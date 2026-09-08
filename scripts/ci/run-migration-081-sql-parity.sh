@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # FILE: scripts/ci/run-migration-081-sql-parity.sh
-# Verifies migration 081 applies cleanly after 080 bootstrap.
+# Verifies migration 081 applies cleanly after the canonical prerequisite chain.
 
 set -euo pipefail
 
@@ -10,6 +10,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
 psql "$MIGRATION_081_PG_URL" -v ON_ERROR_STOP=1 -f scripts/ci/migration-076-sequential-bootstrap.sql
+bash scripts/ci/apply-identity-review-prerequisite-migrations.sh "$MIGRATION_081_PG_URL"
 psql "$MIGRATION_081_PG_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/049_good_trouble_cannabis_pilot.sql
 sed 's|^//.*||' supabase/migrations/050_good_trouble_biometric_thresholds.sql | psql "$MIGRATION_081_PG_URL" -v ON_ERROR_STOP=1 -f -
 psql "$MIGRATION_081_PG_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/050_identity_review_workflow.sql
