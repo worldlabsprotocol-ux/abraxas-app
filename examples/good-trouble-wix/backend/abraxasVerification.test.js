@@ -10,6 +10,7 @@ import {
   NONCE_STATE,
   PARTNER_ID,
   POLICY_ID,
+  BROWSE_POLICY_ID,
   RECEIPT_VALIDATION_MODE,
   RETURN_URL_BASE,
   VERIFIER_RE,
@@ -31,6 +32,7 @@ import {
 import { validateSandboxReceipt } from "./abraxasReceiptValidator.js";
 import {
   createAbraxasVerificationStartService,
+  createPurchaseVerificationStartService,
   completeAbraxasVerificationService,
   __testOnlySetHashFn,
 } from "./abraxasVerificationService.js";
@@ -54,7 +56,7 @@ const VALID_SANDBOX_RECEIPT = {
 };
 
 async function seedFlow(store, overrides = {}) {
-  const payload = await buildVerificationStartPayload({ hashFn });
+  const payload = await buildVerificationStartPayload({ hashFn, purpose: "purchase" });
   const record = await store.insert({
     ...payload.flowRecord,
     ...overrides,
@@ -92,7 +94,7 @@ describe("default SHA-256 auto-wiring (no manual init)", () => {
   it("uses node:crypto sha256 for completion flow when no hash override is configured", async () => {
     __testOnlySetHashFn(null);
     const store = createMemoryNonceStore();
-    const payload = await buildVerificationStartPayload({ hashFn: defaultSha256Hex });
+    const payload = await buildVerificationStartPayload({ hashFn: defaultSha256Hex, purpose: "purchase" });
     await store.insert(payload.flowRecord);
 
     const result = await completeAbraxasVerificationService(
@@ -105,7 +107,7 @@ describe("default SHA-256 auto-wiring (no manual init)", () => {
       },
     );
 
-    expect(result).toEqual({ verified: true, code: "verified" });
+    expect(result).toMatchObject({ verified: true, code: "verified", purpose: "purchase", flowConsumed: true });
   });
 
   it("propagates hash function failure during completion (fail closed)", async () => {
@@ -165,10 +167,8 @@ describe("integration constants", () => {
   it("uses strict sandbox mode and exact partner/policy ids", () => {
     expect(INTEGRATION_CONSTANTS).toEqual({
       mode: "sandbox",
-      partnerId: "good-trouble-cannabis",
-      policyId: "good-trouble-retail-v1",
-      returnUrlBase: RETURN_URL_BASE,
-      gtvParam: GTV_PARAM,
+      browse: expect.objectContaining({ purpose: "browse", policyId: BROWSE_POLICY_ID }),
+      purchase: expect.objectContaining({ purpose: "purchase", policyId: POLICY_ID }),
     });
     expect(RECEIPT_VALIDATION_MODE).toBe("sandbox");
   });
@@ -176,7 +176,7 @@ describe("integration constants", () => {
 
 describe("buildVerificationStartPayload", () => {
   it("puts opaque flowId in return_url gtv — never the verifier", async () => {
-    const payload = await buildVerificationStartPayload({ hashFn });
+    const payload = await buildVerificationStartPayload({ hashFn, purpose: "purchase" });
 
     expect(payload.verifyUrl.startsWith(`${ABRAXAS_ORIGIN}/partner/verify?`)).toBe(true);
     const url = new URL(payload.verifyUrl);
@@ -192,7 +192,7 @@ describe("buildVerificationStartPayload", () => {
   });
 
   it("stores only verifier challenge — no raw verifier", async () => {
-    const payload = await buildVerificationStartPayload({ hashFn });
+    const payload = await buildVerificationStartPayload({ hashFn, purpose: "purchase" });
     expect(payload.flowRecord).toMatchObject({
       flowId: payload.flowId,
       state: NONCE_STATE.PENDING,
@@ -236,10 +236,10 @@ describe("createAbraxasVerificationStart service", () => {
 
   it("requires captcha token unless explicitly skipped in tests", async () => {
     const store = createMemoryNonceStore();
-    const missing = await createAbraxasVerificationStartService("", { store, hashFn });
+    const missing = await createPurchaseVerificationStartService("", { store, hashFn });
     expect(missing).toEqual({ error: "captcha_required" });
 
-    const invalid = await createAbraxasVerificationStartService("token", {
+    const invalid = await createPurchaseVerificationStartService("token", {
       store,
       hashFn,
       authorizeCaptcha: async () => {
@@ -253,7 +253,7 @@ describe("createAbraxasVerificationStart service", () => {
     const store = createMemoryNonceStore();
     const now = new Date("2026-01-01T00:00:00.000Z");
     for (let i = 0; i < 100; i += 1) {
-      const payload = await buildVerificationStartPayload({ hashFn, now });
+      const payload = await buildVerificationStartPayload({ hashFn, now, purpose: "purchase" });
       await store.insert(payload.flowRecord);
     }
     const result = await createAbraxasVerificationStartService("captcha-token", {
@@ -268,7 +268,7 @@ describe("createAbraxasVerificationStart service", () => {
   it("purges expired pending flows before capacity evaluation", async () => {
     const store = createMemoryNonceStore();
     const past = new Date("2020-01-01T00:00:00.000Z");
-    const payload = await buildVerificationStartPayload({ hashFn, now: past });
+    const payload = await buildVerificationStartPayload({ hashFn, now: past, purpose: "purchase" });
     await store.insert({
       ...payload.flowRecord,
       expiresAt: new Date(past.getTime() + 1000),
@@ -299,7 +299,7 @@ describe("completeAbraxasVerificationCore — PKCE", () => {
       validateReceipt: async () => ({ verified: true }),
     });
 
-    expect(result).toEqual({ verified: true, code: "verified" });
+    expect(result).toMatchObject({ verified: true, code: "verified", purpose: "purchase", flowConsumed: true });
     const stored = await store.findByFlowId(flowId);
     expect(stored?.state).toBe(NONCE_STATE.CONSUMED);
   });
@@ -358,7 +358,7 @@ describe("completeAbraxasVerificationCore — PKCE", () => {
   it("rejects expired flow", async () => {
     const store = createMemoryNonceStore();
     const past = new Date("2020-01-01T00:00:00.000Z");
-    const payload = await buildVerificationStartPayload({ hashFn, now: past });
+    const payload = await buildVerificationStartPayload({ hashFn, now: past, purpose: "purchase" });
     await store.insert({
       ...payload.flowRecord,
       expiresAt: new Date(past.getTime() + 1000),
@@ -549,8 +549,8 @@ describe("Wix webMethod source contract", () => {
 
 describe("PKCE entropy and independence", () => {
   it("generates independent random flowId and verifier with 256-bit entropy each", async () => {
-    const a = await buildVerificationStartPayload({ hashFn });
-    const b = await buildVerificationStartPayload({ hashFn });
+    const a = await buildVerificationStartPayload({ hashFn, purpose: "purchase" });
+    const b = await buildVerificationStartPayload({ hashFn, purpose: "purchase" });
     expect(a.flowId).not.toBe(b.flowId);
     expect(a.verifier).not.toBe(b.verifier);
     expect(a.verifier).toMatch(VERIFIER_RE);

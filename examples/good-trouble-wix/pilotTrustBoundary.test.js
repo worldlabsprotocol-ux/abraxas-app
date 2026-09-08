@@ -3,21 +3,29 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { PILOT_VERIFIED_SESSION_FLAG } from "./backend/constants.js";
+import { PURCHASE_VERIFIED_SESSION_FLAG } from "./backend/constants.js";
 
 const ROOT = join(process.cwd(), "examples/good-trouble-wix");
 const BACKEND_DIR = join(ROOT, "backend");
 
-describe("good_trouble_age_verified_pilot trust boundary", () => {
+describe("good_trouble purchase verified pilot trust boundary", () => {
   it("is defined as a sessionStorage-only pilot UI constant", () => {
-    expect(PILOT_VERIFIED_SESSION_FLAG).toBe("good_trouble_age_verified_pilot");
+    expect(PURCHASE_VERIFIED_SESSION_FLAG).toBe("good_trouble_purchase_verified_pilot");
   });
 
-  it("is written only in the callback page after backend verified:true", () => {
+  it("is written only in the purchase callback page after backend verified:true", () => {
     const callbackSource = readFileSync(join(ROOT, "pages/AgeVerificationResult.js"), "utf8");
-    expect(callbackSource).toContain("PILOT_VERIFIED_SESSION_FLAG");
+    expect(callbackSource).toContain("PURCHASE_VERIFIED_SESSION_FLAG");
     expect(callbackSource).toMatch(/result\?\.verified === true/);
     expect(callbackSource).not.toMatch(/status\s*===\s*["']approved["']/);
+  });
+
+  it("browse access flag is written only on browse callback — not purchase callback", () => {
+    const browseSource = readFileSync(join(ROOT, "pages/BrowseVerificationResult.js"), "utf8");
+    const purchaseSource = readFileSync(join(ROOT, "pages/AgeVerificationResult.js"), "utf8");
+    expect(browseSource).toContain("BROWSE_ACCESS_STORAGE_KEY");
+    expect(purchaseSource).not.toContain("BROWSE_ACCESS_STORAGE_KEY");
+    expect(purchaseSource).toContain("PURCHASE_VERIFIED_SESSION_FLAG");
   });
 
   it("is never read or accepted by backend web methods or services", () => {
@@ -33,15 +41,16 @@ describe("good_trouble_age_verified_pilot trust boundary", () => {
       "abraxasReceiptValidator.js",
       "sha256Adapter.js",
     ].map((name) => readFileSync(join(BACKEND_DIR, name), "utf8")).join("\n");
-    expect(sensitive).not.toContain(PILOT_VERIFIED_SESSION_FLAG);
-    expect(sensitive).not.toContain("good_trouble_age_verified_pilot");
+    expect(sensitive).not.toContain(PURCHASE_VERIFIED_SESSION_FLAG);
+    expect(sensitive).not.toContain("good_trouble_purchase_verified_pilot");
+    expect(sensitive).not.toContain("good_trouble_browse_access_l0");
   });
 
   it("is not used in popup start path (traditional yesButton remains separate)", () => {
     const popupSource = readFileSync(join(ROOT, "pages/AgeVerificationPopup.js"), "utf8");
     const logicSource = readFileSync(join(ROOT, "pages/ageVerificationPopupLogic.js"), "utf8");
-    expect(popupSource).not.toContain(PILOT_VERIFIED_SESSION_FLAG);
-    expect(logicSource).not.toContain(PILOT_VERIFIED_SESSION_FLAG);
+    expect(popupSource).not.toContain(PURCHASE_VERIFIED_SESSION_FLAG);
+    expect(logicSource).not.toContain(PURCHASE_VERIFIED_SESSION_FLAG);
     expect(popupSource).toContain("#yesButton");
     expect(popupSource).toContain("#noButton");
     expect(popupSource).not.toContain("good_trouble_age_verified_pilot");
@@ -77,20 +86,20 @@ describe("good_trouble_age_verified_pilot trust boundary", () => {
     const popupSource = readFileSync(join(ROOT, "pages/AgeVerificationPopup.js"), "utf8");
     const logicSource = readFileSync(join(ROOT, "pages/ageVerificationPopupLogic.js"), "utf8");
     const webSource = readFileSync(join(BACKEND_DIR, "abraxasVerification.web.js"), "utf8");
-    expect(popupSource).not.toContain(PILOT_VERIFIED_SESSION_FLAG);
-    expect(logicSource).not.toContain(PILOT_VERIFIED_SESSION_FLAG);
-    expect(webSource).not.toContain(PILOT_VERIFIED_SESSION_FLAG);
+    expect(popupSource).not.toContain(PURCHASE_VERIFIED_SESSION_FLAG);
+    expect(logicSource).not.toContain(PURCHASE_VERIFIED_SESSION_FLAG);
+    expect(webSource).not.toContain(PURCHASE_VERIFIED_SESSION_FLAG);
     expect(logicSource).not.toMatch(/verified:\s*true/);
   });
 
   it("uses traditional self-attestation localStorage only — not Abraxas pilot flag", () => {
     const logicSource = readFileSync(join(ROOT, "pages/ageVerificationPopupLogic.js"), "utf8");
     expect(logicSource).toContain("good_trouble_age_self_attested");
-    expect(logicSource).not.toContain("good_trouble_age_verified_pilot");
+    expect(logicSource).not.toContain("good_trouble_purchase_verified_pilot");
   });
 
   it("does not appear anywhere else in the repository backend", () => {
     const serviceSource = readFileSync(join(BACKEND_DIR, "abraxasVerificationService.js"), "utf8");
-    expect(serviceSource).not.toContain(PILOT_VERIFIED_SESSION_FLAG);
+    expect(serviceSource).not.toContain(PURCHASE_VERIFIED_SESSION_FLAG);
   });
 });

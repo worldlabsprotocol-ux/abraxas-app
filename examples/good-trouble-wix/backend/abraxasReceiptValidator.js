@@ -19,6 +19,12 @@ function sharedErrors(receipt, now) {
   if (receipt.policy_id !== EXPECTED_POLICY_ID) errors.push("policy_mismatch");
   if (receipt.schema_version !== SUPPORTED_SCHEMA_VERSION) errors.push("schema_version_unsupported");
   if (receipt.artifact_type !== EXPECTED_ARTIFACT_TYPE) errors.push("artifact_type_mismatch");
+  if (receipt.artifact_type === "browse_access_receipt") {
+    errors.push("browse_receipt_not_purchase_authority");
+  }
+  if (receipt.valid_for_purchase === false) errors.push("not_valid_for_purchase");
+  if (receipt.purpose === "browse") errors.push("browse_purpose_not_checkout");
+  if (receipt.assurance_level === "L0") errors.push("l0_not_checkout_authority");
 
   if (!receipt.expires_at) {
     errors.push("expires_at_missing");

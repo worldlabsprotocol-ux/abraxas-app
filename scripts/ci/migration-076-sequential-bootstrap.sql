@@ -1,5 +1,20 @@
 -- FILE: scripts/ci/migration-076-sequential-bootstrap.sql
 -- Fresh sequential path schema before 049 → 051 (pre-055 PK=id).
+-- Provisions Supabase-like API roles expected by migrations that GRANT/REVOKE to
+-- anon, authenticated, and service_role (see scripts/ci/migration-072-parity-bootstrap.sql).
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+    CREATE ROLE anon NOLOGIN NOINHERIT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+    CREATE ROLE authenticated NOLOGIN NOINHERIT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'service_role') THEN
+    CREATE ROLE service_role NOLOGIN NOINHERIT BYPASSRLS;
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS public.partners (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -2,7 +2,7 @@
 // Canonical claim types for Compliance + Asset passports.
 
 export type ClaimStatus = "active" | "suspended" | "revoked" | "expired" | "under_review";
-export type AssuranceLevel = "L1" | "L2" | "L3" | "L4";
+export type AssuranceLevel = "L0" | "L1" | "L2" | "L3" | "L4";
 
 /** Machine-readable claim identifiers used in policies and APIs */
 export type ClaimType =
@@ -15,6 +15,7 @@ export type ClaimType =
   | "ubo_verified"
   | "accredited_status"
   | "product_eligibility"
+  | "self_attested_age_band"
   | "wallet_binding_confirmed"
   | "wallet_risk_band"
   | "asset_ownership_reviewed"
@@ -353,6 +354,7 @@ export function claimTypeLabel(type: ClaimType): string {
     ubo_verified: "Beneficial ownership verified",
     accredited_status: "Accredited investor",
     product_eligibility: "Product suitability",
+    self_attested_age_band: "Self-attested age band (browse only)",
     wallet_binding_confirmed: "Wallet binding",
     wallet_risk_band: "Wallet risk band",
     asset_ownership_reviewed: "Asset ownership reviewed",

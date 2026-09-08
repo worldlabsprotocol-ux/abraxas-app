@@ -15,12 +15,15 @@ export const POPUP_STATE = {
   RECOVERABLE_ERROR: "recoverable_error",
 };
 
-export const ABRAXAS_LABEL = "Verify with Abraxas Passport";
+export const ABRAXAS_BROWSE_LABEL = "Continue browsing with Abraxas";
+export const ABRAXAS_PURCHASE_LABEL = "Verify eligibility for purchase";
+
+export const ABRAXAS_LABEL = ABRAXAS_BROWSE_LABEL;
 export const ABRAXAS_LABEL_STARTING = "Starting…";
 
 export const STATUS_READY =
-  "Use Abraxas Passport for reusable, privacy-preserving verification.";
-export const STATUS_STARTING = "Starting secure verification with Abraxas Passport…";
+  "Enter your date of birth on Abraxas to continue browsing. Good Trouble will not receive your birth date.";
+export const STATUS_STARTING = "Starting secure browsing verification with Abraxas…";
 export const STATUS_PREVIEW_PASSED =
   "Preview check passed: Abraxas Passport backend flow is working.";
 export const STATUS_SESSION_UNAVAILABLE =

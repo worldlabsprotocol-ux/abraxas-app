@@ -9,6 +9,9 @@ export const GOOD_TROUBLE_RETAIL_POLICY_ID = "good-trouble-retail-v1" as const;
 /** Future batch attestation policy (COA + chain-of-custody) */
 export const GOOD_TROUBLE_BATCH_POLICY_ID = "good-trouble-batch-v1" as const;
 
+/** Tier 1 browse access — L0 self-attestation only (not purchase eligibility). */
+export const GOOD_TROUBLE_BROWSE_POLICY_ID = "good-trouble-browse-v1" as const;
+
 export const GOOD_TROUBLE_BRAND = {
   name: "Good Trouble",
   legalName: "Good Trouble Cannabis",

@@ -18,6 +18,8 @@ export const PARTNER_FLOW_RATE_LIMIT_ENDPOINTS = [
   "/api/v1/partner-flow/refresh",
   "/api/receipts/public",
   "/api/v1/verification-requests/consent",
+  "/api/age-assurance/self-attest",
+  "/api/age-assurance/browse-receipt/verify",
 ] as const;
 
 export type PartnerFlowRateLimitEndpoint = (typeof PARTNER_FLOW_RATE_LIMIT_ENDPOINTS)[number];
@@ -60,6 +62,8 @@ const ENDPOINT_ENV_KEYS: Record<PartnerFlowRateLimitEndpoint, string> = {
   "/api/v1/partner-flow/refresh": "PARTNER_FLOW_RATE_LIMIT_REFRESH",
   "/api/receipts/public": "PARTNER_FLOW_RATE_LIMIT_PUBLIC_RECEIPT",
   "/api/v1/verification-requests/consent": "PARTNER_FLOW_RATE_LIMIT_CONSENT",
+  "/api/age-assurance/self-attest": "PARTNER_FLOW_RATE_LIMIT_SELF_ATTEST",
+  "/api/age-assurance/browse-receipt/verify": "PARTNER_FLOW_RATE_LIMIT_BROWSE_RECEIPT_VERIFY",
 };
 
 const DEFAULT_LIMITS: Record<PartnerFlowRateLimitEndpoint, number> = {
@@ -68,6 +72,8 @@ const DEFAULT_LIMITS: Record<PartnerFlowRateLimitEndpoint, number> = {
   "/api/v1/partner-flow/refresh": 20,
   "/api/receipts/public": 120,
   "/api/v1/verification-requests/consent": 30,
+  "/api/age-assurance/self-attest": 20,
+  "/api/age-assurance/browse-receipt/verify": 60,
 };
 
 const IP_BASED_ENDPOINTS = new Set<PartnerFlowRateLimitEndpoint>([

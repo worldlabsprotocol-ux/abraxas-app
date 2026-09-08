@@ -48,7 +48,7 @@ export interface PartnerIssuerTrustRule {
 }
 
 const ASSURANCE_RANK: Record<AssuranceLevel, number> = {
-  L1: 1, L2: 2, L3: 3, L4: 4,
+  L0: 0, L1: 1, L2: 2, L3: 3, L4: 4,
 };
 
 function mapIssuer(row: Record<string, unknown>): IssuerRecord {

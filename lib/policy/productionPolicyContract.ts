@@ -164,6 +164,22 @@ export const PRODUCTION_PARTNER_POLICIES: ProductionPartnerPolicy[] = [
       ],
     },
   },
+  {
+    id: "good-trouble-browse-v1",
+    partnerId: "good-trouble-cannabis",
+    sandboxOnly: true,
+    enforcementNote: "Tier 1 browse access — L0 self-attestation only; not valid for purchase.",
+    rules: {
+      sandbox_only: true,
+      browse_access_only: true,
+      allowed_purposes: ["browse"],
+      minimum_assurance_cap: "L0",
+      required_claims: [
+        { claim_type: "self_attested_age_band", must_equal: "over_21", max_age_hours: 24 },
+      ],
+      session_receipt_hours: 4,
+    },
+  },
 ];
 
 export type ClaimIssuanceSource =
@@ -172,6 +188,7 @@ export type ClaimIssuanceSource =
   | "veriffApprovedClaims"
   | "walletBindingClaim_zklogin"
   | "walletBindingClaim_siwe"
+  | "submitSelfAttestation"
   | "not_implemented";
 
 export interface ClaimContractRow {
@@ -310,6 +327,17 @@ export const CLAIM_CONTRACT: Record<ClaimType, ClaimContractRow> = {
     resolvedBy: "getActiveClaims",
     evaluatedBy: "evaluatePolicyRules",
     regressionTests: [],
+  },
+  self_attested_age_band: {
+    claimType: "self_attested_age_band",
+    issuedBy: ["submitSelfAttestation"],
+    storedIn: "self_attestation_ledger (age_band only)",
+    resolvedBy: "getActiveSelfAttestations → ledgerRowsToClaims",
+    evaluatedBy: "evaluatePolicyRules (browse_access_only policies only)",
+    regressionTests: [
+      "lib/assurance/selfAttestation/tieredAgeAssurance.test.ts",
+      "lib/goodTrouble/migration081SelfAttestationLedger.sqlParity.test.ts",
+    ],
   },
 };
 

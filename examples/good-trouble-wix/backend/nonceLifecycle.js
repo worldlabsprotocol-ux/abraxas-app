@@ -5,17 +5,13 @@ import { randomBytes } from "node:crypto";
 import {
   ABRAXAS_ORIGIN,
   CLAIM_TTL_MS,
-  FLOW_ID_PREFIX,
   FLOW_TTL_MS,
-  GTV_PARAM,
   MAX_VALIDATION_ATTEMPTS,
   NONCE_STATE,
-  PARTNER_ID,
-  POLICY_ID,
   RECEIPT_VALIDATION_MODE,
-  RETURN_URL_BASE,
   VERIFIER_BYTES,
 } from "./constants.js";
+import { BROWSE_FLOW, PURCHASE_FLOW } from "./flowPurpose.js";
 import {
   validateFlowId,
   validateReceiptId,
@@ -39,7 +35,9 @@ function randomHex(byteLength) {
  * @property {string | null} [claimToken]
  * @property {number} [validationAttempts]
  * @property {Date | null} [consumedAt]
- * @property {string | null} [correlationId]
+ * @property {string} correlationId
+ * @property {"browse" | "purchase"} purpose
+ * @property {string} policyId
  */
 
 /**
@@ -61,33 +59,41 @@ export async function hashValue(value, hashFn) {
 }
 
 /**
- * Build Partner Flow entry URL. Callback carries opaque flowId in gtv — never the verifier.
- * @param {{ hashFn: (v: string) => Promise<string> | string, now?: Date }} params
+ * Build Partner Flow entry URL. Callback carries opaque flowId — never the verifier.
+ * @param {{ hashFn: (v: string) => Promise<string> | string, now?: Date, purpose?: "browse" | "purchase" }} params
  */
 export async function buildVerificationStartPayload(params) {
+  const flowConfig = params.purpose === "browse" ? BROWSE_FLOW : PURCHASE_FLOW;
   const now = params.now ?? new Date();
   const verifier = randomHex(VERIFIER_BYTES);
-  const flowId = `${FLOW_ID_PREFIX}${randomHex(VERIFIER_BYTES)}`;
+  const flowId = `${flowConfig.flowIdPrefix}${randomHex(VERIFIER_BYTES)}`;
   const verifierChallenge = await hashValue(verifier, params.hashFn);
   const expiresAt = new Date(now.getTime() + FLOW_TTL_MS);
   const correlationId = randomHex(8);
 
-  const returnUrl = `${RETURN_URL_BASE}?${GTV_PARAM}=${encodeURIComponent(flowId)}`;
+  const returnUrl = `${flowConfig.returnUrlBase}?${flowConfig.callbackParam}=${encodeURIComponent(flowId)}`;
   const search = new URLSearchParams({
-    partner_id: PARTNER_ID,
-    policy_id: POLICY_ID,
+    partner_id: flowConfig.partnerId,
+    policy_id: flowConfig.policyId,
     return_url: returnUrl,
   });
+  if (flowConfig.purpose === "browse") {
+    search.set("purpose", "browse");
+  }
 
   return {
     verifyUrl: `${ABRAXAS_ORIGIN}/partner/verify?${search.toString()}`,
     flowId,
+    purpose: flowConfig.purpose,
+    policyId: flowConfig.policyId,
     /** Returned over TLS web method only — frontend stores in sessionStorage, never in URL. */
     verifier,
     flowRecord: {
       flowId,
       verifierChallenge,
       state: NONCE_STATE.PENDING,
+      purpose: flowConfig.purpose,
+      policyId: flowConfig.policyId,
       createdAt: now,
       expiresAt,
       claimExpiresAt: null,
@@ -189,8 +195,13 @@ export async function releaseValidatingClaim(store, record) {
     : { ok: false, code: "release_failed" };
 }
 
+function resolveRecordPurpose(record) {
+  if (record.purpose) return record.purpose;
+  if (record.flowId?.startsWith("gtb_")) return "browse";
+  return "purchase";
+}
+
 /**
- * Complete Abraxas callback — PKCE proof required; fail-closed; no localStorage authority.
  * @param {object} params
  * @param {FlowStore} params.store
  * @param {string} params.receiptId
@@ -226,7 +237,15 @@ export async function completeAbraxasVerificationCore(params) {
     return { verified: false, code: claim.code };
   }
 
-  const validation = await params.validateReceipt(receiptCheck.receiptId);
+  if (resolveRecordPurpose(claim.record) !== "purchase") {
+    await markFlowConsumed(params.store, claim.record, params.now);
+    return { verified: false, code: "flow_purpose_mismatch" };
+  }
+
+  const validation = await params.validateReceipt(
+    receiptCheck.receiptId,
+    claim.record,
+  );
   if (validation.transientFailure) {
     const release = await releaseValidatingClaim(params.store, claim.record);
     return {
@@ -246,13 +265,88 @@ export async function completeAbraxasVerificationCore(params) {
     return { verified: false, code: consumed.code };
   }
 
-  return { verified: true, code: "verified" };
+  return {
+    verified: true,
+    code: "verified",
+    purpose: "purchase",
+    policyId: claim.record.policyId,
+    flowConsumed: true,
+  };
+}
+
+/**
+ * Complete browse callback — JWT browse receipt + PKCE; purpose must be browse.
+ * @param {object} params
+ * @param {FlowStore} params.store
+ * @param {string} params.browseReceipt
+ * @param {string} params.flowId
+ * @param {string} params.verifier
+ * @param {(input: string) => Promise<string> | string} params.hashFn
+ * @param {(token: string, record: FlowRecord) => Promise<{ verified: boolean, transientFailure?: boolean }>} params.validateBrowseReceipt
+ * @param {Date} [params.now]
+ */
+export async function completeBrowseVerificationCore(params) {
+  const token = typeof params.browseReceipt === "string" ? params.browseReceipt.trim() : "";
+  if (!token || token.length > 8192) {
+    return { verified: false, code: "missing_browse_receipt" };
+  }
+
+  const flowCheck = validateFlowId(params.flowId);
+  if (!flowCheck.ok) {
+    return { verified: false, code: flowCheck.code };
+  }
+
+  const verifierCheck = validateVerifier(params.verifier);
+  if (!verifierCheck.ok) {
+    return { verified: false, code: verifierCheck.code };
+  }
+
+  const claim = await claimPendingFlow(params.store, {
+    flowId: flowCheck.flowId,
+    verifier: verifierCheck.verifier,
+    hashFn: params.hashFn,
+    now: params.now,
+  });
+  if (!claim.ok) {
+    return { verified: false, code: claim.code };
+  }
+
+  if (resolveRecordPurpose(claim.record) !== "browse") {
+    await markFlowConsumed(params.store, claim.record, params.now);
+    return { verified: false, code: "flow_purpose_mismatch" };
+  }
+
+  const validation = await params.validateBrowseReceipt(token, claim.record);
+  if (validation.transientFailure) {
+    const release = await releaseValidatingClaim(params.store, claim.record);
+    return {
+      verified: false,
+      code: release.released ? "receipt_fetch_transient_failure" : "flow_exhausted",
+      retryable: Boolean(release.released),
+    };
+  }
+
+  if (!validation.verified) {
+    await markFlowConsumed(params.store, claim.record, params.now);
+    return { verified: false, code: "browse_receipt_invalid" };
+  }
+
+  const consumed = await markFlowConsumed(params.store, claim.record, params.now);
+  if (!consumed.ok) {
+    return { verified: false, code: consumed.code };
+  }
+
+  return {
+    verified: true,
+    code: "verified",
+    purpose: "browse",
+    policyId: claim.record.policyId,
+    flowConsumed: true,
+  };
 }
 
 export const INTEGRATION_CONSTANTS = {
   mode: RECEIPT_VALIDATION_MODE,
-  partnerId: PARTNER_ID,
-  policyId: POLICY_ID,
-  returnUrlBase: RETURN_URL_BASE,
-  gtvParam: GTV_PARAM,
+  browse: BROWSE_FLOW,
+  purchase: PURCHASE_FLOW,
 };

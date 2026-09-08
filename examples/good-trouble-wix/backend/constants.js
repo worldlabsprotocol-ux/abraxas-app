@@ -10,8 +10,23 @@ export const PARTNER_ID =
 export const POLICY_ID =
   "good-trouble-retail-v1";
 
-export const RETURN_URL_BASE =
+/** Tier 1 browse policy — L0 self-attestation only (not purchase). */
+export const BROWSE_POLICY_ID =
+  "good-trouble-browse-v1";
+
+export const FLOW_PURPOSE_BROWSE = "browse";
+export const FLOW_PURPOSE_PURCHASE = "purchase";
+
+/** Purchase / regulated eligibility callback. */
+export const PURCHASE_RETURN_URL_BASE =
   "https://www.goodtroublecanna.com/age-verification-result";
+
+/** Browse / L0 self-attestation callback — separate from purchase. */
+export const BROWSE_RETURN_URL_BASE =
+  "https://www.goodtroublecanna.com/browse-verification-result";
+
+/** @deprecated Use PURCHASE_RETURN_URL_BASE */
+export const RETURN_URL_BASE = PURCHASE_RETURN_URL_BASE;
 
 export const NONCE_COLLECTION =
   "AbraxasVerificationNonces";
@@ -50,7 +65,14 @@ export const CONSUMED_FLOW_RETENTION_MS =
  * never imports from a backend-only file.
  */
 export {
+  GTB_PARAM,
   GTV_PARAM,
+  BROWSE_ACCESS_STORAGE_KEY,
+  BROWSE_RETURN_DESTINATION_STORAGE_KEY,
+  BROWSE_VERIFIER_STORAGE_PREFIX,
+  PURCHASE_RETURN_DESTINATION_STORAGE_KEY,
+  PURCHASE_VERIFIED_SESSION_FLAG,
+  PURCHASE_VERIFIER_STORAGE_PREFIX,
   PILOT_VERIFIED_SESSION_FLAG,
   RETURN_DESTINATION_STORAGE_KEY,
   VERIFIER_STORAGE_PREFIX,
@@ -63,17 +85,16 @@ export {
 export const RECEIPT_VALIDATION_MODE =
   "sandbox";
 
-export const FLOW_ID_PREFIX =
-  "gtf_";
+export const FLOW_ID_PREFIX_PURCHASE = "gtf_";
+export const FLOW_ID_PREFIX_BROWSE = "gtb_";
+
+/** @deprecated Use FLOW_ID_PREFIX_PURCHASE */
+export const FLOW_ID_PREFIX = FLOW_ID_PREFIX_PURCHASE;
 
 export const VERIFIER_BYTES = 32;
 
-/**
- * Opaque flow identifier:
- * "gtf_" followed by 64 lowercase hexadecimal characters.
- */
-export const FLOW_ID_RE =
-  /^gtf_[a-f0-9]{64}$/;
+/** Purchase (gtf_) and browse (gtb_) opaque flow identifiers. */
+export const FLOW_ID_RE = /^(gtf|gtb)_[a-f0-9]{64}$/;
 
 /**
  * High-entropy verifier:

@@ -11,6 +11,12 @@ import type {
   PolicyEvaluationResult,
   RequiredClaimRule,
 } from "@/lib/policy/types";
+import {
+  isSelfAttestationClaim,
+  selfAttestationClaimMeetsBrowseRule,
+  selfAttestationForbiddenForRule,
+} from "@/lib/policy/selfAttestationGuards";
+import { SELF_ATTESTATION_CLAIM_TYPE } from "@/lib/assurance/selfAttestation/constants";
 
 const PRODUCT_ELIGIBILITY_CLAIM_TYPE = "product_eligibility";
 
@@ -51,6 +57,7 @@ export function hasConflictingProductEligibilityRule(rules: PartnerPolicyRules):
 }
 
 const ASSURANCE_RANK: Record<AssuranceLevel, number> = {
+  L0: 0,
   L1: 1,
   L2: 2,
   L3: 3,
@@ -64,6 +71,31 @@ function claimMeetsRule(
   trustContext?: PolicyEvaluationContext,
 ): boolean {
   if (!claim) return false;
+
+  if (rule.claim_type === SELF_ATTESTATION_CLAIM_TYPE) {
+    if (selfAttestationForbiddenForRule(rule)) return false;
+    if (!isSelfAttestationClaim(claim)) return false;
+    const liveStatus = resolveClaimStatusAtRead({
+      status: claim.status,
+      expires_at: claim.expires_at,
+    });
+    if (liveStatus !== "active") return false;
+    const maxAgeHours = rule.credential_max_age_hours ?? rule.max_age_hours;
+    if (maxAgeHours != null) {
+      const issued = new Date(claim.issued_at).getTime();
+      if (Date.now() - issued > maxAgeHours * 60 * 60 * 1000) return false;
+    }
+    return selfAttestationClaimMeetsBrowseRule(
+      claim,
+      rule,
+      trustContext?.partnerId,
+      trustContext?.policyId,
+    );
+  }
+
+  if (isSelfAttestationClaim(claim)) {
+    return false;
+  }
 
   const liveStatus = resolveClaimStatusAtRead({
     status: claim.status,

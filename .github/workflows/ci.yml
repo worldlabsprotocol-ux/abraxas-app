@@ -112,3 +112,34 @@ jobs:
         run: bash scripts/ci/run-migration-076-sql-parity.sh
         env:
           MIGRATION_076_PG_URL: postgresql://postgres:postgres@127.0.0.1:5432/migration_076_parity
+
+  migration-081-parity:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: migration_081_parity
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d migration_081_parity"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Migration 081 SQL parity
+        run: bash scripts/ci/run-migration-081-sql-parity.sh
+        env:
+          MIGRATION_081_PG_URL: postgresql://postgres:postgres@127.0.0.1:5432/migration_081_parity
