@@ -3,6 +3,7 @@ import { PROTOCOL_INTEGRATIONS } from "@/lib/protocolIntegrations";
 import { getGoodTroubleBatch } from "@/lib/goodTrouble/batchProvenance";
 import { batchToCredentialSubject } from "@/lib/credentials/cannabisBatchCredential";
 import {
+  GOOD_TROUBLE_BROWSE_RETURN_URL,
   GOOD_TROUBLE_PARTNER_ID,
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
@@ -35,6 +36,13 @@ describe("goodTrouble pilot", () => {
 
   it("uses sandbox retail policy id", () => {
     expect(GOOD_TROUBLE_RETAIL_POLICY_ID).toBe("good-trouble-retail-v1");
+  });
+
+  it("uses dedicated browse callback URL — not homepage", () => {
+    expect(GOOD_TROUBLE_BROWSE_RETURN_URL).toBe(
+      "https://www.goodtroublecanna.com/browse-verification-result",
+    );
+    expect(GOOD_TROUBLE_BROWSE_RETURN_URL).not.toContain("/?");
   });
 
   it("uses partner brand logo on registry", () => {
