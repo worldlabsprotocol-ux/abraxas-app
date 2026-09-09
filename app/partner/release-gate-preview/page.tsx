@@ -9,7 +9,7 @@ import {
 } from "@/lib/partner/partnerHolderCopy";
 import { Btn } from "@/components/redesign/ui";
 import { SelfAttestationBrowseForm } from "@/components/partner/SelfAttestationBrowseForm";
-import { GOOD_TROUBLE_BROWSE_POLICY_ID, GOOD_TROUBLE_PARTNER_ID } from "@/lib/goodTrouble/constants";
+import { GOOD_TROUBLE_BROWSE_POLICY_ID, GOOD_TROUBLE_BROWSE_RETURN_URL, GOOD_TROUBLE_PARTNER_ID } from "@/lib/goodTrouble/constants";
 
 const PREVIEW_STATES: PartnerHolderState[] = [
   "browse_self_attest",
@@ -49,7 +49,7 @@ export default function PartnerReleaseGatePreviewPage() {
                   partnerId={GOOD_TROUBLE_PARTNER_ID}
                   policyId={GOOD_TROUBLE_BROWSE_POLICY_ID}
                   partnerName={partnerName}
-                  returnUrl="https://www.goodtroublecanna.com"
+                  returnUrl={GOOD_TROUBLE_BROWSE_RETURN_URL}
                 />
               )}
               {state === "return_to_partner" && (

@@ -3,8 +3,8 @@
 Good Trouble × Abraxas — two-tier age lifecycle (browse L0 + purchase L2+).
 
 **Source of truth:** `main` branch after merge of PR #260.  
-**Audit date:** 2026-09-08.  
-**Wix test suite:** 130/130 passing on `main`.
+**Audit date:** 2026-09-09.  
+**Wix test suite:** 148/148 passing on branch `cursor/good-trouble-wix-browse-callback-d541`.
 
 ---
 
@@ -15,27 +15,32 @@ Deploy in this order (Public → Backend → Pages/lightbox):
 | Order | Repository path | Wix destination | Wix filename / target | Replace or new | Direct dependencies |
 |------:|-----------------|-------------------|----------------------|----------------|---------------------|
 | 1 | `examples/good-trouble-wix/public/abraxasClientConstants.js` | Public file | `src/public/abraxasClientConstants.js` | New (or replace if split) | — |
-| 2 | `examples/good-trouble-wix/pages/ageVerificationPopupLogic.js` | Public file | `src/public/ageVerificationPopupLogic.js` | Replace | — |
-| 3 | `examples/good-trouble-wix/backend/constants.js` | Backend file | `src/backend/constants.js` | Replace | `../public/abraxasClientConstants.js` |
-| 4 | `examples/good-trouble-wix/backend/browseConstants.js` | Backend file | `src/backend/browseConstants.js` | **New** | — |
-| 5 | `examples/good-trouble-wix/backend/flowPurpose.js` | Backend file | `src/backend/flowPurpose.js` | **New** | `./constants.js` |
-| 6 | `examples/good-trouble-wix/backend/pkceProof.js` | Backend file | `src/backend/pkceProof.js` | Replace | `./constants.js`, `node:crypto` |
-| 7 | `examples/good-trouble-wix/backend/sha256Adapter.js` | Backend file | `src/backend/sha256Adapter.js` | Replace | `node:crypto` |
-| 8 | `examples/good-trouble-wix/backend/flowCapacity.js` | Backend file | `src/backend/flowCapacity.js` | Replace | — |
-| 9 | `examples/good-trouble-wix/backend/captchaGate.js` | Backend file | `src/backend/captchaGate.js` | Replace | — |
-| 10 | `examples/good-trouble-wix/backend/browseReceiptValidator.js` | Backend file | `src/backend/browseReceiptValidator.js` | **New** | `./browseConstants.js` |
-| 11 | `examples/good-trouble-wix/backend/abraxasReceiptValidator.js` | Backend file | `src/backend/abraxasReceiptValidator.js` | Replace | — |
-| 12 | `examples/good-trouble-wix/backend/browseReceiptRemoteValidator.js` | Backend file | `src/backend/browseReceiptRemoteValidator.js` | **New** | `./constants.js`, `./browseReceiptValidator.js` |
-| 13 | `examples/good-trouble-wix/backend/purchaseEligibilityAuthorization.js` | Backend file | `src/backend/purchaseEligibilityAuthorization.js` | **New** | `./browseReceiptValidator.js`, `./abraxasReceiptValidator.js`, `./constants.js` |
-| 14 | `examples/good-trouble-wix/backend/checkoutAuthorization.js` | Backend file | `src/backend/checkoutAuthorization.js` | **New** | `./purchaseEligibilityAuthorization.js`, `./constants.js` |
-| 15 | `examples/good-trouble-wix/backend/nonceLifecycle.js` | Backend file | `src/backend/nonceLifecycle.js` | Replace | `./constants.js`, `./flowPurpose.js`, `./pkceProof.js`, `node:crypto` |
-| 16 | `examples/good-trouble-wix/backend/wixNonceStore.js` | Backend file | `src/backend/wixNonceStore.js` | Replace | `wix-data`, `./constants.js` |
-| 17 | `examples/good-trouble-wix/backend/abraxasVerificationService.js` | Backend file | `src/backend/abraxasVerificationService.js` | Replace | receipt validators, `nonceLifecycle`, `wixNonceStore` (dynamic), `captchaGate`, `constants` |
-| 18 | `examples/good-trouble-wix/backend/abraxasVerification.web.js` | Backend file | `src/backend/abraxasVerification.web.js` | Replace | `wix-web-module`, `./abraxasVerificationService.js` |
-| 19 | `examples/good-trouble-wix/pages/AgeVerificationPopup.js` | Lightbox code | Age Verification popup panel | Replace | `backend/abraxasVerification.web`, `public/*`, Wix frontend modules |
-| 20 | `examples/good-trouble-wix/pages/BrowseVerificationResult.js` | Page code | `/browse-verification-result` page | **New page** | `backend/abraxasVerification.web`, `public/abraxasClientConstants`, `wix-location`, `wix-storage-frontend` |
-| 21 | `examples/good-trouble-wix/pages/AgeVerificationResult.js` | Page code | `/age-verification-result` page | Replace | `backend/abraxasVerification.web`, `public/abraxasClientConstants`, `wix-location`, `wix-storage-frontend` |
-| 22 | `examples/good-trouble-wix/pages/PurchaseVerificationEntry.js` | Page code | Cart / pre-checkout page (operator slug) | **New page** | `backend/abraxasVerification.web`, `public/abraxasClientConstants`, `wix-location-frontend`, `wix-window`, `wix-storage-frontend` |
+| 2 | `examples/good-trouble-wix/public/browseCallbackHygiene.js` | Public file | `src/public/browseCallbackHygiene.js` | **New** | — |
+| 3 | `examples/good-trouble-wix/public/browseAccessUi.js` | Public file | `src/public/browseAccessUi.js` | **New** | `./abraxasClientConstants.js` |
+| 4 | `examples/good-trouble-wix/public/browseVerificationCallbackLogic.js` | Public file | `src/public/browseVerificationCallbackLogic.js` | **New** | `./abraxasClientConstants.js` |
+| 5 | `examples/good-trouble-wix/pages/ageVerificationPopupLogic.js` | Public file | `src/public/ageVerificationPopupLogic.js` | Replace | — |
+| 6 | `examples/good-trouble-wix/backend/constants.js` | Backend file | `src/backend/constants.js` | Replace | `../public/abraxasClientConstants.js` |
+| 7 | `examples/good-trouble-wix/backend/browseConstants.js` | Backend file | `src/backend/browseConstants.js` | **New** | — |
+| 8 | `examples/good-trouble-wix/backend/flowPurpose.js` | Backend file | `src/backend/flowPurpose.js` | **New** | `./constants.js` |
+| 9 | `examples/good-trouble-wix/backend/pkceProof.js` | Backend file | `src/backend/pkceProof.js` | Replace | `./constants.js`, `node:crypto` |
+| 10 | `examples/good-trouble-wix/backend/sha256Adapter.js` | Backend file | `src/backend/sha256Adapter.js` | Replace | `node:crypto` |
+| 11 | `examples/good-trouble-wix/backend/flowCapacity.js` | Backend file | `src/backend/flowCapacity.js` | Replace | — |
+| 12 | `examples/good-trouble-wix/backend/captchaGate.js` | Backend file | `src/backend/captchaGate.js` | Replace | — |
+| 13 | `examples/good-trouble-wix/backend/browseReceiptValidator.js` | Backend file | `src/backend/browseReceiptValidator.js` | **New** | `./browseConstants.js` |
+| 14 | `examples/good-trouble-wix/backend/abraxasReceiptValidator.js` | Backend file | `src/backend/abraxasReceiptValidator.js` | Replace | — |
+| 15 | `examples/good-trouble-wix/backend/browseReceiptRemoteValidator.js` | Backend file | `src/backend/browseReceiptRemoteValidator.js` | **New** | `./constants.js`, `./browseReceiptValidator.js` |
+| 16 | `examples/good-trouble-wix/backend/purchaseEligibilityAuthorization.js` | Backend file | `src/backend/purchaseEligibilityAuthorization.js` | **New** | `./browseReceiptValidator.js`, `./abraxasReceiptValidator.js`, `./constants.js` |
+| 17 | `examples/good-trouble-wix/backend/checkoutAuthorization.js` | Backend file | `src/backend/checkoutAuthorization.js` | **New** | `./purchaseEligibilityAuthorization.js`, `./constants.js` |
+| 18 | `examples/good-trouble-wix/backend/nonceLifecycle.js` | Backend file | `src/backend/nonceLifecycle.js` | Replace | `./constants.js`, `./flowPurpose.js`, `./pkceProof.js`, `node:crypto` |
+| 19 | `examples/good-trouble-wix/backend/wixNonceStore.js` | Backend file | `src/backend/wixNonceStore.js` | Replace | `wix-data`, `./constants.js` |
+| 20 | `examples/good-trouble-wix/backend/abraxasVerificationService.js` | Backend file | `src/backend/abraxasVerificationService.js` | Replace | receipt validators, `nonceLifecycle`, `wixNonceStore` (dynamic), `captchaGate`, `constants` |
+| 21 | `examples/good-trouble-wix/backend/abraxasVerification.web.js` | Backend file | `src/backend/abraxasVerification.web.js` | Replace | `wix-web-module`, `./abraxasVerificationService.js` |
+| 22 | `examples/good-trouble-wix/pages/AgeVerificationPopup.js` | Lightbox code | Age Verification popup panel | Replace | `backend/abraxasVerification.web`, `public/*`, Wix frontend modules |
+| 23 | `examples/good-trouble-wix/pages/BrowseVerificationResult.js` | Page code | `/browse-verification-result` page | **New page** | `backend/abraxasVerification.web`, `public/*`, `wix-location`, `wix-storage-frontend` |
+| 24 | `examples/good-trouble-wix/pages/AgeVerificationResult.js` | Page code | `/age-verification-result` page | Replace | `backend/abraxasVerification.web`, `public/abraxasClientConstants`, `wix-location`, `wix-storage-frontend` |
+| 25 | `examples/good-trouble-wix/pages/PurchaseVerificationEntry.js` | Page code | Cart / pre-checkout page (operator slug) | **New page** | `backend/abraxasVerification.web`, `public/abraxasClientConstants`, `wix-location-frontend`, `wix-window`, `wix-storage-frontend` |
+| 26 | `examples/good-trouble-wix/pages/masterPage.js` | Master page code | Site **Master Page** Velo panel | **New** | `public/browseCallbackHygiene`, `public/browseAccessUi`, `wix-location-frontend`, `wix-window`, `wix-storage-frontend` |
+| 27 | `examples/good-trouble-wix/pages/Homepage.js` | Page code | Site **Home** page Velo panel | **New** | same as masterPage |
 
 **Do not deploy:** `*.test.js`, `backend/memoryNonceStore.js`, `pages/verificationCallbackLogic.js` (unused duplicate helpers).
 
@@ -88,6 +93,19 @@ Allowlisted query params: `status`, `decision_id`, `receipt_id`, `receipt_expire
 ### 5. CMS collection `AbraxasVerificationNonces`
 
 Admin-only read/write. Required fields include: `flowId`, `verifierChallenge`, `state`, `createdAt`, `expiresAt`, `claimExpiresAt`, `claimToken`, `validationAttempts`, `consumedAt`, `correlationId`, `purpose`, `policyId`.
+
+### 6. Master Page + Homepage (URL hygiene + browse gate suppression)
+
+| Wix target | Velo panel | Element IDs | Required |
+|------------|------------|-------------|----------|
+| **Master Page** | Master Page code | *(none — code-only)* | **Required** |
+| **Home** | Home page code | *(none — code-only)* | **Required** |
+
+Both panels paste `masterPage.js` / `Homepage.js` respectively. They **immediately** strip sensitive callback query params via `history.replaceState` (never treated as validation) and dismiss the Age Verification lightbox when `good_trouble_browse_access_l0=1` is present in `sessionStorage` after backend-verified browse success.
+
+**Never return browse receipts to the homepage.** Abraxas browse self-attestation must redirect to:
+
+`https://www.goodtroublecanna.com/browse-verification-result?gtb={flowId}`
 
 ---
 
@@ -2782,10 +2800,14 @@ WHERE partner_id = 'good-trouble-cannabis';
 
 ## G. Wix security verification
 
-**Suite result (main):** `npx vitest run examples/good-trouble-wix/` → **130/130 passed**.
+**Suite result (branch):** `npx vitest run examples/good-trouble-wix/` → **148/148 passed**.
 
 | Requirement | Verified by |
 |-------------|-------------|
+| Browse callback lands on `/browse-verification-result` (not homepage) | `tieredLifecycleSecurity.test.js`, `constants.js` |
+| Homepage/masterPage strip sensitive callback params | `browseVerificationCallback.test.js` |
+| Valid browse callback dismisses age popup (session flag only) | `browseVerificationCallback.test.js` |
+| URL-only receipt cannot unlock browsing | `browseVerificationCallback.test.js` |
 | Browse receipt cannot authorize purchase | `tieredLifecycleSecurity.test.js`, `checkoutAuthorization.test.js` |
 | L0 cannot satisfy L2+ | `purchaseEligibilityAuthorization.js` (`insufficient_assurance`, `self_attestation_not_checkout`) |
 | sessionStorage flags are UI-only | `session_flag_not_authoritative`, `browse_session_flag_not_checkout` tests |
@@ -2801,14 +2823,15 @@ WHERE partner_id = 'good-trouble-cannabis';
 ## H. Manual deployment checklist (Wix Editor)
 
 1. **Create pages:** Browse Verification Result (`browse-verification-result`), verify Age Verification Result (`age-verification-result`), create Purchase Verification Entry page.
-2. **Assign slugs** exactly as above for callback pages.
+2. **Paste Master Page + Home page code** (`masterPage.js`, `Homepage.js`) for immediate URL hygiene.
+3. **Assign slugs** exactly as above for callback pages.
 3. **Add elements** per section B with exact IDs (`#yesButton`, `#abraxasButton`, etc.).
 4. **Enable Dev Mode / Velo** on the site.
-5. **Create Public files:** paste `abraxasClientConstants.js`, `ageVerificationPopupLogic.js`.
+5. **Create Public files:** paste `abraxasClientConstants.js`, `browseCallbackHygiene.js`, `browseAccessUi.js`, `browseVerificationCallbackLogic.js`, `ageVerificationPopupLogic.js`.
 6. **Create Backend files:** paste all 16 backend modules in dependency order (section A).
 7. **Paste page/lightbox code** into each panel (section C).
 8. **Configure web methods** — ensure `createBrowseVerificationStart`, `completeBrowseVerification`, `createPurchaseVerificationStart`, `completePurchaseVerification` are exposed with **Anyone** permission.
-9. **Preview browse lifecycle:** open site → age popup → Abraxas browse → return to `/browse-verification-result` → confirm browse session flag only.
+9. **Preview browse lifecycle:** open site → age popup → Abraxas browse → return to `/browse-verification-result` → backend validates receipt → clean redirect to saved path → age popup suppressed for session.
 10. **Preview purchase lifecycle:** open purchase entry page → Abraxas purchase → return to `/age-verification-result` → confirm purchase flag (UI only).
 11. **Inspect logs** in Wix backend monitoring — verify flow IDs (`gtb_` / `gtf_`) without logging receipt bodies or PII.
 12. **Publish** only after Production migration 081 + callback SQL + all acceptance tests pass.
@@ -2822,7 +2845,12 @@ WHERE partner_id = 'good-trouble-cannabis';
 | **Checkout hook not in repo** | High for regulated commerce | `checkoutAuthorization.js` + `purchaseEligibilityAuthorization.js` are deployed backend modules but **no Wix Stores checkout page code** imports them. Operator must wire `authorizeRegulatedCheckout()` into the cart/checkout Velo hook before enabling regulated purchase. |
 | `verificationCallbackLogic.js` unused | Low | Duplicate helpers; callback pages inline logic. Safe to skip. |
 | `memoryNonceStore.js` | Info | Test-only — do not deploy. |
-| Preview `origin_not_allowed` on Abraxas self-attest form | Medium | Fixed in draft PR `cursor/wix-origin-preview-fix-d541` — use `getPublicAppOriginFromRequest` for CSRF guard. |
+| Preview `origin_not_allowed` on Abraxas self-attest form | Medium | Fixed in draft PR `cursor/tiered-age-preview-route-d541` — `VERCEL_ENV` origin guard. |
+| Homepage browse receipt redirect (legacy) | High | Fixed in draft PR `cursor/good-trouble-wix-browse-callback-d541` — dedicated callback page, masterPage/Homepage URL hygiene, Abraxas preview uses `GOOD_TROUBLE_BROWSE_RETURN_URL`. |
+
+### Account federation (explicit consent — not implemented)
+
+L0 browse receipts **must not** auto-create Wix members. A future “Continue with Abraxas” account-linking feature requires separate explicit consent with authenticated Abraxas session, server-to-server token exchange, audience-bound single-use authorization code, pairwise Good Trouble subject identifier, Wix member mapping, unlink/recovery lifecycle, collision protections, and **no** DOB or identity evidence disclosure.
 
 ### Wix ready for manual installation?
 

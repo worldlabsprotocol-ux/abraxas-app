@@ -12,6 +12,10 @@ export const GOOD_TROUBLE_BATCH_POLICY_ID = "good-trouble-batch-v1" as const;
 /** Tier 1 browse access — L0 self-attestation only (not purchase eligibility). */
 export const GOOD_TROUBLE_BROWSE_POLICY_ID = "good-trouble-browse-v1" as const;
 
+/** Wix L0 browse callback — never return browse receipts to the homepage. */
+export const GOOD_TROUBLE_BROWSE_RETURN_URL =
+  "https://www.goodtroublecanna.com/browse-verification-result" as const;
+
 export const GOOD_TROUBLE_BRAND = {
   name: "Good Trouble",
   legalName: "Good Trouble Cannabis",

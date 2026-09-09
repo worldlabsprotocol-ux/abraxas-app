@@ -26,6 +26,7 @@ const BROWSE_RECEIPT = {
   valid_for_purchase: false,
   purpose: "browse",
   assurance_level: "L0",
+  age_band: "over_21",
   partner_id: "good-trouble-cannabis",
   policy_id: "good-trouble-browse-v1",
   expires_at: new Date(Date.now() + 3600000).toISOString(),

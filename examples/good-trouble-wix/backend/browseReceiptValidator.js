@@ -35,6 +35,9 @@ export function validateBrowseAccessPayload(payload, opts = {}) {
   if (record.assurance_level !== "L0") {
     errors.push("assurance_not_l0");
   }
+  if (record.age_band !== "over_21") {
+    errors.push("age_band_mismatch");
+  }
   if (record.partner_id !== partnerId) {
     errors.push("partner_mismatch");
   }

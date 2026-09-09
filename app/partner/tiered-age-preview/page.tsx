@@ -6,6 +6,7 @@ import { PartnerJourneyLayout } from "@/components/partner/PartnerJourneyLayout"
 import { SelfAttestationBrowseForm } from "@/components/partner/SelfAttestationBrowseForm";
 import {
   GOOD_TROUBLE_BROWSE_POLICY_ID,
+  GOOD_TROUBLE_BROWSE_RETURN_URL,
   GOOD_TROUBLE_BRAND,
   GOOD_TROUBLE_PARTNER_ID,
 } from "@/lib/goodTrouble/constants";
@@ -52,7 +53,7 @@ export default function TieredAgePreviewPage() {
           partnerId={GOOD_TROUBLE_PARTNER_ID}
           policyId={GOOD_TROUBLE_BROWSE_POLICY_ID}
           partnerName={partnerName}
-          returnUrl={GOOD_TROUBLE_BRAND.website}
+          returnUrl={GOOD_TROUBLE_BROWSE_RETURN_URL}
         />
       </PartnerJourneyLayout>
     </div>
