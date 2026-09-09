@@ -37,6 +37,15 @@ Deploy in this order (Public → Backend → Pages/lightbox):
 | 21 | `examples/good-trouble-wix/pages/AgeVerificationResult.js` | Page code | `/age-verification-result` page | Replace | `backend/abraxasVerification.web`, `public/abraxasClientConstants`, `wix-location`, `wix-storage-frontend` |
 | 22 | `examples/good-trouble-wix/pages/PurchaseVerificationEntry.js` | Page code | Cart / pre-checkout page (operator slug) | **New page** | `backend/abraxasVerification.web`, `public/abraxasClientConstants`, `wix-location-frontend`, `wix-window`, `wix-storage-frontend` |
 
+**Browse receipt validation (authoritative Wix backend filenames):**
+
+| Wix backend filename | Repository source | Role |
+|----------------------|-------------------|------|
+| `src/backend/browseReceiptValidator.js` | `backend/browseReceiptValidator.js` | Local payload/metadata checks (`artifact_type`, `purpose`, `age_band`, partner/policy, expiry, no PII) |
+| `src/backend/browseReceiptRemoteValidator.js` | `backend/browseReceiptRemoteValidator.js` | Abraxas `POST /api/age-assurance/browse-receipt/verify` + metadata assembly → `browseReceiptValidator.js` |
+
+> **Never create `browseReceiptMetadataValidator.js` on Wix.** That filename is not in this repository (GitHub returns 404). It is an operator typo for the two modules above. An empty file with the wrong name breaks browse callback completion.
+
 **Do not deploy:** `*.test.js`, `backend/memoryNonceStore.js`, `pages/verificationCallbackLogic.js` (unused duplicate helpers).
 
 ### Lifecycle mapping
@@ -2435,6 +2444,9 @@ export function validateBrowseAccessPayload(payload, opts = {}) {
   }
   if (record.assurance_level !== "L0") {
     errors.push("assurance_not_l0");
+  }
+  if (record.age_band !== "over_21") {
+    errors.push("age_band_mismatch");
   }
   if (record.partner_id !== partnerId) {
     errors.push("partner_mismatch");

@@ -54,6 +54,7 @@ const VALID_BROWSE_RECEIPT = {
   valid_for_purchase: false,
   purpose: "browse",
   assurance_level: "L0",
+  age_band: "over_21",
   partner_id: PARTNER_ID,
   policy_id: BROWSE_POLICY_ID,
   expires_at: "2099-01-01T00:00:00.000Z",
