@@ -23,8 +23,8 @@ describe("good_trouble purchase verified pilot trust boundary", () => {
   it("browse access flag is written only on browse callback — not purchase callback", () => {
     const browseSource = readFileSync(join(ROOT, "pages/BrowseVerificationResult.js"), "utf8");
     const purchaseSource = readFileSync(join(ROOT, "pages/AgeVerificationResult.js"), "utf8");
-    expect(browseSource).toContain("BROWSE_ACCESS_STORAGE_KEY");
-    expect(purchaseSource).not.toContain("BROWSE_ACCESS_STORAGE_KEY");
+    expect(browseSource).toContain("setBrowseAccessSessionFlag");
+    expect(purchaseSource).not.toContain("setBrowseAccessSessionFlag");
     expect(purchaseSource).toContain("PURCHASE_VERIFIED_SESSION_FLAG");
   });
 

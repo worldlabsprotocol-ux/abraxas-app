@@ -4,31 +4,26 @@
 import { completeBrowseVerification } from "backend/abraxasVerification.web";
 
 import {
-  BROWSE_ACCESS_STORAGE_KEY,
   BROWSE_RETURN_DESTINATION_STORAGE_KEY,
   BROWSE_VERIFIER_STORAGE_PREFIX,
-  GTB_PARAM,
 } from "public/abraxasClientConstants";
+
+import { stripSensitiveCallbackParamsFromHref } from "public/browseCallbackHygiene";
+import { setBrowseAccessSessionFlag } from "public/browseAccessUi";
+import {
+  BROWSE_CALLBACK_GENERIC_FAILURE,
+  BROWSE_CALLBACK_RESTART_MESSAGE,
+  BROWSE_CALLBACK_SUCCESS_MESSAGE,
+  clearFlowVerifier,
+  extractBrowseCallbackInputs,
+  isBackendBrowseVerificationSuccess,
+  parseAllowlistedBrowseCallbackParams,
+  resolveSafeReturnDestination,
+  shouldRetainVerifierForRetry,
+} from "public/browseVerificationCallbackLogic";
 
 import wixLocation from "wix-location";
 import { session } from "wix-storage-frontend";
-
-const ALLOWED_CALLBACK_PARAMS = new Set([
-  "browse_receipt",
-  "partner_id",
-  "policy_id",
-  "purpose",
-  GTB_PARAM,
-]);
-
-const GENERIC_FAILURE =
-  "Browsing access could not be confirmed. Please try again.";
-
-const RESTART_MESSAGE =
-  "This verification was opened in a different browser or tab. Please start again from the age gate.";
-
-const SUCCESS_MESSAGE =
-  "Browsing access confirmed. Returning you to Good Trouble…";
 
 let completionStarted = false;
 
@@ -56,29 +51,16 @@ function verifierStorageKey(flowId) {
   return `${BROWSE_VERIFIER_STORAGE_PREFIX}${flowId}`;
 }
 
-function parseAllowlistedCallbackParams() {
-  const query = wixLocation.query;
-  const parsed = {};
-  for (const key of Object.keys(query)) {
-    if (ALLOWED_CALLBACK_PARAMS.has(key)) parsed[key] = query[key];
-  }
-  return parsed;
-}
-
-function clearVerifier(flowId) {
+function stripCallbackParamsFromAddressBar() {
   try {
-    session.removeItem(verifierStorageKey(flowId));
+    if (typeof window !== "undefined" && window.history?.replaceState) {
+      stripSensitiveCallbackParamsFromHref(
+        wixLocation.url,
+        (state, title, url) => window.history.replaceState(state, title, url),
+      );
+    }
   } catch {
-    // non-authoritative cleanup
-  }
-}
-
-/** L0 browse UI flag — may dismiss age popup; never checkout authority. */
-function setBrowseAccessState() {
-  try {
-    session.setItem(BROWSE_ACCESS_STORAGE_KEY, String(Date.now()));
-  } catch {
-    // Fail closed for navigation only; user can retry.
+    // URL hygiene is best-effort; backend validation remains authoritative.
   }
 }
 
@@ -86,11 +68,10 @@ function restoreReturnDestination() {
   try {
     const destination = session.getItem(BROWSE_RETURN_DESTINATION_STORAGE_KEY);
     session.removeItem(BROWSE_RETURN_DESTINATION_STORAGE_KEY);
-    if (destination && typeof destination === "string" && destination.startsWith("/") && !destination.startsWith("//")) {
-      setTimeout(() => { wixLocation.to(destination); }, 1200);
-      return;
-    }
-    setTimeout(() => { wixLocation.to("/"); }, 1200);
+    const safeDestination = resolveSafeReturnDestination(destination);
+    setTimeout(() => {
+      wixLocation.to(safeDestination);
+    }, 1200);
   } catch {
     // Keep success message visible.
   }
@@ -106,43 +87,44 @@ async function handleCallback() {
     return;
   }
 
-  const params = parseAllowlistedCallbackParams();
-  const flowId = typeof params[GTB_PARAM] === "string" ? params[GTB_PARAM].trim() : "";
-  const browseReceipt = typeof params.browse_receipt === "string" ? params.browse_receipt.trim() : "";
+  const params = parseAllowlistedBrowseCallbackParams(wixLocation.query);
+  const { flowId, browseReceipt } = extractBrowseCallbackInputs(params);
+
+  stripCallbackParamsFromAddressBar();
 
   if (!flowId || !browseReceipt) {
-    setStatus(GENERIC_FAILURE);
+    setStatus(BROWSE_CALLBACK_GENERIC_FAILURE);
     return;
   }
 
   const verifier = session.getItem(verifierStorageKey(flowId));
   if (!verifier) {
-    setStatus(RESTART_MESSAGE);
+    setStatus(BROWSE_CALLBACK_RESTART_MESSAGE);
     return;
   }
 
   try {
     const result = await completeBrowseVerification(browseReceipt, flowId, verifier);
 
-    if (result?.verified === true && result?.purpose === "browse") {
-      clearVerifier(flowId);
-      setBrowseAccessState();
-      setStatus(SUCCESS_MESSAGE);
+    if (isBackendBrowseVerificationSuccess(result)) {
+      clearFlowVerifier(verifierStorageKey, session, flowId);
+      setBrowseAccessSessionFlag(session);
+      setStatus(BROWSE_CALLBACK_SUCCESS_MESSAGE);
       restoreReturnDestination();
       return;
     }
 
-    if (result?.code === "receipt_fetch_transient_failure" && result?.retryable === true) {
+    if (shouldRetainVerifierForRetry(result)) {
       setStatus("Still confirming browsing access. Please wait a moment…");
       completionStarted = false;
       setTimeout(() => { void handleCallback(); }, 2000);
       return;
     }
 
-    clearVerifier(flowId);
-    setStatus(GENERIC_FAILURE);
+    clearFlowVerifier(verifierStorageKey, session, flowId);
+    setStatus(BROWSE_CALLBACK_GENERIC_FAILURE);
   } catch {
-    clearVerifier(flowId);
-    setStatus(GENERIC_FAILURE);
+    clearFlowVerifier(verifierStorageKey, session, flowId);
+    setStatus(BROWSE_CALLBACK_GENERIC_FAILURE);
   }
 }
