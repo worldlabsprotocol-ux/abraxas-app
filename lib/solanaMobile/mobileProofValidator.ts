@@ -49,7 +49,20 @@ export function validateBrowseAccessProof(
     return { ok: false, code: "receipt_expired" };
   }
 
-  return { ok: true, proof: proof as BrowseAccessProof };
+  const validated: BrowseAccessProof = {
+    artifact_type: BROWSE_ARTIFACT_TYPE,
+    purpose: "browse",
+    valid_for_purchase: false,
+    assurance_level: "L0",
+    partner_id: String(proof.partner_id),
+    policy_id: String(proof.policy_id),
+    age_band: "over_21",
+    receipt_id: String(proof.receipt_id ?? ""),
+    issued_at: String(proof.issued_at ?? ""),
+    expires_at: String(proof.expires_at),
+  };
+
+  return { ok: true, proof: validated };
 }
 
 export function validateEligibilityDecisionProof(
@@ -75,7 +88,21 @@ export function validateEligibilityDecisionProof(
     return { ok: false, code: "receipt_expired" };
   }
 
-  return { ok: true, proof: proof as EligibilityDecisionProof };
+  const validated: EligibilityDecisionProof = {
+    artifact_type: PURCHASE_ARTIFACT_TYPE,
+    purpose: "purchase",
+    valid_for_purchase: true,
+    assurance_level: proof.assurance_level as EligibilityDecisionProof["assurance_level"],
+    partner_id: String(proof.partner_id),
+    policy_id: String(proof.policy_id),
+    decision_result: proof.decision_result === "denied" ? "denied" : "approved",
+    over_21: true,
+    receipt_id: String(proof.receipt_id ?? ""),
+    issued_at: String(proof.issued_at ?? ""),
+    expires_at: String(proof.expires_at),
+  };
+
+  return { ok: true, proof: validated };
 }
 
 /** Regulated purchase gate — never accepts browse proofs, URL flags, or L0. */
