@@ -237,7 +237,10 @@ describe("createAbraxasVerificationStart service", () => {
   it("requires captcha token unless explicitly skipped in tests", async () => {
     const store = createMemoryNonceStore();
     const missing = await createPurchaseVerificationStartService("", { store, hashFn });
-    expect(missing).toEqual({ error: "captcha_required" });
+    expect(missing).toMatchObject({
+      error: "captcha_required",
+      diagnostic: { code: "captcha_required", stage: "captcha_gate" },
+    });
 
     const invalid = await createPurchaseVerificationStartService("token", {
       store,
@@ -246,7 +249,10 @@ describe("createAbraxasVerificationStart service", () => {
         throw new Error("invalid");
       },
     });
-    expect(invalid).toEqual({ error: "captcha_invalid" });
+    expect(invalid).toMatchObject({
+      error: "captcha_invalid",
+      diagnostic: { code: "captcha_invalid", stage: "captcha_gate" },
+    });
   });
 
   it("returns rate_limited when outstanding pending flows exceed cap", async () => {
@@ -262,7 +268,59 @@ describe("createAbraxasVerificationStart service", () => {
       skipCaptcha: true,
       now,
     });
-    expect(result).toEqual({ error: "rate_limited" });
+    expect(result.error).toBe("rate_limited");
+    expect(result.diagnostic).toMatchObject({
+      code: "rate_limited",
+      stage: "capacity_precheck",
+      purpose: "purchase",
+      policyId: POLICY_ID,
+    });
+  });
+
+  it("returns nonce_insert_failed with diagnostic when CMS insert throws", async () => {
+    const store = createMemoryNonceStore();
+    const failingStore = {
+      ...store,
+      insert: async () => {
+        throw new Error("wix-data validation failed for purpose field");
+      },
+      countPending: store.countPending.bind(store),
+      purgeStale: store.purgeStale?.bind(store),
+      removeById: store.removeById.bind(store),
+    };
+
+    const result = await createPurchaseVerificationStartService(null, {
+      store: failingStore,
+      hashFn,
+      skipCaptcha: true,
+    });
+
+    expect(result.error).toBe("nonce_insert_failed");
+    expect(result.diagnostic).toMatchObject({
+      code: "nonce_insert_failed",
+      stage: "nonce_insert",
+      purpose: "purchase",
+      policyId: POLICY_ID,
+      correlationId: expect.any(String),
+    });
+    expect(result).not.toHaveProperty("verifier");
+  });
+
+  it("purchase start success includes verifyUrl, gtf_ flowId, verifier, and purpose metadata", async () => {
+    const store = createMemoryNonceStore();
+    const result = await createPurchaseVerificationStartService(null, {
+      store,
+      hashFn,
+      skipCaptcha: true,
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(result.verifyUrl).toMatch(/^https:\/\/abraxasworld\.xyz\/partner\/verify\?/);
+    expect(result.flowId).toMatch(/^gtf_[a-f0-9]{64}$/);
+    expect(result.verifier).toMatch(VERIFIER_RE);
+    expect(result.purpose).toBe("purchase");
+    expect(result.policyId).toBe(POLICY_ID);
+    expect(result.correlationId).toMatch(/^[a-f0-9]{16}$/);
   });
 
   it("purges expired pending flows before capacity evaluation", async () => {

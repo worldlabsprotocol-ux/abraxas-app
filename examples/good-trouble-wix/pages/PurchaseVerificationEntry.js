@@ -8,9 +8,15 @@ import {
   PURCHASE_VERIFIER_STORAGE_PREFIX,
 } from "public/abraxasClientConstants";
 
+import { createPurchaseVerificationController } from "public/purchaseVerificationLogic";
+
 import wixLocationFrontend from "wix-location-frontend";
 import wixWindow from "wix-window";
+import wixWindowFrontend from "wix-window-frontend";
 import { session } from "wix-storage-frontend";
+
+/** @type {ReturnType<typeof createPurchaseVerificationController> | null} */
+let purchaseController = null;
 
 $w.onReady(() => {
   if (wixWindow.rendering.env !== "browser") return;
@@ -21,41 +27,36 @@ function wirePurchaseButton() {
   const button = $w("#purchaseAbraxasButton");
   if (!button) return;
 
-  button.onClick(() => {
-    void startPurchaseVerification();
+  purchaseController = createPurchaseVerificationController({
+    setStatus(message) {
+      const status = $w("#purchaseStatusText");
+      if (status) status.text = message;
+    },
+
+    startPurchaseVerification: () => createPurchaseVerificationStart(),
+
+    getViewMode: () => wixWindowFrontend.viewMode,
+
+    storeVerifier(flowId, verifier) {
+      session.setItem(`${PURCHASE_VERIFIER_STORAGE_PREFIX}${flowId}`, verifier);
+    },
+
+    saveReturnDestination() {
+      try {
+        const currentUrl = String(wixLocationFrontend.url || "");
+        const path = currentUrl.split("?")[0].replace(/^https?:\/\/[^/]+/, "") || "/";
+        session.setItem(PURCHASE_RETURN_DESTINATION_STORAGE_KEY, path);
+      } catch {
+        // non-authoritative
+      }
+    },
+
+    navigateToVerifyUrl(url) {
+      wixLocationFrontend.to(url);
+    },
   });
-}
 
-async function startPurchaseVerification() {
-  const status = $w("#purchaseStatusText");
-  if (status) {
-    status.text = "Starting purchase eligibility verification…";
-  }
-
-  try {
-    const result = await createPurchaseVerificationStart();
-    if (!result?.verifyUrl || !result?.flowId || !result?.verifier) {
-      if (status) status.text = "Verification could not be started. Please try again.";
-      return;
-    }
-
-    saveReturnDestination();
-    session.setItem(
-      `${PURCHASE_VERIFIER_STORAGE_PREFIX}${result.flowId}`,
-      result.verifier,
-    );
-    wixLocationFrontend.to(result.verifyUrl);
-  } catch {
-    if (status) status.text = "Verification could not be started. Please try again.";
-  }
-}
-
-function saveReturnDestination() {
-  try {
-    const currentUrl = String(wixLocationFrontend.url || "");
-    const path = currentUrl.split("?")[0].replace(/^https?:\/\/[^/]+/, "") || "/";
-    session.setItem(PURCHASE_RETURN_DESTINATION_STORAGE_KEY, path);
-  } catch {
-    // non-authoritative
-  }
+  button.onClick(() => {
+    void purchaseController?.start();
+  });
 }

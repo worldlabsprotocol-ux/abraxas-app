@@ -6,6 +6,13 @@ import { verifyBrowseReceiptRemotely } from "./browseReceiptRemoteValidator.js";
 import { authorizeCaptchaToken } from "./captchaGate.js";
 import { MAX_OUTSTANDING_PENDING_FLOWS } from "./constants.js";
 import {
+  buildFlowStartFailure,
+  buildFlowStartSuccess,
+  flowStartContext,
+  FLOW_START_STAGES,
+  mapThrownErrorToStartCode,
+} from "./flowStartDiagnostics.js";
+import {
   assertCapacityAvailable,
   finalizeFlowStart,
 } from "./flowCapacity.js";
@@ -39,31 +46,98 @@ async function resolveStore(deps) {
   return createWixNonceStore();
 }
 
+/**
+ * @param {"browse" | "purchase"} purpose
+ * @param {string | null | undefined} captchaToken
+ * @param {object} [deps]
+ */
 async function startFlow(purpose, captchaToken, deps = {}) {
-  if (!deps.skipCaptcha) {
-    const captcha = await authorizeCaptchaToken(captchaToken, deps.authorizeCaptcha);
-    if (!captcha.ok) return { error: captcha.code };
+  const context = flowStartContext(purpose);
+
+  try {
+    if (!deps.skipCaptcha) {
+      const captcha = await authorizeCaptchaToken(captchaToken, deps.authorizeCaptcha);
+      if (!captcha.ok) {
+        return buildFlowStartFailure({
+          code: captcha.code,
+          stage: FLOW_START_STAGES.CAPTCHA_GATE,
+          purpose: context.purpose,
+          policyId: context.policyId,
+        });
+      }
+    }
+
+    const store = await resolveStore(deps);
+    const hashFn = resolveHashFn(deps.hashFn);
+    const now = deps.now ?? new Date();
+
+    const capacity = await assertCapacityAvailable(store, MAX_OUTSTANDING_PENDING_FLOWS, now);
+    if (!capacity.ok) {
+      return buildFlowStartFailure({
+        code: capacity.code,
+        stage: FLOW_START_STAGES.CAPACITY_PRECHECK,
+        purpose: context.purpose,
+        policyId: context.policyId,
+      });
+    }
+
+    let payload;
+    try {
+      payload = await buildVerificationStartPayload({ hashFn, now, purpose });
+    } catch {
+      return buildFlowStartFailure({
+        code: "payload_build_failed",
+        stage: FLOW_START_STAGES.PAYLOAD_BUILD,
+        purpose: context.purpose,
+        policyId: context.policyId,
+      });
+    }
+
+    let inserted;
+    try {
+      inserted = await store.insert(payload.flowRecord);
+    } catch {
+      return buildFlowStartFailure({
+        code: "nonce_insert_failed",
+        stage: FLOW_START_STAGES.NONCE_INSERT,
+        purpose: context.purpose,
+        policyId: context.policyId,
+        correlationId: payload.flowRecord.correlationId,
+      });
+    }
+
+    const finalized = await finalizeFlowStart(
+      store,
+      inserted._id,
+      MAX_OUTSTANDING_PENDING_FLOWS,
+      now,
+    );
+    if (!finalized.ok) {
+      return buildFlowStartFailure({
+        code: finalized.code,
+        stage: FLOW_START_STAGES.CAPACITY_FINALIZE,
+        purpose: context.purpose,
+        policyId: context.policyId,
+        correlationId: payload.flowRecord.correlationId,
+      });
+    }
+
+    return buildFlowStartSuccess({
+      verifyUrl: payload.verifyUrl,
+      flowId: payload.flowId,
+      verifier: payload.verifier,
+      purpose: payload.purpose,
+      policyId: payload.policyId,
+      correlationId: payload.flowRecord.correlationId,
+    });
+  } catch (error) {
+    return buildFlowStartFailure({
+      code: mapThrownErrorToStartCode(error),
+      stage: FLOW_START_STAGES.CAPACITY_PRECHECK,
+      purpose: context.purpose,
+      policyId: context.policyId,
+    });
   }
-
-  const store = await resolveStore(deps);
-  const hashFn = resolveHashFn(deps.hashFn);
-  const now = deps.now ?? new Date();
-
-  const capacity = await assertCapacityAvailable(store, MAX_OUTSTANDING_PENDING_FLOWS, now);
-  if (!capacity.ok) return { error: capacity.code };
-
-  const payload = await buildVerificationStartPayload({ hashFn, now, purpose });
-  const inserted = await store.insert(payload.flowRecord);
-  const finalized = await finalizeFlowStart(store, inserted._id, MAX_OUTSTANDING_PENDING_FLOWS, now);
-  if (!finalized.ok) return { error: finalized.code };
-
-  return {
-    verifyUrl: payload.verifyUrl,
-    flowId: payload.flowId,
-    verifier: payload.verifier,
-    purpose: payload.purpose,
-    policyId: payload.policyId,
-  };
 }
 
 export async function createBrowseVerificationStartService(captchaToken, deps = {}) {

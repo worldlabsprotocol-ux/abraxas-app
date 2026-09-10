@@ -4,6 +4,7 @@
 
 import wixData from "wix-data";
 import { CONSUMED_FLOW_RETENTION_MS, NONCE_COLLECTION, NONCE_STATE } from "./constants.js";
+import { normalizeWixDataCount } from "./wixDataCount.js";
 
 /** @internal Elevated write access for backend-only web methods. */
 const BACKEND_WRITE_OPTIONS = { suppressAuth: true };
@@ -46,15 +47,13 @@ export function createWixNonceStore() {
       );
     },
     async countPending(now = new Date()) {
-      const totalCount = await wixData.query(NONCE_COLLECTION)
+      const rawCount = await wixData.query(NONCE_COLLECTION)
         .eq("state", NONCE_STATE.PENDING)
         .gt("expiresAt", now)
         .count(BACKEND_READ_OPTIONS);
 
-      if (
-        !Number.isSafeInteger(totalCount) ||
-        totalCount < 0
-      ) {
+      const totalCount = normalizeWixDataCount(rawCount);
+      if (totalCount === null) {
         throw new Error("Invalid pending-flow count returned by Wix Data");
       }
 

@@ -134,12 +134,18 @@ describe("wixNonceStore elevated backend access", () => {
     expect(countMock).toHaveBeenCalledWith(BACKEND_READ_OPTIONS);
   });
 
+  it("normalizes object-shaped count() results from Wix Data", async () => {
+    countMock.mockResolvedValueOnce({ totalCount: 5 });
+    const count = await store.countPending(new Date("2026-01-01T00:00:00.000Z"));
+    expect(count).toBe(5);
+  });
+
   it.each([
     ["undefined", undefined],
-    ["object-shaped result", { totalCount: 5 }],
     ["negative", -1],
     ["non-integer", 1.5],
     ["NaN", Number.NaN],
+    ["object without numeric total", { totalCount: "five" }],
   ])("fails closed when count() returns %s", async (_label, invalidCount) => {
     countMock.mockResolvedValueOnce(invalidCount);
     await expect(store.countPending(new Date("2026-01-01T00:00:00.000Z"))).rejects.toThrow(
@@ -197,22 +203,33 @@ describe("wixNonceStore capacity enforcement", () => {
       now,
     });
 
-    expect(result).toEqual({ error: "rate_limited" });
+    expect(result).toMatchObject({
+      error: "rate_limited",
+      diagnostic: { code: "rate_limited", stage: "capacity_precheck" },
+    });
     expect(wixDataMock.insert).not.toHaveBeenCalled();
   });
 
-  it("does not permit flow creation when countPending fails closed on invalid count", async () => {
+  it("returns capacity_count_invalid when countPending fails closed on invalid count", async () => {
     countMock.mockResolvedValueOnce(undefined);
     const store = createWixNonceStore();
     const now = new Date("2026-01-01T00:00:00.000Z");
 
-    await expect(
-      createAbraxasVerificationStartService(null, {
-        store,
-        skipCaptcha: true,
-        now,
-      }),
-    ).rejects.toThrow("Invalid pending-flow count returned by Wix Data");
+    const result = await createAbraxasVerificationStartService(null, {
+      store,
+      skipCaptcha: true,
+      now,
+    });
+
+    expect(result).toMatchObject({
+      error: "capacity_count_invalid",
+      diagnostic: {
+        code: "capacity_count_invalid",
+        stage: "capacity_precheck",
+        purpose: "purchase",
+        policyId: "good-trouble-retail-v1",
+      },
+    });
     expect(wixDataMock.insert).not.toHaveBeenCalled();
   });
 });
