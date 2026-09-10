@@ -15,13 +15,16 @@ Deploy in this order (Public → Backend → Pages/lightbox):
 | Order | Repository path | Wix destination | Wix filename / target | Replace or new | Direct dependencies |
 |------:|-----------------|-------------------|----------------------|----------------|---------------------|
 | 1 | `examples/good-trouble-wix/public/abraxasClientConstants.js` | Public file | `src/public/abraxasClientConstants.js` | New (or replace if split) | — |
-| 2 | `examples/good-trouble-wix/pages/ageVerificationPopupLogic.js` | Public file | `src/public/ageVerificationPopupLogic.js` | Replace | — |
+| 2 | `examples/good-trouble-wix/pages/ageVerificationPopupLogic.js`
+| 2b | `examples/good-trouble-wix/pages/purchaseVerificationLogic.js` | Public file | `src/public/purchaseVerificationLogic.js` | **New** | — | | Public file | `src/public/ageVerificationPopupLogic.js` | Replace | — |
 | 3 | `examples/good-trouble-wix/backend/constants.js` | Backend file | `src/backend/constants.js` | Replace | `../public/abraxasClientConstants.js` |
 | 4 | `examples/good-trouble-wix/backend/browseConstants.js` | Backend file | `src/backend/browseConstants.js` | **New** | — |
 | 5 | `examples/good-trouble-wix/backend/flowPurpose.js` | Backend file | `src/backend/flowPurpose.js` | **New** | `./constants.js` |
 | 6 | `examples/good-trouble-wix/backend/pkceProof.js` | Backend file | `src/backend/pkceProof.js` | Replace | `./constants.js`, `node:crypto` |
 | 7 | `examples/good-trouble-wix/backend/sha256Adapter.js` | Backend file | `src/backend/sha256Adapter.js` | Replace | `node:crypto` |
-| 8 | `examples/good-trouble-wix/backend/flowCapacity.js` | Backend file | `src/backend/flowCapacity.js` | Replace | — |
+| 8 | `examples/good-trouble-wix/backend/flowCapacity.js`
+| 8b | `examples/good-trouble-wix/backend/flowStartDiagnostics.js` | Backend file | `src/backend/flowStartDiagnostics.js` | **New** | `./flowPurpose.js` |
+| 8c | `examples/good-trouble-wix/backend/wixDataCount.js` | Backend file | `src/backend/wixDataCount.js` | **New** | — | | Backend file | `src/backend/flowCapacity.js` | Replace | — |
 | 9 | `examples/good-trouble-wix/backend/captchaGate.js` | Backend file | `src/backend/captchaGate.js` | Replace | — |
 | 10 | `examples/good-trouble-wix/backend/browseReceiptValidator.js` | Backend file | `src/backend/browseReceiptValidator.js` | **New** | `./browseConstants.js` |
 | 11 | `examples/good-trouble-wix/backend/abraxasReceiptValidator.js` | Backend file | `src/backend/abraxasReceiptValidator.js` | Replace | — |
@@ -35,7 +38,7 @@ Deploy in this order (Public → Backend → Pages/lightbox):
 | 19 | `examples/good-trouble-wix/pages/AgeVerificationPopup.js` | Lightbox code | Age Verification popup panel | Replace | `backend/abraxasVerification.web`, `public/*`, Wix frontend modules |
 | 20 | `examples/good-trouble-wix/pages/BrowseVerificationResult.js` | Page code | `/browse-verification-result` page | **New page** | `backend/abraxasVerification.web`, `public/abraxasClientConstants`, `wix-location`, `wix-storage-frontend` |
 | 21 | `examples/good-trouble-wix/pages/AgeVerificationResult.js` | Page code | `/age-verification-result` page | Replace | `backend/abraxasVerification.web`, `public/abraxasClientConstants`, `wix-location`, `wix-storage-frontend` |
-| 22 | `examples/good-trouble-wix/pages/PurchaseVerificationEntry.js` | Page code | Cart / pre-checkout page (operator slug) | **New page** | `backend/abraxasVerification.web`, `public/abraxasClientConstants`, `wix-location-frontend`, `wix-window`, `wix-storage-frontend` |
+| 22 | `examples/good-trouble-wix/pages/PurchaseVerificationEntry.js` | Page code | Cart / pre-checkout page (operator slug) | **New page** | `backend/abraxasVerification.web`, `public/purchaseVerificationLogic`, `public/abraxasClientConstants`, `wix-location-frontend`, `wix-window`, `wix-storage-frontend` |
 
 **Browse receipt validation (authoritative Wix backend filenames):**
 
@@ -1122,9 +1125,15 @@ import {
   PURCHASE_VERIFIER_STORAGE_PREFIX,
 } from "public/abraxasClientConstants";
 
+import { createPurchaseVerificationController } from "public/purchaseVerificationLogic";
+
 import wixLocationFrontend from "wix-location-frontend";
 import wixWindow from "wix-window";
+import wixWindowFrontend from "wix-window-frontend";
 import { session } from "wix-storage-frontend";
+
+/** @type {ReturnType<typeof createPurchaseVerificationController> | null} */
+let purchaseController = null;
 
 $w.onReady(() => {
   if (wixWindow.rendering.env !== "browser") return;
@@ -1135,47 +1144,40 @@ function wirePurchaseButton() {
   const button = $w("#purchaseAbraxasButton");
   if (!button) return;
 
+  purchaseController = createPurchaseVerificationController({
+    setStatus(message) {
+      const status = $w("#purchaseStatusText");
+      if (status) status.text = message;
+    },
+
+    startPurchaseVerification: () => createPurchaseVerificationStart(),
+
+    getViewMode: () => wixWindowFrontend.viewMode,
+
+    storeVerifier(flowId, verifier) {
+      session.setItem(`${PURCHASE_VERIFIER_STORAGE_PREFIX}${flowId}`, verifier);
+    },
+
+    saveReturnDestination() {
+      try {
+        const currentUrl = String(wixLocationFrontend.url || "");
+        const path = currentUrl.split("?")[0].replace(/^https?:\/\/[^/]+/, "") || "/";
+        session.setItem(PURCHASE_RETURN_DESTINATION_STORAGE_KEY, path);
+      } catch {
+        // non-authoritative
+      }
+    },
+
+    navigateToVerifyUrl(url) {
+      wixLocationFrontend.to(url);
+    },
+  });
+
   button.onClick(() => {
-    void startPurchaseVerification();
+    void purchaseController?.start();
   });
 }
-
-async function startPurchaseVerification() {
-  const status = $w("#purchaseStatusText");
-  if (status) {
-    status.text = "Starting purchase eligibility verification…";
-  }
-
-  try {
-    const result = await createPurchaseVerificationStart();
-    if (!result?.verifyUrl || !result?.flowId || !result?.verifier) {
-      if (status) status.text = "Verification could not be started. Please try again.";
-      return;
-    }
-
-    saveReturnDestination();
-    session.setItem(
-      `${PURCHASE_VERIFIER_STORAGE_PREFIX}${result.flowId}`,
-      result.verifier,
-    );
-    wixLocationFrontend.to(result.verifyUrl);
-  } catch {
-    if (status) status.text = "Verification could not be started. Please try again.";
-  }
-}
-
-function saveReturnDestination() {
-  try {
-    const currentUrl = String(wixLocationFrontend.url || "");
-    const path = currentUrl.split("?")[0].replace(/^https?:\/\/[^/]+/, "") || "/";
-    session.setItem(PURCHASE_RETURN_DESTINATION_STORAGE_KEY, path);
-  } catch {
-    // non-authoritative
-  }
-}
-
 ```
-
 ### backend/abraxasVerification.web.js
 
 - **Wix destination:** Backend file
@@ -1237,6 +1239,13 @@ import { verifyBrowseReceiptRemotely } from "./browseReceiptRemoteValidator.js";
 import { authorizeCaptchaToken } from "./captchaGate.js";
 import { MAX_OUTSTANDING_PENDING_FLOWS } from "./constants.js";
 import {
+  buildFlowStartFailure,
+  buildFlowStartSuccess,
+  flowStartContext,
+  FLOW_START_STAGES,
+  mapThrownErrorToStartCode,
+} from "./flowStartDiagnostics.js";
+import {
   assertCapacityAvailable,
   finalizeFlowStart,
 } from "./flowCapacity.js";
@@ -1270,31 +1279,98 @@ async function resolveStore(deps) {
   return createWixNonceStore();
 }
 
+/**
+ * @param {"browse" | "purchase"} purpose
+ * @param {string | null | undefined} captchaToken
+ * @param {object} [deps]
+ */
 async function startFlow(purpose, captchaToken, deps = {}) {
-  if (!deps.skipCaptcha) {
-    const captcha = await authorizeCaptchaToken(captchaToken, deps.authorizeCaptcha);
-    if (!captcha.ok) return { error: captcha.code };
+  const context = flowStartContext(purpose);
+
+  try {
+    if (!deps.skipCaptcha) {
+      const captcha = await authorizeCaptchaToken(captchaToken, deps.authorizeCaptcha);
+      if (!captcha.ok) {
+        return buildFlowStartFailure({
+          code: captcha.code,
+          stage: FLOW_START_STAGES.CAPTCHA_GATE,
+          purpose: context.purpose,
+          policyId: context.policyId,
+        });
+      }
+    }
+
+    const store = await resolveStore(deps);
+    const hashFn = resolveHashFn(deps.hashFn);
+    const now = deps.now ?? new Date();
+
+    const capacity = await assertCapacityAvailable(store, MAX_OUTSTANDING_PENDING_FLOWS, now);
+    if (!capacity.ok) {
+      return buildFlowStartFailure({
+        code: capacity.code,
+        stage: FLOW_START_STAGES.CAPACITY_PRECHECK,
+        purpose: context.purpose,
+        policyId: context.policyId,
+      });
+    }
+
+    let payload;
+    try {
+      payload = await buildVerificationStartPayload({ hashFn, now, purpose });
+    } catch {
+      return buildFlowStartFailure({
+        code: "payload_build_failed",
+        stage: FLOW_START_STAGES.PAYLOAD_BUILD,
+        purpose: context.purpose,
+        policyId: context.policyId,
+      });
+    }
+
+    let inserted;
+    try {
+      inserted = await store.insert(payload.flowRecord);
+    } catch {
+      return buildFlowStartFailure({
+        code: "nonce_insert_failed",
+        stage: FLOW_START_STAGES.NONCE_INSERT,
+        purpose: context.purpose,
+        policyId: context.policyId,
+        correlationId: payload.flowRecord.correlationId,
+      });
+    }
+
+    const finalized = await finalizeFlowStart(
+      store,
+      inserted._id,
+      MAX_OUTSTANDING_PENDING_FLOWS,
+      now,
+    );
+    if (!finalized.ok) {
+      return buildFlowStartFailure({
+        code: finalized.code,
+        stage: FLOW_START_STAGES.CAPACITY_FINALIZE,
+        purpose: context.purpose,
+        policyId: context.policyId,
+        correlationId: payload.flowRecord.correlationId,
+      });
+    }
+
+    return buildFlowStartSuccess({
+      verifyUrl: payload.verifyUrl,
+      flowId: payload.flowId,
+      verifier: payload.verifier,
+      purpose: payload.purpose,
+      policyId: payload.policyId,
+      correlationId: payload.flowRecord.correlationId,
+    });
+  } catch (error) {
+    return buildFlowStartFailure({
+      code: mapThrownErrorToStartCode(error),
+      stage: FLOW_START_STAGES.CAPACITY_PRECHECK,
+      purpose: context.purpose,
+      policyId: context.policyId,
+    });
   }
-
-  const store = await resolveStore(deps);
-  const hashFn = resolveHashFn(deps.hashFn);
-  const now = deps.now ?? new Date();
-
-  const capacity = await assertCapacityAvailable(store, MAX_OUTSTANDING_PENDING_FLOWS, now);
-  if (!capacity.ok) return { error: capacity.code };
-
-  const payload = await buildVerificationStartPayload({ hashFn, now, purpose });
-  const inserted = await store.insert(payload.flowRecord);
-  const finalized = await finalizeFlowStart(store, inserted._id, MAX_OUTSTANDING_PENDING_FLOWS, now);
-  if (!finalized.ok) return { error: finalized.code };
-
-  return {
-    verifyUrl: payload.verifyUrl,
-    flowId: payload.flowId,
-    verifier: payload.verifier,
-    purpose: payload.purpose,
-    policyId: payload.policyId,
-  };
 }
 
 export async function createBrowseVerificationStartService(captchaToken, deps = {}) {
@@ -1368,9 +1444,7 @@ export async function completeBrowseVerificationService(browseReceipt, flowId, v
 export async function completeAbraxasVerificationService(receiptId, flowId, verifier, deps = {}) {
   return completePurchaseVerificationService(receiptId, flowId, verifier, deps);
 }
-
 ```
-
 ### backend/constants.js
 
 - **Wix destination:** Backend file
@@ -2188,6 +2262,7 @@ export async function authorizeCaptchaToken(captchaToken, authorizeFn) {
 
 import wixData from "wix-data";
 import { CONSUMED_FLOW_RETENTION_MS, NONCE_COLLECTION, NONCE_STATE } from "./constants.js";
+import { normalizeWixDataCount } from "./wixDataCount.js";
 
 /** @internal Elevated write access for backend-only web methods. */
 const BACKEND_WRITE_OPTIONS = { suppressAuth: true };
@@ -2230,15 +2305,13 @@ export function createWixNonceStore() {
       );
     },
     async countPending(now = new Date()) {
-      const totalCount = await wixData.query(NONCE_COLLECTION)
+      const rawCount = await wixData.query(NONCE_COLLECTION)
         .eq("state", NONCE_STATE.PENDING)
         .gt("expiresAt", now)
         .count(BACKEND_READ_OPTIONS);
 
-      if (
-        !Number.isSafeInteger(totalCount) ||
-        totalCount < 0
-      ) {
+      const totalCount = normalizeWixDataCount(rawCount);
+      if (totalCount === null) {
         throw new Error("Invalid pending-flow count returned by Wix Data");
       }
 
@@ -2269,9 +2342,7 @@ export function createWixNonceStore() {
     },
   };
 }
-
 ```
-
 ### backend/abraxasReceiptValidator.js
 
 - **Wix destination:** Backend file
@@ -2712,6 +2783,397 @@ export function isPilotSessionFlagAuthoritative() {
 export { PURCHASE_VERIFIED_SESSION_FLAG as PILOT_VERIFIED_SESSION_FLAG } from "./constants.js";
 
 ```
+
+---
+### pages/purchaseVerificationLogic.js
+
+- **Wix destination:** Public file
+- **Wix path/name:** `src/public/purchaseVerificationLogic.js`
+
+```javascript
+// FILE: examples/good-trouble-wix/pages/purchaseVerificationLogic.js
+// Wix deployment: copy to src/public/purchaseVerificationLogic.js
+
+export const PURCHASE_STATUS_STARTING =
+  "Starting purchase eligibility verification…";
+
+export const PURCHASE_STATUS_GENERIC_FAILURE =
+  "Verification could not be started. Please try again.";
+
+export const PURCHASE_STATUS_RATE_LIMITED =
+  "Verification is busy. Please wait a moment and try again.";
+
+/** Stable backend codes that may surface distinct user-facing copy. */
+export const ALLOWLISTED_PURCHASE_START_ERROR_CODES = new Set([
+  "rate_limited",
+  "capacity_count_invalid",
+  "nonce_insert_failed",
+]);
+
+export const PURCHASE_START_ERROR_MESSAGES = {
+  rate_limited: PURCHASE_STATUS_RATE_LIMITED,
+  capacity_count_invalid: PURCHASE_STATUS_GENERIC_FAILURE,
+  nonce_insert_failed: PURCHASE_STATUS_GENERIC_FAILURE,
+  start_incomplete: PURCHASE_STATUS_GENERIC_FAILURE,
+  start_exception: PURCHASE_STATUS_GENERIC_FAILURE,
+  start_internal_error: PURCHASE_STATUS_GENERIC_FAILURE,
+};
+
+/**
+ * @param {string} viewMode
+ * @returns {boolean}
+ */
+export function isEditorPreviewViewMode(viewMode) {
+  return viewMode === "Preview" || viewMode === "Editor";
+}
+
+/**
+ * @param {string} code
+ * @returns {string}
+ */
+export function safePurchaseStartErrorMessage(code) {
+  return PURCHASE_START_ERROR_MESSAGES[code] ?? PURCHASE_STATUS_GENERIC_FAILURE;
+}
+
+/**
+ * Preview-only operator hint. Never includes verifier, receipt, token, or PII.
+ * @param {{ code?: string, stage?: string, correlationId?: string | null } | null | undefined} diagnostic
+ * @returns {string | null}
+ */
+export function formatPurchasePreviewDiagnostic(diagnostic) {
+  if (!diagnostic?.code) return null;
+  const parts = [diagnostic.code];
+  if (diagnostic.stage) parts.push(`@${diagnostic.stage}`);
+  if (diagnostic.correlationId) parts.push(`ref=${diagnostic.correlationId}`);
+  return parts.join(" ");
+}
+
+/**
+ * @param {{
+ *   result?: {
+ *     error?: string,
+ *     diagnostic?: { code?: string, stage?: string, correlationId?: string | null },
+ *     verifyUrl?: string,
+ *     flowId?: string,
+ *     verifier?: string,
+ *   } | null,
+ *   viewMode?: string,
+ * }} params
+ * @returns {{ ok: true, result: object } | { ok: false, code: string, message: string, previewDetail?: string }}
+ */
+export function interpretPurchaseStartResult(params) {
+  const result = params.result;
+  const viewMode = params.viewMode ?? "Site";
+  const preview = isEditorPreviewViewMode(viewMode);
+  const previewDetail = preview
+    ? formatPurchasePreviewDiagnostic(result?.diagnostic)
+    : null;
+
+  if (result?.error) {
+    const code = result.error;
+    const message = ALLOWLISTED_PURCHASE_START_ERROR_CODES.has(code)
+      ? safePurchaseStartErrorMessage(code)
+      : PURCHASE_STATUS_GENERIC_FAILURE;
+    return {
+      ok: false,
+      code,
+      message,
+      ...(previewDetail ? { previewDetail } : {}),
+    };
+  }
+
+  const { verifyUrl, flowId, verifier } = result ?? {};
+  if (!verifyUrl || !flowId || !verifier) {
+    return {
+      ok: false,
+      code: "start_incomplete",
+      message: PURCHASE_STATUS_GENERIC_FAILURE,
+      ...(previewDetail ? { previewDetail: previewDetail ?? "start_incomplete" } : {}),
+    };
+  }
+
+  if (!flowId.startsWith("gtf_")) {
+    return {
+      ok: false,
+      code: "start_incomplete",
+      message: PURCHASE_STATUS_GENERIC_FAILURE,
+      ...(previewDetail ? { previewDetail: previewDetail ?? "invalid_flow_id_prefix" } : {}),
+    };
+  }
+
+  return {
+    ok: true,
+    result: {
+      verifyUrl,
+      flowId,
+      verifier,
+      purpose: result?.purpose,
+      policyId: result?.policyId,
+      correlationId: result?.correlationId ?? null,
+    },
+  };
+}
+
+/**
+ * @param {{
+ *   setStatus: (message: string) => void,
+ *   startPurchaseVerification: () => Promise<object>,
+ *   getViewMode?: () => string | Promise<string>,
+ *   storeVerifier: (flowId: string, verifier: string) => void,
+ *   saveReturnDestination: () => void,
+ *   navigateToVerifyUrl: (url: string) => void,
+ * }} deps
+ */
+export function createPurchaseVerificationController(deps) {
+  return {
+    async start() {
+      deps.setStatus(PURCHASE_STATUS_STARTING);
+
+      try {
+        const result = await deps.startPurchaseVerification();
+        const viewMode = deps.getViewMode ? await deps.getViewMode() : "Site";
+        const interpreted = interpretPurchaseStartResult({ result, viewMode });
+
+        if (!interpreted.ok) {
+          const suffix = interpreted.previewDetail
+            ? ` (${interpreted.previewDetail})`
+            : "";
+          deps.setStatus(`${interpreted.message}${suffix}`);
+          return interpreted;
+        }
+
+        if (isEditorPreviewViewMode(viewMode)) {
+          deps.setStatus(
+            `Preview check passed: purchase flow ready (${interpreted.result.flowId.slice(0, 8)}…).`,
+          );
+          return { ok: true, code: "preview_backend_passed", result: interpreted.result };
+        }
+
+        deps.saveReturnDestination();
+        deps.storeVerifier(interpreted.result.flowId, interpreted.result.verifier);
+        deps.navigateToVerifyUrl(interpreted.result.verifyUrl);
+        return { ok: true, code: "redirecting", result: interpreted.result };
+      } catch {
+        const viewMode = deps.getViewMode ? await deps.getViewMode() : "Site";
+        const preview = isEditorPreviewViewMode(viewMode);
+        deps.setStatus(
+          preview
+            ? `${PURCHASE_STATUS_GENERIC_FAILURE} (start_exception)`
+            : PURCHASE_STATUS_GENERIC_FAILURE,
+        );
+        return { ok: false, code: "start_exception", message: PURCHASE_STATUS_GENERIC_FAILURE };
+      }
+    },
+  };
+}
+```
+
+### backend/flowStartDiagnostics.js
+
+- **Wix destination:** Backend file
+- **Wix path/name:** `src/backend/flowStartDiagnostics.js`
+
+```javascript
+// FILE: examples/good-trouble-wix/backend/flowStartDiagnostics.js
+// Privacy-safe structured diagnostics for verification flow start failures.
+
+import { BROWSE_FLOW, PURCHASE_FLOW } from "./flowPurpose.js";
+
+/** @typedef {"browse" | "purchase"} FlowPurpose */
+
+export const FLOW_START_STAGES = {
+  CAPTCHA_GATE: "captcha_gate",
+  CAPACITY_PRECHECK: "capacity_precheck",
+  PAYLOAD_BUILD: "payload_build",
+  NONCE_INSERT: "nonce_insert",
+  CAPACITY_FINALIZE: "capacity_finalize",
+  RESPONSE_BUILD: "response_build",
+};
+
+/** Stable codes safe to return to Preview UI and backend logs. */
+export const ALLOWLISTED_FLOW_START_ERROR_CODES = new Set([
+  "captcha_required",
+  "captcha_invalid",
+  "rate_limited",
+  "capacity_count_invalid",
+  "nonce_insert_failed",
+  "payload_build_failed",
+  "start_incomplete",
+  "start_internal_error",
+]);
+
+const PURPOSE_POLICY = {
+  browse: {
+    purpose: BROWSE_FLOW.purpose,
+    policyId: BROWSE_FLOW.policyId,
+  },
+  purchase: {
+    purpose: PURCHASE_FLOW.purpose,
+    policyId: PURCHASE_FLOW.policyId,
+  },
+};
+
+/**
+ * @param {FlowPurpose} purpose
+ */
+export function flowStartContext(purpose) {
+  return PURPOSE_POLICY[purpose] ?? PURPOSE_POLICY.purchase;
+}
+
+/**
+ * @param {unknown} error
+ * @returns {string}
+ */
+export function mapThrownErrorToStartCode(error) {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  if (message.includes("Invalid pending-flow count returned by Wix Data")) {
+    return "capacity_count_invalid";
+  }
+  if (message.includes("wix-data") || message.includes("WixData")) {
+    return "nonce_insert_failed";
+  }
+  return "start_internal_error";
+}
+
+/**
+ * Privacy-safe backend log payload. Never include verifier, challenge, receipt, token, or PII.
+ * @param {{
+ *   stage: string,
+ *   code: string,
+ *   purpose: FlowPurpose,
+ *   policyId: string,
+ *   correlationId?: string | null,
+ * }} entry
+ */
+export function logFlowStartFailure(entry) {
+  const payload = {
+    event: "abraxas_flow_start_failed",
+    stage: entry.stage,
+    code: entry.code,
+    purpose: entry.purpose,
+    policyId: entry.policyId,
+    correlationId: entry.correlationId ?? null,
+  };
+  console.info(JSON.stringify(payload));
+  return payload;
+}
+
+/**
+ * @param {{
+ *   code: string,
+ *   stage: string,
+ *   purpose: FlowPurpose,
+ *   policyId: string,
+ *   correlationId?: string | null,
+ * }} params
+ */
+export function buildFlowStartFailure(params) {
+  const code = ALLOWLISTED_FLOW_START_ERROR_CODES.has(params.code)
+    ? params.code
+    : "start_internal_error";
+
+  logFlowStartFailure({
+    stage: params.stage,
+    code,
+    purpose: params.purpose,
+    policyId: params.policyId,
+    correlationId: params.correlationId ?? null,
+  });
+
+  return {
+    error: code,
+    diagnostic: {
+      code,
+      stage: params.stage,
+      purpose: params.purpose,
+      policyId: params.policyId,
+      correlationId: params.correlationId ?? null,
+    },
+  };
+}
+
+/**
+ * @param {{
+ *   verifyUrl: string,
+ *   flowId: string,
+ *   verifier: string,
+ *   purpose: FlowPurpose,
+ *   policyId: string,
+ *   correlationId?: string | null,
+ * }} payload
+ */
+export function buildFlowStartSuccess(payload) {
+  if (!payload.verifyUrl || !payload.flowId || !payload.verifier) {
+    return buildFlowStartFailure({
+      code: "start_incomplete",
+      stage: FLOW_START_STAGES.RESPONSE_BUILD,
+      purpose: payload.purpose,
+      policyId: payload.policyId,
+      correlationId: payload.correlationId ?? null,
+    });
+  }
+
+  return {
+    verifyUrl: payload.verifyUrl,
+    flowId: payload.flowId,
+    verifier: payload.verifier,
+    purpose: payload.purpose,
+    policyId: payload.policyId,
+    correlationId: payload.correlationId ?? null,
+  };
+}
+```
+
+### backend/wixDataCount.js
+
+- **Wix destination:** Backend file
+- **Wix path/name:** `src/backend/wixDataCount.js`
+
+```javascript
+// FILE: examples/good-trouble-wix/backend/wixDataCount.js
+// Normalizes Wix Data count() results — some Velo runtimes return object-shaped counts.
+
+/**
+ * @param {unknown} value
+ * @returns {number | null} Safe non-negative integer count, or null when unusable.
+ */
+export function normalizeWixDataCount(value) {
+  if (typeof value === "number" && Number.isSafeInteger(value) && value >= 0) {
+    return value;
+  }
+
+  if (value && typeof value === "object") {
+    const candidate = value.totalCount ?? value.count ?? value.total;
+    if (typeof candidate === "number" && Number.isSafeInteger(candidate) && candidate >= 0) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+```
+
+### Purchase verification start — operator diagnostics
+
+When the Purchase Verification Entry page shows **“Verification could not be started. Please try again.”**, the backend web method failed before redirect. The unpublished `/age-verification-result` callback **does not** block start — it only affects return completion.
+
+**Preview / Editor:** status text appends an allowlisted diagnostic suffix, e.g. `rate_limited @capacity_precheck ref=<correlationId>`.
+
+**Production:** users see only the generic message; backend logs emit structured JSON:
+
+```json
+{"event":"abraxas_flow_start_failed","stage":"capacity_precheck","code":"rate_limited","purpose":"purchase","policyId":"good-trouble-retail-v1","correlationId":"..."}
+```
+
+| Diagnostic code | Stage | Likely cause | Operator action |
+|-----------------|-------|--------------|-----------------|
+| `rate_limited` | `capacity_precheck` or `capacity_finalize` | ≥100 unexpired `pending` rows in `AbraxasVerificationNonces` | Run scheduled `purgeStale()`; clear stale test rows |
+| `capacity_count_invalid` | `capacity_precheck` | Wix Data `count()` returned non-integer (fixed in `wixDataCount.js`) | Deploy updated `wixNonceStore.js` + `wixDataCount.js` |
+| `nonce_insert_failed` | `nonce_insert` | CMS field type mismatch (`purpose`, `policyId` must be **Text**) | Fix collection schema; redeploy backend |
+| `start_incomplete` | frontend | Web method returned without `verifyUrl` / `flowId` / `verifier` | Redeploy `abraxasVerification.web.js` + service |
+| `start_exception` | frontend | Uncaught web-method error (missing export, import failure) | Ensure `createPurchaseVerificationStart` is deployed with **Anyone** permission |
+
+Successful start always returns `verifyUrl`, `flowId` beginning `gtf_`, and `verifier` (verifier never logged).
 
 ---
 
