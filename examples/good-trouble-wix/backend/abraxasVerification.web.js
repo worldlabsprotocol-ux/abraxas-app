@@ -14,6 +14,7 @@ export const createBrowseVerificationStart = webMethod(
   async () => createBrowseVerificationStartService(null, { skipCaptcha: true }),
 );
 
+// The Good Trouble pilot intentionally starts purchase verification without CAPTCHA.
 export const createPurchaseVerificationStart = webMethod(
   Permissions.Anyone,
   async () => createPurchaseVerificationStartService(null, { skipCaptcha: true }),
