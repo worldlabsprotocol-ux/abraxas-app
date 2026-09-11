@@ -32,6 +32,7 @@ import {
   PASSPORT_SECURE_ACCOUNT_EXPLAINER,
   PASSPORT_SECURE_ACCOUNT_LABEL,
 } from "@/lib/passport/passportCustomerCopy";
+import { shouldShowPartnerConsent } from "@/lib/partner/partnerConsentVisibility";
 
 function resolveMinimumAge(policyId: string): number | null {
   if (policyId === GOOD_TROUBLE_RETAIL_POLICY_ID) return 21;
@@ -113,6 +114,13 @@ function PartnerContinueInner() {
   }, [suiAddress, credential, identityStatus, handoff.ready, returnPath, setup, ageAssuranceStatus, showIdFallback]);
 
   const holderCopy = resolvePartnerHolderPresentation(holderState, partnerName);
+  const showPartnerConsent = shouldShowPartnerConsent({
+    verificationRequestId: verifyRequestId,
+    consentDismissed,
+    identityComplete: setup.identityComplete,
+    underReview: holderState === "under_review",
+    handoffReady: handoff.ready,
+  });
 
   useEffect(() => {
     if (!verifyRequestId || !partnerId || !returnPath) {
@@ -227,10 +235,10 @@ function PartnerContinueInner() {
         <>
           <PartnerFlowReturnHandler handoff={handoff} />
 
-          {verifyRequestId && !consentDismissed && holderState !== "under_review" && (
+          {showPartnerConsent && verifyRequestId && (
             <ConsentCeremony
               requestId={verifyRequestId}
-              identityComplete={setup.identityComplete}
+              identityComplete
               onDismiss={() => setConsentDismissed(true)}
             />
           )}
