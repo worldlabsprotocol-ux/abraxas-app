@@ -81,4 +81,26 @@ describe("completePartnerVerifyOAuthCallback", () => {
     await completePartnerVerifyOAuthCallback("#id_token=test");
     expect(mockClearLogin).toHaveBeenCalled();
   });
+
+  it("completes a fresh callback even when stale local session state exists", async () => {
+    mockLoadSession.mockReturnValue({ suiAddress: "0xstale" });
+    mockComplete.mockResolvedValue({ suiAddress: "0xfresh" });
+
+    await completePartnerVerifyOAuthCallback("#id_token=fresh-token");
+
+    expect(mockComplete).toHaveBeenCalledWith("id-token", {
+      callbackHash: "#id_token=fresh-token",
+    });
+    expect(mockEnsureReady).toHaveBeenCalledWith("0xfresh");
+  });
+
+  it("reuses an existing local session only when the callback has no token", async () => {
+    mockParseToken.mockReturnValue(null);
+    mockLoadSession.mockReturnValue({ suiAddress: "0xexisting" });
+
+    await completePartnerVerifyOAuthCallback("");
+
+    expect(mockComplete).not.toHaveBeenCalled();
+    expect(mockEnsureReady).toHaveBeenCalledWith("0xexisting");
+  });
 });
