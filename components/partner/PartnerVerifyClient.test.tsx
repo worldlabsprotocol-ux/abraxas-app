@@ -3,6 +3,12 @@
 
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor, cleanup, fireEvent } from "@testing-library/react";
+import {
+  GOOD_TROUBLE_BROWSE_POLICY_ID,
+  GOOD_TROUBLE_PARTNER_ID,
+  GOOD_TROUBLE_RETAIL_POLICY_ID,
+} from "@/lib/goodTrouble/constants";
+import { GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON } from "@/lib/partner/goodTroubleBrowseFlow";
 import { PartnerVerifyClient } from "./PartnerVerifyClient";
 
 const mockEnsureReady = vi.fn();
@@ -13,12 +19,14 @@ const mockAuthState = {
   isLoading: false,
 };
 
+let mockSearchParams = new URLSearchParams({
+  partner_id: GOOD_TROUBLE_PARTNER_ID,
+  policy_id: GOOD_TROUBLE_RETAIL_POLICY_ID,
+  return_url: "https://www.goodtroublecanna.com/age-verification-result?gtv=gtv_test123",
+});
+
 vi.mock("next/navigation", () => ({
-  useSearchParams: () => new URLSearchParams({
-    partner_id: "good-trouble-cannabis",
-    policy_id: "good-trouble-retail-v1",
-    return_url: "https://www.goodtroublecanna.com/age-verification-result?gtv=gtv_test123",
-  }),
+  useSearchParams: () => mockSearchParams,
 }));
 
 vi.mock("@/components/sui/SuiAuthProvider", () => ({
@@ -48,6 +56,11 @@ describe("PartnerVerifyClient auth/session gating", () => {
     vi.clearAllMocks();
     mockAuthState.suiAddress = "0xabc";
     mockAuthState.isLoading = false;
+    mockSearchParams = new URLSearchParams({
+      partner_id: GOOD_TROUBLE_PARTNER_ID,
+      policy_id: GOOD_TROUBLE_RETAIL_POLICY_ID,
+      return_url: "https://www.goodtroublecanna.com/age-verification-result?gtv=gtv_test123",
+    });
     sessionStorage.clear();
     mockEnsureReady.mockResolvedValue({ ok: true });
     mockSignInWithGoogle.mockResolvedValue(true);
@@ -146,5 +159,67 @@ describe("PartnerVerifyClient auth/session gating", () => {
     mockAuthState.suiAddress = null;
     render(<PartnerVerifyClient previewPhase="signing_in" previewSignInConfigured />);
     expect(screen.getByRole("button", { name: /Signing you in/i })).toBeTruthy();
+  });
+});
+
+describe("PartnerVerifyClient Good Trouble DOB-first browse sign-in", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuthState.suiAddress = null;
+    mockAuthState.isLoading = false;
+    mockSearchParams = new URLSearchParams({
+      partner_id: GOOD_TROUBLE_PARTNER_ID,
+      policy_id: GOOD_TROUBLE_BROWSE_POLICY_ID,
+      purpose: "browse",
+      return_url: "https://www.goodtroublecanna.com/browse-verification-result",
+    });
+    mockSignInWithGoogle.mockResolvedValue(true);
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("shows Passport value copy for the exact Good Trouble browse tuple", async () => {
+    render(<PartnerVerifyClient />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON })).toBeTruthy();
+    });
+    expect(screen.getByText(/Create a private Passport for faster future access/i)).toBeTruthy();
+    expect(screen.queryByText(/Signing in is not age verification/i)).toBeNull();
+  });
+
+  it("starts OAuth only once per click on the Passport button", async () => {
+    render(<PartnerVerifyClient />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON })).toBeTruthy();
+    });
+
+    const button = screen.getByRole("button", { name: GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON });
+    fireEvent.click(button);
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(mockSignInWithGoogle).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("does not show DOB-first sign-in copy for retail policy with browse purpose", async () => {
+    mockSearchParams = new URLSearchParams({
+      partner_id: GOOD_TROUBLE_PARTNER_ID,
+      policy_id: GOOD_TROUBLE_RETAIL_POLICY_ID,
+      purpose: "browse",
+      return_url: "https://www.goodtroublecanna.com/age-verification-result?gtv=gtv_test123",
+    });
+
+    render(<PartnerVerifyClient />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Continue with Google/i })).toBeTruthy();
+    });
+    expect(screen.queryByText(/Create a private Passport for faster future access/i)).toBeNull();
+    expect(screen.getByText(/Signing in is not age verification/i)).toBeTruthy();
   });
 });

@@ -4,6 +4,15 @@
 
 import { Btn } from "@/components/redesign/ui";
 import { PartnerJourneyLayout } from "@/components/partner/PartnerJourneyLayout";
+import {
+  GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON,
+  GOOD_TROUBLE_BROWSE_SIGN_IN_CLARIFICATION,
+  GOOD_TROUBLE_BROWSE_SIGN_IN_INTRO,
+  GOOD_TROUBLE_BROWSE_SIGN_IN_PRIVACY_COPY,
+  GOOD_TROUBLE_BROWSE_SIGN_IN_STATUS,
+  GOOD_TROUBLE_BROWSE_SIGN_IN_VALUE_COPY,
+  GOOD_TROUBLE_BROWSE_SIGN_IN_VALUE_HEADING,
+} from "@/lib/partner/goodTroubleBrowseFlow";
 import { resolvePartnerContinuationIntro } from "@/lib/partner/partnerVerifyDisplay";
 import type { PartnerJourneyPrimaryAction } from "@/lib/partner/partnerJourneyStateMachine";
 
@@ -24,6 +33,9 @@ export interface PartnerVerifyShellProps {
   phase: PartnerVerifyPhase;
   partnerId: string;
   partnerName: string;
+  policyId: string;
+  purpose?: string | null;
+  isDobFirstBrowse: boolean;
   policyRequirement: string;
   statusMessage: string;
   signInConfigured: boolean;
@@ -48,6 +60,9 @@ export function PartnerVerifyShell({
   phase,
   partnerId,
   partnerName,
+  policyId,
+  purpose,
+  isDobFirstBrowse,
   policyRequirement,
   statusMessage,
   signInConfigured,
@@ -58,11 +73,21 @@ export function PartnerVerifyShell({
   partnerReturnLabel,
   partnerHomeUrl,
 }: PartnerVerifyShellProps) {
+  const continuationContext = { policyId, purpose };
+  const onSignInScreen = showSignIn(phase);
+  const useDobFirstSignInCopy = isDobFirstBrowse && onSignInScreen;
+  const intro = useDobFirstSignInCopy
+    ? GOOD_TROUBLE_BROWSE_SIGN_IN_INTRO
+    : resolvePartnerContinuationIntro(partnerId, continuationContext);
+  const resolvedStatus = useDobFirstSignInCopy
+    ? GOOD_TROUBLE_BROWSE_SIGN_IN_STATUS
+    : (statusMessage || policyRequirement);
+
   if (phase === "invalid_link" && invalidLinkMessage) {
     return (
       <PartnerJourneyLayout
         partnerName={partnerName}
-        intro={resolvePartnerContinuationIntro(partnerId)}
+        intro={resolvePartnerContinuationIntro(partnerId, continuationContext)}
         statusMessage={invalidLinkMessage}
         partnerHomeUrl={partnerHomeUrl}
         partnerReturnLabel={partnerReturnLabel}
@@ -79,10 +104,11 @@ export function PartnerVerifyShell({
   return (
     <PartnerJourneyLayout
       partnerName={partnerName}
-      intro={resolvePartnerContinuationIntro(partnerId)}
-      statusMessage={statusMessage || policyRequirement}
+      intro={intro}
+      statusMessage={resolvedStatus}
       partnerHomeUrl={showReturnButton(phase) ? partnerHomeUrl : null}
       partnerReturnLabel={partnerReturnLabel}
+      showAccountFooter={!useDobFirstSignInCopy}
     >
       {phase === "error" || phase === "return_failed" ? (
         <div role="alert">
@@ -101,7 +127,9 @@ export function PartnerVerifyShell({
               disabled={primaryDisabled || busy}
               aria-busy={phase === "signing_in"}
             >
-              {phase === "signing_in" ? "Signing you in…" : "Continue with Google"}
+              {phase === "signing_in"
+                ? "Signing you in…"
+                : (useDobFirstSignInCopy ? GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON : "Continue with Google")}
             </Btn>
           )}
 
@@ -131,24 +159,49 @@ export function PartnerVerifyShell({
         </>
       )}
 
-      <aside
-        aria-label="Privacy notice"
-        style={{
-          marginTop: "1.25rem",
-          padding: "0.85rem 1rem",
-          borderRadius: 12,
-          border: "1px solid rgba(45,212,191,0.18)",
-          background: "rgba(45,212,191,0.06)",
-          fontSize: "0.78rem",
-          lineHeight: 1.6,
-          color: "var(--text-secondary, #d1d5db)",
-        }}
-      >
-        <strong style={{ display: "block", marginBottom: "0.35rem", color: "#2DD4BF" }}>
-          Signing in is not age verification
-        </strong>
-        Google sign-in confirms your account only. The partner receives a policy result — not your ID photos or date of birth through this screen.
-      </aside>
+      {useDobFirstSignInCopy ? (
+        <aside
+          aria-label="Passport benefits and privacy"
+          style={{
+            marginTop: "1.25rem",
+            padding: "0.85rem 1rem",
+            borderRadius: 12,
+            border: "1px solid rgba(45,212,191,0.18)",
+            background: "rgba(45,212,191,0.06)",
+            fontSize: "0.78rem",
+            lineHeight: 1.6,
+            color: "var(--text-secondary, #d1d5db)",
+          }}
+        >
+          <strong style={{ display: "block", marginBottom: "0.35rem", color: "#2DD4BF" }}>
+            {GOOD_TROUBLE_BROWSE_SIGN_IN_VALUE_HEADING}
+          </strong>
+          <p style={{ margin: "0 0 0.5rem" }}>{GOOD_TROUBLE_BROWSE_SIGN_IN_VALUE_COPY}</p>
+          <p style={{ margin: "0 0 0.5rem" }}>{GOOD_TROUBLE_BROWSE_SIGN_IN_PRIVACY_COPY}</p>
+          <p style={{ margin: 0, fontSize: "0.72rem", color: "var(--text-muted, #9ca3af)" }}>
+            {GOOD_TROUBLE_BROWSE_SIGN_IN_CLARIFICATION}
+          </p>
+        </aside>
+      ) : (
+        <aside
+          aria-label="Privacy notice"
+          style={{
+            marginTop: "1.25rem",
+            padding: "0.85rem 1rem",
+            borderRadius: 12,
+            border: "1px solid rgba(45,212,191,0.18)",
+            background: "rgba(45,212,191,0.06)",
+            fontSize: "0.78rem",
+            lineHeight: 1.6,
+            color: "var(--text-secondary, #d1d5db)",
+          }}
+        >
+          <strong style={{ display: "block", marginBottom: "0.35rem", color: "#2DD4BF" }}>
+            Signing in is not age verification
+          </strong>
+          Google sign-in confirms your account only. The partner receives a policy result — not your ID photos or date of birth through this screen.
+        </aside>
+      )}
     </PartnerJourneyLayout>
   );
 }

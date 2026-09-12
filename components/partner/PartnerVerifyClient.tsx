@@ -11,6 +11,7 @@ import {
   createPartnerVerifyCorrelationId,
   logPartnerVerifyAuthEvent,
 } from "@/lib/partner/partnerVerifyAuthDebug";
+import { isGoodTroubleBrowseFlow } from "@/lib/partner/goodTroubleBrowseFlow";
 import {
   resolvePartnerDisplayName,
   resolvePartnerHomeUrl,
@@ -100,7 +101,13 @@ export function PartnerVerifyClient({
   const permission = searchParams.get("permission") ?? "";
   const permissionVersion = searchParams.get("permission_version") ?? "";
   const policyId = searchParams.get("policy_id") ?? "";
+  const purpose = searchParams.get("purpose") ?? "";
   const returnUrl = searchParams.get("return_url") ?? "";
+  const isDobFirstBrowse = isGoodTroubleBrowseFlow({
+    partnerId: relyingPartyId,
+    policyId,
+    purpose,
+  });
 
   const invalidLinkMessage = useMemo(
     () => describeInvalidLink({ relyingPartyId, returnUrl, policyId, permission }),
@@ -322,6 +329,9 @@ export function PartnerVerifyClient({
       phase={phase}
       partnerId={relyingPartyId}
       partnerName={partnerName}
+      policyId={policyId}
+      purpose={purpose}
+      isDobFirstBrowse={isDobFirstBrowse}
       policyRequirement={policyRequirement}
       statusMessage={statusMessage}
       signInConfigured={signInConfigured || previewSignInConfigured}
