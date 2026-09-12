@@ -14,8 +14,8 @@ Complete this record from the JSON printed by the deployment scripts. Do not rep
 
 - Network: Creditcoin Testnet, chain ID 102031
 - Native verifier: `0x0000000000000000000000000000000000000FD2`
-- Abraxas USC address: `PENDING_TESTNET_DEPLOYMENT`
-- Deployment transaction: `PENDING_TESTNET_DEPLOYMENT`
+- Abraxas USC address: `0xD64562a3F0858eB3b42fEf46895aD851EF2d2c91`
+- Deployment transaction: `0xe9bb4e44a0b044f1972930d8a24851eb6e0df356d47e2014a88d828ba29acc77`
 - Successful `verifyAndRecord` transaction: `PENDING_END_TO_END_PROOF`
 
 ## Acceptance evidence
