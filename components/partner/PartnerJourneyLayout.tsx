@@ -14,6 +14,7 @@ export interface PartnerJourneyLayoutProps {
   statusMessage: string;
   partnerHomeUrl?: string | null;
   partnerReturnLabel?: string;
+  showAccountFooter?: boolean;
   children: React.ReactNode;
 }
 
@@ -23,6 +24,7 @@ export function PartnerJourneyLayout({
   statusMessage,
   partnerHomeUrl,
   partnerReturnLabel,
+  showAccountFooter = true,
   children,
 }: PartnerJourneyLayoutProps) {
   return (
@@ -90,10 +92,12 @@ export function PartnerJourneyLayout({
           </footer>
         )}
 
-        <p style={{ margin: "1rem 0 0", fontSize: "0.72rem", color: "var(--text-muted, #9ca3af)", lineHeight: 1.5 }}>
-          Signing in confirms your account only.{" "}
-          <Link href="/privacy" style={{ color: TEAL, textDecoration: "none" }}>Privacy</Link>
-        </p>
+        {showAccountFooter && (
+          <p style={{ margin: "1rem 0 0", fontSize: "0.72rem", color: "var(--text-muted, #9ca3af)", lineHeight: 1.5 }}>
+            Signing in confirms your account only.{" "}
+            <Link href="/privacy" style={{ color: TEAL, textDecoration: "none" }}>Privacy</Link>
+          </p>
+        )}
       </main>
     </div>
   );

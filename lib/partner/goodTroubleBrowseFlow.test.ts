@@ -24,6 +24,14 @@ const BROWSE_FORM_SOURCE = readFileSync(
   join(process.cwd(), "components/partner/SelfAttestationBrowseForm.tsx"),
   "utf8",
 );
+const PARTNER_VERIFY_CLIENT_SOURCE = readFileSync(
+  join(process.cwd(), "components/partner/PartnerVerifyClient.tsx"),
+  "utf8",
+);
+const PARTNER_VERIFY_SHELL_SOURCE = readFileSync(
+  join(process.cwd(), "components/partner/PartnerVerifyShell.tsx"),
+  "utf8",
+);
 
 describe("isGoodTroubleBrowseFlow", () => {
   it("matches Good Trouble browse policy and purpose", () => {
@@ -90,6 +98,23 @@ describe("PartnerContinueClient Good Trouble browse deployment contract", () => 
     expect(PARTNER_CONTINUE_SOURCE).toContain("AgeAssuranceMethodChooser");
     expect(PARTNER_CONTINUE_SOURCE).toContain('flowTier={flowTier}');
     expect(PARTNER_CONTINUE_SOURCE).toContain("GOOD_TROUBLE_RETAIL_POLICY_ID");
+  });
+});
+
+describe("PartnerVerify sign-in deployment contract", () => {
+  it("reads purpose and passes DOB-first browse state into PartnerVerifyShell", () => {
+    expect(PARTNER_VERIFY_CLIENT_SOURCE).toContain('searchParams.get("purpose")');
+    expect(PARTNER_VERIFY_CLIENT_SOURCE).toContain("isGoodTroubleBrowseFlow");
+    expect(PARTNER_VERIFY_CLIENT_SOURCE).toContain("isDobFirstBrowse={isDobFirstBrowse}");
+    expect(PARTNER_VERIFY_CLIENT_SOURCE).toContain("policyId={policyId}");
+    expect(PARTNER_VERIFY_CLIENT_SOURCE).toContain("purpose={purpose}");
+  });
+
+  it("uses Passport value copy on the Good Trouble browse sign-in screen", () => {
+    expect(PARTNER_VERIFY_SHELL_SOURCE).toContain("GOOD_TROUBLE_BROWSE_SIGN_IN_INTRO");
+    expect(PARTNER_VERIFY_SHELL_SOURCE).toContain("GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON");
+    expect(PARTNER_VERIFY_SHELL_SOURCE).toContain("GOOD_TROUBLE_BROWSE_SIGN_IN_VALUE_HEADING");
+    expect(PARTNER_VERIFY_SHELL_SOURCE).toContain("isDobFirstBrowse");
   });
 });
 
