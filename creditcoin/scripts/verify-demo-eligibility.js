@@ -19,7 +19,15 @@ async function main() {
 
   const creditcoinProvider = ethers.provider;
   const info = new chainInfo.PrecompileChainInfoProvider(creditcoinProvider);
-  await info.waitUntilHeightAttested(chainKey, sourceReceipt.blockNumber);
+  // Attestcoin may trail Sepolia by several minutes. Keep the demo process alive
+  // long enough for the attestors to reach a freshly mined source transaction.
+  await info.waitUntilHeightAttested(
+    chainKey,
+    sourceReceipt.blockNumber,
+    5_000,
+    10 * 60_000,
+    15_000
+  );
 
   const builder = new proofProvider.service.ProofBuilder(chainKey, proofBuilderUrl);
   const result = await builder.getProof(sourceTxHash);
