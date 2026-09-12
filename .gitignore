@@ -49,3 +49,7 @@ fix_*.py
 /sui/**/build/
 /sui/**/Pub.devnet.toml
 /sui/**/Move.lock
+
+# Local artifact generation and visual QA
+/output/
+/tmp/

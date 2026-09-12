@@ -1,0 +1,21 @@
+{
+  "name": "abraxas-creditcoin-usc",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "chains": "node scripts/list-supported-chains.js",
+    "deploy:source": "hardhat run scripts/deploy-source.js --network sepolia",
+    "deploy:usc": "hardhat run scripts/deploy-usc.js --network creditcoinUscTestnet",
+    "demo:publish": "hardhat run scripts/publish-demo-eligibility.js --network sepolia",
+    "demo:verify": "hardhat run scripts/verify-demo-eligibility.js --network creditcoinUscTestnet"
+  },
+  "devDependencies": {
+    "@gluwa/usc-sdk": "^0.18.0",
+    "@nomicfoundation/hardhat-ethers": "^3.0.8",
+    "dotenv": "^16.4.7",
+    "ethers": "^6.13.5",
+    "hardhat": "^2.22.19"
+  }
+}

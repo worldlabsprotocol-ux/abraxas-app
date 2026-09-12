@@ -6,6 +6,8 @@ Abraxas is **not** a unified KYC product, an automatic legal-compliance service,
 
 **Live (beta):** [https://abraxasworld.xyz](https://abraxasworld.xyz)
 
+**Creditcoin hackathon prototype:** [`creditcoin/`](creditcoin/README.md) contains the Attestcoin USC contracts, tests, deployment scripts, and privacy boundary for cross-chain RWA eligibility.
+
 ---
 
 ## How Partner Flow works
