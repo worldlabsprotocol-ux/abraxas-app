@@ -2,6 +2,11 @@
 // Human-readable partner verification copy for institutional UI.
 
 import { GOOD_TROUBLE_BRAND, GOOD_TROUBLE_PARTNER_ID, GOOD_TROUBLE_RETAIL_POLICY_ID } from "@/lib/goodTrouble/constants";
+import {
+  GOOD_TROUBLE_BROWSE_INTRO,
+  GOOD_TROUBLE_BROWSE_STATUS,
+  isGoodTroubleBrowseFlow,
+} from "@/lib/partner/goodTroubleBrowseFlow";
 
 const PARTNER_LABELS: Record<string, { name: string; returnLabel: string }> = {
   [GOOD_TROUBLE_PARTNER_ID]: {
@@ -29,9 +34,33 @@ export function resolvePolicyRequirement(policyId: string, permissionLabel?: str
     ?? "Complete the verification step required by this partner. Signing in alone does not verify your age.";
 }
 
-export function resolvePartnerContinuationIntro(partnerId: string): string {
+export function resolvePartnerContinuationIntro(
+  partnerId: string,
+  context?: { policyId?: string; purpose?: string | null },
+): string {
+  if (isGoodTroubleBrowseFlow({
+    partnerId,
+    policyId: context?.policyId ?? "",
+    purpose: context?.purpose,
+  })) {
+    return GOOD_TROUBLE_BROWSE_INTRO;
+  }
   const name = resolvePartnerDisplayName(partnerId);
   return `${name} uses Abraxas to confirm this requirement without collecting more personal information than necessary.`;
+}
+
+export function resolvePartnerContinuationStatus(
+  partnerId: string,
+  context?: { policyId?: string; purpose?: string | null },
+): string {
+  if (isGoodTroubleBrowseFlow({
+    partnerId,
+    policyId: context?.policyId ?? "",
+    purpose: context?.purpose,
+  })) {
+    return GOOD_TROUBLE_BROWSE_STATUS;
+  }
+  return "Complete the step below so we can share the required result with the partner.";
 }
 
 export function resolvePartnerHomeUrl(partnerId: string): string | null {
