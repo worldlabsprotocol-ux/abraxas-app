@@ -33,6 +33,7 @@ import {
   PASSPORT_SECURE_ACCOUNT_LABEL,
 } from "@/lib/passport/passportCustomerCopy";
 import { shouldShowPartnerConsent } from "@/lib/partner/partnerConsentVisibility";
+import { resolvePartnerSetupVisibility } from "@/lib/partner/partnerSetupVisibility";
 
 function resolveMinimumAge(policyId: string): number | null {
   if (policyId === GOOD_TROUBLE_RETAIL_POLICY_ID) return 21;
@@ -120,6 +121,13 @@ function PartnerContinueInner() {
     identityComplete: setup.identityComplete,
     underReview: holderState === "under_review",
     handoffReady: handoff.ready,
+  });
+  const setupVisibility = resolvePartnerSetupVisibility({
+    partnerId,
+    walletReady: walletDone,
+    walletBound: setup.walletBound,
+    identityComplete: setup.identityComplete,
+    underReview: holderState === "under_review",
   });
 
   useEffect(() => {
@@ -255,7 +263,7 @@ function PartnerContinueInner() {
             </StatusBanner>
           )}
 
-          {walletDone && !setup.walletBound && (
+          {setupVisibility.showWalletBinding && (
             <div style={{ marginBottom: "1rem" }}>
               <p style={{ margin: "0 0 0.75rem", fontSize: "0.9rem", lineHeight: 1.6 }}>
                 {PASSPORT_SECURE_ACCOUNT_EXPLAINER}
@@ -266,7 +274,7 @@ function PartnerContinueInner() {
             </div>
           )}
 
-          {setup.walletBound && !setup.identityComplete && holderState !== "under_review" && (
+          {setupVisibility.showIdentityVerification && (
             <div style={{ marginBottom: "1rem" }}>
               {!showIdFallback ? (
                 <AgeAssuranceMethodChooser
@@ -357,3 +365,4 @@ export function PartnerContinueClient() {
     </Suspense>
   );
 }
+
