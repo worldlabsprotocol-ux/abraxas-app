@@ -12,7 +12,7 @@ Complete this record from the JSON printed by the deployment scripts. Do not rep
 
 ## Creditcoin
 
-- Network: USC testnet, chain ID 102033
+- Network: Creditcoin Testnet, chain ID 102031
 - Native verifier: `0x0000000000000000000000000000000000000FD2`
 - Abraxas USC address: `PENDING_TESTNET_DEPLOYMENT`
 - Deployment transaction: `PENDING_TESTNET_DEPLOYMENT`

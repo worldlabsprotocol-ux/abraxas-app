@@ -21,8 +21,8 @@ module.exports = {
       accounts,
     },
     creditcoinUscTestnet: {
-      url: process.env.CREDITCOIN_RPC_URL || "https://rpc.usc-testnet.creditcoin.network",
-      chainId: 102033,
+      url: process.env.CREDITCOIN_RPC_URL || "https://rpc.cc3-testnet.creditcoin.network/",
+      chainId: 102031,
       accounts,
       timeout: 360000,
     },
