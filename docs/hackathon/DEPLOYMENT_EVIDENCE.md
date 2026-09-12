@@ -25,5 +25,5 @@ Complete this record from the JSON printed by the deployment scripts. Do not rep
 - [x] Attestcoin attestors have reached the required source height.
 - [x] The proof builder returns a Merkle proof and continuity proof.
 - [x] `verifyAndRecord` succeeds on Creditcoin.
-- [ ] A second call with the same source transaction reverts.
+- [x] A second call with the same source transaction reverts.
 - [x] `isEligible` returns true only for the matching unexpired policy.

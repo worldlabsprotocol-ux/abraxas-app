@@ -9,7 +9,8 @@
     "deploy:source": "hardhat run scripts/deploy-source.js --network sepolia",
     "deploy:usc": "hardhat run scripts/deploy-usc.js --network creditcoinUscTestnet",
     "demo:publish": "hardhat run scripts/publish-demo-eligibility.js --network sepolia",
-    "demo:verify": "hardhat run scripts/verify-demo-eligibility.js --network creditcoinUscTestnet"
+    "demo:verify": "hardhat run scripts/verify-demo-eligibility.js --network creditcoinUscTestnet",
+    "demo:status": "hardhat run scripts/check-demo-status.js --network creditcoinUscTestnet"
   },
   "devDependencies": {
     "@gluwa/usc-sdk": "^0.18.0",
