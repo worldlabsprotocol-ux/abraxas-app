@@ -16,14 +16,14 @@ Complete this record from the JSON printed by the deployment scripts. Do not rep
 - Native verifier: `0x0000000000000000000000000000000000000FD2`
 - Abraxas USC address: `0xD64562a3F0858eB3b42fEf46895aD851EF2d2c91`
 - Deployment transaction: `0xe9bb4e44a0b044f1972930d8a24851eb6e0df356d47e2014a88d828ba29acc77`
-- Successful `verifyAndRecord` transaction: `PENDING_END_TO_END_PROOF`
+- Successful `verifyAndRecord` transaction: `0x854fe91372b93d634e2711176be453b3112648ce330b79253e584b008545dcaa`
 
 ## Acceptance evidence
 
 - [x] Source registry deployment is visible in the Sepolia explorer.
 - [x] Eligibility event contains hashes and the policy result only.
-- [ ] Attestcoin attestors have reached the required source height.
-- [ ] The proof builder returns a Merkle proof and continuity proof.
-- [ ] `verifyAndRecord` succeeds on Creditcoin.
+- [x] Attestcoin attestors have reached the required source height.
+- [x] The proof builder returns a Merkle proof and continuity proof.
+- [x] `verifyAndRecord` succeeds on Creditcoin.
 - [ ] A second call with the same source transaction reverts.
-- [ ] `isEligible` returns true only for the matching unexpired policy.
+- [x] `isEligible` returns true only for the matching unexpired policy.
