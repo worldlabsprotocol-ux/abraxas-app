@@ -34,19 +34,24 @@ export async function completePartnerVerifyOAuthCallback(
 
   const hasResume = Boolean(peekPartnerVerifyResumePath());
 
-  let session = loadUserSession();
-  if (!session?.suiAddress) {
-    const idToken = parseIdTokenFromCallbackHash(callbackHash);
-    if (!idToken) {
+  const idToken = parseIdTokenFromCallbackHash(callbackHash);
+  let session;
+
+  // A callback token represents a fresh sign-in attempt and must take
+  // precedence over stale local identity state. Completing it also restores
+  // the signing material needed to mint the httpOnly browser-session cookie.
+  if (idToken) {
+    session = await completeGoogleZkLogin(idToken, { callbackHash });
+    logPartnerVerifyAuthEvent("zklogin_complete", { correlationId });
+  } else {
+    session = loadUserSession();
+    if (!session?.suiAddress) {
       clearLoginInFlight();
       throw new PartnerVerifyOAuthCallbackError(
         "Sign-in could not be completed in this browser. Try again.",
         correlationId,
       );
     }
-    session = await completeGoogleZkLogin(idToken, { callbackHash });
-    logPartnerVerifyAuthEvent("zklogin_complete", { correlationId });
-  } else {
     clearLoginInFlight();
   }
 
