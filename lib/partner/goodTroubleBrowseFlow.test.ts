@@ -41,6 +41,22 @@ describe("isGoodTroubleBrowseFlow", () => {
       purpose: "purchase",
     })).toBe(false);
   });
+
+  it("does not match browse purpose with retail policy", () => {
+    expect(isGoodTroubleBrowseFlow({
+      partnerId: GOOD_TROUBLE_PARTNER_ID,
+      policyId: GOOD_TROUBLE_RETAIL_POLICY_ID,
+      purpose: "browse",
+    })).toBe(false);
+  });
+
+  it("does not match purchase purpose with browse policy", () => {
+    expect(isGoodTroubleBrowseFlow({
+      partnerId: GOOD_TROUBLE_PARTNER_ID,
+      policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
+      purpose: "purchase",
+    })).toBe(false);
+  });
 });
 
 describe("Good Trouble browse partner copy", () => {

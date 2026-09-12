@@ -7,6 +7,7 @@ import {
   requireAgeAssuranceSession,
   validateAgeAssurancePartnerContext,
 } from "@/lib/assurance/ageProviders/routeHelpers";
+import { assertSelfAttestOrigin } from "@/lib/assurance/selfAttestation/originGuard";
 import {
   buildBrowseReturnUrl,
   reuseBrowseSelfAttestation,
@@ -17,6 +18,11 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   const started = Date.now();
+  const origin = assertSelfAttestOrigin(request);
+  if (!origin.ok) {
+    return ageAssuranceErrorResponse(origin.code, "Request origin not allowed", 403);
+  }
+
   const session = await requireAgeAssuranceSession(request);
   if (!session.ok) {
     return ageAssuranceErrorResponse("auth_required", session.error, session.status);

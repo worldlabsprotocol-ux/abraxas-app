@@ -11,8 +11,11 @@ export function isGoodTroubleBrowseFlow(input: {
   policyId: string;
   purpose?: string | null;
 }): boolean {
-  if (input.partnerId !== GOOD_TROUBLE_PARTNER_ID) return false;
-  return input.purpose === "browse" || input.policyId === GOOD_TROUBLE_BROWSE_POLICY_ID;
+  return (
+    input.partnerId === GOOD_TROUBLE_PARTNER_ID
+    && input.policyId === GOOD_TROUBLE_BROWSE_POLICY_ID
+    && input.purpose === "browse"
+  );
 }
 
 export const GOOD_TROUBLE_BROWSE_INTRO =

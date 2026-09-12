@@ -23,6 +23,38 @@ describe("resolvePartnerSetupVisibility", () => {
     });
   });
 
+  it("does not show DOB-first browse for browse purpose with retail policy", () => {
+    expect(resolvePartnerSetupVisibility({
+      partnerId: GOOD_TROUBLE_PARTNER_ID,
+      policyId: GOOD_TROUBLE_RETAIL_POLICY_ID,
+      purpose: "browse",
+      walletReady: true,
+      walletBound: false,
+      identityComplete: false,
+      underReview: false,
+    })).toEqual({
+      showWalletBinding: false,
+      showIdentityVerification: true,
+      showDobFirstBrowseForm: false,
+    });
+  });
+
+  it("does not show DOB-first browse for purchase purpose with browse policy", () => {
+    expect(resolvePartnerSetupVisibility({
+      partnerId: GOOD_TROUBLE_PARTNER_ID,
+      policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
+      purpose: "purchase",
+      walletReady: true,
+      walletBound: false,
+      identityComplete: false,
+      underReview: false,
+    })).toEqual({
+      showWalletBinding: false,
+      showIdentityVerification: true,
+      showDobFirstBrowseForm: false,
+    });
+  });
+
   it("keeps regulated purchase verification for Good Trouble retail policy", () => {
     expect(resolvePartnerSetupVisibility({
       partnerId: GOOD_TROUBLE_PARTNER_ID,
