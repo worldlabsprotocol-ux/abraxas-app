@@ -1,8 +1,8 @@
 "use client";
 // FILE: components/partner/SelfAttestationBrowseForm.tsx
-// Tier 1 browse self-attestation — DOB not retained client-side after submit.
+// Good Trouble browse DOB-first setup — full DOB not retained client-side after submit.
 
-import { useCallback, useId, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { Btn } from "@/components/redesign/ui";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import { GOOD_TROUBLE_BROWSE_POLICY_ID } from "@/lib/goodTrouble/constants";
@@ -33,6 +33,25 @@ function composeIsoDate(month: string, day: string, year: string): string | null
   return `${y}-${pad2(m)}-${pad2(d)}`;
 }
 
+function redirectWithBrowseReceipt(
+  returnUrl: string,
+  data: { browse_receipt: string; browse_receipt_id?: string; policy_id: string },
+): boolean {
+  try {
+    const target = new URL(returnUrl);
+    target.searchParams.set("browse_receipt", data.browse_receipt);
+    if (data.browse_receipt_id) {
+      target.searchParams.set("browse_receipt_id", data.browse_receipt_id);
+    }
+    target.searchParams.set("purpose", "browse");
+    target.searchParams.set("policy_id", data.policy_id);
+    window.location.replace(target.toString());
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function SelfAttestationBrowseForm({
   partnerId,
   policyId = GOOD_TROUBLE_BROWSE_POLICY_ID,
@@ -48,6 +67,7 @@ export function SelfAttestationBrowseForm({
   const [day, setDay] = useState("");
   const [year, setYear] = useState("");
   const [busy, setBusy] = useState(false);
+  const [checkingReuse, setCheckingReuse] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SubmitResult | null>(null);
 
@@ -57,6 +77,57 @@ export function SelfAttestationBrowseForm({
     setYear("");
   }, []);
 
+  useEffect(() => {
+    if (!returnUrl) {
+      setCheckingReuse(false);
+      return;
+    }
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/age-assurance/browse-reuse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            partner_id: partnerId,
+            policy_id: policyId,
+            return_url: returnUrl,
+          }),
+        });
+        const data = await res.json() as {
+          ok?: boolean;
+          browse_receipt?: string;
+          browse_receipt_id?: string;
+          redirect_url?: string;
+        };
+        if (cancelled) return;
+        if (res.ok && data.ok && data.browse_receipt) {
+          if (data.redirect_url) {
+            window.location.replace(data.redirect_url);
+            return;
+          }
+          if (redirectWithBrowseReceipt(returnUrl, {
+            browse_receipt: data.browse_receipt,
+            browse_receipt_id: data.browse_receipt_id,
+            policy_id: policyId,
+          })) {
+            return;
+          }
+        }
+      } catch {
+        // No reusable proof — show DOB form.
+      } finally {
+        if (!cancelled) setCheckingReuse(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [partnerId, policyId, returnUrl]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -64,7 +135,7 @@ export function SelfAttestationBrowseForm({
 
     const iso = composeIsoDate(month, day, year);
     if (!iso) {
-      setError("Enter a valid date of birth.");
+      setError("We couldn't confirm your age. Check your birthday and try again.");
       return;
     }
 
@@ -92,7 +163,7 @@ export function SelfAttestationBrowseForm({
       clearFields();
 
       if (!res.ok || !data.ok || !data.age_band) {
-        setError("We could not confirm browsing access. Check your date and try again.");
+        setError("We couldn't confirm your age. Check your birthday and try again.");
         return;
       }
 
@@ -106,37 +177,34 @@ export function SelfAttestationBrowseForm({
         setResult({ ok: true, age_band: "over_21" });
         onConfirmed?.();
         if (returnUrl && data.browse_receipt) {
-          try {
-            const target = new URL(returnUrl);
-            target.searchParams.set("browse_receipt", data.browse_receipt);
-            if (data.browse_receipt_id) {
-              target.searchParams.set("browse_receipt_id", data.browse_receipt_id);
-            }
-            target.searchParams.set("purpose", "browse");
-            target.searchParams.set("policy_id", policyId);
-            window.location.replace(target.toString());
-          } catch {
-            // Fall through to success UI if return URL is malformed.
-          }
+          redirectWithBrowseReceipt(returnUrl, {
+            browse_receipt: data.browse_receipt,
+            browse_receipt_id: data.browse_receipt_id,
+            policy_id: policyId,
+          });
         }
         return;
       }
     } catch {
       clearFields();
-      setError("We could not confirm browsing access. Try again.");
+      setError("We couldn't confirm your age. Check your birthday and try again.");
     } finally {
       setBusy(false);
     }
   }
 
+  if (checkingReuse) {
+    return <p role="status">Loading…</p>;
+  }
+
   if (result?.ok && result.age_band === "over_21") {
     return (
-      <StatusBanner tone="success" title="Browsing access confirmed">
-        You may continue browsing {partnerName}. Checkout may require stronger verification.
+      <StatusBanner tone="success" title="Your Passport is ready">
+        You're confirmed as 21+. Your private Abraxas profile and wallet are ready for future visits.
         {returnUrl && (
           <div style={{ marginTop: "0.75rem" }}>
             <Btn variant="secondary" onClick={() => { window.location.href = returnUrl; }}>
-              Return to {partnerName}
+              Continue to {partnerName}
             </Btn>
           </div>
         )}
@@ -146,25 +214,17 @@ export function SelfAttestationBrowseForm({
 
   if (result?.ok && result.age_band === "under_21") {
     return (
-      <StatusBanner tone="info" title="Browsing access not available">
-        You must be 21 or older to browse this site. Regulated purchases remain unavailable.
-        {returnUrl && (
-          <div style={{ marginTop: "0.75rem" }}>
-            <Btn variant="secondary" onClick={() => { window.location.href = returnUrl; }}>
-              Return to {partnerName}
-            </Btn>
-          </div>
-        )}
+      <StatusBanner tone="info" title="You must be 21+">
+        You must be 21 or older to continue.
       </StatusBanner>
     );
   }
 
   return (
     <form onSubmit={(e) => void handleSubmit(e)} noValidate autoComplete="off" data-form-type="other">
-      <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.05rem" }}>Continue browsing</h2>
+      <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.05rem" }}>Confirm you&apos;re 21+</h2>
       <p style={{ margin: "0 0 1rem", fontSize: "0.9rem", lineHeight: 1.6 }}>
-        Enter your date of birth to continue browsing. This is a self-attestation and does not
-        complete purchase eligibility verification. Your full date of birth will not be retained.
+        Enter your birthday once. We&apos;ll save only that you&apos;re 21 or older—not your birthday.
       </p>
 
       <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1rem" }}>
@@ -250,7 +310,7 @@ export function SelfAttestationBrowseForm({
           opacity: busy ? 0.55 : 1,
         }}
       >
-        {busy ? "Confirming…" : "Continue browsing"}
+        {busy ? "Creating…" : "Create my Passport"}
       </button>
 
       {error && (

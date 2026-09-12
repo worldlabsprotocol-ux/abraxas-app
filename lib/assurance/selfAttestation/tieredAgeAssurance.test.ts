@@ -268,6 +268,7 @@ describe("Wix checkout boundary", () => {
     valid_for_purchase: false,
     purpose: "browse",
     assurance_level: "L0",
+    age_band: "over_21",
     partner_id: GOOD_TROUBLE_PARTNER_ID,
     policy_id: GOOD_TROUBLE_BROWSE_POLICY_ID,
     expires_at: new Date(Date.now() + 3600000).toISOString(),

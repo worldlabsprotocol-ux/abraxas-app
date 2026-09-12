@@ -9,16 +9,19 @@ import { AbraxasIdentityCapture } from "@/components/passport/AbraxasIdentityCap
 import { ConsentCeremony } from "@/components/passport/ConsentCeremony";
 import { PartnerFlowReturnHandler } from "@/components/partner/PartnerFlowReturnHandler";
 import { AgeAssuranceMethodChooser } from "@/components/partner/AgeAssuranceMethodChooser";
+import { SelfAttestationBrowseForm } from "@/components/partner/SelfAttestationBrowseForm";
 import { PartnerJourneyLayout } from "@/components/partner/PartnerJourneyLayout";
 import { usePartnerFlowHandoff } from "@/lib/passport/partnerFlowHandoff";
 import { usePassportVerification } from "@/lib/hooks/usePassportVerification";
 import { computePassportSetupState } from "@/lib/idv/identityVerificationStates";
 import {
   resolvePartnerContinuationIntro,
+  resolvePartnerContinuationStatus,
   resolvePartnerDisplayName,
   resolvePartnerHomeUrl,
   resolvePartnerReturnLabel,
 } from "@/lib/partner/partnerVerifyDisplay";
+import { isGoodTroubleBrowseFlow } from "@/lib/partner/goodTroubleBrowseFlow";
 import {
   resolvePartnerHolderPresentation,
   type PartnerHolderState,
@@ -62,6 +65,11 @@ function PartnerContinueInner() {
   const isBrowseFlow =
     purposeParam === "browse" || policyId === GOOD_TROUBLE_BROWSE_POLICY_ID;
   const flowTier: "browse" | "checkout" = isBrowseFlow ? "browse" : "checkout";
+  const isDobFirstBrowse = isGoodTroubleBrowseFlow({
+    partnerId,
+    policyId,
+    purpose: purposeParam,
+  });
 
   const {
     identityStatus,
@@ -124,6 +132,8 @@ function PartnerContinueInner() {
   });
   const setupVisibility = resolvePartnerSetupVisibility({
     partnerId,
+    policyId,
+    purpose: purposeParam,
     walletReady: walletDone,
     walletBound: setup.walletBound,
     identityComplete: setup.identityComplete,
@@ -219,19 +229,21 @@ function PartnerContinueInner() {
     }
   }
 
-  const statusMessage = holderState === "under_review"
-    ? holderCopy.message
-    : holderState === "age_confirmed"
+  const statusMessage = isDobFirstBrowse
+    ? resolvePartnerContinuationStatus(partnerId, { policyId, purpose: purposeParam })
+    : holderState === "under_review"
       ? holderCopy.message
-      : "Complete the step below so we can share the required result with the partner.";
+      : holderState === "age_confirmed"
+        ? holderCopy.message
+        : resolvePartnerContinuationStatus(partnerId, { policyId, purpose: purposeParam });
 
   return (
     <PartnerJourneyLayout
       partnerName={partnerName}
-      intro={resolvePartnerContinuationIntro(partnerId)}
+      intro={resolvePartnerContinuationIntro(partnerId, { policyId, purpose: purposeParam })}
       statusMessage={statusMessage}
-      partnerHomeUrl={partnerHomeUrl}
-      partnerReturnLabel={returnLabel}
+      partnerHomeUrl={isDobFirstBrowse ? null : partnerHomeUrl}
+      partnerReturnLabel={isDobFirstBrowse ? undefined : returnLabel}
     >
       {authLoading ? (
         <p role="status">Loading…</p>
@@ -241,9 +253,9 @@ function PartnerContinueInner() {
         </StatusBanner>
       ) : (
         <>
-          <PartnerFlowReturnHandler handoff={handoff} />
+          {!isDobFirstBrowse && <PartnerFlowReturnHandler handoff={handoff} />}
 
-          {showPartnerConsent && verifyRequestId && (
+          {!isDobFirstBrowse && showPartnerConsent && verifyRequestId && (
             <ConsentCeremony
               requestId={verifyRequestId}
               identityComplete
@@ -251,13 +263,22 @@ function PartnerContinueInner() {
             />
           )}
 
-          {holderState === "under_review" && (
+          {setupVisibility.showDobFirstBrowseForm && (
+            <SelfAttestationBrowseForm
+              partnerId={partnerId}
+              policyId={GOOD_TROUBLE_BROWSE_POLICY_ID}
+              partnerName={partnerName}
+              returnUrl={decodedReturnUrl}
+            />
+          )}
+
+          {!isDobFirstBrowse && holderState === "under_review" && (
             <StatusBanner tone="pending" title={holderCopy.title}>
               {holderCopy.message}
             </StatusBanner>
           )}
 
-          {holderState === "verification_expired" && (
+          {!isDobFirstBrowse && holderState === "verification_expired" && (
             <StatusBanner tone="info" title={holderCopy.title}>
               {holderCopy.message}
             </StatusBanner>
@@ -336,11 +357,11 @@ function PartnerContinueInner() {
             </div>
           )}
 
-          {setup.identityComplete && !handoff.ready && (
+          {!isDobFirstBrowse && setup.identityComplete && !handoff.ready && (
             <p role="status">{holderCopy.title}…</p>
           )}
 
-          {returnPath && handoff.ready && (
+          {!isDobFirstBrowse && returnPath && handoff.ready && (
             <div style={{ marginTop: "1rem" }}>
               <Btn
                 variant="secondary"
