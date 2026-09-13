@@ -61,22 +61,39 @@ export const CONSUMED_FLOW_RETENTION_MS =
   24 * 60 * 60 * 1000;
 
 /**
- * Browser-safe constants live in the public module so Wix page code
- * never imports from a backend-only file.
+ * Callback query-param names — duplicated here so Wix backend modules never
+ * import from ../public (Wix Velo backend cannot resolve public re-exports).
+ * Keep values in sync with public/abraxasClientConstants.js.
  */
-export {
-  GTB_PARAM,
-  GTV_PARAM,
-  BROWSE_ACCESS_STORAGE_KEY,
-  BROWSE_RETURN_DESTINATION_STORAGE_KEY,
-  BROWSE_VERIFIER_STORAGE_PREFIX,
-  PURCHASE_RETURN_DESTINATION_STORAGE_KEY,
-  PURCHASE_VERIFIED_SESSION_FLAG,
-  PURCHASE_VERIFIER_STORAGE_PREFIX,
-  PILOT_VERIFIED_SESSION_FLAG,
-  RETURN_DESTINATION_STORAGE_KEY,
-  VERIFIER_STORAGE_PREFIX,
-} from "../public/abraxasClientConstants.js";
+export const GTV_PARAM = "gtv";
+export const GTB_PARAM = "gtb";
+
+/** Purchase verifier prefix — `${PURCHASE_VERIFIER_STORAGE_PREFIX}${flowId}`. */
+export const PURCHASE_VERIFIER_STORAGE_PREFIX = "abraxas_gt_purchase_verifier_";
+
+/** Browse verifier prefix — `${BROWSE_VERIFIER_STORAGE_PREFIX}${flowId}`. */
+export const BROWSE_VERIFIER_STORAGE_PREFIX = "abraxas_gt_browse_verifier_";
+
+/** @deprecated Use PURCHASE_VERIFIER_STORAGE_PREFIX */
+export const VERIFIER_STORAGE_PREFIX = PURCHASE_VERIFIER_STORAGE_PREFIX;
+
+/** Purchase return destination saved before Abraxas redirect (same-origin path). */
+export const PURCHASE_RETURN_DESTINATION_STORAGE_KEY = "good_trouble_return_destination_purchase";
+
+/** Browse return destination saved before Abraxas browse redirect. */
+export const BROWSE_RETURN_DESTINATION_STORAGE_KEY = "good_trouble_return_destination_browse";
+
+/** @deprecated Use PURCHASE_RETURN_DESTINATION_STORAGE_KEY */
+export const RETURN_DESTINATION_STORAGE_KEY = PURCHASE_RETURN_DESTINATION_STORAGE_KEY;
+
+/** L0 browse UI flag — sessionStorage only. */
+export const BROWSE_ACCESS_STORAGE_KEY = "good_trouble_browse_access_l0";
+
+/** Purchase pilot UI convenience flag — sessionStorage only. */
+export const PURCHASE_VERIFIED_SESSION_FLAG = "good_trouble_purchase_verified_pilot";
+
+/** @deprecated Use PURCHASE_VERIFIED_SESSION_FLAG */
+export const PILOT_VERIFIED_SESSION_FLAG = PURCHASE_VERIFIED_SESSION_FLAG;
 
 /**
  * The current Good Trouble pilot uses sandbox receipt validation.

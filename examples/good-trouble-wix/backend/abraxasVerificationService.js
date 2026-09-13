@@ -14,8 +14,10 @@ import {
   buildFlowStartSuccess,
   flowStartContext,
   FLOW_START_STAGES,
+  isFlowStartFailure,
   mapThrownErrorToStartCode,
 } from "./flowStartDiagnostics.js";
+import { createWixNonceStore } from "./wixNonceStore.js";
 import {
   assertCapacityAvailable,
   finalizeFlowStart,
@@ -44,9 +46,8 @@ function resolveHashFn(depsHashFn) {
   return defaultSha256Hex;
 }
 
-async function resolveStore(deps) {
+function resolveStore(deps) {
   if (deps.store) return deps.store;
-  const { createWixNonceStore } = await import("./wixNonceStore.js");
   return createWixNonceStore();
 }
 
@@ -146,12 +147,12 @@ async function startFlow(purpose, captchaToken, deps = {}) {
 
 export async function createBrowseVerificationStartService(captchaToken, deps = {}) {
   const result = await startFlow("browse", captchaToken, deps);
-  if (result.error) return result;
+  if (isFlowStartFailure(result)) return result;
 
-  const flowId = typeof result.flowId === "string" ? result.flowId : "";
-  const policyId = typeof result.policyId === "string" ? result.policyId : "";
-  const purpose = typeof result.purpose === "string" ? result.purpose : "";
-  const verifyUrl = typeof result.verifyUrl === "string" ? result.verifyUrl : "";
+  const flowId = result.flowId;
+  const policyId = result.policyId;
+  const purpose = result.purpose;
+  const verifyUrl = result.verifyUrl;
 
   if (
     purpose !== "browse"
