@@ -69,14 +69,14 @@ describe("resolvePartnerContinueContext", () => {
     expect(resolved.purpose).toBe("purchase");
   });
 
-  it("requires explicit browse purpose when server context is absent", () => {
+  it("derives browse mode from browse policy when purpose is missing from URL", () => {
     expect(resolvePartnerContinueContext({
       partnerId: GOOD_TROUBLE_PARTNER_ID,
       policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
       purpose: null,
       returnUrl: RETURN_URL,
       verifyRequestId: null,
-    }).isDobFirstBrowse).toBe(false);
+    }).isDobFirstBrowse).toBe(true);
 
     expect(resolvePartnerContinueContext({
       partnerId: GOOD_TROUBLE_PARTNER_ID,
@@ -85,5 +85,25 @@ describe("resolvePartnerContinueContext", () => {
       returnUrl: RETURN_URL,
       verifyRequestId: null,
     }).isDobFirstBrowse).toBe(true);
+  });
+
+  it("prefers stored verification-request purpose when authoritative", () => {
+    const resolved = resolvePartnerContinueContext(
+      {
+        partnerId: GOOD_TROUBLE_PARTNER_ID,
+        policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
+        purpose: null,
+        returnUrl: RETURN_URL,
+        verifyRequestId: "vr-3",
+      },
+      {
+        partnerId: GOOD_TROUBLE_PARTNER_ID,
+        policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
+        purpose: "browse",
+      },
+    );
+
+    expect(resolved.purpose).toBe("browse");
+    expect(resolved.isDobFirstBrowse).toBe(true);
   });
 });

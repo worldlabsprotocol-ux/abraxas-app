@@ -7,6 +7,7 @@ import {
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
 import {
+  GoodTroubleFlowTupleMismatchError,
   GOOD_TROUBLE_BROWSE_DOB_HEADING,
   GOOD_TROUBLE_BROWSE_EYEBROW,
   GOOD_TROUBLE_BROWSE_HEADING,
@@ -15,6 +16,7 @@ import {
   GOOD_TROUBLE_BROWSE_STATUS,
   GOOD_TROUBLE_BROWSE_SUPPORTING,
   isGoodTroubleBrowseFlow,
+  resolveGoodTroubleFlowPurpose,
 } from "./goodTroubleBrowseFlow";
 import {
   resolvePartnerContinuationIntro,
@@ -69,6 +71,45 @@ describe("isGoodTroubleBrowseFlow", () => {
       policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
       purpose: "purchase",
     })).toBe(false);
+  });
+
+  it("matches browse policy when purpose was dropped after OAuth resume", () => {
+    expect(isGoodTroubleBrowseFlow({
+      partnerId: GOOD_TROUBLE_PARTNER_ID,
+      policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
+      purpose: null,
+    })).toBe(true);
+  });
+});
+
+describe("resolveGoodTroubleFlowPurpose", () => {
+  const BROWSE_RETURN =
+    "https://www.goodtroublecanna.com/browse-verification-result?gtb=gtb_abc";
+
+  it("resolves browse from browse policy without explicit purpose", () => {
+    expect(resolveGoodTroubleFlowPurpose({
+      partnerId: GOOD_TROUBLE_PARTNER_ID,
+      policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
+      returnUrl: BROWSE_RETURN,
+    })).toBe("browse");
+  });
+
+  it("rejects browse policy with purchase callback", () => {
+    expect(() => resolveGoodTroubleFlowPurpose({
+      partnerId: GOOD_TROUBLE_PARTNER_ID,
+      policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
+      purpose: "browse",
+      returnUrl: "https://www.goodtroublecanna.com/age-verification-result?gtv=gtf_abc",
+    })).toThrow(GoodTroubleFlowTupleMismatchError);
+  });
+
+  it("rejects retail policy with browse purpose", () => {
+    expect(() => resolveGoodTroubleFlowPurpose({
+      partnerId: GOOD_TROUBLE_PARTNER_ID,
+      policyId: GOOD_TROUBLE_RETAIL_POLICY_ID,
+      purpose: "browse",
+      returnUrl: "https://www.goodtroublecanna.com/age-verification-result?gtv=gtf_abc",
+    })).toThrow(GoodTroubleFlowTupleMismatchError);
   });
 });
 

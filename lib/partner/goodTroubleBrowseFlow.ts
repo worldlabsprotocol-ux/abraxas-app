@@ -4,18 +4,100 @@
 import {
   GOOD_TROUBLE_BROWSE_POLICY_ID,
   GOOD_TROUBLE_PARTNER_ID,
+  GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
 
+export class GoodTroubleFlowTupleMismatchError extends Error {
+  readonly code = "flow_tuple_mismatch" as const;
+
+  constructor(message: string) {
+    super(message);
+    this.name = "GoodTroubleFlowTupleMismatchError";
+  }
+}
+
+/**
+ * Authoritative Good Trouble browse detection.
+ * Browse policy implies browse purpose when purpose is absent (OAuth resume may drop it).
+ * Tuple mismatches must fail closed — never silently open purchase verification.
+ */
 export function isGoodTroubleBrowseFlow(input: {
   partnerId: string;
   policyId: string;
   purpose?: string | null;
 }): boolean {
-  return (
-    input.partnerId === GOOD_TROUBLE_PARTNER_ID
-    && input.policyId === GOOD_TROUBLE_BROWSE_POLICY_ID
-    && input.purpose === "browse"
-  );
+  if (input.partnerId !== GOOD_TROUBLE_PARTNER_ID) return false;
+  if (input.policyId !== GOOD_TROUBLE_BROWSE_POLICY_ID) return false;
+
+  const purpose = input.purpose?.trim();
+  if (purpose === "purchase") return false;
+  if (purpose && purpose !== "browse") return false;
+  return true;
+}
+
+/**
+ * Normalize and validate the Good Trouble partner flow tuple before evaluate/continue.
+ * @returns Resolved purpose ("browse" | "purchase") for storage and redirects.
+ */
+export function resolveGoodTroubleFlowPurpose(input: {
+  partnerId: string;
+  policyId: string;
+  purpose?: string | null;
+  returnUrl?: string | null;
+}): "browse" | "purchase" | null {
+  if (input.partnerId !== GOOD_TROUBLE_PARTNER_ID) return null;
+
+  const purpose = input.purpose?.trim() || null;
+  const returnUrl = input.returnUrl?.trim() || "";
+
+  if (input.policyId === GOOD_TROUBLE_BROWSE_POLICY_ID) {
+    if (purpose === "purchase") {
+      throw new GoodTroubleFlowTupleMismatchError(
+        "Browse policy cannot be combined with purchase purpose",
+      );
+    }
+    if (purpose && purpose !== "browse") {
+      throw new GoodTroubleFlowTupleMismatchError(
+        `Unsupported purpose "${purpose}" for browse policy`,
+      );
+    }
+    if (returnUrl) {
+      const normalized = returnUrl.toLowerCase();
+      if (
+        normalized.includes("age-verification-result")
+        || normalized.includes("gtf_")
+        || normalized.includes("good-trouble-retail-v1")
+      ) {
+        throw new GoodTroubleFlowTupleMismatchError(
+          "Browse policy requires a browse callback return URL",
+        );
+      }
+    }
+    return "browse";
+  }
+
+  if (input.policyId === GOOD_TROUBLE_RETAIL_POLICY_ID) {
+    if (purpose === "browse") {
+      throw new GoodTroubleFlowTupleMismatchError(
+        "Retail policy cannot be combined with browse purpose",
+      );
+    }
+    if (returnUrl) {
+      const normalized = returnUrl.toLowerCase();
+      if (
+        normalized.includes("browse-verification-result")
+        || normalized.includes("gtb_")
+        || normalized.includes("good-trouble-browse-v1")
+      ) {
+        throw new GoodTroubleFlowTupleMismatchError(
+          "Retail policy requires a purchase callback return URL",
+        );
+      }
+    }
+    return "purchase";
+  }
+
+  return null;
 }
 
 export const GOOD_TROUBLE_BROWSE_INTRO =

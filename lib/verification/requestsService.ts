@@ -28,6 +28,7 @@ export { getPartnerPolicy as getPolicy } from "@/lib/policy/getPolicy";
 export async function createVerificationRequest(input: {
   partnerId: string;
   policyId: string;
+  purpose?: string | null;
   requestedAction?: string;
   requestedClaims?: string[];
   suiAddress?: string;
@@ -48,6 +49,7 @@ export async function createVerificationRequest(input: {
   const { data, error } = await sb.from("verification_requests").insert({
     partner_id: input.partnerId,
     policy_id: input.policyId,
+    purpose: input.purpose?.trim() || null,
     requested_action: input.requestedAction ?? null,
     requested_claims: requestedClaims,
     sui_address: input.suiAddress ? normalizeSuiAddress(input.suiAddress) : null,
@@ -86,6 +88,7 @@ export interface VerificationRequestPreview {
   request_id: string;
   partner_id: string;
   policy_id: string;
+  purpose: string | null;
   policy_name: string;
   requested_action: string | null;
   requested_claims: string[];
@@ -117,6 +120,7 @@ export async function getVerificationRequestPreview(
     request_id: requestId,
     partner_id: request.partner_id as string,
     policy_id: request.policy_id as string,
+    purpose: (request.purpose as string | null) ?? null,
     policy_name: policy?.name ?? request.policy_id as string,
     requested_action: (request.requested_action as string | null) ?? null,
     requested_claims: allClaims,

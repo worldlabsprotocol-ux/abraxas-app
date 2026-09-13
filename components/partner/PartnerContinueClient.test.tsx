@@ -141,6 +141,26 @@ describe("PartnerContinueClient Good Trouble browse journey", () => {
     });
   });
 
+  it("shows browse chrome during context load when browse policy is in URL without purpose", async () => {
+    mockSearchParams = new URLSearchParams({
+      verify_request: "vr-browse-1",
+      partner_id: GOOD_TROUBLE_PARTNER_ID,
+      policy_id: GOOD_TROUBLE_BROWSE_POLICY_ID,
+      return: "https://www.goodtroublecanna.com/browse-verification-result?gtb=gtb_test",
+    });
+
+    render(<PartnerContinueClient />);
+
+    await waitFor(() => {
+      expect(screen.getByText(GOOD_TROUBLE_BROWSE_EYEBROW)).toBeTruthy();
+    });
+    expect(screen.getByRole("heading", { name: GOOD_TROUBLE_BROWSE_HEADING })).toBeTruthy();
+    expect(screen.queryByText(/Verify eligibility for purchase/i)).toBeNull();
+    expect(screen.queryByText(/Continue with ID Verification/i)).toBeNull();
+    expect(screen.queryByText(/Return pending/i)).toBeNull();
+    expect(screen.queryByText(/Use Good Trouble's age check/i)).toBeNull();
+  });
+
   it("does not enable browse flow for retail policy with browse purpose in URL", async () => {
     mockSearchParams = new URLSearchParams({
       verify_request: "vr-retail-1",

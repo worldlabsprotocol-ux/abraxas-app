@@ -42,7 +42,11 @@ import {
 } from "@/lib/partner/partnerFlowReceiptAccess";
 import { checkPartnerFlowRevocationGate } from "@/lib/partner/partnerFlowRevocationRuntime";
 import type { PartnerPolicyRules } from "@/lib/policy/types";
-import { isGoodTroubleBrowseFlow } from "@/lib/partner/goodTroubleBrowseFlow";
+import {
+  isGoodTroubleBrowseFlow,
+  resolveGoodTroubleFlowPurpose,
+} from "@/lib/partner/goodTroubleBrowseFlow";
+import { GOOD_TROUBLE_BROWSE_POLICY_ID } from "@/lib/goodTrouble/constants";
 import {
   buildBrowseReturnUrl,
   reuseBrowseSelfAttestation,
@@ -107,7 +111,9 @@ export function buildPartnerEvidenceUrl(input: {
     policy_id: input.policyId,
     return: input.returnUrl,
   });
-  if (input.purpose) params.set("purpose", input.purpose);
+  const purpose = input.purpose
+    ?? (input.policyId === GOOD_TROUBLE_BROWSE_POLICY_ID ? "browse" : undefined);
+  if (purpose) params.set("purpose", purpose);
   return `${appUrl}/partner/continue?${params.toString()}`;
 }
 
@@ -476,6 +482,7 @@ export async function evaluateGoodTroubleBrowseFlow(input: {
   partnerId: string;
   policyId: string;
   returnUrl: string;
+  purpose?: "browse";
   appOrigin?: string;
 }): Promise<PartnerFlowEvaluateResult> {
   const subject = normalizeSuiAddress(input.suiAddress);
@@ -515,6 +522,7 @@ export async function evaluateGoodTroubleBrowseFlow(input: {
   const request = await createVerificationRequest({
     partnerId: input.partnerId,
     policyId: input.policyId,
+    purpose: input.purpose ?? "browse",
     requestedAction: policy?.rules_json.product_eligibility_action ?? "partner_eligibility",
     suiAddress: subject,
     returnUrl: input.returnUrl,
@@ -554,10 +562,18 @@ export async function evaluatePartnerFlow(input: {
     return { next: "authenticate" };
   }
 
-  if (isGoodTroubleBrowseFlow({
+  const resolvedPurpose = resolveGoodTroubleFlowPurpose({
     partnerId: input.partnerId,
     policyId: input.policyId,
     purpose: input.purpose,
+    returnUrl: input.returnUrl,
+  });
+  const effectivePurpose = resolvedPurpose ?? input.purpose;
+
+  if (isGoodTroubleBrowseFlow({
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    purpose: effectivePurpose,
   })) {
     return evaluateGoodTroubleBrowseFlow({
       suiAddress: input.suiAddress,
@@ -565,6 +581,7 @@ export async function evaluatePartnerFlow(input: {
       policyId: input.policyId,
       returnUrl: input.returnUrl,
       appOrigin: input.appOrigin,
+      purpose: "browse",
     });
   }
 
@@ -636,6 +653,7 @@ export async function evaluatePartnerFlow(input: {
   const request = await createVerificationRequest({
     partnerId: input.partnerId,
     policyId: input.policyId,
+    purpose: effectivePurpose,
     requestedAction: (await getPolicy(input.policyId))?.rules_json.product_eligibility_action ?? "partner_eligibility",
     suiAddress: subject,
     returnUrl: input.returnUrl,
@@ -647,7 +665,7 @@ export async function evaluatePartnerFlow(input: {
     partnerId: input.partnerId,
     policyId: input.policyId,
     returnUrl: input.returnUrl,
-    purpose: input.purpose,
+    purpose: effectivePurpose,
     appOrigin: input.appOrigin,
   });
 

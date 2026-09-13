@@ -165,6 +165,7 @@ export function PartnerVerifyClient({
           errorCode: "browser_session",
         });
         evaluateOnceRef.current = false;
+        signInOnceRef.current = false;
         setPhase("sign_in");
         setStatusMessage("Sign in to continue with Abraxas.");
         return;
@@ -197,6 +198,7 @@ export function PartnerVerifyClient({
             errorCode: "401",
           });
           evaluateOnceRef.current = false;
+          signInOnceRef.current = false;
           setPhase("sign_in");
           setStatusMessage("Sign in to continue with Abraxas.");
           return;

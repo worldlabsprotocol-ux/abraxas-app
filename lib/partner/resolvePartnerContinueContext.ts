@@ -19,6 +19,7 @@ export type PartnerContinueUrlParams = {
 export type PartnerContinueServerContext = {
   partnerId: string;
   policyId: string;
+  purpose?: string | null;
 };
 
 export type ResolvedPartnerContinueContext = PartnerContinueUrlParams & {
@@ -58,13 +59,13 @@ export function resolvePartnerContinueContext(
   const authoritative = Boolean(server?.partnerId && server?.policyId);
   const partnerId = (authoritative ? server!.partnerId : url.partnerId).trim();
   const policyId = (authoritative ? server!.policyId : url.policyId).trim();
-  const purpose = authoritative
-    ? derivePurposeFromAuthoritativePolicy({
+  const storedPurpose = authoritative ? server?.purpose?.trim() || null : null;
+  const purpose = storedPurpose
+    ?? derivePurposeFromAuthoritativePolicy({
       partnerId,
       policyId,
       urlPurpose: url.purpose,
-    })
-    : (url.purpose?.trim() || null);
+    });
 
   const isDobFirstBrowse = isGoodTroubleBrowseFlow({
     partnerId,
