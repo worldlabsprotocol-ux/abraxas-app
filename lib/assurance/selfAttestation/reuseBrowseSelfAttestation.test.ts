@@ -94,13 +94,16 @@ describe("reuseBrowseSelfAttestation", () => {
   });
 
   it("builds browse callback URL without exposing DOB", () => {
-    const url = buildBrowseReturnUrl(RETURN_URL, {
+    const callbackUrl =
+      `https://www.goodtroublecanna.com/browse-verification-result?gtb=gtb_${"a".repeat(64)}`;
+    const url = buildBrowseReturnUrl(callbackUrl, {
       browseReceipt: "jwt-token",
       browseReceiptId: "br_existing",
       policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
     });
     expect(url).toContain("browse_receipt=jwt-token");
     expect(url).toContain(`policy_id=${GOOD_TROUBLE_BROWSE_POLICY_ID}`);
+    expect(url).toContain("rc=test-site");
     expect(url).not.toMatch(/date_of_birth|dob=/i);
   });
 });

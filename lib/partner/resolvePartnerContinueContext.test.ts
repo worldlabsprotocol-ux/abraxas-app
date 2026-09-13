@@ -9,7 +9,10 @@ import {
   resolvePartnerContinueContext,
 } from "./resolvePartnerContinueContext";
 
+const GTB_FLOW_ID = `gtb_${"a".repeat(64)}`;
 const RETURN_URL = "https://www.goodtroublecanna.com/browse-verification-result";
+const BROWSE_CALLBACK_URL =
+  `https://www.goodtroublecanna.com/browse-verification-result?gtb=${GTB_FLOW_ID}`;
 
 describe("derivePurposeFromAuthoritativePolicy", () => {
   it("maps browse policy to browse purpose", () => {
@@ -105,5 +108,26 @@ describe("resolvePartnerContinueContext", () => {
 
     expect(resolved.purpose).toBe("browse");
     expect(resolved.isDobFirstBrowse).toBe(true);
+  });
+
+  it("normalizes browse callback return URL with rc=test-site for authoritative browse flow", () => {
+    const resolved = resolvePartnerContinueContext(
+      {
+        partnerId: GOOD_TROUBLE_PARTNER_ID,
+        policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
+        purpose: "browse",
+        returnUrl: BROWSE_CALLBACK_URL,
+        verifyRequestId: "vr-4",
+      },
+      {
+        partnerId: GOOD_TROUBLE_PARTNER_ID,
+        policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
+        purpose: "browse",
+      },
+    );
+
+    const parsed = new URL(resolved.returnUrl);
+    expect(parsed.searchParams.get("gtb")).toBe(GTB_FLOW_ID);
+    expect(parsed.searchParams.get("rc")).toBe("test-site");
   });
 });

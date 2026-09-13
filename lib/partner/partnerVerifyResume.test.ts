@@ -79,7 +79,9 @@ describe("partnerVerifyResume", () => {
       partnerId: "good-trouble-cannabis",
       policyId: "good-trouble-browse-v1",
       purpose: "browse",
-      returnUrl,
+      returnUrl: `${returnUrl}&rc=test-site`,
+      permission: undefined,
+      permissionVersion: undefined,
     });
   });
 
