@@ -151,6 +151,9 @@ describe("Good Trouble browse screen chrome", () => {
   it("uses the minimal browse heading and supporting line", () => {
     expect(GOOD_TROUBLE_BROWSE_EYEBROW).toBe("PRIVATE AGE CHECK");
     expect(GOOD_TROUBLE_BROWSE_HEADING).toBe("Continue to Good Trouble");
-    expect(GOOD_TROUBLE_BROWSE_SUPPORTING).toBe(GOOD_TROUBLE_BROWSE_STATUS);
+    expect(GOOD_TROUBLE_BROWSE_SUPPORTING).toBe(
+      "Enter your birthday once. Good Trouble receives only a yes-or-no 21+ result.",
+    );
+    expect(GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON).toBe("Continue");
   });
 });

@@ -8,7 +8,6 @@ import { parseIdTokenFromCallbackHash, loadUserSession } from "@/lib/sui/zklogin
 import {
   appendPartnerAuthReadyQuery,
   consumePartnerVerifyResumePath,
-  peekPartnerVerifyResumePath,
 } from "@/lib/partner/partnerVerifyResume";
 import {
   createPartnerVerifyCorrelationId,
@@ -31,8 +30,6 @@ export async function completePartnerVerifyOAuthCallback(
   const correlationId = createPartnerVerifyCorrelationId();
   logPartnerVerifyAuthEvent("oauth_callback_received", { correlationId });
   clearStaleLoginInFlight();
-
-  const hasResume = Boolean(peekPartnerVerifyResumePath());
 
   const idToken = parseIdTokenFromCallbackHash(callbackHash);
   let session;
@@ -66,16 +63,30 @@ export async function completePartnerVerifyOAuthCallback(
   logPartnerVerifyAuthEvent("browser_session_ready", { correlationId });
   clearLoginInFlight();
 
-  if (hasResume) {
-    const resumePath = consumePartnerVerifyResumePath();
-    if (resumePath) {
-      logPartnerVerifyAuthEvent("partner_resume_restored", { correlationId });
-      return {
-        redirectPath: appendPartnerAuthReadyQuery(resumePath),
-        correlationId,
-      };
-    }
+  const resumePath = consumePartnerVerifyResumePath()
+    ?? await restorePartnerVerifyResumeFromServer();
+
+  if (resumePath) {
+    logPartnerVerifyAuthEvent("partner_resume_restored", { correlationId });
+    return {
+      redirectPath: appendPartnerAuthReadyQuery(resumePath),
+      correlationId,
+    };
   }
 
   return { redirectPath: "/passport?signed_in=1", correlationId };
+}
+
+async function restorePartnerVerifyResumeFromServer(): Promise<string | null> {
+  try {
+    const res = await fetch("/api/v1/partner-verify/resume", { credentials: "include" });
+    if (!res.ok) return null;
+    const data = await res.json() as { ok?: boolean; path?: string };
+    if (data.ok && typeof data.path === "string" && data.path.startsWith("/partner/verify?")) {
+      return data.path;
+    }
+  } catch {
+    // Fall through to default passport redirect.
+  }
+  return null;
 }

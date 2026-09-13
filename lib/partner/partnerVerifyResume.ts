@@ -174,6 +174,25 @@ export function parsePartnerVerifyResumeParams(
   });
 }
 
+export async function syncPartnerVerifyResumeToServer(
+  params: PartnerVerifyResumeParams,
+): Promise<void> {
+  if (typeof window === "undefined") return;
+  const sanitized = sanitizeResumeParams(params);
+  if (!sanitized) return;
+
+  try {
+    await fetch("/api/v1/partner-verify/resume", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(sanitized),
+    });
+  } catch {
+    // sessionStorage remains the primary fast path when the network fails.
+  }
+}
+
 export function savePartnerVerifyResume(params: PartnerVerifyResumeParams): void {
   if (typeof window === "undefined") return;
   const sanitized = sanitizeResumeParams(params);
@@ -187,6 +206,7 @@ export function savePartnerVerifyResume(params: PartnerVerifyResumeParams): void
     savedAt: new Date().toISOString(),
   };
   sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  void syncPartnerVerifyResumeToServer(sanitized);
 }
 
 export function loadPartnerVerifyResume(): PartnerVerifyResumeState | null {

@@ -6,7 +6,6 @@ const mockComplete = vi.fn();
 const mockEnsureReady = vi.fn();
 const mockLoadSession = vi.fn();
 const mockParseToken = vi.fn();
-const mockPeek = vi.fn();
 const mockConsume = vi.fn();
 const mockClearLogin = vi.fn();
 const mockClearStale = vi.fn();
@@ -25,7 +24,6 @@ vi.mock("@/lib/sui/zklogin/session", () => ({
 }));
 
 vi.mock("@/lib/partner/partnerVerifyResume", () => ({
-  peekPartnerVerifyResumePath: () => mockPeek(),
   consumePartnerVerifyResumePath: () => mockConsume(),
   appendPartnerAuthReadyQuery: (path: string) => `${path}&partner_auth=ready`,
 }));
@@ -48,7 +46,6 @@ describe("completePartnerVerifyOAuthCallback", () => {
     mockParseToken.mockReturnValue("id-token");
     mockComplete.mockResolvedValue({ suiAddress: "0xabc" });
     mockEnsureReady.mockResolvedValue({ ok: true });
-    mockPeek.mockReturnValue("/partner/verify?partner_id=test");
     mockConsume.mockReturnValue("/partner/verify?partner_id=test");
   });
 
@@ -102,5 +99,18 @@ describe("completePartnerVerifyOAuthCallback", () => {
 
     expect(mockComplete).not.toHaveBeenCalled();
     expect(mockEnsureReady).toHaveBeenCalledWith("0xexisting");
+  });
+
+  it("restores browse resume from signed cookie when sessionStorage was cleared", async () => {
+    mockConsume.mockReturnValue(null);
+    global.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      ok: true,
+      path: "/partner/verify?partner_id=good-trouble-cannabis&policy_id=good-trouble-browse-v1&purpose=browse&return_url=https%3A%2F%2Fwww.goodtroublecanna.com%2Fbrowse-verification-result",
+    }), { status: 200 })) as typeof fetch;
+
+    const result = await completePartnerVerifyOAuthCallback("#id_token=test");
+
+    expect(result.redirectPath).toContain("purpose=browse");
+    expect(result.redirectPath).toContain("partner_auth=ready");
   });
 });
