@@ -60,7 +60,9 @@ function PartnerContinueInner() {
   const returnPath = searchParams.get("return");
   const ageAssuranceStatus = searchParams.get("age_assurance");
   const purposeParam = searchParams.get("purpose");
-  const decodedReturnUrl = returnPath ? decodeURIComponent(returnPath) : "";
+  // useSearchParams already decodes query values. Decoding a second time can
+  // corrupt a partner callback URL that legitimately contains percent escapes.
+  const decodedReturnUrl = returnPath ?? "";
 
   const isBrowseFlow =
     purposeParam === "browse" || policyId === GOOD_TROUBLE_BROWSE_POLICY_ID;
@@ -244,6 +246,7 @@ function PartnerContinueInner() {
       statusMessage={statusMessage}
       partnerHomeUrl={isDobFirstBrowse ? null : partnerHomeUrl}
       partnerReturnLabel={isDobFirstBrowse ? undefined : returnLabel}
+      showAccountFooter={!isDobFirstBrowse}
     >
       {authLoading ? (
         <p role="status">Loading…</p>
@@ -310,7 +313,7 @@ function PartnerContinueInner() {
                   browsePolicyId={GOOD_TROUBLE_BROWSE_POLICY_ID}
                   onFallbackId={() => setShowIdFallback(true)}
                   onTraditionalReturn={() => {
-                    if (decodedReturnUrl) window.location.href = decodedReturnUrl;
+                    if (partnerHomeUrl) window.location.assign(partnerHomeUrl);
                   }}
                 />
               ) : (

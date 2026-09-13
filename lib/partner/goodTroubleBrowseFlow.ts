@@ -19,10 +19,10 @@ export function isGoodTroubleBrowseFlow(input: {
 }
 
 export const GOOD_TROUBLE_BROWSE_INTRO =
-  "Confirm you're 21+ without sharing your birthday with Good Trouble.";
+  "A private age check for Good Trouble.";
 
 export const GOOD_TROUBLE_BROWSE_STATUS =
-  "One quick step, then we'll send you back.";
+  "Good Trouble receives only a yes-or-no 21+ result.";
 
 /** Sign-in screen copy for the DOB-first browse journey (before Google/zkLogin). */
 export const GOOD_TROUBLE_BROWSE_SIGN_IN_INTRO =
