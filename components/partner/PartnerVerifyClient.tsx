@@ -213,7 +213,7 @@ export function PartnerVerifyClient({
         setPhase("returning");
         setStatusMessage(
           isDobFirstBrowse
-            ? "You're confirmed. Returning to Good Trouble…"
+            ? "Confirmed. Returning to Good Trouble…"
             : (data.customer_message ?? "Returning to partner…"),
         );
         try {

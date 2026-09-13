@@ -13,6 +13,10 @@ import { createBrowseVerificationStart } from "backend/abraxasVerification.web";
 import {
   BROWSE_RETURN_DESTINATION_STORAGE_KEY,
   BROWSE_VERIFIER_STORAGE_PREFIX,
+  PILOT_VERIFIED_SESSION_FLAG,
+  PURCHASE_RETURN_DESTINATION_STORAGE_KEY,
+  PURCHASE_VERIFIED_SESSION_FLAG,
+  RETURN_DESTINATION_STORAGE_KEY,
 } from "public/abraxasClientConstants";
 
 import wixLocationFrontend from "wix-location-frontend";
@@ -25,6 +29,7 @@ import {
 } from "wix-storage-frontend";
 
 import {
+  clearStalePurchaseSessionArtifacts,
   createPopupController,
   createPopupInitializationGuard,
 } from "public/ageVerificationPopupLogic";
@@ -74,6 +79,20 @@ $w.onReady(() => {
 
           startAbraxasVerification: () =>
             createBrowseVerificationStart(),
+
+          clearStalePurchaseArtifacts() {
+            clearStalePurchaseSessionArtifacts((key) => {
+              session.removeItem(key);
+            });
+            try {
+              session.removeItem(PURCHASE_VERIFIED_SESSION_FLAG);
+              session.removeItem(PILOT_VERIFIED_SESSION_FLAG);
+              session.removeItem(PURCHASE_RETURN_DESTINATION_STORAGE_KEY);
+              session.removeItem(RETURN_DESTINATION_STORAGE_KEY);
+            } catch {
+              // Non-authoritative cleanup.
+            }
+          },
 
           sessionStorageAvailable,
 

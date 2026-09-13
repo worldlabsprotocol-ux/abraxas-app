@@ -5,7 +5,6 @@
 import { useCallback, useEffect, useId, useState } from "react";
 import {
   GOOD_TROUBLE_BROWSE_CHECKING_STATE,
-  GOOD_TROUBLE_BROWSE_DOB_HEADING,
   GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON,
   GOOD_TROUBLE_BROWSE_SUCCESS_STATE,
   GOOD_TROUBLE_BROWSE_TRADITIONAL_FALLBACK,
@@ -268,10 +267,6 @@ export function SelfAttestationBrowseForm({
 
   return (
     <form onSubmit={(e) => void handleSubmit(e)} noValidate autoComplete="off" data-form-type="other">
-      <h2 style={{ margin: "0 0 1rem", fontSize: "1.05rem" }}>
-        {GOOD_TROUBLE_BROWSE_DOB_HEADING}
-      </h2>
-
       <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1rem" }}>
         <div>
           <label htmlFor={monthId} style={{ display: "block", fontSize: "0.85rem", marginBottom: "0.25rem" }}>
@@ -355,7 +350,7 @@ export function SelfAttestationBrowseForm({
           opacity: busy ? 0.55 : 1,
         }}
       >
-        {busy ? "Checking…" : GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON}
+        {busy ? GOOD_TROUBLE_BROWSE_CHECKING_STATE : GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON}
       </button>
 
       {partnerHomeUrl && (

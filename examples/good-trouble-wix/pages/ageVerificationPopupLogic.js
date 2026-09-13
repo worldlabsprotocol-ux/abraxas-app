@@ -15,15 +15,29 @@ export const POPUP_STATE = {
   RECOVERABLE_ERROR: "recoverable_error",
 };
 
-export const ABRAXAS_BROWSE_LABEL = "Continue browsing with Abraxas";
+export const ABRAXAS_BROWSE_LABEL = "Verify age with Abraxas Passport";
 export const ABRAXAS_PURCHASE_LABEL = "Verify eligibility for purchase";
 
 export const ABRAXAS_LABEL = ABRAXAS_BROWSE_LABEL;
 export const ABRAXAS_LABEL_STARTING = "Starting…";
 
+export const BROWSE_POLICY_ID = "good-trouble-browse-v1";
+export const BROWSE_FLOW_ID_PREFIX = "gtb_";
+export const PURCHASE_POLICY_ID = "good-trouble-retail-v1";
+export const PURCHASE_FLOW_ID_PREFIX = "gtf_";
+export const BROWSE_CALLBACK_PATH = "browse-verification-result";
+export const PURCHASE_CALLBACK_PATH = "age-verification-result";
+
+/** Session keys that must not leak purchase state into a fresh browse start. */
+export const PURCHASE_SESSION_KEYS_TO_CLEAR = [
+  "good_trouble_return_destination_purchase",
+  "good_trouble_purchase_verified_pilot",
+  "good_trouble_return_destination",
+];
+
 export const STATUS_READY =
-  "Enter your date of birth on Abraxas to continue browsing. Good Trouble will not receive your birth date.";
-export const STATUS_STARTING = "Starting secure browsing verification with Abraxas…";
+  "Enter your birthday once on Abraxas. Good Trouble receives only a yes-or-no result.";
+export const STATUS_STARTING = "Starting age verification with Abraxas…";
 export const STATUS_PREVIEW_PASSED =
   "Preview check passed: Abraxas Passport backend flow is working.";
 export const STATUS_SESSION_UNAVAILABLE =
@@ -107,6 +121,80 @@ export function safeStartErrorMessage(code) {
 }
 
 /**
+ * Remove purchase-only session artifacts so a browse click never reuses gtf_ state.
+ * @param {(key: string) => void} removeItem
+ */
+export function clearStalePurchaseSessionArtifacts(removeItem) {
+  for (const key of PURCHASE_SESSION_KEYS_TO_CLEAR) {
+    try {
+      removeItem(key);
+    } catch {
+      // Non-authoritative cleanup.
+    }
+  }
+}
+
+/**
+ * Fail closed if the backend returned purchase or mixed lifecycle metadata.
+ * @param {object | null | undefined} result
+ * @returns {{ ok: true, result: object } | { ok: false, code: string }}
+ */
+export function validateBrowseVerificationStart(result) {
+  if (!result || result.error) {
+    return { ok: false, code: result?.error ?? "start_failed" };
+  }
+
+  const verifyUrl = typeof result.verifyUrl === "string" ? result.verifyUrl : "";
+  const flowId = typeof result.flowId === "string" ? result.flowId : "";
+  const verifier = typeof result.verifier === "string" ? result.verifier : "";
+  const policyId = typeof result.policyId === "string" ? result.policyId : "";
+  const purpose = typeof result.purpose === "string" ? result.purpose : "";
+
+  if (!verifyUrl || !flowId || !verifier) {
+    return { ok: false, code: "start_incomplete" };
+  }
+
+  if (!flowId.startsWith(BROWSE_FLOW_ID_PREFIX)) {
+    return { ok: false, code: "browse_start_not_browse_flow" };
+  }
+
+  if (flowId.startsWith(PURCHASE_FLOW_ID_PREFIX)) {
+    return { ok: false, code: "browse_start_purchase_flow_leak" };
+  }
+
+  if (policyId && policyId !== BROWSE_POLICY_ID) {
+    return { ok: false, code: "browse_start_wrong_policy" };
+  }
+
+  if (purpose && purpose !== "browse") {
+    return { ok: false, code: "browse_start_wrong_purpose" };
+  }
+
+  const normalizedUrl = verifyUrl.toLowerCase();
+  if (normalizedUrl.includes(PURCHASE_POLICY_ID)) {
+    return { ok: false, code: "browse_start_retail_policy" };
+  }
+
+  if (normalizedUrl.includes(PURCHASE_CALLBACK_PATH)) {
+    return { ok: false, code: "browse_start_purchase_callback" };
+  }
+
+  if (!normalizedUrl.includes(BROWSE_POLICY_ID)) {
+    return { ok: false, code: "browse_start_missing_browse_policy" };
+  }
+
+  if (!normalizedUrl.includes("purpose=browse")) {
+    return { ok: false, code: "browse_start_missing_purpose" };
+  }
+
+  if (!normalizedUrl.includes(BROWSE_CALLBACK_PATH)) {
+    return { ok: false, code: "browse_start_missing_browse_callback" };
+  }
+
+  return { ok: true, result };
+}
+
+/**
  * @param {{
  *   setAbraxasButtonEnabled: (enabled: boolean) => void | Promise<void>,
  *   setAbraxasButtonLabel: (label: string) => void,
@@ -123,6 +211,7 @@ export function safeStartErrorMessage(code) {
  *   getViewMode?: () => string | Promise<string>,
  *   persistTraditionalAgeAttestation?: (storage: Storage) => void,
  *   onTraditionalYesComplete?: () => void | Promise<void>,
+ *   clearStalePurchaseArtifacts?: () => void,
  *   storage?: Storage,
  * }} deps
  */
@@ -195,22 +284,23 @@ export function createPopupController(deps) {
         return { ok: false, code: "session_storage_unavailable" };
       }
 
+      if (deps.clearStalePurchaseArtifacts) {
+        deps.clearStalePurchaseArtifacts();
+      }
+
       try {
         const result = await deps.startAbraxasVerification();
 
-        if (result?.error) {
-          const code = ALLOWLISTED_START_ERROR_CODES.has(result.error)
-            ? result.error
+        const validated = validateBrowseVerificationStart(result);
+        if (!validated.ok) {
+          const code = ALLOWLISTED_START_ERROR_CODES.has(validated.code)
+            ? validated.code
             : "start_failed";
           await enterRecoverableError(code);
           return { ok: false, code };
         }
 
-        const { verifyUrl, flowId, verifier } = result;
-        if (!verifyUrl || !flowId || !verifier) {
-          await enterRecoverableError("start_incomplete");
-          return { ok: false, code: "start_incomplete" };
-        }
+        const { verifyUrl, flowId, verifier } = validated.result;
 
         const viewMode = deps.getViewMode ? await deps.getViewMode() : "Site";
         if (isEditorPreviewViewMode(viewMode)) {

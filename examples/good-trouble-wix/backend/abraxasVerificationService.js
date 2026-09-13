@@ -4,7 +4,11 @@
 import { fetchAndValidateSandboxReceipt } from "./abraxasReceiptValidator.js";
 import { verifyBrowseReceiptRemotely } from "./browseReceiptRemoteValidator.js";
 import { authorizeCaptchaToken } from "./captchaGate.js";
-import { MAX_OUTSTANDING_PENDING_FLOWS } from "./constants.js";
+import {
+  BROWSE_POLICY_ID,
+  FLOW_ID_PREFIX_BROWSE,
+  MAX_OUTSTANDING_PENDING_FLOWS,
+} from "./constants.js";
 import {
   buildFlowStartFailure,
   buildFlowStartSuccess,
@@ -141,7 +145,33 @@ async function startFlow(purpose, captchaToken, deps = {}) {
 }
 
 export async function createBrowseVerificationStartService(captchaToken, deps = {}) {
-  return startFlow("browse", captchaToken, deps);
+  const result = await startFlow("browse", captchaToken, deps);
+  if (result.error) return result;
+
+  const flowId = typeof result.flowId === "string" ? result.flowId : "";
+  const policyId = typeof result.policyId === "string" ? result.policyId : "";
+  const purpose = typeof result.purpose === "string" ? result.purpose : "";
+  const verifyUrl = typeof result.verifyUrl === "string" ? result.verifyUrl : "";
+
+  if (
+    purpose !== "browse"
+    || policyId !== BROWSE_POLICY_ID
+    || !flowId.startsWith(FLOW_ID_PREFIX_BROWSE)
+    || !verifyUrl.includes(BROWSE_POLICY_ID)
+    || !verifyUrl.includes("purpose=browse")
+    || verifyUrl.includes("good-trouble-retail-v1")
+    || verifyUrl.includes("age-verification-result")
+  ) {
+    return buildFlowStartFailure({
+      code: "start_internal_error",
+      stage: FLOW_START_STAGES.RESPONSE_BUILD,
+      purpose: "browse",
+      policyId: BROWSE_POLICY_ID,
+      correlationId: result.correlationId ?? null,
+    });
+  }
+
+  return result;
 }
 
 export async function createPurchaseVerificationStartService(captchaToken, deps = {}) {
