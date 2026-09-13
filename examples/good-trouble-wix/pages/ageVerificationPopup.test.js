@@ -5,7 +5,11 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import {
   ABRAXAS_LABEL,
   ABRAXAS_LABEL_STARTING,
+  BROWSE_POLICY_ID,
   POPUP_STATE,
+  PURCHASE_CALLBACK_PATH,
+  PURCHASE_FLOW_ID_PREFIX,
+  PURCHASE_POLICY_ID,
   STATUS_GENERIC_FAILURE,
   STATUS_PREVIEW_PASSED,
   STATUS_READY,
@@ -17,6 +21,7 @@ import {
   createPopupInitializationGuard,
   isEditorPreviewViewMode,
   persistTraditionalAgeAttestation,
+  validateBrowseVerificationStart,
 } from "./ageVerificationPopupLogic.js";
 
 const POPUP_SOURCE = readFileSync(
@@ -59,10 +64,28 @@ describe("Wix deployment contract", () => {
   it("starts browse Abraxas with no client arguments and wixLocationFrontend.to navigation", () => {
     expect(POPUP_SOURCE).toContain("createBrowseVerificationStart()");
     expect(POPUP_SOURCE).not.toMatch(/createBrowseVerificationStart\([^)]+\)/);
+    expect(POPUP_SOURCE).not.toContain("createPurchaseVerificationStart");
+    expect(POPUP_SOURCE).not.toContain("createAbraxasVerificationStart");
     expect(POPUP_SOURCE).toContain("wix-location-frontend");
     expect(POPUP_SOURCE).toContain("wixLocationFrontend.to(url)");
     expect(POPUP_SOURCE).not.toContain("window.location.href");
     expect(POPUP_SOURCE).not.toContain("browse-verification-result");
+    expect(POPUP_SOURCE).toContain("clearStalePurchaseArtifacts");
+  });
+
+  it("regression: homepage popup must never start purchase lifecycle artifacts", () => {
+    expect(POPUP_SOURCE).not.toContain(PURCHASE_POLICY_ID);
+    expect(POPUP_SOURCE).not.toContain(PURCHASE_CALLBACK_PATH);
+    expect(POPUP_SOURCE).not.toContain(`${PURCHASE_FLOW_ID_PREFIX}`);
+    expect(LOGIC_SOURCE).not.toContain("createPurchaseVerificationStart");
+    expect(LOGIC_SOURCE).not.toContain("createAbraxasVerificationStart");
+    expect(validateBrowseVerificationStart({
+      verifyUrl: `https://abraxasworld.xyz/partner/verify?partner_id=good-trouble-cannabis&policy_id=${PURCHASE_POLICY_ID}&return_url=https%3A%2F%2Fwww.goodtroublecanna.com%2F${PURCHASE_CALLBACK_PATH}`,
+      flowId: `${PURCHASE_FLOW_ID_PREFIX}${"a".repeat(64)}`,
+      verifier: "b".repeat(64),
+      policyId: PURCHASE_POLICY_ID,
+      purpose: "purchase",
+    }).ok).toBe(false);
   });
 
   it("awaits Wix enable/disable without enable-then-disable", () => {
@@ -114,16 +137,24 @@ function createMemoryStorage() {
   };
 }
 
+function buildBrowseStartFixture() {
+  const flowId = "gtb_" + "a".repeat(64);
+  return {
+    verifyUrl: `https://abraxasworld.xyz/partner/verify?partner_id=good-trouble-cannabis&policy_id=${BROWSE_POLICY_ID}&purpose=browse&return_url=https%3A%2F%2Fwww.goodtroublecanna.com%2Fbrowse-verification-result%3Fgtb%3D${flowId}`,
+    flowId,
+    verifier: "b".repeat(64),
+    policyId: BROWSE_POLICY_ID,
+    purpose: "browse",
+  };
+}
+
 function createDeps(overrides = {}) {
   return {
     setAbraxasButtonEnabled: vi.fn(async () => {}),
     setAbraxasButtonLabel: vi.fn(),
     setStatus: vi.fn(),
-    startAbraxasVerification: vi.fn(async () => ({
-      verifyUrl: "https://abraxasworld.xyz/partner/verify?x=1",
-      flowId: "gtf_" + "a".repeat(64),
-      verifier: "b".repeat(64),
-    })),
+    startAbraxasVerification: vi.fn(async () => buildBrowseStartFixture()),
+    clearStalePurchaseArtifacts: vi.fn(),
     sessionStorageAvailable: () => true,
     storeVerifier: vi.fn(),
     navigateToVerifyUrl: vi.fn(),
@@ -194,11 +225,7 @@ describe("ageVerificationPopupLogic state machine", () => {
     expect(deps.setStatus).toHaveBeenCalledWith(STATUS_STARTING);
     expect(controller.getState()).toBe(POPUP_STATE.STARTING_BACKEND);
 
-    resolveStart?.({
-      verifyUrl: "https://abraxasworld.xyz/partner/verify?x=1",
-      flowId: "gtf_" + "a".repeat(64),
-      verifier: "b".repeat(64),
-    });
+    resolveStart?.(buildBrowseStartFixture());
     await pending;
   });
 
@@ -237,11 +264,7 @@ describe("ageVerificationPopupLogic state machine", () => {
       expect(deps.startAbraxasVerification).toHaveBeenCalledTimes(1);
     });
 
-    resolveStart?.({
-      verifyUrl: "https://abraxasworld.xyz/partner/verify?x=1",
-      flowId: "gtf_" + "a".repeat(64),
-      verifier: "b".repeat(64),
-    });
+    resolveStart?.(buildBrowseStartFixture());
     await first;
   });
 
@@ -298,11 +321,7 @@ describe("async Abraxas button enable/disable ordering", () => {
       }),
       startAbraxasVerification: vi.fn(async () => {
         operationOrder.push("backend_start");
-        return {
-          verifyUrl: "https://abraxasworld.xyz/partner/verify?x=1",
-          flowId: "gtf_" + "a".repeat(64),
-          verifier: "b".repeat(64),
-        };
+        return buildBrowseStartFixture();
       }),
     });
     const controller = createPopupController(deps);

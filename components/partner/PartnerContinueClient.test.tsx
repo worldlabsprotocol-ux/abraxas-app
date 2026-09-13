@@ -5,7 +5,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import {
   GOOD_TROUBLE_BROWSE_CHECKING_STATE,
-  GOOD_TROUBLE_BROWSE_DOB_HEADING,
   GOOD_TROUBLE_BROWSE_EYEBROW,
   GOOD_TROUBLE_BROWSE_HEADING,
   GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON,
@@ -107,9 +106,9 @@ describe("PartnerContinueClient Good Trouble browse journey", () => {
     expect(screen.getByText(GOOD_TROUBLE_BROWSE_SUPPORTING)).toBeTruthy();
 
     await waitFor(() => {
-      expect(screen.getByText(GOOD_TROUBLE_BROWSE_DOB_HEADING)).toBeTruthy();
+      expect(screen.getByRole("button", { name: GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON })).toBeTruthy();
     });
-    expect(screen.getByRole("button", { name: GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON })).toBeTruthy();
+    expect(screen.getByLabelText("Month")).toBeTruthy();
     expect(screen.queryByText("Return pending")).toBeNull();
     expect(screen.queryByText("PartnerFlowReturnHandler")).toBeNull();
   });
@@ -118,7 +117,7 @@ describe("PartnerContinueClient Good Trouble browse journey", () => {
     const { container } = render(<PartnerContinueClient />);
 
     await waitFor(() => {
-      expect(screen.getByText(GOOD_TROUBLE_BROWSE_DOB_HEADING)).toBeTruthy();
+      expect(screen.getByRole("button", { name: GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON })).toBeTruthy();
     });
 
     const text = container.textContent ?? "";
@@ -138,7 +137,7 @@ describe("PartnerContinueClient Good Trouble browse journey", () => {
     render(<PartnerContinueClient />);
 
     await waitFor(() => {
-      expect(screen.getByText(GOOD_TROUBLE_BROWSE_DOB_HEADING)).toBeTruthy();
+      expect(screen.getByRole("button", { name: GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON })).toBeTruthy();
     });
   });
 
@@ -170,7 +169,7 @@ describe("PartnerContinueClient Good Trouble browse journey", () => {
     await waitFor(() => {
       expect(screen.getByText(/Verify eligibility for purchase/i)).toBeTruthy();
     });
-    expect(screen.queryByText(GOOD_TROUBLE_BROWSE_DOB_HEADING)).toBeNull();
+    expect(screen.queryByRole("button", { name: GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON })).toBeNull();
     expect(screen.queryByText("Return pending")).toBeNull();
   });
 
@@ -233,7 +232,7 @@ describe("PartnerContinueClient Good Trouble browse journey", () => {
     resolveReuse(new Response(JSON.stringify({ ok: false }), { status: 404 }));
 
     await waitFor(() => {
-      expect(screen.getByText(GOOD_TROUBLE_BROWSE_DOB_HEADING)).toBeTruthy();
+      expect(screen.getByRole("button", { name: GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON })).toBeTruthy();
     });
   });
 });

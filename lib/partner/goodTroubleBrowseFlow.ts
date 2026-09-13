@@ -27,25 +27,22 @@ export const GOOD_TROUBLE_BROWSE_STATUS =
 /** Minimal /partner/continue browse screen copy. */
 export const GOOD_TROUBLE_BROWSE_EYEBROW = "PRIVATE AGE CHECK";
 
-export const GOOD_TROUBLE_BROWSE_HEADING = "Continue to Good Trouble";
+export const GOOD_TROUBLE_BROWSE_HEADING = "Confirm you're 21+";
 
 export const GOOD_TROUBLE_BROWSE_SUPPORTING =
-  "Enter your birthday once. Good Trouble receives only a yes-or-no 21+ result.";
+  "Enter your birthday once. Good Trouble receives only a yes-or-no result.";
 
 export const GOOD_TROUBLE_BROWSE_DOB_HEADING = "Enter your birthday";
-
-export const GOOD_TROUBLE_BROWSE_DOB_EXPLANATION =
-  "We keep only whether you're 21 or older, so future visits are faster.";
 
 export const GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON = "Continue";
 
 export const GOOD_TROUBLE_BROWSE_TRADITIONAL_FALLBACK =
   "Use Good Trouble's age check";
 
-export const GOOD_TROUBLE_BROWSE_CHECKING_STATE = "Checking your Passport…";
+export const GOOD_TROUBLE_BROWSE_CHECKING_STATE = "Checking your age…";
 
 export const GOOD_TROUBLE_BROWSE_SUCCESS_STATE =
-  "You're confirmed. Returning to Good Trouble…";
+  "Confirmed. Returning to Good Trouble…";
 
 export const GOOD_TROUBLE_BROWSE_PROHIBITED_UI_PHRASES = [
   "Return pending",

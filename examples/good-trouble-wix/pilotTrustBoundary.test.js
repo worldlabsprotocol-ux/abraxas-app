@@ -49,8 +49,8 @@ describe("good_trouble purchase verified pilot trust boundary", () => {
   it("is not used in popup start path (traditional yesButton remains separate)", () => {
     const popupSource = readFileSync(join(ROOT, "pages/AgeVerificationPopup.js"), "utf8");
     const logicSource = readFileSync(join(ROOT, "pages/ageVerificationPopupLogic.js"), "utf8");
-    expect(popupSource).not.toContain(PURCHASE_VERIFIED_SESSION_FLAG);
-    expect(logicSource).not.toContain(PURCHASE_VERIFIED_SESSION_FLAG);
+    expect(popupSource).not.toMatch(/setItem\([^)]*PURCHASE_VERIFIED_SESSION_FLAG/);
+    expect(logicSource).not.toMatch(/setItem\([^)]*good_trouble_purchase_verified_pilot/);
     expect(popupSource).toContain("#yesButton");
     expect(popupSource).toContain("#noButton");
     expect(popupSource).not.toContain("good_trouble_age_verified_pilot");
@@ -86,8 +86,8 @@ describe("good_trouble purchase verified pilot trust boundary", () => {
     const popupSource = readFileSync(join(ROOT, "pages/AgeVerificationPopup.js"), "utf8");
     const logicSource = readFileSync(join(ROOT, "pages/ageVerificationPopupLogic.js"), "utf8");
     const webSource = readFileSync(join(BACKEND_DIR, "abraxasVerification.web.js"), "utf8");
-    expect(popupSource).not.toContain(PURCHASE_VERIFIED_SESSION_FLAG);
-    expect(logicSource).not.toContain(PURCHASE_VERIFIED_SESSION_FLAG);
+    expect(popupSource).not.toMatch(/setItem\([^)]*PURCHASE_VERIFIED_SESSION_FLAG/);
+    expect(logicSource).not.toMatch(/setItem\([^)]*good_trouble_purchase_verified_pilot/);
     expect(webSource).not.toContain(PURCHASE_VERIFIED_SESSION_FLAG);
     expect(logicSource).not.toMatch(/verified:\s*true/);
   });
@@ -95,7 +95,8 @@ describe("good_trouble purchase verified pilot trust boundary", () => {
   it("uses traditional self-attestation localStorage only — not Abraxas pilot flag", () => {
     const logicSource = readFileSync(join(ROOT, "pages/ageVerificationPopupLogic.js"), "utf8");
     expect(logicSource).toContain("good_trouble_age_self_attested");
-    expect(logicSource).not.toContain("good_trouble_purchase_verified_pilot");
+    expect(logicSource).not.toMatch(/setItem\([^)]*good_trouble_purchase_verified_pilot/);
+    expect(logicSource).toContain("PURCHASE_SESSION_KEYS_TO_CLEAR");
   });
 
   it("does not appear anywhere else in the repository backend", () => {
