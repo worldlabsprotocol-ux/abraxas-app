@@ -60,7 +60,7 @@ export function buildPartnerFlowCompleteBody(
   const body: PartnerFlowCompleteBody = {
     partner_id: ctx.partnerId,
     policy_id: ctx.policyId,
-    return_url: decodeURIComponent(ctx.returnPath),
+    return_url: ctx.returnPath,
   };
 
   if (ctx.verificationRequestId) {

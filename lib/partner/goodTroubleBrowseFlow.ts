@@ -24,6 +24,38 @@ export const GOOD_TROUBLE_BROWSE_INTRO =
 export const GOOD_TROUBLE_BROWSE_STATUS =
   "Good Trouble receives only a yes-or-no 21+ result.";
 
+/** Minimal /partner/continue browse screen copy. */
+export const GOOD_TROUBLE_BROWSE_EYEBROW = "PRIVATE AGE CHECK";
+
+export const GOOD_TROUBLE_BROWSE_HEADING = "Continue to Good Trouble";
+
+export const GOOD_TROUBLE_BROWSE_SUPPORTING =
+  "Good Trouble receives only a yes-or-no 21+ result.";
+
+export const GOOD_TROUBLE_BROWSE_DOB_HEADING = "Enter your birthday";
+
+export const GOOD_TROUBLE_BROWSE_DOB_EXPLANATION =
+  "We keep only whether you're 21 or older, so future visits are faster.";
+
+export const GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON = "Create my Passport";
+
+export const GOOD_TROUBLE_BROWSE_CHECKING_STATE = "Checking your Passport…";
+
+export const GOOD_TROUBLE_BROWSE_SUCCESS_STATE =
+  "You're confirmed. Returning to Good Trouble…";
+
+export const GOOD_TROUBLE_BROWSE_PROHIBITED_UI_PHRASES = [
+  "Return pending",
+  "Complete the steps above",
+  "Signing in confirms your account only",
+  "wallet binding",
+  "assurance level",
+  "self-attestation",
+  "L0",
+  "policy result",
+  "verification requirement",
+] as const;
+
 /** Sign-in screen copy for the DOB-first browse journey (before Google/zkLogin). */
 export const GOOD_TROUBLE_BROWSE_SIGN_IN_INTRO =
   "Create a private Passport for faster future access.";

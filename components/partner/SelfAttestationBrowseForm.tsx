@@ -3,8 +3,13 @@
 // Good Trouble browse DOB-first setup — full DOB not retained client-side after submit.
 
 import { useCallback, useEffect, useId, useState } from "react";
-import { Btn } from "@/components/redesign/ui";
-import { StatusBanner } from "@/components/ui/StatusBanner";
+import {
+  GOOD_TROUBLE_BROWSE_CHECKING_STATE,
+  GOOD_TROUBLE_BROWSE_DOB_EXPLANATION,
+  GOOD_TROUBLE_BROWSE_DOB_HEADING,
+  GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON,
+  GOOD_TROUBLE_BROWSE_SUCCESS_STATE,
+} from "@/lib/partner/goodTroubleBrowseFlow";
 import { GOOD_TROUBLE_BROWSE_POLICY_ID } from "@/lib/goodTrouble/constants";
 
 export interface SelfAttestationBrowseFormProps {
@@ -12,6 +17,7 @@ export interface SelfAttestationBrowseFormProps {
   policyId?: string;
   partnerName: string;
   returnUrl: string;
+  partnerHomeUrl?: string | null;
   onConfirmed?: () => void;
   onUnder21?: () => void;
 }
@@ -57,6 +63,7 @@ export function SelfAttestationBrowseForm({
   policyId = GOOD_TROUBLE_BROWSE_POLICY_ID,
   partnerName,
   returnUrl,
+  partnerHomeUrl,
   onConfirmed,
   onUnder21,
 }: SelfAttestationBrowseFormProps) {
@@ -194,37 +201,38 @@ export function SelfAttestationBrowseForm({
   }
 
   if (checkingReuse) {
-    return <p role="status">Loading…</p>;
+    return <p role="status">{GOOD_TROUBLE_BROWSE_CHECKING_STATE}</p>;
   }
 
   if (result?.ok && result.age_band === "over_21") {
-    return (
-      <StatusBanner tone="success" title="Your Passport is ready">
-        You're confirmed as 21+. Your private Abraxas profile and wallet are ready for future visits.
-        {returnUrl && (
-          <div style={{ marginTop: "0.75rem" }}>
-            <Btn variant="secondary" onClick={() => { window.location.href = returnUrl; }}>
-              Continue to {partnerName}
-            </Btn>
-          </div>
-        )}
-      </StatusBanner>
-    );
+    return <p role="status">{GOOD_TROUBLE_BROWSE_SUCCESS_STATE}</p>;
   }
 
   if (result?.ok && result.age_band === "under_21") {
     return (
-      <StatusBanner tone="info" title="You must be 21+">
-        You must be 21 or older to continue.
-      </StatusBanner>
+      <div>
+        <p role="alert" style={{ margin: "0 0 0.75rem", fontSize: "0.9rem", lineHeight: 1.6 }}>
+          You must be 21 or older to continue.
+        </p>
+        {partnerHomeUrl && (
+          <a
+            href={partnerHomeUrl}
+            style={{ fontSize: "0.86rem", color: "var(--text-secondary, #d1d5db)", textDecoration: "underline" }}
+          >
+            Back to {partnerName}
+          </a>
+        )}
+      </div>
     );
   }
 
   return (
     <form onSubmit={(e) => void handleSubmit(e)} noValidate autoComplete="off" data-form-type="other">
-      <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.05rem" }}>Enter your birthday</h2>
+      <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.05rem" }}>
+        {GOOD_TROUBLE_BROWSE_DOB_HEADING}
+      </h2>
       <p style={{ margin: "0 0 1rem", fontSize: "0.9rem", lineHeight: 1.6 }}>
-        We&apos;ll keep only whether you&apos;re 21 or older, making future visits faster.
+        {GOOD_TROUBLE_BROWSE_DOB_EXPLANATION}
       </p>
 
       <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1rem" }}>
@@ -310,8 +318,19 @@ export function SelfAttestationBrowseForm({
           opacity: busy ? 0.55 : 1,
         }}
       >
-        {busy ? "Creating…" : "Create my Passport"}
+        {busy ? "Creating…" : GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON}
       </button>
+
+      {partnerHomeUrl && (
+        <p style={{ marginTop: "1rem" }}>
+          <a
+            href={partnerHomeUrl}
+            style={{ fontSize: "0.86rem", color: "var(--text-secondary, #d1d5db)", textDecoration: "underline" }}
+          >
+            Back to {partnerName}
+          </a>
+        </p>
+      )}
 
       {error && (
         <p role="alert" style={{ marginTop: "0.75rem", color: "var(--text-secondary)" }}>{error}</p>

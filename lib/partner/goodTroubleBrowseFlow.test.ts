@@ -7,8 +7,13 @@ import {
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
 import {
+  GOOD_TROUBLE_BROWSE_DOB_HEADING,
+  GOOD_TROUBLE_BROWSE_EYEBROW,
+  GOOD_TROUBLE_BROWSE_HEADING,
   GOOD_TROUBLE_BROWSE_INTRO,
+  GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON,
   GOOD_TROUBLE_BROWSE_STATUS,
+  GOOD_TROUBLE_BROWSE_SUPPORTING,
   isGoodTroubleBrowseFlow,
 } from "./goodTroubleBrowseFlow";
 import {
@@ -81,22 +86,24 @@ describe("Good Trouble browse partner copy", () => {
 });
 
 describe("PartnerContinueClient Good Trouble browse deployment contract", () => {
-  it("renders DOB-first browse form directly after sign-in", () => {
+  it("resolves browse flow from verification request and renders DOB form directly", () => {
+    expect(PARTNER_CONTINUE_SOURCE).toContain("resolvePartnerContinueContext");
+    expect(PARTNER_CONTINUE_SOURCE).toContain("/api/v1/verification-requests/");
     expect(PARTNER_CONTINUE_SOURCE).toContain("SelfAttestationBrowseForm");
-    expect(PARTNER_CONTINUE_SOURCE).toContain("showDobFirstBrowseForm");
-    expect(PARTNER_CONTINUE_SOURCE).toContain("isGoodTroubleBrowseFlow");
+    expect(PARTNER_CONTINUE_SOURCE).toContain("isDobFirstBrowse");
+    expect(PARTNER_CONTINUE_SOURCE).toContain("GOOD_TROUBLE_BROWSE_EYEBROW");
+    expect(PARTNER_CONTINUE_SOURCE).toContain("GOOD_TROUBLE_BROWSE_HEADING");
   });
 
-  it("does not show wallet binding, ID upload, or purchase copy on browse flow", () => {
-    expect(PARTNER_CONTINUE_SOURCE).toContain("!isDobFirstBrowse");
-    expect(PARTNER_CONTINUE_SOURCE).toContain("setupVisibility.showWalletBinding");
-    expect(PARTNER_CONTINUE_SOURCE).toContain("setupVisibility.showIdentityVerification");
-    expect(PARTNER_CONTINUE_SOURCE).not.toContain("Use the traditional partner option");
+  it("never renders PartnerFlowReturnHandler on the browse path", () => {
+    const browseBranch = PARTNER_CONTINUE_SOURCE.split("if (isDobFirstBrowse)")[1]?.split("return (")[0] ?? "";
+    expect(browseBranch).not.toContain("PartnerFlowReturnHandler");
+    expect(PARTNER_CONTINUE_SOURCE).not.toContain("Return pending");
   });
 
   it("keeps regulated purchase verification path separate", () => {
     expect(PARTNER_CONTINUE_SOURCE).toContain("AgeAssuranceMethodChooser");
-    expect(PARTNER_CONTINUE_SOURCE).toContain('flowTier={flowTier}');
+    expect(PARTNER_CONTINUE_SOURCE).toContain("compactCheckout");
     expect(PARTNER_CONTINUE_SOURCE).toContain("GOOD_TROUBLE_RETAIL_POLICY_ID");
   });
 
@@ -124,18 +131,26 @@ describe("PartnerVerify sign-in deployment contract", () => {
 });
 
 describe("SelfAttestationBrowseForm customer copy", () => {
-  it("uses DOB-first plain language without technical jargon", () => {
-    expect(BROWSE_FORM_SOURCE).toContain("Enter your birthday");
-    expect(BROWSE_FORM_SOURCE).toContain("Create my Passport");
-    expect(BROWSE_FORM_SOURCE).toContain("Your Passport is ready");
-    expect(BROWSE_FORM_SOURCE).toContain("Continue to {partnerName}");
-    expect(BROWSE_FORM_SOURCE).toContain("You must be 21+");
+  it("uses the simplified browse copy without technical jargon", () => {
+    expect(BROWSE_FORM_SOURCE).toContain("GOOD_TROUBLE_BROWSE_DOB_HEADING");
+    expect(BROWSE_FORM_SOURCE).toContain("GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON");
+    expect(BROWSE_FORM_SOURCE).toContain("GOOD_TROUBLE_BROWSE_CHECKING_STATE");
+    expect(BROWSE_FORM_SOURCE).toContain("GOOD_TROUBLE_BROWSE_SUCCESS_STATE");
     expect(BROWSE_FORM_SOURCE).not.toContain("self-attestation");
     expect(BROWSE_FORM_SOURCE).not.toContain("assurance level");
-    expect(BROWSE_FORM_SOURCE).not.toContain("traditional partner option");
+    expect(BROWSE_FORM_SOURCE).not.toContain("Return pending");
+    expect(BROWSE_FORM_SOURCE).not.toContain("StatusBanner");
   });
 
   it("checks browse proof reuse before showing the DOB form", () => {
     expect(BROWSE_FORM_SOURCE).toContain("/api/age-assurance/browse-reuse");
+  });
+});
+
+describe("Good Trouble browse screen chrome", () => {
+  it("uses the minimal browse heading and supporting line", () => {
+    expect(GOOD_TROUBLE_BROWSE_EYEBROW).toBe("PRIVATE AGE CHECK");
+    expect(GOOD_TROUBLE_BROWSE_HEADING).toBe("Continue to Good Trouble");
+    expect(GOOD_TROUBLE_BROWSE_SUPPORTING).toBe(GOOD_TROUBLE_BROWSE_STATUS);
   });
 });
