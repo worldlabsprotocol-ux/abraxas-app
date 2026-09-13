@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
     policy_id?: string;
     permission?: string;
     permission_version?: string;
+    purpose?: string;
     return_url?: string;
   };
   try {
@@ -101,6 +102,7 @@ export async function POST(request: NextRequest) {
     const result = await evaluatePartnerFlow({
       partnerId,
       policyId,
+      purpose: body.purpose?.trim() || undefined,
       returnUrl,
       suiAddress: session.session.suiAddress,
       appOrigin: getPublicAppOriginFromRequest(request),

@@ -251,10 +251,10 @@ export function AgeAssuranceMethodChooser({
 
       <div>
         <Btn variant="secondary" onClick={onTraditionalReturn}>
-          Use the traditional partner option
+          Use {partnerName}&apos;s age check
         </Btn>
         <p style={{ margin: "0.5rem 0 0", fontSize: "0.82rem", color: "var(--text-muted)" }}>
-          Return to {partnerName} without Abraxas verification.
+          You&apos;ll return to {partnerName}.
         </p>
       </div>
 

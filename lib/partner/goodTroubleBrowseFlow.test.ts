@@ -99,6 +99,11 @@ describe("PartnerContinueClient Good Trouble browse deployment contract", () => 
     expect(PARTNER_CONTINUE_SOURCE).toContain('flowTier={flowTier}');
     expect(PARTNER_CONTINUE_SOURCE).toContain("GOOD_TROUBLE_RETAIL_POLICY_ID");
   });
+
+  it("returns the traditional fallback to the partner home page", () => {
+    expect(PARTNER_CONTINUE_SOURCE).toContain("window.location.assign(partnerHomeUrl)");
+    expect(PARTNER_CONTINUE_SOURCE).not.toContain("decodeURIComponent(returnPath)");
+  });
 });
 
 describe("PartnerVerify sign-in deployment contract", () => {
@@ -120,7 +125,7 @@ describe("PartnerVerify sign-in deployment contract", () => {
 
 describe("SelfAttestationBrowseForm customer copy", () => {
   it("uses DOB-first plain language without technical jargon", () => {
-    expect(BROWSE_FORM_SOURCE).toContain("Confirm you&apos;re 21+");
+    expect(BROWSE_FORM_SOURCE).toContain("Enter your birthday");
     expect(BROWSE_FORM_SOURCE).toContain("Create my Passport");
     expect(BROWSE_FORM_SOURCE).toContain("Your Passport is ready");
     expect(BROWSE_FORM_SOURCE).toContain("Continue to {partnerName}");

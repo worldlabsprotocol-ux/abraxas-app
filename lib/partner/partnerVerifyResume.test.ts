@@ -19,6 +19,13 @@ const SAMPLE = {
   returnUrl: "https://www.goodtroublecanna.com/age-verification-result?gtv=gtv_abc123",
 };
 
+const BROWSE_SAMPLE = {
+  partnerId: "good-trouble-cannabis",
+  policyId: "good-trouble-browse-v1",
+  purpose: "browse",
+  returnUrl: "https://www.goodtroublecanna.com/browse-verification-result?gtv=gtb_abc123",
+};
+
 describe("partnerVerifyResume", () => {
   beforeEach(() => {
     sessionStorage.clear();
@@ -44,6 +51,13 @@ describe("partnerVerifyResume", () => {
       return_url: SAMPLE.returnUrl,
     });
     expect(parsePartnerVerifyResumeParams(params)).toEqual(SAMPLE);
+  });
+
+  it("preserves browse purpose across the Google sign-in resume", () => {
+    savePartnerVerifyResume(BROWSE_SAMPLE);
+    const path = consumePartnerVerifyResumePath();
+    expect(path).toContain("policy_id=good-trouble-browse-v1");
+    expect(path).toContain("purpose=browse");
   });
 
   it("rejects incomplete partner verify links", () => {

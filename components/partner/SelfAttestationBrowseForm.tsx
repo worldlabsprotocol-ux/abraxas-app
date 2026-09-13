@@ -222,9 +222,9 @@ export function SelfAttestationBrowseForm({
 
   return (
     <form onSubmit={(e) => void handleSubmit(e)} noValidate autoComplete="off" data-form-type="other">
-      <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.05rem" }}>Confirm you&apos;re 21+</h2>
+      <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.05rem" }}>Enter your birthday</h2>
       <p style={{ margin: "0 0 1rem", fontSize: "0.9rem", lineHeight: 1.6 }}>
-        Enter your birthday once. We&apos;ll save only that you&apos;re 21 or older—not your birthday.
+        We&apos;ll keep only whether you&apos;re 21 or older, making future visits faster.
       </p>
 
       <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1rem" }}>

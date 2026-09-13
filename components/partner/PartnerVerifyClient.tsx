@@ -182,6 +182,7 @@ export function PartnerVerifyClient({
           permission: permission || undefined,
           permission_version: permissionVersion || undefined,
           policy_id: policyId || undefined,
+          purpose: purpose || undefined,
           return_url: returnUrl,
         }),
       });
@@ -258,6 +259,7 @@ export function PartnerVerifyClient({
     permission,
     permissionVersion,
     policyId,
+    purpose,
     returnUrl,
   ]);
 
