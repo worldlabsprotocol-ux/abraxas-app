@@ -15,6 +15,9 @@ export interface PartnerJourneyLayoutProps {
   partnerHomeUrl?: string | null;
   partnerReturnLabel?: string;
   showAccountFooter?: boolean;
+  eyebrow?: string;
+  title?: string;
+  hideStatus?: boolean;
   children: React.ReactNode;
 }
 
@@ -25,6 +28,9 @@ export function PartnerJourneyLayout({
   partnerHomeUrl,
   partnerReturnLabel,
   showAccountFooter = true,
+  eyebrow,
+  title,
+  hideStatus = false,
   children,
 }: PartnerJourneyLayoutProps) {
   return (
@@ -53,17 +59,21 @@ export function PartnerJourneyLayout({
       >
         <header style={{ marginBottom: "1.25rem" }}>
           <p style={{ margin: "0 0 0.35rem", fontSize: "0.72rem", letterSpacing: "0.12em", color: TEAL, fontWeight: 700 }}>
-            PARTNER VERIFICATION
+            {eyebrow ?? "PARTNER VERIFICATION"}
           </p>
           <h1 style={{ margin: "0 0 0.5rem", fontSize: "clamp(1.15rem, 3vw, 1.4rem)", fontWeight: 800, lineHeight: 1.25 }}>
-            Continue with {partnerName}
+            {title ?? `Continue with ${partnerName}`}
           </h1>
-          <p style={{ margin: "0 0 0.5rem", fontSize: "0.9rem", lineHeight: 1.6, color: "var(--text-secondary, #d1d5db)" }}>
-            {intro}
-          </p>
-          <p role="status" style={{ margin: 0, fontSize: "0.86rem", lineHeight: 1.55, color: "var(--text-muted, #b8c0cc)" }}>
-            {statusMessage}
-          </p>
+          {intro && (
+            <p style={{ margin: "0 0 0.5rem", fontSize: "0.9rem", lineHeight: 1.6, color: "var(--text-secondary, #d1d5db)" }}>
+              {intro}
+            </p>
+          )}
+          {!hideStatus && statusMessage && (
+            <p role="status" style={{ margin: 0, fontSize: "0.86rem", lineHeight: 1.55, color: "var(--text-muted, #b8c0cc)" }}>
+              {statusMessage}
+            </p>
+          )}
         </header>
 
         {children}

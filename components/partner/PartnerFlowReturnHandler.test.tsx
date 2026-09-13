@@ -19,7 +19,7 @@ const baseContext: PartnerFlowHandoffContext = {
   suiAddress: "0x1234567890abcdef1234567890abcdef12345678",
   identityStatus: "earned",
   hasCredential: true,
-  returnPath: encodeURIComponent("https://partner.example/callback"),
+  returnPath: "https://partner.example/callback",
   partnerId: "demo_partner",
   policyId: "demo-policy-v1",
   verificationRequestId: "vr_demo",
@@ -79,8 +79,8 @@ describe("buildPartnerFlowCompleteBody", () => {
 });
 
 describe("PartnerFlowReturnHandler", () => {
-  it("shows return pending when partner context exists but handoff is not ready", () => {
-    render(
+  it("renders nothing while partner handoff is not ready", () => {
+    const { container } = render(
       <HandoffHarness
         context={{
           ...baseContext,
@@ -90,7 +90,8 @@ describe("PartnerFlowReturnHandler", () => {
       />,
     );
 
-    expect(screen.getByText("Return pending")).toBeInTheDocument();
+    expect(screen.queryByText("Return pending")).not.toBeInTheDocument();
+    expect(container.querySelector('[role="status"]')).toBeNull();
   });
 
   it("renders nothing when partner context is absent", () => {

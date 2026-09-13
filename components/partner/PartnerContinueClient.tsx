@@ -21,7 +21,11 @@ import {
   resolvePartnerHomeUrl,
   resolvePartnerReturnLabel,
 } from "@/lib/partner/partnerVerifyDisplay";
-import { isGoodTroubleBrowseFlow } from "@/lib/partner/goodTroubleBrowseFlow";
+import {
+  GOOD_TROUBLE_BROWSE_EYEBROW,
+  GOOD_TROUBLE_BROWSE_HEADING,
+  GOOD_TROUBLE_BROWSE_SUPPORTING,
+} from "@/lib/partner/goodTroubleBrowseFlow";
 import {
   resolvePartnerHolderPresentation,
   type PartnerHolderState,
@@ -37,6 +41,10 @@ import {
 } from "@/lib/passport/passportCustomerCopy";
 import { shouldShowPartnerConsent } from "@/lib/partner/partnerConsentVisibility";
 import { resolvePartnerSetupVisibility } from "@/lib/partner/partnerSetupVisibility";
+import {
+  resolvePartnerContinueContext,
+  type ResolvedPartnerContinueContext,
+} from "@/lib/partner/resolvePartnerContinueContext";
 
 function resolveMinimumAge(policyId: string): number | null {
   if (policyId === GOOD_TROUBLE_RETAIL_POLICY_ID) return 21;
@@ -53,25 +61,73 @@ function PartnerContinueInner() {
   const [captureStarted, setCaptureStarted] = useState(false);
   const [showIdFallback, setShowIdFallback] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [contextLoading, setContextLoading] = useState(true);
+  const [flowContext, setFlowContext] = useState<ResolvedPartnerContinueContext | null>(null);
 
   const verifyRequestId = searchParams.get("verify_request");
-  const partnerId = searchParams.get("partner_id") ?? "";
-  const policyId = searchParams.get("policy_id") ?? "";
+  const urlPartnerId = searchParams.get("partner_id") ?? "";
+  const urlPolicyId = searchParams.get("policy_id") ?? "";
+  const urlPurpose = searchParams.get("purpose");
   const returnPath = searchParams.get("return");
   const ageAssuranceStatus = searchParams.get("age_assurance");
-  const purposeParam = searchParams.get("purpose");
-  // useSearchParams already decodes query values. Decoding a second time can
-  // corrupt a partner callback URL that legitimately contains percent escapes.
   const decodedReturnUrl = returnPath ?? "";
 
-  const isBrowseFlow =
-    purposeParam === "browse" || policyId === GOOD_TROUBLE_BROWSE_POLICY_ID;
-  const flowTier: "browse" | "checkout" = isBrowseFlow ? "browse" : "checkout";
-  const isDobFirstBrowse = isGoodTroubleBrowseFlow({
-    partnerId,
-    policyId,
-    purpose: purposeParam,
-  });
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadContext() {
+      const urlContext = {
+        partnerId: urlPartnerId,
+        policyId: urlPolicyId,
+        purpose: urlPurpose,
+        returnUrl: decodedReturnUrl,
+        verifyRequestId,
+      };
+
+      if (!verifyRequestId) {
+        if (!cancelled) {
+          setFlowContext(resolvePartnerContinueContext(urlContext));
+          setContextLoading(false);
+        }
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/v1/verification-requests/${verifyRequestId}`, {
+          credentials: "include",
+        });
+        if (res.ok) {
+          const preview = await res.json() as { partner_id?: string; policy_id?: string };
+          if (!cancelled) {
+            setFlowContext(resolvePartnerContinueContext(urlContext, {
+              partnerId: preview.partner_id ?? "",
+              policyId: preview.policy_id ?? "",
+            }));
+            setContextLoading(false);
+          }
+          return;
+        }
+      } catch {
+        // Fall back to URL params when preview is unavailable.
+      }
+
+      if (!cancelled) {
+        setFlowContext(resolvePartnerContinueContext(urlContext));
+        setContextLoading(false);
+      }
+    }
+
+    void loadContext();
+    return () => {
+      cancelled = true;
+    };
+  }, [verifyRequestId, urlPartnerId, urlPolicyId, urlPurpose, decodedReturnUrl]);
+
+  const partnerId = flowContext?.partnerId ?? urlPartnerId;
+  const policyId = flowContext?.policyId ?? urlPolicyId;
+  const purposeParam = flowContext?.purpose ?? urlPurpose;
+  const isDobFirstBrowse = flowContext?.isDobFirstBrowse ?? false;
+  const flowTier: "browse" | "checkout" = isDobFirstBrowse ? "browse" : "checkout";
 
   const {
     identityStatus,
@@ -102,7 +158,7 @@ function PartnerContinueInner() {
     suiAddress,
     identityStatus,
     hasCredential,
-    returnPath,
+    returnPath: decodedReturnUrl,
     partnerId,
     policyId,
     verificationRequestId: verifyRequestId,
@@ -231,24 +287,49 @@ function PartnerContinueInner() {
     }
   }
 
-  const statusMessage = isDobFirstBrowse
-    ? resolvePartnerContinuationStatus(partnerId, { policyId, purpose: purposeParam })
-    : holderState === "under_review"
+  if (isDobFirstBrowse) {
+    return (
+      <PartnerJourneyLayout
+        partnerName={partnerName}
+        intro={GOOD_TROUBLE_BROWSE_SUPPORTING}
+        statusMessage=""
+        eyebrow={GOOD_TROUBLE_BROWSE_EYEBROW}
+        title={GOOD_TROUBLE_BROWSE_HEADING}
+        hideStatus
+        showAccountFooter={false}
+      >
+        {authLoading || contextLoading ? (
+          <p role="status">Loading…</p>
+        ) : !suiAddress ? (
+          <p role="status">Return to the partner site and sign in again.</p>
+        ) : (
+          <SelfAttestationBrowseForm
+            partnerId={partnerId}
+            policyId={GOOD_TROUBLE_BROWSE_POLICY_ID}
+            partnerName={partnerName}
+            returnUrl={decodedReturnUrl}
+            partnerHomeUrl={partnerHomeUrl}
+          />
+        )}
+      </PartnerJourneyLayout>
+    );
+  }
+
+  const statusMessage = holderState === "under_review"
+    ? holderCopy.message
+    : holderState === "age_confirmed"
       ? holderCopy.message
-      : holderState === "age_confirmed"
-        ? holderCopy.message
-        : resolvePartnerContinuationStatus(partnerId, { policyId, purpose: purposeParam });
+      : resolvePartnerContinuationStatus(partnerId, { policyId, purpose: purposeParam });
 
   return (
     <PartnerJourneyLayout
       partnerName={partnerName}
       intro={resolvePartnerContinuationIntro(partnerId, { policyId, purpose: purposeParam })}
       statusMessage={statusMessage}
-      partnerHomeUrl={isDobFirstBrowse ? null : partnerHomeUrl}
-      partnerReturnLabel={isDobFirstBrowse ? undefined : returnLabel}
-      showAccountFooter={!isDobFirstBrowse}
+      partnerHomeUrl={partnerHomeUrl}
+      partnerReturnLabel={returnLabel}
     >
-      {authLoading ? (
+      {authLoading || contextLoading ? (
         <p role="status">Loading…</p>
       ) : !suiAddress ? (
         <StatusBanner tone="pending" title={holderCopy.title}>
@@ -256,9 +337,9 @@ function PartnerContinueInner() {
         </StatusBanner>
       ) : (
         <>
-          {!isDobFirstBrowse && <PartnerFlowReturnHandler handoff={handoff} />}
+          <PartnerFlowReturnHandler handoff={handoff} />
 
-          {!isDobFirstBrowse && showPartnerConsent && verifyRequestId && (
+          {showPartnerConsent && verifyRequestId && (
             <ConsentCeremony
               requestId={verifyRequestId}
               identityComplete
@@ -266,22 +347,13 @@ function PartnerContinueInner() {
             />
           )}
 
-          {setupVisibility.showDobFirstBrowseForm && (
-            <SelfAttestationBrowseForm
-              partnerId={partnerId}
-              policyId={GOOD_TROUBLE_BROWSE_POLICY_ID}
-              partnerName={partnerName}
-              returnUrl={decodedReturnUrl}
-            />
-          )}
-
-          {!isDobFirstBrowse && holderState === "under_review" && (
+          {holderState === "under_review" && (
             <StatusBanner tone="pending" title={holderCopy.title}>
               {holderCopy.message}
             </StatusBanner>
           )}
 
-          {!isDobFirstBrowse && holderState === "verification_expired" && (
+          {holderState === "verification_expired" && (
             <StatusBanner tone="info" title={holderCopy.title}>
               {holderCopy.message}
             </StatusBanner>
@@ -311,6 +383,7 @@ function PartnerContinueInner() {
                   ageAssuranceStatus={ageAssuranceStatus}
                   flowTier={flowTier}
                   browsePolicyId={GOOD_TROUBLE_BROWSE_POLICY_ID}
+                  compactCheckout
                   onFallbackId={() => setShowIdFallback(true)}
                   onTraditionalReturn={() => {
                     if (partnerHomeUrl) window.location.assign(partnerHomeUrl);
@@ -360,11 +433,11 @@ function PartnerContinueInner() {
             </div>
           )}
 
-          {!isDobFirstBrowse && setup.identityComplete && !handoff.ready && (
+          {setup.identityComplete && !handoff.ready && (
             <p role="status">{holderCopy.title}…</p>
           )}
 
-          {!isDobFirstBrowse && returnPath && handoff.ready && (
+          {returnPath && handoff.ready && (
             <div style={{ marginTop: "1rem" }}>
               <Btn
                 variant="secondary"
@@ -389,4 +462,3 @@ export function PartnerContinueClient() {
     </Suspense>
   );
 }
-

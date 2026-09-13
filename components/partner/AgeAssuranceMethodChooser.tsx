@@ -27,6 +27,8 @@ export interface AgeAssuranceMethodChooserProps {
   /** browse = tier 1 self-attest; checkout = tier 2 authoritative verification */
   flowTier?: "browse" | "checkout";
   browsePolicyId?: string;
+  /** Purchase flow: one action card without repeated privacy paragraphs. */
+  compactCheckout?: boolean;
 }
 
 type ProviderListResponse = {
@@ -47,6 +49,7 @@ export function AgeAssuranceMethodChooser({
   ageAssuranceStatus,
   flowTier = "checkout",
   browsePolicyId = GOOD_TROUBLE_BROWSE_POLICY_ID,
+  compactCheckout = false,
 }: AgeAssuranceMethodChooserProps) {
   const [loading, setLoading] = useState(true);
   const [providers, setProviders] = useState<AgeAssuranceProviderPublicMeta[]>([]);
@@ -178,6 +181,63 @@ export function AgeAssuranceMethodChooser({
       <StatusBanner tone="pending" title={copy.title}>
         {copy.message}
       </StatusBanner>
+    );
+  }
+
+  if (compactCheckout) {
+    const primaryProvider = providers[0];
+    const primaryTitle = existingEligible
+      ? copy.title
+      : primaryProvider
+        ? resolvePartnerHolderPresentation("choose_private_method", partnerName).title
+        : checkoutCopy.title;
+    const primaryMessage = existingEligible
+      ? copy.message
+      : primaryProvider
+        ? resolvePartnerHolderPresentation("choose_private_method", partnerName).message
+        : checkoutCopy.message;
+
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <div>
+          <p style={{ margin: 0, fontWeight: 600, fontSize: "1rem" }}>{primaryTitle}</p>
+          <p style={{ margin: "0.5rem 0 0", fontSize: "0.9rem", lineHeight: 1.6 }}>{primaryMessage}</p>
+        </div>
+
+        {holderState === "verification_could_not_confirm" && (
+          <StatusBanner tone="info" title={copy.title}>
+            {copy.message}
+          </StatusBanner>
+        )}
+
+        {existingEligible ? (
+          <Btn disabled={busy !== null} onClick={() => void reuseExistingProof()}>
+            {busy === "reuse" ? "Confirming…" : "Use my existing Abraxas age proof"}
+          </Btn>
+        ) : primaryProvider ? (
+          <Btn disabled={busy !== null} onClick={() => void startProvider(primaryProvider.id)}>
+            {busy === primaryProvider.id ? "Starting…" : primaryProvider.displayName}
+          </Btn>
+        ) : (
+          <Btn variant="secondary" onClick={onFallbackId}>
+            {resolvePartnerHolderPresentation("id_upload_fallback", partnerName).action_label}
+          </Btn>
+        )}
+
+        {!existingEligible && primaryProvider && (
+          <Btn variant="secondary" onClick={onFallbackId}>
+            Verify with ID instead
+          </Btn>
+        )}
+
+        <Btn variant="secondary" onClick={onTraditionalReturn}>
+          Use {partnerName}&apos;s age check
+        </Btn>
+
+        {error && (
+          <p role="alert" style={{ color: "var(--text-secondary)" }}>{error}</p>
+        )}
+      </div>
     );
   }
 

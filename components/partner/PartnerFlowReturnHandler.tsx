@@ -20,17 +20,7 @@ export function PartnerFlowReturnHandler({ handoff }: Props) {
 
   if (!handoff.isPartnerFlowContext) return null;
 
-  if (!handoff.ready) {
-    return (
-      <div style={{ marginBottom: "1.25rem" }}>
-        <StatusBanner tone="pending" title="Return pending">
-          Finish the steps above. Abraxas will complete the partner handoff automatically when your Passport is ready.
-        </StatusBanner>
-      </div>
-    );
-  }
-
-  if (handoff.phase === "idle") return null;
+  if (!handoff.ready || handoff.phase === "idle") return null;
 
   if (handoff.phase === "completing") {
     return (
