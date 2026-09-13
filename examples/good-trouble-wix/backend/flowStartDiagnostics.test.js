@@ -5,6 +5,8 @@ import {
   ALLOWLISTED_FLOW_START_ERROR_CODES,
   buildFlowStartFailure,
   buildFlowStartSuccess,
+  isFlowStartFailure,
+  isFlowStartSuccess,
   logFlowStartFailure,
   mapThrownErrorToStartCode,
 } from "./flowStartDiagnostics.js";
@@ -78,9 +80,25 @@ describe("flowStartDiagnostics", () => {
       correlationId: "corr_2",
     });
 
-    expect(success.verifyUrl).toContain("/partner/verify");
-    expect(success.flowId).toMatch(/^gtf_[a-f0-9]{64}$/);
-    expect(success.verifier).toHaveLength(64);
-    expect(success.error).toBeUndefined();
+    expect(isFlowStartSuccess(success)).toBe(true);
+    expect(isFlowStartFailure(success)).toBe(false);
+    if (isFlowStartSuccess(success)) {
+      expect(success.verifyUrl).toContain("/partner/verify");
+      expect(success.flowId).toMatch(/^gtf_[a-f0-9]{64}$/);
+      expect(success.verifier).toHaveLength(64);
+    }
+  });
+
+  it("returns a failure union when success payload is incomplete", () => {
+    const incomplete = buildFlowStartSuccess({
+      verifyUrl: "",
+      flowId: "",
+      verifier: "",
+      purpose: "browse",
+      policyId: "good-trouble-browse-v1",
+    });
+
+    expect(isFlowStartFailure(incomplete)).toBe(true);
+    expect(isFlowStartSuccess(incomplete)).toBe(false);
   });
 });

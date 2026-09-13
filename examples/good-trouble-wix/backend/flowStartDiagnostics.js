@@ -5,6 +5,61 @@ import { BROWSE_FLOW, PURCHASE_FLOW } from "./flowPurpose.js";
 
 /** @typedef {"browse" | "purchase"} FlowPurpose */
 
+/**
+ * @typedef {object} FlowStartDiagnostic
+ * @property {string} code
+ * @property {string} stage
+ * @property {FlowPurpose} purpose
+ * @property {string} policyId
+ * @property {string | null} correlationId
+ */
+
+/**
+ * @typedef {object} FlowStartFailure
+ * @property {string} error
+ * @property {FlowStartDiagnostic} diagnostic
+ */
+
+/**
+ * @typedef {object} FlowStartSuccess
+ * @property {string} verifyUrl
+ * @property {string} flowId
+ * @property {string} verifier
+ * @property {FlowPurpose} purpose
+ * @property {string} policyId
+ * @property {string | null} [correlationId]
+ */
+
+/** @typedef {FlowStartSuccess | FlowStartFailure} FlowStartResult */
+
+/**
+ * @param {unknown} result
+ * @returns {result is FlowStartFailure}
+ */
+export function isFlowStartFailure(result) {
+  return Boolean(
+    result
+    && typeof result === "object"
+    && "error" in result
+    && typeof result.error === "string",
+  );
+}
+
+/**
+ * @param {unknown} result
+ * @returns {result is FlowStartSuccess}
+ */
+export function isFlowStartSuccess(result) {
+  return Boolean(
+    result
+    && typeof result === "object"
+    && !isFlowStartFailure(result)
+    && "verifyUrl" in result
+    && "flowId" in result
+    && "verifier" in result,
+  );
+}
+
 export const FLOW_START_STAGES = {
   CAPTCHA_GATE: "captcha_gate",
   CAPACITY_PRECHECK: "capacity_precheck",
@@ -90,6 +145,7 @@ export function logFlowStartFailure(entry) {
  *   policyId: string,
  *   correlationId?: string | null,
  * }} params
+ * @returns {FlowStartFailure}
  */
 export function buildFlowStartFailure(params) {
   const code = ALLOWLISTED_FLOW_START_ERROR_CODES.has(params.code)
@@ -125,6 +181,7 @@ export function buildFlowStartFailure(params) {
  *   policyId: string,
  *   correlationId?: string | null,
  * }} payload
+ * @returns {FlowStartResult}
  */
 export function buildFlowStartSuccess(payload) {
   if (!payload.verifyUrl || !payload.flowId || !payload.verifier) {

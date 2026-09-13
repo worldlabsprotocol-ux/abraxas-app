@@ -21,6 +21,7 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "."),
       "server-only": path.resolve(__dirname, "test/mocks/server-only.ts"),
+      "wix-data": path.resolve(__dirname, "test/mocks/wix-data.js"),
     },
   },
 });
