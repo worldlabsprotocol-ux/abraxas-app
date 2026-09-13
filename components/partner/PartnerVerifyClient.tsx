@@ -211,7 +211,11 @@ export function PartnerVerifyClient({
 
       if (data.next === "enter" && data.redirect_url) {
         setPhase("returning");
-        setStatusMessage(data.customer_message ?? "Returning to partner…");
+        setStatusMessage(
+          isDobFirstBrowse
+            ? "You're confirmed. Returning to Good Trouble…"
+            : (data.customer_message ?? "Returning to partner…"),
+        );
         try {
           window.location.assign(data.redirect_url);
         } catch {
@@ -222,8 +226,24 @@ export function PartnerVerifyClient({
       }
       if (data.next === "passport" && data.passport_url) {
         setPhase("returning");
-        setStatusMessage(data.customer_message ?? "Continuing verification…");
+        setStatusMessage(
+          isDobFirstBrowse
+            ? "Continuing to your birthday check…"
+            : (data.customer_message ?? "Continuing verification…"),
+        );
         window.location.assign(data.passport_url);
+        return;
+      }
+      if (data.next === "pending_review" && isDobFirstBrowse && data.passport_url) {
+        setPhase("returning");
+        setStatusMessage("Continuing to your birthday check…");
+        window.location.assign(data.passport_url);
+        return;
+      }
+      if (data.next === "pending_review" && isDobFirstBrowse) {
+        evaluateOnceRef.current = false;
+        setPhase("error");
+        setStatusMessage("Verification could not be completed.");
         return;
       }
       if (data.next === "pending_review") {
@@ -261,6 +281,7 @@ export function PartnerVerifyClient({
     policyId,
     purpose,
     returnUrl,
+    isDobFirstBrowse,
   ]);
 
   useEffect(() => {

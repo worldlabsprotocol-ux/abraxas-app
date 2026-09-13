@@ -42,6 +42,11 @@ import {
 } from "@/lib/partner/partnerFlowReceiptAccess";
 import { checkPartnerFlowRevocationGate } from "@/lib/partner/partnerFlowRevocationRuntime";
 import type { PartnerPolicyRules } from "@/lib/policy/types";
+import { isGoodTroubleBrowseFlow } from "@/lib/partner/goodTroubleBrowseFlow";
+import {
+  buildBrowseReturnUrl,
+  reuseBrowseSelfAttestation,
+} from "@/lib/assurance/selfAttestation/reuseBrowseSelfAttestation";
 
 const APP_URL = getPublicAppOrigin();
 const ISSUER = process.env.ABRAXAS_ISSUER_URL ?? APP_URL;
@@ -465,6 +470,74 @@ export async function startPartnerFlow(input: PartnerFlowStartInput): Promise<{
   return { partner_verify_url: partnerVerifyUrl };
 }
 
+/** Good Trouble L0 browse — self-attestation only; never purchase, ID, or manual review. */
+export async function evaluateGoodTroubleBrowseFlow(input: {
+  suiAddress: string;
+  partnerId: string;
+  policyId: string;
+  returnUrl: string;
+  appOrigin?: string;
+}): Promise<PartnerFlowEvaluateResult> {
+  const subject = normalizeSuiAddress(input.suiAddress);
+
+  const revoked = await denyIfPartnerFlowRevoked({
+    suiAddress: subject,
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    operation: "evaluate",
+  });
+  if (revoked) return revoked;
+
+  const reuse = await reuseBrowseSelfAttestation({
+    holderRef: subject,
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    returnUrl: input.returnUrl,
+  });
+
+  if (reuse.ok) {
+    const redirect_url = buildBrowseReturnUrl(input.returnUrl, {
+      browseReceipt: reuse.browse_receipt,
+      browseReceiptId: reuse.browse_receipt_id,
+      policyId: input.policyId,
+    });
+    const policy = await getPolicy(input.policyId);
+    if (redirect_url) {
+      return {
+        next: "enter",
+        redirect_url,
+        policy_version: policy?.version,
+      };
+    }
+  }
+
+  const policy = await getPolicy(input.policyId);
+  const request = await createVerificationRequest({
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    requestedAction: policy?.rules_json.product_eligibility_action ?? "partner_eligibility",
+    suiAddress: subject,
+    returnUrl: input.returnUrl,
+    appOrigin: input.appOrigin,
+  });
+
+  const passport_url = buildPassportUrl({
+    verificationRequestId: request.request_id,
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    returnUrl: input.returnUrl,
+    purpose: "browse",
+    appOrigin: input.appOrigin,
+  });
+
+  return {
+    next: "passport",
+    verification_request_id: request.request_id,
+    passport_url,
+    policy_version: policy?.version,
+  };
+}
+
 export async function evaluatePartnerFlow(input: {
   suiAddress?: string | null;
   partnerId: string;
@@ -479,6 +552,20 @@ export async function evaluatePartnerFlow(input: {
 
   if (!input.suiAddress) {
     return { next: "authenticate" };
+  }
+
+  if (isGoodTroubleBrowseFlow({
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    purpose: input.purpose,
+  })) {
+    return evaluateGoodTroubleBrowseFlow({
+      suiAddress: input.suiAddress,
+      partnerId: input.partnerId,
+      policyId: input.policyId,
+      returnUrl: input.returnUrl,
+      appOrigin: input.appOrigin,
+    });
   }
 
   const subject = normalizeSuiAddress(input.suiAddress);
@@ -714,9 +801,11 @@ export function resolvePartnerFlowStep(input: {
   credentialStatus: HolderCredentialStatus["status"];
   policyDecision: "approved" | "denied" | "manual_review";
   authenticated: boolean;
+  /** L0 browse flows skip ID pending-review routing. */
+  browseFlow?: boolean;
 }): PartnerFlowNextStep {
   if (!input.authenticated) return "authenticate";
-  if (input.credentialStatus === "pending_review") return "pending_review";
+  if (!input.browseFlow && input.credentialStatus === "pending_review") return "pending_review";
   if (input.credentialStatus === "active" && input.policyDecision === "approved") return "enter";
   if (input.credentialStatus === "active" && input.policyDecision === "denied") return "denied";
   if (input.credentialStatus === "active" && input.policyDecision === "manual_review") return "pending_review";

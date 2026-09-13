@@ -206,6 +206,29 @@ describe("PartnerVerifyClient Good Trouble DOB-first browse sign-in", () => {
     });
   });
 
+  it("redirects to DOB continue after browse evaluate — never pending review", async () => {
+    mockAuthState.suiAddress = "0xabc";
+    const assignSpy = vi.fn();
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...window.location, assign: assignSpy },
+    });
+    mockEnsureReady.mockResolvedValue({ ok: true });
+    mockEvaluateResponse.mockResolvedValue(new Response(JSON.stringify({
+      next: "passport",
+      passport_url: "https://abraxas.test/partner/continue?verify_request=vr-browse&purpose=browse",
+    }), { status: 200 }));
+
+    render(<PartnerVerifyClient />);
+
+    await waitFor(() => {
+      expect(assignSpy).toHaveBeenCalledWith(
+        "https://abraxas.test/partner/continue?verify_request=vr-browse&purpose=browse",
+      );
+    });
+    expect(screen.queryByText(/under review/i)).toBeNull();
+  });
+
   it("does not show DOB-first sign-in copy for retail policy with browse purpose", async () => {
     mockSearchParams = new URLSearchParams({
       partner_id: GOOD_TROUBLE_PARTNER_ID,

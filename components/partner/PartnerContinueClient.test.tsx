@@ -105,7 +105,10 @@ describe("PartnerContinueClient Good Trouble browse journey", () => {
 
     expect(screen.getByRole("heading", { name: GOOD_TROUBLE_BROWSE_HEADING })).toBeTruthy();
     expect(screen.getByText(GOOD_TROUBLE_BROWSE_SUPPORTING)).toBeTruthy();
-    expect(screen.getByText(GOOD_TROUBLE_BROWSE_DOB_HEADING)).toBeTruthy();
+
+    await waitFor(() => {
+      expect(screen.getByText(GOOD_TROUBLE_BROWSE_DOB_HEADING)).toBeTruthy();
+    });
     expect(screen.getByRole("button", { name: GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON })).toBeTruthy();
     expect(screen.queryByText("Return pending")).toBeNull();
     expect(screen.queryByText("PartnerFlowReturnHandler")).toBeNull();

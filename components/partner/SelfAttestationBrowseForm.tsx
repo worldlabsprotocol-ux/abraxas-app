@@ -5,10 +5,10 @@
 import { useCallback, useEffect, useId, useState } from "react";
 import {
   GOOD_TROUBLE_BROWSE_CHECKING_STATE,
-  GOOD_TROUBLE_BROWSE_DOB_EXPLANATION,
   GOOD_TROUBLE_BROWSE_DOB_HEADING,
   GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON,
   GOOD_TROUBLE_BROWSE_SUCCESS_STATE,
+  GOOD_TROUBLE_BROWSE_TRADITIONAL_FALLBACK,
 } from "@/lib/partner/goodTroubleBrowseFlow";
 import { GOOD_TROUBLE_BROWSE_POLICY_ID } from "@/lib/goodTrouble/constants";
 
@@ -77,6 +77,7 @@ export function SelfAttestationBrowseForm({
   const [checkingReuse, setCheckingReuse] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SubmitResult | null>(null);
+  const [manualReturnUrl, setManualReturnUrl] = useState<string | null>(null);
 
   const clearFields = useCallback(() => {
     setMonth("");
@@ -184,11 +185,28 @@ export function SelfAttestationBrowseForm({
         setResult({ ok: true, age_band: "over_21" });
         onConfirmed?.();
         if (returnUrl && data.browse_receipt) {
-          redirectWithBrowseReceipt(returnUrl, {
+          let fallbackUrl: string | null = null;
+          try {
+            const target = new URL(returnUrl);
+            target.searchParams.set("browse_receipt", data.browse_receipt);
+            if (data.browse_receipt_id) {
+              target.searchParams.set("browse_receipt_id", data.browse_receipt_id);
+            }
+            target.searchParams.set("purpose", "browse");
+            target.searchParams.set("policy_id", policyId);
+            fallbackUrl = target.toString();
+            setManualReturnUrl(fallbackUrl);
+          } catch {
+            setManualReturnUrl(null);
+          }
+          const redirected = redirectWithBrowseReceipt(returnUrl, {
             browse_receipt: data.browse_receipt,
             browse_receipt_id: data.browse_receipt_id,
             policy_id: policyId,
           });
+          if (!redirected && fallbackUrl) {
+            window.location.replace(fallbackUrl);
+          }
         }
         return;
       }
@@ -205,7 +223,29 @@ export function SelfAttestationBrowseForm({
   }
 
   if (result?.ok && result.age_band === "over_21") {
-    return <p role="status">{GOOD_TROUBLE_BROWSE_SUCCESS_STATE}</p>;
+    return (
+      <div>
+        <p role="status">{GOOD_TROUBLE_BROWSE_SUCCESS_STATE}</p>
+        {manualReturnUrl && (
+          <p style={{ marginTop: "1rem" }}>
+            <a
+              href={manualReturnUrl}
+              style={{
+                display: "inline-block",
+                padding: "0.7rem 1.3rem",
+                borderRadius: 999,
+                fontWeight: 700,
+                textDecoration: "none",
+                background: "var(--accent, #10B981)",
+                color: "#fff",
+              }}
+            >
+              Return to {partnerName}
+            </a>
+          </p>
+        )}
+      </div>
+    );
   }
 
   if (result?.ok && result.age_band === "under_21") {
@@ -228,12 +268,9 @@ export function SelfAttestationBrowseForm({
 
   return (
     <form onSubmit={(e) => void handleSubmit(e)} noValidate autoComplete="off" data-form-type="other">
-      <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.05rem" }}>
+      <h2 style={{ margin: "0 0 1rem", fontSize: "1.05rem" }}>
         {GOOD_TROUBLE_BROWSE_DOB_HEADING}
       </h2>
-      <p style={{ margin: "0 0 1rem", fontSize: "0.9rem", lineHeight: 1.6 }}>
-        {GOOD_TROUBLE_BROWSE_DOB_EXPLANATION}
-      </p>
 
       <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1rem" }}>
         <div>
@@ -318,7 +355,7 @@ export function SelfAttestationBrowseForm({
           opacity: busy ? 0.55 : 1,
         }}
       >
-        {busy ? "Creating…" : GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON}
+        {busy ? "Checking…" : GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON}
       </button>
 
       {partnerHomeUrl && (
@@ -327,7 +364,7 @@ export function SelfAttestationBrowseForm({
             href={partnerHomeUrl}
             style={{ fontSize: "0.86rem", color: "var(--text-secondary, #d1d5db)", textDecoration: "underline" }}
           >
-            Back to {partnerName}
+            {GOOD_TROUBLE_BROWSE_TRADITIONAL_FALLBACK}
           </a>
         </p>
       )}
