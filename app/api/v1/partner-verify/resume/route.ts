@@ -2,6 +2,7 @@
 // Persist partner-verify entry in a signed HttpOnly cookie across OAuth redirect.
 
 import { NextRequest, NextResponse } from "next/server";
+import { normalizePartnerVerifyInput } from "@/lib/partner/normalizePartnerVerifyInput";
 import {
   parsePartnerVerifyResumeParams,
   type PartnerVerifyResumeParams,
@@ -18,25 +19,26 @@ import {
 export const dynamic = "force-dynamic";
 
 function sanitizeBody(body: Record<string, unknown>): PartnerVerifyResumeParams | null {
-  const partnerId = typeof body.partnerId === "string" ? body.partnerId.trim() : "";
-  const policyId = typeof body.policyId === "string" ? body.policyId.trim() : "";
-  const returnUrl = typeof body.returnUrl === "string" ? body.returnUrl.trim() : "";
-  const permission = typeof body.permission === "string" ? body.permission.trim() : undefined;
-  const permissionVersion = typeof body.permissionVersion === "string"
-    ? body.permissionVersion.trim()
-    : undefined;
-  const purpose = typeof body.purpose === "string" ? body.purpose.trim() : undefined;
-
-  if (!partnerId || !returnUrl || (!policyId && !permission)) return null;
+  const normalized = normalizePartnerVerifyInput({
+    partnerId: typeof body.partnerId === "string" ? body.partnerId : null,
+    policyId: typeof body.policyId === "string" ? body.policyId : null,
+    returnUrl: typeof body.returnUrl === "string" ? body.returnUrl : null,
+    permission: typeof body.permission === "string" ? body.permission : null,
+    permissionVersion: typeof body.permissionVersion === "string" ? body.permissionVersion : null,
+    purpose: typeof body.purpose === "string" ? body.purpose : null,
+  });
+  if (!normalized.ok) return null;
 
   const params = new URLSearchParams({
-    partner_id: partnerId,
-    return_url: returnUrl,
+    partner_id: normalized.params.partnerId,
+    return_url: normalized.params.returnUrl,
+    policy_id: normalized.params.policyId,
   });
-  if (policyId) params.set("policy_id", policyId);
-  if (permission) params.set("permission", permission);
-  if (permissionVersion) params.set("permission_version", permissionVersion);
-  if (purpose) params.set("purpose", purpose);
+  if (normalized.params.permission) params.set("permission", normalized.params.permission);
+  if (normalized.params.permissionVersion) {
+    params.set("permission_version", normalized.params.permissionVersion);
+  }
+  if (normalized.params.purpose) params.set("purpose", normalized.params.purpose);
 
   return parsePartnerVerifyResumeParams(params);
 }

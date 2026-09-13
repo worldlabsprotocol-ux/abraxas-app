@@ -9,6 +9,7 @@ import {
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
 import { GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON } from "@/lib/partner/goodTroubleBrowseFlow";
+import { GOOD_TROUBLE_LEGACY_BROWSE_INVALID_LINK_MESSAGE } from "@/lib/partner/normalizePartnerVerifyInput";
 import { PartnerVerifyClient } from "./PartnerVerifyClient";
 
 const mockEnsureReady = vi.fn();
@@ -229,7 +230,73 @@ describe("PartnerVerifyClient Good Trouble DOB-first browse sign-in", () => {
     expect(screen.queryByText(/under review/i)).toBeNull();
   });
 
-  it("does not show DOB-first sign-in copy for retail policy with browse purpose", async () => {
+  it("normalizes legacy missing-policy browse URL and shows DOB-first sign-in", async () => {
+    mockSearchParams = new URLSearchParams({
+      partner_id: GOOD_TROUBLE_PARTNER_ID,
+      return_url: `https://www.goodtroublecanna.com/browse-verification-result?gtb=gtb_${"a".repeat(64)}`,
+    });
+
+    render(<PartnerVerifyClient />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON })).toBeTruthy();
+    });
+  });
+
+  it("posts normalized browse tuple to evaluate for legacy missing-policy URL", async () => {
+    mockAuthState.suiAddress = "0xabc";
+    mockSearchParams = new URLSearchParams({
+      partner_id: GOOD_TROUBLE_PARTNER_ID,
+      return_url: `https://www.goodtroublecanna.com/browse-verification-result?gtb=gtb_${"a".repeat(64)}`,
+    });
+    mockEnsureReady.mockResolvedValue({ ok: true });
+
+    const fetchSpy = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/api/v1/partner-flow/evaluate")) {
+        const body = JSON.parse(String(init?.body ?? "{}")) as Record<string, string>;
+        expect(body.policy_id).toBe(GOOD_TROUBLE_BROWSE_POLICY_ID);
+        expect(body.purpose).toBe("browse");
+        return mockEvaluateResponse();
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+    global.fetch = fetchSpy as typeof fetch;
+
+    render(<PartnerVerifyClient />);
+
+    await waitFor(() => {
+      expect(fetchSpy).toHaveBeenCalled();
+    });
+  });
+
+  it("does not call evaluate after browser-session creation fails", async () => {
+    mockAuthState.suiAddress = "0xabc";
+    mockEnsureReady.mockResolvedValue({ ok: false, error: "expired" });
+
+    render(<PartnerVerifyClient />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON })).toBeTruthy();
+    });
+    expect(mockEvaluateResponse).not.toHaveBeenCalled();
+  });
+
+  it("shows Good Trouble invalid-link copy for malformed legacy browse callback", async () => {
+    mockSearchParams = new URLSearchParams({
+      partner_id: GOOD_TROUBLE_PARTNER_ID,
+      return_url: "https://www.goodtroublecanna.com/browse-verification-result",
+    });
+
+    render(<PartnerVerifyClient />);
+
+    await waitFor(() => {
+      expect(screen.getAllByText(GOOD_TROUBLE_LEGACY_BROWSE_INVALID_LINK_MESSAGE).length).toBeGreaterThan(0);
+    });
+    expect(screen.queryByText(/Verification could not be completed/i)).toBeNull();
+  });
+
+  it("shows invalid-link screen for retail policy with browse purpose conflict", async () => {
     mockSearchParams = new URLSearchParams({
       partner_id: GOOD_TROUBLE_PARTNER_ID,
       policy_id: GOOD_TROUBLE_RETAIL_POLICY_ID,
@@ -240,9 +307,9 @@ describe("PartnerVerifyClient Good Trouble DOB-first browse sign-in", () => {
     render(<PartnerVerifyClient />);
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /Continue with Google/i })).toBeTruthy();
+      expect(screen.getAllByText(GOOD_TROUBLE_LEGACY_BROWSE_INVALID_LINK_MESSAGE).length).toBeGreaterThan(0);
     });
     expect(screen.queryByText(/Create a private Passport for faster future access/i)).toBeNull();
-    expect(screen.getByText(/Signing in is not age verification/i)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Continue with Google/i })).toBeNull();
   });
 });

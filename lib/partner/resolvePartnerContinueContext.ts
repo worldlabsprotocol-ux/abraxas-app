@@ -7,6 +7,7 @@ import {
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
 import { isGoodTroubleBrowseFlow } from "@/lib/partner/goodTroubleBrowseFlow";
+import { normalizePartnerVerifyInput } from "@/lib/partner/normalizePartnerVerifyInput";
 
 export type PartnerContinueUrlParams = {
   partnerId: string;
@@ -56,15 +57,33 @@ export function resolvePartnerContinueContext(
   url: PartnerContinueUrlParams,
   server?: PartnerContinueServerContext | null,
 ): ResolvedPartnerContinueContext {
+  let urlPartnerId = url.partnerId.trim();
+  let urlPolicyId = url.policyId.trim();
+  let urlPurpose = url.purpose;
+
+  if (!server?.policyId && urlPartnerId && url.returnUrl) {
+    const normalized = normalizePartnerVerifyInput({
+      partnerId: urlPartnerId,
+      policyId: urlPolicyId,
+      purpose: urlPurpose,
+      returnUrl: url.returnUrl,
+    });
+    if (normalized.ok) {
+      urlPartnerId = normalized.params.partnerId;
+      urlPolicyId = normalized.params.policyId;
+      urlPurpose = normalized.params.purpose ?? urlPurpose;
+    }
+  }
+
   const authoritative = Boolean(server?.partnerId && server?.policyId);
-  const partnerId = (authoritative ? server!.partnerId : url.partnerId).trim();
-  const policyId = (authoritative ? server!.policyId : url.policyId).trim();
+  const partnerId = (authoritative ? server!.partnerId : urlPartnerId).trim();
+  const policyId = (authoritative ? server!.policyId : urlPolicyId).trim();
   const storedPurpose = authoritative ? server?.purpose?.trim() || null : null;
   const purpose = storedPurpose
     ?? derivePurposeFromAuthoritativePolicy({
       partnerId,
       policyId,
-      urlPurpose: url.purpose,
+      urlPurpose,
     });
 
   const isDobFirstBrowse = isGoodTroubleBrowseFlow({

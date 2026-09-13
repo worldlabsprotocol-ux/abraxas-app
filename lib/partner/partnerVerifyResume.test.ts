@@ -68,6 +68,21 @@ describe("partnerVerifyResume", () => {
     expect(parsePartnerVerifyResumeParams(params)).toBeNull();
   });
 
+  it("parses legacy Good Trouble browse link missing policy_id and purpose", () => {
+    const returnUrl =
+      `https://www.goodtroublecanna.com/browse-verification-result?gtb=gtb_${"a".repeat(64)}`;
+    const params = new URLSearchParams({
+      partner_id: "good-trouble-cannabis",
+      return_url: returnUrl,
+    });
+    expect(parsePartnerVerifyResumeParams(params)).toEqual({
+      partnerId: "good-trouble-cannabis",
+      policyId: "good-trouble-browse-v1",
+      purpose: "browse",
+      returnUrl,
+    });
+  });
+
   it("saves and consumes resume path preserving gtv flow id", () => {
     savePartnerVerifyResume(SAMPLE);
     const loaded = loadPartnerVerifyResume();
