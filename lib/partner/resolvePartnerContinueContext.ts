@@ -7,7 +7,11 @@ import {
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
 import { isGoodTroubleBrowseFlow } from "@/lib/partner/goodTroubleBrowseFlow";
-import { normalizePartnerVerifyInput } from "@/lib/partner/normalizePartnerVerifyInput";
+import {
+  normalizeGoodTroubleBrowseReturnUrl,
+  normalizePartnerVerifyInput,
+  shouldNormalizeGoodTroubleBrowseReturnUrl,
+} from "@/lib/partner/normalizePartnerVerifyInput";
 
 export type PartnerContinueUrlParams = {
   partnerId: string;
@@ -60,18 +64,20 @@ export function resolvePartnerContinueContext(
   let urlPartnerId = url.partnerId.trim();
   let urlPolicyId = url.policyId.trim();
   let urlPurpose = url.purpose;
+  let urlReturnUrl = url.returnUrl.trim();
 
-  if (!server?.policyId && urlPartnerId && url.returnUrl) {
+  if (!server?.policyId && urlPartnerId && urlReturnUrl) {
     const normalized = normalizePartnerVerifyInput({
       partnerId: urlPartnerId,
       policyId: urlPolicyId,
       purpose: urlPurpose,
-      returnUrl: url.returnUrl,
+      returnUrl: urlReturnUrl,
     });
     if (normalized.ok) {
       urlPartnerId = normalized.params.partnerId;
       urlPolicyId = normalized.params.policyId;
       urlPurpose = normalized.params.purpose ?? urlPurpose;
+      urlReturnUrl = normalized.params.returnUrl;
     }
   }
 
@@ -92,11 +98,20 @@ export function resolvePartnerContinueContext(
     purpose,
   });
 
+  const returnUrl = shouldNormalizeGoodTroubleBrowseReturnUrl({
+    partnerId,
+    policyId,
+    purpose,
+    returnUrl: urlReturnUrl,
+  })
+    ? normalizeGoodTroubleBrowseReturnUrl(urlReturnUrl)
+    : urlReturnUrl;
+
   return {
     partnerId,
     policyId,
     purpose,
-    returnUrl: url.returnUrl,
+    returnUrl,
     verifyRequestId: url.verifyRequestId,
     isDobFirstBrowse,
     authoritative,

@@ -15,6 +15,9 @@ export const GOOD_TROUBLE_PURCHASE_CALLBACK_PATH = "/age-verification-result";
 export const GOOD_TROUBLE_RETURN_HOST = "www.goodtroublecanna.com";
 export const GOOD_TROUBLE_GTB_PARAM = "gtb";
 export const GOOD_TROUBLE_GTV_PARAM = "gtv";
+/** Wix test-site routing hint — required for unpublished Good Trouble browse callback. */
+export const GOOD_TROUBLE_BROWSE_RC_PARAM = "rc";
+export const GOOD_TROUBLE_BROWSE_RC_VALUE = "test-site";
 
 /** Purchase (gtf_) and browse (gtb_) opaque flow identifiers — matches Wix backend validation. */
 export const GOOD_TROUBLE_FLOW_ID_RE = /^(gtf|gtb)_[a-f0-9]{64}$/;
@@ -60,11 +63,61 @@ export function extractGoodTroubleGtbFlowId(returnUrl: string): string | null {
 }
 
 export function isLegacyGoodTroubleBrowseReturnUrl(returnUrl: string): boolean {
+  return isGoodTroubleBrowseCallbackReturnUrl(returnUrl);
+}
+
+/** Good Trouble browse callback shape — host, path, and valid gtb token. */
+export function isGoodTroubleBrowseCallbackReturnUrl(returnUrl: string): boolean {
   const parsed = parseHttpsReturnUrl(returnUrl);
   if (!parsed) return false;
   if (parsed.hostname !== GOOD_TROUBLE_RETURN_HOST) return false;
   if (parsed.pathname !== GOOD_TROUBLE_BROWSE_CALLBACK_PATH) return false;
   return extractGoodTroubleGtbFlowId(returnUrl) !== null;
+}
+
+export function shouldNormalizeGoodTroubleBrowseReturnUrl(input: {
+  partnerId: string;
+  policyId: string;
+  purpose?: string | null;
+  returnUrl: string;
+}): boolean {
+  if (input.partnerId !== GOOD_TROUBLE_PARTNER_ID) return false;
+  if (input.policyId !== GOOD_TROUBLE_BROWSE_POLICY_ID) return false;
+
+  const purpose = input.purpose?.trim();
+  if (purpose === "purchase") return false;
+  if (purpose && purpose !== "browse") return false;
+
+  return isGoodTroubleBrowseCallbackReturnUrl(input.returnUrl);
+}
+
+/** Append Wix test-site routing hint for the exact Good Trouble browse callback tuple. */
+export function normalizeGoodTroubleBrowseReturnUrl(returnUrl: string): string {
+  if (!isGoodTroubleBrowseCallbackReturnUrl(returnUrl)) return returnUrl;
+
+  const parsed = parseHttpsReturnUrl(returnUrl);
+  if (!parsed) return returnUrl;
+
+  parsed.searchParams.set(GOOD_TROUBLE_BROWSE_RC_PARAM, GOOD_TROUBLE_BROWSE_RC_VALUE);
+  return parsed.toString();
+}
+
+function applyGoodTroubleBrowseReturnUrlNormalization(
+  params: PartnerVerifyNormalizedParams,
+): PartnerVerifyNormalizedParams {
+  if (!shouldNormalizeGoodTroubleBrowseReturnUrl({
+    partnerId: params.partnerId,
+    policyId: params.policyId,
+    purpose: params.purpose,
+    returnUrl: params.returnUrl,
+  })) {
+    return params;
+  }
+
+  return {
+    ...params,
+    returnUrl: normalizeGoodTroubleBrowseReturnUrl(params.returnUrl),
+  };
 }
 
 function isGoodTroublePurchaseReturnUrl(returnUrl: string): boolean {
@@ -149,12 +202,12 @@ export function normalizePartnerVerifyInput(input: {
         return {
           ok: true,
           legacyBrowseNormalized: true,
-          params: {
+          params: applyGoodTroubleBrowseReturnUrlNormalization({
             partnerId,
             policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
             purpose: "browse",
             returnUrl,
-          },
+          }),
         };
       }
 
@@ -195,14 +248,14 @@ export function normalizePartnerVerifyInput(input: {
   return {
     ok: true,
     legacyBrowseNormalized: false,
-    params: {
+    params: applyGoodTroubleBrowseReturnUrlNormalization({
       partnerId,
       policyId,
       returnUrl,
       purpose: purpose || undefined,
       permission: permission || undefined,
       permissionVersion: permissionVersion || undefined,
-    },
+    }),
   };
 }
 

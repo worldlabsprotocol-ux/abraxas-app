@@ -82,7 +82,7 @@ describe("POST /api/v1/partner-flow/evaluate legacy Good Trouble browse", () => 
         partnerId: GOOD_TROUBLE_PARTNER_ID,
         policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
         purpose: "browse",
-        returnUrl: LEGACY_BROWSE_RETURN_URL,
+        returnUrl: `${LEGACY_BROWSE_RETURN_URL}&rc=test-site`,
       }),
     );
   });

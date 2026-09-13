@@ -3,6 +3,10 @@
 
 import { randomBytes } from "crypto";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
+import {
+  normalizeGoodTroubleBrowseReturnUrl,
+  shouldNormalizeGoodTroubleBrowseReturnUrl,
+} from "@/lib/partner/normalizePartnerVerifyInput";
 import { isAllowedPartnerReturnUrl } from "@/lib/partner/returnUrlAllowlist";
 import { getPolicy } from "@/lib/verification/requestsService";
 import { isBrowseAccessPolicy } from "@/lib/policy/selfAttestationGuards";
@@ -33,7 +37,16 @@ export type BrowseReuseResult =
 export async function reuseBrowseSelfAttestation(
   input: BrowseReuseInput,
 ): Promise<BrowseReuseResult> {
-  if (!await isAllowedPartnerReturnUrl(input.partnerId, input.returnUrl)) {
+  const returnUrl = shouldNormalizeGoodTroubleBrowseReturnUrl({
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    purpose: "browse",
+    returnUrl: input.returnUrl,
+  })
+    ? normalizeGoodTroubleBrowseReturnUrl(input.returnUrl)
+    : input.returnUrl;
+
+  if (!await isAllowedPartnerReturnUrl(input.partnerId, returnUrl)) {
     return { ok: false, code: "return_url_not_allowed" };
   }
 
@@ -103,7 +116,7 @@ export function buildBrowseReturnUrl(
   },
 ): string | null {
   try {
-    const target = new URL(returnUrl);
+    const target = new URL(normalizeGoodTroubleBrowseReturnUrl(returnUrl));
     target.searchParams.set("browse_receipt", input.browseReceipt);
     target.searchParams.set("browse_receipt_id", input.browseReceiptId);
     target.searchParams.set("purpose", "browse");

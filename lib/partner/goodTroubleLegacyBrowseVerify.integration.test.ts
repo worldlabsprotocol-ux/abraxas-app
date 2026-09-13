@@ -8,7 +8,12 @@ import {
   GOOD_TROUBLE_PARTNER_ID,
 } from "@/lib/goodTrouble/constants";
 import { GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON } from "@/lib/partner/goodTroubleBrowseFlow";
-import { GOOD_TROUBLE_LEGACY_BROWSE_INVALID_LINK_MESSAGE } from "@/lib/partner/normalizePartnerVerifyInput";
+import {
+  GOOD_TROUBLE_BROWSE_RC_PARAM,
+  GOOD_TROUBLE_BROWSE_RC_VALUE,
+  GOOD_TROUBLE_LEGACY_BROWSE_INVALID_LINK_MESSAGE,
+  normalizeGoodTroubleBrowseReturnUrl,
+} from "@/lib/partner/normalizePartnerVerifyInput";
 import {
   buildPartnerVerifyPath,
   consumePartnerVerifyResumePath,
@@ -27,7 +32,7 @@ vi.mock("@/lib/assurance/selfAttestation/reuseBrowseSelfAttestation", () => ({
     browseReceiptId: string;
     policyId: string;
   }) => {
-    const target = new URL(returnUrl);
+    const target = new URL(normalizeGoodTroubleBrowseReturnUrl(returnUrl));
     target.searchParams.set("browse_receipt", input.browseReceipt);
     target.searchParams.set("browse_receipt_id", input.browseReceiptId);
     target.searchParams.set("policy_id", input.policyId);
@@ -78,6 +83,7 @@ import { evaluatePartnerFlow } from "@/lib/partner/relyingPartyFlow";
 const GTB_FLOW_ID = `gtb_${"a".repeat(64)}`;
 const LEGACY_BROWSE_RETURN_URL =
   `https://www.goodtroublecanna.com/browse-verification-result?gtb=${GTB_FLOW_ID}`;
+const NORMALIZED_BROWSE_RETURN_URL = normalizeGoodTroubleBrowseReturnUrl(LEGACY_BROWSE_RETURN_URL);
 
 const LEGACY_VERIFY_PATH =
   `/partner/verify?partner_id=${GOOD_TROUBLE_PARTNER_ID}`
@@ -117,15 +123,18 @@ describe("Good Trouble legacy browse verify integration", () => {
     const restored = consumePartnerVerifyResumePath();
     expect(restored).toContain("policy_id=good-trouble-browse-v1");
     expect(restored).toContain("purpose=browse");
+    expect(restored).toContain(
+      `${GOOD_TROUBLE_BROWSE_RC_PARAM}%3D${GOOD_TROUBLE_BROWSE_RC_VALUE}`,
+    );
   });
 
-  it("evaluatePartnerFlow stores browse purpose on verification request for normalized legacy input", async () => {
+  it("evaluatePartnerFlow stores browse purpose and rc=test-site return URL for normalized legacy input", async () => {
     const result = await evaluatePartnerFlow({
       suiAddress: "0xabc",
       partnerId: GOOD_TROUBLE_PARTNER_ID,
       policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
       purpose: "browse",
-      returnUrl: LEGACY_BROWSE_RETURN_URL,
+      returnUrl: NORMALIZED_BROWSE_RETURN_URL,
     });
 
     expect(result.next).toBe("passport");
@@ -134,6 +143,7 @@ describe("Good Trouble legacy browse verify integration", () => {
         partnerId: GOOD_TROUBLE_PARTNER_ID,
         policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
         purpose: "browse",
+        returnUrl: NORMALIZED_BROWSE_RETURN_URL,
       }),
     );
   });
@@ -177,6 +187,8 @@ describe("Good Trouble legacy browse verify integration", () => {
 
     expect(result.next).toBe("enter");
     expect(result.redirect_url).toContain("browse_receipt=jwt-legacy");
+    expect(result.redirect_url).toContain(`${GOOD_TROUBLE_BROWSE_RC_PARAM}=${GOOD_TROUBLE_BROWSE_RC_VALUE}`);
+    expect(result.redirect_url).toContain(`gtb=${GTB_FLOW_ID}`);
     expect(mockCreateRequest).not.toHaveBeenCalled();
   });
 
