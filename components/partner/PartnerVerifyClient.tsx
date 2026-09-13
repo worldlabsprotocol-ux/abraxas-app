@@ -12,6 +12,7 @@ import {
   logPartnerVerifyAuthEvent,
 } from "@/lib/partner/partnerVerifyAuthDebug";
 import { isGoodTroubleBrowseFlow } from "@/lib/partner/goodTroubleBrowseFlow";
+import { normalizePartnerVerifySearchParams } from "@/lib/partner/normalizePartnerVerifyInput";
 import {
   resolvePartnerDisplayName,
   resolvePartnerHomeUrl,
@@ -21,7 +22,6 @@ import {
 import {
   PARTNER_AUTH_READY_QUERY,
   PARTNER_AUTH_READY_VALUE,
-  parsePartnerVerifyResumeParams,
   savePartnerVerifyResume,
 } from "@/lib/partner/partnerVerifyResume";
 import { clearLoginInFlight, clearStaleLoginInFlight, isLoginInFlight } from "@/lib/sui/zklogin/loginInFlight";
@@ -42,20 +42,6 @@ interface FlowResult {
 }
 
 const BROWSER_SESSION_AUTH_ERROR = "Sign in required in this browser";
-
-function describeInvalidLink(input: {
-  relyingPartyId: string;
-  returnUrl: string;
-  policyId: string;
-  permission: string;
-}): string | null {
-  const missing: string[] = [];
-  if (!input.relyingPartyId) missing.push("partner identifier");
-  if (!input.returnUrl) missing.push("return URL");
-  if (!input.policyId && !input.permission) missing.push("policy or permission");
-  if (missing.length === 0) return null;
-  return `This verification link is missing required parameters (${missing.join(", ")}). Ask the partner site for a fresh Partner Flow link.`;
-}
 
 function isBrowserSessionAuthError(message: string): boolean {
   return message === BROWSER_SESSION_AUTH_ERROR
@@ -95,24 +81,30 @@ export function PartnerVerifyClient({
   const signInOnceRef = useRef(false);
   const correlationRef = useRef<string | null>(null);
 
-  const relyingPartyId = searchParams.get("relying_party_id")
+  const verifyInput = useMemo(
+    () => normalizePartnerVerifySearchParams(searchParams),
+    [searchParams],
+  );
+
+  const relyingPartyId = verifyInput.ok ? verifyInput.params.partnerId : (
+    searchParams.get("relying_party_id")
     ?? searchParams.get("partner_id")
-    ?? "";
-  const permission = searchParams.get("permission") ?? "";
-  const permissionVersion = searchParams.get("permission_version") ?? "";
-  const policyId = searchParams.get("policy_id") ?? "";
-  const purpose = searchParams.get("purpose") ?? "";
-  const returnUrl = searchParams.get("return_url") ?? "";
+    ?? ""
+  );
+  const permission = verifyInput.ok ? (verifyInput.params.permission ?? "") : (searchParams.get("permission") ?? "");
+  const permissionVersion = verifyInput.ok
+    ? (verifyInput.params.permissionVersion ?? "")
+    : (searchParams.get("permission_version") ?? "");
+  const policyId = verifyInput.ok ? verifyInput.params.policyId : (searchParams.get("policy_id") ?? "");
+  const purpose = verifyInput.ok ? (verifyInput.params.purpose ?? "") : (searchParams.get("purpose") ?? "");
+  const returnUrl = verifyInput.ok ? verifyInput.params.returnUrl : (searchParams.get("return_url") ?? "");
   const isDobFirstBrowse = isGoodTroubleBrowseFlow({
     partnerId: relyingPartyId,
     policyId,
     purpose,
   });
 
-  const invalidLinkMessage = useMemo(
-    () => describeInvalidLink({ relyingPartyId, returnUrl, policyId, permission }),
-    [relyingPartyId, returnUrl, policyId, permission],
-  );
+  const invalidLinkMessage = verifyInput.ok ? null : verifyInput.invalidLinkMessage;
 
   const partnerName = resolvePartnerDisplayName(relyingPartyId);
   const partnerReturnLabel = resolvePartnerReturnLabel(relyingPartyId);
@@ -135,9 +127,10 @@ export function PartnerVerifyClient({
 
   useEffect(() => {
     if (invalidLinkMessage) return;
-    const resumeParams = parsePartnerVerifyResumeParams(searchParams);
-    if (resumeParams) savePartnerVerifyResume(resumeParams);
-  }, [invalidLinkMessage, searchParams]);
+    if (verifyInput.ok) {
+      savePartnerVerifyResume(verifyInput.params);
+    }
+  }, [invalidLinkMessage, verifyInput]);
 
   useEffect(() => {
     if (suiAddress) clearLoginInFlight();
@@ -311,8 +304,9 @@ export function PartnerVerifyClient({
     if (signInOnceRef.current || signInBusy || isLoginInFlight()) return;
     signInOnceRef.current = true;
 
-    const resumeParams = parsePartnerVerifyResumeParams(searchParams);
-    if (resumeParams) savePartnerVerifyResume(resumeParams);
+    if (verifyInput.ok) {
+      savePartnerVerifyResume(verifyInput.params);
+    }
 
     clearStaleLoginInFlight();
     if (isLoginInFlight()) clearLoginInFlight();
@@ -335,7 +329,7 @@ export function PartnerVerifyClient({
       setPhase("sign_in");
       setStatusMessage("Sign in to continue with Abraxas.");
     }
-  }, [searchParams, signIn, signInBusy, signInWithGoogle]);
+  }, [verifyInput, signIn, signInBusy, signInWithGoogle]);
 
   const handleTryAgain = useCallback(() => {
     evaluateOnceRef.current = false;

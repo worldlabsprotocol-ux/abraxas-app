@@ -2,6 +2,8 @@
 // Persist validated partner-verify entry across zkLogin OAuth redirect.
 // Stores only partner flow identifiers — never tokens, receipts, or PII.
 
+import { normalizePartnerVerifySearchParams } from "@/lib/partner/normalizePartnerVerifyInput";
+
 const STORAGE_KEY = "abraxas_partner_verify_resume_v1";
 const MAX_AGE_MS = 30 * 60 * 1000; // 30 minutes
 const PARTNER_VERIFY_PATH_PREFIX = "/partner/verify?";
@@ -151,26 +153,17 @@ export function buildPartnerVerifyPath(params: PartnerVerifyResumeParams): strin
 export function parsePartnerVerifyResumeParams(
   searchParams: URLSearchParams,
 ): PartnerVerifyResumeParams | null {
-  const partnerId = (
-    searchParams.get("relying_party_id")
-    ?? searchParams.get("partner_id")
-    ?? ""
-  ).trim();
-  const returnUrl = (searchParams.get("return_url") ?? "").trim();
-  const policyId = (searchParams.get("policy_id") ?? "").trim();
-  const permission = (searchParams.get("permission") ?? "").trim();
-  const permissionVersion = (searchParams.get("permission_version") ?? "").trim();
-  const purpose = (searchParams.get("purpose") ?? "").trim();
+  const normalized = normalizePartnerVerifySearchParams(searchParams);
+  if (!normalized.ok) return null;
 
-  if (!partnerId || !returnUrl || (!policyId && !permission)) return null;
-
+  const { params } = normalized;
   return sanitizeResumeParams({
-    partnerId,
-    policyId,
-    returnUrl,
-    permission: permission || undefined,
-    permissionVersion: permissionVersion || undefined,
-    purpose: purpose || undefined,
+    partnerId: params.partnerId,
+    policyId: params.policyId,
+    returnUrl: params.returnUrl,
+    permission: params.permission,
+    permissionVersion: params.permissionVersion,
+    purpose: params.purpose,
   });
 }
 

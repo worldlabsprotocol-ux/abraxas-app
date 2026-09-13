@@ -93,7 +93,7 @@ export function PartnerVerifyShell({
         partnerReturnLabel={partnerReturnLabel}
       >
         <p role="alert" style={{ fontSize: "0.88rem", lineHeight: 1.65 }}>
-          Ask the partner site for a fresh verification link.
+          {invalidLinkMessage}
         </p>
       </PartnerJourneyLayout>
     );

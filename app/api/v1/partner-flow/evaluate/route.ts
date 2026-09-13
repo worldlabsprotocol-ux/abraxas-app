@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
 import { evaluatePartnerFlow, PartnerFlowIdempotencyConflictError } from "@/lib/partner/relyingPartyFlow";
 import { isAllowedPartnerReturnUrl } from "@/lib/partner/returnUrlAllowlist";
-import { resolvePartnerFlowParams } from "@/lib/verify/resolveFlowParams";
 import {
   auditPartnerFlowReceiptOutcome,
   auditPartnerFlowStepBestEffort,
@@ -21,6 +20,7 @@ import {
   GoodTroubleFlowTupleMismatchError,
   resolveGoodTroubleFlowPurpose,
 } from "@/lib/partner/goodTroubleBrowseFlow";
+import { normalizePartnerVerifyInput } from "@/lib/partner/normalizePartnerVerifyInput";
 import {
   enforcePartnerFlowRateLimit,
   recordPartnerFlowRequestOutcome,
@@ -72,27 +72,29 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const partnerId = (body.relying_party_id ?? body.partner_id)?.trim();
-  const returnUrl = body.return_url?.trim();
-  if (!partnerId || !returnUrl) {
+  const normalized = normalizePartnerVerifyInput({
+    partnerId: body.partner_id,
+    relyingPartyId: body.relying_party_id,
+    policyId: body.policy_id,
+    purpose: body.purpose,
+    returnUrl: body.return_url,
+    permission: body.permission,
+    permissionVersion: body.permission_version,
+  });
+  if (!normalized.ok) {
     return NextResponse.json(
-      { error: "relying_party_id (or partner_id) and return_url are required" },
+      { error: normalized.invalidLinkMessage, code: normalized.code },
       { status: 400 },
     );
   }
 
-  let policyId: string;
-  try {
-    ({ policyId } = resolvePartnerFlowParams({
-      relyingPartyId: partnerId,
-      policyId: body.policy_id,
-      permission: body.permission,
-      permissionVersion: body.permission_version,
-    }));
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "Invalid permission or policy";
-    return NextResponse.json({ error: msg }, { status: 400 });
-  }
+  const {
+    partnerId,
+    policyId,
+    returnUrl,
+    permission,
+    permissionVersion,
+  } = normalized.params;
 
   const allowed = await isAllowedPartnerReturnUrl(partnerId, returnUrl);
   if (!allowed) {
@@ -102,12 +104,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let resolvedPurpose = body.purpose?.trim() || undefined;
+  let resolvedPurpose = normalized.params.purpose?.trim() || undefined;
   try {
     const goodTroublePurpose = resolveGoodTroubleFlowPurpose({
       partnerId,
       policyId,
-      purpose: body.purpose,
+      purpose: normalized.params.purpose,
       returnUrl,
     });
     if (goodTroublePurpose) {
