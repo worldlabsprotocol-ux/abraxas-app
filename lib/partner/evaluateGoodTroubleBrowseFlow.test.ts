@@ -127,6 +127,25 @@ describe("evaluatePartnerFlow browse short-circuit", () => {
     expect(result.next).toBe("passport");
     expect(result.next).not.toBe("pending_review");
   });
+
+  it("routes browse policy to DOB continue when purpose was dropped after OAuth", async () => {
+    const result = await evaluatePartnerFlow({
+      suiAddress: "0xabc",
+      partnerId: GOOD_TROUBLE_PARTNER_ID,
+      policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
+      returnUrl: RETURN_URL,
+    });
+
+    expect(result.next).toBe("passport");
+    expect(result.passport_url).toContain("purpose=browse");
+    expect(result.passport_url).toContain("good-trouble-browse-v1");
+    expect(mockCreateRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
+        purpose: "browse",
+      }),
+    );
+  });
 });
 
 describe("resolvePartnerFlowStep browse routing", () => {

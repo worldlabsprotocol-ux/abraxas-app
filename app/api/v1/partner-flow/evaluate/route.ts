@@ -18,6 +18,10 @@ import { isPartnerFlowRevocationDenied } from "@/lib/partner/partnerFlowRevocati
 import { enrichPartnerFlowResponse } from "@/lib/partner/enrichPartnerFlowResponse";
 import { getPublicAppOriginFromRequest } from "@/lib/app/publicAppOrigin";
 import {
+  GoodTroubleFlowTupleMismatchError,
+  resolveGoodTroubleFlowPurpose,
+} from "@/lib/partner/goodTroubleBrowseFlow";
+import {
   enforcePartnerFlowRateLimit,
   recordPartnerFlowRequestOutcome,
 } from "@/lib/partner/partnerFlowRouteGuard";
@@ -98,11 +102,29 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  let resolvedPurpose = body.purpose?.trim() || undefined;
+  try {
+    const goodTroublePurpose = resolveGoodTroubleFlowPurpose({
+      partnerId,
+      policyId,
+      purpose: body.purpose,
+      returnUrl,
+    });
+    if (goodTroublePurpose) {
+      resolvedPurpose = goodTroublePurpose;
+    }
+  } catch (e) {
+    if (e instanceof GoodTroubleFlowTupleMismatchError) {
+      return NextResponse.json({ error: e.message, code: e.code }, { status: 400 });
+    }
+    throw e;
+  }
+
   try {
     const result = await evaluatePartnerFlow({
       partnerId,
       policyId,
-      purpose: body.purpose?.trim() || undefined,
+      purpose: resolvedPurpose,
       returnUrl,
       suiAddress: session.session.suiAddress,
       appOrigin: getPublicAppOriginFromRequest(request),

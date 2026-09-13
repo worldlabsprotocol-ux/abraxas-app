@@ -97,11 +97,16 @@ function PartnerContinueInner() {
           credentials: "include",
         });
         if (res.ok) {
-          const preview = await res.json() as { partner_id?: string; policy_id?: string };
+          const preview = await res.json() as {
+            partner_id?: string;
+            policy_id?: string;
+            purpose?: string | null;
+          };
           if (!cancelled) {
             setFlowContext(resolvePartnerContinueContext(urlContext, {
               partnerId: preview.partner_id ?? "",
               policyId: preview.policy_id ?? "",
+              purpose: preview.purpose ?? null,
             }));
             setContextLoading(false);
           }
@@ -126,7 +131,14 @@ function PartnerContinueInner() {
   const partnerId = flowContext?.partnerId ?? urlPartnerId;
   const policyId = flowContext?.policyId ?? urlPolicyId;
   const purposeParam = flowContext?.purpose ?? urlPurpose;
-  const isDobFirstBrowse = flowContext?.isDobFirstBrowse ?? false;
+  const provisionalBrowse = resolvePartnerContinueContext({
+    partnerId: urlPartnerId,
+    policyId: urlPolicyId,
+    purpose: urlPurpose,
+    returnUrl: decodedReturnUrl,
+    verifyRequestId,
+  }).isDobFirstBrowse;
+  const isDobFirstBrowse = flowContext?.isDobFirstBrowse ?? provisionalBrowse;
   const flowTier: "browse" | "checkout" = isDobFirstBrowse ? "browse" : "checkout";
 
   const {

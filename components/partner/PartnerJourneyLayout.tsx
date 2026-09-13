@@ -105,7 +105,7 @@ export function PartnerJourneyLayout({
         {showAccountFooter && (
           <p style={{ margin: "1rem 0 0", fontSize: "0.72rem", color: "var(--text-muted, #9ca3af)", lineHeight: 1.5 }}>
             Signing in confirms your account only.{" "}
-            <Link href="/privacy" style={{ color: TEAL, textDecoration: "none" }}>Privacy</Link>
+            <Link href="/legal/privacy" style={{ color: TEAL, textDecoration: "none" }}>Privacy</Link>
           </p>
         )}
       </main>
