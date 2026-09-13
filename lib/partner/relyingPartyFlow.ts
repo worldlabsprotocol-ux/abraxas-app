@@ -92,6 +92,7 @@ export function buildPartnerEvidenceUrl(input: {
   partnerId: string;
   policyId: string;
   returnUrl: string;
+  purpose?: string;
   appOrigin?: string;
 }): string {
   const appUrl = (input.appOrigin ?? getPublicAppOrigin()).replace(/\/$/, "");
@@ -101,6 +102,7 @@ export function buildPartnerEvidenceUrl(input: {
     policy_id: input.policyId,
     return: input.returnUrl,
   });
+  if (input.purpose) params.set("purpose", input.purpose);
   return `${appUrl}/partner/continue?${params.toString()}`;
 }
 
@@ -110,6 +112,7 @@ export function buildPassportUrl(input: {
   partnerId: string;
   policyId: string;
   returnUrl: string;
+  purpose?: string;
   appOrigin?: string;
 }): string {
   return buildPartnerEvidenceUrl(input);
@@ -467,6 +470,7 @@ export async function evaluatePartnerFlow(input: {
   partnerId: string;
   policyId: string;
   returnUrl: string;
+  purpose?: string;
   appOrigin?: string;
 }): Promise<PartnerFlowEvaluateResult> {
   if (!await isReturnUrlAllowed(input.partnerId, input.returnUrl)) {
@@ -556,6 +560,7 @@ export async function evaluatePartnerFlow(input: {
     partnerId: input.partnerId,
     policyId: input.policyId,
     returnUrl: input.returnUrl,
+    purpose: input.purpose,
     appOrigin: input.appOrigin,
   });
 

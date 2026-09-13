@@ -12,6 +12,7 @@ const ALLOWED_RESUME_KEYS = new Set([
   "returnUrl",
   "permission",
   "permissionVersion",
+  "purpose",
   "savedAt",
 ]);
 
@@ -21,6 +22,7 @@ export type PartnerVerifyResumeParams = {
   returnUrl: string;
   permission?: string;
   permissionVersion?: string;
+  purpose?: string;
 };
 
 export type PartnerVerifyResumeState = PartnerVerifyResumeParams & {
@@ -107,6 +109,7 @@ function sanitizeResumeParams(
   const returnUrl = params.returnUrl.trim();
   const permission = params.permission?.trim();
   const permissionVersion = params.permissionVersion?.trim();
+  const purpose = params.purpose?.trim();
 
   if (!partnerId || !returnUrl || (!policyId && !permission)) return null;
   if (!isSafeReturnUrlForResume(returnUrl)) return null;
@@ -117,6 +120,7 @@ function sanitizeResumeParams(
     returnUrl,
     permission,
     permissionVersion,
+    purpose,
   });
   if (!isRestorablePartnerVerifyPath(built)) return null;
 
@@ -126,6 +130,7 @@ function sanitizeResumeParams(
     returnUrl,
     permission: permission || undefined,
     permissionVersion: permissionVersion || undefined,
+    purpose: purpose || undefined,
   };
 }
 
@@ -139,6 +144,7 @@ export function buildPartnerVerifyPath(params: PartnerVerifyResumeParams): strin
   if (params.permissionVersion?.trim()) {
     search.set("permission_version", params.permissionVersion.trim());
   }
+  if (params.purpose?.trim()) search.set("purpose", params.purpose.trim());
   return `${PARTNER_VERIFY_PATH_PREFIX}${search.toString()}`;
 }
 
@@ -154,6 +160,7 @@ export function parsePartnerVerifyResumeParams(
   const policyId = (searchParams.get("policy_id") ?? "").trim();
   const permission = (searchParams.get("permission") ?? "").trim();
   const permissionVersion = (searchParams.get("permission_version") ?? "").trim();
+  const purpose = (searchParams.get("purpose") ?? "").trim();
 
   if (!partnerId || !returnUrl || (!policyId && !permission)) return null;
 
@@ -163,6 +170,7 @@ export function parsePartnerVerifyResumeParams(
     returnUrl,
     permission: permission || undefined,
     permissionVersion: permissionVersion || undefined,
+    purpose: purpose || undefined,
   });
 }
 
@@ -201,6 +209,7 @@ export function loadPartnerVerifyResume(): PartnerVerifyResumeState | null {
       permissionVersion: typeof parsed.permissionVersion === "string"
         ? parsed.permissionVersion.trim()
         : undefined,
+      purpose: typeof parsed.purpose === "string" ? parsed.purpose.trim() : undefined,
       savedAt: typeof parsed.savedAt === "string" ? parsed.savedAt.trim() : "",
     };
 

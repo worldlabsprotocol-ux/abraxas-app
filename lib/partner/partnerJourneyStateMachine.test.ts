@@ -57,6 +57,18 @@ describe("partner journey state machine", () => {
     expect(url).not.toContain("/passport?");
   });
 
+  it("preserves browse purpose in the partner evidence URL", () => {
+    const url = buildPartnerEvidenceUrl({
+      verificationRequestId: "request-1",
+      partnerId: "good-trouble-cannabis",
+      policyId: "good-trouble-browse-v1",
+      purpose: "browse",
+      returnUrl: "https://www.goodtroublecanna.com/browse-verification-result",
+      appOrigin: "https://abraxasworld.xyz",
+    });
+    expect(url).toContain("purpose=browse");
+  });
+
   it("uses partner intro copy for Good Trouble", () => {
     const intro = partnerJourneyPartnerIntro("Good Trouble Cannabis");
     expect(intro).toContain("Good Trouble Cannabis uses Abraxas");
