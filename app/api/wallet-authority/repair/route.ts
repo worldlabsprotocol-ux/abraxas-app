@@ -21,12 +21,13 @@ export async function POST(req: NextRequest) {
     const result = await ensureZkLoginWalletBinding(session.session.suiAddress);
     const snapshot = await getCanonicalWalletBindingSnapshot(session.session.suiAddress);
 
-    if (result.status === "failed") {
+    if (result.status === "failed" || !snapshot.persisted) {
       return NextResponse.json({
         ok: false,
         wallet_binding_status: "failed",
         reason_code: result.reason_code ?? "binding_not_persisted",
         repairable: snapshot.repairable,
+        persisted: snapshot.persisted,
       }, { status: 503 });
     }
 
@@ -35,8 +36,8 @@ export async function POST(req: NextRequest) {
       wallet_binding_status: result.status,
       reason_code: result.reason_code,
       binding_method: result.binding_method,
-      persisted: snapshot.persisted,
-      repairable: snapshot.repairable,
+      persisted: true,
+      repairable: false,
     });
   } catch (error) {
     if (isWalletPersistenceError(error)) {

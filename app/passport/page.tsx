@@ -61,11 +61,13 @@ function PassportPageInner() {
     isRefreshing,
     isPolling,
     refresh,
+    refreshWalletBindingState,
     isLoading: verificationLoading,
     setup: setupFromHook,
     veriffConfigured,
     idvProvider,
     walletBindingL3,
+    walletBindingStatus,
     verifyState,
     verifyResult,
     onChain,
@@ -292,6 +294,7 @@ function PassportPageInner() {
               suiAddress={suiAddress}
               email={email}
               setup={setup}
+              walletBindingStatus={walletBindingStatus}
               identityStatus={identityStatus}
               credential={credential}
               via={via}
@@ -301,7 +304,7 @@ function PassportPageInner() {
               veriffConfigured={veriffConfigured}
               onStartIdCheck={startIdentityVerification}
               onRefresh={refresh}
-              onWalletBound={refresh}
+              onWalletBound={refreshWalletBindingState}
               handoff={handoff}
               capturePolicy={{
                 verificationRequestId: verifyRequestId,

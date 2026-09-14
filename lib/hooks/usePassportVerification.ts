@@ -24,6 +24,7 @@ import {
 } from "@/lib/api/passport";
 import type { PassportSetupState } from "@/lib/idv/identityVerificationStates";
 import { computePassportSetupState, resolveCredentialStatus, resolveIdentityVerificationStatus } from "@/lib/idv/identityVerificationStates";
+import type { CanonicalWalletBindingStatus } from "@/lib/trust/readCanonicalWalletBinding";
 
 export type IdentityStampStatus = "not_started" | "pending" | "earned" | "declined" | "resubmission_requested";
 export type CredentialVerifyState = "idle" | "checking" | "valid" | "invalid";
@@ -71,7 +72,15 @@ interface PipelineResult {
   veriffConfigured: boolean;
   idvProvider: "veriff" | "manual";
   walletBindingL3: boolean;
+  walletBindingStatus: CanonicalWalletBindingStatus;
+  walletBindingReadError?: string;
   autoProvisionFailed?: boolean;
+}
+
+export interface WalletBindingRefreshState {
+  walletBound: boolean;
+  walletBindingStatus: CanonicalWalletBindingStatus;
+  walletBindingReadError?: string;
 }
 
 async function runIdentityPipeline(
@@ -90,15 +99,35 @@ async function runIdentityPipeline(
   let veriffConfigured = false;
   let idvProvider: "veriff" | "manual" = "manual";
   let walletBindingL3 = false;
+  let walletBindingStatus: CanonicalWalletBindingStatus = "missing";
+  let walletBindingReadError: string | undefined;
   let autoProvisionFailed = false;
 
   if (!suiAddress && !email) {
-    return { identityStatus, via, credential, verifyState, verifyResult, onChain, syncMessage, setup, veriffConfigured, idvProvider, walletBindingL3, autoProvisionFailed };
+    return {
+      identityStatus,
+      via,
+      credential,
+      verifyState,
+      verifyResult,
+      onChain,
+      syncMessage,
+      setup,
+      veriffConfigured,
+      idvProvider,
+      walletBindingL3,
+      walletBindingStatus,
+      walletBindingReadError,
+      autoProvisionFailed,
+    };
   }
 
   let data: IdentityStatusResponse = await fetchIdentityStatus(suiAddress, email);
   idvProvider = data.idv_provider ?? (veriffConfigured ? "veriff" : "manual");
   walletBindingL3 = data.wallet_binding_l3 ?? false;
+  walletBindingStatus = data.wallet_binding_status
+    ?? (walletBindingL3 ? "active" : "missing");
+  walletBindingReadError = data.wallet_binding_read_error;
   setup = data.setup ?? null;
 
   if (
@@ -167,7 +196,22 @@ async function runIdentityPipeline(
     }
   }
 
-  return { identityStatus, via, credential, verifyState, verifyResult, onChain, syncMessage, setup, veriffConfigured, idvProvider, walletBindingL3, autoProvisionFailed };
+  return {
+    identityStatus,
+    via,
+    credential,
+    verifyState,
+    verifyResult,
+    onChain,
+    syncMessage,
+    setup,
+    veriffConfigured,
+    idvProvider,
+    walletBindingL3,
+    walletBindingStatus,
+    walletBindingReadError,
+    autoProvisionFailed,
+  };
 }
 
 export function usePassportVerification(
@@ -215,9 +259,23 @@ export function usePassportVerification(
   }, [suiAddress, email, pipelineQuery.data?.credential, queryClient]);
 
   const refresh = useCallback(async () => {
-    await queryClient.invalidateQueries({
+    await queryClient.refetchQueries({
       queryKey: passportQueryKeys.identity(suiAddress, email),
     });
+  }, [queryClient, suiAddress, email]);
+
+  const refreshWalletBindingState = useCallback(async (): Promise<WalletBindingRefreshState> => {
+    await queryClient.refetchQueries({
+      queryKey: passportQueryKeys.identity(suiAddress, email),
+    });
+    const latest = queryClient.getQueryData<PipelineResult>(
+      passportQueryKeys.identity(suiAddress, email),
+    );
+    return {
+      walletBound: Boolean(latest?.setup?.walletBound),
+      walletBindingStatus: latest?.walletBindingStatus ?? "missing",
+      walletBindingReadError: latest?.walletBindingReadError,
+    };
   }, [queryClient, suiAddress, email]);
 
   const retryProvision = useCallback(async () => {
@@ -283,6 +341,7 @@ export function usePassportVerification(
     hasStatusSnapshot,
     lastChecked: pipelineQuery.dataUpdatedAt ? new Date(pipelineQuery.dataUpdatedAt) : null,
     refresh,
+    refreshWalletBindingState,
     retryProvision,
     isPolling,
     isLoading: pipelineQuery.isLoading,
@@ -290,5 +349,7 @@ export function usePassportVerification(
     veriffConfigured: data?.veriffConfigured ?? false,
     idvProvider: data?.idvProvider ?? "manual",
     walletBindingL3: data?.walletBindingL3 ?? false,
+    walletBindingStatus: data?.walletBindingStatus ?? "missing",
+    walletBindingReadError: data?.walletBindingReadError,
   };
 }

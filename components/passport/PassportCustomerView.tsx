@@ -11,7 +11,8 @@ import { usePassportBrowserSession } from "@/lib/passport/usePassportBrowserSess
 import { isBrowserSessionAuthFailure } from "@/lib/passport/passportBrowserSessionAuth";
 import { repairZkLoginBinding } from "@/lib/walletAuthority/client/repairZkLoginBinding";
 import type { PassportSetupState } from "@/lib/idv/identityVerificationStates";
-import type { IdentityStampStatus } from "@/lib/hooks/usePassportVerification";
+import type { IdentityStampStatus, WalletBindingRefreshState } from "@/lib/hooks/usePassportVerification";
+import type { CanonicalWalletBindingStatus } from "@/lib/trust/readCanonicalWalletBinding";
 import type { StoredCredential } from "@/lib/credentials/storage";
 import type { PartnerFlowHandoffController } from "@/lib/passport/partnerFlowHandoff";
 import { PartnerReturnCta } from "@/components/passport/PartnerReturnCta";
@@ -46,6 +47,7 @@ interface Props {
   suiAddress: string | null;
   email: string;
   setup: PassportSetupState;
+  walletBindingStatus?: CanonicalWalletBindingStatus;
   identityStatus: IdentityStampStatus;
   credential: StoredCredential | null;
   via: string | null;
@@ -55,7 +57,7 @@ interface Props {
   veriffConfigured: boolean;
   onStartIdCheck: () => void;
   onRefresh: () => void;
-  onWalletBound?: () => void;
+  onWalletBound?: () => Promise<WalletBindingRefreshState | void>;
   handoff: PartnerFlowHandoffController;
   capturePolicy?: CapturePolicyContext;
 }
@@ -66,6 +68,7 @@ export function PassportCustomerView({
   suiAddress,
   email,
   setup,
+  walletBindingStatus = "missing",
   identityStatus,
   credential,
   via,
@@ -89,6 +92,10 @@ export function PassportCustomerView({
   const hasCredential = Boolean(credential) && identityStatus === "earned";
   const browserSessionReady = browserSessionState === "authenticated";
   const browserSessionLoading = walletDone && browserSessionState === "loading";
+  const walletBindingUnavailable = walletBindingStatus === "unavailable";
+  const canOfferWalletRepair = browserSessionReady
+    && !setup.walletBound
+    && !walletBindingUnavailable;
   const status = resolvePassportCustomerStatus({
     walletDone,
     setup,
@@ -115,7 +122,14 @@ export function PassportCustomerView({
         }
         throw new Error(result.error ?? "Wallet binding repair failed.");
       }
-      onWalletBound?.();
+      const refreshed = await onWalletBound?.();
+      if (refreshed && !refreshed.walletBound) {
+        if (refreshed.walletBindingStatus === "unavailable") {
+          setBindError("Wallet status is temporarily unavailable. Try again in a moment.");
+        } else {
+          setBindError("Wallet binding did not save. Try again.");
+        }
+      }
     } catch (e) {
       setBindError(e instanceof Error ? e.message : "Security confirmation failed.");
     } finally {
@@ -167,7 +181,25 @@ export function PassportCustomerView({
         <PassportReauthenticationPanel />
       )}
 
-      {walletDone && browserSessionReady && !setup.walletBound && (
+      {walletDone && walletBindingUnavailable && (
+        <section style={CARD} aria-labelledby="passport-wallet-unavailable-heading">
+          <h2 id="passport-wallet-unavailable-heading" style={{
+            fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.5rem",
+          }}>
+            Wallet status temporarily unavailable
+          </h2>
+          <p style={{
+            fontFamily: FONT, fontSize: "0.84rem", lineHeight: 1.6, color: "var(--text-secondary)", margin: "0 0 1rem",
+          }}>
+            We could not verify your wallet binding right now. Try again in a moment.
+          </p>
+          <Btn size="lg" fullWidth variant="secondary" onClick={() => void onRefresh()}>
+            Try again
+          </Btn>
+        </section>
+      )}
+
+      {walletDone && canOfferWalletRepair && (
         <section style={CARD} aria-labelledby="passport-secure-heading">
           <h2 id="passport-secure-heading" style={{
             fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.5rem",
