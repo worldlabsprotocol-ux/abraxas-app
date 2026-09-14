@@ -27,6 +27,11 @@ export const PASSPORT_USE_PASSPORT_SUB = "Share only what is needed";
 export const PASSPORT_SIGN_IN_LABEL = "Sign in";
 export const PASSPORT_SIGN_IN_SUB = "Start with your account";
 
+export const PASSPORT_REAUTH_HEADLINE = "Sign in again to continue";
+export const PASSPORT_REAUTH_EXPLAINER =
+  "Your Passport account is remembered on this device, but your secure browser session expired. Sign in again with Google to continue.";
+export const PASSPORT_REAUTH_LABEL = "Sign in again with Google";
+
 export const PASSPORT_ADVANCED_DETAILS_TITLE = "Advanced details";
 
 export const PASSPORT_SETUP_STEPS = [

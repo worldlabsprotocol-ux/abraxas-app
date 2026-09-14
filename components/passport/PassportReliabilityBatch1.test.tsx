@@ -9,8 +9,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { PassportSetupPanel } from "./PassportSetupPanel";
 import { PassportPrivacyCenter } from "./PassportPrivacyCenter";
-import * as signingSession from "@/lib/sui/zklogin/signingSession";
-import * as personalMessage from "@/lib/sui/intent/personalMessage";
 import type { PassportSetupState } from "@/lib/idv/identityVerificationStates";
 import { computePassportSetupState } from "@/lib/idv/identityVerificationStates";
 
@@ -48,23 +46,38 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+function mockAuthenticatedBrowserSession() {
+  vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+    const url = typeof input === "string" ? input : input.toString();
+    if (url.includes("/api/auth/browser-session")) {
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    }
+    return new Response(JSON.stringify({ ok: false }), { status: 500 });
+  }));
+}
+
 beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {});
+  mockAuthenticatedBrowserSession();
 });
 
 describe("PassportSetupPanel wallet bind", () => {
   it("disables the bind button while loading", async () => {
-    vi.spyOn(signingSession, "getEphemeralSecretKey").mockReturnValue("ephemeral-secret-key");
-    vi.spyOn(personalMessage, "signIntentMessage").mockImplementation(() => new Promise(() => {}));
-
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ challenge_id: "ch_1", message: "bind-me" }), { status: 200 }),
-    ));
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.includes("/api/auth/browser-session")) {
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+      if (url.includes("/api/wallet-authority/repair")) {
+        return new Promise(() => {});
+      }
+      return new Response("{}", { status: 404 });
+    }));
 
     render(<PassportSetupPanel {...setupPanelProps} />);
 
     const user = userEvent.setup();
-    const button = screen.getByRole("button", { name: /Secure your Passport/i });
+    const button = await screen.findByRole("button", { name: /Secure your Passport/i });
     await user.click(button);
 
     await waitFor(() => {
@@ -72,39 +85,49 @@ describe("PassportSetupPanel wallet bind", () => {
     });
   });
 
-  it("shows fixed challenge failure copy without API error text", async () => {
-    vi.spyOn(signingSession, "getEphemeralSecretKey").mockReturnValue("ephemeral-secret-key");
-
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ error: "db_timeout" }), { status: 500 }),
-    ));
+  it("shows fixed repair failure copy without API error text", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.includes("/api/auth/browser-session")) {
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+      if (url.includes("/api/wallet-authority/repair")) {
+        return new Response(JSON.stringify({ error: "db_timeout" }), { status: 500 });
+      }
+      return new Response("{}", { status: 404 });
+    }));
 
     render(<PassportSetupPanel {...setupPanelProps} />);
 
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: /Secure your Passport/i }));
+    await user.click(await screen.findByRole("button", { name: /Secure your Passport/i }));
 
-    expect(await screen.findByText("Couldn't start wallet binding. Try again in a moment.")).toBeInTheDocument();
+    expect(await screen.findByText("Couldn't confirm wallet binding. Try again in a moment.")).toBeInTheDocument();
     expect(screen.queryByText("db_timeout")).not.toBeInTheDocument();
   });
 
-  it("prevents duplicate challenge requests on double click", async () => {
-    vi.spyOn(signingSession, "getEphemeralSecretKey").mockReturnValue("ephemeral-secret-key");
-    vi.spyOn(personalMessage, "signIntentMessage").mockImplementation(() => new Promise(() => {}));
-
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ challenge_id: "ch_1", message: "bind-me" }), { status: 200 }),
-    );
+  it("prevents duplicate repair requests on double click", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+      if (url.includes("/api/auth/browser-session")) {
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+      if (url.includes("/api/wallet-authority/repair")) {
+        return new Promise(() => {});
+      }
+      return new Response("{}", { status: 404 });
+    });
     vi.stubGlobal("fetch", fetchMock);
 
     render(<PassportSetupPanel {...setupPanelProps} />);
 
     const user = userEvent.setup();
-    const button = screen.getByRole("button", { name: /Secure your Passport/i });
+    const button = await screen.findByRole("button", { name: /Secure your Passport/i });
     await user.dblClick(button);
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledTimes(1);
+      const repairCalls = fetchMock.mock.calls.filter(([url]) => String(url).includes("/api/wallet-authority/repair"));
+      expect(repairCalls).toHaveLength(1);
     });
   });
 });

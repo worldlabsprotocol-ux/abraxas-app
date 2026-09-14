@@ -5,7 +5,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
+import { PassportReauthenticationPanel } from "@/components/passport/PassportReauthenticationPanel";
 import { Btn } from "@/components/redesign/ui";
+import { usePassportBrowserSession } from "@/lib/passport/usePassportBrowserSession";
+import { isBrowserSessionAuthFailure } from "@/lib/passport/passportBrowserSessionAuth";
+import { repairZkLoginBinding } from "@/lib/walletAuthority/client/repairZkLoginBinding";
 import type { PassportSetupState } from "@/lib/idv/identityVerificationStates";
 import type { IdentityStampStatus } from "@/lib/hooks/usePassportVerification";
 import type { StoredCredential } from "@/lib/credentials/storage";
@@ -77,8 +81,14 @@ export function PassportCustomerView({
 }: Props) {
   const [bindLoading, setBindLoading] = useState(false);
   const [bindError, setBindError] = useState<string | null>(null);
+  const {
+    browserSessionState,
+    requireReauthentication,
+  } = usePassportBrowserSession(suiAddress, authLoading);
 
   const hasCredential = Boolean(credential) && identityStatus === "earned";
+  const browserSessionReady = browserSessionState === "authenticated";
+  const browserSessionLoading = walletDone && browserSessionState === "loading";
   const status = resolvePassportCustomerStatus({
     walletDone,
     setup,
@@ -93,16 +103,16 @@ export function PassportCustomerView({
   });
 
   async function bindWallet() {
-    if (!suiAddress) return;
+    if (!suiAddress || !browserSessionReady) return;
     setBindLoading(true);
     setBindError(null);
     try {
-      const res = await fetch("/api/wallet-authority/repair", {
-        method: "POST",
-        credentials: "include",
-      });
-      const result = await res.json() as { ok?: boolean; error?: string };
-      if (!res.ok || !result.ok) {
+      const result = await repairZkLoginBinding();
+      if (!result.ok) {
+        if (isBrowserSessionAuthFailure(result.status ?? 0, result.error)) {
+          requireReauthentication();
+          return;
+        }
         throw new Error(result.error ?? "Wallet binding repair failed.");
       }
       onWalletBound?.();
@@ -113,7 +123,7 @@ export function PassportCustomerView({
     }
   }
 
-  if (authLoading) {
+  if (authLoading || browserSessionLoading) {
     return (
       <section style={CARD} aria-live="polite">
         <p style={{ fontFamily: FONT, fontSize: "0.85rem", color: "var(--text-secondary)", margin: 0 }}>
@@ -153,7 +163,11 @@ export function PassportCustomerView({
         </section>
       )}
 
-      {walletDone && !setup.walletBound && (
+      {walletDone && browserSessionState === "reauthentication_required" && (
+        <PassportReauthenticationPanel />
+      )}
+
+      {walletDone && browserSessionReady && !setup.walletBound && (
         <section style={CARD} aria-labelledby="passport-secure-heading">
           <h2 id="passport-secure-heading" style={{
             fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.5rem",
