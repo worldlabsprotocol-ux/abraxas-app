@@ -5,6 +5,7 @@ import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { appendAuditEvent } from "@/lib/verification/audit";
 import { WalletPersistenceError } from "@/lib/credentials/walletPersistenceErrors";
+import { readCanonicalWalletBindingTruth } from "@/lib/trust/readCanonicalWalletBinding";
 
 export type WalletBindingStatusValue = "ok" | "repaired" | "failed";
 
@@ -39,58 +40,30 @@ export async function getCanonicalWalletBindingSnapshot(
   subjectId: string,
 ): Promise<CanonicalWalletBindingSnapshot> {
   const subject = normalizeSuiAddress(subjectId);
-  const sb = requireSupabaseAdmin();
+  const truth = await readCanonicalWalletBindingTruth(subject, requireSupabaseAdmin());
 
-  const { data: binding, error: bindingError } = await sb
-    .from("wallet_bindings")
-    .select("wallet_address, binding_method, binding_status, revoked_at")
-    .eq("subject_id", subject)
-    .eq("wallet_address", subject)
-    .eq("chain", "sui")
-    .maybeSingle();
-
-  if (bindingError) {
+  if (truth.status === "unavailable") {
     throw new WalletPersistenceError(
       "binding_upsert_failed",
       "Failed to read wallet binding",
-      bindingError.message,
+      truth.read_error,
     );
   }
 
-  const { data: claim, error: claimError } = await sb
-    .from("credential_claims")
-    .select("id")
-    .eq("subject_id", subject)
-    .eq("claim_type", "wallet_binding_confirmed")
-    .eq("status", "active")
-    .maybeSingle();
-
-  if (claimError) {
-    throw new WalletPersistenceError(
-      "claim_insert_failed",
-      "Failed to read wallet binding claim",
-      claimError.message,
-    );
-  }
-
-  const bindingStatus = !binding
-    ? "missing"
-    : binding.revoked_at || binding.binding_status === "revoked" || binding.binding_status === "compromised"
+  const bindingStatus = truth.status === "active"
+    ? "active"
+    : truth.status === "revoked"
       ? "revoked"
-      : binding.binding_status === "active" || !binding.binding_status
-        ? "active"
-        : "missing";
-
-  const persisted = bindingStatus === "active" && Boolean(claim?.id);
+      : "missing";
 
   return {
     subject_id: subject,
     wallet_address: subject,
-    persisted,
+    persisted: truth.persisted,
     binding_status: bindingStatus,
-    binding_method: (binding?.binding_method as string | null) ?? null,
-    claim_active: Boolean(claim?.id),
-    repairable: !persisted,
+    binding_method: truth.binding_method,
+    claim_active: truth.claim_active,
+    repairable: truth.repairable,
   };
 }
 

@@ -37,11 +37,13 @@ import type { PartnerFlowHandoffController } from "@/lib/passport/partnerFlowHan
 import { IDLE_PARTNER_FLOW_HANDOFF } from "@/lib/passport/partnerFlowHandoff";
 import { PassportSignInRecoveryPanel } from "@/components/passport/PassportSignInRecoveryPanel";
 import { PassportReauthenticationPanel } from "@/components/passport/PassportReauthenticationPanel";
+import { PassportSessionProbeFailedPanel } from "@/components/passport/PassportSessionProbeFailedPanel";
 import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
 import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
 import { usePassportBrowserSession } from "@/lib/passport/usePassportBrowserSession";
-import { isBrowserSessionAuthFailure } from "@/lib/passport/passportBrowserSessionAuth";
-import { repairZkLoginBinding } from "@/lib/walletAuthority/client/repairZkLoginBinding";
+import { runPassportWalletBind } from "@/lib/passport/runPassportWalletBind";
+import type { WalletBindingRefreshState } from "@/lib/hooks/usePassportVerification";
+import type { CanonicalWalletBindingStatus } from "@/lib/trust/readCanonicalWalletBinding";
 import { HOLDER_VERIFY_DEFAULT_PATH } from "@/lib/integrate/partnerJourney";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 import {
@@ -77,6 +79,7 @@ interface Props {
   suiAddress: string | null;
   email: string;
   setup: PassportSetupState;
+  walletBindingStatus?: CanonicalWalletBindingStatus;
   identityStatus: IdentityStampStatus;
   credential: StoredCredential | null;
   via: string | null;
@@ -89,7 +92,7 @@ interface Props {
   walletBindingL3: boolean;
   onStartIdCheck: () => void;
   onRefresh: () => void;
-  onWalletBound?: () => void;
+  onWalletBound?: () => Promise<WalletBindingRefreshState | void>;
   handoff?: PartnerFlowHandoffController;
   guidedOnboarding?: boolean;
   capturePolicy?: CapturePolicyContext;
@@ -107,6 +110,7 @@ export function PassportDashboard({
   suiAddress,
   email,
   setup,
+  walletBindingStatus = "missing",
   identityStatus,
   credential,
   via,
@@ -136,13 +140,17 @@ export function PassportDashboard({
   const [identityExpanded, setIdentityExpanded] = useState(false);
   const [bindError, setBindError] = useState<string | null>(null);
   const [bindLoading, setBindLoading] = useState(false);
-  const [bindSuccess, setBindSuccess] = useState(false);
   const {
     browserSessionState,
     requireReauthentication,
+    refreshBrowserSession,
   } = usePassportBrowserSession(suiAddress, authLoading);
   const browserSessionReady = browserSessionState === "authenticated";
   const browserSessionLoading = walletDone && browserSessionState === "loading";
+  const walletBindingUnavailable = walletBindingStatus === "unavailable";
+  const canOfferWalletRepair = browserSessionReady
+    && !setup.walletBound
+    && !walletBindingUnavailable;
   const manualMode = idvProvider === "manual";
   const hasCredential = Boolean(credential) && identityStatus === "earned";
   const assuranceLabel = manualMode ? "L2" : "L3";
@@ -209,18 +217,16 @@ export function PassportDashboard({
     }
     setBindLoading(true);
     setBindError(null);
-    setBindSuccess(false);
     try {
-      const result = await repairZkLoginBinding();
-      if (!result.ok) {
-        if (isBrowserSessionAuthFailure(result.status ?? 0, result.error)) {
-          requireReauthentication();
-          return;
-        }
-        throw new Error(result.error ?? "Wallet binding repair failed. Try again.");
+      const result = await runPassportWalletBind({
+        browserSessionReady,
+        requireReauthentication,
+        onWalletBound,
+      });
+      if (!result.ok && result.message) {
+        setBindError(result.message);
+        return;
       }
-      setBindSuccess(true);
-      onWalletBound?.();
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Wallet bind failed";
       setBindError(msg);
@@ -296,7 +302,31 @@ export function PassportDashboard({
             <PassportReauthenticationPanel />
           )}
 
-          {walletDone && browserSessionReady && !setup.walletBound && (
+          {walletDone && browserSessionState === "session_probe_failed" && (
+            <PassportSessionProbeFailedPanel onRetry={() => void refreshBrowserSession()} />
+          )}
+
+          {walletDone && walletBindingUnavailable && (
+            <section style={CARD} aria-labelledby="passport-wallet-unavailable-heading">
+              <h2 id="passport-wallet-unavailable-heading" style={{
+                fontFamily: FONT, fontSize: "1.05rem", fontWeight: 800,
+                color: "var(--text-primary)", margin: "0 0 0.5rem",
+              }}>
+                Wallet status temporarily unavailable
+              </h2>
+              <p style={{
+                fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
+                lineHeight: 1.65, margin: "0 0 1rem",
+              }}>
+                We could not verify your wallet binding right now. Try again in a moment.
+              </p>
+              <Btn size="lg" fullWidth variant="secondary" onClick={() => void onRefresh()}>
+                Try again
+              </Btn>
+            </section>
+          )}
+
+          {walletDone && canOfferWalletRepair && (
             <section style={CARD} aria-labelledby="passport-bind-heading">
               <h2 id="passport-bind-heading" style={{
                 fontFamily: FONT, fontSize: "1.05rem", fontWeight: 800,
@@ -313,11 +343,6 @@ export function PassportDashboard({
               <Btn size="lg" fullWidth loading={bindLoading} onClick={() => void bindWallet()}>
                 {bindLoading ? "Waiting for confirmation…" : "Confirm securely →"}
               </Btn>
-              {bindSuccess && (
-                <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: ACCENT, margin: "0.65rem 0 0" }}>
-                  Wallet bound successfully.
-                </p>
-              )}
               {bindError && (
                 <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: RED, margin: "0.65rem 0 0", lineHeight: 1.55 }}>
                   {bindError}

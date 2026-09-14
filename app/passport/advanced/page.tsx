@@ -39,10 +39,12 @@ function PassportAdvancedInner() {
     isRefreshing,
     isPolling,
     refresh,
+    refreshWalletBindingState,
     setup: setupFromHook,
     veriffConfigured,
     idvProvider,
     walletBindingL3,
+    walletBindingStatus,
     onChain,
     verifyState,
     verifyResult,
@@ -92,6 +94,7 @@ function PassportAdvancedInner() {
           suiAddress={suiAddress}
           email={email}
           setup={setup}
+          walletBindingStatus={walletBindingStatus}
           identityStatus={identityStatus}
           credential={credential}
           via={via}
@@ -104,7 +107,7 @@ function PassportAdvancedInner() {
           walletBindingL3={walletBindingL3}
           onStartIdCheck={() => {}}
           onRefresh={refresh}
-          onWalletBound={refresh}
+          onWalletBound={refreshWalletBindingState}
           guidedOnboarding={false}
           verifyState={verifyState}
           verifyResult={verifyResult}

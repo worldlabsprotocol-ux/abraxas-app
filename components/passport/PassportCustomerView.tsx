@@ -6,10 +6,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
 import { PassportReauthenticationPanel } from "@/components/passport/PassportReauthenticationPanel";
+import { PassportSessionProbeFailedPanel } from "@/components/passport/PassportSessionProbeFailedPanel";
 import { Btn } from "@/components/redesign/ui";
 import { usePassportBrowserSession } from "@/lib/passport/usePassportBrowserSession";
-import { isBrowserSessionAuthFailure } from "@/lib/passport/passportBrowserSessionAuth";
-import { repairZkLoginBinding } from "@/lib/walletAuthority/client/repairZkLoginBinding";
+import { runPassportWalletBind } from "@/lib/passport/runPassportWalletBind";
 import type { PassportSetupState } from "@/lib/idv/identityVerificationStates";
 import type { IdentityStampStatus, WalletBindingRefreshState } from "@/lib/hooks/usePassportVerification";
 import type { CanonicalWalletBindingStatus } from "@/lib/trust/readCanonicalWalletBinding";
@@ -87,6 +87,7 @@ export function PassportCustomerView({
   const {
     browserSessionState,
     requireReauthentication,
+    refreshBrowserSession,
   } = usePassportBrowserSession(suiAddress, authLoading);
 
   const hasCredential = Boolean(credential) && identityStatus === "earned";
@@ -110,25 +111,17 @@ export function PassportCustomerView({
   });
 
   async function bindWallet() {
-    if (!suiAddress || !browserSessionReady) return;
+    if (!suiAddress) return;
     setBindLoading(true);
     setBindError(null);
     try {
-      const result = await repairZkLoginBinding();
-      if (!result.ok) {
-        if (isBrowserSessionAuthFailure(result.status ?? 0, result.error)) {
-          requireReauthentication();
-          return;
-        }
-        throw new Error(result.error ?? "Wallet binding repair failed.");
-      }
-      const refreshed = await onWalletBound?.();
-      if (refreshed && !refreshed.walletBound) {
-        if (refreshed.walletBindingStatus === "unavailable") {
-          setBindError("Wallet status is temporarily unavailable. Try again in a moment.");
-        } else {
-          setBindError("Wallet binding did not save. Try again.");
-        }
+      const result = await runPassportWalletBind({
+        browserSessionReady,
+        requireReauthentication,
+        onWalletBound,
+      });
+      if (!result.ok && result.message) {
+        setBindError(result.message);
       }
     } catch (e) {
       setBindError(e instanceof Error ? e.message : "Security confirmation failed.");
@@ -179,6 +172,10 @@ export function PassportCustomerView({
 
       {walletDone && browserSessionState === "reauthentication_required" && (
         <PassportReauthenticationPanel />
+      )}
+
+      {walletDone && browserSessionState === "session_probe_failed" && (
+        <PassportSessionProbeFailedPanel onRetry={() => void refreshBrowserSession()} />
       )}
 
       {walletDone && walletBindingUnavailable && (
