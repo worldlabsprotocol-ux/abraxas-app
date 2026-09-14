@@ -5,9 +5,11 @@
 import { useState } from "react";
 import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
 import { PassportReauthenticationPanel } from "@/components/passport/PassportReauthenticationPanel";
+import { PassportSessionProbeFailedPanel } from "@/components/passport/PassportSessionProbeFailedPanel";
 import { usePassportBrowserSession } from "@/lib/passport/usePassportBrowserSession";
-import { isBrowserSessionAuthFailure } from "@/lib/passport/passportBrowserSessionAuth";
-import { repairZkLoginBinding } from "@/lib/walletAuthority/client/repairZkLoginBinding";
+import { runPassportWalletBind } from "@/lib/passport/runPassportWalletBind";
+import type { WalletBindingRefreshState } from "@/lib/hooks/usePassportVerification";
+import type { CanonicalWalletBindingStatus } from "@/lib/trust/readCanonicalWalletBinding";
 import { truncateSuiAddress } from "@/components/sui/SuiAuthProvider";
 import type { PassportSetupState } from "@/lib/idv/identityVerificationStates";
 import type { IdentityStampStatus } from "@/lib/hooks/usePassportVerification";
@@ -62,6 +64,7 @@ interface Props {
   suiAddress: string | null;
   email: string;
   setup: PassportSetupState;
+  walletBindingStatus?: CanonicalWalletBindingStatus;
   identityStatus: IdentityStampStatus;
   credential: StoredCredential | null;
   isPolling: boolean;
@@ -72,7 +75,7 @@ interface Props {
   idvProvider?: "veriff" | "manual";
   onStartIdCheck: () => void;
   onRefresh: () => void;
-  onWalletBound?: () => void;
+  onWalletBound?: () => Promise<WalletBindingRefreshState | void>;
   handoff?: PartnerFlowHandoffController;
 }
 
@@ -82,6 +85,7 @@ export function PassportSetupPanel({
   suiAddress,
   email,
   setup,
+  walletBindingStatus = "missing",
   identityStatus,
   credential,
   isPolling,
@@ -100,34 +104,36 @@ export function PassportSetupPanel({
   const completedCount = [setup.accountComplete, setup.walletBound, setup.identityComplete].filter(Boolean).length;
   const [bindLoading, setBindLoading] = useState(false);
   const [bindErrorKind, setBindErrorKind] = useState<BindErrorKind | null>(null);
-  const [bindSuccess, setBindSuccess] = useState(false);
   const {
     browserSessionState,
     requireReauthentication,
+    refreshBrowserSession,
   } = usePassportBrowserSession(suiAddress, authLoading);
   const browserSessionReady = browserSessionState === "authenticated";
+  const walletBindingUnavailable = walletBindingStatus === "unavailable";
+  const canOfferWalletRepair = browserSessionReady
+    && !setup.walletBound
+    && !walletBindingUnavailable;
 
   async function bindWallet() {
     if (!suiAddress || bindLoading) return;
-    if (!browserSessionReady) {
-      requireReauthentication();
-      return;
-    }
     setBindLoading(true);
     setBindErrorKind(null);
-    setBindSuccess(false);
     try {
-      const result = await repairZkLoginBinding();
+      const result = await runPassportWalletBind({
+        browserSessionReady,
+        requireReauthentication,
+        onWalletBound,
+      });
       if (!result.ok) {
-        if (isBrowserSessionAuthFailure(result.status ?? 0, result.error)) {
-          requireReauthentication();
+        if (result.kind === "refresh_unavailable") {
+          setBindErrorKind("confirm_failed");
           return;
         }
-        setBindErrorKind("confirm_failed");
-        return;
+        if (result.kind !== "reauthentication_required") {
+          setBindErrorKind("confirm_failed");
+        }
       }
-      setBindSuccess(true);
-      onWalletBound?.();
     } catch {
       setBindErrorKind("confirm_failed");
     } finally {
@@ -229,7 +235,29 @@ export function PassportSetupPanel({
             <PassportReauthenticationPanel />
           )}
 
-          {walletDone && browserSessionReady && !setup.walletBound && (
+          {walletDone && browserSessionState === "session_probe_failed" && (
+            <PassportSessionProbeFailedPanel onRetry={() => void refreshBrowserSession()} />
+          )}
+
+          {walletDone && walletBindingUnavailable && (
+            <div style={{
+              padding: "0.85rem 1rem", borderRadius: 12,
+              background: "var(--surface-inset)", border: "1px solid var(--border-strong)",
+              marginBottom: "0.85rem",
+            }}>
+              <div style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
+                Wallet status temporarily unavailable
+              </div>
+              <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.85rem" }}>
+                We could not verify your wallet binding right now. Try again in a moment.
+              </p>
+              <Btn size="lg" fullWidth variant="secondary" onClick={() => void onRefresh()}>
+                Try again
+              </Btn>
+            </div>
+          )}
+
+          {walletDone && canOfferWalletRepair && (
             <div style={{
               padding: "0.85rem 1rem", borderRadius: 12,
               background: "var(--surface-inset)", border: "1px solid var(--border-strong)",
@@ -244,11 +272,6 @@ export function PassportSetupPanel({
               <Btn size="lg" fullWidth loading={bindLoading} disabled={bindLoading} onClick={() => void bindWallet()}>
                 {bindLoading ? "Waiting for signature…" : "Secure your Passport →"}
               </Btn>
-              {bindSuccess && (
-                <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: ACCENT, margin: "0.65rem 0 0" }}>
-                  Wallet bound. Continue with the next setup step.
-                </p>
-              )}
               {bindErrorKind && (
                 <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "#EF4444", margin: "0.65rem 0 0", lineHeight: 1.55 }}>
                   {BIND_ERROR_COPY[bindErrorKind]}

@@ -118,6 +118,7 @@ export const DEMO_REQUIRED_MIGRATION_ORDER = [
   "058_partner_metering_foundation.sql",
   "062_partner_webhook_outbox.sql",
   "065_service_role_runtime_grants.sql",
+  "083_zklogin_wallet_binding_atomic.sql",
 ] as const;
 
 export const DEMO_MIGRATION_065_FILENAME = "065_service_role_runtime_grants.sql" as const;
@@ -347,6 +348,19 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
     extensions: [],
     notes:
       "Explicit per-table service_role grants after catalog evidence. Does not enable automatic table exposure.",
+  },
+  {
+    file: "083_zklogin_wallet_binding_atomic.sql",
+    tier: "required",
+    creates: [
+      "upsert_zklogin_wallet_binding_atomic RPC",
+      "replace_credential_claim_atomic RPC",
+    ],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Atomic zkLogin wallet binding + wallet_binding_confirmed claim repair. Required for Passport Confirm securely.",
   },
 ];
 

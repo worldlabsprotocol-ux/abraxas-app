@@ -10,6 +10,9 @@ export type CanonicalWalletBindingStatus = "active" | "missing" | "revoked" | "u
 export interface CanonicalWalletBindingTruth {
   persisted: boolean;
   status: CanonicalWalletBindingStatus;
+  binding_method: string | null;
+  claim_active: boolean;
+  repairable: boolean;
   read_error?: string;
 }
 
@@ -44,7 +47,7 @@ export async function readCanonicalWalletBindingTruth(
 
   const { data: walletBinding, error: walletBindingError } = await sb
     .from("wallet_bindings")
-    .select("binding_status, revoked_at")
+    .select("binding_method, binding_status, revoked_at")
     .eq("subject_id", sui)
     .eq("wallet_address", sui)
     .eq("chain", "sui")
@@ -67,6 +70,9 @@ export async function readCanonicalWalletBindingTruth(
     return {
       persisted: false,
       status: "unavailable",
+      binding_method: null,
+      claim_active: false,
+      repairable: false,
       read_error: WALLET_BINDING_READ_FAILED_CODE,
     };
   }
@@ -77,5 +83,8 @@ export async function readCanonicalWalletBindingTruth(
   return {
     persisted,
     status: persisted ? "active" : bindingStatus,
+    binding_method: (walletBinding?.binding_method as string | null) ?? null,
+    claim_active: Boolean(walletBindingClaim?.id),
+    repairable: !persisted,
   };
 }
