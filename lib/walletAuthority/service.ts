@@ -6,6 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { appendAuditEvent } from "@/lib/verification/audit";
 import { upsertClaims } from "@/lib/credentials/claimsService";
+import { WalletPersistenceError } from "@/lib/credentials/walletPersistenceErrors";
 import { walletBindingClaim, CLAIM_ISSUERS } from "@/lib/credentials/claimSchema";
 import {
   createEvmChallengePayload,
@@ -129,7 +130,7 @@ export async function createEvmBindingChallenge(input: {
     chainId: input.chainId,
   });
 
-  await sb.from("wallet_binding_challenges").insert({
+  const { error: insertError } = await sb.from("wallet_binding_challenges").insert({
     id: payload.challengeId,
     wallet_address: normalizeEvmAddress(input.walletAddress),
     chain: "evm",
@@ -139,6 +140,14 @@ export async function createEvmBindingChallenge(input: {
     subject_id: normalizeSuiAddress(input.subjectId),
     expires_at: payload.expiresAt,
   });
+
+  if (insertError) {
+    throw new WalletPersistenceError(
+      "challenge_insert_failed",
+      "Failed to store wallet binding challenge",
+      insertError.message,
+    );
+  }
 
   return {
     challenge_id: payload.challengeId,

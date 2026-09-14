@@ -2,8 +2,9 @@
 // Persist and query normalized credential claims.
 
 import { normalizeSuiAddress } from "@mysten/sui/utils";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getSupabaseAdmin, requireSupabaseAdmin } from "@/lib/supabase/admin";
 import type { ClaimStatus, CredentialClaimRecord } from "@/lib/credentials/claimSchema";
+import { WalletPersistenceError } from "@/lib/credentials/walletPersistenceErrors";
 import { appendAuditEvent } from "@/lib/verification/audit";
 
 function mapRow(row: Record<string, unknown>): CredentialClaimRecord {
@@ -28,21 +29,42 @@ function mapRow(row: Record<string, unknown>): CredentialClaimRecord {
 export async function upsertClaims(
   claims: Omit<CredentialClaimRecord, "id" | "status">[],
 ): Promise<void> {
-  const sb = getSupabaseAdmin();
-  if (!sb || !claims.length) return;
+  if (!claims.length) return;
+  const sb = requireSupabaseAdmin();
+  const now = new Date().toISOString();
 
   for (const claim of claims) {
-    await sb.from("credential_claims")
-      .update({ status: "expired", updated_at: new Date().toISOString() })
-      .eq("subject_id", claim.subject_id)
-      .eq("claim_type", claim.claim_type)
-      .eq("status", "active");
-
-    await sb.from("credential_claims").insert({
-      ...claim,
-      status: "active",
-      updated_at: new Date().toISOString(),
+    const subject = normalizeSuiAddress(claim.subject_id);
+    const { data, error } = await sb.rpc("replace_credential_claim_atomic", {
+      p_subject_id: subject,
+      p_credential_jti: claim.credential_jti,
+      p_claim_type: claim.claim_type,
+      p_claim_value: claim.claim_value,
+      p_issuer_id: claim.issuer_id,
+      p_assurance_level: claim.assurance_level,
+      p_issued_at: claim.issued_at ?? now,
+      p_expires_at: claim.expires_at,
+      p_evidence_reference: claim.evidence_reference,
+      p_jurisdiction: claim.jurisdiction,
+      p_policy_scope: claim.policy_scope,
     });
+
+    if (error) {
+      throw new WalletPersistenceError(
+        "rpc_failed",
+        "Credential claim replacement RPC failed",
+        error.message,
+      );
+    }
+
+    const result = data as { ok?: boolean; code?: string; detail?: string } | null;
+    if (!result?.ok) {
+      throw new WalletPersistenceError(
+        "rpc_rejected",
+        "Credential claim replacement RPC rejected the write",
+        result?.detail ?? result?.code ?? "rpc_rejected",
+      );
+    }
   }
 
   await appendAuditEvent({
@@ -163,18 +185,27 @@ export async function upsertWalletBinding(
   walletAddress: string,
   bindingMethod = "zklogin",
 ): Promise<void> {
-  const sb = getSupabaseAdmin();
-  if (!sb) return;
-
+  const sb = requireSupabaseAdmin();
   const subject = normalizeSuiAddress(subjectId);
   const wallet = normalizeSuiAddress(walletAddress);
+  const now = new Date().toISOString();
 
-  await sb.from("wallet_bindings").upsert({
+  const { error } = await sb.from("wallet_bindings").upsert({
     subject_id: subject,
     chain: "sui",
     wallet_address: wallet,
     binding_method: bindingMethod,
-    verified_at: new Date().toISOString(),
+    binding_status: "active",
+    verified_at: now,
     revoked_at: null,
+    risk_status: "low",
   }, { onConflict: "subject_id,wallet_address" });
+
+  if (error) {
+    throw new WalletPersistenceError(
+      "binding_upsert_failed",
+      "Failed to persist wallet binding",
+      error.message,
+    );
+  }
 }

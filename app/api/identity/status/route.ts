@@ -39,16 +39,28 @@ function sb(): SupabaseClient | null {
   return createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
 }
 
-async function walletBindingL3(supabase: SupabaseClient, sui: string): Promise<boolean> {
+async function hasCanonicalWalletBinding(supabase: SupabaseClient, sui: string): Promise<boolean> {
   const normalized = normalizeSuiAddress(sui);
-  const { data } = await supabase
+  const { data: binding } = await supabase
     .from("wallet_bindings")
-    .select("binding_method")
+    .select("binding_status, revoked_at")
     .eq("subject_id", normalized)
     .eq("wallet_address", normalized)
-    .is("revoked_at", null)
+    .eq("chain", "sui")
     .maybeSingle();
-  return data?.binding_method === "signed_challenge";
+
+  const { data: claim } = await supabase
+    .from("credential_claims")
+    .select("id")
+    .eq("subject_id", normalized)
+    .eq("claim_type", "wallet_binding_confirmed")
+    .eq("status", "active")
+    .maybeSingle();
+
+  if (!binding || !claim?.id) return false;
+  if (binding.revoked_at) return false;
+  if (binding.binding_status === "revoked" || binding.binding_status === "compromised") return false;
+  return binding.binding_status === "active" || !binding.binding_status;
 }
 
 async function manualDocStatusBySui(supabase: SupabaseClient, sui: string): Promise<StatusPayload | null> {
@@ -120,7 +132,7 @@ async function statusBySui(supabase: SupabaseClient, sui: string): Promise<Statu
 
   const idvStatus = resolveIdentityVerificationStatus(data);
   const credStatus = resolveCredentialStatus(data);
-  const l3 = await walletBindingL3(supabase, sui);
+  const l3 = await hasCanonicalWalletBinding(supabase, sui);
 
   let expires_at: string | null = null;
   if (data.credential_jti) {

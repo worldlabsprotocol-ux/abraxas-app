@@ -10,6 +10,8 @@ import type { ClaimType } from "@/lib/credentials/claimSchema";
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
+export const WALLET_BINDING_READ_FAILED_CODE = "wallet_binding_read_failed";
+
 export interface TrustStatus {
   sui_address: string;
   identity: {
@@ -41,6 +43,9 @@ export interface TrustStatus {
   ready_to_transact: boolean;
   enhanced_trust: boolean;
   wallet_registered: boolean;
+  wallet_binding_persisted: boolean;
+  wallet_binding_status: "active" | "missing" | "revoked" | "unavailable";
+  wallet_binding_read_error?: string;
   claims: {
     active_count: number;
     types: ClaimType[];
@@ -54,10 +59,20 @@ export async function getTrustStatus(rawAddress: string): Promise<TrustStatus | 
   const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
   const sponsor = getSponsorConfig();
 
-  const { data: walletRow } = await sb
-    .from("sui_zklogin_identities")
-    .select("sui_address")
-    .eq("sui_address", sui)
+  const { data: walletBinding, error: walletBindingError } = await sb
+    .from("wallet_bindings")
+    .select("binding_method, binding_status, revoked_at")
+    .eq("subject_id", sui)
+    .eq("wallet_address", sui)
+    .eq("chain", "sui")
+    .maybeSingle();
+
+  const { data: walletBindingClaim, error: walletBindingClaimError } = await sb
+    .from("credential_claims")
+    .select("id")
+    .eq("subject_id", sui)
+    .eq("claim_type", "wallet_binding_confirmed")
+    .eq("status", "active")
     .maybeSingle();
 
   const { data: idv } = await sb
@@ -96,7 +111,33 @@ export async function getTrustStatus(rawAddress: string): Promise<TrustStatus | 
     .limit(1)
     .maybeSingle();
 
-  const walletRegistered = Boolean(walletRow?.sui_address);
+  let walletBindingStatus: TrustStatus["wallet_binding_status"];
+  let walletBindingReadError: string | undefined;
+  let walletBindingPersisted = false;
+  let walletRegistered = false;
+
+  if (walletBindingError || walletBindingClaimError) {
+    console.error("[getTrustStatus] wallet binding read failed", {
+      subject: sui,
+      wallet_binding_error: walletBindingError?.message,
+      wallet_binding_claim_error: walletBindingClaimError?.message,
+    });
+    walletBindingStatus = "unavailable";
+    walletBindingReadError = WALLET_BINDING_READ_FAILED_CODE;
+  } else {
+    walletBindingStatus = !walletBinding
+      ? "missing"
+      : walletBinding.revoked_at
+        || walletBinding.binding_status === "revoked"
+        || walletBinding.binding_status === "compromised"
+        ? "revoked"
+        : walletBinding.binding_status === "active" || !walletBinding.binding_status
+          ? "active"
+          : "missing";
+
+    walletBindingPersisted = walletBindingStatus === "active" && Boolean(walletBindingClaim?.id);
+    walletRegistered = walletBindingPersisted;
+  }
   const identityApproved = idv?.status === "approved";
   const credentialActive = Boolean(
     cred?.jti && cred.expiration_date && new Date(cred.expiration_date) > new Date(),
@@ -135,6 +176,9 @@ export async function getTrustStatus(rawAddress: string): Promise<TrustStatus | 
       sponsor_address: sponsor.sponsor_address,
     },
     wallet_registered: walletRegistered,
+    wallet_binding_persisted: walletBindingPersisted,
+    wallet_binding_status: walletBindingStatus,
+    ...(walletBindingReadError ? { wallet_binding_read_error: walletBindingReadError } : {}),
     ready_to_transact: walletRegistered,
     enhanced_trust: enhancedTrust,
     claims: {

@@ -3,7 +3,8 @@
 // Unified account status on /passport. Basic tier after sign-in; enhanced after ID check.
 
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { consumerCopy } from "@/lib/consumerCopy";
 import { fetchTrustStatus, passportQueryKeys } from "@/lib/api/passport";
 import { Skeleton } from "@/lib/motion/Skeleton";
@@ -31,7 +32,11 @@ export function PassportTrustCard({
   suiAddress: string | null;
   completionPercent?: number;
 }) {
-  const { data: trust, isLoading } = useQuery({
+  const queryClient = useQueryClient();
+  const [repairing, setRepairing] = useState(false);
+  const [repairError, setRepairError] = useState<string | null>(null);
+
+  const { data: trust, isLoading, isError } = useQuery({
     queryKey: suiAddress ? passportQueryKeys.trust(suiAddress) : ["passport", "trust", "none"],
     queryFn: () => fetchTrustStatus(suiAddress!),
     enabled: Boolean(suiAddress),
@@ -40,9 +45,37 @@ export function PassportTrustCard({
 
   if (!suiAddress) return null;
 
-  const walletReady = Boolean(suiAddress);
+  const walletUnavailable = isError || trust?.wallet_binding_status === "unavailable";
+  const walletReady = trust?.wallet_binding_persisted ?? false;
+  const walletRepairable = Boolean(trust)
+    && !walletReady
+    && !walletUnavailable
+    && (trust?.wallet_binding_status === "missing" || trust?.wallet_binding_status === "revoked");
   const enhanced = trust?.enhanced_trust ?? false;
   const copy = consumerCopy.trustCard;
+
+  async function handleRepair() {
+    if (!suiAddress || repairing) return;
+    setRepairing(true);
+    setRepairError(null);
+    try {
+      const res = await fetch("/api/wallet-authority/repair", {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error ?? "Wallet binding repair failed");
+      }
+      await queryClient.invalidateQueries({
+        queryKey: passportQueryKeys.trust(suiAddress),
+      });
+    } catch (error) {
+      setRepairError(error instanceof Error ? error.message : "Wallet binding repair failed");
+    } finally {
+      setRepairing(false);
+    }
+  }
 
   if (isLoading) {
     return (
@@ -73,18 +106,38 @@ export function PassportTrustCard({
         )}
       </div>
       <div style={{ fontFamily: FONT, fontSize: "0.92rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
-        {walletReady ? (enhanced ? copy.readyEnhanced : copy.ready) : "Sign in to get started"}
+        {walletUnavailable
+          ? "Wallet status temporarily unavailable"
+          : walletRepairable
+            ? "Wallet binding needs repair"
+            : walletReady
+              ? (enhanced ? copy.readyEnhanced : copy.ready)
+              : "Sign in to get started"}
       </div>
       <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.85rem" }}>
-        {walletReady
-          ? enhanced ? copy.enhancedBody : copy.readyBody
-          : copy.signInBody}
+        {walletUnavailable
+          ? "We could not verify your wallet binding right now. Try again in a moment."
+          : walletRepairable
+            ? "Your Passport address exists, but the canonical wallet binding was not saved. Use Repair wallet binding below or sign in again."
+            : walletReady
+              ? enhanced ? copy.enhancedBody : copy.readyBody
+              : copy.signInBody}
       </p>
 
       {trust && (
         <div style={{ display: "grid", gap: "0.45rem", marginBottom: enhanced ? 0 : "0.85rem" }}>
           {[
-            { label: copy.rows.wallet, ok: trust.wallet_registered || walletReady, detail: "Active" },
+            {
+              label: copy.rows.wallet,
+              ok: walletReady,
+              detail: walletUnavailable
+                ? "Unavailable"
+                : walletRepairable
+                  ? "Repair required"
+                  : walletReady
+                    ? "Active"
+                    : "Missing",
+            },
             { label: copy.rows.intent, ok: trust.intent.proofs_count > 0, detail: trust.intent.proofs_count > 0 ? "Done" : "Optional" },
             { label: copy.rows.identity, ok: trust.identity.status === "approved" && trust.credential.active, detail: trust.identity.status === "approved" && trust.credential.active ? "Verified" : formatIdentityStatus(trust.identity.status) },
             { label: copy.rows.credential, ok: trust.credential.active, detail: trust.credential.active ? "Active · Tier 2" : "Not issued" },
@@ -99,6 +152,40 @@ export function PassportTrustCard({
               <span style={{ fontFamily: FONT, fontSize: "0.68rem", color: row.detail === "In review" ? AMBER : "var(--text-muted)" }}>{row.detail}</span>
             </div>
           ))}
+        </div>
+      )}
+
+      {walletRepairable && (
+        <div style={{
+          padding: "0.75rem 0.85rem", borderRadius: 10,
+          background: `${AMBER}10`, border: `1px solid ${AMBER}33`,
+          marginBottom: "0.85rem",
+        }}>
+          <div style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 600, color: AMBER, marginBottom: "0.35rem" }}>
+            Repair wallet binding
+          </div>
+          <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.55, margin: "0 0 0.65rem" }}>
+            This restores the canonical zkLogin wallet binding without collecting identity data.
+          </p>
+          {repairError && (
+            <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: AMBER, margin: "0 0 0.65rem" }}>
+              {repairError}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={() => { void handleRepair(); }}
+            disabled={repairing}
+            style={{
+              fontFamily: FONT, fontSize: "0.75rem", fontWeight: 700, color: ACCENT,
+              background: "transparent", border: `1px solid ${ACCENT}55`, borderRadius: 8,
+              minHeight: 44, padding: "0 0.85rem",
+              cursor: repairing ? "wait" : "pointer",
+              opacity: repairing ? 0.7 : 1,
+            }}
+          >
+            {repairing ? "Repairing…" : "Repair wallet binding"}
+          </button>
         </div>
       )}
 
