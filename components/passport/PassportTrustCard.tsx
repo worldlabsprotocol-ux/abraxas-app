@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { consumerCopy } from "@/lib/consumerCopy";
 import { fetchTrustStatus, passportQueryKeys } from "@/lib/api/passport";
+import { repairZkLoginBinding } from "@/lib/walletAuthority/client/repairZkLoginBinding";
 import { Skeleton } from "@/lib/motion/Skeleton";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -59,13 +60,9 @@ export function PassportTrustCard({
     setRepairing(true);
     setRepairError(null);
     try {
-      const res = await fetch("/api/wallet-authority/repair", {
-        method: "POST",
-        credentials: "include",
-      });
-      const data = await res.json() as { ok?: boolean; error?: string };
-      if (!res.ok || !data.ok) {
-        throw new Error(data.error ?? "Wallet binding repair failed");
+      const result = await repairZkLoginBinding();
+      if (!result.ok) {
+        throw new Error(result.error ?? "Wallet binding repair failed");
       }
       await queryClient.invalidateQueries({
         queryKey: passportQueryKeys.trust(suiAddress),

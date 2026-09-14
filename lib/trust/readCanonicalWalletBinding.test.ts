@@ -59,6 +59,9 @@ describe("readCanonicalWalletBindingTruth", () => {
     expect(truth).toEqual({
       persisted: true,
       status: "active",
+      binding_method: null,
+      claim_active: true,
+      repairable: false,
     });
   });
 

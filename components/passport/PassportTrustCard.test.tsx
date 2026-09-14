@@ -111,7 +111,7 @@ describe("PassportTrustCard wallet repair UX", () => {
     });
     fetchMock.mockResolvedValue({
       ok: true,
-      json: async () => ({ ok: true, wallet_binding_status: "repaired" }),
+      json: async () => ({ ok: true, wallet_binding_status: "repaired", persisted: true }),
     });
 
     renderCard();
