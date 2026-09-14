@@ -19,7 +19,7 @@ export default function AdminError({
   }, [error]);
 
   return (
-    <div data-theme="dark" className="abx-admin-shell" style={{ minHeight: "50vh", display: "grid", placeItems: "center", padding: "2rem 1rem" }}>
+    <div data-theme="dark" className="abx-admin-shell" style={{ display: "grid", placeItems: "center", padding: "2rem 1rem" }}>
       <div style={{ maxWidth: 480, width: "100%" }}>
         <AbxEmptyState
           tone="error"
