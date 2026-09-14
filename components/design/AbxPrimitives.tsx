@@ -111,14 +111,14 @@ export function AbxCard({
       className={className}
       style={{
         borderRadius: ABX_SPACING.cardRadius,
-        border: accentTokens ? `1px solid ${accentTokens.border}` : "1px solid var(--border)",
+        border: accentTokens ? `1px solid ${accentTokens.border}` : "1px solid var(--abx-card-border, var(--border))",
         background: accentTokens
-          ? `linear-gradient(145deg, ${accentTokens.faint} 0%, rgba(0,0,0,0.35) 100%)`
-          : "var(--surface-raised)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
+          ? `linear-gradient(145deg, ${accentTokens.faint} 0%, var(--abx-card-bg-end, rgba(17,26,46,0.92)) 100%)`
+          : "var(--abx-card-bg, var(--surface-glass))",
+        backdropFilter: "blur(16px)",
+        WebkitBackdropFilter: "blur(16px)",
         padding,
-        boxShadow: accentTokens?.glow !== "none" ? accentTokens?.glow : undefined,
+        boxShadow: accentTokens?.glow ?? "var(--abx-card-shadow, 0 8px 32px rgba(4,10,24,0.35))",
         ...style,
       }}
     >

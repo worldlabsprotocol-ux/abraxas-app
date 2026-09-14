@@ -5,14 +5,14 @@
 // legacy PageShell on migrated routes.
 
 import { WalletContextProvider } from "@/components/WalletContextProvider";
-import { AmbientGlow } from "./AmbientGlow";
+import { AbxAtmosphericBackground } from "@/components/design/AbxAtmosphericBackground";
 import { RedesignNav } from "./RedesignNav";
 
 export function RedesignShell({ children }: { children: React.ReactNode }) {
   return (
     <WalletContextProvider>
       <div data-theme="dark" className="abx-institutional-shell">
-        <AmbientGlow />
+        <AbxAtmosphericBackground />
         <RedesignNav />
         <main style={{ position: "relative", zIndex: 1 }}>
           {children}

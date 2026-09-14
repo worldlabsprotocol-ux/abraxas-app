@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-14T21:52:58.397Z",
+  "updatedAt": "2026-09-14T23:16:05.886Z",
   "files": {
     "components/redesign/RedesignHome.tsx": "6bcc582f293568bdadcad3452b577c165e5f82a4bcdad73b9e1ec2b06f7cf5e2",
     "components/redesign/AbraxasBootScreen.tsx": "c8e2d8815064f0bf65f0421303b35b3c7187354a90810ce689ac9a1918fbfe9f",
@@ -19,7 +19,7 @@
     "lib/home/protocolProofMedia.ts": "23e094aea4b2d1c120c815a50dded852319a7fde91ad4914c04a6131177faba7",
     "lib/home/ecosystemContent.ts": "34cc8e06b31393314138af4049f1171152dc9060bf938dc1a6115acb030eda13",
     "lib/home/partnerNetwork.ts": "862f7113f5aee930a2447b5f9380b455b770e442e2eae3e8bac918ccfc28d47d",
-    "app/globals.home.css": "ae8bd6c84749a3c273293da15914214dca3eccde26ee7820f59a42fd10b03d7f",
+    "app/globals.home.css": "35ebe98c84de222c639686b8a8957635aebfb41e76ef2c8834ec7f4c39e93997",
     "assets/icon-48.png": "3d3dcbcaf12e30ae599c8b003b63c71825b6aaea3169dfdddc8cd85759a11711",
     "assets/assets/partner-network/premiere-lookbook-cover.jpg": "71aa8838b2c3cd3a53e35b528f2020df4e4f5eab9cabd5c3d5c770c32479f3b1",
     "assets/assets/partner-network/smakd-brand-lifestyle.jpg": "90375709e494c54ccf4e5f21b32aad940221064b5653157a81dc3e5c60fbbcf9",
