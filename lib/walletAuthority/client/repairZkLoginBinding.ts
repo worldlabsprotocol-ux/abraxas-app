@@ -3,7 +3,7 @@
 
 export type RepairZkLoginBindingResult =
   | { ok: true; wallet_binding_status: "ok" | "repaired" }
-  | { ok: false; code?: string; error?: string };
+  | { ok: false; status?: number; code?: string; error?: string };
 
 export async function repairZkLoginBinding(): Promise<RepairZkLoginBindingResult> {
   const res = await fetch("/api/wallet-authority/repair", {
@@ -20,6 +20,7 @@ export async function repairZkLoginBinding(): Promise<RepairZkLoginBindingResult
   if (!res.ok || !data.ok) {
     return {
       ok: false,
+      status: res.status,
       code: data.reason_code ?? data.error,
       error: data.error ?? "Wallet binding repair failed",
     };

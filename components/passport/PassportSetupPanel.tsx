@@ -4,6 +4,10 @@
 
 import { useState } from "react";
 import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
+import { PassportReauthenticationPanel } from "@/components/passport/PassportReauthenticationPanel";
+import { usePassportBrowserSession } from "@/lib/passport/usePassportBrowserSession";
+import { isBrowserSessionAuthFailure } from "@/lib/passport/passportBrowserSessionAuth";
+import { repairZkLoginBinding } from "@/lib/walletAuthority/client/repairZkLoginBinding";
 import { truncateSuiAddress } from "@/components/sui/SuiAuthProvider";
 import type { PassportSetupState } from "@/lib/idv/identityVerificationStates";
 import type { IdentityStampStatus } from "@/lib/hooks/usePassportVerification";
@@ -54,6 +58,7 @@ const UNLOCKS = [
 
 interface Props {
   walletDone: boolean;
+  authLoading?: boolean;
   suiAddress: string | null;
   email: string;
   setup: PassportSetupState;
@@ -73,6 +78,7 @@ interface Props {
 
 export function PassportSetupPanel({
   walletDone,
+  authLoading = false,
   suiAddress,
   email,
   setup,
@@ -95,19 +101,28 @@ export function PassportSetupPanel({
   const [bindLoading, setBindLoading] = useState(false);
   const [bindErrorKind, setBindErrorKind] = useState<BindErrorKind | null>(null);
   const [bindSuccess, setBindSuccess] = useState(false);
+  const {
+    browserSessionState,
+    requireReauthentication,
+  } = usePassportBrowserSession(suiAddress, authLoading);
+  const browserSessionReady = browserSessionState === "authenticated";
 
   async function bindWallet() {
     if (!suiAddress || bindLoading) return;
+    if (!browserSessionReady) {
+      requireReauthentication();
+      return;
+    }
     setBindLoading(true);
     setBindErrorKind(null);
     setBindSuccess(false);
     try {
-      const res = await fetch("/api/wallet-authority/repair", {
-        method: "POST",
-        credentials: "include",
-      });
-      const result = await res.json() as { ok?: boolean };
-      if (!res.ok || !result.ok) {
+      const result = await repairZkLoginBinding();
+      if (!result.ok) {
+        if (isBrowserSessionAuthFailure(result.status ?? 0, result.error)) {
+          requireReauthentication();
+          return;
+        }
         setBindErrorKind("confirm_failed");
         return;
       }
@@ -210,7 +225,11 @@ export function PassportSetupPanel({
             </div>
           )}
 
-          {walletDone && !setup.walletBound && (
+          {walletDone && browserSessionState === "reauthentication_required" && (
+            <PassportReauthenticationPanel />
+          )}
+
+          {walletDone && browserSessionReady && !setup.walletBound && (
             <div style={{
               padding: "0.85rem 1rem", borderRadius: 12,
               background: "var(--surface-inset)", border: "1px solid var(--border-strong)",

@@ -36,8 +36,12 @@ import { PartnerReturnCta } from "@/components/passport/PartnerReturnCta";
 import type { PartnerFlowHandoffController } from "@/lib/passport/partnerFlowHandoff";
 import { IDLE_PARTNER_FLOW_HANDOFF } from "@/lib/passport/partnerFlowHandoff";
 import { PassportSignInRecoveryPanel } from "@/components/passport/PassportSignInRecoveryPanel";
+import { PassportReauthenticationPanel } from "@/components/passport/PassportReauthenticationPanel";
 import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
 import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
+import { usePassportBrowserSession } from "@/lib/passport/usePassportBrowserSession";
+import { isBrowserSessionAuthFailure } from "@/lib/passport/passportBrowserSessionAuth";
+import { repairZkLoginBinding } from "@/lib/walletAuthority/client/repairZkLoginBinding";
 import { HOLDER_VERIFY_DEFAULT_PATH } from "@/lib/integrate/partnerJourney";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 import {
@@ -133,6 +137,12 @@ export function PassportDashboard({
   const [bindError, setBindError] = useState<string | null>(null);
   const [bindLoading, setBindLoading] = useState(false);
   const [bindSuccess, setBindSuccess] = useState(false);
+  const {
+    browserSessionState,
+    requireReauthentication,
+  } = usePassportBrowserSession(suiAddress, authLoading);
+  const browserSessionReady = browserSessionState === "authenticated";
+  const browserSessionLoading = walletDone && browserSessionState === "loading";
   const manualMode = idvProvider === "manual";
   const hasCredential = Boolean(credential) && identityStatus === "earned";
   const assuranceLabel = manualMode ? "L2" : "L3";
@@ -193,16 +203,20 @@ export function PassportDashboard({
       setBindError("Sign in first to create your Abraxas wallet.");
       return;
     }
+    if (!browserSessionReady) {
+      requireReauthentication();
+      return;
+    }
     setBindLoading(true);
     setBindError(null);
     setBindSuccess(false);
     try {
-      const res = await fetch("/api/wallet-authority/repair", {
-        method: "POST",
-        credentials: "include",
-      });
-      const result = await res.json() as { ok?: boolean; error?: string };
-      if (!res.ok || !result.ok) {
+      const result = await repairZkLoginBinding();
+      if (!result.ok) {
+        if (isBrowserSessionAuthFailure(result.status ?? 0, result.error)) {
+          requireReauthentication();
+          return;
+        }
         throw new Error(result.error ?? "Wallet binding repair failed. Try again.");
       }
       setBindSuccess(true);
@@ -218,7 +232,7 @@ export function PassportDashboard({
 
   return (
     <div>
-      {authLoading && (
+      {(authLoading || browserSessionLoading) && (
         <section style={CARD} aria-live="polite">
           <p style={{
             fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
@@ -254,7 +268,7 @@ export function PassportDashboard({
         </section>
       )}
 
-      {!authLoading && walletDone && !guidedOnboarding && (
+      {!authLoading && !browserSessionLoading && walletDone && !guidedOnboarding && (
         <>
           {showVerifiedHero && (
             <PassportVerifiedHero
@@ -278,7 +292,11 @@ export function PassportDashboard({
             />
           )}
 
-          {walletDone && !setup.walletBound && (
+          {walletDone && browserSessionState === "reauthentication_required" && (
+            <PassportReauthenticationPanel />
+          )}
+
+          {walletDone && browserSessionReady && !setup.walletBound && (
             <section style={CARD} aria-labelledby="passport-bind-heading">
               <h2 id="passport-bind-heading" style={{
                 fontFamily: FONT, fontSize: "1.05rem", fontWeight: 800,
