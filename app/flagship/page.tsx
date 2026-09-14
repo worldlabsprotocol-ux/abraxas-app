@@ -10,7 +10,7 @@ const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
 export default function FlagshipPage() {
   return (
-    <RedesignPage maxWidth={900}>
+    <RedesignPage accent="neutral" maxWidth={900}>
       <Link href="/" style={{
         display: "inline-block",
         fontFamily: FONT,

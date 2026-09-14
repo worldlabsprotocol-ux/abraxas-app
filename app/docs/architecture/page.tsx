@@ -37,7 +37,7 @@ function StatusPill({ status }: { status: ArchStatus }) {
 
 export default function ArchitecturePage() {
   return (
-    <RedesignPage maxWidth={880}>
+    <RedesignPage accent="developer" maxWidth={880}>
       <PageHeader
         eyebrow="Technical architecture"
         title="How Abraxas is built"

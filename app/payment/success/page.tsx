@@ -33,13 +33,13 @@ const PRODUCT_LABELS: Record<string, string> = {
 const PRODUCT_STEPS: Record<string, readonly string[]> = {
   wyoming_starter: [
     "If your payment completed, check your email for Wyoming LLC intake instructions.",
-    "Entity filing and any tokenization steps are manual in this beta — nothing starts automatically.",
+    "Entity filing and any tokenization steps are manual in this beta. Nothing starts automatically.",
     "Open Passport to bind your wallet for verification workflows when needed.",
     "Follow email instructions for document review updates.",
   ],
   wyoming_growth: [
-    "If your payment completed, check your email for growth-tier intake instructions.",
-    "Governance and cap-table steps are coordinated manually in this beta.",
+    "If your payment completed, check your email for growth tier intake instructions.",
+    "Governance and cap table steps are coordinated manually in this beta.",
     "Open Passport to bind your wallet for verification workflows when needed.",
     "Follow email instructions for next steps.",
   ],
@@ -51,13 +51,13 @@ const PRODUCT_STEPS: Record<string, readonly string[]> = {
   ],
   asset_verification: [
     "If your payment completed, check your email for asset verification intake instructions.",
-    "Document review is manual in this beta — timelines vary.",
+    "Document review is manual in this beta. Timelines vary.",
     "Open Passport to bind your wallet and use verification tools when required.",
     "Credential issuance depends on review outcome.",
   ],
   music_audit: [
     "If your payment completed, check your email for music audit intake instructions.",
-    "Catalog review is manual in this beta — timelines vary.",
+    "Catalog review is manual in this beta. Timelines vary.",
     "Open Passport to bind your wallet for verification workflows when needed.",
     "Follow email instructions for report delivery.",
   ],

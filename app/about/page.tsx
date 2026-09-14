@@ -7,7 +7,7 @@ import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "About Abraxas",
-  description: "Where assets become collateral. A plain-English explainer of Abraxas Protocol. the verification and collateral intelligence OS for real-world assets.",
+  description: "Where assets become collateral. A plain English explainer of Abraxas Protocol, the verification and collateral intelligence OS for real world assets.",
 };
 
 const M = "'JetBrains Mono','SF Mono',ui-monospace,monospace";

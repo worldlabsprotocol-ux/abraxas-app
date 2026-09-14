@@ -15,7 +15,7 @@ const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
 export default function RoadmapPage() {
   return (
-    <RedesignPage maxWidth={820}>
+    <RedesignPage accent="neutral" maxWidth={820}>
       <PageHeader eyebrow="Roadmap" title={ROADMAP_HEADLINE} subtitle={ROADMAP_SUBTITLE} />
 
       <ContentCard title="How we got here">

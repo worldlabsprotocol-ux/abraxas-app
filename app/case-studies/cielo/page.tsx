@@ -31,7 +31,7 @@ const LEVEL_COLOR: Record<string, string> = {
 
 export default function CieloCaseStudyPage() {
   return (
-    <RedesignPage maxWidth={900}>
+    <RedesignPage accent="neutral" maxWidth={900}>
       <PageHeader
         eyebrow="Case study · Genesis asset"
         title="Cielo Sunrise (ABX-RE-HOSP-001)"

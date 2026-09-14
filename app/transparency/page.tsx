@@ -47,7 +47,7 @@ export default function TransparencyPage() {
   }, []);
 
   return (
-    <RedesignPage maxWidth={860}>
+    <RedesignPage accent="neutral" maxWidth={860}>
       <PageHeader
         eyebrow="Transparency"
         title="Operational log"

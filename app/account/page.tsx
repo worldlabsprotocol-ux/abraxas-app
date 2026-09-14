@@ -53,7 +53,7 @@ function AccountInner() {
 
   if (!isAuthenticated || !suiAddress) {
     return (
-      <RedesignPage maxWidth={720}>
+      <RedesignPage accent="neutral" maxWidth={720}>
         <PageHeader
           eyebrow={HOLDER_ACCOUNT_EYEBROW}
           title={HOLDER_ACCOUNT_SIGNED_OUT_TITLE}
@@ -106,7 +106,7 @@ function AccountInner() {
     : null;
 
   return (
-    <RedesignPage maxWidth={720}>
+    <RedesignPage accent="neutral" maxWidth={720}>
       <PageHeader
         eyebrow={HOLDER_ACCOUNT_EYEBROW}
         title={HOLDER_ACCOUNT_TITLE}

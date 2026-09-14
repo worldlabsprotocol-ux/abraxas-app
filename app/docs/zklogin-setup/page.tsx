@@ -12,7 +12,7 @@ const ACCENT = "#10B981";
 
 export default function ZkLoginSetupPage() {
   return (
-    <RedesignPage maxWidth={820}>
+    <RedesignPage accent="developer" maxWidth={820}>
       <PageHeader
         eyebrow="Operator guide"
         title="zkLogin backend setup"

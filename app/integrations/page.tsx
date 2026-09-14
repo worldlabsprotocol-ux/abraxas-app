@@ -47,7 +47,7 @@ export default function IntegrationsPage() {
   };
 
   return (
-    <RedesignPage maxWidth={900}>
+    <RedesignPage accent="developer" maxWidth={900}>
       <PageHeader
         eyebrow="Integrations"
         title="The reusable verification primitive"

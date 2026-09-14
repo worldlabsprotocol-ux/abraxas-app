@@ -8,7 +8,7 @@ const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
 export default function BlogPage() {
   return (
-    <RedesignPage maxWidth={860}>
+    <RedesignPage accent="neutral" maxWidth={860}>
       <PageHeader eyebrow="Learn" title="Deep dives" subtitle="Real world asset tokenization, RWA infrastructure, asset verification, and the Abraxas proof model for institutional RWA." />
       <ContentCard title="Articles">
         <div style={{ display: "grid", gap: "0.75rem" }}>

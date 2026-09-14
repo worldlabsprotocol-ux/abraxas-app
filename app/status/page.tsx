@@ -80,7 +80,7 @@ export default function ProtocolStatusPage() {
   } satisfies PublicMetrics : null);
 
   return (
-    <RedesignPage maxWidth={820}>
+    <RedesignPage accent="neutral" maxWidth={820}>
       <header style={{ marginBottom: "1.5rem" }}>
         <div className="abx-eyebrow-violet" style={{ marginBottom: "0.35rem" }}>Infrastructure</div>
         <h1 style={{ fontFamily: FONT, fontSize: "1.75rem", fontWeight: 900, margin: "0 0 0.5rem", letterSpacing: "-0.03em" }}>

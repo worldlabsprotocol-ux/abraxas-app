@@ -9,7 +9,7 @@ import { GOOD_TROUBLE_BRAND } from "@/lib/goodTrouble/constants";
 
 export default function GoodTroublePage() {
   return (
-    <RedesignPage maxWidth={900}>
+    <RedesignPage accent="partner" maxWidth={900}>
       <PageHeader
         eyebrow="Integration pilot · Cannabis"
         title={`${GOOD_TROUBLE_BRAND.name} verification`}

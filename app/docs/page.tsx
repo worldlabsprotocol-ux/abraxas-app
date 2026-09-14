@@ -81,7 +81,7 @@ export default function DocsPage() {
   };
 
   return (
-    <RedesignPage maxWidth={900}>
+    <RedesignPage accent="developer" maxWidth={900}>
       <header style={{ marginBottom: "1.25rem" }}>
         <div className="abx-eyebrow-violet" style={{ marginBottom: "0.35rem" }}>Documentation</div>
         <h1 style={{ fontFamily: FONT, fontSize: "1.75rem", fontWeight: 900, margin: "0 0 0.5rem", letterSpacing: "-0.03em" }}>

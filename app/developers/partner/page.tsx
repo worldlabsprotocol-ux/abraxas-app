@@ -88,7 +88,7 @@ export default function PartnerPortalPage() {
   }
 
   return (
-    <RedesignPage maxWidth={880}>
+    <RedesignPage accent="developer" maxWidth={880}>
       <PageHeader
         eyebrow="Developers"
         title="Partner portal"

@@ -92,6 +92,7 @@ export interface AbxCardProps {
   padding?: string;
   style?: CSSProperties;
   className?: string;
+  id?: string;
 }
 
 export function AbxCard({
@@ -100,11 +101,13 @@ export function AbxCard({
   padding = ABX_SPACING.cardPadding,
   style,
   className = "abx-card",
+  id,
 }: AbxCardProps) {
   const accentTokens = accent ? ABX_TAB_ACCENTS[accent] : null;
 
   return (
     <div
+      id={id}
       className={className}
       style={{
         borderRadius: ABX_SPACING.cardRadius,

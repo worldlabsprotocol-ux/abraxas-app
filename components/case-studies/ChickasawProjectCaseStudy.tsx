@@ -4,7 +4,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard, KeyValueTable, BulletList } from "@/components/redesign/RedesignContent";
 import { CaseStudyVideoHero } from "@/components/case-studies/CaseStudyGallery";
 import { AssetInquirePanel } from "@/components/case-studies/AssetInquirePanel";
@@ -77,7 +76,7 @@ export function ChickasawProjectCaseStudy() {
   }, []);
 
   return (
-    <RedesignPage maxWidth={920}>
+    <>
       <PageHeader
         eyebrow="Reference land loop · consent-gated"
         title={`${CPG_ASSET.name}`}
@@ -304,7 +303,7 @@ export function ChickasawProjectCaseStudy() {
         <Btn href="#acquire" size="lg">Acquire on Abraxas →</Btn>
         <Btn href={CPG_ASSET.verifyPath} variant="secondary" size="lg">Verify record</Btn>
       </div>
-    </RedesignPage>
+    </>
   );
 }
 

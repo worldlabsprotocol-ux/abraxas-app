@@ -53,7 +53,7 @@ function StatusPill({ status }: { status: AILLayerStatus }) {
 
 export default function AILSpecPage() {
   return (
-    <RedesignPage maxWidth={900}>
+    <RedesignPage accent="developer" maxWidth={900}>
       <PageHeader
         eyebrow={AIL_NAME}
         title={AIL_POSITIONING}

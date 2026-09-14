@@ -8,7 +8,7 @@ import { GOOD_TROUBLE_BRAND, GOOD_TROUBLE_PILOT_DISCLAIMER } from "@/lib/goodTro
 
 export default function GoodTroubleCheckoutPage() {
   return (
-    <RedesignPage maxWidth={640}>
+    <RedesignPage accent="partner" maxWidth={640}>
       <PageHeader
         eyebrow="Good Trouble · Regulated retail"
         title="Checkout verification"

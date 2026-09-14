@@ -35,7 +35,7 @@ const AUDIT_TRAIL = [
 
 export default function InstitutionalPage() {
   return (
-    <RedesignPage>
+    <RedesignPage accent="neutral">
       <PageHeader
         eyebrow="Institutional"
         title="Built for scale. Honest about what is live."

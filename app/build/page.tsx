@@ -3,7 +3,7 @@
 // Tokenize on Abraxas — owner intake aligned with institutional homepage.
 
 import Link from "next/link";
-import { RedesignShell } from "@/components/redesign/RedesignShell";
+import { AbxPageShell } from "@/components/design/AbxPageShell";
 import { RedesignFooter } from "@/components/redesign/RedesignFooter";
 import { Btn } from "@/components/redesign/ui";
 
@@ -19,7 +19,7 @@ const STEPS = [
 
 export default function BuildPage() {
   return (
-    <RedesignShell>
+    <AbxPageShell accent="neutral">
       <div style={{ maxWidth: 820, margin: "0 auto", padding: "clamp(1.25rem, 4vw, 2.5rem) clamp(1rem, 3vw, 1.5rem)" }}>
         <div style={{ fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: ACCENT, marginBottom: "0.5rem" }}>
           Tokenize
@@ -82,6 +82,6 @@ export default function BuildPage() {
         </p>
       </div>
       <RedesignFooter />
-    </RedesignShell>
+    </AbxPageShell>
   );
 }

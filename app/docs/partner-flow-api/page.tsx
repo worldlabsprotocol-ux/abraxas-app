@@ -59,7 +59,7 @@ export default function PartnerFlowApiDocsPage() {
   );
 
   return (
-    <RedesignPage maxWidth={920}>
+    <RedesignPage accent="developer" maxWidth={920}>
       <PageHeader
         eyebrow="Integrators · Partner Flow API"
         title="Partner Flow OpenAPI contract"

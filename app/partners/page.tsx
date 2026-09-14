@@ -99,7 +99,7 @@ export default function PartnersPage() {
   const utilityPartners = PARTNERS.filter(p => !p.isVerificationPartner);
 
   return (
-    <RedesignPage maxWidth={760}>
+    <RedesignPage accent="neutral" maxWidth={760}>
       <PageHeader
         eyebrow="Partners"
         title="Who actually backs the verification"

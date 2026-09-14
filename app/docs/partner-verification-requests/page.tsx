@@ -10,7 +10,7 @@ const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 
 export default function PartnerVerificationRequestsPage() {
   return (
-    <RedesignPage maxWidth={820}>
+    <RedesignPage accent="developer" maxWidth={820}>
       <PageHeader
         eyebrow="Integrators · Step 4"
         title="Partner verification requests"

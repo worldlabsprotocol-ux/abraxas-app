@@ -23,7 +23,7 @@ export default function TokenomicsPage() {
   }, []);
 
   return (
-    <RedesignPage maxWidth={820}>
+    <RedesignPage accent="neutral" maxWidth={820}>
       <PageHeader
         eyebrow="Tokenomics"
         title={`${TOKENOMICS.symbol} utility and economics`}

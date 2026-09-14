@@ -21,7 +21,7 @@ const EMERGENCY_POLICY = [
 
 export default function SecurityPage() {
   return (
-    <RedesignPage maxWidth={820}>
+    <RedesignPage accent="home" maxWidth={820}>
       <PageHeader
         eyebrow="Security"
         title="Security and trust practices"

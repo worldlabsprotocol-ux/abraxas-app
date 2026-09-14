@@ -42,7 +42,7 @@ export default async function BlogArticlePage({
   const usesFigures = FIGURE_ARTICLE_SLUGS.includes(article.slug);
 
   return (
-    <RedesignPage maxWidth={720}>
+    <RedesignPage accent="neutral" maxWidth={720}>
       <PageHeader
         eyebrow={`${BLOG_CATEGORY_LABELS[article.category]} · ${article.readingTime}`}
         title={article.title}

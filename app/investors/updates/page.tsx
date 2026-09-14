@@ -68,7 +68,7 @@ const UPDATE_SECTIONS = [
 
 export default function InvestorUpdatesPage() {
   return (
-    <RedesignPage maxWidth={820}>
+    <RedesignPage accent="home" maxWidth={820}>
       <PageHeader
         eyebrow="Investor relations"
         title="Monthly update template"

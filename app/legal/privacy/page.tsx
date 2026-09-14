@@ -29,7 +29,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function PrivacyPolicyPage() {
   return (
-    <RedesignPage maxWidth={680}>
+    <RedesignPage accent="legal" maxWidth={680}>
       <PageHeader title="Privacy Policy" />
       <p style={{ fontFamily:S, fontSize:"0.78rem", color:"var(--text-muted)",
                    marginBottom:"2rem" }}>

@@ -11,7 +11,7 @@ const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 
 export default function CredentialPortabilityPage() {
   return (
-    <RedesignPage maxWidth={820}>
+    <RedesignPage accent="developer" maxWidth={820}>
       <PageHeader
         eyebrow="Integrators"
         title="Portable credentials & verification API"

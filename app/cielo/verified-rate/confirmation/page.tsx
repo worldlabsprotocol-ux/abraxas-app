@@ -1,7 +1,7 @@
 // FILE: app/cielo/verified-rate/confirmation/page.tsx
 // User-facing verified-rate request status. not a reservation confirmation.
 
-import { RedesignShell } from "@/components/redesign/RedesignShell";
+import { AbxPageShell } from "@/components/design/AbxPageShell";
 import { VerifiedRateConfirmationClient } from "@/components/cielo/VerifiedRateConfirmationClient";
 
 interface PageProps {
@@ -12,7 +12,7 @@ export default function VerifiedRateConfirmationPage({ searchParams }: PageProps
   const ref = searchParams?.ref?.trim();
 
   return (
-    <RedesignShell>
+    <AbxPageShell accent="neutral">
       {ref ? (
         <VerifiedRateConfirmationClient refCode={ref} />
       ) : (
@@ -22,6 +22,6 @@ export default function VerifiedRateConfirmationPage({ searchParams }: PageProps
           </p>
         </div>
       )}
-    </RedesignShell>
+    </AbxPageShell>
   );
 }

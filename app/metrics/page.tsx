@@ -85,7 +85,7 @@ export default function MetricsPage() {
   const hasVerifyActivity = Boolean(v && v.data_available && v.total_presentations > 0);
 
   return (
-    <RedesignPage maxWidth={900}>
+    <RedesignPage accent="neutral" maxWidth={900}>
       <PageHeader
         eyebrow="Transparency"
         title="Live protocol metrics"

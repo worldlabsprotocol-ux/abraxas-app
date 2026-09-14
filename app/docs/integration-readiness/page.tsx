@@ -27,7 +27,7 @@ const body: React.CSSProperties = {
 
 export default function IntegrationReadinessPage() {
   return (
-    <RedesignPage maxWidth={920}>
+    <RedesignPage accent="developer" maxWidth={920}>
       <PageHeader
         eyebrow="Integrators · Status"
         title="Integration readiness"

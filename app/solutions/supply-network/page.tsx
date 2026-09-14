@@ -10,7 +10,7 @@ const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
 export default function SupplyNetworkPage() {
   return (
-    <RedesignPage maxWidth={820}>
+    <RedesignPage accent="neutral" maxWidth={820}>
       <PageHeader
         eyebrow="Solutions"
         title={SUPPLY_NETWORK.headline}

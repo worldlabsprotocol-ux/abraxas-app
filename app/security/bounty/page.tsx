@@ -88,7 +88,7 @@ export default function BugBountyPage() {
   const mailto = `mailto:${BUG_BOUNTY.reportEmail}?subject=${encodeURIComponent(BUG_BOUNTY.reportSubject)}`;
 
   return (
-    <RedesignPage maxWidth={860}>
+    <RedesignPage accent="home" maxWidth={860}>
       <PageHeader
         eyebrow="Security program"
         title="Bug bounty & audit tracker"

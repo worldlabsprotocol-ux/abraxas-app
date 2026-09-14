@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { VAULTS, fmtUSD } from "@/lib/appData";
-import { RedesignShell } from "@/components/redesign/RedesignShell";
+import { AbxPageShell } from "@/components/design/AbxPageShell";
 import { MotionCard } from "@/lib/motion/MotionCard";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -11,7 +11,7 @@ const ACCENT = "#10B981";
 
 export default function MarketplacePage() {
   return (
-    <RedesignShell>
+    <AbxPageShell accent="home">
       <div style={{ maxWidth: 980, margin: "0 auto", padding: "clamp(2.5rem,6vw,4rem) clamp(1rem,3vw,2rem) 5rem" }}>
         <div style={{ fontFamily: FONT, fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.14em",
                        textTransform: "uppercase", color: ACCENT, marginBottom: "0.6rem" }}>
@@ -78,6 +78,6 @@ export default function MarketplacePage() {
           })}
         </div>
       </div>
-    </RedesignShell>
+    </AbxPageShell>
   );
 }

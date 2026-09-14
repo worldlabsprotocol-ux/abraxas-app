@@ -11,7 +11,7 @@ const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 export default function ChainPage() {
   const c = CHAIN_NARRATIVE;
   return (
-    <RedesignPage maxWidth={820}>
+    <RedesignPage accent="developer" maxWidth={820}>
       <PageHeader
         eyebrow="Architecture"
         title={c.headline}

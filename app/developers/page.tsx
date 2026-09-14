@@ -19,7 +19,7 @@ const MONO = ABRAXAS_FONT_MONO;
 
 export default function DevelopersPage() {
   return (
-    <RedesignPage maxWidth={880}>
+    <RedesignPage accent="developer" maxWidth={880}>
       <PageHeader
         eyebrow="Developers"
         title="Build on Abraxas verification"

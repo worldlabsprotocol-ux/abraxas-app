@@ -41,6 +41,16 @@ const TARGET_FILES = [
   "app/verify/error.tsx",
   "app/legal/privacy/page.tsx",
   "app/legal/terms/page.tsx",
+  "app/about/page.tsx",
+  "app/payment/success/page.tsx",
+  "app/auth/callback/page.tsx",
+  "app/login/page.tsx",
+  "app/dashboard/page.tsx",
+  "components/redesign/RedesignContent.tsx",
+  "components/redesign/RedesignFooter.tsx",
+  "components/admin/AdminPageHeader.tsx",
+  "components/cielo/CieloPaymentPanel.tsx",
+  "components/cielo/CieloReceiptPanel.tsx",
 ];
 
 function collectTargetFiles(): string[] {

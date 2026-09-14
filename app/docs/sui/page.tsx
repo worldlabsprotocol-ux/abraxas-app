@@ -15,7 +15,7 @@ const ACCENT = "#10B981";
 
 function SuiDocsInner() {
   return (
-    <RedesignPage maxWidth={960}>
+    <RedesignPage accent="developer" maxWidth={960}>
       <PageHeader
         eyebrow="Sui verification"
         title="Everything Abraxas does on Sui"

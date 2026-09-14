@@ -78,7 +78,7 @@ export default function PartnerFlowDocsPage() {
   });
 
   return (
-    <RedesignPage maxWidth={1100}>
+    <RedesignPage accent="developer" maxWidth={1100}>
       <PageHeader
         eyebrow="Integrators · Partner Flow"
         title={PARTNER_FLOW_HEADLINE}

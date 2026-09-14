@@ -21,7 +21,7 @@ const ACCENT = "#10B981";
 
 export default function PassportSpecPage() {
   return (
-    <RedesignPage maxWidth={900}>
+    <RedesignPage accent="developer" maxWidth={900}>
       <PageHeader
         eyebrow="Passport specification"
         title="Chain-agnostic Passport root"

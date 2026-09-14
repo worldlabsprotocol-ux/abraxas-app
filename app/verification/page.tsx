@@ -33,7 +33,7 @@ const BOOTSTRAP_STEPS = [
 
 export default function VerificationPage() {
   return (
-    <RedesignPage maxWidth={960}>
+    <RedesignPage accent="neutral" maxWidth={960}>
       <PageHeader
         eyebrow="Internal engineering · not a public attestation"
         title="Verification layer status"

@@ -9,7 +9,7 @@ const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
 export default function CommunityPage() {
   return (
-    <RedesignPage maxWidth={720}>
+    <RedesignPage accent="neutral" maxWidth={720}>
       <PageHeader
         eyebrow="Community"
         title="Build with us"

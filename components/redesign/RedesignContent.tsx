@@ -2,6 +2,7 @@
 // FILE: components/redesign/RedesignContent.tsx
 // Page building blocks for docs, roadmap, tokenomics, etc.
 
+import { AbxCard } from "@/components/design/AbxPrimitives";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -68,14 +69,7 @@ export function ContentCard({
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} style={{
-      marginBottom: "1.25rem",
-      padding: "1.25rem",
-      borderRadius: "var(--radius-lg)",
-      border: "1px solid var(--border)",
-      background: "var(--surface-raised)",
-      boxShadow: "var(--shadow-card)",
-    }}>
+    <AbxCard id={id} style={{ marginBottom: "1.25rem" }} padding="1.25rem">
       {title && (
         <h2 style={{
           fontFamily: FONT,
@@ -88,7 +82,7 @@ export function ContentCard({
         </h2>
       )}
       {children}
-    </section>
+    </AbxCard>
   );
 }
 
