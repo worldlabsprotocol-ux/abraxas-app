@@ -8,9 +8,12 @@ import {
   computePassportSetupState,
   resolveCredentialStatus,
   resolveIdentityVerificationStatus,
+  type IdentityVerificationStatus,
+  type CredentialStatus,
 } from "@/lib/idv/identityVerificationStates";
 import { getIdvProvider, isVeriffLive } from "@/lib/idv/idvProvider";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { readCanonicalWalletBindingTruth } from "@/lib/trust/readCanonicalWalletBinding";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -21,17 +24,29 @@ type StatusPayload = {
   credential_jti?: string | null;
   document_type?: string | null;
   jurisdiction?: string | null;
-  identity_verification_status?: string;
-  credential_status?: string;
+  identity_verification_status?: IdentityVerificationStatus;
+  credential_status?: CredentialStatus;
   veriff_session_id?: string | null;
   last_verified_at?: string | null;
   credential_issued_at?: string | null;
   expires_at?: string | null;
   error_message?: string | null;
+  wallet_binding_l3: boolean;
+  wallet_binding_status: "active" | "missing" | "revoked" | "unavailable";
+  wallet_binding_read_error?: string;
+  setup: ReturnType<typeof computePassportSetupState>;
+  veriff_configured: boolean;
+  idv_provider: string;
+};
+
+type PartialStatusPayload = Omit<
+  StatusPayload,
+  "wallet_binding_l3" | "wallet_binding_status" | "wallet_binding_read_error" | "setup"
+> & {
   wallet_binding_l3?: boolean;
+  wallet_binding_status?: StatusPayload["wallet_binding_status"];
+  wallet_binding_read_error?: string;
   setup?: ReturnType<typeof computePassportSetupState>;
-  veriff_configured?: boolean;
-  idv_provider?: string;
 };
 
 function sb(): SupabaseClient | null {
@@ -39,31 +54,54 @@ function sb(): SupabaseClient | null {
   return createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
 }
 
-async function hasCanonicalWalletBinding(supabase: SupabaseClient, sui: string): Promise<boolean> {
-  const normalized = normalizeSuiAddress(sui);
-  const { data: binding } = await supabase
-    .from("wallet_bindings")
-    .select("binding_status, revoked_at")
-    .eq("subject_id", normalized)
-    .eq("wallet_address", normalized)
-    .eq("chain", "sui")
-    .maybeSingle();
-
-  const { data: claim } = await supabase
-    .from("credential_claims")
-    .select("id")
-    .eq("subject_id", normalized)
-    .eq("claim_type", "wallet_binding_confirmed")
-    .eq("status", "active")
-    .maybeSingle();
-
-  if (!binding || !claim?.id) return false;
-  if (binding.revoked_at) return false;
-  if (binding.binding_status === "revoked" || binding.binding_status === "compromised") return false;
-  return binding.binding_status === "active" || !binding.binding_status;
+function mapLegacyStatusToIdentity(status: string): IdentityVerificationStatus {
+  if (status === "approved") return "approved";
+  if (status === "requires_resubmission") return "requires_resubmission";
+  if (status === "declined") return "declined";
+  if (status === "pending") return "in_progress";
+  return "not_started";
 }
 
-async function manualDocStatusBySui(supabase: SupabaseClient, sui: string): Promise<StatusPayload | null> {
+async function finalizeStatusPayload(
+  supabase: SupabaseClient,
+  sui: string,
+  partial: PartialStatusPayload,
+): Promise<StatusPayload> {
+  const walletTruth = await readCanonicalWalletBindingTruth(sui, supabase);
+  const walletBindingL3 = walletTruth.persisted;
+
+  const { data: walletRow } = await supabase
+    .from("sui_zklogin_identities")
+    .select("sui_address")
+    .eq("sui_address", normalizeSuiAddress(sui))
+    .maybeSingle();
+
+  const identityStatus = partial.identity_verification_status
+    ?? mapLegacyStatusToIdentity(partial.status);
+  const credentialStatus = partial.credential_status
+    ?? (partial.status === "approved" && partial.credential_jti ? "active" : "not_issued");
+
+  const setup = computePassportSetupState({
+    walletDone: Boolean(walletRow),
+    identityStatus,
+    credentialStatus,
+    walletBindingL3,
+  });
+
+  return {
+    ...partial,
+    identity_verification_status: identityStatus,
+    credential_status: credentialStatus,
+    wallet_binding_l3: walletBindingL3,
+    wallet_binding_status: walletTruth.status,
+    ...(walletTruth.read_error ? { wallet_binding_read_error: walletTruth.read_error } : {}),
+    setup,
+    veriff_configured: partial.veriff_configured ?? isVeriffLive(),
+    idv_provider: partial.idv_provider ?? getIdvProvider(),
+  };
+}
+
+async function manualDocStatusBySui(supabase: SupabaseClient, sui: string): Promise<PartialStatusPayload | null> {
   const normalized = normalizeSuiAddress(sui);
 
   const { data: accepted } = await supabase
@@ -76,7 +114,12 @@ async function manualDocStatusBySui(supabase: SupabaseClient, sui: string): Prom
     .maybeSingle();
 
   if (accepted) {
-    return { status: "approved", via: "manual_review", idv_provider: getIdvProvider(), veriff_configured: isVeriffLive() };
+    return {
+      status: "approved",
+      via: "manual_review",
+      idv_provider: getIdvProvider(),
+      veriff_configured: isVeriffLive(),
+    };
   }
 
   const { data: pending } = await supabase
@@ -89,7 +132,12 @@ async function manualDocStatusBySui(supabase: SupabaseClient, sui: string): Prom
     .maybeSingle();
 
   if (pending) {
-    return { status: "pending", via: "manual_review", idv_provider: getIdvProvider(), veriff_configured: isVeriffLive() };
+    return {
+      status: "pending",
+      via: "manual_review",
+      idv_provider: getIdvProvider(),
+      veriff_configured: isVeriffLive(),
+    };
   }
 
   const { data: resubmit } = await supabase
@@ -115,7 +163,7 @@ async function manualDocStatusBySui(supabase: SupabaseClient, sui: string): Prom
   return null;
 }
 
-async function statusBySui(supabase: SupabaseClient, sui: string): Promise<StatusPayload | null> {
+async function statusBySui(supabase: SupabaseClient, sui: string): Promise<PartialStatusPayload | null> {
   const { data } = await supabase
     .from("identity_verifications")
     .select(`
@@ -132,7 +180,6 @@ async function statusBySui(supabase: SupabaseClient, sui: string): Promise<Statu
 
   const idvStatus = resolveIdentityVerificationStatus(data);
   const credStatus = resolveCredentialStatus(data);
-  const l3 = await hasCanonicalWalletBinding(supabase, sui);
 
   let expires_at: string | null = null;
   if (data.credential_jti) {
@@ -150,19 +197,6 @@ async function statusBySui(supabase: SupabaseClient, sui: string): Promise<Statu
     : idvStatus === "declined" || idvStatus === "expired" || idvStatus === "error" ? "declined"
     : idvStatus === "not_started" ? "not_started"
     : "pending";
-
-  const { data: walletRow } = await supabase
-    .from("sui_zklogin_identities")
-    .select("sui_address")
-    .eq("sui_address", normalizeSuiAddress(sui))
-    .maybeSingle();
-
-  const setup = computePassportSetupState({
-    walletDone: Boolean(walletRow),
-    identityStatus: idvStatus,
-    credentialStatus: credStatus,
-    walletBindingL3: l3,
-  });
 
   return {
     status: legacyStatus,
@@ -182,14 +216,12 @@ async function statusBySui(supabase: SupabaseClient, sui: string): Promise<Statu
     credential_issued_at: data.credential_issued_at,
     expires_at,
     error_message: data.error_message,
-    wallet_binding_l3: l3,
-    setup,
     veriff_configured: isVeriffLive(),
     idv_provider: getIdvProvider(),
   };
 }
 
-async function statusByEmail(supabase: SupabaseClient, email: string): Promise<StatusPayload> {
+async function statusByEmail(supabase: SupabaseClient, email: string): Promise<PartialStatusPayload> {
   const { data: veriffRow } = await supabase
     .from("identity_verifications")
     .select("status, credential_jti, liveness_provider, sui_address, identity_verification_status, credential_status")
@@ -202,10 +234,21 @@ async function statusByEmail(supabase: SupabaseClient, email: string): Promise<S
   }
 
   if (veriffRow?.status === "approved") {
-    return { status: "approved", via: "veriff", credential_jti: veriffRow.credential_jti };
+    return {
+      status: "approved",
+      via: "veriff",
+      credential_jti: veriffRow.credential_jti,
+      veriff_configured: isVeriffLive(),
+      idv_provider: getIdvProvider(),
+    };
   }
   if (veriffRow?.status === "pending") {
-    return { status: "pending", via: "veriff" };
+    return {
+      status: "pending",
+      via: "veriff",
+      veriff_configured: isVeriffLive(),
+      idv_provider: getIdvProvider(),
+    };
   }
 
   const { data: docRow } = await supabase
@@ -218,7 +261,12 @@ async function statusByEmail(supabase: SupabaseClient, email: string): Promise<S
     .maybeSingle();
 
   if (docRow) {
-    return { status: "approved", via: "manual_review", idv_provider: getIdvProvider(), veriff_configured: isVeriffLive() };
+    return {
+      status: "approved",
+      via: "manual_review",
+      idv_provider: getIdvProvider(),
+      veriff_configured: isVeriffLive(),
+    };
   }
 
   const { data: pendingDoc } = await supabase
@@ -231,7 +279,12 @@ async function statusByEmail(supabase: SupabaseClient, email: string): Promise<S
     .maybeSingle();
 
   if (pendingDoc) {
-    return { status: "pending", via: "manual_review", idv_provider: getIdvProvider(), veriff_configured: isVeriffLive() };
+    return {
+      status: "pending",
+      via: "manual_review",
+      idv_provider: getIdvProvider(),
+      veriff_configured: isVeriffLive(),
+    };
   }
 
   const { data: resubmitDoc } = await supabase
@@ -253,7 +306,11 @@ async function statusByEmail(supabase: SupabaseClient, email: string): Promise<S
     };
   }
 
-  return { status: "not_started", veriff_configured: isVeriffLive(), idv_provider: getIdvProvider() };
+  return {
+    status: "not_started",
+    veriff_configured: isVeriffLive(),
+    idv_provider: getIdvProvider(),
+  };
 }
 
 export async function GET(req: NextRequest) {
@@ -293,24 +350,38 @@ export async function GET(req: NextRequest) {
 
   const supabase = sb();
   if (!supabase) {
+    const walletTruth = await readCanonicalWalletBindingTruth(sui);
+    const setup = computePassportSetupState({
+      walletDone: true,
+      identityStatus: "not_started",
+      credentialStatus: "not_issued",
+      walletBindingL3: walletTruth.persisted,
+    });
     return NextResponse.json({
       status: "not_started",
       dev_mode: true,
       idv_provider: getIdvProvider(),
       veriff_configured: isVeriffLive(),
+      wallet_binding_l3: walletTruth.persisted,
+      wallet_binding_status: walletTruth.status,
+      ...(walletTruth.read_error ? { wallet_binding_read_error: walletTruth.read_error } : {}),
+      setup,
     });
   }
 
   const bySui = await statusBySui(supabase, sui);
-  if (bySui) return NextResponse.json(bySui);
-
-  if (email) {
-    return NextResponse.json(await statusByEmail(supabase, email));
+  if (bySui) {
+    return NextResponse.json(await finalizeStatusPayload(supabase, sui, bySui));
   }
 
-  return NextResponse.json({
+  if (email) {
+    const byEmail = await statusByEmail(supabase, email);
+    return NextResponse.json(await finalizeStatusPayload(supabase, sui, byEmail));
+  }
+
+  return NextResponse.json(await finalizeStatusPayload(supabase, sui, {
     status: "not_started",
     veriff_configured: isVeriffLive(),
     idv_provider: getIdvProvider(),
-  });
+  }));
 }

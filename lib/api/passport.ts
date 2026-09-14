@@ -6,6 +6,7 @@ import type { VerificationResult } from "@/lib/credentials/types";
 import type { StoredCredential } from "@/lib/credentials/storage";
 
 import type { PassportSetupState } from "@/lib/idv/identityVerificationStates";
+import type { CanonicalWalletBindingStatus } from "@/lib/trust/readCanonicalWalletBinding";
 
 export interface IdentityStatusResponse {
   status?: string;
@@ -19,6 +20,8 @@ export interface IdentityStatusResponse {
   expires_at?: string | null;
   error_message?: string | null;
   wallet_binding_l3?: boolean;
+  wallet_binding_status?: CanonicalWalletBindingStatus;
+  wallet_binding_read_error?: string;
   setup?: PassportSetupState;
   veriff_configured?: boolean;
   idv_provider?: "veriff" | "manual";
@@ -79,7 +82,11 @@ export async function fetchIdentityStatus(
   if (suiAddress) params.set("sui_address", suiAddress);
   if (email) params.set("email", email);
   const res = await fetch(`/api/identity/status?${params}`, { credentials: "include" });
-  return res.json() as Promise<IdentityStatusResponse>;
+  const data = await res.json() as IdentityStatusResponse & { error?: string };
+  if (!res.ok) {
+    throw new Error(data.error ?? `Identity status failed (${res.status})`);
+  }
+  return data;
 }
 
 export async function syncVeriffDecision(suiAddress: string): Promise<VeriffSyncResponse> {

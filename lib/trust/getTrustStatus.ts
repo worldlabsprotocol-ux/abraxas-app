@@ -6,6 +6,7 @@ import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { isPassportIssuerConfigured, getSponsorConfig } from "@/lib/sui/passportIssuer";
 import { getActiveClaims } from "@/lib/credentials/claimsService";
 import type { ClaimType } from "@/lib/credentials/claimSchema";
+import { readCanonicalWalletBindingTruth } from "@/lib/trust/readCanonicalWalletBinding";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -59,21 +60,7 @@ export async function getTrustStatus(rawAddress: string): Promise<TrustStatus | 
   const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
   const sponsor = getSponsorConfig();
 
-  const { data: walletBinding, error: walletBindingError } = await sb
-    .from("wallet_bindings")
-    .select("binding_method, binding_status, revoked_at")
-    .eq("subject_id", sui)
-    .eq("wallet_address", sui)
-    .eq("chain", "sui")
-    .maybeSingle();
-
-  const { data: walletBindingClaim, error: walletBindingClaimError } = await sb
-    .from("credential_claims")
-    .select("id")
-    .eq("subject_id", sui)
-    .eq("claim_type", "wallet_binding_confirmed")
-    .eq("status", "active")
-    .maybeSingle();
+  const walletTruth = await readCanonicalWalletBindingTruth(sui, sb);
 
   const { data: idv } = await sb
     .from("identity_verifications")
@@ -111,33 +98,10 @@ export async function getTrustStatus(rawAddress: string): Promise<TrustStatus | 
     .limit(1)
     .maybeSingle();
 
-  let walletBindingStatus: TrustStatus["wallet_binding_status"];
-  let walletBindingReadError: string | undefined;
-  let walletBindingPersisted = false;
-  let walletRegistered = false;
-
-  if (walletBindingError || walletBindingClaimError) {
-    console.error("[getTrustStatus] wallet binding read failed", {
-      subject: sui,
-      wallet_binding_error: walletBindingError?.message,
-      wallet_binding_claim_error: walletBindingClaimError?.message,
-    });
-    walletBindingStatus = "unavailable";
-    walletBindingReadError = WALLET_BINDING_READ_FAILED_CODE;
-  } else {
-    walletBindingStatus = !walletBinding
-      ? "missing"
-      : walletBinding.revoked_at
-        || walletBinding.binding_status === "revoked"
-        || walletBinding.binding_status === "compromised"
-        ? "revoked"
-        : walletBinding.binding_status === "active" || !walletBinding.binding_status
-          ? "active"
-          : "missing";
-
-    walletBindingPersisted = walletBindingStatus === "active" && Boolean(walletBindingClaim?.id);
-    walletRegistered = walletBindingPersisted;
-  }
+  const walletBindingStatus = walletTruth.status;
+  const walletBindingReadError = walletTruth.read_error;
+  const walletBindingPersisted = walletTruth.persisted;
+  const walletRegistered = walletBindingPersisted;
   const identityApproved = idv?.status === "approved";
   const credentialActive = Boolean(
     cred?.jti && cred.expiration_date && new Date(cred.expiration_date) > new Date(),

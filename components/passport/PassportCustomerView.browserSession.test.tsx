@@ -38,7 +38,10 @@ const baseProps = {
   veriffConfigured: false,
   onStartIdCheck: vi.fn(),
   onRefresh: vi.fn(),
-  onWalletBound: vi.fn(),
+  onWalletBound: vi.fn(async () => ({
+    walletBound: true,
+    walletBindingStatus: "active" as const,
+  })),
   handoff: IDLE_PARTNER_FLOW_HANDOFF,
 };
 
@@ -69,6 +72,9 @@ function mockFetchSequence(handlers: Array<(url: string, init?: RequestInit) => 
   let call = 0;
   return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === "string" ? input : input.toString();
+    if (url.includes("/api/auth/browser-session") && init?.method === "DELETE") {
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    }
     const handler = handlers[Math.min(call, handlers.length - 1)];
     call += 1;
     return handler(url, init);
@@ -122,7 +128,11 @@ describe("PassportCustomerView browser session gating", () => {
         return new Response(JSON.stringify({ ok: true }), { status: 200 });
       }
       if (url.includes("/api/wallet-authority/repair")) {
-        return new Response(JSON.stringify({ ok: false, error: BROWSER_SESSION_AUTH_ERROR }), { status: 401 });
+        return new Response(JSON.stringify({
+          ok: false,
+          error: BROWSER_SESSION_AUTH_ERROR,
+          persisted: false,
+        }), { status: 401 });
       }
       return new Response("{}", { status: 404 });
     });
@@ -145,19 +155,23 @@ describe("PassportCustomerView browser session gating", () => {
 
   it("repairs binding after session is restored and calls onWalletBound", async () => {
     let sessionReady = false;
-    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = typeof input === "string" ? input : input.toString();
-      if (url.includes("/api/auth/browser-session") && !url.includes("DELETE")) {
+      if (url.includes("/api/auth/browser-session")) {
+        if (init?.method === "DELETE") {
+          return new Response(JSON.stringify({ ok: true }), { status: 200 });
+        }
         if (!sessionReady) {
           return new Response(JSON.stringify({ ok: false }), { status: 401 });
         }
         return new Response(JSON.stringify({ ok: true }), { status: 200 });
       }
-      if (url.includes("/api/auth/browser-session") && url.endsWith("/api/auth/browser-session")) {
-        return new Response(JSON.stringify({ ok: sessionReady }), { status: sessionReady ? 200 : 401 });
-      }
       if (url.includes("/api/wallet-authority/repair")) {
-        return new Response(JSON.stringify({ ok: true, wallet_binding_status: "repaired" }), { status: 200 });
+        return new Response(JSON.stringify({
+          ok: true,
+          wallet_binding_status: "repaired",
+          persisted: true,
+        }), { status: 200 });
       }
       return new Response(JSON.stringify({ error: "Invalid or expired id_token" }), { status: 401 });
     });

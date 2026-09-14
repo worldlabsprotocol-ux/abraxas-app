@@ -7,7 +7,8 @@ export type PassportBrowserSessionState =
   | "idle"
   | "loading"
   | "authenticated"
-  | "reauthentication_required";
+  | "reauthentication_required"
+  | "session_probe_failed";
 
 export function isBrowserSessionAuthError(message: string): boolean {
   return message === BROWSER_SESSION_AUTH_ERROR

@@ -15,9 +15,10 @@ export async function repairZkLoginBinding(): Promise<RepairZkLoginBindingResult
     wallet_binding_status?: string;
     reason_code?: string;
     error?: string;
+    persisted?: boolean;
   };
 
-  if (!res.ok || !data.ok) {
+  if (!res.ok || !data.ok || data.persisted !== true) {
     return {
       ok: false,
       status: res.status,
