@@ -6,10 +6,10 @@ export const SIMPLIFIED_HOME_EYEBROW = "PRIVATE, REUSABLE VERIFICATION";
 export const SIMPLIFIED_HOME_HEADLINE = "Tired of verifying yourself over and over?";
 
 export const SIMPLIFIED_HOME_SUBHEAD =
-  "Verify once with Abraxas. Privately prove only what a service needs—without repeatedly sharing your personal information.";
+  "Verify once with Abraxas. Privately prove only what a service needs without repeatedly sharing your personal information.";
 
 export const SIMPLIFIED_HOME_TRUST_LINE =
-  "You control what is shared. Partners receive the result—not your underlying documents.";
+  "You control what is shared. Partners receive the result, not your underlying documents.";
 
 export const SIMPLIFIED_HOME_CTA_PRIMARY = "Create your Passport";
 export const SIMPLIFIED_HOME_CTA_SECONDARY = "Use Abraxas for your business";
@@ -46,7 +46,7 @@ export const SIMPLIFIED_AUDIENCE_PEOPLE = {
 
 export const SIMPLIFIED_AUDIENCE_BUSINESS = {
   title: "For businesses",
-  body: "Request policy-specific proof without collecting more personal information than necessary.",
+  body: "Request policy specific proof without collecting more personal information than necessary.",
 } as const;
 
 export const SIMPLIFIED_TRUST_STATEMENT =

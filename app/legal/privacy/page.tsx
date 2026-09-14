@@ -78,7 +78,7 @@ export default function PrivacyPolicyPage() {
           personal information, please contact us using the information in Section 8.</p>
         </Section>
 
-        <Section title="4. Do-not-track signals">
+        <Section title="4. Do not track signals">
           <p>Some browsers include a Do-Not-Track ("DNT") feature. No uniform standard
           for recognizing DNT signals has been finalized across the industry, so we
           do not currently respond to DNT signals in a particular way, but we limit

@@ -199,7 +199,7 @@ export function PartnerVerifyShell({
           <strong style={{ display: "block", marginBottom: "0.35rem", color: "#2DD4BF" }}>
             Signing in is not age verification
           </strong>
-          Google sign-in confirms your account only. The partner receives a policy result — not your ID photos or date of birth through this screen.
+          Google sign in confirms your account only. The partner receives a policy result, not your ID photos or date of birth through this screen.
         </aside>
       )}
     </PartnerJourneyLayout>

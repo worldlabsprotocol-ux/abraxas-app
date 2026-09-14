@@ -301,7 +301,7 @@ export function PassportSetupPanel({
                   {manualMode ? (
                     <> Use your device camera below — name, government ID, and selfie. Verified by Abraxas Verify.</>
                   ) : (
-                    <> Legacy third-party IDV path. Abraxas Verify is the default on this deployment.</>
+                    <> Legacy third party IDV path. Abraxas Verify is the default on this deployment.</>
                   )}
                 </p>
 
@@ -565,7 +565,7 @@ function PassportDataTransparency({ visible, via }: { visible: boolean; via: str
         ["Identity", "Verified outcome only"],
         ["Document images", "Not stored by Abraxas"],
         ["Biometric data", "Not stored by Abraxas"],
-        ["Verification provider", via === "veriff" ? "Legacy third-party" : via === "manual" ? "Abraxas Verify (camera)" : "Abraxas Verify"],
+        ["Verification provider", via === "veriff" ? "Legacy third party" : via === "manual" ? "Abraxas Verify (camera)" : "Abraxas Verify"],
       ].map(([k, v]) => (
         <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", fontFamily: FONT, fontSize: "0.68rem", marginBottom: 3 }}>
           <span style={{ color: "var(--text-muted)" }}>{k}</span>

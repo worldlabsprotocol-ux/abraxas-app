@@ -39,7 +39,7 @@ const PRIVACY_NOTES = {
 const COPY: Record<PartnerHolderState, Omit<PartnerHolderPresentation, "state">> = {
   confirm_account: {
     title: "Confirm your account",
-    message: "Sign in with Google to connect your Abraxas account. Signing in confirms account control — it does not verify your age.",
+    message: "Sign in with Google to connect your Abraxas account. Signing in confirms account control. It does not verify your age.",
     action_label: "Continue with Google",
     privacy_note: PRIVACY_NOTES.auth_not_age,
   },
@@ -50,19 +50,19 @@ const COPY: Record<PartnerHolderState, Omit<PartnerHolderPresentation, "state">>
   },
   existing_proof_accepted: {
     title: "Use your existing Abraxas age proof",
-    message: "You already have active age verification. Reuse it to share only the eligibility result with this partner — no new evidence required.",
+    message: "You already have active age verification. Reuse it to share only the eligibility result with this partner. No new evidence is required.",
     action_label: "Use my existing Abraxas age proof",
     privacy_note: PRIVACY_NOTES.partner_minimal,
   },
   choose_private_method: {
     title: "Verify privately without uploading ID",
-    message: "Choose a privacy-preserving verification method. Partners receive only the eligibility result.",
+    message: "Choose a privacy preserving verification method. Partners receive only the eligibility result.",
     action_label: null,
     privacy_note: PRIVACY_NOTES.partner_minimal,
   },
   provider_unavailable: {
     title: "Private verification unavailable",
-    message: "No privacy-preserving age-assurance providers are configured in this environment. You can verify another way or return to the partner.",
+    message: "No privacy preserving age assurance providers are configured in this environment. You can verify another way or return to the partner.",
     action_label: null,
   },
   verification_in_progress: {
@@ -84,14 +84,14 @@ const COPY: Record<PartnerHolderState, Omit<PartnerHolderPresentation, "state">>
   verify_purchase_eligibility: {
     title: "Verify eligibility for purchase",
     message:
-      "Your earlier date-of-birth entry was self-attestation only. An authoritative verification method is now required. The partner receives only the eligibility result. The merchant may still require identification at purchase or delivery.",
+      "Your earlier date of birth entry was self attestation only. An authoritative verification method is now required. The partner receives only the eligibility result. The merchant may still require identification at purchase or delivery.",
     action_label: null,
     privacy_note: PRIVACY_NOTES.partner_minimal,
   },
   browse_self_attest: {
     title: "Continue browsing",
     message:
-      "Enter your date of birth to continue browsing. This is a self-attestation and does not complete purchase eligibility verification. Your full date of birth will not be retained.",
+      "Enter your date of birth to continue browsing. This is self attestation and does not complete purchase eligibility verification. Your full date of birth will not be retained.",
     action_label: "Continue browsing",
   },
   browse_access_confirmed: {
@@ -128,7 +128,7 @@ const COPY: Record<PartnerHolderState, Omit<PartnerHolderPresentation, "state">>
     action_label: "Return to partner",
   },
   verification_expired: {
-    title: "Verification expired—update required",
+    title: "Verification expired. Update required",
     message: "Your previous verification has expired. Complete verification again to continue.",
     action_label: "Update verification",
   },

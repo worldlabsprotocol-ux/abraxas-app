@@ -73,12 +73,12 @@ export function IndependentBiometricStatusCard({
         </Link>
       </div>
       <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.55 }}>
-        {status?.summary ?? "Abraxas Verify — camera capture + biometric engine. Name, ID, and selfie below."}
+        {status?.summary ?? "Abraxas Verify uses camera capture and a biometric engine. Name, ID, and selfie below."}
       </p>
       {status?.biometric_engine && (
         <p style={{ fontFamily: MONO, fontSize: "0.58rem", color, margin: "6px 0 0" }}>
           Engine {status.biometric_engine.engine}
-          {status.biometric_engine.auto_approve_enabled ? " · auto-approve on" : " · human review queue"}
+          {status.biometric_engine.auto_approve_enabled ? " · auto approve on" : " · human review queue"}
         </p>
       )}
       {status && status.pending_review_count != null && status.pending_review_count > 0 && (

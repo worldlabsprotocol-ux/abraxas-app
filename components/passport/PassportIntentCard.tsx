@@ -28,7 +28,7 @@ export function PassportIntentCard({
     const secretKey = loadEphemeralSecretKey();
     if (!secretKey) {
       setStatus("error");
-      setError("Wallet signing key missing. Sign out and sign in once — your Passport stays the same.");
+      setError("Wallet signing key missing. Sign out and sign in once. Your Passport stays the same.");
       return;
     }
 

@@ -193,7 +193,7 @@ describe("Good Trouble browse screen chrome", () => {
     expect(GOOD_TROUBLE_BROWSE_EYEBROW).toBe("PRIVATE AGE CHECK");
     expect(GOOD_TROUBLE_BROWSE_HEADING).toBe("Confirm you're 21+");
     expect(GOOD_TROUBLE_BROWSE_SUPPORTING).toBe(
-      "Enter your birthday once. Good Trouble receives only a yes-or-no result.",
+      "Enter your birthday once. Good Trouble receives only a yes or no result.",
     );
     expect(GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON).toBe("Continue");
   });

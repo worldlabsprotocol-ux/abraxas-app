@@ -104,7 +104,7 @@ export const GOOD_TROUBLE_BROWSE_INTRO =
   "A private age check for Good Trouble.";
 
 export const GOOD_TROUBLE_BROWSE_STATUS =
-  "Good Trouble receives only a yes-or-no 21+ result.";
+  "Good Trouble receives only a yes or no 21+ result.";
 
 /** Minimal /partner/continue browse screen copy. */
 export const GOOD_TROUBLE_BROWSE_EYEBROW = "PRIVATE AGE CHECK";
@@ -112,7 +112,7 @@ export const GOOD_TROUBLE_BROWSE_EYEBROW = "PRIVATE AGE CHECK";
 export const GOOD_TROUBLE_BROWSE_HEADING = "Confirm you're 21+";
 
 export const GOOD_TROUBLE_BROWSE_SUPPORTING =
-  "Enter your birthday once. Good Trouble receives only a yes-or-no result.";
+  "Enter your birthday once. Good Trouble receives only a yes or no result.";
 
 export const GOOD_TROUBLE_BROWSE_DOB_HEADING = "Enter your birthday";
 
@@ -160,7 +160,7 @@ export const GOOD_TROUBLE_BROWSE_SIGN_IN_CLARIFICATION =
 
 export const GOOD_TROUBLE_BROWSE_SIGN_IN_PROHIBITED_PHRASES = [
   "Signing in is not age verification",
-  "Google sign-in confirms your account only",
+  "Google sign in confirms your account only",
   "policy result",
   "verification requirement",
   "regulated purchase",

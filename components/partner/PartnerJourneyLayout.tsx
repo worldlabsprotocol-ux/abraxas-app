@@ -3,10 +3,17 @@
 // Shared partner journey chrome — continuation of partner site, not Abraxas dashboard.
 
 import Link from "next/link";
-import { PUBLIC_FONT_SANS, PUBLIC_SURFACE } from "@/lib/design/publicSurface";
+import { AbxCard } from "@/components/design/AbxPrimitives";
+import {
+  ABX_FONT_SANS,
+  ABX_PAGE_BACKGROUNDS,
+  ABX_SPACING,
+  ABX_TAB_ACCENTS,
+  ABX_TYPOGRAPHY,
+} from "@/lib/design/abraxasDesignSystem";
 
-const FONT = PUBLIC_FONT_SANS;
-const TEAL = "#2DD4BF";
+const FONT = ABX_FONT_SANS;
+const PARTNER_ACCENT = ABX_TAB_ACCENTS.partner;
 
 export interface PartnerJourneyLayoutProps {
   partnerName: string;
@@ -45,23 +52,32 @@ export function PartnerJourneyLayout({
         padding: "clamp(1rem, 4vw, 2.5rem)",
         fontFamily: FONT,
         color: "var(--text-primary, #f4f4f5)",
-        background: "linear-gradient(180deg, #04050a 0%, #080a12 45%, #060810 100%)",
+        background: ABX_PAGE_BACKGROUNDS.partnerJourney,
       }}
     >
-      <main
-        style={{
-          width: "min(100%, 560px)",
-          borderRadius: PUBLIC_SURFACE.cardRadius,
-          border: PUBLIC_SURFACE.cardBorder,
-          background: PUBLIC_SURFACE.cardBackground,
-          padding: PUBLIC_SURFACE.cardPadding,
-        }}
+      <AbxCard
+        accent="partner"
+        padding={ABX_SPACING.cardPadding}
+        style={{ width: "min(100%, 560px)", boxShadow: PARTNER_ACCENT.glow }}
       >
         <header style={{ marginBottom: "1.25rem" }}>
-          <p style={{ margin: "0 0 0.35rem", fontSize: "0.72rem", letterSpacing: "0.12em", color: TEAL, fontWeight: 700 }}>
-            {eyebrow ?? "PARTNER VERIFICATION"}
+          <p
+            style={{
+              margin: "0 0 0.35rem",
+              fontFamily: FONT,
+              ...ABX_TYPOGRAPHY.eyebrow,
+              color: PARTNER_ACCENT.color,
+            }}
+          >
+            {eyebrow ?? "Partner verification"}
           </p>
-          <h1 style={{ margin: "0 0 0.5rem", fontSize: "clamp(1.15rem, 3vw, 1.4rem)", fontWeight: 800, lineHeight: 1.25 }}>
+          <h1
+            style={{
+              margin: "0 0 0.5rem",
+              fontFamily: FONT,
+              ...ABX_TYPOGRAPHY.h1,
+            }}
+          >
             {title ?? `Continue with ${partnerName}`}
           </h1>
           {intro && (
@@ -105,10 +121,10 @@ export function PartnerJourneyLayout({
         {showAccountFooter && (
           <p style={{ margin: "1rem 0 0", fontSize: "0.72rem", color: "var(--text-muted, #9ca3af)", lineHeight: 1.5 }}>
             Signing in confirms your account only.{" "}
-            <Link href="/legal/privacy" style={{ color: TEAL, textDecoration: "none" }}>Privacy</Link>
+            <Link href="/legal/privacy" style={{ color: PARTNER_ACCENT.color, textDecoration: "none" }}>Privacy</Link>
           </p>
         )}
-      </main>
+      </AbxCard>
     </div>
   );
 }
