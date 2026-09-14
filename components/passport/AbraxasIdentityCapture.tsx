@@ -231,8 +231,8 @@ export function AbraxasIdentityCapture({
         </div>
         <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.6 }}>
           {instant
-            ? "Abraxas Verify passed automated checks. Your Passport credential and on-chain stamps are active."
-            : "Your photos are in the review queue. Partners receive the verification outcome only — not your document images."}
+            ? "Abraxas Verify passed automated checks. Your Passport credential and on chain stamps are active."
+            : "Your photos are in the review queue. Partners receive the verification outcome only, not your document images."}
         </p>
       </div>
     );
@@ -392,7 +392,7 @@ export function AbraxasIdentityCapture({
             <div style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
               <strong style={{ color: "var(--text-primary)" }}>{legalName}</strong>
               <br />
-              Submitted images are stored privately for Abraxas review only. Partners see verification outcome + credential — not your photos.
+              Submitted images are stored privately for Abraxas review only. Partners see verification outcome and credential, not your photos.
             </div>
           </div>
         )}

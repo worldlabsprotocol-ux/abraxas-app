@@ -72,7 +72,7 @@ export const PAYMENT_RETURN_DEFAULT_STEPS = [
   "If your payment completed, check your email for a receipt and any intake instructions.",
   "Open Passport to bind your wallet and review verification status.",
   "Use Build to submit asset documents when you are ready.",
-  "This beta has no self-serve case tracker — follow email instructions for updates.",
+  "This beta has no self serve case tracker. Follow email instructions for updates.",
 ] as const;
 
 export const PAYMENT_RETURN_PRIMARY_CTA = "Open Passport →";
@@ -106,7 +106,7 @@ export const VERIFY_ERROR_HOLDER_LINK_LABEL = "Open holder verify in Passport";
 export const PARTNERS_REFERENCE_ONLY_NOTE =
   "Reference listing only. No public website link is available.";
 
-export const SETUP_WALLET_READY_HEADLINE = "Wallet ready — browse, verify, and connect";
+export const SETUP_WALLET_READY_HEADLINE = "Wallet ready. Browse, verify, and connect";
 
 export const SETUP_WALLET_READY_SUB =
   "Wallet bound · Account active · Add identity verification only when a partner policy requires it.";

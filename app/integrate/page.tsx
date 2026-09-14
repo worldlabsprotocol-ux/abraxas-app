@@ -26,7 +26,7 @@ const GOLD = "#E8C547";
 
 export default function IntegratePage() {
   return (
-    <RedesignPage maxWidth={820}>
+    <RedesignPage maxWidth={820} accent="developer">
       <PageHeader
         eyebrow={BUSINESS_PAGE_EYEBROW}
         title={BUSINESS_PAGE_HEADLINE}

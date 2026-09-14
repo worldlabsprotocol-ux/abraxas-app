@@ -80,7 +80,7 @@ export function PartnerEnterClient({
 
     setReceipt(data);
     setUnlocked(true);
-    setStatus("Verified — welcome.");
+    setStatus("Verified. Welcome.");
   }, [receiptId, urlPartnerId, urlStatus, partnerId]);
 
   async function refreshReceipt() {

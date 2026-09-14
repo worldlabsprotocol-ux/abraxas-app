@@ -1,26 +1,26 @@
 "use client";
 // FILE: components/redesign/RedesignPage.tsx
-// Standard inner page wrapper: RedesignShell + content + footer.
+// Standard inner page wrapper: accent aware shell + content + footer.
 
-import { RedesignShell } from "./RedesignShell";
-import { RedesignFooter } from "./RedesignFooter";
+import { AbxPageShell } from "@/components/design/AbxPageShell";
+import type { AbxTabAccent } from "@/lib/design/abraxasDesignSystem";
 
 interface RedesignPageProps {
   children: React.ReactNode;
   maxWidth?: number;
+  accent?: AbxTabAccent;
+  withFooter?: boolean;
 }
 
-export function RedesignPage({ children, maxWidth = 900 }: RedesignPageProps) {
+export function RedesignPage({
+  children,
+  maxWidth = 900,
+  accent = "neutral",
+  withFooter = true,
+}: RedesignPageProps) {
   return (
-    <RedesignShell>
-      <div style={{
-        maxWidth,
-        margin: "0 auto",
-        padding: "2rem clamp(1rem, 3vw, 1.75rem) 0",
-      }}>
-        {children}
-      </div>
-      <RedesignFooter />
-    </RedesignShell>
+    <AbxPageShell accent={accent} maxWidth={maxWidth} withFooter={withFooter}>
+      {children}
+    </AbxPageShell>
   );
 }

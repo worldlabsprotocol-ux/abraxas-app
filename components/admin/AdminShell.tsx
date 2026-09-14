@@ -14,12 +14,14 @@ export function AdminShell({ children }: AdminShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div style={{
-      display: "flex",
-      minHeight: "100vh",
-      background: "#0a0c10",
-      color: "#f0f0f0",
-    }}>
+    <div
+      data-theme="dark"
+      className="abx-admin-shell"
+      style={{
+        display: "flex",
+        minHeight: "100vh",
+      }}
+    >
       <AdminSidebar
         mobileOpen={mobileOpen}
         onClose={() => setMobileOpen(false)}

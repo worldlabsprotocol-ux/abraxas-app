@@ -22,10 +22,10 @@ describe("HomeAssuranceNetwork", () => {
     expect(screen.getByRole("list", { name: /transaction requirement options/i })).toBeTruthy();
     expect(screen.getByRole("heading", { level: 3, name: ASSURANCE_NETWORK_TRANSACTION_HEADLINE })).toBeTruthy();
     expect(screen.getByLabelText(/example policy identifiers/i)).toBeTruthy();
-    expect(screen.getByText(/Google sign-in and zkLogin establish account authentication/i)).toBeTruthy();
+    expect(screen.getByText(/Google sign in establishes account authentication/i)).toBeTruthy();
     expect(screen.getByLabelText(/assurance flow diagram/i)).toBeTruthy();
     expect(screen.getByRole("list", { name: /how abraxas assurance works/i })).toBeTruthy();
-    expect(screen.getByText(/Transaction-time ID requirements are policy obligations/i)).toBeTruthy();
+    expect(screen.getByText(/Transaction time ID requirements are policy obligations/i)).toBeTruthy();
   });
 
   it("does not present transaction ID as the highest evidence level", () => {

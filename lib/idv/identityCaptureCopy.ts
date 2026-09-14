@@ -9,7 +9,7 @@ export const CAMERA_CAPTURE_COPY = {
   permissionLead:
     "Your device will open its camera app. Allow camera access when prompted, then take the photo.",
   qualityReminder:
-    "Hold steady in good lighting. Avoid blur, glare, and cropped edges — Abraxas will check photo quality before you continue.",
+    "Hold steady in good lighting. Avoid blur, glare, and cropped edges. Abraxas will check photo quality before you continue.",
 } as const;
 
 export interface IdentityCameraCaptureCopy {
@@ -28,7 +28,7 @@ export function identityCameraCaptureCopy(
 ): IdentityCameraCaptureCopy {
   if (kind === "id_front") {
     return {
-      label: "Government ID — front side",
+      label: "Government ID front side",
       hint:
         "Photograph the front of your passport, driver's license, or national ID. Fill the frame, keep text readable, and use good lighting. You do not need to photograph the back in this step.",
       permissionNote: CAMERA_CAPTURE_COPY.permissionLead,
@@ -41,7 +41,7 @@ export function identityCameraCaptureCopy(
   }
 
   return {
-    label: "Selfie — face verification",
+    label: "Selfie for face verification",
     hint:
       "Use your front camera. Look straight at the lens with your face centered. We'll compare this photo to your ID during review.",
     permissionNote: CAMERA_CAPTURE_COPY.permissionLead,
@@ -75,6 +75,6 @@ export function flipCameraAriaLabel(currentFacing: "user" | "environment"): stri
 
 export function identityCaptureStepIntro(step: IdentityCameraCaptureKind): string {
   return step === "id_front"
-    ? "Step 2 of 4 — allow camera access, then photograph the front of your ID."
-    : "Step 3 of 4 — allow camera access, then take a selfie.";
+    ? "Step 2 of 4. Allow camera access, then photograph the front of your ID."
+    : "Step 3 of 4. Allow camera access, then take a selfie.";
 }

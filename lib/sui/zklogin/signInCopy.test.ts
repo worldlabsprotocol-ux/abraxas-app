@@ -13,12 +13,12 @@ describe("ZKLOGIN_SIGN_IN_COPY", () => {
   it("uses Passport-first helper and legacy button copy", () => {
     expect(ZKLOGIN_SIGN_IN_COPY.openButton).toBe("Sign in");
     expect(ZKLOGIN_SIGN_IN_COPY.chooserTitle).toBe("Access your Passport");
-    expect(ZKLOGIN_SIGN_IN_COPY.legacySectionHeading).toBe("Older sign-in setup");
+    expect(ZKLOGIN_SIGN_IN_COPY.legacySectionHeading).toBe("Older sign in setup");
     expect(ZKLOGIN_SIGN_IN_COPY.canonicalHelper).toBe(
       "Recommended for most Passports.",
     );
     expect(ZKLOGIN_SIGN_IN_COPY.legacyButton).toBe(
-      "Recover a Passport created with an older sign-in setup",
+      "Recover a Passport created with an older sign in setup",
     );
     expect(ZKLOGIN_SIGN_IN_COPY.legacyHelper).toBe(
       "Use this only when Continue with Google does not open your Passport and you are directed here.",
@@ -27,7 +27,7 @@ describe("ZKLOGIN_SIGN_IN_COPY", () => {
 
   it("exposes accessible labels for both sign-in actions", () => {
     expect(ZKLOGIN_SIGN_IN_COPY.canonicalAriaLabel).toMatch(/Continue with Google/i);
-    expect(ZKLOGIN_SIGN_IN_COPY.legacyAriaLabel).toMatch(/older sign-in setup/i);
+    expect(ZKLOGIN_SIGN_IN_COPY.legacyAriaLabel).toMatch(/older sign in setup/i);
   });
 
   it("keeps backend terms out of end-user copy", () => {

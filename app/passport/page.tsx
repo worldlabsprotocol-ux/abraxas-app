@@ -14,9 +14,8 @@ import { VerificationSuccessPanel } from "@/components/passport/VerificationSucc
 import { VeriffDeviceHint } from "@/components/passport/VeriffDeviceHint";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { usePassportVerification } from "@/lib/hooks/usePassportVerification";
-import { AmbientGlow } from "@/components/redesign/AmbientGlow";
-import { RedesignNav } from "@/components/redesign/RedesignNav";
-import { RedesignFooter } from "@/components/redesign/RedesignFooter";
+import { AbxPageHeader } from "@/components/design/AbxPrimitives";
+import { AbxPageShell } from "@/components/design/AbxPageShell";
 import { RedesignPageLoading } from "@/components/redesign/RedesignPageLoading";
 import { Btn } from "@/components/redesign/ui";
 import { StatusBanner } from "@/components/ui/StatusBanner";
@@ -196,36 +195,16 @@ function PassportPageInner() {
   }
 
   return (
-    <div data-theme="dark" style={{
-      background: "var(--bg)", minHeight: "100vh",
-      color: "var(--text-primary)", position: "relative", overflowX: "hidden",
-    }}>
-      <AmbientGlow />
+    <AbxPageShell accent="passport" maxWidth={720} contentStyle={{ paddingTop: "clamp(2rem,5vw,3rem)" }}>
       <div id="veriff-root" />
       <VeriffDeviceHint visible={showVeriffHint} />
-      <RedesignNav />
 
-      <div style={{
-        position: "relative", zIndex: 1, maxWidth: 720, margin: "0 auto",
-        padding: "clamp(2rem,5vw,3rem) clamp(1rem,4vw,2.5rem)",
-      }}>
-        <div style={{ marginBottom: "1.25rem" }}>
-          <div className="abx-eyebrow-violet" style={{ marginBottom: "0.625rem" }}>
-            {pageView === "verify" ? HOLDER_VERIFY_EYEBROW : PASSPORT_PAGE_EYEBROW}
-          </div>
-          <h1 style={{
-            fontFamily: S, fontSize: "clamp(1.35rem, 3.5vw, 1.85rem)", fontWeight: 800,
-            lineHeight: 1.15, color: "var(--text-primary)", letterSpacing: "-0.03em", margin: "0 0 0.65rem",
-          }}>
-            {pageView === "verify" ? HOLDER_VERIFY_HEADLINE : PASSPORT_PAGE_HEADLINE}
-          </h1>
-          <p style={{
-            fontFamily: S, fontSize: "0.9rem", color: "var(--text-secondary)",
-            lineHeight: 1.65, maxWidth: 560, margin: 0,
-          }}>
-            {pageView === "verify" ? HOLDER_VERIFY_SUBHEAD : PASSPORT_PAGE_SUBHEAD}
-          </p>
-        </div>
+      <AbxPageHeader
+        accent="passport"
+        eyebrow={pageView === "verify" ? HOLDER_VERIFY_EYEBROW : PASSPORT_PAGE_EYEBROW}
+        title={pageView === "verify" ? HOLDER_VERIFY_HEADLINE : PASSPORT_PAGE_HEADLINE}
+        lead={pageView === "verify" ? HOLDER_VERIFY_SUBHEAD : PASSPORT_PAGE_SUBHEAD}
+      />
 
         <Suspense fallback={<RedesignPageLoading label="Loading navigation…" compact />}>
           <PassportPageTabs active={pageView} />
@@ -320,8 +299,6 @@ function PassportPageInner() {
             )}
           </>
         )}
-      </div>
-      <RedesignFooter />
-    </div>
+    </AbxPageShell>
   );
 }

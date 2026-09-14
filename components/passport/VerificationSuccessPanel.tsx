@@ -33,8 +33,8 @@ export function VerificationSuccessPanel({
         <div style={{ fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.35rem" }}>You can now:</div>
         {[
           "Submit an asset for verification",
-          "Access partner-gated actions",
-          "Bind a wallet for on-chain eligibility",
+          "Access partner gated actions",
+          "Bind a wallet for on chain eligibility",
           "Start entity or investor verification if required",
         ].map(item => (
           <div key={item}>✓ {item}</div>

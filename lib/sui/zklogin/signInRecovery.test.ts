@@ -92,7 +92,7 @@ describe("signInRecovery", () => {
 
     expect(recovery?.suggestedMode).toBe("legacy_recovery");
     expect(recoveryPrimaryActionLabel("legacy_recovery")).toBe(
-      "Recover a Passport created with an older sign-in setup",
+      "Recover a Passport created with an older sign in setup",
     );
     expect(recoveryPrimaryActionHelper("legacy_recovery")).toMatch(/only when Continue with Google/i);
   });

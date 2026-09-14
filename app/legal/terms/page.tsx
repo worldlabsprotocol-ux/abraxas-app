@@ -86,7 +86,7 @@ export default function TermsPage() {
           financial crime.</p>
         </Section>
 
-        <Section title="7. Third-party services">
+        <Section title="7. Third party services">
           <p>The Services integrate third-party providers, including Veriff for
           identity verification, Supabase for data storage, and HeroSwap for the
           Swap feature. Your use of those specific features is also governed by each

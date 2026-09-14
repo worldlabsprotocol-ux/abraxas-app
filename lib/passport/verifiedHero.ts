@@ -7,7 +7,7 @@ export const VERIFIED_HERO_HEADLINE = "You're verified";
 export const VERIFIED_HERO_SUPPORTING =
   "Your Abraxas identity proof is ready to use with compatible applications.";
 export const VERIFIED_HERO_PRIVACY =
-  "Partners receive only the proof required by their policy — not your ID or selfie files.";
+  "Partners receive only the proof required by their policy, not your ID or selfie files.";
 
 export function shouldShowVerifiedHero(
   identityUi: IdentityUiState,

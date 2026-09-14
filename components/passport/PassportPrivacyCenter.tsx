@@ -112,7 +112,7 @@ export function PassportPrivacyCenter({ suiAddress }: { suiAddress: string | nul
         lineHeight: 1.65, margin: "0 0 1rem",
       }}>
         Abraxas stores verification and consent records so you can reuse proofs with partners.
-        Partners receive signed claims — not your raw ID or selfie files.
+        Partners receive signed claims, not your raw ID or selfie files.
       </p>
 
       <div style={{
