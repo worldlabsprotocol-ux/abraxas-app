@@ -6,7 +6,7 @@ import type { PartnerFlowHealthReport } from "@/lib/partner/partnerFlowHealth";
 export const PARTNER_FLOW_RATE_LIMITS_SETUP_URL =
   "https://github.com/worldlabsprotocol-ux/abraxas-app/blob/main/docs/PARTNER_FLOW_RATE_LIMITS.md#distributed-protection-vercel";
 
-export const PARTNER_FLOW_HEALTH_CLI = "npm run partner-flow:health";
+export const PARTNER_FLOW_HEALTH_CLI = "npm run partner flow:health";
 
 type RateLimitInfo = PartnerFlowHealthReport["rate_limit"];
 
@@ -205,7 +205,7 @@ export function buildNextActionView(rateLimit: RateLimitInfo): NextActionView {
     title: "Enable network-wide protection",
     body:
       "To share rate limits across every Vercel server, connect a Redis store. "
-      + "Until then, basic per-instance protection stays active — partners are not unprotected, but limits are not coordinated globally.",
+      + "Until then, basic per-instance protection stays active, partners are not unprotected, but limits are not coordinated globally.",
     docUrl: PARTNER_FLOW_RATE_LIMITS_SETUP_URL,
     docLinkLabel: "Open setup guide",
   };

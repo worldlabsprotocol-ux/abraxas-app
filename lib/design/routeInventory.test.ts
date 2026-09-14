@@ -56,6 +56,11 @@ function hasShellInTree(pagePath: string): boolean {
 }
 
 describe("routeInventory", () => {
+  it("covers the full route inventory", () => {
+    const pages = walkPages(join(ROOT, "app"));
+    expect(pages.length).toBeGreaterThanOrEqual(153);
+  });
+
   it("has no pending routes in the inventory manifest", () => {
     expect(pendingRoutes()).toEqual([]);
   });

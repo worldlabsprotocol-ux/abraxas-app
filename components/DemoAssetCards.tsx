@@ -71,7 +71,7 @@ const DEMO_ASSETS: DemoAsset[] = [
   },
   {
     id:                 "demo-003",
-    title:              "Non-Operated Working Interest",
+    title:              "Non Operated Working Interest",
     category:           "Mineral Rights",
     subline:            "12.5% non-op WI · Proved developed reserves · Clean title",
     declaredValueUsd:   185000,

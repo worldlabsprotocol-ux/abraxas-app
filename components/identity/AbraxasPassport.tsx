@@ -426,7 +426,7 @@ export function AbraxasPassport({
             { k: "Standard", v: "W3C VC Data Model v2.0" },
             { k: "Signature", v: "Ed25519 · Abraxas issuer key" },
             { k: "Anchor", v: "Sui Passport object (devnet → mainnet)" },
-            { k: "Privacy", v: "Documents off-chain · proof on-chain" },
+            { k: "Privacy", v: "Documents off chain · proof on chain" },
           ].map(row => (
             <div key={row.k} style={{ display: "flex", gap: "0.4rem", alignItems: "baseline" }}>
               <span style={{

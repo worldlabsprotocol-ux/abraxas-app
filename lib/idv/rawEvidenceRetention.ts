@@ -17,7 +17,7 @@ export function resolveRawEvidenceRetentionDays(
   if (!raw) {
     return {
       ok: false,
-      error: `${RAW_IDENTITY_EVIDENCE_RETENTION_ENV} is not configured — operator must set an approved retention period`,
+      error: `${RAW_IDENTITY_EVIDENCE_RETENTION_ENV} is not configured, operator must set an approved retention period`,
     };
   }
 

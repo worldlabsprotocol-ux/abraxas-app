@@ -27,7 +27,7 @@ const FAQS = [
   },
   {
     q: "What happens to my money?",
-    a: "Stablecoin payments route to asset-specific settlement containers on Sui. Abraxas verifies on-chain transfer state — it does not take discretionary custody of investor capital. Bookings move through Authorized → Captured → Settled as transfers are confirmed (typically within one business day). We follow up by email at each stage.",
+    a: "Stablecoin payments route to asset-specific settlement containers on Sui. Abraxas verifies on chain transfer state, it does not take discretionary custody of investor capital. Bookings move through Authorized → Captured → Settled as transfers are confirmed (typically within one business day). We follow up by email at each stage.",
   },
 ];
 

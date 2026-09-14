@@ -115,7 +115,7 @@ export function computePassportSetupState(input: {
     nextActionLabel = "ID review in progress (optional)";
   } else if (profileComplete && !identityComplete) {
     nextAction = "ready";
-    nextActionLabel = "Profile ready — add ID anytime";
+    nextActionLabel = "Profile ready, add ID anytime";
   } else if (profileComplete) {
     nextAction = "ready";
     nextActionLabel = "Passport ready";

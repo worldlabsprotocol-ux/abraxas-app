@@ -34,7 +34,7 @@ export const consumerCopy = {
       "Optional ID check when a deal or protocol requires enhanced trust. Licensed provider. Abraxas stores only the outcome.",
     step3Title: "Get passport",
     step3Body:
-      "W3C credential issued to your wallet automatically after approval. On-chain stamps when configured.",
+      "W3C credential issued to your wallet automatically after approval. On chain stamps when configured.",
     step4Title: "Reuse anywhere",
     step4Body:
       "Share your verify link or JWT. Partners call our API. you never re-upload documents.",
@@ -76,7 +76,7 @@ export const consumerCopy = {
       intent: "Session check",
       identity: "ID verification (optional)",
       credential: "Identity credential",
-      onChain: "On-chain profile",
+      onChain: "On chain profile",
     },
     upgradeTitle: "Optional: add identity verification",
     upgradeBody:

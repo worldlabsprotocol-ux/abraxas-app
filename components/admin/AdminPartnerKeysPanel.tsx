@@ -100,11 +100,11 @@ export function AdminPartnerKeysPanel({ adminRequest }: { adminRequest: Producti
       setPartnerAllowsLive(allowsLive);
       if (!allowsLive) {
         setKeyEnvironment("test");
-        setPartnerLookupMessage("Sandbox-only partner — Production (abx_live_) keys are disabled.");
+        setPartnerLookupMessage("Sandbox only partner, Production (abx_live_) keys are disabled.");
         return;
       }
 
-      setPartnerLookupMessage("Production-capable partner — choose Sandbox or Production key type.");
+      setPartnerLookupMessage("Production capable partner, choose Sandbox or Production key type.");
     } catch {
       setPartnerAllowsLive(false);
       setKeyEnvironment("test");

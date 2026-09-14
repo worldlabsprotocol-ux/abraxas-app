@@ -53,7 +53,7 @@ function sortAssets(assets: ExploreAsset[], sort: SortKey) {
 export function AssetsExplorer({
   excludeIds = [],
   pinIds = [],
-  title = "Real assets. Proven on-chain.",
+  title = "Real assets. Proven on chain.",
   eyebrow = "Verified Assets",
   compact = false,
   home = false,

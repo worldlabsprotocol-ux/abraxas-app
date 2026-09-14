@@ -149,23 +149,23 @@ export function PartnerSandboxDemoClient() {
         {error ? <p style={{ color: "#f87171", fontFamily: FONT, fontSize: "0.8rem" }}>{error}</p> : null}
 
         <DemoStep
-          title="Step 1 — Demo Passport"
-          description="Pre-provisioned synthetic sandbox holder. Credential availability only — no PII."
+          title="Step 1, Demo Passport"
+          description="Pre provisioned synthetic sandbox holder. Credential availability only, no PII."
           state={step.passport}
           onRun={loadPassport}
           payload={passport}
         />
 
         <DemoStep
-          title="Step 2 — Partner policy request"
-          description="Is this sandbox holder verified and eligible under this policy? (No age-21 claim — sandbox policy has no minimum_age rule.)"
+          title="Step 2, Partner policy request"
+          description="Is this sandbox holder verified and eligible under this policy? (No age-21 claim, sandbox policy has no minimum_age rule.)"
           state={step.evaluate}
           onRun={runEvaluate}
           payload={evaluation}
         />
 
         <DemoStep
-          title="Step 3–4 — Evaluate, complete, and issue receipt"
+          title="Step 3, 4, Evaluate, complete, and issue receipt"
           description={`Uses evaluateSubjectPolicy and issuePartnerSessionReceipt (production Partner Flow receipt service). ${DEMO_COMPLETION_NEUTRAL_OPS_NOTE}`}
           state={step.complete}
           onRun={runComplete}
@@ -173,8 +173,8 @@ export function PartnerSandboxDemoClient() {
         />
 
         <DemoStep
-          title="Step 5 — Public validation"
-          description="Independent public receipt view — decision, policy, receipt ID, timestamps, signature validity, live validity."
+          title="Step 5, Public validation"
+          description="Independent public receipt view, decision, policy, receipt ID, timestamps, signature validity, live validity."
           state={step.validate}
           onRun={() => {
             const id = (issuance as { receipt_id?: string } | null)?.receipt_id;

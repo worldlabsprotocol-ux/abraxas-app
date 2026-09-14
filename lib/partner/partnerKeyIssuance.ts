@@ -82,7 +82,7 @@ export function normalizePartnerKeyScopes(
   }
 
   if (!Array.isArray(scopes) || scopes.length === 0) {
-    return { ok: false, error: "scopes must be a non-empty array when provided" };
+    return { ok: false, error: "scopes must be a non empty array when provided" };
   }
 
   const deduped: PartnerScope[] = [];

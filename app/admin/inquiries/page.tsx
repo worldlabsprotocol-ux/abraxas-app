@@ -97,7 +97,7 @@ export default function AdminInquiriesPage() {
       <PageHeader
         eyebrow="Admin · acquisition"
         title="Asset inquiry queue"
-        subtitle="Closed-loop buyer interest from case studies. route to partner, update status on-protocol."
+        subtitle="Closed loop buyer interest from case studies. route to partner, update status on protocol."
       />
 
       {msg && (

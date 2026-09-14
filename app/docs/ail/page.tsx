@@ -77,7 +77,7 @@ export default function AILSpecPage() {
             </div>
             <BulletList items={[
               "Another KYC vendor",
-              "Storing passports on-chain",
+              "Storing passports on chain",
               "Replacing Veriff's legal liability",
               "Proprietary identity format",
             ]} />

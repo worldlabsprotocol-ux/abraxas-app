@@ -18,9 +18,9 @@ const STATUS_CONFIG = {
 
 // Idle heartbeat messages. shown when stream is quiet
 const HEARTBEAT_LINES = [
-  "[00:00:00] [CIRCUIT]  All circuits nominal. monitoring vault PDAs on-chain",
+  "[00:00:00] [CIRCUIT]  All circuits nominal. monitoring vault PDAs on chain",
   "[00:00:01] [CIRCUIT]  Vault PDA state verified. no anomalies detected",
-  "[00:00:02] [SCAN]     Helius telemetry active. awaiting on-chain events",
+  "[00:00:02] [SCAN]     Helius telemetry active. awaiting on chain events",
   "[00:00:03] [CIRCUIT]  Liquidity depth nominal across all monitored pools",
   "[00:00:04] [CIRCUIT]  Policy bounds verified. portfolio within risk threshold",
   "[00:00:05] [SCAN]     Oracle price feeds stable. no deviation detected",

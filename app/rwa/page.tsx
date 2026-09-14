@@ -7,6 +7,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSystemState, simulateHeliusEvent } from "@/lib/systemState";
+import { AbxInnerPage } from "@/components/design/AbxInnerPage";
+import { AbxLoadingPanel } from "@/components/design/AbxPrimitives";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface PhysicalCard  { name: string; grade?: string; floorSol?: number; spotUsd?: number; symbol?: string; change24h: number; updatedAt: string; seed?: number; range?: number; baseSol?: number; baseUsd?: number; }
@@ -469,27 +471,18 @@ export default function RWAPage() {
 
   const navSol = physical?.nav.totalSol ?? 0;
 
+  const navLead = navSol > 0
+    ? `Physical NAV ${navSol.toFixed(1)} SOL, updates every 10 minutes.`
+    : "Real world asset intelligence, stability layers, and physical market telemetry.";
+
   return (
-    <div style={{ maxWidth: "960px", margin: "0 auto", padding: "2rem 1.25rem 3rem" }}>
-      {/* Header */}
-      <div style={{ marginBottom: "1.5rem" }}>
-        <p style={{ fontSize: "0.58rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "0.3rem" }}>IP / RWA</p>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: "0.75rem" }}>
-          <h1 style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: "clamp(1.5rem,4vw,2rem)", letterSpacing: "-0.02em", margin: 0 }}>
-            Living Market
-          </h1>
-          {navSol > 0 && (
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, fontSize: "1.25rem", color: "#FBBF24" }}>
-                {navSol.toFixed(1)} SOL
-              </div>
-              <div style={{ fontSize: "0.58rem", color: "var(--subtle)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                Physical NAV · updates every 10min
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+    <AbxInnerPage
+      accent="home"
+      eyebrow="IP / RWA"
+      title="Living Market"
+      lead={navLead}
+      maxWidth={960}
+    >
 
       {/* Stress test */}
       <StressTestPanel stress={stress} />
@@ -569,11 +562,7 @@ export default function RWAPage() {
         </>
       )}
 
-      {loading && (
-        <div style={{ padding: "3rem", textAlign: "center", color: "var(--subtle)", fontFamily: "'JetBrains Mono',monospace", fontSize: "0.68rem" }}>
-          [ORACLE] FETCHING MARKET DATA…
-        </div>
-      )}
-    </div>
+      {loading && <AbxLoadingPanel label="Fetching market data" />}
+    </AbxInnerPage>
   );
 }

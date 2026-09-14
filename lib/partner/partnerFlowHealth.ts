@@ -83,7 +83,7 @@ async function fetchUsageRows24h(): Promise<UsageRow[]> {
     .limit(5000);
 
   if (error) {
-    console.warn("partner-flow health: partner_api_usage query failed:", error.message);
+    console.warn("partner flow health: partner_api_usage query failed:", error.message);
     return [];
   }
 

@@ -182,7 +182,7 @@ export function PartnerSandboxSignoffPanel({
       return;
     }
     if (res.status === 409) {
-      setSignoffError("Another update occurred — refresh and retry.");
+      setSignoffError("Another update occurred, refresh and retry.");
       return;
     }
     if (!res.ok) {

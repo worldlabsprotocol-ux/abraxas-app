@@ -81,12 +81,12 @@ export async function getIndependentIdvStatus(): Promise<IndependentIdvStatus> {
     blockers.push("NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY for document storage");
   }
   if (!issuerConfigured) {
-    blockers.push("SUI_SPONSOR_SECRET_KEY + SUI_ISSUANCE_CAP_OBJECT_ID for on-chain stamps");
+    blockers.push("SUI_SPONSOR_SECRET_KEY + SUI_ISSUANCE_CAP_OBJECT_ID for on chain stamps");
   } else if (!sponsor.configured) {
-    blockers.push("Sponsor wallet or issuance cap misconfigured — check /api/sui/passport/sponsor");
+    blockers.push("Sponsor wallet or issuance cap misconfigured, check /api/sui/passport/sponsor");
   }
   if (!resolved.deployment.packageId?.startsWith("0x")) {
-    blockers.push(`Sui package not deployed on ${getActiveSuiNetwork()} — run sui:deploy`);
+    blockers.push(`Sui package not deployed on ${getActiveSuiNetwork()}, run sui:deploy`);
   }
 
   const coreLive =
@@ -105,11 +105,11 @@ export async function getIndependentIdvStatus(): Promise<IndependentIdvStatus> {
 
   const summary = abraxasIndependent
     ? fullLive
-      ? "Independent biometric IDV is production-ready: Abraxas Verify engine, capture, review, credential, and on-chain stamps."
+      ? "Independent biometric IDV is production ready: Abraxas Verify engine, capture, review, credential, and on chain stamps."
       : coreLive
-        ? "Capture and review path ready; configure Sui sponsor for on-chain stamps."
-        : `${blockers.length} blocker(s) — see independent IDV health.`
-    : `Legacy Veriff is active (${idvProviderLabel(provider)}). Abraxas Verify is default — remove IDV_PROVIDER=veriff.`;
+        ? "Capture and review path ready; configure Sui sponsor for on chain stamps."
+        : `${blockers.length} blocker(s), see independent IDV health.`
+    : `Legacy Veriff is active (${idvProviderLabel(provider)}). Abraxas Verify is default, remove IDV_PROVIDER=veriff.`;
 
   return {
     provider,
@@ -130,6 +130,6 @@ export async function getIndependentIdvStatus(): Promise<IndependentIdvStatus> {
     mainnet_package_missing: resolved.mainnetPackageMissing,
     pending_review_count: pendingReviewCount,
     biometric_engine: biometricEngine,
-    blockers: abraxasIndependent ? blockers : ["IDV_PROVIDER=veriff — Abraxas Verify capture disabled"],
+    blockers: abraxasIndependent ? blockers : ["IDV_PROVIDER=veriff, Abraxas Verify capture disabled"],
   };
 }

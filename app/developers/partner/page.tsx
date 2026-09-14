@@ -92,7 +92,7 @@ export default function PartnerPortalPage() {
       <PageHeader
         eyebrow="Developers"
         title="Partner portal"
-        subtitle="View API usage and onboarding progress for this API key. Keys are server-side only — never expose in client apps."
+        subtitle="View API usage and onboarding progress for this API key. Keys are server side only, never expose in client apps."
       />
 
       {!dashboard ? (

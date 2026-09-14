@@ -8,18 +8,18 @@ export const PARTNER_SANDBOX_INTEGRATION_HEADLINE =
   "Sandbox integration checklist";
 
 export const PARTNER_SANDBOX_INTEGRATION_SUMMARY =
-  "Two independent tracks: Partner Flow (browser redirect + public receipt verification) and Webhooks (optional, requires webhooks:read). Complete each track on its own — they do not share credentials or proof.";
+  "Two independent tracks: Partner Flow (browser redirect + public receipt verification) and Webhooks (optional, requires webhooks:read). Complete each track on its own, they do not share credentials or proof.";
 
 export const PARTNER_SANDBOX_GLOSSARY = [
   {
     term: "Partner Flow track",
     definition:
-      "Browser redirect to /partner/verify, callback with receipt_id, server-side GET /api/receipts/{receipt_id}/public verification. No API key in the browser.",
+      "Browser redirect to /partner/verify, callback with receipt_id, server side GET /api/receipts/{receipt_id}/public verification. No API key in the browser.",
   },
   {
     term: "Webhook track",
     definition:
-      "Optional outbound HTTPS notifications. Sandbox test events use partner.webhook.test — never connected to the public decision-receipt API.",
+      "Optional outbound HTTPS notifications. Sandbox test events use partner.webhook.test, never connected to the public decision-receipt API.",
   },
   {
     term: "delivered (webhook)",
@@ -34,7 +34,7 @@ export const PARTNER_SANDBOX_GLOSSARY = [
   {
     term: "Sandbox receipt",
     definition:
-      "Decision receipt from a sandbox policy. May have production_usable: false and currently_valid: false — expected for sandbox-only testing.",
+      "Decision receipt from a sandbox policy. May have production_usable: false and currently_valid: false, expected for sandbox only testing.",
   },
 ] as const;
 
@@ -43,13 +43,13 @@ export const PARTNER_FLOW_TRACK_MILESTONES = [
     id: "ops_provisioned",
     title: "Operator provisioning",
     description:
-      "Abraxas ops supplies partner_id, policy_id, and an allowlisted return_url. You cannot self-build a complete entry URL without all three.",
+      "Abraxas ops supplies partner_id, policy_id, and an allowlisted return_url. You cannot self build a complete entry URL without all three.",
   },
   {
     id: "entry_url",
     title: "Partner Flow entry URL",
     description:
-      "Redirect holders to /partner/verify with operator-supplied policy_id and return_url. Use the template below — do not guess missing values.",
+      "Redirect holders to /partner/verify with operator supplied policy_id and return_url. Use the template below, do not guess missing values.",
   },
   {
     id: "callback_handler",
@@ -61,7 +61,7 @@ export const PARTNER_FLOW_TRACK_MILESTONES = [
     id: "sandbox_receipt_validated",
     title: "Sandbox receipt validated",
     description:
-      "Confirm signature_valid, matching partner_id/policy_id, and approved decision. production_usable: false is expected — sandbox receipts never authorize Production access.",
+      "Confirm signature_valid, matching partner_id/policy_id, and approved decision. production_usable: false is expected, sandbox receipts never authorize Production access.",
   },
 ] as const;
 
@@ -86,7 +86,7 @@ export const WEBHOOK_TRACK_MILESTONES = [
     id: "http_delivered",
     title: "HTTP delivered",
     description:
-      "Delivery history shows status delivered — your endpoint returned a successful HTTP response. This is transport only, not signature verification.",
+      "Delivery history shows status delivered, your endpoint returned a successful HTTP response. This is transport only, not signature verification.",
   },
   {
     id: "signature_verified",
@@ -99,7 +99,7 @@ export const WEBHOOK_TRACK_MILESTONES = [
 export const SANDBOX_RECEIPT_CHECKS = [
   {
     check: "signature_valid === true",
-    why: "Ed25519 signature over canonical payload_hash — required even in sandbox",
+    why: "Ed25519 signature over canonical payload_hash, required even in sandbox",
     required: true,
   },
   {
@@ -109,7 +109,7 @@ export const SANDBOX_RECEIPT_CHECKS = [
   },
   {
     check: "partner_id matches your integration",
-    why: "Prevents cross-partner receipt replay",
+    why: "Prevents cross partner receipt replay",
     required: true,
   },
   {
@@ -119,12 +119,12 @@ export const SANDBOX_RECEIPT_CHECKS = [
   },
   {
     check: "production_usable may be false",
-    why: "Expected for sandbox policies — do not use sandbox receipts to gate Production access",
+    why: "Expected for sandbox policies, do not use sandbox receipts to gate Production access",
     required: false,
   },
   {
     check: "currently_valid may be false",
-    why: "Sandbox receipts often invalidate with production_not_usable:false — this is expected, not a failure",
+    why: "Sandbox receipts often invalidate with production_not_usable:false, this is expected, not a failure",
     required: false,
   },
 ] as const;
@@ -235,9 +235,9 @@ export function evaluateSandboxReceiptChecks(
       passed: true,
       detail:
         receipt?.production_usable === false
-          ? "production_usable: false — expected for sandbox; not a validation failure"
+          ? "production_usable: false, expected for sandbox; not a validation failure"
           : receipt?.production_usable === true
-            ? "production_usable: true — unusual for sandbox policies"
+            ? "production_usable: true, unusual for sandbox policies"
             : "production_usable not set",
     },
     {
@@ -262,7 +262,7 @@ function buildSandboxCurrentlyValidDetail(receipt: SandboxReceiptInput | null | 
   }
   const reasons = receipt?.invalidation_reasons ?? [];
   if (reasons.includes("production_not_usable:false")) {
-    return "currently_valid: false with production_not_usable:false — expected sandbox invalidation";
+    return "currently_valid: false with production_not_usable:false, expected sandbox invalidation";
   }
   if (receipt?.currently_valid === false) {
     return `currently_valid: false${reasons.length ? ` (${reasons.join(", ")})` : ""}`;

@@ -53,7 +53,7 @@ export const INVEST_CONFIGS: Record<string, AssetInvestConfig> = {
       { source: "Title search",              status: "confirmed" },
       { source: "Appraisal",                 status: "confirmed" },
       { source: "Active rental income record", status: "confirmed" },
-      { source: "Public record cross-check", status: "confirmed" },
+      { source: "Public record cross check", status: "confirmed" },
     ],
   },
 
@@ -97,7 +97,7 @@ export const INVEST_CONFIGS: Record<string, AssetInvestConfig> = {
     id: "aas-3",
     founderVetted: true,
     name: "14 Days in Beijing",
-    subtitle: "Chancellor K. Jackson · Multi-Format IP",
+    subtitle: "Chancellor K. Jackson · Multi Format IP",
     color: "#F59E0B",
     stats: [
       { label: "TV Pilot",   val: "13 EP · COMPLETE" },
@@ -148,10 +148,10 @@ export const INVEST_CONFIGS: Record<string, AssetInvestConfig> = {
       { label: "Appreciation",     val: "~3x since purchase" },
     ],
     historicalNote:
-      "Purchased March 1999 for $76,200 (public record confirmed). Current estimated value $208,200+, approximately 3x appreciation over 25 years without a traditional bank refinance. Located in Smyrna's 30080 corridor, six minutes from Truist Park and The Battery Atlanta, a $1B+ mixed-use development that has fundamentally repriced the surrounding residential market. Construction and commercial investment in the Smyrna/Cumberland area has continued accelerating since The Battery opened in 2017, making this area one of metro Atlanta's most defensible holds. The owner has chosen not to take the traditional bank loan route, positioning this asset for a structured on-chain solution that better fits the long-term thesis: hold the equity, access liquidity on favorable terms, and continue benefiting from the ongoing commercial development in the immediate area.",
+      "Purchased March 1999 for $76,200 (public record confirmed). Current estimated value $208,200+, approximately 3x appreciation over 25 years without a traditional bank refinance. Located in Smyrna's 30080 corridor, six minutes from Truist Park and The Battery Atlanta, a $1B+ mixed-use development that has fundamentally repriced the surrounding residential market. Construction and commercial investment in the Smyrna/Cumberland area has continued accelerating since The Battery opened in 2017, making this area one of metro Atlanta's most defensible holds. The owner has chosen not to take the traditional bank loan route, positioning this asset for a structured on chain solution that better fits the long-term thesis: hold the equity, access liquidity on favorable terms, and continue benefiting from the ongoing commercial development in the immediate area.",
     options: [
       {
-        title: "On-Chain Equity Loan",
+        title: "On Chain Equity Loan",
         badge: "PREFERRED STRUCTURE",
         color: "#06B6D4",
         desc: "Property is paid off and clear. Borrow USDC against the verified equity without selling, without a bank, and without a refinance. Owner keeps full ownership, occupancy, and future appreciation.",

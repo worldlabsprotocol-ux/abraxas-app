@@ -14,7 +14,7 @@ const STAGES = [
     key: "bonding",
     label: "Building",
     plain: "Strategy proven, capital pooling",
-    desc: "The vault is establishing its track record. Agent is active, positions are opening, and performance history is being built on-chain.",
+    desc: "The vault is establishing its track record. Agent is active, positions are opening, and performance history is being built on chain.",
     icon: "◌",
   },
   {

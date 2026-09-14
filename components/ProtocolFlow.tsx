@@ -45,7 +45,7 @@ const STEPS = [
     label: "ONCHAIN CREDIT",
     icon:  "◎",
     color: "#f0f0f0",
-    desc:  "Persistent credit history builds on-chain reputation",
+    desc:  "Persistent credit history builds on chain reputation",
     metric:{ label:"Credit score", value:"AAS-1 standard" },
   },
 ] as const;

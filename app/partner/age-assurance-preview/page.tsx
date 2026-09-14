@@ -26,7 +26,7 @@ export default function AgeAssurancePreviewPage() {
     <div id="age-assurance-method-selection" style={{ padding: "1rem" }}>
       <PartnerJourneyLayout
         partnerName={partnerName}
-        intro="Privacy-first age assurance — method selection preview."
+        intro="Privacy-first age assurance, method selection preview."
         statusMessage={chooseCopy.message}
         partnerHomeUrl="https://www.goodtroublecanna.com"
         partnerReturnLabel={`Return to ${partnerName}`}

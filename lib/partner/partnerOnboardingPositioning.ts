@@ -16,7 +16,7 @@ export const PARTNER_ONBOARDING_SUPPORTING_COPY =
   "Abraxas helps users prove eligibility and securely continue into partner experiences without repeatedly exposing sensitive identity information.";
 
 export const PARTNER_ONBOARDING_FUTURE_EXPLAINER =
-  "With explicit user consent, partners will be able to create or recover a local account from an Abraxas verification, request selected contact information, and unlock partner-specific benefits without requiring another password.";
+  "With explicit user consent, partners will be able to create or recover a local account from an Abraxas verification, request selected contact information, and unlock partner specific benefits without requiring another password.";
 
 export const PARTNER_ONBOARDING_FUTURE_LABEL = "In development";
 
@@ -42,19 +42,19 @@ export const PARTNER_ONBOARDING_AVAILABLE_NOW: PartnerCapabilityItem[] = [
   {
     id: "signed-receipts",
     label: "Signed public receipts",
-    detail: "Server-side GET /api/receipts/{receipt_id}/public with signature and trust fields.",
+    detail: "Server side GET /api/receipts/{receipt_id}/public with signature and trust fields.",
     availability: "available_now",
   },
   {
     id: "privacy-callbacks",
     label: "Privacy-preserving partner callbacks",
-    detail: "Frozen callback query parameters contain no PII — partners verify receipts, not URLs alone.",
+    detail: "Frozen callback query parameters contain no PII, partners verify receipts, not URLs alone.",
     availability: "available_now",
   },
   {
     id: "sandbox-design-partner",
-    label: "Sandbox design-partner integration",
-    detail: "Manual review, operator-provisioned sandbox policies, callback allowlists, and conformance tooling.",
+    label: "Sandbox design partner integration",
+    detail: "Manual review, operator provisioned sandbox policies, callback allowlists, and conformance tooling.",
     availability: "available_now",
   },
 ];
@@ -62,8 +62,8 @@ export const PARTNER_ONBOARDING_AVAILABLE_NOW: PartnerCapabilityItem[] = [
 export const PARTNER_ONBOARDING_IN_DEVELOPMENT: PartnerCapabilityItem[] = [
   {
     id: "passwordless-account",
-    label: "Consented passwordless partner-account creation",
-    detail: "Create or recover a partner-local account from an Abraxas verification — not deployed yet.",
+    label: "Consented passwordless partner account creation",
+    detail: "Create or recover a partner local account from an Abraxas verification, not deployed yet.",
     availability: "in_development",
   },
   {
@@ -75,24 +75,24 @@ export const PARTNER_ONBOARDING_IN_DEVELOPMENT: PartnerCapabilityItem[] = [
   {
     id: "optional-email",
     label: "Optional email sharing",
-    detail: "Separate consent scope for contact information — never bundled with eligibility verification.",
+    detail: "Separate consent scope for contact information, never bundled with eligibility verification.",
     availability: "in_development",
   },
   {
     id: "newsletter-consent",
     label: "Separate newsletter / marketing consent",
-    detail: "Marketing enrollment is optional and independently consented — never preselected.",
+    detail: "Marketing enrollment is optional and independently consented, never preselected.",
     availability: "in_development",
   },
   {
     id: "continue-with-abraxas-login",
     label: "Returning “Continue with Abraxas” login",
-    detail: "Faster return visits using verified Passport context — partner sessions remain partner-owned.",
+    detail: "Faster return visits using verified Passport context, partner sessions remain partner owned.",
     availability: "in_development",
   },
   {
     id: "partner-sessions-benefits",
-    label: "Partner-owned sessions and benefits",
+    label: "Partner owned sessions and benefits",
     detail: "Partners issue their own sessions, preferences, purchases, rewards, and communications.",
     availability: "in_development",
   },
@@ -104,7 +104,7 @@ export const PARTNER_ONBOARDING_PRIVACY_PRINCIPLES = [
   "Eligibility verification is separate from marketing consent.",
   "Newsletter enrollment must be optional and separately consented.",
   "Each partner owns its local accounts, sessions, preferences, purchases, rewards, and communications.",
-  "Abraxas must not silently enroll users in third-party services.",
+  "Abraxas must not silently enroll users in third party services.",
   "Future partner identity must be pairwise so partners cannot correlate users across services.",
 ] as const;
 
@@ -112,7 +112,7 @@ export const PARTNER_ONBOARDING_HOW_IT_WORKS = [
   {
     step: 1,
     title: "User selects Continue with Abraxas Passport",
-    body: "The partner starts Partner Flow with an allowlisted return_url — available today.",
+    body: "The partner starts Partner Flow with an allowlisted return_url, available today.",
   },
   {
     step: 2,
@@ -131,13 +131,13 @@ export const PARTNER_ONBOARDING_HOW_IT_WORKS = [
   },
   {
     step: 5,
-    title: "Partner validates the signed result server-side",
+    title: "Partner validates the signed result server side",
     body: "Fetch and validate GET /api/receipts/{receipt_id}/public before granting access.",
   },
   {
     step: 6,
     title: "Partner creates or finds its local account and issues its own session",
-    body: "Planned: consented passwordless account bootstrap from verification — partners own sessions today.",
+    body: "Planned: consented passwordless account bootstrap from verification, partners own sessions today.",
   },
   {
     step: 7,
@@ -155,7 +155,7 @@ export const PARTNER_CONSENT_MOCKUP_CONTROLS = [
 ] as const;
 
 export const PARTNER_CONSENT_MOCKUP_NOTE =
-  "Illustrative consent layout only — not a live enrollment form. Newsletter is never preselected.";
+  "Illustrative consent layout only, not a live enrollment form. Newsletter is never preselected.";
 
 export const PARTNER_ONBOARDING_DOC_LINKS = {
   partnerFlow: "/docs/partner-flow",

@@ -23,7 +23,7 @@ export default function DevelopersPage() {
       <PageHeader
         eyebrow="Developers"
         title="Build on Abraxas verification"
-        subtitle={`${PARTNER_ONBOARDING_HEADLINE} Partner Flow, Passport, and signed receipts are available in beta. Consented passwordless partner accounts and optional email/newsletter scopes are in development — not live.`}
+        subtitle={`${PARTNER_ONBOARDING_HEADLINE} Partner Flow, Passport, and signed receipts are available in beta. Consented passwordless partner accounts and optional email/newsletter scopes are in development, not live.`}
       />
 
       <ConceptDemoVideo demo={BuildIntegrateCinematicDemo} id="developers-demo" />

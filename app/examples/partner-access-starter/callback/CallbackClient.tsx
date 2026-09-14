@@ -31,7 +31,7 @@ export function CallbackClient() {
     }
 
     const receiptId = validation.params.receipt_id!;
-    setStatus("Verifying receipt server-side…");
+    setStatus("Verifying receipt server side…");
 
     void fetch(STARTER_ROUTES.verifyApi, {
       method: "POST",

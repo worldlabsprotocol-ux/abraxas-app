@@ -115,7 +115,7 @@ export function HomeLiveStats() {
             {METRICS_FOOTNOTE_PREFIX}
             {view.phase ? ` Phase: ${view.phase.replace(/_/g, " ")}.` : ""}
             {updatedLabel ? ` Updated ${updatedLabel}.` : ""}
-            {view.databaseSource === "unavailable" ? " Database source offline — counts may be incomplete." : ""}
+            {view.databaseSource === "unavailable" ? " Database source offline, counts may be incomplete." : ""}
           </p>
         </>
       )}

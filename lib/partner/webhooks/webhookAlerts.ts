@@ -212,7 +212,7 @@ export async function syncWebhookAlert(input: {
   const sendResult = await sendOperationalAdminEmail({
     subject: input.active
       ? `[Abraxas Webhooks] ${label}`
-      : `[Abraxas Webhooks] ${label} — recovered`,
+      : `[Abraxas Webhooks] ${label}, recovered`,
     html: alertEmailHtml({
       title: label,
       recovery: !input.active,

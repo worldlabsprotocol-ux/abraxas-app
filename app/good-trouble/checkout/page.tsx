@@ -12,7 +12,7 @@ export default function GoodTroubleCheckoutPage() {
       <PageHeader
         eyebrow="Good Trouble · Regulated retail"
         title="Checkout verification"
-        subtitle={`${GOOD_TROUBLE_BRAND.name} uses Abraxas Passport for age-gated retail eligibility in ${GOOD_TROUBLE_BRAND.location}.`}
+        subtitle={`${GOOD_TROUBLE_BRAND.name} uses Abraxas Passport for age gated retail eligibility in ${GOOD_TROUBLE_BRAND.location}.`}
       />
       <p
         style={{

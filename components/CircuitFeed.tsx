@@ -30,7 +30,7 @@ const BASE_SIGNALS: Omit<Signal,"id"|"ts">[] = [
   {level:"NOMINAL",  type:"WALLET",     message:"No suspicious wallet patterns detected"},
   {level:"NOMINAL",  type:"ORACLE",     message:"Pyth feed latency within threshold"},
   {level:"ALERT",    type:"PRICING",    message:"Watch floor price anomaly detected"},
-  {level:"NOMINAL",  type:"PROTOCOL",   message:"All state transitions verified on-chain"},
+  {level:"NOMINAL",  type:"PROTOCOL",   message:"All state transitions verified on chain"},
   {level:"WATCH",    type:"EXPOSURE",   message:"Spirits category concentration above 22%"},
 ];
 

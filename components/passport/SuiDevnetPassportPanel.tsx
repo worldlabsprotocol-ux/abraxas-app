@@ -180,7 +180,7 @@ export function SuiDevnetPassportPanel({
             Sui devnet · live object
           </div>
           <div style={{ fontFamily: FONT, fontSize: compact ? "0.88rem" : "0.95rem", fontWeight: 700, color: "var(--text-primary)" }}>
-            {isUserPassport ? "Your on-chain Passport" : "View devnet passport"}
+            {isUserPassport ? "Your on chain Passport" : "View devnet passport"}
           </div>
           {!compact && (
             <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0.35rem 0 0", lineHeight: 1.65, maxWidth: 520 }}>

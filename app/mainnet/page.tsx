@@ -16,7 +16,7 @@ export default function MainnetPage() {
       <PageHeader
         eyebrow="Mainnet readiness"
         title="Scoreboard"
-        subtitle="Seven boolean gates before open, self-serve, audit-complete mainnet. No calendar dates. only shipped proof."
+        subtitle="Seven boolean gates before open, self serve, audit-complete mainnet. No calendar dates. only shipped proof."
       />
 
       <div

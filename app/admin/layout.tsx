@@ -66,7 +66,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.6, marginBottom: "1.25rem" }}>
             {productionSessionOnly
               ? "Sign in with an authorized admin Google account."
-              : "Sign in with an authorized admin Google account, or enter the reviewer PIN (non-production only)."}
+              : "Sign in with an authorized admin Google account, or enter the reviewer PIN (non production only)."}
           </p>
           {!productionSessionOnly && (
           <form onSubmit={e => void submitPin(e)} style={{ display: "flex", flexDirection: "column", gap: "0.65rem" }}>

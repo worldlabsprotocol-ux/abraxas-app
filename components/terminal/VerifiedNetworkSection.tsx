@@ -23,7 +23,7 @@ const REASONS: Reason[] = [
     title: "Get in before the standard sets",
     punch: "Verification is about to be mandatory everywhere. Do it once, now, and you're already inside the network while everyone else is scrambling to catch up.",
     points: [
-      "Founding Verified is minted to your Passport, permanent and non-transferable",
+      "Founding Verified is minted to your Passport, permanent and non transferable",
       "Earned by real verification depth, not by staking capital",
       "First 250 seats, when protocols check Abraxas first, you were already in",
     ],
@@ -33,7 +33,7 @@ const REASONS: Reason[] = [
     title: "One verification, every door",
     punch: "Stop re-uploading the same documents to ten platforms. Verify your identity and your assets once, then carry that proof everywhere.",
     points: [
-      "Verify once on Abraxas today — built for reuse across lenders, marketplaces, and protocols as partners come online",
+      "Verify once on Abraxas today, built for reuse across lenders, marketplaces, and protocols as partners come online",
       "No re-KYC, no redundant uploads, no waiting in the same line twice",
       "The credential is the key, the network is the building",
     ],
@@ -54,7 +54,7 @@ const REASONS: Reason[] = [
     punch: "Cold outreach is dead weight. Verified people and verified assets find each other and transact on proof, not promises.",
     points: [
       "Verified status unlocks collateral, lending, and marketplace access",
-      "Warm, on-chain credibility instead of cold introductions",
+      "Warm, on chain credibility instead of cold introductions",
       "Deal flow moves to the people who can prove who they are",
     ],
   },

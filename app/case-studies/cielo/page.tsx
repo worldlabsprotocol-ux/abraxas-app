@@ -35,7 +35,7 @@ export default function CieloCaseStudyPage() {
       <PageHeader
         eyebrow="Case study · Genesis asset"
         title="Cielo Sunrise (ABX-RE-HOSP-001)"
-        subtitle="Institutional diligence pack: dated sources, conflict disclosures, assurance levels, and on-chain proof links. Eat-your-own-dogfood. not a mockup."
+        subtitle="Institutional diligence pack: dated sources, conflict disclosures, assurance levels, and on chain proof links. Eat-your-own-dogfood. not a mockup."
       />
 
       <CaseStudyPhotoHero
@@ -118,7 +118,7 @@ export default function CieloCaseStudyPage() {
         </p>
       </ContentCard>
 
-      <ContentCard title="On-chain & operational proof">
+      <ContentCard title="On chain & operational proof">
         <div style={{ display: "grid", gap: "0.65rem" }}>
           {CIELO_ONCHAIN_PROOF.map(proof => (
             <Link key={proof.label} href={proof.href}

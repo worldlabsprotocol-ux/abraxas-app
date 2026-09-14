@@ -193,7 +193,7 @@ function validateCanonicalOrigin(options: PartnerConformanceOptions): Conformanc
     "pass",
     options.productionMode
       ? `origin=${SITE_URL}`
-      : `origin=${origin} (non-production probe)`,
+      : `origin=${origin} (non production probe)`,
   );
 }
 
@@ -350,7 +350,7 @@ export function formatConformanceReport(result: PartnerConformanceResult): strin
     "=== Abraxas partner conformance harness ===",
     "",
     `production_mode: ${result.options.productionMode}`,
-    `base_url: ${result.options.baseUrl || "(not set — fixture checks only)"}`,
+    `base_url: ${result.options.baseUrl || "(not set, fixture checks only)"}`,
     `partner_id: ${result.options.partnerId || "(not set)"}`,
     `policy_id: ${result.options.policyId || "(not set)"}`,
     `return_url: ${result.options.returnUrl || "(not set)"}`,

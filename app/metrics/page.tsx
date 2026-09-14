@@ -191,7 +191,7 @@ export default function MetricsPage() {
               <Metric label="Attested value" value={m.attested_value_label} sub="Cielo appraisal" />
               <Metric label="Accounts (zkLogin)" value={String(m.zklogin_wallets)} sub="Registered wallets" />
               <Metric label="Active credentials" value={String(m.active_credentials)} sub="W3C VC issued" />
-              <Metric label="On-chain passports" value={String(m.on_chain_passports)} sub="Sui objects" />
+              <Metric label="On chain passports" value={String(m.on_chain_passports)} sub="Sui objects" />
               <Metric label="Featured stay" value={m.cielo_revenue_label} sub={`${m.captured_cielo_bookings} captured · ${m.pending_cielo_bookings} pending`} />
               <Metric label="Investor interest" value={String(m.investment_interest_count)} sub="Submitted via portal" />
               <Metric label="Design partners" value={String(m.design_partner_applications)} sub="Integration applications" />

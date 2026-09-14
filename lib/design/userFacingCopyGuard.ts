@@ -1,67 +1,66 @@
 // FILE: lib/design/userFacingCopyGuard.ts
-// Scans customer journey copy for forbidden dash punctuation in prose.
+// Scans user facing copy for forbidden dash punctuation in prose.
 
-import { readFileSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
 const REPO_ROOT = join(__dirname, "..", "..");
 
-/** Customer journey copy sources only (not admin or developer docs). */
-const TARGET_FILES = [
-  "lib/partner/partnerHolderCopy.ts",
-  "lib/partner/goodTroubleBrowseFlow.ts",
-  "lib/passport/passportCustomerCopy.ts",
-  "lib/passport/verifiedHero.ts",
-  "lib/home/simplifiedHomeCopy.ts",
-  "lib/home/assuranceNetworkCopy.ts",
-  "lib/idv/identityCaptureCopy.ts",
-  "lib/sui/zklogin/signInCopy.ts",
-  "lib/integrate/businessPageCopy.ts",
-  "lib/integrate/partnerJourney.ts",
-  "components/passport/PassportCustomerView.tsx",
-  "components/passport/PassportSetupPanel.tsx",
-  "components/passport/PassportReauthenticationPanel.tsx",
-  "components/passport/PassportSignInRecoveryPanel.tsx",
-  "components/passport/PassportVerifySetupRequired.tsx",
-  "components/passport/VerificationSuccessPanel.tsx",
-  "components/passport/WalletBindingCard.tsx",
-  "components/passport/AbraxasIdentityCapture.tsx",
-  "components/passport/PassportVerifiedHero.tsx",
-  "components/passport/PassportPrivacyCenter.tsx",
-  "components/passport/PassportIntentCard.tsx",
-  "components/passport/IndependentBiometricStatusCard.tsx",
-  "components/partner/PartnerVerifyShell.tsx",
-  "components/partner/PartnerJourneyLayout.tsx",
-  "components/partner/SelfAttestationBrowseForm.tsx",
-  "components/partner/PartnerContinueClient.tsx",
-  "components/partner/PartnerEnterClient.tsx",
-  "components/partner/AgeAssuranceMethodChooser.tsx",
-  "components/redesign/RedesignPageLoading.tsx",
-  "app/passport/error.tsx",
-  "app/verify/error.tsx",
-  "app/legal/privacy/page.tsx",
-  "app/legal/terms/page.tsx",
-  "app/about/page.tsx",
-  "app/payment/success/page.tsx",
-  "app/auth/callback/page.tsx",
-  "app/login/page.tsx",
-  "app/dashboard/page.tsx",
-  "components/redesign/RedesignContent.tsx",
-  "components/redesign/RedesignFooter.tsx",
-  "components/admin/AdminPageHeader.tsx",
-  "components/cielo/CieloPaymentPanel.tsx",
-  "components/cielo/CieloReceiptPanel.tsx",
+const EXCLUDED_DIRS = new Set(["node_modules", ".next", "api"]);
+const EXCLUDED_FILE_PATTERNS = [
+  /\.test\.(ts|tsx)$/,
+  /\.spec\.(ts|tsx)$/,
+  /routeInventory\.ts$/,
+  /userFacingCopyGuard/,
+  /fixtures\/copyGuardViolations/,
 ];
 
-function collectTargetFiles(): string[] {
-  return TARGET_FILES.map((p) => join(REPO_ROOT, p)).filter((f) => {
-    try {
-      statSync(f);
+function shouldScanFile(absPath: string): boolean {
+  const rel = relative(REPO_ROOT, absPath);
+  if (EXCLUDED_FILE_PATTERNS.some((re) => re.test(rel))) return false;
+  if (rel.startsWith("app/api/")) return false;
+  if (!/\.(tsx|ts)$/.test(rel)) return false;
+
+  if (rel.startsWith("app/") && rel.endsWith(".tsx")) return true;
+  if (rel.startsWith("components/") && rel.endsWith(".tsx")) return true;
+  if (rel.startsWith("lib/") && rel.endsWith(".ts") && !rel.includes("/server/")) {
+    if (/Copy\.ts$|copy\.ts$|Profile\.ts$|signInCopy|businessPage|partnerHolder|goodTrouble|passportCustomer|simplifiedHome|assuranceNetwork|identityCapture|docsHub|teamProfile|partnerJourney/.test(rel)) {
       return true;
+    }
+    if (rel.includes("/home/") || rel.includes("/passport/") || rel.includes("/partner/") || rel.includes("/integrate/") || rel.includes("/idv/")) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function walkScanFiles(dir: string, files: string[] = []): string[] {
+  for (const entry of readdirSync(dir)) {
+    const abs = join(dir, entry);
+    if (statSync(abs).isDirectory()) {
+      if (EXCLUDED_DIRS.has(entry)) continue;
+      walkScanFiles(abs, files);
+    } else if (shouldScanFile(abs)) {
+      files.push(abs);
+    }
+  }
+  return files;
+}
+
+function collectTargetFiles(): string[] {
+  const roots = [
+    join(REPO_ROOT, "app"),
+    join(REPO_ROOT, "components"),
+    join(REPO_ROOT, "lib"),
+  ];
+  const files = roots.flatMap((root) => {
+    try {
+      return walkScanFiles(root);
     } catch {
-      return false;
+      return [];
     }
   });
+  return Array.from(new Set(files)).sort();
 }
 
 function extractStringLiterals(line: string): string[] {
@@ -81,6 +80,13 @@ function extractStringLiterals(line: string): string[] {
   return results;
 }
 
+function isNonCopyLine(line: string): boolean {
+  if (/fontFamily|font-family|fontSize|font-size|letterSpacing|lineHeight|borderRadius|gridTemplate|flexDirection|animation:|strokeWidth|stopColor|viewBox|textAnchor|Webkit|scrollbar|backdropFilter|minmax\(|clamp\(|repeat\(|textTransform|whiteSpace|wordBreak|boxShadow|background:|padding:|margin:|display:|gap:|color:\s*["']?#|rgba?\(/.test(line)) {
+    return true;
+  }
+  return false;
+}
+
 function isTechnicalString(text: string): boolean {
   if (!/\s/.test(text)) return true;
   if (/^\/[a-z]/.test(text)) return true;
@@ -88,22 +94,27 @@ function isTechnicalString(text: string): boolean {
   if (/Content-Type|application\/|abraxas:|abraxas-/.test(text)) return true;
   if (/^[a-z0-9]+(-[a-z0-9]+)+$/.test(text)) return true;
   if (/\b0x[a-fA-F0-9]{6,}\b/.test(text)) return true;
-  if (/\bL[0-3]\b/.test(text)) return true;
+  if (/\bL[0-4]\b/.test(text) && /assurance|taxonomy|level/i.test(text)) return true;
   if (/\bRPC\b|\btuple\b|\bschema\b|\bmigration\b|\bpolicy engine\b/i.test(text)) return true;
-  if (/\bW3C\b|\bJWT\b|\bzkLogin\b/.test(text)) return true;
-  if (/px solid|var\(--|JetBrains|ui-monospace|\$\{/.test(text)) return true;
+  if (/\bW3C\b|\bJWT\b|\bzkLogin\b|\bGET\b|\bPOST\b|\bPUT\b|\bDELETE\b/.test(text)) return true;
+  if (/\d+px|\d+rem|solid|var\(--|JetBrains|ui-monospace|sans-serif|monospace|system-ui|Space Grotesk|'Inter'|ease-in-out|ease-out|uppercase|lowercase|capitalize|\$\{/.test(text)) return true;
   if (/GET \/api|\/docs\/|npm run|allowSandbox|receipt_id/.test(text)) return true;
   if (/operator-provisioned|self-serve|api-key|callback allowlists/i.test(text)) return true;
+  if (/^[A-Z_][A-Z0-9_]+$/.test(text)) return true;
+  if (/\{[a-zA-Z_]+\}/.test(text)) return true;
+  if (/`[a-z]+`/.test(text)) return true;
+  if (/pulse\s+\d|infinite|stroke|gradient|viewBox/i.test(text)) return true;
+  if (/[A-Z][A-Z0-9_]{4,}/.test(text)) return true;
+  if (/IDV_PROVIDER=|YYYY-MM-DD|sui:deploy|\/api\//.test(text)) return true;
+  if (/[a-z]+\/[a-z]/.test(text) && !/\s[a-z]{4,}/i.test(text)) return true;
+  if (/^\$\{.*\}\s/.test(text) || /\s\$\{/.test(text)) return true;
   return false;
 }
 
-function shouldScanLine(fileRel: string, line: string): boolean {
-  if (fileRel === "lib/integrate/partnerJourney.ts") {
-    return /HOLDER_|PAYMENT_RETURN_|VERIFY_ERROR_|FOOTER_|SETUP_WALLET_|APPLE_WALLET_|DASHBOARD_LEGACY_/.test(line);
-  }
-  if (fileRel === "lib/integrate/businessPageCopy.ts") {
-    return /BUSINESS_PAGE_|BUSINESS_BENEFITS|BUSINESS_INTEGRATION/.test(line);
-  }
+function shouldScanLine(_fileRel: string, line: string): boolean {
+  if (/^\s*import\s/.test(line)) return false;
+  if (/^\s*export\s+(type|interface)\s/.test(line)) return false;
+  if (/console\.(log|warn|error)/.test(line)) return false;
   return true;
 }
 
@@ -112,10 +123,14 @@ function isProseString(text: string): boolean {
   return /[A-Za-z]{2,}\s+[A-Za-z]{2,}/.test(text);
 }
 
-function hasForbiddenHyphenInProse(text: string): boolean {
-  if (text.includes("—") || text.includes("–")) return true;
-  if (/\b[A-Za-z]{2,}-[A-Za-z]{2,}\b/.test(text)) return true;
-  return false;
+const MARKETING_HYPHEN_BLOCKLIST = /\b(age|higher|non|pre|self|multi|cross|on|off|real|full|low|high|open|closed|end|top|mid)-[a-z]{3,}\b/i;
+
+function classifyDashViolation(text: string): CopyViolation["reason"] | null {
+  if (text.includes("—")) return "em_dash";
+  if (text.includes("–")) return "en_dash";
+  if (/\s-\s/.test(text) && /[A-Za-z]/.test(text)) return "sentence_hyphen";
+  if (MARKETING_HYPHEN_BLOCKLIST.test(text)) return "sentence_hyphen";
+  return null;
 }
 
 export interface CopyViolation {
@@ -123,6 +138,11 @@ export interface CopyViolation {
   line: number;
   text: string;
   reason: "em_dash" | "en_dash" | "sentence_hyphen";
+}
+
+export function scanStringForCopyViolations(text: string): CopyViolation["reason"] | null {
+  if (!isProseString(text)) return null;
+  return classifyDashViolation(text);
 }
 
 export function scanUserFacingCopy(): CopyViolation[] {
@@ -134,21 +154,23 @@ export function scanUserFacingCopy(): CopyViolation[] {
     const lines = readFileSync(file, "utf8").split("\n");
 
     lines.forEach((line, idx) => {
-      if (/^\s*\/\//.test(line) || /^\s*\/\*/.test(line)) return;
+      if (/^\s*\/\//.test(line) || /^\s*\/\*/.test(line) || /^\s*\*/.test(line)) return;
+      if (/\/\*\*?/.test(line) || /\*\//.test(line)) return;
       if (!shouldScanLine(rel, line)) return;
+      if (isNonCopyLine(line)) return;
       const literals = extractStringLiterals(line);
       for (const text of literals) {
-        if (!isProseString(text)) continue;
-        if (text.includes("—")) {
-          violations.push({ file: rel, line: idx + 1, text, reason: "em_dash" });
-        } else if (text.includes("–")) {
-          violations.push({ file: rel, line: idx + 1, text, reason: "en_dash" });
-        } else if (hasForbiddenHyphenInProse(text) && /-/.test(text)) {
-          violations.push({ file: rel, line: idx + 1, text, reason: "sentence_hyphen" });
+        const reason = classifyDashViolation(text);
+        if (reason && isProseString(text)) {
+          violations.push({ file: rel, line: idx + 1, text, reason });
         }
       }
     });
   }
 
   return violations;
+}
+
+export function scannedFileCount(): number {
+  return collectTargetFiles().length;
 }

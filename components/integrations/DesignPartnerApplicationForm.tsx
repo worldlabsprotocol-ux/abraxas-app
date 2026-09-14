@@ -150,7 +150,7 @@ export function DesignPartnerApplicationForm({
           onChange={(v) => setForm((f) => ({ ...f, email: v }))}
           required
           disabled={busy}
-          helper="We reply here — use a domain you control."
+          helper="We reply here, use a domain you control."
         />
         <Field
           label="Website"
@@ -182,7 +182,7 @@ export function DesignPartnerApplicationForm({
             onChange={(e) => setForm((f) => ({ ...f, use_case: e.target.value }))}
             rows={3}
             style={{ ...inputStyle, resize: "vertical" }}
-            placeholder="Describe the eligibility gate (e.g. age-gated retail checkout), expected holder flow, and your callback URL pattern."
+            placeholder="Describe the eligibility gate (e.g. age gated retail checkout), expected holder flow, and your callback URL pattern."
           />
           <span style={helperStyle}>Helps us assess fit and sandbox provisioning needs.</span>
         </label>

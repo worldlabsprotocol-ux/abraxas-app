@@ -53,9 +53,9 @@ interface TierDef { id: Tier; name: string; price: number; color: string; taglin
 
 const TIERS: TierDef[] = [
   { id:"starter",    name:"STARTER",    price:1499, color:B, tagline:"Single LLC + tokenization",
-    features:["Wyoming LLC Formation","Operating Agreement","On-chain Token (Token-2022)","V5 Basic Verification"] },
+    features:["Wyoming LLC Formation","Operating Agreement","On chain Token (Token-2022)","V5 Basic Verification"] },
   { id:"growth",     name:"GROWTH",     price:2999, color:P, tagline:"Built for active operators",
-    features:["Everything in Starter","Multi-sig Governance","On-chain Cap Table","Lending Eligible (60% LTV)"] },
+    features:["Everything in Starter","Multi sig Governance","On chain Cap Table","Lending Eligible (60% LTV)"] },
   { id:"enterprise", name:"ENTERPRISE", price:4999, color:G, tagline:"Full institutional-grade",
     features:["Everything in Growth","Full Compliance Package","Priority Verification (24h)","Dedicated Verifier"] },
 ];
@@ -303,7 +303,7 @@ export function TokenizationRequestModal({ open, onClose, initialTier }: {
             </div>
             <div style={{ fontFamily:S, fontSize:"clamp(0.9rem,2vw,1.1rem)",
                            fontWeight:800, color:W }}>
-              {step==="success" ? "Submission received." : "Launch your business on-chain."}
+              {step==="success" ? "Submission received." : "Launch your business on chain."}
             </div>
           </div>
           <button onClick={close} style={{ padding:"0.35rem 0.625rem", borderRadius:4,

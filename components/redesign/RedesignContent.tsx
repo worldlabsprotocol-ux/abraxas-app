@@ -2,74 +2,50 @@
 // FILE: components/redesign/RedesignContent.tsx
 // Page building blocks for docs, roadmap, tokenomics, etc.
 
-import { AbxCard } from "@/components/design/AbxPrimitives";
+import { AbxCard, AbxPageHeader } from "@/components/design/AbxPrimitives";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
+import type { AbxTabAccent } from "@/lib/design/abraxasDesignSystem";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
-const ACCENT = "var(--accent, #E8C547)";
 
 export function PageHeader({
   eyebrow,
   title,
   subtitle,
+  accent = "neutral",
+  align = "left",
 }: {
   eyebrow?: string;
   title: string;
   subtitle?: string;
+  accent?: AbxTabAccent;
+  align?: "left" | "center";
 }) {
   return (
-    <header style={{ marginBottom: "2rem" }}>
-      {eyebrow && (
-        <div style={{
-          fontFamily: MONO,
-          fontSize: "0.62rem",
-          fontWeight: 700,
-          color: ACCENT,
-          letterSpacing: "0.12em",
-          textTransform: "uppercase",
-          marginBottom: "0.5rem",
-        }}>
-          {eyebrow}
-        </div>
-      )}
-      <h1 style={{
-        fontFamily: FONT,
-        fontSize: "var(--fs-h1)",
-        fontWeight: 800,
-        letterSpacing: "-0.03em",
-        margin: "0 0 0.75rem",
-        color: "var(--text-primary)",
-      }}>
-        {title}
-      </h1>
-      {subtitle && (
-        <p style={{
-          fontFamily: FONT,
-          fontSize: "var(--fs-body)",
-          color: "var(--text-secondary)",
-          lineHeight: 1.75,
-          maxWidth: 640,
-          margin: 0,
-        }}>
-          {subtitle}
-        </p>
-      )}
-    </header>
+    <AbxPageHeader
+      accent={accent}
+      eyebrow={eyebrow}
+      title={title}
+      lead={subtitle}
+      align={align}
+    />
   );
 }
 
 export function ContentCard({
   title,
   id,
+  accent,
   children,
 }: {
   title?: string;
   id?: string;
+  accent?: AbxTabAccent;
   children: React.ReactNode;
 }) {
   return (
-    <AbxCard id={id} style={{ marginBottom: "1.25rem" }} padding="1.25rem">
+    <AbxCard id={id} accent={accent} style={{ marginBottom: "1.25rem" }} padding="1.25rem">
       {title && (
         <h2 style={{
           fontFamily: FONT,

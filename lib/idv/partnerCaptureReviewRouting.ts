@@ -57,7 +57,7 @@ export function withPartnerHumanReviewEscalation(
     decision: "human_review",
     reasons: [
       ...assessment.reasons,
-      "Partner age-gated flow: queued for human review despite engine reject.",
+      "Partner age gated flow: queued for human review despite engine reject.",
     ],
     reason_codes: [...assessment.reason_codes, "PARTNER_HUMAN_REVIEW_ESCALATION"],
   };

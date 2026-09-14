@@ -25,7 +25,7 @@ const PARTNERS: Partner[] = [
   {
     name: "Utila",
     category: "Custody",
-    description: "MPC-based custody infrastructure for assets verified on Abraxas, stronger protection than a typical self-custody wallet.",
+    description: "MPC-based custody infrastructure for assets verified on Abraxas, stronger protection than a typical self custody wallet.",
     appliesTo: "Custody for verified assets",
     url: "https://utila.io",
     isVerificationPartner: true,
@@ -41,7 +41,7 @@ const PARTNERS: Partner[] = [
   {
     name: "HeroSwap",
     category: "Swap Utility",
-    description: "Cross-chain swap, a general crypto utility, separate from asset verification. Not a verification partner.",
+    description: "Cross chain swap, a general crypto utility, separate from asset verification. Not a verification partner.",
     appliesTo: "The Swap page only",
     url: "https://heroswap.com",
     isVerificationPartner: false,

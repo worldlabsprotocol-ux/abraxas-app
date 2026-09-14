@@ -37,7 +37,7 @@ const DEALS: Deal[] = [
     current: 3,
     note: "Deal terms structured. Operator agreement finalized.",
     minInvestment: "$25,000",
-    structure: "Tokenized royalty · On-chain record",
+    structure: "Tokenized royalty · On chain record",
     useOfProceeds: "Operator LOI execution, lease structuring, legal",
     closedDate: "2026-06-19",
   },

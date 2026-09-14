@@ -8,7 +8,7 @@ const MONO = ABRAXAS_FONT_MONO;
 
 export function DeveloperContextBanner({
   title = "Developer tools",
-  description = "This page is for integrators and engineers — not the customer verification experience.",
+  description = "This page is for integrators and engineers, not the customer verification experience.",
 }: {
   title?: string;
   description?: string;

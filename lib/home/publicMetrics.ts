@@ -65,7 +65,7 @@ const HOMEPAGE_METRIC_SPECS: MetricSpec[] = [
   {
     key: "active_credentials",
     label: "Active credentials (beta)",
-    definition: "Non-revoked credentials in the Abraxas credential store.",
+    definition: "Non revoked credentials in the Abraxas credential store.",
     read: (m) => m.active_credentials,
   },
   {
@@ -129,7 +129,7 @@ export function buildHomepageMetricsView(payload: PublicMetricsPayload | null | 
   };
 }
 
-/** @deprecated Use buildHomepageStatCards — kept for tests migrating from Batch 1. */
+/** @deprecated Use buildHomepageStatCards, kept for tests migrating from Batch 1. */
 export function buildHomeStatCards(metrics: PublicMetrics | null | undefined): HomeStatCard[] {
   return buildHomepageStatCards(metrics);
 }

@@ -33,7 +33,7 @@ export const PARTNER_FLOW_DOCUMENTED_OPERATIONS: readonly PartnerFlowDocumentedO
     operationId: "partnerFlowEntry",
     category: "browser_entry",
     implementation: "app/partner/verify/page.tsx",
-    summary: "Browser redirect entry — holder starts Partner Flow",
+    summary: "Browser redirect entry, holder starts Partner Flow",
   },
   {
     method: "GET",
@@ -41,7 +41,7 @@ export const PARTNER_FLOW_DOCUMENTED_OPERATIONS: readonly PartnerFlowDocumentedO
     operationId: "passportHandoff",
     category: "passport_handoff",
     implementation: "app/passport/page.tsx",
-    summary: "Passport UI — ID capture and consent after evaluate returns next=passport",
+    summary: "Passport UI, ID capture and consent after evaluate returns next=passport",
   },
   {
     method: "POST",
@@ -106,27 +106,27 @@ export const PARTNER_FLOW_EXCLUDED_OPERATIONS = [
   {
     method: "POST",
     path: "/api/v1/verification-requests",
-    reason: "Server-to-server integration — requires partner API key (verify:requests); see /docs/partner-verification-requests",
+    reason: "Server-to-server integration, requires partner API key (verify:requests); see /docs/partner verification-requests",
   },
   {
     method: "GET",
     path: "/api/v1/receipts/{receiptId}",
-    reason: "Partner-authenticated receipt view — requires API key; browser Partner Flow uses GET /api/receipts/{receiptId}/public",
+    reason: "Partner authenticated receipt view, requires API key; browser Partner Flow uses GET /api/receipts/{receiptId}/public",
   },
   {
     method: "GET",
     path: "/api/v1/decision-receipts/{receiptId}/status",
-    reason: "Partner-authenticated receipt status — requires API key",
+    reason: "Partner authenticated receipt status, requires API key",
   },
   {
     method: "POST",
     path: "/api/credentials/verify",
-    reason: "Credential/registry verify path — separate integration; see /docs/relying-party-verify",
+    reason: "Credential/registry verify path, separate integration; see /docs/relying-party-verify",
   },
   {
     method: "POST",
     path: "/api/v1/authorize",
-    reason: "Abraxas Connect path — separate integration; see /docs/ail",
+    reason: "Abraxas Connect path, separate integration; see /docs/ail",
   },
 ] as const;
 

@@ -68,7 +68,7 @@ export async function VerifyRecordStatic({ recordId }: { recordId: string }) {
         <div style={{ maxWidth: 520 }}>
           <VerifierResultCard
             result={result}
-            previewLabel="Server-rendered · public registry"
+            previewLabel="Server rendered · public registry"
             heroImage={heroImage}
           />
         </div>

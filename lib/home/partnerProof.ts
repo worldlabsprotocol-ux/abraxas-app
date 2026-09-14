@@ -1,11 +1,11 @@
 // FILE: lib/home/partnerProof.ts
-// Public partner proof cards — authorized names/logos only.
+// Public partner proof cards, authorized names/logos only.
 
 export type PublicPartnerProofStatus = "pilot_testing" | "integration_testing";
 
 export interface PublicPartnerProofCard {
   id: string;
-  /** Display name — only when public-name permission is confirmed */
+  /** Display name, only when public-name permission is confirmed */
   displayName?: string;
   status: PublicPartnerProofStatus;
   summary?: string;
@@ -16,13 +16,13 @@ export interface PublicPartnerProofCard {
 export const HOME_PARTNER_PROOF_HEADING = "Built with real partners";
 
 export const HOME_PARTNER_PROOF_SUBHEAD =
-  "Abraxas is being tested through its first relying-partner integration—turning private verification into a real customer journey.";
+  "Abraxas is being tested through its first relying partner integration, turning private verification into a real customer journey.";
 
 /** Good Trouble name/logo withheld until explicit public permission is confirmed. */
 export const HOME_PARTNER_PROOF_FALLBACK = {
-  title: "First relying-partner pilot",
+  title: "First relying partner pilot",
   badge: "Integration testing underway",
-  summary: "Private eligibility verification for an age-gated retail experience.",
+  summary: "Private eligibility verification for an age gated retail experience.",
   journeyHref: "/pilot-journey",
 } as const;
 

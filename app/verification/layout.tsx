@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   ...pageMetadata({
     title: "Engineering status · Abraxas",
     description:
-      "Internal verification-layer engineering checklist and bootstrap diagnostics. Not a public attestation or third-party certification.",
+      "Internal verification-layer engineering checklist and bootstrap diagnostics. Not a public attestation or third party certification.",
     path: "/verification",
   }),
   robots: {

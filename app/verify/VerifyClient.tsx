@@ -163,13 +163,13 @@ function VerifyTabs({
           color: "var(--text-muted)",
           margin: "0 0 1.25rem",
         }}>
-          {activeTab === "receipt" && "Mirror GET /api/receipts/{receipt_id}/public on your server after callback — do not grant access from this UI alone."}
+          {activeTab === "receipt" && "Mirror GET /api/receipts/{receipt_id}/public on your server after callback, do not grant access from this UI alone."}
           {activeTab === "registry" && (audience === "holder"
-            ? "Look up public registry records by ABX ID — separate from Partner Flow session receipts."
-            : "Look up public registry records by ABX ID — not Partner Flow session receipts.")}
+            ? "Look up public registry records by ABX ID, separate from Partner Flow session receipts."
+            : "Look up public registry records by ABX ID, not Partner Flow session receipts.")}
           {activeTab === "credential" && (audience === "holder"
             ? "Test your Abraxas credential JWT and required claims before sharing with a partner."
-            : "Test POST /api/credentials/verify with a holder JWT and required claims — separate from Partner Flow receipts.")}
+            : "Test POST /api/credentials/verify with a holder JWT and required claims, separate from Partner Flow receipts.")}
         </p>
       )}
 

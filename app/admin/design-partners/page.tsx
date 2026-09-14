@@ -677,7 +677,7 @@ export default function AdminDesignPartnersPage() {
       )}
 
       {promotedPartnerId && (
-        <ContentCard title="Sandbox handoff — operator assistance">
+        <ContentCard title="Sandbox handoff, operator assistance">
           <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
             Share these values with the design partner. Default key scopes are verify:credential and verify:registry only.
             Webhook testing requires a separate key with webhooks:read from{" "}

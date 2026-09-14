@@ -382,7 +382,7 @@ export default function AdminIdentityPage() {
                       {item.verification_request_id ? ` · Flow: ${item.verification_request_id.slice(0, 8)}…` : ""}
                     </div>
                     <div style={{ fontFamily: MONO, fontSize: "0.62rem", color: "rgba(255,255,255,0.45)", marginTop: 4 }}>
-                      {item.sui_address ? `${item.sui_address.slice(0, 10)}…${item.sui_address.slice(-6)}` : "No wallet — user must sign in"}
+                      {item.sui_address ? `${item.sui_address.slice(0, 10)}…${item.sui_address.slice(-6)}` : "No wallet, user must sign in"}
                     </div>
                     <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.55)", marginTop: 6 }}>
                       {item.capture_complete ? "ID + selfie complete" : "Incomplete capture"}
@@ -436,7 +436,7 @@ export default function AdminIdentityPage() {
                           value={documentDobs[item.id] ?? ""}
                           onChange={e => setDocumentDobs(prev => ({ ...prev, [item.id]: e.target.value }))}
                           disabled={itemBusy(item.id)}
-                          title="Document date of birth (internal only — never exposed)"
+                          title="Document date of birth (internal only, never exposed)"
                           style={{
                             width: "100%", minWidth: 180, padding: "0.45rem 0.55rem", borderRadius: 6,
                             border: "1px solid rgba(255,255,255,0.12)", background: "rgba(0,0,0,0.25)",

@@ -19,7 +19,7 @@ function SuiDocsInner() {
       <PageHeader
         eyebrow="Sui verification"
         title="Everything Abraxas does on Sui"
-        subtitle="zkLogin sign-in, on-chain Passport stamps, sponsored transactions for verified tiers, and intent message proofs. one place to learn and operate."
+        subtitle="zkLogin sign-in, on chain Passport stamps, sponsored transactions for verified tiers, and intent message proofs. one place to learn and operate."
       />
 
       <ContentCard title="Try it now">

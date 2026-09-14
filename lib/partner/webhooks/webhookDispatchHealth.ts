@@ -72,7 +72,7 @@ export async function getWebhookDispatchRunHealth(): Promise<{
 
   let schedulerMessage = "Dispatch scheduler is configured.";
   if (!schedulerConfigured) {
-    schedulerMessage = "Dispatch scheduler not yet configured. Add Vercel cron or an external scheduler calling /api/cron/partner-webhook-dispatch.";
+    schedulerMessage = "Dispatch scheduler not yet configured. Add Vercel cron or an external scheduler calling /api/cron/partner webhook-dispatch.";
   } else if (!cronSecretConfigured) {
     schedulerMessage = "CRON_SECRET is not set. Dispatch cannot run until it is configured.";
   }

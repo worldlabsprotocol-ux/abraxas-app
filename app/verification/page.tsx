@@ -37,7 +37,7 @@ export default function VerificationPage() {
       <PageHeader
         eyebrow="Internal engineering · not a public attestation"
         title="Verification layer status"
-        subtitle="Operator checklist for the verify → proof → lookup stack. For engineering and bootstrap diagnostics only — not third-party certification, compliance attestation, or a public verification product."
+        subtitle="Operator checklist for the verify → proof → lookup stack. For engineering and bootstrap diagnostics only, not third party certification, compliance attestation, or a public verification product."
       />
 
       <VerificationLayerScoreboard />

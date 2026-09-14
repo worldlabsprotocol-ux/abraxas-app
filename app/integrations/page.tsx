@@ -105,7 +105,7 @@ export default function IntegrationsPage() {
         </p>
         <BulletList items={[
           "GET /api/trust/registry. issuers + W3C schema identifiers",
-          "Veriff · Abraxas Network · Manual Review · Screening (partner-gated)",
+          "Veriff · Abraxas Network · Manual Review · Screening (partner gated)",
           "Issuer suspension and schema versioning",
         ]} />
         <Btn href="/api/trust/registry" size="sm" variant="secondary">View registry JSON →</Btn>

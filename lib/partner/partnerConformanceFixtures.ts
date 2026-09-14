@@ -79,14 +79,14 @@ export function conformanceReceiptFixtureCases(): ConformanceReceiptFixtureCase[
     },
     {
       id: "sandbox-only-receipt",
-      label: "sandbox-only receipt without opt-in",
+      label: "sandbox only receipt without opt-in",
       receipt: baseReceipt({ production_usable: false }),
       expectValid: false,
       expectedReasonPrefix: "production_not_usable",
     },
     {
       id: "sandbox-only-with-opt-in",
-      label: "sandbox-only receipt with explicit allowSandbox",
+      label: "sandbox only receipt with explicit allowSandbox",
       receipt: baseReceipt({ production_usable: false }),
       expectValid: true,
       allowSandbox: true,

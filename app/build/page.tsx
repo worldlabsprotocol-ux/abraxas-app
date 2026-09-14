@@ -12,7 +12,7 @@ const MONO = "'JetBrains Mono',monospace";
 const ACCENT = "#10B981";
 
 const STEPS = [
-  { n: "1", title: "Tell us what you own", body: "Property, fund, inventory, IP — we map the asset class and jurisdiction." },
+  { n: "1", title: "Tell us what you own", body: "Property, fund, inventory, IP, we map the asset class and jurisdiction." },
   { n: "2", title: "Verify once on Passport", body: "Owner ID + docs through Abraxas. Partners see proof, not your files." },
   { n: "3", title: "On-registry + tokenize", body: "Reference record, compliance stamps, and token rails when policy allows." },
 ];
