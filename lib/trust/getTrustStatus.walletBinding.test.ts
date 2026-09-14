@@ -24,7 +24,7 @@ vi.mock("@supabase/supabase-js", () => ({
   createClient: (...args: unknown[]) => createClient(...args),
 }));
 
-import { getTrustStatus } from "./getTrustStatus";
+import { getTrustStatus, WALLET_BINDING_READ_FAILED_CODE } from "./getTrustStatus";
 
 function intentChallengesTable() {
   return {
@@ -59,6 +59,9 @@ describe("getTrustStatus wallet binding truth", () => {
   });
 
   it("reports unavailable when wallet binding queries fail", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const sensitiveMessage = "relation public.wallet_bindings does not exist (SQLSTATE 42P01)";
+
     createClient.mockReturnValue({
       from: (table: string) => {
         if (table === "wallet_bindings") {
@@ -69,7 +72,7 @@ describe("getTrustStatus wallet binding truth", () => {
                   eq: () => ({
                     maybeSingle: async () => ({
                       data: null,
-                      error: { message: "connection refused" },
+                      error: { message: sensitiveMessage },
                     }),
                   }),
                 }),
@@ -118,7 +121,12 @@ describe("getTrustStatus wallet binding truth", () => {
     expect(status?.wallet_binding_status).toBe("unavailable");
     expect(status?.wallet_binding_persisted).toBe(false);
     expect(status?.wallet_registered).toBe(false);
-    expect(status?.wallet_binding_read_error).toContain("connection refused");
+    expect(status?.wallet_binding_read_error).toBe(WALLET_BINDING_READ_FAILED_CODE);
+    expect(JSON.stringify(status)).not.toContain("wallet_bindings");
+    expect(JSON.stringify(status)).not.toContain("42P01");
+    expect(JSON.stringify(status)).not.toContain("relation public");
+    expect(consoleError).toHaveBeenCalled();
+    consoleError.mockRestore();
   });
 
   it("does not mark wallet registered from address alone", async () => {

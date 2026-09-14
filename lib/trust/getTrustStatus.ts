@@ -10,6 +10,8 @@ import type { ClaimType } from "@/lib/credentials/claimSchema";
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
+export const WALLET_BINDING_READ_FAILED_CODE = "wallet_binding_read_failed";
+
 export interface TrustStatus {
   sui_address: string;
   identity: {
@@ -115,8 +117,13 @@ export async function getTrustStatus(rawAddress: string): Promise<TrustStatus | 
   let walletRegistered = false;
 
   if (walletBindingError || walletBindingClaimError) {
+    console.error("[getTrustStatus] wallet binding read failed", {
+      subject: sui,
+      wallet_binding_error: walletBindingError?.message,
+      wallet_binding_claim_error: walletBindingClaimError?.message,
+    });
     walletBindingStatus = "unavailable";
-    walletBindingReadError = walletBindingError?.message ?? walletBindingClaimError?.message;
+    walletBindingReadError = WALLET_BINDING_READ_FAILED_CODE;
   } else {
     walletBindingStatus = !walletBinding
       ? "missing"
