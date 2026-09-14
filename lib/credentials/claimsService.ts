@@ -34,37 +34,35 @@ export async function upsertClaims(
   const now = new Date().toISOString();
 
   for (const claim of claims) {
-    const { data: inserted, error: insertError } = await sb
-      .from("credential_claims")
-      .insert({
-        ...claim,
-        status: "active",
-        updated_at: now,
-      })
-      .select("id")
-      .single();
+    const subject = normalizeSuiAddress(claim.subject_id);
+    const { data, error } = await sb.rpc("replace_credential_claim_atomic", {
+      p_subject_id: subject,
+      p_credential_jti: claim.credential_jti,
+      p_claim_type: claim.claim_type,
+      p_claim_value: claim.claim_value,
+      p_issuer_id: claim.issuer_id,
+      p_assurance_level: claim.assurance_level,
+      p_issued_at: claim.issued_at ?? now,
+      p_expires_at: claim.expires_at,
+      p_evidence_reference: claim.evidence_reference,
+      p_jurisdiction: claim.jurisdiction,
+      p_policy_scope: claim.policy_scope,
+    });
 
-    if (insertError || !inserted?.id) {
+    if (error) {
       throw new WalletPersistenceError(
-        "claim_insert_failed",
-        "Failed to insert credential claim",
-        insertError?.message,
+        "rpc_failed",
+        "Credential claim replacement RPC failed",
+        error.message,
       );
     }
 
-    const { error: expireError } = await sb
-      .from("credential_claims")
-      .update({ status: "expired", updated_at: now })
-      .eq("subject_id", claim.subject_id)
-      .eq("claim_type", claim.claim_type)
-      .eq("status", "active")
-      .neq("id", inserted.id as string);
-
-    if (expireError) {
+    const result = data as { ok?: boolean; code?: string; detail?: string } | null;
+    if (!result?.ok) {
       throw new WalletPersistenceError(
-        "claim_expire_failed",
-        "Failed to retire prior credential claim",
-        expireError.message,
+        "rpc_rejected",
+        "Credential claim replacement RPC rejected the write",
+        result?.detail ?? result?.code ?? "rpc_rejected",
       );
     }
   }

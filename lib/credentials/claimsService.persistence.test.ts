@@ -37,35 +37,50 @@ describe("claimsService persistence errors", () => {
       .toBeInstanceOf(WalletPersistenceError);
   });
 
-  it("inserts claim before expiring prior active claims", async () => {
-    const calls: string[] = [];
-    mockRequireSupabaseAdmin.mockReturnValue({
-      from: () => ({
-        insert: () => ({
-          select: () => ({
-            single: async () => {
-              calls.push("insert");
-              return { data: { id: "claim-new" }, error: null };
-            },
-          }),
-        }),
-        update: () => ({
-          eq: () => ({
-            eq: () => ({
-              eq: () => ({
-                neq: async () => {
-                  calls.push("expire");
-                  return { error: null };
-                },
-              }),
-            }),
-          }),
-        }),
-      }),
-    });
+  it("uses atomic replace_credential_claim_atomic RPC for claim replacement", async () => {
+    const rpc = vi.fn(async () => ({
+      data: { ok: true, claim_id: "claim-new" },
+      error: null,
+    }));
+    mockRequireSupabaseAdmin.mockReturnValue({ rpc });
 
     const claim = walletBindingClaim({ subjectId: SUBJECT, walletAddress: SUBJECT });
     await upsertClaims([{ ...claim, issuer_id: CLAIM_ISSUERS.abraxas }]);
-    expect(calls).toEqual(["insert", "expire"]);
+
+    expect(rpc).toHaveBeenCalledWith("replace_credential_claim_atomic", expect.objectContaining({
+      p_subject_id: SUBJECT,
+      p_claim_type: "wallet_binding_confirmed",
+    }));
+    expect(mockAppendAuditEvent).toHaveBeenCalled();
+  });
+
+  it("throws on RPC rejection without recording audit success", async () => {
+    mockRequireSupabaseAdmin.mockReturnValue({
+      rpc: vi.fn(async () => ({
+        data: { ok: false, code: "database_error" },
+        error: null,
+      })),
+    });
+
+    const claim = walletBindingClaim({ subjectId: SUBJECT, walletAddress: SUBJECT });
+    await expect(upsertClaims([{ ...claim, issuer_id: CLAIM_ISSUERS.abraxas }]))
+      .rejects
+      .toBeInstanceOf(WalletPersistenceError);
+    expect(mockAppendAuditEvent).not.toHaveBeenCalled();
+  });
+
+  it("throws on RPC transport failure without recording audit success", async () => {
+    mockRequireSupabaseAdmin.mockReturnValue({
+      rpc: vi.fn(async () => ({
+        data: null,
+        error: { message: "connection reset" },
+      })),
+    });
+
+    const claim = walletBindingClaim({ subjectId: SUBJECT, walletAddress: SUBJECT });
+    await expect(upsertClaims([{ ...claim, issuer_id: CLAIM_ISSUERS.abraxas }]))
+      .rejects
+      .toMatchObject({ code: "rpc_failed" });
+    expect(mockAppendAuditEvent).not.toHaveBeenCalled();
   });
 });

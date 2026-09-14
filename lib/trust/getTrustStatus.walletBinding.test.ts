@@ -58,6 +58,69 @@ describe("getTrustStatus wallet binding truth", () => {
     vi.clearAllMocks();
   });
 
+  it("reports unavailable when wallet binding queries fail", async () => {
+    createClient.mockReturnValue({
+      from: (table: string) => {
+        if (table === "wallet_bindings") {
+          return {
+            select: () => ({
+              eq: () => ({
+                eq: () => ({
+                  eq: () => ({
+                    maybeSingle: async () => ({
+                      data: null,
+                      error: { message: "connection refused" },
+                    }),
+                  }),
+                }),
+              }),
+            }),
+          };
+        }
+        if (table === "credential_claims") {
+          return {
+            select: () => ({
+              eq: () => ({
+                eq: () => ({
+                  eq: () => ({
+                    maybeSingle: async () => ({ data: null, error: null }),
+                  }),
+                }),
+              }),
+            }),
+          };
+        }
+        if (table === "identity_verifications") {
+          return { select: () => ({ or: () => ({ maybeSingle: async () => ({ data: null }) }) }) };
+        }
+        if (table === "abraxas_credentials") {
+          return {
+            select: () => ({
+              or: () => ({
+                is: () => ({
+                  order: () => ({
+                    limit: () => ({ maybeSingle: async () => ({ data: null }) }),
+                  }),
+                }),
+              }),
+            }),
+          };
+        }
+        if (table === "sui_passport_objects") {
+          return { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }) }) };
+        }
+        if (table === "intent_challenges") return intentChallengesTable();
+        throw new Error(`unexpected table ${table}`);
+      },
+    });
+
+    const status = await getTrustStatus(SUBJECT);
+    expect(status?.wallet_binding_status).toBe("unavailable");
+    expect(status?.wallet_binding_persisted).toBe(false);
+    expect(status?.wallet_registered).toBe(false);
+    expect(status?.wallet_binding_read_error).toContain("connection refused");
+  });
+
   it("does not mark wallet registered from address alone", async () => {
     createClient.mockReturnValue({
       from: (table: string) => {

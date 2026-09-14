@@ -29,7 +29,8 @@ export interface TrustStatusResponse {
   enhanced_trust: boolean;
   wallet_registered: boolean;
   wallet_binding_persisted?: boolean;
-  wallet_binding_status?: "active" | "missing" | "revoked";
+  wallet_binding_status?: "active" | "missing" | "revoked" | "unavailable";
+  wallet_binding_read_error?: string;
   identity: { status: string; veriff_session_id: string | null };
   credential: { active: boolean };
   on_chain: { provisioned: boolean; stamps_complete: boolean; object_id: string | null };
