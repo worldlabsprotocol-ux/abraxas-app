@@ -1,34 +1,8 @@
 // FILE: app/api/wallet/binding/challenge/route.ts
-// Step 1: issue a one-time wallet binding challenge (Supabase-backed).
+// Legacy Sui L3 binding — disabled (insecure, unauthenticated).
 
-import { NextRequest, NextResponse } from "next/server";
-import {
-  createSuiWalletBindingChallenge,
-  getWalletBindingSchemaCheck,
-} from "@/lib/walletBinding/suiChallenge";
+import { legacyWalletBindingDisabledResponse } from "@/lib/auth/legacyAuthRoutes";
 
-export async function POST(req: NextRequest) {
-  const body = await req.json().catch(() => ({})) as { sui_address?: string };
-
-  if (!body.sui_address?.trim()) {
-    return NextResponse.json({ error: "sui_address required" }, { status: 400 });
-  }
-
-  try {
-    const schema = await getWalletBindingSchemaCheck();
-    if (!schema.compatible) {
-      return NextResponse.json({
-        error: schema.userMessage,
-        code: "WALLET_BINDING_SCHEMA_INCOMPATIBLE",
-        migration: schema.migration,
-      }, { status: 503 });
-    }
-
-    const challenge = await createSuiWalletBindingChallenge(body.sui_address.trim());
-    return NextResponse.json(challenge);
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "Challenge failed";
-    const status = msg.includes("temporarily unavailable") ? 503 : 400;
-    return NextResponse.json({ error: msg }, { status });
-  }
+export async function POST() {
+  return legacyWalletBindingDisabledResponse();
 }

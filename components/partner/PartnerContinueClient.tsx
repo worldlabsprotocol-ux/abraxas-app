@@ -31,8 +31,6 @@ import {
   type PartnerHolderState,
 } from "@/lib/partner/partnerHolderCopy";
 import { GOOD_TROUBLE_RETAIL_POLICY_ID, GOOD_TROUBLE_BROWSE_POLICY_ID } from "@/lib/goodTrouble/constants";
-import { signIntentMessage } from "@/lib/sui/intent/personalMessage";
-import { getEphemeralSecretKey } from "@/lib/sui/zklogin/signingSession";
 import { Btn } from "@/components/redesign/ui";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import {
@@ -221,36 +219,17 @@ function PartnerContinueInner() {
     setBindLoading(true);
     setError(null);
     try {
-      const secret = getEphemeralSecretKey();
-      if (!secret) throw new Error("Sign in again, then try again.");
-
-      const chRes = await fetch("/api/wallet/binding/challenge", {
+      const res = await fetch("/api/wallet-authority/repair", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sui_address: suiAddress }),
+        credentials: "include",
       });
-      const challenge = await chRes.json() as { challenge_id?: string; message?: string; error?: string };
-      if (!chRes.ok || !challenge.challenge_id || !challenge.message) {
-        throw new Error(challenge.error ?? "Could not start security confirmation.");
+      const result = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok || !result.ok) {
+        throw new Error(result.error ?? "Wallet binding repair failed.");
       }
-
-      const { signature, publicKey } = await signIntentMessage(challenge.message, secret);
-      const confirmRes = await fetch("/api/wallet/binding/confirm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          challenge_id: challenge.challenge_id,
-          sui_address: suiAddress,
-          message: challenge.message,
-          signature,
-          public_key: publicKey,
-        }),
-      });
-      const result = await confirmRes.json() as { ok?: boolean; error?: string };
-      if (!confirmRes.ok) throw new Error(result.error ?? "Security confirmation failed.");
       void refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Security confirmation failed.");
+      setError(e instanceof Error ? e.message : "Wallet binding repair failed.");
     } finally {
       setBindLoading(false);
     }

@@ -6,8 +6,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
 import { Btn } from "@/components/redesign/ui";
-import { signIntentMessage } from "@/lib/sui/intent/personalMessage";
-import { getEphemeralSecretKey } from "@/lib/sui/zklogin/signingSession";
 import type { PassportSetupState } from "@/lib/idv/identityVerificationStates";
 import type { IdentityStampStatus } from "@/lib/hooks/usePassportVerification";
 import type { StoredCredential } from "@/lib/credentials/storage";
@@ -99,33 +97,14 @@ export function PassportCustomerView({
     setBindLoading(true);
     setBindError(null);
     try {
-      const secret = getEphemeralSecretKey();
-      if (!secret) throw new Error("Sign in again, then try securing your Passport.");
-
-      const chRes = await fetch("/api/wallet/binding/challenge", {
+      const res = await fetch("/api/wallet-authority/repair", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sui_address: suiAddress }),
+        credentials: "include",
       });
-      const challenge = await chRes.json() as { challenge_id?: string; message?: string; error?: string };
-      if (!chRes.ok || !challenge.challenge_id || !challenge.message) {
-        throw new Error(challenge.error ?? "Could not start security confirmation. Try again.");
+      const result = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok || !result.ok) {
+        throw new Error(result.error ?? "Wallet binding repair failed.");
       }
-
-      const { signature, publicKey } = await signIntentMessage(challenge.message, secret);
-      const confirmRes = await fetch("/api/wallet/binding/confirm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          challenge_id: challenge.challenge_id,
-          sui_address: suiAddress,
-          message: challenge.message,
-          signature,
-          public_key: publicKey,
-        }),
-      });
-      const result = await confirmRes.json() as { ok?: boolean; error?: string };
-      if (!confirmRes.ok) throw new Error(result.error ?? "Security confirmation failed.");
       onWalletBound?.();
     } catch (e) {
       setBindError(e instanceof Error ? e.message : "Security confirmation failed.");

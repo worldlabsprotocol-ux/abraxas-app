@@ -45,9 +45,10 @@ vi.mock("@/lib/auth/verifyZkLoginIdToken", () => ({
   }),
 }));
 
-vi.mock("@/lib/credentials/claimsService", () => ({
-  upsertClaims: vi.fn(),
-  upsertWalletBinding: vi.fn(),
+const mockEnsureZkLoginWalletBinding = vi.fn();
+
+vi.mock("@/lib/credentials/ensureZkLoginWalletBinding", () => ({
+  ensureZkLoginWalletBinding: (...args: unknown[]) => mockEnsureZkLoginWalletBinding(...args),
 }));
 
 function postRegister(body: Record<string, unknown>) {
@@ -107,6 +108,7 @@ describe("POST /api/auth/zklogin/register", () => {
       }),
     });
     upsert.mockResolvedValue({ error: null });
+    mockEnsureZkLoginWalletBinding.mockResolvedValue({ status: "ok" });
   });
 
   afterEach(() => {
@@ -215,11 +217,17 @@ describe("POST /api/auth/zklogin/register", () => {
       login_mode: "legacy_recovery",
     });
 
-    const json = (await res.json()) as { sui_address?: string; user_salt?: string };
+    const json = (await res.json()) as {
+      sui_address?: string;
+      user_salt?: string;
+      wallet_binding_status?: string;
+    };
 
     expect(res.status).toBe(200);
     expect(json.sui_address).toBe(address);
     expect(json.user_salt).toBe(USER_SALT);
+    expect(json.wallet_binding_status).toBe("ok");
+    expect(mockEnsureZkLoginWalletBinding).toHaveBeenCalledWith(address);
     expect(upsert).not.toHaveBeenCalled();
   });
 
@@ -234,12 +242,43 @@ describe("POST /api/auth/zklogin/register", () => {
       login_mode: "canonical",
     });
 
-    const json = (await res.json()) as { sui_address?: string; user_salt?: string };
+    const json = (await res.json()) as {
+      sui_address?: string;
+      user_salt?: string;
+      wallet_binding_status?: string;
+    };
 
     expect(res.status).toBe(200);
     expect(json.sui_address).toMatch(/^0x[a-f0-9]{64}$/);
     expect(json.user_salt).toBeTruthy();
+    expect(json.wallet_binding_status).toBe("ok");
     expect(upsert).toHaveBeenCalledTimes(1);
+    expect(mockEnsureZkLoginWalletBinding).toHaveBeenCalledWith(json.sui_address);
+  });
+
+  it("returns repairable wallet_binding_status when persistence fails for returning user", async () => {
+    const { legacyToken, address } = mockExistingIdentity();
+    mockEnsureZkLoginWalletBinding.mockResolvedValue({
+      status: "failed",
+      reason_code: "rpc_failed",
+    });
+
+    const res = await postRegister({
+      id_token: legacyToken,
+      oauth_sub: OAUTH_SUB,
+      provider: "google",
+      login_mode: "legacy_recovery",
+    });
+
+    const json = (await res.json()) as {
+      wallet_binding_status?: string;
+      wallet_binding_reason_code?: string;
+    };
+
+    expect(res.status).toBe(200);
+    expect(json.wallet_binding_status).toBe("failed");
+    expect(json.wallet_binding_reason_code).toBe("rpc_failed");
+    expect(mockEnsureZkLoginWalletBinding).toHaveBeenCalledWith(address);
   });
 
   it("rejects untrusted audience", async () => {

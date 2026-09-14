@@ -2,8 +2,9 @@
 // Persist and query normalized credential claims.
 
 import { normalizeSuiAddress } from "@mysten/sui/utils";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getSupabaseAdmin, requireSupabaseAdmin } from "@/lib/supabase/admin";
 import type { ClaimStatus, CredentialClaimRecord } from "@/lib/credentials/claimSchema";
+import { WalletPersistenceError } from "@/lib/credentials/walletPersistenceErrors";
 import { appendAuditEvent } from "@/lib/verification/audit";
 
 function mapRow(row: Record<string, unknown>): CredentialClaimRecord {
@@ -28,21 +29,44 @@ function mapRow(row: Record<string, unknown>): CredentialClaimRecord {
 export async function upsertClaims(
   claims: Omit<CredentialClaimRecord, "id" | "status">[],
 ): Promise<void> {
-  const sb = getSupabaseAdmin();
-  if (!sb || !claims.length) return;
+  if (!claims.length) return;
+  const sb = requireSupabaseAdmin();
+  const now = new Date().toISOString();
 
   for (const claim of claims) {
-    await sb.from("credential_claims")
-      .update({ status: "expired", updated_at: new Date().toISOString() })
+    const { data: inserted, error: insertError } = await sb
+      .from("credential_claims")
+      .insert({
+        ...claim,
+        status: "active",
+        updated_at: now,
+      })
+      .select("id")
+      .single();
+
+    if (insertError || !inserted?.id) {
+      throw new WalletPersistenceError(
+        "claim_insert_failed",
+        "Failed to insert credential claim",
+        insertError?.message,
+      );
+    }
+
+    const { error: expireError } = await sb
+      .from("credential_claims")
+      .update({ status: "expired", updated_at: now })
       .eq("subject_id", claim.subject_id)
       .eq("claim_type", claim.claim_type)
-      .eq("status", "active");
+      .eq("status", "active")
+      .neq("id", inserted.id as string);
 
-    await sb.from("credential_claims").insert({
-      ...claim,
-      status: "active",
-      updated_at: new Date().toISOString(),
-    });
+    if (expireError) {
+      throw new WalletPersistenceError(
+        "claim_expire_failed",
+        "Failed to retire prior credential claim",
+        expireError.message,
+      );
+    }
   }
 
   await appendAuditEvent({
@@ -163,18 +187,27 @@ export async function upsertWalletBinding(
   walletAddress: string,
   bindingMethod = "zklogin",
 ): Promise<void> {
-  const sb = getSupabaseAdmin();
-  if (!sb) return;
-
+  const sb = requireSupabaseAdmin();
   const subject = normalizeSuiAddress(subjectId);
   const wallet = normalizeSuiAddress(walletAddress);
+  const now = new Date().toISOString();
 
-  await sb.from("wallet_bindings").upsert({
+  const { error } = await sb.from("wallet_bindings").upsert({
     subject_id: subject,
     chain: "sui",
     wallet_address: wallet,
     binding_method: bindingMethod,
-    verified_at: new Date().toISOString(),
+    binding_status: "active",
+    verified_at: now,
     revoked_at: null,
+    risk_status: "low",
   }, { onConflict: "subject_id,wallet_address" });
+
+  if (error) {
+    throw new WalletPersistenceError(
+      "binding_upsert_failed",
+      "Failed to persist wallet binding",
+      error.message,
+    );
+  }
 }

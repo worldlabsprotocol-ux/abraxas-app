@@ -10,7 +10,8 @@ import {
   veriffApprovedClaims,
   walletBindingClaim,
 } from "@/lib/credentials/claimSchema";
-import { upsertClaims, upsertWalletBinding } from "@/lib/credentials/claimsService";
+import { upsertClaims } from "@/lib/credentials/claimsService";
+import { ensureZkLoginWalletBinding } from "@/lib/credentials/ensureZkLoginWalletBinding";
 import { buildProductEligibilityClaimsForIssuance } from "@/lib/idv/buildProductEligibilityClaims";
 import { idvSupabase, transitionIdentityVerification } from "./identityVerificationDb";
 import { getSuiNetwork } from "@/lib/sui/network";
@@ -190,7 +191,7 @@ export async function issueIdentityCredential(
       credential_jwt: jwt,
     }, { onConflict: "jti" });
 
-    await upsertWalletBinding(normalized, normalized, "zklogin");
+    await ensureZkLoginWalletBinding(normalized);
 
     const documentDateOfBirth =
       options?.documentDateOfBirth?.trim()

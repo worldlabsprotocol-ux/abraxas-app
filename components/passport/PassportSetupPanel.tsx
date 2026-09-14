@@ -5,8 +5,6 @@
 import { useState } from "react";
 import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
 import { truncateSuiAddress } from "@/components/sui/SuiAuthProvider";
-import { signIntentMessage } from "@/lib/sui/intent/personalMessage";
-import { getEphemeralSecretKey } from "@/lib/sui/zklogin/signingSession";
 import type { PassportSetupState } from "@/lib/idv/identityVerificationStates";
 import type { IdentityStampStatus } from "@/lib/hooks/usePassportVerification";
 import type { StoredCredential } from "@/lib/credentials/storage";
@@ -104,37 +102,12 @@ export function PassportSetupPanel({
     setBindErrorKind(null);
     setBindSuccess(false);
     try {
-      const secret = getEphemeralSecretKey();
-      if (!secret) {
-        setBindErrorKind("signing_unavailable");
-        return;
-      }
-
-      const chRes = await fetch("/api/wallet/binding/challenge", {
+      const res = await fetch("/api/wallet-authority/repair", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sui_address: suiAddress }),
+        credentials: "include",
       });
-      const challenge = await chRes.json() as { challenge_id?: string; message?: string };
-      if (!chRes.ok || !challenge.challenge_id || !challenge.message) {
-        setBindErrorKind("challenge_failed");
-        return;
-      }
-
-      const { signature, publicKey } = await signIntentMessage(challenge.message, secret);
-      const confirmRes = await fetch("/api/wallet/binding/confirm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          challenge_id: challenge.challenge_id,
-          sui_address: suiAddress,
-          message: challenge.message,
-          signature,
-          public_key: publicKey,
-        }),
-      });
-      const result = await confirmRes.json() as { ok?: boolean };
-      if (!confirmRes.ok || !result.ok) {
+      const result = await res.json() as { ok?: boolean };
+      if (!res.ok || !result.ok) {
         setBindErrorKind("confirm_failed");
         return;
       }

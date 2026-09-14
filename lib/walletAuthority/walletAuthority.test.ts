@@ -57,7 +57,7 @@ function createMockSupabase(initialChallenge: ChallengeRow) {
         }),
       }),
     }),
-    insert: async () => ({ error: null }),
+    insert: async () => ({ error: null as { message: string } | null }),
   };
 
   const bindingsTable = {
@@ -127,6 +127,33 @@ describe("consumeWalletBindingChallenge", () => {
 
     const successes = [first, second].filter(Boolean);
     expect(successes).toHaveLength(1);
+  });
+});
+
+describe("createEvmBindingChallenge", () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  it("throws when challenge insert fails", async () => {
+    const challenge = makeChallengeRow();
+    mockSb = createMockSupabase(challenge);
+    mockSb.from = ((table: string) => {
+      if (table === "wallet_binding_challenges") {
+        return {
+          insert: async () => ({ error: { message: "insert failed" } }),
+        };
+      }
+      throw new Error(`Unexpected table ${table}`);
+    }) as typeof mockSb.from;
+
+    const { createEvmBindingChallenge } = await import("@/lib/walletAuthority/service");
+
+    await expect(createEvmBindingChallenge({
+      subjectId: TEST_SUBJECT,
+      walletAddress: account.address,
+      chainId: 1,
+    })).rejects.toThrow(/Failed to store wallet binding challenge/);
   });
 });
 

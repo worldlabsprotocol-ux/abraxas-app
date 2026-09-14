@@ -5,8 +5,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { truncateSuiAddress } from "@/components/sui/SuiAuthProvider";
-import { signIntentMessage } from "@/lib/sui/intent/personalMessage";
-import { getEphemeralSecretKey } from "@/lib/sui/zklogin/signingSession";
 import type { PassportSetupState } from "@/lib/idv/identityVerificationStates";
 import type { IdentityStampStatus, CredentialVerifyState, OnChainPassportStatus } from "@/lib/hooks/usePassportVerification";
 import type { StoredCredential } from "@/lib/credentials/storage";
@@ -199,46 +197,14 @@ export function PassportDashboard({
     setBindError(null);
     setBindSuccess(false);
     try {
-      const secret = getEphemeralSecretKey();
-      if (!secret) {
-        throw new Error("Wallet signing key missing. Sign out and sign in once — your Passport stays the same.");
-      }
-
-      const chRes = await fetch("/api/wallet/binding/challenge", {
+      const res = await fetch("/api/wallet-authority/repair", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sui_address: suiAddress }),
+        credentials: "include",
       });
-      const challenge = await chRes.json() as {
-        challenge_id?: string;
-        message?: string;
-        error?: string;
-        code?: string;
-      };
-      if (!chRes.ok || !challenge.challenge_id || !challenge.message) {
-        if (chRes.status === 503 || challenge.code === "WALLET_BINDING_SCHEMA_INCOMPATIBLE") {
-          throw new Error(
-            challenge.error
-              ?? "Wallet binding is temporarily unavailable. Your verified identity still works without it.",
-          );
-        }
-        throw new Error(challenge.error ?? "Could not start wallet bind. Try again.");
+      const result = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok || !result.ok) {
+        throw new Error(result.error ?? "Wallet binding repair failed. Try again.");
       }
-
-      const { signature, publicKey } = await signIntentMessage(challenge.message, secret);
-      const confirmRes = await fetch("/api/wallet/binding/confirm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          challenge_id: challenge.challenge_id,
-          sui_address: suiAddress,
-          message: challenge.message,
-          signature,
-          public_key: publicKey,
-        }),
-      });
-      const result = await confirmRes.json() as { ok?: boolean; error?: string };
-      if (!confirmRes.ok) throw new Error(result.error ?? "Wallet bind failed. Try again.");
       setBindSuccess(true);
       onWalletBound?.();
     } catch (e) {

@@ -7,8 +7,11 @@ import { createClient } from "@supabase/supabase-js";
 import { jwtToAddress } from "@mysten/sui/zklogin";
 import { randomBytes } from "crypto";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
-import { walletBindingClaim } from "@/lib/credentials/claimSchema";
-import { upsertClaims, upsertWalletBinding } from "@/lib/credentials/claimsService";
+import {
+  ensureZkLoginWalletBinding,
+  type WalletBindingStatusResult,
+} from "@/lib/credentials/ensureZkLoginWalletBinding";
+import { isWalletPersistenceError } from "@/lib/credentials/walletPersistenceErrors";
 import { verifyGoogleZkLoginIdToken } from "@/lib/auth/verifyZkLoginIdToken";
 import {
   classifyGoogleAudience,
@@ -42,6 +45,23 @@ function logRecoveryAudit(
     "[zklogin/register]",
     buildZkLoginRecoveryAuditMetadata({ loginMode, audienceCohort, outcome }),
   );
+}
+
+async function persistZkLoginWalletBinding(
+  suiAddress: string,
+): Promise<WalletBindingStatusResult> {
+  try {
+    return await ensureZkLoginWalletBinding(suiAddress);
+  } catch (error) {
+    if (isWalletPersistenceError(error)) {
+      console.warn("[zklogin/register] wallet binding persistence failed:", error.code);
+      return {
+        status: "failed",
+        reason_code: error.code,
+      };
+    }
+    throw error;
+  }
 }
 
 export async function POST(req: Request) {
@@ -124,6 +144,8 @@ export async function POST(req: Request) {
         .eq("oauth_sub", body.oauth_sub);
     }
 
+    const walletBindingStatus = await persistZkLoginWalletBinding(existing.sui_address);
+
     logRecoveryAudit(loginMode, audienceCohort, "success");
     return NextResponse.json({
       sui_address: existing.sui_address,
@@ -131,6 +153,10 @@ export async function POST(req: Request) {
       provider: body.provider ?? "google",
       oauth_sub: body.oauth_sub,
       email: emailFromJwt ?? existing.email,
+      wallet_binding_status: walletBindingStatus.status,
+      ...(walletBindingStatus.reason_code
+        ? { wallet_binding_reason_code: walletBindingStatus.reason_code }
+        : {}),
     });
   }
 
@@ -161,13 +187,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Failed to save identity" }, { status: 500 });
   }
 
-  try {
-    const normalized = normalizeSuiAddress(sui_address);
-    await upsertWalletBinding(normalized, normalized, "zklogin");
-    await upsertClaims([walletBindingClaim({ subjectId: normalized, walletAddress: normalized })]);
-  } catch (e) {
-    console.warn("[zklogin/register] wallet binding claim skipped:", e);
-  }
+  const walletBindingStatus = await persistZkLoginWalletBinding(sui_address);
 
   logRecoveryAudit("canonical", audienceCohort, "success");
   return NextResponse.json({
@@ -176,5 +196,9 @@ export async function POST(req: Request) {
     provider: body.provider ?? "google",
     oauth_sub: body.oauth_sub,
     email,
+    wallet_binding_status: walletBindingStatus.status,
+    ...(walletBindingStatus.reason_code
+      ? { wallet_binding_reason_code: walletBindingStatus.reason_code }
+      : {}),
   });
 }

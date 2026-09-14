@@ -1,3 +1,9 @@
-import { NextResponse } from "next/server";
-export async function GET() { return NextResponse.json({ error: "auth not configured" }, { status: 501 }); }
-export async function POST() { return NextResponse.json({ error: "auth not configured" }, { status: 501 }); }
+import { legacyAuthRouteDisabledResponse } from "@/lib/auth/legacyAuthRoutes";
+
+export async function GET() {
+  return legacyAuthRouteDisabledResponse();
+}
+
+export async function POST() {
+  return legacyAuthRouteDisabledResponse();
+}
