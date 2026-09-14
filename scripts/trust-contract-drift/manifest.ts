@@ -16,7 +16,7 @@ export interface DriftRuleDefinition {
 export const CANONICAL_ANCHORS = {
   manualProvisioning: {
     file: "lib/activation/activationCopy.ts",
-    excerpt: "There is no self-serve production access.",
+    excerpt: "There is no self serve production access.",
     lineHint: 47,
   },
   partnerOnboarding: {
