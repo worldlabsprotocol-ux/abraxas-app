@@ -50,7 +50,7 @@ export const GOOD_TROUBLE_SAMPLE_BATCHES: CannabisBatchRecord[] = [
     organic_claim: true,
     coa_status: "on_file",
     lab: { thc_percent: 28.1, cbd_percent: 0.4, lab_name: "Partner COA (pilot)", report_ref: "COA-GT-CHO-2026-05" },
-    profile_notes: "Rich cocoa and coffee notes. Daytime clarity — cultivator description.",
+    profile_notes: "Rich cocoa and coffee notes. Daytime clarity, cultivator description.",
   },
   {
     record_id: "ABX-CNB-BATCH-002",
@@ -64,7 +64,7 @@ export const GOOD_TROUBLE_SAMPLE_BATCHES: CannabisBatchRecord[] = [
     organic_claim: true,
     coa_status: "on_file",
     lab: { thc_percent: 32.4, cbd_percent: 0.2, lab_name: "Partner COA (pilot)", report_ref: "COA-GT-FPO-2026-05" },
-    profile_notes: "Sweet, fruity tropical finish. Energetic onset easing to calm — per brand profile.",
+    profile_notes: "Sweet, fruity tropical finish. Energetic onset easing to calm, per brand profile.",
   },
   {
     record_id: "ABX-CNB-BATCH-003",
@@ -78,7 +78,7 @@ export const GOOD_TROUBLE_SAMPLE_BATCHES: CannabisBatchRecord[] = [
     organic_claim: true,
     coa_status: "on_file",
     lab: { thc_percent: 29.6, cbd_percent: 0.3, lab_name: "Partner COA (pilot)", report_ref: "COA-GT-GEL-2026-05" },
-    profile_notes: "Dessert-like berry and citrus. Balanced euphoria — cultivator description.",
+    profile_notes: "Dessert-like berry and citrus. Balanced euphoria, cultivator description.",
   },
   {
     record_id: "ABX-CNB-BATCH-004",
@@ -91,7 +91,7 @@ export const GOOD_TROUBLE_SAMPLE_BATCHES: CannabisBatchRecord[] = [
     state: "MO",
     organic_claim: true,
     coa_status: "pending",
-    profile_notes: "Pilot batch — COA upload pending partner attestation.",
+    profile_notes: "Pilot batch, COA upload pending partner attestation.",
   },
 ];
 
@@ -111,6 +111,6 @@ export function batchVerifyPayload(batch: CannabisBatchRecord) {
     coa_status: batch.coa_status,
     organic_claim: batch.organic_claim,
     assurance_note:
-      "Pilot fixture — partner-attested batch metadata. Not Abraxas lab verification until L3 attestation is wired.",
+      "Pilot fixture, partner attested batch metadata. Not Abraxas lab verification until L3 attestation is wired.",
   };
 }

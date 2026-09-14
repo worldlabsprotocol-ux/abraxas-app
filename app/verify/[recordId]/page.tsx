@@ -3,7 +3,7 @@
 
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { RedesignShell } from "@/components/redesign/RedesignShell";
+import { AbxPageShell } from "@/components/design/AbxPageShell";
 import { VerifyRecordStatic } from "@/components/verify/VerifyRecordStatic";
 import { REGISTRY_ASSETS, resolveRegistryAsset } from "@/lib/data/registryAssets";
 import { resolveVerifierQuery } from "@/lib/verifyRegistry";
@@ -49,8 +49,8 @@ export default function VerifyRecordPage({ params }: PageProps) {
   if (!asset) notFound();
 
   return (
-    <RedesignShell>
+    <AbxPageShell accent="verify">
       <VerifyRecordStatic recordId={asset.abxId} />
-    </RedesignShell>
+    </AbxPageShell>
   );
 }

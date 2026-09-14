@@ -17,7 +17,7 @@ const PILLARS = [
   },
   {
     title: "Sui-native verification",
-    body: "Google sign-in, optional ID check, W3C credentials, and on-chain Passport stamps. Stablecoin booking live on Cielo Sunrise.",
+    body: "Google sign-in, optional ID check, W3C credentials, and on chain Passport stamps. Stablecoin booking live on Cielo Sunrise.",
   },
   {
     title: "Live asset proof",
@@ -35,7 +35,7 @@ const AUDIT_TRAIL = [
 
 export default function InstitutionalPage() {
   return (
-    <RedesignPage>
+    <RedesignPage accent="neutral">
       <PageHeader
         eyebrow="Institutional"
         title="Built for scale. Honest about what is live."

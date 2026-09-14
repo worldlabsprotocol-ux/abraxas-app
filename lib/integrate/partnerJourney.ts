@@ -116,25 +116,25 @@ export const PARTNER_FLOW_DOCS_PATH = "/docs/partner-flow";
 export const PARTNER_RECEIPT_DOCS_ANCHOR = "/docs/partner-flow#receipt-verification";
 
 export const INTEGRATIONS_HUB_SUBHEAD =
-  "Public beta · design partner applications reviewed manually. Submit integration intent below — sandbox policies and callback allowlists are operator-provisioned after approval, not self-serve.";
+  "Public beta · design partner applications reviewed manually. Submit integration intent below, sandbox policies and callback allowlists are operator provisioned after approval, not self serve.";
 
 export const INTEGRATIONS_APPLY_NOTE =
-  "Apply once at this form. Abraxas operators review applications manually. There is no self-serve production portal or automatic API-key issuance.";
+  "Apply once at this form. Abraxas operators review applications manually. There is no self serve production portal or automatic API-key issuance.";
 
 export const INTEGRATIONS_SDK_NOTE =
-  "Example server-side pattern only. API credentials are operator-provisioned after manual approval — not self-serve.";
+  "Example server side pattern only. API credentials are operator provisioned after manual approval, not self serve.";
 
 export const PARTNER_RECEIPT_MIRROR_NOTE =
-  "The public receipt tester mirrors GET /api/receipts/{receipt_id}/public — it is not a production access gate. Your server must verify before granting access.";
+  "The public receipt tester mirrors GET /api/receipts/{receipt_id}/public, it is not a production access gate. Your server must verify before granting access.";
 
 export const PARTNER_POST_APPLY_HEADLINE = "After you apply";
 
 export const PARTNER_POST_APPLY_SUBHEAD =
-  "While Abraxas operators review your application (typically a few business days), start with the Partner Flow contract and server-side receipt checks.";
+  "While Abraxas operators review your application (typically a few business days), start with the Partner Flow contract and server side receipt checks.";
 
 export const PARTNER_POST_APPLY_STEPS = [
-  "Read /docs/partner-flow — entry URL, callback params, and lifecycle.",
-  "Implement server-side receipt verification — GET /api/receipts/{receipt_id}/public before granting access (/docs/partner-flow#receipt-verification).",
+  "Read /docs/partner flow, entry URL, callback params, and lifecycle.",
+  "Implement server side receipt verification, GET /api/receipts/{receipt_id}/public before granting access (/docs/partner flow#receipt-verification).",
   "When operators provision sandbox partner_id, policy_id, and allowlisted return_url, test with the receipt tester (public mirror only).",
   "Run npm run partner:conformance after sandbox credentials are issued.",
 ] as const;
@@ -170,7 +170,7 @@ export const PARTNER_CONVERSION_FORBIDDEN_TERMS = [
   "soc ",
   "iso ",
   "thousands of",
-  "self-serve production",
+  "self serve production",
   "automatic api-key",
   "automatic api key",
   "live integrations",
@@ -181,7 +181,7 @@ export const INTEGRATOR_START_HERE_STEPS: IntegratorStartStep[] = [
     step: 1,
     title: "Apply for manual review",
     body:
-      "Submit a design partner application for age-gated digital commerce. Abraxas operators review applications manually — there is no self-serve production portal and no automatic API-key issuance.",
+      "Submit a design partner application for age gated digital commerce. Abraxas operators review applications manually, there is no self serve production portal and no automatic API-key issuance.",
     cta: { label: "Apply for review", href: PARTNER_APPLICATION_PATH },
     availability: "now",
   },
@@ -189,7 +189,7 @@ export const INTEGRATOR_START_HERE_STEPS: IntegratorStartStep[] = [
     step: 2,
     title: "Read the Partner Flow contract",
     body:
-      "Read the browser-redirect contract, frozen callback parameters, and the server-side receipt verification checks your backend must implement.",
+      "Read the browser-redirect contract, frozen callback parameters, and the server side receipt verification checks your backend must implement.",
     cta: { label: "Partner Flow docs", href: PARTNER_FLOW_DOCS_PATH },
     availability: "now",
   },
@@ -197,7 +197,7 @@ export const INTEGRATOR_START_HERE_STEPS: IntegratorStartStep[] = [
     step: 3,
     title: "Use sandbox when provisioned",
     body:
-      "After approval, operators may provision sandbox policies and callback allowlists. Test with the receipt tester using operator-provided receipt IDs. Sandbox receipts are not production-usable unless your validator explicitly opts in with allowSandbox.",
+      "After approval, operators may provision sandbox policies and callback allowlists. Test with the receipt tester using operator provided receipt IDs. Sandbox receipts are not production usable unless your validator explicitly opts in with allowSandbox.",
     cta: { label: "Receipt tester", href: PARTNER_RECEIPT_VERIFIER_PATH },
     availability: "after_approval",
   },
@@ -211,18 +211,18 @@ export const INTEGRATOR_START_HERE_STEPS: IntegratorStartStep[] = [
 ];
 
 export const INTEGRATOR_SANDBOX_BOUNDARY = {
-  sandboxLabel: "Sandbox (operator-provisioned test policies)",
+  sandboxLabel: "Sandbox (operator provisioned test policies)",
   sandboxDetail:
     "May be issued after manual approval. Receipts from sandbox policies require allowSandbox in your validator. Not valid for production gates.",
   productionLabel: "Production (operator-provisioned)",
   productionDetail:
-    "Requires approved partner row, active policy, allowlisted callback URLs, and production_usable receipts. No self-serve provisioning.",
+    "Requires approved partner row, active policy, allowlisted callback URLs, and production_usable receipts. No self serve provisioning.",
   receiptTesterLabel: "Partner Flow receipt tester",
   receiptTesterDetail:
-    "Paste a receipt_id from your callback and mirror the server-side GET /api/receipts/{receipt_id}/public check.",
+    "Paste a receipt_id from your callback and mirror the server side GET /api/receipts/{receipt_id}/public check.",
   registryDemoLabel: "Registry record demo (separate)",
   registryDemoDetail:
-    "Public registry showcase only — not a Partner Flow session receipt. Use the receipt tester for callback artifacts.",
+    "Public registry showcase only, not a Partner Flow session receipt. Use the receipt tester for callback artifacts.",
 } as const;
 
 export const PARTNER_FLOW_CONFORMANCE_COMMAND = `PARTNER_FLOW_RP_PARTNER_ID=your-partner-id \\
@@ -232,8 +232,8 @@ PARTNER_FLOW_RP_BASE_URL=https://abraxasworld.xyz \\
 npm run partner:conformance`;
 
 export const PARTNER_FLOW_FIRST_TASKS = [
-  `Apply at ${PARTNER_APPLICATION_PATH} — describe your age-gated checkout or eligibility gate.`,
-  "Read /docs/partner-flow — entry URL params, lifecycle, and receipt checks.",
-  "Implement callback handler — fetch public receipt server-side; never trust URL params alone.",
+  `Apply at ${PARTNER_APPLICATION_PATH}, describe your age gated checkout or eligibility gate.`,
+  "Read /docs/partner flow, entry URL params, lifecycle, and receipt checks.",
+  "Implement callback handler, fetch public receipt server side; never trust URL params alone.",
   "Run npm run partner:conformance after operators provision partner_id, policy_id, and return_url.",
 ] as const;

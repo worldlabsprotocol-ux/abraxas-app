@@ -3,7 +3,7 @@
 // Tokenize on Abraxas — owner intake aligned with institutional homepage.
 
 import Link from "next/link";
-import { RedesignShell } from "@/components/redesign/RedesignShell";
+import { AbxPageShell } from "@/components/design/AbxPageShell";
 import { RedesignFooter } from "@/components/redesign/RedesignFooter";
 import { Btn } from "@/components/redesign/ui";
 
@@ -12,14 +12,14 @@ const MONO = "'JetBrains Mono',monospace";
 const ACCENT = "#10B981";
 
 const STEPS = [
-  { n: "1", title: "Tell us what you own", body: "Property, fund, inventory, IP — we map the asset class and jurisdiction." },
+  { n: "1", title: "Tell us what you own", body: "Property, fund, inventory, IP, we map the asset class and jurisdiction." },
   { n: "2", title: "Verify once on Passport", body: "Owner ID + docs through Abraxas. Partners see proof, not your files." },
   { n: "3", title: "On-registry + tokenize", body: "Reference record, compliance stamps, and token rails when policy allows." },
 ];
 
 export default function BuildPage() {
   return (
-    <RedesignShell>
+    <AbxPageShell accent="neutral">
       <div style={{ maxWidth: 820, margin: "0 auto", padding: "clamp(1.25rem, 4vw, 2.5rem) clamp(1rem, 3vw, 1.5rem)" }}>
         <div style={{ fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: ACCENT, marginBottom: "0.5rem" }}>
           Tokenize
@@ -82,6 +82,6 @@ export default function BuildPage() {
         </p>
       </div>
       <RedesignFooter />
-    </RedesignShell>
+    </AbxPageShell>
   );
 }

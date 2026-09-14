@@ -245,7 +245,7 @@ export function HomeAssuranceNetwork() {
             "Authoritative issuer",
             "Abraxas reusable credential",
             "Partner policy evaluation",
-            "Partner-bound receipt",
+            "Partner bound receipt",
             "Merchant decision",
           ].map((label, index, arr) => (
             <span key={label} style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>

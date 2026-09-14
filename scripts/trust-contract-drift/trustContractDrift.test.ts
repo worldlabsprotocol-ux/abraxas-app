@@ -17,7 +17,7 @@ import {
 } from "./rules";
 
 const CANONICAL_ACTIVATION = `export const AUDIENCE_OPERATOR = {
-  body: "Abraxas operators review applications and issue sandbox or production policies. There is no self-serve production access.",
+  body: "Abraxas operators review applications and issue sandbox or production policies. There is no self serve production access.",
 };`;
 
 const CANONICAL_OPENAPI = `export const PARTNER_FLOW_RECEIPT_SECURITY_FIELDS = [

@@ -72,7 +72,7 @@ export function HomePartnerNetwork() {
     <section
       aria-labelledby="home-partner-network-heading"
       id="partner-network"
-      className="abx-home-section-center abx-partner-network"
+      className="abx-home-section-center abx-partner network"
       style={{ width: "100%" }}
     >
       <div className="abx-home-intro">

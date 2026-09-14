@@ -18,7 +18,7 @@ export default function PitchDeckPage() {
   const total = PITCH_DECK.length;
 
   return (
-    <RedesignPage maxWidth={820}>
+    <RedesignPage accent="home" maxWidth={820}>
       <div style={{ marginBottom: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.75rem" }}>
         <div>
           <div style={{ fontFamily: MONO, fontSize: "0.62rem", fontWeight: 700, color: ACCENT, letterSpacing: "0.12em", textTransform: "uppercase" }}>

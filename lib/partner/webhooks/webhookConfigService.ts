@@ -101,7 +101,7 @@ export async function upsertPartnerWebhookEndpoint(input: {
       ok: true,
       config: mapConfig(data),
       signing_secret: generated.raw,
-      notice: "Endpoint changed — webhooks disabled and signing secret rotated. Copy the new secret now (shown once), update your verifier, then re-enable delivery.",
+      notice: "Endpoint changed, webhooks disabled and signing secret rotated. Copy the new secret now (shown once), update your verifier, then re-enable delivery.",
     };
   }
 
@@ -129,7 +129,7 @@ export async function upsertPartnerWebhookEndpoint(input: {
     ok: true,
     config: mapConfig(data),
     signing_secret: generated.raw,
-    notice: "Copy the signing secret now — it will not be shown again.",
+    notice: "Copy the signing secret now, it will not be shown again.",
   };
 }
 
@@ -163,7 +163,7 @@ export async function rotatePartnerWebhookSigningSecret(partnerId: string): Prom
     ok: true,
     signing_secret: generated.raw,
     prefix: generated.prefix,
-    notice: "Copy the signing secret now — it will not be shown again.",
+    notice: "Copy the signing secret now, it will not be shown again.",
   };
 }
 

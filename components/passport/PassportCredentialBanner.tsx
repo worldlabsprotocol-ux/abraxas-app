@@ -17,7 +17,7 @@ const ACCENT = "#10B981";
 const AMBER = "#F59E0B";
 
 const PERMISSION_LABELS: Record<string, string> = {
-  fiat_offramp: "Fiat off-ramp",
+  fiat_offramp: "Fiat off ramp",
   defi_access: "DeFi access",
   rwa_tokenize: "RWA tokenize",
   cross_border: "Cross-border",
@@ -231,12 +231,12 @@ export function PassportCredentialBanner({
           }}>
             <div style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.5rem" }}>
               {provisionFailed
-                ? "On-chain update didn't complete. Try again below. If this keeps happening, contact support."
+                ? "On chain update didn't complete. Try again below. If this keeps happening, contact support."
                 : onChain.issuer_configured
                   ? (isPolling || onChain.needs_provision)
-                    ? "On-chain update in progress. This page checks for updates every few seconds. You can also refresh this page."
-                    : "On-chain update in progress. Refresh this page to check the update."
-                  : "On-chain stamps aren't available in this beta environment yet. Verification progress still appears on this page."}
+                    ? "On chain update in progress. This page checks for updates every few seconds. You can also refresh this page."
+                    : "On chain update in progress. Refresh this page to check the update."
+                  : "On chain stamps aren't available in this beta environment yet. Verification progress still appears on this page."}
             </div>
             {provisionFailed && credential && (
               <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.55, margin: "0 0 0.5rem" }}>

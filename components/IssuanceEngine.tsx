@@ -21,7 +21,7 @@ const CLASSES = {
   "Short-Term Rental":  { fee:250, ltv:55, color:"#14F195",  icon:"⊞", cat:"Real Estate",    partner:"Title & Deed Verification Network",  desc:"Airbnb or VRBO rental property. Unlock DeFi capital." },
   "Mineral Rights":     { fee:500, ltv:55, color:"#C8A96E",  icon:"◈", cat:"Energy",         partner:"Energy Verification Network",         desc:"Non-op working interest or mineral rights with clean title." },
   "Racehorses":         { fee:250, ltv:55, color:"#22c55e",  icon:"◉", cat:"Animal Asset",   partner:"Certified Custody Network",           desc:"Thoroughbred horses with registry documentation." },
-  "Other":              { fee:100, ltv:45, color:"#a855f7",  icon:"⬢", cat:"General",        partner:"Certified Custody Network",           desc:"Any real-world asset with documented ownership and value." },
+  "Other":              { fee:100, ltv:45, color:"#a855f7",  icon:"⬢", cat:"General",        partner:"Certified Custody Network",           desc:"Any real world asset with documented ownership and value." },
 } as const;
 
 type AssetClassKey = keyof typeof CLASSES;

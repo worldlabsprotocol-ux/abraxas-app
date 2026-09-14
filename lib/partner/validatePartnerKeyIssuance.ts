@@ -39,7 +39,7 @@ export async function validatePartnerKeyIssuance(
   if (!data) {
     return {
       ok: false,
-      error: "Partner org not registered — create org at /admin/partners first",
+      error: "Partner org not registered, create org at /admin/partners first",
       status: 400,
     };
   }
@@ -63,7 +63,7 @@ export async function validatePartnerKeyIssuance(
   if (environment === "live" && data.status !== "active" && data.status !== "pilot") {
     return {
       ok: false,
-      error: `Partner status "${data.status}" — promote to pilot/active before live keys`,
+      error: `Partner status "${data.status}", promote to pilot/active before live keys`,
       status: 403,
       partner: {
         company: data.company,

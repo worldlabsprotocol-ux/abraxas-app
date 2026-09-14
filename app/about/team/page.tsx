@@ -20,7 +20,7 @@ const ACCENT = "var(--accent)";
 
 export default function TeamPage() {
   return (
-    <RedesignPage maxWidth={860}>
+    <RedesignPage accent="neutral" maxWidth={860}>
       <PageHeader
         eyebrow="Execution & team"
         title="Who builds Abraxas"

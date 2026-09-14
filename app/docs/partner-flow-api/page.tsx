@@ -59,11 +59,11 @@ export default function PartnerFlowApiDocsPage() {
   );
 
   return (
-    <RedesignPage maxWidth={920}>
+    <RedesignPage accent="developer" maxWidth={920}>
       <PageHeader
         eyebrow="Integrators · Partner Flow API"
         title="Partner Flow OpenAPI contract"
-        subtitle="Machine-readable specification for browser-redirect Partner Flow — evaluate, Passport handoff, complete, refresh, and public receipt verification."
+        subtitle="Machine-readable specification for browser-redirect Partner Flow, evaluate, Passport handoff, complete, refresh, and public receipt verification."
       />
 
       <p style={{ ...body, marginBottom: "1.25rem" }}>
@@ -85,9 +85,9 @@ export default function PartnerFlowApiDocsPage() {
       <ContentCard title="Auth boundaries">
         <BulletList
           items={[
-            "Browser entry & session — holder on abraxasworld.xyz; `abraxas_browser_session` cookie; no partner API key in client code.",
-            "Passport handoff — same browser session during first-time ID verification (`next=passport`).",
-            "Public receipt — partner backend fetches `GET /api/receipts/{receiptId}/public` (no auth, CORS enabled).",
+            "Browser entry & session, holder on abraxasworld.xyz; `abraxas_browser_session` cookie; no partner API key in client code.",
+            "Passport handoff, same browser session during first-time ID verification (`next=passport`).",
+            "Public receipt, partner backend fetches `GET /api/receipts/{receiptId}/public` (no auth, CORS enabled).",
             "Server-to-server API-key routes are intentionally excluded from this contract (see below).",
           ]}
         />
@@ -124,11 +124,11 @@ export default function PartnerFlowApiDocsPage() {
         </p>
       </ContentCard>
 
-      <ContentCard title="Example — fetch public receipt (curl)">
+      <ContentCard title="Example, fetch public receipt (curl)">
         <pre style={pre}>{PARTNER_FLOW_PUBLIC_RECEIPT_CURL_EXAMPLE}</pre>
       </ContentCard>
 
-      <ContentCard title="Example — verify receipt (JavaScript, server-side)">
+      <ContentCard title="Example, verify receipt (JavaScript, server side)">
         <pre style={pre}>{PARTNER_FLOW_PUBLIC_RECEIPT_JS_EXAMPLE}</pre>
       </ContentCard>
 

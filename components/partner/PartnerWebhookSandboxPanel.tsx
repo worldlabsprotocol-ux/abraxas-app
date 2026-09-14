@@ -42,12 +42,12 @@ const BLOCKED_REASON_COPY: Record<string, string> = {
 };
 
 const QUEUED_SUCCESS_COPY =
-  "Test event queued. Queued means accepted for delivery — check delivery history for HTTP delivered status. Delivered is transport only, not signature verification.";
+  "Test event queued. Queued means accepted for delivery, check delivery history for HTTP delivered status. Delivered is transport only, not signature verification.";
 
 const WEBHOOK_PROGRESS_STEPS = [
   { id: "queued", label: "Queued", detail: "Event accepted for async delivery" },
   { id: "delivered", label: "HTTP delivered", detail: "Your endpoint returned a successful HTTP response" },
-  { id: "signature_verified", label: "Signature verified by your receiver", detail: "Manual acknowledgment — not inferred from delivery" },
+  { id: "signature_verified", label: "Signature verified by your receiver", detail: "Manual acknowledgment, not inferred from delivery" },
 ] as const;
 
 function authHeaders(apiKey: string): HeadersInit {

@@ -2,14 +2,14 @@
 // Execution & team transparency for investor diligence.
 
 export const TEAM_MISSION =
-  "Abraxas is building reusable verification infrastructure for real-world assets. so identity and asset proof travel with the transaction, not trapped in PDFs and repeated KYC forms.";
+  "Abraxas is building reusable verification infrastructure for real world assets. so identity and asset proof travel with the transaction, not trapped in PDFs and repeated KYC forms.";
 
 export const CURRENT_TEAM = [
   {
     name: "Sae'Von Holloway",
     role: "Founder & Protocol Lead",
     location: "American reservation · United States",
-    focus: "Twenty years in markets · full-stack protocol · genesis asset pilots (Cielo, Chickasaw, Smyrna)",
+    focus: "Twenty years in markets · full stack protocol · genesis asset pilots (Cielo, Chickasaw, Smyrna)",
     links: [
       { label: "LinkedIn", href: "https://www.linkedin.com/company/worldlabsprotocol/" },
       { label: "GitHub", href: "https://github.com/worldlabsprotocol-ux/abraxas-app" },
@@ -28,7 +28,7 @@ export const PLANNED_ROLES = [
   {
     role: "Compliance & legal counsel (fractional)",
     timing: "Active search",
-    why: "Securities framing, cross-border credential acceptance, relying-party agreements",
+    why: "Securities framing, cross border credential acceptance, relying-party agreements",
   },
   {
     role: "Design partner success",
@@ -49,7 +49,7 @@ export const ADVISOR_BENCH = {
     "RWA / private credit operator with live deal flow",
     "Identity / KYC infrastructure (ex-Veriff, ex-Jumio, ex-Onfido)",
     "Institutional DeFi or lending protocol BD",
-    "Georgia / Wyoming real-estate or hospitality counsel",
+    "Georgia / Wyoming real estate or hospitality counsel",
   ],
 } as const;
 

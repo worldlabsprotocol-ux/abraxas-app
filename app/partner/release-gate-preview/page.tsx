@@ -37,7 +37,7 @@ export default function PartnerReleaseGatePreviewPage() {
           <section key={state} id={state} aria-label={copy.title}>
             <PartnerJourneyLayout
               partnerName={partnerName}
-              intro="Release gate preview — production holder copy and layout."
+              intro="Release gate preview, production holder copy and layout."
               statusMessage={copy.message}
               partnerHomeUrl="https://www.goodtroublecanna.com"
               partnerReturnLabel={`Return to ${partnerName}`}

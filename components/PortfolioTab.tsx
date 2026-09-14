@@ -35,12 +35,12 @@ const STATUS_META: Record<string,{label:string;color:string}> = {
 // Live signal feed (replaces accordion FAQ)
 const SIGNAL_FEED = [
   { tag:"PROTOCOL",  text:"AAS-1 verification standard enforces 6-stage authentication chain",       time:"2h ago" },
-  { tag:"RWA",       text:"Tokenized real-world assets on Solana surpassed $2.4B in Q1 2026",       time:"4h ago" },
+  { tag:"RWA",       text:"Tokenized real world assets on Solana surpassed $2.4B in Q1 2026",       time:"4h ago" },
   { tag:"COLLATERAL",text:"Gold bullion remains highest LTV asset class at 80%. proof of custody required", time:"6h ago" },
   { tag:"ONCHAIN",   text:"Loopscale lending depth now supports USDC draws against Token-2022 certs", time:"8h ago" },
   { tag:"ABRAXAS",   text:"Mineral rights tokenization available. Permian Basin WI accepted",       time:"12h ago" },
   { tag:"SECURITY",  text:"Zero fraud flags across all AAS-1 certified assets since protocol launch", time:"1d ago" },
-  { tag:"PROTOCOL",  text:"Circuit Monitor provides real-time on-chain safety across all positions", time:"1d ago" },
+  { tag:"PROTOCOL",  text:"Circuit Monitor provides real time on chain safety across all positions", time:"1d ago" },
   { tag:"ABRA",      text:"$ABRA required for protocol access. acquire via Bags.fm or Jupiter",     time:"2d ago" },
 ];
 
@@ -217,7 +217,7 @@ export function PortfolioTab() {
       {/* ══════════════════════════════════════════════════════════════
           4. CIRCUIT MONITOR. ON-CHAIN SAFETY
       ══════════════════════════════════════════════════════════════ */}
-      <Rule label="Circuit Monitor. On-Chain Safety" />
+      <Rule label="Circuit Monitor. On Chain Safety" />
       <div style={{
         padding:"1.25rem 1.5rem", borderRadius:"8px", marginBottom:"0.5rem",
         border:"1px solid rgba(20,241,149,0.12)",
@@ -277,7 +277,7 @@ export function PortfolioTab() {
             background:"linear-gradient(135deg, #7c3aed, #C8A96E)", color:"#fff",
             opacity: !connected ? 0.7 : 1,
           }}>
-            {connected ? "Open Studio →" : "Connect Wallet (top-right) to Start"}
+            {connected ? "Open Studio →" : "Connect Wallet (top right) to Start"}
           </button>
         </div>
       ) : (

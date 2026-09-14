@@ -11,14 +11,14 @@
 // default embed, which still works, you just won't earn the 50% fee
 // share on swaps until you register.
 
-import { RedesignShell } from "@/components/redesign/RedesignShell";
+import { AbxPageShell } from "@/components/design/AbxPageShell";
 import { RedesignFooter } from "@/components/redesign/RedesignFooter";
 
 const AFFILIATE_NAME = "heroswap"; // replace with your real affiliate name once registered
 
 export default function SwapPage() {
   return (
-    <RedesignShell>
+    <AbxPageShell accent="neutral">
       <div style={{ maxWidth:480, margin:"0 auto", padding:"2rem clamp(1rem,3vw,1.5rem)" }}>
         <div style={{ fontFamily:"'Inter',system-ui,sans-serif", fontSize:"0.72rem",
                        color:"#10B981", marginBottom:"0.5rem" }}>
@@ -64,6 +64,6 @@ export default function SwapPage() {
         </div>
       </div>
       <RedesignFooter />
-    </RedesignShell>
+    </AbxPageShell>
   );
 }

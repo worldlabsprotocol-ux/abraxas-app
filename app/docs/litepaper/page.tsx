@@ -13,7 +13,7 @@ const ACCENT = "#10B981";
 export default function LitepaperPage() {
   const lp = LITEPAPER;
   return (
-    <RedesignPage maxWidth={820}>
+    <RedesignPage accent="developer" maxWidth={820}>
       <PageHeader
         eyebrow={`Litepaper v${lp.version}`}
         title={lp.title}

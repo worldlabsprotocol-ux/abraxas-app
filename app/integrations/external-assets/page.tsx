@@ -60,7 +60,7 @@ export default function ExternalAssetsPage() {
   }
 
   return (
-    <RedesignPage maxWidth={720}>
+    <RedesignPage accent="developer" maxWidth={720}>
       <PageHeader
         eyebrow="External asset owners"
         title="Apply for Abraxas registry review"

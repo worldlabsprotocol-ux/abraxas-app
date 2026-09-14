@@ -8,6 +8,9 @@ import { useEffect, useState } from "react";
 import { VAULTS, fmtUSD } from "@/lib/appData";
 import { AGENTS } from "@/lib/agentEngine";
 import { useProtocolStream } from "@/lib/protocolStream";
+import { AbxCard, AbxEmptyState, AbxStatusBadge } from "@/components/design/AbxPrimitives";
+import { AbxInnerPage } from "@/components/design/AbxInnerPage";
+import { Btn } from "@/components/redesign/ui";
 
 // Vault-scoped event stream. filters global stream by vaultId
 function VaultEventStream({ vaultId }: { vaultId: string }) {
@@ -173,46 +176,52 @@ export default function VaultDetailPage({ params }: { params: { id: string } }) 
 
   if (!v) {
     return (
-      <div style={{ maxWidth: "480px", margin: "0 auto", padding: "4rem 1.25rem", textAlign: "center" }}>
-        <p style={{ color: "var(--muted)", marginBottom: "1rem" }}>Vault not found.</p>
-        <Link href="/marketplace" style={{ color: "var(--gold)" }}>Browse vaults →</Link>
-      </div>
+      <AbxInnerPage accent="home" title="Vault not found" align="center" maxWidth={480}>
+        <AbxEmptyState
+          title="This vault is not available"
+          message="The vault ID may be outdated or removed."
+          actionLabel="Browse vaults"
+          actionHref="/marketplace"
+        />
+      </AbxInnerPage>
     );
   }
 
   return (
-    <div style={{ maxWidth: "900px", margin: "0 auto", padding: "2.5rem 1.25rem 4rem" }}>
-      <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "var(--subtle)", fontSize: "0.75rem", cursor: "pointer", marginBottom: "1.25rem" }}>
-        ← Back
-      </button>
-
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
-        <div>
-          <p style={{ fontSize: "0.58rem", letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "0.3rem" }}>Vault · Protocol Execution Unit</p>
-          <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 800, fontSize: "clamp(1.75rem, 5vw, 2.4rem)", letterSpacing: "-0.02em", marginBottom: "0.25rem" }}>
-            {v.name}
-          </h1>
-          <p style={{ fontSize: "0.82rem", color: "var(--muted)" }}>{v.asset} · {v.agent}</p>
-        </div>
+    <AbxInnerPage
+      accent="home"
+      eyebrow="Vault · Protocol execution unit"
+      title={v.name}
+      lead={`${v.asset} · ${v.agent}`}
+      maxWidth={900}
+      actions={(
+        <button onClick={() => router.back()} type="button" style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "0.75rem", cursor: "pointer" }}>
+          ← Back
+        </button>
+      )}
+    >
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "0.5rem" }}>
         <div style={{ textAlign: "right" }}>
           <div style={{ fontWeight: 800, fontSize: "1.8rem", color: "var(--green)" }}>{v.apy}%</div>
-          <div style={{ fontSize: "0.6rem", color: "var(--subtle)", textTransform: "uppercase", letterSpacing: "0.08em" }}>APY</div>
+          <div style={{ fontSize: "0.6rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>APY</div>
         </div>
       </div>
 
-      {/* Stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "0.625rem", marginBottom: "1.5rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "0.625rem" }}>
         {[
-          { k: "TVL",         v: fmtUSD(v.tvl)                          },
-          { k: "Inception",   v: v.inceptionDate                        },
-          { k: "Status",      v: v.status,  green: v.status === "operating" },
-          { k: "Unrecovered", v: "$0",      green: true                 },
+          { k: "TVL", v: fmtUSD(v.tvl) },
+          { k: "Inception", v: v.inceptionDate },
+          { k: "Status", v: v.status, operating: v.status === "operating" },
+          { k: "Unrecovered", v: "$0" },
         ].map((s) => (
-          <div key={s.k} style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "10px", padding: "0.875rem 1rem" }}>
-            <div style={{ fontSize: "0.58rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "0.2rem" }}>{s.k}</div>
-            <div style={{ fontWeight: 700, fontSize: "0.9rem", color: (s as {green?:boolean}).green ? "var(--green)" : "var(--text)", textTransform: s.k === "Status" ? "capitalize" : "none" }}>{s.v}</div>
-          </div>
+          <AbxCard key={s.k} accent="home" padding="0.875rem 1rem">
+            <div style={{ fontSize: "0.58rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "0.2rem" }}>{s.k}</div>
+            {s.k === "Status" ? (
+              <AbxStatusBadge label={s.v} tone={s.operating ? "success" : "warning"} />
+            ) : (
+              <div style={{ fontWeight: 700, fontSize: "0.9rem", color: "var(--text-primary)" }}>{s.v}</div>
+            )}
+          </AbxCard>
         ))}
       </div>
 
@@ -222,28 +231,21 @@ export default function VaultDetailPage({ params }: { params: { id: string } }) 
         <CircuitPanel vaultId={v.id} />
       </div>
 
-      {/* On-chain proof */}
-      <div style={{ background: "var(--surface)", border: "1px solid var(--line)", borderRadius: "12px", padding: "1rem 1.25rem", marginBottom: "1.25rem" }}>
-        <p style={{ fontSize: "0.58rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--subtle)", marginBottom: "0.4rem" }}>
-          Vault wallet · On-chain
+      <AbxCard accent="home">
+        <p style={{ fontSize: "0.58rem", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "0.4rem" }}>
+          Vault wallet · On chain
         </p>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "0.68rem", color: "var(--gold)", wordBreak: "break-all", marginBottom: "0.4rem" }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.68rem", color: "var(--gold)", wordBreak: "break-all", marginBottom: "0.4rem" }}>
           {v.walletAddress}
         </div>
         <a href={v.solscanUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.7rem", color: "var(--gold)", textDecoration: "none" }}>
           View on Solscan ↗
         </a>
-      </div>
+      </AbxCard>
 
-      {/* Deploy CTA */}
-      <Link href={`/deposit/${v.id}`} style={{ textDecoration: "none" }}>
-        <button style={{ width: "100%", background: "var(--gold)", color: "var(--void)", border: "none", borderRadius: "10px", padding: "1rem", fontWeight: 700, fontSize: "0.95rem", cursor: "pointer", marginBottom: "1.5rem" }}>
-          Deploy Capital →
-        </button>
-      </Link>
+      <Btn href={`/deposit/${v.id}`} size="lg" style={{ width: "100%" }}>Deploy capital</Btn>
 
-      {/* Vault event log */}
       <VaultEventStream vaultId={v.id} />
-    </div>
+    </AbxInnerPage>
   );
 }

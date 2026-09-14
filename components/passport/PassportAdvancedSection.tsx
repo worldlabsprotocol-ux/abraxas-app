@@ -16,7 +16,7 @@ const STAMPS = {
     { id: "accredited", label: "Accredited Investor", note: "Securities-eligible actions" },
   ],
   notRequired: [
-    { id: "source_of_funds", label: "Source of Funds", note: "Only for high-limit transfers" },
+    { id: "source_of_funds", label: "Source of Funds", note: "Only for high limit transfers" },
   ],
 };
 

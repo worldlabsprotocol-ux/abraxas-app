@@ -6,23 +6,23 @@ import { SITE_URL } from "@/lib/siteUrl";
 
 export const PARTNER_FLOW_CANONICAL_HOST = SITE_URL;
 
-export const PARTNER_FLOW_HEADLINE = "Partner Flow — browser redirect integration";
+export const PARTNER_FLOW_HEADLINE = "Partner Flow, browser redirect integration";
 
 export const PARTNER_FLOW_SUMMARY =
-  "Redirect holders to Abraxas, receive a signed session receipt on your callback URL, and verify it server-side via the public receipt endpoint. No API key in the browser.";
+  "Redirect holders to Abraxas, receive a signed session receipt on your callback URL, and verify it server side via the public receipt endpoint. No API key in the browser.";
 
 export const INTEGRATION_PATH_DECISION_TREE = [
   {
     path: "Partner Flow (this guide)",
-    when: "Web or mobile app with a browser redirect; age-gated retail, booking, or policy-based eligibility",
-    auth: "Browser session cookie on abraxasworld.xyz only — no partner API key in client code",
+    when: "Web or mobile app with a browser redirect; age gated retail, booking, or policy-based eligibility",
+    auth: "Browser session cookie on abraxasworld.xyz only, no partner API key in client code",
     start: `${SITE_URL}/partner/verify?partner_id=…&policy_id=…&return_url=…`,
     verify: "GET /api/receipts/{receipt_id}/public (no auth)",
   },
   {
     path: "Server verification requests",
     when: "Your backend starts the flow and polls for a decision after holder consent",
-    auth: "Partner API key (verify:requests) server-side only",
+    auth: "Partner API key (verify:requests) server side only",
     start: "POST /api/v1/verification-requests → redirect holder to consent_url",
     verify: "GET /api/v1/decisions/{id}/status",
     docs: "/docs/partner-verification-requests",
@@ -38,7 +38,7 @@ export const INTEGRATION_PATH_DECISION_TREE = [
   {
     path: "Abraxas Connect",
     when: "EVM wallet binding + consent-gated authorization loop",
-    auth: "Partner API key server-side; browser session on Connect UI",
+    auth: "Partner API key server side; browser session on Connect UI",
     start: "POST /api/v1/authorize → hosted_connect_url",
     verify: "GET /api/v1/authorize/{id}/status",
     docs: "/docs/ail",
@@ -49,7 +49,7 @@ export const PARTNER_FLOW_ENTRY_PARAMS = [
   { name: "partner_id", required: true, description: "Relying party identifier (must exist in partners table)" },
   { name: "policy_id", required: true, description: "Active partner_policies.id to evaluate (or use permission + permission_version instead)" },
   { name: "return_url", required: true, description: "HTTPS callback on your origin; must be allowlisted in partners.allowed_return_urls" },
-  { name: "permission", required: false, description: "Alternative to policy_id — resolved to a policy for the relying party" },
+  { name: "permission", required: false, description: "Alternative to policy_id, resolved to a policy for the relying party" },
   { name: "permission_version", required: false, description: "Optional permission version pin" },
 ] as const;
 
@@ -72,7 +72,7 @@ export const PARTNER_FLOW_LIFECYCLE = [
   {
     step: 4,
     title: "Passport + consent (first visit)",
-    body: "When next=passport, holder completes ID/biometric capture and consent. After admin approval, POST /api/v1/partner-flow/complete issues the session receipt.",
+    body: "When next=passport, holder completes ID/biometric capture and consent. After admin approval, POST /api/v1/partner flow/complete issues the session receipt.",
   },
   {
     step: 5,
@@ -82,14 +82,14 @@ export const PARTNER_FLOW_LIFECYCLE = [
   {
     step: 6,
     title: "Refresh (optional)",
-    body: "When the session receipt TTL expires but the credential remains valid, POST /api/v1/partner-flow/refresh re-issues a receipt (browser session required).",
+    body: "When the session receipt TTL expires but the credential remains valid, POST /api/v1/partner flow/refresh re-issues a receipt (browser session required).",
   },
 ] as const;
 
 export const PARTNER_FLOW_CALLBACK_PARAMS = PARTNER_CALLBACK_PARAMS;
 
 export const PARTNER_FLOW_CALLBACK_PII_NOTE =
-  "Callback query parameters contain no PII — no legal name, DOB, document numbers, images, or wallet address. Verify eligibility via the signed receipt, not the URL alone.";
+  "Callback query parameters contain no PII, no legal name, DOB, document numbers, images, or wallet address. Verify eligibility via the signed receipt, not the URL alone.";
 
 export const PARTNER_FLOW_RECEIPT_CHECKS = [
   { check: "signature_valid === true", why: "Ed25519 signature over canonical payload_hash" },
@@ -97,7 +97,7 @@ export const PARTNER_FLOW_RECEIPT_CHECKS = [
   { check: "status === \"active\"", why: "Reject expired, revoked, or unknown receipt state" },
   { check: "expires_at present, valid, and not passed", why: "Session receipt TTL; re-verify at settlement time" },
   { check: "production_usable === true", why: "Required for production gates; sandbox policies need explicit allowSandbox opt-in in your validator" },
-  { check: "partner_id matches your integration", why: "Prevents cross-partner receipt replay" },
+  { check: "partner_id matches your integration", why: "Prevents cross partner receipt replay" },
   { check: "policy_id matches your gate", why: "Ensures the evaluated policy is the one you requested" },
 ] as const;
 
@@ -193,7 +193,7 @@ export const PARTNER_WEBHOOK_LIFECYCLE_EVENT_TYPES = [
 export const PARTNER_WEBHOOK_SANDBOX_GUIDE = {
   headline: "Webhook sandbox test delivery",
   summary:
-    "Queue a single partner.webhook.test event from the partner portal with an abx_test_ key. Queued does not mean delivered — confirm in your handler and delivery history.",
+    "Queue a single partner.webhook.test event from the partner portal with an abx_test_ key. Queued does not mean delivered, confirm in your handler and delivery history.",
   queuedDisclaimer:
     "A successful enqueue returns queued: true. Delivery is asynchronous; inspect delivery history for delivered, retrying, or failed outcomes.",
   portalPath: "/developers/partner",

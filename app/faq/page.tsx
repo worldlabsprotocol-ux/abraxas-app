@@ -13,7 +13,7 @@ export default function FAQPage() {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
-    <RedesignPage maxWidth={760}>
+    <RedesignPage accent="neutral" maxWidth={760}>
       <PageHeader
         eyebrow="FAQ"
         title="Why this, why now"

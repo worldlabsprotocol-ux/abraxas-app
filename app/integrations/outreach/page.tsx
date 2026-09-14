@@ -28,7 +28,7 @@ export default function OutreachPage() {
   }
 
   return (
-    <RedesignPage maxWidth={860}>
+    <RedesignPage accent="developer" maxWidth={860}>
       <PageHeader
         eyebrow="Design partner outreach"
         title="Recruit your first relying party"

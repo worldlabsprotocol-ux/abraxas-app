@@ -1,7 +1,7 @@
 // FILE: app/dashboard/page.tsx
 // Legacy URL — honest transition screen to Passport (no redirect, no demo metrics).
 
-import { RedesignShell } from "@/components/redesign/RedesignShell";
+import { AbxPageShell } from "@/components/design/AbxPageShell";
 import { ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
 import { RedesignFooter } from "@/components/redesign/RedesignFooter";
@@ -16,7 +16,7 @@ const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
 export default function DashboardPage() {
   return (
-    <RedesignShell>
+    <AbxPageShell accent="neutral">
       <div style={{
         maxWidth: 640,
         margin: "0 auto",
@@ -58,6 +58,6 @@ export default function DashboardPage() {
         </ContentCard>
       </div>
       <RedesignFooter />
-    </RedesignShell>
+    </AbxPageShell>
   );
 }

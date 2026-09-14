@@ -15,7 +15,7 @@ const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
 export default function WhyVerificationPage() {
   return (
-    <RedesignPage maxWidth={820}>
+    <RedesignPage accent="developer" maxWidth={820}>
       <PageHeader
         eyebrow="Technical thesis"
         title="Why unified KYC is hard for RWAs. and how Abraxas solves it"

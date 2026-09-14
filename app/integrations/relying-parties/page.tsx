@@ -31,7 +31,7 @@ export default function RelyingPartiesPage() {
   const sandboxPartners = getSandboxPartners();
 
   return (
-    <RedesignPage maxWidth={900}>
+    <RedesignPage accent="developer" maxWidth={900}>
       <PageHeader
         eyebrow="Relying party program"
         title="Verify once. Your protocol clears the transaction."

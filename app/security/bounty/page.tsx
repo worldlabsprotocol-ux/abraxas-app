@@ -78,7 +78,7 @@ function BountyReportForm() {
         background: ACCENT, color: "#1a1400", fontFamily: FONT, fontSize: "0.78rem", fontWeight: 800,
         cursor: status === "sending" ? "wait" : "pointer", opacity: status === "sending" ? 0.7 : 1,
       }}>
-        {status === "sending" ? "Submitting…" : "Submit report on-protocol →"}
+        {status === "sending" ? "Submitting…" : "Submit report on protocol →"}
       </button>
     </form>
   );
@@ -88,7 +88,7 @@ export default function BugBountyPage() {
   const mailto = `mailto:${BUG_BOUNTY.reportEmail}?subject=${encodeURIComponent(BUG_BOUNTY.reportSubject)}`;
 
   return (
-    <RedesignPage maxWidth={860}>
+    <RedesignPage accent="home" maxWidth={860}>
       <PageHeader
         eyebrow="Security program"
         title="Bug bounty & audit tracker"
@@ -186,7 +186,7 @@ export default function BugBountyPage() {
         <BulletList items={[...BUG_BOUNTY.launchCriteria]} />
       </ContentCard>
 
-      <ContentCard title="Submit via API (pre-registration)">
+      <ContentCard title="Submit via API (pre registration)">
         <p style={{ ...body, marginBottom: "0.85rem" }}>
           Reports persist in Abraxas ops queue and notify the security inbox. Email fallback remains below.
         </p>

@@ -71,7 +71,7 @@ export async function runCapturePreflight(
   const issues: string[] = [];
 
   if (blob.size < 8_000) {
-    return { ok: false, score: 0, issues: ["Image file is too small — retake with your camera."] };
+    return { ok: false, score: 0, issues: ["Image file is too small, retake with your camera."] };
   }
 
   const img = await loadImageFromBlob(blob);
@@ -116,11 +116,11 @@ export async function runCapturePreflight(
     }
   }
 
-  if (minDim < 400) issues.push("Move closer — image resolution is too low.");
-  if (brightness < 0.25) issues.push("Scene is too dark — add light or move to a brighter area.");
-  if (brightness > 0.92) issues.push("Scene is overexposed — reduce glare on the ID or face.");
-  if (sharpnessScore < 0.2) issues.push("Image looks blurry — hold steady and tap to focus.");
-  if (kind === "selfie" && varianceScore < 0.15) issues.push("Selfie looks flat — ensure your face is visible.");
+  if (minDim < 400) issues.push("Move closer, image resolution is too low.");
+  if (brightness < 0.25) issues.push("Scene is too dark, add light or move to a brighter area.");
+  if (brightness > 0.92) issues.push("Scene is overexposed, reduce glare on the ID or face.");
+  if (sharpnessScore < 0.2) issues.push("Image looks blurry, hold steady and tap to focus.");
+  if (kind === "selfie" && varianceScore < 0.15) issues.push("Selfie looks flat, ensure your face is visible.");
 
   const minScore = kind === "id_front" ? 0.38 : 0.34;
   const ok = score >= minScore && issues.length === 0;

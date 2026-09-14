@@ -13,7 +13,7 @@ const ACCENT = "#10B981";
 
 export default function StrategyPage() {
   return (
-    <RedesignPage maxWidth={900}>
+    <RedesignPage accent="home" maxWidth={900}>
       <PageHeader
         eyebrow="Strategic roadmap"
         title="Four pillars to $100M protocol credibility"

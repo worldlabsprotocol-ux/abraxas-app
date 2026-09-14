@@ -12,10 +12,10 @@ import { ThemeProvider } from "@/components/ThemeContext";
 
 export const metadata: Metadata = {
   title: "Abraxas, Verify Once. Transact Everywhere.",
-  description: "The verification and identity layer for real-world assets onchain. Real estate, royalties, mineral rights, a business, verified once, then investable with stablecoins.",
+  description: "The verification and identity layer for real world assets onchain. Real estate, royalties, mineral rights, a business, verified once, then investable with stablecoins.",
   openGraph: {
     title: "Abraxas, Verify Once. Transact Everywhere.",
-    description: "The verification and identity layer for real-world assets onchain.",
+    description: "The verification and identity layer for real world assets onchain.",
     url: "https://abraxasworld.xyz",
     siteName: "Abraxas",
     images: ["/og-image.jpg"],
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Abraxas, Verify Once. Transact Everywhere.",
-    description: "The verification and identity layer for real-world assets onchain.",
+    description: "The verification and identity layer for real world assets onchain.",
     images: ["/og-image.jpg"],
   },
 };

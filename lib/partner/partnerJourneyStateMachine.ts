@@ -57,7 +57,7 @@ const MESSAGES: Record<PartnerJourneyState, Omit<PartnerJourneyPresentation, "st
     telemetry_outcome: "request_received",
   },
   sign_in_required: {
-    customer_message: "Sign in to continue. Signing in confirms your account — it does not verify your age.",
+    customer_message: "Sign in to continue. Signing in confirms your account, it does not verify your age.",
     primary_action: "sign_in",
     primary_label: "Continue with Google",
     terminal: false,
@@ -90,7 +90,7 @@ const MESSAGES: Record<PartnerJourneyState, Omit<PartnerJourneyPresentation, "st
   },
   additional_verification_required: {
     customer_message:
-      "Verify your age. This partner requires identity verification — signing in alone does not verify your age.",
+      "Verify your age. This partner requires identity verification, signing in alone does not verify your age.",
     primary_action: "continue",
     primary_label: "Verify your age",
     terminal: false,

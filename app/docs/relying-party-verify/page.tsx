@@ -28,7 +28,7 @@ const ACCENT = "#10B981";
 
 export default function RelyingPartyVerifyDocsPage() {
   return (
-    <RedesignPage maxWidth={900}>
+    <RedesignPage accent="developer" maxWidth={900}>
       <PageHeader
         eyebrow="External relying party"
         title={EXTERNAL_RP_HEADLINE}

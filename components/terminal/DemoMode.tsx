@@ -20,7 +20,7 @@ const STEPS: DemoStep[] = [
   { selector: "#demo-music",      caption: "Music catalog audits for artists and publishers.", duration: 4000 },
   { selector: "#demo-deals",      caption: "Submitting an asset takes four steps, watch it cycle.", duration: 5000 },
   { selector: "#demo-milestones", caption: "How it works, verify once, then transact everywhere.", duration: 4500 },
-  { selector: "#demo-wyoming",    caption: "Form a business on-chain in minutes.", duration: 4000 },
+  { selector: "#demo-wyoming",    caption: "Form a business on chain in minutes.", duration: 4000 },
 ];
 
 export function DemoMode() {

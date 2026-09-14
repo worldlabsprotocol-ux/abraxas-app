@@ -8,7 +8,7 @@ import { MusicRoyaltySection } from "@/components/redesign/MusicRoyaltySection";
 
 export default function MusicAuditPage() {
   return (
-    <RedesignPage maxWidth={1180}>
+    <RedesignPage accent="neutral" maxWidth={1180}>
       <PageHeader
         eyebrow="For creators"
         title="Music & IP royalty audit"

@@ -47,7 +47,7 @@ export default function CieloE2ePage() {
   useEffect(() => { load(); }, []);
 
   return (
-    <RedesignPage maxWidth={860}>
+    <RedesignPage accent="neutral" maxWidth={860}>
       <PageHeader
         eyebrow="Operations"
         title="Cielo E2E health check"

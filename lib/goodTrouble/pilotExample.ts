@@ -20,4 +20,4 @@ export const GOOD_TROUBLE_PILOT_EXAMPLE: ReferenceRelyingPartyConfig = {
 };
 
 export const GOOD_TROUBLE_PILOT_LABEL =
-  "Good Trouble is Abraxas's hosted pilot checkout — not a generic integration template.";
+  "Good Trouble is Abraxas's hosted pilot checkout, not a generic integration template.";

@@ -8,11 +8,11 @@ import { GOOD_TROUBLE_BRAND, GOOD_TROUBLE_PILOT_DISCLAIMER } from "@/lib/goodTro
 
 export default function GoodTroubleCheckoutPage() {
   return (
-    <RedesignPage maxWidth={640}>
+    <RedesignPage accent="partner" maxWidth={640}>
       <PageHeader
         eyebrow="Good Trouble · Regulated retail"
         title="Checkout verification"
-        subtitle={`${GOOD_TROUBLE_BRAND.name} uses Abraxas Passport for age-gated retail eligibility in ${GOOD_TROUBLE_BRAND.location}.`}
+        subtitle={`${GOOD_TROUBLE_BRAND.name} uses Abraxas Passport for age gated retail eligibility in ${GOOD_TROUBLE_BRAND.location}.`}
       />
       <p
         style={{

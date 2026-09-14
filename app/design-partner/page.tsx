@@ -29,11 +29,11 @@ const MONO = ABRAXAS_FONT_MONO;
 
 export default function DesignPartnerPage() {
   return (
-    <RedesignPage maxWidth={880}>
+    <RedesignPage accent="developer" maxWidth={880}>
       <PageHeader
         eyebrow="Design partner program"
         title="Apply to integrate Abraxas Partner Flow"
-        subtitle={`${RELYING_PARTY_DEFINITION} Applications are reviewed manually — sandbox and production access are operator-provisioned, not self-serve.`}
+        subtitle={`${RELYING_PARTY_DEFINITION} Applications are reviewed manually, sandbox and production access are operator provisioned, not self serve.`}
       />
 
       <IntegratorStartHerePanel id="partner-start-here" />

@@ -97,7 +97,7 @@ export function PartnerProductionEnvPromotionPanel() {
       }
       setActivateMessage(
         data.already_production_enabled
-          ? "Partner already production-enabled."
+          ? "Partner already production enabled."
           : "Production environment enabled. Issue a new live key manually when ready.",
       );
       setActivateOpen(false);
@@ -129,7 +129,7 @@ export function PartnerProductionEnvPromotionPanel() {
       }
       setReverseMessage(
         data.already_reversed
-          ? "Partner already in sandbox-only pilot state with no active live keys."
+          ? "Partner already in sandbox only pilot state with no active live keys."
           : "Production environment reversed. Active live keys were revoked; issue a new live key after re-activation.",
       );
       setReverseOpen(false);

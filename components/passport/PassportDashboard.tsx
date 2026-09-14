@@ -794,15 +794,15 @@ function CredentialsSection({
       }}>
         {verifiedView
           ? "Your active proofs"
-          : "Time-bound yes/no proofs — not a folder of your documents"}
+          : "Time-bound yes/no proofs, not a folder of your documents"}
       </h2>
       <p style={{
         fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
         lineHeight: 1.55, margin: "0 0 0.75rem",
       }}>
         {verifiedView
-          ? "Partners check these proofs against their policy — they never receive your ID photos or selfie files."
-          : "Think of a credential like a tamper-proof badge. Partners check the badge — they don't get your ID photos."}
+          ? "Partners check these proofs against their policy, they never receive your ID photos or selfie files."
+          : "Think of a credential like a tamper-proof badge. Partners check the badge, they don't get your ID photos."}
       </p>
 
       {!verifiedView && (

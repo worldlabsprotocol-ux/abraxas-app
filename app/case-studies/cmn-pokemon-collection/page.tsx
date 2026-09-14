@@ -36,11 +36,11 @@ const body: React.CSSProperties = {
 
 export default function CmnPokemonCollectionPage() {
   return (
-    <RedesignPage maxWidth={900}>
+    <RedesignPage accent="neutral" maxWidth={900}>
       <PageHeader
         eyebrow="Case study · Collectibles · Graded Card"
         title={CMN_POKEMON_ASSET.name}
-        subtitle="First PSA slab on-registry — new collectibles asset class on Abraxas. Not listed for sale."
+        subtitle="First PSA slab on registry, new collectibles asset class on Abraxas. Not listed for sale."
       />
 
       <div style={{

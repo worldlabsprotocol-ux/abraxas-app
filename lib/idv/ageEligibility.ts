@@ -1,5 +1,5 @@
 // FILE: lib/idv/ageEligibility.ts
-// Server-side age eligibility from authoritative IDV DOB — never expose DOB or computed age.
+// Server-side age eligibility from authoritative IDV DOB, never expose DOB or computed age.
 
 export const PRODUCT_ELIGIBILITY_OVER_21 = "over_21" as const;
 
@@ -20,7 +20,7 @@ const ISO_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 /**
  * Parse an authoritative document DOB (YYYY-MM-DD). Returns null for malformed or future dates.
- * Never log the input or output — use only for internal eligibility derivation.
+ * Never log the input or output, use only for internal eligibility derivation.
  */
 export function parseAuthoritativeDateOfBirth(raw: string): Date | null {
   const trimmed = raw.trim();

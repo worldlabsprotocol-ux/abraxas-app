@@ -53,7 +53,7 @@ function AccountInner() {
 
   if (!isAuthenticated || !suiAddress) {
     return (
-      <RedesignPage maxWidth={720}>
+      <RedesignPage accent="neutral" maxWidth={720}>
         <PageHeader
           eyebrow={HOLDER_ACCOUNT_EYEBROW}
           title={HOLDER_ACCOUNT_SIGNED_OUT_TITLE}
@@ -106,7 +106,7 @@ function AccountInner() {
     : null;
 
   return (
-    <RedesignPage maxWidth={720}>
+    <RedesignPage accent="neutral" maxWidth={720}>
       <PageHeader
         eyebrow={HOLDER_ACCOUNT_EYEBROW}
         title={HOLDER_ACCOUNT_TITLE}
@@ -178,7 +178,7 @@ function AccountInner() {
             </div>
           </ContentCard>
 
-          <ContentCard title="On-chain passport (devnet)">
+          <ContentCard title="On chain passport (devnet)">
             <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: 0 }}>
               {trust.on_chain.provisioned
                 ? <>Provisioned · object {trust.on_chain.object_id?.slice(0, 12)}…</>

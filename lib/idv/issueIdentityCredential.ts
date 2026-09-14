@@ -273,8 +273,8 @@ export async function issueIdentityCredential(
       }, { onConflict: "sui_address" });
     }
   } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : "On-chain provision failed";
-    console.error("[issueIdentityCredential] On-chain provision failed:", e);
+    const message = e instanceof Error ? e.message : "On chain provision failed";
+    console.error("[issueIdentityCredential] On chain provision failed:", e);
     onChainResult = { ok: false, error: message };
   }
 

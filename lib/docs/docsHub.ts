@@ -122,7 +122,7 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
         id: "security",
         title: "Security",
         summary:
-          "Service role keys and signing keys are server-side only. Supabase RLS on all tables. Biometric assessments and reviewer actions produce audit records.",
+          "Service role keys and signing keys are server side only. Supabase RLS on all tables. Biometric assessments and reviewer actions produce audit records.",
         readMore: { label: "Security page", href: "/security" },
       },
     ],

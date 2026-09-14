@@ -23,7 +23,7 @@ export default function TieredAgePreviewPage() {
     <div id="tiered-age-browse-preview" style={{ padding: "1rem" }}>
       <PartnerJourneyLayout
         partnerName={partnerName}
-        intro="Tier 1 browse preview — self-attestation only (L0)."
+        intro="Tier 1 browse preview, self attestation only (L0)."
         statusMessage="Preview environment: browsing access only. Checkout requires separate L2+ verification."
         partnerHomeUrl={GOOD_TROUBLE_BRAND.website}
         partnerReturnLabel={`Return to ${partnerName}`}

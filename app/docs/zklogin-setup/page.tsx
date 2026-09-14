@@ -12,7 +12,7 @@ const ACCENT = "#10B981";
 
 export default function ZkLoginSetupPage() {
   return (
-    <RedesignPage maxWidth={820}>
+    <RedesignPage accent="developer" maxWidth={820}>
       <PageHeader
         eyebrow="Operator guide"
         title="zkLogin backend setup"
@@ -75,7 +75,7 @@ export default function ZkLoginSetupPage() {
         </p>
       </ContentCard>
 
-      <ContentCard title="Step 6. On-chain stamps (your next build)">
+      <ContentCard title="Step 6. On chain stamps (your next build)">
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.75rem" }}>
           Move package is on devnet (<Link href="/docs/passport-spec" style={{ color: ACCENT }}>see live panel</Link>).
           After Veriff approves, add an API that calls <code style={{ fontFamily: MONO }}>issue_stamps_entry</code> and stores the Passport object ID per Sui address.

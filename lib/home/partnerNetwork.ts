@@ -1,5 +1,5 @@
 // FILE: lib/home/partnerNetwork.ts
-// Partner Network section — live implementations vs design partners (separate from Protocol in Action).
+// Partner Network section, live implementations vs design partners (separate from Protocol in Action).
 
 export type PartnerNetworkStatus = "live" | "design_partner";
 
@@ -26,26 +26,26 @@ export const PARTNER_NETWORK_TITLE = "Partner Network";
 export const PARTNER_NETWORK_SUBTITLE =
   "Organizations building on reusable trust through Abraxas.";
 
-/** Good Trouble script logo — Partner Network card (registry wordmark). */
+/** Good Trouble script logo, Partner Network card (registry wordmark). */
 export const GOOD_TROUBLE_PARTNER_IMAGE: PartnerNetworkImage = {
   src: "/assets/good-trouble/brand-logo.png",
-  alt: "Good Trouble — reusable age verification for cannabis retail",
+  alt: "Good Trouble, reusable age verification for cannabis retail",
   objectPosition: "center center",
   fit: "cover",
   mediaBackground: "#c45c2a",
 };
 
-/** Premiere lookbook cover — invitation-only luxury hospitality (from partner PDF). */
+/** Premiere lookbook cover, invitation-only luxury hospitality (from partner PDF). */
 export const PREMIERE_PARTNER_IMAGE: PartnerNetworkImage = {
   src: "/assets/partner-network/premiere-lookbook-cover.jpg",
-  alt: "The Premiere Upscale Smoking Experience — invitation-only luxury cannabis hospitality",
+  alt: "The Premiere Upscale Smoking Experience, invitation-only luxury cannabis hospitality",
   objectPosition: "center 45%",
 };
 
-/** SMAK'D brand lifestyle — consumer cannabis brand (official rusmakd.com photography). */
+/** SMAK'D brand lifestyle, consumer cannabis brand (official rusmakd.com photography). */
 export const SMAKD_PARTNER_IMAGE: PartnerNetworkImage = {
   src: "/assets/partner-network/smakd-brand-lifestyle.jpg",
-  alt: "SMAK'D premium rolling papers — consumer cannabis brand",
+  alt: "SMAK'D premium rolling papers, consumer cannabis brand",
   objectPosition: "center 35%",
 };
 

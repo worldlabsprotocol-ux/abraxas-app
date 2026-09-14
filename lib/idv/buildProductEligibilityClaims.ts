@@ -16,7 +16,7 @@ export function buildProductEligibilityClaimsForIssuance(input: {
   subjectId: string;
   jti: string;
   documentDateOfBirth?: string | null;
-  /** Authoritative age-band from an approved age-assurance provider — never from social OAuth. */
+  /** Authoritative age-band from an approved age-assurance provider, never from social OAuth. */
   authoritativeAgeBand?: AuthoritativeAgeBandForIssuance | null;
   minimumAgeGate?: number | null;
   expiresAt: Date;

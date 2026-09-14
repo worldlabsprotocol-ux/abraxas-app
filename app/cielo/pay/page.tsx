@@ -6,9 +6,8 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { CieloPaymentPanel } from "@/components/cielo/CieloPaymentPanel";
-import { RedesignNav } from "@/components/redesign/RedesignNav";
+import { AbxPageHeader } from "@/components/design/AbxPrimitives";
 import { RedesignPageLoading } from "@/components/redesign/RedesignPageLoading";
-import { AmbientGlow } from "@/components/redesign/AmbientGlow";
 
 const FONT = "'Inter',system-ui,sans-serif";
 
@@ -26,30 +25,27 @@ function PayInner() {
   }
 
   return (
-    <div style={{ maxWidth: 520, margin: "0 auto", padding: "2rem 1rem" }}>
-      <h1 style={{ fontFamily: FONT, fontSize: "1.35rem", fontWeight: 800, marginBottom: "0.35rem" }}>
-        Complete your Cielo payment
-      </h1>
+    <>
+      <AbxPageHeader
+        accent="home"
+        eyebrow="Cielo payment"
+        title="Complete your Cielo payment"
+        lead={`Booking ${bookingId}. Pay with Apple Pay or card.`}
+      />
       <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", marginBottom: "1.25rem" }}>
-        Booking {bookingId} · Pay with Apple Pay or card · verified on-chain
-        {" · "}
-        <Link href={`/cielo/status?booking_id=${encodeURIComponent(bookingId)}`} style={{ color: "#10B981" }}>
+        <Link href={`/cielo/status?booking_id=${encodeURIComponent(bookingId)}`} style={{ color: "var(--abx-accent)", fontWeight: 600, textDecoration: "none" }}>
           Track status
         </Link>
       </p>
       <CieloPaymentPanel bookingId={bookingId} suiAddress={suiAddress} />
-    </div>
+    </>
   );
 }
 
 export default function CieloPayPage() {
   return (
-    <div data-theme="dark" style={{ background: "var(--bg)", minHeight: "100vh", color: "var(--text-primary)" }}>
-      <AmbientGlow />
-      <RedesignNav />
-      <Suspense fallback={<RedesignPageLoading label="Loading payment…" compact />}>
-        <PayInner />
-      </Suspense>
-    </div>
+    <Suspense fallback={<RedesignPageLoading label="Loading payment…" compact />}>
+      <PayInner />
+    </Suspense>
   );
 }

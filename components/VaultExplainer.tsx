@@ -13,11 +13,11 @@ import { useState } from "react";
 const QUESTIONS = [
   {
     q: "I already minted a token. Why do I need to deposit?",
-    a: "Minting the Token-2022 registers your asset on-chain. it proves you own the catalog, property, or invoice. But a token sitting in your wallet doesn't generate yield. Depositing capital into the vault is what activates the agent. The token represents ownership. The deposit is the fuel. Think of it like owning a rental property (token) vs. actually renting it out (deposit). You need both.",
+    a: "Minting the Token-2022 registers your asset on chain. it proves you own the catalog, property, or invoice. But a token sitting in your wallet doesn't generate yield. Depositing capital into the vault is what activates the agent. The token represents ownership. The deposit is the fuel. Think of it like owning a rental property (token) vs. actually renting it out (deposit). You need both.",
   },
   {
     q: "How does interest actually accrue?",
-    a: "The vault agent continuously monitors your asset class. streaming velocity for music, rent flows for real estate, invoice settlement for receivables. When distributions clear (royalty payouts, rent, invoice payments), the agent captures them and reinvests automatically. The interest accrues from the spread between when capital is deployed and when the underlying asset generates its next distribution. The Token-2022 InterestBearingMint extension records your yield rate on-chain. so your balance compounds without any manual action.",
+    a: "The vault agent continuously monitors your asset class. streaming velocity for music, rent flows for real estate, invoice settlement for receivables. When distributions clear (royalty payouts, rent, invoice payments), the agent captures them and reinvests automatically. The interest accrues from the spread between when capital is deployed and when the underlying asset generates its next distribution. The Token-2022 InterestBearingMint extension records your yield rate on chain. so your balance compounds without any manual action.",
   },
   {
     q: "What stops the system from collapsing if markets go bad?",
@@ -29,7 +29,7 @@ const QUESTIONS = [
   },
   {
     q: "Is my principal safe if I want to exit?",
-    a: "Abraxas is non-custodial. Your Token-2022 position token represents your vault share and lives in your wallet. To exit, you sell or burn the position token. the vault unwinds your share and returns capital to your wallet. The agent doesn't hold your funds in a custodial account. The vault contract on Solana governs the mechanics, not Abraxas the company. This is why building on Token-2022 matters. the rules are in the code, not in a terms of service.",
+    a: "Abraxas is non custodial. Your Token-2022 position token represents your vault share and lives in your wallet. To exit, you sell or burn the position token. the vault unwinds your share and returns capital to your wallet. The agent doesn't hold your funds in a custodial account. The vault contract on Solana governs the mechanics, not Abraxas the company. This is why building on Token-2022 matters. the rules are in the code, not in a terms of service.",
   },
 ];
 

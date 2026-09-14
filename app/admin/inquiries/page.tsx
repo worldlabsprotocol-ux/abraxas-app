@@ -76,7 +76,7 @@ export default function AdminInquiriesPage() {
 
   if (!authed) {
     return (
-      <RedesignPage maxWidth={420}>
+      <RedesignPage accent="admin" maxWidth={420}>
         <PageHeader eyebrow="Admin" title="Asset inquiries" subtitle="Operator PIN required." />
         <ContentCard title="Sign in">
           <input
@@ -93,11 +93,11 @@ export default function AdminInquiriesPage() {
   }
 
   return (
-    <RedesignPage maxWidth={960}>
+    <RedesignPage accent="admin" maxWidth={960}>
       <PageHeader
         eyebrow="Admin · acquisition"
         title="Asset inquiry queue"
-        subtitle="Closed-loop buyer interest from case studies. route to partner, update status on-protocol."
+        subtitle="Closed loop buyer interest from case studies. route to partner, update status on protocol."
       />
 
       {msg && (

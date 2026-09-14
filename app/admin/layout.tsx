@@ -52,21 +52,21 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   if (state === "loading") {
     return (
-      <div style={{ minHeight: "60vh", display: "grid", placeItems: "center", color: "rgba(255,255,255,0.5)", fontFamily: FONT }}>
-        Checking admin access…
+      <div data-theme="dark" className="abx-admin-shell" style={{ minHeight: "60vh", display: "grid", placeItems: "center", color: "var(--text-muted)", fontFamily: FONT }}>
+        Checking admin access
       </div>
     );
   }
 
   if (state === "denied") {
     return (
-      <div style={{ minHeight: "70vh", display: "grid", placeItems: "center", padding: "2rem", background: "#0a0c10", color: "#f0f0f0" }}>
+      <div data-theme="dark" className="abx-admin-shell" style={{ minHeight: "70vh", display: "grid", placeItems: "center", padding: "2rem", color: "#f0f0f0" }}>
         <div style={{ maxWidth: 400, width: "100%", textAlign: "center" }}>
           <h1 style={{ fontFamily: FONT, fontSize: "1.25rem", marginBottom: "0.5rem" }}>Admin access required</h1>
           <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.6, marginBottom: "1.25rem" }}>
             {productionSessionOnly
               ? "Sign in with an authorized admin Google account."
-              : "Sign in with an authorized admin Google account, or enter the reviewer PIN (non-production only)."}
+              : "Sign in with an authorized admin Google account, or enter the reviewer PIN (non production only)."}
           </p>
           {!productionSessionOnly && (
           <form onSubmit={e => void submitPin(e)} style={{ display: "flex", flexDirection: "column", gap: "0.65rem" }}>
@@ -96,7 +96,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           </form>
           )}
           <Link href="/" style={{ display: "inline-block", marginTop: "1rem", fontFamily: FONT, fontSize: "0.78rem", color: "#10B981" }}>
-            ← Back to site
+            Back to site
           </Link>
         </div>
       </div>

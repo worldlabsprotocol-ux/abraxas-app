@@ -24,15 +24,15 @@ const ITEMS = [
   },
   {
     metric: "Yield (APY)",
-    definition: "Annualized rate projected from realized income performance. Vaults under 90 days of history are projections, not realized full-year figures.",
+    definition: "Annualized rate projected from realized income performance. Vaults under 90 days of history are projections, not realized full year figures.",
     calc: "(Cumulative income ÷ days operating) × 365 ÷ TVL",
     source: "Per-vault APY shown on each vault card.",
   },
   {
     metric: "Token-2022 Position",
-    definition: "Each deposit mints one position token to the depositor's Sui wallet. The token name and symbol match the on-screen UI exactly.",
+    definition: "Each deposit mints one position token to the depositor's Sui wallet. The token name and symbol match the on screen UI exactly.",
     calc: "1 token minted per deposit. Burned on withdraw.",
-    source: "On-chain Solscan verifiable via the deposit success screen.",
+    source: "On chain Solscan verifiable via the deposit success screen.",
   },
 ];
 

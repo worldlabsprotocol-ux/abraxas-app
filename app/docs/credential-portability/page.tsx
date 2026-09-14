@@ -11,7 +11,7 @@ const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 
 export default function CredentialPortabilityPage() {
   return (
-    <RedesignPage maxWidth={820}>
+    <RedesignPage accent="developer" maxWidth={820}>
       <PageHeader
         eyebrow="Integrators"
         title="Portable credentials & verification API"
@@ -56,7 +56,7 @@ export default function CredentialPortabilityPage() {
           "Check assurance level on each claim. do not treat L1 the same as L4",
           "Respect refreshDue dates. stale appraisals may need re-attestation",
           "Support selective disclosure. request only claims needed for the action",
-          "Handle revocation. credentials can be revoked server-side",
+          "Handle revocation. credentials can be revoked server side",
         ]} />
       </ContentCard>
 

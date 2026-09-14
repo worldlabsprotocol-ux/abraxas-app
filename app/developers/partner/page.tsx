@@ -88,11 +88,11 @@ export default function PartnerPortalPage() {
   }
 
   return (
-    <RedesignPage maxWidth={880}>
+    <RedesignPage accent="developer" maxWidth={880}>
       <PageHeader
         eyebrow="Developers"
         title="Partner portal"
-        subtitle="View API usage and onboarding progress for this API key. Keys are server-side only — never expose in client apps."
+        subtitle="View API usage and onboarding progress for this API key. Keys are server side only, never expose in client apps."
       />
 
       {!dashboard ? (

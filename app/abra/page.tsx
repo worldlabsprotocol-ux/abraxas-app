@@ -156,10 +156,10 @@ export default function AbraPage() {
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
           {[
-            { icon: "◎", title: "Vault access priority", desc: "Higher $ABRA holdings unlock earlier access to new vaults and higher-yield positions as they graduate." },
+            { icon: "◎", title: "Vault access priority", desc: "Higher $ABRA holdings unlock earlier access to new vaults and higher yield positions as they graduate." },
             { icon: "◉", title: "Fee reduction", desc: "Operators holding $ABRA qualify for reduced platform fees as the protocol matures. Hold more, pay less." },
             { icon: "⬡", title: "Network participation", desc: "Every vault activated adds to the network. $ABRA represents your stake in the operating layer, not just a token." },
-            { icon: "◈", title: "OG status pathway", desc: "Early holders are recognized permanently on-chain. The protocol remembers who was here first." },
+            { icon: "◈", title: "OG status pathway", desc: "Early holders are recognized permanently on chain. The protocol remembers who was here first." },
           ].map((item) => (
             <div key={item.title} style={{ display: "flex", gap: "0.875rem", alignItems: "flex-start" }}>
               <div style={{ fontSize: "1rem", flexShrink: 0, color: "var(--gold)", width: "1.5rem", marginTop: "0.1rem" }}>{item.icon}</div>

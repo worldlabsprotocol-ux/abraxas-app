@@ -109,7 +109,7 @@ export function WorldWearablesHoodie({ onBuyNow }: WorldWearablesHoodieProps) {
           id: "world-wearables-hoodie",
           name: "World Labs Hoodie",
           price: "$65.00",
-          description: "One physical hoodie, shipped to you, with an on-chain record of authenticity and ownership tied to this specific item.",
+          description: "One physical hoodie, shipped to you, with an on chain record of authenticity and ownership tied to this specific item.",
           color: G,
           requiresShipping: true,
           sizes: ["S", "M", "L", "XL", "XXL"],

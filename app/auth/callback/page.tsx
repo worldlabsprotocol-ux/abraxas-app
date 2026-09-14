@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
+import { AuthStatusPanel } from "@/components/auth/AuthStatusPanel";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -36,37 +37,21 @@ export default function AuthCallbackPage() {
     complete();
   }, [router]);
 
+  if (status === "working") {
+    return (
+      <AuthStatusPanel
+        status="loading"
+        title="Confirming your email"
+        description="Redirecting to Passport. Sign in with Google to create your Sui wallet."
+      />
+    );
+  }
+
   return (
-    <div style={{ minHeight:"100vh", display:"flex", alignItems:"center",
-                   justifyContent:"center", background:"#060810",
-                   color:"#fff", fontFamily:"'Inter',system-ui,sans-serif" }}>
-      <div style={{ textAlign:"center", maxWidth:340, padding:"2rem" }}>
-        {status === "working" ? (
-          <>
-            <div style={{ fontSize:"0.95rem", fontWeight:600, marginBottom:"0.5rem" }}>
-              Confirming your email
-            </div>
-            <div style={{ fontSize:"0.78rem", color:"rgba(255,255,255,0.5)" }}>
-              Redirecting to Passport. sign in with Google to create your Sui wallet…
-            </div>
-          </>
-        ) : (
-          <>
-            <div style={{ fontSize:"0.95rem", fontWeight:600, marginBottom:"0.5rem",
-                           color:"#EF4444" }}>
-              Couldn't complete sign in
-            </div>
-            <div style={{ fontSize:"0.78rem", color:"rgba(255,255,255,0.5)",
-                           marginBottom:"1rem" }}>
-              {errorMsg}
-            </div>
-            <a href="/passport" style={{ color:"#10B981", fontSize:"0.8rem",
-                                                    textDecoration:"none" }}>
-              Go to Passport →
-            </a>
-          </>
-        )}
-      </div>
-    </div>
+    <AuthStatusPanel
+      status="error"
+      title="Could not complete sign in"
+      errorMessage={errorMsg}
+    />
   );
 }

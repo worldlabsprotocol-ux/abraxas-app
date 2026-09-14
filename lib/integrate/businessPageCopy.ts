@@ -25,14 +25,14 @@ export const BUSINESS_BENEFITS = [
   {
     id: "clear-decisions",
     title: "Make clear decisions",
-    body: "Verify partner-specific results on your server.",
+    body: "Verify partner specific results on your server.",
   },
 ] as const;
 
 export const BUSINESS_INTEGRATION_PILLARS = [
-  "Partner-specific policies",
+  "Partner specific policies",
   "Private eligibility results",
-  "Server-verifiable decisions",
+  "Server verifiable decisions",
   "Reusable customer proof",
 ] as const;
 

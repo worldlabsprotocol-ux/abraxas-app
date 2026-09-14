@@ -33,11 +33,11 @@ const BOOTSTRAP_STEPS = [
 
 export default function VerificationPage() {
   return (
-    <RedesignPage maxWidth={960}>
+    <RedesignPage accent="neutral" maxWidth={960}>
       <PageHeader
         eyebrow="Internal engineering · not a public attestation"
         title="Verification layer status"
-        subtitle="Operator checklist for the verify → proof → lookup stack. For engineering and bootstrap diagnostics only — not third-party certification, compliance attestation, or a public verification product."
+        subtitle="Operator checklist for the verify → proof → lookup stack. For engineering and bootstrap diagnostics only, not third party certification, compliance attestation, or a public verification product."
       />
 
       <VerificationLayerScoreboard />

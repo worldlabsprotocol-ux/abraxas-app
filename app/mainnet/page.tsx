@@ -12,11 +12,11 @@ const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
 export default function MainnetPage() {
   return (
-    <RedesignPage maxWidth={960}>
+    <RedesignPage accent="neutral" maxWidth={960}>
       <PageHeader
         eyebrow="Mainnet readiness"
         title="Scoreboard"
-        subtitle="Seven boolean gates before open, self-serve, audit-complete mainnet. No calendar dates. only shipped proof."
+        subtitle="Seven boolean gates before open, self serve, audit-complete mainnet. No calendar dates. only shipped proof."
       />
 
       <div

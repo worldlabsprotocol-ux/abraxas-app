@@ -3,7 +3,7 @@
 
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { RedesignShell } from "@/components/redesign/RedesignShell";
+import { AbxPageShell } from "@/components/design/AbxPageShell";
 import { RedesignPageLoading } from "@/components/redesign/RedesignPageLoading";
 import { VerifyPageIntro } from "@/components/verify/VerifyPageIntro";
 import { DeveloperContextBanner } from "@/components/redesign/DeveloperContextBanner";
@@ -28,7 +28,7 @@ export default function VerifyPage({ searchParams }: PageProps) {
   }
 
   return (
-    <RedesignShell>
+    <AbxPageShell accent="verify">
       <div style={{ padding: "0 clamp(1rem, 3vw, 2rem)", marginBottom: "1rem" }}>
         <DeveloperContextBanner title="Developer Receipt Tester" />
       </div>
@@ -56,6 +56,6 @@ export default function VerifyPage({ searchParams }: PageProps) {
         <VerifyPageIntroDemo />
         <VerifyStaticSample />
       </div>
-    </RedesignShell>
+    </AbxPageShell>
   );
 }

@@ -118,7 +118,7 @@ export const ADMIN_CONFIRM_COPY: Record<AdminConfirmActionKey, AdminConfirmCopy>
     title: "Approve data export request?",
     body:
       "This approves the holder's data export request (ref {{requestRef}}). "
-      + "It does not deliver an export automatically — follow your privacy runbook for fulfillment.",
+      + "It does not deliver an export automatically, follow your privacy runbook for fulfillment.",
     confirmLabel: "Approve export",
     cancelLabel: "Cancel",
     risk: "medium",
@@ -174,7 +174,7 @@ export const ADMIN_CONFIRM_COPY: Record<AdminConfirmActionKey, AdminConfirmCopy>
     requireReasonCode: false,
   },
   "revocation.partner_scoped": {
-    title: "Revoke partner-scoped access?",
+    title: "Revoke partner scoped access?",
     body:
       "This revokes {{activeReceiptCount}} active receipt(s) for partner {{partnerId}} on this subject. "
       + "Other partners' receipts are not affected. Credential claims are not globally revoked. "
@@ -191,7 +191,7 @@ export const ADMIN_CONFIRM_COPY: Record<AdminConfirmActionKey, AdminConfirmCopy>
     title: "Promote design partner application?",
     body:
       "This creates partner org {{partnerId}} for {{company}} and issues a sandbox API key (abx_test_). "
-      + "The application is marked onboarded. The API key is shown once — "
+      + "The application is marked onboarded. The API key is shown once, "
       + "store it in your approved secret manager immediately.",
     confirmLabel: "Promote and issue sandbox key",
     cancelLabel: "Cancel",

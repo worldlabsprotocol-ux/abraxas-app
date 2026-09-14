@@ -19,7 +19,7 @@ export function BorrowPage() {
     {q:"What happens if my collateral value drops?",
      a:"If your collateral value falls below the liquidation threshold, Loopscale's risk engine will issue a health warning. You may add collateral or repay part of the loan to restore the health factor."},
     {q:"Is the underlying asset sold during a loan?",
-     a:"No. The physical asset remains in custody throughout the loan period. Ownership does not transfer. You retain the on-chain token and can reclaim the asset upon full repayment."},
+     a:"No. The physical asset remains in custody throughout the loan period. Ownership does not transfer. You retain the on chain token and can reclaim the asset upon full repayment."},
   ];
 
   return (

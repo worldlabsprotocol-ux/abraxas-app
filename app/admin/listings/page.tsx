@@ -94,7 +94,7 @@ export default function AdminListingsPage() {
 
   if (!authed) {
     return (
-      <RedesignPage maxWidth={720}>
+      <RedesignPage accent="admin" maxWidth={720}>
         <PageHeader eyebrow="Admin" title="MLS lot inventory" subtitle="Operator console for Chickasaw Project lot status." />
         <ContentCard title="Admin PIN required">
           <div style={{ display: "flex", gap: "0.65rem", flexWrap: "wrap" }}>
@@ -115,7 +115,7 @@ export default function AdminListingsPage() {
   }
 
   return (
-    <RedesignPage maxWidth={960}>
+    <RedesignPage accent="admin" maxWidth={960}>
       <PageHeader
         eyebrow="Admin · MLS"
         title="Lot inventory"

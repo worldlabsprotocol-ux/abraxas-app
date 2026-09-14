@@ -12,7 +12,7 @@ export const RP_ONBOARDING_STEPS = [
   {
     id: "first_api_call",
     title: "First API call",
-    description: "Server-side POST /api/credentials/verify or GET /api/verify/registry from your backend.",
+    description: "Server side POST /api/credentials/verify or GET /api/verify/registry from your backend.",
   },
   {
     id: "sandbox_approved",
@@ -27,7 +27,7 @@ export const RP_ONBOARDING_STEPS = [
   {
     id: "production_approved",
     title: "Production verify approved",
-    description: "First approved production verify — counts toward mainnet gate #5.",
+    description: "First approved production verify, counts toward mainnet gate #5.",
   },
 ] as const;
 

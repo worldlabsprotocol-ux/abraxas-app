@@ -3,12 +3,12 @@
 
 import { Suspense } from "react";
 import Link from "next/link";
-import { RedesignShell } from "@/components/redesign/RedesignShell";
+import { AbxPageShell } from "@/components/design/AbxPageShell";
 import { CieloVerifiedRateFlow } from "@/components/cielo/CieloVerifiedRateFlow";
 
 export default function CieloVerifiedRatePage() {
   return (
-    <RedesignShell>
+    <AbxPageShell accent="neutral">
       <div style={{ maxWidth: 640, margin: "0 auto", padding: "clamp(2rem, 6vw, 4rem) clamp(1rem, 3vw, 2rem)" }}>
         <Link href="/flagship" style={{
           fontFamily: "'Inter',system-ui,sans-serif", fontSize: "0.72rem", fontWeight: 600,
@@ -20,6 +20,6 @@ export default function CieloVerifiedRatePage() {
           <CieloVerifiedRateFlow />
         </Suspense>
       </div>
-    </RedesignShell>
+    </AbxPageShell>
   );
 }

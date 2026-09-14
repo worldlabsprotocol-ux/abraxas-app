@@ -31,7 +31,7 @@ const agenticStack = getAgenticFinanceStack();
 
 export default function AiAgentsDocsPage() {
   return (
-    <RedesignPage maxWidth={900}>
+    <RedesignPage accent="developer" maxWidth={900}>
       <PageHeader
         eyebrow="AI agents"
         title={AGENT_ONE_PAGER.title}

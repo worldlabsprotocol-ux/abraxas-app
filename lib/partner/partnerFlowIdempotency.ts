@@ -6,7 +6,7 @@ export type PartnerFlowReplayStatus = "issued" | "idempotent_replay";
 export class PartnerFlowIdempotencyConflictError extends Error {
   readonly code = "idempotency_conflict" as const;
 
-  constructor(message = "Partner flow idempotency conflict — request identity does not match stored decision") {
+  constructor(message = "Partner flow idempotency conflict, request identity does not match stored decision") {
     super(message);
     this.name = "PartnerFlowIdempotencyConflictError";
   }

@@ -22,7 +22,7 @@ export const GOOD_TROUBLE_BRAND = {
   mission:
     "To cultivate premium, organic cannabis and meaningful experiences that inspire connection and elevate perspective.",
   qualityPromise:
-    "The same potency, purity, and punch — every time. Consistency you can feel is not an accident.",
+    "The same potency, purity, and punch, every time. Consistency you can feel is not an accident.",
   adultUseNotice:
     "Products are intended for adults 21+. Consume responsibly and in compliance with applicable Missouri law.",
 } as const;

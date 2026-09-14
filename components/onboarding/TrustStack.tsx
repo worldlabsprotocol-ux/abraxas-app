@@ -47,11 +47,11 @@ const TRUST_LAYERS = [
     desc:  "An independent auditor reviews the documentation chain for completeness, accuracy, and consistency. The collateral score is derived from audit outcomes.",
     status:"REQUIRED", color:GREEN,
     icon: "◎",
-    items: ["Documentation completeness review", "Data cross-verification", "Fraud risk assessment", "Collateral score issuance"],
+    items: ["Documentation completeness review", "Data cross verification", "Fraud risk assessment", "Collateral score issuance"],
   },
   {
     layer: "06",
-    title: "On-Chain Attestation",
+    title: "On Chain Attestation",
     desc:  "The verified asset record is anchored to Sui via a Move Passport object. Every attestation is a SHA-256 hash committed to a public, permanent ledger.",
     status:"REQUIRED", color:BLUE,
     icon: "◈",
@@ -71,7 +71,7 @@ const INTEGRATIONS = [
   { name:"Fireblocks",   desc:"Institutional MPC custody",     status:"PLANNED", color:BLUE  },
   { name:"Anchorage",    desc:"Digital asset banking",         status:"PLANNED", color:BLUE  },
   { name:"Chainlink",    desc:"Decentralized oracle feeds",    status:"PLANNED", color:AMBER },
-  { name:"Pyth Network", desc:"High-frequency price oracles",  status:"PLANNED", color:AMBER },
+  { name:"Pyth Network", desc:"High frequency price oracles",  status:"PLANNED", color:AMBER },
   { name:"First American", desc:"Title & escrow services",     status:"ACTIVE",  color:GREEN },
 ];
 

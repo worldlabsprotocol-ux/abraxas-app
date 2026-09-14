@@ -9,7 +9,7 @@ import { TrustFrameworkDemo } from "@/components/vision/TrustFrameworkDemo";
 
 export default function TrustFrameworkPage() {
   return (
-    <RedesignPage>
+    <RedesignPage accent="neutral">
       <PageHeader
         eyebrow="Verification standards"
         title="Abraxas Trust Framework"

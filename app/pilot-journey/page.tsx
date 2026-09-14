@@ -12,7 +12,7 @@ const FONT = ABRAXAS_FONT_SANS;
 
 export default function PilotJourneyPage() {
   return (
-    <RedesignPage maxWidth={720}>
+    <RedesignPage accent="neutral" maxWidth={720}>
       <PageHeader
         eyebrow="Pilot journey"
         title={HOME_PARTNER_PROOF_FALLBACK.title}

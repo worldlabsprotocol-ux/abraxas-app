@@ -38,7 +38,7 @@ export interface AdminReviewRequest {
   rejectionReasons?: string[];
   jurisdiction?: string;
   documentType?: string;
-  /** Authoritative document DOB (YYYY-MM-DD) — internal reviewer input, never exposed. */
+  /** Authoritative document DOB (YYYY-MM-DD), internal reviewer input, never exposed. */
   documentDateOfBirth?: string;
   minimumAgeGate?: number;
 }
@@ -197,7 +197,7 @@ export async function executeAdminReviewAction(
     if (!suiRaw) {
       return {
         ok: false,
-        error: "No Sui address linked — user must sign in before approval",
+        error: "No Sui address linked, user must sign in before approval",
         status: 400,
       };
     }

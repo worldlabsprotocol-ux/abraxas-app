@@ -14,6 +14,7 @@ import {
   completePartnerVerifyOAuthCallback,
   PartnerVerifyOAuthCallbackError,
 } from "@/lib/partner/partnerVerifyOAuthCallback";
+import { AuthStatusPanel } from "@/components/auth/AuthStatusPanel";
 
 export default function ZkLoginCallbackPage() {
   const router = useRouter();
@@ -60,42 +61,22 @@ export default function ZkLoginCallbackPage() {
     void finish();
   }, [router]);
 
+  if (status === "working") {
+    return (
+      <AuthStatusPanel
+        status="loading"
+        title="Signing you in"
+        description="Securing your session and preparing verification."
+      />
+    );
+  }
+
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "var(--bg, #060810)",
-        color: "var(--text-primary, #fff)",
-        fontFamily: "'Inter',system-ui,sans-serif",
-      }}
-    >
-      <div style={{ textAlign: "center", maxWidth: 380, padding: "2rem" }}>
-        {status === "working" ? (
-          <>
-            <div style={{ fontSize: "0.95rem", fontWeight: 600, marginBottom: "0.5rem" }}>
-              Signing you in
-            </div>
-            <div style={{ fontSize: "0.78rem", color: "var(--text-muted, rgba(255,255,255,0.5))" }}>
-              Securing your session and preparing verification…
-            </div>
-          </>
-        ) : (
-          <>
-            <div style={{ fontSize: "0.95rem", fontWeight: 600, marginBottom: "0.5rem", color: "#EF4444" }}>
-              Sign-in incomplete
-            </div>
-            <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginBottom: "1rem" }}>
-              {errorMsg}
-            </div>
-            <a href="/passport" style={{ color: "#10B981", fontSize: "0.8rem", textDecoration: "none" }}>
-              Back to Passport →
-            </a>
-          </>
-        )}
-      </div>
-    </div>
+    <AuthStatusPanel
+      status="error"
+      title="Sign in incomplete"
+      errorMessage={errorMsg}
+      actionLabel="Back to Passport"
+    />
   );
 }

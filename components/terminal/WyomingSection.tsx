@@ -28,7 +28,7 @@ interface TierDef {
 const TIERS: TierDef[] = [
   {
     id:"starter", tier:"STARTER", price:"$1,499", color:B,
-    items:["Wyoming LLC Formation","Operating Agreement","On-chain Token","Full Verification"],
+    items:["Wyoming LLC Formation","Operating Agreement","On chain Token","Full Verification"],
   },
   {
     id:"growth", tier:"GROWTH", price:"$2,999", color:"#8B5CF6",
@@ -64,7 +64,7 @@ export function WyomingSection({ onSelectTier, onBrowse }: WyomingSectionProps) 
               body:"An LLC means the property, the IP, or the rights belong to an entity, not just you personally. That protects you and makes the ownership easy to verify." },
             { icon:"◎", title:"Accept investment without a bank",
               body:"Once formed, the LLC can tokenize membership units on Sui with a verified ownership record. No traditional bank gatekeeping, no months of opaque paperwork." },
-            { icon:"◎", title:"An on-chain record of who owns what",
+            { icon:"◎", title:"An on chain record of who owns what",
               body:"The ownership structure is recorded on Sui. any investor or counterparty can verify it instantly without calling a lawyer or waiting on a title company." },
           ].map(r => (
             <div key={r.title} style={{ display:"flex", gap:"0.625rem",

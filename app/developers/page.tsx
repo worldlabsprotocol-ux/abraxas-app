@@ -19,11 +19,11 @@ const MONO = ABRAXAS_FONT_MONO;
 
 export default function DevelopersPage() {
   return (
-    <RedesignPage maxWidth={880}>
+    <RedesignPage accent="developer" maxWidth={880}>
       <PageHeader
         eyebrow="Developers"
         title="Build on Abraxas verification"
-        subtitle={`${PARTNER_ONBOARDING_HEADLINE} Partner Flow, Passport, and signed receipts are available in beta. Consented passwordless partner accounts and optional email/newsletter scopes are in development — not live.`}
+        subtitle={`${PARTNER_ONBOARDING_HEADLINE} Partner Flow, Passport, and signed receipts are available in beta. Consented passwordless partner accounts and optional email/newsletter scopes are in development, not live.`}
       />
 
       <ConceptDemoVideo demo={BuildIntegrateCinematicDemo} id="developers-demo" />

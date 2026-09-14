@@ -15,7 +15,7 @@ const ACCENT = "#10B981";
 
 export default function InvestorsPage() {
   return (
-    <RedesignPage maxWidth={900}>
+    <RedesignPage accent="home" maxWidth={900}>
       <PageHeader
         eyebrow="Investors"
         title="Data room"

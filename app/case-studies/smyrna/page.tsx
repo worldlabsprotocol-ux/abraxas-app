@@ -27,7 +27,7 @@ const LEVEL_COLOR: Record<string, string> = {
 
 export default function SmyrnaCaseStudyPage() {
   return (
-    <RedesignPage maxWidth={900}>
+    <RedesignPage accent="neutral" maxWidth={900}>
       <PageHeader
         eyebrow="Case study · Verified residential"
         title={SMYRNA_ASSET.name}

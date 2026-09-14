@@ -54,7 +54,7 @@ export const PROTOCOL_IN_ACTION_PROOFS: ProtocolProof[] = [
     category: "Genesis Asset",
     title: "Cielo Sunrise",
     summary: "Verified hospitality asset",
-    demonstrates: "Real-world asset verification and registry.",
+    demonstrates: "Real world asset verification and registry.",
     href: "/flagship",
     image: PROTOCOL_PROOF_IMAGES.cielo,
   },

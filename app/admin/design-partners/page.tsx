@@ -579,7 +579,7 @@ export default function AdminDesignPartnersPage() {
 
   if (gate.loading) {
     return (
-      <RedesignPage maxWidth={720}>
+      <RedesignPage accent="developer" maxWidth={720}>
         <PageHeader eyebrow="Admin" title="Design partner queue" subtitle="Review applications and issue sandbox keys." />
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)" }}>Checking admin session…</p>
       </RedesignPage>
@@ -588,7 +588,7 @@ export default function AdminDesignPartnersPage() {
 
   if (!gate.authorized) {
     return (
-      <RedesignPage maxWidth={720}>
+      <RedesignPage accent="developer" maxWidth={720}>
         <PageHeader eyebrow="Admin" title="Design partner queue" subtitle="Review applications and issue sandbox keys." />
         {gate.usePinUnlock ? (
           <ContentCard title="Admin PIN">
@@ -619,7 +619,7 @@ export default function AdminDesignPartnersPage() {
     : `Showing ${apps.length} application${apps.length === 1 ? "" : "s"}`;
 
   return (
-    <RedesignPage maxWidth={960}>
+    <RedesignPage accent="developer" maxWidth={960}>
       <PageHeader
         eyebrow="Admin · Relying parties"
         title="Design partner applications"
@@ -677,7 +677,7 @@ export default function AdminDesignPartnersPage() {
       )}
 
       {promotedPartnerId && (
-        <ContentCard title="Sandbox handoff — operator assistance">
+        <ContentCard title="Sandbox handoff, operator assistance">
           <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
             Share these values with the design partner. Default key scopes are verify:credential and verify:registry only.
             Webhook testing requires a separate key with webhooks:read from{" "}

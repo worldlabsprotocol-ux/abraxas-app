@@ -78,7 +78,7 @@ export default function PartnerFlowDocsPage() {
   });
 
   return (
-    <RedesignPage maxWidth={1100}>
+    <RedesignPage accent="developer" maxWidth={1100}>
       <PageHeader
         eyebrow="Integrators · Partner Flow"
         title={PARTNER_FLOW_HEADLINE}
@@ -206,21 +206,21 @@ export default function PartnerFlowDocsPage() {
             </div>
             <BulletList
               items={[
-                "next=authenticate — holder must sign in",
-                "next=passport — ID + biometric required",
-                "next=enter — approved; redirect with receipt",
-                "next=denied — policy denial",
-                "next=pending_review — manual review queue",
+                "next=authenticate, holder must sign in",
+                "next=passport, ID + biometric required",
+                "next=enter, approved; redirect with receipt",
+                "next=denied, policy denial",
+                "next=pending_review, manual review queue",
               ]}
             />
           </SectionCard>
 
-          <SectionCard id="callback" title="Callback query parameters (frozen — no PII)">
+          <SectionCard id="callback" title="Callback query parameters (frozen, no PII)">
             <p style={body}>{PARTNER_FLOW_CALLBACK_PII_NOTE}</p>
             <BulletList items={[...PARTNER_FLOW_CALLBACK_PARAMS]} />
           </SectionCard>
 
-          <SectionCard id="receipt-verification" title="Receipt verification (server-side)">
+          <SectionCard id="receipt-verification" title="Receipt verification (server side)">
             <p style={body}>
               Fetch <code style={{ fontFamily: MONO }}>GET /api/receipts/{"{receipt_id}"}/public</code> from your backend.
               No API key required. Never trust callback URL parameters alone.
@@ -258,7 +258,7 @@ export default function PartnerFlowDocsPage() {
               `Delivery history: ${PARTNER_WEBHOOK_SANDBOX_GUIDE.endpoints.delivery_history}`,
               `Test enqueue (sandbox key + webhooks:read, user-initiated only): ${PARTNER_WEBHOOK_SANDBOX_GUIDE.endpoints.sandbox_test_enqueue}`,
               PARTNER_WEBHOOK_SANDBOX_GUIDE.queuedDisclaimer,
-              "Webhook endpoint URL and signing secret are configured by Abraxas ops — not self-serve.",
+              "Webhook endpoint URL and signing secret are configured by Abraxas ops, not self serve.",
             ]} />
             <div style={{ marginTop: "0.75rem" }}>
               <Btn href={PARTNER_WEBHOOK_SANDBOX_GUIDE.portalPath} size="sm">Open partner portal</Btn>

@@ -27,11 +27,11 @@ const body: React.CSSProperties = {
 
 export default function IntegrationReadinessPage() {
   return (
-    <RedesignPage maxWidth={920}>
+    <RedesignPage accent="developer" maxWidth={920}>
       <PageHeader
         eyebrow="Integrators · Status"
         title="Integration readiness"
-        subtitle="Evidence-based status for abraxasworld.xyz — what is live, what awaits pilot proof, and which release gates stay open."
+        subtitle="Evidence-based status for abraxasworld.xyz, what is live, what awaits pilot proof, and which release gates stay open."
       />
 
       <p style={{ ...body, marginBottom: "1rem" }}>

@@ -19,16 +19,16 @@ const GAPS = [
     problem: "Institutional-only access.",
     stat: "Most RWA protocols",
     statSub: "gate access behind institutional minimums",
-    solution: "abraSOUND and abraYIELD pools start at $50 USDC. No KYC. No accreditation. If you can connect a wallet, you can earn from real-world assets.",
+    solution: "abraSOUND and abraYIELD pools start at $50 USDC. No KYC. No accreditation. If you can connect a wallet, you can earn from real world assets.",
     color: "rgba(61,214,140,0.06)",
     border: "rgba(61,214,140,0.2)",
   },
   {
     icon: "◈",
-    problem: "Cross-chain fragmentation.",
+    problem: "Cross chain fragmentation.",
     stat: "1-3% pricing gaps",
     statSub: "for identical assets across chains",
-    solution: "Abraxas verification is Sui-native. zkLogin sign-in, low-cost transactions, sponsored gas for verified tiers, and Move Passport objects on-chain. One verification layer. One credential.",
+    solution: "Abraxas verification is Sui-native. zkLogin sign-in, low cost transactions, sponsored gas for verified tiers, and Move Passport objects on chain. One verification layer. One credential.",
     color: "rgba(107,140,255,0.07)",
     border: "rgba(107,140,255,0.2)",
   },
@@ -46,19 +46,19 @@ const GAPS = [
 const LANDSCAPE = [
   {
     layer: "Layer 1", role: "IP Registration & Licensing",
-    what: "Registers IP on-chain, creates programmable licenses, enables automated royalty routing between creators.",
-    gap: "Doesn't operate the income stream after registration. The IP is on-chain. but idle.",
+    what: "Registers IP on chain, creates programmable licenses, enables automated royalty routing between creators.",
+    gap: "Doesn't operate the income stream after registration. The IP is on chain. but idle.",
     icon: "◈", color: "rgba(107,140,255,0.07)", border: "rgba(107,140,255,0.18)",
   },
   {
     layer: "Layer 2", role: "Private Credit & Lending",
-    what: "Unlocks liquidity through uncollateralized lending pools. Institutional-grade credit on-chain. Assets serve as collateral.",
+    what: "Unlocks liquidity through uncollateralized lending pools. Institutional-grade credit on chain. Assets serve as collateral.",
     gap: "Lends against your asset. capital leaves your hands. Doesn't operate the income stream the asset generates.",
     icon: "◉", color: "rgba(200,169,110,0.05)", border: "rgba(200,169,110,0.14)",
   },
   {
     layer: "Layer 3", role: "Tokenized Treasuries & Institutions",
-    what: "Wraps government bonds and money markets as on-chain tokens. Institutional access with high minimum thresholds.",
+    what: "Wraps government bonds and money markets as on chain tokens. Institutional access with high minimum thresholds.",
     gap: "Traditional assets only. Excludes independent creators. Minimum investment thresholds block retail participants.",
     icon: "⬡", color: "rgba(61,214,140,0.04)", border: "rgba(61,214,140,0.14)",
   },
@@ -81,7 +81,7 @@ const FAQS = [
   },
   {
     q: "Why does Sui matter for this use case?",
-    a: "zkLogin lets users sign in with Google. no seed phrase, no browser extension. while still getting a real on-chain Sui address for their Passport. Sui's object model fits the Passport stamp bitmask natively, and transaction costs stay low enough that verification anchoring and sponsored actions for verified tiers are economically viable at scale.",
+    a: "zkLogin lets users sign in with Google. no seed phrase, no browser extension. while still getting a real on chain Sui address for their Passport. Sui's object model fits the Passport stamp bitmask natively, and transaction costs stay low enough that verification anchoring and sponsored actions for verified tiers are economically viable at scale.",
   },
   {
     q: "What stops the system from collapsing in a down market?",
@@ -93,7 +93,7 @@ const FAQS = [
   },
   {
     q: "Is this legal?",
-    a: "Abraxas does not take custody of your assets, does not issue securities, and does not make investment decisions on your behalf in a fiduciary capacity. The agent executes according to on-chain rules that you set at deposit. The Token-2022 position token is a representation of your vault share. not a security. That said, regulatory environments vary by jurisdiction and are evolving rapidly. We recommend consulting legal counsel in your jurisdiction before making large deposits. The protocol is currently in beta.",
+    a: "Abraxas does not take custody of your assets, does not issue securities, and does not make investment decisions on your behalf in a fiduciary capacity. The agent executes according to on chain rules that you set at deposit. The Token-2022 position token is a representation of your vault share. not a security. That said, regulatory environments vary by jurisdiction and are evolving rapidly. We recommend consulting legal counsel in your jurisdiction before making large deposits. The protocol is currently in beta.",
   },
 ];
 

@@ -36,7 +36,7 @@ export function getBiometricEngineHealth(): BiometricEngineHealth {
 
   // Production default: human review only is intentional, not a blocker.
   if (autoApprove) {
-    blockers.push("Auto-approve enabled — monitor false-positive rate in production");
+    blockers.push("Auto-approve enabled, monitor false-positive rate in production");
   }
 
   const status: BiometricEngineStatus = "live";

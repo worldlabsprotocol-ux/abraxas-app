@@ -25,13 +25,11 @@ export default function PartnerVerifyPage({ searchParams = {} }: PartnerVerifyPa
   );
 
   return (
-    <div data-theme="dark" style={{ minHeight: "100vh", background: "#04050a" }}>
-      <Suspense fallback={<RedesignPageLoading label="Loading verification…" compact />}>
-        <PartnerVerifyClient
-          previewPhase={previewPhase}
-          previewSignInConfigured={previewSignInConfigured}
-        />
-      </Suspense>
-    </div>
+    <Suspense fallback={<RedesignPageLoading label="Loading verification…" compact />}>
+      <PartnerVerifyClient
+        previewPhase={previewPhase}
+        previewSignInConfigured={previewSignInConfigured}
+      />
+    </Suspense>
   );
 }
