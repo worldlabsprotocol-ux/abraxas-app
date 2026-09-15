@@ -12,7 +12,6 @@ import type { PartnerDashboardReadiness } from "@/lib/partner/partnerPortalReadi
 
 const FONT = "'Inter',system-ui,sans-serif";
 const MONO = "'JetBrains Mono',monospace";
-const KEY_STORAGE = "abraxas_partner_api_key";
 
 interface Dashboard {
   partner_id: string;
@@ -42,15 +41,9 @@ export default function PartnerPortalPage() {
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    try {
-      const saved = sessionStorage.getItem(KEY_STORAGE);
-      if (saved) {
-        setApiKey(saved);
-      }
-    } catch {
-      /* ignore */
-    }
+  useEffect(() => () => {
+    setApiKey("");
+    setDashboard(null);
   }, []);
 
   useEffect(() => {
@@ -70,21 +63,12 @@ export default function PartnerPortalPage() {
       return;
     }
     setDashboard(data.dashboard);
-    try {
-      sessionStorage.setItem(KEY_STORAGE, key);
-    } catch {
-      /* ignore */
-    }
   }
 
   function logout() {
     setApiKey("");
     setDashboard(null);
-    try {
-      sessionStorage.removeItem(KEY_STORAGE);
-    } catch {
-      /* ignore */
-    }
+    setError("");
   }
 
   return (

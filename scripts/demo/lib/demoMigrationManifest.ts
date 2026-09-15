@@ -112,6 +112,7 @@ export const DEMO_REQUIRED_MIGRATION_ORDER = [
   "034_credential_status_registry.sql",
   "035_issuer_framework_trust_registry.sql",
   "036_connect_wallet_authority.sql",
+  "037_active_wallet_unique.sql",
   "053_partner_flow_idempotency.sql",
   "055_policy_immutable_versions.sql",
   "056_publish_partner_policy_draft_rpc.sql",
@@ -260,7 +261,7 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
   },
   {
     file: "037_active_wallet_unique.sql",
-    tier: "recommended",
+    tier: "required",
     creates: [],
     alters: [],
     seeds: [],

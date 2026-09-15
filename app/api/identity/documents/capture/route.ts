@@ -28,6 +28,11 @@ import {
   findActivePendingReviewSession,
   hashEvidenceBuffers,
 } from "@/lib/idv/identityReviewSession";
+import {
+  DOCUMENT_CAPTURE_PERSISTENCE_FAILED,
+  DOCUMENT_METADATA_PERSISTENCE_FAILED,
+  logDocumentApiError,
+} from "@/lib/idv/documentApiPublicErrors";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/jpg", "image/png", "image/webp"]);
 const MAX_BYTES = 8 * 1024 * 1024;
@@ -278,7 +283,11 @@ export async function POST(req: NextRequest) {
           already_pending: true,
         }, { status: 409 });
       }
-      return NextResponse.json({ error: sessionResult.error }, { status: 500 });
+      logDocumentApiError("identity/documents/capture", sessionResult.error, { stage: "review_session" });
+      return NextResponse.json({
+        error: DOCUMENT_CAPTURE_PERSISTENCE_FAILED,
+        retryable: true,
+      }, { status: 500 });
     }
 
     const { data: inserted, error: insertErr } = await supabase
@@ -287,7 +296,11 @@ export async function POST(req: NextRequest) {
       .select("id, document_type");
 
     if (insertErr) {
-      return NextResponse.json({ error: insertErr.message }, { status: 500 });
+      logDocumentApiError("identity/documents/capture", insertErr, { stage: "passport_documents_insert" });
+      return NextResponse.json({
+        error: DOCUMENT_METADATA_PERSISTENCE_FAILED,
+        retryable: true,
+      }, { status: 500 });
     }
 
     const reviewDocId = inserted?.find(r => r.document_type === "id_front")?.id;

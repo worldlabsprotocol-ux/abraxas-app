@@ -12,15 +12,14 @@
 
 import { NextRequest, NextResponse }   from "next/server";
 import { SignJWT, importJWK }          from "jose";
-import { createClient }                from "@supabase/supabase-js";
 import { randomUUID }                  from "crypto";
 import type { IssueCredentialInput, AbraxasCredentialClaims } from "@/lib/credentials/types";
 import { resolveHolderAddress } from "@/lib/credentials/types";
 import { toSuiDid } from "@/lib/sui/identity";
+import { checkInternalApiSecret } from "@/lib/api/requireInternalApiSecret";
+import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 
 const ISSUER  = process.env.ABRAXAS_ISSUER_URL      ?? "https://abraxas-app.vercel.app";
-const SB_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const SB_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";  // service role — server only
 const TTL_MS  = 365 * 24 * 60 * 60 * 1000;  // 1 year
 
 // Determine permissions based on verification inputs
@@ -48,15 +47,9 @@ function buildLevel(input: IssueCredentialInput): "basic" | "standard" | "enhanc
 }
 
 export async function POST(req: NextRequest) {
-  const internalSecret = process.env.INTERNAL_API_SECRET;
-  if (process.env.NODE_ENV === "production") {
-    const provided = req.headers.get("x-internal-secret") ?? "";
-    if (!internalSecret || provided !== internalSecret) {
-      return NextResponse.json(
-        { error: "Credential issuance is restricted to verified IDV pipeline. Use /api/idv/webhook." },
-        { status: 403 },
-      );
-    }
+  const auth = checkInternalApiSecret(req);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.message, code: auth.code }, { status: auth.status });
   }
 
   const body: IssueCredentialInput = await req.json().catch(() => null);
@@ -121,8 +114,8 @@ export async function POST(req: NextRequest) {
     .sign(signingKey);
 
   // Persist to Supabase (server-side, uses service role key)
-  if (SB_URL && SB_KEY) {
-    const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
+  try {
+    const sb = requireSupabaseAdmin();
 
     // Upsert verification record
     await sb.from("identity_verifications").upsert({
@@ -152,6 +145,11 @@ export async function POST(req: NextRequest) {
       issuance_date:      now.toISOString(),
       expiration_date:    expiresAt.toISOString(),
       credential_jwt:     jwt,
+    });
+  } catch (err) {
+    console.error("[credentials/issue] persistence failed", {
+      holder_present: Boolean(holderAddress),
+      error_message: err instanceof Error ? err.message : "unknown",
     });
   }
 

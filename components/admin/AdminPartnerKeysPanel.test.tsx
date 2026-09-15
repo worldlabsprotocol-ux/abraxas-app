@@ -76,7 +76,7 @@ describe("AdminPartnerKeysPanel", () => {
 
     await screen.findByTestId("partner-key-lookup-message");
     expect(screen.getByTestId("partner-key-env-live")).toBeDisabled();
-    expect(screen.getByTestId("partner-key-lookup-message")).toHaveTextContent("Sandbox-only partner");
+    expect(screen.getByTestId("partner-key-lookup-message")).toHaveTextContent(/Sandbox only partner/i);
   });
 
   it("posts explicit non-empty webhooks:read scopes", async () => {

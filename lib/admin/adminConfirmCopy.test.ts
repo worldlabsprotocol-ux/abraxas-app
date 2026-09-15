@@ -15,6 +15,7 @@ const ROOT = resolve(__dirname, "../..");
 
 const BATCH_ONE_KEYS: AdminConfirmActionKey[] = [
   "identity.approve",
+  "identity.purge_evidence",
   "identity.reject",
   "receipt.revoke",
   "partner_key.revoke",
@@ -173,7 +174,7 @@ describe("adminConfirmCopy batch 2 registry", () => {
     expect(body.toLowerCase()).not.toContain("api key");
   });
 
-  it("exports exactly fifteen keys across batch 1 and batch 2", () => {
+  it("exports exactly sixteen keys across batch 1 and batch 2", () => {
     expect(Object.keys(ADMIN_CONFIRM_COPY).sort()).toEqual([...ALL_KEYS].sort());
   });
 });

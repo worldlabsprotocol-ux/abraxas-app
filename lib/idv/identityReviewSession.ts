@@ -129,7 +129,7 @@ export async function createIdentityReviewSession(
     if (error.code === "23505") {
       return { ok: false, error: "duplicate_pending_review", duplicate: true };
     }
-    return { ok: false, error: error.message };
+    return { ok: false, error: "document_metadata_persistence_failed" };
   }
 
   return { ok: true, session: data as IdentityReviewSessionRow };

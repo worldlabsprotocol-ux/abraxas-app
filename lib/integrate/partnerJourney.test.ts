@@ -12,7 +12,8 @@ describe("partnerJourney", () => {
     expect(INTEGRATOR_START_HERE_STEPS).toHaveLength(4);
     expect(INTEGRATOR_START_HERE_STEPS[0].title.toLowerCase()).toContain("apply");
     expect(INTEGRATOR_START_HERE_STEPS[1].cta.href).toBe("/docs/partner-flow");
-    expect(INTEGRATOR_START_HERE_STEPS[3].title.toLowerCase()).toContain("receipt");
+    expect(INTEGRATOR_START_HERE_STEPS[2].title.toLowerCase()).toContain("sandbox");
+    expect(INTEGRATOR_START_HERE_STEPS[3].body.toLowerCase()).toContain("receipt");
   });
 
   it("does not imply self-serve production access", () => {

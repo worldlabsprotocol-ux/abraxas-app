@@ -7,6 +7,7 @@ vi.mock("./session", () => ({
   loadUserSession: vi.fn(),
   saveUserSession: vi.fn(),
   clearPendingSession: vi.fn(),
+  clearUserSession: vi.fn(),
 }));
 
 vi.mock("./signingSession", () => ({
@@ -18,7 +19,13 @@ vi.mock("@/lib/auth/ensureBrowserSession", () => ({
   ensureBrowserSession: vi.fn().mockResolvedValue({ ok: true }),
 }));
 
-import { loadPendingSession, loadUserSession, saveUserSession } from "./session";
+import {
+  clearPendingSession,
+  clearUserSession,
+  loadPendingSession,
+  loadUserSession,
+  saveUserSession,
+} from "./session";
 import {
   completeGoogleZkLogin,
   mapRegisterFailureToUserError,
@@ -87,6 +94,71 @@ describe("completeGoogleZkLogin", () => {
     const session = await completeGoogleZkLogin("token");
     expect(session.suiAddress).toBe("0xabc");
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("rejects fresh OAuth callback when pending session is missing despite stale cached session", async () => {
+    vi.mocked(loadPendingSession).mockReturnValue(null);
+    vi.mocked(loadUserSession).mockReturnValue({
+      suiAddress: "0xstale",
+      provider: "google",
+      oauthSub: "stale-sub",
+      maxEpoch: 100,
+      loggedInAt: new Date().toISOString(),
+    });
+
+    const token = fakeGoogleIdToken({ sub: "fresh-sub", aud: NEW_OAUTH_CLIENT_ID });
+    await expect(
+      completeGoogleZkLogin(token, { callbackHash: `#state=${OAUTH_STATE}` }),
+    ).rejects.toThrow("Sign-in could not finish");
+    expect(clearUserSession).toHaveBeenCalled();
+    expect(clearPendingSession).toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("clears stale material when OAuth state verification fails with pending session", async () => {
+    vi.mocked(loadPendingSession).mockReturnValue(basePending);
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      json: async () => ({ code: "zklogin_sign_in_expired" }),
+    } as Response);
+
+    const token = fakeGoogleIdToken({ sub: "sub", aud: NEW_OAUTH_CLIENT_ID });
+    await expect(
+      completeGoogleZkLogin(token, { callbackHash: `#id_token=x&state=${OAUTH_STATE}` }),
+    ).rejects.toThrow(ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE);
+    expect(clearUserSession).toHaveBeenCalled();
+    expect(clearPendingSession).toHaveBeenCalled();
+  });
+
+  it("clears untrusted material when registration fails", async () => {
+    vi.mocked(loadPendingSession).mockReturnValue(basePending);
+    mockVerifiedLoginFetch("canonical", {
+      ok: false,
+      status: 500,
+      json: async () => ({ error: "register_failed" }),
+    } as Response);
+
+    const token = fakeGoogleIdToken({ sub: "sub", aud: NEW_OAUTH_CLIENT_ID });
+    await expect(
+      completeGoogleZkLogin(token, { callbackHash: `#state=${OAUTH_STATE}` }),
+    ).rejects.toThrow();
+    expect(clearUserSession).toHaveBeenCalled();
+    expect(clearPendingSession).toHaveBeenCalled();
+  });
+
+  it("rejects expired cached session on callback re-entry without fresh OAuth", async () => {
+    vi.mocked(loadPendingSession).mockReturnValue(null);
+    vi.mocked(loadUserSession).mockReturnValue({
+      suiAddress: "0xexpired",
+      provider: "google",
+      oauthSub: "sub",
+      maxEpoch: 0,
+      loggedInAt: new Date().toISOString(),
+    });
+
+    await expect(completeGoogleZkLogin("token")).rejects.toThrow(ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE);
+    expect(clearUserSession).toHaveBeenCalled();
   });
 
   it("throws when pending and existing session are both missing", async () => {

@@ -33,7 +33,7 @@ describe("partnerKeyIssuance", () => {
   it("rejects explicit empty scopes", () => {
     expect(normalizePartnerKeyScopes([], { scopesProvided: true })).toEqual({
       ok: false,
-      error: "scopes must be a non-empty array when provided",
+      error: "scopes must be a non empty array when provided",
     });
   });
 

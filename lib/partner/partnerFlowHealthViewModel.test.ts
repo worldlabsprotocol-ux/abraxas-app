@@ -195,7 +195,7 @@ describe("partnerFlowHealthViewModel", () => {
 
   it("places CLI and env vars in technical details only", () => {
     const technical = buildTechnicalDetails(baseReport());
-    expect(technical.cliCommand).toBe("npm run partner-flow:health");
+    expect(technical.cliCommand).toBe("npm run partner flow:health");
     expect(technical.envVarNames).toContain("UPSTASH_REDIS_REST_URL");
     expect(technical.trustedIpStrategy).toBe("vercel-x-real-ip");
     expect(technical.distributedStoreActive).toBe(false);

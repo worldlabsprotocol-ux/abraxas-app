@@ -11,6 +11,11 @@ import {
   buildOpaqueStampUploadPath,
   opaqueStoragePathHasNoPii,
 } from "@/lib/idv/passportDocumentStoragePath";
+import {
+  DOCUMENT_METADATA_PERSISTENCE_FAILED,
+  DOCUMENT_UPLOAD_FAILED,
+  logDocumentApiError,
+} from "@/lib/idv/documentApiPublicErrors";
 
 function getSupabase(): SupabaseClient | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -73,7 +78,8 @@ export async function POST(req: NextRequest) {
       .upload(path, buffer, { contentType: file.type });
 
     if (uploadError) {
-      return NextResponse.json({ error: uploadError.message }, { status: 500 });
+      logDocumentApiError("identity/documents/upload", uploadError, { stage: "storage_upload" });
+      return NextResponse.json({ error: DOCUMENT_UPLOAD_FAILED, retryable: true }, { status: 500 });
     }
 
     const { data: inserted, error: insertErr } = await supabase.from("passport_documents").insert({
@@ -86,7 +92,8 @@ export async function POST(req: NextRequest) {
     }).select("id").single();
 
     if (insertErr) {
-      return NextResponse.json({ error: insertErr.message }, { status: 500 });
+      logDocumentApiError("identity/documents/upload", insertErr, { stage: "metadata_insert" });
+      return NextResponse.json({ error: DOCUMENT_METADATA_PERSISTENCE_FAILED, retryable: true }, { status: 500 });
     }
 
     if (stampId === "identity") {
@@ -111,7 +118,7 @@ export async function POST(req: NextRequest) {
       review_status: stampId === "identity" ? "submitted" : undefined,
     });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    logDocumentApiError("identity/documents/upload", err, { stage: "unexpected" });
+    return NextResponse.json({ error: DOCUMENT_UPLOAD_FAILED, retryable: true }, { status: 500 });
   }
 }
