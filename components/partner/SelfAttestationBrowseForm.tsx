@@ -170,7 +170,11 @@ export function SelfAttestationBrowseForm({
       clearFields();
 
       if (!res.ok || !data.ok || !data.age_band) {
-        setError("We couldn't confirm your age. Check your birthday and try again.");
+        if (data.code === "receipt_signing_failed") {
+          setError("We couldn't finish your age confirmation. Please try again in a moment.");
+        } else {
+          setError("We couldn't confirm your age. Check your birthday and try again.");
+        }
         return;
       }
 

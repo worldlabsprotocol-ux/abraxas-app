@@ -2,17 +2,20 @@
 // Returns purchase_intents for the lifecycle admin panel.
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { checkAdminAccess } from "@/lib/adminAuth";
+import { requireAdminRouteAccess } from "@/lib/admin/requireAdminRouteAccess";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function createServiceClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+}
 
 export async function GET(req: NextRequest) {
-  if (!await checkAdminAccess(req)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = await requireAdminRouteAccess(req);
+  if (denied) return denied;
+
+  const supabase = createServiceClient();
   const { data, error } = await supabase
     .from("purchase_intents")
     .select("id, item_name, price, email, lifecycle_status, risk_flag, created_at")
