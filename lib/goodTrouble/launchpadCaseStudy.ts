@@ -2,7 +2,7 @@
 // Good Trouble case study framing for Partner Launchpad.
 
 export const GOOD_TROUBLE_CASE_STUDY = {
-  title: "Integration case study",
+  title: "INTEGRATION CASE STUDY",
   videoUrl: "https://www.youtube.com/watch?v=GheS92n0i_M",
   videoLabel: "Watch the working demo",
   summary:
