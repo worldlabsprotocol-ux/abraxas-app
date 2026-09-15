@@ -3,6 +3,7 @@
 
 import { SignJWT, jwtVerify } from "jose";
 import type { NextRequest, NextResponse } from "next/server";
+import { resolvePartnerConsoleSessionSecret } from "@/lib/partner/launchpad/partnerConsoleSessionSecret";
 
 export const PARTNER_CONSOLE_SESSION_COOKIE = "abraxas_partner_console_session";
 const SESSION_TTL_SEC = 60 * 60 * 8;
@@ -14,10 +15,7 @@ export interface PartnerConsoleSession {
 }
 
 function sessionSecret(): Uint8Array | null {
-  const raw = process.env.ABRAXAS_BROWSER_SESSION_SECRET?.trim()
-    ?? process.env.ABRAXAS_SIGNING_KEY?.trim();
-  if (!raw) return null;
-  return new TextEncoder().encode(raw);
+  return resolvePartnerConsoleSessionSecret();
 }
 
 export async function issuePartnerConsoleSessionToken(

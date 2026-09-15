@@ -2,7 +2,10 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminRouteAccess } from "@/lib/admin/requireAdminRouteAccess";
-import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import {
+  approveLaunchpadProductionAccess,
+  rejectLaunchpadProductionAccess,
+} from "@/lib/partner/launchpad/productionApproval";
 
 export const dynamic = "force-dynamic";
 
@@ -24,45 +27,34 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     return NextResponse.json({ error: "decision must be approved or rejected" }, { status: 400 });
   }
 
-  const sb = requireSupabaseAdmin();
-  const { data: requestRow, error: fetchError } = await sb
-    .from("partner_production_access_requests")
-    .select("id, application_id, partner_id, status")
-    .eq("id", params.id)
-    .maybeSingle();
-
-  if (fetchError || !requestRow) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (decision === "rejected") {
+    const result = await rejectLaunchpadProductionAccess({
+      requestId: params.id,
+      reviewerNotes: body.reviewer_notes,
+    });
+    if (!result.ok) {
+      const status = result.code === "not_found" ? 404 : 400;
+      return NextResponse.json({ error: result.code }, { status });
+    }
+    return NextResponse.json({ ok: true, status: "rejected" });
   }
 
-  const now = new Date().toISOString();
-  const { error: updateError } = await sb
-    .from("partner_production_access_requests")
-    .update({
-      status: decision,
-      reviewer_notes: body.reviewer_notes?.trim() || null,
-      reviewed_at: now,
-    })
-    .eq("id", params.id);
+  const result = await approveLaunchpadProductionAccess({
+    requestId: params.id,
+    reviewerNotes: body.reviewer_notes,
+  });
 
-  if (updateError) {
-    return NextResponse.json({ error: "Update failed" }, { status: 503 });
+  if (!result.ok) {
+    const status = result.code === "not_found" ? 404 : result.code === "invalid_state" ? 400 : 503;
+    return NextResponse.json({ error: result.code }, { status });
   }
 
-  if (decision === "approved") {
-    await sb
-      .from("partner_launchpad_applications")
-      .update({ environment: "production", updated_at: now })
-      .eq("id", requestRow.application_id);
-
-    await sb
-      .from("partners")
-      .update({
-        allowed_environments: ["sandbox", "production"],
-        updated_at: now,
-      })
-      .eq("partner_id", requestRow.partner_id);
-  }
-
-  return NextResponse.json({ ok: true, status: decision });
+  return NextResponse.json({
+    ok: true,
+    status: "approved",
+    application_id: result.application_id,
+    partner_id: result.partner_id,
+    key_prefix: result.key_prefix,
+    idempotency_replay: result.idempotency_replay,
+  });
 }

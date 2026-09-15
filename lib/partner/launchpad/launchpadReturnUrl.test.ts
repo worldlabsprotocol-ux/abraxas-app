@@ -30,6 +30,8 @@ describe("launchpad return URL validation", () => {
       policy_template_id: "age_21_retail",
       allowed_return_urls: ["https://app.example.com/callback"],
       api_key_id: null,
+      production_api_key_id: null,
+      production_key_revealed_at: null,
       status: "active",
       idempotency_key: null,
       created_at: "",
