@@ -181,6 +181,10 @@ export function SelfAttestationBrowseForm({
       }
 
       if (data.age_band === "over_21") {
+        if (!data.browse_receipt) {
+          setError("We couldn't finish your age confirmation. Please try again in a moment.");
+          return;
+        }
         setResult({ ok: true, age_band: "over_21" });
         onConfirmed?.();
         if (returnUrl && data.browse_receipt) {

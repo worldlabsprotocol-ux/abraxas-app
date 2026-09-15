@@ -5,6 +5,7 @@
 // acts on.
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { checkAdminAccess } from "@/lib/adminAuth";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,6 +15,10 @@ const supabase = createClient(
 const VALID_STATUSES = ["authorized", "captured", "disputed", "settled", "refunded"];
 
 export async function POST(req: NextRequest) {
+  if (!await checkAdminAccess(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const body = await req.json() as { id?: string; lifecycle_status?: string; dispute_reason?: string };
   if (!body.id || !body.lifecycle_status || !VALID_STATUSES.includes(body.lifecycle_status)) {
     return NextResponse.json({ error: "id and a valid lifecycle_status required" }, { status: 400 });
