@@ -123,10 +123,12 @@ export interface PrepareSettlementAuthorizationInput {
   applicationId: string;
   partnerId: string;
   receiptId: string;
-  eligibleWallet: string;
+  eligibleWallet?: string;
   amountMicroUsdc: bigint;
   environment: SettlementEnvironment;
   settlementReference?: string;
+  subjectId?: string;
+  idempotencyKey?: string;
 }
 
 export interface RecordSettlementConfirmationInput {
@@ -134,7 +136,5 @@ export interface RecordSettlementConfirmationInput {
   partnerId: string;
   authorizationId: string;
   transactionHash: string;
-  blockNumber?: number;
-  payerWallet: string;
-  amountMicroUsdc: bigint;
 }
+

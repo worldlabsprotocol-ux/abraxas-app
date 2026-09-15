@@ -7,6 +7,8 @@ import { SETTLEMENT_PUBLIC_ERRORS } from "@/lib/settlement/publicErrors";
 import type { ArcSettlementConfigRow } from "@/lib/settlement/types";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { normalizeEvmAddress } from "@/lib/settlement/validation";
+import { subjectPseudonymId } from "@/lib/decisionReceipts/pseudonym";
+import { normalizeSuiAddress } from "@mysten/sui/utils";
 
 export interface ValidatedSettlementReceipt {
   receiptId: string;
@@ -26,6 +28,7 @@ export async function validateReceiptForSettlement(input: {
   config: ArcSettlementConfigRow;
   eligibleWallet: string;
   environment: "sandbox" | "production";
+  subjectId?: string;
 }): Promise<{ ok: true; receipt: ValidatedSettlementReceipt } | { ok: false; code: string }> {
   const result = await getPartnerReceipt(input.receiptId, input.partnerId);
   if (!result) {
@@ -84,6 +87,14 @@ export async function validateReceiptForSettlement(input: {
   if (!record) {
     return { ok: false, code: SETTLEMENT_PUBLIC_ERRORS.receipt_not_found };
   }
+
+  if (input.subjectId) {
+    const expectedPseudonym = subjectPseudonymId(normalizeSuiAddress(input.subjectId));
+    if (record.subject_pseudonym_id !== expectedPseudonym) {
+      return { ok: false, code: SETTLEMENT_PUBLIC_ERRORS.receipt_audience_mismatch };
+    }
+  }
+
   const receiptCommitment = computeReceiptCommitmentFromPayloadHash(record.payload_hash);
 
   return {

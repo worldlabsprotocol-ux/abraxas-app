@@ -89,13 +89,45 @@ Record the deployed address in `ARC_TESTNET_SETTLEMENT_CONTRACT_ADDRESS`.
 
 ## Staging sequence
 
-1. Merge Partner Launchpad PR #290
-2. Apply migrations 084, 085, then 086 to staging
-3. Deploy ProofGatedSettlement to Arc Testnet
-4. Set settlement env vars on staging
-5. Enable Arc settlement on a sandbox Launchpad application
-6. Walk through `/developers/arc-demo?app=<slug>`
-7. Verify Launchpad activity shows settlement without personal data
+Dependency order before Arc Testnet staging:
+
+1. Merge PR #288
+2. Merge PR #289
+3. Rebase PR #290 onto `main`
+4. Rerun PR #290 validation
+5. Apply migrations 084 and 085 to staging
+6. Test PR #290 against staging
+7. Confirm 084 and 085 are additive
+8. Apply 084 and 085 to production before merging PR #290
+9. Merge PR #290
+10. Confirm production deployment
+11. Rebase PR #291 onto `main`
+12. Retarget PR #291 to `main`
+13. Rerun all validation
+14. Apply migration 086 to staging only
+15. Deploy ProofGatedSettlement to Arc Testnet (deployment script only, not Vercel)
+16. Configure `ABRAXAS_SETTLEMENT_SIGNER_PRIVATE_KEY`, `ABRAXAS_SETTLEMENT_SIGNER_ADDRESS`, and `ARC_TESTNET_SETTLEMENT_CONTRACT_ADDRESS` in staging only
+17. Complete the Arc staging walkthrough at `/developers/arc-demo?app=<slug>`
+18. Review evidence before any production Arc configuration
+
+PR #291 must not require `ARC_DEPLOYER_PRIVATE_KEY` in Vercel runtime configuration.
+There is no production Arc deployment sequence while Arc remains testnet only.
+
+## Settlement confirmation trust model
+
+Confirmation endpoints accept only `authorization_id` and `transaction_hash` from clients.
+
+The server independently verifies through the configured Arc RPC:
+
+- Chain ID is exactly `5042002`
+- Transaction receipt status is successful
+- Transaction targets the configured settlement contract
+- `SettlementExecuted` event is emitted by that contract
+- Nonce, wallet, recipient, token, amount, application id, and receipt commitment match the stored authorization
+- Sandbox environment is enforced
+- Transaction hash is unique and idempotently persisted through `partner_launchpad_arc_confirm_settlement_atomic`
+
+Browser supplied payer wallets, amounts, logs, or events are never trusted.
 
 ## Rollback
 

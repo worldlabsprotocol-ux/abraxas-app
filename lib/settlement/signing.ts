@@ -1,14 +1,20 @@
 // FILE: lib/settlement/signing.ts
 // EIP-712 settlement authorization signing — domain separated from receipt Ed25519 keys.
 
-import { createHash, randomBytes } from "crypto";
+import "server-only";
+
+import { randomBytes } from "crypto";
 import {
   type Hex,
   type TypedDataDomain,
   encodeAbiParameters,
   keccak256,
 } from "viem";
-import { privateKeyToAccount, privateKeyToAddress } from "viem/accounts";
+import {
+  loadSettlementSignerPrivateKey,
+  deriveSettlementSignerAddress,
+  validateSettlementSignerConfiguration,
+} from "@/lib/settlement/settlementSigner.server";
 import type { SettlementAmountKind, SettlementAuthorizationPayload, SettlementEnvironment } from "@/lib/settlement/types";
 import {
   SETTLEMENT_EIP712_DOMAIN_NAME,
@@ -49,34 +55,13 @@ export function generateSettlementNonce(): `0x${string}` {
   return `0x${randomBytes(32).toString("hex")}` as `0x${string}`;
 }
 
-function normalizePrivateKey(raw: string): Hex {
-  const trimmed = raw.trim();
-  return (trimmed.startsWith("0x") ? trimmed : `0x${trimmed}`) as Hex;
-}
-
-export function loadSettlementSignerPrivateKey(): Hex | null {
-  const direct = process.env.ABRAXAS_SETTLEMENT_SIGNER_PRIVATE_KEY;
-  if (direct) return normalizePrivateKey(direct);
-
-  const master = process.env.ABRAXAS_SETTLEMENT_SIGNING_KEY;
-  if (!master) return null;
-
-  const derived = createHash("sha256")
-    .update("abraxas:settlement:signer:v1:")
-    .update(master)
-    .digest();
-  return `0x${derived.toString("hex")}` as Hex;
-}
-
 export function getSettlementSignerAddress(): `0x${string}` | null {
-  const configured = process.env.ABRAXAS_SETTLEMENT_SIGNER_ADDRESS;
-  if (configured) {
-    return configured.toLowerCase() as `0x${string}`;
-  }
-  const privateKey = loadSettlementSignerPrivateKey();
-  if (!privateKey) return null;
-  return privateKeyToAddress(privateKey).toLowerCase() as `0x${string}`;
+  const configured = process.env.ABRAXAS_SETTLEMENT_SIGNER_ADDRESS?.trim().toLowerCase();
+  if (configured) return configured as `0x${string}`;
+  return deriveSettlementSignerAddress();
 }
+
+export { loadSettlementSignerPrivateKey, validateSettlementSignerConfiguration };
 
 export function buildSettlementTypedDataDomain(
   chainId: number,
@@ -116,11 +101,11 @@ export async function signSettlementAuthorization(
   payload: SettlementAuthorizationPayload,
   verifyingContract: `0x${string}`,
 ): Promise<{ signature: `0x${string}`; signerAddress: `0x${string}` }> {
-  const privateKey = loadSettlementSignerPrivateKey();
-  if (!privateKey) {
-    throw new Error("settlement_signer_unavailable");
+  const signer = validateSettlementSignerConfiguration();
+  if (!signer.ok) {
+    throw new Error(signer.code);
   }
-  const account = privateKeyToAccount(privateKey);
+  const account = signer.account;
   const domain = buildSettlementTypedDataDomain(Number(payload.chainId), verifyingContract);
   const message = buildSettlementTypedDataMessage(payload);
   const signature = await account.signTypedData({

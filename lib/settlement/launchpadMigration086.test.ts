@@ -41,4 +41,16 @@ describe("086_arc_proof_gated_settlement migration contract", () => {
     expect(migrationSql).toContain("'arc_testnet'");
     expect(migrationSql).not.toContain("arc_mainnet");
   });
+
+  it("enforces unique transaction hash and atomic confirmation", () => {
+    expect(migrationSql).toContain("partner_launchpad_arc_settlement_records_tx_unique");
+    expect(migrationSql).toContain("partner_launchpad_arc_confirm_settlement_atomic");
+    expect(migrationSql).toContain("SECURITY DEFINER");
+    expect(migrationSql).toContain("SET search_path = pg_catalog, public");
+    expect(migrationSql).toContain("FOR UPDATE");
+  });
+
+  it("stores amounts as bigint micro units", () => {
+    expect(migrationSql).toContain("amount_micro_usdc bigint");
+  });
 });

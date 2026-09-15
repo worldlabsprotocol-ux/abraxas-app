@@ -6,7 +6,6 @@ import { keccak256, stringToHex } from "viem";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { recordLaunchpadActivity } from "@/lib/partner/launchpad/recordActivity";
 import type { LaunchpadActivityEventType } from "@/lib/partner/launchpad/types";
-import { createArcSettlementAdapter } from "@/lib/settlement/ArcSettlementAdapter";
 import { quoteSettlementFees } from "@/lib/settlement/accountingHooks";
 import {
   applicationIdToBytes32,
@@ -34,6 +33,9 @@ import type {
   SignedSettlementAuthorization,
 } from "@/lib/settlement/types";
 import { normalizeEvmAddress, validateSettlementAmount } from "@/lib/settlement/validation";
+import { assertCanonicalEvmWalletOwnership } from "@/lib/settlement/walletOwnership.server";
+import { confirmSettlementFromChain } from "@/lib/settlement/confirmSettlement.server";
+import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
 
 function mapConfigRow(row: Record<string, unknown>): ArcSettlementConfigRow {
   return row as unknown as ArcSettlementConfigRow;
@@ -119,6 +121,29 @@ export async function prepareSettlementAuthorization(
   if (config.partner_id !== input.partnerId) {
     return { ok: false, code: SETTLEMENT_PUBLIC_ERRORS.unauthorized };
   }
+
+  const application = await getLaunchpadApplicationForPartner(input.applicationId, input.partnerId);
+  if (!application || application.status !== "active") {
+    return { ok: false, code: SETTLEMENT_PUBLIC_ERRORS.application_not_found };
+  }
+
+  if (input.environment === "production") {
+    return { ok: false, code: SETTLEMENT_PUBLIC_ERRORS.production_unavailable };
+  }
+
+  if (input.idempotencyKey) {
+    const sb = requireSupabaseAdmin();
+    const { data: existingIdem } = await sb
+      .from("partner_launchpad_arc_authorizations")
+      .select("id, status")
+      .eq("application_id", input.applicationId)
+      .eq("metadata->>idempotency_key", input.idempotencyKey)
+      .maybeSingle();
+    if (existingIdem) {
+      return { ok: false, code: SETTLEMENT_PUBLIC_ERRORS.authorization_reused };
+    }
+  }
+
   if (!config.enabled) {
     return { ok: false, code: SETTLEMENT_PUBLIC_ERRORS.config_disabled };
   }
@@ -129,9 +154,21 @@ export async function prepareSettlementAuthorization(
     return { ok: false, code: SETTLEMENT_PUBLIC_ERRORS.contract_not_configured };
   }
 
-  const wallet = normalizeEvmAddress(input.eligibleWallet);
-  if (!wallet) {
-    return { ok: false, code: SETTLEMENT_PUBLIC_ERRORS.invalid_wallet };
+  let wallet: `0x${string}` | null = null;
+  if (input.subjectId) {
+    const ownership = await assertCanonicalEvmWalletOwnership({
+      subjectId: input.subjectId,
+      claimedWallet: input.eligibleWallet ?? "",
+    });
+    if (!ownership.ok) {
+      return { ok: false, code: ownership.code };
+    }
+    wallet = ownership.wallet;
+  } else {
+    wallet = normalizeEvmAddress(input.eligibleWallet ?? "");
+    if (!wallet) {
+      return { ok: false, code: SETTLEMENT_PUBLIC_ERRORS.invalid_wallet };
+    }
   }
 
   const amountCheck = validateSettlementAmount(config, input.amountMicroUsdc);
@@ -145,6 +182,7 @@ export async function prepareSettlementAuthorization(
     config,
     eligibleWallet: wallet,
     environment: input.environment,
+    subjectId: input.subjectId,
   });
   if (!receiptResult.ok) {
     return { ok: false, code: receiptResult.code };
@@ -230,6 +268,7 @@ export async function prepareSettlementAuthorization(
       metadata: {
         signer_address: signedBy,
         fee_micro_usdc: feeQuote.feeMicroUsdc.toString(),
+        idempotency_key: input.idempotencyKey ?? null,
       },
     })
     .select("*")
@@ -320,81 +359,19 @@ export async function recordSettlementConfirmation(
     return { ok: false, code: SETTLEMENT_PUBLIC_ERRORS.authorization_not_found };
   }
 
-  if (auth.status === "confirmed") {
-    return { ok: false, code: SETTLEMENT_PUBLIC_ERRORS.duplicate_confirmation };
-  }
-
   const config = await getArcSettlementConfig(input.applicationId);
   if (!config?.settlement_contract_address) {
     return { ok: false, code: SETTLEMENT_PUBLIC_ERRORS.contract_not_configured };
   }
 
-  const adapter = createArcSettlementAdapter(
-    "arc_testnet",
-    config.settlement_contract_address as `0x${string}`,
-  );
-  const tx = await adapter.verifyTransactionConfirmed(input.transactionHash);
-  if (!tx?.confirmed) {
-    return { ok: false, code: SETTLEMENT_PUBLIC_ERRORS.transaction_not_confirmed };
-  }
-
-  const payer = normalizeEvmAddress(input.payerWallet);
-  const eligible = normalizeEvmAddress(auth.eligible_wallet);
-  if (!payer || !eligible || payer.toLowerCase() !== eligible.toLowerCase()) {
-    return { ok: false, code: SETTLEMENT_PUBLIC_ERRORS.wallet_mismatch };
-  }
-
-  if (BigInt(auth.amount_micro_usdc) !== input.amountMicroUsdc) {
-    return { ok: false, code: SETTLEMENT_PUBLIC_ERRORS.authorization_invalid };
-  }
-
-  const sb = requireSupabaseAdmin();
-  const { data: existingTx } = await sb
-    .from("partner_launchpad_arc_settlement_records")
-    .select("id")
-    .eq("transaction_hash", input.transactionHash)
-    .maybeSingle();
-  if (existingTx) {
-    return { ok: false, code: SETTLEMENT_PUBLIC_ERRORS.duplicate_confirmation };
-  }
-
-  const now = new Date().toISOString();
-  await sb
-    .from("partner_launchpad_arc_authorizations")
-    .update({
-      status: "confirmed",
-      transaction_hash: input.transactionHash,
-      block_number: tx.blockNumber,
-      confirmed_at: now,
-      updated_at: now,
-    })
-    .eq("id", input.authorizationId);
-
-  await sb.from("partner_launchpad_arc_settlement_records").insert({
-    authorization_id: input.authorizationId,
-    application_id: input.applicationId,
-    partner_id: input.partnerId,
-    chain_id: auth.chain_id,
-    transaction_hash: input.transactionHash,
-    block_number: tx.blockNumber,
-    payer_wallet: payer,
-    recipient: auth.recipient,
-    token_address: auth.token_address,
-    amount_micro_usdc: Number(input.amountMicroUsdc),
-    receipt_commitment: auth.receipt_commitment,
-    settlement_reference: auth.settlement_reference,
-    explorer_url: tx.explorerUrl,
-    confirmed_at: now,
+  return confirmSettlementFromChain({
+    applicationId: input.applicationId,
+    partnerId: input.partnerId,
+    authorizationId: input.authorizationId,
+    transactionHash: input.transactionHash,
+    config,
+    authorization: auth,
   });
-
-  await recordArcActivity(input.applicationId, input.partnerId, "arc_transaction_confirmed", {
-    authorization_id: input.authorizationId,
-    transaction_hash: input.transactionHash,
-    amount_micro_usdc: Number(input.amountMicroUsdc),
-    testnet: true,
-  });
-
-  return { ok: true };
 }
 
 export async function markAuthorizationSubmitted(

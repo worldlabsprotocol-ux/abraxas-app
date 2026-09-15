@@ -1,6 +1,8 @@
 // FILE: lib/settlement/SettlementAdapter.ts
 // Chain independent settlement adapter interface.
 
+import { parseUsdcAmountMicro, formatUsdcAmountMicro } from "@/lib/settlement/usdcAmount";
+
 import type { SignedSettlementAuthorization } from "@/lib/settlement/types";
 
 export interface SettlementAdapterPrepareInput {
@@ -37,23 +39,14 @@ export interface SettlementAdapterFactory {
   create(config: SettlementAdapterPrepareInput): SettlementAdapter;
 }
 
-const MICRO_USDC = BigInt(1_000_000);
-
-export function microUsdcToDisplay(amountMicroUsdc: bigint, decimals = 6): string {
-  const whole = amountMicroUsdc / MICRO_USDC;
-  const fraction = amountMicroUsdc % MICRO_USDC;
-  const fractionStr = fraction.toString().padStart(decimals, "0").replace(/0+$/, "");
-  return fractionStr.length > 0 ? `${whole}.${fractionStr}` : whole.toString();
+export function microUsdcToDisplay(amountMicroUsdc: bigint): string {
+  return formatUsdcAmountMicro(amountMicroUsdc);
 }
 
 export function displayUsdcToMicro(amount: string): bigint {
-  const trimmed = amount.trim();
-  if (!/^\d+(\.\d{1,6})?$/.test(trimmed)) {
-    throw new Error("invalid_usdc_amount");
-  }
-  const [whole, fraction = ""] = trimmed.split(".");
-  const fractionPadded = fraction.padEnd(6, "0").slice(0, 6);
-  return BigInt(whole) * MICRO_USDC + BigInt(fractionPadded || "0");
+  const parsed = parseUsdcAmountMicro(amount);
+  if (!parsed.ok) throw new Error("invalid_usdc_amount");
+  return parsed.amountMicroUsdc;
 }
 
 export type { SignedSettlementAuthorization };

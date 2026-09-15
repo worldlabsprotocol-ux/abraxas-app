@@ -39,8 +39,11 @@ type DemoStep =
   | "authorize"
   | "approve"
   | "settle"
+  | "confirming"
   | "complete"
   | "error";
+
+type TxState = "idle" | "submitted" | "confirming" | "confirmed" | "failed";
 
 interface PublicConfig {
   application: {
@@ -77,6 +80,7 @@ export function ArcSettlementDemoClient({ appSlug }: { appSlug: string }) {
   const [authorization, setAuthorization] = useState<Record<string, unknown> | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [explorerUrl, setExplorerUrl] = useState<string | null>(null);
+  const [txState, setTxState] = useState<TxState>("idle");
   const [demoAmount, setDemoAmount] = useState("0.01");
 
   const amountMicro = useMemo(() => {
@@ -160,8 +164,8 @@ export function ArcSettlementDemoClient({ appSlug }: { appSlug: string }) {
       body: JSON.stringify({
         app: config.application.public_slug,
         receipt_id: receiptId,
-        eligible_wallet: wallet,
         amount_micro_usdc: String(amountMicro),
+        idempotency_key: `demo-${receiptId}-${amountMicro}`,
       }),
     });
     const data = await res.json();
@@ -234,6 +238,7 @@ export function ArcSettlementDemoClient({ appSlug }: { appSlug: string }) {
       });
 
       setStep("settle");
+      setTxState("submitted");
       const hash = await client.sendTransaction({
         to: contract,
         data: settleData,
@@ -242,6 +247,27 @@ export function ArcSettlementDemoClient({ appSlug }: { appSlug: string }) {
       setTxHash(hash);
       const explorer = `${config.settlement.explorer_url}/tx/${hash}`;
       setExplorerUrl(explorer);
+      setStep("confirming");
+      setTxState("confirming");
+
+      const confirmRes = await fetch("/api/launchpad/public/settlement/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          app: config.application.public_slug,
+          authorization_id: authorization.authorization_id,
+          transaction_hash: hash,
+        }),
+      });
+      const confirmData = await confirmRes.json();
+      if (!confirmRes.ok) {
+        setError(confirmData.error ?? confirmData.code ?? "Settlement confirmation pending");
+        setTxState("failed");
+        setStep("error");
+        return;
+      }
+      setTxState("confirmed");
       setStep("complete");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Settlement transaction failed");
@@ -271,7 +297,8 @@ export function ArcSettlementDemoClient({ appSlug }: { appSlug: string }) {
       {step === "review" && config && (
         <ContentCard title="2. Review eligibility requirement">
           <p style={bodyText}>{config.application.user_explanation}</p>
-          <p style={bodyText}>Policy: {config.application.policy_template_label}</p>
+          <p style={bodyText}>Required policy: {config.application.policy_template_label}</p>
+          {wallet && <p style={bodyText}>Connected verified wallet: <code style={{ fontFamily: MONO }}>{wallet}</code></p>}
           <label style={labelStyle}>
             Settlement amount USDC
             <input value={demoAmount} onChange={(e) => setDemoAmount(e.target.value)} style={inputStyle} />
@@ -291,20 +318,22 @@ export function ArcSettlementDemoClient({ appSlug }: { appSlug: string }) {
         </ContentCard>
       )}
 
-      {(step === "approve" || step === "settle") && authorization && (
+      {(step === "approve" || step === "settle" || step === "confirming") && authorization && (
         <ContentCard title="6. Approve Arc Testnet USDC transfer">
+          <p style={bodyText}>Arc Testnet recipient: <code style={{ fontFamily: MONO }}>{String(authorization.recipient)}</code></p>
           <p style={bodyText}>
-            Amount: {demoAmount} USDC · Expires: {String(authorization.expires_at)}
+            Exact amount: {demoAmount} USDC TESTNET · Authorization expires: {String(authorization.expires_at)}
           </p>
-          <Btn size="sm" onClick={() => void approveAndSettle()} disabled={step === "settle"}>
-            {step === "settle" ? "Submitting…" : "Approve and settle"}
+          <p style={bodyText}>Transaction state: {txState}</p>
+          <Btn size="sm" onClick={() => void approveAndSettle()} disabled={step === "settle" || step === "confirming"}>
+            {step === "settle" ? "Submitting transaction" : step === "confirming" ? "Verifying onchain" : "Approve and settle"}
           </Btn>
         </ContentCard>
       )}
 
-      {step === "complete" && txHash && (
+      {step === "complete" && txHash && txState === "confirmed" && (
         <ContentCard title="8. Settlement complete">
-          <p style={bodyText}>Transaction confirmed on Arc Testnet.</p>
+          <p style={bodyText}>Arc Testnet settlement verified independently onchain.</p>
           <pre style={codeStyle}>{txHash}</pre>
           {explorerUrl && (
             <a href={explorerUrl} target="_blank" rel="noreferrer" style={{ color: "var(--accent)", fontFamily: FONT }}>

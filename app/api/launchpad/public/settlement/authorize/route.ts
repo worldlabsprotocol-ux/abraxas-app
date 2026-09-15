@@ -7,11 +7,23 @@ import { getLaunchpadApplicationBySlug } from "@/lib/partner/launchpad/resolveLa
 import { prepareSettlementAuthorization } from "@/lib/settlement/SettlementAuthorizationService";
 import { settlementError, settlementJson } from "@/lib/settlement/settlementApiHelpers";
 import { SETTLEMENT_PUBLIC_ERRORS } from "@/lib/settlement/publicErrors";
-import { normalizeEvmAddress } from "@/lib/settlement/validation";
+import { checkSettlementRateLimit } from "@/lib/settlement/settlementRateLimit";
+import { parseUsdcAmountMicro } from "@/lib/settlement/usdcAmount";
+import {
+  assertReceiptSubjectMatchesSession,
+  getCanonicalEvmWalletForSubject,
+} from "@/lib/settlement/walletOwnership.server";
 
 export const dynamic = "force-dynamic";
 
+const ROUTE = "/api/launchpad/public/settlement/authorize";
+
 export async function POST(req: NextRequest) {
+  const rateLimited = checkSettlementRateLimit(req, ROUTE, 20);
+  if (!rateLimited.allowed) {
+    return settlementError(SETTLEMENT_PUBLIC_ERRORS.rate_limited, 429);
+  }
+
   const session = await requireBrowserSession(req);
   if (!session.ok) {
     return settlementError(SETTLEMENT_PUBLIC_ERRORS.unauthorized, session.status);
@@ -20,8 +32,9 @@ export async function POST(req: NextRequest) {
   let body: {
     app?: string;
     receipt_id?: string;
-    eligible_wallet?: string;
     amount_micro_usdc?: string | number;
+    idempotency_key?: string;
+    return_url?: string;
   };
   try {
     body = await req.json();
@@ -29,13 +42,13 @@ export async function POST(req: NextRequest) {
     return settlementError(SETTLEMENT_PUBLIC_ERRORS.authorization_invalid, 400, "Invalid JSON");
   }
 
-  if (!body.app || !body.receipt_id || !body.eligible_wallet || body.amount_micro_usdc === undefined) {
+  if (!body.app || !body.receipt_id || body.amount_micro_usdc === undefined) {
     return settlementError(SETTLEMENT_PUBLIC_ERRORS.authorization_invalid, 400);
   }
 
-  const wallet = normalizeEvmAddress(body.eligible_wallet);
-  if (!wallet) {
-    return settlementError(SETTLEMENT_PUBLIC_ERRORS.invalid_wallet, 400);
+  const amountParsed = parseUsdcAmountMicro(body.amount_micro_usdc);
+  if (!amountParsed.ok) {
+    return settlementError(amountParsed.code, 400);
   }
 
   const app = await getLaunchpadApplicationBySlug(body.app);
@@ -43,13 +56,32 @@ export async function POST(req: NextRequest) {
     return settlementError(SETTLEMENT_PUBLIC_ERRORS.application_not_found, 404);
   }
 
+  if (app.environment !== "sandbox") {
+    return settlementError(SETTLEMENT_PUBLIC_ERRORS.environment_mismatch, 403);
+  }
+
+  const subjectMatch = await assertReceiptSubjectMatchesSession({
+    receiptId: body.receipt_id,
+    subjectId: session.session.suiAddress,
+  });
+  if (!subjectMatch.ok) {
+    return settlementError(subjectMatch.code, 403);
+  }
+
+  const canonicalWallet = await getCanonicalEvmWalletForSubject(session.session.suiAddress);
+  if (!canonicalWallet) {
+    return settlementError(SETTLEMENT_PUBLIC_ERRORS.wallet_mismatch, 403);
+  }
+
   const result = await prepareSettlementAuthorization({
     applicationId: app.id,
     partnerId: app.partner_id,
     receiptId: body.receipt_id,
-    eligibleWallet: wallet,
-    amountMicroUsdc: BigInt(String(body.amount_micro_usdc)),
-    environment: app.environment === "production" ? "production" : "sandbox",
+    eligibleWallet: canonicalWallet,
+    amountMicroUsdc: amountParsed.amountMicroUsdc,
+    environment: "sandbox",
+    subjectId: session.session.suiAddress,
+    idempotencyKey: body.idempotency_key,
   });
 
   if (!result.ok) {
@@ -62,7 +94,7 @@ export async function POST(req: NextRequest) {
     authorization: {
       authorization_id: authorization.authorizationId,
       chain_id: Number(authorization.payload.chainId),
-      contract_address: authorization.typedData.domain?.verifyingContract ?? null,
+      contract_address: authorization.typedData.domain.verifyingContract,
       token_address: authorization.payload.token,
       recipient: authorization.payload.recipient,
       eligible_wallet: authorization.payload.eligibleWallet,

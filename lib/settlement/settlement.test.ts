@@ -1,6 +1,8 @@
 // FILE: lib/settlement/settlement.test.ts
 
-import { describe, expect, it, beforeEach, afterEach } from "vitest";
+import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
+
+vi.mock("server-only", () => ({}));
 import { privateKeyToAccount } from "viem/accounts";
 import {
   computeReceiptCommitmentFromPayloadHash,

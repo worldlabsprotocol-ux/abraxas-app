@@ -8,12 +8,19 @@ import {
   settlementJson,
 } from "@/lib/settlement/settlementApiHelpers";
 import { SETTLEMENT_PUBLIC_ERRORS } from "@/lib/settlement/publicErrors";
+import { parseUsdcAmountMicro } from "@/lib/settlement/usdcAmount";
+import { checkSettlementRateLimit } from "@/lib/settlement/settlementRateLimit";
 
 export const dynamic = "force-dynamic";
 
 type RouteContext = { params: { id: string } };
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  const rateLimited = checkSettlementRateLimit(req, "/api/launchpad/applications/settlement/authorize", 60);
+  if (!rateLimited.allowed) {
+    return settlementError(SETTLEMENT_PUBLIC_ERRORS.rate_limited, 429);
+  }
+
   const auth = await requireSettlementPartnerAuth(req, params.id);
   if (!auth.ok) return auth.response;
 
@@ -23,6 +30,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     amount_micro_usdc?: string | number;
     environment?: "sandbox" | "production";
     settlement_reference?: string;
+    idempotency_key?: string;
   };
   try {
     body = await req.json();
@@ -39,14 +47,20 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     return settlementError(SETTLEMENT_PUBLIC_ERRORS.production_unavailable, 403);
   }
 
+  const amountParsed = parseUsdcAmountMicro(body.amount_micro_usdc);
+  if (!amountParsed.ok) {
+    return settlementError(amountParsed.code, 400);
+  }
+
   const result = await prepareSettlementAuthorization({
     applicationId: params.id,
     partnerId: auth.partnerId,
     receiptId: body.receipt_id,
     eligibleWallet: body.eligible_wallet,
-    amountMicroUsdc: BigInt(String(body.amount_micro_usdc)),
+    amountMicroUsdc: amountParsed.amountMicroUsdc,
     environment,
     settlementReference: body.settlement_reference,
+    idempotencyKey: body.idempotency_key,
   });
 
   if (!result.ok) {

@@ -84,7 +84,7 @@ describe("ProofGatedSettlement", function () {
     const MockUSDC = await ethers.getContractFactory("MockUSDC");
     usdc = await MockUSDC.deploy();
     const Settlement = await ethers.getContractFactory("ProofGatedSettlement");
-    settlement = await Settlement.deploy(true, signer.address);
+    settlement = await Settlement.deploy(true, signer.address, await usdc.getAddress(), recipient.address);
     await usdc.mint(payer.address, 1_000_000n);
     await usdc.connect(payer).approve(await settlement.getAddress(), 1_000_000n);
   });
@@ -196,6 +196,29 @@ describe("ProofGatedSettlement", function () {
     const signature = await signAuth(signer, await settlement.getAddress(), auth);
     await expect(settlement.connect(payer).settle(auth, signature, auth.amountMicroUsdc))
       .to.be.revertedWithCustomError(settlement, "EnforcedPause");
+  });
+
+  it("rejects wrong token", async function () {
+    const auth = sampleAuth({
+      eligibleWallet: payer.address,
+      recipient: recipient.address,
+      token: "0x0000000000000000000000000000000000000bad",
+    });
+    const signature = await signAuth(signer, await settlement.getAddress(), auth);
+    await expect(settlement.connect(payer).settle(auth, signature, auth.amountMicroUsdc))
+      .to.be.revertedWithCustomError(settlement, "InvalidToken");
+  });
+
+  it("rejects wrong recipient", async function () {
+    const [, , , other] = await ethers.getSigners();
+    const auth = sampleAuth({
+      eligibleWallet: payer.address,
+      recipient: other.address,
+      token: await usdc.getAddress(),
+    });
+    const signature = await signAuth(signer, await settlement.getAddress(), auth);
+    await expect(settlement.connect(payer).settle(auth, signature, auth.amountMicroUsdc))
+      .to.be.revertedWithCustomError(settlement, "InvalidRecipient");
   });
 
   it("rejects production environment in sandbox only mode", async function () {

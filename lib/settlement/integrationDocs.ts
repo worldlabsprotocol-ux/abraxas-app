@@ -65,8 +65,6 @@ const confirmRes = await fetch(
     body: JSON.stringify({
       authorization_id: authorization.authorization_id,
       transaction_hash: txHash,
-      payer_wallet: walletAddress,
-      amount_micro_usdc: authorization.amount_micro_usdc,
     }),
   },
 );`,

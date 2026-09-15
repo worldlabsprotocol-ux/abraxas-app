@@ -20,8 +20,6 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   let body: {
     authorization_id?: string;
     transaction_hash?: string;
-    payer_wallet?: string;
-    amount_micro_usdc?: string | number;
   };
   try {
     body = await req.json();
@@ -29,7 +27,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     return settlementError(SETTLEMENT_PUBLIC_ERRORS.authorization_invalid, 400, "Invalid JSON");
   }
 
-  if (!body.authorization_id || !body.transaction_hash || !body.payer_wallet || body.amount_micro_usdc === undefined) {
+  if (!body.authorization_id || !body.transaction_hash) {
     return settlementError(SETTLEMENT_PUBLIC_ERRORS.authorization_invalid, 400);
   }
 
@@ -38,8 +36,6 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     partnerId: auth.partnerId,
     authorizationId: body.authorization_id,
     transactionHash: body.transaction_hash,
-    payerWallet: body.payer_wallet,
-    amountMicroUsdc: BigInt(String(body.amount_micro_usdc)),
   });
 
   if (!result.ok) {

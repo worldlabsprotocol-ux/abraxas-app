@@ -40,7 +40,9 @@ contract ProofGatedSettlement is EIP712, ReentrancyGuard, Pausable, Ownable {
     uint8 private constant AMOUNT_KIND_MAX = 1;
     uint8 private constant ENV_SANDBOX = 0;
 
-    bool public sandboxOnly;
+    bool public immutable sandboxOnly;
+    address public immutable approvedToken;
+    address public immutable approvedRecipient;
     mapping(bytes32 => bool) public usedNonces;
     mapping(address => bool) public authorizedSigners;
 
@@ -87,9 +89,20 @@ contract ProofGatedSettlement is EIP712, ReentrancyGuard, Pausable, Ownable {
     error NonceAlreadyUsed();
     error SignerNotAuthorized();
     error TransferFailed();
+    error InvalidToken();
+    error InvalidRecipient();
+    error ZeroAddress();
 
-    constructor(bool sandboxOnlyMode, address initialSigner) EIP712("AbraxasSettlement", "1") Ownable(msg.sender) {
+    constructor(
+        bool sandboxOnlyMode,
+        address initialSigner,
+        address token,
+        address recipient
+    ) EIP712("AbraxasSettlement", "1") Ownable(msg.sender) {
+        if (token == address(0) || recipient == address(0)) revert ZeroAddress();
         sandboxOnly = sandboxOnlyMode;
+        approvedToken = token;
+        approvedRecipient = recipient;
         if (initialSigner != address(0)) {
             authorizedSigners[initialSigner] = true;
             emit SignerAuthorized(initialSigner);
@@ -132,6 +145,11 @@ contract ProofGatedSettlement is EIP712, ReentrancyGuard, Pausable, Ownable {
         if (auth.eligibleWallet != msg.sender) revert InvalidWallet();
         if (usedNonces[auth.nonce]) revert NonceAlreadyUsed();
         if (sandboxOnly && auth.environment != ENV_SANDBOX) revert InvalidEnvironment();
+        if (auth.token != approvedToken) revert InvalidToken();
+        if (auth.recipient != approvedRecipient) revert InvalidRecipient();
+        if (auth.eligibleWallet == address(0) || auth.recipient == address(0) || auth.token == address(0)) {
+            revert ZeroAddress();
+        }
 
         if (auth.amountKind == AMOUNT_KIND_EXACT) {
             if (transferAmountMicroUsdc != auth.amountMicroUsdc) revert InvalidAmount();

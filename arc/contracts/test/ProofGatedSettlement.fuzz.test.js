@@ -9,7 +9,7 @@ describe("ProofGatedSettlement fuzz", function () {
     const MockUSDC = await ethers.getContractFactory("MockUSDC");
     const usdc = await MockUSDC.deploy();
     const Settlement = await ethers.getContractFactory("ProofGatedSettlement");
-    const settlement = await Settlement.deploy(true, signer.address);
+    const settlement = await Settlement.deploy(true, signer.address, await usdc.getAddress(), recipient.address);
     await usdc.mint(payer.address, 10_000_000n);
     await usdc.connect(payer).approve(await settlement.getAddress(), 10_000_000n);
 

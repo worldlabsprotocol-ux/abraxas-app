@@ -95,6 +95,108 @@ CREATE TABLE IF NOT EXISTS public.partner_launchpad_arc_settlement_records (
 CREATE INDEX IF NOT EXISTS partner_launchpad_arc_settlement_records_app_idx
   ON public.partner_launchpad_arc_settlement_records (application_id, confirmed_at DESC);
 
+CREATE UNIQUE INDEX IF NOT EXISTS partner_launchpad_arc_settlement_records_tx_unique
+  ON public.partner_launchpad_arc_settlement_records (transaction_hash);
+
+CREATE UNIQUE INDEX IF NOT EXISTS partner_launchpad_arc_authorizations_idempotency_unique
+  ON public.partner_launchpad_arc_authorizations ((metadata->>'idempotency_key'))
+  WHERE metadata->>'idempotency_key' IS NOT NULL;
+
+CREATE OR REPLACE FUNCTION public.partner_launchpad_arc_confirm_settlement_atomic(
+  p_authorization_id uuid,
+  p_application_id uuid,
+  p_partner_id text,
+  p_transaction_hash text,
+  p_block_number bigint,
+  p_payer_wallet text,
+  p_recipient text,
+  p_token_address text,
+  p_amount_micro_usdc bigint,
+  p_receipt_commitment text,
+  p_settlement_reference text,
+  p_explorer_url text
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public
+AS $$
+DECLARE
+  v_auth public.partner_launchpad_arc_authorizations%ROWTYPE;
+  v_existing_tx uuid;
+  v_now timestamptz := pg_catalog.now();
+BEGIN
+  SELECT * INTO v_auth
+    FROM public.partner_launchpad_arc_authorizations
+   WHERE id = p_authorization_id
+     AND application_id = p_application_id
+     AND partner_id = p_partner_id
+   FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('ok', false, 'code', 'authorization_not_found');
+  END IF;
+
+  IF v_auth.status = 'confirmed' THEN
+    RETURN jsonb_build_object('ok', false, 'code', 'duplicate_confirmation');
+  END IF;
+
+  SELECT id INTO v_existing_tx
+    FROM public.partner_launchpad_arc_settlement_records
+   WHERE transaction_hash = p_transaction_hash
+   LIMIT 1;
+
+  IF FOUND THEN
+    RETURN jsonb_build_object('ok', false, 'code', 'duplicate_confirmation');
+  END IF;
+
+  UPDATE public.partner_launchpad_arc_authorizations
+     SET status = 'confirmed',
+         transaction_hash = p_transaction_hash,
+         block_number = p_block_number,
+         confirmed_at = v_now,
+         updated_at = v_now
+   WHERE id = p_authorization_id;
+
+  INSERT INTO public.partner_launchpad_arc_settlement_records (
+    authorization_id,
+    application_id,
+    partner_id,
+    chain_id,
+    transaction_hash,
+    block_number,
+    payer_wallet,
+    recipient,
+    token_address,
+    amount_micro_usdc,
+    receipt_commitment,
+    settlement_reference,
+    explorer_url,
+    confirmed_at
+  ) VALUES (
+    p_authorization_id,
+    p_application_id,
+    p_partner_id,
+    v_auth.chain_id,
+    p_transaction_hash,
+    p_block_number,
+    p_payer_wallet,
+    p_recipient,
+    p_token_address,
+    p_amount_micro_usdc,
+    p_receipt_commitment,
+    p_settlement_reference,
+    p_explorer_url,
+    v_now
+  );
+
+  RETURN jsonb_build_object('ok', true, 'code', 'confirmed');
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.partner_launchpad_arc_confirm_settlement_atomic FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.partner_launchpad_arc_confirm_settlement_atomic TO postgres, service_role;
+
 ALTER TABLE public.partner_launchpad_arc_settlement_config ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.partner_launchpad_arc_authorizations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.partner_launchpad_arc_settlement_records ENABLE ROW LEVEL SECURITY;
