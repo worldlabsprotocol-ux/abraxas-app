@@ -6,6 +6,7 @@ import { WalletContextProvider } from "@/components/WalletContextProvider";
 import { HomeAudiencePanels } from "@/components/home/HomeAudiencePanels";
 import { HomePartnerProof } from "@/components/home/HomePartnerProof";
 import { HomeHowItWorks } from "@/components/home/HomeHowItWorks";
+import { HomeGoodTroubleIntegration } from "@/components/home/HomeGoodTroubleIntegration";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
 import { HomeTrustClose } from "@/components/home/HomeTrustClose";
 import { AmbientGlow } from "./AmbientGlow";
@@ -25,6 +26,7 @@ function HomeContent() {
     <main style={{ position: "relative", zIndex: 1, paddingBottom: "3.5rem", textAlign: "center" }}>
       <div style={{ ...MAXW, display: "flex", flexDirection: "column", gap: SECTION_GAP, alignItems: "center", width: "100%" }}>
         <HomeSharpHero />
+        <HomeGoodTroubleIntegration />
         <HomeHowItWorks />
         <HomePartnerProof />
         <HomeAudiencePanels />
