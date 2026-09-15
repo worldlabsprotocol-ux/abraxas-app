@@ -3,9 +3,9 @@ import { auditRequiredDemoMigrations } from "./demoMigrationTransactionAudit";
 import { DEMO_REQUIRED_MIGRATION_ORDER } from "./demoMigrationManifest";
 
 describe("demoMigrationTransactionAudit", () => {
-  it("audits all 21 required migrations", () => {
+  it("audits all 22 required migrations", () => {
     const audit = auditRequiredDemoMigrations();
-    expect(audit).toHaveLength(21);
+    expect(audit).toHaveLength(22);
     expect(audit.map((entry) => entry.file)).toEqual([...DEMO_REQUIRED_MIGRATION_ORDER]);
   });
 
