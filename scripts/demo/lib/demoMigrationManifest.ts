@@ -120,6 +120,7 @@ export const DEMO_REQUIRED_MIGRATION_ORDER = [
   "062_partner_webhook_outbox.sql",
   "065_service_role_runtime_grants.sql",
   "083_zklogin_wallet_binding_atomic.sql",
+  "084_partner_launchpad_foundation.sql",
 ] as const;
 
 export const DEMO_MIGRATION_065_FILENAME = "065_service_role_runtime_grants.sql" as const;
@@ -362,6 +363,21 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
     extensions: [],
     notes:
       "Atomic zkLogin wallet binding + wallet_binding_confirmed claim repair. Required for Passport Confirm securely.",
+  },
+  {
+    file: "084_partner_launchpad_foundation.sql",
+    tier: "required",
+    creates: [
+      "partner_launchpad_applications",
+      "partner_launchpad_activity",
+      "partner_production_access_requests",
+      "partner_launchpad_provision_sandbox_atomic RPC",
+    ],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Partner Launchpad self service applications, activity events, production access requests, and atomic sandbox provisioning.",
   },
 ];
 
