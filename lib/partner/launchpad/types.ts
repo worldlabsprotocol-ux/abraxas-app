@@ -24,7 +24,16 @@ export type LaunchpadActivityEventType =
   | "credential_revoked"
   | "production_access_requested"
   | "production_access_approved"
-  | "production_access_rejected";
+  | "production_access_rejected"
+  | "arc_authorization_requested"
+  | "arc_authorization_issued"
+  | "arc_authorization_rejected"
+  | "arc_transaction_submitted"
+  | "arc_transaction_confirmed"
+  | "arc_transaction_failed"
+  | "arc_authorization_expired"
+  | "arc_authorization_replayed"
+  | "arc_settlement_paused";
 
 export type ProductionAccessRequestStatus = "pending" | "approved" | "rejected";
 

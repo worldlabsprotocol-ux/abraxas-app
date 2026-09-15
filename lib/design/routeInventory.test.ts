@@ -18,6 +18,7 @@ const SHELL_MARKERS = [
   "PartnerContinueClient",
   "PartnerEnterClient",
   "PartnerLaunchpadClient",
+  "ArcSettlementDemoClient",
   "AdminShell",
 ];
 
