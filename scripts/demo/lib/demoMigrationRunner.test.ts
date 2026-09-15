@@ -301,9 +301,9 @@ describe("demo denylist and reference checks", () => {
 });
 
 describe("demoMigrationRunner manifest scope", () => {
-  it("loads exactly the approved 18-file order", () => {
+  it("loads exactly the approved 20-file order", () => {
     const plan = loadRequiredMigrationPlan();
-    expect(plan).toHaveLength(18);
+    expect(plan).toHaveLength(20);
     expect(plan.map((entry) => entry.file)).toEqual([...DEMO_REQUIRED_MIGRATION_ORDER]);
   });
 
