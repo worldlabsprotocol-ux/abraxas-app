@@ -1,0 +1,80 @@
+// FILE: lib/settlement/contractAbi.ts
+// ProofGatedSettlement contract ABI for client and server use.
+
+export const PROOF_GATED_SETTLEMENT_ABI = [
+  {
+    type: "function",
+    name: "settle",
+    stateMutability: "nonpayable",
+    inputs: [
+      {
+        name: "auth",
+        type: "tuple",
+        components: [
+          { name: "chainId", type: "uint256" },
+          { name: "environment", type: "uint8" },
+          { name: "partnerApplicationId", type: "bytes32" },
+          { name: "partnerIdHash", type: "bytes32" },
+          { name: "policyIdHash", type: "bytes32" },
+          { name: "policyVersion", type: "uint256" },
+          { name: "eligibleWallet", type: "address" },
+          { name: "recipient", type: "address" },
+          { name: "token", type: "address" },
+          { name: "amountMicroUsdc", type: "uint256" },
+          { name: "amountKind", type: "uint8" },
+          { name: "actionType", type: "bytes32" },
+          { name: "nonce", type: "bytes32" },
+          { name: "issuedAt", type: "uint256" },
+          { name: "expiresAt", type: "uint256" },
+          { name: "receiptCommitment", type: "bytes32" },
+          { name: "settlementReference", type: "bytes32" },
+        ],
+      },
+      { name: "signature", type: "bytes" },
+      { name: "transferAmountMicroUsdc", type: "uint256" },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "paused",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "sandboxOnly",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "isSignerAuthorized",
+    stateMutability: "view",
+    inputs: [{ name: "signer", type: "address" }],
+    outputs: [{ name: "", type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "isNonceUsed",
+    stateMutability: "view",
+    inputs: [{ name: "nonce", type: "bytes32" }],
+    outputs: [{ name: "", type: "bool" }],
+  },
+  {
+    type: "event",
+    name: "SettlementExecuted",
+    inputs: [
+      { name: "payer", type: "address", indexed: true },
+      { name: "recipient", type: "address", indexed: true },
+      { name: "token", type: "address", indexed: true },
+      { name: "amountMicroUsdc", type: "uint256", indexed: false },
+      { name: "nonce", type: "bytes32", indexed: true },
+      { name: "partnerApplicationId", type: "bytes32", indexed: true },
+      { name: "receiptCommitment", type: "bytes32", indexed: false },
+      { name: "settlementReference", type: "bytes32", indexed: false },
+    ],
+  },
+] as const;

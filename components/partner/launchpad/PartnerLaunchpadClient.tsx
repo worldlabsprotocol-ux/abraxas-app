@@ -11,11 +11,12 @@ import { LAUNCHPAD_TEST_SCENARIOS } from "@/lib/partner/launchpad/testScenarios"
 import type { LaunchpadIntegrationDocs } from "@/lib/partner/launchpad/integrationDocs";
 import { slugifyLaunchpadApplication } from "@/lib/partner/launchpad/slug";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
+import { LaunchpadSettlementPanel } from "@/components/partner/launchpad/LaunchpadSettlementPanel";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
 
-type WizardStep = "application" | "policy" | "destinations" | "provisioned" | "test" | "production";
+type WizardStep = "application" | "policy" | "destinations" | "provisioned" | "test" | "settlement" | "production";
 
 interface PolicyTemplate {
   id: string;
@@ -57,6 +58,7 @@ const STEPS: { id: WizardStep; label: string }[] = [
   { id: "destinations", label: "Destinations" },
   { id: "provisioned", label: "Credentials" },
   { id: "test", label: "Test" },
+  { id: "settlement", label: "Settlement" },
   { id: "production", label: "Production" },
 ];
 
@@ -391,6 +393,10 @@ export function PartnerLaunchpadClient() {
             <Btn size="sm" onClick={() => setStep("production")}>Request production access</Btn>
           </div>
         </ContentCard>
+      )}
+
+      {step === "settlement" && activeApp && (
+        <LaunchpadSettlementPanel applicationId={activeApp.id} publicSlug={activeApp.public_slug} />
       )}
 
       {step === "production" && (
