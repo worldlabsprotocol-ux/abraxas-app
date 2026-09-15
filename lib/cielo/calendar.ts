@@ -2,16 +2,9 @@
 // Abraxas Protocol Calendar — source of truth for Cielo crypto bookings.
 // No host iCal required. Operator blocks + booking holds live here.
 
-import { createClient } from "@supabase/supabase-js";
 import { CIELO_AIRBNB_URL } from "@/lib/data/flagshipProperty";
 import type { BlockedDate, CalendarBlockSource, CieloAvailability } from "@/lib/cielo/types";
-
-const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
-
-function sb() {
-  return createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
-}
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 function rowToBlock(row: {
   start_date: string;
@@ -31,9 +24,10 @@ function rowToBlock(row: {
 
 /** Read all active calendar blocks from Abraxas DB. */
 export async function getProtocolCalendarBlocks(): Promise<BlockedDate[]> {
-  if (!SB_URL || !SB_KEY) return [];
+  const sb = getSupabaseAdmin();
+  if (!sb) return [];
 
-  const { data } = await sb()
+  const { data } = await sb
     .from("cielo_calendar_blocks")
     .select("start_date, end_date, source, booking_id, note")
     .order("start_date", { ascending: true });
@@ -43,7 +37,7 @@ export async function getProtocolCalendarBlocks(): Promise<BlockedDate[]> {
   }
 
   // Fallback: derive from stay_requests if calendar table empty / not migrated yet
-  const { data: stays } = await sb()
+  const { data: stays } = await sb
     .from("stay_requests")
     .select("check_in, check_out, booking_id, status")
     .in("status", ["pending", "confirmed", "authorized", "captured"]);
@@ -67,8 +61,9 @@ export async function getCieloAvailability(): Promise<CieloAvailability> {
   const operator = blocked.filter(b => b.source === "operator" || b.source === "maintenance").length;
 
   let lastAttested: string | null = null;
-  if (SB_URL && SB_KEY) {
-    const { data } = await sb()
+  const sb = getSupabaseAdmin();
+  if (sb) {
+    const { data } = await sb
       .from("cielo_calendar_blocks")
       .select("created_at")
       .eq("source", "operator")
@@ -98,9 +93,10 @@ export async function holdDatesForBooking(
   checkIn: string,
   checkOut: string,
 ): Promise<void> {
-  if (!SB_URL || !SB_KEY) return;
+  const sb = getSupabaseAdmin();
+  if (!sb) return;
 
-  await sb().from("cielo_calendar_blocks").insert({
+  await sb.from("cielo_calendar_blocks").insert({
     start_date: checkIn,
     end_date: checkOut,
     source: "abraxas_pending",
@@ -111,9 +107,10 @@ export async function holdDatesForBooking(
 
 /** Promote a pending hold to confirmed (after operator approval). */
 export async function confirmBookingHold(bookingId: string): Promise<void> {
-  if (!SB_URL || !SB_KEY) return;
+  const sb = getSupabaseAdmin();
+  if (!sb) return;
 
-  await sb()
+  await sb
     .from("cielo_calendar_blocks")
     .update({ source: "abraxas_confirmed", note: "Confirmed Abraxas stay" })
     .eq("booking_id", bookingId);
@@ -121,8 +118,9 @@ export async function confirmBookingHold(bookingId: string): Promise<void> {
 
 /** Release hold if booking cancelled or declined. */
 export async function releaseBookingHold(bookingId: string): Promise<void> {
-  if (!SB_URL || !SB_KEY) return;
-  await sb().from("cielo_calendar_blocks").delete().eq("booking_id", bookingId);
+  const sb = getSupabaseAdmin();
+  if (!sb) return;
+  await sb.from("cielo_calendar_blocks").delete().eq("booking_id", bookingId);
 }
 
 /** Operator manually blocks dates (e.g. after checking public Airbnb listing). */
@@ -132,9 +130,10 @@ export async function addOperatorBlock(
   note: string,
   createdBy = "operator",
 ): Promise<void> {
-  if (!SB_URL || !SB_KEY) return;
+  const sb = getSupabaseAdmin();
+  if (!sb) return;
 
-  await sb().from("cielo_calendar_blocks").insert({
+  await sb.from("cielo_calendar_blocks").insert({
     start_date: startDate,
     end_date: endDate,
     source: "operator",
@@ -145,13 +144,15 @@ export async function addOperatorBlock(
 }
 
 export async function removeBlockById(id: string): Promise<void> {
-  if (!SB_URL || !SB_KEY) return;
-  await sb().from("cielo_calendar_blocks").delete().eq("id", id);
+  const sb = getSupabaseAdmin();
+  if (!sb) return;
+  await sb.from("cielo_calendar_blocks").delete().eq("id", id);
 }
 
 export async function listCalendarBlocks() {
-  if (!SB_URL || !SB_KEY) return [];
-  const { data } = await sb()
+  const sb = getSupabaseAdmin();
+  if (!sb) return [];
+  const { data } = await sb
     .from("cielo_calendar_blocks")
     .select("*")
     .order("start_date", { ascending: true });
@@ -159,8 +160,9 @@ export async function listCalendarBlocks() {
 }
 
 export async function listStayRequests(limit = 50) {
-  if (!SB_URL || !SB_KEY) return [];
-  const { data } = await sb()
+  const sb = getSupabaseAdmin();
+  if (!sb) return [];
+  const { data } = await sb
     .from("stay_requests")
     .select("*")
     .order("created_at", { ascending: false })

@@ -109,14 +109,23 @@ describe("065_service_role_runtime_grants migration", () => {
   const grantStatements = extractIndentedGrantStatements(doBody);
   const expectedGrants = buildExpected065GrantLiterals();
 
-  it("is migration 18 and follows 062 in the required order", () => {
-    expect(DEMO_REQUIRED_MIGRATION_ORDER).toHaveLength(18);
-    expect(DEMO_REQUIRED_MIGRATION_ORDER.at(-1)).toBe(DEMO_MIGRATION_065_FILENAME);
-    expect(DEMO_REQUIRED_MIGRATION_ORDER.at(-2)).toBe("062_partner_webhook_outbox.sql");
+  it("is migration 20 and keeps 083 after wallet binding dependencies", () => {
+    expect(DEMO_REQUIRED_MIGRATION_ORDER).toHaveLength(20);
+    expect(DEMO_REQUIRED_MIGRATION_ORDER.at(-1)).toBe("083_zklogin_wallet_binding_atomic.sql");
+    expect(DEMO_REQUIRED_MIGRATION_ORDER.at(-2)).toBe(DEMO_MIGRATION_065_FILENAME);
+    expect(DEMO_REQUIRED_MIGRATION_ORDER).toContain("037_active_wallet_unique.sql");
+    const idx018 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf("018_policy_verification.sql");
+    const idx036 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf("036_connect_wallet_authority.sql");
+    const idx037 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf("037_active_wallet_unique.sql");
+    const idx083 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf("083_zklogin_wallet_binding_atomic.sql");
+    expect(idx037).toBeGreaterThan(idx036);
+    expect(idx083).toBeGreaterThan(idx018);
+    expect(idx083).toBeGreaterThan(idx036);
+    expect(idx083).toBeGreaterThan(idx037);
   });
 
   it("preserves hashes for the existing 17 ledgered manifest files", () => {
-    const ledgered = DEMO_REQUIRED_MIGRATION_ORDER.slice(0, 17);
+    const ledgered = DEMO_REQUIRED_MIGRATION_ORDER.filter((file) => file in LEDGERED_MIGRATION_HASH_SNAPSHOT);
     expect(ledgered).toHaveLength(17);
     for (const file of ledgered) {
       const content = readMigration(file);

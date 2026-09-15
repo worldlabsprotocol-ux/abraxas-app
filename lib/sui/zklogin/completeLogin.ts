@@ -4,6 +4,7 @@
 import { jwtToAddress, decodeJwt } from "@mysten/sui/zklogin";
 import {
   clearPendingSession,
+  clearUserSession,
   loadPendingSession,
   loadUserSession,
   saveUserSession,
@@ -88,22 +89,56 @@ export async function resolveVerifiedLoginMode(callbackHash?: string): Promise<Z
   throw new Error(ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE);
 }
 
+function hasFreshOAuthCallback(callbackHash?: string): boolean {
+  return Boolean(callbackHash?.trim());
+}
+
+function isSessionExpired(session: ZkLoginUserSession): boolean {
+  if (!Number.isFinite(session.maxEpoch) || session.maxEpoch <= 0) return true;
+  return false;
+}
+
+function clearUntrustedZkLoginMaterial(): void {
+  clearUserSession();
+  clearPendingSession();
+  clearLoginInFlight();
+}
+
 export async function completeGoogleZkLogin(
   idToken: string,
   options?: { callbackHash?: string },
 ): Promise<ZkLoginUserSession> {
   logAuthEvent("oauth_callback");
 
+  const freshOAuthCallback = hasFreshOAuthCallback(options?.callbackHash);
   const pending = loadPendingSession();
+
   if (!pending) {
+    if (freshOAuthCallback) {
+      clearUntrustedZkLoginMaterial();
+      logAuthEvent("zklogin_complete_error", {
+        errorCode: "pending_session_missing_with_oauth_callback",
+      });
+      throw new Error(
+        "Sign-in could not finish: this browser lost the temporary signing key during Google redirect. "
+        + "Disable private browsing, allow site storage, then tap Sign in once more.",
+      );
+    }
+
     const existing = loadUserSession();
     if (existing) {
+      if (isSessionExpired(existing)) {
+        clearUntrustedZkLoginMaterial();
+        logAuthEvent("zklogin_complete_error", { errorCode: "cached_session_expired" });
+        throw new Error(ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE);
+      }
       logAuthEvent("zklogin_complete", {
         correlationId: createAuthCorrelationId(),
         detail: "existing_session",
       });
       return existing;
     }
+
     clearLoginInFlight();
     logAuthEvent("zklogin_complete_error", {
       errorCode: "pending_session_missing",
@@ -126,7 +161,7 @@ export async function completeGoogleZkLogin(
   try {
     loginMode = await resolveVerifiedLoginMode(options?.callbackHash);
   } catch (e) {
-    clearLoginInFlight();
+    clearUntrustedZkLoginMaterial();
     const err = e instanceof Error ? e.message : ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE;
     logAuthEvent("zklogin_complete_error", { errorCode: toAuthErrorCode(err, "oauth_state_invalid") });
     throw new Error(err);
@@ -149,7 +184,7 @@ export async function completeGoogleZkLogin(
   const regData = (await regRes.json()) as RegisterFailureBody;
 
   if (!regRes.ok || !regData.sui_address) {
-    clearLoginInFlight();
+    clearUntrustedZkLoginMaterial();
     const err = mapRegisterFailureToUserError(regRes.status, regData, loginMode);
     logAuthEvent("zklogin_complete_error", {
       errorCode: toAuthErrorCode(regData.code ?? err, "register_failed"),

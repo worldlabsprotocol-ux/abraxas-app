@@ -63,7 +63,8 @@ describe("integrationReadiness", () => {
 
   it("separates wiring checklist from release gates", () => {
     expect(INTEGRATION_WIRING_CHECKLIST.length).toBeGreaterThanOrEqual(8);
-    expect(RELEASE_GATE_CHECKLIST.every(g => g.blocked)).toBe(true);
+    expect(RELEASE_GATE_CHECKLIST.some(g => g.blocked)).toBe(true);
+    expect(RELEASE_GATE_CHECKLIST.some(g => !g.blocked)).toBe(true);
     expect(INTEGRATION_WIRING_COMPLETE_CRITERIA.length).toBeGreaterThanOrEqual(4);
   });
 

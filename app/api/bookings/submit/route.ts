@@ -1,13 +1,11 @@
 // FILE: app/api/bookings/submit/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
 import { getCieloAvailability } from "@/lib/cielo/availability";
 import { holdDatesForBooking } from "@/lib/cielo/calendar";
 import { rangesOverlap, eachNight, estimateUsdc } from "@/lib/cielo/bookingValidation";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
-const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 const TREASURY = process.env.NEXT_PUBLIC_CIRCUIT_WALLET ?? "circuit.skr";
 
 export async function POST(req: NextRequest) {
@@ -49,8 +47,8 @@ export async function POST(req: NextRequest) {
     payment_asset: body.payment_asset ?? "USDC",
   };
 
-  if (SB_URL && SB_KEY) {
-    const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
+  const sb = getSupabaseAdmin();
+  if (sb) {
     try {
       await sb.from("stay_requests").insert({
         booking_id,

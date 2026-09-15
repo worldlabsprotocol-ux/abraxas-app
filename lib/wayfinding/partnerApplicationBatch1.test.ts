@@ -112,9 +112,9 @@ describe("phase 8 partner application batch 1", () => {
 
   it("prioritizes receipt verification docs over receipt tester in post-apply flows", () => {
     const integrations = read("app/integrations/page.tsx");
-    expect(integrations).toContain("PARTNER_POST_APPLY_STEPS");
     expect(integrations).toContain("PARTNER_RECEIPT_DOCS_ANCHOR");
-    expect(integrations).toContain("Receipt tester (mirror)");
+    expect(integrations).toContain("PARTNER_RECEIPT_VERIFIER_PATH");
+    expect(integrations).toContain("Partner Flow docs");
 
     const panel = read("components/integrate/IntegratorStartHerePanel.tsx");
     const receiptDocsIdx = panel.indexOf("PARTNER_RECEIPT_DOCS_ANCHOR");

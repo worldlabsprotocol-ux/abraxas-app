@@ -211,6 +211,28 @@ function installCredentialTables(
         }),
       };
     }
+    if (table === "passport_documents") {
+      const resolved = Promise.resolve({ count: 0, error: null });
+      const chain = {
+        select: vi.fn(() => chain),
+        or: vi.fn(() => chain),
+        eq: vi.fn(() => chain),
+        in: vi.fn(() => resolved),
+      };
+      return chain;
+    }
+    if (table === "identity_review_sessions") {
+      let eqCalls = 0;
+      const resolved = Promise.resolve({ count: 0, error: null });
+      const chain = {
+        select: vi.fn(() => chain),
+        eq: vi.fn(() => {
+          eqCalls += 1;
+          return eqCalls >= 2 ? resolved : chain;
+        }),
+      };
+      return chain;
+    }
     if (table === "abraxas_credentials") {
       return {
         select: vi.fn().mockReturnThis(),

@@ -2,11 +2,40 @@
 // FILE: lib/admin/adminReceiptsPage.test.ts
 
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createElement } from "react";
 import AdminReceiptsPage from "@/app/admin/receipts/page";
+
+const adminRequest = vi.fn();
+
+vi.mock("@/lib/admin/productionAdminSessionUi", () => ({
+  PRODUCTION_ADMIN_UNAUTHORIZED_MESSAGE: "Sign in with an authorized Google account.",
+  ProductionAdminSessionStatus: () => null,
+  useProductionAdminSessionGate: () => ({
+    loading: false,
+    authorized: true,
+    usePinUnlock: false,
+    pin: "",
+    setPin: vi.fn(),
+    unlockWithPin: vi.fn(),
+    unauthorizedMessage: "Sign in",
+    authorizedLabel: "Signed in",
+    adminRequest,
+  }),
+}));
+
+vi.mock("@/lib/admin/useAdminConfirm", () => ({
+  useAdminConfirm: () => ({
+    requestConfirm: ({ onConfirmed }: { onConfirmed: () => void }) => onConfirmed(),
+    confirmDialogProps: { open: false, busy: false },
+  }),
+}));
+
+vi.mock("@/components/admin/AdminConfirmDialog", () => ({
+  AdminConfirmDialog: () => null,
+}));
 
 const receiptRow = {
   receipt_id: "rcpt_demo_001",
@@ -38,7 +67,7 @@ const receiptDetail = {
 };
 
 function mockReceiptFetch() {
-  vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo, init?: RequestInit) => {
+  adminRequest.mockImplementation(async (input: RequestInfo, init?: RequestInit) => {
     const url = String(input);
     if (url.endsWith("/api/admin/receipts") && !init?.method) {
       return new Response(JSON.stringify({ receipts: [receiptRow] }), { status: 200 });
@@ -56,17 +85,17 @@ function mockReceiptFetch() {
       }), { status: 200 });
     }
     return new Response(JSON.stringify({ receipts: [receiptRow] }), { status: 200 });
-  }));
+  });
 }
 
 afterEach(() => {
   cleanup();
-  vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 
 beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {});
+  adminRequest.mockReset();
 });
 
 describe("AdminReceiptsPage loading and revoke feedback", () => {
@@ -92,8 +121,6 @@ describe("AdminReceiptsPage loading and revoke feedback", () => {
     await screen.findByText("Receipt inspector");
 
     await user.click(screen.getByRole("button", { name: "Revoke receipt" }));
-    const dialog = await screen.findByRole("dialog");
-    await user.click(within(dialog).getByRole("button", { name: "Revoke receipt" }));
 
     await waitFor(() => {
       expect(screen.getByText(/Receipt rcpt_demo_001 revoked/i)).toBeInTheDocument();

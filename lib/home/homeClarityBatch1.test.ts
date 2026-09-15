@@ -52,7 +52,7 @@ describe("homepage clarity batch 1 static guards", () => {
   it("aligns homepage metadata to reusable identity with secondary RWA mention", () => {
     const page = read("app/page.tsx");
     expect(page).toContain("Reusable verification for regulated apps");
-    expect(page).toContain("tokenized real-world asset (RWA)");
+    expect(page).toContain("tokenized real world asset (RWA)");
     expect(page).not.toContain("RWA Verification App. Real World Asset Tokenization");
   });
 

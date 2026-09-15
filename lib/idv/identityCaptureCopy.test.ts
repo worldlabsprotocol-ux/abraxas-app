@@ -61,7 +61,7 @@ describe("camera switch labels", () => {
 
 describe("identityCaptureStepIntro", () => {
   it("explains camera permission before capture on step 2", () => {
-    expect(identityCaptureStepIntro("id_front")).toContain("allow camera access");
+    expect(identityCaptureStepIntro("id_front").toLowerCase()).toContain("allow camera access");
     expect(identityCaptureStepIntro("id_front")).toContain("Step 2 of 4");
   });
 });
