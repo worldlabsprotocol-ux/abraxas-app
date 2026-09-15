@@ -110,12 +110,12 @@ describe("065_service_role_runtime_grants migration", () => {
   const expectedGrants = buildExpected065GrantLiterals();
 
   it("keeps 065 after 062 and before later required migrations", () => {
-    expect(DEMO_REQUIRED_MIGRATION_ORDER).toHaveLength(20);
+    expect(DEMO_REQUIRED_MIGRATION_ORDER).toHaveLength(21);
     const idx065 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf(DEMO_MIGRATION_065_FILENAME);
     const idx062 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf("062_partner_webhook_outbox.sql");
     expect(idx065).toBeGreaterThan(idx062);
-    expect(DEMO_REQUIRED_MIGRATION_ORDER.at(-1)).toBe("084_partner_launchpad_foundation.sql");
-    expect(DEMO_REQUIRED_MIGRATION_ORDER.at(-2)).toBe("083_zklogin_wallet_binding_atomic.sql");
+    expect(DEMO_REQUIRED_MIGRATION_ORDER.at(-1)).toBe("085_partner_launchpad_hardening.sql");
+    expect(DEMO_REQUIRED_MIGRATION_ORDER.at(-2)).toBe("084_partner_launchpad_foundation.sql");
   });
 
   it("preserves hashes for the existing 17 ledgered manifest files", () => {
