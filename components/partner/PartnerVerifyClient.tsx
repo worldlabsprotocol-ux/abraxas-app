@@ -190,6 +190,7 @@ export function PartnerVerifyClient({
           policy_id: policyId || undefined,
           purpose: purpose || undefined,
           return_url: returnUrl,
+          app: launchpadAppSlug || undefined,
         }),
       });
       const data = await res.json() as FlowResult;

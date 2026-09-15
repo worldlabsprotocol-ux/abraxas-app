@@ -7,18 +7,24 @@ export type LaunchpadApplicationStatus = "active" | "suspended" | "pending";
 
 export type LaunchpadActivityEventType =
   | "verification_started"
+  | "disclosure_viewed"
   | "user_consented"
   | "proof_reused"
   | "proof_created"
+  | "receipt_signing_attempted"
   | "receipt_issued"
   | "receipt_verified"
   | "verification_failed"
+  | "verification_unavailable"
+  | "return_completed"
   | "callback_completed"
   | "callback_failed"
   | "application_provisioned"
   | "credential_rotated"
   | "credential_revoked"
-  | "production_access_requested";
+  | "production_access_requested"
+  | "production_access_approved"
+  | "production_access_rejected";
 
 export type ProductionAccessRequestStatus = "pending" | "approved" | "rejected";
 
@@ -34,6 +40,8 @@ export interface LaunchpadApplicationRow {
   policy_template_id: string;
   allowed_return_urls: string[];
   api_key_id: string | null;
+  production_api_key_id: string | null;
+  production_key_revealed_at: string | null;
   status: LaunchpadApplicationStatus;
   idempotency_key: string | null;
   created_at: string;

@@ -26,7 +26,13 @@ export async function GET(req: NextRequest) {
       applicationId: resolved.config.applicationId,
       partnerId: resolved.config.partnerId,
       eventType: "verification_started",
-      publicCode: "started",
+      publicCode: "hosted_opened",
+    });
+    await recordLaunchpadActivity(sb, {
+      applicationId: resolved.config.applicationId,
+      partnerId: resolved.config.partnerId,
+      eventType: "disclosure_viewed",
+      publicCode: "disclosure_ready",
     });
   } catch {
     /* activity is best effort for public resolve */
