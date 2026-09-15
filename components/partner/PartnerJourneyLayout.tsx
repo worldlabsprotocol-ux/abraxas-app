@@ -10,6 +10,7 @@ import {
   ABX_SPACING,
   ABX_TAB_ACCENTS,
   ABX_TYPOGRAPHY,
+  abxAccentCssVars,
 } from "@/lib/design/abraxasDesignSystem";
 
 const FONT = ABX_FONT_SANS;
@@ -45,6 +46,7 @@ export function PartnerJourneyLayout({
       data-theme="dark"
       className="partner-journey-layout"
       style={{
+        ...abxAccentCssVars("partner"),
         minHeight: "100vh",
         display: "flex",
         alignItems: "center",

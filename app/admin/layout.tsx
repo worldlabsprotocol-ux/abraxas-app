@@ -52,7 +52,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   if (state === "loading") {
     return (
-      <div data-theme="dark" className="abx-admin-shell" style={{ minHeight: "60vh", display: "grid", placeItems: "center", color: "var(--text-muted)", fontFamily: FONT }}>
+      <div data-theme="dark" className="abx-admin-shell" style={{ display: "grid", placeItems: "center", color: "var(--text-muted)", fontFamily: FONT }}>
         Checking admin access
       </div>
     );
@@ -60,7 +60,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   if (state === "denied") {
     return (
-      <div data-theme="dark" className="abx-admin-shell" style={{ minHeight: "70vh", display: "grid", placeItems: "center", padding: "2rem", color: "#f0f0f0" }}>
+      <div data-theme="dark" className="abx-admin-shell" style={{ display: "grid", placeItems: "center", padding: "2rem", color: "#f0f0f0" }}>
         <div style={{ maxWidth: 400, width: "100%", textAlign: "center" }}>
           <h1 style={{ fontFamily: FONT, fontSize: "1.25rem", marginBottom: "0.5rem" }}>Admin access required</h1>
           <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.6, marginBottom: "1.25rem" }}>

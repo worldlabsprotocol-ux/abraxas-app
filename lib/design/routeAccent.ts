@@ -24,6 +24,7 @@ const PREFIX_ACCENTS: Array<{ prefix: string; accent: AbxTabAccent }> = [
   { prefix: "/payment", accent: "partner" },
   { prefix: "/cielo", accent: "home" },
   { prefix: "/marketplace", accent: "home" },
+  { prefix: "/rwa", accent: "home" },
   { prefix: "/vault", accent: "home" },
   { prefix: "/build", accent: "home" },
   { prefix: "/swap", accent: "home" },
