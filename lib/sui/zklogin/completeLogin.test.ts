@@ -25,6 +25,7 @@ import {
 } from "./completeLogin";
 import { fakeGoogleIdToken } from "./testJwt";
 import { jwtToAddress } from "@mysten/sui/zklogin";
+import { ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE } from "./oauthLoginState";
 import { ZKLOGIN_SIGN_IN_COPY } from "./signInCopy";
 
 const LEGACY_OAUTH_CLIENT_ID = "187000000000-legacyclient.apps.googleusercontent.com";
@@ -108,7 +109,7 @@ describe("completeGoogleZkLogin", () => {
     const token = fakeGoogleIdToken({ sub: "sub", aud: NEW_OAUTH_CLIENT_ID });
     await expect(
       completeGoogleZkLogin(token, { callbackHash: `#id_token=x&state=${OAUTH_STATE}` }),
-    ).rejects.toThrow(ZKLOGIN_SIGN_IN_COPY.errors.signInExpired);
+    ).rejects.toThrow(ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE);
   });
 
   it("rejects login when OAuth client ID changed but server still returns legacy address", async () => {

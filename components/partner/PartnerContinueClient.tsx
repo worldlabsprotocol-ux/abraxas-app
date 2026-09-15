@@ -432,7 +432,8 @@ function PartnerContinueInner() {
             <div style={{ marginTop: "1rem" }}>
               <Btn
                 variant="secondary"
-                onClick={() => { window.location.href = returnPath; }}
+                disabled={handoff.inFlight}
+                onClick={() => { void handoff.complete(); }}
               >
                 {returnLabel}
               </Btn>

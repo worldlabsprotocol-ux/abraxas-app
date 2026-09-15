@@ -3,6 +3,7 @@
 // Shared partner-flow handoff controller — sole owner of phase and in-flight state.
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { navigateToPartnerHandoffRedirect } from "@/lib/partner/partnerClientNavigation";
 
 export type PartnerFlowHandoffPhase = "idle" | "completing" | "failed";
 export type PartnerFlowHandoffFailureCategory =
@@ -134,7 +135,11 @@ export function usePartnerFlowHandoff(ctx: PartnerFlowHandoffContext): PartnerFl
     const result = await postPartnerFlowComplete(body);
 
     if (result.ok) {
-      window.location.href = result.redirectUrl;
+      if (!navigateToPartnerHandoffRedirect(result.redirectUrl)) {
+        setFailureCategory("partner_flow_completion_failed");
+        setPhase("failed");
+        inFlightRef.current = false;
+      }
       return;
     }
 

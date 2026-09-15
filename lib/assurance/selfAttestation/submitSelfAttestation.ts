@@ -153,17 +153,18 @@ export async function submitSelfAttestation(
       nonce,
     });
     const signed = await signBrowseAccessReceipt(payload);
-    if (signed) {
-      browseReceipt = signed;
-      emitSelfAttestationAuditEvent({
-        event: "browse_receipt_issued",
-        holderRef,
-        partnerId: input.partnerId,
-        policyId: input.policyId,
-        purpose,
-        ageBand,
-      });
+    if (!signed) {
+      return { ok: false, code: "receipt_signing_failed", status: 503 };
     }
+    browseReceipt = signed;
+    emitSelfAttestationAuditEvent({
+      event: "browse_receipt_issued",
+      holderRef,
+      partnerId: input.partnerId,
+      policyId: input.policyId,
+      purpose,
+      ageBand,
+    });
   }
 
   return {
