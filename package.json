@@ -43,7 +43,8 @@
     "demo:migrate": "npx tsx scripts/demo/apply-demo-migrations.ts",
     "demo:provision": "npx tsx scripts/demo/provision-partner-sandbox-holder.ts",
     "demo:signing-key:generate": "npx tsx scripts/demo/generate-demo-signing-key.ts",
-    "demo:signing-key:verify": "npx tsx scripts/demo/verify-demo-signing-key.ts"
+    "demo:signing-key:verify": "npx tsx scripts/demo/verify-demo-signing-key.ts",
+    "walkthrough:progressive-proof:preview": "npx tsx scripts/progressive-proof/preview-validation.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",
