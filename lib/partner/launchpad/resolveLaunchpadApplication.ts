@@ -2,7 +2,7 @@
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
-import { isPartnerReturnUrlAllowlisted } from "@/lib/connect/returnUrlAllowlistSemantics";
+import { isLaunchpadReturnUrlAllowlisted } from "@/lib/partner/launchpad/launchpadReturnUrlAllowlist";
 
 export async function getLaunchpadApplicationBySlug(
   publicSlug: string,
@@ -46,5 +46,5 @@ export function validateLaunchpadHostedReturnUrl(
   app: LaunchpadApplicationRow,
   returnUrl: string,
 ): boolean {
-  return isPartnerReturnUrlAllowlisted(app.allowed_return_urls, returnUrl);
+  return isLaunchpadReturnUrlAllowlisted(app.allowed_return_urls, returnUrl);
 }

@@ -62,4 +62,13 @@ describe("hostile return URL matrix", () => {
     expect(validateLaunchpadHostedReturnUrl(app, "https://app.example.com/callback")).toBe(true);
     expect(validateLaunchpadHostedReturnUrl(app, "https://app.example.com/callback/complete")).toBe(true);
   });
+
+  it("rejects disallowed paths when allowlist entry is origin-only", () => {
+    const originOnlyApp: LaunchpadApplicationRow = {
+      ...app,
+      allowed_return_urls: ["https://preview.example.com"],
+    };
+    expect(validateLaunchpadHostedReturnUrl(originOnlyApp, "https://preview.example.com")).toBe(true);
+    expect(validateLaunchpadHostedReturnUrl(originOnlyApp, "https://preview.example.com/disallowed/path")).toBe(false);
+  });
 });

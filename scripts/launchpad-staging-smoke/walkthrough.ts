@@ -27,6 +27,19 @@ function step(id: string, label: string, status: StepStatus, detail?: string): S
   return { id, label, status, detail };
 }
 
+/** Abraxas returns 401 for unknown keys and 403 for revoked keys — both reject auth. */
+function isCredentialRejected(status: number): boolean {
+  return status === 401 || status === 403;
+}
+
+function buildVercelBypassHeaders(bypass?: string): Record<string, string> {
+  if (!bypass) return {};
+  return {
+    "x-vercel-protection-bypass": bypass,
+    "x-vercel-set-bypass-cookie": "true",
+  };
+}
+
 function jsonField(body: unknown, path: string): unknown {
   if (!body || typeof body !== "object") return undefined;
   return path.split(".").reduce<unknown>((acc, key) => {
@@ -183,18 +196,24 @@ export async function runLaunchpadStagingWalkthrough(config: StagingTargetConfig
           ),
         );
 
-        const otherPartnerRes = await client.postJson("/api/launchpad/applications", {
+        const unauthenticatedClient = new LaunchpadStagingClient(config);
+        const otherPartnerRes = await unauthenticatedClient.postJson("/api/launchpad/applications", {
           ...provisionPayload,
           application_name: `Other ${testId}`,
           display_name: `Other ${testId}`,
           partner_id: `${partnerId}-other`,
         });
+        const crossPartnerRejected =
+          otherPartnerRes.status === 409
+          || otherPartnerRes.status === 400
+          || (otherPartnerRes.status === 403
+            && String(jsonField(otherPartnerRes.body, "error") ?? "").includes("forbidden"));
         authorizationMatrix.push(
           step(
             "idempotency-cross-partner",
             "Another partner cannot reuse the idempotency key",
-            otherPartnerRes.status === 409 || otherPartnerRes.status === 400 ? "pass" : "fail",
-            `status=${otherPartnerRes.status}`,
+            crossPartnerRejected ? "pass" : "fail",
+            `status=${otherPartnerRes.status} error=${String(jsonField(otherPartnerRes.body, "error") ?? "none")}`,
           ),
         );
 
@@ -316,15 +335,13 @@ export async function runLaunchpadStagingWalkthrough(config: StagingTargetConfig
           }
         });
 
-        const extraHeaders: Record<string, string> = {};
-        if (config.vercelProtectionBypass) {
-          extraHeaders["x-vercel-protection-bypass"] = config.vercelProtectionBypass;
-        }
+        const extraHeaders = buildVercelBypassHeaders(config.vercelProtectionBypass);
         if (Object.keys(extraHeaders).length) {
           await page.setExtraHTTPHeaders(extraHeaders);
         }
 
         await page.goto(`${config.targetUrl}/developers/launchpad`, { waitUntil: "domcontentloaded" });
+        await page.getByLabel("Sandbox API key").waitFor({ state: "visible", timeout: 30_000 }).catch(() => undefined);
         const signInVisible = await page.getByLabel("Sandbox API key").isVisible().catch(() => false);
         steps.push(
           step(
@@ -351,18 +368,21 @@ export async function runLaunchpadStagingWalkthrough(config: StagingTargetConfig
             }
           }, state.sandboxApiKey);
           await page.getByRole("button", { name: "Sign in" }).click();
+          await page.getByText("Build your integration").waitFor({ state: "visible", timeout: 30_000 }).catch(() => undefined);
+          const sandboxBadgeVisible = await page.getByText("sandbox", { exact: false }).first().isVisible().catch(() => false);
           steps.push(
             step(
               "03-authenticate",
               "Authenticate with sandbox API key",
-              (await page.getByText("sandbox", { exact: false }).first().isVisible().catch(() => false)) ? "pass" : "fail",
+              sandboxBadgeVisible ? "pass" : "fail",
             ),
           );
+          const workspaceVisible = await page.getByText("Build your integration").isVisible().catch(() => false);
           steps.push(
             step(
               "04-workspace-loads",
               "Partner Launchpad workspace loads after authentication",
-              (await page.getByText("Build your integration").isVisible().catch(() => false)) ? "pass" : "fail",
+              workspaceVisible ? "pass" : "fail",
             ),
           );
         } else {
@@ -502,8 +522,8 @@ export async function runLaunchpadStagingWalkthrough(config: StagingTargetConfig
             step(
               "revoked-old-credential",
               "Previous credential rejected after rotation",
-              oldKeyRes.status === 401 ? "pass" : "fail",
-              `status=${oldKeyRes.status}`,
+              isCredentialRejected(oldKeyRes.status) ? "pass" : "fail",
+              `status=${oldKeyRes.status} error=${String(jsonField(oldKeyRes.body, "error") ?? "none")}`,
             ),
           );
         }
@@ -537,14 +557,16 @@ export async function runLaunchpadStagingWalkthrough(config: StagingTargetConfig
             step(
               "31-revoked-rejected",
               "Revoked credential rejected",
-              revokedRes.status === 401 ? "pass" : "fail",
+              isCredentialRejected(revokedRes.status) ? "pass" : "fail",
+              `status=${revokedRes.status} error=${String(jsonField(revokedRes.body, "error") ?? "none")}`,
             ),
           );
           authorizationMatrix.push(
             step(
               "revoked-credential-auth",
               "Revoked credential cannot authenticate",
-              revokedRes.status === 401 ? "pass" : "fail",
+              isCredentialRejected(revokedRes.status) ? "pass" : "fail",
+              `status=${revokedRes.status} error=${String(jsonField(revokedRes.body, "error") ?? "none")}`,
             ),
           );
         }
