@@ -10,6 +10,17 @@ Abraxas is **not** a unified KYC product, an automatic legal-compliance service,
 
 ---
 
+## Environments and Supabase projects
+
+| Environment | Application | Supabase project ref | Status on `main` |
+|-------------|-------------|----------------------|------------------|
+| **Production** | [abraxasworld.xyz](https://abraxasworld.xyz) | `bztwutzprwsdrtqdpymf` (MAIN) | Live Partner Flow, Passport, operator-provisioned sandbox |
+| **Launchpad staging preview** | Vercel preview for [PR #290](https://github.com/worldlabsprotocol-ux/abraxas-app/pull/290) | `ocntwbxarpjeixdnzide` (intended DEMO) | Draft only — not merged |
+
+Do **not** run Partner Launchpad staging smoke tests against the preview until `GET /api/launchpad/staging/environment` returns HTTP 200 with `deployment_environment: "preview"` and `supabase_project_ref` equal to the intended demo ref (`ocntwbxarpjeixdnzide`). Stop before any mutations on mismatch. Never point smoke tests or local experiments at MAIN production Supabase (`bztwutzprwsdrtqdpymf`).
+
+---
+
 ## How Partner Flow works
 
 1. Your app redirects the holder to Abraxas with `partner_id`, `policy_id`, and an allowlisted `return_url`.
@@ -23,12 +34,14 @@ Full integrator guide: [/docs/partner-flow](https://abraxasworld.xyz/docs/partne
 
 | | Sandbox | Production |
 |---|---------|------------|
-| **Access** | Operator-provisioned after design-partner review | Separate operator review and activation |
+| **Access (today on `main`)** | Operator-provisioned after design-partner review | Separate operator review and activation |
 | **API keys** | `abx_test_…` | `abx_live_…` |
 | **Receipts** | `production_usable: false` is **expected** | `production_usable: true` required for live gates |
 | **Authorization** | Sandbox receipts **cannot** authorize Production access | Validate every applicable field before granting access |
 
 Sandbox and Production credentials, policies, and return URLs are **not** interchangeable.
+
+**Self-service sandbox provisioning** is **not** live on `main`. It is in draft [PR #290](https://github.com/worldlabsprotocol-ux/abraxas-app/pull/290) (Partner Launchpad) and requires migrations `084` and `085` before use.
 
 ### Public receipt vs webhooks
 
@@ -59,19 +72,37 @@ Do not trust callback query parameters alone. Do not treat webhook delivery as p
 
 ## Current capabilities
 
-Grounded in the current `main` branch:
+Grounded in the current `main` branch (production at [abraxasworld.xyz](https://abraxasworld.xyz)):
 
 - **Partner Flow** — browser redirect entry at `/partner/verify`; browser-session APIs `POST /api/v1/partner-flow/evaluate`, `complete`, and `refresh`; public receipt at `GET /api/receipts/{receipt_id}/public`
 - **OpenAPI contract** — `public/openapi/partner-flow.openapi.yaml` and [/docs/partner-flow-api](https://abraxasworld.xyz/docs/partner-flow-api)
-- **Sandbox integration** — design-partner application, operator provisioning, partner portal at `/developers/partner`, conformance tooling (`npm run partner:conformance`, `npm run integration:preflight`)
+- **Sandbox integration (operator-provisioned)** — design-partner application, operator provisioning, partner portal at `/developers/partner`, conformance tooling (`npm run partner:conformance`, `npm run integration:preflight`)
 - **Optional webhooks** — signed, non-PII lifecycle notifications; sandbox test delivery from the partner portal (separate `webhooks:read` scope)
 - **Alternative server-driven path** — `POST /api/v1/verification-requests` with a partner API key (see [/docs/partner-verification-requests](https://abraxasworld.xyz/docs/partner-verification-requests))
 - **Passport (holder tools)** — `/passport` for zkLogin sign-in and optional identity capture; separate from Partner Flow receipt gates
 - **Credential verify path** — `POST /api/credentials/verify` for relying parties gating on existing credentials (see [/docs/relying-party-verify](https://abraxasworld.xyz/docs/relying-party-verify))
 
-### In development (not live)
+### In development (draft PRs — not on `main`)
 
-These capabilities are **planned** — do not implement against them until documented as shipped:
+Do not treat these as shipped production capabilities until merged and documented as live.
+
+#### Partner Launchpad — [PR #290](https://github.com/worldlabsprotocol-ux/abraxas-app/pull/290)
+
+Self-service sandbox application workspace at `/developers/launchpad` (provision policy, return URLs, hosted verify link, activity feed, production access request).
+
+- **Database:** requires migrations [`084_partner_launchpad_foundation.sql`](supabase/migrations/084_partner_launchpad_foundation.sql) and [`085_partner_launchpad_hardening.sql`](supabase/migrations/085_partner_launchpad_hardening.sql) on the target Supabase project
+- **Staging status:** has **not** passed the full demo staging walkthrough
+- **Deployment guide:** [docs/LAUNCHPAD_DEPLOYMENT.md](docs/LAUNCHPAD_DEPLOYMENT.md)
+- **Staging smoke:** `npm run smoke:launchpad:staging` (see [scripts/launchpad-staging-smoke/README.md](scripts/launchpad-staging-smoke/README.md))
+
+#### Arc proof-gated settlement — [PR #291](https://github.com/worldlabsprotocol-ux/abraxas-app/pull/291)
+
+Arc Testnet **prototype** for USDC settlement after eligibility authorization. **Depends on Partner Launchpad ([PR #290](https://github.com/worldlabsprotocol-ux/abraxas-app/pull/290)).**
+
+- **Architecture:** [docs/ARC_SETTLEMENT.md](https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/arc-proof-gated-settlement/docs/ARC_SETTLEMENT.md) (draft branch only)
+- **Not claimed:** deployed production contract, completed staging settlement transaction, mainnet support, or production-ready settlement
+
+#### Passwordless partner onboarding (planning)
 
 - **Consented passwordless partner-account creation** — create or recover a partner-local account from an Abraxas verification
 - **Pairwise partner identity** — per-partner subject identifiers; partners cannot correlate users across services
@@ -88,7 +119,7 @@ Planning reference: [docs/PARTNER_PASSWORDLESS_ONBOARDING_PLAN.md](docs/PARTNER_
 
 ## External design partners
 
-Partner Flow sandbox access is **reviewed and operator-provisioned** — not self-serve.
+**On `main` today:** Partner Flow sandbox access is **reviewed and operator-provisioned** through the design-partner program — not self-serve.
 
 | Step | Link |
 |------|------|
@@ -98,6 +129,8 @@ Partner Flow sandbox access is **reviewed and operator-provisioned** — not sel
 | Partner portal (API key) | [/developers/partner](https://abraxasworld.xyz/developers/partner) |
 
 Pilot playbook (partner-facing): [docs/EXTERNAL_DESIGN_PARTNER_PILOT.md](docs/EXTERNAL_DESIGN_PARTNER_PILOT.md)
+
+When Partner Launchpad ships ([PR #290](https://github.com/worldlabsprotocol-ux/abraxas-app/pull/290)), partners will be able to provision sandbox applications from `/developers/launchpad` after migrations `084`/`085` are applied and staging sign-off completes. Until then, use the operator-provisioned path above.
 
 ---
 
@@ -192,7 +225,7 @@ ABRAXAS_ISSUER_URL=http://localhost:3000
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-Partner Flow integration testing also requires operator-provisioned `partner_id`, `policy_id`, and allowlisted `return_url` — see the [external design partner playbook](docs/EXTERNAL_DESIGN_PARTNER_PILOT.md).
+Against **production (`main`)**, Partner Flow integration testing requires operator-provisioned `partner_id`, `policy_id`, and allowlisted `return_url` — see the [external design partner playbook](docs/EXTERNAL_DESIGN_PARTNER_PILOT.md). Draft Partner Launchpad ([PR #290](https://github.com/worldlabsprotocol-ux/abraxas-app/pull/290)) adds self-service sandbox provisioning on the demo Supabase project only after migrations `084`/`085` and staging smoke sign-off.
 
 ### CI placeholders (build and type-check only — nonfunctional)
 
@@ -218,6 +251,7 @@ NEXT_PUBLIC_VERIFICATION_PROGRAM_ID=ABRAXASverify1111111111111111111111111111111
 | `npm run lint` | ESLint |
 | `npm run integration:preflight` | Read-only integration checks ([docs/INTEGRATION_PREFLIGHT.md](docs/INTEGRATION_PREFLIGHT.md)) |
 | `npm run partner:conformance` | Partner Flow conformance checks (after credentials are issued) |
+| `npm run smoke:launchpad:staging` | Partner Launchpad staging smoke (draft [PR #290](https://github.com/worldlabsprotocol-ux/abraxas-app/pull/290); requires preview identity confirmation) |
 
 ---
 
@@ -227,6 +261,8 @@ NEXT_PUBLIC_VERIFICATION_PROGRAM_ID=ABRAXASverify1111111111111111111111111111111
 |-------|----------|
 | Docs hub | [/docs](https://abraxasworld.xyz/docs) |
 | Partner Flow | [/docs/partner-flow](https://abraxasworld.xyz/docs/partner-flow) |
+| Partner Launchpad deployment (draft) | [docs/LAUNCHPAD_DEPLOYMENT.md](docs/LAUNCHPAD_DEPLOYMENT.md) |
+| Arc settlement prototype (draft) | [docs/ARC_SETTLEMENT.md](https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/arc-proof-gated-settlement/docs/ARC_SETTLEMENT.md) |
 | External pilot playbook | [docs/EXTERNAL_DESIGN_PARTNER_PILOT.md](docs/EXTERNAL_DESIGN_PARTNER_PILOT.md) |
 | Integration preflight | [docs/INTEGRATION_PREFLIGHT.md](docs/INTEGRATION_PREFLIGHT.md) |
 | Partner webhooks | [docs/PARTNER_WEBHOOKS.md](docs/PARTNER_WEBHOOKS.md) |
