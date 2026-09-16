@@ -90,6 +90,8 @@ export const ROUTE_INVENTORY: RouteInventoryEntry[] = [
   { path: "/formations", status: "migrated_layout", shell: "AbxSectionLayout" },
   { path: "/formations/begin", status: "migrated_layout", shell: "AbxSectionLayout" },
   { path: "/gallery", status: "migrated_layout", shell: "AbxSectionLayout" },
+  { path: "/stocklana", status: "migrated_redesign", shell: "RedesignPage", notes: "Stocklana Solana eligibility hackathon demo" },
+  { path: "/stocklana/callback", status: "migrated_partner", shell: "StocklanaCallbackClient" },
   { path: "/good-trouble", status: "migrated_redesign", shell: "RedesignPage" },
   { path: "/good-trouble/checkout", status: "migrated_redesign", shell: "RedesignPage" },
   { path: "/good-trouble/enter", status: "migrated_partner", shell: "PartnerEnterClient" },

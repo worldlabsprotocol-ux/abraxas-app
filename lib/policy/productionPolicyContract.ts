@@ -180,6 +180,25 @@ export const PRODUCTION_PARTNER_POLICIES: ProductionPartnerPolicy[] = [
       session_receipt_hours: 4,
     },
   },
+  {
+    id: "stocklana-non-us-eligibility-v1",
+    partnerId: "stocklana-demo",
+    sandboxOnly: true,
+    enforcementNote:
+      "Stocklana hackathon demo — blocks US jurisdiction; does not replace PreStocks issuer KYC/AML.",
+    rules: {
+      sandbox_only: true,
+      blocked_jurisdictions: ["US"],
+      required_claims: [
+        { claim_type: "identity_verified", max_age_hours: 8760, min_assurance: "L2" },
+        { claim_type: "liveness_passed", max_age_hours: 8760 },
+        { claim_type: "residency_country", max_age_hours: 8760 },
+      ],
+      account_required: true,
+      consent_required: true,
+      session_receipt_hours: 24,
+    },
+  },
 ];
 
 export type ClaimIssuanceSource =
