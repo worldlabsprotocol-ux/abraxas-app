@@ -25,6 +25,7 @@ import {
   GOOD_TROUBLE_PARTNER_ID,
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
+import { referencePartnerBrowseCallbackUrl } from "@/lib/demo/referencePartnerBrowseCallback";
 
 const PREVIEW_URL = (process.env.PREVIEW_URL ?? "").replace(/\/$/, "");
 const BYPASS = resolveVercelProtectionBypass();
@@ -32,7 +33,7 @@ const OUT_DIR = process.env.ARTIFACT_DIR ?? "/opt/cursor/artifacts/screenshots/p
 const REPORT_DIR = process.env.REPORT_DIR ?? "reports/progressive-proof-foundation";
 const STATE_PATH = process.env.PLAYWRIGHT_STATE_PATH ?? join(OUT_DIR, "auth-state.json");
 const RESUME = process.argv.includes("--resume");
-const BROWSE_RETURN = process.env.BROWSE_RETURN_URL ?? "https://www.goodtroublecanna.com/browse-callback";
+const BROWSE_RETURN = process.env.BROWSE_RETURN_URL ?? referencePartnerBrowseCallbackUrl(PREVIEW_URL);
 
 const results: Array<{ step: string; ok: boolean; detail: string }> = [];
 
@@ -154,14 +155,18 @@ async function runPhase2(ctx: Awaited<ReturnType<typeof seedContext>>) {
 
   let browseReceipt: string | null = null;
   const finalUrl = page.url();
+  const onDemoCallback = finalUrl.startsWith(BROWSE_RETURN);
   if (finalUrl.includes("browse_receipt=")) {
     browseReceipt = new URL(finalUrl).searchParams.get("browse_receipt");
-    log("browse receipt redirect", Boolean(browseReceipt), redactBypassFromUrl(finalUrl).slice(0, 120));
+    log(
+      "demo callback redirect",
+      Boolean(browseReceipt) && onDemoCallback,
+      onDemoCallback
+        ? redactBypassFromUrl(finalUrl).slice(0, 140)
+        : `redirect missed demo callback (expected ${BROWSE_RETURN})`,
+    );
   } else {
-    const content = await page.content();
-    const match = content.match(/browse_receipt["':\s]+([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)/);
-    browseReceipt = match?.[1] ?? null;
-    log("browse receipt capture", Boolean(browseReceipt), browseReceipt ? "receipt JWT captured from page" : "no receipt yet");
+    log("demo callback redirect", false, "no browse_receipt on return URL — partner return not verified");
   }
 
   if (!browseReceipt) {

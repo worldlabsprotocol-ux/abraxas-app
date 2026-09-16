@@ -23,6 +23,7 @@ import {
   GOOD_TROUBLE_PARTNER_ID,
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
+import { referencePartnerBrowseCallbackUrl } from "@/lib/demo/referencePartnerBrowseCallback";
 import type { CredentialClaimRecord } from "@/lib/credentials/claimSchema";
 
 const PREVIEW_URL = (process.env.PREVIEW_URL ?? "").replace(/\/$/, "");
@@ -33,7 +34,8 @@ const REPORT_DIR = process.env.REPORT_DIR ?? "reports/progressive-proof-foundati
 const PARTNER_ID = GOOD_TROUBLE_PARTNER_ID;
 const BROWSE_POLICY = GOOD_TROUBLE_BROWSE_POLICY_ID;
 const RETAIL_POLICY = GOOD_TROUBLE_RETAIL_POLICY_ID;
-const RETURN_URL = "https://www.goodtroublecanna.com/age-verification-result";
+const BROWSE_RETURN_URL = referencePartnerBrowseCallbackUrl(PREVIEW_URL);
+const RETAIL_RETURN_URL = `${PREVIEW_URL}/good-trouble/enter`;
 
 interface CheckResult {
   name: string;
@@ -289,7 +291,7 @@ async function runBrowserChecks() {
       partner_id: PARTNER_ID,
       policy_id: BROWSE_POLICY,
       purpose: "browse",
-      return_url: "https://www.goodtroublecanna.com/browse-callback",
+      return_url: BROWSE_RETURN_URL,
     });
     const resp = await page.goto(`${PREVIEW_URL}/partner/verify?${q}`, {
       waitUntil: "domcontentloaded",
@@ -339,7 +341,7 @@ async function runBrowserChecks() {
     partner_id: PARTNER_ID,
     policy_id: RETAIL_POLICY,
     purpose: "purchase",
-    return_url: RETURN_URL,
+    return_url: RETAIL_RETURN_URL,
   });
   await retailPage.goto(`${PREVIEW_URL}/partner/verify?${retailQ}`, { waitUntil: "domcontentloaded", timeout: 120000 });
   await retailPage.waitForTimeout(2500);
