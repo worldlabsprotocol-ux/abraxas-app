@@ -21,6 +21,8 @@ import {
   enforcePartnerFlowRateLimit,
   recordPartnerFlowRequestOutcome,
 } from "@/lib/partner/partnerFlowRouteGuard";
+import { extractLaunchpadFlowContext } from "@/lib/partner/launchpad/extractLaunchpadFlowContext";
+import { recordCompleteLaunchpadActivity, recordFlowFailureActivity } from "@/lib/partner/launchpad/mapPartnerFlowActivity";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +61,9 @@ export async function POST(request: NextRequest) {
     return_url?: string;
     verification_request_id?: string;
     flow_trace_id?: string;
+    app?: string;
+    launchpad_application_id?: string;
+    application_id?: string;
   };
   try {
     body = await request.json();
@@ -76,10 +81,19 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const launchpadContext = extractLaunchpadFlowContext(body);
+
   const allowed = await isAllowedPartnerReturnUrl(partnerId, returnUrl);
   if (!allowed) {
+    void recordFlowFailureActivity({
+      context: launchpadContext,
+      partnerId,
+      policyId,
+      publicCode: "return_url_rejected",
+      eventType: "callback_failed",
+    });
     return NextResponse.json(
-      { error: "return_url is not allowed for this partner" },
+      { error: "return_url is not allowed for this relying party" },
       { status: 400 },
     );
   }
@@ -284,6 +298,15 @@ export async function POST(request: NextRequest) {
     partnerId,
     policyId,
     httpStatus: 200,
+  });
+
+  void recordCompleteLaunchpadActivity({
+    context: launchpadContext,
+    partnerId,
+    policyId,
+    correlationId: flowTraceId,
+    replayStatus: isPartnerFlowRevocationDenied(result) ? null : result.replay_status,
+    hasRedirectUrl: Boolean(result.redirect_url),
   });
 
   return NextResponse.json({

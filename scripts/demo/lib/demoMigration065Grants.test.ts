@@ -109,19 +109,26 @@ describe("065_service_role_runtime_grants migration", () => {
   const grantStatements = extractIndentedGrantStatements(doBody);
   const expectedGrants = buildExpected065GrantLiterals();
 
-  it("is migration 20 and keeps 083 after wallet binding dependencies", () => {
-    expect(DEMO_REQUIRED_MIGRATION_ORDER).toHaveLength(20);
-    expect(DEMO_REQUIRED_MIGRATION_ORDER.at(-1)).toBe("083_zklogin_wallet_binding_atomic.sql");
-    expect(DEMO_REQUIRED_MIGRATION_ORDER.at(-2)).toBe(DEMO_MIGRATION_065_FILENAME);
+  it("keeps 065 after 062 and launchpad migrations after wallet binding dependencies", () => {
+    expect(DEMO_REQUIRED_MIGRATION_ORDER).toHaveLength(22);
+    const idx065 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf(DEMO_MIGRATION_065_FILENAME);
+    const idx062 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf("062_partner_webhook_outbox.sql");
+    expect(idx065).toBeGreaterThan(idx062);
+    expect(DEMO_REQUIRED_MIGRATION_ORDER.at(-1)).toBe("085_partner_launchpad_hardening.sql");
+    expect(DEMO_REQUIRED_MIGRATION_ORDER.at(-2)).toBe("084_partner_launchpad_foundation.sql");
     expect(DEMO_REQUIRED_MIGRATION_ORDER).toContain("037_active_wallet_unique.sql");
     const idx018 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf("018_policy_verification.sql");
     const idx036 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf("036_connect_wallet_authority.sql");
     const idx037 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf("037_active_wallet_unique.sql");
     const idx083 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf("083_zklogin_wallet_binding_atomic.sql");
+    const idx084 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf("084_partner_launchpad_foundation.sql");
+    const idx085 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf("085_partner_launchpad_hardening.sql");
     expect(idx037).toBeGreaterThan(idx036);
     expect(idx083).toBeGreaterThan(idx018);
     expect(idx083).toBeGreaterThan(idx036);
     expect(idx083).toBeGreaterThan(idx037);
+    expect(idx084).toBeGreaterThan(idx083);
+    expect(idx085).toBeGreaterThan(idx084);
   });
 
   it("preserves hashes for the existing 17 ledgered manifest files", () => {

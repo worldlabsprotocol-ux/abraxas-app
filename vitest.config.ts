@@ -12,6 +12,7 @@ export default defineConfig({
       "components/**/*.test.tsx",
       "app/api/**/*.test.ts",
       "scripts/demo/**/*.test.ts",
+      "scripts/launchpad-staging-smoke/**/*.test.ts",
       "scripts/trust-contract-drift/**/*.test.ts",
       "examples/partner-access-nextjs-starter/**/*.test.ts",
       "examples/good-trouble-wix/**/*.test.js",
