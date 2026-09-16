@@ -1,19 +1,20 @@
-# Pause — human Google sign-in required (PR #293)
+# Browse E2E — same-session interactive handoff (PR #293)
 
-**Preview:** https://abraxas-app-git-cursor-pr-296681-worldlabsprotocol-uxs-projects.vercel.app  
-**Deployed SHA:** `b9a12655` (CI green; includes DEMO reference-partner browse callback)
+**Preview SHA:** `bdd0cd78`  
+**DEMO:** `ocntwbxarpjeixdnzide`
 
-## Exact action (one human step)
+## Prerequisites
 
-1. Open the Good Trouble **browse** partner verify URL below (Abraxas DEMO callback — not Good Trouble Wix):
+1. `VERCEL_PROTECTION_BYPASS` on **this** Cloud Agent environment (see audit report for exact UI path).
+2. Agent runs: `npm run walkthrough:progressive-proof:browse-e2e -- --interactive`
 
-   https://abraxas-app-git-cursor-pr-296681-worldlabsprotocol-uxs-projects.vercel.app/partner/verify?partner_id=good-trouble-cannabis&policy_id=good-trouble-browse-v1&purpose=browse&return_url=https%3A%2F%2Fabraxas-app-git-cursor-pr-296681-worldlabsprotocol-uxs-projects.vercel.app%2Fdemo%2Freference-partner%2Fbrowse-callback
+## Same-session Google sign-in (required)
 
-2. If Vercel Deployment Protection appears, authenticate with your team SSO (one time).
+Do **not** open the preview URL in your local browser. Sessions are not shared.
 
-3. Click **Continue with Google** and complete Google OAuth with a test account. Do **not** upload documents or start Veriff at this step.
+1. Open this agent run: https://cursor.com/agents/bc-dbc1a061-611f-47da-8196-b4029a82d541  
+2. Open the **Desktop** panel (headed Chromium on the agent VM).  
+3. In **that** Chromium window: click **Continue with Google** and complete OAuth.  
+4. The script waits in the same process, then runs DOB self-attest → DEMO callback → live API checks.
 
-4. Reply **“signed in”** so the agent can run phase 2 (`--resume`): DOB self-attest → signed browse receipt → DEMO callback → `valid_for_purchase: false` + retail denial proof.
-
-**DEMO callback (receipt lands here):**  
-`https://abraxas-app-git-cursor-pr-296681-worldlabsprotocol-uxs-projects.vercel.app/demo/reference-partner/browse-callback`
+No cookie export, no `auth-state.json`, no tokens in chat.
