@@ -12,7 +12,8 @@ import {
   isVercelSsoRedirect,
   resolveVercelProtectionBypass,
   vercelBypassHeaders,
-  vercelBypassSeedUrl,
+  redactBypassFromUrl,
+  vercelBypassSeedTarget,
 } from "@/lib/preview/vercelBypass";
 import { evaluatePassportSignInSurface } from "@/lib/preview/passportSignInAssertions";
 import { evaluatePolicyRules } from "@/lib/policy/evaluatePolicy";
@@ -91,7 +92,11 @@ async function traceRedirectChain(path: string, maxHops = 5) {
       redirect: "manual",
     });
     const location = res.headers.get("location");
-    chain.push({ status: res.status, location, url: nextUrl });
+    chain.push({
+      status: res.status,
+      location: location ? redactBypassFromUrl(location) : null,
+      url: redactBypassFromUrl(nextUrl),
+    });
     if (res.status < 300 || res.status >= 400 || !location) break;
     nextUrl = location.startsWith("http") ? location : new URL(location, PREVIEW_URL).toString();
     if (isVercelSsoRedirect(location)) break;
@@ -220,7 +225,7 @@ async function seedBypassContext(browser: Awaited<ReturnType<typeof chromium.lau
   if (!BYPASS) return;
   const ctx = await browser.newContext({ extraHTTPHeaders: vercelBypassHeaders(BYPASS) });
   const page = await ctx.newPage();
-  await page.goto(vercelBypassSeedUrl(PREVIEW_URL, BYPASS), { waitUntil: "domcontentloaded", timeout: 120000 });
+  await page.goto(vercelBypassSeedTarget(PREVIEW_URL), { waitUntil: "domcontentloaded", timeout: 120000 });
   await page.close();
   await ctx.close();
 }

@@ -14,7 +14,7 @@
 
 - Traces and classifies redirects (Vercel SSO vs same-origin)
 - Uses `/api/protocol/status` for reachability
-- Seeds bypass cookies via `vercelBypassSeedUrl()` before browser navigation
+- Seeds bypass cookies via header-only navigation (`vercelBypassSeedTarget()` — never puts the secret in URLs)
 
 ## Passport sign-in copy assertion fix
 

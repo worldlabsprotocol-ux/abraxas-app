@@ -22,12 +22,20 @@ export function isVercelSsoRedirect(location: string | null): boolean {
   return location.includes("vercel.com/sso") || location.includes("vercel.com/login");
 }
 
-export function vercelBypassSeedUrl(previewUrl: string, bypass = resolveVercelProtectionBypass()): string {
-  const base = previewUrl.replace(/\/$/, "");
-  if (!bypass) return base;
-  const params = new URLSearchParams({
-    "x-vercel-protection-bypass": bypass,
-    "x-vercel-set-bypass-cookie": "true",
-  });
-  return `${base}/?${params.toString()}`;
+/** Safe navigation target for bypass cookie seeding — never includes the secret in the URL. */
+export function vercelBypassSeedTarget(previewUrl: string): string {
+  return previewUrl.replace(/\/$/, "");
+}
+
+/** Redact bypass secrets from URLs before logging or writing reports. */
+export function redactBypassFromUrl(url: string, bypass = resolveVercelProtectionBypass()): string {
+  if (!bypass) return url;
+  return url
+    .replaceAll(bypass, "[REDACTED_BYPASS]")
+    .replace(/x-vercel-protection-bypass=[^&]+/gi, "x-vercel-protection-bypass=[REDACTED]");
+}
+
+export function urlContainsBypassSecret(url: string, bypass = resolveVercelProtectionBypass()): boolean {
+  if (!bypass) return false;
+  return url.includes(bypass) || /x-vercel-protection-bypass=/i.test(url);
 }
