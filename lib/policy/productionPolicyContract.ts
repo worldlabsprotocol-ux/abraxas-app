@@ -363,6 +363,11 @@ export const CIELO_DB_ONLY_POLICY_FLAGS: Record<string, string> = {
   identity_optional: "evaluateCieloVerifiedGuest (skips identity credential requirement)",
 };
 
+export function findProductionPolicyRules(policyId: string): PartnerPolicyRules | null {
+  const policy = PRODUCTION_PARTNER_POLICIES.find((p) => p.id === policyId);
+  return policy?.rules ?? null;
+}
+
 export function requiredClaimsForPolicy(policyId: string): ClaimType[] {
   const policy = PRODUCTION_PARTNER_POLICIES.find(p => p.id === policyId);
   if (!policy?.rules.required_claims) return [];

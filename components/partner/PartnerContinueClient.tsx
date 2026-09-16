@@ -172,6 +172,7 @@ function PartnerContinueInner() {
     partnerId,
     policyId,
     verificationRequestId: verifyRequestId,
+    walletBound: setup.walletBound,
   });
 
   const partnerName = resolvePartnerDisplayName(partnerId);

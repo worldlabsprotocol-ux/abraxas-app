@@ -4,6 +4,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { navigateToPartnerHandoffRedirect } from "@/lib/partner/partnerClientNavigation";
+import { findProductionPolicyRules } from "@/lib/policy/productionPolicyContract";
+import type { PartnerPolicyRules } from "@/lib/policy/types";
+import { isProgressivePartnerHandoffReady } from "@/lib/progressiveProof/handoffReady";
 
 export type PartnerFlowHandoffPhase = "idle" | "completing" | "failed";
 export type PartnerFlowHandoffFailureCategory =
@@ -18,6 +21,12 @@ export interface PartnerFlowHandoffContext {
   partnerId: string | null;
   policyId: string | null;
   verificationRequestId: string | null;
+  /** Progressive proof — wallet binding for policy evaluation. */
+  walletBound?: boolean;
+  /** When omitted, resolved from production policy contract when policyId is set. */
+  policyRules?: PartnerPolicyRules | null;
+  policyDecision?: "approved" | "denied" | "manual_review";
+  missingClaims?: string[];
 }
 
 export interface PartnerFlowHandoffController {
@@ -43,12 +52,20 @@ export function isPartnerFlowContext(
 }
 
 export function isPartnerFlowHandoffReady(ctx: PartnerFlowHandoffContext): boolean {
-  return Boolean(
-    isPartnerFlowContext(ctx)
-    && ctx.suiAddress
-    && ctx.identityStatus === "earned"
-    && ctx.hasCredential,
-  );
+  if (!isPartnerFlowContext(ctx) || !ctx.suiAddress) return false;
+
+  const policyRules = ctx.policyRules
+    ?? (ctx.policyId ? findProductionPolicyRules(ctx.policyId) : null);
+
+  return isProgressivePartnerHandoffReady({
+    signedIn: true,
+    walletBound: ctx.walletBound ?? true,
+    identityCredentialEarned: ctx.identityStatus === "earned",
+    hasCredential: ctx.hasCredential,
+    policyRules,
+    policyDecision: ctx.policyDecision,
+    missingClaims: ctx.missingClaims,
+  });
 }
 
 export function buildPartnerFlowCompleteBody(
