@@ -9,6 +9,7 @@ import { LaunchpadStagingClient } from "./client";
 import { verifyPreviewIdentity } from "./identity";
 import { assertApiKeyShape, describeApiKey, redactSensitiveText } from "./redact";
 import type { SmokeReport, SmokeStepResult, StepStatus } from "./report";
+import { buildSmokePartnerId, buildSmokeProvisionPayload } from "./provisionPayload";
 import { summarizeReport, writeSmokeReport } from "./report";
 
 interface WalkthroughState {
@@ -131,19 +132,11 @@ export async function runLaunchpadStagingWalkthrough(config: StagingTargetConfig
         ),
       );
 
-      const partnerId = `${testId.replace(/[^a-z0-9-]/gi, "-").slice(0, 48)}`;
+      const partnerId = buildSmokePartnerId(testId);
       state.partnerId = partnerId;
-      const idempotencyKey = `${testId}-provision`;
+      const provisionPayload = buildSmokeProvisionPayload({ testId, approvedReturnUrl });
 
-      const provisionRes = await client.postJson("/api/launchpad/applications", {
-        application_name: `Staging smoke ${testId}`,
-        display_name: `Staging smoke ${testId}`,
-        partner_id: partnerId,
-        policy_template_id: "age_21_retail",
-        return_url: approvedReturnUrl,
-        idempotency_key: idempotencyKey,
-        public_slug: partnerId.slice(-32),
-      });
+      const provisionRes = await client.postJson("/api/launchpad/applications", provisionPayload);
 
       migrationsValidated =
         provisionRes.status === 200
@@ -155,13 +148,15 @@ export async function runLaunchpadStagingWalkthrough(config: StagingTargetConfig
           "08-provision-sandbox",
           "Atomic sandbox provisioning succeeds",
           migrationsValidated ? "pass" : "fail",
-          migrationsValidated ? undefined : `status=${provisionRes.status} code=${String(jsonField(provisionRes.body, "code") ?? jsonField(provisionRes.body, "error") ?? "unknown")}`,
+          migrationsValidated
+            ? undefined
+            : `status=${provisionRes.status} code=${String(jsonField(provisionRes.body, "code") ?? "unknown")} reason=${String(jsonField(provisionRes.body, "error") ?? "unknown")}`,
         ),
       );
 
       if (migrationsValidated) {
         state.applicationId = String(jsonField(provisionRes.body, "application.application_id"));
-        state.publicSlug = String(jsonField(provisionRes.body, "application.public_slug") ?? partnerId.slice(-32));
+        state.publicSlug = String(jsonField(provisionRes.body, "application.public_slug") ?? "");
         const apiKey = jsonField(provisionRes.body, "api_key");
         if (typeof apiKey === "string") {
           assertApiKeyShape(apiKey, "sandbox");
@@ -178,14 +173,7 @@ export async function runLaunchpadStagingWalkthrough(config: StagingTargetConfig
           steps.push(step("10-credential-reveal-once", "Sandbox API key revealed once on provision", "fail", "api_key missing"));
         }
 
-        const replayRes = await client.postJson("/api/launchpad/applications", {
-          application_name: `Staging smoke ${testId}`,
-          display_name: `Staging smoke ${testId}`,
-          partner_id: partnerId,
-          policy_template_id: "age_21_retail",
-          return_url: approvedReturnUrl,
-          idempotency_key: idempotencyKey,
-        });
+        const replayRes = await client.postJson("/api/launchpad/applications", provisionPayload);
         const replayId = String(jsonField(replayRes.body, "application.application_id") ?? "");
         steps.push(
           step(
@@ -196,12 +184,10 @@ export async function runLaunchpadStagingWalkthrough(config: StagingTargetConfig
         );
 
         const otherPartnerRes = await client.postJson("/api/launchpad/applications", {
+          ...provisionPayload,
           application_name: `Other ${testId}`,
           display_name: `Other ${testId}`,
           partner_id: `${partnerId}-other`,
-          policy_template_id: "age_21_retail",
-          return_url: approvedReturnUrl,
-          idempotency_key: idempotencyKey,
         });
         authorizationMatrix.push(
           step(
