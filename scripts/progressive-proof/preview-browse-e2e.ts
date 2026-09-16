@@ -75,6 +75,21 @@ async function assertNotVercelSso(page: Page): Promise<boolean> {
   return !body.includes("Log in to Vercel");
 }
 
+async function waitForPastVercelProtection(page: Page): Promise<void> {
+  if (await assertNotVercelSso(page)) return;
+  console.log(`
+=== VERCEL DEPLOYMENT PROTECTION (same Desktop Chromium) ===
+Complete Vercel team login in the Desktop browser window.
+This script waits, then continues to Abraxas Google sign-in.
+============================================================
+`);
+  await page.waitForFunction(
+    () => !window.location.hostname.includes("vercel.com"),
+    { timeout: SIGN_IN_TIMEOUT_MS },
+  );
+  log("preview access", true, "past Vercel deployment protection");
+}
+
 function printInteractiveHandoff() {
   console.log(`
 === SAME-SESSION GOOGLE SIGN-IN (do not use your local browser) ===
@@ -216,10 +231,14 @@ async function runInteractive() {
   await page.goto(browseVerifyUrl(), { waitUntil: "domcontentloaded", timeout: 120000 });
   await page.waitForTimeout(2000);
 
-  if (!(await assertNotVercelSso(page))) {
-    log("preview access", false, "Vercel SSO — VERCEL_PROTECTION_BYPASS not applied");
+  await waitForPastVercelProtection(page);
+  if (!BYPASS && !(await assertNotVercelSso(page))) {
+    log("preview access", false, "still on Vercel SSO — add VERCEL_PROTECTION_BYPASS or complete Desktop Vercel login");
     await desktop.close();
     return;
+  }
+  if (BYPASS) {
+    log("preview access", true, "bypass headers active");
   }
 
   await capture(page, "01-browse-verify-entry-desktop");
@@ -282,10 +301,13 @@ async function writeReport(label: string) {
 
 async function main() {
   if (!PREVIEW_URL) throw new Error("PREVIEW_URL required");
-  if (!BYPASS) {
+  if (!BYPASS && !INTERACTIVE) {
     throw new Error(
       "VERCEL_PROTECTION_BYPASS or VERCEL_AUTOMATION_BYPASS_SECRET required (header-only; add to this Cloud Agent environment secrets)",
     );
+  }
+  if (!BYPASS && INTERACTIVE) {
+    console.warn("WARN: bypass secret not in runtime — use Desktop Chromium to complete Vercel login if prompted");
   }
 
   await mkdir(OUT_DIR, { recursive: true });
