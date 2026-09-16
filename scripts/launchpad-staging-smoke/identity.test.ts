@@ -1,7 +1,8 @@
 // FILE: scripts/launchpad-staging-smoke/identity.test.ts
 
 import { describe, expect, it } from "vitest";
-import { validatePreviewIdentityBody } from "./identity";
+import { validatePreviewIdentityBody, verifyPreviewIdentity } from "./identity";
+import type { LaunchpadStagingClient } from "./client";
 import { redactSensitiveText } from "./redact";
 
 describe("launchpad staging identity harness", () => {
@@ -39,6 +40,31 @@ describe("launchpad staging identity harness", () => {
       "ocntwbxarpjeixdnzide",
     );
     expect(result.ok).toBe(false);
+  });
+
+  it("accepts a confirmed preview identity response from the server endpoint", async () => {
+    const client = {
+      getJson: async () => ({
+        status: 200,
+        ok: true,
+        url: "https://preview.example/api/launchpad/staging/environment",
+        headers: { "cache-control": "no-store, no-cache, must-revalidate" },
+        body: {
+          deployment_environment: "preview",
+          supabase_project_ref: "ocntwbxarpjeixdnzide",
+          commit_sha: "78fee79dedfe4e9f68c4008392058c6129a0d723",
+        },
+        rawText: "{}",
+      }),
+    } as Pick<LaunchpadStagingClient, "getJson"> as LaunchpadStagingClient;
+
+    const result = await verifyPreviewIdentity(client, {
+      targetUrl: "https://preview.example",
+      expectedSupabaseRef: "ocntwbxarpjeixdnzide",
+    });
+    expect(result.ok).toBe(true);
+    expect(result.detectedSupabaseRef).toBe("ocntwbxarpjeixdnzide");
+    expect(result.detectedDeploymentEnvironment).toBe("preview");
   });
 
   it("redacts bypass secrets from report text", () => {
