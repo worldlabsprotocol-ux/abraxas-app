@@ -17,6 +17,8 @@ export interface SmokeReport {
   targetUrl: string;
   expectedSupabaseRef: string;
   detectedSupabaseRef: string | null;
+  detectedDeploymentEnvironment: string | null;
+  previewCommitSha: string | null;
   commitSha: string;
   timestamp: string;
   testId: string;
@@ -55,6 +57,9 @@ export function writeSmokeReport(report: SmokeReport): string {
     `- Target URL: ${report.targetUrl}`,
     `- Expected demo Supabase ref: ${report.expectedSupabaseRef}`,
     `- Detected demo Supabase ref: ${report.detectedSupabaseRef ?? "not detected"}`,
+    `- Detected deployment environment: ${report.detectedDeploymentEnvironment ?? "not detected"}`,
+    `- Preview commit SHA: ${report.previewCommitSha ?? "not detected"}`,
+    `- Harness commit SHA: ${report.commitSha}`,
     `- Migrations 084/085 validated in demo: ${report.migrationsValidated ? "yes" : "no"}`,
     "",
     "## Walkthrough steps",

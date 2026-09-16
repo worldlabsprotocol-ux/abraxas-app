@@ -21,6 +21,8 @@ Reusable Playwright and API walkthrough for PR #290 against an explicit Vercel p
 
 Partner Launchpad console authentication uses a sandbox API key (`abx_test_…`) issued during provisioning. The smoke test provisions its own tagged application and never prints full keys in reports.
 
+Before any mutations, the harness calls `GET /api/launchpad/staging/environment` (preview-only) to confirm the server-configured demo Supabase project ref matches `LAUNCHPAD_EXPECTED_SUPABASE_REF`. The expected ref is never trusted without this independent server confirmation.
+
 If the Vercel preview has Deployment Protection enabled:
 
 1. Open the preview URL in a browser and complete the Vercel SSO prompt once.

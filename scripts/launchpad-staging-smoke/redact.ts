@@ -17,7 +17,9 @@ export function redactSensitiveText(input: string): string {
   return input
     .replace(API_KEY_PATTERN, "abx_[redacted]")
     .replace(JWT_PATTERN, "[redacted-jwt]")
-    .replace(SUPABASE_KEY_PATTERN, "[redacted-supabase-key]");
+    .replace(SUPABASE_KEY_PATTERN, "[redacted-supabase-key]")
+    .replace(/VERCEL_PROTECTION_BYPASS[=:]\S+/gi, "VERCEL_PROTECTION_BYPASS=[redacted]")
+    .replace(/x-vercel-protection-bypass[=:]\S+/gi, "x-vercel-protection-bypass=[redacted]");
 }
 
 export function redactHeaders(headers: Record<string, string>): Record<string, string> {

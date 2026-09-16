@@ -5,8 +5,8 @@ import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { chromium, type Browser, type Page } from "@playwright/test";
 import type { StagingTargetConfig } from "./guards";
-import { extractSupabaseProjectRef, isVercelDeploymentProtection } from "./guards";
 import { LaunchpadStagingClient } from "./client";
+import { verifyPreviewIdentity } from "./identity";
 import { assertApiKeyShape, describeApiKey, redactSensitiveText } from "./redact";
 import type { SmokeReport, SmokeStepResult, StepStatus } from "./report";
 import { summarizeReport, writeSmokeReport } from "./report";
@@ -62,50 +62,22 @@ export async function runLaunchpadStagingWalkthrough(config: StagingTargetConfig
   const screenshotPaths: string[] = [];
 
   let detectedSupabaseRef: string | null = null;
+  let detectedDeploymentEnvironment: string | null = null;
+  let previewCommitSha: string | null = null;
   let migrationsValidated = false;
   let browser: Browser | null = null;
   let blockedByVercelSso = false;
+  let identityConfirmed = false;
 
   const commitSha = execSync("git rev-parse HEAD", { encoding: "utf8" }).trim();
 
-  async function detectSupabaseRef(): Promise<string | null> {
-    const htmlRes = await client.request("/developers/launchpad");
-    if (isVercelDeploymentProtection(htmlRes.status, htmlRes.body, htmlRes.headers)) {
-      blockedByVercelSso = true;
-      return null;
-    }
-
-    const refs = new Set<string>();
-    const fromHtml = extractSupabaseProjectRef(htmlRes.rawText);
-    if (fromHtml) refs.add(fromHtml);
-
-    const scriptMatches = htmlRes.rawText.match(/\/_next\/static\/[^"'\\s]+/g) ?? [];
-    for (const scriptPath of scriptMatches.slice(0, 8)) {
-      const chunkRes = await client.request(scriptPath);
-      if (isVercelDeploymentProtection(chunkRes.status, chunkRes.body, chunkRes.headers)) {
-        blockedByVercelSso = true;
-        return null;
-      }
-      const fromChunk = extractSupabaseProjectRef(chunkRes.rawText);
-      if (fromChunk) refs.add(fromChunk);
-    }
-
-    const policiesRes = await client.getJson("/api/launchpad/policies");
-    if (isVercelDeploymentProtection(policiesRes.status, policiesRes.body, policiesRes.headers)) {
-      blockedByVercelSso = true;
-      return null;
-    }
-
-    const fromPolicies = extractSupabaseProjectRef(policiesRes.rawText);
-    if (fromPolicies) refs.add(fromPolicies);
-
-    if (refs.size === 1) return [...refs][0]!;
-    if (refs.size > 1) return [...refs].find((r) => r === config.expectedSupabaseRef) ?? [...refs][0]!;
-    return null;
-  }
-
   try {
-    detectedSupabaseRef = await detectSupabaseRef();
+    const identity = await verifyPreviewIdentity(client, config);
+    detectedSupabaseRef = identity.detectedSupabaseRef;
+    detectedDeploymentEnvironment = identity.detectedDeploymentEnvironment;
+    previewCommitSha = identity.detectedCommitSha;
+    blockedByVercelSso = identity.blockedByVercelSso;
+    identityConfirmed = identity.ok;
 
     if (blockedByVercelSso) {
       operatorSteps.push(
@@ -114,23 +86,22 @@ export async function runLaunchpadStagingWalkthrough(config: StagingTargetConfig
       operatorSteps.push(
         "Optional: save Playwright storage state after SSO and set PLAYWRIGHT_STORAGE_STATE for browser walkthrough steps.",
       );
-      steps.push(step("precondition", "Preview reachable without Vercel deployment protection", "blocked", "Vercel auth enabled (401 protection response)"));
-    } else if (!detectedSupabaseRef) {
-      steps.push(step("precondition", "Detect demo Supabase project ref from preview", "fail", "Could not detect Supabase hostname in preview responses"));
-    } else if (detectedSupabaseRef !== config.expectedSupabaseRef) {
+      steps.push(step("precondition", "Preview reachable without Vercel deployment protection", "blocked", identity.detail));
+    } else if (!identityConfirmed) {
+      steps.push(step("precondition", "Preview identity endpoint confirms demo Supabase binding", "fail", identity.detail));
+    } else {
+      steps.push(step("precondition", "Preview identity endpoint confirms demo Supabase binding", "pass", identity.detail));
       steps.push(
         step(
-          "precondition",
-          "Detected Supabase ref matches expected demo ref",
-          "fail",
-          `observed=${detectedSupabaseRef}`,
+          "precondition-commit",
+          "Preview commit SHA present",
+          previewCommitSha ? "pass" : "fail",
+          previewCommitSha ? previewCommitSha.slice(0, 7) : "missing",
         ),
       );
-    } else {
-      steps.push(step("precondition", "Detected Supabase ref matches expected demo ref", "pass", detectedSupabaseRef));
     }
 
-    if (!blockedByVercelSso && detectedSupabaseRef === config.expectedSupabaseRef) {
+    if (identityConfirmed) {
       const sessionRes = await client.getJson("/api/launchpad/auth/session");
       steps.push(
         step(
@@ -671,6 +642,8 @@ export async function runLaunchpadStagingWalkthrough(config: StagingTargetConfig
     targetUrl: config.targetUrl,
     expectedSupabaseRef: config.expectedSupabaseRef,
     detectedSupabaseRef,
+    detectedDeploymentEnvironment,
+    previewCommitSha,
     commitSha,
     timestamp: new Date().toISOString(),
     testId,
