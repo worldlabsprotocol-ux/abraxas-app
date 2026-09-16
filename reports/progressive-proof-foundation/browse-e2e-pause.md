@@ -1,7 +1,7 @@
 # Pause — human Google sign-in required (PR #293)
 
 **Preview:** https://abraxas-app-git-cursor-pr-296681-worldlabsprotocol-uxs-projects.vercel.app  
-**Deployed SHA:** `a926f6a4` (CI green) — update after callback commit deploys
+**Deployed SHA:** `b9a12655` (CI green; includes DEMO reference-partner browse callback)
 
 ## Exact action (one human step)
 
