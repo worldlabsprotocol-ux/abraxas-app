@@ -13,6 +13,7 @@ import {
   STOCKLANA_BRAND,
   STOCKLANA_DEMO_DISCLAIMER,
   STOCKLANA_JURISDICTION_NOTICE,
+  STOCKLANA_MINT_IDENTITY_NOTICE,
   STOCKLANA_NO_PRESTOCKS_API_NOTICE,
   STOCKLANA_VERIFICATION_SPLIT_NOTICE,
 } from "@/lib/stocklana/constants";
@@ -141,7 +142,7 @@ export function StocklanaDemoClient() {
               </div>
               <div style={{ marginTop: "0.5rem", fontFamily: FONT, fontSize: "0.68rem" }}>
                 <a href={selectedAsset.prestocksProductUrl} target="_blank" rel="noreferrer" style={{ color: ACCENT }}>
-                  PreStocks product page →
+                  Third-party reference listing →
                 </a>
               </div>
               {mintVerify && (
@@ -155,7 +156,7 @@ export function StocklanaDemoClient() {
                   fontSize: "0.62rem",
                   color: "var(--text-secondary)",
                 }}>
-                  on-chain: {mintVerify.ok ? "Token-2022 mint verified" : mintVerify.detail}
+                  on-chain: {mintVerify.ok ? "Token-2022 mint account found (issuer not attested)" : mintVerify.detail}
                   {mintVerify.ownerProgram ? ` · owner ${mintVerify.ownerProgram.slice(0, 8)}…` : ""}
                   {loadingMint ? " · checking…" : ""}
                 </div>
@@ -210,6 +211,9 @@ export function StocklanaDemoClient() {
 
       <ContentCard title="Data honesty">
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: 0 }}>
+          {STOCKLANA_MINT_IDENTITY_NOTICE}
+        </p>
+        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.65, marginTop: "0.5rem" }}>
           {STOCKLANA_NO_PRESTOCKS_API_NOTICE}
         </p>
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.65, marginTop: "0.5rem" }}>

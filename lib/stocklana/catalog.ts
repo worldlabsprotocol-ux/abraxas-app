@@ -22,7 +22,7 @@ export const STOCKLANA_ASSET_CATALOG: readonly StocklanaAsset[] = [
   {
     id: "openai-prestocks",
     symbol: "OPENAI",
-    name: "OpenAI PreStocks",
+    name: "OpenAI (curated SPL mint)",
     company: "OpenAI",
     mint: "PreweJYECqtQwBtpxHL171nL2K6umo692gTm7Q3rpgF",
     tokenProgram: "token-2022",
@@ -30,12 +30,12 @@ export const STOCKLANA_ASSET_CATALOG: readonly StocklanaAsset[] = [
     publicListingUrl: "https://coinmarketcap.com/currencies/openai-tokenized-stock-prestocks/",
     source: "public_market_listing",
     description:
-      "Tokenized pre-IPO exposure to OpenAI valuation via PreStocks SPV-backed SPL token on Solana.",
+      "Curated Solana SPL mint associated with OpenAI in public listings. On-chain verification checks Token-2022 program ownership only.",
   },
   {
     id: "spacex-prestocks",
     symbol: "SPACEX",
-    name: "SpaceX PreStocks",
+    name: "SpaceX (curated SPL mint)",
     company: "SpaceX",
     mint: "PreANxuXjsy2pvisWWMNB6YaJNzr7681wJJr2rHsfTh",
     tokenProgram: "token-2022",
@@ -43,7 +43,7 @@ export const STOCKLANA_ASSET_CATALOG: readonly StocklanaAsset[] = [
     publicListingUrl: "https://coinmarketcap.com/currencies/spacex-tokenized-stock-prestocks/",
     source: "public_market_listing",
     description:
-      "Tokenized pre-IPO exposure to SpaceX valuation via PreStocks SPV-backed SPL token on Solana.",
+      "Curated Solana SPL mint associated with SpaceX in public listings. On-chain verification checks Token-2022 program ownership only.",
   },
 ] as const;
 

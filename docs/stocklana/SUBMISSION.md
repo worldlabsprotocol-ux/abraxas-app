@@ -17,7 +17,7 @@ Stocklana is a Solana tokenized-stock demo: connect Phantom, pick a PreStocks SP
 | Capability | Status |
 |------------|--------|
 | Solana wallet connect (Phantom/Solflare) on `/stocklana` | Works |
-| Curated PreStocks SPL mint catalog with product page links | Works |
+| Curated SPL mint catalog with third-party reference links (issuer not attested on-chain) | Works |
 | On-chain Token-2022 mint verification via Solana RPC | Works |
 | Abraxas hosted verify redirect (`/partner/verify`) | Works when `stocklana-demo` partner seeded (migration 087 on DEMO) |
 | Server-side receipt validation (`POST /api/stocklana/eligibility`) | Works |
@@ -30,7 +30,8 @@ Stocklana is a Solana tokenized-stock demo: connect Phantom, pick a PreStocks SP
 | Item | Notes |
 |------|-------|
 | Stocklana trading / purchase | Button is demo-only; no live trade execution |
-| PreStocks quotes / AUM / volume | Not shown — no API |
+| Issuer identity / PreStocks SPV attestation | Not verified — Token-2022 account check only |
+| Third-party quotes / AUM / volume | Not shown — no API |
 | Solana wallet in Abraxas verify | Holder auth remains Sui zkLogin + Passport (documented in UI) |
 
 ## What remains unbuilt
