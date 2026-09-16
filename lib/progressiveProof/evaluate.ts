@@ -28,7 +28,7 @@ export function evaluateProgressiveProof(
   if (input.heldClaims != null) {
     // Held snapshot present — never trust caller-supplied missingClaims: [] alone.
     missing = input.missingClaims != null
-      ? [...new Set([...computedMissing, ...input.missingClaims])]
+      ? Array.from(new Set([...computedMissing, ...input.missingClaims]))
       : computedMissing;
   } else if (input.missingClaims != null) {
     missing = [...input.missingClaims];

@@ -49,8 +49,7 @@ export function isPartnerFlowContext(
 export function isPartnerFlowHandoffReady(ctx: PartnerFlowHandoffContext): boolean {
   if (!isPartnerFlowContext(ctx) || !ctx.suiAddress) return false;
 
-  const policyRules = ctx.policyRules
-    ?? (ctx.policyId ? findProductionPolicyRules(ctx.policyId) : null);
+  const policyRules = ctx.policyId ? findProductionPolicyRules(ctx.policyId) : null;
 
   return isProgressivePartnerHandoffReady({
     signedIn: true,
