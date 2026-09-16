@@ -27,15 +27,14 @@ export function isProgressivePartnerHandoffReady(input: PartnerHandoffReadinessI
     return input.identityCredentialEarned && input.hasCredential;
   }
 
+  // Browse completes via SelfAttestationBrowseForm receipt redirect — not partner handoff.
   if (isBrowseAccessPolicy(input.policyRules)) {
-    const evalResult = evaluateProgressiveProof({
-      signedIn: input.signedIn,
-      walletBound: input.walletBound,
-      policyRules: input.policyRules,
-      policyDecision: input.policyDecision,
-      missingClaims: input.missingClaims,
-    });
-    return evalResult.uiState === "eligible";
+    return false;
+  }
+
+  // Client-side handoff lacks held-claim snapshots; regulated policies require earned credential.
+  if (input.policyDecision == null && input.missingClaims == null) {
+    return input.identityCredentialEarned && input.hasCredential;
   }
 
   const evalResult = evaluateProgressiveProof({

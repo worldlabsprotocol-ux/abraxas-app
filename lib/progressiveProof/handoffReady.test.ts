@@ -25,7 +25,7 @@ describe("isProgressivePartnerHandoffReady", () => {
     })).toBe(false);
   });
 
-  it("does not require full IDV credential for Good Trouble browse policy", () => {
+  it("does not enable partner handoff for browse policies (receipt redirect path)", () => {
     const rules = findProductionPolicyRules(GOOD_TROUBLE_BROWSE_POLICY_ID)!;
     expect(isProgressivePartnerHandoffReady({
       signedIn: true,
@@ -35,29 +35,35 @@ describe("isProgressivePartnerHandoffReady", () => {
       policyRules: rules,
       policyDecision: "approved",
       missingClaims: [],
-    })).toBe(true);
-  });
-
-  it("fails closed for browse when claims are still missing", () => {
-    const rules = findProductionPolicyRules(GOOD_TROUBLE_BROWSE_POLICY_ID)!;
-    expect(isProgressivePartnerHandoffReady({
-      signedIn: true,
-      walletBound: true,
-      identityCredentialEarned: false,
-      hasCredential: false,
-      policyRules: rules,
-      policyDecision: "approved",
-      missingClaims: ["self_attested_age_band"],
     })).toBe(false);
   });
 
-  it("requires eligible evaluation for retail checkout policies", () => {
+  it("requires earned credential for retail when no server evaluation is supplied", () => {
     const rules = findProductionPolicyRules(GOOD_TROUBLE_RETAIL_POLICY_ID)!;
     expect(isProgressivePartnerHandoffReady({
       signedIn: true,
       walletBound: true,
       identityCredentialEarned: false,
       hasCredential: false,
+      policyRules: rules,
+    })).toBe(false);
+
+    expect(isProgressivePartnerHandoffReady({
+      signedIn: true,
+      walletBound: true,
+      identityCredentialEarned: true,
+      hasCredential: true,
+      policyRules: rules,
+    })).toBe(true);
+  });
+
+  it("fails closed when server evaluation reports missing claims", () => {
+    const rules = findProductionPolicyRules(GOOD_TROUBLE_RETAIL_POLICY_ID)!;
+    expect(isProgressivePartnerHandoffReady({
+      signedIn: true,
+      walletBound: true,
+      identityCredentialEarned: true,
+      hasCredential: true,
       policyRules: rules,
       policyDecision: "approved",
       missingClaims: ["identity_verified"],

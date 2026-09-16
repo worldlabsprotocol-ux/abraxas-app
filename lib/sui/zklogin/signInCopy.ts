@@ -9,7 +9,7 @@ export const ZKLOGIN_SIGN_IN_COPY = {
   closeButton: "Close",
 
   canonicalButton: "Continue with Google",
-  canonicalHelper: "Creates your account only — no documents or ID checks at sign-in.",
+  canonicalHelper: "Creates your account only. No documents or ID checks at sign-in.",
   canonicalAriaLabel: "Continue with Google to create or open your Abraxas Passport",
 
   legacyButton: "Recover a Passport created with an older sign in setup",

@@ -22,13 +22,30 @@ export function evaluateProgressiveProof(
   const required = resolveStoredRequiredClaims(input.policyRules);
   const requiredTypes = required.map((r) => r.claim_type);
   const satisfied = activeClaimTypes(held).filter((t) => requiredTypes.includes(t));
-  const missing = input.missingClaims != null
-    ? [...input.missingClaims]
-    : requiredTypes.filter((t) => !satisfied.includes(t));
+  const computedMissing = requiredTypes.filter((t) => !satisfied.includes(t));
+
+  let missing: string[];
+  if (input.heldClaims != null) {
+    // Held snapshot present — never trust caller-supplied missingClaims: [] alone.
+    missing = input.missingClaims != null
+      ? [...new Set([...computedMissing, ...input.missingClaims])]
+      : computedMissing;
+  } else if (input.missingClaims != null) {
+    missing = [...input.missingClaims];
+    // Fail closed: empty missing_claims cannot override absent held-claim evidence.
+    if (missing.length === 0 && computedMissing.length > 0) {
+      missing = computedMissing;
+    }
+  } else {
+    missing = computedMissing;
+  }
 
   const hasExpired = held.some((c) => c.status === "expired" && requiredTypes.includes(c.claimType));
   const hasRevoked = held.some((c) => c.status === "revoked" && requiredTypes.includes(c.claimType));
   const hasPending = held.some((c) => c.status === "under_review" && requiredTypes.includes(c.claimType));
+
+  const policyApproved = input.policyDecision === "approved" && missing.length === 0;
+  const heldSnapshotBlocksApproval = input.heldClaims != null && computedMissing.length > 0;
 
   let uiState: ProgressiveProofUiState;
   let detail: string;
@@ -48,12 +65,12 @@ export function evaluateProgressiveProof(
   } else if (missing.length > 0) {
     uiState = "proof_needed";
     detail = `missing:${missing.join(",")}`;
+  } else if (policyApproved && !heldSnapshotBlocksApproval) {
+    uiState = "eligible";
+    detail = "policy_satisfied";
   } else if (input.policyDecision === "denied") {
     uiState = "denied";
     detail = input.reasonCodes?.[0] ?? "policy_denied";
-  } else if (input.policyDecision === "approved" && missing.length === 0) {
-    uiState = "eligible";
-    detail = "policy_satisfied";
   } else {
     uiState = "proof_needed";
     detail = "evidence_required";

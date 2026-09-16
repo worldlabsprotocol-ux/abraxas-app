@@ -22,27 +22,23 @@ describe("isPartnerFlowHandoffReady progressive wiring", () => {
     })).toBe(false);
   });
 
-  it("allows browse handoff when policy approves without full IDV credential", () => {
+  it("allows retail handoff when identity credential is earned", () => {
     expect(isPartnerFlowHandoffReady({
       ...baseContext,
-      policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
-      identityStatus: "not_started",
-      hasCredential: false,
+      policyId: GOOD_TROUBLE_RETAIL_POLICY_ID,
+      identityStatus: "earned",
+      hasCredential: true,
       walletBound: true,
-      policyDecision: "approved",
-      missingClaims: [],
     })).toBe(true);
   });
 
-  it("fails closed when browse policy still has missing claims", () => {
+  it("does not enable browse handoff (browse uses receipt redirect)", () => {
     expect(isPartnerFlowHandoffReady({
       ...baseContext,
       policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
       identityStatus: "not_started",
       hasCredential: false,
       walletBound: true,
-      policyDecision: "approved",
-      missingClaims: ["self_attested_age_band"],
     })).toBe(false);
   });
 });
