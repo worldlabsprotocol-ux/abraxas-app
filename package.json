@@ -45,7 +45,8 @@
     "demo:signing-key:generate": "npx tsx scripts/demo/generate-demo-signing-key.ts",
     "demo:signing-key:verify": "npx tsx scripts/demo/verify-demo-signing-key.ts",
     "walkthrough:progressive-proof:preview": "npx tsx scripts/progressive-proof/preview-validation.ts",
-    "walkthrough:progressive-proof:browse-e2e": "npx tsx scripts/progressive-proof/preview-browse-e2e.ts"
+    "walkthrough:progressive-proof:browse-e2e": "npx tsx scripts/progressive-proof/preview-browse-e2e.ts",
+    "audit:progressive-proof:preview": "npx tsx scripts/progressive-proof/preview-audit.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",
