@@ -6,7 +6,8 @@ Migration 084 and 085 are **additive** and backward compatible with the currentl
 
 1. Apply `084_partner_launchpad_foundation.sql` to **staging** Supabase
 2. Apply `085_partner_launchpad_hardening.sql` to **staging** Supabase
-3. Run verification SQL (below) on staging
+3. Apply `086_partner_launchpad_provision_schema_fix.sql` to **staging** Supabase (required when `partners`/`partner_policies` predate migration 039 or use the 018 policy schema)
+4. Run verification SQL (below) on staging
 4. Deploy PR #290 branch to **staging** Vercel
 5. Complete staging smoke tests (Launchpad provision, hosted verify, activity, production approval)
 6. Apply `084` then `085` to **production** Supabase while the current production app remains running
