@@ -1,5 +1,5 @@
 // FILE: lib/stocklana/eligibilityPolicy.ts
-// Sandbox policy contract for non-US eligibility (mirrors migration 086).
+// Sandbox policy contract for non-US eligibility (mirrors migration 087).
 
 export const STOCKLANA_ELIGIBILITY_POLICY_RULES = {
   sandbox_only: true,

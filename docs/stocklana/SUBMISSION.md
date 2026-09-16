@@ -19,7 +19,7 @@ Stocklana is a Solana tokenized-stock demo: connect Phantom, pick a PreStocks SP
 | Solana wallet connect (Phantom/Solflare) on `/stocklana` | Works |
 | Curated PreStocks SPL mint catalog with product page links | Works |
 | On-chain Token-2022 mint verification via Solana RPC | Works |
-| Abraxas hosted verify redirect (`/partner/verify`) | Works when `stocklana-demo` partner seeded (migration 086 on DEMO) |
+| Abraxas hosted verify redirect (`/partner/verify`) | Works when `stocklana-demo` partner seeded (migration 087 on DEMO) |
 | Server-side receipt validation (`POST /api/stocklana/eligibility`) | Works |
 | Permitted / denied / pending / expired / error UI states | Works |
 | US jurisdiction denial (`blocked_jurisdictions: ["US"]`) | Works when holder residency resolves to US |
@@ -38,7 +38,7 @@ Stocklana is a Solana tokenized-stock demo: connect Phantom, pick a PreStocks SP
 | Item | Notes |
 |------|-------|
 | PreStocks official API integration | No public API found |
-| Production partner promotion | Sandbox pilot only (`086_stocklana_pilot.sql`) |
+| Production partner promotion | Sandbox pilot only (`087_stocklana_pilot.sql`) |
 | On-chain eligibility attestation on Solana | Receipt validated server-side; no Solana program |
 | Automated US/non-US test personas without real IDV | Requires real Passport verification paths |
 
@@ -49,13 +49,13 @@ Stocklana is a Solana tokenized-stock demo: connect Phantom, pick a PreStocks SP
 | Stocklana app shell | Solana wallet adapter (mainnet) |
 | Abraxas verification | Sui zkLogin + Passport + Partner Flow |
 | Proof to Stocklana | Signed decision receipt (`GET /api/receipts/{id}/public`) |
-| Database | Partner/policy rows via migration 086 (DEMO only for staging) |
+| Database | Partner/policy rows via migration 087 (DEMO only for staging; after launchpad 086) |
 
 ## Operator setup (DEMO Supabase only)
 
-1. Apply `supabase/migrations/086_stocklana_pilot.sql` on **DEMO** (`ocntwbxarpjeixdnzide`) — never MAIN.
-2. Deploy preview branch.
-3. Add preview callback URL to `partners.allowed_return_urls` if using a custom Vercel hostname.
+1. Apply `supabase/migrations/087_stocklana_pilot.sql` on **DEMO** (`ocntwbxarpjeixdnzide`) after launchpad `086_partner_launchpad_provision_schema_fix.sql` — never MAIN.
+2. Deploy preview branch (`cursor/stocklana-solana-eligibility-d541`).
+3. Migration 087 allowlists the PR #292 preview callback URL; re-apply or merge `allowed_return_urls` if the Vercel hostname changes.
 4. Run holder flow with non-US verified residency for permitted path; US document for denied path.
 
 ## Recording script (90s)
@@ -70,7 +70,7 @@ Stocklana is a Solana tokenized-stock demo: connect Phantom, pick a PreStocks SP
 
 ## Submission checklist
 
-- [ ] Migration 086 applied on DEMO preview database
+- [ ] Migration 087 applied on DEMO preview database
 - [ ] `/stocklana` loads on preview URL
 - [ ] Mint verification green for OPENAI asset
 - [ ] Full verify → callback → receipt validation recorded on video
