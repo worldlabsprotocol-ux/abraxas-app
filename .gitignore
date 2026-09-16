@@ -38,6 +38,7 @@ next-env.d.ts
 # Partner Sandbox demo local state (Phase B)
 scripts/demo/.sandbox-holder.json
 reports/demo-*
+reports/launchpad-staging-smoke/
 scripts/demo/*.validation-report.*
 
 # Local Claude fix scripts
