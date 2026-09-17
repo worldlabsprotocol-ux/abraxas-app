@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildReferencePartnerBrowseVerifyUrl, REFERENCE_PARTNER_BROWSE_CALLBACK_PATH } from "./referencePartnerBrowse";
+import { buildReferencePartnerBrowseVerifyUrl } from "./referencePartnerBrowse";
+import { REFERENCE_PARTNER_BROWSE_CALLBACK_PATH } from "./referencePartnerBrowseCallback";
 
 describe("reference partner browse entry", () => {
   it("keeps the callback on the current Abraxas origin and binds the browse policy", () => {
