@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation";
 import {
   GOOD_TROUBLE_BROWSE_POLICY_ID,
   GOOD_TROUBLE_PARTNER_ID,
+  GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -27,6 +28,7 @@ export function ReferencePartnerBrowseCallbackClient() {
   const [status, setStatus] = useState("Waiting for browse receipt…");
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<VerifyResult | null>(null);
+  const [retailBlockCode, setRetailBlockCode] = useState<string | null>(null);
 
   const browseReceipt = searchParams.get("browse_receipt");
   const browseReceiptId = searchParams.get("browse_receipt_id");
@@ -57,7 +59,23 @@ export function ReferencePartnerBrowseCallbackClient() {
       throw new Error("Browse receipt incorrectly marked valid for purchase");
     }
 
+    // Demonstrate policy binding: the same L0 browse token must fail for retail.
+    const retailRes = await fetch("/api/age-assurance/browse-receipt/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        browse_receipt: browseReceipt,
+        partner_id: GOOD_TROUBLE_PARTNER_ID,
+        policy_id: GOOD_TROUBLE_RETAIL_POLICY_ID,
+      }),
+    });
+    const retailData = await retailRes.json() as VerifyResult & { error?: string };
+    if (retailRes.ok || retailData.verified || retailData.code !== "context_mismatch") {
+      throw new Error("Browse receipt was not rejected for the retail policy");
+    }
+
     setResult(data);
+    setRetailBlockCode(retailData.code);
     setStatus("Browse access verified. Not valid for regulated retail purchase.");
   }, [browseReceipt, policyId]);
 
@@ -113,6 +131,13 @@ export function ReferencePartnerBrowseCallbackClient() {
               expires_at: result.expires_at,
             }, null, 2)}
           </pre>
+          <div style={{ marginTop: "1rem", padding: "0.75rem", borderRadius: 8, border: "1px solid #f59e0b55", background: "#f59e0b12" }}>
+            <strong style={{ fontSize: "0.8rem", color: "#fbbf24" }}>Retail re-check: blocked</strong>
+            <p style={{ margin: "0.35rem 0 0", fontSize: "0.78rem", lineHeight: 1.55, color: "var(--text-secondary)" }}>
+              The same receipt was tested against <code>{GOOD_TROUBLE_RETAIL_POLICY_ID}</code> and rejected with{" "}
+              <code>{retailBlockCode ?? "context_mismatch"}</code>. Browse proof cannot be reused for a stronger policy.
+            </p>
+          </div>
         </div>
       )}
     </div>
