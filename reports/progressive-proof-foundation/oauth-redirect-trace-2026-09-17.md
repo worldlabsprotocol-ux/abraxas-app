@@ -54,6 +54,16 @@ Client OAuth uses `window.location.origin` (`lib/sui/zklogin/config.ts`). Callba
 
 Ensure Preview env does **not** set `NEXT_PUBLIC_APP_URL` or `ABRAXAS_ISSUER_URL` to `https://abraxasworld.xyz` for server-generated links. Client OAuth already uses Preview origin when the tab stays on Preview. Do **not** set `NEXT_PUBLIC_ZKLOGIN_REDIRECT_URI` to Production for Preview audits.
 
-## Next step (not started)
+## Re-validation (2026-09-17 run 3, post-fix push `70a349da`)
 
-After redeploy + trace PASS + fresh Desktop session from Preview `/partner/verify`, human Google sign-in may resume. **Do not** reuse the Production passport tab from the failed run.
+| Check | Result |
+|-------|--------|
+| `trace-preview-oauth-redirect.ts` | PASS — `redirect_uri_matches_preview: true` |
+| `preview-browse-e2e.ts --handoff-check` | PASS — exit 0; no post-sign-in steps; `redirect_uri` matches Preview callback |
+| Controlled session manifest | `pid` + `preview_origin` + `expected_callback` on Preview host |
+
+Artifacts: `/opt/cursor/artifacts/preview-oauth-redirect-trace.json`, `/opt/cursor/artifacts/handoff-check-run3.log`
+
+## Next step
+
+Human Google sign-in may resume in a **fresh** `--interactive` Desktop Chromium session from Preview `/partner/verify`. **Do not** reuse the Production passport tab from the failed run.

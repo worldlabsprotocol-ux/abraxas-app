@@ -47,7 +47,7 @@ const HANDOFF_CHECK = process.argv.includes("--handoff-check");
 const BROWSE_RETURN = process.env.BROWSE_RETURN_URL ?? referencePartnerBrowseCallbackUrl(PREVIEW_URL);
 /** Interactive handoff: 0 = wait indefinitely (no silent 30-minute expiry). */
 const SIGN_IN_TIMEOUT_MS = Number(
-  process.env.SIGN_IN_TIMEOUT_MS ?? (INTERACTIVE ? 0 : 30 * 60 * 1000),
+  process.env.SIGN_IN_TIMEOUT_MS ?? (INTERACTIVE || HANDOFF_CHECK ? 0 : 30 * 60 * 1000),
 );
 const PREVIEW_ORIGIN = PREVIEW_URL ? new URL(PREVIEW_URL).origin : "";
 const EXPECTED_CALLBACK = `${PREVIEW_ORIGIN}/auth/zklogin/callback`;
