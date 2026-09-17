@@ -26,16 +26,31 @@ import {
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
 import { referencePartnerBrowseCallbackUrl } from "@/lib/demo/referencePartnerBrowseCallback";
+import {
+  assertPreviewAuditOrigin,
+  extractRedirectUriFromGoogleOAuthUrl,
+  isForbiddenProductionAuditOrigin,
+  originFromUrl,
+  PreviewAuditOriginViolation,
+} from "@/lib/preview/previewAuditOrigin";
 
 const PREVIEW_URL = (process.env.PREVIEW_URL ?? "").replace(/\/$/, "");
 const BYPASS = resolveVercelProtectionBypass();
 const OUT_DIR = process.env.ARTIFACT_DIR ?? "/opt/cursor/artifacts/screenshots/pr293-browse-e2e";
 const REPORT_DIR = process.env.REPORT_DIR ?? "reports/progressive-proof-foundation";
 const PROFILE_DIR = process.env.PLAYWRIGHT_PROFILE_DIR ?? join(OUT_DIR, ".playwright-profile");
+const SESSION_MANIFEST = process.env.SESSION_MANIFEST ?? join(OUT_DIR, "controlled-session.json");
+const HANDOFF_HEARTBEAT = process.env.HANDOFF_HEARTBEAT ?? join(OUT_DIR, "handoff-heartbeat.json");
 const RESUME = process.argv.includes("--resume");
 const INTERACTIVE = process.argv.includes("--interactive");
+const HANDOFF_CHECK = process.argv.includes("--handoff-check");
 const BROWSE_RETURN = process.env.BROWSE_RETURN_URL ?? referencePartnerBrowseCallbackUrl(PREVIEW_URL);
-const SIGN_IN_TIMEOUT_MS = Number(process.env.SIGN_IN_TIMEOUT_MS ?? 30 * 60 * 1000);
+/** Interactive handoff: 0 = wait indefinitely (no silent 30-minute expiry). */
+const SIGN_IN_TIMEOUT_MS = Number(
+  process.env.SIGN_IN_TIMEOUT_MS ?? (INTERACTIVE ? 0 : 30 * 60 * 1000),
+);
+const PREVIEW_ORIGIN = PREVIEW_URL ? new URL(PREVIEW_URL).origin : "";
+const EXPECTED_CALLBACK = `${PREVIEW_ORIGIN}/auth/zklogin/callback`;
 
 const results: Array<{ step: string; ok: boolean; detail: string }> = [];
 
@@ -58,10 +73,55 @@ function log(step: string, ok: boolean, detail: string) {
   console.log(`${ok ? "PASS" : ok === false ? "FAIL" : "PAUSE"} ${step}: ${detail}`);
 }
 
+function resolveWaitDeadline(): number {
+  return SIGN_IN_TIMEOUT_MS <= 0 ? Number.POSITIVE_INFINITY : Date.now() + SIGN_IN_TIMEOUT_MS;
+}
+
+async function writeHandoffHeartbeat(page: Page, phase: string): Promise<void> {
+  const url = page.url();
+  await writeFile(HANDOFF_HEARTBEAT, JSON.stringify({
+    phase,
+    at: new Date().toISOString(),
+    origin: originFromUrl(url),
+    path: (() => {
+      try {
+        return new URL(url).pathname;
+      } catch {
+        return null;
+      }
+    })(),
+    preview_origin: PREVIEW_ORIGIN,
+    pid: process.pid,
+  }, null, 2));
+}
+
+function attachPreviewAuditGuards(page: Page): void {
+  page.on("framenavigated", (frame) => {
+    if (frame !== page.mainFrame()) return;
+    const url = frame.url();
+    if (!url || url === "about:blank") return;
+    assertPreviewAuditOrigin(url, PREVIEW_URL, "navigation");
+  });
+
+  page.on("request", (request) => {
+    if (request.method() !== "POST") return;
+    if (!request.url().includes("/api/auth/zklogin/register")) return;
+    const origin = originFromUrl(request.url());
+    if (origin && isForbiddenProductionAuditOrigin(origin)) {
+      throw new PreviewAuditOriginViolation(request.url(), PREVIEW_URL, "zklogin register blocked on production");
+    }
+    assertPreviewAuditOrigin(request.url(), PREVIEW_URL, "zklogin register request");
+  });
+}
+
 /** Observe register API outcomes without logging OAuth tokens or PII. */
 function attachZkLoginRegisterMonitor(page: Page) {
   page.on("response", async (response) => {
     if (!response.url().includes("/api/auth/zklogin/register")) return;
+    const origin = originFromUrl(response.url());
+    if (origin && isForbiddenProductionAuditOrigin(origin)) {
+      throw new PreviewAuditOriginViolation(response.url(), PREVIEW_URL, "zklogin register response on production");
+    }
     zkLoginRegisterProbe.status = response.status();
     try {
       const json = await response.json() as Record<string, unknown>;
@@ -157,12 +217,86 @@ Complete Vercel team login in the Desktop browser window.
 This script waits, then continues to Abraxas Google sign-in.
 ============================================================
 `);
-  await page.waitForFunction(
-    () => !window.location.hostname.includes("vercel.com"),
-    undefined,
-    { timeout: SIGN_IN_TIMEOUT_MS },
-  );
-  log("preview access", true, "past Vercel deployment protection");
+  const deadline = resolveWaitDeadline();
+  while (Date.now() < deadline) {
+    assertPreviewAuditOrigin(page.url(), PREVIEW_URL, "vercel-sso-wait");
+    if (await assertNotVercelSso(page)) {
+      log("preview access", true, "past Vercel deployment protection");
+      return;
+    }
+    await writeHandoffHeartbeat(page, "vercel_sso_wait");
+    await page.waitForTimeout(2000);
+  }
+  throw new Error("Timed out waiting past Vercel deployment protection");
+}
+
+function isPostGoogleSignInUrl(url: string): boolean {
+  if (url.includes("accounts.google.com")) return false;
+  if (url.includes("/signin/oauth/error") || url.includes("authError=")) return false;
+  try {
+    const { pathname } = new URL(url);
+    return pathname.includes("/partner/continue")
+      || pathname.includes("/auth/zklogin/callback")
+      || pathname.includes("/passport");
+  } catch {
+    return false;
+  }
+}
+
+async function isPostGoogleSignInDom(page: Page): Promise<boolean> {
+  return page.evaluate(() => {
+    const onContinue = window.location.pathname.includes("/partner/continue");
+    const onCallback = window.location.pathname.includes("/auth/zklogin/callback");
+    const hasDobInputs = Boolean(
+      document.querySelector('input[placeholder="MM"]')
+      || document.querySelector('input[placeholder="YYYY"]')
+      || document.querySelector('input[id*="month" i]'),
+    );
+    return onContinue || onCallback || hasDobInputs;
+  });
+}
+
+async function waitForHumanGoogleReturn(page: Page): Promise<void> {
+  const deadline = resolveWaitDeadline();
+  let lastHeartbeat = 0;
+  while (true) {
+    const url = page.url();
+    assertPreviewAuditOrigin(url, PREVIEW_URL, "google-handoff-wait");
+    if (
+      url.includes("/signin/oauth/error")
+      || url.includes("authError=")
+      || /redirect_uri_mismatch/i.test(url)
+    ) {
+      throw new Error(
+        "Google OAuth error page (restart from Preview /partner/verify; do not continue from error URL)",
+      );
+    }
+    if (isPostGoogleSignInUrl(url) && await isPostGoogleSignInDom(page)) {
+      assertPreviewAuditOrigin(url, PREVIEW_URL, "post-google-return");
+      return;
+    }
+    if (Date.now() > deadline) {
+      throw new Error(
+        SIGN_IN_TIMEOUT_MS <= 0
+          ? "human sign-in wait ended unexpectedly"
+          : `human sign-in wait exceeded ${SIGN_IN_TIMEOUT_MS}ms`,
+      );
+    }
+    if (Date.now() - lastHeartbeat > 30_000) {
+      console.log(
+        `HANDOFF_WAIT origin=${originFromUrl(url) ?? "unknown"} path=${(() => {
+          try {
+            return new URL(url).pathname;
+          } catch {
+            return "?";
+          }
+        })()}`,
+      );
+      await writeHandoffHeartbeat(page, "google_handoff_wait");
+      lastHeartbeat = Date.now();
+    }
+    await page.waitForTimeout(1000);
+  }
 }
 
 function printInteractiveHandoff() {
@@ -178,8 +312,9 @@ function printInteractiveHandoff() {
 }
 
 async function waitForGoogleSignIn(page: Page): Promise<void> {
-  page.setDefaultTimeout(SIGN_IN_TIMEOUT_MS);
+  page.setDefaultTimeout(120_000);
   printInteractiveHandoff();
+  assertPreviewAuditOrigin(page.url(), PREVIEW_URL, "pre-handoff");
 
   const passportBtn = page.getByRole("button", { name: /create or open my passport/i });
   const googleBtn = page.getByRole("button", { name: /continue with google/i });
@@ -192,6 +327,7 @@ async function waitForGoogleSignIn(page: Page): Promise<void> {
   } else {
     log("interactive handoff", true, "waiting for Google sign-in in agent Desktop Chromium");
   }
+
   await page.waitForURL(
     (url) => {
       const href = url.toString();
@@ -199,44 +335,39 @@ async function waitForGoogleSignIn(page: Page): Promise<void> {
         || href.includes("/auth/zklogin/callback")
         || href.includes("/partner/continue");
     },
-    { timeout: 60_000 },
+    { timeout: 120_000 },
   );
+
   const href = page.url();
-  const oauthHost = (() => {
+  console.log(`oauth_navigation_host=${(() => {
     try {
       return new URL(href).hostname;
     } catch {
       return "unknown";
     }
-  })();
-  console.log(`oauth_navigation_host=${oauthHost}`);
-  if (
-    href.includes("/signin/oauth/error")
-    || href.includes("authError=")
-    || /redirect_uri_mismatch/i.test(href)
-  ) {
-    throw new Error(
-      "Google OAuth error page (do not continue from here). Restart from /partner/verify after fixing redirect URI.",
-    );
-  }
-  console.log("HANDOFF_READY: take control in Desktop Chromium for Google sign-in");
+  })()}`);
 
-  await page.waitForFunction(
-    () => {
-      const href = window.location.href;
-      if (window.location.hostname.includes("accounts.google.com")) return false;
-      const onContinue = window.location.pathname.includes("/partner/continue");
-      const onCallback = window.location.pathname.includes("/auth/zklogin/callback");
-      const hasDobInputs = Boolean(
-        document.querySelector('input[placeholder="MM"]')
-        || document.querySelector('input[placeholder="YYYY"]')
-        || document.querySelector('input[id*="month" i]'),
+  if (href.includes("accounts.google.com")) {
+    const redirectUri = extractRedirectUriFromGoogleOAuthUrl(href);
+    console.log(`oauth_redirect_uri=${redirectUri ?? "unknown"}`);
+    if (redirectUri && redirectUri !== EXPECTED_CALLBACK) {
+      throw new Error(
+        `Google redirect_uri is not Preview callback: got ${redirectUri}; expected ${EXPECTED_CALLBACK}`,
       );
-      return onContinue || onCallback || hasDobInputs;
-    },
-    undefined,
-    { timeout: SIGN_IN_TIMEOUT_MS },
-  );
+    }
+    console.log("HANDOFF_READY: take control in Desktop Chromium for Google sign-in");
+    if (HANDOFF_CHECK) {
+      log("handoff check", true, `redirect_uri matches Preview callback; origin guard active; pid=${process.pid}`);
+      return;
+    }
+    await waitForHumanGoogleReturn(page);
+  } else {
+    assertPreviewAuditOrigin(href, PREVIEW_URL, "oauth-return-without-google");
+    if (HANDOFF_CHECK) {
+      log("handoff check", true, `already on Preview post-OAuth path; origin guard active; pid=${process.pid}`);
+      return;
+    }
+  }
 
   const registerOk = assertZkLoginRegisterSucceeded();
   log(
@@ -340,9 +471,22 @@ async function runPostSignInFlow(page: Page) {
   );
 }
 
+async function writeSessionManifest(): Promise<void> {
+  await writeFile(SESSION_MANIFEST, JSON.stringify({
+    pid: process.pid,
+    preview_url: PREVIEW_URL,
+    preview_origin: PREVIEW_ORIGIN,
+    profile_dir: PROFILE_DIR,
+    expected_callback: EXPECTED_CALLBACK,
+    started_at: new Date().toISOString(),
+    sign_in_timeout_ms: SIGN_IN_TIMEOUT_MS,
+  }, null, 2));
+}
+
 async function runInteractive() {
   await mkdir(OUT_DIR, { recursive: true });
   await mkdir(PROFILE_DIR, { recursive: true });
+  await writeSessionManifest();
 
   const desktop = await chromium.launchPersistentContext(PROFILE_DIR, {
     headless: false,
@@ -353,6 +497,7 @@ async function runInteractive() {
   });
 
   const page = desktop.pages()[0] ?? await desktop.newPage();
+  attachPreviewAuditGuards(page);
   attachZkLoginRegisterMonitor(page);
   await seedBypassCookie(page);
   await page.goto(browseVerifyUrl(), { waitUntil: "domcontentloaded", timeout: 120000 });
@@ -369,8 +514,21 @@ async function runInteractive() {
   }
 
   await capture(page, "01-browse-verify-entry-desktop");
-  await waitForGoogleSignIn(page);
-  await runPostSignInFlow(page);
+  try {
+    await waitForGoogleSignIn(page);
+    if (HANDOFF_CHECK) {
+      log("controlled session", true, `manifest=${SESSION_MANIFEST}; pid=${process.pid}`);
+      await desktop.close();
+      return;
+    }
+    await runPostSignInFlow(page);
+  } catch (error) {
+    if (error instanceof PreviewAuditOriginViolation) {
+      log("preview origin guard", false, error.message);
+      console.error("ABORT: preview audit left controlled Preview origin — close stray Production tabs and restart from Preview /partner/verify");
+    }
+    throw error;
+  }
 
   // Mobile viewport in same profile/session
   await page.setViewportSize({ width: 390, height: 844 });
@@ -440,10 +598,12 @@ async function main() {
   await mkdir(OUT_DIR, { recursive: true });
   await mkdir(REPORT_DIR, { recursive: true });
 
-  if (INTERACTIVE) {
+  if (INTERACTIVE || HANDOFF_CHECK) {
     await runInteractive();
-    await writeReport("interactive");
-    const failed = results.some((r) => r.ok === false);
+    await writeReport(HANDOFF_CHECK ? "handoff-check" : "interactive");
+    const failed = HANDOFF_CHECK
+      ? results.some((r) => r.ok === false && !r.step.startsWith("demo callback") && !r.step.startsWith("browse self-attest"))
+      : results.some((r) => r.ok === false);
     process.exit(failed ? 1 : 0);
   }
 
@@ -464,6 +624,10 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error(e);
+  if (e instanceof PreviewAuditOriginViolation) {
+    console.error(`ABORT preview origin violation: ${e.message}`);
+  } else {
+    console.error(e);
+  }
   process.exit(1);
 });
