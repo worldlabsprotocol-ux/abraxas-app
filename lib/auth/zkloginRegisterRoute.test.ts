@@ -79,6 +79,7 @@ describe("POST /api/auth/zklogin/register", () => {
   const env = { ...process.env };
 
   beforeEach(() => {
+    delete process.env.VERCEL_ENV;
     process.env.NEXT_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
     process.env.GOOGLE_ZKLOGIN_CLIENT_ID = NEW_AUD;
@@ -313,6 +314,43 @@ describe("POST /api/auth/zklogin/register", () => {
 
     expect(res.status).toBe(404);
     expect(upsert).not.toHaveBeenCalled();
+  });
+
+  it("returns 503 when preview deployment is bound to production Supabase", async () => {
+    process.env.VERCEL_ENV = "preview";
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://bztwutzprwsdrtqdpymf.supabase.co";
+
+    const res = await postRegister({
+      id_token: fakeGoogleIdToken({ sub: OAUTH_SUB, aud: NEW_AUD }),
+      oauth_sub: OAUTH_SUB,
+      provider: "google",
+    });
+
+    const json = (await res.json()) as { code?: string; expected_supabase_ref?: string };
+    expect(res.status).toBe(503);
+    expect(json.code).toBe("preview_supabase_not_demo_bound");
+    expect(json.expected_supabase_ref).toBe("ocntwbxarpjeixdnzide");
+    expect(upsert).not.toHaveBeenCalled();
+  });
+
+  it("returns identity_save_permission_denied when service_role lacks INSERT grant", async () => {
+    maybeSingle.mockResolvedValue({ data: null });
+    upsert.mockResolvedValue({
+      error: { code: "42501", message: "permission denied for table sui_zklogin_identities" },
+    });
+    const newToken = fakeGoogleIdToken({ sub: OTHER_SUB, aud: NEW_AUD, email: "new@example.com" } as never);
+
+    const res = await postRegister({
+      id_token: newToken,
+      oauth_sub: OTHER_SUB,
+      provider: "google",
+      login_mode: "canonical",
+    });
+
+    const json = (await res.json()) as { code?: string; error?: string };
+    expect(res.status).toBe(500);
+    expect(json.code).toBe("identity_save_permission_denied");
+    expect(json.error).toBe("Failed to save identity");
   });
 
   it("does not create duplicate identity on legacy recovery for unknown oauth_sub", async () => {

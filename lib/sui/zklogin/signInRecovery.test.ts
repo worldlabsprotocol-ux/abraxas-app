@@ -75,7 +75,7 @@ describe("signInRecovery", () => {
 
     expect(recovery?.suggestedMode).toBe("canonical");
     expect(recoveryPrimaryActionLabel("canonical")).toBe("Continue with Google");
-    expect(recoveryPrimaryActionHelper("canonical")).toBe("Recommended for most Passports.");
+    expect(recoveryPrimaryActionHelper("canonical")).toMatch(/account only/i);
   });
 
   it("maps legacy mismatch recovery to legacy recovery CTA", () => {

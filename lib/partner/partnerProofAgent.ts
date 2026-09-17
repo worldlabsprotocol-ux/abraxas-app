@@ -2,6 +2,7 @@
 // Narrow tool interface for Abraxas Proof Agent — deterministic server enforcement beneath.
 
 import { evaluatePolicyForSubject } from "@/lib/policy/evaluateSubjectPolicy";
+import { isBrowseAccessPolicy } from "@/lib/policy/selfAttestationGuards";
 import { getHolderCredentialStatus } from "@/lib/partner/relyingPartyFlow";
 import { isAllowedPartnerReturnUrl } from "@/lib/partner/returnUrlAllowlist";
 import { buildAssuranceBoundarySummary, TOKEN_HOLDINGS_NEVER_ELIGIBILITY } from "@/lib/partner/assuranceBoundary";
@@ -66,13 +67,12 @@ export async function inspectPartnerPolicyForAgent(
   if (!policy) throw new Error("Policy not found");
 
   const credential = await getHolderCredentialStatus(suiAddress);
+  const browsePolicy = isBrowseAccessPolicy(policy.rules_json);
   let next: PartnerFlowNextStep = "passport";
   let suitable = false;
   let expired = credential.status === "expired";
 
-  if (credential.status === "pending_review") {
-    next = "pending_review";
-  } else if (credential.status === "active" && credential.credential_jti) {
+  const evaluatePolicyOutcome = async () => {
     const { evaluation } = await evaluatePolicyForSubject({
       suiAddress,
       policyId,
@@ -83,9 +83,19 @@ export async function inspectPartnerPolicyForAgent(
       suitable = true;
     } else if (evaluation.decision === "manual_review") {
       next = "pending_review";
+    } else if (evaluation.missing_claims.length > 0) {
+      next = "passport";
     } else {
       next = "denied";
     }
+  };
+
+  if (credential.status === "pending_review") {
+    next = "pending_review";
+  } else if (browsePolicy) {
+    await evaluatePolicyOutcome();
+  } else if (credential.status === "active" && credential.credential_jti) {
+    await evaluatePolicyOutcome();
   } else if (credential.status === "revoked") {
     next = "denied";
   }

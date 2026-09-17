@@ -23,9 +23,38 @@ import {
   buildZkLoginRecoveryAuditMetadata,
 } from "@/lib/sui/zklogin/recoveryAudit";
 import { ZKLOGIN_SIGN_IN_COPY } from "@/lib/sui/zklogin/signInCopy";
+import {
+  classifyZkLoginIdentitySaveError,
+  logZkLoginIdentitySaveError,
+} from "@/lib/auth/zkloginIdentitySaveError";
+import {
+  DEMO_SUPABASE_PROJECT_REF,
+  isKnownProductionSupabaseRef,
+  supabaseProjectRefFromUrl,
+} from "@/lib/supabase/projectRefs";
 
-const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+function supabaseRuntimeConfig() {
+  return {
+    url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    key: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+  };
+}
+
+function previewSupabaseBindingFailure(sbUrl: string) {
+  const ref = supabaseProjectRefFromUrl(sbUrl);
+  if (process.env.VERCEL_ENV !== "preview" || !isKnownProductionSupabaseRef(ref)) {
+    return null;
+  }
+  console.error("[zklogin/register] preview_bound_to_production_supabase", {
+    bound_ref: ref,
+    expected_demo_ref: DEMO_SUPABASE_PROJECT_REF,
+  });
+  return NextResponse.json({
+    error: "Preview deployment must use DEMO Supabase for partner audit flows",
+    code: "preview_supabase_not_demo_bound",
+    expected_supabase_ref: DEMO_SUPABASE_PROJECT_REF,
+  }, { status: 503 });
+}
 
 function generateUserSalt(): string {
   const hex = randomBytes(16).toString("hex");
@@ -65,6 +94,7 @@ async function persistZkLoginWalletBinding(
 }
 
 export async function POST(req: Request) {
+  try {
   const body = await req.json().catch(() => ({})) as {
     id_token?: string;
     provider?: string;
@@ -76,6 +106,10 @@ export async function POST(req: Request) {
   if (!body.id_token || !body.oauth_sub) {
     return NextResponse.json({ error: "id_token and oauth_sub required" }, { status: 400 });
   }
+
+  const { url: sbUrl, key: sbKey } = supabaseRuntimeConfig();
+  const previewBindingFailure = previewSupabaseBindingFailure(sbUrl);
+  if (previewBindingFailure) return previewBindingFailure;
 
   const loginMode = parseLoginMode(body.login_mode);
 
@@ -100,7 +134,7 @@ export async function POST(req: Request) {
     }, { status: 400 });
   }
 
-  if (!SB_URL || !SB_KEY) {
+  if (!sbUrl || !sbKey) {
     const salt = generateUserSalt();
     const sui_address = jwtToAddress(body.id_token, salt);
     return NextResponse.json({
@@ -113,7 +147,7 @@ export async function POST(req: Request) {
     });
   }
 
-  const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
+  const sb = createClient(sbUrl, sbKey, { auth: { persistSession: false } });
 
   const { data: existing } = await sb
     .from("sui_zklogin_identities")
@@ -183,8 +217,9 @@ export async function POST(req: Request) {
   }, { onConflict: "oauth_sub" });
 
   if (error) {
-    console.error("[zklogin/register]", error);
-    return NextResponse.json({ error: "Failed to save identity" }, { status: 500 });
+    logZkLoginIdentitySaveError(error);
+    const code = classifyZkLoginIdentitySaveError(error);
+    return NextResponse.json({ error: "Failed to save identity", code }, { status: 500 });
   }
 
   const walletBindingStatus = await persistZkLoginWalletBinding(sui_address);
@@ -201,4 +236,12 @@ export async function POST(req: Request) {
       ? { wallet_binding_reason_code: walletBindingStatus.reason_code }
       : {}),
   });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "register_failed";
+    console.error("[zklogin/register] unexpected_error", { message });
+    return NextResponse.json({
+      error: "Registration failed",
+      code: "register_internal_error",
+    }, { status: 500 });
+  }
 }
