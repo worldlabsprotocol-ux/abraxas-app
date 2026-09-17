@@ -194,17 +194,36 @@ async function waitForGoogleSignIn(page: Page): Promise<void> {
   }
   console.log("HANDOFF_READY: take control in Desktop Chromium for Google sign-in");
 
+  await page.waitForURL(
+    (url) => {
+      const href = url.toString();
+      return href.includes("accounts.google.com")
+        || href.includes("/auth/zklogin/callback")
+        || href.includes("/partner/continue");
+    },
+    { timeout: 60_000 },
+  );
+  const oauthHost = (() => {
+    try {
+      return new URL(page.url()).hostname;
+    } catch {
+      return "unknown";
+    }
+  })();
+  console.log(`oauth_navigation_host=${oauthHost}`);
+
   await page.waitForFunction(
     () => {
-      const text = document.body?.innerText ?? "";
-      const host = window.location.hostname;
-      if (host.includes("accounts.google.com")) return false;
+      const href = window.location.href;
+      if (window.location.hostname.includes("accounts.google.com")) return false;
       const onContinue = window.location.pathname.includes("/partner/continue");
-      const hasDob = /enter your birthday|date of birth|MM|YYYY/i.test(text);
-      const signedInBrowse = /create or open my passport/i.test(text) === false
-        && /continue with google/i.test(text) === false
-        && (onContinue || hasDob || window.location.pathname.includes("/passport"));
-      return signedInBrowse;
+      const onCallback = window.location.pathname.includes("/auth/zklogin/callback");
+      const hasDobInputs = Boolean(
+        document.querySelector('input[placeholder="MM"]')
+        || document.querySelector('input[placeholder="YYYY"]')
+        || document.querySelector('input[id*="month" i]'),
+      );
+      return onContinue || onCallback || hasDobInputs;
     },
     undefined,
     { timeout: SIGN_IN_TIMEOUT_MS },
