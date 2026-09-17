@@ -132,6 +132,42 @@ async function main() {
       callback.sso ? "BLOCKED" : callback.status < 400 ? "PASS" : "FAIL",
       callback.sso ? "SSO" : `status=${callback.status}`,
     );
+
+    const binding = await probePreviewApi("/api/preview/supabase-binding");
+    if (binding.sso) {
+      record("preview.supabase_binding", "BLOCKED", "SSO");
+    } else if (binding.status === 200 && binding.json && typeof binding.json === "object") {
+      const b = binding.json as {
+        all_match_demo?: boolean;
+        production_ref_detected?: boolean;
+        url_project_ref?: string;
+        anon_key_project_ref?: string;
+        service_role_key_project_ref?: string;
+        deployment_sha?: string;
+      };
+      record(
+        "preview.supabase_binding",
+        b.all_match_demo ? "PASS" : "FAIL",
+        `sha=${b.deployment_sha?.slice(0, 8) ?? "?"}; url=${b.url_project_ref}; anon=${b.anon_key_project_ref}; service=${b.service_role_key_project_ref}; production_detected=${b.production_ref_detected}`,
+      );
+    } else {
+      const registerProbe = await probePreviewApi("/api/auth/zklogin/register", {
+        id_token: "probe",
+        oauth_sub: "probe",
+      });
+      const reg = registerProbe.json as { code?: string } | undefined;
+      if (registerProbe.status === 503 && reg?.code === "preview_supabase_not_demo_bound") {
+        record("preview.supabase_binding", "FAIL", "register URL gate: production/staging Supabase ref (not DEMO)");
+      } else if (registerProbe.status === 401) {
+        record(
+          "preview.supabase_binding",
+          "FAIL",
+          "URL gate passed (401 on probe token); anon/service-role refs not verified on this SHA — deploy supabase-binding probe route",
+        );
+      } else {
+        record("preview.supabase_binding", "FAIL", `binding probe status=${binding.status}; register status=${registerProbe.status}`);
+      }
+    }
   }
 
   record("demo.supabase_ref", "PASS", `DEMO=${DEMO_REF}; MAIN not queried (${MAIN_REF})`);

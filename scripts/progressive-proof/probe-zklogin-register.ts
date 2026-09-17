@@ -21,11 +21,18 @@ async function main() {
   });
 
   const json = await res.json().catch(() => ({})) as Record<string, unknown>;
+  const bindingSignal = res.status === 503 && json.code === "preview_supabase_not_demo_bound"
+    ? "url_points_to_production_supabase"
+    : res.status === 401
+      ? "url_passed_demo_binding_gate_or_invalid_token"
+      : null;
+
   console.log(JSON.stringify({
     status: res.status,
     code: json.code ?? null,
     error: json.error ?? null,
     expected_supabase_ref: json.expected_supabase_ref ?? null,
+    binding_signal: bindingSignal,
   }, null, 2));
 }
 
