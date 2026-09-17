@@ -7,7 +7,7 @@
 | Item | Value |
 |------|-------|
 | Preview URL | `https://abraxas-app-git-cursor-pr-296681-worldlabsprotocol-uxs-projects.vercel.app` |
-| Deployed preview SHA | **`8f22eab5`** (Vercel Preview deploy `2026-09-17T11:20:39Z`) |
+| Deployed preview SHA | **`7f5f9e1c`** (Vercel Preview deploy `2026-09-17T12:32:51Z`) |
 | Prior failure SHA | `7c71ee21` (register HTTP 500 during Google sign-in) |
 | DEMO Supabase ref | **`ocntwbxarpjeixdnzide`** — `service_role` INSERT/UPDATE on `sui_zklogin_identities` **granted**; `upsert_zklogin_wallet_binding_atomic` RPC present |
 | MAIN Supabase | `bztwutzprwsdrtqdpymf` — **not queried or modified** |
@@ -32,7 +32,7 @@
 | `GOOGLE_ZKLOGIN_CLIENT_ID` | Server JWT audience |
 | `NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID` | Browser OAuth client |
 
-Redeploy preview after saving. Until bound to DEMO, register returns **503** (not opaque 500).
+Redeploy preview after saving. Live probe on `7f5f9e1c` confirmed DEMO binding (`all_match_demo: true`).
 
 ## Live audit steps (resume after `8f22eab5` deploy)
 
@@ -40,10 +40,11 @@ Redeploy preview after saving. Until bound to DEMO, register returns **503** (no
 |------|--------|-------|
 | 1. Unit / policy / register regression tests | **PASS** | 15/15 zklogin register tests; progressive proof security tests |
 | 2. Production build | **PASS** | `npm run build` on `8f22eab5` |
-| 3. Preview deployment SHA | **PASS** | Confirmed `8f22eab5` via GitHub deployments API |
-| 4. DEMO Supabase grants | **PASS** | Verified via Supabase MCP on `ocntwbxarpjeixdnzide` only |
-| 5. Preview access (automation) | **BLOCKED** | `VERCEL_PROTECTION_BYPASS` unset in agent shell; pages `302 → vercel.com/sso-api` |
-| 6. Google sign-in + zklogin register | **NOT RUN** | Prior run **FAIL** at register 500 (`7c71ee21`); re-test via `--interactive` clean Chromium |
+| 3. Preview deployment SHA | **PASS** | Latest Preview deploy **`7f5f9e1c`** (`2026-09-17T12:32:51Z`) |
+| 4. DEMO Supabase grants | **PASS** | Verified via Supabase MCP on `ocntwbxarpjeixdnzide` only (prior run) |
+| 5. Preview access (automation) | **PASS** | This run: `VERCEL_PROTECTION_BYPASS` present (not printed) |
+| 5b. Preview Supabase binding (URL + anon + service-role) | **PASS** | All three refs = `ocntwbxarpjeixdnzide`; `all_match_demo: true`; `production_ref_detected: false` |
+| 6. Google sign-in + zklogin register | **NOT RUN** | Binding gate cleared; interactive Google deferred (this run stopped after probe PASS) |
 | 7. GT browse DOB-only | **NOT RUN** | Blocked at step 6 |
 | 8. DEMO callback + `browse_receipt` | **NOT RUN** | Blocked at step 6 |
 | 9. Live verify API `valid_for_purchase=false` | **NOT RUN** | Blocked at step 6 |

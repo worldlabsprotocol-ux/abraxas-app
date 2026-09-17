@@ -1,20 +1,21 @@
 # Preview Supabase binding verification — PR #293 (2026-09-17)
 
-**Target deployment:** `9a644873` on Preview (includes `/api/preview/supabase-binding`)  
-**Prior deployment:** `8f22eab5` (register RCA)  
+**Target deployment:** `7f5f9e1c` on Preview (includes `/api/preview/supabase-binding`)  
+**Prior deployments:** `9a644873` (probe route), `8f22eab5` (register RCA)  
 **DEMO ref (audit target):** `ocntwbxarpjeixdnzide`  
 **MAIN ref (must not be used for this audit):** `bztwutzprwsdrtqdpymf`
 
-## HTTP probe status (this agent run)
+## HTTP probe status (run 2 — bypass present)
 
 | Check | Result |
 |-------|--------|
-| `VERCEL_PROTECTION_BYPASS` in runtime | **unset** (`printenv` length 0) |
-| Vercel MCP | Auth timed out — cannot read Preview env vars or server logs |
-| `POST /api/auth/zklogin/register` (no bypass) | Vercel Deployment Protection `401 Protected deployment` |
-| `GET /api/preview/supabase-binding` | Not on `8f22eab5` (added in follow-up commit for full URL+key ref audit) |
+| `VERCEL_PROTECTION_BYPASS` in runtime | **present** (non-empty; not printed) |
+| `GET /api/preview/supabase-binding` (header-only bypass) | **HTTP 200** `all_match_demo: true` |
+| URL / anon / service-role refs | all `ocntwbxarpjeixdnzide` |
+| `production_ref_detected` | `false` |
+| Google sign-in | **not started** (mismatch gate cleared) |
 
-**Conclusion:** Live server-side binding cannot be confirmed via HTTP in this run until bypass is available (fresh cloud agent run recommended).
+**Conclusion:** Live Preview is bound to DEMO. See `preview-supabase-binding-probe-2026-09-17-run2.md`.
 
 ## Corroborating evidence (no secrets printed)
 
@@ -26,7 +27,7 @@
 | First live register failure (`7c71ee21`) | HTTP 500 `Failed to save identity` — matches `service_role` INSERT denied on production/staging without migration `065` |
 | DEMO grants (MCP SQL) | `service_role` INSERT/UPDATE on `sui_zklogin_identities` = **true** |
 
-**Assessment:** Preview is **very likely still bound to MAIN/staging** (`bztwutzprwsdrtqdpymf`), not DEMO. Register traffic during the failed sign-in did not reach DEMO.
+**Assessment (superseded by run 2 live probe):** Historical signals above explained the `7c71ee21` register 500. Live Preview SHA `7f5f9e1c` now reports all three refs = DEMO. The docs note that Preview *can* share staging remains a process warning, not the current binding.
 
 ## Required Vercel Preview configuration (Preview scope only)
 
@@ -60,4 +61,4 @@ Expect **401** (invalid probe token), **not** 503 `preview_supabase_not_demo_bou
 
 ## Interactive audit
 
-**Do not start Google sign-in** until binding probe passes. Restart interactive audit only after redeploy + probe PASS.
+Binding probe **PASS** on `7f5f9e1c`. Google sign-in was **not started** in run 2 (explicit stop-after-mismatch instruction; no mismatch occurred). Interactive walkthrough is now unblocked.
