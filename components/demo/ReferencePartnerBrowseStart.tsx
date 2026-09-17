@@ -3,16 +3,30 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { buildReferencePartnerBrowseVerifyUrl } from "@/lib/demo/referencePartnerBrowse";
+import { referencePartnerBrowseCallbackUrl } from "@/lib/demo/referencePartnerBrowseCallback";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#38BDF8";
 
 export function ReferencePartnerBrowseStart() {
   const [verifyUrl, setVerifyUrl] = useState<string | null>(null);
+  const [callbackUrl, setCallbackUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setVerifyUrl(buildReferencePartnerBrowseVerifyUrl(window.location.origin));
+    setCallbackUrl(referencePartnerBrowseCallbackUrl(window.location.origin));
   }, []);
+
+  const copyCallbackUrl = async () => {
+    if (!callbackUrl) return;
+    try {
+      await navigator.clipboard.writeText(callbackUrl);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  };
 
   return (
     <main style={{ maxWidth: 680, margin: "3rem auto", padding: "0 1rem 3rem", fontFamily: FONT, color: "var(--text-primary)" }}>
@@ -47,6 +61,19 @@ export function ReferencePartnerBrowseStart() {
       <p style={{ color: "#fbbf24", fontSize: "0.8rem", lineHeight: 1.6, marginTop: "1rem" }}>
         This environment must be allowlisted for the Abraxas-controlled callback before the flow can complete.
       </p>
+      {callbackUrl && (
+        <section style={{ marginTop: "0.75rem", padding: "0.75rem", border: "1px solid var(--border)", borderRadius: 10, background: "var(--surface)" }}>
+          <p style={{ margin: "0 0 0.45rem", color: "var(--text-secondary)", fontSize: "0.75rem", fontWeight: 700 }}>
+            DEMO callback URL to allowlist
+          </p>
+          <code style={{ display: "block", overflowWrap: "anywhere", color: "var(--text-primary)", fontSize: "0.72rem", lineHeight: 1.5 }}>
+            {callbackUrl}
+          </code>
+          <button type="button" onClick={() => void copyCallbackUrl()} style={{ marginTop: "0.65rem", padding: "0.4rem 0.65rem", borderRadius: 7, border: "1px solid #38bdf855", background: "#38bdf812", color: ACCENT, font: "inherit", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer" }}>
+            {copied ? "Copied" : "Copy callback URL"}
+          </button>
+        </section>
+      )}
       <Link href="/docs/progressive-proof" style={{ color: ACCENT, fontSize: "0.84rem", fontWeight: 700 }}>Read the integration quickstart →</Link>
     </main>
   );
