@@ -90,6 +90,7 @@ export default function ProgressiveProofDocsPage() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
           <Btn href="/docs/partner-flow" size="sm">Partner Flow guide →</Btn>
           <Btn href="/docs/relying-party-verify" variant="secondary" size="sm">Server API guide →</Btn>
+          <Btn href="/demo/reference-partner" variant="ghost" size="sm">Try reference demo →</Btn>
         </div>
       </ContentCard>
 
