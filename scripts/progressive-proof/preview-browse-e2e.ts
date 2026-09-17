@@ -159,6 +159,7 @@ This script waits, then continues to Abraxas Google sign-in.
 `);
   await page.waitForFunction(
     () => !window.location.hostname.includes("vercel.com"),
+    undefined,
     { timeout: SIGN_IN_TIMEOUT_MS },
   );
   log("preview access", true, "past Vercel deployment protection");
@@ -167,9 +168,9 @@ This script waits, then continues to Abraxas Google sign-in.
 function printInteractiveHandoff() {
   console.log(`
 === SAME-SESSION GOOGLE SIGN-IN (do not use your local browser) ===
-1. Open this agent run: https://cursor.com/agents/bc-dbc1a061-611f-47da-8196-b4029a82d541
+1. Open this agent run: https://cursor.com/agents/bc-aca75cd0-6e1a-48bf-8c99-a1790f3dc2c0
 2. Open the **Desktop** panel (headed Chromium on this VM, DISPLAY=${process.env.DISPLAY ?? "unset"}).
-3. In that Chromium window only: click **Continue with Google** and finish Google OAuth.
+3. In that Chromium window only: finish Google OAuth (Good Trouble browse uses Create or open my Passport).
 4. Stay in the same window — this script waits, then continues DOB → callback → API checks.
    Do not export cookies, tokens, or auth state.
 ===================================================================
@@ -177,16 +178,27 @@ function printInteractiveHandoff() {
 }
 
 async function waitForGoogleSignIn(page: Page): Promise<void> {
+  page.setDefaultTimeout(SIGN_IN_TIMEOUT_MS);
   printInteractiveHandoff();
+
+  const passportBtn = page.getByRole("button", { name: /create or open my passport/i });
   const googleBtn = page.getByRole("button", { name: /continue with google/i });
-  if (await googleBtn.count()) {
-    log("interactive handoff", true, "waiting for Google sign-in in agent Desktop Chromium");
+  if (await passportBtn.count()) {
+    log("interactive handoff", true, "clicked Create or open my Passport; take control in Desktop Chromium for Google");
+    await passportBtn.first().click();
+  } else if (await googleBtn.count()) {
+    log("interactive handoff", true, "clicked Continue with Google; take control in Desktop Chromium for Google");
     await googleBtn.first().click();
+  } else {
+    log("interactive handoff", true, "waiting for Google sign-in in agent Desktop Chromium");
   }
+  console.log("HANDOFF_READY: take control in Desktop Chromium for Google sign-in");
 
   await page.waitForFunction(
     () => {
       const text = document.body?.innerText ?? "";
+      const host = window.location.hostname;
+      if (host.includes("accounts.google.com")) return false;
       const onContinue = window.location.pathname.includes("/partner/continue");
       const hasDob = /enter your birthday|date of birth|MM|YYYY/i.test(text);
       const signedInBrowse = /create or open my passport/i.test(text) === false
@@ -194,6 +206,7 @@ async function waitForGoogleSignIn(page: Page): Promise<void> {
         && (onContinue || hasDob || window.location.pathname.includes("/passport"));
       return signedInBrowse;
     },
+    undefined,
     { timeout: SIGN_IN_TIMEOUT_MS },
   );
 
