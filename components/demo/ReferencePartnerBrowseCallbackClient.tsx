@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import {
   GOOD_TROUBLE_BROWSE_POLICY_ID,
   GOOD_TROUBLE_PARTNER_ID,
@@ -36,7 +37,6 @@ export function ReferencePartnerBrowseCallbackClient() {
 
   const verify = useCallback(async () => {
     if (!browseReceipt) {
-      setError("Missing browse_receipt in callback URL.");
       setStatus("No browse receipt received.");
       return;
     }
@@ -98,13 +98,23 @@ export function ReferencePartnerBrowseCallbackClient() {
         DEMO · REFERENCE PARTNER · BROWSE CALLBACK
       </div>
       <h1 style={{ fontSize: "1.15rem", margin: "0 0 0.75rem", fontWeight: 800 }}>
-        {result?.verified ? "Browse receipt accepted" : "Validating browse receipt"}
+        {result?.verified ? "Browse receipt accepted" : browseReceipt ? "Validating browse receipt" : "Start the reference flow"}
       </h1>
       <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
         {status}
       </p>
-      {error && (
+      {error && browseReceipt && (
         <p style={{ fontSize: "0.82rem", color: "#EF4444", marginTop: "0.5rem" }}>{error}</p>
+      )}
+      {!browseReceipt && (
+        <div style={{ marginTop: "1.25rem" }}>
+          <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
+            This page receives a signed browse receipt after the verification flow. Start there instead of opening the callback directly.
+          </p>
+          <Link href="/demo/reference-partner" style={{ display: "inline-block", marginTop: "0.6rem", padding: "0.65rem 0.85rem", borderRadius: 8, background: ACCENT, color: "#04111d", fontSize: "0.8rem", fontWeight: 800, textDecoration: "none" }}>
+            Start browse verification →
+          </Link>
+        </div>
       )}
       {result?.verified && (
         <div style={{ marginTop: "1.25rem" }}>
