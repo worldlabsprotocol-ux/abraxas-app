@@ -12,8 +12,12 @@ async function main() {
   if (!BYPASS) throw new Error("VERCEL_PROTECTION_BYPASS required for preview probe");
 
   const res = await fetch(`${PREVIEW_URL}/api/preview/supabase-binding`, {
-    headers: vercelBypassHeaders(BYPASS),
+    headers: vercelBypassHeaders(BYPASS, { setCookie: false }),
+    redirect: "manual",
   });
+  if (res.status >= 300 && res.status < 400) {
+    throw new Error(`unexpected redirect status=${res.status} location=${res.headers.get("location")}`);
+  }
   const json = await res.json().catch(() => ({})) as Record<string, unknown>;
   console.log(JSON.stringify({ status: res.status, ...json }, null, 2));
 }

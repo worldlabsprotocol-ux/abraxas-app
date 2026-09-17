@@ -264,7 +264,7 @@ async function runPostSignInFlow(page: Page) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...vercelBypassHeaders(BYPASS),
+      ...vercelBypassHeaders(BYPASS, { setCookie: false }),
     },
     body: JSON.stringify({
       browse_receipt: browseReceipt,
@@ -283,7 +283,7 @@ async function runPostSignInFlow(page: Page) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...vercelBypassHeaders(BYPASS),
+      ...vercelBypassHeaders(BYPASS, { setCookie: false }),
     },
     body: JSON.stringify({
       browse_receipt: browseReceipt,

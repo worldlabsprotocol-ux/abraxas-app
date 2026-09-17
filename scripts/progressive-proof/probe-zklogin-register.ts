@@ -15,8 +15,9 @@ async function main() {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...vercelBypassHeaders(BYPASS),
+      ...vercelBypassHeaders(BYPASS, { setCookie: false }),
     },
+    redirect: "manual",
     body: JSON.stringify({ id_token: "probe", oauth_sub: "probe" }),
   });
 

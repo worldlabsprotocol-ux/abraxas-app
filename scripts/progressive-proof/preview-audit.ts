@@ -60,7 +60,7 @@ function runVitest(pattern: string, label: string): boolean {
 async function probePreview(path: string): Promise<{ status: number; sso: boolean; finalUrl: string }> {
   const url = `${PREVIEW_URL}${path}`;
   const res = await fetch(url, {
-    headers: vercelBypassHeaders(BYPASS),
+    headers: vercelBypassHeaders(BYPASS, { setCookie: false }),
     redirect: "manual",
   });
   const location = res.headers.get("location");
@@ -72,7 +72,7 @@ async function probePreviewApi(path: string, body?: object): Promise<{ status: n
   const res = await fetch(`${PREVIEW_URL}${path}`, {
     method: body ? "POST" : "GET",
     headers: {
-      ...vercelBypassHeaders(BYPASS),
+      ...vercelBypassHeaders(BYPASS, { setCookie: false }),
       ...(body ? { "Content-Type": "application/json" } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,

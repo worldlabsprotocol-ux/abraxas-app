@@ -29,6 +29,13 @@ describe("vercelBypass", () => {
     });
   });
 
+  it("omits set-cookie for Node fetch probes to avoid 307 redirect loops", () => {
+    vi.stubEnv("VERCEL_PROTECTION_BYPASS", "header-only-secret");
+    expect(vercelBypassHeaders("header-only-secret", { setCookie: false })).toEqual({
+      "x-vercel-protection-bypass": "header-only-secret",
+    });
+  });
+
   it("redacts bypass from URLs for logs and reports", () => {
     vi.stubEnv("VERCEL_PROTECTION_BYPASS", "leaky-secret");
     const dirty = "https://preview.example/?x-vercel-protection-bypass=leaky-secret&x=1";

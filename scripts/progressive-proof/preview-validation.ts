@@ -68,7 +68,7 @@ async function fetchPreview(path: string, opts: RequestInit = {}) {
   const url = `${PREVIEW_URL}${path}`;
   const res = await fetch(url, {
     ...opts,
-    headers: { ...vercelBypassHeaders(BYPASS), ...(opts.headers ?? {}) },
+    headers: { ...vercelBypassHeaders(BYPASS, { setCookie: false }), ...(opts.headers ?? {}) },
     redirect: "manual",
   });
   return { url, res, status: res.status, location: res.headers.get("location") };
@@ -78,7 +78,7 @@ async function fetchPreviewFollow(path: string, opts: RequestInit = {}) {
   const url = `${PREVIEW_URL}${path}`;
   const res = await fetch(url, {
     ...opts,
-    headers: { ...vercelBypassHeaders(BYPASS), ...(opts.headers ?? {}) },
+    headers: { ...vercelBypassHeaders(BYPASS, { setCookie: false }), ...(opts.headers ?? {}) },
     redirect: "follow",
   });
   return { url: res.url, res, status: res.status };
@@ -90,7 +90,7 @@ async function traceRedirectChain(path: string, maxHops = 5) {
 
   for (let hop = 0; hop < maxHops; hop++) {
     const res = await fetch(nextUrl, {
-      headers: vercelBypassHeaders(BYPASS),
+      headers: vercelBypassHeaders(BYPASS, { setCookie: false }),
       redirect: "manual",
     });
     const location = res.headers.get("location");

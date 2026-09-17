@@ -9,12 +9,27 @@ export function resolveVercelProtectionBypass(): string {
   ).trim();
 }
 
-export function vercelBypassHeaders(bypass = resolveVercelProtectionBypass()): Record<string, string> {
+export type VercelBypassHeaderOptions = {
+  /**
+   * When true, Vercel answers with 307 + `Set-Cookie: _vercel_jwt` to the same URL.
+   * Node `fetch` has no cookie jar, so following that 307 loops until redirect-count exceeded.
+   * Use `true` for Playwright/browser contexts; `false` for Node HTTP probes.
+   */
+  setCookie?: boolean;
+};
+
+export function vercelBypassHeaders(
+  bypass = resolveVercelProtectionBypass(),
+  options: VercelBypassHeaderOptions = {},
+): Record<string, string> {
   if (!bypass) return {};
-  return {
+  const headers: Record<string, string> = {
     "x-vercel-protection-bypass": bypass,
-    "x-vercel-set-bypass-cookie": "true",
   };
+  if (options.setCookie !== false) {
+    headers["x-vercel-set-bypass-cookie"] = "true";
+  }
+  return headers;
 }
 
 export function isVercelSsoRedirect(location: string | null): boolean {
