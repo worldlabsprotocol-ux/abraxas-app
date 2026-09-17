@@ -1,6 +1,7 @@
 # Preview Supabase binding verification — PR #293 (2026-09-17)
 
-**Target deployment:** `8f22eab5` on Preview  
+**Target deployment:** `9a644873` on Preview (includes `/api/preview/supabase-binding`)  
+**Prior deployment:** `8f22eab5` (register RCA)  
 **DEMO ref (audit target):** `ocntwbxarpjeixdnzide`  
 **MAIN ref (must not be used for this audit):** `bztwutzprwsdrtqdpymf`
 
