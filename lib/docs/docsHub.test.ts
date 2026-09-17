@@ -29,6 +29,14 @@ describe("docsHub", () => {
     expect(dev?.topics.map((t) => t.id)).toEqual(["api", "architecture", "security"]);
   });
 
+  it("links the quick start and developer API entry to progressive proof", () => {
+    const quickStart = getDocsHubGroup("quick-start");
+    const developer = getDocsHubGroup("developer");
+
+    expect(quickStart?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/progressive-proof");
+    expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/progressive-proof");
+  });
+
   it("links roadmap to integration readiness and partner flow", () => {
     const roadmap = getDocsHubGroup("roadmap");
     const hrefs = roadmap?.topics[0]?.links?.map((l) => l.href) ?? [];
