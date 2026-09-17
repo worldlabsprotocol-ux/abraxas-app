@@ -39,9 +39,83 @@ const SIGN_IN_TIMEOUT_MS = Number(process.env.SIGN_IN_TIMEOUT_MS ?? 30 * 60 * 10
 
 const results: Array<{ step: string; ok: boolean; detail: string }> = [];
 
+type ZkLoginRegisterProbe = {
+  status: number | null;
+  code: string | null;
+  error: string | null;
+  expected_supabase_ref: string | null;
+};
+
+const zkLoginRegisterProbe: ZkLoginRegisterProbe = {
+  status: null,
+  code: null,
+  error: null,
+  expected_supabase_ref: null,
+};
+
 function log(step: string, ok: boolean, detail: string) {
   results.push({ step, ok, detail });
   console.log(`${ok ? "PASS" : ok === false ? "FAIL" : "PAUSE"} ${step}: ${detail}`);
+}
+
+/** Observe register API outcomes without logging OAuth tokens or PII. */
+function attachZkLoginRegisterMonitor(page: Page) {
+  page.on("response", async (response) => {
+    if (!response.url().includes("/api/auth/zklogin/register")) return;
+    zkLoginRegisterProbe.status = response.status();
+    try {
+      const json = await response.json() as Record<string, unknown>;
+      zkLoginRegisterProbe.code = typeof json.code === "string" ? json.code : null;
+      zkLoginRegisterProbe.error = typeof json.error === "string" ? json.error : null;
+      zkLoginRegisterProbe.expected_supabase_ref = typeof json.expected_supabase_ref === "string"
+        ? json.expected_supabase_ref
+        : null;
+    } catch {
+      zkLoginRegisterProbe.code = null;
+      zkLoginRegisterProbe.error = "non_json_response";
+    }
+    console.log(
+      `zklogin/register probe: status=${zkLoginRegisterProbe.status}; code=${zkLoginRegisterProbe.code ?? "n/a"}`,
+    );
+  });
+}
+
+function assertZkLoginRegisterSucceeded(): boolean {
+  const { status, code, expected_supabase_ref } = zkLoginRegisterProbe;
+  if (status === null) {
+    log(
+      "zklogin register API",
+      false,
+      "no POST /api/auth/zklogin/register observed during sign-in",
+    );
+    return false;
+  }
+  if (status === 503 && code === "preview_supabase_not_demo_bound") {
+    log(
+      "zklogin register API",
+      false,
+      `preview still bound to production Supabase — bind Preview env to DEMO ref ${expected_supabase_ref ?? "ocntwbxarpjeixdnzide"}`,
+    );
+    return false;
+  }
+  if (status === 500 && code === "identity_save_permission_denied") {
+    log(
+      "zklogin register API",
+      false,
+      "service_role lacks INSERT on sui_zklogin_identities (Postgres 42501) — use DEMO Supabase on Preview",
+    );
+    return false;
+  }
+  if (status < 200 || status >= 300) {
+    log(
+      "zklogin register API",
+      false,
+      `HTTP ${status}; code=${code ?? "n/a"}; error=${zkLoginRegisterProbe.error ?? "n/a"}`,
+    );
+    return false;
+  }
+  log("zklogin register API", true, `HTTP ${status}`);
+  return true;
 }
 
 function browseVerifyUrl(): string {
@@ -122,7 +196,18 @@ async function waitForGoogleSignIn(page: Page): Promise<void> {
     },
     { timeout: SIGN_IN_TIMEOUT_MS },
   );
-  log("google sign-in", true, "session detected in Playwright browser");
+
+  const registerOk = assertZkLoginRegisterSucceeded();
+  log(
+    "google sign-in",
+    registerOk,
+    registerOk
+      ? "session detected; zklogin register succeeded"
+      : "session UI progressed but zklogin register did not succeed",
+  );
+  if (!registerOk) {
+    throw new Error("zklogin register failed — browse flow blocked");
+  }
 }
 
 async function runPostSignInFlow(page: Page) {
@@ -227,6 +312,7 @@ async function runInteractive() {
   });
 
   const page = desktop.pages()[0] ?? await desktop.newPage();
+  attachZkLoginRegisterMonitor(page);
   await seedBypassCookie(page);
   await page.goto(browseVerifyUrl(), { waitUntil: "domcontentloaded", timeout: 120000 });
   await page.waitForTimeout(2000);
