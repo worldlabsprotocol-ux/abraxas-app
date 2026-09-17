@@ -44,7 +44,7 @@ Redeploy preview after saving. Live probe on `7f5f9e1c` confirmed DEMO binding (
 | 4. DEMO Supabase grants | **PASS** | Verified via Supabase MCP on `ocntwbxarpjeixdnzide` only (prior run) |
 | 5. Preview access (automation) | **PASS** | This run: `VERCEL_PROTECTION_BYPASS` present (not printed) |
 | 5b. Preview Supabase binding (URL + anon + service-role) | **PASS** | All three refs = `ocntwbxarpjeixdnzide`; `all_match_demo: true`; `production_ref_detected: false` |
-| 6. Google sign-in + zklogin register | **NOT RUN** | Binding gate cleared; interactive Google deferred (this run stopped after probe PASS) |
+| 6. Google sign-in + zklogin register | **FAIL** | Desktop Chromium reached Google; **`redirect_uri_mismatch`**. Register **not called**. See `interactive-audit-google-oauth-2026-09-17.md` |
 | 7. GT browse DOB-only | **NOT RUN** | Blocked at step 6 |
 | 8. DEMO callback + `browse_receipt` | **NOT RUN** | Blocked at step 6 |
 | 9. Live verify API `valid_for_purchase=false` | **NOT RUN** | Blocked at step 6 |
