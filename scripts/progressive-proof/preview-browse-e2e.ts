@@ -192,8 +192,6 @@ async function waitForGoogleSignIn(page: Page): Promise<void> {
   } else {
     log("interactive handoff", true, "waiting for Google sign-in in agent Desktop Chromium");
   }
-  console.log("HANDOFF_READY: take control in Desktop Chromium for Google sign-in");
-
   await page.waitForURL(
     (url) => {
       const href = url.toString();
@@ -203,14 +201,25 @@ async function waitForGoogleSignIn(page: Page): Promise<void> {
     },
     { timeout: 60_000 },
   );
+  const href = page.url();
   const oauthHost = (() => {
     try {
-      return new URL(page.url()).hostname;
+      return new URL(href).hostname;
     } catch {
       return "unknown";
     }
   })();
   console.log(`oauth_navigation_host=${oauthHost}`);
+  if (
+    href.includes("/signin/oauth/error")
+    || href.includes("authError=")
+    || /redirect_uri_mismatch/i.test(href)
+  ) {
+    throw new Error(
+      "Google OAuth error page (do not continue from here). Restart from /partner/verify after fixing redirect URI.",
+    );
+  }
+  console.log("HANDOFF_READY: take control in Desktop Chromium for Google sign-in");
 
   await page.waitForFunction(
     () => {
