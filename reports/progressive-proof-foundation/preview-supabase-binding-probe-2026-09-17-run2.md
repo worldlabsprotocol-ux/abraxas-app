@@ -48,6 +48,15 @@ Header-only bypass (no `x-vercel-set-bypass-cookie`). Response `Cache-Control: n
 
 **Verdict: PASS.** Preview is bound to DEMO on URL, anon key, and service-role key.
 
+Official script (after header-only fix) reproduces the same JSON:
+
+```bash
+PREVIEW_URL=https://abraxas-app-git-cursor-pr-296681-worldlabsprotocol-uxs-projects.vercel.app \
+npx tsx scripts/progressive-proof/probe-preview-supabase-binding.ts
+```
+
+Corroborating URL gate (no OAuth): `POST /api/auth/zklogin/register` with dummy token → **HTTP 401** `Invalid id_token` (not 503 `preview_supabase_not_demo_bound`).
+
 ## Probe script note
 
 The documented `npx tsx scripts/progressive-proof/probe-preview-supabase-binding.ts` command initially failed with `redirect count exceeded`. Vercel answers `x-vercel-set-bypass-cookie: true` with **307** to the same path plus `_vercel_jwt`; Node `fetch` has no cookie jar, so it loops.
