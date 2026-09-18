@@ -133,6 +133,7 @@ function PassportPageInner() {
     partnerId: partnerIdParam,
     policyId: policyIdParam,
     verificationRequestId: verifyRequestId,
+    walletBound: setup.walletBound,
   });
 
   const loadVeriffScript = (src: string): Promise<void> =>

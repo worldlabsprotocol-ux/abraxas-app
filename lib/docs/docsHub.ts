@@ -42,9 +42,10 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
         id: "quick-start",
         title: "Quick Start",
         summary:
-          "Sign in with Google at /passport to create a Sui wallet automatically. Complete optional biometric ID verification. Partners call POST /api/credentials/verify with a presentation proof.",
+          "Google zkLogin creates an account only. A partner policy requests only missing evidence, then your server verifies the signed receipt before granting access.",
         links: [
           { label: "Passport", href: "/passport" },
+          { label: "Progressive proof", href: "/docs/progressive-proof" },
           { label: "Integrate", href: "/integrate" },
           { label: "Partner Flow", href: "/docs/partner-flow" },
           { label: "Relying party guide", href: "/docs/relying-party-verify" },
@@ -100,6 +101,7 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
         summary:
           "Partner Flow redirect, POST /api/credentials/verify, verification requests, and public receipt verification.",
         links: [
+          { label: "Progressive proof quickstart", href: "/docs/progressive-proof" },
           { label: "Partner Flow", href: "/docs/partner-flow" },
           { label: "Partner Flow API (OpenAPI)", href: "/docs/partner-flow-api" },
           { label: "Protocol compatibility manifest", href: "/api/protocol/compatibility" },

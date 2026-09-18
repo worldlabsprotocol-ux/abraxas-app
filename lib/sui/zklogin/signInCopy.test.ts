@@ -14,9 +14,8 @@ describe("ZKLOGIN_SIGN_IN_COPY", () => {
     expect(ZKLOGIN_SIGN_IN_COPY.openButton).toBe("Sign in");
     expect(ZKLOGIN_SIGN_IN_COPY.chooserTitle).toBe("Access your Passport");
     expect(ZKLOGIN_SIGN_IN_COPY.legacySectionHeading).toBe("Older sign in setup");
-    expect(ZKLOGIN_SIGN_IN_COPY.canonicalHelper).toBe(
-      "Recommended for most Passports.",
-    );
+    expect(ZKLOGIN_SIGN_IN_COPY.canonicalHelper).toMatch(/account only/i);
+    expect(ZKLOGIN_SIGN_IN_COPY.canonicalHelper).toMatch(/no documents/i);
     expect(ZKLOGIN_SIGN_IN_COPY.legacyButton).toBe(
       "Recover a Passport created with an older sign in setup",
     );

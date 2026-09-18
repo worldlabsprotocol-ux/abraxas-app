@@ -75,8 +75,8 @@ export function buildPassportProofSummary(input: {
   } else if (input.identityUi === "under_review") {
     items.push("Verification review in progress");
   } else {
-    items.push("Eligibility not yet verified");
-    items.push("Verification available when a participating service requests it");
+    items.push("No partner proof on file yet");
+    items.push("Proof is collected only when a participating service requests it");
   }
 
   return items;

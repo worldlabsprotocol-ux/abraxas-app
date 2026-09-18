@@ -31,7 +31,7 @@ describe("passportCustomerStatus", () => {
       walletBindingL3: true,
     });
     const proof = buildPassportProofSummary({ walletBound: true, identityUi: "not_started" });
-    expect(proof).toContain("Eligibility not yet verified");
+    expect(proof).toContain("No partner proof on file yet");
     expect(proof).not.toContain("Verified information on file");
   });
 

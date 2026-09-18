@@ -12,7 +12,6 @@
     "sui:deploy:devnet": "bash scripts/sui/deploy-devnet.sh",
     "sui:deploy:mainnet": "bash scripts/sui/deploy-mainnet.sh",
     "sui:mint-cap": "bash scripts/sui/mint-issuance-cap.sh",
-    "sui:install-cli": "bash scripts/sui/install-cli.sh",
     "sui:setup-devnet": "bash scripts/sui/setup-sponsor-devnet.sh",
     "cielo:e2e": "DOTENV_CONFIG_PATH=.env.local npx ts-node -r dotenv/config scripts/cielo-e2e-check.ts",
     "cielo:e2e:remote": "BASE_URL=https://abraxas-app.vercel.app npx ts-node scripts/cielo-e2e-check.ts",
@@ -44,7 +43,10 @@
     "demo:provision": "npx tsx scripts/demo/provision-partner-sandbox-holder.ts",
     "demo:signing-key:generate": "npx tsx scripts/demo/generate-demo-signing-key.ts",
     "demo:signing-key:verify": "npx tsx scripts/demo/verify-demo-signing-key.ts",
-    "smoke:launchpad:staging": "npx tsx scripts/launchpad-staging-smoke/run.ts"
+    "smoke:launchpad:staging": "npx tsx scripts/launchpad-staging-smoke/run.ts",
+    "walkthrough:progressive-proof:preview": "npx tsx scripts/progressive-proof/preview-validation.ts",
+    "walkthrough:progressive-proof:browse-e2e": "npx tsx scripts/progressive-proof/preview-browse-e2e.ts",
+    "audit:progressive-proof:preview": "npx tsx scripts/progressive-proof/preview-audit.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",
@@ -55,7 +57,7 @@
     "@solana/wallet-adapter-base": "^0.9.27",
     "@solana/wallet-adapter-phantom": "^0.9.29",
     "@solana/wallet-adapter-react": "^0.15.39",
-    "@solana/wallet-adapter-react-ui": "^0.9.39",
+    "@solana/wallet-adapter-react-ui": "^0.9.29",
     "@solana/wallet-adapter-solflare": "^0.6.33",
     "@solana/wallet-adapter-wallets": "^0.19.38",
     "@solana/web3.js": "^1.98.4",

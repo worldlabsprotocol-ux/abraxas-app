@@ -4,6 +4,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { navigateToPartnerHandoffRedirect } from "@/lib/partner/partnerClientNavigation";
+import { findProductionPolicyRules } from "@/lib/policy/productionPolicyContract";
+import { isProgressivePartnerHandoffReady } from "@/lib/progressiveProof/handoffReady";
 
 export type PartnerFlowHandoffPhase = "idle" | "completing" | "failed";
 export type PartnerFlowHandoffFailureCategory =
@@ -18,6 +20,8 @@ export interface PartnerFlowHandoffContext {
   partnerId: string | null;
   policyId: string | null;
   verificationRequestId: string | null;
+  /** Progressive proof — wallet binding for policy evaluation. */
+  walletBound?: boolean;
 }
 
 export interface PartnerFlowHandoffController {
@@ -43,12 +47,17 @@ export function isPartnerFlowContext(
 }
 
 export function isPartnerFlowHandoffReady(ctx: PartnerFlowHandoffContext): boolean {
-  return Boolean(
-    isPartnerFlowContext(ctx)
-    && ctx.suiAddress
-    && ctx.identityStatus === "earned"
-    && ctx.hasCredential,
-  );
+  if (!isPartnerFlowContext(ctx) || !ctx.suiAddress) return false;
+
+  const policyRules = ctx.policyId ? findProductionPolicyRules(ctx.policyId) : null;
+
+  return isProgressivePartnerHandoffReady({
+    signedIn: true,
+    walletBound: ctx.walletBound ?? true,
+    identityCredentialEarned: ctx.identityStatus === "earned",
+    hasCredential: ctx.hasCredential,
+    policyRules,
+  });
 }
 
 export function buildPartnerFlowCompleteBody(
