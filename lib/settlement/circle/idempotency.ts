@@ -38,5 +38,5 @@ export function allocateDistinctCircleIdempotencyKeys(
       throw new Error("circle_idempotency_allocation_exhausted");
     }
   }
-  return [...keys];
+  return Array.from(keys);
 }
