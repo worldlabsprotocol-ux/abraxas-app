@@ -27,6 +27,7 @@ export interface LaunchpadHealthCheck {
     | "webhook_failure"
     | "webhook_schema"
     | "action_channel"
+    | "policy_change_control"
     | "production";
   label: string;
   status: LaunchpadHealthStatus;
@@ -48,6 +49,13 @@ export function buildLaunchpadIntegrationHealth(input: {
   unsupportedLifecycleEvents?: string[];
   schemaSkipCode?: string | null;
   productionCompatibility?: string;
+  policyChangeControl?: {
+    status: LaunchpadHealthStatus;
+    nextAction: string;
+    blockerCode: string | null;
+    pinnedVersion: number;
+    activeVersion: number | null;
+  };
 }): { overall: LaunchpadHealthStatus; checks: LaunchpadHealthCheck[] } {
   const { application: app } = input;
   const productionCallback = hasProductionLaunchpadCallback(app.allowed_return_urls);
@@ -181,6 +189,17 @@ export function buildLaunchpadIntegrationHealth(input: {
         }
         return "Configure a callback, a webhook, or both. Never treat a webhook payload as authorization.";
       })(),
+    },
+    {
+      id: "policy_change_control",
+      label: "Policy version pin",
+      status: input.policyChangeControl?.status
+        ?? (app.policy_id && app.policy_version > 0 ? "pass" : "blocked"),
+      detail: input.policyChangeControl
+        ? `${input.policyChangeControl.nextAction}${input.policyChangeControl.blockerCode ? ` Blocker: ${input.policyChangeControl.blockerCode}.` : ""} Pinned v${input.policyChangeControl.pinnedVersion}${input.policyChangeControl.activeVersion != null ? `; catalog active v${input.policyChangeControl.activeVersion}` : ""}.`
+        : app.policy_id
+          ? `Policy ${app.policy_id} v${app.policy_version} is pinned to receipts. Newer versions are not used until explicitly adopted.`
+          : "Configure a policy before testing.",
     },
     {
       id: "production", label: "Production activation",

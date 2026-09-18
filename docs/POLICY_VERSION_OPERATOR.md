@@ -171,4 +171,7 @@ Uses `publish_partner_policy_draft` (migration 056). Deprecation + activation oc
 
 ## Partner onboarding
 
-This workflow is **operator-only**. Partners cannot self-publish policy versions. New relying parties are onboarded via admin assignment of an existing active policy (`partners.assigned_policy_id`).
+Operator-only publication remains available at `POST /api/admin/policies/versions`.
+
+Partner Launchpad now also exposes **Policy Change Control** (`docs/POLICY_CHANGE_CONTROL.md`): partners can create a draft successor, fixture-test it offline, publish after server-side validation, and **explicitly adopt** a version onto each application. Publishing never silently rewrites old receipts or active pins.
+

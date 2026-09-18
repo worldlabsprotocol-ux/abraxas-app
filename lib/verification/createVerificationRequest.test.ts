@@ -4,6 +4,7 @@ import { PolicyOwnershipError } from "@/lib/policy/assertPolicyOwnership";
 
 vi.mock("@/lib/policy/getPolicy", () => ({
   getPartnerPolicy: vi.fn(),
+  getPartnerPolicyAtVersion: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/admin", () => ({
@@ -62,5 +63,22 @@ describe("P0-CNS-3: createVerificationRequest tenancy", () => {
 
     expect(result.request_id).toBe("req_1");
     expect(result.consent_url).toContain("req_1");
+  });
+
+  it("fails closed when the target policy version is still draft", async () => {
+    const { getPartnerPolicy } = await import("@/lib/policy/getPolicy");
+    vi.mocked(getPartnerPolicy).mockResolvedValue({
+      id: "good-trouble-retail-v1",
+      partner_id: "good-trouble-cannabis",
+      version: 2,
+      name: "GT draft",
+      rules_json: { required_claims: [{ claim_type: "identity_verified" }] },
+      status: "draft",
+    });
+
+    await expect(createVerificationRequest({
+      partnerId: "good-trouble-cannabis",
+      policyId: "good-trouble-retail-v1",
+    })).rejects.toMatchObject({ code: "policy_version_draft" });
   });
 });

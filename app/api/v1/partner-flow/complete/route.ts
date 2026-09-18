@@ -27,6 +27,8 @@ import {
 } from "@/lib/partner/partnerFlowRouteGuard";
 import { extractLaunchpadFlowContext } from "@/lib/partner/launchpad/extractLaunchpadFlowContext";
 import { recordCompleteLaunchpadActivity, recordFlowFailureActivity } from "@/lib/partner/launchpad/mapPartnerFlowActivity";
+import { resolveLaunchpadPinnedPolicyVersion } from "@/lib/partner/launchpad/resolvePinnedPolicyVersion";
+import { PolicyChangeControlError } from "@/lib/policy/changeControl/codes";
 
 export const dynamic = "force-dynamic";
 
@@ -136,8 +138,20 @@ export async function POST(request: NextRequest) {
       returnUrl,
       suiAddress: session.session.suiAddress,
       verificationRequestId: body.verification_request_id,
+      expectedPolicyVersion: await resolveLaunchpadPinnedPolicyVersion({
+        context: launchpadContext,
+        partnerId,
+        policyId,
+      }),
     });
   } catch (e) {
+    if (e instanceof PolicyChangeControlError) {
+      const errorTraceId = flowTraceId ?? resolvePartnerFlowTraceId({});
+      return NextResponse.json(
+        { error: e.message, code: e.code, flow_trace_id: errorTraceId },
+        { status: 409 },
+      );
+    }
     if (e instanceof PartnerFlowIdempotencyConflictError) {
       const errorTraceId = flowTraceId ?? resolvePartnerFlowTraceId({});
       return NextResponse.json(

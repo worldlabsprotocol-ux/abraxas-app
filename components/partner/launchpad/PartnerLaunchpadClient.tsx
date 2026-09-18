@@ -14,6 +14,11 @@ import { hasProductionLaunchpadCallback, isProductionLaunchpadCallback } from "@
 import { CUSTOM_LAUNCHPAD_CLAIMS, CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID } from "@/lib/partner/launchpad/customPolicy";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 import { PartnerEventDeliveryPanel } from "@/components/partner/launchpad/PartnerEventDeliveryPanel";
+import { PolicyChangeControlLaunchpadSlot } from "@/components/partner/launchpad/PolicyChangeControlLaunchpadSlot";
+import {
+  launchpadHealthChecksForUi,
+  shouldRenderPolicyChangeControlUi,
+} from "@/lib/partner/launchpad/policyChangeControlUi";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -53,6 +58,7 @@ interface Workspace {
   display_name: string;
   environment: string;
   applications: ApplicationSummary[];
+  policy_change_control_available?: boolean;
 }
 
 interface ActivityEvent {
@@ -85,7 +91,11 @@ const STEPS: { id: WizardStep; label: string }[] = [
   { id: "production", label: "Production" },
 ];
 
-export function PartnerLaunchpadClient() {
+export function PartnerLaunchpadClient({
+  policyChangeControlAvailable = false,
+}: {
+  policyChangeControlAvailable?: boolean;
+} = {}) {
   const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
@@ -133,6 +143,13 @@ export function PartnerLaunchpadClient() {
   const selectedPack = useMemo(
     () => policies.find((policy) => policy.id === policyTemplateId) ?? null,
     [policies, policyTemplateId],
+  );
+  const pccUiAvailable = shouldRenderPolicyChangeControlUi(policyChangeControlAvailable)
+    && (workspace?.policy_change_control_available === undefined
+      || workspace.policy_change_control_available === true);
+  const healthChecks = launchpadHealthChecksForUi(
+    integrationHealth?.checks ?? [],
+    pccUiAvailable,
   );
 
   const refreshWorkspace = useCallback(async () => {
@@ -735,6 +752,17 @@ export function PartnerLaunchpadClient() {
       )}
 
       {activeApp && (
+        <PolicyChangeControlLaunchpadSlot
+          available={pccUiAvailable}
+          applicationId={activeApp.id}
+          onChanged={() => {
+            void refreshWorkspace();
+            void refreshIntegrationHealth();
+          }}
+        />
+      )}
+
+      {activeApp && (
         <PartnerEventDeliveryPanel applicationId={activeApp.id} />
       )}
 
@@ -742,7 +770,7 @@ export function PartnerLaunchpadClient() {
         <ContentCard title="Integration health">
           <p style={bodyText}>Abraxas checks this configuration server-side. Fix only the items marked as action required or blocked.</p>
           <div style={{ display: "grid", gap: "0.45rem" }}>
-            {integrationHealth.checks.map((check) => {
+            {healthChecks.map((check) => {
               const color = check.status === "pass" ? "#10B981" : check.status === "action_required" ? "#f59e0b" : "#ef4444";
               return <div key={check.id} style={{ border: "1px solid var(--border)", borderRadius: 10, padding: "0.65rem" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", fontFamily: FONT, fontSize: "0.74rem", fontWeight: 700 }}>

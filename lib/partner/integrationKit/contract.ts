@@ -1,7 +1,7 @@
 // FILE: lib/partner/integrationKit/contract.ts
 // Versioned Partner Integration Kit contract. Documents actual receipt behavior.
 
-export const PARTNER_INTEGRATION_KIT_VERSION = "1.0.0" as const;
+export const PARTNER_INTEGRATION_KIT_VERSION = "1.1.0" as const;
 export const PARTNER_INTEGRATION_RECEIPT_SCHEMA_VERSION = "1.0.0" as const;
 
 export const PARTNER_INTEGRATION_OUTCOMES = [
@@ -12,6 +12,12 @@ export const PARTNER_INTEGRATION_OUTCOMES = [
   "wrong_partner",
   "wrong_policy",
   "wrong_policy_version",
+  "policy_version_missing",
+  "policy_version_unknown",
+  "policy_version_draft",
+  "policy_version_deprecated",
+  "policy_version_not_yet_effective",
+  "policy_version_not_adopted",
   "invalid_signature",
   "environment_mismatch",
   "invalid",
@@ -72,6 +78,11 @@ export const PARTNER_INTEGRATION_ERROR_CODES = [
   "policy_mismatch",
   "policy_version_missing",
   "policy_version_mismatch",
+  "policy_version_unknown",
+  "policy_version_draft",
+  "policy_version_deprecated",
+  "policy_version_not_yet_effective",
+  "policy_version_not_adopted",
   "decision_not_approved",
   "receipt_expired",
   "receipt_revoked",

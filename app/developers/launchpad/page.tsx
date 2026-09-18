@@ -2,9 +2,11 @@
 // Partner Launchpad — self service sandbox integration workspace.
 
 import { PartnerLaunchpadClient } from "@/components/partner/launchpad/PartnerLaunchpadClient";
+import { resolvePolicyChangeControlUiAvailability } from "@/lib/partner/launchpad/policyChangeControlAvailability";
 
 export const dynamic = "force-dynamic";
 
-export default function PartnerLaunchpadPage() {
-  return <PartnerLaunchpadClient />;
+export default async function PartnerLaunchpadPage() {
+  const policyChangeControlAvailable = await resolvePolicyChangeControlUiAvailability();
+  return <PartnerLaunchpadClient policyChangeControlAvailable={policyChangeControlAvailable} />;
 }

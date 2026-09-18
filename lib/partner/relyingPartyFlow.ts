@@ -30,6 +30,7 @@ import { buildEvaluatedClaimRefs, claimTypesFromEvaluation } from "@/lib/decisio
 import { issueReceiptForDecision } from "@/lib/decisionReceipts/service";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { createVerificationRequest, getPolicy } from "@/lib/verification/requestsService";
+import { resolveIssuablePolicyForPartner } from "@/lib/policy/changeControl/lifecycle";
 import { getPublicAppOrigin } from "@/lib/app/publicAppOrigin";
 import { isReturnUrlAllowed, buildRedirectUrl } from "@/lib/connect/returnUrlAllowlist";
 import { computeSessionReceiptExpiresAt } from "@/lib/partner/sessionReceipt";
@@ -203,8 +204,9 @@ async function evaluateHolderPolicy(
   suiAddress: string,
   partnerId: string,
   policyId: string,
+  policyVersion?: number,
 ) {
-  return evaluatePolicyForSubject({ suiAddress, policyId, partnerId });
+  return evaluatePolicyForSubject({ suiAddress, policyId, partnerId, policyVersion });
 }
 
 async function denyIfPartnerFlowRevoked(input: {
@@ -235,6 +237,7 @@ export async function issuePartnerSessionReceipt(input: {
   policyId: string;
   credentialJti: string;
   verificationRequestId?: string;
+  expectedPolicyVersion?: number;
   /** When true, supersede prior session decisions before issuing (refresh after TTL). */
   supersedePriorSession?: boolean;
 }): Promise<{
@@ -333,7 +336,17 @@ export async function issuePartnerSessionReceipt(input: {
     }
 
     const sb = requireSupabaseAdmin();
-    const { policy, evaluation } = await evaluateHolderPolicy(subject, input.partnerId, input.policyId);
+    const issuable = await resolveIssuablePolicyForPartner({
+      policyId: input.policyId,
+      partnerId: input.partnerId,
+      expectedVersion: input.expectedPolicyVersion,
+    });
+    const { policy, evaluation } = await evaluateHolderPolicy(
+      subject,
+      input.partnerId,
+      input.policyId,
+      issuable.version,
+    );
     const sessionExpires = computeSessionReceiptExpiresAt(policy.rules_json);
 
     const decisionInsertBase = {
@@ -424,7 +437,12 @@ export async function issuePartnerSessionReceipt(input: {
     policyId: input.policyId,
   });
 
-  const { policy, evaluation } = await evaluateHolderPolicy(subject, input.partnerId, input.policyId);
+  const { policy, evaluation } = await evaluateHolderPolicy(
+    subject,
+    input.partnerId,
+    input.policyId,
+    storedReceipt.policy_version,
+  );
   const evaluatedAt = new Date().toISOString();
   const identityVerified = Boolean(evaluation.claims.identity_verified);
   const productEligibilityRequired = policyExplicitlyRequiresProductEligibility(policy.rules_json);
@@ -553,6 +571,7 @@ export async function evaluatePartnerFlow(input: {
   returnUrl: string;
   purpose?: string;
   appOrigin?: string;
+  expectedPolicyVersion?: number;
 }): Promise<PartnerFlowEvaluateResult> {
   if (!await isReturnUrlAllowed(input.partnerId, input.returnUrl)) {
     throw new Error("return_url not allowlisted for partner");
@@ -601,7 +620,12 @@ export async function evaluatePartnerFlow(input: {
     });
     if (revoked) return revoked;
 
-    const { policy, evaluation } = await evaluateHolderPolicy(subject, input.partnerId, input.policyId);
+    const { policy, evaluation } = await evaluateHolderPolicy(
+      subject,
+      input.partnerId,
+      input.policyId,
+      input.expectedPolicyVersion,
+    );
 
     if (evaluation.decision === "approved") {
       const { decision_id, receipt_id, receipt_expires_at, partner_result, replay_status, currently_valid, validity, invalidation_reasons } = await issuePartnerSessionReceipt({
@@ -609,6 +633,7 @@ export async function evaluatePartnerFlow(input: {
         partnerId: input.partnerId,
         policyId: input.policyId,
         credentialJti: credential.credential_jti,
+        expectedPolicyVersion: input.expectedPolicyVersion,
       });
 
       const redirect_url = buildRedirectUrl(input.returnUrl, {
@@ -658,6 +683,7 @@ export async function evaluatePartnerFlow(input: {
     suiAddress: subject,
     returnUrl: input.returnUrl,
     appOrigin: input.appOrigin,
+    expectedPolicyVersion: input.expectedPolicyVersion,
   });
 
   const passport_url = buildPassportUrl({
@@ -683,6 +709,7 @@ export async function completePartnerFlowAfterApproval(input: {
   policyId: string;
   returnUrl: string;
   verificationRequestId?: string;
+  expectedPolicyVersion?: number;
 }): Promise<PartnerFlowEvaluateResult & { ok: true } | { ok: false; error: string }> {
   if (!await isReturnUrlAllowed(input.partnerId, input.returnUrl)) {
     return { ok: false, error: "return_url not allowlisted for partner" };
@@ -710,6 +737,7 @@ export async function completePartnerFlowAfterApproval(input: {
     policyId: input.policyId,
     credentialJti: credential.credential_jti,
     verificationRequestId: input.verificationRequestId,
+    expectedPolicyVersion: input.expectedPolicyVersion,
   });
 
   const { decision_id, partner_result, receipt_id, receipt_expires_at, replay_status, currently_valid, validity, invalidation_reasons } = issued;
@@ -753,6 +781,7 @@ export async function refreshPartnerSessionReceipt(input: {
   partnerId: string;
   policyId: string;
   returnUrl: string;
+  expectedPolicyVersion?: number;
 }): Promise<PartnerFlowEvaluateResult> {
   const credential = await getHolderCredentialStatus(input.suiAddress);
   if (credential.status !== "active" || !credential.credential_jti) {
@@ -767,7 +796,12 @@ export async function refreshPartnerSessionReceipt(input: {
   });
   if (revoked) return revoked;
 
-  const { policy, evaluation } = await evaluateHolderPolicy(input.suiAddress, input.partnerId, input.policyId);
+  const { policy, evaluation } = await evaluateHolderPolicy(
+    input.suiAddress,
+    input.partnerId,
+    input.policyId,
+    input.expectedPolicyVersion,
+  );
   if (evaluation.decision !== "approved") {
     return { next: "denied", reason_codes: evaluation.reason_codes, policy_version: policy.version };
   }
@@ -778,6 +812,7 @@ export async function refreshPartnerSessionReceipt(input: {
     policyId: input.policyId,
     credentialJti: credential.credential_jti,
     supersedePriorSession: true,
+    expectedPolicyVersion: input.expectedPolicyVersion,
   });
 
   const redirect_url = buildRedirectUrl(input.returnUrl, {

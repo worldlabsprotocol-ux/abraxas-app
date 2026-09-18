@@ -31,6 +31,8 @@ import {
 } from "@/lib/partner/partnerFlowRouteGuard";
 import { extractLaunchpadFlowContext } from "@/lib/partner/launchpad/extractLaunchpadFlowContext";
 import { recordEvaluateLaunchpadActivity, recordFlowFailureActivity } from "@/lib/partner/launchpad/mapPartnerFlowActivity";
+import { resolveLaunchpadPinnedPolicyVersion } from "@/lib/partner/launchpad/resolvePinnedPolicyVersion";
+import { PolicyChangeControlError } from "@/lib/policy/changeControl/codes";
 
 export const dynamic = "force-dynamic";
 
@@ -141,6 +143,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const expectedPolicyVersion = await resolveLaunchpadPinnedPolicyVersion({
+      context: launchpadContext,
+      partnerId,
+      policyId,
+    });
     const result = await evaluatePartnerFlow({
       partnerId,
       policyId,
@@ -148,6 +155,7 @@ export async function POST(request: NextRequest) {
       returnUrl,
       suiAddress: session.session.suiAddress,
       appOrigin: getPublicAppOriginFromRequest(request),
+      expectedPolicyVersion,
     });
 
     const flowTraceId = resolvePartnerFlowTraceId({
@@ -284,6 +292,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ...enrichPartnerFlowResponse(result), flow_trace_id: flowTraceId });
   } catch (e) {
+    if (e instanceof PolicyChangeControlError) {
+      const flowTraceId = resolvePartnerFlowTraceId({});
+      return NextResponse.json(
+        { error: e.message, code: e.code, flow_trace_id: flowTraceId },
+        { status: 409 },
+      );
+    }
     if (e instanceof PartnerFlowIdempotencyConflictError) {
       const flowTraceId = resolvePartnerFlowTraceId({});
       return NextResponse.json(

@@ -4,11 +4,14 @@ import { NextRequest } from "next/server";
 import { launchpadError, launchpadJson, requireLaunchpadSession } from "@/lib/partner/launchpad/apiHelpers";
 import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
 import { buildLaunchpadIntegrationHealth } from "@/lib/partner/launchpad/integrationHealth";
+import { buildPolicyChangeControlOverview } from "@/lib/policy/changeControl/overview";
 import { getLaunchpadWebhookOverview } from "@/lib/partner/eventDelivery/launchpadWebhook";
 import { hasProductionLaunchpadCallback } from "@/lib/partner/launchpad/productionCallbackReadiness";
 import { harnessPassedFromActivity } from "@/lib/partner/launchpad/partnerTestHarness";
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { probePolicyChangeControlSchema } from "@/lib/policy/changeControl/schemaReady";
+import { launchpadPolicyChangeControlHealthSlice } from "@/lib/policy/changeControl/health";
 
 export const dynamic = "force-dynamic";
 type RouteContext = { params: { id: string } };
@@ -43,6 +46,24 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     policyVersion: app.policy_version,
     callbackConfigured: hasProductionLaunchpadCallback(app.allowed_return_urls),
   });
+  const policySchema = await probePolicyChangeControlSchema();
+  let policyOverview = null;
+  if (policySchema.ready) {
+    try {
+      policyOverview = await buildPolicyChangeControlOverview({
+        policyId: app.policy_id,
+        partnerId: auth.session.partnerId,
+        focusApplication: app,
+      });
+    } catch {
+      policyOverview = null;
+    }
+  }
+  const policyChangeControl = launchpadPolicyChangeControlHealthSlice({
+    schemaReady: policySchema.ready,
+    overview: policyOverview,
+    pinnedVersion: app.policy_version,
+  });
   return launchpadJson(buildLaunchpadIntegrationHealth({
     application: app,
     activeSandboxKey: Boolean(app.api_key_id && active.has(app.api_key_id)),
@@ -58,5 +79,6 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     unsupportedLifecycleEvents: webhook.unsupported_lifecycle_events,
     schemaSkipCode: webhook.schema_skip_code,
     productionCompatibility: webhook.production_compatibility,
+    policyChangeControl,
   }));
 }

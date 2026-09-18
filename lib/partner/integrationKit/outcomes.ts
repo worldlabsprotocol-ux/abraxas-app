@@ -24,10 +24,28 @@ export function outcomeFromValidationErrors(errors: string[]): PartnerIntegratio
   if (matches(errors, ["signature_invalid"])) {
     return "invalid_signature";
   }
-  if (matches(errors, ["partner_mismatch"])) {
+  if (matches(errors, ["partner_mismatch", "policy_wrong_partner"])) {
     return "wrong_partner";
   }
-  if (matches(errors, ["policy_version_missing", "policy_version_mismatch"])) {
+  if (matches(errors, ["policy_version_draft", "policy_draft_not_issuable"])) {
+    return "policy_version_draft";
+  }
+  if (matches(errors, ["policy_version_deprecated"])) {
+    return "policy_version_deprecated";
+  }
+  if (matches(errors, ["policy_version_unknown"])) {
+    return "policy_version_unknown";
+  }
+  if (matches(errors, ["policy_version_not_yet_effective"])) {
+    return "policy_version_not_yet_effective";
+  }
+  if (matches(errors, ["policy_version_not_adopted"])) {
+    return "policy_version_not_adopted";
+  }
+  if (matches(errors, ["policy_version_missing"])) {
+    return "policy_version_missing";
+  }
+  if (matches(errors, ["policy_version_mismatch", "policy_version_mismatched"])) {
     return "wrong_policy_version";
   }
   if (matches(errors, ["policy_mismatch"])) {

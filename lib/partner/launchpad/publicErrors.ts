@@ -16,6 +16,7 @@ export const LAUNCHPAD_PUBLIC_ERRORS = {
   production_request_failed: "launchpad_production_request_failed",
   signing_unavailable: "launchpad_signing_unavailable",
   verify_config_unavailable: "launchpad_verify_config_unavailable",
+  policy_version_blocked: "launchpad_policy_version_blocked",
 } as const;
 
 export type LaunchpadPublicErrorCode = typeof LAUNCHPAD_PUBLIC_ERRORS[keyof typeof LAUNCHPAD_PUBLIC_ERRORS];

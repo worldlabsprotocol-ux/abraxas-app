@@ -5,8 +5,10 @@ import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { claimTypeLabel, type ClaimType } from "@/lib/credentials/claimSchema";
 import { evaluatePolicyRules } from "@/lib/policy/evaluatePolicy";
-import { getPartnerPolicy } from "@/lib/policy/getPolicy";
+import { getPartnerPolicy, getPartnerPolicyAtVersion } from "@/lib/policy/getPolicy";
 import { assertPolicyBelongsToPartner } from "@/lib/policy/assertPolicyOwnership";
+import { assertPolicyVersionIssuable } from "@/lib/policy/changeControl/issuance";
+import { PolicyChangeControlError } from "@/lib/policy/changeControl/codes";
 import { evaluatePolicyForSubject } from "@/lib/policy/evaluateSubjectPolicy";
 import type { PolicyDecisionRecord } from "@/lib/policy/types";
 import { appendAuditEvent } from "@/lib/verification/audit";
@@ -34,12 +36,25 @@ export async function createVerificationRequest(input: {
   suiAddress?: string;
   returnUrl?: string;
   appOrigin?: string;
+  expectedPolicyVersion?: number;
 }): Promise<{ request_id: string; consent_url: string; expires_at: string }> {
   const sb = requireSupabaseAdmin();
   const appUrl = (input.appOrigin ?? getPublicAppOrigin()).replace(/\/$/, "");
-  const policy = await getPartnerPolicy(input.policyId);
-  if (!policy) throw new Error("Policy not found");
+  const policy = input.expectedPolicyVersion != null
+    ? await getPartnerPolicyAtVersion(input.policyId, input.expectedPolicyVersion)
+    : await getPartnerPolicy(input.policyId);
+  if (!policy) {
+    throw new PolicyChangeControlError(
+      input.expectedPolicyVersion != null ? "policy_version_unknown" : "policy_version_missing",
+    );
+  }
   assertPolicyBelongsToPartner(policy, input.partnerId);
+  assertPolicyVersionIssuable({
+    policy,
+    partnerId: input.partnerId,
+    expectedVersion: input.expectedPolicyVersion,
+    mode: "production_receipt",
+  });
 
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
   const requestedClaims = input.requestedClaims?.length
