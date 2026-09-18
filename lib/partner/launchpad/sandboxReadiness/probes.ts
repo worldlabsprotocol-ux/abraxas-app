@@ -151,7 +151,7 @@ export function probeHarnessFailClosed(input: {
     ...input,
     now: FIXTURE_NOW,
   });
-  if ("ok" in result && result.ok === false) {
+  if ("ok" in result) {
     return {
       status: "fail",
       code: codeMap[input.scenarioId],
