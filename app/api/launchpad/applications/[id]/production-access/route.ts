@@ -10,6 +10,7 @@ import {
 import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
 import { recordLaunchpadActivity } from "@/lib/partner/launchpad/recordActivity";
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
+import { hasProductionLaunchpadCallback } from "@/lib/partner/launchpad/productionCallbackReadiness";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +27,13 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
   if (!app) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
+  }
+  if (!hasProductionLaunchpadCallback(app.allowed_return_urls)) {
+    return launchpadError(
+      LAUNCHPAD_PUBLIC_ERRORS.return_url_rejected,
+      400,
+      "production_https_callback_required",
+    );
   }
 
   let body: { request_notes?: string };

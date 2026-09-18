@@ -10,6 +10,7 @@ import { Btn } from "@/components/redesign/ui";
 import { LAUNCHPAD_TEST_SCENARIOS } from "@/lib/partner/launchpad/testScenarios";
 import type { LaunchpadIntegrationDocs } from "@/lib/partner/launchpad/integrationDocs";
 import { slugifyLaunchpadApplication } from "@/lib/partner/launchpad/slug";
+import { hasProductionLaunchpadCallback } from "@/lib/partner/launchpad/productionCallbackReadiness";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -86,6 +87,9 @@ export function PartnerLaunchpadClient() {
     () => workspace?.applications.find((app) => app.id === activeAppId) ?? workspace?.applications[0] ?? null,
     [workspace, activeAppId],
   );
+  const productionCallbackReady = activeApp
+    ? hasProductionLaunchpadCallback(activeApp.allowed_return_urls)
+    : false;
 
   const refreshWorkspace = useCallback(async () => {
     const res = await fetch("/api/launchpad/applications", { credentials: "include" });
@@ -250,6 +254,11 @@ export function PartnerLaunchpadClient() {
 
   async function requestProduction() {
     if (!activeApp) return;
+    if (!productionCallbackReady) {
+      setError("Add an HTTPS callback URL before requesting production access.");
+      setStep("destinations");
+      return;
+    }
     const res = await fetch(`/api/launchpad/applications/${activeApp.id}/production-access`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -468,7 +477,12 @@ export function PartnerLaunchpadClient() {
           <p style={bodyText}>
             Submit a production access request for operator review. Approved applications receive production scoped credentials and return URL validation.
           </p>
-          <Btn size="sm" onClick={() => void requestProduction()}>Submit production request</Btn>
+          {!productionCallbackReady && (
+            <p style={{ ...bodyText, color: "#f59e0b" }}>
+              Add an HTTPS callback URL in Destinations before requesting production access. Localhost is sandbox-only.
+            </p>
+          )}
+          <Btn size="sm" onClick={() => void requestProduction()} disabled={!productionCallbackReady}>Submit production request</Btn>
           <p style={{ ...bodyText, marginTop: "0.75rem" }}>
             Review the <Link href="/good-trouble" style={{ color: "var(--accent)" }}>Good Trouble integration case study</Link> for the pattern this launchpad generalizes.
           </p>
