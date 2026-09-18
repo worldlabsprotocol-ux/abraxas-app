@@ -63,13 +63,14 @@ if (receipt.policy_id !== "${app.policy_id}") throw new Error("policy_mismatch")
       { code: "environment_mismatch", description: "Sandbox receipt used in production verification" },
     ],
     sandbox_testing: [
-      "Use the Partner Launchpad test console to simulate eligible and ineligible outcomes.",
+      "Use the Partner Launchpad test harness to evaluate approved, denied, expired, revoked, wrong-partner, wrong-policy, replay, sandbox-not-production, and no-PII outcomes against signed receipts.",
       `Sandbox key prefix: ${keyPrefix ?? "abx_test_…"}`,
-      `Policy template: ${template?.label ?? app.policy_template_id}`,
+      `Policy pack: ${template?.label ?? app.policy_template_id}`,
       "Sandbox receipts are labeled and rejected by production verification endpoints.",
+      "Google sign-in creates an account. It does not prove the selected pack.",
     ],
     production_checklist: [
-      "Complete sandbox integration tests in the Launchpad test console.",
+      "Complete every Partner Launchpad harness outcome for this application.",
       "Add an approved HTTPS production return URL.",
       "Publish the exact DNS TXT challenge and let Launchpad verify domain control.",
       "Activate production automatically and reveal the one-time production API key.",

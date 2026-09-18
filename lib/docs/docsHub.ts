@@ -46,6 +46,7 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
         links: [
           { label: "Passport", href: "/passport" },
           { label: "Progressive proof", href: "/docs/progressive-proof" },
+          { label: "Policy packs", href: "/docs/policy-packs" },
           { label: "Integrate", href: "/integrate" },
           { label: "Partner Flow", href: "/docs/partner-flow" },
           { label: "Relying party guide", href: "/docs/relying-party-verify" },
@@ -102,6 +103,7 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
           "Partner Flow redirect, POST /api/credentials/verify, verification requests, and public receipt verification.",
         links: [
           { label: "Progressive proof quickstart", href: "/docs/progressive-proof" },
+          { label: "Policy packs", href: "/docs/policy-packs" },
           { label: "Partner Flow", href: "/docs/partner-flow" },
           { label: "Partner Flow API (OpenAPI)", href: "/docs/partner-flow-api" },
           { label: "Protocol compatibility manifest", href: "/api/protocol/compatibility" },

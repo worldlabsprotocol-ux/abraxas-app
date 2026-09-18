@@ -1,13 +1,17 @@
 // FILE: lib/partner/launchpad/policyCatalog.ts
-// Versioned predefined policy templates — partners cannot submit executable policy code.
+// Launchpad policy templates resolve from the versioned policy-pack catalog.
 
+import { CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID } from "@/lib/partner/launchpad/customPolicy";
+import {
+  POLICY_PACKS,
+  POLICY_PACK_LIST,
+  resolvePolicyPack,
+  type PolicyPack,
+  type PolicyPackId,
+} from "@/lib/partner/launchpad/policyPacks";
 import type { PartnerPolicyRules } from "@/lib/policy/types";
 
-export type LaunchpadPolicyTemplateId =
-  | "age_18_retail"
-  | "age_21_retail"
-  | "membership_credential"
-  | "residency_us";
+export type LaunchpadPolicyTemplateId = PolicyPackId;
 
 export interface LaunchpadPolicyTemplate {
   id: LaunchpadPolicyTemplateId;
@@ -21,83 +25,38 @@ export interface LaunchpadPolicyTemplate {
   rules: PartnerPolicyRules;
 }
 
-const SANDBOX_BASE: Pick<PartnerPolicyRules, "sandbox_only"> = { sandbox_only: true };
+function packToTemplate(pack: PolicyPack): LaunchpadPolicyTemplate {
+  return {
+    id: pack.id,
+    label: pack.display_name,
+    userExplanation: pack.holder_explanation,
+    disclosedResult: pack.disclosed_result,
+    receiptClaim: pack.receipt_claim,
+    receiptLifetimeHours: pack.receipt_lifetime_hours,
+    reusePolicy: pack.reuse_policy,
+    permittedMethods: pack.permitted_methods,
+    rules: pack.rules,
+  };
+}
 
-export const LAUNCHPAD_POLICY_TEMPLATES: Record<LaunchpadPolicyTemplateId, LaunchpadPolicyTemplate> = {
-  age_18_retail: {
-    id: "age_18_retail",
-    label: "Age over 18",
-    userExplanation: "Confirm the visitor is at least 18 without sharing a birth date.",
-    disclosedResult: "age_eligible_18",
-    receiptClaim: "age_threshold_met",
-    receiptLifetimeHours: 24,
-    reusePolicy: "time_bound",
-    permittedMethods: ["passport", "self_attestation"],
-    rules: {
-      ...SANDBOX_BASE,
-      minimum_age: 18,
-      required_claims: [{ claim_type: "identity_verified", min_assurance: "L1" }],
-    },
-  },
-  age_21_retail: {
-    id: "age_21_retail",
-    label: "Age over 21",
-    userExplanation: "Confirm the visitor is at least 21 without sharing a birth date.",
-    disclosedResult: "age_eligible_21",
-    receiptClaim: "age_threshold_met",
-    receiptLifetimeHours: 24,
-    reusePolicy: "time_bound",
-    permittedMethods: ["passport"],
-    rules: {
-      ...SANDBOX_BASE,
-      minimum_age: 21,
-      required_claims: [{ claim_type: "identity_verified", min_assurance: "L2" }],
-    },
-  },
-  membership_credential: {
-    id: "membership_credential",
-    label: "Credential possession",
-    userExplanation: "Confirm the visitor holds an active Abraxas credential.",
-    disclosedResult: "credential_active",
-    receiptClaim: "identity_verified",
-    receiptLifetimeHours: 12,
-    reusePolicy: "session",
-    permittedMethods: ["passport"],
-    rules: {
-      ...SANDBOX_BASE,
-      required_claims: [{ claim_type: "identity_verified", min_assurance: "L2" }],
-    },
-  },
-  residency_us: {
-    id: "residency_us",
-    label: "United States residency",
-    userExplanation: "Confirm United States residency without exposing full identity documents.",
-    disclosedResult: "residency_us",
-    receiptClaim: "jurisdiction_met",
-    receiptLifetimeHours: 48,
-    reusePolicy: "time_bound",
-    permittedMethods: ["passport"],
-    rules: {
-      ...SANDBOX_BASE,
-      required_claims: [
-        { claim_type: "identity_verified", min_assurance: "L2" },
-        { claim_type: "screening_outcome", min_assurance: "L1" },
-      ],
-    },
-  },
-};
+export const LAUNCHPAD_POLICY_TEMPLATES: Record<LaunchpadPolicyTemplateId, LaunchpadPolicyTemplate> =
+  Object.fromEntries(POLICY_PACK_LIST.map((pack) => [pack.id, packToTemplate(pack)])) as Record<
+    LaunchpadPolicyTemplateId,
+    LaunchpadPolicyTemplate
+  >;
 
-export const LAUNCHPAD_POLICY_TEMPLATE_LIST = Object.values(LAUNCHPAD_POLICY_TEMPLATES);
+export const LAUNCHPAD_POLICY_TEMPLATE_LIST = POLICY_PACK_LIST.map(packToTemplate);
 
 export function resolveLaunchpadPolicyTemplate(
   templateId: string,
 ): LaunchpadPolicyTemplate | null {
-  if (templateId in LAUNCHPAD_POLICY_TEMPLATES) {
-    return LAUNCHPAD_POLICY_TEMPLATES[templateId as LaunchpadPolicyTemplateId];
-  }
-  return null;
+  if (templateId === CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID) return null;
+  const pack = resolvePolicyPack(templateId);
+  return pack ? packToTemplate(pack) : null;
 }
 
 export function buildLaunchpadPolicyId(partnerId: string, templateId: string): string {
   return `${partnerId}-${templateId}-v1`;
 }
+
+export { POLICY_PACKS };
