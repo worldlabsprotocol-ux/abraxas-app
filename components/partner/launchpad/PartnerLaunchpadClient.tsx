@@ -80,6 +80,7 @@ export function PartnerLaunchpadClient() {
   const [partnerId, setPartnerId] = useState("");
   const [policyTemplateId, setPolicyTemplateId] = useState("age_21_retail");
   const [returnUrl, setReturnUrl] = useState("http://localhost:3000/callback");
+  const [newReturnUrl, setNewReturnUrl] = useState("");
 
   const activeApp = useMemo(
     () => workspace?.applications.find((app) => app.id === activeAppId) ?? workspace?.applications[0] ?? null,
@@ -134,6 +135,13 @@ export function PartnerLaunchpadClient() {
       setPartnerId(slugifyLaunchpadApplication(applicationName));
     }
   }, [applicationName, partnerId]);
+
+  useEffect(() => {
+    const firstReturnUrl = activeApp?.allowed_return_urls[0];
+    if (firstReturnUrl && !activeApp.allowed_return_urls.includes(returnUrl)) {
+      setReturnUrl(firstReturnUrl);
+    }
+  }, [activeApp, returnUrl]);
 
   async function signInWithKey() {
     setError("");
@@ -200,6 +208,44 @@ export function PartnerLaunchpadClient() {
     const activityRes = await fetch(`/api/launchpad/applications/${activeApp.id}/activity`, { credentials: "include" });
     const activityData = await activityRes.json();
     if (activityData.events) setActivity(activityData.events);
+  }
+
+  async function addReturnUrl() {
+    if (!activeApp || !newReturnUrl.trim()) return;
+    setError("");
+    const res = await fetch(`/api/launchpad/applications/${activeApp.id}/return-urls`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ return_url: newReturnUrl.trim() }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error ?? "Could not add callback URL");
+      return;
+    }
+    setReturnUrl(newReturnUrl.trim());
+    setNewReturnUrl("");
+    await refreshWorkspace();
+  }
+
+  async function removeReturnUrl(url: string) {
+    if (!activeApp) return;
+    setError("");
+    const res = await fetch(`/api/launchpad/applications/${activeApp.id}/return-urls`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ return_url: url }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error ?? "Keep one callback URL configured before removing another.");
+      return;
+    }
+    const remaining = (data.allowed_return_urls as string[] | undefined) ?? [];
+    if (url === returnUrl && remaining[0]) setReturnUrl(remaining[0]);
+    await refreshWorkspace();
   }
 
   async function requestProduction() {
@@ -332,12 +378,36 @@ export function PartnerLaunchpadClient() {
 
       {step === "destinations" && (
         <ContentCard title="Approved return URLs">
-          <label style={labelStyle}>
-            Development callback URL
-            <input value={returnUrl} onChange={(e) => setReturnUrl(e.target.value)} style={inputStyle} />
-          </label>
-          <p style={bodyText}>Only listed HTTPS or localhost destinations can receive verification results.</p>
-          <Btn size="sm" onClick={() => void provisionApplication()}>Provision sandbox</Btn>
+          {activeApp ? (
+            <>
+              <p style={bodyText}>Add a new callback before removing an old one. This keeps your sandbox flow usable while you deploy.</p>
+              <div style={{ display: "grid", gap: "0.45rem", marginBottom: "0.85rem" }}>
+                {activeApp.allowed_return_urls.map((url) => (
+                  <div key={url} style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap", padding: "0.6rem", border: "1px solid var(--border)", borderRadius: 10 }}>
+                    <code style={{ ...bodyText, margin: 0, flex: "1 1 260px", fontFamily: MONO, fontSize: "0.68rem", overflowWrap: "anywhere" }}>{url}</code>
+                    <Btn size="sm" variant="ghost" onClick={() => void removeReturnUrl(url)} disabled={activeApp.allowed_return_urls.length <= 1}>Remove</Btn>
+                  </div>
+                ))}
+              </div>
+              <label style={labelStyle}>
+                Add callback URL
+                <input value={newReturnUrl} onChange={(e) => setNewReturnUrl(e.target.value)} placeholder="https://your-app.example.com/auth/abraxas/callback" style={inputStyle} />
+              </label>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                <Btn size="sm" onClick={() => void addReturnUrl()}>Add callback URL</Btn>
+                <Btn size="sm" variant="secondary" onClick={() => setStep("test")}>Open test console</Btn>
+              </div>
+            </>
+          ) : (
+            <>
+              <label style={labelStyle}>
+                Development callback URL
+                <input value={returnUrl} onChange={(e) => setReturnUrl(e.target.value)} style={inputStyle} />
+              </label>
+              <p style={bodyText}>Only listed HTTPS or localhost destinations can receive verification results.</p>
+              <Btn size="sm" onClick={() => void provisionApplication()}>Provision sandbox</Btn>
+            </>
+          )}
         </ContentCard>
       )}
 
