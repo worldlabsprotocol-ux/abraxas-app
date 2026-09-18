@@ -15,7 +15,7 @@ Abraxas is **not** a unified KYC product, an automatic legal-compliance service,
 | Environment | Application | Supabase project ref | Status on `main` |
 |-------------|-------------|----------------------|------------------|
 | **Production** | [abraxasworld.xyz](https://abraxasworld.xyz) | `bztwutzprwsdrtqdpymf` (MAIN) | Live Partner Flow, Passport, operator-provisioned sandbox |
-| **Launchpad staging preview** | Vercel preview for [PR #290](https://github.com/worldlabsprotocol-ux/abraxas-app/pull/290) | `ocntwbxarpjeixdnzide` (intended DEMO) | Draft only — not merged |
+| **Launchpad** | [`/developers/launchpad`](https://abraxasworld.xyz/developers/launchpad) on Production (`main`) | Use DEMO `ocntwbxarpjeixdnzide` for Launchpad staging smoke — never MAIN | Code merged; Production staging-identity route returns 404 by design |
 
 Do **not** run Partner Launchpad staging smoke tests against the preview until `GET /api/launchpad/staging/environment` returns HTTP 200 with `deployment_environment: "preview"` and `supabase_project_ref` equal to the intended demo ref (`ocntwbxarpjeixdnzide`). Stop before any mutations on mismatch. Never point smoke tests or local experiments at MAIN production Supabase (`bztwutzprwsdrtqdpymf`).
 
@@ -41,7 +41,7 @@ Full integrator guide: [/docs/partner-flow](https://abraxasworld.xyz/docs/partne
 
 Sandbox and Production credentials, policies, and return URLs are **not** interchangeable.
 
-**Self-service sandbox provisioning** is **not** live on `main`. It is in draft [PR #290](https://github.com/worldlabsprotocol-ux/abraxas-app/pull/290) (Partner Launchpad) and requires migrations `084` and `085` before use.
+**Self-service Partner Launchpad** is on `main` (`/developers/launchpad`). Do **not** run Launchpad staging smoke or production activation against MAIN Supabase. Confirm `GET /api/launchpad/staging/environment` on a **Preview** deployment returns DEMO ref `ocntwbxarpjeixdnzide` before mutations. On Production that route is expected to 404.
 
 ### Public receipt vs webhooks
 
