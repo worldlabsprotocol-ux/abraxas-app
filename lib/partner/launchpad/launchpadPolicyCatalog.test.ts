@@ -9,7 +9,7 @@ import {
 
 describe("launchpad policy catalog", () => {
   it("exposes predefined templates only", () => {
-    expect(LAUNCHPAD_POLICY_TEMPLATE_LIST.length).toBeGreaterThanOrEqual(4);
+    expect(LAUNCHPAD_POLICY_TEMPLATE_LIST).toHaveLength(7);
     for (const template of LAUNCHPAD_POLICY_TEMPLATE_LIST) {
       expect(template.rules).toBeTruthy();
       expect(template.userExplanation.length).toBeGreaterThan(10);

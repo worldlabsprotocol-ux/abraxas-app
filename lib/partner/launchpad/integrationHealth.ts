@@ -4,11 +4,14 @@
 import type { LaunchpadApplicationRow } from "./types";
 import { hasProductionLaunchpadCallback } from "./productionCallbackReadiness";
 import { isVerifiedDomainForCallbacks } from "./domainVerification";
+import { resolvePolicyPack, policyPackIsSandboxOnly } from "./policyPacks";
+import { CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID } from "./customPolicy";
+import { REQUIRED_HARNESS_SCENARIOS, type PartnerHarnessScenarioId } from "./partnerTestHarness";
 
 export type LaunchpadHealthStatus = "pass" | "action_required" | "blocked";
 
 export interface LaunchpadHealthCheck {
-  id: "application" | "policy" | "sandbox_key" | "callback" | "domain" | "production";
+  id: "application" | "policy" | "policy_pack" | "sandbox_key" | "harness" | "callback" | "domain" | "production";
   label: string;
   status: LaunchpadHealthStatus;
   detail: string;
@@ -19,6 +22,7 @@ export function buildLaunchpadIntegrationHealth(input: {
   activeSandboxKey: boolean;
   activeProductionKey: boolean;
   verifiedHostnames: string[];
+  harnessCompleted?: PartnerHarnessScenarioId[];
 }): { overall: LaunchpadHealthStatus; checks: LaunchpadHealthCheck[] } {
   const { application: app } = input;
   const productionCallback = hasProductionLaunchpadCallback(app.allowed_return_urls);
@@ -26,6 +30,13 @@ export function buildLaunchpadIntegrationHealth(input: {
     allowedReturnUrls: app.allowed_return_urls,
     verifiedHostnames: input.verifiedHostnames,
   });
+  const pack = resolvePolicyPack(app.policy_template_id);
+  const custom = app.policy_template_id === CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID;
+  const sandboxOnlyPack = pack ? policyPackIsSandboxOnly(pack) : true;
+  const completed = new Set(input.harnessCompleted ?? []);
+  const missingHarness = REQUIRED_HARNESS_SCENARIOS.filter((id) => !completed.has(id));
+  const harnessPassed = missingHarness.length === 0;
+
   const checks: LaunchpadHealthCheck[] = [
     {
       id: "application", label: "Application status",
@@ -38,9 +49,27 @@ export function buildLaunchpadIntegrationHealth(input: {
       detail: app.policy_id ? `Policy ${app.policy_id} v${app.policy_version} is pinned to receipts.` : "Configure a policy before testing.",
     },
     {
+      id: "policy_pack",
+      label: "Policy pack",
+      status: pack || custom ? "pass" : "blocked",
+      detail: pack
+        ? `${pack.display_name}. Catalog suitability: ${pack.production_suitability.replace(/_/g, " ")}. Google sign-in is not eligibility.`
+        : custom
+          ? "Constrained custom sandbox policy. Custom policies remain sandbox-only."
+          : "Select a policy pack before testing.",
+    },
+    {
       id: "sandbox_key", label: "Sandbox credential",
       status: input.activeSandboxKey ? "pass" : "blocked",
       detail: input.activeSandboxKey ? "An active sandbox credential is available." : "Rotate a sandbox credential before testing the integration.",
+    },
+    {
+      id: "harness",
+      label: "Integration test harness",
+      status: harnessPassed ? "pass" : "action_required",
+      detail: harnessPassed
+        ? "All required harness outcomes passed using receipt trust evaluation."
+        : `Run the remaining harness cases: ${missingHarness.join(", ")}. Activation stays blocked until the harness passes.`,
     },
     {
       id: "callback", label: "Production callback",
@@ -54,12 +83,18 @@ export function buildLaunchpadIntegrationHealth(input: {
     },
     {
       id: "production", label: "Production activation",
-      status: app.environment === "production" && input.activeProductionKey ? "pass" : (productionCallback && domainVerified ? "action_required" : "blocked"),
+      status: app.environment === "production" && input.activeProductionKey
+        ? "pass"
+        : (productionCallback && domainVerified && harnessPassed && !sandboxOnlyPack ? "action_required" : "blocked"),
       detail: app.environment === "production" && input.activeProductionKey
         ? "Production is active with a scoped credential."
-        : productionCallback && domainVerified
-          ? "All automated safety checks passed. Activate production when ready."
-          : "Production remains fail-closed until callback and domain checks pass.",
+        : !harnessPassed
+          ? "Complete the integration test harness before activation."
+          : sandboxOnlyPack
+            ? "This policy pack is catalog-marked sandbox-only. Choose a production-eligible pack or keep the integration in sandbox."
+            : productionCallback && domainVerified
+              ? "All automated safety checks passed. Activate production when ready."
+              : "Production remains fail-closed until callback, domain, and harness checks pass.",
     },
   ];
   const overall: LaunchpadHealthStatus = checks.some((check) => check.status === "blocked")

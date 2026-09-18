@@ -23,6 +23,14 @@ interface PolicyTemplate {
   id: string;
   label: string;
   user_explanation: string;
+  disclosed_result?: string;
+  required_claims?: string[];
+  minimum_assurance?: string;
+  receipt_lifetime_hours?: number;
+  intended_use_examples?: string[];
+  partner_receives?: string;
+  partner_does_not_receive?: string[];
+  production_suitability?: string;
 }
 
 interface ApplicationSummary {
@@ -69,10 +77,10 @@ interface IntegrationHealth {
 
 const STEPS: { id: WizardStep; label: string }[] = [
   { id: "application", label: "Application" },
-  { id: "policy", label: "Proof" },
+  { id: "policy", label: "Policy pack" },
   { id: "destinations", label: "Destinations" },
   { id: "provisioned", label: "Credentials" },
-  { id: "test", label: "Test" },
+  { id: "test", label: "Harness" },
   { id: "production", label: "Production" },
 ];
 
@@ -81,6 +89,9 @@ export function PartnerLaunchpadClient() {
   const [loading, setLoading] = useState(true);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [policies, setPolicies] = useState<PolicyTemplate[]>([]);
+  const [googleDisclaimer, setGoogleDisclaimer] = useState(
+    "Google sign-in creates an Abraxas account. It does not prove age, identity, residency, wallet control, membership, or any other eligibility claim.",
+  );
   const [step, setStep] = useState<WizardStep>("application");
   const [error, setError] = useState("");
   const [apiKeyInput, setApiKeyInput] = useState("");
@@ -118,6 +129,10 @@ export function PartnerLaunchpadClient() {
   const productionDomainVerified = Boolean(productionCallback && domainVerifications.some((verification) => {
     try { return verification.status === "verified" && new URL(productionCallback).hostname.toLowerCase() === verification.hostname.toLowerCase(); } catch { return false; }
   }));
+  const selectedPack = useMemo(
+    () => policies.find((policy) => policy.id === policyTemplateId) ?? null,
+    [policies, policyTemplateId],
+  );
 
   const refreshWorkspace = useCallback(async () => {
     const res = await fetch("/api/launchpad/applications", { credentials: "include" });
@@ -141,6 +156,9 @@ export function PartnerLaunchpadClient() {
       const sessionData = await sessionRes.json();
       const policiesData = await policiesRes.json();
       if (policiesData.policies) setPolicies(policiesData.policies);
+      if (typeof policiesData.google_account_not_eligibility === "string") {
+        setGoogleDisclaimer(policiesData.google_account_not_eligibility);
+      }
       if (sessionData.authenticated) {
         await refreshWorkspace();
       }
@@ -264,6 +282,7 @@ export function PartnerLaunchpadClient() {
     const activityRes = await fetch(`/api/launchpad/applications/${activeApp.id}/activity`, { credentials: "include" });
     const activityData = await activityRes.json();
     if (activityData.events) setActivity(activityData.events);
+    await refreshIntegrationHealth();
   }
 
   async function addReturnUrl() {
@@ -308,6 +327,17 @@ export function PartnerLaunchpadClient() {
 
   async function requestProduction() {
     if (!activeApp) return;
+    const harnessCheck = integrationHealth?.checks.find((check) => check.id === "harness");
+    const productionCheck = integrationHealth?.checks.find((check) => check.id === "production");
+    if (harnessCheck && harnessCheck.status !== "pass") {
+      setError(harnessCheck.detail);
+      setStep("test");
+      return;
+    }
+    if (productionCheck?.status === "blocked") {
+      setError(productionCheck.detail);
+      return;
+    }
     if (!productionCallbackReady || !productionDomainVerified) {
       setError("Add an HTTPS callback URL and verify its domain before activating production.");
       setStep("destinations");
@@ -379,7 +409,7 @@ export function PartnerLaunchpadClient() {
       <PageHeader
         eyebrow="Partner Launchpad"
         title="Build your integration"
-        subtitle="Create a sandbox application, choose a policy, register return URLs, test outcomes, and request production access. No custom Abraxas code required."
+        subtitle="Choose a policy pack, host verification, receive a signed result, and test the loop yourself. Proofs, not profiles."
       />
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", marginBottom: "1rem" }} role="list" aria-label="Launchpad progress">
@@ -442,12 +472,16 @@ export function PartnerLaunchpadClient() {
             Partner identifier
             <input value={partnerId} onChange={(e) => setPartnerId(e.target.value)} style={inputStyle} />
           </label>
-          <Btn size="sm" onClick={() => setStep("policy")}>Continue to proof selection</Btn>
+          <Btn size="sm" onClick={() => setStep("policy")}>Continue to policy packs</Btn>
         </ContentCard>
       )}
 
       {step === "policy" && (
-        <ContentCard title="Choose proof">
+        <ContentCard title="Choose a policy pack">
+          <p style={bodyText}>
+            Packs are declarative and versioned. The holder proves a narrow claim. The partner receives a signed boolean equivalent result, not a profile, ID image, or contact list.
+          </p>
+          <p style={{ ...bodyText, color: "#f59e0b" }}>{googleDisclaimer}</p>
           <div style={{ display: "grid", gap: "0.5rem" }}>
             {policies.map((policy) => (
               <button
@@ -465,6 +499,11 @@ export function PartnerLaunchpadClient() {
               >
                 <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: "0.82rem" }}>{policy.label}</div>
                 <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", marginTop: 4 }}>{policy.user_explanation}</div>
+                {policy.production_suitability && (
+                  <div style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)", marginTop: 6 }}>
+                    Suitability: {policy.production_suitability.replace(/_/g, " ")}
+                  </div>
+                )}
               </button>
             ))}
             <button
@@ -476,10 +515,28 @@ export function PartnerLaunchpadClient() {
                 background: policyTemplateId === CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID ? "rgba(99,102,241,0.08)" : "var(--surface)", cursor: "pointer",
               }}
             >
-              <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: "0.82rem" }}>Custom protocol policy</div>
-              <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", marginTop: 4 }}>Choose constrained claim requirements. Production activates automatically after the security gate passes.</div>
+              <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: "0.82rem" }}>Constrained custom policy</div>
+              <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", marginTop: 4 }}>
+                Use only when a catalog pack does not fit. Custom policies stay sandbox only and cannot run arbitrary partner code.
+              </div>
             </button>
           </div>
+          {selectedPack && policyTemplateId !== CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID && (
+            <div style={{ marginTop: "0.85rem", padding: "0.85rem", border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface-inset)" }}>
+              <p style={{ ...bodyText, fontWeight: 700, color: "var(--text-primary)" }}>What the holder must prove</p>
+              <p style={bodyText}>{selectedPack.user_explanation}</p>
+              <p style={bodyText}>Claims: {(selectedPack.required_claims ?? []).join(", ") || "catalog claims"} · Assurance {selectedPack.minimum_assurance ?? "—"} · Receipt {selectedPack.receipt_lifetime_hours ?? "—"}h</p>
+              <p style={{ ...bodyText, fontWeight: 700, color: "var(--text-primary)" }}>What the partner receives</p>
+              <p style={bodyText}>{selectedPack.partner_receives ?? selectedPack.disclosed_result}</p>
+              <p style={{ ...bodyText, fontWeight: 700, color: "var(--text-primary)" }}>What Abraxas does not share</p>
+              <p style={bodyText}>{(selectedPack.partner_does_not_receive ?? []).join(", ")}</p>
+              {(selectedPack.intended_use_examples ?? []).length > 0 && (
+                <ul style={{ margin: "0 0 0.5rem", paddingLeft: "1.1rem", fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)" }}>
+                  {selectedPack.intended_use_examples!.map((example) => <li key={example}>{example}</li>)}
+                </ul>
+              )}
+            </div>
+          )}
           {policyTemplateId === CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID && (
             <div style={{ marginTop: "0.85rem", padding: "0.85rem", border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface-inset)" }}>
               <label style={labelStyle}>Policy name<input value={customPolicyName} onChange={(e) => setCustomPolicyName(e.target.value)} style={inputStyle} /></label>
@@ -524,7 +581,7 @@ export function PartnerLaunchpadClient() {
               </label>
               <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                 <Btn size="sm" onClick={() => void addReturnUrl()}>Add callback URL</Btn>
-                <Btn size="sm" variant="secondary" onClick={() => setStep("test")}>Open test console</Btn>
+                <Btn size="sm" variant="secondary" onClick={() => setStep("test")}>Open test harness</Btn>
               </div>
             </>
           ) : (
@@ -560,14 +617,17 @@ export function PartnerLaunchpadClient() {
             </div>
           )}
           <div style={{ marginTop: "0.75rem" }}>
-            <Btn size="sm" onClick={() => setStep("test")}>Open test console</Btn>
+            <Btn size="sm" onClick={() => setStep("test")}>Open test harness</Btn>
           </div>
         </ContentCard>
       )}
 
       {step === "test" && activeApp && (
-        <ContentCard title="Sandbox test console">
-          <p style={bodyText}>Simulated results are labeled sandbox data and never affect production.</p>
+        <ContentCard title="Partner test harness">
+          <p style={bodyText}>
+            Each case signs a receipt and evaluates it with the same public trust path used in production. Failures stay failures. Sandbox receipts never count as production ready.
+          </p>
+          <p style={bodyText}>Configured policy: <code style={{ fontFamily: MONO }}>{activeApp.policy_id}</code> ({activeApp.policy_template_id})</p>
           <div style={{ display: "grid", gap: "0.4rem", marginBottom: "0.75rem" }}>
             {LAUNCHPAD_TEST_SCENARIOS.map((scenario) => (
               <button key={scenario.id} type="button" onClick={() => void runScenario(scenario.id)} style={scenarioButtonStyle}>
@@ -599,7 +659,7 @@ export function PartnerLaunchpadClient() {
           </p>
           {!productionCallbackReady && (
             <p style={{ ...bodyText, color: "#f59e0b" }}>
-              Add an HTTPS callback URL in Destinations first. Localhost is sandbox-only.
+              Add an HTTPS callback URL in Destinations first. Localhost is sandbox only.
             </p>
           )}
           {productionCallbackReady && !productionDomainVerified && (
@@ -617,7 +677,13 @@ export function PartnerLaunchpadClient() {
             </div>
           )}
           {productionDomainVerified && <p style={{ ...bodyText, color: "#10B981" }}>Domain verified. Your integration can activate production automatically.</p>}
-          <Btn size="sm" onClick={() => void requestProduction()} disabled={!productionCallbackReady || !productionDomainVerified}>Activate production automatically</Btn>
+          <Btn
+            size="sm"
+            onClick={() => void requestProduction()}
+            disabled={!productionCallbackReady || !productionDomainVerified || integrationHealth?.checks.find((check) => check.id === "harness")?.status !== "pass" || integrationHealth?.checks.find((check) => check.id === "production")?.status === "blocked"}
+          >
+            Activate production automatically
+          </Btn>
           {revealedProductionKey && (
             <div style={{ marginTop: "0.85rem" }}>
               <p style={bodyText}>Copy this production API key now. It will not be shown again.</p>

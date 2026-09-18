@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildLaunchpadIntegrationHealth } from "./integrationHealth";
+import { REQUIRED_HARNESS_SCENARIOS } from "./partnerTestHarness";
 import type { LaunchpadApplicationRow } from "./types";
 
 const app = {
@@ -11,24 +12,64 @@ const app = {
 
 describe("Launchpad integration health", () => {
   it("keeps production blocked until the callback and its domain are proven", () => {
-    const health = buildLaunchpadIntegrationHealth({ application: app, activeSandboxKey: true, activeProductionKey: false, verifiedHostnames: [] });
+    const health = buildLaunchpadIntegrationHealth({
+      application: app,
+      activeSandboxKey: true,
+      activeProductionKey: false,
+      verifiedHostnames: [],
+      harnessCompleted: REQUIRED_HARNESS_SCENARIOS,
+    });
     expect(health.overall).toBe("blocked");
     expect(health.checks.find((check) => check.id === "production")?.status).toBe("blocked");
+  });
+
+  it("blocks activation until the test harness passes", () => {
+    const health = buildLaunchpadIntegrationHealth({
+      application: { ...app, allowed_return_urls: ["https://partner.example.com/callback"] },
+      activeSandboxKey: true,
+      activeProductionKey: false,
+      verifiedHostnames: ["partner.example.com"],
+    });
+    expect(health.checks.find((check) => check.id === "harness")?.status).toBe("action_required");
+    expect(health.checks.find((check) => check.id === "production")?.detail).toContain("integration test harness");
   });
 
   it("makes an eligible integration actionable before automatic activation", () => {
     const health = buildLaunchpadIntegrationHealth({
       application: { ...app, allowed_return_urls: ["https://partner.example.com/callback"] },
-      activeSandboxKey: true, activeProductionKey: false, verifiedHostnames: ["partner.example.com"],
+      activeSandboxKey: true,
+      activeProductionKey: false,
+      verifiedHostnames: ["partner.example.com"],
+      harnessCompleted: REQUIRED_HARNESS_SCENARIOS,
     });
     expect(health.overall).toBe("action_required");
     expect(health.checks.find((check) => check.id === "production")?.detail).toContain("All automated safety checks passed");
+    expect(health.checks.find((check) => check.id === "policy_pack")?.detail).toContain("Age 21");
+  });
+
+  it("keeps collector redemption sandbox-only even after the harness passes", () => {
+    const health = buildLaunchpadIntegrationHealth({
+      application: {
+        ...app,
+        policy_template_id: "collector_redemption",
+        allowed_return_urls: ["https://partner.example.com/callback"],
+      },
+      activeSandboxKey: true,
+      activeProductionKey: false,
+      verifiedHostnames: ["partner.example.com"],
+      harnessCompleted: REQUIRED_HARNESS_SCENARIOS,
+    });
+    expect(health.checks.find((check) => check.id === "production")?.status).toBe("blocked");
+    expect(health.checks.find((check) => check.id === "production")?.detail).toContain("sandbox-only");
   });
 
   it("reports fully active production only with a live scoped key", () => {
     const health = buildLaunchpadIntegrationHealth({
       application: { ...app, environment: "production", production_api_key_id: "live", allowed_return_urls: ["https://partner.example.com/callback"] },
-      activeSandboxKey: true, activeProductionKey: true, verifiedHostnames: ["partner.example.com"],
+      activeSandboxKey: true,
+      activeProductionKey: true,
+      verifiedHostnames: ["partner.example.com"],
+      harnessCompleted: REQUIRED_HARNESS_SCENARIOS,
     });
     expect(health.overall).toBe("pass");
   });

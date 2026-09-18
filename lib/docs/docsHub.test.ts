@@ -34,7 +34,9 @@ describe("docsHub", () => {
     const developer = getDocsHubGroup("developer");
 
     expect(quickStart?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/progressive-proof");
+    expect(quickStart?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/policy-packs");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/progressive-proof");
+    expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/policy-packs");
   });
 
   it("links roadmap to integration readiness and partner flow", () => {
