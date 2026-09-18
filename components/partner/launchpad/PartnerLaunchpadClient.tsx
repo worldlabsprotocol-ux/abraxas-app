@@ -62,6 +62,11 @@ interface DomainVerification {
   last_error: string | null;
 }
 
+interface IntegrationHealth {
+  overall: "pass" | "action_required" | "blocked";
+  checks: Array<{ id: string; label: string; status: "pass" | "action_required" | "blocked"; detail: string }>;
+}
+
 const STEPS: { id: WizardStep; label: string }[] = [
   { id: "application", label: "Application" },
   { id: "policy", label: "Proof" },
@@ -88,6 +93,7 @@ export function PartnerLaunchpadClient() {
   const [copyFeedback, setCopyFeedback] = useState("");
   const [domainVerifications, setDomainVerifications] = useState<DomainVerification[]>([]);
   const [domainChallenge, setDomainChallenge] = useState<{ hostname: string; record_name: string; record_value: string; expires_at: string } | null>(null);
+  const [integrationHealth, setIntegrationHealth] = useState<IntegrationHealth | null>(null);
 
   const [applicationName, setApplicationName] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -163,7 +169,15 @@ export function PartnerLaunchpadClient() {
     if (res.ok) setDomainVerifications(data.verifications ?? []);
   }, [activeApp]);
 
+  const refreshIntegrationHealth = useCallback(async () => {
+    if (!activeApp) return;
+    const res = await fetch(`/api/launchpad/applications/${activeApp.id}/health`, { credentials: "include" });
+    const data = await res.json();
+    if (res.ok) setIntegrationHealth(data);
+  }, [activeApp]);
+
   useEffect(() => { void refreshDomainVerification(); }, [refreshDomainVerification]);
+  useEffect(() => { void refreshIntegrationHealth(); }, [refreshIntegrationHealth]);
 
   useEffect(() => {
     if (applicationName && !partnerId) {
@@ -269,6 +283,7 @@ export function PartnerLaunchpadClient() {
     setReturnUrl(newReturnUrl.trim());
     setNewReturnUrl("");
     await refreshWorkspace();
+    await refreshIntegrationHealth();
   }
 
   async function removeReturnUrl(url: string) {
@@ -288,6 +303,7 @@ export function PartnerLaunchpadClient() {
     const remaining = (data.allowed_return_urls as string[] | undefined) ?? [];
     if (url === returnUrl && remaining[0]) setReturnUrl(remaining[0]);
     await refreshWorkspace();
+    await refreshIntegrationHealth();
   }
 
   async function requestProduction() {
@@ -312,6 +328,7 @@ export function PartnerLaunchpadClient() {
     if (keyRes.ok && keyData.api_key) setRevealedProductionKey(keyData.api_key);
     else if (!keyRes.ok) setError(keyData.error ?? "Production activated, but the key could not be revealed.");
     await refreshWorkspace();
+    await refreshIntegrationHealth();
     setStep("production");
   }
 
@@ -326,6 +343,7 @@ export function PartnerLaunchpadClient() {
     if (!res.ok) { setError(data.error ?? "Could not create domain challenge"); return; }
     setDomainChallenge(data.verification);
     await refreshDomainVerification();
+    await refreshIntegrationHealth();
   }
 
   async function verifyDomainChallenge() {
@@ -338,6 +356,7 @@ export function PartnerLaunchpadClient() {
     const data = await res.json();
     if (!res.ok) { setError(data.error ?? "DNS record is not visible yet. Wait a few minutes and try again."); return; }
     await refreshDomainVerification();
+    await refreshIntegrationHealth();
   }
 
   function copyText(text: string) {
@@ -621,6 +640,24 @@ export function PartnerLaunchpadClient() {
               </li>
             ))}
           </ul>
+        </ContentCard>
+      )}
+
+      {activeApp && integrationHealth && (
+        <ContentCard title="Integration health">
+          <p style={bodyText}>Abraxas checks this configuration server-side. Fix only the items marked as action required or blocked.</p>
+          <div style={{ display: "grid", gap: "0.45rem" }}>
+            {integrationHealth.checks.map((check) => {
+              const color = check.status === "pass" ? "#10B981" : check.status === "action_required" ? "#f59e0b" : "#ef4444";
+              return <div key={check.id} style={{ border: "1px solid var(--border)", borderRadius: 10, padding: "0.65rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", fontFamily: FONT, fontSize: "0.74rem", fontWeight: 700 }}>
+                  <span>{check.label}</span><span style={{ color }}>{check.status.replace(/_/g, " ")}</span>
+                </div>
+                <p style={{ ...bodyText, margin: "0.3rem 0 0" }}>{check.detail}</p>
+              </div>;
+            })}
+          </div>
+          <Btn size="sm" variant="secondary" onClick={() => void refreshIntegrationHealth()}>Refresh health</Btn>
         </ContentCard>
       )}
     </RedesignPage>
