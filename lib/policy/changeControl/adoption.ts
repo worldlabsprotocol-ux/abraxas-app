@@ -7,6 +7,10 @@ import { getPartnerPolicyAtVersion } from "@/lib/policy/getPolicy";
 import { PolicyChangeControlError } from "@/lib/policy/changeControl/codes";
 import { evaluatePolicyVersionGate } from "@/lib/policy/changeControl/issuance";
 import { appendPolicyLifecycleAudit } from "@/lib/policy/changeControl/audit";
+import {
+  assertPolicyChangeControlSchemaReady,
+  isPolicySchemaMissingError,
+} from "@/lib/policy/changeControl/schemaReady";
 
 export async function adoptPolicyVersionForApplication(input: {
   application: LaunchpadApplicationRow;
@@ -39,6 +43,8 @@ export async function adoptPolicyVersionForApplication(input: {
     throw new PolicyChangeControlError(gate.code);
   }
 
+  await assertPolicyChangeControlSchemaReady();
+
   const sb = requireSupabaseAdmin();
   const { data: updated, error: updateError } = await sb
     .from("partner_launchpad_applications")
@@ -50,7 +56,7 @@ export async function adoptPolicyVersionForApplication(input: {
     .select("*")
     .maybeSingle();
 
-  if (updateError) throw new Error(updateError.message);
+  if (updateError) throw new Error("policy_adoption_update_failed");
   if (!updated) {
     throw new PolicyChangeControlError("policy_version_mismatched", "Application pin changed concurrently");
   }
@@ -64,7 +70,10 @@ export async function adoptPolicyVersionForApplication(input: {
     actor_id: input.actorId ?? null,
   });
   if (adoptionError && !adoptionError.message.toLowerCase().includes("duplicate")) {
-    throw new Error(adoptionError.message);
+    if (isPolicySchemaMissingError(adoptionError)) {
+      throw new PolicyChangeControlError("policy_schema_unavailable");
+    }
+    throw new Error("policy_adoption_write_failed");
   }
 
   await appendPolicyLifecycleAudit({

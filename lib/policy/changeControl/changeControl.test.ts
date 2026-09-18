@@ -6,6 +6,8 @@ import {
   evaluatePolicyFixture,
   evaluatePolicyVersionGate,
   fixtureInputContainsForbiddenKeys,
+  launchpadPolicyChangeControlHealthSlice,
+  schemaUnavailablePolicyChangeControlHealth,
   validatePolicyDraftForPublish,
 } from "@/lib/policy/changeControl";
 import { sanitizePolicyAuditMetadata } from "@/lib/policy/changeControl/audit";
@@ -179,5 +181,19 @@ describe("Policy Change Control", () => {
     expect(clean.api_key).toBeUndefined();
     expect(clean.ok).toBe(true);
     expect(JSON.stringify(clean)).not.toMatch(/holder@|abx_test_secret/);
+  });
+
+  it("reports schema-unavailable health as blocked, never pass", () => {
+    const health = schemaUnavailablePolicyChangeControlHealth(1);
+    expect(health.status).toBe("blocked");
+    expect(health.blocker_code).toBe("policy_schema_unavailable");
+
+    const swallowed = launchpadPolicyChangeControlHealthSlice({
+      schemaReady: true,
+      overview: null,
+      pinnedVersion: 1,
+    });
+    expect(swallowed.status).toBe("blocked");
+    expect(swallowed.blockerCode).toBe("policy_schema_unavailable");
   });
 });

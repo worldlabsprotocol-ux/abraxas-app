@@ -24,21 +24,45 @@ import {
   fixtureInputContainsForbiddenKeys,
   publishPartnerPolicyDraftVersion,
 } from "@/lib/policy/changeControl";
+import {
+  POLICY_SCHEMA_UNAVAILABLE_HTTP_STATUS,
+  assertPolicyChangeControlSchemaReady,
+  isPolicySchemaMissingError,
+  policySchemaUnavailableResult,
+  probePolicyChangeControlSchema,
+} from "@/lib/policy/changeControl/schemaReady";
 import type { PartnerPolicyRules } from "@/lib/policy/types";
 
 export const dynamic = "force-dynamic";
 type RouteContext = { params: { id: string } };
 
+const POLICY_WRITE_ACTIONS = new Set([
+  "create_draft",
+  "update_draft",
+  "publish",
+  "deprecate",
+  "adopt",
+  "delete_draft",
+]);
+
 function mapError(error: unknown) {
   if (error instanceof PolicyChangeControlError) {
+    if (error.code === "policy_schema_unavailable") {
+      return launchpadJson(
+        policySchemaUnavailableResult({ evidence: error.evidence }),
+        POLICY_SCHEMA_UNAVAILABLE_HTTP_STATUS,
+      );
+    }
     const status = error.code === "policy_wrong_partner" ? 403 : 409;
     return launchpadError(error.code, status, error.message);
   }
   if (error instanceof PolicyImmutabilityError) {
     return launchpadError("policy_immutability_violation", 409, error.message);
   }
-  const message = error instanceof Error ? error.message : "policy_change_control_failed";
-  return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.policy_version_blocked, 400, message);
+  if (isPolicySchemaMissingError(error)) {
+    return launchpadJson(policySchemaUnavailableResult(), POLICY_SCHEMA_UNAVAILABLE_HTTP_STATUS);
+  }
+  return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.policy_version_blocked, 400, "policy_change_control_failed");
 }
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
@@ -48,6 +72,16 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
 
   try {
+    const schema = await probePolicyChangeControlSchema();
+    if (!schema.ready) {
+      return launchpadJson(
+        policySchemaUnavailableResult({
+          application_id: app.id,
+          pinned_version: app.policy_version,
+        }),
+        POLICY_SCHEMA_UNAVAILABLE_HTTP_STATUS,
+      );
+    }
     const overview = await buildPolicyChangeControlOverview({
       policyId: app.policy_id,
       partnerId: auth.session.partnerId,
@@ -90,6 +124,9 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   const actorId = auth.session.partnerId;
 
   try {
+    if (body.action && POLICY_WRITE_ACTIONS.has(body.action)) {
+      await assertPolicyChangeControlSchemaReady();
+    }
     switch (body.action) {
       case "create_draft": {
         const draft = await createPartnerPolicyDraftSuccessor({

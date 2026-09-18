@@ -6,6 +6,7 @@ export {
   POLICY_LIFECYCLE_AUDIT_EVENTS,
   PolicyChangeControlError,
   type PolicyChangeControlCode,
+  type PolicyChangeControlEvidence,
   type PolicyLifecycleAuditEvent,
 } from "@/lib/policy/changeControl/codes";
 
@@ -40,8 +41,21 @@ export {
 
 export {
   derivePolicyChangeControlHealth,
+  schemaUnavailablePolicyChangeControlHealth,
+  launchpadPolicyChangeControlHealthSlice,
   type PolicyChangeControlHealth,
 } from "@/lib/policy/changeControl/health";
+
+export {
+  POLICY_SCHEMA_UNAVAILABLE_CODE,
+  POLICY_SCHEMA_UNAVAILABLE_HTTP_STATUS,
+  isPolicySchemaMissingError,
+  probePolicyChangeControlSchema,
+  assertPolicyChangeControlSchemaReady,
+  policySchemaUnavailableResult,
+  type PolicyChangeControlSchemaProbe,
+  type PolicySchemaUnavailableResult,
+} from "@/lib/policy/changeControl/schemaReady";
 
 export { adoptPolicyVersionForApplication } from "@/lib/policy/changeControl/adoption";
 export { buildPolicyChangeControlOverview } from "@/lib/policy/changeControl/overview";

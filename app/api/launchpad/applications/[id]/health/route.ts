@@ -10,6 +10,8 @@ import { hasProductionLaunchpadCallback } from "@/lib/partner/launchpad/producti
 import { harnessPassedFromActivity } from "@/lib/partner/launchpad/partnerTestHarness";
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { probePolicyChangeControlSchema } from "@/lib/policy/changeControl/schemaReady";
+import { launchpadPolicyChangeControlHealthSlice } from "@/lib/policy/changeControl/health";
 
 export const dynamic = "force-dynamic";
 type RouteContext = { params: { id: string } };
@@ -44,11 +46,24 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     policyVersion: app.policy_version,
     callbackConfigured: hasProductionLaunchpadCallback(app.allowed_return_urls),
   });
-  const policyOverview = await buildPolicyChangeControlOverview({
-    policyId: app.policy_id,
-    partnerId: auth.session.partnerId,
-    focusApplication: app,
-  }).catch(() => null);
+  const policySchema = await probePolicyChangeControlSchema();
+  let policyOverview = null;
+  if (policySchema.ready) {
+    try {
+      policyOverview = await buildPolicyChangeControlOverview({
+        policyId: app.policy_id,
+        partnerId: auth.session.partnerId,
+        focusApplication: app,
+      });
+    } catch {
+      policyOverview = null;
+    }
+  }
+  const policyChangeControl = launchpadPolicyChangeControlHealthSlice({
+    schemaReady: policySchema.ready,
+    overview: policyOverview,
+    pinnedVersion: app.policy_version,
+  });
   return launchpadJson(buildLaunchpadIntegrationHealth({
     application: app,
     activeSandboxKey: Boolean(app.api_key_id && active.has(app.api_key_id)),
@@ -64,14 +79,6 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     unsupportedLifecycleEvents: webhook.unsupported_lifecycle_events,
     schemaSkipCode: webhook.schema_skip_code,
     productionCompatibility: webhook.production_compatibility,
-    policyChangeControl: policyOverview
-      ? {
-          status: policyOverview.health.status,
-          nextAction: policyOverview.health.next_action,
-          blockerCode: policyOverview.health.blocker_code,
-          pinnedVersion: policyOverview.health.pinned_version,
-          activeVersion: policyOverview.health.active_version,
-        }
-      : undefined,
+    policyChangeControl,
   }));
 }

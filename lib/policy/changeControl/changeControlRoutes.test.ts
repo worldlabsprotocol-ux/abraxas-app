@@ -7,7 +7,12 @@ const overviewMock = vi.fn();
 const createDraftMock = vi.fn();
 const publishMock = vi.fn();
 const adoptMock = vi.fn();
+const deprecateMock = vi.fn();
+const updateDraftMock = vi.fn();
+const deleteDraftMock = vi.fn();
 const fixturePolicyMock = vi.fn();
+const probeMock = vi.fn();
+const assertSchemaMock = vi.fn();
 
 vi.mock("@/lib/partner/launchpad/apiHelpers", async () => {
   const actual = await vi.importActual<typeof import("@/lib/partner/launchpad/apiHelpers")>(
@@ -34,6 +39,20 @@ vi.mock("@/lib/policy/changeControl", async () => {
     createPartnerPolicyDraftSuccessor: (...args: unknown[]) => createDraftMock(...args),
     publishPartnerPolicyDraftVersion: (...args: unknown[]) => publishMock(...args),
     adoptPolicyVersionForApplication: (...args: unknown[]) => adoptMock(...args),
+    deprecatePartnerPolicyVersion: (...args: unknown[]) => deprecateMock(...args),
+    editPartnerPolicyDraft: (...args: unknown[]) => updateDraftMock(...args),
+    deletePartnerPolicyDraft: (...args: unknown[]) => deleteDraftMock(...args),
+  };
+});
+
+vi.mock("@/lib/policy/changeControl/schemaReady", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/policy/changeControl/schemaReady")>(
+    "@/lib/policy/changeControl/schemaReady",
+  );
+  return {
+    ...actual,
+    probePolicyChangeControlSchema: (...args: unknown[]) => probeMock(...args),
+    assertPolicyChangeControlSchemaReady: (...args: unknown[]) => assertSchemaMock(...args),
   };
 });
 
@@ -56,6 +75,13 @@ describe("launchpad policy change control routes", () => {
       public_slug: "partner-app",
       display_name: "App",
     });
+    probeMock.mockResolvedValue({
+      ready: true,
+      lifecycle_audit: true,
+      adoptions: true,
+      deprecate_effective_at: true,
+    });
+    assertSchemaMock.mockResolvedValue(undefined);
   });
 
   it("returns the policies overview without PII or secrets", async () => {
@@ -169,5 +195,69 @@ describe("launchpad policy change control routes", () => {
       }),
     }), { params: { id: "app-1" } });
     expect(res.status).toBe(400);
+  });
+
+  it("returns a typed feature-unavailable result when the schema is missing", async () => {
+    probeMock.mockResolvedValue({
+      ready: false,
+      lifecycle_audit: false,
+      adoptions: true,
+      deprecate_effective_at: true,
+    });
+    const res = await GET(new NextRequest("http://localhost/api/launchpad/applications/app-1/policies"), {
+      params: { id: "app-1" },
+    });
+    const body = await res.json();
+    expect(res.status).toBe(503);
+    expect(body).toMatchObject({
+      ok: false,
+      code: "policy_schema_unavailable",
+      available: false,
+      feature: "policy_change_control",
+      application_id: "app-1",
+      pinned_version: 1,
+    });
+    expect(overviewMock).not.toHaveBeenCalled();
+    expect(JSON.stringify(body)).not.toMatch(/42P01|PGRST|does not exist/);
+  });
+
+  it("fails every policy mutation before any draft or adoption write when schema is unavailable", async () => {
+    const { PolicyChangeControlError } = await import("@/lib/policy/changeControl/codes");
+    assertSchemaMock.mockRejectedValue(new PolicyChangeControlError("policy_schema_unavailable"));
+    const actions = [
+      { action: "create_draft" },
+      { action: "update_draft", version: 2 },
+      { action: "publish", version: 2 },
+      { action: "deprecate", version: 1 },
+      { action: "adopt", version: 2 },
+      { action: "delete_draft", version: 2 },
+    ];
+    for (const body of actions) {
+      vi.clearAllMocks();
+      sessionMock.mockResolvedValue({ ok: true, session: { partnerId: "partner-a" } });
+      appMock.mockResolvedValue({
+        id: "app-1",
+        partner_id: "partner-a",
+        policy_id: "policy-v1",
+        policy_version: 1,
+      });
+      assertSchemaMock.mockRejectedValue(new PolicyChangeControlError("policy_schema_unavailable"));
+      const res = await POST(new NextRequest("http://localhost/api/launchpad/applications/app-1/policies", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }), { params: { id: "app-1" } });
+      const json = await res.json();
+      expect(res.status).toBe(503);
+      expect(json.code).toBe("policy_schema_unavailable");
+      expect(json.ok).toBe(false);
+      expect(json.available).toBe(false);
+      expect(createDraftMock).not.toHaveBeenCalled();
+      expect(updateDraftMock).not.toHaveBeenCalled();
+      expect(publishMock).not.toHaveBeenCalled();
+      expect(deprecateMock).not.toHaveBeenCalled();
+      expect(adoptMock).not.toHaveBeenCalled();
+      expect(deleteDraftMock).not.toHaveBeenCalled();
+      expect(JSON.stringify(json)).not.toMatch(/42P01|PGRST|does not exist/);
+    }
   });
 });

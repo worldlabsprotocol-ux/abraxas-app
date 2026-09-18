@@ -16,6 +16,7 @@ import { PolicyChangeControlError } from "@/lib/policy/changeControl/codes";
 import { assertDraftPublishable } from "@/lib/policy/changeControl/validateDraft";
 import { appendPolicyLifecycleAudit } from "@/lib/policy/changeControl/audit";
 import { evaluatePolicyVersionGate } from "@/lib/policy/changeControl/issuance";
+import { assertPolicyChangeControlSchemaReady } from "@/lib/policy/changeControl/schemaReady";
 
 export async function loadPartnerPolicyFamily(input: {
   policyId: string;
@@ -28,8 +29,23 @@ export async function loadPartnerPolicyFamily(input: {
     .eq("id", input.policyId)
     .eq("partner_id", input.partnerId)
     .order("version", { ascending: true });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error("policy_family_load_failed");
   return (data ?? []) as PartnerPolicy[];
+}
+
+async function compensateDraftOnly(policyId: string, version: number): Promise<boolean> {
+  try {
+    const sb = requireSupabaseAdmin();
+    const { error } = await sb
+      .from("partner_policies")
+      .delete()
+      .eq("id", policyId)
+      .eq("version", version)
+      .eq("status", "draft");
+    return !error;
+  } catch {
+    return false;
+  }
 }
 
 export async function assertPartnerOwnsPolicy(input: {
@@ -56,21 +72,33 @@ export async function createPartnerPolicyDraftSuccessor(input: {
   rulesJson?: PartnerPolicyRules;
   name?: string;
 }): Promise<PartnerPolicy> {
+  await assertPolicyChangeControlSchemaReady();
   await assertPartnerOwnsPolicy({ policyId: input.policyId, partnerId: input.partnerId });
   const draft = await createPolicyDraftFromActive({
     policyId: input.policyId,
     rulesJson: input.rulesJson,
     name: input.name,
   });
-  await appendPolicyLifecycleAudit({
-    policyId: draft.id,
-    version: draft.version,
-    partnerId: input.partnerId,
-    eventType: "created",
-    actorId: input.actorId,
-    toVersion: draft.version,
-    fromVersion: draft.version - 1,
-  });
+  try {
+    await appendPolicyLifecycleAudit({
+      policyId: draft.id,
+      version: draft.version,
+      partnerId: input.partnerId,
+      eventType: "created",
+      actorId: input.actorId,
+      toVersion: draft.version,
+      fromVersion: draft.version - 1,
+    });
+  } catch {
+    const compensated = await compensateDraftOnly(draft.id, draft.version);
+    throw new PolicyChangeControlError("policy_schema_unavailable", "policy_schema_unavailable", {
+      draft_created: true,
+      audit_written: false,
+      compensated,
+      draft_persisted: compensated ? false : true,
+      version: draft.version,
+    });
+  }
   return draft;
 }
 
@@ -90,6 +118,7 @@ export async function editPartnerPolicyDraft(input: {
   if (!isPolicyDraft(current.status)) {
     throw new PolicyChangeControlError("policy_immutability_violation", "Published versions cannot be edited");
   }
+  await assertPolicyChangeControlSchemaReady();
   const draft = await updatePolicyDraft({
     policyId: input.policyId,
     version: input.version,
@@ -118,6 +147,7 @@ export async function publishPartnerPolicyDraftVersion(input: {
     version: input.version,
   });
   assertDraftPublishable(draft);
+  await assertPolicyChangeControlSchemaReady();
   const result = await publishPolicyDraft({ policyId: input.policyId, version: input.version });
   await appendPolicyLifecycleAudit({
     policyId: result.published.id,
@@ -158,6 +188,7 @@ export async function deprecatePartnerPolicyVersion(input: {
   if (current.status !== "active") {
     throw new PolicyChangeControlError("policy_immutability_violation", "Only active versions can be deprecated");
   }
+  await assertPolicyChangeControlSchemaReady();
 
   const effectiveAt = input.deprecateEffectiveAt?.trim() || null;
   if (effectiveAt) {
@@ -175,7 +206,7 @@ export async function deprecatePartnerPolicyVersion(input: {
         .eq("status", "active")
         .select("*")
         .single();
-      if (error) throw new Error(error.message);
+      if (error) throw new Error("policy_deprecate_failed");
       await appendPolicyLifecycleAudit({
         policyId: input.policyId,
         version: input.version,
@@ -200,7 +231,7 @@ export async function deprecatePartnerPolicyVersion(input: {
       .eq("status", "active")
       .select("*")
       .single();
-    if (error) throw new Error(error.message);
+    if (error) throw new Error("policy_deprecate_failed");
     await appendPolicyLifecycleAudit({
       policyId: input.policyId,
       version: input.version,
@@ -239,6 +270,7 @@ export async function deletePartnerPolicyDraft(input: {
   if (!isPolicyDraft(current.status)) {
     throw new PolicyChangeControlError("policy_immutability_violation");
   }
+  await assertPolicyChangeControlSchemaReady();
 
   const sb = requireSupabaseAdmin();
   const { count: receiptCount } = await sb

@@ -87,3 +87,49 @@ export function derivePolicyChangeControlHealth(input: {
     compatibility: input.comparison?.compatibility ?? "identical",
   };
 }
+
+export function schemaUnavailablePolicyChangeControlHealth(
+  pinnedVersion: number,
+): PolicyChangeControlHealth {
+  return {
+    status: "blocked",
+    next_action: "Policy Change Control schema is unavailable. Lifecycle reads and writes are blocked.",
+    blocker_code: "policy_schema_unavailable",
+    pinned_version: pinnedVersion,
+    active_version: null,
+    draft_version: null,
+    compatibility: "unknown",
+  };
+}
+
+export function launchpadPolicyChangeControlHealthSlice(input: {
+  schemaReady: boolean;
+  overview: {
+    health: PolicyChangeControlHealth;
+  } | null;
+  pinnedVersion: number;
+}): {
+  status: PolicyChangeControlHealthStatus;
+  nextAction: string;
+  blockerCode: string | null;
+  pinnedVersion: number;
+  activeVersion: number | null;
+} {
+  if (!input.schemaReady || !input.overview) {
+    const blocked = schemaUnavailablePolicyChangeControlHealth(input.pinnedVersion);
+    return {
+      status: blocked.status,
+      nextAction: blocked.next_action,
+      blockerCode: blocked.blocker_code,
+      pinnedVersion: blocked.pinned_version,
+      activeVersion: blocked.active_version,
+    };
+  }
+  return {
+    status: input.overview.health.status,
+    nextAction: input.overview.health.next_action,
+    blockerCode: input.overview.health.blocker_code,
+    pinnedVersion: input.overview.health.pinned_version,
+    activeVersion: input.overview.health.active_version,
+  };
+}

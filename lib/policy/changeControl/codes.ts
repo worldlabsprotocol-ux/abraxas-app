@@ -15,17 +15,26 @@ export const POLICY_CHANGE_CONTROL_CODES = [
   "policy_draft_not_issuable",
   "policy_publish_invalid",
   "policy_immutability_violation",
+  "policy_schema_unavailable",
 ] as const;
 
 export type PolicyChangeControlCode = (typeof POLICY_CHANGE_CONTROL_CODES)[number];
 
+export type PolicyChangeControlEvidence = Record<string, string | number | boolean | null>;
+
 export class PolicyChangeControlError extends Error {
   readonly code: PolicyChangeControlCode;
+  readonly evidence?: PolicyChangeControlEvidence;
 
-  constructor(code: PolicyChangeControlCode, message?: string) {
+  constructor(
+    code: PolicyChangeControlCode,
+    message?: string,
+    evidence?: PolicyChangeControlEvidence,
+  ) {
     super(message ?? code);
     this.name = "PolicyChangeControlError";
     this.code = code;
+    this.evidence = evidence;
   }
 }
 

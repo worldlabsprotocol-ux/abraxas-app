@@ -34,6 +34,20 @@ Partners can evolve eligibility policies over time without silently changing wha
 - Launchpad applications pin `policy_version`. Publishing v2 does **not** move them. They must **Adopt**.
 - Missing, unknown, draft, deprecated-effective, mismatched, future, and wrong-partner versions fail closed with typed codes.
 - Versions with issued receipts or active Launchpad bindings cannot be deleted.
+- Launchpad Policies GET/POST and Health fail closed with `policy_schema_unavailable` when migration 088 objects are absent (`partner_policy_lifecycle_audit`, `partner_policy_adoptions`, and `partner_policies.deprecate_effective_at`). Receipt issuance, Partner Flow, receipts, and crons without a Launchpad Policies context do not query those relations.
+
+## Production schema availability
+
+Migration 088 remains DEMO-only. Production binaries must not query missing relations.
+
+| Route | Missing 088 schema |
+|---|---|
+| `GET /api/launchpad/applications/:id/policies` | HTTP 503 `{ ok: false, code: "policy_schema_unavailable", available: false, feature: "policy_change_control" }` |
+| `POST` `create_draft` / `publish` / `adopt` / `deprecate` (and other policy writes) | Same typed result. Preflight runs before any draft or adoption write. |
+| `GET /api/launchpad/applications/:id/health` | HTTP 200 with `policy_change_control` **blocked** and `blockerCode: "policy_schema_unavailable"`. Never pass because an overview error was swallowed. |
+| Partner Flow, receipts, verification, crons, issuance without Launchpad Policies context | Unchanged. Those paths do not require 088 objects. |
+
+Raw Postgres/PostgREST errors are never returned to the client.
 
 ## Partner Launchpad
 

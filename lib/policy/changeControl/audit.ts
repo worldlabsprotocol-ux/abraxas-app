@@ -2,7 +2,11 @@
 // Append-only policy lifecycle audit. Metadata must never include PII or secrets.
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
-import type { PolicyLifecycleAuditEvent } from "@/lib/policy/changeControl/codes";
+import {
+  PolicyChangeControlError,
+  type PolicyLifecycleAuditEvent,
+} from "@/lib/policy/changeControl/codes";
+import { isPolicySchemaMissingError } from "@/lib/policy/changeControl/schemaReady";
 
 const FORBIDDEN_METADATA_KEYS = [
   "email",
@@ -61,7 +65,12 @@ export async function appendPolicyLifecycleAudit(input: {
     safe_code: input.safeCode ?? null,
     metadata: sanitizePolicyAuditMetadata(input.metadata),
   });
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (isPolicySchemaMissingError(error)) {
+      throw new PolicyChangeControlError("policy_schema_unavailable");
+    }
+    throw new PolicyChangeControlError("policy_schema_unavailable", "policy_schema_unavailable");
+  }
 }
 
 export async function listPolicyLifecycleAudit(input: {
@@ -86,7 +95,12 @@ export async function listPolicyLifecycleAudit(input: {
     .eq("partner_id", input.partnerId)
     .order("created_at", { ascending: false })
     .limit(input.limit ?? 50);
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (isPolicySchemaMissingError(error)) {
+      throw new PolicyChangeControlError("policy_schema_unavailable");
+    }
+    throw new PolicyChangeControlError("policy_schema_unavailable", "policy_schema_unavailable");
+  }
   return (data ?? []) as Array<{
     id: string;
     event_type: PolicyLifecycleAuditEvent;
