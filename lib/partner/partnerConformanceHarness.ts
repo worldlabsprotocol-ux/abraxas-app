@@ -12,6 +12,8 @@ import {
 } from "@/lib/partner/partnerConformanceFixtures";
 import { validatePartnerReturnUrlFormat } from "@/lib/partner/referenceRelyingPartyConfig";
 import { validatePartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlowReceipt";
+import { AbraxasPartnerKit, parsePartnerCallbackParams } from "@/lib/partner/integrationKit";
+import { resolvePolicyPack, POLICY_PACK_LIST } from "@/lib/partner/launchpad/policyPacks";
 import { SITE_URL } from "@/lib/siteUrl";
 
 const STALE_HOST = "abraxas-app.vercel.app";
@@ -124,6 +126,97 @@ function validateReceiptFixtures(options: PartnerConformanceOptions): Conformanc
         : failures.join("; "),
     ),
   );
+
+  return checks;
+}
+
+function kitConformanceChecks(options: PartnerConformanceOptions): ConformanceCheck[] {
+  const productionKit = new AbraxasPartnerKit({
+    partnerId: CONFORMANCE_FIXTURE_PARTNER_ID,
+    policyId: CONFORMANCE_FIXTURE_POLICY_ID,
+    environment: "production",
+  });
+  const sandboxKit = new AbraxasPartnerKit({
+    partnerId: CONFORMANCE_FIXTURE_PARTNER_ID,
+    policyId: CONFORMANCE_FIXTURE_POLICY_ID,
+    environment: "sandbox",
+  });
+  const fixtures = Object.fromEntries(conformanceReceiptFixtureCases().map((item) => [item.id, item]));
+  const checks: ConformanceCheck[] = [];
+
+  const pii = parsePartnerCallbackParams(new URLSearchParams({ receipt_id: "dr_x", email: "a@b.c" }));
+  checks.push(check(
+    "kit-callback-no-pii",
+    "Callback parameters reject PII keys",
+    !pii.ok ? "pass" : "fail",
+    !pii.ok ? pii.errors.join(", ") : "PII keys were accepted",
+  ));
+
+  const approved = productionKit.evaluateFetchedReceipt(fixtures["valid-production-receipt"]!.receipt!);
+  checks.push(check(
+    "kit-signed-receipt",
+    "Signed receipt verification permits a valid production receipt",
+    approved.outcome === "permitted" ? "pass" : "fail",
+    `outcome=${approved.outcome}; errors=${approved.errors.join(",") || "none"}`,
+  ));
+
+  const wrongPartner = productionKit.evaluateFetchedReceipt(fixtures["wrong-partner"]!.receipt!);
+  checks.push(check(
+    "kit-wrong-partner",
+    "Wrong partner is rejected",
+    wrongPartner.outcome !== "permitted" ? "pass" : "fail",
+    `outcome=${wrongPartner.outcome}`,
+  ));
+
+  const wrongPolicy = productionKit.evaluateFetchedReceipt(fixtures["wrong-policy"]!.receipt!);
+  checks.push(check(
+    "kit-wrong-policy",
+    "Wrong policy is rejected",
+    wrongPolicy.outcome !== "permitted" ? "pass" : "fail",
+    `outcome=${wrongPolicy.outcome}`,
+  ));
+
+  const expired = productionKit.evaluateFetchedReceipt(fixtures["expired-receipt"]!.receipt!);
+  checks.push(check(
+    "kit-expired",
+    "Expired receipt is rejected",
+    expired.outcome === "expired" || expired.outcome === "invalid" ? "pass" : "fail",
+    `outcome=${expired.outcome}`,
+  ));
+
+  const revoked = productionKit.evaluateFetchedReceipt(fixtures["revoked-receipt"]!.receipt!);
+  checks.push(check(
+    "kit-revoked",
+    "Revoked receipt is rejected",
+    revoked.outcome === "revoked" || revoked.outcome === "invalid" ? "pass" : "fail",
+    `outcome=${revoked.outcome}`,
+  ));
+
+  const sandbox = productionKit.evaluateFetchedReceipt(fixtures["sandbox-only-receipt"]!.receipt!);
+  checks.push(check(
+    "kit-sandbox-in-production",
+    "Sandbox receipt is rejected in production mode",
+    sandbox.outcome !== "permitted" ? "pass" : "fail",
+    `outcome=${sandbox.outcome}`,
+  ));
+
+  const sandboxOk = sandboxKit.evaluateFetchedReceipt(fixtures["sandbox-only-with-opt-in"]!.receipt!);
+  checks.push(check(
+    "kit-sandbox-explicit",
+    "Sandbox receipt can be evaluated only with sandbox environment",
+    sandboxOk.outcome === "permitted" || sandboxOk.outcome === "invalid" ? (sandboxOk.outcome === "permitted" ? "pass" : "fail") : "fail",
+    `outcome=${sandboxOk.outcome}`,
+  ));
+
+  const packMatch = POLICY_PACK_LIST.some((pack) => options.policyId.includes(pack.id)) || Boolean(resolvePolicyPack(options.policyId));
+  checks.push(check(
+    "kit-policy-pack-config",
+    "Policy pack or pinned policy id is configured",
+    options.policyId ? "pass" : "fail",
+    packMatch
+      ? `policy_id=${options.policyId} matches a catalog pack`
+      : `policy_id=${options.policyId} (custom or partner pinned policy)`,
+  ));
 
   return checks;
 }
@@ -264,6 +357,7 @@ export async function runPartnerConformance(
   checks.push(validateCanonicalOrigin(options));
   checks.push(validateCallbackUrl(options));
   checks.push(...validateReceiptFixtures(options));
+  checks.push(...kitConformanceChecks(options));
 
   if (options.skipLiveManifest || !options.baseUrl) {
     checks.push(
