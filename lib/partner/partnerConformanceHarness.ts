@@ -147,7 +147,7 @@ function kitConformanceChecks(options: PartnerConformanceOptions): ConformanceCh
   const pii = parsePartnerCallbackParams(new URLSearchParams({ receipt_id: "dr_x", email: "a@b.c" }));
   checks.push(check(
     "kit-callback-no-pii",
-    "Callback parameters reject PII keys",
+    "Callback parameters reject PII keys (offline fixture verification)",
     !pii.ok ? "pass" : "fail",
     !pii.ok ? pii.errors.join(", ") : "PII keys were accepted",
   ));
@@ -155,57 +155,57 @@ function kitConformanceChecks(options: PartnerConformanceOptions): ConformanceCh
   const approved = productionKit.evaluateFetchedReceipt(fixtures["valid-production-receipt"]!.receipt!);
   checks.push(check(
     "kit-signed-receipt",
-    "Signed receipt verification permits a valid production receipt",
+    "Offline fixture verification: signed receipt permits a valid production receipt",
     approved.outcome === "permitted" ? "pass" : "fail",
-    `outcome=${approved.outcome}; errors=${approved.errors.join(",") || "none"}`,
+    `offline fixture: outcome=${approved.outcome}; errors=${approved.errors.join(",") || "none"}`,
   ));
 
   const wrongPartner = productionKit.evaluateFetchedReceipt(fixtures["wrong-partner"]!.receipt!);
   checks.push(check(
     "kit-wrong-partner",
-    "Wrong partner is rejected",
+    "Offline fixture verification: wrong partner is rejected",
     wrongPartner.outcome !== "permitted" ? "pass" : "fail",
-    `outcome=${wrongPartner.outcome}`,
+    `offline fixture: outcome=${wrongPartner.outcome}`,
   ));
 
   const wrongPolicy = productionKit.evaluateFetchedReceipt(fixtures["wrong-policy"]!.receipt!);
   checks.push(check(
     "kit-wrong-policy",
-    "Wrong policy is rejected",
+    "Offline fixture verification: wrong policy is rejected",
     wrongPolicy.outcome !== "permitted" ? "pass" : "fail",
-    `outcome=${wrongPolicy.outcome}`,
+    `offline fixture: outcome=${wrongPolicy.outcome}`,
   ));
 
   const expired = productionKit.evaluateFetchedReceipt(fixtures["expired-receipt"]!.receipt!);
   checks.push(check(
     "kit-expired",
-    "Expired receipt is rejected",
+    "Offline fixture verification: expired receipt is rejected",
     expired.outcome === "expired" || expired.outcome === "invalid" ? "pass" : "fail",
-    `outcome=${expired.outcome}`,
+    `offline fixture: outcome=${expired.outcome}`,
   ));
 
   const revoked = productionKit.evaluateFetchedReceipt(fixtures["revoked-receipt"]!.receipt!);
   checks.push(check(
     "kit-revoked",
-    "Revoked receipt is rejected",
+    "Offline fixture verification: revoked receipt is rejected",
     revoked.outcome === "revoked" || revoked.outcome === "invalid" ? "pass" : "fail",
-    `outcome=${revoked.outcome}`,
+    `offline fixture: outcome=${revoked.outcome}`,
   ));
 
   const sandbox = productionKit.evaluateFetchedReceipt(fixtures["sandbox-only-receipt"]!.receipt!);
   checks.push(check(
     "kit-sandbox-in-production",
-    "Sandbox receipt is rejected in production mode",
+    "Offline fixture verification: sandbox receipt is rejected in production mode",
     sandbox.outcome !== "permitted" ? "pass" : "fail",
-    `outcome=${sandbox.outcome}`,
+    `offline fixture: outcome=${sandbox.outcome}`,
   ));
 
   const sandboxOk = sandboxKit.evaluateFetchedReceipt(fixtures["sandbox-only-with-opt-in"]!.receipt!);
   checks.push(check(
     "kit-sandbox-explicit",
-    "Sandbox receipt can be evaluated only with sandbox environment",
+    "Offline fixture verification: sandbox receipt can be evaluated only with sandbox environment",
     sandboxOk.outcome === "permitted" || sandboxOk.outcome === "invalid" ? (sandboxOk.outcome === "permitted" ? "pass" : "fail") : "fail",
-    `outcome=${sandboxOk.outcome}`,
+    `offline fixture: outcome=${sandboxOk.outcome}`,
   ));
 
   const packMatch = POLICY_PACK_LIST.some((pack) => options.policyId.includes(pack.id)) || Boolean(resolvePolicyPack(options.policyId));

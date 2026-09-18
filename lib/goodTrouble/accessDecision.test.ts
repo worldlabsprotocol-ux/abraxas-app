@@ -41,4 +41,18 @@ describe("Good Trouble Integration Kit access decision", () => {
     expect(revokedResult.grant).toBe(false);
     expect(revokedResult.outcome).toBe("revoked");
   });
+
+  it("returns typed fail-closed outcomes for partner and signature failures", async () => {
+    const wrongPartner = { ...approvedReceipt(), partner_id: "other-partner" };
+    const fetchPartner = vi.fn(async () => new Response(JSON.stringify(wrongPartner), { status: 200 })) as unknown as typeof fetch;
+    const partnerResult = await decideGoodTroubleAccess(new URLSearchParams({ receipt_id: "dr_gt_kit" }), fetchPartner);
+    expect(partnerResult.grant).toBe(false);
+    expect(partnerResult.outcome).toBe("wrong_partner");
+
+    const badSig = { ...approvedReceipt(), signature_valid: false };
+    const fetchSig = vi.fn(async () => new Response(JSON.stringify(badSig), { status: 200 })) as unknown as typeof fetch;
+    const sigResult = await decideGoodTroubleAccess(new URLSearchParams({ receipt_id: "dr_gt_kit" }), fetchSig);
+    expect(sigResult.grant).toBe(false);
+    expect(sigResult.outcome).toBe("invalid_signature");
+  });
 });

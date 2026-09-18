@@ -9,6 +9,11 @@ export const PARTNER_INTEGRATION_OUTCOMES = [
   "denied",
   "expired",
   "revoked",
+  "wrong_partner",
+  "wrong_policy",
+  "wrong_policy_version",
+  "invalid_signature",
+  "environment_mismatch",
   "invalid",
   "retry",
 ] as const;
@@ -65,6 +70,7 @@ export const PARTNER_INTEGRATION_ERROR_CODES = [
   "signature_invalid",
   "partner_mismatch",
   "policy_mismatch",
+  "policy_version_missing",
   "policy_version_mismatch",
   "decision_not_approved",
   "receipt_expired",
@@ -82,3 +88,6 @@ export const PARTNER_INTEGRATION_SANDBOX_BEHAVIOR =
 
 export const PARTNER_INTEGRATION_GOOGLE_BOUNDARY =
   "Google sign in creates an Abraxas account. It does not prove age, identity, residency, or eligibility.";
+
+export const PARTNER_INTEGRATION_SOURCE_LEVEL =
+  "The Partner Integration Kit is source level code in this repository (lib/partner/integrationKit). It is not a published npm package.";

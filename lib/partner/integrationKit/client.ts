@@ -137,8 +137,12 @@ export class AbraxasPartnerKit {
     });
     const errors = [...validation.errors];
     const version = (receipt as PartnerFlowPublicReceipt & { policy_version?: number }).policy_version;
-    if (this.options.policyVersion != null && version != null && Number(version) !== this.options.policyVersion) {
-      errors.push(`policy_version_mismatch:expected=${this.options.policyVersion},got=${version}`);
+    if (this.options.policyVersion != null) {
+      if (version == null || Number.isNaN(Number(version))) {
+        errors.push("policy_version_missing");
+      } else if (Number(version) !== this.options.policyVersion) {
+        errors.push(`policy_version_mismatch:expected=${this.options.policyVersion},got=${version}`);
+      }
     }
     if (receipt.schema_version && receipt.schema_version !== PARTNER_INTEGRATION_RECEIPT_SCHEMA_VERSION) {
       errors.push(`schema_version_unsupported:${receipt.schema_version}`);

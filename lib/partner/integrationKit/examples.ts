@@ -17,6 +17,9 @@ const kit = new AbraxasPartnerKit({
 
 export async function GET(req: NextRequest) {
   const result = await kit.verifyCallback(req.nextUrl.searchParams);
+  // Permit only outcome === permitted. denied, expired, revoked, wrong_partner,
+  // wrong_policy, wrong_policy_version, invalid_signature, environment_mismatch,
+  // invalid, and retry all deny the protocol action.
   if (!permitProtocolAction(result)) {
     return NextResponse.json({ action: "deny", outcome: result.outcome, errors: result.errors }, { status: 403 });
   }
@@ -38,6 +41,7 @@ const kit = new AbraxasPartnerKit({
 
 app.get("/auth/abraxas/callback", async (req, res) => {
   const result = await kit.verifyCallback(req.query);
+  // permitProtocolAction is true only for permitted. All other outcomes deny.
   if (!permitProtocolAction(result)) {
     return res.status(403).json({ action: "deny", outcome: result.outcome, errors: result.errors });
   }
@@ -61,6 +65,7 @@ export async function startVerification(returnUrl: string) {
 
 export async function completeVerification(callbackSearch: URLSearchParams) {
   const result = await kit.verifyCallback(callbackSearch);
+  // Grant only when outcome is permitted.
   if (!permitProtocolAction(result)) {
     return { grant: false, outcome: result.outcome };
   }

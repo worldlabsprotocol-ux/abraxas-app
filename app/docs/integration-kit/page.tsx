@@ -8,6 +8,7 @@ import {
   CONFORMANCE_COMMAND_EXAMPLE,
   PARTNER_INTEGRATION_GOOGLE_BOUNDARY,
   PARTNER_INTEGRATION_REPLAY_BEHAVIOR,
+  PARTNER_INTEGRATION_SOURCE_LEVEL,
   genericTypescriptExample,
 } from "@/lib/partner/integrationKit";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
@@ -36,9 +37,10 @@ export default function IntegrationKitDocsPage() {
           <li>Redirect the holder to the hosted verification URL.</li>
           <li>Receive callback keys only. They are not authorization.</li>
           <li>Fetch GET /api/receipts/{"{id}"}/public and evaluate with AbraxasPartnerKit.</li>
-          <li>Permit only when outcome is permitted. Deny expired, revoked, wrong policy, and invalid receipts.</li>
+          <li>Permit only when outcome is permitted. Deny denied, expired, revoked, wrong_partner, wrong_policy, wrong_policy_version, invalid_signature, environment_mismatch, invalid, and retry.</li>
         </ol>
-        <p style={{ ...body, marginTop: "0.85rem" }}>{PARTNER_INTEGRATION_GOOGLE_BOUNDARY}</p>
+        <p style={{ ...body, marginTop: "0.85rem" }}>{PARTNER_INTEGRATION_SOURCE_LEVEL}</p>
+        <p style={{ ...body, marginTop: "0.5rem" }}>{PARTNER_INTEGRATION_GOOGLE_BOUNDARY}</p>
         <p style={{ ...body, marginTop: "0.5rem" }}>{PARTNER_INTEGRATION_REPLAY_BEHAVIOR}</p>
       </ContentCard>
       <ContentCard title="Generic TypeScript">
