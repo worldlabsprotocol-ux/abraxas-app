@@ -54,5 +54,9 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     signingSecretAvailable: webhook.signing_secret_available,
     latestDeliveryStatus: webhook.latest_delivery_status,
     deliveryFailureBlocker: webhook.delivery_failure_blocker,
+    extendedEventTypesAvailable: webhook.extended_event_types_available,
+    unsupportedLifecycleEvents: webhook.unsupported_lifecycle_events,
+    schemaSkipCode: webhook.schema_skip_code,
+    productionCompatibility: webhook.production_compatibility,
   }));
 }

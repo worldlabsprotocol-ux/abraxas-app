@@ -25,6 +25,7 @@ export interface LaunchpadHealthCheck {
     | "webhook_secret"
     | "webhook_delivery"
     | "webhook_failure"
+    | "webhook_schema"
     | "action_channel"
     | "production";
   label: string;
@@ -43,6 +44,10 @@ export function buildLaunchpadIntegrationHealth(input: {
   signingSecretAvailable?: boolean;
   latestDeliveryStatus?: PartnerVisibleDeliveryState | null;
   deliveryFailureBlocker?: boolean;
+  extendedEventTypesAvailable?: boolean;
+  unsupportedLifecycleEvents?: string[];
+  schemaSkipCode?: string | null;
+  productionCompatibility?: string;
 }): { overall: LaunchpadHealthStatus; checks: LaunchpadHealthCheck[] } {
   const { application: app } = input;
   const productionCallback = hasProductionLaunchpadCallback(app.allowed_return_urls);
@@ -132,6 +137,14 @@ export function buildLaunchpadIntegrationHealth(input: {
       detail: input.latestDeliveryStatus
         ? `Latest partner-visible delivery state: ${input.latestDeliveryStatus}. Delivery is best effort, not guaranteed.`
         : "No webhook deliveries yet. Send a labeled test event after enabling delivery.",
+    },
+    {
+      id: "webhook_schema",
+      label: "Unsupported lifecycle events",
+      status: input.extendedEventTypesAvailable ? "pass" : "action_required",
+      detail: input.extendedEventTypesAvailable
+        ? `Extended lifecycle events are available. Production compatibility remains ${input.productionCompatibility ?? "receipt.issued, receipt.revoked, and TEST EVENT"}.`
+        : `Unsupported lifecycle events: ${(input.unsupportedLifecycleEvents ?? ["receipt.expired", "decision.denied", "integration.health_changed"]).join(", ")}. Skip code ${input.schemaSkipCode ?? "event_type_not_supported"}. Production compatibility remains limited to ${input.productionCompatibility ?? "receipt.issued, receipt.revoked, and TEST EVENT"}.`,
     },
     {
       id: "webhook_failure",

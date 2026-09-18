@@ -38,6 +38,10 @@ interface WebhookOverview {
   production_event_types?: string[];
   extended_event_types_available?: boolean;
   unsupported_event_types?: string[];
+  unsupported_lifecycle_events?: string[];
+  schema_skip_code?: string | null;
+  production_compatibility?: string;
+  compatibility_notice?: string;
   deliveries: DeliveryRow[];
 }
 
@@ -188,9 +192,10 @@ export function PartnerEventDeliveryPanel({ applicationId }: { applicationId: st
           <p style={body}>
             Production-ready public types on current schema: {(overview.production_event_types ?? overview.event_types ?? []).join(", ") || "receipt.issued, receipt.revoked"}.
             Storage uses partner.receipt.issued, partner.receipt.revoked, and partner.webhook.test.
-            {overview.extended_event_types_available
-              ? " Extended types are available in this database."
-              : " receipt.expired, decision.denied, and integration.health_changed are not enqueued on this schema."}
+            {overview.compatibility_notice
+              ?? (overview.extended_event_types_available
+                ? " Extended types are available in this database."
+                : " Unsupported lifecycle events: receipt.expired, decision.denied, and integration.health_changed. Skip code event_type_not_supported. Production compatibility remains limited to receipt.issued, receipt.revoked, and TEST EVENT.")}
           </p>
           <p style={body}>
             Endpoint health: {overview.webhook_configured ? overview.endpoint_display : "not configured"}

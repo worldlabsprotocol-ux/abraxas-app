@@ -10,6 +10,7 @@ import {
   toPublicPartnerEventType,
   toStoredWebhookEventType,
 } from "@/lib/partner/eventDelivery/mapping";
+import { toLaunchpadWebhookPublicFailureCode } from "@/lib/partner/eventDelivery/publicFailure";
 import { verifyPartnerWebhookEvent } from "@/lib/partner/eventDelivery/verify";
 import { partnerEventDeliveryConformanceChecks } from "@/lib/partner/eventDelivery/conformance";
 import { WEBHOOK_MAX_ATTEMPTS } from "@/lib/partner/webhooks/types";
@@ -21,6 +22,11 @@ describe("Partner Event Delivery contract", () => {
     expect(toStoredWebhookEventType("receipt.issued")).toBe("partner.receipt.issued");
     expect(toStoredWebhookEventType("receipt.revoked")).toBe("partner.receipt.revoked");
     expect(toPartnerVisibleEventLabel("partner.webhook.test")).toBe("TEST EVENT");
+  });
+
+  it("maps enqueue failures onto whitelisted public codes", () => {
+    expect(toLaunchpadWebhookPublicFailureCode("enqueue_unavailable")).toBe("enqueue_unavailable");
+    expect(toLaunchpadWebhookPublicFailureCode("PGRST202")).toBe("persistence_failed");
   });
 
   it("maps partner-visible delivery states including dead-lettered", () => {

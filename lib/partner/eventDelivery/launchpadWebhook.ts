@@ -28,6 +28,12 @@ import {
 } from "@/lib/partner/eventDelivery/mapping";
 import { webhookOutboxSupportsStoredEventType } from "@/lib/partner/eventDelivery/schemaCapability";
 import { isWebhookHttpsEndpointWellFormed } from "@/lib/partner/webhooks/webhookEndpointFormValidation";
+import {
+  EVENT_TYPE_NOT_SUPPORTED,
+  PRODUCTION_COMPATIBLE_EVENT_LABEL,
+  toLaunchpadWebhookPublicFailureCode,
+  type LaunchpadWebhookPublicFailureCode,
+} from "@/lib/partner/eventDelivery/publicFailure";
 
 export function maskWebhookEndpoint(url: string): string {
   try {
@@ -80,13 +86,20 @@ export async function getLaunchpadWebhookOverview(input: {
   const publicEventTypes = extendedAvailable
     ? [...PARTNER_PRODUCTION_PUBLIC_EVENT_TYPES, ...PARTNER_EXTENDED_PUBLIC_EVENT_TYPES]
     : [...PARTNER_PRODUCTION_PUBLIC_EVENT_TYPES];
+  const unsupportedLifecycleEvents = extendedAvailable ? [] : [...PARTNER_EXTENDED_PUBLIC_EVENT_TYPES];
 
   return {
     schema_version: PARTNER_EVENT_SCHEMA_VERSION,
     event_types: publicEventTypes,
     production_event_types: PARTNER_PRODUCTION_PUBLIC_EVENT_TYPES,
     extended_event_types_available: extendedAvailable,
-    unsupported_event_types: extendedAvailable ? [] : PARTNER_EXTENDED_PUBLIC_EVENT_TYPES,
+    unsupported_event_types: unsupportedLifecycleEvents,
+    unsupported_lifecycle_events: unsupportedLifecycleEvents,
+    schema_skip_code: extendedAvailable ? null : EVENT_TYPE_NOT_SUPPORTED,
+    production_compatibility: PRODUCTION_COMPATIBLE_EVENT_LABEL,
+    compatibility_notice: extendedAvailable
+      ? `Production compatibility includes ${PRODUCTION_COMPATIBLE_EVENT_LABEL}. Extended lifecycle events are available on this schema.`
+      : `Unsupported lifecycle events: ${unsupportedLifecycleEvents.join(", ")}. Skip code ${EVENT_TYPE_NOT_SUPPORTED}. Production compatibility remains limited to ${PRODUCTION_COMPATIBLE_EVENT_LABEL}.`,
     storage_event_types: ["partner.receipt.issued", "partner.receipt.revoked", "partner.webhook.test"],
     endpoint_requirements: PARTNER_EVENT_ENDPOINT_REQUIREMENTS,
     disclaimer: PARTNER_EVENT_NOT_AUTHORIZATION,
@@ -163,8 +176,23 @@ export async function removeLaunchpadWebhookEndpoint(partnerId: string) {
   return removePartnerWebhookEndpoint(partnerId);
 }
 
-export async function enqueueLaunchpadWebhookTest(partnerId: string) {
-  return enqueuePartnerWebhookTestDelivery(partnerId);
+export async function enqueueLaunchpadWebhookTest(partnerId: string): Promise<
+  | { ok: true; queued: true; eventId: string }
+  | { ok: false; code: LaunchpadWebhookPublicFailureCode }
+> {
+  const config = await getPartnerWebhookConfig(partnerId);
+  if (!config?.endpoint_url?.trim()) {
+    return { ok: false, code: "webhook_not_configured" };
+  }
+  if (config.enabled !== true) {
+    return { ok: false, code: "webhook_disabled" };
+  }
+
+  const result = await enqueuePartnerWebhookTestDelivery(partnerId);
+  if (!result.ok) {
+    return { ok: false, code: toLaunchpadWebhookPublicFailureCode(result.code) };
+  }
+  return result;
 }
 
 export async function redeliverLaunchpadWebhook(input: {

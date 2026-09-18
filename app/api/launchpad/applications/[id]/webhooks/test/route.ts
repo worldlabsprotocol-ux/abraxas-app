@@ -11,6 +11,7 @@ import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resol
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
 import { enqueueLaunchpadWebhookTest } from "@/lib/partner/eventDelivery/launchpadWebhook";
 import { PARTNER_WEBHOOK_TEST_EVENT_TYPE } from "@/lib/partner/webhooks/types";
+import { toLaunchpadWebhookPublicFailureCode } from "@/lib/partner/eventDelivery/publicFailure";
 
 export const dynamic = "force-dynamic";
 type RouteContext = { params: { id: string } };
@@ -25,7 +26,8 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
 
   const result = await enqueueLaunchpadWebhookTest(auth.session.partnerId);
   if (!result.ok) {
-    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, result.code);
+    const code = toLaunchpadWebhookPublicFailureCode(result.code);
+    return launchpadError(code, 400, code);
   }
   return launchpadJson({
     ok: true,

@@ -110,10 +110,14 @@ describe("065_service_role_runtime_grants migration", () => {
   const expectedGrants = buildExpected065GrantLiterals();
 
   it("keeps 065 after 062 and launchpad migrations after wallet binding dependencies", () => {
-    expect(DEMO_REQUIRED_MIGRATION_ORDER).toHaveLength(22);
+    expect(DEMO_REQUIRED_MIGRATION_ORDER).toHaveLength(24);
     const idx065 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf(DEMO_MIGRATION_065_FILENAME);
     const idx062 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf("062_partner_webhook_outbox.sql");
-    expect(idx065).toBeGreaterThan(idx062);
+    const idx067 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf("067_partner_webhook_test_event_atomic.sql");
+    const idx069 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf("069_partner_webhook_test_advisory_lock_fix.sql");
+    expect(idx065).toBeGreaterThan(idx069);
+    expect(idx069).toBeGreaterThan(idx067);
+    expect(idx067).toBeGreaterThan(idx062);
     expect(DEMO_REQUIRED_MIGRATION_ORDER.at(-1)).toBe("085_partner_launchpad_hardening.sql");
     expect(DEMO_REQUIRED_MIGRATION_ORDER.at(-2)).toBe("084_partner_launchpad_foundation.sql");
     expect(DEMO_REQUIRED_MIGRATION_ORDER).toContain("037_active_wallet_unique.sql");

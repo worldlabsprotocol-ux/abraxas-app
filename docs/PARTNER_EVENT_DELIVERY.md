@@ -12,7 +12,9 @@ No new migration is required. Event Delivery persists on the existing `062`/`067
 | `receipt.revoked` | `partner.receipt.revoked` |
 | TEST EVENT | `partner.webhook.test` |
 
-`receipt.expired`, `decision.denied`, and `integration.health_changed` are **not** enqueued unless a fail-closed schema probe proves the CHECK already allows those stored values. They are not claimed as available on Production.
+`receipt.expired`, `decision.denied`, and `integration.health_changed` are **not** enqueued unless a fail-closed schema probe proves the CHECK already allows those stored values. Launchpad overview and Integration Health then show skip code `event_type_not_supported` and keep production compatibility limited to `receipt.issued`, `receipt.revoked`, and TEST EVENT.
+
+DEMO Preview TEST EVENT enqueue requires `enqueue_partner_webhook_test_delivery(text)` from migrations **067 then 069**. Those files were not applied on DEMO `ocntwbxarpjeixdnzide` at the time of the Preview failure. Operator steps: `docs/demo/DEMO_WEBHOOK_TEST_EVENT_067_069_RUNBOOK.md`. Never apply that runbook on MAIN or Production.
 
 Reuse `ABRAXAS_WEBHOOK_MASTER_KEY` and dispatch cron from `docs/PARTNER_WEBHOOKS.md`. No MAIN Supabase, Production Vercel, Google OAuth, or production activation changes.
 

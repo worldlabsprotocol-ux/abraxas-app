@@ -37,7 +37,7 @@ export default function PartnerEventDeliveryDocsPage() {
           Production payload types: receipt.issued, receipt.revoked. Stored as partner.receipt.issued and partner.receipt.revoked.
         </p>
         <p style={{ ...body, marginTop: "0.5rem" }}>
-          receipt.expired, decision.denied, and integration.health_changed are not available on Production schemas.
+          receipt.expired, decision.denied, and integration.health_changed are unsupported lifecycle events on Production schemas (skip code event_type_not_supported). Production compatibility remains limited to receipt.issued, receipt.revoked, and TEST EVENT.
         </p>
         <p style={{ ...body, marginTop: "0.5rem" }}>{PARTNER_EVENT_NOT_AUTHORIZATION}</p>
         <p style={{ ...body, marginTop: "0.5rem" }}>Delivery is best effort. It is not guaranteed.</p>

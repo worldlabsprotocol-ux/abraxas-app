@@ -28,6 +28,14 @@ export {
 } from "@/lib/partner/eventDelivery/mapping";
 
 export {
+  LAUNCHPAD_WEBHOOK_PUBLIC_FAILURE_CODES,
+  toLaunchpadWebhookPublicFailureCode,
+  EVENT_TYPE_NOT_SUPPORTED,
+  PRODUCTION_COMPATIBLE_EVENT_LABEL,
+  type LaunchpadWebhookPublicFailureCode,
+} from "@/lib/partner/eventDelivery/publicFailure";
+
+export {
   verifyPartnerWebhookEvent,
   verifyWebhookThenReceipt,
   webhookEventIsNotAuthorizationNotice,
