@@ -31,6 +31,7 @@ export interface PolicySchemaUnavailableResult {
   evidence?: Record<string, string | number | boolean | null>;
   application_id?: string;
   pinned_version?: number;
+  [key: string]: unknown;
 }
 
 function asErrorShape(error: unknown): { code: string; message: string } {
