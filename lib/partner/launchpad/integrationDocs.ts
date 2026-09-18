@@ -63,7 +63,7 @@ if (receipt.policy_id !== "${app.policy_id}") throw new Error("policy_mismatch")
       { code: "environment_mismatch", description: "Sandbox receipt used in production verification" },
     ],
     sandbox_testing: [
-      "Use the Partner Launchpad test harness to evaluate approved, denied, expired, revoked, wrong-partner, wrong-policy, replay, sandbox-not-production, and no-PII outcomes against signed receipts.",
+      "Use the Partner Launchpad test harness to evaluate approved, denied, expired, revoked, wrong partner, wrong policy, replay, sandbox not production, and no PII outcomes against signed receipts.",
       `Sandbox key prefix: ${keyPrefix ?? "abx_test_…"}`,
       `Policy pack: ${template?.label ?? app.policy_template_id}`,
       "Sandbox receipts are labeled and rejected by production verification endpoints.",

@@ -479,7 +479,7 @@ export function PartnerLaunchpadClient() {
       {step === "policy" && (
         <ContentCard title="Choose a policy pack">
           <p style={bodyText}>
-            Packs are declarative and versioned. The holder proves a narrow claim. The partner receives a signed boolean-equivalent result, not a profile, ID image, or contact list.
+            Packs are declarative and versioned. The holder proves a narrow claim. The partner receives a signed boolean equivalent result, not a profile, ID image, or contact list.
           </p>
           <p style={{ ...bodyText, color: "#f59e0b" }}>{googleDisclaimer}</p>
           <div style={{ display: "grid", gap: "0.5rem" }}>
@@ -517,7 +517,7 @@ export function PartnerLaunchpadClient() {
             >
               <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: "0.82rem" }}>Constrained custom policy</div>
               <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", marginTop: 4 }}>
-                Use only when a catalog pack does not fit. Custom policies stay sandbox-only and cannot run arbitrary partner code.
+                Use only when a catalog pack does not fit. Custom policies stay sandbox only and cannot run arbitrary partner code.
               </div>
             </button>
           </div>
@@ -625,7 +625,7 @@ export function PartnerLaunchpadClient() {
       {step === "test" && activeApp && (
         <ContentCard title="Partner test harness">
           <p style={bodyText}>
-            Each case signs a receipt and evaluates it with the same public trust path used in production. Failures stay failures. Sandbox receipts never count as production-ready.
+            Each case signs a receipt and evaluates it with the same public trust path used in production. Failures stay failures. Sandbox receipts never count as production ready.
           </p>
           <p style={bodyText}>Configured policy: <code style={{ fontFamily: MONO }}>{activeApp.policy_id}</code> ({activeApp.policy_template_id})</p>
           <div style={{ display: "grid", gap: "0.4rem", marginBottom: "0.75rem" }}>
@@ -659,7 +659,7 @@ export function PartnerLaunchpadClient() {
           </p>
           {!productionCallbackReady && (
             <p style={{ ...bodyText, color: "#f59e0b" }}>
-              Add an HTTPS callback URL in Destinations first. Localhost is sandbox-only.
+              Add an HTTPS callback URL in Destinations first. Localhost is sandbox only.
             </p>
           )}
           {productionCallbackReady && !productionDomainVerified && (

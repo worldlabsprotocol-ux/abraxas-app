@@ -224,9 +224,9 @@ function buildSignedPublicReceipt(input: {
     signature,
     signing_key_id: input.key.signingKeyId,
     signature_valid: signatureValid,
-    currently_valid: false,
-    validity: "sandbox_only",
-    invalidation_reasons: productionUsable ? [] : ["production_not_usable:false"],
+    currently_valid: input.status === "active" && input.decision === "approved",
+    validity: input.status === "active" ? "active" : input.status,
+    invalidation_reasons: [],
     artifact_type: "eligibility_decision_receipt",
     anchor_reference: null,
   };
@@ -408,5 +408,5 @@ export function harnessPassedFromActivity(
     }
   }
   const missing = REQUIRED_HARNESS_SCENARIOS.filter((id) => !completed.has(id));
-  return { passed: missing.length === 0, completed: [...completed], missing };
+  return { passed: missing.length === 0, completed: Array.from(completed), missing };
 }
