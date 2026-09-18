@@ -16,4 +16,16 @@ describe("production Launchpad callback readiness", () => {
     ])).toBe(true);
     expect(hasProductionLaunchpadCallback(["http://localhost:3000/callback"])).toBe(false);
   });
+
+  it("rejects wildcard and private IP literals for production", () => {
+    for (const url of [
+      "https://*.example.com/callback",
+      "https://10.0.0.1/callback",
+      "https://192.168.1.1/callback",
+      "https://172.16.0.1/callback",
+      "https://169.254.1.1/callback",
+      "https://[fc00::1]/callback",
+      "https://0.0.0.0/callback",
+    ]) expect(isProductionLaunchpadCallback(url)).toBe(false);
+  });
 });

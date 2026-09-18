@@ -17,6 +17,19 @@ describe("launchpad return URL validation", () => {
     expect(validateLaunchpadReturnUrl("http://localhost:3000/callback").ok).toBe(true);
   });
 
+  it("rejects wildcard and private-network callback hosts", () => {
+    for (const url of [
+      "https://*.example.com/callback",
+      "https://10.0.0.1/callback",
+      "https://192.168.1.10/callback",
+      "https://172.16.0.10/callback",
+      "https://169.254.169.254/callback",
+      "https://[fc00::1]/callback",
+      "https://0.0.0.0/callback",
+      "https://localhost/callback",
+    ]) expect(validateLaunchpadReturnUrl(url).ok).toBe(false);
+  });
+
   it("rejects hostile redirect hosts against allowlist", () => {
     const app: LaunchpadApplicationRow = {
       id: "app-1",
