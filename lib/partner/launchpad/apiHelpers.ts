@@ -4,7 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePartnerConsoleSession } from "@/lib/partner/launchpad/partnerConsoleSession";
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
-import { checkLaunchpadRateLimit } from "@/lib/partner/launchpad/rateLimit";
+import { checkLaunchpadRateLimit, checkLaunchpadTenantRateLimit } from "@/lib/partner/launchpad/rateLimit";
 
 export function launchpadJson(
   body: Record<string, unknown>,
@@ -47,6 +47,21 @@ export function enforceLaunchpadRateLimit(
   const result = checkLaunchpadRateLimit(req, route, limit);
   if (!result.allowed) {
     return launchpadError("launchpad_rate_limited", 429);
+  }
+  return null;
+}
+
+export function enforceLaunchpadTenantRateLimit(
+  req: NextRequest,
+  route: string,
+  tenantId: string,
+  limit: number,
+  code = "sandbox_rate_limited",
+): NextResponse | null {
+  const ip = checkLaunchpadRateLimit(req, route, limit);
+  const tenant = checkLaunchpadTenantRateLimit(req, route, tenantId, limit);
+  if (!ip.allowed || !tenant.allowed) {
+    return launchpadError(code, 429);
   }
   return null;
 }

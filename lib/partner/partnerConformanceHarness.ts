@@ -15,6 +15,10 @@ import { validatePartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlo
 import { AbraxasPartnerKit, parsePartnerCallbackParams } from "@/lib/partner/integrationKit";
 import { partnerEventDeliveryConformanceChecks } from "@/lib/partner/eventDelivery/conformance";
 import { resolvePolicyPack, POLICY_PACK_LIST } from "@/lib/partner/launchpad/policyPacks";
+import {
+  sandboxManifestConformanceFixture,
+  validateSandboxManifest,
+} from "@/lib/partner/launchpad/sandboxReadiness/manifest";
 import { SITE_URL } from "@/lib/siteUrl";
 
 const STALE_HOST = "abraxas-app.vercel.app";
@@ -222,6 +226,43 @@ function kitConformanceChecks(options: PartnerConformanceOptions): ConformanceCh
   return checks;
 }
 
+function sandboxManifestConformanceChecks(): ConformanceCheck[] {
+  const valid = validateSandboxManifest(sandboxManifestConformanceFixture());
+  const withSecret = validateSandboxManifest({
+    ...sandboxManifestConformanceFixture(),
+    api_key: "abx_test_leaked",
+  });
+  const productionWithoutPass = validateSandboxManifest(
+    sandboxManifestConformanceFixture({
+      readiness_state: "blocked",
+      production_activation_eligible: true,
+    }),
+  );
+
+  return [
+    check(
+      "sandbox-manifest-offline",
+      "Sandbox readiness manifest validates offline without secrets or PII",
+      valid.ok ? "pass" : "fail",
+      valid.ok ? "fixture manifest has no secrets, JWTs, OAuth, wallet, or PII" : valid.errors.join("; "),
+    ),
+    check(
+      "sandbox-manifest-rejects-secrets",
+      "Sandbox manifest validator rejects leaked credentials",
+      !withSecret.ok ? "pass" : "fail",
+      !withSecret.ok ? withSecret.errors.join("; ") : "secret material was accepted",
+    ),
+    check(
+      "sandbox-manifest-not-production-auth",
+      "Sandbox pass is never treated as production authorization",
+      !productionWithoutPass.ok ? "pass" : "fail",
+      !productionWithoutPass.ok
+        ? productionWithoutPass.errors.join("; ")
+        : "production_activation_eligible was accepted without a sandbox pass",
+    ),
+  ];
+}
+
 function validateCallbackUrl(options: PartnerConformanceOptions): ConformanceCheck {
   const format = validatePartnerReturnUrlFormat(options.returnUrl);
   if (!format.ok) {
@@ -360,6 +401,7 @@ export async function runPartnerConformance(
   checks.push(...validateReceiptFixtures(options));
   checks.push(...kitConformanceChecks(options));
   checks.push(...partnerEventDeliveryConformanceChecks());
+  checks.push(...sandboxManifestConformanceChecks());
 
   if (options.skipLiveManifest || !options.baseUrl) {
     checks.push(

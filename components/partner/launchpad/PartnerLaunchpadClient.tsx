@@ -15,6 +15,7 @@ import { CUSTOM_LAUNCHPAD_CLAIMS, CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID } from "@/
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 import { PartnerEventDeliveryPanel } from "@/components/partner/launchpad/PartnerEventDeliveryPanel";
 import { PolicyChangeControlLaunchpadSlot } from "@/components/partner/launchpad/PolicyChangeControlLaunchpadSlot";
+import { PartnerSandboxReadinessPanel } from "@/components/partner/launchpad/PartnerSandboxReadinessPanel";
 import {
   launchpadHealthChecksForUi,
   shouldRenderPolicyChangeControlUi,
@@ -23,7 +24,7 @@ import {
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
 
-type WizardStep = "application" | "policy" | "destinations" | "provisioned" | "test" | "production";
+type WizardStep = "application" | "policy" | "destinations" | "provisioned" | "test" | "readiness" | "production";
 
 interface PolicyTemplate {
   id: string;
@@ -88,6 +89,7 @@ const STEPS: { id: WizardStep; label: string }[] = [
   { id: "destinations", label: "Destinations" },
   { id: "provisioned", label: "Credentials" },
   { id: "test", label: "Harness" },
+  { id: "readiness", label: "Readiness" },
   { id: "production", label: "Production" },
 ];
 
@@ -665,9 +667,19 @@ export function PartnerLaunchpadClient({
             </details>
           )}
           <div style={{ marginTop: "0.75rem" }}>
-            <Btn size="sm" onClick={() => setStep("production")}>Open production safety gate</Btn>
+            <Btn size="sm" onClick={() => setStep("readiness")}>Open integration readiness</Btn>
           </div>
         </ContentCard>
+      )}
+
+      {(step === "readiness" || Boolean(activeApp)) && activeApp && (
+        <PartnerSandboxReadinessPanel
+          applicationId={activeApp.id}
+          onChanged={() => {
+            void refreshWorkspace();
+            void refreshIntegrationHealth();
+          }}
+        />
       )}
 
       {activeApp && docs && (

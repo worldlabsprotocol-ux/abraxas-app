@@ -15,6 +15,17 @@ function clientKey(req: NextRequest, suffix: string): string {
   return `${suffix}:${ip}`;
 }
 
+export function checkLaunchpadTenantRateLimit(
+  req: NextRequest,
+  route: string,
+  tenantId: string,
+  limit: number,
+  windowSec = 60,
+): { allowed: true } | { allowed: false; retryAfterSec: number } {
+  const tenant = tenantId.trim().toLowerCase() || "unknown";
+  return checkLaunchpadRateLimit(req, `${route}:tenant:${tenant}`, limit, windowSec);
+}
+
 export function checkLaunchpadRateLimit(
   req: NextRequest,
   route: string,

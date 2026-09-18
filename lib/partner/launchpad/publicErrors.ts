@@ -17,6 +17,8 @@ export const LAUNCHPAD_PUBLIC_ERRORS = {
   signing_unavailable: "launchpad_signing_unavailable",
   verify_config_unavailable: "launchpad_verify_config_unavailable",
   policy_version_blocked: "launchpad_policy_version_blocked",
+  sandbox_rate_limited: "sandbox_rate_limited",
+  sandbox_run_duplicate: "sandbox_run_duplicate",
 } as const;
 
 export type LaunchpadPublicErrorCode = typeof LAUNCHPAD_PUBLIC_ERRORS[keyof typeof LAUNCHPAD_PUBLIC_ERRORS];

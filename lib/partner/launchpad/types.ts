@@ -24,7 +24,8 @@ export type LaunchpadActivityEventType =
   | "credential_revoked"
   | "production_access_requested"
   | "production_access_approved"
-  | "production_access_rejected";
+  | "production_access_rejected"
+  | "sandbox_readiness_run";
 
 export type ProductionAccessRequestStatus = "pending" | "approved" | "rejected";
 
