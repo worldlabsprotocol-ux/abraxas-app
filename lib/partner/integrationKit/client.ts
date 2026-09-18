@@ -21,6 +21,7 @@ export interface AbraxasPartnerKitOptions {
   partnerId: string;
   policyId: string;
   policyVersion?: number;
+  requirePolicyVersion?: boolean;
   environment: "sandbox" | "production";
   baseUrl?: string;
   appSlug?: string;
@@ -137,8 +138,11 @@ export class AbraxasPartnerKit {
     });
     const errors = [...validation.errors];
     const version = (receipt as PartnerFlowPublicReceipt & { policy_version?: number }).policy_version;
-    if (this.options.policyVersion != null) {
-      if (version == null || Number.isNaN(Number(version))) {
+    const pinRequired = this.options.requirePolicyVersion === true || this.options.policyVersion != null;
+    if (pinRequired) {
+      if (this.options.policyVersion == null) {
+        errors.push("policy_version_not_adopted");
+      } else if (version == null || Number.isNaN(Number(version))) {
         errors.push("policy_version_missing");
       } else if (Number(version) !== this.options.policyVersion) {
         errors.push(`policy_version_mismatch:expected=${this.options.policyVersion},got=${version}`);

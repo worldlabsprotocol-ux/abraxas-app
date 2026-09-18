@@ -49,6 +49,8 @@ export const DEMO_OPTIONAL_TABLES = [
   "decision_receipt_revocation_events",
   "sui_zklogin_identities",
   "identity_verification_events",
+  "partner_policy_lifecycle_audit",
+  "partner_policy_adoptions",
 ] as const;
 
 export const DEMO_SANDBOX_PARTNER_ID = "abraxas-partner-sandbox";
@@ -415,6 +417,22 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
     extensions: [],
     notes:
       "Launchpad hardening: tenant bound idempotency, production approval RPC, encrypted one time production key reveal envelope.",
+  },
+  {
+    file: "088_policy_change_control.sql",
+    tier: "recommended",
+    creates: [
+      "partner_policy_lifecycle_audit",
+      "partner_policy_adoptions",
+    ],
+    alters: [
+      "partner_policies.deprecate_effective_at",
+      "enforce_partner_policy_immutability",
+    ],
+    seeds: [],
+    extensions: [],
+    notes:
+      "DEMO-only Policy Change Control: append-only lifecycle audit, explicit version adoptions, scheduled deprecation, and deletion guards for receipts/bindings.",
   },
 ];
 

@@ -79,6 +79,9 @@ export interface PartnerPolicy {
   name: string;
   rules_json: PartnerPolicyRules;
   status: string;
+  effective_at?: string;
+  deprecate_effective_at?: string | null;
+  created_at?: string;
 }
 
 export interface PolicyEvaluationResult {

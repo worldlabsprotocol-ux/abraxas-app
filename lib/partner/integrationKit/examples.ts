@@ -3,7 +3,7 @@
 
 import type { AbraxasPartnerKitOptions } from "@/lib/partner/integrationKit/client";
 
-export function nextjsRouteHandlerExample(opts: Pick<AbraxasPartnerKitOptions, "partnerId" | "policyId" | "environment">): string {
+export function nextjsRouteHandlerExample(opts: Pick<AbraxasPartnerKitOptions, "partnerId" | "policyId" | "environment" | "policyVersion">): string {
   return `// app/api/abraxas/callback/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { AbraxasPartnerKit, permitProtocolAction } from "@/lib/partner/integrationKit";
@@ -11,15 +11,17 @@ import { AbraxasPartnerKit, permitProtocolAction } from "@/lib/partner/integrati
 const kit = new AbraxasPartnerKit({
   partnerId: "${opts.partnerId}",
   policyId: "${opts.policyId}",
+  policyVersion: ${opts.policyVersion ?? 1},
+  requirePolicyVersion: true,
   environment: "${opts.environment}",
   baseUrl: process.env.ABRAXAS_BASE_URL,
 });
 
 export async function GET(req: NextRequest) {
   const result = await kit.verifyCallback(req.nextUrl.searchParams);
-  // Permit only outcome === permitted. denied, expired, revoked, wrong_partner,
-  // wrong_policy, wrong_policy_version, invalid_signature, environment_mismatch,
-  // invalid, and retry all deny the protocol action.
+  // Permit only outcome === permitted. Draft, deprecated, missing, mismatched,
+  // unknown, and future policy versions fail closed. Only a verified permitted
+  // result authorizes a partner action.
   if (!permitProtocolAction(result)) {
     return NextResponse.json({ action: "deny", outcome: result.outcome, errors: result.errors }, { status: 403 });
   }
@@ -28,13 +30,15 @@ export async function GET(req: NextRequest) {
 `;
 }
 
-export function expressHandlerExample(opts: Pick<AbraxasPartnerKitOptions, "partnerId" | "policyId" | "environment">): string {
+export function expressHandlerExample(opts: Pick<AbraxasPartnerKitOptions, "partnerId" | "policyId" | "environment" | "policyVersion">): string {
   return `// express callback
 import { AbraxasPartnerKit, permitProtocolAction } from "@/lib/partner/integrationKit";
 
 const kit = new AbraxasPartnerKit({
   partnerId: "${opts.partnerId}",
   policyId: "${opts.policyId}",
+  policyVersion: ${opts.policyVersion ?? 1},
+  requirePolicyVersion: true,
   environment: "${opts.environment}",
   baseUrl: process.env.ABRAXAS_BASE_URL,
 });
@@ -50,12 +54,14 @@ app.get("/auth/abraxas/callback", async (req, res) => {
 `;
 }
 
-export function genericTypescriptExample(opts: Pick<AbraxasPartnerKitOptions, "partnerId" | "policyId" | "environment">): string {
+export function genericTypescriptExample(opts: Pick<AbraxasPartnerKitOptions, "partnerId" | "policyId" | "environment" | "policyVersion">): string {
   return `import { AbraxasPartnerKit, permitProtocolAction } from "@/lib/partner/integrationKit";
 
 const kit = new AbraxasPartnerKit({
   partnerId: "${opts.partnerId}",
   policyId: "${opts.policyId}",
+  policyVersion: ${opts.policyVersion ?? 1},
+  requirePolicyVersion: true,
   environment: "${opts.environment}",
 });
 

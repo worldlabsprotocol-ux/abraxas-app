@@ -67,6 +67,26 @@ describe("Launchpad integration health", () => {
     expect(health.checks.find((check) => check.id === "production")?.detail).toContain("sandbox-only");
   });
 
+  it("surfaces policy version pin health when catalog and pin diverge", () => {
+    const health = buildLaunchpadIntegrationHealth({
+      application: app,
+      activeSandboxKey: true,
+      activeProductionKey: false,
+      verifiedHostnames: [],
+      policyChangeControl: {
+        status: "action_required",
+        nextAction: "Explicitly adopt published policy version 2.",
+        blockerCode: "policy_version_not_adopted",
+        pinnedVersion: 1,
+        activeVersion: 2,
+      },
+    });
+    const check = health.checks.find((item) => item.id === "policy_change_control");
+    expect(check?.status).toBe("action_required");
+    expect(check?.detail).toContain("policy_version_not_adopted");
+    expect(check?.detail).toContain("Pinned v1");
+  });
+
   it("reports fully active production only with a live scoped key", () => {
     const health = buildLaunchpadIntegrationHealth({
       application: { ...app, environment: "production", production_api_key_id: "live", allowed_return_urls: ["https://partner.example.com/callback"] },

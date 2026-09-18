@@ -85,7 +85,7 @@ describe("Partner Integration Kit", () => {
       invalidation_reasons: [] as string[],
     };
     const missing = client.evaluateFetchedReceipt(base);
-    expect(missing.outcome).toBe("wrong_policy_version");
+    expect(missing.outcome).toBe("policy_version_missing");
     expect(missing.errors).toContain("policy_version_missing");
     expect(permitProtocolAction(missing)).toBe(false);
 
@@ -99,8 +99,28 @@ describe("Partner Integration Kit", () => {
     expect(PARTNER_INTEGRATION_REPLAY_BEHAVIOR.toLowerCase()).toContain("not a one time consume");
     expect(PARTNER_INTEGRATION_REPLAY_BEHAVIOR.toLowerCase()).toContain("do not treat public get as replay protection");
     expect(CONFORMANCE_COMMAND_EXAMPLE).toContain("npm run partner:conformance");
-    expect(PARTNER_INTEGRATION_KIT_VERSION).toBe("1.0.0");
+    expect(PARTNER_INTEGRATION_KIT_VERSION).toBe("1.1.0");
     expect(PARTNER_INTEGRATION_SOURCE_LEVEL.toLowerCase()).toContain("not a published npm package");
+  });
+
+  it("maps typed policy-version fail-closed codes", () => {
+    const client = kit({ policyVersion: 1, requirePolicyVersion: true });
+    const base = {
+      receipt_id: "dr_kit",
+      schema_version: "1.0.0",
+      partner_id: "partner-acme",
+      policy_id: "partner-acme-age_21_retail-v1",
+      policy_version: 1,
+      decision_result: "approved",
+      signature_valid: true,
+      expires_at: "2099-01-01T00:00:00.000Z",
+      status: "active",
+      production_usable: false,
+      currently_valid: true,
+      invalidation_reasons: [] as string[],
+    };
+    expect(kit({ requirePolicyVersion: true }).evaluateFetchedReceipt(base as typeof base).outcome).toBe("policy_version_not_adopted");
+    expect(permitProtocolAction(client.evaluateFetchedReceipt({ ...base, partner_id: "other" }))).toBe(false);
   });
 
   it("builds a hosted verification URL without API keys", () => {
