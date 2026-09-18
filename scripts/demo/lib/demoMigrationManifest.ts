@@ -120,6 +120,8 @@ export const DEMO_REQUIRED_MIGRATION_ORDER = [
   "062_partner_webhook_outbox.sql",
   "065_service_role_runtime_grants.sql",
   "083_zklogin_wallet_binding_atomic.sql",
+  "084_partner_launchpad_foundation.sql",
+  "085_partner_launchpad_hardening.sql",
 ] as const;
 
 export const DEMO_MIGRATION_065_FILENAME = "065_service_role_runtime_grants.sql" as const;
@@ -362,6 +364,36 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
     extensions: [],
     notes:
       "Atomic zkLogin wallet binding + wallet_binding_confirmed claim repair. Required for Passport Confirm securely.",
+  },
+  {
+    file: "084_partner_launchpad_foundation.sql",
+    tier: "required",
+    creates: [
+      "partner_launchpad_applications",
+      "partner_launchpad_activity",
+      "partner_production_access_requests",
+      "partner_launchpad_provision_sandbox_atomic RPC",
+    ],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Partner Launchpad self service applications, activity events, production access requests, and atomic sandbox provisioning.",
+  },
+  {
+    file: "085_partner_launchpad_hardening.sql",
+    tier: "required",
+    creates: ["partner_launchpad_approve_production_atomic RPC"],
+    alters: [
+      "partner_launchpad_applications.production_api_key_id",
+      "partner_launchpad_applications.production_key_revealed_at",
+      "partner_launchpad_applications.production_key_encrypted",
+      "partner_launchpad_activity partner FK",
+    ],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Launchpad hardening: tenant bound idempotency, production approval RPC, encrypted one time production key reveal envelope.",
   },
 ];
 

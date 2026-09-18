@@ -25,6 +25,8 @@ import {
   enforcePartnerFlowRateLimit,
   recordPartnerFlowRequestOutcome,
 } from "@/lib/partner/partnerFlowRouteGuard";
+import { extractLaunchpadFlowContext } from "@/lib/partner/launchpad/extractLaunchpadFlowContext";
+import { recordEvaluateLaunchpadActivity, recordFlowFailureActivity } from "@/lib/partner/launchpad/mapPartnerFlowActivity";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +67,9 @@ export async function POST(request: NextRequest) {
     permission_version?: string;
     purpose?: string;
     return_url?: string;
+    app?: string;
+    launchpad_application_id?: string;
+    application_id?: string;
   };
   try {
     body = await request.json();
@@ -96,8 +101,17 @@ export async function POST(request: NextRequest) {
     permissionVersion,
   } = normalized.params;
 
+  const launchpadContext = extractLaunchpadFlowContext(body);
+
   const allowed = await isAllowedPartnerReturnUrl(partnerId, returnUrl);
   if (!allowed) {
+    void recordFlowFailureActivity({
+      context: launchpadContext,
+      partnerId,
+      policyId,
+      publicCode: "return_url_rejected",
+      eventType: "callback_failed",
+    });
     return NextResponse.json(
       { error: "return_url is not allowed for this relying party" },
       { status: 400 },
@@ -235,6 +249,16 @@ export async function POST(request: NextRequest) {
       httpStatus: 200,
     });
 
+    void recordEvaluateLaunchpadActivity({
+      context: launchpadContext,
+      partnerId,
+      policyId,
+      correlationId: flowTraceId,
+      next: result.next,
+      replayStatus: isPartnerFlowRevocationDenied(result) ? null : result.replay_status,
+      hasRedirectUrl: Boolean(result.redirect_url),
+    });
+
     return NextResponse.json({ ...enrichPartnerFlowResponse(result), flow_trace_id: flowTraceId });
   } catch (e) {
     if (e instanceof PartnerFlowIdempotencyConflictError) {
@@ -254,6 +278,13 @@ export async function POST(request: NextRequest) {
       subjectId: session.session.suiAddress,
       outcome: "error",
       error: msg,
+    });
+    void recordFlowFailureActivity({
+      context: launchpadContext,
+      partnerId,
+      policyId,
+      correlationId: flowTraceId,
+      publicCode: "evaluation_failed",
     });
     void logPartnerUsage({
       endpoint: ENDPOINT,

@@ -30,8 +30,8 @@ describe("demoMigrationManifest validation", () => {
     expect(DEMO_REQUIRED_MIGRATION_ORDER[0]).toBe("006_abraxas_id.sql");
     expect(DEMO_REQUIRED_MIGRATION_ORDER).toContain("018_policy_verification.sql");
     expect(DEMO_REQUIRED_MIGRATION_ORDER).toContain("065_service_role_runtime_grants.sql");
-    expect(DEMO_REQUIRED_MIGRATION_ORDER.at(-1)).toBe("083_zklogin_wallet_binding_atomic.sql");
-    expect(DEMO_REQUIRED_MIGRATION_ORDER).toHaveLength(20);
+    expect(DEMO_REQUIRED_MIGRATION_ORDER.at(-1)).toBe("085_partner_launchpad_hardening.sql");
+    expect(DEMO_REQUIRED_MIGRATION_ORDER).toHaveLength(22);
     expect(DEMO_REQUIRED_MIGRATION_ORDER).toContain("037_active_wallet_unique.sql");
   });
 });

@@ -16,9 +16,7 @@ import {
   GOOD_TROUBLE_VERIFY_EXAMPLE,
   GOOD_TROUBLE_BATCH_VERIFY_EXAMPLE,
 } from "@/lib/goodTrouble/retailEligibility";
-import {
-  goodTroubleProductionVerifyUrl,
-} from "@/lib/goodTrouble/partnerIntegration";
+import { GOOD_TROUBLE_CASE_STUDY } from "@/lib/goodTrouble/launchpadCaseStudy";
 import { CANNABIS_BATCH_SCHEMA_ID, CANNABIS_BATCH_VC_TYPES } from "@/lib/credentials/cannabisBatchCredential";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -52,7 +50,7 @@ export function GoodTroublePilotSection({ hideHeader = false }: { hideHeader?: b
             {GOOD_TROUBLE_BRAND.name} × Abraxas
           </h2>
           <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.65, maxWidth: 640, margin: 0 }}>
-            {GOOD_TROUBLE_BRAND.mission} Batch provenance fixtures and Passport retail eligibility — sandbox pilot, not live POS.
+            {GOOD_TROUBLE_CASE_STUDY.summary}
           </p>
         </div>
       )}
@@ -145,8 +143,21 @@ export function GoodTroublePilotSection({ hideHeader = false }: { hideHeader?: b
         Planned VC types: {CANNABIS_BATCH_VC_TYPES.join(" · ")}
       </div>
 
+      <div style={{
+        padding: "0.85rem 1rem", borderRadius: 12, marginBottom: "1rem",
+        background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.2)",
+      }}>
+        <div style={{ fontFamily: FONT, fontSize: "0.58rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: 4 }}>
+          {GOOD_TROUBLE_CASE_STUDY.title}
+        </div>
+        <Link href={GOOD_TROUBLE_CASE_STUDY.videoUrl} target="_blank" rel="noopener noreferrer"
+          style={{ fontFamily: FONT, fontSize: "0.78rem", color: ACCENT, fontWeight: 700, textDecoration: "none" }}>
+          {GOOD_TROUBLE_CASE_STUDY.videoLabel} ↗
+        </Link>
+      </div>
+
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-        <Btn href={goodTroubleProductionVerifyUrl()} size="sm">Continue with Abraxas →</Btn>
+        <Btn href={GOOD_TROUBLE_CASE_STUDY.ctaHref} size="sm">{GOOD_TROUBLE_CASE_STUDY.ctaLabel} →</Btn>
         <Btn href="/good-trouble/checkout" variant="secondary" size="sm">Retail checkout entry →</Btn>
         <Btn href="/verify?mode=credential" variant="secondary" size="sm">Test credential verify →</Btn>
         <Btn href="/integrations/relying-parties" variant="secondary" size="sm">Relying party program →</Btn>

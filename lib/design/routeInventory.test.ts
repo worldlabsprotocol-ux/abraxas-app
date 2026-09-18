@@ -17,6 +17,7 @@ const SHELL_MARKERS = [
   "PartnerVerifyShell",
   "PartnerContinueClient",
   "PartnerEnterClient",
+  "PartnerLaunchpadClient",
   "AdminShell",
 ];
 

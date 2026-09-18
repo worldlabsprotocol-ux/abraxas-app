@@ -13,6 +13,7 @@ import {
 } from "@/lib/partner/partnerVerifyAuthDebug";
 import { isGoodTroubleBrowseFlow } from "@/lib/partner/goodTroubleBrowseFlow";
 import { normalizePartnerVerifySearchParams } from "@/lib/partner/normalizePartnerVerifyInput";
+import { useLaunchpadVerifyResolution } from "@/components/partner/useLaunchpadVerifyResolution";
 import {
   resolvePartnerDisplayName,
   resolvePartnerHomeUrl,
@@ -81,35 +82,46 @@ export function PartnerVerifyClient({
   const signInOnceRef = useRef(false);
   const correlationRef = useRef<string | null>(null);
 
+  const launchpadAppSlug = searchParams.get("app");
+  const launchpadReturnUrl = searchParams.get("return_url");
+  const launchpadResolution = useLaunchpadVerifyResolution(launchpadAppSlug, launchpadReturnUrl);
+  const launchpadActive = Boolean(launchpadAppSlug);
+
   const verifyInput = useMemo(
     () => normalizePartnerVerifySearchParams(searchParams),
     [searchParams],
   );
 
-  const relyingPartyId = verifyInput.ok ? verifyInput.params.partnerId : (
-    searchParams.get("relying_party_id")
-    ?? searchParams.get("partner_id")
-    ?? ""
-  );
+  const relyingPartyId = launchpadResolution.resolved?.partnerId
+    ?? (verifyInput.ok ? verifyInput.params.partnerId : (
+      searchParams.get("relying_party_id")
+      ?? searchParams.get("partner_id")
+      ?? ""
+    ));
   const permission = verifyInput.ok ? (verifyInput.params.permission ?? "") : (searchParams.get("permission") ?? "");
   const permissionVersion = verifyInput.ok
     ? (verifyInput.params.permissionVersion ?? "")
     : (searchParams.get("permission_version") ?? "");
-  const policyId = verifyInput.ok ? verifyInput.params.policyId : (searchParams.get("policy_id") ?? "");
+  const policyId = launchpadResolution.resolved?.policyId
+    ?? (verifyInput.ok ? verifyInput.params.policyId : (searchParams.get("policy_id") ?? ""));
   const purpose = verifyInput.ok ? (verifyInput.params.purpose ?? "") : (searchParams.get("purpose") ?? "");
-  const returnUrl = verifyInput.ok ? verifyInput.params.returnUrl : (searchParams.get("return_url") ?? "");
+  const returnUrl = launchpadResolution.resolved?.returnUrl
+    ?? (verifyInput.ok ? verifyInput.params.returnUrl : (searchParams.get("return_url") ?? ""));
   const isDobFirstBrowse = isGoodTroubleBrowseFlow({
     partnerId: relyingPartyId,
     policyId,
     purpose,
   });
 
-  const invalidLinkMessage = verifyInput.ok ? null : verifyInput.invalidLinkMessage;
+  const invalidLinkMessage = launchpadActive
+    ? (launchpadResolution.loading ? null : launchpadResolution.error)
+    : (verifyInput.ok ? null : verifyInput.invalidLinkMessage);
 
-  const partnerName = resolvePartnerDisplayName(relyingPartyId);
+  const partnerName = launchpadResolution.resolved?.displayName ?? resolvePartnerDisplayName(relyingPartyId);
   const partnerReturnLabel = resolvePartnerReturnLabel(relyingPartyId);
   const partnerHomeUrl = resolvePartnerHomeUrl(relyingPartyId);
-  const policyRequirement = resolvePolicyRequirement(policyId, permission || null);
+  const policyRequirement = launchpadResolution.resolved?.userExplanation
+    ?? resolvePolicyRequirement(policyId, permission || null);
 
   useEffect(() => {
     clearStaleLoginInFlight();
@@ -178,6 +190,7 @@ export function PartnerVerifyClient({
           policy_id: policyId || undefined,
           purpose: purpose || undefined,
           return_url: returnUrl,
+          app: launchpadAppSlug || undefined,
         }),
       });
       const data = await res.json() as FlowResult;
