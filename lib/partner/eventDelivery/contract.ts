@@ -3,12 +3,20 @@
 
 export const PARTNER_EVENT_SCHEMA_VERSION = "2026-09-18" as const;
 
-export const PARTNER_PUBLIC_EVENT_TYPES = [
+export const PARTNER_PRODUCTION_PUBLIC_EVENT_TYPES = [
   "receipt.issued",
-  "receipt.expired",
   "receipt.revoked",
+] as const;
+
+export const PARTNER_EXTENDED_PUBLIC_EVENT_TYPES = [
+  "receipt.expired",
   "decision.denied",
   "integration.health_changed",
+] as const;
+
+export const PARTNER_PUBLIC_EVENT_TYPES = [
+  ...PARTNER_PRODUCTION_PUBLIC_EVENT_TYPES,
+  ...PARTNER_EXTENDED_PUBLIC_EVENT_TYPES,
 ] as const;
 
 export type PartnerPublicEventType = (typeof PARTNER_PUBLIC_EVENT_TYPES)[number];

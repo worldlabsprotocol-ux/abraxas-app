@@ -6,7 +6,9 @@ import {
   partnerDeliveryIsRedeliverable,
   recommendPartnerActionChannel,
   toPartnerVisibleDeliveryState,
+  toPartnerVisibleEventLabel,
   toPublicPartnerEventType,
+  toStoredWebhookEventType,
 } from "@/lib/partner/eventDelivery/mapping";
 import { verifyPartnerWebhookEvent } from "@/lib/partner/eventDelivery/verify";
 import { partnerEventDeliveryConformanceChecks } from "@/lib/partner/eventDelivery/conformance";
@@ -16,7 +18,9 @@ describe("Partner Event Delivery contract", () => {
   it("maps legacy outbox types onto public event types", () => {
     expect(toPublicPartnerEventType("partner.receipt.issued")).toBe("receipt.issued");
     expect(toPublicPartnerEventType("partner.receipt.revoked")).toBe("receipt.revoked");
-    expect(toPublicPartnerEventType("receipt.expired")).toBe("receipt.expired");
+    expect(toStoredWebhookEventType("receipt.issued")).toBe("partner.receipt.issued");
+    expect(toStoredWebhookEventType("receipt.revoked")).toBe("partner.receipt.revoked");
+    expect(toPartnerVisibleEventLabel("partner.webhook.test")).toBe("TEST EVENT");
   });
 
   it("maps partner-visible delivery states including dead-lettered", () => {
@@ -49,6 +53,7 @@ describe("Partner Event Delivery contract", () => {
         receiptId: eventType === "integration.health_changed" ? null : "dr_safe",
         decisionId: eventType === "decision.denied" ? "decision-1" : null,
       });
+      expect(payload.event_type === "receipt.issued" || payload.event_type === "receipt.revoked" || payload.event_type === eventType).toBe(true);
       expect(webhookPayloadHasNoPii(payload)).toBe(true);
       const text = JSON.stringify(payload);
       expect(text).not.toContain("@");

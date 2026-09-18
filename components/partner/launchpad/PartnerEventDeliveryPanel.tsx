@@ -14,6 +14,8 @@ interface DeliveryRow {
   outbox_id: string;
   event_id: string;
   event_type: string;
+  public_event_type?: string | null;
+  storage_event_type?: string;
   visible_state: string;
   occurred_at: string;
   attempt_count: number;
@@ -32,6 +34,10 @@ interface WebhookOverview {
   delivery_not_guaranteed: boolean;
   latest_delivery_status: string | null;
   partner_action_channel: string;
+  event_types?: string[];
+  production_event_types?: string[];
+  extended_event_types_available?: boolean;
+  unsupported_event_types?: string[];
   deliveries: DeliveryRow[];
 }
 
@@ -179,6 +185,13 @@ export function PartnerEventDeliveryPanel({ applicationId }: { applicationId: st
       <p style={body}>Delivery is best effort with bounded retries. It is not guaranteed.</p>
       {overview && (
         <>
+          <p style={body}>
+            Production-ready public types on current schema: {(overview.production_event_types ?? overview.event_types ?? []).join(", ") || "receipt.issued, receipt.revoked"}.
+            Storage uses partner.receipt.issued, partner.receipt.revoked, and partner.webhook.test.
+            {overview.extended_event_types_available
+              ? " Extended types are available in this database."
+              : " receipt.expired, decision.denied, and integration.health_changed are not enqueued on this schema."}
+          </p>
           <p style={body}>
             Endpoint health: {overview.webhook_configured ? overview.endpoint_display : "not configured"}
             {" · "}

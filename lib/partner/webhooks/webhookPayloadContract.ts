@@ -99,7 +99,7 @@ export function buildPartnerWebhookPayload(input: {
   const payload: PartnerWebhookPayload = {
     event_id: input.eventId,
     schema_version: PARTNER_EVENT_SCHEMA_VERSION,
-    event_type: input.eventType,
+    event_type: publicType ?? input.eventType,
     timestamp: input.occurredAt,
     occurred_at: input.occurredAt,
     partner_id: input.partnerId,

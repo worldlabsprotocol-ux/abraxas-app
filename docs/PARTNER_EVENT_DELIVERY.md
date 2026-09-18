@@ -2,24 +2,19 @@
 
 Signed lifecycle notifications for relying partners. **Notification only.** Partners must fetch `GET /api/receipts/{id}/public` and verify the signed receipt on their server before granting access. Webhook delivery is best effort with bounded retries. This implementation does not claim guaranteed delivery.
 
-## DEMO migration (optional, labeled)
+## Production schema compatibility
 
-Apply only on DEMO / isolated operator databases. Do not apply to MAIN or Production from this PR.
+No new migration is required. Event Delivery persists on the existing `062`/`067` outbox CHECK:
 
-1. Existing webhook stack: `062`, `063`, `064`, `067`, `068`, `069` as already documented in `docs/PARTNER_WEBHOOKS.md`
-2. Event Delivery types: `supabase/migrations/088_partner_event_delivery_event_types.sql`
+| Public payload `event_type` | Stored outbox `event_type` |
+|-----------------------------|----------------------------|
+| `receipt.issued` | `partner.receipt.issued` |
+| `receipt.revoked` | `partner.receipt.revoked` |
+| TEST EVENT | `partner.webhook.test` |
 
-`088` expands `partner_webhook_outbox.event_type` so public types can persist:
+`receipt.expired`, `decision.denied`, and `integration.health_changed` are **not** enqueued unless a fail-closed schema probe proves the CHECK already allows those stored values. They are not claimed as available on Production.
 
-- `receipt.issued`
-- `receipt.expired`
-- `receipt.revoked`
-- `decision.denied`
-- `integration.health_changed`
-
-Legacy `partner.*` types remain valid for existing rows.
-
-Environment: reuse `ABRAXAS_WEBHOOK_MASTER_KEY` and dispatch cron from the webhook runbook. No MAIN Supabase, Production Vercel, Google OAuth, or production activation changes.
+Reuse `ABRAXAS_WEBHOOK_MASTER_KEY` and dispatch cron from `docs/PARTNER_WEBHOOKS.md`. No MAIN Supabase, Production Vercel, Google OAuth, or production activation changes.
 
 ## Public event schema (`2026-09-18`)
 

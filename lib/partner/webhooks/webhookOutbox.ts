@@ -15,6 +15,13 @@ import type {
   PartnerWebhookStatus,
 } from "@/lib/partner/webhooks/types";
 import { WEBHOOK_DELIVERY_LEASE_MS } from "@/lib/partner/webhooks/types";
+import {
+  toStoredWebhookEventType,
+} from "@/lib/partner/eventDelivery/mapping";
+import {
+  classifyWebhookOutboxInsertError,
+  webhookOutboxSupportsStoredEventType,
+} from "@/lib/partner/eventDelivery/schemaCapability";
 
 const OUTBOX = "partner_webhook_outbox";
 const CONFIG = "partner_webhook_configs";
@@ -69,6 +76,18 @@ function clearDeliveryLeaseFields() {
   };
 }
 
+let lastEnqueueSkipCode: string | null = null;
+
+export function recordWebhookEnqueueSkip(code: string): void {
+  lastEnqueueSkipCode = code;
+}
+
+export function consumeLastWebhookEnqueueSkip(): string | null {
+  const code = lastEnqueueSkipCode;
+  lastEnqueueSkipCode = null;
+  return code;
+}
+
 export async function isPartnerWebhookEnabled(partnerId: string): Promise<boolean> {
   const sb = requireSupabaseAdmin();
   const { data } = await sb
@@ -97,6 +116,18 @@ export async function enqueuePartnerWebhookEvent(input: {
   const enabled = await isPartnerWebhookEnabled(partnerId);
   if (!enabled) return { ok: false, error: "webhook_disabled" };
 
+  const storedType = toStoredWebhookEventType(input.eventType);
+  if (!storedType || storedType === "partner.webhook.test") {
+    recordWebhookEnqueueSkip("event_type_not_supported");
+    return { ok: false, error: "event_type_not_supported" };
+  }
+
+  const supported = await webhookOutboxSupportsStoredEventType(storedType);
+  if (!supported) {
+    recordWebhookEnqueueSkip("event_type_not_supported");
+    return { ok: false, error: "event_type_not_supported" };
+  }
+
   const eventId = randomUUID();
   const occurredAt = input.occurredAt ?? new Date().toISOString();
   const payload = buildPartnerWebhookPayload({
@@ -118,7 +149,7 @@ export async function enqueuePartnerWebhookEvent(input: {
 
   const idempotencyKey = buildWebhookIdempotencyKey({
     partnerId,
-    eventType: input.eventType,
+    eventType: storedType,
     resourceId: input.resourceId,
   });
 
@@ -127,7 +158,7 @@ export async function enqueuePartnerWebhookEvent(input: {
     .from(OUTBOX)
     .insert({
       partner_id: partnerId,
-      event_type: input.eventType,
+      event_type: storedType,
       event_id: eventId,
       idempotency_key: idempotencyKey,
       payload,
@@ -149,7 +180,9 @@ export async function enqueuePartnerWebhookEvent(input: {
         return { ok: true, eventId: existing.event_id as string, created: false };
       }
     }
-    return { ok: false, error: error.message };
+    const code = classifyWebhookOutboxInsertError(error);
+    recordWebhookEnqueueSkip(code);
+    return { ok: false, error: code };
   }
 
   return { ok: true, eventId: mapOutboxRow(data).event_id, created: true };
@@ -159,12 +192,21 @@ export async function enqueuePartnerWebhookEvent(input: {
 export function enqueuePartnerWebhookEventBestEffort(
   input: Parameters<typeof enqueuePartnerWebhookEvent>[0],
 ): void {
-  void enqueuePartnerWebhookEvent(input).catch((err: unknown) => {
-    console.warn(
-      "partner webhook enqueue best-effort failed:",
-      err instanceof Error ? err.message : String(err),
-    );
-  });
+  void enqueuePartnerWebhookEvent(input)
+    .then((result) => {
+      if (!result.ok) {
+        recordWebhookEnqueueSkip(result.error);
+        console.warn("partner webhook enqueue skipped:", result.error);
+      }
+    })
+    .catch((err: unknown) => {
+      recordWebhookEnqueueSkip("persistence_failed");
+      console.warn(
+        "partner webhook enqueue skipped:",
+        "persistence_failed",
+      );
+      void err;
+    });
 }
 
 export async function listDispatchableWebhookEvents(limit = 25): Promise<PartnerWebhookOutboxRecord[]> {

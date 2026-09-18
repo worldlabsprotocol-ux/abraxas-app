@@ -22,7 +22,7 @@ export function maybeEnqueuePartnerReceiptIssued(input: {
 
   enqueuePartnerWebhookEventBestEffort({
     partnerId,
-    eventType: "receipt.issued",
+    eventType: "partner.receipt.issued",
     receiptId,
     policyId: input.policyId ?? null,
     policyVersion: input.policyVersion ?? null,
@@ -44,7 +44,7 @@ export function maybeEnqueuePartnerReceiptRevoked(input: {
   if (input.alreadyRevoked) return;
   enqueuePartnerWebhookEventBestEffort({
     partnerId: input.partnerId,
-    eventType: "receipt.revoked",
+    eventType: "partner.receipt.revoked",
     receiptId: input.receiptId,
     decisionId: input.decisionId ?? null,
     policyId: input.policyId ?? null,
@@ -165,10 +165,5 @@ export function partnerWebhookEventTypes(): PartnerWebhookEventType[] {
     "partner.receipt.revoked",
     "partner.access.revoked",
     "partner.credential.revoked",
-    "receipt.issued",
-    "receipt.expired",
-    "receipt.revoked",
-    "decision.denied",
-    "integration.health_changed",
   ];
 }

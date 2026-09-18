@@ -2,6 +2,8 @@
 export {
   PARTNER_EVENT_SCHEMA_VERSION,
   PARTNER_PUBLIC_EVENT_TYPES,
+  PARTNER_PRODUCTION_PUBLIC_EVENT_TYPES,
+  PARTNER_EXTENDED_PUBLIC_EVENT_TYPES,
   PARTNER_EVENT_OUTCOMES,
   PARTNER_VISIBLE_DELIVERY_STATES,
   PARTNER_EVENT_SIGNATURE_METADATA,
@@ -19,6 +21,7 @@ export {
 export {
   toPublicPartnerEventType,
   toStoredWebhookEventType,
+  toPartnerVisibleEventLabel,
   toPartnerVisibleDeliveryState,
   partnerDeliveryIsRedeliverable,
   recommendPartnerActionChannel,

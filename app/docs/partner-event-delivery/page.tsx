@@ -8,7 +8,6 @@ import {
   PARTNER_EVENT_ENDPOINT_REQUIREMENTS,
   PARTNER_EVENT_NOT_AUTHORIZATION,
   PARTNER_EVENT_SCHEMA_VERSION,
-  PARTNER_PUBLIC_EVENT_TYPES,
   expressWebhookHandlerExample,
   nextjsWebhookHandlerExample,
 } from "@/lib/partner/eventDelivery";
@@ -34,7 +33,12 @@ export default function PartnerEventDeliveryDocsPage() {
       />
       <ContentCard title="Contract">
         <p style={body}>Schema version {PARTNER_EVENT_SCHEMA_VERSION}.</p>
-        <p style={{ ...body, marginTop: "0.5rem" }}>Event types: {PARTNER_PUBLIC_EVENT_TYPES.join(", ")}.</p>
+        <p style={{ ...body, marginTop: "0.5rem" }}>
+          Production payload types: receipt.issued, receipt.revoked. Stored as partner.receipt.issued and partner.receipt.revoked.
+        </p>
+        <p style={{ ...body, marginTop: "0.5rem" }}>
+          receipt.expired, decision.denied, and integration.health_changed are not available on Production schemas.
+        </p>
         <p style={{ ...body, marginTop: "0.5rem" }}>{PARTNER_EVENT_NOT_AUTHORIZATION}</p>
         <p style={{ ...body, marginTop: "0.5rem" }}>Delivery is best effort. It is not guaranteed.</p>
         <ul style={{ ...body, marginTop: "0.75rem", paddingLeft: "1.2rem" }}>

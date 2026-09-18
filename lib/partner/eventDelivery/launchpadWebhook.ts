@@ -16,14 +16,17 @@ import {
   PARTNER_EVENT_ENDPOINT_REQUIREMENTS,
   PARTNER_EVENT_NOT_AUTHORIZATION,
   PARTNER_EVENT_SCHEMA_VERSION,
-  PARTNER_PUBLIC_EVENT_TYPES,
+  PARTNER_EXTENDED_PUBLIC_EVENT_TYPES,
+  PARTNER_PRODUCTION_PUBLIC_EVENT_TYPES,
 } from "@/lib/partner/eventDelivery/contract";
 import {
   partnerDeliveryIsRedeliverable,
   recommendPartnerActionChannel,
   toPartnerVisibleDeliveryState,
+  toPartnerVisibleEventLabel,
   toPublicPartnerEventType,
 } from "@/lib/partner/eventDelivery/mapping";
+import { webhookOutboxSupportsStoredEventType } from "@/lib/partner/eventDelivery/schemaCapability";
 import { isWebhookHttpsEndpointWellFormed } from "@/lib/partner/webhooks/webhookEndpointFormValidation";
 
 export function maskWebhookEndpoint(url: string): string {
@@ -58,7 +61,9 @@ export async function getLaunchpadWebhookOverview(input: {
     return {
       outbox_id: row.outbox_id,
       event_id: row.event_id,
-      event_type: toPublicPartnerEventType(String(row.event_type)) ?? row.event_type,
+      event_type: toPartnerVisibleEventLabel(String(row.event_type)),
+      public_event_type: toPublicPartnerEventType(String(row.event_type)),
+      storage_event_type: row.event_type,
       visible_state: visible,
       occurred_at: row.occurred_at,
       delivered_at: row.delivered_at,
@@ -71,9 +76,18 @@ export async function getLaunchpadWebhookOverview(input: {
     };
   });
 
+  const extendedAvailable = await webhookOutboxSupportsStoredEventType("receipt.expired");
+  const publicEventTypes = extendedAvailable
+    ? [...PARTNER_PRODUCTION_PUBLIC_EVENT_TYPES, ...PARTNER_EXTENDED_PUBLIC_EVENT_TYPES]
+    : [...PARTNER_PRODUCTION_PUBLIC_EVENT_TYPES];
+
   return {
     schema_version: PARTNER_EVENT_SCHEMA_VERSION,
-    event_types: PARTNER_PUBLIC_EVENT_TYPES,
+    event_types: publicEventTypes,
+    production_event_types: PARTNER_PRODUCTION_PUBLIC_EVENT_TYPES,
+    extended_event_types_available: extendedAvailable,
+    unsupported_event_types: extendedAvailable ? [] : PARTNER_EXTENDED_PUBLIC_EVENT_TYPES,
+    storage_event_types: ["partner.receipt.issued", "partner.receipt.revoked", "partner.webhook.test"],
     endpoint_requirements: PARTNER_EVENT_ENDPOINT_REQUIREMENTS,
     disclaimer: PARTNER_EVENT_NOT_AUTHORIZATION,
     webhook_configured: webhookConfigured,
