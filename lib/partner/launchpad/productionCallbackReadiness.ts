@@ -2,8 +2,6 @@
 // Production promotion requires a real HTTPS callback; localhost remains sandbox-only.
 
 import { normalizePartnerReturnUrlForAllowlist } from "@/lib/connect/returnUrlAllowlistSemantics";
-import { isIP } from "net";
-import { isPublicWebhookIp } from "@/lib/partner/webhooks/webhookPublicIp";
 
 function isLocalHostname(hostname: string): boolean {
   const normalized = hostname.toLowerCase();
@@ -18,8 +16,14 @@ export function isSafeLaunchpadCallbackHostname(hostname: string, allowLocalhost
   const normalized = hostname.trim().toLowerCase();
   if (!normalized || normalized.includes("*")) return false;
   if (isLocalHostname(normalized)) return allowLocalhost && normalized === "localhost";
+  // Production callbacks must be DNS names. Rejecting all IP literals avoids SSRF,
+  // private-range edge cases, and bypassing the DNS ownership challenge.
   const ipLiteral = normalized.replace(/^\[/, "").replace(/\]$/, "");
-  if (isIP(ipLiteral) !== 0) return isPublicWebhookIp(ipLiteral);
+  if (ipLiteral.includes(":")) return false;
+  const octets = ipLiteral.split(".");
+  if (octets.length === 4 && octets.every((octet) => /^\d+$/.test(octet) && Number(octet) >= 0 && Number(octet) <= 255)) {
+    return false;
+  }
   return true;
 }
 
