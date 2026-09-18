@@ -10,7 +10,7 @@ import { Btn } from "@/components/redesign/ui";
 import { LAUNCHPAD_TEST_SCENARIOS } from "@/lib/partner/launchpad/testScenarios";
 import type { LaunchpadIntegrationDocs } from "@/lib/partner/launchpad/integrationDocs";
 import { slugifyLaunchpadApplication } from "@/lib/partner/launchpad/slug";
-import { hasProductionLaunchpadCallback } from "@/lib/partner/launchpad/productionCallbackReadiness";
+import { hasProductionLaunchpadCallback, isProductionLaunchpadCallback } from "@/lib/partner/launchpad/productionCallbackReadiness";
 import { CUSTOM_LAUNCHPAD_CLAIMS, CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID } from "@/lib/partner/launchpad/customPolicy";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 
@@ -114,7 +114,7 @@ export function PartnerLaunchpadClient() {
   const productionCallbackReady = activeApp
     ? hasProductionLaunchpadCallback(activeApp.allowed_return_urls)
     : false;
-  const productionCallback = activeApp?.allowed_return_urls.find(hasProductionLaunchpadCallback) ?? null;
+  const productionCallback = activeApp?.allowed_return_urls.find((url) => isProductionLaunchpadCallback(url)) ?? null;
   const productionDomainVerified = Boolean(productionCallback && domainVerifications.some((verification) => {
     try { return verification.status === "verified" && new URL(productionCallback).hostname.toLowerCase() === verification.hostname.toLowerCase(); } catch { return false; }
   }));
