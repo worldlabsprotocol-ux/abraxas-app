@@ -15,6 +15,8 @@ import {
   attachPartnerConsoleSessionCookie,
   issuePartnerConsoleSessionToken,
 } from "@/lib/partner/launchpad/partnerConsoleSession";
+import { resolvePolicyChangeControlUiAvailability } from "@/lib/partner/launchpad/policyChangeControlAvailability";
+import { withPolicyChangeControlUiFlag } from "@/lib/partner/launchpad/policyChangeControlUi";
 
 export const dynamic = "force-dynamic";
 
@@ -22,12 +24,18 @@ export async function GET(req: NextRequest) {
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
 
-  const workspace = await buildLaunchpadWorkspaceView(auth.session.partnerId);
+  const [workspace, policyChangeControlAvailable] = await Promise.all([
+    buildLaunchpadWorkspaceView(auth.session.partnerId),
+    resolvePolicyChangeControlUiAvailability(),
+  ]);
   if (!workspace) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.not_configured, 503);
   }
 
-  return launchpadJson({ ok: true, workspace });
+  return launchpadJson({
+    ok: true,
+    workspace: withPolicyChangeControlUiFlag(workspace, policyChangeControlAvailable),
+  });
 }
 
 export async function POST(req: NextRequest) {

@@ -53,6 +53,7 @@ export interface LaunchpadWorkspaceView {
   display_name: string;
   environment: LaunchpadEnvironment;
   applications: LaunchpadApplicationSummary[];
+  policy_change_control_available?: boolean;
 }
 
 export interface LaunchpadApplicationSummary {

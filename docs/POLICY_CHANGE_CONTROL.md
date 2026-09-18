@@ -46,12 +46,13 @@ Migration 088 remains DEMO-only. Production binaries must not query missing rela
 | `POST` `create_draft` / `publish` / `adopt` / `deprecate` (and other policy writes) | Same typed result. Preflight runs before any draft or adoption write. |
 | `GET /api/launchpad/applications/:id/health` | HTTP 200 with `policy_change_control` **blocked** and `blockerCode: "policy_schema_unavailable"`. Never pass because an overview error was swallowed. |
 | Partner Flow, receipts, verification, crons, issuance without Launchpad Policies context | Unchanged. Those paths do not require 088 objects. |
+| Launchpad UI | Policies card and Policies API client requests are hidden when schema availability is false. DEMO with 088 still shows the full Policies UI. Direct Policies API remains fail-closed. |
 
 Raw Postgres/PostgREST errors are never returned to the client.
 
 ## Partner Launchpad
 
-The Policies area shows:
+The Policies area is dark-launched behind a server schema probe. Production Launchpad hides the Policies card and does not call the Policies API when migration 088 is absent. DEMO with 088 shows the full area:
 
 - current active version
 - draft successor

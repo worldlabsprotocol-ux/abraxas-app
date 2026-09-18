@@ -60,9 +60,11 @@ interface FixtureResult {
 
 export function PartnerPolicyChangeControlPanel({
   applicationId,
+  enabled = true,
   onChanged,
 }: {
   applicationId: string;
+  enabled?: boolean;
   onChanged?: () => void;
 }) {
   const [overview, setOverview] = useState<Overview | null>(null);
@@ -73,15 +75,20 @@ export function PartnerPolicyChangeControlPanel({
   const [deprecateAt, setDeprecateAt] = useState("");
 
   const load = useCallback(async () => {
+    if (!enabled) return;
     const res = await fetch(`/api/launchpad/applications/${applicationId}/policies`, { credentials: "include" });
     const data = await res.json();
     if (res.ok) setOverview(data as Overview);
     else setError(String(data.error ?? data.code ?? "Could not load policies"));
-  }, [applicationId]);
+  }, [applicationId, enabled]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    if (!enabled) return;
+    void load();
+  }, [enabled, load]);
 
   async function run(action: string, extra: Record<string, unknown> = {}) {
+    if (!enabled) return;
     setBusy(true);
     setError("");
     setNotice("");
@@ -106,6 +113,8 @@ export function PartnerPolicyChangeControlPanel({
     await load();
     onChanged?.();
   }
+
+  if (!enabled) return null;
 
   if (!overview) {
     return (
