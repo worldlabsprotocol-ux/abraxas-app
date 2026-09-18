@@ -39,6 +39,7 @@ describe("docsHub", () => {
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/policy-packs");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/integration-kit");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/partner-event-delivery");
+    expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/circle-arc-testnet");
   });
 
   it("links roadmap to integration readiness and partner flow", () => {

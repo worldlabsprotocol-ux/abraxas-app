@@ -25,7 +25,9 @@ export type LaunchpadActivityEventType =
   | "production_access_requested"
   | "production_access_approved"
   | "production_access_rejected"
-  | "sandbox_readiness_run";
+  | "sandbox_readiness_run"
+  | "settlement_intent_created"
+  | "settlement_intent_submitted";
 
 export type ProductionAccessRequestStatus = "pending" | "approved" | "rejected";
 

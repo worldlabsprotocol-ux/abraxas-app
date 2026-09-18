@@ -106,6 +106,7 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
           { label: "Policy packs", href: "/docs/policy-packs" },
           { label: "Integration Kit", href: "/docs/integration-kit" },
           { label: "Partner Event Delivery", href: "/docs/partner-event-delivery" },
+          { label: "Circle Arc testnet settlement", href: "/docs/circle-arc-testnet" },
           { label: "Partner Flow", href: "/docs/partner-flow" },
           { label: "Partner Flow API (OpenAPI)", href: "/docs/partner-flow-api" },
           { label: "Protocol compatibility manifest", href: "/api/protocol/compatibility" },

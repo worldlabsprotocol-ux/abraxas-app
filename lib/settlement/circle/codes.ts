@@ -1,0 +1,69 @@
+// FILE: lib/settlement/circle/codes.ts
+// Precise public codes. Never leak Circle secrets or raw provider payloads.
+
+export const CIRCLE_PUBLIC_CODES = {
+  unavailable: "circle_unavailable",
+  schema_unavailable: "settlement_schema_unavailable",
+  production_blocked: "circle_production_blocked",
+  live_credentials_blocked: "circle_live_credentials_blocked",
+  wrong_network: "circle_wrong_network",
+  invalid_input: "settlement_invalid_input",
+  duplicate: "settlement_duplicate",
+  not_a_payment: "settlement_intent_not_a_payment",
+  pending: "settlement_pending",
+  submitted: "settlement_submitted",
+  settled: "settlement_settled",
+  failed: "settlement_failed",
+  unauthenticated_result: "settlement_unauthenticated_provider_result",
+  client_hash_rejected: "settlement_client_hash_rejected",
+  amount_mismatch: "settlement_amount_mismatch",
+  receipt_missing: "settlement_receipt_missing",
+  receipt_unsigned: "settlement_receipt_unsigned",
+  receipt_denied: "settlement_receipt_denied",
+  receipt_expired: "settlement_receipt_expired",
+  receipt_revoked: "settlement_receipt_revoked",
+  receipt_wrong_partner: "settlement_receipt_wrong_partner",
+  receipt_wrong_policy: "settlement_receipt_wrong_policy",
+  receipt_wrong_policy_version: "settlement_receipt_wrong_policy_version",
+  receipt_invalid: "settlement_receipt_invalid",
+} as const;
+
+export type CirclePublicCode = (typeof CIRCLE_PUBLIC_CODES)[keyof typeof CIRCLE_PUBLIC_CODES];
+
+export const CIRCLE_RECEIPT_FAIL_CLOSED_CODES = [
+  CIRCLE_PUBLIC_CODES.receipt_unsigned,
+  CIRCLE_PUBLIC_CODES.receipt_denied,
+  CIRCLE_PUBLIC_CODES.receipt_expired,
+  CIRCLE_PUBLIC_CODES.receipt_revoked,
+  CIRCLE_PUBLIC_CODES.receipt_wrong_partner,
+  CIRCLE_PUBLIC_CODES.receipt_wrong_policy,
+  CIRCLE_PUBLIC_CODES.receipt_wrong_policy_version,
+  CIRCLE_PUBLIC_CODES.receipt_invalid,
+  CIRCLE_PUBLIC_CODES.receipt_missing,
+] as const;
+
+export const CIRCLE_MANIFEST_FORBIDDEN_NEEDLES = [
+  "secret",
+  "api_key",
+  "entity_secret",
+  "private_key",
+  "wallet_set",
+  "ciphertext",
+  "raw_payload",
+  "authorization",
+  "bearer",
+  "jwt",
+  "oauth",
+  "id_token",
+  "date_of_birth",
+  "legal_name",
+  "passport",
+  "selfie",
+  "document_number",
+  "email",
+  "abx_test_",
+  "abx_live_",
+  "abx_whsec_",
+  "test_api_key",
+  "live_api_key",
+] as const;

@@ -16,6 +16,7 @@ import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 import { PartnerEventDeliveryPanel } from "@/components/partner/launchpad/PartnerEventDeliveryPanel";
 import { PolicyChangeControlLaunchpadSlot } from "@/components/partner/launchpad/PolicyChangeControlLaunchpadSlot";
 import { PartnerSandboxReadinessPanel } from "@/components/partner/launchpad/PartnerSandboxReadinessPanel";
+import { CircleSettlementLaunchpadPanel } from "@/components/partner/launchpad/CircleSettlementLaunchpadPanel";
 import {
   launchpadHealthChecksForUi,
   shouldRenderPolicyChangeControlUi,
@@ -680,6 +681,10 @@ export function PartnerLaunchpadClient({
             void refreshIntegrationHealth();
           }}
         />
+      )}
+
+      {activeApp && (
+        <CircleSettlementLaunchpadPanel applicationId={activeApp.id} />
       )}
 
       {activeApp && docs && (

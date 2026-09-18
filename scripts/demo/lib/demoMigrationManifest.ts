@@ -434,6 +434,18 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
     notes:
       "DEMO-only Policy Change Control: append-only lifecycle audit, explicit version adoptions, scheduled deprecation, and deletion guards for receipts/bindings.",
   },
+  {
+    file: "089_circle_arc_testnet_settlement.sql",
+    tier: "recommended",
+    creates: [
+      "partner_settlement_intents",
+    ],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Preview/DEMO-first Circle Arc testnet settlement intents. Not a custodial ledger. No secrets or raw provider payloads.",
+  },
 ];
 
 /** Map of which migration file first creates each core object. */
@@ -454,6 +466,7 @@ export const OBJECT_PROVENANCE: Record<string, string> = {
   partner_entitlements: "058_partner_metering_foundation.sql",
   partner_webhook_outbox: "062_partner_webhook_outbox.sql",
   partner_webhook_configs: "062_partner_webhook_outbox.sql",
+  partner_settlement_intents: "089_circle_arc_testnet_settlement.sql",
 };
 
 export function getDemoManifestFilenames(): string[] {
