@@ -104,6 +104,7 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
         links: [
           { label: "Progressive proof quickstart", href: "/docs/progressive-proof" },
           { label: "Policy packs", href: "/docs/policy-packs" },
+          { label: "Integration Kit", href: "/docs/integration-kit" },
           { label: "Partner Flow", href: "/docs/partner-flow" },
           { label: "Partner Flow API (OpenAPI)", href: "/docs/partner-flow-api" },
           { label: "Protocol compatibility manifest", href: "/api/protocol/compatibility" },

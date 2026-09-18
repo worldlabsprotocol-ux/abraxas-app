@@ -652,6 +652,30 @@ export function PartnerLaunchpadClient() {
         </ContentCard>
       )}
 
+      {activeApp && docs && (
+        <ContentCard title="Integration Kit">
+          <p style={bodyText}>
+            Proofs, not profiles. You receive a signed eligibility result. You never receive documents, date of birth, email, wallet address, or credential JWTs.
+          </p>
+          <p style={bodyText}>Policy pack: <code style={{ fontFamily: MONO }}>{activeApp.policy_template_id}</code> · Policy <code style={{ fontFamily: MONO }}>{activeApp.policy_id}</code></p>
+          <p style={bodyText}>Hosted verification URL</p>
+          <pre style={codeBlockStyle}>{docs.hosted_link}</pre>
+          <p style={bodyText}>Next.js route handler</p>
+          <pre style={codeBlockStyle}>{docs.typescript_verification_example}</pre>
+          <p style={bodyText}>Express handler</p>
+          <pre style={codeBlockStyle}>{docs.kit_express_example}</pre>
+          <p style={bodyText}>Generic TypeScript</p>
+          <pre style={codeBlockStyle}>{docs.kit_generic_example}</pre>
+          <p style={bodyText}>Conformance command</p>
+          <pre style={codeBlockStyle}>{docs.conformance_command}</pre>
+          <p style={bodyText}>
+            Public receipt verifier: <Link href="/docs/partner-flow" style={{ color: "var(--accent)" }}>Partner Flow docs</Link>
+            {" · "}
+            <Link href="/docs/policy-packs" style={{ color: "var(--accent)" }}>Policy packs</Link>
+          </p>
+        </ContentCard>
+      )}
+
       {step === "production" && (
         <ContentCard title="Automated production safety gate">
           <p style={bodyText}>

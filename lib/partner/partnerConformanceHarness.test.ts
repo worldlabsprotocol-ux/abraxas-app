@@ -107,6 +107,7 @@ describe("runPartnerConformance", () => {
       fetch: manifestFetchMock(),
     });
     const report = formatConformanceReport(result);
+    expect(result.checks.find(c => c.id === "kit-signed-receipt")?.label).toMatch(/offline fixture/i);
     expect(report).toContain("=== Abraxas partner conformance harness ===");
     expect(report).toContain("PASS");
     expect(report).toContain("partner_id: acme-protocol");

@@ -4,11 +4,20 @@
 import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
 import { resolveLaunchpadPolicyTemplate } from "@/lib/partner/launchpad/policyCatalog";
 import { SITE_URL } from "@/lib/siteUrl";
+import {
+  CONFORMANCE_COMMAND_EXAMPLE,
+  expressHandlerExample,
+  genericTypescriptExample,
+  nextjsRouteHandlerExample,
+} from "@/lib/partner/integrationKit";
 
 export interface LaunchpadIntegrationDocs {
   hosted_link: string;
   javascript_example: string;
   typescript_verification_example: string;
+  kit_express_example: string;
+  kit_generic_example: string;
+  conformance_command: string;
   curl_verification_example: string;
   callback_example: string;
   receipt_fields: Array<{ field: string; description: string }>;
@@ -32,16 +41,22 @@ const verifyUrl = new URL("${SITE_URL}/partner/verify");
 verifyUrl.searchParams.set("app", "${app.public_slug}");
 verifyUrl.searchParams.set("return_url", "${returnUrl}");
 window.location.assign(verifyUrl.toString());`,
-    typescript_verification_example: `import { createHmac, timingSafeEqual } from "node:crypto";
-
-const receiptId = req.query.receipt_id as string;
-const res = await fetch(\`\${process.env.ABRAXAS_BASE_URL}/api/v1/receipts/\${receiptId}\`, {
-  headers: { Authorization: \`Bearer \${process.env.ABRAXAS_API_KEY}\` },
-});
-if (!res.ok) throw new Error("receipt_verification_failed");
-const receipt = await res.json();
-if (receipt.partner_id !== "${app.partner_id}") throw new Error("audience_mismatch");
-if (receipt.policy_id !== "${app.policy_id}") throw new Error("policy_mismatch");`,
+    typescript_verification_example: nextjsRouteHandlerExample({
+      partnerId: app.partner_id,
+      policyId: app.policy_id,
+      environment: "sandbox",
+    }),
+    kit_express_example: expressHandlerExample({
+      partnerId: app.partner_id,
+      policyId: app.policy_id,
+      environment: "sandbox",
+    }),
+    kit_generic_example: genericTypescriptExample({
+      partnerId: app.partner_id,
+      policyId: app.policy_id,
+      environment: "sandbox",
+    }),
+    conformance_command: CONFORMANCE_COMMAND_EXAMPLE,
     curl_verification_example: `curl -sS \\
   -H "Authorization: Bearer abx_test_YOUR_KEY" \\
   "${SITE_URL}/api/v1/receipts/RECEIPT_ID"`,

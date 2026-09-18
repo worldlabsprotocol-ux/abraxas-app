@@ -25,10 +25,12 @@ export function PartnerEnterClient({
   partnerId,
   partnerName,
   verifyPath,
+  accessDecisionUrl,
 }: {
   partnerId: string;
   partnerName: string;
   verifyPath: string;
+  accessDecisionUrl?: string;
 }) {
   const searchParams = useSearchParams();
   const [unlocked, setUnlocked] = useState(false);
@@ -56,6 +58,32 @@ export function PartnerEnterClient({
     }
 
     setStatus("Fetching signed verification result…");
+    if (accessDecisionUrl) {
+      const decisionUrl = `${accessDecisionUrl}?${searchParams.toString()}`;
+      const res = await fetch(decisionUrl, { cache: "no-store" });
+      const data = await res.json() as {
+        grant?: boolean;
+        outcome?: string;
+        errors?: string[];
+        receipt_id?: string;
+        error?: string;
+      };
+      if (!data.grant) {
+        throw new Error(data.errors?.join("; ") || data.error || `Access ${data.outcome ?? "denied"}`);
+      }
+      setReceipt({
+        receipt_id: data.receipt_id ?? receiptId,
+        partner_id: partnerId,
+        policy_id: searchParams.get("policy_id") ?? "",
+        decision_result: "approved",
+        expires_at: null,
+        signature_valid: true,
+        status: "active",
+      });
+      setUnlocked(true);
+      setStatus("Verified on the server. Receipt valid, action permitted.");
+      return;
+    }
     const res = await fetch(`/api/receipts/${encodeURIComponent(receiptId)}/public`);
     const data = await res.json() as PublicReceipt & { error?: string };
     if (!res.ok) throw new Error(data.error ?? "Receipt not found");
@@ -81,7 +109,7 @@ export function PartnerEnterClient({
     setReceipt(data);
     setUnlocked(true);
     setStatus("Verified. Welcome.");
-  }, [receiptId, urlPartnerId, urlStatus, partnerId]);
+  }, [receiptId, urlPartnerId, urlStatus, partnerId, accessDecisionUrl, searchParams]);
 
   async function refreshReceipt() {
     setRefreshing(true);
