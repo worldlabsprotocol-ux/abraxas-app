@@ -14,7 +14,11 @@ import {
 import { buildPartnerFlowVerificationRequestIdempotencyKey } from "@/lib/partner/partnerFlowIdempotency";
 import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
 import { maybeRecordPartnerFlowReceiptMetering } from "@/lib/partner/partnerMeteringHooks";
-import { maybeEnqueuePartnerReceiptIssued } from "@/lib/partner/webhooks/webhookHooks";
+import {
+  maybeEnqueuePartnerDecisionDenied,
+  maybeEnqueuePartnerReceiptExpired,
+  maybeEnqueuePartnerReceiptIssued,
+} from "@/lib/partner/webhooks/webhookHooks";
 import { isPartnerFlowRevocationDenied } from "@/lib/partner/partnerFlowRevocationRuntime";
 import { enrichPartnerFlowResponse } from "@/lib/partner/enrichPartnerFlowResponse";
 import {
@@ -273,6 +277,25 @@ export async function POST(request: NextRequest) {
     decision: result.partner_result?.decision,
     receiptId: result.partner_result?.receipt_id,
     policyId,
+    policyVersion: result.policy_version,
+    decisionId: result.decision_id,
+  });
+
+  maybeEnqueuePartnerDecisionDenied({
+    partnerId,
+    decision: result.partner_result?.decision,
+    receiptId: result.partner_result?.receipt_id,
+    policyId,
+    policyVersion: result.policy_version,
+    decisionId: result.decision_id,
+  });
+
+  maybeEnqueuePartnerReceiptExpired({
+    partnerId,
+    status: result.validity === "expired" || result.invalidation_reasons?.includes("expired") ? "expired" : null,
+    receiptId: result.partner_result?.receipt_id,
+    policyId,
+    policyVersion: result.policy_version,
     decisionId: result.decision_id,
   });
 

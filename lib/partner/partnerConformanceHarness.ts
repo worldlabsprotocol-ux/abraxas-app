@@ -13,6 +13,7 @@ import {
 import { validatePartnerReturnUrlFormat } from "@/lib/partner/referenceRelyingPartyConfig";
 import { validatePartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlowReceipt";
 import { AbraxasPartnerKit, parsePartnerCallbackParams } from "@/lib/partner/integrationKit";
+import { partnerEventDeliveryConformanceChecks } from "@/lib/partner/eventDelivery/conformance";
 import { resolvePolicyPack, POLICY_PACK_LIST } from "@/lib/partner/launchpad/policyPacks";
 import { SITE_URL } from "@/lib/siteUrl";
 
@@ -358,6 +359,7 @@ export async function runPartnerConformance(
   checks.push(validateCallbackUrl(options));
   checks.push(...validateReceiptFixtures(options));
   checks.push(...kitConformanceChecks(options));
+  checks.push(...partnerEventDeliveryConformanceChecks());
 
   if (options.skipLiveManifest || !options.baseUrl) {
     checks.push(

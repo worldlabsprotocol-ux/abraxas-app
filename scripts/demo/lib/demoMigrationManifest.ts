@@ -118,6 +118,8 @@ export const DEMO_REQUIRED_MIGRATION_ORDER = [
   "056_publish_partner_policy_draft_rpc.sql",
   "058_partner_metering_foundation.sql",
   "062_partner_webhook_outbox.sql",
+  "067_partner_webhook_test_event_atomic.sql",
+  "069_partner_webhook_test_advisory_lock_fix.sql",
   "065_service_role_runtime_grants.sql",
   "083_zklogin_wallet_binding_atomic.sql",
   "084_partner_launchpad_foundation.sql",
@@ -325,6 +327,25 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
     notes: "Webhook outbox for maybeEnqueuePartnerReceiptIssued (delivery disabled by default).",
   },
   {
+    file: "067_partner_webhook_test_event_atomic.sql",
+    tier: "required",
+    creates: ["enqueue_partner_webhook_test_delivery RPC"],
+    alters: ["partner_webhook_outbox event_type CHECK partner.webhook.test"],
+    seeds: [],
+    extensions: [],
+    notes:
+      "DEMO-required TEST EVENT RPC. Never apply this runbook on MAIN or Production; Production already has a separate operator path.",
+  },
+  {
+    file: "069_partner_webhook_test_advisory_lock_fix.sql",
+    tier: "required",
+    creates: ["enqueue_partner_webhook_test_delivery RPC lock fix"],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes: "Forward-only advisory lock correction. Apply on DEMO after 067. Never apply on MAIN from this runbook.",
+  },
+  {
     file: "063_partner_webhook_operator_ops.sql",
     tier: "optional",
     creates: ["partner_webhook_dispatch_runs", "partner_webhook_retry_audit"],
@@ -497,6 +518,7 @@ export function validateDemoMigrationDependencies(): string[] {
     { migration: "033_decision_receipts.sql", requiresTables: ["verification_decisions", "consent_receipts"] },
     { migration: "053_partner_flow_idempotency.sql", requiresTables: ["verification_decisions"] },
     { migration: "062_partner_webhook_outbox.sql", requiresTables: ["partners"] },
+    { migration: "067_partner_webhook_test_event_atomic.sql", requiresTables: ["partner_webhook_outbox", "partner_webhook_configs"] },
   ];
 
   const createdSoFar = new Set<string>();

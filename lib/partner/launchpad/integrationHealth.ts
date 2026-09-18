@@ -7,11 +7,27 @@ import { isVerifiedDomainForCallbacks } from "./domainVerification";
 import { resolvePolicyPack, policyPackIsSandboxOnly } from "./policyPacks";
 import { CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID } from "./customPolicy";
 import { REQUIRED_HARNESS_SCENARIOS, type PartnerHarnessScenarioId } from "./partnerTestHarness";
+import type { PartnerVisibleDeliveryState } from "@/lib/partner/eventDelivery/contract";
+import { recommendPartnerActionChannel } from "@/lib/partner/eventDelivery/mapping";
 
 export type LaunchpadHealthStatus = "pass" | "action_required" | "blocked";
 
 export interface LaunchpadHealthCheck {
-  id: "application" | "policy" | "policy_pack" | "sandbox_key" | "harness" | "callback" | "domain" | "production";
+  id:
+    | "application"
+    | "policy"
+    | "policy_pack"
+    | "sandbox_key"
+    | "harness"
+    | "callback"
+    | "domain"
+    | "webhook"
+    | "webhook_secret"
+    | "webhook_delivery"
+    | "webhook_failure"
+    | "webhook_schema"
+    | "action_channel"
+    | "production";
   label: string;
   status: LaunchpadHealthStatus;
   detail: string;
@@ -23,6 +39,15 @@ export function buildLaunchpadIntegrationHealth(input: {
   activeProductionKey: boolean;
   verifiedHostnames: string[];
   harnessCompleted?: PartnerHarnessScenarioId[];
+  webhookConfigured?: boolean;
+  webhookEnabled?: boolean;
+  signingSecretAvailable?: boolean;
+  latestDeliveryStatus?: PartnerVisibleDeliveryState | null;
+  deliveryFailureBlocker?: boolean;
+  extendedEventTypesAvailable?: boolean;
+  unsupportedLifecycleEvents?: string[];
+  schemaSkipCode?: string | null;
+  productionCompatibility?: string;
 }): { overall: LaunchpadHealthStatus; checks: LaunchpadHealthCheck[] } {
   const { application: app } = input;
   const productionCallback = hasProductionLaunchpadCallback(app.allowed_return_urls);
@@ -80,6 +105,82 @@ export function buildLaunchpadIntegrationHealth(input: {
       id: "domain", label: "Domain ownership",
       status: domainVerified ? "pass" : "action_required",
       detail: domainVerified ? "The callback domain is verified by DNS TXT proof." : "Create and verify the DNS TXT challenge for the production callback domain.",
+    },
+    {
+      id: "webhook",
+      label: "Webhook configured",
+      status: input.webhookConfigured ? "pass" : "action_required",
+      detail: input.webhookConfigured
+        ? "A webhook endpoint is registered for lifecycle events."
+        : "Add an HTTPS webhook endpoint in Partner Event Delivery to receive signed events with no PII.",
+    },
+    {
+      id: "webhook_secret",
+      label: "Signing secret available",
+      status: input.signingSecretAvailable ? "pass" : "action_required",
+      detail: input.signingSecretAvailable
+        ? "A webhook signing secret is stored. Copy it only at create or rotate time."
+        : "Create or rotate a webhook signing secret and store it on your server.",
+    },
+    {
+      id: "webhook_delivery",
+      label: "Latest delivery status",
+      status: !input.webhookConfigured
+        ? "action_required"
+        : input.latestDeliveryStatus === "delivered"
+          ? "pass"
+          : input.latestDeliveryStatus === "retrying"
+            ? "action_required"
+            : input.latestDeliveryStatus === "failed" || input.latestDeliveryStatus === "dead-lettered"
+              ? "blocked"
+              : "action_required",
+      detail: input.latestDeliveryStatus
+        ? `Latest partner-visible delivery state: ${input.latestDeliveryStatus}. Delivery is best effort, not guaranteed.`
+        : "No webhook deliveries yet. Send a labeled test event after enabling delivery.",
+    },
+    {
+      id: "webhook_schema",
+      label: "Unsupported lifecycle events",
+      status: input.extendedEventTypesAvailable ? "pass" : "action_required",
+      detail: input.extendedEventTypesAvailable
+        ? `Extended lifecycle events are available. Production compatibility remains ${input.productionCompatibility ?? "receipt.issued, receipt.revoked, and TEST EVENT"}.`
+        : `Unsupported lifecycle events: ${(input.unsupportedLifecycleEvents ?? ["receipt.expired", "decision.denied", "integration.health_changed"]).join(", ")}. Skip code ${input.schemaSkipCode ?? "event_type_not_supported"}. Production compatibility remains limited to ${input.productionCompatibility ?? "receipt.issued, receipt.revoked, and TEST EVENT"}.`,
+    },
+    {
+      id: "webhook_failure",
+      label: "Delivery failure blocker",
+      status: input.deliveryFailureBlocker ? "blocked" : "pass",
+      detail: input.deliveryFailureBlocker
+        ? "A failed or dead-lettered delivery needs a safe redelivery after you fix the endpoint."
+        : "No failed webhook deliveries are blocking this integration.",
+    },
+    {
+      id: "action_channel",
+      label: "Partner action channel",
+      status: recommendPartnerActionChannel({
+        webhookConfigured: Boolean(input.webhookConfigured),
+        webhookEnabled: Boolean(input.webhookEnabled),
+        callbackConfigured: productionCallback,
+      }) === "none"
+        ? "action_required"
+        : "pass",
+      detail: (() => {
+        const channel = recommendPartnerActionChannel({
+          webhookConfigured: Boolean(input.webhookConfigured),
+          webhookEnabled: Boolean(input.webhookEnabled),
+          callbackConfigured: productionCallback,
+        });
+        if (channel === "both") {
+          return "Use the callback for the holder return and the webhook for lifecycle updates. Verify the receipt on your server either way.";
+        }
+        if (channel === "webhook") {
+          return "Webhook is the lifecycle channel. Keep a callback for holder return, and still verify the receipt server-side.";
+        }
+        if (channel === "callback") {
+          return "Callback is configured. Add a webhook if you need signed lifecycle updates after the holder leaves.";
+        }
+        return "Configure a callback, a webhook, or both. Never treat a webhook payload as authorization.";
+      })(),
     },
     {
       id: "production", label: "Production activation",

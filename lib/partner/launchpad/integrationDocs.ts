@@ -83,6 +83,7 @@ window.location.assign(verifyUrl.toString());`,
       `Policy pack: ${template?.label ?? app.policy_template_id}`,
       "Sandbox receipts are labeled and rejected by production verification endpoints.",
       "Google sign-in creates an account. It does not prove the selected pack.",
+      "Send a labeled TEST EVENT from Partner Event Delivery after the webhook endpoint is enabled.",
     ],
     production_checklist: [
       "Complete every Partner Launchpad harness outcome for this application.",
@@ -90,6 +91,7 @@ window.location.assign(verifyUrl.toString());`,
       "Publish the exact DNS TXT challenge and let Launchpad verify domain control.",
       "Activate production automatically and reveal the one-time production API key.",
       "Verify receipts server side before granting access.",
+      "If you enable Partner Event Delivery, verify webhook signatures and still fetch the public receipt before granting access.",
     ],
   };
 }

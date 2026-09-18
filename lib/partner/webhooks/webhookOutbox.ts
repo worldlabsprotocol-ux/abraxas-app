@@ -15,6 +15,13 @@ import type {
   PartnerWebhookStatus,
 } from "@/lib/partner/webhooks/types";
 import { WEBHOOK_DELIVERY_LEASE_MS } from "@/lib/partner/webhooks/types";
+import {
+  toStoredWebhookEventType,
+} from "@/lib/partner/eventDelivery/mapping";
+import {
+  classifyWebhookOutboxInsertError,
+  webhookOutboxSupportsStoredEventType,
+} from "@/lib/partner/eventDelivery/schemaCapability";
 
 const OUTBOX = "partner_webhook_outbox";
 const CONFIG = "partner_webhook_configs";
@@ -69,6 +76,18 @@ function clearDeliveryLeaseFields() {
   };
 }
 
+let lastEnqueueSkipCode: string | null = null;
+
+export function recordWebhookEnqueueSkip(code: string): void {
+  lastEnqueueSkipCode = code;
+}
+
+export function consumeLastWebhookEnqueueSkip(): string | null {
+  const code = lastEnqueueSkipCode;
+  lastEnqueueSkipCode = null;
+  return code;
+}
+
 export async function isPartnerWebhookEnabled(partnerId: string): Promise<boolean> {
   const sb = requireSupabaseAdmin();
   const { data } = await sb
@@ -84,9 +103,11 @@ export async function enqueuePartnerWebhookEvent(input: {
   eventType: PartnerWebhookEventType;
   occurredAt?: string;
   policyId?: string | null;
+  policyVersion?: number | null;
   receiptId?: string | null;
   decisionId?: string | null;
   reasonCode?: string | null;
+  outcome?: string | null;
   resourceId: string;
 }): Promise<{ ok: true; eventId: string; created: boolean } | { ok: false; error: string }> {
   const partnerId = input.partnerId.trim();
@@ -94,6 +115,18 @@ export async function enqueuePartnerWebhookEvent(input: {
 
   const enabled = await isPartnerWebhookEnabled(partnerId);
   if (!enabled) return { ok: false, error: "webhook_disabled" };
+
+  const storedType = toStoredWebhookEventType(input.eventType);
+  if (!storedType || storedType === "partner.webhook.test") {
+    recordWebhookEnqueueSkip("event_type_not_supported");
+    return { ok: false, error: "event_type_not_supported" };
+  }
+
+  const supported = await webhookOutboxSupportsStoredEventType(storedType);
+  if (!supported) {
+    recordWebhookEnqueueSkip("event_type_not_supported");
+    return { ok: false, error: "event_type_not_supported" };
+  }
 
   const eventId = randomUUID();
   const occurredAt = input.occurredAt ?? new Date().toISOString();
@@ -103,9 +136,11 @@ export async function enqueuePartnerWebhookEvent(input: {
     occurredAt,
     partnerId,
     policyId: input.policyId ?? null,
+    policyVersion: input.policyVersion ?? null,
     receiptId: input.receiptId ?? null,
     decisionId: input.decisionId ?? null,
     reasonCode: input.reasonCode ?? null,
+    outcome: input.outcome ?? null,
   });
 
   if (!webhookPayloadHasNoPii(payload)) {
@@ -114,7 +149,7 @@ export async function enqueuePartnerWebhookEvent(input: {
 
   const idempotencyKey = buildWebhookIdempotencyKey({
     partnerId,
-    eventType: input.eventType,
+    eventType: storedType,
     resourceId: input.resourceId,
   });
 
@@ -123,7 +158,7 @@ export async function enqueuePartnerWebhookEvent(input: {
     .from(OUTBOX)
     .insert({
       partner_id: partnerId,
-      event_type: input.eventType,
+      event_type: storedType,
       event_id: eventId,
       idempotency_key: idempotencyKey,
       payload,
@@ -145,7 +180,9 @@ export async function enqueuePartnerWebhookEvent(input: {
         return { ok: true, eventId: existing.event_id as string, created: false };
       }
     }
-    return { ok: false, error: error.message };
+    const code = classifyWebhookOutboxInsertError(error);
+    recordWebhookEnqueueSkip(code);
+    return { ok: false, error: code };
   }
 
   return { ok: true, eventId: mapOutboxRow(data).event_id, created: true };
@@ -155,12 +192,21 @@ export async function enqueuePartnerWebhookEvent(input: {
 export function enqueuePartnerWebhookEventBestEffort(
   input: Parameters<typeof enqueuePartnerWebhookEvent>[0],
 ): void {
-  void enqueuePartnerWebhookEvent(input).catch((err: unknown) => {
-    console.warn(
-      "partner webhook enqueue best-effort failed:",
-      err instanceof Error ? err.message : String(err),
-    );
-  });
+  void enqueuePartnerWebhookEvent(input)
+    .then((result) => {
+      if (!result.ok) {
+        recordWebhookEnqueueSkip(result.error);
+        console.warn("partner webhook enqueue skipped:", result.error);
+      }
+    })
+    .catch((err: unknown) => {
+      recordWebhookEnqueueSkip("persistence_failed");
+      console.warn(
+        "partner webhook enqueue skipped:",
+        "persistence_failed",
+      );
+      void err;
+    });
 }
 
 export async function listDispatchableWebhookEvents(limit = 25): Promise<PartnerWebhookOutboxRecord[]> {
@@ -271,8 +317,9 @@ export async function listPartnerWebhookDeliveries(input: {
   partnerId: string;
   limit?: number;
 }): Promise<Array<{
+  outbox_id: string;
   event_id: string;
-  event_type: PartnerWebhookEventType;
+  event_type: PartnerWebhookEventType | string;
   status: PartnerWebhookStatus;
   occurred_at: string;
   delivered_at: string | null;
@@ -282,20 +329,21 @@ export async function listPartnerWebhookDeliveries(input: {
   const sb = requireSupabaseAdmin();
   const { data } = await sb
     .from(OUTBOX)
-    .select("event_id, event_type, status, occurred_at, delivered_at, attempt_count, last_error_code")
+    .select("id, event_id, event_type, status, occurred_at, delivered_at, attempt_count, last_error_code")
     .eq("partner_id", input.partnerId)
     .order("occurred_at", { ascending: false })
     .limit(Math.min(input.limit ?? 50, 100));
 
-  return (data ?? []) as Array<{
-    event_id: string;
-    event_type: PartnerWebhookEventType;
-    status: PartnerWebhookStatus;
-    occurred_at: string;
-    delivered_at: string | null;
-    attempt_count: number;
-    last_error_code: string | null;
-  }>;
+  return (data ?? []).map((row) => ({
+    outbox_id: row.id as string,
+    event_id: row.event_id as string,
+    event_type: row.event_type as string,
+    status: row.status as PartnerWebhookStatus,
+    occurred_at: row.occurred_at as string,
+    delivered_at: (row.delivered_at as string | null) ?? null,
+    attempt_count: row.attempt_count as number,
+    last_error_code: (row.last_error_code as string | null) ?? null,
+  }));
 }
 
 export async function getWebhookDeliveryHealth(): Promise<Record<PartnerWebhookStatus, number>> {

@@ -178,6 +178,18 @@ export class AbraxasPartnerKit {
     }
     return this.evaluateFetchedReceipt(fetched.receipt);
   }
+
+  async verifyReceiptId(receiptId: string): Promise<PartnerKitSafeResult> {
+    const fetched = await this.fetchPublicReceipt(receiptId);
+    if (!fetched.ok) {
+      return emptyResult({
+        outcome: outcomeFromValidationErrors(fetched.errors),
+        errors: fetched.errors,
+        receipt_id: receiptId,
+      });
+    }
+    return this.evaluateFetchedReceipt(fetched.receipt);
+  }
 }
 
 export function permitProtocolAction(result: PartnerKitSafeResult): boolean {
