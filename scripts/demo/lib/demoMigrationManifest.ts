@@ -395,6 +395,16 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
     notes:
       "Launchpad hardening: tenant bound idempotency, production approval RPC, encrypted one time production key reveal envelope.",
   },
+  {
+    file: "088_partner_event_delivery_event_types.sql",
+    tier: "optional",
+    creates: [],
+    alters: ["partner_webhook_outbox.event_type CHECK"],
+    seeds: [],
+    extensions: [],
+    notes:
+      "DEMO-ONLY optional. Expands webhook outbox event types for Partner Event Delivery. Do not apply to MAIN or Production from the PR. Delivery remains best effort.",
+  },
 ];
 
 /** Map of which migration file first creates each core object. */

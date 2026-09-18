@@ -186,6 +186,15 @@ export async function setPartnerWebhookEnabled(input: {
   return { ok: true };
 }
 
+export async function removePartnerWebhookEndpoint(partnerId: string): Promise<
+  { ok: true } | { ok: false; error: string }
+> {
+  const sb = requireSupabaseAdmin();
+  const { error } = await sb.from(CONFIG).delete().eq("partner_id", partnerId);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
 export async function loadPartnerWebhookSigningSecret(partnerId: string): Promise<string | null> {
   const sb = requireSupabaseAdmin();
   const { data } = await sb

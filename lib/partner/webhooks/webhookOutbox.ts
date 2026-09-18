@@ -84,9 +84,11 @@ export async function enqueuePartnerWebhookEvent(input: {
   eventType: PartnerWebhookEventType;
   occurredAt?: string;
   policyId?: string | null;
+  policyVersion?: number | null;
   receiptId?: string | null;
   decisionId?: string | null;
   reasonCode?: string | null;
+  outcome?: string | null;
   resourceId: string;
 }): Promise<{ ok: true; eventId: string; created: boolean } | { ok: false; error: string }> {
   const partnerId = input.partnerId.trim();
@@ -103,9 +105,11 @@ export async function enqueuePartnerWebhookEvent(input: {
     occurredAt,
     partnerId,
     policyId: input.policyId ?? null,
+    policyVersion: input.policyVersion ?? null,
     receiptId: input.receiptId ?? null,
     decisionId: input.decisionId ?? null,
     reasonCode: input.reasonCode ?? null,
+    outcome: input.outcome ?? null,
   });
 
   if (!webhookPayloadHasNoPii(payload)) {
@@ -271,8 +275,9 @@ export async function listPartnerWebhookDeliveries(input: {
   partnerId: string;
   limit?: number;
 }): Promise<Array<{
+  outbox_id: string;
   event_id: string;
-  event_type: PartnerWebhookEventType;
+  event_type: PartnerWebhookEventType | string;
   status: PartnerWebhookStatus;
   occurred_at: string;
   delivered_at: string | null;
@@ -282,20 +287,21 @@ export async function listPartnerWebhookDeliveries(input: {
   const sb = requireSupabaseAdmin();
   const { data } = await sb
     .from(OUTBOX)
-    .select("event_id, event_type, status, occurred_at, delivered_at, attempt_count, last_error_code")
+    .select("id, event_id, event_type, status, occurred_at, delivered_at, attempt_count, last_error_code")
     .eq("partner_id", input.partnerId)
     .order("occurred_at", { ascending: false })
     .limit(Math.min(input.limit ?? 50, 100));
 
-  return (data ?? []) as Array<{
-    event_id: string;
-    event_type: PartnerWebhookEventType;
-    status: PartnerWebhookStatus;
-    occurred_at: string;
-    delivered_at: string | null;
-    attempt_count: number;
-    last_error_code: string | null;
-  }>;
+  return (data ?? []).map((row) => ({
+    outbox_id: row.id as string,
+    event_id: row.event_id as string,
+    event_type: row.event_type as string,
+    status: row.status as PartnerWebhookStatus,
+    occurred_at: row.occurred_at as string,
+    delivered_at: (row.delivered_at as string | null) ?? null,
+    attempt_count: row.attempt_count as number,
+    last_error_code: (row.last_error_code as string | null) ?? null,
+  }));
 }
 
 export async function getWebhookDeliveryHealth(): Promise<Record<PartnerWebhookStatus, number>> {

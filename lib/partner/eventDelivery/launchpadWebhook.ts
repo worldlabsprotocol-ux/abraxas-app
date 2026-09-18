@@ -1,0 +1,165 @@
+// FILE: lib/partner/eventDelivery/launchpadWebhook.ts
+// Partner Launchpad self-service webhook setup wrapping existing config and outbox.
+
+import {
+  getPartnerWebhookConfig,
+  removePartnerWebhookEndpoint,
+  rotatePartnerWebhookSigningSecret,
+  setPartnerWebhookEnabled,
+  upsertPartnerWebhookEndpoint,
+} from "@/lib/partner/webhooks/webhookConfigService";
+import { listPartnerWebhookDeliveries } from "@/lib/partner/webhooks/webhookOutbox";
+import { enqueuePartnerWebhookTestDelivery } from "@/lib/partner/webhooks/webhookTestDelivery";
+import { requeueFailedWebhookDelivery } from "@/lib/partner/webhooks/webhookDeadLetter";
+import { maybeEnqueueIntegrationHealthChanged } from "@/lib/partner/webhooks/webhookHooks";
+import {
+  PARTNER_EVENT_ENDPOINT_REQUIREMENTS,
+  PARTNER_EVENT_NOT_AUTHORIZATION,
+  PARTNER_EVENT_SCHEMA_VERSION,
+  PARTNER_PUBLIC_EVENT_TYPES,
+} from "@/lib/partner/eventDelivery/contract";
+import {
+  partnerDeliveryIsRedeliverable,
+  recommendPartnerActionChannel,
+  toPartnerVisibleDeliveryState,
+  toPublicPartnerEventType,
+} from "@/lib/partner/eventDelivery/mapping";
+import { isWebhookHttpsEndpointWellFormed } from "@/lib/partner/webhooks/webhookEndpointFormValidation";
+
+export function maskWebhookEndpoint(url: string): string {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname;
+    const path = parsed.pathname.length > 24 ? `${parsed.pathname.slice(0, 21)}...` : parsed.pathname;
+    return `${parsed.protocol}//${host}${path}`;
+  } catch {
+    return "configured";
+  }
+}
+
+export async function getLaunchpadWebhookOverview(input: {
+  partnerId: string;
+  policyId?: string | null;
+  policyVersion?: number | null;
+  callbackConfigured: boolean;
+}) {
+  const config = await getPartnerWebhookConfig(input.partnerId);
+  const webhookConfigured = Boolean(config?.endpoint_url?.trim());
+  const webhookEnabled = config?.enabled === true;
+  const deliveries = webhookConfigured
+    ? await listPartnerWebhookDeliveries({ partnerId: input.partnerId, limit: 25 })
+    : [];
+  const latest = deliveries[0] ?? null;
+  const visibleDeliveries = deliveries.map((row) => {
+    const visible = toPartnerVisibleDeliveryState({
+      status: row.status,
+      attempt_count: row.attempt_count,
+    });
+    return {
+      outbox_id: row.outbox_id,
+      event_id: row.event_id,
+      event_type: toPublicPartnerEventType(String(row.event_type)) ?? row.event_type,
+      visible_state: visible,
+      occurred_at: row.occurred_at,
+      delivered_at: row.delivered_at,
+      attempt_count: row.attempt_count,
+      last_error_code: row.last_error_code,
+      redelivery_eligible: partnerDeliveryIsRedeliverable({
+        status: row.status,
+        webhookEnabled,
+      }),
+    };
+  });
+
+  return {
+    schema_version: PARTNER_EVENT_SCHEMA_VERSION,
+    event_types: PARTNER_PUBLIC_EVENT_TYPES,
+    endpoint_requirements: PARTNER_EVENT_ENDPOINT_REQUIREMENTS,
+    disclaimer: PARTNER_EVENT_NOT_AUTHORIZATION,
+    webhook_configured: webhookConfigured,
+    webhook_enabled: webhookEnabled,
+    signing_secret_available: Boolean(config?.signing_secret_prefix),
+    signing_secret_prefix: config?.signing_secret_prefix ?? null,
+    endpoint_display: config?.endpoint_url ? maskWebhookEndpoint(config.endpoint_url) : null,
+    delivery_not_guaranteed: true,
+    latest_delivery: visibleDeliveries[0] ?? null,
+    latest_delivery_status: latest
+      ? toPartnerVisibleDeliveryState({ status: latest.status, attempt_count: latest.attempt_count })
+      : null,
+    delivery_failure_blocker: visibleDeliveries.some(
+      (row) => row.visible_state === "failed" || row.visible_state === "dead-lettered",
+    ),
+    partner_action_channel: recommendPartnerActionChannel({
+      webhookConfigured,
+      webhookEnabled,
+      callbackConfigured: input.callbackConfigured,
+    }),
+    deliveries: visibleDeliveries,
+  };
+}
+
+export async function saveLaunchpadWebhookEndpoint(input: {
+  partnerId: string;
+  endpointUrl: string;
+  policyId?: string | null;
+  policyVersion?: number | null;
+}) {
+  const form = isWebhookHttpsEndpointWellFormed(input.endpointUrl);
+  if (!form.ok) return { ok: false as const, error: form.error };
+
+  const result = await upsertPartnerWebhookEndpoint({
+    partnerId: input.partnerId,
+    endpointUrl: input.endpointUrl,
+  });
+  if (!result.ok) return result;
+
+  maybeEnqueueIntegrationHealthChanged({
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    policyVersion: input.policyVersion,
+    reasonCode: "endpoint_saved",
+  });
+
+  return result;
+}
+
+export async function rotateLaunchpadWebhookSecret(partnerId: string) {
+  return rotatePartnerWebhookSigningSecret(partnerId);
+}
+
+export async function setLaunchpadWebhookEnabled(input: {
+  partnerId: string;
+  enabled: boolean;
+  policyId?: string | null;
+  policyVersion?: number | null;
+}) {
+  const result = await setPartnerWebhookEnabled(input);
+  if (result.ok) {
+    maybeEnqueueIntegrationHealthChanged({
+      partnerId: input.partnerId,
+      policyId: input.policyId,
+      policyVersion: input.policyVersion,
+      reasonCode: input.enabled ? "delivery_enabled" : "delivery_disabled",
+    });
+  }
+  return result;
+}
+
+export async function removeLaunchpadWebhookEndpoint(partnerId: string) {
+  return removePartnerWebhookEndpoint(partnerId);
+}
+
+export async function enqueueLaunchpadWebhookTest(partnerId: string) {
+  return enqueuePartnerWebhookTestDelivery(partnerId);
+}
+
+export async function redeliverLaunchpadWebhook(input: {
+  partnerId: string;
+  outboxId: string;
+}) {
+  return requeueFailedWebhookDelivery({
+    outboxId: input.outboxId,
+    partnerId: input.partnerId,
+    retriedBy: `launchpad:${input.partnerId}`,
+  });
+}

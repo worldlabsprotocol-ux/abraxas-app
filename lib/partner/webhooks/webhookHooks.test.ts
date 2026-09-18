@@ -28,7 +28,7 @@ describe("webhook hooks non-blocking", () => {
       decisionId: "decision-a",
     });
     expect(enqueueMock).toHaveBeenCalledWith(expect.objectContaining({
-      eventType: "partner.receipt.issued",
+      eventType: "receipt.issued",
       partnerId: "partner-a",
       receiptId: "dr_1",
     }));

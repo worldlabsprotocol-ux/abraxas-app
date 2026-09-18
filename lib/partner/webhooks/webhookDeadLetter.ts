@@ -55,6 +55,7 @@ export async function listFailedWebhookDeliveries(input?: {
 export async function requeueFailedWebhookDelivery(input: {
   outboxId: string;
   retriedBy?: string;
+  partnerId?: string;
 }): Promise<{ ok: true; event_id: string } | { ok: false; error: string }> {
   const sb = requireSupabaseAdmin();
   const { data: row } = await sb
@@ -64,6 +65,9 @@ export async function requeueFailedWebhookDelivery(input: {
     .maybeSingle();
 
   if (!row) return { ok: false, error: "event_not_found" };
+  if (input.partnerId && row.partner_id !== input.partnerId) {
+    return { ok: false, error: "event_not_found" };
+  }
   if (row.status !== "failed") return { ok: false, error: "event_not_failed" };
 
   const partnerId = row.partner_id as string;

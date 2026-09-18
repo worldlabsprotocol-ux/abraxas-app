@@ -7,16 +7,27 @@ import type {
   PartnerWebhookTestPayload,
 } from "@/lib/partner/webhooks/types";
 import { PARTNER_WEBHOOK_TEST_EVENT_TYPE } from "@/lib/partner/webhooks/types";
+import {
+  PARTNER_EVENT_SCHEMA_VERSION,
+  PARTNER_EVENT_SIGNATURE_METADATA,
+  outcomeForPublicEventType,
+} from "@/lib/partner/eventDelivery/contract";
+import { toPublicPartnerEventType } from "@/lib/partner/eventDelivery/mapping";
 
 export const WEBHOOK_PAYLOAD_ALLOWED_KEYS = [
   "event_id",
+  "schema_version",
   "event_type",
+  "timestamp",
   "occurred_at",
   "partner_id",
   "policy_id",
+  "policy_version",
   "receipt_id",
   "decision_id",
+  "outcome",
   "reason_code",
+  "signature",
 ] as const;
 
 export const WEBHOOK_TEST_PAYLOAD_ALLOWED_KEYS = [
@@ -46,12 +57,24 @@ export const WEBHOOK_PII_FORBIDDEN_KEYS = [
   "claims_json",
   "credential_jwt",
   "jwt",
+  "id_token",
+  "oauth_token",
   "document",
+  "document_image",
+  "image",
   "selfie",
   "biometric",
   "storage_path",
   "admin_note",
   "reviewer_note",
+  "date_of_birth",
+  "dob",
+  "legal_name",
+  "full_name",
+  "given_name",
+  "family_name",
+  "profile",
+  "user_profile",
 ] as const;
 
 export const WEBHOOK_NOTIFICATION_DISCLAIMER =
@@ -63,18 +86,29 @@ export function buildPartnerWebhookPayload(input: {
   occurredAt: string;
   partnerId: string;
   policyId?: string | null;
+  policyVersion?: number | null;
   receiptId?: string | null;
   decisionId?: string | null;
   reasonCode?: string | null;
+  outcome?: string | null;
 }): PartnerWebhookPayload {
+  const publicType = toPublicPartnerEventType(input.eventType);
+  const outcome = input.outcome
+    ?? (publicType ? outcomeForPublicEventType(publicType) : null);
+
   const payload: PartnerWebhookPayload = {
     event_id: input.eventId,
+    schema_version: PARTNER_EVENT_SCHEMA_VERSION,
     event_type: input.eventType,
+    timestamp: input.occurredAt,
     occurred_at: input.occurredAt,
     partner_id: input.partnerId,
+    policy_id: input.policyId ?? null,
+    policy_version: typeof input.policyVersion === "number" ? input.policyVersion : null,
+    outcome,
+    signature: { ...PARTNER_EVENT_SIGNATURE_METADATA },
   };
 
-  if (input.policyId) payload.policy_id = input.policyId;
   if (input.receiptId) payload.receipt_id = input.receiptId;
   if (input.decisionId) payload.decision_id = input.decisionId;
   if (input.reasonCode) payload.reason_code = input.reasonCode;

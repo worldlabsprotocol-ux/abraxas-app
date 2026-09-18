@@ -45,6 +45,7 @@ describe("Launchpad integration health", () => {
     expect(health.overall).toBe("action_required");
     expect(health.checks.find((check) => check.id === "production")?.detail).toContain("All automated safety checks passed");
     expect(health.checks.find((check) => check.id === "policy_pack")?.detail).toContain("Age 21");
+    expect(health.checks.find((check) => check.id === "webhook")?.status).toBe("action_required");
   });
 
   it("keeps collector redemption sandbox-only even after the harness passes", () => {
@@ -70,7 +71,13 @@ describe("Launchpad integration health", () => {
       activeProductionKey: true,
       verifiedHostnames: ["partner.example.com"],
       harnessCompleted: REQUIRED_HARNESS_SCENARIOS,
+      webhookConfigured: true,
+      webhookEnabled: true,
+      signingSecretAvailable: true,
+      latestDeliveryStatus: "delivered",
+      deliveryFailureBlocker: false,
     });
     expect(health.overall).toBe("pass");
+    expect(health.checks.find((check) => check.id === "production")?.status).toBe("pass");
   });
 });

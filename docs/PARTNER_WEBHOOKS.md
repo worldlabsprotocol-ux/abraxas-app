@@ -68,6 +68,8 @@ Never includes email, wallet, OAuth subject, JWTs, claims, documents, or storage
 
 Delivery health: pending, delivering, delivered, retrying, failed.
 
+Partner Launchpad self-service and the versioned public event contract live in `docs/PARTNER_EVENT_DELIVERY.md`. Public types (`receipt.issued`, `receipt.expired`, `receipt.revoked`, `decision.denied`, `integration.health_changed`) require DEMO-only migration `088_partner_event_delivery_event_types.sql`.
+
 ## Operator dead-letter recovery
 
 Admin UI (`/admin/partners` → Webhooks) lists failed deliveries (metadata only) and supports manual retry:

@@ -6,6 +6,11 @@ export const PARTNER_WEBHOOK_EVENT_TYPES = [
   "partner.receipt.revoked",
   "partner.access.revoked",
   "partner.credential.revoked",
+  "receipt.issued",
+  "receipt.expired",
+  "receipt.revoked",
+  "decision.denied",
+  "integration.health_changed",
 ] as const;
 
 export const PARTNER_WEBHOOK_TEST_EVENT_TYPE = "partner.webhook.test" as const;
@@ -34,13 +39,24 @@ export type PartnerWebhookStatus = (typeof PARTNER_WEBHOOK_STATUSES)[number];
 
 export interface PartnerWebhookPayload {
   event_id: string;
+  schema_version?: string;
   event_type: PartnerWebhookEventType;
+  timestamp?: string;
   occurred_at: string;
   partner_id: string;
   policy_id?: string | null;
+  policy_version?: number | null;
   receipt_id?: string | null;
   decision_id?: string | null;
+  outcome?: string | null;
   reason_code?: string | null;
+  signature?: {
+    alg: string;
+    version: string;
+    header: string;
+    timestamp_header: string;
+    id_header: string;
+  };
 }
 
 export interface PartnerWebhookConfigRecord {

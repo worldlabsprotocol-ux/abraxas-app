@@ -4,6 +4,8 @@ import { NextRequest } from "next/server";
 import { launchpadError, launchpadJson, requireLaunchpadSession } from "@/lib/partner/launchpad/apiHelpers";
 import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
 import { buildLaunchpadIntegrationHealth } from "@/lib/partner/launchpad/integrationHealth";
+import { getLaunchpadWebhookOverview } from "@/lib/partner/eventDelivery/launchpadWebhook";
+import { hasProductionLaunchpadCallback } from "@/lib/partner/launchpad/productionCallbackReadiness";
 import { harnessPassedFromActivity } from "@/lib/partner/launchpad/partnerTestHarness";
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
@@ -35,11 +37,22 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     metadata?: Record<string, unknown>;
   }>);
   const active = new Set((keys ?? []).filter((key) => !key.revoked_at).map((key) => key.id));
+  const webhook = await getLaunchpadWebhookOverview({
+    partnerId: auth.session.partnerId,
+    policyId: app.policy_id,
+    policyVersion: app.policy_version,
+    callbackConfigured: hasProductionLaunchpadCallback(app.allowed_return_urls),
+  });
   return launchpadJson(buildLaunchpadIntegrationHealth({
     application: app,
     activeSandboxKey: Boolean(app.api_key_id && active.has(app.api_key_id)),
     activeProductionKey: Boolean(app.production_api_key_id && active.has(app.production_api_key_id)),
     verifiedHostnames: (domains ?? []).map((domain) => String(domain.hostname)),
     harnessCompleted: harness.completed,
+    webhookConfigured: webhook.webhook_configured,
+    webhookEnabled: webhook.webhook_enabled,
+    signingSecretAvailable: webhook.signing_secret_available,
+    latestDeliveryStatus: webhook.latest_delivery_status,
+    deliveryFailureBlocker: webhook.delivery_failure_blocker,
   }));
 }
