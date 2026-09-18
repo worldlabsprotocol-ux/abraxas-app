@@ -70,8 +70,9 @@ if (receipt.policy_id !== "${app.policy_id}") throw new Error("policy_mismatch")
     ],
     production_checklist: [
       "Complete sandbox integration tests in the Launchpad test console.",
-      "Submit a production access request with approved production return URLs.",
-      "Receive operator approval and a production scoped API key.",
+      "Add an approved HTTPS production return URL.",
+      "Publish the exact DNS TXT challenge and let Launchpad verify domain control.",
+      "Activate production automatically and reveal the one-time production API key.",
       "Verify receipts server side before granting access.",
     ],
   };

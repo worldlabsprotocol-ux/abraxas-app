@@ -11,6 +11,8 @@ import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resol
 import { recordLaunchpadActivity } from "@/lib/partner/launchpad/recordActivity";
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
 import { hasProductionLaunchpadCallback } from "@/lib/partner/launchpad/productionCallbackReadiness";
+import { isVerifiedDomainForCallbacks } from "@/lib/partner/launchpad/domainVerification";
+import { approveLaunchpadProductionAccess } from "@/lib/partner/launchpad/productionApproval";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -44,6 +46,22 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   }
 
   const sb = requireSupabaseAdmin();
+  const { data: verifiedDomains } = await sb
+    .from("partner_launchpad_domain_verifications")
+    .select("hostname")
+    .eq("application_id", params.id)
+    .eq("partner_id", auth.session.partnerId)
+    .eq("status", "verified");
+  if (!isVerifiedDomainForCallbacks({
+    allowedReturnUrls: app.allowed_return_urls,
+    verifiedHostnames: (verifiedDomains ?? []).map((row) => String(row.hostname)),
+  })) {
+    return launchpadError(
+      LAUNCHPAD_PUBLIC_ERRORS.return_url_rejected,
+      400,
+      "production_domain_verification_required",
+    );
+  }
   const { data, error } = await sb
     .from("partner_production_access_requests")
     .insert({
@@ -63,8 +81,23 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     applicationId: params.id,
     partnerId: auth.session.partnerId,
     eventType: "production_access_requested",
-    publicCode: "pending",
+    publicCode: "automated_gate_passed",
   });
 
-  return launchpadJson({ ok: true, request: data });
+  // The database RPC keeps key creation, application state, and audit logging atomic.
+  // This is an automated approval: no generic operator queue for a verified integration.
+  const approved = await approveLaunchpadProductionAccess({
+    requestId: data.id,
+    reviewerNotes: "Automated production safety gate passed",
+  });
+  if (!approved.ok) {
+    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.production_request_failed, 500, approved.code);
+  }
+
+  return launchpadJson({
+    ok: true,
+    automated_activation: true,
+    key_prefix: approved.key_prefix,
+    request: { id: data.id, status: "approved", created_at: data.created_at },
+  });
 }

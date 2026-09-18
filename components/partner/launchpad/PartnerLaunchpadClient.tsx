@@ -53,6 +53,15 @@ interface ActivityEvent {
   created_at: string;
 }
 
+interface DomainVerification {
+  hostname: string;
+  challenge_token: string;
+  status: "pending" | "verified" | "expired" | "failed";
+  expires_at: string;
+  verified_at: string | null;
+  last_error: string | null;
+}
+
 const STEPS: { id: WizardStep; label: string }[] = [
   { id: "application", label: "Application" },
   { id: "policy", label: "Proof" },
@@ -71,11 +80,14 @@ export function PartnerLaunchpadClient() {
   const [error, setError] = useState("");
   const [apiKeyInput, setApiKeyInput] = useState("");
   const [revealedKey, setRevealedKey] = useState<string | null>(null);
+  const [revealedProductionKey, setRevealedProductionKey] = useState<string | null>(null);
   const [activeAppId, setActiveAppId] = useState<string | null>(null);
   const [docs, setDocs] = useState<LaunchpadIntegrationDocs | null>(null);
   const [activity, setActivity] = useState<ActivityEvent[]>([]);
   const [testResult, setTestResult] = useState<Record<string, unknown> | null>(null);
   const [copyFeedback, setCopyFeedback] = useState("");
+  const [domainVerifications, setDomainVerifications] = useState<DomainVerification[]>([]);
+  const [domainChallenge, setDomainChallenge] = useState<{ hostname: string; record_name: string; record_value: string; expires_at: string } | null>(null);
 
   const [applicationName, setApplicationName] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -96,6 +108,10 @@ export function PartnerLaunchpadClient() {
   const productionCallbackReady = activeApp
     ? hasProductionLaunchpadCallback(activeApp.allowed_return_urls)
     : false;
+  const productionCallback = activeApp?.allowed_return_urls.find(hasProductionLaunchpadCallback) ?? null;
+  const productionDomainVerified = Boolean(productionCallback && domainVerifications.some((verification) => {
+    try { return verification.status === "verified" && new URL(productionCallback).hostname.toLowerCase() === verification.hostname.toLowerCase(); } catch { return false; }
+  }));
 
   const refreshWorkspace = useCallback(async () => {
     const res = await fetch("/api/launchpad/applications", { credentials: "include" });
@@ -139,6 +155,15 @@ export function PartnerLaunchpadClient() {
       if (activityData.events) setActivity(activityData.events);
     })();
   }, [activeApp]);
+
+  const refreshDomainVerification = useCallback(async () => {
+    if (!activeApp) return;
+    const res = await fetch(`/api/launchpad/applications/${activeApp.id}/domain-verification`, { credentials: "include" });
+    const data = await res.json();
+    if (res.ok) setDomainVerifications(data.verifications ?? []);
+  }, [activeApp]);
+
+  useEffect(() => { void refreshDomainVerification(); }, [refreshDomainVerification]);
 
   useEffect(() => {
     if (applicationName && !partnerId) {
@@ -267,8 +292,8 @@ export function PartnerLaunchpadClient() {
 
   async function requestProduction() {
     if (!activeApp) return;
-    if (!productionCallbackReady) {
-      setError("Add an HTTPS callback URL before requesting production access.");
+    if (!productionCallbackReady || !productionDomainVerified) {
+      setError("Add an HTTPS callback URL and verify its domain before activating production.");
       setStep("destinations");
       return;
     }
@@ -276,11 +301,43 @@ export function PartnerLaunchpadClient() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ request_notes: "Ready for production review" }),
+      body: JSON.stringify({ request_notes: "Automated production safety gate" }),
     });
     const data = await res.json();
-    if (!res.ok) setError(data.error ?? "Request failed");
-    else setStep("production");
+    if (!res.ok) { setError(data.error ?? "Activation failed"); return; }
+    const keyRes = await fetch(`/api/launchpad/applications/${activeApp.id}/credentials/reveal-production`, {
+      method: "POST", credentials: "include",
+    });
+    const keyData = await keyRes.json();
+    if (keyRes.ok && keyData.api_key) setRevealedProductionKey(keyData.api_key);
+    else if (!keyRes.ok) setError(keyData.error ?? "Production activated, but the key could not be revealed.");
+    await refreshWorkspace();
+    setStep("production");
+  }
+
+  async function createDomainChallenge() {
+    if (!activeApp || !productionCallback) return;
+    setError("");
+    const res = await fetch(`/api/launchpad/applications/${activeApp.id}/domain-verification`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
+      body: JSON.stringify({ return_url: productionCallback }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setError(data.error ?? "Could not create domain challenge"); return; }
+    setDomainChallenge(data.verification);
+    await refreshDomainVerification();
+  }
+
+  async function verifyDomainChallenge() {
+    if (!activeApp || !productionCallback) return;
+    setError("");
+    const res = await fetch(`/api/launchpad/applications/${activeApp.id}/domain-verification`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
+      body: JSON.stringify({ return_url: productionCallback, action: "verify" }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setError(data.error ?? "DNS record is not visible yet. Wait a few minutes and try again."); return; }
+    await refreshDomainVerification();
   }
 
   function copyText(text: string) {
@@ -401,7 +458,7 @@ export function PartnerLaunchpadClient() {
               }}
             >
               <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: "0.82rem" }}>Custom protocol policy</div>
-              <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", marginTop: 4 }}>Choose claim requirements for sandbox. Production always requires review.</div>
+              <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", marginTop: 4 }}>Choose constrained claim requirements. Production activates automatically after the security gate passes.</div>
             </button>
           </div>
           {policyTemplateId === CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID && (
@@ -511,22 +568,44 @@ export function PartnerLaunchpadClient() {
             </details>
           )}
           <div style={{ marginTop: "0.75rem" }}>
-            <Btn size="sm" onClick={() => setStep("production")}>Request production access</Btn>
+            <Btn size="sm" onClick={() => setStep("production")}>Open production safety gate</Btn>
           </div>
         </ContentCard>
       )}
 
       {step === "production" && (
-        <ContentCard title="Production access">
+        <ContentCard title="Automated production safety gate">
           <p style={bodyText}>
-            Submit a production access request for operator review. Approved applications receive production scoped credentials and return URL validation.
+            Production activates automatically after Abraxas verifies your callback domain. No generic review queue is needed for a standard integration.
           </p>
           {!productionCallbackReady && (
             <p style={{ ...bodyText, color: "#f59e0b" }}>
-              Add an HTTPS callback URL in Destinations before requesting production access. Localhost is sandbox-only.
+              Add an HTTPS callback URL in Destinations first. Localhost is sandbox-only.
             </p>
           )}
-          <Btn size="sm" onClick={() => void requestProduction()} disabled={!productionCallbackReady}>Submit production request</Btn>
+          {productionCallbackReady && !productionDomainVerified && (
+            <div style={{ marginTop: "0.75rem", padding: "0.8rem", border: "1px solid var(--border)", borderRadius: 10 }}>
+              <p style={bodyText}>Prove you control <code style={{ fontFamily: MONO }}>{new URL(productionCallback!).hostname}</code>. Abraxas will only activate a production callback on a verified domain.</p>
+              {!domainChallenge ? (
+                <Btn size="sm" onClick={() => void createDomainChallenge()}>Create DNS challenge</Btn>
+              ) : (
+                <>
+                  <p style={{ ...bodyText, marginTop: "0.7rem" }}>Create this DNS TXT record:</p>
+                  <pre style={codeBlockStyle}>{domainChallenge.record_name}{"\n"}{domainChallenge.record_value}</pre>
+                  <Btn size="sm" onClick={() => void verifyDomainChallenge()}>Check DNS record</Btn>
+                </>
+              )}
+            </div>
+          )}
+          {productionDomainVerified && <p style={{ ...bodyText, color: "#10B981" }}>Domain verified. Your integration can activate production automatically.</p>}
+          <Btn size="sm" onClick={() => void requestProduction()} disabled={!productionCallbackReady || !productionDomainVerified}>Activate production automatically</Btn>
+          {revealedProductionKey && (
+            <div style={{ marginTop: "0.85rem" }}>
+              <p style={bodyText}>Copy this production API key now. It will not be shown again.</p>
+              <pre style={codeBlockStyle}>{revealedProductionKey}</pre>
+              <Btn size="sm" variant="secondary" onClick={() => copyText(revealedProductionKey)}>Copy production API key</Btn>
+            </div>
+          )}
           <p style={{ ...bodyText, marginTop: "0.75rem" }}>
             Review the <Link href="/good-trouble" style={{ color: "var(--accent)" }}>Good Trouble integration case study</Link> for the pattern this launchpad generalizes.
           </p>
