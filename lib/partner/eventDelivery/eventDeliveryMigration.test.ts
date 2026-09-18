@@ -16,6 +16,6 @@ describe("088 partner event delivery migration", () => {
     expect(sql).toContain("integration.health_changed");
     expect(sql).toContain("partner.receipt.issued");
     expect(sql).toContain("partner.webhook.test");
-    expect(sql).not.toMatch(/MAIN|production apply/i);
+    expect(sql).toMatch(/Do not apply to MAIN or Production/i);
   });
 });
