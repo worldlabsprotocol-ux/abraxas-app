@@ -4,6 +4,7 @@ import { describe, expect, it, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 import {
   checkLaunchpadRateLimit,
+  checkLaunchpadTenantRateLimit,
   resetLaunchpadRateLimitStoreForTests,
 } from "@/lib/partner/launchpad/rateLimit";
 
@@ -23,5 +24,14 @@ describe("launchpad rate limit", () => {
     if (!blocked.allowed) {
       expect(blocked.retryAfterSec).toBeGreaterThan(0);
     }
+  });
+
+  it("scopes sandbox readiness limits by tenant", () => {
+    const req = new NextRequest("http://localhost/api/launchpad/sandbox-readiness/run", {
+      headers: { "x-forwarded-for": "203.0.113.11" },
+    });
+    expect(checkLaunchpadTenantRateLimit(req, "/api/launchpad/sandbox-readiness/run", "partner-a", 1).allowed).toBe(true);
+    expect(checkLaunchpadTenantRateLimit(req, "/api/launchpad/sandbox-readiness/run", "partner-a", 1).allowed).toBe(false);
+    expect(checkLaunchpadTenantRateLimit(req, "/api/launchpad/sandbox-readiness/run", "partner-b", 1).allowed).toBe(true);
   });
 });
