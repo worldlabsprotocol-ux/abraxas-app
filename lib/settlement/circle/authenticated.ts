@@ -1,62 +1,49 @@
 // FILE: lib/settlement/circle/authenticated.ts
-// Only the Circle adapter may seal a provider result. Plain objects cannot settle.
+// Official Circle transaction-state mapping. Sealing lives in authenticated.server.ts.
 
-import { CIRCLE_CURRENCY, CIRCLE_NETWORK } from "@/lib/settlement/circle/constants";
+import {
+  CIRCLE_OFFICIAL_TRANSACTION_STATES,
+  CIRCLE_TERMINAL_TRANSACTION_STATES,
+  type CircleIntentState,
+  type CircleProviderState,
+} from "@/lib/settlement/circle/constants";
 
-const CIRCLE_AUTHENTICATED = Symbol.for("abraxas.circle.authenticated");
-
-export type CircleProviderState =
-  | "QUEUED"
-  | "PENDING"
-  | "INITIATED"
-  | "BROADCASTED"
-  | "COMPLETE"
-  | "FAILED"
-  | "CANCELLED"
-  | "DENIED";
+export type { CircleProviderState };
 
 export interface CircleSafeTransfer {
   providerRequestRef: string;
   circleTransactionId: string | null;
-  network: typeof CIRCLE_NETWORK;
-  currency: typeof CIRCLE_CURRENCY;
+  network: "ARC-TESTNET";
+  currency: "USDC";
   amountMinor: number;
   providerState: CircleProviderState;
   occurredAt: string;
 }
 
-export type CircleAuthenticatedResult = CircleSafeTransfer & {
-  readonly [CIRCLE_AUTHENTICATED]: true;
-};
-
-export function sealCircleAuthenticatedResult(input: CircleSafeTransfer): CircleAuthenticatedResult {
-  if (input.network !== CIRCLE_NETWORK) {
-    throw new Error("circle_wrong_network");
-  }
-  if (input.currency !== CIRCLE_CURRENCY) {
-    throw new Error("circle_wrong_currency");
-  }
-  if (!input.providerRequestRef.trim()) {
-    throw new Error("circle_missing_request_ref");
-  }
-  return {
-    ...input,
-    [CIRCLE_AUTHENTICATED]: true,
-  };
+export function parseOfficialProviderState(value: unknown): CircleProviderState | null {
+  if (typeof value !== "string") return null;
+  const upper = value.toUpperCase();
+  return (CIRCLE_OFFICIAL_TRANSACTION_STATES as readonly string[]).includes(upper)
+    ? upper as CircleProviderState
+    : null;
 }
 
-export function isCircleAuthenticatedResult(value: unknown): value is CircleAuthenticatedResult {
-  return Boolean(
-    value
-    && typeof value === "object"
-    && (value as { [CIRCLE_AUTHENTICATED]?: unknown })[CIRCLE_AUTHENTICATED] === true,
-  );
+export function isTerminalProviderState(
+  state: CircleProviderState,
+): state is (typeof CIRCLE_TERMINAL_TRANSACTION_STATES)[number] {
+  return (CIRCLE_TERMINAL_TRANSACTION_STATES as readonly string[]).includes(state);
 }
 
-export function toSettledState(providerState: CircleProviderState): "submitted" | "settled" | "failed" {
+/**
+ * COMPLETE is the only official final successful state.
+ * FAILED / DENIED → failed. CANCELLED → cancelled.
+ * Non-final official states stay submitted (retrying).
+ */
+export function mapOfficialProviderStateToIntent(
+  providerState: CircleProviderState,
+): CircleIntentState {
   if (providerState === "COMPLETE") return "settled";
-  if (providerState === "FAILED" || providerState === "CANCELLED" || providerState === "DENIED") {
-    return "failed";
-  }
+  if (providerState === "CANCELLED") return "cancelled";
+  if (providerState === "FAILED" || providerState === "DENIED") return "failed";
   return "submitted";
 }

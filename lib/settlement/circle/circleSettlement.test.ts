@@ -1,16 +1,14 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import { parseAmountMinor, formatUsdcFromMinor, parseUsdcStringToMinor } from "@/lib/settlement/circle/amount";
 import {
   applyCircleProviderResult,
   rejectClientProvidedSettlementProof,
 } from "@/lib/settlement/circle/execute";
-import {
-  isCircleAuthenticatedResult,
-  sealCircleAuthenticatedResult,
-} from "@/lib/settlement/circle/authenticated";
+import { isCircleAuthenticatedResult, sealCircleAuthenticatedResult } from "@/lib/settlement/circle/authenticated.server";
 import {
   credentialsReady,
   readCircleCredentialProbe,
+  toPublicCircleAvailability,
 } from "@/lib/settlement/circle/availability";
 import { CIRCLE_PUBLIC_CODES } from "@/lib/settlement/circle/codes";
 import {
@@ -19,13 +17,15 @@ import {
 } from "@/lib/settlement/circle/evidence";
 import type { SettlementIntentRow } from "@/lib/settlement/circle/store";
 import { CIRCLE_CURRENCY, CIRCLE_NETWORK } from "@/lib/settlement/circle/constants";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 function intent(overrides: Partial<SettlementIntentRow> = {}): SettlementIntentRow {
   return {
     id: "intent-1",
     application_id: "app-1",
     partner_id: "acme",
-    idempotency_key: "demo-1",
+    idempotency_key: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
     state: "pending",
     network: CIRCLE_NETWORK,
     currency: CIRCLE_CURRENCY,
@@ -61,13 +61,14 @@ describe("Circle integer USDC amounts", () => {
   });
 });
 
-describe("Circle credential probe", () => {
+describe("Circle credential probe and public availability", () => {
   const keys = [
     "CIRCLE_API_KEY",
     "CIRCLE_ENTITY_SECRET",
     "CIRCLE_WALLET_SET_ID",
     "CIRCLE_DEMO_SOURCE_WALLET_ID",
     "CIRCLE_DEMO_DESTINATION_WALLET_ID",
+    "CIRCLE_ARC_TESTNET_ENABLED",
     "VERCEL_ENV",
     "ABRAXAS_RUNTIME_ENV",
   ] as const;
@@ -85,9 +86,22 @@ describe("Circle credential probe", () => {
     }
   });
 
+  function readySecrets() {
+    process.env.CIRCLE_API_KEY = "TEST_API_KEY:not-a-real-key";
+    process.env.CIRCLE_ENTITY_SECRET = "aa".repeat(32);
+    process.env.CIRCLE_WALLET_SET_ID = "wallet-set";
+    process.env.CIRCLE_DEMO_SOURCE_WALLET_ID = "source";
+    process.env.CIRCLE_DEMO_DESTINATION_WALLET_ID = "dest";
+  }
+
   it("is unavailable without credentials", () => {
     const probe = readCircleCredentialProbe();
     expect(credentialsReady(probe)).toBe(false);
+    const publicAvailability = toPublicCircleAvailability({ schemaReady: true, credentials: probe });
+    expect(publicAvailability.credentials_status).toBe("unavailable");
+    expect(JSON.stringify(publicAvailability)).not.toContain("api_key");
+    expect(JSON.stringify(publicAvailability)).not.toContain("entity_secret");
+    expect(JSON.stringify(publicAvailability)).not.toContain("wallet_set");
   });
 
   it("blocks live Circle API keys", () => {
@@ -96,21 +110,41 @@ describe("Circle credential probe", () => {
     process.env.CIRCLE_WALLET_SET_ID = "wallet-set";
     process.env.CIRCLE_DEMO_SOURCE_WALLET_ID = "source";
     process.env.CIRCLE_DEMO_DESTINATION_WALLET_ID = "dest";
+    process.env.CIRCLE_ARC_TESTNET_ENABLED = "true";
+    process.env.VERCEL_ENV = "preview";
     const probe = readCircleCredentialProbe();
     expect(probe.live_key_blocked).toBe(true);
     expect(credentialsReady(probe)).toBe(false);
   });
 
-  it("blocks Production runtime", () => {
+  it("blocks Production runtime even with the testnet flag", () => {
+    readySecrets();
+    process.env.CIRCLE_ARC_TESTNET_ENABLED = "true";
     process.env.VERCEL_ENV = "production";
-    process.env.CIRCLE_API_KEY = "TEST_API_KEY:not-a-real-key";
-    process.env.CIRCLE_ENTITY_SECRET = "aa".repeat(32);
-    process.env.CIRCLE_WALLET_SET_ID = "wallet-set";
-    process.env.CIRCLE_DEMO_SOURCE_WALLET_ID = "source";
-    process.env.CIRCLE_DEMO_DESTINATION_WALLET_ID = "dest";
     const probe = readCircleCredentialProbe();
     expect(probe.production_env_blocked).toBe(true);
     expect(credentialsReady(probe)).toBe(false);
+    expect(toPublicCircleAvailability({ schemaReady: true, credentials: probe }).code)
+      .toBe("circle_production_blocked");
+  });
+
+  it("blocks local and staging unless explicitly allowlisted for DEMO testnet", () => {
+    readySecrets();
+    process.env.VERCEL_ENV = "staging";
+    const blocked = readCircleCredentialProbe();
+    expect(blocked.environment_blocked).toBe(true);
+    expect(credentialsReady(blocked)).toBe(false);
+    expect(toPublicCircleAvailability({ schemaReady: true, credentials: blocked }).code)
+      .toBe("circle_environment_blocked");
+
+    process.env.CIRCLE_ARC_TESTNET_ENABLED = "true";
+    process.env.ABRAXAS_RUNTIME_ENV = "demo";
+    delete process.env.VERCEL_ENV;
+    const allowed = readCircleCredentialProbe();
+    expect(allowed.environment_blocked).toBe(false);
+    expect(credentialsReady(allowed)).toBe(true);
+    expect(toPublicCircleAvailability({ schemaReady: true, credentials: allowed }).credentials_status)
+      .toBe("configured");
   });
 });
 
@@ -170,12 +204,12 @@ describe("client-supplied settlement proof", () => {
       .toBe(CIRCLE_PUBLIC_CODES.client_hash_rejected);
     expect(rejectClientProvidedSettlementProof({ wallet_address: "0xabc" }))
       .toBe(CIRCLE_PUBLIC_CODES.client_hash_rejected);
-    expect(rejectClientProvidedSettlementProof({ receipt_id: "r1", idempotency_key: "k1" }))
+    expect(rejectClientProvidedSettlementProof({ receipt_id: "r1", idempotency_key: "demo-arc-settlement-1" }))
       .toBeNull();
   });
 });
 
-describe("Circle safe evidence", () => {
+describe("Circle safe evidence and public module boundary", () => {
   it("accepts the DEMO fixture and rejects secrets or production activation", () => {
     expect(validateCircleSafeEvidence(circleEvidenceConformanceFixture()).ok).toBe(true);
     expect(validateCircleSafeEvidence({
@@ -186,5 +220,17 @@ describe("Circle safe evidence", () => {
       ...circleEvidenceConformanceFixture(),
       activates_production: true,
     }).ok).toBe(false);
+    expect(validateCircleSafeEvidence({
+      ...circleEvidenceConformanceFixture(),
+      idempotency_key: "demo-arc-settlement-1",
+    }).ok).toBe(false);
+  });
+
+  it("does not export test sealing helpers from the public production module", () => {
+    const index = readFileSync(resolve(process.cwd(), "lib/settlement/circle/index.ts"), "utf8");
+    const execute = readFileSync(resolve(process.cwd(), "lib/settlement/circle/execute.ts"), "utf8");
+    expect(index).not.toContain("sealCircleAuthenticatedResult");
+    expect(execute).not.toContain("port?:");
+    expect(execute).toContain("createCircleWalletsPortFromEnv()");
   });
 });

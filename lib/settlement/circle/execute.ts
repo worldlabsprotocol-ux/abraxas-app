@@ -1,31 +1,32 @@
 // FILE: lib/settlement/circle/execute.ts
+import "server-only";
 // Settlement state machine. Intents stay pending until a sealed Circle result arrives.
+// Production routes must never inject a mock Circle port.
 
 import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
 import { recordLaunchpadActivity } from "@/lib/partner/launchpad/recordActivity";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { parseAmountMinor } from "@/lib/settlement/circle/amount";
+import { mapOfficialProviderStateToIntent } from "@/lib/settlement/circle/authenticated";
 import {
   isCircleAuthenticatedResult,
-  toSettledState,
   type CircleAuthenticatedResult,
-} from "@/lib/settlement/circle/authenticated";
+} from "@/lib/settlement/circle/authenticated.server";
 import {
   probeCircleAvailability,
   type CircleAvailability,
 } from "@/lib/settlement/circle/availability";
 import { CIRCLE_PUBLIC_CODES, type CirclePublicCode } from "@/lib/settlement/circle/codes";
 import { createCircleWalletsPortFromEnv } from "@/lib/settlement/circle/client.server";
-import type { CircleWalletsPort } from "@/lib/settlement/circle/port";
 import {
   CIRCLE_DEMO_AMOUNT_MINOR,
+  CIRCLE_TERMINAL_INTENT_STATES,
   type CircleIntentState,
 } from "@/lib/settlement/circle/constants";
 import type { CircleSafeEvidence } from "@/lib/settlement/circle/evidence";
 import { gateSettlementReceipt } from "@/lib/settlement/circle/receiptGate";
 import {
   applyAuthenticatedEvidence,
-  findIntentByIdempotency,
   insertPendingIntent,
   listIntentsForApplication,
   toSafeEvidence,
@@ -101,7 +102,11 @@ export function applyCircleProviderResult(
   if (result.amountMinor !== intent.amount_minor) {
     return { ok: false, code: CIRCLE_PUBLIC_CODES.amount_mismatch };
   }
-  return { ok: true, state: toSettledState(result.providerState), sealed: result };
+  return { ok: true, state: mapOfficialProviderStateToIntent(result.providerState), sealed: result };
+}
+
+function isTerminalIntent(state: CircleIntentState): boolean {
+  return (CIRCLE_TERMINAL_INTENT_STATES as readonly string[]).includes(state);
 }
 
 async function persistAuthenticated(
@@ -148,6 +153,7 @@ export async function loadCircleSettlementView(input: {
 function statusCode(state: CircleIntentState): CirclePublicCode {
   if (state === "settled") return CIRCLE_PUBLIC_CODES.settled;
   if (state === "failed") return CIRCLE_PUBLIC_CODES.failed;
+  if (state === "cancelled") return CIRCLE_PUBLIC_CODES.cancelled;
   if (state === "submitted") return CIRCLE_PUBLIC_CODES.submitted;
   return CIRCLE_PUBLIC_CODES.pending;
 }
@@ -156,15 +162,19 @@ export async function runCircleSettlement(input: {
   application: LaunchpadApplicationRow;
   partnerId: string;
   receiptId: string;
-  idempotencyKey: string;
   amountMinor?: unknown;
   body?: Record<string, unknown> | null;
-  port?: CircleWalletsPort | null;
 }): Promise<CircleSettlementView> {
   const availability = await probeCircleAvailability();
   const hostile = rejectClientProvidedSettlementProof(input.body ?? null);
   if (hostile) {
     return view({ ok: false, code: hostile, availability });
+  }
+  if (availability.code === CIRCLE_PUBLIC_CODES.production_blocked) {
+    return view({ ok: false, code: CIRCLE_PUBLIC_CODES.production_blocked, availability });
+  }
+  if (availability.code === CIRCLE_PUBLIC_CODES.live_credentials_blocked) {
+    return view({ ok: false, code: CIRCLE_PUBLIC_CODES.live_credentials_blocked, availability });
   }
   if (!availability.schema_ready) {
     return view({
@@ -173,19 +183,9 @@ export async function runCircleSettlement(input: {
       availability,
     });
   }
-  if (availability.credentials.production_env_blocked) {
-    return view({ ok: false, code: CIRCLE_PUBLIC_CODES.production_blocked, availability });
-  }
-  if (availability.credentials.live_key_blocked) {
-    return view({ ok: false, code: CIRCLE_PUBLIC_CODES.live_credentials_blocked, availability });
-  }
 
   const amountMinor = parseAmountMinor(input.amountMinor, CIRCLE_DEMO_AMOUNT_MINOR);
   if (amountMinor == null) {
-    return view({ ok: false, code: CIRCLE_PUBLIC_CODES.invalid_input, availability });
-  }
-  const idempotencyKey = input.idempotencyKey.trim();
-  if (!idempotencyKey || idempotencyKey.length > 128) {
     return view({ ok: false, code: CIRCLE_PUBLIC_CODES.invalid_input, availability });
   }
 
@@ -202,7 +202,6 @@ export async function runCircleSettlement(input: {
   const inserted = await insertPendingIntent({
     applicationId: input.application.id,
     partnerId: input.partnerId,
-    idempotencyKey,
     amountMinor,
     receiptId: gated.receipt_id,
     policyId: input.application.policy_id,
@@ -212,8 +211,8 @@ export async function runCircleSettlement(input: {
     return view({ ok: false, code: inserted.code, availability });
   }
 
-  let intent = inserted.row;
-  if (inserted.duplicate && intent.state === "settled") {
+  const intent = inserted.row;
+  if (inserted.duplicate && isTerminalIntent(intent.state)) {
     return view({
       ok: true,
       code: CIRCLE_PUBLIC_CODES.duplicate,
@@ -223,19 +222,12 @@ export async function runCircleSettlement(input: {
     });
   }
 
-  const existing = await findIntentByIdempotency({
-    applicationId: input.application.id,
-    partnerId: input.partnerId,
-    idempotencyKey,
-  });
-  if (existing) intent = existing;
-
   if (!availability.available) {
     await recordLaunchpadActivity(requireSupabaseAdmin(), {
       applicationId: input.application.id,
       partnerId: input.partnerId,
       eventType: "settlement_intent_created",
-      publicCode: CIRCLE_PUBLIC_CODES.unavailable,
+      publicCode: availability.code ?? CIRCLE_PUBLIC_CODES.unavailable,
       metadata: {
         settlement: true,
         state: intent.state,
@@ -251,7 +243,7 @@ export async function runCircleSettlement(input: {
     });
   }
 
-  const port = input.port === undefined ? createCircleWalletsPortFromEnv() : input.port;
+  const port = createCircleWalletsPortFromEnv();
   if (!port) {
     return view({
       ok: true,
@@ -273,7 +265,7 @@ export async function runCircleSettlement(input: {
 
   let sealed: CircleAuthenticatedResult | null = null;
   if (intent.circle_transaction_id) {
-    const refreshed = await port.getTransaction(intent.circle_transaction_id);
+    const refreshed = await port.getTransaction(intent.circle_transaction_id, intent.amount_minor);
     if (refreshed.ok) sealed = refreshed.result;
   } else {
     const created = await port.createTestnetUsdcTransfer({
@@ -301,6 +293,22 @@ export async function runCircleSettlement(input: {
       evidence: toSafeEvidence(intent),
     });
   }
+
+  const gatedBeforePersist = await gateSettlementReceipt({
+    receiptId: intent.receipt_id,
+    partnerId: input.partnerId,
+    policyId: input.application.policy_id,
+    policyVersion: input.application.policy_version,
+  });
+  if (!gatedBeforePersist.ok) {
+    return view({
+      ok: false,
+      code: gatedBeforePersist.code,
+      availability,
+      evidence: toSafeEvidence(intent),
+    });
+  }
+
   const updated = await persistAuthenticated(intent, sealed);
   await recordLaunchpadActivity(requireSupabaseAdmin(), {
     applicationId: input.application.id,

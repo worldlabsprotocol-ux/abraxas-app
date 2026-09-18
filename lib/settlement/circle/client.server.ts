@@ -6,20 +6,21 @@ import { publicEncrypt, constants as cryptoConstants, randomUUID } from "node:cr
 import {
   sealCircleAuthenticatedResult,
   type CircleAuthenticatedResult,
-  type CircleProviderState,
-} from "@/lib/settlement/circle/authenticated";
+} from "@/lib/settlement/circle/authenticated.server";
+import { parseOfficialProviderState } from "@/lib/settlement/circle/authenticated";
 import { formatUsdcFromMinor, parseUsdcStringToMinor } from "@/lib/settlement/circle/amount";
 import { credentialsReady, readCircleCredentialProbe } from "@/lib/settlement/circle/availability";
+import {
+  circleCreateTransferRequest,
+  circleGetEntityPublicKeyRequest,
+  circleGetTransactionRequest,
+  circleGetWalletRequest,
+} from "@/lib/settlement/circle/contract";
 import type { CircleWalletsPort } from "@/lib/settlement/circle/port";
 import {
-  ARC_TESTNET_USDC_TOKEN_ADDRESS,
   CIRCLE_API_BASE_URL,
   CIRCLE_CURRENCY,
-  CIRCLE_ENTITY_PUBLIC_KEY_PATH,
   CIRCLE_NETWORK,
-  CIRCLE_TRANSFER_PATH,
-  CIRCLE_TRANSACTION_PATH,
-  CIRCLE_WALLET_PATH,
 } from "@/lib/settlement/circle/constants";
 
 export type { CircleWalletsPort };
@@ -41,17 +42,6 @@ interface CircleTransactionRecord {
   updateDate?: string;
   tokenId?: string;
 }
-
-const ALLOWED_PROVIDER_STATES: CircleProviderState[] = [
-  "QUEUED",
-  "PENDING",
-  "INITIATED",
-  "BROADCASTED",
-  "COMPLETE",
-  "FAILED",
-  "CANCELLED",
-  "DENIED",
-];
 
 function entitySecretBytes(secret: string): Buffer | null {
   const trimmed = secret.trim();
@@ -122,12 +112,6 @@ function parseWallet(json: Record<string, unknown> | null): CircleWalletRecord |
   };
 }
 
-function parseProviderState(value: unknown): CircleProviderState | null {
-  if (typeof value !== "string") return null;
-  const upper = value.toUpperCase() as CircleProviderState;
-  return ALLOWED_PROVIDER_STATES.includes(upper) ? upper : null;
-}
-
 function parseTransaction(
   json: Record<string, unknown> | null,
   fallbackRequestRef: string,
@@ -136,7 +120,7 @@ function parseTransaction(
   const data = asRecord(json?.data);
   const tx = asRecord(data.transaction ?? data) as CircleTransactionRecord;
   const id = typeof tx.id === "string" ? tx.id : null;
-  const state = parseProviderState(tx.state);
+  const state = parseOfficialProviderState(tx.state);
   if (!id || !state) return null;
   if (tx.blockchain && tx.blockchain !== CIRCLE_NETWORK) return null;
   const amountRaw = Array.isArray(tx.amounts) && typeof tx.amounts[0] === "string" ? tx.amounts[0] : null;
@@ -163,14 +147,16 @@ export function createCircleWalletsPortFromEnv(): CircleWalletsPort | null {
   const destinationWalletId = process.env.CIRCLE_DEMO_DESTINATION_WALLET_ID!.trim();
 
   async function requireCiphertext(): Promise<string | null> {
-    const keyRes = await circleFetch({ apiKey, path: CIRCLE_ENTITY_PUBLIC_KEY_PATH });
+    const keyReq = circleGetEntityPublicKeyRequest();
+    const keyRes = await circleFetch({ apiKey, path: keyReq.path, method: keyReq.method });
     const publicKey = String(asRecord(keyRes.json?.data).publicKey ?? "");
     if (!keyRes.ok || !publicKey.includes("BEGIN")) return null;
     return encryptEntitySecret(entitySecret, publicKey);
   }
 
   async function getWallet(walletId: string): Promise<CircleWalletRecord | null> {
-    const res = await circleFetch({ apiKey, path: `${CIRCLE_WALLET_PATH}/${walletId}` });
+    const req = circleGetWalletRequest(walletId);
+    const res = await circleFetch({ apiKey, path: req.path, method: req.method });
     if (!res.ok) return null;
     const wallet = parseWallet(res.json);
     if (!wallet || wallet.blockchain !== CIRCLE_NETWORK) return null;
@@ -193,38 +179,36 @@ export function createCircleWalletsPortFromEnv(): CircleWalletsPort | null {
       }
       const ciphertext = await requireCiphertext();
       if (!ciphertext) return { ok: false, code: "circle_unavailable" };
-      const requestRef = input.idempotencyKey;
+      const transfer = circleCreateTransferRequest({
+        idempotencyKey: input.idempotencyKey,
+        entitySecretCiphertext: ciphertext,
+        walletId: sourceWalletId,
+        destinationAddress: destination.address,
+        amountUsdc: formatUsdcFromMinor(input.amountMinor),
+      });
       const res = await circleFetch({
         apiKey,
-        path: CIRCLE_TRANSFER_PATH,
-        method: "POST",
-        body: {
-          idempotencyKey: requestRef,
-          entitySecretCiphertext: ciphertext,
-          walletId: sourceWalletId,
-          destinationAddress: destination.address,
-          tokenAddress: ARC_TESTNET_USDC_TOKEN_ADDRESS,
-          blockchain: CIRCLE_NETWORK,
-          amounts: [formatUsdcFromMinor(input.amountMinor)],
-          feeLevel: "MEDIUM",
-        },
+        path: transfer.path,
+        method: transfer.method,
+        body: transfer.body,
       });
-      const sealed = parseTransaction(res.json, requestRef, input.amountMinor);
+      const sealed = parseTransaction(res.json, input.idempotencyKey, input.amountMinor);
       if (!res.ok || !sealed) return { ok: false, code: "circle_unavailable" };
       return { ok: true, result: sealed };
     },
-    async getTransaction(transactionId) {
+    async getTransaction(transactionId, expectedAmountMinor) {
+      const req = circleGetTransactionRequest(transactionId);
       const res = await circleFetch({
         apiKey,
-        path: `${CIRCLE_TRANSACTION_PATH}/${transactionId}`,
+        path: req.path,
+        method: req.method,
       });
-      // Amount is re-checked by execute() against the stored intent.
       const data = asRecord(res.json?.data);
       const tx = asRecord(data.transaction ?? data);
       const amountRaw = Array.isArray(tx.amounts) && typeof tx.amounts[0] === "string"
         ? tx.amounts[0]
         : null;
-      const amountMinor = amountRaw ? parseUsdcStringToMinor(amountRaw) : null;
+      const amountMinor = amountRaw ? parseUsdcStringToMinor(amountRaw) : expectedAmountMinor;
       if (!res.ok || amountMinor == null) return { ok: false, code: "circle_unavailable" };
       const sealed = parseTransaction(res.json, transactionId, amountMinor);
       if (!sealed) return { ok: false, code: "circle_unavailable" };

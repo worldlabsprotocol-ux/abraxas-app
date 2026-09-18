@@ -18,19 +18,23 @@ This runbook is for **Vercel Preview** and **Cloud Agent runtime** only. Do not 
    - destination: labeled `abraxas-demo-sink`
 9. Copy the wallet set ID and both wallet IDs (UUIDs). Do not treat the public addresses as eligibility or ownership proof.
 
-## 2. Secrets required (testnet only)
+## 2. Secrets and allowlist (testnet only)
 
-| Secret | Where it belongs |
+| Name | Where it belongs |
 | --- | --- |
+| `CIRCLE_ARC_TESTNET_ENABLED=true` | Vercel **Preview** env, Cloud Agent runtime env |
+| `ABRAXAS_RUNTIME_ENV=demo` | Cloud Agent runtime (Preview already has `VERCEL_ENV=preview`) |
 | `CIRCLE_API_KEY` | Vercel **Preview** env, Cloud Agent runtime env |
 | `CIRCLE_ENTITY_SECRET` | Vercel **Preview** env, Cloud Agent runtime env |
 | `CIRCLE_WALLET_SET_ID` | Vercel **Preview** env, Cloud Agent runtime env |
 | `CIRCLE_DEMO_SOURCE_WALLET_ID` | Vercel **Preview** env, Cloud Agent runtime env |
 | `CIRCLE_DEMO_DESTINATION_WALLET_ID` | Vercel **Preview** env, Cloud Agent runtime env |
 
-Do not set these on Production. Do not add them to `.env.local` in git. Do not put them in query strings.
+Do not set these on Production. Do not add them to `.env.local` in git. Do not put them in query strings. Local and staging stay blocked unless `CIRCLE_ARC_TESTNET_ENABLED=true` and `ABRAXAS_RUNTIME_ENV=demo` (never with `VERCEL_ENV=production`).
 
-Also apply migration `089_circle_arc_testnet_settlement.sql` to DEMO Supabase `ocntwbxarpjeixdnzide` before the first real transfer.
+Also apply migration `089_circle_arc_testnet_settlement.sql` to DEMO Supabase `ocntwbxarpjeixdnzide` before the first real transfer. Do not apply it until this PR is re-audited as safe.
+
+The server generates the Circle `idempotencyKey` as UUID v4. Do not paste a key into Launchpad or send one from the browser.
 
 ## 3. Testnet USDC without real money
 
@@ -45,11 +49,11 @@ Also apply migration `089_circle_arc_testnet_settlement.sql` to DEMO Supabase `o
 2. Open Partner Launchpad on that Preview.
 3. Use an isolated DEMO sandbox app with a pinned active policy.
 4. Issue a server-verified **sandbox** signed receipt for that partner/policy/version.
-5. On **Arc testnet settlement**, paste the receipt ID and a unique idempotency key.
+5. On **Arc testnet settlement**, paste the receipt ID. Do not supply a Circle idempotency key.
 6. Create the DEMO settlement intent. It must start `pending`.
-7. When Circle credentials are present, the server authenticates against `ARC-TESTNET`, submits the transfer from the DEMO source wallet, and records only safe evidence.
+7. When Circle credentials and the DEMO/Preview allowlist are present, the server authenticates against `ARC-TESTNET`, submits the transfer from the DEMO source wallet, and records only safe evidence.
 8. Refresh until `provider_state` is `COMPLETE` and intent state is `settled`.
-9. Replay the same idempotency key. Expect `settlement_duplicate` and no second transfer.
+9. Replay the same receipt. Expect `settlement_duplicate` and no second transfer.
 10. Repeat with denied, expired, revoked, unsigned, wrong-partner, and wrong-policy receipts. Those must fail closed and never settle.
 
 ## 5. Safe video demo
@@ -73,4 +77,4 @@ Do not film Circle Console secret pages.
 4. Fund the new source wallet from the faucet.
 5. Confirm Production still has **no** Circle variables.
 
-Until Preview has these secrets and DEMO has migration 089, Launchpad must show `circle_unavailable` / schema unavailable and must not claim a live Circle integration.
+Until Preview has these secrets, the DEMO/Preview allowlist, and DEMO has migration 089, Launchpad must show `circle_unavailable` / schema unavailable / environment blocked and must not claim a live Circle integration.

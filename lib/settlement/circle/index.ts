@@ -5,6 +5,7 @@ export {
   CIRCLE_FEATURE,
   CIRCLE_INFRASTRUCTURE_LABEL,
   CIRCLE_NETWORK,
+  CIRCLE_OFFICIAL_TRANSACTION_STATES,
   CIRCLE_SETTLEMENT_ARTIFACT,
   CIRCLE_SETTLEMENT_LABEL,
   CIRCLE_SETTLEMENT_SCHEMA_VERSION,
@@ -22,4 +23,7 @@ export {
   rejectClientProvidedSettlementProof,
   runCircleSettlement,
 } from "@/lib/settlement/circle/execute";
-export { isCircleAuthenticatedResult, sealCircleAuthenticatedResult } from "@/lib/settlement/circle/authenticated";
+export {
+  mapOfficialProviderStateToIntent,
+  parseOfficialProviderState,
+} from "@/lib/settlement/circle/authenticated";

@@ -11,6 +11,7 @@ import {
   CIRCLE_SETTLEMENT_SCHEMA_VERSION,
   type CircleIntentState,
 } from "@/lib/settlement/circle/constants";
+import { isCircleUuidV4 } from "@/lib/settlement/circle/idempotency";
 
 export interface CircleSafeEvidence {
   artifact: typeof CIRCLE_SETTLEMENT_ARTIFACT;
@@ -63,8 +64,8 @@ export function validateCircleSafeEvidence(value: unknown): { ok: boolean; error
   if (typeof rec.receipt_id !== "string" || !rec.receipt_id.trim()) errors.push("receipt_id_missing");
   if (typeof rec.policy_id !== "string" || !rec.policy_id.trim()) errors.push("policy_id_missing");
   if (typeof rec.policy_version !== "number") errors.push("policy_version_missing");
-  if (typeof rec.idempotency_key !== "string" || !rec.idempotency_key.trim()) {
-    errors.push("idempotency_key_missing");
+  if (typeof rec.idempotency_key !== "string" || !isCircleUuidV4(rec.idempotency_key)) {
+    errors.push("idempotency_key_not_uuid_v4");
   }
   const keys = Object.keys(rec).join(" ").toLowerCase();
   if (keys.includes("wallet") || keys.includes("secret") || keys.includes("payload") || keys.includes("address")) {
@@ -99,7 +100,7 @@ export function circleEvidenceConformanceFixture(
     receipt_id: "00000000-0000-4000-8000-000000000099",
     policy_id: "acme-age-21-v1",
     policy_version: 1,
-    idempotency_key: "demo-settlement-1",
+    idempotency_key: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
     last_updated_at: "2026-09-18T00:00:00.000Z",
     ...overrides,
   };

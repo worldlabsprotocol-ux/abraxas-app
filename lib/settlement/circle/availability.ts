@@ -1,10 +1,17 @@
 // FILE: lib/settlement/circle/availability.ts
 // Preview-safe unavailable probe. Never calls Circle until testnet credentials exist.
+// Public availability never reveals which credential is absent.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { CIRCLE_PUBLIC_CODES, type CirclePublicCode } from "@/lib/settlement/circle/codes";
-import { CIRCLE_FEATURE, CIRCLE_SCHEMA_TABLE } from "@/lib/settlement/circle/constants";
+import {
+  CIRCLE_ARC_TESTNET_ENABLE_ENV,
+  CIRCLE_FEATURE,
+  CIRCLE_SCHEMA_TABLE,
+} from "@/lib/settlement/circle/constants";
+
+export type CircleCredentialsStatus = "configured" | "unavailable";
 
 export interface CircleCredentialProbe {
   api_key: boolean;
@@ -14,16 +21,17 @@ export interface CircleCredentialProbe {
   destination_wallet_id: boolean;
   live_key_blocked: boolean;
   production_env_blocked: boolean;
+  environment_blocked: boolean;
 }
 
 export interface CircleAvailability {
   available: boolean;
   schema_ready: boolean;
-  credentials_ready: boolean;
+  configured: boolean;
+  credentials_status: CircleCredentialsStatus;
   code: CirclePublicCode | null;
   feature: typeof CIRCLE_FEATURE;
   activates_production: false;
-  credentials: CircleCredentialProbe;
 }
 
 function isLiveCircleApiKey(value: string): boolean {
@@ -31,12 +39,27 @@ function isLiveCircleApiKey(value: string): boolean {
   return trimmed.startsWith("LIVE_API_KEY:") || trimmed.includes("LIVE_API_KEY:");
 }
 
-function isProductionRuntime(): boolean {
+export function isProductionRuntime(): boolean {
   return process.env.VERCEL_ENV === "production" || process.env.ABRAXAS_RUNTIME_ENV === "production";
+}
+
+/**
+ * Explicit DEMO/Preview testnet allowlist. Local, staging, and production are
+ * blocked unless CIRCLE_ARC_TESTNET_ENABLED=true AND (VERCEL_ENV=preview or
+ * ABRAXAS_RUNTIME_ENV=demo). Production is never allowed.
+ */
+export function isApprovedCircleTestnetEnvironment(): boolean {
+  if (isProductionRuntime()) return false;
+  if (process.env[CIRCLE_ARC_TESTNET_ENABLE_ENV]?.trim() !== "true") return false;
+  const vercel = process.env.VERCEL_ENV?.trim();
+  const runtime = process.env.ABRAXAS_RUNTIME_ENV?.trim();
+  return vercel === "preview" || runtime === "demo";
 }
 
 export function readCircleCredentialProbe(): CircleCredentialProbe {
   const apiKey = process.env.CIRCLE_API_KEY?.trim() ?? "";
+  const production_env_blocked = isProductionRuntime();
+  const environment_blocked = !isApprovedCircleTestnetEnvironment();
   return {
     api_key: Boolean(apiKey) && !isLiveCircleApiKey(apiKey),
     entity_secret: Boolean(process.env.CIRCLE_ENTITY_SECRET?.trim()),
@@ -44,7 +67,8 @@ export function readCircleCredentialProbe(): CircleCredentialProbe {
     source_wallet_id: Boolean(process.env.CIRCLE_DEMO_SOURCE_WALLET_ID?.trim()),
     destination_wallet_id: Boolean(process.env.CIRCLE_DEMO_DESTINATION_WALLET_ID?.trim()),
     live_key_blocked: Boolean(apiKey) && isLiveCircleApiKey(apiKey),
-    production_env_blocked: isProductionRuntime(),
+    production_env_blocked,
+    environment_blocked,
   };
 }
 
@@ -57,6 +81,7 @@ export function credentialsReady(probe: CircleCredentialProbe): boolean {
     && probe.destination_wallet_id
     && !probe.live_key_blocked
     && !probe.production_env_blocked
+    && !probe.environment_blocked
   );
 }
 
@@ -102,9 +127,27 @@ export function availabilityCode(input: {
 }): CirclePublicCode | null {
   if (input.credentials.production_env_blocked) return CIRCLE_PUBLIC_CODES.production_blocked;
   if (input.credentials.live_key_blocked) return CIRCLE_PUBLIC_CODES.live_credentials_blocked;
+  if (input.credentials.environment_blocked) return CIRCLE_PUBLIC_CODES.environment_blocked;
   if (!input.schemaReady) return CIRCLE_PUBLIC_CODES.schema_unavailable;
   if (!credentialsReady(input.credentials)) return CIRCLE_PUBLIC_CODES.unavailable;
   return null;
+}
+
+export function toPublicCircleAvailability(input: {
+  schemaReady: boolean;
+  credentials: CircleCredentialProbe;
+}): CircleAvailability {
+  const configured = credentialsReady(input.credentials);
+  const code = availabilityCode({ schemaReady: input.schemaReady, credentials: input.credentials });
+  return {
+    available: input.schemaReady && configured,
+    schema_ready: input.schemaReady,
+    configured,
+    credentials_status: configured ? "configured" : "unavailable",
+    code,
+    feature: CIRCLE_FEATURE,
+    activates_production: false,
+  };
 }
 
 export async function probeCircleAvailability(
@@ -112,23 +155,5 @@ export async function probeCircleAvailability(
 ): Promise<CircleAvailability> {
   const credentials = readCircleCredentialProbe();
   const schema_ready = await probeSettlementSchema(client);
-  const creds = credentialsReady(credentials);
-  const code = availabilityCode({ schemaReady: schema_ready, credentials });
-  return {
-    available: schema_ready && creds,
-    schema_ready,
-    credentials_ready: creds,
-    code,
-    feature: CIRCLE_FEATURE,
-    activates_production: false,
-    credentials: {
-      api_key: credentials.api_key,
-      entity_secret: credentials.entity_secret,
-      wallet_set_id: credentials.wallet_set_id,
-      source_wallet_id: credentials.source_wallet_id,
-      destination_wallet_id: credentials.destination_wallet_id,
-      live_key_blocked: credentials.live_key_blocked,
-      production_env_blocked: credentials.production_env_blocked,
-    },
-  };
+  return toPublicCircleAvailability({ schemaReady: schema_ready, credentials });
 }

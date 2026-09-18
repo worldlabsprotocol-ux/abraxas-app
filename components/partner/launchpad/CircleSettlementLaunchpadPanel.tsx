@@ -54,7 +54,6 @@ export function CircleSettlementLaunchpadPanel({
   const [report, setReport] = useState<SettlementResponse | null>(null);
   const [error, setError] = useState("");
   const [receiptId, setReceiptId] = useState("");
-  const [idempotencyKey, setIdempotencyKey] = useState("demo-arc-settlement-1");
   const [busy, setBusy] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState("");
 
@@ -84,7 +83,6 @@ export function CircleSettlementLaunchpadPanel({
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         receipt_id: receiptId,
-        idempotency_key: idempotencyKey,
       }),
     });
     const data = await res.json() as SettlementResponse;
@@ -107,6 +105,7 @@ export function CircleSettlementLaunchpadPanel({
       <p style={bodyText}>
         DEMO / Arc testnet infrastructure only. Abraxas is not a custodian of customer funds.
         A settlement intent is not a payment. It stays pending until Circle returns an authenticated result.
+        The server generates the Circle idempotency key. Browser values are not accepted.
       </p>
       {unavailable && (
         <p style={{ ...bodyText, color: "#f59e0b" }}>
@@ -147,14 +146,6 @@ provider_occurred_at: ${evidence.provider_occurred_at ?? "—"}`}
         <input
           value={receiptId}
           onChange={(event) => setReceiptId(event.target.value)}
-          style={{ display: "block", width: "100%", marginTop: 4, fontFamily: MONO, fontSize: "0.72rem" }}
-        />
-      </label>
-      <label style={{ ...bodyText, display: "block" }}>
-        Idempotency key
-        <input
-          value={idempotencyKey}
-          onChange={(event) => setIdempotencyKey(event.target.value)}
           style={{ display: "block", width: "100%", marginTop: 4, fontFamily: MONO, fontSize: "0.72rem" }}
         />
       </label>

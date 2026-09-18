@@ -103,5 +103,10 @@ describe("Circle settlement routes", () => {
       body: JSON.stringify({ receipt_id: "r1", idempotency_key: "k1" }),
     }), { params: { id: "app-1" } });
     expect(res.status).toBe(409);
+    expect(runMock).toHaveBeenCalledWith(expect.objectContaining({
+      receiptId: "r1",
+    }));
+    expect(runMock.mock.calls[0][0].idempotencyKey).toBeUndefined();
   });
 });
+

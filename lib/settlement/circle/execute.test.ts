@@ -1,15 +1,15 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { CIRCLE_PUBLIC_CODES } from "@/lib/settlement/circle/codes";
-import { sealCircleAuthenticatedResult } from "@/lib/settlement/circle/authenticated";
+import { sealCircleAuthenticatedResult } from "@/lib/settlement/circle/authenticated.server";
 import { CIRCLE_CURRENCY, CIRCLE_NETWORK } from "@/lib/settlement/circle/constants";
 import type { SettlementIntentRow } from "@/lib/settlement/circle/store";
 
 const probeMock = vi.fn();
 const gateMock = vi.fn();
 const insertMock = vi.fn();
-const findIdempotencyMock = vi.fn();
 const applyEvidenceMock = vi.fn();
 const listMock = vi.fn();
+const createPortMock = vi.fn(() => null);
 
 vi.mock("@/lib/settlement/circle/availability", async () => {
   const actual = await vi.importActual<typeof import("@/lib/settlement/circle/availability")>(
@@ -32,7 +32,6 @@ vi.mock("@/lib/settlement/circle/store", async () => {
   return {
     ...actual,
     insertPendingIntent: (...args: unknown[]) => insertMock(...args),
-    findIntentByIdempotency: (...args: unknown[]) => findIdempotencyMock(...args),
     applyAuthenticatedEvidence: (...args: unknown[]) => applyEvidenceMock(...args),
     listIntentsForApplication: (...args: unknown[]) => listMock(...args),
   };
@@ -48,7 +47,7 @@ vi.mock("@/lib/supabase/admin", () => ({
 }));
 
 vi.mock("@/lib/settlement/circle/client.server", () => ({
-  createCircleWalletsPortFromEnv: () => null,
+  createCircleWalletsPortFromEnv: () => createPortMock(),
 }));
 
 import { runCircleSettlement } from "@/lib/settlement/circle/execute";
@@ -78,7 +77,7 @@ function pendingRow(): SettlementIntentRow {
     id: "intent-1",
     application_id: "app-1",
     partner_id: "acme",
-    idempotency_key: "demo-1",
+    idempotency_key: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
     state: "pending",
     network: CIRCLE_NETWORK,
     currency: CIRCLE_CURRENCY,
@@ -96,65 +95,61 @@ function pendingRow(): SettlementIntentRow {
   };
 }
 
+function unavailableAvailability() {
+  return {
+    available: false,
+    schema_ready: true,
+    configured: false,
+    credentials_status: "unavailable" as const,
+    code: CIRCLE_PUBLIC_CODES.unavailable,
+    feature: "circle_arc_testnet_settlement" as const,
+    activates_production: false as const,
+  };
+}
+
+function readyAvailability() {
+  return {
+    available: true,
+    schema_ready: true,
+    configured: true,
+    credentials_status: "configured" as const,
+    code: null,
+    feature: "circle_arc_testnet_settlement" as const,
+    activates_production: false as const,
+  };
+}
+
 describe("runCircleSettlement", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    createPortMock.mockReturnValue(null);
     gateMock.mockResolvedValue({ ok: true, code: CIRCLE_PUBLIC_CODES.pending, receipt_id: "receipt-1" });
-    findIdempotencyMock.mockResolvedValue(null);
     listMock.mockResolvedValue([]);
   });
 
   it("creates a pending intent when Circle is unavailable and does not mark it settled", async () => {
-    probeMock.mockResolvedValue({
-      available: false,
-      schema_ready: true,
-      credentials_ready: false,
-      code: CIRCLE_PUBLIC_CODES.unavailable,
-      feature: "circle_arc_testnet_settlement",
-      activates_production: false,
-      credentials: {
-        api_key: false,
-        entity_secret: false,
-        wallet_set_id: false,
-        source_wallet_id: false,
-        destination_wallet_id: false,
-        live_key_blocked: false,
-        production_env_blocked: false,
-      },
-    });
+    probeMock.mockResolvedValue(unavailableAvailability());
     insertMock.mockResolvedValue({ ok: true, row: pendingRow(), duplicate: false });
     const result = await runCircleSettlement({
       application: app,
       partnerId: "acme",
       receiptId: "receipt-1",
-      idempotencyKey: "demo-1",
-      port: null,
+      body: { receipt_id: "receipt-1", idempotency_key: "demo-arc-settlement-1" },
     });
     expect(result.ok).toBe(true);
     expect(result.code).toBe("circle_unavailable");
     expect(result.evidence?.state).toBe("pending");
     expect(result.activates_production).toBe(false);
     expect(result.intent_is_not_a_payment).toBe(true);
+    expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({
+      applicationId: "app-1",
+      receiptId: "receipt-1",
+    }));
+    expect(insertMock.mock.calls[0][0].idempotencyKey).toBeUndefined();
   });
 
   it("does not create an intent when the receipt gate fails closed", async () => {
-    probeMock.mockResolvedValue({
-      available: true,
-      schema_ready: true,
-      credentials_ready: true,
-      code: null,
-      feature: "circle_arc_testnet_settlement",
-      activates_production: false,
-      credentials: {
-        api_key: true,
-        entity_secret: true,
-        wallet_set_id: true,
-        source_wallet_id: true,
-        destination_wallet_id: true,
-        live_key_blocked: false,
-        production_env_blocked: false,
-      },
-    });
+    probeMock.mockResolvedValue(readyAvailability());
     gateMock.mockResolvedValue({
       ok: false,
       code: CIRCLE_PUBLIC_CODES.receipt_denied,
@@ -164,8 +159,6 @@ describe("runCircleSettlement", () => {
       application: app,
       partnerId: "acme",
       receiptId: "receipt-denied",
-      idempotencyKey: "demo-denied",
-      port: null,
     });
     expect(result.ok).toBe(false);
     expect(result.code).toBe("settlement_receipt_denied");
@@ -173,27 +166,11 @@ describe("runCircleSettlement", () => {
   });
 
   it("settles from a sealed Circle COMPLETE result and blocks a duplicate", async () => {
-    probeMock.mockResolvedValue({
-      available: true,
-      schema_ready: true,
-      credentials_ready: true,
-      code: null,
-      feature: "circle_arc_testnet_settlement",
-      activates_production: false,
-      credentials: {
-        api_key: true,
-        entity_secret: true,
-        wallet_set_id: true,
-        source_wallet_id: true,
-        destination_wallet_id: true,
-        live_key_blocked: false,
-        production_env_blocked: false,
-      },
-    });
+    probeMock.mockResolvedValue(readyAvailability());
     const row = pendingRow();
     insertMock.mockResolvedValueOnce({ ok: true, row, duplicate: false });
     const sealed = sealCircleAuthenticatedResult({
-      providerRequestRef: "demo-1",
+      providerRequestRef: row.idempotency_key,
       circleTransactionId: "tx-1",
       network: CIRCLE_NETWORK,
       currency: CIRCLE_CURRENCY,
@@ -201,10 +178,19 @@ describe("runCircleSettlement", () => {
       providerState: "COMPLETE",
       occurredAt: "2026-09-18T00:00:00.000Z",
     });
+    createPortMock.mockReturnValue({
+      authenticateAgainstArcTestnet: async () => ({ ok: true, network: CIRCLE_NETWORK }),
+      createTestnetUsdcTransfer: async (input: { idempotencyKey: string }) => {
+        expect(input.idempotencyKey).toBe(row.idempotency_key);
+        expect(input.idempotencyKey).not.toBe("demo-arc-settlement-1");
+        return { ok: true, result: sealed };
+      },
+      getTransaction: async () => ({ ok: true, result: sealed }),
+    });
     applyEvidenceMock.mockResolvedValue({
       ...row,
       state: "settled",
-      provider_request_ref: "demo-1",
+      provider_request_ref: row.idempotency_key,
       circle_transaction_id: "tx-1",
       provider_state: "COMPLETE",
     });
@@ -212,15 +198,10 @@ describe("runCircleSettlement", () => {
       application: app,
       partnerId: "acme",
       receiptId: "receipt-1",
-      idempotencyKey: "demo-1",
-      port: {
-        authenticateAgainstArcTestnet: async () => ({ ok: true, network: CIRCLE_NETWORK }),
-        createTestnetUsdcTransfer: async () => ({ ok: true, result: sealed }),
-        getTransaction: async () => ({ ok: true, result: sealed }),
-      },
     });
     expect(first.evidence?.state).toBe("settled");
     expect(first.evidence?.circle_transaction_id).toBe("tx-1");
+    expect(gateMock).toHaveBeenCalledTimes(2);
 
     insertMock.mockResolvedValueOnce({
       ok: true,
@@ -231,14 +212,42 @@ describe("runCircleSettlement", () => {
       application: app,
       partnerId: "acme",
       receiptId: "receipt-1",
-      idempotencyKey: "demo-1",
-      port: {
-        authenticateAgainstArcTestnet: async () => ({ ok: true, network: CIRCLE_NETWORK }),
-        createTestnetUsdcTransfer: async () => ({ ok: true, result: sealed }),
-        getTransaction: async () => ({ ok: true, result: sealed }),
-      },
+      body: { receipt_id: "receipt-1", idempotency_key: "demo-arc-settlement-1" },
     });
     expect(second.duplicate).toBe(true);
     expect(second.code).toBe("settlement_duplicate");
+  });
+
+  it("allocates distinct Circle keys when two applications share identical browser input", async () => {
+    probeMock.mockResolvedValue(unavailableAvailability());
+    const browserBody = { receipt_id: "shared-receipt", idempotency_key: "demo-arc-settlement-1" };
+    insertMock
+      .mockResolvedValueOnce({
+        ok: true,
+        row: { ...pendingRow(), application_id: "app-a", idempotency_key: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" },
+        duplicate: false,
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        row: { ...pendingRow(), application_id: "app-b", idempotency_key: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb" },
+        duplicate: false,
+      });
+    const first = await runCircleSettlement({
+      application: { ...app, id: "app-a" },
+      partnerId: "acme",
+      receiptId: browserBody.receipt_id,
+      body: browserBody,
+    });
+    const second = await runCircleSettlement({
+      application: { ...app, id: "app-b" },
+      partnerId: "acme",
+      receiptId: browserBody.receipt_id,
+      body: browserBody,
+    });
+    expect(first.evidence?.idempotency_key).not.toBe(second.evidence?.idempotency_key);
+    expect(first.evidence?.idempotency_key).not.toBe(browserBody.idempotency_key);
+    expect(second.evidence?.idempotency_key).not.toBe(browserBody.idempotency_key);
+    expect(insertMock.mock.calls[0][0].idempotencyKey).toBeUndefined();
+    expect(insertMock.mock.calls[1][0].idempotencyKey).toBeUndefined();
   });
 });

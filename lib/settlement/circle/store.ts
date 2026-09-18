@@ -15,9 +15,11 @@ import {
   CIRCLE_SETTLEMENT_ARTIFACT,
   CIRCLE_SETTLEMENT_LABEL,
   CIRCLE_SETTLEMENT_SCHEMA_VERSION,
+  CIRCLE_TERMINAL_INTENT_STATES,
   type CircleIntentState,
 } from "@/lib/settlement/circle/constants";
 import type { CircleSafeEvidence } from "@/lib/settlement/circle/evidence";
+import { createCircleIdempotencyKey } from "@/lib/settlement/circle/idempotency";
 
 export interface SettlementIntentRow {
   id: string;
@@ -71,10 +73,13 @@ function isUniqueViolation(error: unknown): boolean {
   return rec.code === "23505" || String(rec.message ?? "").toLowerCase().includes("duplicate");
 }
 
+function isTerminalIntentState(state: CircleIntentState): boolean {
+  return (CIRCLE_TERMINAL_INTENT_STATES as readonly string[]).includes(state);
+}
+
 export async function insertPendingIntent(input: {
   applicationId: string;
   partnerId: string;
-  idempotencyKey: string;
   amountMinor: number;
   receiptId: string;
   policyId: string;
@@ -82,10 +87,18 @@ export async function insertPendingIntent(input: {
   client?: SupabaseClient;
 }): Promise<{ ok: true; row: SettlementIntentRow; duplicate: boolean } | { ok: false; code: string }> {
   const sb = input.client ?? requireSupabaseAdmin();
+  const existing = await findIntentByReceipt({
+    applicationId: input.applicationId,
+    partnerId: input.partnerId,
+    receiptId: input.receiptId,
+    client: sb,
+  });
+  if (existing) return { ok: true, row: existing, duplicate: true };
+
   const payload = {
     application_id: input.applicationId,
     partner_id: input.partnerId,
-    idempotency_key: input.idempotencyKey,
+    idempotency_key: createCircleIdempotencyKey(),
     state: "pending" as const,
     network: CIRCLE_NETWORK,
     currency: CIRCLE_CURRENCY,
@@ -107,39 +120,16 @@ export async function insertPendingIntent(input: {
     return { ok: false, code: CIRCLE_PUBLIC_CODES.schema_unavailable };
   }
   if (error && isUniqueViolation(error)) {
-    const existing = await findIntentByIdempotency({
-      applicationId: input.applicationId,
-      partnerId: input.partnerId,
-      idempotencyKey: input.idempotencyKey,
-      client: sb,
-    }) ?? await findIntentByReceipt({
+    const raced = await findIntentByReceipt({
       applicationId: input.applicationId,
       partnerId: input.partnerId,
       receiptId: input.receiptId,
       client: sb,
     });
-    if (existing) return { ok: true, row: existing, duplicate: true };
+    if (raced) return { ok: true, row: raced, duplicate: true };
     return { ok: false, code: CIRCLE_PUBLIC_CODES.duplicate };
   }
   return { ok: false, code: CIRCLE_PUBLIC_CODES.schema_unavailable };
-}
-
-export async function findIntentByIdempotency(input: {
-  applicationId: string;
-  partnerId: string;
-  idempotencyKey: string;
-  client?: SupabaseClient;
-}): Promise<SettlementIntentRow | null> {
-  const sb = input.client ?? requireSupabaseAdmin();
-  const { data, error } = await sb
-    .from(CIRCLE_SCHEMA_TABLE)
-    .select("*")
-    .eq("application_id", input.applicationId)
-    .eq("partner_id", input.partnerId)
-    .eq("idempotency_key", input.idempotencyKey)
-    .maybeSingle();
-  if (error || !data) return null;
-  return data as SettlementIntentRow;
 }
 
 export async function findIntentByReceipt(input: {
@@ -188,7 +178,7 @@ export async function applyAuthenticatedEvidence(input: {
   occurredAt: string;
   client?: SupabaseClient;
 }): Promise<SettlementIntentRow | null> {
-  if (input.intent.state === "settled") return input.intent;
+  if (isTerminalIntentState(input.intent.state)) return input.intent;
   const sb = input.client ?? requireSupabaseAdmin();
   const { data, error } = await sb
     .from(CIRCLE_SCHEMA_TABLE)
@@ -202,7 +192,7 @@ export async function applyAuthenticatedEvidence(input: {
     })
     .eq("id", input.intent.id)
     .eq("partner_id", input.intent.partner_id)
-    .neq("state", "settled")
+    .not("state", "in", `(${CIRCLE_TERMINAL_INTENT_STATES.join(",")})`)
     .select("*")
     .maybeSingle();
   if (error || !data) return null;

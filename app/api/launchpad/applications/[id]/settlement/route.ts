@@ -29,6 +29,7 @@ function httpStatus(code: string, ok: boolean): number {
     || code === CIRCLE_PUBLIC_CODES.schema_unavailable
     || code === CIRCLE_PUBLIC_CODES.production_blocked
     || code === CIRCLE_PUBLIC_CODES.live_credentials_blocked
+    || code === CIRCLE_PUBLIC_CODES.environment_blocked
   ) {
     return 503;
   }
@@ -81,14 +82,16 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     application: app,
     partnerId: auth.session.partnerId,
     receiptId: String(body.receipt_id ?? ""),
-    idempotencyKey: String(body.idempotency_key ?? ""),
     amountMinor: body.amount_minor,
     body,
   });
+  const terminalDuplicate = result.duplicate && (
+    result.evidence?.state === "settled"
+    || result.evidence?.state === "failed"
+    || result.evidence?.state === "cancelled"
+  );
   return launchpadJson(
     { ...result, error: result.ok ? undefined : result.code },
-    result.duplicate && result.evidence?.state === "settled"
-      ? 409
-      : httpStatus(String(result.code), result.ok),
+    terminalDuplicate ? 409 : httpStatus(String(result.code), result.ok),
   );
 }
