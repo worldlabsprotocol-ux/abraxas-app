@@ -8,6 +8,11 @@ import {
   buildLaunchpadPolicyId,
   resolveLaunchpadPolicyTemplate,
 } from "@/lib/partner/launchpad/policyCatalog";
+import {
+  buildCustomLaunchpadSandboxPolicy,
+  CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID,
+  type CustomLaunchpadPolicyInput,
+} from "@/lib/partner/launchpad/customPolicy";
 import { validateLaunchpadReturnUrl } from "@/lib/partner/launchpad/returnUrl";
 import { slugifyLaunchpadApplication, isValidLaunchpadPublicSlug } from "@/lib/partner/launchpad/slug";
 import type { ProvisionSandboxResult } from "@/lib/partner/launchpad/types";
@@ -19,6 +24,7 @@ export type ProvisionSandboxInput = {
   partnerId: string;
   publicSlug?: string;
   policyTemplateId: string;
+  customPolicy?: CustomLaunchpadPolicyInput;
   returnUrl: string;
   idempotencyKey?: string;
 };
@@ -43,9 +49,15 @@ export async function provisionLaunchpadSandbox(
   const displayName = input.displayName.trim();
   const partnerId = normalizePartnerId(input.partnerId);
   const template = resolveLaunchpadPolicyTemplate(input.policyTemplateId);
+  const customPolicy = input.policyTemplateId === CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID && input.customPolicy
+    ? buildCustomLaunchpadSandboxPolicy(input.customPolicy)
+    : null;
 
-  if (!applicationName || !displayName || !isValidPartnerId(partnerId) || !template) {
-    return { ok: false, code: !template ? "policy_template_invalid" : "invalid_input" };
+  if (!applicationName || !displayName || !isValidPartnerId(partnerId) || (!template && !customPolicy)) {
+    return { ok: false, code: !template && !customPolicy ? "policy_template_invalid" : "invalid_input" };
+  }
+  if (customPolicy && !customPolicy.ok) {
+    return { ok: false, code: "invalid_input" };
   }
 
   const returnCheck = validateLaunchpadReturnUrl(input.returnUrl);
@@ -58,7 +70,8 @@ export async function provisionLaunchpadSandbox(
     return { ok: false, code: "invalid_input" };
   }
 
-  const policyId = buildLaunchpadPolicyId(partnerId, template.id);
+  const policyId = buildLaunchpadPolicyId(partnerId, input.policyTemplateId);
+  const policyRules = customPolicy && customPolicy.ok ? customPolicy.rules : template!.rules;
   const { raw, prefix, hash } = generatePartnerKey("test");
 
   const { data, error } = await sb.rpc("partner_launchpad_provision_sandbox_atomic", {
@@ -66,9 +79,9 @@ export async function provisionLaunchpadSandbox(
     p_display_name: displayName,
     p_partner_id: partnerId,
     p_public_slug: publicSlug,
-    p_policy_template_id: template.id,
+    p_policy_template_id: input.policyTemplateId,
     p_policy_id: policyId,
-    p_policy_rules: template.rules,
+    p_policy_rules: policyRules,
     p_return_url: input.returnUrl.trim(),
     p_idempotency_key: input.idempotencyKey ?? null,
     p_key_prefix: prefix,

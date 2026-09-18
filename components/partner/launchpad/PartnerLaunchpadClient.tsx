@@ -11,6 +11,7 @@ import { LAUNCHPAD_TEST_SCENARIOS } from "@/lib/partner/launchpad/testScenarios"
 import type { LaunchpadIntegrationDocs } from "@/lib/partner/launchpad/integrationDocs";
 import { slugifyLaunchpadApplication } from "@/lib/partner/launchpad/slug";
 import { hasProductionLaunchpadCallback } from "@/lib/partner/launchpad/productionCallbackReadiness";
+import { CUSTOM_LAUNCHPAD_CLAIMS, CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID } from "@/lib/partner/launchpad/customPolicy";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -82,6 +83,11 @@ export function PartnerLaunchpadClient() {
   const [policyTemplateId, setPolicyTemplateId] = useState("age_21_retail");
   const [returnUrl, setReturnUrl] = useState("http://localhost:3000/callback");
   const [newReturnUrl, setNewReturnUrl] = useState("");
+  const [customPolicyName, setCustomPolicyName] = useState("Protocol eligibility");
+  const [customPolicyExplanation, setCustomPolicyExplanation] = useState("Confirm the holder meets this protocol's eligibility requirements.");
+  const [customClaimIds, setCustomClaimIds] = useState<string[]>(["identity_verified"]);
+  const [customAssurance, setCustomAssurance] = useState("L2");
+  const [customReceiptHours, setCustomReceiptHours] = useState("24");
 
   const activeApp = useMemo(
     () => workspace?.applications.find((app) => app.id === activeAppId) ?? workspace?.applications[0] ?? null,
@@ -181,6 +187,13 @@ export function PartnerLaunchpadClient() {
         display_name: displayName || applicationName,
         partner_id: partnerId,
         policy_template_id: policyTemplateId,
+        custom_policy: policyTemplateId === CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID ? {
+          name: customPolicyName,
+          user_explanation: customPolicyExplanation,
+          required_claim_ids: customClaimIds,
+          minimum_assurance: customAssurance,
+          receipt_lifetime_hours: Number(customReceiptHours),
+        } : undefined,
         return_url: returnUrl,
         idempotency_key: `launchpad-${partnerId}-${policyTemplateId}`,
       }),
@@ -378,7 +391,38 @@ export function PartnerLaunchpadClient() {
                 <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", marginTop: 4 }}>{policy.user_explanation}</div>
               </button>
             ))}
+            <button
+              type="button"
+              onClick={() => setPolicyTemplateId(CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID)}
+              style={{
+                textAlign: "left", padding: "0.75rem", borderRadius: 12,
+                border: `1px solid ${policyTemplateId === CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID ? "var(--accent)" : "var(--border)"}`,
+                background: policyTemplateId === CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID ? "rgba(99,102,241,0.08)" : "var(--surface)", cursor: "pointer",
+              }}
+            >
+              <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: "0.82rem" }}>Custom protocol policy</div>
+              <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", marginTop: 4 }}>Choose claim requirements for sandbox. Production always requires review.</div>
+            </button>
           </div>
+          {policyTemplateId === CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID && (
+            <div style={{ marginTop: "0.85rem", padding: "0.85rem", border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface-inset)" }}>
+              <label style={labelStyle}>Policy name<input value={customPolicyName} onChange={(e) => setCustomPolicyName(e.target.value)} style={inputStyle} /></label>
+              <label style={labelStyle}>What the holder sees<input value={customPolicyExplanation} onChange={(e) => setCustomPolicyExplanation(e.target.value)} style={inputStyle} /></label>
+              <div style={{ ...labelStyle, marginBottom: "0.5rem" }}>Required proof</div>
+              <div style={{ display: "grid", gap: "0.35rem", marginBottom: "0.75rem" }}>
+                {CUSTOM_LAUNCHPAD_CLAIMS.map((claim) => (
+                  <label key={claim.id} style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start", fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)" }}>
+                    <input type="checkbox" checked={customClaimIds.includes(claim.id)} onChange={(e) => setCustomClaimIds((current) => e.target.checked ? [...current, claim.id] : current.filter((id) => id !== claim.id))} />
+                    <span><strong style={{ color: "var(--text-primary)" }}>{claim.label}</strong> · {claim.description}</span>
+                  </label>
+                ))}
+              </div>
+              <div style={{ display: "flex", gap: "0.65rem", flexWrap: "wrap" }}>
+                <label style={{ ...labelStyle, flex: "1 1 130px" }}>Minimum assurance<select value={customAssurance} onChange={(e) => setCustomAssurance(e.target.value)} style={inputStyle}>{["L0", "L1", "L2", "L3", "L4"].map((level) => <option key={level} value={level}>{level}</option>)}</select></label>
+                <label style={{ ...labelStyle, flex: "1 1 130px" }}>Receipt hours<input type="number" min="1" max="168" value={customReceiptHours} onChange={(e) => setCustomReceiptHours(e.target.value)} style={inputStyle} /></label>
+              </div>
+            </div>
+          )}
           <div style={{ marginTop: "0.75rem" }}>
             <Btn size="sm" onClick={() => setStep("destinations")}>Configure destinations</Btn>
           </div>

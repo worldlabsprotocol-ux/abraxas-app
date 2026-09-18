@@ -58,6 +58,15 @@ export async function POST(req: NextRequest) {
     partnerId,
     publicSlug: body.public_slug ? String(body.public_slug) : undefined,
     policyTemplateId: String(body.policy_template_id ?? ""),
+    customPolicy: body.custom_policy && typeof body.custom_policy === "object" ? {
+      name: String((body.custom_policy as Record<string, unknown>).name ?? ""),
+      userExplanation: String((body.custom_policy as Record<string, unknown>).user_explanation ?? ""),
+      requiredClaimIds: Array.isArray((body.custom_policy as Record<string, unknown>).required_claim_ids)
+        ? (body.custom_policy as Record<string, unknown>).required_claim_ids as string[]
+        : [],
+      minimumAssurance: String((body.custom_policy as Record<string, unknown>).minimum_assurance ?? "") as import("@/lib/credentials/claimSchema").AssuranceLevel,
+      receiptLifetimeHours: Number((body.custom_policy as Record<string, unknown>).receipt_lifetime_hours ?? NaN),
+    } : undefined,
     returnUrl: String(body.return_url ?? ""),
     idempotencyKey: body.idempotency_key ? String(body.idempotency_key) : undefined,
   });
