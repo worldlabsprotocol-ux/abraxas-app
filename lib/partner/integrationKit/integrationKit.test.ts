@@ -119,7 +119,7 @@ describe("Partner Integration Kit", () => {
       currently_valid: true,
       invalidation_reasons: [] as string[],
     };
-    expect(kit({ requirePolicyVersion: true }).evaluateFetchedReceipt(base as typeof base).outcome).toBe("policy_version_not_adopted");
+    expect(kit({ policyVersion: undefined, requirePolicyVersion: true }).evaluateFetchedReceipt(base as typeof base).outcome).toBe("policy_version_not_adopted");
     expect(permitProtocolAction(client.evaluateFetchedReceipt({ ...base, partner_id: "other" }))).toBe(false);
   });
 

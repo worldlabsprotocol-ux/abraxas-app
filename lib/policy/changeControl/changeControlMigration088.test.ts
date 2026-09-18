@@ -38,8 +38,8 @@ describe("088_policy_change_control migration contract", () => {
   });
 
   it("grants service_role only and revokes public/anon/authenticated", () => {
-    expect(sql).toContain("GRANT SELECT, INSERT ON public.partner_policy_lifecycle_audit TO service_role");
-    expect(sql).toContain("REVOKE ALL ON public.partner_policy_lifecycle_audit FROM public, anon, authenticated");
-    expect(sql).not.toContain("GRANT SELECT ON public.partner_policy_lifecycle_audit TO anon");
+    expect(sql.toLowerCase()).toContain("grant select, insert on public.partner_policy_lifecycle_audit to service_role");
+    expect(sql.toLowerCase()).toContain("revoke all on public.partner_policy_lifecycle_audit from public, anon, authenticated");
+    expect(sql.toLowerCase()).not.toContain("grant select on public.partner_policy_lifecycle_audit to anon");
   });
 });

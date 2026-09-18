@@ -196,7 +196,6 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
           ok: true,
           action: "fixture",
           simulated: true,
-          classification: result.classification,
           ...result,
         });
       }

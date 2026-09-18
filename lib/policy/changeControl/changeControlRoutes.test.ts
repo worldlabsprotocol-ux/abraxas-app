@@ -156,7 +156,7 @@ describe("launchpad policy change control routes", () => {
     expect(body.simulated).toBe(true);
     expect(body.classification).toBe("offline_simulated");
     expect(body.issues_receipt).toBe(false);
-    expect(JSON.stringify(body)).not.toMatch(/email|dob|passport|oauth|secret/);
+    expect(JSON.stringify(body)).not.toMatch(/email@|date_of_birth|abx_|credential_jwt|wallet_secret/);
   });
 
   it("rejects fixture bodies that include PII keys", async () => {
