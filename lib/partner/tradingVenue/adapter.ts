@@ -29,6 +29,7 @@ import {
   type TradingVenueClientVisibleResult,
 } from "@/lib/partner/tradingVenue/clientVisible";
 import { consumeTradingVenueNonce } from "@/lib/partner/tradingVenue/nonceStore";
+import { WalletStandardStoreUnavailableError } from "@/lib/partner/walletStandard/errors";
 
 const DEFAULT_TTL_MS = 15 * 60 * 1000;
 
@@ -94,7 +95,7 @@ export class AbraxasTradingVenueAdapter {
     };
   }
 
-  preflight(input: TradingVenuePreflightInput): TradingVenueClientVisibleResult {
+  async preflight(input: TradingVenuePreflightInput): Promise<TradingVenueClientVisibleResult> {
     const requestedType = input.action_type ?? input.contract.action_type;
     const requestedScope = input.action_scope ?? input.contract.action_scope;
     if (!isVenueActionType(requestedType) || !isVenueActionScope(requestedScope)) {
@@ -123,7 +124,7 @@ export class AbraxasTradingVenueAdapter {
       );
     }
 
-    const wallet = resolveWalletBindingForAction({
+    const wallet = await resolveWalletBindingForAction({
       mode: input.contract.wallet_binding,
       bindingRef: input.binding_ref,
       partnerId: this.kit.options.partnerId,
@@ -131,6 +132,9 @@ export class AbraxasTradingVenueAdapter {
       consume: false,
     });
     if (!wallet.ok) {
+      if (wallet.status === "store_unavailable") {
+        return deniedVenueResult("store_unavailable", requestedType, requestedScope, "rejected", input.contract.expires_at);
+      }
       const reason =
         wallet.status === "missing" ? "wallet_binding_missing"
         : wallet.status === "expired" ? "wallet_binding_expired"
@@ -148,15 +152,26 @@ export class AbraxasTradingVenueAdapter {
       );
     }
 
-    const nonceState = consumeTradingVenueNonce(this.kit.options.partnerId, input.contract.nonce);
+    let nonceState: "consumed" | "replayed" | "invalid" | "expired";
+    try {
+      nonceState = await consumeTradingVenueNonce(this.kit.options.partnerId, input.contract.nonce, input.contract.expires_at);
+    } catch (error) {
+      if (error instanceof WalletStandardStoreUnavailableError) {
+        return deniedVenueResult("store_unavailable", requestedType, requestedScope, "rejected", input.contract.expires_at);
+      }
+      throw error;
+    }
     if (nonceState === "replayed") {
       return deniedVenueResult("replayed", requestedType, requestedScope, "replayed", input.contract.expires_at);
+    }
+    if (nonceState === "expired") {
+      return deniedVenueResult("action_expired", requestedType, requestedScope, "rejected", input.contract.expires_at);
     }
     if (nonceState === "invalid") {
       return deniedVenueResult("invalid", requestedType, requestedScope, "rejected", input.contract.expires_at);
     }
     if (wallet.status === "bound") {
-      resolveWalletBindingForAction({
+      await resolveWalletBindingForAction({
         mode: input.contract.wallet_binding,
         bindingRef: input.binding_ref,
         partnerId: this.kit.options.partnerId,

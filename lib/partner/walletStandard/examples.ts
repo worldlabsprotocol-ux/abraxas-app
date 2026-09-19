@@ -25,6 +25,7 @@ const bound = await fetch("/api/wallet-standard/bind", {
     challenge_id: challenge.challenge_id,
     partner_id: process.env.ABRAXAS_PARTNER_ID,
     action_contract_nonce: actionContract.nonce,
+    message: challenge.message,
     signature: signed.ok ? signed.signature : "",
     public_key: signed.ok ? signed.publicKey : "",
   }),
@@ -32,7 +33,7 @@ const bound = await fetch("/api/wallet-standard/bind", {
 // bound.binding_ref is tenant-scoped. Never log public_key or an address.
 
 // 4. Optional or required preflight on the Trading Venue Adapter.
-adapter.preflight({
+await adapter.preflight({
   result: verifiedReceipt,
   contract: { ...actionContract, wallet_binding: "optional" },
   binding_ref: bound.binding_ref,

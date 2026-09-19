@@ -2,7 +2,14 @@
 // Domain-bound short-lived challenge. No wallet address. No transaction.
 
 import { WALLET_STANDARD_PURPOSE, type WalletStandardChallengeView } from "@/lib/partner/walletStandard/contract";
-import { putWalletChallenge } from "@/lib/partner/walletStandard/store";
+import { WalletStandardStoreUnavailableError } from "@/lib/partner/walletStandard/errors";
+import {
+  hashActionContractNonce,
+  hashChallengeMessage,
+  hashWalletNonce,
+  hashWalletOrigin,
+} from "@/lib/partner/walletStandard/hashes";
+import { insertWalletChallenge } from "@/lib/partner/walletStandard/store";
 
 const CHALLENGE_TTL_MS = 5 * 60 * 1000;
 
@@ -38,12 +45,12 @@ export function buildWalletStandardMessage(input: {
   ].join("\n");
 }
 
-export function issueWalletStandardChallenge(input: {
+export async function issueWalletStandardChallenge(input: {
   origin: string;
   partnerId: string;
   actionContractNonce: string;
   now?: Date;
-}): WalletStandardChallengeView | { ok: false; status: "invalid" | "wrong_origin" } {
+}): Promise<WalletStandardChallengeView | { ok: false; status: "invalid" | "wrong_origin" | "store_unavailable" }> {
   const origin = input.origin.trim();
   const partnerId = input.partnerId.trim();
   const actionContractNonce = input.actionContractNonce.trim();
@@ -64,16 +71,22 @@ export function issueWalletStandardChallenge(input: {
     nonce,
     expiresAt,
   });
-  putWalletChallenge({
-    challenge_id: challengeId,
-    origin,
-    partner_id: partnerId,
-    action_contract_nonce: actionContractNonce,
-    nonce,
-    expires_at: expiresAt,
-    purpose: WALLET_STANDARD_PURPOSE,
-    consumed: false,
-  });
+  try {
+    await insertWalletChallenge({
+      challenge_id: challengeId,
+      partner_id: partnerId,
+      origin_hash: hashWalletOrigin(origin),
+      action_contract_nonce_hash: hashActionContractNonce(partnerId, actionContractNonce),
+      nonce_hash: hashWalletNonce(partnerId, nonce),
+      message_hash: hashChallengeMessage(message),
+      expires_at: expiresAt,
+    });
+  } catch (error) {
+    if (error instanceof WalletStandardStoreUnavailableError) {
+      return { ok: false, status: "store_unavailable" };
+    }
+    throw error;
+  }
   return {
     challenge_id: challengeId,
     message,

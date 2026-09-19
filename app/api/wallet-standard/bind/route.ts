@@ -12,16 +12,18 @@ export async function POST(req: NextRequest) {
     challenge_id?: string;
     partner_id?: string;
     action_contract_nonce?: string;
+    message?: string;
     signature?: string;
     public_key?: string;
     origin?: string;
   };
   const origin = (body.origin ?? req.headers.get("origin") ?? "").trim();
-  const bound = bindWalletStandard({
+  const bound = await bindWalletStandard({
     challengeId: String(body.challenge_id ?? ""),
     origin,
     partnerId: String(body.partner_id ?? ""),
     actionContractNonce: String(body.action_contract_nonce ?? ""),
+    message: String(body.message ?? ""),
     signature: String(body.signature ?? ""),
     publicKey: String(body.public_key ?? ""),
   });
@@ -34,5 +36,6 @@ export async function POST(req: NextRequest) {
   if (assertNoSensitiveWalletClientKeys(visible).length > 0) {
     return NextResponse.json({ ok: false, status: "invalid", binding_ref: null, expires_at: null }, { status: 500 });
   }
-  return NextResponse.json(visible, { status: bound.ok ? 200 : 400 });
+  const status = bound.status === "store_unavailable" ? 503 : bound.ok ? 200 : 400;
+  return NextResponse.json(visible, { status });
 }

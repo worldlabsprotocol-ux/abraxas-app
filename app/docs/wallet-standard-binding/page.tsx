@@ -7,6 +7,7 @@ import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 import {
   WALLET_STANDARD_CONNECTOR_NOTICE,
+  WALLET_STANDARD_MIGRATION_PLAN,
   WALLET_STANDARD_NOT_IDENTITY,
   WALLET_STANDARD_NO_WALLET_PRODUCT,
   walletStandardBindingExample,
@@ -38,6 +39,28 @@ export default function WalletStandardBindingDocsPage() {
           substitute for a signed eligibility receipt.
         </p>
         <p style={{ ...body, marginTop: "0.6rem" }}>{WALLET_STANDARD_CONNECTOR_NOTICE}</p>
+      </ContentCard>
+
+      <ContentCard title="Durable store migration">
+        <p style={body}>
+          This public feature requires <code>{WALLET_STANDARD_MIGRATION_PLAN.file}</code> on both DEMO
+          and Production before challenge or bind can succeed. Missing schema fails closed with
+          {" "}<code>store_unavailable</code>. There is no in-process fallback.
+        </p>
+        <p style={{ ...body, marginTop: "0.6rem" }}>
+          Apply DEMO first, then Production, as separate operator steps. Do not auto-apply from Vercel.
+          {WALLET_STANDARD_MIGRATION_PLAN.stores_only}
+        </p>
+        <ol style={{ ...body, paddingLeft: "1.2rem", display: "grid", gap: "0.35rem", marginTop: "0.75rem" }}>
+          {WALLET_STANDARD_MIGRATION_PLAN.demo_steps.map((step) => (
+            <li key={step}>{step}</li>
+          ))}
+        </ol>
+        <ol style={{ ...body, paddingLeft: "1.2rem", display: "grid", gap: "0.35rem", marginTop: "0.75rem" }}>
+          {WALLET_STANDARD_MIGRATION_PLAN.production_steps.map((step) => (
+            <li key={step}>{step}</li>
+          ))}
+        </ol>
       </ContentCard>
 
       <ContentCard title="Partner implementation">

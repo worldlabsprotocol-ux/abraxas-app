@@ -1,21 +1,36 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import nacl from "tweetnacl";
 import { NextRequest } from "next/server";
+
+process.env.NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET || "wallet-standard-durable-test-secret";
+
+vi.mock("@/lib/supabase/admin", () => ({
+  requireSupabaseAdmin: () => {
+    const { requireWalletStandardTestAdmin } = require("./fakeDurableBackend");
+    return requireWalletStandardTestAdmin();
+  },
+}));
+
 import { issueWalletStandardChallenge } from "@/lib/partner/walletStandard/challenge";
 import { bindWalletStandard } from "@/lib/partner/walletStandard/bind";
-import { resolveWalletBindingForAction } from "@/lib/partner/walletStandard/resolve";
-import { resetWalletStandardStoreForTests } from "@/lib/partner/walletStandard/store";
+import { resolveWalletBindingForAction, revokeWalletStandardBinding } from "@/lib/partner/walletStandard/resolve";
+import { consumeWalletChallenge } from "@/lib/partner/walletStandard/store";
 import { assertNoSensitiveWalletClientKeys } from "@/lib/partner/walletStandard/safety";
 import { POST as challengePost } from "@/app/api/wallet-standard/challenge/route";
 import { POST as bindPost } from "@/app/api/wallet-standard/bind/route";
+import {
+  fakeWalletInserts,
+  resetFakeWalletStandardBackend,
+  setFakeWalletAdminMissing,
+  setFakeWalletSchemaMissing,
+} from "@/lib/partner/walletStandard/fakeDurableBackend";
 import {
   AbraxasTradingVenueAdapter,
   VENUE_REF_PARTNER_ID,
   VENUE_REF_POLICY_ID,
   assertNoSensitiveVenueClientKeys,
-  resetTradingVenueNonceStoreForTests,
   venueFixtureReceipt,
 } from "@/lib/partner/tradingVenue";
 import { AbraxasPartnerKit } from "@/lib/partner/integrationKit";
@@ -34,8 +49,8 @@ function sign(message: string) {
   };
 }
 
-function issue(overrides?: { origin?: string; partnerId?: string; actionContractNonce?: string; now?: Date }) {
-  const issued = issueWalletStandardChallenge({
+async function issue(overrides?: { origin?: string; partnerId?: string; actionContractNonce?: string; now?: Date }) {
+  const issued = await issueWalletStandardChallenge({
     origin: overrides?.origin ?? ORIGIN,
     partnerId: overrides?.partnerId ?? PARTNER,
     actionContractNonce: overrides?.actionContractNonce ?? CONTRACT,
@@ -45,23 +60,33 @@ function issue(overrides?: { origin?: string; partnerId?: string; actionContract
   return issued;
 }
 
+async function bind(challenge: { challenge_id: string; message: string }, overrides?: {
+  origin?: string;
+  partnerId?: string;
+  actionContractNonce?: string;
+  signed?: ReturnType<typeof sign>;
+}) {
+  const signed = overrides?.signed ?? sign(challenge.message);
+  return bindWalletStandard({
+    challengeId: challenge.challenge_id,
+    origin: overrides?.origin ?? ORIGIN,
+    partnerId: overrides?.partnerId ?? PARTNER,
+    actionContractNonce: overrides?.actionContractNonce ?? CONTRACT,
+    message: challenge.message,
+    signature: signed.signature,
+    publicKey: signed.publicKey,
+  });
+}
+
 describe("Wallet Standard binding", () => {
   beforeEach(() => {
-    resetWalletStandardStoreForTests();
-    resetTradingVenueNonceStoreForTests();
+    resetFakeWalletStandardBackend();
   });
 
-  it("binds a valid Wallet Standard message signature and hides the raw address", () => {
-    const challenge = issue();
+  it("binds a valid Wallet Standard message signature and hides the raw address", async () => {
+    const challenge = await issue();
     const signed = sign(challenge.message);
-    const bound = bindWalletStandard({
-      challengeId: challenge.challenge_id,
-      origin: ORIGIN,
-      partnerId: PARTNER,
-      actionContractNonce: CONTRACT,
-      signature: signed.signature,
-      publicKey: signed.publicKey,
-    });
+    const bound = await bind(challenge, { signed });
     expect(bound.ok).toBe(true);
     expect(bound.status).toBe("bound");
     expect(bound.binding_ref?.startsWith("wbr_")).toBe(true);
@@ -70,86 +95,37 @@ describe("Wallet Standard binding", () => {
     expect(assertNoSensitiveWalletClientKeys(bound)).toEqual([]);
   });
 
-  it("rejects wrong origin, expired challenge, replay, altered contract, cross-partner, and invalid signature", () => {
-    const challenge = issue();
+  it("rejects wrong origin, expired challenge, replay, altered contract, cross-partner, and invalid signature", async () => {
+    const challenge = await issue();
     const signed = sign(challenge.message);
-    expect(bindWalletStandard({
-      challengeId: challenge.challenge_id,
-      origin: "https://evil.example",
-      partnerId: PARTNER,
-      actionContractNonce: CONTRACT,
-      signature: signed.signature,
-      publicKey: signed.publicKey,
-    }).status).toBe("wrong_origin");
+    expect((await bind(challenge, { origin: "https://evil.example", signed })).status).toBe("wrong_origin");
 
-    const expired = issue({ now: new Date(Date.now() - 10 * 60 * 1000), actionContractNonce: "expired-nonce" });
-    const expiredSigned = sign(expired.message);
-    expect(bindWalletStandard({
-      challengeId: expired.challenge_id,
-      origin: ORIGIN,
-      partnerId: PARTNER,
-      actionContractNonce: "expired-nonce",
-      signature: expiredSigned.signature,
-      publicKey: expiredSigned.publicKey,
-    }).status).toBe("expired");
+    const expired = await issue({ now: new Date(Date.now() - 10 * 60 * 1000), actionContractNonce: "expired-nonce" });
+    expect((await bind(expired, { actionContractNonce: "expired-nonce" })).status).toBe("expired");
 
-    const replayChallenge = issue({ actionContractNonce: "replay-nonce" });
+    const replayChallenge = await issue({ actionContractNonce: "replay-nonce" });
     const replaySigned = sign(replayChallenge.message);
-    const first = bindWalletStandard({
-      challengeId: replayChallenge.challenge_id,
-      origin: ORIGIN,
-      partnerId: PARTNER,
-      actionContractNonce: "replay-nonce",
-      signature: replaySigned.signature,
-      publicKey: replaySigned.publicKey,
-    });
+    const first = await bind(replayChallenge, { actionContractNonce: "replay-nonce", signed: replaySigned });
     expect(first.ok).toBe(true);
-    expect(bindWalletStandard({
-      challengeId: replayChallenge.challenge_id,
-      origin: ORIGIN,
-      partnerId: PARTNER,
-      actionContractNonce: "replay-nonce",
-      signature: replaySigned.signature,
-      publicKey: replaySigned.publicKey,
-    }).status).toBe("replayed");
+    expect((await bind(replayChallenge, { actionContractNonce: "replay-nonce", signed: replaySigned })).status).toBe("replayed");
 
-    const altered = issue({ actionContractNonce: "altered-a" });
-    const alteredSigned = sign(altered.message);
-    expect(bindWalletStandard({
-      challengeId: altered.challenge_id,
-      origin: ORIGIN,
-      partnerId: PARTNER,
-      actionContractNonce: "altered-b",
-      signature: alteredSigned.signature,
-      publicKey: alteredSigned.publicKey,
-    }).status).toBe("mismatched");
+    const altered = await issue({ actionContractNonce: "altered-a" });
+    expect((await bind(altered, { actionContractNonce: "altered-b" })).status).toBe("mismatched");
 
-    const cross = issue({ actionContractNonce: "cross-nonce" });
-    const crossSigned = sign(cross.message);
-    expect(bindWalletStandard({
-      challengeId: cross.challenge_id,
-      origin: ORIGIN,
-      partnerId: "other-partner",
-      actionContractNonce: "cross-nonce",
-      signature: crossSigned.signature,
-      publicKey: crossSigned.publicKey,
-    }).status).toBe("cross_partner");
+    const cross = await issue({ actionContractNonce: "cross-nonce" });
+    expect((await bind(cross, { partnerId: "other-partner", actionContractNonce: "cross-nonce" })).status).toBe("cross_partner");
 
-    const bad = issue({ actionContractNonce: "bad-sig" });
+    const bad = await issue({ actionContractNonce: "bad-sig" });
     const badSigned = sign(bad.message);
     const flipped = Buffer.from(badSigned.signature, "base64");
     flipped[0] = flipped[0] ^ 0xff;
-    expect(bindWalletStandard({
-      challengeId: bad.challenge_id,
-      origin: ORIGIN,
-      partnerId: PARTNER,
+    expect((await bind(bad, {
       actionContractNonce: "bad-sig",
-      signature: flipped.toString("base64"),
-      publicKey: badSigned.publicKey,
-    }).status).toBe("invalid_signature");
+      signed: { ...badSigned, signature: flipped.toString("base64") },
+    })).status).toBe("invalid_signature");
   });
 
-  it("keeps no-wallet venue preflight working and fail-closes required binding errors", () => {
+  it("keeps no-wallet venue preflight working and fail-closes required binding errors", async () => {
     const venue = new AbraxasTradingVenueAdapter({
       partnerId: VENUE_REF_PARTNER_ID,
       policyId: VENUE_REF_POLICY_ID,
@@ -159,30 +135,27 @@ describe("Wallet Standard binding", () => {
     const open = venue.issueActionContract({ wallet_binding: "optional" });
     if ("ok" in open) throw new Error("contract");
     const approved = venue.evaluateFetchedReceipt(venueFixtureReceipt("approved"));
-    const unused = venue.preflight({ result: approved, contract: open });
+    const unused = await venue.preflight({ result: approved, contract: open });
     expect(unused.allowed).toBe(true);
     expect(unused.action_binding.wallet_binding).toBe("optional");
 
     const required = venue.issueActionContract({ wallet_binding: "required" });
     if ("ok" in required) throw new Error("contract");
-    const missing = venue.preflight({ result: approved, contract: required });
+    const missing = await venue.preflight({ result: approved, contract: required });
     expect(missing.allowed).toBe(false);
     expect(missing.reason).toBe("wallet_binding_missing");
 
-    const challenge = issue({ partnerId: VENUE_REF_PARTNER_ID, actionContractNonce: required.nonce });
+    const challenge = await issue({ partnerId: VENUE_REF_PARTNER_ID, actionContractNonce: required.nonce });
     const signed = sign(challenge.message);
-    const bound = bindWalletStandard({
-      challengeId: challenge.challenge_id,
-      origin: ORIGIN,
+    const bound = await bind(challenge, {
       partnerId: VENUE_REF_PARTNER_ID,
       actionContractNonce: required.nonce,
-      signature: signed.signature,
-      publicKey: signed.publicKey,
+      signed,
     });
-    const ok = venue.preflight({ result: approved, contract: required, binding_ref: bound.binding_ref });
+    const ok = await venue.preflight({ result: approved, contract: required, binding_ref: bound.binding_ref });
     expect(ok.allowed).toBe(true);
     expect(ok.action_binding.wallet_binding).toBe("bound");
-    const replay = venue.preflight({ result: approved, contract: required, binding_ref: bound.binding_ref });
+    const replay = await venue.preflight({ result: approved, contract: required, binding_ref: bound.binding_ref });
     expect(replay.reason).toBe("wallet_binding_replayed");
     expect(assertNoSensitiveVenueClientKeys(ok)).toEqual([]);
     expect(JSON.stringify(ok)).not.toContain(signed.publicKey);
@@ -193,13 +166,15 @@ describe("Wallet Standard binding", () => {
       readFileSync(join(__dirname, "bind.ts"), "utf8"),
       readFileSync(join(__dirname, "connector.ts"), "utf8"),
       readFileSync(join(__dirname, "challenge.ts"), "utf8"),
+      readFileSync(join(__dirname, "store.ts"), "utf8"),
     ].join("\n");
     expect(src).not.toMatch(/createTransaction|signTransaction|sendAndConfirm|SystemProgram|mintTo/);
     expect(src).not.toContain("private_key");
     expect(src).not.toContain("seed phrase");
+    expect(src).not.toMatch(/new Map\(|in-process fallback/i);
   });
 
-  it("keeps Passport and receipt verification usable without a wallet", () => {
+  it("keeps Passport and receipt verification usable without a wallet", async () => {
     const kit = new AbraxasPartnerKit({
       partnerId: VENUE_REF_PARTNER_ID,
       policyId: VENUE_REF_POLICY_ID,
@@ -213,11 +188,11 @@ describe("Wallet Standard binding", () => {
     expect(verifyPage).not.toContain("/api/wallet-standard/bind");
     const passport = readFileSync(join(process.cwd(), "app/passport/page.tsx"), "utf8");
     expect(passport).not.toContain("signWalletStandardChallenge");
-    expect(resolveWalletBindingForAction({
+    expect((await resolveWalletBindingForAction({
       mode: "not_attached",
       partnerId: PARTNER,
       actionContractNonce: CONTRACT,
-    }).ok).toBe(true);
+    })).ok).toBe(true);
   });
 
   it("serves challenge and bind routes without echoing key material", async () => {
@@ -237,6 +212,7 @@ describe("Wallet Standard binding", () => {
         challenge_id: challenge.challenge_id,
         partner_id: PARTNER,
         action_contract_nonce: CONTRACT,
+        message: challenge.message,
         signature: signed.signature,
         public_key: signed.publicKey,
       }),
@@ -246,5 +222,74 @@ describe("Wallet Standard binding", () => {
     expect(bound.binding_ref).toMatch(/^wbr_/);
     expect(JSON.stringify(bound)).not.toContain(signed.publicKey);
     expect(assertNoSensitiveWalletClientKeys(bound)).toEqual([]);
+  });
+
+  it("shares challenge and bind state across store instances and blocks concurrent replay", async () => {
+    const challenge = await issue({ actionContractNonce: "cross-instance" });
+    const signed = sign(challenge.message);
+    const first = await bind(challenge, { actionContractNonce: "cross-instance", signed });
+    expect(first.ok).toBe(true);
+    const [a, b] = await Promise.all([
+      consumeWalletChallenge(challenge.challenge_id, PARTNER),
+      consumeWalletChallenge(challenge.challenge_id, PARTNER),
+    ]);
+    expect([a.ok, b.ok].filter(Boolean)).toHaveLength(0);
+    expect([!a.ok && a.code, !b.ok && b.code]).toContain("replayed");
+  });
+
+  it("revokes a binding and isolates partners", async () => {
+    const challenge = await issue({ actionContractNonce: "revoke-me" });
+    const bound = await bind(challenge, { actionContractNonce: "revoke-me" });
+    expect(bound.ok).toBe(true);
+    expect(await revokeWalletStandardBinding(bound.binding_ref!, PARTNER)).toBe("revoked");
+    expect(await resolveWalletBindingForAction({
+      mode: "required",
+      bindingRef: bound.binding_ref,
+      partnerId: PARTNER,
+      actionContractNonce: "revoke-me",
+    })).toEqual({ ok: false, status: "revoked" });
+
+    const home = await issue({ actionContractNonce: "home-only" });
+    const homeBound = await bind(home, { actionContractNonce: "home-only" });
+    expect(await resolveWalletBindingForAction({
+      mode: "required",
+      bindingRef: homeBound.binding_ref,
+      partnerId: "other-partner",
+      actionContractNonce: "home-only",
+    })).toEqual({ ok: false, status: "missing" });
+  });
+
+  it("fails closed when the schema or admin store is missing", async () => {
+    setFakeWalletSchemaMissing(true);
+    const missing = await issueWalletStandardChallenge({
+      origin: ORIGIN,
+      partnerId: PARTNER,
+      actionContractNonce: "schema-missing",
+    });
+    expect(missing).toEqual({ ok: false, status: "store_unavailable" });
+    setFakeWalletSchemaMissing(false);
+    setFakeWalletAdminMissing(true);
+    const adminMissing = await issueWalletStandardChallenge({
+      origin: ORIGIN,
+      partnerId: PARTNER,
+      actionContractNonce: "admin-missing",
+    });
+    expect(adminMissing).toEqual({ ok: false, status: "store_unavailable" });
+  });
+
+  it("never writes raw address, signature, or key material to database-facing rows", async () => {
+    const challenge = await issue({ actionContractNonce: "hash-only" });
+    const signed = sign(challenge.message);
+    await bind(challenge, { actionContractNonce: "hash-only", signed });
+    const blob = JSON.stringify(fakeWalletInserts);
+    expect(blob).not.toContain(signed.publicKey);
+    expect(blob).not.toContain(signed.signature);
+    expect(blob).not.toContain(signed.addressLike);
+    expect(blob).not.toContain(ORIGIN);
+    expect(blob).not.toContain("hash-only");
+    for (const insert of fakeWalletInserts) {
+      expect(assertNoSensitiveWalletClientKeys(insert.row)).toEqual([]);
+      expect(JSON.stringify(insert.row)).not.toMatch(/wallet_address|signature|private_key|seed phrase/i);
+    }
   });
 });

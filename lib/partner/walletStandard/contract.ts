@@ -14,12 +14,14 @@ export const WALLET_STANDARD_SAFE_REASONS = [
   "not_attached",
   "missing",
   "expired",
+  "revoked",
   "mismatched",
   "replayed",
   "cross_partner",
   "wrong_origin",
   "invalid_signature",
   "invalid",
+  "store_unavailable",
 ] as const;
 export type WalletStandardSafeReason = (typeof WALLET_STANDARD_SAFE_REASONS)[number];
 

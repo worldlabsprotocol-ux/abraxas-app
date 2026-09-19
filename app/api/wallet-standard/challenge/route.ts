@@ -14,13 +14,14 @@ export async function POST(req: NextRequest) {
     origin?: string;
   };
   const origin = (body.origin ?? req.headers.get("origin") ?? "").trim();
-  const issued = issueWalletStandardChallenge({
+  const issued = await issueWalletStandardChallenge({
     origin,
     partnerId: String(body.partner_id ?? ""),
     actionContractNonce: String(body.action_contract_nonce ?? ""),
   });
   if ("ok" in issued) {
-    return NextResponse.json({ ok: false, status: issued.status, binding_ref: null, expires_at: null }, { status: 400 });
+    const status = issued.status === "store_unavailable" ? 503 : 400;
+    return NextResponse.json({ ok: false, status: issued.status, binding_ref: null, expires_at: null }, { status });
   }
   if (assertNoSensitiveWalletClientKeys(issued).length > 0) {
     return NextResponse.json({ ok: false, status: "invalid", binding_ref: null, expires_at: null }, { status: 500 });

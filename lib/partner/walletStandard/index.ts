@@ -18,7 +18,8 @@ export {
 
 export { issueWalletStandardChallenge, isAllowedWalletStandardOrigin } from "@/lib/partner/walletStandard/challenge";
 export { bindWalletStandard } from "@/lib/partner/walletStandard/bind";
-export { resolveWalletBindingForAction } from "@/lib/partner/walletStandard/resolve";
+export { resolveWalletBindingForAction, revokeWalletStandardBinding } from "@/lib/partner/walletStandard/resolve";
+export { WALLET_STANDARD_MIGRATION_PLAN } from "@/lib/partner/walletStandard/migrationPlan";
 export { resetWalletStandardStoreForTests } from "@/lib/partner/walletStandard/store";
 export { walletStandardBindingExample } from "@/lib/partner/walletStandard/examples";
 export { assertNoSensitiveWalletClientKeys } from "@/lib/partner/walletStandard/safety";

@@ -127,6 +127,7 @@ export const DEMO_REQUIRED_MIGRATION_ORDER = [
   "084_partner_launchpad_foundation.sql",
   "085_partner_launchpad_hardening.sql",
   "091_partner_flow_continuations.sql",
+  "092_wallet_standard_action_bindings.sql",
 ] as const;
 
 export const DEMO_MIGRATION_065_FILENAME = "065_service_role_runtime_grants.sql" as const;
@@ -430,6 +431,20 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
       "Partner Flow OAuth continuations. Idempotent; DEMO already has the table. Required on Production for OAuth resume. Not Circle. Do not apply 089/090 to Production.",
   },
   {
+    file: "092_wallet_standard_action_bindings.sql",
+    tier: "required",
+    creates: [
+      "wallet_standard_challenges",
+      "wallet_standard_bindings",
+      "partner_venue_action_nonces",
+    ],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Durable Wallet Standard challenges, bindings, and venue action nonces. Hashes only. Required on DEMO and Production before this public feature is live. Apply DEMO first, then Production. Do not auto-apply from Vercel.",
+  },
+  {
     file: "088_policy_change_control.sql",
     tier: "recommended",
     creates: [
@@ -479,6 +494,9 @@ export const OBJECT_PROVENANCE: Record<string, string> = {
   partner_webhook_configs: "062_partner_webhook_outbox.sql",
   partner_settlement_intents: "089_circle_arc_testnet_settlement.sql",
   partner_flow_continuations: "091_partner_flow_continuations.sql",
+  wallet_standard_challenges: "092_wallet_standard_action_bindings.sql",
+  wallet_standard_bindings: "092_wallet_standard_action_bindings.sql",
+  partner_venue_action_nonces: "092_wallet_standard_action_bindings.sql",
 };
 
 export function getDemoManifestFilenames(): string[] {

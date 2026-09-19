@@ -1,26 +1,33 @@
 // FILE: lib/partner/walletStandard/bind.ts
 // Consume a challenge and issue an opaque tenant-scoped binding ref.
 
-import { buildWalletStandardMessage } from "@/lib/partner/walletStandard/challenge";
 import type { WalletStandardBindView, WalletStandardSafeReason } from "@/lib/partner/walletStandard/contract";
+import { WalletStandardStoreUnavailableError } from "@/lib/partner/walletStandard/errors";
+import {
+  hashActionContractNonce,
+  hashChallengeMessage,
+  hashWalletOrigin,
+} from "@/lib/partner/walletStandard/hashes";
 import {
   bindingRefFromHash,
   consumeWalletChallenge,
   getWalletChallenge,
+  getWalletChallengeById,
   hashWalletPublicKey,
-  putWalletBinding,
+  insertWalletBinding,
 } from "@/lib/partner/walletStandard/store";
 import { decodeWalletKeyMaterial, verifyWalletStandardSignature } from "@/lib/partner/walletStandard/verify";
 
-export function bindWalletStandard(input: {
+export async function bindWalletStandard(input: {
   challengeId: string;
   origin: string;
   partnerId: string;
   actionContractNonce: string;
+  message: string;
   signature: string;
   publicKey: string;
   now?: Date;
-}): WalletStandardBindView {
+}): Promise<WalletStandardBindView> {
   const fail = (status: WalletStandardSafeReason): WalletStandardBindView => ({
     ok: false,
     status,
@@ -28,52 +35,72 @@ export function bindWalletStandard(input: {
     expires_at: null,
   });
 
-  const challenge = getWalletChallenge(input.challengeId);
-  if (!challenge) return fail("invalid");
-  if (challenge.consumed) return fail("replayed");
-  if (challenge.partner_id !== input.partnerId.trim()) return fail("cross_partner");
-  if (challenge.action_contract_nonce !== input.actionContractNonce.trim()) return fail("mismatched");
-  if (challenge.origin !== input.origin.trim()) return fail("wrong_origin");
-  const now = input.now ?? new Date();
-  if (Date.parse(challenge.expires_at) <= now.getTime()) return fail("expired");
+  try {
+    const partnerId = input.partnerId.trim();
+    const origin = input.origin.trim();
+    const actionContractNonce = input.actionContractNonce.trim();
+    const message = input.message;
+    if (!partnerId || !actionContractNonce || !input.challengeId.trim() || !message) {
+      return fail("invalid");
+    }
 
-  const message = buildWalletStandardMessage({
-    origin: challenge.origin,
-    partnerId: challenge.partner_id,
-    actionContractNonce: challenge.action_contract_nonce,
-    nonce: challenge.nonce,
-    expiresAt: challenge.expires_at,
-  });
-  if (!verifyWalletStandardSignature({
-    message,
-    signature: input.signature,
-    publicKey: input.publicKey,
-  })) {
-    return fail("invalid_signature");
+    const scoped = await getWalletChallenge(input.challengeId, partnerId);
+    if (!scoped) {
+      const other = await getWalletChallengeById(input.challengeId);
+      if (other) return fail("cross_partner");
+      return fail("invalid");
+    }
+
+    if (scoped.origin_hash !== hashWalletOrigin(origin)) return fail("wrong_origin");
+    if (scoped.action_contract_nonce_hash !== hashActionContractNonce(partnerId, actionContractNonce)) {
+      return fail("mismatched");
+    }
+    if (scoped.message_hash !== hashChallengeMessage(message)) return fail("invalid");
+    const now = input.now ?? new Date();
+    if (Date.parse(scoped.expires_at) <= now.getTime()) return fail("expired");
+    if (scoped.revoked_at) return fail("invalid");
+    if (scoped.consumed_at) return fail("replayed");
+
+    if (!verifyWalletStandardSignature({
+      message,
+      signature: input.signature,
+      publicKey: input.publicKey,
+    })) {
+      return fail("invalid_signature");
+    }
+
+    const pub = decodeWalletKeyMaterial(input.publicKey);
+    if (!pub) return fail("invalid");
+
+    const consumed = await consumeWalletChallenge(scoped.challenge_id, partnerId);
+    if (!consumed.ok) {
+      if (consumed.code === "replayed" || consumed.code === "expired" || consumed.code === "revoked") {
+        return fail(consumed.code);
+      }
+      return fail("invalid");
+    }
+
+    const pubkeyHash = hashWalletPublicKey(partnerId, pub);
+    const bindingRef = bindingRefFromHash(pubkeyHash);
+    await insertWalletBinding({
+      binding_ref: bindingRef,
+      partner_id: partnerId,
+      action_contract_nonce_hash: consumed.action_contract_nonce_hash,
+      pubkey_hash: pubkeyHash,
+      origin_hash: consumed.origin_hash,
+      expires_at: consumed.expires_at,
+    });
+
+    return {
+      ok: true,
+      status: "bound",
+      binding_ref: bindingRef,
+      expires_at: consumed.expires_at,
+    };
+  } catch (error) {
+    if (error instanceof WalletStandardStoreUnavailableError) {
+      return fail("store_unavailable");
+    }
+    throw error;
   }
-
-  const pub = decodeWalletKeyMaterial(input.publicKey);
-  if (!pub) return fail("invalid");
-
-  const consumed = consumeWalletChallenge(challenge.challenge_id);
-  if (!consumed) return fail("replayed");
-
-  const pubkeyHash = hashWalletPublicKey(challenge.partner_id, pub);
-  const bindingRef = bindingRefFromHash(pubkeyHash);
-  putWalletBinding({
-    binding_ref: bindingRef,
-    partner_id: challenge.partner_id,
-    action_contract_nonce: challenge.action_contract_nonce,
-    pubkey_hash: pubkeyHash,
-    origin: challenge.origin,
-    expires_at: challenge.expires_at,
-    consumed: false,
-  });
-
-  return {
-    ok: true,
-    status: "bound",
-    binding_ref: bindingRef,
-    expires_at: challenge.expires_at,
-  };
 }

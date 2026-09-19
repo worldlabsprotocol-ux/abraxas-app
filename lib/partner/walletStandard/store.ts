@@ -1,77 +1,199 @@
 // FILE: lib/partner/walletStandard/store.ts
-// In-process challenge and binding store. Hashed wallet material only.
+// Durable service-role store. No in-process fallback.
 
-import { createHash } from "node:crypto";
+import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import {
+  isWalletStoreSchemaMissing,
+  WalletStandardStoreUnavailableError,
+} from "@/lib/partner/walletStandard/errors";
 
-export interface StoredWalletChallenge {
+export interface DurableWalletChallenge {
   challenge_id: string;
-  origin: string;
   partner_id: string;
-  action_contract_nonce: string;
-  nonce: string;
+  origin_hash: string;
+  action_contract_nonce_hash: string;
+  nonce_hash: string;
+  message_hash: string;
   expires_at: string;
-  purpose: string;
-  consumed: boolean;
+  consumed_at: string | null;
+  revoked_at: string | null;
 }
 
-export interface StoredWalletBinding {
+export interface DurableWalletBinding {
   binding_ref: string;
   partner_id: string;
-  action_contract_nonce: string;
+  action_contract_nonce_hash: string;
   pubkey_hash: string;
-  origin: string;
+  origin_hash: string;
   expires_at: string;
-  consumed: boolean;
+  consumed_at: string | null;
+  revoked_at: string | null;
 }
 
-const challenges = new Map<string, StoredWalletChallenge>();
-const bindings = new Map<string, StoredWalletBinding>();
+function admin() {
+  try {
+    return requireSupabaseAdmin();
+  } catch {
+    throw new WalletStandardStoreUnavailableError();
+  }
+}
+
+function assertOk(error: { message?: string; code?: string } | null): void {
+  if (!error) return;
+  throw new WalletStandardStoreUnavailableError();
+}
+
+function mapChallenge(row: Record<string, unknown>): DurableWalletChallenge {
+  return {
+    challenge_id: String(row.challenge_id ?? ""),
+    partner_id: String(row.partner_id ?? ""),
+    origin_hash: String(row.origin_hash ?? ""),
+    action_contract_nonce_hash: String(row.action_contract_nonce_hash ?? ""),
+    nonce_hash: String(row.nonce_hash ?? ""),
+    message_hash: String(row.message_hash ?? ""),
+    expires_at: String(row.expires_at ?? ""),
+    consumed_at: row.consumed_at ? String(row.consumed_at) : null,
+    revoked_at: row.revoked_at ? String(row.revoked_at) : null,
+  };
+}
+
+function mapBinding(row: Record<string, unknown>): DurableWalletBinding {
+  return {
+    binding_ref: String(row.binding_ref ?? ""),
+    partner_id: String(row.partner_id ?? ""),
+    action_contract_nonce_hash: String(row.action_contract_nonce_hash ?? ""),
+    pubkey_hash: String(row.pubkey_hash ?? ""),
+    origin_hash: String(row.origin_hash ?? ""),
+    expires_at: String(row.expires_at ?? ""),
+    consumed_at: row.consumed_at ? String(row.consumed_at) : null,
+    revoked_at: row.revoked_at ? String(row.revoked_at) : null,
+  };
+}
+
+export async function insertWalletChallenge(row: Omit<DurableWalletChallenge, "consumed_at" | "revoked_at">): Promise<void> {
+  const sb = admin();
+  const { error } = await sb.from("wallet_standard_challenges").insert({
+    challenge_id: row.challenge_id,
+    partner_id: row.partner_id,
+    origin_hash: row.origin_hash,
+    action_contract_nonce_hash: row.action_contract_nonce_hash,
+    nonce_hash: row.nonce_hash,
+    message_hash: row.message_hash,
+    expires_at: row.expires_at,
+  });
+  if (isWalletStoreSchemaMissing(error) || error) throw new WalletStandardStoreUnavailableError();
+}
 
 export function resetWalletStandardStoreForTests(): void {
-  challenges.clear();
-  bindings.clear();
+  // Production store has no in-process cache. Tests reset the fake backend.
 }
 
-export function hashWalletPublicKey(partnerId: string, publicKeyBytes: Uint8Array): string {
-  return createHash("sha256")
-    .update(partnerId.trim().toLowerCase())
-    .update(":")
-    .update(Buffer.from(publicKeyBytes))
-    .digest("hex")
-    .slice(0, 40);
+export async function getWalletChallengeById(challengeId: string): Promise<DurableWalletChallenge | null> {
+  const sb = admin();
+  const { data, error } = await sb
+    .from("wallet_standard_challenges")
+    .select("challenge_id, partner_id, origin_hash, action_contract_nonce_hash, nonce_hash, message_hash, expires_at, consumed_at, revoked_at")
+    .eq("challenge_id", challengeId)
+    .maybeSingle();
+  if (isWalletStoreSchemaMissing(error)) throw new WalletStandardStoreUnavailableError();
+  assertOk(error);
+  return data ? mapChallenge(data as Record<string, unknown>) : null;
 }
 
-export function bindingRefFromHash(pubkeyHash: string): string {
-  return `wbr_${pubkeyHash.slice(0, 32)}`;
+export async function getWalletChallenge(challengeId: string, partnerId: string): Promise<DurableWalletChallenge | null> {
+  const sb = admin();
+  const { data, error } = await sb
+    .from("wallet_standard_challenges")
+    .select("challenge_id, partner_id, origin_hash, action_contract_nonce_hash, nonce_hash, message_hash, expires_at, consumed_at, revoked_at")
+    .eq("challenge_id", challengeId)
+    .eq("partner_id", partnerId)
+    .maybeSingle();
+  if (isWalletStoreSchemaMissing(error)) throw new WalletStandardStoreUnavailableError();
+  assertOk(error);
+  return data ? mapChallenge(data as Record<string, unknown>) : null;
 }
 
-export function putWalletChallenge(row: StoredWalletChallenge): void {
-  challenges.set(row.challenge_id, row);
+export async function consumeWalletChallenge(
+  challengeId: string,
+  partnerId: string,
+): Promise<{ ok: true; expires_at: string; origin_hash: string; action_contract_nonce_hash: string; message_hash: string } | { ok: false; code: string }> {
+  const sb = admin();
+  const { data, error } = await sb.rpc("wallet_standard_consume_challenge", {
+    p_challenge_id: challengeId,
+    p_partner_id: partnerId,
+  });
+  if (isWalletStoreSchemaMissing(error) || error) throw new WalletStandardStoreUnavailableError();
+  const payload = data as { ok?: boolean; code?: string; expires_at?: string; origin_hash?: string; action_contract_nonce_hash?: string; message_hash?: string };
+  if (payload?.ok) {
+    return {
+      ok: true,
+      expires_at: String(payload.expires_at),
+      origin_hash: String(payload.origin_hash),
+      action_contract_nonce_hash: String(payload.action_contract_nonce_hash),
+      message_hash: String(payload.message_hash),
+    };
+  }
+  return { ok: false, code: String(payload?.code ?? "missing") };
 }
 
-export function getWalletChallenge(id: string): StoredWalletChallenge | null {
-  return challenges.get(id) ?? null;
+export async function insertWalletBinding(row: Omit<DurableWalletBinding, "consumed_at" | "revoked_at">): Promise<void> {
+  const sb = admin();
+  const { error } = await sb.from("wallet_standard_bindings").insert({
+    binding_ref: row.binding_ref,
+    partner_id: row.partner_id,
+    action_contract_nonce_hash: row.action_contract_nonce_hash,
+    pubkey_hash: row.pubkey_hash,
+    origin_hash: row.origin_hash,
+    expires_at: row.expires_at,
+  });
+  if (error?.code === "23505") return;
+  if (isWalletStoreSchemaMissing(error) || error) throw new WalletStandardStoreUnavailableError();
 }
 
-export function consumeWalletChallenge(id: string): StoredWalletChallenge | null {
-  const row = challenges.get(id);
-  if (!row || row.consumed) return null;
-  row.consumed = true;
-  return row;
+export async function getWalletBinding(bindingRef: string, partnerId: string): Promise<DurableWalletBinding | null> {
+  const sb = admin();
+  const { data, error } = await sb
+    .from("wallet_standard_bindings")
+    .select("binding_ref, partner_id, action_contract_nonce_hash, pubkey_hash, origin_hash, expires_at, consumed_at, revoked_at")
+    .eq("binding_ref", bindingRef)
+    .eq("partner_id", partnerId)
+    .maybeSingle();
+  if (isWalletStoreSchemaMissing(error)) throw new WalletStandardStoreUnavailableError();
+  assertOk(error);
+  return data ? mapBinding(data as Record<string, unknown>) : null;
 }
 
-export function putWalletBinding(row: StoredWalletBinding): void {
-  bindings.set(row.binding_ref, row);
+export async function consumeWalletBinding(
+  bindingRef: string,
+  partnerId: string,
+): Promise<"consumed" | "replayed" | "missing" | "expired" | "revoked"> {
+  const sb = admin();
+  const { data, error } = await sb.rpc("wallet_standard_consume_binding", {
+    p_binding_ref: bindingRef,
+    p_partner_id: partnerId,
+  });
+  if (isWalletStoreSchemaMissing(error) || error) throw new WalletStandardStoreUnavailableError();
+  const payload = data as { ok?: boolean; code?: string };
+  if (payload?.ok) return "consumed";
+  const code = String(payload?.code ?? "missing");
+  if (code === "replayed" || code === "expired" || code === "revoked") return code;
+  return "missing";
 }
 
-export function getWalletBinding(ref: string): StoredWalletBinding | null {
-  return bindings.get(ref) ?? null;
+export async function revokeWalletBinding(
+  bindingRef: string,
+  partnerId: string,
+): Promise<"revoked" | "missing"> {
+  const sb = admin();
+  const { data, error } = await sb.rpc("wallet_standard_revoke_binding", {
+    p_binding_ref: bindingRef,
+    p_partner_id: partnerId,
+  });
+  if (isWalletStoreSchemaMissing(error) || error) throw new WalletStandardStoreUnavailableError();
+  return (data as { ok?: boolean })?.ok ? "revoked" : "missing";
 }
 
-export function consumeWalletBinding(ref: string): "consumed" | "replayed" | "missing" {
-  const row = bindings.get(ref);
-  if (!row) return "missing";
-  if (row.consumed) return "replayed";
-  row.consumed = true;
-  return "consumed";
-}
+export {
+  hashWalletPublicKey,
+  bindingRefFromHash,
+} from "@/lib/partner/walletStandard/hashes";
