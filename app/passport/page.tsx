@@ -22,6 +22,7 @@ import { StatusBanner } from "@/components/ui/StatusBanner";
 import { computePassportSetupState } from "@/lib/idv/identityVerificationStates";
 import { VerifyClient } from "@/app/verify/VerifyClient";
 import { PartnerFlowReturnHandler } from "@/components/partner/PartnerFlowReturnHandler";
+import { PartnerVerificationResumeCta } from "@/components/passport/PartnerVerificationResumeCta";
 import {
   PASSPORT_PAGE_EYEBROW,
   PASSPORT_PAGE_HEADLINE,
@@ -233,6 +234,7 @@ function PassportPageInner() {
             )}
 
             <PartnerFlowReturnHandler handoff={handoff} />
+            <PartnerVerificationResumeCta />
 
             {isStatusFetchError && statusFetchError && (
               <div style={{ marginBottom: "1.25rem" }}>

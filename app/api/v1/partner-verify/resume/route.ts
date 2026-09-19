@@ -1,5 +1,5 @@
 // FILE: app/api/v1/partner-verify/resume/route.ts
-// Persist partner-verify entry in a signed HttpOnly cookie across OAuth redirect.
+// Persist a tenant-scoped continuation. Database store is mandatory.
 
 import { NextRequest, NextResponse } from "next/server";
 import { normalizePartnerVerifyInput } from "@/lib/partner/normalizePartnerVerifyInput";
@@ -9,14 +9,27 @@ import {
 } from "@/lib/partner/partnerVerifyResume";
 import {
   attachPartnerVerifyResumeCookie,
-  buildResumePathFromPayload,
   clearPartnerVerifyResumeCookie,
   PARTNER_VERIFY_RESUME_COOKIE,
   signPartnerVerifyResumeCookie,
   verifyPartnerVerifyResumeCookie,
 } from "@/lib/partner/partnerVerifyResumeCookie";
+import {
+  CONTINUATION_STORE_UNAVAILABLE,
+  ContinuationStoreUnavailableError,
+  createPartnerFlowContinuationRecord,
+} from "@/lib/partner/partnerFlowContinuation";
+import { createSupabaseContinuationStore } from "@/lib/partner/partnerFlowContinuationStore";
+import { peekContinuationSafeView } from "@/lib/partner/activatePartnerFlowContinuation";
 
 export const dynamic = "force-dynamic";
+
+function storeUnavailableResponse() {
+  return NextResponse.json(
+    { ok: false, code: CONTINUATION_STORE_UNAVAILABLE },
+    { status: 503 },
+  );
+}
 
 function sanitizeBody(body: Record<string, unknown>): PartnerVerifyResumeParams | null {
   const normalized = normalizePartnerVerifyInput({
@@ -40,12 +53,14 @@ function sanitizeBody(body: Record<string, unknown>): PartnerVerifyResumeParams 
   }
   if (normalized.params.purpose) params.set("purpose", normalized.params.purpose);
 
-  return parsePartnerVerifyResumeParams(params);
+  const parsed = parsePartnerVerifyResumeParams(params);
+  if (!parsed) return null;
+
+  const appSlug = typeof body.appSlug === "string" ? body.appSlug.trim() : undefined;
+  const policyVersion = typeof body.policyVersion === "number" ? body.policyVersion : undefined;
+  return { ...parsed, appSlug, policyVersion };
 }
 
-/**
- * POST — store resumable partner-verify path in signed HttpOnly cookie.
- */
 export async function POST(request: NextRequest) {
   let body: Record<string, unknown>;
   try {
@@ -59,7 +74,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid resume parameters" }, { status: 400 });
   }
 
-  const token = await signPartnerVerifyResumeCookie(resume);
+  const record = createPartnerFlowContinuationRecord(resume);
+  if (!record) {
+    return NextResponse.json({ error: "Invalid resume parameters" }, { status: 400 });
+  }
+
+  try {
+    await createSupabaseContinuationStore().save(record);
+  } catch (error) {
+    if (error instanceof ContinuationStoreUnavailableError) {
+      return storeUnavailableResponse();
+    }
+    return storeUnavailableResponse();
+  }
+
+  const token = await signPartnerVerifyResumeCookie({ jti: record.jti });
   if (!token) {
     return NextResponse.json({ error: "Resume cookie unavailable" }, { status: 503 });
   }
@@ -69,33 +98,26 @@ export async function POST(request: NextRequest) {
   return res;
 }
 
-/**
- * GET — consume cookie and return restorable partner-verify path (OAuth resume fallback).
- */
 export async function GET(request: NextRequest) {
   const token = request.cookies.get(PARTNER_VERIFY_RESUME_COOKIE)?.value;
   if (!token) {
-    return NextResponse.json({ ok: false, code: "no_resume" }, { status: 404 });
+    return NextResponse.json({ ok: true, hasContinuation: false, action: null });
   }
 
   const payload = await verifyPartnerVerifyResumeCookie(token);
-  if (!payload) {
-    const res = NextResponse.json({ ok: false, code: "invalid_resume" }, { status: 400 });
+  if (!payload?.jti) {
+    const res = NextResponse.json({ ok: true, hasContinuation: false, action: null });
     clearPartnerVerifyResumeCookie(res);
     return res;
   }
 
-  const path = buildResumePathFromPayload(payload);
-  if (!path) {
-    const res = NextResponse.json({ ok: false, code: "invalid_resume" }, { status: 400 });
-    clearPartnerVerifyResumeCookie(res);
-    return res;
+  try {
+    const stored = await createSupabaseContinuationStore().peek(payload.jti);
+    return NextResponse.json({ ok: true, ...peekContinuationSafeView(stored) });
+  } catch (error) {
+    if (error instanceof ContinuationStoreUnavailableError) {
+      return storeUnavailableResponse();
+    }
+    return storeUnavailableResponse();
   }
-
-  const res = NextResponse.json({
-    ok: true,
-    path,
-  });
-  clearPartnerVerifyResumeCookie(res);
-  return res;
 }

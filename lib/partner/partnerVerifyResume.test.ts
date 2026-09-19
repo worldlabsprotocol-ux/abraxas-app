@@ -143,6 +143,15 @@ describe("partnerVerifyResume", () => {
     expect(sessionStorage.getItem("abraxas_partner_verify_resume_v1")).toBeNull();
   });
 
+  it("saves localhost sandbox callbacks for Partner Flow resume", () => {
+    savePartnerVerifyResume({
+      partnerId: "circle-arc-demo-304",
+      policyId: "circle-arc-demo-304-sandbox_economic_demo-v1",
+      returnUrl: "http://localhost:3000/callback",
+    });
+    expect(loadPartnerVerifyResume()?.returnUrl).toBe("http://localhost:3000/callback");
+  });
+
   it("rejects unsafe return_url values in resume state", () => {
     sessionStorage.setItem(
       "abraxas_partner_verify_resume_v1",

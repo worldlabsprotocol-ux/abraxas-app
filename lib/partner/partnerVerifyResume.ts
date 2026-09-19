@@ -2,6 +2,7 @@
 // Persist validated partner-verify entry across zkLogin OAuth redirect.
 // Stores only partner flow identifiers — never tokens, receipts, or PII.
 
+import { normalizePartnerReturnUrlForAllowlist } from "@/lib/connect/returnUrlAllowlistSemantics";
 import { normalizePartnerVerifySearchParams } from "@/lib/partner/normalizePartnerVerifyInput";
 
 const STORAGE_KEY = "abraxas_partner_verify_resume_v1";
@@ -15,6 +16,8 @@ const ALLOWED_RESUME_KEYS = new Set([
   "permission",
   "permissionVersion",
   "purpose",
+  "appSlug",
+  "policyVersion",
   "savedAt",
 ]);
 
@@ -25,6 +28,8 @@ export type PartnerVerifyResumeParams = {
   permission?: string;
   permissionVersion?: string;
   purpose?: string;
+  appSlug?: string;
+  policyVersion?: number;
 };
 
 export type PartnerVerifyResumeState = PartnerVerifyResumeParams & {
@@ -95,12 +100,7 @@ function isSafeReturnUrlForResume(value: string): boolean {
   ) {
     return false;
   }
-  try {
-    const parsed = new URL(trimmed);
-    return parsed.protocol === "https:";
-  } catch {
-    return false;
-  }
+  return normalizePartnerReturnUrlForAllowlist(trimmed) !== null;
 }
 
 function sanitizeResumeParams(
@@ -112,9 +112,12 @@ function sanitizeResumeParams(
   const permission = params.permission?.trim();
   const permissionVersion = params.permissionVersion?.trim();
   const purpose = params.purpose?.trim();
+  const appSlug = params.appSlug?.trim();
+  const policyVersion = params.policyVersion;
 
   if (!partnerId || !returnUrl || (!policyId && !permission)) return null;
   if (!isSafeReturnUrlForResume(returnUrl)) return null;
+  if (policyVersion != null && (!Number.isInteger(policyVersion) || policyVersion < 1)) return null;
 
   const built = buildPartnerVerifyPath({
     partnerId,
@@ -133,6 +136,8 @@ function sanitizeResumeParams(
     permission: permission || undefined,
     permissionVersion: permissionVersion || undefined,
     purpose: purpose || undefined,
+    appSlug: appSlug || undefined,
+    policyVersion: policyVersion ?? undefined,
   };
 }
 
@@ -223,6 +228,8 @@ export function loadPartnerVerifyResume(): PartnerVerifyResumeState | null {
         ? parsed.permissionVersion.trim()
         : undefined,
       purpose: typeof parsed.purpose === "string" ? parsed.purpose.trim() : undefined,
+      appSlug: typeof parsed.appSlug === "string" ? parsed.appSlug.trim() : undefined,
+      policyVersion: typeof parsed.policyVersion === "number" ? parsed.policyVersion : undefined,
       savedAt: typeof parsed.savedAt === "string" ? parsed.savedAt.trim() : "",
     };
 

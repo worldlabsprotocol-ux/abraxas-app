@@ -129,7 +129,10 @@ function isGoodTroublePurchaseReturnUrl(returnUrl: string): boolean {
   return returnUrl.toLowerCase().includes("gtf_");
 }
 
-function missingGenericMessage(missing: string[]): string {
+export function partnerVerifyMissingRequiredParametersMessage(missing: string[]): string {
+  if (missing.length === 0) {
+    return "This verification link is missing required parameters. Ask the partner site for a fresh Partner Flow link.";
+  }
   return `This verification link is missing required parameters (${missing.join(", ")}). Ask the partner site for a fresh Partner Flow link.`;
 }
 
@@ -160,7 +163,7 @@ export function normalizePartnerVerifyInput(input: {
     return {
       ok: false,
       code: "missing_required_params",
-      invalidLinkMessage: missingGenericMessage(missing),
+      invalidLinkMessage: partnerVerifyMissingRequiredParametersMessage(missing),
     };
   }
 
@@ -241,7 +244,7 @@ export function normalizePartnerVerifyInput(input: {
       code: "missing_policy",
       invalidLinkMessage: isGoodTrouble
         ? GOOD_TROUBLE_LEGACY_BROWSE_INVALID_LINK_MESSAGE
-        : missingGenericMessage(["policy or permission"]),
+        : partnerVerifyMissingRequiredParametersMessage(["policy or permission"]),
     };
   }
 
