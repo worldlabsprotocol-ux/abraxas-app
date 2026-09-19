@@ -25,6 +25,9 @@ describe("starter kit route", () => {
     const json = await res.json();
     expect(json.issues_credentials).toBe(false);
     expect(json.moves_funds).toBe(false);
+    expect(json.browser_only_supported).toBe(false);
+    expect(json.runtimes).toContain("javascript_wix_velo");
+    expect(json.runtimes).toContain("universal_https");
     expect(studioPayloadLeaks(json)).toEqual([]);
   });
 
@@ -39,7 +42,8 @@ describe("starter kit route", () => {
     const kit = await ok.json();
     expect(kit.ok).toBe(true);
     expect(kit.files.some((file: { path: string }) => file.path.includes("callback"))).toBe(true);
-    expect(studioPayloadLeaks(kit)).toEqual([]);
+    expect(kit.filename).toMatch(/\.zip$/);
+    expect(studioPayloadLeaks({ ...kit, archive_base64: "" })).toEqual([]);
 
     const denied = await post({
       pack_id: "age_21_retail",

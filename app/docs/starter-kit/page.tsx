@@ -4,7 +4,13 @@ import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
-import { STARTER_KIT_DOES_NOT_DO, STARTER_KIT_NOTICES } from "@/lib/partner/starterKit/contract";
+import {
+  STARTER_KIT_CANONICAL_CONTRACT,
+  STARTER_KIT_DOES_NOT_DO,
+  STARTER_KIT_MINIMUM_REQUIREMENTS,
+  STARTER_KIT_NOTICES,
+  STARTER_KIT_PLATFORM_MATRIX,
+} from "@/lib/partner/starterKit/contract";
 
 const FONT = ABRAXAS_FONT_SANS;
 const body: React.CSSProperties = {
@@ -21,8 +27,23 @@ export default function StarterKitDocsPage() {
       <PageHeader
         eyebrow="Developers · Integration Studio"
         title="Partner starter kit generator"
-        subtitle="Choose a policy pack and path in Integration Studio and download a placeholder-only runnable project."
+        subtitle={STARTER_KIT_CANONICAL_CONTRACT}
       />
+      <ContentCard title="Minimum platform requirements">
+        <ul style={{ ...body, paddingLeft: "1.2rem", display: "grid", gap: "0.4rem" }}>
+          {STARTER_KIT_MINIMUM_REQUIREMENTS.map((line) => <li key={line}>{line}</li>)}
+        </ul>
+      </ContentCard>
+      <ContentCard title="Supported platforms">
+        <ul style={{ ...body, paddingLeft: "1.2rem", display: "grid", gap: "0.45rem" }}>
+          {STARTER_KIT_PLATFORM_MATRIX.map((item) => (
+            <li key={item.id}>
+              <strong>{item.label}</strong>
+              {item.canonical ? " (canonical)" : ""} — {item.note}
+            </li>
+          ))}
+        </ul>
+      </ContentCard>
       <ContentCard title="What it generates">
         <p style={body}>
           README, server route, .env.example, receipt verification, safe errors, optional webhook

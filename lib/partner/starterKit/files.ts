@@ -4,18 +4,18 @@
 import { studioPackContract } from "@/lib/partner/integrationStudio/catalog";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
 import {
+  STARTER_KIT_CANONICAL_CONTRACT,
   STARTER_KIT_DOES_NOT_DO,
+  STARTER_KIT_MINIMUM_REQUIREMENTS,
   STARTER_KIT_NOTICES,
   STARTER_KIT_PLACEHOLDERS as P,
   type StarterKitOptionalCapability,
   type StarterKitRuntime,
 } from "./contract";
+import { serverlessFiles, universalHttpsFiles, wixVeloFiles, type StarterKitFile } from "./platforms";
 import type { ValidStarterKitSelection } from "./validate";
 
-export interface StarterKitFile {
-  path: string;
-  contents: string;
-}
+export type { StarterKitFile };
 
 const SAFE_PATH = /^[a-zA-Z0-9.][a-zA-Z0-9._/-]*$/;
 
@@ -63,9 +63,15 @@ function readme(selection: ValidStarterKitSelection): string {
 
 Generated from Integration Studio. This is a sandbox starter, not a Production credential.
 
+${STARTER_KIT_CANONICAL_CONTRACT}
+
+## Minimum platform requirements
+${STARTER_KIT_MINIMUM_REQUIREMENTS.map((line) => `- ${line}`).join("\n")}
+
 ## Selected
 - Policy pack: ${pack.display_name} (\`${selection.pack_id}\`)
 - Integration path: \`${selection.path}\`
+- Platform: \`${selection.platform}\`
 - Runtime: \`${selection.runtime}\`
 - Optional capabilities: ${selection.capabilities.length ? selection.capabilities.join(", ") : "none"}
 
@@ -367,13 +373,16 @@ app.listen(3000);
 }
 
 function packageJson(runtime: StarterKitRuntime): string {
+  const scripts = runtime === "typescript_nextjs"
+    ? { dev: "next dev", test: "vitest run" }
+    : runtime === "typescript_express"
+      ? { start: "tsx src/server.ts", test: "vitest run" }
+      : { test: "vitest run" };
   return `${JSON.stringify({
     name: "abraxas-partner-starter",
     private: true,
     version: "0.0.0",
-    scripts: runtime === "typescript_nextjs"
-      ? { dev: "next dev", test: "vitest run" }
-      : { start: "tsx src/server.ts", test: "vitest run" },
+    scripts,
     dependencies: {
       "@abraxas/partner-kit": "workspace:*",
     },
@@ -390,9 +399,11 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
   const webhook = needs(selection.path, selection.capabilities, "webhooks");
   const venue = selection.path === "trading_venue" || selection.capabilities.includes("trading_venue");
   const payment = selection.path === "payment_authorization" || selection.capabilities.includes("payment_authorization");
-  const solana = selection.path === "solana_gate" || selection.capabilities.includes("solana_gate");
+  const solana = selection.path === "solana_gate"
+    || selection.capabilities.includes("solana_gate")
+    || selection.platform === "solana_backend";
   const wallet = selection.path === "wallet_standard_binding" || selection.capabilities.includes("wallet_standard_binding");
-  const next = selection.runtime === "typescript_nextjs";
+  const include = { webhook, venue, payment, solana, wallet };
 
   const files: StarterKitFile[] = [
     { path: "README.md", contents: readme(selection) },
@@ -400,28 +411,36 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     { path: "DEPLOYMENT.md", contents: deployment() },
     { path: ".env.example", contents: envExample(webhook) },
     { path: "package.json", contents: packageJson(selection.runtime) },
-    { path: next ? "src/lib/abraxas.ts" : "src/lib/abraxas.ts", contents: kitInit(selection.runtime) },
     { path: "tests/public-receipt.fixture.json", contents: fixtureJson() },
     { path: "tests/receipt-fixture.test.ts", contents: fixtureTest() },
   ];
 
-  if (next) {
+  if (selection.runtime === "typescript_nextjs") {
+    files.push({ path: "src/lib/abraxas.ts", contents: kitInit(selection.runtime) });
     files.push({ path: "app/api/abraxas/callback/route.ts", contents: receiptRoute("typescript_nextjs") });
     files.push({ path: "src/lib/hosted.ts", contents: hostedHelper() });
     if (webhook) files.push({ path: "app/api/abraxas/webhooks/route.ts", contents: webhookRoute("typescript_nextjs") });
     if (venue) files.push({ path: "app/api/abraxas/trading-preflight/route.ts", contents: venuePreflight("typescript_nextjs") });
     if (payment) files.push({ path: "app/api/abraxas/payment-preflight/route.ts", contents: paymentPreflight("typescript_nextjs") });
-  } else {
+    if (solana) files.push({ path: "src/lib/solana-gate.ts", contents: solanaGate() });
+    if (wallet) files.push({ path: "src/lib/wallet-binding.ts", contents: walletBinding() });
+  } else if (selection.runtime === "typescript_express") {
+    files.push({ path: "src/lib/abraxas.ts", contents: kitInit(selection.runtime) });
     files.push({ path: "src/callback.ts", contents: receiptRoute("typescript_express") });
     files.push({ path: "src/lib/hosted.ts", contents: hostedHelper() });
     if (webhook) files.push({ path: "src/webhook.ts", contents: webhookRoute("typescript_express") });
     if (venue) files.push({ path: "src/trading-preflight.ts", contents: venuePreflight("typescript_express") });
     if (payment) files.push({ path: "src/payment-preflight.ts", contents: paymentPreflight("typescript_express") });
     files.push({ path: "src/server.ts", contents: expressServer({ webhook, venue, payment }) });
+    if (solana) files.push({ path: "src/lib/solana-gate.ts", contents: solanaGate() });
+    if (wallet) files.push({ path: "src/lib/wallet-binding.ts", contents: walletBinding() });
+  } else if (selection.runtime === "universal_https") {
+    files.push(...universalHttpsFiles(include));
+  } else if (selection.runtime === "javascript_wix_velo") {
+    files.push(...wixVeloFiles({ webhook, venue, payment, wallet }));
+  } else {
+    files.push(...serverlessFiles(include));
   }
-
-  if (solana) files.push({ path: "src/lib/solana-gate.ts", contents: solanaGate() });
-  if (wallet) files.push({ path: "src/lib/wallet-binding.ts", contents: walletBinding() });
 
   for (const file of files) assertSafeStarterPath(file.path);
   return files;

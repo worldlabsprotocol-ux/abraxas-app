@@ -6,10 +6,14 @@ import { isIntegrationStudioPathId, type IntegrationStudioPathId } from "@/lib/p
 import {
   PATH_IMPLIED_CAPABILITY,
   STARTER_KIT_ALLOWED_INPUT_KEYS,
+  STARTER_KIT_FORBIDDEN_RUNTIMES,
+  STARTER_KIT_PLATFORM_TO_RUNTIME,
   STARTER_KIT_REJECTED_CAPABILITIES,
   isStarterKitOptionalCapability,
+  isStarterKitPlatform,
   isStarterKitRuntime,
   type StarterKitOptionalCapability,
+  type StarterKitPlatform,
   type StarterKitRuntime,
 } from "./contract";
 
@@ -17,6 +21,7 @@ export interface ValidStarterKitSelection {
   pack_id: string;
   path: IntegrationStudioPathId;
   runtime: StarterKitRuntime;
+  platform: StarterKitPlatform;
   capabilities: StarterKitOptionalCapability[];
 }
 
@@ -36,10 +41,32 @@ export function validateStarterKitInput(raw: unknown): StarterKitValidation {
 
   const packId = typeof body.pack_id === "string" ? body.pack_id : "";
   const path = typeof body.path === "string" ? body.path : "";
-  const runtime = typeof body.runtime === "string" ? body.runtime : "";
+  const requestedRuntime = typeof body.runtime === "string" ? body.runtime : "";
+  const requestedPlatform = typeof body.platform === "string" ? body.platform : "";
+  if ((STARTER_KIT_FORBIDDEN_RUNTIMES as readonly string[]).includes(requestedRuntime) || requestedPlatform === "browser_only") {
+    return { ok: false, code: "browser_only_forbidden" };
+  }
   if (!studioPackContract(packId)) return { ok: false, code: "unknown_pack" };
   if (!isIntegrationStudioPathId(path)) return { ok: false, code: "unknown_path" };
-  if (!isStarterKitRuntime(runtime)) return { ok: false, code: "unknown_runtime" };
+
+  let platform: StarterKitPlatform;
+  let runtime: StarterKitRuntime;
+  if (requestedPlatform) {
+    if (!isStarterKitPlatform(requestedPlatform)) return { ok: false, code: "unknown_platform" };
+    platform = requestedPlatform;
+    runtime = STARTER_KIT_PLATFORM_TO_RUNTIME[platform];
+    if (requestedRuntime && requestedRuntime !== runtime) return { ok: false, code: "mixed_selection" };
+  } else if (requestedRuntime) {
+    if (!isStarterKitRuntime(requestedRuntime)) return { ok: false, code: "unknown_runtime" };
+    runtime = requestedRuntime;
+    platform = runtime === "universal_https" ? "universal_https"
+      : runtime === "typescript_nextjs" ? "nextjs"
+      : runtime === "typescript_express" ? "express"
+      : runtime === "javascript_wix_velo" ? "wix_velo"
+      : "serverless";
+  } else {
+    return { ok: false, code: "unknown_runtime" };
+  }
 
   if (body.capabilities !== undefined && !Array.isArray(body.capabilities)) {
     return { ok: false, code: "invalid_capabilities" };
@@ -61,6 +88,6 @@ export function validateStarterKitInput(raw: unknown): StarterKitValidation {
 
   return {
     ok: true,
-    selection: { pack_id: packId, path, runtime, capabilities },
+    selection: { pack_id: packId, path, runtime, platform, capabilities },
   };
 }
