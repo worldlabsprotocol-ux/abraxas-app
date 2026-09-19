@@ -32,6 +32,7 @@ import {
   isKnownProductionSupabaseRef,
   supabaseProjectRefFromUrl,
 } from "@/lib/supabase/projectRefs";
+import { isJudgeDemoRequested, evaluateJudgeDemoContract } from "@/lib/judgeDemo/contract";
 
 function supabaseRuntimeConfig() {
   return {
@@ -40,7 +41,22 @@ function supabaseRuntimeConfig() {
   };
 }
 
-function previewSupabaseBindingFailure(sbUrl: string) {
+function previewSupabaseBindingFailure(sbUrl: string, req: Request) {
+  if (isJudgeDemoRequested()) {
+    const evaluation = evaluateJudgeDemoContract({ request: req });
+    if (!evaluation.ok) {
+      console.error("[zklogin/register] judge_demo_runtime_failed_closed", {
+        fail_codes: evaluation.fail_codes,
+        expected_demo_ref: DEMO_SUPABASE_PROJECT_REF,
+      });
+      return NextResponse.json({
+        error: "Judge Demo must use DEMO Supabase on https://demo.abraxasworld.xyz",
+        code: "judge_demo_runtime_failed_closed",
+        expected_supabase_ref: DEMO_SUPABASE_PROJECT_REF,
+        fail_codes: evaluation.fail_codes,
+      }, { status: 503 });
+    }
+  }
   const ref = supabaseProjectRefFromUrl(sbUrl);
   if (process.env.VERCEL_ENV !== "preview" || !isKnownProductionSupabaseRef(ref)) {
     return null;
@@ -108,7 +124,7 @@ export async function POST(req: Request) {
   }
 
   const { url: sbUrl, key: sbKey } = supabaseRuntimeConfig();
-  const previewBindingFailure = previewSupabaseBindingFailure(sbUrl);
+  const previewBindingFailure = previewSupabaseBindingFailure(sbUrl, req);
   if (previewBindingFailure) return previewBindingFailure;
 
   const loginMode = parseLoginMode(body.login_mode);

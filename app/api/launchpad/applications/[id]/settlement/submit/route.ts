@@ -34,6 +34,7 @@ function httpStatus(code: string, ok: boolean): number {
     || code === CIRCLE_PUBLIC_CODES.production_blocked
     || code === CIRCLE_PUBLIC_CODES.live_credentials_blocked
     || code === CIRCLE_PUBLIC_CODES.environment_blocked
+    || code === CIRCLE_PUBLIC_CODES.judge_demo_transfer_blocked
   ) {
     return 503;
   }

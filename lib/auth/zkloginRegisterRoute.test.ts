@@ -80,6 +80,8 @@ describe("POST /api/auth/zklogin/register", () => {
 
   beforeEach(() => {
     delete process.env.VERCEL_ENV;
+    delete process.env.ABRAXAS_JUDGE_DEMO;
+    delete process.env.NEXT_PUBLIC_ABRAXAS_JUDGE_DEMO;
     process.env.NEXT_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
     process.env.GOOGLE_ZKLOGIN_CLIENT_ID = NEW_AUD;
@@ -329,6 +331,27 @@ describe("POST /api/auth/zklogin/register", () => {
     const json = (await res.json()) as { code?: string; expected_supabase_ref?: string };
     expect(res.status).toBe(503);
     expect(json.code).toBe("preview_supabase_not_demo_bound");
+    expect(json.expected_supabase_ref).toBe("ocntwbxarpjeixdnzide");
+    expect(upsert).not.toHaveBeenCalled();
+  });
+
+  it("returns 503 when Judge Demo is bound to Production Supabase", async () => {
+    process.env.ABRAXAS_JUDGE_DEMO = "true";
+    process.env.NEXT_PUBLIC_ABRAXAS_JUDGE_DEMO = "true";
+    process.env.ABRAXAS_RUNTIME_ENV = "demo";
+    process.env.VERCEL_ENV = "preview";
+    process.env.NEXT_PUBLIC_APP_URL = "https://demo.abraxasworld.xyz";
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://bztwutzprwsdrtqdpymf.supabase.co";
+
+    const res = await postRegister({
+      id_token: fakeGoogleIdToken({ sub: OAUTH_SUB, aud: NEW_AUD }),
+      oauth_sub: OAUTH_SUB,
+      provider: "google",
+    });
+
+    const json = (await res.json()) as { code?: string; expected_supabase_ref?: string };
+    expect(res.status).toBe(503);
+    expect(json.code).toBe("judge_demo_runtime_failed_closed");
     expect(json.expected_supabase_ref).toBe("ocntwbxarpjeixdnzide");
     expect(upsert).not.toHaveBeenCalled();
   });

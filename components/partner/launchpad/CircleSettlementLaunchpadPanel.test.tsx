@@ -7,6 +7,7 @@ import { CircleSettlementLaunchpadPanel } from "@/components/partner/launchpad/C
 describe("CircleSettlementLaunchpadPanel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllEnvs();
     global.fetch = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes("eligible-receipts")) {
@@ -89,5 +90,39 @@ describe("CircleSettlementLaunchpadPanel", () => {
     expect(await findByText(/amount_minor: 10000/)).toBeTruthy();
     expect(queryByText(/receipt_id/i)).toBeNull();
     expect(queryByText(/Signed receipt ID/i)).toBeNull();
+  });
+
+  it("shows pending evidence in Judge Demo without a Circle submit control", async () => {
+    vi.stubEnv("NEXT_PUBLIC_ABRAXAS_JUDGE_DEMO", "true");
+    global.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("eligible-receipts")) {
+        return new Response(JSON.stringify({ ok: true, receipts: [] }), { status: 200 });
+      }
+      return new Response(JSON.stringify({
+        ok: true,
+        available: true,
+        code: "settlement_pending",
+        activates_production: false,
+        not_a_custodian: true,
+        intent_is_not_a_payment: true,
+        evidence: {
+          intent_id: "00000000-0000-4000-8000-000000000001",
+          state: "pending",
+          network: "ARC-TESTNET",
+          currency: "USDC",
+          amount_minor: 10_000,
+          policy_id: "policy-1",
+          policy_version: 1,
+          label: "sandbox/testnet",
+        },
+      }), { status: 200 });
+    }) as typeof fetch;
+    const { findByText, queryByText } = render(createElement(CircleSettlementLaunchpadPanel, {
+      applicationId: "app-1",
+    }));
+    expect(await findByText(/Pending intent — sandbox\/testnet/)).toBeTruthy();
+    expect(await findByText(/cannot consume testnet funds/i)).toBeTruthy();
+    expect(queryByText(/^Submit testnet transfer$/)).toBeNull();
   });
 });
