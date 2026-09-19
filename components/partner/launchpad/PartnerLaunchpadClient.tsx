@@ -23,6 +23,7 @@ import {
   shouldRenderPolicyChangeControlUi,
 } from "@/lib/partner/launchpad/policyChangeControlUi";
 import { selectLaunchpadResumeAppId } from "@/lib/partner/activationPath";
+import { PartnerSandboxTestConsolePanel } from "@/components/partner/launchpad/PartnerSandboxTestConsolePanel";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -172,6 +173,9 @@ export function PartnerLaunchpadClient({
         setActiveAppId(data.workspace.applications[0].id);
       }
       setAuthenticated(true);
+      if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("view") === "test") {
+        setStep("test");
+      }
     }
   }, [activeAppId]);
 
@@ -649,6 +653,10 @@ export function PartnerLaunchpadClient({
             <Btn size="sm" onClick={() => setStep("test")}>Open test harness</Btn>
           </div>
         </ContentCard>
+      )}
+
+      {step === "test" && activeApp && (
+        <PartnerSandboxTestConsolePanel applicationId={activeApp.id} />
       )}
 
       {step === "test" && activeApp && (

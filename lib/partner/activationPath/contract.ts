@@ -120,6 +120,8 @@ export function launchpadResumeHref(applicationId?: string | null): string {
   return `${PARTNER_ACTIVATION_LAUNCHPAD}?app=${encodeURIComponent(applicationId)}`;
 }
 
+export { launchpadSandboxTestHref } from "@/lib/partner/launchpad/sandboxTestConsole/contract";
+
 export function selectLaunchpadResumeAppId(
   applications: Array<{ id: string }>,
   requestedId?: string | null,

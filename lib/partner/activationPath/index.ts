@@ -7,6 +7,7 @@ export {
   PARTNER_ACTIVATION_PRODUCTION,
   buildPartnerActivationChecklist,
   launchpadResumeHref,
+  launchpadSandboxTestHref,
   selectLaunchpadResumeAppId,
   partnerActivationPublicView,
 } from "./contract";

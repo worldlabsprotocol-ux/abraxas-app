@@ -11,6 +11,7 @@ import {
   PARTNER_ACTIVATION_PRODUCTION,
   buildPartnerActivationChecklist,
   launchpadResumeHref,
+  launchpadSandboxTestHref,
   partnerActivationPublicView,
   selectLaunchpadResumeAppId,
 } from "./contract";
@@ -93,6 +94,7 @@ describe("partner activation path", () => {
     expect(selectLaunchpadResumeAppId([], "app-a")).toBeNull();
     expect(launchpadResumeHref("app-b")).toBe("/developers/launchpad?app=app-b");
     expect(launchpadResumeHref()).toBe("/developers/launchpad");
+    expect(launchpadSandboxTestHref("app-b")).toBe("/developers/launchpad?app=app-b&view=test");
   });
 
   it("denies production on this path and keeps placeholders in the public view", () => {
