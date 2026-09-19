@@ -27,7 +27,7 @@ function encryptionKey(): Uint8Array | null {
 }
 
 function pruneConsumed(now = Date.now()): void {
-  for (const [jti, exp] of consumedJti.entries()) {
+  for (const [jti, exp] of Array.from(consumedJti.entries())) {
     if (exp <= now) consumedJti.delete(jti);
   }
 }
