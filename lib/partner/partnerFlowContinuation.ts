@@ -240,7 +240,7 @@ export function createMemoryContinuationStore(
       return rows.get(jti) ?? null;
     },
     async peekByVerifyRequestId(verifyRequestId) {
-      return [...rows.values()].find((row) => row.verifyRequestId === verifyRequestId) ?? null;
+      return Array.from(rows.values()).find((row) => row.verifyRequestId === verifyRequestId) ?? null;
     },
     async consume(jti) {
       const existing = rows.get(jti);
