@@ -7,6 +7,7 @@ const resolvePartnerConsoleSessionMock = vi.fn();
 const getAppMock = vi.fn();
 const loadViewMock = vi.fn();
 const runMock = vi.fn();
+const submitMock = vi.fn();
 
 vi.mock("@/lib/partner/launchpad/partnerConsoleSession", () => ({
   resolvePartnerConsoleSession: (...args: unknown[]) => resolvePartnerConsoleSessionMock(...args),
@@ -24,6 +25,7 @@ vi.mock("@/lib/partner/launchpad/resolveLaunchpadApplication", () => ({
 vi.mock("@/lib/settlement/circle/execute", () => ({
   loadCircleSettlementView: (...args: unknown[]) => loadViewMock(...args),
   runCircleSettlement: (...args: unknown[]) => runMock(...args),
+  submitCircleSettlementIntent: (...args: unknown[]) => submitMock(...args),
 }));
 
 describe("Circle settlement routes", () => {
@@ -107,6 +109,39 @@ describe("Circle settlement routes", () => {
       receiptId: "r1",
     }));
     expect(runMock.mock.calls[0][0].idempotencyKey).toBeUndefined();
+  });
+
+  it("submit POST rejects wallet overrides and duplicate submits", async () => {
+    submitMock.mockResolvedValueOnce({
+      ok: false,
+      code: CIRCLE_PUBLIC_CODES.client_hash_rejected,
+      activates_production: false,
+    });
+    const { POST } = await import("@/app/api/launchpad/applications/[id]/settlement/submit/route");
+    const rejected = await POST(new NextRequest("http://localhost/api/launchpad/applications/app-1/settlement/submit", {
+      method: "POST",
+      body: JSON.stringify({
+        intent_id: "00000000-0000-4000-8000-000000000001",
+        confirm_testnet_transfer: true,
+        wallet_address: "0xabc",
+      }),
+    }), { params: { id: "app-1" } });
+    expect(rejected.status).toBe(400);
+
+    submitMock.mockResolvedValueOnce({
+      ok: false,
+      code: CIRCLE_PUBLIC_CODES.duplicate_submit,
+      activates_production: false,
+      duplicate: true,
+    });
+    const duplicate = await POST(new NextRequest("http://localhost/api/launchpad/applications/app-1/settlement/submit", {
+      method: "POST",
+      body: JSON.stringify({
+        intent_id: "00000000-0000-4000-8000-000000000001",
+        confirm_testnet_transfer: true,
+      }),
+    }), { params: { id: "app-1" } });
+    expect(duplicate.status).toBe(409);
   });
 });
 

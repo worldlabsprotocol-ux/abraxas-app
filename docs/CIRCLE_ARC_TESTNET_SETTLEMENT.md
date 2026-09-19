@@ -7,13 +7,15 @@ Abraxas is not a custodian of customer funds. Settlement uses a dedicated DEMO/t
 ## Behavior
 
 1. Verify the sandbox receipt (approved, signed, unexpired, matching partner/policy/version).
-2. Insert a `pending` intent with a **server-generated UUID v4** Circle idempotency key. Partner and UI values are ignored. An intent is not a payment.
-3. If Circle credentials, schema, or the DEMO/Preview testnet allowlist are missing, stay pending and return a Preview-safe unavailable code.
-4. If credentials exist on an approved DEMO/Preview testnet environment, authenticate the DEMO wallets against `ARC-TESTNET` (`GET /v1/w3s/wallets/{id}`) and submit a USDC transfer.
-5. Mark `settled` only from a sealed Circle-authenticated result with official `COMPLETE`. `FAILED`/`DENIED` map to `failed`. `CANCELLED` maps to `cancelled`. Other official states stay `submitted` (retrying). Client hashes, browser responses, callback parameters, and unsealed mock objects cannot settle.
-6. Duplicate `(application, receipt_id)` retries reuse the persisted Circle key. The key is globally unique for the Circle API key.
+2. Insert a `pending` intent with a **server-generated UUID v4** Circle idempotency key. Partner and UI values are ignored. An intent is not a payment. This step never calls Circle or moves USDC.
+3. Review the pending intent. Duplicate create requests return the same row.
+4. An explicit submit (`intent_id` + `confirm_testnet_transfer: true`) is required before Circle is contacted. Amount, wallets, network, currency, receipt, and partner stay server-derived.
+5. If Circle credentials, schema, or the DEMO/Preview testnet allowlist are missing, submit stays blocked. Create can still leave a pending review row.
+6. On submit, authenticate the DEMO wallets against `ARC-TESTNET` (`GET /v1/w3s/wallets/{id}`) and submit a USDC transfer once.
+7. Mark `settled` only from a sealed Circle-authenticated result with official `COMPLETE`. `FAILED`/`DENIED` map to `failed`. `CANCELLED` maps to `cancelled`. Other official states stay `submitted` (retrying). Client hashes, browser responses, callback parameters, and unsealed mock objects cannot settle.
+8. Duplicate `(application, receipt_id)` creates reuse the persisted Circle key. Duplicate submits do not call Circle again.
 
-Safe evidence fields: provider request reference, Circle transaction reference, network, currency, integer `amount_minor`, state, timestamp, receipt ID, policy ID/version, server idempotency key.
+Safe evidence fields: intent ID, provider request reference, Circle transaction reference, network, currency, integer `amount_minor`, state, timestamp, receipt ID, policy ID/version, server idempotency key.
 
 Secrets, entity secrets, wallet-set secrets, private keys, raw provider payloads, credential-presence booleans, and PII are not stored or shown in Launchpad, manifests, or reports.
 

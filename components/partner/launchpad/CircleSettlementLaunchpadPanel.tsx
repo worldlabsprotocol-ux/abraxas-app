@@ -11,6 +11,7 @@ const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
 
 interface SafeEvidence {
+  intent_id?: string;
   state?: string;
   network?: string;
   currency?: string;
@@ -24,6 +25,8 @@ interface SafeEvidence {
   policy_version?: number;
   idempotency_key?: string;
   infrastructure_label?: string;
+  label?: string;
+  environment?: string;
 }
 
 interface SettlementResponse {
@@ -54,6 +57,7 @@ export function CircleSettlementLaunchpadPanel({
   const [report, setReport] = useState<SettlementResponse | null>(null);
   const [error, setError] = useState("");
   const [receiptId, setReceiptId] = useState("");
+  const [confirmTransfer, setConfirmTransfer] = useState(false);
   const [busy, setBusy] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState("");
 
@@ -74,7 +78,7 @@ export function CircleSettlementLaunchpadPanel({
     void load();
   }, [load]);
 
-  async function runSettlement() {
+  async function createIntent() {
     setBusy(true);
     setError("");
     const res = await fetch(`/api/launchpad/applications/${applicationId}/settlement`, {
@@ -91,6 +95,27 @@ export function CircleSettlementLaunchpadPanel({
     setBusy(false);
   }
 
+  async function submitTransfer() {
+    const intentId = report?.evidence?.intent_id;
+    if (!intentId || !confirmTransfer) return;
+    setBusy(true);
+    setError("");
+    const res = await fetch(`/api/launchpad/applications/${applicationId}/settlement/submit`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        intent_id: intentId,
+        confirm_testnet_transfer: true,
+      }),
+    });
+    const data = await res.json() as SettlementResponse;
+    setReport(data);
+    setConfirmTransfer(false);
+    if (!data.ok && data.code) setError(String(data.code));
+    setBusy(false);
+  }
+
   async function copyEvidence() {
     if (!report?.evidence) return;
     await navigator.clipboard.writeText(JSON.stringify(report.evidence, null, 2));
@@ -99,24 +124,48 @@ export function CircleSettlementLaunchpadPanel({
 
   const evidence = report?.evidence;
   const unavailable = report && report.available === false;
+  const pendingReview = evidence?.state === "pending";
 
   return (
     <ContentCard title="Arc testnet settlement">
       <p style={bodyText}>
         DEMO / Arc testnet infrastructure only. Abraxas is not a custodian of customer funds.
-        A settlement intent is not a payment. It stays pending until Circle returns an authenticated result.
-        The server generates the Circle idempotency key. Browser values are not accepted.
+        Creating an intent never moves funds. Submit is a separate, one-time testnet confirmation.
+        The server derives amount, network, currency, wallets, and receipt binding.
       </p>
       {unavailable && (
         <p style={{ ...bodyText, color: "#f59e0b" }}>
           Circle testnet settlement is unavailable on this Preview ({report?.code ?? "circle_unavailable"}).
-          Operator setup is required. This does not activate production.
+          You can still create a pending intent for review. This does not activate production.
         </p>
       )}
       {report?.activates_production === false && (
         <p style={bodyText}>Production activation remains independently gated and is not performed here.</p>
       )}
-      {evidence && (
+      {pendingReview && (
+        <div
+          style={{
+            border: "1px solid var(--border)",
+            borderRadius: 8,
+            padding: "0.75rem",
+            marginBottom: "0.7rem",
+            background: "rgba(255,255,255,0.03)",
+          }}
+        >
+          <p style={{ ...bodyText, fontWeight: 600, color: "var(--text-primary)" }}>
+            Pending intent — sandbox/testnet
+          </p>
+          <p style={bodyText}>No funds moved yet.</p>
+          <p style={{ ...bodyText, fontFamily: MONO, marginBottom: 0 }}>
+            {`amount_minor: ${evidence.amount_minor}
+receipt_id: ${evidence.receipt_id}
+policy: ${evidence.policy_id} v${evidence.policy_version}
+network: ${evidence.network}
+currency: ${evidence.currency}`}
+          </p>
+        </div>
+      )}
+      {evidence && !pendingReview && (
         <pre
           style={{
             fontFamily: MONO,
@@ -150,7 +199,7 @@ provider_occurred_at: ${evidence.provider_occurred_at ?? "—"}`}
         />
       </label>
       <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginTop: "0.6rem" }}>
-        <Btn size="sm" onClick={() => void runSettlement()} disabled={busy}>
+        <Btn size="sm" onClick={() => void createIntent()} disabled={busy}>
           Create DEMO settlement intent
         </Btn>
         {evidence && (
@@ -159,6 +208,25 @@ provider_occurred_at: ${evidence.provider_occurred_at ?? "—"}`}
           </Btn>
         )}
       </div>
+      {pendingReview && evidence.intent_id && (
+        <div style={{ marginTop: "0.85rem" }}>
+          <label style={{ ...bodyText, display: "flex", gap: 8, alignItems: "flex-start" }}>
+            <input
+              type="checkbox"
+              checked={confirmTransfer}
+              onChange={(event) => setConfirmTransfer(event.target.checked)}
+            />
+            I confirm this one-time Arc testnet USDC transfer. Amount, wallets, and receipt stay server-derived.
+          </label>
+          <Btn
+            size="sm"
+            onClick={() => void submitTransfer()}
+            disabled={busy || !confirmTransfer}
+          >
+            Submit testnet transfer
+          </Btn>
+        </div>
+      )}
       {copyFeedback && <p style={bodyText}>{copyFeedback}</p>}
       {error && <p style={{ ...bodyText, color: "#ef4444" }}>{error}</p>}
     </ContentCard>

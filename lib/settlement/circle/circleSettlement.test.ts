@@ -3,6 +3,7 @@ import { parseAmountMinor, formatUsdcFromMinor, parseUsdcStringToMinor } from "@
 import {
   applyCircleProviderResult,
   rejectClientProvidedSettlementProof,
+  rejectClientSubmitOverrides,
 } from "@/lib/settlement/circle/execute";
 import { isCircleAuthenticatedResult, sealCircleAuthenticatedResult } from "@/lib/settlement/circle/authenticated.server";
 import {
@@ -206,6 +207,11 @@ describe("client-supplied settlement proof", () => {
       .toBe(CIRCLE_PUBLIC_CODES.client_hash_rejected);
     expect(rejectClientProvidedSettlementProof({ receipt_id: "r1", idempotency_key: "demo-arc-settlement-1" }))
       .toBeNull();
+    expect(rejectClientSubmitOverrides({
+      intent_id: "00000000-0000-4000-8000-000000000001",
+      confirm_testnet_transfer: true,
+      amount_minor: 10,
+    })).toBe(CIRCLE_PUBLIC_CODES.client_override_rejected);
   });
 });
 

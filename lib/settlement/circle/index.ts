@@ -21,7 +21,9 @@ export {
   applyCircleProviderResult,
   loadCircleSettlementView,
   rejectClientProvidedSettlementProof,
+  rejectClientSubmitOverrides,
   runCircleSettlement,
+  submitCircleSettlementIntent,
 } from "@/lib/settlement/circle/execute";
 export {
   mapOfficialProviderStateToIntent,

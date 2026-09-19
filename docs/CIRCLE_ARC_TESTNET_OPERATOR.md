@@ -50,10 +50,10 @@ The server generates the Circle `idempotencyKey` as UUID v4. Do not paste a key 
 3. Use an isolated DEMO sandbox app with a pinned active policy.
 4. Issue a server-verified **sandbox** signed receipt for that partner/policy/version.
 5. On **Arc testnet settlement**, paste the receipt ID. Do not supply a Circle idempotency key.
-6. Create the DEMO settlement intent. It must start `pending`.
-7. When Circle credentials and the DEMO/Preview allowlist are present, the server authenticates against `ARC-TESTNET`, submits the transfer from the DEMO source wallet, and records only safe evidence.
-8. Refresh until `provider_state` is `COMPLETE` and intent state is `settled`.
-9. Replay the same receipt. Expect `settlement_duplicate` and no second transfer.
+6. Create the DEMO settlement intent. It must start `pending`. Creating an intent must not call Circle or move USDC.
+7. Review the pending card (sandbox/testnet, integer amount, receipt, policy/version, ARC-TESTNET / USDC). It must say **No funds moved yet.**
+8. Check the one-time confirmation and use **Submit testnet transfer**. Only that step may call Circle, and only for this pending DEMO intent.
+9. Refresh until `provider_state` is `COMPLETE` and intent state is `settled`. Replay create or submit. Expect a duplicate and no second transfer.
 10. Repeat with denied, expired, revoked, unsigned, wrong-partner, and wrong-policy receipts. Those must fail closed and never settle.
 
 ## 5. Safe video demo

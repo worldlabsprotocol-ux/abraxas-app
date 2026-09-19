@@ -60,6 +60,7 @@ export function toSafeEvidence(row: SettlementIntentRow): CircleSafeEvidence {
     circle_transaction_id: row.circle_transaction_id,
     provider_state: row.provider_state,
     provider_occurred_at: row.provider_occurred_at,
+    intent_id: row.id,
     receipt_id: row.receipt_id,
     policy_id: row.policy_id,
     policy_version: row.policy_version,
@@ -193,6 +194,49 @@ export async function applyAuthenticatedEvidence(input: {
     .eq("id", input.intent.id)
     .eq("partner_id", input.intent.partner_id)
     .not("state", "in", `(${CIRCLE_TERMINAL_INTENT_STATES.join(",")})`)
+    .select("*")
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as SettlementIntentRow;
+}
+
+export async function getIntentForPartner(input: {
+  intentId: string;
+  applicationId: string;
+  partnerId: string;
+  client?: SupabaseClient;
+}): Promise<SettlementIntentRow | null> {
+  const sb = input.client ?? requireSupabaseAdmin();
+  const { data, error } = await sb
+    .from(CIRCLE_SCHEMA_TABLE)
+    .select("*")
+    .eq("id", input.intentId)
+    .eq("application_id", input.applicationId)
+    .eq("partner_id", input.partnerId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as SettlementIntentRow;
+}
+
+export async function claimPendingIntentForSubmit(input: {
+  intent: SettlementIntentRow;
+  client?: SupabaseClient;
+}): Promise<SettlementIntentRow | null> {
+  if (input.intent.state !== "pending" || input.intent.circle_transaction_id) {
+    return null;
+  }
+  const sb = input.client ?? requireSupabaseAdmin();
+  const { data, error } = await sb
+    .from(CIRCLE_SCHEMA_TABLE)
+    .update({
+      state: "submitted",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.intent.id)
+    .eq("application_id", input.intent.application_id)
+    .eq("partner_id", input.intent.partner_id)
+    .eq("state", "pending")
+    .is("circle_transaction_id", null)
     .select("*")
     .maybeSingle();
   if (error || !data) return null;

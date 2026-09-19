@@ -19,7 +19,9 @@ import {
 import { CIRCLE_PUBLIC_CODES, type CirclePublicCode } from "@/lib/settlement/circle/codes";
 import { createCircleWalletsPortFromEnv } from "@/lib/settlement/circle/client.server";
 import {
+  CIRCLE_CURRENCY,
   CIRCLE_DEMO_AMOUNT_MINOR,
+  CIRCLE_NETWORK,
   CIRCLE_TERMINAL_INTENT_STATES,
   type CircleIntentState,
 } from "@/lib/settlement/circle/constants";
@@ -27,11 +29,15 @@ import type { CircleSafeEvidence } from "@/lib/settlement/circle/evidence";
 import { gateSettlementReceipt } from "@/lib/settlement/circle/receiptGate";
 import {
   applyAuthenticatedEvidence,
+  claimPendingIntentForSubmit,
+  getIntentForPartner,
   insertPendingIntent,
   listIntentsForApplication,
   toSafeEvidence,
   type SettlementIntentRow,
 } from "@/lib/settlement/circle/store";
+
+export const CIRCLE_TESTNET_CONFIRM_FIELD = "confirm_testnet_transfer" as const;
 
 export interface CircleSettlementView {
   ok: boolean;
@@ -82,11 +88,47 @@ export function rejectClientProvidedSettlementProof(body: Record<string, unknown
     "wallet_address",
     "destination_address",
     "source_address",
+    "wallet_id",
+    "source_wallet_id",
+    "destination_wallet_id",
+    "wallet_set_id",
   ];
   for (const key of hostile) {
     if (body[key] != null && body[key] !== "") return CIRCLE_PUBLIC_CODES.client_hash_rejected;
   }
   return null;
+}
+
+const CLIENT_SUBMIT_OVERRIDE_KEYS = [
+  "amount_minor",
+  "amount",
+  "network",
+  "currency",
+  "receipt_id",
+  "partner_id",
+  "wallet_address",
+  "destination_address",
+  "source_address",
+  "wallet_id",
+  "source_wallet_id",
+  "destination_wallet_id",
+  "wallet_set_id",
+] as const;
+
+export function rejectClientSubmitOverrides(body: Record<string, unknown> | null): CirclePublicCode | null {
+  if (!body) return CIRCLE_PUBLIC_CODES.invalid_input;
+  const hostile = rejectClientProvidedSettlementProof(body);
+  if (hostile) return hostile;
+  for (const key of CLIENT_SUBMIT_OVERRIDE_KEYS) {
+    if (body[key] != null && body[key] !== "") {
+      return CIRCLE_PUBLIC_CODES.client_override_rejected;
+    }
+  }
+  return null;
+}
+
+export function parseTestnetSubmitConfirmation(body: Record<string, unknown> | null): boolean {
+  return body?.[CIRCLE_TESTNET_CONFIRM_FIELD] === true;
 }
 
 export function applyCircleProviderResult(
@@ -212,108 +254,183 @@ export async function runCircleSettlement(input: {
   }
 
   const intent = inserted.row;
-  if (inserted.duplicate && isTerminalIntent(intent.state)) {
+  if (inserted.duplicate) {
     return view({
       ok: true,
-      code: CIRCLE_PUBLIC_CODES.duplicate,
+      code: isTerminalIntent(intent.state)
+        ? CIRCLE_PUBLIC_CODES.duplicate
+        : statusCode(intent.state),
       availability,
       evidence: toSafeEvidence(intent),
       duplicate: true,
     });
   }
 
+  await recordLaunchpadActivity(requireSupabaseAdmin(), {
+    applicationId: input.application.id,
+    partnerId: input.partnerId,
+    eventType: "settlement_intent_created",
+    publicCode: CIRCLE_PUBLIC_CODES.pending,
+    metadata: {
+      settlement: true,
+      state: intent.state,
+      activates_production: false,
+      funds_moved: false,
+    },
+  }).catch(() => undefined);
+
+  return view({
+    ok: true,
+    code: CIRCLE_PUBLIC_CODES.pending,
+    availability,
+    evidence: toSafeEvidence(intent),
+    duplicate: false,
+  });
+}
+
+export async function submitCircleSettlementIntent(input: {
+  application: LaunchpadApplicationRow;
+  partnerId: string;
+  intentId: string;
+  body?: Record<string, unknown> | null;
+}): Promise<CircleSettlementView> {
+  const availability = await probeCircleAvailability();
+  const overrides = rejectClientSubmitOverrides(input.body ?? null);
+  if (overrides) {
+    return view({ ok: false, code: overrides, availability });
+  }
+  if (!parseTestnetSubmitConfirmation(input.body ?? null)) {
+    return view({ ok: false, code: CIRCLE_PUBLIC_CODES.confirm_required, availability });
+  }
+  if (availability.code === CIRCLE_PUBLIC_CODES.production_blocked) {
+    return view({ ok: false, code: CIRCLE_PUBLIC_CODES.production_blocked, availability });
+  }
+  if (availability.code === CIRCLE_PUBLIC_CODES.live_credentials_blocked) {
+    return view({ ok: false, code: CIRCLE_PUBLIC_CODES.live_credentials_blocked, availability });
+  }
+  if (!availability.schema_ready) {
+    return view({ ok: false, code: CIRCLE_PUBLIC_CODES.schema_unavailable, availability });
+  }
   if (!availability.available) {
-    await recordLaunchpadActivity(requireSupabaseAdmin(), {
-      applicationId: input.application.id,
-      partnerId: input.partnerId,
-      eventType: "settlement_intent_created",
-      publicCode: availability.code ?? CIRCLE_PUBLIC_CODES.unavailable,
-      metadata: {
-        settlement: true,
-        state: intent.state,
-        activates_production: false,
-      },
-    }).catch(() => undefined);
     return view({
-      ok: true,
+      ok: false,
       code: availability.code ?? CIRCLE_PUBLIC_CODES.unavailable,
       availability,
-      evidence: toSafeEvidence(intent),
-      duplicate: inserted.duplicate,
+    });
+  }
+
+  const loaded = await getIntentForPartner({
+    intentId: input.intentId.trim(),
+    applicationId: input.application.id,
+    partnerId: input.partnerId,
+  });
+  if (!loaded) {
+    return view({ ok: false, code: CIRCLE_PUBLIC_CODES.intent_not_found, availability });
+  }
+  if (
+    loaded.network !== CIRCLE_NETWORK
+    || loaded.currency !== CIRCLE_CURRENCY
+    || loaded.application_id !== input.application.id
+    || loaded.partner_id !== input.partnerId
+  ) {
+    return view({
+      ok: false,
+      code: CIRCLE_PUBLIC_CODES.wrong_network,
+      availability,
+      evidence: toSafeEvidence(loaded),
+    });
+  }
+  if (loaded.state !== "pending" || loaded.circle_transaction_id) {
+    return view({
+      ok: false,
+      code: loaded.state === "pending"
+        ? CIRCLE_PUBLIC_CODES.duplicate_submit
+        : CIRCLE_PUBLIC_CODES.not_pending,
+      availability,
+      evidence: toSafeEvidence(loaded),
+      duplicate: true,
+    });
+  }
+
+  const gated = await gateSettlementReceipt({
+    receiptId: loaded.receipt_id,
+    partnerId: input.partnerId,
+    policyId: input.application.policy_id,
+    policyVersion: input.application.policy_version,
+  });
+  if (!gated.ok) {
+    return view({
+      ok: false,
+      code: gated.code,
+      availability,
+      evidence: toSafeEvidence(loaded),
+    });
+  }
+
+  const claimed = await claimPendingIntentForSubmit({ intent: loaded });
+  if (!claimed) {
+    const raced = await getIntentForPartner({
+      intentId: loaded.id,
+      applicationId: input.application.id,
+      partnerId: input.partnerId,
+    });
+    return view({
+      ok: false,
+      code: CIRCLE_PUBLIC_CODES.duplicate_submit,
+      availability,
+      evidence: raced ? toSafeEvidence(raced) : toSafeEvidence(loaded),
+      duplicate: true,
     });
   }
 
   const port = createCircleWalletsPortFromEnv();
   if (!port) {
     return view({
-      ok: true,
+      ok: false,
       code: CIRCLE_PUBLIC_CODES.unavailable,
       availability,
-      evidence: toSafeEvidence(intent),
+      evidence: toSafeEvidence(claimed),
     });
   }
 
   const auth = await port.authenticateAgainstArcTestnet();
   if (!auth.ok) {
     return view({
-      ok: true,
+      ok: false,
       code: auth.code,
       availability,
-      evidence: toSafeEvidence(intent),
+      evidence: toSafeEvidence(claimed),
     });
   }
 
-  let sealed: CircleAuthenticatedResult | null = null;
-  if (intent.circle_transaction_id) {
-    const refreshed = await port.getTransaction(intent.circle_transaction_id, intent.amount_minor);
-    if (refreshed.ok) sealed = refreshed.result;
-  } else {
-    const created = await port.createTestnetUsdcTransfer({
-      amountMinor: intent.amount_minor,
-      idempotencyKey: intent.idempotency_key,
-    });
-    if (created.ok) sealed = created.result;
-  }
-
-  if (!sealed) {
+  const created = await port.createTestnetUsdcTransfer({
+    amountMinor: claimed.amount_minor,
+    idempotencyKey: claimed.idempotency_key,
+  });
+  if (!created.ok) {
     return view({
-      ok: true,
-      code: CIRCLE_PUBLIC_CODES.pending,
+      ok: false,
+      code: created.code || CIRCLE_PUBLIC_CODES.unavailable,
       availability,
-      evidence: toSafeEvidence(intent),
+      evidence: toSafeEvidence(claimed),
     });
   }
 
-  const applied = applyCircleProviderResult(intent, sealed);
+  const applied = applyCircleProviderResult(claimed, created.result);
   if (!applied.ok) {
     return view({
       ok: false,
       code: applied.code,
       availability,
-      evidence: toSafeEvidence(intent),
+      evidence: toSafeEvidence(claimed),
     });
   }
 
-  const gatedBeforePersist = await gateSettlementReceipt({
-    receiptId: intent.receipt_id,
-    partnerId: input.partnerId,
-    policyId: input.application.policy_id,
-    policyVersion: input.application.policy_version,
-  });
-  if (!gatedBeforePersist.ok) {
-    return view({
-      ok: false,
-      code: gatedBeforePersist.code,
-      availability,
-      evidence: toSafeEvidence(intent),
-    });
-  }
-
-  const updated = await persistAuthenticated(intent, sealed);
+  const updated = await persistAuthenticated(claimed, created.result);
   await recordLaunchpadActivity(requireSupabaseAdmin(), {
     applicationId: input.application.id,
     partnerId: input.partnerId,
-    eventType: updated.state === "settled" ? "settlement_intent_submitted" : "settlement_intent_created",
+    eventType: "settlement_intent_submitted",
     publicCode: statusCode(updated.state),
     metadata: {
       settlement: true,
@@ -324,11 +441,8 @@ export async function runCircleSettlement(input: {
 
   return view({
     ok: true,
-    code: inserted.duplicate && updated.state === intent.state
-      ? CIRCLE_PUBLIC_CODES.duplicate
-      : statusCode(updated.state),
+    code: statusCode(updated.state),
     availability,
     evidence: toSafeEvidence(updated),
-    duplicate: inserted.duplicate,
   });
 }

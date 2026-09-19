@@ -28,6 +28,11 @@ export const CIRCLE_PUBLIC_CODES = {
   receipt_wrong_policy: "settlement_receipt_wrong_policy",
   receipt_wrong_policy_version: "settlement_receipt_wrong_policy_version",
   receipt_invalid: "settlement_receipt_invalid",
+  confirm_required: "settlement_confirm_required",
+  intent_not_found: "settlement_intent_not_found",
+  not_pending: "settlement_not_pending",
+  duplicate_submit: "settlement_duplicate_submit",
+  client_override_rejected: "settlement_client_override_rejected",
 } as const;
 
 export type CirclePublicCode = (typeof CIRCLE_PUBLIC_CODES)[keyof typeof CIRCLE_PUBLIC_CODES];

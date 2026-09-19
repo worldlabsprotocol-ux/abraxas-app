@@ -27,7 +27,7 @@ export default function CircleArcTestnetDocsPage() {
       />
       <ContentCard title="What this is">
         <p style={body}>
-          {CIRCLE_INFRASTRUCTURE_LABEL}. Network {CIRCLE_NETWORK}. A settlement intent stays pending until Circle returns an authenticated provider result. Browser responses, callback parameters, client transaction hashes, and mocked provider objects cannot mark an intent settled.
+          {CIRCLE_INFRASTRUCTURE_LABEL}. Network {CIRCLE_NETWORK}. Creating an intent only records a pending review row. An explicit submit step is required before Circle is called. Browser responses, callback parameters, client transaction hashes, and mocked provider objects cannot mark an intent settled.
         </p>
         <p style={{ ...body, marginTop: "0.6rem" }}>
           Launchpad shows only safe evidence: provider request reference, Circle transaction reference, network, currency, integer amount, state, timestamp, receipt ID, policy ID/version, and idempotency key.

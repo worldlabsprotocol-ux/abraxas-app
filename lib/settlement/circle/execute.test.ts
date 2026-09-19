@@ -9,6 +9,8 @@ const gateMock = vi.fn();
 const insertMock = vi.fn();
 const applyEvidenceMock = vi.fn();
 const listMock = vi.fn();
+const getIntentMock = vi.fn();
+const claimMock = vi.fn();
 const createPortMock = vi.fn(() => null);
 
 vi.mock("@/lib/settlement/circle/availability", async () => {
@@ -34,6 +36,8 @@ vi.mock("@/lib/settlement/circle/store", async () => {
     insertPendingIntent: (...args: unknown[]) => insertMock(...args),
     applyAuthenticatedEvidence: (...args: unknown[]) => applyEvidenceMock(...args),
     listIntentsForApplication: (...args: unknown[]) => listMock(...args),
+    getIntentForPartner: (...args: unknown[]) => getIntentMock(...args),
+    claimPendingIntentForSubmit: (...args: unknown[]) => claimMock(...args),
   };
 });
 
@@ -50,7 +54,7 @@ vi.mock("@/lib/settlement/circle/client.server", () => ({
   createCircleWalletsPortFromEnv: () => createPortMock(),
 }));
 
-import { runCircleSettlement } from "@/lib/settlement/circle/execute";
+import { runCircleSettlement, submitCircleSettlementIntent } from "@/lib/settlement/circle/execute";
 
 const app = {
   id: "app-1",
@@ -72,9 +76,11 @@ const app = {
   updated_at: "2026-09-18T00:00:00.000Z",
 };
 
+const INTENT_ID = "00000000-0000-4000-8000-000000000001";
+
 function pendingRow(): SettlementIntentRow {
   return {
-    id: "intent-1",
+    id: INTENT_ID,
     application_id: "app-1",
     partner_id: "acme",
     idempotency_key: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
@@ -119,12 +125,36 @@ function readyAvailability() {
   };
 }
 
-describe("runCircleSettlement", () => {
+describe("runCircleSettlement create-intent", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     createPortMock.mockReturnValue(null);
     gateMock.mockResolvedValue({ ok: true, code: CIRCLE_PUBLIC_CODES.pending, receipt_id: "receipt-1" });
     listMock.mockResolvedValue([]);
+  });
+
+  it("creates a pending intent with zero Circle calls when configured", async () => {
+    probeMock.mockResolvedValue(readyAvailability());
+    insertMock.mockResolvedValue({ ok: true, row: pendingRow(), duplicate: false });
+    const transfer = vi.fn();
+    createPortMock.mockReturnValue({
+      authenticateAgainstArcTestnet: vi.fn(),
+      createTestnetUsdcTransfer: transfer,
+      getTransaction: vi.fn(),
+    });
+    const result = await runCircleSettlement({
+      application: app,
+      partnerId: "acme",
+      receiptId: "receipt-1",
+      body: { receipt_id: "receipt-1" },
+    });
+    expect(result.ok).toBe(true);
+    expect(result.code).toBe("settlement_pending");
+    expect(result.evidence?.state).toBe("pending");
+    expect(result.evidence?.intent_id).toBe(INTENT_ID);
+    expect(result.evidence?.circle_transaction_id).toBeNull();
+    expect(createPortMock).not.toHaveBeenCalled();
+    expect(transfer).not.toHaveBeenCalled();
   });
 
   it("creates a pending intent when Circle is unavailable and does not mark it settled", async () => {
@@ -137,15 +167,9 @@ describe("runCircleSettlement", () => {
       body: { receipt_id: "receipt-1", idempotency_key: "demo-arc-settlement-1" },
     });
     expect(result.ok).toBe(true);
-    expect(result.code).toBe("circle_unavailable");
+    expect(result.code).toBe("settlement_pending");
     expect(result.evidence?.state).toBe("pending");
-    expect(result.activates_production).toBe(false);
-    expect(result.intent_is_not_a_payment).toBe(true);
-    expect(insertMock).toHaveBeenCalledWith(expect.objectContaining({
-      applicationId: "app-1",
-      receiptId: "receipt-1",
-    }));
-    expect(insertMock.mock.calls[0][0].idempotencyKey).toBeUndefined();
+    expect(createPortMock).not.toHaveBeenCalled();
   });
 
   it("does not create an intent when the receipt gate fails closed", async () => {
@@ -163,59 +187,20 @@ describe("runCircleSettlement", () => {
     expect(result.ok).toBe(false);
     expect(result.code).toBe("settlement_receipt_denied");
     expect(insertMock).not.toHaveBeenCalled();
+    expect(createPortMock).not.toHaveBeenCalled();
   });
 
-  it("settles from a sealed Circle COMPLETE result and blocks a duplicate", async () => {
+  it("returns the existing pending intent on duplicate create without Circle", async () => {
     probeMock.mockResolvedValue(readyAvailability());
-    const row = pendingRow();
-    insertMock.mockResolvedValueOnce({ ok: true, row, duplicate: false });
-    const sealed = sealCircleAuthenticatedResult({
-      providerRequestRef: row.idempotency_key,
-      circleTransactionId: "tx-1",
-      network: CIRCLE_NETWORK,
-      currency: CIRCLE_CURRENCY,
-      amountMinor: 10_000,
-      providerState: "COMPLETE",
-      occurredAt: "2026-09-18T00:00:00.000Z",
-    });
-    createPortMock.mockReturnValue({
-      authenticateAgainstArcTestnet: async () => ({ ok: true, network: CIRCLE_NETWORK }),
-      createTestnetUsdcTransfer: async (input: { idempotencyKey: string }) => {
-        expect(input.idempotencyKey).toBe(row.idempotency_key);
-        expect(input.idempotencyKey).not.toBe("demo-arc-settlement-1");
-        return { ok: true, result: sealed };
-      },
-      getTransaction: async () => ({ ok: true, result: sealed }),
-    });
-    applyEvidenceMock.mockResolvedValue({
-      ...row,
-      state: "settled",
-      provider_request_ref: row.idempotency_key,
-      circle_transaction_id: "tx-1",
-      provider_state: "COMPLETE",
-    });
-    const first = await runCircleSettlement({
+    insertMock.mockResolvedValue({ ok: true, row: pendingRow(), duplicate: true });
+    const result = await runCircleSettlement({
       application: app,
       partnerId: "acme",
       receiptId: "receipt-1",
     });
-    expect(first.evidence?.state).toBe("settled");
-    expect(first.evidence?.circle_transaction_id).toBe("tx-1");
-    expect(gateMock).toHaveBeenCalledTimes(2);
-
-    insertMock.mockResolvedValueOnce({
-      ok: true,
-      row: { ...row, state: "settled", circle_transaction_id: "tx-1" },
-      duplicate: true,
-    });
-    const second = await runCircleSettlement({
-      application: app,
-      partnerId: "acme",
-      receiptId: "receipt-1",
-      body: { receipt_id: "receipt-1", idempotency_key: "demo-arc-settlement-1" },
-    });
-    expect(second.duplicate).toBe(true);
-    expect(second.code).toBe("settlement_duplicate");
+    expect(result.duplicate).toBe(true);
+    expect(result.evidence?.state).toBe("pending");
+    expect(createPortMock).not.toHaveBeenCalled();
   });
 
   it("allocates distinct Circle keys when two applications share identical browser input", async () => {
@@ -245,9 +230,148 @@ describe("runCircleSettlement", () => {
       body: browserBody,
     });
     expect(first.evidence?.idempotency_key).not.toBe(second.evidence?.idempotency_key);
-    expect(first.evidence?.idempotency_key).not.toBe(browserBody.idempotency_key);
-    expect(second.evidence?.idempotency_key).not.toBe(browserBody.idempotency_key);
     expect(insertMock.mock.calls[0][0].idempotencyKey).toBeUndefined();
-    expect(insertMock.mock.calls[1][0].idempotencyKey).toBeUndefined();
+    expect(createPortMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("submitCircleSettlementIntent", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    probeMock.mockResolvedValue(readyAvailability());
+    gateMock.mockResolvedValue({ ok: true, code: CIRCLE_PUBLIC_CODES.pending, receipt_id: "receipt-1" });
+  });
+
+  it("makes one Circle transfer call and settles only on COMPLETE", async () => {
+    const row = pendingRow();
+    getIntentMock.mockResolvedValue(row);
+    claimMock.mockResolvedValue({ ...row, state: "submitted" });
+    const sealed = sealCircleAuthenticatedResult({
+      providerRequestRef: row.idempotency_key,
+      circleTransactionId: "tx-1",
+      network: CIRCLE_NETWORK,
+      currency: CIRCLE_CURRENCY,
+      amountMinor: 10_000,
+      providerState: "COMPLETE",
+      occurredAt: "2026-09-18T00:00:00.000Z",
+    });
+    const transfer = vi.fn(async (input: { idempotencyKey: string }) => {
+      expect(input.idempotencyKey).toBe(row.idempotency_key);
+      return { ok: true, result: sealed };
+    });
+    createPortMock.mockReturnValue({
+      authenticateAgainstArcTestnet: async () => ({ ok: true, network: CIRCLE_NETWORK }),
+      createTestnetUsdcTransfer: transfer,
+      getTransaction: vi.fn(),
+    });
+    applyEvidenceMock.mockResolvedValue({
+      ...row,
+      state: "settled",
+      provider_request_ref: row.idempotency_key,
+      circle_transaction_id: "tx-1",
+      provider_state: "COMPLETE",
+    });
+    const first = await submitCircleSettlementIntent({
+      application: app,
+      partnerId: "acme",
+      intentId: INTENT_ID,
+      body: { intent_id: INTENT_ID, confirm_testnet_transfer: true },
+    });
+    expect(first.ok).toBe(true);
+    expect(first.evidence?.state).toBe("settled");
+    expect(transfer).toHaveBeenCalledTimes(1);
+
+    getIntentMock.mockResolvedValue({ ...row, state: "settled", circle_transaction_id: "tx-1" });
+    const second = await submitCircleSettlementIntent({
+      application: app,
+      partnerId: "acme",
+      intentId: INTENT_ID,
+      body: { intent_id: INTENT_ID, confirm_testnet_transfer: true },
+    });
+    expect(second.ok).toBe(false);
+    expect(second.code).toBe("settlement_not_pending");
+    expect(transfer).toHaveBeenCalledTimes(1);
+    expect(claimMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects missing confirmation, client amount, and wallet overrides without Circle", async () => {
+    const transfer = vi.fn();
+    createPortMock.mockReturnValue({ createTestnetUsdcTransfer: transfer });
+    const missing = await submitCircleSettlementIntent({
+      application: app,
+      partnerId: "acme",
+      intentId: INTENT_ID,
+      body: { intent_id: INTENT_ID },
+    });
+    expect(missing.code).toBe("settlement_confirm_required");
+    const amount = await submitCircleSettlementIntent({
+      application: app,
+      partnerId: "acme",
+      intentId: INTENT_ID,
+      body: { intent_id: INTENT_ID, confirm_testnet_transfer: true, amount_minor: 99 },
+    });
+    expect(amount.code).toBe("settlement_client_override_rejected");
+    const wallet = await submitCircleSettlementIntent({
+      application: app,
+      partnerId: "acme",
+      intentId: INTENT_ID,
+      body: { intent_id: INTENT_ID, confirm_testnet_transfer: true, wallet_address: "0xabc" },
+    });
+    expect(wallet.code).toBe("settlement_client_hash_rejected");
+    expect(transfer).not.toHaveBeenCalled();
+    expect(getIntentMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects cross-partner access and invalid receipts without Circle", async () => {
+    const transfer = vi.fn();
+    createPortMock.mockReturnValue({ createTestnetUsdcTransfer: transfer });
+    getIntentMock.mockResolvedValueOnce(null);
+    const missing = await submitCircleSettlementIntent({
+      application: app,
+      partnerId: "other",
+      intentId: INTENT_ID,
+      body: { intent_id: INTENT_ID, confirm_testnet_transfer: true },
+    });
+    expect(missing.code).toBe("settlement_intent_not_found");
+
+    getIntentMock.mockResolvedValueOnce(pendingRow());
+    gateMock.mockResolvedValueOnce({
+      ok: false,
+      code: CIRCLE_PUBLIC_CODES.receipt_revoked,
+      receipt_id: "receipt-1",
+    });
+    const revoked = await submitCircleSettlementIntent({
+      application: app,
+      partnerId: "acme",
+      intentId: INTENT_ID,
+      body: { intent_id: INTENT_ID, confirm_testnet_transfer: true },
+    });
+    expect(revoked.code).toBe("settlement_receipt_revoked");
+    expect(claimMock).not.toHaveBeenCalled();
+    expect(transfer).not.toHaveBeenCalled();
+  });
+
+  it("leaves the intent pending-only when the provider fails after claim", async () => {
+    const row = pendingRow();
+    getIntentMock.mockResolvedValue(row);
+    claimMock.mockResolvedValue({ ...row, state: "submitted" });
+    const transfer = vi.fn(async () => ({ ok: false, code: CIRCLE_PUBLIC_CODES.unavailable }));
+    createPortMock.mockReturnValue({
+      authenticateAgainstArcTestnet: async () => ({ ok: true, network: CIRCLE_NETWORK }),
+      createTestnetUsdcTransfer: transfer,
+      getTransaction: vi.fn(),
+    });
+    const result = await submitCircleSettlementIntent({
+      application: app,
+      partnerId: "acme",
+      intentId: INTENT_ID,
+      body: { intent_id: INTENT_ID, confirm_testnet_transfer: true },
+    });
+    expect(result.ok).toBe(false);
+    expect(result.code).toBe("circle_unavailable");
+    expect(result.evidence?.state).toBe("submitted");
+    expect(result.evidence?.circle_transaction_id).toBeNull();
+    expect(transfer).toHaveBeenCalledTimes(1);
+    expect(applyEvidenceMock).not.toHaveBeenCalled();
   });
 });

@@ -30,6 +30,7 @@ export interface CircleSafeEvidence {
   circle_transaction_id: string | null;
   provider_state: string | null;
   provider_occurred_at: string | null;
+  intent_id: string;
   receipt_id: string;
   policy_id: string;
   policy_version: number;
@@ -60,6 +61,9 @@ export function validateCircleSafeEvidence(value: unknown): { ok: boolean; error
   if (rec.intent_is_not_a_payment !== true) errors.push("intent_marked_as_payment");
   if (typeof rec.amount_minor !== "number" || !Number.isInteger(rec.amount_minor)) {
     errors.push("amount_minor_not_integer");
+  }
+  if (typeof rec.intent_id !== "string" || !isCircleUuidV4(rec.intent_id)) {
+    errors.push("intent_id_not_uuid_v4");
   }
   if (typeof rec.receipt_id !== "string" || !rec.receipt_id.trim()) errors.push("receipt_id_missing");
   if (typeof rec.policy_id !== "string" || !rec.policy_id.trim()) errors.push("policy_id_missing");
@@ -97,6 +101,7 @@ export function circleEvidenceConformanceFixture(
     circle_transaction_id: null,
     provider_state: null,
     provider_occurred_at: null,
+    intent_id: "00000000-0000-4000-8000-000000000088",
     receipt_id: "00000000-0000-4000-8000-000000000099",
     policy_id: "acme-age-21-v1",
     policy_version: 1,
