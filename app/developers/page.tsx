@@ -6,6 +6,7 @@ import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard, BulletList } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
+import { PublicJourneyNextSteps } from "@/components/product/PublicJourneyNextSteps";
 import { INTEGRATION_SDK_SNIPPET } from "@/lib/protocolIntegrations";
 import { PARTNER_ONBOARDING_HEADLINE, PARTNER_ONBOARDING_DOC_LINKS } from "@/lib/partner/partnerOnboardingPositioning";
 import { PRODUCTION_INTEGRATION_PATH } from "@/lib/relyingPartyProgram";
@@ -48,14 +49,15 @@ export default function DevelopersPage() {
       </ContentCard>
 
       <ContentCard title="Quick integration">
-        <pre style={{
+        <pre className="abx-code-scroll" style={{
           fontFamily: MONO, fontSize: "0.62rem", lineHeight: 1.55,
-          padding: "1rem", borderRadius: 12, overflow: "auto",
+          padding: "1rem", borderRadius: 12, overflowX: "auto",
           background: "var(--surface-inset)", border: "1px solid var(--border)",
           color: "var(--text-secondary)", margin: 0,
         }}>
           {INTEGRATION_SDK_SNIPPET}
         </pre>
+        <PublicJourneyNextSteps title="Use this snippet" />
       </ContentCard>
 
       <ContentCard title="API reference">
@@ -63,16 +65,16 @@ export default function DevelopersPage() {
           {[
             { label: "Integration Studio", href: "/developers/integration-studio" },
             { label: "External RP verify + proof", href: "/docs/relying-party-verify" },
-            { label: "JSON integration guide", href: "/api/docs/relying-party" },
+            { label: "JSON integration guide (API)", href: "/docs/relying-party-verify" },
             { label: "Consent verification requests", href: "/docs/partner-verification-requests" },
             { label: "Record verifier", href: "/verify" },
             { label: "Solana integration", href: "/docs/solana" },
             { label: "Solana claim access example", href: "/examples/solana-partner" },
             { label: "Trading venue preflight example", href: "/examples/trading-venue" },
             { label: "Payment authorization example", href: "/examples/payment-authorization" },
-            { label: "Sui deployment status", href: "/api/sui/status" },
-            { label: "Mainnet readiness", href: "/api/mainnet/readiness" },
-            { label: "Positioning loop", href: "/api/positioning/loop" },
+            { label: "Sui deployment status (JSON API)", href: "/docs/sui" },
+            { label: "Mainnet readiness docs", href: "/docs" },
+            { label: "Positioning", href: "/docs/why-verification" },
             { label: "Asset signals webhook", href: "/integrations/relying-parties" },
             { label: "MLS lot status push", href: "/integrations/relying-parties" },
             { label: "Trust layer docs", href: "/trust-framework" },

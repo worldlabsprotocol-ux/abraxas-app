@@ -5,6 +5,7 @@
 import { useState } from "react";
 import { ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
+import { PublicJourneyNextSteps } from "@/components/product/PublicJourneyNextSteps";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -48,7 +49,11 @@ export function TradingVenueExampleClient({ startUrl }: { startUrl: string }) {
         <p style={{ ...body, marginBottom: "0.75rem" }}>
           Start a policy check. The callback is not authorization. This page never connects a wallet.
         </p>
-        <Btn href={startUrl} size="sm">Open Partner Flow →</Btn>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+          <Btn href={startUrl} size="sm">Open Partner Flow →</Btn>
+          <Btn href="/docs/trading-venue" size="sm" variant="secondary">Venue docs →</Btn>
+        </div>
+        <PublicJourneyNextSteps title="Build this adapter" />
       </ContentCard>
       <ContentCard title="Sandbox Enable market access">
         <p style={{ ...body, marginBottom: "0.75rem" }}>
@@ -65,7 +70,7 @@ export function TradingVenueExampleClient({ startUrl }: { startUrl: string }) {
           </Btn>
         </div>
         {result && (
-          <pre style={{ fontFamily: MONO, fontSize: "0.68rem", overflowX: "auto", padding: "1rem", borderRadius: 10, border: "1px solid var(--border)", margin: 0 }}>
+          <pre className="abx-code-scroll" style={{ fontFamily: MONO, fontSize: "0.68rem", overflowX: "auto", maxWidth: "100%", padding: "1rem", borderRadius: 10, border: "1px solid var(--border)", margin: 0 }}>
             {result}
           </pre>
         )}

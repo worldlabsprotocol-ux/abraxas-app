@@ -123,6 +123,14 @@ code, pre, kbd, .abx-mono {
   font-family: var(--font-mono), ui-monospace, monospace;
 }
 
+pre, .abx-code-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+}
+
 *:not(img):not(svg):not(path) {
   transition: background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
 }

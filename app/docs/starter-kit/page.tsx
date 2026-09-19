@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
+import { Btn } from "@/components/redesign/ui";
+import { PublicJourneyNextSteps } from "@/components/product/PublicJourneyNextSteps";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import {
   STARTER_KIT_CANONICAL_CONTRACT,
@@ -58,11 +60,17 @@ export default function StarterKitDocsPage() {
         </ul>
       </ContentCard>
       <ContentCard title="Open Studio">
-        <p style={body}>
-          <Link href="/developers/integration-studio">Integration Studio</Link>
-          {" · "}
-          <Link href="/developers/launchpad">Partner Launchpad</Link>
+        <p style={{ ...body, marginBottom: "0.75rem" }}>
+          Generate a zip in Integration Studio. Partner Flow docs stay the receipt contract.
         </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+          <Btn href="/developers/integration-studio" size="sm">Open Integration Studio →</Btn>
+          <Btn href="/docs/partner-flow" variant="secondary" size="sm">Partner Flow docs →</Btn>
+          <Link href="/developers/launchpad" style={{ alignSelf: "center", color: "var(--accent)", fontWeight: 700 }}>
+            Partner Launchpad
+          </Link>
+        </div>
+        <PublicJourneyNextSteps />
       </ContentCard>
     </RedesignPage>
   );

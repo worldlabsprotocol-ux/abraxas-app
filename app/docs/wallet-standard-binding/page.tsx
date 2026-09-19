@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
+import { PublicJourneyNextSteps } from "@/components/product/PublicJourneyNextSteps";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 import {
   WALLET_STANDARD_CONNECTOR_NOTICE,
@@ -72,6 +73,7 @@ export default function WalletStandardBindingDocsPage() {
           {" · "}
           Venue adapter: <Link href="/docs/trading-venue">Trading venue adapter</Link>
         </p>
+        <PublicJourneyNextSteps />
       </ContentCard>
     </RedesignPage>
   );

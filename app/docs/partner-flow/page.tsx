@@ -6,6 +6,7 @@ import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard, BulletList } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
+import { PublicJourneyNextSteps } from "@/components/product/PublicJourneyNextSteps";
 import { PartnerFlowDocToc, PartnerFlowStartHereCard, PartnerFlowDocMobileJump, PartnerFlowMobileReceiptCallout } from "@/components/docs/PartnerFlowDocToc";
 import { PartnerOnboardingPositioningPanel } from "@/components/integrate/PartnerOnboardingPositioningPanel";
 import {
@@ -363,7 +364,9 @@ export default function PartnerFlowDocsPage() {
               <Link href="/docs/partner-verification-requests">
                 <Btn size="sm" variant="secondary">Server verification requests</Btn>
               </Link>
+              <Btn href="/developers/launchpad" size="sm" variant="ghost">Partner Launchpad</Btn>
             </div>
+            <PublicJourneyNextSteps title="Generate a starter or open Studio" />
           </SectionCard>
         </div>
       </div>
