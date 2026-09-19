@@ -38,6 +38,7 @@ export const CIRCLE_PUBLIC_CODES = {
   selection_expired: "settlement_selection_expired",
   selection_replay: "settlement_selection_replay",
   selection_cross_tenant: "settlement_selection_cross_tenant",
+  judge_demo_transfer_blocked: "judge_demo_transfer_blocked",
 } as const;
 
 export type CirclePublicCode = (typeof CIRCLE_PUBLIC_CODES)[keyof typeof CIRCLE_PUBLIC_CODES];

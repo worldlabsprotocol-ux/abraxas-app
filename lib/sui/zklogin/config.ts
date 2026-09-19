@@ -27,6 +27,9 @@ export const ZKLOGIN_CALLBACK_PATH = "/auth/zklogin/callback";
  * Server: configured public app origin (NEXT_PUBLIC_APP_URL → issuer → Vercel → localhost).
  */
 export function getZkLoginRedirectUri(): string {
+  if (process.env.NEXT_PUBLIC_ABRAXAS_JUDGE_DEMO?.trim() === "true") {
+    return `https://demo.abraxasworld.xyz${ZKLOGIN_CALLBACK_PATH}`;
+  }
   if (typeof window !== "undefined") {
     return `${window.location.origin}${ZKLOGIN_CALLBACK_PATH}`;
   }

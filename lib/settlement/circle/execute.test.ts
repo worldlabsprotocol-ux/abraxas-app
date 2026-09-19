@@ -500,4 +500,25 @@ describe("submitCircleSettlementIntent", () => {
     expect(transfer).toHaveBeenCalledTimes(1);
     expect(applyEvidenceMock).not.toHaveBeenCalled();
   });
+
+  it("blocks Circle transfer submit in Judge Demo without calling the wallets port", async () => {
+    const previous = process.env.ABRAXAS_JUDGE_DEMO;
+    process.env.ABRAXAS_JUDGE_DEMO = "true";
+    try {
+      const result = await submitCircleSettlementIntent({
+        application: app,
+        partnerId: "acme",
+        intentId: INTENT_ID,
+        body: { intent_id: INTENT_ID, confirm_testnet_transfer: true },
+      });
+      expect(result.ok).toBe(false);
+      expect(result.code).toBe("judge_demo_transfer_blocked");
+      expect(createPortMock).not.toHaveBeenCalled();
+      expect(claimMock).not.toHaveBeenCalled();
+      expect(getIntentMock).not.toHaveBeenCalled();
+    } finally {
+      if (previous === undefined) delete process.env.ABRAXAS_JUDGE_DEMO;
+      else process.env.ABRAXAS_JUDGE_DEMO = previous;
+    }
+  });
 });

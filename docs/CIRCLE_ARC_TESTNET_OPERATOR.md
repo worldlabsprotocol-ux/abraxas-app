@@ -32,6 +32,8 @@ This runbook is for **Vercel Preview** and **Cloud Agent runtime** only. Do not 
 
 Do not set these on Production. Do not add them to `.env.local` in git. Do not put them in query strings. Local and staging stay blocked unless `CIRCLE_ARC_TESTNET_ENABLED=true` and `ABRAXAS_RUNTIME_ENV=demo` (never with `VERCEL_ENV=production`).
 
+Public Judge Demo (`https://demo.abraxasworld.xyz`) may **display** receipt-gated settlement evidence and pending-intent state. It must never submit a Circle transfer. See `docs/demo/JUDGE_DEMO_DEPLOYMENT.md`.
+
 Also apply migration `089_circle_arc_testnet_settlement.sql` and then `090_circle_settlement_selection_replay.sql` to DEMO Supabase `ocntwbxarpjeixdnzide` before the first real transfer. Do not apply them until this PR is re-audited as safe. Migration 090 adds a hashed selection-token `jti` unique constraint so replay is durable across Vercel instances. Do not store raw tokens.
 
 The server generates the Circle `idempotencyKey` as UUID v4. Do not paste a key into Launchpad or send one from the browser.

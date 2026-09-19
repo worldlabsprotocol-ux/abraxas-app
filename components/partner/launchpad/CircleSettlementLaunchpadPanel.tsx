@@ -154,6 +154,7 @@ export function CircleSettlementLaunchpadPanel({
   const evidence = report?.evidence;
   const unavailable = report && report.available === false;
   const pendingReview = evidence?.state === "pending";
+  const judgeDemo = process.env.NEXT_PUBLIC_ABRAXAS_JUDGE_DEMO?.trim() === "true";
 
   return (
     <ContentCard title="Arc testnet settlement">
@@ -272,7 +273,7 @@ provider_occurred_at: ${evidence.provider_occurred_at ?? "—"}`}
           </Btn>
         )}
       </div>
-      {pendingReview && evidence.intent_id && (
+      {pendingReview && evidence.intent_id && !judgeDemo && (
         <div style={{ marginTop: "0.85rem" }}>
           <label style={{ ...bodyText, display: "flex", gap: 8, alignItems: "flex-start" }}>
             <input
@@ -290,6 +291,12 @@ provider_occurred_at: ${evidence.provider_occurred_at ?? "—"}`}
             Submit testnet transfer
           </Btn>
         </div>
+      )}
+      {pendingReview && judgeDemo && (
+        <p style={bodyText}>
+          Public Judge Demo displays pending sandbox settlement evidence only.
+          Circle transfer submit is disabled so judges cannot consume testnet funds.
+        </p>
       )}
       {!pendingReview && (
         <p style={bodyText}>Submit testnet transfer stays unavailable until a pending intent exists.</p>
