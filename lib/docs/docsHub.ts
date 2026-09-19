@@ -114,6 +114,7 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
           { label: "Trading venue adapter", href: "/docs/trading-venue" },
           { label: "Wallet Standard binding", href: "/docs/wallet-standard-binding" },
           { label: "Payment authorization", href: "/docs/payment-authorization" },
+          { label: "Partner Action Control Plane", href: "/docs/action-control-plane" },
           { label: "Partner Event Delivery", href: "/docs/partner-event-delivery" },
           { label: "Circle Arc testnet settlement", href: "/docs/circle-arc-testnet" },
           { label: "Partner Flow", href: "/docs/partner-flow" },
