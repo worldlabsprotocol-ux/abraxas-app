@@ -3,9 +3,9 @@
 
 function crc32(bytes: Uint8Array): number {
   let crc = 0xffffffff;
-  for (const byte of bytes) {
-    crc ^= byte;
-    for (let i = 0; i < 8; i += 1) {
+  for (let index = 0; index < bytes.length; index += 1) {
+    crc ^= bytes[index]!;
+    for (let bit = 0; bit < 8; bit += 1) {
       crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
     }
   }
