@@ -110,7 +110,7 @@ describe("065_service_role_runtime_grants migration", () => {
   const expectedGrants = buildExpected065GrantLiterals();
 
   it("keeps 065 after 062 and launchpad migrations after wallet binding dependencies", () => {
-    expect(DEMO_REQUIRED_MIGRATION_ORDER).toHaveLength(25);
+    expect(DEMO_REQUIRED_MIGRATION_ORDER).toHaveLength(26);
     const idx065 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf(DEMO_MIGRATION_065_FILENAME);
     const idx062 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf("062_partner_webhook_outbox.sql");
     const idx067 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf("067_partner_webhook_test_event_atomic.sql");
@@ -118,9 +118,9 @@ describe("065_service_role_runtime_grants migration", () => {
     expect(idx065).toBeGreaterThan(idx069);
     expect(idx069).toBeGreaterThan(idx067);
     expect(idx067).toBeGreaterThan(idx062);
-    expect(DEMO_REQUIRED_MIGRATION_ORDER.at(-1)).toBe("091_partner_flow_continuations.sql");
-    expect(DEMO_REQUIRED_MIGRATION_ORDER.at(-2)).toBe("085_partner_launchpad_hardening.sql");
-    expect(DEMO_REQUIRED_MIGRATION_ORDER.at(-3)).toBe("084_partner_launchpad_foundation.sql");
+    expect(DEMO_REQUIRED_MIGRATION_ORDER.at(-1)).toBe("092_wallet_standard_action_bindings.sql");
+    expect(DEMO_REQUIRED_MIGRATION_ORDER.at(-2)).toBe("091_partner_flow_continuations.sql");
+    expect(DEMO_REQUIRED_MIGRATION_ORDER.at(-3)).toBe("085_partner_launchpad_hardening.sql");
     expect(DEMO_REQUIRED_MIGRATION_ORDER).toContain("037_active_wallet_unique.sql");
     const idx018 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf("018_policy_verification.sql");
     const idx036 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf("036_connect_wallet_authority.sql");
@@ -129,6 +129,7 @@ describe("065_service_role_runtime_grants migration", () => {
     const idx084 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf("084_partner_launchpad_foundation.sql");
     const idx085 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf("085_partner_launchpad_hardening.sql");
     const idx091 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf("091_partner_flow_continuations.sql");
+    const idx092 = DEMO_REQUIRED_MIGRATION_ORDER.indexOf("092_wallet_standard_action_bindings.sql");
     expect(idx037).toBeGreaterThan(idx036);
     expect(idx083).toBeGreaterThan(idx018);
     expect(idx083).toBeGreaterThan(idx036);
@@ -136,6 +137,7 @@ describe("065_service_role_runtime_grants migration", () => {
     expect(idx084).toBeGreaterThan(idx083);
     expect(idx085).toBeGreaterThan(idx084);
     expect(idx091).toBeGreaterThan(idx085);
+    expect(idx092).toBeGreaterThan(idx091);
   });
 
   it("preserves hashes for the existing 17 ledgered manifest files", () => {

@@ -26,7 +26,7 @@ export async function enableMarketAccess(receiptId: string) {
   }
   const verified = await adapter.verifySignedReceipt(receiptId);
   // Client JSON is allow/deny, reason, action binding, and expiry only.
-  return adapter.preflight({ result: verified, contract });
+  return await adapter.preflight({ result: verified, contract });
 }
 `;
 }

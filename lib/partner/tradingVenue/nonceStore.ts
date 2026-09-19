@@ -1,33 +1,40 @@
 // FILE: lib/partner/tradingVenue/nonceStore.ts
-// In-process one-time nonce consume. Tenant keyed. No receipt material stored.
+// Durable one-time nonce consume. Tenant keyed hashed nonce. No receipt material.
 
-const consumed = new Set<string>();
-
-function tenantNonceKey(partnerId: string, nonce: string): string {
-  return `${partnerId.trim().toLowerCase()}::${nonce.trim()}`;
-}
+import { WalletStandardStoreUnavailableError } from "@/lib/partner/walletStandard/errors";
+import { hashWalletNonce } from "@/lib/partner/walletStandard/hashes";
+import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { isWalletStoreSchemaMissing } from "@/lib/partner/walletStandard/errors";
 
 export function resetTradingVenueNonceStoreForTests(): void {
-  consumed.clear();
+  // Durable store has no in-process cache. Tests reset the fake backend.
 }
 
-export function consumeTradingVenueNonce(
+export async function consumeTradingVenueNonce(
   partnerId: string,
   nonce: string,
-): "consumed" | "replayed" | "invalid" {
+  expiresAt: string,
+): Promise<"consumed" | "replayed" | "invalid" | "expired"> {
   const partner = partnerId.trim();
   const value = nonce.trim();
   if (!partner || !value || value.length < 16 || value.length > 128) {
     return "invalid";
   }
-  const key = tenantNonceKey(partner, value);
-  if (consumed.has(key)) {
-    return "replayed";
+  let sb;
+  try {
+    sb = requireSupabaseAdmin();
+  } catch {
+    throw new WalletStandardStoreUnavailableError();
   }
-  consumed.add(key);
-  return "consumed";
-}
-
-export function peekTradingVenueNonce(partnerId: string, nonce: string): boolean {
-  return consumed.has(tenantNonceKey(partnerId, nonce));
+  const { data, error } = await sb.rpc("venue_consume_action_nonce", {
+    p_partner_id: partner,
+    p_nonce_hash: hashWalletNonce(partner, value),
+    p_expires_at: expiresAt,
+  });
+  if (isWalletStoreSchemaMissing(error) || error) throw new WalletStandardStoreUnavailableError();
+  const payload = data as { ok?: boolean; code?: string };
+  if (payload?.ok) return "consumed";
+  const code = String(payload?.code ?? "invalid");
+  if (code === "replayed" || code === "expired") return code;
+  return "invalid";
 }

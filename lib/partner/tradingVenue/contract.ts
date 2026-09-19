@@ -25,6 +25,12 @@ export const TRADING_VENUE_SAFE_REASON_CODES = [
   "action_mismatch",
   "action_expired",
   "replayed",
+  "wallet_binding_missing",
+  "wallet_binding_expired",
+  "wallet_binding_mismatch",
+  "wallet_binding_replayed",
+  "wallet_binding_cross_partner",
+  "store_unavailable",
   "invalid",
   "retry",
 ] as const;
@@ -68,11 +74,27 @@ export const TRADING_VENUE_NO_FUNDS_BOUNDARY =
 export const TRADING_VENUE_NO_VENUE_PARTNERSHIP =
   "This adapter is venue-neutral. It does not imply a partnership with any named exchange, wallet, or router.";
 
+export const TRADING_VENUE_WALLET_BINDING_MODES = ["not_attached", "optional", "required"] as const;
+export type TradingVenueWalletBindingMode = (typeof TRADING_VENUE_WALLET_BINDING_MODES)[number];
+
+export const TRADING_VENUE_WALLET_BINDING_STATES = [
+  "not_attached",
+  "optional",
+  "required",
+  "bound",
+  "missing",
+  "expired",
+  "mismatched",
+  "replayed",
+  "cross_partner",
+] as const;
+export type TradingVenueWalletBindingState = (typeof TRADING_VENUE_WALLET_BINDING_STATES)[number];
+
 export const TRADING_VENUE_WALLET_BINDING_FUTURE = {
   status: "not_attached" as const,
-  implemented: false as const,
+  implemented: true as const,
   attach_later:
-    "A future Wallet Standard or Phantom-compatible proof may attach to action_binding without changing receipt verification or policy semantics.",
+    "Wallet Standard signMessage may attach an opaque binding_ref to action_binding without changing receipt verification or policy semantics.",
 };
 
 export const TRADING_VENUE_PRIVACY_CONTRACT = [
@@ -97,14 +119,14 @@ export interface TradingVenueActionContract {
   action_scope: TradingVenueActionScope;
   expires_at: string;
   nonce: string;
-  wallet_binding: typeof TRADING_VENUE_WALLET_BINDING_FUTURE.status;
+  wallet_binding: TradingVenueWalletBindingMode;
 }
 
 export interface TradingVenueActionBinding {
   action_type: TradingVenueActionType | "rejected";
   action_scope: string;
   nonce_state: "issued" | "consumed" | "replayed" | "rejected";
-  wallet_binding: typeof TRADING_VENUE_WALLET_BINDING_FUTURE.status;
+  wallet_binding: TradingVenueWalletBindingState;
 }
 
 export const TRADING_VENUE_LIVE_INTEGRATION_REQUIREMENTS = [
@@ -115,7 +137,7 @@ export const TRADING_VENUE_LIVE_INTEGRATION_REQUIREMENTS = [
   "Verify the current public receipt on the server. Do not trust callbacks, webhooks, or client flags.",
   "Consume the nonce on the first permitted preflight. Replay the same nonce as deny.",
   "Return only allow or deny, a safe reason, action binding, and expiry. Never return receipt material.",
-  "Keep wallet binding optional and off until a Wallet Standard attachment is specified. Do not collect private keys.",
+  "Wallet binding stays optional unless the venue sets required. Do not collect private keys or expose wallet addresses.",
   "Do not submit orders, route liquidity, custody assets, or connect to a live exchange from Abraxas.",
   "Name no implied venue partnership in product copy. Integrate only after a written venue agreement and production review.",
 ] as const;

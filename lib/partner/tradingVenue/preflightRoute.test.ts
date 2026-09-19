@@ -1,7 +1,16 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
+
+if (!process.env.NEXTAUTH_SECRET?.trim()) process.env.NEXTAUTH_SECRET = "wallet-standard-durable-test-secret";
+
+vi.mock("@/lib/supabase/admin", async () => {
+  const { requireWalletStandardTestAdmin } = await import("@/lib/partner/walletStandard/fakeDurableBackend");
+  return { requireSupabaseAdmin: requireWalletStandardTestAdmin };
+});
+
 import { POST, GET } from "@/app/api/examples/trading-venue/preflight/route";
-import { assertNoSensitiveVenueClientKeys, resetTradingVenueNonceStoreForTests } from "@/lib/partner/tradingVenue";
+import { assertNoSensitiveVenueClientKeys } from "@/lib/partner/tradingVenue";
+import { resetFakeWalletStandardBackend } from "@/lib/partner/walletStandard/fakeDurableBackend";
 
 function post(body: unknown) {
   return POST(
@@ -15,7 +24,7 @@ function post(body: unknown) {
 
 describe("Trading venue reference preflight", () => {
   beforeEach(() => {
-    resetTradingVenueNonceStoreForTests();
+    resetFakeWalletStandardBackend();
   });
 
   it("allows enable_market_access only for the approved fixture", async () => {

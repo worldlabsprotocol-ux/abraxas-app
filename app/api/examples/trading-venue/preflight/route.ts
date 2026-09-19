@@ -93,13 +93,15 @@ export async function POST(req: NextRequest) {
   }
 
   const result = client.evaluateFetchedReceipt(venueFixtureReceipt(body.fixture));
-  const first = client.preflight({
+  const first = await client.preflight({
     result,
     contract,
     action_type: body.action_type,
     action_scope: body.action_scope,
   });
-  const visible = body.replay_contract ? client.preflight({ result, contract, action_type: body.action_type, action_scope: body.action_scope }) : first;
+  const visible = body.replay_contract
+    ? await client.preflight({ result, contract, action_type: body.action_type, action_scope: body.action_scope })
+    : first;
   if (assertNoSensitiveVenueClientKeys(visible).length > 0) {
     return NextResponse.json({
       allowed: false,

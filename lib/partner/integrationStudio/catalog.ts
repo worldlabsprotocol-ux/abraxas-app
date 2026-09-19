@@ -14,6 +14,7 @@ import {
   INTEGRATION_STUDIO_PROVISION,
   INTEGRATION_STUDIO_SOLANA_NOTICE,
   INTEGRATION_STUDIO_VENUE_NOTICE,
+  INTEGRATION_STUDIO_WALLET_NOTICE,
   INTEGRATION_STUDIO_WEBHOOK_NOTICE,
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio/contract";
@@ -101,6 +102,12 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
       funds_movement: false,
       connects_wallet: false,
       notice: INTEGRATION_STUDIO_VENUE_NOTICE,
+    },
+    wallet_standard: {
+      required_for_passport: false,
+      required_for_receipts: false,
+      identity_verification: false,
+      notice: INTEGRATION_STUDIO_WALLET_NOTICE,
     },
   };
 }

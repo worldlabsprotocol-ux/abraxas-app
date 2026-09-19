@@ -34,6 +34,7 @@ export default function DevelopersPage() {
           <Btn href="/developers/integration-studio" size="sm">Integration Studio →</Btn>
           <Btn href="/docs/solana" size="sm">Solana integration →</Btn>
           <Btn href="/docs/trading-venue" size="sm">Trading venue adapter →</Btn>
+          <Btn href="/docs/wallet-standard-binding" size="sm">Wallet Standard binding →</Btn>
           <Btn href="/docs/partner-flow" size="sm">Partner Flow docs →</Btn>
           <Btn href="/docs/relying-party-verify" size="sm">External RP guide →</Btn>
           <Btn href="/design-partner" size="sm">Request API key →</Btn>
