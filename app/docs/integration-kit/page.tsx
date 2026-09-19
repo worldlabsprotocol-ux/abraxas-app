@@ -51,6 +51,8 @@ export default function IntegrationKitDocsPage() {
           {CONFORMANCE_COMMAND_EXAMPLE}
         </pre>
         <p style={{ ...body, marginTop: "0.75rem" }}>
+          Studio: <Link href="/developers/integration-studio">Integration Studio</Link>
+          {" · "}
           Launchpad: <Link href="/developers/launchpad">Partner Launchpad</Link>
           {" · "}
           Solana: <Link href="/docs/solana">Solana integration</Link>

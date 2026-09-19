@@ -165,6 +165,7 @@ export const PARTNER_CONSENT_MOCKUP_NOTE =
 
 export const PARTNER_ONBOARDING_DOC_LINKS = {
   partnerFlow: "/docs/partner-flow",
+  integrationStudio: "/developers/integration-studio",
   designPartner: "/design-partner",
   integrations: "/integrations",
   integrationsApply: "/integrations#apply",

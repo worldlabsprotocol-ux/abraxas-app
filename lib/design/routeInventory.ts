@@ -79,6 +79,7 @@ export const ROUTE_INVENTORY: RouteInventoryEntry[] = [
   { path: "/developers", status: "migrated_redesign", shell: "RedesignPage" },
   { path: "/developers/partner", status: "migrated_redesign", shell: "RedesignPage" },
   { path: "/developers/launchpad", status: "migrated_redesign", shell: "RedesignPage + PartnerLaunchpadClient" },
+  { path: "/developers/integration-studio", status: "migrated_redesign", shell: "RedesignPage" },
   { path: "/docs", status: "migrated_redesign", shell: "RedesignPage" },
   { path: "/docs/*", status: "migrated_redesign", shell: "RedesignPage (all doc routes)" },
   { path: "/earn", status: "migrated_layout", shell: "AbxSectionLayout" },

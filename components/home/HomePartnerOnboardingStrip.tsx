@@ -57,7 +57,8 @@ export function HomePartnerOnboardingStrip() {
         <strong style={{ color: "var(--text-secondary)" }}>{PARTNER_ONBOARDING_FUTURE_LABEL}:</strong> consented passwordless partner accounts, optional email sharing, and separate newsletter consent — not deployed yet.
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", justifyContent: "center" }}>
-        <Btn href={PARTNER_ONBOARDING_DOC_LINKS.partnerFlow} size="sm">Partner Flow docs</Btn>
+        <Btn href={PARTNER_ONBOARDING_DOC_LINKS.integrationStudio} size="sm">Integration Studio</Btn>
+        <Btn href={PARTNER_ONBOARDING_DOC_LINKS.partnerFlow} variant="secondary" size="sm">Partner Flow docs</Btn>
         <Btn href={PARTNER_ONBOARDING_DOC_LINKS.designPartner} variant="secondary" size="sm">Design partner program</Btn>
         <Btn href={PARTNER_ONBOARDING_DOC_LINKS.integrationsApply} variant="ghost" size="sm">Apply for sandbox</Btn>
       </div>

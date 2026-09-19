@@ -38,6 +38,7 @@ describe("docsHub", () => {
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/progressive-proof");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/policy-packs");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/integration-kit");
+    expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/developers/integration-studio");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/solana");
     expect(getDocsHubGroup("core-concepts")?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/solana");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/partner-event-delivery");
