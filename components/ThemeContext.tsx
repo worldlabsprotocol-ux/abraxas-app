@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/ThemeContext.tsx
-// Light default, dark optional. Persists to localStorage.
+// Dark default (obsidian protocol). Light remains an explicit preference.
 
 import {
   createContext, useContext, useEffect, useState, ReactNode, useCallback,
@@ -17,20 +17,20 @@ interface ThemeCtx {
 const STORAGE_KEY = "abraxas_theme";
 
 const ThemeContext = createContext<ThemeCtx>({
-  theme: "light",
+  theme: "dark",
   setTheme: () => {},
   toggleTheme: () => {},
 });
 
 function readStoredTheme(): Theme {
-  if (typeof window === "undefined") return "light";
+  if (typeof window === "undefined") return "dark";
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored === "dark" || stored === "light") return stored;
-  return "light";
+  return "dark";
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("light");
+  const [theme, setThemeState] = useState<Theme>("dark");
 
   useEffect(() => {
     const initial = readStoredTheme();

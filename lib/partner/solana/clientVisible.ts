@@ -56,9 +56,9 @@ export function toClientVisibleResult(
   };
 }
 
-export function assertNoSensitiveClientKeys(payload: object): string[] {
+export function assertNoSensitiveClientKeys(payload: unknown): string[] {
   const leaks: string[] = [];
-  const blob = JSON.stringify(payload).toLowerCase();
+  const blob = JSON.stringify(payload ?? null).toLowerCase();
   const needles = [
     "receipt_id",
     "dr_",

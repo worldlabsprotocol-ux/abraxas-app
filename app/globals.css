@@ -32,9 +32,9 @@
 }
 
 [data-theme="dark"] {
-  /* Rich midnight — deep navy foundation with warm accent highlights. */
-  --bg:             #09111F;
-  --bg-secondary:   #0D1526;
+  /* Deep obsidian with teal and indigo. Serious protocol, not a DeFi clone. */
+  --bg:             #05080F;
+  --bg-secondary:   #071018;
   --surface:        rgba(22, 32, 52, 0.58);
   --surface-raised: rgba(28, 40, 62, 0.78);
   --surface-inset:  rgba(17, 26, 46, 0.88);
@@ -45,25 +45,25 @@
   --text-secondary: #CBD5E1;
   --text-muted:     #94A3B8;
   --text-caption:   #64748B;
-  --accent:         #E8C547;
-  --accent-pale:    #F5E6A8;
-  --accent-deep:    #C9A227;
-  --accent-bright:  #F5E6A8;
-  --accent-faint:   rgba(232, 197, 71, 0.14);
-  --accent-border:  rgba(232, 197, 71, 0.45);
-  --accent-2:       #C4B5FD;
-  --accent-2-deep:  #A78BFA;
-  --accent-2-faint: rgba(167, 139, 250, 0.14);
-  --accent-verify:  #10B981;
-  --accent-verify-faint: rgba(16, 185, 129, 0.14);
+  --accent:         #2DD4BF;
+  --accent-pale:    #99F6E4;
+  --accent-deep:    #0F766E;
+  --accent-bright:  #5EEAD4;
+  --accent-faint:   rgba(45, 212, 191, 0.14);
+  --accent-border:  rgba(45, 212, 191, 0.4);
+  --accent-2:       #818CF8;
+  --accent-2-deep:  #4F46E5;
+  --accent-2-faint: rgba(99, 102, 241, 0.16);
+  --accent-verify:  #2DD4BF;
+  --accent-verify-faint: rgba(45, 212, 191, 0.14);
   --cosmic-cyan:    #22D3EE;
   --cosmic-cyan-faint: rgba(34, 211, 238, 0.14);
-  --cosmic-void:    #09111F;
-  --cosmic-glow-gold: 0 0 60px rgba(232, 197, 71, 0.2);
-  --cosmic-glow-violet: 0 0 80px rgba(167, 139, 250, 0.15);
-  --cosmic-glow-cyan: 0 0 48px rgba(34, 211, 238, 0.18);
-  --nav-bg:         rgba(9, 17, 31, 0.82);
-  --nav-bg-solid:   rgba(13, 21, 38, 0.94);
+  --cosmic-void:    #05080F;
+  --cosmic-glow-gold: 0 0 60px rgba(45, 212, 191, 0.16);
+  --cosmic-glow-violet: 0 0 80px rgba(99, 102, 241, 0.18);
+  --cosmic-glow-cyan: 0 0 48px rgba(34, 211, 238, 0.16);
+  --nav-bg:         rgba(5, 8, 15, 0.82);
+  --nav-bg-solid:   rgba(7, 16, 24, 0.94);
   --shadow-soft:    0 18px 60px rgba(4, 10, 24, 0.55);
   --shadow-card:    0 12px 40px rgba(4, 10, 24, 0.42);
   --shadow-glow:    0 0 0 1px rgba(232, 197, 71, 0.35), 0 8px 32px rgba(232, 197, 71, 0.18);
@@ -404,6 +404,28 @@ details > summary::-webkit-details-marker {
   gap: 0.65rem;
   justify-content: center;
   margin-bottom: 0.5rem;
+}
+
+.abx-atmosphere-hero {
+  position: relative;
+}
+.abx-atmosphere-hero::before {
+  content: "";
+  position: absolute;
+  inset: -18% -8% auto;
+  height: 280px;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(45, 212, 191, 0.16), transparent 62%),
+    radial-gradient(ellipse at 12% 40%, rgba(99, 102, 241, 0.12), transparent 58%);
+  filter: blur(8px);
+}
+[data-theme="dark"] body {
+  background-image:
+    radial-gradient(1200px 600px at 50% -10%, rgba(45, 212, 191, 0.08), transparent 55%),
+    radial-gradient(900px 500px at 100% 20%, rgba(79, 70, 229, 0.1), transparent 50%),
+    linear-gradient(180deg, #05080F 0%, #071018 48%, #05080F 100%);
+  background-attachment: fixed;
 }
 
 /* Partner Network — protocol participants, not sponsor logos */

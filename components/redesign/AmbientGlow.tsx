@@ -17,7 +17,7 @@ export function AmbientGlow() {
         style={{
           position: "absolute", top: "-18%", left: "50%", transform: "translateX(-50%)",
           width: "min(1100px, 120%)", height: 620,
-          background: "radial-gradient(50% 50% at 50% 50%, rgba(232,197,71,0.16) 0%, rgba(232,197,71,0.06) 42%, rgba(4,5,10,0) 72%)",
+          background: "radial-gradient(50% 50% at 50% 50%, rgba(45,212,191,0.16) 0%, rgba(45,212,191,0.05) 42%, rgba(4,5,10,0) 72%)",
           filter: "blur(24px)",
         }}
       />
@@ -28,7 +28,7 @@ export function AmbientGlow() {
         style={{
           position: "absolute", bottom: "2%", left: "-10%",
           width: 640, height: 460,
-          background: "radial-gradient(50% 50% at 50% 50%, rgba(167,139,250,0.14) 0%, rgba(167,139,250,0.05) 45%, rgba(4,5,10,0) 72%)",
+          background: "radial-gradient(50% 50% at 50% 50%, rgba(99,102,241,0.16) 0%, rgba(79,70,229,0.06) 45%, rgba(4,5,10,0) 72%)",
           filter: "blur(32px)",
         }}
       />

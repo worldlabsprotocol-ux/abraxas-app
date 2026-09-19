@@ -2,6 +2,8 @@
 // OAuth + proving service configuration for Sui zkLogin.
 
 import { getPublicAppOrigin } from "@/lib/app/publicAppOrigin";
+import { DEMO_OAUTH_CALLBACK } from "@/lib/product/demoRuntime";
+import { PUBLIC_DEMO_HOST, PUBLIC_DEMO_ORIGIN } from "@/lib/product/publicOrigin";
 import type { ZkLoginLoginMode } from "@/lib/sui/zklogin/audienceCohorts";
 import {
   isClientLegacyRecoveryConfigured,
@@ -27,12 +29,19 @@ export const ZKLOGIN_CALLBACK_PATH = "/auth/zklogin/callback";
  * Server: configured public app origin (NEXT_PUBLIC_APP_URL → issuer → Vercel → localhost).
  */
 export function getZkLoginRedirectUri(): string {
-  if (process.env.NEXT_PUBLIC_ABRAXAS_JUDGE_DEMO?.trim() === "true") {
-    return `https://demo.abraxasworld.xyz${ZKLOGIN_CALLBACK_PATH}`;
-  }
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? process.env.ABRAXAS_ISSUER_URL ?? "").replace(/\/$/, "");
+  const runtimeDemo = process.env.ABRAXAS_RUNTIME_ENV?.trim() === "demo" || appUrl === PUBLIC_DEMO_ORIGIN;
   if (typeof window !== "undefined") {
-    return `${window.location.origin}${ZKLOGIN_CALLBACK_PATH}`;
+    try {
+      if (new URL(window.location.origin).hostname === PUBLIC_DEMO_HOST || runtimeDemo) {
+        return DEMO_OAUTH_CALLBACK;
+      }
+      return `${window.location.origin}${ZKLOGIN_CALLBACK_PATH}`;
+    } catch {
+      return `${window.location.origin}${ZKLOGIN_CALLBACK_PATH}`;
+    }
   }
+  if (runtimeDemo) return DEMO_OAUTH_CALLBACK;
   return `${getPublicAppOrigin().replace(/\/$/, "")}${ZKLOGIN_CALLBACK_PATH}`;
 }
 

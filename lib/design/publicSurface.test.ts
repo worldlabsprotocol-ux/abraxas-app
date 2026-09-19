@@ -8,15 +8,19 @@ import { PUBLIC_NAV_LINKS } from "./publicSurface";
 const ROOT = resolve(__dirname, "../..");
 
 describe("public surface tokens", () => {
-  it("defines consumer-focused primary navigation without Docs", () => {
+  it("exposes every public product surface in primary navigation", () => {
     expect(PUBLIC_NAV_LINKS.map((link) => link.label)).toEqual([
       "Home",
       "Passport",
-      "For businesses",
+      "Partners",
+      "Docs",
+      "Developers",
+      "Verify",
     ]);
     const hrefs = PUBLIC_NAV_LINKS.map((link) => link.href);
-    expect(hrefs).not.toContain("/docs/partner-flow");
-    expect(hrefs).not.toContain("/verify");
+    expect(hrefs).toContain("/docs");
+    expect(hrefs).toContain("/verification");
+    expect(hrefs).not.toContain("/judge-demo");
   });
 
   it("uses shared nav links in RedesignNav", () => {

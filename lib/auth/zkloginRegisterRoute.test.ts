@@ -80,6 +80,7 @@ describe("POST /api/auth/zklogin/register", () => {
 
   beforeEach(() => {
     delete process.env.VERCEL_ENV;
+    delete process.env.ABRAXAS_RUNTIME_ENV;
     delete process.env.ABRAXAS_JUDGE_DEMO;
     delete process.env.NEXT_PUBLIC_ABRAXAS_JUDGE_DEMO;
     process.env.NEXT_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
@@ -335,9 +336,7 @@ describe("POST /api/auth/zklogin/register", () => {
     expect(upsert).not.toHaveBeenCalled();
   });
 
-  it("returns 503 when Judge Demo is bound to Production Supabase", async () => {
-    process.env.ABRAXAS_JUDGE_DEMO = "true";
-    process.env.NEXT_PUBLIC_ABRAXAS_JUDGE_DEMO = "true";
+  it("returns 503 when DEMO runtime is bound to Production Supabase", async () => {
     process.env.ABRAXAS_RUNTIME_ENV = "demo";
     process.env.VERCEL_ENV = "preview";
     process.env.NEXT_PUBLIC_APP_URL = "https://demo.abraxasworld.xyz";
@@ -351,7 +350,7 @@ describe("POST /api/auth/zklogin/register", () => {
 
     const json = (await res.json()) as { code?: string; expected_supabase_ref?: string };
     expect(res.status).toBe(503);
-    expect(json.code).toBe("judge_demo_runtime_failed_closed");
+    expect(json.code).toBe("demo_runtime_failed_closed");
     expect(json.expected_supabase_ref).toBe("ocntwbxarpjeixdnzide");
     expect(upsert).not.toHaveBeenCalled();
   });

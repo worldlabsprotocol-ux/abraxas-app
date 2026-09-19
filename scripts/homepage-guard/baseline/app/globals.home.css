@@ -125,6 +125,28 @@
   margin-bottom: 0.5rem;
 }
 
+.abx-atmosphere-hero {
+  position: relative;
+}
+.abx-atmosphere-hero::before {
+  content: "";
+  position: absolute;
+  inset: -18% -8% auto;
+  height: 280px;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(45, 212, 191, 0.16), transparent 62%),
+    radial-gradient(ellipse at 12% 40%, rgba(99, 102, 241, 0.12), transparent 58%);
+  filter: blur(8px);
+}
+[data-theme="dark"] body {
+  background-image:
+    radial-gradient(1200px 600px at 50% -10%, rgba(45, 212, 191, 0.08), transparent 55%),
+    radial-gradient(900px 500px at 100% 20%, rgba(79, 70, 229, 0.1), transparent 50%),
+    linear-gradient(180deg, #05080F 0%, #071018 48%, #05080F 100%);
+  background-attachment: fixed;
+}
+
 /* Partner Network — protocol participants, not sponsor logos */
 .abx-partner-network {
   max-width: 960px;

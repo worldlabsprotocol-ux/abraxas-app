@@ -6,6 +6,7 @@ const PUBLIC_FILES = [
   "app/judge-demo/page.tsx",
   "app/layout.tsx",
   "app/docs/circle-arc-testnet/page.tsx",
+  "app/verification/page.tsx",
   "app/docs/page.tsx",
   "app/login/page.tsx",
   "app/passport/page.tsx",
@@ -24,6 +25,7 @@ describe("public surface copy", () => {
       expect(src, rel).not.toMatch(/Public Judge Demo/);
       expect(src, rel).not.toMatch(/Abraxas Judge Demo/);
       expect(src, rel).not.toMatch(/judge-visible/);
+      expect(src, rel).not.toMatch(/Testnet transfer submission is disabled/);
     }
   });
 });

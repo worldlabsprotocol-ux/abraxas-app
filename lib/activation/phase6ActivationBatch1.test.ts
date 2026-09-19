@@ -134,13 +134,12 @@ describe("phase 6 activation static guards", () => {
     assertNoForbiddenTerms(renderedCopy);
   });
 
-  it("exposes consumer-focused public nav without Docs in primary navigation", () => {
+  it("exposes public product navigation including docs and verification", () => {
     const nav = read("components/redesign/RedesignNav.tsx");
     const surface = read("lib/design/publicSurface.ts");
     expect(nav).toContain("PUBLIC_NAV_LINKS");
-    expect(surface).toContain('label: "For businesses"');
-    expect(surface).not.toContain('label: "Docs"');
-    expect(nav).not.toMatch(/href:\s*"\/verify"/);
+    expect(surface).toContain('label: "Partners"');
+    expect(surface).toContain('label: "Docs"');
     expect(nav).not.toContain("NAV_PARTNER_VERIFY_LABEL");
   });
 });
@@ -238,12 +237,12 @@ describe("HomeSharpHero and RedesignNav smoke", () => {
     expect(screen.getByRole("heading", { level: 1, name: SIMPLIFIED_HOME_HEADLINE })).toBeInTheDocument();
   });
 
-  it("shows three consumer links in mobile drawer without Docs", () => {
+  it("shows product links in the mobile drawer", () => {
     render(React.createElement(RedesignNav));
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
 
     expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("href", "/");
-    expect(screen.queryByRole("link", { name: "Docs" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /Verify proofs/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Docs" })).toHaveAttribute("href", "/docs");
+    expect(screen.getByRole("link", { name: "Verify" })).toHaveAttribute("href", "/verification");
   });
 });

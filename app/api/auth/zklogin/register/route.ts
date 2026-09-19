@@ -32,7 +32,7 @@ import {
   isKnownProductionSupabaseRef,
   supabaseProjectRefFromUrl,
 } from "@/lib/supabase/projectRefs";
-import { isJudgeDemoRequested, evaluateJudgeDemoContract } from "@/lib/judgeDemo/contract";
+import { evaluateDemoRuntime, isPublicDemoRuntime } from "@/lib/product/demoRuntime";
 
 function supabaseRuntimeConfig() {
   return {
@@ -42,16 +42,16 @@ function supabaseRuntimeConfig() {
 }
 
 function previewSupabaseBindingFailure(sbUrl: string, req: Request) {
-  if (isJudgeDemoRequested()) {
-    const evaluation = evaluateJudgeDemoContract({ request: req });
+  if (isPublicDemoRuntime()) {
+    const evaluation = evaluateDemoRuntime({ request: req });
     if (!evaluation.ok) {
-      console.error("[zklogin/register] judge_demo_runtime_failed_closed", {
+      console.error("[zklogin/register] demo_runtime_failed_closed", {
         fail_codes: evaluation.fail_codes,
         expected_demo_ref: DEMO_SUPABASE_PROJECT_REF,
       });
       return NextResponse.json({
-        error: "DEMO environment must use DEMO data on https://demo.abraxasworld.xyz",
-        code: "judge_demo_runtime_failed_closed",
+        error: "DEMO environment must use isolated DEMO data on https://demo.abraxasworld.xyz",
+        code: "demo_runtime_failed_closed",
         expected_supabase_ref: DEMO_SUPABASE_PROJECT_REF,
         fail_codes: evaluation.fail_codes,
       }, { status: 503 });

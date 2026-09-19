@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignNav.tsx
-// Canonical public nav — Home · Passport · For businesses · Docs
+// Canonical public nav — Home · Passport · Partners · Docs · Developers · Verify
 
 import Link from "next/link";
 import Image from "next/image";

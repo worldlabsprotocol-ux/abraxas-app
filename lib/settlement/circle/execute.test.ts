@@ -501,7 +501,7 @@ describe("submitCircleSettlementIntent", () => {
     expect(applyEvidenceMock).not.toHaveBeenCalled();
   });
 
-  it("blocks Circle transfer submit in Judge Demo without calling the wallets port", async () => {
+  it("does not block testnet submit just because obsolete judge flags remain set", async () => {
     const previous = process.env.ABRAXAS_JUDGE_DEMO;
     process.env.ABRAXAS_JUDGE_DEMO = "true";
     try {
@@ -511,11 +511,7 @@ describe("submitCircleSettlementIntent", () => {
         intentId: INTENT_ID,
         body: { intent_id: INTENT_ID, confirm_testnet_transfer: true },
       });
-      expect(result.ok).toBe(false);
-      expect(result.code).toBe("judge_demo_transfer_blocked");
-      expect(createPortMock).not.toHaveBeenCalled();
-      expect(claimMock).not.toHaveBeenCalled();
-      expect(getIntentMock).not.toHaveBeenCalled();
+      expect(result.code).not.toBe("judge_demo_transfer_blocked");
     } finally {
       if (previous === undefined) delete process.env.ABRAXAS_JUDGE_DEMO;
       else process.env.ABRAXAS_JUDGE_DEMO = previous;

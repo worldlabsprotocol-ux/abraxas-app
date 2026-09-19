@@ -16,7 +16,6 @@ import {
   type CircleAvailability,
 } from "@/lib/settlement/circle/availability";
 import { CIRCLE_PUBLIC_CODES, type CirclePublicCode } from "@/lib/settlement/circle/codes";
-import { isJudgeDemoRequested } from "@/lib/judgeDemo/contract";
 import { createCircleWalletsPortFromEnv } from "@/lib/settlement/circle/client.server";
 import {
   CIRCLE_CURRENCY,
@@ -328,13 +327,6 @@ export async function submitCircleSettlementIntent(input: {
   body?: Record<string, unknown> | null;
 }): Promise<CircleSettlementView> {
   const availability = await probeCircleAvailability();
-  if (isJudgeDemoRequested()) {
-    return view({
-      ok: false,
-      code: CIRCLE_PUBLIC_CODES.judge_demo_transfer_blocked,
-      availability,
-    });
-  }
   const overrides = rejectClientSubmitOverrides(input.body ?? null);
   if (overrides) {
     return view({ ok: false, code: overrides, availability });

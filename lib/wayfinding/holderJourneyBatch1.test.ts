@@ -133,12 +133,11 @@ describe("phase 9 holder journey batch 1", () => {
     expect(DASHBOARD_LEGACY_TITLE).toContain("moved");
   });
 
-  it("keeps public nav focused on Home, Passport, and For businesses", () => {
+  it("keeps public nav on the live product surfaces", () => {
     const nav = read("components/redesign/RedesignNav.tsx");
     expect(nav).toContain("PUBLIC_NAV_LINKS");
-    expect(nav).toContain("For businesses");
+    expect(nav).toContain("Partners");
     expect(nav).not.toContain("NAV_PARTNER_VERIFY_LABEL");
-    expect(nav).not.toMatch(/href:\s*"\/verify"/);
   });
 
   it("routes footer product links to passport and businesses surfaces", () => {
