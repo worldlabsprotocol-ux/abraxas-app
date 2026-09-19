@@ -11,6 +11,7 @@ export const FOOTER_DEVELOPER_LINKS = [
   { label: "Documentation", href: "/docs" },
   { label: "Partner Flow", href: "/docs/partner-flow" },
   { label: "Receipt verification", href: "/verify?mode=receipt" },
+  { label: "Solana integration", href: "/docs/solana" },
 ] as const;
 
 export const FOOTER_COMPANY_LINKS = [

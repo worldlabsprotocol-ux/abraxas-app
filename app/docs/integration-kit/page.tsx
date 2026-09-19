@@ -52,6 +52,8 @@ export default function IntegrationKitDocsPage() {
         </pre>
         <p style={{ ...body, marginTop: "0.75rem" }}>
           Launchpad: <Link href="/developers/launchpad">Partner Launchpad</Link>
+          {" · "}
+          Solana: <Link href="/docs/solana">Solana integration</Link>
         </p>
       </ContentCard>
     </RedesignPage>

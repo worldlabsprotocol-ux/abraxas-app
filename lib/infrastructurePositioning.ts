@@ -139,6 +139,11 @@ export const DEVELOPER_QUICKSTARTS = [
     desc: "Wallet trust status before any gated action",
   },
   {
+    title: "Solana partner gate",
+    href: "/docs/solana",
+    desc: "Verify a signed receipt, then bind claim access",
+  },
+  {
     title: "Partner verification API",
     href: "/docs/partner-verification-requests",
     desc: "Create requests · consent · policy decisions",

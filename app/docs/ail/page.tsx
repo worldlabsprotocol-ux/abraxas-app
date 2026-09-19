@@ -232,6 +232,7 @@ export default function AILSpecPage() {
           {[
             { label: "Get verified", href: "/passport" },
             { label: "Sui integration", href: "/docs/sui" },
+            { label: "Solana integration", href: "/docs/solana" },
             { label: "Architecture", href: "/docs/architecture" },
             { label: "Passport spec", href: "/docs/passport-spec" },
             { label: "Security", href: "/security" },

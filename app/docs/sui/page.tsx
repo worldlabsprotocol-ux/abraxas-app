@@ -56,6 +56,7 @@ function SuiDocsInner() {
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
         {[
+          { label: "Solana integration", href: "/docs/solana" },
           { label: "zkLogin setup (operators)", href: "/docs/zklogin-setup" },
           { label: "Passport spec", href: "/docs/passport-spec" },
           { label: "Architecture", href: "/docs/architecture" },
