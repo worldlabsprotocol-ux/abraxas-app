@@ -97,6 +97,7 @@ describe("Integration Studio self-service sandbox create", () => {
     expect(json.application.partner_id).toBe("acme");
     expect(json.application.api_key).toBeUndefined();
     expect(json.application.key_prefix).toBe("abx_test_abcd");
+    expect((json as { resume_href?: string }).resume_href).toBe("/developers/launchpad?app=app-1");
     expect(json.path_instructions.hosted_partner_flow.code).toContain("acme");
     expect(provisionMock).toHaveBeenCalledWith(expect.objectContaining({
       partnerId: "acme",

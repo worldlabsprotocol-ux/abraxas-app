@@ -13,8 +13,8 @@ export default function IntegrationStudioPage() {
     <RedesignPage accent="developer" maxWidth={920}>
       <PageHeader
         eyebrow="Developers · Integration Studio"
-        title="Understand the contract, then integrate"
-        subtitle={`${ACCOUNT_ACCESS_FIRST_PAINT} Choose a policy pack, create a sandbox integration after sign-in, then upgrade to Production after readiness review. Studio does not move funds.`}
+        title="Create a sandbox integration"
+        subtitle={`${ACCOUNT_ACCESS_FIRST_PAINT} Discover a pack, create an isolated sandbox app, generate a starter kit, then test. Production stays on the reviewed Launchpad path. Studio does not move funds.`}
       />
       <IntegrationStudioClient />
     </RedesignPage>

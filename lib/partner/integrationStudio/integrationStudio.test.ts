@@ -85,6 +85,8 @@ describe("Integration Studio", () => {
     expect(catalog.payment_authorization.creates_payments).toBe(false);
     expect(catalog.payment_authorization.calls_circle).toBe(false);
     expect(catalog.wallet_standard.identity_verification).toBe(false);
+    expect(catalog.activation.issues_production_key).toBe(false);
+    expect(catalog.activation.create_cta).toBe("Create a sandbox integration");
     expect(studioPayloadLeaks({ hosted, verify, webhook, solana, venue, wallet, catalog })).toEqual([]);
   });
 
@@ -122,7 +124,7 @@ describe("Integration Studio", () => {
     const developers = readFileSync(join(process.cwd(), "app/developers/page.tsx"), "utf8");
     expect(developers).toContain(INTEGRATION_STUDIO_PATH);
     const client = readFileSync(join(process.cwd(), "app/developers/integration-studio/IntegrationStudioClient.tsx"), "utf8");
-    expect(client).toContain("Create a sandbox integration");
+    expect(client).toContain("PARTNER_ACTIVATION_CREATE_CTA");
     expect(client).toContain("Generate starter kit");
     expect(client).toContain("INTEGRATION_STUDIO_PROVISION.production_upgrade_cta");
     expect(client.toLowerCase()).not.toContain("operator-issued");

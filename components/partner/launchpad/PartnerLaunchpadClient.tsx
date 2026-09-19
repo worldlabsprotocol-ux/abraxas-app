@@ -22,6 +22,7 @@ import {
   launchpadHealthChecksForUi,
   shouldRenderPolicyChangeControlUi,
 } from "@/lib/partner/launchpad/policyChangeControlUi";
+import { selectLaunchpadResumeAppId } from "@/lib/partner/activationPath";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -161,7 +162,13 @@ export function PartnerLaunchpadClient({
     const data = await res.json();
     if (res.ok && data.workspace) {
       setWorkspace(data.workspace);
-      if (!activeAppId && data.workspace.applications[0]) {
+      const requested = typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("app")
+        : null;
+      const resumeId = selectLaunchpadResumeAppId(data.workspace.applications, requested);
+      if (resumeId && (!activeAppId || requested === resumeId)) {
+        setActiveAppId(resumeId);
+      } else if (!activeAppId && data.workspace.applications[0]) {
         setActiveAppId(data.workspace.applications[0].id);
       }
       setAuthenticated(true);
