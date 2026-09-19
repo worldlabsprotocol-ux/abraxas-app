@@ -85,8 +85,8 @@ describe("Good Trouble browse journey integration (Abraxas)", () => {
     });
 
     expect(result.next).toBe("passport");
-    expect(result.passport_url).toContain("purpose=browse");
-    expect(result.passport_url).toContain("good-trouble-browse-v1");
+    expect(result.passport_url).toContain("/partner/continue?verify_request=");
+    expect(result.passport_url).not.toContain("return");
     expect(result.passport_url).not.toContain("good-trouble-retail-v1");
   });
 

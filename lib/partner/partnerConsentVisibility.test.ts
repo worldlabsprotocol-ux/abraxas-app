@@ -5,19 +5,49 @@ const readyForConsent = {
   verificationRequestId: "vr_test",
   consentDismissed: false,
   identityComplete: true,
+  evidenceComplete: true,
+  qualifyingMethodSucceeded: true,
   underReview: false,
   handoffReady: false,
 };
 
 describe("partner consent visibility", () => {
-  it("shows one consent action after required identity evidence is ready", () => {
+  it("shows one consent action after a qualifying method succeeds", () => {
     expect(shouldShowPartnerConsent(readyForConsent)).toBe(true);
-  });
-
-  it("does not present an incomplete Passport as a denied partner decision", () => {
     expect(shouldShowPartnerConsent({
       ...readyForConsent,
       identityComplete: false,
+      evidenceComplete: false,
+      methodQualified: true,
+      qualifyingMethodSucceeded: true,
+    })).toBe(true);
+  });
+
+  it("does not show final approval after sign-in or method selection alone", () => {
+    expect(shouldShowPartnerConsent({
+      ...readyForConsent,
+      methodQualified: false,
+      qualifyingMethodSucceeded: false,
+    })).toBe(false);
+    expect(shouldShowPartnerConsent({
+      verificationRequestId: "vr_test",
+      consentDismissed: false,
+      identityComplete: true,
+      evidenceComplete: true,
+      methodSelected: true,
+      methodQualified: false,
+      underReview: false,
+      handoffReady: false,
+    })).toBe(false);
+  });
+
+  it("does not present incomplete policy evidence as a denied partner decision", () => {
+    expect(shouldShowPartnerConsent({
+      ...readyForConsent,
+      identityComplete: false,
+      evidenceComplete: false,
+      methodQualified: false,
+      qualifyingMethodSucceeded: false,
     })).toBe(false);
   });
 

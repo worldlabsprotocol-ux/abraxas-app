@@ -90,9 +90,9 @@ const MESSAGES: Record<PartnerJourneyState, Omit<PartnerJourneyPresentation, "st
   },
   additional_verification_required: {
     customer_message:
-      "Verify your age. This partner requires identity verification, signing in alone does not verify your age.",
+      "Choose how to satisfy this policy. Signing in only opened an account. Identity or liveness is not the default first step.",
     primary_action: "continue",
-    primary_label: "Verify your age",
+    primary_label: "Choose a verification method",
     terminal: false,
     safe_retry: true,
     telemetry_outcome: "additional_verification_required",
@@ -185,5 +185,5 @@ export function mapFlowNextStepToJourneyState(next: PartnerFlowNextStep): Partne
 }
 
 export function partnerJourneyPartnerIntro(partnerName: string): string {
-  return `${partnerName} uses Abraxas to confirm this requirement without collecting more personal information than necessary.`;
+  return `${partnerName} uses Abraxas to confirm only the selected policy. Sign-in opens an account. Identity or liveness is not the default first step.`;
 }

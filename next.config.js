@@ -27,7 +27,8 @@ const ML_TRACE_EXCLUDES = [
 const nextConfig = {
   reactStrictMode: true,
   // Next.js 14: keep native Node packages out of the server webpack graph.
-  experimental: {
+    experimental: {
+    instrumentationHook: true,
     serverComponentsExternalPackages: ["onnxruntime-node"],
     // Legacy key merged into outputFileTracingExcludes["**/*"] — works on Vercel when route keys do not.
     outputFileTracingIgnores: ML_TRACE_EXCLUDES,

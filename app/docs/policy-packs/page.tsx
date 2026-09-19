@@ -24,7 +24,7 @@ export default function PolicyPacksDocsPage() {
       <PageHeader
         eyebrow="Developers · Policy packs"
         title="Choose a pack, verify, then check the signed receipt"
-        subtitle="Abraxas is reusable private eligibility infrastructure. A partner selects a narrow policy, hosts verification, and verifies a signed result. Google sign-in is not eligibility."
+        subtitle="Abraxas is reusable private eligibility infrastructure. A partner selects a narrow policy. The holder chooses the minimum qualifying method. Google sign-in is not eligibility. Identity or liveness is never the default first step."
       />
 
       <ContentCard title="The loop">

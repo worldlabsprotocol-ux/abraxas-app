@@ -6,9 +6,9 @@ const mockComplete = vi.fn();
 const mockEnsureReady = vi.fn();
 const mockLoadSession = vi.fn();
 const mockParseToken = vi.fn();
-const mockConsume = vi.fn();
 const mockClearLogin = vi.fn();
 const mockClearStale = vi.fn();
+const mockClearResume = vi.fn();
 
 vi.mock("@/lib/sui/zklogin/completeLogin", () => ({
   completeGoogleZkLogin: (...args: unknown[]) => mockComplete(...args),
@@ -24,8 +24,7 @@ vi.mock("@/lib/sui/zklogin/session", () => ({
 }));
 
 vi.mock("@/lib/partner/partnerVerifyResume", () => ({
-  consumePartnerVerifyResumePath: () => mockConsume(),
-  appendPartnerAuthReadyQuery: (path: string) => `${path}&partner_auth=ready`,
+  clearPartnerVerifyResume: () => mockClearResume(),
 }));
 
 vi.mock("@/lib/sui/zklogin/loginInFlight", () => ({
@@ -46,71 +45,88 @@ describe("completePartnerVerifyOAuthCallback", () => {
     mockParseToken.mockReturnValue("id-token");
     mockComplete.mockResolvedValue({ suiAddress: "0xabc" });
     mockEnsureReady.mockResolvedValue({ ok: true });
-    mockConsume.mockReturnValue("/partner/verify?partner_id=test");
   });
 
-  it("awaits browser session before consuming resume", async () => {
+  it("awaits browser session before activating continuation", async () => {
     const order: string[] = [];
     mockEnsureReady.mockImplementation(async () => {
       order.push("browser_session");
       return { ok: true };
     });
-    mockConsume.mockImplementation(() => {
-      order.push("consume");
-      return "/partner/verify?partner_id=test";
-    });
-
-    await completePartnerVerifyOAuthCallback("#id_token=test");
-
-    expect(order).toEqual(["browser_session", "consume"]);
-    expect(mockClearLogin).toHaveBeenCalled();
-  });
-
-  it("does not consume resume when browser session is not ready", async () => {
-    mockEnsureReady.mockResolvedValue({ ok: false, error: "failed" });
-
-    await expect(completePartnerVerifyOAuthCallback("#id_token=test")).rejects.toThrow();
-    expect(mockConsume).not.toHaveBeenCalled();
-    expect(mockClearLogin).toHaveBeenCalled();
-  });
-
-  it("clears login in flight after successful callback", async () => {
-    await completePartnerVerifyOAuthCallback("#id_token=test");
-    expect(mockClearLogin).toHaveBeenCalled();
-  });
-
-  it("completes a fresh callback even when stale local session state exists", async () => {
-    mockLoadSession.mockReturnValue({ suiAddress: "0xstale" });
-    mockComplete.mockResolvedValue({ suiAddress: "0xfresh" });
-
-    await completePartnerVerifyOAuthCallback("#id_token=fresh-token");
-
-    expect(mockComplete).toHaveBeenCalledWith("id-token", {
-      callbackHash: "#id_token=fresh-token",
-    });
-    expect(mockEnsureReady).toHaveBeenCalledWith("0xfresh");
-  });
-
-  it("reuses an existing local session only when the callback has no token", async () => {
-    mockParseToken.mockReturnValue(null);
-    mockLoadSession.mockReturnValue({ suiAddress: "0xexisting" });
-
-    await completePartnerVerifyOAuthCallback("");
-
-    expect(mockComplete).not.toHaveBeenCalled();
-    expect(mockEnsureReady).toHaveBeenCalledWith("0xexisting");
-  });
-
-  it("restores browse resume from signed cookie when sessionStorage was cleared", async () => {
-    mockConsume.mockReturnValue(null);
-    global.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({
-      ok: true,
-      path: "/partner/verify?partner_id=good-trouble-cannabis&policy_id=good-trouble-browse-v1&purpose=browse&return_url=https%3A%2F%2Fwww.goodtroublecanna.com%2Fbrowse-verification-result",
-    }), { status: 200 })) as typeof fetch;
+    global.fetch = vi.fn().mockImplementation(async () => {
+      order.push("activate");
+      return new Response(JSON.stringify({
+        ok: true,
+        issuedReceipt: false,
+        continuePath: "/partner/continue?verify_request=vr-1",
+      }), { status: 200 });
+    }) as typeof fetch;
 
     const result = await completePartnerVerifyOAuthCallback("#id_token=test");
 
-    expect(result.redirectPath).toContain("purpose=browse");
-    expect(result.redirectPath).toContain("partner_auth=ready");
+    expect(order).toEqual(["browser_session", "activate"]);
+    expect(result.redirectPath).toBe(
+      "/partner/continue?verify_request=vr-1",
+    );
+    expect(result.redirectPath).not.toContain("return");
+    expect(mockClearLogin).toHaveBeenCalled();
+  });
+
+  it("does not activate when browser session is not ready", async () => {
+    mockEnsureReady.mockResolvedValue({ ok: false, error: "failed" });
+    global.fetch = vi.fn() as typeof fetch;
+
+    await expect(completePartnerVerifyOAuthCallback("#id_token=test")).rejects.toThrow();
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(mockClearLogin).toHaveBeenCalled();
+  });
+
+  it("falls back to Passport without issuing a receipt when activate cannot run", async () => {
+    global.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      ok: false,
+      code: "missing",
+    }), { status: 404 })) as typeof fetch;
+
+    const result = await completePartnerVerifyOAuthCallback("#id_token=test");
+    expect(result.redirectPath).toBe("/passport?signed_in=1");
+  });
+
+  it("ignores activate payloads that are not restorable continue paths", async () => {
+    global.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      ok: true,
+      issuedReceipt: false,
+      continuePath: "https://evil.example/partner/continue",
+    }), { status: 200 })) as typeof fetch;
+
+    const result = await completePartnerVerifyOAuthCallback("#id_token=test");
+    expect(result.redirectPath).toBe("/passport?signed_in=1");
+  });
+
+  it("falls back to Passport when the continuation store is unavailable and never issues a receipt", async () => {
+    global.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      ok: false,
+      code: "continuation_store_unavailable",
+    }), { status: 503 })) as typeof fetch;
+
+    const result = await completePartnerVerifyOAuthCallback("#id_token=test");
+    expect(result.redirectPath).toBe("/passport?signed_in=1");
+    expect(result.redirectPath).not.toContain("return");
+    expect(result.redirectPath).not.toContain("receipt");
+  });
+
+  it("never treats callback query parameters as resume state", async () => {
+    global.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      ok: true,
+      issuedReceipt: false,
+      continuePath: "/partner/continue?verify_request=vr-1",
+    }), { status: 200 })) as typeof fetch;
+
+    await completePartnerVerifyOAuthCallback("#id_token=test&partner_id=attacker&return_url=https://evil.example");
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/v1/partner-verify/resume/activate",
+      expect.objectContaining({ method: "POST" }),
+    );
+    const body = JSON.parse((global.fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0][1].body as string);
+    expect(body).toEqual({});
   });
 });

@@ -43,6 +43,8 @@ import {
   resolvePartnerContinueContext,
   type ResolvedPartnerContinueContext,
 } from "@/lib/partner/resolvePartnerContinueContext";
+import { partnerVerifyMissingRequiredParametersMessage } from "@/lib/partner/normalizePartnerVerifyInput";
+import { sanitizePartnerContinueBrowserSearch } from "@/lib/partner/partnerFlowContinuation";
 
 function resolveMinimumAge(policyId: string): number | null {
   if (policyId === GOOD_TROUBLE_RETAIL_POLICY_ID) return 21;
@@ -61,14 +63,16 @@ function PartnerContinueInner() {
   const [error, setError] = useState<string | null>(null);
   const [contextLoading, setContextLoading] = useState(true);
   const [flowContext, setFlowContext] = useState<ResolvedPartnerContinueContext | null>(null);
+  const [boundReturnUrl, setBoundReturnUrl] = useState("");
+  const [methodSelected, setMethodSelected] = useState(false);
+  const [methodQualified, setMethodQualified] = useState(false);
 
   const verifyRequestId = searchParams.get("verify_request");
   const urlPartnerId = searchParams.get("partner_id") ?? "";
   const urlPolicyId = searchParams.get("policy_id") ?? "";
   const urlPurpose = searchParams.get("purpose");
-  const returnPath = searchParams.get("return");
   const ageAssuranceStatus = searchParams.get("age_assurance");
-  const decodedReturnUrl = returnPath ?? "";
+  const decodedReturnUrl = boundReturnUrl;
 
   useEffect(() => {
     let cancelled = false;
@@ -100,8 +104,25 @@ function PartnerContinueInner() {
             policy_id?: string;
             purpose?: string | null;
           };
+          let bindingReturnUrl = "";
+          try {
+            const bindingRes = await fetch(
+              `/api/v1/partner-verify/continue-binding?verify_request=${encodeURIComponent(verifyRequestId)}`,
+              { credentials: "include" },
+            );
+            if (bindingRes.ok) {
+              const binding = await bindingRes.json() as { return_url?: string };
+              if (typeof binding.return_url === "string") bindingReturnUrl = binding.return_url;
+            }
+          } catch {
+            // Continue with preview when the binding cookie is absent (evaluate-created flows).
+          }
           if (!cancelled) {
-            setFlowContext(resolvePartnerContinueContext(urlContext, {
+            if (bindingReturnUrl) setBoundReturnUrl(bindingReturnUrl);
+            setFlowContext(resolvePartnerContinueContext({
+              ...urlContext,
+              returnUrl: bindingReturnUrl || urlContext.returnUrl,
+            }, {
               partnerId: preview.partner_id ?? "",
               policyId: preview.policy_id ?? "",
               purpose: preview.purpose ?? null,
@@ -125,6 +146,41 @@ function PartnerContinueInner() {
       cancelled = true;
     };
   }, [verifyRequestId, urlPartnerId, urlPolicyId, urlPurpose, decodedReturnUrl]);
+
+  useEffect(() => {
+    setMethodSelected(false);
+    setMethodQualified(false);
+    if (!verifyRequestId) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch(
+          `/api/v1/partner-verify/method-qualification?verify_request=${encodeURIComponent(verifyRequestId)}`,
+          { credentials: "include" },
+        );
+        const data = await res.json() as { method_qualified?: boolean; issuedReceipt?: boolean };
+        if (cancelled) return;
+        if (searchParams.get("method_qualified") === "1" && data.method_qualified !== true) {
+          setMethodQualified(false);
+          return;
+        }
+        setMethodQualified(res.ok && data.method_qualified === true && data.issuedReceipt !== true);
+      } catch {
+        if (!cancelled) setMethodQualified(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [verifyRequestId, searchParams]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sanitized = sanitizePartnerContinueBrowserSearch(searchParams);
+    if (!sanitized.strippedUntrusted) return;
+    const next = sanitized.search ? `/partner/continue?${sanitized.search}` : "/partner/continue";
+    window.history.replaceState(null, "", next);
+  }, [searchParams]);
 
   const partnerId = flowContext?.partnerId ?? urlPartnerId;
   const policyId = flowContext?.policyId ?? urlPolicyId;
@@ -187,15 +243,20 @@ function PartnerContinueInner() {
     if (ageAssuranceStatus === "failed") return "verification_could_not_confirm";
     if (showIdFallback) return "id_upload_fallback";
     if (setup.walletBound && !setup.identityComplete) return "verify_age";
-    if (returnPath && handoff.ready) return "return_to_partner";
+    if (decodedReturnUrl && handoff.ready) return "return_to_partner";
     return "verify_age";
-  }, [suiAddress, credential, identityStatus, handoff.ready, returnPath, setup, ageAssuranceStatus, showIdFallback]);
+  }, [suiAddress, credential, identityStatus, handoff.ready, decodedReturnUrl, setup, ageAssuranceStatus, showIdFallback]);
 
   const holderCopy = resolvePartnerHolderPresentation(holderState, partnerName);
+  const qualifyingMethodSucceeded = methodQualified;
   const showPartnerConsent = shouldShowPartnerConsent({
     verificationRequestId: verifyRequestId,
     consentDismissed,
+    evidenceComplete: methodQualified,
     identityComplete: setup.identityComplete,
+    methodSelected,
+    methodQualified,
+    qualifyingMethodSucceeded,
     underReview: holderState === "under_review",
     handoffReady: handoff.ready,
   });
@@ -209,11 +270,7 @@ function PartnerContinueInner() {
     underReview: holderState === "under_review",
   });
 
-  useEffect(() => {
-    if (!verifyRequestId || !partnerId || !returnPath) {
-      window.location.replace("/partner/verify");
-    }
-  }, [verifyRequestId, partnerId, returnPath]);
+  const continueContextIncomplete = !verifyRequestId || !partnerId;
 
   async function bindWallet() {
     if (!suiAddress) return;
@@ -279,6 +336,25 @@ function PartnerContinueInner() {
     }
   }
 
+  if (!authLoading && !contextLoading && continueContextIncomplete) {
+    const missing: string[] = [];
+    if (!verifyRequestId) missing.push("verification request");
+    if (!partnerId) missing.push("partner identifier");
+    const invalidLinkMessage = partnerVerifyMissingRequiredParametersMessage(missing);
+    return (
+      <PartnerJourneyLayout
+        partnerName={partnerName}
+        intro="This Partner Flow link cannot continue."
+        statusMessage={invalidLinkMessage}
+        hideStatus={false}
+      >
+        <StatusBanner tone="info" title="Verification could not continue">
+          {invalidLinkMessage}
+        </StatusBanner>
+      </PartnerJourneyLayout>
+    );
+  }
+
   if (isDobFirstBrowse) {
     return (
       <PartnerJourneyLayout
@@ -331,14 +407,6 @@ function PartnerContinueInner() {
         <>
           <PartnerFlowReturnHandler handoff={handoff} />
 
-          {showPartnerConsent && verifyRequestId && (
-            <ConsentCeremony
-              requestId={verifyRequestId}
-              identityComplete
-              onDismiss={() => setConsentDismissed(true)}
-            />
-          )}
-
           {holderState === "under_review" && (
             <StatusBanner tone="pending" title={holderCopy.title}>
               {holderCopy.message}
@@ -375,8 +443,12 @@ function PartnerContinueInner() {
                   ageAssuranceStatus={ageAssuranceStatus}
                   flowTier={flowTier}
                   browsePolicyId={GOOD_TROUBLE_BROWSE_POLICY_ID}
-                  compactCheckout
+                  compactCheckout={false}
                   onFallbackId={() => setShowIdFallback(true)}
+                  onMethodQualified={(qualified) => {
+                    setMethodSelected(true);
+                    setMethodQualified(qualified);
+                  }}
                   onTraditionalReturn={() => {
                     if (partnerHomeUrl) window.location.assign(partnerHomeUrl);
                   }}
@@ -425,11 +497,21 @@ function PartnerContinueInner() {
             </div>
           )}
 
+          {showPartnerConsent && verifyRequestId && (
+            <div style={{ marginTop: "1rem" }}>
+              <ConsentCeremony
+                requestId={verifyRequestId}
+                identityComplete
+                onDismiss={() => setConsentDismissed(true)}
+              />
+            </div>
+          )}
+
           {setup.identityComplete && !handoff.ready && (
             <p role="status">{holderCopy.title}…</p>
           )}
 
-          {returnPath && handoff.ready && (
+          {decodedReturnUrl && handoff.ready && (
             <div style={{ marginTop: "1rem" }}>
               <Btn
                 variant="secondary"

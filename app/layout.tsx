@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/AppProviders";
+import { JudgeDemoSandboxBanner } from "@/components/judgeDemo/JudgeDemoSandboxBanner";
 import { siteMetadata } from "@/lib/seo/metadata";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -72,6 +73,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: langInitScript }} />
       </head>
       <body>
+        <JudgeDemoSandboxBanner />
         <AppProviders>
           {children}
         </AppProviders>

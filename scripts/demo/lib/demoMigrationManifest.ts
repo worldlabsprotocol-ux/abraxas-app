@@ -126,6 +126,7 @@ export const DEMO_REQUIRED_MIGRATION_ORDER = [
   "083_zklogin_wallet_binding_atomic.sql",
   "084_partner_launchpad_foundation.sql",
   "085_partner_launchpad_hardening.sql",
+  "091_partner_flow_continuations.sql",
 ] as const;
 
 export const DEMO_MIGRATION_065_FILENAME = "065_service_role_runtime_grants.sql" as const;
@@ -419,6 +420,16 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
       "Launchpad hardening: tenant bound idempotency, production approval RPC, encrypted one time production key reveal envelope.",
   },
   {
+    file: "091_partner_flow_continuations.sql",
+    tier: "required",
+    creates: ["partner_flow_continuations"],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Partner Flow OAuth continuations. Idempotent; DEMO already has the table. Required on Production for OAuth resume. Not Circle. Do not apply 089/090 to Production.",
+  },
+  {
     file: "088_policy_change_control.sql",
     tier: "recommended",
     creates: [
@@ -433,6 +444,18 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
     extensions: [],
     notes:
       "DEMO-only Policy Change Control: append-only lifecycle audit, explicit version adoptions, scheduled deprecation, and deletion guards for receipts/bindings.",
+  },
+  {
+    file: "089_circle_arc_testnet_settlement.sql",
+    tier: "recommended",
+    creates: [
+      "partner_settlement_intents",
+    ],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Preview/DEMO-first Circle Arc testnet settlement intents. Not a custodial ledger. No secrets or raw provider payloads.",
   },
 ];
 
@@ -454,6 +477,8 @@ export const OBJECT_PROVENANCE: Record<string, string> = {
   partner_entitlements: "058_partner_metering_foundation.sql",
   partner_webhook_outbox: "062_partner_webhook_outbox.sql",
   partner_webhook_configs: "062_partner_webhook_outbox.sql",
+  partner_settlement_intents: "089_circle_arc_testnet_settlement.sql",
+  partner_flow_continuations: "091_partner_flow_continuations.sql",
 };
 
 export function getDemoManifestFilenames(): string[] {

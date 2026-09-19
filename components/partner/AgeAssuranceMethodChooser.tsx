@@ -13,6 +13,12 @@ import {
 import type { AgeAssuranceProviderPublicMeta } from "@/lib/assurance/ageProviders/types";
 import { SelfAttestationBrowseForm } from "@/components/partner/SelfAttestationBrowseForm";
 import { GOOD_TROUBLE_BROWSE_POLICY_ID } from "@/lib/goodTrouble/constants";
+import {
+  planEligibilityMethods,
+  resolvePackForEligibility,
+  type EligibilityMethodId,
+} from "@/lib/partner/eligibilityMethods";
+import { GOOGLE_ACCOUNT_NOT_ELIGIBILITY } from "@/lib/partner/launchpad/policyPacks";
 
 export interface AgeAssuranceMethodChooserProps {
   partnerId: string;
@@ -23,6 +29,10 @@ export interface AgeAssuranceMethodChooserProps {
   minimumAge: number | null;
   onFallbackId: () => void;
   onTraditionalReturn: () => void;
+  /** Server confirmed method_qualified. Must not issue a receipt. */
+  onMethodQualified?: (qualified: boolean) => void;
+  /** @deprecated Selection/start is not qualification. */
+  onMethodSatisfied?: () => void;
   ageAssuranceStatus?: string | null;
   /** browse = tier 1 self-attest; checkout = tier 2 authoritative verification */
   flowTier?: "browse" | "checkout";
@@ -46,6 +56,8 @@ export function AgeAssuranceMethodChooser({
   minimumAge,
   onFallbackId,
   onTraditionalReturn,
+  onMethodQualified,
+  onMethodSatisfied,
   ageAssuranceStatus,
   flowTier = "checkout",
   browsePolicyId = GOOD_TROUBLE_BROWSE_POLICY_ID,
@@ -56,9 +68,13 @@ export function AgeAssuranceMethodChooser({
   const [existingEligible, setExistingEligible] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [selectedMethodId, setSelectedMethodId] = useState<EligibilityMethodId | null>(null);
+  const [methodQualified, setMethodQualified] = useState(false);
+  const [issuedReceipt, setIssuedReceipt] = useState(false);
 
   const privacy = partnerHolderPrivacyNotes(partnerName);
   const threshold = minimumAge != null && minimumAge >= 21 ? 21 : 18;
+  const pack = resolvePackForEligibility(policyId);
 
   const holderState: PartnerHolderState = loading
     ? "checking_existing_proof"
@@ -184,6 +200,20 @@ export function AgeAssuranceMethodChooser({
     );
   }
 
+  const plan = pack
+    ? planEligibilityMethods({
+      pack,
+      existingProofCompatible: existingEligible,
+      partnerAgeCheckConfigured: true,
+      partnerAgeCheckAssurance: pack.minimum_assurance,
+      privacyPreservingAvailable: pack.id === "sandbox_economic_demo"
+        || providers.some((provider) => provider.authoritative || provider.configured),
+      browseSelfAttestAllowed: false,
+    })
+    : null;
+
+  const disclosure = plan?.disclosure;
+
   if (compactCheckout) {
     const primaryProvider = providers[0];
     const primaryTitle = existingEligible
@@ -199,10 +229,30 @@ export function AgeAssuranceMethodChooser({
 
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-        <div>
-          <p style={{ margin: 0, fontWeight: 600, fontSize: "1rem" }}>{primaryTitle}</p>
-          <p style={{ margin: "0.5rem 0 0", fontSize: "0.9rem", lineHeight: 1.6 }}>{primaryMessage}</p>
-        </div>
+        {disclosure && (
+          <div>
+            <p style={{ margin: 0, fontWeight: 600, fontSize: "1rem" }}>Choose how to satisfy this requirement</p>
+            <p style={{ margin: "0.5rem 0 0", fontSize: "0.9rem", lineHeight: 1.6 }}>{disclosure.purpose}</p>
+            <p style={{ margin: "0.5rem 0 0", fontSize: "0.82rem", lineHeight: 1.55, color: "var(--text-muted)" }}>
+              Shared result: {disclosure.disclosed_result}. Assurance required: {disclosure.assurance_level}.
+              Withheld: {disclosure.withheld.join(", ")}.
+            </p>
+            <p style={{ margin: "0.5rem 0 0", fontSize: "0.82rem", lineHeight: 1.55, color: "var(--text-muted)" }}>
+              {GOOGLE_ACCOUNT_NOT_ELIGIBILITY}
+            </p>
+            {disclosure.economic_demo && (
+              <p style={{ margin: "0.5rem 0 0", fontSize: "0.82rem", lineHeight: 1.55 }}>
+                Sandbox / testnet economic demo only. This is not real age verification and cannot be used in Production.
+              </p>
+            )}
+          </div>
+        )}
+        {!disclosure && (
+          <div>
+            <p style={{ margin: 0, fontWeight: 600, fontSize: "1rem" }}>{primaryTitle}</p>
+            <p style={{ margin: "0.5rem 0 0", fontSize: "0.9rem", lineHeight: 1.6 }}>{primaryMessage}</p>
+          </div>
+        )}
 
         {holderState === "verification_could_not_confirm" && (
           <StatusBanner tone="info" title={copy.title}>
@@ -210,29 +260,34 @@ export function AgeAssuranceMethodChooser({
           </StatusBanner>
         )}
 
-        {existingEligible ? (
+        {plan?.no_non_id_method_satisfies && (
+          <StatusBanner tone="info" title="No non-ID method can satisfy this policy">
+            Identity or liveness is available as an optional method. Use the partner eligibility check if it is configured.
+            Completing this step does not move USDC.
+          </StatusBanner>
+        )}
+
+        {existingEligible && (
           <Btn disabled={busy !== null} onClick={() => void reuseExistingProof()}>
-            {busy === "reuse" ? "Confirming…" : "Use my existing Abraxas age proof"}
-          </Btn>
-        ) : primaryProvider ? (
-          <Btn disabled={busy !== null} onClick={() => void startProvider(primaryProvider.id)}>
-            {busy === primaryProvider.id ? "Starting…" : primaryProvider.displayName}
-          </Btn>
-        ) : (
-          <Btn variant="secondary" onClick={onFallbackId}>
-            {resolvePartnerHolderPresentation("id_upload_fallback", partnerName).action_label}
+            {busy === "reuse" ? "Confirming…" : "Use my existing compatible proof"}
           </Btn>
         )}
 
         {!existingEligible && primaryProvider && (
-          <Btn variant="secondary" onClick={onFallbackId}>
-            Verify with ID instead
+          <Btn disabled={busy !== null} onClick={() => void startProvider(primaryProvider.id)}>
+            {busy === primaryProvider.id ? "Starting…" : primaryProvider.displayName}
           </Btn>
         )}
 
         <Btn variant="secondary" onClick={onTraditionalReturn}>
-          Use {partnerName}&apos;s age check
+          Use {partnerName}&apos;s eligibility check
         </Btn>
+
+        {pack && !plan?.disclosure.economic_demo && (
+          <Btn variant="secondary" onClick={onFallbackId}>
+            Identity / liveness (optional)
+          </Btn>
+        )}
 
         {error && (
           <p role="alert" style={{ color: "var(--text-secondary)" }}>{error}</p>
@@ -243,17 +298,32 @@ export function AgeAssuranceMethodChooser({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-      <p style={{ margin: 0, fontWeight: 600, fontSize: "1rem" }}>{checkoutCopy.title}</p>
-      <p style={{ margin: 0, fontSize: "0.9rem", lineHeight: 1.6 }}>{checkoutCopy.message}</p>
+      <p style={{ margin: 0, fontWeight: 600, fontSize: "1rem" }}>Choose how to satisfy this requirement</p>
+      <p style={{ margin: 0, fontSize: "0.9rem", lineHeight: 1.6 }}>
+        {disclosure?.purpose ?? checkoutCopy.message}
+      </p>
+      {disclosure && (
+        <p style={{ margin: 0, fontSize: "0.85rem", lineHeight: 1.6, color: "var(--text-muted)" }}>
+          Requirement: {disclosure.requirement}. Shared result: {disclosure.disclosed_result}.
+          Assurance: {disclosure.assurance_level}. Withheld: {disclosure.withheld.join(", ")}.
+        </p>
+      )}
       <p style={{ margin: 0, fontSize: "0.85rem", lineHeight: 1.6, color: "var(--text-muted)" }}>
-        {privacy.auth_not_age}
+        {GOOGLE_ACCOUNT_NOT_ELIGIBILITY}
       </p>
       <p style={{ margin: 0, fontSize: "0.85rem", lineHeight: 1.6, color: "var(--text-muted)" }}>
         {privacy.partner_minimal}
       </p>
-      <p style={{ margin: 0, fontSize: "0.85rem", lineHeight: 1.6, color: "var(--text-muted)" }}>
-        {privacy.merchant_obligation}
-      </p>
+      {disclosure?.economic_demo && (
+        <p style={{ margin: 0, fontSize: "0.85rem", lineHeight: 1.6 }}>
+          Sandbox / testnet economic demo only. This is not real age verification and cannot be used in Production.
+        </p>
+      )}
+      {plan?.no_non_id_method_satisfies && (
+        <StatusBanner tone="info" title="No non-ID method can satisfy this policy">
+          Identity or liveness is optional here. Prefer the partner eligibility check when it is configured.
+        </StatusBanner>
+      )}
 
       {holderState === "verification_could_not_confirm" && (
         <StatusBanner tone="info" title={copy.title}>
@@ -261,62 +331,116 @@ export function AgeAssuranceMethodChooser({
         </StatusBanner>
       )}
 
-      {existingEligible && (
-        <div>
-          <p style={{ margin: "0 0 0.5rem", fontWeight: 600 }}>{copy.title}</p>
-          <p style={{ margin: "0 0 0.75rem", fontSize: "0.9rem", lineHeight: 1.6 }}>{copy.message}</p>
-          <Btn disabled={busy !== null} onClick={() => void reuseExistingProof()}>
-            {busy === "reuse" ? "Confirming…" : "Use my existing Abraxas age proof"}
-          </Btn>
-        </div>
-      )}
-
-      {providers.length > 0 && (
-        <div>
-          <p style={{ margin: "0 0 0.5rem", fontWeight: 600 }}>
-            {resolvePartnerHolderPresentation("choose_private_method", partnerName).title}
-          </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-            {providers.map(provider => (
-              <Btn
-                key={provider.id}
-                variant="secondary"
-                disabled={busy !== null}
-                onClick={() => void startProvider(provider.id)}
-              >
-                {busy === provider.id ? "Starting…" : provider.displayName}
-              </Btn>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {providers.length === 0 && !existingEligible && (
-        <StatusBanner tone="info" title={copy.title}>
-          {copy.message}
-        </StatusBanner>
-      )}
-
-      <div>
-        <p style={{ margin: "0 0 0.5rem", fontWeight: 600 }}>
-          {resolvePartnerHolderPresentation("id_upload_fallback", partnerName).title}
-        </p>
-        <p style={{ margin: "0 0 0.75rem", fontSize: "0.85rem", lineHeight: 1.6 }}>
-          {privacy.id_fallback}
-        </p>
-        <Btn variant="secondary" onClick={onFallbackId}>
-          {resolvePartnerHolderPresentation("id_upload_fallback", partnerName).action_label}
-        </Btn>
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }} role="list">
+        {(plan?.methods ?? [])
+          .filter((method) => method.id !== "account_login" && method.available)
+          .map((method) => (
+            <Btn
+              key={method.id}
+              variant={selectedMethodId === method.id ? "primary" : "secondary"}
+              ariaLabel={selectedMethodId === method.id ? `${method.label} (selected)` : method.label}
+              disabled={busy !== null}
+              onClick={() => {
+                setSelectedMethodId(method.id);
+                setMethodQualified(false);
+                setIssuedReceipt(false);
+                setError(null);
+                onMethodQualified?.(false);
+              }}
+            >
+              {method.label}
+            </Btn>
+          ))}
       </div>
-
-      <div>
-        <Btn variant="secondary" onClick={onTraditionalReturn}>
-          Use {partnerName}&apos;s age check
-        </Btn>
-        <p style={{ margin: "0.5rem 0 0", fontSize: "0.82rem", color: "var(--text-muted)" }}>
-          You&apos;ll return to {partnerName}.
+      {selectedMethodId && (
+        <p style={{ margin: 0, fontSize: "0.85rem", lineHeight: 1.6 }}>
+          {plan?.methods.find((method) => method.id === selectedMethodId)?.why}
+          {" "}Selecting a method does not issue a receipt.
         </p>
-      </div>
+      )}
+      {!methodQualified && (
+      <Btn
+        disabled={busy !== null || !selectedMethodId}
+        onClick={() => {
+          const method = plan?.methods.find((item) => item.id === selectedMethodId);
+          if (!method || method.id === "account_login") {
+            setError("Choose a qualifying method. Sign-in is not eligibility.");
+            return;
+          }
+          if (!method.qualifies && method.id !== "identity_liveness") {
+            setError("That method does not meet this policy’s required assurance.");
+            return;
+          }
+          if (method.id === "identity_liveness") {
+            onFallbackId();
+            return;
+          }
+          if (!verifyRequestId) {
+            setError("This verification session is missing. Start again from the partner.");
+            return;
+          }
+          setIssuedReceipt(false);
+          setBusy("qualify");
+          void (async () => {
+            try {
+              const res = await fetch("/api/v1/partner-verify/method-qualification", {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  verify_request: verifyRequestId,
+                  method_id: method.id,
+                }),
+              });
+              const data = await res.json() as {
+                method_qualified?: boolean;
+                issuedReceipt?: boolean;
+                error?: string;
+                code?: string;
+              };
+              if (data.issuedReceipt === true) {
+                setError("Method completion must not issue a receipt.");
+                setMethodQualified(false);
+                onMethodQualified?.(false);
+                return;
+              }
+              if (!res.ok || data.method_qualified !== true) {
+                setMethodQualified(false);
+                onMethodQualified?.(false);
+                setError(
+                  data.code === "sandbox_evidence_rejected"
+                    ? "Sandbox methods cannot satisfy an authoritative policy."
+                    : data.error ?? "The selected method has not qualified yet.",
+                );
+                return;
+              }
+              const confirm = await fetch(
+                `/api/v1/partner-verify/method-qualification?verify_request=${encodeURIComponent(verifyRequestId)}`,
+                { credentials: "include" },
+              );
+              const confirmed = await confirm.json() as { method_qualified?: boolean; issuedReceipt?: boolean };
+              if (confirmed.issuedReceipt === true || confirmed.method_qualified !== true) {
+                setMethodQualified(false);
+                onMethodQualified?.(false);
+                setError("Qualification must be confirmed by the server before approval.");
+                return;
+              }
+              setMethodQualified(true);
+              onMethodQualified?.(true);
+              onMethodSatisfied?.();
+            } catch {
+              setMethodQualified(false);
+              onMethodQualified?.(false);
+              setError("Could not complete the selected method. Try again.");
+            } finally {
+              setBusy(null);
+            }
+          })();
+        }}
+      >
+        Use selected method
+      </Btn>
+      )}
 
       {error && (
         <p role="alert" style={{ color: "var(--text-secondary)" }}>{error}</p>

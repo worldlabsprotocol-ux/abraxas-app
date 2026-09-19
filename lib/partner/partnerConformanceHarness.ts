@@ -19,6 +19,10 @@ import {
   sandboxManifestConformanceFixture,
   validateSandboxManifest,
 } from "@/lib/partner/launchpad/sandboxReadiness/manifest";
+import {
+  circleEvidenceConformanceFixture,
+  validateCircleSafeEvidence,
+} from "@/lib/settlement/circle/evidence";
 import { SITE_URL } from "@/lib/siteUrl";
 
 const STALE_HOST = "abraxas-app.vercel.app";
@@ -258,7 +262,41 @@ function sandboxManifestConformanceChecks(): ConformanceCheck[] {
       !productionWithoutPass.ok ? "pass" : "fail",
       !productionWithoutPass.ok
         ? productionWithoutPass.errors.join("; ")
-        : "production_activation_eligible was accepted without a sandbox pass",
+        :       "production_activation_eligible was accepted without a sandbox pass",
+    ),
+  ];
+}
+
+function circleSettlementConformanceChecks(): ConformanceCheck[] {
+  const valid = validateCircleSafeEvidence(circleEvidenceConformanceFixture());
+  const withSecret = validateCircleSafeEvidence({
+    ...circleEvidenceConformanceFixture(),
+    api_key: "TEST_API_KEY:leaked",
+  });
+  const productionClaim = validateCircleSafeEvidence({
+    ...circleEvidenceConformanceFixture(),
+    activates_production: true,
+  });
+  return [
+    check(
+      "circle-settlement-evidence-offline",
+      "Circle settlement evidence validates offline without secrets or PII",
+      valid.ok ? "pass" : "fail",
+      valid.ok ? "fixture evidence has no Circle secrets, wallet addresses, or PII" : valid.errors.join("; "),
+    ),
+    check(
+      "circle-settlement-rejects-secrets",
+      "Circle settlement evidence rejects leaked credentials",
+      !withSecret.ok ? "pass" : "fail",
+      !withSecret.ok ? withSecret.errors.join("; ") : "secret material was accepted",
+    ),
+    check(
+      "circle-settlement-not-production-activation",
+      "Circle testnet settlement never activates production",
+      !productionClaim.ok ? "pass" : "fail",
+      !productionClaim.ok
+        ? productionClaim.errors.join("; ")
+        : "activates_production true was accepted",
     ),
   ];
 }
@@ -402,6 +440,7 @@ export async function runPartnerConformance(
   checks.push(...kitConformanceChecks(options));
   checks.push(...partnerEventDeliveryConformanceChecks());
   checks.push(...sandboxManifestConformanceChecks());
+  checks.push(...circleSettlementConformanceChecks());
 
   if (options.skipLiveManifest || !options.baseUrl) {
     checks.push(

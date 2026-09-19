@@ -1,0 +1,298 @@
+// FILE: lib/settlement/circle/store.ts
+// Persist pending intents and Circle-authenticated evidence only. No raw payloads.
+
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import {
+  isSettlementSchemaMissingError,
+} from "@/lib/settlement/circle/availability";
+import { CIRCLE_PUBLIC_CODES } from "@/lib/settlement/circle/codes";
+import {
+  CIRCLE_CURRENCY,
+  CIRCLE_INFRASTRUCTURE_LABEL,
+  CIRCLE_NETWORK,
+  CIRCLE_SCHEMA_TABLE,
+  CIRCLE_SETTLEMENT_ARTIFACT,
+  CIRCLE_SETTLEMENT_LABEL,
+  CIRCLE_SETTLEMENT_SCHEMA_VERSION,
+  CIRCLE_TERMINAL_INTENT_STATES,
+  type CircleIntentState,
+} from "@/lib/settlement/circle/constants";
+import type { CircleSafeEvidence } from "@/lib/settlement/circle/evidence";
+import { createCircleIdempotencyKey } from "@/lib/settlement/circle/idempotency";
+
+export interface SettlementIntentRow {
+  id: string;
+  application_id: string;
+  partner_id: string;
+  idempotency_key: string;
+  state: CircleIntentState;
+  network: typeof CIRCLE_NETWORK;
+  currency: typeof CIRCLE_CURRENCY;
+  amount_minor: number;
+  receipt_id: string;
+  selection_jti_hash?: string | null;
+  policy_id: string;
+  policy_version: number;
+  provider_request_ref: string | null;
+  circle_transaction_id: string | null;
+  provider_state: string | null;
+  provider_occurred_at: string | null;
+  infrastructure_label: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export function toSafeEvidence(row: SettlementIntentRow): CircleSafeEvidence {
+  return {
+    artifact: CIRCLE_SETTLEMENT_ARTIFACT,
+    schema_version: CIRCLE_SETTLEMENT_SCHEMA_VERSION,
+    environment: "sandbox",
+    label: CIRCLE_SETTLEMENT_LABEL,
+    infrastructure_label: CIRCLE_INFRASTRUCTURE_LABEL,
+    not_a_custodian: true,
+    intent_is_not_a_payment: true,
+    activates_production: false,
+    network: CIRCLE_NETWORK,
+    currency: CIRCLE_CURRENCY,
+    amount_minor: row.amount_minor,
+    state: row.state,
+    provider_request_ref: row.provider_request_ref,
+    circle_transaction_id: row.circle_transaction_id,
+    provider_state: row.provider_state,
+    provider_occurred_at: row.provider_occurred_at,
+    intent_id: row.id,
+    receipt_id: row.receipt_id,
+    policy_id: row.policy_id,
+    policy_version: row.policy_version,
+    idempotency_key: row.idempotency_key,
+    last_updated_at: row.updated_at,
+  };
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  const rec = error && typeof error === "object" ? error as { code?: string; message?: string } : {};
+  return rec.code === "23505" || String(rec.message ?? "").toLowerCase().includes("duplicate");
+}
+
+function isTerminalIntentState(state: CircleIntentState): boolean {
+  return (CIRCLE_TERMINAL_INTENT_STATES as readonly string[]).includes(state);
+}
+
+export async function insertPendingIntent(input: {
+  applicationId: string;
+  partnerId: string;
+  amountMinor: number;
+  receiptId: string;
+  policyId: string;
+  policyVersion: number;
+  selectionJtiHash: string;
+  client?: SupabaseClient;
+}): Promise<
+  | { ok: true; row: SettlementIntentRow; duplicate: boolean; replay: boolean }
+  | { ok: false; code: string }
+> {
+  const hash = input.selectionJtiHash.trim().toLowerCase();
+  if (!/^[a-f0-9]{64}$/.test(hash)) {
+    return { ok: false, code: CIRCLE_PUBLIC_CODES.selection_invalid };
+  }
+  const sb = input.client ?? requireSupabaseAdmin();
+
+  const byHash = await findIntentBySelectionHash({
+    applicationId: input.applicationId,
+    partnerId: input.partnerId,
+    selectionJtiHash: hash,
+    client: sb,
+  });
+  if (byHash.missingSchema) {
+    return { ok: false, code: CIRCLE_PUBLIC_CODES.schema_unavailable };
+  }
+  if (byHash.row) {
+    return { ok: true, row: byHash.row, duplicate: true, replay: true };
+  }
+
+  const existing = await findIntentByReceipt({
+    applicationId: input.applicationId,
+    partnerId: input.partnerId,
+    receiptId: input.receiptId,
+    client: sb,
+  });
+  if (existing) return { ok: true, row: existing, duplicate: true, replay: false };
+
+  const payload = {
+    application_id: input.applicationId,
+    partner_id: input.partnerId,
+    idempotency_key: createCircleIdempotencyKey(),
+    state: "pending" as const,
+    network: CIRCLE_NETWORK,
+    currency: CIRCLE_CURRENCY,
+    amount_minor: input.amountMinor,
+    receipt_id: input.receiptId,
+    selection_jti_hash: hash,
+    policy_id: input.policyId,
+    policy_version: input.policyVersion,
+    infrastructure_label: CIRCLE_INFRASTRUCTURE_LABEL,
+  };
+  const { data, error } = await sb
+    .from(CIRCLE_SCHEMA_TABLE)
+    .insert(payload)
+    .select("*")
+    .maybeSingle();
+  if (!error && data) {
+    return { ok: true, row: data as SettlementIntentRow, duplicate: false, replay: false };
+  }
+  if (error && isSettlementSchemaMissingError(error)) {
+    return { ok: false, code: CIRCLE_PUBLIC_CODES.schema_unavailable };
+  }
+  if (error && isUniqueViolation(error)) {
+    const racedHash = await findIntentBySelectionHash({
+      applicationId: input.applicationId,
+      partnerId: input.partnerId,
+      selectionJtiHash: hash,
+      client: sb,
+    });
+    if (racedHash.row) {
+      return { ok: true, row: racedHash.row, duplicate: true, replay: true };
+    }
+    const raced = await findIntentByReceipt({
+      applicationId: input.applicationId,
+      partnerId: input.partnerId,
+      receiptId: input.receiptId,
+      client: sb,
+    });
+    if (raced) return { ok: true, row: raced, duplicate: true, replay: false };
+    return { ok: false, code: CIRCLE_PUBLIC_CODES.duplicate };
+  }
+  return { ok: false, code: CIRCLE_PUBLIC_CODES.schema_unavailable };
+}
+
+export async function findIntentByReceipt(input: {
+  applicationId: string;
+  partnerId: string;
+  receiptId: string;
+  client?: SupabaseClient;
+}): Promise<SettlementIntentRow | null> {
+  const sb = input.client ?? requireSupabaseAdmin();
+  const { data, error } = await sb
+    .from(CIRCLE_SCHEMA_TABLE)
+    .select("*")
+    .eq("application_id", input.applicationId)
+    .eq("partner_id", input.partnerId)
+    .eq("receipt_id", input.receiptId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as SettlementIntentRow;
+}
+
+export async function findIntentBySelectionHash(input: {
+  applicationId: string;
+  partnerId: string;
+  selectionJtiHash: string;
+  client?: SupabaseClient;
+}): Promise<{ row: SettlementIntentRow | null; missingSchema: boolean }> {
+  const sb = input.client ?? requireSupabaseAdmin();
+  const { data, error } = await sb
+    .from(CIRCLE_SCHEMA_TABLE)
+    .select("*")
+    .eq("application_id", input.applicationId)
+    .eq("partner_id", input.partnerId)
+    .eq("selection_jti_hash", input.selectionJtiHash)
+    .maybeSingle();
+  if (error && isSettlementSchemaMissingError(error)) {
+    return { row: null, missingSchema: true };
+  }
+  if (error || !data) return { row: null, missingSchema: false };
+  return { row: data as SettlementIntentRow, missingSchema: false };
+}
+
+export async function listIntentsForApplication(input: {
+  applicationId: string;
+  partnerId: string;
+  client?: SupabaseClient;
+}): Promise<SettlementIntentRow[]> {
+  const sb = input.client ?? requireSupabaseAdmin();
+  const { data, error } = await sb
+    .from(CIRCLE_SCHEMA_TABLE)
+    .select("*")
+    .eq("application_id", input.applicationId)
+    .eq("partner_id", input.partnerId)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (error || !data) return [];
+  return data as SettlementIntentRow[];
+}
+
+export async function applyAuthenticatedEvidence(input: {
+  intent: SettlementIntentRow;
+  state: CircleIntentState;
+  providerRequestRef: string;
+  circleTransactionId: string | null;
+  providerState: string;
+  occurredAt: string;
+  client?: SupabaseClient;
+}): Promise<SettlementIntentRow | null> {
+  if (isTerminalIntentState(input.intent.state)) return input.intent;
+  const sb = input.client ?? requireSupabaseAdmin();
+  const { data, error } = await sb
+    .from(CIRCLE_SCHEMA_TABLE)
+    .update({
+      state: input.state,
+      provider_request_ref: input.providerRequestRef,
+      circle_transaction_id: input.circleTransactionId,
+      provider_state: input.providerState,
+      provider_occurred_at: input.occurredAt,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.intent.id)
+    .eq("partner_id", input.intent.partner_id)
+    .not("state", "in", `(${CIRCLE_TERMINAL_INTENT_STATES.join(",")})`)
+    .select("*")
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as SettlementIntentRow;
+}
+
+export async function getIntentForPartner(input: {
+  intentId: string;
+  applicationId: string;
+  partnerId: string;
+  client?: SupabaseClient;
+}): Promise<SettlementIntentRow | null> {
+  const sb = input.client ?? requireSupabaseAdmin();
+  const { data, error } = await sb
+    .from(CIRCLE_SCHEMA_TABLE)
+    .select("*")
+    .eq("id", input.intentId)
+    .eq("application_id", input.applicationId)
+    .eq("partner_id", input.partnerId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as SettlementIntentRow;
+}
+
+export async function claimPendingIntentForSubmit(input: {
+  intent: SettlementIntentRow;
+  client?: SupabaseClient;
+}): Promise<SettlementIntentRow | null> {
+  if (input.intent.state !== "pending" || input.intent.circle_transaction_id) {
+    return null;
+  }
+  const sb = input.client ?? requireSupabaseAdmin();
+  const { data, error } = await sb
+    .from(CIRCLE_SCHEMA_TABLE)
+    .update({
+      state: "submitted",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.intent.id)
+    .eq("application_id", input.intent.application_id)
+    .eq("partner_id", input.intent.partner_id)
+    .eq("state", "pending")
+    .is("circle_transaction_id", null)
+    .select("*")
+    .maybeSingle();
+  if (error || !data) return null;
+  return data as SettlementIntentRow;
+}

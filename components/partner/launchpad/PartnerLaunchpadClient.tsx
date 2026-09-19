@@ -16,6 +16,7 @@ import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 import { PartnerEventDeliveryPanel } from "@/components/partner/launchpad/PartnerEventDeliveryPanel";
 import { PolicyChangeControlLaunchpadSlot } from "@/components/partner/launchpad/PolicyChangeControlLaunchpadSlot";
 import { PartnerSandboxReadinessPanel } from "@/components/partner/launchpad/PartnerSandboxReadinessPanel";
+import { CircleSettlementLaunchpadPanel } from "@/components/partner/launchpad/CircleSettlementLaunchpadPanel";
 import {
   launchpadHealthChecksForUi,
   shouldRenderPolicyChangeControlUi,
@@ -499,7 +500,7 @@ export function PartnerLaunchpadClient({
       {step === "policy" && (
         <ContentCard title="Choose a policy pack">
           <p style={bodyText}>
-            Packs are declarative and versioned. The holder proves a narrow claim. The partner receives a signed boolean equivalent result, not a profile, ID image, or contact list.
+            Packs are declarative and versioned. The holder proves a narrow claim using the minimum method the pack allows. The partner receives a signed boolean equivalent result, not a profile, ID image, or contact list. Identity or liveness is optional unless the pack requires it. The sandbox economic demo pack is not age verification and is not usable in Production.
           </p>
           <p style={{ ...bodyText, color: "#f59e0b" }}>{googleDisclaimer}</p>
           <div style={{ display: "grid", gap: "0.5rem" }}>
@@ -680,6 +681,10 @@ export function PartnerLaunchpadClient({
             void refreshIntegrationHealth();
           }}
         />
+      )}
+
+      {activeApp && (
+        <CircleSettlementLaunchpadPanel applicationId={activeApp.id} />
       )}
 
       {activeApp && docs && (

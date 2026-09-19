@@ -192,9 +192,9 @@ describe("partner URL builders", () => {
       policyId: "good-trouble-retail-v1",
       returnUrl: "https://example.com/enter",
     });
-    expect(url).toContain("verify_request=req-1");
-    expect(url).toContain("return=");
-    expect(url).toContain("partner_id=good-trouble-cannabis");
+    expect(url).toContain("/partner/continue?verify_request=req-1");
+    expect(url).not.toContain("return=");
+    expect(url).not.toContain("partner_id=");
   });
 
   it("builds generic partner verify URL from config", () => {

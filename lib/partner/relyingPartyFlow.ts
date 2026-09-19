@@ -2,6 +2,7 @@
 // Generic relying-party flow: credential-first verify, Passport only when required.
 
 import { normalizeSuiAddress } from "@mysten/sui/utils";
+import { buildPartnerContinuePath } from "@/lib/partner/partnerFlowContinuation";
 import { getActiveClaims } from "@/lib/credentials/claimsService";
 import { evaluatePolicyForSubject } from "@/lib/policy/evaluateSubjectPolicy";
 import {
@@ -106,16 +107,14 @@ export function buildPartnerEvidenceUrl(input: {
   appOrigin?: string;
 }): string {
   const appUrl = (input.appOrigin ?? getPublicAppOrigin()).replace(/\/$/, "");
-  const params = new URLSearchParams({
-    verify_request: input.verificationRequestId,
-    partner_id: input.partnerId,
-    policy_id: input.policyId,
-    return: input.returnUrl,
+  const path = buildPartnerContinuePath({
+    verificationRequestId: input.verificationRequestId,
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    purpose: input.purpose
+      ?? (input.policyId === GOOD_TROUBLE_BROWSE_POLICY_ID ? "browse" : undefined),
   });
-  const purpose = input.purpose
-    ?? (input.policyId === GOOD_TROUBLE_BROWSE_POLICY_ID ? "browse" : undefined);
-  if (purpose) params.set("purpose", purpose);
-  return `${appUrl}/partner/continue?${params.toString()}`;
+  return `${appUrl}${path ?? "/partner/continue"}`;
 }
 
 /** @deprecated Prefer buildPartnerEvidenceUrl for partner-flow evidence steps. */

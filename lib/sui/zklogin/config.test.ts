@@ -14,6 +14,7 @@ const ENV_KEYS = [
   "NEXT_PUBLIC_ZKLOGIN_REDIRECT_URI",
   "NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID",
   "NEXT_PUBLIC_GOOGLE_ZKLOGIN_LEGACY_CLIENT_ID",
+  "NEXT_PUBLIC_ABRAXAS_JUDGE_DEMO",
 ] as const;
 
 describe("zkLogin OAuth redirect URI — same-origin", () => {
@@ -147,6 +148,20 @@ describe("zkLogin OAuth redirect URI — same-origin", () => {
 
     expect(getZkLoginRedirectUri()).toBe(
       `https://abraxas-app-preview.vercel.app${ZKLOGIN_CALLBACK_PATH}`,
+    );
+  });
+
+  it("pins the stable Judge Demo callback and ignores Preview aliases", () => {
+    process.env.NEXT_PUBLIC_ABRAXAS_JUDGE_DEMO = "true";
+    process.env.VERCEL_URL = "abraxas-app-git-cursor-sa-f485a1-worldlabsprotocol-uxs-projects.vercel.app";
+    vi.stubGlobal("window", {
+      location: {
+        origin: "https://abraxas-app-git-cursor-sa-f485a1-worldlabsprotocol-uxs-projects.vercel.app",
+      },
+    });
+
+    expect(getZkLoginRedirectUri()).toBe(
+      `https://demo.abraxasworld.xyz${ZKLOGIN_CALLBACK_PATH}`,
     );
   });
 });

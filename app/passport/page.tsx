@@ -22,6 +22,7 @@ import { StatusBanner } from "@/components/ui/StatusBanner";
 import { computePassportSetupState } from "@/lib/idv/identityVerificationStates";
 import { VerifyClient } from "@/app/verify/VerifyClient";
 import { PartnerFlowReturnHandler } from "@/components/partner/PartnerFlowReturnHandler";
+import { PartnerVerificationResumeCta } from "@/components/passport/PartnerVerificationResumeCta";
 import {
   PASSPORT_PAGE_EYEBROW,
   PASSPORT_PAGE_HEADLINE,
@@ -99,16 +100,10 @@ function PassportPageInner() {
   });
 
   useEffect(() => {
-    if (verifyRequestId && partnerIdParam && returnPathParam && pageView === "passport") {
-      const params = new URLSearchParams({
-        verify_request: verifyRequestId,
-        partner_id: partnerIdParam,
-        policy_id: policyIdParam ?? "",
-        return: returnPathParam,
-      });
-      window.location.replace(`/partner/continue?${params.toString()}`);
+    if (verifyRequestId && pageView === "passport") {
+      window.location.replace(`/partner/continue?verify_request=${encodeURIComponent(verifyRequestId)}`);
     }
-  }, [verifyRequestId, partnerIdParam, returnPathParam, policyIdParam, pageView]);
+  }, [verifyRequestId, pageView]);
 
   useEffect(() => {
     if (verificationParam === "complete" || verificationParam === "pending") {
@@ -233,6 +228,7 @@ function PassportPageInner() {
             )}
 
             <PartnerFlowReturnHandler handoff={handoff} />
+            <PartnerVerificationResumeCta />
 
             {isStatusFetchError && statusFetchError && (
               <div style={{ marginBottom: "1.25rem" }}>
