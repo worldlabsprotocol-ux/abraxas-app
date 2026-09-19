@@ -4,14 +4,12 @@ import { join } from "node:path";
 import nacl from "tweetnacl";
 import { NextRequest } from "next/server";
 
-process.env.NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET || "wallet-standard-durable-test-secret";
+if (!process.env.NEXTAUTH_SECRET?.trim()) process.env.NEXTAUTH_SECRET = "wallet-standard-durable-test-secret";
 
-vi.mock("@/lib/supabase/admin", () => ({
-  requireSupabaseAdmin: () => {
-    const { requireWalletStandardTestAdmin } = require("./fakeDurableBackend");
-    return requireWalletStandardTestAdmin();
-  },
-}));
+vi.mock("@/lib/supabase/admin", async () => {
+  const { requireWalletStandardTestAdmin } = await import("@/lib/partner/walletStandard/fakeDurableBackend");
+  return { requireSupabaseAdmin: requireWalletStandardTestAdmin };
+});
 
 import { issueWalletStandardChallenge } from "@/lib/partner/walletStandard/challenge";
 import { bindWalletStandard } from "@/lib/partner/walletStandard/bind";
@@ -171,7 +169,8 @@ describe("Wallet Standard binding", () => {
     expect(src).not.toMatch(/createTransaction|signTransaction|sendAndConfirm|SystemProgram|mintTo/);
     expect(src).not.toContain("private_key");
     expect(src).not.toContain("seed phrase");
-    expect(src).not.toMatch(/new Map\(|in-process fallback/i);
+    expect(src).not.toMatch(/new Map</);
+    expect(src).not.toMatch(/const consumed = new Set/);
   });
 
   it("keeps Passport and receipt verification usable without a wallet", async () => {

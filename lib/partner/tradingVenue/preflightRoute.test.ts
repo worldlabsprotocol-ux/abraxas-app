@@ -1,14 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-process.env.NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET || "wallet-standard-durable-test-secret";
+if (!process.env.NEXTAUTH_SECRET?.trim()) process.env.NEXTAUTH_SECRET = "wallet-standard-durable-test-secret";
 
-vi.mock("@/lib/supabase/admin", () => ({
-  requireSupabaseAdmin: () => {
-    const { requireWalletStandardTestAdmin } = require("@/lib/partner/walletStandard/fakeDurableBackend");
-    return requireWalletStandardTestAdmin();
-  },
-}));
+vi.mock("@/lib/supabase/admin", async () => {
+  const { requireWalletStandardTestAdmin } = await import("@/lib/partner/walletStandard/fakeDurableBackend");
+  return { requireSupabaseAdmin: requireWalletStandardTestAdmin };
+});
 
 import { POST, GET } from "@/app/api/examples/trading-venue/preflight/route";
 import { assertNoSensitiveVenueClientKeys } from "@/lib/partner/tradingVenue";
