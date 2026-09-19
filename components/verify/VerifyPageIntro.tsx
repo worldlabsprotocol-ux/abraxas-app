@@ -2,6 +2,7 @@
 // Server-rendered developer tester intro.
 
 import Link from "next/link";
+import { PublicJourneyNextSteps } from "@/components/product/PublicJourneyNextSteps";
 import {
   HOLDER_VERIFY_DEFAULT_PATH,
   VERIFY_HUB_EYEBROW,
@@ -45,6 +46,7 @@ export function VerifyPageIntro() {
         </Link>
         .
       </p>
+      <PublicJourneyNextSteps title="Use this receipt in an integration" />
     </div>
   );
 }

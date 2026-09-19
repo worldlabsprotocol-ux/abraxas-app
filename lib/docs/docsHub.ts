@@ -120,7 +120,7 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
           { label: "Circle Arc testnet settlement", href: "/docs/circle-arc-testnet" },
           { label: "Partner Flow", href: "/docs/partner-flow" },
           { label: "Partner Flow API (OpenAPI)", href: "/docs/partner-flow-api" },
-          { label: "Protocol compatibility manifest", href: "/api/protocol/compatibility" },
+          { label: "Protocol compatibility manifest (JSON API)", href: "/api/protocol/compatibility" },
           { label: "AI agents", href: "/docs/ai-agents" },
           { label: "Partner verification requests", href: "/docs/partner-verification-requests" },
         ],

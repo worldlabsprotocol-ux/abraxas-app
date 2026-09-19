@@ -5,6 +5,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Btn } from "@/components/redesign/ui";
+import { PublicJourneyNextSteps } from "@/components/product/PublicJourneyNextSteps";
 import {
   GOOD_TROUBLE_BRAND,
   GOOD_TROUBLE_PILOT_DISCLAIMER,
@@ -160,12 +161,14 @@ export function GoodTroublePilotSection({ hideHeader = false }: { hideHeader?: b
         <Btn href={GOOD_TROUBLE_CASE_STUDY.ctaHref} size="sm">{GOOD_TROUBLE_CASE_STUDY.ctaLabel} →</Btn>
         <Btn href="/good-trouble/checkout" variant="secondary" size="sm">Retail checkout entry →</Btn>
         <Btn href="/verify?mode=credential" variant="secondary" size="sm">Test credential verify →</Btn>
+        <Btn href="/passport?view=verify&mode=registry" variant="ghost" size="sm">Holder Passport verify →</Btn>
         <Btn href="/integrations/relying-parties" variant="secondary" size="sm">Relying party program →</Btn>
         <Link href={GOOD_TROUBLE_BRAND.website} target="_blank" rel="noopener noreferrer"
           style={{ fontFamily: FONT, fontSize: "0.78rem", color: ACCENT, alignSelf: "center", textDecoration: "none" }}>
           {GOOD_TROUBLE_BRAND.website.replace("https://", "")} ↗
         </Link>
       </div>
+      <PublicJourneyNextSteps title="Integrate this pilot" />
     </section>
   );
 }
@@ -192,9 +195,9 @@ function CodeBlock({ title, code }: { title: string; code: string }) {
   return (
     <div>
       <div style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.35rem" }}>{title}</div>
-      <pre style={{
+      <pre className="abx-code-scroll" style={{
         fontFamily: MONO, fontSize: "0.62rem", lineHeight: 1.55, margin: 0,
-        padding: "0.85rem", borderRadius: 10, overflow: "auto",
+        padding: "0.85rem", borderRadius: 10, overflowX: "auto", maxWidth: "100%",
         background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-secondary)",
       }}>
         {code}

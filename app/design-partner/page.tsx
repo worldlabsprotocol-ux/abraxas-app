@@ -137,6 +137,8 @@ export default function DesignPartnerPage() {
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem", marginBottom: "2rem" }}>
         <Btn href={PARTNER_APPLICATION_PATH} size="lg">Apply for review</Btn>
         <Btn href="/integrate" variant="secondary" size="lg">Integrate overview</Btn>
+        <Btn href="/developers/integration-studio" variant="secondary" size="lg">Integration Studio</Btn>
+        <Btn href="/developers/launchpad" variant="ghost" size="lg">Partner Launchpad</Btn>
       </div>
     </RedesignPage>
   );

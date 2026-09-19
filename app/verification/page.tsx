@@ -4,6 +4,7 @@
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
+import { PublicJourneyNextSteps } from "@/components/product/PublicJourneyNextSteps";
 import { ACCOUNT_ACCESS_FIRST_PAINT } from "@/lib/product/publicOrigin";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +24,10 @@ export default function VerificationPage() {
         <p style={{ fontFamily: "var(--font-sans), system-ui, sans-serif", fontSize: "0.86rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 1rem" }}>
           Enter a receipt on the public verifier. The partner Integration Kit remains the authorization path.
         </p>
-        <Btn href="/verify?mode=receipt" size="lg">Open receipt verifier →</Btn>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+          <Btn href="/verify?mode=receipt" size="lg">Open receipt verifier →</Btn>
+        </div>
+        <PublicJourneyNextSteps title="Integrate this check" />
       </ContentCard>
     </RedesignPage>
   );

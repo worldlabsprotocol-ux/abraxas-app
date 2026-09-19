@@ -5,6 +5,7 @@
 import { useState } from "react";
 import { ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
+import { PublicJourneyNextSteps } from "@/components/product/PublicJourneyNextSteps";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -44,6 +45,7 @@ export function PaymentAuthorizationExampleClient({ startUrl }: { startUrl: stri
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.9rem" }}>
           <Btn href={startUrl} size="sm">Open hosted verification →</Btn>
           <Btn href="/docs/payment-authorization" size="sm" variant="secondary">Payment docs →</Btn>
+          <Btn href="/developers/integration-studio" size="sm" variant="ghost">Integration Studio →</Btn>
           <button
             type="button"
             disabled={busy}
@@ -64,11 +66,12 @@ export function PaymentAuthorizationExampleClient({ startUrl }: { startUrl: stri
       </ContentCard>
       {result && (
         <ContentCard title="Preflight result">
-          <pre style={{ fontFamily: MONO, fontSize: "0.67rem", overflowX: "auto", maxWidth: "100%", boxSizing: "border-box", padding: "1rem", borderRadius: 10, border: "1px solid var(--border)", margin: 0 }}>
+          <pre className="abx-code-scroll" style={{ fontFamily: MONO, fontSize: "0.67rem", overflowX: "auto", maxWidth: "100%", boxSizing: "border-box", padding: "1rem", borderRadius: 10, border: "1px solid var(--border)", margin: 0 }}>
             {result}
           </pre>
         </ContentCard>
       )}
+      <PublicJourneyNextSteps title="Build this adapter" />
     </>
   );
 }
