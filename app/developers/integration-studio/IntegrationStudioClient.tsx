@@ -25,6 +25,7 @@ const PATH_LABEL: Record<IntegrationStudioPathId, string> = {
   server_receipt_verify: "Server receipt verification",
   webhook_events: "Webhook / event delivery",
   solana_gate: "Solana eligibility gate",
+  trading_venue: "Trading venue access",
 };
 
 const body: React.CSSProperties = {
@@ -219,6 +220,11 @@ export function IntegrationStudioClient() {
         {pathId === "solana_gate" && (
           <p style={{ ...body, marginBottom: "0.65rem" }}>
             Receipt-gated claim access only. No transaction, mint, wallet custody, or fund movement.
+          </p>
+        )}
+        {pathId === "trading_venue" && (
+          <p style={{ ...body, marginBottom: "0.65rem" }}>
+            Policy pack, then Partner Flow, then a minimum approved receipt, then a venue preflight for Enable market access. Lifecycle and webhook events re-check the public receipt. No trades, wallets, tokens, or funds movement. Venue-neutral. No named exchange partnership.
           </p>
         )}
         {created && hostedDocs?.hosted_link && pathId === "hosted_partner_flow" && (

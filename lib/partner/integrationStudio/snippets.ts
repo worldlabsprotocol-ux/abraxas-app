@@ -7,6 +7,7 @@ import {
 } from "@/lib/partner/integrationKit/examples";
 import { nextjsWebhookHandlerExample } from "@/lib/partner/eventDelivery/examples";
 import { solanaServerVerifyExample } from "@/lib/partner/solana/examples";
+import { tradingVenueServerPreflightExample } from "@/lib/partner/tradingVenue/examples";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
 
 const DEMO_OPTS = {
@@ -51,6 +52,11 @@ export function studioSnippetForApplication(input: {
       docs: "/docs/solana",
       code: solanaServerVerifyExample(),
     },
+    trading_venue: {
+      title: "Trading venue access",
+      docs: "/docs/trading-venue",
+      code: tradingVenueServerPreflightExample(),
+    },
   };
 }
 
@@ -79,6 +85,12 @@ export function studioSnippetForPath(path: IntegrationStudioPathId): { title: st
         title: "Solana eligibility gate",
         docs: "/docs/solana",
         code: solanaServerVerifyExample(),
+      };
+    case "trading_venue":
+      return {
+        title: "Trading venue access",
+        docs: "/docs/trading-venue",
+        code: tradingVenueServerPreflightExample(),
       };
     default: {
       const _never: never = path;
