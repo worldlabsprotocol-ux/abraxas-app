@@ -294,8 +294,8 @@ provider_occurred_at: ${evidence.provider_occurred_at ?? "—"}`}
       )}
       {pendingReview && judgeDemo && (
         <p style={bodyText}>
-          Public Judge Demo displays pending sandbox settlement evidence only.
-          Circle transfer submit is disabled so judges cannot consume testnet funds.
+          DEMO environment displays pending testnet settlement evidence only.
+          Testnet transfer submission is disabled.
         </p>
       )}
       {!pendingReview && (

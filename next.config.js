@@ -24,8 +24,16 @@ const ML_TRACE_EXCLUDES = [
   "**/node_modules/@img/sharp-webcontainers-*/**",
 ];
 
+const PUBLIC_SURFACE_REDIRECTS = [
+  { source: "/partner", destination: "/docs/partner-flow", permanent: false },
+  { source: "/onboarding", destination: "/design-partner", permanent: false },
+];
+
 const nextConfig = {
   reactStrictMode: true,
+  async redirects() {
+    return PUBLIC_SURFACE_REDIRECTS;
+  },
   // Next.js 14: keep native Node packages out of the server webpack graph.
     experimental: {
     instrumentationHook: true,

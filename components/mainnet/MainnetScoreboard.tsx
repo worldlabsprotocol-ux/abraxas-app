@@ -281,8 +281,8 @@ export function MainnetScoreboard({ variant = "full" }: { variant?: Variant }) {
                 <div style={{ fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700, letterSpacing: "0.1em", color: COSMIC_PALETTE.textMuted }}>
                   VERIFICATION LAYER ({verificationLayer.items.filter((i) => i.status === "live").length}/{verificationLayer.items.length} live)
                 </div>
-                <Link href="/verification" style={{ fontFamily: FONT, fontSize: "0.68rem", fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>
-                  Full scoreboard →
+                <Link href="/docs" style={{ fontFamily: FONT, fontSize: "0.68rem", fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>
+                  Documentation →
                 </Link>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>

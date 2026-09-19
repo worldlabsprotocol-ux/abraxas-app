@@ -14,7 +14,7 @@ function wordCount(text: string): number {
 
 describe("passport customer view metrics", () => {
   it("uses PassportCustomerView instead of technical dashboard on default page", () => {
-    const page = readFileSync(resolve(ROOT, "app/passport/page.tsx"), "utf8");
+    const page = readFileSync(resolve(ROOT, "app/passport/PassportPageClient.tsx"), "utf8");
     expect(page).toContain("PassportCustomerView");
     expect(page).not.toContain("PassportDashboard");
     expect(page).not.toContain("PassportSetupPanel");
@@ -29,7 +29,7 @@ describe("passport customer view metrics", () => {
   });
 
   it("reduces default passport page word count versus pre-cleanup main", () => {
-    const current = readFileSync(resolve(ROOT, "app/passport/page.tsx"), "utf8");
+    const current = readFileSync(resolve(ROOT, "app/passport/PassportPageClient.tsx"), "utf8");
     const before = execSync("git show c02c335c:app/passport/page.tsx", { cwd: ROOT, encoding: "utf8" });
     const currentWords = wordCount(current);
     const beforeWords = wordCount(before);

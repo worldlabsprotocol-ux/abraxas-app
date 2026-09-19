@@ -32,7 +32,7 @@ const PROTECTED_PATHS = [
   "app/verify/VerifyClient.tsx",
   "components/passport/PassportPageTabs.tsx",
   "components/sui/NavProfileMenu.tsx",
-  "app/passport/page.tsx",
+  "app/passport/PassportPageClient.tsx",
   "lib/integrate/partnerJourney.ts",
   "lib/externalRelyingPartyIntegration.ts",
   "app/design-partner/page.tsx",
@@ -105,7 +105,7 @@ describe("phase 7 partner conversion batch 1", () => {
     expect(nav).not.toContain('href: "/verify"');
     expect(nav).not.toContain("Verify a record");
 
-    const passport = read("app/passport/page.tsx");
+    const passport = read("app/passport/PassportPageClient.tsx");
     expect(passport).toContain("PassportCustomerView");
     expect(passport).not.toMatch(/Btn href="\/verify"/);
     expect(passport).not.toContain("HOLDER_VERIFY_DEFAULT_PATH");

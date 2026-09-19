@@ -114,12 +114,12 @@ CLI must not target Production:
 
 ## Judge-visible routes
 
-Banner: “Public Judge Demo · sandbox / DEMO infrastructure only · not Production”
+Banner: “DEMO environment · Test data · Testnet transfer submission is disabled”
 
 | Path | Purpose |
 |------|---------|
 | `/` | Homepage |
-| `/judge-demo` | Index of judge-visible routes |
+| `/judge-demo` | Redirects to `/` when the DEMO contract is enabled; 404 on Production |
 | `/passport` | Passport |
 | `/good-trouble` | Good Trouble |
 | `/docs/partner-flow` | Partner Flow docs |
@@ -127,7 +127,7 @@ Banner: “Public Judge Demo · sandbox / DEMO infrastructure only · not Produc
 | `/docs/integration-kit` | Integration kit |
 | `/developers/launchpad` | Launchpad / sandbox evidence |
 | `/docs/circle-arc-testnet` | Settlement evidence docs |
-| `/api/judge-demo/environment` | Public identity JSON |
+| `/api/judge-demo/environment` | Public DEMO identity JSON |
 
 Circle: GET evidence and pending intents may display. `POST .../settlement/submit` returns `judge_demo_transfer_blocked`. The Launchpad UI hides Submit. No wallet IDs, secrets, PII, or raw provider payloads in public views.
 

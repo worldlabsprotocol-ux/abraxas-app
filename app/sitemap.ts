@@ -8,7 +8,7 @@ const STATIC_ROUTES = [
   "",
   "/passport",
   "/integrate",
-  "/verification",
+  "/docs/partner-flow",
   "/mainnet",
   "/trust-framework",
   "/build",

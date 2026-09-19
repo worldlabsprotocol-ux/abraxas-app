@@ -1,4 +1,4 @@
-export function JudgeDemoSandboxBanner() {
+export function DemoEnvironmentBanner() {
   if (process.env.NEXT_PUBLIC_ABRAXAS_JUDGE_DEMO?.trim() !== "true") {
     return null;
   }
@@ -6,7 +6,7 @@ export function JudgeDemoSandboxBanner() {
   return (
     <div
       role="status"
-      data-testid="judge-demo-sandbox-banner"
+      data-testid="demo-environment-banner"
       style={{
         background: "#0f172a",
         color: "#f8fafc",
@@ -18,11 +18,7 @@ export function JudgeDemoSandboxBanner() {
         borderBottom: "1px solid #334155",
       }}
     >
-      Public Judge Demo · sandbox / DEMO infrastructure only · not Production ·
-      {" "}
-      <a href="/judge-demo" style={{ color: "#7dd3fc", fontWeight: 600 }}>
-        judge-visible routes
-      </a>
+      DEMO environment · Test data · Testnet transfer submission is disabled
     </div>
   );
 }

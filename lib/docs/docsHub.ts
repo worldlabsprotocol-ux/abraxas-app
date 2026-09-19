@@ -62,7 +62,7 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
         id: "passport",
         title: "Passport",
         summary:
-          "Google zkLogin creates a deterministic Sui address. Identity verification is optional but unlocks enhanced trust for payments, asset submission, and partner policies.",
+          "Google sign-in opens an Abraxas account only. It does not prove eligibility. Additional checks run only when a partner policy requires them.",
         readMore: { label: "Passport spec", href: "/docs/passport-spec" },
         links: [
           { label: "zkLogin setup", href: "/docs/zklogin-setup" },
@@ -73,7 +73,7 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
         id: "biometrics",
         title: "Biometrics",
         summary:
-          "Users submit legal name, government ID, and selfie. The biometric engine scores face match, liveness, document type, and fraud risk. Borderline cases queue for human review.",
+          "Identity or liveness is not the default path. A partner policy may request identity evidence only when that policy truly requires it. Google sign-in is account access only.",
         readMore: { label: "Verify on Passport", href: "/passport" },
       },
       {

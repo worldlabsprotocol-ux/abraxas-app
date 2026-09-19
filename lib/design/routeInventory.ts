@@ -107,7 +107,7 @@ export const ROUTE_INVENTORY: RouteInventoryEntry[] = [
   { path: "/lending", status: "migrated_layout", shell: "AbxSectionLayout" },
   { path: "/list", status: "migrated_layout", shell: "AbxSectionLayout" },
   { path: "/live", status: "migrated_layout", shell: "AbxSectionLayout" },
-  { path: "/login", status: "migrated_layout", shell: "AbxSectionLayout" },
+  { path: "/login", status: "migrated_redesign", shell: "RedesignPage" },
   { path: "/mainnet", status: "migrated_redesign", shell: "RedesignPage" },
   { path: "/marketplace", status: "migrated_abx", shell: "AbxPageShell" },
   { path: "/methodology", status: "migrated_layout", shell: "AbxSectionLayout" },

@@ -50,7 +50,7 @@ export const SIMPLIFIED_AUDIENCE_BUSINESS = {
 } as const;
 
 export const SIMPLIFIED_TRUST_STATEMENT =
-  "Authentication starts the process. Approved evidence establishes eligibility. Each partner makes its own final decision.";
+  "Google sign-in opens an account. Eligibility is a result defined by each partner policy. Identity or liveness appears only when a policy truly requires it.";
 
 export const SIMPLIFIED_FINAL_LINE = "Ready to verify once?";
 
