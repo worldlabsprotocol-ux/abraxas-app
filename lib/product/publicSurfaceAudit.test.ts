@@ -25,6 +25,7 @@ const PUBLIC_PAGES = [
   "/docs/trading-venue",
   "/docs/wallet-standard-binding",
   "/docs/action-control-plane",
+  "/docs/starter-kit",
   "/docs/circle-arc-testnet",
   "/verify",
   "/good-trouble",

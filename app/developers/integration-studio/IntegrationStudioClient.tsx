@@ -16,6 +16,12 @@ import {
   studioSnippetForPath,
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio";
+import {
+  STARTER_KIT_DOES_NOT_DO,
+  STARTER_KIT_MINIMUM_REQUIREMENTS,
+  STARTER_KIT_PLATFORM_MATRIX,
+  type StarterKitPlatform,
+} from "@/lib/partner/starterKit/contract";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -61,12 +67,90 @@ export function IntegrationStudioClient() {
   const [error, setError] = useState("");
   const [revealedKey, setRevealedKey] = useState<string | null>(null);
   const [created, setCreated] = useState<CreatedApp | null>(null);
+  const [platform, setPlatform] = useState<StarterKitPlatform>("universal_https");
+  const [optionalCaps, setOptionalCaps] = useState<string[]>([]);
+  const [kitError, setKitError] = useState("");
+  const [kitBusy, setKitBusy] = useState(false);
+  const [kitFiles, setKitFiles] = useState<Array<{ path: string; contents: string }>>([]);
+  const [kitArchive, setKitArchive] = useState("");
+  const [kitFilename, setKitFilename] = useState("abraxas-starter-kit.zip");
+  const [copiedPath, setCopiedPath] = useState("");
   const [pathInstructions, setPathInstructions] = useState<Record<string, { title: string; docs: string; code: string }> | null>(null);
   const [hostedDocs, setHostedDocs] = useState<{ hosted_link?: string; sandbox_testing?: string[] } | null>(null);
 
   const contract = useMemo(() => studioPackContract(packId), [packId]);
   const snippet = useMemo(() => studioSnippetForPath(pathId), [pathId]);
   const createdSnippet = pathInstructions?.[pathId] ?? snippet;
+
+  function toggleCapability(id: string) {
+    setOptionalCaps((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  }
+
+  async function generateStarter() {
+    setKitError("");
+    setKitBusy(true);
+    try {
+      const res = await fetch("/api/developers/integration-studio/starter-kit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pack_id: packId,
+          path: pathId,
+          platform,
+          capabilities: optionalCaps,
+        }),
+      });
+      const data = await res.json() as {
+        ok?: boolean;
+        error?: string;
+        filename?: string;
+        files?: Array<{ path: string; contents: string }>;
+        archive_base64?: string;
+      };
+      if (!res.ok || !data.ok || !data.files || !data.archive_base64) {
+        setKitError(data.error ?? "Could not generate starter kit");
+        setKitFiles([]);
+        setKitArchive("");
+        return;
+      }
+      setKitFiles(data.files);
+      setKitArchive(data.archive_base64);
+      setKitFilename(data.filename ?? "abraxas-starter-kit.zip");
+    } catch {
+      setKitError("Could not generate starter kit");
+    } finally {
+      setKitBusy(false);
+    }
+  }
+
+  function downloadArchive() {
+    if (!kitArchive) return;
+    const bytes = Uint8Array.from(atob(kitArchive), (char) => char.charCodeAt(0));
+    const blob = new Blob([bytes], { type: "application/zip" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = kitFilename;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function downloadFile(file: { path: string; contents: string }) {
+    const blob = new Blob([file.contents], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = file.path.split("/").pop() ?? file.path;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function copyFile(file: { path: string; contents: string }) {
+    void navigator.clipboard.writeText(file.contents).then(() => {
+      setCopiedPath(file.path);
+      setTimeout(() => setCopiedPath(""), 1600);
+    });
+  }
 
   useEffect(() => {
     void (async () => {
@@ -263,7 +347,100 @@ export function IntegrationStudioClient() {
         </pre>
       </ContentCard>
 
-      <ContentCard title="5. Create a sandbox integration">
+      <ContentCard title="5. Generate starter kit">
+        <p style={{ ...body, marginBottom: "0.75rem" }}>
+          Universal HTTPS is the canonical starter. A static or browser-only site cannot verify receipts or hold partner secrets.
+        </p>
+        <ul style={{ ...body, paddingLeft: "1.1rem", marginBottom: "0.75rem", display: "grid", gap: "0.3rem" }}>
+          {STARTER_KIT_MINIMUM_REQUIREMENTS.map((line) => <li key={line}>{line}</li>)}
+        </ul>
+        <p style={{ ...body, marginBottom: "0.55rem", fontWeight: 700, color: "var(--text-primary)" }}>Platform</p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginBottom: "0.75rem" }}>
+          {STARTER_KIT_PLATFORM_MATRIX.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setPlatform(item.id)}
+              style={{
+                padding: "0.45rem 0.75rem",
+                borderRadius: 999,
+                border: platform === item.id ? "1px solid rgba(45,212,191,0.55)" : "1px solid var(--border)",
+                background: platform === item.id ? "rgba(45,212,191,0.12)" : "var(--surface-inset)",
+                color: "var(--text-primary)",
+                fontFamily: FONT,
+                fontSize: "0.74rem",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              {item.label}{item.canonical ? " · canonical" : ""}
+            </button>
+          ))}
+        </div>
+        <p style={{ ...body, marginBottom: "0.75rem" }}>
+          {STARTER_KIT_PLATFORM_MATRIX.find((item) => item.id === platform)?.note}
+          {" Works with: "}
+          {(STARTER_KIT_PLATFORM_MATRIX.find((item) => item.id === platform)?.works ?? []).join(", ")}.
+        </p>
+        <p style={{ ...body, marginBottom: "0.55rem", fontWeight: 700, color: "var(--text-primary)" }}>Optional capabilities</p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginBottom: "0.75rem" }}>
+          {["webhooks", "wallet_standard_binding", "trading_venue", "payment_authorization", "solana_gate"].map((id) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => toggleCapability(id)}
+              style={{
+                padding: "0.45rem 0.75rem",
+                borderRadius: 999,
+                border: optionalCaps.includes(id) ? "1px solid rgba(99,102,241,0.55)" : "1px solid var(--border)",
+                background: optionalCaps.includes(id) ? "rgba(99,102,241,0.14)" : "var(--surface-inset)",
+                color: "var(--text-primary)",
+                fontFamily: FONT,
+                fontSize: "0.74rem",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              {id.replace(/_/g, " ")}
+            </button>
+          ))}
+        </div>
+        <div style={{ marginBottom: "0.85rem" }}>
+          <p style={{ ...body, fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.4rem" }}>What this starter kit does not do</p>
+          <ul style={{ ...body, paddingLeft: "1.1rem", display: "grid", gap: "0.3rem" }}>
+            {STARTER_KIT_DOES_NOT_DO.map((line) => <li key={line}>{line}</li>)}
+          </ul>
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.75rem" }}>
+          <Btn size="sm" loading={kitBusy} disabled={kitBusy} onClick={() => void generateStarter()}>
+            Generate starter kit
+          </Btn>
+          {kitArchive && (
+            <Btn size="sm" variant="secondary" onClick={downloadArchive}>Download zip project</Btn>
+          )}
+        </div>
+        {kitError && <p style={{ ...body, color: "var(--danger, #f87171)", marginBottom: "0.7rem" }}>{kitError}</p>}
+        {kitFiles.length > 0 && (
+          <div style={{ display: "grid", gap: "0.45rem" }}>
+            <p style={{ ...body, marginBottom: 0 }}>{kitFiles.length} files. Copy or download each file, or take the zip. No secrets included.</p>
+            {kitFiles.map((file) => (
+              <div key={file.path} style={{ border: "1px solid var(--border)", borderRadius: 10, padding: "0.55rem 0.7rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", flexWrap: "wrap", fontFamily: FONT, fontSize: "0.74rem", fontWeight: 700 }}>
+                  <span>{file.path}</span>
+                  <span>
+                    <button type="button" onClick={() => copyFile(file)} style={{ marginRight: 8, cursor: "pointer" }}>
+                      {copiedPath === file.path ? "Copied" : "Copy"}
+                    </button>
+                    <button type="button" onClick={() => downloadFile(file)} style={{ cursor: "pointer" }}>Download</button>
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </ContentCard>
+
+      <ContentCard title="6. Create a sandbox integration">
         <p style={{ ...body, marginBottom: "0.75rem" }}>{INTEGRATION_STUDIO_PROVISION.notice}</p>
         {!signedIn && (
           <p style={{ ...body, marginBottom: "0.85rem" }}>
@@ -352,7 +529,7 @@ export function IntegrationStudioClient() {
         </div>
       </ContentCard>
 
-      <ContentCard title="6. Integration checklist">
+      <ContentCard title="7. Integration checklist">
         <ol style={{ ...body, paddingLeft: "1.15rem", display: "grid", gap: "0.45rem" }}>
           {INTEGRATION_STUDIO_CHECKLIST.map((item) => (
             <li key={item.id}>
