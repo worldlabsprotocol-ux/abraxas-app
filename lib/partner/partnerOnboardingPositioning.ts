@@ -57,6 +57,12 @@ export const PARTNER_ONBOARDING_AVAILABLE_NOW: PartnerCapabilityItem[] = [
     detail: "Manual review, operator provisioned sandbox policies, callback allowlists, and conformance tooling.",
     availability: "available_now",
   },
+  {
+    id: "solana-adapter",
+    label: "Solana Partner Adapter",
+    detail: "Start a policy request, verify the signed receipt on the server, and bind claim access without moving funds.",
+    availability: "available_now",
+  },
 ];
 
 export const PARTNER_ONBOARDING_IN_DEVELOPMENT: PartnerCapabilityItem[] = [
@@ -163,6 +169,7 @@ export const PARTNER_ONBOARDING_DOC_LINKS = {
   integrations: "/integrations",
   integrationsApply: "/integrations#apply",
   developersPartner: "/developers/partner",
+  solana: "/docs/solana",
   passwordlessPlan: "/docs/partner-flow#planned-passwordless-onboarding",
   goodTroublePilot: "/good-trouble",
 } as const;

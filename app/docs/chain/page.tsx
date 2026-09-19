@@ -41,6 +41,7 @@ export default function ChainPage() {
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem", marginBottom: "2rem" }}>
         <Btn href="/docs/architecture" size="lg">Full architecture →</Btn>
         <Btn href="/docs/sui" variant="secondary" size="lg">Sui integration</Btn>
+        <Btn href="/docs/solana" variant="secondary" size="lg">Solana integration</Btn>
         <Btn href="/tokenomics" variant="ghost" size="lg">Tokenomics</Btn>
       </div>
     </RedesignPage>

@@ -86,6 +86,7 @@ export const ROUTE_INVENTORY: RouteInventoryEntry[] = [
   { path: "/examples/partner-access-starter", status: "migrated_layout", shell: "AbxSectionLayout" },
   { path: "/examples/partner-access-starter/callback", status: "migrated_layout", shell: "AbxSectionLayout" },
   { path: "/examples/partner-access-starter/protected", status: "migrated_layout", shell: "AbxSectionLayout" },
+  { path: "/examples/solana-partner", status: "migrated_redesign", shell: "RedesignPage" },
   { path: "/faq", status: "migrated_redesign", shell: "RedesignPage" },
   { path: "/flagship", status: "migrated_redesign", shell: "RedesignPage" },
   { path: "/formations", status: "migrated_layout", shell: "AbxSectionLayout" },
