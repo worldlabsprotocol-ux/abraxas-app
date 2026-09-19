@@ -16,6 +16,10 @@ import {
   studioSnippetForPath,
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio";
+import {
+  STARTER_KIT_DOES_NOT_DO,
+  STARTER_KIT_RUNTIMES,
+} from "@/lib/partner/starterKit/contract";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -61,12 +65,71 @@ export function IntegrationStudioClient() {
   const [error, setError] = useState("");
   const [revealedKey, setRevealedKey] = useState<string | null>(null);
   const [created, setCreated] = useState<CreatedApp | null>(null);
+  const [runtime, setRuntime] = useState<(typeof STARTER_KIT_RUNTIMES)[number]>("typescript_nextjs");
+  const [optionalCaps, setOptionalCaps] = useState<string[]>([]);
+  const [kitError, setKitError] = useState("");
+  const [kitBusy, setKitBusy] = useState(false);
+  const [kitFiles, setKitFiles] = useState<Array<{ path: string; contents: string }>>([]);
+  const [kitBundle, setKitBundle] = useState("");
+  const [kitFilename, setKitFilename] = useState("abraxas-starter-kit.txt");
   const [pathInstructions, setPathInstructions] = useState<Record<string, { title: string; docs: string; code: string }> | null>(null);
   const [hostedDocs, setHostedDocs] = useState<{ hosted_link?: string; sandbox_testing?: string[] } | null>(null);
 
   const contract = useMemo(() => studioPackContract(packId), [packId]);
   const snippet = useMemo(() => studioSnippetForPath(pathId), [pathId]);
   const createdSnippet = pathInstructions?.[pathId] ?? snippet;
+
+  function toggleCapability(id: string) {
+    setOptionalCaps((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  }
+
+  async function generateStarter() {
+    setKitError("");
+    setKitBusy(true);
+    try {
+      const res = await fetch("/api/developers/integration-studio/starter-kit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pack_id: packId,
+          path: pathId,
+          runtime,
+          capabilities: optionalCaps,
+        }),
+      });
+      const data = await res.json() as {
+        ok?: boolean;
+        error?: string;
+        filename?: string;
+        files?: Array<{ path: string; contents: string }>;
+        bundle?: string;
+      };
+      if (!res.ok || !data.ok || !data.files || !data.bundle) {
+        setKitError(data.error ?? "Could not generate starter kit");
+        setKitFiles([]);
+        setKitBundle("");
+        return;
+      }
+      setKitFiles(data.files);
+      setKitBundle(data.bundle);
+      setKitFilename(data.filename ?? "abraxas-starter-kit.txt");
+    } catch {
+      setKitError("Could not generate starter kit");
+    } finally {
+      setKitBusy(false);
+    }
+  }
+
+  function downloadBundle() {
+    if (!kitBundle) return;
+    const blob = new Blob([kitBundle], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = kitFilename;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
 
   useEffect(() => {
     void (async () => {
@@ -263,7 +326,97 @@ export function IntegrationStudioClient() {
         </pre>
       </ContentCard>
 
-      <ContentCard title="5. Create a sandbox integration">
+      <ContentCard title="5. Generate starter kit">
+        <p style={{ ...body, marginBottom: "0.75rem" }}>
+          Leave with a runnable sandbox project. Placeholders only. This generator never creates live apps, keys, or receipts.
+        </p>
+        <p style={{ ...body, marginBottom: "0.55rem", fontWeight: 700, color: "var(--text-primary)" }}>Runtime</p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginBottom: "0.75rem" }}>
+          {STARTER_KIT_RUNTIMES.map((id) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setRuntime(id)}
+              style={{
+                padding: "0.45rem 0.75rem",
+                borderRadius: 999,
+                border: runtime === id ? "1px solid rgba(45,212,191,0.55)" : "1px solid var(--border)",
+                background: runtime === id ? "rgba(45,212,191,0.12)" : "var(--surface-inset)",
+                color: "var(--text-primary)",
+                fontFamily: FONT,
+                fontSize: "0.74rem",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              {id === "typescript_nextjs" ? "TypeScript / Next.js" : "TypeScript / Express"}
+            </button>
+          ))}
+        </div>
+        <p style={{ ...body, marginBottom: "0.55rem", fontWeight: 700, color: "var(--text-primary)" }}>Optional capabilities</p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginBottom: "0.75rem" }}>
+          {["webhooks", "wallet_standard_binding", "trading_venue", "payment_authorization", "solana_gate"].map((id) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => toggleCapability(id)}
+              style={{
+                padding: "0.45rem 0.75rem",
+                borderRadius: 999,
+                border: optionalCaps.includes(id) ? "1px solid rgba(99,102,241,0.55)" : "1px solid var(--border)",
+                background: optionalCaps.includes(id) ? "rgba(99,102,241,0.14)" : "var(--surface-inset)",
+                color: "var(--text-primary)",
+                fontFamily: FONT,
+                fontSize: "0.74rem",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              {id.replace(/_/g, " ")}
+            </button>
+          ))}
+        </div>
+        <div style={{ marginBottom: "0.85rem" }}>
+          <p style={{ ...body, fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.4rem" }}>What this starter kit does not do</p>
+          <ul style={{ ...body, paddingLeft: "1.1rem", display: "grid", gap: "0.3rem" }}>
+            {STARTER_KIT_DOES_NOT_DO.map((line) => <li key={line}>{line}</li>)}
+          </ul>
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.75rem" }}>
+          <Btn size="sm" loading={kitBusy} disabled={kitBusy} onClick={() => void generateStarter()}>
+            Generate starter kit
+          </Btn>
+          {kitBundle && (
+            <Btn size="sm" variant="secondary" onClick={downloadBundle}>Download starter project</Btn>
+          )}
+        </div>
+        {kitError && <p style={{ ...body, color: "var(--danger, #f87171)", marginBottom: "0.7rem" }}>{kitError}</p>}
+        {kitFiles.length > 0 && (
+          <div>
+            <p style={{ ...body, marginBottom: "0.5rem" }}>{kitFiles.length} files. Copy or download. No secrets included.</p>
+            <pre
+              style={{
+                fontFamily: MONO,
+                fontSize: "0.62rem",
+                overflowX: "auto",
+                maxWidth: "100%",
+                boxSizing: "border-box",
+                padding: "1rem",
+                borderRadius: 12,
+                border: "1px solid var(--border)",
+                background: "var(--surface-inset)",
+                color: "var(--text-secondary)",
+                margin: 0,
+                maxHeight: 280,
+              }}
+            >
+              {kitFiles.map((file) => file.path).join("\n")}
+            </pre>
+          </div>
+        )}
+      </ContentCard>
+
+      <ContentCard title="6. Create a sandbox integration">
         <p style={{ ...body, marginBottom: "0.75rem" }}>{INTEGRATION_STUDIO_PROVISION.notice}</p>
         {!signedIn && (
           <p style={{ ...body, marginBottom: "0.85rem" }}>
@@ -352,7 +505,7 @@ export function IntegrationStudioClient() {
         </div>
       </ContentCard>
 
-      <ContentCard title="6. Integration checklist">
+      <ContentCard title="7. Integration checklist">
         <ol style={{ ...body, paddingLeft: "1.15rem", display: "grid", gap: "0.45rem" }}>
           {INTEGRATION_STUDIO_CHECKLIST.map((item) => (
             <li key={item.id}>

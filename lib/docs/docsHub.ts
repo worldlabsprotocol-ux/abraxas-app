@@ -110,6 +110,7 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
           { label: "Policy packs", href: "/docs/policy-packs" },
           { label: "Integration Kit", href: "/docs/integration-kit" },
           { label: "Integration Studio", href: "/developers/integration-studio" },
+          { label: "Starter kit generator", href: "/docs/starter-kit" },
           { label: "Solana integration", href: "/docs/solana" },
           { label: "Trading venue adapter", href: "/docs/trading-venue" },
           { label: "Wallet Standard binding", href: "/docs/wallet-standard-binding" },

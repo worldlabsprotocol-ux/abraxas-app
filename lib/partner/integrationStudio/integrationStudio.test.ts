@@ -123,6 +123,7 @@ describe("Integration Studio", () => {
     expect(developers).toContain(INTEGRATION_STUDIO_PATH);
     const client = readFileSync(join(process.cwd(), "app/developers/integration-studio/IntegrationStudioClient.tsx"), "utf8");
     expect(client).toContain("Create a sandbox integration");
+    expect(client).toContain("Generate starter kit");
     expect(client).toContain("INTEGRATION_STUDIO_PROVISION.production_upgrade_cta");
     expect(client.toLowerCase()).not.toContain("operator-issued");
     expect(client.toLowerCase()).not.toContain("operator issued");

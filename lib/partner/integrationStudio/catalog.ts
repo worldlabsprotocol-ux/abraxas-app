@@ -7,6 +7,7 @@ import {
   type PolicyPackId,
 } from "@/lib/partner/launchpad/policyPacks";
 import { planEligibilityMethods } from "@/lib/partner/eligibilityMethods";
+import { starterKitPublicCatalog } from "@/lib/partner/starterKit/contract";
 import {
   INTEGRATION_STUDIO_CHECKLIST,
   INTEGRATION_STUDIO_GOOGLE,
@@ -110,6 +111,7 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
       identity_verification: false,
       notice: INTEGRATION_STUDIO_WALLET_NOTICE,
     },
+    starter_kit: starterKitPublicCatalog(),
     payment_authorization: {
       creates_payments: false,
       creates_transfers: false,
