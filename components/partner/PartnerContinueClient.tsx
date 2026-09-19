@@ -40,10 +40,6 @@ import {
 import { shouldShowPartnerConsent } from "@/lib/partner/partnerConsentVisibility";
 import { resolvePartnerSetupVisibility } from "@/lib/partner/partnerSetupVisibility";
 import {
-  inferPolicyPackFromPolicyId,
-  policyPackRequiresIdentityEvidence,
-} from "@/lib/partner/launchpad/policyPacks";
-import {
   resolvePartnerContinueContext,
   type ResolvedPartnerContinueContext,
 } from "@/lib/partner/resolvePartnerContinueContext";
@@ -68,7 +64,8 @@ function PartnerContinueInner() {
   const [contextLoading, setContextLoading] = useState(true);
   const [flowContext, setFlowContext] = useState<ResolvedPartnerContinueContext | null>(null);
   const [boundReturnUrl, setBoundReturnUrl] = useState("");
-  const [methodSatisfied, setMethodSatisfied] = useState(false);
+  const [methodSelected, setMethodSelected] = useState(false);
+  const [methodQualified, setMethodQualified] = useState(false);
 
   const verifyRequestId = searchParams.get("verify_request");
   const urlPartnerId = searchParams.get("partner_id") ?? "";
@@ -151,6 +148,33 @@ function PartnerContinueInner() {
   }, [verifyRequestId, urlPartnerId, urlPolicyId, urlPurpose, decodedReturnUrl]);
 
   useEffect(() => {
+    setMethodSelected(false);
+    setMethodQualified(false);
+    if (!verifyRequestId) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch(
+          `/api/v1/partner-verify/method-qualification?verify_request=${encodeURIComponent(verifyRequestId)}`,
+          { credentials: "include" },
+        );
+        const data = await res.json() as { method_qualified?: boolean; issuedReceipt?: boolean };
+        if (cancelled) return;
+        if (searchParams.get("method_qualified") === "1" && data.method_qualified !== true) {
+          setMethodQualified(false);
+          return;
+        }
+        setMethodQualified(res.ok && data.method_qualified === true && data.issuedReceipt !== true);
+      } catch {
+        if (!cancelled) setMethodQualified(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [verifyRequestId, searchParams]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
     const sanitized = sanitizePartnerContinueBrowserSearch(searchParams);
     if (!sanitized.strippedUntrusted) return;
@@ -224,17 +248,14 @@ function PartnerContinueInner() {
   }, [suiAddress, credential, identityStatus, handoff.ready, decodedReturnUrl, setup, ageAssuranceStatus, showIdFallback]);
 
   const holderCopy = resolvePartnerHolderPresentation(holderState, partnerName);
-  const selectedPack = inferPolicyPackFromPolicyId(policyId);
-  const requiresIdentityEvidence = selectedPack
-    ? policyPackRequiresIdentityEvidence(selectedPack)
-    : true;
-  const qualifyingMethodSucceeded = methodSatisfied
-    || (requiresIdentityEvidence && setup.identityComplete);
+  const qualifyingMethodSucceeded = methodQualified;
   const showPartnerConsent = shouldShowPartnerConsent({
     verificationRequestId: verifyRequestId,
     consentDismissed,
-    evidenceComplete: qualifyingMethodSucceeded,
+    evidenceComplete: methodQualified,
     identityComplete: setup.identityComplete,
+    methodSelected,
+    methodQualified,
     qualifyingMethodSucceeded,
     underReview: holderState === "under_review",
     handoffReady: handoff.ready,
@@ -424,7 +445,10 @@ function PartnerContinueInner() {
                   browsePolicyId={GOOD_TROUBLE_BROWSE_POLICY_ID}
                   compactCheckout={false}
                   onFallbackId={() => setShowIdFallback(true)}
-                  onMethodSatisfied={() => setMethodSatisfied(true)}
+                  onMethodQualified={(qualified) => {
+                    setMethodSelected(true);
+                    setMethodQualified(qualified);
+                  }}
                   onTraditionalReturn={() => {
                     if (partnerHomeUrl) window.location.assign(partnerHomeUrl);
                   }}

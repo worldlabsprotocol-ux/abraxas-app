@@ -4,7 +4,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
 import { getPublicAppOriginFromRequest } from "@/lib/app/publicAppOrigin";
+import { requireQualifiedPartnerMethod } from "@/lib/partner/requirePartnerMethodQualification";
 import { consentAndDecide } from "@/lib/verification/requestsService";
+import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import {
   enforcePartnerFlowRateLimit,
   recordPartnerFlowRequestOutcome,
@@ -41,6 +43,37 @@ export async function POST(
   const { id } = await params;
 
   try {
+    const sb = requireSupabaseAdmin();
+    const { data: requestRow } = await sb
+      .from("verification_requests")
+      .select("partner_id, policy_id")
+      .eq("id", id)
+      .maybeSingle();
+    if (!requestRow) {
+      return NextResponse.json({ error: "Request not found" }, { status: 404 });
+    }
+    const qualified = await requireQualifiedPartnerMethod({
+      request: req,
+      verifyRequestId: id,
+      partnerId: String(requestRow.partner_id ?? ""),
+      policyId: String(requestRow.policy_id ?? ""),
+    });
+    if (!qualified.ok) {
+      recordPartnerFlowRequestOutcome({
+        request: req,
+        endpoint: ENDPOINT,
+        method: "POST",
+        started,
+        sessionSubject: session.session.suiAddress,
+        httpStatus: 403,
+      });
+      return NextResponse.json({
+        error: "A qualifying method must complete before approval.",
+        code: qualified.code,
+        issuedReceipt: false,
+      }, { status: 403 });
+    }
+
     const result = await consentAndDecide({
       requestId: id,
       suiAddress: session.session.suiAddress,

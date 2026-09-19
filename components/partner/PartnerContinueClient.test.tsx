@@ -87,6 +87,13 @@ describe("PartnerContinueClient Good Trouble browse journey", () => {
       if (url.includes("/api/age-assurance/browse-reuse")) {
         return new Response(JSON.stringify({ ok: false, code: "no_reusable_browse_proof" }), { status: 404 });
       }
+      if (url.includes("/api/v1/partner-verify/method-qualification")) {
+        return new Response(JSON.stringify({
+          ok: true,
+          method_qualified: false,
+          issuedReceipt: false,
+        }), { status: 200 });
+      }
       if (url.includes("/api/v1/partner-verify/continue-binding")) {
         return new Response(JSON.stringify({
           ok: true,
@@ -216,6 +223,13 @@ describe("PartnerContinueClient Good Trouble browse journey", () => {
           policy_id: GOOD_TROUBLE_BROWSE_POLICY_ID,
         }), { status: 200 });
       }
+      if (url.includes("/api/v1/partner-verify/method-qualification")) {
+        return new Response(JSON.stringify({
+          ok: true,
+          method_qualified: false,
+          issuedReceipt: false,
+        }), { status: 200 });
+      }
       if (url.includes("/api/v1/partner-verify/continue-binding")) {
         return new Response(JSON.stringify({
           ok: true,
@@ -247,6 +261,13 @@ describe("PartnerContinueClient Good Trouble browse journey", () => {
         return new Response(JSON.stringify({
           partner_id: GOOD_TROUBLE_PARTNER_ID,
           policy_id: GOOD_TROUBLE_BROWSE_POLICY_ID,
+        }), { status: 200 });
+      }
+      if (url.includes("/api/v1/partner-verify/method-qualification")) {
+        return new Response(JSON.stringify({
+          ok: true,
+          method_qualified: false,
+          issuedReceipt: false,
         }), { status: 200 });
       }
       if (url.includes("/api/v1/partner-verify/continue-binding")) {

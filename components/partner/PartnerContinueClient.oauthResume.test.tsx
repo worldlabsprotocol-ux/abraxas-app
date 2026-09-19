@@ -160,6 +160,14 @@ describe("OAuth callback must not land on bare /partner/verify", () => {
           return_url: "https://partner.example/callback",
         }), { status: 200 });
       }
+      if (url.includes("/api/v1/partner-verify/method-qualification")) {
+        return new Response(JSON.stringify({
+          ok: true,
+          method_selected: false,
+          method_qualified: false,
+          issuedReceipt: false,
+        }), { status: 200 });
+      }
       if (url.includes("/api/age-assurance/providers")) {
         return new Response(JSON.stringify({
           providers: [{ id: "demo", displayName: "Partner-provided eligibility check", configured: true }],
@@ -220,6 +228,14 @@ describe("OAuth callback must not land on bare /partner/verify", () => {
           status: "pending",
         }), { status: 200 });
       }
+      if (url.includes("/api/v1/partner-verify/method-qualification")) {
+        return new Response(JSON.stringify({
+          ok: true,
+          method_selected: false,
+          method_qualified: false,
+          issuedReceipt: false,
+        }), { status: 200 });
+      }
       if (url.includes("/api/v1/partner-verify/continue-binding")) {
         return new Response(JSON.stringify({
           ok: true,
@@ -256,15 +272,17 @@ describe("OAuth callback must not land on bare /partner/verify", () => {
     await userEvent.click(screen.getByRole("button", { name: /Partner-provided eligibility check/i }));
     expect(screen.queryByText(/Approve & share claims/i)).toBeNull();
     await userEvent.click(screen.getByRole("button", { name: /Use selected method/i }));
-
     await waitFor(() => {
-      expect(screen.getByText(/Approve & share claims/i)).toBeTruthy();
+      expect((global.fetch as unknown as ReturnType<typeof vi.fn>).mock.calls.some(
+        (call) => String(call[0]).includes("/api/v1/partner-verify/method-qualification"),
+      )).toBe(true);
     });
-    const approve = screen.getByText(/Approve & share claims/i);
-    expect(chooser.compareDocumentPosition(approve) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByText(/Approve & share claims/i)).toBeNull();
+    expect(chooser.isConnected).toBe(true);
     expect((global.fetch as unknown as ReturnType<typeof vi.fn>).mock.calls.every(
       (call) => !String(call[0]).includes("/api/age-assurance/reuse")
-        && !String(call[0]).includes("/api/age-assurance/session"),
+        && !String(call[0]).includes("/api/age-assurance/session")
+        && !String(call[0]).includes("/consent"),
     )).toBe(true);
   });
 

@@ -29,7 +29,9 @@ export interface AgeAssuranceMethodChooserProps {
   minimumAge: number | null;
   onFallbackId: () => void;
   onTraditionalReturn: () => void;
-  /** Qualifying method finished in-app. Must not issue a receipt. */
+  /** Server confirmed method_qualified. Must not issue a receipt. */
+  onMethodQualified?: (qualified: boolean) => void;
+  /** @deprecated Selection/start is not qualification. */
   onMethodSatisfied?: () => void;
   ageAssuranceStatus?: string | null;
   /** browse = tier 1 self-attest; checkout = tier 2 authoritative verification */
@@ -54,6 +56,7 @@ export function AgeAssuranceMethodChooser({
   minimumAge,
   onFallbackId,
   onTraditionalReturn,
+  onMethodQualified,
   onMethodSatisfied,
   ageAssuranceStatus,
   flowTier = "checkout",
@@ -66,6 +69,7 @@ export function AgeAssuranceMethodChooser({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [selectedMethodId, setSelectedMethodId] = useState<EligibilityMethodId | null>(null);
+  const [methodQualified, setMethodQualified] = useState(false);
   const [issuedReceipt, setIssuedReceipt] = useState(false);
 
   const privacy = partnerHolderPrivacyNotes(partnerName);
@@ -338,8 +342,10 @@ export function AgeAssuranceMethodChooser({
               disabled={busy !== null}
               onClick={() => {
                 setSelectedMethodId(method.id);
+                setMethodQualified(false);
                 setIssuedReceipt(false);
                 setError(null);
+                onMethodQualified?.(false);
               }}
             >
               {method.label}
@@ -352,6 +358,7 @@ export function AgeAssuranceMethodChooser({
           {" "}Selecting a method does not issue a receipt.
         </p>
       )}
+      {!methodQualified && (
       <Btn
         disabled={busy !== null || !selectedMethodId}
         onClick={() => {
@@ -368,12 +375,72 @@ export function AgeAssuranceMethodChooser({
             onFallbackId();
             return;
           }
+          if (!verifyRequestId) {
+            setError("This verification session is missing. Start again from the partner.");
+            return;
+          }
           setIssuedReceipt(false);
-          onMethodSatisfied?.();
+          setBusy("qualify");
+          void (async () => {
+            try {
+              const res = await fetch("/api/v1/partner-verify/method-qualification", {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  verify_request: verifyRequestId,
+                  method_id: method.id,
+                }),
+              });
+              const data = await res.json() as {
+                method_qualified?: boolean;
+                issuedReceipt?: boolean;
+                error?: string;
+                code?: string;
+              };
+              if (data.issuedReceipt === true) {
+                setError("Method completion must not issue a receipt.");
+                setMethodQualified(false);
+                onMethodQualified?.(false);
+                return;
+              }
+              if (!res.ok || data.method_qualified !== true) {
+                setMethodQualified(false);
+                onMethodQualified?.(false);
+                setError(
+                  data.code === "sandbox_evidence_rejected"
+                    ? "Sandbox methods cannot satisfy an authoritative policy."
+                    : data.error ?? "The selected method has not qualified yet.",
+                );
+                return;
+              }
+              const confirm = await fetch(
+                `/api/v1/partner-verify/method-qualification?verify_request=${encodeURIComponent(verifyRequestId)}`,
+                { credentials: "include" },
+              );
+              const confirmed = await confirm.json() as { method_qualified?: boolean; issuedReceipt?: boolean };
+              if (confirmed.issuedReceipt === true || confirmed.method_qualified !== true) {
+                setMethodQualified(false);
+                onMethodQualified?.(false);
+                setError("Qualification must be confirmed by the server before approval.");
+                return;
+              }
+              setMethodQualified(true);
+              onMethodQualified?.(true);
+              onMethodSatisfied?.();
+            } catch {
+              setMethodQualified(false);
+              onMethodQualified?.(false);
+              setError("Could not complete the selected method. Try again.");
+            } finally {
+              setBusy(null);
+            }
+          })();
         }}
       >
         Use selected method
       </Btn>
+      )}
 
       {error && (
         <p role="alert" style={{ color: "var(--text-secondary)" }}>{error}</p>
