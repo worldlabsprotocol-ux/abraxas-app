@@ -3,11 +3,17 @@ import { NextRequest } from "next/server";
 
 const mockPeek = vi.fn();
 const mockMaybeSingle = vi.fn();
+const mockGetPolicy = vi.fn();
 
 vi.mock("@/lib/partner/partnerFlowContinuationStore", () => ({
   createSupabaseContinuationStore: () => ({
     peekByVerifyRequestId: (...args: unknown[]) => mockPeek(...args),
   }),
+}));
+
+vi.mock("@/lib/policy/getPolicy", () => ({
+  getPartnerPolicy: (...args: unknown[]) => mockGetPolicy(...args),
+  getPartnerPolicyAtVersion: (...args: unknown[]) => mockGetPolicy(...args),
 }));
 
 vi.mock("@/lib/supabase/admin", () => ({
@@ -44,7 +50,6 @@ function vrRow() {
     data: {
       partner_id: STORED.partnerId,
       policy_id: STORED.policyId,
-      policy_version: 1,
       sui_address: SUBJECT,
       status: "pending",
       expires_at: new Date(Date.now() + 600_000).toISOString(),
@@ -59,6 +64,11 @@ describe("requireQualifiedPartnerMethod", () => {
     mockPeek.mockReset();
     mockPeek.mockResolvedValue(STORED);
     mockMaybeSingle.mockResolvedValue(vrRow());
+    mockGetPolicy.mockResolvedValue({
+      id: STORED.policyId,
+      partner_id: STORED.partnerId,
+      version: 1,
+    });
   });
 
   it("denies consent when the method is only selected", async () => {

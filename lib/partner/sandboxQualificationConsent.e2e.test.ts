@@ -115,8 +115,8 @@ describe("sign-in → qualify → consent → sandbox receipt", () => {
     mockPeek.mockResolvedValue({
       partnerId: POLICY.partner_id,
       policyId: POLICY.id,
-      policyVersion: 1,
       expiresAt: new Date(Date.now() + 3600_000).toISOString(),
+      consumedAt: new Date().toISOString(),
     });
   });
 

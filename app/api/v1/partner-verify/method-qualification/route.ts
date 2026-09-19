@@ -104,6 +104,7 @@ export async function POST(request: NextRequest) {
       method_qualified: false,
       issuedReceipt: false,
     }, { status: failStatus(bound.code) });
+    if (bound.clearBinding) clearPartnerContinueBindingCookie(res);
     clearPartnerMethodQualificationCookie(res);
     return res;
   }
