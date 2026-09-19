@@ -32,7 +32,7 @@ This runbook is for **Vercel Preview** and **Cloud Agent runtime** only. Do not 
 
 Do not set these on Production. Do not add them to `.env.local` in git. Do not put them in query strings. Local and staging stay blocked unless `CIRCLE_ARC_TESTNET_ENABLED=true` and `ABRAXAS_RUNTIME_ENV=demo` (never with `VERCEL_ENV=production`).
 
-Also apply migration `089_circle_arc_testnet_settlement.sql` to DEMO Supabase `ocntwbxarpjeixdnzide` before the first real transfer. Do not apply it until this PR is re-audited as safe.
+Also apply migration `089_circle_arc_testnet_settlement.sql` and then `090_circle_settlement_selection_replay.sql` to DEMO Supabase `ocntwbxarpjeixdnzide` before the first real transfer. Do not apply them until this PR is re-audited as safe. Migration 090 adds a hashed selection-token `jti` unique constraint so replay is durable across Vercel instances. Do not store raw tokens.
 
 The server generates the Circle `idempotencyKey` as UUID v4. Do not paste a key into Launchpad or send one from the browser.
 
@@ -48,8 +48,8 @@ The server generates the Circle `idempotencyKey` as UUID v4. Do not paste a key 
 1. Confirm Preview identity is DEMO (`ocntwbxarpjeixdnzide`) and not Production.
 2. Open Partner Launchpad on that Preview.
 3. Use an isolated DEMO sandbox app with a pinned active policy. For a receipt that does not claim real age verification, use the sandbox-only `sandbox_economic_demo` pack. Do not use it in Production.
-4. Issue a server-verified **sandbox** signed receipt for that partner/policy/version. Partner Flow asks for the minimum evidence that pack requires. Circle settlement never adds an ID step.
-5. On **Arc testnet settlement**, paste the receipt ID. Do not supply a Circle idempotency key.
+4. Issue a server-verified **sandbox** signed receipt for that partner/policy/version. Partner Flow asks for the minimum evidence that pack requires. Circle settlement never adds an ID step. Sandbox product-eligibility claims expire in **30 minutes** by design (`deriveServerSandboxQualificationClaims`). After expiry, re-run sandbox Partner Flow (privacy-preserving or partner age check) on the same `sandbox_economic_demo` app until a new approved `sandbox_only` receipt is issued. Do not reuse an expired receipt.
+5. On **Arc testnet settlement**, choose an eligible sandbox receipt. Do not paste a receipt ID or supply a Circle idempotency key.
 6. Create the DEMO settlement intent. It must start `pending`. Creating an intent must not call Circle or move USDC.
 7. Review the pending card (sandbox/testnet, integer amount, receipt, policy/version, ARC-TESTNET / USDC). It must say **No funds moved yet.**
 8. Check the one-time confirmation and use **Submit testnet transfer**. Only that step may call Circle, and only for this pending DEMO intent.
@@ -77,4 +77,4 @@ Do not film Circle Console secret pages.
 4. Fund the new source wallet from the faucet.
 5. Confirm Production still has **no** Circle variables.
 
-Until Preview has these secrets, the DEMO/Preview allowlist, and DEMO has migration 089, Launchpad must show `circle_unavailable` / schema unavailable / environment blocked and must not claim a live Circle integration.
+Until Preview has these secrets, the DEMO/Preview allowlist, and DEMO has migrations 089 and 090, Launchpad must show `circle_unavailable` / schema unavailable / environment blocked and must not claim a live Circle integration.

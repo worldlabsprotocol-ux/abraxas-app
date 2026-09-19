@@ -25,10 +25,7 @@ import {
   type CircleIntentState,
 } from "@/lib/settlement/circle/constants";
 import type { CircleSafeEvidence } from "@/lib/settlement/circle/evidence";
-import {
-  consumeEligibleReceiptSelection,
-  verifyEligibleReceiptSelection,
-} from "@/lib/settlement/circle/eligibleReceiptSelection";
+import { verifyEligibleReceiptSelection } from "@/lib/settlement/circle/eligibleReceiptSelection";
 import { gateSettlementReceipt } from "@/lib/settlement/circle/receiptGate";
 import {
   applyAuthenticatedEvidence,
@@ -273,8 +270,6 @@ export async function runCircleSettlement(input: {
     return view({ ok: false, code: gated.code, availability });
   }
 
-  consumeEligibleReceiptSelection(verified.selection.jti, verified.selection.expMs);
-
   const inserted = await insertPendingIntent({
     applicationId: input.application.id,
     partnerId: input.partnerId,
@@ -282,6 +277,7 @@ export async function runCircleSettlement(input: {
     receiptId: gated.receipt_id,
     policyId: input.application.policy_id,
     policyVersion: input.application.policy_version,
+    selectionJtiHash: verified.selection.jtiHash,
   });
   if (!inserted.ok) {
     return view({ ok: false, code: inserted.code, availability });
@@ -291,9 +287,11 @@ export async function runCircleSettlement(input: {
   if (inserted.duplicate) {
     return view({
       ok: true,
-      code: isTerminalIntent(intent.state)
-        ? CIRCLE_PUBLIC_CODES.duplicate
-        : statusCode(intent.state),
+      code: inserted.replay
+        ? CIRCLE_PUBLIC_CODES.selection_replay
+        : (isTerminalIntent(intent.state)
+          ? CIRCLE_PUBLIC_CODES.duplicate
+          : statusCode(intent.state)),
       availability,
       evidence: toSafeEvidence(intent),
       duplicate: true,

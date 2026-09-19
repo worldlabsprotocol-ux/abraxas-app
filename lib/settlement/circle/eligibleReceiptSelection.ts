@@ -1,11 +1,13 @@
 // FILE: lib/settlement/circle/eligibleReceiptSelection.ts
 // Encrypted, session- and app-bound selection tokens. Never a public receipt id.
+// Replay authority is the database unique hash, not an in-process map.
 
 import { createHash, randomUUID } from "crypto";
 import { CompactEncrypt, compactDecrypt } from "jose";
 import { CIRCLE_PUBLIC_CODES, type CirclePublicCode } from "@/lib/settlement/circle/codes";
 
 const MAX_AGE_SEC = 10 * 60;
+const JTI_HASH_PREFIX = "abraxas:settlement-selection-jti:v1:";
 const ALLOWED = new Set([
   "receiptId",
   "partnerId",
@@ -18,22 +20,10 @@ const ALLOWED = new Set([
   "iat",
 ]);
 
-const consumedJti = new Map<string, number>();
-
 function encryptionKey(): Uint8Array | null {
   const raw = process.env.ABRAXAS_BROWSER_SESSION_SECRET ?? process.env.ABRAXAS_SIGNING_KEY;
   if (!raw) return null;
   return createHash("sha256").update(raw).digest();
-}
-
-function pruneConsumed(now = Date.now()): void {
-  for (const [jti, exp] of Array.from(consumedJti.entries())) {
-    if (exp <= now) consumedJti.delete(jti);
-  }
-}
-
-export function resetEligibleReceiptSelectionReplayForTests(): void {
-  consumedJti.clear();
 }
 
 export type EligibleReceiptSelection = {
@@ -44,11 +34,16 @@ export type EligibleReceiptSelection = {
   policyVersion: number;
   sessionKeyId: string;
   jti: string;
+  jtiHash: string;
   expMs: number;
 };
 
+export function hashEligibleReceiptSelectionJti(jti: string): string {
+  return createHash("sha256").update(`${JTI_HASH_PREFIX}${jti.trim()}`).digest("hex");
+}
+
 export async function signEligibleReceiptSelection(
-  input: Omit<EligibleReceiptSelection, "jti" | "expMs"> & { jti?: string },
+  input: Omit<EligibleReceiptSelection, "jti" | "jtiHash" | "expMs"> & { jti?: string },
   now = Date.now(),
 ): Promise<string | null> {
   const key = encryptionKey();
@@ -87,7 +82,6 @@ export async function verifyEligibleReceiptSelection(
   if (!key || !token.trim()) {
     return { ok: false, code: CIRCLE_PUBLIC_CODES.selection_invalid };
   }
-  pruneConsumed(now);
   let parsed: Record<string, unknown>;
   try {
     const { plaintext } = await compactDecrypt(token.trim(), key);
@@ -101,6 +95,7 @@ export async function verifyEligibleReceiptSelection(
   const exp = typeof parsed.exp === "number" ? parsed.exp : 0;
   if (exp * 1000 <= now) return { ok: false, code: CIRCLE_PUBLIC_CODES.selection_expired };
 
+  const jti = typeof parsed.jti === "string" ? parsed.jti.trim() : "";
   const selection: EligibleReceiptSelection = {
     receiptId: typeof parsed.receiptId === "string" ? parsed.receiptId.trim() : "",
     partnerId: typeof parsed.partnerId === "string" ? parsed.partnerId.trim() : "",
@@ -108,7 +103,8 @@ export async function verifyEligibleReceiptSelection(
     policyId: typeof parsed.policyId === "string" ? parsed.policyId.trim() : "",
     policyVersion: typeof parsed.policyVersion === "number" ? parsed.policyVersion : NaN,
     sessionKeyId: typeof parsed.sessionKeyId === "string" ? parsed.sessionKeyId.trim() : "",
-    jti: typeof parsed.jti === "string" ? parsed.jti.trim() : "",
+    jti,
+    jtiHash: jti ? hashEligibleReceiptSelectionJti(jti) : "",
     expMs: exp * 1000,
   };
   if (
@@ -118,6 +114,7 @@ export async function verifyEligibleReceiptSelection(
     || !selection.policyId
     || !selection.sessionKeyId
     || !selection.jti
+    || !selection.jtiHash
     || !Number.isInteger(selection.policyVersion)
   ) {
     return { ok: false, code: CIRCLE_PUBLIC_CODES.selection_invalid };
@@ -135,12 +132,5 @@ export async function verifyEligibleReceiptSelection(
   ) {
     return { ok: false, code: CIRCLE_PUBLIC_CODES.receipt_wrong_policy_version };
   }
-  if (consumedJti.has(selection.jti)) {
-    return { ok: false, code: CIRCLE_PUBLIC_CODES.selection_replay };
-  }
   return { ok: true, selection };
-}
-
-export function consumeEligibleReceiptSelection(jti: string, expMs: number): void {
-  consumedJti.set(jti, expMs);
 }
