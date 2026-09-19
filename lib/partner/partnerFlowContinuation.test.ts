@@ -6,6 +6,8 @@ import {
   continuationRequestsIdentity,
   isRestorablePartnerContinuePath,
   isSafePartnerContinuationReturnUrl,
+  partnerContinueHasUntrustedReturn,
+  sanitizePartnerContinueBrowserSearch,
   sanitizePartnerFlowContinuation,
 } from "./partnerFlowContinuation";
 
@@ -26,9 +28,22 @@ describe("partnerFlowContinuation sanitizers", () => {
       policyId: "acme-sandbox_economic_demo-v1",
       purpose: "sandbox_economic_demo",
     });
-    expect(path).toContain("/partner/continue?");
+    expect(path).toBe("/partner/continue?verify_request=vr-1");
     expect(path).not.toContain("return");
+    expect(path).not.toContain("partner_id");
     expect(isRestorablePartnerContinuePath(`${path}&return=https://evil.example`)).toBe(false);
+  });
+
+  it("rejects the observed Preview continue URL that leaked localhost return", () => {
+    const observed = "/partner/continue?verify_request=vr-live&partner_id=circle-arc-demo-304&policy_id=circle-arc-demo-304-sandbox_economic_demo-v1&return=http://localhost:3000/callback/circle-arc-economic-demo-304";
+    expect(partnerContinueHasUntrustedReturn(observed.split("?")[1] ?? "")).toBe(true);
+    expect(isRestorablePartnerContinuePath(observed)).toBe(false);
+    const sanitized = sanitizePartnerContinueBrowserSearch(observed.split("?")[1] ?? "");
+    expect(sanitized.strippedUntrusted).toBe(true);
+    expect(sanitized.search).toBe("verify_request=vr-live");
+    expect(sanitized.search).not.toContain("return");
+    expect(sanitized.search).not.toContain("localhost");
+    expect(sanitized.search).not.toContain("partner_id");
   });
 
   it("sandbox economic demo does not request identity; authoritative retail still does", () => {

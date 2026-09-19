@@ -5,18 +5,36 @@ const readyForConsent = {
   verificationRequestId: "vr_test",
   consentDismissed: false,
   identityComplete: true,
+  evidenceComplete: true,
+  qualifyingMethodSucceeded: true,
   underReview: false,
   handoffReady: false,
 };
 
 describe("partner consent visibility", () => {
-  it("shows one consent action after required policy evidence is ready", () => {
+  it("shows one consent action after a qualifying method succeeds", () => {
     expect(shouldShowPartnerConsent(readyForConsent)).toBe(true);
     expect(shouldShowPartnerConsent({
       ...readyForConsent,
       identityComplete: false,
       evidenceComplete: true,
+      qualifyingMethodSucceeded: true,
     })).toBe(true);
+  });
+
+  it("does not show final approval after sign-in or method selection alone", () => {
+    expect(shouldShowPartnerConsent({
+      ...readyForConsent,
+      qualifyingMethodSucceeded: false,
+    })).toBe(false);
+    expect(shouldShowPartnerConsent({
+      verificationRequestId: "vr_test",
+      consentDismissed: false,
+      identityComplete: true,
+      evidenceComplete: true,
+      underReview: false,
+      handoffReady: false,
+    })).toBe(false);
   });
 
   it("does not present incomplete policy evidence as a denied partner decision", () => {

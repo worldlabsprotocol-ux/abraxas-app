@@ -16,6 +16,7 @@ import { GOOD_TROUBLE_BROWSE_POLICY_ID } from "@/lib/goodTrouble/constants";
 import {
   planEligibilityMethods,
   resolvePackForEligibility,
+  type EligibilityMethodId,
 } from "@/lib/partner/eligibilityMethods";
 import { GOOGLE_ACCOUNT_NOT_ELIGIBILITY } from "@/lib/partner/launchpad/policyPacks";
 
@@ -28,6 +29,8 @@ export interface AgeAssuranceMethodChooserProps {
   minimumAge: number | null;
   onFallbackId: () => void;
   onTraditionalReturn: () => void;
+  /** Qualifying method finished in-app. Must not issue a receipt. */
+  onMethodSatisfied?: () => void;
   ageAssuranceStatus?: string | null;
   /** browse = tier 1 self-attest; checkout = tier 2 authoritative verification */
   flowTier?: "browse" | "checkout";
@@ -51,6 +54,7 @@ export function AgeAssuranceMethodChooser({
   minimumAge,
   onFallbackId,
   onTraditionalReturn,
+  onMethodSatisfied,
   ageAssuranceStatus,
   flowTier = "checkout",
   browsePolicyId = GOOD_TROUBLE_BROWSE_POLICY_ID,
@@ -61,6 +65,8 @@ export function AgeAssuranceMethodChooser({
   const [existingEligible, setExistingEligible] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [selectedMethodId, setSelectedMethodId] = useState<EligibilityMethodId | null>(null);
+  const [issuedReceipt, setIssuedReceipt] = useState(false);
 
   const privacy = partnerHolderPrivacyNotes(partnerName);
   const threshold = minimumAge != null && minimumAge >= 21 ? 21 : 18;
@@ -195,7 +201,9 @@ export function AgeAssuranceMethodChooser({
       pack,
       existingProofCompatible: existingEligible,
       partnerAgeCheckConfigured: true,
-      privacyPreservingAvailable: providers.some((provider) => provider.authoritative || provider.configured),
+      partnerAgeCheckAssurance: pack.minimum_assurance,
+      privacyPreservingAvailable: pack.id === "sandbox_economic_demo"
+        || providers.some((provider) => provider.authoritative || provider.configured),
       browseSelfAttestAllowed: false,
     })
     : null;
@@ -319,64 +327,53 @@ export function AgeAssuranceMethodChooser({
         </StatusBanner>
       )}
 
-      {existingEligible && (
-        <div>
-          <p style={{ margin: "0 0 0.5rem", fontWeight: 600 }}>{copy.title}</p>
-          <p style={{ margin: "0 0 0.75rem", fontSize: "0.9rem", lineHeight: 1.6 }}>{copy.message}</p>
-          <Btn disabled={busy !== null} onClick={() => void reuseExistingProof()}>
-            {busy === "reuse" ? "Confirming…" : "Use my existing compatible proof"}
-          </Btn>
-        </div>
-      )}
-
-      {providers.length > 0 && (
-        <div>
-          <p style={{ margin: "0 0 0.5rem", fontWeight: 600 }}>
-            {resolvePartnerHolderPresentation("choose_private_method", partnerName).title}
-          </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-            {providers.map(provider => (
-              <Btn
-                key={provider.id}
-                variant="secondary"
-                disabled={busy !== null}
-                onClick={() => void startProvider(provider.id)}
-              >
-                {busy === provider.id ? "Starting…" : provider.displayName}
-              </Btn>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {providers.length === 0 && !existingEligible && (
-        <StatusBanner tone="info" title={copy.title}>
-          {copy.message}
-        </StatusBanner>
-      )}
-
-      <div>
-        <Btn variant="secondary" onClick={onTraditionalReturn}>
-          Use {partnerName}&apos;s eligibility check
-        </Btn>
-        <p style={{ margin: "0.5rem 0 0", fontSize: "0.82rem", color: "var(--text-muted)" }}>
-          You&apos;ll return to {partnerName}. This does not move USDC.
-        </p>
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }} role="list">
+        {(plan?.methods ?? [])
+          .filter((method) => method.id !== "account_login" && method.available)
+          .map((method) => (
+            <Btn
+              key={method.id}
+              variant={selectedMethodId === method.id ? "primary" : "secondary"}
+              ariaLabel={selectedMethodId === method.id ? `${method.label} (selected)` : method.label}
+              disabled={busy !== null}
+              onClick={() => {
+                setSelectedMethodId(method.id);
+                setIssuedReceipt(false);
+                setError(null);
+              }}
+            >
+              {method.label}
+            </Btn>
+          ))}
       </div>
-
-      {pack && !disclosure?.economic_demo && (
-      <div>
-        <p style={{ margin: "0 0 0.5rem", fontWeight: 600 }}>
-          Identity / liveness (optional)
+      {selectedMethodId && (
+        <p style={{ margin: 0, fontSize: "0.85rem", lineHeight: 1.6 }}>
+          {plan?.methods.find((method) => method.id === selectedMethodId)?.why}
+          {" "}Selecting a method does not issue a receipt.
         </p>
-        <p style={{ margin: "0 0 0.75rem", fontSize: "0.85rem", lineHeight: 1.6 }}>
-          {privacy.id_fallback}
-        </p>
-        <Btn variant="secondary" onClick={onFallbackId}>
-          Identity / liveness
-        </Btn>
-      </div>
       )}
+      <Btn
+        disabled={busy !== null || !selectedMethodId}
+        onClick={() => {
+          const method = plan?.methods.find((item) => item.id === selectedMethodId);
+          if (!method || method.id === "account_login") {
+            setError("Choose a qualifying method. Sign-in is not eligibility.");
+            return;
+          }
+          if (!method.qualifies && method.id !== "identity_liveness") {
+            setError("That method does not meet this policy’s required assurance.");
+            return;
+          }
+          if (method.id === "identity_liveness") {
+            onFallbackId();
+            return;
+          }
+          setIssuedReceipt(false);
+          onMethodSatisfied?.();
+        }}
+      >
+        Use selected method
+      </Btn>
 
       {error && (
         <p role="alert" style={{ color: "var(--text-secondary)" }}>{error}</p>

@@ -66,7 +66,9 @@ describe("partner journey state machine", () => {
       returnUrl: "https://www.goodtroublecanna.com/browse-verification-result",
       appOrigin: "https://abraxasworld.xyz",
     });
-    expect(url).toContain("purpose=browse");
+    expect(url).toContain("verify_request=request-1");
+    expect(url).not.toContain("return");
+    expect(url).not.toContain("localhost");
   });
 
   it("uses partner intro copy for Good Trouble", () => {

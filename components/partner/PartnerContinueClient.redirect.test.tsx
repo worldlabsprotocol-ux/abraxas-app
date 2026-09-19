@@ -69,6 +69,14 @@ describe("PartnerContinueClient partner redirect trust", () => {
       if (url.includes("/api/age-assurance/providers")) {
         return new Response(JSON.stringify({ providers: [], existing_proof: { eligible_for_reuse: false } }), { status: 200 });
       }
+      if (url.includes("/api/v1/partner-verify/continue-binding")) {
+        return new Response(JSON.stringify({
+          ok: true,
+          partner_id: GOOD_TROUBLE_PARTNER_ID,
+          policy_id: GOOD_TROUBLE_RETAIL_POLICY_ID,
+          return_url: "https://www.goodtroublecanna.com/age-verification-result",
+        }), { status: 200 });
+      }
       throw new Error(`Unexpected fetch: ${url}`);
     }) as typeof fetch;
   });

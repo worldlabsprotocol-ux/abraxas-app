@@ -96,8 +96,9 @@ describe("evaluateGoodTroubleBrowseFlow", () => {
 
     expect(result.next).toBe("passport");
     expect(result.passport_url).toContain("/partner/continue?");
-    expect(result.passport_url).toContain("purpose=browse");
-    expect(result.passport_url).toContain("policy_id=good-trouble-browse-v1");
+    expect(result.passport_url).toContain("/partner/continue?verify_request=");
+    expect(result.passport_url).not.toContain("return");
+    expect(result.passport_url).not.toContain("policy_id=");
     expect(mockCreateRequest).toHaveBeenCalled();
   });
 });
@@ -137,8 +138,8 @@ describe("evaluatePartnerFlow browse short-circuit", () => {
     });
 
     expect(result.next).toBe("passport");
-    expect(result.passport_url).toContain("purpose=browse");
-    expect(result.passport_url).toContain("good-trouble-browse-v1");
+    expect(result.passport_url).toContain("/partner/continue?verify_request=");
+    expect(result.passport_url).not.toContain("return");
     expect(mockCreateRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,

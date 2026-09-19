@@ -49,7 +49,7 @@ describe("activatePartnerFlowContinuation", () => {
     if (!result.ok) return;
     expect(result.issuedReceipt).toBe(false);
     expect(result.continuePath).toBe(
-      "/partner/continue?verify_request=vr-exact-1&partner_id=good-trouble-cannabis&policy_id=good-trouble-retail-v1",
+      "/partner/continue?verify_request=vr-exact-1",
     );
     expect(result.continuePath).not.toContain("return");
     expect(mockCreateRequest).toHaveBeenCalledWith(expect.objectContaining({
@@ -61,6 +61,16 @@ describe("activatePartnerFlowContinuation", () => {
     expect(shouldShowPartnerConsent({
       verificationRequestId: result.verifyRequestId,
       identityComplete: true,
+      qualifyingMethodSucceeded: false,
+      consentDismissed: false,
+      underReview: false,
+      handoffReady: false,
+    })).toBe(false);
+    expect(shouldShowPartnerConsent({
+      verificationRequestId: result.verifyRequestId,
+      identityComplete: true,
+      evidenceComplete: true,
+      qualifyingMethodSucceeded: true,
       consentDismissed: false,
       underReview: false,
       handoffReady: false,
