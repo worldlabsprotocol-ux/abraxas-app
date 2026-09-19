@@ -9,6 +9,7 @@ export const FOOTER_PRODUCT_LINKS = [
 
 export const FOOTER_DEVELOPER_LINKS = [
   { label: "Documentation", href: "/docs" },
+  { label: "Integration Studio", href: "/developers/integration-studio" },
   { label: "Partner Flow", href: "/docs/partner-flow" },
   { label: "Receipt verification", href: "/verify?mode=receipt" },
   { label: "Solana integration", href: "/docs/solana" },

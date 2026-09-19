@@ -188,7 +188,8 @@ export function PartnerOnboardingPositioningPanel({
       )}
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "1rem" }}>
-        <Btn href={PARTNER_ONBOARDING_DOC_LINKS.partnerFlow} size="sm">Partner Flow docs</Btn>
+        <Btn href={PARTNER_ONBOARDING_DOC_LINKS.integrationStudio} size="sm">Integration Studio</Btn>
+        <Btn href={PARTNER_ONBOARDING_DOC_LINKS.partnerFlow} variant="secondary" size="sm">Partner Flow docs</Btn>
         <Btn href={PARTNER_ONBOARDING_DOC_LINKS.integrationsApply} variant="secondary" size="sm">Apply for sandbox</Btn>
         <Link href={PARTNER_ONBOARDING_DOC_LINKS.passwordlessPlan} style={{ fontFamily: FONT, fontSize: "0.74rem", fontWeight: 700, color: "var(--accent)", alignSelf: "center", textDecoration: "none" }}>
           Passwordless onboarding plan →

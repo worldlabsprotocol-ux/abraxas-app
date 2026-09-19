@@ -1,0 +1,98 @@
+// FILE: lib/partner/integrationStudio/catalog.ts
+// Safe public catalog derived from existing policy packs and eligibility plans.
+
+import {
+  POLICY_PACK_LIST,
+  resolvePolicyPack,
+  type PolicyPackId,
+} from "@/lib/partner/launchpad/policyPacks";
+import { planEligibilityMethods } from "@/lib/partner/eligibilityMethods";
+import {
+  INTEGRATION_STUDIO_CHECKLIST,
+  INTEGRATION_STUDIO_GOOGLE,
+  INTEGRATION_STUDIO_PATHS,
+  INTEGRATION_STUDIO_PROVISION,
+  INTEGRATION_STUDIO_SOLANA_NOTICE,
+  INTEGRATION_STUDIO_WEBHOOK_NOTICE,
+  type IntegrationStudioPathId,
+} from "@/lib/partner/integrationStudio/contract";
+
+export interface StudioMethodView {
+  id: string;
+  label: string;
+  qualifies: boolean;
+  available: boolean;
+  primary: boolean;
+  why: string;
+}
+
+export interface StudioPackContract {
+  pack_id: PolicyPackId;
+  display_name: string;
+  requirement: string;
+  purpose: string;
+  disclosed_result: string;
+  withheld: string[];
+  assurance: string;
+  production_suitability: string;
+  methods: StudioMethodView[];
+  google_is_account_only: typeof INTEGRATION_STUDIO_GOOGLE;
+  identity_is_default: false;
+}
+
+export function studioPackContract(packId: string): StudioPackContract | null {
+  const pack = resolvePolicyPack(packId);
+  if (!pack) return null;
+  const plan = planEligibilityMethods({
+    pack,
+    privacyPreservingAvailable: true,
+  });
+  return {
+    pack_id: pack.id,
+    display_name: pack.display_name,
+    requirement: plan.disclosure.requirement,
+    purpose: plan.disclosure.purpose,
+    disclosed_result: plan.disclosure.disclosed_result,
+    withheld: [...plan.disclosure.withheld],
+    assurance: plan.disclosure.assurance_level,
+    production_suitability: pack.production_suitability,
+    methods: plan.methods.map((method) => ({
+      id: method.id,
+      label: method.label,
+      qualifies: method.qualifies,
+      available: method.available,
+      primary: method.primary,
+      why: method.why,
+    })),
+    google_is_account_only: INTEGRATION_STUDIO_GOOGLE,
+    identity_is_default: false,
+  };
+}
+
+export function listStudioPackSummaries() {
+  return POLICY_PACK_LIST.map((pack) => ({
+    pack_id: pack.id,
+    display_name: pack.display_name,
+    disclosed_result: pack.disclosed_result,
+    assurance: pack.minimum_assurance,
+    production_suitability: pack.production_suitability,
+  }));
+}
+
+export function studioPublicCatalog(input?: { packId?: string; pathId?: IntegrationStudioPathId }) {
+  const pack = studioPackContract(input?.packId ?? "age_21_retail") ?? studioPackContract("age_21_retail");
+  return {
+    packs: listStudioPackSummaries(),
+    contract: pack,
+    paths: INTEGRATION_STUDIO_PATHS,
+    selected_path: input?.pathId ?? "hosted_partner_flow",
+    checklist: INTEGRATION_STUDIO_CHECKLIST,
+    provision: INTEGRATION_STUDIO_PROVISION,
+    webhook_is_not_authorization: INTEGRATION_STUDIO_WEBHOOK_NOTICE,
+    solana: {
+      creates_transactions: false,
+      funds_movement: false,
+      notice: INTEGRATION_STUDIO_SOLANA_NOTICE,
+    },
+  };
+}

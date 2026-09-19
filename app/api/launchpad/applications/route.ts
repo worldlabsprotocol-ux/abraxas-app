@@ -4,6 +4,7 @@
 import { NextRequest } from "next/server";
 import {
   enforceLaunchpadRateLimit,
+  enforceLaunchpadTenantRateLimit,
   launchpadError,
   launchpadJson,
   requireLaunchpadSession,
@@ -52,12 +53,25 @@ export async function POST(req: NextRequest) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400);
   }
 
+  if (String(body.environment ?? "sandbox") === "production" || body.issue_production_key === true) {
+    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.forbidden, 403, "production_denied");
+  }
+
   const partnerId = String(body.partner_id ?? sessionPartnerId ?? "");
   if (!partnerId) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "partner_id required");
   }
   if (sessionPartnerId && partnerId !== sessionPartnerId) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.forbidden, 403);
+  }
+  if (sessionPartnerId) {
+    const tenantLimited = enforceLaunchpadTenantRateLimit(
+      req,
+      "/api/launchpad/applications",
+      sessionPartnerId,
+      5,
+    );
+    if (tenantLimited) return tenantLimited;
   }
 
   const result = await provisionLaunchpadSandbox({
@@ -88,10 +102,11 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const { api_key: _omitKey, ...safeApplication } = result.result;
   const res = launchpadJson({
     ok: true,
     idempotency_replay: result.idempotencyReplay,
-    application: result.result,
+    application: safeApplication,
     api_key: result.apiKey ?? null,
   });
 

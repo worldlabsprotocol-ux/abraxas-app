@@ -1,0 +1,71 @@
+// FILE: lib/partner/integrationStudio/contract.ts
+// Public Integration Studio contract. Reuses packs, kit, events, Solana. No parallel verifier.
+
+import { GOOGLE_ACCOUNT_NOT_ELIGIBILITY } from "@/lib/partner/launchpad/policyPacks";
+import { PARTNER_EVENT_NOT_AUTHORIZATION } from "@/lib/partner/eventDelivery/contract";
+import { SOLANA_NO_FUNDS_BOUNDARY } from "@/lib/partner/solana/contract";
+
+export const INTEGRATION_STUDIO_PATH = "/developers/integration-studio" as const;
+
+export const INTEGRATION_STUDIO_PATHS = [
+  "hosted_partner_flow",
+  "server_receipt_verify",
+  "webhook_events",
+  "solana_gate",
+] as const;
+
+export type IntegrationStudioPathId = (typeof INTEGRATION_STUDIO_PATHS)[number];
+
+export const INTEGRATION_STUDIO_CHECKLIST = [
+  {
+    id: "hosted_verify",
+    title: "Hosted verify",
+    body: "Redirect the holder to /partner/verify with your partner_id and policy_id. Callback query keys are not authorization.",
+  },
+  {
+    id: "approved_receipt",
+    title: "Approved receipt",
+    body: "Only a currently valid approved receipt can permit an action. Denied, expired, and revoked receipts fail closed.",
+  },
+  {
+    id: "server_verification",
+    title: "Server verification",
+    body: "Fetch GET /api/receipts/{id}/public and evaluate with AbraxasPartnerKit on your server.",
+  },
+  {
+    id: "expiry_revocation",
+    title: "Expiry and revocation",
+    body: "Re-evaluate before each grant. Public GET is not a one-time consume. Handle expired and revoked outcomes.",
+  },
+  {
+    id: "webhook_verification",
+    title: "Webhook verification",
+    body: "Verify HMAC, ignore duplicates, then fetch the public receipt. A webhook body is never a grant.",
+  },
+  {
+    id: "policy_version",
+    title: "Policy version upgrades",
+    body: "Pin policyVersion and requirePolicyVersion. Draft, deprecated, missing, and mismatched versions fail closed.",
+  },
+] as const;
+
+export const INTEGRATION_STUDIO_PROVISION = {
+  requires_partner_session: true as const,
+  self_serve_sandbox: true as const,
+  self_serve_production: false as const,
+  create_sandbox_cta: "Create a sandbox integration",
+  production_upgrade_cta: "Upgrade to Production after readiness review",
+  apply_href: "/design-partner",
+  launchpad_href: "/developers/launchpad",
+  partner_portal_href: "/developers/partner",
+  notice:
+    "Signed-in partners can create an isolated sandbox integration through Partner Launchpad. The sandbox key is shown once. Production credentials stay on the reviewed upgrade path.",
+};
+
+export const INTEGRATION_STUDIO_GOOGLE = GOOGLE_ACCOUNT_NOT_ELIGIBILITY;
+export const INTEGRATION_STUDIO_WEBHOOK_NOTICE = PARTNER_EVENT_NOT_AUTHORIZATION;
+export const INTEGRATION_STUDIO_SOLANA_NOTICE = SOLANA_NO_FUNDS_BOUNDARY;
+
+export function isIntegrationStudioPathId(value: string): value is IntegrationStudioPathId {
+  return (INTEGRATION_STUDIO_PATHS as readonly string[]).includes(value);
+}

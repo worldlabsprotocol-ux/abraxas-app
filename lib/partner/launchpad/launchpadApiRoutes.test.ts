@@ -81,6 +81,29 @@ describe("launchpad API authorization boundaries", () => {
     expect(body.workspace.policy_change_control_available).toBe(false);
   });
 
+  it("POST /api/launchpad/applications denies production self-service", async () => {
+    resolvePartnerConsoleSessionMock.mockResolvedValue({
+      partnerId: "acme",
+      apiKeyId: "key-1",
+      environment: "sandbox",
+    });
+    const { POST } = await import("@/app/api/launchpad/applications/route");
+    const res = await POST(new NextRequest("http://localhost/api/launchpad/applications", {
+      method: "POST",
+      headers: { "content-type": "application/json", cookie: "abraxas_partner_console_session=test" },
+      body: JSON.stringify({
+        application_name: "Live",
+        partner_id: "acme",
+        policy_template_id: "age_21_retail",
+        return_url: "https://shop.example.com/callback",
+        environment: "production",
+      }),
+    }));
+    expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body.error).toBe("production_denied");
+  });
+
   it("includes policy_change_control_available=true for DEMO-style present schema", async () => {
     resolvePartnerConsoleSessionMock.mockResolvedValue({
       partnerId: "acme",

@@ -85,6 +85,7 @@ describe("partnerOnboardingPositioning copy", () => {
       [PARTNER_ONBOARDING_DOC_LINKS.designPartner]: "app/design-partner/page.tsx",
       [PARTNER_ONBOARDING_DOC_LINKS.integrations]: "app/integrations/page.tsx",
       [PARTNER_ONBOARDING_DOC_LINKS.developersPartner]: "app/developers/partner/page.tsx",
+      [PARTNER_ONBOARDING_DOC_LINKS.integrationStudio]: "app/developers/integration-studio/page.tsx",
       [PARTNER_ONBOARDING_DOC_LINKS.goodTroublePilot]: "app/good-trouble/page.tsx",
     };
 

@@ -54,7 +54,7 @@ export const PARTNER_ONBOARDING_AVAILABLE_NOW: PartnerCapabilityItem[] = [
   {
     id: "sandbox-design-partner",
     label: "Sandbox design partner integration",
-    detail: "Manual review, operator provisioned sandbox policies, callback allowlists, and conformance tooling.",
+    detail: "Create a sandbox integration after partner sign-in. Upgrade to Production after readiness review.",
     availability: "available_now",
   },
   {
@@ -165,6 +165,7 @@ export const PARTNER_CONSENT_MOCKUP_NOTE =
 
 export const PARTNER_ONBOARDING_DOC_LINKS = {
   partnerFlow: "/docs/partner-flow",
+  integrationStudio: "/developers/integration-studio",
   designPartner: "/design-partner",
   integrations: "/integrations",
   integrationsApply: "/integrations#apply",
