@@ -2,6 +2,7 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
+import { resetLaunchpadRateLimitStoreForTests } from "@/lib/partner/launchpad/rateLimit";
 
 const resolvePartnerConsoleSessionMock = vi.fn();
 const getAppMock = vi.fn();
@@ -31,6 +32,7 @@ vi.mock("@/lib/supabase/admin", () => ({
 
 describe("action control plane route", () => {
   beforeEach(() => {
+    resetLaunchpadRateLimitStoreForTests();
     vi.clearAllMocks();
     resolvePartnerConsoleSessionMock.mockResolvedValue(null);
     getAppMock.mockResolvedValue(null);

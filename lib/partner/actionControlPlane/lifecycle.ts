@@ -31,7 +31,7 @@ export function opaqueActionControlPlaneId(rawId: string): string {
 
 function safeReasonFromCode(code: string | null | undefined): ActionControlPlaneSafeReason {
   const value = String(code ?? "").toLowerCase();
-  if (value.includes("replay")) return "nonce_replayed";
+  if (value.includes("replay") || value === "reused") return "nonce_replayed";
   if (value.includes("expired")) return "receipt_expired";
   if (value.includes("revoked")) return "receipt_revoked";
   if (value.includes("denied") || value.includes("wrong_")) return "policy_denied";

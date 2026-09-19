@@ -82,7 +82,9 @@ function policySelected(evidence: SandboxReadinessEvidence): boolean {
 }
 
 function callbackAllowlisted(evidence: SandboxReadinessEvidence): boolean {
-  return evidence.allowedReturnUrls.some((url) => isLaunchpadReturnUrlAllowlisted(url));
+  return evidence.allowedReturnUrls.some((url) =>
+    isLaunchpadReturnUrlAllowlisted(evidence.allowedReturnUrls, url),
+  );
 }
 
 function partnerFlowTested(evidence: SandboxReadinessEvidence): boolean {

@@ -44,7 +44,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     application: app,
     partnerId: auth.session.partnerId,
   });
-  return launchpadJson(sanitizeActionControlPlaneValue(view));
+  return launchpadJson(sanitizeActionControlPlaneValue(view) as unknown as Record<string, unknown>);
 }
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
