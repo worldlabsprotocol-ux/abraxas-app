@@ -243,6 +243,8 @@ export function IntegrationStudioClient() {
             fontFamily: MONO,
             fontSize: "0.64rem",
             overflowX: "auto",
+            maxWidth: "100%",
+            boxSizing: "border-box",
             padding: "1rem",
             borderRadius: 12,
             border: "1px solid var(--border)",

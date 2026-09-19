@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     expires_at: bound.expires_at,
   };
   if (assertNoSensitiveWalletClientKeys(visible).length > 0) {
-    return NextResponse.json({ ok: false, status: "invalid", binding_ref: null, expires_at: null }, { status: 500 });
+    return NextResponse.json({ ok: false, status: "invalid", binding_ref: null, expires_at: null }, { status: 503 });
   }
   const status = bound.status === "store_unavailable" ? 503 : bound.ok ? 200 : 400;
   return NextResponse.json(visible, { status });

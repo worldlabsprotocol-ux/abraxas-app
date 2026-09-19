@@ -1,7 +1,7 @@
 // FILE: lib/product/demoRuntime.ts
 // DEMO is the same public product with isolated data. Bound by origin/runtime, not a judge flag.
 
-import { PUBLIC_DEMO_HOST, PUBLIC_DEMO_ORIGIN } from "@/lib/product/publicOrigin";
+import { PUBLIC_DEMO_HOST, PUBLIC_DEMO_ORIGIN, PUBLIC_PRODUCT_HOSTS } from "@/lib/product/publicOrigin";
 import { auditRuntimeSupabaseBinding } from "@/lib/supabase/runtimeSupabaseBinding";
 import { DEMO_SUPABASE_PROJECT_REF } from "@/lib/supabase/projectRefs";
 
@@ -12,6 +12,17 @@ export const OBSOLETE_JUDGE_DEMO_ENV_NAMES = [
   "ABRAXAS_JUDGE_DEMO",
   "NEXT_PUBLIC_ABRAXAS_JUDGE_DEMO",
 ] as const;
+
+export class DemoRuntimeUnavailableError extends Error {
+  readonly code = "demo_runtime_unavailable";
+  readonly fail_codes: DemoRuntimeFailCode[];
+
+  constructor(failCodes: DemoRuntimeFailCode[]) {
+    super("demo_runtime_unavailable");
+    this.name = "DemoRuntimeUnavailableError";
+    this.fail_codes = failCodes;
+  }
+}
 
 export type DemoRuntimeFailCode =
   | "demo_origin_mismatch"
@@ -100,7 +111,9 @@ export function evaluateDemoRuntime(input?: {
     if (input?.request && !hostCheck.ok) fail_codes.push("demo_unexpected_host");
     if (runtimeEnv && runtimeEnv !== "demo") fail_codes.push("demo_runtime_not_demo");
     if (runtimeEnv === "production") fail_codes.push("demo_production_runtime");
-    if (vercelEnv === "production") fail_codes.push("demo_production_vercel");
+    if (vercelEnv === "production" && configuredOriginHostIsPublicProduct(configuredOrigin)) {
+      fail_codes.push("demo_production_vercel");
+    }
     if (audit.production_ref_detected) fail_codes.push("demo_production_supabase");
     if (!audit.all_match_demo) fail_codes.push("demo_supabase_not_demo");
     if (audit.missing.length > 0) fail_codes.push("demo_missing_binding");
@@ -146,5 +159,14 @@ export function assertDemoRuntimeBoot(
   if (!isPublicDemoRuntime(env)) return;
   const evaluation = evaluateDemoRuntime({ env });
   if (evaluation.ok) return;
-  throw new Error(`DEMO runtime failed closed: ${evaluation.fail_codes.join(",")}`);
+  throw new DemoRuntimeUnavailableError(evaluation.fail_codes);
+}
+
+function configuredOriginHostIsPublicProduct(origin: string): boolean {
+  try {
+    const host = new URL(origin).hostname.toLowerCase();
+    return PUBLIC_PRODUCT_HOSTS.has(host);
+  } catch {
+    return false;
+  }
 }
