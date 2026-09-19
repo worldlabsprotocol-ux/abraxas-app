@@ -79,6 +79,22 @@ describe("DEMO runtime binding", () => {
     expect(() => assertDemoRuntimeBoot(env)).not.toThrow();
   });
 
+  it("allows isolated DEMO when key JWTs omit a project ref but the URL is DEMO", async () => {
+    const jwt = await new SignJWT({ role: "anon" })
+      .setProtectedHeader({ alg: "HS256" })
+      .sign(new TextEncoder().encode("test-secret-for-demo-runtime-jwt"));
+    const env = {
+      ABRAXAS_RUNTIME_ENV: "demo",
+      VERCEL_ENV: "preview",
+      NEXT_PUBLIC_APP_URL: `${PUBLIC_DEMO_ORIGIN}/`,
+      NEXT_PUBLIC_SUPABASE_URL: `https://${DEMO_SUPABASE_PROJECT_REF}.supabase.co`,
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: jwt,
+      SUPABASE_SERVICE_ROLE_KEY: jwt,
+    };
+    expect(evaluateDemoRuntime({ env }).ok).toBe(true);
+    expect(() => assertDemoRuntimeBoot(env)).not.toThrow();
+  });
+
   it("allows isolated DEMO on a Vercel production alias", async () => {
     const jwt = await demoJwt();
     const env = {
