@@ -92,8 +92,8 @@ describe("CircleSettlementLaunchpadPanel", () => {
     expect(queryByText(/Signed receipt ID/i)).toBeNull();
   });
 
-  it("shows pending evidence in Judge Demo without a Circle submit control", async () => {
-    vi.stubEnv("NEXT_PUBLIC_ABRAXAS_JUDGE_DEMO", "true");
+  it("keeps receipt-gated testnet submit available with explicit confirmation", async () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://demo.abraxasworld.xyz");
     global.fetch = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes("eligible-receipts")) {
@@ -118,11 +118,12 @@ describe("CircleSettlementLaunchpadPanel", () => {
         },
       }), { status: 200 });
     }) as typeof fetch;
-    const { findByText, queryByText } = render(createElement(CircleSettlementLaunchpadPanel, {
+    const { findByText } = render(createElement(CircleSettlementLaunchpadPanel, {
       applicationId: "app-1",
     }));
     expect(await findByText(/Pending intent — sandbox\/testnet/)).toBeTruthy();
-    expect(await findByText(/Testnet transfer submission is disabled/)).toBeTruthy();
-    expect(queryByText(/^Submit testnet transfer$/)).toBeNull();
+    expect(await findByText(/Arc testnet only/)).toBeTruthy();
+    expect(await findByText(/Submit testnet transfer/)).toBeTruthy();
+    expect(await findByText(/explicit confirmation/i)).toBeTruthy();
   });
 });

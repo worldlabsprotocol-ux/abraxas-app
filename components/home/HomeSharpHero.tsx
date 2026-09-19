@@ -33,7 +33,7 @@ export function HomeSharpHero() {
     <section
       id="top"
       aria-labelledby="home-hero-heading"
-      className="abx-home-hero"
+      className="abx-home-hero abx-atmosphere-hero"
       style={{
         padding: "clamp(2rem, 6vw, 4rem) 0 clamp(1.5rem, 4vw, 2.5rem)",
       }}

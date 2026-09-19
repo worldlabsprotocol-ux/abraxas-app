@@ -34,9 +34,9 @@ const themeInitScript = `
 (function(){
   try {
     var t = localStorage.getItem("abraxas_theme");
-    document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme", t === "light" ? "light" : "dark");
   } catch (e) {
-    document.documentElement.setAttribute("data-theme", "light");
+    document.documentElement.setAttribute("data-theme", "dark");
   }
 })();
 `;

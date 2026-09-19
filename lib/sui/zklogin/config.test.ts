@@ -14,7 +14,7 @@ const ENV_KEYS = [
   "NEXT_PUBLIC_ZKLOGIN_REDIRECT_URI",
   "NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID",
   "NEXT_PUBLIC_GOOGLE_ZKLOGIN_LEGACY_CLIENT_ID",
-  "NEXT_PUBLIC_ABRAXAS_JUDGE_DEMO",
+  "ABRAXAS_RUNTIME_ENV",
 ] as const;
 
 describe("zkLogin OAuth redirect URI — same-origin", () => {
@@ -151,8 +151,9 @@ describe("zkLogin OAuth redirect URI — same-origin", () => {
     );
   });
 
-  it("pins the stable Judge Demo callback and ignores Preview aliases", () => {
-    process.env.NEXT_PUBLIC_ABRAXAS_JUDGE_DEMO = "true";
+  it("pins the stable DEMO callback from origin or runtime, not a judge flag", () => {
+    process.env.ABRAXAS_RUNTIME_ENV = "demo";
+    process.env.NEXT_PUBLIC_APP_URL = "https://demo.abraxasworld.xyz";
     process.env.VERCEL_URL = "abraxas-app-git-cursor-sa-f485a1-worldlabsprotocol-uxs-projects.vercel.app";
     vi.stubGlobal("window", {
       location: {
@@ -160,6 +161,15 @@ describe("zkLogin OAuth redirect URI — same-origin", () => {
       },
     });
 
+    expect(getZkLoginRedirectUri()).toBe(
+      `https://demo.abraxasworld.xyz${ZKLOGIN_CALLBACK_PATH}`,
+    );
+  });
+
+  it("pins the stable DEMO callback on the public DEMO host", () => {
+    vi.stubGlobal("window", {
+      location: { origin: "https://demo.abraxasworld.xyz" },
+    });
     expect(getZkLoginRedirectUri()).toBe(
       `https://demo.abraxasworld.xyz${ZKLOGIN_CALLBACK_PATH}`,
     );

@@ -53,6 +53,7 @@
     "@moonpay/platform-sdk-web": "^1.6.0",
     "@mysten/sui": "^1.45.2",
     "@reclaimprotocol/js-sdk": "^5.5.0",
+    "@solana/kit": "^8.3.0",
     "@solana/spl-token": "^0.4.8",
     "@solana/wallet-adapter-base": "^0.9.27",
     "@solana/wallet-adapter-phantom": "^0.9.29",

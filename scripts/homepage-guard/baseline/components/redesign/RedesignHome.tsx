@@ -8,6 +8,8 @@ import { HomePartnerProof } from "@/components/home/HomePartnerProof";
 import { HomeHowItWorks } from "@/components/home/HomeHowItWorks";
 import { HomeGoodTroubleIntegration } from "@/components/home/HomeGoodTroubleIntegration";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
+import { HomeProductEvidence } from "@/components/home/HomeProductEvidence";
+import { HomePolicyOutcomeStrip } from "@/components/home/HomePolicyOutcomeStrip";
 import { HomeTrustClose } from "@/components/home/HomeTrustClose";
 import { AmbientGlow } from "./AmbientGlow";
 import { RedesignNav } from "./RedesignNav";
@@ -26,6 +28,8 @@ function HomeContent() {
     <main style={{ position: "relative", zIndex: 1, paddingBottom: "3.5rem", textAlign: "center" }}>
       <div style={{ ...MAXW, display: "flex", flexDirection: "column", gap: SECTION_GAP, alignItems: "center", width: "100%" }}>
         <HomeSharpHero />
+        <HomeProductEvidence />
+        <HomePolicyOutcomeStrip />
         <HomeGoodTroubleIntegration />
         <HomeHowItWorks />
         <HomePartnerProof />

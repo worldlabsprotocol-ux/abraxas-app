@@ -1,5 +1,7 @@
+import { isPublicDemoClientSurface } from "@/lib/product/demoRuntime";
+
 export function DemoEnvironmentBanner() {
-  if (process.env.NEXT_PUBLIC_ABRAXAS_JUDGE_DEMO?.trim() !== "true") {
+  if (!isPublicDemoClientSurface()) {
     return null;
   }
 
@@ -8,17 +10,17 @@ export function DemoEnvironmentBanner() {
       role="status"
       data-testid="demo-environment-banner"
       style={{
-        background: "#0f172a",
-        color: "#f8fafc",
+        background: "#061018",
+        color: "#E2E8F0",
         fontFamily: "var(--font-sans), system-ui, sans-serif",
         fontSize: "0.78rem",
         letterSpacing: "0.02em",
         padding: "0.55rem 1rem",
         textAlign: "center",
-        borderBottom: "1px solid #334155",
+        borderBottom: "1px solid rgba(45, 212, 191, 0.28)",
       }}
     >
-      DEMO environment · Test data · Testnet transfer submission is disabled
+      DEMO environment · Isolated test data · Same public Abraxas product
     </div>
   );
 }

@@ -82,13 +82,13 @@ describe("homepage clarity batch 1 static guards", () => {
     }
   });
 
-  it("exposes consumer-focused public nav without Docs in primary links", () => {
+  it("exposes product navigation for Passport, partners, docs, and verification", () => {
     const nav = read("components/redesign/RedesignNav.tsx");
     const surface = read("lib/design/publicSurface.ts");
     expect(nav).toContain("PUBLIC_NAV_LINKS");
-    expect(surface).toContain('label: "For businesses"');
-    expect(surface).not.toContain('label: "Docs"');
-    expect(surface).not.toContain('href: "/verify"');
+    expect(surface).toContain('label: "Partners"');
+    expect(surface).toContain('label: "Docs"');
+    expect(surface).toContain('href: "/verification"');
     expect(nav).toContain("aria-expanded={open}");
     expect(nav).toContain('id="rd-nav-mobile-drawer"');
   });
@@ -145,7 +145,7 @@ describe("AbraxasBootScreen accessibility and persistence", () => {
 });
 
 describe("RedesignNav mobile discoverability", () => {
-  it("shows three consumer links in mobile drawer without Docs or verify", () => {
+  it("shows product links in the mobile drawer", () => {
     render(React.createElement(RedesignNav));
 
     fireEvent.click(screen.getByRole("button", { name: "Menu" }));
@@ -153,8 +153,9 @@ describe("RedesignNav mobile discoverability", () => {
 
     expect(screen.getByRole("link", { name: "Home" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Passport" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "For businesses" })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Docs" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /Verify proofs/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Partners" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Docs" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Developers" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Verify" })).toBeInTheDocument();
   });
 });

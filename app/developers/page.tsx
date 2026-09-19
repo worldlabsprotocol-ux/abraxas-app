@@ -31,6 +31,7 @@ export default function DevelopersPage() {
       <ContentCard title="Start here">
         <BulletList items={PRODUCTION_INTEGRATION_PATH.map((s, i) => `${i + 1}. ${s}`)} />
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
+          <Btn href="/docs/solana" size="sm">Solana integration →</Btn>
           <Btn href="/docs/partner-flow" size="sm">Partner Flow docs →</Btn>
           <Btn href="/docs/relying-party-verify" size="sm">External RP guide →</Btn>
           <Btn href="/design-partner" size="sm">Request API key →</Btn>
@@ -58,6 +59,8 @@ export default function DevelopersPage() {
             { label: "JSON integration guide", href: "/api/docs/relying-party" },
             { label: "Consent verification requests", href: "/docs/partner-verification-requests" },
             { label: "Record verifier", href: "/verify" },
+            { label: "Solana integration", href: "/docs/solana" },
+            { label: "Solana claim access example", href: "/examples/solana-partner" },
             { label: "Sui deployment status", href: "/api/sui/status" },
             { label: "Mainnet readiness", href: "/api/mainnet/readiness" },
             { label: "Positioning loop", href: "/api/positioning/loop" },

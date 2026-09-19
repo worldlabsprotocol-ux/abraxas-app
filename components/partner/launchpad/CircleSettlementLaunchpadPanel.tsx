@@ -154,8 +154,6 @@ export function CircleSettlementLaunchpadPanel({
   const evidence = report?.evidence;
   const unavailable = report && report.available === false;
   const pendingReview = evidence?.state === "pending";
-  const judgeDemo = process.env.NEXT_PUBLIC_ABRAXAS_JUDGE_DEMO?.trim() === "true";
-
   return (
     <ContentCard title="Arc testnet settlement">
       <p style={bodyText}>
@@ -273,8 +271,12 @@ provider_occurred_at: ${evidence.provider_occurred_at ?? "—"}`}
           </Btn>
         )}
       </div>
-      {pendingReview && evidence.intent_id && !judgeDemo && (
+      {pendingReview && evidence.intent_id && (
         <div style={{ marginTop: "0.85rem" }}>
+          <p style={bodyText}>
+            Arc testnet only. Receipt gated. Review first. An explicit confirmation is required.
+            Funds never move automatically.
+          </p>
           <label style={{ ...bodyText, display: "flex", gap: 8, alignItems: "flex-start" }}>
             <input
               type="checkbox"
@@ -291,12 +293,6 @@ provider_occurred_at: ${evidence.provider_occurred_at ?? "—"}`}
             Submit testnet transfer
           </Btn>
         </div>
-      )}
-      {pendingReview && judgeDemo && (
-        <p style={bodyText}>
-          DEMO environment displays pending testnet settlement evidence only.
-          Testnet transfer submission is disabled.
-        </p>
       )}
       {!pendingReview && (
         <p style={bodyText}>Submit testnet transfer stays unavailable until a pending intent exists.</p>

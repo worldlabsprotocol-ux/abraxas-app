@@ -49,6 +49,7 @@ describe("partnerOnboardingPositioning copy", () => {
       "signed-receipts",
       "privacy-callbacks",
       "sandbox-design-partner",
+      "solana-adapter",
     ]);
     expect(PARTNER_ONBOARDING_AVAILABLE_NOW.every((c) => c.availability === "available_now")).toBe(true);
   });
