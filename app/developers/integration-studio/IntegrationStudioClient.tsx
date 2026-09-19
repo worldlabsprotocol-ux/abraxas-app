@@ -8,7 +8,6 @@ import { ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 import {
-  INTEGRATION_STUDIO_CHECKLIST,
   INTEGRATION_STUDIO_PATHS,
   INTEGRATION_STUDIO_PROVISION,
   listStudioPackSummaries,
@@ -22,6 +21,13 @@ import {
   STARTER_KIT_PLATFORM_MATRIX,
   type StarterKitPlatform,
 } from "@/lib/partner/starterKit/contract";
+import {
+  PARTNER_ACTIVATION_CREATE_CTA,
+  PARTNER_ACTIVATION_PRODUCTION,
+  PARTNER_ACTIVATION_RESUME_CTA,
+  buildPartnerActivationChecklist,
+  launchpadResumeHref,
+} from "@/lib/partner/activationPath";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -77,10 +83,12 @@ export function IntegrationStudioClient() {
   const [copiedPath, setCopiedPath] = useState("");
   const [pathInstructions, setPathInstructions] = useState<Record<string, { title: string; docs: string; code: string }> | null>(null);
   const [hostedDocs, setHostedDocs] = useState<{ hosted_link?: string; sandbox_testing?: string[] } | null>(null);
+  const [resumeApp, setResumeApp] = useState<{ id: string; application_name: string; public_slug: string } | null>(null);
 
   const contract = useMemo(() => studioPackContract(packId), [packId]);
   const snippet = useMemo(() => studioSnippetForPath(pathId), [pathId]);
   const createdSnippet = pathInstructions?.[pathId] ?? snippet;
+  const activationChecklist = useMemo(() => buildPartnerActivationChecklist(optionalCaps), [optionalCaps]);
 
   function toggleCapability(id: string) {
     setOptionalCaps((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
@@ -157,9 +165,21 @@ export function IntegrationStudioClient() {
       try {
         const res = await fetch("/api/launchpad/auth/session", { credentials: "include" });
         const data = await res.json() as { authenticated?: boolean };
-        setSignedIn(Boolean(data.authenticated));
+        const authenticated = Boolean(data.authenticated);
+        setSignedIn(authenticated);
+        if (!authenticated) {
+          setResumeApp(null);
+          return;
+        }
+        const workspaceRes = await fetch("/api/launchpad/applications", { credentials: "include" });
+        const workspace = await workspaceRes.json() as {
+          workspace?: { applications?: Array<{ id: string; application_name: string; public_slug: string }> };
+        };
+        const first = workspace.workspace?.applications?.[0];
+        setResumeApp(first ?? null);
       } catch {
         setSignedIn(false);
+        setResumeApp(null);
       }
     })();
   }, []);
@@ -212,7 +232,16 @@ export function IntegrationStudioClient() {
 
   return (
     <>
-      <ContentCard title="1. Choose a policy pack">
+      {resumeApp && (
+        <ContentCard title={PARTNER_ACTIVATION_RESUME_CTA}>
+          <p style={{ ...body, marginBottom: "0.75rem" }}>
+            Signed in. Resume {resumeApp.application_name} ({resumeApp.public_slug}) on Partner Launchpad. Readiness stays on existing Launchpad evidence.
+          </p>
+          <Btn href={launchpadResumeHref(resumeApp.id)} size="sm">{PARTNER_ACTIVATION_RESUME_CTA} →</Btn>
+        </ContentCard>
+      )}
+
+      <ContentCard title="Discover · Choose a policy pack">
         <p style={{ ...body, marginBottom: "0.75rem" }}>
           These are the same packs Partner Launchpad uses. Identity or liveness is never the default path.
         </p>
@@ -241,7 +270,7 @@ export function IntegrationStudioClient() {
       </ContentCard>
 
       {contract && (
-        <ContentCard title="2. Partner contract">
+        <ContentCard title="Discover · Narrow result">
           <dl style={{ display: "grid", gap: "0.55rem", margin: 0 }}>
             {[
               ["Requirement", contract.requirement],
@@ -273,7 +302,7 @@ export function IntegrationStudioClient() {
         </ContentCard>
       )}
 
-      <ContentCard title="3. Choose an integration path">
+      <ContentCard title="Discover · Choose an integration path">
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem" }}>
           {INTEGRATION_STUDIO_PATHS.map((id) => (
             <button
@@ -298,7 +327,7 @@ export function IntegrationStudioClient() {
         </div>
       </ContentCard>
 
-      <ContentCard title={`4. ${createdSnippet.title}`}>
+      <ContentCard title={`Discover · ${createdSnippet.title}`}>
         <p style={{ ...body, marginBottom: "0.65rem" }}>
           Existing implementation. Docs:{" "}
           <Link href={createdSnippet.docs} style={{ color: "var(--accent)", fontWeight: 700 }}>{createdSnippet.docs}</Link>
@@ -347,7 +376,7 @@ export function IntegrationStudioClient() {
         </pre>
       </ContentCard>
 
-      <ContentCard title="5. Generate starter kit">
+      <ContentCard title="Integrate · Generate starter kit">
         <p style={{ ...body, marginBottom: "0.75rem" }}>
           Universal HTTPS is the canonical starter. A static or browser-only site cannot verify receipts or hold partner secrets.
         </p>
@@ -440,11 +469,11 @@ export function IntegrationStudioClient() {
         )}
       </ContentCard>
 
-      <ContentCard title="6. Create a sandbox integration">
+      <ContentCard title={`Create · ${PARTNER_ACTIVATION_CREATE_CTA}`}>
         <p style={{ ...body, marginBottom: "0.75rem" }}>{INTEGRATION_STUDIO_PROVISION.notice}</p>
         {!signedIn && (
           <p style={{ ...body, marginBottom: "0.85rem" }}>
-            Sign in on Partner Launchpad first. Studio then creates a sandbox app on your tenant.
+            Explore the catalog without a session. Sign in on Partner Launchpad to create an isolated sandbox app on your tenant. The raw sandbox key is shown once.
           </p>
         )}
         {signedIn && (
@@ -502,7 +531,7 @@ export function IntegrationStudioClient() {
               loading={submitting}
               onClick={() => void createSandbox()}
             >
-              {INTEGRATION_STUDIO_PROVISION.create_sandbox_cta}
+              {PARTNER_ACTIVATION_CREATE_CTA}
             </Btn>
           </form>
         )}
@@ -522,21 +551,37 @@ export function IntegrationStudioClient() {
           {!signedIn && (
             <Btn href={INTEGRATION_STUDIO_PROVISION.launchpad_href} size="sm">Sign in on Partner Launchpad →</Btn>
           )}
-          <Btn href={INTEGRATION_STUDIO_PROVISION.launchpad_href} variant="secondary" size="sm">
+          {created && (
+            <Btn href={launchpadResumeHref(created.application_id)} size="sm">
+              {PARTNER_ACTIVATION_RESUME_CTA} →
+            </Btn>
+          )}
+          <Btn href={created ? launchpadResumeHref(created.application_id) : INTEGRATION_STUDIO_PROVISION.launchpad_href} variant="secondary" size="sm">
             {INTEGRATION_STUDIO_PROVISION.production_upgrade_cta} →
           </Btn>
           <Btn href={INTEGRATION_STUDIO_PROVISION.partner_portal_href} variant="ghost" size="sm">Partner portal →</Btn>
         </div>
       </ContentCard>
 
-      <ContentCard title="7. Integration checklist">
-        <ol style={{ ...body, paddingLeft: "1.15rem", display: "grid", gap: "0.45rem" }}>
-          {INTEGRATION_STUDIO_CHECKLIST.map((item) => (
+      <ContentCard title="Test · Sandbox checklist">
+        <ol style={{ ...body, paddingLeft: "1.15rem", display: "grid", gap: "0.55rem" }}>
+          {activationChecklist.map((item) => (
             <li key={item.id}>
-              <strong>{item.title}.</strong> {item.body}
+              <strong>{item.title}.</strong> {item.body}{" "}
+              <Link href={item.href} style={{ color: "var(--accent)", fontWeight: 700 }}>{item.href}</Link>
+              {item.kit_file ? ` · kit file ${item.kit_file}` : ""}
             </li>
           ))}
         </ol>
+      </ContentCard>
+
+      <ContentCard title="Upgrade · Production review">
+        <p style={body}>{PARTNER_ACTIVATION_PRODUCTION.notice}</p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
+          <Btn href={created ? launchpadResumeHref(created.application_id) : INTEGRATION_STUDIO_PROVISION.launchpad_href} size="sm">
+            Open Launchpad readiness →
+          </Btn>
+        </div>
       </ContentCard>
     </>
   );

@@ -23,7 +23,7 @@ export default function DevelopersPage() {
     <RedesignPage accent="developer" maxWidth={880}>
       <PageHeader
         eyebrow="Developers"
-        title="Build on Abraxas verification"
+        title="Create a sandbox integration"
         subtitle={`${PARTNER_ONBOARDING_HEADLINE} Partner Flow, Passport, and signed receipts are available in beta. Consented passwordless partner accounts and optional email/newsletter scopes are in development, not live.`}
       />
 

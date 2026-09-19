@@ -8,6 +8,7 @@ import {
 } from "@/lib/partner/launchpad/policyPacks";
 import { planEligibilityMethods } from "@/lib/partner/eligibilityMethods";
 import { starterKitPublicCatalog } from "@/lib/partner/starterKit/contract";
+import { partnerActivationPublicView } from "@/lib/partner/activationPath";
 import {
   INTEGRATION_STUDIO_CHECKLIST,
   INTEGRATION_STUDIO_GOOGLE,
@@ -119,5 +120,6 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
       calls_circle: false,
       notice: INTEGRATION_STUDIO_PAYMENT_NOTICE,
     },
+    activation: partnerActivationPublicView(),
   };
 }

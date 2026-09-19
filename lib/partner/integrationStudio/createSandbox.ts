@@ -20,6 +20,7 @@ import {
   issuePartnerConsoleSessionToken,
 } from "@/lib/partner/launchpad/partnerConsoleSession";
 import { studioSnippetForApplication } from "@/lib/partner/integrationStudio/snippets";
+import { launchpadResumeHref, partnerActivationPublicView } from "@/lib/partner/activationPath";
 import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
 
 export const STUDIO_CREATE_ROUTE = "/api/developers/integration-studio" as const;
@@ -204,7 +205,9 @@ export async function createStudioSandbox(req: NextRequest) {
     docs,
     path_instructions,
     production_upgrade: "Upgrade to Production after readiness review",
-    production_href: "/developers/launchpad",
+    production_href: launchpadResumeHref(application.application_id),
+    activation: partnerActivationPublicView(),
+    resume_href: launchpadResumeHref(application.application_id),
   });
 
   if (apiKey && result.result.api_key_id) {
