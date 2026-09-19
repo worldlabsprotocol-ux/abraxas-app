@@ -69,6 +69,14 @@ describe("PartnerContinueClient partner redirect trust", () => {
       if (url.includes("/api/age-assurance/providers")) {
         return new Response(JSON.stringify({ providers: [], existing_proof: { eligible_for_reuse: false } }), { status: 200 });
       }
+      if (url.includes("/api/v1/partner-verify/method-qualification")) {
+        return new Response(JSON.stringify({
+          ok: true,
+          method_selected: false,
+          method_qualified: false,
+          issuedReceipt: false,
+        }), { status: 200 });
+      }
       if (url.includes("/api/v1/partner-verify/continue-binding")) {
         return new Response(JSON.stringify({
           ok: true,

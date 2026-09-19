@@ -26,6 +26,8 @@ export async function evaluatePolicyForSubject(input: {
   partnerId: string;
   /** When set, evaluate against the pinned historical version (P1-1 reproducibility). */
   policyVersion?: number;
+  /** Server-derived claims only. Never pass client, query, or cookie-decoded values. */
+  additionalClaims?: CredentialClaimRecord[];
 }): Promise<SubjectPolicyEvaluation> {
   const policy = input.policyVersion != null
     ? await getPartnerPolicyAtVersion(input.policyId, input.policyVersion)
@@ -37,7 +39,7 @@ export async function evaluatePolicyForSubject(input: {
   const claims = await getActiveClaims(subject);
 
   const effectiveRules = resolveEffectivePolicyRules(policy);
-  let mergedClaims = [...claims];
+  let mergedClaims = [...claims, ...(input.additionalClaims ?? [])];
 
   if (isBrowseAccessPolicy(effectiveRules)) {
     const rows = await getActiveSelfAttestations({

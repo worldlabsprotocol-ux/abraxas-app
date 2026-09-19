@@ -17,7 +17,8 @@ describe("partner consent visibility", () => {
     expect(shouldShowPartnerConsent({
       ...readyForConsent,
       identityComplete: false,
-      evidenceComplete: true,
+      evidenceComplete: false,
+      methodQualified: true,
       qualifyingMethodSucceeded: true,
     })).toBe(true);
   });
@@ -25,6 +26,7 @@ describe("partner consent visibility", () => {
   it("does not show final approval after sign-in or method selection alone", () => {
     expect(shouldShowPartnerConsent({
       ...readyForConsent,
+      methodQualified: false,
       qualifyingMethodSucceeded: false,
     })).toBe(false);
     expect(shouldShowPartnerConsent({
@@ -32,6 +34,8 @@ describe("partner consent visibility", () => {
       consentDismissed: false,
       identityComplete: true,
       evidenceComplete: true,
+      methodSelected: true,
+      methodQualified: false,
       underReview: false,
       handoffReady: false,
     })).toBe(false);
@@ -42,6 +46,8 @@ describe("partner consent visibility", () => {
       ...readyForConsent,
       identityComplete: false,
       evidenceComplete: false,
+      methodQualified: false,
+      qualifyingMethodSucceeded: false,
     })).toBe(false);
   });
 
