@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
 
   const leaks = studioPayloadLeaks(body);
   if (leaks.length > 0) {
-    return NextResponse.json({ error: "redacted" }, { status: 500 });
+    return NextResponse.json({ error: "redacted" }, { status: 503 });
   }
 
   return NextResponse.json(body, { headers: { "Cache-Control": "no-store" } });

@@ -40,9 +40,27 @@ export async function GET(
     return NextResponse.json({ error: "Receipt not found" }, { status: 404 });
   }
 
-  assertNoPiiInPublicView(view);
-  if (!publicReceiptLiveTrustHasNoPii(view)) {
-    throw new Error("Public receipt live trust view must not contain PII");
+  try {
+    assertNoPiiInPublicView(view);
+    if (!publicReceiptLiveTrustHasNoPii(view)) {
+      recordPartnerFlowRequestOutcome({
+        request: req,
+        endpoint: ENDPOINT,
+        method: "GET",
+        started,
+        httpStatus: 503,
+      });
+      return NextResponse.json({ error: "unavailable" }, { status: 503 });
+    }
+  } catch {
+    recordPartnerFlowRequestOutcome({
+      request: req,
+      endpoint: ENDPOINT,
+      method: "GET",
+      started,
+      httpStatus: 503,
+    });
+    return NextResponse.json({ error: "unavailable" }, { status: 503 });
   }
 
   recordPartnerFlowRequestOutcome({

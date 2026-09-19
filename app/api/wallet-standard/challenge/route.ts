@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, status: issued.status, binding_ref: null, expires_at: null }, { status });
   }
   if (assertNoSensitiveWalletClientKeys(issued).length > 0) {
-    return NextResponse.json({ ok: false, status: "invalid", binding_ref: null, expires_at: null }, { status: 500 });
+    return NextResponse.json({ ok: false, status: "invalid", binding_ref: null, expires_at: null }, { status: 503 });
   }
   return NextResponse.json(issued);
 }

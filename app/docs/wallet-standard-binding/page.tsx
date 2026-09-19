@@ -64,7 +64,7 @@ export default function WalletStandardBindingDocsPage() {
       </ContentCard>
 
       <ContentCard title="Partner implementation">
-        <pre style={{ fontFamily: MONO, fontSize: "0.67rem", overflowX: "auto", padding: "1rem", borderRadius: 10, border: "1px solid var(--border)" }}>
+        <pre style={{ fontFamily: MONO, fontSize: "0.67rem", overflowX: "auto", maxWidth: "100%", boxSizing: "border-box", padding: "1rem", borderRadius: 10, border: "1px solid var(--border)" }}>
           {walletStandardBindingExample()}
         </pre>
         <p style={{ ...body, marginTop: "0.75rem" }}>
