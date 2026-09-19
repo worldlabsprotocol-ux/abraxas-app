@@ -1,10 +1,11 @@
 // FILE: app/api/v1/partner-verify/resume/activate/route.ts
-// Resume the exact pending /partner/continue flow after a browser session exists.
+// Resume /partner/continue only from the database continuation store.
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
 import { activatePartnerFlowContinuation } from "@/lib/partner/activatePartnerFlowContinuation";
-import { resolveContinuationStore } from "@/lib/partner/resolveContinuationStore";
+import { CONTINUATION_STORE_UNAVAILABLE } from "@/lib/partner/partnerFlowContinuation";
+import { createSupabaseContinuationStore } from "@/lib/partner/partnerFlowContinuationStore";
 import {
   attachPartnerContinueBindingCookie,
   clearPartnerVerifyResumeCookie,
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
   }
 
   const result = await activatePartnerFlowContinuation({
-    store: await resolveContinuationStore(payload),
+    store: createSupabaseContinuationStore(),
     jti: payload?.jti ?? null,
     suiAddress: session.session.suiAddress,
     claimedPartnerId: claimed.partnerId,
@@ -51,7 +52,9 @@ export async function POST(request: NextRequest) {
   });
 
   if (!result.ok) {
-    const status = result.code === "missing" ? 404 : 400;
+    const status = result.code === CONTINUATION_STORE_UNAVAILABLE
+      ? 503
+      : result.code === "missing" ? 404 : 400;
     const res = NextResponse.json({ ok: false, code: result.code }, { status });
     if (result.code === "replay" || result.code === "expired" || result.code === "missing") {
       clearPartnerVerifyResumeCookie(res);
@@ -61,10 +64,6 @@ export async function POST(request: NextRequest) {
 
   const binding = await signPartnerContinueBindingCookie({
     verifyRequestId: result.verifyRequestId,
-    partnerId: result.partnerId,
-    policyId: result.policyId,
-    purpose: result.purpose,
-    returnUrl: result.returnUrl,
   });
 
   const res = NextResponse.json({

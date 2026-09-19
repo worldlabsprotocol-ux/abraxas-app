@@ -13,8 +13,10 @@ vi.mock("@/lib/partner/returnUrlAllowlist", () => ({
 }));
 
 import {
+  CONTINUATION_STORE_UNAVAILABLE,
   createMemoryContinuationStore,
   createPartnerFlowContinuationRecord,
+  createUnavailableContinuationStore,
 } from "./partnerFlowContinuation";
 import { activatePartnerFlowContinuation, peekContinuationSafeView } from "./activatePartnerFlowContinuation";
 import { shouldShowPartnerConsent } from "./partnerConsentVisibility";
@@ -143,6 +145,17 @@ describe("activatePartnerFlowContinuation", () => {
       allowReturnUrl: async () => false,
     })).toEqual({ ok: false, code: "open_redirect" });
 
+    expect(mockCreateRequest).not.toHaveBeenCalled();
+  });
+
+  it("fails closed without creating a verification request when the store is unavailable", async () => {
+    const result = await activatePartnerFlowContinuation({
+      store: createUnavailableContinuationStore(),
+      jti: "jti-1",
+      suiAddress: "0xabc",
+      allowReturnUrl: async () => true,
+    });
+    expect(result).toEqual({ ok: false, code: CONTINUATION_STORE_UNAVAILABLE });
     expect(mockCreateRequest).not.toHaveBeenCalled();
   });
 

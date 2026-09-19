@@ -1,13 +1,16 @@
 "use client";
 // FILE: components/passport/PartnerVerificationResumeCta.tsx
-// Single Passport action when automatic Partner Flow resume cannot run.
+// Server-backed resume action, or a recoverable store-unavailable message.
 
 import { useEffect, useState } from "react";
 import { Btn } from "@/components/redesign/ui";
+import { CONTINUATION_STORE_UNAVAILABLE } from "@/lib/partner/partnerFlowContinuation";
+import { PARTNER_CONTINUATION_STORE_UNAVAILABLE_MESSAGE } from "@/lib/partner/partnerContinuationCopy";
 import { isRestorablePartnerContinuePath } from "@/lib/partner/partnerFlowContinuation";
 
 export function PartnerVerificationResumeCta() {
   const [visible, setVisible] = useState(false);
+  const [storeUnavailable, setStoreUnavailable] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -15,18 +18,38 @@ export function PartnerVerificationResumeCta() {
     let cancelled = false;
     void fetch("/api/v1/partner-verify/resume", { credentials: "include" })
       .then(async (res) => {
-        const data = await res.json() as { hasContinuation?: boolean; action?: string };
-        if (!cancelled && data.hasContinuation && data.action === "return_to_partner_verification") {
+        const data = await res.json() as {
+          hasContinuation?: boolean;
+          action?: string;
+          code?: string;
+        };
+        if (cancelled) return;
+        if (data.code === CONTINUATION_STORE_UNAVAILABLE || res.status === 503) {
+          setStoreUnavailable(true);
+          setVisible(false);
+          return;
+        }
+        if (data.hasContinuation && data.action === "return_to_partner_verification") {
           setVisible(true);
         }
       })
       .catch(() => {
-        // Stay hidden when peek fails closed.
+        // Peek network failure is not a store-unavailable signal.
       });
     return () => {
       cancelled = true;
     };
   }, []);
+
+  if (storeUnavailable) {
+    return (
+      <div style={{ margin: "0 0 1rem" }} role="status">
+        <p style={{ margin: 0, fontSize: "0.9rem", lineHeight: 1.5 }}>
+          {PARTNER_CONTINUATION_STORE_UNAVAILABLE_MESSAGE}
+        </p>
+      </div>
+    );
+  }
 
   if (!visible) return null;
 
@@ -46,7 +69,16 @@ export function PartnerVerificationResumeCta() {
             body: JSON.stringify({}),
           })
             .then(async (res) => {
-              const data = await res.json() as { ok?: boolean; continuePath?: string };
+              const data = await res.json() as {
+                ok?: boolean;
+                continuePath?: string;
+                code?: string;
+              };
+              if (data.code === CONTINUATION_STORE_UNAVAILABLE || res.status === 503) {
+                setVisible(false);
+                setStoreUnavailable(true);
+                return;
+              }
               if (
                 res.ok
                 && data.ok

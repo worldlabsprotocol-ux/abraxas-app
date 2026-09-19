@@ -27,6 +27,7 @@ describe("zklogin callback partner verify resume", () => {
     );
     expect(orchestration).toContain("/passport?signed_in=1");
     expect(orchestration).not.toContain("consumePartnerVerifyResumePath");
+    expect(orchestration).toContain("issuedReceipt");
   });
 
   it("Passport stranded-user copy offers a server-backed return action", () => {

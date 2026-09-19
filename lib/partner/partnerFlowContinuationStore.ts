@@ -1,10 +1,11 @@
 // FILE: lib/partner/partnerFlowContinuationStore.ts
-// Persist tenant-scoped Partner Flow continuations (no receipts, no PII).
+// Database-backed continuations only. Missing 084 objects fail closed.
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
-import type {
-  PartnerFlowContinuationRecord,
-  PartnerFlowContinuationStore,
+import {
+  ContinuationStoreUnavailableError,
+  type PartnerFlowContinuationRecord,
+  type PartnerFlowContinuationStore,
 } from "@/lib/partner/partnerFlowContinuation";
 
 function mapRow(row: Record<string, unknown>): PartnerFlowContinuationRecord {
@@ -25,10 +26,22 @@ function mapRow(row: Record<string, unknown>): PartnerFlowContinuationRecord {
   };
 }
 
+function assertStoreAvailable(error: { message?: string; code?: string } | null): void {
+  if (error) throw new ContinuationStoreUnavailableError();
+}
+
+function adminClient() {
+  try {
+    return requireSupabaseAdmin();
+  } catch {
+    throw new ContinuationStoreUnavailableError();
+  }
+}
+
 export function createSupabaseContinuationStore(): PartnerFlowContinuationStore {
   return {
     async save(record) {
-      const sb = requireSupabaseAdmin();
+      const sb = adminClient();
       const { error } = await sb.from("partner_flow_continuations").upsert({
         jti: record.jti,
         partner_id: record.partnerId,
@@ -44,27 +57,38 @@ export function createSupabaseContinuationStore(): PartnerFlowContinuationStore 
         expires_at: record.expiresAt,
         created_at: record.createdAt,
       });
-      if (error) throw new Error("continuation_store_unavailable");
+      assertStoreAvailable(error);
     },
     async peek(jti) {
-      const sb = requireSupabaseAdmin();
+      const sb = adminClient();
       const { data, error } = await sb
         .from("partner_flow_continuations")
         .select("*")
         .eq("jti", jti)
         .maybeSingle();
-      if (error || !data) return null;
-      return mapRow(data as Record<string, unknown>);
+      assertStoreAvailable(error);
+      return data ? mapRow(data as Record<string, unknown>) : null;
+    },
+    async peekByVerifyRequestId(verifyRequestId) {
+      const sb = adminClient();
+      const { data, error } = await sb
+        .from("partner_flow_continuations")
+        .select("*")
+        .eq("verify_request_id", verifyRequestId)
+        .maybeSingle();
+      assertStoreAvailable(error);
+      return data ? mapRow(data as Record<string, unknown>) : null;
     },
     async consume(jti) {
-      const sb = requireSupabaseAdmin();
+      const sb = adminClient();
       const { data: existing, error: readError } = await sb
         .from("partner_flow_continuations")
         .select("*")
         .eq("jti", jti)
         .is("consumed_at", null)
         .maybeSingle();
-      if (readError || !existing) return null;
+      assertStoreAvailable(readError);
+      if (!existing) return null;
 
       const consumedAt = new Date().toISOString();
       const { data: updated, error: writeError } = await sb
@@ -74,8 +98,17 @@ export function createSupabaseContinuationStore(): PartnerFlowContinuationStore 
         .is("consumed_at", null)
         .select("*")
         .maybeSingle();
-      if (writeError || !updated) return null;
+      assertStoreAvailable(writeError);
+      if (!updated) return null;
       return mapRow(existing as Record<string, unknown>);
+    },
+    async attachVerifyRequestId(jti, verifyRequestId) {
+      const sb = adminClient();
+      const { error } = await sb
+        .from("partner_flow_continuations")
+        .update({ verify_request_id: verifyRequestId })
+        .eq("jti", jti);
+      assertStoreAvailable(error);
     },
   };
 }

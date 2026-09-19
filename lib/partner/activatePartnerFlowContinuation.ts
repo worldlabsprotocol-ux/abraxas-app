@@ -3,6 +3,8 @@
 
 import { isAllowedPartnerReturnUrl } from "@/lib/partner/returnUrlAllowlist";
 import {
+  CONTINUATION_STORE_UNAVAILABLE,
+  ContinuationStoreUnavailableError,
   assertContinuationMatchesStored,
   buildPartnerContinuePath,
   continuationIsUsable,
@@ -37,7 +39,15 @@ export async function activatePartnerFlowContinuation(input: {
 }): Promise<ActivateContinuationResult> {
   if (!input.jti) return { ok: false, code: "missing" };
 
-  const peeked = await input.store.peek(input.jti);
+  let peeked;
+  try {
+    peeked = await input.store.peek(input.jti);
+  } catch (error) {
+    if (error instanceof ContinuationStoreUnavailableError) {
+      return { ok: false, code: CONTINUATION_STORE_UNAVAILABLE };
+    }
+    throw error;
+  }
   if (!peeked) return { ok: false, code: "missing" };
   if (peeked.consumedAt) return { ok: false, code: "replay" };
   if (!continuationIsUsable(peeked)) return { ok: false, code: "expired" };
@@ -59,7 +69,15 @@ export async function activatePartnerFlowContinuation(input: {
     return { ok: false, code: "open_redirect" };
   }
 
-  const consumed = await input.store.consume(input.jti);
+  let consumed;
+  try {
+    consumed = await input.store.consume(input.jti);
+  } catch (error) {
+    if (error instanceof ContinuationStoreUnavailableError) {
+      return { ok: false, code: CONTINUATION_STORE_UNAVAILABLE };
+    }
+    throw error;
+  }
   if (!consumed) return { ok: false, code: "replay" };
 
   try {
@@ -71,6 +89,7 @@ export async function activatePartnerFlowContinuation(input: {
       returnUrl: sanitized.returnUrl,
       expectedPolicyVersion: sanitized.policyVersion,
     });
+    await input.store.attachVerifyRequestId(input.jti, request.request_id);
 
     const continuePath = buildPartnerContinuePath({
       verificationRequestId: request.request_id,
@@ -91,6 +110,9 @@ export async function activatePartnerFlowContinuation(input: {
       issuedReceipt: false,
     };
   } catch (error) {
+    if (error instanceof ContinuationStoreUnavailableError) {
+      return { ok: false, code: CONTINUATION_STORE_UNAVAILABLE };
+    }
     const message = error instanceof Error ? error.message : "";
     if (message.includes("policy_version") || message.includes("Policy")) {
       return { ok: false, code: "altered_version" };

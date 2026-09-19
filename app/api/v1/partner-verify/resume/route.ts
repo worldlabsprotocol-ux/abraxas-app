@@ -1,5 +1,5 @@
 // FILE: app/api/v1/partner-verify/resume/route.ts
-// Persist a tenant-scoped continuation. GET peeks only — never consumes, never returns a raw URL.
+// Persist a tenant-scoped continuation. Database store is mandatory.
 
 import { NextRequest, NextResponse } from "next/server";
 import { normalizePartnerVerifyInput } from "@/lib/partner/normalizePartnerVerifyInput";
@@ -14,11 +14,22 @@ import {
   signPartnerVerifyResumeCookie,
   verifyPartnerVerifyResumeCookie,
 } from "@/lib/partner/partnerVerifyResumeCookie";
-import { createPartnerFlowContinuationRecord, continuationIsUsable } from "@/lib/partner/partnerFlowContinuation";
+import {
+  CONTINUATION_STORE_UNAVAILABLE,
+  ContinuationStoreUnavailableError,
+  createPartnerFlowContinuationRecord,
+} from "@/lib/partner/partnerFlowContinuation";
 import { createSupabaseContinuationStore } from "@/lib/partner/partnerFlowContinuationStore";
 import { peekContinuationSafeView } from "@/lib/partner/activatePartnerFlowContinuation";
 
 export const dynamic = "force-dynamic";
+
+function storeUnavailableResponse() {
+  return NextResponse.json(
+    { ok: false, code: CONTINUATION_STORE_UNAVAILABLE },
+    { status: 503 },
+  );
+}
 
 function sanitizeBody(body: Record<string, unknown>): PartnerVerifyResumeParams | null {
   const normalized = normalizePartnerVerifyInput({
@@ -70,11 +81,14 @@ export async function POST(request: NextRequest) {
 
   try {
     await createSupabaseContinuationStore().save(record);
-  } catch {
-    // Cookie remains the OAuth-surviving pointer when the table is not yet applied.
+  } catch (error) {
+    if (error instanceof ContinuationStoreUnavailableError) {
+      return storeUnavailableResponse();
+    }
+    return storeUnavailableResponse();
   }
 
-  const token = await signPartnerVerifyResumeCookie({ ...resume, jti: record.jti });
+  const token = await signPartnerVerifyResumeCookie({ jti: record.jti });
   if (!token) {
     return NextResponse.json({ error: "Resume cookie unavailable" }, { status: 503 });
   }
@@ -84,9 +98,6 @@ export async function POST(request: NextRequest) {
   return res;
 }
 
-/**
- * GET — peek only. Does not consume. Does not return a path or return_url.
- */
 export async function GET(request: NextRequest) {
   const token = request.cookies.get(PARTNER_VERIFY_RESUME_COOKIE)?.value;
   if (!token) {
@@ -102,22 +113,11 @@ export async function GET(request: NextRequest) {
 
   try {
     const stored = await createSupabaseContinuationStore().peek(payload.jti);
-    if (stored) {
-      return NextResponse.json({ ok: true, ...peekContinuationSafeView(stored) });
+    return NextResponse.json({ ok: true, ...peekContinuationSafeView(stored) });
+  } catch (error) {
+    if (error instanceof ContinuationStoreUnavailableError) {
+      return storeUnavailableResponse();
     }
-  } catch {
-    // Fall through to signed cookie record.
+    return storeUnavailableResponse();
   }
-
-  const cookieRecord = {
-    ...payload,
-    jti: payload.jti,
-    createdAt: new Date().toISOString(),
-    expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
-    consumedAt: null,
-  };
-  return NextResponse.json({
-    ok: true,
-    ...peekContinuationSafeView(continuationIsUsable(cookieRecord) ? cookieRecord : null),
-  });
 }

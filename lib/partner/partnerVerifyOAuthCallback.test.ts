@@ -102,6 +102,18 @@ describe("completePartnerVerifyOAuthCallback", () => {
     expect(result.redirectPath).toBe("/passport?signed_in=1");
   });
 
+  it("falls back to Passport when the continuation store is unavailable and never issues a receipt", async () => {
+    global.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      ok: false,
+      code: "continuation_store_unavailable",
+    }), { status: 503 })) as typeof fetch;
+
+    const result = await completePartnerVerifyOAuthCallback("#id_token=test");
+    expect(result.redirectPath).toBe("/passport?signed_in=1");
+    expect(result.redirectPath).not.toContain("return");
+    expect(result.redirectPath).not.toContain("receipt");
+  });
+
   it("never treats callback query parameters as resume state", async () => {
     global.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({
       ok: true,

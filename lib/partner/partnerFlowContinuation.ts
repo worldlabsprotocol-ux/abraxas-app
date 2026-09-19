@@ -43,10 +43,23 @@ export type PartnerFlowContinuationRecord = PartnerFlowContinuationInput & {
   verifyRequestId?: string | null;
 };
 
+export const CONTINUATION_STORE_UNAVAILABLE = "continuation_store_unavailable" as const;
+
+export class ContinuationStoreUnavailableError extends Error {
+  readonly code = CONTINUATION_STORE_UNAVAILABLE;
+
+  constructor() {
+    super(CONTINUATION_STORE_UNAVAILABLE);
+    this.name = "ContinuationStoreUnavailableError";
+  }
+}
+
 export type PartnerFlowContinuationStore = {
   save(record: PartnerFlowContinuationRecord): Promise<void>;
   peek(jti: string): Promise<PartnerFlowContinuationRecord | null>;
+  peekByVerifyRequestId(verifyRequestId: string): Promise<PartnerFlowContinuationRecord | null>;
   consume(jti: string): Promise<PartnerFlowContinuationRecord | null>;
+  attachVerifyRequestId(jti: string, verifyRequestId: string): Promise<void>;
 };
 
 export function isSafePartnerContinuationReturnUrl(value: string): boolean {
@@ -226,6 +239,9 @@ export function createMemoryContinuationStore(
     async peek(jti) {
       return rows.get(jti) ?? null;
     },
+    async peekByVerifyRequestId(verifyRequestId) {
+      return [...rows.values()].find((row) => row.verifyRequestId === verifyRequestId) ?? null;
+    },
     async consume(jti) {
       const existing = rows.get(jti);
       if (!existing || existing.consumedAt) return null;
@@ -233,5 +249,23 @@ export function createMemoryContinuationStore(
       rows.set(jti, consumed);
       return existing;
     },
+    async attachVerifyRequestId(jti, verifyRequestId) {
+      const existing = rows.get(jti);
+      if (!existing) return;
+      rows.set(jti, { ...existing, verifyRequestId });
+    },
+  };
+}
+
+export function createUnavailableContinuationStore(): PartnerFlowContinuationStore {
+  const fail = async () => {
+    throw new ContinuationStoreUnavailableError();
+  };
+  return {
+    save: fail,
+    peek: fail,
+    peekByVerifyRequestId: fail,
+    consume: fail,
+    attachVerifyRequestId: fail,
   };
 }

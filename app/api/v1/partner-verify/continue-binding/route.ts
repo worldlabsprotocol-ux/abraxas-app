@@ -1,8 +1,13 @@
 // FILE: app/api/v1/partner-verify/continue-binding/route.ts
-// Tenant-scoped return binding for /partner/continue — never trusts URL callback params.
+// Return binding comes from the database continuation, not cookie fields.
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
+import {
+  CONTINUATION_STORE_UNAVAILABLE,
+  ContinuationStoreUnavailableError,
+} from "@/lib/partner/partnerFlowContinuation";
+import { createSupabaseContinuationStore } from "@/lib/partner/partnerFlowContinuationStore";
 import {
   clearPartnerContinueBindingCookie,
   PARTNER_CONTINUE_BINDING_COOKIE,
@@ -23,24 +28,31 @@ export async function GET(request: NextRequest) {
   }
 
   const token = request.cookies.get(PARTNER_CONTINUE_BINDING_COOKIE)?.value;
-  if (!token) {
-    return NextResponse.json({ ok: false, code: "missing" }, { status: 404 });
-  }
-
-  const payload = await verifyPartnerContinueBindingCookie(token);
-  if (!payload || payload.verifyRequestId !== verifyRequest) {
+  const pointer = token ? await verifyPartnerContinueBindingCookie(token) : null;
+  if (!pointer || pointer.verifyRequestId !== verifyRequest) {
     const res = NextResponse.json({ ok: false, code: "invalid" }, { status: 400 });
-    if (payload && payload.verifyRequestId !== verifyRequest) {
+    if (pointer && pointer.verifyRequestId !== verifyRequest) {
       clearPartnerContinueBindingCookie(res);
     }
     return res;
   }
 
-  return NextResponse.json({
-    ok: true,
-    partner_id: payload.partnerId,
-    policy_id: payload.policyId,
-    purpose: payload.purpose ?? null,
-    return_url: payload.returnUrl,
-  });
+  try {
+    const stored = await createSupabaseContinuationStore().peekByVerifyRequestId(verifyRequest);
+    if (!stored) {
+      return NextResponse.json({ ok: false, code: "missing" }, { status: 404 });
+    }
+    return NextResponse.json({
+      ok: true,
+      partner_id: stored.partnerId,
+      policy_id: stored.policyId,
+      purpose: stored.purpose ?? null,
+      return_url: stored.returnUrl,
+    });
+  } catch (error) {
+    if (error instanceof ContinuationStoreUnavailableError) {
+      return NextResponse.json({ ok: false, code: CONTINUATION_STORE_UNAVAILABLE }, { status: 503 });
+    }
+    return NextResponse.json({ ok: false, code: CONTINUATION_STORE_UNAVAILABLE }, { status: 503 });
+  }
 }
