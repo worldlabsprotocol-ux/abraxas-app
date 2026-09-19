@@ -41,15 +41,15 @@ export async function signPartnerVerifyResumeCookie(
   if (!isRestorablePartnerVerifyPath(path)) return null;
 
   return new SignJWT({
-    jti: payload.jti ?? null,
+    jti: payload.jti,
     partnerId: payload.partnerId,
     policyId: payload.policyId,
     returnUrl: payload.returnUrl,
-    permission: payload.permission ?? null,
-    permissionVersion: payload.permissionVersion ?? null,
-    purpose: payload.purpose ?? null,
-    appSlug: payload.appSlug ?? null,
-    policyVersion: payload.policyVersion ?? null,
+    permission: payload.permission,
+    permissionVersion: payload.permissionVersion,
+    purpose: payload.purpose,
+    appSlug: payload.appSlug,
+    policyVersion: payload.policyVersion,
   })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -120,7 +120,7 @@ export async function signPartnerContinueBindingCookie(
     verifyRequestId: payload.verifyRequestId,
     partnerId: payload.partnerId,
     policyId: payload.policyId,
-    purpose: payload.purpose ?? null,
+    purpose: payload.purpose,
     returnUrl: payload.returnUrl,
   })
     .setProtectedHeader({ alg: "HS256" })
