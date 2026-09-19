@@ -112,14 +112,14 @@ CLI must not target Production:
 # Do not vercel deploy --prod. Do not change the demo branch matcher.
 ```
 
-## Judge-visible routes
+## Public product routes
 
 Banner: “DEMO environment · Test data · Testnet transfer submission is disabled”
 
 | Path | Purpose |
 |------|---------|
 | `/` | Homepage |
-| `/judge-demo` | Redirects to `/` when the DEMO contract is enabled; 404 on Production |
+| `/judge-demo` | 404 on both origins. Not a product entry. |
 | `/passport` | Passport |
 | `/good-trouble` | Good Trouble |
 | `/docs/partner-flow` | Partner Flow docs |
@@ -138,7 +138,7 @@ Production never requires Circle migrations `089` or `090`. Circle stays blocked
 Run **unauthenticated** against `https://demo.abraxasworld.xyz` (no Vercel bypass cookie):
 
 1. `GET /` — 200, sandbox banner visible, not a Vercel SSO login
-2. `GET /judge-demo` — lists routes
+2. `GET /judge-demo` — 404 on both origins
 3. `GET /passport`, `/good-trouble`, `/docs/partner-flow`, `/docs/policy-packs`, `/docs/integration-kit`, `/developers/launchpad` — 200 HTML
 4. `GET /api/judge-demo/environment` — 200 JSON: `ok=true`, `origin=https://demo.abraxasworld.xyz`, `oauth_callback=https://demo.abraxasworld.xyz/auth/zklogin/callback`, `supabase_project_ref=ocntwbxarpjeixdnzide`, `supabase_bound_to_demo=true`, `runtime_env=demo`, `runtime_marker_non_production=true`, `circle_submit_allowed=false`, `engineering_preview_only=false`, `sso_not_required_on_custom_domain=true`
 5. JSON must not contain JWTs, `service_role`, wallet ids, or API keys
