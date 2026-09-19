@@ -1,4 +1,12 @@
+-- FILE: supabase/migrations/091_partner_flow_continuations.sql
 -- Tenant-scoped Partner Flow OAuth continuations. No receipts or PII.
+--
+-- Numbered 091 because 084_partner_launchpad_foundation.sql is already the
+-- Launchpad foundation migration on main.
+-- Idempotent: DEMO ocntwbxarpjeixdnzide already has this table. Safe to re-run.
+-- Production MAIN bztwutzprwsdrtqdpymf needs this table before the Partner Flow
+-- OAuth resume app ships. This is not a Circle migration.
+-- Do not apply 089 or 090 to Production.
 
 create table if not exists public.partner_flow_continuations (
   jti text primary key,

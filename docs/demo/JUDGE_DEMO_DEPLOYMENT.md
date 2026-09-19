@@ -1,35 +1,39 @@
 # Judge Demo deployment contract
 
-Public judge visibility is a **release requirement**. Judges open one stable URL:
+Public judge visibility is a **release requirement**. `main` is the only release source of truth.
 
-`https://demo.abraxasworld.xyz`
-
-That host must show current **approved** Abraxas capabilities backed only by **DEMO** infrastructure (`ocntwbxarpjeixdnzide`). Git Preview aliases (`*.vercel.app` behind Vercel SSO) remain **engineering-only** and are never the only way to view a feature.
+| Host | Role |
+|------|------|
+| `https://abraxasworld.xyz` | Public **product**. Production data and Production secrets only. |
+| `https://demo.abraxasworld.xyz` | Public **judge / DEMO** surface. DEMO Supabase `ocntwbxarpjeixdnzide` only. |
+| Git Preview `*.vercel.app` | **Engineering-only**. Vercel SSO. Never the judge URL. Never the only way to view a feature. |
 
 This document is the repository-side contract. It does **not** deploy, change Vercel, change Google OAuth, apply SQL, or touch MAIN/Production by itself.
 
 ## Current Vercel facts (audit)
 
-| Item | Observed |
-|------|----------|
+| Item | Observed / required |
+|------|---------------------|
 | Project | `abraxas-app` (`prj_89NiVgA4I28AJTuapWlzuKJ4KgQ0`) |
 | Custom environment | slug `demo`, id `env_OILNDL1XzhouauSEnyVNGapIKsY2`, type `preview` |
 | Description | Isolated presenter demo. No production data or credentials. |
-| Branch matcher | **equals `main`** (must be changed to the approved Judge Demo git branch **or** a deployment of that branch must be assigned to this custom environment — do **not** merge to `main` solely to publish a judge surface) |
-| Custom domain | `demo.abraxasworld.xyz` (verified) |
+| Branch matcher | **equals `main`**. Leave it on `main`. Never retarget `demo` to a feature branch. |
+| Custom domain | `demo.abraxasworld.xyz` (verified), attached to environment `demo` only |
 | Extra alias | `abraxas-app-env-demo-worldlabsprotocol-uxs-projects.vercel.app` (engineering; not the judge URL) |
-| SSO / Deployment Protection | `ssoProtection.enabled=true`, `deploymentType=all_except_custom_domains` — custom domain is already excluded from Vercel SSO |
-| Production domain | `abraxasworld.xyz` (do not attach Judge Demo here) |
+| SSO / Deployment Protection | `ssoProtection.enabled=true`, `deploymentType=all_except_custom_domains` — custom domain is excluded from Vercel SSO |
+| Production domain | `abraxasworld.xyz` (public product; never attach Judge Demo flags here) |
 
 Existing custom-environment keys (values not decrypted in this audit): `NEXT_PUBLIC_APP_URL`, `ABRAXAS_ISSUER_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ABRAXAS_SIGNING_KEY`, `ABRAXAS_PUBLIC_KEY`, `ABRAXAS_SIGNING_KEY_ID`, `ABRAXAS_BROWSER_SESSION_SECRET`, `ADMIN_PIN`, `PARTNER_SANDBOX_DEMO_ENABLED`, `PARTNER_SANDBOX_DEMO_SUBJECT_ID`.
 
-**Missing for Judge Demo runtime** until an operator sets them on custom environment `demo` only:
+**Missing for Judge Demo runtime** until an operator sets them on custom environment `demo` only, **after** the approved `main` deploy:
 
 - `ABRAXAS_JUDGE_DEMO=true`
 - `NEXT_PUBLIC_ABRAXAS_JUDGE_DEMO=true`
 - `ABRAXAS_RUNTIME_ENV=demo`
 - Google zkLogin client ids (if Passport sign-in is in the judge script)
 - Optional Circle **display** vars (`CIRCLE_ARC_TESTNET_ENABLED=true` plus DEMO testnet credentials). Submit remains blocked in Judge Demo even if credentials exist.
+
+Never set Judge Demo flags, Circle testnet secrets, or DEMO keys on Production.
 
 ## Fail-closed runtime
 
@@ -48,7 +52,7 @@ Mismatch fails closed (process throw on boot; identity `503`; zkLogin register `
 
 ## One Google OAuth URI
 
-Register **exactly** this Authorized redirect URI in the Google Cloud OAuth client used by DEMO:
+Register **exactly** this Authorized redirect URI in the **DEMO** Google Cloud OAuth client:
 
 ```
 https://demo.abraxasworld.xyz/auth/zklogin/callback
@@ -86,32 +90,27 @@ Set **only** on environment `demo` (`env_OILNDL1XzhouauSEnyVNGapIKsY2`). Never c
 | `CIRCLE_ARC_TESTNET_ENABLED` | `true` only if displaying settlement evidence; submit still blocked |
 | `CIRCLE_API_KEY` | Testnet only; never `LIVE_API_KEY:` |
 
-Do **not** set: Production Supabase URL/keys, Production signing keys, Production `ADMIN_PIN`, `INTERNAL_API_SECRET`, Production Circle wallets.
+Do **not** set: Production Supabase URL/keys, Production signing keys, Production `ADMIN_PIN`, `INTERNAL_API_SECRET`, Production Circle wallets, Judge Demo flags on Production.
 
-After saving public (`NEXT_PUBLIC_*`) vars, **redeploy** the custom environment.
+After saving public (`NEXT_PUBLIC_*`) vars, **redeploy** custom environment `demo` from **`main`**.
 
 ## Deployment command / branch process
 
-Do **not** merge to `main` or Production to satisfy judges.
+Judges see `main` through the `demo` custom environment. Do **not** retarget `demo` to a feature branch. Do **not** use Git Preview as the judge URL.
 
-Recommended (dashboard, no CLI required):
+1. Merge the approved release PR to **`main`**.
+2. Wait for Vercel **Production** (`abraxasworld.xyz`) and custom environment **`demo`** (tracking `main`) to deploy that SHA.
+3. Confirm **demo** branch matcher is still **equals `main`**.
+4. Confirm domain **demo.abraxasworld.xyz** stays attached to environment `demo` only.
+5. Confirm **Deployment Protection** remains SSO for **all except custom domains**.
+6. Set the Judge Demo flags on environment `demo` only, then **redeploy `demo`** (not Production).
 
-1. Open Vercel project **abraxas-app** → **Environments** → **demo**
-2. Change **Branch tracking** from `main` to the git branch that contains this Judge Demo contract (and the approved capabilities you intend to show), **or** use **Deployments → Create Deployment** and target environment **demo** with that commit SHA
-3. Confirm domain **demo.abraxasworld.xyz** stays attached to `demo` only
-4. Confirm **Deployment Protection** remains **Standard Protection / SSO for all except custom domains**
-5. Redeploy environment `demo`
-
-CLI equivalent (operator machine; not run by this agent):
+CLI must not target Production:
 
 ```bash
-# From the approved git SHA. Target the custom environment, never Production.
-vercel deploy --cwd . --scope worldlabsprotocol-uxs-projects
-# In the prompt or dashboard, assign the resulting deployment to custom environment "demo"
-# or use the project UI "Promote" onto environment demo.
+# Operators may inspect the demo environment after main has deployed.
+# Do not vercel deploy --prod. Do not change the demo branch matcher.
 ```
-
-Vercel custom environments are not `--target=production`. Never pass Production.
 
 ## Judge-visible routes
 
@@ -132,6 +131,8 @@ Banner: “Public Judge Demo · sandbox / DEMO infrastructure only · not Produc
 
 Circle: GET evidence and pending intents may display. `POST .../settlement/submit` returns `judge_demo_transfer_blocked`. The Launchpad UI hides Submit. No wallet IDs, secrets, PII, or raw provider payloads in public views.
 
+Production never requires Circle migrations `089` or `090`. Circle stays blocked when `VERCEL_ENV=production`.
+
 ## Public smoke-test checklist
 
 Run **unauthenticated** against `https://demo.abraxasworld.xyz` (no Vercel bypass cookie):
@@ -143,19 +144,22 @@ Run **unauthenticated** against `https://demo.abraxasworld.xyz` (no Vercel bypas
 5. JSON must not contain JWTs, `service_role`, wallet ids, or API keys
 6. Optional Passport Google start uses redirect_uri exactly the one URI above
 7. Git Preview URL still shows Vercel SSO — engineering-only
+8. `https://abraxasworld.xyz/api/judge-demo/environment` is 404 and has no judge banner
 
 ## Rollback
 
-1. In Vercel **demo** environment, restore **branch matcher** to `main` (or the last known-good demo SHA)
-2. Instant Rollback the previous **demo** deployment (not Production)
-3. Unset `ABRAXAS_JUDGE_DEMO` and `NEXT_PUBLIC_ABRAXAS_JUDGE_DEMO` if the contract must go dark
+1. Instant Rollback the previous **demo** deployment that came from `main` (not Production)
+2. Keep the **demo** branch matcher on **`main`**
+3. Unset `ABRAXAS_JUDGE_DEMO` and `NEXT_PUBLIC_ABRAXAS_JUDGE_DEMO` on environment `demo` if the contract must go dark, then redeploy `demo`
 4. Leave Production, MAIN Supabase, and Google Production clients untouched
-5. Confirm `https://abraxasworld.xyz` still serves Production and `https://demo.abraxasworld.xyz` is no longer on the withdrawn SHA
+5. Confirm `https://abraxasworld.xyz` still serves Production
 
 ## Operator actions still required (this PR does not perform them)
 
-- Point custom environment `demo` at the approved non-`main` git SHA
-- Set the missing flags and DEMO Google client ids
-- Register the single Google callback URI
-- Redeploy `demo`
-- Smoke-test the public host
+- Merge to `main` only after CI is green (not done by the agent that opened this PR unless a human approves merge)
+- Apply `091_partner_flow_continuations.sql` to Production before or with the Production app
+- Do **not** apply `089` or `090` to Production
+- After `main` is on both Production and `demo`, set Judge Demo flags on **`demo` only**
+- Register the single DEMO Google callback URI
+- Redeploy `demo` from `main`
+- Smoke-test both public hosts

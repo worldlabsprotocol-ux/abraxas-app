@@ -15,7 +15,7 @@ Abraxas is not a custodian of customer funds. Settlement uses a dedicated DEMO/t
 7. Mark `settled` only from a sealed Circle-authenticated result with official `COMPLETE`. `FAILED`/`DENIED` map to `failed`. `CANCELLED` maps to `cancelled`. Other official states stay `submitted` (retrying). Client hashes, browser responses, callback parameters, and unsealed mock objects cannot settle.
 8. Duplicate `(application, receipt_id)` creates reuse the persisted Circle key. Duplicate submits do not call Circle again.
 
-Public Judge Demo never reaches step 5–7. Submit returns `judge_demo_transfer_blocked` so public visitors cannot consume testnet funds. Pending evidence may still display. See `docs/demo/JUDGE_DEMO_DEPLOYMENT.md`.
+Public Judge Demo never reaches step 5–7. Submit returns `judge_demo_transfer_blocked` so public visitors cannot consume testnet funds. Pending evidence may still display. Production does not apply migrations 089 or 090; Circle stays blocked when `VERCEL_ENV=production`. See `docs/demo/JUDGE_DEMO_DEPLOYMENT.md`.
 
 Safe evidence fields: intent ID, provider request reference, Circle transaction reference, network, currency, integer `amount_minor`, state, timestamp, receipt ID, policy ID/version, server idempotency key.
 

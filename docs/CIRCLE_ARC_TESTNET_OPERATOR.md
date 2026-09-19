@@ -34,7 +34,7 @@ Do not set these on Production. Do not add them to `.env.local` in git. Do not p
 
 Public Judge Demo (`https://demo.abraxasworld.xyz`) may **display** receipt-gated settlement evidence and pending-intent state. It must never submit a Circle transfer. See `docs/demo/JUDGE_DEMO_DEPLOYMENT.md`.
 
-Also apply migration `089_circle_arc_testnet_settlement.sql` and then `090_circle_settlement_selection_replay.sql` to DEMO Supabase `ocntwbxarpjeixdnzide` before the first real transfer. Do not apply them until this PR is re-audited as safe. Migration 090 adds a hashed selection-token `jti` unique constraint so replay is durable across Vercel instances. Do not store raw tokens.
+Also apply migration `089_circle_arc_testnet_settlement.sql` and then `090_circle_settlement_selection_replay.sql` to DEMO Supabase `ocntwbxarpjeixdnzide` before the first real transfer. Do **not** apply 089 or 090 to Production. Production Partner Flow OAuth resume needs `091_partner_flow_continuations.sql` only. Circle stays blocked when `VERCEL_ENV=production`. Judge Demo submit stays `judge_demo_transfer_blocked`.
 
 The server generates the Circle `idempotencyKey` as UUID v4. Do not paste a key into Launchpad or send one from the browser.
 

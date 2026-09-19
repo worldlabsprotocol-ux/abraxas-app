@@ -1,5 +1,5 @@
 // FILE: lib/partner/partnerFlowContinuationStore.ts
-// Database-backed continuations only. Missing 084 objects fail closed.
+// Database-backed continuations only. Missing 091 objects fail closed.
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import {

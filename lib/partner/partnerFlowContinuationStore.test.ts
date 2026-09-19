@@ -14,7 +14,7 @@ describe("createSupabaseContinuationStore", () => {
     mockFrom.mockReset();
   });
 
-  it("treats a missing 084 table as continuation_store_unavailable on create, peek, and consume", async () => {
+  it("treats a missing 091 table as continuation_store_unavailable on create, peek, and consume", async () => {
     const chain = {
       upsert: vi.fn().mockResolvedValue({ error: { message: "Could not find the table" } }),
       select: vi.fn().mockReturnThis(),

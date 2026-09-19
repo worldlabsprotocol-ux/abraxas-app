@@ -26,14 +26,15 @@ export default function JudgeDemoIndexPage() {
       <PageHeader
         eyebrow="Public Judge Demo · sandbox / DEMO only"
         title="Abraxas Judge Demo"
-        subtitle="This custom domain is the public judge surface. Protected Git Preview aliases remain engineering-only and are never the only way to view a feature. Circle transfers and testnet fund movement are disabled here."
+        subtitle="demo.abraxasworld.xyz is the public judge surface on the demo environment that tracks main, using DEMO data only. abraxasworld.xyz is the public product. Git Preview aliases remain engineering-only. Circle transfers are disabled here."
       />
       {!judgeMode && (
         <ContentCard title="Runtime flags not enabled">
           <p>
             Operators must set both <code>ABRAXAS_JUDGE_DEMO=true</code> and{" "}
             <code>NEXT_PUBLIC_ABRAXAS_JUDGE_DEMO=true</code> on the Vercel custom environment{" "}
-            <code>demo</code>. See <code>docs/demo/JUDGE_DEMO_DEPLOYMENT.md</code>.
+            <code>demo</code> after that environment has deployed <code>main</code>. Never retarget{" "}
+            <code>demo</code> to a feature branch. See <code>docs/demo/JUDGE_DEMO_DEPLOYMENT.md</code>.
           </p>
         </ContentCard>
       )}
