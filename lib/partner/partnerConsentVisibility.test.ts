@@ -46,6 +46,8 @@ describe("partner consent visibility", () => {
       ...readyForConsent,
       identityComplete: false,
       evidenceComplete: false,
+      methodQualified: false,
+      qualifyingMethodSucceeded: false,
     })).toBe(false);
   });
 
