@@ -4,10 +4,53 @@ import { describe, expect, it } from "vitest";
 import { INTEGRATION_STUDIO_PATHS } from "@/lib/partner/integrationStudio/contract";
 import { generateStarterKit } from "./generate";
 import { validateStarterKitInput } from "./validate";
-import { STARTER_KIT_DOES_NOT_DO, STARTER_KIT_RUNTIMES } from "./contract";
+import { STARTER_KIT_DOES_NOT_DO, STARTER_KIT_PLACEHOLDERS, STARTER_KIT_RUNTIMES } from "./contract";
 import { studioPayloadLeaks } from "@/lib/partner/integrationStudio/safety";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 const FORBIDDEN = /createTransfer|createCharge|confirm_testnet_transfer|signTransaction|placeOrder|sendAndConfirm|mintTo|abx_live_|wallet_address|legal_name|date_of_birth/;
+
+function readU16(bytes: Uint8Array, offset: number): number {
+  return bytes[offset]! | (bytes[offset + 1]! << 8);
+}
+
+function readU32(bytes: Uint8Array, offset: number): number {
+  return (
+    (bytes[offset]! |
+      (bytes[offset + 1]! << 8) |
+      (bytes[offset + 2]! << 16) |
+      (bytes[offset + 3]! << 24)) >>>
+    0
+  );
+}
+
+function decodeStoreZip(bytes: Uint8Array): Array<{ path: string; contents: string }> {
+  const files: Array<{ path: string; contents: string }> = [];
+  let offset = 0;
+  while (offset + 30 <= bytes.length) {
+    const signature = readU32(bytes, offset);
+    if (signature === 0x02014b50 || signature === 0x06054b50) break;
+    expect(signature).toBe(0x04034b50);
+    const method = readU16(bytes, offset + 8);
+    expect(method).toBe(0);
+    const size = readU32(bytes, offset + 22);
+    const nameLen = readU16(bytes, offset + 26);
+    const extraLen = readU16(bytes, offset + 28);
+    const nameStart = offset + 30;
+    const nameEnd = nameStart + nameLen;
+    const dataStart = nameEnd + extraLen;
+    const dataEnd = dataStart + size;
+    const nameBytes = bytes.subarray(nameStart, nameEnd);
+    const dataBytes = bytes.subarray(dataStart, dataEnd);
+    files.push({
+      path: new TextDecoder().decode(nameBytes),
+      contents: new TextDecoder().decode(dataBytes),
+    });
+    offset = dataEnd;
+  }
+  return files;
+}
 
 function serverSideProof(files: Array<{ path: string; contents: string }>): boolean {
   return files.some((file) =>
@@ -118,5 +161,41 @@ describe("Partner Starter Kit Generator", () => {
     const code = kit.files.map((file) => file.contents).join("\n");
     expect(code).not.toMatch(/createTransfer|confirm_testnet_transfer/);
     expect(kit.does_not_do).toEqual([...STARTER_KIT_DOES_NOT_DO]);
+  });
+
+  it("creates a valid STORE ZIP for every supported runtime without Uint8Array for-of", () => {
+    const zipSource = readFileSync(join(process.cwd(), "lib/partner/starterKit/zipStore.ts"), "utf8");
+    expect(zipSource).not.toMatch(/for\s*\(\s*const\s+\w+\s+of\s+bytes\s*\)/);
+    expect(zipSource).toContain("for (let index = 0; index < bytes.length; index += 1)");
+
+    for (const runtime of STARTER_KIT_RUNTIMES) {
+      const validated = validateStarterKitInput({
+        pack_id: "age_21_retail",
+        path: "hosted_partner_flow",
+        runtime,
+        capabilities: ["webhooks"],
+      });
+      expect(validated.ok, runtime).toBe(true);
+      if (!validated.ok) continue;
+      const kit = generateStarterKit(validated.selection);
+      expect(kit.ok, runtime).toBe(true);
+      if (!kit.ok) continue;
+      expect(kit.archive_base64.startsWith("UEs")).toBe(true);
+      const archive = Uint8Array.from(Buffer.from(kit.archive_base64, "base64"));
+      expect(archive[0]).toBe(0x50);
+      expect(archive[1]).toBe(0x4b);
+      const unzipped = decodeStoreZip(archive);
+      expect(unzipped.map((file) => file.path).sort()).toEqual(kit.files.map((file) => file.path).sort());
+      for (const file of kit.files) {
+        const extracted = unzipped.find((entry) => entry.path === file.path);
+        expect(extracted?.contents, `${runtime} ${file.path}`).toBe(file.contents);
+        expect(file.path.includes("..")).toBe(false);
+        expect(file.path.startsWith("/")).toBe(false);
+      }
+      const blob = kit.files.map((file) => file.contents).join("\n");
+      expect(blob).toContain(STARTER_KIT_PLACEHOLDERS.api_key);
+      expect(blob).not.toMatch(/abx_live_|eyJ[A-Za-z0-9_-]{20,}/);
+      expect(studioPayloadLeaks({ ...kit, archive_base64: "" })).toEqual([]);
+    }
   });
 });
