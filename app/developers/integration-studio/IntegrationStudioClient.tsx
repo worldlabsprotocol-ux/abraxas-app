@@ -27,6 +27,7 @@ const PATH_LABEL: Record<IntegrationStudioPathId, string> = {
   solana_gate: "Solana eligibility gate",
   trading_venue: "Trading venue access",
   wallet_standard_binding: "Wallet Standard binding",
+  payment_authorization: "Payment and commerce",
 };
 
 const body: React.CSSProperties = {
@@ -231,6 +232,11 @@ export function IntegrationStudioClient() {
         {pathId === "wallet_standard_binding" && (
           <p style={{ ...body, marginBottom: "0.65rem" }}>
             Optional. Bind a self-custodial wallet to one action contract when a venue or membership check needs it. This is not identity verification and does not reveal a wallet address, balances, or keys. Passport, Partner Flow, and receipt verification still work with no wallet connected.
+          </p>
+        )}
+        {pathId === "payment_authorization" && (
+          <p style={{ ...body, marginBottom: "0.65rem" }}>
+            Policy pack, then Partner Flow, then a minimum approved receipt, then a payment preflight for checkout or recurring authorization. The merchant then runs its own payment flow. Webhooks re-check the public receipt and never grant access. No charges, transfers, Circle calls, or funds movement.
           </p>
         )}
         {created && hostedDocs?.hosted_link && pathId === "hosted_partner_flow" && (

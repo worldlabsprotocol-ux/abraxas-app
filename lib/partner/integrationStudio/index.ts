@@ -8,6 +8,7 @@ export {
   INTEGRATION_STUDIO_GOOGLE,
   INTEGRATION_STUDIO_VENUE_NOTICE,
   INTEGRATION_STUDIO_WALLET_NOTICE,
+  INTEGRATION_STUDIO_PAYMENT_NOTICE,
   isIntegrationStudioPathId,
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio/contract";
