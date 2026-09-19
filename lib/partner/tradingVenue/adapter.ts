@@ -15,10 +15,13 @@ import {
   TRADING_VENUE_NOT_A_MARKET,
   TRADING_VENUE_SANDBOX_SCOPE,
   TRADING_VENUE_WALLET_BINDING_FUTURE,
+  TRADING_VENUE_WALLET_BINDING_MODES,
   type TradingVenueActionContract,
   type TradingVenueActionScope,
   type TradingVenueActionType,
+  type TradingVenueWalletBindingMode,
 } from "@/lib/partner/tradingVenue/contract";
+import { resolveWalletBindingForAction } from "@/lib/partner/walletStandard/resolve";
 import {
   deniedVenueResult,
   permittedVenueResult,
@@ -36,6 +39,7 @@ export interface TradingVenuePreflightInput {
   contract: TradingVenueActionContract;
   action_type?: string;
   action_scope?: string;
+  binding_ref?: string | null;
 }
 
 export class AbraxasTradingVenueAdapter {
@@ -66,12 +70,14 @@ export class AbraxasTradingVenueAdapter {
   issueActionContract(input?: {
     action_type?: string;
     action_scope?: string;
+    wallet_binding?: string;
     ttlMs?: number;
     now?: Date;
   }): TradingVenueActionContract | { ok: false; reason: "action_mismatch" } {
     const actionType = (input?.action_type ?? "enable_market_access") as string;
     const actionScope = (input?.action_scope ?? TRADING_VENUE_SANDBOX_SCOPE) as string;
-    if (!isVenueActionType(actionType) || !isVenueActionScope(actionScope)) {
+    const walletBinding = (input?.wallet_binding ?? TRADING_VENUE_WALLET_BINDING_FUTURE.status) as string;
+    if (!isVenueActionType(actionType) || !isVenueActionScope(actionScope) || !isVenueWalletBindingMode(walletBinding)) {
       return { ok: false, reason: "action_mismatch" };
     }
     const now = input?.now ?? new Date();
@@ -84,7 +90,7 @@ export class AbraxasTradingVenueAdapter {
       action_scope: actionScope,
       expires_at: new Date(now.getTime() + ttl).toISOString(),
       nonce: createVenueNonce(),
-      wallet_binding: TRADING_VENUE_WALLET_BINDING_FUTURE.status,
+      wallet_binding: walletBinding,
     };
   }
 
@@ -117,6 +123,31 @@ export class AbraxasTradingVenueAdapter {
       );
     }
 
+    const wallet = resolveWalletBindingForAction({
+      mode: input.contract.wallet_binding,
+      bindingRef: input.binding_ref,
+      partnerId: this.kit.options.partnerId,
+      actionContractNonce: input.contract.nonce,
+      consume: false,
+    });
+    if (!wallet.ok) {
+      const reason =
+        wallet.status === "missing" ? "wallet_binding_missing"
+        : wallet.status === "expired" ? "wallet_binding_expired"
+        : wallet.status === "mismatched" ? "wallet_binding_mismatch"
+        : wallet.status === "replayed" ? "wallet_binding_replayed"
+        : wallet.status === "cross_partner" ? "wallet_binding_cross_partner"
+        : "invalid";
+      return deniedVenueResult(
+        reason,
+        requestedType,
+        requestedScope,
+        "rejected",
+        input.contract.expires_at,
+        wallet.status === "cross_partner" ? "cross_partner" : wallet.status === "replayed" ? "replayed" : wallet.status === "expired" ? "expired" : wallet.status === "mismatched" ? "mismatched" : "missing",
+      );
+    }
+
     const nonceState = consumeTradingVenueNonce(this.kit.options.partnerId, input.contract.nonce);
     if (nonceState === "replayed") {
       return deniedVenueResult("replayed", requestedType, requestedScope, "replayed", input.contract.expires_at);
@@ -124,7 +155,21 @@ export class AbraxasTradingVenueAdapter {
     if (nonceState === "invalid") {
       return deniedVenueResult("invalid", requestedType, requestedScope, "rejected", input.contract.expires_at);
     }
-    return permittedVenueResult(requestedType, requestedScope, input.contract.expires_at);
+    if (wallet.status === "bound") {
+      resolveWalletBindingForAction({
+        mode: input.contract.wallet_binding,
+        bindingRef: input.binding_ref,
+        partnerId: this.kit.options.partnerId,
+        actionContractNonce: input.contract.nonce,
+        consume: true,
+      });
+    }
+    const walletState = wallet.status === "bound"
+      ? "bound"
+      : wallet.status === "optional_unused"
+        ? "optional"
+        : "not_attached";
+    return permittedVenueResult(requestedType, requestedScope, input.contract.expires_at, walletState);
   }
 }
 
@@ -134,6 +179,10 @@ export function isVenueActionType(value: string): value is TradingVenueActionTyp
 
 export function isVenueActionScope(value: string): value is TradingVenueActionScope {
   return (TRADING_VENUE_ALLOWED_SCOPES as readonly string[]).includes(value);
+}
+
+export function isVenueWalletBindingMode(value: string): value is TradingVenueWalletBindingMode {
+  return (TRADING_VENUE_WALLET_BINDING_MODES as readonly string[]).includes(value);
 }
 
 function createVenueNonce(): string {

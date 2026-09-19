@@ -9,6 +9,7 @@ import {
   type TradingVenueActionScope,
   type TradingVenueActionType,
   type TradingVenueSafeReasonCode,
+  type TradingVenueWalletBindingState,
 } from "@/lib/partner/tradingVenue/contract";
 
 export interface TradingVenueClientVisibleResult {
@@ -54,6 +55,7 @@ export function deniedVenueResult(
   actionScope: string,
   nonceState: TradingVenueActionBinding["nonce_state"],
   expiresAt: string | null = null,
+  walletBinding: TradingVenueWalletBindingState = TRADING_VENUE_WALLET_BINDING_FUTURE.status,
 ): TradingVenueClientVisibleResult {
   return {
     allowed: false,
@@ -62,7 +64,7 @@ export function deniedVenueResult(
       action_type: actionType,
       action_scope: actionScope,
       nonce_state: nonceState,
-      wallet_binding: TRADING_VENUE_WALLET_BINDING_FUTURE.status,
+      wallet_binding: walletBinding,
     },
     expires_at: expiresAt,
   };
@@ -72,6 +74,7 @@ export function permittedVenueResult(
   actionType: TradingVenueActionType,
   actionScope: TradingVenueActionScope,
   expiresAt: string,
+  walletBinding: TradingVenueWalletBindingState = TRADING_VENUE_WALLET_BINDING_FUTURE.status,
 ): TradingVenueClientVisibleResult {
   return {
     allowed: true,
@@ -80,7 +83,7 @@ export function permittedVenueResult(
       action_type: actionType,
       action_scope: actionScope,
       nonce_state: "consumed",
-      wallet_binding: TRADING_VENUE_WALLET_BINDING_FUTURE.status,
+      wallet_binding: walletBinding,
     },
     expires_at: expiresAt,
   };

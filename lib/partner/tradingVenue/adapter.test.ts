@@ -125,12 +125,12 @@ describe("Abraxas Trading Venue Adapter", () => {
     expect(adapter().connectsWallet).toBe(false);
     expect(TRADING_VENUE_NO_FUNDS_BOUNDARY.toLowerCase()).toContain("never creates a trade");
     expect(TRADING_VENUE_NOT_A_MARKET.toLowerCase()).toContain("not an exchange");
-    expect(TRADING_VENUE_WALLET_BINDING_FUTURE.implemented).toBe(false);
+    expect(TRADING_VENUE_WALLET_BINDING_FUTURE.implemented).toBe(true);
   });
 
-  it("lists exact future live venue requirements and keeps wallet binding off", () => {
+  it("lists exact live venue requirements and defaults wallet binding to not_attached", () => {
     expect(TRADING_VENUE_LIVE_INTEGRATION_REQUIREMENTS.length).toBeGreaterThanOrEqual(8);
-    expect(TRADING_VENUE_LIVE_INTEGRATION_REQUIREMENTS.join(" ")).toContain("Wallet Standard");
+    expect(TRADING_VENUE_LIVE_INTEGRATION_REQUIREMENTS.join(" ")).toContain("Wallet binding");
     expect(TRADING_VENUE_FORBIDDEN_CLIENT_KEYS).toContain("wallet_address");
     expect(TRADING_VENUE_FORBIDDEN_CLIENT_KEYS).toContain("trading_history");
     const contract = contractFor(adapter());
