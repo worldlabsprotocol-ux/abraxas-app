@@ -47,6 +47,7 @@ import {
   resolvePartnerContinueContext,
   type ResolvedPartnerContinueContext,
 } from "@/lib/partner/resolvePartnerContinueContext";
+import { partnerVerifyMissingRequiredParametersMessage } from "@/lib/partner/normalizePartnerVerifyInput";
 
 function resolveMinimumAge(policyId: string): number | null {
   if (policyId === GOOD_TROUBLE_RETAIL_POLICY_ID) return 21;
@@ -209,9 +210,9 @@ function PartnerContinueInner() {
     if (ageAssuranceStatus === "failed") return "verification_could_not_confirm";
     if (showIdFallback) return "id_upload_fallback";
     if (setup.walletBound && !setup.identityComplete) return "verify_age";
-    if (returnPath && handoff.ready) return "return_to_partner";
+    if (decodedReturnUrl && handoff.ready) return "return_to_partner";
     return "verify_age";
-  }, [suiAddress, credential, identityStatus, handoff.ready, returnPath, setup, ageAssuranceStatus, showIdFallback]);
+  }, [suiAddress, credential, identityStatus, handoff.ready, decodedReturnUrl, setup, ageAssuranceStatus, showIdFallback]);
 
   const holderCopy = resolvePartnerHolderPresentation(holderState, partnerName);
   const selectedPack = inferPolicyPackFromPolicyId(policyId);
@@ -236,11 +237,7 @@ function PartnerContinueInner() {
     underReview: holderState === "under_review",
   });
 
-  useEffect(() => {
-    if (!verifyRequestId || !partnerId || !returnPath) {
-      window.location.replace("/partner/verify");
-    }
-  }, [verifyRequestId, partnerId, returnPath]);
+  const continueContextIncomplete = !verifyRequestId || !partnerId;
 
   async function bindWallet() {
     if (!suiAddress) return;
@@ -304,6 +301,25 @@ function PartnerContinueInner() {
     } finally {
       setStarting(false);
     }
+  }
+
+  if (!authLoading && !contextLoading && continueContextIncomplete) {
+    const missing: string[] = [];
+    if (!verifyRequestId) missing.push("verification request");
+    if (!partnerId) missing.push("partner identifier");
+    const invalidLinkMessage = partnerVerifyMissingRequiredParametersMessage(missing);
+    return (
+      <PartnerJourneyLayout
+        partnerName={partnerName}
+        intro="This Partner Flow link cannot continue."
+        statusMessage={invalidLinkMessage}
+        hideStatus={false}
+      >
+        <StatusBanner tone="info" title="Verification could not continue">
+          {invalidLinkMessage}
+        </StatusBanner>
+      </PartnerJourneyLayout>
+    );
   }
 
   if (isDobFirstBrowse) {
@@ -456,7 +472,7 @@ function PartnerContinueInner() {
             <p role="status">{holderCopy.title}…</p>
           )}
 
-          {returnPath && handoff.ready && (
+          {decodedReturnUrl && handoff.ready && (
             <div style={{ marginTop: "1rem" }}>
               <Btn
                 variant="secondary"
