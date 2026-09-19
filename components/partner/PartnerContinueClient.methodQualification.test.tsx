@@ -160,6 +160,22 @@ describe("Partner Continue method qualification gating", () => {
     )).toBe(true);
   });
 
+  it("keeps the live Preview error when qualification is not server-confirmed", async () => {
+    render(<PartnerContinueClient />);
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Privacy-preserving verification/i })).toBeTruthy();
+    });
+    await userEvent.click(screen.getByRole("button", { name: /Privacy-preserving verification/i }));
+    expect(screen.queryByText(/The selected method has not qualified yet/i)).toBeNull();
+    expect(screen.queryByText(/Approve & share claims/i)).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: /Use selected method/i }));
+    await waitFor(() => {
+      expect(screen.getByText("The selected method has not qualified yet.")).toBeTruthy();
+    });
+    expect(screen.queryByText(/Approve & share claims/i)).toBeNull();
+    expect(screen.getByRole("button", { name: /Use selected method/i })).toBeTruthy();
+  });
+
   it("renders final consent only after the server confirms qualification", async () => {
     global.fetch = mockPartnerFetch({ qualifyOnPost: true });
     render(<PartnerContinueClient />);
@@ -172,6 +188,7 @@ describe("Partner Continue method qualification gating", () => {
     await waitFor(() => {
       expect(screen.getByText(/Approve & share claims/i)).toBeTruthy();
     });
+    expect(screen.queryByText("The selected method has not qualified yet.")).toBeNull();
     expect(screen.queryByRole("button", { name: /Use selected method/i })).toBeNull();
     const chooser = screen.getByText(/Choose how to satisfy this requirement/i);
     const approve = screen.getByText(/Approve & share claims/i);

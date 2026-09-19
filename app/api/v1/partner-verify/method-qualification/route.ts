@@ -3,11 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
-import {
-  CONTINUATION_STORE_UNAVAILABLE,
-  ContinuationStoreUnavailableError,
-} from "@/lib/partner/partnerFlowContinuation";
-import { createSupabaseContinuationStore } from "@/lib/partner/partnerFlowContinuationStore";
+import { CONTINUATION_STORE_UNAVAILABLE } from "@/lib/partner/partnerFlowContinuation";
 import {
   evaluateMethodQualification,
   publicQualificationView,
@@ -20,30 +16,17 @@ import {
   signPartnerMethodQualificationCookie,
   verifyPartnerMethodQualificationCookie,
 } from "@/lib/partner/partnerMethodQualificationCookie";
+import { resolveBoundPartnerContinuation } from "@/lib/partner/resolveBoundPartnerContinuation";
 import {
+  attachPartnerContinueBindingCookie,
   clearPartnerContinueBindingCookie,
-  PARTNER_CONTINUE_BINDING_COOKIE,
-  verifyPartnerContinueBindingCookie,
+  signPartnerContinueBindingCookie,
 } from "@/lib/partner/partnerVerifyResumeCookie";
 
 export const dynamic = "force-dynamic";
 
-async function resolveBoundContinuation(request: NextRequest, verifyRequest: string) {
-  const token = request.cookies.get(PARTNER_CONTINUE_BINDING_COOKIE)?.value;
-  const pointer = token ? await verifyPartnerContinueBindingCookie(token) : null;
-  if (!pointer || pointer.verifyRequestId !== verifyRequest) {
-    return { ok: false as const, code: "invalid_binding" };
-  }
-  try {
-    const stored = await createSupabaseContinuationStore().peekByVerifyRequestId(verifyRequest);
-    if (!stored) return { ok: false as const, code: "missing" };
-    return { ok: true as const, stored };
-  } catch (error) {
-    if (error instanceof ContinuationStoreUnavailableError) {
-      return { ok: false as const, code: CONTINUATION_STORE_UNAVAILABLE };
-    }
-    return { ok: false as const, code: CONTINUATION_STORE_UNAVAILABLE };
-  }
+function failStatus(code: string): number {
+  return code === CONTINUATION_STORE_UNAVAILABLE ? 503 : 400;
 }
 
 export async function GET(request: NextRequest) {
@@ -57,16 +40,19 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ok: false, code: "missing", method_qualified: false, issuedReceipt: false }, { status: 400 });
   }
 
-  const bound = await resolveBoundContinuation(request, verifyRequest);
+  const bound = await resolveBoundPartnerContinuation({
+    request,
+    verifyRequestId: verifyRequest,
+    sessionSubject: session.session.suiAddress,
+  });
   if (!bound.ok) {
-    const status = bound.code === CONTINUATION_STORE_UNAVAILABLE ? 503 : 400;
     const res = NextResponse.json({
       ok: false,
       code: bound.code,
       method_qualified: false,
       issuedReceipt: false,
-    }, { status });
-    if (bound.code === "invalid_binding") clearPartnerContinueBindingCookie(res);
+    }, { status: failStatus(bound.code) });
+    if (bound.clearBinding) clearPartnerContinueBindingCookie(res);
     clearPartnerMethodQualificationCookie(res);
     return res;
   }
@@ -106,15 +92,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, code: "missing", method_qualified: false, issuedReceipt: false }, { status: 400 });
   }
 
-  const bound = await resolveBoundContinuation(request, verifyRequest);
+  const bound = await resolveBoundPartnerContinuation({
+    request,
+    verifyRequestId: verifyRequest,
+    sessionSubject: session.session.suiAddress,
+  });
   if (!bound.ok) {
-    const status = bound.code === CONTINUATION_STORE_UNAVAILABLE ? 503 : 400;
     const res = NextResponse.json({
       ok: false,
       code: bound.code,
       method_qualified: false,
       issuedReceipt: false,
-    }, { status });
+    }, { status: failStatus(bound.code) });
     clearPartnerMethodQualificationCookie(res);
     return res;
   }
@@ -143,6 +132,7 @@ export async function POST(request: NextRequest) {
   }
 
   const token = await signPartnerMethodQualificationCookie(evaluated.record);
+  const rebound = await signPartnerContinueBindingCookie({ verifyRequestId: verifyRequest });
   const res = NextResponse.json({
     ok: true,
     method_selected: true,
@@ -151,5 +141,6 @@ export async function POST(request: NextRequest) {
     sandbox_only: evaluated.record.sandboxOnly,
   });
   if (token) attachPartnerMethodQualificationCookie(res, token);
+  if (rebound) attachPartnerContinueBindingCookie(res, rebound);
   return res;
 }

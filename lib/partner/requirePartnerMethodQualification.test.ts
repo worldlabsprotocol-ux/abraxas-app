@@ -2,10 +2,24 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const mockPeek = vi.fn();
+const mockMaybeSingle = vi.fn();
 
 vi.mock("@/lib/partner/partnerFlowContinuationStore", () => ({
   createSupabaseContinuationStore: () => ({
     peekByVerifyRequestId: (...args: unknown[]) => mockPeek(...args),
+  }),
+}));
+
+vi.mock("@/lib/supabase/admin", () => ({
+  SupabaseAdminConfigurationError: class extends Error {},
+  requireSupabaseAdmin: () => ({
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: (...args: unknown[]) => mockMaybeSingle(...args),
+        }),
+      }),
+    }),
   }),
 }));
 
@@ -16,18 +30,35 @@ import {
   signPartnerMethodQualificationCookie,
 } from "./partnerMethodQualificationCookie";
 
+const SUBJECT = "0x0000000000000000000000000000000000000000000000000000000000000abc";
 const STORED = {
   partnerId: "circle-arc-demo-304",
   policyId: "circle-arc-demo-304-sandbox_economic_demo-v1",
   policyVersion: 1,
   verifyRequestId: "vr-sandbox-1",
+  expiresAt: new Date(Date.now() + 600_000).toISOString(),
 };
+
+function vrRow() {
+  return {
+    data: {
+      partner_id: STORED.partnerId,
+      policy_id: STORED.policyId,
+      policy_version: 1,
+      sui_address: SUBJECT,
+      status: "pending",
+      expires_at: new Date(Date.now() + 600_000).toISOString(),
+    },
+    error: null,
+  };
+}
 
 describe("requireQualifiedPartnerMethod", () => {
   beforeEach(() => {
     process.env.ABRAXAS_BROWSER_SESSION_SECRET = "test-method-qualification-secret";
     mockPeek.mockReset();
     mockPeek.mockResolvedValue(STORED);
+    mockMaybeSingle.mockResolvedValue(vrRow());
   });
 
   it("denies consent when the method is only selected", async () => {
@@ -39,6 +70,7 @@ describe("requireQualifiedPartnerMethod", () => {
       verifyRequestId: STORED.verifyRequestId,
       partnerId: STORED.partnerId,
       policyId: STORED.policyId,
+      sessionSubject: SUBJECT,
     });
     expect(result).toEqual({ ok: false, code: "method_not_qualified" });
   });
@@ -64,6 +96,7 @@ describe("requireQualifiedPartnerMethod", () => {
       verifyRequestId: STORED.verifyRequestId,
       partnerId: STORED.partnerId,
       policyId: STORED.policyId,
+      sessionSubject: SUBJECT,
     });
     expect(ok.ok).toBe(true);
     if (ok.ok) {
@@ -73,11 +106,19 @@ describe("requireQualifiedPartnerMethod", () => {
     }
 
     mockPeek.mockResolvedValue({ ...STORED, policyId: "good-trouble-retail-v1" });
+    mockMaybeSingle.mockResolvedValue({
+      data: {
+        ...vrRow().data,
+        policy_id: "good-trouble-retail-v1",
+      },
+      error: null,
+    });
     const cross = await requireQualifiedPartnerMethod({
       request: req,
       verifyRequestId: STORED.verifyRequestId,
       partnerId: STORED.partnerId,
       policyId: "good-trouble-retail-v1",
+      sessionSubject: SUBJECT,
     });
     expect(cross.ok).toBe(false);
   });

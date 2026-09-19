@@ -95,7 +95,7 @@ const REQUEST_ROW = {
   id: "vr-sandbox-e2e",
   status: "pending",
   expires_at: new Date(Date.now() + 3600_000).toISOString(),
-  sui_address: "0xabc",
+  sui_address: "0x0000000000000000000000000000000000000000000000000000000000000abc",
   partner_id: POLICY.partner_id,
   policy_id: POLICY.id,
   requested_action: "sandbox_economic_demo",
@@ -116,6 +116,7 @@ describe("sign-in → qualify → consent → sandbox receipt", () => {
       partnerId: POLICY.partner_id,
       policyId: POLICY.id,
       policyVersion: 1,
+      expiresAt: new Date(Date.now() + 3600_000).toISOString(),
     });
   });
 

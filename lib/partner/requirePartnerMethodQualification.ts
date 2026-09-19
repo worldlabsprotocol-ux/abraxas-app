@@ -2,7 +2,6 @@
 // Consent and receipt issuance require a server-verified method qualification.
 
 import type { NextRequest } from "next/server";
-import { createSupabaseContinuationStore } from "@/lib/partner/partnerFlowContinuationStore";
 import {
   qualificationMatchesBinding,
   type MethodQualificationRecord,
@@ -11,10 +10,7 @@ import {
   PARTNER_METHOD_QUALIFICATION_COOKIE,
   verifyPartnerMethodQualificationCookie,
 } from "@/lib/partner/partnerMethodQualificationCookie";
-import {
-  PARTNER_CONTINUE_BINDING_COOKIE,
-  verifyPartnerContinueBindingCookie,
-} from "@/lib/partner/partnerVerifyResumeCookie";
+import { resolveBoundPartnerContinuation } from "@/lib/partner/resolveBoundPartnerContinuation";
 
 export async function requireQualifiedPartnerMethod(input: {
   request: NextRequest;
@@ -22,24 +18,19 @@ export async function requireQualifiedPartnerMethod(input: {
   partnerId: string;
   policyId: string;
   policyVersion?: number;
+  sessionSubject: string;
 }): Promise<{ ok: true; record: MethodQualificationRecord } | { ok: false; code: string }> {
   const verifyRequestId = input.verifyRequestId.trim();
-  const bindingTok = input.request.cookies.get(PARTNER_CONTINUE_BINDING_COOKIE)?.value;
-  const pointer = bindingTok ? await verifyPartnerContinueBindingCookie(bindingTok) : null;
-  if (!pointer || pointer.verifyRequestId !== verifyRequestId) {
-    return { ok: false, code: "invalid_binding" };
-  }
-
-  let stored;
-  try {
-    stored = await createSupabaseContinuationStore().peekByVerifyRequestId(verifyRequestId);
-  } catch {
-    return { ok: false, code: "continuation_store_unavailable" };
-  }
-  if (!stored) return { ok: false, code: "missing" };
-  if (stored.partnerId !== input.partnerId.trim() || stored.policyId !== input.policyId.trim()) {
+  const bound = await resolveBoundPartnerContinuation({
+    request: input.request,
+    verifyRequestId,
+    sessionSubject: input.sessionSubject,
+  });
+  if (!bound.ok) return { ok: false, code: bound.code };
+  if (bound.stored.partnerId !== input.partnerId.trim() || bound.stored.policyId !== input.policyId.trim()) {
     return { ok: false, code: "cross_partner" };
   }
+  const stored = bound.stored;
 
   const qTok = input.request.cookies.get(PARTNER_METHOD_QUALIFICATION_COOKIE)?.value;
   const record = qTok ? await verifyPartnerMethodQualificationCookie(qTok) : null;

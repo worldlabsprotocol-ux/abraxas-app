@@ -205,6 +205,7 @@ export async function consentAndDecide(input: {
       verifyRequestId: input.requestId,
       partnerId,
       policyId,
+      sessionSubject: subject,
     });
     if (qualified.ok) {
       additionalClaims = deriveServerSandboxQualificationClaims({

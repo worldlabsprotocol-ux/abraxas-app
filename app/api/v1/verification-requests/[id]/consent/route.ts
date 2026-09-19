@@ -57,6 +57,7 @@ export async function POST(
       verifyRequestId: id,
       partnerId: String(requestRow.partner_id ?? ""),
       policyId: String(requestRow.policy_id ?? ""),
+      sessionSubject: session.session.suiAddress,
     });
     if (!qualified.ok) {
       recordPartnerFlowRequestOutcome({
