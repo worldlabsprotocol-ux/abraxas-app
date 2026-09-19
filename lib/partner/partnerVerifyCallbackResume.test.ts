@@ -38,7 +38,7 @@ describe("zklogin callback partner verify resume", () => {
     expect(cta).toContain("Return to partner verification");
     expect(cta).toContain("/api/v1/partner-verify/resume/activate");
     expect(cta).not.toContain("window.location.href =");
-    const passport = readFileSync(join(process.cwd(), "app/passport/page.tsx"), "utf8");
+    const passport = readFileSync(join(process.cwd(), "app/passport/PassportPageClient.tsx"), "utf8");
     expect(passport).toContain("PartnerVerificationResumeCta");
   });
 });

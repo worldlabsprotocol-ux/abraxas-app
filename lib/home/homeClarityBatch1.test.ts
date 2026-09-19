@@ -65,8 +65,11 @@ describe("homepage clarity batch 1 static guards", () => {
 
   it("replaces null Suspense fallbacks on touched routes", () => {
     const passport = read("app/passport/page.tsx");
-    expect(passport).toContain('label="Loading navigation…"');
+    const passportClient = read("app/passport/PassportPageClient.tsx");
+    expect(passport).toContain("AccountAccessFirstPaint");
+    expect(passportClient).toContain('label="Loading navigation…"');
     expect(passport).not.toMatch(/Suspense fallback=\{null\}/);
+    expect(passportClient).not.toMatch(/Suspense fallback=\{null\}/);
 
     for (const route of [
       "app/cielo/pay/page.tsx",
