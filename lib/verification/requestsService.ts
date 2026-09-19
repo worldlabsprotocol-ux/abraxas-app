@@ -3,13 +3,16 @@
 
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
-import { claimTypeLabel, type ClaimType } from "@/lib/credentials/claimSchema";
+import { claimTypeLabel, type ClaimType, type CredentialClaimRecord } from "@/lib/credentials/claimSchema";
 import { evaluatePolicyRules } from "@/lib/policy/evaluatePolicy";
 import { getPartnerPolicy, getPartnerPolicyAtVersion } from "@/lib/policy/getPolicy";
 import { assertPolicyBelongsToPartner } from "@/lib/policy/assertPolicyOwnership";
 import { assertPolicyVersionIssuable } from "@/lib/policy/changeControl/issuance";
 import { PolicyChangeControlError } from "@/lib/policy/changeControl/codes";
+import type { NextRequest } from "next/server";
 import { evaluatePolicyForSubject } from "@/lib/policy/evaluateSubjectPolicy";
+import { requireQualifiedPartnerMethod } from "@/lib/partner/requirePartnerMethodQualification";
+import { deriveServerSandboxQualificationClaims } from "@/lib/partner/sandboxQualificationClaims";
 import type { PolicyDecisionRecord } from "@/lib/policy/types";
 import { appendAuditEvent } from "@/lib/verification/audit";
 import {
@@ -160,6 +163,7 @@ export async function getVerificationRequestPreview(
 export async function consentAndDecide(input: {
   requestId: string;
   suiAddress: string;
+  request?: NextRequest;
 }): Promise<{
   decision_id: string;
   receipt_id: string | null;
@@ -193,10 +197,31 @@ export async function consentAndDecide(input: {
   }
 
   const partnerId = request.partner_id as string;
+  const policyId = request.policy_id as string;
+  let additionalClaims: CredentialClaimRecord[] = [];
+  if (input.request) {
+    const qualified = await requireQualifiedPartnerMethod({
+      request: input.request,
+      verifyRequestId: input.requestId,
+      partnerId,
+      policyId,
+    });
+    if (qualified.ok) {
+      additionalClaims = deriveServerSandboxQualificationClaims({
+        record: qualified.record,
+        subjectId: subject,
+        storedPartnerId: partnerId,
+        storedPolicyId: policyId,
+        storedPolicyVersion: qualified.record.policyVersion,
+      });
+    }
+  }
   const { policy, evaluation, claims } = await evaluatePolicyForSubject({
     suiAddress: subject,
-    policyId: request.policy_id as string,
+    policyId,
     partnerId,
+    policyVersion: typeof request.policy_version === "number" ? request.policy_version : undefined,
+    additionalClaims,
   });
 
   const { data: claimed, error: claimError } = await sb

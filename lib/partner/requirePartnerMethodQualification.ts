@@ -3,7 +3,10 @@
 
 import type { NextRequest } from "next/server";
 import { createSupabaseContinuationStore } from "@/lib/partner/partnerFlowContinuationStore";
-import { qualificationMatchesBinding } from "@/lib/partner/partnerMethodQualification";
+import {
+  qualificationMatchesBinding,
+  type MethodQualificationRecord,
+} from "@/lib/partner/partnerMethodQualification";
 import {
   PARTNER_METHOD_QUALIFICATION_COOKIE,
   verifyPartnerMethodQualificationCookie,
@@ -19,7 +22,7 @@ export async function requireQualifiedPartnerMethod(input: {
   partnerId: string;
   policyId: string;
   policyVersion?: number;
-}): Promise<{ ok: true } | { ok: false; code: string }> {
+}): Promise<{ ok: true; record: MethodQualificationRecord } | { ok: false; code: string }> {
   const verifyRequestId = input.verifyRequestId.trim();
   const bindingTok = input.request.cookies.get(PARTNER_CONTINUE_BINDING_COOKIE)?.value;
   const pointer = bindingTok ? await verifyPartnerContinueBindingCookie(bindingTok) : null;
@@ -49,5 +52,5 @@ export async function requireQualifiedPartnerMethod(input: {
   })) {
     return { ok: false, code: "method_not_qualified" };
   }
-  return { ok: true };
+  return { ok: true, record: record! };
 }

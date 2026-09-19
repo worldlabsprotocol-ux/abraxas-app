@@ -84,10 +84,11 @@ describe("consent route method qualification gate", () => {
       { params: Promise.resolve({ id: "vr-sandbox-1" }) },
     );
     expect(res.status).toBe(200);
-    expect(mockConsentAndDecide).toHaveBeenCalledWith({
+    expect(mockConsentAndDecide).toHaveBeenCalledWith(expect.objectContaining({
       requestId: "vr-sandbox-1",
       suiAddress: "0xabc",
-    });
+      request: expect.any(Request),
+    }));
     const body = await res.json() as { decision_context?: string };
     expect(body.decision_context ?? "sandbox_only").toBe("sandbox_only");
   });

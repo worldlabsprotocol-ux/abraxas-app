@@ -77,6 +77,7 @@ export async function POST(
     const result = await consentAndDecide({
       requestId: id,
       suiAddress: session.session.suiAddress,
+      request: req,
     });
 
     const appOrigin = getPublicAppOriginFromRequest(req);

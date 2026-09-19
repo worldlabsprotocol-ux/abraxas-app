@@ -65,7 +65,12 @@ describe("requireQualifiedPartnerMethod", () => {
       partnerId: STORED.partnerId,
       policyId: STORED.policyId,
     });
-    expect(ok).toEqual({ ok: true });
+    expect(ok.ok).toBe(true);
+    if (ok.ok) {
+      expect(ok.record.methodId).toBe("privacy_preserving");
+      expect(ok.record.sandboxOnly).toBe(true);
+      expect(ok.record.issuedReceipt).toBe(false);
+    }
 
     mockPeek.mockResolvedValue({ ...STORED, policyId: "good-trouble-retail-v1" });
     const cross = await requireQualifiedPartnerMethod({
