@@ -21,8 +21,6 @@ export const JUDGE_DEMO_VISIBLE_PATHS = [
   "/docs/integration-kit",
   "/developers/launchpad",
   "/docs/circle-arc-testnet",
-  "/judge-demo",
-  "/api/judge-demo/environment",
 ] as const;
 
 export type JudgeDemoFailCode =
