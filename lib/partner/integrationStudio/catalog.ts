@@ -13,6 +13,7 @@ import {
   INTEGRATION_STUDIO_PATHS,
   INTEGRATION_STUDIO_PROVISION,
   INTEGRATION_STUDIO_SOLANA_NOTICE,
+  INTEGRATION_STUDIO_VENUE_NOTICE,
   INTEGRATION_STUDIO_WEBHOOK_NOTICE,
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio/contract";
@@ -93,6 +94,13 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
       creates_transactions: false,
       funds_movement: false,
       notice: INTEGRATION_STUDIO_SOLANA_NOTICE,
+    },
+    trading_venue: {
+      creates_trades: false,
+      creates_transactions: false,
+      funds_movement: false,
+      connects_wallet: false,
+      notice: INTEGRATION_STUDIO_VENUE_NOTICE,
     },
   };
 }

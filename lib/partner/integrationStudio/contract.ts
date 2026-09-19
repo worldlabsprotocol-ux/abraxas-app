@@ -4,6 +4,7 @@
 import { GOOGLE_ACCOUNT_NOT_ELIGIBILITY } from "@/lib/partner/launchpad/policyPacks";
 import { PARTNER_EVENT_NOT_AUTHORIZATION } from "@/lib/partner/eventDelivery/contract";
 import { SOLANA_NO_FUNDS_BOUNDARY } from "@/lib/partner/solana/contract";
+import { TRADING_VENUE_NO_FUNDS_BOUNDARY } from "@/lib/partner/tradingVenue/contract";
 
 export const INTEGRATION_STUDIO_PATH = "/developers/integration-studio" as const;
 
@@ -12,6 +13,7 @@ export const INTEGRATION_STUDIO_PATHS = [
   "server_receipt_verify",
   "webhook_events",
   "solana_gate",
+  "trading_venue",
 ] as const;
 
 export type IntegrationStudioPathId = (typeof INTEGRATION_STUDIO_PATHS)[number];
@@ -65,6 +67,7 @@ export const INTEGRATION_STUDIO_PROVISION = {
 export const INTEGRATION_STUDIO_GOOGLE = GOOGLE_ACCOUNT_NOT_ELIGIBILITY;
 export const INTEGRATION_STUDIO_WEBHOOK_NOTICE = PARTNER_EVENT_NOT_AUTHORIZATION;
 export const INTEGRATION_STUDIO_SOLANA_NOTICE = SOLANA_NO_FUNDS_BOUNDARY;
+export const INTEGRATION_STUDIO_VENUE_NOTICE = TRADING_VENUE_NO_FUNDS_BOUNDARY;
 
 export function isIntegrationStudioPathId(value: string): value is IntegrationStudioPathId {
   return (INTEGRATION_STUDIO_PATHS as readonly string[]).includes(value);

@@ -59,15 +59,21 @@ describe("Integration Studio", () => {
     const verify = studioSnippetForPath("server_receipt_verify").code;
     const webhook = studioSnippetForPath("webhook_events").code;
     const solana = studioSnippetForPath("solana_gate").code;
+    const venue = studioSnippetForPath("trading_venue").code;
     expect(hosted).toContain("AbraxasPartnerKit");
     expect(verify).toContain("verifyCallback");
     expect(webhook).toContain("verifyPartnerWebhookEvent");
     expect(solana).toContain("AbraxasSolanaPartnerAdapter");
     expect(solana).not.toMatch(/createTransaction|sendAndConfirm|mintTo/);
-    const catalog = studioPublicCatalog({ pathId: "solana_gate" });
+    expect(venue).toContain("AbraxasTradingVenueAdapter");
+    expect(venue).toContain("enable_market_access");
+    expect(venue).not.toMatch(/placeOrder|submitOrder|connectWallet/);
+    const catalog = studioPublicCatalog({ pathId: "trading_venue" });
     expect(catalog.solana.creates_transactions).toBe(false);
     expect(catalog.solana.funds_movement).toBe(false);
-    expect(studioPayloadLeaks({ hosted, verify, webhook, solana, catalog })).toEqual([]);
+    expect(catalog.trading_venue.creates_trades).toBe(false);
+    expect(catalog.trading_venue.connects_wallet).toBe(false);
+    expect(studioPayloadLeaks({ hosted, verify, webhook, solana, venue, catalog })).toEqual([]);
   });
 
   it("serves a public catalog with a safe response shape", async () => {

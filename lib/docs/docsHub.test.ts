@@ -40,6 +40,7 @@ describe("docsHub", () => {
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/integration-kit");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/developers/integration-studio");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/solana");
+    expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/trading-venue");
     expect(getDocsHubGroup("core-concepts")?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/solana");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/partner-event-delivery");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/circle-arc-testnet");

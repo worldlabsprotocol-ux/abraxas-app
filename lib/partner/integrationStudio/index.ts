@@ -6,6 +6,7 @@ export {
   INTEGRATION_STUDIO_CHECKLIST,
   INTEGRATION_STUDIO_PROVISION,
   INTEGRATION_STUDIO_GOOGLE,
+  INTEGRATION_STUDIO_VENUE_NOTICE,
   isIntegrationStudioPathId,
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio/contract";
