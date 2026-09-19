@@ -56,7 +56,7 @@ export function toClientVisibleResult(
   };
 }
 
-export function assertNoSensitiveClientKeys(payload: Record<string, unknown>): string[] {
+export function assertNoSensitiveClientKeys(payload: object): string[] {
   const leaks: string[] = [];
   const blob = JSON.stringify(payload).toLowerCase();
   const needles = [
