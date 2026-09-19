@@ -7,15 +7,34 @@ import { CircleSettlementLaunchpadPanel } from "@/components/partner/launchpad/C
 describe("CircleSettlementLaunchpadPanel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch = vi.fn(async () => new Response(JSON.stringify({
-      ok: true,
-      available: false,
-      code: "circle_unavailable",
-      activates_production: false,
-      not_a_custodian: true,
-      intent_is_not_a_payment: true,
-      evidence: null,
-    }), { status: 200 })) as typeof fetch;
+    global.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("eligible-receipts")) {
+        return new Response(JSON.stringify({
+          ok: true,
+          receipts: [{
+            selection_token: "opaque-token",
+            decision_state: "approved",
+            issued_at: "2026-09-19T09:55:00.000Z",
+            policy_version: 1,
+            environment: "sandbox",
+            eligibility_summary: "Sandbox product eligibility. Not identity verification. Not usable in Production.",
+            amount_minor: 10000,
+            network: "ARC-TESTNET",
+            currency: "USDC",
+          }],
+        }), { status: 200 });
+      }
+      return new Response(JSON.stringify({
+        ok: true,
+        available: false,
+        code: "circle_unavailable",
+        activates_production: false,
+        not_a_custodian: true,
+        intent_is_not_a_payment: true,
+        evidence: null,
+      }), { status: 200 });
+    }) as typeof fetch;
   });
 
   afterEach(() => {
@@ -30,10 +49,19 @@ describe("CircleSettlementLaunchpadPanel", () => {
     expect(await findByText(/not a custodian/i)).toBeTruthy();
     expect(await findByText(/circle_unavailable/)).toBeTruthy();
     expect(queryByText(/^Activate production$/i)).toBeNull();
+    expect(queryByText(/Signed receipt ID/i)).toBeNull();
+    expect(await findByText(/Eligible sandbox receipts/)).toBeTruthy();
+    expect(await findByText(/Create DEMO settlement intent/)).toBeTruthy();
+    expect(await findByText(/Submit testnet transfer stays unavailable/)).toBeTruthy();
   });
 
   it("shows a reviewable pending card and the distinct submit action", async () => {
-    global.fetch = vi.fn(async () => new Response(JSON.stringify({
+    global.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("eligible-receipts")) {
+        return new Response(JSON.stringify({ ok: true, receipts: [] }), { status: 200 });
+      }
+      return new Response(JSON.stringify({
       ok: true,
       available: true,
       code: "settlement_pending",
@@ -46,18 +74,20 @@ describe("CircleSettlementLaunchpadPanel", () => {
         network: "ARC-TESTNET",
         currency: "USDC",
         amount_minor: 10_000,
-        receipt_id: "receipt-1",
         policy_id: "policy-1",
         policy_version: 1,
         label: "sandbox/testnet",
       },
-    }), { status: 200 })) as typeof fetch;
-    const { findByText } = render(createElement(CircleSettlementLaunchpadPanel, {
+    }), { status: 200 });
+    }) as typeof fetch;
+    const { findByText, queryByText } = render(createElement(CircleSettlementLaunchpadPanel, {
       applicationId: "app-1",
     }));
     expect(await findByText(/No funds moved yet/)).toBeTruthy();
     expect(await findByText(/Pending intent — sandbox\/testnet/)).toBeTruthy();
     expect(await findByText(/Submit testnet transfer/)).toBeTruthy();
     expect(await findByText(/amount_minor: 10000/)).toBeTruthy();
+    expect(queryByText(/receipt_id/i)).toBeNull();
+    expect(queryByText(/Signed receipt ID/i)).toBeNull();
   });
 });

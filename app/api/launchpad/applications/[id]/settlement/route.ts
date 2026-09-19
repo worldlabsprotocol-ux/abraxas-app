@@ -81,8 +81,8 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   const result = await runCircleSettlement({
     application: app,
     partnerId: auth.session.partnerId,
-    receiptId: String(body.receipt_id ?? ""),
-    amountMinor: body.amount_minor,
+    sessionKeyId: auth.session.apiKeyId,
+    selectionToken: body.selection_token,
     body,
   });
   const terminalDuplicate = result.duplicate && (

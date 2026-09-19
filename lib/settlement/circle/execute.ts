@@ -6,7 +6,6 @@ import "server-only";
 import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
 import { recordLaunchpadActivity } from "@/lib/partner/launchpad/recordActivity";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
-import { parseAmountMinor } from "@/lib/settlement/circle/amount";
 import { mapOfficialProviderStateToIntent } from "@/lib/settlement/circle/authenticated";
 import {
   isCircleAuthenticatedResult,
@@ -26,6 +25,10 @@ import {
   type CircleIntentState,
 } from "@/lib/settlement/circle/constants";
 import type { CircleSafeEvidence } from "@/lib/settlement/circle/evidence";
+import {
+  consumeEligibleReceiptSelection,
+  verifyEligibleReceiptSelection,
+} from "@/lib/settlement/circle/eligibleReceiptSelection";
 import { gateSettlementReceipt } from "@/lib/settlement/circle/receiptGate";
 import {
   applyAuthenticatedEvidence,
@@ -99,6 +102,15 @@ export function rejectClientProvidedSettlementProof(body: Record<string, unknown
   return null;
 }
 
+const CLIENT_CREATE_OVERRIDE_KEYS = [
+  "receipt_id",
+  "amount_minor",
+  "amount",
+  "network",
+  "currency",
+  "partner_id",
+] as const;
+
 const CLIENT_SUBMIT_OVERRIDE_KEYS = [
   "amount_minor",
   "amount",
@@ -113,7 +125,20 @@ const CLIENT_SUBMIT_OVERRIDE_KEYS = [
   "source_wallet_id",
   "destination_wallet_id",
   "wallet_set_id",
+  "selection_token",
 ] as const;
+
+export function rejectClientCreateOverrides(body: Record<string, unknown> | null): CirclePublicCode | null {
+  if (!body) return CIRCLE_PUBLIC_CODES.invalid_input;
+  const hostile = rejectClientProvidedSettlementProof(body);
+  if (hostile) return hostile;
+  for (const key of CLIENT_CREATE_OVERRIDE_KEYS) {
+    if (body[key] != null && body[key] !== "") {
+      return CIRCLE_PUBLIC_CODES.client_override_rejected;
+    }
+  }
+  return null;
+}
 
 export function rejectClientSubmitOverrides(body: Record<string, unknown> | null): CirclePublicCode | null {
   if (!body) return CIRCLE_PUBLIC_CODES.invalid_input;
@@ -203,12 +228,12 @@ function statusCode(state: CircleIntentState): CirclePublicCode {
 export async function runCircleSettlement(input: {
   application: LaunchpadApplicationRow;
   partnerId: string;
-  receiptId: string;
-  amountMinor?: unknown;
+  sessionKeyId: string;
+  selectionToken?: unknown;
   body?: Record<string, unknown> | null;
 }): Promise<CircleSettlementView> {
   const availability = await probeCircleAvailability();
-  const hostile = rejectClientProvidedSettlementProof(input.body ?? null);
+  const hostile = rejectClientCreateOverrides(input.body ?? null);
   if (hostile) {
     return view({ ok: false, code: hostile, availability });
   }
@@ -226,13 +251,20 @@ export async function runCircleSettlement(input: {
     });
   }
 
-  const amountMinor = parseAmountMinor(input.amountMinor, CIRCLE_DEMO_AMOUNT_MINOR);
-  if (amountMinor == null) {
-    return view({ ok: false, code: CIRCLE_PUBLIC_CODES.invalid_input, availability });
+  const token = typeof input.selectionToken === "string" ? input.selectionToken : "";
+  const verified = await verifyEligibleReceiptSelection(token, {
+    partnerId: input.partnerId,
+    applicationId: input.application.id,
+    policyId: input.application.policy_id,
+    policyVersion: input.application.policy_version,
+    sessionKeyId: input.sessionKeyId,
+  });
+  if (!verified.ok) {
+    return view({ ok: false, code: verified.code, availability });
   }
 
   const gated = await gateSettlementReceipt({
-    receiptId: input.receiptId,
+    receiptId: verified.selection.receiptId,
     partnerId: input.partnerId,
     policyId: input.application.policy_id,
     policyVersion: input.application.policy_version,
@@ -241,10 +273,12 @@ export async function runCircleSettlement(input: {
     return view({ ok: false, code: gated.code, availability });
   }
 
+  consumeEligibleReceiptSelection(verified.selection.jti, verified.selection.expMs);
+
   const inserted = await insertPendingIntent({
     applicationId: input.application.id,
     partnerId: input.partnerId,
-    amountMinor,
+    amountMinor: CIRCLE_DEMO_AMOUNT_MINOR,
     receiptId: gated.receipt_id,
     policyId: input.application.policy_id,
     policyVersion: input.application.policy_version,

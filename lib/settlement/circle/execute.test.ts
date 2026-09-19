@@ -55,6 +55,10 @@ vi.mock("@/lib/settlement/circle/client.server", () => ({
 }));
 
 import { runCircleSettlement, submitCircleSettlementIntent } from "@/lib/settlement/circle/execute";
+import {
+  resetEligibleReceiptSelectionReplayForTests,
+  signEligibleReceiptSelection,
+} from "@/lib/settlement/circle/eligibleReceiptSelection";
 
 const app = {
   id: "app-1",
@@ -128,10 +132,31 @@ function readyAvailability() {
 describe("runCircleSettlement create-intent", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    resetEligibleReceiptSelectionReplayForTests();
+    process.env.ABRAXAS_BROWSER_SESSION_SECRET = "test-settlement-selection-secret";
     createPortMock.mockReturnValue(null);
     gateMock.mockResolvedValue({ ok: true, code: CIRCLE_PUBLIC_CODES.pending, receipt_id: "receipt-1" });
     listMock.mockResolvedValue([]);
   });
+
+  async function selectionToken(overrides: Partial<{
+    receiptId: string;
+    partnerId: string;
+    applicationId: string;
+    policyId: string;
+    policyVersion: number;
+    sessionKeyId: string;
+  }> = {}) {
+    return signEligibleReceiptSelection({
+      receiptId: "receipt-1",
+      partnerId: "acme",
+      applicationId: "app-1",
+      policyId: "policy-1",
+      policyVersion: 1,
+      sessionKeyId: "key-1",
+      ...overrides,
+    });
+  }
 
   it("creates a pending intent with zero Circle calls when configured", async () => {
     probeMock.mockResolvedValue(readyAvailability());
@@ -142,11 +167,13 @@ describe("runCircleSettlement create-intent", () => {
       createTestnetUsdcTransfer: transfer,
       getTransaction: vi.fn(),
     });
+    const token = await selectionToken();
     const result = await runCircleSettlement({
       application: app,
       partnerId: "acme",
-      receiptId: "receipt-1",
-      body: { receipt_id: "receipt-1" },
+      sessionKeyId: "key-1",
+      selectionToken: token,
+      body: { selection_token: token },
     });
     expect(result.ok).toBe(true);
     expect(result.code).toBe("settlement_pending");
@@ -155,16 +182,19 @@ describe("runCircleSettlement create-intent", () => {
     expect(result.evidence?.circle_transaction_id).toBeNull();
     expect(createPortMock).not.toHaveBeenCalled();
     expect(transfer).not.toHaveBeenCalled();
+    expect(gateMock).toHaveBeenCalledWith(expect.objectContaining({ receiptId: "receipt-1" }));
   });
 
   it("creates a pending intent when Circle is unavailable and does not mark it settled", async () => {
     probeMock.mockResolvedValue(unavailableAvailability());
     insertMock.mockResolvedValue({ ok: true, row: pendingRow(), duplicate: false });
+    const token = await selectionToken();
     const result = await runCircleSettlement({
       application: app,
       partnerId: "acme",
-      receiptId: "receipt-1",
-      body: { receipt_id: "receipt-1", idempotency_key: "demo-arc-settlement-1" },
+      sessionKeyId: "key-1",
+      selectionToken: token,
+      body: { selection_token: token },
     });
     expect(result.ok).toBe(true);
     expect(result.code).toBe("settlement_pending");
@@ -179,10 +209,13 @@ describe("runCircleSettlement create-intent", () => {
       code: CIRCLE_PUBLIC_CODES.receipt_denied,
       receipt_id: "receipt-denied",
     });
+    const token = await selectionToken({ receiptId: "receipt-denied" });
     const result = await runCircleSettlement({
       application: app,
       partnerId: "acme",
-      receiptId: "receipt-denied",
+      sessionKeyId: "key-1",
+      selectionToken: token,
+      body: { selection_token: token },
     });
     expect(result.ok).toBe(false);
     expect(result.code).toBe("settlement_receipt_denied");
@@ -190,22 +223,99 @@ describe("runCircleSettlement create-intent", () => {
     expect(createPortMock).not.toHaveBeenCalled();
   });
 
-  it("returns the existing pending intent on duplicate create without Circle", async () => {
+  it("rejects client receipt ids and does not call Circle", async () => {
     probeMock.mockResolvedValue(readyAvailability());
-    insertMock.mockResolvedValue({ ok: true, row: pendingRow(), duplicate: true });
     const result = await runCircleSettlement({
       application: app,
       partnerId: "acme",
+      sessionKeyId: "key-1",
+      selectionToken: "ignored",
+      body: { receipt_id: "receipt-1", selection_token: "ignored" },
+    });
+    expect(result.code).toBe("settlement_client_override_rejected");
+    expect(gateMock).not.toHaveBeenCalled();
+    expect(insertMock).not.toHaveBeenCalled();
+    expect(createPortMock).not.toHaveBeenCalled();
+  });
+
+  it("fails closed on tampered, expired, replayed, and cross-tenant tokens", async () => {
+    probeMock.mockResolvedValue(readyAvailability());
+    insertMock.mockResolvedValue({ ok: true, row: pendingRow(), duplicate: false });
+    const fresh = await selectionToken();
+    const tampered = await runCircleSettlement({
+      application: app,
+      partnerId: "acme",
+      sessionKeyId: "key-1",
+      selectionToken: `${fresh}aa`,
+      body: { selection_token: `${fresh}aa` },
+    });
+    expect(tampered.code).toBe("settlement_selection_invalid");
+
+    const expiredToken = await signEligibleReceiptSelection({
       receiptId: "receipt-1",
+      partnerId: "acme",
+      applicationId: "app-1",
+      policyId: "policy-1",
+      policyVersion: 1,
+      sessionKeyId: "key-1",
+    }, Date.now() - 11 * 60 * 1000);
+    const expired = await runCircleSettlement({
+      application: app,
+      partnerId: "acme",
+      sessionKeyId: "key-1",
+      selectionToken: expiredToken,
+      body: { selection_token: expiredToken },
+    });
+    expect(expired.code).toBe("settlement_selection_expired");
+
+    const crossToken = await selectionToken({ partnerId: "other", applicationId: "app-other" });
+    const cross = await runCircleSettlement({
+      application: app,
+      partnerId: "acme",
+      sessionKeyId: "key-1",
+      selectionToken: crossToken,
+      body: { selection_token: crossToken },
+    });
+    expect(cross.code).toBe("settlement_selection_cross_tenant");
+
+    const replayToken = await selectionToken();
+    const first = await runCircleSettlement({
+      application: app,
+      partnerId: "acme",
+      sessionKeyId: "key-1",
+      selectionToken: replayToken,
+      body: { selection_token: replayToken },
+    });
+    expect(first.ok).toBe(true);
+    const replay = await runCircleSettlement({
+      application: app,
+      partnerId: "acme",
+      sessionKeyId: "key-1",
+      selectionToken: replayToken,
+      body: { selection_token: replayToken },
+    });
+    expect(replay.code).toBe("settlement_selection_replay");
+    expect(insertMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns the existing pending intent on duplicate create without Circle", async () => {
+    probeMock.mockResolvedValue(readyAvailability());
+    insertMock.mockResolvedValue({ ok: true, row: pendingRow(), duplicate: true });
+    const token = await selectionToken();
+    const result = await runCircleSettlement({
+      application: app,
+      partnerId: "acme",
+      sessionKeyId: "key-1",
+      selectionToken: token,
+      body: { selection_token: token },
     });
     expect(result.duplicate).toBe(true);
     expect(result.evidence?.state).toBe("pending");
     expect(createPortMock).not.toHaveBeenCalled();
   });
 
-  it("allocates distinct Circle keys when two applications share identical browser input", async () => {
+  it("allocates distinct Circle keys when two applications share the same receipt", async () => {
     probeMock.mockResolvedValue(unavailableAvailability());
-    const browserBody = { receipt_id: "shared-receipt", idempotency_key: "demo-arc-settlement-1" };
     insertMock
       .mockResolvedValueOnce({
         ok: true,
@@ -217,17 +327,21 @@ describe("runCircleSettlement create-intent", () => {
         row: { ...pendingRow(), application_id: "app-b", idempotency_key: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb" },
         duplicate: false,
       });
+    const firstToken = await selectionToken({ applicationId: "app-a" });
+    const secondToken = await selectionToken({ applicationId: "app-b" });
     const first = await runCircleSettlement({
       application: { ...app, id: "app-a" },
       partnerId: "acme",
-      receiptId: browserBody.receipt_id,
-      body: browserBody,
+      sessionKeyId: "key-1",
+      selectionToken: firstToken,
+      body: { selection_token: firstToken },
     });
     const second = await runCircleSettlement({
       application: { ...app, id: "app-b" },
       partnerId: "acme",
-      receiptId: browserBody.receipt_id,
-      body: browserBody,
+      sessionKeyId: "key-1",
+      selectionToken: secondToken,
+      body: { selection_token: secondToken },
     });
     expect(first.evidence?.idempotency_key).not.toBe(second.evidence?.idempotency_key);
     expect(insertMock.mock.calls[0][0].idempotencyKey).toBeUndefined();

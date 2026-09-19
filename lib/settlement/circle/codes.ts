@@ -34,6 +34,10 @@ export const CIRCLE_PUBLIC_CODES = {
   not_pending: "settlement_not_pending",
   duplicate_submit: "settlement_duplicate_submit",
   client_override_rejected: "settlement_client_override_rejected",
+  selection_invalid: "settlement_selection_invalid",
+  selection_expired: "settlement_selection_expired",
+  selection_replay: "settlement_selection_replay",
+  selection_cross_tenant: "settlement_selection_cross_tenant",
 } as const;
 
 export type CirclePublicCode = (typeof CIRCLE_PUBLIC_CODES)[keyof typeof CIRCLE_PUBLIC_CODES];
