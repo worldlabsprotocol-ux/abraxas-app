@@ -77,9 +77,13 @@ vi.mock("@/lib/sui/zklogin/session", () => ({
   parseIdTokenFromCallbackHash: (...args: unknown[]) => mockParseToken(...args),
 }));
 
-vi.mock("@/lib/partner/partnerVerifyResume", () => ({
-  clearPartnerVerifyResume: () => mockClearResume(),
-}));
+vi.mock("@/lib/partner/partnerVerifyResume", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/partner/partnerVerifyResume")>();
+  return {
+    ...actual,
+    clearPartnerVerifyResume: () => mockClearResume(),
+  };
+});
 
 vi.mock("@/lib/sui/zklogin/loginInFlight", () => ({
   clearLoginInFlight: () => mockClearLogin(),
