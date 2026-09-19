@@ -176,7 +176,7 @@ describe("Partner Continue method qualification gating", () => {
     expect(screen.getByRole("button", { name: /Use selected method/i })).toBeTruthy();
   });
 
-  it("renders final consent only after the server confirms qualification", async () => {
+  it("qualifies sandbox privacy-preserving on exactly one Use selected method click, then shows consent", async () => {
     global.fetch = mockPartnerFetch({ qualifyOnPost: true });
     render(<PartnerContinueClient />);
     await waitFor(() => {

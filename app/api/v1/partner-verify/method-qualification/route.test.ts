@@ -4,6 +4,8 @@ import { NextRequest } from "next/server";
 const mockPeek = vi.fn();
 const mockRequireSession = vi.fn();
 const mockMaybeSingle = vi.fn();
+const mockGetPolicy = vi.fn();
+const mockGetPolicyAtVersion = vi.fn();
 
 vi.mock("@/lib/auth/browserSession", () => ({
   requireBrowserSession: (...args: unknown[]) => mockRequireSession(...args),
@@ -13,6 +15,11 @@ vi.mock("@/lib/partner/partnerFlowContinuationStore", () => ({
   createSupabaseContinuationStore: () => ({
     peekByVerifyRequestId: (...args: unknown[]) => mockPeek(...args),
   }),
+}));
+
+vi.mock("@/lib/policy/getPolicy", () => ({
+  getPartnerPolicy: (...args: unknown[]) => mockGetPolicy(...args),
+  getPartnerPolicyAtVersion: (...args: unknown[]) => mockGetPolicyAtVersion(...args),
 }));
 
 vi.mock("@/lib/supabase/admin", () => ({
@@ -49,7 +56,6 @@ function vrRow(overrides: Record<string, unknown> = {}) {
     data: {
       partner_id: STORED.partnerId,
       policy_id: STORED.policyId,
-      policy_version: 1,
       sui_address: SUBJECT,
       status: "pending",
       expires_at: new Date(Date.now() + 600_000).toISOString(),
@@ -75,6 +81,16 @@ describe("method-qualification routes", () => {
     mockPeek.mockReset();
     mockPeek.mockResolvedValue(STORED);
     mockMaybeSingle.mockResolvedValue(vrRow());
+    mockGetPolicy.mockResolvedValue({
+      id: STORED.policyId,
+      partner_id: STORED.partnerId,
+      version: 1,
+    });
+    mockGetPolicyAtVersion.mockResolvedValue({
+      id: STORED.policyId,
+      partner_id: STORED.partnerId,
+      version: 1,
+    });
     mockRequireSession.mockResolvedValue({
       ok: true,
       session: { suiAddress: SUBJECT },
@@ -127,6 +143,34 @@ describe("method-qualification routes", () => {
     expect(res.headers.get("set-cookie") ?? "").toMatch(/abraxas_partner_method_qualification=/);
   });
 
+  it("POST qualifies sandbox privacy_preserving when continuation version is absent and VR has no policy_version", async () => {
+    mockPeek.mockResolvedValue({ ...STORED, policyVersion: undefined, consumedAt: new Date().toISOString() });
+    const postReq = new NextRequest("http://localhost/api/v1/partner-verify/method-qualification", {
+      method: "POST",
+      body: JSON.stringify({
+        verify_request: "vr-sandbox-1",
+        method_id: "privacy_preserving",
+      }),
+    });
+    const postRes = await POST(postReq);
+    expect(postRes.status).toBe(200);
+    expect(await postRes.json()).toMatchObject({
+      method_qualified: true,
+      issuedReceipt: false,
+    });
+    const cookies = cookieMap(postRes.headers.get("set-cookie"));
+    const getReq = new NextRequest(
+      "http://localhost/api/v1/partner-verify/method-qualification?verify_request=vr-sandbox-1",
+    );
+    getReq.cookies.set(PARTNER_METHOD_QUALIFICATION_COOKIE, cookies[PARTNER_METHOD_QUALIFICATION_COOKIE]);
+    const getRes = await GET(getReq);
+    expect(getRes.status).toBe(200);
+    expect(await getRes.json()).toMatchObject({
+      method_qualified: true,
+      issuedReceipt: false,
+    });
+  });
+
   it("POST qualifies privacy_preserving without a continue-binding cookie, then GET confirms", async () => {
     const postReq = new NextRequest("http://localhost/api/v1/partner-verify/method-qualification", {
       method: "POST",
@@ -168,8 +212,12 @@ describe("method-qualification routes", () => {
     mockMaybeSingle.mockResolvedValue(vrRow({
       partner_id: "good-trouble-cannabis",
       policy_id: "good-trouble-retail-v1",
-      policy_version: 2,
     }));
+    mockGetPolicyAtVersion.mockResolvedValue({
+      id: "good-trouble-retail-v1",
+      partner_id: "good-trouble-cannabis",
+      version: 2,
+    });
     const binding = await signPartnerContinueBindingCookie({ verifyRequestId: "vr-retail-1" });
     const req = new NextRequest("http://localhost/api/v1/partner-verify/method-qualification", {
       method: "POST",

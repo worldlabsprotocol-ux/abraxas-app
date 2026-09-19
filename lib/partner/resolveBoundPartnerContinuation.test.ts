@@ -3,11 +3,18 @@ import { NextRequest } from "next/server";
 
 const mockPeek = vi.fn();
 const mockMaybeSingle = vi.fn();
+const mockGetPolicy = vi.fn();
+const mockGetPolicyAtVersion = vi.fn();
 
 vi.mock("@/lib/partner/partnerFlowContinuationStore", () => ({
   createSupabaseContinuationStore: () => ({
     peekByVerifyRequestId: (...args: unknown[]) => mockPeek(...args),
   }),
+}));
+
+vi.mock("@/lib/policy/getPolicy", () => ({
+  getPartnerPolicy: (...args: unknown[]) => mockGetPolicy(...args),
+  getPartnerPolicyAtVersion: (...args: unknown[]) => mockGetPolicyAtVersion(...args),
 }));
 
 vi.mock("@/lib/supabase/admin", () => ({
@@ -47,7 +54,6 @@ function vrRow(overrides: Record<string, unknown> = {}) {
     data: {
       partner_id: STORED.partnerId,
       policy_id: STORED.policyId,
-      policy_version: 1,
       sui_address: SUBJECT,
       status: "pending",
       expires_at: new Date(Date.now() + 600_000).toISOString(),
@@ -62,8 +68,46 @@ describe("resolveBoundPartnerContinuation", () => {
     process.env.ABRAXAS_BROWSER_SESSION_SECRET = "test-method-qualification-secret";
     mockPeek.mockReset();
     mockMaybeSingle.mockReset();
+    mockGetPolicy.mockReset();
+    mockGetPolicyAtVersion.mockReset();
     mockPeek.mockResolvedValue(STORED);
     mockMaybeSingle.mockResolvedValue(vrRow());
+    mockGetPolicy.mockResolvedValue({
+      id: STORED.policyId,
+      partner_id: STORED.partnerId,
+      version: 1,
+    });
+    mockGetPolicyAtVersion.mockResolvedValue({
+      id: STORED.policyId,
+      partner_id: STORED.partnerId,
+      version: 1,
+    });
+  });
+
+  it("binds a consumed OAuth continuation when the VR has no policy_version column", async () => {
+    mockPeek.mockResolvedValue({ ...STORED, policyVersion: undefined });
+    const req = new NextRequest("http://localhost/qualify");
+    const result = await resolveBoundPartnerContinuation({
+      request: req,
+      verifyRequestId: "vr-sandbox-1",
+      sessionSubject: SUBJECT,
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.stored.policyVersion).toBe(1);
+      expect(mockGetPolicy).toHaveBeenCalled();
+      expect(mockGetPolicyAtVersion).not.toHaveBeenCalled();
+    }
+  });
+
+  it("binds an unsigned verification request to the current session without a write", async () => {
+    mockMaybeSingle.mockResolvedValue(vrRow({ sui_address: "" }));
+    const result = await resolveBoundPartnerContinuation({
+      request: new NextRequest("http://localhost/qualify"),
+      verifyRequestId: "vr-sandbox-1",
+      sessionSubject: SUBJECT,
+    });
+    expect(result.ok).toBe(true);
   });
 
   it("binds from session, store, and verification when the continue-binding cookie is absent", async () => {
@@ -108,7 +152,8 @@ describe("resolveBoundPartnerContinuation", () => {
     });
     expect(result).toMatchObject({ ok: false, code: "cross_partner" });
 
-    mockMaybeSingle.mockResolvedValue(vrRow({ policy_version: 9 }));
+    mockMaybeSingle.mockResolvedValue(vrRow());
+    mockGetPolicyAtVersion.mockResolvedValue(null);
     result = await resolveBoundPartnerContinuation({
       request: new NextRequest("http://localhost/qualify"),
       verifyRequestId: "vr-sandbox-1",
@@ -116,7 +161,14 @@ describe("resolveBoundPartnerContinuation", () => {
     });
     expect(result).toMatchObject({ ok: false, code: "altered_version" });
 
-    mockMaybeSingle.mockResolvedValue(vrRow({ sui_address: "" }));
+    mockGetPolicyAtVersion.mockResolvedValue({
+      id: STORED.policyId,
+      partner_id: STORED.partnerId,
+      version: 1,
+    });
+    mockMaybeSingle.mockResolvedValue(vrRow({
+      sui_address: "0x0000000000000000000000000000000000000000000000000000000000000def",
+    }));
     result = await resolveBoundPartnerContinuation({
       request: new NextRequest("http://localhost/qualify"),
       verifyRequestId: "vr-sandbox-1",
