@@ -196,7 +196,7 @@ export function AgeAssuranceMethodChooser({
       existingProofCompatible: existingEligible,
       partnerAgeCheckConfigured: true,
       privacyPreservingAvailable: providers.some((provider) => provider.authoritative || provider.configured),
-      browseSelfAttestAllowed: flowTier === "browse",
+      browseSelfAttestAllowed: false,
     })
     : null;
 
