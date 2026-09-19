@@ -67,6 +67,7 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
         links: [
           { label: "zkLogin setup", href: "/docs/zklogin-setup" },
           { label: "Sui integration", href: "/docs/sui" },
+          { label: "Solana integration", href: "/docs/solana" },
         ],
       },
       {
@@ -105,6 +106,7 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
           { label: "Progressive proof quickstart", href: "/docs/progressive-proof" },
           { label: "Policy packs", href: "/docs/policy-packs" },
           { label: "Integration Kit", href: "/docs/integration-kit" },
+          { label: "Solana integration", href: "/docs/solana" },
           { label: "Partner Event Delivery", href: "/docs/partner-event-delivery" },
           { label: "Circle Arc testnet settlement", href: "/docs/circle-arc-testnet" },
           { label: "Partner Flow", href: "/docs/partner-flow" },
