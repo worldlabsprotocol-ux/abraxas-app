@@ -36,7 +36,7 @@ function walkPages(dir: string, files: string[] = []): string[] {
 
 function hasShellInTree(pagePath: string): boolean {
   const pageSrc = readFileSync(pagePath, "utf8");
-  if (/\bredirect\s*\(/.test(pageSrc) && !pageSrc.includes("return (") && !pageSrc.includes("return(")) {
+  if (/\b(redirect|notFound)\s*\(/.test(pageSrc) && !pageSrc.includes("return (") && !pageSrc.includes("return(")) {
     return true;
   }
   if (SHELL_MARKERS.some((m) => pageSrc.includes(m))) return true;

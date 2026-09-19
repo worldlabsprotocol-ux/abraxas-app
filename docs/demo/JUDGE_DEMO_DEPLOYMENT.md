@@ -112,14 +112,14 @@ CLI must not target Production:
 # Do not vercel deploy --prod. Do not change the demo branch matcher.
 ```
 
-## Judge-visible routes
+## Public product routes
 
 Banner: “DEMO environment · Test data · Testnet transfer submission is disabled”
 
 | Path | Purpose |
 |------|---------|
 | `/` | Homepage |
-| `/judge-demo` | Redirects to `/` when the DEMO contract is enabled; 404 on Production |
+| `/judge-demo` | 404 on both origins. Not a product entry. |
 | `/passport` | Passport |
 | `/good-trouble` | Good Trouble |
 | `/docs/partner-flow` | Partner Flow docs |
