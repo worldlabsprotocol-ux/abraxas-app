@@ -50,7 +50,7 @@ function previewSupabaseBindingFailure(sbUrl: string, req: Request) {
         expected_demo_ref: DEMO_SUPABASE_PROJECT_REF,
       });
       return NextResponse.json({
-        error: "Judge Demo must use DEMO Supabase on https://demo.abraxasworld.xyz",
+        error: "DEMO environment must use DEMO data on https://demo.abraxasworld.xyz",
         code: "judge_demo_runtime_failed_closed",
         expected_supabase_ref: DEMO_SUPABASE_PROJECT_REF,
         fail_codes: evaluation.fail_codes,

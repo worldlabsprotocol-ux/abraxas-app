@@ -122,7 +122,7 @@ describe("CircleSettlementLaunchpadPanel", () => {
       applicationId: "app-1",
     }));
     expect(await findByText(/Pending intent — sandbox\/testnet/)).toBeTruthy();
-    expect(await findByText(/cannot consume testnet funds/i)).toBeTruthy();
+    expect(await findByText(/Testnet transfer submission is disabled/)).toBeTruthy();
     expect(queryByText(/^Submit testnet transfer$/)).toBeNull();
   });
 });

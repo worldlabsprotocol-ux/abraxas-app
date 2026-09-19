@@ -171,7 +171,7 @@ export function BlogArticleBody({
           marginTop: "1.5rem", paddingTop: "1.25rem", borderTop: "1px solid var(--border-strong)",
         }}>
           {article.relatedHref && <Btn href={article.relatedHref} size="sm">Integrate</Btn>}
-          <Btn href="/verification" variant="secondary" size="sm">Verification layer</Btn>
+          <Btn href="/docs/partner-flow" variant="secondary" size="sm">Partner Flow docs</Btn>
           {article.mediumUrl && <Btn href={article.mediumUrl} newTab variant="ghost" size="sm">Read on Medium</Btn>}
           <Link href={`/blog/${article.slug}`} style={{
             fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700,

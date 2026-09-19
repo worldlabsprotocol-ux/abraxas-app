@@ -41,9 +41,22 @@ describe("GET /api/judge-demo/environment", () => {
     }
   });
 
-  it("returns 404 when Judge Demo is not enabled", async () => {
+  it("returns 404 when DEMO flags are not enabled", async () => {
     const res = await GET(new NextRequest("http://localhost/api/judge-demo/environment"));
     expect(res.status).toBe(404);
+  });
+
+  it("returns 404 on the public product host even if DEMO flags are set", async () => {
+    process.env.ABRAXAS_JUDGE_DEMO = "true";
+    process.env.NEXT_PUBLIC_ABRAXAS_JUDGE_DEMO = "true";
+    process.env.ABRAXAS_RUNTIME_ENV = "production";
+    process.env.VERCEL_ENV = "production";
+    const res = await GET(new NextRequest("https://abraxasworld.xyz/api/judge-demo/environment", {
+      headers: { host: "abraxasworld.xyz" },
+    }));
+    expect(res.status).toBe(404);
+    const body = await res.json() as { code?: string };
+    expect(body.code).toBe("judge_demo_not_enabled");
   });
 
   it("proves public judge demo + DEMO bind without credentials", async () => {

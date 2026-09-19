@@ -16,6 +16,8 @@ const SHELL_MARKERS = [
   "PartnerJourneyLayout",
   "PartnerVerifyShell",
   "PartnerContinueClient",
+  "PassportPageClient",
+  "VerificationDashboard",
   "PartnerEnterClient",
   "PartnerLaunchpadClient",
   "AdminShell",

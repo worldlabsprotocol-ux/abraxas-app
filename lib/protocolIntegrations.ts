@@ -26,7 +26,8 @@ const check = await fetch("${SITE_URL}/api/verification/check-level", {
 });
 const level = await check.json();
 if (level.needsDeepVerification) {
-  // Prompt ID check — user completes Veriff once
+  // Send the holder through Partner Flow for the method that policy requires.
+  // Google sign-in is account access only. Identity or liveness is not the default.
 }
 
 // 2) Partner flow: create request → user consents → get decision

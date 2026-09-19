@@ -1,5 +1,5 @@
 // FILE: app/api/judge-demo/environment/route.ts
-// Public Judge Demo identity. Project refs and runtime markers only — never secrets.
+// Public DEMO environment identity. Project refs and runtime markers only — never secrets.
 
 import { NextRequest, NextResponse } from "next/server";
 import {
@@ -8,15 +8,18 @@ import {
   judgeDemoIdentityHasForbiddenMaterial,
   toPublicJudgeDemoIdentity,
 } from "@/lib/judgeDemo/contract";
+import { isPublicProductProduction, isPublicProductRequestHost } from "@/lib/product/publicOrigin";
 
 export const dynamic = "force-dynamic";
 
+const UNAVAILABLE = NextResponse.json(
+  { error: "judge_demo_unavailable", code: "judge_demo_not_enabled" },
+  { status: 404, headers: { "Cache-Control": "no-store" } },
+);
+
 export async function GET(req: NextRequest) {
-  if (!isJudgeDemoRequested()) {
-    return NextResponse.json(
-      { error: "judge_demo_unavailable", code: "judge_demo_not_enabled" },
-      { status: 404, headers: { "Cache-Control": "no-store" } },
-    );
+  if (!isJudgeDemoRequested() || isPublicProductProduction() || isPublicProductRequestHost(req)) {
+    return UNAVAILABLE;
   }
 
   const evaluation = evaluateJudgeDemoContract({ request: req });
