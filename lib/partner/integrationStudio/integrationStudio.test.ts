@@ -81,10 +81,9 @@ describe("Integration Studio", () => {
     };
     expect(json.access).toBe("public");
     expect(json.partner_session_required_for_provisioning).toBe(true);
-    expect((json as { provision: { create_sandbox_cta: string; self_serve_production: boolean } }).provision.create_sandbox_cta)
-      .toBe("Create a sandbox integration");
-    expect((json as { provision: { create_sandbox_cta: string; self_serve_production: boolean } }).provision.self_serve_production)
-      .toBe(false);
+    const provision = (json as unknown as { provision: { create_sandbox_cta: string; self_serve_production: boolean } }).provision;
+    expect(provision.create_sandbox_cta).toBe("Create a sandbox integration");
+    expect(provision.self_serve_production).toBe(false);
     expect(json.contract.pack_id).toBe("age_21_retail");
     expect(json.solana.funds_movement).toBe(false);
     expect(studioPayloadLeaks(json)).toEqual([]);

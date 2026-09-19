@@ -19,4 +19,3 @@ export {
 
 export { studioSnippetForPath, studioSnippetForApplication } from "@/lib/partner/integrationStudio/snippets";
 export { studioPayloadLeaks } from "@/lib/partner/integrationStudio/safety";
-export { createStudioSandbox } from "@/lib/partner/integrationStudio/createSandbox";

@@ -3,13 +3,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import {
-  createStudioSandbox,
   isIntegrationStudioPathId,
   studioPackContract,
   studioPayloadLeaks,
   studioPublicCatalog,
   studioSnippetForPath,
 } from "@/lib/partner/integrationStudio";
+import { createStudioSandbox } from "@/lib/partner/integrationStudio/createSandbox";
 
 export const dynamic = "force-dynamic";
 
