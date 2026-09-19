@@ -169,8 +169,9 @@ export function isRestorablePartnerContinuePath(path: string): boolean {
   if (!/^\/partner\/continue\?[^#]*$/.test(path)) return false;
 
   const params = new URLSearchParams(path.slice(PARTNER_CONTINUE_PATH_PREFIX.length));
-  for (const key of params.keys()) {
-    if (!CONTINUE_ALLOWED_KEYS.has(key)) return false;
+  const keys = Array.from(params.keys());
+  for (let i = 0; i < keys.length; i += 1) {
+    if (!CONTINUE_ALLOWED_KEYS.has(keys[i])) return false;
   }
   if (params.has("return") || params.has("return_url") || params.has("receipt") || params.has("id_token")) {
     return false;
