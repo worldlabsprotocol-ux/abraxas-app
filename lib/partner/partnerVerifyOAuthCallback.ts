@@ -1,14 +1,12 @@
 // FILE: lib/partner/partnerVerifyOAuthCallback.ts
-// OAuth callback completion for partner verify — browser session before resume consumption.
+// OAuth callback completion — activate server continuation after browser session.
 
 import { ensureBrowserSessionReady } from "@/lib/auth/ensureBrowserSession";
 import { completeGoogleZkLogin } from "@/lib/sui/zklogin/completeLogin";
 import { clearLoginInFlight, clearStaleLoginInFlight } from "@/lib/sui/zklogin/loginInFlight";
 import { parseIdTokenFromCallbackHash, loadUserSession } from "@/lib/sui/zklogin/session";
-import {
-  appendPartnerAuthReadyQuery,
-  consumePartnerVerifyResumePath,
-} from "@/lib/partner/partnerVerifyResume";
+import { clearPartnerVerifyResume } from "@/lib/partner/partnerVerifyResume";
+import { isRestorablePartnerContinuePath } from "@/lib/partner/partnerFlowContinuation";
 import {
   createPartnerVerifyCorrelationId,
   logPartnerVerifyAuthEvent,
@@ -34,9 +32,6 @@ export async function completePartnerVerifyOAuthCallback(
   const idToken = parseIdTokenFromCallbackHash(callbackHash);
   let session;
 
-  // A callback token represents a fresh sign-in attempt and must take
-  // precedence over stale local identity state. Completing it also restores
-  // the signing material needed to mint the httpOnly browser-session cookie.
   if (idToken) {
     session = await completeGoogleZkLogin(idToken, { callbackHash });
     logPartnerVerifyAuthEvent("zklogin_complete", { correlationId });
@@ -62,31 +57,33 @@ export async function completePartnerVerifyOAuthCallback(
   }
   logPartnerVerifyAuthEvent("browser_session_ready", { correlationId });
   clearLoginInFlight();
+  clearPartnerVerifyResume();
 
-  const resumePath = consumePartnerVerifyResumePath()
-    ?? await restorePartnerVerifyResumeFromServer();
-
-  if (resumePath) {
+  const activated = await activatePartnerFlowContinuationFromServer();
+  if (activated) {
     logPartnerVerifyAuthEvent("partner_resume_restored", { correlationId });
-    return {
-      redirectPath: appendPartnerAuthReadyQuery(resumePath),
-      correlationId,
-    };
+    return { redirectPath: activated, correlationId };
   }
 
   return { redirectPath: "/passport?signed_in=1", correlationId };
 }
 
-async function restorePartnerVerifyResumeFromServer(): Promise<string | null> {
+async function activatePartnerFlowContinuationFromServer(): Promise<string | null> {
   try {
-    const res = await fetch("/api/v1/partner-verify/resume", { credentials: "include" });
+    const res = await fetch("/api/v1/partner-verify/resume/activate", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
     if (!res.ok) return null;
-    const data = await res.json() as { ok?: boolean; path?: string };
-    if (data.ok && typeof data.path === "string" && data.path.startsWith("/partner/verify?")) {
-      return data.path;
+    const data = await res.json() as { ok?: boolean; continuePath?: string; issuedReceipt?: boolean };
+    if (data.issuedReceipt) return null;
+    if (data.ok && typeof data.continuePath === "string" && isRestorablePartnerContinuePath(data.continuePath)) {
+      return data.continuePath;
     }
   } catch {
-    // Fall through to default passport redirect.
+    // Passport shows a single server-backed return action when auto-resume cannot happen.
   }
   return null;
 }

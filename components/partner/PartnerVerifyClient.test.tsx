@@ -75,6 +75,9 @@ describe("PartnerVerifyClient auth/session gating", () => {
       if (url.includes("/api/v1/partner-flow/evaluate")) {
         return mockEvaluateResponse();
       }
+      if (url.includes("/api/v1/partner-verify/resume")) {
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
       throw new Error(`Unexpected fetch: ${url}`);
     }) as typeof fetch;
   });

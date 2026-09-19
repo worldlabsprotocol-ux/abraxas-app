@@ -24,7 +24,7 @@ describe("partnerVerifyResumeCookie", () => {
     expect(token).toBeTruthy();
 
     const verified = await verifyPartnerVerifyResumeCookie(token!);
-    expect(verified).toEqual(BROWSE_SAMPLE);
+    expect(verified).toMatchObject(BROWSE_SAMPLE);
   });
 
   it("builds restorable partner verify path with browse purpose", () => {

@@ -65,6 +65,7 @@ function PartnerContinueInner() {
   const [error, setError] = useState<string | null>(null);
   const [contextLoading, setContextLoading] = useState(true);
   const [flowContext, setFlowContext] = useState<ResolvedPartnerContinueContext | null>(null);
+  const [boundReturnUrl, setBoundReturnUrl] = useState("");
 
   const verifyRequestId = searchParams.get("verify_request");
   const urlPartnerId = searchParams.get("partner_id") ?? "";
@@ -72,7 +73,7 @@ function PartnerContinueInner() {
   const urlPurpose = searchParams.get("purpose");
   const returnPath = searchParams.get("return");
   const ageAssuranceStatus = searchParams.get("age_assurance");
-  const decodedReturnUrl = returnPath ?? "";
+  const decodedReturnUrl = boundReturnUrl || returnPath || "";
 
   useEffect(() => {
     let cancelled = false;
@@ -104,8 +105,25 @@ function PartnerContinueInner() {
             policy_id?: string;
             purpose?: string | null;
           };
+          let bindingReturnUrl = "";
+          try {
+            const bindingRes = await fetch(
+              `/api/v1/partner-verify/continue-binding?verify_request=${encodeURIComponent(verifyRequestId)}`,
+              { credentials: "include" },
+            );
+            if (bindingRes.ok) {
+              const binding = await bindingRes.json() as { return_url?: string };
+              if (typeof binding.return_url === "string") bindingReturnUrl = binding.return_url;
+            }
+          } catch {
+            // Continue with preview when the binding cookie is absent (evaluate-created flows).
+          }
           if (!cancelled) {
-            setFlowContext(resolvePartnerContinueContext(urlContext, {
+            if (bindingReturnUrl) setBoundReturnUrl(bindingReturnUrl);
+            setFlowContext(resolvePartnerContinueContext({
+              ...urlContext,
+              returnUrl: bindingReturnUrl || urlContext.returnUrl,
+            }, {
               partnerId: preview.partner_id ?? "",
               policyId: preview.policy_id ?? "",
               purpose: preview.purpose ?? null,

@@ -56,7 +56,7 @@ export default function ZkLoginSetupPage() {
       <ContentCard title="Step 3. Test sign-in">
         <BulletList items={[
           "Visit /passport → Continue with Google",
-          "Should land on /auth/zklogin/callback then /passport?signed_in=1",
+          "Should land on /auth/zklogin/callback. Partner Flow then resumes /partner/continue from server-stored state; otherwise Passport shows Return to partner verification. A standalone Passport sign-in lands on /passport?signed_in=1 and never issues a receipt.",
           "Check sui_zklogin_identities table for a 0x… address",
         ]} />
       </ContentCard>

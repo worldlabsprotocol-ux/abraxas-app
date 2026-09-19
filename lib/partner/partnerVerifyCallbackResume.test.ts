@@ -12,18 +12,32 @@ describe("zklogin callback partner verify resume", () => {
     );
     expect(callbackPage).toContain("completePartnerVerifyOAuthCallback");
     expect(callbackPage).toContain("router.replace(redirectPath)");
+    expect(callbackPage).not.toContain("searchParams");
   });
 
-  it("consumes saved partner verify path only after browser session is ready", () => {
+  it("activates server continuation only after browser session is ready", () => {
     const orchestration = readFileSync(
       join(process.cwd(), "lib/partner/partnerVerifyOAuthCallback.ts"),
       "utf8",
     );
     expect(orchestration).toContain("ensureBrowserSessionReady");
-    expect(orchestration).toContain("consumePartnerVerifyResumePath");
+    expect(orchestration).toContain("/api/v1/partner-verify/resume/activate");
     expect(orchestration.indexOf("ensureBrowserSessionReady")).toBeLessThan(
-      orchestration.indexOf("consumePartnerVerifyResumePath"),
+      orchestration.indexOf("resume/activate"),
     );
-    expect(orchestration).toContain("appendPartnerAuthReadyQuery");
+    expect(orchestration).toContain("/passport?signed_in=1");
+    expect(orchestration).not.toContain("consumePartnerVerifyResumePath");
+  });
+
+  it("Passport stranded-user copy offers a server-backed return action", () => {
+    const cta = readFileSync(
+      join(process.cwd(), "components/passport/PartnerVerificationResumeCta.tsx"),
+      "utf8",
+    );
+    expect(cta).toContain("Return to partner verification");
+    expect(cta).toContain("/api/v1/partner-verify/resume/activate");
+    expect(cta).not.toContain("window.location.href =");
+    const passport = readFileSync(join(process.cwd(), "app/passport/page.tsx"), "utf8");
+    expect(passport).toContain("PartnerVerificationResumeCta");
   });
 });

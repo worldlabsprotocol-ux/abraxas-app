@@ -16,6 +16,7 @@ import type { CanonicalWalletBindingStatus } from "@/lib/trust/readCanonicalWall
 import type { StoredCredential } from "@/lib/credentials/storage";
 import type { PartnerFlowHandoffController } from "@/lib/passport/partnerFlowHandoff";
 import { PartnerReturnCta } from "@/components/passport/PartnerReturnCta";
+import { PartnerVerificationResumeCta } from "@/components/passport/PartnerVerificationResumeCta";
 import { PassportRecentActivity } from "@/components/passport/PassportRecentActivity";
 import { AbraxasIdentityCapture } from "@/components/passport/AbraxasIdentityCapture";
 import {
@@ -158,6 +159,8 @@ export function PassportCustomerView({
           {status.summary}
         </p>
       </section>
+
+      <PartnerVerificationResumeCta />
 
       {!walletDone && (
         <section style={CARD} aria-labelledby="passport-signin-heading">

@@ -139,10 +139,29 @@ export function PartnerVerifyClient({
 
   useEffect(() => {
     if (invalidLinkMessage) return;
-    if (verifyInput.ok) {
-      savePartnerVerifyResume(verifyInput.params);
-    }
-  }, [invalidLinkMessage, verifyInput]);
+    const partnerId = relyingPartyId.trim();
+    const resolvedPolicyId = policyId.trim();
+    const resolvedReturnUrl = returnUrl.trim();
+    if (!partnerId || !resolvedReturnUrl || !resolvedPolicyId) return;
+    savePartnerVerifyResume({
+      partnerId,
+      policyId: resolvedPolicyId,
+      returnUrl: resolvedReturnUrl,
+      permission: permission || undefined,
+      permissionVersion: permissionVersion || undefined,
+      purpose: purpose || undefined,
+      appSlug: launchpadAppSlug || undefined,
+    });
+  }, [
+    invalidLinkMessage,
+    relyingPartyId,
+    policyId,
+    returnUrl,
+    permission,
+    permissionVersion,
+    purpose,
+    launchpadAppSlug,
+  ]);
 
   useEffect(() => {
     if (suiAddress) clearLoginInFlight();
@@ -317,8 +336,16 @@ export function PartnerVerifyClient({
     if (signInOnceRef.current || signInBusy || isLoginInFlight()) return;
     signInOnceRef.current = true;
 
-    if (verifyInput.ok) {
-      savePartnerVerifyResume(verifyInput.params);
+    if (relyingPartyId.trim() && policyId.trim() && returnUrl.trim()) {
+      savePartnerVerifyResume({
+        partnerId: relyingPartyId.trim(),
+        policyId: policyId.trim(),
+        returnUrl: returnUrl.trim(),
+        permission: permission || undefined,
+        permissionVersion: permissionVersion || undefined,
+        purpose: purpose || undefined,
+        appSlug: launchpadAppSlug || undefined,
+      });
     }
 
     clearStaleLoginInFlight();
@@ -342,7 +369,18 @@ export function PartnerVerifyClient({
       setPhase("sign_in");
       setStatusMessage("Sign in to continue with Abraxas.");
     }
-  }, [verifyInput, signIn, signInBusy, signInWithGoogle]);
+  }, [
+    relyingPartyId,
+    policyId,
+    returnUrl,
+    permission,
+    permissionVersion,
+    purpose,
+    launchpadAppSlug,
+    signIn,
+    signInBusy,
+    signInWithGoogle,
+  ]);
 
   const handleTryAgain = useCallback(() => {
     evaluateOnceRef.current = false;
