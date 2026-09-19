@@ -74,7 +74,6 @@ function PartnerContinueInner() {
   const urlPartnerId = searchParams.get("partner_id") ?? "";
   const urlPolicyId = searchParams.get("policy_id") ?? "";
   const urlPurpose = searchParams.get("purpose");
-  const inboundReturn = searchParams.get("return") ?? searchParams.get("return_url");
   const ageAssuranceStatus = searchParams.get("age_assurance");
   const decodedReturnUrl = boundReturnUrl;
 
