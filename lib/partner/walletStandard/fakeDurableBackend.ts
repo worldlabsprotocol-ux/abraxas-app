@@ -75,7 +75,7 @@ function isExpired(expiresAt: string): boolean {
 
 function insertChallenge(row: ChallengeRow): { error: { code?: string; message?: string } | null } {
   if (fakeWalletSchemaMissing) return { error: schemaError() };
-  for (const existing of challenges.values()) {
+  for (const existing of Array.from(challenges.values())) {
     if (existing.challenge_id === row.challenge_id) return { error: uniqueError() };
     if (existing.partner_id === row.partner_id && existing.nonce_hash === row.nonce_hash) return { error: uniqueError() };
     if (existing.partner_id === row.partner_id && existing.message_hash === row.message_hash) return { error: uniqueError() };
@@ -87,7 +87,7 @@ function insertChallenge(row: ChallengeRow): { error: { code?: string; message?:
 
 function insertBinding(row: BindingRow): { error: { code?: string; message?: string } | null } {
   if (fakeWalletSchemaMissing) return { error: schemaError() };
-  for (const existing of bindings.values()) {
+  for (const existing of Array.from(bindings.values())) {
     if (existing.binding_ref === row.binding_ref) return { error: uniqueError() };
     if (
       existing.partner_id === row.partner_id
@@ -167,9 +167,9 @@ function consumeNonce(partnerId: string, nonceHash: string, expiresAt: string) {
 }
 
 function tableRows(table: string): Array<Record<string, unknown>> {
-  if (table === "wallet_standard_challenges") return [...challenges.values()];
-  if (table === "wallet_standard_bindings") return [...bindings.values()];
-  if (table === "partner_venue_action_nonces") return [...nonces.values()];
+  if (table === "wallet_standard_challenges") return Array.from(challenges.values());
+  if (table === "wallet_standard_bindings") return Array.from(bindings.values());
+  if (table === "partner_venue_action_nonces") return Array.from(nonces.values());
   return [];
 }
 
