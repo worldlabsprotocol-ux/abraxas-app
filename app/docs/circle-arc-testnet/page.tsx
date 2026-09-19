@@ -35,7 +35,7 @@ export default function CircleArcTestnetDocsPage() {
       </ContentCard>
       <ContentCard title="Fail closed">
         <p style={body}>
-          Unsigned, denied, expired, revoked, wrong-partner, and wrong-policy receipts cannot settle. Duplicate intents return {CIRCLE_PUBLIC_CODES.duplicate}. Missing Circle credentials return {CIRCLE_PUBLIC_CODES.unavailable} on Preview without activating production. The Circle idempotency key is generated on the server.
+          Unsigned, denied, expired, revoked, wrong-partner, wrong-policy, login-only, and self-attested receipts cannot settle. Circle does not ask for identity. Use a policy-qualified signed receipt. The sandbox economic demo pack is not age verification and cannot be used in Production. Duplicate intents return {CIRCLE_PUBLIC_CODES.duplicate}. Missing Circle credentials return {CIRCLE_PUBLIC_CODES.unavailable} on Preview without activating production. The Circle idempotency key is generated on the server.
         </p>
       </ContentCard>
       <ContentCard title="Operator setup">

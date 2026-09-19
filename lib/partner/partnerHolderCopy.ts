@@ -76,8 +76,8 @@ const COPY: Record<PartnerHolderState, Omit<PartnerHolderPresentation, "state">>
     action_label: "Try again",
   },
   verify_age: {
-    title: "Choose how to verify your age",
-    message: "This partner requires age verification. Select the option that works best for you.",
+    title: "Choose how to satisfy this requirement",
+    message: "Abraxas asks for the minimum evidence this policy requires. Signing in only opens an account. Identity or liveness is optional unless the policy truly requires it.",
     action_label: null,
     privacy_note: PRIVACY_NOTES.auth_not_age,
   },
@@ -109,7 +109,7 @@ const COPY: Record<PartnerHolderState, Omit<PartnerHolderPresentation, "state">>
   id_upload_fallback: {
     title: "Verify another way",
     message: "Upload your government ID and a selfie for review. This is a fallback when private methods are unavailable. We will explain retention and deletion before collection.",
-    action_label: "Continue with ID verification",
+    action_label: "Identity / liveness (optional)",
     privacy_note: PRIVACY_NOTES.id_fallback,
   },
   under_review: {

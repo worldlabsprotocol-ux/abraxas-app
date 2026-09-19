@@ -10,14 +10,20 @@ const readyForConsent = {
 };
 
 describe("partner consent visibility", () => {
-  it("shows one consent action after required identity evidence is ready", () => {
+  it("shows one consent action after required policy evidence is ready", () => {
     expect(shouldShowPartnerConsent(readyForConsent)).toBe(true);
-  });
-
-  it("does not present an incomplete Passport as a denied partner decision", () => {
     expect(shouldShowPartnerConsent({
       ...readyForConsent,
       identityComplete: false,
+      evidenceComplete: true,
+    })).toBe(true);
+  });
+
+  it("does not present incomplete policy evidence as a denied partner decision", () => {
+    expect(shouldShowPartnerConsent({
+      ...readyForConsent,
+      identityComplete: false,
+      evidenceComplete: false,
     })).toBe(false);
   });
 

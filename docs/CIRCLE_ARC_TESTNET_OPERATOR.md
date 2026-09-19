@@ -47,8 +47,8 @@ The server generates the Circle `idempotencyKey` as UUID v4. Do not paste a key 
 
 1. Confirm Preview identity is DEMO (`ocntwbxarpjeixdnzide`) and not Production.
 2. Open Partner Launchpad on that Preview.
-3. Use an isolated DEMO sandbox app with a pinned active policy.
-4. Issue a server-verified **sandbox** signed receipt for that partner/policy/version.
+3. Use an isolated DEMO sandbox app with a pinned active policy. For a receipt that does not claim real age verification, use the sandbox-only `sandbox_economic_demo` pack. Do not use it in Production.
+4. Issue a server-verified **sandbox** signed receipt for that partner/policy/version. Partner Flow asks for the minimum evidence that pack requires. Circle settlement never adds an ID step.
 5. On **Arc testnet settlement**, paste the receipt ID. Do not supply a Circle idempotency key.
 6. Create the DEMO settlement intent. It must start `pending`. Creating an intent must not call Circle or move USDC.
 7. Review the pending card (sandbox/testnet, integer amount, receipt, policy/version, ARC-TESTNET / USDC). It must say **No funds moved yet.**

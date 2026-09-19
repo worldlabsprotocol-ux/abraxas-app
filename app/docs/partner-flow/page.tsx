@@ -207,7 +207,7 @@ export default function PartnerFlowDocsPage() {
             <BulletList
               items={[
                 "next=authenticate, holder must sign in",
-                "next=passport, ID + biometric required",
+                "next=passport, choose a policy-qualified method (identity is not the default)",
                 "next=enter, approved; redirect with receipt",
                 "next=denied, policy denial",
                 "next=pending_review, manual review queue",

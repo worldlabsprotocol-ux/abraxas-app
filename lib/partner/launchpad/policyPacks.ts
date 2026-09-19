@@ -24,7 +24,8 @@ export type PolicyPackId =
   | "wallet_control"
   | "membership_credential"
   | "collector_redemption"
-  | "identity_liveness";
+  | "identity_liveness"
+  | "sandbox_economic_demo";
 
 export type PolicyPackProductionSuitability =
   | "sandbox_only"
@@ -236,6 +237,32 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
       ],
     },
   }),
+  sandbox_economic_demo: pack({
+    id: "sandbox_economic_demo",
+    display_name: "Sandbox economic demo (not age verification)",
+    holder_explanation:
+      "Sandbox / testnet demonstration only. This pack proves a labeled demo eligibility flag so Preview can exercise receipt-gated settlement. It is not age verification, not identity verification, and not usable in Production.",
+    required_claims: ["product_eligibility"],
+    minimum_assurance: "L1",
+    receipt_lifetime_hours: 2,
+    intended_use_examples: [
+      "Preview Circle Arc testnet receipt demonstration",
+      "Sandbox harness for settlement without claiming a real age check",
+    ],
+    partner_receives: "Signed result sandbox_demo_eligible. Not an age finding and not a Production authorization.",
+    partner_does_not_receive: ["date of birth", "government ID images", "legal name", "email", "wallet address"],
+    production_suitability: "sandbox_only",
+    disclosed_result: "sandbox_demo_eligible",
+    receipt_claim: "product_eligibility",
+    reuse_policy: "session",
+    permitted_methods: ["reuse_existing_proof", "partner_age_check", "privacy_preserving"],
+    rules: {
+      ...SANDBOX,
+      session_receipt_hours: 2,
+      product_eligibility_action: "sandbox_economic_demo",
+      required_claims: [{ claim_type: "product_eligibility", min_assurance: "L1" }],
+    },
+  }),
 };
 
 export const POLICY_PACK_LIST = Object.values(POLICY_PACKS);
@@ -251,4 +278,26 @@ export function resolvePolicyPack(id: string): PolicyPack | null {
 
 export function policyPackIsSandboxOnly(pack: PolicyPack): boolean {
   return pack.production_suitability === "sandbox_only";
+}
+
+export function policyPackRequiresIdentityEvidence(pack: PolicyPack): boolean {
+  return pack.required_claims.some((claim) =>
+    claim === "identity_verified" || claim === "liveness_passed" || claim === "government_id_verified",
+  );
+}
+
+/** Resolve a catalog pack from a Launchpad policy id such as partner-age_21_retail-v1. */
+export function inferPolicyPackFromPolicyId(policyId: string): PolicyPack | null {
+  const trimmed = policyId.trim();
+  const direct = resolvePolicyPack(trimmed);
+  if (direct) return direct;
+  const packs = [...POLICY_PACK_LIST].sort((a, b) => b.id.length - a.id.length);
+  for (const pack of packs) {
+    if (trimmed.includes(pack.id)) return pack;
+  }
+  return null;
+}
+
+export function policyPackIsEconomicDemo(pack: PolicyPack): boolean {
+  return pack.id === "sandbox_economic_demo";
 }

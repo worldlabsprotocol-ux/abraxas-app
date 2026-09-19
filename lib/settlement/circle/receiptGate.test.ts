@@ -23,7 +23,9 @@ function sandboxReceipt(overrides: Record<string, unknown> = {}) {
     production_usable: false,
     decision_context: "sandbox_only",
     artifact_type: "eligibility_decision_receipt",
-    evaluated_claim_refs: [],
+    evaluated_claim_refs: [
+      { claim_type: "product_eligibility", issuer_id: "issuer:abraxas-sandbox", status: "active" },
+    ],
     currently_valid: false,
     invalidation_reasons: ["production_not_usable:false"],
     ...overrides,
@@ -62,6 +64,26 @@ describe("Circle settlement receipt gate", () => {
         receiptId: "receipt-1",
         partnerId: "acme",
         policyId: "policy-1",
+        policyVersion: 1,
+      });
+      expect(gated.ok).toBe(false);
+      expect(gated.code).toBe(code);
+    }
+  });
+
+  it("rejects login-only, self-attestation, and misused sandbox demo receipts", async () => {
+    const cases: Array<[Record<string, unknown>, string]> = [
+      [{ evaluated_claim_refs: [] }, CIRCLE_PUBLIC_CODES.receipt_inadequate],
+      [{
+        evaluated_claim_refs: [{ claim_type: "self_attested_age_band", issuer_id: "issuer:abraxas-self-attest", status: "active" }],
+      }, CIRCLE_PUBLIC_CODES.receipt_inadequate],
+    ];
+    for (const [override, code] of cases) {
+      getPublicReceipt.mockResolvedValue(sandboxReceipt(override));
+      const gated = await gateSettlementReceipt({
+        receiptId: "receipt-1",
+        partnerId: "acme",
+        policyId: String(override.policy_id ?? "policy-1"),
         policyVersion: 1,
       });
       expect(gated.ok).toBe(false);

@@ -132,6 +132,8 @@ export function CircleSettlementLaunchpadPanel({
         DEMO / Arc testnet infrastructure only. Abraxas is not a custodian of customer funds.
         Creating an intent never moves funds. Submit is a separate, one-time testnet confirmation.
         The server derives amount, network, currency, wallets, and receipt binding.
+        Paste a signed receipt that already qualifies the selected policy. Settlement never asks for identity or liveness.
+        Self-attestation, account login, and unverified partner claims cannot settle testnet USDC. Completing Partner Flow does not move USDC.
       </p>
       {unavailable && (
         <p style={{ ...bodyText, color: "#f59e0b" }}>

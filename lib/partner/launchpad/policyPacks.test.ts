@@ -27,10 +27,11 @@ const REQUIRED_PACK_IDS: PolicyPackId[] = [
   "membership_credential",
   "collector_redemption",
   "identity_liveness",
+  "sandbox_economic_demo",
 ];
 
 describe("policy packs catalog", () => {
-  it("exposes exactly the seven reusable packs", () => {
+  it("exposes the reusable packs plus the sandbox economic demo fixture", () => {
     expect(POLICY_PACK_LIST.map((pack) => pack.id).sort()).toEqual([...REQUIRED_PACK_IDS].sort());
     expect(POLICY_PACK_CATALOG_VERSION).toBe(1);
   });
@@ -64,8 +65,11 @@ describe("policy packs catalog", () => {
     expect(GOOGLE_ACCOUNT_NOT_ELIGIBILITY.toLowerCase()).toContain("does not prove");
   });
 
-  it("marks collector redemption sandbox-only and age packs production-eligible after the safety gate", () => {
+  it("marks collector redemption and the economic demo sandbox-only; age packs stay gated for production", () => {
     expect(policyPackIsSandboxOnly(POLICY_PACKS.collector_redemption)).toBe(true);
+    expect(policyPackIsSandboxOnly(POLICY_PACKS.sandbox_economic_demo)).toBe(true);
+    expect(POLICY_PACKS.sandbox_economic_demo.holder_explanation.toLowerCase()).toContain("not age verification");
+    expect(POLICY_PACKS.sandbox_economic_demo.holder_explanation.toLowerCase()).toContain("not usable in production");
     expect(policyPackIsSandboxOnly(POLICY_PACKS.age_18_retail)).toBe(false);
     expect(policyPackIsSandboxOnly(POLICY_PACKS.identity_liveness)).toBe(false);
   });

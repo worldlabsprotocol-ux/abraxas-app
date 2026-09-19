@@ -62,17 +62,17 @@ export const PARTNER_FLOW_LIFECYCLE = [
   {
     step: 2,
     title: "Holder authenticates",
-    body: "zkLogin or wallet sign-in sets an httpOnly abraxas_browser_session cookie on the Abraxas origin. Your site never sees this cookie.",
+    body: "zkLogin or wallet sign-in sets an httpOnly abraxas_browser_session cookie on the Abraxas origin. Sign-in opens an account only. It is not eligibility.",
   },
   {
     step: 3,
     title: "POST /api/v1/partner-flow/evaluate",
-    body: "Abraxas UI calls evaluate with the browser session. next=enter (returning user), passport (ID required), pending_review, denied, or authenticate.",
+    body: "Abraxas UI calls evaluate with the browser session. next=enter (returning user with a compatible proof), passport (choose a policy-qualified method), pending_review, denied, or authenticate.",
   },
   {
     step: 4,
-    title: "Passport + consent (first visit)",
-    body: "When next=passport, holder completes ID/biometric capture and consent. After admin approval, POST /api/v1/partner flow/complete issues the session receipt.",
+    title: "Choose how to satisfy the policy, then consent",
+    body: "When next=passport, the holder sees the requirement, shared result, withheld fields, and available methods. Reuse an existing proof or a qualifying partner/privacy method first. Identity or liveness is optional unless the policy requires it. Self-attestation cannot satisfy an authoritative policy or settle Circle USDC.",
   },
   {
     step: 5,

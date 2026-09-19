@@ -13,6 +13,11 @@ import {
 import type { AgeAssuranceProviderPublicMeta } from "@/lib/assurance/ageProviders/types";
 import { SelfAttestationBrowseForm } from "@/components/partner/SelfAttestationBrowseForm";
 import { GOOD_TROUBLE_BROWSE_POLICY_ID } from "@/lib/goodTrouble/constants";
+import {
+  planEligibilityMethods,
+  resolvePackForEligibility,
+} from "@/lib/partner/eligibilityMethods";
+import { GOOGLE_ACCOUNT_NOT_ELIGIBILITY } from "@/lib/partner/launchpad/policyPacks";
 
 export interface AgeAssuranceMethodChooserProps {
   partnerId: string;
@@ -59,6 +64,7 @@ export function AgeAssuranceMethodChooser({
 
   const privacy = partnerHolderPrivacyNotes(partnerName);
   const threshold = minimumAge != null && minimumAge >= 21 ? 21 : 18;
+  const pack = resolvePackForEligibility(policyId);
 
   const holderState: PartnerHolderState = loading
     ? "checking_existing_proof"
@@ -184,6 +190,18 @@ export function AgeAssuranceMethodChooser({
     );
   }
 
+  const plan = pack
+    ? planEligibilityMethods({
+      pack,
+      existingProofCompatible: existingEligible,
+      partnerAgeCheckConfigured: true,
+      privacyPreservingAvailable: providers.some((provider) => provider.authoritative || provider.configured),
+      browseSelfAttestAllowed: false,
+    })
+    : null;
+
+  const disclosure = plan?.disclosure;
+
   if (compactCheckout) {
     const primaryProvider = providers[0];
     const primaryTitle = existingEligible
@@ -199,10 +217,30 @@ export function AgeAssuranceMethodChooser({
 
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-        <div>
-          <p style={{ margin: 0, fontWeight: 600, fontSize: "1rem" }}>{primaryTitle}</p>
-          <p style={{ margin: "0.5rem 0 0", fontSize: "0.9rem", lineHeight: 1.6 }}>{primaryMessage}</p>
-        </div>
+        {disclosure && (
+          <div>
+            <p style={{ margin: 0, fontWeight: 600, fontSize: "1rem" }}>Choose how to satisfy this requirement</p>
+            <p style={{ margin: "0.5rem 0 0", fontSize: "0.9rem", lineHeight: 1.6 }}>{disclosure.purpose}</p>
+            <p style={{ margin: "0.5rem 0 0", fontSize: "0.82rem", lineHeight: 1.55, color: "var(--text-muted)" }}>
+              Shared result: {disclosure.disclosed_result}. Assurance required: {disclosure.assurance_level}.
+              Withheld: {disclosure.withheld.join(", ")}.
+            </p>
+            <p style={{ margin: "0.5rem 0 0", fontSize: "0.82rem", lineHeight: 1.55, color: "var(--text-muted)" }}>
+              {GOOGLE_ACCOUNT_NOT_ELIGIBILITY}
+            </p>
+            {disclosure.economic_demo && (
+              <p style={{ margin: "0.5rem 0 0", fontSize: "0.82rem", lineHeight: 1.55 }}>
+                Sandbox / testnet economic demo only. This is not real age verification and cannot be used in Production.
+              </p>
+            )}
+          </div>
+        )}
+        {!disclosure && (
+          <div>
+            <p style={{ margin: 0, fontWeight: 600, fontSize: "1rem" }}>{primaryTitle}</p>
+            <p style={{ margin: "0.5rem 0 0", fontSize: "0.9rem", lineHeight: 1.6 }}>{primaryMessage}</p>
+          </div>
+        )}
 
         {holderState === "verification_could_not_confirm" && (
           <StatusBanner tone="info" title={copy.title}>
@@ -210,29 +248,34 @@ export function AgeAssuranceMethodChooser({
           </StatusBanner>
         )}
 
-        {existingEligible ? (
+        {plan?.no_non_id_method_satisfies && (
+          <StatusBanner tone="info" title="No non-ID method can satisfy this policy">
+            Identity or liveness is available as an optional method. Use the partner eligibility check if it is configured.
+            Completing this step does not move USDC.
+          </StatusBanner>
+        )}
+
+        {existingEligible && (
           <Btn disabled={busy !== null} onClick={() => void reuseExistingProof()}>
-            {busy === "reuse" ? "Confirming…" : "Use my existing Abraxas age proof"}
-          </Btn>
-        ) : primaryProvider ? (
-          <Btn disabled={busy !== null} onClick={() => void startProvider(primaryProvider.id)}>
-            {busy === primaryProvider.id ? "Starting…" : primaryProvider.displayName}
-          </Btn>
-        ) : (
-          <Btn variant="secondary" onClick={onFallbackId}>
-            {resolvePartnerHolderPresentation("id_upload_fallback", partnerName).action_label}
+            {busy === "reuse" ? "Confirming…" : "Use my existing compatible proof"}
           </Btn>
         )}
 
         {!existingEligible && primaryProvider && (
-          <Btn variant="secondary" onClick={onFallbackId}>
-            Verify with ID instead
+          <Btn disabled={busy !== null} onClick={() => void startProvider(primaryProvider.id)}>
+            {busy === primaryProvider.id ? "Starting…" : primaryProvider.displayName}
           </Btn>
         )}
 
         <Btn variant="secondary" onClick={onTraditionalReturn}>
-          Use {partnerName}&apos;s age check
+          Use {partnerName}&apos;s eligibility check
         </Btn>
+
+        {pack && !plan?.disclosure.economic_demo && (
+          <Btn variant="secondary" onClick={onFallbackId}>
+            Identity / liveness (optional)
+          </Btn>
+        )}
 
         {error && (
           <p role="alert" style={{ color: "var(--text-secondary)" }}>{error}</p>
@@ -243,17 +286,32 @@ export function AgeAssuranceMethodChooser({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-      <p style={{ margin: 0, fontWeight: 600, fontSize: "1rem" }}>{checkoutCopy.title}</p>
-      <p style={{ margin: 0, fontSize: "0.9rem", lineHeight: 1.6 }}>{checkoutCopy.message}</p>
+      <p style={{ margin: 0, fontWeight: 600, fontSize: "1rem" }}>Choose how to satisfy this requirement</p>
+      <p style={{ margin: 0, fontSize: "0.9rem", lineHeight: 1.6 }}>
+        {disclosure?.purpose ?? checkoutCopy.message}
+      </p>
+      {disclosure && (
+        <p style={{ margin: 0, fontSize: "0.85rem", lineHeight: 1.6, color: "var(--text-muted)" }}>
+          Requirement: {disclosure.requirement}. Shared result: {disclosure.disclosed_result}.
+          Assurance: {disclosure.assurance_level}. Withheld: {disclosure.withheld.join(", ")}.
+        </p>
+      )}
       <p style={{ margin: 0, fontSize: "0.85rem", lineHeight: 1.6, color: "var(--text-muted)" }}>
-        {privacy.auth_not_age}
+        {GOOGLE_ACCOUNT_NOT_ELIGIBILITY}
       </p>
       <p style={{ margin: 0, fontSize: "0.85rem", lineHeight: 1.6, color: "var(--text-muted)" }}>
         {privacy.partner_minimal}
       </p>
-      <p style={{ margin: 0, fontSize: "0.85rem", lineHeight: 1.6, color: "var(--text-muted)" }}>
-        {privacy.merchant_obligation}
-      </p>
+      {disclosure?.economic_demo && (
+        <p style={{ margin: 0, fontSize: "0.85rem", lineHeight: 1.6 }}>
+          Sandbox / testnet economic demo only. This is not real age verification and cannot be used in Production.
+        </p>
+      )}
+      {plan?.no_non_id_method_satisfies && (
+        <StatusBanner tone="info" title="No non-ID method can satisfy this policy">
+          Identity or liveness is optional here. Prefer the partner eligibility check when it is configured.
+        </StatusBanner>
+      )}
 
       {holderState === "verification_could_not_confirm" && (
         <StatusBanner tone="info" title={copy.title}>
@@ -266,7 +324,7 @@ export function AgeAssuranceMethodChooser({
           <p style={{ margin: "0 0 0.5rem", fontWeight: 600 }}>{copy.title}</p>
           <p style={{ margin: "0 0 0.75rem", fontSize: "0.9rem", lineHeight: 1.6 }}>{copy.message}</p>
           <Btn disabled={busy !== null} onClick={() => void reuseExistingProof()}>
-            {busy === "reuse" ? "Confirming…" : "Use my existing Abraxas age proof"}
+            {busy === "reuse" ? "Confirming…" : "Use my existing compatible proof"}
           </Btn>
         </div>
       )}
@@ -298,25 +356,27 @@ export function AgeAssuranceMethodChooser({
       )}
 
       <div>
+        <Btn variant="secondary" onClick={onTraditionalReturn}>
+          Use {partnerName}&apos;s eligibility check
+        </Btn>
+        <p style={{ margin: "0.5rem 0 0", fontSize: "0.82rem", color: "var(--text-muted)" }}>
+          You&apos;ll return to {partnerName}. This does not move USDC.
+        </p>
+      </div>
+
+      {pack && !disclosure?.economic_demo && (
+      <div>
         <p style={{ margin: "0 0 0.5rem", fontWeight: 600 }}>
-          {resolvePartnerHolderPresentation("id_upload_fallback", partnerName).title}
+          Identity / liveness (optional)
         </p>
         <p style={{ margin: "0 0 0.75rem", fontSize: "0.85rem", lineHeight: 1.6 }}>
           {privacy.id_fallback}
         </p>
         <Btn variant="secondary" onClick={onFallbackId}>
-          {resolvePartnerHolderPresentation("id_upload_fallback", partnerName).action_label}
+          Identity / liveness
         </Btn>
       </div>
-
-      <div>
-        <Btn variant="secondary" onClick={onTraditionalReturn}>
-          Use {partnerName}&apos;s age check
-        </Btn>
-        <p style={{ margin: "0.5rem 0 0", fontSize: "0.82rem", color: "var(--text-muted)" }}>
-          You&apos;ll return to {partnerName}.
-        </p>
-      </div>
+      )}
 
       {error && (
         <p role="alert" style={{ color: "var(--text-secondary)" }}>{error}</p>

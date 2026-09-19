@@ -6,7 +6,7 @@ Abraxas is not a custodian of customer funds. Settlement uses a dedicated DEMO/t
 
 ## Behavior
 
-1. Verify the sandbox receipt (approved, signed, unexpired, matching partner/policy/version).
+1. Verify the sandbox receipt (approved, signed, unexpired, matching partner/policy/version). Account login, self-attestation, and empty claim sets are inadequate. Circle never introduces an ID requirement; it only consumes an already-qualified receipt. For Preview demonstrations, prefer the sandbox-only `sandbox_economic_demo` pack. It is not age verification and is not usable in Production.
 2. Insert a `pending` intent with a **server-generated UUID v4** Circle idempotency key. Partner and UI values are ignored. An intent is not a payment. This step never calls Circle or moves USDC.
 3. Review the pending intent. Duplicate create requests return the same row.
 4. An explicit submit (`intent_id` + `confirm_testnet_transfer: true`) is required before Circle is contacted. Amount, wallets, network, currency, receipt, and partner stay server-derived.

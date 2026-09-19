@@ -500,7 +500,7 @@ export function PartnerLaunchpadClient({
       {step === "policy" && (
         <ContentCard title="Choose a policy pack">
           <p style={bodyText}>
-            Packs are declarative and versioned. The holder proves a narrow claim. The partner receives a signed boolean equivalent result, not a profile, ID image, or contact list.
+            Packs are declarative and versioned. The holder proves a narrow claim using the minimum method the pack allows. The partner receives a signed boolean equivalent result, not a profile, ID image, or contact list. Identity or liveness is optional unless the pack requires it. The sandbox economic demo pack is not age verification and is not usable in Production.
           </p>
           <p style={{ ...bodyText, color: "#f59e0b" }}>{googleDisclaimer}</p>
           <div style={{ display: "grid", gap: "0.5rem" }}>

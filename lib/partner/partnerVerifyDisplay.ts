@@ -46,7 +46,7 @@ export function resolvePartnerContinuationIntro(
     return GOOD_TROUBLE_BROWSE_INTRO;
   }
   const name = resolvePartnerDisplayName(partnerId);
-  return `${name} uses Abraxas to confirm this requirement without collecting more personal information than necessary.`;
+  return `${name} uses Abraxas to confirm only the selected policy. Sign-in opens an account. You then choose a qualifying method. Identity or liveness is not the default first step.`;
 }
 
 export function resolvePartnerContinuationStatus(
