@@ -3,6 +3,7 @@
 
 import { getPublicReceipt } from "@/lib/decisionReceipts/service";
 import { outcomeFromValidationErrors } from "@/lib/partner/integrationKit/outcomes";
+import { isInadequateCircleSettlementReceipt } from "@/lib/partner/eligibilityMethods";
 import { validatePartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlowReceipt";
 import { CIRCLE_PUBLIC_CODES, type CirclePublicCode } from "@/lib/settlement/circle/codes";
 
@@ -91,6 +92,17 @@ export async function gateSettlementReceipt(
     return {
       ok: false,
       code: CIRCLE_PUBLIC_CODES.receipt_wrong_policy_version,
+      receipt_id: receiptId,
+      policy_id: publicReceipt.policy_id,
+      policy_version: publicReceipt.policy_version,
+    };
+  }
+
+  const inadequate = isInadequateCircleSettlementReceipt(publicReceipt);
+  if (inadequate.inadequate) {
+    return {
+      ok: false,
+      code: CIRCLE_PUBLIC_CODES.receipt_inadequate,
       receipt_id: receiptId,
       policy_id: publicReceipt.policy_id,
       policy_version: publicReceipt.policy_version,

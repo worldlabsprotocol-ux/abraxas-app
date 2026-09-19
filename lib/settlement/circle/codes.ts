@@ -28,6 +28,7 @@ export const CIRCLE_PUBLIC_CODES = {
   receipt_wrong_policy: "settlement_receipt_wrong_policy",
   receipt_wrong_policy_version: "settlement_receipt_wrong_policy_version",
   receipt_invalid: "settlement_receipt_invalid",
+  receipt_inadequate: "settlement_receipt_inadequate",
   confirm_required: "settlement_confirm_required",
   intent_not_found: "settlement_intent_not_found",
   not_pending: "settlement_not_pending",
@@ -46,6 +47,7 @@ export const CIRCLE_RECEIPT_FAIL_CLOSED_CODES = [
   CIRCLE_PUBLIC_CODES.receipt_wrong_policy,
   CIRCLE_PUBLIC_CODES.receipt_wrong_policy_version,
   CIRCLE_PUBLIC_CODES.receipt_invalid,
+  CIRCLE_PUBLIC_CODES.receipt_inadequate,
   CIRCLE_PUBLIC_CODES.receipt_missing,
 ] as const;
 

@@ -40,6 +40,10 @@ import {
 import { shouldShowPartnerConsent } from "@/lib/partner/partnerConsentVisibility";
 import { resolvePartnerSetupVisibility } from "@/lib/partner/partnerSetupVisibility";
 import {
+  inferPolicyPackFromPolicyId,
+  policyPackRequiresIdentityEvidence,
+} from "@/lib/partner/launchpad/policyPacks";
+import {
   resolvePartnerContinueContext,
   type ResolvedPartnerContinueContext,
 } from "@/lib/partner/resolvePartnerContinueContext";
@@ -192,9 +196,14 @@ function PartnerContinueInner() {
   }, [suiAddress, credential, identityStatus, handoff.ready, returnPath, setup, ageAssuranceStatus, showIdFallback]);
 
   const holderCopy = resolvePartnerHolderPresentation(holderState, partnerName);
+  const selectedPack = inferPolicyPackFromPolicyId(policyId);
+  const requiresIdentityEvidence = selectedPack
+    ? policyPackRequiresIdentityEvidence(selectedPack)
+    : true;
   const showPartnerConsent = shouldShowPartnerConsent({
     verificationRequestId: verifyRequestId,
     consentDismissed,
+    evidenceComplete: requiresIdentityEvidence ? setup.identityComplete : Boolean(suiAddress),
     identityComplete: setup.identityComplete,
     underReview: holderState === "under_review",
     handoffReady: handoff.ready,
@@ -375,7 +384,7 @@ function PartnerContinueInner() {
                   ageAssuranceStatus={ageAssuranceStatus}
                   flowTier={flowTier}
                   browsePolicyId={GOOD_TROUBLE_BROWSE_POLICY_ID}
-                  compactCheckout
+                  compactCheckout={false}
                   onFallbackId={() => setShowIdFallback(true)}
                   onTraditionalReturn={() => {
                     if (partnerHomeUrl) window.location.assign(partnerHomeUrl);
