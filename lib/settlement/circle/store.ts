@@ -31,6 +31,7 @@ export interface SettlementIntentRow {
   currency: typeof CIRCLE_CURRENCY;
   amount_minor: number;
   receipt_id: string;
+  selection_jti_hash?: string | null;
   policy_id: string;
   policy_version: number;
   provider_request_ref: string | null;
@@ -85,16 +86,38 @@ export async function insertPendingIntent(input: {
   receiptId: string;
   policyId: string;
   policyVersion: number;
+  selectionJtiHash: string;
   client?: SupabaseClient;
-}): Promise<{ ok: true; row: SettlementIntentRow; duplicate: boolean } | { ok: false; code: string }> {
+}): Promise<
+  | { ok: true; row: SettlementIntentRow; duplicate: boolean; replay: boolean }
+  | { ok: false; code: string }
+> {
+  const hash = input.selectionJtiHash.trim().toLowerCase();
+  if (!/^[a-f0-9]{64}$/.test(hash)) {
+    return { ok: false, code: CIRCLE_PUBLIC_CODES.selection_invalid };
+  }
   const sb = input.client ?? requireSupabaseAdmin();
+
+  const byHash = await findIntentBySelectionHash({
+    applicationId: input.applicationId,
+    partnerId: input.partnerId,
+    selectionJtiHash: hash,
+    client: sb,
+  });
+  if (byHash.missingSchema) {
+    return { ok: false, code: CIRCLE_PUBLIC_CODES.schema_unavailable };
+  }
+  if (byHash.row) {
+    return { ok: true, row: byHash.row, duplicate: true, replay: true };
+  }
+
   const existing = await findIntentByReceipt({
     applicationId: input.applicationId,
     partnerId: input.partnerId,
     receiptId: input.receiptId,
     client: sb,
   });
-  if (existing) return { ok: true, row: existing, duplicate: true };
+  if (existing) return { ok: true, row: existing, duplicate: true, replay: false };
 
   const payload = {
     application_id: input.applicationId,
@@ -105,6 +128,7 @@ export async function insertPendingIntent(input: {
     currency: CIRCLE_CURRENCY,
     amount_minor: input.amountMinor,
     receipt_id: input.receiptId,
+    selection_jti_hash: hash,
     policy_id: input.policyId,
     policy_version: input.policyVersion,
     infrastructure_label: CIRCLE_INFRASTRUCTURE_LABEL,
@@ -115,19 +139,28 @@ export async function insertPendingIntent(input: {
     .select("*")
     .maybeSingle();
   if (!error && data) {
-    return { ok: true, row: data as SettlementIntentRow, duplicate: false };
+    return { ok: true, row: data as SettlementIntentRow, duplicate: false, replay: false };
   }
   if (error && isSettlementSchemaMissingError(error)) {
     return { ok: false, code: CIRCLE_PUBLIC_CODES.schema_unavailable };
   }
   if (error && isUniqueViolation(error)) {
+    const racedHash = await findIntentBySelectionHash({
+      applicationId: input.applicationId,
+      partnerId: input.partnerId,
+      selectionJtiHash: hash,
+      client: sb,
+    });
+    if (racedHash.row) {
+      return { ok: true, row: racedHash.row, duplicate: true, replay: true };
+    }
     const raced = await findIntentByReceipt({
       applicationId: input.applicationId,
       partnerId: input.partnerId,
       receiptId: input.receiptId,
       client: sb,
     });
-    if (raced) return { ok: true, row: raced, duplicate: true };
+    if (raced) return { ok: true, row: raced, duplicate: true, replay: false };
     return { ok: false, code: CIRCLE_PUBLIC_CODES.duplicate };
   }
   return { ok: false, code: CIRCLE_PUBLIC_CODES.schema_unavailable };
@@ -151,6 +184,27 @@ export async function findIntentByReceipt(input: {
     .maybeSingle();
   if (error || !data) return null;
   return data as SettlementIntentRow;
+}
+
+export async function findIntentBySelectionHash(input: {
+  applicationId: string;
+  partnerId: string;
+  selectionJtiHash: string;
+  client?: SupabaseClient;
+}): Promise<{ row: SettlementIntentRow | null; missingSchema: boolean }> {
+  const sb = input.client ?? requireSupabaseAdmin();
+  const { data, error } = await sb
+    .from(CIRCLE_SCHEMA_TABLE)
+    .select("*")
+    .eq("application_id", input.applicationId)
+    .eq("partner_id", input.partnerId)
+    .eq("selection_jti_hash", input.selectionJtiHash)
+    .maybeSingle();
+  if (error && isSettlementSchemaMissingError(error)) {
+    return { row: null, missingSchema: true };
+  }
+  if (error || !data) return { row: null, missingSchema: false };
+  return { row: data as SettlementIntentRow, missingSchema: false };
 }
 
 export async function listIntentsForApplication(input: {

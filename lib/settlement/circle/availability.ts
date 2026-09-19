@@ -116,7 +116,10 @@ export async function probeSettlementSchema(
 ): Promise<boolean> {
   const sb = client ?? getSupabaseAdmin();
   if (!sb) return false;
-  const { error } = await sb.from(CIRCLE_SCHEMA_TABLE).select("id", { head: true, count: "exact" }).limit(0);
+  const { error } = await sb
+    .from(CIRCLE_SCHEMA_TABLE)
+    .select("id, selection_jti_hash", { head: true, count: "exact" })
+    .limit(0);
   if (!error) return true;
   return false;
 }

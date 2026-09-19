@@ -48,8 +48,28 @@ describe("089_circle_arc_testnet_settlement migration contract", () => {
   });
 });
 
+describe("090_circle_settlement_selection_replay migration contract", () => {
+  const sql = readFileSync(
+    resolve(process.cwd(), "supabase/migrations/090_circle_settlement_selection_replay.sql"),
+    "utf8",
+  );
+
+  it("is DEMO-first, hashed-jti only, and service_role only", () => {
+    expect(sql).toContain("ocntwbxarpjeixdnzide");
+    expect(sql).toContain("selection_jti_hash");
+    expect(sql).toContain("SHA-256 hex");
+    expect(sql).toContain("Never store the raw token");
+    expect(sql).toContain("partner_settlement_intents_selection_jti_hash_unique");
+    expect(sql).toContain("partner_settlement_intents_receipt_unique");
+    expect(sql).not.toContain("selection_token");
+    expect(sql).not.toMatch(/jsonb/i);
+    expect(sql.toLowerCase()).toContain("revoke all on public.partner_settlement_intents from public, anon, authenticated");
+    expect(sql.toLowerCase()).toContain("grant select, insert, update on public.partner_settlement_intents to service_role");
+  });
+});
+
 describe("Circle client bundle boundary", () => {
-  it("keeps the Circle client and sealing helpers server-only", () => {
+  it("keeps the Circle client and sealing helpers server-only", async () => {
     const client = readFileSync(CLIENT_PATH, "utf8");
     const panel = readFileSync(PANEL_PATH, "utf8");
     const index = readFileSync(INDEX_PATH, "utf8");

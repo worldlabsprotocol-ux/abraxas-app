@@ -7,7 +7,7 @@ Abraxas is not a custodian of customer funds. Settlement uses a dedicated DEMO/t
 ## Behavior
 
 1. Verify the sandbox receipt (approved, signed, unexpired, matching partner/policy/version). Account login, self-attestation, and empty claim sets are inadequate. Circle never introduces an ID requirement; it only consumes an already-qualified receipt. For Preview demonstrations, prefer the sandbox-only `sandbox_economic_demo` pack. It is not age verification and is not usable in Production.
-2. Insert a `pending` intent with a **server-generated UUID v4** Circle idempotency key. Partner and UI values are ignored. An intent is not a payment. This step never calls Circle or moves USDC.
+2. Insert a `pending` intent with a **server-generated UUID v4** Circle idempotency key. Partner and UI values are ignored. An intent is not a payment. This step never calls Circle or moves USDC. Create-intent accepts only a short-lived encrypted selection token. Replay is enforced in the database: a hashed selection `jti` is unique, and `(application_id, receipt_id)` is unique, so concurrent serverless creates cannot insert a second pending row. Same-token replay returns the existing row with `settlement_selection_replay`. Missing the hashed-jti column fails closed as `settlement_schema_unavailable`.
 3. Review the pending intent. Duplicate create requests return the same row.
 4. An explicit submit (`intent_id` + `confirm_testnet_transfer: true`) is required before Circle is contacted. Amount, wallets, network, currency, receipt, and partner stay server-derived.
 5. If Circle credentials, schema, or the DEMO/Preview testnet allowlist are missing, submit stays blocked. Create can still leave a pending review row.

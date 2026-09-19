@@ -55,10 +55,7 @@ vi.mock("@/lib/settlement/circle/client.server", () => ({
 }));
 
 import { runCircleSettlement, submitCircleSettlementIntent } from "@/lib/settlement/circle/execute";
-import {
-  resetEligibleReceiptSelectionReplayForTests,
-  signEligibleReceiptSelection,
-} from "@/lib/settlement/circle/eligibleReceiptSelection";
+import { signEligibleReceiptSelection } from "@/lib/settlement/circle/eligibleReceiptSelection";
 
 const app = {
   id: "app-1",
@@ -132,7 +129,6 @@ function readyAvailability() {
 describe("runCircleSettlement create-intent", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    resetEligibleReceiptSelectionReplayForTests();
     process.env.ABRAXAS_BROWSER_SESSION_SECRET = "test-settlement-selection-secret";
     createPortMock.mockReturnValue(null);
     gateMock.mockResolvedValue({ ok: true, code: CIRCLE_PUBLIC_CODES.pending, receipt_id: "receipt-1" });
@@ -160,7 +156,7 @@ describe("runCircleSettlement create-intent", () => {
 
   it("creates a pending intent with zero Circle calls when configured", async () => {
     probeMock.mockResolvedValue(readyAvailability());
-    insertMock.mockResolvedValue({ ok: true, row: pendingRow(), duplicate: false });
+    insertMock.mockResolvedValue({ ok: true, row: pendingRow(), duplicate: false, replay: false });
     const transfer = vi.fn();
     createPortMock.mockReturnValue({
       authenticateAgainstArcTestnet: vi.fn(),
@@ -180,14 +176,16 @@ describe("runCircleSettlement create-intent", () => {
     expect(result.evidence?.state).toBe("pending");
     expect(result.evidence?.intent_id).toBe(INTENT_ID);
     expect(result.evidence?.circle_transaction_id).toBeNull();
+    expect(JSON.stringify(result)).not.toMatch(/selection_jti_hash|selection_token/);
     expect(createPortMock).not.toHaveBeenCalled();
     expect(transfer).not.toHaveBeenCalled();
     expect(gateMock).toHaveBeenCalledWith(expect.objectContaining({ receiptId: "receipt-1" }));
+    expect(insertMock.mock.calls[0][0].selectionJtiHash).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it("creates a pending intent when Circle is unavailable and does not mark it settled", async () => {
     probeMock.mockResolvedValue(unavailableAvailability());
-    insertMock.mockResolvedValue({ ok: true, row: pendingRow(), duplicate: false });
+    insertMock.mockResolvedValue({ ok: true, row: pendingRow(), duplicate: false, replay: false });
     const token = await selectionToken();
     const result = await runCircleSettlement({
       application: app,
@@ -238,9 +236,9 @@ describe("runCircleSettlement create-intent", () => {
     expect(createPortMock).not.toHaveBeenCalled();
   });
 
-  it("fails closed on tampered, expired, replayed, and cross-tenant tokens", async () => {
+  it("fails closed on tampered, expired, and cross-tenant tokens before insert", async () => {
     probeMock.mockResolvedValue(readyAvailability());
-    insertMock.mockResolvedValue({ ok: true, row: pendingRow(), duplicate: false });
+    insertMock.mockResolvedValue({ ok: true, row: pendingRow(), duplicate: false, replay: false });
     const fresh = await selectionToken();
     const tampered = await runCircleSettlement({
       application: app,
@@ -277,7 +275,15 @@ describe("runCircleSettlement create-intent", () => {
       body: { selection_token: crossToken },
     });
     expect(cross.code).toBe("settlement_selection_cross_tenant");
+    expect(insertMock).not.toHaveBeenCalled();
+  });
 
+  it("returns the same pending intent on same-token replay without a second insert row", async () => {
+    probeMock.mockResolvedValue(readyAvailability());
+    const row = pendingRow();
+    insertMock
+      .mockResolvedValueOnce({ ok: true, row, duplicate: false, replay: false })
+      .mockResolvedValueOnce({ ok: true, row, duplicate: true, replay: true });
     const replayToken = await selectionToken();
     const first = await runCircleSettlement({
       application: app,
@@ -294,13 +300,17 @@ describe("runCircleSettlement create-intent", () => {
       selectionToken: replayToken,
       body: { selection_token: replayToken },
     });
+    expect(replay.ok).toBe(true);
+    expect(replay.duplicate).toBe(true);
     expect(replay.code).toBe("settlement_selection_replay");
-    expect(insertMock).toHaveBeenCalledTimes(1);
+    expect(replay.evidence?.intent_id).toBe(INTENT_ID);
+    expect(insertMock).toHaveBeenCalledTimes(2);
+    expect(createPortMock).not.toHaveBeenCalled();
   });
 
   it("returns the existing pending intent on duplicate create without Circle", async () => {
     probeMock.mockResolvedValue(readyAvailability());
-    insertMock.mockResolvedValue({ ok: true, row: pendingRow(), duplicate: true });
+    insertMock.mockResolvedValue({ ok: true, row: pendingRow(), duplicate: true, replay: false });
     const token = await selectionToken();
     const result = await runCircleSettlement({
       application: app,
@@ -321,11 +331,13 @@ describe("runCircleSettlement create-intent", () => {
         ok: true,
         row: { ...pendingRow(), application_id: "app-a", idempotency_key: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" },
         duplicate: false,
+        replay: false,
       })
       .mockResolvedValueOnce({
         ok: true,
         row: { ...pendingRow(), application_id: "app-b", idempotency_key: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb" },
         duplicate: false,
+        replay: false,
       });
     const firstToken = await selectionToken({ applicationId: "app-a" });
     const secondToken = await selectionToken({ applicationId: "app-b" });
