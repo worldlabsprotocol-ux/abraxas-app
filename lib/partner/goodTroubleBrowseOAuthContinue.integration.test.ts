@@ -153,9 +153,10 @@ describe("Good Trouble browse OAuth → continue integration", () => {
 
     const continueUrl = new URL(result.passport_url ?? "", "https://abraxasworld.xyz");
     expect(continueUrl.pathname).toBe("/partner/continue");
-    expect(continueUrl.searchParams.get("policy_id")).toBe(GOOD_TROUBLE_BROWSE_POLICY_ID);
-    expect(continueUrl.searchParams.get("purpose")).toBe("browse");
     expect(continueUrl.searchParams.get("verify_request")).toBe("vr-oauth-browse-1");
+    expect(continueUrl.searchParams.get("policy_id")).toBeNull();
+    expect(continueUrl.searchParams.get("return")).toBeNull();
+    expect(continueUrl.searchParams.get("return_url")).toBeNull();
   });
 
   it("/partner/continue resolves browse DOB mode from authoritative stored request", () => {

@@ -8,10 +8,13 @@ export function shouldShowPartnerConsent(input: {
   evidenceComplete?: boolean;
   /** @deprecated Use evidenceComplete. Kept so identity-complete still maps for identity packs. */
   identityComplete?: boolean;
+  /** A holder-selected qualifying method finished. Login is never enough. */
+  qualifyingMethodSucceeded?: boolean;
   underReview: boolean;
   handoffReady: boolean;
 }): boolean {
-  const evidenceReady = input.evidenceComplete ?? input.identityComplete ?? false;
+  const methodReady = input.qualifyingMethodSucceeded === true;
+  const evidenceReady = methodReady && (input.evidenceComplete ?? input.identityComplete ?? false);
   return Boolean(input.verificationRequestId)
     && !input.consentDismissed
     && evidenceReady

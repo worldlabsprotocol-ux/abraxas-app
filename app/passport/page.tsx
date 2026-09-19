@@ -100,16 +100,10 @@ function PassportPageInner() {
   });
 
   useEffect(() => {
-    if (verifyRequestId && partnerIdParam && returnPathParam && pageView === "passport") {
-      const params = new URLSearchParams({
-        verify_request: verifyRequestId,
-        partner_id: partnerIdParam,
-        policy_id: policyIdParam ?? "",
-        return: returnPathParam,
-      });
-      window.location.replace(`/partner/continue?${params.toString()}`);
+    if (verifyRequestId && pageView === "passport") {
+      window.location.replace(`/partner/continue?verify_request=${encodeURIComponent(verifyRequestId)}`);
     }
-  }, [verifyRequestId, partnerIdParam, returnPathParam, policyIdParam, pageView]);
+  }, [verifyRequestId, pageView]);
 
   useEffect(() => {
     if (verificationParam === "complete" || verificationParam === "pending") {

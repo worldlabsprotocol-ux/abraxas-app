@@ -48,6 +48,7 @@ import {
   type ResolvedPartnerContinueContext,
 } from "@/lib/partner/resolvePartnerContinueContext";
 import { partnerVerifyMissingRequiredParametersMessage } from "@/lib/partner/normalizePartnerVerifyInput";
+import { sanitizePartnerContinueBrowserSearch } from "@/lib/partner/partnerFlowContinuation";
 
 function resolveMinimumAge(policyId: string): number | null {
   if (policyId === GOOD_TROUBLE_RETAIL_POLICY_ID) return 21;
@@ -67,14 +68,14 @@ function PartnerContinueInner() {
   const [contextLoading, setContextLoading] = useState(true);
   const [flowContext, setFlowContext] = useState<ResolvedPartnerContinueContext | null>(null);
   const [boundReturnUrl, setBoundReturnUrl] = useState("");
+  const [methodSatisfied, setMethodSatisfied] = useState(false);
 
   const verifyRequestId = searchParams.get("verify_request");
   const urlPartnerId = searchParams.get("partner_id") ?? "";
   const urlPolicyId = searchParams.get("policy_id") ?? "";
   const urlPurpose = searchParams.get("purpose");
-  const returnPath = searchParams.get("return");
   const ageAssuranceStatus = searchParams.get("age_assurance");
-  const decodedReturnUrl = boundReturnUrl || returnPath || "";
+  const decodedReturnUrl = boundReturnUrl;
 
   useEffect(() => {
     let cancelled = false;
@@ -149,6 +150,14 @@ function PartnerContinueInner() {
     };
   }, [verifyRequestId, urlPartnerId, urlPolicyId, urlPurpose, decodedReturnUrl]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sanitized = sanitizePartnerContinueBrowserSearch(searchParams);
+    if (!sanitized.strippedUntrusted) return;
+    const next = sanitized.search ? `/partner/continue?${sanitized.search}` : "/partner/continue";
+    window.history.replaceState(null, "", next);
+  }, [searchParams]);
+
   const partnerId = flowContext?.partnerId ?? urlPartnerId;
   const policyId = flowContext?.policyId ?? urlPolicyId;
   const purposeParam = flowContext?.purpose ?? urlPurpose;
@@ -219,11 +228,14 @@ function PartnerContinueInner() {
   const requiresIdentityEvidence = selectedPack
     ? policyPackRequiresIdentityEvidence(selectedPack)
     : true;
+  const qualifyingMethodSucceeded = methodSatisfied
+    || (requiresIdentityEvidence && setup.identityComplete);
   const showPartnerConsent = shouldShowPartnerConsent({
     verificationRequestId: verifyRequestId,
     consentDismissed,
-    evidenceComplete: requiresIdentityEvidence ? setup.identityComplete : Boolean(suiAddress),
+    evidenceComplete: qualifyingMethodSucceeded,
     identityComplete: setup.identityComplete,
+    qualifyingMethodSucceeded,
     underReview: holderState === "under_review",
     handoffReady: handoff.ready,
   });
@@ -374,14 +386,6 @@ function PartnerContinueInner() {
         <>
           <PartnerFlowReturnHandler handoff={handoff} />
 
-          {showPartnerConsent && verifyRequestId && (
-            <ConsentCeremony
-              requestId={verifyRequestId}
-              identityComplete
-              onDismiss={() => setConsentDismissed(true)}
-            />
-          )}
-
           {holderState === "under_review" && (
             <StatusBanner tone="pending" title={holderCopy.title}>
               {holderCopy.message}
@@ -420,6 +424,7 @@ function PartnerContinueInner() {
                   browsePolicyId={GOOD_TROUBLE_BROWSE_POLICY_ID}
                   compactCheckout={false}
                   onFallbackId={() => setShowIdFallback(true)}
+                  onMethodSatisfied={() => setMethodSatisfied(true)}
                   onTraditionalReturn={() => {
                     if (partnerHomeUrl) window.location.assign(partnerHomeUrl);
                   }}
@@ -465,6 +470,16 @@ function PartnerContinueInner() {
                   </div>
                 </>
               )}
+            </div>
+          )}
+
+          {showPartnerConsent && verifyRequestId && (
+            <div style={{ marginTop: "1rem" }}>
+              <ConsentCeremony
+                requestId={verifyRequestId}
+                identityComplete
+                onDismiss={() => setConsentDismissed(true)}
+              />
             </div>
           )}
 

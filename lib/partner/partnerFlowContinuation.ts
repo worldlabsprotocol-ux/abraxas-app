@@ -172,7 +172,35 @@ export function assertContinuationMatchesStored(input: {
   return { ok: true };
 }
 
-const CONTINUE_ALLOWED_KEYS = new Set(["verify_request", "partner_id", "policy_id", "purpose"]);
+const CONTINUE_ALLOWED_KEYS = new Set(["verify_request"]);
+const CONTINUE_UNTRUSTED_KEYS = new Set([
+  "return",
+  "return_url",
+  "receipt",
+  "receipt_id",
+  "id_token",
+  "cookie",
+  "jti",
+]);
+
+export function partnerContinueHasUntrustedReturn(search: string | URLSearchParams): boolean {
+  const params = typeof search === "string" ? new URLSearchParams(search.replace(/^\?/, "")) : search;
+  return params.has("return") || params.has("return_url");
+}
+
+/** Visible continue query: opaque verify_request only. Strips return/receipt/cookie values. */
+export function sanitizePartnerContinueBrowserSearch(
+  search: string | URLSearchParams,
+): { search: string; strippedUntrusted: boolean } {
+  const params = typeof search === "string" ? new URLSearchParams(search.replace(/^\?/, "")) : new URLSearchParams(search);
+  const verifyRequest = params.get("verify_request")?.trim() ?? "";
+  const strippedUntrusted = Array.from(params.keys()).some((key) => (
+    CONTINUE_UNTRUSTED_KEYS.has(key) || key !== "verify_request"
+  ));
+  const next = new URLSearchParams();
+  if (verifyRequest) next.set("verify_request", verifyRequest);
+  return { search: next.toString(), strippedUntrusted };
+}
 
 export function isRestorablePartnerContinuePath(path: string): boolean {
   if (typeof path !== "string" || path.trim() !== path) return false;
@@ -186,32 +214,23 @@ export function isRestorablePartnerContinuePath(path: string): boolean {
   for (let i = 0; i < keys.length; i += 1) {
     if (!CONTINUE_ALLOWED_KEYS.has(keys[i])) return false;
   }
-  if (params.has("return") || params.has("return_url") || params.has("receipt") || params.has("id_token")) {
-    return false;
-  }
+  if (partnerContinueHasUntrustedReturn(params)) return false;
+  if (params.has("receipt") || params.has("id_token")) return false;
   const verifyRequest = params.get("verify_request")?.trim() ?? "";
-  const partnerId = params.get("partner_id")?.trim() ?? "";
-  const policyId = params.get("policy_id")?.trim() ?? "";
-  if (!verifyRequest || !partnerId || !policyId) return false;
-  return true;
+  return Boolean(verifyRequest);
 }
 
 export function buildPartnerContinuePath(input: {
   verificationRequestId: string;
-  partnerId: string;
-  policyId: string;
+  partnerId?: string;
+  policyId?: string;
   purpose?: string;
 }): string | null {
   const verificationRequestId = input.verificationRequestId.trim();
-  const partnerId = input.partnerId.trim();
-  const policyId = input.policyId.trim();
-  if (!verificationRequestId || !partnerId || !policyId) return null;
+  if (!verificationRequestId) return null;
   const search = new URLSearchParams({
     verify_request: verificationRequestId,
-    partner_id: partnerId,
-    policy_id: policyId,
   });
-  if (input.purpose?.trim()) search.set("purpose", input.purpose.trim());
   const path = `${PARTNER_CONTINUE_PATH_PREFIX}${search.toString()}`;
   return isRestorablePartnerContinuePath(path) ? path : null;
 }

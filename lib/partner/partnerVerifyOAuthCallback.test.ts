@@ -58,7 +58,7 @@ describe("completePartnerVerifyOAuthCallback", () => {
       return new Response(JSON.stringify({
         ok: true,
         issuedReceipt: false,
-        continuePath: "/partner/continue?verify_request=vr-1&partner_id=test&policy_id=policy-v1",
+        continuePath: "/partner/continue?verify_request=vr-1",
       }), { status: 200 });
     }) as typeof fetch;
 
@@ -66,7 +66,7 @@ describe("completePartnerVerifyOAuthCallback", () => {
 
     expect(order).toEqual(["browser_session", "activate"]);
     expect(result.redirectPath).toBe(
-      "/partner/continue?verify_request=vr-1&partner_id=test&policy_id=policy-v1",
+      "/partner/continue?verify_request=vr-1",
     );
     expect(result.redirectPath).not.toContain("return");
     expect(mockClearLogin).toHaveBeenCalled();
@@ -118,7 +118,7 @@ describe("completePartnerVerifyOAuthCallback", () => {
     global.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({
       ok: true,
       issuedReceipt: false,
-      continuePath: "/partner/continue?verify_request=vr-1&partner_id=test&policy_id=policy-v1",
+      continuePath: "/partner/continue?verify_request=vr-1",
     }), { status: 200 })) as typeof fetch;
 
     await completePartnerVerifyOAuthCallback("#id_token=test&partner_id=attacker&return_url=https://evil.example");

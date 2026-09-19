@@ -4,6 +4,7 @@
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { PartnerContinueClient } from "./PartnerContinueClient";
 import { PartnerVerifyClient } from "./PartnerVerifyClient";
 import { partnerVerifyMissingRequiredParametersMessage } from "@/lib/partner/normalizePartnerVerifyInput";
@@ -132,7 +133,7 @@ describe("OAuth callback must not land on bare /partner/verify", () => {
   });
 
   it("reproduces the Preview failure: bare /partner/verify after activate omit-return, then stays on continue", async () => {
-    const continuePath = `/partner/continue?verify_request=${VERIFY_REQUEST_ID}&partner_id=${ECONOMIC_PARTNER_ID}&policy_id=${ECONOMIC_POLICY_ID}`;
+    const continuePath = `/partner/continue?verify_request=${VERIFY_REQUEST_ID}`;
     global.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url.includes("/api/v1/partner-verify/resume/activate") && init?.method === "POST") {
@@ -187,8 +188,8 @@ describe("OAuth callback must not land on bare /partner/verify", () => {
     mockSearchParams = continueParamsFromPath(oauth.redirectPath);
     expect(mockSearchParams.get("return")).toBeNull();
     expect(mockSearchParams.get("verify_request")).toBe(VERIFY_REQUEST_ID);
-    expect(mockSearchParams.get("partner_id")).toBe(ECONOMIC_PARTNER_ID);
-    expect(mockSearchParams.get("policy_id")).toBe(ECONOMIC_POLICY_ID);
+    expect(mockSearchParams.get("partner_id")).toBeNull();
+    expect(mockSearchParams.get("return_url")).toBeNull();
 
     render(<PartnerContinueClient />);
 
@@ -196,9 +197,75 @@ describe("OAuth callback must not land on bare /partner/verify", () => {
       expect(screen.getByText(/Choose how to satisfy this requirement/i)).toBeTruthy();
     });
     expect(screen.getByText(/Sandbox \/ testnet economic demo only/i)).toBeTruthy();
+    expect(screen.queryByText(/Approve & share claims/i)).toBeNull();
     expect(screen.queryByText(/This verification link is missing required parameters/i)).toBeNull();
     expect(replaceSpy).not.toHaveBeenCalledWith("/partner/verify");
     expect(replaceSpy.mock.calls.every((call) => call[0] !== "/partner/verify")).toBe(true);
+  });
+
+  it("strips the observed leaked return URL and keeps chooser before final approval", async () => {
+    const observed = `verify_request=${VERIFY_REQUEST_ID}&partner_id=${ECONOMIC_PARTNER_ID}&policy_id=${ECONOMIC_POLICY_ID}&return=http://localhost:3000/callback/circle-arc-economic-demo-304`;
+    mockSearchParams = new URLSearchParams(observed);
+    const replaceStateSpy = vi.fn();
+    window.history.replaceState = replaceStateSpy;
+    global.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes(`/api/v1/verification-requests/${VERIFY_REQUEST_ID}`)) {
+        return new Response(JSON.stringify({
+          partner_id: ECONOMIC_PARTNER_ID,
+          policy_id: ECONOMIC_POLICY_ID,
+          purpose: "sandbox_economic_demo",
+          policy_name: "Sandbox economic demo",
+          claim_labels: [],
+          status: "pending",
+        }), { status: 200 });
+      }
+      if (url.includes("/api/v1/partner-verify/continue-binding")) {
+        return new Response(JSON.stringify({
+          ok: true,
+          partner_id: ECONOMIC_PARTNER_ID,
+          policy_id: ECONOMIC_POLICY_ID,
+          return_url: "http://localhost:3000/callback/circle-arc-economic-demo-304",
+        }), { status: 200 });
+      }
+      if (url.includes("/api/age-assurance/providers")) {
+        return new Response(JSON.stringify({
+          providers: [],
+          existing_proof: { eligible_for_reuse: false },
+        }), { status: 200 });
+      }
+      if (url.includes("/api/age-assurance/")) {
+        throw new Error("method selection must not call receipt APIs");
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    }) as typeof fetch;
+
+    render(<PartnerContinueClient />);
+
+    await waitFor(() => {
+      expect(replaceStateSpy).toHaveBeenCalled();
+    });
+    const sanitizedUrl = String(replaceStateSpy.mock.calls[0][2]);
+    expect(sanitizedUrl).toBe(`/partner/continue?verify_request=${VERIFY_REQUEST_ID}`);
+    expect(sanitizedUrl).not.toContain("return");
+    expect(sanitizedUrl).not.toContain("localhost");
+
+    const chooser = await screen.findByText(/Choose how to satisfy this requirement/i);
+    expect(screen.queryByText(/Approve & share claims/i)).toBeNull();
+
+    await userEvent.click(screen.getByRole("button", { name: /Partner-provided eligibility check/i }));
+    expect(screen.queryByText(/Approve & share claims/i)).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: /Use selected method/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Approve & share claims/i)).toBeTruthy();
+    });
+    const approve = screen.getByText(/Approve & share claims/i);
+    expect(chooser.compareDocumentPosition(approve) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect((global.fetch as unknown as ReturnType<typeof vi.fn>).mock.calls.every(
+      (call) => !String(call[0]).includes("/api/age-assurance/reuse")
+        && !String(call[0]).includes("/api/age-assurance/session"),
+    )).toBe(true);
   });
 
   it("fails closed on continue when verify request is missing after sign-in, without navigating to bare verify", async () => {
