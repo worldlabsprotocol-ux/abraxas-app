@@ -24,6 +24,7 @@ const PUBLIC_PAGES = [
   "/docs/partner-flow",
   "/docs/trading-venue",
   "/docs/wallet-standard-binding",
+  "/docs/action-control-plane",
   "/docs/circle-arc-testnet",
   "/verify",
   "/good-trouble",

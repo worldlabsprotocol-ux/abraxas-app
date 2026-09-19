@@ -40,6 +40,7 @@ export default function DevelopersPage() {
           <Btn href="/docs/relying-party-verify" size="sm">External RP guide →</Btn>
           <Btn href="/design-partner" size="sm">Request API key →</Btn>
           <Btn href="/developers/launchpad" size="sm">Partner Launchpad →</Btn>
+          <Btn href="/docs/action-control-plane" size="sm">Action Control Plane →</Btn>
           <Btn href={PARTNER_ONBOARDING_DOC_LINKS.developersPartner} variant="secondary" size="sm">Partner portal →</Btn>
           <Btn href="/integrate" variant="ghost" size="sm">Full integrate guide →</Btn>
         </div>

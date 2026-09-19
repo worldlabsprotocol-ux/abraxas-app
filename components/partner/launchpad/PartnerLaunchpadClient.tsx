@@ -16,6 +16,7 @@ import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 import { PartnerEventDeliveryPanel } from "@/components/partner/launchpad/PartnerEventDeliveryPanel";
 import { PolicyChangeControlLaunchpadSlot } from "@/components/partner/launchpad/PolicyChangeControlLaunchpadSlot";
 import { PartnerSandboxReadinessPanel } from "@/components/partner/launchpad/PartnerSandboxReadinessPanel";
+import { PartnerActionControlPlanePanel } from "@/components/partner/launchpad/PartnerActionControlPlanePanel";
 import { CircleSettlementLaunchpadPanel } from "@/components/partner/launchpad/CircleSettlementLaunchpadPanel";
 import {
   launchpadHealthChecksForUi,
@@ -671,6 +672,10 @@ export function PartnerLaunchpadClient({
             <Btn size="sm" onClick={() => setStep("readiness")}>Open integration readiness</Btn>
           </div>
         </ContentCard>
+      )}
+
+      {activeApp && (
+        <PartnerActionControlPlanePanel applicationId={activeApp.id} />
       )}
 
       {(step === "readiness" || Boolean(activeApp)) && activeApp && (
