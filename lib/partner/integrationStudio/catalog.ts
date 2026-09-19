@@ -15,6 +15,7 @@ import {
   INTEGRATION_STUDIO_SOLANA_NOTICE,
   INTEGRATION_STUDIO_VENUE_NOTICE,
   INTEGRATION_STUDIO_WALLET_NOTICE,
+  INTEGRATION_STUDIO_PAYMENT_NOTICE,
   INTEGRATION_STUDIO_WEBHOOK_NOTICE,
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio/contract";
@@ -108,6 +109,13 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
       required_for_receipts: false,
       identity_verification: false,
       notice: INTEGRATION_STUDIO_WALLET_NOTICE,
+    },
+    payment_authorization: {
+      creates_payments: false,
+      creates_transfers: false,
+      funds_movement: false,
+      calls_circle: false,
+      notice: INTEGRATION_STUDIO_PAYMENT_NOTICE,
     },
   };
 }

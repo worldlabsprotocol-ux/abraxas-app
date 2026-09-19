@@ -35,6 +35,7 @@ export default function DevelopersPage() {
           <Btn href="/docs/solana" size="sm">Solana integration →</Btn>
           <Btn href="/docs/trading-venue" size="sm">Trading venue adapter →</Btn>
           <Btn href="/docs/wallet-standard-binding" size="sm">Wallet Standard binding →</Btn>
+          <Btn href="/docs/payment-authorization" size="sm">Payment authorization →</Btn>
           <Btn href="/docs/partner-flow" size="sm">Partner Flow docs →</Btn>
           <Btn href="/docs/relying-party-verify" size="sm">External RP guide →</Btn>
           <Btn href="/design-partner" size="sm">Request API key →</Btn>
@@ -66,6 +67,7 @@ export default function DevelopersPage() {
             { label: "Solana integration", href: "/docs/solana" },
             { label: "Solana claim access example", href: "/examples/solana-partner" },
             { label: "Trading venue preflight example", href: "/examples/trading-venue" },
+            { label: "Payment authorization example", href: "/examples/payment-authorization" },
             { label: "Sui deployment status", href: "/api/sui/status" },
             { label: "Mainnet readiness", href: "/api/mainnet/readiness" },
             { label: "Positioning loop", href: "/api/positioning/loop" },
