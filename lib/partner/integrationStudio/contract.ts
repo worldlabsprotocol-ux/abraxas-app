@@ -51,11 +51,15 @@ export const INTEGRATION_STUDIO_CHECKLIST = [
 
 export const INTEGRATION_STUDIO_PROVISION = {
   requires_partner_session: true as const,
+  self_serve_sandbox: true as const,
+  self_serve_production: false as const,
+  create_sandbox_cta: "Create a sandbox integration",
+  production_upgrade_cta: "Upgrade to Production after readiness review",
   apply_href: "/design-partner",
   launchpad_href: "/developers/launchpad",
   partner_portal_href: "/developers/partner",
   notice:
-    "Sandbox apps and API keys are provisioned after partner review. Integration Studio does not create keys, receipts, or intents.",
+    "Signed-in partners can create an isolated sandbox integration through Partner Launchpad. The sandbox key is shown once. Production credentials stay on the reviewed upgrade path.",
 };
 
 export const INTEGRATION_STUDIO_GOOGLE = GOOGLE_ACCOUNT_NOT_ELIGIBILITY;

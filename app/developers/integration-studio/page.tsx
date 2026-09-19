@@ -14,7 +14,7 @@ export default function IntegrationStudioPage() {
       <PageHeader
         eyebrow="Developers · Integration Studio"
         title="Understand the contract, then integrate"
-        subtitle={`${ACCOUNT_ACCESS_FIRST_PAINT} Choose a policy pack, pick a path, and reuse Partner Flow, receipts, events, and the Solana adapter. Studio does not issue keys or move funds.`}
+        subtitle={`${ACCOUNT_ACCESS_FIRST_PAINT} Choose a policy pack, create a sandbox integration after sign-in, then upgrade to Production after readiness review. Studio does not move funds.`}
       />
       <IntegrationStudioClient />
     </RedesignPage>

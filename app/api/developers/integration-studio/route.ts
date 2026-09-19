@@ -1,8 +1,9 @@
 // FILE: app/api/developers/integration-studio/route.ts
-// Public studio catalog. Architecture only. No keys, receipts, or provisioning.
+// Public catalog GET. Session-bound sandbox create POST via Launchpad provision.
 
 import { NextRequest, NextResponse } from "next/server";
 import {
+  createStudioSandbox,
   isIntegrationStudioPathId,
   studioPackContract,
   studioPayloadLeaks,
@@ -36,4 +37,8 @@ export async function GET(req: NextRequest) {
   }
 
   return NextResponse.json(body, { headers: { "Cache-Control": "no-store" } });
+}
+
+export async function POST(req: NextRequest) {
+  return createStudioSandbox(req);
 }

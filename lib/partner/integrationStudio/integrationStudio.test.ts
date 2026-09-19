@@ -35,7 +35,7 @@ describe("Integration Studio", () => {
     expect(identity?.identity_is_default).toBe(false);
   });
 
-  it("exposes the real checklist and does not fabricate provisioning", () => {
+  it("exposes the real checklist and self-service sandbox copy", () => {
     expect(INTEGRATION_STUDIO_CHECKLIST.map((item) => item.id)).toEqual([
       "hosted_verify",
       "approved_receipt",
@@ -45,7 +45,13 @@ describe("Integration Studio", () => {
       "policy_version",
     ]);
     expect(INTEGRATION_STUDIO_PROVISION.requires_partner_session).toBe(true);
-    expect(INTEGRATION_STUDIO_PROVISION.notice.toLowerCase()).toContain("does not create keys");
+    expect(INTEGRATION_STUDIO_PROVISION.self_serve_sandbox).toBe(true);
+    expect(INTEGRATION_STUDIO_PROVISION.self_serve_production).toBe(false);
+    expect(INTEGRATION_STUDIO_PROVISION.create_sandbox_cta).toBe("Create a sandbox integration");
+    expect(INTEGRATION_STUDIO_PROVISION.production_upgrade_cta).toBe(
+      "Upgrade to Production after readiness review",
+    );
+    expect(INTEGRATION_STUDIO_PROVISION.notice.toLowerCase()).toContain("shown once");
   });
 
   it("reuses kit, webhook, and Solana snippets without fund movement or secrets", () => {
@@ -75,6 +81,10 @@ describe("Integration Studio", () => {
     };
     expect(json.access).toBe("public");
     expect(json.partner_session_required_for_provisioning).toBe(true);
+    expect((json as { provision: { create_sandbox_cta: string; self_serve_production: boolean } }).provision.create_sandbox_cta)
+      .toBe("Create a sandbox integration");
+    expect((json as { provision: { create_sandbox_cta: string; self_serve_production: boolean } }).provision.self_serve_production)
+      .toBe(false);
     expect(json.contract.pack_id).toBe("age_21_retail");
     expect(json.solana.funds_movement).toBe(false);
     expect(studioPayloadLeaks(json)).toEqual([]);
@@ -94,5 +104,10 @@ describe("Integration Studio", () => {
     expect(page).not.toContain("judge");
     const developers = readFileSync(join(process.cwd(), "app/developers/page.tsx"), "utf8");
     expect(developers).toContain(INTEGRATION_STUDIO_PATH);
+    const client = readFileSync(join(process.cwd(), "app/developers/integration-studio/IntegrationStudioClient.tsx"), "utf8");
+    expect(client).toContain("Create a sandbox integration");
+    expect(client).toContain("Upgrade to Production after readiness review");
+    expect(client.toLowerCase()).not.toContain("operator-issued");
+    expect(client.toLowerCase()).not.toContain("operator issued");
   });
 });

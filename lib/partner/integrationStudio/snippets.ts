@@ -16,6 +16,44 @@ const DEMO_OPTS = {
   environment: "sandbox" as const,
 };
 
+export function studioSnippetForApplication(input: {
+  partnerId: string;
+  policyId: string;
+  policyVersion: number;
+  publicSlug: string;
+  returnUrl: string;
+}) {
+  const opts = {
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    policyVersion: input.policyVersion,
+    environment: "sandbox" as const,
+  };
+  return {
+    hosted_partner_flow: {
+      title: "Hosted Partner Flow",
+      docs: "/docs/partner-flow",
+      code: genericTypescriptExample(opts),
+      hosted_link_hint: `/partner/verify?app=${encodeURIComponent(input.publicSlug)}`,
+    },
+    server_receipt_verify: {
+      title: "Server-side receipt verification",
+      docs: "/docs/integration-kit",
+      code: nextjsRouteHandlerExample(opts),
+    },
+    webhook_events: {
+      title: "Webhook and event delivery",
+      docs: "/docs/partner-event-delivery",
+      code: nextjsWebhookHandlerExample(opts),
+    },
+    solana_gate: {
+      title: "Solana eligibility gate",
+      docs: "/docs/solana",
+      code: solanaServerVerifyExample(),
+    },
+  };
+}
+
 export function studioSnippetForPath(path: IntegrationStudioPathId): { title: string; docs: string; code: string } {
   switch (path) {
     case "hosted_partner_flow":
