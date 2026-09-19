@@ -8,6 +8,7 @@ const getAppMock = vi.fn();
 const loadViewMock = vi.fn();
 const runMock = vi.fn();
 const submitMock = vi.fn();
+const listEligibleMock = vi.fn();
 
 vi.mock("@/lib/partner/launchpad/partnerConsoleSession", () => ({
   resolvePartnerConsoleSession: (...args: unknown[]) => resolvePartnerConsoleSessionMock(...args),
@@ -26,6 +27,11 @@ vi.mock("@/lib/settlement/circle/execute", () => ({
   loadCircleSettlementView: (...args: unknown[]) => loadViewMock(...args),
   runCircleSettlement: (...args: unknown[]) => runMock(...args),
   submitCircleSettlementIntent: (...args: unknown[]) => submitMock(...args),
+}));
+
+vi.mock("@/lib/settlement/circle/eligibleReceipts", () => ({
+  listEligibleSettlementReceipts: (...args: unknown[]) => listEligibleMock(...args),
+  eligibleReceiptListHasForbiddenMaterial: (payload: unknown) => JSON.stringify(payload).includes("receipt_id"),
 }));
 
 describe("Circle settlement routes", () => {
@@ -68,6 +74,32 @@ describe("Circle settlement routes", () => {
     expect(body.code).toBe("circle_unavailable");
   });
 
+  it("GET eligible-receipts returns labels without receipt ids", async () => {
+    listEligibleMock.mockResolvedValue([{
+      selection_token: "opaque-token",
+      decision_state: "approved",
+      issued_at: "2026-09-19T09:55:00.000Z",
+      policy_version: 1,
+      environment: "sandbox",
+      eligibility_summary: "Sandbox product eligibility. Not identity verification. Not usable in Production.",
+      amount_minor: 10_000,
+      network: "ARC-TESTNET",
+      currency: "USDC",
+    }]);
+    const { GET } = await import("@/app/api/launchpad/applications/[id]/settlement/eligible-receipts/route");
+    const res = await GET(new NextRequest("http://localhost/api/launchpad/applications/app-1/settlement/eligible-receipts"), {
+      params: { id: "app-1" },
+    });
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.receipts).toHaveLength(1);
+    expect(JSON.stringify(body)).not.toMatch(/receipt_id/);
+    expect(listEligibleMock).toHaveBeenCalledWith(expect.objectContaining({
+      partnerId: "acme",
+      sessionKeyId: "key-1",
+    }));
+  });
+
   it("POST rejects client transaction hashes", async () => {
     runMock.mockResolvedValue({
       ok: false,
@@ -80,8 +112,7 @@ describe("Circle settlement routes", () => {
     const res = await POST(new NextRequest("http://localhost/api/launchpad/applications/app-1/settlement", {
       method: "POST",
       body: JSON.stringify({
-        receipt_id: "r1",
-        idempotency_key: "k1",
+        selection_token: "opaque-token",
         transaction_hash: "0xabc",
       }),
     }), { params: { id: "app-1" } });
@@ -102,13 +133,14 @@ describe("Circle settlement routes", () => {
     const { POST } = await import("@/app/api/launchpad/applications/[id]/settlement/route");
     const res = await POST(new NextRequest("http://localhost/api/launchpad/applications/app-1/settlement", {
       method: "POST",
-      body: JSON.stringify({ receipt_id: "r1", idempotency_key: "k1" }),
+      body: JSON.stringify({ selection_token: "opaque-token" }),
     }), { params: { id: "app-1" } });
     expect(res.status).toBe(409);
     expect(runMock).toHaveBeenCalledWith(expect.objectContaining({
-      receiptId: "r1",
+      selectionToken: "opaque-token",
+      sessionKeyId: "key-1",
     }));
-    expect(runMock.mock.calls[0][0].idempotencyKey).toBeUndefined();
+    expect(runMock.mock.calls[0][0].receiptId).toBeUndefined();
   });
 
   it("submit POST rejects wallet overrides and duplicate submits", async () => {
