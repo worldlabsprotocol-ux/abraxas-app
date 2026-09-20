@@ -77,7 +77,7 @@ export async function savePartnerFlowRequestConfig(input: {
   if (!callbackUrl || !isLaunchpadReturnUrlAllowlisted(urls, callbackUrl)) {
     throw Object.assign(new Error("callback_rejected"), { code: "callback_rejected" });
   }
-  if (capabilityAuthorityError(input.parsed.capabilities, Array.from(input.enabledCapabilities))) {
+  if (capabilityAuthorityError(input.parsed.capabilities, input.enabledCapabilities.slice())) {
     throw Object.assign(new Error(PARTNER_FLOW_CAPABILITY_REJECTED), { code: PARTNER_FLOW_CAPABILITY_REJECTED });
   }
   const displayLabel = input.parsed.display_label ?? input.application.display_name;
@@ -108,7 +108,7 @@ export async function savePartnerFlowRequestConfig(input: {
     purpose: input.parsed.purpose,
     action: input.parsed.action,
     callback_url: callbackUrl,
-    capabilities: Array.from(input.parsed.capabilities),
+    capabilities: input.parsed.capabilities.slice(),
     display_label: displayLabel,
   };
 }

@@ -71,6 +71,14 @@ export function parsePartnerFlowRequestBody(body: unknown): PartnerFlowParseResu
   if (!Array.isArray(rawCaps) || rawCaps.some((item) => typeof item !== "string" || !isPartnerFlowCapability(item))) {
     return { ok: false, error: "invalid_input" };
   }
+  const capabilities: PartnerFlowCapability[] = [];
+  const seen = new Set<PartnerFlowCapability>();
+  (rawCaps as PartnerFlowCapability[]).forEach((item) => {
+    if (!seen.has(item)) {
+      seen.add(item);
+      capabilities.push(item);
+    }
+  });
   return {
     ok: true,
     input: {
@@ -78,7 +86,7 @@ export function parsePartnerFlowRequestBody(body: unknown): PartnerFlowParseResu
       action: record.action,
       callback_index: record.callback_index,
       display_label,
-      capabilities: Array.from(new Set(rawCaps as PartnerFlowCapability[])),
+      capabilities,
     },
   };
 }

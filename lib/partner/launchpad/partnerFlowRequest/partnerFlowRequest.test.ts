@@ -218,6 +218,11 @@ describe("Partner Flow request configuration", () => {
       starterKitCapabilities: [],
     });
     expect(enabled).toEqual(["webhooks"]);
+    const ordered = enabledPartnerFlowCapabilities({
+      webhookConfigured: true,
+      starterKitCapabilities: ["solana_gate", "webhooks", "trading_venue", "solana_gate"],
+    });
+    expect(ordered).toEqual(["webhooks", "trading_venue", "solana_gate"]);
     expect(capabilityAuthorityError(["webhooks"], enabled)).toBeNull();
     expect(capabilityAuthorityError(["trading_venue"], enabled)).toBe("capability_rejected");
     expect(capabilityAuthorityError(["payment_authorization"], enabled)).toBe("capability_rejected");
