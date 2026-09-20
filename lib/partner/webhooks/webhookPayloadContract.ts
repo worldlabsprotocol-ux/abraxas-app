@@ -114,7 +114,7 @@ export function buildPartnerWebhookPayload(input: {
   if (input.decisionId) payload.decision_id = input.decisionId;
   if (input.reasonCode) payload.reason_code = input.reasonCode;
 
-  return (pickAllowedKeys(payload, WEBHOOK_PAYLOAD_ALLOWED_KEYS) ?? payload) as PartnerWebhookPayload;
+  return (pickAllowedKeys(payload, WEBHOOK_PAYLOAD_ALLOWED_KEYS) ?? payload) as unknown as PartnerWebhookPayload;
 }
 
 export function webhookPayloadHasNoPii(payload: PartnerWebhookPayload): boolean {

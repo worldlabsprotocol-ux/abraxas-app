@@ -79,6 +79,6 @@ export class AbraxasPortableActionAdapter {
       action_scope: input.action_scope,
       binding_ref: input.binding_ref,
     });
-    return (pickAllowedKeys(result, PORTABLE_ACTION_CLIENT_VISIBLE_KEYS) ?? result) as PortableActionClientResult;
+    return (pickAllowedKeys(result, PORTABLE_ACTION_CLIENT_VISIBLE_KEYS) ?? result) as unknown as PortableActionClientResult;
   }
 }

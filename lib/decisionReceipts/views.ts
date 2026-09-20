@@ -81,7 +81,7 @@ export function toPublicView(record: DecisionReceiptRecord): DecisionReceiptPubl
     anchor_reference: record.anchor_reference,
     artifact_type: "eligibility_decision_receipt" as const,
   };
-  return (pickAllowedKeys(view, SHARED_SURFACE_FIELDS.public_receipt) ?? view) as DecisionReceiptPublicView;
+  return (pickAllowedKeys(view, SHARED_SURFACE_FIELDS.public_receipt) ?? view) as unknown as DecisionReceiptPublicView;
 }
 
 export function toPartnerView(

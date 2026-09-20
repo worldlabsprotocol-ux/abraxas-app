@@ -81,7 +81,7 @@ export function buildHolderRequestBrief(input: {
       identity_not_default: IDENTITY_NOT_DEFAULT,
     };
   }
-  return sealed.payload as HolderRequestBrief;
+  return sealed.payload as unknown as HolderRequestBrief;
 }
 
 function packProfile(pack: ReturnType<typeof inferPolicyPackFromPolicyId>) {

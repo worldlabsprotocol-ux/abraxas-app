@@ -134,7 +134,7 @@ export class AbraxasPaymentAuthorizationAdapter {
       action_scope: requestedScope,
     });
     const mapped = toPaymentClient(result);
-    return (pickAllowedKeys(mapped, PAYMENT_AUTHORIZATION_CLIENT_VISIBLE_KEYS) ?? mapped) as PaymentAuthorizationClientVisibleResult;
+    return (pickAllowedKeys(mapped, PAYMENT_AUTHORIZATION_CLIENT_VISIBLE_KEYS) ?? mapped) as unknown as PaymentAuthorizationClientVisibleResult;
   }
 }
 

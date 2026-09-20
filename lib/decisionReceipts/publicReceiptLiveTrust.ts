@@ -62,7 +62,7 @@ export function attachLiveTrustToPublicView(
     validity: trust.validity,
     invalidation_reasons: trust.invalidation_reasons,
   };
-  return (pickAllowedKeys(attached, SHARED_SURFACE_FIELDS.public_receipt) ?? attached) as PublicReceiptLiveTrustView;
+  return (pickAllowedKeys(attached, SHARED_SURFACE_FIELDS.public_receipt) ?? attached) as unknown as PublicReceiptLiveTrustView;
 }
 
 export async function buildPublicReceiptWithLiveTrust(

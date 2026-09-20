@@ -10,7 +10,7 @@ import {
   type PolicyPackId,
 } from "@/lib/partner/launchpad/policyPacks";
 import { resolveDisclosureProfile } from "@/lib/privacy/selectiveDisclosure";
-import { SHARED_SURFACE_FIELDS } from "@/lib/privacy/selectiveDisclosure/contract";
+import { PLANNER_ALLOWED_OUTPUT_FIELDS } from "@/lib/privacy/selectiveDisclosure/contract";
 import {
   POLICY_VERSION_PATHS,
   type PolicyVersionPathId,
@@ -86,9 +86,7 @@ export function surfaceFromPack(input: {
 }): PolicyVersionSurface {
   const sandboxOnly = policyPackIsSandboxOnly(input.pack);
   const disclosure = resolveDisclosureProfile(input.pack.id);
-  const allowedOutput = disclosure.ok
-    ? [...disclosure.profile.public_receipt_fields]
-    : [...SHARED_SURFACE_FIELDS.public_receipt];
+  const allowedOutput = disclosure.ok ? [...PLANNER_ALLOWED_OUTPUT_FIELDS] : [];
   return {
     pack_id: input.pack.id,
     version: input.version,

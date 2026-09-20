@@ -81,6 +81,15 @@ export const CONSENT_PREVIEW_ALLOWED_FIELDS = [
   "sandbox_only",
 ] as const;
 
+export const PLANNER_ALLOWED_OUTPUT_FIELDS = [
+  "decision_result",
+  "status",
+  "currently_valid",
+  "production_usable",
+  "decision_context",
+  "artifact_type",
+] as const;
+
 export const PUBLIC_RECEIPT_ALLOWED_FIELDS = [
   ...PARTNER_INTEGRATION_TRUSTED_RECEIPT_FIELDS,
   "evaluated_claim_refs",
@@ -92,7 +101,6 @@ export const PUBLIC_RECEIPT_ALLOWED_FIELDS = [
   "signing_key_id",
   "anchor_reference",
   "subject_pseudonym_id",
-  "currently_valid",
   "validity",
   "invalidation_reasons",
 ] as const;

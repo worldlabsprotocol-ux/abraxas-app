@@ -115,6 +115,8 @@ export interface VerificationRequestPreview {
   requested_claims: string[];
   claim_labels: { claim_type: string; label: string; will_share: boolean }[];
   never_shared: string[];
+  expires_at: string;
+  status: string;
   shared_result_category?: string;
   sandbox_only?: boolean;
 }
@@ -177,7 +179,7 @@ export async function getVerificationRequestPreview(
       sandbox_only: true,
     };
   }
-  return sealed.payload as VerificationRequestPreview;
+  return sealed.payload as unknown as VerificationRequestPreview;
 }
 
 export async function consentAndDecide(input: {

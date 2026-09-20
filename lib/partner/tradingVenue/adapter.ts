@@ -102,7 +102,7 @@ export class AbraxasTradingVenueAdapter {
       action_scope: requestedScope,
       binding_ref: input.binding_ref,
     });
-    return (pickAllowedKeys(result, TRADING_VENUE_CLIENT_VISIBLE_KEYS) ?? result) as TradingVenueClientVisibleResult;
+    return (pickAllowedKeys(result, TRADING_VENUE_CLIENT_VISIBLE_KEYS) ?? result) as unknown as TradingVenueClientVisibleResult;
   }
 }
 

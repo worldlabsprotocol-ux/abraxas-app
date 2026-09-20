@@ -142,7 +142,7 @@ export function buildPassportActivityItem(
     profile.ok ? profile.profile : GENERIC_MINIMAL_PROFILE,
     "passport_activity",
   );
-  return sealed.ok ? sealed.payload as PassportActivityItem : null;
+  return sealed.ok ? sealed.payload as unknown as PassportActivityItem : null;
 }
 
 export function buildPassportActivityView(input: {

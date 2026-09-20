@@ -62,7 +62,7 @@ function emptyResult(overrides: Partial<PartnerKitSafeResult> & Pick<PartnerKitS
     replay_behavior: PARTNER_INTEGRATION_REPLAY_BEHAVIOR,
     ...overrides,
   };
-  return (pickAllowedKeys(result, SHARED_SURFACE_FIELDS.partner_kit) ?? result) as PartnerKitSafeResult;
+  return (pickAllowedKeys(result, SHARED_SURFACE_FIELDS.partner_kit) ?? result) as unknown as PartnerKitSafeResult;
 }
 
 function safeFromReceipt(

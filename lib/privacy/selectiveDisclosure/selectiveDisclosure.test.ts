@@ -209,6 +209,6 @@ describe("selective disclosure security", () => {
 
   it("states the privacy notice without claiming ZK", () => {
     expect(SELECTIVE_DISCLOSURE_NOTICE.toLowerCase()).toContain("policy result");
-    expect(SELECTIVE_DISCLOSURE_NOTICE.toLowerCase()).not.toContain("zero-knowledge");
+    expect(SELECTIVE_DISCLOSURE_NOTICE.toLowerCase()).toContain("not a zero-knowledge");
   });
 });
