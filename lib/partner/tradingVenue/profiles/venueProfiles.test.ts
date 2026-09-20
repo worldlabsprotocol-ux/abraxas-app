@@ -175,7 +175,7 @@ describe("trading venue integration profiles", () => {
       pack_id: "age_21_retail",
       path: "trading_venue",
       runtime: "typescript_nextjs",
-      capabilities: ["trading_venue"],
+      capabilities: [],
     });
     expect(validated.ok).toBe(true);
     if (!validated.ok) return;
