@@ -43,8 +43,13 @@ import {
   resolvePartnerContinueContext,
   type ResolvedPartnerContinueContext,
 } from "@/lib/partner/resolvePartnerContinueContext";
-import { partnerVerifyMissingRequiredParametersMessage } from "@/lib/partner/normalizePartnerVerifyInput";
 import { sanitizePartnerContinueBrowserSearch } from "@/lib/partner/partnerFlowContinuation";
+import { HolderRecoveryCard } from "@/components/partner/HolderRecoveryCard";
+import {
+  buildHolderRequestBrief,
+  holderSafeClientMessage,
+  resolveHolderRecovery,
+} from "@/lib/partner/holderExperience";
 
 function resolveMinimumAge(policyId: string): number | null {
   if (policyId === GOOD_TROUBLE_RETAIL_POLICY_ID) return 21;
@@ -283,11 +288,11 @@ function PartnerContinueInner() {
       });
       const result = await res.json() as { ok?: boolean; error?: string };
       if (!res.ok || !result.ok) {
-        throw new Error(result.error ?? "Wallet binding repair failed.");
+        throw new Error("Could not confirm your account. Try again.");
       }
       void refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Wallet binding repair failed.");
+      setError(e instanceof Error ? holderSafeClientMessage(e.message) : holderSafeClientMessage());
     } finally {
       setBindLoading(false);
     }
@@ -310,7 +315,7 @@ function PartnerContinueInner() {
       });
       const sessionData = await sessionRes.json() as { session_url?: string | null; error?: string };
       if (!sessionRes.ok || !sessionData.session_url) {
-        setError(sessionData.error ?? "Could not start verification. Try again.");
+        setError(holderSafeClientMessage(sessionData.error));
         return;
       }
       void refresh();
@@ -330,27 +335,29 @@ function PartnerContinueInner() {
       };
       w.veriffSDK.createVeriffFrame({ url: sessionData.session_url });
     } catch {
-      setError("Could not load verification. Check your connection and try again.");
+      setError(holderSafeClientMessage());
     } finally {
       setStarting(false);
     }
   }
 
+  const holderBrief = buildHolderRequestBrief({
+    partnerId,
+    partnerName,
+    policyId,
+    purpose: purposeParam,
+  });
+
   if (!authLoading && !contextLoading && continueContextIncomplete) {
-    const missing: string[] = [];
-    if (!verifyRequestId) missing.push("verification request");
-    if (!partnerId) missing.push("partner identifier");
-    const invalidLinkMessage = partnerVerifyMissingRequiredParametersMessage(missing);
     return (
       <PartnerJourneyLayout
         partnerName={partnerName}
         intro="This Partner Flow link cannot continue."
-        statusMessage={invalidLinkMessage}
-        hideStatus={false}
+        statusMessage=""
+        hideStatus
+        brief={holderBrief}
       >
-        <StatusBanner tone="info" title="Verification could not continue">
-          {invalidLinkMessage}
-        </StatusBanner>
+        <HolderRecoveryCard recovery={resolveHolderRecovery("missing", partnerName, partnerHomeUrl)} />
       </PartnerJourneyLayout>
     );
   }
@@ -396,13 +403,12 @@ function PartnerContinueInner() {
       statusMessage={statusMessage}
       partnerHomeUrl={partnerHomeUrl}
       partnerReturnLabel={returnLabel}
+      brief={holderBrief}
     >
       {authLoading || contextLoading ? (
-        <p role="status">Loading…</p>
+        <p role="status" aria-live="polite">Loading this partner request…</p>
       ) : !suiAddress ? (
-        <StatusBanner tone="pending" title={holderCopy.title}>
-          Return to the partner site and start verification again.
-        </StatusBanner>
+        <HolderRecoveryCard recovery={resolveHolderRecovery("session_required", partnerName, partnerHomeUrl)} />
       ) : (
         <>
           <PartnerFlowReturnHandler handoff={handoff} />
@@ -414,9 +420,11 @@ function PartnerContinueInner() {
           )}
 
           {holderState === "verification_expired" && (
-            <StatusBanner tone="info" title={holderCopy.title}>
-              {holderCopy.message}
-            </StatusBanner>
+            <HolderRecoveryCard recovery={resolveHolderRecovery("expired", partnerName, partnerHomeUrl)} />
+          )}
+
+          {methodSelected && !methodQualified && (
+            <HolderRecoveryCard recovery={resolveHolderRecovery("method_not_qualified", partnerName, partnerHomeUrl)} />
           )}
 
           {setupVisibility.showWalletBinding && (
@@ -480,9 +488,7 @@ function PartnerContinueInner() {
                     </Btn>
                   )}
                   {!veriffConfigured && idvProvider === "veriff" && (
-                    <p style={{ marginTop: "0.5rem", fontSize: "0.82rem", color: "var(--text-muted)" }}>
-                      Verification is not available in this environment.
-                    </p>
+                    <HolderRecoveryCard recovery={resolveHolderRecovery("provider_unavailable", partnerName, partnerHomeUrl)} />
                   )}
                   <div style={{ marginTop: "0.75rem" }}>
                     <Btn
@@ -523,7 +529,7 @@ function PartnerContinueInner() {
             </div>
           )}
 
-          {error && <p role="alert" style={{ marginTop: "0.75rem", color: "var(--text-secondary)" }}>{error}</p>}
+          {error && <p role="alert" aria-live="assertive" style={{ marginTop: "0.75rem", color: "var(--text-secondary)" }}>{error}</p>}
         </>
       )}
     </PartnerJourneyLayout>

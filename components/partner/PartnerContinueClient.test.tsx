@@ -297,3 +297,53 @@ describe("PartnerContinueClient Good Trouble browse journey", () => {
     });
   });
 });
+
+describe("PartnerContinueClient holder recovery", () => {
+  afterEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+  });
+
+  it("explains a missing continue link without leaking query or backend details", async () => {
+    mockAuthState.suiAddress = "0xabc";
+    mockAuthState.isLoading = false;
+    mockSearchParams = new URLSearchParams({
+      return_url: "https://evil.example/callback",
+      receipt_id: "dr_secret",
+    });
+    global.fetch = vi.fn() as typeof fetch;
+    const { container } = render(<PartnerContinueClient />);
+    await waitFor(() => {
+      expect(screen.getByText(/could not be found/i)).toBeTruthy();
+    });
+    expect(container.textContent).not.toMatch(/evil\.example|dr_secret|receipt_id|SQLSTATE/i);
+  });
+
+  it("asks the holder to sign in again after session loss without exposing wallet copy", async () => {
+    mockAuthState.suiAddress = null;
+    mockAuthState.isLoading = false;
+    mockSearchParams = new URLSearchParams({
+      verify_request: "vr-session",
+      partner_id: GOOD_TROUBLE_PARTNER_ID,
+      policy_id: GOOD_TROUBLE_RETAIL_POLICY_ID,
+    });
+    global.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/v1/verification-requests/vr-session")) {
+        return new Response(JSON.stringify({
+          partner_id: GOOD_TROUBLE_PARTNER_ID,
+          policy_id: GOOD_TROUBLE_RETAIL_POLICY_ID,
+        }), { status: 200 });
+      }
+      if (url.includes("continue-binding") || url.includes("method-qualification")) {
+        return new Response(JSON.stringify({ ok: true, method_qualified: false }), { status: 200 });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    }) as typeof fetch;
+    const { container } = render(<PartnerContinueClient />);
+    await waitFor(() => {
+      expect(screen.getByText(/Sign in to continue/i)).toBeTruthy();
+    });
+    expect(container.textContent).not.toMatch(/0xabc|receipt_id|jwt /i);
+  });
+});

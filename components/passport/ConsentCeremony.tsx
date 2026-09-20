@@ -5,6 +5,8 @@
 import { useEffect, useState } from "react";
 import { NEVER_SHARED_WITH_PARTNERS, POLICY_DECISIONS, type PolicyDecision } from "@/lib/abraxasNetwork";
 import { consentVerificationRequest, declineVerificationRequest } from "@/lib/api/passport";
+import { resolvePartnerDisplayName } from "@/lib/partner/partnerVerifyDisplay";
+import { holderSafeClientMessage, resolveHolderRecovery } from "@/lib/partner/holderExperience";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -43,10 +45,10 @@ export function ConsentCeremony({
     fetch(`/api/v1/verification-requests/${requestId}`, { credentials: "include" })
       .then(r => r.json())
       .then(data => {
-        if (data.error) throw new Error(data.error);
+        if (data.error) throw new Error("preview_failed");
         setPreview(data as ConsentPreview);
       })
-      .catch(e => setError(e instanceof Error ? e.message : "Could not load request"))
+      .catch(() => setError(holderSafeClientMessage()))
       .finally(() => setLoading(false));
   }, [requestId]);
 
@@ -58,8 +60,8 @@ export function ConsentCeremony({
       const decision = (data.decision ?? "manual_review") as PolicyDecision;
       setResult({ decision, decision_reference: data.decision_reference ?? "" });
       onComplete?.({ decision, decision_reference: data.decision_reference ?? "" });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Consent failed");
+    } catch {
+      setError(holderSafeClientMessage());
     } finally {
       setBusy(false);
     }
@@ -72,8 +74,8 @@ export function ConsentCeremony({
       await declineVerificationRequest(requestId);
       setResult({ decision: "declined", decision_reference: "" });
       onDismiss?.();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Decline failed");
+    } catch {
+      setError(holderSafeClientMessage());
     } finally {
       setBusy(false);
     }
@@ -82,7 +84,7 @@ export function ConsentCeremony({
   if (loading) {
     return (
       <div style={{ padding: "1rem", borderRadius: 14, background: "var(--surface-raised)", border: "1px solid var(--border-strong)", marginBottom: "1.25rem" }}>
-        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", margin: 0 }}>Loading partner request…</p>
+        <p role="status" aria-live="polite" style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", margin: 0 }}>Loading partner request…</p>
       </div>
     );
   }
@@ -90,7 +92,7 @@ export function ConsentCeremony({
   if (error && !preview) {
     return (
       <div style={{ padding: "1rem", borderRadius: 14, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", marginBottom: "1.25rem" }}>
-        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "#EF4444", margin: 0 }}>{error}</p>
+        <p role="alert" aria-live="assertive" style={{ fontFamily: FONT, fontSize: "0.78rem", color: "#EF4444", margin: 0 }}>{holderSafeClientMessage()}</p>
       </div>
     );
   }
@@ -122,13 +124,12 @@ export function ConsentCeremony({
           Partner decision: {meta.label}
         </div>
         <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: "0 0 0.35rem", lineHeight: 1.55 }}>
-          {result.decision === "approved" && !identityComplete
-            ? "Consent recorded. Finish identity verification above to return to the partner app."
-            : meta.description}
+          {result.decision === "approved"
+            ? "The partner receives only the policy result, not underlying evidence. Sandbox results are not Production-usable."
+            : result.decision === "denied"
+              ? resolveHolderRecovery("denied").explanation
+              : meta.description}
         </p>
-        <div style={{ fontFamily: MONO, fontSize: "0.52rem", color: "var(--text-muted)" }}>
-          Audit ref {result.decision_reference.slice(0, 12)}… · Only authorized claims were shared
-        </div>
       </div>
     );
   }
@@ -136,13 +137,14 @@ export function ConsentCeremony({
   if (!preview) return null;
 
   if (preview.status === "cancelled" || preview.status === "decided" || preview.status === "expired") {
+    const recovery = resolveHolderRecovery(preview.status === "expired" ? "expired" : "cancelled");
     return (
       <div style={{
         padding: "1rem", borderRadius: 14, marginBottom: "1.25rem",
         background: "var(--surface-inset)", border: "1px solid var(--border)",
       }}>
-        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", margin: 0 }}>
-          This partner request is no longer active ({preview.status}).
+        <p role="status" style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", margin: 0 }}>
+          {recovery.explanation}
         </p>
       </div>
     );
@@ -163,14 +165,14 @@ export function ConsentCeremony({
         {preview.policy_name}
       </h3>
       <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: "0 0 0.85rem", lineHeight: 1.6 }}>
-        <strong>{preview.partner_id}</strong>
-        {preview.requested_action ? ` requests access for: ${preview.requested_action.replace(/_/g, " ")}` : " requests eligibility claims."}
+        <strong>{resolvePartnerDisplayName(preview.partner_id)}</strong>
+        {preview.requested_action ? ` requests access for: ${preview.requested_action.replace(/_/g, " ")}` : " requests a policy result."}
       </p>
       <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: "0 0 0.85rem", lineHeight: 1.6 }}>
         Abraxas is designed to return the policy decision needed for this request rather than automatically sharing your ID files.
       </p>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "0.85rem" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "0.75rem", marginBottom: "0.85rem" }}>
         <div>
           <div style={{ fontFamily: MONO, fontSize: "0.5rem", color: ACCENT, marginBottom: "0.35rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>
             Will share (claims only)
@@ -198,7 +200,7 @@ export function ConsentCeremony({
       </div>
 
       {error && (
-        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "#EF4444", margin: "0 0 0.65rem" }}>{error}</p>
+        <p role="alert" aria-live="assertive" style={{ fontFamily: FONT, fontSize: "0.72rem", color: "#EF4444", margin: "0 0 0.65rem" }}>{holderSafeClientMessage()}</p>
       )}
 
       <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
@@ -222,7 +224,7 @@ export function ConsentCeremony({
         </button>
       </div>
       <p style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)", margin: "0.55rem 0 0", lineHeight: 1.5 }}>
-        Expires {new Date(preview.expires_at).toLocaleString()} · Policy {preview.policy_id}
+        Google sign-in is account access only. Selecting a method earlier did not share a result.
       </p>
     </div>
   );

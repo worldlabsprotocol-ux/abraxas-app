@@ -116,6 +116,65 @@ describe("PartnerVerifyShell customer UI", () => {
     const results = await runAxe(container);
     expect(results.violations).toEqual([]);
     expect(screen.getByRole("button", { name: /Try again/i })).toBeTruthy();
+    expect(screen.getByText(/Who is requesting/i)).toBeTruthy();
+    expect(container.textContent).not.toMatch(/receipt_id|abx_live_|0xabc/i);
+  });
+
+  it("explains denied results without exposing evidence or receipt ids", () => {
+    const { container } = render(
+      <PartnerVerifyShell
+        {...baseProps}
+        phase="denied"
+        statusMessage="This requirement could not be met."
+      />,
+    );
+    expect(screen.getByText(/Required eligibility was not established/i)).toBeTruthy();
+    expect(container.textContent).not.toMatch(/receipt_id/i);
+  });
+
+  it("labels sandbox approved results as not Production-usable", () => {
+    render(
+      <PartnerVerifyShell
+        {...baseProps}
+        policyId="circle-arc-demo-304-sandbox_economic_demo-v1"
+        environment="sandbox"
+        phase="approved"
+        statusMessage="Returning you to the partner."
+      />,
+    );
+    expect(screen.getByText(/Sandbox result only/i)).toBeTruthy();
+    expect(screen.getAllByText(/not Production-usable/i).length).toBeGreaterThan(0);
+  });
+
+  it("covers expired, missing, cancelled, invalid-binding, session, method, and provider states", () => {
+    const phases = [
+      "expired",
+      "missing",
+      "cancelled",
+      "invalid_binding",
+      "method_not_qualified",
+      "provider_unavailable",
+    ] as const;
+    for (const phase of phases) {
+      const { unmount, container } = render(
+        <PartnerVerifyShell
+          {...baseProps}
+          phase={phase}
+          statusMessage="unused"
+        />,
+      );
+      expect(container.querySelector("[role='alert']")).toBeTruthy();
+      expect(container.textContent).not.toMatch(/receipt_id|SQLSTATE|jwt /i);
+      unmount();
+    }
+    render(
+      <PartnerVerifyShell
+        {...baseProps}
+        phase="sign_in"
+        statusMessage="Sign in to continue with Abraxas."
+      />,
+    );
+    expect(screen.getByText(/Google sign-in opens an Abraxas account/i)).toBeTruthy();
   });
 
   it("shows partner return link on denied state", async () => {
@@ -216,7 +275,7 @@ describe("PartnerVerifyShell Good Trouble DOB-first browse sign-in copy", () => 
     );
 
     expect(screen.getByText(/Signing in is not age verification/i)).toBeTruthy();
-    expect(screen.getByText(/policy result/i)).toBeTruthy();
+    expect(screen.getAllByText(/policy result/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Signing in confirms your account only/i)).toBeTruthy();
     expect(screen.queryByText(GOOD_TROUBLE_BROWSE_SIGN_IN_INTRO)).toBeNull();
   });

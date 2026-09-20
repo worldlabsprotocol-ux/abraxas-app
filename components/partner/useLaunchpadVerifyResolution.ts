@@ -47,7 +47,7 @@ export function useLaunchpadVerifyResolution(
         const data = await res.json();
         if (cancelled) return;
         if (!res.ok) {
-          setError(data.error ?? "Verification link is invalid.");
+          setError("This verification link is not valid. Start again from the partner site.");
           setResolved(null);
           return;
         }
@@ -71,7 +71,7 @@ export function useLaunchpadVerifyResolution(
         });
       })
       .catch(() => {
-        if (!cancelled) setError("Could not load verification configuration.");
+        setError("Could not load this verification link. Start again from the partner site.");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

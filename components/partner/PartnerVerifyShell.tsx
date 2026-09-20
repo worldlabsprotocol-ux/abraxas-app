@@ -15,6 +15,12 @@ import {
 } from "@/lib/partner/goodTroubleBrowseFlow";
 import { resolvePartnerContinuationIntro } from "@/lib/partner/partnerVerifyDisplay";
 import type { PartnerJourneyPrimaryAction } from "@/lib/partner/partnerJourneyStateMachine";
+import { HolderRecoveryCard } from "@/components/partner/HolderRecoveryCard";
+import {
+  buildHolderRequestBrief,
+  resolveHolderRecovery,
+  type HolderRequestBrief,
+} from "@/lib/partner/holderExperience";
 
 export type PartnerVerifyPhase =
   | "loading"
@@ -27,7 +33,14 @@ export type PartnerVerifyPhase =
   | "denied"
   | "error"
   | "invalid_link"
-  | "return_failed";
+  | "return_failed"
+  | "expired"
+  | "missing"
+  | "cancelled"
+  | "invalid_binding"
+  | "method_not_qualified"
+  | "provider_unavailable"
+  | "approved";
 
 export interface PartnerVerifyShellProps {
   phase: PartnerVerifyPhase;
@@ -46,6 +59,43 @@ export interface PartnerVerifyShellProps {
   partnerReturnLabel: string;
   partnerHomeUrl?: string | null;
   primaryAction?: PartnerJourneyPrimaryAction;
+  environment?: string | null;
+  disclosedResult?: string | null;
+}
+
+function recoveryForPhase(phase: PartnerVerifyPhase) {
+  switch (phase) {
+    case "loading":
+    case "preparing":
+    case "verifying":
+    case "signing_in":
+    case "returning":
+    case "pending_review":
+      return "loading" as const;
+    case "sign_in":
+      return "session_required" as const;
+    case "expired":
+      return "expired" as const;
+    case "missing":
+    case "invalid_link":
+      return "missing" as const;
+    case "cancelled":
+      return "cancelled" as const;
+    case "denied":
+      return "denied" as const;
+    case "provider_unavailable":
+      return "provider_unavailable" as const;
+    case "error":
+    case "return_failed":
+    case "invalid_binding":
+      return "invalid_binding" as const;
+    case "method_not_qualified":
+      return "method_not_qualified" as const;
+    case "approved":
+      return "approved" as const;
+    default:
+      return "loading" as const;
+  }
 }
 
 function showSignIn(phase: PartnerVerifyPhase): boolean {
@@ -53,7 +103,17 @@ function showSignIn(phase: PartnerVerifyPhase): boolean {
 }
 
 function showReturnButton(phase: PartnerVerifyPhase): boolean {
-  return phase === "error" || phase === "return_failed" || phase === "denied" || phase === "pending_review";
+  return phase === "error"
+    || phase === "return_failed"
+    || phase === "denied"
+    || phase === "pending_review"
+    || phase === "expired"
+    || phase === "missing"
+    || phase === "cancelled"
+    || phase === "invalid_binding"
+    || phase === "invalid_link"
+    || phase === "provider_unavailable"
+    || phase === "approved";
 }
 
 export function PartnerVerifyShell({
@@ -72,6 +132,8 @@ export function PartnerVerifyShell({
   invalidLinkMessage,
   partnerReturnLabel,
   partnerHomeUrl,
+  environment = null,
+  disclosedResult = null,
 }: PartnerVerifyShellProps) {
   const continuationContext = { policyId, purpose };
   const onSignInScreen = showSignIn(phase);
@@ -82,43 +144,62 @@ export function PartnerVerifyShell({
   const resolvedStatus = useDobFirstSignInCopy
     ? GOOD_TROUBLE_BROWSE_SIGN_IN_STATUS
     : (statusMessage || policyRequirement);
+  const brief: HolderRequestBrief = buildHolderRequestBrief({
+    partnerId,
+    partnerName,
+    policyId,
+    purpose,
+    environment,
+    disclosedResult,
+    userExplanation: policyRequirement,
+  });
+  const recovery = resolveHolderRecovery(recoveryForPhase(phase), partnerName, partnerHomeUrl);
 
   if (phase === "invalid_link" && invalidLinkMessage) {
     return (
       <PartnerJourneyLayout
         partnerName={partnerName}
         intro={resolvePartnerContinuationIntro(partnerId, continuationContext)}
-        statusMessage={invalidLinkMessage}
+        statusMessage=""
+        hideStatus
         partnerHomeUrl={partnerHomeUrl}
         partnerReturnLabel={partnerReturnLabel}
+        brief={brief}
       >
-        <p role="alert" style={{ fontSize: "0.88rem", lineHeight: 1.65 }}>
-          {invalidLinkMessage}
-        </p>
+        <HolderRecoveryCard recovery={recovery} />
       </PartnerJourneyLayout>
     );
   }
 
   const busy = phase === "signing_in" || phase === "preparing" || phase === "verifying" || phase === "returning";
 
+  const recoveryPhases = phase === "error" || phase === "return_failed" || phase === "expired" || phase === "missing" || phase === "cancelled" || phase === "invalid_binding" || phase === "method_not_qualified" || phase === "provider_unavailable" || phase === "denied" || phase === "approved";
+
   return (
     <PartnerJourneyLayout
       partnerName={partnerName}
       intro={intro}
       statusMessage={resolvedStatus}
+      hideStatus={recoveryPhases}
       partnerHomeUrl={showReturnButton(phase) ? partnerHomeUrl : null}
       partnerReturnLabel={partnerReturnLabel}
       showAccountFooter={!useDobFirstSignInCopy}
+      brief={useDobFirstSignInCopy ? null : brief}
     >
-      {phase === "error" || phase === "return_failed" ? (
-        <div role="alert">
-          <p style={{ margin: "0 0 1rem", fontSize: "0.88rem", lineHeight: 1.65 }}>
-            {statusMessage || "Verification could not be completed."}
-          </p>
-          <Btn onClick={onTryAgain} style={{ marginBottom: "0.5rem" }}>
-            Try again
-          </Btn>
-        </div>
+      {recoveryPhases ? (
+        <HolderRecoveryCard
+          recovery={{
+            ...(phase === "approved" && brief.environment_label.startsWith("Sandbox")
+              ? resolveHolderRecovery("sandbox_approved", partnerName, partnerHomeUrl)
+              : recovery),
+            next_label: phase === "error" || phase === "return_failed" ? "Try again" : (
+              phase === "approved" && brief.environment_label.startsWith("Sandbox")
+                ? resolveHolderRecovery("sandbox_approved", partnerName, partnerHomeUrl).next_label
+                : recovery.next_label
+            ),
+          }}
+          onPrimary={phase === "error" || phase === "return_failed" || phase === "method_not_qualified" ? onTryAgain : undefined}
+        />
       ) : (
         <>
           {showSignIn(phase) && signInConfigured && (
@@ -153,12 +234,6 @@ export function PartnerVerifyShell({
           {phase === "pending_review" && (
             <p style={{ margin: "0.75rem 0 0", fontSize: "0.86rem", lineHeight: 1.6 }}>
               Your verification is under review. You may close this window and check back later.
-            </p>
-          )}
-
-          {phase === "denied" && (
-            <p role="alert" style={{ margin: "0.75rem 0 0", fontSize: "0.86rem", lineHeight: 1.6 }}>
-              This requirement could not be met. Contact the partner if you believe this is an error.
             </p>
           )}
         </>
