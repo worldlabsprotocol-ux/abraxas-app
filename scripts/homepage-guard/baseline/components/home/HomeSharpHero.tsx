@@ -3,15 +3,14 @@
 // Hero — headline, CTAs, and verify-once flow visual.
 
 import { Btn } from "@/components/redesign/ui";
-import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
-import { useZkLoginSignInChooserOptional } from "@/components/sui/ZkLoginSignInChooserProvider";
-import { canOpenSignInChooser } from "@/lib/sui/zklogin/signInChooserState";
 import { ABRAXAS_FONT_DISPLAY, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import {
   SIMPLIFIED_HOME_CTA_PRIMARY,
   SIMPLIFIED_HOME_CTA_PRIMARY_HREF,
   SIMPLIFIED_HOME_CTA_SECONDARY,
   SIMPLIFIED_HOME_CTA_SECONDARY_HREF,
+  SIMPLIFIED_HOME_CTA_BUILD,
+  SIMPLIFIED_HOME_CTA_BUILD_HREF,
   SIMPLIFIED_HOME_EYEBROW,
   SIMPLIFIED_HOME_HEADLINE,
   SIMPLIFIED_HOME_SUBHEAD,
@@ -24,11 +23,6 @@ const TEAL = "#2DD4BF";
 const GOLD = "#E8C547";
 
 export function HomeSharpHero() {
-  const auth = useSuiAuthOptional();
-  const chooser = useZkLoginSignInChooserOptional();
-  const signedIn = Boolean(auth?.suiAddress);
-  const useChooser = !signedIn && canOpenSignInChooser({ configured: auth?.isConfigured ?? false });
-
   return (
     <section
       id="top"
@@ -73,17 +67,14 @@ export function HomeSharpHero() {
       </p>
 
       <div className="abx-home-hero-actions" style={{ marginBottom: "1.5rem" }}>
-        {useChooser ? (
-          <Btn size="lg" onClick={() => chooser?.openChooser()}>
-            {SIMPLIFIED_HOME_CTA_PRIMARY}
-          </Btn>
-        ) : (
-          <Btn href={SIMPLIFIED_HOME_CTA_PRIMARY_HREF} size="lg">
-            {SIMPLIFIED_HOME_CTA_PRIMARY}
-          </Btn>
-        )}
+        <Btn href={SIMPLIFIED_HOME_CTA_PRIMARY_HREF} size="lg">
+          {SIMPLIFIED_HOME_CTA_PRIMARY}
+        </Btn>
         <Btn href={SIMPLIFIED_HOME_CTA_SECONDARY_HREF} variant="secondary" size="lg">
           {SIMPLIFIED_HOME_CTA_SECONDARY}
+        </Btn>
+        <Btn href={SIMPLIFIED_HOME_CTA_BUILD_HREF} variant="secondary" size="lg">
+          {SIMPLIFIED_HOME_CTA_BUILD}
         </Btn>
       </div>
 

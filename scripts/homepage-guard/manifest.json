@@ -26,7 +26,11 @@
     "lib/home/protocolProofLogos.ts",
     "lib/home/protocolProofMedia.ts",
     "lib/home/ecosystemContent.ts",
-    "lib/home/partnerNetwork.ts"
+    "lib/home/partnerNetwork.ts",
+    "lib/home/commandCenter.ts",
+    "components/home/HomeCapabilityMap.tsx",
+    "components/home/HomeProtocolMap.tsx",
+    "components/home/HomeUseCases.tsx"
   ],
   "protectedCss": {
     "source": "app/globals.css",
@@ -57,7 +61,12 @@
     {
       "id": "homepage-css-tokens",
       "file": "app/globals.css",
-      "mustContain": [".abx-home-section-center", ".abx-home-proof-card", ".abx-home-proof-media", ".abx-home-hero"]
+      "mustContain": [".abx-home-section-center", ".abx-home-proof-card", ".abx-home-proof-media", ".abx-home-hero", ".abx-command-center"]
+    },
+    {
+      "id": "command-center-map",
+      "file": "components/redesign/RedesignHome.tsx",
+      "mustContain": ["HomeCapabilityMap", "HomeProtocolMap", "HomeUseCases"]
     }
   ],
   "protectedAssetPaths": [

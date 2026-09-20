@@ -30,6 +30,8 @@ describe("homepage baseline (approved design invariants)", () => {
     const shell = read("components/redesign/RedesignHome.tsx");
     expect(shell).toContain('textAlign: "center"');
     expect(shell).toContain('alignItems: "center"');
+    expect(shell).toContain("HomeCapabilityMap");
+    expect(shell).toContain("HomeProtocolMap");
   });
 
   it("homepage typography CSS tokens exist", () => {
@@ -37,6 +39,7 @@ describe("homepage baseline (approved design invariants)", () => {
     expect(css).toContain(".abx-home-section-center");
     expect(css).toContain(".abx-home-proof-card");
     expect(css).toContain(".abx-home-proof-media");
+    expect(css).toContain(".abx-command-center");
   });
 
   it("protocol proof asset modules are present", () => {

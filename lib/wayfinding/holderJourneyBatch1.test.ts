@@ -136,7 +136,7 @@ describe("phase 9 holder journey batch 1", () => {
   it("keeps public nav on the live product surfaces", () => {
     const nav = read("components/redesign/RedesignNav.tsx");
     expect(nav).toContain("PUBLIC_NAV_LINKS");
-    expect(nav).toContain("Partners");
+    expect(nav).toContain("Launchpad");
     expect(nav).not.toContain("NAV_PARTNER_VERIFY_LABEL");
   });
 

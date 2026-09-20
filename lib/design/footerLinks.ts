@@ -3,6 +3,7 @@
 
 export const FOOTER_PRODUCT_LINKS = [
   { label: "Passport", href: "/passport" },
+  { label: "Capability map", href: "/#capability-map" },
   { label: "For businesses", href: "/integrate" },
   { label: "Pilot journey", href: "/pilot-journey" },
 ] as const;

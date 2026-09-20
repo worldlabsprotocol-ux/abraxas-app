@@ -1,24 +1,27 @@
 // FILE: lib/home/simplifiedHomeCopy.ts
 // Minimal homepage copy — human, high-impact positioning.
 
-export const SIMPLIFIED_HOME_EYEBROW = "PRIVATE, REUSABLE VERIFICATION";
+export const SIMPLIFIED_HOME_EYEBROW = "PRIVATE ELIGIBILITY PROTOCOL";
 
-export const SIMPLIFIED_HOME_HEADLINE = "Tired of verifying yourself over and over?";
+export const SIMPLIFIED_HOME_HEADLINE = "Prove only what a service needs.";
 
 export const SIMPLIFIED_HOME_SUBHEAD =
-  "Verify once with Abraxas. Privately prove only what a service needs without repeatedly sharing your personal information.";
+  "Abraxas is a private eligibility protocol. Your evidence stays private. Partners verify a current result on their server.";
 
 export const SIMPLIFIED_HOME_TRUST_LINE =
-  "You control what is shared. Partners receive the result, not your underlying documents.";
+  "Use one private verification again with fresh consent. Abraxas does not execute trades, payments, or transfers.";
 
-export const SIMPLIFIED_HOME_CTA_PRIMARY = "Create your Passport";
-export const SIMPLIFIED_HOME_CTA_SECONDARY = "Use Abraxas for your business";
+export const SIMPLIFIED_HOME_CTA_PRIMARY = "Prove eligibility";
+export const SIMPLIFIED_HOME_CTA_SECONDARY = "Verify a result";
 export const SIMPLIFIED_HOME_CTA_PRIMARY_HREF = "/passport";
-export const SIMPLIFIED_HOME_CTA_SECONDARY_HREF = "/integrations#apply";
+export const SIMPLIFIED_HOME_CTA_SECONDARY_HREF = "/verification";
+export const SIMPLIFIED_HOME_CTA_BUILD = "Build with Abraxas";
+export const SIMPLIFIED_HOME_CTA_BUILD_HREF = "/developers/integration-studio";
 
 export const SIMPLIFIED_HERO_FLOW = [
-  "Verify once",
-  "Use across participating services",
+  "Person",
+  "Partner",
+  "Protocol explorer",
 ] as const;
 
 export const SIMPLIFIED_HOW_IT_WORKS = [

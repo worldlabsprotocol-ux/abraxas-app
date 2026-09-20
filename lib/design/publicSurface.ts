@@ -15,10 +15,16 @@ export const PUBLIC_SECTION_GAP = "clamp(2rem, 6vw, 3.25rem)";
 export const PUBLIC_NAV_LINKS = [
   { href: "/", label: "Home", exact: true as const },
   { href: "/passport", label: "Passport", matchPrefixes: ["/passport"] as const },
-  { href: "/integrate", label: "Partners", matchPrefixes: ["/integrate", "/design-partner", "/good-trouble"] as const },
-  { href: "/docs", label: "Docs", matchPrefixes: ["/docs"] as const },
-  { href: "/developers", label: "Developers", matchPrefixes: ["/developers", "/examples", "/verification"] as const },
   { href: "/verification", label: "Verify", matchPrefixes: ["/verification", "/verify"] as const },
+  { href: "/developers/integration-studio", label: "Build", matchPrefixes: ["/developers/integration-studio"] as const },
+  { href: "/developers/launchpad", label: "Launchpad", matchPrefixes: ["/developers/launchpad"] as const },
+  { href: "/docs", label: "Docs", matchPrefixes: ["/docs"] as const },
+] as const;
+
+export const PUBLIC_NAV_MAP_LINKS = [
+  { href: "/#capability-map", label: "Capability map" },
+  { href: "/docs/partner-flow", label: "Partner Flow" },
+  { href: "/integrate", label: "For businesses" },
 ] as const;
 
 export const PUBLIC_SURFACE = {
