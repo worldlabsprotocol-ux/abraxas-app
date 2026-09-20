@@ -14,6 +14,7 @@ import { hasProductionLaunchpadCallback, isProductionLaunchpadCallback } from "@
 import { CUSTOM_LAUNCHPAD_CLAIMS, CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID } from "@/lib/partner/launchpad/customPolicy";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 import { PartnerEventDeliveryPanel } from "@/components/partner/launchpad/PartnerEventDeliveryPanel";
+import { PartnerWebhookDeliveryHealthPanel } from "@/components/partner/launchpad/PartnerWebhookDeliveryHealthPanel";
 import { PolicyChangeControlLaunchpadSlot } from "@/components/partner/launchpad/PolicyChangeControlLaunchpadSlot";
 import { PartnerSandboxReadinessPanel } from "@/components/partner/launchpad/PartnerSandboxReadinessPanel";
 import { PartnerActionControlPlanePanel } from "@/components/partner/launchpad/PartnerActionControlPlanePanel";
@@ -809,6 +810,10 @@ export function PartnerLaunchpadClient({
             void refreshIntegrationHealth();
           }}
         />
+      )}
+
+      {activeApp && (
+        <PartnerWebhookDeliveryHealthPanel applicationId={activeApp.id} />
       )}
 
       {activeApp && (
