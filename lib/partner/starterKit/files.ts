@@ -99,6 +99,10 @@ Optional. \`signMessage\` only. Never \`signTransaction\`. Binding is not identi
 
 ## Circle
 Circle Arc testnet transfer is a separate, review-first, explicit-confirmation path. This kit does not call it.
+
+## Networks
+Universal HTTPS remains canonical. Partners run their own chain or venue execution. Abraxas verifies and preflights only. This kit never includes RPC URLs, private keys, transaction payloads, wallet secrets, or Mainnet activation.
+See /docs/multichain-mainnet-readiness.
 `;
 }
 

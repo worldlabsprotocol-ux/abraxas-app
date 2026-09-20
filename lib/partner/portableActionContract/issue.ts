@@ -2,6 +2,7 @@
 // Server-issued action contracts. Client never supplies partner, policy, or environment.
 
 import type { AbraxasPartnerKit } from "@/lib/partner/integrationKit";
+import { getNetworkCapability } from "@/lib/partner/networkCapability/registry";
 import {
   PORTABLE_ACTION_RECEIPT_REQUIREMENT,
   PORTABLE_ACTION_TYPE_SCOPES,
@@ -28,6 +29,7 @@ export function issuePortableActionContract(input: {
   wallet_binding?: string;
   ttlMs?: number;
   now?: Date;
+  network_id?: string;
 }): PortableActionContract | { ok: false; reason: "action_mismatch" } {
   if (!isPortableActionType(input.action_type)) {
     return { ok: false, reason: "action_mismatch" };
@@ -44,6 +46,15 @@ export function issuePortableActionContract(input: {
   const now = input.now ?? new Date();
   const ttl = Math.min(Math.max(input.ttlMs ?? DEFAULT_TTL_MS, 30_000), 60 * 60 * 1000);
   const issuedAt = now.toISOString();
+  let network_context: PortableActionContract["network_context"];
+  if (input.network_id) {
+    const network = getNetworkCapability(input.network_id);
+    if (!network) return { ok: false, reason: "action_mismatch" };
+    if (!(network.supported_actions as readonly string[]).includes(input.action_type)) {
+      return { ok: false, reason: "action_mismatch" };
+    }
+    network_context = { network_id: network.network_id, environment: network.environment };
+  }
   return {
     partner_id: input.kit.options.partnerId,
     policy_id: input.kit.options.policyId,
@@ -56,5 +67,6 @@ export function issuePortableActionContract(input: {
     nonce: createActionNonce(),
     wallet_binding: walletBinding as PortableActionWalletBindingMode,
     environment: input.kit.options.environment,
+    ...(network_context ? { network_context } : {}),
   };
 }

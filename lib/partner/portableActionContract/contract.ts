@@ -5,6 +5,7 @@ import { PARTNER_INTEGRATION_GOOGLE_BOUNDARY } from "@/lib/partner/integrationKi
 import { PARTNER_EVENT_NOT_AUTHORIZATION } from "@/lib/partner/eventDelivery/contract";
 import { SOLANA_NO_FUNDS_BOUNDARY } from "@/lib/partner/solana/contract";
 import { WALLET_STANDARD_BINDING_MODES, type WalletStandardBindingMode } from "@/lib/partner/walletStandard/contract";
+import type { NetworkContext } from "@/lib/partner/networkCapability/types";
 
 export const PORTABLE_ACTION_CONTRACT_VERSION = "1.0.0" as const;
 export const PORTABLE_ACTION_RECEIPT_REQUIREMENT = "current_public_receipt" as const;
@@ -82,6 +83,7 @@ export const PORTABLE_ACTION_CONTRACT_KEYS = [
   "nonce",
   "wallet_binding",
   "environment",
+  "network_context",
 ] as const;
 
 export const PORTABLE_ACTION_REJECTED_CONTRACT_KEYS = [
@@ -92,6 +94,16 @@ export const PORTABLE_ACTION_REJECTED_CONTRACT_KEYS = [
   "client_issued",
   "webhook_body",
   "callback",
+  "network_id",
+  "chain_id",
+  "rpc",
+  "rpc_url",
+  "wallet_address",
+  "transaction",
+  "tx",
+  "execute",
+  "execution",
+  "provider",
 ] as const;
 
 export const PORTABLE_ACTION_FORBIDDEN_KEYS = [
@@ -103,6 +115,9 @@ export const PORTABLE_ACTION_FORBIDDEN_KEYS = [
   "receipt_id",
   "activate_production",
   "issue_production_key",
+  "network_id",
+  "chain_id",
+  "rpc_url",
 ] as const;
 
 export const PORTABLE_ACTION_NOT_EXECUTION =
@@ -133,6 +148,7 @@ export interface PortableActionContract {
   nonce: string;
   wallet_binding: PortableActionWalletBindingMode;
   environment: PortableActionEnvironment;
+  network_context?: NetworkContext;
 }
 
 export interface PortableActionBinding {

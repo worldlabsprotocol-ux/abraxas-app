@@ -28,12 +28,13 @@ import { PartnerSandboxTestConsolePanel } from "@/components/partner/launchpad/P
 import { PartnerGoLiveReadinessPanel } from "@/components/partner/launchpad/PartnerGoLiveReadinessPanel";
 import { PartnerFlowRequestPanel } from "@/components/partner/launchpad/PartnerFlowRequestPanel";
 import { PolicyVersionPlannerPanel } from "@/components/partner/launchpad/PolicyVersionPlannerPanel";
+import { NetworkReadinessPanel } from "@/components/partner/launchpad/NetworkReadinessPanel";
 import { GO_LIVE_REVIEW_ENTRY } from "@/lib/partner/launchpad/goLiveReadiness/contract";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
 
-type WizardStep = "application" | "policy" | "destinations" | "configure" | "versions" | "provisioned" | "test" | "readiness" | "production";
+type WizardStep = "application" | "policy" | "destinations" | "configure" | "versions" | "networks" | "provisioned" | "test" | "readiness" | "production";
 
 interface PolicyTemplate {
   id: string;
@@ -98,6 +99,7 @@ const STEPS: { id: WizardStep; label: string }[] = [
   { id: "destinations", label: "Destinations" },
   { id: "configure", label: "Partner Flow" },
   { id: "versions", label: "Policy version" },
+  { id: "networks", label: "Networks" },
   { id: "provisioned", label: "Credentials" },
   { id: "test", label: "Harness" },
   { id: "readiness", label: "Readiness" },
@@ -185,6 +187,7 @@ export function PartnerLaunchpadClient({
         if (view === "test") setStep("test");
         if (view === "configure") setStep("configure");
         if (view === "versions") setStep("versions");
+        if (view === "networks") setStep("networks");
         if (view === "destinations") setStep("destinations");
         if (view === "policy") setStep("policy");
       }
@@ -639,6 +642,13 @@ export function PartnerLaunchpadClient({
 
       {step === "versions" && activeApp && (
         <PolicyVersionPlannerPanel
+          applicationId={activeApp.id}
+          onContinue={() => setStep("networks")}
+        />
+      )}
+
+      {step === "networks" && activeApp && (
+        <NetworkReadinessPanel
           applicationId={activeApp.id}
           onContinue={() => setStep("test")}
         />

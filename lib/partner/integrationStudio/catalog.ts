@@ -25,6 +25,7 @@ import {
 } from "@/lib/partner/integrationStudio/contract";
 import { SELECTIVE_DISCLOSURE_NOTICE } from "@/lib/privacy/selectiveDisclosure";
 import { POLICY_COMPATIBILITY_NOTICE } from "@/lib/policy/compatibilityEdge";
+import { NETWORK_CAPABILITY_NOTICE, publicNetworkMatrix } from "@/lib/partner/networkCapability";
 
 export interface StudioMethodView {
   id: string;
@@ -137,6 +138,13 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
     policy_compatibility: {
       docs: "/docs/policy-compatibility",
       notice: POLICY_COMPATIBILITY_NOTICE,
+    },
+    network_readiness: {
+      docs: "/docs/multichain-mainnet-readiness",
+      notice: NETWORK_CAPABILITY_NOTICE,
+      executes_action: false,
+      funds_movement: false,
+      matrix: publicNetworkMatrix(),
     },
     activation: partnerActivationPublicView(),
   };

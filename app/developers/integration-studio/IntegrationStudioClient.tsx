@@ -334,6 +334,10 @@ export function IntegrationStudioClient() {
             <Link href="/docs/policy-compatibility" style={{ color: "var(--accent)", fontWeight: 700 }}>
               Policy compatibility
             </Link>
+            {" · "}
+            <Link href="/docs/multichain-mainnet-readiness" style={{ color: "var(--accent)", fontWeight: 700 }}>
+              Multi-chain Mainnet readiness
+            </Link>
           </p>
           <p style={{ ...body, marginTop: "0.45rem" }}>
             Identity is default: {String(contract.identity_is_default)}.
