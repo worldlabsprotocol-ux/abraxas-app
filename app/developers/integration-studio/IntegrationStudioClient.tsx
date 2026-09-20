@@ -17,6 +17,7 @@ import {
 } from "@/lib/partner/integrationStudio";
 import { isPolicyPackId } from "@/lib/partner/launchpad/policyPacks";
 import { launchpadConfigureHref } from "@/lib/partner/launchpad/partnerFlowRequest/contract";
+import { launchpadPolicyVersionHref } from "@/lib/partner/launchpad/policyVersionPlanner/contract";
 import { PolicyFitPlanner } from "@/app/developers/integration-studio/PolicyFitPlanner";
 import {
   STARTER_KIT_DOES_NOT_DO,
@@ -88,6 +89,7 @@ export function IntegrationStudioClient() {
   const [pathInstructions, setPathInstructions] = useState<Record<string, { title: string; docs: string; code: string }> | null>(null);
   const [hostedDocs, setHostedDocs] = useState<{ hosted_link?: string; sandbox_testing?: string[] } | null>(null);
   const [resumeApp, setResumeApp] = useState<{ id: string; application_name: string; public_slug: string } | null>(null);
+  const [handoffNotice, setHandoffNotice] = useState("");
 
   const contract = useMemo(() => studioPackContract(packId), [packId]);
   const snippet = useMemo(() => studioSnippetForPath(pathId), [pathId]);
@@ -163,6 +165,19 @@ export function IntegrationStudioClient() {
       setTimeout(() => setCopiedPath(""), 1600);
     });
   }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const pack = params.get("pack");
+    const catalogVersion = params.get("catalog_version");
+    if (pack && isPolicyPackId(pack)) {
+      setPackId(pack);
+      if (catalogVersion) {
+        setHandoffNotice(`Planning catalog version ${catalogVersion} is preselected. Creating a sandbox still uses the current Launchpad pin, not an automatic upgrade.`);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     void (async () => {
@@ -244,6 +259,7 @@ export function IntegrationStudioClient() {
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
             <Btn href={launchpadSandboxTestHref(resumeApp.id)} size="sm">Test your sandbox integration →</Btn>
             <Btn href={launchpadConfigureHref(resumeApp.id)} variant="secondary" size="sm">Configure Partner Flow →</Btn>
+            <Btn href={launchpadPolicyVersionHref(resumeApp.id)} variant="secondary" size="sm">Policy version →</Btn>
             <Btn href={launchpadResumeHref(resumeApp.id)} variant="ghost" size="sm">{PARTNER_ACTIVATION_RESUME_CTA} →</Btn>
           </div>
         </ContentCard>
@@ -262,6 +278,11 @@ export function IntegrationStudioClient() {
         <p style={{ ...body, marginBottom: "0.75rem" }}>
           These are the same packs Partner Launchpad uses. Identity or liveness is never the default path.
         </p>
+        {handoffNotice && (
+          <p role="status" style={{ ...body, marginBottom: "0.75rem", color: "var(--text-primary)", fontWeight: 700 }}>
+            {handoffNotice}
+          </p>
+        )}
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem" }}>
           {packs.map((pack) => (
             <button

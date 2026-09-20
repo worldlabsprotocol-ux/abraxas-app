@@ -27,12 +27,13 @@ import { selectLaunchpadResumeAppId } from "@/lib/partner/activationPath";
 import { PartnerSandboxTestConsolePanel } from "@/components/partner/launchpad/PartnerSandboxTestConsolePanel";
 import { PartnerGoLiveReadinessPanel } from "@/components/partner/launchpad/PartnerGoLiveReadinessPanel";
 import { PartnerFlowRequestPanel } from "@/components/partner/launchpad/PartnerFlowRequestPanel";
+import { PolicyVersionPlannerPanel } from "@/components/partner/launchpad/PolicyVersionPlannerPanel";
 import { GO_LIVE_REVIEW_ENTRY } from "@/lib/partner/launchpad/goLiveReadiness/contract";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
 
-type WizardStep = "application" | "policy" | "destinations" | "configure" | "provisioned" | "test" | "readiness" | "production";
+type WizardStep = "application" | "policy" | "destinations" | "configure" | "versions" | "provisioned" | "test" | "readiness" | "production";
 
 interface PolicyTemplate {
   id: string;
@@ -96,6 +97,7 @@ const STEPS: { id: WizardStep; label: string }[] = [
   { id: "policy", label: "Policy pack" },
   { id: "destinations", label: "Destinations" },
   { id: "configure", label: "Partner Flow" },
+  { id: "versions", label: "Policy version" },
   { id: "provisioned", label: "Credentials" },
   { id: "test", label: "Harness" },
   { id: "readiness", label: "Readiness" },
@@ -182,6 +184,7 @@ export function PartnerLaunchpadClient({
         const view = new URLSearchParams(window.location.search).get("view");
         if (view === "test") setStep("test");
         if (view === "configure") setStep("configure");
+        if (view === "versions") setStep("versions");
         if (view === "destinations") setStep("destinations");
         if (view === "policy") setStep("policy");
       }
@@ -629,6 +632,13 @@ export function PartnerLaunchpadClient({
 
       {step === "configure" && activeApp && (
         <PartnerFlowRequestPanel
+          applicationId={activeApp.id}
+          onContinue={() => setStep("versions")}
+        />
+      )}
+
+      {step === "versions" && activeApp && (
+        <PolicyVersionPlannerPanel
           applicationId={activeApp.id}
           onContinue={() => setStep("test")}
         />

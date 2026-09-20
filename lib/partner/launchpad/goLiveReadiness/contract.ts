@@ -48,7 +48,7 @@ export type GoLiveItemId = (typeof GO_LIVE_ITEM_IDS)[number];
 
 export const GO_LIVE_ITEM_HREF: Record<GoLiveItemId, string> = {
   sandbox_app: "/developers/launchpad",
-  policy_pin: "/developers/integration-studio",
+  policy_pin: "/developers/launchpad?view=versions",
   callback: "/developers/launchpad?view=destinations",
   sandbox_key: "/developers/launchpad?view=provisioned",
   starter_kit: "/developers/integration-studio",
