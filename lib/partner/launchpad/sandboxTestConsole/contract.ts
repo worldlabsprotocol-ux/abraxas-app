@@ -123,6 +123,14 @@ export function buildSandboxTestChecklist(
       capability: "wallet_standard_binding",
     },
     {
+      id: "sandbox_conformance",
+      title: "Run the local sandbox partner contract before a real holder test",
+      href: "/docs/sandbox-conformance",
+      kit_file: null,
+      required: true,
+      capability: null,
+    },
+    {
       id: "request_production",
       title: "Return to Launchpad and request Production only after the sandbox checklist is complete",
       href: "/developers/launchpad",

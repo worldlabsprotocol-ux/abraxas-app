@@ -63,6 +63,12 @@ export const PUBLIC_JOURNEY_SURFACES = [
     file: "app/docs/starter-kit/page.tsx",
   },
   {
+    route: "/docs/sandbox-conformance",
+    purpose: "Local end-to-end sandbox partner contract before a real holder test.",
+    primaryCta: { label: "Open Partner Launchpad", href: "/developers/launchpad" },
+    file: "app/docs/sandbox-conformance/page.tsx",
+  },
+  {
     route: "/docs/trading-venue",
     purpose: "Trading venue policy preflight. Abraxas does not execute trades.",
     primaryCta: { label: "Enable market access example", href: "/examples/trading-venue" },
