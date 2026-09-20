@@ -49,7 +49,7 @@ export function operatorProposalOverride(body: unknown): boolean {
 
 function pickAllowed<T extends string>(values: unknown, allowed: readonly T[]): T[] {
   if (!Array.isArray(values)) return [];
-  return [...new Set(values.filter((item): item is T => typeof item === "string" && (allowed as readonly string[]).includes(item)))];
+  return Array.from(new Set(values.filter((item): item is T => typeof item === "string" && (allowed as readonly string[]).includes(item))));
 }
 
 export function sanitizeProposalPayload(body: unknown): SanitizedProposalPayload | null {
