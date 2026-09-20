@@ -13,7 +13,7 @@ import { Btn } from "@/components/redesign/ui";
 import { DocumentUpload } from "@/components/passport/DocumentUpload";
 import { AbraxasIdentityCapture } from "@/components/passport/AbraxasIdentityCapture";
 import { IndependentBiometricStatusCard } from "@/components/passport/IndependentBiometricStatusCard";
-import { PassportShareHistoryCard } from "@/components/passport/PassportShareHistoryCard";
+import { PassportVerificationActivity } from "@/components/passport/PassportVerificationActivity";
 import { PassportPrivacyCenter } from "@/components/passport/PassportPrivacyCenter";
 import { PassportCredentialBanner } from "@/components/passport/PassportCredentialBanner";
 import { PassportIntentCard } from "@/components/passport/PassportIntentCard";
@@ -923,10 +923,10 @@ function PartnerAccessSection({
         lineHeight: 1.65, margin: "0 0 0.85rem",
       }}>
         {verifiedView
-          ? "When you approve a service request, the consent record appears here. Each service sees only what its policy requires."
+          ? "When you approve a service request, a safe summary appears in verification activity. Partners receive only the policy result."
           : "When a service requests eligibility, you see what information is needed, why, and what access it unlocks."}
       </p>
-      <PassportShareHistoryCard suiAddress={suiAddress} verifiedView={verifiedView} />
+      <PassportVerificationActivity />
       <PassportPrivacyCenter suiAddress={suiAddress} />
     </section>
   );
