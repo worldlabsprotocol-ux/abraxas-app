@@ -16,7 +16,7 @@ export function enabledPartnerFlowCapabilities(input: {
   for (const item of input.starterKitCapabilities ?? []) {
     if (isPartnerFlowCapability(item)) enabled.add(item);
   }
-  return [...enabled];
+  return Array.from(enabled);
 }
 
 export function selectedEnabledCapabilities(

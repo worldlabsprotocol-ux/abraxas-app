@@ -82,7 +82,7 @@ export function buildPartnerFlowRequestView(input: {
   if (!app.id) next.push(PARTNER_FLOW_NEXT_STEPS.configure_app);
   if (!input.starterKitEvidenced) next.push(PARTNER_FLOW_NEXT_STEPS.starter_kit);
 
-  const enabled = [...(input.enabledCapabilities ?? [])];
+  const enabled = Array.from(input.enabledCapabilities ?? []);
   const preview = purpose && app.policy_id
     ? buildHolderRequestBrief({
       partnerId: app.partner_id,
