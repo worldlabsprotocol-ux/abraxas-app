@@ -91,7 +91,7 @@ export function evaluateProductionReviewGates(input: ProductionReviewGateInput):
     }
   }
 
-  const unique = [...new Set(blockers)];
+  const unique = Array.from(new Set(blockers));
   const webhook = input.evidence.webhookConfigured
     ? (input.evidence.latestDeliveryStatus ?? "configured")
     : "not_configured";
