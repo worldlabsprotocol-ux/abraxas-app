@@ -160,7 +160,8 @@ export function PartnerVerifyShell({
       <PartnerJourneyLayout
         partnerName={partnerName}
         intro={resolvePartnerContinuationIntro(partnerId, continuationContext)}
-        statusMessage={recovery.explanation}
+        statusMessage=""
+        hideStatus
         partnerHomeUrl={partnerHomeUrl}
         partnerReturnLabel={partnerReturnLabel}
         brief={brief}
@@ -172,17 +173,20 @@ export function PartnerVerifyShell({
 
   const busy = phase === "signing_in" || phase === "preparing" || phase === "verifying" || phase === "returning";
 
+  const recoveryPhases = phase === "error" || phase === "return_failed" || phase === "expired" || phase === "missing" || phase === "cancelled" || phase === "invalid_binding" || phase === "method_not_qualified" || phase === "provider_unavailable" || phase === "denied" || phase === "approved";
+
   return (
     <PartnerJourneyLayout
       partnerName={partnerName}
       intro={intro}
       statusMessage={resolvedStatus}
+      hideStatus={recoveryPhases}
       partnerHomeUrl={showReturnButton(phase) ? partnerHomeUrl : null}
       partnerReturnLabel={partnerReturnLabel}
       showAccountFooter={!useDobFirstSignInCopy}
       brief={useDobFirstSignInCopy ? null : brief}
     >
-      {phase === "error" || phase === "return_failed" || phase === "expired" || phase === "missing" || phase === "cancelled" || phase === "invalid_binding" || phase === "method_not_qualified" || phase === "provider_unavailable" || phase === "denied" || phase === "approved" ? (
+      {recoveryPhases ? (
         <HolderRecoveryCard
           recovery={{
             ...(phase === "approved" && brief.environment_label.startsWith("Sandbox")

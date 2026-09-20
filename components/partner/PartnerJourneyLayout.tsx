@@ -2,6 +2,8 @@
 // FILE: components/partner/PartnerJourneyLayout.tsx
 // Shared partner journey chrome — continuation of partner site, not Abraxas dashboard.
 
+import Link from "next/link";
+import { AbxCard } from "@/components/design/AbxPrimitives";
 import { HolderRequestBriefCard } from "@/components/partner/HolderRequestBriefCard";
 import type { HolderRequestBrief } from "@/lib/partner/holderExperience";
 import {

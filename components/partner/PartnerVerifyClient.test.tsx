@@ -9,7 +9,6 @@ import {
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
 import { GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON } from "@/lib/partner/goodTroubleBrowseFlow";
-import { GOOD_TROUBLE_LEGACY_BROWSE_INVALID_LINK_MESSAGE } from "@/lib/partner/normalizePartnerVerifyInput";
 import { PartnerVerifyClient } from "./PartnerVerifyClient";
 
 const mockEnsureReady = vi.fn();
@@ -294,9 +293,10 @@ describe("PartnerVerifyClient Good Trouble DOB-first browse sign-in", () => {
     render(<PartnerVerifyClient />);
 
     await waitFor(() => {
-      expect(screen.getAllByText(GOOD_TROUBLE_LEGACY_BROWSE_INVALID_LINK_MESSAGE).length).toBeGreaterThan(0);
+      expect(screen.getByRole("heading", { name: /could not be found/i })).toBeTruthy();
     });
     expect(screen.queryByText(/Verification could not be completed/i)).toBeNull();
+    expect(screen.queryByText(/missing required parameters/i)).toBeNull();
   });
 
   it("shows invalid-link screen for retail policy with browse purpose conflict", async () => {
@@ -310,7 +310,7 @@ describe("PartnerVerifyClient Good Trouble DOB-first browse sign-in", () => {
     render(<PartnerVerifyClient />);
 
     await waitFor(() => {
-      expect(screen.getAllByText(GOOD_TROUBLE_LEGACY_BROWSE_INVALID_LINK_MESSAGE).length).toBeGreaterThan(0);
+      expect(screen.getByRole("heading", { name: /could not be found/i })).toBeTruthy();
     });
     expect(screen.queryByText(/Create a private Passport for faster future access/i)).toBeNull();
     expect(screen.queryByRole("button", { name: /Continue with Google/i })).toBeNull();

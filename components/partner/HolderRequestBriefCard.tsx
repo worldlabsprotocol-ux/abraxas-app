@@ -2,9 +2,10 @@
 // FILE: components/partner/HolderRequestBriefCard.tsx
 // Requestor, purpose, result, withheld, environment. No return URLs or IDs.
 
+import type { CSSProperties } from "react";
 import type { HolderRequestBrief } from "@/lib/partner/holderExperience";
 
-const wrap: React.CSSProperties = {
+const wrap: CSSProperties = {
   margin: "0 0 1rem",
   padding: "0.85rem 1rem",
   borderRadius: 12,
@@ -15,7 +16,7 @@ const wrap: React.CSSProperties = {
   maxWidth: "100%",
 };
 
-const label: React.CSSProperties = {
+const label: CSSProperties = {
   margin: "0 0 0.2rem",
   fontSize: "0.68rem",
   fontWeight: 700,
@@ -24,7 +25,7 @@ const label: React.CSSProperties = {
   color: "var(--text-muted, #9ca3af)",
 };
 
-const value: React.CSSProperties = {
+const value: CSSProperties = {
   margin: "0 0 0.7rem",
   fontSize: "0.8rem",
   lineHeight: 1.55,

@@ -7,7 +7,6 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { PartnerContinueClient } from "./PartnerContinueClient";
 import { PartnerVerifyClient } from "./PartnerVerifyClient";
-import { partnerVerifyMissingRequiredParametersMessage } from "@/lib/partner/normalizePartnerVerifyInput";
 
 const ECONOMIC_POLICY_ID = "circle-arc-demo-304-sandbox_economic_demo-v1";
 const ECONOMIC_PARTNER_ID = "circle-arc-demo-304";
@@ -184,13 +183,10 @@ describe("OAuth callback must not land on bare /partner/verify", () => {
 
     mockSearchParams = new URLSearchParams();
     render(<PartnerVerifyClient />);
-    const observedBareVerifyMessage = partnerVerifyMissingRequiredParametersMessage([
-      "partner identifier",
-      "return URL",
-    ]);
     await waitFor(() => {
-      expect(screen.getAllByText(observedBareVerifyMessage).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/incomplete or no longer available/i).length).toBeGreaterThan(0);
     });
+    expect(screen.queryByText(/missing required parameters/i)).toBeNull();
     cleanup();
 
     mockSearchParams = continueParamsFromPath(oauth.redirectPath);
@@ -295,10 +291,10 @@ describe("OAuth callback must not land on bare /partner/verify", () => {
 
     render(<PartnerContinueClient />);
 
-    const closed = partnerVerifyMissingRequiredParametersMessage(["verification request"]);
     await waitFor(() => {
-      expect(screen.getAllByText(closed).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/incomplete or no longer available/i).length).toBeGreaterThan(0);
     });
+    expect(screen.queryByText(/missing required parameters/i)).toBeNull();
     expect(replaceSpy).not.toHaveBeenCalledWith("/partner/verify");
   });
 });

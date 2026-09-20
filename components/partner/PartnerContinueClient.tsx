@@ -353,8 +353,8 @@ function PartnerContinueInner() {
       <PartnerJourneyLayout
         partnerName={partnerName}
         intro="This Partner Flow link cannot continue."
-        statusMessage={resolveHolderRecovery("missing", partnerName).explanation}
-        hideStatus={false}
+        statusMessage=""
+        hideStatus
         brief={holderBrief}
       >
         <HolderRecoveryCard recovery={resolveHolderRecovery("missing", partnerName, partnerHomeUrl)} />
