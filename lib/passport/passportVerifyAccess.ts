@@ -14,13 +14,8 @@ export function passportVerifySetupBlockedReason(setup: PassportSetupState): "si
   return null;
 }
 
-/** Preserve partner-flow query params when routing back to setup. */
+/** Preserve the holder verify_request pointer when routing back to setup. */
 export function buildPassportSetupHref(searchParams: URLSearchParams): string {
-  const params = new URLSearchParams();
-  for (const key of ["verify_request", "policy_id", "partner_id", "return", "verification"] as const) {
-    const value = searchParams.get(key);
-    if (value) params.set(key, value);
-  }
-  const qs = params.toString();
-  return qs ? `/passport?${qs}` : "/passport";
+  const verify = searchParams.get("verify_request")?.trim() ?? "";
+  return verify ? `/passport?verify_request=${encodeURIComponent(verify)}` : "/passport";
 }

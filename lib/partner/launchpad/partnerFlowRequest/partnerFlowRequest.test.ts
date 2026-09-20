@@ -132,6 +132,7 @@ describe("Partner Flow request configuration", () => {
   });
 
   it("ignores a later unrelated activity and uses the latest configuration event", () => {
+    const allowed = ["http://localhost:3000/callback"];
     const rows = [
       {
         application_id: "app-1",
@@ -140,7 +141,8 @@ describe("Partner Flow request configuration", () => {
         metadata: {
           purpose: "Confirm adult retail eligibility",
           action: "retail_access",
-          callback_url: "http://localhost:3000/callback",
+          callback_ref: "not-persisted-url",
+          callback_index: 0,
         },
         created_at: "2026-09-20T10:00:00.000Z",
       },
@@ -157,7 +159,7 @@ describe("Partner Flow request configuration", () => {
         created_at: "2026-09-20T11:00:00.000Z",
       },
     ];
-    const stored = storedConfigFromActivityRows(rows, "app-1", "acme");
+    const stored = storedConfigFromActivityRows(rows, "app-1", "acme", allowed);
     expect(stored.purpose).toBe("Confirm adult retail eligibility");
     expect(stored.action).toBe("retail_access");
     expect(stored.callback_url).toBe("http://localhost:3000/callback");
@@ -172,7 +174,7 @@ describe("Partner Flow request configuration", () => {
         metadata: {
           purpose: "Confirm adult retail eligibility",
           action: "retail_access",
-          callback_url: "http://localhost:3000/callback",
+          callback_index: 0,
         },
         created_at: "2026-09-20T10:00:00.000Z",
       },
@@ -183,11 +185,11 @@ describe("Partner Flow request configuration", () => {
         metadata: {
           purpose: "Confirm member lounge eligibility",
           action: "membership_access",
-          callback_url: "http://localhost:3000/members",
+          callback_index: 1,
         },
         created_at: "2026-09-20T12:00:00.000Z",
       },
-    ], "app-1", "acme");
+    ], "app-1", "acme", ["http://localhost:3000/callback", "http://localhost:3000/members"]);
     expect(stored.purpose).toBe("Confirm member lounge eligibility");
     expect(stored.action).toBe("membership_access");
     expect(stored.callback_url).toBe("http://localhost:3000/members");

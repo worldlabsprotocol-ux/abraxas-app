@@ -90,6 +90,10 @@ export default function PartnerFlowDocsPage() {
         Canonical production host:{" "}
         <code style={{ fontFamily: MONO, fontSize: "0.75rem" }}>{PARTNER_FLOW_CANONICAL_HOST}</code>
         {" · "}
+        <Link href="/docs/selective-disclosure" style={{ color: ACCENT, fontWeight: 600, textDecoration: "none" }}>
+          Selective disclosure
+        </Link>
+        {" · "}
         <Link href="/verify?mode=receipt" style={{ color: ACCENT, fontWeight: 600, textDecoration: "none" }}>
           Open receipt tester →
         </Link>

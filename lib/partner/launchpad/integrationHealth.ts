@@ -220,5 +220,13 @@ export function buildLaunchpadIntegrationHealth(input: {
   const overall: LaunchpadHealthStatus = checks.some((check) => check.status === "blocked")
     ? "blocked"
     : checks.some((check) => check.status === "action_required") ? "action_required" : "pass";
-  return { overall, checks };
+  return {
+    overall,
+    checks: checks.map((check) => ({
+      id: check.id,
+      label: check.label,
+      status: check.status,
+      detail: check.detail,
+    })),
+  };
 }

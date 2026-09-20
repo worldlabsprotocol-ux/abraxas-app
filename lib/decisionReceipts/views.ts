@@ -10,6 +10,8 @@ import type {
 import { buildCanonicalPayload } from "@/lib/decisionReceipts/canonical";
 import { verifyReceiptSignature, loadReceiptVerificationKey } from "@/lib/decisionReceipts/signing";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
+import { pickAllowedKeys } from "@/lib/privacy/selectiveDisclosure";
+import { SHARED_SURFACE_FIELDS } from "@/lib/privacy/selectiveDisclosure/contract";
 
 export function resolveReceiptStatus(record: DecisionReceiptRecord): DecisionReceiptRecord["status"] {
   if (record.status === "revoked" || record.revoked_at) return "revoked";
@@ -56,7 +58,7 @@ export function verifyRecordSignature(record: DecisionReceiptRecord): boolean {
 export function toPublicView(record: DecisionReceiptRecord): DecisionReceiptPublicView {
   const status = resolveReceiptStatus(record);
   const signatureValid = verifyRecordSignature(record);
-  return {
+  const view = {
     receipt_id: record.id,
     schema_version: record.schema_version,
     policy_id: record.policy_id,
@@ -77,8 +79,9 @@ export function toPublicView(record: DecisionReceiptRecord): DecisionReceiptPubl
     signing_key_id: record.signing_key_id,
     signature_valid: signatureValid,
     anchor_reference: record.anchor_reference,
-    artifact_type: "eligibility_decision_receipt",
+    artifact_type: "eligibility_decision_receipt" as const,
   };
+  return (pickAllowedKeys(view, SHARED_SURFACE_FIELDS.public_receipt) ?? view) as unknown as DecisionReceiptPublicView;
 }
 
 export function toPartnerView(

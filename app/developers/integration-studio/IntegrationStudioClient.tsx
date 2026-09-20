@@ -326,6 +326,12 @@ export function IntegrationStudioClient() {
           </dl>
           <p style={{ ...body, marginTop: "0.85rem" }}>{contract.google_is_account_only}</p>
           <p style={{ ...body, marginTop: "0.45rem" }}>
+            Partners receive a policy result, not evidence.{" "}
+            <Link href="/docs/selective-disclosure" style={{ color: "var(--accent)", fontWeight: 700 }}>
+              Selective disclosure
+            </Link>
+          </p>
+          <p style={{ ...body, marginTop: "0.45rem" }}>
             Identity is default: {String(contract.identity_is_default)}.
           </p>
           <ul style={{ ...body, margin: "0.75rem 0 0", paddingLeft: "1.1rem" }}>

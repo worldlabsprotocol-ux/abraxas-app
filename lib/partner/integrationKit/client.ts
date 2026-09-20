@@ -16,6 +16,8 @@ import {
   type PartnerIntegrationOutcome,
 } from "@/lib/partner/integrationKit/contract";
 import { resolvePolicyPack } from "@/lib/partner/launchpad/policyPacks";
+import { pickAllowedKeys, safeCallbackClientErrors } from "@/lib/privacy/selectiveDisclosure";
+import { SHARED_SURFACE_FIELDS } from "@/lib/privacy/selectiveDisclosure/contract";
 
 export interface AbraxasPartnerKitOptions {
   partnerId: string;
@@ -46,7 +48,7 @@ export interface PartnerKitSafeResult {
 }
 
 function emptyResult(overrides: Partial<PartnerKitSafeResult> & Pick<PartnerKitSafeResult, "outcome" | "errors">): PartnerKitSafeResult {
-  return {
+  const result: PartnerKitSafeResult = {
     kit_version: PARTNER_INTEGRATION_KIT_VERSION,
     action: overrides.outcome === "permitted" ? "permit" : "deny",
     receipt_id: null,
@@ -60,6 +62,7 @@ function emptyResult(overrides: Partial<PartnerKitSafeResult> & Pick<PartnerKitS
     replay_behavior: PARTNER_INTEGRATION_REPLAY_BEHAVIOR,
     ...overrides,
   };
+  return (pickAllowedKeys(result, SHARED_SURFACE_FIELDS.partner_kit) ?? result) as unknown as PartnerKitSafeResult;
 }
 
 function safeFromReceipt(
@@ -166,10 +169,9 @@ export class AbraxasPartnerKit {
   ): Promise<PartnerKitSafeResult> {
     const parsed = this.parseCallback(search);
     if (!parsed.ok) {
-      const pii = parsed.errors.some((error) => error.startsWith("pii_in_callback"));
       return emptyResult({
-        outcome: pii ? "invalid" : parsed.errors.includes("receipt_id_missing") ? "invalid" : "invalid",
-        errors: parsed.errors,
+        outcome: "invalid",
+        errors: safeCallbackClientErrors(parsed.errors),
       });
     }
     const fetched = await this.fetchPublicReceipt(parsed.params.receipt_id!);

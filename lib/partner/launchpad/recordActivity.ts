@@ -2,6 +2,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LaunchpadActivityEventType } from "@/lib/partner/launchpad/types";
+import { sanitizeLaunchpadActivityMetadata } from "@/lib/privacy/selectiveDisclosure";
 
 export async function recordLaunchpadActivity(
   sb: SupabaseClient,
@@ -18,6 +19,6 @@ export async function recordLaunchpadActivity(
     partner_id: input.partnerId,
     event_type: input.eventType,
     public_code: input.publicCode ?? null,
-    metadata: input.metadata ?? {},
+    metadata: sanitizeLaunchpadActivityMetadata(input.metadata ?? {}),
   });
 }

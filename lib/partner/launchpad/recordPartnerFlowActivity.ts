@@ -72,7 +72,7 @@ export async function maybeRecordLaunchpadFlowActivity(
   } catch (error) {
     console.error("[launchpad/activity] best effort record failed", {
       event_type: input.eventType,
-      error_message: error instanceof Error ? error.message : "unknown",
+      error: "unavailable",
     });
   }
 }

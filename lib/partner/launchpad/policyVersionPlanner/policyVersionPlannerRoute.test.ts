@@ -90,6 +90,11 @@ describe("policy-version-plan route", () => {
       params: { id: "app-1" },
     });
     expect(rejected.status).toBe(400);
+
+    const disclosure = await GET(get("http://localhost/api/launchpad/applications/app-1/policy-version-plan?disclosure_profile=custom"), {
+      params: { id: "app-1" },
+    });
+    expect(disclosure.status).toBe(400);
   });
 
   it("does not mutate the pin when comparing or selecting, and denies Production activation", async () => {

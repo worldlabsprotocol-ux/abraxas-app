@@ -7,6 +7,8 @@ import {
   policyPackIsSandboxOnly,
 } from "@/lib/partner/launchpad/policyPacks";
 import { resolvePartnerDisplayName, resolvePartnerHomeUrl } from "@/lib/partner/partnerVerifyDisplay";
+import { applyDisclosureProfile, resolveDisclosureProfile } from "@/lib/privacy/selectiveDisclosure";
+import { GENERIC_MINIMAL_PROFILE } from "@/lib/privacy/selectiveDisclosure/profiles";
 import {
   PASSPORT_ACTIVITY_DOCS,
   PASSPORT_ACTIVITY_LIMIT,
@@ -105,12 +107,18 @@ export function buildPassportActivityItem(
     row.requested_action,
     pack?.holder_explanation ?? "Confirm the selected policy result.",
   );
-  const withheld = pack?.partner_does_not_receive?.length
-    ? pack.partner_does_not_receive
-    : [...PASSPORT_ACTIVITY_WITHHELD];
+  const withheld = (() => {
+    if (pack) {
+      const resolved = resolveDisclosureProfile(pack.id);
+      if (resolved.ok) return [...resolved.profile.withheld];
+    }
+    return pack?.partner_does_not_receive?.length
+      ? pack.partner_does_not_receive
+      : [...PASSPORT_ACTIVITY_WITHHELD];
+  })();
   const partnerHref = resolvePartnerHomeUrl(row.partner_id);
 
-  return {
+  const item: PassportActivityItem = {
     activity_ref: opaqueActivityRef(subjectId, row.decision_id),
     partner_label: resolvePartnerDisplayName(row.partner_id),
     policy_label: pack?.display_name ?? "Selected policy",
@@ -128,6 +136,13 @@ export function buildPassportActivityItem(
     recovery: recoveryFor(state),
     partner_entry_href: partnerHref,
   };
+  const profile = pack ? resolveDisclosureProfile(pack.id) : { ok: false as const, reason: "disclosure_unavailable" as const };
+  const sealed = applyDisclosureProfile(
+    item,
+    profile.ok ? profile.profile : GENERIC_MINIMAL_PROFILE,
+    "passport_activity",
+  );
+  return sealed.ok ? sealed.payload as unknown as PassportActivityItem : null;
 }
 
 export function buildPassportActivityView(input: {

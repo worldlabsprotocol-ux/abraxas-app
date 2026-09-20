@@ -102,6 +102,7 @@ export function PolicyVersionPlannerPanel({
                   ["Qualifying method", comparison.method_category.from, comparison.method_category.to],
                   ["Shared result", comparison.partner_receives.from, comparison.partner_receives.to],
                   ["Withheld", comparison.withheld.from.join(", "), comparison.withheld.to.join(", ")],
+                  ["Allowed output fields", comparison.allowed_output_fields.from.join(", "), comparison.allowed_output_fields.to.join(", ")],
                   ["Environment", comparison.environment.from, comparison.environment.to],
                 ].map(([label, from, to]) => (
                   <div key={String(label)} style={{ border: "1px solid var(--border)", borderRadius: 10, padding: "0.65rem" }}>

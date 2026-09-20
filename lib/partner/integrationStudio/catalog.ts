@@ -23,6 +23,7 @@ import {
   INTEGRATION_STUDIO_WEBHOOK_NOTICE,
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio/contract";
+import { SELECTIVE_DISCLOSURE_NOTICE } from "@/lib/privacy/selectiveDisclosure";
 
 export interface StudioMethodView {
   id: string;
@@ -127,6 +128,10 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
       executes_action: false,
       funds_movement: false,
       notice: INTEGRATION_STUDIO_PORTABLE_NOTICE,
+    },
+    selective_disclosure: {
+      docs: "/docs/selective-disclosure",
+      notice: SELECTIVE_DISCLOSURE_NOTICE,
     },
     activation: partnerActivationPublicView(),
   };

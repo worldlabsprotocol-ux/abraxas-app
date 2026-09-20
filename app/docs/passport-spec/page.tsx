@@ -143,6 +143,7 @@ export default function PassportSpecPage() {
           {[
             { label: "Sui hub", href: "/docs/sui" },
             { label: "Get verified", href: "/passport" },
+            { label: "Selective disclosure", href: "/docs/selective-disclosure" },
             { label: "GitHub", href: "https://github.com/worldlabsprotocol-ux/abraxas-app" },
           ].map(l => (
             <Link key={l.href} href={l.href} target={l.href.startsWith("http") ? "_blank" : undefined}

@@ -59,10 +59,16 @@ describe("P0-CNS-3: createVerificationRequest tenancy", () => {
     const result = await createVerificationRequest({
       partnerId: "good-trouble-cannabis",
       policyId: "good-trouble-retail-v1",
+      returnUrl: "https://evil.example/callback?email=holder@example.com",
     });
 
     expect(result.request_id).toBe("req_1");
-    expect(result.consent_url).toContain("req_1");
+    expect(result.consent_url).toContain("verify_request=req_1");
+    expect(result.consent_url).not.toContain("return");
+    expect(result.consent_url).not.toContain("partner_id");
+    expect(result.consent_url).not.toContain("policy_id");
+    expect(result.consent_url).not.toContain("evil.example");
+    expect(result.consent_url).not.toContain("@");
   });
 
   it("fails closed when the target policy version is still draft", async () => {

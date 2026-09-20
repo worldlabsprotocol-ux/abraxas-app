@@ -37,7 +37,25 @@ describe("Partner Integration Kit", () => {
       email: "holder@example.com",
     }));
     expect(parsed.ok).toBe(false);
-    if (!parsed.ok) expect(parsed.errors.some((error) => error.startsWith("pii_in_callback"))).toBe(true);
+    if (!parsed.ok) {
+      expect(parsed.errors).toContain("pii_in_callback");
+      expect(JSON.stringify(parsed.errors)).not.toContain("holder@example.com");
+      expect(JSON.stringify(parsed.errors)).not.toContain("email");
+    }
+  });
+
+  it("does not echo forged callback query values in kit client JSON", async () => {
+    const result = await kit().verifyCallback(new URLSearchParams({
+      receipt_id: "dr_forged",
+      email: "holder@example.com",
+      return_url: "https://evil.example/callback",
+    }));
+    const json = JSON.stringify(result);
+    expect(result.callback_trusted).toBe(false);
+    expect(result.errors).toContain("callback_untrusted");
+    expect(json).not.toContain("holder@example.com");
+    expect(json).not.toContain("evil.example");
+    expect(json).not.toMatch(/SQLSTATE|oauth_token|0x[a-f0-9]{40}/i);
   });
 
   it("maps receipt trust failures to typed outcomes", () => {

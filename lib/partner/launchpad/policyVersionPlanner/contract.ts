@@ -50,6 +50,10 @@ export const POLICY_VERSION_FORBIDDEN_KEYS = [
   "return_url",
   "approval",
   "callback",
+  "disclosure_profile",
+  "claim_allowlist",
+  "withheld_override",
+  "allowed_fields",
 ] as const;
 
 export const POLICY_VERSION_GOOGLE = GOOGLE_ACCOUNT_NOT_ELIGIBILITY;

@@ -22,10 +22,8 @@ function holderVerifyMode(mode: string | null): string {
 
 function buildHolderVerifyTabHref(searchParams: URLSearchParams): string {
   const params = new URLSearchParams();
-  for (const key of ["verify_request", "policy_id", "partner_id", "return", "verification"] as const) {
-    const value = searchParams.get(key);
-    if (value) params.set(key, value);
-  }
+  const verify = searchParams.get("verify_request")?.trim() ?? "";
+  if (verify) params.set("verify_request", verify);
   params.set("view", "verify");
   params.set("mode", holderVerifyMode(searchParams.get("mode")));
   return `/passport?${params.toString()}`;

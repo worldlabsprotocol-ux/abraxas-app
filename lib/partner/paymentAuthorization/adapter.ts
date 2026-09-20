@@ -11,6 +11,7 @@ import {
   PAYMENT_AUTHORIZATION_ACTION_TYPES,
   PAYMENT_AUTHORIZATION_ALLOWED_SCOPES,
   PAYMENT_AUTHORIZATION_CHECKOUT_SCOPE,
+  PAYMENT_AUTHORIZATION_CLIENT_VISIBLE_KEYS,
   PAYMENT_AUTHORIZATION_NO_FUNDS_BOUNDARY,
   PAYMENT_AUTHORIZATION_NOT_A_PROCESSOR,
   PAYMENT_AUTHORIZATION_TYPE_SCOPES,
@@ -26,6 +27,7 @@ import {
 import { issuePortableActionContract } from "@/lib/partner/portableActionContract/issue";
 import { preflightPortableAction } from "@/lib/partner/portableActionContract/preflight";
 import type { PortableActionClientResult } from "@/lib/partner/portableActionContract/contract";
+import { pickAllowedKeys } from "@/lib/privacy/selectiveDisclosure";
 
 export interface AbraxasPaymentAuthorizationAdapterOptions extends AbraxasPartnerKitOptions {}
 
@@ -131,7 +133,8 @@ export class AbraxasPaymentAuthorizationAdapter {
       action_type: requestedType,
       action_scope: requestedScope,
     });
-    return toPaymentClient(result);
+    const mapped = toPaymentClient(result);
+    return (pickAllowedKeys(mapped, PAYMENT_AUTHORIZATION_CLIENT_VISIBLE_KEYS) ?? mapped) as unknown as PaymentAuthorizationClientVisibleResult;
   }
 }
 

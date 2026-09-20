@@ -111,4 +111,17 @@ describe("Policy Version Change Planner", () => {
     expect(comparePolicyVersionSurfaces(from, to).compatibility).toBe("unchanged");
     expect(resolvePackForPlanner("age_21_retail", "x")).toBe(pack);
   });
+
+  it("classifies allowed output field changes as policy review", () => {
+    const pack = resolvePolicyPack("age_21_retail")!;
+    const from = surfaceFromPack({ pack, version: 1, status: "current" });
+    const to = applySuccessor(from, {
+      pack_id: "age_21_retail",
+      version: 2,
+      status: "planning",
+      allowed_output_fields: [...from.allowed_output_fields, "legal_name"],
+    });
+    expect(comparePolicyVersionSurfaces(from, to).compatibility).toBe("policy_review");
+    expect(comparePolicyVersionSurfaces(from, to).allowed_output_fields.changed).toBe(true);
+  });
 });

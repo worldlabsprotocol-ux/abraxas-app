@@ -9,6 +9,7 @@ import {
 import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { projectLaunchpadActivityEvent } from "@/lib/privacy/selectiveDisclosure";
 
 export const dynamic = "force-dynamic";
 
@@ -33,5 +34,8 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  return launchpadJson({ ok: true, events: data ?? [] });
+  return launchpadJson({
+    ok: true,
+    events: (data ?? []).map((row) => projectLaunchpadActivityEvent(row as Record<string, unknown>)),
+  });
 }

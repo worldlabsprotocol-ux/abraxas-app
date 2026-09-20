@@ -26,6 +26,7 @@ import { capabilityAuthorityError, enabledPartnerFlowCapabilities } from "./capa
 export async function loadPartnerFlowStoredConfig(
   applicationId: string,
   partnerId: string,
+  allowedUrls: string[] = [],
 ): Promise<PartnerFlowStoredConfig> {
   const sb = requireSupabaseAdmin();
   const { data, error } = await sb
@@ -39,7 +40,7 @@ export async function loadPartnerFlowStoredConfig(
   if (error) throw new Error("unavailable");
   const rows = (data ?? []) as PartnerFlowActivityRow[];
   if (!rows.length) return { ...EMPTY_PARTNER_FLOW_STORED_CONFIG };
-  return storedConfigFromActivityRows(rows, applicationId, partnerId);
+  return storedConfigFromActivityRows(rows, applicationId, partnerId, allowedUrls);
 }
 
 export async function loadEnabledPartnerFlowCapabilities(
@@ -98,8 +99,8 @@ export async function savePartnerFlowRequestConfig(input: {
     metadata: {
       purpose: input.parsed.purpose,
       action: input.parsed.action,
-      callback_url: callbackUrl,
       callback_ref: opaqueCallbackRef(callbackUrl),
+      callback_index: input.parsed.callback_index,
       capabilities: input.parsed.capabilities.join(","),
       display_label: displayLabel,
     },
@@ -134,7 +135,7 @@ export async function resolveStoredPartnerFlowCallback(
   partnerId: string,
   allowedUrls: string[],
 ): Promise<string | null> {
-  const stored = await loadPartnerFlowStoredConfig(applicationId, partnerId);
+  const stored = await loadPartnerFlowStoredConfig(applicationId, partnerId, allowedUrls);
   if (stored.callback_url && isLaunchpadReturnUrlAllowlisted(allowedUrls, stored.callback_url)) {
     return stored.callback_url;
   }

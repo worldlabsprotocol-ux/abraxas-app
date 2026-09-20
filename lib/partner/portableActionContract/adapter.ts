@@ -9,12 +9,14 @@ import {
 import type { PartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlowReceipt";
 import {
   PORTABLE_ACTION_BOUNDARY,
+  PORTABLE_ACTION_CLIENT_VISIBLE_KEYS,
   PORTABLE_ACTION_NOT_EXECUTION,
   type PortableActionClientResult,
   type PortableActionContract,
 } from "./contract";
 import { issuePortableActionContract } from "./issue";
 import { preflightPortableAction } from "./preflight";
+import { pickAllowedKeys } from "@/lib/privacy/selectiveDisclosure";
 
 export interface AbraxasPortableActionAdapterOptions extends AbraxasPartnerKitOptions {}
 
@@ -69,7 +71,7 @@ export class AbraxasPortableActionAdapter {
     action_scope?: string;
     binding_ref?: string | null;
   }): Promise<PortableActionClientResult> {
-    return preflightPortableAction({
+    const result = await preflightPortableAction({
       kit: this.kit,
       result: input.result,
       contract: input.contract,
@@ -77,5 +79,6 @@ export class AbraxasPortableActionAdapter {
       action_scope: input.action_scope,
       binding_ref: input.binding_ref,
     });
+    return (pickAllowedKeys(result, PORTABLE_ACTION_CLIENT_VISIBLE_KEYS) ?? result) as unknown as PortableActionClientResult;
   }
 }

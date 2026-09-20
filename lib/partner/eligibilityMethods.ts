@@ -11,6 +11,7 @@ import {
   resolvePolicyPack,
   type PolicyPack,
 } from "@/lib/partner/launchpad/policyPacks";
+import { resolveDisclosureProfile } from "@/lib/privacy/selectiveDisclosure";
 
 export type EligibilityMethodId =
   | "account_login"
@@ -68,11 +69,14 @@ export function resolvePackForEligibility(policyIdOrPack: string | PolicyPack): 
 }
 
 export function buildEligibilityDisclosure(pack: PolicyPack): EligibilityDisclosure {
+  const resolved = resolveDisclosureProfile(pack.id);
+  const withheld = resolved.ok ? [...resolved.profile.withheld] : pack.partner_does_not_receive;
+  const disclosed = resolved.ok ? resolved.profile.result_category : pack.disclosed_result;
   return {
     requirement: pack.display_name,
     purpose: pack.holder_explanation,
-    disclosed_result: pack.disclosed_result,
-    withheld: pack.partner_does_not_receive,
+    disclosed_result: disclosed,
+    withheld,
     assurance_level: pack.minimum_assurance,
     sandbox_only: pack.production_suitability === "sandbox_only" || pack.rules.sandbox_only === true,
     economic_demo: policyPackIsEconomicDemo(pack),
