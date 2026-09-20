@@ -132,8 +132,9 @@ describe("passport verification activity view", () => {
     expect(serialized).not.toContain("signature");
     expect(serialized).not.toContain("receipt_id");
     expect(serialized).not.toContain(SUBJECT_A);
-    expect(serialized.toLowerCase()).not.toContain("universal access");
-    expect(serialized.toLowerCase()).not.toContain("payment authorization");
+    expect(view.notice.toLowerCase()).toContain("is not universal access");
+    expect(view.notice.toLowerCase()).toMatch(/identity credential/);
+    expect(view.notice.toLowerCase()).toMatch(/payment authorization/);
     expect(view.items[0].evidence_not_shared).toMatch(/not shared/i);
     expect(view.items[0].partner_received).toMatch(/only the policy result/i);
     expect(passportActivityCopyLeaks(serialized)).toEqual([]);
