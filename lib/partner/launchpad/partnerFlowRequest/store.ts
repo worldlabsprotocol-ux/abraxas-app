@@ -5,15 +5,23 @@ import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
 import { recordLaunchpadActivity } from "@/lib/partner/launchpad/recordActivity";
 import { isLaunchpadReturnUrlAllowlisted } from "@/lib/partner/launchpad/launchpadReturnUrlAllowlist";
+import { getLaunchpadWebhookOverview } from "@/lib/partner/eventDelivery/launchpadWebhook";
+import { hasProductionLaunchpadCallback } from "@/lib/partner/launchpad/productionCallbackReadiness";
 import {
+  PARTNER_FLOW_CAPABILITY_REJECTED,
   PARTNER_FLOW_REQUEST_ACTIVITY_CODE,
-  isPartnerFlowAction,
-  isPartnerFlowCapability,
-  type PartnerFlowAction,
+  PARTNER_FLOW_REQUEST_EVENT_TYPE,
   type PartnerFlowCapability,
 } from "./contract";
 import type { PartnerFlowRequestInput } from "./validate";
 import { opaqueCallbackRef, type PartnerFlowStoredConfig } from "./view";
+import {
+  EMPTY_PARTNER_FLOW_STORED_CONFIG,
+  starterKitCapabilitiesFromActivity,
+  storedConfigFromActivityRows,
+  type PartnerFlowActivityRow,
+} from "./activity";
+import { capabilityAuthorityError, enabledPartnerFlowCapabilities } from "./capabilities";
 
 export async function loadPartnerFlowStoredConfig(
   applicationId: string,
@@ -22,37 +30,55 @@ export async function loadPartnerFlowStoredConfig(
   const sb = requireSupabaseAdmin();
   const { data, error } = await sb
     .from("partner_launchpad_activity")
-    .select("metadata")
+    .select("application_id, partner_id, event_type, public_code, metadata, created_at")
     .eq("application_id", applicationId)
     .eq("partner_id", partnerId)
-    .eq("public_code", PARTNER_FLOW_REQUEST_ACTIVITY_CODE)
+    .eq("event_type", PARTNER_FLOW_REQUEST_EVENT_TYPE)
     .order("created_at", { ascending: false })
     .limit(1);
   if (error) throw new Error("unavailable");
-  const meta = ((data ?? [])[0] as { metadata?: Record<string, unknown> } | undefined)?.metadata ?? {};
-  const action = typeof meta.action === "string" && isPartnerFlowAction(meta.action) ? meta.action : null;
-  const capabilities = String(meta.capabilities ?? "")
-    .split(",")
-    .map((item) => item.trim())
-    .filter((item): item is PartnerFlowCapability => isPartnerFlowCapability(item));
-  return {
-    purpose: typeof meta.purpose === "string" ? meta.purpose : null,
-    action,
-    callback_url: typeof meta.callback_url === "string" ? meta.callback_url : null,
-    capabilities,
-    display_label: typeof meta.display_label === "string" ? meta.display_label : null,
-  };
+  const rows = (data ?? []) as PartnerFlowActivityRow[];
+  if (!rows.length) return { ...EMPTY_PARTNER_FLOW_STORED_CONFIG };
+  return storedConfigFromActivityRows(rows, applicationId, partnerId);
+}
+
+export async function loadEnabledPartnerFlowCapabilities(
+  application: LaunchpadApplicationRow,
+  partnerId: string,
+): Promise<PartnerFlowCapability[]> {
+  const sb = requireSupabaseAdmin();
+  const { data } = await sb
+    .from("partner_launchpad_activity")
+    .select("event_type, public_code, metadata, created_at")
+    .eq("application_id", application.id)
+    .eq("partner_id", partnerId)
+    .order("created_at", { ascending: false })
+    .limit(40);
+  const webhook = await getLaunchpadWebhookOverview({
+    partnerId,
+    policyId: application.policy_id,
+    policyVersion: application.policy_version,
+    callbackConfigured: hasProductionLaunchpadCallback(application.allowed_return_urls),
+  });
+  return enabledPartnerFlowCapabilities({
+    webhookConfigured: Boolean(webhook.webhook_configured || webhook.webhook_enabled),
+    starterKitCapabilities: starterKitCapabilitiesFromActivity((data ?? []) as PartnerFlowActivityRow[]),
+  });
 }
 
 export async function savePartnerFlowRequestConfig(input: {
   application: LaunchpadApplicationRow;
   partnerId: string;
   parsed: PartnerFlowRequestInput;
+  enabledCapabilities: readonly PartnerFlowCapability[];
 }): Promise<PartnerFlowStoredConfig> {
   const urls = input.application.allowed_return_urls ?? [];
   const callbackUrl = urls[input.parsed.callback_index];
   if (!callbackUrl || !isLaunchpadReturnUrlAllowlisted(urls, callbackUrl)) {
     throw Object.assign(new Error("callback_rejected"), { code: "callback_rejected" });
+  }
+  if (capabilityAuthorityError(input.parsed.capabilities, [...input.enabledCapabilities])) {
+    throw Object.assign(new Error(PARTNER_FLOW_CAPABILITY_REJECTED), { code: PARTNER_FLOW_CAPABILITY_REJECTED });
   }
   const displayLabel = input.parsed.display_label ?? input.application.display_name;
   const sb = requireSupabaseAdmin();
@@ -67,7 +93,7 @@ export async function savePartnerFlowRequestConfig(input: {
   await recordLaunchpadActivity(sb, {
     applicationId: input.application.id,
     partnerId: input.partnerId,
-    eventType: "disclosure_viewed",
+    eventType: PARTNER_FLOW_REQUEST_EVENT_TYPE,
     publicCode: PARTNER_FLOW_REQUEST_ACTIVITY_CODE,
     metadata: {
       purpose: input.parsed.purpose,
@@ -82,7 +108,7 @@ export async function savePartnerFlowRequestConfig(input: {
     purpose: input.parsed.purpose,
     action: input.parsed.action,
     callback_url: callbackUrl,
-    capabilities: input.parsed.capabilities,
+    capabilities: [...input.parsed.capabilities],
     display_label: displayLabel,
   };
 }

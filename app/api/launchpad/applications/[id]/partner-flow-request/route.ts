@@ -10,8 +10,10 @@ import {
 } from "@/lib/partner/launchpad/apiHelpers";
 import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
+import { capabilityAuthorityError } from "@/lib/partner/launchpad/partnerFlowRequest/capabilities";
 import {
   buildPartnerFlowRequestView,
+  loadEnabledPartnerFlowCapabilities,
   loadPartnerFlowStoredConfig,
   loadStarterKitEvidenced,
   parsePartnerFlowRequestBody,
@@ -26,8 +28,10 @@ async function assemble(applicationId: string, partnerId: string) {
   const app = await getLaunchpadApplicationForPartner(applicationId, partnerId);
   if (!app) return { ok: false as const, status: 404 as const };
   let stored;
+  let enabledCapabilities = [] as Awaited<ReturnType<typeof loadEnabledPartnerFlowCapabilities>>;
   try {
     stored = await loadPartnerFlowStoredConfig(app.id, partnerId);
+    enabledCapabilities = await loadEnabledPartnerFlowCapabilities(app, partnerId);
   } catch {
     return { ok: false as const, status: 503 as const };
   }
@@ -37,11 +41,16 @@ async function assemble(applicationId: string, partnerId: string) {
   } catch {
     starterKitEvidenced = false;
   }
-  const view = buildPartnerFlowRequestView({ application: app, stored, starterKitEvidenced });
+  const view = buildPartnerFlowRequestView({
+    application: app,
+    stored,
+    starterKitEvidenced,
+    enabledCapabilities,
+  });
   if (partnerFlowViewLeaks(view).length > 0) {
     return { ok: false as const, status: 503 as const };
   }
-  return { ok: true as const, app, view };
+  return { ok: true as const, app, view, enabledCapabilities };
 }
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
@@ -96,16 +105,29 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   }
   const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
+  let enabledCapabilities;
+  try {
+    enabledCapabilities = await loadEnabledPartnerFlowCapabilities(app, auth.session.partnerId);
+  } catch {
+    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 503, "unavailable");
+  }
+  if (capabilityAuthorityError(parsed.input.capabilities, enabledCapabilities)) {
+    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "capability_rejected");
+  }
   try {
     await savePartnerFlowRequestConfig({
       application: app,
       partnerId: auth.session.partnerId,
       parsed: parsed.input,
+      enabledCapabilities,
     });
   } catch (error) {
     const code = error instanceof Error && "code" in error ? String((error as { code?: string }).code) : "";
     if (code === "callback_rejected") {
       return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.return_url_rejected, 400, "callback_rejected");
+    }
+    if (code === "capability_rejected") {
+      return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "capability_rejected");
     }
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 503, "unavailable");
   }

@@ -2,12 +2,18 @@ import { describe, expect, it } from "vitest";
 import { POLICY_PACK_CATALOG_VERSION } from "@/lib/partner/launchpad/policyPacks";
 import { buildHolderRequestBrief } from "@/lib/partner/holderExperience";
 import { parsePartnerFlowRequestBody } from "@/lib/partner/launchpad/partnerFlowRequest/validate";
+import { storedConfigFromActivityRows } from "@/lib/partner/launchpad/partnerFlowRequest/activity";
+import {
+  capabilityAuthorityError,
+  enabledPartnerFlowCapabilities,
+} from "@/lib/partner/launchpad/partnerFlowRequest/capabilities";
 import {
   buildPartnerFlowRequestView,
   partnerFlowViewLeaks,
   sandboxStartLink,
 } from "@/lib/partner/launchpad/partnerFlowRequest/view";
 import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
+import { PARTNER_FLOW_REQUEST_EVENT_TYPE } from "@/lib/partner/launchpad/partnerFlowRequest/contract";
 
 const app: LaunchpadApplicationRow = {
   id: "app-1",
@@ -82,8 +88,10 @@ describe("Partner Flow request configuration", () => {
         display_label: "Acme",
       },
       starterKitEvidenced: false,
+      enabledCapabilities: ["webhooks"],
     });
-    expect(view.policy_version).toBe(1);
+    expect(view.capabilities).toEqual(["webhooks"]);
+    expect(view.enabled_capabilities).toEqual(["webhooks"]);
     expect(view.policy_template_id).toBe("age_21_retail");
     expect(view.issues_production_key).toBe(false);
     expect(view.activates_production).toBe(false);
@@ -121,5 +129,100 @@ describe("Partner Flow request configuration", () => {
     });
     expect(view.sandbox_start_link).toBeNull();
     expect(view.next_steps.map((step) => step.id)).toContain("add_callback");
+  });
+
+  it("ignores a later unrelated activity and uses the latest configuration event", () => {
+    const rows = [
+      {
+        application_id: "app-1",
+        partner_id: "acme",
+        event_type: PARTNER_FLOW_REQUEST_EVENT_TYPE,
+        metadata: {
+          purpose: "Confirm adult retail eligibility",
+          action: "retail_access",
+          callback_url: "http://localhost:3000/callback",
+        },
+        created_at: "2026-09-20T10:00:00.000Z",
+      },
+      {
+        application_id: "app-1",
+        partner_id: "acme",
+        event_type: "sandbox_readiness_run",
+        public_code: "trading_preflight",
+        metadata: {
+          purpose: "Ignore this later sandbox run",
+          action: "wallet_bound_action",
+          callback_url: "https://evil.example/callback",
+        },
+        created_at: "2026-09-20T11:00:00.000Z",
+      },
+    ];
+    const stored = storedConfigFromActivityRows(rows, "app-1", "acme");
+    expect(stored.purpose).toBe("Confirm adult retail eligibility");
+    expect(stored.action).toBe("retail_access");
+    expect(stored.callback_url).toBe("http://localhost:3000/callback");
+  });
+
+  it("lets a later configuration activity supersede an earlier one", () => {
+    const stored = storedConfigFromActivityRows([
+      {
+        application_id: "app-1",
+        partner_id: "acme",
+        event_type: PARTNER_FLOW_REQUEST_EVENT_TYPE,
+        metadata: {
+          purpose: "Confirm adult retail eligibility",
+          action: "retail_access",
+          callback_url: "http://localhost:3000/callback",
+        },
+        created_at: "2026-09-20T10:00:00.000Z",
+      },
+      {
+        application_id: "app-1",
+        partner_id: "acme",
+        event_type: PARTNER_FLOW_REQUEST_EVENT_TYPE,
+        metadata: {
+          purpose: "Confirm member lounge eligibility",
+          action: "membership_access",
+          callback_url: "http://localhost:3000/members",
+        },
+        created_at: "2026-09-20T12:00:00.000Z",
+      },
+    ], "app-1", "acme");
+    expect(stored.purpose).toBe("Confirm member lounge eligibility");
+    expect(stored.action).toBe("membership_access");
+    expect(stored.callback_url).toBe("http://localhost:3000/members");
+  });
+
+  it("falls back safely when no configuration activity exists", () => {
+    const stored = storedConfigFromActivityRows([
+      {
+        application_id: "app-1",
+        partner_id: "acme",
+        event_type: "disclosure_viewed",
+        metadata: { purpose: "Not configuration" },
+        created_at: "2026-09-20T10:00:00.000Z",
+      },
+    ], "app-1", "acme");
+    expect(stored).toEqual({
+      purpose: null,
+      action: null,
+      callback_url: null,
+      capabilities: [],
+      display_label: null,
+    });
+  });
+
+  it("rejects forged capabilities that are not already enabled and accepts enabled ones", () => {
+    const enabled = enabledPartnerFlowCapabilities({
+      webhookConfigured: true,
+      starterKitCapabilities: [],
+    });
+    expect(enabled).toEqual(["webhooks"]);
+    expect(capabilityAuthorityError(["webhooks"], enabled)).toBeNull();
+    expect(capabilityAuthorityError(["trading_venue"], enabled)).toBe("capability_rejected");
+    expect(capabilityAuthorityError(["payment_authorization"], enabled)).toBe("capability_rejected");
+    expect(capabilityAuthorityError(["wallet_standard_binding"], enabled)).toBe("capability_rejected");
+    expect(capabilityAuthorityError(["solana_gate"], enabled)).toBe("capability_rejected");
+    expect(capabilityAuthorityError(["webhooks", "trading_venue"], enabled)).toBe("capability_rejected");
   });
 });

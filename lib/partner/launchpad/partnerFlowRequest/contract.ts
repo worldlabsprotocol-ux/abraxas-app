@@ -8,7 +8,9 @@ import { SANDBOX_TEST_CONSOLE_CAPABILITIES } from "@/lib/partner/launchpad/sandb
 
 export const PARTNER_FLOW_REQUEST_VERSION = "1.0.0" as const;
 export const PARTNER_FLOW_REQUEST_ACTIVITY_CODE = "partner_flow_request_configured" as const;
+export const PARTNER_FLOW_REQUEST_EVENT_TYPE = "partner_flow_request_configured" as const;
 export const PARTNER_FLOW_REQUEST_ENTRY = "Configure Partner Flow" as const;
+export const PARTNER_FLOW_CAPABILITY_REJECTED = "capability_rejected" as const;
 
 export const PARTNER_FLOW_ACTIONS = [
   "retail_access",

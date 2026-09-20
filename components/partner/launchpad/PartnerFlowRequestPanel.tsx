@@ -11,7 +11,6 @@ import { HolderRequestBriefCard } from "@/components/partner/HolderRequestBriefC
 import {
   PARTNER_FLOW_ACTIONS,
   PARTNER_FLOW_ACTION_LABELS,
-  PARTNER_FLOW_CAPABILITIES,
   PARTNER_FLOW_REQUEST_ENTRY,
   PARTNER_FLOW_REVIEW_NOTICE,
 } from "@/lib/partner/launchpad/partnerFlowRequest/contract";
@@ -107,6 +106,8 @@ export function PartnerFlowRequestPanel({
           ? "Choose an approved callback. New URLs must be added on Destinations first."
           : data.error === "invalid_purpose"
             ? "Use a short plain-language purpose without links or special characters."
+            : data.error === "capability_rejected"
+              ? "Choose only capabilities already enabled for this sandbox app."
             : "Those settings could not be saved. Check the purpose, action, and callback.");
         return;
       }
@@ -195,7 +196,7 @@ export function PartnerFlowRequestPanel({
           Optional capabilities already on this sandbox app
         </legend>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
-          {PARTNER_FLOW_CAPABILITIES.map((id) => (
+          {(view?.enabled_capabilities ?? []).map((id) => (
             <button
               key={id}
               type="button"

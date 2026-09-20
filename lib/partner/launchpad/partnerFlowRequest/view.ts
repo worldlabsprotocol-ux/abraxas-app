@@ -6,6 +6,7 @@ import { SITE_URL } from "@/lib/siteUrl";
 import { buildHolderRequestBrief, type HolderRequestBrief } from "@/lib/partner/holderExperience";
 import { studioPayloadLeaks } from "@/lib/partner/integrationStudio/safety";
 import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
+import { selectedEnabledCapabilities } from "./capabilities";
 import {
   PARTNER_FLOW_ACTION_LABELS,
   PARTNER_FLOW_GOOGLE,
@@ -38,6 +39,7 @@ export interface PartnerFlowRequestView {
   callback_options: Array<{ index: number; label: string }>;
   selected_callback_index: number | null;
   capabilities: PartnerFlowCapability[];
+  enabled_capabilities: PartnerFlowCapability[];
   preview: HolderRequestBrief | null;
   sandbox_start_link: string | null;
   next_steps: Array<{ id: string; label: string; href: string }>;
@@ -64,6 +66,7 @@ export function buildPartnerFlowRequestView(input: {
   application: LaunchpadApplicationRow;
   stored: PartnerFlowStoredConfig;
   starterKitEvidenced: boolean;
+  enabledCapabilities?: readonly PartnerFlowCapability[];
 }): PartnerFlowRequestView {
   const app = input.application;
   const callbacks = app.allowed_return_urls ?? [];
@@ -79,6 +82,7 @@ export function buildPartnerFlowRequestView(input: {
   if (!app.id) next.push(PARTNER_FLOW_NEXT_STEPS.configure_app);
   if (!input.starterKitEvidenced) next.push(PARTNER_FLOW_NEXT_STEPS.starter_kit);
 
+  const enabled = [...(input.enabledCapabilities ?? [])];
   const preview = purpose && app.policy_id
     ? buildHolderRequestBrief({
       partnerId: app.partner_id,
@@ -103,7 +107,8 @@ export function buildPartnerFlowRequestView(input: {
     action_label: input.stored.action ? PARTNER_FLOW_ACTION_LABELS[input.stored.action] : null,
     callback_options: callbacks.map((_, index) => ({ index, label: callbackOptionLabel(index) })),
     selected_callback_index: selectedIndex >= 0 ? selectedIndex : null,
-    capabilities: input.stored.capabilities,
+    capabilities: selectedEnabledCapabilities(input.stored.capabilities, enabled),
+    enabled_capabilities: enabled,
     preview,
     sandbox_start_link: selectedUrl ? sandboxStartLink(app.public_slug) : null,
     next_steps: next,

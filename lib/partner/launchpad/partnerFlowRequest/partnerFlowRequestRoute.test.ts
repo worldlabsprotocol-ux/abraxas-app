@@ -7,6 +7,7 @@ const getAppMock = vi.fn();
 const loadStoredMock = vi.fn();
 const saveMock = vi.fn();
 const kitMock = vi.fn();
+const enabledMock = vi.fn();
 
 vi.mock("@/lib/partner/launchpad/partnerConsoleSession", () => ({
   resolvePartnerConsoleSession: (...args: unknown[]) => resolvePartnerConsoleSessionMock(...args),
@@ -25,6 +26,7 @@ vi.mock("@/lib/partner/launchpad/partnerFlowRequest/store", () => ({
   loadPartnerFlowStoredConfig: (...args: unknown[]) => loadStoredMock(...args),
   savePartnerFlowRequestConfig: (...args: unknown[]) => saveMock(...args),
   loadStarterKitEvidenced: (...args: unknown[]) => kitMock(...args),
+  loadEnabledPartnerFlowCapabilities: (...args: unknown[]) => enabledMock(...args),
   resolveStoredPartnerFlowCallback: vi.fn(),
 }));
 
@@ -69,6 +71,7 @@ describe("partner-flow-request route", () => {
       display_label: "Acme",
     });
     kitMock.mockResolvedValue(true);
+    enabledMock.mockResolvedValue(["webhooks"]);
     saveMock.mockResolvedValue({
       purpose: "Confirm adult retail eligibility",
       action: "retail_access",
@@ -116,11 +119,14 @@ describe("partner-flow-request route", () => {
         action: "retail_access",
         callback_index: 0,
         display_label: "Acme",
-        capabilities: [],
+        capabilities: ["webhooks"],
       }),
     }), { params: { id: "app-1" } });
     expect(ok.status).toBe(200);
-    expect(saveMock).toHaveBeenCalled();
+    expect(saveMock).toHaveBeenCalledWith(expect.objectContaining({
+      enabledCapabilities: ["webhooks"],
+      parsed: expect.objectContaining({ capabilities: ["webhooks"] }),
+    }));
 
     const denied = await POST(new NextRequest("http://localhost/api/launchpad/applications/app-1/partner-flow-request", {
       method: "POST",
@@ -142,5 +148,23 @@ describe("partner-flow-request route", () => {
       }),
     }), { params: { id: "app-1" } });
     expect(res.status).toBe(400);
+  });
+
+  it("rejects forged trading payment wallet webhook and solana capabilities", async () => {
+    enabledMock.mockResolvedValueOnce([]);
+    const res = await POST(new NextRequest("http://localhost/api/launchpad/applications/app-1/partner-flow-request", {
+      method: "POST",
+      headers: { "content-type": "application/json", cookie: "abraxas_partner_console_session=test" },
+      body: JSON.stringify({
+        purpose: "Confirm adult retail eligibility",
+        action: "retail_access",
+        callback_index: 0,
+        capabilities: ["trading_venue", "payment_authorization", "wallet_standard_binding", "webhooks", "solana_gate"],
+      }),
+    }), { params: { id: "app-1" } });
+    expect(res.status).toBe(400);
+    const json = await res.json() as { error: string };
+    expect(json.error).toBe("capability_rejected");
+    expect(saveMock).not.toHaveBeenCalled();
   });
 });

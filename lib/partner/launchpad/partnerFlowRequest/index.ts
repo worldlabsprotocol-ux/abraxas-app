@@ -7,9 +7,12 @@ export {
   launchpadConfigureHref,
 } from "./contract";
 export { parsePartnerFlowRequestBody } from "./validate";
+export { storedConfigFromActivityRows } from "./activity";
+export { enabledPartnerFlowCapabilities, capabilityAuthorityError } from "./capabilities";
 export { buildPartnerFlowRequestView, sandboxStartLink, partnerFlowViewLeaks } from "./view";
 export {
   loadPartnerFlowStoredConfig,
+  loadEnabledPartnerFlowCapabilities,
   savePartnerFlowRequestConfig,
   resolveStoredPartnerFlowCallback,
   loadStarterKitEvidenced,
