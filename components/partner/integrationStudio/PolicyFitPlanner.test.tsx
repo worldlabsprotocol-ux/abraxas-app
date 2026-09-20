@@ -81,5 +81,6 @@ describe("PolicyFitPlanner", () => {
     await userEvent.click(screen.getByRole("button", { name: "Find matching policy pack" }));
     expect(await screen.findByRole("heading", { name: "Talk to us about a policy fit" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Talk to us about a policy fit/i }).getAttribute("href")).toContain("/design-partner");
+    expect(screen.getByRole("link", { name: /Propose a policy/i }).getAttribute("href")).toContain("/developers/launchpad");
   });
 });

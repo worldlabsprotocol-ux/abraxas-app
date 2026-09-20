@@ -222,6 +222,7 @@ export function PolicyFitPlanner({
                 >
                   Use this pack in Studio
                 </Btn>
+                <Btn href="/developers/launchpad#policy-proposal" size="sm" variant="secondary">Propose a policy</Btn>
               </div>
             </article>
           ) : (
@@ -230,7 +231,10 @@ export function PolicyFitPlanner({
                 Talk to us about a policy fit
               </h3>
               <p role="status" style={{ ...body, marginBottom: "0.65rem" }}>{result.no_fit_message}</p>
-              <Btn href={result.design_partner_href} size="sm">Talk to us about a policy fit →</Btn>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                <Btn href={`/developers/launchpad#policy-proposal`} size="sm">Propose a policy</Btn>
+                <Btn href={result.design_partner_href} size="sm" variant="secondary">Talk to us about a policy fit →</Btn>
+              </div>
             </article>
           )}
           <p style={{ ...body, marginTop: "0.85rem" }}>{result.review_notice}</p>

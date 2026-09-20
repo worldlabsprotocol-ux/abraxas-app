@@ -33,7 +33,9 @@ export type LaunchpadActivityEventType =
   | "sandbox_readiness_run"
   | "settlement_intent_created"
   | "settlement_intent_submitted"
-  | "partner_flow_request_configured";
+  | "partner_flow_request_configured"
+  | "policy_proposal_submitted"
+  | "policy_proposal_reviewed";
 
 export type ProductionAccessRequestStatus = "pending" | "approved" | "rejected";
 

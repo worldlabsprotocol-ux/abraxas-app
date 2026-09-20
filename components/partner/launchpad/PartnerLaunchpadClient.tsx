@@ -30,6 +30,8 @@ import { PartnerFlowRequestPanel } from "@/components/partner/launchpad/PartnerF
 import { PolicyVersionPlannerPanel } from "@/components/partner/launchpad/PolicyVersionPlannerPanel";
 import { NetworkReadinessPanel } from "@/components/partner/launchpad/NetworkReadinessPanel";
 import { GO_LIVE_REVIEW_ENTRY } from "@/lib/partner/launchpad/goLiveReadiness/contract";
+import { PolicyProposalForm } from "@/components/partner/policyProposal/PolicyProposalForm";
+import { POLICY_PROPOSAL_NOTICE } from "@/lib/partner/policyProposal/contract";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -446,6 +448,13 @@ export function PartnerLaunchpadClient({
         title="Build your integration"
         subtitle="Choose a policy pack, host verification, receive a signed result, and test the loop yourself. Proofs, not profiles."
       />
+
+      <ContentCard title="Propose a policy">
+        <div id="policy-proposal">
+          <p style={{ ...bodyText, marginBottom: "0.75rem" }}>{POLICY_PROPOSAL_NOTICE}</p>
+          <PolicyProposalForm />
+        </div>
+      </ContentCard>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", marginBottom: "1rem" }} role="list" aria-label="Launchpad progress">
         {STEPS.map((s, index) => (
