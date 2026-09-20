@@ -136,6 +136,7 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
           { label: "Circle Arc testnet settlement", href: "/docs/circle-arc-testnet" },
           { label: "Multi-chain Mainnet readiness", href: "/docs/multichain-mainnet-readiness" },
           { label: "Production review control plane", href: "/docs/production-review" },
+          { label: "Production credentials", href: "/docs/production-credentials" },
           { label: "Partner Flow", href: "/docs/partner-flow" },
           { label: "Partner Flow API (OpenAPI)", href: "/docs/partner-flow-api" },
           { label: "Protocol compatibility manifest (JSON API)", href: "/api/protocol/compatibility" },
