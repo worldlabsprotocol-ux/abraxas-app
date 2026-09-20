@@ -18,6 +18,7 @@ import type { PartnerFlowHandoffController } from "@/lib/passport/partnerFlowHan
 import { PartnerReturnCta } from "@/components/passport/PartnerReturnCta";
 import { PartnerVerificationResumeCta } from "@/components/passport/PartnerVerificationResumeCta";
 import { PassportRecentActivity } from "@/components/passport/PassportRecentActivity";
+import { PassportVerificationActivity } from "@/components/passport/PassportVerificationActivity";
 import { AbraxasIdentityCapture } from "@/components/passport/AbraxasIdentityCapture";
 import {
   PASSPORT_CRYPTO_DISCLOSURE,
@@ -274,6 +275,8 @@ export function PassportCustomerView({
               ))}
             </ul>
           </section>
+
+          <PassportVerificationActivity />
 
           <PassportRecentActivity
             suiAddress={suiAddress}
