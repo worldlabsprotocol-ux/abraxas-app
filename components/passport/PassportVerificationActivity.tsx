@@ -2,7 +2,8 @@
 // FILE: components/passport/PassportVerificationActivity.tsx
 // Holder-private verification activity. Session cookie only — no subject query params.
 
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useId, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import { PUBLIC_SURFACE } from "@/lib/design/publicSurface";
@@ -10,6 +11,11 @@ import {
   PASSPORT_ACTIVITY_EMPTY,
   PASSPORT_ACTIVITY_NOTICE,
   PASSPORT_ACTIVITY_UNAVAILABLE,
+  PASSPORT_ACTIVITY_WITHDRAW_CONFIRM_POINTS,
+  PASSPORT_ACTIVITY_WITHDRAW_CONFIRM_TITLE,
+  PASSPORT_ACTIVITY_WITHDRAW_LABEL,
+  PASSPORT_ACTIVITY_WITHDRAW_SUCCESS,
+  PASSPORT_ACTIVITY_WITHDRAW_UNAVAILABLE,
   type PassportActivityItem,
   type PassportActivityView,
 } from "@/lib/passport/verificationActivity/contract";
@@ -42,7 +48,140 @@ function formatWhen(iso: string): string {
   return date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }
 
-function ActivityCard({ item }: { item: PassportActivityItem }) {
+function WithdrawConfirmDialog({
+  open,
+  busy,
+  error,
+  partnerLabel,
+  onConfirm,
+  onCancel,
+}: {
+  open: boolean;
+  busy: boolean;
+  error: string | null;
+  partnerLabel: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const titleId = useId();
+  const bodyId = useId();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    cancelRef.current?.focus();
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && !busy) {
+        event.preventDefault();
+        onCancel();
+        return;
+      }
+      if (event.key !== "Tab" || !dialogRef.current) return;
+      const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [open, busy, onCancel]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(4,6,12,0.72)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "1rem",
+        zIndex: 40,
+      }}
+    >
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={bodyId}
+        style={{
+          width: "min(32rem, 100%)",
+          background: "#10141f",
+          border: "1px solid rgba(255,255,255,0.12)",
+          borderRadius: 14,
+          padding: "1rem 1.05rem",
+        }}
+      >
+        <h3 id={titleId} style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: 0 }}>
+          {PASSPORT_ACTIVITY_WITHDRAW_CONFIRM_TITLE}
+        </h3>
+        <div id={bodyId}>
+          <p style={{ fontFamily: FONT, fontSize: "0.8rem", color: "var(--text-secondary)", lineHeight: 1.55, margin: "0.55rem 0 0" }}>
+            Withdraw the shared result for {partnerLabel}.
+          </p>
+          <ul style={{ fontFamily: FONT, fontSize: "0.8rem", color: "var(--text-primary)", lineHeight: 1.55, margin: "0.55rem 0 0", paddingLeft: "1.1rem" }}>
+            {PASSPORT_ACTIVITY_WITHDRAW_CONFIRM_POINTS.map((point) => (
+              <li key={point}>{point}</li>
+            ))}
+          </ul>
+        </div>
+        {error && (
+          <p role="alert" style={{ fontFamily: FONT, fontSize: "0.78rem", color: "#FCA5A5", margin: "0.65rem 0 0", lineHeight: 1.5 }}>
+            {error}
+          </p>
+        )}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.9rem" }}>
+          <button
+            type="button"
+            ref={cancelRef}
+            disabled={busy}
+            onClick={onCancel}
+            style={{
+              fontFamily: FONT, fontSize: "0.8rem", fontWeight: 650, padding: "0.45rem 0.75rem",
+              borderRadius: 8, border: "1px solid rgba(255,255,255,0.16)", background: "transparent", color: "var(--text-primary)",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onConfirm}
+            style={{
+              fontFamily: FONT, fontSize: "0.8rem", fontWeight: 700, padding: "0.45rem 0.75rem",
+              borderRadius: 8, border: "1px solid rgba(245,158,11,0.55)", background: "rgba(245,158,11,0.16)", color: "#FBBF24",
+            }}
+          >
+            {busy ? "Withdrawing…" : PASSPORT_ACTIVITY_WITHDRAW_LABEL}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ActivityCard({
+  item,
+  onRequestWithdraw,
+}: {
+  item: PassportActivityItem;
+  onRequestWithdraw: (item: PassportActivityItem) => void;
+}) {
   const ink = STATE_INK[item.state] ?? "var(--text-secondary)";
   return (
     <article
@@ -116,16 +255,60 @@ function ActivityCard({ item }: { item: PassportActivityItem }) {
           </a>
         </p>
       )}
+      {item.current && (
+        <p style={{ margin: "0.55rem 0 0" }}>
+          <button
+            type="button"
+            onClick={() => onRequestWithdraw(item)}
+            style={{
+              fontFamily: FONT,
+              fontSize: "0.76rem",
+              fontWeight: 700,
+              color: "#FBBF24",
+              background: "transparent",
+              border: "1px solid rgba(251,191,36,0.4)",
+              borderRadius: 8,
+              padding: "0.35rem 0.6rem",
+            }}
+          >
+            {PASSPORT_ACTIVITY_WITHDRAW_LABEL}
+          </button>
+        </p>
+      )}
     </article>
   );
 }
 
 export function PassportVerificationActivity() {
+  const queryClient = useQueryClient();
+  const [pending, setPending] = useState<PassportActivityItem | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["passport", "verification-activity"],
     queryFn: fetchActivity,
     staleTime: 30_000,
     retry: false,
+  });
+
+  const withdraw = useMutation({
+    mutationFn: async (activityRef: string) => {
+      const res = await fetch("/api/passport/verification-activity/withdraw", {
+        method: "POST",
+        credentials: "include",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ activity_ref: activityRef }),
+      });
+      const body = await res.json().catch(() => ({})) as { ok?: boolean; error?: string; next_step?: string; state_label?: string };
+      if (!res.ok) {
+        throw new Error(typeof body.error === "string" ? body.error : PASSPORT_ACTIVITY_WITHDRAW_UNAVAILABLE);
+      }
+      return body;
+    },
+    onSuccess: async (body) => {
+      setPending(null);
+      setNotice(typeof body.next_step === "string" ? body.next_step : PASSPORT_ACTIVITY_WITHDRAW_SUCCESS);
+      await queryClient.invalidateQueries({ queryKey: ["passport", "verification-activity"] });
+    },
   });
 
   const signedOut = error instanceof Error && error.message === "signin";
@@ -175,9 +358,36 @@ export function PassportVerificationActivity() {
         </p>
       )}
 
+      {notice && (
+        <p role="status" style={{ fontFamily: FONT, fontSize: "0.8rem", color: "#FBBF24", margin: "0 0 0.75rem", lineHeight: 1.55 }}>
+          {notice}
+        </p>
+      )}
+
       {!isLoading && !isError && (data?.items ?? []).map((item) => (
-        <ActivityCard key={item.activity_ref} item={item} />
+        <ActivityCard
+          key={item.activity_ref}
+          item={item}
+          onRequestWithdraw={(next) => {
+            setNotice(null);
+            withdraw.reset();
+            setPending(next);
+          }}
+        />
       ))}
+
+      <WithdrawConfirmDialog
+        open={Boolean(pending)}
+        busy={withdraw.isPending}
+        error={withdraw.isError ? (withdraw.error instanceof Error ? withdraw.error.message : PASSPORT_ACTIVITY_WITHDRAW_UNAVAILABLE) : null}
+        partnerLabel={pending?.partner_label ?? "this partner"}
+        onCancel={() => {
+          if (!withdraw.isPending) setPending(null);
+        }}
+        onConfirm={() => {
+          if (pending) void withdraw.mutateAsync(pending.activity_ref);
+        }}
+      />
 
       {data?.truncated && (
         <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-muted)", margin: "0.35rem 0 0" }}>

@@ -31,6 +31,39 @@ export const PASSPORT_ACTIVITY_UNAVAILABLE =
 export const PASSPORT_ACTIVITY_NOTICE =
   "Partners receive only the policy result. Underlying evidence and personal data stay with you. An approved result is not universal access, an identity credential, or a payment authorization.";
 
+export const PASSPORT_ACTIVITY_WITHDRAW_LABEL = "Withdraw shared result";
+
+export const PASSPORT_ACTIVITY_WITHDRAW_CONFIRM_TITLE = "Withdraw this shared result?";
+
+export const PASSPORT_ACTIVITY_WITHDRAW_CONFIRM_POINTS = [
+  "Future partner checks will not accept this result.",
+  "This does not erase lawful minimal audit history.",
+  "A partner may ask you to verify again later.",
+  "This does not reverse a trade, payment, transfer, membership decision, or other action a partner already took.",
+] as const;
+
+export const PASSPORT_ACTIVITY_WITHDRAW_SUCCESS =
+  "This result is revoked. Future partner checks will not accept it. A partner may ask you to verify again from their usual entry point. Actions already taken by a partner are not reversed.";
+
+export const PASSPORT_ACTIVITY_WITHDRAW_NOT_CURRENT =
+  "This result is no longer current, so it cannot be withdrawn.";
+
+export const PASSPORT_ACTIVITY_WITHDRAW_UNAVAILABLE =
+  "Withdrawal is temporarily unavailable. Return to Passport and try again.";
+
+export const PASSPORT_ACTIVITY_WITHDRAW_NOT_FOUND =
+  "That verification activity is not available in this Passport.";
+
+export const PASSPORT_ACTIVITY_WITHDRAW_CLIENT_KEYS = [
+  "ok",
+  "state",
+  "state_label",
+  "already_withdrawn",
+  "next_step",
+] as const;
+
+export const HOLDER_WITHDRAWAL_REASON_CODE = "holder_withdrawal" as const;
+
 export const PASSPORT_ACTIVITY_WITHHELD = [
   "underlying evidence",
   "government ID images",

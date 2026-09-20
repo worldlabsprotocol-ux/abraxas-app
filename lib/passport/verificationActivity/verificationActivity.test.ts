@@ -12,6 +12,7 @@ import {
   buildPassportActivityItem,
   buildPassportActivityView,
   opaqueActivityRef,
+  isOpaqueActivityRef,
   passportActivityCopyLeaks,
   resolvePassportActivityState,
   safePurposeText,
@@ -146,6 +147,8 @@ describe("passport verification activity view", () => {
     expect(a).toMatch(/^act_[a-f0-9]{12}$/);
     expect(a).not.toBe(b);
     expect(a).not.toContain("dec-1");
+    expect(isOpaqueActivityRef(a)).toBe(true);
+    expect(isOpaqueActivityRef("dr_abc")).toBe(false);
   });
 
   it("bounds the result set", () => {

@@ -20,6 +20,7 @@ export const REVOCATION_REASON_CODES = [
   "fraud_investigation",
   "compliance_hold",
   "duplicate_issuance",
+  "holder_withdrawal",
 ] as const;
 
 export type RevocationReasonCode = (typeof REVOCATION_REASON_CODES)[number];
@@ -120,6 +121,7 @@ export async function revokeDecisionReceiptControlled(input: {
   reasonCode: RevocationReasonCode;
   changedBy: string;
   idempotencyKey?: string;
+  skipStandardAudit?: boolean;
 }): Promise<RevokeDecisionReceiptResult | { ok: false; error: string }> {
   if (!isRevocationReasonCode(input.reasonCode)) {
     return { ok: false, error: "invalid_reason_code" };
@@ -137,21 +139,23 @@ export async function revokeDecisionReceiptControlled(input: {
   }
 
   if (!rpc.already_revoked) {
-    await appendAuditEvent({
-      actor_type: "admin_operator",
-      actor_id: input.changedBy,
-      action: "decision_receipt.revoked",
-      object_type: "decision_receipt",
-      object_id: receiptId,
-      policy_id: record.policy_id,
-      policy_version: record.policy_version,
-      metadata: {
-        reason_code: input.reasonCode,
-        verification_decision_id: rpc.decision_id ?? record.verification_decision_id,
-        claim_ids: rpc.claim_ids ?? [],
-        partner_id: record.partner_id,
-      },
-    });
+    if (!input.skipStandardAudit) {
+      await appendAuditEvent({
+        actor_type: "admin_operator",
+        actor_id: input.changedBy,
+        action: "decision_receipt.revoked",
+        object_type: "decision_receipt",
+        object_id: receiptId,
+        policy_id: record.policy_id,
+        policy_version: record.policy_version,
+        metadata: {
+          reason_code: input.reasonCode,
+          verification_decision_id: rpc.decision_id ?? record.verification_decision_id,
+          claim_ids: rpc.claim_ids ?? [],
+          partner_id: record.partner_id,
+        },
+      });
+    }
 
     maybeEnqueuePartnerReceiptRevoked({
       partnerId: record.partner_id,

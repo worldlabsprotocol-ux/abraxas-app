@@ -43,6 +43,10 @@ export function opaqueActivityRef(subjectId: string, decisionId: string): string
   return `act_${createHash("sha256").update(`${subjectId}:${decisionId}`).digest("hex").slice(0, 12)}`;
 }
 
+export function isOpaqueActivityRef(value: unknown): value is string {
+  return typeof value === "string" && /^act_[a-f0-9]{12}$/.test(value);
+}
+
 export function safePurposeText(raw: string | null | undefined, fallback: string): string {
   const text = raw?.trim() ?? "";
   if (!text) return fallback;
