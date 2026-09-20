@@ -96,6 +96,7 @@ export const PASSPORT_ACTIVITY_CLIENT_ITEM_KEYS = [
   "current",
   "recovery",
   "partner_entry_href",
+  "reuse_consent_notice",
 ] as const;
 
 export const PASSPORT_ACTIVITY_CLIENT_VIEW_KEYS = [
@@ -124,6 +125,7 @@ export interface PassportActivityItem {
   current: boolean;
   recovery: string | null;
   partner_entry_href: string | null;
+  reuse_consent_notice: string | null;
 }
 
 export interface PassportActivityView {

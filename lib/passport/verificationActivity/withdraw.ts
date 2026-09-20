@@ -5,6 +5,7 @@ import { requireSupabaseAdmin, SupabaseAdminConfigurationError } from "@/lib/sup
 import { appendAuditEvent } from "@/lib/verification/audit";
 import { subjectPseudonymId } from "@/lib/decisionReceipts/pseudonym";
 import { revokeDecisionReceiptControlled } from "@/lib/decisionReceipts/revocationControlPlane";
+import { revokeDerivedFromSourceReceipt } from "@/lib/passport/reusableEligibility/store";
 import { applyDisclosureProfile } from "@/lib/privacy/selectiveDisclosure/enforce";
 import { rejectClientDisclosureConfig } from "@/lib/privacy/selectiveDisclosure/clientOverride";
 import { GENERIC_MINIMAL_PROFILE } from "@/lib/privacy/selectiveDisclosure/profiles";
@@ -235,6 +236,13 @@ export async function withdrawHolderSharedResult(input: {
 
     const state = resolvePassportActivityState(match.source);
     if (state === "revoked") {
+      if (match.receipt_id) {
+        await revokeDerivedFromSourceReceipt({
+          sourceReceiptId: match.receipt_id,
+          changedBy: `holder:${subjectPseudonymId(input.subjectId)}`,
+          reasonCode: HOLDER_WITHDRAWAL_REASON_CODE,
+        });
+      }
       const view = projectHolderWithdrawalClientView(true);
       return { ok: true, view };
     }
@@ -277,6 +285,12 @@ export async function withdrawHolderSharedResult(input: {
         activity_ref: match.activity_ref,
         already_withdrawn: result.alreadyRevoked,
       },
+    });
+
+    await revokeDerivedFromSourceReceipt({
+      sourceReceiptId: match.receipt_id,
+      changedBy: `holder:${pseudonym}`,
+      reasonCode: HOLDER_WITHDRAWAL_REASON_CODE,
     });
 
     const view = projectHolderWithdrawalClientView(result.alreadyRevoked);

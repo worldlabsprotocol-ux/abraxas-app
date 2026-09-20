@@ -56,6 +56,7 @@ describe("PassportVerificationActivity", () => {
         current: true,
         recovery: null,
         partner_entry_href: "https://www.goodtroublecanna.com/",
+        reuse_consent_notice: "A current result can be reused for a later compatible request only if you give fresh consent. Future partners are not listed here.",
       }],
       truncated: false,
       notice: "Partners receive only the policy result.",

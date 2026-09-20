@@ -31,6 +31,9 @@ import { issueReceiptForDecision } from "@/lib/decisionReceipts/service";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 import { getPublicAppOrigin } from "@/lib/app/publicAppOrigin";
 import { buildHolderConsentUrl } from "@/lib/privacy/selectiveDisclosure";
+import { resolveCompatibleReusableFact } from "@/lib/passport/reusableEligibility/qualify";
+import { derivedClaimRefs, derivedReasonCodes, persistReuseDerivation } from "@/lib/passport/reusableEligibility/issue";
+import type { InternalReusableFact } from "@/lib/passport/reusableEligibility/contract";
 
 export { getPartnerPolicy as getPolicy } from "@/lib/policy/getPolicy";
 
@@ -218,6 +221,7 @@ export async function consentAndDecide(input: {
   const partnerId = request.partner_id as string;
   const policyId = request.policy_id as string;
   let additionalClaims: CredentialClaimRecord[] = [];
+  let reuseFact: InternalReusableFact | null = null;
   if (input.request) {
     const qualified = await requireQualifiedPartnerMethod({
       request: input.request,
@@ -227,22 +231,48 @@ export async function consentAndDecide(input: {
       sessionSubject: subject,
     });
     if (qualified.ok) {
-      additionalClaims = deriveServerSandboxQualificationClaims({
-        record: qualified.record,
-        subjectId: subject,
-        storedPartnerId: partnerId,
-        storedPolicyId: policyId,
-        storedPolicyVersion: qualified.record.policyVersion,
-      });
+      if (qualified.record.methodId === "reuse_existing_proof") {
+        const resolved = await resolveCompatibleReusableFact({
+          subjectId: subject,
+          targetPolicyId: policyId,
+          targetPolicyVersion: qualified.record.policyVersion
+            ?? (typeof request.policy_version === "number" ? request.policy_version : 1),
+        });
+        if (!resolved.ok) {
+          throw new Error("A compatible private verification is no longer available.");
+        }
+        reuseFact = resolved.fact;
+      } else {
+        additionalClaims = deriveServerSandboxQualificationClaims({
+          record: qualified.record,
+          subjectId: subject,
+          storedPartnerId: partnerId,
+          storedPolicyId: policyId,
+          storedPolicyVersion: qualified.record.policyVersion,
+        });
+      }
     }
   }
-  const { policy, evaluation, claims } = await evaluatePolicyForSubject({
+  const evaluated = await evaluatePolicyForSubject({
     suiAddress: subject,
     policyId,
     partnerId,
     policyVersion: typeof request.policy_version === "number" ? request.policy_version : undefined,
     additionalClaims,
   });
+  let { policy, evaluation, claims } = evaluated;
+  if (reuseFact && evaluation.decision !== "approved") {
+    const pack = inferPolicyPackFromPolicyId(policyId);
+    evaluation = {
+      decision: "approved",
+      claims: { [pack?.receipt_claim ?? "eligibility"]: true },
+      reason_codes: derivedReasonCodes(),
+      valid_until: reuseFact.expires_at,
+      missing_claims: [],
+      decision_context: reuseFact.decision_context,
+      production_usable: reuseFact.decision_context === "production",
+    };
+  }
 
   const { data: claimed, error: claimError } = await sb
     .from("verification_requests")
@@ -306,10 +336,12 @@ export async function consentAndDecide(input: {
   });
 
   const claimTypes = claimTypesFromEvaluation(evaluation.claims);
-  const evaluatedClaimRefs = buildEvaluatedClaimRefs(
-    claims,
-    claimTypes.length ? claimTypes : Object.keys(evaluation.claims),
-  );
+  const evaluatedClaimRefs = reuseFact
+    ? derivedClaimRefs(reuseFact, policy.id)
+    : buildEvaluatedClaimRefs(
+      claims,
+      claimTypes.length ? claimTypes : Object.keys(evaluation.claims),
+    );
 
   const receipt = await issueReceiptForDecision({
     decisionId: decisionRow?.id as string,
@@ -330,6 +362,18 @@ export async function consentAndDecide(input: {
 
   if (!receipt) {
     throw new Error("Failed to issue decision receipt");
+  }
+
+  if (reuseFact && evaluation.decision === "approved") {
+    await persistReuseDerivation({
+      fact: reuseFact,
+      derivedReceiptId: receipt.id,
+      derivedDecisionId: String(decisionRow?.id ?? ""),
+      requestingPartnerId: partnerId,
+      requestingPolicyId: policy.id,
+      requestingPolicyVersion: policy.version,
+      verifyRequestId: input.requestId,
+    });
   }
 
   void auditPartnerFlowStepBestEffort({

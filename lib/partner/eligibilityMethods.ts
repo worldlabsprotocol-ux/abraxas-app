@@ -115,8 +115,8 @@ export function planEligibilityMethods(input: {
     },
     {
       id: "reuse_existing_proof",
-      label: "Use my existing compatible proof",
-      why: "A reusable Abraxas proof already meets this policy. No new evidence is collected.",
+      label: "Use an existing private verification",
+      why: "A previous private verification may satisfy this request. The new partner receives only this policy’s result. Selecting reuse does not issue a result.",
       qualifies: existing,
       circle_settlement_eligible: existing && !browseOnly && !selfAttestAllowed,
       primary: existing,

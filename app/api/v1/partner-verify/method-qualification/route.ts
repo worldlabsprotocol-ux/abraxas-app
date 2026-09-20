@@ -22,6 +22,8 @@ import {
   clearPartnerContinueBindingCookie,
   signPartnerContinueBindingCookie,
 } from "@/lib/partner/partnerVerifyResumeCookie";
+import { rejectReuseClientAuthority, reuseOptionForContinuation } from "@/lib/passport/reusableEligibility";
+import { resolveCompatibleReusableFact } from "@/lib/passport/reusableEligibility/qualify";
 
 export const dynamic = "force-dynamic";
 
@@ -66,8 +68,14 @@ export async function GET(request: NextRequest) {
     policyId: bound.stored.policyId,
     policyVersion: bound.stored.policyVersion,
   });
+  const reuse = await reuseOptionForContinuation({
+    subjectId: session.session.suiAddress,
+    targetPolicyId: bound.stored.policyId,
+    targetPolicyVersion: bound.stored.policyVersion ?? 1,
+  });
   const res = NextResponse.json({
     ...publicQualificationView(matched ? record : null),
+    reuse,
   });
   if (!matched) clearPartnerMethodQualificationCookie(res);
   return res;
@@ -91,6 +99,14 @@ export async function POST(request: NextRequest) {
   if (!verifyRequest || !methodId) {
     return NextResponse.json({ ok: false, code: "missing", method_qualified: false, issuedReceipt: false }, { status: 400 });
   }
+  if (rejectReuseClientAuthority(body)) {
+    return NextResponse.json({
+      ok: false,
+      code: "disclosure_rejected",
+      method_qualified: false,
+      issuedReceipt: false,
+    }, { status: 400 });
+  }
 
   const bound = await resolveBoundPartnerContinuation({
     request,
@@ -109,6 +125,16 @@ export async function POST(request: NextRequest) {
     return res;
   }
 
+  let existingProofCompatible = false;
+  if (methodId === "reuse_existing_proof") {
+    const resolved = await resolveCompatibleReusableFact({
+      subjectId: session.session.suiAddress,
+      targetPolicyId: bound.stored.policyId,
+      targetPolicyVersion: bound.stored.policyVersion ?? 1,
+    });
+    existingProofCompatible = resolved.ok;
+  }
+
   const evaluated = evaluateMethodQualification({
     methodId,
     verifyRequestId: verifyRequest,
@@ -118,6 +144,7 @@ export async function POST(request: NextRequest) {
     claimedPartnerId: typeof body.partner_id === "string" ? body.partner_id : undefined,
     claimedPolicyId: typeof body.policy_id === "string" ? body.policy_id : undefined,
     claimedPolicyVersion: typeof body.policy_version === "number" ? body.policy_version : undefined,
+    existingProofCompatible,
   });
 
   if (!evaluated.ok) {
