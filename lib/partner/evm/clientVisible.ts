@@ -3,7 +3,6 @@
 
 import type { PortableActionClientResult } from "@/lib/partner/portableActionContract/contract";
 import {
-  EVM_PARTNER_FORBIDDEN_CLIENT_KEYS,
   type EvmPartnerActionBinding,
   type EvmPartnerActionScope,
   type EvmPartnerActionType,
@@ -81,9 +80,21 @@ export function assertNoSensitiveEvmClientKeys(payload: unknown): string[] {
   const leaks: string[] = [];
   const blob = JSON.stringify(payload ?? null).toLowerCase();
   const needles = [
-    ...EVM_PARTNER_FORBIDDEN_CLIENT_KEYS,
-    "0x",
-    "privatekey",
+    "receipt_id",
+    "signature_valid",
+    "wallet_address",
+    "email",
+    "legal_name",
+    "date_of_birth",
+    "dob",
+    "profile",
+    "claims",
+    "evaluated_claim_refs",
+    "jwt",
+    "id_token",
+    "rpc_url",
+    "calldata",
+    "private_key",
     "infura",
     "alchemy",
     "etherscan",

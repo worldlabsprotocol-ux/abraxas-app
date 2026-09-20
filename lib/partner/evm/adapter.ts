@@ -103,7 +103,7 @@ export class AbraxasEvmPartnerAdapter {
   }
 
   async preflight(input: EvmPartnerPreflightInput): Promise<EvmPartnerClientVisibleResult> {
-    if (hasEvmExecutionOverride(input) || rejectEvmClientOverride(input.contract)) {
+    if (hasEvmExecutionOverride(input)) {
       return deniedEvmResult("invalid", "rejected", String(input.action_scope ?? ""), "rejected");
     }
     const requestedType = input.action_type ?? input.contract.action_type;

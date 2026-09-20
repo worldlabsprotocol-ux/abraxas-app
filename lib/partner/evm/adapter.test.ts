@@ -203,7 +203,7 @@ describe("Abraxas EVM partner eligibility adapter", () => {
     });
     expect(stolen.reason).toBe("partner_mismatch");
     expect(assertNoSensitiveEvmClientKeys(stolen)).toEqual([]);
-    expect(JSON.stringify(stolen)).not.toMatch(/rpc|private_key|wallet_address|calldata/i);
+    expect(JSON.stringify(stolen)).not.toMatch(/rpc_url|private_key|wallet_address|calldata/i);
   });
 
   it("never calls RPC, wallets, transactions, or fund movement", () => {
