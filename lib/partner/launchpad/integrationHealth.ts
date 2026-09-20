@@ -213,7 +213,7 @@ export function buildLaunchpadIntegrationHealth(input: {
           : sandboxOnlyPack
             ? "This policy pack is catalog-marked sandbox-only. Choose a production-eligible pack or keep the integration in sandbox."
             : productionCallback && domainVerified
-              ? "All automated safety checks passed. Activate production when ready."
+              ? "Safety checks passed. Request Production review. Activation stays a reviewer decision."
               : "Production remains fail-closed until callback, domain, and harness checks pass.",
     },
   ];
