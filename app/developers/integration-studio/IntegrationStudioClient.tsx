@@ -27,6 +27,7 @@ import {
   PARTNER_ACTIVATION_RESUME_CTA,
   buildPartnerActivationChecklist,
   launchpadResumeHref,
+  launchpadSandboxTestHref,
 } from "@/lib/partner/activationPath";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -237,7 +238,10 @@ export function IntegrationStudioClient() {
           <p style={{ ...body, marginBottom: "0.75rem" }}>
             Signed in. Resume {resumeApp.application_name} ({resumeApp.public_slug}) on Partner Launchpad. Readiness stays on existing Launchpad evidence.
           </p>
-          <Btn href={launchpadResumeHref(resumeApp.id)} size="sm">{PARTNER_ACTIVATION_RESUME_CTA} →</Btn>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+            <Btn href={launchpadSandboxTestHref(resumeApp.id)} size="sm">Test your sandbox integration →</Btn>
+            <Btn href={launchpadResumeHref(resumeApp.id)} variant="secondary" size="sm">{PARTNER_ACTIVATION_RESUME_CTA} →</Btn>
+          </div>
         </ContentCard>
       )}
 
