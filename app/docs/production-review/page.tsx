@@ -48,6 +48,8 @@ export default function ProductionReviewDocsPage() {
           {" "}
           <Link href={PRODUCTION_REVIEW_PATH}>Operator queue</Link>
           {" · "}
+          <Link href="/docs/production-credentials">Production credentials</Link>
+          {" · "}
           <Link href="/docs/multichain-mainnet-readiness">Mainnet readiness</Link>
           {" · "}
           <Link href="/docs/sandbox-conformance">Sandbox partner contract</Link>
