@@ -124,6 +124,31 @@
   justify-content: center;
   margin-bottom: 0.5rem;
 }
+.abx-command-center {
+  position: relative;
+  isolation: isolate;
+}
+.abx-command-center::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(45, 212, 191, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99, 102, 241, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse at 50% 12%, #000 20%, transparent 72%);
+}
+.abx-command-map,
+.abx-protocol-map {
+  width: 100%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .abx-command-center::before {
+    background-image: none;
+  }
+}
 
 .abx-atmosphere-hero {
   position: relative;
