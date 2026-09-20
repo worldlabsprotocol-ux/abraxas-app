@@ -12,6 +12,7 @@ import {
   INTEGRATION_STUDIO_PROVISION,
   listStudioPackSummaries,
   studioPackContract,
+  studioPublicCatalog,
   studioSnippetForPath,
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio";
@@ -392,9 +393,18 @@ export function IntegrationStudioClient() {
           </p>
         )}
         {pathId === "trading_venue" && (
-          <p style={{ ...body, marginBottom: "0.65rem" }}>
-            Policy pack, then Partner Flow, then a minimum approved receipt, then a venue preflight for Enable market access. Lifecycle and webhook events re-check the public receipt. No trades, wallets, tokens, or funds movement. Venue-neutral. No named exchange partnership.
-          </p>
+          <div style={{ ...body, marginBottom: "0.65rem" }}>
+            <p style={{ margin: 0 }}>
+              Policy pack, then Partner Flow, then a minimum approved receipt, then a venue preflight for Enable market access using a server-configured venue profile (generic or Hyperliquid-class). Lifecycle and webhook events re-check the public receipt. No trades, wallets, tokens, or funds movement. No named exchange partnership. Profile selection is Launchpad sandbox config, never a browser field.
+            </p>
+            <ul style={{ paddingLeft: "1.1rem", marginTop: "0.5rem", display: "grid", gap: "0.3rem" }}>
+              {(studioPublicCatalog().trading_venue.profiles ?? []).map((profile) => (
+                <li key={profile.profile_id}>
+                  {profile.label} (`{profile.profile_id}`) · {profile.posture.replace(/_/g, " ")} · Abraxas never executes
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
         {pathId === "wallet_standard_binding" && (
           <p style={{ ...body, marginBottom: "0.65rem" }}>

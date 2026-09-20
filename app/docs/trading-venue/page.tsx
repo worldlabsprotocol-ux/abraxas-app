@@ -15,6 +15,8 @@ import {
   TRADING_VENUE_PRIVACY_CONTRACT,
   TRADING_VENUE_VERIFICATION_REUSE,
   TRADING_VENUE_WALLET_BINDING_FUTURE,
+  VENUE_PROFILE_NO_PARTNERSHIP,
+  VENUE_PROFILE_PREFLIGHT_ONLY,
   tradingVenueServerPreflightExample,
 } from "@/lib/partner/tradingVenue";
 
@@ -72,7 +74,21 @@ export default function TradingVenueDocsPage() {
           {" · "}
           Kit: <Link href="/docs/integration-kit">Partner Integration Kit</Link>
           {" · "}
+          Profiles: <Link href="/docs/trading-venue-profiles">Venue integration profiles</Link>
+          {" · "}
           Reference: <Link href="/examples/trading-venue">Enable market access example</Link>
+        </p>
+      </ContentCard>
+
+      <ContentCard title="Hyperliquid-class profile">
+        <p style={body}>
+          `hyperliquid_trading_venue` is a sandbox preflight profile for enable_market_access.
+          {` ${VENUE_PROFILE_PREFLIGHT_ONLY} ${VENUE_PROFILE_NO_PARTNERSHIP}`}
+        </p>
+        <p style={{ ...body, marginTop: "0.5rem" }}>
+          Abraxas does not call Hyperliquid APIs, read accounts or positions, fetch market data,
+          submit orders, or imply that Hyperliquid endorses, uses, or partners with Abraxas.
+          Keep `generic_trading_venue` for existing sandbox integrations.
         </p>
       </ContentCard>
 

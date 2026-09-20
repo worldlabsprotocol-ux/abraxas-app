@@ -10,6 +10,7 @@ import { planEligibilityMethods } from "@/lib/partner/eligibilityMethods";
 import { starterKitPublicCatalog } from "@/lib/partner/starterKit/contract";
 import { partnerActivationPublicView } from "@/lib/partner/activationPath";
 import { policyFitPublicChoices } from "@/lib/partner/integrationStudio/policyFit/contract";
+import { selectableSandboxVenueProfiles } from "@/lib/partner/tradingVenue/profiles";
 import {
   INTEGRATION_STUDIO_CHECKLIST,
   INTEGRATION_STUDIO_GOOGLE,
@@ -111,6 +112,13 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
       funds_movement: false,
       connects_wallet: false,
       notice: INTEGRATION_STUDIO_VENUE_NOTICE,
+      profiles: selectableSandboxVenueProfiles().map((profile) => ({
+        profile_id: profile.profile_id,
+        label: profile.label,
+        posture: profile.posture,
+        docs_href: profile.docs_href,
+        abraxas_executes: false as const,
+      })),
     },
     wallet_standard: {
       required_for_passport: false,

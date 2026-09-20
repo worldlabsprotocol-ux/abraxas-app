@@ -31,6 +31,10 @@ export const TRADING_VENUE_SAFE_REASON_CODES = [
   "wallet_binding_replayed",
   "wallet_binding_cross_partner",
   "store_unavailable",
+  "profile_unknown",
+  "profile_disabled",
+  "profile_planned",
+  "profile_mismatch",
   "invalid",
   "retry",
 ] as const;

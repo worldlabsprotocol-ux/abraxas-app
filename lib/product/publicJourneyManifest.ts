@@ -75,6 +75,12 @@ export const PUBLIC_JOURNEY_SURFACES = [
     file: "app/docs/trading-venue/page.tsx",
   },
   {
+    route: "/docs/trading-venue-profiles",
+    purpose: "Server-owned venue integration profiles. Preflight only. No partnership or execution.",
+    primaryCta: { label: "Trading venue adapter", href: "/docs/trading-venue" },
+    file: "app/docs/trading-venue-profiles/page.tsx",
+  },
+  {
     route: "/docs/payment-authorization",
     purpose: "Payment authorization preflight. Abraxas does not move money.",
     primaryCta: { label: "Checkout authorization example", href: "/examples/payment-authorization" },

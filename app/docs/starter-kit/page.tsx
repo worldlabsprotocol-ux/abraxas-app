@@ -66,6 +66,9 @@ export default function StarterKitDocsPage() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
           <Btn href="/developers/integration-studio" size="sm">Open Integration Studio →</Btn>
           <Btn href="/docs/partner-flow" variant="secondary" size="sm">Partner Flow docs →</Btn>
+          <Link href="/docs/trading-venue-profiles" style={{ alignSelf: "center", color: "var(--accent)", fontWeight: 700 }}>
+            Trading venue profiles
+          </Link>
           <Link href="/docs/multichain-mainnet-readiness" style={{ alignSelf: "center", color: "var(--accent)", fontWeight: 700 }}>
             Multi-chain Mainnet readiness
           </Link>

@@ -10,6 +10,7 @@ const adapter = new AbraxasTradingVenueAdapter({
   policyVersion: 1,
   requirePolicyVersion: true,
   environment: "sandbox",
+  venueProfileId: "generic_trading_venue",
 });
 
 export function startVenueCheck(returnUrl: string) {

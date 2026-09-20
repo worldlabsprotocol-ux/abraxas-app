@@ -136,6 +136,10 @@ export function assertNoSensitiveVenueClientKeys(payload: unknown): string[] {
     "trading_history",
     "order_id",
     "fill_id",
+    "rpc_url",
+    "hyperliquid api",
+    "account_id",
+    "position_id",
   ];
   for (const needle of needles) {
     if (blob.includes(needle)) leaks.push(needle);

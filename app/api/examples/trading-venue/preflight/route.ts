@@ -14,6 +14,7 @@ import {
   isVenueFixtureId,
   venueFixtureReceipt,
 } from "@/lib/partner/tradingVenue";
+import { rejectVenueProfileClientOverride } from "@/lib/partner/tradingVenue/profiles";
 
 export const dynamic = "force-dynamic";
 
@@ -27,34 +28,30 @@ function adapter(environment: "sandbox" | "production") {
 }
 
 export async function POST(req: NextRequest) {
-  const body = (await req.json().catch(() => ({}))) as {
-    fixture?: string;
-    action_type?: string;
-    action_scope?: string;
-    environment?: string;
-    replay_contract?: boolean;
-    contract?: {
-      partner_id?: string;
-      policy_id?: string;
-      policy_version?: number;
-      action_type?: string;
-      action_scope?: string;
-      expires_at?: string;
-      nonce?: string;
-      wallet_binding?: "not_attached";
-    };
-  };
+  const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+  if (rejectVenueProfileClientOverride(body)) {
+    return NextResponse.json({
+      allowed: false,
+      reason: "invalid",
+      action_binding: {
+        action_type: "rejected",
+        action_scope: "",
+        nonce_state: "rejected",
+        wallet_binding: "not_attached",
+      },
+      expires_at: null,
+    }, { status: 400 });
+  }
 
-  const environment = body.environment === "production" ? "production" : "sandbox";
-  const client = adapter(environment);
+  const client = adapter("sandbox");
   const issued = client.issueActionContract({
-    action_type: body.action_type ?? "enable_market_access",
-    action_scope: body.action_scope ?? "sandbox:market_access",
+    action_type: String(body.action_type ?? "enable_market_access"),
+    action_scope: String(body.action_scope ?? "sandbox:market_access"),
   });
   if ("ok" in issued) {
     return NextResponse.json({
       allowed: false,
-      reason: "action_mismatch",
+      reason: issued.reason,
       action_binding: {
         action_type: "rejected",
         action_scope: String(body.action_scope ?? ""),
@@ -65,20 +62,23 @@ export async function POST(req: NextRequest) {
     }, { status: 400 });
   }
 
-  const contract = body.contract && body.contract.nonce
+  const contractInput = body.contract && typeof body.contract === "object" && !Array.isArray(body.contract)
+    ? body.contract as Record<string, unknown>
+    : null;
+  const contract = contractInput && contractInput.nonce
     ? {
-      partner_id: String(body.contract.partner_id ?? issued.partner_id),
-      policy_id: String(body.contract.policy_id ?? issued.policy_id),
-      policy_version: Number(body.contract.policy_version ?? issued.policy_version),
-      action_type: (body.contract.action_type ?? issued.action_type) as typeof issued.action_type,
-      action_scope: (body.contract.action_scope ?? issued.action_scope) as typeof issued.action_scope,
-      expires_at: String(body.contract.expires_at ?? issued.expires_at),
-      nonce: String(body.contract.nonce),
+      partner_id: String(contractInput.partner_id ?? issued.partner_id),
+      policy_id: String(contractInput.policy_id ?? issued.policy_id),
+      policy_version: Number(contractInput.policy_version ?? issued.policy_version),
+      action_type: (contractInput.action_type ?? issued.action_type) as typeof issued.action_type,
+      action_scope: (contractInput.action_scope ?? issued.action_scope) as typeof issued.action_scope,
+      expires_at: String(contractInput.expires_at ?? issued.expires_at),
+      nonce: String(contractInput.nonce),
       wallet_binding: "not_attached" as const,
     }
     : issued;
 
-  if (!body.fixture || !isVenueFixtureId(body.fixture)) {
+  if (!body.fixture || !isVenueFixtureId(String(body.fixture))) {
     return NextResponse.json({
       allowed: false,
       reason: "invalid",
@@ -92,15 +92,20 @@ export async function POST(req: NextRequest) {
     }, { status: 400 });
   }
 
-  const result = client.evaluateFetchedReceipt(venueFixtureReceipt(body.fixture));
+  const result = client.evaluateFetchedReceipt(venueFixtureReceipt(String(body.fixture)));
   const first = await client.preflight({
     result,
     contract,
-    action_type: body.action_type,
-    action_scope: body.action_scope,
+    action_type: typeof body.action_type === "string" ? body.action_type : undefined,
+    action_scope: typeof body.action_scope === "string" ? body.action_scope : undefined,
   });
   const visible = body.replay_contract
-    ? await client.preflight({ result, contract, action_type: body.action_type, action_scope: body.action_scope })
+    ? await client.preflight({
+      result,
+      contract,
+      action_type: typeof body.action_type === "string" ? body.action_type : undefined,
+      action_scope: typeof body.action_scope === "string" ? body.action_scope : undefined,
+    })
     : first;
   if (assertNoSensitiveVenueClientKeys(visible).length > 0) {
     return NextResponse.json({

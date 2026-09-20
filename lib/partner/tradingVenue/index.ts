@@ -54,4 +54,17 @@ export {
   TRADING_VENUE_ARCHITECTURE_DIAGRAM,
 } from "@/lib/partner/tradingVenue/examples";
 
+export {
+  VENUE_PROFILE_REGISTRY,
+  VENUE_PROFILE_NEXT_STEPS,
+  VENUE_PROFILE_NO_PARTNERSHIP,
+  VENUE_PROFILE_PREFLIGHT_ONLY,
+  VENUE_MAINNET_EXTERNAL_REQUIREMENTS,
+  getVenueProfile,
+  selectableSandboxVenueProfiles,
+  publicVenueProfileMatrix,
+  tradingVenueProfileExample,
+  VENUE_PROFILE_ARCHITECTURE,
+} from "@/lib/partner/tradingVenue/profiles";
+
 export { resetTradingVenueNonceStoreForTests } from "@/lib/partner/tradingVenue/nonceStore";
