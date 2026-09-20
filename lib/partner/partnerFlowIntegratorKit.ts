@@ -92,7 +92,7 @@ export const PARTNER_FLOW_CALLBACK_PII_NOTE =
   "Callback query parameters contain no PII, no legal name, DOB, document numbers, images, or wallet address. Verify eligibility via the signed receipt, not the URL alone.";
 
 export const PARTNER_FLOW_RECEIPT_CHECKS = [
-  { check: "signature_valid === true", why: "Ed25519 signature over canonical payload_hash" },
+  { check: "signature_valid === true", why: "Ed25519 signature over canonical payload_hash; key ID resolved by Abraxas, not the client" },
   { check: "decision_result === \"approved\"", why: "Fail closed on denied or manual_review" },
   { check: "status === \"active\"", why: "Reject expired, revoked, or unknown receipt state" },
   { check: "expires_at present, valid, and not passed", why: "Session receipt TTL; re-verify at settlement time" },
@@ -130,6 +130,7 @@ export const PARTNER_FLOW_AUTH_BOUNDARY = {
   ],
   publicNoAuth: [
     "GET /api/receipts/{receipt_id}/public",
+    "GET /api/receipts/verification-keys",
     "GET /api/credentials/public-key",
   ],
 } as const;

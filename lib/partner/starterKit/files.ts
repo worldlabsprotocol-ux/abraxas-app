@@ -89,7 +89,7 @@ ${STARTER_KIT_NOTICES.google}
 5. Grant only when \`permitProtocolAction\` is true and the receipt is currently valid.
 
 ## Receipt verification
-Fetch \`GET /api/receipts/{id}/public\` through AbraxasPartnerKit. Re-check live validity before every grant. Denied, expired, revoked, wrong-partner, and wrong-policy outcomes fail closed.
+Fetch \`GET /api/receipts/{id}/public\` through AbraxasPartnerKit. Re-check live validity before every grant. Denied, expired, revoked, wrong-partner, and wrong-policy outcomes fail closed. Optional: \`GET /api/receipts/verification-keys\` for public Ed25519 material. Signature verification is not a grant. Never store private signing keys.
 
 ## Trading and payment
 Preflight authorization only. An allowed result is not a trade, charge, transfer, or settlement.

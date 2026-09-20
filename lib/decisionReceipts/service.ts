@@ -6,20 +6,19 @@ import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { appendAuditEvent } from "@/lib/verification/audit";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 import { buildCanonicalPayload } from "@/lib/decisionReceipts/canonical";
-import {
-  loadReceiptSigningKey,
-  signReceiptPayload,
-} from "@/lib/decisionReceipts/signing";
+import { signReceiptPayload } from "@/lib/decisionReceipts/signing";
+import { resolveIssuanceSigningKey } from "@/lib/decisionReceipts/verificationKeyLifecycle";
 import { recordReceiptClaimDependencies } from "@/lib/decisionReceipts/dependencies";
 import { subjectPseudonymId } from "@/lib/decisionReceipts/pseudonym";
 import { toPartnerView, toPublicView } from "@/lib/decisionReceipts/views";
 import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver";
 import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation";
 import { buildPublicReceiptWithLiveTrust } from "@/lib/decisionReceipts/publicReceiptLiveTrust";
-import type {
-  DecisionReceiptContext,
-  DecisionReceiptRecord,
-  IssueDecisionReceiptInput,
+import {
+  DECISION_RECEIPT_SCHEMA_VERSION,
+  type DecisionReceiptContext,
+  type DecisionReceiptRecord,
+  type IssueDecisionReceiptInput,
 } from "@/lib/decisionReceipts/types";
 
 function generateReceiptId(): string {
@@ -106,9 +105,11 @@ export async function issueDecisionReceipt(
     if (byKey) return mapRow(byKey as Record<string, unknown>);
   }
 
-  const signingKey = loadReceiptSigningKey();
-  if (!signingKey) {
-    throw new Error("ABRAXAS_SIGNING_KEY not configured");
+  const signingKey = resolveIssuanceSigningKey({
+    schemaVersion: DECISION_RECEIPT_SCHEMA_VERSION,
+  });
+  if (!signingKey.ok) {
+    throw new Error("receipt_signing_unavailable");
   }
 
   const decisionContext: DecisionReceiptContext =
@@ -161,7 +162,7 @@ export async function issueDecisionReceipt(
     schema_version: canonical.schema_version,
     payload_hash: payloadHash,
     signature,
-    signing_key_id: signingKey.signingKeyId,
+    signing_key_id: signingKey.key_id,
     anchor_reference: input.anchorReference ?? null,
     idempotency_key: input.idempotencyKey ?? input.verificationDecisionId,
   }).select("*").single();

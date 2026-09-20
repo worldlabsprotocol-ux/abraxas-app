@@ -101,7 +101,7 @@ export function verifyReceiptSignature(
 }
 
 /** Generate ephemeral Ed25519 key pair for tests */
-export function generateTestSigningKeyPair(): ReceiptSigningKeyPair {
+export function generateTestSigningKeyPair(signingKeyId = getReceiptSigningKeyId()): ReceiptSigningKeyPair {
   const keyPair = nacl.sign.keyPair();
   const privateKeyJwk: JsonWebKey = {
     kty: "OKP",
@@ -115,7 +115,7 @@ export function generateTestSigningKeyPair(): ReceiptSigningKeyPair {
     x: base64UrlEncode(keyPair.publicKey),
   };
   return {
-    signingKeyId: "test-signing-key",
+    signingKeyId,
     privateKeyJwk,
     publicKeyJwk,
   };

@@ -2,13 +2,11 @@
 // Public and partner-safe receipt views.
 
 import type {
-  DecisionReceiptCanonicalPayload,
   DecisionReceiptPartnerView,
   DecisionReceiptPublicView,
   DecisionReceiptRecord,
 } from "@/lib/decisionReceipts/types";
-import { buildCanonicalPayload } from "@/lib/decisionReceipts/canonical";
-import { verifyReceiptSignature, loadReceiptVerificationKey } from "@/lib/decisionReceipts/signing";
+import { verifyRecordSignatureWithRegistry } from "@/lib/decisionReceipts/verificationKeyLifecycle";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 import { pickAllowedKeys } from "@/lib/privacy/selectiveDisclosure";
 import { SHARED_SURFACE_FIELDS } from "@/lib/privacy/selectiveDisclosure/contract";
@@ -27,32 +25,8 @@ export function isReceiptCurrentlyValid(record: DecisionReceiptRecord): boolean 
   return true;
 }
 
-function toCanonical(record: DecisionReceiptRecord): DecisionReceiptCanonicalPayload {
-  return buildCanonicalPayload({
-    receipt_id: record.id,
-    schema_version: record.schema_version,
-    decision_id: record.verification_decision_id,
-    policy_id: record.policy_id,
-    policy_version: record.policy_version,
-    partner_id: record.partner_id,
-    subject_pseudonym_id: record.subject_pseudonym_id,
-    wallet_binding_ref: record.wallet_binding_ref,
-    consent_receipt_id: record.consent_receipt_id,
-    decision_result: record.decision_result,
-    reason_codes: record.reason_codes,
-    evaluated_claim_refs: record.evaluated_claim_refs,
-    issuer_refs: record.issuer_refs,
-    decision_context: record.decision_context,
-    evaluated_at: record.evaluated_at,
-    expires_at: record.expires_at,
-  });
-}
-
 export function verifyRecordSignature(record: DecisionReceiptRecord): boolean {
-  const publicKey = loadReceiptVerificationKey();
-  if (!publicKey) return false;
-  const payload = toCanonical(record);
-  return verifyReceiptSignature(payload, record.signature, publicKey);
+  return verifyRecordSignatureWithRegistry(record);
 }
 
 export function toPublicView(record: DecisionReceiptRecord): DecisionReceiptPublicView {
