@@ -50,6 +50,9 @@ export const SELECTIVE_DISCLOSURE_CLIENT_OVERRIDE_KEYS = [
   "approval",
   "activate_production",
   "issue_production_key",
+  "fact_id",
+  "source_receipt_id",
+  "source_partner_id",
 ] as const;
 
 export const HOLDER_BRIEF_ALLOWED_FIELDS = [

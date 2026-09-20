@@ -19,6 +19,11 @@ import {
   type EligibilityMethodId,
 } from "@/lib/partner/eligibilityMethods";
 import { GOOGLE_ACCOUNT_NOT_ELIGIBILITY } from "@/lib/partner/launchpad/policyPacks";
+import {
+  REUSE_CONFIRM_POINTS,
+  REUSE_LABEL,
+  type ReuseClientView,
+} from "@/lib/passport/reusableEligibility/contract";
 
 export interface AgeAssuranceMethodChooserProps {
   partnerId: string;
@@ -66,6 +71,7 @@ export function AgeAssuranceMethodChooser({
   const [loading, setLoading] = useState(true);
   const [providers, setProviders] = useState<AgeAssuranceProviderPublicMeta[]>([]);
   const [existingEligible, setExistingEligible] = useState(false);
+  const [reuseView, setReuseView] = useState<ReuseClientView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [selectedMethodId, setSelectedMethodId] = useState<EligibilityMethodId | null>(null);
@@ -123,41 +129,67 @@ export function AgeAssuranceMethodChooser({
         return;
       }
       setProviders(data.providers ?? []);
-      setExistingEligible(Boolean(data.existing_proof?.eligible_for_reuse));
+      let reuseAvailable = false;
+      if (verifyRequestId) {
+        const reuseRes = await fetch(
+          `/api/v1/partner-verify/method-qualification?verify_request=${encodeURIComponent(verifyRequestId)}`,
+          { credentials: "include" },
+        );
+        const reuseBody = await reuseRes.json().catch(() => ({})) as { reuse?: ReuseClientView };
+        if (reuseBody.reuse) setReuseView(reuseBody.reuse);
+        reuseAvailable = reuseBody.reuse?.available === true;
+      }
+      setExistingEligible(reuseAvailable);
     } catch {
       setError("Could not load verification options.");
     } finally {
       setLoading(false);
     }
-  }, [partnerId, policyId, threshold]);
+  }, [partnerId, policyId, threshold, verifyRequestId]);
 
   useEffect(() => {
     void loadProviders();
   }, [loadProviders]);
 
   async function reuseExistingProof() {
+    if (!verifyRequestId) {
+      setError("This verification session is missing. Start again from the partner.");
+      return;
+    }
     setBusy("reuse");
     setError(null);
     try {
-      const res = await fetch("/api/age-assurance/reuse", {
+      const res = await fetch("/api/v1/partner-verify/method-qualification", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         credentials: "include",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          partner_id: partnerId,
-          policy_id: policyId,
-          return_url: returnUrl,
-          verification_request_id: verifyRequestId ?? undefined,
+          verify_request: verifyRequestId,
+          method_id: "reuse_existing_proof",
         }),
       });
-      const data = await res.json() as { ok?: boolean; redirect_url?: string; error?: string };
-      if (res.ok && data.redirect_url) {
-        window.location.href = data.redirect_url;
+      const data = await res.json() as {
+        method_qualified?: boolean;
+        issuedReceipt?: boolean;
+        error?: string;
+        code?: string;
+      };
+      if (data.issuedReceipt === true) {
+        setError("Selecting reuse does not issue a result. Consent is still required.");
+        onMethodQualified?.(false);
         return;
       }
-      setError(data.error ?? "Could not reuse existing proof.");
+      if (!res.ok || data.method_qualified !== true) {
+        onMethodQualified?.(false);
+        setError(data.error ?? "No compatible private verification is available for this request.");
+        return;
+      }
+      setSelectedMethodId("reuse_existing_proof");
+      setMethodQualified(true);
+      onMethodQualified?.(true);
     } catch {
-      setError("Could not reuse existing proof.");
+      setError("Could not use the existing private verification. Try another method.");
+      onMethodQualified?.(false);
     } finally {
       setBusy(null);
     }
@@ -268,9 +300,16 @@ export function AgeAssuranceMethodChooser({
         )}
 
         {existingEligible && (
-          <Btn disabled={busy !== null} onClick={() => void reuseExistingProof()}>
-            {busy === "reuse" ? "Confirming…" : "Use my existing compatible proof"}
-          </Btn>
+          <div>
+            <ul style={{ margin: "0 0 0.75rem", paddingLeft: "1.1rem", fontSize: "0.85rem", lineHeight: 1.55 }}>
+              {(reuseView?.explanation?.length ? reuseView.explanation : REUSE_CONFIRM_POINTS).map((point) => (
+                <li key={point}>{point}</li>
+              ))}
+            </ul>
+            <Btn disabled={busy !== null} onClick={() => void reuseExistingProof()}>
+              {busy === "reuse" ? "Confirming…" : REUSE_LABEL}
+            </Btn>
+          </div>
         )}
 
         {!existingEligible && primaryProvider && (

@@ -9,6 +9,7 @@ import {
 import { resolvePartnerDisplayName, resolvePartnerHomeUrl } from "@/lib/partner/partnerVerifyDisplay";
 import { applyDisclosureProfile, resolveDisclosureProfile } from "@/lib/privacy/selectiveDisclosure";
 import { GENERIC_MINIMAL_PROFILE } from "@/lib/privacy/selectiveDisclosure/profiles";
+import { REUSE_PASSPORT_NOTICE } from "@/lib/passport/reusableEligibility/contract";
 import {
   PASSPORT_ACTIVITY_DOCS,
   PASSPORT_ACTIVITY_LIMIT,
@@ -139,6 +140,7 @@ export function buildPassportActivityItem(
     current: state === "approved" || state === "sandbox_only",
     recovery: recoveryFor(state),
     partner_entry_href: partnerHref,
+    reuse_consent_notice: (state === "approved" || state === "sandbox_only") ? REUSE_PASSPORT_NOTICE : null,
   };
   const profile = pack ? resolveDisclosureProfile(pack.id) : { ok: false as const, reason: "disclosure_unavailable" as const };
   const sealed = applyDisclosureProfile(

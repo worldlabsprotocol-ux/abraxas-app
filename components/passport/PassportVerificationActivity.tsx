@@ -235,6 +235,11 @@ function ActivityCard({
       <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0.25rem 0 0", lineHeight: 1.55 }}>
         {item.evidence_not_shared}
       </p>
+      {item.reuse_consent_notice && (
+        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0.25rem 0 0", lineHeight: 1.55 }}>
+          {item.reuse_consent_notice}
+        </p>
+      )}
       {item.sandbox_only && (
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "#A5B4FC", margin: "0.25rem 0 0", lineHeight: 1.55 }}>
           Sandbox-only. This result is not usable in Production.

@@ -266,7 +266,10 @@ describe("holder receipt withdrawal", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.view.already_withdrawn).toBe(true);
-    expect(rpcMock).not.toHaveBeenCalled();
+    expect(rpcMock).not.toHaveBeenCalledWith("revoke_decision_receipt_atomic", expect.anything());
+    expect(rpcMock).toHaveBeenCalledWith("revoke_derived_receipts_for_source", expect.objectContaining({
+      p_source_receipt_id: RECEIPT_ID,
+    }));
   });
 
   it("does not withdraw another holder's result", async () => {
