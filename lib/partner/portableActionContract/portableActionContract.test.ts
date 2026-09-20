@@ -15,7 +15,9 @@ import {
   PORTABLE_ACTION_CLIENT_VISIBLE_KEYS,
   PORTABLE_ACTION_NOT_EXECUTION,
   assertNoSensitivePortableClientKeys,
+  portableReasonFromOutcome,
 } from "@/lib/partner/portableActionContract";
+import { PARTNER_INTEGRATION_OUTCOMES } from "@/lib/partner/integrationKit/contract";
 import { venueFixtureReceipt, VENUE_REF_PARTNER_ID, VENUE_REF_POLICY_ID } from "@/lib/partner/tradingVenue";
 import { issueWalletStandardChallenge } from "@/lib/partner/walletStandard/challenge";
 import { bindWalletStandard } from "@/lib/partner/walletStandard/bind";
@@ -176,6 +178,34 @@ describe("Portable partner action contract", () => {
     expect(ok.allowed).toBe(true);
     expect(ok.action_binding.wallet_binding).toBe("bound");
     expect(JSON.stringify(ok)).not.toContain(signed.publicKey);
+  });
+
+  it("maps every PartnerIntegrationOutcome to a portable safe reason", () => {
+    const expected: Record<(typeof PARTNER_INTEGRATION_OUTCOMES)[number], ReturnType<typeof portableReasonFromOutcome>> = {
+      permitted: "permitted",
+      denied: "policy_denied",
+      expired: "receipt_expired",
+      revoked: "receipt_revoked",
+      wrong_partner: "partner_mismatch",
+      wrong_policy: "policy_mismatch",
+      wrong_policy_version: "policy_mismatch",
+      policy_version_missing: "policy_mismatch",
+      policy_version_unknown: "policy_mismatch",
+      policy_version_draft: "policy_mismatch",
+      policy_version_deprecated: "policy_mismatch",
+      policy_version_not_yet_effective: "policy_mismatch",
+      policy_version_not_adopted: "policy_mismatch",
+      invalid_signature: "invalid",
+      environment_mismatch: "environment_mismatch",
+      invalid: "invalid",
+      retry: "retry",
+    };
+    expect(Object.keys(expected).sort()).toEqual([...PARTNER_INTEGRATION_OUTCOMES].sort());
+    for (const outcome of PARTNER_INTEGRATION_OUTCOMES) {
+      expect(portableReasonFromOutcome(outcome)).toBe(expected[outcome]);
+    }
+    const contractSrc = readFileSync(join(__dirname, "../integrationKit/contract.ts"), "utf8");
+    expect(contractSrc).not.toMatch(/portableActionContract/);
   });
 
   it("rejects sandbox/production boundary, extra keys, and production activation fields", async () => {

@@ -50,7 +50,8 @@ export function portableReasonFromOutcome(outcome: PartnerIntegrationOutcome): P
       return "environment_mismatch";
     case "retry":
       return "retry";
-    default:
+    case "invalid_signature":
+    case "invalid":
       return "invalid";
   }
 }
