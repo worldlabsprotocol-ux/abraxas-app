@@ -76,10 +76,10 @@ function resultExpands(fact: CompatibilityFactSnapshot, target: CompatibilityTar
 }
 
 function disclosureExpands(fact: CompatibilityFactSnapshot, target: CompatibilityTargetSnapshot): boolean {
-  const sourceWithheld = new Set(fact.disclosure_boundary.split("|")[1]?.split(",").filter(Boolean) ?? []);
+  const sourceWithheld = fact.disclosure_boundary.split("|")[1]?.split(",").filter(Boolean) ?? [];
   const targetWithheld = new Set(target.disclosure_boundary.split("|")[1]?.split(",").filter(Boolean) ?? []);
-  for (const item of sourceWithheld) {
-    if (!targetWithheld.has(item)) return true;
+  for (let i = 0; i < sourceWithheld.length; i += 1) {
+    if (!targetWithheld.has(sourceWithheld[i])) return true;
   }
   const sourceResult = fact.disclosure_boundary.split("|")[0];
   const targetResult = target.disclosure_boundary.split("|")[0];
