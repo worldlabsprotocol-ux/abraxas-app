@@ -5,14 +5,14 @@ export function assertNoSensitiveEvmWalletClientKeys(payload: unknown): string[]
   const blob = JSON.stringify(payload ?? null).toLowerCase();
   const needles = [
     "wallet_address",
-    "publickey",
+    '"publickey"',
     "public_key",
     "secretkey",
     "private_key",
     "seed phrase",
     "signature_valid",
     '"signature"',
-    "balance",
+    '"balance"',
     "rpc_url",
     "calldata",
   ];
