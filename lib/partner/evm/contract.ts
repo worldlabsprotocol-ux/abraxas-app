@@ -99,7 +99,7 @@ export const EVM_NO_EXECUTION_BOUNDARY =
   "Allowed is never a transaction approval, signature, gas authorization, transfer, or execution. The partner backend retains its own RPC, signer, contract, gas, transaction construction, and execution.";
 
 export const EVM_WALLET_BINDING_OUT_OF_SCOPE =
-  "EVM wallet binding is out of scope. Do not reuse Solana Wallet Standard assumptions. Wallet fields from the client are rejected.";
+  "Optional EVM wallet-control proves message-signed control for one named action. It is not Solana Wallet Standard, login, KYC, custody, a balance read, or transaction signing. Client wallet fields remain rejected.";
 
 export const EVM_PRIVACY_CONTRACT = [
   PARTNER_INTEGRATION_GOOGLE_BOUNDARY,
@@ -121,7 +121,7 @@ export interface EvmPartnerActionContract extends Omit<
 > {
   action_type: EvmPartnerActionType;
   action_scope: EvmPartnerActionScope;
-  wallet_binding?: "not_attached";
+  wallet_binding?: PortableActionContract["wallet_binding"];
   receipt_requirement?: PortableActionContract["receipt_requirement"];
   issued_at?: string;
   environment?: PortableActionContract["environment"];
@@ -131,7 +131,7 @@ export interface EvmPartnerActionBinding {
   action_type: EvmPartnerActionType | "rejected";
   action_scope: string;
   nonce_state: "issued" | "consumed" | "replayed" | "rejected";
-  wallet_binding: "not_attached" | "unsupported";
+  wallet_binding: PortableActionContract["wallet_binding"] | "bound" | "missing" | "expired" | "mismatched" | "replayed" | "cross_partner" | "unsupported";
 }
 
 export const EVM_LIVE_INTEGRATION_REQUIREMENTS = [
@@ -146,5 +146,5 @@ export const EVM_LIVE_INTEGRATION_REQUIREMENTS = [
   "Reject arbitrary contract methods, calldata, chain IDs, recipient addresses, token amounts, transaction payloads, and wallet fields.",
   "EVM Mainnet stays unavailable until reviewed Production access, a supported action, a current receipt, durable replay, and a partner-owned EVM execution integration exist.",
   "Do not claim any specific EVM chain, RPC, wallet, protocol, or Mainnet deployment is live.",
-  "Do not connect a browser wallet or reuse Solana Wallet Standard assumptions.",
+  "Optional EVM wallet-control is an EIP-191 personal_sign proof for one action. It is not login, KYC, custody, a balance read, or transaction approval.",
 ] as const;

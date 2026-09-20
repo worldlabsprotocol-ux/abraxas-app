@@ -94,7 +94,7 @@ export default function EvmPartnerAdapterDocsPage() {
           {" · "}
           Portable contract: <Link href="/docs/portable-action-contract">Portable action contract</Link>
           {" · "}
-          Networks: <Link href="/docs/multichain-mainnet-readiness">Mainnet readiness</Link>
+          Wallet control: <Link href="/docs/evm-wallet-binding">EVM wallet-control binding</Link>
         </p>
       </ContentCard>
 

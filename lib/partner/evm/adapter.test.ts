@@ -217,7 +217,7 @@ describe("Abraxas EVM partner eligibility adapter", () => {
     expect(adapter().submitsTransactions).toBe(false);
     expect(EVM_NO_EXECUTION_BOUNDARY.toLowerCase()).toContain("never a transaction approval");
     expect(EVM_NOT_A_CHAIN_PRODUCT.toLowerCase()).toContain("not a wallet");
-    expect(EVM_WALLET_BINDING_OUT_OF_SCOPE.toLowerCase()).toContain("out of scope");
+    expect(EVM_WALLET_BINDING_OUT_OF_SCOPE.toLowerCase()).toContain("message-signed");
     expect(EVM_LIVE_INTEGRATION_REQUIREMENTS.join(" ")).toContain("partner-owned EVM execution");
   });
 

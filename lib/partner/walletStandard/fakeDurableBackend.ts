@@ -31,11 +31,44 @@ type NonceRow = {
   consumed_at: string;
 };
 
+type EvmChallengeRow = {
+  challenge_id: string;
+  partner_id: string;
+  origin_hash: string;
+  policy_hash: string;
+  action_hash: string;
+  network_hash: string;
+  action_contract_nonce_hash: string;
+  nonce_hash: string;
+  message_hash: string;
+  expires_at: string;
+  consumed_at: string | null;
+  revoked_at: string | null;
+  reason_class: string;
+};
+
+type EvmBindingRow = {
+  binding_ref: string;
+  partner_id: string;
+  address_hash: string;
+  origin_hash: string;
+  policy_hash: string;
+  action_hash: string;
+  network_hash: string;
+  action_contract_nonce_hash: string;
+  expires_at: string;
+  consumed_at: string | null;
+  revoked_at: string | null;
+  reason_class: string;
+};
+
 export type FakeWalletInsert = { table: string; row: Record<string, unknown> };
 
 const challenges = new Map<string, ChallengeRow>();
 const bindings = new Map<string, BindingRow>();
 const nonces = new Map<string, NonceRow>();
+const evmChallenges = new Map<string, EvmChallengeRow>();
+const evmBindings = new Map<string, EvmBindingRow>();
 export const fakeWalletInserts: FakeWalletInsert[] = [];
 export let fakeWalletSchemaMissing = false;
 export let fakeWalletAdminMissing = false;
@@ -44,6 +77,8 @@ export function resetFakeWalletStandardBackend(): void {
   challenges.clear();
   bindings.clear();
   nonces.clear();
+  evmChallenges.clear();
+  evmBindings.clear();
   fakeWalletInserts.length = 0;
   fakeWalletSchemaMissing = false;
   fakeWalletAdminMissing = false;
@@ -152,6 +187,82 @@ function revokeBinding(bindingRef: string, partnerId: string) {
   return { data: { ok: true, code: "revoked" }, error: null };
 }
 
+function insertEvmChallenge(row: EvmChallengeRow): { error: { code?: string; message?: string } | null } {
+  if (fakeWalletSchemaMissing) return { error: schemaError() };
+  for (const existing of Array.from(evmChallenges.values())) {
+    if (existing.challenge_id === row.challenge_id) return { error: uniqueError() };
+    if (existing.partner_id === row.partner_id && existing.nonce_hash === row.nonce_hash) return { error: uniqueError() };
+    if (existing.partner_id === row.partner_id && existing.message_hash === row.message_hash) return { error: uniqueError() };
+  }
+  evmChallenges.set(row.challenge_id, { ...row, consumed_at: null, revoked_at: null });
+  fakeWalletInserts.push({ table: "evm_wallet_challenges", row: { ...row } });
+  return { error: null };
+}
+
+function insertEvmBinding(row: EvmBindingRow): { error: { code?: string; message?: string } | null } {
+  if (fakeWalletSchemaMissing) return { error: schemaError() };
+  for (const existing of Array.from(evmBindings.values())) {
+    if (existing.binding_ref === row.binding_ref) return { error: uniqueError() };
+    if (
+      existing.partner_id === row.partner_id
+      && existing.action_contract_nonce_hash === row.action_contract_nonce_hash
+      && existing.address_hash === row.address_hash
+    ) {
+      return { error: uniqueError() };
+    }
+  }
+  evmBindings.set(row.binding_ref, { ...row, consumed_at: null, revoked_at: null });
+  fakeWalletInserts.push({ table: "evm_wallet_bindings", row: { ...row } });
+  return { error: null };
+}
+
+function consumeEvmChallenge(challengeId: string, partnerId: string) {
+  if (fakeWalletSchemaMissing) return { data: null, error: schemaError() };
+  const row = evmChallenges.get(challengeId);
+  if (!row || row.partner_id !== partnerId) return { data: { ok: false, code: "missing" }, error: null };
+  if (row.consumed_at) return { data: { ok: false, code: "replayed" }, error: null };
+  if (row.revoked_at) return { data: { ok: false, code: "revoked" }, error: null };
+  if (isExpired(row.expires_at)) return { data: { ok: false, code: "expired" }, error: null };
+  row.consumed_at = nowIso();
+  row.reason_class = "consumed";
+  return {
+    data: {
+      ok: true,
+      code: "consumed",
+      expires_at: row.expires_at,
+      origin_hash: row.origin_hash,
+      policy_hash: row.policy_hash,
+      action_hash: row.action_hash,
+      network_hash: row.network_hash,
+      action_contract_nonce_hash: row.action_contract_nonce_hash,
+      message_hash: row.message_hash,
+    },
+    error: null,
+  };
+}
+
+function consumeEvmBinding(bindingRef: string, partnerId: string) {
+  if (fakeWalletSchemaMissing) return { data: null, error: schemaError() };
+  const row = evmBindings.get(bindingRef);
+  if (!row || row.partner_id !== partnerId) return { data: { ok: false, code: "missing" }, error: null };
+  if (row.consumed_at) return { data: { ok: false, code: "replayed" }, error: null };
+  if (row.revoked_at) return { data: { ok: false, code: "revoked" }, error: null };
+  if (isExpired(row.expires_at)) return { data: { ok: false, code: "expired" }, error: null };
+  row.consumed_at = nowIso();
+  row.reason_class = "consumed";
+  return { data: { ok: true, code: "consumed", expires_at: row.expires_at }, error: null };
+}
+
+function revokeEvmBinding(bindingRef: string, partnerId: string) {
+  if (fakeWalletSchemaMissing) return { data: null, error: schemaError() };
+  const row = evmBindings.get(bindingRef);
+  if (!row || row.partner_id !== partnerId) return { data: { ok: false, code: "missing" }, error: null };
+  if (row.revoked_at) return { data: { ok: false, code: "missing" }, error: null };
+  row.revoked_at = nowIso();
+  row.reason_class = "revoked";
+  return { data: { ok: true, code: "revoked" }, error: null };
+}
+
 function consumeNonce(partnerId: string, nonceHash: string, expiresAt: string) {
   if (fakeWalletSchemaMissing) return { data: null, error: schemaError() };
   if (isExpired(expiresAt)) return { data: { ok: false, code: "expired" }, error: null };
@@ -170,6 +281,8 @@ function tableRows(table: string): Array<Record<string, unknown>> {
   if (table === "wallet_standard_challenges") return Array.from(challenges.values());
   if (table === "wallet_standard_bindings") return Array.from(bindings.values());
   if (table === "partner_venue_action_nonces") return Array.from(nonces.values());
+  if (table === "evm_wallet_challenges") return Array.from(evmChallenges.values());
+  if (table === "evm_wallet_bindings") return Array.from(evmBindings.values());
   return [];
 }
 
@@ -188,6 +301,12 @@ export function createWalletStandardAdminClient() {
           }
           if (table === "partner_venue_action_nonces") {
             return Promise.resolve(insertNonce(payload as unknown as NonceRow));
+          }
+          if (table === "evm_wallet_challenges") {
+            return Promise.resolve(insertEvmChallenge(payload as EvmChallengeRow));
+          }
+          if (table === "evm_wallet_bindings") {
+            return Promise.resolve(insertEvmBinding(payload as EvmBindingRow));
           }
           return Promise.resolve({ error: schemaError() });
         },
@@ -217,6 +336,15 @@ export function createWalletStandardAdminClient() {
       }
       if (name === "venue_consume_action_nonce") {
         return Promise.resolve(consumeNonce(args.p_partner_id, args.p_nonce_hash, args.p_expires_at));
+      }
+      if (name === "evm_wallet_consume_challenge") {
+        return Promise.resolve(consumeEvmChallenge(args.p_challenge_id, args.p_partner_id));
+      }
+      if (name === "evm_wallet_consume_binding") {
+        return Promise.resolve(consumeEvmBinding(args.p_binding_ref, args.p_partner_id));
+      }
+      if (name === "evm_wallet_revoke_binding") {
+        return Promise.resolve(revokeEvmBinding(args.p_binding_ref, args.p_partner_id));
       }
       return Promise.resolve({ data: null, error: { message: "Could not find the function" } });
     },

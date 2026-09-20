@@ -27,6 +27,7 @@ import {
 } from "@/lib/partner/evm/clientVisible";
 import { issuePortableActionContract } from "@/lib/partner/portableActionContract/issue";
 import { preflightPortableAction } from "@/lib/partner/portableActionContract/preflight";
+import { isPortableWalletBindingMode } from "@/lib/partner/portableActionContract/contract";
 import { pickAllowedKeys } from "@/lib/privacy/selectiveDisclosure";
 import { rejectNetworkClientOverride } from "@/lib/partner/networkCapability/clientOverride";
 
@@ -37,6 +38,7 @@ export interface EvmPartnerPreflightInput {
   contract: EvmPartnerActionContract;
   action_type?: string;
   action_scope?: string;
+  binding_ref?: string | null;
 }
 
 export class AbraxasEvmPartnerAdapter {
@@ -72,6 +74,7 @@ export class AbraxasEvmPartnerAdapter {
     ttlMs?: number;
     now?: Date;
     network_id?: string;
+    wallet_binding?: string;
   }): EvmPartnerActionContract | { ok: false; reason: "action_mismatch" } {
     if (input && hasEvmExecutionOverride(input)) {
       return { ok: false, reason: "action_mismatch" };
@@ -87,13 +90,17 @@ export class AbraxasEvmPartnerAdapter {
     if (EVM_PARTNER_TYPE_SCOPES[actionType] !== actionScope) {
       return { ok: false, reason: "action_mismatch" };
     }
+    const walletBinding = input?.wallet_binding ?? "not_attached";
+    if (!isPortableWalletBindingMode(walletBinding)) {
+      return { ok: false, reason: "action_mismatch" };
+    }
     const networkId = input?.network_id
       ?? (this.kit.options.environment === "sandbox" ? "evm_sandbox" : "evm_mainnet");
     const issued = issuePortableActionContract({
       kit: this.kit,
       action_type: actionType,
       action_scope: actionScope,
-      wallet_binding: "not_attached",
+      wallet_binding: walletBinding,
       ttlMs: input?.ttlMs,
       now: input?.now,
       network_id: networkId,
@@ -117,12 +124,10 @@ export class AbraxasEvmPartnerAdapter {
     const result = await preflightPortableAction({
       kit: this.kit,
       result: input.result,
-      contract: {
-        ...input.contract,
-        wallet_binding: "not_attached",
-      },
+      contract: input.contract,
       action_type: requestedType,
       action_scope: requestedScope,
+      binding_ref: input.binding_ref,
     });
     const mapped = toEvmClient(result);
     return (pickAllowedKeys(mapped, EVM_PARTNER_CLIENT_VISIBLE_KEYS) ?? mapped) as unknown as EvmPartnerClientVisibleResult;

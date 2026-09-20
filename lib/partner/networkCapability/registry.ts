@@ -71,9 +71,9 @@ export const NETWORK_CAPABILITY_REGISTRY: readonly NetworkCapabilityEntry[] = [
     environment: "sandbox",
     status: "configured",
     supported_actions: ["enable_protocol_access", "enable_member_access", "enable_redemption_access"],
-    wallet_binding: "unsupported",
+    wallet_binding: "optional",
     display_label: "EVM partner eligibility (sandbox)",
-    docs_href: "/docs/evm-partner-adapter",
+    docs_href: "/docs/evm-wallet-binding",
     posture:
       "Preflight-only eligibility for named protocol, member, and redemption access. The partner backend retains node access, signer, contract, gas, and execution. Not a live chain.",
   },
@@ -84,9 +84,9 @@ export const NETWORK_CAPABILITY_REGISTRY: readonly NetworkCapabilityEntry[] = [
     environment: "mainnet",
     status: "production_review_required",
     supported_actions: ["enable_protocol_access", "enable_member_access", "enable_redemption_access"],
-    wallet_binding: "unsupported",
+    wallet_binding: "optional",
     display_label: "EVM Mainnet eligibility gate",
-    docs_href: "/docs/evm-partner-adapter",
+    docs_href: "/docs/evm-wallet-binding",
     posture:
       "Adapter exists. Unavailable until reviewed Production access, a supported named action, a current receipt, durable replay, and a partner-owned EVM execution integration exist. Not a live chain, wallet, protocol, or Mainnet deployment.",
   },

@@ -12,6 +12,7 @@ import { walletStandardBindingExample } from "@/lib/partner/walletStandard/examp
 import { paymentAuthorizationServerExample } from "@/lib/partner/paymentAuthorization/examples";
 import { portableActionServerExample } from "@/lib/partner/portableActionContract/examples";
 import { evmPartnerServerExample } from "@/lib/partner/evm/examples";
+import { evmWalletBindingExample } from "@/lib/partner/evmWalletBinding/examples";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
 
 const DEMO_OPTS = {
@@ -79,7 +80,7 @@ export function studioSnippetForApplication(input: {
     evm_partner_adapter: {
       title: "EVM partner eligibility",
       docs: "/docs/evm-partner-adapter",
-      code: evmPartnerServerExample(),
+      code: `${evmPartnerServerExample()}\n\n${evmWalletBindingExample()}`,
     },
   };
 }
@@ -138,7 +139,7 @@ export function studioSnippetForPath(path: IntegrationStudioPathId): { title: st
       return {
         title: "EVM partner eligibility",
         docs: "/docs/evm-partner-adapter",
-        code: evmPartnerServerExample(),
+        code: `${evmPartnerServerExample()}\n\n${evmWalletBindingExample()}`,
       };
     default: {
       const _never: never = path;
