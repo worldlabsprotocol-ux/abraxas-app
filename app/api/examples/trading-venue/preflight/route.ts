@@ -78,7 +78,8 @@ export async function POST(req: NextRequest) {
     }
     : issued;
 
-  if (!body.fixture || !isVenueFixtureId(String(body.fixture))) {
+  const fixtureId = String(body.fixture ?? "");
+  if (!isVenueFixtureId(fixtureId)) {
     return NextResponse.json({
       allowed: false,
       reason: "invalid",
@@ -92,7 +93,7 @@ export async function POST(req: NextRequest) {
     }, { status: 400 });
   }
 
-  const result = client.evaluateFetchedReceipt(venueFixtureReceipt(String(body.fixture)));
+  const result = client.evaluateFetchedReceipt(venueFixtureReceipt(fixtureId));
   const first = await client.preflight({
     result,
     contract,
