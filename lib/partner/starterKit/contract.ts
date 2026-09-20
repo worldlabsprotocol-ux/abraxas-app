@@ -10,9 +10,10 @@ import { PARTNER_EVENT_NOT_AUTHORIZATION } from "@/lib/partner/eventDelivery/con
 import { SOLANA_NO_FUNDS_BOUNDARY } from "@/lib/partner/solana/contract";
 import { TRADING_VENUE_NO_FUNDS_BOUNDARY } from "@/lib/partner/tradingVenue/contract";
 import { PAYMENT_AUTHORIZATION_NO_FUNDS_BOUNDARY } from "@/lib/partner/paymentAuthorization/contract";
+import { PORTABLE_ACTION_NOT_EXECUTION } from "@/lib/partner/portableActionContract/contract";
 import { WALLET_STANDARD_NOT_IDENTITY } from "@/lib/partner/walletStandard/contract";
 
-export const STARTER_KIT_VERSION = "1.1.0" as const;
+export const STARTER_KIT_VERSION = "1.2.0" as const;
 export const STARTER_KIT_API_PATH = "/api/developers/integration-studio/starter-kit" as const;
 
 export const STARTER_KIT_RUNTIMES = [
@@ -66,6 +67,7 @@ export const STARTER_KIT_OPTIONAL_CAPABILITIES = [
   "wallet_standard_binding",
   "trading_venue",
   "payment_authorization",
+  "portable_action_contract",
   "solana_gate",
 ] as const;
 export type StarterKitOptionalCapability = (typeof STARTER_KIT_OPTIONAL_CAPABILITIES)[number];
@@ -105,6 +107,7 @@ export const STARTER_KIT_NOTICES = {
   solana: SOLANA_NO_FUNDS_BOUNDARY,
   venue: TRADING_VENUE_NO_FUNDS_BOUNDARY,
   payment: PAYMENT_AUTHORIZATION_NO_FUNDS_BOUNDARY,
+  portable: PORTABLE_ACTION_NOT_EXECUTION,
   wallet: WALLET_STANDARD_NOT_IDENTITY,
 } as const;
 
@@ -116,6 +119,7 @@ export const PATH_IMPLIED_CAPABILITY: Record<IntegrationStudioPathId, string> = 
   trading_venue: "trading_venue",
   wallet_standard_binding: "wallet_standard_binding",
   payment_authorization: "payment_authorization",
+  portable_action_contract: "portable_action_contract",
 };
 
 export function isStarterKitRuntime(value: string): value is StarterKitRuntime {
@@ -148,7 +152,7 @@ export const STARTER_KIT_PLATFORM_MATRIX = [
     label: "Universal HTTPS",
     runtime: "universal_https",
     canonical: true,
-    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "wallet_standard_binding", "solana_gate"],
+    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "portable_action_contract", "wallet_standard_binding", "solana_gate"],
     note: "Any product with an HTTPS backend. Canonical integration.",
   },
   {
@@ -156,7 +160,7 @@ export const STARTER_KIT_PLATFORM_MATRIX = [
     label: "Next.js",
     runtime: "typescript_nextjs",
     canonical: false,
-    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "wallet_standard_binding", "solana_gate"],
+    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "portable_action_contract", "wallet_standard_binding", "solana_gate"],
     note: "App Router server routes. Secrets stay in the server runtime.",
   },
   {
@@ -164,7 +168,7 @@ export const STARTER_KIT_PLATFORM_MATRIX = [
     label: "Express / Node",
     runtime: "typescript_express",
     canonical: false,
-    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "wallet_standard_binding", "solana_gate"],
+    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "portable_action_contract", "wallet_standard_binding", "solana_gate"],
     note: "Node HTTP server using the same Partner Kit contracts.",
   },
   {
@@ -172,7 +176,7 @@ export const STARTER_KIT_PLATFORM_MATRIX = [
     label: "Wix Velo",
     runtime: "javascript_wix_velo",
     canonical: false,
-    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "wallet_standard_binding"],
+    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "portable_action_contract", "wallet_standard_binding"],
     note: "Good Trouble-style Wix backend. Secrets Manager names only. Frontend calls backend only.",
   },
   {
@@ -180,7 +184,7 @@ export const STARTER_KIT_PLATFORM_MATRIX = [
     label: "Serverless function",
     runtime: "typescript_serverless",
     canonical: false,
-    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "wallet_standard_binding", "solana_gate"],
+    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "portable_action_contract", "wallet_standard_binding", "solana_gate"],
     note: "Vercel Functions, Cloudflare Workers, or Netlify Functions with small host substitutions.",
   },
   {

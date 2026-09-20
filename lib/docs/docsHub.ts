@@ -71,6 +71,7 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
           { label: "Trading venue adapter", href: "/docs/trading-venue" },
           { label: "Wallet Standard binding", href: "/docs/wallet-standard-binding" },
           { label: "Payment authorization", href: "/docs/payment-authorization" },
+          { label: "Portable action contract", href: "/docs/portable-action-contract" },
         ],
       },
       {
@@ -115,6 +116,7 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
           { label: "Trading venue adapter", href: "/docs/trading-venue" },
           { label: "Wallet Standard binding", href: "/docs/wallet-standard-binding" },
           { label: "Payment authorization", href: "/docs/payment-authorization" },
+          { label: "Portable action contract", href: "/docs/portable-action-contract" },
           { label: "Partner Action Control Plane", href: "/docs/action-control-plane" },
           { label: "Sandbox partner contract", href: "/docs/sandbox-conformance" },
           { label: "Partner Event Delivery", href: "/docs/partner-event-delivery" },

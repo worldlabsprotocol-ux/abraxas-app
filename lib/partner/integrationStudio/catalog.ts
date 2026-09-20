@@ -19,6 +19,7 @@ import {
   INTEGRATION_STUDIO_VENUE_NOTICE,
   INTEGRATION_STUDIO_WALLET_NOTICE,
   INTEGRATION_STUDIO_PAYMENT_NOTICE,
+  INTEGRATION_STUDIO_PORTABLE_NOTICE,
   INTEGRATION_STUDIO_WEBHOOK_NOTICE,
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio/contract";
@@ -121,6 +122,11 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
       funds_movement: false,
       calls_circle: false,
       notice: INTEGRATION_STUDIO_PAYMENT_NOTICE,
+    },
+    portable_action_contract: {
+      executes_action: false,
+      funds_movement: false,
+      notice: INTEGRATION_STUDIO_PORTABLE_NOTICE,
     },
     activation: partnerActivationPublicView(),
   };

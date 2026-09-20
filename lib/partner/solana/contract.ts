@@ -43,7 +43,7 @@ export const SOLANA_FORBIDDEN_CLIENT_KEYS = [
 ] as const;
 
 export const SOLANA_NO_FUNDS_BOUNDARY =
-  "The Solana Partner Adapter never creates a transaction, mints a token, or moves funds. It binds an allow or deny result to a partner action only.";
+  "The Solana Partner Adapter never creates a transaction, mints a token, or moves funds. It binds an allow or deny result to a partner action only. It remains an eligibility gate and does not consume the portable action-contract nonce store.";
 
 export const SOLANA_PRIVACY_CONTRACT = [
   PARTNER_INTEGRATION_GOOGLE_BOUNDARY,

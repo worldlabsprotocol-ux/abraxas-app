@@ -1,9 +1,8 @@
 // FILE: lib/partner/paymentAuthorization/adapter.ts
-// Server-side payment preflight. Reuses the Partner Integration Kit. No execution.
+// Server-side payment preflight. Reuses portable action-contract primitives. No execution.
 
 import {
   AbraxasPartnerKit,
-  permitProtocolAction,
   type AbraxasPartnerKitOptions,
   type PartnerKitSafeResult,
 } from "@/lib/partner/integrationKit";
@@ -21,14 +20,12 @@ import {
 } from "@/lib/partner/paymentAuthorization/contract";
 import {
   deniedPaymentResult,
-  paymentReasonFromOutcome,
   permittedPaymentResult,
   type PaymentAuthorizationClientVisibleResult,
 } from "@/lib/partner/paymentAuthorization/clientVisible";
-import { consumeTradingVenueNonce } from "@/lib/partner/tradingVenue/nonceStore";
-import { WalletStandardStoreUnavailableError } from "@/lib/partner/walletStandard/errors";
-
-const DEFAULT_TTL_MS = 15 * 60 * 1000;
+import { issuePortableActionContract } from "@/lib/partner/portableActionContract/issue";
+import { preflightPortableAction } from "@/lib/partner/portableActionContract/preflight";
+import type { PortableActionClientResult } from "@/lib/partner/portableActionContract/contract";
 
 export interface AbraxasPaymentAuthorizationAdapterOptions extends AbraxasPartnerKitOptions {}
 
@@ -37,6 +34,27 @@ export interface PaymentAuthorizationPreflightInput {
   contract: PaymentAuthorizationActionContract;
   action_type?: string;
   action_scope?: string;
+}
+
+function toPaymentClient(result: PortableActionClientResult): PaymentAuthorizationClientVisibleResult {
+  if (!result.allowed) {
+    const actionType = result.action_binding.action_type === "authorize_checkout"
+      || result.action_binding.action_type === "authorize_recurring_payment"
+      ? result.action_binding.action_type
+      : "rejected";
+    return deniedPaymentResult(
+      result.reason as PaymentAuthorizationClientVisibleResult["reason"],
+      actionType,
+      result.action_binding.action_scope,
+      result.action_binding.nonce_state,
+      result.expires_at,
+    );
+  }
+  return permittedPaymentResult(
+    result.action_binding.action_type as PaymentAuthorizationActionType,
+    result.action_binding.action_scope as PaymentAuthorizationActionScope,
+    result.expires_at as string,
+  );
 }
 
 export class AbraxasPaymentAuthorizationAdapter {
@@ -82,17 +100,16 @@ export class AbraxasPaymentAuthorizationAdapter {
     if (PAYMENT_AUTHORIZATION_TYPE_SCOPES[actionType] !== actionScope) {
       return { ok: false, reason: "action_mismatch" };
     }
-    const now = input?.now ?? new Date();
-    const ttl = Math.min(Math.max(input?.ttlMs ?? DEFAULT_TTL_MS, 30_000), 60 * 60 * 1000);
-    return {
-      partner_id: this.kit.options.partnerId,
-      policy_id: this.kit.options.policyId,
-      policy_version: this.kit.options.policyVersion ?? 1,
+    const issued = issuePortableActionContract({
+      kit: this.kit,
       action_type: actionType,
       action_scope: actionScope,
-      expires_at: new Date(now.getTime() + ttl).toISOString(),
-      nonce: createPaymentNonce(),
-    };
+      wallet_binding: "not_attached",
+      ttlMs: input?.ttlMs,
+      now: input?.now,
+    });
+    if ("ok" in issued) return issued;
+    return issued as PaymentAuthorizationActionContract;
   }
 
   async preflight(input: PaymentAuthorizationPreflightInput): Promise<PaymentAuthorizationClientVisibleResult> {
@@ -104,48 +121,17 @@ export class AbraxasPaymentAuthorizationAdapter {
     if (PAYMENT_AUTHORIZATION_TYPE_SCOPES[requestedType] !== requestedScope) {
       return deniedPaymentResult("action_mismatch", requestedType, requestedScope, "rejected", input.contract.expires_at);
     }
-    if (
-      input.contract.partner_id !== this.kit.options.partnerId
-      || input.contract.policy_id !== this.kit.options.policyId
-      || input.contract.policy_version !== (this.kit.options.policyVersion ?? 1)
-    ) {
-      return deniedPaymentResult("partner_mismatch", requestedType, requestedScope, "rejected", input.contract.expires_at);
-    }
-    if (input.contract.action_type !== requestedType || input.contract.action_scope !== requestedScope) {
-      return deniedPaymentResult("action_mismatch", requestedType, requestedScope, "rejected", input.contract.expires_at);
-    }
-    if (Date.parse(input.contract.expires_at) <= Date.now()) {
-      return deniedPaymentResult("action_expired", requestedType, requestedScope, "rejected", input.contract.expires_at);
-    }
-    if (!permitProtocolAction(input.result)) {
-      return deniedPaymentResult(
-        paymentReasonFromOutcome(input.result.outcome),
-        requestedType,
-        requestedScope,
-        "rejected",
-        input.contract.expires_at,
-      );
-    }
-
-    let nonceState: "consumed" | "replayed" | "invalid" | "expired";
-    try {
-      nonceState = await consumeTradingVenueNonce(this.kit.options.partnerId, input.contract.nonce, input.contract.expires_at);
-    } catch (error) {
-      if (error instanceof WalletStandardStoreUnavailableError) {
-        return deniedPaymentResult("store_unavailable", requestedType, requestedScope, "rejected", input.contract.expires_at);
-      }
-      throw error;
-    }
-    if (nonceState === "replayed") {
-      return deniedPaymentResult("replayed", requestedType, requestedScope, "replayed", input.contract.expires_at);
-    }
-    if (nonceState === "expired") {
-      return deniedPaymentResult("action_expired", requestedType, requestedScope, "rejected", input.contract.expires_at);
-    }
-    if (nonceState === "invalid") {
-      return deniedPaymentResult("invalid", requestedType, requestedScope, "rejected", input.contract.expires_at);
-    }
-    return permittedPaymentResult(requestedType, requestedScope, input.contract.expires_at);
+    const result = await preflightPortableAction({
+      kit: this.kit,
+      result: input.result,
+      contract: {
+        ...input.contract,
+        wallet_binding: input.contract.wallet_binding ?? "not_attached",
+      },
+      action_type: requestedType,
+      action_scope: requestedScope,
+    });
+    return toPaymentClient(result);
   }
 }
 
@@ -155,11 +141,4 @@ export function isPaymentActionType(value: string): value is PaymentAuthorizatio
 
 export function isPaymentActionScope(value: string): value is PaymentAuthorizationActionScope {
   return (PAYMENT_AUTHORIZATION_ALLOWED_SCOPES as readonly string[]).includes(value);
-}
-
-function createPaymentNonce(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-  return `pn_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 12)}`;
 }

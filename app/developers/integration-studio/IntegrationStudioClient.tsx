@@ -45,6 +45,7 @@ const PATH_LABEL: Record<IntegrationStudioPathId, string> = {
   trading_venue: "Trading venue access",
   wallet_standard_binding: "Wallet Standard binding",
   payment_authorization: "Payment and commerce",
+  portable_action_contract: "Portable action contract",
 };
 
 const body: React.CSSProperties = {
@@ -390,6 +391,11 @@ export function IntegrationStudioClient() {
             Policy pack, then Partner Flow, then a minimum approved receipt, then a payment preflight for checkout or recurring authorization. The merchant then runs its own payment flow. Webhooks re-check the public receipt and never grant access. No charges, transfers, Circle calls, or funds movement.
           </p>
         )}
+        {pathId === "portable_action_contract" && (
+          <p style={{ ...body, marginBottom: "0.65rem" }}>
+            Issue a server-authoritative action contract, re-fetch the current public receipt, then preflight one named action and narrow scope. Allowed means your system may perform that action. Abraxas never executes membership, trading, payment, or protocol calls.
+          </p>
+        )}
         {created && hostedDocs?.hosted_link && pathId === "hosted_partner_flow" && (
           <p style={{ ...body, marginBottom: "0.65rem" }}>
             Hosted verify for this app uses slug <strong>{created.public_slug}</strong>. The key is never placed in this URL.
@@ -451,7 +457,7 @@ export function IntegrationStudioClient() {
         </p>
         <p style={{ ...body, marginBottom: "0.55rem", fontWeight: 700, color: "var(--text-primary)" }}>Optional capabilities</p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginBottom: "0.75rem" }}>
-          {["webhooks", "wallet_standard_binding", "trading_venue", "payment_authorization", "solana_gate"].map((id) => (
+          {["webhooks", "wallet_standard_binding", "trading_venue", "payment_authorization", "portable_action_contract", "solana_gate"].map((id) => (
             <button
               key={id}
               type="button"

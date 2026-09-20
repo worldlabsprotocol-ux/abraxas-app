@@ -8,6 +8,7 @@ export const PUBLIC_PRODUCT_ROUTES = [
   "/developers/integration-studio",
   "/docs/trading-venue",
   "/docs/payment-authorization",
+  "/docs/portable-action-contract",
   "/docs/wallet-standard-binding",
   "/docs/starter-kit",
   "/examples/trading-venue",
