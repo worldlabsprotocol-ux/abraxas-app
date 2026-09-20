@@ -65,6 +65,9 @@ export default function PortableActionContractDocsPage() {
             <li key={line}>{line}</li>
           ))}
         </ul>
+        <p style={{ ...body, marginTop: "0.75rem" }}>
+          Canonical disclosure: <Link href="/docs/selective-disclosure">Selective disclosure</Link>
+        </p>
       </ContentCard>
 
       <ContentCard title="Server side preflight">

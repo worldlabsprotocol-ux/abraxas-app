@@ -45,9 +45,11 @@ describe("docsHub", () => {
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/wallet-standard-binding");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/payment-authorization");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/portable-action-contract");
+    expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/selective-disclosure");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/action-control-plane");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/sandbox-conformance");
     expect(getDocsHubGroup("core-concepts")?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/solana");
+    expect(getDocsHubGroup("core-concepts")?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/selective-disclosure");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/partner-event-delivery");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/circle-arc-testnet");
   });

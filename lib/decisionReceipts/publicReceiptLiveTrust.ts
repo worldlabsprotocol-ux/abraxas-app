@@ -4,6 +4,8 @@
 import type { DecisionReceiptPublicView, DecisionReceiptRecord, EvaluatedClaimRef } from "@/lib/decisionReceipts/types";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { toPublicView } from "@/lib/decisionReceipts/views";
+import { pickAllowedKeys } from "@/lib/privacy/selectiveDisclosure";
+import { SHARED_SURFACE_FIELDS } from "@/lib/privacy/selectiveDisclosure/contract";
 import {
   evaluatePublicReceiptTrust,
   type TrustEvaluationResult,
@@ -54,12 +56,13 @@ export function attachLiveTrustToPublicView(
   view: DecisionReceiptPublicView,
   trust: TrustEvaluationResult,
 ): PublicReceiptLiveTrustView {
-  return {
+  const attached = {
     ...view,
     currently_valid: trust.currently_valid,
     validity: trust.validity,
     invalidation_reasons: trust.invalidation_reasons,
   };
+  return (pickAllowedKeys(attached, SHARED_SURFACE_FIELDS.public_receipt) ?? attached) as PublicReceiptLiveTrustView;
 }
 
 export async function buildPublicReceiptWithLiveTrust(

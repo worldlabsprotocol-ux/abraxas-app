@@ -26,7 +26,6 @@ export async function GET(
     }
     return NextResponse.json(preview);
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "Preview failed";
-    return NextResponse.json({ error: msg }, { status: 500 });
+    return NextResponse.json({ error: "unavailable" }, { status: 500 });
   }
 }

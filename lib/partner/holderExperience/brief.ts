@@ -1,13 +1,12 @@
 // FILE: lib/partner/holderExperience/brief.ts
 // Server-derived holder request brief. No return URLs or policy internals.
 
-import {
-  inferPolicyPackFromPolicyId,
-  policyPackIsSandboxOnly,
-} from "@/lib/partner/launchpad/policyPacks";
+import { inferPolicyPackFromPolicyId, policyPackIsSandboxOnly } from "@/lib/partner/launchpad/policyPacks";
 import { planEligibilityMethods } from "@/lib/partner/eligibilityMethods";
 import { resolvePartnerDisplayName } from "@/lib/partner/partnerVerifyDisplay";
 import { HOLDER_GOOGLE_ACCOUNT_ONLY } from "./contract";
+import { applyDisclosureProfile, resolveDisclosureProfile } from "@/lib/privacy/selectiveDisclosure";
+import { GENERIC_MINIMAL_PROFILE } from "@/lib/privacy/selectiveDisclosure/profiles";
 
 export interface HolderRequestBrief {
   requestor: string;
@@ -43,18 +42,19 @@ export function buildHolderRequestBrief(input: {
   const result = input.disclosedResult?.trim()
     || pack?.partner_receives
     || "A yes/no policy result. Not your documents or date of birth.";
-  const withheld = pack?.partner_does_not_receive?.length
-    ? pack.partner_does_not_receive
-    : ["date of birth", "government ID images", "legal name", "email"];
+  const withheld = profileWithheld(pack);
+  const resultCategory = pack?.disclosed_result
+    ? `Policy result: ${pack.disclosed_result}`
+    : "eligibility confirmed";
   const plan = pack ? planEligibilityMethods({ pack, privacyPreservingAvailable: true }) : null;
   const primary = plan?.methods.find((method) => method.primary && method.qualifies)
     ?? plan?.methods.find((method) => method.qualifies && method.id !== "account_login");
 
-  return {
+  const brief: HolderRequestBrief = {
     requestor,
     purpose,
     result,
-    shared_result_category: pack?.disclosed_result ? `Policy result: ${pack.disclosed_result}` : "eligibility confirmed",
+    shared_result_category: resultCategory,
     withheld,
     environment_label: sandbox ? "Sandbox / test" : "Partner verification",
     environment_detail: sandbox
@@ -66,4 +66,33 @@ export function buildHolderRequestBrief(input: {
     google_account_only: HOLDER_GOOGLE_ACCOUNT_ONLY,
     identity_not_default: IDENTITY_NOT_DEFAULT,
   };
+  const sealed = applyDisclosureProfile(brief, packProfile(pack), "holder_brief");
+  if (!sealed.ok) {
+    return {
+      requestor: "This partner",
+      purpose: "Confirm the selected policy result.",
+      result: "A yes/no policy result.",
+      shared_result_category: "eligibility confirmed",
+      withheld: ["date of birth", "government ID images", "legal name", "email"],
+      environment_label: "Sandbox / test",
+      environment_detail: "This is a sandbox or test request. A passing result here is not Production-usable.",
+      method_explanation: IDENTITY_NOT_DEFAULT,
+      google_account_only: HOLDER_GOOGLE_ACCOUNT_ONLY,
+      identity_not_default: IDENTITY_NOT_DEFAULT,
+    };
+  }
+  return sealed.payload as HolderRequestBrief;
+}
+
+function packProfile(pack: ReturnType<typeof inferPolicyPackFromPolicyId>) {
+  if (!pack) return GENERIC_MINIMAL_PROFILE;
+  const resolved = resolveDisclosureProfile(pack.id);
+  return resolved.ok ? resolved.profile : GENERIC_MINIMAL_PROFILE;
+}
+
+function profileWithheld(pack: ReturnType<typeof inferPolicyPackFromPolicyId>): string[] {
+  if (!pack) return ["date of birth", "government ID images", "legal name", "email"];
+  const resolved = resolveDisclosureProfile(pack.id);
+  if (!resolved.ok) return pack.partner_does_not_receive.slice();
+  return [...resolved.profile.withheld];
 }

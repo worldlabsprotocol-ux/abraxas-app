@@ -10,6 +10,7 @@ import type { PartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlowRe
 import {
   TRADING_VENUE_ACTION_TYPES,
   TRADING_VENUE_ALLOWED_SCOPES,
+  TRADING_VENUE_CLIENT_VISIBLE_KEYS,
   TRADING_VENUE_NO_FUNDS_BOUNDARY,
   TRADING_VENUE_NOT_A_MARKET,
   TRADING_VENUE_SANDBOX_SCOPE,
@@ -26,6 +27,7 @@ import {
 } from "@/lib/partner/tradingVenue/clientVisible";
 import { issuePortableActionContract } from "@/lib/partner/portableActionContract/issue";
 import { preflightPortableAction } from "@/lib/partner/portableActionContract/preflight";
+import { pickAllowedKeys } from "@/lib/privacy/selectiveDisclosure";
 
 export interface AbraxasTradingVenueAdapterOptions extends AbraxasPartnerKitOptions {}
 
@@ -100,7 +102,7 @@ export class AbraxasTradingVenueAdapter {
       action_scope: requestedScope,
       binding_ref: input.binding_ref,
     });
-    return result as TradingVenueClientVisibleResult;
+    return (pickAllowedKeys(result, TRADING_VENUE_CLIENT_VISIBLE_KEYS) ?? result) as TradingVenueClientVisibleResult;
   }
 }
 

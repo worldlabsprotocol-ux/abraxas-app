@@ -12,6 +12,7 @@ export interface PolicyVersionComparisonView {
   method_category: { from: string; to: string; changed: boolean };
   partner_receives: { from: string; to: string; changed: boolean };
   withheld: { from: string[]; to: string[]; changed: boolean };
+  allowed_output_fields: { from: string[]; to: string[]; changed: boolean };
   environment: { from: string; to: string; changed: boolean };
   paths: Record<string, { from: boolean; to: boolean; changed: boolean }>;
   compatibility: PolicyVersionCompatibilityResult;
@@ -32,6 +33,7 @@ export function comparePolicyVersionSurfaces(
   const methodChanged = from.method_category !== to.method_category;
   const receivesChanged = from.partner_receives !== to.partner_receives;
   const withheldDiff = withheldChanged(from.withheld, to.withheld);
+  const outputDiff = withheldChanged(from.allowed_output_fields, to.allowed_output_fields);
   const environmentChanged = from.sandbox_only !== to.sandbox_only || from.production_review !== to.production_review;
   const paths: PolicyVersionComparisonView["paths"] = {};
   let pathChanged = false;
@@ -42,7 +44,7 @@ export function comparePolicyVersionSurfaces(
   });
 
   let compatibility: PolicyVersionCompatibilityResult = "unchanged";
-  if (resultChanged || receivesChanged || withheldDiff || environmentChanged) {
+  if (resultChanged || receivesChanged || withheldDiff || outputDiff || environmentChanged) {
     compatibility = "policy_review";
   } else if (methodChanged || pathChanged) {
     compatibility = "sandbox_retest";
@@ -61,6 +63,11 @@ export function comparePolicyVersionSurfaces(
     method_category: { from: from.method_category, to: to.method_category, changed: methodChanged },
     partner_receives: { from: from.partner_receives, to: to.partner_receives, changed: receivesChanged },
     withheld: { from: from.withheld.slice(), to: to.withheld.slice(), changed: withheldDiff },
+    allowed_output_fields: {
+      from: from.allowed_output_fields.slice(),
+      to: to.allowed_output_fields.slice(),
+      changed: outputDiff,
+    },
     environment: { from: from.environment_label, to: to.environment_label, changed: environmentChanged },
     paths,
     compatibility,

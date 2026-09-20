@@ -13,6 +13,7 @@ import {
   outcomeForPublicEventType,
 } from "@/lib/partner/eventDelivery/contract";
 import { toPublicPartnerEventType } from "@/lib/partner/eventDelivery/mapping";
+import { pickAllowedKeys } from "@/lib/privacy/selectiveDisclosure";
 
 export const WEBHOOK_PAYLOAD_ALLOWED_KEYS = [
   "event_id",
@@ -113,7 +114,7 @@ export function buildPartnerWebhookPayload(input: {
   if (input.decisionId) payload.decision_id = input.decisionId;
   if (input.reasonCode) payload.reason_code = input.reasonCode;
 
-  return payload;
+  return (pickAllowedKeys(payload, WEBHOOK_PAYLOAD_ALLOWED_KEYS) ?? payload) as PartnerWebhookPayload;
 }
 
 export function webhookPayloadHasNoPii(payload: PartnerWebhookPayload): boolean {

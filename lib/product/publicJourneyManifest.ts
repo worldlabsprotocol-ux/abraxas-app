@@ -87,6 +87,12 @@ export const PUBLIC_JOURNEY_SURFACES = [
     file: "app/docs/portable-action-contract/page.tsx",
   },
   {
+    route: "/docs/selective-disclosure",
+    purpose: "Canonical selective-disclosure boundary. Policy result only, not evidence.",
+    primaryCta: { label: "Integration Studio", href: "/developers/integration-studio" },
+    file: "app/docs/selective-disclosure/page.tsx",
+  },
+  {
     route: "/docs/wallet-standard-binding",
     purpose: "Optional message-only wallet binding. Never transaction signing.",
     primaryCta: { label: "Integration Studio", href: "/developers/integration-studio" },

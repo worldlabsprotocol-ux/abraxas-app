@@ -13,6 +13,9 @@ import type { NextRequest } from "next/server";
 import { evaluatePolicyForSubject } from "@/lib/policy/evaluateSubjectPolicy";
 import { requireQualifiedPartnerMethod } from "@/lib/partner/requirePartnerMethodQualification";
 import { deriveServerSandboxQualificationClaims } from "@/lib/partner/sandboxQualificationClaims";
+import { inferPolicyPackFromPolicyId } from "@/lib/partner/launchpad/policyPacks";
+import { applyDisclosureProfile, resolveDisclosureProfile } from "@/lib/privacy/selectiveDisclosure";
+import { GENERIC_MINIMAL_PROFILE } from "@/lib/privacy/selectiveDisclosure/profiles";
 import type { PolicyDecisionRecord } from "@/lib/policy/types";
 import { appendAuditEvent } from "@/lib/verification/audit";
 import {
@@ -112,8 +115,8 @@ export interface VerificationRequestPreview {
   requested_claims: string[];
   claim_labels: { claim_type: string; label: string; will_share: boolean }[];
   never_shared: string[];
-  expires_at: string;
-  status: string;
+  shared_result_category?: string;
+  sandbox_only?: boolean;
 }
 
 /** Holder preview before consent — no decision yet */
@@ -134,7 +137,10 @@ export async function getVerificationRequestPreview(
   const policyClaims = (policy?.rules_json.required_claims ?? []).map(r => r.claim_type);
   const allClaims = Array.from(new Set([...requestedClaims, ...policyClaims]));
 
-  return {
+  const pack = inferPolicyPackFromPolicyId(request.policy_id as string);
+  const resolved = pack ? resolveDisclosureProfile(pack.id) : { ok: false as const, reason: "disclosure_unavailable" as const };
+  const profile = resolved.ok ? resolved.profile : GENERIC_MINIMAL_PROFILE;
+  const preview = {
     request_id: requestId,
     partner_id: request.partner_id as string,
     policy_id: request.policy_id as string,
@@ -145,19 +151,33 @@ export async function getVerificationRequestPreview(
     claim_labels: allClaims.map(ct => ({
       claim_type: ct,
       label: claimTypeLabel(ct as ClaimType),
-      will_share: true,
+      will_share: false,
     })),
-    never_shared: [
-      "Passport image",
-      "Passport number",
-      "Full date of birth",
-      "Home address",
-      "Selfie / biometric data",
-      "Tax or financial documents",
-    ],
+    never_shared: [...profile.withheld],
     expires_at: request.expires_at as string,
     status: request.status as string,
+    shared_result_category: profile.result_category,
+    sandbox_only: profile.sandbox_only,
   };
+  const sealed = applyDisclosureProfile(preview, profile, "consent_preview");
+  if (!sealed.ok) {
+    return {
+      request_id: requestId,
+      partner_id: request.partner_id as string,
+      policy_id: request.policy_id as string,
+      purpose: null,
+      policy_name: "Policy",
+      requested_action: null,
+      requested_claims: [],
+      claim_labels: [],
+      never_shared: [...GENERIC_MINIMAL_PROFILE.withheld],
+      expires_at: request.expires_at as string,
+      status: request.status as string,
+      shared_result_category: GENERIC_MINIMAL_PROFILE.result_category,
+      sandbox_only: true,
+    };
+  }
+  return sealed.payload as VerificationRequestPreview;
 }
 
 export async function consentAndDecide(input: {

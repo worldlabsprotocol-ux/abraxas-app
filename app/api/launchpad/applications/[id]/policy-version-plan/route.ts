@@ -15,6 +15,7 @@ import {
   buildPolicyVersionPlannerView,
   policyVersionPlannerLeaks,
 } from "@/lib/partner/launchpad/policyVersionPlanner";
+import { rejectClientDisclosureConfig } from "@/lib/privacy/selectiveDisclosure";
 
 export const dynamic = "force-dynamic";
 type RouteContext = { params: { id: string } };
@@ -44,6 +45,13 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.forbidden, 403);
   }
   if (req.nextUrl.searchParams.get("policy_version") || req.nextUrl.searchParams.get("target_version")) {
+    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "unknown_input");
+  }
+  const queryOverrides: Record<string, string> = {};
+  req.nextUrl.searchParams.forEach((value, key) => {
+    queryOverrides[key] = value;
+  });
+  if (!rejectClientDisclosureConfig(queryOverrides).ok) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "unknown_input");
   }
   const assembled = await assemble(params.id, auth.session.partnerId);
@@ -79,6 +87,9 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   }
   const keys = Object.keys(record);
   if (keys.some((key) => (POLICY_VERSION_FORBIDDEN_KEYS as readonly string[]).includes(key))) {
+    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "unknown_input");
+  }
+  if (!rejectClientDisclosureConfig(record).ok) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "unknown_input");
   }
   const assembled = await assemble(params.id, auth.session.partnerId);

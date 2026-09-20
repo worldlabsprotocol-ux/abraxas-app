@@ -9,6 +9,8 @@ import {
   type PolicyPack,
   type PolicyPackId,
 } from "@/lib/partner/launchpad/policyPacks";
+import { resolveDisclosureProfile } from "@/lib/privacy/selectiveDisclosure";
+import { SHARED_SURFACE_FIELDS } from "@/lib/privacy/selectiveDisclosure/contract";
 import {
   POLICY_VERSION_PATHS,
   type PolicyVersionPathId,
@@ -33,6 +35,7 @@ export interface PolicyVersionSurface {
   method_category: string;
   partner_receives: string;
   withheld: string[];
+  allowed_output_fields: string[];
   environment_label: string;
   sandbox_only: boolean;
   production_review: boolean;
@@ -48,6 +51,7 @@ export interface PolicyVersionSuccessorSpec {
   method_category?: string;
   partner_receives?: string;
   withheld?: readonly string[];
+  allowed_output_fields?: readonly string[];
   sandbox_only?: boolean;
   paths?: Partial<PolicyVersionPathSupport>;
 }
@@ -81,6 +85,10 @@ export function surfaceFromPack(input: {
   status: PolicyVersionStatus;
 }): PolicyVersionSurface {
   const sandboxOnly = policyPackIsSandboxOnly(input.pack);
+  const disclosure = resolveDisclosureProfile(input.pack.id);
+  const allowedOutput = disclosure.ok
+    ? [...disclosure.profile.public_receipt_fields]
+    : [...SHARED_SURFACE_FIELDS.public_receipt];
   return {
     pack_id: input.pack.id,
     version: input.version,
@@ -89,6 +97,7 @@ export function surfaceFromPack(input: {
     method_category: methodCategoryForPack(input.pack),
     partner_receives: input.pack.partner_receives,
     withheld: input.pack.partner_does_not_receive.slice(),
+    allowed_output_fields: allowedOutput,
     environment_label: environmentLabel(sandboxOnly),
     sandbox_only: sandboxOnly,
     production_review: !sandboxOnly,
@@ -111,6 +120,9 @@ export function applySuccessor(base: PolicyVersionSurface, spec: PolicyVersionSu
     method_category: spec.method_category ?? base.method_category,
     partner_receives: spec.partner_receives ?? base.partner_receives,
     withheld: spec.withheld ? spec.withheld.slice() : base.withheld.slice(),
+    allowed_output_fields: spec.allowed_output_fields
+      ? spec.allowed_output_fields.slice()
+      : base.allowed_output_fields.slice(),
     environment_label: environmentLabel(sandboxOnly),
     sandbox_only: sandboxOnly,
     production_review: !sandboxOnly,
