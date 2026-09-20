@@ -15,6 +15,7 @@ import {
   studioSnippetForPath,
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio";
+import { isPolicyPackId } from "@/lib/partner/launchpad/policyPacks";
 import { PolicyFitPlanner } from "@/app/developers/integration-studio/PolicyFitPlanner";
 import {
   STARTER_KIT_DOES_NOT_DO,
@@ -248,6 +249,7 @@ export function IntegrationStudioClient() {
 
       <PolicyFitPlanner
         onApply={(selection) => {
+          if (!isPolicyPackId(selection.packId)) return;
           setPackId(selection.packId);
           setPathId(selection.pathId);
           setOptionalCaps(selection.capabilities);
