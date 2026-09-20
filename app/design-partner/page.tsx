@@ -2,12 +2,14 @@
 // FILE: app/design-partner/page.tsx
 // Design partner onboarding hub.
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard, BulletList } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
 import { IntegratorStartHerePanel } from "@/components/integrate/IntegratorStartHerePanel";
 import { PartnerOnboardingPositioningPanel } from "@/components/integrate/PartnerOnboardingPositioningPanel";
+import { DesignPartnerPolicyFitNotice } from "@/app/design-partner/DesignPartnerPolicyFitNotice";
 import {
   INTEGRATOR_SANDBOX_BOUNDARY,
   PARTNER_APPLICATION_PATH,
@@ -35,6 +37,10 @@ export default function DesignPartnerPage() {
         title="Apply to integrate Abraxas Partner Flow"
         subtitle={`${RELYING_PARTY_DEFINITION} Applications are reviewed manually, sandbox and production access are operator provisioned, not self serve.`}
       />
+
+      <Suspense fallback={null}>
+        <DesignPartnerPolicyFitNotice />
+      </Suspense>
 
       <IntegratorStartHerePanel id="partner-start-here" />
 
