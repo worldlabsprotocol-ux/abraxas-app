@@ -107,7 +107,7 @@ describe("phase 6 activation static guards", () => {
     const home = read("components/redesign/RedesignHome.tsx");
     expect(home).not.toContain("AbraxasBootScreen");
     expect(home).not.toContain("bootReady");
-    expect(home).toContain("HomeHowItWorks");
+    expect(home).toContain("HomeProtocolMap");
     expect(home).toContain("HomeAudiencePanels");
     expect(home).toContain("HomeTrustClose");
     expect(home).not.toContain("HomeAssuranceNetwork");
@@ -138,7 +138,7 @@ describe("phase 6 activation static guards", () => {
     const nav = read("components/redesign/RedesignNav.tsx");
     const surface = read("lib/design/publicSurface.ts");
     expect(nav).toContain("PUBLIC_NAV_LINKS");
-    expect(surface).toContain('label: "Partners"');
+    expect(surface).toContain('label: "Launchpad"');
     expect(surface).toContain('label: "Docs"');
     expect(nav).not.toContain("NAV_PARTNER_VERIFY_LABEL");
   });

@@ -86,7 +86,8 @@ describe("homepage clarity batch 1 static guards", () => {
     const nav = read("components/redesign/RedesignNav.tsx");
     const surface = read("lib/design/publicSurface.ts");
     expect(nav).toContain("PUBLIC_NAV_LINKS");
-    expect(surface).toContain('label: "Partners"');
+    expect(surface).toContain('label: "Build"');
+    expect(surface).toContain('label: "Launchpad"');
     expect(surface).toContain('label: "Docs"');
     expect(surface).toContain('href: "/verification"');
     expect(nav).toContain("aria-expanded={open}");
@@ -153,9 +154,9 @@ describe("RedesignNav mobile discoverability", () => {
 
     expect(screen.getByRole("link", { name: "Home" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Passport" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Partners" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Docs" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Developers" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Verify" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Build" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Launchpad" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Docs" })).toBeInTheDocument();
   });
 });

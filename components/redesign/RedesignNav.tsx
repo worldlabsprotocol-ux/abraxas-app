@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignNav.tsx
-// Canonical public nav — Home · Passport · Partners · Docs · Developers · Verify
+// Canonical public nav — Home · Passport · Verify · Build · Launchpad · Docs
 
 import Link from "next/link";
 import Image from "next/image";
@@ -10,7 +10,7 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { NavProfileMenu, NavSignInButton } from "@/components/sui/NavProfileMenu";
 import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
-import { PUBLIC_FONT_SANS, PUBLIC_NAV_LINKS } from "@/lib/design/publicSurface";
+import { PUBLIC_FONT_SANS, PUBLIC_NAV_LINKS, PUBLIC_NAV_MAP_LINKS } from "@/lib/design/publicSurface";
 
 const FONT = PUBLIC_FONT_SANS;
 const ACCENT = "var(--accent)";
@@ -127,6 +127,14 @@ export function RedesignNav() {
             </MotionLink>
           );
         })}
+        <details className="rd-nav-map">
+          <summary>Map</summary>
+          <div className="rd-nav-map-panel">
+            {PUBLIC_NAV_MAP_LINKS.map((l) => (
+              <Link key={l.href} href={l.href}>{l.label}</Link>
+            ))}
+          </div>
+        </details>
       </div>
 
       <div className="rd-nav-spacer" style={{ flex: 1 }} />
@@ -210,6 +218,14 @@ export function RedesignNav() {
                 {l.label}
               </Link>
             ))}
+            <p style={{ margin: "0.45rem 0 0.15rem", fontFamily: FONT, fontSize: "0.68rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)" }}>
+              Capability map
+            </p>
+            {PUBLIC_NAV_MAP_LINKS.map((l) => (
+              <Link key={l.href} href={l.href} onClick={() => setOpen(false)} style={mobileSubLink}>
+                {l.label}
+              </Link>
+            ))}
             {signedIn && (
               <>
                 <div style={{ height: 1, background: "var(--border)", margin: "0.35rem 0" }} />
@@ -222,6 +238,48 @@ export function RedesignNav() {
       </AnimatePresence>
 
       <style>{`
+        .rd-nav-map {
+          position: relative;
+          font-family: ${FONT};
+          font-size: clamp(0.78rem, 1.1vw, 0.86rem);
+          color: var(--text-secondary);
+        }
+        .rd-nav-map summary {
+          list-style: none;
+          cursor: pointer;
+          padding: 0.4rem 0.7rem;
+          border-radius: 999px;
+          font-weight: 600;
+        }
+        .rd-nav-map summary::-webkit-details-marker { display: none; }
+        .rd-nav-map summary:focus-visible {
+          outline: 2px solid ${ACCENT};
+          outline-offset: 2px;
+        }
+        .rd-nav-map-panel {
+          position: absolute;
+          top: calc(100% + 0.35rem);
+          left: 0;
+          min-width: 12rem;
+          display: grid;
+          gap: 0.2rem;
+          padding: 0.55rem;
+          border-radius: 12px;
+          background: var(--nav-bg-solid);
+          border: 1px solid var(--border);
+          z-index: 20;
+        }
+        .rd-nav-map-panel a {
+          text-decoration: none;
+          color: var(--text-primary);
+          padding: 0.45rem 0.5rem;
+          border-radius: 8px;
+          font-weight: 600;
+        }
+        .rd-nav-map-panel a:hover, .rd-nav-map-panel a:focus-visible {
+          background: rgba(45,212,191,0.12);
+          color: ${ACCENT};
+        }
         @media (min-width: 920px) {
           .rd-nav-links { display: flex !important; }
           .rd-nav-right { display: flex !important; }
