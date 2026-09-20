@@ -11,6 +11,7 @@ import {
   productionCredentialCsrfRejected,
   PRODUCTION_CREDENTIAL_NOTICE,
 } from "@/lib/partner/launchpad/productionCredentials";
+import type { ProductionCredentialResult } from "@/lib/partner/launchpad/productionCredentials/issue";
 import { PRODUCTION_CREDENTIAL_ACTIONS } from "@/lib/partner/launchpad/productionCredentials/contract";
 
 export const dynamic = "force-dynamic";
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
 }
 
-function omitRaw(result: { api_key?: string; [key: string]: unknown }) {
+function omitRaw(result: ProductionCredentialResult): Omit<ProductionCredentialResult, "api_key"> {
   const { api_key: _raw, ...rest } = result;
   return rest;
 }
