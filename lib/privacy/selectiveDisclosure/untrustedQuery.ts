@@ -43,7 +43,7 @@ export function safeCallbackClientErrors(errors: readonly string[]): string[] {
     }
     out.add("invalid");
   }
-  return [...out];
+  return Array.from(out);
 }
 
 export function sanitizeUntrustedQueryForClient(

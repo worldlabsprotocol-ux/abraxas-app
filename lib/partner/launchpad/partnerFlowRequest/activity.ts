@@ -51,16 +51,17 @@ export function hydratePartnerFlowCallbackUrl(
   metadata: Record<string, unknown> | null | undefined,
   allowedUrls: readonly string[],
 ): string | null {
+  const allowlist = [...allowedUrls];
   const meta = metadata ?? {};
   const index = typeof meta.callback_index === "number" ? meta.callback_index : Number(meta.callback_index);
-  if (Number.isInteger(index) && index >= 0 && allowedUrls[index]) {
-    const candidate = allowedUrls[index]!;
-    if (isLaunchpadReturnUrlAllowlisted(allowedUrls, candidate)) return candidate;
+  if (Number.isInteger(index) && index >= 0 && allowlist[index]) {
+    const candidate = allowlist[index]!;
+    if (isLaunchpadReturnUrlAllowlisted(allowlist, candidate)) return candidate;
   }
   const ref = typeof meta.callback_ref === "string" ? meta.callback_ref : "";
   if (ref) {
-    const match = allowedUrls.find((url) => opaqueCallbackRef(url) === ref);
-    if (match && isLaunchpadReturnUrlAllowlisted(allowedUrls, match)) return match;
+    const match = allowlist.find((url) => opaqueCallbackRef(url) === ref);
+    if (match && isLaunchpadReturnUrlAllowlisted(allowlist, match)) return match;
   }
   return null;
 }
