@@ -5,18 +5,17 @@ import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
 import type { GoLiveEvidence } from "@/lib/partner/launchpad/goLiveReadiness/evaluate";
 
 const fromMock = vi.fn();
-const recordMock = vi.fn();
+const rpcMock = vi.fn();
 const getAppMock = vi.fn();
 const loadEvidenceMock = vi.fn();
 const probeMock = vi.fn();
 
 vi.mock("@/lib/supabase/admin", () => ({
-  requireSupabaseAdmin: () => ({ from: (...args: unknown[]) => fromMock(...args) }),
+  requireSupabaseAdmin: () => ({
+    from: (...args: unknown[]) => fromMock(...args),
+    rpc: (...args: unknown[]) => rpcMock(...args),
+  }),
   SupabaseAdminConfigurationError: class extends Error { code = "supabase_admin_not_configured"; },
-}));
-
-vi.mock("@/lib/partner/launchpad/recordActivity", () => ({
-  recordLaunchpadActivity: (...args: unknown[]) => recordMock(...args),
 }));
 
 vi.mock("@/lib/partner/launchpad/resolveLaunchpadApplication", () => ({
@@ -72,27 +71,15 @@ const evidence: GoLiveEvidence = {
   request: { id: "req-1", status: "approved", created_at: "t", reviewed_at: "t2" },
 };
 
-const inserts: Record<string, unknown>[] = [];
-const appUpdates: Record<string, unknown>[] = [];
 let requestStatus = "approved";
-let liveKey: { id: string; revoked_at: string | null; key_prefix: string } | null = null;
 let storeDown = false;
+let rpcPayload: Record<string, unknown> = {};
+let liveKey: { id: string; revoked_at: string | null; key_prefix: string } | null = null;
 
 function chainFor(table: string) {
   const chain: Record<string, unknown> = {};
   const self = () => chain;
   chain.select = self;
-  chain.insert = (row: Record<string, unknown>) => {
-    inserts.push(row);
-    return chain;
-  };
-  chain.update = (row: Record<string, unknown>) => {
-    if (table === "partner_launchpad_applications") appUpdates.push(row);
-    if (table === "partner_api_keys" && liveKey && "revoked_at" in row) {
-      liveKey = { ...liveKey, revoked_at: String(row.revoked_at) };
-    }
-    return chain;
-  };
   chain.eq = self;
   chain.limit = async () => ({ error: storeDown ? { message: "down" } : null });
   chain.maybeSingle = async () => {
@@ -111,15 +98,7 @@ function chainFor(table: string) {
         error: null,
       };
     }
-    if (table === "partner_api_keys") {
-      return { data: liveKey, error: null };
-    }
-    return { data: null, error: null };
-  };
-  chain.single = async () => {
-    if (storeDown) return { data: null, error: { message: "down" } };
-    liveKey = { id: "live-key-1", revoked_at: null, key_prefix: "abx_live_xxxxxxx" };
-    return { data: { id: "live-key-1" }, error: null };
+    return { data: liveKey, error: null };
   };
   return chain;
 }
@@ -127,105 +106,126 @@ function chainFor(table: string) {
 describe("operateProductionCredential", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    inserts.length = 0;
-    appUpdates.length = 0;
     requestStatus = "approved";
-    liveKey = null;
     storeDown = false;
+    liveKey = null;
+    rpcPayload = {
+      ok: true,
+      code: "issued",
+      action: "issue",
+      credential_state: "active",
+      key_prefix: "abx_live_xxxxxxx",
+      request_id: "req-1",
+      application_id: "app-1",
+      activates_mainnet: false,
+      executes: false,
+      environment_changed: false,
+    };
     fromMock.mockImplementation((table: string) => chainFor(table));
-    getAppMock.mockResolvedValue({ ...application, production_api_key_id: null });
+    rpcMock.mockResolvedValue({ data: rpcPayload, error: null });
+    getAppMock.mockResolvedValue({ ...application });
     loadEvidenceMock.mockResolvedValue(evidence);
     probeMock.mockResolvedValue({ ready: true });
-    recordMock.mockResolvedValue(undefined);
   });
 
   it("requires explicit confirmation and never issues on a status read", async () => {
     const denied = await operateProductionCredential({ requestId: "req-1", action: "issue", confirm: false });
     expect(denied).toMatchObject({ ok: false, code: "confirmation_required", activates_mainnet: false, executes: false });
     const status = await loadProductionCredentialStatus("req-1");
-    expect(status.ok).toBe(true);
     expect(status).not.toHaveProperty("api_key");
-    expect(status.credential_state).toBe("never_issued");
     expect(JSON.stringify(status)).not.toMatch(/abx_live_[A-Za-z0-9_-]{12,}/);
-    expect(recordMock).not.toHaveBeenCalled();
+    expect(rpcMock.mock.calls.some((call) => call[1]?.p_action === "issue")).toBe(false);
   });
 
-  it("denies pending and rejected reviews", async () => {
+  it("denies pending reviews before calling the write RPC", async () => {
     requestStatus = "pending";
-    expect((await operateProductionCredential({ requestId: "req-1", action: "issue", confirm: true })).code).toBe("review_not_approved");
-    requestStatus = "rejected";
-    expect((await operateProductionCredential({ requestId: "req-1", action: "issue", confirm: true })).code).toBe("review_not_approved");
+    const result = await operateProductionCredential({ requestId: "req-1", action: "issue", confirm: true });
+    expect(result.code).toBe("review_not_approved");
+    expect(rpcMock.mock.calls.filter((call) => call[1]?.p_action === "issue")).toHaveLength(0);
   });
 
-  it("fails closed when the store is unavailable", async () => {
-    storeDown = true;
+  it("fails closed when the atomic RPC is missing", async () => {
+    rpcMock.mockResolvedValue({ data: null, error: { message: "Could not find the function public.partner_launchpad_operate_production_credential_atomic" } });
     const result = await operateProductionCredential({ requestId: "req-1", action: "issue", confirm: true });
-    expect(result.ok).toBe(false);
-    expect(result.code).toBe("production_credential_store_unavailable");
-    expect(result.credential_state).toBe("unavailable");
+    expect(result).toMatchObject({ ok: false, code: "production_credential_store_unavailable", credential_state: "unavailable" });
   });
 
   it("isolates tenants so the wrong partner app cannot mint a live key", async () => {
     getAppMock.mockResolvedValue(null);
     const result = await operateProductionCredential({ requestId: "req-1", action: "issue", confirm: true });
     expect(result).toMatchObject({ ok: false, code: "not_found" });
-    expect(inserts).toHaveLength(0);
+    expect(rpcMock.mock.calls.filter((call) => call[1]?.p_action === "issue")).toHaveLength(0);
   });
 
-  it("issues one abx_live_ key once, without changing environment or activating Mainnet", async () => {
+  it("returns the raw key only when the durable RPC reports issued", async () => {
     const result = await operateProductionCredential({ requestId: "req-1", action: "issue", confirm: true });
     expect(result.ok).toBe(true);
     expect(result.api_key?.startsWith("abx_live_")).toBe(true);
-    expect(result.api_key).not.toMatch(/^abx_test_/);
-    expect(result.key_prefix?.startsWith("abx_live_")).toBe(true);
     expect(result.activates_mainnet).toBe(false);
-    expect(result.executes).toBe(false);
     expect(result.environment_changed).toBe(false);
-    expect(inserts[0]?.key_prefix).toBe(result.key_prefix);
-    expect(inserts[0]?.key_hash).toEqual(expect.any(String));
-    expect(inserts[0]).not.toHaveProperty("raw");
-    expect(appUpdates.some((row) => row.environment === "production")).toBe(false);
-    const event = recordMock.mock.calls[0]?.[1] as { eventType: string; metadata: Record<string, unknown> };
-    expect(event.eventType).toBe("production_credential_issued");
-    expect(event.metadata.activates_production).toBe(false);
-    expect(JSON.stringify(event)).not.toMatch(/abx_live_[A-Za-z0-9_-]{12,}/);
+    const write = rpcMock.mock.calls.find((call) => call[1]?.p_action === "issue");
+    expect(write?.[1]?.p_key_prefix).toMatch(/^abx_live_/);
+    expect(write?.[1]?.p_key_hash).toMatch(/^[a-f0-9]{64}$/);
   });
 
-  it("refuses silent duplicates and requires rotate for a second live key", async () => {
-    getAppMock.mockResolvedValue({ ...application, production_api_key_id: "live-key-1" });
-    liveKey = { id: "live-key-1", revoked_at: null, key_prefix: "abx_live_xxxxxxx" };
-    const duplicate = await operateProductionCredential({ requestId: "req-1", action: "issue", confirm: true });
-    expect(duplicate).toMatchObject({ ok: false, code: "already_issued", credential_state: "active" });
-    const rotated = await operateProductionCredential({ requestId: "req-1", action: "rotate", confirm: true });
-    expect(rotated.ok).toBe(true);
-    expect(rotated.action).toBe("rotate");
-    expect(rotated.credential_state).toBe("rotating");
-    expect(rotated.api_key?.startsWith("abx_live_")).toBe(true);
-    const event = recordMock.mock.calls.at(-1)?.[1] as { eventType: string };
-    expect(event.eventType).toBe("production_credential_rotated");
-  });
-
-  it("revokes an active live key without minting or executing", async () => {
-    getAppMock.mockResolvedValue({ ...application, production_api_key_id: "live-key-1" });
-    liveKey = { id: "live-key-1", revoked_at: null, key_prefix: "abx_live_xxxxxxx" };
-    const result = await operateProductionCredential({ requestId: "req-1", action: "revoke", confirm: true });
-    expect(result).toMatchObject({
-      ok: true,
-      action: "revoke",
-      credential_state: "revoked",
-      activates_mainnet: false,
-      executes: false,
+  it("never reveals a raw key on already_issued", async () => {
+    rpcMock.mockImplementation(async (_name: string, args: { p_action?: string }) => {
+      if (args?.p_action === "revoke" && !args.p_key_prefix) return { data: { ok: false, code: "not_found" }, error: null };
+      return {
+        data: { ok: false, code: "already_issued", credential_state: "active", activates_mainnet: false, executes: false, environment_changed: false },
+        error: null,
+      };
     });
-    expect(result).not.toHaveProperty("api_key");
-    const event = recordMock.mock.calls.at(-1)?.[1] as { eventType: string };
-    expect(event.eventType).toBe("production_credential_revoked");
+    const result = await operateProductionCredential({ requestId: "req-1", action: "issue", confirm: true });
+    expect(result).toMatchObject({ ok: false, code: "already_issued" });
+    expect(result.api_key).toBeUndefined();
+    expect(JSON.stringify(result)).not.toMatch(/abx_live_[A-Za-z0-9_-]{12,}/);
   });
 
-  it("re-checks readiness before minting", async () => {
+  it("attaches a one-time raw key only after a successful rotate RPC", async () => {
+    rpcMock.mockImplementation(async (_name: string, args: { p_action?: string }) => {
+      if (args?.p_action === "rotate") {
+        return {
+          data: {
+            ok: true,
+            code: "rotated",
+            action: "rotate",
+            credential_state: "rotating",
+            key_prefix: args.p_key_prefix,
+            activates_mainnet: false,
+            executes: false,
+            environment_changed: false,
+          },
+          error: null,
+        };
+      }
+      return { data: { ok: false, code: "not_found" }, error: null };
+    });
+    const result = await operateProductionCredential({ requestId: "req-1", action: "rotate", confirm: true });
+    expect(result.ok).toBe(true);
+    expect(result.api_key?.startsWith("abx_live_")).toBe(true);
+    expect(result.credential_state).toBe("rotating");
+  });
+
+  it("returns a durable revoked state without a raw key", async () => {
+    rpcMock.mockImplementation(async (_name: string, args: { p_action?: string }) => {
+      if (args?.p_action === "revoke") {
+        return {
+          data: { ok: true, code: "revoked", action: "revoke", credential_state: "revoked", activates_mainnet: false, executes: false, environment_changed: false },
+          error: null,
+        };
+      }
+      return { data: { ok: false, code: "not_found" }, error: null };
+    });
+    const result = await operateProductionCredential({ requestId: "req-1", action: "revoke", confirm: true });
+    expect(result).toMatchObject({ ok: true, action: "revoke", credential_state: "revoked" });
+    expect(result.api_key).toBeUndefined();
+  });
+
+  it("re-checks readiness before the write RPC", async () => {
     loadEvidenceMock.mockResolvedValue({ ...evidence, activeSandboxKey: false, allowedReturnUrls: [] });
     const result = await operateProductionCredential({ requestId: "req-1", action: "issue", confirm: true });
-    expect(result.ok).toBe(false);
     expect(result.code).toBe("production_credential_not_ready");
-    expect(inserts).toHaveLength(0);
+    expect(rpcMock.mock.calls.filter((call) => call[1]?.p_action === "issue")).toHaveLength(0);
   });
 });

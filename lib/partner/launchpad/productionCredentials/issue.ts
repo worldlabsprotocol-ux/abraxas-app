@@ -1,13 +1,13 @@
 // FILE: lib/partner/launchpad/productionCredentials/issue.ts
 // Explicit operator issuance of one abx_live_ credential after review approval.
+// Writes go through the durable operate RPC only.
 
 import { requireSupabaseAdmin, SupabaseAdminConfigurationError } from "@/lib/supabase/admin";
 import { generatePartnerKey } from "@/lib/partner/partnerAuth";
-import { recordLaunchpadActivity } from "@/lib/partner/launchpad/recordActivity";
 import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
 import { loadGoLiveEvidence } from "@/lib/partner/launchpad/goLiveReadiness/load";
 import { probePolicyChangeControlSchema } from "@/lib/policy/changeControl/schemaReady";
-import { PRODUCTION_LIVE_KEY_SCOPES, type ProductionCredentialAction } from "./contract";
+import type { ProductionCredentialAction } from "./contract";
 import { evaluateProductionCredentialPrereqs, productionCredentialLeaks, productionCredentialState } from "./evaluate";
 
 export interface ProductionCredentialResult {
@@ -25,16 +25,37 @@ export interface ProductionCredentialResult {
 }
 
 const NONE = { activates_mainnet: false as const, executes: false as const, environment_changed: false as const };
+const ATOMIC_RPC = "partner_launchpad_operate_production_credential_atomic";
+
+type RpcRow = {
+  ok?: boolean;
+  code?: string;
+  action?: string;
+  credential_state?: string;
+  key_prefix?: string;
+  request_id?: string;
+  application_id?: string;
+  activates_mainnet?: boolean;
+  executes?: boolean;
+  environment_changed?: boolean;
+};
 
 async function schemaReady(): Promise<boolean> {
   try {
     const sb = requireSupabaseAdmin();
-    const [keys, requests, policy] = await Promise.all([
+    const [keys, requests, policy, rpc] = await Promise.all([
       sb.from("partner_api_keys").select("id", { head: true, count: "exact" }).limit(0),
       sb.from("partner_production_access_requests").select("id", { head: true, count: "exact" }).limit(0),
       probePolicyChangeControlSchema(sb),
+      sb.rpc(ATOMIC_RPC, {
+        p_request_id: "00000000-0000-0000-0000-000000000000",
+        p_action: "revoke",
+      }),
     ]);
-    return !keys.error && !requests.error && policy.ready;
+    const missingRpc = Boolean(
+      rpc.error && /could not find the function|schema cache|does not exist/i.test(rpc.error.message ?? ""),
+    );
+    return !keys.error && !requests.error && policy.ready && !missingRpc;
   } catch {
     return false;
   }
@@ -52,6 +73,25 @@ async function liveKeyRevoked(keyId: string | null, partnerId: string): Promise<
   if (!data) return true;
   if (typeof data.key_prefix === "string" && data.key_prefix.startsWith("abx_test_")) return true;
   return Boolean(data.revoked_at);
+}
+
+function safeResult(row: RpcRow, raw?: string): ProductionCredentialResult {
+  const minted = row.ok && (row.code === "issued" || row.code === "rotated") && raw;
+  const result: ProductionCredentialResult = {
+    ok: Boolean(row.ok),
+    action: (row.action as ProductionCredentialAction | undefined) ?? undefined,
+    credential_state: row.credential_state as ProductionCredentialResult["credential_state"],
+    key_prefix: minted ? row.key_prefix : undefined,
+    api_key: minted ? raw : undefined,
+    request_id: row.request_id,
+    application_id: row.application_id,
+    code: row.code,
+    ...NONE,
+  };
+  if (productionCredentialLeaks(result, Boolean(minted)).length > 0) {
+    return { ok: false, code: "production_credential_store_unavailable", ...NONE };
+  }
+  return result;
 }
 
 export async function operateProductionCredential(input: {
@@ -91,154 +131,33 @@ export async function operateProductionCredential(input: {
       };
     }
 
-    const revoked = await liveKeyRevoked(application.production_api_key_id, request.partner_id);
-    const state = productionCredentialState({
-      productionApiKeyId: application.production_api_key_id,
-      revoked,
-      schemaReady: durable,
+    let prefix: string | null = null;
+    let hash: string | null = null;
+    let raw: string | undefined;
+    if (input.action === "issue" || input.action === "rotate") {
+      const minted = generatePartnerKey("live");
+      if (!minted.raw.startsWith("abx_live_") || minted.prefix.startsWith("abx_test_")) {
+        return { ok: false, code: "production_credential_store_unavailable", ...NONE };
+      }
+      prefix = minted.prefix;
+      hash = minted.hash;
+      raw = minted.raw;
+    }
+
+    const { data, error: rpcError } = await sb.rpc(ATOMIC_RPC, {
+      p_request_id: input.requestId,
+      p_action: input.action,
+      p_key_prefix: prefix,
+      p_key_hash: hash,
     });
-
-    if (input.action === "issue") {
-      if (state === "active") return { ok: false, code: "already_issued", credential_state: "active", ...NONE };
-      return mintLiveKey({
-        action: "issue",
-        eventType: "production_credential_issued",
-        application,
-        requestId: request.id,
-        partnerId: request.partner_id,
-        previousKeyId: application.production_api_key_id,
-      });
-    }
-
-    if (input.action === "rotate") {
-      if (state !== "active") return { ok: false, code: "rotation_not_available", credential_state: state, ...NONE };
-      return mintLiveKey({
-        action: "rotate",
-        eventType: "production_credential_rotated",
-        application,
-        requestId: request.id,
-        partnerId: request.partner_id,
-        previousKeyId: application.production_api_key_id,
-      });
-    }
-
-    if (state !== "active" || !application.production_api_key_id) {
-      return { ok: false, code: "revoke_not_available", credential_state: state, ...NONE };
-    }
-    const { error: revokeError } = await sb
-      .from("partner_api_keys")
-      .update({ revoked_at: new Date().toISOString() })
-      .eq("id", application.production_api_key_id)
-      .eq("partner_id", request.partner_id);
-    if (revokeError) return { ok: false, code: "production_credential_store_unavailable", ...NONE };
-    await recordLaunchpadActivity(sb, {
-      applicationId: application.id,
-      partnerId: request.partner_id,
-      eventType: "production_credential_revoked",
-      publicCode: "production_credential_revoked",
-      metadata: {
-        request_id: request.id,
-        policy_id: application.policy_id,
-        policy_version: application.policy_version,
-        issues_production_key: false,
-        activates_production: false,
-      },
-    });
-    const revokedResult: ProductionCredentialResult = {
-      ok: true,
-      action: "revoke",
-      credential_state: "revoked",
-      request_id: request.id,
-      application_id: application.id,
-      ...NONE,
-    };
-    if (productionCredentialLeaks(revokedResult).length > 0) {
-      return { ok: false, code: "production_credential_store_unavailable", ...NONE };
-    }
-    return revokedResult;
+    if (rpcError) return { ok: false, code: "production_credential_store_unavailable", credential_state: "unavailable", ...NONE };
+    return safeResult((data ?? {}) as RpcRow, raw);
   } catch (error) {
     if (error instanceof SupabaseAdminConfigurationError) {
       return { ok: false, code: "production_credential_store_unavailable", credential_state: "unavailable", ...NONE };
     }
     return { ok: false, code: "production_credential_store_unavailable", credential_state: "unavailable", ...NONE };
   }
-}
-
-async function mintLiveKey(input: {
-  action: "issue" | "rotate";
-  eventType: "production_credential_issued" | "production_credential_rotated";
-  application: Awaited<ReturnType<typeof getLaunchpadApplicationForPartner>>;
-  requestId: string;
-  partnerId: string;
-  previousKeyId: string | null;
-}): Promise<ProductionCredentialResult> {
-  if (!input.application) return { ok: false, code: "not_found", ...NONE };
-  const minted = generatePartnerKey("live");
-  if (!minted.raw.startsWith("abx_live_") || minted.prefix.startsWith("abx_test_")) {
-    return { ok: false, code: "production_credential_store_unavailable", ...NONE };
-  }
-  const sb = requireSupabaseAdmin();
-  const { data: newKey, error: insertError } = await sb
-    .from("partner_api_keys")
-    .insert({
-      partner_id: input.partnerId,
-      display_name: `${input.application.display_name} production`,
-      key_prefix: minted.prefix,
-      key_hash: minted.hash,
-      scopes: [...PRODUCTION_LIVE_KEY_SCOPES],
-    })
-    .select("id")
-    .single();
-  if (insertError || !newKey) return { ok: false, code: "production_credential_store_unavailable", ...NONE };
-
-  if (input.previousKeyId) {
-    await sb
-      .from("partner_api_keys")
-      .update({ revoked_at: new Date().toISOString() })
-      .eq("id", input.previousKeyId)
-      .eq("partner_id", input.partnerId);
-  }
-
-  const { error: updateError } = await sb
-    .from("partner_launchpad_applications")
-    .update({
-      production_api_key_id: newKey.id,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", input.application.id)
-    .eq("partner_id", input.partnerId)
-    .eq("environment", input.application.environment);
-  if (updateError) return { ok: false, code: "production_credential_store_unavailable", ...NONE };
-
-  await recordLaunchpadActivity(sb, {
-    applicationId: input.application.id,
-    partnerId: input.partnerId,
-    eventType: input.eventType,
-    publicCode: input.eventType,
-    metadata: {
-      request_id: input.requestId,
-      key_prefix: minted.prefix,
-      policy_id: input.application.policy_id,
-      policy_version: input.application.policy_version,
-      issues_production_key: true,
-      activates_production: false,
-    },
-  });
-
-  const result: ProductionCredentialResult = {
-    ok: true,
-    action: input.action,
-    credential_state: input.action === "rotate" ? "rotating" : "active",
-    key_prefix: minted.prefix,
-    api_key: minted.raw,
-    request_id: input.requestId,
-    application_id: input.application.id,
-    ...NONE,
-  };
-  if (productionCredentialLeaks(result, true).length > 0) {
-    return { ok: false, code: "production_credential_store_unavailable", ...NONE };
-  }
-  return result;
 }
 
 export async function loadProductionCredentialStatus(requestId: string): Promise<ProductionCredentialResult> {
