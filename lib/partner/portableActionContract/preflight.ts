@@ -2,6 +2,7 @@
 // Shared preflight gates. Webhooks, callbacks, and client contracts are never grants.
 
 import { permitProtocolAction, type AbraxasPartnerKit, type PartnerKitSafeResult } from "@/lib/partner/integrationKit";
+import type { PartnerIntegrationOutcome } from "@/lib/partner/integrationKit/contract";
 import { consumeTradingVenueNonce } from "@/lib/partner/tradingVenue/nonceStore";
 import { resolveWalletBindingForAction } from "@/lib/partner/walletStandard/resolve";
 import { WalletStandardStoreUnavailableError } from "@/lib/partner/walletStandard/errors";
