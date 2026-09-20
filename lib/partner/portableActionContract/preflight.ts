@@ -2,10 +2,13 @@
 // Shared preflight gates. Webhooks, callbacks, and client contracts are never grants.
 
 import { permitProtocolAction, type AbraxasPartnerKit, type PartnerKitSafeResult } from "@/lib/partner/integrationKit";
+import type { PartnerIntegrationOutcome } from "@/lib/partner/integrationKit/contract";
 import { consumeTradingVenueNonce } from "@/lib/partner/tradingVenue/nonceStore";
 import { resolveWalletBindingForAction } from "@/lib/partner/walletStandard/resolve";
 import { WalletStandardStoreUnavailableError } from "@/lib/partner/walletStandard/errors";
-import type { PartnerIntegrationOutcome } from "@/lib/partner/integrationKit/contract";
+import { evaluateNetworkAction, mapNetworkReasonToPortable } from "@/lib/partner/networkCapability/evaluate";
+import type { NetworkContext } from "@/lib/partner/networkCapability/types";
+import { getNetworkCapability } from "@/lib/partner/networkCapability/registry";
 import {
   PORTABLE_ACTION_CONTRACT_KEYS,
   PORTABLE_ACTION_RECEIPT_REQUIREMENT,
@@ -111,6 +114,24 @@ export function normalizePortableActionContract(input: {
   ) {
     return { ok: false, reason: "invalid" };
   }
+  let network_context: NetworkContext | undefined;
+  if (raw.network_context !== undefined) {
+    if (!raw.network_context || typeof raw.network_context !== "object" || Array.isArray(raw.network_context)) {
+      return { ok: false, reason: "invalid" };
+    }
+    const nc = raw.network_context as Record<string, unknown>;
+    const ncKeys = Object.keys(nc);
+    if (ncKeys.some((key) => key !== "network_id" && key !== "environment")) {
+      return { ok: false, reason: "invalid" };
+    }
+    if (typeof nc.network_id !== "string" || !nc.network_id) return { ok: false, reason: "invalid" };
+    const known = getNetworkCapability(nc.network_id);
+    if (!known) return { ok: false, reason: "invalid" };
+    if (typeof nc.environment === "string" && nc.environment !== known.environment) {
+      return { ok: false, reason: "environment_mismatch" };
+    }
+    network_context = { network_id: known.network_id, environment: known.environment };
+  }
   return {
     partner_id: typeof raw.partner_id === "string" ? raw.partner_id : "",
     policy_id: typeof raw.policy_id === "string" ? raw.policy_id : "",
@@ -123,6 +144,7 @@ export function normalizePortableActionContract(input: {
     nonce,
     wallet_binding: walletBinding,
     environment,
+    ...(network_context ? { network_context } : {}),
   };
 }
 
@@ -173,6 +195,29 @@ export async function preflightPortableAction(input: {
       "rejected",
       contract.expires_at,
     );
+  }
+  if (contract.network_context) {
+    const network = evaluateNetworkAction({
+      networkId: contract.network_context.network_id,
+      context: {
+        productionAccessApproved: input.kit.options.environment === "production",
+        kitEnvironment: input.kit.options.environment,
+        receiptCurrentlyValid: true,
+        durableReplaySatisfied: true,
+        partnerExecutionIntegration: false,
+        actionType: requestedType,
+      },
+    });
+    if (!network.ok) {
+      const mapped = mapNetworkReasonToPortable(network.reason);
+      return denied(
+        mapped as PortableActionSafeReasonCode,
+        requestedType,
+        requestedScope,
+        "rejected",
+        contract.expires_at,
+      );
+    }
   }
 
   const wallet = await resolveWalletBindingForAction({

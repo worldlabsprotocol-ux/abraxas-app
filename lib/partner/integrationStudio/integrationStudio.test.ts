@@ -91,6 +91,8 @@ describe("Integration Studio", () => {
     expect(catalog.portable_action_contract.executes_action).toBe(false);
     expect(catalog.selective_disclosure.docs).toBe("/docs/selective-disclosure");
     expect(catalog.policy_compatibility.docs).toBe("/docs/policy-compatibility");
+    expect(catalog.network_readiness.docs).toBe("/docs/multichain-mainnet-readiness");
+    expect(catalog.network_readiness.executes_action).toBe(false);
     expect(catalog.wallet_standard.identity_verification).toBe(false);
     expect(catalog.activation.issues_production_key).toBe(false);
     expect(catalog.activation.create_cta).toBe("Create a sandbox integration");

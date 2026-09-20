@@ -53,6 +53,7 @@ export class AbraxasPortableActionAdapter {
     wallet_binding?: string;
     ttlMs?: number;
     now?: Date;
+    network_id?: string;
   }): PortableActionContract | { ok: false; reason: "action_mismatch" } {
     return issuePortableActionContract({
       kit: this.kit,
@@ -61,6 +62,7 @@ export class AbraxasPortableActionAdapter {
       wallet_binding: input.wallet_binding,
       ttlMs: input.ttlMs,
       now: input.now,
+      network_id: input.network_id,
     });
   }
 

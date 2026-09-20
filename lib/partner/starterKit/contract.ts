@@ -89,6 +89,7 @@ export const STARTER_KIT_DOES_NOT_DO = [
   "Does not treat browser flags, callback query keys, or webhook bodies as grants.",
   "Does not charge, capture, transfer, settle, or call Circle.",
   "Does not sign a blockchain transaction or bind a wallet as identity.",
+  "Does not activate Mainnet, include RPC credentials, or execute partner chain transactions.",
 ] as const;
 
 export const STARTER_KIT_REJECTED_CAPABILITIES = [
