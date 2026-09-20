@@ -22,6 +22,7 @@ export interface ProductionReviewQueueItem {
   submitted_note: string | null;
   submitted_at: string;
   decision_status: string;
+  credential_state: "never_issued" | "active" | "revoked" | "unavailable";
   issues_production_key: false;
   activates_mainnet: false;
 }
@@ -34,6 +35,7 @@ export function toProductionReviewQueueItem(input: {
   application: Pick<LaunchpadApplicationRow, "display_name" | "application_name" | "public_slug" | "policy_id" | "policy_version">;
   evidence: GoLiveEvidence;
   gates: ProductionReviewGateResult;
+  credentialState?: "never_issued" | "active" | "revoked" | "unavailable";
 }): ProductionReviewQueueItem {
   return {
     request_ref: opaqueProductionRequestRef(input.requestId),
@@ -50,6 +52,7 @@ export function toProductionReviewQueueItem(input: {
     submitted_note: sanitizeReviewNote(input.note),
     submitted_at: input.createdAt,
     decision_status: input.status,
+    credential_state: input.credentialState ?? "never_issued",
     issues_production_key: false,
     activates_mainnet: false,
   };

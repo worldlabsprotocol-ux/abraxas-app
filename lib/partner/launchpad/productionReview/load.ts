@@ -5,6 +5,7 @@ import { requireSupabaseAdmin, SupabaseAdminConfigurationError } from "@/lib/sup
 import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
 import { loadGoLiveEvidence } from "@/lib/partner/launchpad/goLiveReadiness/load";
 import { probePolicyChangeControlSchema } from "@/lib/policy/changeControl/schemaReady";
+import { productionCredentialState } from "@/lib/partner/launchpad/productionCredentials/evaluate";
 import { evaluateProductionReviewGates } from "./evaluate";
 import { productionReviewLeaks, productionReviewPublicEnvelope, toProductionReviewQueueItem } from "./snapshot";
 
@@ -40,6 +41,22 @@ export async function loadProductionReviewQueue(status = "pending") {
         evidence,
         durableSchemaReady: schemaReady,
       });
+      let credentialState: "never_issued" | "active" | "revoked" | "unavailable" = "never_issued";
+      if (application.production_api_key_id) {
+        const { data: key } = await sb
+          .from("partner_api_keys")
+          .select("revoked_at")
+          .eq("id", application.production_api_key_id)
+          .eq("partner_id", row.partner_id)
+          .maybeSingle();
+        credentialState = productionCredentialState({
+          productionApiKeyId: application.production_api_key_id,
+          revoked: Boolean(key?.revoked_at) || !key,
+          schemaReady,
+        });
+      } else if (!schemaReady) {
+        credentialState = "unavailable";
+      }
       items.push(toProductionReviewQueueItem({
         requestId: row.id,
         status: row.status,
@@ -48,6 +65,7 @@ export async function loadProductionReviewQueue(status = "pending") {
         application,
         evidence,
         gates,
+        credentialState,
       }));
     }
     const envelope = productionReviewPublicEnvelope(items);

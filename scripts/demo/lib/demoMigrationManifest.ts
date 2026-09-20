@@ -472,6 +472,16 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
     notes:
       "Preview/DEMO-first Circle Arc testnet settlement intents. Not a custodial ledger. No secrets or raw provider payloads.",
   },
+  {
+    file: "095_partner_launchpad_production_credential_atomic.sql",
+    tier: "recommended",
+    creates: ["partner_launchpad_operate_production_credential_atomic RPC"],
+    alters: ["partner_api_keys.launchpad_application_id"],
+    seeds: [],
+    extensions: [],
+    notes:
+      "DEMO-first atomic operator Production credential issue/rotate/revoke. One active abx_live_ key per Launchpad app. Does not change environment or activate Mainnet. Do not auto-apply from Vercel.",
+  },
 ];
 
 /** Map of which migration file first creates each core object. */
