@@ -82,6 +82,8 @@ export default function PortableActionContractDocsPage() {
           {" · "}
           Venue: <Link href="/docs/trading-venue">Trading venue</Link>
           {" · "}
+          Profiles: <Link href="/docs/trading-venue-profiles">Venue profiles</Link>
+          {" · "}
           Payment: <Link href="/docs/payment-authorization">Payment authorization</Link>
           {" · "}
           Networks: <Link href="/docs/multichain-mainnet-readiness">Mainnet readiness</Link>

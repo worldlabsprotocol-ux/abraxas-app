@@ -86,7 +86,7 @@ export function buildSandboxTestConsoleView(
       label: "Trading preflight capability",
       status: selected.includes("trading_venue") ? "action_required" : "not_selected",
       next_step: selected.includes("trading_venue")
-        ? "Use the allow/deny-shaped local fixtures. Abraxas does not execute trades."
+        ? "Configure sandbox, test receipt preflight and nonce handling, then build the venue’s own execution and request Production review."
         : "Shown only when trading is selected.",
     },
     {

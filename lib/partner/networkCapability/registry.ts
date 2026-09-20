@@ -97,9 +97,9 @@ export const NETWORK_CAPABILITY_REGISTRY: readonly NetworkCapabilityEntry[] = [
     environment: "sandbox",
     status: "configured",
     supported_actions: ["enable_market_access"],
-    wallet_binding: "optional",
+    wallet_binding: "not_attached",
     display_label: "Trading venue preflight (Hyperliquid-class)",
-    docs_href: "/docs/trading-venue",
+    docs_href: "/docs/trading-venue-profiles",
     posture:
       "Partner-preflight only. Venue-neutral. Never places an order, routes, or moves funds. Does not imply a Hyperliquid partnership.",
   },

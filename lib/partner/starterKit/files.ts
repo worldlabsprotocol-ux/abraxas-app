@@ -282,6 +282,8 @@ function venuePreflight(runtime: StarterKitRuntime): string {
 import { kit, permitProtocolAction } from ${runtime === "typescript_nextjs" ? '"../../../lib/abraxas"' : '"./lib/abraxas"'};
 
 const venue = new AbraxasTradingVenueAdapter({ kit });
+// Server sandbox config selects generic_trading_venue or hyperliquid_trading_venue.
+// Never accept venue_profile_id, orders, balances, or Production fields from the browser.
 
 export async function tradingPreflight() {
   const receipt = await kit.verifyReceiptId("REPLACE_WITH_RECEIPT_ID_AT_RUNTIME");

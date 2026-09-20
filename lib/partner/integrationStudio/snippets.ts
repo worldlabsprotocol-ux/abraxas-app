@@ -7,7 +7,7 @@ import {
 } from "@/lib/partner/integrationKit/examples";
 import { nextjsWebhookHandlerExample } from "@/lib/partner/eventDelivery/examples";
 import { solanaServerVerifyExample } from "@/lib/partner/solana/examples";
-import { tradingVenueServerPreflightExample } from "@/lib/partner/tradingVenue/examples";
+import { tradingVenueProfileExample } from "@/lib/partner/tradingVenue/profiles";
 import { walletStandardBindingExample } from "@/lib/partner/walletStandard/examples";
 import { paymentAuthorizationServerExample } from "@/lib/partner/paymentAuthorization/examples";
 import { portableActionServerExample } from "@/lib/partner/portableActionContract/examples";
@@ -59,8 +59,8 @@ export function studioSnippetForApplication(input: {
     },
     trading_venue: {
       title: "Trading venue access",
-      docs: "/docs/trading-venue",
-      code: tradingVenueServerPreflightExample(),
+      docs: "/docs/trading-venue-profiles",
+      code: tradingVenueProfileExample("generic_trading_venue"),
     },
     wallet_standard_binding: {
       title: "Wallet Standard binding",
@@ -114,8 +114,8 @@ export function studioSnippetForPath(path: IntegrationStudioPathId): { title: st
     case "trading_venue":
       return {
         title: "Trading venue access",
-        docs: "/docs/trading-venue",
-        code: tradingVenueServerPreflightExample(),
+        docs: "/docs/trading-venue-profiles",
+        code: tradingVenueProfileExample("generic_trading_venue"),
       };
     case "wallet_standard_binding":
       return {

@@ -42,6 +42,7 @@ describe("docsHub", () => {
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/starter-kit");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/solana");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/trading-venue");
+    expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/trading-venue-profiles");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/wallet-standard-binding");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/payment-authorization");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/portable-action-contract");

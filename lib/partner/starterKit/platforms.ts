@@ -110,6 +110,7 @@ const kit = new AbraxasPartnerKit({
   environment: "sandbox",
 });
 const venue = new AbraxasTradingVenueAdapter({ kit });
+// generic_trading_venue or hyperliquid_trading_venue from server sandbox config only.
 
 export async function tradingPreflight(receiptId) {
   const receipt = await kit.verifyReceiptId(receiptId);
@@ -368,6 +369,7 @@ export async function tradingPreflight(receiptId) {
     action_type: "enable_market_access",
     action_scope: "sandbox:market_access",
   });
+  // generic_trading_venue or hyperliquid_trading_venue from server sandbox config only.
 }
 `,
     }] : []),
@@ -563,6 +565,7 @@ export async function tradingPreflight(receiptId: string) {
     action_type: "enable_market_access",
     action_scope: "sandbox:market_access",
   });
+  // generic_trading_venue or hyperliquid_trading_venue from server sandbox config only.
 }
 `,
     }] : []),

@@ -56,6 +56,9 @@ describe("Trading venue reference preflight", () => {
     expect(replayJson.reason).toBe("replayed");
     const action = await post({ fixture: "approved", action_type: "place_order" });
     expect((await action.json()).reason).toBe("action_mismatch");
+    const override = await post({ fixture: "approved", venue_profile_id: "hyperliquid_trading_venue" });
+    expect(override.status).toBe(400);
+    expect((await override.json()).reason).toBe("invalid");
   });
 
   it("does not echo receipt material, wallets, or trading history", async () => {

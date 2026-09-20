@@ -7,6 +7,7 @@ export const PUBLIC_PRODUCT_ROUTES = [
   "/developers",
   "/developers/integration-studio",
   "/docs/trading-venue",
+  "/docs/trading-venue-profiles",
   "/docs/payment-authorization",
   "/docs/portable-action-contract",
   "/docs/selective-disclosure",

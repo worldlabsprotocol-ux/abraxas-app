@@ -23,6 +23,7 @@ const PUBLIC_PAGES = [
   "/docs",
   "/docs/partner-flow",
   "/docs/trading-venue",
+  "/docs/trading-venue-profiles",
   "/docs/wallet-standard-binding",
   "/docs/action-control-plane",
   "/docs/portable-action-contract",

@@ -77,6 +77,8 @@ export default function MultichainMainnetReadinessDocsPage() {
           {" · "}
           <Link href="/docs/trading-venue">Trading venue</Link>
           {" · "}
+          <Link href="/docs/trading-venue-profiles">Venue profiles</Link>
+          {" · "}
           <Link href="/docs/payment-authorization">Payment authorization</Link>
           {" · "}
           <Link href="/docs/receipt-key-lifecycle">Receipt key lifecycle</Link>

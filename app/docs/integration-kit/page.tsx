@@ -57,6 +57,10 @@ export default function IntegrationKitDocsPage() {
           {" · "}
           Solana: <Link href="/docs/solana">Solana integration</Link>
           {" · "}
+          Venue: <Link href="/docs/trading-venue">Trading venue</Link>
+          {" · "}
+          Profiles: <Link href="/docs/trading-venue-profiles">Venue profiles</Link>
+          {" · "}
           Keys: <Link href="/docs/receipt-key-lifecycle">Receipt key lifecycle</Link>
         </p>
       </ContentCard>

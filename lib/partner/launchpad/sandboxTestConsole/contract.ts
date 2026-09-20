@@ -101,7 +101,7 @@ export function buildSandboxTestChecklist(
     {
       id: "trading_preflight",
       title: "Test trading preflight adapter",
-      href: "/docs/trading-venue",
+      href: "/docs/trading-venue-profiles",
       kit_file: null,
       required: false,
       capability: "trading_venue",
