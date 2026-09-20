@@ -25,6 +25,8 @@ export type LaunchpadActivityEventType =
   | "production_access_requested"
   | "production_access_approved"
   | "production_access_rejected"
+  | "production_review_approved"
+  | "production_review_rejected"
   | "sandbox_readiness_run"
   | "settlement_intent_created"
   | "settlement_intent_submitted"

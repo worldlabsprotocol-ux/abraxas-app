@@ -52,6 +52,9 @@ export default function AdminPartnerFlowHealthPage() {
             </p>
           </div>
           <div style={{ display: "flex", gap: "0.85rem", flexWrap: "wrap" }}>
+            <Link href="/admin/production-review" style={{ fontFamily: FONT, fontSize: "0.78rem", color: ACCENT, textDecoration: "none" }}>
+              Production review queue →
+            </Link>
             <Link href="/admin/partner-flow/readiness" style={{ fontFamily: FONT, fontSize: "0.78rem", color: ACCENT, textDecoration: "none" }}>
               Production readiness →
             </Link>
