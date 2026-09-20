@@ -81,6 +81,12 @@ export const PUBLIC_JOURNEY_SURFACES = [
     file: "app/docs/payment-authorization/page.tsx",
   },
   {
+    route: "/docs/portable-action-contract",
+    purpose: "Canonical partner action preflight. Abraxas never executes the action.",
+    primaryCta: { label: "Integration Studio", href: "/developers/integration-studio" },
+    file: "app/docs/portable-action-contract/page.tsx",
+  },
+  {
     route: "/docs/wallet-standard-binding",
     purpose: "Optional message-only wallet binding. Never transaction signing.",
     primaryCta: { label: "Integration Studio", href: "/developers/integration-studio" },

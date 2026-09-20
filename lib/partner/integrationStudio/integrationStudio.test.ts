@@ -62,6 +62,7 @@ describe("Integration Studio", () => {
     const venue = studioSnippetForPath("trading_venue").code;
     const wallet = studioSnippetForPath("wallet_standard_binding").code;
     const payment = studioSnippetForPath("payment_authorization").code;
+    const portable = studioSnippetForPath("portable_action_contract").code;
     expect(hosted).toContain("AbraxasPartnerKit");
     expect(verify).toContain("verifyCallback");
     expect(webhook).toContain("verifyPartnerWebhookEvent");
@@ -76,6 +77,9 @@ describe("Integration Studio", () => {
     expect(payment).toContain("AbraxasPaymentAuthorizationAdapter");
     expect(payment).toContain("authorize_checkout");
     expect(payment).not.toMatch(/createTransfer|createCharge|confirm_testnet_transfer/);
+    expect(portable).toContain("AbraxasPortableActionAdapter");
+    expect(portable).toContain("partner_protocol_action");
+    expect(portable).toContain("never grants");
     const catalog = studioPublicCatalog({ pathId: "wallet_standard_binding" });
     expect(catalog.solana.creates_transactions).toBe(false);
     expect(catalog.solana.funds_movement).toBe(false);
@@ -84,10 +88,11 @@ describe("Integration Studio", () => {
     expect(catalog.wallet_standard.required_for_passport).toBe(false);
     expect(catalog.payment_authorization.creates_payments).toBe(false);
     expect(catalog.payment_authorization.calls_circle).toBe(false);
+    expect(catalog.portable_action_contract.executes_action).toBe(false);
     expect(catalog.wallet_standard.identity_verification).toBe(false);
     expect(catalog.activation.issues_production_key).toBe(false);
     expect(catalog.activation.create_cta).toBe("Create a sandbox integration");
-    expect(studioPayloadLeaks({ hosted, verify, webhook, solana, venue, wallet, catalog })).toEqual([]);
+    expect(studioPayloadLeaks({ hosted, verify, webhook, solana, venue, wallet, portable, catalog })).toEqual([]);
   });
 
   it("serves a public catalog with a safe response shape", async () => {

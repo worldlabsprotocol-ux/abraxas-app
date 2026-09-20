@@ -7,6 +7,7 @@ import { SOLANA_NO_FUNDS_BOUNDARY } from "@/lib/partner/solana/contract";
 import { TRADING_VENUE_NO_FUNDS_BOUNDARY } from "@/lib/partner/tradingVenue/contract";
 import { WALLET_STANDARD_NOT_IDENTITY } from "@/lib/partner/walletStandard/contract";
 import { PAYMENT_AUTHORIZATION_NO_FUNDS_BOUNDARY } from "@/lib/partner/paymentAuthorization/contract";
+import { PORTABLE_ACTION_NOT_EXECUTION } from "@/lib/partner/portableActionContract/contract";
 
 export const INTEGRATION_STUDIO_PATH = "/developers/integration-studio" as const;
 
@@ -18,6 +19,7 @@ export const INTEGRATION_STUDIO_PATHS = [
   "trading_venue",
   "wallet_standard_binding",
   "payment_authorization",
+  "portable_action_contract",
 ] as const;
 
 export type IntegrationStudioPathId = (typeof INTEGRATION_STUDIO_PATHS)[number];
@@ -74,6 +76,7 @@ export const INTEGRATION_STUDIO_SOLANA_NOTICE = SOLANA_NO_FUNDS_BOUNDARY;
 export const INTEGRATION_STUDIO_VENUE_NOTICE = TRADING_VENUE_NO_FUNDS_BOUNDARY;
 export const INTEGRATION_STUDIO_WALLET_NOTICE = WALLET_STANDARD_NOT_IDENTITY;
 export const INTEGRATION_STUDIO_PAYMENT_NOTICE = PAYMENT_AUTHORIZATION_NO_FUNDS_BOUNDARY;
+export const INTEGRATION_STUDIO_PORTABLE_NOTICE = PORTABLE_ACTION_NOT_EXECUTION;
 
 export function isIntegrationStudioPathId(value: string): value is IntegrationStudioPathId {
   return (INTEGRATION_STUDIO_PATHS as readonly string[]).includes(value);

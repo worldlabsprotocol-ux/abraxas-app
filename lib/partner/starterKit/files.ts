@@ -111,6 +111,7 @@ ${STARTER_KIT_NOTICES.webhook}
 ${STARTER_KIT_NOTICES.solana}
 ${STARTER_KIT_NOTICES.venue}
 ${STARTER_KIT_NOTICES.payment}
+${STARTER_KIT_NOTICES.portable}
 ${STARTER_KIT_NOTICES.wallet}
 `;
 }
@@ -122,7 +123,8 @@ function deployment(): string {
 - [ ] Callback URL allowlisted in Launchpad. Localhost is sandbox-only.
 - [ ] Receipt verification uses AbraxasPartnerKit and live \`currently_valid\`.
 - [ ] Webhook HMAC verified, duplicates ignored, then public receipt re-fetched.
-- [ ] Trading or payment preflight uses partner/policy/version/scope/expiry/one-time nonce.
+- [ ] Trading, payment, or generic action preflight uses partner/policy/version/scope/expiry/one-time nonce.
+- [ ] Allowed means your system may perform its own named action. Abraxas never executes it.
 - [ ] Wallet binding stays optional and never signs a transaction.
 - [ ] Production upgrade remains reviewed. This kit does not issue live access.
 - [ ] Policy review still required before a live grant.
@@ -328,6 +330,43 @@ export async function POST() {
   return body;
 }
 
+function portablePreflight(runtime: StarterKitRuntime): string {
+  const body = `import { AbraxasPortableActionAdapter } from "@abraxas/partner-kit/portable-action-contract";
+import { kit } from ${runtime === "typescript_nextjs" ? '"../../../lib/abraxas"' : '"./lib/abraxas"'};
+
+const actions = new AbraxasPortableActionAdapter({
+  partnerId: kit.options.partnerId,
+  policyId: kit.options.policyId,
+  policyVersion: kit.options.policyVersion,
+  requirePolicyVersion: true,
+  environment: "sandbox",
+});
+
+export async function portablePreflight(receiptId: string) {
+  const contract = actions.issueActionContract({
+    action_type: "partner_protocol_action",
+    action_scope: "sandbox:partner_protocol",
+  });
+  if ("ok" in contract && contract.ok === false) {
+    return { allowed: false, reason: contract.reason };
+  }
+  const verified = await actions.verifySignedReceipt(receiptId);
+  // allowed means your app may perform its named action. Abraxas never executes it.
+  return actions.preflight({ result: verified, contract });
+}
+`;
+  if (runtime === "typescript_nextjs") {
+    return `import { NextResponse } from "next/server";
+${body}
+export async function POST() {
+  const result = await portablePreflight("REPLACE_WITH_RECEIPT_ID_AT_RUNTIME");
+  return NextResponse.json({ allowed: result.allowed === true, reason: "reason" in result ? result.reason : "permitted" });
+}
+`;
+  }
+  return body;
+}
+
 function solanaGate(): string {
   return `import { AbraxasSolanaPartnerAdapter } from "@abraxas/partner-kit/solana";
 import { kit, permitProtocolAction } from "./abraxas";
@@ -360,14 +399,15 @@ function expressServer(include: {
   webhook: boolean;
   venue: boolean;
   payment: boolean;
+  portable: boolean;
 }): string {
   return `import express from "express";
 import { receiptCallback } from "./callback";
-${include.webhook ? 'import { webhookHandler } from "./webhook";\n' : ""}${include.venue ? 'import { tradingPreflight } from "./trading-preflight";\n' : ""}${include.payment ? 'import { paymentPreflight } from "./payment-preflight";\n' : ""}
+${include.webhook ? 'import { webhookHandler } from "./webhook";\n' : ""}${include.venue ? 'import { tradingPreflight } from "./trading-preflight";\n' : ""}${include.payment ? 'import { paymentPreflight } from "./payment-preflight";\n' : ""}${include.portable ? 'import { portablePreflight } from "./portable-preflight";\n' : ""}
 const app = express();
 app.use(express.text({ type: "*/*" }));
 app.get("/auth/abraxas/callback", (req, res) => void receiptCallback(req, res));
-${include.webhook ? 'app.post("/webhooks/abraxas", (req, res) => void webhookHandler(req, res));\n' : ""}${include.venue ? 'app.post("/preflight/trading", async (_req, res) => res.json(await tradingPreflight()));\n' : ""}${include.payment ? 'app.post("/preflight/payment", async (_req, res) => res.json(await paymentPreflight()));\n' : ""}
+${include.webhook ? 'app.post("/webhooks/abraxas", (req, res) => void webhookHandler(req, res));\n' : ""}${include.venue ? 'app.post("/preflight/trading", async (_req, res) => res.json(await tradingPreflight()));\n' : ""}${include.payment ? 'app.post("/preflight/payment", async (_req, res) => res.json(await paymentPreflight()));\n' : ""}${include.portable ? 'app.post("/preflight/action", async (_req, res) => res.json(await portablePreflight("REPLACE_WITH_RECEIPT_ID_AT_RUNTIME")));\n' : ""}
 app.listen(3000);
 `;
 }
@@ -403,7 +443,8 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     || selection.capabilities.includes("solana_gate")
     || selection.platform === "solana_backend";
   const wallet = selection.path === "wallet_standard_binding" || selection.capabilities.includes("wallet_standard_binding");
-  const include = { webhook, venue, payment, solana, wallet };
+  const portable = selection.path === "portable_action_contract" || selection.capabilities.includes("portable_action_contract");
+  const include = { webhook, venue, payment, solana, wallet, portable };
 
   const files: StarterKitFile[] = [
     { path: "README.md", contents: readme(selection) },
@@ -422,6 +463,7 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     if (webhook) files.push({ path: "app/api/abraxas/webhooks/route.ts", contents: webhookRoute("typescript_nextjs") });
     if (venue) files.push({ path: "app/api/abraxas/trading-preflight/route.ts", contents: venuePreflight("typescript_nextjs") });
     if (payment) files.push({ path: "app/api/abraxas/payment-preflight/route.ts", contents: paymentPreflight("typescript_nextjs") });
+    if (portable) files.push({ path: "app/api/abraxas/action-preflight/route.ts", contents: portablePreflight("typescript_nextjs") });
     if (solana) files.push({ path: "src/lib/solana-gate.ts", contents: solanaGate() });
     if (wallet) files.push({ path: "src/lib/wallet-binding.ts", contents: walletBinding() });
   } else if (selection.runtime === "typescript_express") {
@@ -431,13 +473,14 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     if (webhook) files.push({ path: "src/webhook.ts", contents: webhookRoute("typescript_express") });
     if (venue) files.push({ path: "src/trading-preflight.ts", contents: venuePreflight("typescript_express") });
     if (payment) files.push({ path: "src/payment-preflight.ts", contents: paymentPreflight("typescript_express") });
-    files.push({ path: "src/server.ts", contents: expressServer({ webhook, venue, payment }) });
+    if (portable) files.push({ path: "src/portable-preflight.ts", contents: portablePreflight("typescript_express") });
+    files.push({ path: "src/server.ts", contents: expressServer({ webhook, venue, payment, portable }) });
     if (solana) files.push({ path: "src/lib/solana-gate.ts", contents: solanaGate() });
     if (wallet) files.push({ path: "src/lib/wallet-binding.ts", contents: walletBinding() });
   } else if (selection.runtime === "universal_https") {
     files.push(...universalHttpsFiles(include));
   } else if (selection.runtime === "javascript_wix_velo") {
-    files.push(...wixVeloFiles({ webhook, venue, payment, wallet }));
+    files.push(...wixVeloFiles({ webhook, venue, payment, wallet, portable }));
   } else {
     files.push(...serverlessFiles(include));
   }

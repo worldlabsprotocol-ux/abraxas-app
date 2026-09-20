@@ -111,15 +111,17 @@ export const TRADING_VENUE_VERIFICATION_REUSE =
 export const TRADING_VENUE_FLOW =
   "Policy pack → hosted Partner Flow → minimum approved receipt → venue preflight → lifecycle or webhook re-check. A webhook body is never a grant.";
 
-export interface TradingVenueActionContract {
-  partner_id: string;
-  policy_id: string;
-  policy_version: number;
+import type { PortableActionContract } from "@/lib/partner/portableActionContract/contract";
+
+export interface TradingVenueActionContract extends Omit<
+  PortableActionContract,
+  "action_type" | "action_scope" | "receipt_requirement" | "issued_at" | "environment"
+> {
   action_type: TradingVenueActionType;
   action_scope: TradingVenueActionScope;
-  expires_at: string;
-  nonce: string;
-  wallet_binding: TradingVenueWalletBindingMode;
+  receipt_requirement?: PortableActionContract["receipt_requirement"];
+  issued_at?: string;
+  environment?: PortableActionContract["environment"];
 }
 
 export interface TradingVenueActionBinding {

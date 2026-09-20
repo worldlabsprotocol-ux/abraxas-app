@@ -14,6 +14,7 @@ export function universalHttpsFiles(include: {
   payment: boolean;
   solana: boolean;
   wallet: boolean;
+  portable: boolean;
 }): StarterKitFile[] {
   const files: StarterKitFile[] = [
     {
@@ -140,6 +141,32 @@ export async function paymentPreflight(receiptId) {
 `,
     });
   }
+  if (include.portable) {
+    files.push({
+      path: "http/portable-preflight.mjs",
+      contents: `import { AbraxasPortableActionAdapter } from "@abraxas/partner-kit/portable-action-contract";
+
+const adapter = new AbraxasPortableActionAdapter({
+  partnerId: process.env.ABRAXAS_PARTNER_ID ?? "${P.partner_id}",
+  policyId: process.env.ABRAXAS_POLICY_ID ?? "${P.policy_id}",
+  policyVersion: Number(process.env.ABRAXAS_POLICY_VERSION ?? "${P.policy_version}"),
+  requirePolicyVersion: true,
+  environment: "sandbox",
+});
+
+export async function portablePreflight(receiptId) {
+  const contract = adapter.issueActionContract({
+    action_type: "partner_protocol_action",
+    action_scope: "sandbox:partner_protocol",
+  });
+  if ("ok" in contract && contract.ok === false) return { allowed: false, reason: contract.reason };
+  const verified = await adapter.verifySignedReceipt(receiptId);
+  // allowed means your app may perform its named action. Abraxas never executes it.
+  return adapter.preflight({ result: verified, contract });
+}
+`,
+    });
+  }
   if (include.solana) {
     files.push({
       path: "http/solana-gate.mjs",
@@ -177,7 +204,7 @@ export async function optionalWalletBinding(wallet) {
   return files;
 }
 
-export function wixVeloFiles(include: { webhook: boolean; venue: boolean; payment: boolean; wallet: boolean }): StarterKitFile[] {
+export function wixVeloFiles(include: { webhook: boolean; venue: boolean; payment: boolean; wallet: boolean; portable: boolean }): StarterKitFile[] {
   return [
     {
       path: "PLATFORM.md",
@@ -331,6 +358,29 @@ export async function paymentPreflight(receiptId) {
 }
 `,
     }] : []),
+    ...(include.portable ? [{
+      path: "backend/portable-preflight.web.js",
+      contents: `import { AbraxasPortableActionAdapter } from "@abraxas/partner-kit/portable-action-contract";
+import { getSecret } from "wix-secrets-backend";
+
+export async function portablePreflight(receiptId) {
+  const adapter = new AbraxasPortableActionAdapter({
+    partnerId: await getSecret("ABRAXAS_PARTNER_ID"),
+    policyId: await getSecret("ABRAXAS_POLICY_ID"),
+    policyVersion: Number(await getSecret("ABRAXAS_POLICY_VERSION")),
+    requirePolicyVersion: true,
+    environment: "sandbox",
+  });
+  const contract = adapter.issueActionContract({
+    action_type: "grant_membership_access",
+    action_scope: "sandbox:membership_access",
+  });
+  if ("ok" in contract && contract.ok === false) return { allowed: false, reason: contract.reason };
+  const verified = await adapter.verifySignedReceipt(receiptId);
+  return adapter.preflight({ result: verified, contract });
+}
+`,
+    }] : []),
     ...(include.wallet ? [{
       path: "backend/wallet-binding.web.js",
       contents: `import { signWalletStandardChallenge } from "@abraxas/partner-kit/wallet-standard";
@@ -349,6 +399,7 @@ export function serverlessFiles(include: {
   payment: boolean;
   solana: boolean;
   wallet: boolean;
+  portable: boolean;
 }): StarterKitFile[] {
   return [
     {
@@ -464,6 +515,29 @@ export async function paymentPreflight(receiptId: string) {
     action_type: "authorize_checkout",
     action_scope: "sandbox:checkout",
   });
+}
+`,
+    }] : []),
+    ...(include.portable ? [{
+      path: "src/handlers/portable-preflight.ts",
+      contents: `import { AbraxasPortableActionAdapter } from "@abraxas/partner-kit/portable-action-contract";
+
+const adapter = new AbraxasPortableActionAdapter({
+  partnerId: process.env.ABRAXAS_PARTNER_ID ?? "${P.partner_id}",
+  policyId: process.env.ABRAXAS_POLICY_ID ?? "${P.policy_id}",
+  policyVersion: Number(process.env.ABRAXAS_POLICY_VERSION ?? "${P.policy_version}"),
+  requirePolicyVersion: true,
+  environment: "sandbox",
+});
+
+export async function portablePreflight(receiptId: string) {
+  const contract = adapter.issueActionContract({
+    action_type: "partner_protocol_action",
+    action_scope: "sandbox:partner_protocol",
+  });
+  if ("ok" in contract && contract.ok === false) return { allowed: false, reason: contract.reason };
+  const verified = await adapter.verifySignedReceipt(receiptId);
+  return adapter.preflight({ result: verified, contract });
 }
 `,
     }] : []),

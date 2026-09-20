@@ -1,9 +1,8 @@
 // FILE: lib/partner/tradingVenue/adapter.ts
-// Server-side venue preflight. Reuses the Partner Integration Kit. No execution.
+// Server-side venue preflight. Reuses portable action-contract primitives. No execution.
 
 import {
   AbraxasPartnerKit,
-  permitProtocolAction,
   type AbraxasPartnerKitOptions,
   type PartnerKitSafeResult,
 } from "@/lib/partner/integrationKit";
@@ -21,17 +20,12 @@ import {
   type TradingVenueActionType,
   type TradingVenueWalletBindingMode,
 } from "@/lib/partner/tradingVenue/contract";
-import { resolveWalletBindingForAction } from "@/lib/partner/walletStandard/resolve";
 import {
   deniedVenueResult,
-  permittedVenueResult,
-  reasonFromOutcome,
   type TradingVenueClientVisibleResult,
 } from "@/lib/partner/tradingVenue/clientVisible";
-import { consumeTradingVenueNonce } from "@/lib/partner/tradingVenue/nonceStore";
-import { WalletStandardStoreUnavailableError } from "@/lib/partner/walletStandard/errors";
-
-const DEFAULT_TTL_MS = 15 * 60 * 1000;
+import { issuePortableActionContract } from "@/lib/partner/portableActionContract/issue";
+import { preflightPortableAction } from "@/lib/partner/portableActionContract/preflight";
 
 export interface AbraxasTradingVenueAdapterOptions extends AbraxasPartnerKitOptions {}
 
@@ -77,22 +71,19 @@ export class AbraxasTradingVenueAdapter {
   }): TradingVenueActionContract | { ok: false; reason: "action_mismatch" } {
     const actionType = (input?.action_type ?? "enable_market_access") as string;
     const actionScope = (input?.action_scope ?? TRADING_VENUE_SANDBOX_SCOPE) as string;
-    const walletBinding = (input?.wallet_binding ?? TRADING_VENUE_WALLET_BINDING_FUTURE.status) as string;
-    if (!isVenueActionType(actionType) || !isVenueActionScope(actionScope) || !isVenueWalletBindingMode(walletBinding)) {
+    if (!isVenueActionType(actionType) || !isVenueActionScope(actionScope)) {
       return { ok: false, reason: "action_mismatch" };
     }
-    const now = input?.now ?? new Date();
-    const ttl = Math.min(Math.max(input?.ttlMs ?? DEFAULT_TTL_MS, 30_000), 60 * 60 * 1000);
-    return {
-      partner_id: this.kit.options.partnerId,
-      policy_id: this.kit.options.policyId,
-      policy_version: this.kit.options.policyVersion ?? 1,
+    const issued = issuePortableActionContract({
+      kit: this.kit,
       action_type: actionType,
       action_scope: actionScope,
-      expires_at: new Date(now.getTime() + ttl).toISOString(),
-      nonce: createVenueNonce(),
-      wallet_binding: walletBinding,
-    };
+      wallet_binding: input?.wallet_binding ?? TRADING_VENUE_WALLET_BINDING_FUTURE.status,
+      ttlMs: input?.ttlMs,
+      now: input?.now,
+    });
+    if ("ok" in issued) return issued;
+    return issued as TradingVenueActionContract;
   }
 
   async preflight(input: TradingVenuePreflightInput): Promise<TradingVenueClientVisibleResult> {
@@ -101,90 +92,15 @@ export class AbraxasTradingVenueAdapter {
     if (!isVenueActionType(requestedType) || !isVenueActionScope(requestedScope)) {
       return deniedVenueResult("action_mismatch", "rejected", String(requestedScope), "rejected");
     }
-    if (
-      input.contract.partner_id !== this.kit.options.partnerId
-      || input.contract.policy_id !== this.kit.options.policyId
-      || input.contract.policy_version !== (this.kit.options.policyVersion ?? 1)
-    ) {
-      return deniedVenueResult("partner_mismatch", requestedType, requestedScope, "rejected", input.contract.expires_at);
-    }
-    if (input.contract.action_type !== requestedType || input.contract.action_scope !== requestedScope) {
-      return deniedVenueResult("action_mismatch", requestedType, requestedScope, "rejected", input.contract.expires_at);
-    }
-    if (Date.parse(input.contract.expires_at) <= Date.now()) {
-      return deniedVenueResult("action_expired", requestedType, requestedScope, "rejected", input.contract.expires_at);
-    }
-    if (!permitProtocolAction(input.result)) {
-      return deniedVenueResult(
-        reasonFromOutcome(input.result.outcome),
-        requestedType,
-        requestedScope,
-        "rejected",
-        input.contract.expires_at,
-      );
-    }
-
-    const wallet = await resolveWalletBindingForAction({
-      mode: input.contract.wallet_binding,
-      bindingRef: input.binding_ref,
-      partnerId: this.kit.options.partnerId,
-      actionContractNonce: input.contract.nonce,
-      consume: false,
+    const result = await preflightPortableAction({
+      kit: this.kit,
+      result: input.result,
+      contract: input.contract,
+      action_type: requestedType,
+      action_scope: requestedScope,
+      binding_ref: input.binding_ref,
     });
-    if (!wallet.ok) {
-      if (wallet.status === "store_unavailable") {
-        return deniedVenueResult("store_unavailable", requestedType, requestedScope, "rejected", input.contract.expires_at);
-      }
-      const reason =
-        wallet.status === "missing" ? "wallet_binding_missing"
-        : wallet.status === "expired" ? "wallet_binding_expired"
-        : wallet.status === "mismatched" ? "wallet_binding_mismatch"
-        : wallet.status === "replayed" ? "wallet_binding_replayed"
-        : wallet.status === "cross_partner" ? "wallet_binding_cross_partner"
-        : "invalid";
-      return deniedVenueResult(
-        reason,
-        requestedType,
-        requestedScope,
-        "rejected",
-        input.contract.expires_at,
-        wallet.status === "cross_partner" ? "cross_partner" : wallet.status === "replayed" ? "replayed" : wallet.status === "expired" ? "expired" : wallet.status === "mismatched" ? "mismatched" : "missing",
-      );
-    }
-
-    let nonceState: "consumed" | "replayed" | "invalid" | "expired";
-    try {
-      nonceState = await consumeTradingVenueNonce(this.kit.options.partnerId, input.contract.nonce, input.contract.expires_at);
-    } catch (error) {
-      if (error instanceof WalletStandardStoreUnavailableError) {
-        return deniedVenueResult("store_unavailable", requestedType, requestedScope, "rejected", input.contract.expires_at);
-      }
-      throw error;
-    }
-    if (nonceState === "replayed") {
-      return deniedVenueResult("replayed", requestedType, requestedScope, "replayed", input.contract.expires_at);
-    }
-    if (nonceState === "expired") {
-      return deniedVenueResult("action_expired", requestedType, requestedScope, "rejected", input.contract.expires_at);
-    }
-    if (nonceState === "invalid") {
-      return deniedVenueResult("invalid", requestedType, requestedScope, "rejected", input.contract.expires_at);
-    }
-    if (wallet.status === "bound") {
-      await resolveWalletBindingForAction({
-        mode: input.contract.wallet_binding,
-        bindingRef: input.binding_ref,
-        partnerId: this.kit.options.partnerId,
-        actionContractNonce: input.contract.nonce,
-        consume: true,
-      });
-    }
-    const walletState = wallet.status === "bound"
-      ? "bound"
-      : wallet.status === "optional_unused"
-        ? "optional"
-        : "not_attached";
-    return permittedVenueResult(requestedType, requestedScope, input.contract.expires_at, walletState);
+    return result as TradingVenueClientVisibleResult;
   }
 }
 
@@ -198,11 +114,4 @@ export function isVenueActionScope(value: string): value is TradingVenueActionSc
 
 export function isVenueWalletBindingMode(value: string): value is TradingVenueWalletBindingMode {
   return (TRADING_VENUE_WALLET_BINDING_MODES as readonly string[]).includes(value);
-}
-
-function createVenueNonce(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-  return `vn_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 12)}`;
 }

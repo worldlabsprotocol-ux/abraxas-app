@@ -10,6 +10,7 @@ import { solanaServerVerifyExample } from "@/lib/partner/solana/examples";
 import { tradingVenueServerPreflightExample } from "@/lib/partner/tradingVenue/examples";
 import { walletStandardBindingExample } from "@/lib/partner/walletStandard/examples";
 import { paymentAuthorizationServerExample } from "@/lib/partner/paymentAuthorization/examples";
+import { portableActionServerExample } from "@/lib/partner/portableActionContract/examples";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
 
 const DEMO_OPTS = {
@@ -69,6 +70,11 @@ export function studioSnippetForApplication(input: {
       docs: "/docs/payment-authorization",
       code: paymentAuthorizationServerExample(),
     },
+    portable_action_contract: {
+      title: "Portable action contract",
+      docs: "/docs/portable-action-contract",
+      code: portableActionServerExample(),
+    },
   };
 }
 
@@ -115,6 +121,12 @@ export function studioSnippetForPath(path: IntegrationStudioPathId): { title: st
         title: "Payment and commerce",
         docs: "/docs/payment-authorization",
         code: paymentAuthorizationServerExample(),
+      };
+    case "portable_action_contract":
+      return {
+        title: "Portable action contract",
+        docs: "/docs/portable-action-contract",
+        code: portableActionServerExample(),
       };
     default: {
       const _never: never = path;

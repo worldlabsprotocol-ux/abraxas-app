@@ -104,14 +104,18 @@ export const PAYMENT_AUTHORIZATION_VERIFICATION_REUSE =
 export const PAYMENT_AUTHORIZATION_FLOW =
   "Policy pack → hosted Partner Flow → minimum approved receipt → payment preflight → merchant payment flow → lifecycle or webhook re-check. A webhook body is never a payment grant.";
 
-export interface PaymentAuthorizationActionContract {
-  partner_id: string;
-  policy_id: string;
-  policy_version: number;
+import type { PortableActionContract } from "@/lib/partner/portableActionContract/contract";
+
+export interface PaymentAuthorizationActionContract extends Omit<
+  PortableActionContract,
+  "action_type" | "action_scope" | "wallet_binding" | "receipt_requirement" | "issued_at" | "environment"
+> {
   action_type: PaymentAuthorizationActionType;
   action_scope: PaymentAuthorizationActionScope;
-  expires_at: string;
-  nonce: string;
+  wallet_binding?: PortableActionContract["wallet_binding"];
+  receipt_requirement?: PortableActionContract["receipt_requirement"];
+  issued_at?: string;
+  environment?: PortableActionContract["environment"];
 }
 
 export interface PaymentAuthorizationActionBinding {
