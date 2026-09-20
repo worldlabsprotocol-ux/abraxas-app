@@ -105,6 +105,7 @@ describe("revocation control plane", () => {
 
   it("accepts only fixed non-pii reason codes", () => {
     expect(isRevocationReasonCode("operator_security_review")).toBe(true);
+    expect(isRevocationReasonCode("holder_withdrawal")).toBe(true);
     expect(isRevocationReasonCode("custom_reason")).toBe(false);
   });
 
