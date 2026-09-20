@@ -39,6 +39,8 @@ export const LAUNCHPAD_ACTIVITY_METADATA_ALLOWED_KEYS = [
   "callback_class",
   "kit_evidenced",
   "sandbox_key_configured",
+  "reason_class",
+  "issues_production_key",
   "starter_kit",
   "action_family",
   "probe",

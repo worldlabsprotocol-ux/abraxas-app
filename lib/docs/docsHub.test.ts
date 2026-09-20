@@ -56,6 +56,7 @@ describe("docsHub", () => {
     expect(getDocsHubGroup("core-concepts")?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/selective-disclosure");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/partner-event-delivery");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/circle-arc-testnet");
+    expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/production-review");
   });
 
   it("links roadmap to integration readiness and partner flow", () => {

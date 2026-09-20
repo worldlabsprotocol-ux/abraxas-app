@@ -29,6 +29,7 @@ const PUBLIC_PAGES = [
   "/docs/portable-action-contract",
   "/docs/selective-disclosure",
   "/docs/starter-kit",
+  "/docs/production-review",
   "/docs/circle-arc-testnet",
   "/verify",
   "/good-trouble",
