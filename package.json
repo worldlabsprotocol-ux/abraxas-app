@@ -115,6 +115,6 @@
     "@types/react": "^18.3.3"
   },
   "engines": {
-    "node": "20.x"
+    "node": "24.x"
   }
 }
