@@ -3,7 +3,7 @@
 
 import { POLICY_PACK_CATALOG_VERSION, type PolicyPackId } from "@/lib/partner/launchpad/policyPacks";
 import { PARTNER_INTEGRATION_TRUSTED_RECEIPT_FIELDS } from "@/lib/partner/integrationKit/contract";
-import { WEBHOOK_PAYLOAD_ALLOWED_KEYS } from "@/lib/partner/webhooks/webhookPayloadContract";
+import { WEBHOOK_PAYLOAD_ALLOWED_KEYS } from "@/lib/partner/webhooks/payloadAllowlist";
 import { PORTABLE_ACTION_CLIENT_VISIBLE_KEYS } from "@/lib/partner/portableActionContract/contract";
 import { TRADING_VENUE_CLIENT_VISIBLE_KEYS } from "@/lib/partner/tradingVenue/contract";
 import { PAYMENT_AUTHORIZATION_CLIENT_VISIBLE_KEYS } from "@/lib/partner/paymentAuthorization/contract";
