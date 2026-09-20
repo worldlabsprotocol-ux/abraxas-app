@@ -129,7 +129,7 @@ export function normalizePortableActionContract(input: {
 export async function preflightPortableAction(input: {
   kit: AbraxasPartnerKit;
   result: PartnerKitSafeResult;
-  contract: PortableActionContract | Record<string, unknown>;
+  contract: unknown;
   action_type?: string;
   action_scope?: string;
   binding_ref?: string | null;

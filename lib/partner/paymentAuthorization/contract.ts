@@ -108,11 +108,14 @@ import type { PortableActionContract } from "@/lib/partner/portableActionContrac
 
 export interface PaymentAuthorizationActionContract extends Omit<
   PortableActionContract,
-  "action_type" | "action_scope" | "wallet_binding"
+  "action_type" | "action_scope" | "wallet_binding" | "receipt_requirement" | "issued_at" | "environment"
 > {
   action_type: PaymentAuthorizationActionType;
   action_scope: PaymentAuthorizationActionScope;
   wallet_binding?: PortableActionContract["wallet_binding"];
+  receipt_requirement?: PortableActionContract["receipt_requirement"];
+  issued_at?: string;
+  environment?: PortableActionContract["environment"];
 }
 
 export interface PaymentAuthorizationActionBinding {

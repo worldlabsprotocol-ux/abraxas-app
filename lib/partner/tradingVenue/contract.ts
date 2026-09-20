@@ -113,9 +113,15 @@ export const TRADING_VENUE_FLOW =
 
 import type { PortableActionContract } from "@/lib/partner/portableActionContract/contract";
 
-export interface TradingVenueActionContract extends Omit<PortableActionContract, "action_type" | "action_scope"> {
+export interface TradingVenueActionContract extends Omit<
+  PortableActionContract,
+  "action_type" | "action_scope" | "receipt_requirement" | "issued_at" | "environment"
+> {
   action_type: TradingVenueActionType;
   action_scope: TradingVenueActionScope;
+  receipt_requirement?: PortableActionContract["receipt_requirement"];
+  issued_at?: string;
+  environment?: PortableActionContract["environment"];
 }
 
 export interface TradingVenueActionBinding {
