@@ -585,6 +585,9 @@ export function IntegrationStudioClient() {
           <Btn href={created ? launchpadResumeHref(created.application_id) : INTEGRATION_STUDIO_PROVISION.launchpad_href} size="sm">
             Open Launchpad readiness →
           </Btn>
+          <Btn href="/docs/sandbox-conformance" variant="secondary" size="sm">
+            Sandbox partner contract →
+          </Btn>
         </div>
       </ContentCard>
     </>

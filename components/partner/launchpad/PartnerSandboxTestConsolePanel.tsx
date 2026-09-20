@@ -148,6 +148,7 @@ export function PartnerSandboxTestConsolePanel({
           </ol>
           <p style={{ ...body, marginTop: "0.85rem" }}>{view.production.notice}</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
+            <Btn href="/docs/sandbox-conformance" size="sm" variant="secondary">Sandbox contract →</Btn>
             <Btn href="/docs/starter-kit" size="sm" variant="secondary">Starter Kit docs →</Btn>
             <Btn href="/developers/integration-studio" size="sm" variant="ghost">Integration Studio →</Btn>
             {onRequestReview && (
