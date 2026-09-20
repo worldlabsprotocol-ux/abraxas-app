@@ -6,7 +6,7 @@ import { PARTNER_EVENT_NOT_AUTHORIZATION } from "@/lib/partner/eventDelivery/con
 import { launchpadSandboxTestHref } from "@/lib/partner/launchpad/sandboxTestConsole/contract";
 import { WEBHOOK_MAX_ATTEMPTS } from "@/lib/partner/webhooks/types";
 
-export const WEBHOOK_DELIVERY_HEALTH_VERSION = "1.0.0" as const;
+export const WEBHOOK_DELIVERY_HEALTH_VERSION = "1.1.0" as const;
 export const WEBHOOK_DELIVERY_HEALTH_WINDOW_HOURS = 72 as const;
 export const WEBHOOK_DELIVERY_HEALTH_LIST_LIMIT = 20 as const;
 

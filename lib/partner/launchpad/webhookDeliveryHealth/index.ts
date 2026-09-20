@@ -6,5 +6,11 @@ export {
   webhookHealthTestConsoleHref,
 } from "./contract";
 export { webhookHealthCopyLeaks } from "./classify";
+export {
+  WEBHOOK_HEALTH_APP_POLICY_LABEL,
+  WEBHOOK_HEALTH_PARTNER_WIDE_LABEL,
+  extractOutboxPolicyId,
+  partitionWebhookHealthDeliveries,
+} from "./scope";
 export { buildWebhookDeliveryHealthView, type WebhookDeliveryHealthView } from "./view";
 export { loadWebhookDeliveryHealth } from "./load";

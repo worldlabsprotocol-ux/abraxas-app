@@ -21,7 +21,7 @@ describe("PartnerWebhookDeliveryHealthPanel", () => {
       retryReady: false,
       schemaReady: true,
       deliveries: [],
-      scopedByApplicationPolicy: true,
+      deliveryScope: "app_policy",
     });
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(payload), { status: 200 })));
     const { container } = render(<PartnerWebhookDeliveryHealthPanel applicationId="app-1" />);
@@ -32,5 +32,36 @@ describe("PartnerWebhookDeliveryHealthPanel", () => {
     expect(screen.getByRole("link", { name: /Starter Kit/i }).getAttribute("href")).toBe("/docs/starter-kit");
     expect(screen.getByRole("link", { name: /Integration Studio/i }).getAttribute("href")).toBe("/developers/integration-studio");
     expect(container.textContent).not.toMatch(/Send TEST EVENT|abx_whsec_|receipt_id|https:\/\/hooks/);
+    expect(screen.getByRole("heading", { name: /This app’s policy deliveries/i })).toBeTruthy();
+  });
+
+  it("labels unattributable rows as partner-wide, not this app", async () => {
+    const payload = buildWebhookDeliveryHealthView({
+      applicationId: "app-1",
+      partnerId: "partner-a",
+      webhookConfigured: true,
+      signingSecretConfigured: true,
+      deliveryEnabled: true,
+      endpointUrl: null,
+      retryReady: true,
+      schemaReady: true,
+      deliveries: [{
+        outbox_id: "out-unknown",
+        event_type: "partner.receipt.issued",
+        status: "failed",
+        occurred_at: "2026-09-20T00:00:00.000Z",
+        delivered_at: null,
+        last_error_code: "timeout",
+      }],
+      deliveryScope: "partner_wide",
+    });
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(payload), { status: 200 })));
+    const { container } = render(<PartnerWebhookDeliveryHealthPanel applicationId="app-1" />);
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /Partner-wide webhook delivery health/i })).toBeTruthy();
+    });
+    expect(container.textContent).toMatch(/not this app/i);
+    expect(container.querySelector("caption")?.textContent).toMatch(/partner-wide/i);
+    expect(container.textContent).not.toMatch(/Recent deliveries for this app/);
   });
 });

@@ -48,10 +48,12 @@ export function PartnerWebhookDeliveryHealthPanel({ applicationId }: { applicati
   }, [applicationId]);
 
   return (
-    <ContentCard title="Webhook delivery">
+    <ContentCard title={view?.scope_label ?? "Webhook delivery"}>
       <p style={body}>
-        Tenant-scoped health for this sandbox app. A webhook is a notification only.
-        Re-fetch and server-verify the current receipt before granting access.
+        {view?.scope_explanation
+          ?? "Webhook configuration is stored per partner. Delivery rows are shown only when they can be attributed safely."}
+        {" "}
+        A webhook is a notification only. Re-fetch and server-verify the current receipt before granting access.
       </p>
       {error && <p role="alert" aria-live="assertive" style={body}>{error}</p>}
       {view && (
@@ -76,9 +78,14 @@ export function PartnerWebhookDeliveryHealthPanel({ applicationId }: { applicati
             Retry: {view.retry.state} ({view.retry.max_attempts} bounded attempts).
             Delivery status does not grant eligibility or Production access.
           </p>
-          {view.capability_state === "optional_not_selected" && (
+          {view.capability_state === "optional_not_selected" && view.delivery_scope === "app_policy" && (
             <p style={body}>
-              Webhooks are optional for this sandbox path. Add the capability through Integration Studio, then configure an endpoint.
+              Webhooks are optional. Add the capability through Integration Studio if this partner path needs them.
+            </p>
+          )}
+          {view.capability_state === "optional_not_selected" && view.delivery_scope === "partner_wide" && (
+            <p style={body}>
+              Webhooks are optional. Add the capability through Integration Studio. Partner-wide delivery rows below are not this app’s readiness.
             </p>
           )}
           <p style={body}>{view.notice}</p>
@@ -104,7 +111,9 @@ export function PartnerWebhookDeliveryHealthPanel({ applicationId }: { applicati
           {view.deliveries.length > 0 && (
             <div style={{ overflowX: "auto", maxWidth: "100%" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: FONT, fontSize: "0.72rem" }}>
-                <caption style={{ textAlign: "left", marginBottom: "0.4rem", fontWeight: 700 }}>Recent deliveries</caption>
+                <caption style={{ textAlign: "left", marginBottom: "0.4rem", fontWeight: 700 }}>
+                  {view.delivery_scope === "app_policy" ? "Recent deliveries for this app’s policy" : "Recent partner-wide deliveries"}
+                </caption>
                 <thead>
                   <tr>
                     <th style={{ textAlign: "left" }}>Reference</th>

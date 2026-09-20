@@ -18,6 +18,13 @@ import {
   type WebhookHealthRetryState,
   type WebhookHealthStatus,
 } from "./contract";
+import type { WebhookHealthDeliveryScope } from "./scope";
+import {
+  WEBHOOK_HEALTH_APP_POLICY_EXPLANATION,
+  WEBHOOK_HEALTH_APP_POLICY_LABEL,
+  WEBHOOK_HEALTH_PARTNER_WIDE_EXPLANATION,
+  WEBHOOK_HEALTH_PARTNER_WIDE_LABEL,
+} from "./scope";
 import {
   classifyWebhookEndpointHost,
   classifyWebhookFailureClass,
@@ -37,6 +44,9 @@ export interface WebhookHealthOutboxRow {
 export interface WebhookDeliveryHealthView {
   version: typeof WEBHOOK_DELIVERY_HEALTH_VERSION;
   application_id: string;
+  delivery_scope: WebhookHealthDeliveryScope;
+  scope_label: typeof WEBHOOK_HEALTH_APP_POLICY_LABEL | typeof WEBHOOK_HEALTH_PARTNER_WIDE_LABEL;
+  scope_explanation: string;
   webhook_configured: boolean;
   signing_secret_configured: boolean;
   delivery_enabled: boolean;
@@ -53,7 +63,6 @@ export interface WebhookDeliveryHealthView {
     max_attempts: number;
     bounded: true;
   };
-  scoped_by_application_policy: boolean;
   deliveries: Array<{
     delivery_ref: string;
     event_type: string;
@@ -84,7 +93,7 @@ export function buildWebhookDeliveryHealthView(input: {
   retryReady: boolean;
   schemaReady: boolean;
   deliveries: WebhookHealthOutboxRow[];
-  scopedByApplicationPolicy: boolean;
+  deliveryScope: WebhookHealthDeliveryScope;
 }): WebhookDeliveryHealthView {
   const host = classifyWebhookEndpointHost(input.endpointUrl);
   const capability_state: WebhookHealthCapabilityState = input.webhookConfigured
@@ -121,9 +130,10 @@ export function buildWebhookDeliveryHealthView(input: {
       ? "ready"
       : "waiting";
 
+  const appScoped = input.deliveryScope === "app_policy";
   const next_actions: string[] = [];
   if (capability_state === "optional_not_selected") {
-    next_actions.push("Webhooks are optional. Add them in Integration Studio, then return here.");
+    next_actions.push("Webhooks are optional. Add them in Integration Studio if this partner path needs them.");
   } else if (capability_state === "incomplete") {
     next_actions.push("Finish webhook setup in Partner Event Delivery, then generate a Starter Kit.");
   }
@@ -135,6 +145,9 @@ export function buildWebhookDeliveryHealthView(input: {
   return {
     version: WEBHOOK_DELIVERY_HEALTH_VERSION,
     application_id: input.applicationId,
+    delivery_scope: input.deliveryScope,
+    scope_label: appScoped ? WEBHOOK_HEALTH_APP_POLICY_LABEL : WEBHOOK_HEALTH_PARTNER_WIDE_LABEL,
+    scope_explanation: appScoped ? WEBHOOK_HEALTH_APP_POLICY_EXPLANATION : WEBHOOK_HEALTH_PARTNER_WIDE_EXPLANATION,
     webhook_configured: input.webhookConfigured,
     signing_secret_configured: input.signingSecretConfigured,
     delivery_enabled: input.deliveryEnabled,
@@ -151,7 +164,6 @@ export function buildWebhookDeliveryHealthView(input: {
       max_attempts: WEBHOOK_HEALTH_MAX_ATTEMPTS,
       bounded: true,
     },
-    scoped_by_application_policy: input.scopedByApplicationPolicy,
     deliveries,
     notice: WEBHOOK_DELIVERY_HEALTH_NOTICE,
     disclaimer: WEBHOOK_DELIVERY_HEALTH_DISCLAIMER,

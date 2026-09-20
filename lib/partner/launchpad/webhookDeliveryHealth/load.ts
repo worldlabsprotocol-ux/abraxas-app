@@ -1,5 +1,5 @@
 // FILE: lib/partner/launchpad/webhookDeliveryHealth/load.ts
-// Tenant-scoped load. Session partner_id + application_id. No payload returned.
+// Tenant-scoped load. Attribute deliveries only by exact payload.policy_id.
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { getPartnerWebhookConfig } from "@/lib/partner/webhooks/webhookConfigService";
@@ -9,9 +9,11 @@ import {
   WEBHOOK_DELIVERY_HEALTH_LIST_LIMIT,
   WEBHOOK_DELIVERY_HEALTH_WINDOW_HOURS,
 } from "./contract";
-import { buildWebhookDeliveryHealthView, type WebhookHealthOutboxRow } from "./view";
+import { extractOutboxPolicyId, partitionWebhookHealthDeliveries } from "./scope";
+import { buildWebhookDeliveryHealthView } from "./view";
 
 const OUTBOX = "partner_webhook_outbox";
+const FETCH_LIMIT = 100;
 
 export async function loadWebhookDeliveryHealth(input: {
   application: LaunchpadApplicationRow;
@@ -27,10 +29,14 @@ export async function loadWebhookDeliveryHealth(input: {
   const deliveryEnabled = config?.enabled === true;
   const sinceIso = new Date(Date.now() - WEBHOOK_DELIVERY_HEALTH_WINDOW_HOURS * 3600_000).toISOString();
 
-  const { rows, scopedByApplicationPolicy } = await listScopedDeliveries({
+  const fetched = await listPartnerOutboxForHealth({
     partnerId: input.partnerId,
-    policyId: input.application.policy_id,
     sinceIso,
+  });
+  const partitioned = partitionWebhookHealthDeliveries({
+    selectedPolicyId: input.application.policy_id,
+    policyFieldReadable: fetched.policyFieldReadable,
+    rows: fetched.rows,
   });
 
   return buildWebhookDeliveryHealthView({
@@ -42,41 +48,68 @@ export async function loadWebhookDeliveryHealth(input: {
     endpointUrl: config?.endpoint_url ?? null,
     retryReady: readiness.webhook_dispatch_configured && readiness.webhook_signing_capable,
     schemaReady: readiness.webhook_schema_062_ready && readiness.webhook_schema_063_ready,
-    deliveries: rows,
-    scopedByApplicationPolicy,
+    deliveries: partitioned.rows.slice(0, WEBHOOK_DELIVERY_HEALTH_LIST_LIMIT),
+    deliveryScope: partitioned.delivery_scope,
   });
 }
 
-async function listScopedDeliveries(input: {
+async function listPartnerOutboxForHealth(input: {
   partnerId: string;
-  policyId: string;
   sinceIso: string;
-}): Promise<{ rows: WebhookHealthOutboxRow[]; scopedByApplicationPolicy: boolean }> {
+}): Promise<{
+  policyFieldReadable: boolean;
+  rows: Array<{
+    outbox_id: string;
+    event_type: string;
+    status: string;
+    occurred_at: string;
+    delivered_at: string | null;
+    last_error_code: string | null;
+    policy_id: string | null;
+  }>;
+}> {
   const sb = requireSupabaseAdmin();
-  const base = () => sb
+  const withPayload = await sb
+    .from(OUTBOX)
+    .select("id, event_type, status, occurred_at, delivered_at, last_error_code, payload")
+    .eq("partner_id", input.partnerId)
+    .gte("occurred_at", input.sinceIso)
+    .order("occurred_at", { ascending: false })
+    .limit(FETCH_LIMIT);
+
+  if (!withPayload.error) {
+    return {
+      policyFieldReadable: true,
+      rows: ((withPayload.data as Array<Record<string, unknown>> | null) ?? []).map((row) => ({
+        outbox_id: String(row.id ?? ""),
+        event_type: String(row.event_type ?? ""),
+        status: String(row.status ?? "pending"),
+        occurred_at: String(row.occurred_at ?? ""),
+        delivered_at: (row.delivered_at as string | null) ?? null,
+        last_error_code: (row.last_error_code as string | null) ?? null,
+        policy_id: extractOutboxPolicyId(row.payload),
+      })),
+    };
+  }
+
+  const fallback = await sb
     .from(OUTBOX)
     .select("id, event_type, status, occurred_at, delivered_at, last_error_code")
     .eq("partner_id", input.partnerId)
     .gte("occurred_at", input.sinceIso)
     .order("occurred_at", { ascending: false })
-    .limit(WEBHOOK_DELIVERY_HEALTH_LIST_LIMIT);
+    .limit(FETCH_LIMIT);
 
-  const scoped = await base().eq("payload->>policy_id", input.policyId);
-  if (!scoped.error) {
-    return { rows: mapRows(scoped.data), scopedByApplicationPolicy: true };
-  }
-
-  const fallback = await base();
-  return { rows: mapRows(fallback.data), scopedByApplicationPolicy: false };
-}
-
-function mapRows(data: unknown): WebhookHealthOutboxRow[] {
-  return ((data as Array<Record<string, unknown>> | null) ?? []).map((row) => ({
-    outbox_id: String(row.id ?? ""),
-    event_type: String(row.event_type ?? ""),
-    status: String(row.status ?? "pending"),
-    occurred_at: String(row.occurred_at ?? ""),
-    delivered_at: (row.delivered_at as string | null) ?? null,
-    last_error_code: (row.last_error_code as string | null) ?? null,
-  }));
+  return {
+    policyFieldReadable: false,
+    rows: ((fallback.data as Array<Record<string, unknown>> | null) ?? []).map((row) => ({
+      outbox_id: String(row.id ?? ""),
+      event_type: String(row.event_type ?? ""),
+      status: String(row.status ?? "pending"),
+      occurred_at: String(row.occurred_at ?? ""),
+      delivered_at: (row.delivered_at as string | null) ?? null,
+      last_error_code: (row.last_error_code as string | null) ?? null,
+      policy_id: null,
+    })),
+  };
 }
