@@ -55,7 +55,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   if (goLiveViewLeaks(view).length > 0) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.forbidden, 503, "redacted");
   }
-  return launchpadJson(view);
+  return launchpadJson({ ...view });
 }
 
 export async function POST(req: NextRequest, { params }: RouteContext) {

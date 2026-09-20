@@ -10,7 +10,6 @@ import { buildSandboxTestConsoleView } from "@/lib/partner/launchpad/sandboxTest
 import { sanitizeSandboxTestCapabilities } from "@/lib/partner/launchpad/sandboxTestConsole/contract";
 import type { ProductionAccessRequestStatus } from "@/lib/partner/launchpad/types";
 import {
-  GO_LIVE_CAPABILITIES,
   GO_LIVE_ITEM_HREF,
   GO_LIVE_LIFECYCLE_LABEL,
   GO_LIVE_NOTE_MAX_CHARS,
@@ -91,10 +90,8 @@ export function deriveSelectedCapabilities(evidence: Pick<GoLiveEvidence, "webho
   return selected;
 }
 
-export function sanitizeDisplayedCapabilities(input?: readonly string[]): GoLiveCapability[] {
-  const extras = sanitizeSandboxTestCapabilities(input);
-  const allowed = new Set<string>(GO_LIVE_CAPABILITIES);
-  return extras.filter((item): item is GoLiveCapability => allowed.has(item));
+export function sanitizeDisplayedCapabilities(input?: readonly string[]): string[] {
+  return sanitizeSandboxTestCapabilities(input);
 }
 
 export function validateGoLiveNote(raw: unknown): { ok: true; note: string | null } | { ok: false; code: "go_live_note_invalid" } {
