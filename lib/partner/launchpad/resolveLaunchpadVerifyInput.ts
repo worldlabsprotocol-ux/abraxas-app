@@ -7,6 +7,7 @@ import {
 } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
 import { resolveLaunchpadPolicyTemplate } from "@/lib/partner/launchpad/policyCatalog";
 import { normalizePartnerVerifyInput } from "@/lib/partner/normalizePartnerVerifyInput";
+import { resolveStoredPartnerFlowCallback } from "@/lib/partner/launchpad/partnerFlowRequest/store";
 
 export interface LaunchpadVerifyConfig {
   partnerId: string;
@@ -31,13 +32,13 @@ export async function resolveLaunchpadVerifyConfig(input: {
   | { ok: false; code: string; message: string }
 > {
   const publicSlug = input.publicSlug.trim();
-  const returnUrl = input.returnUrl.trim();
+  let returnUrl = input.returnUrl.trim();
 
-  if (!publicSlug || !returnUrl) {
+  if (!publicSlug) {
     return {
       ok: false,
       code: "missing_required_params",
-      message: "Application slug and return URL are required.",
+      message: "Application slug is required.",
     };
   }
 
@@ -55,6 +56,22 @@ export async function resolveLaunchpadVerifyConfig(input: {
       ok: false,
       code: "launchpad_application_revoked",
       message: "This application is suspended. Contact the partner for a new link.",
+    };
+  }
+
+  if (!returnUrl) {
+    try {
+      returnUrl = await resolveStoredPartnerFlowCallback(app.id, app.partner_id, app.allowed_return_urls) ?? "";
+    } catch {
+      returnUrl = app.allowed_return_urls[0] ?? "";
+    }
+  }
+
+  if (!returnUrl) {
+    return {
+      ok: false,
+      code: "missing_required_params",
+      message: "This application needs an approved callback before Hosted Partner Flow can start.",
     };
   }
 

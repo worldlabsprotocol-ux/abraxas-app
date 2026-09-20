@@ -5,6 +5,7 @@ import {
   inferPolicyPackFromPolicyId,
   policyPackIsSandboxOnly,
 } from "@/lib/partner/launchpad/policyPacks";
+import { planEligibilityMethods } from "@/lib/partner/eligibilityMethods";
 import { resolvePartnerDisplayName } from "@/lib/partner/partnerVerifyDisplay";
 import { HOLDER_GOOGLE_ACCOUNT_ONLY } from "./contract";
 
@@ -12,9 +13,11 @@ export interface HolderRequestBrief {
   requestor: string;
   purpose: string;
   result: string;
+  shared_result_category: string;
   withheld: string[];
   environment_label: string;
   environment_detail: string;
+  method_explanation: string;
   google_account_only: string;
   identity_not_default: string;
 }
@@ -33,7 +36,7 @@ export function buildHolderRequestBrief(input: {
 }): HolderRequestBrief {
   const pack = input.policyId ? inferPolicyPackFromPolicyId(input.policyId) : null;
   const requestor = (input.partnerName?.trim() || resolvePartnerDisplayName(input.partnerId ?? "")) || "This partner";
-  const sandbox = pack ? policyPackIsSandboxOnly(pack) : input.environment === "sandbox";
+  const sandbox = input.environment === "sandbox" || Boolean(pack && policyPackIsSandboxOnly(pack));
   const purpose = input.userExplanation?.trim()
     || pack?.holder_explanation
     || (input.purpose ? `Confirm the requested ${input.purpose.replace(/_/g, " ")} result.` : "Confirm the selected policy result.");
@@ -43,16 +46,23 @@ export function buildHolderRequestBrief(input: {
   const withheld = pack?.partner_does_not_receive?.length
     ? pack.partner_does_not_receive
     : ["date of birth", "government ID images", "legal name", "email"];
+  const plan = pack ? planEligibilityMethods({ pack, privacyPreservingAvailable: true }) : null;
+  const primary = plan?.methods.find((method) => method.primary && method.qualifies)
+    ?? plan?.methods.find((method) => method.qualifies && method.id !== "account_login");
 
   return {
     requestor,
     purpose,
     result,
+    shared_result_category: pack?.disclosed_result ? `Policy result: ${pack.disclosed_result}` : "eligibility confirmed",
     withheld,
     environment_label: sandbox ? "Sandbox / test" : "Partner verification",
     environment_detail: sandbox
       ? "This is a sandbox or test request. A passing result here is not Production-usable."
       : "The partner receives only the policy result. Production use still depends on that partner’s reviewed access.",
+    method_explanation: primary
+      ? `${primary.label}. ${primary.why}`
+      : IDENTITY_NOT_DEFAULT,
     google_account_only: HOLDER_GOOGLE_ACCOUNT_ONLY,
     identity_not_default: IDENTITY_NOT_DEFAULT,
   };

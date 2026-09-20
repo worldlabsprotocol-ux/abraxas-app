@@ -47,6 +47,8 @@ export function HolderRequestBriefCard({ brief }: { brief: HolderRequestBrief })
       <p style={value}>{brief.purpose}</p>
       <p style={label}>Result shared</p>
       <p style={value}>{brief.result}</p>
+      <p style={label}>Shared result category</p>
+      <p style={value}>{brief.shared_result_category}</p>
       <p style={label}>Withheld</p>
       <ul style={{ ...value, margin: "0 0 0.7rem", paddingLeft: "1.1rem" }}>
         {brief.withheld.map((item) => (
@@ -58,6 +60,7 @@ export function HolderRequestBriefCard({ brief }: { brief: HolderRequestBrief })
         <strong>{brief.environment_label}.</strong> {brief.environment_detail}
       </p>
       <p style={{ ...value, margin: "0.65rem 0 0" }}>{brief.google_account_only}</p>
+      <p style={{ ...value, margin: "0.4rem 0 0" }}>{brief.method_explanation}</p>
       <p style={{ ...value, margin: "0.4rem 0 0" }}>{brief.identity_not_default}</p>
     </section>
   );
