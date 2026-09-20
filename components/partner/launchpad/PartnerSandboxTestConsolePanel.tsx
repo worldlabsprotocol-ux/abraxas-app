@@ -25,7 +25,13 @@ const body: React.CSSProperties = {
 
 type ConsoleView = ReturnType<typeof buildSandboxTestConsoleView>;
 
-export function PartnerSandboxTestConsolePanel({ applicationId }: { applicationId: string }) {
+export function PartnerSandboxTestConsolePanel({
+  applicationId,
+  onRequestReview,
+}: {
+  applicationId: string;
+  onRequestReview?: () => void;
+}) {
   const [caps, setCaps] = useState<string[]>([]);
   const [view, setView] = useState<ConsoleView | null>(null);
   const [error, setError] = useState("");
@@ -144,6 +150,9 @@ export function PartnerSandboxTestConsolePanel({ applicationId }: { applicationI
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
             <Btn href="/docs/starter-kit" size="sm" variant="secondary">Starter Kit docs →</Btn>
             <Btn href="/developers/integration-studio" size="sm" variant="ghost">Integration Studio →</Btn>
+            {onRequestReview && (
+              <Btn size="sm" onClick={onRequestReview}>Request Production review</Btn>
+            )}
           </div>
         </>
       )}

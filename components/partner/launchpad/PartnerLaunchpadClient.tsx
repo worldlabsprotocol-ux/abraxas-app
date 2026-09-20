@@ -24,6 +24,8 @@ import {
 } from "@/lib/partner/launchpad/policyChangeControlUi";
 import { selectLaunchpadResumeAppId } from "@/lib/partner/activationPath";
 import { PartnerSandboxTestConsolePanel } from "@/components/partner/launchpad/PartnerSandboxTestConsolePanel";
+import { PartnerGoLiveReadinessPanel } from "@/components/partner/launchpad/PartnerGoLiveReadinessPanel";
+import { GO_LIVE_REVIEW_ENTRY } from "@/lib/partner/launchpad/goLiveReadiness/contract";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -360,36 +362,23 @@ export function PartnerLaunchpadClient({
 
   async function requestProduction() {
     if (!activeApp) return;
-    const harnessCheck = integrationHealth?.checks.find((check) => check.id === "harness");
-    const productionCheck = integrationHealth?.checks.find((check) => check.id === "production");
-    if (harnessCheck && harnessCheck.status !== "pass") {
-      setError(harnessCheck.detail);
-      setStep("test");
-      return;
-    }
-    if (productionCheck?.status === "blocked") {
-      setError(productionCheck.detail);
-      return;
-    }
     if (!productionCallbackReady || !productionDomainVerified) {
-      setError("Add an HTTPS callback URL and verify its domain before activating production.");
+      setError("Add an HTTPS callback and verify its domain before requesting Production review.");
       setStep("destinations");
       return;
     }
-    const res = await fetch(`/api/launchpad/applications/${activeApp.id}/production-access`, {
+    const res = await fetch(`/api/launchpad/applications/${activeApp.id}/go-live`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ request_notes: "Automated production safety gate" }),
+      body: JSON.stringify({}),
     });
     const data = await res.json();
-    if (!res.ok) { setError(data.error ?? "Activation failed"); return; }
-    const keyRes = await fetch(`/api/launchpad/applications/${activeApp.id}/credentials/reveal-production`, {
-      method: "POST", credentials: "include",
-    });
-    const keyData = await keyRes.json();
-    if (keyRes.ok && keyData.api_key) setRevealedProductionKey(keyData.api_key);
-    else if (!keyRes.ok) setError(keyData.error ?? "Production activated, but the key could not be revealed.");
+    if (!res.ok) {
+      setError(data.error ?? "Review request was not accepted");
+      setStep("production");
+      return;
+    }
     await refreshWorkspace();
     await refreshIntegrationHealth();
     setStep("production");
@@ -656,7 +645,20 @@ export function PartnerLaunchpadClient({
       )}
 
       {step === "test" && activeApp && (
-        <PartnerSandboxTestConsolePanel applicationId={activeApp.id} />
+        <PartnerSandboxTestConsolePanel
+          applicationId={activeApp.id}
+          onRequestReview={() => setStep("production")}
+        />
+      )}
+
+      {step === "test" && activeApp && (
+        <PartnerGoLiveReadinessPanel
+          applicationId={activeApp.id}
+          onChanged={() => {
+            void refreshWorkspace();
+            void refreshIntegrationHealth();
+          }}
+        />
       )}
 
       {step === "test" && activeApp && (
@@ -731,49 +733,59 @@ export function PartnerLaunchpadClient({
         </ContentCard>
       )}
 
-      {step === "production" && (
-        <ContentCard title="Automated production safety gate">
-          <p style={bodyText}>
-            Production activates automatically after Abraxas verifies your callback domain. No generic review queue is needed for a standard integration.
-          </p>
-          {!productionCallbackReady && (
-            <p style={{ ...bodyText, color: "#f59e0b" }}>
-              Add an HTTPS callback URL in Destinations first. Localhost is sandbox only.
+      {step === "production" && activeApp && (
+        <>
+          <PartnerGoLiveReadinessPanel
+            applicationId={activeApp.id}
+            onChanged={() => {
+              void refreshWorkspace();
+              void refreshIntegrationHealth();
+            }}
+          />
+          <ContentCard title="Callback domain for Production review">
+            <p style={bodyText}>
+              Reviewers expect an HTTPS allowlisted callback on a domain you control. Localhost stays sandbox-only. This step does not issue a production key.
             </p>
-          )}
-          {productionCallbackReady && !productionDomainVerified && (
-            <div style={{ marginTop: "0.75rem", padding: "0.8rem", border: "1px solid var(--border)", borderRadius: 10 }}>
-              <p style={bodyText}>Prove you control <code style={{ fontFamily: MONO }}>{new URL(productionCallback!).hostname}</code>. Abraxas will only activate a production callback on a verified domain.</p>
-              {!domainChallenge ? (
-                <Btn size="sm" onClick={() => void createDomainChallenge()}>Create DNS challenge</Btn>
-              ) : (
-                <>
-                  <p style={{ ...bodyText, marginTop: "0.7rem" }}>Create this DNS TXT record:</p>
-                  <pre style={codeBlockStyle}>{domainChallenge.record_name}{"\n"}{domainChallenge.record_value}</pre>
-                  <Btn size="sm" onClick={() => void verifyDomainChallenge()}>Check DNS record</Btn>
-                </>
-              )}
+            {!productionCallbackReady && (
+              <p style={{ ...bodyText, color: "#f59e0b" }}>
+                Add an HTTPS callback URL in Destinations first. Localhost is sandbox only.
+              </p>
+            )}
+            {productionCallbackReady && !productionDomainVerified && (
+              <div style={{ marginTop: "0.75rem", padding: "0.8rem", border: "1px solid var(--border)", borderRadius: 10 }}>
+                <p style={bodyText}>Prove you control <code style={{ fontFamily: MONO }}>{new URL(productionCallback!).hostname}</code>.</p>
+                {!domainChallenge ? (
+                  <Btn size="sm" onClick={() => void createDomainChallenge()}>Create DNS challenge</Btn>
+                ) : (
+                  <>
+                    <p style={{ ...bodyText, marginTop: "0.7rem" }}>Create this DNS TXT record:</p>
+                    <pre style={codeBlockStyle}>{domainChallenge.record_name}{"\n"}{domainChallenge.record_value}</pre>
+                    <Btn size="sm" onClick={() => void verifyDomainChallenge()}>Check DNS record</Btn>
+                  </>
+                )}
+              </div>
+            )}
+            {productionDomainVerified && (
+              <p style={{ ...bodyText, color: "#10B981" }}>Domain verified. You can request Production review when the other server checks pass.</p>
+            )}
+            <div style={{ marginTop: "0.75rem" }}>
+              <Btn
+                size="sm"
+                onClick={() => void requestProduction()}
+                disabled={!productionCallbackReady || !productionDomainVerified}
+              >
+                {GO_LIVE_REVIEW_ENTRY}
+              </Btn>
             </div>
-          )}
-          {productionDomainVerified && <p style={{ ...bodyText, color: "#10B981" }}>Domain verified. Your integration can activate production automatically.</p>}
-          <Btn
-            size="sm"
-            onClick={() => void requestProduction()}
-            disabled={!productionCallbackReady || !productionDomainVerified || integrationHealth?.checks.find((check) => check.id === "harness")?.status !== "pass" || integrationHealth?.checks.find((check) => check.id === "production")?.status === "blocked"}
-          >
-            Activate production automatically
-          </Btn>
-          {revealedProductionKey && (
-            <div style={{ marginTop: "0.85rem" }}>
-              <p style={bodyText}>Copy this production API key now. It will not be shown again.</p>
-              <pre style={codeBlockStyle}>{revealedProductionKey}</pre>
-              <Btn size="sm" variant="secondary" onClick={() => copyText(revealedProductionKey)}>Copy production API key</Btn>
-            </div>
-          )}
-          <p style={{ ...bodyText, marginTop: "0.75rem" }}>
-            Review the <Link href="/good-trouble" style={{ color: "var(--accent)" }}>Good Trouble integration case study</Link> for the pattern this launchpad generalizes.
-          </p>
-        </ContentCard>
+            {revealedProductionKey && (
+              <div style={{ marginTop: "0.85rem" }}>
+                <p style={bodyText}>A reviewer already issued a production key for this app. Copy it only if it was just revealed to you.</p>
+                <pre style={codeBlockStyle}>{revealedProductionKey}</pre>
+                <Btn size="sm" variant="secondary" onClick={() => copyText(revealedProductionKey)}>Copy production API key</Btn>
+              </div>
+            )}
+          </ContentCard>
+        </>
       )}
 
       {activeApp && activity.length > 0 && (
