@@ -2,8 +2,8 @@
 // FILE: components/partner/PartnerJourneyLayout.tsx
 // Shared partner journey chrome — continuation of partner site, not Abraxas dashboard.
 
-import Link from "next/link";
-import { AbxCard } from "@/components/design/AbxPrimitives";
+import { HolderRequestBriefCard } from "@/components/partner/HolderRequestBriefCard";
+import type { HolderRequestBrief } from "@/lib/partner/holderExperience";
 import {
   ABX_FONT_SANS,
   ABX_PAGE_BACKGROUNDS,
@@ -26,6 +26,7 @@ export interface PartnerJourneyLayoutProps {
   eyebrow?: string;
   title?: string;
   hideStatus?: boolean;
+  brief?: HolderRequestBrief | null;
   children: React.ReactNode;
 }
 
@@ -39,6 +40,7 @@ export function PartnerJourneyLayout({
   eyebrow,
   title,
   hideStatus = false,
+  brief = null,
   children,
 }: PartnerJourneyLayoutProps) {
   return (
@@ -55,12 +57,13 @@ export function PartnerJourneyLayout({
         fontFamily: FONT,
         color: "var(--text-primary, #f4f4f5)",
         background: ABX_PAGE_BACKGROUNDS.partnerJourney,
+        overflowX: "hidden",
       }}
     >
       <AbxCard
         accent="partner"
         padding={ABX_SPACING.cardPadding}
-        style={{ width: "min(100%, 560px)", boxShadow: PARTNER_ACCENT.glow }}
+        style={{ width: "min(100%, 560px)", maxWidth: "100%", boxShadow: PARTNER_ACCENT.glow, overflowWrap: "anywhere" }}
       >
         <header style={{ marginBottom: "1.25rem" }}>
           <p
@@ -93,6 +96,8 @@ export function PartnerJourneyLayout({
             </p>
           )}
         </header>
+
+        {brief && <HolderRequestBriefCard brief={brief} />}
 
         {children}
 

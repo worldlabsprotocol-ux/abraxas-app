@@ -411,6 +411,8 @@ export function PartnerVerifyClient({
       invalidLinkMessage={invalidLinkMessage}
       partnerReturnLabel={partnerReturnLabel}
       partnerHomeUrl={partnerHomeUrl}
+      environment={launchpadResolution.resolved?.environment ?? null}
+      disclosedResult={launchpadResolution.resolved?.disclosedResult ?? null}
     />
   );
 }
