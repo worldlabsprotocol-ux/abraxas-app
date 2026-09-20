@@ -99,6 +99,10 @@ export function PartnerGoLiveReadinessPanel({
           <p style={{ ...body, marginBottom: "0.75rem" }}>
             Policy <code style={{ fontFamily: MONO }}>{view.policy_id}</code> · v{view.policy_version}
             {" · "}sandbox key {view.sandbox_key_configured ? "configured" : "missing"}
+            {" · "}
+            <Link href={`/developers/launchpad?app=${encodeURIComponent(applicationId)}&view=versions`} style={{ color: "var(--accent)", fontWeight: 700 }}>
+              Policy version
+            </Link>
           </p>
           <div style={{ display: "grid", gap: "0.45rem" }}>
             {view.checks.filter((check) => check.status !== "not_selected").map((check) => (
