@@ -13,3 +13,6 @@ export { SELECTIVE_DISCLOSURE_PROFILES, GENERIC_MINIMAL_PROFILE, profileFromPack
 export { applyDisclosureProfile, pickAllowedKeys, failClosedDisclosureError } from "./enforce";
 export { detectDisclosureLeaks } from "./leakDetector";
 export { rejectClientDisclosureConfig } from "./clientOverride";
+export { sanitizeLaunchpadActivityMetadata, projectLaunchpadActivityEvent, LAUNCHPAD_ACTIVITY_METADATA_ALLOWED_KEYS } from "./activityMetadata";
+export { buildHolderConsentUrl, holderVisibleSearch, consentUrlContainsOnlyVerifyRequest } from "./consentUrl";
+export { sanitizeUntrustedQueryForClient, safeCallbackClientErrors, safeQueryErrorMessage } from "./untrustedQuery";

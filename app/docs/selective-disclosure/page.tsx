@@ -52,6 +52,25 @@ export default function SelectiveDisclosureDocsPage() {
         </p>
       </ContentCard>
 
+      <ContentCard title="Holder URLs, callbacks, and Launchpad activity">
+        <p style={body}>
+          Consent and continue URLs carry only <code style={{ fontFamily: MONO }}>verify_request</code>.
+          Return navigation stays on the stored continuation record, not the query string. Callback
+          query keys are untrusted and cannot set partner, policy, version, destination, or return
+          navigation. Launchpad activity metadata is allowlisted at write time and projected again
+          on read, so receipt payloads, signatures, hashes, wallets, PII, callback URLs, OAuth
+          material, provider payloads, internal policy fields, and raw errors are not persisted.
+        </p>
+      </ContentCard>
+
+      <ContentCard title="Admin evaluation paths">
+        <p style={body}>
+          Internal policy evaluation and evidence stores used by authorized operators are outside
+          partner, holder, and public serialization. They remain behind existing admin authorization
+          and are not a client-visible selective-disclosure surface.
+        </p>
+      </ContentCard>
+
       <ContentCard title="Catalog packs">
         <ul style={{ ...body, paddingLeft: "1.2rem", display: "grid", gap: "0.45rem" }}>
           {POLICY_PACK_LIST.map((pack) => (

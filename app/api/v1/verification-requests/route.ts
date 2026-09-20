@@ -51,8 +51,7 @@ export async function POST(req: NextRequest) {
       partner_id: auth.partnerId,
       status: "pending",
     });
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "Failed to create request";
+  } catch {
     void logPartnerUsage({
       endpoint: "/api/v1/verification-requests",
       method: "POST",
@@ -62,6 +61,6 @@ export async function POST(req: NextRequest) {
       responseTimeMs: Date.now() - started,
       policyId: body.policy_id,
     });
-    return NextResponse.json({ error: msg }, { status: 400 });
+    return NextResponse.json({ error: "unavailable" }, { status: 400 });
   }
 }

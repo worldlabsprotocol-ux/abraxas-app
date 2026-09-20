@@ -19,6 +19,12 @@ import {
   pickAllowedKeys,
   rejectClientDisclosureConfig,
   resolveDisclosureProfile,
+  sanitizeLaunchpadActivityMetadata,
+  projectLaunchpadActivityEvent,
+  buildHolderConsentUrl,
+  consentUrlContainsOnlyVerifyRequest,
+  sanitizeUntrustedQueryForClient,
+  safeCallbackClientErrors,
 } from "./index";
 
 const FORBIDDEN_SAMPLE = {
@@ -210,5 +216,93 @@ describe("selective disclosure security", () => {
   it("states the privacy notice without claiming ZK", () => {
     expect(SELECTIVE_DISCLOSURE_NOTICE.toLowerCase()).toContain("policy result");
     expect(SELECTIVE_DISCLOSURE_NOTICE.toLowerCase()).toContain("not a zero-knowledge");
+  });
+});
+
+describe("launchpad activity metadata boundary", () => {
+  it("cannot persist forbidden fields at write time", () => {
+    const sanitized = sanitizeLaunchpadActivityMetadata({
+      purpose: "Confirm adult retail eligibility",
+      action: "retail_access",
+      callback_index: 0,
+      callback_ref: "abc123def456",
+      callback_url: "https://evil.example/callback",
+      return_url: "https://evil.example/return",
+      receipt_id: "dr_secret",
+      signature: "sig",
+      payload_hash: "deadbeef",
+      wallet_address: "0x" + "ab".repeat(20),
+      email: "holder@example.com",
+      oauth_token: "tok",
+      provider_payload: { raw: true },
+      rules_json: { required_claims: [] },
+      error: "SQLSTATE 42P01 relation does not exist",
+      scenario: "approved",
+    });
+    expect(sanitized.purpose).toBe("Confirm adult retail eligibility");
+    expect(sanitized.action).toBe("retail_access");
+    expect(sanitized.callback_index).toBe(0);
+    expect(sanitized.scenario).toBe("approved");
+    expect(sanitized.callback_url).toBeUndefined();
+    expect(sanitized.return_url).toBeUndefined();
+    expect(sanitized.receipt_id).toBeUndefined();
+    expect(sanitized.signature).toBeUndefined();
+    expect(sanitized.email).toBeUndefined();
+    expect(sanitized.error).toBeUndefined();
+    expect(JSON.stringify(sanitized)).not.toMatch(/https?:\/\//);
+    expect(JSON.stringify(sanitized)).not.toContain("@");
+    expect(detectDisclosureLeaks(sanitized)).toEqual([]);
+  });
+
+  it("cannot return forbidden fields at read time", () => {
+    const projected = projectLaunchpadActivityEvent({
+      id: "evt_1",
+      event_type: "partner_flow_request_configured",
+      public_code: "configured",
+      created_at: "2026-09-20T00:00:00.000Z",
+      metadata: {
+        purpose: "Confirm adult retail eligibility",
+        callback_url: "https://evil.example/callback",
+        receipt_id: "dr_secret",
+        email: "holder@example.com",
+      },
+    });
+    expect(projected.metadata.purpose).toBe("Confirm adult retail eligibility");
+    expect(projected.metadata.callback_url).toBeUndefined();
+    expect(JSON.stringify(projected)).not.toContain("evil.example");
+    expect(JSON.stringify(projected)).not.toContain("dr_secret");
+    expect(JSON.stringify(projected)).not.toContain("@");
+  });
+});
+
+describe("consent URL and untrusted callback query", () => {
+  it("retains only verify_request on holder consent URLs", () => {
+    const url = buildHolderConsentUrl({
+      verifyRequestId: "vr_safe",
+      appOrigin: "https://abraxas.example",
+    });
+    expect(url).toBe("https://abraxas.example/passport?verify_request=vr_safe");
+    expect(consentUrlContainsOnlyVerifyRequest(url)).toBe(true);
+  });
+
+  it("strips forged callback query values from client search and safe errors", () => {
+    const sanitized = sanitizeUntrustedQueryForClient({
+      verify_request: "vr_safe",
+      return_url: "https://evil.example/callback",
+      receipt_id: "dr_forged",
+      email: "holder@example.com",
+      policy_version: "9",
+      environment: "production",
+    });
+    expect(sanitized.search).toBe("verify_request=vr_safe");
+    expect(sanitized.stripped).toBe(true);
+    expect(sanitized.error).toEqual({ error: "disclosure_rejected" });
+    expect(sanitized.search).not.toContain("return");
+    expect(sanitized.search).not.toContain("receipt");
+    expect(sanitized.search).not.toContain("@");
+    expect(safeCallbackClientErrors(["pii_in_callback:email", "unknown_callback_param:return_url", "receipt_id_missing"]))
+      .toEqual(expect.arrayContaining(["callback_untrusted", "receipt_id_missing"]));
+    expect(JSON.stringify(safeCallbackClientErrors(["pii_in_callback:email"]))).not.toContain("@");
+    expect(JSON.stringify(safeCallbackClientErrors(["pii_in_callback:email"]))).not.toContain("email");
   });
 });

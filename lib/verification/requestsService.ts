@@ -30,6 +30,7 @@ import {
 import { issueReceiptForDecision } from "@/lib/decisionReceipts/service";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 import { getPublicAppOrigin } from "@/lib/app/publicAppOrigin";
+import { buildHolderConsentUrl } from "@/lib/privacy/selectiveDisclosure";
 
 export { getPartnerPolicy as getPolicy } from "@/lib/policy/getPolicy";
 
@@ -91,16 +92,12 @@ export async function createVerificationRequest(input: {
     metadata: { requested_action: input.requestedAction },
   });
 
-  const consentParams = new URLSearchParams({ verify_request: data.id as string });
-  if (input.returnUrl) {
-    consentParams.set("return", input.returnUrl);
-    consentParams.set("partner_id", input.partnerId);
-    consentParams.set("policy_id", input.policyId);
-  }
-
   return {
     request_id: data.id as string,
-    consent_url: `${appUrl}/passport?${consentParams.toString()}`,
+    consent_url: buildHolderConsentUrl({
+      verifyRequestId: data.id as string,
+      appOrigin: appUrl,
+    }),
     expires_at: expiresAt,
   };
 }

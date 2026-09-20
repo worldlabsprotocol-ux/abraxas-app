@@ -16,7 +16,7 @@ import {
   type PartnerIntegrationOutcome,
 } from "@/lib/partner/integrationKit/contract";
 import { resolvePolicyPack } from "@/lib/partner/launchpad/policyPacks";
-import { pickAllowedKeys } from "@/lib/privacy/selectiveDisclosure";
+import { pickAllowedKeys, safeCallbackClientErrors } from "@/lib/privacy/selectiveDisclosure";
 import { SHARED_SURFACE_FIELDS } from "@/lib/privacy/selectiveDisclosure/contract";
 
 export interface AbraxasPartnerKitOptions {
@@ -169,10 +169,9 @@ export class AbraxasPartnerKit {
   ): Promise<PartnerKitSafeResult> {
     const parsed = this.parseCallback(search);
     if (!parsed.ok) {
-      const pii = parsed.errors.some((error) => error.startsWith("pii_in_callback"));
       return emptyResult({
-        outcome: pii ? "invalid" : parsed.errors.includes("receipt_id_missing") ? "invalid" : "invalid",
-        errors: parsed.errors,
+        outcome: "invalid",
+        errors: safeCallbackClientErrors(parsed.errors),
       });
     }
     const fetched = await this.fetchPublicReceipt(parsed.params.receipt_id!);

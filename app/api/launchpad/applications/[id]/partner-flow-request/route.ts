@@ -30,7 +30,7 @@ async function assemble(applicationId: string, partnerId: string) {
   let stored;
   let enabledCapabilities = [] as Awaited<ReturnType<typeof loadEnabledPartnerFlowCapabilities>>;
   try {
-    stored = await loadPartnerFlowStoredConfig(app.id, partnerId);
+    stored = await loadPartnerFlowStoredConfig(app.id, partnerId, app.allowed_return_urls);
     enabledCapabilities = await loadEnabledPartnerFlowCapabilities(app, partnerId);
   } catch {
     return { ok: false as const, status: 503 as const };

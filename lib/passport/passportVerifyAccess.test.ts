@@ -50,12 +50,11 @@ describe("passportVerifyAccess", () => {
     });
 
     const href = buildPassportSetupHref(params);
-    expect(href).toContain("/passport?");
-    expect(href).toContain("verify_request=vr_123");
-    expect(href).toContain("policy_id=abraxas-core-v1");
-    expect(href).toContain("partner_id=demo-partner");
-    expect(href).toContain("return=");
-    expect(href).toContain("verification=pending");
+    expect(href).toBe("/passport?verify_request=vr_123");
+    expect(href).not.toContain("policy_id");
+    expect(href).not.toContain("partner_id");
+    expect(href).not.toContain("return=");
+    expect(href).not.toContain("verification=pending");
     expect(href).not.toContain("view=verify");
     expect(href).not.toContain("mode=credential");
   });

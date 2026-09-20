@@ -9,6 +9,8 @@ import {
   type PartnerFlowCapability,
 } from "./contract";
 import type { PartnerFlowStoredConfig } from "./view";
+import { opaqueCallbackRef } from "./view";
+import { isLaunchpadReturnUrlAllowlisted } from "@/lib/partner/launchpad/launchpadReturnUrlAllowlist";
 
 export const EMPTY_PARTNER_FLOW_STORED_CONFIG: PartnerFlowStoredConfig = {
   purpose: null,
@@ -39,16 +41,35 @@ export function parsePartnerFlowStoredConfig(
   return {
     purpose: typeof meta.purpose === "string" ? meta.purpose : null,
     action,
-    callback_url: typeof meta.callback_url === "string" ? meta.callback_url : null,
+    callback_url: null,
     capabilities,
     display_label: typeof meta.display_label === "string" ? meta.display_label : null,
   };
+}
+
+export function hydratePartnerFlowCallbackUrl(
+  metadata: Record<string, unknown> | null | undefined,
+  allowedUrls: readonly string[],
+): string | null {
+  const meta = metadata ?? {};
+  const index = typeof meta.callback_index === "number" ? meta.callback_index : Number(meta.callback_index);
+  if (Number.isInteger(index) && index >= 0 && allowedUrls[index]) {
+    const candidate = allowedUrls[index]!;
+    if (isLaunchpadReturnUrlAllowlisted(allowedUrls, candidate)) return candidate;
+  }
+  const ref = typeof meta.callback_ref === "string" ? meta.callback_ref : "";
+  if (ref) {
+    const match = allowedUrls.find((url) => opaqueCallbackRef(url) === ref);
+    if (match && isLaunchpadReturnUrlAllowlisted(allowedUrls, match)) return match;
+  }
+  return null;
 }
 
 export function storedConfigFromActivityRows(
   rows: PartnerFlowActivityRow[],
   applicationId: string,
   partnerId: string,
+  allowedUrls: readonly string[] = [],
 ): PartnerFlowStoredConfig {
   const matches = rows.filter((row) =>
     row.event_type === PARTNER_FLOW_REQUEST_EVENT_TYPE
@@ -57,7 +78,12 @@ export function storedConfigFromActivityRows(
   );
   if (!matches.length) return { ...EMPTY_PARTNER_FLOW_STORED_CONFIG };
   matches.sort((a, b) => String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")));
-  return parsePartnerFlowStoredConfig(matches[0]?.metadata);
+  const latest = matches[0];
+  const parsed = parsePartnerFlowStoredConfig(latest?.metadata);
+  return {
+    ...parsed,
+    callback_url: hydratePartnerFlowCallbackUrl(latest?.metadata, allowedUrls),
+  };
 }
 
 export function starterKitCapabilitiesFromActivity(

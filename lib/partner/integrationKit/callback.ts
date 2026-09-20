@@ -33,10 +33,10 @@ export function parsePartnerCallbackParams(
   for (const key of Array.from(params.keys())) {
     const lower = key.toLowerCase();
     if (PARTNER_INTEGRATION_FORBIDDEN_CALLBACK_KEYS.some((forbidden) => lower.includes(forbidden))) {
-      errors.push(`pii_in_callback:${key}`);
+      errors.push("pii_in_callback");
     }
     if (!ALLOWED.has(key)) {
-      errors.push(`unknown_callback_param:${key}`);
+      errors.push("unknown_callback_param");
     }
   }
 
