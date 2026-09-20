@@ -51,6 +51,9 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   req.nextUrl.searchParams.forEach((value, key) => {
     queryOverrides[key] = value;
   });
+  if (Object.keys(queryOverrides).some((key) => (POLICY_VERSION_FORBIDDEN_KEYS as readonly string[]).includes(key))) {
+    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "unknown_input");
+  }
   if (!rejectClientDisclosureConfig(queryOverrides).ok) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "unknown_input");
   }

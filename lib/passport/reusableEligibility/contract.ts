@@ -4,7 +4,7 @@
 export const REUSABLE_ELIGIBILITY_VERSION = "1.0.0" as const;
 
 export const REUSE_COMPATIBILITY_RULE =
-  "exact_pack_and_version_or_reviewed_catalog" as const;
+  "exact_pack_and_version_or_reviewed_compatibility_edge" as const;
 
 export const REUSE_LIFECYCLE_RULE =
   "source_withdrawal_invalidates_derived_future_checks" as const;
@@ -79,7 +79,9 @@ export interface InternalReusableFact {
   pack_id: string;
   policy_version: number;
   minimum_assurance: string;
+  method_category: string;
   result_category: string;
+  disclosure_boundary: string;
   decision_context: "production" | "sandbox_only";
   source_decision_id: string;
   source_receipt_id: string;

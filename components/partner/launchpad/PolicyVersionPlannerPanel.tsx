@@ -76,6 +76,11 @@ export function PolicyVersionPlannerPanel({
             {statusText(view.availability)}
           </p>
           <p style={{ ...body, marginBottom: "0.65rem" }}>{view.availability_label}</p>
+          {view.reusable_continuity_reviewed && view.reusable_continuity_label && (
+            <p style={{ ...body, fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.65rem" }} role="status">
+              {view.reusable_continuity_label}
+            </p>
+          )}
           {view.current && (
             <div style={{ border: "1px solid var(--border)", borderRadius: 12, padding: "0.8rem", marginBottom: "0.85rem" }}>
               <p style={{ ...body, fontWeight: 700, color: "var(--text-primary)" }}>
@@ -124,6 +129,11 @@ export function PolicyVersionPlannerPanel({
             </>
           )}
           <p style={{ ...body, marginBottom: "0.7rem" }}>{view.google_is_account_only}</p>
+          <p style={{ ...body, marginBottom: "0.7rem" }}>
+            <Link href="/docs/policy-compatibility" style={{ color: "var(--accent)", fontWeight: 700 }}>
+              Policy compatibility
+            </Link>
+          </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginBottom: "0.75rem" }}>
             {view.next_actions.map((action) => (
               <Link key={action.id} href={action.href} style={{ color: "var(--accent)", fontFamily: FONT, fontSize: "0.75rem", fontWeight: 700 }}>

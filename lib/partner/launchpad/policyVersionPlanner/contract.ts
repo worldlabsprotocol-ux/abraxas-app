@@ -54,6 +54,11 @@ export const POLICY_VERSION_FORBIDDEN_KEYS = [
   "claim_allowlist",
   "withheld_override",
   "allowed_fields",
+  "edge_id",
+  "compatibility",
+  "compatibility_type",
+  "compatibility_status",
+  "registry",
 ] as const;
 
 export const POLICY_VERSION_GOOGLE = GOOGLE_ACCOUNT_NOT_ELIGIBILITY;

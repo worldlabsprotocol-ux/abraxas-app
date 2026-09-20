@@ -13,6 +13,11 @@ import {
   type PolicyVersionAvailability,
 } from "./contract";
 import {
+  hasActiveReviewedContinuity,
+  REUSABLE_CONTINUITY_REVIEWED_LABEL,
+  type PolicyCompatibilityEdge,
+} from "@/lib/policy/compatibilityEdge";
+import {
   POLICY_PACK_PINNED_STATUS_OVERRIDES,
   POLICY_PACK_VERSION_SUCCESSORS,
   applySuccessor,
@@ -43,6 +48,8 @@ export interface PolicyVersionPlannerView {
   review_notice: string;
   next_actions: Array<{ id: string; label: string; href: string }>;
   studio_handoff: string | null;
+  reusable_continuity_reviewed: boolean;
+  reusable_continuity_label: typeof REUSABLE_CONTINUITY_REVIEWED_LABEL | null;
   mutates_policy_pin: false;
   mutates_holder_flow: false;
   issues_production_key: false;
@@ -52,6 +59,7 @@ export interface PolicyVersionPlannerView {
 export function buildPolicyVersionPlannerView(
   application: LaunchpadApplicationRow,
   catalog = POLICY_PACK_VERSION_SUCCESSORS,
+  registry?: readonly PolicyCompatibilityEdge[],
 ): PolicyVersionPlannerView {
   const pack = resolvePackForPlanner(application.policy_template_id, application.policy_id);
   const pinnedVersion = application.policy_version;
@@ -96,6 +104,16 @@ export function buildPolicyVersionPlannerView(
     href: hrefs.production_review,
   });
 
+  const reviewed = Boolean(
+    pack && newer && hasActiveReviewedContinuity({
+      sourcePackId: pack.id,
+      sourceVersion: pinnedVersion,
+      targetPackId: newer.pack_id ?? pack.id,
+      targetVersion: newer.version,
+      registry,
+    }),
+  );
+
   return {
     version: POLICY_VERSION_PLANNER_VERSION,
     application_id: application.id,
@@ -114,6 +132,8 @@ export function buildPolicyVersionPlannerView(
     studio_handoff: pack
       ? studioPolicyVersionHandoffHref(pack.id, newer?.version ?? POLICY_PACK_CATALOG_VERSION)
       : null,
+    reusable_continuity_reviewed: reviewed,
+    reusable_continuity_label: reviewed ? REUSABLE_CONTINUITY_REVIEWED_LABEL : null,
     mutates_policy_pin: false,
     mutates_holder_flow: false,
     issues_production_key: false,

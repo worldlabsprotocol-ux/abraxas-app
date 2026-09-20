@@ -46,7 +46,7 @@ function receipt(overrides: Partial<SourceReceiptRow> = {}): SourceReceiptRow {
 
 describe("consent-bound reusable eligibility facts", () => {
   it("documents exact pack+version compatibility and derived invalidation", () => {
-    expect(REUSE_COMPATIBILITY_RULE).toBe("exact_pack_and_version_or_reviewed_catalog");
+    expect(REUSE_COMPATIBILITY_RULE).toBe("exact_pack_and_version_or_reviewed_compatibility_edge");
     expect(REUSE_LIFECYCLE_RULE).toBe("source_withdrawal_invalidates_derived_future_checks");
     expect(catalogAllowsReuse({
       sourcePackId: "age_21_retail",
@@ -207,6 +207,11 @@ describe("consent-bound reusable eligibility facts", () => {
       method_id: "reuse_existing_proof",
       fact_id: "fact_abc",
       source_receipt_id: SOURCE_RECEIPT,
+    })).toBe(true);
+    expect(rejectReuseClientAuthority({
+      method_id: "reuse_existing_proof",
+      edge_id: "edge_test_age21_v1_v2",
+      compatibility_type: "exact_continuity",
     })).toBe(true);
     expect(rejectReuseClientAuthority({
       method_id: "reuse_existing_proof",

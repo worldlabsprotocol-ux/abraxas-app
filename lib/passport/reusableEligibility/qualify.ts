@@ -2,6 +2,7 @@
 // Server-only compatible-fact lookup for the bound continuation.
 
 import { inferPolicyPackFromPolicyId, policyPackIsSandboxOnly } from "@/lib/partner/launchpad/policyPacks";
+import type { PolicyCompatibilityEdge } from "@/lib/policy/compatibilityEdge";
 import { evaluateFactCompatibility, targetIsSandboxOnly } from "./compatibility";
 import { listHolderFacts } from "./store";
 import { buildReuseClientView } from "./view";
@@ -13,6 +14,7 @@ export async function resolveCompatibleReusableFact(input: {
   targetPolicyId: string;
   targetPolicyVersion: number;
   targetSandboxOnly?: boolean;
+  registry?: readonly PolicyCompatibilityEdge[];
 }): Promise<
   | { ok: true; fact: InternalReusableFact; state: "available" }
   | { ok: false; state: ReuseClientState }
@@ -34,6 +36,7 @@ export async function resolveCompatibleReusableFact(input: {
         targetPolicyId: input.targetPolicyId,
         targetPolicyVersion: input.targetPolicyVersion,
         targetSandboxOnly: targetSandbox,
+        registry: input.registry,
       });
       if (check.ok && fact.status === "active") {
         return { ok: true, fact, state: "available" };

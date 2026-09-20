@@ -103,6 +103,10 @@ export default function SelectiveDisclosureDocsPage() {
           <Link href="/docs/portable-action-contract">Portable action contract</Link>
           {" · "}
           <Link href="/docs/policy-packs">Policy packs</Link>
+          {" · "}
+          <Link href="/docs/policy-compatibility">Policy compatibility</Link>
+          {" · "}
+          <Link href="/docs/reusable-eligibility">Reusable eligibility</Link>
         </p>
       </ContentCard>
       <PublicJourneyNextSteps />
