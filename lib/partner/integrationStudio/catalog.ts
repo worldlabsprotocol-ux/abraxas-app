@@ -9,6 +9,7 @@ import {
 import { planEligibilityMethods } from "@/lib/partner/eligibilityMethods";
 import { starterKitPublicCatalog } from "@/lib/partner/starterKit/contract";
 import { partnerActivationPublicView } from "@/lib/partner/activationPath";
+import { policyFitPublicChoices } from "@/lib/partner/integrationStudio/policyFit/contract";
 import {
   INTEGRATION_STUDIO_CHECKLIST,
   INTEGRATION_STUDIO_GOOGLE,
@@ -113,6 +114,7 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
       notice: INTEGRATION_STUDIO_WALLET_NOTICE,
     },
     starter_kit: starterKitPublicCatalog(),
+    policy_fit: policyFitPublicChoices(),
     payment_authorization: {
       creates_payments: false,
       creates_transfers: false,

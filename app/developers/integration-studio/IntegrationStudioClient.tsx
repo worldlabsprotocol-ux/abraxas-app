@@ -15,6 +15,8 @@ import {
   studioSnippetForPath,
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio";
+import { isPolicyPackId } from "@/lib/partner/launchpad/policyPacks";
+import { PolicyFitPlanner } from "@/app/developers/integration-studio/PolicyFitPlanner";
 import {
   STARTER_KIT_DOES_NOT_DO,
   STARTER_KIT_MINIMUM_REQUIREMENTS,
@@ -244,6 +246,15 @@ export function IntegrationStudioClient() {
           </div>
         </ContentCard>
       )}
+
+      <PolicyFitPlanner
+        onApply={(selection) => {
+          if (!isPolicyPackId(selection.packId)) return;
+          setPackId(selection.packId);
+          setPathId(selection.pathId);
+          setOptionalCaps(selection.capabilities);
+        }}
+      />
 
       <ContentCard title="Discover · Choose a policy pack">
         <p style={{ ...body, marginBottom: "0.75rem" }}>
