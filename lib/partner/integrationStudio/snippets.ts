@@ -11,6 +11,7 @@ import { tradingVenueServerPreflightExample } from "@/lib/partner/tradingVenue/e
 import { walletStandardBindingExample } from "@/lib/partner/walletStandard/examples";
 import { paymentAuthorizationServerExample } from "@/lib/partner/paymentAuthorization/examples";
 import { portableActionServerExample } from "@/lib/partner/portableActionContract/examples";
+import { evmPartnerServerExample } from "@/lib/partner/evm/examples";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
 
 const DEMO_OPTS = {
@@ -75,6 +76,11 @@ export function studioSnippetForApplication(input: {
       docs: "/docs/portable-action-contract",
       code: portableActionServerExample(),
     },
+    evm_partner_adapter: {
+      title: "EVM partner eligibility",
+      docs: "/docs/evm-partner-adapter",
+      code: evmPartnerServerExample(),
+    },
   };
 }
 
@@ -127,6 +133,12 @@ export function studioSnippetForPath(path: IntegrationStudioPathId): { title: st
         title: "Portable action contract",
         docs: "/docs/portable-action-contract",
         code: portableActionServerExample(),
+      };
+    case "evm_partner_adapter":
+      return {
+        title: "EVM partner eligibility",
+        docs: "/docs/evm-partner-adapter",
+        code: evmPartnerServerExample(),
       };
     default: {
       const _never: never = path;

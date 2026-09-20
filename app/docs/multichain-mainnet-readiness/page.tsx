@@ -73,6 +73,8 @@ export default function MultichainMainnetReadinessDocsPage() {
           {" · "}
           <Link href="/docs/solana">Solana</Link>
           {" · "}
+          <Link href="/docs/evm-partner-adapter">EVM partner adapter</Link>
+          {" · "}
           <Link href="/docs/trading-venue">Trading venue</Link>
           {" · "}
           <Link href="/docs/payment-authorization">Payment authorization</Link>

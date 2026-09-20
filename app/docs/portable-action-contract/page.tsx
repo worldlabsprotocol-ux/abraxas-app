@@ -56,6 +56,7 @@ export default function PortableActionContractDocsPage() {
           <li>Trading market access: enable_market_access in sandbox:market_access.</li>
           <li>Payment authorization: authorize_checkout or authorize_recurring_payment.</li>
           <li>Generic partner protocol: partner_protocol_action in sandbox:partner_protocol.</li>
+          <li>EVM partner eligibility: enable_protocol_access, enable_member_access, enable_redemption_access.</li>
         </ul>
       </ContentCard>
 
@@ -84,6 +85,8 @@ export default function PortableActionContractDocsPage() {
           Payment: <Link href="/docs/payment-authorization">Payment authorization</Link>
           {" · "}
           Networks: <Link href="/docs/multichain-mainnet-readiness">Mainnet readiness</Link>
+          {" · "}
+          EVM: <Link href="/docs/evm-partner-adapter">EVM partner adapter</Link>
         </p>
       </ContentCard>
     </RedesignPage>

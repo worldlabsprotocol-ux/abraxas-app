@@ -15,6 +15,7 @@ export function universalHttpsFiles(include: {
   solana: boolean;
   wallet: boolean;
   portable: boolean;
+  evm: boolean;
 }): StarterKitFile[] {
   const files: StarterKitFile[] = [
     {
@@ -167,6 +168,35 @@ export async function portablePreflight(receiptId) {
 `,
     });
   }
+  if (include.evm) {
+    files.push({
+      path: "http/evm-preflight.mjs",
+      contents: `import { AbraxasEvmPartnerAdapter } from "@abraxas/partner-kit/evm";
+
+const adapter = new AbraxasEvmPartnerAdapter({
+  partnerId: process.env.ABRAXAS_PARTNER_ID ?? "${P.partner_id}",
+  policyId: process.env.ABRAXAS_POLICY_ID ?? "${P.policy_id}",
+  policyVersion: Number(process.env.ABRAXAS_POLICY_VERSION ?? "${P.policy_version}"),
+  requirePolicyVersion: true,
+  environment: "sandbox",
+});
+
+export async function evmPreflight(receiptId) {
+  const contract = adapter.issueActionContract({
+    action_type: "enable_protocol_access",
+    action_scope: "sandbox:protocol_access",
+  });
+  if ("ok" in contract && contract.ok === false) return { allowed: false, reason: contract.reason };
+  const verified = await adapter.verifySignedReceipt(receiptId);
+  const result = await adapter.preflight({ result: verified, contract });
+  if (!result.allowed) return result;
+  // PARTNER EXECUTION BELONGS HERE.
+  // Use your own RPC, signer, contract, gas, and transaction construction.
+  return result;
+}
+`,
+    });
+  }
   if (include.solana) {
     files.push({
       path: "http/solana-gate.mjs",
@@ -204,7 +234,7 @@ export async function optionalWalletBinding(wallet) {
   return files;
 }
 
-export function wixVeloFiles(include: { webhook: boolean; venue: boolean; payment: boolean; wallet: boolean; portable: boolean }): StarterKitFile[] {
+export function wixVeloFiles(include: { webhook: boolean; venue: boolean; payment: boolean; wallet: boolean; portable: boolean; evm: boolean }): StarterKitFile[] {
   return [
     {
       path: "PLATFORM.md",
@@ -381,6 +411,32 @@ export async function portablePreflight(receiptId) {
 }
 `,
     }] : []),
+    ...(include.evm ? [{
+      path: "backend/evm-preflight.web.js",
+      contents: `import { AbraxasEvmPartnerAdapter } from "@abraxas/partner-kit/evm";
+import { getSecret } from "wix-secrets-backend";
+
+export async function evmPreflight(receiptId) {
+  const adapter = new AbraxasEvmPartnerAdapter({
+    partnerId: await getSecret("ABRAXAS_PARTNER_ID"),
+    policyId: await getSecret("ABRAXAS_POLICY_ID"),
+    policyVersion: Number(await getSecret("ABRAXAS_POLICY_VERSION")),
+    requirePolicyVersion: true,
+    environment: "sandbox",
+  });
+  const contract = adapter.issueActionContract({
+    action_type: "enable_protocol_access",
+    action_scope: "sandbox:protocol_access",
+  });
+  if ("ok" in contract && contract.ok === false) return { allowed: false, reason: contract.reason };
+  const verified = await adapter.verifySignedReceipt(receiptId);
+  const result = await adapter.preflight({ result: verified, contract });
+  if (!result.allowed) return result;
+  // PARTNER EXECUTION BELONGS HERE.
+  return result;
+}
+`,
+    }] : []),
     ...(include.wallet ? [{
       path: "backend/wallet-binding.web.js",
       contents: `import { signWalletStandardChallenge } from "@abraxas/partner-kit/wallet-standard";
@@ -400,6 +456,7 @@ export function serverlessFiles(include: {
   solana: boolean;
   wallet: boolean;
   portable: boolean;
+  evm: boolean;
 }): StarterKitFile[] {
   return [
     {
@@ -538,6 +595,32 @@ export async function portablePreflight(receiptId: string) {
   if ("ok" in contract && contract.ok === false) return { allowed: false, reason: contract.reason };
   const verified = await adapter.verifySignedReceipt(receiptId);
   return adapter.preflight({ result: verified, contract });
+}
+`,
+    }] : []),
+    ...(include.evm ? [{
+      path: "src/handlers/evm-preflight.ts",
+      contents: `import { AbraxasEvmPartnerAdapter } from "@abraxas/partner-kit/evm";
+
+const adapter = new AbraxasEvmPartnerAdapter({
+  partnerId: process.env.ABRAXAS_PARTNER_ID ?? "${P.partner_id}",
+  policyId: process.env.ABRAXAS_POLICY_ID ?? "${P.policy_id}",
+  policyVersion: Number(process.env.ABRAXAS_POLICY_VERSION ?? "${P.policy_version}"),
+  requirePolicyVersion: true,
+  environment: "sandbox",
+});
+
+export async function evmPreflight(receiptId: string) {
+  const contract = adapter.issueActionContract({
+    action_type: "enable_protocol_access",
+    action_scope: "sandbox:protocol_access",
+  });
+  if ("ok" in contract && contract.ok === false) return { allowed: false, reason: contract.reason };
+  const verified = await adapter.verifySignedReceipt(receiptId);
+  const result = await adapter.preflight({ result: verified, contract });
+  if (!result.allowed) return result;
+  // PARTNER EXECUTION BELONGS HERE.
+  return result;
 }
 `,
     }] : []),

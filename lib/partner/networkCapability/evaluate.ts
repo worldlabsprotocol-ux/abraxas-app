@@ -75,5 +75,6 @@ export function mapNetworkReasonToPortable(reason: NetworkReadinessReason): stri
   if (reason === "receipt_not_current") return "invalid";
   if (reason === "replay_required") return "replayed";
   if (reason === "client_override_rejected") return "invalid";
+  if (reason === "production_review_required") return "invalid";
   return "invalid";
 }

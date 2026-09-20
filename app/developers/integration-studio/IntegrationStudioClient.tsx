@@ -46,6 +46,7 @@ const PATH_LABEL: Record<IntegrationStudioPathId, string> = {
   wallet_standard_binding: "Wallet Standard binding",
   payment_authorization: "Payment and commerce",
   portable_action_contract: "Portable action contract",
+  evm_partner_adapter: "EVM partner eligibility",
 };
 
 const body: React.CSSProperties = {
@@ -410,6 +411,11 @@ export function IntegrationStudioClient() {
             Issue a server-authoritative action contract, re-fetch the current public receipt, then preflight one named action and narrow scope. Allowed means your system may perform that action. Abraxas never executes membership, trading, payment, or protocol calls.
           </p>
         )}
+        {pathId === "evm_partner_adapter" && (
+          <p style={{ ...body, marginBottom: "0.65rem" }}>
+            Server-verified allow or deny for one named protocol action. Allowed is never a transaction approval, signature, gas authorization, transfer, or execution. The partner backend keeps node access, signer, contract, gas, and execution. No browser wallet connection. EVM wallet binding is out of scope.
+          </p>
+        )}
         {created && hostedDocs?.hosted_link && pathId === "hosted_partner_flow" && (
           <p style={{ ...body, marginBottom: "0.65rem" }}>
             Hosted verify for this app uses slug <strong>{created.public_slug}</strong>. The key is never placed in this URL.
@@ -471,7 +477,7 @@ export function IntegrationStudioClient() {
         </p>
         <p style={{ ...body, marginBottom: "0.55rem", fontWeight: 700, color: "var(--text-primary)" }}>Optional capabilities</p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginBottom: "0.75rem" }}>
-          {["webhooks", "wallet_standard_binding", "trading_venue", "payment_authorization", "portable_action_contract", "solana_gate"].map((id) => (
+          {["webhooks", "wallet_standard_binding", "trading_venue", "payment_authorization", "portable_action_contract", "solana_gate", "evm_partner_adapter"].map((id) => (
             <button
               key={id}
               type="button"
