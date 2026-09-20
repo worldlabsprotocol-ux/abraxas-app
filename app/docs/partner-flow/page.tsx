@@ -94,6 +94,14 @@ export default function PartnerFlowDocsPage() {
           Selective disclosure
         </Link>
         {" · "}
+        <Link href="/docs/policy-compatibility" style={{ color: ACCENT, fontWeight: 600, textDecoration: "none" }}>
+          Policy compatibility
+        </Link>
+        {" · "}
+        <Link href="/docs/reusable-eligibility" style={{ color: ACCENT, fontWeight: 600, textDecoration: "none" }}>
+          Reusable eligibility
+        </Link>
+        {" · "}
         <Link href="/verify?mode=receipt" style={{ color: ACCENT, fontWeight: 600, textDecoration: "none" }}>
           Open receipt tester →
         </Link>

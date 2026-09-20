@@ -24,6 +24,7 @@ import {
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio/contract";
 import { SELECTIVE_DISCLOSURE_NOTICE } from "@/lib/privacy/selectiveDisclosure";
+import { POLICY_COMPATIBILITY_NOTICE } from "@/lib/policy/compatibilityEdge";
 
 export interface StudioMethodView {
   id: string;
@@ -132,6 +133,10 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
     selective_disclosure: {
       docs: "/docs/selective-disclosure",
       notice: SELECTIVE_DISCLOSURE_NOTICE,
+    },
+    policy_compatibility: {
+      docs: "/docs/policy-compatibility",
+      notice: POLICY_COMPATIBILITY_NOTICE,
     },
     activation: partnerActivationPublicView(),
   };

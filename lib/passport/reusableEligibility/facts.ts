@@ -3,6 +3,7 @@
 
 import { createHash } from "crypto";
 import { inferPolicyPackFromPolicyId } from "@/lib/partner/launchpad/policyPacks";
+import { canonicalizeDisclosureBoundary } from "@/lib/policy/compatibilityEdge";
 import { subjectPseudonymId } from "@/lib/decisionReceipts/pseudonym";
 import type { InternalReusableFact } from "./contract";
 
@@ -47,7 +48,9 @@ export function projectInternalFact(input: {
     pack_id: pack.id,
     policy_version: input.receipt.policy_version,
     minimum_assurance: pack.minimum_assurance,
+    method_category: pack.minimum_assurance,
     result_category: pack.disclosed_result,
+    disclosure_boundary: canonicalizeDisclosureBoundary(pack.disclosed_result, pack.partner_does_not_receive),
     decision_context: context,
     source_decision_id: input.receipt.verification_decision_id,
     source_receipt_id: input.receipt.id,

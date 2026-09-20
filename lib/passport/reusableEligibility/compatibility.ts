@@ -1,20 +1,24 @@
 // FILE: lib/passport/reusableEligibility/compatibility.ts
-// First-release compatibility is exact pack+version, or an empty reviewed catalog.
+// Exact pack+version reuse, then a reviewed compatibility-edge registry. Never infer.
 
 import {
   inferPolicyPackFromPolicyId,
   policyPackIsSandboxOnly,
   type PolicyPackId,
 } from "@/lib/partner/launchpad/policyPacks";
+import {
+  canonicalizeDisclosureBoundary,
+  evaluateCompatibility,
+  findDirectEdges,
+  mapEvalReasonToReuseState,
+  productionActiveEdgeCount,
+  type CompatibilityFactSnapshot,
+  type CompatibilityTargetSnapshot,
+  type PolicyCompatibilityEdge,
+} from "@/lib/policy/compatibilityEdge";
 import type { InternalReusableFact } from "./contract";
 
-/** Reviewed extra edges. First release: none. Never infer age/residency/membership/identity/sandbox/trading/payment. */
-export const REVIEWED_REUSE_COMPATIBILITY: ReadonlyArray<{
-  from_pack: PolicyPackId;
-  from_version: number;
-  to_pack: PolicyPackId;
-  to_version: number;
-}> = [];
+export { productionActiveEdgeCount };
 
 export type CompatibilityDenial =
   | "incompatible"
@@ -30,21 +34,55 @@ export function packsAreExactMatch(sourcePolicyId: string, targetPolicyId: strin
   return source.id === target.id;
 }
 
+export function factSnapshot(fact: InternalReusableFact): CompatibilityFactSnapshot {
+  return {
+    pack_id: fact.pack_id,
+    policy_version: fact.policy_version,
+    minimum_assurance: fact.minimum_assurance,
+    method_category: fact.method_category,
+    result_category: fact.result_category,
+    disclosure_boundary: fact.disclosure_boundary,
+    decision_context: fact.decision_context,
+    status: fact.status,
+    expires_at: fact.expires_at,
+  };
+}
+
+export function targetSnapshot(input: {
+  targetPolicyId: string;
+  targetPolicyVersion: number;
+  targetSandboxOnly: boolean;
+}): CompatibilityTargetSnapshot | null {
+  const pack = inferPolicyPackFromPolicyId(input.targetPolicyId);
+  if (!pack) return null;
+  return {
+    pack_id: pack.id,
+    policy_version: input.targetPolicyVersion,
+    required_assurance: pack.minimum_assurance,
+    method_category: pack.minimum_assurance,
+    result_category: pack.disclosed_result,
+    disclosure_boundary: canonicalizeDisclosureBoundary(pack.disclosed_result, pack.partner_does_not_receive),
+    sandbox_only: input.targetSandboxOnly || policyPackIsSandboxOnly(pack),
+  };
+}
+
 export function catalogAllowsReuse(input: {
   sourcePackId: PolicyPackId;
   sourceVersion: number;
   targetPackId: PolicyPackId;
   targetVersion: number;
+  registry?: readonly PolicyCompatibilityEdge[];
 }): boolean {
   if (input.sourcePackId === input.targetPackId && input.sourceVersion === input.targetVersion) {
     return true;
   }
-  return REVIEWED_REUSE_COMPATIBILITY.some((edge) =>
-    edge.from_pack === input.sourcePackId
-    && edge.from_version === input.sourceVersion
-    && edge.to_pack === input.targetPackId
-    && edge.to_version === input.targetVersion,
-  );
+  return findDirectEdges({
+    sourcePackId: input.sourcePackId,
+    sourceVersion: input.sourceVersion,
+    targetPackId: input.targetPackId,
+    targetVersion: input.targetVersion,
+    registry: input.registry,
+  }).some((edge) => edge.status === "active");
 }
 
 export function evaluateFactCompatibility(input: {
@@ -53,33 +91,22 @@ export function evaluateFactCompatibility(input: {
   targetPolicyVersion: number;
   targetSandboxOnly: boolean;
   now?: Date;
+  registry?: readonly PolicyCompatibilityEdge[];
 }): { ok: true } | { ok: false; reason: CompatibilityDenial } {
-  const now = input.now ?? new Date();
-  if (input.fact.status === "revoked") return { ok: false, reason: "revoked" };
-  if (input.fact.status === "expired" || (input.fact.expires_at && new Date(input.fact.expires_at) < now)) {
-    return { ok: false, reason: "expired" };
-  }
-  const targetPack = inferPolicyPackFromPolicyId(input.targetPolicyId);
-  if (!targetPack) return { ok: false, reason: "incompatible" };
-  if (input.fact.decision_context === "sandbox_only" && !input.targetSandboxOnly) {
-    return { ok: false, reason: "sandbox_blocked" };
-  }
-  if (policyPackIsSandboxOnly(targetPack) !== (input.fact.decision_context === "sandbox_only")
-    && input.fact.decision_context === "sandbox_only") {
-    return { ok: false, reason: "sandbox_blocked" };
-  }
-  if (!catalogAllowsReuse({
-    sourcePackId: input.fact.pack_id as PolicyPackId,
-    sourceVersion: input.fact.policy_version,
-    targetPackId: targetPack.id,
-    targetVersion: input.targetPolicyVersion,
-  })) {
-    return { ok: false, reason: "incompatible" };
-  }
-  if (input.targetSandboxOnly && input.fact.decision_context === "production") {
-    // Production facts may satisfy a sandbox request of the same pack+version.
-  }
-  return { ok: true };
+  const target = targetSnapshot({
+    targetPolicyId: input.targetPolicyId,
+    targetPolicyVersion: input.targetPolicyVersion,
+    targetSandboxOnly: input.targetSandboxOnly,
+  });
+  if (!target) return { ok: false, reason: "incompatible" };
+  const result = evaluateCompatibility({
+    fact: factSnapshot(input.fact),
+    target,
+    now: input.now,
+    registry: input.registry,
+  });
+  if (result.ok) return { ok: true };
+  return { ok: false, reason: mapEvalReasonToReuseState(result.reason) };
 }
 
 export function targetIsSandboxOnly(policyId: string, continuationSandbox?: boolean): boolean {

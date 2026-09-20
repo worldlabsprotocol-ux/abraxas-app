@@ -73,6 +73,7 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
           { label: "Payment authorization", href: "/docs/payment-authorization" },
           { label: "Portable action contract", href: "/docs/portable-action-contract" },
           { label: "Selective disclosure", href: "/docs/selective-disclosure" },
+          { label: "Policy compatibility", href: "/docs/policy-compatibility" },
         ],
       },
       {
@@ -119,6 +120,8 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
           { label: "Payment authorization", href: "/docs/payment-authorization" },
           { label: "Portable action contract", href: "/docs/portable-action-contract" },
           { label: "Selective disclosure", href: "/docs/selective-disclosure" },
+          { label: "Policy compatibility", href: "/docs/policy-compatibility" },
+          { label: "Reusable eligibility", href: "/docs/reusable-eligibility" },
           { label: "Partner Action Control Plane", href: "/docs/action-control-plane" },
           { label: "Sandbox partner contract", href: "/docs/sandbox-conformance" },
           { label: "Partner Event Delivery", href: "/docs/partner-event-delivery" },

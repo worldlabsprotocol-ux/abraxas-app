@@ -330,6 +330,10 @@ export function IntegrationStudioClient() {
             <Link href="/docs/selective-disclosure" style={{ color: "var(--accent)", fontWeight: 700 }}>
               Selective disclosure
             </Link>
+            {" · "}
+            <Link href="/docs/policy-compatibility" style={{ color: "var(--accent)", fontWeight: 700 }}>
+              Policy compatibility
+            </Link>
           </p>
           <p style={{ ...body, marginTop: "0.45rem" }}>
             Identity is default: {String(contract.identity_is_default)}.

@@ -35,7 +35,9 @@ export default function PolicyPacksDocsPage() {
           <li><strong>Server verification.</strong> Fetch the public receipt, check signature, partner, policy, expiry, revocation, and sandbox vs production before granting access.</li>
         </ol>
         <p style={{ ...body, marginTop: "0.85rem" }}>
-          See <Link href="/docs/selective-disclosure">selective disclosure</Link> and{" "}
+          See <Link href="/docs/selective-disclosure">selective disclosure</Link>,{" "}
+          <Link href="/docs/policy-compatibility">policy compatibility</Link>,{" "}
+          <Link href="/docs/reusable-eligibility">reusable eligibility</Link>, and{" "}
           <Link href="/developers/launchpad">Partner Launchpad</Link>.
         </p>
       </ContentCard>
