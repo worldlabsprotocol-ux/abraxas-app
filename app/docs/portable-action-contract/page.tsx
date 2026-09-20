@@ -87,6 +87,8 @@ export default function PortableActionContractDocsPage() {
           Networks: <Link href="/docs/multichain-mainnet-readiness">Mainnet readiness</Link>
           {" · "}
           EVM: <Link href="/docs/evm-partner-adapter">EVM partner adapter</Link>
+          {" · "}
+          Keys: <Link href="/docs/receipt-key-lifecycle">Receipt key lifecycle</Link>
         </p>
       </ContentCard>
     </RedesignPage>

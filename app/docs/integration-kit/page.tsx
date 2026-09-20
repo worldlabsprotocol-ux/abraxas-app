@@ -56,6 +56,8 @@ export default function IntegrationKitDocsPage() {
           Launchpad: <Link href="/developers/launchpad">Partner Launchpad</Link>
           {" · "}
           Solana: <Link href="/docs/solana">Solana integration</Link>
+          {" · "}
+          Keys: <Link href="/docs/receipt-key-lifecycle">Receipt key lifecycle</Link>
         </p>
       </ContentCard>
     </RedesignPage>

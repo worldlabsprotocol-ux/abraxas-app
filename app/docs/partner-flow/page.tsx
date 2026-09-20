@@ -237,6 +237,8 @@ export default function PartnerFlowDocsPage() {
             <p style={body}>
               Fetch <code style={{ fontFamily: MONO }}>GET /api/receipts/{"{receipt_id}"}/public</code> from your backend.
               No API key required. Never trust callback URL parameters alone.
+              Optional independent check: <Link href="/docs/receipt-key-lifecycle">receipt verification-key lifecycle</Link>
+              {" "}(<code style={{ fontFamily: MONO }}>GET /api/receipts/verification-keys</code>). Signature verification is not a grant.
             </p>
             <BulletList items={PARTNER_FLOW_RECEIPT_CHECKS.map((c) => `${c.check} — ${c.why}`)} />
             <pre tabIndex={0} style={{
