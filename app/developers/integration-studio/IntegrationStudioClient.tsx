@@ -16,6 +16,7 @@ import {
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio";
 import { isPolicyPackId } from "@/lib/partner/launchpad/policyPacks";
+import { launchpadConfigureHref } from "@/lib/partner/launchpad/partnerFlowRequest/contract";
 import { PolicyFitPlanner } from "@/app/developers/integration-studio/PolicyFitPlanner";
 import {
   STARTER_KIT_DOES_NOT_DO,
@@ -242,7 +243,8 @@ export function IntegrationStudioClient() {
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
             <Btn href={launchpadSandboxTestHref(resumeApp.id)} size="sm">Test your sandbox integration →</Btn>
-            <Btn href={launchpadResumeHref(resumeApp.id)} variant="secondary" size="sm">{PARTNER_ACTIVATION_RESUME_CTA} →</Btn>
+            <Btn href={launchpadConfigureHref(resumeApp.id)} variant="secondary" size="sm">Configure Partner Flow →</Btn>
+            <Btn href={launchpadResumeHref(resumeApp.id)} variant="ghost" size="sm">{PARTNER_ACTIVATION_RESUME_CTA} →</Btn>
           </div>
         </ContentCard>
       )}
