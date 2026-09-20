@@ -71,7 +71,7 @@ function launchpadFrom(table: string) {
     },
     maybeSingle() {
       if (launchpadSchemaMissing) return Promise.resolve({ data: null, error: schemaError() });
-      const rows = table === "partner_launchpad_applications" ? [...apps.values()] : [];
+      const rows = table === "partner_launchpad_applications" ? Array.from(apps.values()) : [];
       const match = rows.find((row) => filters.every(([column, value]) => String(row[column] ?? "") === value));
       return Promise.resolve({ data: match ?? null, error: null });
     },
@@ -129,7 +129,7 @@ export function createSandboxPartnerMemoryAdmin() {
         }
         const partnerId = String(args.p_partner_id);
         const publicSlug = String(args.p_public_slug);
-        const existing = [...apps.values()].find((row) => row.public_slug === publicSlug && row.partner_id === partnerId);
+        const existing = Array.from(apps.values()).find((row) => row.public_slug === publicSlug && row.partner_id === partnerId);
         if (existing && args.p_idempotency_key && existing.idempotency_key === args.p_idempotency_key) {
           return Promise.resolve({
             data: {
@@ -203,7 +203,7 @@ export function requireSandboxPartnerTestAdmin() {
 }
 
 export function memoryApps(): AppRow[] {
-  return [...apps.values()];
+  return Array.from(apps.values());
 }
 
 export function memoryRequests(): RequestRow[] {
