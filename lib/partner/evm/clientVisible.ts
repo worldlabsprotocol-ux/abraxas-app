@@ -21,6 +21,7 @@ export function deniedEvmResult(
   actionScope: string,
   nonceState: EvmPartnerActionBinding["nonce_state"],
   expiresAt: string | null = null,
+  walletBinding: EvmPartnerActionBinding["wallet_binding"] = "not_attached",
 ): EvmPartnerClientVisibleResult {
   return {
     allowed: false,
@@ -29,7 +30,7 @@ export function deniedEvmResult(
       action_type: actionType,
       action_scope: actionScope,
       nonce_state: nonceState,
-      wallet_binding: "not_attached",
+      wallet_binding: walletBinding,
     },
     expires_at: expiresAt,
   };
@@ -39,6 +40,7 @@ export function permittedEvmResult(
   actionType: EvmPartnerActionType,
   actionScope: EvmPartnerActionScope,
   expiresAt: string,
+  walletBinding: EvmPartnerActionBinding["wallet_binding"] = "not_attached",
 ): EvmPartnerClientVisibleResult {
   return {
     allowed: true,
@@ -47,7 +49,7 @@ export function permittedEvmResult(
       action_type: actionType,
       action_scope: actionScope,
       nonce_state: "consumed",
-      wallet_binding: "not_attached",
+      wallet_binding: walletBinding,
     },
     expires_at: expiresAt,
   };
@@ -67,12 +69,14 @@ export function toEvmClient(result: PortableActionClientResult): EvmPartnerClien
       result.action_binding.action_scope,
       result.action_binding.nonce_state,
       result.expires_at,
+      result.action_binding.wallet_binding,
     );
   }
   return permittedEvmResult(
     actionType as EvmPartnerActionType,
     result.action_binding.action_scope as EvmPartnerActionScope,
     result.expires_at as string,
+    result.action_binding.wallet_binding,
   );
 }
 

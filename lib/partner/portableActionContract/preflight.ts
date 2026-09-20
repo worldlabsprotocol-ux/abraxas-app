@@ -6,6 +6,8 @@ import type { PartnerIntegrationOutcome } from "@/lib/partner/integrationKit/con
 import { consumeTradingVenueNonce } from "@/lib/partner/tradingVenue/nonceStore";
 import { resolveWalletBindingForAction } from "@/lib/partner/walletStandard/resolve";
 import { WalletStandardStoreUnavailableError } from "@/lib/partner/walletStandard/errors";
+import { resolveEvmWalletBindingForAction } from "@/lib/partner/evmWalletBinding/resolve";
+import { EvmWalletStoreUnavailableError } from "@/lib/partner/evmWalletBinding/errors";
 import { evaluateNetworkAction, mapNetworkReasonToPortable } from "@/lib/partner/networkCapability/evaluate";
 import type { NetworkContext } from "@/lib/partner/networkCapability/types";
 import { getNetworkCapability } from "@/lib/partner/networkCapability/registry";
@@ -220,13 +222,30 @@ export async function preflightPortableAction(input: {
     }
   }
 
-  const wallet = await resolveWalletBindingForAction({
-    mode: contract.wallet_binding,
-    bindingRef: input.binding_ref,
-    partnerId: input.kit.options.partnerId,
-    actionContractNonce: contract.nonce,
-    consume: false,
-  });
+  const networkEntry = contract.network_context
+    ? getNetworkCapability(contract.network_context.network_id)
+    : null;
+  const useEvmWalletBinding = networkEntry?.ecosystem === "evm";
+  const wallet = useEvmWalletBinding
+    ? await resolveEvmWalletBindingForAction({
+      mode: contract.wallet_binding,
+      bindingRef: input.binding_ref,
+      partnerId: input.kit.options.partnerId,
+      policyId: input.kit.options.policyId,
+      policyVersion: input.kit.options.policyVersion ?? 1,
+      actionType: requestedType,
+      actionScope: requestedScope,
+      networkId: contract.network_context!.network_id,
+      actionContractNonce: contract.nonce,
+      consume: false,
+    })
+    : await resolveWalletBindingForAction({
+      mode: contract.wallet_binding,
+      bindingRef: input.binding_ref,
+      partnerId: input.kit.options.partnerId,
+      actionContractNonce: contract.nonce,
+      consume: false,
+    });
   if (!wallet.ok) {
     if (wallet.status === "store_unavailable") {
       return denied("store_unavailable", requestedType, requestedScope, "rejected", contract.expires_at);
@@ -255,7 +274,7 @@ export async function preflightPortableAction(input: {
       contract.expires_at,
     );
   } catch (error) {
-    if (error instanceof WalletStandardStoreUnavailableError) {
+    if (error instanceof WalletStandardStoreUnavailableError || error instanceof EvmWalletStoreUnavailableError) {
       return denied("store_unavailable", requestedType, requestedScope, "rejected", contract.expires_at);
     }
     throw error;
@@ -270,13 +289,28 @@ export async function preflightPortableAction(input: {
     return denied("invalid", requestedType, requestedScope, "rejected", contract.expires_at);
   }
   if (wallet.status === "bound") {
-    await resolveWalletBindingForAction({
-      mode: contract.wallet_binding,
-      bindingRef: input.binding_ref,
-      partnerId: input.kit.options.partnerId,
-      actionContractNonce: contract.nonce,
-      consume: true,
-    });
+    if (useEvmWalletBinding) {
+      await resolveEvmWalletBindingForAction({
+        mode: contract.wallet_binding,
+        bindingRef: input.binding_ref,
+        partnerId: input.kit.options.partnerId,
+        policyId: input.kit.options.policyId,
+        policyVersion: input.kit.options.policyVersion ?? 1,
+        actionType: requestedType,
+        actionScope: requestedScope,
+        networkId: contract.network_context!.network_id,
+        actionContractNonce: contract.nonce,
+        consume: true,
+      });
+    } else {
+      await resolveWalletBindingForAction({
+        mode: contract.wallet_binding,
+        bindingRef: input.binding_ref,
+        partnerId: input.kit.options.partnerId,
+        actionContractNonce: contract.nonce,
+        consume: true,
+      });
+    }
   }
   const walletState: PortableActionBinding["wallet_binding"] = wallet.status === "bound"
     ? "bound"

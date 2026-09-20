@@ -403,6 +403,15 @@ export async function evmPreflight(receiptId: string) {
   // Do not send chain IDs, calldata, wallets, or transaction payloads to Abraxas.
   return result;
 }
+
+export async function optionalEvmWalletControl(origin: string, contract) {
+  // Only when wallet_binding is optional or required on this EVM action.
+  // Sign this message to prove control for this one action.
+  // No transaction will be created or signed.
+  // Abraxas does not read your balances or hold your keys.
+  // Holder uses personal_sign / EIP-191 only. Store binding_ref. Never store an address.
+  return { origin, nonce: contract.nonce, method: "personal_sign" };
+}
 `;
   if (runtime === "typescript_nextjs") {
     return `import { NextResponse } from "next/server";

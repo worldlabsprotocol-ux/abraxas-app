@@ -194,6 +194,13 @@ export async function evmPreflight(receiptId) {
   // Use your own RPC, signer, contract, gas, and transaction construction.
   return result;
 }
+
+export async function optionalEvmWalletControl(origin, contract) {
+  // Sign this message to prove control for this one action.
+  // No transaction will be created or signed.
+  // Abraxas does not read your balances or hold your keys.
+  return { origin, nonce: contract.nonce, method: "personal_sign" };
+}
 `,
     });
   }
@@ -435,6 +442,13 @@ export async function evmPreflight(receiptId) {
   // PARTNER EXECUTION BELONGS HERE.
   return result;
 }
+
+export async function optionalEvmWalletControl(origin, contract) {
+  // Sign this message to prove control for this one action.
+  // No transaction will be created or signed.
+  // Abraxas does not read your balances or hold your keys.
+  return { origin, nonce: contract.nonce, method: "personal_sign" };
+}
 `,
     }] : []),
     ...(include.wallet ? [{
@@ -621,6 +635,13 @@ export async function evmPreflight(receiptId: string) {
   if (!result.allowed) return result;
   // PARTNER EXECUTION BELONGS HERE.
   return result;
+}
+
+export async function optionalEvmWalletControl(origin, contract) {
+  // Sign this message to prove control for this one action.
+  // No transaction will be created or signed.
+  // Abraxas does not read your balances or hold your keys.
+  return { origin, nonce: contract.nonce, method: "personal_sign" };
 }
 `,
     }] : []),

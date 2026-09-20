@@ -413,7 +413,7 @@ export function IntegrationStudioClient() {
         )}
         {pathId === "evm_partner_adapter" && (
           <p style={{ ...body, marginBottom: "0.65rem" }}>
-            Server-verified allow or deny for one named protocol action. Allowed is never a transaction approval, signature, gas authorization, transfer, or execution. The partner backend keeps node access, signer, contract, gas, and execution. No browser wallet connection. EVM wallet binding is out of scope.
+            Server-verified allow or deny for one named protocol action. Allowed is never a transaction approval, signature, gas authorization, transfer, or execution. The partner backend keeps node access, signer, contract, gas, and execution. Optional EVM wallet-control is a personal_sign proof for that one action only: sign this message to prove control; no transaction will be created or signed; Abraxas does not read balances or hold keys.
           </p>
         )}
         {created && hostedDocs?.hosted_link && pathId === "hosted_partner_flow" && (
