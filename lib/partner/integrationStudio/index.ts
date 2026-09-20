@@ -10,6 +10,7 @@ export {
   INTEGRATION_STUDIO_WALLET_NOTICE,
   INTEGRATION_STUDIO_PAYMENT_NOTICE,
   INTEGRATION_STUDIO_PORTABLE_NOTICE,
+  INTEGRATION_STUDIO_EVM_NOTICE,
   isIntegrationStudioPathId,
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio/contract";

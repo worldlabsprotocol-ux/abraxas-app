@@ -16,6 +16,9 @@ export const PORTABLE_ACTION_TYPES = [
   "authorize_recurring_payment",
   "grant_membership_access",
   "partner_protocol_action",
+  "enable_protocol_access",
+  "enable_member_access",
+  "enable_redemption_access",
 ] as const;
 export type PortableActionType = (typeof PORTABLE_ACTION_TYPES)[number];
 
@@ -25,6 +28,9 @@ export const PORTABLE_ACTION_SCOPES = [
   "sandbox:recurring_payment",
   "sandbox:membership_access",
   "sandbox:partner_protocol",
+  "sandbox:protocol_access",
+  "sandbox:member_access",
+  "sandbox:redemption_access",
 ] as const;
 export type PortableActionScope = (typeof PORTABLE_ACTION_SCOPES)[number];
 
@@ -34,6 +40,9 @@ export const PORTABLE_ACTION_TYPE_SCOPES: Record<PortableActionType, PortableAct
   authorize_recurring_payment: "sandbox:recurring_payment",
   grant_membership_access: "sandbox:membership_access",
   partner_protocol_action: "sandbox:partner_protocol",
+  enable_protocol_access: "sandbox:protocol_access",
+  enable_member_access: "sandbox:member_access",
+  enable_redemption_access: "sandbox:redemption_access",
 };
 
 export const PORTABLE_ACTION_WALLET_BINDING_MODES = WALLET_STANDARD_BINDING_MODES;
@@ -104,6 +113,18 @@ export const PORTABLE_ACTION_REJECTED_CONTRACT_KEYS = [
   "execute",
   "execution",
   "provider",
+  "calldata",
+  "data",
+  "to",
+  "recipient",
+  "amount",
+  "token",
+  "method",
+  "contract_address",
+  "wallet",
+  "gas",
+  "value",
+  "chainId",
 ] as const;
 
 export const PORTABLE_ACTION_FORBIDDEN_KEYS = [

@@ -20,6 +20,7 @@ import {
   INTEGRATION_STUDIO_WALLET_NOTICE,
   INTEGRATION_STUDIO_PAYMENT_NOTICE,
   INTEGRATION_STUDIO_PORTABLE_NOTICE,
+  INTEGRATION_STUDIO_EVM_NOTICE,
   INTEGRATION_STUDIO_WEBHOOK_NOTICE,
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio/contract";
@@ -130,6 +131,13 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
       executes_action: false,
       funds_movement: false,
       notice: INTEGRATION_STUDIO_PORTABLE_NOTICE,
+    },
+    evm_partner_adapter: {
+      creates_transactions: false,
+      funds_movement: false,
+      connects_wallet: false,
+      calls_rpc: false,
+      notice: INTEGRATION_STUDIO_EVM_NOTICE,
     },
     selective_disclosure: {
       docs: "/docs/selective-disclosure",

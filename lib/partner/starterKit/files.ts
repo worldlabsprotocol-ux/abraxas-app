@@ -100,6 +100,9 @@ Optional. \`signMessage\` only. Never \`signTransaction\`. Binding is not identi
 ## Circle
 Circle Arc testnet transfer is a separate, review-first, explicit-confirmation path. This kit does not call it.
 
+## EVM partner eligibility
+Backend preflight only. Allowed is never a transaction, signature, gas grant, or execution. Partner execution belongs in your backend. This kit never includes RPC URLs, keys, wallets, signing code, or transaction payloads.
+
 ## Networks
 Universal HTTPS remains canonical. Partners run their own chain or venue execution. Abraxas verifies and preflights only. This kit never includes RPC URLs, private keys, transaction payloads, wallet secrets, or Mainnet activation.
 See /docs/multichain-mainnet-readiness.
@@ -117,6 +120,7 @@ ${STARTER_KIT_NOTICES.venue}
 ${STARTER_KIT_NOTICES.payment}
 ${STARTER_KIT_NOTICES.portable}
 ${STARTER_KIT_NOTICES.wallet}
+${STARTER_KIT_NOTICES.evm}
 `;
 }
 
@@ -371,6 +375,47 @@ export async function POST() {
   return body;
 }
 
+function evmPreflight(runtime: StarterKitRuntime): string {
+  const body = `import { AbraxasEvmPartnerAdapter } from "@abraxas/partner-kit/evm";
+import { kit } from ${runtime === "typescript_nextjs" ? '"../../../lib/abraxas"' : '"./lib/abraxas"'};
+
+const evm = new AbraxasEvmPartnerAdapter({
+  partnerId: kit.options.partnerId,
+  policyId: kit.options.policyId,
+  policyVersion: kit.options.policyVersion,
+  requirePolicyVersion: true,
+  environment: "sandbox",
+});
+
+export async function evmPreflight(receiptId: string) {
+  const contract = evm.issueActionContract({
+    action_type: "enable_protocol_access",
+    action_scope: "sandbox:protocol_access",
+  });
+  if ("ok" in contract && contract.ok === false) {
+    return { allowed: false, reason: contract.reason };
+  }
+  const verified = await evm.verifySignedReceipt(receiptId);
+  const result = await evm.preflight({ result: verified, contract });
+  if (!result.allowed) return result;
+  // PARTNER EXECUTION BELONGS HERE.
+  // Use your own RPC, signer, contract, gas, and transaction construction.
+  // Do not send chain IDs, calldata, wallets, or transaction payloads to Abraxas.
+  return result;
+}
+`;
+  if (runtime === "typescript_nextjs") {
+    return `import { NextResponse } from "next/server";
+${body}
+export async function POST() {
+  const result = await evmPreflight("REPLACE_WITH_RECEIPT_ID_AT_RUNTIME");
+  return NextResponse.json({ allowed: result.allowed === true, reason: "reason" in result ? result.reason : "permitted" });
+}
+`;
+  }
+  return body;
+}
+
 function solanaGate(): string {
   return `import { AbraxasSolanaPartnerAdapter } from "@abraxas/partner-kit/solana";
 import { kit, permitProtocolAction } from "./abraxas";
@@ -404,14 +449,15 @@ function expressServer(include: {
   venue: boolean;
   payment: boolean;
   portable: boolean;
+  evm: boolean;
 }): string {
   return `import express from "express";
 import { receiptCallback } from "./callback";
-${include.webhook ? 'import { webhookHandler } from "./webhook";\n' : ""}${include.venue ? 'import { tradingPreflight } from "./trading-preflight";\n' : ""}${include.payment ? 'import { paymentPreflight } from "./payment-preflight";\n' : ""}${include.portable ? 'import { portablePreflight } from "./portable-preflight";\n' : ""}
+${include.webhook ? 'import { webhookHandler } from "./webhook";\n' : ""}${include.venue ? 'import { tradingPreflight } from "./trading-preflight";\n' : ""}${include.payment ? 'import { paymentPreflight } from "./payment-preflight";\n' : ""}${include.portable ? 'import { portablePreflight } from "./portable-preflight";\n' : ""}${include.evm ? 'import { evmPreflight } from "./evm-preflight";\n' : ""}
 const app = express();
 app.use(express.text({ type: "*/*" }));
 app.get("/auth/abraxas/callback", (req, res) => void receiptCallback(req, res));
-${include.webhook ? 'app.post("/webhooks/abraxas", (req, res) => void webhookHandler(req, res));\n' : ""}${include.venue ? 'app.post("/preflight/trading", async (_req, res) => res.json(await tradingPreflight()));\n' : ""}${include.payment ? 'app.post("/preflight/payment", async (_req, res) => res.json(await paymentPreflight()));\n' : ""}${include.portable ? 'app.post("/preflight/action", async (_req, res) => res.json(await portablePreflight("REPLACE_WITH_RECEIPT_ID_AT_RUNTIME")));\n' : ""}
+${include.webhook ? 'app.post("/webhooks/abraxas", (req, res) => void webhookHandler(req, res));\n' : ""}${include.venue ? 'app.post("/preflight/trading", async (_req, res) => res.json(await tradingPreflight()));\n' : ""}${include.payment ? 'app.post("/preflight/payment", async (_req, res) => res.json(await paymentPreflight()));\n' : ""}${include.portable ? 'app.post("/preflight/action", async (_req, res) => res.json(await portablePreflight("REPLACE_WITH_RECEIPT_ID_AT_RUNTIME")));\n' : ""}${include.evm ? 'app.post("/preflight/evm", async (_req, res) => res.json(await evmPreflight("REPLACE_WITH_RECEIPT_ID_AT_RUNTIME")));\n' : ""}
 app.listen(3000);
 `;
 }
@@ -448,7 +494,8 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     || selection.platform === "solana_backend";
   const wallet = selection.path === "wallet_standard_binding" || selection.capabilities.includes("wallet_standard_binding");
   const portable = selection.path === "portable_action_contract" || selection.capabilities.includes("portable_action_contract");
-  const include = { webhook, venue, payment, solana, wallet, portable };
+  const evm = selection.path === "evm_partner_adapter" || selection.capabilities.includes("evm_partner_adapter");
+  const include = { webhook, venue, payment, solana, wallet, portable, evm };
 
   const files: StarterKitFile[] = [
     { path: "README.md", contents: readme(selection) },
@@ -468,6 +515,7 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     if (venue) files.push({ path: "app/api/abraxas/trading-preflight/route.ts", contents: venuePreflight("typescript_nextjs") });
     if (payment) files.push({ path: "app/api/abraxas/payment-preflight/route.ts", contents: paymentPreflight("typescript_nextjs") });
     if (portable) files.push({ path: "app/api/abraxas/action-preflight/route.ts", contents: portablePreflight("typescript_nextjs") });
+    if (evm) files.push({ path: "app/api/abraxas/evm-preflight/route.ts", contents: evmPreflight("typescript_nextjs") });
     if (solana) files.push({ path: "src/lib/solana-gate.ts", contents: solanaGate() });
     if (wallet) files.push({ path: "src/lib/wallet-binding.ts", contents: walletBinding() });
   } else if (selection.runtime === "typescript_express") {
@@ -478,13 +526,14 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     if (venue) files.push({ path: "src/trading-preflight.ts", contents: venuePreflight("typescript_express") });
     if (payment) files.push({ path: "src/payment-preflight.ts", contents: paymentPreflight("typescript_express") });
     if (portable) files.push({ path: "src/portable-preflight.ts", contents: portablePreflight("typescript_express") });
-    files.push({ path: "src/server.ts", contents: expressServer({ webhook, venue, payment, portable }) });
+    if (evm) files.push({ path: "src/evm-preflight.ts", contents: evmPreflight("typescript_express") });
+    files.push({ path: "src/server.ts", contents: expressServer({ webhook, venue, payment, portable, evm }) });
     if (solana) files.push({ path: "src/lib/solana-gate.ts", contents: solanaGate() });
     if (wallet) files.push({ path: "src/lib/wallet-binding.ts", contents: walletBinding() });
   } else if (selection.runtime === "universal_https") {
     files.push(...universalHttpsFiles(include));
   } else if (selection.runtime === "javascript_wix_velo") {
-    files.push(...wixVeloFiles({ webhook, venue, payment, wallet, portable }));
+    files.push(...wixVeloFiles({ webhook, venue, payment, wallet, portable, evm }));
   } else {
     files.push(...serverlessFiles(include));
   }

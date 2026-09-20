@@ -79,12 +79,13 @@ describe("mainnet multi-chain readiness layer", () => {
     expect(getNetworkCapability("arc_circle_mainnet")?.status).toBe("disabled");
     expect(getNetworkCapability("solana_devnet")?.status).toBe("configured");
     expect(getNetworkCapability("solana_mainnet")?.status).toBe("production_review_required");
-    expect(getNetworkCapability("evm_mainnet")?.status).toBe("planned");
+    expect(getNetworkCapability("evm_mainnet")?.status).toBe("production_review_required");
+    expect(getNetworkCapability("evm_sandbox")?.status).toBe("configured");
     expect(getNetworkCapability("hyperliquid_trading_venue")?.status).toBe("configured");
   });
 
-  it("denies planned and disabled networks", () => {
-    const planned = evaluateNetworkAction({
+  it("denies production-review and disabled networks", () => {
+    const review = evaluateNetworkAction({
       networkId: "evm_mainnet",
       context: {
         productionAccessApproved: true,
@@ -92,10 +93,10 @@ describe("mainnet multi-chain readiness layer", () => {
         receiptCurrentlyValid: true,
         durableReplaySatisfied: true,
         partnerExecutionIntegration: true,
-        actionType: "partner_protocol_action",
+        actionType: "enable_protocol_access",
       },
     });
-    expect(planned).toMatchObject({ ok: false, reason: "planned" });
+    expect(review).toMatchObject({ ok: false, reason: "production_review_required" });
     const disabled = evaluateNetworkAction({
       networkId: "arc_circle_mainnet",
       context: {
@@ -222,7 +223,7 @@ describe("mainnet multi-chain readiness layer", () => {
     const mainnet = view.networks.find((row) => row.network_id === "arc_circle_mainnet");
     expect(mainnet?.eligible_for_this_app).toBe(false);
     expect(mainnet?.why_unavailable).toMatch(/not configured|disabled/i);
-    expect(view.networks.find((row) => row.network_id === "evm_mainnet")?.readiness_reason).toBe("planned");
+    expect(view.networks.find((row) => row.network_id === "evm_mainnet")?.readiness_reason).toBe("production_review_required");
   });
 
   it("never executes or moves funds, and keeps Trading/Payment/Solana/Circle compatibility", () => {
