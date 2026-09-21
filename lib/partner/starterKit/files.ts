@@ -477,18 +477,66 @@ export async function issueOnchainGate(receiptId) {
 function evmVerifierDoc(): string {
   return `# EVM contract integration
 
-Copy \`contracts/evm-eligibility-verifier/src/AbraxasEligibilityVerifier.sol\` into your repository and deploy it yourself.
-Abraxas does not deploy a shared execution contract and does not claim any live-chain deployment.
+Copy \`contracts/evm-eligibility-verifier/src/AbraxasEligibilityVerifier.sol\` and
+\`AbraxasPartnerEligibilityGate.sol\` into your repository and deploy them yourself.
+Abraxas does not deploy a shared execution contract and does not claim any live-chain, Arc, or Mainnet deployment.
 
-The contract verifies:
+The partner gate verifies:
 - trusted Abraxas signer
 - EIP-712 domain (name AbraxasEligibilityVerifier, version 1, chainId, verifyingContract, partnerHash)
-- expiry, one-time nonce, partner/policy/action/scope hashes
+- expiry, one-time nonce, partner/policy/action/environment hashes
 - optional required subject/wallet binding hash
 
 It returns only an eligibility authorization. It cannot transfer tokens, approve ERC-20 spending, or accept amounts/recipients/calldata.
 
-Reference Foundry tests live at \`contracts/evm-eligibility-verifier\`.
+Local: \`cd contracts/evm-eligibility-verifier && forge test -vv\`
+`;
+}
+
+function evmPartnerGateDoc(): string {
+  return `# EVM onchain eligibility gate
+
+Local sequence:
+1. Holder completes private verification.
+2. Your server verifies the current public receipt.
+3. POST /api/v1/chain-attestations with action_type enable_protocol_access (server API key).
+4. Your gate consumeEligibility verifies EIP-712 and consumes the nonce once.
+5. Your consumer records that the named action may proceed. No transfer, mint, swap, or payment.
+
+\`\`\`
+cd contracts/evm-eligibility-verifier
+forge test -vv
+\`\`\`
+
+Human-only deploy: supply your own RPC URL and deployer key at the command line. Do not put them in Vercel or this repo.
+Manifest status is \`local_test\` or \`partner_deployed\` only. Never \`live\`.
+Arc/Circle Mainnet stays disabled. Circle settlement is a separate product path.
+`;
+}
+
+function evmOnchainGate(): string {
+  return `// Server-only. Request an EIP-712 eligibility authorization for YOUR gate.
+export async function issueEvmOnchainGate(receiptId) {
+  const res = await fetch((process.env.ABRAXAS_BASE_URL ?? "https://abraxasworld.xyz") + "/api/v1/chain-attestations", {
+    method: "POST",
+    headers: {
+      authorization: "Bearer " + (process.env.ABRAXAS_SANDBOX_API_KEY ?? "${P.api_key}"),
+      "content-type": "application/json",
+      "x-abraxas-application-id": process.env.ABRAXAS_APP_ID ?? "${P.app_id}",
+    },
+    body: JSON.stringify({
+      receipt_id: receiptId,
+      action_type: "enable_protocol_access",
+      action_scope: "sandbox:protocol_access",
+      network_id: "evm_sandbox",
+      chain_id: 31337,
+      verifying_contract: process.env.PARTNER_GATE_ADDRESS,
+    }),
+  });
+  const issued = await res.json();
+  // Encode consumeEligibility on YOUR contract. Abraxas never broadcasts.
+  return issued;
+}
 `;
 }
 
@@ -641,6 +689,9 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
   const solanaOnchain = selection.path === "solana_onchain_eligibility_gate"
     || selection.capabilities.includes("solana_onchain_eligibility_gate")
     || selection.platform === "solana_program";
+  const evmOnchain = selection.path === "evm_onchain_eligibility_gate"
+    || selection.capabilities.includes("evm_onchain_eligibility_gate")
+    || selection.platform === "evm_contract";
   const include = { webhook, venue, payment, solana, wallet, portable, evm };
 
   const files: StarterKitFile[] = [
@@ -664,6 +715,7 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     if (evm) files.push({ path: "app/api/abraxas/evm-preflight/route.ts", contents: evmPreflight("typescript_nextjs") });
     if (onchain) files.push({ path: "src/lib/onchain-gate.ts", contents: onchainGate() });
     if (solanaOnchain) files.push({ path: "src/lib/solana-onchain-gate.ts", contents: solanaOnchainGate() });
+    if (evmOnchain) files.push({ path: "src/lib/evm-onchain-gate.ts", contents: evmOnchainGate() });
     if (solana) files.push({ path: "src/lib/solana-gate.ts", contents: solanaGate() });
     if (wallet) files.push({ path: "src/lib/wallet-binding.ts", contents: walletBinding() });
   } else if (selection.runtime === "typescript_express") {
@@ -679,6 +731,7 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     if (solana) files.push({ path: "src/lib/solana-gate.ts", contents: solanaGate() });
     if (onchain) files.push({ path: "src/lib/onchain-gate.ts", contents: onchainGate() });
     if (solanaOnchain) files.push({ path: "src/lib/solana-onchain-gate.ts", contents: solanaOnchainGate() });
+    if (evmOnchain) files.push({ path: "src/lib/evm-onchain-gate.ts", contents: evmOnchainGate() });
     if (wallet) files.push({ path: "src/lib/wallet-binding.ts", contents: walletBinding() });
   } else if (selection.runtime === "universal_https") {
     files.push(...universalHttpsFiles(include));
@@ -688,15 +741,19 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     files.push(...serverlessFiles(include));
   }
 
-  if (onchain || solanaOnchain) {
+  if (onchain || solanaOnchain || evmOnchain) {
     if (onchain && !files.some((file) => file.path === "src/lib/onchain-gate.ts")) {
       files.push({ path: "src/lib/onchain-gate.ts", contents: onchainGate() });
     }
     if (solanaOnchain && !files.some((file) => file.path === "src/lib/solana-onchain-gate.ts")) {
       files.push({ path: "src/lib/solana-onchain-gate.ts", contents: solanaOnchainGate() });
     }
-    if (onchain) files.push({ path: "onchain/EVM_VERIFIER.md", contents: evmVerifierDoc() });
-    files.push({ path: "onchain/SOLANA_PROGRAM.md", contents: solanaProgramDoc() });
+    if (evmOnchain && !files.some((file) => file.path === "src/lib/evm-onchain-gate.ts")) {
+      files.push({ path: "src/lib/evm-onchain-gate.ts", contents: evmOnchainGate() });
+    }
+    if (onchain || evmOnchain) files.push({ path: "onchain/EVM_VERIFIER.md", contents: evmVerifierDoc() });
+    if (evmOnchain) files.push({ path: "onchain/EVM_PARTNER_GATE.md", contents: evmPartnerGateDoc() });
+    if (solanaOnchain || onchain) files.push({ path: "onchain/SOLANA_PROGRAM.md", contents: solanaProgramDoc() });
   }
 
   for (const file of files) assertSafeStarterPath(file.path);

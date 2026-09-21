@@ -24,12 +24,14 @@ import {
   INTEGRATION_STUDIO_EVM_NOTICE,
   INTEGRATION_STUDIO_ONCHAIN_NOTICE,
   INTEGRATION_STUDIO_SOLANA_ONCHAIN_NOTICE,
+  INTEGRATION_STUDIO_EVM_ONCHAIN_NOTICE,
   INTEGRATION_STUDIO_WEBHOOK_NOTICE,
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio/contract";
 import { SELECTIVE_DISCLOSURE_NOTICE } from "@/lib/privacy/selectiveDisclosure";
 import { POLICY_COMPATIBILITY_NOTICE } from "@/lib/policy/compatibilityEdge";
 import { NETWORK_CAPABILITY_NOTICE, publicNetworkMatrix } from "@/lib/partner/networkCapability";
+import { evmGateLaunchpadPublicView } from "@/lib/partner/evmGate/readiness";
 
 export interface StudioMethodView {
   id: string;
@@ -164,6 +166,16 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
       calls_rpc: false,
       deploys_shared_program: false,
       notice: INTEGRATION_STUDIO_SOLANA_ONCHAIN_NOTICE,
+    },
+    evm_onchain_eligibility_gate: {
+      creates_transactions: false,
+      funds_movement: false,
+      connects_wallet: false,
+      calls_rpc: false,
+      deploys_shared_contract: false,
+      circle_settlement: false,
+      notice: INTEGRATION_STUDIO_EVM_ONCHAIN_NOTICE,
+      launchpad: evmGateLaunchpadPublicView(),
     },
     selective_disclosure: {
       docs: "/docs/selective-disclosure",

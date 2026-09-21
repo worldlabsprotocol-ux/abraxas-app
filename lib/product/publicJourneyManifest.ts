@@ -111,6 +111,12 @@ export const PUBLIC_JOURNEY_SURFACES = [
     file: "app/docs/solana-onchain-eligibility-gate/page.tsx",
   },
   {
+    route: "/docs/evm-onchain-eligibility-gate",
+    purpose: "Partner-owned EVM eligibility gate. Local Foundry tests. No live or Arc deployment.",
+    primaryCta: { label: "Integration Studio", href: "/developers/integration-studio" },
+    file: "app/docs/evm-onchain-eligibility-gate/page.tsx",
+  },
+  {
     route: "/docs/selective-disclosure",
     purpose: "Canonical selective-disclosure boundary. Policy result only, not evidence.",
     primaryCta: { label: "Integration Studio", href: "/developers/integration-studio" },

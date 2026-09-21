@@ -45,7 +45,7 @@ function networksForCapabilities(capabilities: readonly string[]) {
     if (entry.ecosystem === "trading_venue") return capabilities.includes("trading_venue");
     if (entry.ecosystem === "arc_circle") return capabilities.includes("payment_authorization");
     if (entry.ecosystem === "evm") {
-      return capabilities.includes("evm_partner_adapter") || capabilities.includes("onchain_protocol_gate");
+      return capabilities.includes("evm_partner_adapter") || capabilities.includes("onchain_protocol_gate") || capabilities.includes("evm_onchain_eligibility_gate");
     }
     return false;
   });
