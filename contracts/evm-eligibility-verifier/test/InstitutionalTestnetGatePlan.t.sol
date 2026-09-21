@@ -27,7 +27,8 @@ contract InstitutionalTestnetGatePlanTest {
             policyHash: keccak256("policy"),
             actionHash: keccak256("action"),
             environment: keccak256("sandbox"),
-            requireSubjectBinding: true
+            requireSubjectBinding: true,
+            requireInstitutionalBinding: false
         });
     }
 
@@ -60,7 +61,7 @@ contract InstitutionalTestnetGatePlanTest {
         uint256 pk = 0xA11CE;
         AbraxasPartnerEligibilityGate gate = new AbraxasPartnerEligibilityGate(_cfg(vm.addr(pk)));
         AbraxasPartnerEligibilityGate.ChainEligibilityAttestation memory att;
-        att.schemaVersion = 1;
+        att.schemaVersion = 2;
         att.networkId = keccak256("evm_sepolia");
         att.partnerHash = keccak256("partner");
         att.policyHash = keccak256("policy");
@@ -84,7 +85,7 @@ contract InstitutionalTestnetGatePlanTest {
         uint256 pk = 0xA11CE;
         AbraxasPartnerEligibilityGate gate = new AbraxasPartnerEligibilityGate(_cfg(vm.addr(pk)));
         AbraxasPartnerEligibilityGate.ChainEligibilityAttestation memory att;
-        att.schemaVersion = 1;
+        att.schemaVersion = 2;
         att.networkId = keccak256("evm_sepolia");
         att.partnerHash = keccak256("partner");
         att.policyHash = keccak256("policy");
