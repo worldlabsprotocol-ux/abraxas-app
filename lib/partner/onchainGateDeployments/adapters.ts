@@ -12,6 +12,10 @@ export interface SolanaChainObservation {
   gateConfigPda: string;
   programDigest: `0x${string}`;
   configDigest: `0x${string}`;
+  canonicalMessageLen?: number;
+  schemaVersion?: number;
+  requireInstitutional?: boolean;
+  institutionalCapable?: boolean;
 }
 
 export interface EvmVerificationAdapter {
@@ -166,9 +170,24 @@ export async function verifyEvmAgainstChain(
   return { ok: true };
 }
 
+export function solanaObservationIsV1Only(observed: SolanaChainObservation): boolean {
+  return observed.institutionalCapable === false
+    || observed.requireInstitutional === false
+    || observed.schemaVersion === 1
+    || observed.canonicalMessageLen === 372;
+}
+
+export function solanaObservationHasV2InstitutionalCapability(observed: SolanaChainObservation): boolean {
+  return observed.institutionalCapable === true
+    && observed.requireInstitutional === true
+    && observed.schemaVersion === 2
+    && observed.canonicalMessageLen === 468;
+}
+
 export async function verifySolanaAgainstChain(
   manifest: SolanaDeploymentManifest,
   adapter: SolanaVerificationAdapter | null,
+  options?: { institutionalRequired?: boolean },
 ): Promise<{ ok: true } | { ok: false; reason: OnchainGateSafeReason }> {
   if (!adapter) return { ok: false, reason: "deployment_verification_unavailable" };
   const observed = await adapter.observe(manifest);
@@ -180,6 +199,11 @@ export async function verifySolanaAgainstChain(
   }
   if (observed.configDigest.toLowerCase() !== manifest.config_digest.toLowerCase()) {
     return { ok: false, reason: "config_digest_mismatch" };
+  }
+  if (options?.institutionalRequired) {
+    if (solanaObservationIsV1Only(observed) || !solanaObservationHasV2InstitutionalCapability(observed)) {
+      return { ok: false, reason: "institutional_required" };
+    }
   }
   return { ok: true };
 }

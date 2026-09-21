@@ -69,5 +69,15 @@ export function testnetKitLaunchpadCard(state: TestnetGateSafeState) {
     deploy_button: false as const,
     live: false as const,
     browser_deploy: false as const,
+    sequence: [
+      "Institutional policy review required",
+      "Create V2 testnet deployment plan",
+      "Human deploys gate",
+      "Verify exact deployed configuration",
+      "Register verified sandbox deployment",
+      "Request a fresh institutional presentation and chain attestation",
+    ] as const,
+    utila_integration: false as const,
+    mainnet: false as const,
   };
 }

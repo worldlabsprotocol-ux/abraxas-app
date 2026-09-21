@@ -25,6 +25,10 @@ export async function registerTestnetManifest(input: {
     policyVersion,
     appEnvironment: "sandbox",
     manifest: verified.manifest,
+    institutionalRequired: Boolean(
+      input.raw && typeof input.raw === "object" && "institutional" in input.raw
+        && (input.raw as { institutional?: { institutional_required?: boolean } }).institutional?.institutional_required,
+    ),
   });
   if (!registered.ok) return { ok: false, command, reason: registered.reason };
   if (registered.record.status !== "verified_sandbox") {

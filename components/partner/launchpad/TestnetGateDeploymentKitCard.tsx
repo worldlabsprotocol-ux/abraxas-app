@@ -20,8 +20,11 @@ export function TestnetGateDeploymentKitCard({
   return (
     <ContentCard title="Testnet gate deployment kit">
       <p style={{ fontFamily: FONT, fontSize: "0.8rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: 0 }}>
-        Human-operated CLI for Solana devnet and approved EVM testnet. Status is safe copy only. There is no deploy button in the browser.
+        Human-operated CLI for Solana devnet and EVM Sepolia, including the V2 institutional gate. Status is safe copy only. There is no deploy button in the browser. Not Utila, live KYB, Arc, or Mainnet.
       </p>
+      <ol style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.6, paddingLeft: "1.2rem" }}>
+        {card.sequence.map((step) => <li key={step}>{step}</li>)}
+      </ol>
       <p role="status" style={{ fontFamily: FONT, fontSize: "0.8rem", fontWeight: 700, margin: "0.7rem 0" }}>
         {card.safe_state.replace(/_/g, " ")}
       </p>

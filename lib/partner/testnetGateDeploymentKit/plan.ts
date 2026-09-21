@@ -1,6 +1,16 @@
 import { keccak256, stringToBytes } from "viem";
 import { hashesForApplication } from "@/lib/partner/onchainGateDeployments/digests";
+import { hashUtf8 } from "@/lib/partner/chainAttestation/hashes";
 import { LOCALNET_SOLANA_PROGRAM_IDS, TESTNET_GATE_KIT_VERSION } from "./contract";
+import {
+  actorCommitment,
+  institutionalBytecodeDigest,
+  institutionalConfigDigest,
+  institutionalResultCategoryHash,
+  institutionalSolanaLayout,
+  organizationCommitment,
+  solanaInstitutionalProgramIsV1Only,
+} from "./institutional";
 import { approvedHumanTestnet } from "./networks";
 import type { KitBindings, TestnetGateKitEnvelope } from "./types";
 
@@ -81,6 +91,8 @@ export function planTestnetGate(input: {
     protocol_program_id: net.gate_type === "solana" ? LOCALNET_SOLANA_PROGRAM_IDS.abraxas_protocol_access : null,
     protocol_address: null,
     registry_manifest: null,
+    institutional: null,
+    solana_v2: null,
     kit_digest: kitDigest([
       net.network_id,
       String(net.chain_id ?? ""),
@@ -90,6 +102,91 @@ export function planTestnetGate(input: {
       bindings.action_type,
       bindings.signer_key_id,
       plannedAt,
+    ]),
+  };
+  return { ok: true, envelope };
+}
+
+export function planInstitutionalTestnetGate(input: {
+  target: "institutional-evm-sepolia" | "institutional-solana-devnet";
+  bindings?: Partial<KitBindings>;
+  organizationRef?: string;
+  actorRef?: string;
+  resultCategory?: string;
+  publicVerifier?: string;
+  validUntil?: number;
+  now?: string;
+}): { ok: true; envelope: TestnetGateKitEnvelope } | { ok: false; reason: string } {
+  const net = approvedHumanTestnet(input.target);
+  if (!net.ok) return net;
+  const planned = planTestnetGate({
+    target: net.gate_type === "evm" ? "evm" : "solana",
+    bindings: input.bindings,
+    now: input.now,
+  });
+  if (!planned.ok) return planned;
+  const organization = organizationCommitment(input.organizationRef ?? "");
+  const actor = actorCommitment(input.actorRef ?? "");
+  const category = institutionalResultCategoryHash(input.resultCategory ?? "organization_eligible");
+  const validUntil = input.validUntil ?? 2_000_000_000;
+  const rawVerifier = (input.publicVerifier ?? "").trim() || "unspecified";
+  const publicVerifier = rawVerifier === "unspecified" || /^0x[0-9a-fA-F]{64}$/.test(rawVerifier)
+    ? rawVerifier
+    : hashUtf8(rawVerifier);
+  const institutional = {
+    schema_version: "2" as const,
+    institutional_required: true as const,
+    organization_commitment: organization,
+    actor_commitment: actor,
+    institutional_result_category_hash: category,
+    valid_until: validUntil,
+    signer_key_id: planned.envelope.bindings.signer_key_id,
+    public_verifier: publicVerifier,
+    partner_hash: planned.envelope.partner_hash,
+    policy_hash: planned.envelope.policy_hash,
+    action_hash: planned.envelope.action_hash,
+    environment_hash: planned.envelope.environment_hash,
+    config_digest: institutionalConfigDigest({
+      gateType: net.gate_type,
+      networkId: net.network_id,
+      chainId: net.chain_id,
+      partnerHash: planned.envelope.partner_hash,
+      policyHash: planned.envelope.policy_hash,
+      actionHash: planned.envelope.action_hash,
+      environmentHash: planned.envelope.environment_hash,
+      organizationCommitment: organization,
+      actorCommitment: actor,
+      institutionalResultCategory: category,
+      signerKeyId: planned.envelope.bindings.signer_key_id,
+      publicVerifier,
+      validUntil,
+    }),
+    bytecode_digest: institutionalBytecodeDigest(net.gate_type),
+    consumer: "expiry_bound_protocol_access" as const,
+  };
+  const solanaV2 = net.gate_type === "solana" ? institutionalSolanaLayout() : null;
+  if (solanaV2 && solanaInstitutionalProgramIsV1Only(solanaV2)) {
+    return { ok: false, reason: "institutional_required" };
+  }
+  const envelope: TestnetGateKitEnvelope = {
+    ...planned.envelope,
+    kit_schema_version: 2,
+    eip712: planned.envelope.eip712
+      ? { ...planned.envelope.eip712, version: "2" }
+      : null,
+    institutional,
+    solana_v2: solanaV2,
+    kit_digest: kitDigest([
+      "institutional-v2",
+      net.network_id,
+      String(net.chain_id ?? ""),
+      planned.envelope.bindings.partner_id,
+      planned.envelope.bindings.policy_id,
+      String(planned.envelope.bindings.policy_version),
+      planned.envelope.bindings.signer_key_id,
+      institutional.config_digest,
+      String(validUntil),
+      planned.envelope.planned_at,
     ]),
   };
   return { ok: true, envelope };

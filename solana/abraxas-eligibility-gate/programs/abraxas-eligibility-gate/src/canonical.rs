@@ -3,6 +3,7 @@
 use anchor_lang::solana_program::keccak;
 
 pub const PREFIX: &[u8] = b"ABRAXAS_CHAIN_ELIGIBILITY_V2";
+pub const PREFIX_V1: &[u8] = b"ABRAXAS_CHAIN_ELIGIBILITY_V1";
 pub const PREFIX_LEN: usize = 28;
 pub const HASH_LEN: usize = 32;
 pub const U64_LEN: usize = 8;
@@ -63,10 +64,11 @@ pub fn prefix_keccak() -> [u8; 32] {
     keccak::hash(PREFIX).to_bytes()
 }
 
-pub fn parse_canonical_message(message: &[u8]) -> Result<CanonicalFields, ()> {
-    if message.len() == LEGACY_V1_MESSAGE_LEN {
-        return Err(());
-    }
+pub fn prefix_v1_keccak() -> [u8; 32] {
+    keccak::hash(PREFIX_V1).to_bytes()
+}
+
+fn parse_v2(message: &[u8]) -> Result<CanonicalFields, ()> {
     if message.len() != CANONICAL_MESSAGE_LEN {
         return Err(());
     }
@@ -97,6 +99,63 @@ pub fn parse_canonical_message(message: &[u8]) -> Result<CanonicalFields, ()> {
         institutional_result_category: copy32(&message[OFF_CATEGORY..CANONICAL_MESSAGE_LEN]),
         schema_version: schema,
     })
+}
+
+fn parse_v1(message: &[u8]) -> Result<CanonicalFields, ()> {
+    if message.len() != LEGACY_V1_MESSAGE_LEN {
+        return Err(());
+    }
+    if &message[OFF_PREFIX..OFF_PREFIX_HASH] != PREFIX_V1 {
+        return Err(());
+    }
+    if message[OFF_PREFIX_HASH..OFF_SCHEMA] != prefix_v1_keccak() {
+        return Err(());
+    }
+    let schema = read_u64_be(&message[OFF_SCHEMA..OFF_NETWORK]);
+    if schema != 1 {
+        return Err(());
+    }
+    Ok(CanonicalFields {
+        network_id: copy32(&message[OFF_NETWORK..OFF_PARTNER]),
+        partner_hash: copy32(&message[OFF_PARTNER..OFF_POLICY]),
+        policy_hash: copy32(&message[OFF_POLICY..OFF_ACTION]),
+        action_hash: copy32(&message[OFF_ACTION..OFF_SUBJECT]),
+        subject_hash: copy32(&message[OFF_SUBJECT..OFF_ISSUED]),
+        issued_at: read_u64_be(&message[OFF_ISSUED..OFF_EXPIRES]),
+        expires_at: read_u64_be(&message[OFF_EXPIRES..OFF_NONCE]),
+        nonce: copy32(&message[OFF_NONCE..OFF_ATTESTATION_ID]),
+        attestation_id: copy32(&message[OFF_ATTESTATION_ID..OFF_ENVIRONMENT]),
+        environment: copy32(&message[OFF_ENVIRONMENT..OFF_SIGNER_KEY_ID]),
+        signer_key_id: copy32(&message[OFF_SIGNER_KEY_ID..LEGACY_V1_MESSAGE_LEN]),
+        organization_commitment: [0u8; 32],
+        actor_commitment: [0u8; 32],
+        institutional_result_category: [0u8; 32],
+        schema_version: schema,
+    })
+}
+
+/// V2 468-byte messages never fall back to V1. V1 372-byte is parsed only when allowed.
+pub fn parse_canonical_message(message: &[u8]) -> Result<CanonicalFields, ()> {
+    parse_canonical_message_for_config(message, false)
+}
+
+pub fn parse_canonical_message_for_config(
+    message: &[u8],
+    require_institutional: bool,
+) -> Result<CanonicalFields, ()> {
+    if require_institutional {
+        if message.len() == LEGACY_V1_MESSAGE_LEN {
+            return Err(());
+        }
+        return parse_v2(message);
+    }
+    if message.len() == CANONICAL_MESSAGE_LEN {
+        return parse_v2(message);
+    }
+    if message.len() == LEGACY_V1_MESSAGE_LEN {
+        return parse_v1(message);
+    }
+    Err(())
 }
 
 fn copy32(slice: &[u8]) -> [u8; 32] {
@@ -141,7 +200,15 @@ mod tests {
     #[test]
     fn rejects_wrong_length() {
         assert!(parse_canonical_message(&[0u8; 10]).is_err());
-        assert!(parse_canonical_message(&[0u8; LEGACY_V1_MESSAGE_LEN]).is_err());
+        assert!(parse_canonical_message_for_config(&[0u8; LEGACY_V1_MESSAGE_LEN], true).is_err());
+    }
+
+    #[test]
+    fn v2_does_not_downgrade_to_v1() {
+        let mut v2 = vec![0u8; CANONICAL_MESSAGE_LEN];
+        v2[OFF_PREFIX..OFF_PREFIX_HASH].copy_from_slice(PREFIX_V1);
+        assert!(parse_v2(&v2).is_err());
+        assert!(parse_canonical_message_for_config(&v2, true).is_err());
     }
 
     #[test]

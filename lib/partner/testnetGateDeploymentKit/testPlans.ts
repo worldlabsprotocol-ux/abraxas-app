@@ -47,3 +47,29 @@ export const EVM_TESTNET_TEST_PLAN = {
     "expired or revoked receipt",
   ],
 };
+
+export const INSTITUTIONAL_TESTNET_TEST_PLAN = {
+  title: "Human-run V2 institutional testnet gate path",
+  live: false as const,
+  utila_integration: false as const,
+  steps: [
+    "Institutional policy review required",
+    "Create V2 testnet deployment plan",
+    "Human deploys gate",
+    "Verify exact deployed configuration",
+    "Register verified sandbox deployment",
+    "Request a fresh institutional presentation and chain attestation",
+  ],
+  expected_safe_outputs: [
+    "opaque organization and actor commitments only",
+    "expiry-bound protocol access, no permanent entitlement",
+    "no legal name, documents, UBOs, wallets, RPC URLs, or signatures in the plan",
+  ],
+  failure_cases: [
+    "missing --confirm on institutional deploy",
+    "mainnet or unpublished Arc",
+    "commitment or signer mismatch",
+    "expired valid_until",
+    "register before verified_sandbox",
+  ],
+};

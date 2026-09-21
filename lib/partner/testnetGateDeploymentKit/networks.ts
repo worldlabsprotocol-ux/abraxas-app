@@ -12,13 +12,21 @@ export function publishedArcTestnetChainId(): number | null {
   return posture?.chain_id ?? null;
 }
 
-export function approvedHumanTestnet(target: "solana" | "evm" | "solana-devnet" | "evm-testnet"): {
+export type HumanTestnetTarget =
+  | "solana"
+  | "evm"
+  | "solana-devnet"
+  | "evm-testnet"
+  | "institutional-evm-sepolia"
+  | "institutional-solana-devnet";
+
+export function approvedHumanTestnet(target: HumanTestnetTarget): {
   ok: true;
   network_id: string;
   chain_id: number | null;
   gate_type: "evm" | "solana";
 } | { ok: false; reason: string } {
-  if (target === "solana" || target === "solana-devnet") {
+  if (target === "solana" || target === "solana-devnet" || target === "institutional-solana-devnet") {
     const entry = getNetworkCapability(APPROVED_SOLANA_TESTNET_ID);
     if (!entry || entry.status === "disabled" || entry.environment === "mainnet") {
       return { ok: false, reason: "network_disabled" };

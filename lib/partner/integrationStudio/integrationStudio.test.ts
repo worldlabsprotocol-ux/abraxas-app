@@ -129,6 +129,7 @@ describe("Integration Studio", () => {
     expect(catalog.cross_chain_protocol_access.presentation_sufficient).toBe(false);
     expect(catalog.testnet_gate_deployment.browser_deploy).toBe(false);
     expect(catalog.testnet_gate_deployment.deploys).toBe(false);
+    expect(catalog.testnet_gate_deployment.notice).toContain("Institutional policy review required");
     expect(catalog.institutional_eligibility_gate.utila_integration).toBe(false);
     expect(catalog.institutional_eligibility_gate.wallet_control_qualifies).toBe(false);
     expect(catalog.institutional_eligibility_gate.operator_reviewed_policy).toBe(false);

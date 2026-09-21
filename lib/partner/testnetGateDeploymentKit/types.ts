@@ -15,10 +15,28 @@ export interface KitBindings {
 
 export interface KitEip712Preview {
   name: "AbraxasEligibilityVerifier";
-  version: "1";
+  version: "1" | "2";
   chain_id: number;
   verifying_contract: `0x${string}` | null;
   partner_hash: `0x${string}`;
+}
+
+export interface InstitutionalKitPlan {
+  schema_version: "2";
+  institutional_required: true;
+  organization_commitment: `0x${string}`;
+  actor_commitment: `0x${string}`;
+  institutional_result_category_hash: `0x${string}`;
+  valid_until: number;
+  signer_key_id: string;
+  public_verifier: string;
+  partner_hash: `0x${string}`;
+  policy_hash: `0x${string}`;
+  action_hash: `0x${string}`;
+  environment_hash: `0x${string}`;
+  config_digest: `0x${string}`;
+  bytecode_digest: `0x${string}`;
+  consumer: "expiry_bound_protocol_access";
 }
 
 export interface KitCreate2Preview {
@@ -28,7 +46,7 @@ export interface KitCreate2Preview {
 }
 
 export interface TestnetGateKitEnvelope {
-  kit_schema_version: 1;
+  kit_schema_version: 1 | 2;
   kit_version: "1.0.0";
   phase: "planned" | "deployed" | "verified";
   live: false;
@@ -48,6 +66,8 @@ export interface TestnetGateKitEnvelope {
   protocol_program_id: string | null;
   protocol_address: `0x${string}` | null;
   registry_manifest: OnchainDeploymentManifest | null;
+  institutional: InstitutionalKitPlan | null;
+  solana_v2: ReturnType<typeof import("./institutional").institutionalSolanaLayout> | null;
   kit_digest: `0x${string}`;
 }
 
