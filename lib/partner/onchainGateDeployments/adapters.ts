@@ -1,7 +1,7 @@
 import { keccak256 } from "viem";
 import { ONCHAIN_DEPLOYMENT_TEST_ADAPTER_ENV, type OnchainGateSafeReason } from "./contract";
 import type { EvmDeploymentManifest, SolanaDeploymentManifest } from "./types";
-import { observeSolanaFromAccounts, type SafeSolanaObservation } from "./solanaObserve";
+import type { SafeSolanaObservation } from "./solanaObserve";
 
 export interface EvmChainObservation {
   codeHash: `0x${string}`;
@@ -148,6 +148,7 @@ export function serverSolanaRpcAdapter(): SolanaVerificationAdapter | null {
   return {
     kind: "server_rpc",
     async observe(manifest) {
+      const { observeSolanaFromAccounts } = await import("./solanaObserve");
       const observed = await observeSolanaFromAccounts(manifest, async (pubkey) => fetchSolanaAccount(url, pubkey));
       if (!observed.ok) {
         if (observed.reason === "deployment_verification_unavailable") return { unavailable: true };

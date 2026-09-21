@@ -237,7 +237,8 @@ export function encodeUpgradeableProgramAccount(programDataAddress: string): Uin
 export function encodeProgramDataAccount(elf: Uint8Array, authority: string): Uint8Array {
   const header = Buffer.alloc(45);
   header.writeUInt32LE(3, 0);
-  header.writeBigUInt64LE(1n, 4);
+  header.writeUInt32LE(1, 4);
+  header.writeUInt32LE(0, 8);
   header[12] = 1;
   new PublicKey(authority).toBuffer().copy(header, 13);
   return Buffer.concat([header, Buffer.from(elf)]);

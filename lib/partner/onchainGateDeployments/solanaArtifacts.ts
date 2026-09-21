@@ -1,5 +1,3 @@
-import { keccak256, stringToBytes } from "viem";
-
 export const SOLANA_GATE_ARTIFACT_REGISTRY_VERSION = "1.0.0" as const;
 
 export const SOLANA_UPGRADEABLE_LOADER = "BPFLoaderUpgradeabld11111111111111111111111" as const;
@@ -19,11 +17,13 @@ export interface SolanaGateArtifact {
 }
 
 /** Source-controlled fingerprints. Not client-supplied. Test ELF bytes hash to these ids. */
-export const SOLANA_GATE_V2_PROGRAM_ELF = stringToBytes("abraxas-solana-gate-v2-institutional-elf");
-export const SOLANA_GATE_V1_PROGRAM_ELF = stringToBytes("abraxas-solana-gate-v1-standard-elf");
+export const SOLANA_GATE_V2_PROGRAM_ELF = new TextEncoder().encode("abraxas-solana-gate-v2-institutional-elf");
+export const SOLANA_GATE_V1_PROGRAM_ELF = new TextEncoder().encode("abraxas-solana-gate-v1-standard-elf");
 
-export const SOLANA_GATE_V2_PROGRAM_DIGEST = keccak256(SOLANA_GATE_V2_PROGRAM_ELF);
-export const SOLANA_GATE_V1_PROGRAM_DIGEST = keccak256(SOLANA_GATE_V1_PROGRAM_ELF);
+export const SOLANA_GATE_V2_PROGRAM_DIGEST =
+  "0x753cfc47c93b603a19553f0556cbcd4a3242546db413fdfde4537ea58b454ca9" as const;
+export const SOLANA_GATE_V1_PROGRAM_DIGEST =
+  "0xb805e00731fc1aedf7fa27cb4730ab1285b333de4c08c20c7ce653b35cc0c90f" as const;
 
 export const SOLANA_GATE_ARTIFACTS: readonly SolanaGateArtifact[] = [
   {

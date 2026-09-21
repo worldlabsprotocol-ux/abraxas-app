@@ -552,7 +552,7 @@ async fn structured_v2_gateconfig_observation_layout() {
 }
 
 #[tokio::test]
-async fn v1_only_config_is_not_institutional_capable() {
+async fn structured_observation_rejects_non_institutional_config() {
     let mut ctx = start().await;
     let admin = Keypair::new();
     let signer = Keypair::new();

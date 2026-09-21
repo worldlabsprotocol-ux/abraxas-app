@@ -57,6 +57,7 @@ export const ONCHAIN_GATE_SAFE_REASONS = [
   "store_unavailable",
   "unauthorized",
   "unrecognized_gate_artifact",
+  "signer_update_required",
 ] as const;
 export type OnchainGateSafeReason = (typeof ONCHAIN_GATE_SAFE_REASONS)[number];
 

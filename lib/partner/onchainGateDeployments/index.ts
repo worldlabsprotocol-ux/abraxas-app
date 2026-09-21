@@ -27,6 +27,4 @@ export {
   resolveEvmAdapter,
   resolveSolanaAdapter,
 } from "./adapters";
-export { observeSolanaFromAccounts } from "./solanaObserve";
-export { lookupSolanaGateArtifact, SOLANA_GATE_V2_PROGRAM_DIGEST } from "./solanaArtifacts";
 export { hashesForApplication, expectedEvmConfigDigest, expectedSolanaConfigDigest } from "./digests";
