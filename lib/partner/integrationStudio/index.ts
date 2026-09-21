@@ -13,6 +13,7 @@ export {
   INTEGRATION_STUDIO_EVM_NOTICE,
   INTEGRATION_STUDIO_ONCHAIN_NOTICE,
   INTEGRATION_STUDIO_SOLANA_ONCHAIN_NOTICE,
+  INTEGRATION_STUDIO_EVM_ONCHAIN_NOTICE,
   isIntegrationStudioPathId,
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio/contract";

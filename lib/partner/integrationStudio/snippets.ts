@@ -14,6 +14,7 @@ import { portableActionServerExample } from "@/lib/partner/portableActionContrac
 import { evmPartnerServerExample } from "@/lib/partner/evm/examples";
 import { evmWalletBindingExample } from "@/lib/partner/evmWalletBinding/examples";
 import { chainAttestationServerExample, solanaOnchainEligibilityGateExample } from "@/lib/partner/chainAttestation/examples";
+import { evmOnchainEligibilityGateExample } from "@/lib/partner/evmGate/examples";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
 
 const DEMO_OPTS = {
@@ -93,6 +94,11 @@ export function studioSnippetForApplication(input: {
       docs: "/docs/solana-onchain-eligibility-gate",
       code: solanaOnchainEligibilityGateExample(),
     },
+    evm_onchain_eligibility_gate: {
+      title: "EVM onchain eligibility gate",
+      docs: "/docs/evm-onchain-eligibility-gate",
+      code: evmOnchainEligibilityGateExample(),
+    },
   };
 }
 
@@ -163,6 +169,12 @@ export function studioSnippetForPath(path: IntegrationStudioPathId): { title: st
         title: "Solana onchain eligibility gate",
         docs: "/docs/solana-onchain-eligibility-gate",
         code: solanaOnchainEligibilityGateExample(),
+      };
+    case "evm_onchain_eligibility_gate":
+      return {
+        title: "EVM onchain eligibility gate",
+        docs: "/docs/evm-onchain-eligibility-gate",
+        code: evmOnchainEligibilityGateExample(),
       };
     default: {
       const _never: never = path;
