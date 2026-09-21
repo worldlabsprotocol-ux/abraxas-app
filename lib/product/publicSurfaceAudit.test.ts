@@ -36,6 +36,7 @@ const PUBLIC_PAGES = [
   "/docs/eligibility-presentation-protocol",
   "/docs/cross-chain-protocol-access",
   "/docs/testnet-gate-deployment",
+  "/docs/onchain-verifier-conformance",
   "/docs/organization-eligibility",
   "/docs/selective-disclosure",
   "/docs/starter-kit",

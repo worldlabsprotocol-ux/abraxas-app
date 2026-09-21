@@ -29,6 +29,7 @@ export const INTEGRATION_STUDIO_PATHS = [
   "cross_chain_protocol_access",
   "testnet_gate_deployment",
   "institutional_eligibility_gate",
+  "onchain_verifier_conformance",
 ] as const;
 
 export type IntegrationStudioPathId = (typeof INTEGRATION_STUDIO_PATHS)[number];
@@ -99,6 +100,8 @@ export const INTEGRATION_STUDIO_CROSS_CHAIN_PROTOCOL_NOTICE =
   "Build a cross-chain protocol gate. Private proof, fresh consent, audience-bound receipt, server re-check, one-time chain authorization, then partner-owned activate_protocol_access. Access is short-lived until attestation expiry. Local/sandbox reference only. Not a live Arc, EVM, Solana, Mainnet, USDC, or Utila deployment.";
 export const INTEGRATION_STUDIO_TESTNET_GATE_NOTICE =
   "Human-operated CLI to plan, confirm-deploy, verify, and register a partner-owned gate on Solana devnet or approved EVM Sepolia, including the V2 institutional organization/authorized-signer gate. Sequence: Institutional policy review required → Create V2 testnet deployment plan → Human deploys gate → Verify exact deployed configuration → Register verified sandbox deployment → Request a fresh institutional presentation and chain attestation. No browser deploy button. Not Mainnet, Arc, USDC, Circle, Utila, or live KYB.";
+export const INTEGRATION_STUDIO_ONCHAIN_VERIFIER_CONFORMANCE_NOTICE =
+  "Verify your gate integration. Download the versioned verifier package, run local conformance, fix failed bindings or a stale signer, then request a fresh sandbox attestation. Presentation is never enough. No browser deploy, register, or approve. Not a wallet, payment path, or custody layer.";
 export const INTEGRATION_STUDIO_INSTITUTIONAL_ELIGIBILITY_NOTICE =
   "Institutional eligibility gate. Institutional policy review required. Then create a V2 testnet deployment plan, human-deploy the gate, verify the exact configuration, register verified sandbox, and request a fresh institutional presentation and chain attestation. An authorized representative consents for one partner, purpose, and action. Abraxas issues a fresh expiry-bound chain attestation for the partner-owned EVM or Solana gate. Not document collection, Utila, live KYB, Arc, or Mainnet.";
 
