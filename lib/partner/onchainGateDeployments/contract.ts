@@ -56,6 +56,7 @@ export const ONCHAIN_GATE_SAFE_REASONS = [
   "production_review_required",
   "store_unavailable",
   "unauthorized",
+  "unrecognized_gate_artifact",
 ] as const;
 export type OnchainGateSafeReason = (typeof ONCHAIN_GATE_SAFE_REASONS)[number];
 
@@ -152,6 +153,12 @@ export const ONCHAIN_GATE_CLIENT_AUTHORITY_KEYS = [
   "program_digest",
   "status",
   "deployment_status",
+  "schemaVersion",
+  "canonicalMessageLen",
+  "institutionalCapable",
+  "requireInstitutional",
+  "artifactClass",
+  "artifact_class",
 ] as const;
 
 export const ONCHAIN_GATE_NOT_DEPLOYER =

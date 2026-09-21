@@ -532,6 +532,41 @@ async fn appended_v2_bytes_rejected() {
     assert!(custom_code(&err).is_some());
 }
 
+#[tokio::test]
+async fn structured_v2_gateconfig_observation_layout() {
+    let mut ctx = start().await;
+    let admin = Keypair::new();
+    let signer = Keypair::new();
+    airdrop(&mut ctx, &admin).await;
+    let fields = MessageFields::default();
+    let config = initialize(&mut ctx, &admin, institutional_params(signer.pubkey().to_bytes(), fields)).await;
+    let account = ctx.banks_client.get_account(config).await.unwrap().unwrap();
+    assert_eq!(account.owner, GATE_ID);
+    let derived = config_pda(&admin.pubkey()).0;
+    assert_eq!(config, derived);
+    assert!(account.data.len() > 234);
+    assert_eq!(account.data[233], 1);
+    assert!(deployed_institutional_capable(account.data[233] == 1, 2, 468));
+    let expected_disc = solana_sdk::hash::hash(b"account:GateConfig");
+    assert_eq!(&account.data[..8], &expected_disc.to_bytes()[..8]);
+}
+
+#[tokio::test]
+async fn v1_only_config_is_not_institutional_capable() {
+    let mut ctx = start().await;
+    let admin = Keypair::new();
+    let signer = Keypair::new();
+    airdrop(&mut ctx, &admin).await;
+    let fields = MessageFields::default();
+    let mut params = institutional_params(signer.pubkey().to_bytes(), fields);
+    params.require_institutional = false;
+    let config = initialize(&mut ctx, &admin, params).await;
+    let account = ctx.banks_client.get_account(config).await.unwrap().unwrap();
+    assert_eq!(account.data[233], 0);
+    assert!(!deployed_institutional_capable(false, 1, 372));
+    assert!(!deployed_institutional_capable(account.data[233] == 1, 2, 468));
+}
+
 #[test]
 fn programs_have_no_token_transfer_wallet_or_arbitrary_cpi() {
     let gate = include_str!("../../programs/abraxas-eligibility-gate/src/lib.rs");

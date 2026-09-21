@@ -829,4 +829,103 @@ describe("verified onchain gate deployments", () => {
     expect(revoked.ok).toBe(false);
     if (!revoked.ok) expect(revoked.reason).toBe("deployment_revoked");
   });
+
+  it("registers verified_sandbox from a structured V2 observation adapter", async () => {
+    const { Keypair } = await import("@solana/web3.js");
+    const { hashEnvironment, hashNetworkId, hashSignerKeyId } = await import("@/lib/partner/chainAttestation/hashes");
+    const {
+      deriveGateConfigPda,
+      encodeGateConfigAccount,
+      encodeProgramDataAccount,
+      encodeUpgradeableProgramAccount,
+      observeSolanaFromAccounts,
+    } = await import("@/lib/partner/onchainGateDeployments/solanaObserve");
+    const {
+      SOLANA_GATE_V2_PROGRAM_DIGEST,
+      SOLANA_GATE_V2_PROGRAM_ELF,
+      SOLANA_UPGRADEABLE_LOADER,
+    } = await import("@/lib/partner/onchainGateDeployments/solanaArtifacts");
+    const admin = Keypair.generate();
+    const program = Keypair.generate();
+    const programData = Keypair.generate();
+    const hashes = hashesForApplication({
+      partnerId: EVM_REF_PARTNER_ID,
+      policyId: "organization_eligible",
+      policyVersion: 1,
+      actionType: "partner_protocol_action",
+      actionScope: "sandbox:partner_protocol",
+      environment: "sandbox",
+      signerKeyId: "solana-attestation-test-1",
+    });
+    const programId = program.publicKey.toBase58();
+    const pda = deriveGateConfigPda(programId, admin.publicKey.toBase58());
+    const config_digest = expectedSolanaConfigDigest({
+      programId,
+      gateConfigPda: pda,
+      programDigest: SOLANA_GATE_V2_PROGRAM_DIGEST,
+      partnerHash: hashes.partner_hash,
+      policyHash: hashes.policy_hash,
+      actionHash: hashes.action_hash,
+      environment: hashes.environment_hash,
+      signerKeyId: "solana-attestation-test-1",
+      subjectBindingMode: "required",
+    });
+    const manifest = solanaManifest({
+      program_id: programId,
+      gate_config_pda: pda,
+      program_digest: SOLANA_GATE_V2_PROGRAM_DIGEST,
+      config_digest,
+      partner_hash: hashes.partner_hash,
+      policy_hash: hashes.policy_hash,
+      action_hash: hashes.action_hash,
+      subject_binding_mode: "required",
+    });
+    const accounts = new Map([
+      [programId, {
+        owner: SOLANA_UPGRADEABLE_LOADER,
+        data: encodeUpgradeableProgramAccount(programData.publicKey.toBase58()),
+      }],
+      [programData.publicKey.toBase58(), {
+        owner: SOLANA_UPGRADEABLE_LOADER,
+        data: encodeProgramDataAccount(SOLANA_GATE_V2_PROGRAM_ELF, admin.publicKey.toBase58()),
+      }],
+      [pda, {
+        owner: programId,
+        data: encodeGateConfigAccount({
+          admin: admin.publicKey.toBase58(),
+          partnerProgram: programId,
+          networkId: hashNetworkId("solana_devnet"),
+          partnerHash: hashes.partner_hash,
+          policyHash: hashes.policy_hash,
+          actionHash: hashes.action_hash,
+          environment: hashEnvironment("sandbox"),
+          requireSubject: true,
+          requireInstitutional: true,
+          bump: 255,
+          signerKeyId: hashSignerKeyId("solana-attestation-test-1"),
+        }),
+      }],
+    ]);
+    const registered = await registerOnchainGateDeployment({
+      partnerId: EVM_REF_PARTNER_ID,
+      applicationId: "app-structured-v2",
+      policyId: "organization_eligible",
+      policyVersion: 1,
+      appEnvironment: "sandbox",
+      manifest,
+      solanaAdapter: {
+        kind: "server_rpc",
+        async observe(next) {
+          const result = await observeSolanaFromAccounts(next, async (key) => accounts.get(key) ?? { unavailable: true });
+          if (!result.ok) return { rejected: result.reason };
+          return result.observation;
+        },
+      },
+    });
+    expect(registered.ok).toBe(true);
+    if (!registered.ok) return;
+    expect(registered.record.status).toBe("verified_sandbox");
+    expect(registered.record.require_institutional).toBe(true);
+    expect(onchainGatePayloadLeaks(registered.public)).toEqual([]);
+  });
 });
