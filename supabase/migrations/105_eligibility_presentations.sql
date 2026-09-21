@@ -16,11 +16,12 @@ create table if not exists public.eligibility_presentation_requests (
   result_category text not null,
   nonce_hash text not null unique,
   status text not null
-    check (status in ('created', 'issued', 'expired', 'revoked', 'consumed')),
+    check (status in ('created', 'completed', 'issued', 'expired', 'revoked', 'consumed')),
   expires_at timestamptz not null,
   issued_at timestamptz not null,
   presentation_ref text null,
   source_receipt_id text null,
+  holder_session_hmac text null,
   consent_bound boolean not null default false,
   revoked_at timestamptz null,
   consumed_at timestamptz null,

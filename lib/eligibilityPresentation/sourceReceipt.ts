@@ -28,3 +28,7 @@ export async function loadSourceReceipt(receiptId: string): Promise<DecisionRece
 export function receiptHasFreshConsent(record: DecisionReceiptRecord): boolean {
   return Boolean(record.consent_receipt_id && record.consent_receipt_id.length > 4);
 }
+
+export function receiptEnvironment(record: DecisionReceiptRecord): "sandbox" | "production" {
+  return record.decision_context === "production" ? "production" : "sandbox";
+}

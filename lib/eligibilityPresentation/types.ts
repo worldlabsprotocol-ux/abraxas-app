@@ -47,6 +47,7 @@ export interface EligibilityPresentationRequestRecord {
   issued_at: string;
   presentation_ref: string | null;
   source_receipt_id: string | null;
+  holder_session_hmac: string | null;
   consent_bound: boolean;
   revoked_at: string | null;
   consumed_at: string | null;

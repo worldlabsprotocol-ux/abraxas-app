@@ -36,7 +36,8 @@ export default function EligibilityPresentationProtocolDocsPage() {
           membership, or policy result from Abraxas without collecting the holder’s underlying
           evidence or inventing its own verification stack. The envelope media type is{" "}
           <code>{ELIGIBILITY_PRESENTATION_MEDIA_TYPE}</code>. This is a server-to-server
-          presentation standard. It is not a transferable identity passport, generic KYC form,
+          presentation standard. Partners never send a receipt_id. Abraxas derives the one
+          completed Hosted Partner Flow receipt bound to the presentation request. It is not a transferable identity passport, generic KYC form,
           raw credential wallet, browser-authoritative flow, or reusable bearer token.
         </p>
       </ContentCard>

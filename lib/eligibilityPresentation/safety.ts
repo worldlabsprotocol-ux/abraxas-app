@@ -26,7 +26,8 @@ const NEEDLES = [
 ] as const;
 
 export function presentationLeaks(payload: unknown): string[] {
-  const leaks = [...detectDisclosureLeaks(payload)];
+  const leaks: string[] = [];
+  detectDisclosureLeaks(payload).forEach((item) => leaks.push(item));
   if (!payload || typeof payload !== "object") return leaks;
   const keys = Object.keys(payload as Record<string, unknown>);
   for (const key of keys) {

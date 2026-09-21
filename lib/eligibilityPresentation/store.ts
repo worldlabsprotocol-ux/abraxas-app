@@ -30,8 +30,10 @@ function refreshRequest(
   record: EligibilityPresentationRequestRecord,
   now = Date.now(),
 ): EligibilityPresentationRequestRecord {
-  if (record.status === "created" && new Date(record.expires_at).getTime() <= now) {
-    return { ...record, status: "expired" };
+  if (record.status === "created" || record.status === "completed") {
+    if (new Date(record.expires_at).getTime() <= now) {
+      return { ...record, status: "expired" };
+    }
   }
   return record;
 }
@@ -64,6 +66,7 @@ function requestFromRow(row: Record<string, unknown>): EligibilityPresentationRe
     issued_at: String(row.issued_at),
     presentation_ref: row.presentation_ref ? String(row.presentation_ref) : null,
     source_receipt_id: row.source_receipt_id ? String(row.source_receipt_id) : null,
+    holder_session_hmac: row.holder_session_hmac ? String(row.holder_session_hmac) : null,
     consent_bound: Boolean(row.consent_bound),
     revoked_at: row.revoked_at ? String(row.revoked_at) : null,
     consumed_at: row.consumed_at ? String(row.consumed_at) : null,
@@ -122,6 +125,7 @@ async function persistRequest(record: EligibilityPresentationRequestRecord): Pro
       issued_at: record.issued_at,
       presentation_ref: record.presentation_ref,
       source_receipt_id: record.source_receipt_id,
+      holder_session_hmac: record.holder_session_hmac,
       consent_bound: record.consent_bound,
       revoked_at: record.revoked_at,
       consumed_at: record.consumed_at,
@@ -287,5 +291,44 @@ export async function revokePresentationsForReceipt(receiptId: string): Promise<
   });
   for (const record of updates) {
     await persistPresentation(record);
+  }
+}
+
+export async function findUniqueCreatedRequest(input: {
+  partnerHmac: string;
+  policyId: string;
+  policyVersion: number;
+  environment: "sandbox" | "production";
+}): Promise<EligibilityPresentationRequestRecord | null> {
+  const matches: EligibilityPresentationRequestRecord[] = [];
+  requestMemory.forEach((record) => {
+    const live = refreshRequest(record);
+    if (
+      live.status === "created"
+      && live.partner_hmac === input.partnerHmac
+      && live.policy_id === input.policyId
+      && live.policy_version === input.policyVersion
+      && live.environment === input.environment
+    ) {
+      matches.push(live);
+    }
+  });
+  if (matches.length === 1) return matches[0] ?? null;
+  if (matches.length > 1) return null;
+  if (skipDurableStore()) return null;
+  try {
+    const sb = requireSupabaseAdmin();
+    const { data, error } = await sb
+      .from(REQUESTS)
+      .select("*")
+      .eq("partner_hmac", input.partnerHmac)
+      .eq("policy_id", input.policyId)
+      .eq("policy_version", input.policyVersion)
+      .eq("environment", input.environment)
+      .eq("status", "created");
+    if (error || !data || data.length !== 1) return null;
+    return refreshRequest(requestFromRow(data[0] as Record<string, unknown>));
+  } catch {
+    throw Object.assign(new Error("schema_unavailable"), { code: "schema_unavailable" });
   }
 }

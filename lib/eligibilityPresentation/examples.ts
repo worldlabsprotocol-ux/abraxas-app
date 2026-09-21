@@ -33,6 +33,21 @@ export async function requestEligibilityPresentation(nonce) {
   return created.hosted_verify_url;
 }
 
+export async function issueEligibilityPresentation(requestRef, nonce) {
+  const issued = await fetch(process.env.ABRAXAS_BASE_URL + "/api/v1/eligibility-presentations/issue", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: "Bearer " + process.env.ABRAXAS_SANDBOX_API_KEY,
+    },
+    body: JSON.stringify({
+      request_ref: requestRef,
+      verifier_nonce: nonce,
+    }),
+  }).then((res) => res.json());
+  return issued.envelope;
+}
+
 export async function verifyEligibilityPresentation(envelope, nonce) {
   const verified = await fetch(process.env.ABRAXAS_BASE_URL + "/api/v1/eligibility-presentations/verify", {
     method: "POST",
@@ -74,7 +89,9 @@ Content-Type: application/json
 }
 
 Then redirect the holder to hosted_verify_url.
-After issue, POST the envelope to /api/v1/eligibility-presentations/verify
+After Hosted Partner Flow and fresh consent complete, POST only request_ref and verifier_nonce to /api/v1/eligibility-presentations/issue.
+Abraxas derives the completed receipt. Do not send receipt_id.
+Then POST the envelope to /api/v1/eligibility-presentations/verify
 and GET /api/receipts/{id}/public before any grant.
 A presentation is never a bearer credential.
 `;

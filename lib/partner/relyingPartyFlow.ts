@@ -431,7 +431,7 @@ export async function issuePartnerSessionReceipt(input: {
     throw new Error("Partner session receipt identity incomplete");
   }
 
-  if (vrId && receiptId) {
+      if (vrId && receiptId) {
     try {
       const { bindHandoffToIssuedReceipt } = await import("@/lib/partner/hostedHandoff");
       await bindHandoffToIssuedReceipt({
@@ -442,6 +442,17 @@ export async function issuePartnerSessionReceipt(input: {
       });
     } catch {
       // Handoff bind is best-effort; Partner Kit still re-fetches the current receipt.
+    }
+    try {
+      const { bindPresentationResultToIssuedReceipt } = await import("@/lib/eligibilityPresentation/complete");
+      await bindPresentationResultToIssuedReceipt({
+        partnerId: input.partnerId,
+        policyId: input.policyId,
+        policyVersion: storedReceipt.policy_version,
+        receipt: storedReceipt,
+      });
+    } catch {
+      // Presentation bind is fail-closed at issue time if no exact completed result exists.
     }
   }
 

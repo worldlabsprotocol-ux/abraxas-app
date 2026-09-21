@@ -6,49 +6,34 @@ import {
   ELIGIBILITY_PRESENTATION_MEDIA_TYPE,
   ELIGIBILITY_PRESENTATION_VERSION,
 } from "./contract";
-import { opaquePresentationRef, partnerHmac } from "./opaque";
+import { nonceHash, opaquePresentationRef, partnerHmac } from "./opaque";
 import { loadPresentationRequest, savePresentation, savePresentationRequest } from "./store";
-import { loadSourceReceipt, receiptHasFreshConsent } from "./sourceReceipt";
+import { assertReceiptMatchesRequest, loadBoundSourceReceipt } from "./complete";
 import { signPresentationPayload } from "./sign";
 import type { EligibilityPresentationEnvelope, EligibilityPresentationPayload } from "./types";
 
-export const ISSUE_REQUEST_KEYS = ["request_ref", "receipt_id"] as const;
+export const ISSUE_REQUEST_KEYS = ["request_ref", "verifier_nonce"] as const;
+
+function fail(code: string): never {
+  throw Object.assign(new Error(code), { code });
+}
 
 export async function issueEligibilityPresentation(input: {
   partnerId: string;
   request_ref: string;
-  receipt_id: string;
   verifier_nonce: string;
 }): Promise<EligibilityPresentationEnvelope> {
   const request = await loadPresentationRequest(input.request_ref);
-  if (!request) throw Object.assign(new Error("not_found"), { code: "not_found" });
-  if (request.partner_hmac !== partnerHmac(input.partnerId)) {
-    throw Object.assign(new Error("cross_partner"), { code: "cross_partner" });
-  }
-  if (request.status !== "created") {
-    throw Object.assign(new Error(request.status), { code: request.status });
-  }
-  if (new Date(request.expires_at).getTime() <= Date.now()) {
-    throw Object.assign(new Error("expired"), { code: "expired" });
-  }
-  const receipt = await loadSourceReceipt(input.receipt_id);
-  if (!receipt) throw Object.assign(new Error("receipt_not_found"), { code: "receipt_not_found" });
-  if (receipt.partner_id !== input.partnerId) {
-    throw Object.assign(new Error("cross_partner"), { code: "cross_partner" });
-  }
-  if (receipt.policy_id !== request.policy_id || receipt.policy_version !== request.policy_version) {
-    throw Object.assign(new Error("policy_mismatch"), { code: "policy_mismatch" });
-  }
-  const receiptEnv = receipt.decision_context === "production" ? "production" : "sandbox";
-  if (receiptEnv !== request.environment) {
-    throw Object.assign(new Error("environment_mismatch"), { code: "environment_mismatch" });
-  }
-  if (!receiptHasFreshConsent(receipt)) {
-    throw Object.assign(new Error("consent_required"), { code: "consent_required" });
-  }
-  if (receipt.status !== "active" || receipt.decision_result !== "approved" || receipt.revoked_at) {
-    throw Object.assign(new Error("receipt_invalid"), { code: "receipt_invalid" });
-  }
+  if (!request) fail("not_found");
+  if (request.partner_hmac !== partnerHmac(input.partnerId)) fail("cross_partner");
+  if (request.status === "issued" || request.status === "consumed") fail("replayed");
+  if (request.status === "expired") fail("expired");
+  if (request.status !== "completed") fail("no_completed_result");
+  if (new Date(request.expires_at).getTime() <= Date.now()) fail("expired");
+  if (nonceHash(input.verifier_nonce) !== request.nonce_hash) fail("nonce_mismatch");
+
+  const receipt = await loadBoundSourceReceipt(request);
+  assertReceiptMatchesRequest(request, receipt, input.partnerId);
 
   const presentation_ref = opaquePresentationRef(`${request.request_ref}:${randomBytes(8).toString("hex")}`);
   const issued_at = new Date().toISOString();
@@ -70,10 +55,10 @@ export async function issueEligibilityPresentation(input: {
     selective_disclosure_summary: "result_only",
   };
   const signed = signPresentationPayload({ ...payload, signing_key_id: "pending" });
-  if (!signed) throw Object.assign(new Error("signing_unavailable"), { code: "signing_unavailable" });
+  if (!signed) fail("signing_unavailable");
   payload.signing_key_id = signed.signingKeyId;
   const resigned = signPresentationPayload(payload);
-  if (!resigned) throw Object.assign(new Error("signing_unavailable"), { code: "signing_unavailable" });
+  if (!resigned) fail("signing_unavailable");
 
   await savePresentation({
     presentation_ref,
@@ -102,7 +87,6 @@ export async function issueEligibilityPresentation(input: {
     ...request,
     status: "issued",
     presentation_ref,
-    source_receipt_id: receipt.id,
     consent_bound: true,
   });
 

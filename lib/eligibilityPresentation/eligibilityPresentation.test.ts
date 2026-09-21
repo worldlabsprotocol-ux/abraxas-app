@@ -14,6 +14,7 @@ import {
   ELIGIBILITY_PRESENTATION_MEDIA_TYPE,
   ELIGIBILITY_PRESENTATION_VERSION,
   audienceHash,
+  completePresentationHolderResultForTests,
   createPresentationRequest,
   eligibilityWellKnownDocument,
   eligibilityPresentationSchemaDocument,
@@ -30,6 +31,7 @@ import { ELIGIBILITY_PLANNING_CATEGORIES, isEligibilityPlanningCategory } from "
 import { GET as wellKnownGet } from "@/app/.well-known/abraxas-eligibility/route";
 import { GET as schemaGet } from "@/app/api/v1/eligibility-presentations/schema/route";
 import { POST as requestPost } from "@/app/api/v1/eligibility-presentations/requests/route";
+import { POST as issuePost } from "@/app/api/v1/eligibility-presentations/issue/route";
 
 const KEY = generateTestSigningKeyPair();
 process.env.ABRAXAS_SIGNING_KEY_ID = KEY.signingKeyId;
@@ -83,6 +85,13 @@ const requestBody = {
   verifier_nonce: "nonce-one-time-alpha",
 };
 
+async function completeHolder(requestRef: string, overrides: Partial<DecisionReceiptRecord> = {}) {
+  const record = receipt(overrides);
+  putSourceReceiptForTests(record);
+  await completePresentationHolderResultForTests({ requestRef, receipt: record, partnerId: "acme" });
+  return record;
+}
+
 describe("eligibility presentation protocol", () => {
   beforeEach(() => {
     resetEligibilityPresentationsForTests();
@@ -116,11 +125,10 @@ describe("eligibility presentation protocol", () => {
 
   it("binds audience, nonce, policy, version, action, and environment", async () => {
     const created = await createPresentationRequest({ ...requestBody, partnerId: "acme" });
-    putSourceReceiptForTests(receipt());
+    await completeHolder(created.request_ref);
     const envelope = await issueEligibilityPresentation({
       partnerId: "acme",
       request_ref: created.request_ref,
-      receipt_id: "dr_ep_1",
       verifier_nonce: requestBody.verifier_nonce,
     });
     expect(envelope.payload.audience_hash).toBe(audienceHash("acme"));
@@ -151,11 +159,10 @@ describe("eligibility presentation protocol", () => {
     resetEligibilityPresentationsForTests();
     resetSourceReceiptsForTests();
     const created2 = await createPresentationRequest({ ...requestBody, partnerId: "acme", verifier_nonce: "nonce-one-time-beta" });
-    putSourceReceiptForTests(receipt());
+    await completeHolder(created2.request_ref);
     const envelope2 = await issueEligibilityPresentation({
       partnerId: "acme",
       request_ref: created2.request_ref,
-      receipt_id: "dr_ep_1",
       verifier_nonce: "nonce-one-time-beta",
     });
     expect((await verifyEligibilityPresentation({
@@ -167,30 +174,24 @@ describe("eligibility presentation protocol", () => {
 
   it("requires fresh consent and denies cross-partner issuance", async () => {
     const created = await createPresentationRequest({ ...requestBody, partnerId: "acme", verifier_nonce: "nonce-consent" });
-    putSourceReceiptForTests(receipt({ consent_receipt_id: null }));
+    await expect(completeHolder(created.request_ref, { consent_receipt_id: null }))
+      .rejects.toMatchObject({ code: "consent_required" });
     await expect(issueEligibilityPresentation({
       partnerId: "acme",
       request_ref: created.request_ref,
-      receipt_id: "dr_ep_1",
       verifier_nonce: "nonce-consent",
-    })).rejects.toMatchObject({ code: "consent_required" });
+    })).rejects.toMatchObject({ code: "no_completed_result" });
 
-    putSourceReceiptForTests(receipt({ partner_id: "other" }));
-    await expect(issueEligibilityPresentation({
-      partnerId: "acme",
-      request_ref: created.request_ref,
-      receipt_id: "dr_ep_1",
-      verifier_nonce: "nonce-consent",
-    })).rejects.toMatchObject({ code: "cross_partner" });
+    await expect(completeHolder(created.request_ref, { partner_id: "other" }))
+      .rejects.toMatchObject({ code: "cross_partner" });
   });
 
   it("consumes the verifier nonce once and fails replay, expiry, revocation, and withdrawal", async () => {
     const created = await createPresentationRequest({ ...requestBody, partnerId: "acme", verifier_nonce: "nonce-replay" });
-    putSourceReceiptForTests(receipt());
+    await completeHolder(created.request_ref);
     const envelope = await issueEligibilityPresentation({
       partnerId: "acme",
       request_ref: created.request_ref,
-      receipt_id: "dr_ep_1",
       verifier_nonce: "nonce-replay",
     });
     const expected = {
@@ -234,11 +235,10 @@ describe("eligibility presentation protocol", () => {
       partnerId: "acme",
       verifier_nonce: "nonce-revoke",
     });
-    putSourceReceiptForTests(receipt());
+    await completeHolder(created2.request_ref);
     const envelope2 = await issueEligibilityPresentation({
       partnerId: "acme",
       request_ref: created2.request_ref,
-      receipt_id: "dr_ep_1",
       verifier_nonce: "nonce-revoke",
     });
     await revokePresentationsForReceipt("dr_ep_1");
@@ -261,11 +261,10 @@ describe("eligibility presentation protocol", () => {
       partnerId: "acme",
       verifier_nonce: "nonce-withdraw",
     });
-    putSourceReceiptForTests(receipt());
+    await completeHolder(created3.request_ref);
     const envelope3 = await issueEligibilityPresentation({
       partnerId: "acme",
       request_ref: created3.request_ref,
-      receipt_id: "dr_ep_1",
       verifier_nonce: "nonce-withdraw",
     });
     const withdrawn = await verifyEligibilityPresentation({
@@ -283,11 +282,10 @@ describe("eligibility presentation protocol", () => {
 
   it("requires partner kit receipt re-fetch and never treats the envelope as a grant", async () => {
     const created = await createPresentationRequest({ ...requestBody, partnerId: "acme", verifier_nonce: "nonce-kit" });
-    putSourceReceiptForTests(receipt());
+    await completeHolder(created.request_ref);
     const envelope = await issueEligibilityPresentation({
       partnerId: "acme",
       request_ref: created.request_ref,
-      receipt_id: "dr_ep_1",
       verifier_nonce: "nonce-kit",
     });
     let fetched = 0;
@@ -351,11 +349,10 @@ describe("eligibility presentation protocol", () => {
 
   it("does not leak evidence, keys, wallets, callbacks, or Utila/Circle side effects", async () => {
     const created = await createPresentationRequest({ ...requestBody, partnerId: "acme", verifier_nonce: "nonce-leak" });
-    putSourceReceiptForTests(receipt());
+    await completeHolder(created.request_ref);
     const envelope = await issueEligibilityPresentation({
       partnerId: "acme",
       request_ref: created.request_ref,
-      receipt_id: "dr_ep_1",
       verifier_nonce: "nonce-leak",
     });
     const blob = JSON.stringify(envelope).toLowerCase();
@@ -381,5 +378,69 @@ describe("eligibility presentation protocol", () => {
     expect(docs).toContain("not a transferable identity passport");
     expect(docs.toLowerCase()).toContain("cannot self-publish");
     expect(docs).not.toMatch(/window\.ethereum|app_secret|ABRAXAS_SIGNING_KEY/);
+    expect(docs).toContain("never send a receipt_id");
+  });
+
+  it("rejects forged receipt_id bodies and derives only a completed bound result", async () => {
+    const created = await createPresentationRequest({ ...requestBody, partnerId: "acme", verifier_nonce: "nonce-forge" });
+    const withId = await issuePost(new NextRequest("http://localhost/api/v1/eligibility-presentations/issue", {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: "Bearer abx_test_placeholder" },
+      body: JSON.stringify({
+        request_ref: created.request_ref,
+        verifier_nonce: "nonce-forge",
+        receipt_id: "dr_forged",
+      }),
+    }));
+    expect(withId.status).toBe(400);
+    expect(await withId.json()).toEqual({ error: "invalid_input" });
+
+    await expect(issueEligibilityPresentation({
+      partnerId: "acme",
+      request_ref: created.request_ref,
+      verifier_nonce: "nonce-forge",
+    })).rejects.toMatchObject({ code: "no_completed_result" });
+
+    await expect(completeHolder(created.request_ref, { policy_id: "other-policy-v1" }))
+      .rejects.toMatchObject({ code: "policy_mismatch" });
+    await expect(completeHolder(created.request_ref, { decision_context: "production" }))
+      .rejects.toMatchObject({ code: "environment_mismatch" });
+    await expect(completeHolder(created.request_ref, { revoked_at: "2026-09-21T00:00:00.000Z", status: "revoked" }))
+      .rejects.toMatchObject({ code: "receipt_invalid" });
+
+    await completeHolder(created.request_ref);
+    await expect(issueEligibilityPresentation({
+      partnerId: "acme",
+      request_ref: created.request_ref,
+      verifier_nonce: "wrong-nonce-xxxx",
+    })).rejects.toMatchObject({ code: "nonce_mismatch" });
+
+    const issued = await issueEligibilityPresentation({
+      partnerId: "acme",
+      request_ref: created.request_ref,
+      verifier_nonce: "nonce-forge",
+    });
+    expect(issued.presentation_sufficient ?? false).toBe(false);
+    await expect(issueEligibilityPresentation({
+      partnerId: "acme",
+      request_ref: created.request_ref,
+      verifier_nonce: "nonce-forge",
+    })).rejects.toMatchObject({ code: "replayed" });
+  });
+
+  it("keeps receipt_id out of partner issue schemas, docs, and starter kits", () => {
+    const issueRoute = readFileSync(join(process.cwd(), "app/api/v1/eligibility-presentations/issue/route.ts"), "utf8");
+    expect(issueRoute).not.toMatch(/record\.receipt_id|ISSUE_REQUEST_KEYS = \["request_ref", "receipt_id"\]/);
+    const issueLib = readFileSync(join(process.cwd(), "lib/eligibilityPresentation/issue.ts"), "utf8");
+    expect(issueLib).toContain('ISSUE_REQUEST_KEYS = ["request_ref", "verifier_nonce"]');
+    expect(issueLib).not.toMatch(/input\.receipt_id/);
+    const examples = readFileSync(join(process.cwd(), "lib/eligibilityPresentation/examples.ts"), "utf8");
+    expect(examples).toContain("request_ref: requestRef");
+    expect(examples).toContain("Do not send receipt_id");
+    expect(examples).not.toMatch(/"receipt_id"|receipt_id:/);
+    const docs = readFileSync(join(process.cwd(), "app/docs/eligibility-presentation-protocol/page.tsx"), "utf8");
+    expect(docs.toLowerCase()).toContain("never send a receipt_id");
+    const starter = readFileSync(join(process.cwd(), "lib/partner/starterKit/files.ts"), "utf8");
+    expect(starter).toContain("eligibilityPresentationServerExample");
   });
 });

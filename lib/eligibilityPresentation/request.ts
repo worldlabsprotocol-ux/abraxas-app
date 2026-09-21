@@ -102,6 +102,7 @@ export async function createPresentationRequest(
     issued_at: new Date(now).toISOString(),
     presentation_ref: null,
     source_receipt_id: null,
+    holder_session_hmac: null,
     consent_bound: false,
     revoked_at: null,
     consumed_at: null,

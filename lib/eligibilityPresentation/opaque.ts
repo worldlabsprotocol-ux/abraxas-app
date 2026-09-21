@@ -18,6 +18,10 @@ export function partnerHmac(partnerId: string): string {
   return createHash("sha256").update(`eligibility-partner:${partnerId}`).digest("hex");
 }
 
+export function holderSessionHmac(subjectPseudonymId: string): string {
+  return createHash("sha256").update(`eligibility-holder-session:${subjectPseudonymId}`).digest("hex");
+}
+
 export function nonceHash(nonce: string): string {
   return createHash("sha256").update(`eligibility-nonce:${nonce}`).digest("hex");
 }

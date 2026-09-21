@@ -25,6 +25,7 @@ export type EligibilityPresentationEnvironment =
 
 export const ELIGIBILITY_PRESENTATION_REQUEST_STATUSES = [
   "created",
+  "completed",
   "issued",
   "expired",
   "revoked",
@@ -88,12 +89,14 @@ export const ELIGIBILITY_PRESENTATION_FORBIDDEN_KEYS = [
   "kyb_evidence",
   "raw_evidence",
   "internal_error",
+  "receipt_id",
+  "source_receipt_id",
 ] as const;
 
 export const ELIGIBILITY_PRESENTATION_CHECKLIST = [
   "Create the presentation request from your backend for one audience, policy, version, action, environment, and nonce.",
   "Redirect the holder to Hosted Partner Flow. Fresh consent is required.",
-  "Issue a new audience-bound presentation from the current partner-bound receipt.",
+  "Issue with only request_ref and the original verifier nonce. Abraxas derives the completed receipt. Partners never send a receipt_id.",
   "Verify signature and key lifecycle, then re-fetch GET /api/receipts/{id}/public before any grant.",
   "A presentation is never a bearer credential or automatic KYC/KYB approval.",
 ] as const;
