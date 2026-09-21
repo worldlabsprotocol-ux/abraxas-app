@@ -5,6 +5,9 @@ export const SIMPLIFIED_HOME_EYEBROW = "PRIVATE ELIGIBILITY PROTOCOL";
 
 export const SIMPLIFIED_HOME_HEADLINE = "Prove only what a service needs.";
 
+export const SIMPLIFIED_HOME_SUBHEAD =
+  "Abraxas is a private eligibility protocol. Your evidence stays private. Partners verify a current result on their server.";
+
 export const SIMPLIFIED_HOME_MOBILE_PROMPT =
   "Prove eligibility, verify a result, or try a sandbox example.";
 
