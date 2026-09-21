@@ -11,6 +11,7 @@ export const EVM_PARTNER_ACTION_TYPES = [
   "enable_protocol_access",
   "enable_member_access",
   "enable_redemption_access",
+  "activate_protocol_access",
 ] as const;
 export type EvmPartnerActionType = (typeof EVM_PARTNER_ACTION_TYPES)[number];
 
@@ -28,6 +29,7 @@ export const EVM_PARTNER_TYPE_SCOPES: Record<EvmPartnerActionType, EvmPartnerAct
   enable_protocol_access: EVM_PROTOCOL_SCOPE,
   enable_member_access: EVM_MEMBER_SCOPE,
   enable_redemption_access: EVM_REDEMPTION_SCOPE,
+  activate_protocol_access: EVM_PROTOCOL_SCOPE,
 };
 
 export const EVM_PARTNER_CLIENT_VISIBLE_KEYS = [

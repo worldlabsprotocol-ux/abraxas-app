@@ -14,6 +14,7 @@ import {
 } from "./contract";
 import { serverlessFiles, universalHttpsFiles, wixVeloFiles, type StarterKitFile } from "./platforms";
 import { eligibilityPresentationHttpsExample, eligibilityPresentationServerExample } from "@/lib/eligibilityPresentation/examples";
+import { crossChainProtocolAccessHttpsExample, crossChainProtocolAccessServerExample } from "@/lib/partner/crossChainProtocolAccess/examples";
 import type { ValidStarterKitSelection } from "./validate";
 
 export type { StarterKitFile };
@@ -737,6 +738,7 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     || selection.capabilities.includes("evm_onchain_eligibility_gate")
     || selection.platform === "evm_contract";
   const eligibility = selection.path === "eligibility_presentation" || selection.capabilities.includes("eligibility_presentation");
+  const crossChain = selection.path === "cross_chain_protocol_access" || selection.capabilities.includes("cross_chain_protocol_access");
   const include = { webhook, venue, payment, solana, wallet, portable, evm };
 
   const files: StarterKitFile[] = [
@@ -806,6 +808,10 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
   if (eligibility) {
     files.push({ path: "src/lib/eligibility-presentation.ts", contents: eligibilityPresentationServerExample() });
     files.push({ path: "ELIGIBILITY_PRESENTATION.md", contents: eligibilityPresentationHttpsExample() });
+  }
+  if (crossChain) {
+    files.push({ path: "src/lib/cross-chain-protocol-access.ts", contents: crossChainProtocolAccessServerExample() });
+    files.push({ path: "CROSS_CHAIN_PROTOCOL_ACCESS.md", contents: crossChainProtocolAccessHttpsExample() });
   }
   return files;
 }

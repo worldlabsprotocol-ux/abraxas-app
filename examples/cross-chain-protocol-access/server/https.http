@@ -1,0 +1,20 @@
+POST https://abraxasworld.xyz/api/v1/eligibility-presentations/requests
+Authorization: Bearer YOUR_SANDBOX_API_KEY
+Content-Type: application/json
+
+{
+  "policy_id": "YOUR_POLICY_ID",
+  "policy_version": 1,
+  "purpose": "Confirm one protocol eligibility result",
+  "action": "retail_access",
+  "action_scope": "sandbox:protocol_access",
+  "environment": "sandbox",
+  "result_category": "age_21",
+  "verifier_nonce": "YOUR_ONE_TIME_NONCE"
+}
+
+# Then Hosted Partner Flow + fresh consent.
+# POST /api/v1/eligibility-presentations/issue with only request_ref and verifier_nonce.
+# Verify the envelope, then GET /api/receipts/{id}/public.
+# Server issues activate_protocol_access with a verified deployment_ref.
+# Local/sandbox only. A presentation is never sufficient.

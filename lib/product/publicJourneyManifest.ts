@@ -141,6 +141,12 @@ export const PUBLIC_JOURNEY_SURFACES = [
     file: "app/docs/eligibility-presentation-protocol/page.tsx",
   },
   {
+    route: "/docs/cross-chain-protocol-access",
+    purpose: "Partner-owned activate_protocol_access on EVM and Solana. Local/sandbox reference only.",
+    primaryCta: { label: "Integration Studio", href: "/developers/integration-studio" },
+    file: "app/docs/cross-chain-protocol-access/page.tsx",
+  },
+  {
     route: "/docs/selective-disclosure",
     purpose: "Canonical selective-disclosure boundary. Policy result only, not evidence.",
     primaryCta: { label: "Integration Studio", href: "/developers/integration-studio" },

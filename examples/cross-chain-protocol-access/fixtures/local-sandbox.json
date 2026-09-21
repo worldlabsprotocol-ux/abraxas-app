@@ -1,0 +1,11 @@
+{
+  "label": "local_sandbox_hashes_only",
+  "named_action": "activate_protocol_access",
+  "action_scope": "sandbox:protocol_access",
+  "environment": "sandbox",
+  "partner_hash": "0x1111111111111111111111111111111111111111111111111111111111111111",
+  "policy_hash": "0x2222222222222222222222222222222222222222222222222222222222222222",
+  "action_hash": "0x3333333333333333333333333333333333333333333333333333333333333333",
+  "subject_hash": "0x4444444444444444444444444444444444444444444444444444444444444444",
+  "notes": "Opaque hashes only. No receipts, proofs, signatures, PII, or live deployment claims."
+}

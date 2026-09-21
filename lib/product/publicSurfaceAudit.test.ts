@@ -34,6 +34,7 @@ const PUBLIC_PAGES = [
   "/docs/chain-attestation-signer-lifecycle",
   "/docs/reclaim-private-attestations",
   "/docs/eligibility-presentation-protocol",
+  "/docs/cross-chain-protocol-access",
   "/docs/selective-disclosure",
   "/docs/starter-kit",
   "/docs/production-review",
