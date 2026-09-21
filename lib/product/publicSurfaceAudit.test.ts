@@ -28,6 +28,7 @@ const PUBLIC_PAGES = [
   "/docs/action-control-plane",
   "/docs/portable-action-contract",
   "/docs/chain-verifiable-attestations",
+  "/docs/solana-onchain-eligibility-gate",
   "/docs/selective-disclosure",
   "/docs/starter-kit",
   "/docs/production-review",

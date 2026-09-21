@@ -13,7 +13,7 @@ import { paymentAuthorizationServerExample } from "@/lib/partner/paymentAuthoriz
 import { portableActionServerExample } from "@/lib/partner/portableActionContract/examples";
 import { evmPartnerServerExample } from "@/lib/partner/evm/examples";
 import { evmWalletBindingExample } from "@/lib/partner/evmWalletBinding/examples";
-import { chainAttestationServerExample } from "@/lib/partner/chainAttestation/examples";
+import { chainAttestationServerExample, solanaOnchainEligibilityGateExample } from "@/lib/partner/chainAttestation/examples";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
 
 const DEMO_OPTS = {
@@ -88,6 +88,11 @@ export function studioSnippetForApplication(input: {
       docs: "/docs/chain-verifiable-attestations",
       code: chainAttestationServerExample(),
     },
+    solana_onchain_eligibility_gate: {
+      title: "Solana onchain eligibility gate",
+      docs: "/docs/solana-onchain-eligibility-gate",
+      code: solanaOnchainEligibilityGateExample(),
+    },
   };
 }
 
@@ -152,6 +157,12 @@ export function studioSnippetForPath(path: IntegrationStudioPathId): { title: st
         title: "Onchain protocol gate",
         docs: "/docs/chain-verifiable-attestations",
         code: chainAttestationServerExample(),
+      };
+    case "solana_onchain_eligibility_gate":
+      return {
+        title: "Solana onchain eligibility gate",
+        docs: "/docs/solana-onchain-eligibility-gate",
+        code: solanaOnchainEligibilityGateExample(),
       };
     default: {
       const _never: never = path;

@@ -29,6 +29,7 @@
     "integration:preflight": "npx tsx scripts/integration-preflight.ts",
     "partner:conformance": "npx tsx scripts/partner-conformance.ts",
     "test:sandbox-conformance": "vitest run lib/partner/sandboxPartnerContract/sandboxPartnerContract.test.ts",
+    "solana:gate:test": "cargo test --manifest-path solana/abraxas-eligibility-gate/Cargo.toml --workspace -- --nocapture",
     "iat:automated": "npx tsx scripts/iat-automated.ts",
     "gate:verify-receipt-fixture": "npx tsx scripts/verify-trust-decision-fixture.ts",
     "release:readiness": "npx tsx scripts/release-readiness.ts",

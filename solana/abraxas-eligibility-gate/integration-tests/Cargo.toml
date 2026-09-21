@@ -1,0 +1,13 @@
+[package]
+name = "abraxas-eligibility-gate-integration-tests"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dev-dependencies]
+anchor-lang = "0.30.1"
+abraxas-eligibility-gate = { path = "../programs/abraxas-eligibility-gate", features = ["no-entrypoint"] }
+abraxas-eligibility-consumer = { path = "../programs/abraxas-eligibility-consumer", features = ["no-entrypoint"] }
+solana-program-test = "=1.18.26"
+solana-sdk = "=1.18.26"
+tokio = { version = "1.37", features = ["macros", "rt-multi-thread"] }
