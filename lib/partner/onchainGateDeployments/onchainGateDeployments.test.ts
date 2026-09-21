@@ -502,4 +502,39 @@ describe("verified onchain gate deployments", () => {
     expect(docs).toContain("deployment_verification_unavailable");
     expect(docs).not.toMatch(/USDC transfer/i);
   });
+
+  it("treats incomplete Solana observations as V1-only and denies production test adapters", async () => {
+    const { solanaObservationIsV1Only, solanaObservationHasV2InstitutionalCapability } = await import(
+      "@/lib/partner/onchainGateDeployments/adapters"
+    );
+    expect(solanaObservationIsV1Only({
+      programId: PROGRAM,
+      gateConfigPda: PDA,
+      programDigest: (`0x${"cd".repeat(32)}`) as `0x${string}`,
+      configDigest: (`0x${"cd".repeat(32)}`) as `0x${string}`,
+    })).toBe(true);
+    expect(solanaObservationHasV2InstitutionalCapability({
+      programId: PROGRAM,
+      gateConfigPda: PDA,
+      programDigest: (`0x${"cd".repeat(32)}`) as `0x${string}`,
+      configDigest: (`0x${"cd".repeat(32)}`) as `0x${string}`,
+    })).toBe(false);
+
+    process.env[ONCHAIN_DEPLOYMENT_TEST_ADAPTER_ENV] = "1";
+    const { bindIssuanceToVerifiedDeployment } = await import("@/lib/partner/onchainGateDeployments/bindIssuance");
+    const denied = await bindIssuanceToVerifiedDeployment({
+      partnerId: EVM_REF_PARTNER_ID,
+      applicationId: "app-adapter",
+      networkId: "evm_sandbox",
+      actionType: "enable_protocol_access",
+      actionScope: "sandbox:protocol_access",
+      kitEnvironment: "production",
+      policyId: EVM_REF_POLICY_ID,
+      policyVersion: 1,
+      signerKeyId: "evm-attestation-test-1",
+      testAdapter: { source: "local_anvil", chainId: 31337, verifyingContract: GATE },
+    });
+    expect(denied.ok).toBe(false);
+    if (!denied.ok) expect(denied.reason).toBe("deployment_not_verified");
+  });
 });

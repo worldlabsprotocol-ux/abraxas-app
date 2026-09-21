@@ -8,7 +8,10 @@ import {
   SOLANA_ATTESTATION_MESSAGE_PREFIX,
 } from "@/lib/partner/chainAttestation/contract";
 import { verifyInstitutionalPlan } from "@/lib/partner/testnetGateDeploymentKit/verify";
-import { solanaObservationIsV1Only } from "@/lib/partner/onchainGateDeployments/adapters";
+import {
+  solanaObservationHasV2InstitutionalCapability,
+  solanaObservationIsV1Only,
+} from "@/lib/partner/onchainGateDeployments/adapters";
 import type { OnchainVerifierConformanceReason } from "./contract";
 import { ONCHAIN_VERIFIER_CONFORMANCE_FORBIDDEN_KEYS } from "./contract";
 import { CONFORMANCE_VECTOR_PACKAGE, evmConformanceDigest, solanaConformanceMessage } from "./vectors";
@@ -117,10 +120,17 @@ export function evaluateConformance(input: ConformanceInput): ConformanceResult 
       if (v2 && (v2.message_len !== SOLANA_ATTESTATION_MESSAGE_LEN || v2.prefix !== SOLANA_ATTESTATION_MESSAGE_PREFIX || v2.schema_version !== 2)) {
         reasons.push("institutional_required");
       }
-      if (input.solanaObservation && solanaObservationIsV1Only(input.solanaObservation as never)) {
+      const observed = input.solanaObservation;
+      if (!observed) {
+        reasons.push("deployment_not_verified");
+      } else if (
+        solanaObservationIsV1Only(observed as never)
+        || !solanaObservationHasV2InstitutionalCapability(observed as never)
+      ) {
         reasons.push("institutional_required");
       }
     }
+    if (input.receiptRefetched !== true) reasons.push("presentation_insufficient");
   }
 
   if (envelope.schema_version === 1 && requireInstitutional) reasons.push("institutional_required");

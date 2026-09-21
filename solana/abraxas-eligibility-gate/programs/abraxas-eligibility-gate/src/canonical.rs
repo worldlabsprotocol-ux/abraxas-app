@@ -226,4 +226,28 @@ mod tests {
         message[OFF_SCHEMA + 7] = 2;
         assert!(parse_canonical_message(&message).is_err());
     }
+
+    #[test]
+    fn rejects_truncated_appended_and_length_fuzz() {
+        let mut valid_prefix = vec![0u8; CANONICAL_MESSAGE_LEN];
+        valid_prefix[OFF_PREFIX..OFF_PREFIX_HASH].copy_from_slice(PREFIX);
+        valid_prefix[OFF_PREFIX_HASH..OFF_SCHEMA].copy_from_slice(&prefix_keccak());
+        valid_prefix[OFF_SCHEMA + 7] = 2;
+        assert!(parse_canonical_message(&valid_prefix[..CANONICAL_MESSAGE_LEN - 1]).is_err());
+        let mut appended = valid_prefix.clone();
+        appended.push(0);
+        assert!(parse_canonical_message(&appended).is_err());
+        for len in [0, 1, 16, 371, 373, 467, 469, 512, 1024] {
+            assert!(parse_canonical_message(&vec![0u8; len]).is_err());
+            assert!(parse_canonical_message_for_config(&vec![0u8; len], true).is_err());
+        }
+    }
+
+    #[test]
+    fn rejects_ed25519_foreign_offsets() {
+        let mut data = vec![0u8; 16];
+        data[0] = 1;
+        data[4..6].copy_from_slice(&0u16.to_le_bytes());
+        assert!(extract_ed25519_pubkey_and_message(&data).is_err());
+    }
 }

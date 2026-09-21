@@ -49,6 +49,11 @@ export async function bindIssuanceToVerifiedDeployment(input: {
   testAdapter?: LocalIssuanceTestAdapter;
 }): Promise<BoundDeployment> {
   if (input.testAdapter && process.env[ONCHAIN_DEPLOYMENT_TEST_ADAPTER_ENV] === "1") {
+    const vercel = Boolean(process.env.VERCEL);
+    const productionRuntime = process.env.NODE_ENV === "production";
+    if (vercel || productionRuntime || input.kitEnvironment === "production") {
+      return { ok: false, reason: "deployment_not_verified" };
+    }
     return {
       ok: true,
       record: null,

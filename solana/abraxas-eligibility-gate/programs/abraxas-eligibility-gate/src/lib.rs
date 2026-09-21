@@ -29,6 +29,7 @@ pub mod abraxas_eligibility_gate {
         require!(!params.partner_program.eq(&Pubkey::default()), GateError::InvalidConfig);
         require!(params.trusted_signer != [0u8; 32], GateError::InvalidConfig);
         require!(params.signer_key_id != [0u8; 32], GateError::InvalidConfig);
+        require!(params.network_id != [0u8; 32], GateError::InvalidConfig);
         let config = &mut ctx.accounts.config;
         config.admin = ctx.accounts.admin.key();
         config.apply(params.clone())?;
@@ -75,7 +76,9 @@ pub mod abraxas_eligibility_gate {
                 }
             })?;
         require!(fields.attestation_id == attestation_id, GateError::InvalidMessage);
+        require!(!is_zero32(&fields.network_id), GateError::NetworkMismatch);
         require!(fields.network_id == config.network_id, GateError::NetworkMismatch);
+        require!(fields.issued_at > 0 && fields.expires_at > fields.issued_at, GateError::InvalidMessage);
         require!(fields.partner_hash == config.partner_hash, GateError::PartnerMismatch);
         require!(fields.policy_hash == config.policy_hash, GateError::PolicyMismatch);
         require!(fields.action_hash == config.action_hash, GateError::ActionMismatch);
@@ -125,6 +128,7 @@ pub mod abraxas_eligibility_gate {
         auth.policy_hash = fields.policy_hash;
         auth.action_hash = fields.action_hash;
         auth.attestation_ref = fields.attestation_id;
+        auth.subject_hash = fields.subject_hash;
         auth.organization_commitment = fields.organization_commitment;
         auth.actor_commitment = fields.actor_commitment;
         auth.institutional_result_category = fields.institutional_result_category;
@@ -171,6 +175,7 @@ fn signer_matches(slots: &[SignerSlot; MAX_SIGNERS], pubkey: [u8; 32], key_id: [
 impl GateConfig {
     fn apply(&mut self, params: ConfigParams) -> Result<()> {
         require!(!params.partner_program.eq(&Pubkey::default()), GateError::InvalidConfig);
+        require!(params.network_id != [0u8; 32], GateError::InvalidConfig);
         self.partner_program = params.partner_program;
         self.network_id = params.network_id;
         self.partner_hash = params.partner_hash;
@@ -288,6 +293,7 @@ pub struct Authorization {
     pub policy_hash: [u8; 32],
     pub action_hash: [u8; 32],
     pub attestation_ref: [u8; 32],
+    pub subject_hash: [u8; 32],
     pub organization_commitment: [u8; 32],
     pub actor_commitment: [u8; 32],
     pub institutional_result_category: [u8; 32],

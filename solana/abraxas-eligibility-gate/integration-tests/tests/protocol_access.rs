@@ -651,6 +651,25 @@ async fn direct_expiry_bypass_has_no_instruction() {
 }
 
 #[tokio::test]
+async fn activate_rejects_subject_swap() {
+    let mut ctx = start().await;
+    let admin = Keypair::new();
+    let signer = Keypair::new();
+    airdrop(&mut ctx, &admin).await;
+    let fields = MessageFields::default();
+    let config = initialize_gate(&mut ctx, &admin, default_params(signer.pubkey().to_bytes(), fields)).await;
+    let protocol = initialize_protocol(&mut ctx, config, fields).await;
+    authorize(&mut ctx, &signer, config, fields).await;
+    let mut swapped = fields;
+    swapped.subject_hash = h32(99);
+    let payer = ctx.payer.pubkey();
+    let err = send(&mut ctx, vec![activate_ix(payer, config, protocol, swapped)], &[])
+        .await
+        .unwrap_err();
+    assert!(custom_code(&err).is_some());
+}
+
+#[tokio::test]
 async fn revoked_signer_blocks_new_issuance() {
     let mut ctx = start().await;
     let admin = Keypair::new();

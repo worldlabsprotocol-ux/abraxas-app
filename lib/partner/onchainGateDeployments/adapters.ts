@@ -134,6 +134,11 @@ export function serverSolanaRpcAdapter(): SolanaVerificationAdapter | null {
           gateConfigPda: manifest.gate_config_pda,
           programDigest: digest,
           configDigest: digest,
+          // Raw account keccak cannot prove V2 institutional posture.
+          canonicalMessageLen: 372,
+          schemaVersion: 1,
+          requireInstitutional: false,
+          institutionalCapable: false,
         };
       } catch {
         return { unavailable: true };
@@ -171,6 +176,14 @@ export async function verifyEvmAgainstChain(
 }
 
 export function solanaObservationIsV1Only(observed: SolanaChainObservation): boolean {
+  if (
+    observed.institutionalCapable === undefined
+    || observed.requireInstitutional === undefined
+    || observed.schemaVersion === undefined
+    || observed.canonicalMessageLen === undefined
+  ) {
+    return true;
+  }
   return observed.institutionalCapable === false
     || observed.requireInstitutional === false
     || observed.schemaVersion === 1

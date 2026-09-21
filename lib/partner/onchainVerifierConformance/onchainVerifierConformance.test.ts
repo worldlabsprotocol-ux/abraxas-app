@@ -142,6 +142,28 @@ describe("onchain verifier conformance", () => {
       solanaObservation: { canonicalMessageLen: 372, schemaVersion: 1, requireInstitutional: false, institutionalCapable: false },
     });
     expect(institutional.reasons).toContain("institutional_required");
+    const unobserved = evaluateConformance({
+      raw: {
+        institutional: { institutional_required: true },
+        registry_manifest: solanaManifest(),
+        solana_v2: { message_len: 468, prefix: "ABRAXAS_CHAIN_ELIGIBILITY_V2", schema_version: 2 },
+      },
+      institutionalRequired: true,
+      receiptRefetched: true,
+    });
+    expect(unobserved.ok).toBe(false);
+    expect(unobserved.reasons).toContain("deployment_not_verified");
+    const incompleteObs = evaluateConformance({
+      raw: {
+        institutional: { institutional_required: true },
+        registry_manifest: solanaManifest(),
+        solana_v2: { message_len: 468, prefix: "ABRAXAS_CHAIN_ELIGIBILITY_V2", schema_version: 2 },
+      },
+      institutionalRequired: true,
+      receiptRefetched: true,
+      solanaObservation: { configDigest: "0x1" } as never,
+    });
+    expect(incompleteObs.reasons).toContain("institutional_required");
   });
 
   it("serializes a shareable report without secrets", () => {
