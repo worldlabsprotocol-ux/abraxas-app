@@ -834,10 +834,21 @@ Re-fetch the current public receipt. A wallet-control proof is never KYB. Not Ut
 
 npx tsx scripts/abraxas-gate.ts plan solana
 npx tsx scripts/abraxas-gate.ts plan evm
+npx tsx scripts/abraxas-gate.ts plan institutional-evm-sepolia
+npx tsx scripts/abraxas-gate.ts plan institutional-solana-devnet
 npx tsx scripts/abraxas-gate.ts deploy solana-devnet --confirm
 npx tsx scripts/abraxas-gate.ts deploy evm-testnet --confirm
+npx tsx scripts/abraxas-gate.ts deploy institutional-evm-sepolia --confirm
+npx tsx scripts/abraxas-gate.ts deploy institutional-solana-devnet --confirm
 
-Deploy never runs from Vercel, CI, API routes, or this starter. Copy env names from lib/partner/testnetGateDeploymentKit/.env.example. Not Mainnet, Arc, USDC, or Circle.
+1. Institutional policy review required
+2. Create V2 testnet deployment plan
+3. Human deploys gate
+4. Verify exact deployed configuration
+5. Register verified sandbox deployment
+6. Request a fresh institutional presentation and chain attestation
+
+Deploy never runs from Vercel, CI, API routes, or this starter. Copy env names from lib/partner/testnetGateDeploymentKit/.env.example. Not Mainnet, Arc, USDC, Circle, Utila, or live KYB.
 `,
     });
   }

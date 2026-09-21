@@ -8,12 +8,14 @@ import { PublicJourneyNextSteps } from "@/components/product/PublicJourneyNextSt
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 import {
   TESTNET_GATE_COMMANDS,
+  INSTITUTIONAL_TESTNET_GATE_COMMANDS,
   TESTNET_GATE_NOTICE,
+  INSTITUTIONAL_TESTNET_GATE_NOTICE,
   TESTNET_GATE_NO_FUNDS,
   TESTNET_GATE_ENV_NAMES,
   APPROVED_EVM_TESTNET_CHAIN_ID,
 } from "@/lib/partner/testnetGateDeploymentKit/contract";
-import { EVM_TESTNET_TEST_PLAN, SOLANA_DEVNET_TEST_PLAN } from "@/lib/partner/testnetGateDeploymentKit/testPlans";
+import { EVM_TESTNET_TEST_PLAN, SOLANA_DEVNET_TEST_PLAN, INSTITUTIONAL_TESTNET_TEST_PLAN } from "@/lib/partner/testnetGateDeploymentKit/testPlans";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -41,7 +43,7 @@ export default function TestnetGateDeploymentDocsPage() {
       </ContentCard>
       <ContentCard title="CLI">
         <pre style={{ ...body, fontFamily: MONO, fontSize: "0.78rem", whiteSpace: "pre-wrap" }}>
-          {TESTNET_GATE_COMMANDS.map((row) => `npx tsx scripts/abraxas-gate.ts ${row}`).join("\n")}
+          {[...TESTNET_GATE_COMMANDS, ...INSTITUTIONAL_TESTNET_GATE_COMMANDS].map((row) => `npx tsx scripts/abraxas-gate.ts ${row}`).join("\n")}
         </pre>
         <p style={{ ...body, marginTop: "0.5rem" }}>
           Plan is read-only. Deploy requires <code>--confirm</code>. Verify and register re-check chain state through the server/CLI RPC adapter. Registration never trusts a file alone.
@@ -62,6 +64,12 @@ export default function TestnetGateDeploymentDocsPage() {
           {SOLANA_DEVNET_TEST_PLAN.steps.map((step) => <li key={step}>{step}</li>)}
         </ol>
         <p style={{ ...body, marginTop: "0.5rem" }}>Expected: {SOLANA_DEVNET_TEST_PLAN.expected_safe_outputs.join("; ")}.</p>
+      </ContentCard>
+      <ContentCard title="Institutional V2 testnet">
+        <p style={body}>{INSTITUTIONAL_TESTNET_GATE_NOTICE}</p>
+        <ol style={{ ...body, paddingLeft: "1.2rem" }}>
+          {INSTITUTIONAL_TESTNET_TEST_PLAN.steps.map((step) => <li key={step}>{step}</li>)}
+        </ol>
       </ContentCard>
       <ContentCard title="EVM human test plan">
         <ol style={{ ...body, paddingLeft: "1.2rem" }}>

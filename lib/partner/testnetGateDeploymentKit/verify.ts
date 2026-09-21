@@ -8,7 +8,12 @@ import {
 import { evmDigestFromManifest, solanaDigestFromManifest } from "@/lib/partner/onchainGateDeployments/digests";
 import { hashEnvironment } from "@/lib/partner/chainAttestation/hashes";
 import { rejectForbiddenNetwork } from "./networks";
-import type { TestnetGateKitEnvelope } from "./types";
+import {
+  commitmentsComplete,
+  institutionalConfigDigest,
+  institutionalEnvelopeLeaks,
+} from "./institutional";
+import type { InstitutionalKitPlan, TestnetGateKitEnvelope } from "./types";
 import type { OnchainDeploymentManifest } from "@/lib/partner/onchainGateDeployments/types";
 
 export function extractRegistryManifest(raw: unknown): OnchainDeploymentManifest | null {
@@ -20,10 +25,64 @@ export function extractRegistryManifest(raw: unknown): OnchainDeploymentManifest
   return parsed.ok ? parsed.manifest : null;
 }
 
+function institutionalPlanFrom(raw: unknown): InstitutionalKitPlan | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const rec = raw as TestnetGateKitEnvelope;
+  return rec.institutional ?? null;
+}
+
+export function verifyInstitutionalPlan(
+  plan: InstitutionalKitPlan,
+  envelope?: TestnetGateKitEnvelope | null,
+  nowSeconds = Math.floor(Date.now() / 1000),
+): { ok: true } | { ok: false; reason: string } {
+  if (plan.schema_version !== "2") return { ok: false, reason: "schema_mismatch" };
+  if (!plan.institutional_required) return { ok: false, reason: "institutional_required" };
+  if (!commitmentsComplete(plan)) return { ok: false, reason: "institutional_required" };
+  if (plan.valid_until <= nowSeconds) return { ok: false, reason: "expired" };
+  if (envelope?.eip712 && envelope.eip712.version !== "2") return { ok: false, reason: "schema_mismatch" };
+  if (envelope && envelope.bindings.signer_key_id !== plan.signer_key_id) {
+    return { ok: false, reason: "signer_mismatch" };
+  }
+  if (envelope && (
+    envelope.partner_hash !== plan.partner_hash
+    || envelope.policy_hash !== plan.policy_hash
+    || envelope.action_hash !== plan.action_hash
+  )) {
+    return { ok: false, reason: "binding_mismatch" };
+  }
+  const expected = institutionalConfigDigest({
+    gateType: envelope?.gate_type ?? "evm",
+    networkId: envelope?.network_id ?? "evm_sepolia",
+    chainId: envelope?.chain_id ?? null,
+    partnerHash: plan.partner_hash,
+    policyHash: plan.policy_hash,
+    actionHash: plan.action_hash,
+    environmentHash: plan.environment_hash,
+    organizationCommitment: plan.organization_commitment,
+    actorCommitment: plan.actor_commitment,
+    institutionalResultCategory: plan.institutional_result_category_hash,
+    signerKeyId: plan.signer_key_id,
+    publicVerifier: plan.public_verifier,
+    validUntil: plan.valid_until,
+  });
+  if (expected !== plan.config_digest) return { ok: false, reason: "config_digest_mismatch" };
+  return { ok: true };
+}
+
 export async function verifyTestnetManifest(raw: unknown): Promise<
   { ok: true; manifest: OnchainDeploymentManifest } | { ok: false; reason: string }
 > {
-  if (onchainGatePayloadLeaks(raw).length) return { ok: false, reason: "forbidden_field" };
+  if (onchainGatePayloadLeaks(raw).length || institutionalEnvelopeLeaks(raw).length) {
+    return { ok: false, reason: "forbidden_field" };
+  }
+  const envelope = raw && typeof raw === "object" && "institutional" in (raw as object)
+    ? raw as TestnetGateKitEnvelope
+    : null;
+  if (envelope?.institutional) {
+    const institutional = verifyInstitutionalPlan(envelope.institutional, envelope);
+    if (!institutional.ok) return institutional;
+  }
   const manifest = extractRegistryManifest(raw);
   if (!manifest) return { ok: false, reason: "unverified_manifest" };
   const parsed = parseOnchainDeploymentManifest(manifest);

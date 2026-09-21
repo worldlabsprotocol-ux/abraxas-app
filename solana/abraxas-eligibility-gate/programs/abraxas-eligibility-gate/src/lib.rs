@@ -9,6 +9,7 @@ use anchor_lang::solana_program::{
 };
 
 pub mod canonical;
+pub mod institutional_v2;
 use canonical::*;
 
 declare_id!("GmaDrppBC7P5ARKV8g3djiwP89vz1jLK23V2GBjuAEGB");

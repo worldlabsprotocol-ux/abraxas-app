@@ -253,6 +253,15 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
       browser_deploy: false,
       notice: INTEGRATION_STUDIO_TESTNET_GATE_NOTICE,
       states: ["not_planned", "ready_to_plan", "deployment_pending_verification", "verified_sandbox"],
+      sequence: [
+        "Institutional policy review required",
+        "Create V2 testnet deployment plan",
+        "Human deploys gate",
+        "Verify exact deployed configuration",
+        "Register verified sandbox deployment",
+        "Request a fresh institutional presentation and chain attestation",
+      ],
+      browser_deploy_button: false,
     },
     policy_compatibility: {
       docs: "/docs/policy-compatibility",

@@ -1,6 +1,6 @@
 import { TESTNET_GATE_ENV_NAMES } from "./contract";
-import { approvedHumanTestnet } from "./networks";
-import { planTestnetGate } from "./plan";
+import { approvedHumanTestnet, type HumanTestnetTarget } from "./networks";
+import { planInstitutionalTestnetGate, planTestnetGate } from "./plan";
 import type { KitBindings, KitCliResult } from "./types";
 
 export function automatedEnvironmentForbidden(env: NodeJS.ProcessEnv = process.env): string | null {
@@ -18,7 +18,7 @@ function requireEnv(env: NodeJS.ProcessEnv, name: string): string | null {
 }
 
 export function deployTestnetGate(input: {
-  target: "solana-devnet" | "evm-testnet";
+  target: HumanTestnetTarget;
   confirm: boolean;
   bindings?: Partial<KitBindings>;
   env?: NodeJS.ProcessEnv;
@@ -43,10 +43,21 @@ export function deployTestnetGate(input: {
     if (key) missing.push(TESTNET_GATE_ENV_NAMES.solana_keypair);
   }
   if (missing.length) return { ok: false, command, reason: "missing_operator_config" };
-  const planned = planTestnetGate({
-    target: net.gate_type === "evm" ? "evm" : "solana",
-    bindings: input.bindings,
-  });
+  const institutional = input.target.startsWith("institutional-");
+  const planned = institutional
+    ? planInstitutionalTestnetGate({
+        target: input.target as "institutional-evm-sepolia" | "institutional-solana-devnet",
+        bindings: input.bindings,
+        organizationRef: env[TESTNET_GATE_ENV_NAMES.organization_ref],
+        actorRef: env[TESTNET_GATE_ENV_NAMES.actor_ref],
+        resultCategory: env[TESTNET_GATE_ENV_NAMES.result_category],
+        publicVerifier: env[TESTNET_GATE_ENV_NAMES.public_verifier],
+        validUntil: env[TESTNET_GATE_ENV_NAMES.valid_until] ? Number(env[TESTNET_GATE_ENV_NAMES.valid_until]) : undefined,
+      })
+    : planTestnetGate({
+        target: net.gate_type === "evm" ? "evm" : "solana",
+        bindings: input.bindings,
+      });
   if (!planned.ok) return { ok: false, command, reason: planned.reason };
   return { ok: false, command, reason: "human_broadcast_not_invoked" };
 }
