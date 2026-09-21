@@ -69,6 +69,7 @@ describe("Integration Studio", () => {
     const evmOnchain = studioSnippetForPath("evm_onchain_eligibility_gate").code;
     const presentation = studioSnippetForPath("eligibility_presentation").code;
     const crossChain = studioSnippetForPath("cross_chain_protocol_access").code;
+    const testnetKit = studioSnippetForPath("testnet_gate_deployment").code;
     expect(hosted).toContain("AbraxasPartnerKit");
     expect(verify).toContain("verifyCallback");
     expect(webhook).toContain("verifyPartnerWebhookEvent");
@@ -100,6 +101,8 @@ describe("Integration Studio", () => {
     expect(presentation).not.toMatch(/createTransfer|placeOrder|utila\.api/i);
     expect(crossChain).toContain("activate_protocol_access");
     expect(crossChain).not.toMatch(/createTransfer|USDC|utila\.api/i);
+    expect(testnetKit).toContain("--confirm");
+    expect(testnetKit).not.toMatch(/createTransfer|USDC|broadcast from browser/i);
     const catalog = studioPublicCatalog({ pathId: "wallet_standard_binding" });
     expect(catalog.solana.creates_transactions).toBe(false);
     expect(catalog.solana.funds_movement).toBe(false);
@@ -121,13 +124,15 @@ describe("Integration Studio", () => {
     expect(catalog.eligibility_presentation.utila_integration).toBe(false);
     expect(catalog.cross_chain_protocol_access.funds_movement).toBe(false);
     expect(catalog.cross_chain_protocol_access.presentation_sufficient).toBe(false);
+    expect(catalog.testnet_gate_deployment.browser_deploy).toBe(false);
+    expect(catalog.testnet_gate_deployment.deploys).toBe(false);
     expect(catalog.policy_compatibility.docs).toBe("/docs/policy-compatibility");
     expect(catalog.network_readiness.docs).toBe("/docs/multichain-mainnet-readiness");
     expect(catalog.network_readiness.executes_action).toBe(false);
     expect(catalog.wallet_standard.identity_verification).toBe(false);
     expect(catalog.activation.issues_production_key).toBe(false);
     expect(catalog.activation.create_cta).toBe("Create a sandbox integration");
-    expect(studioPayloadLeaks({ hosted, verify, webhook, solana, venue, wallet, portable, evm, onchain, solanaOnchain, evmOnchain, presentation, crossChain, catalog })).toEqual([]);
+    expect(studioPayloadLeaks({ hosted, verify, webhook, solana, venue, wallet, portable, evm, onchain, solanaOnchain, evmOnchain, presentation, crossChain, testnetKit, catalog })).toEqual([]);
   });
 
   it("serves a public catalog with a safe response shape", async () => {

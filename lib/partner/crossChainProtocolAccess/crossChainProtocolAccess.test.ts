@@ -348,7 +348,7 @@ describe("cross-chain protocol access", () => {
     const catalog = studioPublicCatalog({ pathId: "cross_chain_protocol_access" });
     expect(catalog.cross_chain_protocol_access.funds_movement).toBe(false);
     expect(catalog.cross_chain_protocol_access.presentation_sufficient).toBe(false);
-    expect(STARTER_KIT_VERSION).toBe("1.10.0");
+    expect(STARTER_KIT_VERSION).toBe("1.11.0");
     const validated = validateStarterKitInput({
       pack_id: "age_21_retail",
       path: "cross_chain_protocol_access",

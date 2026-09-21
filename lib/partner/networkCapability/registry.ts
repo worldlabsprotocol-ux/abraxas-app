@@ -66,6 +66,19 @@ export const NETWORK_CAPABILITY_REGISTRY: readonly NetworkCapabilityEntry[] = [
   },
   {
     ...BASE,
+    network_id: "evm_sepolia",
+    ecosystem: "evm",
+    environment: "testnet",
+    status: "configured",
+    supported_actions: ["enable_protocol_access", "enable_member_access", "enable_redemption_access", "activate_protocol_access"],
+    wallet_binding: "optional",
+    display_label: "EVM Sepolia eligibility gate",
+    docs_href: "/docs/testnet-gate-deployment",
+    posture:
+      "Human-operated partner-owned gate on published Sepolia chain ID 11155111. Not Mainnet, not Arc, not Circle settlement, and not a live executor.",
+  },
+  {
+    ...BASE,
     network_id: "evm_sandbox",
     ecosystem: "evm",
     environment: "sandbox",

@@ -27,6 +27,7 @@ import {
   INTEGRATION_STUDIO_EVM_ONCHAIN_NOTICE,
   INTEGRATION_STUDIO_ELIGIBILITY_PRESENTATION_NOTICE,
   INTEGRATION_STUDIO_CROSS_CHAIN_PROTOCOL_NOTICE,
+  INTEGRATION_STUDIO_TESTNET_GATE_NOTICE,
   INTEGRATION_STUDIO_WEBHOOK_NOTICE,
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio/contract";
@@ -228,6 +229,17 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
       calls_rpc: false,
       deploys: false,
       notice: INTEGRATION_STUDIO_CROSS_CHAIN_PROTOCOL_NOTICE,
+    },
+    testnet_gate_deployment: {
+      docs: "/docs/testnet-gate-deployment",
+      title: "Human-operated testnet gate kit",
+      funds_movement: false,
+      creates_transactions: false,
+      calls_rpc: false,
+      deploys: false,
+      browser_deploy: false,
+      notice: INTEGRATION_STUDIO_TESTNET_GATE_NOTICE,
+      states: ["not_planned", "ready_to_plan", "deployment_pending_verification", "verified_sandbox"],
     },
     policy_compatibility: {
       docs: "/docs/policy-compatibility",

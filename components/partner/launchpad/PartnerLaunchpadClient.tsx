@@ -30,6 +30,7 @@ import { PartnerFlowRequestPanel } from "@/components/partner/launchpad/PartnerF
 import { PolicyVersionPlannerPanel } from "@/components/partner/launchpad/PolicyVersionPlannerPanel";
 import { NetworkReadinessPanel } from "@/components/partner/launchpad/NetworkReadinessPanel";
 import { OnchainGateDeploymentPanel } from "@/components/partner/launchpad/OnchainGateDeploymentPanel";
+import { TestnetGateDeploymentKitCard } from "@/components/partner/launchpad/TestnetGateDeploymentKitCard";
 import { GO_LIVE_REVIEW_ENTRY } from "@/lib/partner/launchpad/goLiveReadiness/contract";
 import { PolicyProposalForm } from "@/components/partner/policyProposal/PolicyProposalForm";
 import { POLICY_PROPOSAL_NOTICE } from "@/lib/partner/policyProposal/contract";
@@ -664,6 +665,7 @@ export function PartnerLaunchpadClient({
             onContinue={() => setStep("test")}
           />
           <OnchainGateDeploymentPanel applicationId={activeApp.id} />
+          <TestnetGateDeploymentKitCard planned />
         </>
       )}
 

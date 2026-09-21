@@ -15,7 +15,7 @@
     "sui:setup-devnet": "bash scripts/sui/setup-sponsor-devnet.sh",
     "cielo:e2e": "DOTENV_CONFIG_PATH=.env.local npx ts-node -r dotenv/config scripts/cielo-e2e-check.ts",
     "cielo:e2e:remote": "BASE_URL=https://abraxas-app.vercel.app npx ts-node scripts/cielo-e2e-check.ts",
-    "test": "vitest run",
+    "abraxas-gate": "npx tsx scripts/abraxas-gate.ts",
     "test:watch": "vitest",
     "biometric:verify-migrations": "npx tsx scripts/verify-biometric-migrations.ts",
     "biometric:health": "npx tsx scripts/verify-biometric-health.ts",
