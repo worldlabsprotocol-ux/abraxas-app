@@ -127,7 +127,7 @@ export function evaluateConformance(input: ConformanceInput): ConformanceResult 
   if (envelope.domain_name && envelope.domain_name !== EIP712_DOMAIN_NAME) reasons.push("domain_mismatch");
   if (envelope.domain_version && envelope.domain_version !== EIP712_DOMAIN_VERSION) reasons.push("domain_mismatch");
 
-  const unique = [...new Set(reasons)];
+  const unique = reasons.filter((reason, index) => reasons.indexOf(reason) === index);
   return {
     ok: unique.length === 0,
     reasons: unique,
