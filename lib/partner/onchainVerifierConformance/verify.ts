@@ -13,7 +13,7 @@ import {
   solanaObservationHasV2InstitutionalCapability,
   solanaObservationIsV1Only,
 } from "@/lib/partner/onchainGateDeployments/adapters";
-import { institutionalClassFromFlag, institutionalLabel } from "@/lib/partner/onchainGateDeployments/institutional";
+import { institutionalClassFromFlag, institutionalLabel } from "@/lib/partner/onchainGateDeployments/institutionalClass";
 import type { OnchainVerifierConformanceReason } from "./contract";
 import { ONCHAIN_VERIFIER_CONFORMANCE_FORBIDDEN_KEYS } from "./contract";
 import { CONFORMANCE_VECTOR_PACKAGE, evmConformanceDigest, solanaConformanceMessage } from "./vectors";
@@ -28,6 +28,7 @@ export interface ConformanceInput {
   receiptRefetched?: boolean;
   fromBrowser?: boolean;
   institutionalRequired?: boolean;
+  evmObservation?: { requireInstitutional?: boolean };
   solanaObservation?: {
     canonicalMessageLen?: number;
     schemaVersion?: number;
@@ -105,7 +106,7 @@ export function evaluateConformance(input: ConformanceInput): ConformanceResult 
   const envelope = input.raw && typeof input.raw === "object" ? input.raw as Record<string, unknown> : {};
   const observedInstitutional = input.solanaObservation
     ? solanaObservationHasV2InstitutionalCapability(input.solanaObservation as never)
-    : false;
+    : input.evmObservation?.requireInstitutional === true;
   const requireInstitutional = observedInstitutional;
 
   if (requireInstitutional && envelope.institutional) {

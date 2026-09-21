@@ -1,4 +1,4 @@
-import { INSTITUTIONAL_V2_LABEL } from "@/lib/partner/onchainGateDeployments/institutional";
+import { INSTITUTIONAL_V2_LABEL } from "@/lib/partner/onchainGateDeployments/institutionalClass";
 import { LOCALNET_SOLANA_PROGRAM_IDS } from "./contract";
 import type { OperatorHandoff, TestnetGateKitEnvelope } from "./types";
 

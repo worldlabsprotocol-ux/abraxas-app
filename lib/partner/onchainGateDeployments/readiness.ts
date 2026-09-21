@@ -1,5 +1,5 @@
 import { ONCHAIN_GATE_NOT_DEPLOYER, ONCHAIN_GATE_SAFE_STATES } from "./contract";
-import { institutionalClassFromFlag, institutionalLabel } from "./institutional";
+import { institutionalClassFromFlag, institutionalLabel } from "./institutionalClass";
 import { projectOnchainGatePublic, safeStateFromRecord } from "./project";
 import type { OnchainGateDeploymentRecord } from "./types";
 

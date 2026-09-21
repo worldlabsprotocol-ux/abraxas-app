@@ -1,5 +1,5 @@
 import type { OnchainGateSafeState } from "./contract";
-import { institutionalClassFromFlag, institutionalLabel } from "./institutional";
+import { institutionalClassFromFlag, institutionalLabel } from "./institutionalClass";
 import type { OnchainGateDeploymentRecord, OnchainGatePublicView } from "./types";
 
 export function safeStateFromRecord(record: OnchainGateDeploymentRecord | null): OnchainGateSafeState {

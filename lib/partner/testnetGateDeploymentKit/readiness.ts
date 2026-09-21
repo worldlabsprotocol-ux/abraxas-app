@@ -1,4 +1,4 @@
-import { institutionalClassFromFlag, institutionalLabel } from "@/lib/partner/onchainGateDeployments/institutional";
+import { institutionalClassFromFlag, institutionalLabel } from "@/lib/partner/onchainGateDeployments/institutionalClass";
 import { getNetworkCapability } from "@/lib/partner/networkCapability/registry";
 import { NETWORK_RECEIPT_REQUIREMENT, NETWORK_REPLAY_REQUIREMENT } from "@/lib/partner/networkCapability/types";
 import type { OnchainGateDeploymentRecord } from "@/lib/partner/onchainGateDeployments/types";
