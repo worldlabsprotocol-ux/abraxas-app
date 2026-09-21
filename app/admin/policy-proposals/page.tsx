@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { adminFetch } from "@/lib/admin/adminFetch";
 import { POLICY_PROPOSAL_NOTICE, POLICY_PROPOSAL_OPERATOR_STATUSES, POLICY_PROPOSAL_STATE_LABELS } from "@/lib/partner/policyProposal/contract";
+import { PolicyReleaseCandidateBoard } from "@/components/admin/PolicyReleaseCandidateBoard";
 
 const FONT = "'Inter',system-ui,sans-serif";
 const ACCENT = "#10B981";
@@ -19,6 +20,13 @@ interface Item {
   status_label: string;
   remediation: string | null;
   planning: { proposed_pack_shape?: string; live_policy?: boolean } | null;
+  payload: {
+    action: string;
+    result_needed: string;
+    partner_receives: string[];
+    stays_private: string[];
+    environment: string;
+  };
 }
 
 export default function AdminPolicyProposalsPage() {
@@ -65,6 +73,8 @@ export default function AdminPolicyProposalsPage() {
         <p style={{ fontFamily: FONT, fontSize: "0.78rem" }}>
           <Link href="/docs/policy-proposals" style={{ color: ACCENT }}>Proposal docs</Link>
           {" · "}
+          <Link href="/docs/policy-release-candidates" style={{ color: ACCENT }}>Release candidates</Link>
+          {" · "}
           <Link href="/admin/production-review" style={{ color: ACCENT }}>Production review</Link>
         </p>
         {error && <p role="alert" style={{ fontFamily: FONT, color: "#f87171" }}>{error}</p>}
@@ -91,6 +101,24 @@ export default function AdminPolicyProposalsPage() {
                   </button>
                 ))}
               </div>
+              <PolicyReleaseCandidateBoard
+                proposalId={item.id}
+                proposalRef={item.proposal_ref}
+                canCreate={item.status === "accepted_for_policy_work"}
+                createBody={{
+                  action: item.payload.action,
+                  result_category: item.payload.result_needed,
+                  shared_result: item.payload.partner_receives,
+                  withheld: item.payload.stays_private,
+                  environment: item.payload.environment,
+                  method_category: "reuse_existing_proof",
+                  minimum_assurance: "L1",
+                  disclosure_profile: "result_only",
+                  compatibility_impact: "policy_review",
+                  action_scopes: ["sandbox:protocol_access"],
+                  policy_label: `reviewed_gate_${item.payload.result_needed}`,
+                }}
+              />
             </article>
           ))}
         </div>

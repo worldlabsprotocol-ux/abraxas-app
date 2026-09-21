@@ -47,6 +47,7 @@ export const LAUNCHPAD_ACTIVITY_METADATA_ALLOWED_KEYS = [
   "probe",
   "proposal_ref",
   "lifecycle",
+  "candidate_ref",
 ] as const;
 
 const FORBIDDEN_ACTIVITY_KEYS = [

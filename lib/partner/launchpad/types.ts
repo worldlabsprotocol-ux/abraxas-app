@@ -35,7 +35,9 @@ export type LaunchpadActivityEventType =
   | "settlement_intent_submitted"
   | "partner_flow_request_configured"
   | "policy_proposal_submitted"
-  | "policy_proposal_reviewed";
+  | "policy_proposal_reviewed"
+  | "policy_release_candidate_created"
+  | "policy_release_candidate_reviewed";
 
 export type ProductionAccessRequestStatus = "pending" | "approved" | "rejected";
 
