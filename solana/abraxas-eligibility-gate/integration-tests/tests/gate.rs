@@ -376,7 +376,7 @@ async fn expired_authorization_fails() {
     )
     .await
     .unwrap_err();
-    assert_eq!(custom_code(&err), Some(6000 + 12));
+    assert_eq!(custom_code(&err), Some(6000 + 13));
 }
 
 #[tokio::test]
@@ -646,7 +646,7 @@ async fn authority_only_add_retire_revoke_and_replay_across_rotation() {
     )
     .await
     .unwrap_err();
-    assert_eq!(custom_code(&dup), Some(6000 + 15));
+    assert_eq!(custom_code(&dup), Some(6000 + 16));
 
     let message = canonical_message(fields);
     let payer = ctx.payer.pubkey();

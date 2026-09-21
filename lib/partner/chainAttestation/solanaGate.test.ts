@@ -30,7 +30,7 @@ describe("solana onchain eligibility gate SDK", () => {
     expect(auth.toBase58()).not.toBe(config.toBase58());
     expect(consumer.toBase58().length).toBeGreaterThan(30);
     expect(mapSolanaGateError(6003)).toBe("unknown_signer");
-    expect(mapSolanaGateError(6013)).toBe("replayed");
+    expect(mapSolanaGateError(6014)).toBe("replayed");
     expect(mapSolanaGateError(9)).toBe("invalid");
     expect(LOCAL_SOLANA_GATE_PROGRAM_ID).toMatch(/^[1-9A-HJ-NP-Za-km-z]+$/);
     expect(LOCAL_SOLANA_CONSUMER_PROGRAM_ID).toMatch(/^[1-9A-HJ-NP-Za-km-z]+$/);
