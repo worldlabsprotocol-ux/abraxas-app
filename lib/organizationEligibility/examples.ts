@@ -42,7 +42,7 @@ export async function requestInstitutionalEligibilityGate(nonce) {
   return { ...issued, presentation_sufficient: false, utila_integration: false };
 }
 
-export async function issueHashedOrganizationBinding(receiptId, organizationBindingHash) {
+export async function issueInstitutionalChainAttestation(receiptId) {
   const res = await fetch(process.env.ABRAXAS_BASE_URL + "/api/v1/chain-attestations", {
     method: "POST",
     headers: {
@@ -55,7 +55,6 @@ export async function issueHashedOrganizationBinding(receiptId, organizationBind
       action_scope: "sandbox:protocol_access",
       network_id: "evm_sandbox",
       deployment_ref: process.env.ABRAXAS_GATE_DEPLOYMENT_REF,
-      organization_binding_hash: organizationBindingHash,
     }),
   });
   return res.json();

@@ -131,6 +131,8 @@ describe("Integration Studio", () => {
     expect(catalog.testnet_gate_deployment.deploys).toBe(false);
     expect(catalog.institutional_eligibility_gate.utila_integration).toBe(false);
     expect(catalog.institutional_eligibility_gate.wallet_control_qualifies).toBe(false);
+    expect(catalog.institutional_eligibility_gate.operator_reviewed_policy).toBe(false);
+    expect(catalog.institutional_eligibility_gate.notice).toContain("Institutional policy review required");
     expect(catalog.policy_compatibility.docs).toBe("/docs/policy-compatibility");
     expect(catalog.network_readiness.docs).toBe("/docs/multichain-mainnet-readiness");
     expect(catalog.network_readiness.executes_action).toBe(false);

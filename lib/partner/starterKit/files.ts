@@ -573,7 +573,7 @@ Abraxas does not deploy this program to devnet or Mainnet. Local program IDs are
 Flow:
 1. Holder completes private verification.
 2. Your server verifies the current public receipt.
-3. Abraxas signs a 372-byte ABRAXAS_CHAIN_ELIGIBILITY_V1 message with a dedicated Ed25519 attestation key.
+3. Abraxas signs a 468-byte ABRAXAS_CHAIN_ELIGIBILITY_V2 message with a dedicated Ed25519 attestation key.
 4. Your transaction places the Ed25519 native verify instruction immediately before \`authorize\`.
 5. Your program CPI-consumes the authorization PDA once.
 

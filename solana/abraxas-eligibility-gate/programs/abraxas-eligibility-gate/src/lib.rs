@@ -78,6 +78,14 @@ pub mod abraxas_eligibility_gate {
         if config.require_subject {
             require!(!is_zero32(&fields.subject_hash), GateError::SubjectRequired);
         }
+        if config.require_institutional {
+            require!(
+                !is_zero32(&fields.organization_commitment)
+                    && !is_zero32(&fields.actor_commitment)
+                    && !is_zero32(&fields.institutional_result_category),
+                GateError::InstitutionalRequired
+            );
+        }
 
         let now = Clock::get()?.unix_timestamp;
         require!(fields.expires_at as i64 > now, GateError::Expired);
@@ -89,6 +97,8 @@ pub mod abraxas_eligibility_gate {
         auth.policy_hash = fields.policy_hash;
         auth.action_hash = fields.action_hash;
         auth.attestation_ref = fields.attestation_id;
+        auth.organization_commitment = fields.organization_commitment;
+        auth.actor_commitment = fields.actor_commitment;
         auth.expires_at = fields.expires_at as i64;
         auth.consumed = false;
         auth.revoked = false;
@@ -139,6 +149,7 @@ impl GateConfig {
         self.action_hash = params.action_hash;
         self.environment = params.environment;
         self.require_subject = params.require_subject;
+        self.require_institutional = params.require_institutional;
         Ok(())
     }
 
@@ -205,6 +216,7 @@ pub struct ConfigParams {
     pub environment: [u8; 32],
     pub signer_key_id: [u8; 32],
     pub require_subject: bool,
+    pub require_institutional: bool,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, InitSpace, Default)]
@@ -225,6 +237,7 @@ pub struct GateConfig {
     pub action_hash: [u8; 32],
     pub environment: [u8; 32],
     pub require_subject: bool,
+    pub require_institutional: bool,
     pub bump: u8,
     pub signers: [SignerSlot; MAX_SIGNERS],
 }
@@ -237,6 +250,8 @@ pub struct Authorization {
     pub policy_hash: [u8; 32],
     pub action_hash: [u8; 32],
     pub attestation_ref: [u8; 32],
+    pub organization_commitment: [u8; 32],
+    pub actor_commitment: [u8; 32],
     pub expires_at: i64,
     pub consumed: bool,
     pub revoked: bool,
@@ -334,6 +349,8 @@ pub enum GateError {
     SignerKeyMismatch,
     #[msg("subject_required")]
     SubjectRequired,
+    #[msg("institutional_required")]
+    InstitutionalRequired,
     #[msg("expired")]
     Expired,
     #[msg("replayed")]

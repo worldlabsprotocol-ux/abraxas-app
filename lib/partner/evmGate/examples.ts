@@ -22,7 +22,6 @@ export async function issueEvmOnchainGate(receiptId: string) {
       action_scope: "sandbox:protocol_access",
       network_id: "evm_sandbox",
       deployment_ref: process.env.ABRAXAS_GATE_DEPLOYMENT_REF,
-      organization_binding_hash: process.env.ABRAXAS_ORGANIZATION_BINDING_HASH,
     }),
   });
   const issued = await res.json();

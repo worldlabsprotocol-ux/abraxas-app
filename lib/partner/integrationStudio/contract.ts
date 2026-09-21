@@ -100,7 +100,7 @@ export const INTEGRATION_STUDIO_CROSS_CHAIN_PROTOCOL_NOTICE =
 export const INTEGRATION_STUDIO_TESTNET_GATE_NOTICE =
   "Human-operated CLI to plan, confirm-deploy, verify, and register a partner-owned gate on Solana devnet or approved EVM Sepolia. No browser deploy button. Not Mainnet, Arc, USDC, or Circle.";
 export const INTEGRATION_STUDIO_INSTITUTIONAL_ELIGIBILITY_NOTICE =
-  "Institutional eligibility gate. An authorized representative consents for one partner, purpose, and action. Abraxas returns a narrow audience-bound organization or authorized-signer result. Partners apply their own wallet governance, AML/KYT, quorum, and transaction rules. Not document collection, a company database, sanctions screening, custody, or a live Utila integration.";
+  "Institutional eligibility gate. An authorized representative consents for one partner, purpose, and action. Abraxas returns a narrow audience-bound organization or authorized-signer result, then a fresh expiry-bound chain attestation for the partner-owned EVM or Solana gate. Institutional policy review required. Partners apply their own wallet governance, AML/KYT, quorum, and transaction rules. Not document collection, a company database, sanctions screening, custody, a live Utila integration, or Mainnet availability.";
 
 export function isIntegrationStudioPathId(value: string): value is IntegrationStudioPathId {
   return (INTEGRATION_STUDIO_PATHS as readonly string[]).includes(value);

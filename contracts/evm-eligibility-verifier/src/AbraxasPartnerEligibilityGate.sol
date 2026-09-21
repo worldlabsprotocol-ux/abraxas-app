@@ -10,12 +10,12 @@ contract AbraxasPartnerEligibilityGate {
         "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract,bytes32 partnerHash)"
     );
     bytes32 public constant ATTESTATION_TYPEHASH = keccak256(
-        "ChainEligibilityAttestation(uint256 schemaVersion,bytes32 networkId,bytes32 partnerHash,bytes32 policyHash,bytes32 actionHash,bytes32 subjectHash,uint64 issuedAt,uint64 expiresAt,bytes32 nonce,bytes32 attestationId,bytes32 environment,bytes32 signerKeyId)"
+        "ChainEligibilityAttestation(uint256 schemaVersion,bytes32 networkId,bytes32 partnerHash,bytes32 policyHash,bytes32 actionHash,bytes32 subjectHash,uint64 issuedAt,uint64 expiresAt,bytes32 nonce,bytes32 attestationId,bytes32 environment,bytes32 signerKeyId,bytes32 organizationCommitment,bytes32 actorCommitment,bytes32 institutionalResultCategory)"
     );
 
     string public constant EIP712_NAME = "AbraxasEligibilityVerifier";
-    string public constant EIP712_VERSION = "1";
-    uint256 public constant SCHEMA_VERSION = 1;
+    string public constant EIP712_VERSION = "2";
+    uint256 public constant SCHEMA_VERSION = 2;
     uint256 public constant MAX_SIGNERS = 4;
     uint8 public constant SIGNER_EMPTY = 0;
     uint8 public constant SIGNER_ACTIVE = 1;
@@ -29,6 +29,7 @@ contract AbraxasPartnerEligibilityGate {
     bytes32 public immutable expectedActionHash;
     bytes32 public immutable expectedEnvironment;
     bool public immutable requireSubjectBinding;
+    bool public immutable requireInstitutionalBinding;
 
     struct TrustedSigner {
         bytes32 keyId;
@@ -59,6 +60,7 @@ contract AbraxasPartnerEligibilityGate {
     error Replayed();
     error BindingMismatch();
     error SubjectRequired();
+    error InstitutionalRequired();
     error MalformedSignature();
     error ExecutionRejected();
 
@@ -75,6 +77,9 @@ contract AbraxasPartnerEligibilityGate {
         bytes32 attestationId;
         bytes32 environment;
         bytes32 signerKeyId;
+        bytes32 organizationCommitment;
+        bytes32 actorCommitment;
+        bytes32 institutionalResultCategory;
     }
 
     struct GateConfig {
@@ -86,6 +91,7 @@ contract AbraxasPartnerEligibilityGate {
         bytes32 actionHash;
         bytes32 environment;
         bool requireSubjectBinding;
+        bool requireInstitutionalBinding;
     }
 
     modifier onlyOwner() {
@@ -107,6 +113,7 @@ contract AbraxasPartnerEligibilityGate {
         expectedActionHash = config.actionHash;
         expectedEnvironment = config.environment;
         requireSubjectBinding = config.requireSubjectBinding;
+        requireInstitutionalBinding = config.requireInstitutionalBinding;
         trustedSigners[0] = TrustedSigner({
             keyId: config.trustedSignerKeyId,
             account: config.trustedSigner,
@@ -174,7 +181,10 @@ contract AbraxasPartnerEligibilityGate {
                 att.nonce,
                 att.attestationId,
                 att.environment,
-                att.signerKeyId
+                att.signerKeyId,
+                att.organizationCommitment,
+                att.actorCommitment,
+                att.institutionalResultCategory
             )
         );
     }
@@ -191,6 +201,13 @@ contract AbraxasPartnerEligibilityGate {
         if (att.actionHash != expectedActionHash) revert BindingMismatch();
         if (att.environment != expectedEnvironment) revert BindingMismatch();
         if (requireSubjectBinding && att.subjectHash == bytes32(0)) revert SubjectRequired();
+        if (requireInstitutionalBinding) {
+            if (
+                att.organizationCommitment == bytes32(0)
+                    || att.actorCommitment == bytes32(0)
+                    || att.institutionalResultCategory == bytes32(0)
+            ) revert InstitutionalRequired();
+        }
         if (att.expiresAt <= block.timestamp) revert Expired();
         if (consumedNonces[att.nonce]) revert Replayed();
 

@@ -41,7 +41,11 @@ pub mod abraxas_protocol_access {
         Ok(())
     }
 
-    pub fn activate_protocol_access(ctx: Context<ActivateProtocolAccess>, subject_hash: [u8; 32]) -> Result<()> {
+    pub fn activate_protocol_access(
+        ctx: Context<ActivateProtocolAccess>,
+        subject_hash: [u8; 32],
+        organization_commitment: [u8; 32],
+    ) -> Result<()> {
         require_keys_eq!(ctx.accounts.partner_program.key(), crate::ID, ProtocolAccessError::WrongProgram);
         let protocol = &ctx.accounts.protocol;
         let config = &ctx.accounts.config;
@@ -53,6 +57,10 @@ pub mod abraxas_protocol_access {
         require!(
             ctx.accounts.authorization.action_hash == protocol.expected_action_hash,
             ProtocolAccessError::ActionMismatch
+        );
+        require!(
+            ctx.accounts.authorization.organization_commitment == organization_commitment,
+            ProtocolAccessError::OrganizationMismatch
         );
         if config.require_subject {
             require!(!subject_hash.iter().all(|b| *b == 0), ProtocolAccessError::SubjectRequired);
@@ -78,14 +86,23 @@ pub mod abraxas_protocol_access {
         entitlement.protocol = protocol.key();
         entitlement.gate_config = config.key();
         entitlement.subject_hash = subject_hash;
+        entitlement.organization_commitment = organization_commitment;
         entitlement.attestation_ref = ctx.accounts.authorization.attestation_ref;
         entitlement.valid_until = until;
         entitlement.bump = ctx.bumps.entitlement;
         Ok(())
     }
 
-    pub fn assert_protocol_access(ctx: Context<AssertProtocolAccess>, subject_hash: [u8; 32]) -> Result<()> {
+    pub fn assert_protocol_access(
+        ctx: Context<AssertProtocolAccess>,
+        subject_hash: [u8; 32],
+        organization_commitment: [u8; 32],
+    ) -> Result<()> {
         require!(ctx.accounts.entitlement.subject_hash == subject_hash, ProtocolAccessError::SubjectRequired);
+        require!(
+            ctx.accounts.entitlement.organization_commitment == organization_commitment,
+            ProtocolAccessError::OrganizationMismatch
+        );
         let now = Clock::get()?.unix_timestamp;
         require!(ctx.accounts.entitlement.valid_until > now, ProtocolAccessError::Expired);
         Ok(())
@@ -109,6 +126,7 @@ pub struct ProtocolEntitlement {
     pub protocol: Pubkey,
     pub gate_config: Pubkey,
     pub subject_hash: [u8; 32],
+    pub organization_commitment: [u8; 32],
     pub attestation_ref: [u8; 32],
     pub valid_until: i64,
     pub bump: u8,
@@ -131,7 +149,7 @@ pub struct InitializeProtocolAccess<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(subject_hash: [u8; 32])]
+#[instruction(subject_hash: [u8; 32], organization_commitment: [u8; 32])]
 pub struct ActivateProtocolAccess<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -153,7 +171,7 @@ pub struct ActivateProtocolAccess<'info> {
         init_if_needed,
         payer = payer,
         space = 8 + ProtocolEntitlement::INIT_SPACE,
-        seeds = [ENTITLEMENT_SEED, protocol.key().as_ref(), subject_hash.as_ref()],
+        seeds = [ENTITLEMENT_SEED, protocol.key().as_ref(), subject_hash.as_ref(), organization_commitment.as_ref()],
         bump
     )]
     pub entitlement: Account<'info, ProtocolEntitlement>,
@@ -161,11 +179,11 @@ pub struct ActivateProtocolAccess<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(subject_hash: [u8; 32])]
+#[instruction(subject_hash: [u8; 32], organization_commitment: [u8; 32])]
 pub struct AssertProtocolAccess<'info> {
     pub protocol: Account<'info, ProtocolAccessConfig>,
     #[account(
-        seeds = [ENTITLEMENT_SEED, protocol.key().as_ref(), subject_hash.as_ref()],
+        seeds = [ENTITLEMENT_SEED, protocol.key().as_ref(), subject_hash.as_ref(), organization_commitment.as_ref()],
         bump = entitlement.bump
     )]
     pub entitlement: Account<'info, ProtocolEntitlement>,
@@ -187,6 +205,8 @@ pub enum ProtocolAccessError {
     EnvironmentMismatch,
     #[msg("subject_required")]
     SubjectRequired,
+    #[msg("organization_mismatch")]
+    OrganizationMismatch,
     #[msg("expired")]
     Expired,
     #[msg("stale_attestation")]

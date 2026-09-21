@@ -29,7 +29,7 @@ contract AbraxasEligibilityVerifierTest {
     }
 
     function _att() internal view returns (AbraxasEligibilityVerifier.ChainEligibilityAttestation memory att) {
-        att.schemaVersion = 1;
+        att.schemaVersion = 2;
         att.networkId = keccak256("evm_sandbox");
         att.partnerHash = partnerHash;
         att.policyHash = keccak256("policy");

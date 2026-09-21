@@ -1,7 +1,8 @@
 use abraxas_eligibility_gate::canonical::{
     prefix_keccak, AUTH_SEED, CANONICAL_MESSAGE_LEN, CONFIG_SEED, CONSUMER_AUTH_SEED, OFF_ACTION,
     OFF_ATTESTATION_ID, OFF_ENVIRONMENT, OFF_EXPIRES, OFF_ISSUED, OFF_NETWORK, OFF_NONCE, OFF_PARTNER,
-    OFF_POLICY, OFF_PREFIX, OFF_PREFIX_HASH, OFF_SCHEMA, OFF_SIGNER_KEY_ID, OFF_SUBJECT, PREFIX,
+    OFF_POLICY, OFF_PREFIX, OFF_PREFIX_HASH, OFF_SCHEMA, OFF_SIGNER_KEY_ID, OFF_SUBJECT, OFF_ORG,
+    OFF_ACTOR, OFF_CATEGORY, PREFIX,
 };
 use abraxas_eligibility_gate::{ConfigParams, ID as GATE_ID};
 use abraxas_protocol_access::{ENTITLEMENT_SEED, PROTOCOL_CONFIG_SEED, ID as PROTOCOL_ID};
@@ -30,7 +31,7 @@ fn canonical_message(fields: MessageFields) -> Vec<u8> {
     let mut message = vec![0u8; CANONICAL_MESSAGE_LEN];
     message[OFF_PREFIX..OFF_PREFIX_HASH].copy_from_slice(PREFIX);
     message[OFF_PREFIX_HASH..OFF_SCHEMA].copy_from_slice(&prefix_keccak());
-    write_u64_be(&mut message, OFF_SCHEMA, 1);
+    write_u64_be(&mut message, OFF_SCHEMA, 2);
     message[OFF_NETWORK..OFF_PARTNER].copy_from_slice(&fields.network_id);
     message[OFF_PARTNER..OFF_POLICY].copy_from_slice(&fields.partner_hash);
     message[OFF_POLICY..OFF_ACTION].copy_from_slice(&fields.policy_hash);
@@ -41,7 +42,10 @@ fn canonical_message(fields: MessageFields) -> Vec<u8> {
     message[OFF_NONCE..OFF_ATTESTATION_ID].copy_from_slice(&fields.nonce);
     message[OFF_ATTESTATION_ID..OFF_ENVIRONMENT].copy_from_slice(&fields.attestation_id);
     message[OFF_ENVIRONMENT..OFF_SIGNER_KEY_ID].copy_from_slice(&fields.environment);
-    message[OFF_SIGNER_KEY_ID..CANONICAL_MESSAGE_LEN].copy_from_slice(&fields.signer_key_id);
+    message[OFF_SIGNER_KEY_ID..OFF_ORG].copy_from_slice(&fields.signer_key_id);
+    message[OFF_ORG..OFF_ACTOR].copy_from_slice(&fields.organization_commitment);
+    message[OFF_ACTOR..OFF_CATEGORY].copy_from_slice(&fields.actor_commitment);
+    message[OFF_CATEGORY..CANONICAL_MESSAGE_LEN].copy_from_slice(&fields.institutional_result_category);
     message
 }
 
@@ -58,6 +62,9 @@ struct MessageFields {
     attestation_id: [u8; 32],
     environment: [u8; 32],
     signer_key_id: [u8; 32],
+    organization_commitment: [u8; 32],
+    actor_commitment: [u8; 32],
+    institutional_result_category: [u8; 32],
 }
 
 impl Default for MessageFields {
@@ -74,6 +81,9 @@ impl Default for MessageFields {
             attestation_id: h32(27),
             environment: h32(28),
             signer_key_id: h32(29),
+            organization_commitment: [0u8; 32],
+            actor_commitment: [0u8; 32],
+            institutional_result_category: [0u8; 32],
         }
     }
 }
@@ -118,8 +128,8 @@ fn protocol_pda(config: &Pubkey) -> (Pubkey, u8) {
     Pubkey::find_program_address(&[PROTOCOL_CONFIG_SEED, config.as_ref()], &PROTOCOL_ID)
 }
 
-fn entitlement_pda(protocol: &Pubkey, subject: &[u8; 32]) -> (Pubkey, u8) {
-    Pubkey::find_program_address(&[ENTITLEMENT_SEED, protocol.as_ref(), subject], &PROTOCOL_ID)
+fn entitlement_pda(protocol: &Pubkey, subject: &[u8; 32], org: &[u8; 32]) -> (Pubkey, u8) {
+    Pubkey::find_program_address(&[ENTITLEMENT_SEED, protocol.as_ref(), subject, org], &PROTOCOL_ID)
 }
 
 fn default_params(trusted_signer: [u8; 32], fields: MessageFields) -> ConfigParams {
@@ -133,6 +143,7 @@ fn default_params(trusted_signer: [u8; 32], fields: MessageFields) -> ConfigPara
         environment: fields.environment,
         signer_key_id: fields.signer_key_id,
         require_subject: true,
+        require_institutional: false,
     }
 }
 
@@ -228,7 +239,7 @@ fn authorize_ix(payer: Pubkey, config: Pubkey, attestation_id: [u8; 32]) -> Inst
 fn activate_ix(payer: Pubkey, config: Pubkey, protocol: Pubkey, fields: MessageFields) -> Instruction {
     let (authorization, _) = auth_pda(&config, &fields.attestation_id);
     let (consumer_authority, _) = consumer_auth_pda();
-    let (entitlement, _) = entitlement_pda(&protocol, &fields.subject_hash);
+    let (entitlement, _) = entitlement_pda(&protocol, &fields.subject_hash, &fields.organization_commitment);
     Instruction {
         program_id: PROTOCOL_ID,
         accounts: abraxas_protocol_access::accounts::ActivateProtocolAccess {
@@ -245,6 +256,7 @@ fn activate_ix(payer: Pubkey, config: Pubkey, protocol: Pubkey, fields: MessageF
         .to_account_metas(None),
         data: abraxas_protocol_access::instruction::ActivateProtocolAccess {
             subject_hash: fields.subject_hash,
+            organization_commitment: fields.organization_commitment,
         }
         .data(),
     }
@@ -334,15 +346,15 @@ async fn presentation_shaped_message_then_access_once() {
         .unwrap();
     send(
         &mut ctx,
-        vec![assert_ix(protocol, fields.subject_hash)],
+        vec![assert_ix(protocol, fields.subject_hash, fields.organization_commitment)],
         &[],
     )
     .await
     .unwrap();
 }
 
-fn assert_ix(protocol: Pubkey, subject_hash: [u8; 32]) -> Instruction {
-    let (entitlement, _) = entitlement_pda(&protocol, &subject_hash);
+fn assert_ix(protocol: Pubkey, subject_hash: [u8; 32], organization_commitment: [u8; 32]) -> Instruction {
+    let (entitlement, _) = entitlement_pda(&protocol, &subject_hash, &organization_commitment);
     Instruction {
         program_id: PROTOCOL_ID,
         accounts: abraxas_protocol_access::accounts::AssertProtocolAccess {
@@ -350,7 +362,11 @@ fn assert_ix(protocol: Pubkey, subject_hash: [u8; 32]) -> Instruction {
             entitlement,
         }
         .to_account_metas(None),
-        data: abraxas_protocol_access::instruction::AssertProtocolAccess { subject_hash }.data(),
+        data: abraxas_protocol_access::instruction::AssertProtocolAccess {
+            subject_hash,
+            organization_commitment,
+        }
+        .data(),
     }
 }
 
@@ -524,12 +540,12 @@ async fn access_inactive_after_valid_until() {
     send(&mut ctx, vec![activate_ix(payer, config, protocol, fields)], &[])
         .await
         .unwrap();
-    send(&mut ctx, vec![assert_ix(protocol, fields.subject_hash)], &[])
+    send(&mut ctx, vec![assert_ix(protocol, fields.subject_hash, fields.organization_commitment)], &[])
         .await
         .unwrap();
     set_clock(&mut ctx, 2_000_000_000).await;
     refresh(&mut ctx).await;
-    let err = send(&mut ctx, vec![assert_ix(protocol, fields.subject_hash)], &[])
+    let err = send(&mut ctx, vec![assert_ix(protocol, fields.subject_hash, fields.organization_commitment)], &[])
         .await
         .unwrap_err();
     assert!(custom_code(&err).is_some());
@@ -560,7 +576,7 @@ async fn renewal_extends_valid_until() {
         .unwrap();
     set_clock(&mut ctx, 2_500_000_000).await;
     refresh(&mut ctx).await;
-    send(&mut ctx, vec![assert_ix(protocol, second.subject_hash)], &[])
+    send(&mut ctx, vec![assert_ix(protocol, second.subject_hash, second.organization_commitment)], &[])
         .await
         .unwrap();
 }
@@ -591,7 +607,7 @@ async fn stale_attestation_does_not_shorten() {
     assert!(custom_code(&err).is_some());
     set_clock(&mut ctx, 2_500_000_000).await;
     refresh(&mut ctx).await;
-    send(&mut ctx, vec![assert_ix(protocol, newer.subject_hash)], &[])
+    send(&mut ctx, vec![assert_ix(protocol, newer.subject_hash, newer.organization_commitment)], &[])
         .await
         .unwrap();
 }
@@ -611,7 +627,7 @@ async fn direct_expiry_bypass_has_no_instruction() {
     send(&mut ctx, vec![activate_ix(payer, config, protocol, fields)], &[])
         .await
         .unwrap();
-    let (entitlement, _) = entitlement_pda(&protocol, &fields.subject_hash);
+    let (entitlement, _) = entitlement_pda(&protocol, &fields.subject_hash, &fields.organization_commitment);
     let ix = Instruction {
         program_id: PROTOCOL_ID,
         accounts: abraxas_protocol_access::accounts::AssertProtocolAccess {
@@ -625,7 +641,7 @@ async fn direct_expiry_bypass_has_no_instruction() {
     assert!(custom_code(&err).is_some() || matches!(err, BanksClientError::TransactionError(_)));
     set_clock(&mut ctx, 2_000_000_000).await;
     refresh(&mut ctx).await;
-    let err = send(&mut ctx, vec![assert_ix(protocol, fields.subject_hash)], &[])
+    let err = send(&mut ctx, vec![assert_ix(protocol, fields.subject_hash, fields.organization_commitment)], &[])
         .await
         .unwrap_err();
     assert!(custom_code(&err).is_some());

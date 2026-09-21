@@ -48,6 +48,9 @@ export function eip712TypedData(domain: Eip712Domain, message: ChainEligibilityA
       attestationId: message.attestationId,
       environment: message.environment,
       signerKeyId: message.signerKeyId,
+      organizationCommitment: message.organizationCommitment,
+      actorCommitment: message.actorCommitment,
+      institutionalResultCategory: message.institutionalResultCategory,
     },
   } as const;
 }

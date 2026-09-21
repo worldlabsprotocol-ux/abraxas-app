@@ -26,3 +26,10 @@ export {
   ORGANIZATION_CONSENT_KEYS,
 } from "./consent";
 export { organizationEligibilityServerExample } from "./examples";
+export {
+  resolveInstitutionalAttestationCommitments,
+  organizationCommitment,
+  actorCommitment,
+  institutionalResultCategoryHash,
+  isInstitutionalPolicyId,
+} from "./chainCommitments";

@@ -53,12 +53,13 @@ contract AbraxasPartnerEligibilityGateTest {
             policyHash: policyHash,
             actionHash: actionHash,
             environment: environment,
-            requireSubjectBinding: requireSubject
+            requireSubjectBinding: requireSubject,
+            requireInstitutionalBinding: false
         });
     }
 
     function _att() internal view returns (AbraxasPartnerEligibilityGate.ChainEligibilityAttestation memory att) {
-        att.schemaVersion = 1;
+        att.schemaVersion = 2;
         att.networkId = networkId;
         att.partnerHash = partnerHash;
         att.policyHash = policyHash;
