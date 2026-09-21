@@ -620,6 +620,7 @@ async fn authority_only_add_retire_revoke_and_replay_across_rotation() {
     .await
     .unwrap();
 
+    refresh(&mut ctx).await;
     let dup = send(
         &mut ctx,
         vec![mutate_signer_ix(

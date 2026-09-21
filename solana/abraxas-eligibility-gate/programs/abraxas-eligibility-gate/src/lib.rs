@@ -261,14 +261,14 @@ pub struct InitializeConfig<'info> {
 #[derive(Accounts)]
 pub struct UpdateConfig<'info> {
     pub admin: Signer<'info>,
-    #[account(mut, has_one = admin, seeds = [CONFIG_SEED, admin.key().as_ref()], bump = config.bump)]
+    #[account(mut, has_one = admin, seeds = [CONFIG_SEED, config.admin.as_ref()], bump = config.bump)]
     pub config: Account<'info, GateConfig>,
 }
 
 #[derive(Accounts)]
 pub struct MutateSigner<'info> {
     pub admin: Signer<'info>,
-    #[account(mut, has_one = admin, seeds = [CONFIG_SEED, admin.key().as_ref()], bump = config.bump)]
+    #[account(mut, has_one = admin, seeds = [CONFIG_SEED, config.admin.as_ref()], bump = config.bump)]
     pub config: Account<'info, GateConfig>,
 }
 

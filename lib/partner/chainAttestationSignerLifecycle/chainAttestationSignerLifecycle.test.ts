@@ -373,9 +373,9 @@ describe("chain attestation signer lifecycle", () => {
     expect(kitResult.ok).toBe(true);
     if (!kitResult.ok) return;
     expect(kitResult.files.map((file) => file.path)).toContain("onchain/SIGNER_LIFECYCLE.md");
-    expect(kitResult.files.find((file) => file.path === "onchain/SIGNER_LIFECYCLE.md")!.contents).not.toMatch(/broadcast/i);
+    expect(kitResult.files.find((file) => file.path === "onchain/SIGNER_LIFECYCLE.md")!.contents).toContain("never broadcasts");
     const docs = readFileSync(join(process.cwd(), "app/docs/chain-attestation-signer-lifecycle/page.tsx"), "utf8");
-    expect(docs).toContain("cannot be recovered");
+    expect(docs).toContain("Nobody can recover a compromised private key");
     expect(docs).not.toMatch(/USDC transfer|Mainnet deployment/i);
   });
 });

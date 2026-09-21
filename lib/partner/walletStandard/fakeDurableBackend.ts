@@ -389,7 +389,7 @@ export function createWalletStandardAdminClient() {
           if (table === "chain_attestation_signers") {
             if (fakeWalletSchemaMissing) return insertResult(schemaError());
             const key = `${payload.environment}:${payload.algorithm}:${payload.key_id}`;
-            if (chainAttestationSigners.has(String(payload.signer_ref)) || [...chainAttestationSigners.values()].some((row) => `${row.environment}:${row.algorithm}:${row.key_id}` === key)) {
+            if (chainAttestationSigners.has(String(payload.signer_ref)) || Array.from(chainAttestationSigners.values()).some((row) => `${row.environment}:${row.algorithm}:${row.key_id}` === key)) {
               return insertResult(uniqueError());
             }
             chainAttestationSigners.set(String(payload.signer_ref), payload);
@@ -405,7 +405,7 @@ export function createWalletStandardAdminClient() {
           if (table === "chain_attestation_signer_updates") {
             if (fakeWalletSchemaMissing) return insertResult(schemaError());
             const openKey = `${payload.deployment_ref}:${payload.status}`;
-            if ([...chainAttestationSignerUpdates.values()].some((row) => `${row.deployment_ref}:${row.status}` === openKey)) {
+            if (Array.from(chainAttestationSignerUpdates.values()).some((row) => `${row.deployment_ref}:${row.status}` === openKey)) {
               return insertResult(uniqueError());
             }
             chainAttestationSignerUpdates.set(String(payload.update_ref), payload);

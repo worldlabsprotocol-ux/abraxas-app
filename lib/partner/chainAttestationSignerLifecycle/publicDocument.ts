@@ -34,7 +34,7 @@ export function buildChainAttestationSignerDocument(input: {
       allowed_gate_types: key.allowed_gate_types,
       schema_versions: key.schema_versions,
       reason_class: key.reason_class,
-    }, CHAIN_ATTESTATION_SIGNER_PUBLIC_FIELDS) as ChainAttestationSignerPublicView);
+    }, CHAIN_ATTESTATION_SIGNER_PUBLIC_FIELDS) as unknown as ChainAttestationSignerPublicView);
   const document: ChainAttestationSignerDocument = {
     document: CHAIN_ATTESTATION_SIGNER_DOCUMENT,
     algorithm: input.algorithm,
