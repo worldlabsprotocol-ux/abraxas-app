@@ -128,7 +128,7 @@ npx vitest run lib/partner/crossChainProtocolAccess/crossChainProtocolAccess.tes
           <Link href="/developers/integration-studio">Integration Studio</Link>
         </p>
       </ContentCard>
-      <PublicJourneyNextSteps current="/docs/cross-chain-protocol-access" />
+      <PublicJourneyNextSteps />
     </RedesignPage>
   );
 }

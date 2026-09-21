@@ -21,6 +21,7 @@ export async function activateProtocolAccessOnServer(input) {
     verifier_nonce: input.verifier_nonce,
     network_id: process.env.ABRAXAS_PROTOCOL_NETWORK_ID,
     deployment_ref: process.env.ABRAXAS_VERIFIED_DEPLOYMENT_REF,
+    named_action: "activate_protocol_access",
   });
 }
 `;

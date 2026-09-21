@@ -45,11 +45,11 @@ function contractFor(
   const issued = client.issueActionContract({
     action_type: action,
     action_scope:
-      action === "enable_member_access"
-        ? "sandbox:member_access"
-        : action === "enable_redemption_access"
-          ? "sandbox:redemption_access"
-          : "sandbox:protocol_access",
+      action === "enable_protocol_access"
+        ? "sandbox:protocol_access"
+        : action === "enable_member_access"
+          ? "sandbox:member_access"
+          : "sandbox:redemption_access",
   });
   if ("ok" in issued) throw new Error("expected contract");
   return issued;

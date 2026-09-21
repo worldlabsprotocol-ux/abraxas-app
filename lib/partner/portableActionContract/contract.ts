@@ -19,7 +19,6 @@ export const PORTABLE_ACTION_TYPES = [
   "enable_protocol_access",
   "enable_member_access",
   "enable_redemption_access",
-  "activate_protocol_access",
 ] as const;
 export type PortableActionType = (typeof PORTABLE_ACTION_TYPES)[number];
 
@@ -44,7 +43,6 @@ export const PORTABLE_ACTION_TYPE_SCOPES: Record<PortableActionType, PortableAct
   enable_protocol_access: "sandbox:protocol_access",
   enable_member_access: "sandbox:member_access",
   enable_redemption_access: "sandbox:redemption_access",
-  activate_protocol_access: "sandbox:protocol_access",
 };
 
 export const PORTABLE_ACTION_WALLET_BINDING_MODES = WALLET_STANDARD_BINDING_MODES;

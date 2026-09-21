@@ -89,7 +89,7 @@ contract AbraxasProtocolAccessTest {
         AbraxasPartnerEligibilityGate.ChainEligibilityAttestation memory att = _att();
         bytes memory sig = _sign(att, signerPk, gate);
         protocol.activateProtocolAccess(att, sig);
-        vm.expectRevert(AbraxasPartnerEligibilityGate.Replayed.selector);
+        vm.expectRevert(AbraxasProtocolAccess.AttestationReplayed.selector);
         protocol.activateProtocolAccess(att, sig);
     }
 
