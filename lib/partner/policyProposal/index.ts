@@ -6,6 +6,6 @@ export {
   POLICY_PROPOSAL_VERSION,
   policyProposalPublicChoices,
 } from "./contract";
-export { submitPolicyProposal, listPartnerProposals, listOperatorProposals, decidePolicyProposal } from "./store";
+export { submitPolicyProposal, listPartnerProposals, listOperatorProposals, decidePolicyProposal, getOperatorProposal } from "./store";
 export { policyProposalCsrfRejected, partnerProposalOverride, operatorProposalOverride } from "./csrf";
 export { proposalLeaks, sanitizeProposalPayload, buildPlanningRecord } from "./sanitize";

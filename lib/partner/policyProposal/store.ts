@@ -217,6 +217,31 @@ export async function listOperatorProposals(): Promise<{ ok: true; items: Policy
   }
 }
 
+export async function getOperatorProposal(proposalId: string): Promise<{ ok: true; item: PolicyProposalOperatorItem } | { ok: false; code: string }> {
+  if (!(await storeReady())) return { ok: false, code: "policy_proposal_store_unavailable" };
+  try {
+    const sb = requireSupabaseAdmin();
+    const { data, error } = await sb
+      .from("partner_policy_proposals")
+      .select("id, partner_id, status, payload, operator_note, planning, submitted_at")
+      .eq("id", proposalId)
+      .maybeSingle();
+    if (error) return { ok: false, code: "policy_proposal_store_unavailable" };
+    if (!data) return { ok: false, code: "not_found" };
+    const item: PolicyProposalOperatorItem = {
+      ...toPublic(data),
+      id: data.id,
+      partner_ref: partnerRef(data.partner_id),
+      planning: data.planning ?? null,
+      submitted_at: data.submitted_at,
+    };
+    if (proposalLeaks(item).length > 0) return { ok: false, code: "policy_proposal_store_unavailable" };
+    return { ok: true, item };
+  } catch {
+    return { ok: false, code: "policy_proposal_store_unavailable" };
+  }
+}
+
 export async function decidePolicyProposal(input: {
   proposalId: string;
   body: unknown;
