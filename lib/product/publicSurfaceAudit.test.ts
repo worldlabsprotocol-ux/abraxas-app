@@ -30,6 +30,7 @@ const PUBLIC_PAGES = [
   "/docs/chain-verifiable-attestations",
   "/docs/solana-onchain-eligibility-gate",
   "/docs/evm-onchain-eligibility-gate",
+  "/docs/onchain-gate-deployments",
   "/docs/selective-disclosure",
   "/docs/starter-kit",
   "/docs/production-review",

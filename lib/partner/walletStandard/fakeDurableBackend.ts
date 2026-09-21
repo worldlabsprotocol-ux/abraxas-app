@@ -70,6 +70,8 @@ const nonces = new Map<string, NonceRow>();
 const chainNonces = new Map<string, { partner_id: string; network_id: string; nonce_hash: string; expires_at: string }>();
 const evmChallenges = new Map<string, EvmChallengeRow>();
 const evmBindings = new Map<string, EvmBindingRow>();
+const onchainDeployments = new Map<string, Record<string, unknown>>();
+const onchainDeploymentEvents: Record<string, unknown>[] = [];
 export const fakeWalletInserts: FakeWalletInsert[] = [];
 export let fakeWalletSchemaMissing = false;
 export let fakeWalletAdminMissing = false;
@@ -81,6 +83,8 @@ export function resetFakeWalletStandardBackend(): void {
   chainNonces.clear();
   evmChallenges.clear();
   evmBindings.clear();
+  onchainDeployments.clear();
+  onchainDeploymentEvents.length = 0;
   fakeWalletInserts.length = 0;
   fakeWalletSchemaMissing = false;
   fakeWalletAdminMissing = false;
@@ -285,14 +289,39 @@ function tableRows(table: string): Array<Record<string, unknown>> {
   if (table === "partner_venue_action_nonces") return Array.from(nonces.values());
   if (table === "evm_wallet_challenges") return Array.from(evmChallenges.values());
   if (table === "evm_wallet_bindings") return Array.from(evmBindings.values());
+  if (table === "onchain_gate_deployments") return Array.from(onchainDeployments.values());
+  if (table === "onchain_gate_deployment_events") return onchainDeploymentEvents;
   return [];
+}
+
+function identityKey(row: Record<string, unknown>): string {
+  return [
+    row.partner_id,
+    row.application_id,
+    row.gate_type,
+    row.network_id,
+    String(row.gate_address ?? "").toLowerCase(),
+    row.program_id ?? "",
+    row.gate_config_pda ?? "",
+  ].join("::");
+}
+
+function insertOnchainDeployment(row: Record<string, unknown>): { error: { code?: string; message?: string } | null } {
+  if (fakeWalletSchemaMissing) return { error: schemaError() };
+  if (onchainDeployments.has(String(row.deployment_ref))) return { error: uniqueError() };
+  for (const existing of Array.from(onchainDeployments.values())) {
+    if (identityKey(existing) === identityKey(row)) return { error: uniqueError() };
+  }
+  onchainDeployments.set(String(row.deployment_ref), { ...row });
+  fakeWalletInserts.push({ table: "onchain_gate_deployments", row: { ...row } });
+  return { error: null };
 }
 
 export function createWalletStandardAdminClient() {
   return {
     from(table: string) {
       const filters: Array<[string, string]> = [];
-      return {
+      const builder = {
         insert(row: Record<string, unknown>) {
           const payload = { ...row } as Record<string, unknown>;
           if (table === "wallet_standard_challenges") {
@@ -310,7 +339,34 @@ export function createWalletStandardAdminClient() {
           if (table === "evm_wallet_bindings") {
             return Promise.resolve(insertEvmBinding(payload as EvmBindingRow));
           }
+          if (table === "onchain_gate_deployments") {
+            return Promise.resolve(insertOnchainDeployment(payload));
+          }
+          if (table === "onchain_gate_deployment_events") {
+            if (fakeWalletSchemaMissing) return Promise.resolve({ error: schemaError() });
+            onchainDeploymentEvents.push({ ...payload });
+            fakeWalletInserts.push({ table, row: { ...payload } });
+            return Promise.resolve({ error: null });
+          }
           return Promise.resolve({ error: schemaError() });
+        },
+        update(patch: Record<string, unknown>) {
+          return {
+            eq(column: string, value: string) {
+              filters.push([column, value]);
+              return this;
+            },
+            then(onFulfilled: (value: { data: unknown; error: unknown }) => unknown) {
+              if (fakeWalletSchemaMissing) return Promise.resolve({ data: null, error: schemaError() }).then(onFulfilled);
+              if (table !== "onchain_gate_deployments") {
+                return Promise.resolve({ data: null, error: schemaError() }).then(onFulfilled);
+              }
+              const match = tableRows(table).find((row) => filters.every(([column, value]) => String(row[column] ?? "") === value));
+              if (!match) return Promise.resolve({ data: null, error: null }).then(onFulfilled);
+              Object.assign(match, patch);
+              return Promise.resolve({ data: match, error: null }).then(onFulfilled);
+            },
+          };
         },
         select() {
           return this;
@@ -324,7 +380,13 @@ export function createWalletStandardAdminClient() {
           const match = tableRows(table).find((row) => filters.every(([column, value]) => String(row[column] ?? "") === value));
           return Promise.resolve({ data: match ?? null, error: null });
         },
+        then(onFulfilled: (value: { data: unknown; error: unknown }) => unknown) {
+          if (fakeWalletSchemaMissing) return Promise.resolve({ data: null, error: schemaError() }).then(onFulfilled);
+          const rows = tableRows(table).filter((row) => filters.every(([column, value]) => String(row[column] ?? "") === value));
+          return Promise.resolve({ data: rows, error: null }).then(onFulfilled);
+        },
       };
+      return builder;
     },
     rpc(name: string, args: Record<string, string>) {
       if (name === "wallet_standard_consume_challenge") {

@@ -21,8 +21,7 @@ export async function issueOnchainGate(receiptId: string) {
       action_type: "enable_protocol_access",
       action_scope: "sandbox:protocol_access",
       network_id: "evm_sandbox",
-      chain_id: 11155111,
-      verifying_contract: process.env.PARTNER_VERIFIER_ADDRESS,
+      deployment_ref: process.env.ABRAXAS_GATE_DEPLOYMENT_REF,
     }),
   });
   const issued = await res.json();
@@ -57,6 +56,7 @@ export async function issueSolanaOnchainGate(receiptId: string) {
       action_type: "partner_protocol_action",
       action_scope: "sandbox:partner_protocol",
       network_id: "solana_devnet",
+      deployment_ref: process.env.ABRAXAS_GATE_DEPLOYMENT_REF,
       wallet_binding_mode: "required",
     }),
   });

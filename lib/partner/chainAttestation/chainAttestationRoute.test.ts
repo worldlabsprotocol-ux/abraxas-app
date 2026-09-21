@@ -30,8 +30,7 @@ const validBody = {
   action_type: "enable_protocol_access",
   action_scope: "sandbox:protocol_access",
   network_id: "evm_sandbox",
-  chain_id: 11155111,
-  verifying_contract: "0x1111111111111111111111111111111111111111",
+  deployment_ref: "ogd_test",
   application_id: "app-1",
 };
 

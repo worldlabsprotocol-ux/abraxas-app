@@ -41,8 +41,19 @@ import { SOLANA_ATTESTATION_KEY_ENV, SOLANA_ATTESTATION_KEY_ID_ENV } from "@/lib
 import { generateStarterKit } from "@/lib/partner/starterKit/generate";
 import { validateStarterKitInput } from "@/lib/partner/starterKit/validate";
 import { studioSnippetForPath } from "@/lib/partner/integrationStudio";
+import { ONCHAIN_DEPLOYMENT_TEST_ADAPTER_ENV } from "@/lib/partner/onchainGateDeployments/contract";
 
 const VERIFYING = "0x1111111111111111111111111111111111111111" as const;
+const EVM_TEST_ADAPTER = {
+  source: "local_anvil" as const,
+  chainId: 11155111,
+  verifyingContract: VERIFYING,
+};
+const SOLANA_TEST_ADAPTER = {
+  source: "solana_program_test" as const,
+  programId: "11111111111111111111111111111111",
+  gateConfigPda: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+};
 
 function kit(environment: "sandbox" | "production" = "sandbox") {
   return new AbraxasPartnerKit({
@@ -64,6 +75,7 @@ function installSigner(pk?: `0x${string}`) {
 describe("chain eligibility attestations", () => {
   beforeEach(() => {
     resetFakeWalletStandardBackend();
+    process.env[ONCHAIN_DEPLOYMENT_TEST_ADAPTER_ENV] = "1";
     delete process.env[EVM_ATTESTATION_KEY_ENV];
     delete process.env[EVM_ATTESTATION_KEY_ID_ENV];
     delete process.env[SOLANA_ATTESTATION_KEY_ENV];
@@ -82,8 +94,7 @@ describe("chain eligibility attestations", () => {
       action_type: "enable_protocol_access",
       action_scope: "sandbox:protocol_access",
       network_id: "evm_sandbox",
-      chainId: 11155111,
-      verifyingContract: VERIFYING,
+      testAdapter: EVM_TEST_ADAPTER,
     });
     expect(issued.ok).toBe(true);
     if (!issued.ok) return;
@@ -151,8 +162,7 @@ describe("chain eligibility attestations", () => {
       action_type: "enable_protocol_access",
       action_scope: "sandbox:protocol_access",
       network_id: "evm_sandbox",
-      chainId: 11155111,
-      verifyingContract: VERIFYING,
+      testAdapter: EVM_TEST_ADAPTER,
     });
     expect(missing.ok).toBe(false);
     if (missing.ok) return;
@@ -174,8 +184,7 @@ describe("chain eligibility attestations", () => {
       action_type: "enable_protocol_access",
       action_scope: "sandbox:protocol_access",
       network_id: "arc_circle_mainnet",
-      chainId: 1,
-      verifyingContract: VERIFYING,
+      testAdapter: { ...EVM_TEST_ADAPTER, chainId: 1 },
     });
     expect(arc.ok).toBe(false);
     const mainnet = await issueChainEligibilityAttestation({
@@ -184,8 +193,7 @@ describe("chain eligibility attestations", () => {
       action_type: "enable_protocol_access",
       action_scope: "sandbox:protocol_access",
       network_id: "evm_mainnet",
-      chainId: 1,
-      verifyingContract: VERIFYING,
+      testAdapter: { ...EVM_TEST_ADAPTER, chainId: 1 },
     });
     expect(mainnet.ok).toBe(false);
     if (!mainnet.ok) expect(mainnet.reason).toBe("production_review_required");
@@ -203,8 +211,7 @@ describe("chain eligibility attestations", () => {
       action_type: "enable_protocol_access",
       action_scope: "sandbox:member_access",
       network_id: "evm_sandbox",
-      chainId: 11155111,
-      verifyingContract: VERIFYING,
+      testAdapter: EVM_TEST_ADAPTER,
     });
     expect(scopeMismatch.ok).toBe(false);
 
@@ -214,8 +221,7 @@ describe("chain eligibility attestations", () => {
       action_type: "enable_protocol_access",
       action_scope: "sandbox:protocol_access",
       network_id: "evm_sandbox",
-      chainId: 11155111,
-      verifyingContract: VERIFYING,
+      testAdapter: EVM_TEST_ADAPTER,
       wallet_binding_mode: "required",
     });
     expect(required.ok).toBe(false);
@@ -227,8 +233,7 @@ describe("chain eligibility attestations", () => {
       action_type: "enable_protocol_access",
       action_scope: "sandbox:protocol_access",
       network_id: "evm_sandbox",
-      chainId: 11155111,
-      verifyingContract: VERIFYING,
+      testAdapter: EVM_TEST_ADAPTER,
     });
     expect(issued.ok).toBe(true);
     if (!issued.ok) return;
@@ -296,6 +301,7 @@ describe("chain eligibility attestations", () => {
       action_type: "partner_protocol_action",
       action_scope: "sandbox:partner_protocol",
       network_id: "solana_devnet",
+      testAdapter: SOLANA_TEST_ADAPTER,
     });
     expect(issued.ok).toBe(true);
     if (!issued.ok) return;
@@ -441,6 +447,7 @@ describe("chain eligibility attestations", () => {
       action_type: "partner_protocol_action",
       action_scope: "sandbox:partner_protocol",
       network_id: "solana_devnet",
+      testAdapter: SOLANA_TEST_ADAPTER,
     });
     expect(issued.ok).toBe(false);
     if (issued.ok) return;

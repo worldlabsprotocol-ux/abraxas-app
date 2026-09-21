@@ -69,6 +69,10 @@ export const CHAIN_ATTESTATION_SAFE_REASONS = [
   "store_unavailable",
   "unauthorized",
   "invalid",
+  "deployment_verification_unavailable",
+  "deployment_not_verified",
+  "deployment_revoked",
+  "deployment_mismatch",
 ] as const;
 export type ChainAttestationSafeReason = (typeof CHAIN_ATTESTATION_SAFE_REASONS)[number];
 
@@ -144,6 +148,10 @@ export const CHAIN_ATTESTATION_CLIENT_OVERRIDE_KEYS = [
   "execute",
   "wallet_address",
   "api_key",
+  "verifying_contract",
+  "chain_id",
+  "gate_address",
+  "program_id",
 ] as const;
 
 export const CHAIN_ATTESTATION_NOT_EXECUTION =

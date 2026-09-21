@@ -542,6 +542,16 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
     notes:
       "DEMO-first durable chain eligibility attestation nonces. Separate from venue/payment nonces. Do not auto-apply from Vercel.",
   },
+  {
+    file: "102_verified_onchain_gate_deployments.sql",
+    tier: "recommended",
+    creates: ["onchain_gate_deployments", "onchain_gate_deployment_events"],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "DEMO-first partner-owned EVM/Solana gate deployment registry and lifecycle audit. Opaque refs. Do not auto-apply from Vercel.",
+  },
 ];
 
 /** Map of which migration file first creates each core object. */
@@ -572,6 +582,8 @@ export const OBJECT_PROVENANCE: Record<string, string> = {
   verification_issuer_trust_registry: "098_verification_issuer_trust_registry.sql",
   hosted_partner_flow_handoffs: "099_hosted_partner_flow_handoffs.sql",
   chain_attestation_nonces: "101_chain_attestation_nonces.sql",
+  onchain_gate_deployments: "102_verified_onchain_gate_deployments.sql",
+  onchain_gate_deployment_events: "102_verified_onchain_gate_deployments.sql",
 };
 
 export function getDemoManifestFilenames(): string[] {

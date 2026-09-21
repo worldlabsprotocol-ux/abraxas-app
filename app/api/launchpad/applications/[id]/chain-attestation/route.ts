@@ -58,8 +58,8 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     action_type: parsed.value.action_type,
     action_scope: parsed.value.action_scope,
     network_id: parsed.value.network_id,
-    chainId: parsed.value.chain_id,
-    verifyingContract: parsed.value.verifying_contract,
+    deployment_ref: parsed.value.deployment_ref,
+    application_id: app.id,
     wallet_binding_hash: parsed.value.wallet_binding_hash,
     wallet_binding_mode: parsed.value.wallet_binding_mode,
   });

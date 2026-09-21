@@ -8,6 +8,7 @@ import { resetFakeWalletStandardBackend } from "@/lib/partner/walletStandard/fak
 import { issueChainEligibilityAttestation } from "@/lib/partner/chainAttestation/issue";
 import { verifyEvmEligibilityOffchain } from "@/lib/partner/chainAttestation/evmKit";
 import { EVM_ATTESTATION_KEY_ENV, EVM_ATTESTATION_KEY_ID_ENV } from "@/lib/partner/chainAttestation/signer";
+import { ONCHAIN_DEPLOYMENT_TEST_ADAPTER_ENV } from "@/lib/partner/onchainGateDeployments/contract";
 import { hashAction, hashEnvironment, hashNetworkId, hashPartnerId, hashPolicy } from "@/lib/partner/chainAttestation/hashes";
 import { encodeConsumeEligibilityCall, encodeRecordNamedActionCall } from "./encode";
 import { hashEvmGateBytecode, projectEvmGateManifest, rejectEvmGateClientAuthority, validateEvmGateManifest } from "./validate";
@@ -87,6 +88,7 @@ describe("partner-owned EVM eligibility gate kit", () => {
     const key = generatePrivateKey();
     process.env[EVM_ATTESTATION_KEY_ENV] = key;
     process.env[EVM_ATTESTATION_KEY_ID_ENV] = "evm-attestation-test-1";
+    process.env[ONCHAIN_DEPLOYMENT_TEST_ADAPTER_ENV] = "1";
     const account = privateKeyToAccount(key);
     const kit = new AbraxasPartnerKit({
       partnerId: EVM_REF_PARTNER_ID,
@@ -102,8 +104,7 @@ describe("partner-owned EVM eligibility gate kit", () => {
       action_type: "enable_protocol_access",
       action_scope: "sandbox:protocol_access",
       network_id: "evm_sandbox",
-      chainId: 31337,
-      verifyingContract: GATE,
+      testAdapter: { source: "local_anvil", chainId: 31337, verifyingContract: GATE },
     });
     expect(issued.ok).toBe(true);
     if (!issued.ok) return;

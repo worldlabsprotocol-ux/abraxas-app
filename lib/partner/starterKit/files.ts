@@ -462,8 +462,7 @@ export async function issueOnchainGate(receiptId) {
       action_type: "enable_protocol_access",
       action_scope: "sandbox:protocol_access",
       network_id: "evm_sandbox",
-      chain_id: 11155111,
-      verifying_contract: process.env.PARTNER_VERIFIER_ADDRESS,
+      deployment_ref: process.env.ABRAXAS_GATE_DEPLOYMENT_REF,
     }),
   });
   const issued = await res.json();
@@ -529,8 +528,7 @@ export async function issueEvmOnchainGate(receiptId) {
       action_type: "enable_protocol_access",
       action_scope: "sandbox:protocol_access",
       network_id: "evm_sandbox",
-      chain_id: 31337,
-      verifying_contract: process.env.PARTNER_GATE_ADDRESS,
+      deployment_ref: process.env.ABRAXAS_GATE_DEPLOYMENT_REF,
     }),
   });
   const issued = await res.json();
@@ -577,6 +575,27 @@ The program never transfers SOL or tokens. Server durable nonce consumption (mig
 `;
 }
 
+function deploymentManifestTemplate(): string {
+  return `{
+  "schema_version": 1,
+  "gate_type": "evm",
+  "network_id": "evm_sandbox",
+  "chain_id": 31337,
+  "gate_address": "{{GATE_ADDRESS}}",
+  "bytecode_hash": "{{BYTECODE_HASH}}",
+  "config_digest": "{{CONFIG_DIGEST}}",
+  "partner_hash": "{{PARTNER_HASH}}",
+  "policy_hash": "{{POLICY_HASH}}",
+  "action_hash": "{{ACTION_HASH}}",
+  "action_type": "enable_protocol_access",
+  "action_scope": "sandbox:protocol_access",
+  "environment": "sandbox",
+  "signer_key_id": "{{SIGNER_KEY_ID}}",
+  "subject_binding_mode": "optional"
+}
+`;
+}
+
 function solanaOnchainGate(): string {
   return `// Server-only. Request a Solana onchain eligibility authorization.
 export async function issueSolanaOnchainGate(receiptId) {
@@ -592,6 +611,7 @@ export async function issueSolanaOnchainGate(receiptId) {
       action_type: "partner_protocol_action",
       action_scope: "sandbox:partner_protocol",
       network_id: "solana_devnet",
+      deployment_ref: process.env.ABRAXAS_GATE_DEPLOYMENT_REF,
       wallet_binding_mode: "required",
     }),
   });
@@ -754,6 +774,7 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     if (onchain || evmOnchain) files.push({ path: "onchain/EVM_VERIFIER.md", contents: evmVerifierDoc() });
     if (evmOnchain) files.push({ path: "onchain/EVM_PARTNER_GATE.md", contents: evmPartnerGateDoc() });
     if (solanaOnchain || onchain) files.push({ path: "onchain/SOLANA_PROGRAM.md", contents: solanaProgramDoc() });
+    files.push({ path: "onchain/deployment-manifest.template.json", contents: deploymentManifestTemplate() });
   }
 
   for (const file of files) assertSafeStarterPath(file.path);

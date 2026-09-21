@@ -6,6 +6,10 @@ import { AbraxasPartnerKit, permitProtocolAction } from "@/lib/partner/integrati
 import { getNetworkCapability } from "@/lib/partner/networkCapability/registry";
 import { evaluateNetworkAction } from "@/lib/partner/networkCapability/evaluate";
 import {
+  bindIssuanceToVerifiedDeployment,
+  type LocalIssuanceTestAdapter,
+} from "@/lib/partner/onchainGateDeployments/bindIssuance";
+import {
   CHAIN_ATTESTATION_CLIENT_OVERRIDE_KEYS,
   CHAIN_ATTESTATION_EVM_TYPE_SCOPES,
   CHAIN_ATTESTATION_SCHEMA_VERSION,
@@ -51,8 +55,9 @@ export interface IssueChainAttestationInput {
   action_type: string;
   action_scope: string;
   network_id: string;
-  chainId?: number;
-  verifyingContract?: string;
+  deployment_ref?: string;
+  application_id?: string;
+  testAdapter?: LocalIssuanceTestAdapter;
   wallet_binding_hash?: string | null;
   wallet_binding_mode?: "not_attached" | "optional" | "required";
   now?: Date;
@@ -188,12 +193,28 @@ export async function issueChainEligibilityAttestation(
     if (!signer.ok) {
       return denied("attestation_unavailable", input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
     }
-    if (typeof input.chainId !== "number" || !Number.isInteger(input.chainId) || input.chainId <= 0) {
-      return denied("invalid", input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
+    const bound = await bindIssuanceToVerifiedDeployment({
+      partnerId: input.kit.options.partnerId,
+      applicationId: input.application_id ?? "",
+      deploymentRef: input.deployment_ref,
+      networkId: input.network_id,
+      actionType: input.action_type,
+      actionScope: input.action_scope,
+      kitEnvironment: input.kit.options.environment,
+      policyId: input.kit.options.policyId,
+      policyVersion: input.kit.options.policyVersion ?? 1,
+      signerKeyId: signer.signer.keyId,
+      testAdapter: input.testAdapter,
+    });
+    if (!bound.ok) {
+      return denied(bound.reason, input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
     }
-    const verifying = input.verifyingContract?.trim() ?? "";
+    if (typeof bound.chainId !== "number" || !Number.isInteger(bound.chainId) || bound.chainId <= 0) {
+      return denied("deployment_not_verified", input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
+    }
+    const verifying = bound.verifyingContract?.trim() ?? "";
     if (!isAddress(verifying)) {
-      return denied("invalid", input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
+      return denied("deployment_not_verified", input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
     }
     const fields: ChainEligibilityAttestationFields = {
       schemaVersion: CHAIN_ATTESTATION_SCHEMA_VERSION,
@@ -232,7 +253,7 @@ export async function issueChainEligibilityAttestation(
       throw error;
     }
     const domain = eip712Domain({
-      chainId: input.chainId,
+      chainId: bound.chainId,
       verifyingContract: verifying as `0x${string}`,
       partnerHash,
     });
@@ -266,6 +287,27 @@ export async function issueChainEligibilityAttestation(
   const solanaSigner = loadSolanaAttestationSigner();
   if (!solanaSigner.ok) {
     return denied("attestation_unavailable", input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
+  }
+  const solanaBound = await bindIssuanceToVerifiedDeployment({
+    partnerId: input.kit.options.partnerId,
+    applicationId: input.application_id ?? "",
+    deploymentRef: input.deployment_ref,
+    networkId: input.network_id,
+    actionType: input.action_type,
+    actionScope: input.action_scope,
+    kitEnvironment: input.kit.options.environment,
+    policyId: input.kit.options.policyId,
+    policyVersion: input.kit.options.policyVersion ?? 1,
+    signerKeyId: solanaSigner.signer.keyId,
+    testAdapter: input.testAdapter,
+  });
+  if (!solanaBound.ok) {
+    return denied(solanaBound.reason, input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
+  }
+  if (!solanaBound.programId || !solanaBound.gateConfigPda) {
+    if (!input.testAdapter) {
+      return denied("deployment_not_verified", input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
+    }
   }
   const fields: ChainEligibilityAttestationFields = {
     schemaVersion: CHAIN_ATTESTATION_SCHEMA_VERSION,
