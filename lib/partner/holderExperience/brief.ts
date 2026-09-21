@@ -2,9 +2,9 @@
 // Server-derived holder request brief. No return URLs or policy internals.
 
 import { inferPolicyPackFromPolicyId, policyPackIsSandboxOnly } from "@/lib/partner/launchpad/policyPacks";
-import { planEligibilityMethods } from "@/lib/partner/eligibilityMethods";
 import { resolvePartnerDisplayName } from "@/lib/partner/partnerVerifyDisplay";
 import { HOLDER_GOOGLE_ACCOUNT_ONLY } from "./contract";
+import { HOLDER_APPROVED_METHOD } from "@/lib/verification/issuerTrust";
 import { applyDisclosureProfile, resolveDisclosureProfile } from "@/lib/privacy/selectiveDisclosure";
 import { GENERIC_MINIMAL_PROFILE } from "@/lib/privacy/selectiveDisclosure/profiles";
 
@@ -46,9 +46,6 @@ export function buildHolderRequestBrief(input: {
   const resultCategory = pack?.disclosed_result
     ? `Policy result: ${pack.disclosed_result}`
     : "eligibility confirmed";
-  const plan = pack ? planEligibilityMethods({ pack, privacyPreservingAvailable: true }) : null;
-  const primary = plan?.methods.find((method) => method.primary && method.qualifies)
-    ?? plan?.methods.find((method) => method.qualifies && method.id !== "account_login");
 
   const brief: HolderRequestBrief = {
     requestor,
@@ -60,9 +57,7 @@ export function buildHolderRequestBrief(input: {
     environment_detail: sandbox
       ? "This is a sandbox or test request. A passing result here is not Production-usable."
       : "The partner receives only the policy result. Production use still depends on that partner’s reviewed access.",
-    method_explanation: primary
-      ? `${primary.label}. ${primary.why}`
-      : IDENTITY_NOT_DEFAULT,
+    method_explanation: HOLDER_APPROVED_METHOD,
     google_account_only: HOLDER_GOOGLE_ACCOUNT_ONLY,
     identity_not_default: IDENTITY_NOT_DEFAULT,
   };
@@ -76,7 +71,7 @@ export function buildHolderRequestBrief(input: {
       withheld: ["date of birth", "government ID images", "legal name", "email"],
       environment_label: "Sandbox / test",
       environment_detail: "This is a sandbox or test request. A passing result here is not Production-usable.",
-      method_explanation: IDENTITY_NOT_DEFAULT,
+      method_explanation: HOLDER_APPROVED_METHOD,
       google_account_only: HOLDER_GOOGLE_ACCOUNT_ONLY,
       identity_not_default: IDENTITY_NOT_DEFAULT,
     };

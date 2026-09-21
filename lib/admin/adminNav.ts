@@ -38,7 +38,7 @@ export const ADMIN_PROTOCOL_NAV_ITEMS: readonly AdminNavItem[] = [
     id: "policy-proposals",
     href: "/admin/policy-proposals",
     label: "Policy proposals",
-    description: "Review partner policy proposals and operator release candidates. Neither is a live catalog change.",
+    description: "Review partner policy proposals, release candidates, and verification issuer trust. None of these publish a live catalog.",
     section: "protocol",
   },
   {

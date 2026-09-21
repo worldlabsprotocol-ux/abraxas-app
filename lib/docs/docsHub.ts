@@ -139,6 +139,7 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
           { label: "Production credentials", href: "/docs/production-credentials" },
           { label: "Policy proposals", href: "/docs/policy-proposals" },
           { label: "Policy release candidates", href: "/docs/policy-release-candidates" },
+          { label: "Verification issuer trust", href: "/docs/verification-issuer-trust" },
           { label: "Partner Flow", href: "/docs/partner-flow" },
           { label: "Partner Flow API (OpenAPI)", href: "/docs/partner-flow-api" },
           { label: "Protocol compatibility manifest (JSON API)", href: "/api/protocol/compatibility" },

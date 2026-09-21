@@ -112,6 +112,19 @@ describe("Policy Version Change Planner", () => {
     expect(resolvePackForPlanner("age_21_retail", "x")).toBe(pack);
   });
 
+  it("classifies issuer/method-plan changes as policy review", () => {
+    const pack = resolvePolicyPack("age_21_retail")!;
+    const from = surfaceFromPack({ pack, version: 1, status: "current" });
+    const to = applySuccessor(from, {
+      pack_id: "age_21_retail",
+      version: 2,
+      status: "planning",
+      issuer_method_plan: "no_verified_method",
+    });
+    expect(comparePolicyVersionSurfaces(from, to).compatibility).toBe("policy_review");
+    expect(comparePolicyVersionSurfaces(from, to).issuer_method_plan.changed).toBe(true);
+  });
+
   it("classifies allowed output field changes as policy review", () => {
     const pack = resolvePolicyPack("age_21_retail")!;
     const from = surfaceFromPack({ pack, version: 1, status: "current" });

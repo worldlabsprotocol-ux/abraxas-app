@@ -22,6 +22,7 @@ import {
 } from "./sanitize";
 import { buildReleaseSpecification } from "./spec";
 import { generateReleaseFixtures } from "./fixtures";
+import { planIssuersForReleaseShape, type IssuerMethodPlan } from "@/lib/verification/issuerTrust";
 
 export interface PolicyRcOperatorItem {
   id: string;
@@ -33,6 +34,7 @@ export interface PolicyRcOperatorItem {
   shape: SanitizedReleaseShape;
   spec: ReturnType<typeof buildReleaseSpecification>;
   fixtures: ReturnType<typeof generateReleaseFixtures>;
+  issuer_plan: IssuerMethodPlan;
   remediation: string | null;
   notice: string;
   creates_policy: false;
@@ -84,6 +86,7 @@ function toItem(row: {
     shape: row.shape,
     spec: buildReleaseSpecification(row.shape),
     fixtures: generateReleaseFixtures(row.shape),
+    issuer_plan: planIssuersForReleaseShape(row.shape),
     remediation: row.operator_note,
     ...NONE,
   };
@@ -250,6 +253,10 @@ export async function decideReleaseCandidate(input: {
     }
     if (!policyRcCanTransition(existing.status as PolicyRcState, record.status)) {
       return { ok: false, code: "invalid_transition" };
+    }
+    if (record.status === "ready_for_review") {
+      const plan = planIssuersForReleaseShape(existing.shape);
+      if (!plan.can_ready_for_review) return { ok: false, code: "no_verified_method" };
     }
     const history = Array.isArray(existing.history) ? existing.history : [];
     const { data, error: updateError } = await sb

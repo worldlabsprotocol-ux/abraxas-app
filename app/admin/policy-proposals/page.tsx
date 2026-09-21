@@ -8,6 +8,7 @@ import Link from "next/link";
 import { adminFetch } from "@/lib/admin/adminFetch";
 import { POLICY_PROPOSAL_NOTICE, POLICY_PROPOSAL_OPERATOR_STATUSES, POLICY_PROPOSAL_STATE_LABELS } from "@/lib/partner/policyProposal/contract";
 import { PolicyReleaseCandidateBoard } from "@/components/admin/PolicyReleaseCandidateBoard";
+import { VerificationIssuerTrustBoard } from "@/components/admin/VerificationIssuerTrustBoard";
 
 const FONT = "'Inter',system-ui,sans-serif";
 const ACCENT = "#10B981";
@@ -75,6 +76,8 @@ export default function AdminPolicyProposalsPage() {
           {" · "}
           <Link href="/docs/policy-release-candidates" style={{ color: ACCENT }}>Release candidates</Link>
           {" · "}
+          <Link href="/docs/verification-issuer-trust" style={{ color: ACCENT }}>Issuer trust</Link>
+          {" · "}
           <Link href="/admin/production-review" style={{ color: ACCENT }}>Production review</Link>
         </p>
         {error && <p role="alert" style={{ fontFamily: FONT, color: "#f87171" }}>{error}</p>}
@@ -122,6 +125,7 @@ export default function AdminPolicyProposalsPage() {
             </article>
           ))}
         </div>
+        <VerificationIssuerTrustBoard />
       </div>
     </div>
   );
