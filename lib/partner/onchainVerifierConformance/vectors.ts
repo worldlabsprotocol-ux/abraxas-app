@@ -5,7 +5,7 @@ import {
 } from "@/lib/partner/chainAttestation/contract";
 import { eip712Domain, hashChainAttestationTypedData } from "@/lib/partner/chainAttestation/eip712";
 import { bytesToHex, encodeSolanaEligibilityMessage } from "@/lib/partner/chainAttestation/solanaMessage";
-import { hashUtf8 } from "@/lib/partner/chainAttestation/hashes";
+import { encodeU64Be, hashUtf8 } from "@/lib/partner/chainAttestation/hashes";
 
 const ZERO = (`0x${"00".repeat(32)}`) as `0x${string}`;
 
@@ -59,14 +59,14 @@ export function solanaV1LegacyMessage(): Uint8Array {
   const out = new Uint8Array(372);
   out.set(prefix, 0);
   out.set(hexToArr(prefixHash), 28);
-  out.set(u64(1), 60);
+  out.set(encodeU64Be(1), 60);
   out.set(hexToArr(CONFORMANCE_V1_FIELDS.networkId), 68);
   out.set(hexToArr(CONFORMANCE_V1_FIELDS.partnerHash), 100);
   out.set(hexToArr(CONFORMANCE_V1_FIELDS.policyHash), 132);
   out.set(hexToArr(CONFORMANCE_V1_FIELDS.actionHash), 164);
   out.set(hexToArr(CONFORMANCE_V1_FIELDS.subjectHash), 196);
-  out.set(u64(CONFORMANCE_V1_FIELDS.issuedAt), 228);
-  out.set(u64(CONFORMANCE_V1_FIELDS.expiresAt), 236);
+  out.set(encodeU64Be(CONFORMANCE_V1_FIELDS.issuedAt), 228);
+  out.set(encodeU64Be(CONFORMANCE_V1_FIELDS.expiresAt), 236);
   out.set(hexToArr(CONFORMANCE_V1_FIELDS.nonce), 244);
   out.set(hexToArr(CONFORMANCE_V1_FIELDS.attestationId), 276);
   out.set(hexToArr(CONFORMANCE_V1_FIELDS.environment), 308);
@@ -79,16 +79,6 @@ function hexToArr(hex: string): Uint8Array {
   const out = new Uint8Array(raw.length / 2);
   for (let i = 0; i < out.length; i += 1) out[i] = Number.parseInt(raw.slice(i * 2, i * 2 + 2), 16);
   return out;
-}
-
-function u64(value: number): Uint8Array {
-  const buf = new Uint8Array(8);
-  let n = BigInt(value);
-  for (let i = 7; i >= 0; i -= 1) {
-    buf[i] = Number(n & 0xffn);
-    n >>= 8n;
-  }
-  return buf;
 }
 
 export const CONFORMANCE_VECTOR_PACKAGE = {
