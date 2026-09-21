@@ -31,9 +31,9 @@ export const CONFORMANCE_VECTOR_FIELDS: ChainEligibilityAttestationFields = {
   institutionalResultCategory: h("organization_eligible"),
 };
 
-export const CONFORMANCE_V1_FIELDS: ChainEligibilityAttestationFields = {
+export const CONFORMANCE_V1_FIELDS = {
   ...CONFORMANCE_VECTOR_FIELDS,
-  schemaVersion: 1,
+  schemaVersion: 1 as const,
   organizationCommitment: ZERO,
   actorCommitment: ZERO,
   institutionalResultCategory: ZERO,
