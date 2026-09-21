@@ -13,6 +13,7 @@ import { paymentAuthorizationServerExample } from "@/lib/partner/paymentAuthoriz
 import { portableActionServerExample } from "@/lib/partner/portableActionContract/examples";
 import { evmPartnerServerExample } from "@/lib/partner/evm/examples";
 import { evmWalletBindingExample } from "@/lib/partner/evmWalletBinding/examples";
+import { chainAttestationServerExample } from "@/lib/partner/chainAttestation/examples";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
 
 const DEMO_OPTS = {
@@ -82,6 +83,11 @@ export function studioSnippetForApplication(input: {
       docs: "/docs/evm-partner-adapter",
       code: `${evmPartnerServerExample()}\n\n${evmWalletBindingExample()}`,
     },
+    onchain_protocol_gate: {
+      title: "Onchain protocol gate",
+      docs: "/docs/chain-verifiable-attestations",
+      code: chainAttestationServerExample(),
+    },
   };
 }
 
@@ -140,6 +146,12 @@ export function studioSnippetForPath(path: IntegrationStudioPathId): { title: st
         title: "EVM partner eligibility",
         docs: "/docs/evm-partner-adapter",
         code: `${evmPartnerServerExample()}\n\n${evmWalletBindingExample()}`,
+      };
+    case "onchain_protocol_gate":
+      return {
+        title: "Onchain protocol gate",
+        docs: "/docs/chain-verifiable-attestations",
+        code: chainAttestationServerExample(),
       };
     default: {
       const _never: never = path;

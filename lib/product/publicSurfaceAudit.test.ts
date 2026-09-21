@@ -27,6 +27,7 @@ const PUBLIC_PAGES = [
   "/docs/wallet-standard-binding",
   "/docs/action-control-plane",
   "/docs/portable-action-contract",
+  "/docs/chain-verifiable-attestations",
   "/docs/selective-disclosure",
   "/docs/starter-kit",
   "/docs/production-review",

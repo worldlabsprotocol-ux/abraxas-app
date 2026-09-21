@@ -54,3 +54,8 @@ fix_*.py
 # Local artifact generation and visual QA
 /output/
 /tmp/
+
+# Foundry
+/contracts/evm-eligibility-verifier/out/
+/contracts/evm-eligibility-verifier/cache/
+

@@ -13,8 +13,9 @@ import { PAYMENT_AUTHORIZATION_NO_FUNDS_BOUNDARY } from "@/lib/partner/paymentAu
 import { PORTABLE_ACTION_NOT_EXECUTION } from "@/lib/partner/portableActionContract/contract";
 import { WALLET_STANDARD_NOT_IDENTITY } from "@/lib/partner/walletStandard/contract";
 import { EVM_NO_EXECUTION_BOUNDARY } from "@/lib/partner/evm/contract";
+import { CHAIN_ATTESTATION_NOT_EXECUTION } from "@/lib/partner/chainAttestation/contract";
 
-export const STARTER_KIT_VERSION = "1.3.0" as const;
+export const STARTER_KIT_VERSION = "1.4.0" as const;
 export const STARTER_KIT_API_PATH = "/api/developers/integration-studio/starter-kit" as const;
 
 export const STARTER_KIT_RUNTIMES = [
@@ -33,6 +34,8 @@ export const STARTER_KIT_PLATFORMS = [
   "wix_velo",
   "serverless",
   "solana_backend",
+  "evm_contract",
+  "solana_program",
 ] as const;
 export type StarterKitPlatform = (typeof STARTER_KIT_PLATFORMS)[number];
 
@@ -43,6 +46,8 @@ export const STARTER_KIT_PLATFORM_TO_RUNTIME: Record<StarterKitPlatform, Starter
   wix_velo: "javascript_wix_velo",
   serverless: "typescript_serverless",
   solana_backend: "typescript_serverless",
+  evm_contract: "typescript_serverless",
+  solana_program: "typescript_serverless",
 };
 
 export const STARTER_KIT_FORBIDDEN_RUNTIMES = [
@@ -71,6 +76,7 @@ export const STARTER_KIT_OPTIONAL_CAPABILITIES = [
   "portable_action_contract",
   "solana_gate",
   "evm_partner_adapter",
+  "onchain_protocol_gate",
 ] as const;
 export type StarterKitOptionalCapability = (typeof STARTER_KIT_OPTIONAL_CAPABILITIES)[number];
 
@@ -92,6 +98,7 @@ export const STARTER_KIT_DOES_NOT_DO = [
   "Does not charge, capture, transfer, settle, or call Circle.",
   "Does not sign a blockchain transaction or bind a wallet as identity.",
   "Does not activate Mainnet, include RPC credentials, or execute partner chain transactions.",
+  "Does not treat a chain eligibility attestation as a payment, transfer, trade, token approval, or gas grant.",
 ] as const;
 
 export const STARTER_KIT_REJECTED_CAPABILITIES = [
@@ -113,6 +120,7 @@ export const STARTER_KIT_NOTICES = {
   portable: PORTABLE_ACTION_NOT_EXECUTION,
   wallet: WALLET_STANDARD_NOT_IDENTITY,
   evm: EVM_NO_EXECUTION_BOUNDARY,
+  onchain: CHAIN_ATTESTATION_NOT_EXECUTION,
 } as const;
 
 export const PATH_IMPLIED_CAPABILITY: Record<IntegrationStudioPathId, string> = {
@@ -125,6 +133,7 @@ export const PATH_IMPLIED_CAPABILITY: Record<IntegrationStudioPathId, string> = 
   payment_authorization: "payment_authorization",
   portable_action_contract: "portable_action_contract",
   evm_partner_adapter: "evm_partner_adapter",
+  onchain_protocol_gate: "onchain_protocol_gate",
 };
 
 export function isStarterKitRuntime(value: string): value is StarterKitRuntime {
@@ -157,7 +166,7 @@ export const STARTER_KIT_PLATFORM_MATRIX = [
     label: "Universal HTTPS",
     runtime: "universal_https",
     canonical: true,
-    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "portable_action_contract", "wallet_standard_binding", "solana_gate", "evm_partner_adapter"],
+    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "portable_action_contract", "wallet_standard_binding", "solana_gate", "evm_partner_adapter", "onchain_protocol_gate"],
     note: "Any product with an HTTPS backend. Canonical integration.",
   },
   {
@@ -165,7 +174,7 @@ export const STARTER_KIT_PLATFORM_MATRIX = [
     label: "Next.js",
     runtime: "typescript_nextjs",
     canonical: false,
-    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "portable_action_contract", "wallet_standard_binding", "solana_gate", "evm_partner_adapter"],
+    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "portable_action_contract", "wallet_standard_binding", "solana_gate", "evm_partner_adapter", "onchain_protocol_gate"],
     note: "App Router server routes. Secrets stay in the server runtime.",
   },
   {
@@ -173,7 +182,7 @@ export const STARTER_KIT_PLATFORM_MATRIX = [
     label: "Express / Node",
     runtime: "typescript_express",
     canonical: false,
-    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "portable_action_contract", "wallet_standard_binding", "solana_gate", "evm_partner_adapter"],
+    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "portable_action_contract", "wallet_standard_binding", "solana_gate", "evm_partner_adapter", "onchain_protocol_gate"],
     note: "Node HTTP server using the same Partner Kit contracts.",
   },
   {
@@ -181,7 +190,7 @@ export const STARTER_KIT_PLATFORM_MATRIX = [
     label: "Wix Velo",
     runtime: "javascript_wix_velo",
     canonical: false,
-    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "portable_action_contract", "wallet_standard_binding", "evm_partner_adapter"],
+    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "portable_action_contract", "wallet_standard_binding", "evm_partner_adapter", "onchain_protocol_gate"],
     note: "Good Trouble-style Wix backend. Secrets Manager names only. Frontend calls backend only.",
   },
   {
@@ -189,7 +198,7 @@ export const STARTER_KIT_PLATFORM_MATRIX = [
     label: "Serverless function",
     runtime: "typescript_serverless",
     canonical: false,
-    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "portable_action_contract", "wallet_standard_binding", "solana_gate", "evm_partner_adapter"],
+    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "portable_action_contract", "wallet_standard_binding", "solana_gate", "evm_partner_adapter", "onchain_protocol_gate"],
     note: "Vercel Functions, Cloudflare Workers, or Netlify Functions with small host substitutions.",
   },
   {
@@ -197,8 +206,24 @@ export const STARTER_KIT_PLATFORM_MATRIX = [
     label: "Solana partner backend",
     runtime: "typescript_serverless",
     canonical: false,
-    works: ["solana_gate", "hosted_partner_flow", "server_receipt_verify", "webhook_events"],
+    works: ["solana_gate", "hosted_partner_flow", "server_receipt_verify", "webhook_events", "onchain_protocol_gate"],
     note: "HTTPS partner backend plus the Solana eligibility gate. No on-chain personal data.",
+  },
+  {
+    id: "evm_contract",
+    label: "EVM contract integration",
+    runtime: "typescript_serverless",
+    canonical: false,
+    works: ["onchain_protocol_gate", "evm_partner_adapter", "hosted_partner_flow", "server_receipt_verify"],
+    note: "Partner-owned EIP-712 verifier reference. Abraxas does not deploy a shared contract.",
+  },
+  {
+    id: "solana_program",
+    label: "Solana program integration",
+    runtime: "typescript_serverless",
+    canonical: false,
+    works: ["onchain_protocol_gate", "solana_gate", "hosted_partner_flow", "server_receipt_verify"],
+    note: "Ed25519 message/instruction builders plus a partner-program interface. No deployment.",
   },
 ] as const;
 

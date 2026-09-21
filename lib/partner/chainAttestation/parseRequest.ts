@@ -1,0 +1,73 @@
+// FILE: lib/partner/chainAttestation/parseRequest.ts
+// Allowed issuance request keys only. Extra keys fail closed.
+
+const ALLOWED = [
+  "receipt_id",
+  "action_type",
+  "action_scope",
+  "network_id",
+  "chain_id",
+  "verifying_contract",
+  "wallet_binding_hash",
+  "wallet_binding_mode",
+  "application_id",
+] as const;
+
+export interface ParsedChainAttestationRequest {
+  receipt_id: string;
+  action_type: string;
+  action_scope: string;
+  network_id: string;
+  chain_id: number | undefined;
+  verifying_contract: string | undefined;
+  wallet_binding_hash: string | null;
+  wallet_binding_mode: "not_attached" | "optional" | "required";
+  application_id: string | null;
+}
+
+export function parseChainAttestationRequest(
+  body: unknown,
+): { ok: true; value: ParsedChainAttestationRequest } | { ok: false; reason: "invalid" } {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return { ok: false, reason: "invalid" };
+  const rec = body as Record<string, unknown>;
+  if (Object.keys(rec).some((key) => !(ALLOWED as readonly string[]).includes(key))) {
+    return { ok: false, reason: "invalid" };
+  }
+  const receiptId = typeof rec.receipt_id === "string" ? rec.receipt_id.trim() : "";
+  const actionType = typeof rec.action_type === "string" ? rec.action_type.trim() : "";
+  const actionScope = typeof rec.action_scope === "string" ? rec.action_scope.trim() : "";
+  const networkId = typeof rec.network_id === "string" ? rec.network_id.trim() : "";
+  if (!receiptId || !actionType || !actionScope || !networkId) return { ok: false, reason: "invalid" };
+  const mode = rec.wallet_binding_mode === undefined ? "not_attached" : rec.wallet_binding_mode;
+  if (mode !== "not_attached" && mode !== "optional" && mode !== "required") {
+    return { ok: false, reason: "invalid" };
+  }
+  const chainId = rec.chain_id === undefined ? undefined : rec.chain_id;
+  if (chainId !== undefined && (typeof chainId !== "number" || !Number.isInteger(chainId) || chainId <= 0)) {
+    return { ok: false, reason: "invalid" };
+  }
+  const verifying = rec.verifying_contract === undefined ? undefined : rec.verifying_contract;
+  if (verifying !== undefined && typeof verifying !== "string") return { ok: false, reason: "invalid" };
+  const binding = rec.wallet_binding_hash === undefined || rec.wallet_binding_hash === null
+    ? null
+    : rec.wallet_binding_hash;
+  if (binding !== null && typeof binding !== "string") return { ok: false, reason: "invalid" };
+  const applicationId = rec.application_id === undefined || rec.application_id === null
+    ? null
+    : rec.application_id;
+  if (applicationId !== null && typeof applicationId !== "string") return { ok: false, reason: "invalid" };
+  return {
+    ok: true,
+    value: {
+      receipt_id: receiptId,
+      action_type: actionType,
+      action_scope: actionScope,
+      network_id: networkId,
+      chain_id: chainId,
+      verifying_contract: verifying,
+      wallet_binding_hash: binding,
+      wallet_binding_mode: mode,
+      application_id: applicationId,
+    },
+  };
+}

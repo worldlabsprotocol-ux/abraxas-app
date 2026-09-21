@@ -447,6 +447,67 @@ export async function POST() {
   return body;
 }
 
+function onchainGate(): string {
+  return `// Server-only. Request a short-lived chain eligibility attestation.
+export async function issueOnchainGate(receiptId) {
+  const res = await fetch((process.env.ABRAXAS_BASE_URL ?? "https://abraxasworld.xyz") + "/api/v1/chain-attestations", {
+    method: "POST",
+    headers: {
+      authorization: "Bearer " + (process.env.ABRAXAS_SANDBOX_API_KEY ?? "${P.api_key}"),
+      "content-type": "application/json",
+      "x-abraxas-application-id": process.env.ABRAXAS_APP_ID ?? "${P.app_id}",
+    },
+    body: JSON.stringify({
+      receipt_id: receiptId,
+      action_type: "enable_protocol_access",
+      action_scope: "sandbox:protocol_access",
+      network_id: "evm_sandbox",
+      chain_id: 11155111,
+      verifying_contract: process.env.PARTNER_VERIFIER_ADDRESS,
+    }),
+  });
+  const issued = await res.json();
+  // Pass typed_data + signature to YOUR verifier. Abraxas never submits a transaction.
+  // A valid attestation is not a payment, transfer, trade, token approval, or gas authorization.
+  return issued;
+}
+`;
+}
+
+function evmVerifierDoc(): string {
+  return `# EVM contract integration
+
+Copy \`contracts/evm-eligibility-verifier/src/AbraxasEligibilityVerifier.sol\` into your repository and deploy it yourself.
+Abraxas does not deploy a shared execution contract and does not claim any live-chain deployment.
+
+The contract verifies:
+- trusted Abraxas signer
+- EIP-712 domain (name AbraxasEligibilityVerifier, version 1, chainId, verifyingContract, partnerHash)
+- expiry, one-time nonce, partner/policy/action/scope hashes
+- optional required subject/wallet binding hash
+
+It returns only an eligibility authorization. It cannot transfer tokens, approve ERC-20 spending, or accept amounts/recipients/calldata.
+
+Reference Foundry tests live at \`contracts/evm-eligibility-verifier\`.
+`;
+}
+
+function solanaProgramDoc(): string {
+  return `# Solana program integration
+
+Use the TypeScript helpers in the Abraxas chain attestation SDK to build the exact Ed25519 verify instruction payload.
+
+Message prefix: ABRAXAS_CHAIN_ELIGIBILITY_V1 followed by schema version and the canonical hashes
+(network, partner, policy, action, subject, issued/expiry, nonce, attestation id, environment, signer key id).
+
+Your program must fail closed on unknown signer, wrong bindings, expiry, reused nonce, or missing required subject hash.
+Do not transfer SOL or tokens. Do not treat the attestation as a transaction.
+
+The existing Solana eligibility adapter remains compatible as an off-chain gate.
+This path does not deploy a program or call RPC.
+`;
+}
+
 function solanaGate(): string {
   return `import { AbraxasSolanaPartnerAdapter } from "@abraxas/partner-kit/solana";
 import { kit, permitProtocolAction } from "./abraxas";
@@ -526,6 +587,10 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
   const wallet = selection.path === "wallet_standard_binding" || selection.capabilities.includes("wallet_standard_binding");
   const portable = selection.path === "portable_action_contract" || selection.capabilities.includes("portable_action_contract");
   const evm = selection.path === "evm_partner_adapter" || selection.capabilities.includes("evm_partner_adapter");
+  const onchain = selection.path === "onchain_protocol_gate"
+    || selection.capabilities.includes("onchain_protocol_gate")
+    || selection.platform === "evm_contract"
+    || selection.platform === "solana_program";
   const include = { webhook, venue, payment, solana, wallet, portable, evm };
 
   const files: StarterKitFile[] = [
@@ -547,6 +612,7 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     if (payment) files.push({ path: "app/api/abraxas/payment-preflight/route.ts", contents: paymentPreflight("typescript_nextjs") });
     if (portable) files.push({ path: "app/api/abraxas/action-preflight/route.ts", contents: portablePreflight("typescript_nextjs") });
     if (evm) files.push({ path: "app/api/abraxas/evm-preflight/route.ts", contents: evmPreflight("typescript_nextjs") });
+    if (onchain) files.push({ path: "src/lib/onchain-gate.ts", contents: onchainGate() });
     if (solana) files.push({ path: "src/lib/solana-gate.ts", contents: solanaGate() });
     if (wallet) files.push({ path: "src/lib/wallet-binding.ts", contents: walletBinding() });
   } else if (selection.runtime === "typescript_express") {
@@ -560,6 +626,7 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     if (evm) files.push({ path: "src/evm-preflight.ts", contents: evmPreflight("typescript_express") });
     files.push({ path: "src/server.ts", contents: expressServer({ webhook, venue, payment, portable, evm }) });
     if (solana) files.push({ path: "src/lib/solana-gate.ts", contents: solanaGate() });
+    if (onchain) files.push({ path: "src/lib/onchain-gate.ts", contents: onchainGate() });
     if (wallet) files.push({ path: "src/lib/wallet-binding.ts", contents: walletBinding() });
   } else if (selection.runtime === "universal_https") {
     files.push(...universalHttpsFiles(include));
@@ -567,6 +634,14 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     files.push(...wixVeloFiles({ webhook, venue, payment, wallet, portable, evm }));
   } else {
     files.push(...serverlessFiles(include));
+  }
+
+  if (onchain) {
+    if (!files.some((file) => file.path === "src/lib/onchain-gate.ts")) {
+      files.push({ path: "src/lib/onchain-gate.ts", contents: onchainGate() });
+    }
+    files.push({ path: "onchain/EVM_VERIFIER.md", contents: evmVerifierDoc() });
+    files.push({ path: "onchain/SOLANA_PROGRAM.md", contents: solanaProgramDoc() });
   }
 
   for (const file of files) assertSafeStarterPath(file.path);
