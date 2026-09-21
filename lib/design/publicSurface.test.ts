@@ -12,14 +12,10 @@ describe("public surface tokens", () => {
     expect(PUBLIC_NAV_LINKS.map((link) => link.label)).toEqual([
       "Home",
       "Passport",
-      "Verify",
       "Build",
-      "Launchpad",
-      "Docs",
     ]);
     const hrefs = PUBLIC_NAV_LINKS.map((link) => link.href);
-    expect(hrefs).toContain("/docs");
-    expect(hrefs).toContain("/verification");
+    expect(hrefs).toContain("/passport");
     expect(hrefs).not.toContain("/judge-demo");
   });
 

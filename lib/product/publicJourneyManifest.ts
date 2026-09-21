@@ -124,8 +124,8 @@ export const PUBLIC_JOURNEY_SURFACES = [
   },
   {
     route: "/good-trouble",
-    purpose: "Good Trouble Cannabis eligibility pilot, not a separate product.",
-    primaryCta: { label: "Try the sandbox demonstration", href: "/developers/launchpad" },
+    purpose: "Good Trouble sandbox Partner Flow for 21+ eligibility. Not a live checkout.",
+    primaryCta: { label: "Start sandbox verification", href: "/good-trouble/checkout" },
     file: "app/good-trouble/page.tsx",
   },
 ] as const;

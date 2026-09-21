@@ -14,6 +14,7 @@ import {
   SIMPLIFIED_HOME_EYEBROW,
   SIMPLIFIED_HOME_HEADLINE,
   SIMPLIFIED_HOME_SUBHEAD,
+  SIMPLIFIED_HOME_MOBILE_PROMPT,
   SIMPLIFIED_HOME_TRUST_LINE,
   SIMPLIFIED_HERO_FLOW,
 } from "@/lib/home/simplifiedHomeCopy";
@@ -58,12 +59,26 @@ export function HomeSharpHero() {
           fontSize: "clamp(1rem, 2.4vw, 1.12rem)",
           fontWeight: 500,
           color: "var(--text-secondary)",
-          margin: "0 auto 1.5rem",
+          margin: "0 auto 0.75rem",
           lineHeight: 1.55,
           maxWidth: 560,
         }}
       >
         {SIMPLIFIED_HOME_SUBHEAD}
+      </p>
+      <p
+        className="abx-home-mobile-prompt"
+        style={{
+          fontFamily: FONT,
+          fontSize: "clamp(0.92rem, 2.2vw, 1.02rem)",
+          fontWeight: 700,
+          color: "var(--text-primary)",
+          margin: "0 auto 1.5rem",
+          lineHeight: 1.45,
+          maxWidth: 520,
+        }}
+      >
+        {SIMPLIFIED_HOME_MOBILE_PROMPT}
       </p>
 
       <div className="abx-home-hero-actions" style={{ marginBottom: "1.5rem" }}>

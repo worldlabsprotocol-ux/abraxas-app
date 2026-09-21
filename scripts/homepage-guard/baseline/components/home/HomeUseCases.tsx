@@ -61,6 +61,7 @@ export function HomeUseCases() {
           border-radius: 999px;
         }
         .abx-use-case-status.is-available { color: #04110f; background: #2DD4BF; }
+        .abx-use-case-status.is-sandbox { color: #0b1020; background: #818CF8; }
         .abx-use-case-status.is-planned { color: #1b1404; background: #E8C547; }
         .abx-use-case-title { font-family: ${FONT}; font-size: 0.95rem; font-weight: 800; color: var(--text-primary); }
         .abx-use-case-body { font-family: ${FONT}; font-size: 0.8rem; line-height: 1.5; color: var(--text-secondary); }

@@ -13,20 +13,19 @@ export interface PublicPartnerProofCard {
   logoSrc?: string;
 }
 
-export const HOME_PARTNER_PROOF_HEADING = "Built with real partners";
+export const HOME_PARTNER_PROOF_HEADING = "A sandbox example you can try";
 
 export const HOME_PARTNER_PROOF_SUBHEAD =
-  "Abraxas is being tested through its first relying partner integration, turning private verification into a real customer journey.";
+  "Good Trouble is a labeled sandbox Partner Flow. It is not a live checkout, booking, or payment.";
 
-/** Good Trouble name/logo withheld until explicit public permission is confirmed. */
 export const HOME_PARTNER_PROOF_FALLBACK = {
-  title: "First relying partner pilot",
-  badge: "Integration testing underway",
-  summary: "Private eligibility verification for an age gated retail experience.",
-  journeyHref: "/pilot-journey",
+  title: "Good Trouble",
+  badge: "Sandbox example",
+  summary: "Prove 21+ eligibility. The partner receives only the result. Evidence stays private.",
+  journeyHref: "/good-trouble",
 } as const;
 
-export const HOME_PARTNER_PROOF_CTA = "See the pilot journey";
+export const HOME_PARTNER_PROOF_CTA = "Try the sandbox example";
 
 export function resolveHomePartnerProofCards(
   authorized: PublicPartnerProofCard[] = [],

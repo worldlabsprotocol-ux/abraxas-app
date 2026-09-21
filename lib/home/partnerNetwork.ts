@@ -1,7 +1,7 @@
 // FILE: lib/home/partnerNetwork.ts
 // Partner Network section, live implementations vs design partners (separate from Protocol in Action).
 
-export type PartnerNetworkStatus = "live" | "design_partner";
+export type PartnerNetworkStatus = "sandbox" | "design_partner";
 
 export interface PartnerNetworkImage {
   src: string;
@@ -53,9 +53,9 @@ export const LIVE_PARTNER_NETWORK_CARDS: PartnerNetworkCard[] = [
   {
     id: "good-trouble",
     name: "Good Trouble",
-    status: "live",
+    status: "sandbox",
     description:
-      "First relying party demonstrating reusable age verification through Abraxas Passport.",
+      "Sandbox Partner Flow example for 21+ eligibility. Not a live dispensary checkout.",
     href: "/good-trouble",
     image: GOOD_TROUBLE_PARTNER_IMAGE,
   },
@@ -86,9 +86,9 @@ export const PARTNER_NETWORK_CARDS: PartnerNetworkCard[] = [
 ];
 
 export function partnerNetworkStatusLabel(status: PartnerNetworkStatus): string {
-  return status === "live" ? "Live" : "Design Partner";
+  return status === "sandbox" ? "Sandbox" : "Design Partner";
 }
 
 export function partnerNetworkStatusEmoji(status: PartnerNetworkStatus): string {
-  return status === "live" ? "🟢" : "🟡";
+  return status === "sandbox" ? "🟣" : "🟡";
 }

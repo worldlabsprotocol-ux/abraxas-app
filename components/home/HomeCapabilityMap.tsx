@@ -44,11 +44,12 @@ export function HomeCapabilityMap() {
             <ul className="abx-capability-grid" aria-label={group.title}>
               {COMMAND_CENTER_CARDS.filter((card) => card.group === group.id).map((card) => (
                 <li key={card.id}>
-                  <Link href={card.href} className="abx-capability-card" aria-label={`${card.title}. ${card.summary}`}>
+                  <Link href={card.href} className="abx-capability-card" aria-label={`${card.title}. ${card.statusLabel}. ${card.summary}`}>
+                    <span className={`abx-capability-status is-${card.status}`}>{card.statusLabel}</span>
                     <span className="abx-capability-card-title">{card.title}</span>
                     <span className="abx-capability-card-body">{card.summary}</span>
                     <span className="abx-capability-card-go" aria-hidden="true" style={{ color: TEAL }}>
-                      Open →
+                      {card.actionLabel} →
                     </span>
                   </Link>
                 </li>
@@ -94,6 +95,19 @@ export function HomeCapabilityMap() {
           box-shadow: 0 0 0 2px rgba(45,212,191,0.22), 0 12px 30px rgba(0,0,0,0.28);
         }
         .abx-capability-card-title { font-family: ${FONT}; font-size: 0.95rem; font-weight: 800; color: var(--text-primary); }
+        .abx-capability-status {
+          align-self: flex-start;
+          font-family: ${FONT};
+          font-size: 0.62rem;
+          font-weight: 800;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+          padding: 0.18rem 0.42rem;
+          border-radius: 999px;
+        }
+        .abx-capability-status.is-available { color: #04110f; background: #2DD4BF; }
+        .abx-capability-status.is-sandbox { color: #0b1020; background: #818CF8; }
+        .abx-capability-status.is-planned { color: #1b1404; background: #E8C547; }
         .abx-capability-card-body { font-family: ${FONT}; font-size: 0.8rem; line-height: 1.5; color: var(--text-secondary); flex: 1; }
         .abx-capability-card-go { font-family: ${FONT}; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; }
         @media (prefers-reduced-motion: reduce) {
