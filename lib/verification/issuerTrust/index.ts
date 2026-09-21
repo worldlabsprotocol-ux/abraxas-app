@@ -9,5 +9,6 @@ export {
 } from "./contract";
 export { VERIFICATION_ISSUER_TRUST_RECORDS, opaqueIssuerRef } from "./registry";
 export { planIssuersForReleaseShape, planIssuersForPack, issuerTrustLeaks, issuerRecordIsCurrent } from "./match";
+export type { IssuerMethodPlan, IssuerPlanEntry } from "./match";
 export { projectIssuerTrustRegistry } from "./project";
 export { issuerTrustCsrfRejected, issuerTrustClientOverride } from "./csrf";

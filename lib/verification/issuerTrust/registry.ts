@@ -1,7 +1,6 @@
 // FILE: lib/verification/issuerTrust/registry.ts
 // Source-controlled issuer capability records. Browser cannot publish these.
 
-import { createHash } from "node:crypto";
 import type { PolicyFitCategory, PolicyFitEnvironment } from "@/lib/partner/integrationStudio/policyFit/contract";
 import type { PolicyRcDisclosure, PolicyRcMethod } from "@/lib/partner/policyReleaseCandidate/contract";
 import type { AssuranceLevel } from "@/lib/credentials/claimSchema";
@@ -30,7 +29,13 @@ export interface VerificationIssuerRecord {
 }
 
 export function opaqueIssuerRef(issuerKey: string, recordVersion: number): string {
-  return `vit_${createHash("sha256").update(`verification-issuer:${issuerKey}:${recordVersion}`).digest("hex").slice(0, 12)}`;
+  const input = `verification-issuer:${issuerKey}:${recordVersion}`;
+  let hash = 2166136261;
+  for (let i = 0; i < input.length; i += 1) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `vit_${(hash >>> 0).toString(16).padStart(8, "0")}${recordVersion.toString(16).padStart(4, "0")}`;
 }
 
 export const VERIFICATION_ISSUER_TRUST_RECORDS: readonly VerificationIssuerRecord[] = [

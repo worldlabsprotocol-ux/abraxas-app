@@ -78,13 +78,13 @@ export function isHolderSelectable(record: VerificationIssuerRecord): boolean {
 export function matchesReleaseShape(record: VerificationIssuerRecord, shape: SanitizedReleaseShape, now?: Date): boolean {
   if (!issuerRecordIsCurrent(record, now)) return false;
   if (record.status === "disabled" || record.status === "retiring") return false;
+  if (record.method_category === "account_login") return false;
   if (record.method_category !== shape.method_category) return false;
   if (!record.result_categories.includes(shape.result_category)) return false;
   if (!record.environments.includes(shape.environment)) return false;
+  if (String(record.assurance_level) === "L0") return false;
   if (!assuranceOk(record.assurance_level, shape.minimum_assurance)) return false;
   if (!disclosureOk(record.disclosure_boundary, shape.disclosure_profile)) return false;
-  if (record.method_category === "account_login") return false;
-  if (record.assurance_level === "L0" && shape.minimum_assurance !== "L0") return false;
   return record.status === "active" || record.status === "review_required";
 }
 

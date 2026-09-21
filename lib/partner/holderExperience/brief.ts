@@ -4,7 +4,7 @@
 import { inferPolicyPackFromPolicyId, policyPackIsSandboxOnly } from "@/lib/partner/launchpad/policyPacks";
 import { resolvePartnerDisplayName } from "@/lib/partner/partnerVerifyDisplay";
 import { HOLDER_GOOGLE_ACCOUNT_ONLY } from "./contract";
-import { HOLDER_APPROVED_METHOD } from "@/lib/verification/issuerTrust";
+import { HOLDER_APPROVED_METHOD } from "@/lib/verification/issuerTrust/contract";
 import { applyDisclosureProfile, resolveDisclosureProfile } from "@/lib/privacy/selectiveDisclosure";
 import { GENERIC_MINIMAL_PROFILE } from "@/lib/privacy/selectiveDisclosure/profiles";
 

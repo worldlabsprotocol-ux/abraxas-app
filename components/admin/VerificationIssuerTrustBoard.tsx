@@ -43,7 +43,7 @@ export function VerificationIssuerTrustBoard() {
         {VERIFICATION_ISSUER_TRUST_NOTICE} Browser input cannot create or activate issuers.
       </p>
       {error && <p role="alert" style={{ fontFamily: FONT, color: "#f87171", fontSize: "0.8rem" }}>{error}</p>}
-      <div style={{ display: "grid", gap: "0.65rem", marginTop: "0.75rem" }}>
+      <div data-testid="issuer-trust-list" style={{ display: "grid", gap: "0.65rem", marginTop: "0.75rem", maxWidth: "100%" }}>
         {items.map((item) => (
           <article
             key={item.issuer_ref}

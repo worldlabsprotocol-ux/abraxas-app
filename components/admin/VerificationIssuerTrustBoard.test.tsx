@@ -30,5 +30,7 @@ describe("VerificationIssuerTrustBoard", () => {
     expect(await screen.findByRole("heading", { name: "Verification issuer trust" })).toBeInTheDocument();
     expect(screen.getByText(new RegExp(VERIFICATION_ISSUER_TRUST_NOTICE.slice(0, 40)))).toBeInTheDocument();
     expect(screen.getByRole("article", { name: /Issuer Abraxas reusable eligibility/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /create|activate|publish|select issuer/i })).toBeNull();
+    expect(screen.getByTestId("issuer-trust-list")).toHaveStyle({ maxWidth: "100%" });
   });
 });
