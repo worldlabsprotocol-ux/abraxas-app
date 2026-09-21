@@ -68,8 +68,8 @@ export const INSTITUTIONAL_TESTNET_TEST_PLAN = {
   failure_cases: [
     "missing --confirm on institutional deploy",
     "mainnet or unpublished Arc",
-    "commitment or signer mismatch",
-    "expired valid_until",
+    "static organization or actor commitment on the deployment plan",
+    "attestation expiry or missing institutional fields at authorize",
     "register before verified_sandbox",
   ],
 };

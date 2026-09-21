@@ -46,6 +46,7 @@ export async function bindIssuanceToVerifiedDeployment(input: {
   policyId: string;
   policyVersion: number;
   signerKeyId: string;
+  institutionalRequired?: boolean;
   testAdapter?: LocalIssuanceTestAdapter;
 }): Promise<BoundDeployment> {
   if (input.testAdapter && process.env[ONCHAIN_DEPLOYMENT_TEST_ADAPTER_ENV] === "1") {
@@ -100,6 +101,11 @@ export async function bindIssuanceToVerifiedDeployment(input: {
     if (record.status !== "verified_sandbox") return { ok: false, reason: mapIssuanceDenied(record.status, "sandbox") };
   } else if (record.status !== "verified_production" || !record.production_reviewed_at) {
     return { ok: false, reason: "production_review_required" };
+  }
+
+  const requestedInstitutional = input.institutionalRequired === true;
+  if (record.require_institutional !== requestedInstitutional) {
+    return { ok: false, reason: "institutional_required" };
   }
 
   return {

@@ -1,9 +1,12 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { planInstitutionalTestnetGate, planTestnetGate } from "./plan";
 import { deployTestnetGate } from "./deploy";
 import { verifyTestnetManifest } from "./verify";
 import { registerTestnetManifest } from "./register";
 import { rejectForbiddenNetwork } from "./networks";
+import { validateInstitutionalPlanFile } from "./validatePlan";
+import { operatorHandoffFromPlan } from "./handoff";
+import { classifyKitFile } from "./classify";
 import { TESTNET_GATE_CLI, TESTNET_GATE_ENV_NAMES } from "./contract";
 import type { KitCliResult } from "./types";
 
@@ -21,6 +24,13 @@ function planBindings(env: NodeJS.ProcessEnv) {
   };
 }
 
+function maybeWriteHandoff(result: KitCliResult, env: NodeJS.ProcessEnv): void {
+  if (!result.handoff) return;
+  const path = env.ABRAXAS_GATE_HANDOFF_PATH?.trim();
+  if (!path) return;
+  writeFileSync(path, `${JSON.stringify(result.handoff, null, 2)}\n`);
+}
+
 export async function runAbraxasGate(argv: string[], env: NodeJS.ProcessEnv = process.env): Promise<KitCliResult> {
   const args = argv.filter((item) => item !== "--");
   const command = args[0] ?? "";
@@ -31,7 +41,7 @@ export async function runAbraxasGate(argv: string[], env: NodeJS.ProcessEnv = pr
     if (forbidden) return { ok: false, command: `plan ${target}`, reason: forbidden };
     const planned = planTestnetGate({ target, bindings: planBindings(env) });
     if (!planned.ok) return { ok: false, command: `plan ${target}`, reason: planned.reason };
-    return { ok: true, command: `plan ${target}`, envelope: planned.envelope };
+    return { ok: true, command: `plan ${target}`, envelope: planned.envelope, file_kind: "plan_envelope" };
   }
   if (command === "plan" && (target === "institutional-evm-sepolia" || target === "institutional-solana-devnet")) {
     const forbidden = rejectForbiddenNetwork(target.includes("evm") ? "evm_sepolia" : "solana_devnet");
@@ -39,14 +49,17 @@ export async function runAbraxasGate(argv: string[], env: NodeJS.ProcessEnv = pr
     const planned = planInstitutionalTestnetGate({
       target,
       bindings: planBindings(env),
-      organizationRef: env[TESTNET_GATE_ENV_NAMES.organization_ref],
-      actorRef: env[TESTNET_GATE_ENV_NAMES.actor_ref],
-      resultCategory: env[TESTNET_GATE_ENV_NAMES.result_category],
       publicVerifier: env[TESTNET_GATE_ENV_NAMES.public_verifier],
-      validUntil: env[TESTNET_GATE_ENV_NAMES.valid_until] ? Number(env[TESTNET_GATE_ENV_NAMES.valid_until]) : undefined,
     });
     if (!planned.ok) return { ok: false, command: `plan ${target}`, reason: planned.reason };
-    return { ok: true, command: `plan ${target}`, envelope: planned.envelope };
+    return { ok: true, command: `plan ${target}`, envelope: planned.envelope, file_kind: "plan_envelope" };
+  }
+  if (command === "validate-plan" && target) {
+    const validated = validateInstitutionalPlanFile(readManifest(target));
+    if (!validated.ok || !validated.envelope) return validated;
+    const result = { ...validated, handoff: operatorHandoffFromPlan(validated.envelope) };
+    maybeWriteHandoff(result, env);
+    return result;
   }
   if (
     command === "deploy"
@@ -57,12 +70,16 @@ export async function runAbraxasGate(argv: string[], env: NodeJS.ProcessEnv = pr
       || target === "institutional-solana-devnet"
     )
   ) {
-    return deployTestnetGate({ target, confirm, env, bindings: planBindings(env) });
+    const result = deployTestnetGate({ target, confirm, env, bindings: planBindings(env) });
+    maybeWriteHandoff(result, env);
+    return result;
   }
   if (command === "verify" && target) {
+    const kind = classifyKitFile(readManifest(target));
+    if (kind === "plan_envelope") return { ok: false, command: "verify", reason: "plan_envelope", file_kind: kind };
     const verified = await verifyTestnetManifest(readManifest(target));
-    if (!verified.ok) return { ok: false, command: "verify", reason: verified.reason };
-    return { ok: true, command: "verify" };
+    if (!verified.ok) return { ok: false, command: "verify", reason: verified.reason, file_kind: kind };
+    return { ok: true, command: "verify", file_kind: "registry_manifest" };
   }
   if (command === "register" && target) {
     return registerTestnetManifest({ raw: readManifest(target), env });
@@ -74,6 +91,14 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
   const result = await runAbraxasGate(argv);
   const phase = result.ok ? result.envelope?.phase : undefined;
   const reason = result.ok ? undefined : result.reason;
-  process.stdout.write(`${JSON.stringify({ ok: result.ok, command: result.command, reason, phase, live: false })}\n`);
+  process.stdout.write(`${JSON.stringify({
+    ok: result.ok,
+    command: result.command,
+    reason,
+    phase,
+    file_kind: result.file_kind,
+    broadcast: false,
+    live: false,
+  })}\n`);
   return result.ok ? 0 : 1;
 }

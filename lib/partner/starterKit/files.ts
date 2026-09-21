@@ -856,6 +856,7 @@ npx tsx scripts/abraxas-gate.ts plan solana
 npx tsx scripts/abraxas-gate.ts plan evm
 npx tsx scripts/abraxas-gate.ts plan institutional-evm-sepolia
 npx tsx scripts/abraxas-gate.ts plan institutional-solana-devnet
+npx tsx scripts/abraxas-gate.ts validate-plan ./plan.json
 npx tsx scripts/abraxas-gate.ts deploy solana-devnet --confirm
 npx tsx scripts/abraxas-gate.ts deploy evm-testnet --confirm
 npx tsx scripts/abraxas-gate.ts deploy institutional-evm-sepolia --confirm

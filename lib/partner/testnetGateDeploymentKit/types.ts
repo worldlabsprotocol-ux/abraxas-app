@@ -21,13 +21,21 @@ export interface KitEip712Preview {
   partner_hash: `0x${string}`;
 }
 
+export const INSTITUTIONAL_ATTESTATION_ONLY_FIELDS = [
+  "organization_commitment",
+  "actor_commitment",
+  "institutional_result_category",
+  "subject_hash",
+  "issued_at",
+  "expires_at",
+  "nonce",
+  "attestation_id",
+] as const;
+
 export interface InstitutionalKitPlan {
   schema_version: "2";
   institutional_required: true;
-  organization_commitment: `0x${string}`;
-  actor_commitment: `0x${string}`;
-  institutional_result_category_hash: `0x${string}`;
-  valid_until: number;
+  require_institutional: true;
   signer_key_id: string;
   public_verifier: string;
   partner_hash: `0x${string}`;
@@ -37,6 +45,7 @@ export interface InstitutionalKitPlan {
   config_digest: `0x${string}`;
   bytecode_digest: `0x${string}`;
   consumer: "expiry_bound_protocol_access";
+  attestation_only_fields: typeof INSTITUTIONAL_ATTESTATION_ONLY_FIELDS;
 }
 
 export interface KitCreate2Preview {
@@ -73,6 +82,9 @@ export interface TestnetGateKitEnvelope {
 
 export interface TestnetReadinessReport {
   deployment_verified: boolean;
+  require_institutional: boolean;
+  institutional_class: "institutional_v2" | "standard";
+  institutional_label: string;
   signer_lifecycle_matches: boolean;
   partner_policy_action_match: boolean;
   replay_protection: boolean;
@@ -84,6 +96,53 @@ export interface TestnetReadinessReport {
   reasons: string[];
 }
 
+export type KitFileKind = "plan_envelope" | "registry_manifest" | "invalid";
+
+export interface OperatorHandoff {
+  live: false;
+  broadcast: false;
+  cluster: "solana_devnet" | "evm_sepolia";
+  require_institutional: true;
+  institutional_class: "institutional_v2";
+  institutional_label: string;
+  expected_program_ids?: {
+    eligibility_gate: string;
+    protocol_access: string;
+    source: "anchor_toml_localnet";
+  };
+  gate_config: {
+    require_institutional: true;
+    expected_organization_commitment: "0x0000000000000000000000000000000000000000000000000000000000000000";
+    expected_actor_commitment: "0x0000000000000000000000000000000000000000000000000000000000000000";
+    expected_institutional_result_category: "0x0000000000000000000000000000000000000000000000000000000000000000";
+    subject_binding_mode: "required";
+    note: "Reusable gate. Organization, actor, category, subject, and expiry are attestation-only.";
+  };
+  pda_derivation: {
+    gate_config: ["gate_config", "admin"];
+    authorization: ["authorization", "config", "attestation_id"];
+    entitlement: ["protocol_access", "protocol", "subject_hash", "organization_commitment"];
+  };
+  public_verifier: string;
+  signer_key_id: string;
+  bytecode_digest: `0x${string}`;
+  kit_digest: `0x${string}`;
+  registry_manifest_template: Record<string, string>;
+  verify_command: string;
+  register_command: string;
+  rollback: string;
+  operator_deploys_with: "local_solana_toolchain";
+}
+
 export type KitCliResult =
-  | { ok: true; command: string; envelope?: TestnetGateKitEnvelope; report?: TestnetReadinessReport; public?: unknown }
-  | { ok: false; command: string; reason: string };
+  | {
+      ok: true;
+      command: string;
+      envelope?: TestnetGateKitEnvelope;
+      report?: TestnetReadinessReport;
+      public?: unknown;
+      file_kind?: KitFileKind;
+      handoff?: OperatorHandoff;
+      broadcast?: false;
+    }
+  | { ok: false; command: string; reason: string; file_kind?: KitFileKind; handoff?: OperatorHandoff };

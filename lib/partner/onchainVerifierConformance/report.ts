@@ -10,6 +10,10 @@ export interface SafeConformanceReport {
   deployment_ref: string;
   signer_key_id: string;
   reasons: string[];
+  file_kind: string;
+  require_institutional: boolean;
+  institutional_class: string;
+  institutional_label: string;
   live: false;
   from_browser: false;
 }
@@ -24,6 +28,10 @@ export function serializeConformanceReport(command: string, result: ConformanceR
     deployment_ref: result.deployment_ref,
     signer_key_id: result.signer_key_id,
     reasons: result.ok ? ["permitted"] : result.reasons,
+    file_kind: result.file_kind,
+    require_institutional: result.require_institutional,
+    institutional_class: result.institutional_class,
+    institutional_label: result.institutional_label,
     live: false,
     from_browser: false,
   };

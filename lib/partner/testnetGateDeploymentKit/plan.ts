@@ -3,14 +3,12 @@ import { hashesForApplication } from "@/lib/partner/onchainGateDeployments/diges
 import { hashUtf8 } from "@/lib/partner/chainAttestation/hashes";
 import { LOCALNET_SOLANA_PROGRAM_IDS, TESTNET_GATE_KIT_VERSION } from "./contract";
 import {
-  actorCommitment,
   institutionalBytecodeDigest,
   institutionalConfigDigest,
-  institutionalResultCategoryHash,
   institutionalSolanaLayout,
-  organizationCommitment,
   solanaInstitutionalProgramIsV1Only,
 } from "./institutional";
+import { INSTITUTIONAL_ATTESTATION_ONLY_FIELDS } from "./types";
 import { approvedHumanTestnet } from "./networks";
 import type { KitBindings, TestnetGateKitEnvelope } from "./types";
 
@@ -110,11 +108,7 @@ export function planTestnetGate(input: {
 export function planInstitutionalTestnetGate(input: {
   target: "institutional-evm-sepolia" | "institutional-solana-devnet";
   bindings?: Partial<KitBindings>;
-  organizationRef?: string;
-  actorRef?: string;
-  resultCategory?: string;
   publicVerifier?: string;
-  validUntil?: number;
   now?: string;
 }): { ok: true; envelope: TestnetGateKitEnvelope } | { ok: false; reason: string } {
   const net = approvedHumanTestnet(input.target);
@@ -125,10 +119,6 @@ export function planInstitutionalTestnetGate(input: {
     now: input.now,
   });
   if (!planned.ok) return planned;
-  const organization = organizationCommitment(input.organizationRef ?? "");
-  const actor = actorCommitment(input.actorRef ?? "");
-  const category = institutionalResultCategoryHash(input.resultCategory ?? "organization_eligible");
-  const validUntil = input.validUntil ?? 2_000_000_000;
   const rawVerifier = (input.publicVerifier ?? "").trim() || "unspecified";
   const publicVerifier = rawVerifier === "unspecified" || /^0x[0-9a-fA-F]{64}$/.test(rawVerifier)
     ? rawVerifier
@@ -136,10 +126,7 @@ export function planInstitutionalTestnetGate(input: {
   const institutional = {
     schema_version: "2" as const,
     institutional_required: true as const,
-    organization_commitment: organization,
-    actor_commitment: actor,
-    institutional_result_category_hash: category,
-    valid_until: validUntil,
+    require_institutional: true as const,
     signer_key_id: planned.envelope.bindings.signer_key_id,
     public_verifier: publicVerifier,
     partner_hash: planned.envelope.partner_hash,
@@ -154,15 +141,12 @@ export function planInstitutionalTestnetGate(input: {
       policyHash: planned.envelope.policy_hash,
       actionHash: planned.envelope.action_hash,
       environmentHash: planned.envelope.environment_hash,
-      organizationCommitment: organization,
-      actorCommitment: actor,
-      institutionalResultCategory: category,
       signerKeyId: planned.envelope.bindings.signer_key_id,
       publicVerifier,
-      validUntil,
     }),
     bytecode_digest: institutionalBytecodeDigest(net.gate_type),
     consumer: "expiry_bound_protocol_access" as const,
+    attestation_only_fields: INSTITUTIONAL_ATTESTATION_ONLY_FIELDS,
   };
   const solanaV2 = net.gate_type === "solana" ? institutionalSolanaLayout() : null;
   if (solanaV2 && solanaInstitutionalProgramIsV1Only(solanaV2)) {
@@ -185,7 +169,6 @@ export function planInstitutionalTestnetGate(input: {
       String(planned.envelope.bindings.policy_version),
       planned.envelope.bindings.signer_key_id,
       institutional.config_digest,
-      String(validUntil),
       planned.envelope.planned_at,
     ]),
   };

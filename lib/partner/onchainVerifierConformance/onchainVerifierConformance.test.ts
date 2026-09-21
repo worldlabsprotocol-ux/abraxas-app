@@ -166,6 +166,21 @@ describe("onchain verifier conformance", () => {
     expect(incompleteObs.reasons).toContain("institutional_required");
   });
 
+  it("classifies a local institutional plan as a plan envelope, not a forbidden registry", async () => {
+    const { planInstitutionalTestnetGate } = await import("@/lib/partner/testnetGateDeploymentKit/plan");
+    const planned = planInstitutionalTestnetGate({
+      target: "institutional-solana-devnet",
+      now: "2026-09-21T00:00:00.000Z",
+    });
+    expect(planned.ok).toBe(true);
+    if (!planned.ok) return;
+    const classified = evaluateConformance({ raw: planned.envelope, receiptRefetched: true });
+    expect(classified.file_kind).toBe("plan_envelope");
+    expect(classified.ok).toBe(false);
+    expect(classified.reasons).toContain("plan_envelope");
+    expect(classified.reasons).not.toContain("forbidden_field");
+  });
+
   it("serializes a shareable report without secrets", () => {
     const result = evaluateConformance({ raw: evmManifest() });
     const report = serializeConformanceReport("report", result);

@@ -9,7 +9,6 @@ import { evmDigestFromManifest, solanaDigestFromManifest } from "@/lib/partner/o
 import { hashEnvironment } from "@/lib/partner/chainAttestation/hashes";
 import { rejectForbiddenNetwork } from "./networks";
 import {
-  commitmentsComplete,
   institutionalConfigDigest,
   institutionalEnvelopeLeaks,
 } from "./institutional";
@@ -36,10 +35,25 @@ export function verifyInstitutionalPlan(
   envelope?: TestnetGateKitEnvelope | null,
   nowSeconds = Math.floor(Date.now() / 1000),
 ): { ok: true } | { ok: false; reason: string } {
+  void nowSeconds;
   if (plan.schema_version !== "2") return { ok: false, reason: "schema_mismatch" };
-  if (!plan.institutional_required) return { ok: false, reason: "institutional_required" };
-  if (!commitmentsComplete(plan)) return { ok: false, reason: "institutional_required" };
-  if (plan.valid_until <= nowSeconds) return { ok: false, reason: "expired" };
+  if (!plan.institutional_required || plan.require_institutional !== true) {
+    return { ok: false, reason: "institutional_required" };
+  }
+  const leftover = plan as InstitutionalKitPlan & {
+    organization_commitment?: unknown;
+    actor_commitment?: unknown;
+    institutional_result_category_hash?: unknown;
+    valid_until?: unknown;
+  };
+  if (
+    leftover.organization_commitment != null
+    || leftover.actor_commitment != null
+    || leftover.institutional_result_category_hash != null
+    || leftover.valid_until != null
+  ) {
+    return { ok: false, reason: "binding_mismatch" };
+  }
   if (envelope?.eip712 && envelope.eip712.version !== "2") return { ok: false, reason: "schema_mismatch" };
   if (envelope && envelope.bindings.signer_key_id !== plan.signer_key_id) {
     return { ok: false, reason: "signer_mismatch" };
@@ -59,12 +73,8 @@ export function verifyInstitutionalPlan(
     policyHash: plan.policy_hash,
     actionHash: plan.action_hash,
     environmentHash: plan.environment_hash,
-    organizationCommitment: plan.organization_commitment,
-    actorCommitment: plan.actor_commitment,
-    institutionalResultCategory: plan.institutional_result_category_hash,
     signerKeyId: plan.signer_key_id,
     publicVerifier: plan.public_verifier,
-    validUntil: plan.valid_until,
   });
   if (expected !== plan.config_digest) return { ok: false, reason: "config_digest_mismatch" };
   if (envelope?.solana_v2 && (
@@ -107,10 +117,17 @@ export async function verifyTestnetManifest(raw: unknown): Promise<
     const verified = await verifyEvmAgainstChain(parsed.manifest, resolveEvmAdapter());
     if (!verified.ok) return verified;
   } else {
-    const verified = await verifySolanaAgainstChain(parsed.manifest, resolveSolanaAdapter(), {
-      institutionalRequired: Boolean(envelope?.institutional?.institutional_required),
-    });
+    const verified = await verifySolanaAgainstChain(parsed.manifest, resolveSolanaAdapter());
     if (!verified.ok) return verified;
+    if (envelope?.institutional?.institutional_required) {
+      const { deriveRequireInstitutional } = await import("@/lib/partner/onchainGateDeployments/institutional");
+      const derived = deriveRequireInstitutional({
+        gateType: "solana",
+        policyId: envelope.bindings?.policy_id ?? "",
+        solanaObservation: verified.observation,
+      });
+      if (!derived.ok || !derived.require_institutional) return { ok: false, reason: "institutional_required" };
+    }
   }
   return { ok: true, manifest: parsed.manifest };
 }

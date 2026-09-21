@@ -9,6 +9,14 @@ export { registerOnchainGateDeployment, revokeOnchainGateDeployment, approveProd
 export { bindIssuanceToVerifiedDeployment } from "./bindIssuance";
 export { onchainGateLaunchpadReadiness } from "./readiness";
 export { projectOnchainGatePublic } from "./project";
+export { deriveRequireInstitutional } from "./institutional";
+export {
+  institutionalClassFromFlag,
+  institutionalLabel,
+  INSTITUTIONAL_V2_LABEL,
+  STANDARD_GATE_LABEL,
+} from "./institutionalClass";
+export { launchpadRequestRejectsClientAuthority } from "./clientAuthority";
 export {
   localAnvilFixtureAdapter,
   localSolanaProgramTestAdapter,

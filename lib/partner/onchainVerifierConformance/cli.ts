@@ -32,6 +32,9 @@ export function runAbraxasConformance(argv: string[], env: NodeJS.ProcessEnv = p
       raw: readManifest(file),
       institutionalRequired: command !== "report" ? undefined : undefined,
     });
+    if (result.file_kind === "plan_envelope") {
+      return { ok: false, command, reason: "plan_envelope", report: serializeConformanceReport(command, result), live: false };
+    }
     if (command !== "report" && result.gate_type !== "unknown" && result.gate_type !== command) {
       return { ok: false, command, reason: "binding_mismatch", report: serializeConformanceReport(command, result), live: false };
     }

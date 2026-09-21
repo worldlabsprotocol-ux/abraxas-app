@@ -46,7 +46,7 @@ export default function TestnetGateDeploymentDocsPage() {
           {[...TESTNET_GATE_COMMANDS, ...INSTITUTIONAL_TESTNET_GATE_COMMANDS].map((row) => `npx tsx scripts/abraxas-gate.ts ${row}`).join("\n")}
         </pre>
         <p style={{ ...body, marginTop: "0.5rem" }}>
-          Plan is read-only. Deploy requires <code>--confirm</code>. Verify and register re-check chain state through the server/CLI RPC adapter. Registration never trusts a file alone.
+          Plan is a planning envelope only. Use <code>validate-plan</code> before a human deploy. Deploy requires <code>--confirm</code> and never broadcasts. The operator deploys with a local Solana toolchain, then verify/register a post-deploy registry manifest against chain observation. A reusable institutional gate is not bound to one organization or actor.
         </p>
       </ContentCard>
       <ContentCard title="Approved networks">

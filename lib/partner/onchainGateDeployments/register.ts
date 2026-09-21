@@ -22,6 +22,7 @@ import {
 import { insertDeployment, insertDeploymentEvent, listDeploymentsForApp, updateDeploymentStatus, OnchainGateStoreUnavailableError } from "./store";
 import type { OnchainDeploymentManifest, OnchainGateDeploymentRecord } from "./types";
 import { projectOnchainGatePublic } from "./project";
+import { deriveRequireInstitutional } from "./institutional";
 
 export interface RegisterDeploymentInput {
   partnerId: string;
@@ -33,7 +34,6 @@ export interface RegisterDeploymentInput {
   evmAdapter?: EvmVerificationAdapter | null;
   solanaAdapter?: SolanaVerificationAdapter | null;
   forceNoRpc?: boolean;
-  institutionalRequired?: boolean;
 }
 
 function networkAllows(manifest: OnchainDeploymentManifest): OnchainGateSafeReason | null {
@@ -111,13 +111,15 @@ export async function registerOnchainGateDeployment(input: RegisterDeploymentInp
   const evmAdapter = input.forceNoRpc ? null : resolveEvmAdapter(input.evmAdapter);
   const solanaAdapter = input.forceNoRpc ? null : resolveSolanaAdapter(input.solanaAdapter);
 
-  let verified: { ok: true } | { ok: false; reason: OnchainGateSafeReason };
+  let verified:
+    | { ok: true; evmObservation?: import("./adapters").EvmChainObservation; solanaObservation?: import("./adapters").SolanaChainObservation }
+    | { ok: false; reason: OnchainGateSafeReason };
   if (manifest.gate_type === "evm") {
-    verified = await verifyEvmAgainstChain(manifest, evmAdapter);
+    const evm = await verifyEvmAgainstChain(manifest, evmAdapter);
+    verified = evm.ok ? { ok: true, evmObservation: evm.observation } : evm;
   } else {
-    verified = await verifySolanaAgainstChain(manifest, solanaAdapter, {
-      institutionalRequired: input.institutionalRequired,
-    });
+    const solana = await verifySolanaAgainstChain(manifest, solanaAdapter);
+    verified = solana.ok ? { ok: true, solanaObservation: solana.observation } : solana;
   }
 
   const now = new Date().toISOString();
@@ -133,6 +135,18 @@ export async function registerOnchainGateDeployment(input: RegisterDeploymentInp
   } else {
     const entry = getNetworkCapability(manifest.network_id)!;
     status = statusAfterVerify(manifest, entry.status);
+  }
+
+  const derived = verified.ok
+    ? deriveRequireInstitutional({
+      gateType: manifest.gate_type,
+      policyId: input.policyId,
+      evmObservation: verified.evmObservation,
+      solanaObservation: verified.solanaObservation,
+    })
+    : { ok: true as const, require_institutional: false };
+  if (!derived.ok) {
+    return { ok: false, reason: derived.reason };
   }
 
   const record: OnchainGateDeploymentRecord = {
@@ -157,6 +171,7 @@ export async function registerOnchainGateDeployment(input: RegisterDeploymentInp
     signer_key_id: manifest.signer_key_id,
     subject_binding_mode: manifest.subject_binding_mode,
     status,
+    require_institutional: derived.require_institutional,
     production_reviewed_at: null,
     revoked_at: null,
     created_at: now,

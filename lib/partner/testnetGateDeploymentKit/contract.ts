@@ -18,10 +18,11 @@ export const TESTNET_GATE_COMMANDS = [
 export const INSTITUTIONAL_TESTNET_GATE_COMMANDS = [
   "plan institutional-evm-sepolia",
   "plan institutional-solana-devnet",
+  "validate-plan <plan-file>",
   "deploy institutional-evm-sepolia --confirm",
   "deploy institutional-solana-devnet --confirm",
-  "verify <manifest>",
-  "register <manifest>",
+  "verify <registry-manifest>",
+  "register <registry-manifest>",
 ] as const;
 
 export const TESTNET_GATE_SAFE_STATES = [
@@ -44,11 +45,8 @@ export const TESTNET_GATE_ENV_NAMES = {
   solana_rpc: "ABRAXAS_GATE_SOLANA_RPC_URL",
   solana_keypair: "ABRAXAS_GATE_SOLANA_KEYPAIR",
   solana_verify_rpc: "ABRAXAS_SOLANA_GATE_VERIFY_RPC_URL",
-  organization_ref: "ABRAXAS_GATE_ORGANIZATION_REF",
-  actor_ref: "ABRAXAS_GATE_ACTOR_REF",
-  result_category: "ABRAXAS_GATE_RESULT_CATEGORY",
   public_verifier: "ABRAXAS_GATE_PUBLIC_VERIFIER",
-  valid_until: "ABRAXAS_GATE_VALID_UNTIL",
+  handoff_path: "ABRAXAS_GATE_HANDOFF_PATH",
 } as const;
 
 export const APPROVED_EVM_TESTNET_ID = "evm_sepolia" as const;
@@ -66,7 +64,7 @@ export const TESTNET_GATE_NOTICE =
   "Human-operated local CLI only. Plan is read-only. Deploy requires --confirm and operator RPC/signer env vars. Never runs from Vercel, API routes, CI, or the browser. Not a live Mainnet, Arc, USDC, or Circle path.";
 
 export const INSTITUTIONAL_TESTNET_GATE_NOTICE =
-  "Institutional V2 testnet kit. Institutional policy review required, then plan, human --confirm deploy, verify, and register a verified sandbox deployment before a fresh institutional presentation and chain attestation. No browser deploy button. Not Utila, live KYB, Arc, or Mainnet.";
+  "Institutional V2 testnet kit. A reusable gate requires V2 institutional attestations. Organization, actor, result-category, subject, and expiry are attestation-only — never deployment-static. Plan, validate-plan, then the operator deploys with a local Solana toolchain. --confirm never broadcasts. Verify and register need a post-deploy registry manifest plus chain observation. No browser deploy button. Not Utila, live KYB, Arc, or Mainnet.";
 
 export const TESTNET_GATE_NO_FUNDS =
   "This kit deploys partner-owned eligibility gates only. It does not transfer tokens, mint, approve spending, settle USDC, call Circle, or custody funds.";

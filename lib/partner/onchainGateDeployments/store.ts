@@ -37,6 +37,7 @@ function mapRow(row: Record<string, unknown>): OnchainGateDeploymentRecord {
     signer_key_id: String(row.signer_key_id),
     subject_binding_mode: row.subject_binding_mode as OnchainGateDeploymentRecord["subject_binding_mode"],
     status: row.status as OnchainGateDeploymentStatus,
+    require_institutional: row.require_institutional === true,
     production_reviewed_at: row.production_reviewed_at == null ? null : String(row.production_reviewed_at),
     revoked_at: row.revoked_at == null ? null : String(row.revoked_at),
     created_at: String(row.created_at),

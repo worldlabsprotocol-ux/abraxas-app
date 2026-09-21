@@ -48,6 +48,7 @@ export const ONCHAIN_VERIFIER_CONFORMANCE_SAFE_REASONS = [
   "replayed",
   "presentation_insufficient",
   "deployment_not_verified",
+  "plan_envelope",
   "forbidden_field",
   "unauthorized",
   "invalid",
@@ -77,6 +78,10 @@ export const ONCHAIN_VERIFIER_CONFORMANCE_REPORT_KEYS = [
   "deployment_ref",
   "signer_key_id",
   "reasons",
+  "file_kind",
+  "require_institutional",
+  "institutional_class",
+  "institutional_label",
   "live",
   "from_browser",
 ] as const;

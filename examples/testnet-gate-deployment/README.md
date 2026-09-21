@@ -7,13 +7,17 @@ Local CLI only. This repository does not deploy gates from Vercel, CI, API route
 ```
 npx tsx scripts/abraxas-gate.ts plan solana
 npx tsx scripts/abraxas-gate.ts plan evm
+npx tsx scripts/abraxas-gate.ts plan institutional-solana-devnet
+npx tsx scripts/abraxas-gate.ts validate-plan ./plan.json
 npx tsx scripts/abraxas-gate.ts deploy solana-devnet --confirm
 npx tsx scripts/abraxas-gate.ts deploy evm-testnet --confirm
 npx tsx scripts/abraxas-gate.ts verify ./deployment-manifest.json
 npx tsx scripts/abraxas-gate.ts register ./deployment-manifest.json
 ```
 
-`plan` is read-only. `deploy` requires `--confirm` and operator RPC/signer environment variables. Automated environments refuse deploy.
+`plan` is a planning envelope only. `validate-plan` checks that envelope without treating it as a registry manifest. `deploy --confirm` never broadcasts; the operator deploys with a local Solana toolchain, then supplies public program/PDA/digest fields. Automated environments refuse deploy.
+
+Institutional gates require V2 attestations. Organization, actor, result-category, subject, and expiry are not deployment-static.
 
 ## Approved testnet posture
 

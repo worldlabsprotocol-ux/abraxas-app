@@ -2,6 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { planInstitutionalTestnetGate, planTestnetGate } from "./plan";
+import { validateInstitutionalPlanFile } from "./validatePlan";
+import { classifyKitFile } from "./classify";
+import { operatorHandoffFromPlan } from "./handoff";
 import { deployTestnetGate } from "./deploy";
 import { verifyInstitutionalPlan, verifyTestnetManifest } from "./verify";
 import { registerTestnetManifest } from "./register";
@@ -203,6 +206,7 @@ describe("testnet gate deployment kit", () => {
         signer_key_id: "evm-attestation-test-1",
         subject_binding_mode: "required",
         status: "verified_sandbox",
+        require_institutional: false,
         production_reviewed_at: null,
         revoked_at: null,
         created_at: "2026-09-21T00:00:00.000Z",
@@ -261,25 +265,17 @@ describe("testnet gate deployment kit", () => {
     expect(docs).not.toMatch(/live mainnet deployment|fake USDC|0xdeadbeef/);
   });
 
-  it("plans deterministic V2 institutional manifests and rejects secrets", async () => {
+  it("plans a reusable institutional gate without static org/actor/expiry bindings", async () => {
     const a = planInstitutionalTestnetGate({
       target: "institutional-evm-sepolia",
       now: "2026-09-21T00:00:00.000Z",
-      organizationRef: "org_opaque_ref",
-      actorRef: "act_opaque_ref",
-      resultCategory: "organization_eligible",
       publicVerifier: "verifier-1",
-      validUntil: 2_000_000_000,
       bindings: { partner_id: EVM_REF_PARTNER_ID, policy_id: EVM_REF_POLICY_ID, signer_key_id: "evm-attestation-test-1" },
     });
     const b = planInstitutionalTestnetGate({
       target: "institutional-evm-sepolia",
       now: "2026-09-21T00:00:00.000Z",
-      organizationRef: "org_opaque_ref",
-      actorRef: "act_opaque_ref",
-      resultCategory: "organization_eligible",
       publicVerifier: "verifier-1",
-      validUntil: 2_000_000_000,
       bindings: { partner_id: EVM_REF_PARTNER_ID, policy_id: EVM_REF_POLICY_ID, signer_key_id: "evm-attestation-test-1" },
     });
     expect(a.ok && b.ok).toBe(true);
@@ -288,24 +284,23 @@ describe("testnet gate deployment kit", () => {
     expect(a.envelope.kit_schema_version).toBe(2);
     expect(a.envelope.eip712?.version).toBe("2");
     expect(a.envelope.institutional?.institutional_required).toBe(true);
+    expect(a.envelope.institutional?.require_institutional).toBe(true);
     expect(a.envelope.registry_manifest).toBeNull();
+    expect(a.envelope.institutional && "organization_commitment" in a.envelope.institutional).toBe(false);
+    expect(a.envelope.institutional && "valid_until" in a.envelope.institutional).toBe(false);
     expect(JSON.stringify(a.envelope)).not.toMatch(/legal_name|beneficial_owner|callback_url|private_key|rpc_url/);
     expect(institutionalEnvelopeLeaks({ legal_name: "Acme" })).toContain("legal_name");
     const sol = planInstitutionalTestnetGate({
       target: "institutional-solana-devnet",
       now: "2026-09-21T00:00:00.000Z",
-      organizationRef: "org_opaque_ref",
-      actorRef: "act_opaque_ref",
     });
     expect(sol.ok).toBe(true);
     if (sol.ok) {
       expect(sol.envelope.solana_v2?.message_len).toBe(468);
       expect(sol.envelope.network_id).toBe("solana_devnet");
+      expect(sol.envelope.solana_v2?.gate_config_expected_commitments).toBe("zero_reusable");
     }
-    const cli = await runAbraxasGate(["plan", "institutional-evm-sepolia"], {
-      ABRAXAS_GATE_ORGANIZATION_REF: "org_opaque_ref",
-      ABRAXAS_GATE_ACTOR_REF: "act_opaque_ref",
-    });
+    const cli = await runAbraxasGate(["plan", "institutional-solana-devnet"], {});
     expect(cli.ok).toBe(true);
   });
 
@@ -320,15 +315,11 @@ describe("testnet gate deployment kit", () => {
     expect(rejectForbiddenNetwork("arc_circle_testnet")).toBe("arc_chain_id_unpublished");
   });
 
-  it("fails institutional verify on signer/commitment/expiry mismatch and blocks issuance before verified_sandbox", async () => {
+  it("fails institutional verify on signer mismatch, static identity, and blocks issuance before verified_sandbox", async () => {
     const planned = planInstitutionalTestnetGate({
       target: "institutional-evm-sepolia",
       now: "2026-09-21T00:00:00.000Z",
-      organizationRef: "org_opaque_ref",
-      actorRef: "act_opaque_ref",
-      resultCategory: "authorized_signer",
       publicVerifier: "verifier-1",
-      validUntil: 2_000_000_000,
       bindings: { partner_id: EVM_REF_PARTNER_ID, policy_id: EVM_REF_POLICY_ID, signer_key_id: "evm-attestation-test-1" },
     });
     expect(planned.ok).toBe(true);
@@ -343,14 +334,8 @@ describe("testnet gate deployment kit", () => {
     const commitment = verifyInstitutionalPlan({
       ...planned.envelope.institutional,
       organization_commitment: (`0x${"11".repeat(32)}`) as `0x${string}`,
-    }, planned.envelope);
+    } as never, planned.envelope);
     expect(commitment.ok).toBe(false);
-    const expired = verifyInstitutionalPlan({
-      ...planned.envelope.institutional,
-      valid_until: 1,
-    }, planned.envelope, 10);
-    expect(expired.ok).toBe(false);
-    if (!expired.ok) expect(expired.reason).toBe("expired");
     const leak = await verifyTestnetManifest({ ...planned.envelope, legal_name: "Acme LLC" });
     expect(leak.ok).toBe(false);
     const unverified = await verifyTestnetManifest(planned.envelope);
@@ -375,8 +360,6 @@ describe("testnet gate deployment kit", () => {
     const planned = planInstitutionalTestnetGate({
       target: "institutional-solana-devnet",
       now: "2026-09-21T00:00:00.000Z",
-      organizationRef: "org_opaque_ref",
-      actorRef: "act_opaque_ref",
     });
     expect(planned.ok).toBe(true);
     if (!planned.ok) return;
@@ -449,6 +432,7 @@ describe("testnet gate deployment kit", () => {
   });
 
   it("shows the institutional sequence on Studio and Launchpad without a deploy button", () => {
+    expect(INSTITUTIONAL_TESTNET_GATE_COMMANDS).toContain("validate-plan <plan-file>");
     expect(INSTITUTIONAL_TESTNET_GATE_COMMANDS).toContain("plan institutional-evm-sepolia");
     expect(INSTITUTIONAL_SEQUENCE[0]).toBe("Institutional policy review required");
     expect(INSTITUTIONAL_TESTNET_TEST_PLAN.steps).toEqual([...INSTITUTIONAL_SEQUENCE]);
@@ -460,5 +444,25 @@ describe("testnet gate deployment kit", () => {
     expect(card.deploy_button).toBe(false);
     expect(card.sequence[0]).toBe("Institutional policy review required");
     expect(TESTNET_GATE_COMMANDS.length).toBe(6);
+  });
+
+  it("validates a plan envelope without treating it as a registry manifest", async () => {
+    const planned = planInstitutionalTestnetGate({
+      target: "institutional-solana-devnet",
+      now: "2026-09-21T00:00:00.000Z",
+    });
+    expect(planned.ok).toBe(true);
+    if (!planned.ok) return;
+    expect(classifyKitFile(planned.envelope)).toBe("plan_envelope");
+    const validated = validateInstitutionalPlanFile(planned.envelope);
+    expect(validated.ok).toBe(true);
+    expect(validated.file_kind).toBe("plan_envelope");
+    const handoff = operatorHandoffFromPlan(planned.envelope);
+    expect(handoff.broadcast).toBe(false);
+    expect(handoff.cluster).toBe("solana_devnet");
+    expect(handoff.gate_config.require_institutional).toBe(true);
+    expect(handoff.gate_config.expected_organization_commitment).toMatch(/^0x0+$/);
+    expect(JSON.stringify(handoff)).not.toMatch(/rpc_url|private_key|legal_name/);
+    expect(validateInstitutionalPlanFile({ schema_version: 1, gate_type: "solana" }).ok).toBe(false);
   });
 });

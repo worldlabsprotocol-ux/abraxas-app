@@ -64,6 +64,7 @@ export interface OnchainGateDeploymentRecord {
   signer_key_id: string;
   subject_binding_mode: OnchainGateSubjectMode;
   status: OnchainGateDeploymentStatus;
+  require_institutional: boolean;
   production_reviewed_at: string | null;
   revoked_at: string | null;
   created_at: string;
@@ -89,6 +90,9 @@ export interface OnchainGatePublicView {
   subject_binding_mode: OnchainGateSubjectMode;
   status: OnchainGateDeploymentStatus;
   safe_status: string;
+  require_institutional: boolean;
+  institutional_class: "institutional_v2" | "standard";
+  institutional_label: string;
   live: false;
   deploys: false;
   circle_settlement: false;
