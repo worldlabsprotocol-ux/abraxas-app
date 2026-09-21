@@ -11,6 +11,7 @@ import {
   CROSS_CHAIN_PROTOCOL_EVM_INTERFACE,
   CROSS_CHAIN_PROTOCOL_NO_FUNDS,
   CROSS_CHAIN_PROTOCOL_NOTICE,
+  CROSS_CHAIN_PROTOCOL_REVOCATION_NOTICE,
   CROSS_CHAIN_PROTOCOL_SOLANA_INTERFACE,
 } from "@/lib/partner/crossChainProtocolAccess/contract";
 import { crossChainProtocolAccessServerExample } from "@/lib/partner/crossChainProtocolAccess/examples";
@@ -65,6 +66,15 @@ activate_protocol_access (partner-owned)`}
           contracts or programs.
         </p>
         <p style={body}>{CROSS_CHAIN_PROTOCOL_NO_FUNDS}</p>
+      </ContentCard>
+      <ContentCard title="Expiry and revocation">
+        <p style={body}>
+          Access is valid_until the verified chain attestation expiresAt. Once the chain clock
+          reaches that instant, hasAccess / assert_protocol_access is inactive. A renewed
+          attestation may extend access only through a new one-time authorization. An older
+          authorization cannot shorten a newer valid entitlement. Callers cannot pass expiry.
+        </p>
+        <p style={body}>{CROSS_CHAIN_PROTOCOL_REVOCATION_NOTICE}</p>
       </ContentCard>
       <ContentCard title="EVM interface">
         <p style={body}>

@@ -247,6 +247,43 @@ describe("cross-chain protocol access", () => {
     expect(result.presentation_sufficient).toBe(false);
   });
 
+  it("blocks new issuance after receipt revocation on re-fetch", async () => {
+    const { envelope, record } = await issuedEnvelope();
+    let fetches = 0;
+    const client = kit(async () => {
+      fetches += 1;
+      if (fetches === 1) return { ok: true, status: 200, json: async () => publicFrom(record) };
+      return {
+        ok: true,
+        status: 200,
+        json: async () => publicFrom({ ...record, status: "revoked", revoked_at: "2026-09-21T01:00:00.000Z", decision_result: "approved" }),
+      };
+    });
+    const result = await issueCrossChainProtocolAccess({
+      kit: client,
+      envelope,
+      expected: {
+        verifier_nonce: requestBody.verifier_nonce,
+        policy_id: POLICY,
+        policy_version: 1,
+        action: "retail_access",
+        environment: "sandbox",
+      },
+      network_id: "evm_sandbox",
+      deployment_ref: "dep_local_sandbox",
+      wallet_binding_hash: "0x".padEnd(66, "d"),
+      wallet_binding_mode: "required",
+      testAdapter: {
+        source: "local_anvil",
+        chainId: 31337,
+        verifyingContract: "0x1111111111111111111111111111111111111111",
+      },
+    });
+    expect(result.ok).toBe(false);
+    expect(result.presentation_sufficient).toBe(false);
+    expect(fetches).toBeGreaterThanOrEqual(2);
+  });
+
   it("rejects wrong audience, policy, action, and environment", async () => {
     const { envelope, record } = await issuedEnvelope();
     const client = kit(async () => ({ ok: true, status: 200, json: async () => publicFrom(record) }));
@@ -324,7 +361,11 @@ describe("cross-chain protocol access", () => {
     expect(kitZip.files.some((file) => file.path.includes("cross-chain-protocol-access"))).toBe(true);
     const docs = readFileSync(join(process.cwd(), "app/docs/cross-chain-protocol-access/page.tsx"), "utf8");
     expect(docs).toContain("private proof");
+    expect(docs).toContain("valid_until");
+    expect(docs).toContain("short-lived");
     expect(docs.toLowerCase()).not.toMatch(/live mainnet deployment/);
+    expect(docs).toContain("not an indefinite KYC");
+    expect(hasCrossChainClientOverride({ expiry: "2099-01-01" })).toBe(true);
     expect(readFileSync(join(process.cwd(), "examples/cross-chain-protocol-access/README.md"), "utf8")).toContain("local / sandbox");
   });
 });

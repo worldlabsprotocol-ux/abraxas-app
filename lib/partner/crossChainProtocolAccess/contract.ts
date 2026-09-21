@@ -10,7 +10,10 @@ export const CROSS_CHAIN_PROTOCOL_NOTICE =
   "Private proof → fresh consent → audience-bound receipt → server re-check → one-time chain authorization → partner-owned activate_protocol_access. Local/sandbox reference only. A presentation is never sufficient. Abraxas does not transfer tokens, mint, approve spending, route orders, settle payments, or custody funds.";
 
 export const CROSS_CHAIN_PROTOCOL_NO_FUNDS =
-  "The reference integrations record a boolean entitlement only. They have no payable fallback, token accounts, token program calls, wallet creation, transaction signing, RPC, or deployment action.";
+  "The reference integrations record an expiry-bound entitlement copied from the verified attestation expiresAt. They have no payable fallback, token accounts, token program calls, wallet creation, transaction signing, RPC, or deployment action.";
+
+export const CROSS_CHAIN_PROTOCOL_REVOCATION_NOTICE =
+  "Source withdrawal or revocation blocks all future attestations. Partners must honor receipt lifecycle notifications and re-fetch the current public receipt before sensitive actions. The onchain reference entitlement is deliberately short-lived and is not an indefinite KYC/KYB grant. Callers cannot provide, extend, or alter expiry.";
 
 export const CROSS_CHAIN_PROTOCOL_CLIENT_VISIBLE_KEYS = [
   "allowed",

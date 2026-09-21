@@ -37,6 +37,7 @@ npx vitest run lib/partner/crossChainProtocolAccess/crossChainProtocolAccess.tes
 
 ## No-funds guarantee
 
-The reference contracts/programs record a boolean entitlement only. They have no
-payable fallback, token accounts, token program calls, wallet creation, transaction
-signing, RPC, or deployment action.
+The reference contracts/programs store `valid_until` from the verified attestation
+expiry only. Access is inactive once the chain clock reaches that instant. They have
+no payable fallback, token accounts, token program calls, wallet creation, transaction
+signing, RPC, or deployment action. This is not an indefinite KYC/KYB grant.

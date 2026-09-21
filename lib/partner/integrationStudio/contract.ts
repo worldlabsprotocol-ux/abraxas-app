@@ -94,7 +94,7 @@ export const INTEGRATION_STUDIO_EVM_ONCHAIN_NOTICE =
 export const INTEGRATION_STUDIO_ELIGIBILITY_PRESENTATION_NOTICE =
   "Request one private eligibility presentation. The partner backend creates the request, the holder completes Hosted Partner Flow and fresh consent, then the backend verifies the signed envelope and re-fetches the current public receipt. A presentation is not a bearer credential, passport, or automatic KYC/KYB approval.";
 export const INTEGRATION_STUDIO_CROSS_CHAIN_PROTOCOL_NOTICE =
-  "Build a cross-chain protocol gate. Private proof, fresh consent, audience-bound receipt, server re-check, one-time chain authorization, then partner-owned activate_protocol_access. Local/sandbox reference only. Not a live Arc, EVM, Solana, Mainnet, USDC, or Utila deployment.";
+  "Build a cross-chain protocol gate. Private proof, fresh consent, audience-bound receipt, server re-check, one-time chain authorization, then partner-owned activate_protocol_access. Access is short-lived until attestation expiry. Local/sandbox reference only. Not a live Arc, EVM, Solana, Mainnet, USDC, or Utila deployment.";
 
 export function isIntegrationStudioPathId(value: string): value is IntegrationStudioPathId {
   return (INTEGRATION_STUDIO_PATHS as readonly string[]).includes(value);

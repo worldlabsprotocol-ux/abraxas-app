@@ -1,6 +1,7 @@
 // Partner-owned reference consumer for activate_protocol_access.
 // Local/sandbox ProgramTest only. Never transfers SOL/tokens, mints, swaps,
 // calls token programs, or performs arbitrary CPI.
+// Entitlement is expiry-bound from the verified Authorization expires_at.
 
 use abraxas_eligibility_gate::canonical::CONSUMER_AUTH_SEED;
 use abraxas_eligibility_gate::cpi;
@@ -57,6 +58,10 @@ pub mod abraxas_protocol_access {
             require!(!subject_hash.iter().all(|b| *b == 0), ProtocolAccessError::SubjectRequired);
         }
 
+        let until = ctx.accounts.authorization.expires_at;
+        let entitlement = &mut ctx.accounts.entitlement;
+        require!(entitlement.valid_until <= until, ProtocolAccessError::StaleAttestation);
+
         let bump = ctx.bumps.consumer_authority;
         let signer_seeds: &[&[u8]] = &[CONSUMER_AUTH_SEED, &[bump]];
         cpi::consume(CpiContext::new_with_signer(
@@ -70,13 +75,19 @@ pub mod abraxas_protocol_access {
             &[signer_seeds],
         ))?;
 
-        let entitlement = &mut ctx.accounts.entitlement;
         entitlement.protocol = protocol.key();
         entitlement.gate_config = config.key();
         entitlement.subject_hash = subject_hash;
         entitlement.attestation_ref = ctx.accounts.authorization.attestation_ref;
-        entitlement.granted = true;
+        entitlement.valid_until = until;
         entitlement.bump = ctx.bumps.entitlement;
+        Ok(())
+    }
+
+    pub fn assert_protocol_access(ctx: Context<AssertProtocolAccess>, subject_hash: [u8; 32]) -> Result<()> {
+        require!(ctx.accounts.entitlement.subject_hash == subject_hash, ProtocolAccessError::SubjectRequired);
+        let now = Clock::get()?.unix_timestamp;
+        require!(ctx.accounts.entitlement.valid_until > now, ProtocolAccessError::Expired);
         Ok(())
     }
 }
@@ -99,7 +110,7 @@ pub struct ProtocolEntitlement {
     pub gate_config: Pubkey,
     pub subject_hash: [u8; 32],
     pub attestation_ref: [u8; 32],
-    pub granted: bool,
+    pub valid_until: i64,
     pub bump: u8,
 }
 
@@ -139,7 +150,7 @@ pub struct ActivateProtocolAccess<'info> {
     )]
     pub protocol: Account<'info, ProtocolAccessConfig>,
     #[account(
-        init,
+        init_if_needed,
         payer = payer,
         space = 8 + ProtocolEntitlement::INIT_SPACE,
         seeds = [ENTITLEMENT_SEED, protocol.key().as_ref(), subject_hash.as_ref()],
@@ -147,6 +158,17 @@ pub struct ActivateProtocolAccess<'info> {
     )]
     pub entitlement: Account<'info, ProtocolEntitlement>,
     pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(subject_hash: [u8; 32])]
+pub struct AssertProtocolAccess<'info> {
+    pub protocol: Account<'info, ProtocolAccessConfig>,
+    #[account(
+        seeds = [ENTITLEMENT_SEED, protocol.key().as_ref(), subject_hash.as_ref()],
+        bump = entitlement.bump
+    )]
+    pub entitlement: Account<'info, ProtocolEntitlement>,
 }
 
 #[error_code]
@@ -165,4 +187,8 @@ pub enum ProtocolAccessError {
     EnvironmentMismatch,
     #[msg("subject_required")]
     SubjectRequired,
+    #[msg("expired")]
+    Expired,
+    #[msg("stale_attestation")]
+    StaleAttestation,
 }

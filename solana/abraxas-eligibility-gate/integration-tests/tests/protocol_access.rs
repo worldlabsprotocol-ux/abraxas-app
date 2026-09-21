@@ -292,6 +292,14 @@ async fn set_clock(ctx: &mut ProgramTestContext, unix_timestamp: i64) {
     ctx.set_sysvar(&clock);
 }
 
+fn mutate_signer_ix(admin: Pubkey, config: Pubkey, data: Vec<u8>) -> Instruction {
+    Instruction {
+        program_id: GATE_ID,
+        accounts: abraxas_eligibility_gate::accounts::MutateSigner { admin, config }.to_account_metas(None),
+        data,
+    }
+}
+
 async fn airdrop(ctx: &mut ProgramTestContext, user: &Keypair) {
     let from = ctx.payer.pubkey();
     let ix = solana_sdk::system_instruction::transfer(&from, &user.pubkey(), 2_000_000_000);
@@ -324,6 +332,26 @@ async fn presentation_shaped_message_then_access_once() {
     send(&mut ctx, vec![activate_ix(payer, config, protocol, fields)], &[])
         .await
         .unwrap();
+    send(
+        &mut ctx,
+        vec![assert_ix(protocol, fields.subject_hash)],
+        &[],
+    )
+    .await
+    .unwrap();
+}
+
+fn assert_ix(protocol: Pubkey, subject_hash: [u8; 32]) -> Instruction {
+    let (entitlement, _) = entitlement_pda(&protocol, &subject_hash);
+    Instruction {
+        program_id: PROTOCOL_ID,
+        accounts: abraxas_protocol_access::accounts::AssertProtocolAccess {
+            protocol,
+            entitlement,
+        }
+        .to_account_metas(None),
+        data: abraxas_protocol_access::instruction::AssertProtocolAccess { subject_hash }.data(),
+    }
 }
 
 #[tokio::test]
@@ -479,4 +507,164 @@ async fn direct_bypass_without_authorization_fails() {
         .await
         .unwrap_err();
     assert!(custom_code(&err).is_some() || matches!(err, BanksClientError::TransactionError(_)));
+}
+
+#[tokio::test]
+async fn access_inactive_after_valid_until() {
+    let mut ctx = start().await;
+    let admin = Keypair::new();
+    let signer = Keypair::new();
+    airdrop(&mut ctx, &admin).await;
+    let mut fields = MessageFields::default();
+    fields.expires_at = 2_000_000_000;
+    let config = initialize_gate(&mut ctx, &admin, default_params(signer.pubkey().to_bytes(), fields)).await;
+    let protocol = initialize_protocol(&mut ctx, config, fields).await;
+    authorize(&mut ctx, &signer, config, fields).await;
+    let payer = ctx.payer.pubkey();
+    send(&mut ctx, vec![activate_ix(payer, config, protocol, fields)], &[])
+        .await
+        .unwrap();
+    send(&mut ctx, vec![assert_ix(protocol, fields.subject_hash)], &[])
+        .await
+        .unwrap();
+    set_clock(&mut ctx, 2_000_000_000).await;
+    refresh(&mut ctx).await;
+    let err = send(&mut ctx, vec![assert_ix(protocol, fields.subject_hash)], &[])
+        .await
+        .unwrap_err();
+    assert!(custom_code(&err).is_some());
+}
+
+#[tokio::test]
+async fn renewal_extends_valid_until() {
+    let mut ctx = start().await;
+    let admin = Keypair::new();
+    let signer = Keypair::new();
+    airdrop(&mut ctx, &admin).await;
+    let mut first = MessageFields::default();
+    first.expires_at = 2_000_000_000;
+    let config = initialize_gate(&mut ctx, &admin, default_params(signer.pubkey().to_bytes(), first)).await;
+    let protocol = initialize_protocol(&mut ctx, config, first).await;
+    authorize(&mut ctx, &signer, config, first).await;
+    let payer = ctx.payer.pubkey();
+    send(&mut ctx, vec![activate_ix(payer, config, protocol, first)], &[])
+        .await
+        .unwrap();
+    let mut second = first;
+    second.expires_at = 3_000_000_000;
+    second.nonce = h32(90);
+    second.attestation_id = h32(91);
+    authorize(&mut ctx, &signer, config, second).await;
+    send(&mut ctx, vec![activate_ix(payer, config, protocol, second)], &[])
+        .await
+        .unwrap();
+    set_clock(&mut ctx, 2_500_000_000).await;
+    refresh(&mut ctx).await;
+    send(&mut ctx, vec![assert_ix(protocol, second.subject_hash)], &[])
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+async fn stale_attestation_does_not_shorten() {
+    let mut ctx = start().await;
+    let admin = Keypair::new();
+    let signer = Keypair::new();
+    airdrop(&mut ctx, &admin).await;
+    let mut newer = MessageFields::default();
+    newer.expires_at = 3_000_000_000;
+    let config = initialize_gate(&mut ctx, &admin, default_params(signer.pubkey().to_bytes(), newer)).await;
+    let protocol = initialize_protocol(&mut ctx, config, newer).await;
+    authorize(&mut ctx, &signer, config, newer).await;
+    let payer = ctx.payer.pubkey();
+    send(&mut ctx, vec![activate_ix(payer, config, protocol, newer)], &[])
+        .await
+        .unwrap();
+    let mut older = newer;
+    older.expires_at = 2_000_000_000;
+    older.nonce = h32(80);
+    older.attestation_id = h32(81);
+    authorize(&mut ctx, &signer, config, older).await;
+    let err = send(&mut ctx, vec![activate_ix(payer, config, protocol, older)], &[])
+        .await
+        .unwrap_err();
+    assert!(custom_code(&err).is_some());
+    set_clock(&mut ctx, 2_500_000_000).await;
+    refresh(&mut ctx).await;
+    send(&mut ctx, vec![assert_ix(protocol, newer.subject_hash)], &[])
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+async fn direct_expiry_bypass_has_no_instruction() {
+    let mut ctx = start().await;
+    let admin = Keypair::new();
+    let signer = Keypair::new();
+    airdrop(&mut ctx, &admin).await;
+    let mut fields = MessageFields::default();
+    fields.expires_at = 2_000_000_000;
+    let config = initialize_gate(&mut ctx, &admin, default_params(signer.pubkey().to_bytes(), fields)).await;
+    let protocol = initialize_protocol(&mut ctx, config, fields).await;
+    authorize(&mut ctx, &signer, config, fields).await;
+    let payer = ctx.payer.pubkey();
+    send(&mut ctx, vec![activate_ix(payer, config, protocol, fields)], &[])
+        .await
+        .unwrap();
+    let (entitlement, _) = entitlement_pda(&protocol, &fields.subject_hash);
+    let ix = Instruction {
+        program_id: PROTOCOL_ID,
+        accounts: abraxas_protocol_access::accounts::AssertProtocolAccess {
+            protocol,
+            entitlement,
+        }
+        .to_account_metas(None),
+        data: vec![0xff, 0xff, 0xff, 0xff],
+    };
+    let err = send(&mut ctx, vec![ix], &[]).await.unwrap_err();
+    assert!(custom_code(&err).is_some() || matches!(err, BanksClientError::TransactionError(_)));
+    set_clock(&mut ctx, 2_000_000_000).await;
+    refresh(&mut ctx).await;
+    let err = send(&mut ctx, vec![assert_ix(protocol, fields.subject_hash)], &[])
+        .await
+        .unwrap_err();
+    assert!(custom_code(&err).is_some());
+}
+
+#[tokio::test]
+async fn revoked_signer_blocks_new_issuance() {
+    let mut ctx = start().await;
+    let admin = Keypair::new();
+    let signer = Keypair::new();
+    airdrop(&mut ctx, &admin).await;
+    let mut fields = MessageFields::default();
+    fields.expires_at = 2_000_000_000;
+    let config = initialize_gate(&mut ctx, &admin, default_params(signer.pubkey().to_bytes(), fields)).await;
+    let _protocol = initialize_protocol(&mut ctx, config, fields).await;
+    send(
+        &mut ctx,
+        vec![mutate_signer_ix(
+            admin.pubkey(),
+            config,
+            abraxas_eligibility_gate::instruction::RevokeTrustedSigner {
+                key_id: fields.signer_key_id,
+            }
+            .data(),
+        )],
+        &[&admin],
+    )
+    .await
+    .unwrap();
+    let payer = ctx.payer.pubkey();
+    let err = send(
+        &mut ctx,
+        vec![
+            ed25519_ix(&signer, &canonical_message(fields)),
+            authorize_ix(payer, config, fields.attestation_id),
+        ],
+        &[],
+    )
+    .await
+    .unwrap_err();
+    assert!(custom_code(&err).is_some());
 }

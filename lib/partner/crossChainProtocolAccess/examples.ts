@@ -35,8 +35,10 @@ export function crossChainProtocolAccessHttpsExample(): string {
 3. POST /api/v1/eligibility-presentations/issue with only request_ref and verifier_nonce.
 4. POST /api/v1/eligibility-presentations/verify, then GET /api/receipts/{id}/public.
 5. Issue a chain attestation with server-owned deployment_ref. Named action: activate_protocol_access.
-6. EVM: call AbraxasProtocolAccess.activateProtocolAccess after the gate consumes the EIP-712 attestation once.
-7. Solana: Ed25519 verify ix, gate Authorization PDA, then activate_protocol_access once.
+6. EVM: call AbraxasProtocolAccess.activateProtocolAccess after the gate consumes the EIP-712 attestation once. Access lasts until attestation expiresAt.
+7. Solana: Ed25519 verify ix, gate Authorization PDA, then activate_protocol_access once. assert_protocol_access fails after valid_until.
+
+Source withdrawal/revocation blocks future attestations. Re-fetch GET /api/receipts/{id}/public before sensitive actions. The entitlement is short-lived, not an indefinite KYC/KYB grant. Callers cannot set expiry.
 
 A presentation is never sufficient. No live Arc, EVM, Solana devnet, Mainnet, USDC, Utila, or partner deployment.
 `;
