@@ -67,6 +67,15 @@ export function verifyInstitutionalPlan(
     validUntil: plan.valid_until,
   });
   if (expected !== plan.config_digest) return { ok: false, reason: "config_digest_mismatch" };
+  if (envelope?.solana_v2 && (
+    envelope.solana_v2.message_len !== 468
+    || envelope.solana_v2.schema_version !== 2
+    || envelope.solana_v2.prefix !== "ABRAXAS_CHAIN_ELIGIBILITY_V2"
+    || envelope.solana_v2.require_institutional !== true
+    || envelope.solana_v2.institutional_capable !== true
+  )) {
+    return { ok: false, reason: "institutional_required" };
+  }
   return { ok: true };
 }
 
@@ -98,7 +107,9 @@ export async function verifyTestnetManifest(raw: unknown): Promise<
     const verified = await verifyEvmAgainstChain(parsed.manifest, resolveEvmAdapter());
     if (!verified.ok) return verified;
   } else {
-    const verified = await verifySolanaAgainstChain(parsed.manifest, resolveSolanaAdapter());
+    const verified = await verifySolanaAgainstChain(parsed.manifest, resolveSolanaAdapter(), {
+      institutionalRequired: Boolean(envelope?.institutional?.institutional_required),
+    });
     if (!verified.ok) return verified;
   }
   return { ok: true, manifest: parsed.manifest };

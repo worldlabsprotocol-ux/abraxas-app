@@ -65,7 +65,14 @@ pub mod abraxas_eligibility_gate {
         let config = &ctx.accounts.config;
         require!(pubkey_allowed(&config.signers, pubkey), GateError::UnknownSigner);
 
-        let fields = parse_canonical_message(&message).map_err(|_| GateError::InvalidMessage)?;
+        let fields = parse_canonical_message_for_config(&message, config.require_institutional)
+            .map_err(|_| {
+                if config.require_institutional && message.len() == LEGACY_V1_MESSAGE_LEN {
+                    GateError::InstitutionalRequired
+                } else {
+                    GateError::InvalidMessage
+                }
+            })?;
         require!(fields.attestation_id == attestation_id, GateError::InvalidMessage);
         require!(fields.network_id == config.network_id, GateError::NetworkMismatch);
         require!(fields.partner_hash == config.partner_hash, GateError::PartnerMismatch);
@@ -80,12 +87,31 @@ pub mod abraxas_eligibility_gate {
             require!(!is_zero32(&fields.subject_hash), GateError::SubjectRequired);
         }
         if config.require_institutional {
+            require!(fields.schema_version == SCHEMA_VERSION, GateError::InstitutionalRequired);
             require!(
                 !is_zero32(&fields.organization_commitment)
                     && !is_zero32(&fields.actor_commitment)
                     && !is_zero32(&fields.institutional_result_category),
                 GateError::InstitutionalRequired
             );
+            if !is_zero32(&config.expected_organization_commitment) {
+                require!(
+                    fields.organization_commitment == config.expected_organization_commitment,
+                    GateError::OrganizationMismatch
+                );
+            }
+            if !is_zero32(&config.expected_actor_commitment) {
+                require!(
+                    fields.actor_commitment == config.expected_actor_commitment,
+                    GateError::ActorMismatch
+                );
+            }
+            if !is_zero32(&config.expected_institutional_result_category) {
+                require!(
+                    fields.institutional_result_category == config.expected_institutional_result_category,
+                    GateError::CategoryMismatch
+                );
+            }
         }
 
         let now = Clock::get()?.unix_timestamp;
@@ -100,6 +126,7 @@ pub mod abraxas_eligibility_gate {
         auth.attestation_ref = fields.attestation_id;
         auth.organization_commitment = fields.organization_commitment;
         auth.actor_commitment = fields.actor_commitment;
+        auth.institutional_result_category = fields.institutional_result_category;
         auth.expires_at = fields.expires_at as i64;
         auth.consumed = false;
         auth.revoked = false;
@@ -151,6 +178,9 @@ impl GateConfig {
         self.environment = params.environment;
         self.require_subject = params.require_subject;
         self.require_institutional = params.require_institutional;
+        self.expected_organization_commitment = params.expected_organization_commitment;
+        self.expected_actor_commitment = params.expected_actor_commitment;
+        self.expected_institutional_result_category = params.expected_institutional_result_category;
         Ok(())
     }
 
@@ -218,6 +248,9 @@ pub struct ConfigParams {
     pub signer_key_id: [u8; 32],
     pub require_subject: bool,
     pub require_institutional: bool,
+    pub expected_organization_commitment: [u8; 32],
+    pub expected_actor_commitment: [u8; 32],
+    pub expected_institutional_result_category: [u8; 32],
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, InitSpace, Default)]
@@ -239,6 +272,9 @@ pub struct GateConfig {
     pub environment: [u8; 32],
     pub require_subject: bool,
     pub require_institutional: bool,
+    pub expected_organization_commitment: [u8; 32],
+    pub expected_actor_commitment: [u8; 32],
+    pub expected_institutional_result_category: [u8; 32],
     pub bump: u8,
     pub signers: [SignerSlot; MAX_SIGNERS],
 }
@@ -253,6 +289,7 @@ pub struct Authorization {
     pub attestation_ref: [u8; 32],
     pub organization_commitment: [u8; 32],
     pub actor_commitment: [u8; 32],
+    pub institutional_result_category: [u8; 32],
     pub expires_at: i64,
     pub consumed: bool,
     pub revoked: bool,
@@ -360,4 +397,10 @@ pub enum GateError {
     WrongPartnerProgram,
     #[msg("duplicate_signer")]
     DuplicateSigner,
+    #[msg("organization_mismatch")]
+    OrganizationMismatch,
+    #[msg("actor_mismatch")]
+    ActorMismatch,
+    #[msg("category_mismatch")]
+    CategoryMismatch,
 }

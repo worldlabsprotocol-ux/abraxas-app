@@ -371,6 +371,83 @@ describe("testnet gate deployment kit", () => {
     if (!issued.ok) expect(issued.reason).toBe("deployment_not_verified");
   });
 
+  it("fails closed when a Solana institutional verify observes a V1-only program", async () => {
+    const planned = planInstitutionalTestnetGate({
+      target: "institutional-solana-devnet",
+      now: "2026-09-21T00:00:00.000Z",
+      organizationRef: "org_opaque_ref",
+      actorRef: "act_opaque_ref",
+    });
+    expect(planned.ok).toBe(true);
+    if (!planned.ok) return;
+    const hashes = hashesForApplication({
+      partnerId: planned.envelope.bindings.partner_id,
+      policyId: planned.envelope.bindings.policy_id,
+      policyVersion: planned.envelope.bindings.policy_version,
+      actionType: planned.envelope.bindings.action_type,
+      actionScope: planned.envelope.bindings.action_scope,
+      environment: planned.envelope.bindings.environment,
+      signerKeyId: planned.envelope.bindings.signer_key_id,
+    });
+    const programDigest = (`0x${"cd".repeat(32)}`) as `0x${string}`;
+    const registry = {
+      schema_version: 1 as const,
+      gate_type: "solana" as const,
+      network_id: "solana_devnet",
+      program_id: PROGRAM,
+      gate_config_pda: PDA,
+      program_digest: programDigest,
+      config_digest: hashes.environment_hash,
+      partner_hash: hashes.partner_hash,
+      policy_hash: hashes.policy_hash,
+      action_hash: hashes.action_hash,
+      action_type: planned.envelope.bindings.action_type,
+      action_scope: planned.envelope.bindings.action_scope,
+      environment: "sandbox" as const,
+      signer_key_id: planned.envelope.bindings.signer_key_id,
+      subject_binding_mode: "required" as const,
+    };
+    const { expectedSolanaConfigDigest } = await import("@/lib/partner/onchainGateDeployments");
+    const digest = expectedSolanaConfigDigest({
+      programId: PROGRAM,
+      gateConfigPda: PDA,
+      programDigest,
+      partnerHash: hashes.partner_hash,
+      policyHash: hashes.policy_hash,
+      actionHash: hashes.action_hash,
+      environment: hashes.environment_hash,
+      signerKeyId: planned.envelope.bindings.signer_key_id,
+      subjectBindingMode: "required",
+    });
+    const manifest = { ...registry, config_digest: digest };
+    const envelope = { ...planned.envelope, registry_manifest: manifest };
+    setLocalSolanaProgramTestFixture(PROGRAM, PDA, {
+      programId: PROGRAM,
+      gateConfigPda: PDA,
+      programDigest,
+      configDigest: digest,
+      canonicalMessageLen: 372,
+      schemaVersion: 1,
+      requireInstitutional: false,
+      institutionalCapable: false,
+    });
+    const v1 = await verifyTestnetManifest(envelope);
+    expect(v1.ok).toBe(false);
+    if (!v1.ok) expect(v1.reason).toBe("institutional_required");
+    setLocalSolanaProgramTestFixture(PROGRAM, PDA, {
+      programId: PROGRAM,
+      gateConfigPda: PDA,
+      programDigest,
+      configDigest: digest,
+      canonicalMessageLen: 468,
+      schemaVersion: 2,
+      requireInstitutional: true,
+      institutionalCapable: true,
+    });
+    const v2 = await verifyTestnetManifest(envelope);
+    expect(v2.ok).toBe(true);
+  });
+
   it("shows the institutional sequence on Studio and Launchpad without a deploy button", () => {
     expect(INSTITUTIONAL_TESTNET_GATE_COMMANDS).toContain("plan institutional-evm-sepolia");
     expect(INSTITUTIONAL_SEQUENCE[0]).toBe("Institutional policy review required");

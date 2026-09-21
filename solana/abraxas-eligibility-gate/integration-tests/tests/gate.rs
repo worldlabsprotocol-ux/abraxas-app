@@ -140,6 +140,9 @@ fn default_params(trusted_signer: [u8; 32], fields: MessageFields) -> ConfigPara
         signer_key_id: fields.signer_key_id,
         require_subject: true,
         require_institutional: false,
+        expected_organization_commitment: [0u8; 32],
+        expected_actor_commitment: [0u8; 32],
+        expected_institutional_result_category: [0u8; 32],
     }
 }
 

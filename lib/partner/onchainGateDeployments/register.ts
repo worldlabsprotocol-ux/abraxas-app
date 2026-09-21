@@ -33,6 +33,7 @@ export interface RegisterDeploymentInput {
   evmAdapter?: EvmVerificationAdapter | null;
   solanaAdapter?: SolanaVerificationAdapter | null;
   forceNoRpc?: boolean;
+  institutionalRequired?: boolean;
 }
 
 function networkAllows(manifest: OnchainDeploymentManifest): OnchainGateSafeReason | null {
@@ -114,7 +115,9 @@ export async function registerOnchainGateDeployment(input: RegisterDeploymentInp
   if (manifest.gate_type === "evm") {
     verified = await verifyEvmAgainstChain(manifest, evmAdapter);
   } else {
-    verified = await verifySolanaAgainstChain(manifest, solanaAdapter);
+    verified = await verifySolanaAgainstChain(manifest, solanaAdapter, {
+      institutionalRequired: input.institutionalRequired,
+    });
   }
 
   const now = new Date().toISOString();

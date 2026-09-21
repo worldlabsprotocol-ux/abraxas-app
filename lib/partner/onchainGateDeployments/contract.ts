@@ -49,6 +49,7 @@ export const ONCHAIN_GATE_SAFE_REASONS = [
   "program_mismatch",
   "gate_config_mismatch",
   "deployment_verification_unavailable",
+  "institutional_required",
   "deployment_not_verified",
   "deployment_revoked",
   "deployment_mismatch",

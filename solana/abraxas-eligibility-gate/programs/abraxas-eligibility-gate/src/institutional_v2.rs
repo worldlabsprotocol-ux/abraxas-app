@@ -10,6 +10,16 @@ pub fn entitlement_expired(valid_until: i64, now: i64) -> bool {
     valid_until <= now
 }
 
+/// Deployed program/config is V2-capable only when the live GateConfig requires
+/// institutional V2 (468-byte) messages. V1-only programs fail closed.
+pub fn deployed_institutional_capable(
+    require_institutional: bool,
+    schema_version: u64,
+    message_len: usize,
+) -> bool {
+    require_institutional && schema_version == V2_SCHEMA && message_len == V2_MESSAGE_LEN
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -28,5 +38,8 @@ mod tests {
         assert!(entitlement_expired(50, 100));
         assert!(!entitlement_expired(101, 100));
         assert_eq!(ENTITLEMENT_SEED, b"protocol_access");
+        assert!(deployed_institutional_capable(true, 2, 468));
+        assert!(!deployed_institutional_capable(false, 2, 468));
+        assert!(!deployed_institutional_capable(true, 1, 372));
     }
 }

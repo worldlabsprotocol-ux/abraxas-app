@@ -9,6 +9,7 @@ import {
   institutionalResultCategoryHash,
   institutionalSolanaLayout,
   organizationCommitment,
+  solanaInstitutionalProgramIsV1Only,
 } from "./institutional";
 import { approvedHumanTestnet } from "./networks";
 import type { KitBindings, TestnetGateKitEnvelope } from "./types";
@@ -163,6 +164,10 @@ export function planInstitutionalTestnetGate(input: {
     bytecode_digest: institutionalBytecodeDigest(net.gate_type),
     consumer: "expiry_bound_protocol_access" as const,
   };
+  const solanaV2 = net.gate_type === "solana" ? institutionalSolanaLayout() : null;
+  if (solanaV2 && solanaInstitutionalProgramIsV1Only(solanaV2)) {
+    return { ok: false, reason: "institutional_required" };
+  }
   const envelope: TestnetGateKitEnvelope = {
     ...planned.envelope,
     kit_schema_version: 2,
@@ -170,7 +175,7 @@ export function planInstitutionalTestnetGate(input: {
       ? { ...planned.envelope.eip712, version: "2" }
       : null,
     institutional,
-    solana_v2: net.gate_type === "solana" ? institutionalSolanaLayout() : null,
+    solana_v2: solanaV2,
     kit_digest: kitDigest([
       "institutional-v2",
       net.network_id,

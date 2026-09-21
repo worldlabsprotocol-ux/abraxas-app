@@ -237,6 +237,31 @@ describe("verified onchain gate deployments", () => {
     if (!miss.ok) expect(miss.reason).toBe("program_mismatch");
   });
 
+  it("rejects institutional register against a V1-only Solana observation", async () => {
+    const manifest = solanaManifest();
+    setLocalSolanaProgramTestFixture(PROGRAM, PDA, {
+      programId: PROGRAM,
+      gateConfigPda: PDA,
+      programDigest: manifest.program_digest as `0x${string}`,
+      configDigest: manifest.config_digest as `0x${string}`,
+      canonicalMessageLen: 372,
+      schemaVersion: 1,
+      requireInstitutional: false,
+      institutionalCapable: false,
+    });
+    const miss = await registerOnchainGateDeployment({
+      partnerId: EVM_REF_PARTNER_ID,
+      applicationId: "app-sol-v1",
+      policyId: EVM_REF_POLICY_ID,
+      policyVersion: 1,
+      appEnvironment: "sandbox",
+      manifest,
+      institutionalRequired: true,
+    });
+    expect(miss.ok).toBe(false);
+    if (!miss.ok) expect(miss.reason).toBe("institutional_required");
+  });
+
   it("fails closed when no RPC adapter is configured", async () => {
     const manifest = evmManifest();
     const none = await registerOnchainGateDeployment({

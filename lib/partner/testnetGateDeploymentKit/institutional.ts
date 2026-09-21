@@ -118,7 +118,23 @@ export function institutionalSolanaLayout() {
     },
     stores: ["organization_commitment", "actor_commitment", "valid_until"] as const,
     live: false as const,
+    require_institutional: true as const,
+    institutional_capable: true as const,
   };
+}
+
+export function solanaInstitutionalProgramIsV1Only(input: {
+  message_len?: number;
+  schema_version?: number;
+  prefix?: string;
+  require_institutional?: boolean;
+  institutional_capable?: boolean;
+}): boolean {
+  return input.message_len === INSTITUTIONAL_SOLANA_LEGACY_LEN
+    || input.schema_version === 1
+    || input.prefix === "ABRAXAS_CHAIN_ELIGIBILITY_V1"
+    || input.require_institutional === false
+    || input.institutional_capable === false;
 }
 
 export function institutionalEnvelopeLeaks(value: unknown): string[] {
