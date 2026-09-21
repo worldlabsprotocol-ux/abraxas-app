@@ -116,6 +116,43 @@ describe("Partner Starter Kit Generator", () => {
     expect(backend?.contents).toContain("permitProtocolAction");
     expect(backend?.contents).toContain("getSecret");
     expect(backend?.contents).toContain("AbraxasPartnerKit");
+    expect(backend?.contents).toContain("/api/v1/partner-handoff");
+  });
+
+  it("ships handoff examples for Universal, Next, Express, Wix, Serverless, and mobile", () => {
+    const cases = [
+      { runtime: "universal_https" as const, path: "http/handoff.http" },
+      { runtime: "typescript_nextjs" as const, path: "src/lib/hosted.ts" },
+      { runtime: "typescript_express" as const, path: "src/lib/hosted.ts" },
+      { runtime: "javascript_wix_velo" as const, path: "backend/abraxas.web.js" },
+      { runtime: "typescript_serverless" as const, path: "handoff.js" },
+    ];
+    for (const item of cases) {
+      const validated = validateStarterKitInput({
+        pack_id: "age_21_retail",
+        path: "hosted_partner_flow",
+        runtime: item.runtime,
+      });
+      expect(validated.ok, item.runtime).toBe(true);
+      if (!validated.ok) return;
+      const kit = generateStarterKit(validated.selection);
+      expect(kit.ok).toBe(true);
+      if (!kit.ok) return;
+      expect(kit.files.some((file) => file.path === item.path)).toBe(true);
+      expect(kit.files.some((file) => file.contents.includes("/api/v1/partner-handoff"))).toBe(true);
+      expect(kit.files.some((file) => file.contents.includes("verifyReceiptId"))).toBe(true);
+    }
+    const universal = validateStarterKitInput({
+      pack_id: "age_21_retail",
+      path: "hosted_partner_flow",
+      runtime: "universal_https",
+    });
+    expect(universal.ok).toBe(true);
+    if (!universal.ok) return;
+    const kit = generateStarterKit(universal.selection);
+    expect(kit.ok).toBe(true);
+    if (!kit.ok) return;
+    expect(kit.files.some((file) => file.path === "http/mobile-deeplink.md")).toBe(true);
   });
 
   it("fails closed on static/browser-only and invalid selections", () => {

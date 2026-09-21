@@ -201,11 +201,31 @@ export async function receiptCallback(req: Request, res: Response) {
 }
 
 function hostedHelper(): string {
-  return `import { kit } from "./abraxas";
+  return `import { kit, permitProtocolAction } from "./abraxas";
 
-export function startHostedPartnerFlow() {
-  const returnUrl = process.env.ABRAXAS_CALLBACK_URL ?? "${P.callback_url}";
-  return kit.createHostedVerificationUrl(returnUrl);
+export async function startHostedPartnerFlow() {
+  const res = await fetch((process.env.ABRAXAS_BASE_URL ?? "https://abraxasworld.xyz") + "/api/v1/partner-handoff", {
+    method: "POST",
+    headers: {
+      authorization: "Bearer " + (process.env.ABRAXAS_SANDBOX_API_KEY ?? "${P.api_key}"),
+      "content-type": "application/json",
+      "x-abraxas-application-id": process.env.ABRAXAS_APP_ID ?? "${P.app_id}",
+    },
+    body: JSON.stringify({ runtime: "universal_https" }),
+  });
+  const data = await res.json();
+  if (!data.hosted_url) throw new Error("handoff_unavailable");
+  return data.hosted_url;
+}
+
+export async function finishHandoff(handoffRef) {
+  const res = await fetch((process.env.ABRAXAS_BASE_URL ?? "https://abraxasworld.xyz") + "/api/v1/partner-handoff/" + handoffRef, {
+    headers: { authorization: "Bearer " + (process.env.ABRAXAS_SANDBOX_API_KEY ?? "${P.api_key}") },
+  });
+  const data = await res.json();
+  if (!data.public_receipt_id) return { grant: false, reason: "not_ready" };
+  const receipt = await kit.verifyReceiptId(data.public_receipt_id);
+  return { grant: permitProtocolAction(receipt) === true, outcome: receipt.outcome };
 }
 `;
 }
