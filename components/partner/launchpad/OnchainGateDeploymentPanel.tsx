@@ -24,6 +24,7 @@ export function OnchainGateDeploymentPanel({
   applicationId: string;
 }) {
   const [safeStatus, setSafeStatus] = useState("no_deployment_registered");
+  const [signerHint, setSignerHint] = useState("");
   const [error, setError] = useState("");
   const [manifestText, setManifestText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -34,12 +35,14 @@ export function OnchainGateDeploymentPanel({
       const res = await fetch(`/api/launchpad/applications/${applicationId}/onchain-gate-deployments`, {
         credentials: "include",
       });
-      const data = await res.json() as { safe_status?: string; error?: string };
+      const data = await res.json() as { safe_status?: string; error?: string; signer_updates?: Array<{ status?: string }> };
       if (!res.ok) {
         setError("Could not load gate deployments.");
         return;
       }
       setSafeStatus(data.safe_status ?? "unavailable");
+      const update = data.signer_updates?.find((row) => row.status === "signer_update_required" || row.status === "signer_revoked");
+      setSignerHint(update?.status ? `Signer package: ${update.status.replace(/_/g, " ")}. Apply the owner instruction on your gate. Abraxas does not send the transaction.` : "");
     } catch {
       setError("Could not load gate deployments.");
     }
@@ -79,6 +82,7 @@ export function OnchainGateDeploymentPanel({
       <p style={{ ...body, fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.65rem" }} role="status">
         Status: {safeStatus.replace(/_/g, " ")}
       </p>
+      {signerHint ? <p style={{ ...body, marginBottom: "0.65rem" }}>{signerHint}</p> : null}
       {error && <p role="alert" style={{ ...body, color: "var(--danger, #f87171)", marginBottom: "0.7rem" }}>{error}</p>}
       <textarea
         aria-label="Deployment manifest JSON"
@@ -97,10 +101,13 @@ export function OnchainGateDeploymentPanel({
           marginBottom: "0.65rem",
         }}
       />
-      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
         <Btn size="sm" disabled={busy} onClick={() => void submit()}>Verify registered deployment</Btn>
         <Link href="/docs/onchain-gate-deployments" style={{ fontFamily: FONT, fontSize: "0.78rem" }}>
-          Registration docs →
+          Registration docs
+        </Link>
+        <Link href="/docs/chain-attestation-signer-lifecycle" style={{ fontFamily: FONT, fontSize: "0.78rem" }}>
+          Signer lifecycle
         </Link>
       </div>
     </ContentCard>

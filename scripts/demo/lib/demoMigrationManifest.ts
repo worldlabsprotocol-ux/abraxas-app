@@ -552,6 +552,16 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
     notes:
       "DEMO-first partner-owned EVM/Solana gate deployment registry and lifecycle audit. Opaque refs. Do not auto-apply from Vercel.",
   },
+  {
+    file: "103_chain_attestation_signer_lifecycle.sql",
+    tier: "recommended",
+    creates: ["chain_attestation_signers", "chain_attestation_signer_events", "chain_attestation_signer_updates"],
+    alters: ["onchain_gate_deployments status CHECK signer_update_required signer_revoked"],
+    seeds: [],
+    extensions: [],
+    notes:
+      "DEMO-first chain-attestation signer registry and partner signer-update packages. Public verifier material only. Do not auto-apply from Vercel.",
+  },
 ];
 
 /** Map of which migration file first creates each core object. */
@@ -584,6 +594,9 @@ export const OBJECT_PROVENANCE: Record<string, string> = {
   chain_attestation_nonces: "101_chain_attestation_nonces.sql",
   onchain_gate_deployments: "102_verified_onchain_gate_deployments.sql",
   onchain_gate_deployment_events: "102_verified_onchain_gate_deployments.sql",
+  chain_attestation_signers: "103_chain_attestation_signer_lifecycle.sql",
+  chain_attestation_signer_events: "103_chain_attestation_signer_lifecycle.sql",
+  chain_attestation_signer_updates: "103_chain_attestation_signer_lifecycle.sql",
 };
 
 export function getDemoManifestFilenames(): string[] {

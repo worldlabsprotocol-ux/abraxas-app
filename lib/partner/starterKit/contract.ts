@@ -15,7 +15,7 @@ import { WALLET_STANDARD_NOT_IDENTITY } from "@/lib/partner/walletStandard/contr
 import { EVM_NO_EXECUTION_BOUNDARY } from "@/lib/partner/evm/contract";
 import { CHAIN_ATTESTATION_NOT_EXECUTION } from "@/lib/partner/chainAttestation/contract";
 
-export const STARTER_KIT_VERSION = "1.7.0" as const;
+export const STARTER_KIT_VERSION = "1.8.0" as const;
 export const STARTER_KIT_API_PATH = "/api/developers/integration-studio/starter-kit" as const;
 
 export const STARTER_KIT_RUNTIMES = [
@@ -101,6 +101,7 @@ export const STARTER_KIT_DOES_NOT_DO = [
   "Does not sign a blockchain transaction or bind a wallet as identity.",
   "Does not activate Mainnet, include RPC credentials, or execute partner chain transactions.",
   "Does not treat a chain eligibility attestation as a payment, transfer, trade, token approval, or gas grant.",
+  "Does not rotate partner gate signers automatically or broadcast a signer-update transaction.",
 ] as const;
 
 export const STARTER_KIT_REJECTED_CAPABILITIES = [

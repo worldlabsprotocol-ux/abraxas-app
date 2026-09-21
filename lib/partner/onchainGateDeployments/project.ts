@@ -9,6 +9,8 @@ export function safeStateFromRecord(record: OnchainGateDeploymentRecord | null):
   if (record.status === "production_review_required" || record.status === "verified_production") {
     return record.status === "verified_production" ? "verified_sandbox" : "production_review_required";
   }
+  if (record.status === "signer_update_required") return "signer_update_required";
+  if (record.status === "signer_revoked") return "unavailable";
   return "unavailable";
 }
 

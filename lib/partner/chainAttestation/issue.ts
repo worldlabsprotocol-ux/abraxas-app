@@ -10,6 +10,10 @@ import {
   type LocalIssuanceTestAdapter,
 } from "@/lib/partner/onchainGateDeployments/bindIssuance";
 import {
+  mapSignerReasonToAttestation,
+  resolveChainAttestationIssuanceSigner,
+} from "@/lib/partner/chainAttestationSignerLifecycle";
+import {
   CHAIN_ATTESTATION_CLIENT_OVERRIDE_KEYS,
   CHAIN_ATTESTATION_EVM_TYPE_SCOPES,
   CHAIN_ATTESTATION_SCHEMA_VERSION,
@@ -193,6 +197,17 @@ export async function issueChainEligibilityAttestation(
     if (!signer.ok) {
       return denied("attestation_unavailable", input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
     }
+    const issuanceKey = resolveChainAttestationIssuanceSigner({
+      algorithm: "secp256k1",
+      environment: input.kit.options.environment,
+      networkId: input.network_id,
+      gateType: "evm",
+      schemaVersion: String(CHAIN_ATTESTATION_SCHEMA_VERSION),
+      now,
+    });
+    if (!issuanceKey.ok) {
+      return denied(mapSignerReasonToAttestation(issuanceKey.reason), input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
+    }
     const bound = await bindIssuanceToVerifiedDeployment({
       partnerId: input.kit.options.partnerId,
       applicationId: input.application_id ?? "",
@@ -287,6 +302,17 @@ export async function issueChainEligibilityAttestation(
   const solanaSigner = loadSolanaAttestationSigner();
   if (!solanaSigner.ok) {
     return denied("attestation_unavailable", input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
+  }
+  const solanaIssuance = resolveChainAttestationIssuanceSigner({
+    algorithm: "ed25519",
+    environment: input.kit.options.environment,
+    networkId: input.network_id,
+    gateType: "solana",
+    schemaVersion: String(CHAIN_ATTESTATION_SCHEMA_VERSION),
+    now,
+  });
+  if (!solanaIssuance.ok) {
+    return denied(mapSignerReasonToAttestation(solanaIssuance.reason), input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
   }
   const solanaBound = await bindIssuanceToVerifiedDeployment({
     partnerId: input.kit.options.partnerId,

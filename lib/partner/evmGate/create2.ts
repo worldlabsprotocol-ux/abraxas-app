@@ -17,6 +17,7 @@ export function predictEvmGateCreate2Address(input: {
 
 export function encodeGateConfigArgs(config: {
   trustedSigner: `0x${string}`;
+  trustedSignerKeyId: `0x${string}`;
   partnerHash: `0x${string}`;
   networkId: `0x${string}`;
   policyHash: `0x${string}`;
@@ -29,6 +30,7 @@ export function encodeGateConfigArgs(config: {
       type: "tuple",
       components: [
         { name: "trustedSigner", type: "address" },
+        { name: "trustedSignerKeyId", type: "bytes32" },
         { name: "partnerHash", type: "bytes32" },
         { name: "networkId", type: "bytes32" },
         { name: "policyHash", type: "bytes32" },
