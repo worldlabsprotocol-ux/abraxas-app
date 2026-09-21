@@ -16,6 +16,7 @@ import { evmFixtureReceipt, EVM_REF_PARTNER_ID, EVM_REF_POLICY_ID } from "@/lib/
 import { resetFakeWalletStandardBackend } from "@/lib/partner/walletStandard/fakeDurableBackend";
 import { getNetworkCapability } from "@/lib/partner/networkCapability/registry";
 import {
+  CHAIN_ATTESTATION_CLIENT_VISIBLE_KEYS,
   CHAIN_ATTESTATION_FORBIDDEN_KEYS,
   EIP712_DOMAIN_NAME,
   EIP712_DOMAIN_VERSION,
@@ -31,6 +32,10 @@ import {
 } from "@/lib/partner/chainAttestation/solanaMessage";
 import { hashAction, hashNetworkId, hashPartnerId, hashPolicy, hashEnvironment } from "@/lib/partner/chainAttestation/hashes";
 import { parseChainAttestationRequest } from "@/lib/partner/chainAttestation/parseRequest";
+import {
+  chainAttestationHasForbiddenKeys,
+  projectChainAttestationClient,
+} from "@/lib/partner/chainAttestation/project";
 import { EVM_ATTESTATION_KEY_ENV, EVM_ATTESTATION_KEY_ID_ENV } from "@/lib/partner/chainAttestation/signer";
 import { generateStarterKit } from "@/lib/partner/starterKit/generate";
 import { validateStarterKitInput } from "@/lib/partner/starterKit/validate";
@@ -303,6 +308,80 @@ describe("chain eligibility attestations", () => {
     expect(ix.instructionData[0]).toBe(1);
     expect(ix.messageDataSize).toBe(a.length);
     expect(JSON.stringify(issued.client)).not.toMatch(/transfer|lamports|createTransaction/i);
+  });
+
+  it("projects only the client-visible allowlist in order and keeps forbidden detection separate", () => {
+    const view = {
+      allowed: true,
+      reason: "permitted" as const,
+      action_binding: {
+        action_type: "enable_protocol_access",
+        action_scope: "sandbox:protocol_access",
+        nonce_state: "issued" as const,
+        wallet_binding: "optional" as const,
+      },
+      expires_at: "2099-01-01T00:00:00.000Z",
+      schema_version: 1 as const,
+      network_id: "evm_sandbox",
+      environment: "sandbox" as const,
+    };
+    const projected = projectChainAttestationClient(view);
+    expect(Object.keys(projected)).toEqual([...CHAIN_ATTESTATION_CLIENT_VISIBLE_KEYS]);
+    expect(projected.allowed).toBe(true);
+    expect(projected.reason).toBe("permitted");
+    expect(projected.action_binding).toEqual(view.action_binding);
+    expect(projected.expires_at).toBe(view.expires_at);
+    expect(projected.schema_version).toBe(1);
+    expect(projected.network_id).toBe("evm_sandbox");
+    expect(projected.environment).toBe("sandbox");
+
+    const unsanitized = {
+      ...view,
+      private_key: "secret",
+      signing_key: "secret",
+      receipt: {},
+      receipt_id: "dr_secret",
+      claims: [],
+      evidence: [],
+      source_facts: [],
+      wallet_private_key: "0xabc",
+      wallet_address: "0x1111111111111111111111111111111111111111",
+      provider: "alchemy",
+      api_key: "abx_test_x",
+      calldata: "0xdead",
+      recipient: "0x2222222222222222222222222222222222222222",
+      amount: "1",
+      transaction: {},
+      tx: "0x",
+    };
+    expect(chainAttestationHasForbiddenKeys(unsanitized).length).toBeGreaterThan(0);
+    expect(chainAttestationHasForbiddenKeys(projected)).toEqual([]);
+    const projectedKeys = Object.keys(projected);
+    for (const key of [
+      "private_key",
+      "signing_key",
+      "receipt",
+      "receipt_id",
+      "claims",
+      "evidence",
+      "source_facts",
+      "wallet_private_key",
+      "wallet_address",
+      "provider",
+      "api_key",
+      "calldata",
+      "recipient",
+      "amount",
+      "transaction",
+      "tx",
+      "signature",
+      "typed_data",
+    ]) {
+      expect(projectedKeys).not.toContain(key);
+    }
+    const source = readFileSync(join(process.cwd(), "lib/partner/chainAttestation/project.ts"), "utf8");
+    expect(source).not.toMatch(/as unknown as/);
+    expect(source).not.toContain("pickAllowedKeys");
   });
 
   it("rejects client override keys and keeps forbidden material out of projections", () => {

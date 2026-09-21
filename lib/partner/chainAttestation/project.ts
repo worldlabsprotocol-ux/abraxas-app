@@ -1,9 +1,7 @@
 // FILE: lib/partner/chainAttestation/project.ts
 // Strict selective-disclosure projections.
 
-import { pickAllowedKeys } from "@/lib/privacy/selectiveDisclosure";
 import {
-  CHAIN_ATTESTATION_CLIENT_VISIBLE_KEYS,
   CHAIN_ATTESTATION_FORBIDDEN_KEYS,
   type ChainAttestationSafeReason,
 } from "./contract";
@@ -24,7 +22,15 @@ export interface ChainAttestationClientView {
 }
 
 export function projectChainAttestationClient(view: ChainAttestationClientView): ChainAttestationClientView {
-  return pickAllowedKeys(view, CHAIN_ATTESTATION_CLIENT_VISIBLE_KEYS) as unknown as ChainAttestationClientView;
+  return {
+    allowed: view.allowed,
+    reason: view.reason,
+    action_binding: view.action_binding,
+    expires_at: view.expires_at,
+    schema_version: view.schema_version,
+    network_id: view.network_id,
+    environment: view.environment,
+  };
 }
 
 export function chainAttestationHasForbiddenKeys(value: unknown): string[] {
