@@ -54,6 +54,7 @@ const PATH_LABEL: Record<IntegrationStudioPathId, string> = {
   eligibility_presentation: "Request a private eligibility presentation",
   cross_chain_protocol_access: "Build a cross-chain protocol gate",
   testnet_gate_deployment: "Human-operated testnet gate kit",
+  institutional_eligibility_gate: "Institutional eligibility gate",
 };
 
 const body: React.CSSProperties = {

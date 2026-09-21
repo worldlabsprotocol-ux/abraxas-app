@@ -81,7 +81,7 @@ export function matchesReleaseShape(record: VerificationIssuerRecord, shape: San
   if (record.status === "disabled" || record.status === "retiring") return false;
   if (record.method_category === "account_login") return false;
   if (record.method_category !== shape.method_category) return false;
-  if (!record.result_categories.includes(shape.result_category)) return false;
+  if (!(record.result_categories as readonly string[]).includes(shape.result_category)) return false;
   if (!record.environments.includes(shape.environment)) return false;
   if (String(record.assurance_level) === "L0") return false;
   if (!assuranceOk(record.assurance_level, shape.minimum_assurance)) return false;

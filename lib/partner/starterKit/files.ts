@@ -14,6 +14,7 @@ import {
 } from "./contract";
 import { serverlessFiles, universalHttpsFiles, wixVeloFiles, type StarterKitFile } from "./platforms";
 import { eligibilityPresentationHttpsExample, eligibilityPresentationServerExample } from "@/lib/eligibilityPresentation/examples";
+import { organizationEligibilityServerExample } from "@/lib/organizationEligibility/examples";
 import { crossChainProtocolAccessHttpsExample, crossChainProtocolAccessServerExample } from "@/lib/partner/crossChainProtocolAccess/examples";
 import type { ValidStarterKitSelection } from "./validate";
 
@@ -740,6 +741,7 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
   const eligibility = selection.path === "eligibility_presentation" || selection.capabilities.includes("eligibility_presentation");
   const crossChain = selection.path === "cross_chain_protocol_access" || selection.capabilities.includes("cross_chain_protocol_access");
   const testnetKit = selection.path === "testnet_gate_deployment" || selection.capabilities.includes("testnet_gate_deployment");
+  const institutional = selection.path === "institutional_eligibility_gate" || selection.capabilities.includes("institutional_eligibility_gate");
   const include = { webhook, venue, payment, solana, wallet, portable, evm };
 
   const files: StarterKitFile[] = [
@@ -813,6 +815,17 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
   if (crossChain) {
     files.push({ path: "src/lib/cross-chain-protocol-access.ts", contents: crossChainProtocolAccessServerExample() });
     files.push({ path: "CROSS_CHAIN_PROTOCOL_ACCESS.md", contents: crossChainProtocolAccessHttpsExample() });
+  }
+  if (institutional) {
+    files.push({ path: "src/lib/organization-eligibility.ts", contents: organizationEligibilityServerExample() });
+    files.push({
+      path: "INSTITUTIONAL_ELIGIBILITY.md",
+      contents: `# Institutional eligibility gate
+
+Authorized representative consent, then a narrow audience-bound organization or authorized-signer result.
+Re-fetch the current public receipt. A wallet-control proof is never KYB. Not Utila, AML/KYT, or custody.
+`,
+    });
   }
   if (testnetKit) {
     files.push({

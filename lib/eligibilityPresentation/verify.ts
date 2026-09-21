@@ -12,6 +12,8 @@ import {
   loadPresentationRequest,
 } from "./store";
 import type { EligibilityPresentationEnvelope } from "./types";
+import { ORGANIZATION_RESULT_CATEGORIES } from "@/lib/organizationEligibility/contract";
+import { requireLiveOrganizationEligibility } from "@/lib/organizationEligibility/revoke";
 
 export interface PresentationVerifyExpected {
   audience_hash: string;
@@ -92,6 +94,21 @@ export async function verifyEligibilityPresentation(input: {
   if (stored.status === "revoked") return { ok: false, reason: "revoked", presentation_sufficient: false };
   if (stored.status === "consumed") return { ok: false, reason: "replayed", presentation_sufficient: false };
   if (stored.status !== "issued") return { ok: false, reason: stored.status, presentation_sufficient: false };
+  if ((ORGANIZATION_RESULT_CATEGORIES as readonly string[]).includes(stored.result_category)) {
+    try {
+      await requireLiveOrganizationEligibility({
+        partnerHmac: stored.partner_hmac,
+        result_category: stored.result_category,
+        policy_id: stored.policy_id,
+        policy_version: stored.policy_version,
+        action: stored.action,
+        environment: stored.environment,
+      });
+    } catch (error) {
+      const reason = error instanceof Error && "code" in error ? String((error as { code?: string }).code) : "organization_revoked";
+      return { ok: false, reason, presentation_sufficient: false };
+    }
+  }
 
   const hash = nonceHash(input.expected.verifier_nonce);
   const byNonce = await findPresentationByNonceHash(hash);

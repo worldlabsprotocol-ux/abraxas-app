@@ -22,6 +22,8 @@ export async function issueOnchainGate(receiptId: string) {
       action_scope: "sandbox:protocol_access",
       network_id: "evm_sandbox",
       deployment_ref: process.env.ABRAXAS_GATE_DEPLOYMENT_REF,
+      // Optional hashed organization/authorized-signer binding. Gates receive only this hash.
+      organization_binding_hash: process.env.ABRAXAS_ORGANIZATION_BINDING_HASH,
     }),
   });
   const issued = await res.json();
@@ -58,6 +60,7 @@ export async function issueSolanaOnchainGate(receiptId: string) {
       network_id: "solana_devnet",
       deployment_ref: process.env.ABRAXAS_GATE_DEPLOYMENT_REF,
       wallet_binding_mode: "required",
+      organization_binding_hash: process.env.ABRAXAS_ORGANIZATION_BINDING_HASH,
     }),
   });
   const issued = await res.json();

@@ -242,7 +242,7 @@ describe("testnet gate deployment kit", () => {
     expect(snippet.code).toContain("--confirm");
     const catalog = studioPublicCatalog({ pathId: "testnet_gate_deployment" });
     expect(catalog.testnet_gate_deployment.browser_deploy).toBe(false);
-    expect(STARTER_KIT_VERSION).toBe("1.11.0");
+    expect(STARTER_KIT_VERSION).toBe("1.12.0");
     const validated = validateStarterKitInput({
       pack_id: "age_21_retail",
       path: "testnet_gate_deployment",

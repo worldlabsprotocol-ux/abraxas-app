@@ -582,6 +582,16 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
     notes:
       "DEMO-first audience-bound eligibility presentations with one-time nonce consumption. Safe audit refs only. Do not auto-apply from Vercel.",
   },
+  {
+    file: "106_private_organization_eligibility.sql",
+    tier: "recommended",
+    creates: ["organization_eligibility_records"],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "DEMO-first private organization and authorized-signer eligibility. Opaque HMAC refs, durable revocation. Do not auto-apply from Vercel.",
+  },
 ];
 
 /** Map of which migration file first creates each core object. */
@@ -620,6 +630,7 @@ export const OBJECT_PROVENANCE: Record<string, string> = {
   reclaim_private_attestation_sessions: "104_reclaim_private_attestation_sessions.sql",
   eligibility_presentation_requests: "105_eligibility_presentations.sql",
   eligibility_presentations: "105_eligibility_presentations.sql",
+  organization_eligibility_records: "106_private_organization_eligibility.sql",
 };
 
 export function getDemoManifestFilenames(): string[] {

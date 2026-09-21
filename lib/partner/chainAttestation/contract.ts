@@ -77,6 +77,8 @@ export const CHAIN_ATTESTATION_SAFE_REASONS = [
   "signer_revoked",
   "signer_update_required",
   "schema_mismatch",
+  "organization_revoked",
+  "wallet_binding_mismatch",
 ] as const;
 export type ChainAttestationSafeReason = (typeof CHAIN_ATTESTATION_SAFE_REASONS)[number];
 

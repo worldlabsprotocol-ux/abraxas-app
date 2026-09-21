@@ -47,6 +47,8 @@ describe("verification issuer trust registry", () => {
     expect(byKey["abraxas.verify_identity.production"]?.status).toBe("review_required");
     expect(issuerRecordIsCurrent(byKey["fixture.expired"]!, now)).toBe(false);
     expect(byKey["reclaim.privacy_preserving"]?.integration).toBe("planned");
+    expect(byKey["abraxas.organization_eligibility"]?.method_category).toBe("privacy_preserving");
+    expect(byKey["abraxas.organization_eligibility"]?.assurance_level).toBe("L2");
     expect(byKey["abraxas.google_account"]?.status).toBe("disabled");
   });
 
