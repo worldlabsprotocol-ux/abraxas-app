@@ -156,7 +156,7 @@ export async function findAcceptedReclaimSession(input: {
   policyHmac: string;
   environment: string;
 }): Promise<ReclaimSessionRecord | null> {
-  const matches = [...memory.values()].filter((record) =>
+  const matches = Array.from(memory.values()).filter((record) =>
     record.status === "accepted"
     && record.holder_hmac === input.holderHmac
     && record.verify_request_hmac === input.verifyRequestHmac
