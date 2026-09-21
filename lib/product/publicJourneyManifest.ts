@@ -117,6 +117,12 @@ export const PUBLIC_JOURNEY_SURFACES = [
     file: "app/docs/evm-onchain-eligibility-gate/page.tsx",
   },
   {
+    route: "/docs/onchain-gate-deployments",
+    purpose: "Verified partner-owned EVM and Solana gate deployment registry. Not a deployer.",
+    primaryCta: { label: "Integration Studio", href: "/developers/integration-studio" },
+    file: "app/docs/onchain-gate-deployments/page.tsx",
+  },
+  {
     route: "/docs/selective-disclosure",
     purpose: "Canonical selective-disclosure boundary. Policy result only, not evidence.",
     primaryCta: { label: "Integration Studio", href: "/developers/integration-studio" },

@@ -21,6 +21,7 @@ export const PUBLIC_PRODUCT_ROUTES = [
   "/docs/chain-verifiable-attestations",
   "/docs/solana-onchain-eligibility-gate",
   "/docs/evm-onchain-eligibility-gate",
+  "/docs/onchain-gate-deployments",
   "/docs/selective-disclosure",
   "/docs/hosted-partner-flow-handoff",
   "/docs/receipt-lifecycle-events",

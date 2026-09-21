@@ -166,6 +166,11 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
       calls_rpc: false,
       deploys_shared_program: false,
       notice: INTEGRATION_STUDIO_SOLANA_ONCHAIN_NOTICE,
+      deployment_registry: {
+        docs: "/docs/onchain-gate-deployments",
+        deploys: false,
+        live: false,
+      },
     },
     evm_onchain_eligibility_gate: {
       creates_transactions: false,
@@ -176,6 +181,11 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
       circle_settlement: false,
       notice: INTEGRATION_STUDIO_EVM_ONCHAIN_NOTICE,
       launchpad: evmGateLaunchpadPublicView(),
+      deployment_registry: {
+        docs: "/docs/onchain-gate-deployments",
+        deploys: false,
+        live: false,
+      },
     },
     selective_disclosure: {
       docs: "/docs/selective-disclosure",

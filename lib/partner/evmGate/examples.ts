@@ -21,8 +21,7 @@ export async function issueEvmOnchainGate(receiptId: string) {
       action_type: "enable_protocol_access",
       action_scope: "sandbox:protocol_access",
       network_id: "evm_sandbox",
-      chain_id: 31337,
-      verifying_contract: process.env.PARTNER_GATE_ADDRESS,
+      deployment_ref: process.env.ABRAXAS_GATE_DEPLOYMENT_REF,
     }),
   });
   const issued = await res.json();

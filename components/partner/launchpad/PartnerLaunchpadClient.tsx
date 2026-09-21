@@ -29,6 +29,7 @@ import { PartnerGoLiveReadinessPanel } from "@/components/partner/launchpad/Part
 import { PartnerFlowRequestPanel } from "@/components/partner/launchpad/PartnerFlowRequestPanel";
 import { PolicyVersionPlannerPanel } from "@/components/partner/launchpad/PolicyVersionPlannerPanel";
 import { NetworkReadinessPanel } from "@/components/partner/launchpad/NetworkReadinessPanel";
+import { OnchainGateDeploymentPanel } from "@/components/partner/launchpad/OnchainGateDeploymentPanel";
 import { GO_LIVE_REVIEW_ENTRY } from "@/lib/partner/launchpad/goLiveReadiness/contract";
 import { PolicyProposalForm } from "@/components/partner/policyProposal/PolicyProposalForm";
 import { POLICY_PROPOSAL_NOTICE } from "@/lib/partner/policyProposal/contract";
@@ -657,10 +658,13 @@ export function PartnerLaunchpadClient({
       )}
 
       {step === "networks" && activeApp && (
-        <NetworkReadinessPanel
-          applicationId={activeApp.id}
-          onContinue={() => setStep("test")}
-        />
+        <>
+          <NetworkReadinessPanel
+            applicationId={activeApp.id}
+            onContinue={() => setStep("test")}
+          />
+          <OnchainGateDeploymentPanel applicationId={activeApp.id} />
+        </>
       )}
 
       {step === "provisioned" && (
