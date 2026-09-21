@@ -1,7 +1,8 @@
 // FILE: lib/partner/launchpad/webhookDeliveryHealth/view.ts
 // Pure partner-safe projection. Client fields are never authority.
 
-import { PARTNER_PRODUCTION_PUBLIC_EVENT_TYPES } from "@/lib/partner/eventDelivery/contract";
+import { RECEIPT_LIFECYCLE_EVENT_TYPES, RECEIPT_LIFECYCLE_SCHEDULING_POSTURE } from "@/lib/partner/receiptLifecycle/contract";
+import { projectLifecycleFixture } from "@/lib/partner/receiptLifecycle/envelope";
 import { toPartnerVisibleEventLabel } from "@/lib/partner/eventDelivery/mapping";
 import {
   WEBHOOK_DELIVERY_HEALTH_DISCLAIMER,
@@ -10,6 +11,7 @@ import {
   WEBHOOK_DELIVERY_HEALTH_WINDOW_HOURS,
   WEBHOOK_HEALTH_DOCS,
   WEBHOOK_HEALTH_LOCAL_CHECKLIST,
+  WEBHOOK_HEALTH_LIFECYCLE_CHECKLIST,
   WEBHOOK_HEALTH_MAX_ATTEMPTS,
   webhookHealthTestConsoleHref,
   type WebhookHealthCapabilityState,
@@ -78,9 +80,13 @@ export interface WebhookDeliveryHealthView {
     test_console: string;
     starter_kit: string;
     event_delivery_docs: string;
+    lifecycle_docs: string;
     integration_studio: string;
   };
   next_actions: string[];
+  scheduling_notice: string;
+  lifecycle_checklist: typeof WEBHOOK_HEALTH_LIFECYCLE_CHECKLIST;
+  lifecycle_fixtures: Record<string, ReturnType<typeof projectLifecycleFixture>>;
 }
 
 export function buildWebhookDeliveryHealthView(input: {
@@ -153,7 +159,7 @@ export function buildWebhookDeliveryHealthView(input: {
     delivery_enabled: input.deliveryEnabled,
     host_class: host.host_class,
     masked_host: host.masked_host,
-    event_types: [...PARTNER_PRODUCTION_PUBLIC_EVENT_TYPES],
+    event_types: [...RECEIPT_LIFECYCLE_EVENT_TYPES],
     capability_state,
     window_hours: WEBHOOK_DELIVERY_HEALTH_WINDOW_HOURS,
     counts,
@@ -172,8 +178,14 @@ export function buildWebhookDeliveryHealthView(input: {
       test_console: webhookHealthTestConsoleHref(input.applicationId),
       starter_kit: WEBHOOK_HEALTH_DOCS.starter_kit,
       event_delivery_docs: WEBHOOK_HEALTH_DOCS.event_delivery,
+      lifecycle_docs: WEBHOOK_HEALTH_DOCS.lifecycle_events,
       integration_studio: WEBHOOK_HEALTH_DOCS.integration_studio,
     },
     next_actions,
+    scheduling_notice: RECEIPT_LIFECYCLE_SCHEDULING_POSTURE,
+    lifecycle_checklist: WEBHOOK_HEALTH_LIFECYCLE_CHECKLIST,
+    lifecycle_fixtures: Object.fromEntries(
+      RECEIPT_LIFECYCLE_EVENT_TYPES.map((eventType) => [eventType, projectLifecycleFixture(eventType)]),
+    ),
   };
 }

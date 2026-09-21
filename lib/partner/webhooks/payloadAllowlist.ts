@@ -15,6 +15,11 @@ export const WEBHOOK_PAYLOAD_ALLOWED_KEYS = [
   "outcome",
   "reason_code",
   "signature",
+  "event_ref",
+  "validity_class",
+  "expires_at",
+  "must_reverify",
+  "is_grant",
 ] as const;
 
 export const WEBHOOK_TEST_PAYLOAD_ALLOWED_KEYS = [

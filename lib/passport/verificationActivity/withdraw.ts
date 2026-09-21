@@ -6,6 +6,7 @@ import { appendAuditEvent } from "@/lib/verification/audit";
 import { subjectPseudonymId } from "@/lib/decisionReceipts/pseudonym";
 import { revokeDecisionReceiptControlled } from "@/lib/decisionReceipts/revocationControlPlane";
 import { revokeDerivedFromSourceReceipt } from "@/lib/passport/reusableEligibility/store";
+import { enqueueDerivedInvalidationEvents } from "@/lib/partner/receiptLifecycle";
 import { applyDisclosureProfile } from "@/lib/privacy/selectiveDisclosure/enforce";
 import { rejectClientDisclosureConfig } from "@/lib/privacy/selectiveDisclosure/clientOverride";
 import { GENERIC_MINIMAL_PROFILE } from "@/lib/privacy/selectiveDisclosure/profiles";
@@ -242,6 +243,7 @@ export async function withdrawHolderSharedResult(input: {
           changedBy: `holder:${subjectPseudonymId(input.subjectId)}`,
           reasonCode: HOLDER_WITHDRAWAL_REASON_CODE,
         });
+        void enqueueDerivedInvalidationEvents(match.receipt_id);
       }
       const view = projectHolderWithdrawalClientView(true);
       return { ok: true, view };
@@ -292,6 +294,7 @@ export async function withdrawHolderSharedResult(input: {
       changedBy: `holder:${pseudonym}`,
       reasonCode: HOLDER_WITHDRAWAL_REASON_CODE,
     });
+    void enqueueDerivedInvalidationEvents(match.receipt_id);
 
     const view = projectHolderWithdrawalClientView(result.alreadyRevoked);
     const serialized = JSON.stringify(view);

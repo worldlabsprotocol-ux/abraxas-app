@@ -522,6 +522,16 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
     notes:
       "DEMO-first Hosted Partner Flow handoff records and nonce hashes. Callback URLs are not stored. Do not auto-apply from Vercel.",
   },
+  {
+    file: "100_receipt_lifecycle_outbox_events.sql",
+    tier: "recommended",
+    creates: [],
+    alters: ["partner_webhook_outbox event_type CHECK receipt.expiring receipt.invalidated"],
+    seeds: [],
+    extensions: [],
+    notes:
+      "DEMO-first outbox event_type CHECK expansion for receipt lifecycle events. Do not auto-apply from Vercel.",
+  },
 ];
 
 /** Map of which migration file first creates each core object. */

@@ -109,6 +109,11 @@ export async function enqueuePartnerWebhookEvent(input: {
   reasonCode?: string | null;
   outcome?: string | null;
   resourceId: string;
+  eventRef?: string | null;
+  validityClass?: string | null;
+  expiresAt?: string | null;
+  mustReverify?: true;
+  isGrant?: false;
 }): Promise<{ ok: true; eventId: string; created: boolean } | { ok: false; error: string }> {
   const partnerId = input.partnerId.trim();
   if (!partnerId) return { ok: false, error: "partner_id_required" };
@@ -141,6 +146,11 @@ export async function enqueuePartnerWebhookEvent(input: {
     decisionId: input.decisionId ?? null,
     reasonCode: input.reasonCode ?? null,
     outcome: input.outcome ?? null,
+    eventRef: input.eventRef ?? null,
+    validityClass: input.validityClass ?? null,
+    expiresAt: input.expiresAt ?? null,
+    mustReverify: true,
+    isGrant: false,
   });
 
   if (!webhookPayloadHasNoPii(payload)) {

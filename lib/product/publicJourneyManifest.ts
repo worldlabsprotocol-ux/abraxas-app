@@ -57,6 +57,12 @@ export const PUBLIC_JOURNEY_SURFACES = [
     file: "app/docs/hosted-partner-flow-handoff/page.tsx",
   },
   {
+    route: "/docs/receipt-lifecycle-events",
+    purpose: "Receipt lifecycle webhooks. HMAC, re-fetch, Partner Kit. Notifications, not grants.",
+    primaryCta: { label: "Partner Event Delivery", href: "/docs/partner-event-delivery" },
+    file: "app/docs/receipt-lifecycle-events/page.tsx",
+  },
+  {
     route: "/docs/starter-kit",
     purpose: "Starter kit contract and generator entry.",
     primaryCta: { label: "Open Integration Studio →", href: "/developers/integration-studio" },

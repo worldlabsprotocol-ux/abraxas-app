@@ -29,6 +29,9 @@ export function maybeEnqueuePartnerReceiptIssued(input: {
     decisionId: input.decisionId ?? null,
     resourceId: receiptId,
     outcome: "issued",
+    validityClass: "current",
+    mustReverify: true,
+    isGrant: false,
   });
 }
 
@@ -52,6 +55,61 @@ export function maybeEnqueuePartnerReceiptRevoked(input: {
     reasonCode: input.reasonCode ?? null,
     resourceId: input.receiptId,
     outcome: "revoked",
+    validityClass: "revoked",
+    mustReverify: true,
+    isGrant: false,
+  });
+}
+
+export function maybeEnqueueReceiptInvalidated(input: {
+  partnerId: string;
+  receiptId: string;
+  policyId?: string | null;
+  policyVersion?: number | null;
+  decisionId?: string | null;
+  reasonCode?: string | null;
+}): void {
+  const receiptId = input.receiptId?.trim();
+  const partnerId = input.partnerId?.trim();
+  if (!receiptId || !partnerId) return;
+  enqueuePartnerWebhookEventBestEffort({
+    partnerId,
+    eventType: "receipt.invalidated",
+    receiptId,
+    policyId: input.policyId ?? null,
+    policyVersion: input.policyVersion ?? null,
+    decisionId: input.decisionId ?? null,
+    reasonCode: input.reasonCode ?? "invalidated",
+    resourceId: receiptId,
+    outcome: "invalidated",
+    validityClass: "invalidated",
+    mustReverify: true,
+    isGrant: false,
+  });
+}
+
+export function maybeEnqueueReceiptExpiring(input: {
+  partnerId: string;
+  receiptId: string;
+  policyId?: string | null;
+  policyVersion?: number | null;
+  expiresAt?: string | null;
+}): void {
+  const receiptId = input.receiptId?.trim();
+  const partnerId = input.partnerId?.trim();
+  if (!receiptId || !partnerId) return;
+  enqueuePartnerWebhookEventBestEffort({
+    partnerId,
+    eventType: "receipt.expiring",
+    receiptId,
+    policyId: input.policyId ?? null,
+    policyVersion: input.policyVersion ?? null,
+    resourceId: receiptId,
+    outcome: "expiring",
+    validityClass: "expiring",
+    expiresAt: input.expiresAt ?? null,
+    mustReverify: true,
+    isGrant: false,
   });
 }
 

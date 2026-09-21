@@ -8,7 +8,9 @@ export const PARTNER_WEBHOOK_EVENT_TYPES = [
   "partner.credential.revoked",
   "receipt.issued",
   "receipt.expired",
+  "receipt.expiring",
   "receipt.revoked",
+  "receipt.invalidated",
   "decision.denied",
   "integration.health_changed",
 ] as const;
@@ -25,6 +27,8 @@ export type WebhookOutbox067EventType = (typeof WEBHOOK_OUTBOX_067_EVENT_TYPES)[
 
 export const WEBHOOK_OUTBOX_EXTENDED_EVENT_TYPES = [
   "receipt.expired",
+  "receipt.expiring",
+  "receipt.invalidated",
   "decision.denied",
   "integration.health_changed",
 ] as const;
@@ -68,6 +72,11 @@ export interface PartnerWebhookPayload {
   decision_id?: string | null;
   outcome?: string | null;
   reason_code?: string | null;
+  event_ref?: string | null;
+  validity_class?: string | null;
+  expires_at?: string | null;
+  must_reverify?: true;
+  is_grant?: false;
   signature?: {
     alg: string;
     version: string;

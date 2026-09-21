@@ -43,7 +43,7 @@ export const PASSPORT_ACTIVITY_WITHDRAW_CONFIRM_POINTS = [
 ] as const;
 
 export const PASSPORT_ACTIVITY_WITHDRAW_SUCCESS =
-  "This result is revoked. Future partner checks will not accept it. A partner may ask you to verify again from their usual entry point. Actions already taken by a partner are not reversed.";
+  "This result is revoked. Future partner checks will not accept it. Partners may be notified that this result is no longer valid. They do not receive your evidence. A partner may ask you to verify again from their usual entry point. Actions already taken by a partner are not reversed.";
 
 export const PASSPORT_ACTIVITY_WITHDRAW_NOT_CURRENT =
   "This result is no longer current, so it cannot be withdrawn.";

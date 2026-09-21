@@ -10,6 +10,8 @@ export const PARTNER_PRODUCTION_PUBLIC_EVENT_TYPES = [
 
 export const PARTNER_EXTENDED_PUBLIC_EVENT_TYPES = [
   "receipt.expired",
+  "receipt.expiring",
+  "receipt.invalidated",
   "decision.denied",
   "integration.health_changed",
 ] as const;
@@ -24,9 +26,12 @@ export type PartnerPublicEventType = (typeof PARTNER_PUBLIC_EVENT_TYPES)[number]
 export const PARTNER_EVENT_OUTCOMES = [
   "issued",
   "expired",
+  "expiring",
   "revoked",
+  "invalidated",
   "denied",
   "health_changed",
+  "current",
 ] as const;
 
 export type PartnerEventOutcome = (typeof PARTNER_EVENT_OUTCOMES)[number];
@@ -63,6 +68,11 @@ export const PARTNER_EVENT_ALLOWED_KEYS = [
   "outcome",
   "reason_code",
   "signature",
+  "event_ref",
+  "validity_class",
+  "expires_at",
+  "must_reverify",
+  "is_grant",
 ] as const;
 
 export const PARTNER_EVENT_PII_FORBIDDEN_KEYS = [
@@ -120,8 +130,12 @@ export function outcomeForPublicEventType(eventType: PartnerPublicEventType): Pa
       return "issued";
     case "receipt.expired":
       return "expired";
+    case "receipt.expiring":
+      return "expiring";
     case "receipt.revoked":
       return "revoked";
+    case "receipt.invalidated":
+      return "invalidated";
     case "decision.denied":
       return "denied";
     case "integration.health_changed":

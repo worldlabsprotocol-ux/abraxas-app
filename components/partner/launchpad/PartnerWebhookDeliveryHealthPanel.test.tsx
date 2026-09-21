@@ -30,9 +30,10 @@ describe("PartnerWebhookDeliveryHealthPanel", () => {
     });
     expect(screen.getByRole("link", { name: /Sandbox HMAC fixture/i }).getAttribute("href")).toContain("capability=webhooks");
     expect(screen.getByRole("link", { name: /Starter Kit/i }).getAttribute("href")).toBe("/docs/starter-kit");
-    expect(screen.getByRole("link", { name: /Integration Studio/i }).getAttribute("href")).toBe("/developers/integration-studio");
-    expect(container.textContent).not.toMatch(/Send TEST EVENT|abx_whsec_|receipt_id|https:\/\/hooks/);
-    expect(screen.getByRole("heading", { name: /This app’s policy deliveries/i })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Webhook documentation/i }).getAttribute("href")).toBe("/docs/partner-event-delivery");
+    expect(container.textContent).not.toMatch(/Send TEST EVENT|abx_whsec_|https:\/\/hooks/);
+    expect(screen.getByRole("heading", { name: /Receipt lifecycle events/i })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Receipt lifecycle events/i }).getAttribute("href")).toBe("/docs/receipt-lifecycle-events");
   });
 
   it("labels unattributable rows as partner-wide, not this app", async () => {

@@ -133,6 +133,7 @@ export const DOCS_HUB_GROUPS: DocGroup[] = [
           { label: "Partner Action Control Plane", href: "/docs/action-control-plane" },
           { label: "Sandbox partner contract", href: "/docs/sandbox-conformance" },
           { label: "Partner Event Delivery", href: "/docs/partner-event-delivery" },
+          { label: "Receipt lifecycle events", href: "/docs/receipt-lifecycle-events" },
           { label: "Circle Arc testnet settlement", href: "/docs/circle-arc-testnet" },
           { label: "Multi-chain Mainnet readiness", href: "/docs/multichain-mainnet-readiness" },
           { label: "Production review control plane", href: "/docs/production-review" },

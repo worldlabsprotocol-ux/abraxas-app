@@ -42,6 +42,11 @@ export function buildPartnerWebhookPayload(input: {
   decisionId?: string | null;
   reasonCode?: string | null;
   outcome?: string | null;
+  eventRef?: string | null;
+  validityClass?: string | null;
+  expiresAt?: string | null;
+  mustReverify?: true;
+  isGrant?: false;
 }): PartnerWebhookPayload {
   const publicType = toPublicPartnerEventType(input.eventType);
   const outcome = input.outcome
@@ -58,11 +63,16 @@ export function buildPartnerWebhookPayload(input: {
     policy_version: typeof input.policyVersion === "number" ? input.policyVersion : null,
     outcome,
     signature: { ...PARTNER_EVENT_SIGNATURE_METADATA },
+    must_reverify: true,
+    is_grant: false,
   };
 
   if (input.receiptId) payload.receipt_id = input.receiptId;
   if (input.decisionId) payload.decision_id = input.decisionId;
   if (input.reasonCode) payload.reason_code = input.reasonCode;
+  if (input.eventRef) payload.event_ref = input.eventRef;
+  if (input.validityClass) payload.validity_class = input.validityClass;
+  if (input.expiresAt) payload.expires_at = input.expiresAt;
 
   return (pickAllowedKeys(payload, WEBHOOK_PAYLOAD_ALLOWED_KEYS) ?? payload) as unknown as PartnerWebhookPayload;
 }

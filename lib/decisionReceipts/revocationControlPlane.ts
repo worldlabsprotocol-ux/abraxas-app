@@ -12,6 +12,7 @@ import {
   maybeEnqueuePartnerCredentialRevoked,
   maybeEnqueuePartnerReceiptRevoked,
 } from "@/lib/partner/webhooks/webhookHooks";
+import { enqueueDerivedInvalidationEvents } from "@/lib/partner/receiptLifecycle";
 
 export const REVOCATION_REASON_CODES = [
   "operator_security_review",
@@ -165,6 +166,7 @@ export async function revokeDecisionReceiptControlled(input: {
       reasonCode: input.reasonCode,
       alreadyRevoked: false,
     });
+    void enqueueDerivedInvalidationEvents(receiptId);
   }
 
   return {
