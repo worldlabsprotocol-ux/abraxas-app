@@ -63,6 +63,16 @@ describe("policy proposal contract", () => {
     expect(planning.compatibility_class).toBe("review_required");
   });
 
+  it("accepts KYC/KYB planning result categories without creating a live policy", () => {
+    const payload = sanitizeProposalPayload({
+      ...valid,
+      result_needed: "authorized_signer",
+    });
+    expect(payload?.result_needed).toBe("authorized_signer");
+    const choices = policyProposalPublicChoices();
+    expect(choices.results.some((item) => item.id === "organization_eligible")).toBe(true);
+  });
+
   it("detects leaks without treating structured privacy choices as secrets", () => {
     expect(proposalLeaks({ payload: sanitizeProposalPayload(valid), proposal_ref: "ppr_abc" })).toEqual([]);
     expect(proposalLeaks({ receipt_id: "rct_1", wallet_address: "0xabc" })).toContain("receipt_id");

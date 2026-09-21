@@ -196,6 +196,20 @@ export class AbraxasPartnerKit {
     }
     return this.evaluateFetchedReceipt(fetched.receipt);
   }
+
+  async verifyEligibilityPresentation(
+    envelope: unknown,
+    expected: {
+      verifier_nonce: string;
+      policy_id: string;
+      policy_version: number;
+      action: string;
+      environment: "sandbox" | "production";
+    },
+  ) {
+    const { verifyPresentationWithKit } = await import("@/lib/eligibilityPresentation/kit");
+    return verifyPresentationWithKit(this, envelope, expected);
+  }
 }
 
 export function permitProtocolAction(result: PartnerKitSafeResult): boolean {

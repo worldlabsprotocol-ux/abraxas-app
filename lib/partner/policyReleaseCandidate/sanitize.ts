@@ -28,7 +28,7 @@ import {
   type PolicyRcMethod,
   type PolicyRcState,
 } from "./contract";
-import type { PolicyFitAction, PolicyFitCategory, PolicyFitEnvironment } from "@/lib/partner/integrationStudio/policyFit/contract";
+import { POLICY_FIT_CATEGORIES, type PolicyFitAction, type PolicyFitCategory, type PolicyFitEnvironment } from "@/lib/partner/integrationStudio/policyFit/contract";
 import type { PolicyProposalPrivate, PolicyProposalReceive } from "@/lib/partner/policyProposal/contract";
 import type { PortableActionScope } from "@/lib/partner/portableActionContract/contract";
 
@@ -78,7 +78,9 @@ export function deriveReleaseShape(proposal: SanitizedProposalPayload, body: unk
   if (!body || typeof body !== "object" || Array.isArray(body)) return null;
   if (createReleaseOverride(body)) return null;
   const record = body as Record<string, unknown>;
-  const result = pickOne(record.result_category, POLICY_RC_RESULTS, proposal.result_needed);
+  const requested = typeof record.result_category === "string" ? record.result_category : proposal.result_needed;
+  if (!(POLICY_FIT_CATEGORIES as readonly string[]).includes(requested)) return null;
+  const result = pickOne(requested, POLICY_RC_RESULTS, "age_21");
   const defaultLabel = `reviewed_gate_${result}` as PolicyRcLabel;
   const policy_label = pickOne(record.policy_label, POLICY_RC_LABELS, defaultLabel);
   const shared = pickAllowed(record.shared_result ?? proposal.partner_receives, POLICY_RC_RECEIVES);
