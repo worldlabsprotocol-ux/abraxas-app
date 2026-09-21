@@ -208,9 +208,9 @@ describe("reclaim private attestation adapter", () => {
     expect(accepted.view.issued_receipt).toBe(false);
     const qualified = evaluateMethodQualification({
       methodId: "privacy_preserving",
-      storedPartnerId: "good-trouble-cannabis",
-      storedPolicyId: "good-trouble-retail-v1",
-      storedPolicyVersion: 2,
+      storedPartnerId: "acme",
+      storedPolicyId: "acme-age_21_retail-v1",
+      storedPolicyVersion: 1,
       verifyRequestId: "vr-retail-1",
       reclaimRequired: true,
       reclaimSessionAccepted: true,

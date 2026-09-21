@@ -50,6 +50,8 @@ describe("evaluateMethodQualification", () => {
     expect(result.code).toBe("reclaim_not_accepted");
     expect(result.issuedReceipt).toBe(false);
   });
+
+  it("rejects sandbox methods against an authoritative policy", () => {
     const result = evaluateMethodQualification(RETAIL);
     expect(result.ok).toBe(false);
     expect(result.code).toBe("sandbox_evidence_rejected");
