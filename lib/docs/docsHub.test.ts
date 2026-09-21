@@ -61,6 +61,7 @@ describe("docsHub", () => {
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/policy-proposals");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/policy-release-candidates");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/verification-issuer-trust");
+    expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/hosted-partner-flow-handoff");
   });
 
   it("links roadmap to integration readiness and partner flow", () => {

@@ -34,6 +34,7 @@ const PUBLIC_PAGES = [
   "/docs/policy-proposals",
   "/docs/policy-release-candidates",
   "/docs/verification-issuer-trust",
+  "/docs/hosted-partner-flow-handoff",
   "/docs/circle-arc-testnet",
   "/verify",
   "/good-trouble",

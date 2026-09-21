@@ -512,6 +512,16 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
     notes:
       "DEMO-first snapshot table for the source-controlled verification issuer trust catalog. Browser cannot publish issuers. Do not auto-apply from Vercel.",
   },
+  {
+    file: "099_hosted_partner_flow_handoffs.sql",
+    tier: "recommended",
+    creates: ["hosted_partner_flow_handoffs"],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "DEMO-first Hosted Partner Flow handoff records and nonce hashes. Callback URLs are not stored. Do not auto-apply from Vercel.",
+  },
 ];
 
 /** Map of which migration file first creates each core object. */
@@ -540,6 +550,7 @@ export const OBJECT_PROVENANCE: Record<string, string> = {
   partner_policy_proposals: "096_partner_policy_proposals.sql",
   partner_policy_release_candidates: "097_policy_release_candidates.sql",
   verification_issuer_trust_registry: "098_verification_issuer_trust_registry.sql",
+  hosted_partner_flow_handoffs: "099_hosted_partner_flow_handoffs.sql",
 };
 
 export function getDemoManifestFilenames(): string[] {

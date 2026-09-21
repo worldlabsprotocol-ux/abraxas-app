@@ -31,6 +31,27 @@ These examples are plain HTTPS request/response shapes. Any language can impleme
 `,
     },
     {
+      path: "http/handoff.http",
+      contents: `POST https://abraxasworld.xyz/api/v1/partner-handoff
+Authorization: Bearer ${P.api_key}
+Content-Type: application/json
+X-Abraxas-Application-Id: ${P.app_id}
+
+{"runtime":"universal_https"}
+
+# Holder URL contains only verify_request. Re-fetch the public receipt with Partner Kit.
+`,
+    },
+    {
+      path: "http/mobile-deeplink.md",
+      contents: `# Mobile HTTPS / deep-link return
+
+Open the hosted_url in the system browser. The allowlisted return is a completion signal, not a grant.
+The app must call your backend so the backend can GET /api/v1/partner-handoff/{ref} and verifyReceiptId.
+Never put partner, policy, callback, receipt, or wallet fields in the query string.
+`,
+    },
+    {
       path: "http/hosted-redirect.http",
       contents: `GET https://abraxasworld.xyz/partner/verify?partner_id=${P.partner_id}&policy_id=${P.policy_id}&return_url=${P.callback_url}
 
@@ -278,9 +299,16 @@ async function serverKit() {
 }
 
 export async function startHostedFlow() {
-  const kit = await serverKit();
-  const returnUrl = await getSecret("ABRAXAS_CALLBACK_URL");
-  return { url: kit.createHostedVerificationUrl(returnUrl) };
+  const res = await fetch((await getSecret("ABRAXAS_BASE_URL")) + "/api/v1/partner-handoff", {
+    method: "post",
+    headers: {
+      authorization: "Bearer " + (await getSecret("ABRAXAS_SANDBOX_API_KEY")),
+      "content-type": "application/json",
+      "x-abraxas-application-id": await getSecret("ABRAXAS_APP_ID"),
+    },
+    body: JSON.stringify({ runtime: "wix_velo" }),
+  });
+  return res.json();
 }
 
 export async function verifyCallback(search) {
@@ -486,6 +514,22 @@ The handlers below are framework-neutral. Map them to your host:
 - Netlify Functions: export an async handler that reads \`event.rawQuery\` / \`event.body\`.
 
 Secrets stay in the function environment. Do not embed them in static assets.
+`,
+    },
+    {
+      path: "handoff.js",
+      contents: `export async function createHandoff() {
+  const res = await fetch(process.env.ABRAXAS_BASE_URL + "/api/v1/partner-handoff", {
+    method: "POST",
+    headers: {
+      authorization: "Bearer " + process.env.ABRAXAS_SANDBOX_API_KEY,
+      "content-type": "application/json",
+      "x-abraxas-application-id": process.env.ABRAXAS_APP_ID,
+    },
+    body: JSON.stringify({ runtime: "serverless" }),
+  });
+  return res.json();
+}
 `,
     },
     {

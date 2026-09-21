@@ -51,10 +51,10 @@ export const PUBLIC_JOURNEY_SURFACES = [
     file: "app/docs/page.tsx",
   },
   {
-    route: "/docs/partner-flow",
-    purpose: "Canonical hosted Partner Flow and receipt-verification guide.",
-    primaryCta: { label: "Test receipt in public verifier", href: "/verify?mode=receipt" },
-    file: "app/docs/partner-flow/page.tsx",
+    route: "/docs/hosted-partner-flow-handoff",
+    purpose: "Universal Hosted Partner Flow handoff. Backend create, holder consent, server receipt verify.",
+    primaryCta: { label: "Partner Flow docs", href: "/docs/partner-flow" },
+    file: "app/docs/hosted-partner-flow-handoff/page.tsx",
   },
   {
     route: "/docs/starter-kit",

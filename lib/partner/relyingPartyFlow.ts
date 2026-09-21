@@ -431,6 +431,20 @@ export async function issuePartnerSessionReceipt(input: {
     throw new Error("Partner session receipt identity incomplete");
   }
 
+  if (vrId && receiptId) {
+    try {
+      const { bindHandoffToIssuedReceipt } = await import("@/lib/partner/hostedHandoff");
+      await bindHandoffToIssuedReceipt({
+        verifyRequest: vrId,
+        partnerId: input.partnerId,
+        policyId: input.policyId,
+        publicReceiptId: receiptId,
+      });
+    } catch {
+      // Handoff bind is best-effort; Partner Kit still re-fetches the current receipt.
+    }
+  }
+
   const trust = await evaluateDecisionReceiptTrust(storedReceipt, {
     partnerId: input.partnerId,
     policyId: input.policyId,

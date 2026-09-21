@@ -15,6 +15,7 @@ import {
   PARTNER_FLOW_REVIEW_NOTICE,
 } from "@/lib/partner/launchpad/partnerFlowRequest/contract";
 import type { PartnerFlowRequestView } from "@/lib/partner/launchpad/partnerFlowRequest/view";
+import { HostedHandoffControls } from "./HostedHandoffControls";
 
 const FONT = ABRAXAS_FONT_SANS;
 const body: React.CSSProperties = {
@@ -268,6 +269,10 @@ export function PartnerFlowRequestPanel({
         >
           {copied ? "Sandbox start link copied" : "Copy sandbox start link"}
         </Btn>
+      )}
+
+      {view?.environment === "sandbox" && view.purpose && view.action && view.callback_options.length > 0 && (
+        <HostedHandoffControls applicationId={applicationId} />
       )}
     </ContentCard>
   );
