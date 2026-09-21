@@ -154,9 +154,13 @@ describe("RedesignNav mobile discoverability", () => {
 
     expect(screen.getByRole("link", { name: "Home" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Passport" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Verify" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Build" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Verify" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Launchpad" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Partner Flow" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Docs" })).toBeInTheDocument();
+    expect(screen.getAllByText("Explore").length).toBeGreaterThan(0);
+    expect(screen.getByRole("link", { name: "Capability map" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Explore more Abraxas surfaces")).toBeInTheDocument();
   });
 });

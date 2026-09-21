@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { PUBLIC_NAV_LINKS } from "@/lib/design/publicSurface";
+import { PUBLIC_NAV_LINKS, PUBLIC_NAV_EXPLORE_LINKS } from "@/lib/design/publicSurface";
 import {
   FOOTER_COMPANY_LINKS,
   FOOTER_DEVELOPER_LINKS,
@@ -64,6 +64,7 @@ describe("public product journey", () => {
   it("keeps nav, footer, and next-step destinations available", () => {
     const hrefs = [
       ...PUBLIC_NAV_LINKS.map((link) => link.href),
+      ...PUBLIC_NAV_EXPLORE_LINKS.map((link) => link.href),
       ...FOOTER_PRODUCT_LINKS.map((link) => link.href),
       ...FOOTER_DEVELOPER_LINKS.map((link) => link.href),
       ...FOOTER_COMPANY_LINKS.map((link) => link.href),

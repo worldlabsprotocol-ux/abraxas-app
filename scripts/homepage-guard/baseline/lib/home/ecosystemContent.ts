@@ -3,6 +3,7 @@
 
 import { GOOD_TROUBLE_PROOF_LINE } from "@/lib/positioningStrategy";
 import { PROTOCOL_PROOF_IMAGES, type ProtocolProofImage } from "@/lib/home/protocolProofMedia";
+import { PUBLIC_FLOW_STATUS_LABEL, publicHomeFlowById, type PublicFlowStatus } from "@/lib/product/publicFlowManifest";
 
 export interface IndustryCard {
   id: string;
@@ -18,6 +19,9 @@ export interface ProtocolProof {
   demonstrates: string;
   href: string;
   image: ProtocolProofImage;
+  status: PublicFlowStatus;
+  statusLabel: string;
+  actionLabel: string;
 }
 
 export interface ProtocolConnector {
@@ -50,37 +54,46 @@ export const REGULATED_INDUSTRY_PILLARS = [
 
 export const PROTOCOL_IN_ACTION_PROOFS: ProtocolProof[] = [
   {
-    id: "cielo",
-    category: "Genesis Asset",
-    title: "Cielo Sunrise",
-    summary: "Verified hospitality asset",
-    demonstrates: "Real world asset verification and registry.",
-    href: "/flagship",
-    image: PROTOCOL_PROOF_IMAGES.cielo,
-  },
-  {
-    id: "chickasaw",
-    category: "Traditional Markets",
-    title: "Chickasaw Project",
-    summary: "Property verification and buyer diligence",
-    demonstrates: "Trust infrastructure for conventional transactions.",
-    href: "/case-studies/chickasaw-project",
-    image: PROTOCOL_PROOF_IMAGES.chickasaw,
-  },
-  {
     id: "good-trouble",
-    category: "Reusable Credentials",
-    title: "Good Trouble Canna",
-    summary: "21+ eligibility verification",
+    category: "Sandbox example",
+    title: "Good Trouble",
+    summary: publicHomeFlowById("good-trouble")!.summary,
     demonstrates: GOOD_TROUBLE_PROOF_LINE,
     href: "/good-trouble",
     image: PROTOCOL_PROOF_IMAGES["good-trouble"],
+    status: "sandbox",
+    statusLabel: PUBLIC_FLOW_STATUS_LABEL.sandbox,
+    actionLabel: publicHomeFlowById("good-trouble")!.actionLabel,
+  },
+  {
+    id: "cielo",
+    category: "Registry record",
+    title: "Cielo Sunrise",
+    summary: publicHomeFlowById("cielo-registry")!.summary,
+    demonstrates: "A genesis asset dossier. Not a bookable stay and not a USDC payment.",
+    href: "/flagship",
+    image: PROTOCOL_PROOF_IMAGES.cielo,
+    status: "planned",
+    statusLabel: PUBLIC_FLOW_STATUS_LABEL.planned,
+    actionLabel: publicHomeFlowById("cielo-registry")!.actionLabel,
+  },
+  {
+    id: "chickasaw",
+    category: "Case study",
+    title: "Chickasaw Project",
+    summary: publicHomeFlowById("chickasaw")!.summary,
+    demonstrates: "Diligence narrative for conventional property verification. Not a live transaction.",
+    href: "/case-studies/chickasaw-project",
+    image: PROTOCOL_PROOF_IMAGES.chickasaw,
+    status: "planned",
+    statusLabel: PUBLIC_FLOW_STATUS_LABEL.planned,
+    actionLabel: publicHomeFlowById("chickasaw")!.actionLabel,
   },
 ];
 
 export const PROTOCOL_PASSPORT_CONNECTOR: ProtocolConnector = {
   title: "Abraxas Passport",
-  summary: "Portable identity credentials",
-  demonstrates: "The reusable identity layer connecting every use case.",
+  summary: "Reusable eligibility, not a public identity file",
+  demonstrates: "Open Passport to prove only the result a service needs.",
   href: "/passport",
 };

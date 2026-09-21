@@ -32,6 +32,7 @@ describe("homepage baseline (approved design invariants)", () => {
     expect(shell).toContain('alignItems: "center"');
     expect(shell).toContain("HomeCapabilityMap");
     expect(shell).toContain("HomeProtocolMap");
+    expect(shell).toContain("HomeGoodTroubleIntegration");
   });
 
   it("homepage typography CSS tokens exist", () => {

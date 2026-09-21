@@ -74,10 +74,11 @@ function ProofCard({ proof }: { proof: ProtocolProof }) {
       <article className="abx-home-proof-card">
         {media ? <ProofMediaMark media={media} /> : null}
         <div style={{ padding: "0.65rem 1rem 1rem", flex: 1 }}>
-          <div className="abx-home-proof-eyebrow">{proof.category}</div>
+          <div className="abx-home-proof-eyebrow">{proof.statusLabel} · {proof.category}</div>
           <h3 className="abx-home-proof-title">{proof.title}</h3>
           <p className="abx-home-proof-summary">{proof.summary}</p>
           <p className="abx-home-proof-body">{proof.demonstrates}</p>
+          <p className="abx-home-proof-summary" style={{ marginTop: "0.55rem" }}>{proof.actionLabel} →</p>
         </div>
       </article>
     </Link>
@@ -98,8 +99,7 @@ export function HomeProtocolInAction() {
           Protocol in action
         </h2>
         <p className="abx-home-section-lead">
-          Real implementations, not hypothetical examples. Each partner demonstrates a different
-          capability of reusable trust infrastructure.
+          Working flows first. Registry records and case studies are labeled so they are not mistaken for live bookings or payments.
         </p>
       </div>
 

@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/redesign/RedesignNav.tsx
-// Canonical public nav — Home · Passport · Verify · Build · Launchpad · Docs
+// Canonical public nav — Home · Passport · Build · Explore
 
 import Link from "next/link";
 import Image from "next/image";
@@ -10,7 +10,7 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { NavProfileMenu, NavSignInButton } from "@/components/sui/NavProfileMenu";
 import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
-import { PUBLIC_FONT_SANS, PUBLIC_NAV_LINKS, PUBLIC_NAV_MAP_LINKS } from "@/lib/design/publicSurface";
+import { PUBLIC_FONT_SANS, PUBLIC_NAV_LINKS, PUBLIC_NAV_MAP_LINKS, PUBLIC_NAV_EXPLORE_LINKS } from "@/lib/design/publicSurface";
 
 const FONT = PUBLIC_FONT_SANS;
 const ACCENT = "var(--accent)";
@@ -128,10 +128,10 @@ export function RedesignNav() {
           );
         })}
         <details className="rd-nav-map">
-          <summary>Map</summary>
-          <div className="rd-nav-map-panel">
-            {PUBLIC_NAV_MAP_LINKS.map((l) => (
-              <Link key={l.href} href={l.href}>{l.label}</Link>
+          <summary aria-label="Explore more Abraxas surfaces">Explore</summary>
+          <div className="rd-nav-map-panel" role="menu">
+            {PUBLIC_NAV_EXPLORE_LINKS.map((l) => (
+              <Link key={l.href} href={l.href} role="menuitem">{l.label}</Link>
             ))}
           </div>
         </details>
@@ -219,9 +219,17 @@ export function RedesignNav() {
               </Link>
             ))}
             <p style={{ margin: "0.45rem 0 0.15rem", fontFamily: FONT, fontSize: "0.68rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)" }}>
-              Capability map
+              Explore
             </p>
-            {PUBLIC_NAV_MAP_LINKS.map((l) => (
+            {PUBLIC_NAV_EXPLORE_LINKS.map((l) => (
+              <Link key={`explore-${l.href}`} href={l.href} onClick={() => setOpen(false)} style={mobileSubLink}>
+                {l.label}
+              </Link>
+            ))}
+            <p style={{ margin: "0.45rem 0 0.15rem", fontFamily: FONT, fontSize: "0.68rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)" }}>
+              More
+            </p>
+            {PUBLIC_NAV_MAP_LINKS.filter((l) => !PUBLIC_NAV_EXPLORE_LINKS.some((e) => e.href === l.href)).map((l) => (
               <Link key={l.href} href={l.href} onClick={() => setOpen(false)} style={mobileSubLink}>
                 {l.label}
               </Link>

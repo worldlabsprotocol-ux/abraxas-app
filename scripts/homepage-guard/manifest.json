@@ -30,7 +30,10 @@
     "lib/home/commandCenter.ts",
     "components/home/HomeCapabilityMap.tsx",
     "components/home/HomeProtocolMap.tsx",
-    "components/home/HomeUseCases.tsx"
+    "components/home/HomeUseCases.tsx",
+    "components/home/HomeGoodTroubleIntegration.tsx",
+    "lib/home/goodTroubleIntegrationDemo.ts",
+    "lib/product/publicFlowManifest.ts"
   ],
   "protectedCss": {
     "source": "app/globals.css",
@@ -66,7 +69,12 @@
     {
       "id": "command-center-map",
       "file": "components/redesign/RedesignHome.tsx",
-      "mustContain": ["HomeCapabilityMap", "HomeProtocolMap", "HomeUseCases"]
+      "mustContain": ["HomeCapabilityMap", "HomeProtocolMap", "HomeUseCases", "HomeGoodTroubleIntegration"]
+    },
+    {
+      "id": "good-trouble-sandbox",
+      "file": "lib/home/goodTroubleIntegrationDemo.ts",
+      "mustContain": ["See Abraxas in action", "SANDBOX EXAMPLE"]
     }
   ],
   "protectedAssetPaths": [

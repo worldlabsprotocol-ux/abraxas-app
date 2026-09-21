@@ -16,7 +16,7 @@ describe("partnerNetwork", () => {
   it("keeps live and design partner lists separate", () => {
     expect(LIVE_PARTNER_NETWORK_CARDS).toHaveLength(1);
     expect(DESIGN_PARTNER_NETWORK_CARDS).toHaveLength(2);
-    expect(LIVE_PARTNER_NETWORK_CARDS.every((c) => c.status === "live")).toBe(true);
+    expect(LIVE_PARTNER_NETWORK_CARDS.every((c) => c.status === "sandbox")).toBe(true);
     expect(DESIGN_PARTNER_NETWORK_CARDS.every((c) => c.status === "design_partner")).toBe(true);
   });
 
@@ -29,9 +29,9 @@ describe("partnerNetwork", () => {
   });
 
   it("labels status accurately", () => {
-    expect(partnerNetworkStatusLabel("live")).toBe("Live");
+    expect(partnerNetworkStatusLabel("sandbox")).toBe("Sandbox");
     expect(partnerNetworkStatusLabel("design_partner")).toBe("Design Partner");
-    expect(partnerNetworkStatusEmoji("live")).toBe("🟢");
+    expect(partnerNetworkStatusEmoji("sandbox")).toBe("🟣");
     expect(partnerNetworkStatusEmoji("design_partner")).toBe("🟡");
   });
 

@@ -31,12 +31,12 @@ function HomeContent() {
     <main style={{ position: "relative", zIndex: 1, paddingBottom: "3.5rem", textAlign: "center" }}>
       <div className="abx-command-shell" style={{ ...MAXW, display: "flex", flexDirection: "column", gap: SECTION_GAP, alignItems: "center", width: "100%" }}>
         <HomeSharpHero />
+        <HomeGoodTroubleIntegration />
         <HomeCapabilityMap />
         <HomeProtocolMap />
         <HomeUseCases />
         <HomeProductEvidence />
         <HomePolicyOutcomeStrip />
-        <HomeGoodTroubleIntegration />
         <HomeProtocolInAction />
         <HomePartnerProof />
         <HomeAudiencePanels />

@@ -28,21 +28,21 @@ describe("ecosystemContent", () => {
 
   it("orders protocol proofs as genesis → traditional → reusable eligibility", () => {
     expect(PROTOCOL_IN_ACTION_PROOFS.map((p) => p.id)).toEqual([
+      "good-trouble",
       "cielo",
       "chickasaw",
-      "good-trouble",
     ]);
-    expect(PROTOCOL_IN_ACTION_PROOFS[0]?.category).toBe("Genesis Asset");
-    expect(PROTOCOL_IN_ACTION_PROOFS[2]?.category).toBe("Reusable Credentials");
+    expect(PROTOCOL_IN_ACTION_PROOFS[0]?.category).toBe("Sandbox example");
+    expect(PROTOCOL_IN_ACTION_PROOFS[2]?.category).toBe("Case study");
   });
 
   it("finishes with passport as the connecting layer", () => {
     expect(PROTOCOL_PASSPORT_CONNECTOR.title).toBe("Abraxas Passport");
-    expect(PROTOCOL_PASSPORT_CONNECTOR.demonstrates).toMatch(/connecting every use case/i);
+    expect(PROTOCOL_PASSPORT_CONNECTOR.demonstrates).toMatch(/Open Passport/i);
   });
 
   it("uses product-centric good trouble proof line", () => {
-    expect(PROTOCOL_IN_ACTION_PROOFS[2]?.demonstrates).toBe(GOOD_TROUBLE_PROOF_LINE);
+    expect(PROTOCOL_IN_ACTION_PROOFS[0]?.demonstrates).toBe(GOOD_TROUBLE_PROOF_LINE);
   });
 
   it("attaches audited imagery to protocol proof cards", () => {

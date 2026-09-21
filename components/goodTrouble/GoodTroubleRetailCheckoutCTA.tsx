@@ -38,7 +38,7 @@ export function GoodTroubleRetailCheckoutCTA() {
           margin: "0 0 0.5rem",
         }}
       >
-        Verify to complete your purchase
+        Verify 21+ eligibility to continue
       </h2>
       <p
         style={{
@@ -50,8 +50,7 @@ export function GoodTroubleRetailCheckoutCTA() {
           maxWidth: 520,
         }}
       >
-        Missouri regulated retail requires age and identity verification through Abraxas Passport.
-        You will return here after verification with a signed session receipt.
+        Missouri regulated retail uses Abraxas for age eligibility. After verification you return with a signed session receipt. Checkout stays with the partner. Abraxas does not complete a purchase or move funds.
       </p>
       <div
         style={{

@@ -17,17 +17,17 @@ describe("HomeGoodTroubleIntegration", () => {
     cleanup();
   });
 
-  it("renders the live integration section with required copy", () => {
+  it("renders the sandbox example section with required copy", () => {
     render(<HomeGoodTroubleIntegration />);
 
     expect(screen.getByText(HOME_GOOD_TROUBLE_INTEGRATION.eyebrow)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: HOME_GOOD_TROUBLE_INTEGRATION.headline })).toBeInTheDocument();
     expect(screen.getByText(HOME_GOOD_TROUBLE_INTEGRATION.body)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: HOME_GOOD_TROUBLE_INTEGRATION.primaryCta })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: HOME_GOOD_TROUBLE_INTEGRATION.secondaryCta })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: HOME_GOOD_TROUBLE_INTEGRATION.primaryCta })).toHaveAttribute(
       "href",
       HOME_GOOD_TROUBLE_INTEGRATION.secondaryHref,
     );
+    expect(screen.getByRole("button", { name: HOME_GOOD_TROUBLE_INTEGRATION.secondaryCta })).toBeInTheDocument();
   });
 
   it("uses the correct YouTube video id and defers iframe until play", async () => {
@@ -61,11 +61,11 @@ describe("HomeGoodTroubleIntegration", () => {
     expect(document.querySelector("iframe")).not.toBeNull();
   });
 
-  it("starts playback when the primary CTA is clicked", async () => {
+  it("starts playback when the watch CTA is clicked", async () => {
     const user = userEvent.setup();
     render(<HomeGoodTroubleIntegration />);
 
-    await user.click(screen.getByRole("button", { name: HOME_GOOD_TROUBLE_INTEGRATION.primaryCta }));
+    await user.click(screen.getByRole("button", { name: HOME_GOOD_TROUBLE_INTEGRATION.secondaryCta }));
     expect(document.querySelector("iframe")).not.toBeNull();
   });
 

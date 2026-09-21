@@ -23,6 +23,9 @@ export const PUBLIC_PRODUCT_ROUTES = [
   "/docs/starter-kit",
   "/examples/trading-venue",
   "/examples/payment-authorization",
+  "/good-trouble",
+  "/flagship",
+  "/case-studies/chickasaw-project",
 ] as const;
 
 export type PublicProductRoute = (typeof PUBLIC_PRODUCT_ROUTES)[number];

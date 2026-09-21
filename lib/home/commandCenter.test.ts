@@ -87,10 +87,11 @@ describe("command-center homepage contract", () => {
     const trading = COMMAND_CENTER_USE_CASES.find((item) => item.id === "trading");
     const payment = COMMAND_CENTER_USE_CASES.find((item) => item.id === "payment");
     const protocol = COMMAND_CENTER_USE_CASES.find((item) => item.id === "protocol-access");
-    expect(trading?.availability).toBe("available");
-    expect(payment?.availabilityLabel).toMatch(/Mainnet planned/i);
-    expect(protocol?.availabilityLabel).toMatch(/Mainnet planned/i);
-    expect(COMMAND_CENTER_USE_CASES.every((item) => item.availability === "available" || item.availability === "planned")).toBe(true);
+    expect(trading?.availability).toBe("sandbox");
+    expect(payment?.availability).toBe("sandbox");
+    expect(payment?.availabilityLabel).toMatch(/Sandbox preflight/i);
+    expect(protocol?.availabilityLabel).toMatch(/Sandbox/i);
+    expect(COMMAND_CENTER_USE_CASES.every((item) => ["available", "sandbox", "planned"].includes(item.availability))).toBe(true);
   });
 
   it("keeps cards and protocol stages keyboard-accessible", () => {
@@ -106,10 +107,7 @@ describe("command-center homepage contract", () => {
     expect(PUBLIC_NAV_LINKS.map((link) => link.label)).toEqual([
       "Home",
       "Passport",
-      "Verify",
       "Build",
-      "Launchpad",
-      "Docs",
     ]);
   });
 });

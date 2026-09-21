@@ -15,16 +15,23 @@ export const PUBLIC_SECTION_GAP = "clamp(2rem, 6vw, 3.25rem)";
 export const PUBLIC_NAV_LINKS = [
   { href: "/", label: "Home", exact: true as const },
   { href: "/passport", label: "Passport", matchPrefixes: ["/passport"] as const },
-  { href: "/verification", label: "Verify", matchPrefixes: ["/verification", "/verify"] as const },
   { href: "/developers/integration-studio", label: "Build", matchPrefixes: ["/developers/integration-studio"] as const },
-  { href: "/developers/launchpad", label: "Launchpad", matchPrefixes: ["/developers/launchpad"] as const },
-  { href: "/docs", label: "Docs", matchPrefixes: ["/docs"] as const },
+] as const;
+
+/** Compact Explore menu — former top-level routes plus the capability map. */
+export const PUBLIC_NAV_EXPLORE_LINKS = [
+  { href: "/verification", label: "Verify" },
+  { href: "/developers/launchpad", label: "Launchpad" },
+  { href: "/docs/partner-flow", label: "Partner Flow" },
+  { href: "/docs", label: "Docs" },
+  { href: "/#capability-map", label: "Capability map" },
 ] as const;
 
 export const PUBLIC_NAV_MAP_LINKS = [
   { href: "/#capability-map", label: "Capability map" },
   { href: "/docs/partner-flow", label: "Partner Flow" },
   { href: "/integrate", label: "For businesses" },
+  { href: "/good-trouble", label: "Sandbox example" },
 ] as const;
 
 export const PUBLIC_SURFACE = {
