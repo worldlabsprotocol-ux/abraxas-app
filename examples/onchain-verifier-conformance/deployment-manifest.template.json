@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "gate_type": "evm",
+  "network_id": "evm_sepolia",
+  "notice": "Replace hashes after a verified sandbox deployment. Never put private keys, RPC URLs, or receipts here."
+}

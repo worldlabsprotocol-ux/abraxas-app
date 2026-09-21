@@ -742,6 +742,7 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
   const crossChain = selection.path === "cross_chain_protocol_access" || selection.capabilities.includes("cross_chain_protocol_access");
   const testnetKit = selection.path === "testnet_gate_deployment" || selection.capabilities.includes("testnet_gate_deployment");
   const institutional = selection.path === "institutional_eligibility_gate" || selection.capabilities.includes("institutional_eligibility_gate");
+  const verifierConformance = selection.path === "onchain_verifier_conformance" || selection.capabilities.includes("onchain_verifier_conformance");
   const include = { webhook, venue, payment, solana, wallet, portable, evm };
 
   const files: StarterKitFile[] = [
@@ -824,6 +825,25 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
 
 Authorized representative consent, then a narrow audience-bound organization or authorized-signer result.
 Re-fetch the current public receipt. A wallet-control proof is never KYB. Not Utila, AML/KYT, or custody.
+`,
+    });
+  }
+  if (verifierConformance) {
+    files.push({
+      path: "ONCHAIN_VERIFIER_CONFORMANCE.md",
+      contents: `# Verify your gate integration
+
+npm run abraxas-conformance -- vectors
+npm run abraxas-conformance -- evm ./onchain/deployment-manifest.template.json
+npm run abraxas-conformance -- solana ./onchain/deployment-manifest.template.json
+npm run abraxas-conformance -- report ./onchain/deployment-manifest.template.json
+
+1. Download verifier package
+2. Run conformance locally
+3. Fix any failed binding or stale signer
+4. Request a fresh sandbox attestation
+
+A presentation is never enough. Re-fetch the current public receipt. No browser deploy or self-marked conformance.
 `,
     });
   }

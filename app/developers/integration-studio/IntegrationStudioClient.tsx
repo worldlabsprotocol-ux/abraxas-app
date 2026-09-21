@@ -55,6 +55,7 @@ const PATH_LABEL: Record<IntegrationStudioPathId, string> = {
   cross_chain_protocol_access: "Build a cross-chain protocol gate",
   testnet_gate_deployment: "Human-operated testnet gate kit",
   institutional_eligibility_gate: "Institutional eligibility gate",
+  onchain_verifier_conformance: "Verify your gate integration",
 };
 
 const body: React.CSSProperties = {

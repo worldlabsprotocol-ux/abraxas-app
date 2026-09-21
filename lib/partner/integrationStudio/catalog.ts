@@ -29,6 +29,7 @@ import {
   INTEGRATION_STUDIO_CROSS_CHAIN_PROTOCOL_NOTICE,
   INTEGRATION_STUDIO_TESTNET_GATE_NOTICE,
   INTEGRATION_STUDIO_INSTITUTIONAL_ELIGIBILITY_NOTICE,
+  INTEGRATION_STUDIO_ONCHAIN_VERIFIER_CONFORMANCE_NOTICE,
   INTEGRATION_STUDIO_WEBHOOK_NOTICE,
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio/contract";
@@ -242,6 +243,24 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
       operator_reviewed_policy: false,
       funds_movement: false,
       notice: INTEGRATION_STUDIO_INSTITUTIONAL_ELIGIBILITY_NOTICE,
+    },
+    onchain_verifier_conformance: {
+      docs: "/docs/onchain-verifier-conformance",
+      title: "Verify your gate integration",
+      presentation_sufficient: false,
+      browser_deploy: false,
+      browser_register: false,
+      browser_approve: false,
+      funds_movement: false,
+      creates_transactions: false,
+      calls_rpc: false,
+      notice: INTEGRATION_STUDIO_ONCHAIN_VERIFIER_CONFORMANCE_NOTICE,
+      sequence: [
+        "Download verifier package",
+        "Run conformance locally",
+        "Fix any failed binding or stale signer",
+        "Request a fresh sandbox attestation",
+      ],
     },
     testnet_gate_deployment: {
       docs: "/docs/testnet-gate-deployment",

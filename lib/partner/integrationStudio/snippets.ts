@@ -18,6 +18,7 @@ import { evmOnchainEligibilityGateExample } from "@/lib/partner/evmGate/examples
 import { eligibilityPresentationServerExample } from "@/lib/eligibilityPresentation/examples";
 import { crossChainProtocolAccessServerExample } from "@/lib/partner/crossChainProtocolAccess/examples";
 import { testnetGateDeploymentExample } from "@/lib/partner/testnetGateDeploymentKit/examples";
+import { onchainVerifierConformanceExample } from "@/lib/partner/onchainVerifierConformance/examples";
 import { organizationEligibilityServerExample } from "@/lib/organizationEligibility/examples";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
 
@@ -123,6 +124,11 @@ export function studioSnippetForApplication(input: {
       docs: "/docs/organization-eligibility",
       code: organizationEligibilityServerExample(),
     },
+    onchain_verifier_conformance: {
+      title: "Verify your gate integration",
+      docs: "/docs/onchain-verifier-conformance",
+      code: onchainVerifierConformanceExample(),
+    },
   };
 }
 
@@ -223,6 +229,12 @@ export function studioSnippetForPath(path: IntegrationStudioPathId): { title: st
         title: "Institutional eligibility gate",
         docs: "/docs/organization-eligibility",
         code: organizationEligibilityServerExample(),
+      };
+    case "onchain_verifier_conformance":
+      return {
+        title: "Verify your gate integration",
+        docs: "/docs/onchain-verifier-conformance",
+        code: onchainVerifierConformanceExample(),
       };
     default: {
       const _never: never = path;

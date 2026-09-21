@@ -153,6 +153,12 @@ export const PUBLIC_JOURNEY_SURFACES = [
     file: "app/docs/testnet-gate-deployment/page.tsx",
   },
   {
+    route: "/docs/onchain-verifier-conformance",
+    purpose: "Versioned EVM and Solana verifier artifacts plus a local protocol conformance suite.",
+    primaryCta: { label: "Integration Studio", href: "/developers/integration-studio" },
+    file: "app/docs/onchain-verifier-conformance/page.tsx",
+  },
+  {
     route: "/docs/organization-eligibility",
     purpose: "Private organization and authorized-signer result. Not KYB storage or Utila.",
     primaryCta: { label: "Integration Studio", href: "/developers/integration-studio" },
