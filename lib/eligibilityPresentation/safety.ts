@@ -36,7 +36,11 @@ export function presentationLeaks(payload: unknown): string[] {
   for (const needle of NEEDLES) {
     if (blob.includes(needle.toLowerCase())) leaks.push(needle);
   }
-  return [...new Set(leaks)];
+  const unique: string[] = [];
+  leaks.forEach((item) => {
+    if (!unique.includes(item)) unique.push(item);
+  });
+  return unique;
 }
 
 export function presentationRequestOverride(body: unknown, allowed: readonly string[]): boolean {
