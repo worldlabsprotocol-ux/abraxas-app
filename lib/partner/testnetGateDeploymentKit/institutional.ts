@@ -78,12 +78,8 @@ export function institutionalConfigDigest(input: {
   policyHash: `0x${string}`;
   actionHash: `0x${string}`;
   environmentHash: `0x${string}`;
-  organizationCommitment: `0x${string}`;
-  actorCommitment: `0x${string}`;
-  institutionalResultCategory: `0x${string}`;
   signerKeyId: string;
   publicVerifier: string;
-  validUntil: number;
 }): `0x${string}` {
   return keccak256(concat([
     keccak256(stringToBytes(input.gateType)),
@@ -93,12 +89,9 @@ export function institutionalConfigDigest(input: {
     input.policyHash,
     input.actionHash,
     input.environmentHash,
-    input.organizationCommitment,
-    input.actorCommitment,
-    input.institutionalResultCategory,
     hashSignerKeyId(input.signerKeyId),
     keccak256(stringToBytes(input.publicVerifier.trim() || "unspecified")),
-    pad(toHex(input.validUntil), { size: 32 }),
+    keccak256(stringToBytes("require_institutional")),
     institutionalTypehash(),
   ]));
 }
@@ -116,7 +109,14 @@ export function institutionalSolanaLayout() {
       authorization: ["authorization", "config", "attestation_id"],
       entitlement: ["protocol_access", "protocol", "subject_hash", "organization_commitment"],
     },
-    stores: ["organization_commitment", "actor_commitment", "valid_until"] as const,
+    gate_config_expected_commitments: "zero_reusable" as const,
+    attestation_checked_on_authorize: [
+      "organization_commitment",
+      "actor_commitment",
+      "institutional_result_category",
+      "subject_hash",
+      "expires_at",
+    ] as const,
     live: false as const,
     require_institutional: true as const,
     institutional_capable: true as const,

@@ -1,6 +1,7 @@
 import { TESTNET_GATE_ENV_NAMES } from "./contract";
 import { approvedHumanTestnet, type HumanTestnetTarget } from "./networks";
 import { planInstitutionalTestnetGate, planTestnetGate } from "./plan";
+import { operatorHandoffFromPlan } from "./handoff";
 import type { KitBindings, KitCliResult } from "./types";
 
 export function automatedEnvironmentForbidden(env: NodeJS.ProcessEnv = process.env): string | null {
@@ -30,34 +31,27 @@ export function deployTestnetGate(input: {
   const net = approvedHumanTestnet(input.target);
   if (!net.ok) return { ok: false, command, reason: net.reason };
   const env = input.env ?? process.env;
-  const missing: string[] = [];
-  if (net.gate_type === "evm") {
-    const rpc = requireEnv(env, TESTNET_GATE_ENV_NAMES.evm_rpc);
-    const key = requireEnv(env, TESTNET_GATE_ENV_NAMES.evm_key);
-    if (rpc) missing.push(TESTNET_GATE_ENV_NAMES.evm_rpc);
-    if (key) missing.push(TESTNET_GATE_ENV_NAMES.evm_key);
-  } else {
-    const rpc = requireEnv(env, TESTNET_GATE_ENV_NAMES.solana_rpc);
-    const key = requireEnv(env, TESTNET_GATE_ENV_NAMES.solana_keypair);
-    if (rpc) missing.push(TESTNET_GATE_ENV_NAMES.solana_rpc);
-    if (key) missing.push(TESTNET_GATE_ENV_NAMES.solana_keypair);
-  }
-  if (missing.length) return { ok: false, command, reason: "missing_operator_config" };
   const institutional = input.target.startsWith("institutional-");
   const planned = institutional
     ? planInstitutionalTestnetGate({
         target: input.target as "institutional-evm-sepolia" | "institutional-solana-devnet",
         bindings: input.bindings,
-        organizationRef: env[TESTNET_GATE_ENV_NAMES.organization_ref],
-        actorRef: env[TESTNET_GATE_ENV_NAMES.actor_ref],
-        resultCategory: env[TESTNET_GATE_ENV_NAMES.result_category],
         publicVerifier: env[TESTNET_GATE_ENV_NAMES.public_verifier],
-        validUntil: env[TESTNET_GATE_ENV_NAMES.valid_until] ? Number(env[TESTNET_GATE_ENV_NAMES.valid_until]) : undefined,
       })
     : planTestnetGate({
         target: net.gate_type === "evm" ? "evm" : "solana",
         bindings: input.bindings,
       });
   if (!planned.ok) return { ok: false, command, reason: planned.reason };
-  return { ok: false, command, reason: "human_broadcast_not_invoked" };
+  const handoff = operatorHandoffFromPlan(planned.envelope);
+  const missing: string[] = [];
+  if (net.gate_type === "evm") {
+    if (requireEnv(env, TESTNET_GATE_ENV_NAMES.evm_rpc)) missing.push(TESTNET_GATE_ENV_NAMES.evm_rpc);
+    if (requireEnv(env, TESTNET_GATE_ENV_NAMES.evm_key)) missing.push(TESTNET_GATE_ENV_NAMES.evm_key);
+  } else {
+    if (requireEnv(env, TESTNET_GATE_ENV_NAMES.solana_rpc)) missing.push(TESTNET_GATE_ENV_NAMES.solana_rpc);
+    if (requireEnv(env, TESTNET_GATE_ENV_NAMES.solana_keypair)) missing.push(TESTNET_GATE_ENV_NAMES.solana_keypair);
+  }
+  if (missing.length) return { ok: false, command, reason: "missing_operator_config", handoff };
+  return { ok: false, command, reason: "human_broadcast_not_invoked", handoff };
 }

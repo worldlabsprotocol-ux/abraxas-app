@@ -2,6 +2,9 @@ export { TESTNET_GATE_CLI, TESTNET_GATE_COMMANDS, INSTITUTIONAL_TESTNET_GATE_COM
 export { planTestnetGate, planInstitutionalTestnetGate } from "./plan";
 export { deployTestnetGate, automatedEnvironmentForbidden } from "./deploy";
 export { verifyTestnetManifest, verifyInstitutionalPlan } from "./verify";
+export { validateInstitutionalPlanFile } from "./validatePlan";
+export { classifyKitFile } from "./classify";
+export { operatorHandoffFromPlan } from "./handoff";
 export { registerTestnetManifest } from "./register";
 export { testnetKitSafeState, testnetReadinessReport, testnetKitLaunchpadCard } from "./readiness";
 export { SOLANA_DEVNET_TEST_PLAN, EVM_TESTNET_TEST_PLAN, INSTITUTIONAL_TESTNET_TEST_PLAN } from "./testPlans";

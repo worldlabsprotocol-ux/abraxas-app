@@ -8,6 +8,7 @@ import {
   SOLANA_ATTESTATION_MESSAGE_PREFIX,
 } from "@/lib/partner/chainAttestation/contract";
 import { verifyInstitutionalPlan } from "@/lib/partner/testnetGateDeploymentKit/verify";
+import { classifyKitFile, isPlanningEnvelope } from "@/lib/partner/testnetGateDeploymentKit/classify";
 import {
   solanaObservationHasV2InstitutionalCapability,
   solanaObservationIsV1Only,
@@ -42,6 +43,7 @@ export interface ConformanceResult {
   network_id: string;
   deployment_ref: string;
   signer_key_id: string;
+  file_kind: "plan_envelope" | "registry_manifest" | "vectors" | "invalid";
 }
 
 function leaks(value: unknown): string[] {
@@ -61,7 +63,34 @@ export function rejectBrowserConformanceMark(input: { from_browser?: boolean; re
 
 export function evaluateConformance(input: ConformanceInput): ConformanceResult {
   const reasons: OnchainVerifierConformanceReason[] = [];
+  const fileKind = classifyKitFile(input.raw);
   if (input.fromBrowser) reasons.push("unauthorized");
+  if (isPlanningEnvelope(input.raw)) {
+    const secretLeaks = leaks(input.raw).filter((key) => key !== "live");
+    if (secretLeaks.length) reasons.push("forbidden_field");
+    const envelope = input.raw;
+    const institutional = envelope.institutional;
+    if (institutional) {
+      const plan = verifyInstitutionalPlan(institutional, envelope);
+      if (!plan.ok && plan.reason === "institutional_required") reasons.push("institutional_required");
+      if (!plan.ok && plan.reason === "schema_mismatch") reasons.push("schema_mismatch");
+      if (!plan.ok && (plan.reason === "signer_mismatch" || plan.reason === "binding_mismatch")) {
+        reasons.push(plan.reason === "signer_mismatch" ? "signer_mismatch" : "binding_mismatch");
+      }
+    }
+    reasons.push("plan_envelope");
+    const unique = reasons.filter((reason, index) => reasons.indexOf(reason) === index);
+    return {
+      ok: false,
+      reasons: unique,
+      gate_type: envelope.gate_type,
+      schema_version: envelope.institutional ? "2" : "1",
+      network_id: envelope.network_id,
+      deployment_ref: "",
+      signer_key_id: envelope.bindings.signer_key_id,
+      file_kind: "plan_envelope",
+    };
+  }
   if (leaks(input.raw).length || onchainGatePayloadLeaks(input.raw).length) reasons.push("forbidden_field");
   if (input.receiptRefetched === false) reasons.push("presentation_insufficient");
 
@@ -91,6 +120,7 @@ export function evaluateConformance(input: ConformanceInput): ConformanceResult 
       network_id: "",
       deployment_ref: typeof envelope.deployment_ref === "string" ? envelope.deployment_ref : "",
       signer_key_id: "",
+      file_kind: fileKind === "registry_manifest" ? "registry_manifest" : "invalid",
     };
   }
 
@@ -146,6 +176,7 @@ export function evaluateConformance(input: ConformanceInput): ConformanceResult 
     network_id: manifest.network_id,
     deployment_ref: typeof envelope.deployment_ref === "string" ? envelope.deployment_ref : "",
     signer_key_id: manifest.signer_key_id,
+    file_kind: "registry_manifest",
   };
 }
 
@@ -163,5 +194,6 @@ export function evaluateVectorConformance(): ConformanceResult {
     network_id: "local_vectors",
     deployment_ref: "",
     signer_key_id: "evm-attestation-test-1",
+    file_kind: "vectors",
   };
 }
