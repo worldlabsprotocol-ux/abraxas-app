@@ -33,6 +33,7 @@ const PUBLIC_PAGES = [
   "/docs/production-credentials",
   "/docs/policy-proposals",
   "/docs/policy-release-candidates",
+  "/docs/verification-issuer-trust",
   "/docs/circle-arc-testnet",
   "/verify",
   "/good-trouble",

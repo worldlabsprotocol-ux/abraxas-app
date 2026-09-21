@@ -176,4 +176,28 @@ describe("policy release candidate store", () => {
     expect(tables.has("partner_api_keys")).toBe(false);
     expect(tables.has("partner_settlement_intents")).toBe(false);
   });
+
+  it("blocks ready-for-review when no verified method path exists", async () => {
+    const created = await createReleaseCandidate({
+      proposalId: "prop-1",
+      body: {
+        ...body,
+        method_category: "privacy_preserving",
+        minimum_assurance: "L3",
+        environment: "future_production",
+      },
+      confirm: true,
+    });
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+    expect(created.item.issuer_plan.no_verified_method).toBe(true);
+    const ready = await decideReleaseCandidate({
+      candidateId: created.item.id,
+      body: { status: "ready_for_review", confirm: true },
+      confirm: true,
+    });
+    expect(ready.ok).toBe(false);
+    if (ready.ok) return;
+    expect(ready.code).toBe("no_verified_method");
+  });
 });

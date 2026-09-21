@@ -14,6 +14,7 @@ export interface PolicyVersionComparisonView {
   withheld: { from: string[]; to: string[]; changed: boolean };
   allowed_output_fields: { from: string[]; to: string[]; changed: boolean };
   environment: { from: string; to: string; changed: boolean };
+  issuer_method_plan: { from: string; to: string; changed: boolean };
   paths: Record<string, { from: boolean; to: boolean; changed: boolean }>;
   compatibility: PolicyVersionCompatibilityResult;
   compatibility_label: string;
@@ -35,6 +36,7 @@ export function comparePolicyVersionSurfaces(
   const withheldDiff = withheldChanged(from.withheld, to.withheld);
   const outputDiff = withheldChanged(from.allowed_output_fields, to.allowed_output_fields);
   const environmentChanged = from.sandbox_only !== to.sandbox_only || from.production_review !== to.production_review;
+  const issuerPlanChanged = from.issuer_method_plan !== to.issuer_method_plan;
   const paths: PolicyVersionComparisonView["paths"] = {};
   let pathChanged = false;
   POLICY_VERSION_PATHS.forEach((id) => {
@@ -44,7 +46,7 @@ export function comparePolicyVersionSurfaces(
   });
 
   let compatibility: PolicyVersionCompatibilityResult = "unchanged";
-  if (resultChanged || receivesChanged || withheldDiff || outputDiff || environmentChanged) {
+  if (resultChanged || receivesChanged || withheldDiff || outputDiff || environmentChanged || issuerPlanChanged) {
     compatibility = "policy_review";
   } else if (methodChanged || pathChanged) {
     compatibility = "sandbox_retest";
@@ -69,6 +71,7 @@ export function comparePolicyVersionSurfaces(
       changed: outputDiff,
     },
     environment: { from: from.environment_label, to: to.environment_label, changed: environmentChanged },
+    issuer_method_plan: { from: from.issuer_method_plan, to: to.issuer_method_plan, changed: issuerPlanChanged },
     paths,
     compatibility,
     compatibility_label: labels[compatibility],

@@ -60,6 +60,7 @@ describe("docsHub", () => {
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/production-credentials");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/policy-proposals");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/policy-release-candidates");
+    expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/verification-issuer-trust");
   });
 
   it("links roadmap to integration readiness and partner flow", () => {

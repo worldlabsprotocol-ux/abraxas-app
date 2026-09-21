@@ -21,6 +21,7 @@ interface Candidate {
   status_label: string;
   spec: { copyable: string; checklist: string[] };
   fixtures: { id: string; invariant: string }[];
+  issuer_plan?: { holder_notice: string; no_verified_method: boolean; entries: { label: string; status: string }[] };
 }
 
 export function PolicyReleaseCandidateBoard({
@@ -134,6 +135,11 @@ export function PolicyReleaseCandidateBoard({
             </p>
             <p style={{ fontFamily: FONT, fontSize: "0.72rem", margin: "0.25rem 0 0" }}>
               Contract fixtures: {item.fixtures.map((fixture) => fixture.invariant).join(", ")}
+            </p>
+            <p style={{ fontFamily: FONT, fontSize: "0.72rem", margin: "0.25rem 0 0" }}>
+              {item.issuer_plan?.no_verified_method
+                ? "No verified method is available yet."
+                : `Eligible issuer/method plan: ${(item.issuer_plan?.entries ?? []).map((entry) => `${entry.label} (${entry.status})`).join(", ") || "planning only"}.`}
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginTop: "0.55rem" }}>
               {POLICY_RC_OPERATOR_STATUSES.map((status) => (

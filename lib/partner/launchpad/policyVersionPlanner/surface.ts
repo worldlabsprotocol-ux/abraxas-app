@@ -2,6 +2,7 @@
 // Partner-visible policy version surfaces derived from the catalog. No internals.
 
 import { planEligibilityMethods } from "@/lib/partner/eligibilityMethods";
+import { planIssuersForPack } from "@/lib/verification/issuerTrust";
 import {
   inferPolicyPackFromPolicyId,
   policyPackIsSandboxOnly,
@@ -40,6 +41,7 @@ export interface PolicyVersionSurface {
   sandbox_only: boolean;
   production_review: boolean;
   paths: PolicyVersionPathSupport;
+  issuer_method_plan: "approved_verification_method" | "no_verified_method";
   status: PolicyVersionStatus;
 }
 
@@ -54,6 +56,7 @@ export interface PolicyVersionSuccessorSpec {
   allowed_output_fields?: readonly string[];
   sandbox_only?: boolean;
   paths?: Partial<PolicyVersionPathSupport>;
+  issuer_method_plan?: "approved_verification_method" | "no_verified_method";
 }
 
 export function methodCategoryForPack(pack: PolicyPack): string {
@@ -100,6 +103,7 @@ export function surfaceFromPack(input: {
     sandbox_only: sandboxOnly,
     production_review: !sandboxOnly,
     paths: pathSupportForPack(input.pack),
+    issuer_method_plan: planIssuersForPack(input.pack).availability,
     status: input.status,
   };
 }
@@ -125,6 +129,7 @@ export function applySuccessor(base: PolicyVersionSurface, spec: PolicyVersionSu
     sandbox_only: sandboxOnly,
     production_review: !sandboxOnly,
     paths,
+    issuer_method_plan: spec.issuer_method_plan ?? base.issuer_method_plan,
     status: spec.status,
   };
 }

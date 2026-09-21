@@ -502,6 +502,16 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
     notes:
       "DEMO-first operator policy release candidates. Does not publish catalog packs or live policies. Do not auto-apply from Vercel.",
   },
+  {
+    file: "098_verification_issuer_trust_registry.sql",
+    tier: "recommended",
+    creates: ["verification_issuer_trust_registry"],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "DEMO-first snapshot table for the source-controlled verification issuer trust catalog. Browser cannot publish issuers. Do not auto-apply from Vercel.",
+  },
 ];
 
 /** Map of which migration file first creates each core object. */
@@ -529,6 +539,7 @@ export const OBJECT_PROVENANCE: Record<string, string> = {
   partner_venue_action_nonces: "092_wallet_standard_action_bindings.sql",
   partner_policy_proposals: "096_partner_policy_proposals.sql",
   partner_policy_release_candidates: "097_policy_release_candidates.sql",
+  verification_issuer_trust_registry: "098_verification_issuer_trust_registry.sql",
 };
 
 export function getDemoManifestFilenames(): string[] {
