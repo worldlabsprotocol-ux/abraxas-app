@@ -739,6 +739,7 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     || selection.platform === "evm_contract";
   const eligibility = selection.path === "eligibility_presentation" || selection.capabilities.includes("eligibility_presentation");
   const crossChain = selection.path === "cross_chain_protocol_access" || selection.capabilities.includes("cross_chain_protocol_access");
+  const testnetKit = selection.path === "testnet_gate_deployment" || selection.capabilities.includes("testnet_gate_deployment");
   const include = { webhook, venue, payment, solana, wallet, portable, evm };
 
   const files: StarterKitFile[] = [
@@ -812,6 +813,20 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
   if (crossChain) {
     files.push({ path: "src/lib/cross-chain-protocol-access.ts", contents: crossChainProtocolAccessServerExample() });
     files.push({ path: "CROSS_CHAIN_PROTOCOL_ACCESS.md", contents: crossChainProtocolAccessHttpsExample() });
+  }
+  if (testnetKit) {
+    files.push({
+      path: "TESTNET_GATE_DEPLOYMENT.md",
+      contents: `# Human-operated testnet gate kit
+
+npx tsx scripts/abraxas-gate.ts plan solana
+npx tsx scripts/abraxas-gate.ts plan evm
+npx tsx scripts/abraxas-gate.ts deploy solana-devnet --confirm
+npx tsx scripts/abraxas-gate.ts deploy evm-testnet --confirm
+
+Deploy never runs from Vercel, CI, API routes, or this starter. Copy env names from lib/partner/testnetGateDeploymentKit/.env.example. Not Mainnet, Arc, USDC, or Circle.
+`,
+    });
   }
   return files;
 }

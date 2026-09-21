@@ -17,6 +17,7 @@ import { chainAttestationServerExample, solanaOnchainEligibilityGateExample } fr
 import { evmOnchainEligibilityGateExample } from "@/lib/partner/evmGate/examples";
 import { eligibilityPresentationServerExample } from "@/lib/eligibilityPresentation/examples";
 import { crossChainProtocolAccessServerExample } from "@/lib/partner/crossChainProtocolAccess/examples";
+import { testnetGateDeploymentExample } from "@/lib/partner/testnetGateDeploymentKit/examples";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
 
 const DEMO_OPTS = {
@@ -111,6 +112,11 @@ export function studioSnippetForApplication(input: {
       docs: "/docs/cross-chain-protocol-access",
       code: crossChainProtocolAccessServerExample(),
     },
+    testnet_gate_deployment: {
+      title: "Human-operated testnet gate kit",
+      docs: "/docs/testnet-gate-deployment",
+      code: testnetGateDeploymentExample(),
+    },
   };
 }
 
@@ -199,6 +205,12 @@ export function studioSnippetForPath(path: IntegrationStudioPathId): { title: st
         title: "Build a cross-chain protocol gate",
         docs: "/docs/cross-chain-protocol-access",
         code: crossChainProtocolAccessServerExample(),
+      };
+    case "testnet_gate_deployment":
+      return {
+        title: "Human-operated testnet gate kit",
+        docs: "/docs/testnet-gate-deployment",
+        code: testnetGateDeploymentExample(),
       };
     default: {
       const _never: never = path;

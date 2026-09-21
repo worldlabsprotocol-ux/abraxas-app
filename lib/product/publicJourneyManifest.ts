@@ -147,6 +147,12 @@ export const PUBLIC_JOURNEY_SURFACES = [
     file: "app/docs/cross-chain-protocol-access/page.tsx",
   },
   {
+    route: "/docs/testnet-gate-deployment",
+    purpose: "Human-operated Solana devnet and EVM testnet gate deployment kit. Not a hosted deployer.",
+    primaryCta: { label: "Integration Studio", href: "/developers/integration-studio" },
+    file: "app/docs/testnet-gate-deployment/page.tsx",
+  },
+  {
     route: "/docs/selective-disclosure",
     purpose: "Canonical selective-disclosure boundary. Policy result only, not evidence.",
     primaryCta: { label: "Integration Studio", href: "/developers/integration-studio" },

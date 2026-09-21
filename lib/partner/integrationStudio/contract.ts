@@ -27,6 +27,7 @@ export const INTEGRATION_STUDIO_PATHS = [
   "evm_onchain_eligibility_gate",
   "eligibility_presentation",
   "cross_chain_protocol_access",
+  "testnet_gate_deployment",
 ] as const;
 
 export type IntegrationStudioPathId = (typeof INTEGRATION_STUDIO_PATHS)[number];
@@ -95,6 +96,8 @@ export const INTEGRATION_STUDIO_ELIGIBILITY_PRESENTATION_NOTICE =
   "Request one private eligibility presentation. The partner backend creates the request, the holder completes Hosted Partner Flow and fresh consent, then the backend verifies the signed envelope and re-fetches the current public receipt. A presentation is not a bearer credential, passport, or automatic KYC/KYB approval.";
 export const INTEGRATION_STUDIO_CROSS_CHAIN_PROTOCOL_NOTICE =
   "Build a cross-chain protocol gate. Private proof, fresh consent, audience-bound receipt, server re-check, one-time chain authorization, then partner-owned activate_protocol_access. Access is short-lived until attestation expiry. Local/sandbox reference only. Not a live Arc, EVM, Solana, Mainnet, USDC, or Utila deployment.";
+export const INTEGRATION_STUDIO_TESTNET_GATE_NOTICE =
+  "Human-operated CLI to plan, confirm-deploy, verify, and register a partner-owned gate on Solana devnet or approved EVM Sepolia. No browser deploy button. Not Mainnet, Arc, USDC, or Circle.";
 
 export function isIntegrationStudioPathId(value: string): value is IntegrationStudioPathId {
   return (INTEGRATION_STUDIO_PATHS as readonly string[]).includes(value);

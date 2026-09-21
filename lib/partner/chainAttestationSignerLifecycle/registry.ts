@@ -67,7 +67,7 @@ function implicitEvm(env: Record<string, string | undefined>, environment: Chain
       environment,
       public_verifier: address,
       fingerprint: fingerprintPublicVerifier(address),
-      allowed_networks: ["evm_sandbox", "evm_mainnet"],
+      allowed_networks: ["evm_sandbox", "evm_sepolia", "evm_mainnet"],
       allowed_gate_types: ["evm"],
       schema_versions: ["1"],
       status: "active",

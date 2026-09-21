@@ -35,6 +35,7 @@ const PUBLIC_PAGES = [
   "/docs/reclaim-private-attestations",
   "/docs/eligibility-presentation-protocol",
   "/docs/cross-chain-protocol-access",
+  "/docs/testnet-gate-deployment",
   "/docs/selective-disclosure",
   "/docs/starter-kit",
   "/docs/production-review",

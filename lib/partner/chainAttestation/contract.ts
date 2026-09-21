@@ -41,7 +41,7 @@ export const CHAIN_ATTESTATION_EVM_TYPE_SCOPES = EVM_PARTNER_TYPE_SCOPES;
 export const CHAIN_ATTESTATION_SOLANA_ACTIONS = ["partner_protocol_action"] as const;
 export const CHAIN_ATTESTATION_SOLANA_SCOPE = "sandbox:partner_protocol" as const;
 
-export const CHAIN_ATTESTATION_EVM_NETWORKS = ["evm_sandbox", "evm_mainnet"] as const;
+export const CHAIN_ATTESTATION_EVM_NETWORKS = ["evm_sandbox", "evm_sepolia", "evm_mainnet"] as const;
 export const CHAIN_ATTESTATION_SOLANA_NETWORKS = ["solana_devnet", "solana_mainnet"] as const;
 
 export const SOLANA_ATTESTATION_MESSAGE_PREFIX = "ABRAXAS_CHAIN_ELIGIBILITY_V1" as const;

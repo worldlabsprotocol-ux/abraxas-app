@@ -83,6 +83,8 @@ export default function OnchainGateDeploymentsDocsPage() {
           {" · "}
           <Link href="/docs/chain-attestation-signer-lifecycle">Signer lifecycle</Link>
           {" · "}
+          <Link href="/docs/testnet-gate-deployment">Testnet deployment kit</Link>
+          {" · "}
           <Link href="/developers/launchpad">Partner Launchpad</Link>
         </p>
       </ContentCard>

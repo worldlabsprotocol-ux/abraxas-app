@@ -15,7 +15,7 @@ import { WALLET_STANDARD_NOT_IDENTITY } from "@/lib/partner/walletStandard/contr
 import { EVM_NO_EXECUTION_BOUNDARY } from "@/lib/partner/evm/contract";
 import { CHAIN_ATTESTATION_NOT_EXECUTION } from "@/lib/partner/chainAttestation/contract";
 
-export const STARTER_KIT_VERSION = "1.10.0" as const;
+export const STARTER_KIT_VERSION = "1.11.0" as const;
 export const STARTER_KIT_API_PATH = "/api/developers/integration-studio/starter-kit" as const;
 
 export const STARTER_KIT_RUNTIMES = [
@@ -81,6 +81,7 @@ export const STARTER_KIT_OPTIONAL_CAPABILITIES = [
   "evm_onchain_eligibility_gate",
   "eligibility_presentation",
   "cross_chain_protocol_access",
+  "testnet_gate_deployment",
 ] as const;
 export type StarterKitOptionalCapability = (typeof STARTER_KIT_OPTIONAL_CAPABILITIES)[number];
 
@@ -107,6 +108,7 @@ export const STARTER_KIT_DOES_NOT_DO = [
   "Does not treat an eligibility presentation as a bearer credential, passport, or automatic KYC/KYB approval.",
   "Does not treat activate_protocol_access as a token transfer, mint, spend approval, order, payment, or custody action.",
   "Does not call Utila, collect KYC/KYB evidence, or self-publish planning result categories.",
+  "Does not deploy a gate from the browser, Vercel, CI, or an API route.",
 ] as const;
 
 export const STARTER_KIT_REJECTED_CAPABILITIES = [
@@ -146,6 +148,7 @@ export const PATH_IMPLIED_CAPABILITY: Record<IntegrationStudioPathId, string> = 
   evm_onchain_eligibility_gate: "evm_onchain_eligibility_gate",
   eligibility_presentation: "eligibility_presentation",
   cross_chain_protocol_access: "cross_chain_protocol_access",
+  testnet_gate_deployment: "testnet_gate_deployment",
 };
 
 export function isStarterKitRuntime(value: string): value is StarterKitRuntime {
@@ -178,7 +181,7 @@ export const STARTER_KIT_PLATFORM_MATRIX = [
     label: "Universal HTTPS",
     runtime: "universal_https",
     canonical: true,
-    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "portable_action_contract", "wallet_standard_binding", "solana_gate", "evm_partner_adapter", "onchain_protocol_gate", "solana_onchain_eligibility_gate", "evm_onchain_eligibility_gate", "eligibility_presentation", "cross_chain_protocol_access"],
+    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "portable_action_contract", "wallet_standard_binding", "solana_gate", "evm_partner_adapter", "onchain_protocol_gate", "solana_onchain_eligibility_gate", "evm_onchain_eligibility_gate", "eligibility_presentation", "cross_chain_protocol_access", "testnet_gate_deployment"],
     note: "Any product with an HTTPS backend. Canonical integration.",
   },
   {
@@ -186,7 +189,7 @@ export const STARTER_KIT_PLATFORM_MATRIX = [
     label: "Next.js",
     runtime: "typescript_nextjs",
     canonical: false,
-    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "portable_action_contract", "wallet_standard_binding", "solana_gate", "evm_partner_adapter", "onchain_protocol_gate", "solana_onchain_eligibility_gate", "evm_onchain_eligibility_gate", "eligibility_presentation", "cross_chain_protocol_access"],
+    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "portable_action_contract", "wallet_standard_binding", "solana_gate", "evm_partner_adapter", "onchain_protocol_gate", "solana_onchain_eligibility_gate", "evm_onchain_eligibility_gate", "eligibility_presentation", "cross_chain_protocol_access", "testnet_gate_deployment"],
     note: "App Router server routes. Secrets stay in the server runtime.",
   },
   {
@@ -194,7 +197,7 @@ export const STARTER_KIT_PLATFORM_MATRIX = [
     label: "Express / Node",
     runtime: "typescript_express",
     canonical: false,
-    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "portable_action_contract", "wallet_standard_binding", "solana_gate", "evm_partner_adapter", "onchain_protocol_gate", "solana_onchain_eligibility_gate", "evm_onchain_eligibility_gate", "eligibility_presentation", "cross_chain_protocol_access"],
+    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "portable_action_contract", "wallet_standard_binding", "solana_gate", "evm_partner_adapter", "onchain_protocol_gate", "solana_onchain_eligibility_gate", "evm_onchain_eligibility_gate", "eligibility_presentation", "cross_chain_protocol_access", "testnet_gate_deployment"],
     note: "Node HTTP server using the same Partner Kit contracts.",
   },
   {
@@ -202,7 +205,7 @@ export const STARTER_KIT_PLATFORM_MATRIX = [
     label: "Wix Velo",
     runtime: "javascript_wix_velo",
     canonical: false,
-    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "portable_action_contract", "wallet_standard_binding", "evm_partner_adapter", "onchain_protocol_gate", "solana_onchain_eligibility_gate", "evm_onchain_eligibility_gate", "eligibility_presentation", "cross_chain_protocol_access"],
+    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "portable_action_contract", "wallet_standard_binding", "evm_partner_adapter", "onchain_protocol_gate", "solana_onchain_eligibility_gate", "evm_onchain_eligibility_gate", "eligibility_presentation", "cross_chain_protocol_access", "testnet_gate_deployment"],
     note: "Good Trouble-style Wix backend. Secrets Manager names only. Frontend calls backend only.",
   },
   {
@@ -210,7 +213,7 @@ export const STARTER_KIT_PLATFORM_MATRIX = [
     label: "Serverless function",
     runtime: "typescript_serverless",
     canonical: false,
-    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "portable_action_contract", "wallet_standard_binding", "solana_gate", "evm_partner_adapter", "onchain_protocol_gate", "solana_onchain_eligibility_gate", "evm_onchain_eligibility_gate", "eligibility_presentation", "cross_chain_protocol_access"],
+    works: ["hosted_partner_flow", "server_receipt_verify", "webhook_events", "trading_venue", "payment_authorization", "portable_action_contract", "wallet_standard_binding", "solana_gate", "evm_partner_adapter", "onchain_protocol_gate", "solana_onchain_eligibility_gate", "evm_onchain_eligibility_gate", "eligibility_presentation", "cross_chain_protocol_access", "testnet_gate_deployment"],
     note: "Vercel Functions, Cloudflare Workers, or Netlify Functions with small host substitutions.",
   },
   {
@@ -218,7 +221,7 @@ export const STARTER_KIT_PLATFORM_MATRIX = [
     label: "Solana partner backend",
     runtime: "typescript_serverless",
     canonical: false,
-    works: ["solana_gate", "hosted_partner_flow", "server_receipt_verify", "webhook_events", "onchain_protocol_gate", "solana_onchain_eligibility_gate", "eligibility_presentation", "cross_chain_protocol_access"],
+    works: ["solana_gate", "hosted_partner_flow", "server_receipt_verify", "webhook_events", "onchain_protocol_gate", "solana_onchain_eligibility_gate", "eligibility_presentation", "cross_chain_protocol_access", "testnet_gate_deployment"],
     note: "HTTPS partner backend plus the Solana eligibility gate. No on-chain personal data.",
   },
   {
@@ -226,7 +229,7 @@ export const STARTER_KIT_PLATFORM_MATRIX = [
     label: "EVM contract integration",
     runtime: "typescript_serverless",
     canonical: false,
-    works: ["onchain_protocol_gate", "evm_onchain_eligibility_gate", "evm_partner_adapter", "hosted_partner_flow", "server_receipt_verify", "eligibility_presentation", "cross_chain_protocol_access"],
+    works: ["onchain_protocol_gate", "evm_onchain_eligibility_gate", "evm_partner_adapter", "hosted_partner_flow", "server_receipt_verify", "eligibility_presentation", "cross_chain_protocol_access", "testnet_gate_deployment"],
     note: "Partner-owned EIP-712 gate. Local Foundry tests only. Abraxas does not deploy a shared contract.",
   },
   {
@@ -234,7 +237,7 @@ export const STARTER_KIT_PLATFORM_MATRIX = [
     label: "Solana program integration",
     runtime: "typescript_serverless",
     canonical: false,
-    works: ["onchain_protocol_gate", "solana_onchain_eligibility_gate", "solana_gate", "hosted_partner_flow", "server_receipt_verify", "eligibility_presentation", "cross_chain_protocol_access"],
+    works: ["onchain_protocol_gate", "solana_onchain_eligibility_gate", "solana_gate", "hosted_partner_flow", "server_receipt_verify", "eligibility_presentation", "cross_chain_protocol_access", "testnet_gate_deployment"],
     note: "Local/reference Anchor gate plus Ed25519 helpers. No live deployment or RPC.",
   },
 ] as const;

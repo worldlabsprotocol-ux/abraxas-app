@@ -39,6 +39,11 @@ export const EVM_GATE_NETWORK_POSTURES: readonly EvmGateNetworkPosture[] = [
     future_compatible: false,
     note: "Local Anvil/Foundry chain for partner-owned gate tests. Not a hosted chain.",
   }),
+  posture("evm_sepolia", 11155111, {
+    deployable: true,
+    future_compatible: false,
+    note: "Approved EVM testnet (Sepolia, published chain ID 11155111). Human-operated partner deploy only. Not Mainnet, Arc, or Circle settlement.",
+  }),
   posture("evm_mainnet", 1, {
     deployable: false,
     future_compatible: true,

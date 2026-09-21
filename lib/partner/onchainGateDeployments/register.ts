@@ -50,6 +50,7 @@ function networkAllows(manifest: OnchainDeploymentManifest): OnchainGateSafeReas
       if (!posture?.chain_id || !rpc) return "deployment_verification_unavailable";
     }
     if (manifest.network_id === "evm_sandbox" && manifest.chain_id !== 31337) return "network_disabled";
+    if (manifest.network_id === "evm_sepolia" && manifest.chain_id !== 11155111) return "network_disabled";
   } else if (!isChainAttestationSolanaNetwork(manifest.network_id)) {
     return "network_disabled";
   }
