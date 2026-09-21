@@ -11,6 +11,7 @@ export type BindingFailure =
   | "network_disabled"
   | "expired"
   | "wallet_binding_missing"
+  | "institutional_required"
   | "invalid";
 
 export function assertAttestationBindings(input: {
@@ -22,6 +23,10 @@ export function assertAttestationBindings(input: {
     networkId: `0x${string}`;
     environment: `0x${string}`;
     requireSubject: boolean;
+    requireInstitutional?: boolean;
+    organizationCommitment?: `0x${string}`;
+    actorCommitment?: `0x${string}`;
+    institutionalResultCategory?: `0x${string}`;
   };
   nowSeconds: number;
 }): { ok: true } | { ok: false; reason: BindingFailure } {
@@ -44,6 +49,24 @@ export function assertAttestationBindings(input: {
   if (input.nowSeconds >= fields.expiresAt) return { ok: false, reason: "expired" };
   if (expected.requireSubject && fields.subjectHash.toLowerCase() === ZERO_BYTES32) {
     return { ok: false, reason: "wallet_binding_missing" };
+  }
+  if (expected.requireInstitutional) {
+    if (
+      fields.organizationCommitment.toLowerCase() === ZERO_BYTES32
+      || fields.actorCommitment.toLowerCase() === ZERO_BYTES32
+      || fields.institutionalResultCategory.toLowerCase() === ZERO_BYTES32
+    ) {
+      return { ok: false, reason: "institutional_required" };
+    }
+    if (expected.organizationCommitment && fields.organizationCommitment.toLowerCase() !== expected.organizationCommitment.toLowerCase()) {
+      return { ok: false, reason: "invalid" };
+    }
+    if (expected.actorCommitment && fields.actorCommitment.toLowerCase() !== expected.actorCommitment.toLowerCase()) {
+      return { ok: false, reason: "invalid" };
+    }
+    if (expected.institutionalResultCategory && fields.institutionalResultCategory.toLowerCase() !== expected.institutionalResultCategory.toLowerCase()) {
+      return { ok: false, reason: "invalid" };
+    }
   }
   return { ok: true };
 }

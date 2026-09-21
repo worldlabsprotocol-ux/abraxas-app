@@ -18,6 +18,7 @@ import {
   CHAIN_ATTESTATION_EVM_TYPE_SCOPES,
   CHAIN_ATTESTATION_SCHEMA_VERSION,
   CHAIN_ATTESTATION_SOLANA_SCOPE,
+  ZERO_BYTES32,
   isChainAttestationEvmAction,
   isChainAttestationEvmNetwork,
   isChainAttestationSolanaNetwork,
@@ -64,7 +65,6 @@ export interface IssueChainAttestationInput {
   testAdapter?: LocalIssuanceTestAdapter;
   wallet_binding_hash?: string | null;
   wallet_binding_mode?: "not_attached" | "optional" | "required";
-  organization_binding_hash?: string | null;
   now?: Date;
   ttlMs?: number;
 }
@@ -101,7 +101,7 @@ function denied(
       wallet_binding: "not_attached",
     },
     expires_at: null,
-    schema_version: 1,
+    schema_version: 2,
     network_id: networkId,
     environment,
   });
@@ -193,31 +193,52 @@ export async function issueChainEligibilityAttestation(
     return denied(reason, input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
   }
 
-  if (input.organization_binding_hash) {
-    try {
-      const { requireOrganizationBindingForAttestation } = await import("@/lib/organizationEligibility/revoke");
-      await requireOrganizationBindingForAttestation({
-        partnerId: input.kit.options.partnerId,
-        organization_binding_hash: input.organization_binding_hash,
-        wallet_binding_hash: input.wallet_binding_hash,
-      });
-    } catch (error) {
-      const code = error instanceof Error && "code" in error ? String((error as { code?: string }).code) : "organization_revoked";
-      const reason: ChainAttestationSafeReason =
-        code === "wallet_binding_mismatch" ? "wallet_binding_mismatch" : "organization_revoked";
-      return denied(reason, input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
-    }
+  let institutional;
+  try {
+    const { resolveInstitutionalAttestationCommitments } = await import("@/lib/organizationEligibility/chainCommitments");
+    institutional = await resolveInstitutionalAttestationCommitments({
+      partnerId: input.kit.options.partnerId,
+      policyId: input.kit.options.policyId,
+      policyVersion: input.kit.options.policyVersion ?? 1,
+      action: input.action_type,
+      actionScope: input.action_scope,
+      environment: input.kit.options.environment,
+      walletBindingHash: input.wallet_binding_hash,
+    });
+  } catch (error) {
+    const code = error instanceof Error && "code" in error ? String((error as { code?: string }).code) : "organization_revoked";
+    const reason: ChainAttestationSafeReason =
+      code === "wallet_binding_mismatch" ? "wallet_binding_mismatch"
+        : code === "expired" ? "expired"
+        : code === "consent_required" ? "consent_required"
+        : code === "issuer_mapping_required" || code === "wallet_only_kyb" ? "issuer_mapping_required"
+        : code === "policy_mismatch" ? "policy_mismatch"
+        : code === "action_mismatch" ? "action_mismatch"
+        : code === "environment_mismatch" ? "environment_mismatch"
+        : "organization_revoked";
+    return denied(reason, input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
   }
-  const requireSubject = input.wallet_binding_mode === "required" || network.wallet_binding === "required";
-  const subjectHash = hashSubjectBinding(input.organization_binding_hash ?? input.wallet_binding_hash);
-  if (requireSubject && ((!input.wallet_binding_hash && !input.organization_binding_hash) || subjectHash.endsWith("0".repeat(64)))) {
+
+  const requireSubject = institutional.require_institutional
+    ? Boolean(institutional.record?.subject_binding_hash)
+    : (input.wallet_binding_mode === "required" || network.wallet_binding === "required");
+  const subjectHash = institutional.require_institutional
+    ? institutional.subject_binding_hash
+    : hashSubjectBinding(input.wallet_binding_hash);
+  if (requireSubject && subjectHash.toLowerCase() === ZERO_BYTES32) {
     return denied("wallet_binding_missing", input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
   }
 
   const now = input.now ?? new Date();
   const ttl = Math.min(Math.max(input.ttlMs ?? DEFAULT_TTL_MS, 30_000), 15 * 60 * 1000);
   const issuedAt = unixSeconds(now.toISOString());
-  const expiresAt = unixSeconds(new Date(now.getTime() + ttl).toISOString());
+  let expiresAt = unixSeconds(new Date(now.getTime() + ttl).toISOString());
+  if (institutional.expires_at_unix) {
+    expiresAt = Math.min(expiresAt, institutional.expires_at_unix);
+  }
+  if (expiresAt <= issuedAt) {
+    return denied("expired", input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
+  }
   const nonce = randomBytes32();
   const attestationUuid = crypto.randomUUID();
   const partnerHash = hashPartnerId(input.kit.options.partnerId);
@@ -274,6 +295,9 @@ export async function issueChainEligibilityAttestation(
       attestationId: bytes32FromUuid(attestationUuid),
       environment: hashEnvironment(input.kit.options.environment),
       signerKeyId: hashSignerKeyId(signer.signer.keyId),
+      organizationCommitment: institutional.organization_commitment,
+      actorCommitment: institutional.actor_commitment,
+      institutionalResultCategory: institutional.institutional_result_category,
     };
     try {
       const consume = await consumeChainAttestationNonce({
@@ -314,7 +338,7 @@ export async function issueChainEligibilityAttestation(
         wallet_binding: requireSubject ? "required" : (input.wallet_binding_mode ?? "optional"),
       },
       expires_at: new Date(expiresAt * 1000).toISOString(),
-      schema_version: 1,
+      schema_version: 2,
       network_id: input.network_id,
       environment: input.kit.options.environment,
     });
@@ -378,6 +402,9 @@ export async function issueChainEligibilityAttestation(
     attestationId: bytes32FromUuid(attestationUuid),
     environment: hashEnvironment(input.kit.options.environment),
     signerKeyId: hashSignerKeyId(solanaSigner.signer.keyId),
+    organizationCommitment: institutional.organization_commitment,
+    actorCommitment: institutional.actor_commitment,
+    institutionalResultCategory: institutional.institutional_result_category,
   };
   try {
     const consume = await consumeChainAttestationNonce({
@@ -405,7 +432,7 @@ export async function issueChainEligibilityAttestation(
       wallet_binding: requireSubject ? "required" : (input.wallet_binding_mode ?? "optional"),
     },
     expires_at: new Date(expiresAt * 1000).toISOString(),
-    schema_version: 1,
+    schema_version: 2,
     network_id: input.network_id,
     environment: input.kit.options.environment,
   });

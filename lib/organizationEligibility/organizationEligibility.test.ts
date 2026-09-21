@@ -19,6 +19,9 @@ import {
   resetOrganizationConsentForTests,
   resetOrganizationEligibilityForTests,
   revokeOrganizationEligibility,
+  resolveInstitutionalAttestationCommitments,
+  organizationCommitment,
+  actorCommitment,
 } from "@/lib/organizationEligibility";
 import { VERIFICATION_ISSUER_TRUST_RECORDS } from "@/lib/verification/issuerTrust/registry";
 import { deriveReleaseShape } from "@/lib/partner/policyReleaseCandidate/sanitize";
@@ -270,7 +273,7 @@ describe("private organization eligibility", () => {
       readFileSync(join(process.cwd(), "lib/partner/evmGate/examples.ts"), "utf8"),
     ].join("\n");
     expect(src).not.toMatch(/createTransfer|sendTransaction|circle|utila\.api|mainnet\.infura/i);
-    expect(src).toContain("organization_binding_hash");
+    expect(src).not.toContain("organization_binding_hash");
   });
 
   it("keeps organization policies on the proposal → RC catalog path without live publish", () => {
@@ -357,5 +360,62 @@ describe("private organization eligibility", () => {
     if (!kit.ok) return;
     expect(kit.files.some((file) => file.path === "src/lib/organization-eligibility.ts")).toBe(true);
     expect(kit.files.map((file) => file.contents).join("\n")).not.toMatch(/createTransfer|utila\.api|legal_name/);
+  });
+
+  it("resolves opaque chain commitments from the current organization result only", async () => {
+    const consent = createOrganizationConsent({
+      partnerHmac: organizationPartnerHmac("acme"),
+      result_category: "organization_eligible",
+      purpose: "Confirm one named protocol action",
+      action: "enable_protocol_access",
+      action_scope: "sandbox:protocol_access",
+      environment: "sandbox",
+    });
+    const issued = await issueOrganizationEligibility({
+      partnerId: "acme",
+      consent_ref: consent.consent_ref,
+      organization_seed: "org-chain",
+      actor_seed: "act-chain",
+      subject_binding_hash: hashOrganizationSubjectBinding("wallet-a"),
+    });
+    const resolved = await resolveInstitutionalAttestationCommitments({
+      partnerId: "acme",
+      policyId: "organization_eligible",
+      policyVersion: 1,
+      action: "enable_protocol_access",
+      actionScope: "sandbox:protocol_access",
+      environment: "sandbox",
+    });
+    expect(resolved.require_institutional).toBe(true);
+    expect(resolved.organization_commitment).toBe(organizationCommitment(issued.organization_ref));
+    expect(resolved.actor_commitment).toBe(actorCommitment(issued.actor_ref));
+    expect(resolved.subject_binding_hash).toBe(issued.subject_binding_hash);
+    await expect(resolveInstitutionalAttestationCommitments({
+      partnerId: "acme",
+      policyId: "organization_eligible",
+      policyVersion: 1,
+      action: "other_action",
+      actionScope: "sandbox:protocol_access",
+      environment: "sandbox",
+    })).rejects.toMatchObject({ code: "consent_required" });
+    await revokeOrganizationEligibility({ organization_ref: issued.organization_ref, partnerId: "acme", withdraw: true });
+    await expect(resolveInstitutionalAttestationCommitments({
+      partnerId: "acme",
+      policyId: "organization_eligible",
+      policyVersion: 1,
+      action: "enable_protocol_access",
+      actionScope: "sandbox:protocol_access",
+      environment: "sandbox",
+    })).rejects.toMatchObject({ code: "organization_revoked" });
+    const personal = await resolveInstitutionalAttestationCommitments({
+      partnerId: "acme",
+      policyId: "age_21_plus",
+      policyVersion: 1,
+      action: "enable_protocol_access",
+      actionScope: "sandbox:protocol_access",
+      environment: "sandbox",
+    });
+    expect(personal.require_institutional).toBe(false);
+    expect(personal.organization_commitment).toMatch(/^0x0+$/);
   });
 });

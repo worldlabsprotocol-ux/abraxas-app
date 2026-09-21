@@ -41,9 +41,10 @@ export default function SolanaOnchainEligibilityGateDocsPage() {
       <ContentCard title="Canonical message">
         <p style={body}>
           Prefix <span style={{ fontFamily: MONO }}>{SOLANA_ATTESTATION_MESSAGE_PREFIX}</span>, then keccak of that
-          prefix, schema version 1 as a big-endian u64, then network, partner, policy, action, and subject hashes,
-          issued/expiry timestamps, nonce, attestation id, environment, and signer key id. Total 372 bytes. The program
-          requires an exact byte-for-byte match. It does not parse JSON and does not accept a browser{" "}
+          prefix, schema version 2 as a big-endian u64, then network, partner, policy, action, and subject hashes,
+          issued/expiry timestamps, nonce, attestation id, environment, signer key id, and opaque organization, actor,
+          and institutional result-category commitments. Total 468 bytes. Legacy 372-byte V1 messages are rejected.
+          The program requires an exact byte-for-byte match. It does not parse JSON and does not accept a browser{" "}
           <span style={{ fontFamily: MONO }}>allowed</span> flag.
         </p>
       </ContentCard>

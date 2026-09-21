@@ -2,8 +2,8 @@ use abraxas_eligibility_consumer::ID as CONSUMER_ID;
 use abraxas_eligibility_gate::canonical::{
     prefix_keccak, AUTH_SEED, CANONICAL_MESSAGE_LEN, CONFIG_SEED, CONSUMER_AUTH_SEED, OFF_ACTION,
     OFF_ATTESTATION_ID, OFF_ENVIRONMENT, OFF_EXPIRES, OFF_ISSUED, OFF_NETWORK, OFF_NONCE, OFF_PARTNER,
-    OFF_POLICY, OFF_PREFIX, OFF_PREFIX_HASH, OFF_SCHEMA, OFF_SIGNER_KEY_ID, OFF_SUBJECT, PREFIX,
-    RESULT_SEED,
+    OFF_POLICY, OFF_PREFIX, OFF_PREFIX_HASH, OFF_SCHEMA, OFF_SIGNER_KEY_ID, OFF_SUBJECT, OFF_ORG,
+    OFF_ACTOR, OFF_CATEGORY, PREFIX, RESULT_SEED,
 };
 use abraxas_eligibility_gate::{ConfigParams, ID as GATE_ID};
 use anchor_lang::{system_program, InstructionData, ToAccountMetas};
@@ -31,7 +31,7 @@ fn canonical_message(fields: MessageFields) -> Vec<u8> {
     let mut message = vec![0u8; CANONICAL_MESSAGE_LEN];
     message[OFF_PREFIX..OFF_PREFIX_HASH].copy_from_slice(PREFIX);
     message[OFF_PREFIX_HASH..OFF_SCHEMA].copy_from_slice(&prefix_keccak());
-    write_u64_be(&mut message, OFF_SCHEMA, 1);
+    write_u64_be(&mut message, OFF_SCHEMA, 2);
     message[OFF_NETWORK..OFF_PARTNER].copy_from_slice(&fields.network_id);
     message[OFF_PARTNER..OFF_POLICY].copy_from_slice(&fields.partner_hash);
     message[OFF_POLICY..OFF_ACTION].copy_from_slice(&fields.policy_hash);
@@ -42,7 +42,10 @@ fn canonical_message(fields: MessageFields) -> Vec<u8> {
     message[OFF_NONCE..OFF_ATTESTATION_ID].copy_from_slice(&fields.nonce);
     message[OFF_ATTESTATION_ID..OFF_ENVIRONMENT].copy_from_slice(&fields.attestation_id);
     message[OFF_ENVIRONMENT..OFF_SIGNER_KEY_ID].copy_from_slice(&fields.environment);
-    message[OFF_SIGNER_KEY_ID..CANONICAL_MESSAGE_LEN].copy_from_slice(&fields.signer_key_id);
+    message[OFF_SIGNER_KEY_ID..OFF_ORG].copy_from_slice(&fields.signer_key_id);
+    message[OFF_ORG..OFF_ACTOR].copy_from_slice(&fields.organization_commitment);
+    message[OFF_ACTOR..OFF_CATEGORY].copy_from_slice(&fields.actor_commitment);
+    message[OFF_CATEGORY..CANONICAL_MESSAGE_LEN].copy_from_slice(&fields.institutional_result_category);
     message
 }
 
@@ -59,6 +62,9 @@ struct MessageFields {
     attestation_id: [u8; 32],
     environment: [u8; 32],
     signer_key_id: [u8; 32],
+    organization_commitment: [u8; 32],
+    actor_commitment: [u8; 32],
+    institutional_result_category: [u8; 32],
 }
 
 impl Default for MessageFields {
@@ -75,6 +81,9 @@ impl Default for MessageFields {
             attestation_id: h32(17),
             environment: h32(18),
             signer_key_id: h32(19),
+            organization_commitment: [0u8; 32],
+            actor_commitment: [0u8; 32],
+            institutional_result_category: [0u8; 32],
         }
     }
 }
@@ -130,6 +139,7 @@ fn default_params(trusted_signer: [u8; 32], fields: MessageFields) -> ConfigPara
         environment: fields.environment,
         signer_key_id: fields.signer_key_id,
         require_subject: true,
+        require_institutional: false,
     }
 }
 
@@ -366,7 +376,7 @@ async fn expired_authorization_fails() {
     )
     .await
     .unwrap_err();
-    assert_eq!(custom_code(&err), Some(6000 + 12));
+    assert_eq!(custom_code(&err), Some(6000 + 13));
 }
 
 #[tokio::test]
@@ -636,7 +646,7 @@ async fn authority_only_add_retire_revoke_and_replay_across_rotation() {
     )
     .await
     .unwrap_err();
-    assert_eq!(custom_code(&dup), Some(6000 + 15));
+    assert_eq!(custom_code(&dup), Some(6000 + 16));
 
     let message = canonical_message(fields);
     let payer = ctx.payer.pubkey();

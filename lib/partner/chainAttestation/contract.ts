@@ -4,11 +4,11 @@
 import { EVM_PARTNER_ACTION_TYPES, EVM_PARTNER_TYPE_SCOPES } from "@/lib/partner/evm/contract";
 import { PORTABLE_ACTION_NOT_EXECUTION } from "@/lib/partner/portableActionContract/contract";
 
-export const CHAIN_ATTESTATION_SCHEMA_VERSION = 1 as const;
-export const CHAIN_ATTESTATION_VERSION = "1.0.0" as const;
+export const CHAIN_ATTESTATION_SCHEMA_VERSION = 2 as const;
+export const CHAIN_ATTESTATION_VERSION = "2.0.0" as const;
 
 export const EIP712_DOMAIN_NAME = "AbraxasEligibilityVerifier" as const;
-export const EIP712_DOMAIN_VERSION = "1" as const;
+export const EIP712_DOMAIN_VERSION = "2" as const;
 
 export const EIP712_DOMAIN_TYPE = [
   { name: "name", type: "string" },
@@ -31,6 +31,9 @@ export const EIP712_ATTESTATION_TYPE = [
   { name: "attestationId", type: "bytes32" },
   { name: "environment", type: "bytes32" },
   { name: "signerKeyId", type: "bytes32" },
+  { name: "organizationCommitment", type: "bytes32" },
+  { name: "actorCommitment", type: "bytes32" },
+  { name: "institutionalResultCategory", type: "bytes32" },
 ] as const;
 
 export const EIP712_PRIMARY_TYPE = "ChainEligibilityAttestation" as const;
@@ -44,7 +47,8 @@ export const CHAIN_ATTESTATION_SOLANA_SCOPE = "sandbox:partner_protocol" as cons
 export const CHAIN_ATTESTATION_EVM_NETWORKS = ["evm_sandbox", "evm_sepolia", "evm_mainnet"] as const;
 export const CHAIN_ATTESTATION_SOLANA_NETWORKS = ["solana_devnet", "solana_mainnet"] as const;
 
-export const SOLANA_ATTESTATION_MESSAGE_PREFIX = "ABRAXAS_CHAIN_ELIGIBILITY_V1" as const;
+export const SOLANA_ATTESTATION_MESSAGE_PREFIX = "ABRAXAS_CHAIN_ELIGIBILITY_V2" as const;
+export const SOLANA_ATTESTATION_MESSAGE_LEN = 468 as const;
 
 export const ZERO_BYTES32 = `0x${"00".repeat(32)}` as const;
 
@@ -79,6 +83,9 @@ export const CHAIN_ATTESTATION_SAFE_REASONS = [
   "schema_mismatch",
   "organization_revoked",
   "wallet_binding_mismatch",
+  "issuer_mapping_required",
+  "consent_required",
+  "institutional_required",
 ] as const;
 export type ChainAttestationSafeReason = (typeof CHAIN_ATTESTATION_SAFE_REASONS)[number];
 
@@ -123,6 +130,9 @@ export const CHAIN_ATTESTATION_FORBIDDEN_KEYS = [
   "rpc",
   "rpc_url",
   "legal_name",
+  "beneficial_owner",
+  "ubo",
+  "incorporation",
   "email",
   "date_of_birth",
   "pii",
@@ -158,6 +168,12 @@ export const CHAIN_ATTESTATION_CLIENT_OVERRIDE_KEYS = [
   "chain_id",
   "gate_address",
   "program_id",
+  "organization_commitment",
+  "actor_commitment",
+  "institutional_result_category",
+  "organization_ref",
+  "actor_ref",
+  "organization_binding_hash",
 ] as const;
 
 export const CHAIN_ATTESTATION_NOT_EXECUTION =
@@ -188,6 +204,9 @@ export interface ChainEligibilityAttestationFields {
   attestationId: `0x${string}`;
   environment: `0x${string}`;
   signerKeyId: `0x${string}`;
+  organizationCommitment: `0x${string}`;
+  actorCommitment: `0x${string}`;
+  institutionalResultCategory: `0x${string}`;
 }
 
 export interface Eip712Domain {

@@ -102,6 +102,9 @@ describe("chain eligibility attestations", () => {
     expect(issued.typed_data?.domain.name).toBe(EIP712_DOMAIN_NAME);
     expect(issued.typed_data?.domain.version).toBe(EIP712_DOMAIN_VERSION);
     expect(issued.typed_data?.primaryType).toBe(EIP712_PRIMARY_TYPE);
+    expect(issued.fields.organizationCommitment).toBe(`0x${"00".repeat(32)}`);
+    expect(issued.fields.actorCommitment).toBe(`0x${"00".repeat(32)}`);
+    expect(issued.fields.institutionalResultCategory).toBe(`0x${"00".repeat(32)}`);
     expect(issued.signature).toMatch(/^0x[0-9a-fA-F]{130,}$/);
     const recovered = await recoverTypedDataAddress({
       ...issued.typed_data!,
@@ -334,7 +337,7 @@ describe("chain eligibility attestations", () => {
         wallet_binding: "optional" as const,
       },
       expires_at: "2099-01-01T00:00:00.000Z",
-      schema_version: 1 as const,
+      schema_version: 2 as const,
       network_id: "evm_sandbox",
       environment: "sandbox" as const,
     };
@@ -344,7 +347,7 @@ describe("chain eligibility attestations", () => {
     expect(projected.reason).toBe("permitted");
     expect(projected.action_binding).toEqual(view.action_binding);
     expect(projected.expires_at).toBe(view.expires_at);
-    expect(projected.schema_version).toBe(1);
+    expect(projected.schema_version).toBe(2);
     expect(projected.network_id).toBe("evm_sandbox");
     expect(projected.environment).toBe("sandbox");
 
@@ -477,5 +480,38 @@ describe("chain eligibility attestations", () => {
     const docs = readFileSync(join(process.cwd(), "app/docs/solana-onchain-eligibility-gate/page.tsx"), "utf8");
     expect(docs).toContain("SOLANA_ATTESTATION_MESSAGE_PREFIX");
     expect(docs).not.toMatch(/is live on (devnet|Mainnet)/i);
+  });
+
+  it("rejects client override of organization commitments and extra request keys", () => {
+    expect(parseChainAttestationRequest({
+      receipt_id: "dr_x",
+      action_type: "enable_protocol_access",
+      action_scope: "sandbox:protocol_access",
+      network_id: "evm_sandbox",
+      deployment_ref: "dep_1",
+      organization_commitment: `0x${"11".repeat(32)}`,
+    }).ok).toBe(false);
+    expect(parseChainAttestationRequest({
+      receipt_id: "dr_x",
+      action_type: "enable_protocol_access",
+      action_scope: "sandbox:protocol_access",
+      network_id: "evm_sandbox",
+      deployment_ref: "dep_1",
+      organization_binding_hash: `0x${"11".repeat(32)}`,
+    }).ok).toBe(false);
+    expect(JSON.stringify(projectChainAttestationClient({
+      allowed: false,
+      reason: "institutional_required",
+      action_binding: {
+        action_type: "rejected",
+        action_scope: "rejected",
+        nonce_state: "rejected",
+        wallet_binding: "not_attached",
+      },
+      expires_at: null,
+      schema_version: 2,
+      network_id: null,
+      environment: null,
+    }))).not.toMatch(/legal_name|beneficial_owner|callback_url|utila/i);
   });
 });

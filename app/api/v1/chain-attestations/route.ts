@@ -23,7 +23,7 @@ function fail(reason: string, status: number) {
       wallet_binding: "not_attached",
     },
     expires_at: null,
-    schema_version: 1,
+    schema_version: 2,
     network_id: null,
     environment: null,
     notice: CHAIN_ATTESTATION_NOT_EXECUTION,
@@ -74,7 +74,6 @@ export async function POST(req: NextRequest) {
     application_id: appId,
     wallet_binding_hash: parsed.value.wallet_binding_hash,
     wallet_binding_mode: parsed.value.wallet_binding_mode,
-    organization_binding_hash: parsed.value.organization_binding_hash,
   });
 
   if (!issued.ok) {

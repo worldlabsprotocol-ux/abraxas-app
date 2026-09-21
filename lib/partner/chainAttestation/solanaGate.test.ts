@@ -30,7 +30,7 @@ describe("solana onchain eligibility gate SDK", () => {
     expect(auth.toBase58()).not.toBe(config.toBase58());
     expect(consumer.toBase58().length).toBeGreaterThan(30);
     expect(mapSolanaGateError(6003)).toBe("unknown_signer");
-    expect(mapSolanaGateError(6013)).toBe("replayed");
+    expect(mapSolanaGateError(6014)).toBe("replayed");
     expect(mapSolanaGateError(9)).toBe("invalid");
     expect(LOCAL_SOLANA_GATE_PROGRAM_ID).toMatch(/^[1-9A-HJ-NP-Za-km-z]+$/);
     expect(LOCAL_SOLANA_CONSUMER_PROGRAM_ID).toMatch(/^[1-9A-HJ-NP-Za-km-z]+$/);
@@ -46,11 +46,11 @@ describe("solana onchain eligibility gate SDK", () => {
     expect(accounts[0]?.isSigner).toBe(true);
   });
 
-  it("builds an Ed25519 verify instruction around the canonical 372-byte message", () => {
+  it("builds an Ed25519 verify instruction around the canonical 468-byte message", () => {
     const seed = new Uint8Array(32).fill(3);
     const pair = nacl.sign.keyPair.fromSeed(seed);
     const fields = {
-      schemaVersion: 1 as const,
+      schemaVersion: 2 as const,
       networkId: (`0x${"11".repeat(32)}`) as `0x${string}`,
       partnerHash: (`0x${"12".repeat(32)}`) as `0x${string}`,
       policyHash: (`0x${"13".repeat(32)}`) as `0x${string}`,
@@ -62,9 +62,12 @@ describe("solana onchain eligibility gate SDK", () => {
       attestationId: (`0x${"17".repeat(32)}`) as `0x${string}`,
       environment: (`0x${"18".repeat(32)}`) as `0x${string}`,
       signerKeyId: (`0x${"19".repeat(32)}`) as `0x${string}`,
+      organizationCommitment: (`0x${"00".repeat(32)}`) as `0x${string}`,
+      actorCommitment: (`0x${"00".repeat(32)}`) as `0x${string}`,
+      institutionalResultCategory: (`0x${"00".repeat(32)}`) as `0x${string}`,
     };
     const message = encodeSolanaEligibilityMessage(fields);
-    expect(message.length).toBe(372);
+    expect(message.length).toBe(468);
     expect(new TextDecoder().decode(message.slice(0, SOLANA_ATTESTATION_MESSAGE_PREFIX.length))).toBe(
       SOLANA_ATTESTATION_MESSAGE_PREFIX,
     );

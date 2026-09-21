@@ -10,12 +10,12 @@ contract AbraxasEligibilityVerifier {
         "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract,bytes32 partnerHash)"
     );
     bytes32 public constant ATTESTATION_TYPEHASH = keccak256(
-        "ChainEligibilityAttestation(uint256 schemaVersion,bytes32 networkId,bytes32 partnerHash,bytes32 policyHash,bytes32 actionHash,bytes32 subjectHash,uint64 issuedAt,uint64 expiresAt,bytes32 nonce,bytes32 attestationId,bytes32 environment,bytes32 signerKeyId)"
+        "ChainEligibilityAttestation(uint256 schemaVersion,bytes32 networkId,bytes32 partnerHash,bytes32 policyHash,bytes32 actionHash,bytes32 subjectHash,uint64 issuedAt,uint64 expiresAt,bytes32 nonce,bytes32 attestationId,bytes32 environment,bytes32 signerKeyId,bytes32 organizationCommitment,bytes32 actorCommitment,bytes32 institutionalResultCategory)"
     );
 
     string public constant EIP712_NAME = "AbraxasEligibilityVerifier";
-    string public constant EIP712_VERSION = "1";
-    uint256 public constant SCHEMA_VERSION = 1;
+    string public constant EIP712_VERSION = "2";
+    uint256 public constant SCHEMA_VERSION = 2;
 
     address public owner;
     bytes32 public immutable partnerHash;
@@ -57,6 +57,9 @@ contract AbraxasEligibilityVerifier {
         bytes32 attestationId;
         bytes32 environment;
         bytes32 signerKeyId;
+        bytes32 organizationCommitment;
+        bytes32 actorCommitment;
+        bytes32 institutionalResultCategory;
     }
 
     modifier onlyOwner() {
@@ -119,7 +122,10 @@ contract AbraxasEligibilityVerifier {
                 att.nonce,
                 att.attestationId,
                 att.environment,
-                att.signerKeyId
+                att.signerKeyId,
+                att.organizationCommitment,
+                att.actorCommitment,
+                att.institutionalResultCategory
             )
         );
     }

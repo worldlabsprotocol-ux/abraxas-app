@@ -1,12 +1,13 @@
-//! Canonical ABRAXAS_CHAIN_ELIGIBILITY_V1 message. Byte-for-byte encoding only.
+//! Canonical ABRAXAS_CHAIN_ELIGIBILITY_V2 message. Byte-for-byte encoding only.
 
 use anchor_lang::solana_program::keccak;
 
-pub const PREFIX: &[u8] = b"ABRAXAS_CHAIN_ELIGIBILITY_V1";
+pub const PREFIX: &[u8] = b"ABRAXAS_CHAIN_ELIGIBILITY_V2";
 pub const PREFIX_LEN: usize = 28;
 pub const HASH_LEN: usize = 32;
 pub const U64_LEN: usize = 8;
-pub const CANONICAL_MESSAGE_LEN: usize = 372;
+pub const LEGACY_V1_MESSAGE_LEN: usize = 372;
+pub const CANONICAL_MESSAGE_LEN: usize = 468;
 
 pub const OFF_PREFIX: usize = 0;
 pub const OFF_PREFIX_HASH: usize = 28;
@@ -22,13 +23,16 @@ pub const OFF_NONCE: usize = 244;
 pub const OFF_ATTESTATION_ID: usize = 276;
 pub const OFF_ENVIRONMENT: usize = 308;
 pub const OFF_SIGNER_KEY_ID: usize = 340;
+pub const OFF_ORG: usize = 372;
+pub const OFF_ACTOR: usize = 404;
+pub const OFF_CATEGORY: usize = 436;
 
 pub const AUTH_SEED: &[u8] = b"authorization";
 pub const CONFIG_SEED: &[u8] = b"gate_config";
 pub const CONSUMER_AUTH_SEED: &[u8] = b"consumer_authority";
 pub const RESULT_SEED: &[u8] = b"test_result";
 
-pub const SCHEMA_VERSION: u64 = 1;
+pub const SCHEMA_VERSION: u64 = 2;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct CanonicalFields {
@@ -43,6 +47,9 @@ pub struct CanonicalFields {
     pub attestation_id: [u8; 32],
     pub environment: [u8; 32],
     pub signer_key_id: [u8; 32],
+    pub organization_commitment: [u8; 32],
+    pub actor_commitment: [u8; 32],
+    pub institutional_result_category: [u8; 32],
     pub schema_version: u64,
 }
 
@@ -57,6 +64,9 @@ pub fn prefix_keccak() -> [u8; 32] {
 }
 
 pub fn parse_canonical_message(message: &[u8]) -> Result<CanonicalFields, ()> {
+    if message.len() == LEGACY_V1_MESSAGE_LEN {
+        return Err(());
+    }
     if message.len() != CANONICAL_MESSAGE_LEN {
         return Err(());
     }
@@ -81,7 +91,10 @@ pub fn parse_canonical_message(message: &[u8]) -> Result<CanonicalFields, ()> {
         nonce: copy32(&message[OFF_NONCE..OFF_ATTESTATION_ID]),
         attestation_id: copy32(&message[OFF_ATTESTATION_ID..OFF_ENVIRONMENT]),
         environment: copy32(&message[OFF_ENVIRONMENT..OFF_SIGNER_KEY_ID]),
-        signer_key_id: copy32(&message[OFF_SIGNER_KEY_ID..CANONICAL_MESSAGE_LEN]),
+        signer_key_id: copy32(&message[OFF_SIGNER_KEY_ID..OFF_ORG]),
+        organization_commitment: copy32(&message[OFF_ORG..OFF_ACTOR]),
+        actor_commitment: copy32(&message[OFF_ACTOR..OFF_CATEGORY]),
+        institutional_result_category: copy32(&message[OFF_CATEGORY..CANONICAL_MESSAGE_LEN]),
         schema_version: schema,
     })
 }
@@ -128,12 +141,13 @@ mod tests {
     #[test]
     fn rejects_wrong_length() {
         assert!(parse_canonical_message(&[0u8; 10]).is_err());
+        assert!(parse_canonical_message(&[0u8; LEGACY_V1_MESSAGE_LEN]).is_err());
     }
 
     #[test]
     fn prefix_length_matches() {
         assert_eq!(PREFIX.len(), PREFIX_LEN);
-        assert_eq!(CANONICAL_MESSAGE_LEN, 372);
+        assert_eq!(CANONICAL_MESSAGE_LEN, 468);
         assert_eq!(HASH_LEN, 32);
         assert_eq!(U64_LEN, 8);
     }
@@ -142,7 +156,7 @@ mod tests {
     fn rejects_altered_prefix_hash() {
         let mut message = vec![0u8; CANONICAL_MESSAGE_LEN];
         message[OFF_PREFIX..OFF_PREFIX_HASH].copy_from_slice(PREFIX);
-        message[OFF_SCHEMA + 7] = 1;
+        message[OFF_SCHEMA + 7] = 2;
         assert!(parse_canonical_message(&message).is_err());
     }
 }

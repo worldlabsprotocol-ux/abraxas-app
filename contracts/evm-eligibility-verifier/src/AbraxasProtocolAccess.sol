@@ -16,7 +16,12 @@ contract AbraxasProtocolAccess {
     mapping(bytes32 => uint64) public validUntil;
     mapping(bytes32 => bool) public consumedAttestationRefs;
 
-    event ProtocolAccessActivated(bytes32 indexed subjectHash, bytes32 indexed attestationRef, uint64 validUntil);
+    event ProtocolAccessActivated(
+        bytes32 indexed subjectHash,
+        bytes32 indexed organizationCommitment,
+        bytes32 indexed attestationRef,
+        uint64 validUntil
+    );
 
     error GateRejected();
     error AttestationReplayed();
@@ -32,9 +37,30 @@ contract AbraxasProtocolAccess {
         gate = gate_;
     }
 
+    function entitlementKey(
+        bytes32 subjectHash,
+        bytes32 organizationCommitment,
+        bytes32 actionHash
+    ) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(subjectHash, organizationCommitment, actionHash));
+    }
+
+    function accessValidUntil(bytes32 subjectHash) public view returns (uint64) {
+        return validUntil[entitlementKey(subjectHash, bytes32(0), gate.expectedActionHash())];
+    }
+
     /// @notice True only while block.timestamp is strictly before stored validUntil.
+    /// Personal (zero organization commitment) lookup for the gate action hash.
     function hasAccess(bytes32 subjectHash) public view returns (bool) {
-        return validUntil[subjectHash] > block.timestamp;
+        return hasInstitutionalAccess(subjectHash, bytes32(0), gate.expectedActionHash());
+    }
+
+    function hasInstitutionalAccess(
+        bytes32 subjectHash,
+        bytes32 organizationCommitment,
+        bytes32 actionHash
+    ) public view returns (bool) {
+        return validUntil[entitlementKey(subjectHash, organizationCommitment, actionHash)] > block.timestamp;
     }
 
     /// @notice Consume a valid gate authorization once and record expiry-bound access.
@@ -50,21 +76,30 @@ contract AbraxasProtocolAccess {
         if (att.networkId != gate.expectedNetworkId()) revert BindingMismatch();
         if (gate.requireSubjectBinding() && att.subjectHash == bytes32(0)) revert SubjectRequired();
         if (consumedAttestationRefs[att.attestationId]) revert AttestationReplayed();
+        bytes32 key = entitlementKey(att.subjectHash, att.organizationCommitment, att.actionHash);
         uint64 until = att.expiresAt;
-        if (validUntil[att.subjectHash] > until) revert StaleAttestation();
+        if (validUntil[key] > until) revert StaleAttestation();
 
         bool authorized = gate.consumeEligibility(att, signature);
         if (!authorized) revert GateRejected();
 
         consumedAttestationRefs[att.attestationId] = true;
-        validUntil[att.subjectHash] = until;
-        emit ProtocolAccessActivated(att.subjectHash, att.attestationId, until);
-        return hasAccess(att.subjectHash);
+        validUntil[key] = until;
+        emit ProtocolAccessActivated(att.subjectHash, att.organizationCommitment, att.attestationId, until);
+        return hasInstitutionalAccess(att.subjectHash, att.organizationCommitment, att.actionHash);
     }
 
     /// @notice Partner-owned access check. Inactive once timestamp reaches validUntil.
     function requireAccess(bytes32 subjectHash) external view {
         if (!hasAccess(subjectHash)) revert Inactive();
+    }
+
+    function requireInstitutionalAccess(
+        bytes32 subjectHash,
+        bytes32 organizationCommitment,
+        bytes32 actionHash
+    ) external view {
+        if (!hasInstitutionalAccess(subjectHash, organizationCommitment, actionHash)) revert Inactive();
     }
 
     receive() external payable {

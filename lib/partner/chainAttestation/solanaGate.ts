@@ -29,9 +29,10 @@ export const SOLANA_GATE_ERROR_MAP = {
   6009: "environment_mismatch",
   6010: "signer_key_mismatch",
   6011: "subject_required",
-  6012: "expired",
-  6013: "replayed",
-  6014: "wrong_partner_program",
+  6012: "institutional_required",
+  6013: "expired",
+  6014: "replayed",
+  6015: "wrong_partner_program",
 } as const;
 
 export type SolanaGateSafeReason = (typeof SOLANA_GATE_ERROR_MAP)[keyof typeof SOLANA_GATE_ERROR_MAP] | "invalid";

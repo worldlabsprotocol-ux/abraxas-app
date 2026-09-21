@@ -239,6 +239,7 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
       document_collection: false,
       utila_integration: false,
       wallet_control_qualifies: false,
+      operator_reviewed_policy: false,
       funds_movement: false,
       notice: INTEGRATION_STUDIO_INSTITUTIONAL_ELIGIBILITY_NOTICE,
     },

@@ -10,7 +10,6 @@ const ALLOWED = [
   "wallet_binding_hash",
   "wallet_binding_mode",
   "application_id",
-  "organization_binding_hash",
 ] as const;
 
 export interface ParsedChainAttestationRequest {
@@ -22,7 +21,6 @@ export interface ParsedChainAttestationRequest {
   wallet_binding_hash: string | null;
   wallet_binding_mode: "not_attached" | "optional" | "required";
   application_id: string | null;
-  organization_binding_hash: string | null;
 }
 
 export function parseChainAttestationRequest(
@@ -51,10 +49,6 @@ export function parseChainAttestationRequest(
     ? null
     : rec.application_id;
   if (applicationId !== null && typeof applicationId !== "string") return { ok: false, reason: "invalid" };
-  const organizationBinding = rec.organization_binding_hash === undefined || rec.organization_binding_hash === null
-    ? null
-    : rec.organization_binding_hash;
-  if (organizationBinding !== null && typeof organizationBinding !== "string") return { ok: false, reason: "invalid" };
   return {
     ok: true,
     value: {
@@ -66,7 +60,6 @@ export function parseChainAttestationRequest(
       wallet_binding_hash: binding,
       wallet_binding_mode: mode,
       application_id: applicationId,
-      organization_binding_hash: organizationBinding,
     },
   };
 }

@@ -48,12 +48,13 @@ contract AbraxasProtocolAccessTest {
             policyHash: policyHash,
             actionHash: actionHash,
             environment: environment,
-            requireSubjectBinding: requireSubject
+            requireSubjectBinding: requireSubject,
+            requireInstitutionalBinding: false
         });
     }
 
     function _att() internal view returns (AbraxasPartnerEligibilityGate.ChainEligibilityAttestation memory att) {
-        att.schemaVersion = 1;
+        att.schemaVersion = 2;
         att.networkId = networkId;
         att.partnerHash = partnerHash;
         att.policyHash = policyHash;
@@ -82,7 +83,7 @@ contract AbraxasProtocolAccessTest {
         bytes memory sig = _sign(att, signerPk, gate);
         require(protocol.activateProtocolAccess(att, sig));
         require(protocol.hasAccess(subjectHash));
-        require(protocol.validUntil(subjectHash) == att.expiresAt);
+        require(protocol.accessValidUntil(subjectHash) == att.expiresAt);
         require(gate.consumedNonces(att.nonce));
         protocol.requireAccess(subjectHash);
     }
@@ -110,15 +111,15 @@ contract AbraxasProtocolAccessTest {
         AbraxasPartnerEligibilityGate.ChainEligibilityAttestation memory att = _att();
         bytes memory sig = _sign(att, signerPk, gate);
         protocol.activateProtocolAccess(att, sig);
-        uint64 first = protocol.validUntil(subjectHash);
+        uint64 first = protocol.accessValidUntil(subjectHash);
         att.nonce = keccak256("nonce-protocol-2");
         att.attestationId = keccak256("att-protocol-2");
         att.issuedAt = uint64(block.timestamp);
         att.expiresAt = uint64(block.timestamp + 1200);
         sig = _sign(att, signerPk, gate);
         protocol.activateProtocolAccess(att, sig);
-        require(protocol.validUntil(subjectHash) == att.expiresAt);
-        require(protocol.validUntil(subjectHash) > first);
+        require(protocol.accessValidUntil(subjectHash) == att.expiresAt);
+        require(protocol.accessValidUntil(subjectHash) > first);
         require(protocol.hasAccess(subjectHash));
     }
 
@@ -129,7 +130,7 @@ contract AbraxasProtocolAccessTest {
         newer.attestationId = keccak256("att-newer");
         bytes memory sigNewer = _sign(newer, signerPk, gate);
         protocol.activateProtocolAccess(newer, sigNewer);
-        uint64 kept = protocol.validUntil(subjectHash);
+        uint64 kept = protocol.accessValidUntil(subjectHash);
 
         AbraxasPartnerEligibilityGate.ChainEligibilityAttestation memory older = _att();
         older.expiresAt = uint64(block.timestamp + 300);
@@ -138,7 +139,7 @@ contract AbraxasProtocolAccessTest {
         bytes memory sigOlder = _sign(older, signerPk, gate);
         vm.expectRevert(AbraxasProtocolAccess.StaleAttestation.selector);
         protocol.activateProtocolAccess(older, sigOlder);
-        require(protocol.validUntil(subjectHash) == kept);
+        require(protocol.accessValidUntil(subjectHash) == kept);
         require(!gate.consumedNonces(older.nonce));
     }
 
@@ -226,18 +227,66 @@ contract AbraxasProtocolAccessTest {
         vm.expectRevert(AbraxasPartnerEligibilityGate.UnknownSigner.selector);
         protocol.activateProtocolAccess(att, sig);
         require(!protocol.hasAccess(subjectHash));
-        require(protocol.validUntil(subjectHash) == 0);
+        require(protocol.accessValidUntil(subjectHash) == 0);
     }
 
     function test_directExpiryBypassHasNoSetter() public {
         AbraxasPartnerEligibilityGate.ChainEligibilityAttestation memory att = _att();
         bytes memory sig = _sign(att, signerPk, gate);
         protocol.activateProtocolAccess(att, sig);
-        uint64 stored = protocol.validUntil(subjectHash);
+        uint64 stored = protocol.accessValidUntil(subjectHash);
         require(stored == att.expiresAt);
         vm.expectRevert(AbraxasProtocolAccess.ExecutionRejected.selector);
         (bool ok,) = address(protocol).call(abi.encodeWithSignature("setValidUntil(bytes32,uint64)", subjectHash, uint64(block.timestamp + 99999)));
         ok;
-        require(protocol.validUntil(subjectHash) == stored);
+        require(protocol.accessValidUntil(subjectHash) == stored);
+    }
+
+    function test_institutionalConsumeKeysSubjectOrgAction() public {
+        AbraxasPartnerEligibilityGate.GateConfig memory cfg = _cfg(signer, signerKeyId, partnerHash, true);
+        cfg.requireInstitutionalBinding = true;
+        AbraxasPartnerEligibilityGate instGate = new AbraxasPartnerEligibilityGate(cfg);
+        AbraxasProtocolAccess inst = new AbraxasProtocolAccess(instGate);
+        AbraxasPartnerEligibilityGate.ChainEligibilityAttestation memory att = _att();
+        att.organizationCommitment = keccak256("org-ref");
+        att.actorCommitment = keccak256("actor-ref");
+        att.institutionalResultCategory = keccak256("organization_eligible");
+        bytes memory sig = _sign(att, signerPk, instGate);
+        require(inst.activateProtocolAccess(att, sig));
+        require(inst.hasInstitutionalAccess(subjectHash, att.organizationCommitment, actionHash));
+        require(!inst.hasAccess(subjectHash));
+        require(!inst.hasInstitutionalAccess(subjectHash, keccak256("other-org"), actionHash));
+        vm.warp(uint256(att.expiresAt));
+        require(!inst.hasInstitutionalAccess(subjectHash, att.organizationCommitment, actionHash));
+    }
+
+    function test_institutionalMismatchAndMissingCommitments() public {
+        AbraxasPartnerEligibilityGate.GateConfig memory cfg = _cfg(signer, signerKeyId, partnerHash, true);
+        cfg.requireInstitutionalBinding = true;
+        AbraxasPartnerEligibilityGate instGate = new AbraxasPartnerEligibilityGate(cfg);
+        AbraxasProtocolAccess inst = new AbraxasProtocolAccess(instGate);
+        AbraxasPartnerEligibilityGate.ChainEligibilityAttestation memory att = _att();
+        bytes memory sig = _sign(att, signerPk, instGate);
+        vm.expectRevert(AbraxasPartnerEligibilityGate.InstitutionalRequired.selector);
+        inst.activateProtocolAccess(att, sig);
+
+        att.organizationCommitment = keccak256("org-ref");
+        att.actorCommitment = keccak256("actor-ref");
+        att.institutionalResultCategory = keccak256("organization_eligible");
+        att.policyHash = keccak256("wrong-policy");
+        sig = _sign(att, signerPk, instGate);
+        vm.expectRevert(AbraxasProtocolAccess.BindingMismatch.selector);
+        inst.activateProtocolAccess(att, sig);
+    }
+
+    function test_noPermanentEntitlementAfterExpiry() public {
+        AbraxasPartnerEligibilityGate.ChainEligibilityAttestation memory att = _att();
+        bytes memory sig = _sign(att, signerPk, gate);
+        protocol.activateProtocolAccess(att, sig);
+        require(protocol.hasAccess(subjectHash));
+        vm.warp(uint256(att.expiresAt));
+        require(!protocol.hasAccess(subjectHash));
+        vm.expectRevert(AbraxasProtocolAccess.Inactive.selector);
+        protocol.requireAccess(subjectHash);
     }
 }

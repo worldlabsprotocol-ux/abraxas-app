@@ -16,7 +16,7 @@ export interface ChainAttestationClientView {
     wallet_binding: "not_attached" | "optional" | "required";
   };
   expires_at: string | null;
-  schema_version: 1;
+  schema_version: 2;
   network_id: string | null;
   environment: "sandbox" | "production" | null;
 }

@@ -26,6 +26,9 @@ export function encodeSolanaEligibilityMessage(fields: ChainEligibilityAttestati
     hexToBytes(fields.attestationId),
     hexToBytes(fields.environment),
     hexToBytes(fields.signerKeyId),
+    hexToBytes(fields.organizationCommitment),
+    hexToBytes(fields.actorCommitment),
+    hexToBytes(fields.institutionalResultCategory),
   ]);
 }
 
@@ -104,7 +107,8 @@ Partner program interface (reference only; Abraxas does not deploy a program):
    - network, partner, policy, version, action, and scope hashes match expected bindings;
    - now < expiresAt;
    - nonce has not been consumed in partner-owned replay state;
-   - required subjectHash is present when the named network/action requires a wallet binding.
+   - required subjectHash is present when the named network/action requires a wallet binding;
+   - organizationCommitment, actorCommitment, and institutionalResultCategory are present when the reviewed policy requires institutional binding (legacy V1 372-byte messages are rejected).
 4. On success, record only an eligibility authorization outcome. Do not transfer SOL or tokens,
    sign a later transaction, or treat the attestation as payment, trade, or gas authorization.
 
