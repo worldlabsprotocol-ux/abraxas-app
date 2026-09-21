@@ -17,6 +17,7 @@ import { issueCrossChainProtocolAccess, crossChainPayloadLeaks, hasCrossChainCli
 import {
   CROSS_CHAIN_PROTOCOL_ACTION,
   CROSS_CHAIN_PROTOCOL_EVM_INTERFACE,
+  CROSS_CHAIN_PROTOCOL_REVOCATION_NOTICE,
   CROSS_CHAIN_PROTOCOL_SOLANA_INTERFACE,
 } from "./contract";
 import { studioPublicCatalog, studioSnippetForPath } from "@/lib/partner/integrationStudio";
@@ -362,9 +363,10 @@ describe("cross-chain protocol access", () => {
     const docs = readFileSync(join(process.cwd(), "app/docs/cross-chain-protocol-access/page.tsx"), "utf8");
     expect(docs).toContain("private proof");
     expect(docs).toContain("valid_until");
-    expect(docs).toContain("short-lived");
+    expect(docs).toContain("CROSS_CHAIN_PROTOCOL_REVOCATION_NOTICE");
     expect(docs.toLowerCase()).not.toMatch(/live mainnet deployment/);
-    expect(docs).toContain("not an indefinite KYC");
+    expect(CROSS_CHAIN_PROTOCOL_REVOCATION_NOTICE).toContain("short-lived");
+    expect(CROSS_CHAIN_PROTOCOL_REVOCATION_NOTICE).toContain("not an indefinite KYC");
     expect(hasCrossChainClientOverride({ expiry: "2099-01-01" })).toBe(true);
     expect(readFileSync(join(process.cwd(), "examples/cross-chain-protocol-access/README.md"), "utf8")).toContain("local / sandbox");
   });
