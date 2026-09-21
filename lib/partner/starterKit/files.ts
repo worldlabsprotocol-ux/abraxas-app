@@ -14,6 +14,7 @@ import {
 } from "./contract";
 import { serverlessFiles, universalHttpsFiles, wixVeloFiles, type StarterKitFile } from "./platforms";
 import { eligibilityPresentationHttpsExample, eligibilityPresentationServerExample } from "@/lib/eligibilityPresentation/examples";
+import type { ValidStarterKitSelection } from "./validate";
 
 export type { StarterKitFile };
 
