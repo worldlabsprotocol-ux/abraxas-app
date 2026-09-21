@@ -409,6 +409,7 @@ async fn expired_v2_institutional_authorization() {
     let signer = Keypair::new();
     airdrop(&mut ctx, &admin).await;
     let mut fields = MessageFields::default();
+    fields.issued_at = 1;
     fields.expires_at = 50;
     let config = initialize(&mut ctx, &admin, institutional_params(signer.pubkey().to_bytes(), fields)).await;
     set_clock(&mut ctx, 100).await;

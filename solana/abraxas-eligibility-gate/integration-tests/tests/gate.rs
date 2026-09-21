@@ -364,6 +364,7 @@ async fn expired_authorization_fails() {
     let signer = Keypair::new();
     airdrop(&mut ctx, &admin).await;
     let mut fields = MessageFields::default();
+    fields.issued_at = 1;
     fields.expires_at = 50;
     let config = initialize(&mut ctx, &admin, default_params(signer.pubkey().to_bytes(), fields)).await;
     set_clock(&mut ctx, 100).await;

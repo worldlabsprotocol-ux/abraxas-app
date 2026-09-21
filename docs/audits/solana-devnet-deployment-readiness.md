@@ -38,26 +38,21 @@ Primary code:
 
 ## Exact commands run
 
-Commands are recorded after execution in the PR iteration. Planned / executed local-only set:
+Executed locally (no live RPC, no deploy, no SQL apply, no Vercel mutation). Commit after remediations plus expiry-test fix: recorded in `artifacts/solana-devnet-deployment-readiness.json`.
 
-```bash
-git rev-parse HEAD
-npx vitest run lib/partner/onchainVerifierConformance/onchainVerifierConformance.test.ts lib/partner/onchainGateDeployments/onchainGateDeployments.test.ts
-npm run abraxas-conformance -- vectors
-npm run check:homepage
-npm run check:homepage-guard
-npm run check:trust-contract-drift
-rustup run 1.88.0 cargo test --manifest-path solana/abraxas-eligibility-gate/Cargo.toml --workspace -- --nocapture
-# Foundry vectors (local, no broadcast)
-forge test --root contracts/evm-eligibility-verifier
-# Vercel-equivalent typecheck/build with CI placeholders only
-NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 \
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ci-placeholder \
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ci-placeholder \
-npx tsc --noEmit
-```
+| Command | Result |
+|---------|--------|
+| `npx vitest run` conformance + onchainGateDeployments | 20/20 pass |
+| `npm run abraxas-conformance -- vectors` | `ok: true`, `live: false` |
+| `npm run check:homepage` | 7/7 pass |
+| `npm run check:homepage-guard` | protected baseline intact |
+| `npm run check:trust-contract-drift` | no findings on changed files |
+| `rustup run 1.88.0 cargo test --manifest-path solana/abraxas-eligibility-gate/Cargo.toml --workspace` | pass after expiry tests set `issued_at=1` (L-2) |
+| `forge test` in `contracts/evm-eligibility-verifier` | 53/53 pass |
+| `npx tsc --noEmit` | pre-existing errors in unrelated tests; CI marks this `continue-on-error` |
+| `npm run build` with CI placeholders | pass (Vercel-equivalent Next build) |
 
-No live RPC, no `solana program deploy`, no `supabase db push`, no Vercel project mutation.
+Independent re-review (separate explore agent, read-only): C-1, C-2, H-1, H-2, H-3 **closed**. Remaining Critical/High: **0**. Agent ID `bc-5ca0e19f-25bf-5815-a2e6-35b7ba009126`.
 
 ## Findings
 
@@ -110,14 +105,18 @@ Covered by C-2 / H-1 remediations.
 | M-4 | V1 372-byte accepted when `require_institutional == false` | `parse_canonical_message_for_config` | Intended non-institutional compatibility; first institutional devnet must set `require_institutional` |
 | M-5 | Live Solana RPC adapter cannot compute structured `expectedSolanaConfigDigest` | `adapters.ts` server adapter | Institutional register/verify fail-closed; operators must use a fixture or a future structured decoder, not raw keccak, before claiming V2 on-chain proof |
 | M-6 | `ABRAXAS_ONCHAIN_DEPLOYMENT_TEST_ADAPTER` still bypasses store in local sandbox tests | `bindIssuance.ts` | Denied for `VERCEL`, `NODE_ENV=production`, and `kitEnvironment=production` |
+| M-7 | Launchpad POST `registerOnchainGateDeployment` omits `institutionalRequired` | `app/api/launchpad/applications/[id]/onchain-gate-deployments/route.ts` ~82–88 | First institutional gate must use the **human testnet kit** register path, not Launchpad alone |
+| M-8 | Entitlement assert does not re-bind actor/category | `protocol_access.rs` `assert_protocol_access` | Authorize + activate already require non-zero institutional fields |
+| M-9 | Solana `config_digest` omits institutional posture bits | `digests.ts` | Mitigated when observation requires V2 capability fields |
 
 ### Low / Informational
 
 | ID | Notes |
 |----|--------|
 | L-1 | Non-institutional `evaluateConformance` still allows omitted `receiptRefetched`. Institutional now requires `receiptRefetched === true`. |
-| L-2 | Adding `Authorization.subject_hash` changes account layout. Acceptable because no human-operated Solana gate is registered yet. Redeploy if any unpublished ProgramTest artifacts exist. |
-| L-3 | `npm run abraxas-conformance` is deterministic local self-consistency. `ok` is not a live deployment certificate. |
+| L-2 | Adding `Authorization.subject_hash` changes account layout. Acceptable because no human-operated Solana gate is registered yet. |
+| L-3 | `npm run abraxas-conformance` is deterministic local self-consistency. `ok` is not a live deployment certificate. `solanaObservation` is injectable on the library API; CLI does not pass it. |
+| L-4 | Expiry ProgramTests previously set `expires_at=50` with default `issued_at=1000`, hitting `InvalidMessage` before `Expired`. Fixed in this PR (`issued_at=1`). |
 | I-1 | Toolchain pin: Rust 1.88.0, Solc 0.8.24 `via_ir = true`, Node `24.x`. |
 | I-2 | Required migrations already in repo: `101`–`106` (nonces, deployments, signer lifecycle, Reclaim sessions, presentations, private org eligibility). **Not applied by this audit.** |
 | I-3 | Deploy kit rejects CI, Vercel, missing `--confirm`, Mainnet, unpublished Arc. Verify/register fail-closed on V1-only institutional observation. |
