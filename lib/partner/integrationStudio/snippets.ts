@@ -15,6 +15,7 @@ import { evmPartnerServerExample } from "@/lib/partner/evm/examples";
 import { evmWalletBindingExample } from "@/lib/partner/evmWalletBinding/examples";
 import { chainAttestationServerExample, solanaOnchainEligibilityGateExample } from "@/lib/partner/chainAttestation/examples";
 import { evmOnchainEligibilityGateExample } from "@/lib/partner/evmGate/examples";
+import { eligibilityPresentationServerExample } from "@/lib/eligibilityPresentation/examples";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
 
 const DEMO_OPTS = {
@@ -99,6 +100,11 @@ export function studioSnippetForApplication(input: {
       docs: "/docs/evm-onchain-eligibility-gate",
       code: evmOnchainEligibilityGateExample(),
     },
+    eligibility_presentation: {
+      title: "Request a private eligibility presentation",
+      docs: "/docs/eligibility-presentation-protocol",
+      code: eligibilityPresentationServerExample(),
+    },
   };
 }
 
@@ -175,6 +181,12 @@ export function studioSnippetForPath(path: IntegrationStudioPathId): { title: st
         title: "EVM onchain eligibility gate",
         docs: "/docs/evm-onchain-eligibility-gate",
         code: evmOnchainEligibilityGateExample(),
+      };
+    case "eligibility_presentation":
+      return {
+        title: "Request a private eligibility presentation",
+        docs: "/docs/eligibility-presentation-protocol",
+        code: eligibilityPresentationServerExample(),
       };
     default: {
       const _never: never = path;

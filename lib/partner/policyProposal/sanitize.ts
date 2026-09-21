@@ -18,12 +18,13 @@ import {
   type PolicyProposalReceive,
   type PolicyProposalState,
 } from "./contract";
-import type { PolicyFitAction, PolicyFitCapability, PolicyFitCategory, PolicyFitEnvironment } from "@/lib/partner/integrationStudio/policyFit/contract";
+import type { PolicyFitAction, PolicyFitCapability, PolicyFitEnvironment } from "@/lib/partner/integrationStudio/policyFit/contract";
+import type { PolicyProposalResult } from "./contract";
 import { sanitizeReviewNote } from "@/lib/partner/launchpad/productionReview/opaque";
 
 export interface SanitizedProposalPayload {
   action: PolicyFitAction;
-  result_needed: PolicyFitCategory;
+  result_needed: PolicyProposalResult;
   partner_receives: PolicyProposalReceive[];
   stays_private: PolicyProposalPrivate[];
   environment: PolicyFitEnvironment;
@@ -60,7 +61,7 @@ export function sanitizeProposalPayload(body: unknown): SanitizedProposalPayload
     ? record.action as PolicyFitAction
     : null;
   const result = typeof record.result_needed === "string" && (POLICY_PROPOSAL_RESULTS as readonly string[]).includes(record.result_needed)
-    ? record.result_needed as PolicyFitCategory
+    ? record.result_needed as PolicyProposalResult
     : null;
   const environment = typeof record.environment === "string" && (POLICY_PROPOSAL_ENVIRONMENTS as readonly string[]).includes(record.environment)
     ? record.environment as PolicyFitEnvironment

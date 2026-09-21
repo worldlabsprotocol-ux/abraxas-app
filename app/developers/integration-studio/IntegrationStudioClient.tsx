@@ -51,6 +51,7 @@ const PATH_LABEL: Record<IntegrationStudioPathId, string> = {
   onchain_protocol_gate: "Onchain protocol gate",
   solana_onchain_eligibility_gate: "Solana onchain eligibility gate",
   evm_onchain_eligibility_gate: "EVM onchain eligibility gate",
+  eligibility_presentation: "Request a private eligibility presentation",
 };
 
 const body: React.CSSProperties = {

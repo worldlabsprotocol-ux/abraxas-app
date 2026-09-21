@@ -135,6 +135,12 @@ export const PUBLIC_JOURNEY_SURFACES = [
     file: "app/docs/reclaim-private-attestations/page.tsx",
   },
   {
+    route: "/docs/eligibility-presentation-protocol",
+    purpose: "Server-to-server private eligibility presentation. Not a passport or bearer credential.",
+    primaryCta: { label: "Integration Studio", href: "/developers/integration-studio" },
+    file: "app/docs/eligibility-presentation-protocol/page.tsx",
+  },
+  {
     route: "/docs/selective-disclosure",
     purpose: "Canonical selective-disclosure boundary. Policy result only, not evidence.",
     primaryCta: { label: "Integration Studio", href: "/developers/integration-studio" },

@@ -116,6 +116,8 @@ export function allowedFieldsForSurface(
       return profile.payment_action_fields;
     case "launchpad_summary":
       return profile.launchpad_summary_fields;
+    case "eligibility_presentation":
+      return SHARED_SURFACE_FIELDS.eligibility_presentation;
     default:
       return [];
   }

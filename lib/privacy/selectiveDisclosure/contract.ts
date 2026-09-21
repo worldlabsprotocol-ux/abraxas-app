@@ -20,6 +20,7 @@ export const SELECTIVE_DISCLOSURE_SURFACES = [
   "passport_activity",
   "launchpad_summary",
   "action_contract",
+  "eligibility_presentation",
 ] as const;
 export type SelectiveDisclosureSurface = (typeof SELECTIVE_DISCLOSURE_SURFACES)[number];
 
@@ -171,6 +172,25 @@ export const SHARED_SURFACE_FIELDS = {
   trading_action: TRADING_VENUE_CLIENT_VISIBLE_KEYS,
   payment_action: PAYMENT_AUTHORIZATION_CLIENT_VISIBLE_KEYS,
   launchpad_summary: LAUNCHPAD_SUMMARY_ALLOWED_FIELDS,
+  eligibility_presentation: [
+    "schema_version",
+    "presentation_ref",
+    "issuer",
+    "audience_hash",
+    "policy_id",
+    "policy_version",
+    "result_category",
+    "currently_valid",
+    "environment",
+    "issued_at",
+    "expires_at",
+    "verifier_nonce",
+    "signing_key_id",
+    "receipt_verification_ref",
+    "selective_disclosure_summary",
+    "media_type",
+    "signature",
+  ],
 } as const;
 
 export const DISCLOSURE_CATALOG_VERSION = POLICY_PACK_CATALOG_VERSION;

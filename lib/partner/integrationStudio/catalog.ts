@@ -25,6 +25,7 @@ import {
   INTEGRATION_STUDIO_ONCHAIN_NOTICE,
   INTEGRATION_STUDIO_SOLANA_ONCHAIN_NOTICE,
   INTEGRATION_STUDIO_EVM_ONCHAIN_NOTICE,
+  INTEGRATION_STUDIO_ELIGIBILITY_PRESENTATION_NOTICE,
   INTEGRATION_STUDIO_WEBHOOK_NOTICE,
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio/contract";
@@ -206,6 +207,15 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
       origin_bound: true,
       receives_raw_proof: false,
       app_secret_in_browser: false,
+    },
+    eligibility_presentation: {
+      docs: "/docs/eligibility-presentation-protocol",
+      title: "Request a private eligibility presentation",
+      presentation_sufficient: false,
+      bearer_credential: false,
+      automatic_kyc_kyb_approval: false,
+      utila_integration: false,
+      notice: INTEGRATION_STUDIO_ELIGIBILITY_PRESENTATION_NOTICE,
     },
     policy_compatibility: {
       docs: "/docs/policy-compatibility",

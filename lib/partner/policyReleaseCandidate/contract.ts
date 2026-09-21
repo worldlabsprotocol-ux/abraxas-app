@@ -10,9 +10,11 @@ import {
   POLICY_PROPOSAL_PRIVATE_LABELS,
   POLICY_PROPOSAL_RECEIVES,
   POLICY_PROPOSAL_RECEIVE_LABELS,
-  POLICY_PROPOSAL_RESULTS,
-  POLICY_PROPOSAL_RESULT_LABELS,
 } from "@/lib/partner/policyProposal/contract";
+import {
+  POLICY_FIT_CATEGORIES,
+  POLICY_FIT_CATEGORY_LABELS,
+} from "@/lib/partner/integrationStudio/policyFit/contract";
 import { PORTABLE_ACTION_SCOPES } from "@/lib/partner/portableActionContract/contract";
 import { POLICY_VERSION_COMPATIBILITY } from "@/lib/partner/launchpad/policyVersionPlanner/contract";
 
@@ -86,8 +88,13 @@ export const POLICY_RC_COMPATIBILITY_LABELS: Record<PolicyRcCompatibility, strin
   new_edge_required: "New compatibility edge required after catalog PR",
 };
 
-export type PolicyRcLabel = `reviewed_gate_${(typeof POLICY_PROPOSAL_RESULTS)[number]}`;
-export const POLICY_RC_LABELS: readonly PolicyRcLabel[] = POLICY_PROPOSAL_RESULTS.map(
+export const POLICY_RC_ACTIONS = POLICY_PROPOSAL_ACTIONS;
+export const POLICY_RC_ACTION_LABELS = POLICY_PROPOSAL_ACTION_LABELS;
+export const POLICY_RC_RESULTS = POLICY_FIT_CATEGORIES;
+export const POLICY_RC_RESULT_LABELS = POLICY_FIT_CATEGORY_LABELS;
+
+export type PolicyRcLabel = `reviewed_gate_${(typeof POLICY_RC_RESULTS)[number]}`;
+export const POLICY_RC_LABELS: readonly PolicyRcLabel[] = POLICY_RC_RESULTS.map(
   (id) => `reviewed_gate_${id}` as PolicyRcLabel,
 );
 
@@ -144,10 +151,6 @@ export const POLICY_RC_CLIENT_OVERRIDE_KEYS = [
   "rules_json",
 ] as const;
 
-export const POLICY_RC_ACTIONS = POLICY_PROPOSAL_ACTIONS;
-export const POLICY_RC_ACTION_LABELS = POLICY_PROPOSAL_ACTION_LABELS;
-export const POLICY_RC_RESULTS = POLICY_PROPOSAL_RESULTS;
-export const POLICY_RC_RESULT_LABELS = POLICY_PROPOSAL_RESULT_LABELS;
 export const POLICY_RC_ENVIRONMENTS = POLICY_PROPOSAL_ENVIRONMENTS;
 export const POLICY_RC_ENVIRONMENT_LABELS = POLICY_PROPOSAL_ENVIRONMENT_LABELS;
 export const POLICY_RC_PRIVATE = POLICY_PROPOSAL_PRIVATE;

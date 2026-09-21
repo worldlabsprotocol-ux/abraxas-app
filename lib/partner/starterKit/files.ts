@@ -13,7 +13,7 @@ import {
   type StarterKitRuntime,
 } from "./contract";
 import { serverlessFiles, universalHttpsFiles, wixVeloFiles, type StarterKitFile } from "./platforms";
-import type { ValidStarterKitSelection } from "./validate";
+import { eligibilityPresentationHttpsExample, eligibilityPresentationServerExample } from "@/lib/eligibilityPresentation/examples";
 
 export type { StarterKitFile };
 
@@ -74,6 +74,9 @@ ${STARTER_KIT_MINIMUM_REQUIREMENTS.map((line) => `- ${line}`).join("\n")}
 - Platform: \`${selection.platform}\`
 - Runtime: \`${selection.runtime}\`
 - Optional capabilities: ${selection.capabilities.length ? selection.capabilities.join(", ") : "none"}
+
+## Eligibility presentation
+Request a presentation from your backend, send the holder to Hosted Partner Flow, then verify the signed envelope and re-fetch \`GET /api/receipts/{id}/public\`. A presentation is never a bearer credential or automatic KYC/KYB approval.
 
 ## Private attestations
 Abraxas verifies Reclaim proofs on its own allowlisted callback. Partners never receive the raw proof, source website data, extracted parameters, or app secrets. Continue to verify the public receipt after holder consent.
@@ -732,6 +735,7 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
   const evmOnchain = selection.path === "evm_onchain_eligibility_gate"
     || selection.capabilities.includes("evm_onchain_eligibility_gate")
     || selection.platform === "evm_contract";
+  const eligibility = selection.path === "eligibility_presentation" || selection.capabilities.includes("eligibility_presentation");
   const include = { webhook, venue, payment, solana, wallet, portable, evm };
 
   const files: StarterKitFile[] = [
@@ -798,6 +802,9 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     files.push({ path: "onchain/SIGNER_LIFECYCLE.md", contents: signerLifecycleDoc() });
   }
 
-  for (const file of files) assertSafeStarterPath(file.path);
+  if (eligibility) {
+    files.push({ path: "src/lib/eligibility-presentation.ts", contents: eligibilityPresentationServerExample() });
+    files.push({ path: "ELIGIBILITY_PRESENTATION.md", contents: eligibilityPresentationHttpsExample() });
+  }
   return files;
 }
