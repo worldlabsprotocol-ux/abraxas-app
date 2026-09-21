@@ -129,9 +129,11 @@ export async function loadOrganizationEligibility(ref: string): Promise<Organiza
 }
 
 export async function findOrganizationByDerivation(hash: string): Promise<OrganizationEligibilityRecord | null> {
-  for (const record of memory.values()) {
-    if (record.derivation_hash === hash) return refresh(record);
-  }
+  let found: OrganizationEligibilityRecord | null = null;
+  memory.forEach((record) => {
+    if (!found && record.derivation_hash === hash) found = refresh(record);
+  });
+  if (found) return found;
   if (skipDurableStore()) return null;
   try {
     const sb = requireSupabaseAdmin();
@@ -174,11 +176,13 @@ export async function findOrganizationBySubjectBinding(input: {
   partner_hmac: string;
   subject_binding_hash: string;
 }): Promise<OrganizationEligibilityRecord | null> {
-  for (const record of memory.values()) {
+  let found: OrganizationEligibilityRecord | null = null;
+  memory.forEach((record) => {
+    if (found) return;
     const live = refresh(record);
     if (live.partner_hmac === input.partner_hmac && live.subject_binding_hash === input.subject_binding_hash) {
-      return live;
+      found = live;
     }
-  }
-  return null;
+  });
+  return found;
 }

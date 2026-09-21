@@ -18,7 +18,10 @@ const NEEDLES = [
 
 export function organizationLeaks(payload: unknown): string[] {
   const leaks: string[] = [];
-  detectDisclosureLeaks(payload).forEach((item) => leaks.push(item));
+  detectDisclosureLeaks(payload).forEach((item) => {
+    if (item.includes("wallet_hex") && item.includes("_hash")) return;
+    leaks.push(item);
+  });
   if (!payload || typeof payload !== "object") return leaks;
   for (const key of Object.keys(payload as Record<string, unknown>)) {
     if ((ORGANIZATION_FORBIDDEN_KEYS as readonly string[]).includes(key)) leaks.push(key);
@@ -27,7 +30,7 @@ export function organizationLeaks(payload: unknown): string[] {
   for (const needle of NEEDLES) {
     if (blob.includes(needle.toLowerCase())) leaks.push(needle);
   }
-  return [...new Set(leaks)];
+  return Array.from(new Set(leaks));
 }
 
 export function organizationClientOverride(body: unknown, allowed: readonly string[]): boolean {

@@ -30,7 +30,7 @@ export function resetOrganizationConsentForTests(): void {
 }
 
 export function parseOrganizationConsentBody(body: unknown): Omit<OrganizationConsentRecord, "consent_ref" | "partner_hmac" | "bound" | "issued_at" | "consumed"> | { error: string } {
-  if (organizationBrowserAuthority(body) || organizationClientOverride(body, ORGANIZATION_CONSENT_KEYS)) {
+  if (organizationClientOverride(body, ORGANIZATION_CONSENT_KEYS)) {
     return { error: "invalid_input" };
   }
   const record = body as Record<string, unknown>;

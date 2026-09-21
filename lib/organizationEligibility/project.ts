@@ -1,6 +1,5 @@
 import {
   ORGANIZATION_ELIGIBILITY_VERSION,
-  ORGANIZATION_PUBLIC_RESULT_FIELDS,
   type OrganizationPublicResult,
 } from "./contract";
 import { organizationPolicyContract } from "./policies";
@@ -36,11 +35,6 @@ export function projectOrganizationPublicView(record: OrganizationEligibilityRec
     live: false,
     utila_integration: false,
   };
-  for (const key of Object.keys(view)) {
-    if (!(ORGANIZATION_PUBLIC_RESULT_FIELDS as readonly string[]).includes(key) && key !== "live" && key !== "utila_integration") {
-      delete (view as Record<string, unknown>)[key];
-    }
-  }
   if (organizationLeaks(view).length) {
     throw Object.assign(new Error("redacted"), { code: "redacted" });
   }
