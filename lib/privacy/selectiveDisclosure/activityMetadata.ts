@@ -45,6 +45,8 @@ export const LAUNCHPAD_ACTIVITY_METADATA_ALLOWED_KEYS = [
   "starter_kit",
   "action_family",
   "probe",
+  "proposal_ref",
+  "lifecycle",
 ] as const;
 
 const FORBIDDEN_ACTIVITY_KEYS = [

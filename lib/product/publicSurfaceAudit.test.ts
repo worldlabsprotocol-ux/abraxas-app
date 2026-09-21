@@ -31,6 +31,7 @@ const PUBLIC_PAGES = [
   "/docs/starter-kit",
   "/docs/production-review",
   "/docs/production-credentials",
+  "/docs/policy-proposals",
   "/docs/circle-arc-testnet",
   "/verify",
   "/good-trouble",

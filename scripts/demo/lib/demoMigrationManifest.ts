@@ -482,6 +482,16 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
     notes:
       "DEMO-first atomic operator Production credential issue/rotate/revoke. One active abx_live_ key per Launchpad app. Does not change environment or activate Mainnet. Do not auto-apply from Vercel.",
   },
+  {
+    file: "096_partner_policy_proposals.sql",
+    tier: "recommended",
+    creates: ["partner_policy_proposals"],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "DEMO-first partner policy proposals and operator planning records. Does not publish catalog packs or live policies. Do not auto-apply from Vercel.",
+  },
 ];
 
 /** Map of which migration file first creates each core object. */
@@ -507,6 +517,7 @@ export const OBJECT_PROVENANCE: Record<string, string> = {
   wallet_standard_challenges: "092_wallet_standard_action_bindings.sql",
   wallet_standard_bindings: "092_wallet_standard_action_bindings.sql",
   partner_venue_action_nonces: "092_wallet_standard_action_bindings.sql",
+  partner_policy_proposals: "096_partner_policy_proposals.sql",
 };
 
 export function getDemoManifestFilenames(): string[] {

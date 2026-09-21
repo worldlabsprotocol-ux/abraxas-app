@@ -35,6 +35,13 @@ export const ADMIN_PROTOCOL_NAV_ITEMS: readonly AdminNavItem[] = [
     section: "protocol",
   },
   {
+    id: "policy-proposals",
+    href: "/admin/policy-proposals",
+    label: "Policy proposals",
+    description: "Review partner policy proposals. Accepted items are backlog only, not live catalog changes.",
+    section: "protocol",
+  },
+  {
     id: "receipts",
     href: "/admin/receipts",
     label: "Receipts",

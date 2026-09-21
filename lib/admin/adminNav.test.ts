@@ -11,11 +11,12 @@ import {
 } from "./adminNav";
 
 describe("adminNav protocol sidebar", () => {
-  it("lists the seven protocol routes in required order with Identity first", () => {
+  it("lists the protocol routes in required order with Identity first", () => {
     expect(adminNavItemIds()).toEqual([
       "identity",
       "partners",
       "partner-flow",
+      "policy-proposals",
       "receipts",
       "trust",
       "privacy",
