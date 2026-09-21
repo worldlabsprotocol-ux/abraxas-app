@@ -24,7 +24,7 @@ export interface VerificationIssuerRecord {
   status: IssuerTrustStatus;
   valid_from: string;
   valid_until: string | null;
-  docs: typeof VERIFICATION_ISSUER_TRUST_DOCS | "/docs/reusable-eligibility" | "/docs/selective-disclosure" | "/docs/wallet-standard-binding" | "/docs/partner-flow";
+  docs: typeof VERIFICATION_ISSUER_TRUST_DOCS | "/docs/reusable-eligibility" | "/docs/selective-disclosure" | "/docs/wallet-standard-binding" | "/docs/partner-flow" | "/docs/reclaim-private-attestations";
   integration: IssuerIntegrationState;
 }
 
@@ -164,7 +164,7 @@ export const VERIFICATION_ISSUER_TRUST_RECORDS: readonly VerificationIssuerRecor
     status: "review_required",
     valid_from: "2026-01-01T00:00:00.000Z",
     valid_until: null,
-    docs: VERIFICATION_ISSUER_TRUST_DOCS,
+    docs: "/docs/reclaim-private-attestations",
     integration: "planned",
   },
   {

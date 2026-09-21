@@ -24,6 +24,8 @@ import {
 } from "@/lib/partner/partnerVerifyResumeCookie";
 import { rejectReuseClientAuthority, reuseOptionForContinuation } from "@/lib/passport/reusableEligibility";
 import { resolveCompatibleReusableFact } from "@/lib/passport/reusableEligibility/qualify";
+import { holderHasAcceptedReclaim } from "@/lib/reclaimAttestation";
+import { reclaimRouteForPolicy } from "@/lib/reclaimAttestation/policyFit";
 
 export const dynamic = "force-dynamic";
 
@@ -135,6 +137,19 @@ export async function POST(request: NextRequest) {
     existingProofCompatible = resolved.ok;
   }
 
+  const reclaimRoute = reclaimRouteForPolicy(bound.stored.policyId, "sandbox");
+  const reclaimRequired = methodId === "privacy_preserving" && Boolean(reclaimRoute?.available);
+  let reclaimSessionAccepted = false;
+  if (reclaimRequired) {
+    reclaimSessionAccepted = await holderHasAcceptedReclaim({
+      holderSubject: session.session.suiAddress,
+      verifyRequest,
+      policyId: bound.stored.policyId,
+      policyVersion: bound.stored.policyVersion ?? 1,
+      environment: "sandbox",
+    });
+  }
+
   const evaluated = evaluateMethodQualification({
     methodId,
     verifyRequestId: verifyRequest,
@@ -145,6 +160,8 @@ export async function POST(request: NextRequest) {
     claimedPolicyId: typeof body.policy_id === "string" ? body.policy_id : undefined,
     claimedPolicyVersion: typeof body.policy_version === "number" ? body.policy_version : undefined,
     existingProofCompatible,
+    reclaimRequired,
+    reclaimSessionAccepted,
   });
 
   if (!evaluated.ok) {

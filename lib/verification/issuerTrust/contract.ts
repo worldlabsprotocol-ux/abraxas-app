@@ -24,7 +24,7 @@ export const ISSUER_TRUST_STATUS_LABELS: Record<IssuerTrustStatus, string> = {
   review_required: "Review required",
 };
 
-export const ISSUER_INTEGRATION_STATES = ["integrated", "planned"] as const;
+export const ISSUER_INTEGRATION_STATES = ["integrated", "integration_ready", "planned"] as const;
 export type IssuerIntegrationState = (typeof ISSUER_INTEGRATION_STATES)[number];
 
 export const ISSUER_SUBJECT_BINDINGS = [

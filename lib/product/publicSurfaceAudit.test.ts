@@ -32,6 +32,7 @@ const PUBLIC_PAGES = [
   "/docs/evm-onchain-eligibility-gate",
   "/docs/onchain-gate-deployments",
   "/docs/chain-attestation-signer-lifecycle",
+  "/docs/reclaim-private-attestations",
   "/docs/selective-disclosure",
   "/docs/starter-kit",
   "/docs/production-review",

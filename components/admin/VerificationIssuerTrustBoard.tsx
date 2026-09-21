@@ -17,17 +17,26 @@ interface TrustItem {
   integration: string;
   holder_selectable: boolean;
   current: boolean;
+  policy_applicable?: boolean;
+  docs?: string;
 }
 
 export function VerificationIssuerTrustBoard() {
   const [items, setItems] = useState<TrustItem[]>([]);
   const [error, setError] = useState("");
+  const [reclaim, setReclaim] = useState<{
+    configuration_present?: boolean;
+    integration_ready?: boolean;
+    mapping_present?: boolean;
+    docs?: string;
+  } | null>(null);
 
   const load = useCallback(async () => {
     const res = await adminFetch("/api/admin/verification-issuer-trust", { cache: "no-store" });
-    const data = await res.json() as { items?: TrustItem[]; error?: string };
+    const data = await res.json() as { items?: TrustItem[]; error?: string; reclaim?: typeof reclaim };
     if (!res.ok) throw new Error(data.error ?? "Unavailable");
     setItems(data.items ?? []);
+    setReclaim(data.reclaim ?? null);
   }, []);
 
   useEffect(() => {
@@ -43,6 +52,12 @@ export function VerificationIssuerTrustBoard() {
         {VERIFICATION_ISSUER_TRUST_NOTICE} Browser input cannot create or activate issuers.
       </p>
       {error && <p role="alert" style={{ fontFamily: FONT, color: "#f87171", fontSize: "0.8rem" }}>{error}</p>}
+      {reclaim && (
+        <p data-testid="reclaim-config-status" style={{ fontFamily: FONT, fontSize: "0.76rem", opacity: 0.8, margin: "0.75rem 0 0" }}>
+          Reclaim private attestations: {reclaim.integration_ready ? "integration ready (sandbox mapping)" : "review required until configuration is present"}.
+          {" "}Policy applicability is source-controlled. App secrets are never shown.
+        </p>
+      )}
       <div data-testid="issuer-trust-list" style={{ display: "grid", gap: "0.65rem", marginTop: "0.75rem", maxWidth: "100%" }}>
         {items.map((item) => (
           <article

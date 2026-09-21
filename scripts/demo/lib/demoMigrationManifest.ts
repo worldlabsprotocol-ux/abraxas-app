@@ -562,6 +562,16 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
     notes:
       "DEMO-first chain-attestation signer registry and partner signer-update packages. Public verifier material only. Do not auto-apply from Vercel.",
   },
+  {
+    file: "104_reclaim_private_attestation_sessions.sql",
+    tier: "recommended",
+    creates: ["reclaim_private_attestation_sessions"],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "DEMO-first Reclaim private attestation sessions with proof-digest replay protection. Opaque HMAC/lifecycle only. Do not auto-apply from Vercel.",
+  },
 ];
 
 /** Map of which migration file first creates each core object. */
@@ -597,6 +607,7 @@ export const OBJECT_PROVENANCE: Record<string, string> = {
   chain_attestation_signers: "103_chain_attestation_signer_lifecycle.sql",
   chain_attestation_signer_events: "103_chain_attestation_signer_lifecycle.sql",
   chain_attestation_signer_updates: "103_chain_attestation_signer_lifecycle.sql",
+  reclaim_private_attestation_sessions: "104_reclaim_private_attestation_sessions.sql",
 };
 
 export function getDemoManifestFilenames(): string[] {

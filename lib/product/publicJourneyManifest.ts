@@ -129,6 +129,12 @@ export const PUBLIC_JOURNEY_SURFACES = [
     file: "app/docs/chain-attestation-signer-lifecycle/page.tsx",
   },
   {
+    route: "/docs/reclaim-private-attestations",
+    purpose: "Server-only Reclaim private attestation adapter. Partners never receive the raw proof.",
+    primaryCta: { label: "Integration Studio", href: "/developers/integration-studio" },
+    file: "app/docs/reclaim-private-attestations/page.tsx",
+  },
+  {
     route: "/docs/selective-disclosure",
     purpose: "Canonical selective-disclosure boundary. Policy result only, not evidence.",
     primaryCta: { label: "Integration Studio", href: "/developers/integration-studio" },

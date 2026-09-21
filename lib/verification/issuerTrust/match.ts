@@ -14,6 +14,7 @@ import {
   VERIFICATION_ISSUER_TRUST_RECORDS,
   type VerificationIssuerRecord,
 } from "./registry";
+import { overlayReclaimIssuerRecord } from "@/lib/reclaimAttestation/issuer";
 
 export interface IssuerPlanEntry {
   issuer_ref: string;
@@ -70,7 +71,7 @@ function disclosureOk(supported: keyof typeof DISCLOSURE_RANK, required: keyof t
 
 export function isHolderSelectable(record: VerificationIssuerRecord): boolean {
   return record.status === "active"
-    && record.integration === "integrated"
+    && (record.integration === "integrated" || record.integration === "integration_ready")
     && record.method_category !== "account_login"
     && issuerRecordIsCurrent(record);
 }
@@ -104,9 +105,15 @@ function toEntry(record: VerificationIssuerRecord): IssuerPlanEntry {
   };
 }
 
+export function overlayIssuerTrustRecords(
+  records: readonly VerificationIssuerRecord[] = VERIFICATION_ISSUER_TRUST_RECORDS,
+): VerificationIssuerRecord[] {
+  return records.map(overlayReclaimIssuerRecord);
+}
+
 export function planIssuersForReleaseShape(
   shape: SanitizedReleaseShape,
-  records: readonly VerificationIssuerRecord[] = VERIFICATION_ISSUER_TRUST_RECORDS,
+  records: readonly VerificationIssuerRecord[] = overlayIssuerTrustRecords(),
   now?: Date,
 ): IssuerMethodPlan {
   const matched = records.filter((record) => matchesReleaseShape(record, shape, now));
@@ -162,18 +169,18 @@ export function planIssuersForPack(pack: PolicyPack, now?: Date): IssuerMethodPl
     mutates_compatibility_edge: false,
   };
   if (pack.id === "sandbox_economic_demo") {
-    return planIssuersForReleaseShape({ ...shape, method_category: "partner_age_check", minimum_assurance: "L1" }, VERIFICATION_ISSUER_TRUST_RECORDS, now);
+    return planIssuersForReleaseShape({ ...shape, method_category: "partner_age_check", minimum_assurance: "L1" }, overlayIssuerTrustRecords(), now);
   }
   if (pack.id === "wallet_control") {
-    return planIssuersForReleaseShape({ ...shape, method_category: "reuse_existing_proof", minimum_assurance: "L1" }, VERIFICATION_ISSUER_TRUST_RECORDS, now);
+    return planIssuersForReleaseShape({ ...shape, method_category: "reuse_existing_proof", minimum_assurance: "L1" }, overlayIssuerTrustRecords(), now);
   }
-  return planIssuersForReleaseShape(shape, VERIFICATION_ISSUER_TRUST_RECORDS, now);
+  return planIssuersForReleaseShape(shape, overlayIssuerTrustRecords(), now);
 }
 
 export function issuerTrustLeaks(payload: unknown): string[] {
   const blob = JSON.stringify(payload).toLowerCase();
   const leaks: string[] = [];
-  for (const needle of ["abx_live_", "abx_test_", "callback_url", "oauth", "id_token", "private_key", "sqlstate", "receipt_id"]) {
+  for (const needle of ["abx_live_", "abx_test_", "callback_url", "oauth", "id_token", "private_key", "sqlstate", "receipt_id", "app_secret", "extracted_parameters"]) {
     if (blob.includes(needle)) leaks.push(needle);
   }
   return leaks;
