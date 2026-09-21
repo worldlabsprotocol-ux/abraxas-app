@@ -1,12 +1,11 @@
 // FILE: lib/partner/receiptLifecycle/envelope.ts
 // Safe lifecycle envelope. Selective-disclosure serialization only.
 
-import { createHash } from "node:crypto";
+import { createHash } from "crypto";
 import { pickAllowedKeys } from "@/lib/privacy/selectiveDisclosure/enforce";
 import { detectDisclosureLeaks } from "@/lib/privacy/selectiveDisclosure/leakDetector";
 import {
   RECEIPT_LIFECYCLE_NOT_GRANT,
-  RECEIPT_LIFECYCLE_SCHEMA_VERSION,
   isReceiptLifecycleEventType,
   validityClassForLifecycleEvent,
   type ReceiptLifecycleEventType,
@@ -104,7 +103,7 @@ export function lifecycleEnvelopeLeaks(payload: unknown): string[] {
 }
 
 export function sanitizeLifecycleEnvelope(payload: ReceiptLifecycleEnvelope): ReceiptLifecycleEnvelope {
-  const picked = pickAllowedKeys(payload, RECEIPT_LIFECYCLE_ENVELOPE_KEYS) as ReceiptLifecycleEnvelope;
+  const picked = pickAllowedKeys(payload, RECEIPT_LIFECYCLE_ENVELOPE_KEYS) as unknown as ReceiptLifecycleEnvelope;
   if (!isReceiptLifecycleEventType(picked.event_type)) {
     throw Object.assign(new Error("event_type_not_supported"), { code: "event_type_not_supported" });
   }
