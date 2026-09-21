@@ -62,8 +62,20 @@ pub mod abraxas_protocol_access {
             ctx.accounts.authorization.organization_commitment == organization_commitment,
             ProtocolAccessError::OrganizationMismatch
         );
+        require!(
+            ctx.accounts.authorization.subject_hash == subject_hash,
+            ProtocolAccessError::SubjectMismatch
+        );
         if config.require_subject {
             require!(!subject_hash.iter().all(|b| *b == 0), ProtocolAccessError::SubjectRequired);
+        }
+        if config.require_institutional {
+            require!(
+                !ctx.accounts.authorization.actor_commitment.iter().all(|b| *b == 0)
+                    && !ctx.accounts.authorization.institutional_result_category.iter().all(|b| *b == 0)
+                    && !organization_commitment.iter().all(|b| *b == 0),
+                ProtocolAccessError::OrganizationMismatch
+            );
         }
 
         let until = ctx.accounts.authorization.expires_at;
@@ -211,4 +223,6 @@ pub enum ProtocolAccessError {
     Expired,
     #[msg("stale_attestation")]
     StaleAttestation,
+    #[msg("subject_mismatch")]
+    SubjectMismatch,
 }

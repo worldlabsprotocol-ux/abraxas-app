@@ -476,6 +476,61 @@ async fn v1_only_config_is_not_institutional_capable() {
     assert!(!deployed_institutional_capable(false, 2, CANONICAL_MESSAGE_LEN));
 }
 
+#[tokio::test]
+async fn v2_body_with_v1_prefix_is_rejected() {
+    let mut ctx = start().await;
+    let admin = Keypair::new();
+    let signer = Keypair::new();
+    airdrop(&mut ctx, &admin).await;
+    let fields = MessageFields::default();
+    let config = initialize(&mut ctx, &admin, institutional_params(signer.pubkey().to_bytes(), fields)).await;
+    let mut message = v2_message(fields);
+    message[OFF_PREFIX..OFF_PREFIX_HASH].copy_from_slice(PREFIX_V1);
+    let payer = ctx.payer.pubkey();
+    let err = send(
+        &mut ctx,
+        vec![ed25519_ix(&signer, &message), authorize_ix(payer, config, fields.attestation_id)],
+        &[],
+    )
+    .await
+    .unwrap_err();
+    assert!(custom_code(&err).is_some());
+}
+
+#[tokio::test]
+async fn zero_issued_at_and_zero_network_rejected() {
+    let mut ctx = start().await;
+    let admin = Keypair::new();
+    let signer = Keypair::new();
+    airdrop(&mut ctx, &admin).await;
+    let mut fields = MessageFields::default();
+    fields.issued_at = 0;
+    let config = initialize(&mut ctx, &admin, institutional_params(signer.pubkey().to_bytes(), fields)).await;
+    let err = authorize(&mut ctx, &signer, config, fields).await.unwrap_err();
+    assert!(custom_code(&err).is_some());
+}
+
+#[tokio::test]
+async fn appended_v2_bytes_rejected() {
+    let mut ctx = start().await;
+    let admin = Keypair::new();
+    let signer = Keypair::new();
+    airdrop(&mut ctx, &admin).await;
+    let fields = MessageFields::default();
+    let config = initialize(&mut ctx, &admin, institutional_params(signer.pubkey().to_bytes(), fields)).await;
+    let mut message = v2_message(fields);
+    message.push(0);
+    let payer = ctx.payer.pubkey();
+    let err = send(
+        &mut ctx,
+        vec![ed25519_ix(&signer, &message), authorize_ix(payer, config, fields.attestation_id)],
+        &[],
+    )
+    .await
+    .unwrap_err();
+    assert!(custom_code(&err).is_some());
+}
+
 #[test]
 fn programs_have_no_token_transfer_wallet_or_arbitrary_cpi() {
     let gate = include_str!("../../programs/abraxas-eligibility-gate/src/lib.rs");
