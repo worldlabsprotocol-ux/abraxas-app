@@ -17,6 +17,7 @@ export {
   projectPartner,
   handoffLeaks,
   resetHostedHandoffsForTests,
+  putHandoffForTests,
 } from "./store";
 export { runSandboxHandoffFixture } from "./fixture";
 export { hostedHandoffHttpExamples } from "./examples";

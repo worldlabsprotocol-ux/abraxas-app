@@ -13,6 +13,7 @@ import {
   parseHandoffCreateBody,
   projectPublic,
   resetHostedHandoffsForTests,
+  putHandoffForTests,
   runSandboxHandoffFixture,
 } from "./index";
 
@@ -157,12 +158,13 @@ describe("hosted partner flow handoff", () => {
   it("keeps expired created records from completing", async () => {
     const record = await createHostedHandoff({ application: app, stored, runtime: "mobile_https" });
     const expired = { ...record, expires_at: "2000-01-01T00:00:00.000Z" };
+    putHandoffForTests(expired);
     await expect(completeHostedHandoff({
       record: expired,
       partnerId: app.partner_id,
       applicationId: app.id,
       publicReceiptId: "rcpt_x",
     })).rejects.toMatchObject({ code: "not_completable" });
-    expect((await loadHandoff(record.handoff_ref))?.status).toBe("created");
+    expect((await loadHandoff(record.handoff_ref))?.status).toBe("expired");
   });
 });

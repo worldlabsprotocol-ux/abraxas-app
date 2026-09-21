@@ -39,7 +39,8 @@ X-Abraxas-Application-Id: ${P.app_id}
 
 {"runtime":"universal_https"}
 
-# Holder URL contains only verify_request. Re-fetch the public receipt with Partner Kit.
+# Holder URL contains only verify_request. Re-fetch the public receipt with Partner Kit verifyReceiptId.
+# A callback or deep link is never a grant.
 `,
     },
     {
@@ -529,6 +530,15 @@ Secrets stay in the function environment. Do not embed them in static assets.
     body: JSON.stringify({ runtime: "serverless" }),
   });
   return res.json();
+}
+
+export async function finishHandoff(handoffRef, kit) {
+  const res = await fetch(process.env.ABRAXAS_BASE_URL + "/api/v1/partner-handoff/" + handoffRef, {
+    headers: { authorization: "Bearer " + process.env.ABRAXAS_SANDBOX_API_KEY },
+  });
+  const data = await res.json();
+  if (!data.public_receipt_id) return { grant: false, reason: "not_ready" };
+  return kit.verifyReceiptId(data.public_receipt_id);
 }
 `,
     },

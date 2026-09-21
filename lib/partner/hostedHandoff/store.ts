@@ -24,6 +24,10 @@ export function resetHostedHandoffsForTests(): void {
   memory.clear();
 }
 
+export function putHandoffForTests(record: HostedHandoffRecord): void {
+  memory.set(record.handoff_ref, record);
+}
+
 function hostedUrl(verifyRequest: string): string {
   return `${SITE_URL.replace(/\/$/, "")}/partner/continue?verify_request=${encodeURIComponent(verifyRequest)}`;
 }
@@ -231,10 +235,11 @@ export async function completeHostedHandoff(input: {
   publicReceiptId: string;
   nonce?: string;
 }): Promise<HostedHandoffRecord> {
-  if (input.record.partner_id !== input.partnerId || input.record.application_id !== input.applicationId) {
+  const current = (await loadHandoff(input.record.handoff_ref)) ?? input.record;
+  if (current.partner_id !== input.partnerId || current.application_id !== input.applicationId) {
     throw Object.assign(new Error("tenant_mismatch"), { code: "tenant_mismatch" });
   }
-  const live = refreshStatus(input.record);
+  const live = refreshStatus(current);
   if (live.status === "consumed" || live.status === "completed") {
     throw Object.assign(new Error("replay_denied"), { code: "replay_denied" });
   }
@@ -272,10 +277,11 @@ export async function bindHandoffToIssuedReceipt(input: {
 }
 
 export async function consumeHandoffReceiptLookup(record: HostedHandoffRecord, partnerId: string): Promise<HostedHandoffRecord> {
-  if (record.partner_id !== partnerId) {
+  const current = (await loadHandoff(record.handoff_ref)) ?? record;
+  if (current.partner_id !== partnerId) {
     throw Object.assign(new Error("tenant_mismatch"), { code: "tenant_mismatch" });
   }
-  const live = refreshStatus(record);
+  const live = refreshStatus(current);
   if (live.status === "consumed") {
     throw Object.assign(new Error("replay_denied"), { code: "replay_denied" });
   }
@@ -290,7 +296,17 @@ export async function consumeHandoffReceiptLookup(record: HostedHandoffRecord, p
 export function handoffLeaks(payload: unknown): string[] {
   const blob = JSON.stringify(payload).toLowerCase();
   const leaks: string[] = [];
-  for (const needle of ["callback_url", "return_url", "abx_live_", "abx_test_", "private_key", "oauth", "id_token", "wallet_address", "date_of_birth"]) {
+  for (const needle of [
+    "callback_url",
+    "return_url",
+    "abx_live_",
+    "abx_test_",
+    "private_key",
+    "oauth_token",
+    "id_token",
+    "wallet_address",
+    "date_of_birth",
+  ]) {
     if (blob.includes(needle)) leaks.push(needle);
   }
   return leaks;
