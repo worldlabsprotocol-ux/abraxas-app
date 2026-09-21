@@ -10,7 +10,7 @@ export function testnetKitSafeState(input: {
   record?: OnchainGateDeploymentRecord | null;
 }): TestnetGateSafeState {
   if (input.verified || input.record?.status === "verified_sandbox") return "verified_sandbox";
-  if (input.record && input.record.status !== "verified_sandbox") return "deployment_pending_verification";
+  if (input.record) return "deployment_pending_verification";
   if (input.planned) return "ready_to_plan";
   return "not_planned";
 }

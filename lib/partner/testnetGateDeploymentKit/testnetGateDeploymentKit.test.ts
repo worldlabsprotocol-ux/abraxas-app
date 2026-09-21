@@ -228,7 +228,7 @@ describe("testnet gate deployment kit", () => {
     expect(api).not.toContain("deployTestnetGate");
     expect(api).not.toContain("forge script");
     const card = readFileSync(join(process.cwd(), "components/partner/launchpad/TestnetGateDeploymentKitCard.tsx"), "utf8");
-    expect(card.toLowerCase()).not.toContain("deploy button");
+    expect(card).not.toMatch(/<button/i);
     expect(card).not.toMatch(/onClick=\{.*deploy/);
   });
 

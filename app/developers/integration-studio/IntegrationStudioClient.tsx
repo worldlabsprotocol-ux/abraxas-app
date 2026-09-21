@@ -53,6 +53,7 @@ const PATH_LABEL: Record<IntegrationStudioPathId, string> = {
   evm_onchain_eligibility_gate: "EVM onchain eligibility gate",
   eligibility_presentation: "Request a private eligibility presentation",
   cross_chain_protocol_access: "Build a cross-chain protocol gate",
+  testnet_gate_deployment: "Human-operated testnet gate kit",
 };
 
 const body: React.CSSProperties = {

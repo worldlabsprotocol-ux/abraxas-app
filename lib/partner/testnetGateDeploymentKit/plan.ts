@@ -31,10 +31,16 @@ export function planTestnetGate(input: {
 }): { ok: true; envelope: TestnetGateKitEnvelope } | { ok: false; reason: string } {
   const net = approvedHumanTestnet(input.target);
   if (!net.ok) return net;
-  const bindings: KitBindings = { ...DEFAULT_BINDINGS };
-  for (const [key, value] of Object.entries(input.bindings ?? {})) {
-    if (value !== undefined && value !== "") (bindings as Record<string, unknown>)[key] = value;
-  }
+  const extra = input.bindings ?? {};
+  const bindings: KitBindings = {
+    ...DEFAULT_BINDINGS,
+    partner_id: extra.partner_id || DEFAULT_BINDINGS.partner_id,
+    application_id: extra.application_id || DEFAULT_BINDINGS.application_id,
+    policy_id: extra.policy_id || DEFAULT_BINDINGS.policy_id,
+    policy_version: extra.policy_version ?? DEFAULT_BINDINGS.policy_version,
+    signer_key_id: extra.signer_key_id || DEFAULT_BINDINGS.signer_key_id,
+    subject_binding_mode: extra.subject_binding_mode ?? DEFAULT_BINDINGS.subject_binding_mode,
+  };
   const hashes = hashesForApplication({
     partnerId: bindings.partner_id,
     policyId: bindings.policy_id,

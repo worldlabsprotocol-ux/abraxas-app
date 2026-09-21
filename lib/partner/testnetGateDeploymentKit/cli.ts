@@ -48,6 +48,8 @@ export async function runAbraxasGate(argv: string[], env: NodeJS.ProcessEnv = pr
 
 export async function main(argv = process.argv.slice(2)): Promise<number> {
   const result = await runAbraxasGate(argv);
-  process.stdout.write(`${JSON.stringify({ ok: result.ok, command: result.command, reason: "reason" in result ? result.reason : undefined, phase: result.envelope?.phase, live: false })}\n`);
+  const phase = result.ok ? result.envelope?.phase : undefined;
+  const reason = result.ok ? undefined : result.reason;
+  process.stdout.write(`${JSON.stringify({ ok: result.ok, command: result.command, reason, phase, live: false })}\n`);
   return result.ok ? 0 : 1;
 }
