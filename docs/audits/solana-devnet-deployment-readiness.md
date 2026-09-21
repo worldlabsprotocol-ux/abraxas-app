@@ -54,6 +54,8 @@ Executed locally (no live RPC, no deploy, no SQL apply, no Vercel mutation). Com
 
 Independent re-review (separate explore agent, read-only): C-1, C-2, H-1, H-2, H-3 **closed**. Remaining Critical/High: **0**. Agent ID `bc-5ca0e19f-25bf-5815-a2e6-35b7ba009126`.
 
+Independent security-review of **branch changes** (after remediations were committed; an earlier pass saw an empty diff): C-1, C-2, H-1, H-3 **closed**; remaining Critical/High **0**. Agent ID `bc-c7882c86-4355-5334-aaeb-136cc576fda9`.
+
 ## Findings
 
 ### Critical
