@@ -117,10 +117,17 @@ export async function verifyTestnetManifest(raw: unknown): Promise<
     const verified = await verifyEvmAgainstChain(parsed.manifest, resolveEvmAdapter());
     if (!verified.ok) return verified;
   } else {
-    const verified = await verifySolanaAgainstChain(parsed.manifest, resolveSolanaAdapter(), {
-      institutionalRequired: Boolean(envelope?.institutional?.institutional_required),
-    });
+    const verified = await verifySolanaAgainstChain(parsed.manifest, resolveSolanaAdapter());
     if (!verified.ok) return verified;
+    if (envelope?.institutional?.institutional_required) {
+      const { deriveRequireInstitutional } = await import("@/lib/partner/onchainGateDeployments/institutional");
+      const derived = deriveRequireInstitutional({
+        gateType: "solana",
+        policyId: envelope.bindings?.policy_id ?? "",
+        solanaObservation: verified.observation,
+      });
+      if (!derived.ok || !derived.require_institutional) return { ok: false, reason: "institutional_required" };
+    }
   }
   return { ok: true, manifest: parsed.manifest };
 }

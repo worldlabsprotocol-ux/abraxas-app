@@ -206,6 +206,7 @@ describe("testnet gate deployment kit", () => {
         signer_key_id: "evm-attestation-test-1",
         subject_binding_mode: "required",
         status: "verified_sandbox",
+        require_institutional: false,
         production_reviewed_at: null,
         revoked_at: null,
         created_at: "2026-09-21T00:00:00.000Z",

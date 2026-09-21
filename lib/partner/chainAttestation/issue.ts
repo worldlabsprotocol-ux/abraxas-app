@@ -270,6 +270,7 @@ export async function issueChainEligibilityAttestation(
       policyId: input.kit.options.policyId,
       policyVersion: input.kit.options.policyVersion ?? 1,
       signerKeyId: signer.signer.keyId,
+      institutionalRequired: institutional.require_institutional,
       testAdapter: input.testAdapter,
     });
     if (!bound.ok) {
@@ -379,6 +380,7 @@ export async function issueChainEligibilityAttestation(
     policyId: input.kit.options.policyId,
     policyVersion: input.kit.options.policyVersion ?? 1,
     signerKeyId: solanaSigner.signer.keyId,
+    institutionalRequired: institutional.require_institutional,
     testAdapter: input.testAdapter,
   });
   if (!solanaBound.ok) {

@@ -16,17 +16,11 @@ import {
   registerOnchainGateDeployment,
   revokeOnchainGateDeployment,
 } from "@/lib/partner/onchainGateDeployments";
-import { ONCHAIN_GATE_CLIENT_AUTHORITY_KEYS, ONCHAIN_GATE_NOT_DEPLOYER } from "@/lib/partner/onchainGateDeployments/contract";
+import { ONCHAIN_GATE_NOT_DEPLOYER } from "@/lib/partner/onchainGateDeployments/contract";
+import { launchpadRequestRejectsClientAuthority } from "@/lib/partner/onchainGateDeployments/clientAuthority";
 
 export const dynamic = "force-dynamic";
 type RouteContext = { params: { id: string } };
-
-function rejectAuthority(body: unknown): boolean {
-  if (!body || typeof body !== "object" || Array.isArray(body)) return false;
-  return Object.keys(body as Record<string, unknown>).some((key) =>
-    (ONCHAIN_GATE_CLIENT_AUTHORITY_KEYS as readonly string[]).includes(key),
-  );
-}
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
   const auth = await requireLaunchpadSession(req);
@@ -61,7 +55,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   } catch {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400);
   }
-  if (rejectAuthority(json) && !(json && typeof json === "object" && "manifest" in (json as object))) {
+  if (launchpadRequestRejectsClientAuthority(json)) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "client_override");
   }
   const rec = json && typeof json === "object" && !Array.isArray(json) ? json as Record<string, unknown> : {};

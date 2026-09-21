@@ -59,6 +59,8 @@ export default function OnchainGateDeploymentsDocsPage() {
           Only verified sandbox deployments receive sandbox chain attestations.
           Only a separately reviewed production deployment receives production chain attestations.
           Changed code hash, config digest, network, partner, policy, action, signer key, or a revoked row blocks issuance.
+          Institutional class is server-derived from the verified observation and the server-owned policy. Client require_institutional is ignored.
+          Launchpad shows either “Requires institutional V2 attestations” or “Standard eligibility gate.”
         </p>
         <p style={{ ...body, marginTop: "0.5rem" }}>
           Launchpad safe states: {ONCHAIN_GATE_SAFE_STATES.join(", ")}.

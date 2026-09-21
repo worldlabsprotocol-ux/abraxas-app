@@ -592,6 +592,16 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
     notes:
       "DEMO-first private organization and authorized-signer eligibility. Opaque HMAC refs, durable revocation. Do not auto-apply from Vercel.",
   },
+  {
+    file: "107_onchain_gate_institutional_requirement.sql",
+    tier: "recommended",
+    creates: [],
+    alters: ["onchain_gate_deployments.require_institutional"],
+    seeds: [],
+    extensions: [],
+    notes:
+      "DEMO-first immutable server-derived institutional requirement on verified gate deployments. Safe boolean only. Do not auto-apply from Vercel.",
+  },
 ];
 
 /** Map of which migration file first creates each core object. */

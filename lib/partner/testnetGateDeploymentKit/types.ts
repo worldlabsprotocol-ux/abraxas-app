@@ -82,6 +82,9 @@ export interface TestnetGateKitEnvelope {
 
 export interface TestnetReadinessReport {
   deployment_verified: boolean;
+  require_institutional: boolean;
+  institutional_class: "institutional_v2" | "standard";
+  institutional_label: string;
   signer_lifecycle_matches: boolean;
   partner_policy_action_match: boolean;
   replay_protection: boolean;
@@ -100,6 +103,8 @@ export interface OperatorHandoff {
   broadcast: false;
   cluster: "solana_devnet" | "evm_sepolia";
   require_institutional: true;
+  institutional_class: "institutional_v2";
+  institutional_label: string;
   expected_program_ids?: {
     eligibility_gate: string;
     protocol_access: string;

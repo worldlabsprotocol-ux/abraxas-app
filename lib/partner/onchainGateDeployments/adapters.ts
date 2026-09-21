@@ -5,6 +5,7 @@ import type { EvmDeploymentManifest, SolanaDeploymentManifest } from "./types";
 export interface EvmChainObservation {
   codeHash: `0x${string}`;
   configDigest: `0x${string}`;
+  requireInstitutional?: boolean;
 }
 
 export interface SolanaChainObservation {
@@ -162,7 +163,7 @@ export function resolveSolanaAdapter(override?: SolanaVerificationAdapter | null
 export async function verifyEvmAgainstChain(
   manifest: EvmDeploymentManifest,
   adapter: EvmVerificationAdapter | null,
-): Promise<{ ok: true } | { ok: false; reason: OnchainGateSafeReason }> {
+): Promise<{ ok: true; observation: EvmChainObservation } | { ok: false; reason: OnchainGateSafeReason }> {
   if (!adapter) return { ok: false, reason: "deployment_verification_unavailable" };
   const observed = await adapter.observe(manifest);
   if ("unavailable" in observed) return { ok: false, reason: "deployment_verification_unavailable" };
@@ -172,7 +173,7 @@ export async function verifyEvmAgainstChain(
   if (observed.configDigest.toLowerCase() !== manifest.config_digest.toLowerCase()) {
     return { ok: false, reason: "config_digest_mismatch" };
   }
-  return { ok: true };
+  return { ok: true, observation: observed };
 }
 
 export function solanaObservationIsV1Only(observed: SolanaChainObservation): boolean {
@@ -200,8 +201,7 @@ export function solanaObservationHasV2InstitutionalCapability(observed: SolanaCh
 export async function verifySolanaAgainstChain(
   manifest: SolanaDeploymentManifest,
   adapter: SolanaVerificationAdapter | null,
-  options?: { institutionalRequired?: boolean },
-): Promise<{ ok: true } | { ok: false; reason: OnchainGateSafeReason }> {
+): Promise<{ ok: true; observation: SolanaChainObservation } | { ok: false; reason: OnchainGateSafeReason }> {
   if (!adapter) return { ok: false, reason: "deployment_verification_unavailable" };
   const observed = await adapter.observe(manifest);
   if ("unavailable" in observed) return { ok: false, reason: "deployment_verification_unavailable" };
@@ -213,10 +213,5 @@ export async function verifySolanaAgainstChain(
   if (observed.configDigest.toLowerCase() !== manifest.config_digest.toLowerCase()) {
     return { ok: false, reason: "config_digest_mismatch" };
   }
-  if (options?.institutionalRequired) {
-    if (solanaObservationIsV1Only(observed) || !solanaObservationHasV2InstitutionalCapability(observed)) {
-      return { ok: false, reason: "institutional_required" };
-    }
-  }
-  return { ok: true };
+  return { ok: true, observation: observed };
 }

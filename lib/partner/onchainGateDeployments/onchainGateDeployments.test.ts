@@ -238,12 +238,39 @@ describe("verified onchain gate deployments", () => {
   });
 
   it("rejects institutional register against a V1-only Solana observation", async () => {
-    const manifest = solanaManifest();
+    const hashes = hashesForApplication({
+      partnerId: EVM_REF_PARTNER_ID,
+      policyId: "organization_eligible",
+      policyVersion: 1,
+      actionType: "partner_protocol_action",
+      actionScope: "sandbox:partner_protocol",
+      environment: "sandbox",
+      signerKeyId: "solana-attestation-test-1",
+    });
+    const program_digest = (`0x${"cd".repeat(32)}`) as `0x${string}`;
+    const config_digest = expectedSolanaConfigDigest({
+      programId: PROGRAM,
+      gateConfigPda: PDA,
+      programDigest: program_digest,
+      partnerHash: hashes.partner_hash,
+      policyHash: hashes.policy_hash,
+      actionHash: hashes.action_hash,
+      environment: hashes.environment_hash,
+      signerKeyId: "solana-attestation-test-1",
+      subjectBindingMode: "optional",
+    });
+    const manifest = solanaManifest({
+      partner_hash: hashes.partner_hash,
+      policy_hash: hashes.policy_hash,
+      action_hash: hashes.action_hash,
+      program_digest,
+      config_digest,
+    });
     setLocalSolanaProgramTestFixture(PROGRAM, PDA, {
       programId: PROGRAM,
       gateConfigPda: PDA,
-      programDigest: manifest.program_digest as `0x${string}`,
-      configDigest: manifest.config_digest as `0x${string}`,
+      programDigest: program_digest,
+      configDigest: config_digest,
       canonicalMessageLen: 372,
       schemaVersion: 1,
       requireInstitutional: false,
@@ -252,11 +279,10 @@ describe("verified onchain gate deployments", () => {
     const miss = await registerOnchainGateDeployment({
       partnerId: EVM_REF_PARTNER_ID,
       applicationId: "app-sol-v1",
-      policyId: EVM_REF_POLICY_ID,
+      policyId: "organization_eligible",
       policyVersion: 1,
       appEnvironment: "sandbox",
       manifest,
-      institutionalRequired: true,
     });
     expect(miss.ok).toBe(false);
     if (!miss.ok) expect(miss.reason).toBe("institutional_required");
@@ -480,6 +506,10 @@ describe("verified onchain gate deployments", () => {
     expect(sql).toContain("DEMO-first");
     expect(sql).toContain("service_role");
     expect(sql).not.toMatch(/rpc_url|private_key|usdc|circle wallet/i);
+    const inst = readFileSync(join(process.cwd(), "supabase/migrations/107_onchain_gate_institutional_requirement.sql"), "utf8");
+    expect(inst).toContain("DEMO-first");
+    expect(inst).toContain("require_institutional");
+    expect(inst).not.toMatch(/organization_ref|actor_ref|rpc_url|private_key/i);
   });
 
   it("ships starter kit placeholders and docs without live RPC", () => {
@@ -536,5 +566,267 @@ describe("verified onchain gate deployments", () => {
     });
     expect(denied.ok).toBe(false);
     if (!denied.ok) expect(denied.reason).toBe("deployment_not_verified");
+  });
+
+  it("derives institutional class from V2 observation and ignores client-forged flags", async () => {
+    const { launchpadRequestRejectsClientAuthority } = await import("@/lib/partner/onchainGateDeployments/clientAuthority");
+    const { onchainGateLaunchpadReadiness } = await import("@/lib/partner/onchainGateDeployments/readiness");
+    const { evaluateConformance } = await import("@/lib/partner/onchainVerifierConformance/verify");
+    const { bindIssuanceToVerifiedDeployment } = await import("@/lib/partner/onchainGateDeployments/bindIssuance");
+    const { INSTITUTIONAL_V2_LABEL, STANDARD_GATE_LABEL } = await import("@/lib/partner/onchainGateDeployments/institutional");
+
+    expect(launchpadRequestRejectsClientAuthority({
+      manifest: solanaManifest(),
+      require_institutional: true,
+    })).toBe(true);
+    expect(launchpadRequestRejectsClientAuthority({
+      institutionalRequired: false,
+      manifest: {},
+    })).toBe(true);
+    expect(launchpadRequestRejectsClientAuthority({ manifest: solanaManifest() })).toBe(false);
+
+    const hashes = hashesForApplication({
+      partnerId: EVM_REF_PARTNER_ID,
+      policyId: "organization_eligible",
+      policyVersion: 1,
+      actionType: "partner_protocol_action",
+      actionScope: "sandbox:partner_protocol",
+      environment: "sandbox",
+      signerKeyId: "solana-attestation-test-1",
+    });
+    const program_digest = (`0x${"cd".repeat(32)}`) as `0x${string}`;
+    const config_digest = expectedSolanaConfigDigest({
+      programId: PROGRAM,
+      gateConfigPda: PDA,
+      programDigest: program_digest,
+      partnerHash: hashes.partner_hash,
+      policyHash: hashes.policy_hash,
+      actionHash: hashes.action_hash,
+      environment: hashes.environment_hash,
+      signerKeyId: "solana-attestation-test-1",
+      subjectBindingMode: "optional",
+    });
+    const institutionalManifest = solanaManifest({
+      partner_hash: hashes.partner_hash,
+      policy_hash: hashes.policy_hash,
+      action_hash: hashes.action_hash,
+      program_digest,
+      config_digest,
+    });
+    const v2Observation = {
+      programId: PROGRAM,
+      gateConfigPda: PDA,
+      programDigest: program_digest,
+      configDigest: config_digest,
+      canonicalMessageLen: 468,
+      schemaVersion: 2,
+      requireInstitutional: true,
+      institutionalCapable: true,
+    };
+    setLocalSolanaProgramTestFixture(PROGRAM, PDA, v2Observation);
+    const registered = await registerOnchainGateDeployment({
+      partnerId: EVM_REF_PARTNER_ID,
+      applicationId: "app-v2-inst",
+      policyId: "organization_eligible",
+      policyVersion: 1,
+      appEnvironment: "sandbox",
+      manifest: institutionalManifest,
+    });
+    expect(registered.ok).toBe(true);
+    if (!registered.ok) return;
+    expect(registered.record.require_institutional).toBe(true);
+    expect(registered.public.institutional_class).toBe("institutional_v2");
+    expect(registered.public.institutional_label).toBe(INSTITUTIONAL_V2_LABEL);
+    expect(registered.public).not.toHaveProperty("organization_commitment");
+
+    const launchpad = onchainGateLaunchpadReadiness([registered.record]);
+    expect(launchpad.institutional_class).toBe("institutional_v2");
+    expect(launchpad.institutional_label).toBe(INSTITUTIONAL_V2_LABEL);
+    expect(onchainGatePayloadLeaks(launchpad)).toEqual([]);
+
+    const conformance = evaluateConformance({
+      raw: institutionalManifest,
+      receiptRefetched: true,
+      solanaObservation: v2Observation,
+    });
+    expect(conformance.institutional_class).toBe("institutional_v2");
+    expect(conformance.institutional_label).toBe(INSTITUTIONAL_V2_LABEL);
+    expect(conformance.require_institutional).toBe(true);
+
+    const issuanceOk = await bindIssuanceToVerifiedDeployment({
+      partnerId: EVM_REF_PARTNER_ID,
+      applicationId: "app-v2-inst",
+      deploymentRef: registered.record.deployment_ref,
+      networkId: "solana_devnet",
+      actionType: "partner_protocol_action",
+      actionScope: "sandbox:partner_protocol",
+      kitEnvironment: "sandbox",
+      policyId: "organization_eligible",
+      policyVersion: 1,
+      signerKeyId: "solana-attestation-test-1",
+      institutionalRequired: true,
+    });
+    expect(issuanceOk.ok).toBe(true);
+
+    const crossClass = await bindIssuanceToVerifiedDeployment({
+      partnerId: EVM_REF_PARTNER_ID,
+      applicationId: "app-v2-inst",
+      deploymentRef: registered.record.deployment_ref,
+      networkId: "solana_devnet",
+      actionType: "partner_protocol_action",
+      actionScope: "sandbox:partner_protocol",
+      kitEnvironment: "sandbox",
+      policyId: "organization_eligible",
+      policyVersion: 1,
+      signerKeyId: "solana-attestation-test-1",
+      institutionalRequired: false,
+    });
+    expect(crossClass.ok).toBe(false);
+    if (!crossClass.ok) expect(crossClass.reason).toBe("institutional_required");
+
+    const standard = solanaManifest();
+    setLocalSolanaProgramTestFixture(PROGRAM, PDA, {
+      programId: PROGRAM,
+      gateConfigPda: PDA,
+      programDigest: standard.program_digest as `0x${string}`,
+      configDigest: standard.config_digest as `0x${string}`,
+    });
+    const standardReg = await registerOnchainGateDeployment({
+      partnerId: EVM_REF_PARTNER_ID,
+      applicationId: "app-std",
+      policyId: EVM_REF_POLICY_ID,
+      policyVersion: 1,
+      appEnvironment: "sandbox",
+      manifest: standard,
+    });
+    expect(standardReg.ok).toBe(true);
+    if (!standardReg.ok) return;
+    expect(standardReg.record.require_institutional).toBe(false);
+    expect(standardReg.public.institutional_label).toBe(STANDARD_GATE_LABEL);
+    const instAgainstStd = await bindIssuanceToVerifiedDeployment({
+      partnerId: EVM_REF_PARTNER_ID,
+      applicationId: "app-std",
+      deploymentRef: standardReg.record.deployment_ref,
+      networkId: "solana_devnet",
+      actionType: "partner_protocol_action",
+      actionScope: "sandbox:partner_protocol",
+      kitEnvironment: "sandbox",
+      policyId: EVM_REF_POLICY_ID,
+      policyVersion: 1,
+      signerKeyId: "solana-attestation-test-1",
+      institutionalRequired: true,
+    });
+    expect(instAgainstStd.ok).toBe(false);
+
+    const crossTenant = await bindIssuanceToVerifiedDeployment({
+      partnerId: "other-tenant",
+      applicationId: "app-v2-inst",
+      deploymentRef: registered.record.deployment_ref,
+      networkId: "solana_devnet",
+      actionType: "partner_protocol_action",
+      actionScope: "sandbox:partner_protocol",
+      kitEnvironment: "sandbox",
+      policyId: "organization_eligible",
+      policyVersion: 1,
+      signerKeyId: "solana-attestation-test-1",
+      institutionalRequired: true,
+    });
+    expect(crossTenant.ok).toBe(false);
+
+    const crossApp = await bindIssuanceToVerifiedDeployment({
+      partnerId: EVM_REF_PARTNER_ID,
+      applicationId: "app-other",
+      deploymentRef: registered.record.deployment_ref,
+      networkId: "solana_devnet",
+      actionType: "partner_protocol_action",
+      actionScope: "sandbox:partner_protocol",
+      kitEnvironment: "sandbox",
+      policyId: "organization_eligible",
+      policyVersion: 1,
+      signerKeyId: "solana-attestation-test-1",
+      institutionalRequired: true,
+    });
+    expect(crossApp.ok).toBe(false);
+
+    const policyMiss = await bindIssuanceToVerifiedDeployment({
+      partnerId: EVM_REF_PARTNER_ID,
+      applicationId: "app-v2-inst",
+      deploymentRef: registered.record.deployment_ref,
+      networkId: "solana_devnet",
+      actionType: "partner_protocol_action",
+      actionScope: "sandbox:partner_protocol",
+      kitEnvironment: "sandbox",
+      policyId: "organization_eligible",
+      policyVersion: 2,
+      signerKeyId: "solana-attestation-test-1",
+      institutionalRequired: true,
+    });
+    expect(policyMiss.ok).toBe(false);
+
+    const actionMiss = await bindIssuanceToVerifiedDeployment({
+      partnerId: EVM_REF_PARTNER_ID,
+      applicationId: "app-v2-inst",
+      deploymentRef: registered.record.deployment_ref,
+      networkId: "solana_devnet",
+      actionType: "partner_protocol_action",
+      actionScope: "sandbox:other",
+      kitEnvironment: "sandbox",
+      policyId: "organization_eligible",
+      policyVersion: 1,
+      signerKeyId: "solana-attestation-test-1",
+      institutionalRequired: true,
+    });
+    expect(actionMiss.ok).toBe(false);
+
+    const envMiss = await bindIssuanceToVerifiedDeployment({
+      partnerId: EVM_REF_PARTNER_ID,
+      applicationId: "app-v2-inst",
+      deploymentRef: registered.record.deployment_ref,
+      networkId: "solana_devnet",
+      actionType: "partner_protocol_action",
+      actionScope: "sandbox:partner_protocol",
+      kitEnvironment: "production",
+      policyId: "organization_eligible",
+      policyVersion: 1,
+      signerKeyId: "solana-attestation-test-1",
+      institutionalRequired: true,
+    });
+    expect(envMiss.ok).toBe(false);
+
+    const signerMiss = await bindIssuanceToVerifiedDeployment({
+      partnerId: EVM_REF_PARTNER_ID,
+      applicationId: "app-v2-inst",
+      deploymentRef: registered.record.deployment_ref,
+      networkId: "solana_devnet",
+      actionType: "partner_protocol_action",
+      actionScope: "sandbox:partner_protocol",
+      kitEnvironment: "sandbox",
+      policyId: "organization_eligible",
+      policyVersion: 1,
+      signerKeyId: "stale-signer",
+      institutionalRequired: true,
+    });
+    expect(signerMiss.ok).toBe(false);
+
+    await revokeOnchainGateDeployment({
+      partnerId: EVM_REF_PARTNER_ID,
+      applicationId: "app-v2-inst",
+      deploymentRef: registered.record.deployment_ref,
+    });
+    const revoked = await bindIssuanceToVerifiedDeployment({
+      partnerId: EVM_REF_PARTNER_ID,
+      applicationId: "app-v2-inst",
+      deploymentRef: registered.record.deployment_ref,
+      networkId: "solana_devnet",
+      actionType: "partner_protocol_action",
+      actionScope: "sandbox:partner_protocol",
+      kitEnvironment: "sandbox",
+      policyId: "organization_eligible",
+      policyVersion: 1,
+      signerKeyId: "solana-attestation-test-1",
+      institutionalRequired: true,
+    });
+    expect(revoked.ok).toBe(false);
+    if (!revoked.ok) expect(revoked.reason).toBe("deployment_revoked");
   });
 });

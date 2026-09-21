@@ -1,3 +1,4 @@
+import { institutionalClassFromFlag, institutionalLabel } from "@/lib/partner/onchainGateDeployments/institutional";
 import { getNetworkCapability } from "@/lib/partner/networkCapability/registry";
 import { NETWORK_RECEIPT_REQUIREMENT, NETWORK_REPLAY_REQUIREMENT } from "@/lib/partner/networkCapability/types";
 import type { OnchainGateDeploymentRecord } from "@/lib/partner/onchainGateDeployments/types";
@@ -47,8 +48,12 @@ export function testnetReadinessReport(input: {
   const receipt = entry?.receipt_requirement === NETWORK_RECEIPT_REQUIREMENT;
   if (!receipt) reasons.push("receipt_requirement_missing");
   if (production) reasons.push("production_mainnet_posture");
+  const requireInstitutional = record?.require_institutional === true;
   return {
     deployment_verified: deploymentVerified,
+    require_institutional: requireInstitutional,
+    institutional_class: institutionalClassFromFlag(requireInstitutional),
+    institutional_label: institutionalLabel(requireInstitutional),
     signer_lifecycle_matches: signerOk,
     partner_policy_action_match: bindingsOk,
     replay_protection: Boolean(replay),

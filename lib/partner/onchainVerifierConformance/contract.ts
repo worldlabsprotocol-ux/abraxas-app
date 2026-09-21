@@ -79,6 +79,9 @@ export const ONCHAIN_VERIFIER_CONFORMANCE_REPORT_KEYS = [
   "signer_key_id",
   "reasons",
   "file_kind",
+  "require_institutional",
+  "institutional_class",
+  "institutional_label",
   "live",
   "from_browser",
 ] as const;

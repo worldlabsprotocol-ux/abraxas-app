@@ -1,3 +1,4 @@
+import { INSTITUTIONAL_V2_LABEL } from "@/lib/partner/onchainGateDeployments/institutional";
 import { LOCALNET_SOLANA_PROGRAM_IDS } from "./contract";
 import type { OperatorHandoff, TestnetGateKitEnvelope } from "./types";
 
@@ -8,6 +9,8 @@ export function operatorHandoffFromPlan(envelope: TestnetGateKitEnvelope): Opera
     broadcast: false,
     cluster: solana ? "solana_devnet" : "evm_sepolia",
     require_institutional: true,
+    institutional_class: "institutional_v2",
+    institutional_label: INSTITUTIONAL_V2_LABEL,
     expected_program_ids: solana
       ? {
           eligibility_gate: LOCALNET_SOLANA_PROGRAM_IDS.abraxas_eligibility_gate,

@@ -1,4 +1,5 @@
 import type { OnchainGateSafeState } from "./contract";
+import { institutionalClassFromFlag, institutionalLabel } from "./institutional";
 import type { OnchainGateDeploymentRecord, OnchainGatePublicView } from "./types";
 
 export function safeStateFromRecord(record: OnchainGateDeploymentRecord | null): OnchainGateSafeState {
@@ -34,6 +35,9 @@ export function projectOnchainGatePublic(record: OnchainGateDeploymentRecord): O
     subject_binding_mode: record.subject_binding_mode,
     status: record.status,
     safe_status: safeStateFromRecord(record),
+    require_institutional: record.require_institutional === true,
+    institutional_class: institutionalClassFromFlag(record.require_institutional === true),
+    institutional_label: institutionalLabel(record.require_institutional === true),
     live: false,
     deploys: false,
     circle_settlement: false,
