@@ -38,10 +38,13 @@ export default function ReclaimPrivateAttestationsDocsPage() {
       </ContentCard>
       <ContentCard title="Backend callback contract">
         <p style={body}>
-          Reclaim posts to the allowlisted Abraxas route <code>/api/reclaim/callback</code>. Partners
-          never host this callback and never receive the raw proof. Session context is an opaque
-          Abraxas session reference. The browser receives only the signed request configuration
-          needed to launch the provider flow. App secrets stay on the server.
+          Reclaim posts to Abraxas <code>/api/reclaim/callback</code> on the validated runtime origin:
+          DEMO uses the isolated demo host, and Production uses the public product host. The server
+          derives that origin from <code>ABRAXAS_RUNTIME_ENV</code> and the configured app/issuer
+          origin. Partners never host this callback. A browser, partner, or request parameter cannot
+          choose the callback URL. Session context is an opaque Abraxas session reference. The
+          browser receives only the signed request configuration needed to launch the provider flow.
+          App secrets stay on the server.
         </p>
       </ContentCard>
       <ContentCard title="What is persisted">

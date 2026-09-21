@@ -7,12 +7,15 @@ import { VERIFICATION_ISSUER_TRUST_RECORDS } from "@/lib/verification/issuerTrus
 import {
   acceptReclaimCallback,
   createReclaimSession,
+  findAcceptedReclaimSession,
   forceReclaimStoreUnavailableForTests,
+  putReclaimSessionForTests,
   reclaimCallbackAllowlisted,
   reclaimCallbackUrl,
   reclaimIsIntegrationReady,
   reclaimPayloadLeaks,
   resetReclaimSessionsForTests,
+  resolveReclaimRuntime,
   setReclaimSdkAdapterForTests,
 } from "@/lib/reclaimAttestation";
 import { RECLAIM_SANDBOX_MAPPING } from "@/lib/reclaimAttestation/mapping";
@@ -21,11 +24,11 @@ import { overlayReclaimIssuerRecord } from "@/lib/reclaimAttestation/issuer";
 
 if (!process.env.NEXTAUTH_SECRET?.trim()) process.env.NEXTAUTH_SECRET = "reclaim-attestation-test-secret";
 
-let lastContext = { address: "", message: "" };
+let lastContext = { address: "", message: "", callbackUrl: "" };
 
 const sdk: ReclaimSdkAdapter = {
   async createRequest(input) {
-    lastContext = { address: input.contextAddress, message: input.sessionRef };
+    lastContext = { address: input.contextAddress, message: input.sessionRef, callbackUrl: input.callbackUrl };
     return {
       requestConfig: JSON.stringify({
         providerId: input.providerId,
@@ -69,19 +72,35 @@ const createInput = {
   environment: "sandbox" as const,
 };
 
+function bindProductionRuntime(): void {
+  process.env.ABRAXAS_RUNTIME_ENV = "production";
+  process.env.NEXT_PUBLIC_APP_URL = "https://abraxasworld.xyz";
+  delete process.env.ABRAXAS_ISSUER_URL;
+}
+
+function bindDemoRuntime(): void {
+  process.env.ABRAXAS_RUNTIME_ENV = "demo";
+  process.env.NEXT_PUBLIC_APP_URL = "https://demo.abraxasworld.xyz";
+  delete process.env.ABRAXAS_ISSUER_URL;
+}
+
 describe("reclaim private attestation adapter", () => {
   beforeEach(() => {
     resetReclaimSessionsForTests();
     setReclaimSdkAdapterForTests(sdk);
     process.env.RECLAIMPROTOCOL_APP_ID = "test-app-id";
     process.env.RECLAIMPROTOCOL_APP_SECRET = "test-app-secret";
-    lastContext = { address: "", message: "" };
+    bindProductionRuntime();
+    lastContext = { address: "", message: "", callbackUrl: "" };
   });
 
   afterEach(() => {
     setReclaimSdkAdapterForTests(null);
     delete process.env.RECLAIMPROTOCOL_APP_ID;
     delete process.env.RECLAIMPROTOCOL_APP_SECRET;
+    delete process.env.ABRAXAS_RUNTIME_ENV;
+    delete process.env.NEXT_PUBLIC_APP_URL;
+    delete process.env.ABRAXAS_ISSUER_URL;
     resetReclaimSessionsForTests();
   });
 
@@ -90,7 +109,8 @@ describe("reclaim private attestation adapter", () => {
     expect(created.ok).toBe(true);
     if (!created.ok) return;
     expect(created.browser.session_ref).toMatch(/^rpa_/);
-    expect(JSON.stringify(created.browser)).not.toMatch(/test-app-secret|app_secret|email|wallet|callback_url|eligible/);
+    expect(lastContext.callbackUrl).toBe("https://abraxasworld.xyz/api/reclaim/callback");
+    expect(JSON.stringify(created.browser)).not.toMatch(/test-app-secret|app_secret|email|wallet|callback_url|abraxasworld\.xyz\/api\/reclaim\/callback|eligible/);
     expect(reclaimPayloadLeaks(created.browser)).toEqual([]);
     expect(created.record.issued_receipt).toBe(false);
     expect(created.record.provider_id).toBe(RECLAIM_SANDBOX_MAPPING.provider_id);
@@ -98,10 +118,28 @@ describe("reclaim private attestation adapter", () => {
     expect(lastContext.address.startsWith("0x")).toBe(true);
   });
 
-  it("allowlists only the Abraxas HTTPS callback", () => {
+  it("allowlists only the runtime-bound Abraxas HTTPS callback", () => {
+    const production = resolveReclaimRuntime();
+    expect(production.ok).toBe(true);
+    if (production.ok) expect(production.runtime).toBe("production");
+    expect(reclaimCallbackUrl()).toBe("https://abraxasworld.xyz/api/reclaim/callback");
     expect(reclaimCallbackAllowlisted(reclaimCallbackUrl())).toBe(true);
+    expect(reclaimCallbackAllowlisted("https://demo.abraxasworld.xyz/api/reclaim/callback")).toBe(false);
     expect(reclaimCallbackAllowlisted("https://evil.example/api/reclaim/callback")).toBe(false);
     expect(reclaimCallbackAllowlisted("http://abraxasworld.xyz/api/reclaim/callback")).toBe(false);
+
+    bindDemoRuntime();
+    const demo = resolveReclaimRuntime();
+    expect(demo.ok).toBe(true);
+    if (demo.ok) expect(demo.runtime).toBe("demo");
+    expect(reclaimCallbackUrl()).toBe("https://demo.abraxasworld.xyz/api/reclaim/callback");
+    expect(reclaimCallbackAllowlisted("https://abraxasworld.xyz/api/reclaim/callback")).toBe(false);
+    expect(reclaimCallbackAllowlisted("https://demo.abraxasworld.xyz/api/reclaim/callback")).toBe(true);
+
+    process.env.ABRAXAS_RUNTIME_ENV = "preview";
+    expect(resolveReclaimRuntime().ok).toBe(false);
+    expect(reclaimCallbackUrl()).toBeNull();
+    expect(reclaimCallbackAllowlisted("https://abraxasworld.xyz/api/reclaim/callback")).toBe(false);
   });
 
   it("accepts a valid proof with exact provider, version, context, and TEE", async () => {
@@ -244,6 +282,83 @@ describe("reclaim private attestation adapter", () => {
     const source = readFileSync(join(process.cwd(), "lib/reclaimAttestation/verify.ts"), "utf8");
     expect(source).not.toMatch(/circle|mainnet|broadcast|createReceipt|walletconnect/i);
     expect(created.record.issued_receipt).toBe(false);
+  });
+
+  it("rejects DEMO/Production origin mismatch and user-controlled callback input", async () => {
+    bindDemoRuntime();
+    const created = await createReclaimSession(createInput);
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+    expect(lastContext.callbackUrl).toBe("https://demo.abraxasworld.xyz/api/reclaim/callback");
+    expect(JSON.stringify(created.browser)).not.toMatch(/callback_url|demo\.abraxasworld\.xyz\/api\/reclaim\/callback/);
+
+    bindProductionRuntime();
+    const crossed = await acceptReclaimCallback({ proofs: proofFor() });
+    expect(crossed.ok).toBe(false);
+    if (crossed.ok) return;
+    expect(crossed.code).toBe("reclaim_origin_mismatch");
+
+    bindDemoRuntime();
+    const wrongHost = await acceptReclaimCallback({
+      proofs: proofFor(),
+      request: new Request("https://abraxasworld.xyz/api/reclaim/callback", {
+        method: "POST",
+        headers: { host: "abraxasworld.xyz" },
+      }),
+    });
+    expect(wrongHost.ok).toBe(false);
+    if (wrongHost.ok) return;
+    expect(wrongHost.code).toBe("reclaim_origin_mismatch");
+
+    process.env.NEXT_PUBLIC_APP_URL = "https://evil.example";
+    expect(resolveReclaimRuntime().ok).toBe(false);
+  });
+
+  it("finds an accepted in-memory session without Map iterator helpers", async () => {
+    putReclaimSessionForTests({
+      session_ref: "rpa_memory_lookup",
+      holder_hmac: "holder-hmac",
+      verify_request_hmac: "verify-hmac",
+      policy_hmac: "policy-hmac",
+      policy_id: "partner-age_21_retail-v1",
+      policy_version: 1,
+      method_category: "privacy_preserving",
+      result_class: "age_21",
+      assurance_level: "L1",
+      environment: "sandbox",
+      mapping_id: "reclaim.sandbox.age_gate",
+      provider_id: "reclaim-sandbox-http-provider",
+      provider_version: "1",
+      nonce_hash: "nonce-hmac",
+      context_hmac: "context-hmac",
+      callback_ref: "rcb_test",
+      status: "accepted",
+      proof_digest: "digest-1",
+      issued_at: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 60_000).toISOString(),
+      accepted_at: new Date().toISOString(),
+      cancelled_at: null,
+      issued_receipt: false,
+    });
+    const found = await findAcceptedReclaimSession({
+      holderHmac: "holder-hmac",
+      verifyRequestHmac: "verify-hmac",
+      policyHmac: "policy-hmac",
+      environment: "sandbox",
+    });
+    expect(found?.session_ref).toBe("rpa_memory_lookup");
+    expect(found?.status).toBe("accepted");
+    expect(await findAcceptedReclaimSession({
+      holderHmac: "holder-hmac",
+      verifyRequestHmac: "verify-hmac",
+      policyHmac: "policy-hmac",
+      environment: "production",
+    })).toBeNull();
+
+    const storeSource = readFileSync(join(process.cwd(), "lib/reclaimAttestation/store.ts"), "utf8");
+    expect(storeSource).not.toMatch(/Array\.from\(memory/);
+    expect(storeSource).not.toMatch(/\[\.\.\.memory\.values\(\)\]/);
+    expect(storeSource).not.toMatch(/for\s*\(\s*(const|let|var)\s+\w+\s+of\s+memory/);
   });
 
   it("ships DEMO-first migration 104 with RLS and replay digest", () => {

@@ -203,6 +203,7 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
       docs: "/docs/reclaim-private-attestations",
       callback_path: "/api/reclaim/callback",
       partner_hosts_callback: false,
+      origin_bound: true,
       receives_raw_proof: false,
       app_secret_in_browser: false,
     },

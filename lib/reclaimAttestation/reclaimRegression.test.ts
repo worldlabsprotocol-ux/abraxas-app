@@ -15,7 +15,8 @@ describe("reclaim adapter regressions", () => {
     expect(plan.methods.some((method) => method.id === "privacy_preserving")).toBe(true);
 
     const studio = studioPublicCatalog();
-    expect(studio.reclaim_private_attestations.receives_raw_proof).toBe(false);
+    expect(studio.reclaim_private_attestations.origin_bound).toBe(true);
+    expect(JSON.stringify(studio.reclaim_private_attestations)).not.toMatch(/https:\/\/.*\/api\/reclaim\/callback/);
     expect(studio.reclaim_private_attestations.app_secret_in_browser).toBe(false);
     expect(studio.selective_disclosure.notice).toBe(SELECTIVE_DISCLOSURE_NOTICE);
     expect(starterKitPublicCatalog().issues_receipts).toBe(false);
@@ -24,6 +25,9 @@ describe("reclaim adapter regressions", () => {
     expect(registry.reclaim.google_is_eligibility).toBe(false);
     expect(registry.activates_mainnet).toBe(false);
 
+    const docs = readFileSync(join(process.cwd(), "app/docs/reclaim-private-attestations/page.tsx"), "utf8");
+    expect(docs).toMatch(/DEMO uses the isolated demo host/);
+    expect(docs).toMatch(/cannot\s+choose the callback URL/);
     const kitReadme = readFileSync(join(process.cwd(), "lib/partner/starterKit/files.ts"), "utf8");
     expect(kitReadme).toMatch(/never receive the raw proof/i);
   });

@@ -1,8 +1,8 @@
 // FILE: app/api/reclaim/callback/route.ts
-// Allowlisted Abraxas server callback. Raw proofs stay in memory.
+// Allowlisted Abraxas server callback. Origin is runtime-bound. Raw proofs stay in memory.
 
 import { NextRequest, NextResponse } from "next/server";
-import { acceptReclaimCallback, reclaimCallbackUrl, reclaimPayloadLeaks } from "@/lib/reclaimAttestation";
+import { acceptReclaimCallback, reclaimPayloadLeaks } from "@/lib/reclaimAttestation";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   const proofs = await req.json().catch(() => null);
   const result = await acceptReclaimCallback({
     proofs,
-    callbackUrl: reclaimCallbackUrl(),
+    request: req,
   });
   if (!result.ok) {
     return NextResponse.json({

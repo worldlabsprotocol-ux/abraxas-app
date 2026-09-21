@@ -11,12 +11,8 @@ export function opaqueSessionNonce(): string {
   return randomBytes(32).toString("hex");
 }
 
-export function opaqueCallbackRef(): string {
-  return `rcb_${createHash("sha256").update(reclaimCallbackPathSeed()).digest("hex").slice(0, 16)}`;
-}
-
-function reclaimCallbackPathSeed(): string {
-  return "abraxas-reclaim-callback";
+export function opaqueCallbackRef(runtime: "demo" | "production"): string {
+  return `rcb_${hmacValue("reclaim-callback-runtime", runtime).slice(0, 16)}`;
 }
 
 export function hmacValue(label: string, value: string): string {

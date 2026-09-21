@@ -2,11 +2,10 @@
 
 import type { VerificationIssuerRecord } from "@/lib/verification/issuerTrust/registry";
 import {
-  reclaimCallbackAllowlisted,
-  reclaimCallbackUrl,
   reclaimConfigurationPresent,
   reclaimIsIntegrationReady,
   reclaimMappingPresent,
+  resolveReclaimRuntime,
 } from "./config";
 import { RECLAIM_ATTESTATION_DOCS } from "./contract";
 
@@ -23,10 +22,12 @@ export function overlayReclaimIssuerRecord(record: VerificationIssuerRecord): Ve
 
 export function reclaimIssuerPublicStatus() {
   const ready = reclaimIsIntegrationReady();
+  const runtime = resolveReclaimRuntime();
   return {
     configuration_present: reclaimConfigurationPresent(),
     mapping_present: reclaimMappingPresent(),
-    callback_allowlisted: reclaimCallbackAllowlisted(reclaimCallbackUrl()),
+    callback_allowlisted: runtime.ok,
+    runtime_class: runtime.ok ? runtime.runtime : null,
     integration_ready: ready,
     holder_selectable: ready,
     partner_selectable: false,

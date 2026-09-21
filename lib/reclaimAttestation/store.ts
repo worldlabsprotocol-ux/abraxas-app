@@ -156,14 +156,20 @@ export async function findAcceptedReclaimSession(input: {
   policyHmac: string;
   environment: string;
 }): Promise<ReclaimSessionRecord | null> {
-  const matches = Array.from(memory.values()).filter((record) =>
-    record.status === "accepted"
-    && record.holder_hmac === input.holderHmac
-    && record.verify_request_hmac === input.verifyRequestHmac
-    && record.policy_hmac === input.policyHmac
-    && record.environment === input.environment
-  );
-  if (matches[0]) return refreshStatus(matches[0]);
+  let found: ReclaimSessionRecord | null = null;
+  memory.forEach((record: ReclaimSessionRecord) => {
+    if (found) return;
+    if (
+      record.status === "accepted"
+      && record.holder_hmac === input.holderHmac
+      && record.verify_request_hmac === input.verifyRequestHmac
+      && record.policy_hmac === input.policyHmac
+      && record.environment === input.environment
+    ) {
+      found = record;
+    }
+  });
+  if (found) return refreshStatus(found);
   if (skipDurableStore()) return null;
   try {
     const sb = requireSupabaseAdmin();

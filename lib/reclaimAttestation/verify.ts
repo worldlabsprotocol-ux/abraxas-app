@@ -2,9 +2,21 @@
 // Server callback verification. TEE, provider/version, session, nonce, and replay fail closed.
 
 import { RECLAIM_HOLDER_COPY } from "./contract";
-import { reclaimAppSecret, reclaimCallbackAllowlisted, reclaimCallbackUrl, reclaimConfigurationPresent } from "./config";
+import {
+  reclaimAppSecret,
+  reclaimConfigurationPresent,
+  reclaimRequestMatchesRuntime,
+  resolveReclaimRuntime,
+} from "./config";
 import { extractedShapeMatches, mappingById } from "./mapping";
-import { contextBindingHmac, holderBindingHmac, policyBindingHmac, proofDigest, verifyRequestHmac } from "./opaque";
+import {
+  contextBindingHmac,
+  holderBindingHmac,
+  opaqueCallbackRef,
+  policyBindingHmac,
+  proofDigest,
+  verifyRequestHmac,
+} from "./opaque";
 import { reclaimSdk } from "./sdk";
 import { publicReclaimSessionView, reclaimPayloadLeaks } from "./safety";
 import {
@@ -44,15 +56,19 @@ export type ReclaimCallbackResult =
 
 export async function acceptReclaimCallback(input: {
   proofs: unknown;
-  callbackUrl?: string;
+  request?: { headers: Headers };
 }): Promise<ReclaimCallbackResult> {
   if (!reclaimConfigurationPresent()) {
     return { ok: false, code: "reclaim_configuration_missing", status: 503 };
   }
-  const expectedCallback = reclaimCallbackUrl();
-  if (!reclaimCallbackAllowlisted(input.callbackUrl ?? expectedCallback)) {
-    return { ok: false, code: "reclaim_callback_not_allowlisted", status: 400 };
+  const runtime = resolveReclaimRuntime();
+  if (!runtime.ok) {
+    return { ok: false, code: runtime.code, status: 400 };
   }
+  if (input.request && !reclaimRequestMatchesRuntime(input.request)) {
+    return { ok: false, code: "reclaim_origin_mismatch", status: 400 };
+  }
+  const expectedCallbackRef = opaqueCallbackRef(runtime.runtime);
   const appSecret = reclaimAppSecret();
   if (!appSecret) return { ok: false, code: "reclaim_configuration_missing", status: 503 };
 
@@ -68,6 +84,9 @@ export async function acceptReclaimCallback(input: {
     return { ok: false, code: "schema_unavailable", status: 503 };
   }
   if (!session) return { ok: false, code: "reclaim_session_missing", status: 400 };
+  if (session.callback_ref !== expectedCallbackRef) {
+    return { ok: false, code: "reclaim_origin_mismatch", status: 400 };
+  }
 
   if (session.status === "cancelled") return { ok: false, code: "reclaim_cancelled", status: 400 };
   if (session.status === "expired" || new Date(session.expires_at).getTime() <= Date.now()) {

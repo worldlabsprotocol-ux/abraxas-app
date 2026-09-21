@@ -6,9 +6,9 @@ import {
   reclaimAppId,
   reclaimAppSecret,
   reclaimCallbackAllowlisted,
-  reclaimCallbackUrl,
   reclaimConfigurationPresent,
   reclaimHmacSecret,
+  resolveReclaimRuntime,
 } from "./config";
 import { mappingForPolicy } from "./mapping";
 import {
@@ -35,8 +35,11 @@ export async function createReclaimSession(input: ReclaimSessionCreateInput): Pr
   if (!reclaimConfigurationPresent() || !reclaimHmacSecret()) {
     return { ok: false, code: "reclaim_configuration_missing" };
   }
-  const callbackUrl = reclaimCallbackUrl();
-  if (!reclaimCallbackAllowlisted(callbackUrl)) {
+  const runtime = resolveReclaimRuntime();
+  if (!runtime.ok) {
+    return { ok: false, code: runtime.code };
+  }
+  if (!reclaimCallbackAllowlisted(runtime.callbackUrl)) {
     return { ok: false, code: "reclaim_callback_not_allowlisted" };
   }
   const mapping = mappingForPolicy({
@@ -61,7 +64,7 @@ export async function createReclaimSession(input: ReclaimSessionCreateInput): Pr
       appId,
       appSecret,
       providerId: mapping.provider_id,
-      callbackUrl,
+      callbackUrl: runtime.callbackUrl,
       contextAddress,
       sessionRef,
     });
@@ -89,7 +92,7 @@ export async function createReclaimSession(input: ReclaimSessionCreateInput): Pr
     provider_version: mapping.provider_version,
     nonce_hash: nonceHash(nonce),
     context_hmac: contextBindingHmac(contextAddress),
-    callback_ref: opaqueCallbackRef(),
+    callback_ref: opaqueCallbackRef(runtime.runtime),
     status: "created",
     proof_digest: null,
     issued_at: new Date(now).toISOString(),
