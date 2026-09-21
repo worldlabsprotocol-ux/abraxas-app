@@ -1,5 +1,3 @@
-// Isolated Foundry package. Not a live deployment. Partners copy and own the verifier.
-
 {
   "name": "abraxas-evm-eligibility-verifier",
   "private": true,

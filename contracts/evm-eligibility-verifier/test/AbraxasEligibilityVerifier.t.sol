@@ -10,7 +10,7 @@ interface Vm {
 }
 
 contract AbraxasEligibilityVerifierTest {
-    Vm internal constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat codes")))));
+    Vm internal constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
     AbraxasEligibilityVerifier internal verifier;
     uint256 internal signerPk = 0xA11CE;
     address internal signer;
@@ -45,7 +45,6 @@ contract AbraxasEligibilityVerifierTest {
 
     function _sign(AbraxasEligibilityVerifier.ChainEligibilityAttestation memory att, uint256 pk)
         internal
-        view
         returns (bytes memory)
     {
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", verifier.domainSeparator(), verifier.hashAttestation(att)));
@@ -55,57 +54,66 @@ contract AbraxasEligibilityVerifierTest {
 
     function test_validSignatureAuthorizes() public {
         AbraxasEligibilityVerifier.ChainEligibilityAttestation memory att = _att();
-        require(verifier.verifyEligibility(att, _sign(att, signerPk)));
+        bytes memory sig = _sign(att, signerPk);
+        require(verifier.verifyEligibility(att, sig));
     }
 
     function test_unknownSignerReverts() public {
         AbraxasEligibilityVerifier.ChainEligibilityAttestation memory att = _att();
+        bytes memory sig = _sign(att, uint256(0xB0B));
         vm.expectRevert(AbraxasEligibilityVerifier.UnknownSigner.selector);
-        verifier.verifyEligibility(att, _sign(att, uint256(0xB0B)));
+        verifier.verifyEligibility(att, sig);
     }
 
     function test_signerRotation() public {
         address next = vm.addr(uint256(0xB0B));
         verifier.setTrustedSigner(next);
         AbraxasEligibilityVerifier.ChainEligibilityAttestation memory att = _att();
+        bytes memory oldSig = _sign(att, signerPk);
         vm.expectRevert(AbraxasEligibilityVerifier.UnknownSigner.selector);
-        verifier.verifyEligibility(att, _sign(att, signerPk));
-        require(verifier.verifyEligibility(att, _sign(att, uint256(0xB0B))));
+        verifier.verifyEligibility(att, oldSig);
+        bytes memory newSig = _sign(att, uint256(0xB0B));
+        require(verifier.verifyEligibility(att, newSig));
     }
 
     function test_nonceReplayReverts() public {
         AbraxasEligibilityVerifier.ChainEligibilityAttestation memory att = _att();
-        verifier.verifyEligibility(att, _sign(att, signerPk));
+        bytes memory sig = _sign(att, signerPk);
+        verifier.verifyEligibility(att, sig);
         vm.expectRevert(AbraxasEligibilityVerifier.Replayed.selector);
-        verifier.verifyEligibility(att, _sign(att, signerPk));
+        verifier.verifyEligibility(att, sig);
     }
 
     function test_expiryReverts() public {
         AbraxasEligibilityVerifier.ChainEligibilityAttestation memory att = _att();
         att.expiresAt = uint64(block.timestamp - 1);
+        bytes memory sig = _sign(att, signerPk);
         vm.expectRevert(AbraxasEligibilityVerifier.Expired.selector);
-        verifier.verifyEligibility(att, _sign(att, signerPk));
+        verifier.verifyEligibility(att, sig);
     }
 
     function test_partnerMismatch() public {
         AbraxasEligibilityVerifier.ChainEligibilityAttestation memory att = _att();
         att.partnerHash = keccak256("other");
+        bytes memory sig = _sign(att, signerPk);
         vm.expectRevert(AbraxasEligibilityVerifier.BindingMismatch.selector);
-        verifier.verifyEligibility(att, _sign(att, signerPk));
+        verifier.verifyEligibility(att, sig);
     }
 
     function test_policyMismatch() public {
         AbraxasEligibilityVerifier.ChainEligibilityAttestation memory att = _att();
         att.policyHash = keccak256("other-policy");
+        bytes memory sig = _sign(att, signerPk);
         vm.expectRevert(AbraxasEligibilityVerifier.BindingMismatch.selector);
-        verifier.verifyEligibility(att, _sign(att, signerPk));
+        verifier.verifyEligibility(att, sig);
     }
 
     function test_actionMismatch() public {
         AbraxasEligibilityVerifier.ChainEligibilityAttestation memory att = _att();
         att.actionHash = keccak256("other-action");
+        bytes memory sig = _sign(att, signerPk);
         vm.expectRevert(AbraxasEligibilityVerifier.BindingMismatch.selector);
-        verifier.verifyEligibility(att, _sign(att, signerPk));
+        verifier.verifyEligibility(att, sig);
     }
 
     function test_wrongChainDomain() public {
@@ -125,20 +133,23 @@ contract AbraxasEligibilityVerifierTest {
             true
         );
         AbraxasEligibilityVerifier.ChainEligibilityAttestation memory att = _att();
+        bytes memory missing = _sign(att, signerPk);
         vm.expectRevert(AbraxasEligibilityVerifier.SubjectRequired.selector);
-        verifier.verifyEligibility(att, _sign(att, signerPk));
+        verifier.verifyEligibility(att, missing);
         att.subjectHash = keccak256("wallet-binding");
-        require(verifier.verifyEligibility(att, _sign(att, signerPk)));
+        bytes memory present = _sign(att, signerPk);
+        require(verifier.verifyEligibility(att, present));
     }
 
     function test_optionalSubjectZeroOk() public {
         AbraxasEligibilityVerifier.ChainEligibilityAttestation memory att = _att();
-        require(verifier.verifyEligibility(att, _sign(att, signerPk)));
+        bytes memory sig = _sign(att, signerPk);
+        require(verifier.verifyEligibility(att, sig));
     }
 
     function test_rejectEthTransfer() public {
         vm.expectRevert(AbraxasEligibilityVerifier.ExecutionRejected.selector);
-        (bool sent,) = address(verifier).call{value: 1 ether}("");
+        (bool sent,) = address(verifier).call{value: 0}("");
         sent;
     }
 }

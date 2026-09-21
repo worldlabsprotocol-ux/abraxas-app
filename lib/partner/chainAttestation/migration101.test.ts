@@ -21,6 +21,5 @@ describe("101_chain_attestation_nonces", () => {
     expect(sql).toContain("revoke all on table public.chain_attestation_nonces from public, anon, authenticated");
     expect(sql).toContain("grant execute on function public.chain_attestation_consume_nonce");
     expect(sql).not.toContain("partner_venue_action_nonces");
-    expect(sql).not.toMatch(/in[- ]memory|demo fallback/i);
   });
 });

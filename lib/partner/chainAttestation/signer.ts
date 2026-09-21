@@ -3,8 +3,8 @@
 
 import { privateKeyToAccount } from "viem/accounts";
 import { isHex } from "viem";
-import { eip712TypedData, type Eip712Domain } from "./eip712";
-import type { ChainEligibilityAttestationFields } from "./contract";
+import { eip712TypedData } from "./eip712";
+import type { ChainEligibilityAttestationFields, Eip712Domain } from "./contract";
 
 export const EVM_ATTESTATION_KEY_ENV = "ABRAXAS_EVM_ATTESTATION_PRIVATE_KEY" as const;
 export const EVM_ATTESTATION_KEY_ID_ENV = "ABRAXAS_EVM_ATTESTATION_SIGNER_KEY_ID" as const;

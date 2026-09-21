@@ -40,20 +40,14 @@ export async function verifyEvmEligibilityOffchain(input: {
   const typed = eip712TypedData(input.domain, input.fields);
   const valid = await verifyTypedData({
     address: input.trustedSigner,
-    domain: typed.domain,
-    types: { ChainEligibilityAttestation: typed.types.ChainEligibilityAttestation },
-    primaryType: typed.primaryType,
-    message: typed.message,
+    ...typed,
     signature: input.signature,
-  });
+  } as never);
   if (!valid) return { ok: false, reason: "unknown_signer" };
   const recovered = await recoverTypedDataAddress({
-    domain: typed.domain,
-    types: { ChainEligibilityAttestation: typed.types.ChainEligibilityAttestation },
-    primaryType: typed.primaryType,
-    message: typed.message,
+    ...typed,
     signature: input.signature,
-  });
+  } as never);
   if (recovered.toLowerCase() !== input.trustedSigner.toLowerCase()) {
     return { ok: false, reason: "unknown_signer" };
   }

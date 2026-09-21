@@ -24,7 +24,7 @@ export interface ChainAttestationClientView {
 }
 
 export function projectChainAttestationClient(view: ChainAttestationClientView): ChainAttestationClientView {
-  return pickAllowedKeys(view, CHAIN_ATTESTATION_CLIENT_VISIBLE_KEYS) as ChainAttestationClientView;
+  return pickAllowedKeys(view, CHAIN_ATTESTATION_CLIENT_VISIBLE_KEYS) as unknown as ChainAttestationClientView;
 }
 
 export function chainAttestationHasForbiddenKeys(value: unknown): string[] {

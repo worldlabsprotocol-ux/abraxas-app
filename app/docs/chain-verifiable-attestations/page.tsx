@@ -45,8 +45,8 @@ export default function ChainVerifiableAttestationsDocsPage() {
         </pre>
         <p style={{ ...body, marginTop: "0.85rem" }}>{CHAIN_ATTESTATION_FLOW}</p>
         <p style={{ ...body, marginTop: "0.5rem" }}>
-          The partner deploys and owns its verifier. Abraxas does not deploy a shared execution contract
-          and does not claim any contract is deployed to Arc, Ethereum, Solana, or any live chain.
+          The partner deploys and owns its AbraxasEligibilityVerifier. Abraxas does not deploy a shared execution contract
+          and does not claim any live Arc, Ethereum, Solana, or Mainnet contract.
         </p>
       </ContentCard>
 

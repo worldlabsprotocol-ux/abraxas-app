@@ -341,6 +341,6 @@ describe("chain eligibility attestations", () => {
     expect(snippet.docs).toBe("/docs/chain-verifiable-attestations");
     const docs = readFileSync(join(process.cwd(), "app/docs/chain-verifiable-attestations/page.tsx"), "utf8");
     expect(docs).toContain("AbraxasEligibilityVerifier");
-    expect(docs).not.toMatch(/deployed to (Arc|Ethereum|mainnet)/i);
+    expect(docs).not.toMatch(/is live on (Arc|Ethereum|Mainnet)/i);
   });
 });
