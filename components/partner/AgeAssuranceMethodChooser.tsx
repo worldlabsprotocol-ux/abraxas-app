@@ -12,6 +12,7 @@ import {
 } from "@/lib/partner/partnerHolderCopy";
 import type { AgeAssuranceProviderPublicMeta } from "@/lib/assurance/ageProviders/types";
 import { SelfAttestationBrowseForm } from "@/components/partner/SelfAttestationBrowseForm";
+import { ReclaimPrivateFactCard } from "@/components/partner/ReclaimPrivateFactCard";
 import { GOOD_TROUBLE_BROWSE_POLICY_ID } from "@/lib/goodTrouble/constants";
 import {
   planEligibilityMethods,
@@ -77,6 +78,8 @@ export function AgeAssuranceMethodChooser({
   const [selectedMethodId, setSelectedMethodId] = useState<EligibilityMethodId | null>(null);
   const [methodQualified, setMethodQualified] = useState(false);
   const [issuedReceipt, setIssuedReceipt] = useState(false);
+  const [reclaimAvailable, setReclaimAvailable] = useState(false);
+  const [reclaimApproved, setReclaimApproved] = useState(false);
 
   const privacy = partnerHolderPrivacyNotes(partnerName);
   const threshold = minimumAge != null && minimumAge >= 21 ? 21 : 18;
@@ -140,6 +143,15 @@ export function AgeAssuranceMethodChooser({
         reuseAvailable = reuseBody.reuse?.available === true;
       }
       setExistingEligible(reuseAvailable);
+      try {
+        const reclaimRes = await fetch(`/api/reclaim/availability?policy_id=${encodeURIComponent(policyId)}`, {
+          credentials: "include",
+        });
+        const reclaimBody = await reclaimRes.json().catch(() => ({})) as { available?: boolean };
+        setReclaimAvailable(reclaimBody.available === true);
+      } catch {
+        setReclaimAvailable(false);
+      }
     } catch {
       setError("Could not load verification options.");
     } finally {
@@ -239,6 +251,7 @@ export function AgeAssuranceMethodChooser({
       partnerAgeCheckConfigured: true,
       partnerAgeCheckAssurance: pack.minimum_assurance,
       privacyPreservingAvailable: pack.id === "sandbox_economic_demo"
+        || reclaimAvailable
         || providers.some((provider) => provider.authoritative || provider.configured),
       browseSelfAttestAllowed: false,
     })
@@ -397,6 +410,15 @@ export function AgeAssuranceMethodChooser({
           {" "}Selecting a method does not issue a receipt.
         </p>
       )}
+      {selectedMethodId === "privacy_preserving" && reclaimAvailable && verifyRequestId && (
+        <ReclaimPrivateFactCard
+          verifyRequestId={verifyRequestId}
+          onApproved={() => {
+            setReclaimApproved(true);
+            setError(null);
+          }}
+        />
+      )}
       {!methodQualified && (
       <Btn
         disabled={busy !== null || !selectedMethodId}
@@ -412,6 +434,10 @@ export function AgeAssuranceMethodChooser({
           }
           if (method.id === "identity_liveness") {
             onFallbackId();
+            return;
+          }
+          if (method.id === "privacy_preserving" && reclaimAvailable && !reclaimApproved) {
+            setError("Complete the private check first. Consent is still required after that.");
             return;
           }
           if (!verifyRequestId) {

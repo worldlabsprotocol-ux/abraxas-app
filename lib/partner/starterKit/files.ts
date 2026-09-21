@@ -75,9 +75,9 @@ ${STARTER_KIT_MINIMUM_REQUIREMENTS.map((line) => `- ${line}`).join("\n")}
 - Runtime: \`${selection.runtime}\`
 - Optional capabilities: ${selection.capabilities.length ? selection.capabilities.join(", ") : "none"}
 
-## Partner result
-You receive only the policy result this pack requested: ${pack.disclosed_result}
-Abraxas withholds holder profile fields. The partner receives only the requested policy result.
+## Private attestations
+Abraxas verifies Reclaim proofs on its own allowlisted callback. Partners never receive the raw proof, source website data, extracted parameters, or app secrets. Continue to verify the public receipt after holder consent.
+
 
 ${STARTER_KIT_NOTICES.google}
 

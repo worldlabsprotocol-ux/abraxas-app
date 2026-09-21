@@ -40,6 +40,17 @@ describe("evaluateMethodQualification", () => {
     );
   });
 
+  it("rejects privacy_preserving until an accepted Reclaim session exists when required", () => {
+    const result = evaluateMethodQualification({
+      ...RETAIL,
+      reclaimRequired: true,
+      reclaimSessionAccepted: false,
+    });
+    expect(result.ok).toBe(false);
+    expect(result.code).toBe("reclaim_not_accepted");
+    expect(result.issuedReceipt).toBe(false);
+  });
+
   it("rejects sandbox methods against an authoritative policy", () => {
     const result = evaluateMethodQualification(RETAIL);
     expect(result.ok).toBe(false);

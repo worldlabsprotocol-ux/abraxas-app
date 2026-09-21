@@ -48,6 +48,8 @@ export default function VerificationIssuerTrustDocsPage() {
       </ContentCard>
       <ContentCard title="Where this connects">
         <p style={body}>
+          <Link href="/docs/reclaim-private-attestations">Reclaim private attestations</Link>
+          {" · "}
           <Link href="/docs/policy-release-candidates">Release candidates</Link>
           {" · "}
           <Link href="/docs/policy-proposals">Policy proposals</Link>

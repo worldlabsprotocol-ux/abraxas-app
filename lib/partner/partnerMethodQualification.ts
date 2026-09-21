@@ -50,6 +50,8 @@ export function evaluateMethodQualification(input: {
   verifyRequestId: string;
   identityEvidenceComplete?: boolean;
   existingProofCompatible?: boolean;
+  reclaimSessionAccepted?: boolean;
+  reclaimRequired?: boolean;
 }): MethodQualificationResult {
   const verifyRequestId = input.verifyRequestId.trim();
   const storedPartnerId = input.storedPartnerId.trim();
@@ -98,6 +100,29 @@ export function evaluateMethodQualification(input: {
   }
   if (methodId === "self_attestation") {
     return { ok: false, code: "self_attestation_cannot_qualify", qualified: false, issuedReceipt: false };
+  }
+
+  if (methodId === "privacy_preserving" && input.reclaimRequired && !input.reclaimSessionAccepted) {
+    return { ok: false, code: "reclaim_not_accepted", qualified: false, issuedReceipt: false };
+  }
+  if (methodId === "privacy_preserving" && input.reclaimSessionAccepted) {
+    if (!pack) {
+      return { ok: false, code: "unknown_policy", qualified: false, issuedReceipt: false };
+    }
+    return {
+      ok: true,
+      record: {
+        verifyRequestId,
+        partnerId: storedPartnerId,
+        policyId: storedPolicyId,
+        policyVersion: input.storedPolicyVersion,
+        methodId,
+        state: "qualified",
+        qualified: true,
+        issuedReceipt: false,
+        sandboxOnly: Boolean(pack && (sandboxPack || policyPackIsSandboxOnly(pack))),
+      },
+    };
   }
 
   if (!pack && SANDBOX_COMPLETABLE.includes(methodId)) {

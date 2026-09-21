@@ -50,7 +50,8 @@ export default function StarterKitDocsPage() {
         <p style={body}>
           README, server route, .env.example, receipt verification, safe errors, optional webhook
           verification, a local receipt fixture, and a deployment checklist. Partner IDs, app IDs,
-          keys, callbacks, and secrets are placeholders only.
+          keys, callbacks, and secrets are placeholders only. Reclaim proofs are verified on the
+          Abraxas callback. Partners never receive the raw proof or app secrets.
         </p>
         <p style={{ ...body, marginTop: "0.65rem" }}>{STARTER_KIT_NOTICES.google}</p>
       </ContentCard>
