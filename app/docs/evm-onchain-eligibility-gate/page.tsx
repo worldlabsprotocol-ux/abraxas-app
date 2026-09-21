@@ -82,6 +82,8 @@ export default function EvmOnchainEligibilityGateDocsPage() {
           <Link href="/docs/evm-partner-adapter">EVM partner adapter</Link>
           {" · "}
           <Link href="/docs/circle-arc-testnet">Circle Arc testnet settlement</Link>
+          {" · "}
+          <Link href="/docs/chain-attestation-signer-lifecycle">Signer lifecycle</Link>
         </p>
       </ContentCard>
     </RedesignPage>

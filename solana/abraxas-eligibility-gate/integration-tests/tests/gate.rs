@@ -567,6 +567,185 @@ async fn cross_partner_consume_denied() {
     assert!(custom_code(&err).is_some() || matches!(err, BanksClientError::TransactionError(_)));
 }
 
+fn mutate_signer_ix(
+    admin: Pubkey,
+    config: Pubkey,
+    data: Vec<u8>,
+) -> Instruction {
+    Instruction {
+        program_id: GATE_ID,
+        accounts: abraxas_eligibility_gate::accounts::MutateSigner { admin, config }
+            .to_account_metas(None),
+        data,
+    }
+}
+
+#[tokio::test]
+async fn authority_only_add_retire_revoke_and_replay_across_rotation() {
+    let mut ctx = start().await;
+    let admin = Keypair::new();
+    let stranger = Keypair::new();
+    let signer = Keypair::new();
+    let next = Keypair::new();
+    airdrop(&mut ctx, &admin).await;
+    airdrop(&mut ctx, &stranger).await;
+    let fields = MessageFields::default();
+    let config = initialize(&mut ctx, &admin, default_params(signer.pubkey().to_bytes(), fields)).await;
+    let next_key = h32(77);
+    let stranger_ix = mutate_signer_ix(
+        stranger.pubkey(),
+        config,
+        abraxas_eligibility_gate::instruction::AddTrustedSigner {
+            key_id: next_key,
+            pubkey: next.pubkey().to_bytes(),
+        }
+        .data(),
+    );
+    let err = send(&mut ctx, vec![stranger_ix], &[&stranger]).await.unwrap_err();
+    assert!(custom_code(&err).is_some());
+
+    send(
+        &mut ctx,
+        vec![mutate_signer_ix(
+            admin.pubkey(),
+            config,
+            abraxas_eligibility_gate::instruction::AddTrustedSigner {
+                key_id: next_key,
+                pubkey: next.pubkey().to_bytes(),
+            }
+            .data(),
+        )],
+        &[&admin],
+    )
+    .await
+    .unwrap();
+
+    refresh(&mut ctx).await;
+    let dup = send(
+        &mut ctx,
+        vec![mutate_signer_ix(
+            admin.pubkey(),
+            config,
+            abraxas_eligibility_gate::instruction::AddTrustedSigner {
+                key_id: next_key,
+                pubkey: next.pubkey().to_bytes(),
+            }
+            .data(),
+        )],
+        &[&admin],
+    )
+    .await
+    .unwrap_err();
+    assert_eq!(custom_code(&dup), Some(6000 + 15));
+
+    let message = canonical_message(fields);
+    let payer = ctx.payer.pubkey();
+    send(
+        &mut ctx,
+        vec![
+            ed25519_ix(&signer, &message),
+            authorize_ix(payer, config, fields.attestation_id),
+        ],
+        &[],
+    )
+    .await
+    .unwrap();
+    send(&mut ctx, vec![consume_ix(payer, config, fields.attestation_id)], &[])
+        .await
+        .unwrap();
+
+    send(
+        &mut ctx,
+        vec![mutate_signer_ix(
+            admin.pubkey(),
+            config,
+            abraxas_eligibility_gate::instruction::RetireTrustedSigner {
+                key_id: fields.signer_key_id,
+            }
+            .data(),
+        )],
+        &[&admin],
+    )
+    .await
+    .unwrap();
+
+    refresh(&mut ctx).await;
+    let replay = send(&mut ctx, vec![consume_ix(payer, config, fields.attestation_id)], &[])
+        .await
+        .unwrap_err();
+    assert!(custom_code(&replay).is_some());
+}
+
+#[tokio::test]
+async fn wrong_ed25519_key_id_rejected_and_revoked_cannot_authorize() {
+    let mut ctx = start().await;
+    let admin = Keypair::new();
+    let signer = Keypair::new();
+    let next = Keypair::new();
+    airdrop(&mut ctx, &admin).await;
+    let fields = MessageFields::default();
+    let config = initialize(&mut ctx, &admin, default_params(signer.pubkey().to_bytes(), fields)).await;
+    let next_key = h32(88);
+    send(
+        &mut ctx,
+        vec![mutate_signer_ix(
+            admin.pubkey(),
+            config,
+            abraxas_eligibility_gate::instruction::AddTrustedSigner {
+                key_id: next_key,
+                pubkey: next.pubkey().to_bytes(),
+            }
+            .data(),
+        )],
+        &[&admin],
+    )
+    .await
+    .unwrap();
+
+    let mut mismatch = fields;
+    mismatch.signer_key_id = next_key;
+    mismatch.attestation_id = h32(91);
+    let payer = ctx.payer.pubkey();
+    let err = send(
+        &mut ctx,
+        vec![
+            ed25519_ix(&signer, &canonical_message(mismatch)),
+            authorize_ix(payer, config, mismatch.attestation_id),
+        ],
+        &[],
+    )
+    .await
+    .unwrap_err();
+    assert_eq!(custom_code(&err), Some(6000 + 10));
+
+    send(
+        &mut ctx,
+        vec![mutate_signer_ix(
+            admin.pubkey(),
+            config,
+            abraxas_eligibility_gate::instruction::RevokeTrustedSigner {
+                key_id: fields.signer_key_id,
+            }
+            .data(),
+        )],
+        &[&admin],
+    )
+    .await
+    .unwrap();
+
+    let err = send(
+        &mut ctx,
+        vec![
+            ed25519_ix(&signer, &canonical_message(fields)),
+            authorize_ix(payer, config, fields.attestation_id),
+        ],
+        &[],
+    )
+    .await
+    .unwrap_err();
+    assert_eq!(custom_code(&err), Some(6000 + 3));
+}
+
 async fn airdrop(ctx: &mut ProgramTestContext, user: &Keypair) {
     let from = ctx.payer.pubkey();
     let ix = solana_sdk::system_instruction::transfer(&from, &user.pubkey(), 2_000_000_000);

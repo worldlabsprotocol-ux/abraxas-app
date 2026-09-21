@@ -73,6 +73,10 @@ export const CHAIN_ATTESTATION_SAFE_REASONS = [
   "deployment_not_verified",
   "deployment_revoked",
   "deployment_mismatch",
+  "unknown_key",
+  "signer_revoked",
+  "signer_update_required",
+  "schema_mismatch",
 ] as const;
 export type ChainAttestationSafeReason = (typeof CHAIN_ATTESTATION_SAFE_REASONS)[number];
 

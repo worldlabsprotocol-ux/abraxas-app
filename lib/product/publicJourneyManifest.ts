@@ -123,6 +123,12 @@ export const PUBLIC_JOURNEY_SURFACES = [
     file: "app/docs/onchain-gate-deployments/page.tsx",
   },
   {
+    route: "/docs/chain-attestation-signer-lifecycle",
+    purpose: "Rotate or revoke EVM and Solana chain-attestation signers. Partners update their own gate.",
+    primaryCta: { label: "Integration Studio", href: "/developers/integration-studio" },
+    file: "app/docs/chain-attestation-signer-lifecycle/page.tsx",
+  },
+  {
     route: "/docs/selective-disclosure",
     purpose: "Canonical selective-disclosure boundary. Policy result only, not evidence.",
     primaryCta: { label: "Integration Studio", href: "/developers/integration-studio" },

@@ -11,10 +11,16 @@ interface Vm {
     function chainId(uint256 newChainId) external;
     function deal(address who, uint256 amount) external;
     function warp(uint256 newTimestamp) external;
+    function prank(address msgSender) external;
+    function expectEmit(bool checkTopic1, bool checkTopic2, bool checkTopic3, bool checkData) external;
 }
 
 contract AbraxasPartnerEligibilityGateTest {
     Vm internal constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
+
+    event TrustedSignerAdded(bytes32 indexed keyId, address indexed account);
+    event TrustedSignerRetired(bytes32 indexed keyId, address indexed account);
+    event TrustedSignerRevoked(bytes32 indexed keyId, address indexed account);
 
     AbraxasPartnerEligibilityGate internal gate;
     AbraxasPartnerEligibilityConsumer internal consumer;
@@ -24,22 +30,31 @@ contract AbraxasPartnerEligibilityGateTest {
     bytes32 internal networkId = keccak256("evm_sandbox");
     bytes32 internal policyHash = keccak256("policy");
     bytes32 internal actionHash = keccak256("action");
+    bytes32 internal signerKeyId = keccak256("key-1");
     bytes32 internal environment = keccak256("sandbox");
 
     function setUp() public {
         signer = vm.addr(signerPk);
-        gate = new AbraxasPartnerEligibilityGate(
-            AbraxasPartnerEligibilityGate.GateConfig({
-                trustedSigner: signer,
-                partnerHash: partnerHash,
-                networkId: networkId,
-                policyHash: policyHash,
-                actionHash: actionHash,
-                environment: environment,
-                requireSubjectBinding: false
-            })
-        );
+        gate = new AbraxasPartnerEligibilityGate(_cfg(signer, signerKeyId, partnerHash, false));
         consumer = new AbraxasPartnerEligibilityConsumer(gate);
+    }
+
+    function _cfg(
+        address trusted,
+        bytes32 keyId,
+        bytes32 partner,
+        bool requireSubject
+    ) internal view returns (AbraxasPartnerEligibilityGate.GateConfig memory) {
+        return AbraxasPartnerEligibilityGate.GateConfig({
+            trustedSigner: trusted,
+            trustedSignerKeyId: keyId,
+            partnerHash: partner,
+            networkId: networkId,
+            policyHash: policyHash,
+            actionHash: actionHash,
+            environment: environment,
+            requireSubjectBinding: requireSubject
+        });
     }
 
     function _att() internal view returns (AbraxasPartnerEligibilityGate.ChainEligibilityAttestation memory att) {
@@ -136,15 +151,7 @@ contract AbraxasPartnerEligibilityGateTest {
         gate.consumeEligibility(att, sig);
 
         AbraxasPartnerEligibilityGate other = new AbraxasPartnerEligibilityGate(
-            AbraxasPartnerEligibilityGate.GateConfig({
-                trustedSigner: signer,
-                partnerHash: partnerHash,
-                networkId: networkId,
-                policyHash: policyHash,
-                actionHash: actionHash,
-                environment: environment,
-                requireSubjectBinding: false
-            })
+            _cfg(signer, signerKeyId, partnerHash, false)
         );
         att = _att();
         bytes memory otherSig = _sign(att, signerPk, other);
@@ -154,15 +161,7 @@ contract AbraxasPartnerEligibilityGateTest {
 
     function test_requiredWalletMismatch() public {
         AbraxasPartnerEligibilityGate requiredGate = new AbraxasPartnerEligibilityGate(
-            AbraxasPartnerEligibilityGate.GateConfig({
-                trustedSigner: signer,
-                partnerHash: partnerHash,
-                networkId: networkId,
-                policyHash: policyHash,
-                actionHash: actionHash,
-                environment: environment,
-                requireSubjectBinding: true
-            })
+            _cfg(signer, signerKeyId, partnerHash, true)
         );
         AbraxasPartnerEligibilityGate.ChainEligibilityAttestation memory att = _att();
         bytes memory missing = _sign(att, signerPk, requiredGate);
@@ -195,15 +194,7 @@ contract AbraxasPartnerEligibilityGateTest {
 
     function test_consumerRejectsOtherPartnerActionPolicy() public {
         AbraxasPartnerEligibilityGate other = new AbraxasPartnerEligibilityGate(
-            AbraxasPartnerEligibilityGate.GateConfig({
-                trustedSigner: signer,
-                partnerHash: keccak256("other-partner"),
-                networkId: networkId,
-                policyHash: policyHash,
-                actionHash: actionHash,
-                environment: environment,
-                requireSubjectBinding: false
-            })
+            _cfg(signer, signerKeyId, keccak256("other-partner"), false)
         );
         AbraxasPartnerEligibilityConsumer otherConsumer = new AbraxasPartnerEligibilityConsumer(other);
         AbraxasPartnerEligibilityGate.ChainEligibilityAttestation memory att = _att();
@@ -227,15 +218,7 @@ contract AbraxasPartnerEligibilityGateTest {
 
     function test_create2PredictionMatchesDeploy() public {
         DeployPartnerGate factory = new DeployPartnerGate();
-        AbraxasPartnerEligibilityGate.GateConfig memory config = AbraxasPartnerEligibilityGate.GateConfig({
-            trustedSigner: signer,
-            partnerHash: partnerHash,
-            networkId: networkId,
-            policyHash: policyHash,
-            actionHash: actionHash,
-            environment: environment,
-            requireSubjectBinding: false
-        });
+        AbraxasPartnerEligibilityGate.GateConfig memory config = _cfg(signer, signerKeyId, partnerHash, false);
         bytes32 salt = keccak256("local-test-salt");
         bytes memory initCode = abi.encodePacked(type(AbraxasPartnerEligibilityGate).creationCode, abi.encode(config));
         address predicted = address(uint160(uint256(keccak256(abi.encodePacked(
@@ -251,16 +234,69 @@ contract AbraxasPartnerEligibilityGateTest {
 
     function test_constructorRejectsZeroConfig() public {
         vm.expectRevert(AbraxasPartnerEligibilityGate.InvalidConfig.selector);
-        new AbraxasPartnerEligibilityGate(
-            AbraxasPartnerEligibilityGate.GateConfig({
-                trustedSigner: address(0),
-                partnerHash: partnerHash,
-                networkId: networkId,
-                policyHash: policyHash,
-                actionHash: actionHash,
-                environment: environment,
-                requireSubjectBinding: false
-            })
-        );
+        new AbraxasPartnerEligibilityGate(_cfg(address(0), signerKeyId, partnerHash, false));
+    }
+
+    function test_ownerOnlyRotationRejectsZeroAndDuplicate() public {
+        bytes32 nextKey = keccak256("key-2");
+        uint256 nextPk = 0xB0B;
+        address nextSigner = vm.addr(nextPk);
+        vm.prank(address(0xBEEF));
+        vm.expectRevert(AbraxasPartnerEligibilityGate.NotOwner.selector);
+        gate.addTrustedSigner(nextKey, nextSigner);
+
+        vm.expectRevert(AbraxasPartnerEligibilityGate.UnknownSigner.selector);
+        gate.addTrustedSigner(nextKey, address(0));
+
+        vm.expectEmit(true, true, false, true);
+        emit TrustedSignerAdded(nextKey, nextSigner);
+        gate.addTrustedSigner(nextKey, nextSigner);
+
+        vm.expectRevert(AbraxasPartnerEligibilityGate.DuplicateSigner.selector);
+        gate.addTrustedSigner(nextKey, nextSigner);
+        vm.expectRevert(AbraxasPartnerEligibilityGate.DuplicateSigner.selector);
+        gate.addTrustedSigner(keccak256("key-3"), signer);
+    }
+
+    function test_retiringOverlapAndNonceReplayAfterRotation() public {
+        bytes32 nextKey = keccak256("key-2");
+        uint256 nextPk = 0xB0B;
+        address nextSigner = vm.addr(nextPk);
+        gate.addTrustedSigner(nextKey, nextSigner);
+
+        AbraxasPartnerEligibilityGate.ChainEligibilityAttestation memory att = _att();
+        bytes memory sig = _sign(att, signerPk, gate);
+        require(gate.consumeEligibility(att, sig));
+
+        vm.expectEmit(true, true, false, true);
+        emit TrustedSignerRetired(signerKeyId, signer);
+        gate.retireTrustedSigner(signerKeyId);
+
+        AbraxasPartnerEligibilityGate.ChainEligibilityAttestation memory retiringAtt = _att();
+        retiringAtt.nonce = keccak256("nonce-retiring");
+        retiringAtt.attestationId = keccak256("att-retiring");
+        bytes memory retiringSig = _sign(retiringAtt, signerPk, gate);
+        require(gate.consumeEligibility(retiringAtt, retiringSig));
+
+        vm.expectRevert(AbraxasPartnerEligibilityGate.Replayed.selector);
+        gate.consumeEligibility(att, sig);
+
+        AbraxasPartnerEligibilityGate.ChainEligibilityAttestation memory nextAtt = _att();
+        nextAtt.nonce = keccak256("nonce-next");
+        nextAtt.attestationId = keccak256("att-next");
+        nextAtt.signerKeyId = nextKey;
+        bytes memory nextSig = _sign(nextAtt, nextPk, gate);
+        require(gate.consumeEligibility(nextAtt, nextSig));
+    }
+
+    function test_revokedSignerCannotVerify() public {
+        AbraxasPartnerEligibilityGate.ChainEligibilityAttestation memory att = _att();
+        att.nonce = keccak256("nonce-revoke");
+        bytes memory sig = _sign(att, signerPk, gate);
+        vm.expectEmit(true, true, false, true);
+        emit TrustedSignerRevoked(signerKeyId, signer);
+        gate.revokeTrustedSigner(signerKeyId);
+        vm.expectRevert(AbraxasPartnerEligibilityGate.UnknownSigner.selector);
+        gate.consumeEligibility(att, sig);
     }
 }

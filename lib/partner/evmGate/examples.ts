@@ -26,7 +26,8 @@ export async function issueEvmOnchainGate(receiptId: string) {
   });
   const issued = await res.json();
   if (!issued.allowed) return issued;
-  // Encode consumeEligibility on YOUR gate. Abraxas never broadcasts the transaction.
+  // Encode consumeEligibility on YOUR gate. Owner-only addTrustedSigner / retireTrustedSigner / revokeTrustedSigner.
+  // Abraxas never broadcasts the signer-update transaction.
   return issued;
 }
 `;

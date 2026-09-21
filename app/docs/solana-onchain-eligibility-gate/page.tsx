@@ -90,6 +90,8 @@ cargo test --workspace
           Off-chain Solana adapter (no funds):{" "}
           <Link href="/docs/solana">/docs/solana</Link>. Chain attestation encoding:{" "}
           <Link href="/docs/chain-verifiable-attestations">/docs/chain-verifiable-attestations</Link>.
+          Signer rotation:{" "}
+          <Link href="/docs/chain-attestation-signer-lifecycle">/docs/chain-attestation-signer-lifecycle</Link>.
         </p>
       </ContentCard>
     </RedesignPage>

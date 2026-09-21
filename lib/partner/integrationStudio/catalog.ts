@@ -171,6 +171,10 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
         deploys: false,
         live: false,
       },
+      signer_lifecycle: {
+        docs: "/docs/chain-attestation-signer-lifecycle",
+        broadcasts: false,
+      },
     },
     evm_onchain_eligibility_gate: {
       creates_transactions: false,
@@ -185,6 +189,10 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
         docs: "/docs/onchain-gate-deployments",
         deploys: false,
         live: false,
+      },
+      signer_lifecycle: {
+        docs: "/docs/chain-attestation-signer-lifecycle",
+        broadcasts: false,
       },
     },
     selective_disclosure: {

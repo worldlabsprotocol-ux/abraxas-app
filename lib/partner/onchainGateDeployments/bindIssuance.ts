@@ -26,6 +26,8 @@ export type BoundDeployment =
 
 function mapIssuanceDenied(status: OnchainGateDeploymentRecord["status"], kitEnv: "sandbox" | "production"): ChainAttestationSafeReason {
   if (status === "revoked") return "deployment_revoked";
+  if (status === "signer_revoked") return "signer_revoked";
+  if (status === "signer_update_required") return "signer_update_required";
   if (status === "submitted" || status === "needs_correction") return "deployment_not_verified";
   if (status === "production_review_required") return "production_review_required";
   if (kitEnv === "sandbox" && status !== "verified_sandbox") return "deployment_not_verified";
@@ -86,6 +88,8 @@ export async function bindIssuanceToVerifiedDeployment(input: {
     return { ok: false, reason: "deployment_mismatch" };
   }
   if (record.status === "revoked" || record.revoked_at) return { ok: false, reason: "deployment_revoked" };
+  if (record.status === "signer_revoked") return { ok: false, reason: "signer_revoked" };
+  if (record.status === "signer_update_required") return { ok: false, reason: "signer_update_required" };
 
   if (input.kitEnvironment === "sandbox") {
     if (record.status !== "verified_sandbox") return { ok: false, reason: mapIssuanceDenied(record.status, "sandbox") };

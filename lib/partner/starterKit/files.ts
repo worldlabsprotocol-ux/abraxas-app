@@ -513,6 +513,26 @@ Arc/Circle Mainnet stays disabled. Circle settlement is a separate product path.
 `;
 }
 
+function signerLifecycleDoc(): string {
+  return `# Chain attestation signer lifecycle
+
+Abraxas issues EVM secp256k1 and Solana Ed25519 attestations with dedicated environment keys.
+Receipt private keys are never reused.
+
+When a signer is retiring or revoked:
+1. Abraxas stops issuing new attestations with that key.
+2. You receive a signer-update package (not a transaction).
+3. You call addTrustedSigner / retireTrustedSigner / revokeTrustedSigner on your EVM gate, or add_trusted_signer / retire_trusted_signer / revoke_trusted_signer on your Solana GateConfig.
+4. Issuance stays blocked until your verified deployment config matches the required signer set.
+
+Public verifier material:
+GET /api/chain-attestations/verification-keys/evm
+GET /api/chain-attestations/verification-keys/solana
+
+A compromised private key cannot be recovered. Abraxas never broadcasts your update.
+`;
+}
+
 function evmOnchainGate(): string {
   return `// Server-only. Request an EIP-712 eligibility authorization for YOUR gate.
 export async function issueEvmOnchainGate(receiptId) {
@@ -775,6 +795,7 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     if (evmOnchain) files.push({ path: "onchain/EVM_PARTNER_GATE.md", contents: evmPartnerGateDoc() });
     if (solanaOnchain || onchain) files.push({ path: "onchain/SOLANA_PROGRAM.md", contents: solanaProgramDoc() });
     files.push({ path: "onchain/deployment-manifest.template.json", contents: deploymentManifestTemplate() });
+    files.push({ path: "onchain/SIGNER_LIFECYCLE.md", contents: signerLifecycleDoc() });
   }
 
   for (const file of files) assertSafeStarterPath(file.path);

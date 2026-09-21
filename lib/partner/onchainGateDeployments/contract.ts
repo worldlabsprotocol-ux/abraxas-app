@@ -12,6 +12,8 @@ export const ONCHAIN_GATE_DEPLOYMENT_STATUSES = [
   "needs_correction",
   "production_review_required",
   "verified_production",
+  "signer_update_required",
+  "signer_revoked",
   "revoked",
 ] as const;
 export type OnchainGateDeploymentStatus = (typeof ONCHAIN_GATE_DEPLOYMENT_STATUSES)[number];
@@ -21,6 +23,7 @@ export const ONCHAIN_GATE_SAFE_STATES = [
   "awaiting_verification",
   "verified_sandbox",
   "production_review_required",
+  "signer_update_required",
   "unavailable",
 ] as const;
 export type OnchainGateSafeState = (typeof ONCHAIN_GATE_SAFE_STATES)[number];

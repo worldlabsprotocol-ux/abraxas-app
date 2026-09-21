@@ -37,7 +37,14 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
   const rows = await listAppDeployments(app.partner_id, app.id);
   if (!rows) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 503, "store_unavailable");
-  const view = { ...onchainGateLaunchpadReadiness(rows), notice: ONCHAIN_GATE_NOT_DEPLOYER };
+  const { listSignerUpdatesForApp } = await import("@/lib/partner/chainAttestationSignerLifecycle/store");
+  let signer_updates: unknown[] = [];
+  try {
+    signer_updates = await listSignerUpdatesForApp(app.partner_id, app.id);
+  } catch {
+    signer_updates = [];
+  }
+  const view = { ...onchainGateLaunchpadReadiness(rows), signer_updates, notice: ONCHAIN_GATE_NOT_DEPLOYER };
   if (onchainGatePayloadLeaks(view).length) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 500, "redacted");
   return launchpadJson(view);
 }

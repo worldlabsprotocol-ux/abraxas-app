@@ -30,9 +30,26 @@ export const ABRAXAS_PARTNER_ELIGIBILITY_GATE_ABI = [
   },
   {
     type: "function",
-    name: "setTrustedSigner",
+    name: "addTrustedSigner",
     stateMutability: "nonpayable",
-    inputs: [{ name: "signer", type: "address" }],
+    inputs: [
+      { name: "keyId", type: "bytes32" },
+      { name: "account", type: "address" },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "retireTrustedSigner",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "keyId", type: "bytes32" }],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "revokeTrustedSigner",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "keyId", type: "bytes32" }],
     outputs: [],
   },
   {
@@ -48,6 +65,30 @@ export const ABRAXAS_PARTNER_ELIGIBILITY_GATE_ABI = [
     stateMutability: "view",
     inputs: [{ name: "nonce", type: "bytes32" }],
     outputs: [{ name: "", type: "bool" }],
+  },
+  {
+    type: "event",
+    name: "TrustedSignerAdded",
+    inputs: [
+      { name: "keyId", type: "bytes32", indexed: true },
+      { name: "account", type: "address", indexed: true },
+    ],
+  },
+  {
+    type: "event",
+    name: "TrustedSignerRetired",
+    inputs: [
+      { name: "keyId", type: "bytes32", indexed: true },
+      { name: "account", type: "address", indexed: true },
+    ],
+  },
+  {
+    type: "event",
+    name: "TrustedSignerRevoked",
+    inputs: [
+      { name: "keyId", type: "bytes32", indexed: true },
+      { name: "account", type: "address", indexed: true },
+    ],
   },
   {
     type: "event",
@@ -81,7 +122,9 @@ export const ABRAXAS_PARTNER_ELIGIBILITY_CONSUMER_ABI = [
 
 export const EVM_GATE_ENTRY_POINTS = [
   "consumeEligibility",
-  "setTrustedSigner",
+  "addTrustedSigner",
+  "retireTrustedSigner",
+  "revokeTrustedSigner",
   "domainSeparator",
   "consumedNonces",
 ] as const;

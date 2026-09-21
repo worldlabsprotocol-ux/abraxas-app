@@ -72,6 +72,11 @@ const evmChallenges = new Map<string, EvmChallengeRow>();
 const evmBindings = new Map<string, EvmBindingRow>();
 const onchainDeployments = new Map<string, Record<string, unknown>>();
 const onchainDeploymentEvents: Record<string, unknown>[] = [];
+const chainAttestationSigners = new Map<string, Record<string, unknown>>();
+const chainAttestationSignerEvents: Record<string, unknown>[] = [];
+const chainAttestationSignerUpdates = new Map<string, Record<string, unknown>>();
+const partnerWebhookConfigs = new Map<string, Record<string, unknown>>();
+const partnerWebhookOutbox = new Map<string, Record<string, unknown>>();
 export const fakeWalletInserts: FakeWalletInsert[] = [];
 export let fakeWalletSchemaMissing = false;
 export let fakeWalletAdminMissing = false;
@@ -85,6 +90,11 @@ export function resetFakeWalletStandardBackend(): void {
   evmBindings.clear();
   onchainDeployments.clear();
   onchainDeploymentEvents.length = 0;
+  chainAttestationSigners.clear();
+  chainAttestationSignerEvents.length = 0;
+  chainAttestationSignerUpdates.clear();
+  partnerWebhookConfigs.clear();
+  partnerWebhookOutbox.clear();
   fakeWalletInserts.length = 0;
   fakeWalletSchemaMissing = false;
   fakeWalletAdminMissing = false;
@@ -104,6 +114,27 @@ function schemaError() {
 
 function uniqueError() {
   return { code: "23505", message: "duplicate key value violates unique constraint" };
+}
+
+function insertResult(
+  error: { code?: string; message?: string } | null,
+  data: Record<string, unknown> | null = null,
+) {
+  const payload = { data, error };
+  return {
+    select() {
+      return this;
+    },
+    single() {
+      return Promise.resolve(payload);
+    },
+    maybeSingle() {
+      return Promise.resolve(payload);
+    },
+    then(onFulfilled: (value: { data: unknown; error: unknown }) => unknown) {
+      return Promise.resolve(payload).then(onFulfilled);
+    },
+  };
 }
 
 function nowIso(): string {
@@ -291,6 +322,11 @@ function tableRows(table: string): Array<Record<string, unknown>> {
   if (table === "evm_wallet_bindings") return Array.from(evmBindings.values());
   if (table === "onchain_gate_deployments") return Array.from(onchainDeployments.values());
   if (table === "onchain_gate_deployment_events") return onchainDeploymentEvents;
+  if (table === "chain_attestation_signers") return Array.from(chainAttestationSigners.values());
+  if (table === "chain_attestation_signer_events") return chainAttestationSignerEvents;
+  if (table === "chain_attestation_signer_updates") return Array.from(chainAttestationSignerUpdates.values());
+  if (table === "partner_webhook_configs") return Array.from(partnerWebhookConfigs.values());
+  if (table === "partner_webhook_outbox") return Array.from(partnerWebhookOutbox.values());
   return [];
 }
 
@@ -324,31 +360,85 @@ export function createWalletStandardAdminClient() {
       const builder = {
         insert(row: Record<string, unknown>) {
           const payload = { ...row } as Record<string, unknown>;
+          const wrap = (result: { error: { code?: string; message?: string } | null }) =>
+            insertResult(result.error, result.error ? null : payload);
           if (table === "wallet_standard_challenges") {
-            return Promise.resolve(insertChallenge(payload as ChallengeRow));
+            return wrap(insertChallenge(payload as ChallengeRow));
           }
           if (table === "wallet_standard_bindings") {
-            return Promise.resolve(insertBinding(payload as BindingRow));
+            return wrap(insertBinding(payload as BindingRow));
           }
           if (table === "partner_venue_action_nonces") {
-            return Promise.resolve(insertNonce(payload as unknown as NonceRow));
+            return wrap(insertNonce(payload as unknown as NonceRow));
           }
           if (table === "evm_wallet_challenges") {
-            return Promise.resolve(insertEvmChallenge(payload as EvmChallengeRow));
+            return wrap(insertEvmChallenge(payload as EvmChallengeRow));
           }
           if (table === "evm_wallet_bindings") {
-            return Promise.resolve(insertEvmBinding(payload as EvmBindingRow));
+            return wrap(insertEvmBinding(payload as EvmBindingRow));
           }
           if (table === "onchain_gate_deployments") {
-            return Promise.resolve(insertOnchainDeployment(payload));
+            return wrap(insertOnchainDeployment(payload));
           }
           if (table === "onchain_gate_deployment_events") {
-            if (fakeWalletSchemaMissing) return Promise.resolve({ error: schemaError() });
+            if (fakeWalletSchemaMissing) return insertResult(schemaError());
             onchainDeploymentEvents.push({ ...payload });
             fakeWalletInserts.push({ table, row: { ...payload } });
-            return Promise.resolve({ error: null });
+            return insertResult(null, payload);
           }
-          return Promise.resolve({ error: schemaError() });
+          if (table === "chain_attestation_signers") {
+            if (fakeWalletSchemaMissing) return insertResult(schemaError());
+            const key = `${payload.environment}:${payload.algorithm}:${payload.key_id}`;
+            if (chainAttestationSigners.has(String(payload.signer_ref)) || Array.from(chainAttestationSigners.values()).some((row) => `${row.environment}:${row.algorithm}:${row.key_id}` === key)) {
+              return insertResult(uniqueError());
+            }
+            chainAttestationSigners.set(String(payload.signer_ref), payload);
+            fakeWalletInserts.push({ table, row: { ...payload } });
+            return insertResult(null, payload);
+          }
+          if (table === "chain_attestation_signer_events") {
+            if (fakeWalletSchemaMissing) return insertResult(schemaError());
+            chainAttestationSignerEvents.push({ ...payload });
+            fakeWalletInserts.push({ table, row: { ...payload } });
+            return insertResult(null, payload);
+          }
+          if (table === "chain_attestation_signer_updates") {
+            if (fakeWalletSchemaMissing) return insertResult(schemaError());
+            const openKey = `${payload.deployment_ref}:${payload.status}`;
+            if (Array.from(chainAttestationSignerUpdates.values()).some((row) => `${row.deployment_ref}:${row.status}` === openKey)) {
+              return insertResult(uniqueError());
+            }
+            chainAttestationSignerUpdates.set(String(payload.update_ref), payload);
+            fakeWalletInserts.push({ table, row: { ...payload } });
+            return insertResult(null, payload);
+          }
+          if (table === "partner_webhook_configs") {
+            if (fakeWalletSchemaMissing) return insertResult(schemaError());
+            partnerWebhookConfigs.set(String(payload.partner_id), payload);
+            fakeWalletInserts.push({ table, row: { ...payload } });
+            return insertResult(null, payload);
+          }
+          if (table === "partner_webhook_outbox") {
+            if (fakeWalletSchemaMissing) return insertResult(schemaError());
+            partnerWebhookOutbox.set(String(payload.event_id ?? payload.idempotency_key), payload);
+            fakeWalletInserts.push({ table, row: { ...payload } });
+            return insertResult(null, payload);
+          }
+          return insertResult(schemaError());
+        },
+        delete() {
+          return {
+            eq(column: string, value: string) {
+              filters.push([column, value]);
+              const rows = tableRows(table);
+              for (const row of rows) {
+                if (filters.every(([col, val]) => String(row[col] ?? "") === val)) {
+                  if (table === "partner_webhook_outbox") partnerWebhookOutbox.delete(String(row.event_id ?? row.idempotency_key));
+                }
+              }
+              return Promise.resolve({ error: null });
+            },
+          };
         },
         update(patch: Record<string, unknown>) {
           return {

@@ -51,6 +51,7 @@ describe("docsHub", () => {
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/solana-onchain-eligibility-gate");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/evm-onchain-eligibility-gate");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/onchain-gate-deployments");
+    expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/chain-attestation-signer-lifecycle");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/evm-wallet-binding");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/receipt-key-lifecycle");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/selective-disclosure");

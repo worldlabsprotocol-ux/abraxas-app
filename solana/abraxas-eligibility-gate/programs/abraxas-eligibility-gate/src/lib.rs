@@ -13,6 +13,12 @@ use canonical::*;
 
 declare_id!("GmaDrppBC7P5ARKV8g3djiwP89vz1jLK23V2GBjuAEGB");
 
+pub const MAX_SIGNERS: usize = 4;
+pub const SIGNER_EMPTY: u8 = 0;
+pub const SIGNER_ACTIVE: u8 = 1;
+pub const SIGNER_RETIRING: u8 = 2;
+pub const SIGNER_REVOKED: u8 = 3;
+
 #[program]
 pub mod abraxas_eligibility_gate {
     use super::*;
@@ -20,15 +26,30 @@ pub mod abraxas_eligibility_gate {
     pub fn initialize_config(ctx: Context<InitializeConfig>, params: ConfigParams) -> Result<()> {
         require!(!params.partner_program.eq(&Pubkey::default()), GateError::InvalidConfig);
         require!(params.trusted_signer != [0u8; 32], GateError::InvalidConfig);
+        require!(params.signer_key_id != [0u8; 32], GateError::InvalidConfig);
         let config = &mut ctx.accounts.config;
         config.admin = ctx.accounts.admin.key();
-        config.apply(params)?;
+        config.apply(params.clone())?;
+        config.install_initial_signer(params.signer_key_id, params.trusted_signer)?;
         config.bump = ctx.bumps.config;
         Ok(())
     }
 
     pub fn update_config(ctx: Context<UpdateConfig>, params: ConfigParams) -> Result<()> {
+        // Binding hashes only. Signers rotate through explicit constrained instructions.
         ctx.accounts.config.apply(params)
+    }
+
+    pub fn add_trusted_signer(ctx: Context<MutateSigner>, key_id: [u8; 32], pubkey: [u8; 32]) -> Result<()> {
+        ctx.accounts.config.add_signer(key_id, pubkey)
+    }
+
+    pub fn retire_trusted_signer(ctx: Context<MutateSigner>, key_id: [u8; 32]) -> Result<()> {
+        ctx.accounts.config.retire_signer(key_id)
+    }
+
+    pub fn revoke_trusted_signer(ctx: Context<MutateSigner>, key_id: [u8; 32]) -> Result<()> {
+        ctx.accounts.config.revoke_signer(key_id)
     }
 
     pub fn authorize(ctx: Context<Authorize>, attestation_id: [u8; 32]) -> Result<()> {
@@ -41,7 +62,7 @@ pub mod abraxas_eligibility_gate {
         let (pubkey, message) =
             extract_ed25519_pubkey_and_message(&prior.data).map_err(|_| GateError::InvalidMessage)?;
         let config = &ctx.accounts.config;
-        require!(pubkey == config.trusted_signer, GateError::UnknownSigner);
+        require!(pubkey_allowed(&config.signers, pubkey), GateError::UnknownSigner);
 
         let fields = parse_canonical_message(&message).map_err(|_| GateError::InvalidMessage)?;
         require!(fields.attestation_id == attestation_id, GateError::InvalidMessage);
@@ -50,7 +71,10 @@ pub mod abraxas_eligibility_gate {
         require!(fields.policy_hash == config.policy_hash, GateError::PolicyMismatch);
         require!(fields.action_hash == config.action_hash, GateError::ActionMismatch);
         require!(fields.environment == config.environment, GateError::EnvironmentMismatch);
-        require!(fields.signer_key_id == config.signer_key_id, GateError::SignerKeyMismatch);
+        require!(
+            signer_matches(&config.signers, pubkey, fields.signer_key_id),
+            GateError::SignerKeyMismatch
+        );
         if config.require_subject {
             require!(!is_zero32(&fields.subject_hash), GateError::SubjectRequired);
         }
@@ -91,19 +115,81 @@ pub mod abraxas_eligibility_gate {
     }
 }
 
+fn pubkey_allowed(slots: &[SignerSlot; MAX_SIGNERS], pubkey: [u8; 32]) -> bool {
+    slots.iter().any(|slot| {
+        (slot.status == SIGNER_ACTIVE || slot.status == SIGNER_RETIRING) && slot.pubkey == pubkey
+    })
+}
+
+fn signer_matches(slots: &[SignerSlot; MAX_SIGNERS], pubkey: [u8; 32], key_id: [u8; 32]) -> bool {
+    slots.iter().any(|slot| {
+        (slot.status == SIGNER_ACTIVE || slot.status == SIGNER_RETIRING)
+            && slot.pubkey == pubkey
+            && slot.key_id == key_id
+    })
+}
+
 impl GateConfig {
     fn apply(&mut self, params: ConfigParams) -> Result<()> {
         require!(!params.partner_program.eq(&Pubkey::default()), GateError::InvalidConfig);
-        require!(params.trusted_signer != [0u8; 32], GateError::InvalidConfig);
         self.partner_program = params.partner_program;
-        self.trusted_signer = params.trusted_signer;
         self.network_id = params.network_id;
         self.partner_hash = params.partner_hash;
         self.policy_hash = params.policy_hash;
         self.action_hash = params.action_hash;
         self.environment = params.environment;
-        self.signer_key_id = params.signer_key_id;
         self.require_subject = params.require_subject;
+        Ok(())
+    }
+
+    fn install_initial_signer(&mut self, key_id: [u8; 32], pubkey: [u8; 32]) -> Result<()> {
+        require!(key_id != [0u8; 32] && pubkey != [0u8; 32], GateError::InvalidConfig);
+        self.signers[0] = SignerSlot {
+            key_id,
+            pubkey,
+            status: SIGNER_ACTIVE,
+        };
+        Ok(())
+    }
+
+    fn add_signer(&mut self, key_id: [u8; 32], pubkey: [u8; 32]) -> Result<()> {
+        require!(key_id != [0u8; 32] && pubkey != [0u8; 32], GateError::UnknownSigner);
+        let mut empty: Option<usize> = None;
+        for (i, slot) in self.signers.iter().enumerate() {
+            if slot.status != SIGNER_EMPTY {
+                require!(slot.key_id != key_id && slot.pubkey != pubkey, GateError::DuplicateSigner);
+            } else if empty.is_none() {
+                empty = Some(i);
+            }
+        }
+        let idx = empty.ok_or(GateError::InvalidConfig)?;
+        self.signers[idx] = SignerSlot {
+            key_id,
+            pubkey,
+            status: SIGNER_ACTIVE,
+        };
+        Ok(())
+    }
+
+    fn index_of(&self, key_id: [u8; 32]) -> Result<usize> {
+        for (i, slot) in self.signers.iter().enumerate() {
+            if slot.status != SIGNER_EMPTY && slot.key_id == key_id {
+                return Ok(i);
+            }
+        }
+        err!(GateError::UnknownSigner)
+    }
+
+    fn retire_signer(&mut self, key_id: [u8; 32]) -> Result<()> {
+        let idx = self.index_of(key_id)?;
+        require!(self.signers[idx].status == SIGNER_ACTIVE, GateError::UnknownSigner);
+        self.signers[idx].status = SIGNER_RETIRING;
+        Ok(())
+    }
+
+    fn revoke_signer(&mut self, key_id: [u8; 32]) -> Result<()> {
+        let idx = self.index_of(key_id)?;
+        self.signers[idx].status = SIGNER_REVOKED;
         Ok(())
     }
 }
@@ -121,20 +207,26 @@ pub struct ConfigParams {
     pub require_subject: bool,
 }
 
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, InitSpace, Default)]
+pub struct SignerSlot {
+    pub key_id: [u8; 32],
+    pub pubkey: [u8; 32],
+    pub status: u8,
+}
+
 #[account]
 #[derive(InitSpace)]
 pub struct GateConfig {
     pub admin: Pubkey,
     pub partner_program: Pubkey,
-    pub trusted_signer: [u8; 32],
     pub network_id: [u8; 32],
     pub partner_hash: [u8; 32],
     pub policy_hash: [u8; 32],
     pub action_hash: [u8; 32],
     pub environment: [u8; 32],
-    pub signer_key_id: [u8; 32],
     pub require_subject: bool,
     pub bump: u8,
+    pub signers: [SignerSlot; MAX_SIGNERS],
 }
 
 #[account]
@@ -169,7 +261,14 @@ pub struct InitializeConfig<'info> {
 #[derive(Accounts)]
 pub struct UpdateConfig<'info> {
     pub admin: Signer<'info>,
-    #[account(mut, has_one = admin, seeds = [CONFIG_SEED, admin.key().as_ref()], bump = config.bump)]
+    #[account(mut, has_one = admin, seeds = [CONFIG_SEED, config.admin.as_ref()], bump = config.bump)]
+    pub config: Account<'info, GateConfig>,
+}
+
+#[derive(Accounts)]
+pub struct MutateSigner<'info> {
+    pub admin: Signer<'info>,
+    #[account(mut, has_one = admin, seeds = [CONFIG_SEED, config.admin.as_ref()], bump = config.bump)]
     pub config: Account<'info, GateConfig>,
 }
 
@@ -241,4 +340,6 @@ pub enum GateError {
     Replayed,
     #[msg("wrong_partner_program")]
     WrongPartnerProgram,
+    #[msg("duplicate_signer")]
+    DuplicateSigner,
 }

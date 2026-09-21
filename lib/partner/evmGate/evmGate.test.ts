@@ -70,6 +70,7 @@ describe("partner-owned EVM eligibility gate kit", () => {
     expect(predicted).toBe(getCreate2Address({ from: GATE, salt, bytecodeHash: keccak256(init) }));
     expect(encodeGateConfigArgs({
       trustedSigner: GATE,
+      trustedSignerKeyId: ZERO32,
       partnerHash: ZERO32,
       networkId: ZERO32,
       policyHash: ZERO32,
@@ -133,6 +134,8 @@ describe("partner-owned EVM eligibility gate kit", () => {
     expect(consumer.startsWith("0x")).toBe(true);
     expect(JSON.stringify(issued.client)).not.toMatch(/receipt|evidence|private_key/i);
     expect(EVM_GATE_ENTRY_POINTS).toContain("consumeEligibility");
+    expect(EVM_GATE_ENTRY_POINTS).toContain("addTrustedSigner");
+    expect(EVM_GATE_ENTRY_POINTS).not.toContain("setTrustedSigner");
     expect(EVM_GATE_FORBIDDEN_METHODS).toContain("transfer");
     expect(concatHex([data]).length).toBeGreaterThan(2);
   });
