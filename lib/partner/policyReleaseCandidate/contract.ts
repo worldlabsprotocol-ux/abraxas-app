@@ -15,6 +15,10 @@ import {
   POLICY_FIT_CATEGORIES,
   POLICY_FIT_CATEGORY_LABELS,
 } from "@/lib/partner/integrationStudio/policyFit/contract";
+import {
+  ELIGIBILITY_PLANNING_CATEGORIES,
+  ELIGIBILITY_PLANNING_LABELS,
+} from "@/lib/eligibilityPresentation/planning";
 import { PORTABLE_ACTION_SCOPES } from "@/lib/partner/portableActionContract/contract";
 import { POLICY_VERSION_COMPATIBILITY } from "@/lib/partner/launchpad/policyVersionPlanner/contract";
 
@@ -90,8 +94,11 @@ export const POLICY_RC_COMPATIBILITY_LABELS: Record<PolicyRcCompatibility, strin
 
 export const POLICY_RC_ACTIONS = POLICY_PROPOSAL_ACTIONS;
 export const POLICY_RC_ACTION_LABELS = POLICY_PROPOSAL_ACTION_LABELS;
-export const POLICY_RC_RESULTS = POLICY_FIT_CATEGORIES;
-export const POLICY_RC_RESULT_LABELS = POLICY_FIT_CATEGORY_LABELS;
+export const POLICY_RC_RESULTS = [...POLICY_FIT_CATEGORIES, ...ELIGIBILITY_PLANNING_CATEGORIES] as const;
+export const POLICY_RC_RESULT_LABELS = {
+  ...POLICY_FIT_CATEGORY_LABELS,
+  ...ELIGIBILITY_PLANNING_LABELS,
+};
 
 export type PolicyRcLabel = `reviewed_gate_${(typeof POLICY_RC_RESULTS)[number]}`;
 export const POLICY_RC_LABELS: readonly PolicyRcLabel[] = POLICY_RC_RESULTS.map(

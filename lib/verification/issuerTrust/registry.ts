@@ -17,14 +17,14 @@ export interface VerificationIssuerRecord {
   label: string;
   method_category: PolicyRcMethod | "account_login" | "wallet_control";
   assurance_level: AssuranceLevel;
-  result_categories: readonly PolicyFitCategory[];
+  result_categories: readonly (PolicyFitCategory | "organization_eligible" | "authorized_signer" | "jurisdiction_eligible" | "institutional_counterparty_eligible")[];
   subject_binding: IssuerSubjectBinding;
   environments: readonly PolicyFitEnvironment[];
   disclosure_boundary: PolicyRcDisclosure;
   status: IssuerTrustStatus;
   valid_from: string;
   valid_until: string | null;
-  docs: typeof VERIFICATION_ISSUER_TRUST_DOCS | "/docs/reusable-eligibility" | "/docs/selective-disclosure" | "/docs/wallet-standard-binding" | "/docs/partner-flow" | "/docs/reclaim-private-attestations";
+  docs: typeof VERIFICATION_ISSUER_TRUST_DOCS | "/docs/reusable-eligibility" | "/docs/selective-disclosure" | "/docs/wallet-standard-binding" | "/docs/partner-flow" | "/docs/reclaim-private-attestations" | "/docs/organization-eligibility";
   integration: IssuerIntegrationState;
 }
 
@@ -149,6 +149,27 @@ export const VERIFICATION_ISSUER_TRUST_RECORDS: readonly VerificationIssuerRecor
     valid_from: "2026-01-01T00:00:00.000Z",
     valid_until: null,
     docs: "/docs/partner-flow",
+    integration: "integrated",
+  },
+  {
+    issuer_key: "abraxas.organization_eligibility",
+    record_version: 1,
+    label: "Abraxas organization eligibility",
+    method_category: "privacy_preserving",
+    assurance_level: "L2",
+    result_categories: [
+      "organization_eligible",
+      "authorized_signer",
+      "jurisdiction_eligible",
+      "institutional_counterparty_eligible",
+    ],
+    subject_binding: "abraxas_account",
+    environments: ["sandbox"],
+    disclosure_boundary: "result_only",
+    status: "active",
+    valid_from: "2026-01-01T00:00:00.000Z",
+    valid_until: null,
+    docs: "/docs/organization-eligibility",
     integration: "integrated",
   },
   {

@@ -321,12 +321,12 @@ describe("eligibility presentation protocol", () => {
     expect(result.receipt_refetch_required).toBe(true);
   });
 
-  it("keeps KYC/KYB planning categories out of live packs and release candidates", () => {
+  it("keeps KYC/KYB planning categories out of live packs and from self-publish", () => {
     for (const category of ELIGIBILITY_PLANNING_CATEGORIES) {
       expect(isEligibilityPlanningCategory(category)).toBe(true);
       expect((POLICY_FIT_CATEGORIES as readonly string[]).includes(category)).toBe(false);
       expect(POLICY_FIT_CATEGORY_TO_PACK[category as never]).toBeUndefined();
-      expect((POLICY_RC_RESULTS as readonly string[]).includes(category)).toBe(false);
+      expect((POLICY_RC_RESULTS as readonly string[]).includes(category)).toBe(true);
     }
     const payload = sanitizeProposalPayload({
       action: "retail_access",
@@ -339,12 +339,15 @@ describe("eligibility presentation protocol", () => {
       confirm: true,
     });
     expect(payload?.result_needed).toBe("organization_eligible");
-    expect(deriveReleaseShape(payload!, {
+    const shape = deriveReleaseShape(payload!, {
       confirm: true,
       result_category: "organization_eligible",
       shared_result: ["eligibility_result"],
       withheld: ["date_of_birth", "holder_wallet"],
-    })).toBeNull();
+    });
+    expect(shape?.result_category).toBe("organization_eligible");
+    expect(shape?.live_policy).toBe(false);
+    expect(shape?.publishes_catalog).toBe(false);
   });
 
   it("does not leak evidence, keys, wallets, callbacks, or Utila/Circle side effects", async () => {

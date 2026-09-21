@@ -64,6 +64,7 @@ export interface IssueChainAttestationInput {
   testAdapter?: LocalIssuanceTestAdapter;
   wallet_binding_hash?: string | null;
   wallet_binding_mode?: "not_attached" | "optional" | "required";
+  organization_binding_hash?: string | null;
   now?: Date;
   ttlMs?: number;
 }
@@ -192,9 +193,24 @@ export async function issueChainEligibilityAttestation(
     return denied(reason, input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
   }
 
+  if (input.organization_binding_hash) {
+    try {
+      const { requireOrganizationBindingForAttestation } = await import("@/lib/organizationEligibility/revoke");
+      await requireOrganizationBindingForAttestation({
+        partnerId: input.kit.options.partnerId,
+        organization_binding_hash: input.organization_binding_hash,
+        wallet_binding_hash: input.wallet_binding_hash,
+      });
+    } catch (error) {
+      const code = error instanceof Error && "code" in error ? String((error as { code?: string }).code) : "organization_revoked";
+      const reason: ChainAttestationSafeReason =
+        code === "wallet_binding_mismatch" ? "wallet_binding_mismatch" : "organization_revoked";
+      return denied(reason, input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
+    }
+  }
   const requireSubject = input.wallet_binding_mode === "required" || network.wallet_binding === "required";
-  const subjectHash = hashSubjectBinding(input.wallet_binding_hash);
-  if (requireSubject && (!input.wallet_binding_hash || subjectHash.endsWith("0".repeat(64)))) {
+  const subjectHash = hashSubjectBinding(input.organization_binding_hash ?? input.wallet_binding_hash);
+  if (requireSubject && ((!input.wallet_binding_hash && !input.organization_binding_hash) || subjectHash.endsWith("0".repeat(64)))) {
     return denied("wallet_binding_missing", input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
   }
 

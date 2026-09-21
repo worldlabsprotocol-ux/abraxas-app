@@ -8,6 +8,8 @@ import {
 } from "./contract";
 import { nonceHash, opaquePresentationRef, partnerHmac } from "./opaque";
 import { loadPresentationRequest, savePresentation, savePresentationRequest } from "./store";
+import { ORGANIZATION_RESULT_CATEGORIES } from "@/lib/organizationEligibility/contract";
+import { requireLiveOrganizationEligibility } from "@/lib/organizationEligibility/revoke";
 import { assertReceiptMatchesRequest, loadBoundSourceReceipt } from "./complete";
 import { signPresentationPayload } from "./sign";
 import type { EligibilityPresentationEnvelope, EligibilityPresentationPayload } from "./types";
@@ -31,6 +33,16 @@ export async function issueEligibilityPresentation(input: {
   if (request.status !== "completed") fail("no_completed_result");
   if (new Date(request.expires_at).getTime() <= Date.now()) fail("expired");
   if (nonceHash(input.verifier_nonce) !== request.nonce_hash) fail("nonce_mismatch");
+  if ((ORGANIZATION_RESULT_CATEGORIES as readonly string[]).includes(request.result_category)) {
+    await requireLiveOrganizationEligibility({
+      partnerId: input.partnerId,
+      result_category: request.result_category,
+      policy_id: request.policy_id,
+      policy_version: request.policy_version,
+      action: request.action,
+      environment: request.environment,
+    });
+  }
 
   const receipt = await loadBoundSourceReceipt(request);
   assertReceiptMatchesRequest(request, receipt, input.partnerId);

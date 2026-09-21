@@ -281,6 +281,30 @@ export async function findPresentationByNonceHash(
   }
 }
 
+export async function revokePresentationsForOrganization(input: {
+  partnerHmac: string;
+  result_category: string;
+  policy_id: string;
+  presentation_ref?: string | null;
+}): Promise<void> {
+  const now = new Date().toISOString();
+  const updates: EligibilityPresentationRecord[] = [];
+  presentationMemory.forEach((record) => {
+    const matchRef = input.presentation_ref && record.presentation_ref === input.presentation_ref;
+    const matchBind =
+      record.partner_hmac === input.partnerHmac
+      && record.result_category === input.result_category
+      && record.policy_id === input.policy_id
+      && record.status === "issued";
+    if (matchRef || matchBind) {
+      updates.push({ ...record, status: "revoked", revoked_at: now });
+    }
+  });
+  for (const record of updates) {
+    await persistPresentation(record);
+  }
+}
+
 export async function revokePresentationsForReceipt(receiptId: string): Promise<void> {
   const now = new Date().toISOString();
   const updates: EligibilityPresentationRecord[] = [];

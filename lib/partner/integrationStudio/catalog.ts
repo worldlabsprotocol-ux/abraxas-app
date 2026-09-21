@@ -28,6 +28,7 @@ import {
   INTEGRATION_STUDIO_ELIGIBILITY_PRESENTATION_NOTICE,
   INTEGRATION_STUDIO_CROSS_CHAIN_PROTOCOL_NOTICE,
   INTEGRATION_STUDIO_TESTNET_GATE_NOTICE,
+  INTEGRATION_STUDIO_INSTITUTIONAL_ELIGIBILITY_NOTICE,
   INTEGRATION_STUDIO_WEBHOOK_NOTICE,
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio/contract";
@@ -229,6 +230,17 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
       calls_rpc: false,
       deploys: false,
       notice: INTEGRATION_STUDIO_CROSS_CHAIN_PROTOCOL_NOTICE,
+    },
+    institutional_eligibility_gate: {
+      docs: "/docs/organization-eligibility",
+      title: "Institutional eligibility gate",
+      presentation_sufficient: false,
+      bearer_credential: false,
+      document_collection: false,
+      utila_integration: false,
+      wallet_control_qualifies: false,
+      funds_movement: false,
+      notice: INTEGRATION_STUDIO_INSTITUTIONAL_ELIGIBILITY_NOTICE,
     },
     testnet_gate_deployment: {
       docs: "/docs/testnet-gate-deployment",

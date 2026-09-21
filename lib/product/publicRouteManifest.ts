@@ -27,6 +27,7 @@ export const PUBLIC_PRODUCT_ROUTES = [
   "/docs/eligibility-presentation-protocol",
   "/docs/cross-chain-protocol-access",
   "/docs/testnet-gate-deployment",
+  "/docs/organization-eligibility",
   "/docs/selective-disclosure",
   "/docs/hosted-partner-flow-handoff",
   "/docs/receipt-lifecycle-events",

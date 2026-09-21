@@ -48,10 +48,12 @@ export async function authorizeCheckout(receiptId: string) {
   return adapter.preflight({ result: verified, contract });
 }
 
-export async function partnerProtocolAction(receiptId: string) {
+export async function partnerProtocolAction(receiptId: string, organizationBindingHash?: string) {
   const contract = adapter.issueActionContract({
     action_type: "partner_protocol_action",
     action_scope: "sandbox:partner_protocol",
+    // Optional hashed organization/authorized-signer binding. Never a legal name or KYB file.
+    organization_subject_binding_hash: organizationBindingHash,
   });
   if ("ok" in contract && contract.ok === false) {
     return { allowed: false, reason: contract.reason };

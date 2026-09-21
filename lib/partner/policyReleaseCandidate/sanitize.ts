@@ -28,14 +28,15 @@ import {
   type PolicyRcMethod,
   type PolicyRcState,
 } from "./contract";
-import { POLICY_FIT_CATEGORIES, type PolicyFitAction, type PolicyFitCategory, type PolicyFitEnvironment } from "@/lib/partner/integrationStudio/policyFit/contract";
+import { type PolicyFitAction, type PolicyFitEnvironment } from "@/lib/partner/integrationStudio/policyFit/contract";
+import type { EligibilityPlanningCategory } from "@/lib/eligibilityPresentation/planning";
 import type { PolicyProposalPrivate, PolicyProposalReceive } from "@/lib/partner/policyProposal/contract";
 import type { PortableActionScope } from "@/lib/partner/portableActionContract/contract";
 
 export interface SanitizedReleaseShape {
   policy_label: PolicyRcLabel;
   action: PolicyFitAction;
-  result_category: PolicyFitCategory;
+  result_category: (typeof POLICY_RC_RESULTS)[number] | EligibilityPlanningCategory;
   shared_result: PolicyProposalReceive[];
   withheld: PolicyProposalPrivate[];
   method_category: PolicyRcMethod;
@@ -79,7 +80,7 @@ export function deriveReleaseShape(proposal: SanitizedProposalPayload, body: unk
   if (createReleaseOverride(body)) return null;
   const record = body as Record<string, unknown>;
   const requested = typeof record.result_category === "string" ? record.result_category : proposal.result_needed;
-  if (!(POLICY_FIT_CATEGORIES as readonly string[]).includes(requested)) return null;
+  if (!(POLICY_RC_RESULTS as readonly string[]).includes(requested)) return null;
   const result = pickOne(requested, POLICY_RC_RESULTS, "age_21");
   const defaultLabel = `reviewed_gate_${result}` as PolicyRcLabel;
   const policy_label = pickOne(record.policy_label, POLICY_RC_LABELS, defaultLabel);

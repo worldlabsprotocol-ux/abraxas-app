@@ -74,6 +74,7 @@ export async function POST(req: NextRequest) {
     application_id: appId,
     wallet_binding_hash: parsed.value.wallet_binding_hash,
     wallet_binding_mode: parsed.value.wallet_binding_mode,
+    organization_binding_hash: parsed.value.organization_binding_hash,
   });
 
   if (!issued.ok) {
