@@ -67,6 +67,7 @@ export type FakeWalletInsert = { table: string; row: Record<string, unknown> };
 const challenges = new Map<string, ChallengeRow>();
 const bindings = new Map<string, BindingRow>();
 const nonces = new Map<string, NonceRow>();
+const chainNonces = new Map<string, { partner_id: string; network_id: string; nonce_hash: string; expires_at: string }>();
 const evmChallenges = new Map<string, EvmChallengeRow>();
 const evmBindings = new Map<string, EvmBindingRow>();
 export const fakeWalletInserts: FakeWalletInsert[] = [];
@@ -77,6 +78,7 @@ export function resetFakeWalletStandardBackend(): void {
   challenges.clear();
   bindings.clear();
   nonces.clear();
+  chainNonces.clear();
   evmChallenges.clear();
   evmBindings.clear();
   fakeWalletInserts.length = 0;
@@ -345,6 +347,19 @@ export function createWalletStandardAdminClient() {
       }
       if (name === "evm_wallet_revoke_binding") {
         return Promise.resolve(revokeEvmBinding(args.p_binding_ref, args.p_partner_id));
+      }
+      if (name === "chain_attestation_consume_nonce") {
+        if (fakeWalletSchemaMissing) return Promise.resolve({ data: null, error: schemaError() });
+        if (isExpired(args.p_expires_at)) return Promise.resolve({ data: { ok: false, code: "expired" }, error: null });
+        const key = `${args.p_partner_id}::${args.p_network_id}::${args.p_nonce_hash}`;
+        if (chainNonces.has(key)) return Promise.resolve({ data: { ok: false, code: "replayed" }, error: null });
+        chainNonces.set(key, {
+          partner_id: args.p_partner_id,
+          network_id: args.p_network_id,
+          nonce_hash: args.p_nonce_hash,
+          expires_at: args.p_expires_at,
+        });
+        return Promise.resolve({ data: { ok: true, code: "consumed" }, error: null });
       }
       return Promise.resolve({ data: null, error: { message: "Could not find the function" } });
     },

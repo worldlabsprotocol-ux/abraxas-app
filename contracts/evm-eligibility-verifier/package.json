@@ -1,0 +1,5 @@
+{
+  "name": "abraxas-evm-eligibility-verifier",
+  "private": true,
+  "description": "Reference EIP-712 eligibility verifier. Partners deploy their own copy. Abraxas does not deploy a shared execution contract."
+}

@@ -99,6 +99,12 @@ export const PUBLIC_JOURNEY_SURFACES = [
     file: "app/docs/portable-action-contract/page.tsx",
   },
   {
+    route: "/docs/chain-verifiable-attestations",
+    purpose: "Chain-verifiable eligibility attestations for partner-owned EVM and Solana verifiers.",
+    primaryCta: { label: "Integration Studio", href: "/developers/integration-studio" },
+    file: "app/docs/chain-verifiable-attestations/page.tsx",
+  },
+  {
     route: "/docs/selective-disclosure",
     purpose: "Canonical selective-disclosure boundary. Policy result only, not evidence.",
     primaryCta: { label: "Integration Studio", href: "/developers/integration-studio" },

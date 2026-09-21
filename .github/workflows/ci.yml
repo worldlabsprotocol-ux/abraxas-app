@@ -143,3 +143,12 @@ jobs:
         run: bash scripts/ci/run-migration-081-sql-parity.sh
         env:
           MIGRATION_081_PG_URL: postgresql://postgres:postgres@127.0.0.1:5432/migration_081_parity
+
+  foundry-evm-verifier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: EVM eligibility verifier tests
+        working-directory: contracts/evm-eligibility-verifier
+        run: forge test -vv

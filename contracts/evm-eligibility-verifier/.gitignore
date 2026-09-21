@@ -1,0 +1,6 @@
+# Isolated Foundry project for the partner-owned EIP-712 eligibility verifier.
+# This is a reference. Abraxas does not deploy it to any chain.
+
+out/
+cache/
+broadcast/
