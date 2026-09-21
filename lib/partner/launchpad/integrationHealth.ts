@@ -152,7 +152,7 @@ export function buildLaunchpadIntegrationHealth(input: {
       status: input.extendedEventTypesAvailable ? "pass" : "action_required",
       detail: input.extendedEventTypesAvailable
         ? `Extended lifecycle events are available. Production compatibility remains ${input.productionCompatibility ?? "receipt.issued, receipt.revoked, and TEST EVENT"}.`
-        : `Unsupported lifecycle events: ${(input.unsupportedLifecycleEvents ?? ["receipt.expired", "decision.denied", "integration.health_changed"]).join(", ")}. Skip code ${input.schemaSkipCode ?? "event_type_not_supported"}. Production compatibility remains limited to ${input.productionCompatibility ?? "receipt.issued, receipt.revoked, and TEST EVENT"}.`,
+        : `Unsupported lifecycle events: ${(input.unsupportedLifecycleEvents ?? ["receipt.expired", "receipt.expiring", "receipt.invalidated", "decision.denied", "integration.health_changed"]).join(", ")}. Skip code ${input.schemaSkipCode ?? "event_type_not_supported"}. Production compatibility remains limited to ${input.productionCompatibility ?? "receipt.issued, receipt.revoked, and TEST EVENT"}.`,
     },
     {
       id: "webhook_failure",

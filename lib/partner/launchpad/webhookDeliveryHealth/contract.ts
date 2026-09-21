@@ -58,6 +58,7 @@ export type WebhookHealthRetryState = (typeof WEBHOOK_HEALTH_RETRY_STATES)[numbe
 export const WEBHOOK_HEALTH_DOCS = {
   starter_kit: "/docs/starter-kit",
   event_delivery: "/docs/partner-event-delivery",
+  lifecycle_events: "/docs/receipt-lifecycle-events",
   integration_studio: INTEGRATION_STUDIO_PATH,
   partner_flow: "/docs/partner-flow",
 } as const;
@@ -65,6 +66,29 @@ export const WEBHOOK_HEALTH_DOCS = {
 export function webhookHealthTestConsoleHref(applicationId: string): string {
   return `${launchpadSandboxTestHref(applicationId)}&capability=webhooks`;
 }
+
+export const WEBHOOK_HEALTH_LIFECYCLE_CHECKLIST = [
+  {
+    id: "verify_hmac",
+    title: "Verify webhook HMAC",
+    detail: "Validate the signed webhook on your server. A fixture is not a live send.",
+  },
+  {
+    id: "refetch_receipt",
+    title: "Re-fetch the public receipt",
+    detail: "Call the public receipt endpoint. The webhook body is never the grant.",
+  },
+  {
+    id: "verify_kit",
+    title: "Verify with Partner Kit",
+    detail: "Use Partner Kit verification and currently_valid before the named partner action.",
+  },
+  {
+    id: "named_action",
+    title: "Apply only the named action",
+    detail: "Issued, expiring, revoked, and invalidated events never authorize access by themselves.",
+  },
+] as const;
 
 export const WEBHOOK_HEALTH_LOCAL_CHECKLIST = [
   {

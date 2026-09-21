@@ -20,6 +20,7 @@ export const PUBLIC_PRODUCT_ROUTES = [
   "/docs/portable-action-contract",
   "/docs/selective-disclosure",
   "/docs/hosted-partner-flow-handoff",
+  "/docs/receipt-lifecycle-events",
   "/docs/wallet-standard-binding",
   "/docs/starter-kit",
   "/examples/trading-venue",

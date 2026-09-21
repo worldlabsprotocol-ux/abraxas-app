@@ -195,7 +195,7 @@ export function PartnerEventDeliveryPanel({ applicationId }: { applicationId: st
             {overview.compatibility_notice
               ?? (overview.extended_event_types_available
                 ? " Extended types are available in this database."
-                : " Unsupported lifecycle events: receipt.expired, decision.denied, and integration.health_changed. Skip code event_type_not_supported. Production compatibility remains limited to receipt.issued, receipt.revoked, and TEST EVENT.")}
+                : " Unsupported lifecycle events: receipt.expired, receipt.expiring, receipt.invalidated, decision.denied, and integration.health_changed. Skip code event_type_not_supported. Production compatibility remains limited to receipt.issued, receipt.revoked, and TEST EVENT.")}
           </p>
           <p style={body}>
             Endpoint health: {overview.webhook_configured ? overview.endpoint_display : "not configured"}

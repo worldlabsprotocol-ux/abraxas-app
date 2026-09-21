@@ -106,6 +106,8 @@ export function PartnerWebhookDeliveryHealthPanel({ applicationId }: { applicati
             {" · "}
             <Link href={view.links.event_delivery_docs}>Webhook documentation</Link>
             {" · "}
+            <Link href={view.links.lifecycle_docs}>Receipt lifecycle events</Link>
+            {" · "}
             <Link href={view.links.integration_studio}>Integration Studio</Link>
           </p>
           {view.deliveries.length > 0 && (
@@ -137,6 +139,22 @@ export function PartnerWebhookDeliveryHealthPanel({ applicationId }: { applicati
               </table>
             </div>
           )}
+          <h3 id="receipt-lifecycle-events-heading" style={{ fontFamily: FONT, fontSize: "0.86rem", fontWeight: 800, margin: "1rem 0 0.4rem" }}>
+            Receipt lifecycle events
+          </h3>
+          <p style={body}>{view.scheduling_notice}</p>
+          <ul style={{ ...body, paddingLeft: "1.1rem" }}>
+            {view.lifecycle_checklist.map((item) => (
+              <li key={item.id}><strong>{item.title}.</strong> {item.detail}</li>
+            ))}
+          </ul>
+          <pre
+            aria-label="Safe lifecycle fixture payloads"
+            className="abx-code-scroll"
+            style={{ fontFamily: FONT, fontSize: "0.68rem", whiteSpace: "pre-wrap", margin: "0 0 0.75rem" }}
+          >
+            {JSON.stringify(view.lifecycle_fixtures, null, 2)}
+          </pre>
         </>
       )}
       <Btn size="sm" variant="secondary" onClick={() => void load()}>Refresh delivery health</Btn>

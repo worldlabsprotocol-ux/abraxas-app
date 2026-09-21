@@ -53,6 +53,10 @@ export function toStoredWebhookEventType(
       return PARTNER_WEBHOOK_TEST_EVENT_TYPE;
     case "receipt.expired":
       return "receipt.expired";
+    case "receipt.expiring":
+      return "receipt.expiring";
+    case "receipt.invalidated":
+      return "receipt.invalidated";
     case "decision.denied":
       return "decision.denied";
     case "integration.health_changed":
