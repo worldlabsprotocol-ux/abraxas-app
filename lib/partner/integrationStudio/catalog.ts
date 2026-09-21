@@ -26,6 +26,7 @@ import {
   INTEGRATION_STUDIO_SOLANA_ONCHAIN_NOTICE,
   INTEGRATION_STUDIO_EVM_ONCHAIN_NOTICE,
   INTEGRATION_STUDIO_ELIGIBILITY_PRESENTATION_NOTICE,
+  INTEGRATION_STUDIO_CROSS_CHAIN_PROTOCOL_NOTICE,
   INTEGRATION_STUDIO_WEBHOOK_NOTICE,
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio/contract";
@@ -216,6 +217,17 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
       automatic_kyc_kyb_approval: false,
       utila_integration: false,
       notice: INTEGRATION_STUDIO_ELIGIBILITY_PRESENTATION_NOTICE,
+    },
+    cross_chain_protocol_access: {
+      docs: "/docs/cross-chain-protocol-access",
+      title: "Build a cross-chain protocol gate",
+      named_action: "activate_protocol_access",
+      presentation_sufficient: false,
+      funds_movement: false,
+      creates_transactions: false,
+      calls_rpc: false,
+      deploys: false,
+      notice: INTEGRATION_STUDIO_CROSS_CHAIN_PROTOCOL_NOTICE,
     },
     policy_compatibility: {
       docs: "/docs/policy-compatibility",

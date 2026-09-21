@@ -67,9 +67,15 @@ function hashesMatch(
     // Production manifests may be submitted from a sandbox Launchpad app for review, but hashes must still pin the declared env.
   }
   if (manifest.gate_type === "evm") {
-    if (!isChainAttestationEvmAction(manifest.action_type)) return "action_mismatch";
-    const expected = CHAIN_ATTESTATION_EVM_TYPE_SCOPES[manifest.action_type as keyof typeof CHAIN_ATTESTATION_EVM_TYPE_SCOPES];
-    if (manifest.action_scope !== expected) return "action_mismatch";
+    if (manifest.action_type === "activate_protocol_access") {
+      if (manifest.action_scope !== "sandbox:protocol_access") return "action_mismatch";
+    } else {
+      if (!isChainAttestationEvmAction(manifest.action_type)) return "action_mismatch";
+      const expected = CHAIN_ATTESTATION_EVM_TYPE_SCOPES[manifest.action_type as keyof typeof CHAIN_ATTESTATION_EVM_TYPE_SCOPES];
+      if (manifest.action_scope !== expected) return "action_mismatch";
+    }
+  } else if (manifest.action_type === "activate_protocol_access") {
+    if (manifest.action_scope !== "sandbox:protocol_access") return "action_mismatch";
   } else if (manifest.action_type !== "partner_protocol_action" || manifest.action_scope !== CHAIN_ATTESTATION_SOLANA_SCOPE) {
     return "action_mismatch";
   }

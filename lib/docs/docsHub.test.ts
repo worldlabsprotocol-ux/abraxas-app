@@ -67,7 +67,8 @@ describe("docsHub", () => {
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/policy-proposals");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/policy-release-candidates");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/verification-issuer-trust");
-    expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/hosted-partner-flow-handoff");
+    expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/eligibility-presentation-protocol");
+    expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/cross-chain-protocol-access");
     expect(developer?.topics[0]?.links?.map((link) => link.href)).toContain("/docs/receipt-lifecycle-events");
   });
 

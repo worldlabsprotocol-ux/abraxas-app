@@ -52,6 +52,7 @@ const PATH_LABEL: Record<IntegrationStudioPathId, string> = {
   solana_onchain_eligibility_gate: "Solana onchain eligibility gate",
   evm_onchain_eligibility_gate: "EVM onchain eligibility gate",
   eligibility_presentation: "Request a private eligibility presentation",
+  cross_chain_protocol_access: "Build a cross-chain protocol gate",
 };
 
 const body: React.CSSProperties = {
@@ -443,6 +444,11 @@ export function IntegrationStudioClient() {
         {pathId === "evm_onchain_eligibility_gate" && (
           <p style={{ ...body, marginBottom: "0.65rem" }}>
             Private holder verification, then your server verifies the current receipt. Abraxas signs a short-lived EIP-712 authorization. Your partner-owned gate verifies it and consumes the nonce once. Your contract records that the named action may proceed. Not a live deployment, Arc activation, USDC path, or Circle settlement.
+          </p>
+        )}
+        {pathId === "cross_chain_protocol_access" && (
+          <p style={{ ...body, marginBottom: "0.65rem" }}>
+            Private proof, then fresh consent, then an audience-bound receipt, then a mandatory public-receipt re-fetch, then a one-time chain authorization, then partner-owned activate_protocol_access. Local/sandbox reference on EVM and Solana. A presentation is never sufficient. Browser input cannot choose chain, contract, program, receipt, policy, action, signer, nonce, expiry, or entitlement.
           </p>
         )}
         {created && hostedDocs?.hosted_link && pathId === "hosted_partner_flow" && (

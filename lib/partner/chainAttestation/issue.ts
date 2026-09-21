@@ -114,9 +114,23 @@ export async function issueChainEligibilityAttestation(
     return denied("invalid", input.action_type, input.action_scope, null, input.kit.options.environment);
   }
 
-  const evmAction = isChainAttestationEvmAction(input.action_type);
-  const solanaAction = input.action_type === "partner_protocol_action";
-  if (evmAction) {
+  const protocolAccess = input.action_type === "activate_protocol_access";
+  const evmNetwork = isChainAttestationEvmNetwork(input.network_id);
+  const solanaNetwork = isChainAttestationSolanaNetwork(input.network_id);
+  const evmAction = protocolAccess
+    ? evmNetwork
+    : isChainAttestationEvmAction(input.action_type);
+  const solanaAction = protocolAccess
+    ? solanaNetwork
+    : input.action_type === "partner_protocol_action";
+  if (protocolAccess) {
+    if (input.action_scope !== "sandbox:protocol_access") {
+      return denied("action_mismatch", input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
+    }
+    if (!evmAction && !solanaAction) {
+      return denied("network_disabled", input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
+    }
+  } else if (evmAction) {
     const expected = CHAIN_ATTESTATION_EVM_TYPE_SCOPES[input.action_type as keyof typeof CHAIN_ATTESTATION_EVM_TYPE_SCOPES];
     if (input.action_scope !== expected) {
       return denied("action_mismatch", input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
