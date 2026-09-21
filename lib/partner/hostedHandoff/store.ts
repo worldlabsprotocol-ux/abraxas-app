@@ -20,6 +20,10 @@ import type { HostedHandoffPartnerView, HostedHandoffPublicView, HostedHandoffRe
 const TABLE = "hosted_partner_flow_handoffs";
 const memory = new Map<string, HostedHandoffRecord>();
 
+function skipDurableStore(): boolean {
+  return Boolean(process.env.VITEST);
+}
+
 export function resetHostedHandoffsForTests(): void {
   memory.clear();
 }
@@ -65,7 +69,7 @@ function refreshStatus(record: HostedHandoffRecord, now = Date.now()): HostedHan
 
 async function persist(record: HostedHandoffRecord): Promise<void> {
   memory.set(record.handoff_ref, record);
-  if (process.env.VITEST || process.env.NODE_ENV === "test") return;
+  if (skipDurableStore()) return;
   try {
     const sb = requireSupabaseAdmin();
     const { error } = await sb.from(TABLE).upsert({
@@ -98,7 +102,7 @@ async function persist(record: HostedHandoffRecord): Promise<void> {
     }
   } catch (error) {
     if (error instanceof Error && "code" in error) throw error;
-    if (process.env.NODE_ENV === "test" || process.env.VITEST) return;
+    if (skipDurableStore()) return;
     throw Object.assign(new Error("schema_unavailable"), { code: "schema_unavailable" });
   }
 }
@@ -106,7 +110,7 @@ async function persist(record: HostedHandoffRecord): Promise<void> {
 export async function loadHandoff(handoffRef: string): Promise<HostedHandoffRecord | null> {
   const cached = memory.get(handoffRef);
   if (cached) return refreshStatus(cached);
-  if (process.env.VITEST || process.env.NODE_ENV === "test") return null;
+  if (skipDurableStore()) return null;
   try {
     const sb = requireSupabaseAdmin();
     const { data, error } = await sb.from(TABLE).select("*").eq("handoff_ref", handoffRef).maybeSingle();
@@ -120,10 +124,10 @@ export async function loadHandoff(handoffRef: string): Promise<HostedHandoffReco
 }
 
 export async function loadHandoffByVerifyRequest(verifyRequest: string): Promise<HostedHandoffRecord | null> {
-  for (const record of memory.values()) {
+  for (const record of Array.from(memory.values())) {
     if (record.verify_request === verifyRequest) return refreshStatus(record);
   }
-  if (process.env.VITEST || process.env.NODE_ENV === "test") return null;
+  if (skipDurableStore()) return null;
   try {
     const sb = requireSupabaseAdmin();
     const { data, error } = await sb.from(TABLE).select("*").eq("verify_request", verifyRequest).maybeSingle();
