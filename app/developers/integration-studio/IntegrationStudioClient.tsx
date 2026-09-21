@@ -49,6 +49,7 @@ const PATH_LABEL: Record<IntegrationStudioPathId, string> = {
   portable_action_contract: "Portable action contract",
   evm_partner_adapter: "EVM partner eligibility",
   onchain_protocol_gate: "Onchain protocol gate",
+  solana_onchain_eligibility_gate: "Solana onchain eligibility gate",
 };
 
 const body: React.CSSProperties = {
@@ -432,6 +433,11 @@ export function IntegrationStudioClient() {
             Holder proves a narrow result privately. Abraxas issues a short-lived signed authorization. Your own contract or program verifies it. Your own code chooses what action to allow. A valid attestation is not a payment, transfer, trade, token approval, gas authorization, or transaction. Abraxas does not deploy a shared execution contract.
           </p>
         )}
+        {pathId === "solana_onchain_eligibility_gate" && (
+          <p style={{ ...body, marginBottom: "0.65rem" }}>
+            Private holder verification, then your server verifies the current receipt. Abraxas signs a narrow Solana authorization. Your transaction includes Ed25519 verification immediately before the gate. Your program consumes it once. Local/reference program only — not deployed to devnet or Mainnet. No SOL or token transfer.
+          </p>
+        )}
         {created && hostedDocs?.hosted_link && pathId === "hosted_partner_flow" && (
           <p style={{ ...body, marginBottom: "0.65rem" }}>
             Hosted verify for this app uses slug <strong>{created.public_slug}</strong>. The key is never placed in this URL.
@@ -493,7 +499,7 @@ export function IntegrationStudioClient() {
         </p>
         <p style={{ ...body, marginBottom: "0.55rem", fontWeight: 700, color: "var(--text-primary)" }}>Optional capabilities</p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginBottom: "0.75rem" }}>
-          {["webhooks", "wallet_standard_binding", "trading_venue", "payment_authorization", "portable_action_contract", "solana_gate", "evm_partner_adapter", "onchain_protocol_gate"].map((id) => (
+          {["webhooks", "wallet_standard_binding", "trading_venue", "payment_authorization", "portable_action_contract", "solana_gate", "evm_partner_adapter", "onchain_protocol_gate", "solana_onchain_eligibility_gate"].map((id) => (
             <button
               key={id}
               type="button"

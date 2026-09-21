@@ -23,6 +23,7 @@ import {
   INTEGRATION_STUDIO_PORTABLE_NOTICE,
   INTEGRATION_STUDIO_EVM_NOTICE,
   INTEGRATION_STUDIO_ONCHAIN_NOTICE,
+  INTEGRATION_STUDIO_SOLANA_ONCHAIN_NOTICE,
   INTEGRATION_STUDIO_WEBHOOK_NOTICE,
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio/contract";
@@ -155,6 +156,14 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
       calls_rpc: false,
       deploys_shared_contract: false,
       notice: INTEGRATION_STUDIO_ONCHAIN_NOTICE,
+    },
+    solana_onchain_eligibility_gate: {
+      creates_transactions: false,
+      funds_movement: false,
+      connects_wallet: false,
+      calls_rpc: false,
+      deploys_shared_program: false,
+      notice: INTEGRATION_STUDIO_SOLANA_ONCHAIN_NOTICE,
     },
     selective_disclosure: {
       docs: "/docs/selective-disclosure",

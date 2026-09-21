@@ -18,12 +18,25 @@ export {
 export { issueChainEligibilityAttestation, hasChainAttestationClientOverride } from "./issue";
 export { eip712Domain, eip712TypedData, hashChainAttestationTypedData } from "./eip712";
 export { loadEvmAttestationSigner } from "./signer";
+export { loadSolanaAttestationSigner } from "./solanaSigner";
 export {
   encodeSolanaEligibilityMessage,
   buildSolanaEd25519VerifyInstructionData,
   SOLANA_ED25519_PROGRAM_ID,
   SOLANA_PARTNER_PROGRAM_INTERFACE,
 } from "./solanaMessage";
+export {
+  deriveGateConfigPda,
+  deriveAuthorizationPda,
+  deriveConsumerAuthorityPda,
+  buildAuthorizeAccountKeys,
+  buildEd25519VerifyInstruction,
+  mapSolanaGateError,
+  LOCAL_SOLANA_GATE_PROGRAM_ID,
+  LOCAL_SOLANA_CONSUMER_PROGRAM_ID,
+  SOLANA_GATE_DEPLOYMENT_NOTICE,
+  SOLANA_ONCHAIN_GATE_FLOW,
+} from "./solanaGate";
 export { assertAttestationBindings } from "./bindings";
 export { verifyEvmEligibilityOffchain } from "./evmKit";
 export { projectChainAttestationClient } from "./project";

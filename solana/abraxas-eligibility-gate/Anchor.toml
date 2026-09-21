@@ -1,0 +1,22 @@
+# Isolated Anchor workspace. Local/reference only. Not deployed to devnet or Mainnet.
+
+[features]
+seeds = false
+skip-lint = false
+
+[programs.localnet]
+abraxas_eligibility_gate = "GmaDrppBC7P5ARKV8g3djiwP89vz1jLK23V2GBjuAEGB"
+abraxas_eligibility_consumer = "J2xccRtuG43drESLYznHhLhQkLTdfepcKYbiQ9BsJVaf"
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
+
+[scripts]
+test = "cargo test --workspace --offline -- --nocapture"
+
+[toolchain]
+anchor_version = "0.30.1"

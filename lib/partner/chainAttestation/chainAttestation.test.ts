@@ -37,6 +37,7 @@ import {
   projectChainAttestationClient,
 } from "@/lib/partner/chainAttestation/project";
 import { EVM_ATTESTATION_KEY_ENV, EVM_ATTESTATION_KEY_ID_ENV } from "@/lib/partner/chainAttestation/signer";
+import { SOLANA_ATTESTATION_KEY_ENV, SOLANA_ATTESTATION_KEY_ID_ENV } from "@/lib/partner/chainAttestation/solanaSigner";
 import { generateStarterKit } from "@/lib/partner/starterKit/generate";
 import { validateStarterKitInput } from "@/lib/partner/starterKit/validate";
 import { studioSnippetForPath } from "@/lib/partner/integrationStudio";
@@ -65,6 +66,8 @@ describe("chain eligibility attestations", () => {
     resetFakeWalletStandardBackend();
     delete process.env[EVM_ATTESTATION_KEY_ENV];
     delete process.env[EVM_ATTESTATION_KEY_ID_ENV];
+    delete process.env[SOLANA_ATTESTATION_KEY_ENV];
+    delete process.env[SOLANA_ATTESTATION_KEY_ID_ENV];
   });
 
   it("issues a valid EIP-712 attestation and rejects domain mismatches", async () => {
@@ -281,6 +284,8 @@ describe("chain eligibility attestations", () => {
   });
 
   it("encodes a deterministic Solana message and instruction without transfers", async () => {
+    process.env[SOLANA_ATTESTATION_KEY_ENV] = "03".repeat(32);
+    process.env[SOLANA_ATTESTATION_KEY_ID_ENV] = "solana-attestation-test-1";
     const adapterKit = kit();
     vi.spyOn(adapterKit, "verifyReceiptId").mockImplementation(async () =>
       adapterKit.evaluateFetchedReceipt(evmFixtureReceipt("approved")),
@@ -294,6 +299,8 @@ describe("chain eligibility attestations", () => {
     });
     expect(issued.ok).toBe(true);
     if (!issued.ok) return;
+    expect(issued.solana_signature).toMatch(/^0x[0-9a-f]+$/);
+    expect(issued.fields.signerKeyId).not.toContain("unsigned");
     const a = encodeSolanaEligibilityMessage(issued.fields);
     const b = encodeSolanaEligibilityMessage(issued.fields);
     expect(Buffer.from(a).equals(Buffer.from(b))).toBe(true);
@@ -421,5 +428,47 @@ describe("chain eligibility attestations", () => {
     const docs = readFileSync(join(process.cwd(), "app/docs/chain-verifiable-attestations/page.tsx"), "utf8");
     expect(docs).toContain("AbraxasEligibilityVerifier");
     expect(docs).not.toMatch(/is live on (Arc|Ethereum|Mainnet)/i);
+  });
+
+  it("fails closed when the dedicated Solana attestation signer is missing", async () => {
+    const adapterKit = kit();
+    vi.spyOn(adapterKit, "verifyReceiptId").mockImplementation(async () =>
+      adapterKit.evaluateFetchedReceipt(evmFixtureReceipt("approved")),
+    );
+    const issued = await issueChainEligibilityAttestation({
+      kit: adapterKit,
+      receiptId: "dr_evm_fixture",
+      action_type: "partner_protocol_action",
+      action_scope: "sandbox:partner_protocol",
+      network_id: "solana_devnet",
+    });
+    expect(issued.ok).toBe(false);
+    if (issued.ok) return;
+    expect(issued.reason).toBe("attestation_unavailable");
+  });
+
+  it("ships starter kit and docs for the Solana onchain eligibility gate", () => {
+    const validated = validateStarterKitInput({
+      pack_id: "age_21_retail",
+      path: "solana_onchain_eligibility_gate",
+      platform: "solana_program",
+      capabilities: [],
+    });
+    expect(validated.ok).toBe(true);
+    if (!validated.ok) return;
+    const kitResult = generateStarterKit(validated.selection);
+    expect(kitResult.ok).toBe(true);
+    if (!kitResult.ok) return;
+    const names = kitResult.files.map((file) => file.path);
+    expect(names).toContain("onchain/SOLANA_PROGRAM.md");
+    expect(names).toContain("src/lib/solana-onchain-gate.ts");
+    const blob = kitResult.files.map((file) => file.contents).join("\n");
+    expect(blob).toContain("cargo test --workspace");
+    expect(blob).not.toMatch(/deployed to (devnet|mainnet)/i);
+    const snippet = studioSnippetForPath("solana_onchain_eligibility_gate");
+    expect(snippet.docs).toBe("/docs/solana-onchain-eligibility-gate");
+    const docs = readFileSync(join(process.cwd(), "app/docs/solana-onchain-eligibility-gate/page.tsx"), "utf8");
+    expect(docs).toContain("SOLANA_ATTESTATION_MESSAGE_PREFIX");
+    expect(docs).not.toMatch(/is live on (devnet|Mainnet)/i);
   });
 });

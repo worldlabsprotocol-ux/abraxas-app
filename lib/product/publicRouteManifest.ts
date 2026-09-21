@@ -19,6 +19,7 @@ export const PUBLIC_PRODUCT_ROUTES = [
   "/docs/payment-authorization",
   "/docs/portable-action-contract",
   "/docs/chain-verifiable-attestations",
+  "/docs/solana-onchain-eligibility-gate",
   "/docs/selective-disclosure",
   "/docs/hosted-partner-flow-handoff",
   "/docs/receipt-lifecycle-events",

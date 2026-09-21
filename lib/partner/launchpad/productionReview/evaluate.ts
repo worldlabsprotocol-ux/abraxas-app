@@ -40,7 +40,7 @@ export interface ProductionReviewGateResult {
 function networksForCapabilities(capabilities: readonly string[]) {
   return NETWORK_CAPABILITY_REGISTRY.filter((entry) => {
     if (entry.ecosystem === "solana") {
-      return capabilities.includes("solana_gate") || capabilities.includes("onchain_protocol_gate");
+      return capabilities.includes("solana_gate") || capabilities.includes("onchain_protocol_gate") || capabilities.includes("solana_onchain_eligibility_gate");
     }
     if (entry.ecosystem === "trading_venue") return capabilities.includes("trading_venue");
     if (entry.ecosystem === "arc_circle") return capabilities.includes("payment_authorization");

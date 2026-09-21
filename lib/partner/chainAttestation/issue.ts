@@ -32,7 +32,8 @@ import {
   randomBytes32,
   unixSeconds,
 } from "./hashes";
-import { encodeSolanaEligibilityMessage, bytesToHex } from "./solanaMessage";
+import { encodeSolanaEligibilityMessage, bytesToHex, buildSolanaEd25519VerifyInstructionData } from "./solanaMessage";
+import { loadSolanaAttestationSigner } from "./solanaSigner";
 import { projectChainAttestationClient, type ChainAttestationClientView } from "./project";
 
 const DEFAULT_TTL_MS = 10 * 60 * 1000;
@@ -67,6 +68,8 @@ export type IssueChainAttestationResult =
       typed_data?: ReturnType<typeof eip712TypedData>;
       signature?: `0x${string}`;
       solana_message?: `0x${string}`;
+      solana_signature?: `0x${string}`;
+      solana_ed25519_instruction?: `0x${string}`;
       attestation_id: string;
     }
   | { ok: false; reason: ChainAttestationSafeReason; client: ChainAttestationClientView };
@@ -260,6 +263,10 @@ export async function issueChainEligibilityAttestation(
     };
   }
 
+  const solanaSigner = loadSolanaAttestationSigner();
+  if (!solanaSigner.ok) {
+    return denied("attestation_unavailable", input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
+  }
   const fields: ChainEligibilityAttestationFields = {
     schemaVersion: CHAIN_ATTESTATION_SCHEMA_VERSION,
     networkId: hashNetworkId(input.network_id),
@@ -272,7 +279,7 @@ export async function issueChainEligibilityAttestation(
     nonce,
     attestationId: bytes32FromUuid(attestationUuid),
     environment: hashEnvironment(input.kit.options.environment),
-    signerKeyId: hashSignerKeyId("solana-message-unsigned"),
+    signerKeyId: hashSignerKeyId(solanaSigner.signer.keyId),
   };
   try {
     const consume = await consumeChainAttestationNonce({
@@ -304,12 +311,21 @@ export async function issueChainEligibilityAttestation(
     network_id: input.network_id,
     environment: input.kit.options.environment,
   });
+  const message = encodeSolanaEligibilityMessage(fields);
+  const signature = solanaSigner.signer.sign(message);
+  const ed25519 = buildSolanaEd25519VerifyInstructionData({
+    publicKey: solanaSigner.signer.publicKey,
+    signature,
+    message,
+  });
   return {
     ok: true,
     encoding: "solana",
     fields,
     client,
-    solana_message: bytesToHex(encodeSolanaEligibilityMessage(fields)),
+    solana_message: bytesToHex(message),
+    solana_signature: bytesToHex(signature),
+    solana_ed25519_instruction: bytesToHex(ed25519.instructionData),
     attestation_id: attestationUuid,
   };
 }

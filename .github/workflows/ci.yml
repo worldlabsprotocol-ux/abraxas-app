@@ -152,3 +152,14 @@ jobs:
       - name: EVM eligibility verifier tests
         working-directory: contracts/evm-eligibility-verifier
         run: forge test -vv
+
+  solana-eligibility-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.88.0"
+      - name: Solana eligibility gate ProgramTest
+        working-directory: solana/abraxas-eligibility-gate
+        run: cargo test --workspace -- --nocapture

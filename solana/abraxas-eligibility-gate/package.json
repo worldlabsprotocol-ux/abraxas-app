@@ -1,0 +1,5 @@
+{
+  "name": "abraxas-eligibility-gate",
+  "private": true,
+  "description": "Isolated Anchor workspace for the Solana eligibility gate. Not a live deployment."
+}

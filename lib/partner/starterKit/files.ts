@@ -493,18 +493,65 @@ Reference Foundry tests live at \`contracts/evm-eligibility-verifier\`.
 }
 
 function solanaProgramDoc(): string {
-  return `# Solana program integration
+  return `# Solana onchain eligibility gate
 
-Use the TypeScript helpers in the Abraxas chain attestation SDK to build the exact Ed25519 verify instruction payload.
+Copy \`solana/abraxas-eligibility-gate\` into your repository. Local/reference only.
+Abraxas does not deploy this program to devnet or Mainnet. Local program IDs are fixtures for ProgramTest.
 
-Message prefix: ABRAXAS_CHAIN_ELIGIBILITY_V1 followed by schema version and the canonical hashes
-(network, partner, policy, action, subject, issued/expiry, nonce, attestation id, environment, signer key id).
+Flow:
+1. Holder completes private verification.
+2. Your server verifies the current public receipt.
+3. Abraxas signs a 372-byte ABRAXAS_CHAIN_ELIGIBILITY_V1 message with a dedicated Ed25519 attestation key.
+4. Your transaction places the Ed25519 native verify instruction immediately before \`authorize\`.
+5. Your program CPI-consumes the authorization PDA once.
 
-Your program must fail closed on unknown signer, wrong bindings, expiry, reused nonce, or missing required subject hash.
-Do not transfer SOL or tokens. Do not treat the attestation as a transaction.
+Local commands:
+\`\`\`
+cd solana/abraxas-eligibility-gate
+cargo test --workspace
+# Optional if you have the Anchor toolchain installed:
+# anchor build
+# anchor test
+\`\`\`
 
-The existing Solana eligibility adapter remains compatible as an off-chain gate.
-This path does not deploy a program or call RPC.
+Devnet checklist (human operator only; this starter does not deploy):
+- Generate a program keypair you control.
+- Confirm the dedicated attestation signer key ID (not a receipt key).
+- Set trusted signer, partner program ID, policy/action hashes, network, and environment on-chain as admin.
+- Do not treat a successful local test as a live deployment.
+
+PDA seeds:
+- config: ["gate_config", admin]
+- authorization: ["authorization", config, attestation_id]
+- consumer authority: ["consumer_authority"] (partner program)
+
+The program never transfers SOL or tokens. Server durable nonce consumption (migration 101) remains required in addition to the onchain PDA.
+`;
+}
+
+function solanaOnchainGate(): string {
+  return `// Server-only. Request a Solana onchain eligibility authorization.
+export async function issueSolanaOnchainGate(receiptId) {
+  const res = await fetch((process.env.ABRAXAS_BASE_URL ?? "https://abraxasworld.xyz") + "/api/v1/chain-attestations", {
+    method: "POST",
+    headers: {
+      authorization: "Bearer " + (process.env.ABRAXAS_SANDBOX_API_KEY ?? "${P.api_key}"),
+      "content-type": "application/json",
+      "x-abraxas-application-id": process.env.ABRAXAS_APP_ID ?? "${P.app_id}",
+    },
+    body: JSON.stringify({
+      receipt_id: receiptId,
+      action_type: "partner_protocol_action",
+      action_scope: "sandbox:partner_protocol",
+      network_id: "solana_devnet",
+      wallet_binding_mode: "required",
+    }),
+  });
+  const issued = await res.json();
+  // Place Ed25519 verify immediately before YOUR gate authorize instruction.
+  // Consume the PDA from YOUR program. Abraxas never submits the transaction.
+  return issued;
+}
 `;
 }
 
@@ -591,6 +638,9 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     || selection.capabilities.includes("onchain_protocol_gate")
     || selection.platform === "evm_contract"
     || selection.platform === "solana_program";
+  const solanaOnchain = selection.path === "solana_onchain_eligibility_gate"
+    || selection.capabilities.includes("solana_onchain_eligibility_gate")
+    || selection.platform === "solana_program";
   const include = { webhook, venue, payment, solana, wallet, portable, evm };
 
   const files: StarterKitFile[] = [
@@ -613,6 +663,7 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     if (portable) files.push({ path: "app/api/abraxas/action-preflight/route.ts", contents: portablePreflight("typescript_nextjs") });
     if (evm) files.push({ path: "app/api/abraxas/evm-preflight/route.ts", contents: evmPreflight("typescript_nextjs") });
     if (onchain) files.push({ path: "src/lib/onchain-gate.ts", contents: onchainGate() });
+    if (solanaOnchain) files.push({ path: "src/lib/solana-onchain-gate.ts", contents: solanaOnchainGate() });
     if (solana) files.push({ path: "src/lib/solana-gate.ts", contents: solanaGate() });
     if (wallet) files.push({ path: "src/lib/wallet-binding.ts", contents: walletBinding() });
   } else if (selection.runtime === "typescript_express") {
@@ -627,6 +678,7 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     files.push({ path: "src/server.ts", contents: expressServer({ webhook, venue, payment, portable, evm }) });
     if (solana) files.push({ path: "src/lib/solana-gate.ts", contents: solanaGate() });
     if (onchain) files.push({ path: "src/lib/onchain-gate.ts", contents: onchainGate() });
+    if (solanaOnchain) files.push({ path: "src/lib/solana-onchain-gate.ts", contents: solanaOnchainGate() });
     if (wallet) files.push({ path: "src/lib/wallet-binding.ts", contents: walletBinding() });
   } else if (selection.runtime === "universal_https") {
     files.push(...universalHttpsFiles(include));
@@ -636,11 +688,14 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     files.push(...serverlessFiles(include));
   }
 
-  if (onchain) {
-    if (!files.some((file) => file.path === "src/lib/onchain-gate.ts")) {
+  if (onchain || solanaOnchain) {
+    if (onchain && !files.some((file) => file.path === "src/lib/onchain-gate.ts")) {
       files.push({ path: "src/lib/onchain-gate.ts", contents: onchainGate() });
     }
-    files.push({ path: "onchain/EVM_VERIFIER.md", contents: evmVerifierDoc() });
+    if (solanaOnchain && !files.some((file) => file.path === "src/lib/solana-onchain-gate.ts")) {
+      files.push({ path: "src/lib/solana-onchain-gate.ts", contents: solanaOnchainGate() });
+    }
+    if (onchain) files.push({ path: "onchain/EVM_VERIFIER.md", contents: evmVerifierDoc() });
     files.push({ path: "onchain/SOLANA_PROGRAM.md", contents: solanaProgramDoc() });
   }
 

@@ -23,6 +23,7 @@ export const INTEGRATION_STUDIO_PATHS = [
   "portable_action_contract",
   "evm_partner_adapter",
   "onchain_protocol_gate",
+  "solana_onchain_eligibility_gate",
 ] as const;
 
 export type IntegrationStudioPathId = (typeof INTEGRATION_STUDIO_PATHS)[number];
@@ -83,6 +84,8 @@ export const INTEGRATION_STUDIO_PORTABLE_NOTICE = PORTABLE_ACTION_NOT_EXECUTION;
 export const INTEGRATION_STUDIO_EVM_NOTICE = EVM_NO_EXECUTION_BOUNDARY;
 export const INTEGRATION_STUDIO_ONCHAIN_NOTICE =
   "Holder proves a narrow result privately. Abraxas issues a short-lived signed authorization. The partner’s own contract or program verifies it. The partner’s own code chooses what action to allow. A valid attestation is not a payment, transfer, trade, token approval, gas authorization, or transaction.";
+export const INTEGRATION_STUDIO_SOLANA_ONCHAIN_NOTICE =
+  "Private holder verification, then the server verifies the current receipt. Abraxas signs a narrow Solana authorization. The partner transaction includes Ed25519 verification immediately before the gate. The partner program consumes that authorization once. Local/reference program only — not deployed to devnet or Mainnet.";
 
 export function isIntegrationStudioPathId(value: string): value is IntegrationStudioPathId {
   return (INTEGRATION_STUDIO_PATHS as readonly string[]).includes(value);
