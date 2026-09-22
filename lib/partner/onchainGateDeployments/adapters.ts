@@ -110,6 +110,13 @@ export function serverEvmRpcAdapter(): EvmVerificationAdapter | null {
     kind: "server_rpc",
     async observe(manifest) {
       try {
+        const expectedChainId = BigInt(manifest.chain_id);
+        const observedChainId = async () => {
+          const value = await jsonRpc(url, "eth_chainId", []);
+          if (typeof value !== "string" || !/^0x[0-9a-fA-F]+$/.test(value)) return null;
+          return BigInt(value);
+        };
+        if (await observedChainId() !== expectedChainId) return { unavailable: true };
         const code = await jsonRpc(url, "eth_getCode", [manifest.gate_address, "latest"]);
         if (typeof code !== "string" || code === "0x" || code === "0x0") return { unavailable: true };
         const digestCall = await jsonRpc(url, "eth_call", [
@@ -117,6 +124,7 @@ export function serverEvmRpcAdapter(): EvmVerificationAdapter | null {
           "latest",
         ]);
         if (typeof digestCall !== "string" || !/^0x[0-9a-fA-F]{64,}$/.test(digestCall)) return { unavailable: true };
+        if (await observedChainId() !== expectedChainId) return { unavailable: true };
         return {
           codeHash: keccak256(code as `0x${string}`),
           configDigest: (`0x${digestCall.replace(/^0x/, "").slice(-64).toLowerCase()}`) as `0x${string}`,
