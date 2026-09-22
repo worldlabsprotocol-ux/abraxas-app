@@ -8,6 +8,7 @@ import {
   runPartnerHarnessCase,
 } from "@/lib/partner/launchpad/partnerTestHarness";
 import { POLICY_PACK_LIST } from "@/lib/partner/launchpad/policyPacks";
+import { buildLaunchpadPolicyId } from "@/lib/partner/launchpad/policyCatalog";
 
 describe("partner test harness", () => {
   const signingKey = generateTestSigningKeyPair();
@@ -31,7 +32,7 @@ describe("partner test harness", () => {
       for (const scenarioId of REQUIRED_HARNESS_SCENARIOS) {
         const result = runPartnerHarnessCase({
           partnerId: "partner-acme",
-          policyId: `partner-acme-${pack.id}-v1`,
+          policyId: buildLaunchpadPolicyId("partner-acme", pack.id),
           policyVersion: 1,
           policyTemplateId: pack.id,
           scenarioId,

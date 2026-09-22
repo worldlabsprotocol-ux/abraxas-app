@@ -9,6 +9,7 @@ import {
   type PolicyPack,
   type PolicyPackId,
 } from "@/lib/partner/launchpad/policyPacks";
+import { pinSandboxInstitutionalProtocolAccessPolicyId } from "@/lib/partner/sandboxInstitutionalProtocolAccess";
 import type { PartnerPolicyRules } from "@/lib/policy/types";
 
 export type LaunchpadPolicyTemplateId = PolicyPackId;
@@ -56,7 +57,10 @@ export function resolveLaunchpadPolicyTemplate(
 }
 
 export function buildLaunchpadPolicyId(partnerId: string, templateId: string): string {
-  return `${partnerId}-${templateId}-v1`;
+  return pinSandboxInstitutionalProtocolAccessPolicyId(
+    templateId,
+    `${partnerId}-${templateId}-v1`,
+  );
 }
 
 export { POLICY_PACKS };

@@ -215,6 +215,7 @@ export async function issueChainEligibilityAttestation(
         : code === "policy_mismatch" ? "policy_mismatch"
         : code === "action_mismatch" ? "action_mismatch"
         : code === "environment_mismatch" ? "environment_mismatch"
+        : code === "operator_result_required" ? "consent_required"
         : "organization_revoked";
     return denied(reason, input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
   }

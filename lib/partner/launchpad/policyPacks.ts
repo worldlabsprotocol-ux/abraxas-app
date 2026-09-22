@@ -3,6 +3,13 @@
 
 import type { AssuranceLevel, ClaimType } from "@/lib/credentials/claimSchema";
 import type { PartnerPolicyRules } from "@/lib/policy/types";
+import {
+  SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
+  SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ISSUER,
+  SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_NOTICE,
+  SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
+  SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
+} from "@/lib/partner/sandboxInstitutionalProtocolAccess";
 
 export const POLICY_PACK_CATALOG_VERSION = 1;
 
@@ -25,7 +32,8 @@ export type PolicyPackId =
   | "membership_credential"
   | "collector_redemption"
   | "identity_liveness"
-  | "sandbox_economic_demo";
+  | "sandbox_economic_demo"
+  | "sandbox_institutional_protocol_access";
 
 export type PolicyPackProductionSuitability =
   | "sandbox_only"
@@ -263,6 +271,50 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
       required_claims: [{ claim_type: "product_eligibility", min_assurance: "L1" }],
     },
   }),
+  sandbox_institutional_protocol_access: pack({
+    id: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
+    display_name: "Sandbox institutional protocol access",
+    holder_explanation:
+      `${SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_NOTICE} Sandbox test result for technical integration only. It is not a live KYB or Production approval. The holder completes the existing organization or authorized-signer eligibility flow after an operator issues a sandbox test result. The partner receives an opaque institutional result bound to activate_protocol_access, not a company file.`,
+    required_claims: [],
+    minimum_assurance: "L2",
+    receipt_lifetime_hours: 24,
+    intended_use_examples: [
+      "Sandbox app pinned to the reviewed institutional protocol-access policy",
+      `Later binding of a fresh sandbox result to a V2 Solana devnet gate for ${SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE}`,
+    ],
+    partner_receives:
+      "Signed sandbox institutional result plus opaque commitments. Not a legal name, KYB file, or production authorization.",
+    partner_does_not_receive: [
+      "legal name",
+      "company registration number",
+      "documents",
+      "beneficial owners",
+      "address",
+      "wallet",
+      "provider payload",
+      "raw receipt",
+      "callback URL",
+      "secret",
+    ],
+    production_suitability: "sandbox_only",
+    disclosed_result: "organization_eligible",
+    receipt_claim: "organization_eligible",
+    reuse_policy: "time_bound",
+    permitted_methods: ["privacy_preserving"],
+    rules: {
+      ...SANDBOX,
+      session_receipt_hours: 24,
+      product_eligibility_action: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
+      allowed_purposes: [SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION],
+      enforce_issuer_trust: true,
+      required_claims: [{
+        claim_type: "organization_eligible",
+        min_assurance: "L2",
+        accepted_issuers: [SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ISSUER],
+      }],
+    },
+  }),
 };
 
 export const POLICY_PACK_LIST = Object.values(POLICY_PACKS);
@@ -300,4 +352,8 @@ export function inferPolicyPackFromPolicyId(policyId: string): PolicyPack | null
 
 export function policyPackIsEconomicDemo(pack: PolicyPack): boolean {
   return pack.id === "sandbox_economic_demo";
+}
+
+export function policyPackIsInstitutionalProtocolAccess(pack: PolicyPack): boolean {
+  return pack.id === SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID;
 }

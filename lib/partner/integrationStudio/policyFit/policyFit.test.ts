@@ -47,7 +47,10 @@ describe("Integration Studio policy fit", () => {
       expect(view.studio_selection.pack_id).toBe(view.recommended?.pack_id);
       packs.add(view.recommended!.pack_id);
     }
-    expect(packs.size).toBe(POLICY_PACK_LIST.length);
+    const launchpadReviewed = POLICY_PACK_LIST.filter(
+      (pack) => pack.id === "sandbox_institutional_protocol_access",
+    ).length;
+    expect(packs.size).toBe(POLICY_PACK_LIST.length - launchpadReviewed);
   });
 
   it("returns a no-fit path for mismatched or Production-only sandbox packs", () => {

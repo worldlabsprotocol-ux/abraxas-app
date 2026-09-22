@@ -18,6 +18,7 @@ describe("adminNav protocol sidebar", () => {
       "partner-flow",
       "policy-proposals",
       "receipts",
+      "sandbox-institutional-result",
       "trust",
       "privacy",
       "connect",

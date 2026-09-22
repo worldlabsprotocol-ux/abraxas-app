@@ -103,7 +103,7 @@ export const INTEGRATION_STUDIO_TESTNET_GATE_NOTICE =
 export const INTEGRATION_STUDIO_ONCHAIN_VERIFIER_CONFORMANCE_NOTICE =
   "Verify your gate integration. Download the versioned verifier package, run local conformance, fix failed bindings or a stale signer, then request a fresh sandbox attestation. Presentation is never enough. No browser deploy, register, or approve. Not a wallet, payment path, or custody layer.";
 export const INTEGRATION_STUDIO_INSTITUTIONAL_ELIGIBILITY_NOTICE =
-  "Institutional eligibility gate. Institutional policy review required. Deploy a reusable V2 gate that is not bound to one organization or actor. Then verify the deployed program, register verified sandbox, and request a fresh institutional presentation and chain attestation. Commitments and expiry live only on that attestation. Not document collection, Utila, live KYB, Arc, or Mainnet.";
+  "Institutional eligibility gate. Institutional policy review required. Sandbox test result for technical integration only. It is not a live KYB or Production approval. Deploy a reusable V2 gate that is not bound to one organization or actor. Then verify the deployed program, register verified sandbox, and request a fresh institutional presentation and chain attestation. Commitments and expiry live only on that attestation. Not document collection, Utila, live KYB, Arc, or Mainnet.";
 
 export function isIntegrationStudioPathId(value: string): value is IntegrationStudioPathId {
   return (INTEGRATION_STUDIO_PATHS as readonly string[]).includes(value);

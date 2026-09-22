@@ -17,6 +17,7 @@ import {
   loadPartnerFlowStoredConfig,
   loadStarterKitEvidenced,
   parsePartnerFlowRequestBody,
+  partnerFlowActionsForTemplate,
   partnerFlowViewLeaks,
   savePartnerFlowRequestConfig,
 } from "@/lib/partner/launchpad/partnerFlowRequest";
@@ -105,6 +106,10 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   }
   const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
+  const allowedActions = partnerFlowActionsForTemplate(app.policy_template_id);
+  if (!allowedActions.includes(parsed.input.action)) {
+    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "invalid_action");
+  }
   let enabledCapabilities;
   try {
     enabledCapabilities = await loadEnabledPartnerFlowCapabilities(app, auth.session.partnerId);

@@ -118,6 +118,18 @@ describe("production review control plane", () => {
       evidence: evidence({ policyTemplateId: "sandbox_economic_demo" }),
       durableSchemaReady: true,
     }).blockers).toContain("sandbox_only_policy");
+    expect(evaluateProductionReviewGates({
+      request: { id: "req-1", application_id: "app-1", partner_id: "acme", status: "pending" },
+      application: app({
+        policy_template_id: "sandbox_institutional_protocol_access",
+        policy_id: "sandbox_institutional_protocol_access",
+      }),
+      evidence: evidence({
+        policyTemplateId: "sandbox_institutional_protocol_access",
+        policyId: "sandbox_institutional_protocol_access",
+      }),
+      durableSchemaReady: true,
+    }).blockers).toContain("sandbox_only_policy");
   });
 
   it("denies disabled, planned, and unconfigured Mainnet networks", () => {

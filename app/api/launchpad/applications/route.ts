@@ -56,6 +56,19 @@ export async function POST(req: NextRequest) {
   if (String(body.environment ?? "sandbox") === "production" || body.issue_production_key === true) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.forbidden, 403, "production_denied");
   }
+  const forbiddenAuthority = [
+    "policy_id",
+    "policy_version",
+    "issuer",
+    "assurance",
+    "signer",
+    "network",
+    "receipt_id",
+    "organization_result",
+  ];
+  if (forbiddenAuthority.some((key) => key in body)) {
+    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.forbidden, 403);
+  }
 
   const partnerId = String(body.partner_id ?? sessionPartnerId ?? "");
   if (!partnerId) {

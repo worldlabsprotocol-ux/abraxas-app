@@ -85,6 +85,17 @@ export async function createPresentationRequest(
   if (Number.isNaN(expires) || expires <= now) {
     throw Object.assign(new Error("invalid_expiry"), { code: "invalid_expiry" });
   }
+  const { bindFreshConsentToOperatorSandboxResult } = await import(
+    "@/lib/partner/sandboxInstitutionalOperatorResult/bindConsent"
+  );
+  await bindFreshConsentToOperatorSandboxResult({
+    partnerId: input.partnerId,
+    policyId: input.policy_id,
+    policyVersion: input.policy_version,
+    action: input.action,
+    actionScope: input.action_scope,
+    environment: input.environment,
+  });
   const record: EligibilityPresentationRequestRecord = {
     request_ref: opaqueRequestRef(`${input.partnerId}:${randomBytes(8).toString("hex")}`),
     partner_hmac: partnerHmac(input.partnerId),

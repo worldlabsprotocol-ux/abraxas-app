@@ -141,10 +141,30 @@ const PACK_RESULTS: Record<string, SanitizedReleaseShape["result_category"]> = {
   collector_redemption: "collector_redemption",
   identity_liveness: "identity_liveness",
   sandbox_economic_demo: "sandbox_demo",
+  sandbox_institutional_protocol_access: "organization_eligible",
 };
 
 export function planIssuersForPack(pack: PolicyPack, now?: Date): IssuerMethodPlan {
   const result = PACK_RESULTS[pack.id] ?? "sandbox_demo";
+  if (pack.id === "sandbox_institutional_protocol_access") {
+    const shape: SanitizedReleaseShape = {
+      policy_label: "reviewed_gate_organization_eligible",
+      action: "sandbox_demo",
+      result_category: "organization_eligible",
+      shared_result: ["eligibility_result"],
+      withheld: ["raw_documents", "holder_wallet", "government_id"],
+      method_category: "privacy_preserving",
+      minimum_assurance: "L2",
+      environment: "sandbox",
+      action_scopes: ["sandbox:protocol_access"],
+      disclosure_profile: "result_only",
+      compatibility_impact: "policy_review",
+      live_policy: false,
+      publishes_catalog: false,
+      mutates_compatibility_edge: false,
+    };
+    return planIssuersForReleaseShape(shape, overlayIssuerTrustRecords(), now);
+  }
   const method = pack.id === "identity_liveness"
     ? "identity_liveness"
     : pack.id === "sandbox_economic_demo"

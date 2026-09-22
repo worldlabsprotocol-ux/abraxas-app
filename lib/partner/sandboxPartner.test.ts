@@ -11,6 +11,7 @@ describe("sandboxPartner", () => {
   it("recognizes canonical and legacy sandbox policy ids", () => {
     expect(isSandboxPolicyId(SANDBOX_POLICY_ID)).toBe(true);
     expect(isSandboxPolicyId(LEGACY_SANDBOX_POLICY_ID)).toBe(true);
+    expect(isSandboxPolicyId("sandbox_institutional_protocol_access")).toBe(true);
     expect(isSandboxPolicyId("cielo-verified-guest-v1")).toBe(false);
   });
 

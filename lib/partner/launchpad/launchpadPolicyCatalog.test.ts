@@ -9,7 +9,7 @@ import {
 
 describe("launchpad policy catalog", () => {
   it("exposes predefined templates only", () => {
-    expect(LAUNCHPAD_POLICY_TEMPLATE_LIST).toHaveLength(8);
+    expect(LAUNCHPAD_POLICY_TEMPLATE_LIST).toHaveLength(9);
     for (const template of LAUNCHPAD_POLICY_TEMPLATE_LIST) {
       expect(template.rules).toBeTruthy();
       expect(template.userExplanation.length).toBeGreaterThan(10);
@@ -19,6 +19,9 @@ describe("launchpad policy catalog", () => {
 
   it("builds stable versioned policy ids", () => {
     expect(buildLaunchpadPolicyId("acme", "age_21_retail")).toBe("acme-age_21_retail-v1");
+    expect(buildLaunchpadPolicyId("acme", "sandbox_institutional_protocol_access")).toBe(
+      "sandbox_institutional_protocol_access",
+    );
   });
 
   it("rejects unknown template ids", () => {

@@ -1,4 +1,4 @@
-import { ORGANIZATION_ELIGIBILITY_TTL_MS, ORGANIZATION_RESULT_CATEGORIES, type OrganizationResultCategory } from "./contract";
+import { ORGANIZATION_ELIGIBILITY_TTL_MS, isOrganizationResultCategory } from "./contract";
 import { mapReviewedOrganizationIssuer } from "./mapIssuer";
 import {
   newOrganizationSeed,
@@ -12,6 +12,10 @@ import { organizationPolicyContract } from "./policies";
 import { consumeOrganizationConsent } from "./consent";
 import { findOrganizationByDerivation, saveOrganizationEligibility } from "./store";
 import type { OrganizationEligibilityRecord } from "./types";
+import {
+  SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
+  SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
+} from "@/lib/partner/sandboxInstitutionalProtocolAccess";
 
 const ISSUE_KEYS = ["consent_ref", "subject_binding_hash"] as const;
 
@@ -36,13 +40,19 @@ export async function issueOrganizationEligibility(input: {
   const partner_hmac = organizationPartnerHmac(input.partnerId);
   const consent = consumeOrganizationConsent({ consent_ref: input.consent_ref, partnerHmac: partner_hmac });
   if (!consent) fail("consent_required");
-  if (!(ORGANIZATION_RESULT_CATEGORIES as readonly string[]).includes(consent.result_category)) fail("unknown_policy");
+  if (!isOrganizationResultCategory(consent.result_category)) fail("unknown_policy");
+  if (consent.action === SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION) {
+    if (consent.environment === "production" || consent.action_scope !== SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE) {
+      fail("environment_mismatch");
+    }
+    fail("operator_result_required");
+  }
   const policy = organizationPolicyContract(consent.result_category);
   if (!policy || policy.live_policy || policy.self_publishable || policy.wallet_control_qualifies) fail("unknown_policy");
 
   const mapped = mapReviewedOrganizationIssuer({
     issuer_key: input.issuer_key ?? "abraxas.organization_eligibility",
-    result_category: consent.result_category as OrganizationResultCategory,
+    result_category: consent.result_category,
     now: input.now,
   });
   if (!mapped.ok) fail(mapped.reason);

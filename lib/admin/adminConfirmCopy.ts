@@ -21,7 +21,9 @@ export type AdminConfirmActionKey =
   | "revocation.partner_scoped"
   | "design_partner.promote"
   | "design_partner.approve"
-  | "design_partner.reject";
+  | "design_partner.reject"
+  | "sandbox_institutional_result.issue"
+  | "sandbox_institutional_result.revoke";
 
 export interface AdminConfirmCopy {
   title: string;
@@ -231,6 +233,29 @@ export const ADMIN_CONFIRM_COPY: Record<AdminConfirmActionKey, AdminConfirmCopy>
       + "The raw key is shown once after creation. Existing keys are not revoked automatically. "
       + "Store it in your approved secret manager immediately.",
     confirmLabel: "Issue API key",
+    cancelLabel: "Cancel",
+    risk: "high",
+    requireNote: false,
+    noteOptional: false,
+    requireReasonCode: false,
+  },
+  "sandbox_institutional_result.issue": {
+    title: "Issue a sandbox test-only institutional result?",
+    body:
+      "This creates a short-lived sandbox_test_only result for the pinned sandbox_institutional_protocol_access policy. "
+      + "It is not a live KYB or Production approval. The holder and partner cannot create or approve this result.",
+    confirmLabel: "Issue sandbox test result",
+    cancelLabel: "Cancel",
+    risk: "high",
+    requireNote: false,
+    noteOptional: false,
+    requireReasonCode: false,
+  },
+  "sandbox_institutional_result.revoke": {
+    title: "Revoke the sandbox test-only institutional result?",
+    body:
+      "This revokes the operator sandbox_test_only result. Future presentation, receipt, attestation, and gate authorization for this result will fail.",
+    confirmLabel: "Revoke sandbox test result",
     cancelLabel: "Cancel",
     risk: "high",
     requireNote: false,

@@ -7,6 +7,7 @@ import {
   GOOGLE_ACCOUNT_NOT_ELIGIBILITY,
   inferPolicyPackFromPolicyId,
   policyPackIsEconomicDemo,
+  policyPackIsInstitutionalProtocolAccess,
   policyPackRequiresIdentityEvidence,
   resolvePolicyPack,
   type PolicyPack,
@@ -102,6 +103,7 @@ export function planEligibilityMethods(input: {
     && assuranceMeetsMinimum(input.partnerAgeCheckAssurance, pack.minimum_assurance);
   const privacy = Boolean(input.privacyPreservingAvailable);
   const selfAttestAllowed = browseOnly && input.browseSelfAttestAllowed !== false;
+  const institutional = policyPackIsInstitutionalProtocolAccess(pack);
 
   const methods: EligibilityMethodOption[] = [
     {
@@ -117,10 +119,10 @@ export function planEligibilityMethods(input: {
       id: "reuse_existing_proof",
       label: "Use an existing private verification",
       why: "A previous private verification may satisfy this request. The new partner receives only this policy’s result. Selecting reuse does not issue a result.",
-      qualifies: existing,
-      circle_settlement_eligible: existing && !browseOnly && !selfAttestAllowed,
-      primary: existing,
-      available: existing,
+      qualifies: existing && !institutional,
+      circle_settlement_eligible: existing && !browseOnly && !selfAttestAllowed && !institutional,
+      primary: existing && !institutional,
+      available: existing && !institutional,
     },
     {
       id: "partner_age_check",
@@ -130,28 +132,30 @@ export function planEligibilityMethods(input: {
         : partnerConfigured
           ? `This partner check is configured but its assurance does not meet ${pack.minimum_assurance}. It cannot issue a settlement-capable receipt.`
           : "Offer this route when the partner has configured an eligibility check.",
-      qualifies: partnerQualifies,
-      circle_settlement_eligible: partnerQualifies && !browseOnly,
-      primary: !existing && partnerQualifies,
-      available: partnerConfigured,
+      qualifies: partnerQualifies && !institutional,
+      circle_settlement_eligible: partnerQualifies && !browseOnly && !institutional,
+      primary: !existing && partnerQualifies && !institutional,
+      available: partnerConfigured && !institutional,
     },
     {
       id: "privacy_preserving",
       label: "Privacy-preserving verification",
-      why: "Share only the policy result. The partner does not receive ID images or a profile.",
+      why: institutional
+        ? "Only the reviewed abraxas.organization_eligibility issuer at L2 can qualify this sandbox institutional protocol-access policy."
+        : "Share only the policy result. The partner does not receive ID images or a profile.",
       qualifies: privacy && !browseOnly,
-      circle_settlement_eligible: privacy && !browseOnly,
-      primary: !existing && !partnerQualifies && privacy,
+      circle_settlement_eligible: privacy && !browseOnly && !institutional,
+      primary: institutional || (!existing && !partnerQualifies && privacy),
       available: privacy,
     },
     {
       id: "self_attestation",
       label: "Self-attestation (browse only)",
       why: "Self-attestation is L0 browse access only. It cannot satisfy an authoritative policy and cannot settle Circle USDC.",
-      qualifies: selfAttestAllowed,
+      qualifies: selfAttestAllowed && !institutional,
       circle_settlement_eligible: false,
       primary: false,
-      available: selfAttestAllowed,
+      available: selfAttestAllowed && !institutional,
     },
     {
       id: "identity_liveness",
@@ -159,10 +163,10 @@ export function planEligibilityMethods(input: {
       why: requiresIdentity
         ? "This policy lists identity or liveness as an accepted assurance method. It is not the default first step when another qualifying method exists."
         : "This policy does not require identity or liveness.",
-      qualifies: requiresIdentity,
-      circle_settlement_eligible: requiresIdentity && !browseOnly,
+      qualifies: requiresIdentity && !institutional,
+      circle_settlement_eligible: requiresIdentity && !browseOnly && !institutional,
       primary: false,
-      available: requiresIdentity,
+      available: requiresIdentity && !institutional,
     },
   ];
 
@@ -215,6 +219,10 @@ export function isInadequateCircleSettlementReceipt(receipt: {
 
   if (pack && policyPackIsEconomicDemo(pack) && receipt.decision_context !== "sandbox_only") {
     return { inadequate: true, reason: "sandbox_demo_not_sandbox_context" };
+  }
+
+  if (pack && policyPackIsInstitutionalProtocolAccess(pack) && receipt.production_usable === true) {
+    return { inadequate: true, reason: "sandbox_demo_production" };
   }
 
   return { inadequate: false, reason: null };

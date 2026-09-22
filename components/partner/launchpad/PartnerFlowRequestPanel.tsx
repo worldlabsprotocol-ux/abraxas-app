@@ -13,6 +13,7 @@ import {
   PARTNER_FLOW_ACTION_LABELS,
   PARTNER_FLOW_REQUEST_ENTRY,
   PARTNER_FLOW_REVIEW_NOTICE,
+  partnerFlowActionsForTemplate,
 } from "@/lib/partner/launchpad/partnerFlowRequest/contract";
 import type { PartnerFlowRequestView } from "@/lib/partner/launchpad/partnerFlowRequest/view";
 import { HostedHandoffControls } from "./HostedHandoffControls";
@@ -68,7 +69,9 @@ export function PartnerFlowRequestPanel({
       }
       setView(data);
       setPurpose(data.purpose ?? "");
-      if (data.action) setAction(data.action);
+      const allowed = partnerFlowActionsForTemplate(data.policy_template_id);
+      if (data.action && allowed.includes(data.action)) setAction(data.action);
+      else if (allowed.length === 1) setAction(allowed[0]);
       if (data.selected_callback_index != null) setCallbackIndex(data.selected_callback_index);
       setDisplayLabel(data.display_label);
       setCapabilities(data.capabilities);
@@ -151,7 +154,7 @@ export function PartnerFlowRequestPanel({
           Named action
         </legend>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
-          {PARTNER_FLOW_ACTIONS.map((id) => (
+          {partnerFlowActionsForTemplate(view?.policy_template_id ?? "").map((id) => (
             <button
               key={id}
               type="button"
