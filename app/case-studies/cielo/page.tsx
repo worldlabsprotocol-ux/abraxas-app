@@ -5,10 +5,10 @@ import { CaseStudyGallery, CaseStudyPhotoHero } from "@/components/case-studies/
 import { CIELO_GALLERY_IMAGES, CIELO_HERO_IMAGE } from "@/lib/data/cieloMedia";
 import { publicHomeFlowById, PUBLIC_FLOW_STATUS_LABEL } from "@/lib/product/publicFlowManifest";
 
-const cielo = publicHomeFlowById("cielo-registry");
-if (!cielo) throw new Error("cielo_flow_missing");
-
 export default function CieloCaseStudyPage() {
+  const cielo = publicHomeFlowById("cielo-registry");
+  if (!cielo) throw new Error("cielo_flow_missing");
+
   return (
     <RedesignPage accent="neutral" maxWidth={900}>
       <PageHeader
