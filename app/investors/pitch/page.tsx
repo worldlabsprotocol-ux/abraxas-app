@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/investors/pitch/page.tsx
-// Web pitch deck. 12 slides for VC meetings.
+// Web pitch deck grounded in the current proof map.
 
 import { useState } from "react";
 import Link from "next/link";
@@ -87,8 +87,8 @@ export default function PitchDeckPage() {
         <button type="button" disabled={idx === total - 1} onClick={() => setIdx(i => i + 1)} style={navBtn(idx === total - 1)}>
           Next →
         </button>
-        <Btn href="/case-studies/cielo" variant="ghost" size="sm">Cielo proof</Btn>
-        <Btn href="/metrics" variant="ghost" size="sm">Live metrics</Btn>
+        <Btn href="/institutional" variant="ghost" size="sm">Proof map</Btn>
+        <Btn href="/metrics" variant="ghost" size="sm">Operational metrics</Btn>
       </div>
     </RedesignPage>
   );

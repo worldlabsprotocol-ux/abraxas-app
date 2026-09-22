@@ -58,7 +58,7 @@ export default function LitepaperPage() {
               <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>{s.name}</div>
               <div style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)" }}>{s.desc}</div>
             </div>
-            <span style={{ fontFamily: FONT, fontSize: "0.68rem", fontWeight: 700, color: s.status === "Live" ? ACCENT : "#F59E0B", alignSelf: "start" }}>{s.status}</span>
+            <span style={{ fontFamily: FONT, fontSize: "0.68rem", fontWeight: 700, color: "#F59E0B", alignSelf: "start" }}>{s.status}</span>
           </div>
         ))}
       </ContentCard>

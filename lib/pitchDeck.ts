@@ -1,6 +1,4 @@
-// FILE: lib/pitchDeck.ts
-// Web pitch deck content — 12 slides for VC conversations.
-
+// Investor presentation grounded in the current product and public proof map.
 export interface PitchSlide {
   id: string;
   title: string;
@@ -12,125 +10,72 @@ export interface PitchSlide {
 export const PITCH_DECK: PitchSlide[] = [
   {
     id: "problem",
-    title: "Verification debt",
+    title: "Verification does not travel",
     bullets: [
-      "Every lender, marketplace, and protocol re-runs KYC independently",
-      "Real assets stay illiquid because trust does not travel",
-      "High-touch diligence does not scale to $100M+ asset volume",
+      "Each protocol repeats sensitive eligibility checks",
+      "Partners need a current result bound to their own policy and audience",
+      "Holders should not disclose source evidence to every integration",
     ],
-    highlight: "Users upload the same documents dozens of times.",
-  },
-  {
-    id: "solution",
-    title: "Verify once. Transact everywhere.",
-    bullets: [
-      "Licensed providers verify (Veriff, appraisers, legal)",
-      "Abraxas issues portable W3C credentials on Sui",
-      "Protocols query Abraxas — users consent once",
-    ],
-    link: { label: "Litepaper", href: "/docs/litepaper" },
-  },
-  {
-    id: "moat",
-    title: "Infrastructure, not a marketplace",
-    bullets: [
-      "B2B network effects — SDK + API for any RWA protocol",
-      "Credential reuse lowers cost per check over time",
-      "Post-issuance monitoring keeps assets trustworthy (roadmap)",
-    ],
-    highlight: "4-line integration: GET /api/trust/status",
-    link: { label: "Integrations", href: "/integrations" },
-  },
-  {
-    id: "proof",
-    title: "Live proof: Cielo Sunrise",
-    bullets: [
-      "$1.1M appraised hospitality property in Georgia",
-      "Public Airbnb + Abraxas Protocol Calendar",
-      "Book → confirm → USDC on Sui → on-chain receipt",
-    ],
-    link: { label: "Case study", href: "/case-studies/cielo" },
   },
   {
     id: "product",
-    title: "What ships today",
+    title: "A narrow result, checked again when used",
     bullets: [
-      "Google zkLogin wallet — no seed phrase",
-      "Optional ID check via licensed provider",
-      "10-stage V5 asset pipeline",
-      "Wyoming LLC engine + music audit intake",
+      "Hosted request and fresh holder consent",
+      "Partner-bound public receipt and one-time eligibility presentation",
+      "The partner re-fetches validity and applies its own risk rules",
     ],
-    link: { label: "Roadmap", href: "/roadmap" },
+    link: { label: "Presentation protocol", href: "/docs/eligibility-presentation-protocol" },
   },
   {
-    id: "architecture",
-    title: "Sui for trust · Solana for $ABRA",
+    id: "sandbox",
+    title: "A sandbox flow you can try",
     bullets: [
-      "Sui: identity, credentials, passports, USDC booking",
-      "Solana: optional $ABRA access tiers (fair launch)",
-      "Sensitive data off-chain — only proofs anchor publicly",
+      "Good Trouble demonstrates a 21+ eligibility request",
+      "The partner receives the result; underlying evidence stays private",
+      "It is not a live retail checkout or transaction",
     ],
-    link: { label: "Chain architecture", href: "/docs/chain" },
+    link: { label: "Try the sandbox", href: "/good-trouble" },
   },
   {
-    id: "traction",
-    title: "Traction & metrics",
+    id: "institutional",
+    title: "Institutional policy, limited to sandbox",
     bullets: [
-      "Live metrics from Supabase — wallets, credentials, bookings",
-      "Cielo revenue loop instrumented end-to-end",
-      "Design partner pipeline for external protocol acceptance",
+      "An operator-controlled test result exercises the organization policy path",
+      "Consent, revocation, expiry, and partner binding are enforced",
+      "A live KYB issuer and external partner validation are still required",
     ],
-    link: { label: "Live metrics", href: "/metrics" },
+    link: { label: "Inspect the proof map", href: "/institutional" },
   },
   {
-    id: "economics",
-    title: "Revenue paths",
+    id: "chain",
+    title: "One eligibility contract, two partner-owned gates",
     bullets: [
-      "Verification packages (ID, KYB, property attestation)",
-      "Wyoming LLC formation fees",
-      "Future: passport query fees + asset monitoring",
+      "EVM and Solana gates consume a named access action once",
+      "Local contract and ProgramTest coverage exists",
+      "No public devnet or Mainnet gate deployment is claimed here",
     ],
-    link: { label: "Economics model", href: "/economics" },
+    link: { label: "Verifier conformance", href: "/docs/onchain-verifier-conformance" },
   },
   {
-    id: "token",
-    title: "$ABRA — work token, not a gate",
+    id: "boundary",
+    title: "Partners keep execution authority",
     bullets: [
-      "Not required to verify or book on Abraxas",
-      "Fee tiers for holders · future validator staking",
-      "USDC for user fees · $ABRA for coordination (planned)",
+      "Abraxas does not move funds, place trades, or authorize wallet spending",
+      "Protocols own the deployed gate, governance, AML/KYT, and transaction policy",
+      "Mainnet requires separate Production review and verified deployment",
     ],
-    link: { label: "Tokenomics", href: "/tokenomics" },
+    link: { label: "Network readiness", href: "/docs/multichain-mainnet-readiness" },
   },
   {
-    id: "team",
-    title: "Team & execution",
+    id: "milestones",
+    title: "What turns the code into adoption",
     bullets: [
-      "Solo founder shipped: Cielo live, zkLogin, Veriff, full redesign",
-      "18% team pool reserved for CTO + Head of Compliance post-funding",
-      "Differentiated: tribal rights, royalties, reusable verification",
+      "Human devnet deployment with independently observed configuration",
+      "First unaffiliated end-to-end partner integration",
+      "Measured current-receipt checks, replay rejection, and paid usage",
     ],
-    link: { label: "About", href: "/about" },
-  },
-  {
-    id: "ask",
-    title: "Use of funds",
-    bullets: [
-      "Senior technical hire (Move/mainnet + API scale)",
-      "Compliance counsel for RWA securities framework",
-      "Second verified asset + first external protocol integration",
-      "Security audit (Move Passport mainnet)",
-    ],
-    highlight: "Investors who bring issuer access or regulated-finance counsel.",
-  },
-  {
-    id: "north-star",
-    title: "North star",
-    bullets: [
-      "$100M in independently verified, actively monitored asset value",
-      "Credential reuse rate across external protocols",
-      "If Abraxas disappeared, lenders would lose reusable trust graph",
-    ],
+    highlight: "We report sandbox tests separately from Production usage.",
     link: { label: "Data room", href: "/investors" },
   },
 ];
