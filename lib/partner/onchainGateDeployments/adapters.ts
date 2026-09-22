@@ -1,6 +1,7 @@
 import { keccak256 } from "viem";
-import type { OnchainGateSafeReason } from "./contract";
+import { ONCHAIN_DEPLOYMENT_TEST_ADAPTER_ENV, type OnchainGateSafeReason } from "./contract";
 import type { EvmDeploymentManifest, SolanaDeploymentManifest } from "./types";
+import type { SafeSolanaObservation } from "./solanaObserve";
 
 export interface EvmChainObservation {
   codeHash: `0x${string}`;
@@ -24,9 +25,22 @@ export interface EvmVerificationAdapter {
   observe(manifest: EvmDeploymentManifest): Promise<EvmChainObservation | { unavailable: true }>;
 }
 
+export type SolanaObserveResult =
+  | SolanaChainObservation
+  | SafeSolanaObservation
+  | { unavailable: true }
+  | { rejected: OnchainGateSafeReason };
+
 export interface SolanaVerificationAdapter {
   kind: "server_rpc" | "local_program_test_fixture";
-  observe(manifest: SolanaDeploymentManifest): Promise<SolanaChainObservation | { unavailable: true }>;
+  observe(manifest: SolanaDeploymentManifest): Promise<SolanaObserveResult>;
+}
+
+export function localSolanaFixturesAllowed(): boolean {
+  if (process.env.VERCEL) return false;
+  if (process.env.NODE_ENV === "production") return false;
+  if (process.env.NODE_ENV !== "test") return false;
+  return true;
 }
 
 const evmFixtures = new Map<string, EvmChainObservation>();
@@ -60,6 +74,7 @@ export function localSolanaProgramTestAdapter(): SolanaVerificationAdapter {
   return {
     kind: "local_program_test_fixture",
     async observe(manifest) {
+      if (!localSolanaFixturesAllowed()) return { rejected: "unauthorized" };
       const row = solanaFixtures.get(`${manifest.program_id}:${manifest.gate_config_pda}`);
       if (!row) return { unavailable: true };
       return row;
@@ -113,37 +128,33 @@ export function serverEvmRpcAdapter(): EvmVerificationAdapter | null {
   };
 }
 
+async function fetchSolanaAccount(url: string, pubkey: string): Promise<
+  | { owner: string; data: Uint8Array }
+  | { unavailable: true }
+  | null
+> {
+  const account = await jsonRpc(url, "getAccountInfo", [pubkey, { encoding: "base64" }]);
+  if (account === null) return { unavailable: true };
+  if (!account || typeof account !== "object") return null;
+  const info = account as { value?: { owner?: string; data?: [string, string] } | null };
+  if (info.value === null) return null;
+  if (!info.value?.owner || !info.value.data?.[0]) return { unavailable: true };
+  return { owner: info.value.owner, data: Buffer.from(info.value.data[0], "base64") };
+}
+
 export function serverSolanaRpcAdapter(): SolanaVerificationAdapter | null {
   const url = process.env.ABRAXAS_SOLANA_GATE_VERIFY_RPC_URL?.trim() ?? "";
   if (!url) return null;
   return {
     kind: "server_rpc",
     async observe(manifest) {
-      try {
-        const account = await jsonRpc(url, "getAccountInfo", [
-          manifest.gate_config_pda,
-          { encoding: "base64" },
-        ]);
-        if (!account || typeof account !== "object") return { unavailable: true };
-        const info = account as { value?: { owner?: string; data?: [string, string] } | null };
-        if (!info.value?.owner || !info.value.data?.[0]) return { unavailable: true };
-        if (info.value.owner !== manifest.program_id) return { unavailable: true };
-        const raw = Buffer.from(info.value.data[0], "base64");
-        const digest = keccak256(`0x${raw.toString("hex")}` as `0x${string}`);
-        return {
-          programId: info.value.owner,
-          gateConfigPda: manifest.gate_config_pda,
-          programDigest: digest,
-          configDigest: digest,
-          // Raw account keccak cannot prove V2 institutional posture.
-          canonicalMessageLen: 372,
-          schemaVersion: 1,
-          requireInstitutional: false,
-          institutionalCapable: false,
-        };
-      } catch {
-        return { unavailable: true };
+      const { observeSolanaFromAccounts } = await import("./solanaObserve");
+      const observed = await observeSolanaFromAccounts(manifest, async (pubkey) => fetchSolanaAccount(url, pubkey));
+      if (!observed.ok) {
+        if (observed.reason === "deployment_verification_unavailable") return { unavailable: true };
+        return { rejected: observed.reason };
       }
+      return observed.observation;
     },
   };
 }
@@ -155,8 +166,13 @@ export function resolveEvmAdapter(override?: EvmVerificationAdapter | null): Evm
 }
 
 export function resolveSolanaAdapter(override?: SolanaVerificationAdapter | null): SolanaVerificationAdapter | null {
-  if (override) return override;
-  if (process.env.NODE_ENV === "test") return localSolanaProgramTestAdapter();
+  if (override) {
+    if (!localSolanaFixturesAllowed() && override.kind === "local_program_test_fixture") return null;
+    return override;
+  }
+  if (localSolanaFixturesAllowed() && process.env[ONCHAIN_DEPLOYMENT_TEST_ADAPTER_ENV] !== "0") {
+    return localSolanaProgramTestAdapter();
+  }
   return serverSolanaRpcAdapter();
 }
 
@@ -205,6 +221,7 @@ export async function verifySolanaAgainstChain(
   if (!adapter) return { ok: false, reason: "deployment_verification_unavailable" };
   const observed = await adapter.observe(manifest);
   if ("unavailable" in observed) return { ok: false, reason: "deployment_verification_unavailable" };
+  if ("rejected" in observed) return { ok: false, reason: observed.rejected };
   if (observed.programId !== manifest.program_id) return { ok: false, reason: "program_mismatch" };
   if (observed.gateConfigPda !== manifest.gate_config_pda) return { ok: false, reason: "gate_config_mismatch" };
   if (observed.programDigest.toLowerCase() !== manifest.program_digest.toLowerCase()) {

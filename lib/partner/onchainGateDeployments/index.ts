@@ -20,6 +20,7 @@ export { launchpadRequestRejectsClientAuthority } from "./clientAuthority";
 export {
   localAnvilFixtureAdapter,
   localSolanaProgramTestAdapter,
+  localSolanaFixturesAllowed,
   setLocalAnvilFixture,
   setLocalSolanaProgramTestFixture,
   resetOnchainVerificationFixtures,

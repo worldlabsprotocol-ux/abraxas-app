@@ -41,5 +41,7 @@ mod tests {
         assert!(deployed_institutional_capable(true, 2, 468));
         assert!(!deployed_institutional_capable(false, 2, 468));
         assert!(!deployed_institutional_capable(true, 1, 372));
+        assert!(!deployed_institutional_capable(true, 2, 372));
+        assert!(!deployed_institutional_capable(false, 2, 468));
     }
 }

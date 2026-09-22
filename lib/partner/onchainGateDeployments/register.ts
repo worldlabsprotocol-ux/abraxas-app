@@ -20,6 +20,7 @@ import {
   type SolanaVerificationAdapter,
 } from "./adapters";
 import { insertDeployment, insertDeploymentEvent, listDeploymentsForApp, updateDeploymentStatus, OnchainGateStoreUnavailableError } from "./store";
+import { localSolanaFixturesAllowed } from "./adapters";
 import type { OnchainDeploymentManifest, OnchainGateDeploymentRecord } from "./types";
 import { projectOnchainGatePublic } from "./project";
 import { deriveRequireInstitutional } from "./institutional";
@@ -108,8 +109,9 @@ export async function registerOnchainGateDeployment(input: RegisterDeploymentInp
   const hashErr = hashesMatch(manifest, input);
   if (hashErr) return { ok: false, reason: hashErr };
 
-  const evmAdapter = input.forceNoRpc ? null : resolveEvmAdapter(input.evmAdapter);
-  const solanaAdapter = input.forceNoRpc ? null : resolveSolanaAdapter(input.solanaAdapter);
+  const allowTestAdapters = localSolanaFixturesAllowed();
+  const evmAdapter = input.forceNoRpc ? null : resolveEvmAdapter(allowTestAdapters ? input.evmAdapter : undefined);
+  const solanaAdapter = input.forceNoRpc ? null : resolveSolanaAdapter(allowTestAdapters ? input.solanaAdapter : undefined);
 
   let verified:
     | { ok: true; evmObservation?: import("./adapters").EvmChainObservation; solanaObservation?: import("./adapters").SolanaChainObservation }
