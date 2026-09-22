@@ -13,6 +13,7 @@ import { organizationPartnerHmac } from "./opaque";
 import { listOrganizationEligibilityMatching } from "./store";
 import { mapReviewedOrganizationIssuer } from "./mapIssuer";
 import type { OrganizationEligibilityRecord } from "./types";
+import type { OrganizationResultCategory } from "./contract";
 import { isOperatorSandboxTestResult } from "@/lib/partner/sandboxInstitutionalOperatorResult/audit";
 
 export const ZERO_COMMITMENT = ZERO_BYTES32;
