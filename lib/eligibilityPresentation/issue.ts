@@ -9,6 +9,10 @@ import {
 import { nonceHash, opaquePresentationRef, partnerHmac } from "./opaque";
 import { loadPresentationRequest, savePresentation, savePresentationRequest } from "./store";
 import { ORGANIZATION_RESULT_CATEGORIES } from "@/lib/organizationEligibility/contract";
+import {
+  SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_RESULT,
+  isSandboxInstitutionalProtocolAccessPolicyId,
+} from "@/lib/partner/sandboxInstitutionalProtocolAccess";
 import { requireLiveOrganizationEligibility } from "@/lib/organizationEligibility/revoke";
 import { assertReceiptMatchesRequest, loadBoundSourceReceipt } from "./complete";
 import { signPresentationPayload } from "./sign";
@@ -33,6 +37,10 @@ export async function issueEligibilityPresentation(input: {
   if (request.status !== "completed") fail("no_completed_result");
   if (new Date(request.expires_at).getTime() <= Date.now()) fail("expired");
   if (nonceHash(input.verifier_nonce) !== request.nonce_hash) fail("nonce_mismatch");
+  if (isSandboxInstitutionalProtocolAccessPolicyId(request.policy_id)
+    && request.result_category !== SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_RESULT) {
+    fail("policy_mismatch");
+  }
   if ((ORGANIZATION_RESULT_CATEGORIES as readonly string[]).includes(request.result_category)) {
     await requireLiveOrganizationEligibility({
       partnerId: input.partnerId,

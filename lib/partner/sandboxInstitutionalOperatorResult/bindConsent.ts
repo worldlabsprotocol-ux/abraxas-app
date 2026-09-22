@@ -3,6 +3,8 @@ import {
   createOrganizationConsent,
   organizationPartnerHmac,
 } from "@/lib/organizationEligibility";
+import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
+import { receiptEnvironment, receiptHasFreshConsent } from "@/lib/eligibilityPresentation/sourceReceipt";
 import { listOrganizationEligibilityMatching, saveOrganizationEligibility } from "@/lib/organizationEligibility/store";
 import {
   SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
@@ -24,6 +26,7 @@ export async function bindFreshConsentToOperatorSandboxResult(input: {
   action: string;
   actionScope: string;
   environment: "sandbox" | "production";
+  receipt: DecisionReceiptRecord;
 }): Promise<void> {
   if (!isSandboxInstitutionalProtocolAccessPolicyId(input.policyId)) return;
   if (sandboxInstitutionalProtocolAccessProductionDenied(input.environment, input.policyId)) {
@@ -32,6 +35,13 @@ export async function bindFreshConsentToOperatorSandboxResult(input: {
   if (input.action !== SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION) fail("action_mismatch");
   if (input.actionScope !== SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE) fail("action_mismatch");
   if (input.policyVersion !== 1) fail("policy_mismatch");
+  if (input.receipt.partner_id !== input.partnerId) fail("cross_partner");
+  if (input.receipt.policy_id !== input.policyId || input.receipt.policy_version !== input.policyVersion) fail("policy_mismatch");
+  if (receiptEnvironment(input.receipt) !== input.environment) fail("environment_mismatch");
+  if (!receiptHasFreshConsent(input.receipt)) fail("consent_required");
+  if (input.receipt.status !== "active" || input.receipt.decision_result !== "approved" || input.receipt.revoked_at) {
+    fail("receipt_invalid");
+  }
 
   const matches = await listOrganizationEligibilityMatching({
     partner_hmac: organizationPartnerHmac(input.partnerId),
