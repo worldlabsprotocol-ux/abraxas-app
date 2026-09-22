@@ -65,8 +65,10 @@ export async function saveOrganizationEligibility(record: OrganizationEligibilit
     throw Object.assign(new Error("schema_unavailable"), { code: "schema_unavailable" });
   }
   const live = refresh(record);
-  memory.set(live.organization_ref, live);
-  if (skipDurableStore()) return;
+  if (skipDurableStore()) {
+    memory.set(live.organization_ref, live);
+    return;
+  }
   try {
     const sb = requireSupabaseAdmin();
     const { error } = await sb.from(TABLE).upsert({
@@ -113,33 +115,39 @@ export async function saveOrganizationEligibility(record: OrganizationEligibilit
 }
 
 export async function loadOrganizationEligibility(ref: string): Promise<OrganizationEligibilityRecord | null> {
-  const cached = memory.get(ref);
-  if (cached) return refresh(cached);
-  if (skipDurableStore()) return null;
+  if (storeForcedUnavailable) {
+    throw Object.assign(new Error("schema_unavailable"), { code: "schema_unavailable" });
+  }
+  if (skipDurableStore()) {
+    const cached = memory.get(ref);
+    return cached ? refresh(cached) : null;
+  }
   try {
     const sb = requireSupabaseAdmin();
     const { data, error } = await sb.from(TABLE).select("*").eq("organization_ref", ref).maybeSingle();
-    if (error || !data) return null;
-    const record = fromRow(data as Record<string, unknown>);
-    memory.set(record.organization_ref, record);
-    return record;
+    if (error) throw error;
+    return data ? fromRow(data as Record<string, unknown>) : null;
   } catch {
     throw Object.assign(new Error("schema_unavailable"), { code: "schema_unavailable" });
   }
 }
 
 export async function findOrganizationByDerivation(hash: string): Promise<OrganizationEligibilityRecord | null> {
-  let found: OrganizationEligibilityRecord | null = null;
-  memory.forEach((record) => {
-    if (!found && record.derivation_hash === hash) found = refresh(record);
-  });
-  if (found) return found;
-  if (skipDurableStore()) return null;
+  if (storeForcedUnavailable) {
+    throw Object.assign(new Error("schema_unavailable"), { code: "schema_unavailable" });
+  }
+  if (skipDurableStore()) {
+    let found: OrganizationEligibilityRecord | null = null;
+    memory.forEach((record) => {
+      if (!found && record.derivation_hash === hash) found = refresh(record);
+    });
+    return found;
+  }
   try {
     const sb = requireSupabaseAdmin();
     const { data, error } = await sb.from(TABLE).select("*").eq("derivation_hash", hash).maybeSingle();
-    if (error || !data) return null;
-    return fromRow(data as Record<string, unknown>);
+    if (error) throw error;
+    return data ? fromRow(data as Record<string, unknown>) : null;
   } catch {
     throw Object.assign(new Error("schema_unavailable"), { code: "schema_unavailable" });
   }
@@ -154,34 +162,72 @@ export async function listOrganizationEligibilityMatching(input: {
   environment: "sandbox" | "production";
   actor_ref?: string;
 }): Promise<OrganizationEligibilityRecord[]> {
-  const matches: OrganizationEligibilityRecord[] = [];
-  memory.forEach((record) => {
-    const live = refresh(record);
-    if (
-      live.partner_hmac === input.partner_hmac
-      && live.policy_id === input.policy_id
-      && live.policy_version === input.policy_version
-      && live.action === input.action
-      && live.environment === input.environment
-      && (!input.actor_ref || live.actor_ref === input.actor_ref)
-    ) {
-      matches.push(live);
-    }
-  });
-  return matches;
+  if (storeForcedUnavailable) {
+    throw Object.assign(new Error("schema_unavailable"), { code: "schema_unavailable" });
+  }
+  if (skipDurableStore()) {
+    const matches: OrganizationEligibilityRecord[] = [];
+    memory.forEach((record) => {
+      const live = refresh(record);
+      if (
+        live.partner_hmac === input.partner_hmac
+        && live.result_category === input.result_category
+        && live.policy_id === input.policy_id
+        && live.policy_version === input.policy_version
+        && live.action === input.action
+        && live.environment === input.environment
+        && (!input.actor_ref || live.actor_ref === input.actor_ref)
+      ) {
+        matches.push(live);
+      }
+    });
+    return matches;
+  }
+  try {
+    const sb = requireSupabaseAdmin();
+    let query = sb.from(TABLE).select("*")
+      .eq("partner_hmac", input.partner_hmac)
+      .eq("result_category", input.result_category)
+      .eq("policy_id", input.policy_id)
+      .eq("policy_version", input.policy_version)
+      .eq("action", input.action)
+      .eq("environment", input.environment);
+    if (input.actor_ref) query = query.eq("actor_ref", input.actor_ref);
+    const { data, error } = await query;
+    if (error || !data) throw error ?? new Error("unavailable");
+    return data.map((row) => fromRow(row as Record<string, unknown>));
+  } catch {
+    throw Object.assign(new Error("schema_unavailable"), { code: "schema_unavailable" });
+  }
 }
 
 export async function findOrganizationBySubjectBinding(input: {
   partner_hmac: string;
   subject_binding_hash: string;
 }): Promise<OrganizationEligibilityRecord | null> {
-  let found: OrganizationEligibilityRecord | null = null;
-  memory.forEach((record) => {
-    if (found) return;
-    const live = refresh(record);
-    if (live.partner_hmac === input.partner_hmac && live.subject_binding_hash === input.subject_binding_hash) {
-      found = live;
-    }
-  });
-  return found;
+  if (storeForcedUnavailable) {
+    throw Object.assign(new Error("schema_unavailable"), { code: "schema_unavailable" });
+  }
+  if (skipDurableStore()) {
+    let found: OrganizationEligibilityRecord | null = null;
+    memory.forEach((record) => {
+      if (found) return;
+      const live = refresh(record);
+      if (live.partner_hmac === input.partner_hmac && live.subject_binding_hash === input.subject_binding_hash) {
+        found = live;
+      }
+    });
+    return found;
+  }
+  try {
+    const sb = requireSupabaseAdmin();
+    const { data, error } = await sb.from(TABLE).select("*")
+      .eq("partner_hmac", input.partner_hmac)
+      .eq("subject_binding_hash", input.subject_binding_hash)
+      .maybeSingle();
+    if (error) throw error;
+    return data ? fromRow(data as Record<string, unknown>) : null;
+  } catch {
+    throw Object.assign(new Error("schema_unavailable"), { code: "schema_unavailable" });
+  }
 }

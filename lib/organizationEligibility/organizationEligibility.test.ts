@@ -499,7 +499,7 @@ describe("private organization eligibility", () => {
       action: "enable_protocol_access",
       actionScope: "sandbox:protocol_access",
       environment: "sandbox",
-    })).rejects.toMatchObject({ code: "unknown_policy" });
+    })).rejects.toMatchObject({ code: "consent_required" });
   });
 
   it("rejects client-controlled organization result category overrides", async () => {
