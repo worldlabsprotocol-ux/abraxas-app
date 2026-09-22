@@ -180,7 +180,7 @@ export async function issueChainEligibilityAttestation(
       || receiptEnvironment(privateReceipt) !== input.kit.options.environment
       || !receiptHasFreshConsent(privateReceipt)
       || privateReceipt.status !== "active" || privateReceipt.revoked_at
-      || new Date(privateReceipt.expires_at).getTime() <= Date.now()) {
+      || !privateReceipt.expires_at || new Date(privateReceipt.expires_at).getTime() <= Date.now()) {
       return denied("consent_required", input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
     }
     receiptSubjectPseudonymId = privateReceipt.subject_pseudonym_id;
@@ -476,3 +476,4 @@ export async function issueChainEligibilityAttestation(
     attestation_id: attestationUuid,
   };
 }
+
