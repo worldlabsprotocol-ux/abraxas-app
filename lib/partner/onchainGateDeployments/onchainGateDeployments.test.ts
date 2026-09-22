@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { generatePrivateKey } from "viem/accounts";
+import { keccak256 } from "viem";
 
 if (!process.env.NEXTAUTH_SECRET?.trim()) process.env.NEXTAUTH_SECRET = "onchain-gate-deploy-test";
 
@@ -31,6 +32,7 @@ import {
 } from "@/lib/partner/onchainGateDeployments";
 import { getDeploymentByRef, updateDeploymentStatus } from "@/lib/partner/onchainGateDeployments/store";
 import { ONCHAIN_DEPLOYMENT_TEST_ADAPTER_ENV } from "@/lib/partner/onchainGateDeployments/contract";
+import { serverEvmRpcAdapter, verifyEvmAgainstChain } from "@/lib/partner/onchainGateDeployments/adapters";
 import { generateStarterKit } from "@/lib/partner/starterKit/generate";
 import { validateStarterKitInput } from "@/lib/partner/starterKit/validate";
 import { readFileSync } from "node:fs";
@@ -361,6 +363,62 @@ describe("verified onchain gate deployments", () => {
     });
     expect(digestMiss.ok).toBe(false);
     if (!digestMiss.ok) expect(digestMiss.reason).toBe("config_digest_mismatch");
+  });
+
+  it("rejects an EVM RPC on the wrong chain or one that switches chains during observation", async () => {
+    const previousFetch = globalThis.fetch;
+    const previousRpcUrl = process.env.ABRAXAS_EVM_GATE_VERIFY_RPC_URL;
+    process.env.ABRAXAS_EVM_GATE_VERIFY_RPC_URL = "http://127.0.0.1:8545";
+    const code = "0x6001" as const;
+    const parsed = parseOnchainDeploymentManifest(evmManifest({ bytecode_hash: keccak256(code) }));
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok || parsed.manifest.gate_type !== "evm") return;
+
+    let chainIds = ["0x7a69", "0x7a69"];
+    const methods: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (_url: string, init: { body?: string }) => {
+      const request = JSON.parse(String(init.body)) as { method: string };
+      methods.push(request.method);
+      const result = request.method === "eth_chainId"
+        ? chainIds.shift()
+        : request.method === "eth_getCode"
+          ? code
+          : parsed.manifest.config_digest;
+      return { ok: true, json: async () => ({ result }) };
+    }));
+
+    try {
+      expect((await verifyEvmAgainstChain(parsed.manifest, serverEvmRpcAdapter())).ok).toBe(true);
+      expect(methods).toEqual(["eth_chainId", "eth_getCode", "eth_call", "eth_chainId"]);
+
+      methods.length = 0;
+      chainIds = ["0x1"];
+      expect(await verifyEvmAgainstChain(parsed.manifest, serverEvmRpcAdapter())).toEqual({
+        ok: false,
+        reason: "deployment_verification_unavailable",
+      });
+      expect(methods).toEqual(["eth_chainId"]);
+
+      methods.length = 0;
+      chainIds = ["0x7a69", "0x1"];
+      expect(await verifyEvmAgainstChain(parsed.manifest, serverEvmRpcAdapter())).toEqual({
+        ok: false,
+        reason: "deployment_verification_unavailable",
+      });
+      expect(methods).toEqual(["eth_chainId", "eth_getCode", "eth_call", "eth_chainId"]);
+
+      methods.length = 0;
+      chainIds = ["31337"];
+      expect(await verifyEvmAgainstChain(parsed.manifest, serverEvmRpcAdapter())).toEqual({
+        ok: false,
+        reason: "deployment_verification_unavailable",
+      });
+      expect(methods).toEqual(["eth_chainId"]);
+    } finally {
+      vi.stubGlobal("fetch", previousFetch);
+      if (previousRpcUrl === undefined) delete process.env.ABRAXAS_EVM_GATE_VERIFY_RPC_URL;
+      else process.env.ABRAXAS_EVM_GATE_VERIFY_RPC_URL = previousRpcUrl;
+    }
   });
 
   it("matches and mismatches Solana program and GateConfig", async () => {
