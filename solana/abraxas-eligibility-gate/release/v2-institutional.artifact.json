@@ -1,0 +1,24 @@
+{
+  "artifact_id": "abraxas_eligibility_gate_v2_institutional_r1",
+  "crate": "abraxas-eligibility-gate",
+  "package_version": "0.1.0",
+  "source_commit": "0480d9ac4c739a99a6f3d5773da351a19a1d0f79",
+  "rust_host": "1.88.0",
+  "rust_sbf": "1.89.0",
+  "platform_tools": "v1.53",
+  "cargo_build_sbf": "2.2.20",
+  "anchor": "0.30.1",
+  "solana_program_test": "1.18.26",
+  "build_command": "PATH=\"$HOME/.cache/solana/v1.53/platform-tools/rust/bin:$PATH\" cargo-build-sbf --tools-version v1.53 --no-rustup-override --manifest-path programs/abraxas-eligibility-gate/Cargo.toml",
+  "program_data_digest": "0x956eb9294aa866e8dbd76960841bdb17d3a58ccf801904038cea1169572f9787",
+  "elf_sha256": "0x4036d3ada9835db952b1a73f9f8b549f9a6a22ab5174554a9dd582ed249be1aa",
+  "canonical_message": { "schema": "v2", "length": 468 },
+  "institutional_gate_config": true,
+  "status": "approved",
+  "live": false,
+  "notes": [
+    "ELF binary is not committed. Rebuild locally and compare keccak + SHA-256 before any human deploy.",
+    "Observation digest is keccak256 of the deployed ELF after stripping the upgradeable-loader ProgramData header.",
+    "No private keys, deployer keypairs, RPC values, account data, or deployment transactions are recorded here."
+  ]
+}

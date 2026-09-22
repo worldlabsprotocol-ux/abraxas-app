@@ -17,6 +17,8 @@ npx tsx scripts/abraxas-gate.ts register ./deployment-manifest.json
 
 `plan` is a planning envelope only. `validate-plan` checks that envelope without treating it as a registry manifest. `deploy --confirm` never broadcasts; the operator deploys with a local Solana toolchain, then supplies public program/PDA/digest fields. Automated environments refuse deploy.
 
+Reviewed V2 artifact: `abraxas_eligibility_gate_v2_institutional_r1`. The operator must confirm the locally built/deployed ELF keccak matches `0x956eb9294aa866e8dbd76960841bdb17d3a58ccf801904038cea1169572f9787` before `verify` or `register`. See `solana/abraxas-eligibility-gate/REPRODUCIBLE_RELEASE.md`. There is no deploy button.
+
 Institutional gates require V2 attestations. Organization, actor, result-category, subject, and expiry are not deployment-static.
 
 ## Approved testnet posture

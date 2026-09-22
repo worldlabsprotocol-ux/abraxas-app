@@ -28,3 +28,5 @@ export {
   resolveSolanaAdapter,
 } from "./adapters";
 export { hashesForApplication, expectedEvmConfigDigest, expectedSolanaConfigDigest } from "./digests";
+export { SOLANA_GATE_V2_RELEASE } from "./solanaV2Release";
+export { lookupSolanaGateArtifact } from "./solanaArtifacts";

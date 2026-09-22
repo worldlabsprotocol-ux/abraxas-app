@@ -132,6 +132,15 @@ export interface OperatorHandoff {
   register_command: string;
   rollback: string;
   operator_deploys_with: "local_solana_toolchain";
+  reviewed_solana_v2_artifact?: {
+    artifact_id: string;
+    program_data_digest: `0x${string}`;
+    elf_sha256: `0x${string}`;
+    provenance_ref: string;
+    status: "approved";
+    operator_must_match_digest_before_verify: true;
+    deploy_button: false;
+  };
 }
 
 export type KitCliResult =
