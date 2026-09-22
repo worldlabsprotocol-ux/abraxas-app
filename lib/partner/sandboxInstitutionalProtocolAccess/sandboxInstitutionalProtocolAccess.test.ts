@@ -26,6 +26,36 @@ import { planInstitutionalTestnetGate } from "@/lib/partner/testnetGateDeploymen
 import { partnerFlowActionsForTemplate } from "@/lib/partner/launchpad/partnerFlowRequest/contract";
 import { POST as createApp } from "@/app/api/launchpad/applications/route";
 import { NextRequest } from "next/server";
+import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
+
+function consentedSandboxReceipt(): DecisionReceiptRecord {
+  return {
+    id: "dr_institutional_policy_test",
+    schema_version: "1.0.0",
+    verification_decision_id: "dec_institutional_policy_test",
+    consent_receipt_id: "cr_institutional_policy_test",
+    policy_id: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
+    policy_version: 1,
+    partner_id: "acme",
+    subject_pseudonym_id: "ps_institutional_policy_test",
+    wallet_binding_ref: null,
+    decision_result: "approved",
+    reason_codes: ["eligible"],
+    evaluated_claim_refs: [],
+    issuer_refs: [],
+    decision_context: "sandbox_only",
+    evaluated_at: "2026-09-22T00:00:00.000Z",
+    expires_at: "2099-01-01T00:00:00.000Z",
+    status: "active",
+    payload_hash: "hash",
+    signature: "sig",
+    signing_key_id: "test",
+    anchor_reference: null,
+    revoked_at: null,
+    idempotency_key: null,
+    created_at: "2026-09-22T00:00:00.000Z",
+  };
+}
 
 describe("reviewed sandbox institutional protocol-access policy", () => {
   beforeEach(() => {
@@ -132,6 +162,7 @@ describe("reviewed sandbox institutional protocol-access policy", () => {
       action: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
       actionScope: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
       environment: "sandbox",
+      receipt: consentedSandboxReceipt(),
     });
     const bound = await resolveInstitutionalAttestationCommitments({
       partnerId: "acme",
@@ -225,6 +256,7 @@ describe("reviewed sandbox institutional protocol-access policy", () => {
       action: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
       actionScope: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
       environment: "sandbox",
+      receipt: consentedSandboxReceipt(),
     });
     const publicView = projectOrganizationPublicView(issued);
     expect(publicView.result).toBe("denied");

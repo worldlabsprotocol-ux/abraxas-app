@@ -12,6 +12,7 @@ import {
 } from "@/lib/eligibilityPresentation";
 import {
   issueOrganizationEligibility,
+  loadOrganizationEligibility,
   organizationPartnerHmac,
   resetOrganizationConsentForTests,
   resetOrganizationEligibilityForTests,
@@ -144,16 +145,77 @@ describe("operator sandbox institutional test result", () => {
     })).rejects.toMatchObject({ code: "operator_result_required" });
   });
 
-  it("binds fresh consent then presentation and V2 attestation eligibility", async () => {
-    await issueOperatorSandboxInstitutionalResult({ applicationId: "app-inst-1", confirm: true });
-    await bindFreshConsentToOperatorSandboxResult({
+  it("does not bind consent when a partner only creates a presentation request", async () => {
+    const issued = await issueOperatorSandboxInstitutionalResult({ applicationId: "app-inst-1", confirm: true });
+    const created = await createPresentationRequest({
+      partnerId: "acme",
+      policy_id: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
+      policy_version: 1,
+      purpose: "sandbox institutional demo",
+      action: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
+      action_scope: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
+      environment: "sandbox",
+      result_category: "organization_eligible",
+      verifier_nonce: "nonce-partner-only-1",
+    });
+    expect(created.consent_bound).toBe(false);
+    expect((await loadOrganizationEligibility(issued.organization_ref))?.consent_bound).toBe(false);
+    await expect(issueEligibilityPresentation({
+      partnerId: "acme",
+      request_ref: created.request_ref,
+      verifier_nonce: "nonce-partner-only-1",
+    })).rejects.toMatchObject({ code: "no_completed_result" });
+    await expect(resolveInstitutionalAttestationCommitments({
       partnerId: "acme",
       policyId: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
       policyVersion: 1,
       action: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
       actionScope: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
       environment: "sandbox",
+    })).rejects.toMatchObject({ code: "consent_required" });
+  });
+
+  it("rejects a mismatched result category and a receipt without holder consent", async () => {
+    await issueOperatorSandboxInstitutionalResult({ applicationId: "app-inst-1", confirm: true });
+    await expect(createPresentationRequest({
+      partnerId: "acme",
+      policy_id: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
+      policy_version: 1,
+      purpose: "sandbox institutional demo",
+      action: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
+      action_scope: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
+      environment: "sandbox",
+      result_category: "age_21",
+      verifier_nonce: "nonce-wrong-category-1",
+    })).rejects.toMatchObject({ code: "policy_mismatch" });
+    const created = await createPresentationRequest({
+      partnerId: "acme",
+      policy_id: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
+      policy_version: 1,
+      purpose: "sandbox institutional demo",
+      action: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
+      action_scope: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
+      environment: "sandbox",
+      result_category: "organization_eligible",
+      verifier_nonce: "nonce-missing-consent-1",
     });
+    await expect(completePresentationHolderResultForTests({
+      requestRef: created.request_ref,
+      receipt: receipt({ consent_receipt_id: null }),
+      partnerId: "acme",
+    })).rejects.toMatchObject({ code: "consent_required" });
+  });
+
+  it("binds fresh consent then presentation and V2 attestation eligibility", async () => {
+    await issueOperatorSandboxInstitutionalResult({ applicationId: "app-inst-1", confirm: true });
+    await expect(resolveInstitutionalAttestationCommitments({
+      partnerId: "acme",
+      policyId: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
+      policyVersion: 1,
+      action: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
+      actionScope: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
+      environment: "sandbox",
+    })).rejects.toMatchObject({ code: "consent_required" });
     const created = await createPresentationRequest({
       partnerId: "acme",
       policy_id: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
@@ -165,6 +227,14 @@ describe("operator sandbox institutional test result", () => {
       result_category: "organization_eligible",
       verifier_nonce: "nonce-operator-1",
     });
+    await expect(resolveInstitutionalAttestationCommitments({
+      partnerId: "acme",
+      policyId: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
+      policyVersion: 1,
+      action: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
+      actionScope: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
+      environment: "sandbox",
+    })).rejects.toMatchObject({ code: "consent_required" });
     const rec = receipt();
     putSourceReceiptForTests(rec);
     await completePresentationHolderResultForTests({
@@ -234,6 +304,7 @@ describe("operator sandbox institutional test result", () => {
       action: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
       actionScope: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
       environment: "sandbox",
+      receipt: receipt(),
     });
     await expect(resolveInstitutionalAttestationCommitments({
       partnerId: "other",
@@ -283,6 +354,7 @@ describe("operator sandbox institutional test result", () => {
       action: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
       actionScope: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
       environment: "sandbox",
+      receipt: receipt(),
     })).rejects.toMatchObject({ code: "expired" });
   });
 

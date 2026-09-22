@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(view);
   } catch (error) {
     const code = error instanceof Error && "code" in error ? String((error as { code?: string }).code) : "unavailable";
-    return NextResponse.json({ error: code }, { status: code === "replayed" || code === "invalid_expiry" ? 400 : 503 });
+    const clientError = ["replayed", "invalid_expiry", "policy_mismatch", "action_mismatch", "environment_mismatch"].includes(code);
+    return NextResponse.json({ error: code }, { status: clientError ? 400 : 503 });
   }
 }

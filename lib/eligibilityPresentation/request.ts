@@ -3,6 +3,13 @@
 import { randomBytes } from "node:crypto";
 import { SITE_URL } from "@/lib/siteUrl";
 import {
+  SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
+  SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_VERSION,
+  SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_RESULT,
+  SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
+  isSandboxInstitutionalProtocolAccessPolicyId,
+} from "@/lib/partner/sandboxInstitutionalProtocolAccess";
+import {
   ELIGIBILITY_PRESENTATION_ENVIRONMENTS,
   ELIGIBILITY_PRESENTATION_TTL_MS,
 } from "./contract";
@@ -75,6 +82,21 @@ export function parseCreateRequestBody(
 export async function createPresentationRequest(
   input: CreatePresentationRequestInput,
 ): Promise<EligibilityPresentationRequestRecord> {
+  if (isSandboxInstitutionalProtocolAccessPolicyId(input.policy_id)) {
+    if (input.environment !== "sandbox") {
+      throw Object.assign(new Error("environment_mismatch"), { code: "environment_mismatch" });
+    }
+    if (input.policy_version !== SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_VERSION) {
+      throw Object.assign(new Error("policy_mismatch"), { code: "policy_mismatch" });
+    }
+    if (input.action !== SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION
+      || input.action_scope !== SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE) {
+      throw Object.assign(new Error("action_mismatch"), { code: "action_mismatch" });
+    }
+    if (input.result_category !== SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_RESULT) {
+      throw Object.assign(new Error("policy_mismatch"), { code: "policy_mismatch" });
+    }
+  }
   const hash = nonceHash(input.verifier_nonce);
   const existing = await findRequestByNonceHash(hash);
   if (existing) {
@@ -85,17 +107,6 @@ export async function createPresentationRequest(
   if (Number.isNaN(expires) || expires <= now) {
     throw Object.assign(new Error("invalid_expiry"), { code: "invalid_expiry" });
   }
-  const { bindFreshConsentToOperatorSandboxResult } = await import(
-    "@/lib/partner/sandboxInstitutionalOperatorResult/bindConsent"
-  );
-  await bindFreshConsentToOperatorSandboxResult({
-    partnerId: input.partnerId,
-    policyId: input.policy_id,
-    policyVersion: input.policy_version,
-    action: input.action,
-    actionScope: input.action_scope,
-    environment: input.environment,
-  });
   const record: EligibilityPresentationRequestRecord = {
     request_ref: opaqueRequestRef(`${input.partnerId}:${randomBytes(8).toString("hex")}`),
     partner_hmac: partnerHmac(input.partnerId),

@@ -54,6 +54,18 @@ export async function completePresentationHolderResult(input: {
     holder_session_hmac: holderSessionHmac(input.receipt.subject_pseudonym_id),
     consent_bound: true,
   });
+  const { bindFreshConsentToOperatorSandboxResult } = await import(
+    "@/lib/partner/sandboxInstitutionalOperatorResult/bindConsent"
+  );
+  await bindFreshConsentToOperatorSandboxResult({
+    partnerId: input.receipt.partner_id,
+    policyId: request.policy_id,
+    policyVersion: request.policy_version,
+    action: request.action,
+    actionScope: request.action_scope,
+    environment: request.environment,
+    receipt: input.receipt,
+  });
 }
 
 export async function bindPresentationResultToIssuedReceipt(input: {
