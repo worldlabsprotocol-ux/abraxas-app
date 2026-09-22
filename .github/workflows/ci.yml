@@ -36,6 +36,9 @@ jobs:
       - name: Trust contract drift check (report-only)
         run: npm run check:trust-contract-drift
 
+      - name: Onchain gate deployment ownership tests
+        run: npx vitest run lib/partner/onchainGateDeployments/onchainGateDeployments.test.ts
+
       - name: Type check
         run: npx tsc --noEmit
         continue-on-error: true
