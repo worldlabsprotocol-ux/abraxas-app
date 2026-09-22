@@ -41,6 +41,7 @@ import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import { AbraxasPartnerKit } from "@/lib/partner/integrationKit";
 import { issueChainEligibilityAttestation } from "@/lib/partner/chainAttestation/issue";
+import { loadPresentation } from "@/lib/eligibilityPresentation/store";
 
 const KEY = generateTestSigningKeyPair();
 process.env.ABRAXAS_SIGNING_KEY_ID = KEY.signingKeyId;
@@ -375,6 +376,48 @@ describe("operator sandbox institutional test result", () => {
       request_ref: second.request_ref,
       verifier_nonce: "nonce-second-holder",
     })).rejects.toMatchObject({ code: "consent_required" });
+  });
+
+  it("revokes the issued presentation when the operator result is revoked", async () => {
+    const issued = await issueOperatorSandboxInstitutionalResult({ applicationId: "app-inst-1", confirm: true });
+    const created = await createPresentationRequest({
+      partnerId: "acme",
+      policy_id: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
+      policy_version: 1,
+      purpose: "revocation proof",
+      action: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
+      action_scope: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
+      environment: "sandbox",
+      result_category: "organization_eligible",
+      verifier_nonce: "nonce-operator-revoke",
+    });
+    const rec = receipt();
+    putSourceReceiptForTests(rec);
+    await completePresentationHolderResultForTests({ requestRef: created.request_ref, receipt: rec, partnerId: "acme" });
+    const envelope = await issueEligibilityPresentation({
+      partnerId: "acme",
+      request_ref: created.request_ref,
+      verifier_nonce: "nonce-operator-revoke",
+    });
+    await revokeOperatorSandboxInstitutionalResult({
+      organizationRef: issued.organization_ref,
+      applicationId: "app-inst-1",
+      confirm: true,
+    });
+    expect((await loadPresentation(envelope.payload.presentation_ref))?.status).toBe("revoked");
+    const verified = await verifyEligibilityPresentation({
+      envelope,
+      expected: {
+        audience_hash: created.audience_hash,
+        verifier_nonce: "nonce-operator-revoke",
+        policy_id: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
+        policy_version: 1,
+        action: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
+        environment: "sandbox",
+      },
+      fetchReceipt: async () => ({ receipt_id: rec.id, currently_valid: true, decision_result: "approved", status: "active" }),
+    });
+    expect(verified).toMatchObject({ ok: false, reason: "revoked" });
   });
 
   it("denies expiry, revocation, cross-partner, production, and replay", async () => {

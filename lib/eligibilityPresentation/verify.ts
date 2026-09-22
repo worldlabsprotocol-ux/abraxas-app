@@ -7,7 +7,7 @@ import { verifyPresentationSignature } from "./sign";
 import {
   findPresentationByNonceHash,
   loadPresentation,
-  savePresentation,
+  consumePresentationIfIssued,
   savePresentationRequest,
   loadPresentationRequest,
 } from "./store";
@@ -144,7 +144,12 @@ export async function verifyEligibilityPresentation(input: {
   }
 
   const consumedAt = new Date().toISOString();
-  await savePresentation({ ...stored, status: "consumed", consumed_at: consumedAt });
+  const consumed = await consumePresentationIfIssued({
+    presentationRef: stored.presentation_ref,
+    nonceHash: hash,
+    consumedAt,
+  });
+  if (!consumed) return { ok: false, reason: "replayed", presentation_sufficient: false };
   const request = await loadPresentationRequest(stored.request_ref);
   if (request) {
     await savePresentationRequest({ ...request, status: "consumed", consumed_at: consumedAt });

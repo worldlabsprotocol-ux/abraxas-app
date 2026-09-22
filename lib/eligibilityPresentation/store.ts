@@ -15,6 +15,10 @@ function skipDurableStore(): boolean {
   return Boolean(process.env.VITEST);
 }
 
+function unavailable(): never {
+  throw Object.assign(new Error("schema_unavailable"), { code: "schema_unavailable" });
+}
+
 export function resetEligibilityPresentationsForTests(): void {
   requestMemory.clear();
   presentationMemory.clear();
@@ -103,9 +107,11 @@ async function persistRequest(record: EligibilityPresentationRequestRecord): Pro
   if (storeForcedUnavailable) {
     throw Object.assign(new Error("schema_unavailable"), { code: "schema_unavailable" });
   }
-  requestMemory.set(record.request_ref, record);
-  nonceIndex.set(record.nonce_hash, record.request_ref);
-  if (skipDurableStore()) return;
+  if (skipDurableStore()) {
+    requestMemory.set(record.request_ref, record);
+    nonceIndex.set(record.nonce_hash, record.request_ref);
+    return;
+  }
   try {
     const sb = requireSupabaseAdmin();
     const { error } = await sb.from(REQUESTS).upsert({
@@ -150,8 +156,10 @@ async function persistPresentation(record: EligibilityPresentationRecord): Promi
   if (storeForcedUnavailable) {
     throw Object.assign(new Error("schema_unavailable"), { code: "schema_unavailable" });
   }
-  presentationMemory.set(record.presentation_ref, record);
-  if (skipDurableStore()) return;
+  if (skipDurableStore()) {
+    presentationMemory.set(record.presentation_ref, record);
+    return;
+  }
   try {
     const sb = requireSupabaseAdmin();
     const { error } = await sb.from(PRESENTATIONS).upsert({
@@ -207,77 +215,108 @@ export async function savePresentation(
 export async function loadPresentationRequest(
   requestRef: string,
 ): Promise<EligibilityPresentationRequestRecord | null> {
-  const cached = requestMemory.get(requestRef);
-  if (cached) return refreshRequest(cached);
-  if (skipDurableStore()) return null;
-  if (storeForcedUnavailable) {
-    throw Object.assign(new Error("schema_unavailable"), { code: "schema_unavailable" });
+  if (storeForcedUnavailable) unavailable();
+  if (skipDurableStore()) {
+    const cached = requestMemory.get(requestRef);
+    return cached ? refreshRequest(cached) : null;
   }
   try {
     const sb = requireSupabaseAdmin();
     const { data, error } = await sb.from(REQUESTS).select("*").eq("request_ref", requestRef).maybeSingle();
-    if (error || !data) return null;
-    const record = refreshRequest(requestFromRow(data as Record<string, unknown>));
-    requestMemory.set(record.request_ref, record);
-    return record;
+    if (error) throw error;
+    return data ? refreshRequest(requestFromRow(data as Record<string, unknown>)) : null;
   } catch {
-    throw Object.assign(new Error("schema_unavailable"), { code: "schema_unavailable" });
+    unavailable();
   }
 }
 
 export async function loadPresentation(
   presentationRef: string,
 ): Promise<EligibilityPresentationRecord | null> {
-  const cached = presentationMemory.get(presentationRef);
-  if (cached) return refreshPresentation(cached);
-  if (skipDurableStore()) return null;
-  if (storeForcedUnavailable) {
-    throw Object.assign(new Error("schema_unavailable"), { code: "schema_unavailable" });
+  if (storeForcedUnavailable) unavailable();
+  if (skipDurableStore()) {
+    const cached = presentationMemory.get(presentationRef);
+    return cached ? refreshPresentation(cached) : null;
   }
   try {
     const sb = requireSupabaseAdmin();
     const { data, error } = await sb.from(PRESENTATIONS).select("*").eq("presentation_ref", presentationRef).maybeSingle();
-    if (error || !data) return null;
-    const record = refreshPresentation(presentationFromRow(data as Record<string, unknown>));
-    presentationMemory.set(record.presentation_ref, record);
-    return record;
+    if (error) throw error;
+    return data ? refreshPresentation(presentationFromRow(data as Record<string, unknown>)) : null;
   } catch {
-    throw Object.assign(new Error("schema_unavailable"), { code: "schema_unavailable" });
+    unavailable();
   }
 }
 
 export async function findRequestByNonceHash(
   hash: string,
 ): Promise<EligibilityPresentationRequestRecord | null> {
-  const ref = nonceIndex.get(hash);
-  if (ref) return loadPresentationRequest(ref);
-  if (skipDurableStore()) return null;
+  if (storeForcedUnavailable) unavailable();
+  if (skipDurableStore()) {
+    const ref = nonceIndex.get(hash);
+    return ref ? loadPresentationRequest(ref) : null;
+  }
   try {
     const sb = requireSupabaseAdmin();
     const { data, error } = await sb.from(REQUESTS).select("*").eq("nonce_hash", hash).maybeSingle();
-    if (error || !data) return null;
-    return refreshRequest(requestFromRow(data as Record<string, unknown>));
+    if (error) throw error;
+    return data ? refreshRequest(requestFromRow(data as Record<string, unknown>)) : null;
   } catch {
-    throw Object.assign(new Error("schema_unavailable"), { code: "schema_unavailable" });
+    unavailable();
   }
 }
 
 export async function findPresentationByNonceHash(
   hash: string,
 ): Promise<EligibilityPresentationRecord | null> {
-  let found: EligibilityPresentationRecord | null = null;
-  presentationMemory.forEach((record) => {
-    if (!found && record.nonce_hash === hash) found = record;
-  });
-  if (found) return refreshPresentation(found);
-  if (skipDurableStore()) return null;
+  if (storeForcedUnavailable) unavailable();
+  if (skipDurableStore()) {
+    let found: EligibilityPresentationRecord | null = null;
+    presentationMemory.forEach((record) => {
+      if (!found && record.nonce_hash === hash) found = record;
+    });
+    return found ? refreshPresentation(found) : null;
+  }
   try {
     const sb = requireSupabaseAdmin();
     const { data, error } = await sb.from(PRESENTATIONS).select("*").eq("nonce_hash", hash).maybeSingle();
-    if (error || !data) return null;
-    return refreshPresentation(presentationFromRow(data as Record<string, unknown>));
+    if (error) throw error;
+    return data ? refreshPresentation(presentationFromRow(data as Record<string, unknown>)) : null;
   } catch {
-    throw Object.assign(new Error("schema_unavailable"), { code: "schema_unavailable" });
+    unavailable();
+  }
+}
+
+// The status predicate is evaluated by Postgres in the same UPDATE that consumes
+// the presentation. Two serverless workers cannot both receive a successful row.
+export async function consumePresentationIfIssued(input: {
+  presentationRef: string;
+  nonceHash: string;
+  consumedAt: string;
+}): Promise<boolean> {
+  if (storeForcedUnavailable) unavailable();
+  if (skipDurableStore()) {
+    const current = presentationMemory.get(input.presentationRef);
+    if (!current || current.nonce_hash !== input.nonceHash || refreshPresentation(current).status !== "issued"
+      || current.revoked_at || new Date(current.expires_at).getTime() <= new Date(input.consumedAt).getTime()) return false;
+    presentationMemory.set(input.presentationRef, { ...current, status: "consumed", consumed_at: input.consumedAt });
+    return true;
+  }
+  try {
+    const sb = requireSupabaseAdmin();
+    const { data, error } = await sb.from(PRESENTATIONS)
+      .update({ status: "consumed", consumed_at: input.consumedAt, updated_at: input.consumedAt })
+      .eq("presentation_ref", input.presentationRef)
+      .eq("nonce_hash", input.nonceHash)
+      .eq("status", "issued")
+      .is("revoked_at", null)
+      .gt("expires_at", input.consumedAt)
+      .select("presentation_ref")
+      .maybeSingle();
+    if (error) throw error;
+    return data?.presentation_ref === input.presentationRef;
+  } catch {
+    unavailable();
   }
 }
 
@@ -288,6 +327,27 @@ export async function revokePresentationsForOrganization(input: {
   presentation_ref?: string | null;
 }): Promise<void> {
   const now = new Date().toISOString();
+  if (storeForcedUnavailable) unavailable();
+  if (!skipDurableStore()) {
+    try {
+      const sb = requireSupabaseAdmin();
+      let query = sb.from(PRESENTATIONS)
+        .update({ status: "revoked", revoked_at: now, updated_at: now })
+        .eq("status", "issued");
+      if (input.presentation_ref) {
+        query = query.eq("presentation_ref", input.presentation_ref);
+      } else {
+        query = query.eq("partner_hmac", input.partnerHmac)
+          .eq("result_category", input.result_category)
+          .eq("policy_id", input.policy_id);
+      }
+      const { error } = await query;
+      if (error) throw error;
+      return;
+    } catch {
+      unavailable();
+    }
+  }
   const updates: EligibilityPresentationRecord[] = [];
   presentationMemory.forEach((record) => {
     const matchRef = input.presentation_ref && record.presentation_ref === input.presentation_ref;
@@ -307,6 +367,20 @@ export async function revokePresentationsForOrganization(input: {
 
 export async function revokePresentationsForReceipt(receiptId: string): Promise<void> {
   const now = new Date().toISOString();
+  if (storeForcedUnavailable) unavailable();
+  if (!skipDurableStore()) {
+    try {
+      const sb = requireSupabaseAdmin();
+      const { error } = await sb.from(PRESENTATIONS)
+        .update({ status: "revoked", revoked_at: now, updated_at: now })
+        .eq("receipt_verification_ref", receiptId)
+        .eq("status", "issued");
+      if (error) throw error;
+      return;
+    } catch {
+      unavailable();
+    }
+  }
   const updates: EligibilityPresentationRecord[] = [];
   presentationMemory.forEach((record) => {
     if (record.receipt_verification_ref === receiptId && record.status === "issued") {
@@ -324,22 +398,23 @@ export async function findUniqueCreatedRequest(input: {
   policyVersion: number;
   environment: "sandbox" | "production";
 }): Promise<EligibilityPresentationRequestRecord | null> {
-  const matches: EligibilityPresentationRequestRecord[] = [];
-  requestMemory.forEach((record) => {
-    const live = refreshRequest(record);
-    if (
-      live.status === "created"
-      && live.partner_hmac === input.partnerHmac
-      && live.policy_id === input.policyId
-      && live.policy_version === input.policyVersion
-      && live.environment === input.environment
-    ) {
-      matches.push(live);
-    }
-  });
-  if (matches.length === 1) return matches[0] ?? null;
-  if (matches.length > 1) return null;
-  if (skipDurableStore()) return null;
+  if (storeForcedUnavailable) unavailable();
+  if (skipDurableStore()) {
+    const matches: EligibilityPresentationRequestRecord[] = [];
+    requestMemory.forEach((record) => {
+      const live = refreshRequest(record);
+      if (
+        live.status === "created"
+        && live.partner_hmac === input.partnerHmac
+        && live.policy_id === input.policyId
+        && live.policy_version === input.policyVersion
+        && live.environment === input.environment
+      ) {
+        matches.push(live);
+      }
+    });
+    return matches.length === 1 ? matches[0] ?? null : null;
+  }
   try {
     const sb = requireSupabaseAdmin();
     const { data, error } = await sb
@@ -350,9 +425,10 @@ export async function findUniqueCreatedRequest(input: {
       .eq("policy_version", input.policyVersion)
       .eq("environment", input.environment)
       .eq("status", "created");
-    if (error || !data || data.length !== 1) return null;
+    if (error) throw error;
+    if (!data || data.length !== 1) return null;
     return refreshRequest(requestFromRow(data[0] as Record<string, unknown>));
   } catch {
-    throw Object.assign(new Error("schema_unavailable"), { code: "schema_unavailable" });
+    unavailable();
   }
 }
