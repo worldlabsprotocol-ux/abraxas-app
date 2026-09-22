@@ -19,7 +19,7 @@ import {
   type EvmVerificationAdapter,
   type SolanaVerificationAdapter,
 } from "./adapters";
-import { insertDeployment, insertDeploymentEvent, listDeploymentsForApp, updateDeploymentStatus, OnchainGateStoreUnavailableError } from "./store";
+import { getDeploymentByRef, insertDeployment, insertDeploymentEvent, listDeploymentsForApp, updateDeploymentStatus, OnchainGateStoreUnavailableError } from "./store";
 import { localSolanaFixturesAllowed } from "./adapters";
 import type { OnchainDeploymentManifest, OnchainGateDeploymentRecord } from "./types";
 import { projectOnchainGatePublic } from "./project";
@@ -214,19 +214,27 @@ export async function revokeOnchainGateDeployment(input: {
   deploymentRef: string;
 }): Promise<{ ok: true } | { ok: false; reason: OnchainGateSafeReason }> {
   try {
+    const current = await getDeploymentByRef({
+      deploymentRef: input.deploymentRef,
+      partnerId: input.partnerId,
+      applicationId: input.applicationId,
+    });
+    if (!current) return { ok: false, reason: "application_mismatch" };
+    if (current.status === "revoked") return { ok: true };
     const updated = await updateDeploymentStatus({
       deploymentRef: input.deploymentRef,
       partnerId: input.partnerId,
+      applicationId: input.applicationId,
       status: "revoked",
       revokedAt: new Date().toISOString(),
     });
-    if (!updated || updated.application_id !== input.applicationId) return { ok: false, reason: "application_mismatch" };
+    if (!updated) return { ok: false, reason: "application_mismatch" };
     await insertDeploymentEvent({
       event_id: crypto.randomUUID(),
       deployment_ref: input.deploymentRef,
       partner_id: input.partnerId,
       application_id: input.applicationId,
-      from_status: updated.status === "revoked" ? "revoked" : updated.status,
+      from_status: current.status,
       to_status: "revoked",
       reason: "revoked",
     });
