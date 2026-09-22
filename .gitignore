@@ -59,3 +59,9 @@ fix_*.py
 /contracts/evm-eligibility-verifier/out/
 /contracts/evm-eligibility-verifier/cache/
 
+# Solana SBF / ProgramTest output (never commit ELFs or generated deploy keypairs)
+/solana/**/target/
+/solana/**/test-ledger/
+/solana/**/*.so
+/solana/**/*-keypair.json
+

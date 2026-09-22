@@ -1,4 +1,6 @@
 import { describe, expect, it, beforeEach } from "vitest";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { Keypair } from "@solana/web3.js";
 import { hashAction, hashEnvironment, hashNetworkId, hashPartnerId, hashPolicy, hashSignerKeyId } from "@/lib/partner/chainAttestation/hashes";
 import { EVM_REF_PARTNER_ID, EVM_REF_POLICY_ID } from "@/lib/partner/evm/fixtures";
@@ -15,8 +17,12 @@ import {
   SOLANA_GATE_V1_PROGRAM_ELF,
   SOLANA_GATE_V2_PROGRAM_DIGEST,
   SOLANA_GATE_V2_PROGRAM_ELF,
+  SOLANA_GATE_V2_RETIRED_DIGEST,
+  SOLANA_GATE_V2_REVOKED_DIGEST,
   SOLANA_UPGRADEABLE_LOADER,
 } from "./solanaArtifacts";
+import { SOLANA_GATE_V2_RELEASE } from "./solanaV2Release";
+import { solanaProgramElfKeccak } from "./solanaElfDigest";
 import { localSolanaFixturesAllowed, resolveSolanaAdapter } from "./adapters";
 import { launchpadRequestRejectsClientAuthority } from "./clientAuthority";
 import { ONCHAIN_DEPLOYMENT_TEST_ADAPTER_ENV } from "./contract";
@@ -221,6 +227,59 @@ describe("structured Solana V2 observation", () => {
     process.env.NODE_ENV = "production";
     expect(localSolanaFixturesAllowed()).toBe(false);
     process.env.NODE_ENV = prior;
+  });
+
+  it("accepts the reviewed V2 release ELF digest as institutional-capable and fail-closes mutations and loader errors", async () => {
+    const elfPath = resolve("solana/abraxas-eligibility-gate/target/deploy/abraxas_eligibility_gate.so");
+    if (existsSync(elfPath)) {
+      const elf = readFileSync(elfPath);
+      expect(solanaProgramElfKeccak(elf)).toBe(SOLANA_GATE_V2_RELEASE.program_data_digest);
+      const { manifest, accounts } = setup({ elf, digest: SOLANA_GATE_V2_RELEASE.program_data_digest });
+      const observed = await observeSolanaFromAccounts(manifest, fetchFrom(accounts));
+      expect(observed.ok).toBe(true);
+      if (observed.ok) {
+        expect(observed.observation.institutionalCapable).toBe(true);
+        expect(observed.observation.artifactClass).toBe("v2_institutional");
+      }
+      const mutatedElf = Uint8Array.from(elf);
+      mutatedElf[0] ^= 0x01;
+      const mutated = setup({ elf: mutatedElf, digest: SOLANA_GATE_V2_RELEASE.program_data_digest });
+      const mutatedObs = await observeSolanaFromAccounts(mutated.manifest, fetchFrom(mutated.accounts));
+      expect(mutatedObs.ok).toBe(false);
+      if (!mutatedObs.ok) expect(mutatedObs.reason).toBe("unrecognized_gate_artifact");
+    }
+
+    const wrongHeader = setup();
+    const headerRow = [...wrongHeader.accounts.entries()].find(([, value]) => value.data.length > 45);
+    if (headerRow) {
+      const broken = Uint8Array.from(headerRow[1].data);
+      broken[0] = 1;
+      wrongHeader.accounts.set(headerRow[0], { owner: SOLANA_UPGRADEABLE_LOADER, data: broken });
+    }
+    const headerObs = await observeSolanaFromAccounts(wrongHeader.manifest, fetchFrom(wrongHeader.accounts));
+    expect(headerObs.ok).toBe(false);
+    if (!headerObs.ok) expect(headerObs.reason).toBe("program_mismatch");
+
+    const revoked = setup({ digest: SOLANA_GATE_V2_REVOKED_DIGEST, elf: new TextEncoder().encode("revoked-control") });
+    revoked.manifest.program_digest = SOLANA_GATE_V2_REVOKED_DIGEST;
+    const revokedObs = await observeSolanaFromAccounts(revoked.manifest, fetchFrom(revoked.accounts));
+    expect(revokedObs.ok).toBe(false);
+    if (!revokedObs.ok) expect(revokedObs.reason).toBe("unrecognized_gate_artifact");
+
+    const retired = setup({ digest: SOLANA_GATE_V2_RETIRED_DIGEST, elf: new TextEncoder().encode("retired-control") });
+    retired.manifest.program_digest = SOLANA_GATE_V2_RETIRED_DIGEST;
+    const retiredObs = await observeSolanaFromAccounts(retired.manifest, fetchFrom(retired.accounts));
+    expect(retiredObs.ok).toBe(false);
+    if (!retiredObs.ok) expect(retiredObs.reason).toBe("unrecognized_gate_artifact");
+  });
+
+  it("does not treat a matching V2 artifact as institutional without GateConfig.require_institutional", async () => {
+    const { manifest, accounts } = setup({ requireInstitutional: false });
+    const observed = await observeSolanaFromAccounts(manifest, fetchFrom(accounts));
+    expect(observed.ok).toBe(true);
+    if (!observed.ok) return;
+    expect(observed.observation.institutionalCapable).toBe(false);
+    expect(observed.observation.requireInstitutional).toBe(false);
   });
 
   it("does not treat partner or policy hashes from the client as authority when they disagree with GateConfig", async () => {

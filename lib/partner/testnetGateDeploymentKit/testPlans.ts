@@ -2,6 +2,7 @@ export const SOLANA_DEVNET_TEST_PLAN = {
   title: "Human-run Solana devnet gate path",
   live: false as const,
   steps: [
+    "Build the reviewed V2 eligibility-gate ELF and confirm its keccak digest matches the approved registry artifact before verify/register.",
     "Complete Hosted Partner Flow for the sandbox policy.",
     "Re-fetch GET /api/receipts/{id}/public and require currently_valid.",
     "Issue a chain attestation bound to the verified deployment_ref.",

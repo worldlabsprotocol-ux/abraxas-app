@@ -1,4 +1,3 @@
-import { keccak256 } from "viem";
 import { PublicKey } from "@solana/web3.js";
 import { sha256 } from "@noble/hashes/sha256";
 import { hashEnvironment, hashNetworkId, hashSignerKeyId } from "@/lib/partner/chainAttestation/hashes";
@@ -6,6 +5,7 @@ import type { OnchainGateSafeReason } from "./contract";
 import type { SolanaDeploymentManifest } from "./types";
 import type { SolanaChainObservation } from "./adapters";
 import { expectedSolanaConfigDigest } from "./digests";
+import { solanaProgramElfKeccak } from "./solanaElfDigest";
 import {
   lookupSolanaGateArtifact,
   SOLANA_GATE_ACCOUNT_NAME,
@@ -67,7 +67,7 @@ function programDataAddress(programAccount: SolanaAccountSnapshot): string | nul
   return new PublicKey(programAccount.data.subarray(4, 36)).toBase58();
 }
 
-function programDataElf(programData: SolanaAccountSnapshot): Uint8Array | null {
+export function programDataElf(programData: SolanaAccountSnapshot): Uint8Array | null {
   if (programData.owner !== SOLANA_UPGRADEABLE_LOADER) return null;
   if (programData.data.length < 13) return null;
   const disc = Buffer.from(programData.data.subarray(0, 4)).readUInt32LE(0);
@@ -152,7 +152,7 @@ export async function observeSolanaFromAccounts(
     if (!programData || "unavailable" in programData) return { ok: false, reason: "deployment_verification_unavailable" };
     const elf = programDataElf(programData);
     if (!elf) return { ok: false, reason: "program_mismatch" };
-    const programDigest = keccak256(`0x${Buffer.from(elf).toString("hex")}` as `0x${string}`);
+    const programDigest = solanaProgramElfKeccak(elf);
     const artifact = lookupSolanaGateArtifact(programDigest);
     if (!artifact) return { ok: false, reason: "unrecognized_gate_artifact" };
 
@@ -191,7 +191,8 @@ export async function observeSolanaFromAccounts(
       programDigest.toLowerCase() === manifest.program_digest.toLowerCase() ? "matched" : "mismatched";
     if (digestMatch === "mismatched") return { ok: false, reason: "program_mismatch" };
 
-    const institutional = artifact.institutional_capable && decoded.requireInstitutional && artifact.schema_version === 2;
+    const schemaVersion = artifact.schema_versions_supported.includes(2) && decoded.requireInstitutional ? 2 : artifact.schema_versions_supported[0];
+    const institutional = artifact.institutional_capable && decoded.requireInstitutional && schemaVersion === 2;
     if (decoded.requireInstitutional && !artifact.institutional_capable) {
       return { ok: false, reason: "institutional_required" };
     }
@@ -212,8 +213,8 @@ export async function observeSolanaFromAccounts(
       gateConfigPda: derivedPda,
       programDigest,
       configDigest,
-      schemaVersion: institutional ? 2 : artifact.schema_version,
-      canonicalMessageLen: institutional ? 468 : artifact.canonical_message_len,
+      schemaVersion: institutional ? 2 : artifact.schema_versions_supported[0],
+      canonicalMessageLen: institutional ? 468 : artifact.canonical_message_lengths[0],
       requireInstitutional: institutional,
       institutionalCapable: institutional,
       artifactClass: artifact.artifact_class,

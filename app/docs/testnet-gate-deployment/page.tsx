@@ -35,6 +35,14 @@ export default function TestnetGateDeploymentDocsPage() {
         title="Human-operated testnet gate deployment"
         subtitle={TESTNET_GATE_NOTICE}
       />
+      <ContentCard title="Reviewed Solana V2 artifact">
+        <p style={body}>
+          Operators deploy artifact <code>abraxas_eligibility_gate_v2_institutional_r1</code> only. Confirm the locally built ELF keccak digest
+          <code> 0x956eb9294aa866e8dbd76960841bdb17d3a58ccf801904038cea1169572f9787</code> (SHA-256
+          <code> 0x4036d3ada9835db952b1a73f9f8b549f9a6a22ab5174554a9dd582ed249be1aa</code>) before server verify or register.
+          Rebuild from <code>solana/abraxas-eligibility-gate/REPRODUCIBLE_RELEASE.md</code>. No deploy button and no automatic deployment.
+        </p>
+      </ContentCard>
       <ContentCard title="Boundary">
         <p style={body}>{TESTNET_GATE_NO_FUNDS}</p>
         <p style={{ ...body, marginTop: "0.5rem" }}>

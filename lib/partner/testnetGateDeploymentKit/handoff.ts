@@ -1,4 +1,5 @@
 import { INSTITUTIONAL_V2_LABEL } from "@/lib/partner/onchainGateDeployments/institutionalClass";
+import { SOLANA_GATE_V2_RELEASE } from "@/lib/partner/onchainGateDeployments/solanaV2Release";
 import { LOCALNET_SOLANA_PROGRAM_IDS } from "./contract";
 import type { OperatorHandoff, TestnetGateKitEnvelope } from "./types";
 
@@ -65,5 +66,16 @@ export function operatorHandoffFromPlan(envelope: TestnetGateKitEnvelope): Opera
     register_command: "npm run abraxas-gate -- register ./deployment-manifest.json",
     rollback: "Do not register. Admin revoke_trusted_signer on-chain. Registry: revokeOnchainGateDeployment or Launchpad POST { revoke: true, deployment_ref }. Never move funds.",
     operator_deploys_with: "local_solana_toolchain",
+    reviewed_solana_v2_artifact: solana
+      ? {
+          artifact_id: SOLANA_GATE_V2_RELEASE.artifact_id,
+          program_data_digest: SOLANA_GATE_V2_RELEASE.program_data_digest,
+          elf_sha256: SOLANA_GATE_V2_RELEASE.elf_sha256,
+          provenance_ref: SOLANA_GATE_V2_RELEASE.provenance_ref,
+          status: "approved",
+          operator_must_match_digest_before_verify: true,
+          deploy_button: false,
+        }
+      : undefined,
   };
 }
