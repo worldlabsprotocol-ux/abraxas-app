@@ -132,6 +132,7 @@ export interface OperatorHandoff {
   register_command: string;
   rollback: string;
   operator_deploys_with: "local_solana_toolchain";
+  solana_release_status?: "approved" | "candidate_digest_required";
   reviewed_solana_v2_artifact?: {
     artifact_id: string;
     program_data_digest: `0x${string}`;

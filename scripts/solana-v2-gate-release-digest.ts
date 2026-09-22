@@ -5,6 +5,9 @@ import { solanaProgramElfKeccak, solanaProgramElfSha256 } from "@/lib/partner/on
 import { SOLANA_GATE_V2_RELEASE } from "@/lib/partner/onchainGateDeployments/solanaV2Release";
 import { encodeProgramDataAccount, programDataElf } from "@/lib/partner/onchainGateDeployments/solanaObserve";
 import { SOLANA_UPGRADEABLE_LOADER } from "@/lib/partner/onchainGateDeployments/solanaArtifacts";
+import { LOCAL_SOLANA_GATE_PROGRAM_ID } from "@/lib/partner/chainAttestation/solanaGate";
+
+const candidate = process.argv.slice(2).includes("--candidate");
 
 const elfPath = resolve(
   process.env.SOLANA_V2_RELEASE_ELF
@@ -25,6 +28,10 @@ const observed = stripped ? solanaProgramElfKeccak(stripped) : null;
 
 const ok = keccak === SOLANA_GATE_V2_RELEASE.program_data_digest
   && sha === SOLANA_GATE_V2_RELEASE.elf_sha256
+  && LOCAL_SOLANA_GATE_PROGRAM_ID === SOLANA_GATE_V2_RELEASE.program_id
+  && observed === keccak;
+const candidateComputed = candidate
+  && LOCAL_SOLANA_GATE_PROGRAM_ID !== SOLANA_GATE_V2_RELEASE.program_id
   && observed === keccak;
 
 console.log(JSON.stringify({
@@ -33,7 +40,9 @@ console.log(JSON.stringify({
   program_data_digest: keccak,
   elf_sha256: sha,
   observation_digest: observed,
+  program_id: LOCAL_SOLANA_GATE_PROGRAM_ID,
+  release_status: candidate ? "candidate_unreviewed" : "approved_release_check",
   matches_registry: ok,
 }, null, 2));
 
-process.exit(ok ? 0 : 1);
+process.exit(candidate ? (candidateComputed ? 0 : 1) : (ok ? 0 : 1));

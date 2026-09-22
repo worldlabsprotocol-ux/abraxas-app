@@ -11,6 +11,7 @@ export type SolanaGateArtifactStatus = "approved" | "retired" | "revoked";
 
 export interface SolanaGateArtifact {
   artifact_id: string;
+  program_id?: string;
   artifact_class: SolanaGateArtifactClass;
   program_data_digest: `0x${string}`;
   elf_sha256?: `0x${string}`;
@@ -42,6 +43,7 @@ export const SOLANA_GATE_V2_CAPABILITY_MISMATCH_DIGEST =
 export const SOLANA_GATE_ARTIFACTS: readonly SolanaGateArtifact[] = [
   {
     artifact_id: SOLANA_GATE_V2_RELEASE.artifact_id,
+    program_id: SOLANA_GATE_V2_RELEASE.program_id,
     artifact_class: "v2_institutional",
     program_data_digest: SOLANA_GATE_V2_RELEASE.program_data_digest,
     elf_sha256: SOLANA_GATE_V2_RELEASE.elf_sha256,

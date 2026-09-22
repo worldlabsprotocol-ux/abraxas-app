@@ -1,6 +1,7 @@
 /** Safe, source-controlled V2 release metadata. No keys, RPC, account bytes, or ELF binary. */
 export const SOLANA_GATE_V2_RELEASE = {
   artifact_id: "abraxas_eligibility_gate_v2_institutional_r1",
+  program_id: "GmaDrppBC7P5ARKV8g3djiwP89vz1jLK23V2GBjuAEGB",
   crate: "abraxas-eligibility-gate",
   package_version: "0.1.0",
   source_commit: "0480d9ac4c739a99a6f3d5773da351a19a1d0f79",

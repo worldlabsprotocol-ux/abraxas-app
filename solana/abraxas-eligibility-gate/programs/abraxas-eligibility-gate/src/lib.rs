@@ -13,7 +13,7 @@ pub mod institutional_v2;
 pub mod verifier_sdk;
 use canonical::*;
 
-declare_id!("GmaDrppBC7P5ARKV8g3djiwP89vz1jLK23V2GBjuAEGB");
+declare_id!("4hf3cY57ciPakr4omyTSbksAfW672iGrdo6fiDVQAD4K");
 
 pub const MAX_SIGNERS: usize = 4;
 pub const SIGNER_EMPTY: u8 = 0;
