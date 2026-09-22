@@ -8,6 +8,7 @@ import {
   sandboxInstitutionalProtocolAccessProductionDenied,
 } from "@/lib/partner/sandboxInstitutionalProtocolAccess";
 import { isOperatorSandboxTestResult } from "@/lib/partner/sandboxInstitutionalOperatorResult/audit";
+import { isOrganizationResultCategory } from "./contract";
 
 function fail(code: string): never {
   throw Object.assign(new Error(code), { code });
@@ -66,6 +67,7 @@ export async function requireLiveOrganizationEligibility(input: {
   const live = matches.find((row) => row.currently_valid && row.consent_bound && row.status === "issued");
   if (!live) fail(matches.some((row) => row.status === "revoked" || row.status === "withdrawn") ? "organization_revoked" : "consent_required");
   if (reviewed && !isOperatorSandboxTestResult(live)) fail("operator_result_required");
+  if (!isOrganizationResultCategory(String(live.result_category ?? ""))) fail("unknown_policy");
   if (live.environment !== input.environment) fail("environment_mismatch");
   if (input.subject_binding_hash && live.subject_binding_hash && live.subject_binding_hash !== input.subject_binding_hash) {
     fail("wallet_binding_mismatch");

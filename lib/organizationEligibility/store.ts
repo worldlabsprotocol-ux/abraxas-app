@@ -159,7 +159,6 @@ export async function listOrganizationEligibilityMatching(input: {
     const live = refresh(record);
     if (
       live.partner_hmac === input.partner_hmac
-      && live.result_category === input.result_category
       && live.policy_id === input.policy_id
       && live.policy_version === input.policy_version
       && live.action === input.action
