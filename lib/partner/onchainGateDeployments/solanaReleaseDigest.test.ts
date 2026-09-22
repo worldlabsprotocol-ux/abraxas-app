@@ -21,6 +21,16 @@ import { encodeProgramDataAccount, programDataElf } from "./solanaObserve";
 const ELF_PATH = resolve("solana/abraxas-eligibility-gate/target/deploy/abraxas_eligibility_gate.so");
 
 describe("Solana V2 reproducible release digest", () => {
+  it("keeps TypeScript release constants aligned with the committed provenance JSON", () => {
+    const json = JSON.parse(
+      readFileSync("solana/abraxas-eligibility-gate/release/v2-institutional.artifact.json", "utf8"),
+    ) as { artifact_id: string; program_data_digest: string; elf_sha256: string; status: string };
+    expect(json.artifact_id).toBe(SOLANA_GATE_V2_RELEASE.artifact_id);
+    expect(json.program_data_digest).toBe(SOLANA_GATE_V2_RELEASE.program_data_digest);
+    expect(json.elf_sha256).toBe(SOLANA_GATE_V2_RELEASE.elf_sha256);
+    expect(json.status).toBe("approved");
+  });
+
   it("matches the registry keccak and SHA-256 when the rebuilt ELF is present", () => {
     if (!existsSync(ELF_PATH)) {
       expect(SOLANA_GATE_V2_RELEASE.program_data_digest).toMatch(/^0x[0-9a-f]{64}$/);
