@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach, vi } from "vitest";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { Keypair } from "@solana/web3.js";
@@ -23,7 +23,7 @@ import {
 } from "./solanaArtifacts";
 import { SOLANA_GATE_V2_RELEASE } from "./solanaV2Release";
 import { solanaProgramElfKeccak } from "./solanaElfDigest";
-import { localSolanaFixturesAllowed, resolveSolanaAdapter } from "./adapters";
+import { localSolanaFixturesAllowed, resolveSolanaAdapter, serverSolanaRpcAdapter } from "./adapters";
 import { launchpadRequestRejectsClientAuthority } from "./clientAuthority";
 import { ONCHAIN_DEPLOYMENT_TEST_ADAPTER_ENV } from "./contract";
 
@@ -132,6 +132,57 @@ describe("structured Solana V2 observation", () => {
   beforeEach(() => {
     delete process.env.VERCEL;
     delete process.env[ONCHAIN_DEPLOYMENT_TEST_ADAPTER_ENV];
+  });
+
+  it("binds server RPC observations to the declared Solana cluster", async () => {
+    const previousFetch = globalThis.fetch;
+    const previousRpcUrl = process.env.ABRAXAS_SOLANA_GATE_VERIFY_RPC_URL;
+    process.env.ABRAXAS_SOLANA_GATE_VERIFY_RPC_URL = "http://127.0.0.1:8899";
+    const { manifest, accounts } = setup();
+    const devnetGenesis = "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG";
+    let genesisResponses = [devnetGenesis, devnetGenesis];
+    const methods: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (_url: string, init: { body?: string }) => {
+      const request = JSON.parse(String(init.body)) as { method: string; params: string[] };
+      methods.push(request.method);
+      const result = request.method === "getGenesisHash"
+        ? genesisResponses.shift()
+        : (() => {
+            const account = accounts.get(request.params[0]);
+            return { value: account
+              ? { owner: account.owner, data: [Buffer.from(account.data).toString("base64"), "base64"] }
+              : null };
+          })();
+      return { ok: true, json: async () => ({ result }) };
+    }));
+
+    try {
+      const adapter = serverSolanaRpcAdapter();
+      expect(adapter).not.toBeNull();
+      if (!adapter) return;
+      const verified = await adapter.observe(manifest);
+      expect("unavailable" in verified).toBe(false);
+      expect("rejected" in verified).toBe(false);
+      expect(methods).toEqual([
+        "getGenesisHash", "getAccountInfo", "getAccountInfo", "getAccountInfo", "getGenesisHash",
+      ]);
+
+      methods.length = 0;
+      genesisResponses = ["5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d"];
+      expect(await adapter.observe(manifest)).toEqual({ unavailable: true });
+      expect(methods).toEqual(["getGenesisHash"]);
+
+      methods.length = 0;
+      genesisResponses = [devnetGenesis, "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d"];
+      expect(await adapter.observe(manifest)).toEqual({ unavailable: true });
+      expect(methods).toEqual([
+        "getGenesisHash", "getAccountInfo", "getAccountInfo", "getAccountInfo", "getGenesisHash",
+      ]);
+    } finally {
+      vi.stubGlobal("fetch", previousFetch);
+      if (previousRpcUrl === undefined) delete process.env.ABRAXAS_SOLANA_GATE_VERIFY_RPC_URL;
+      else process.env.ABRAXAS_SOLANA_GATE_VERIFY_RPC_URL = previousRpcUrl;
+    }
   });
 
   it("proves V2 institutional capability from program data and GateConfig", async () => {

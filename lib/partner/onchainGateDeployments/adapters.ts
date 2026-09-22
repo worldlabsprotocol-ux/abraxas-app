@@ -46,6 +46,13 @@ export function localSolanaFixturesAllowed(): boolean {
 const evmFixtures = new Map<string, EvmChainObservation>();
 const solanaFixtures = new Map<string, SolanaChainObservation>();
 
+// Solana SDK ClusterType::get_genesis_hash. Never infer cluster identity from
+// the RPC URL or a caller-supplied label.
+const SOLANA_GENESIS_HASHES: Record<string, string> = {
+  solana_devnet: "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+  solana_mainnet: "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d",
+};
+
 export function resetOnchainVerificationFixtures(): void {
   evmFixtures.clear();
   solanaFixtures.clear();
@@ -156,13 +163,22 @@ export function serverSolanaRpcAdapter(): SolanaVerificationAdapter | null {
   return {
     kind: "server_rpc",
     async observe(manifest) {
-      const { observeSolanaFromAccounts } = await import("./solanaObserve");
-      const observed = await observeSolanaFromAccounts(manifest, async (pubkey) => fetchSolanaAccount(url, pubkey));
-      if (!observed.ok) {
-        if (observed.reason === "deployment_verification_unavailable") return { unavailable: true };
-        return { rejected: observed.reason };
+      try {
+        const expectedGenesis = SOLANA_GENESIS_HASHES[manifest.network_id];
+        if (!expectedGenesis) return { unavailable: true };
+        const genesisMatches = async () => await jsonRpc(url, "getGenesisHash", []) === expectedGenesis;
+        if (!await genesisMatches()) return { unavailable: true };
+        const { observeSolanaFromAccounts } = await import("./solanaObserve");
+        const observed = await observeSolanaFromAccounts(manifest, async (pubkey) => fetchSolanaAccount(url, pubkey));
+        if (!observed.ok) {
+          if (observed.reason === "deployment_verification_unavailable") return { unavailable: true };
+          return { rejected: observed.reason };
+        }
+        if (!await genesisMatches()) return { unavailable: true };
+        return observed.observation;
+      } catch {
+        return { unavailable: true };
       }
-      return observed.observation;
     },
   };
 }
