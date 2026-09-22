@@ -68,7 +68,6 @@ export async function GET(req: NextRequest) {
   }
   const payload = {
     ok: true,
-    notice: SANDBOX_INSTITUTIONAL_OPERATOR_NOTICE,
     ...sandboxInstitutionalOperatorCopy(),
     items,
   };
@@ -106,7 +105,6 @@ export async function POST(req: NextRequest) {
     });
     const payload = {
       ok: true,
-      notice: SANDBOX_INSTITUTIONAL_OPERATOR_NOTICE,
       ...sandboxInstitutionalOperatorCopy(),
       organization_ref: issued.organization_ref,
       expires_at: issued.expires_at,
