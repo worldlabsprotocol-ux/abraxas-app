@@ -217,6 +217,112 @@ describe("verified onchain gate deployments", () => {
     expect(events()).toHaveLength(before + 1);
   });
 
+  it("rechecks EVM code and config at issuance after registration", async () => {
+    const { bindIssuanceToVerifiedDeployment } = await import("@/lib/partner/onchainGateDeployments/bindIssuance");
+    const manifest = evmManifest();
+    const configDigest = manifest.config_digest as `0x${string}`;
+    setLocalAnvilFixture(GATE, { codeHash: BYTECODE, configDigest });
+    const registered = await registerOnchainGateDeployment({
+      partnerId: EVM_REF_PARTNER_ID,
+      applicationId: "app-reobserve-evm",
+      policyId: EVM_REF_POLICY_ID,
+      policyVersion: 1,
+      appEnvironment: "sandbox",
+      manifest,
+    });
+    expect(registered.ok).toBe(true);
+    if (!registered.ok) return;
+    const bind = () => bindIssuanceToVerifiedDeployment({
+      partnerId: EVM_REF_PARTNER_ID,
+      applicationId: "app-reobserve-evm",
+      deploymentRef: registered.record.deployment_ref,
+      networkId: "evm_sandbox",
+      actionType: "enable_protocol_access",
+      actionScope: "sandbox:protocol_access",
+      kitEnvironment: "sandbox",
+      policyId: EVM_REF_POLICY_ID,
+      policyVersion: 1,
+      signerKeyId: "evm-attestation-test-1",
+    });
+    expect((await bind()).ok).toBe(true);
+    setLocalAnvilFixture(GATE, { codeHash: `0x${"11".repeat(32)}`, configDigest });
+    expect(await bind()).toEqual({ ok: false, reason: "deployment_mismatch" });
+    setLocalAnvilFixture(GATE, { codeHash: BYTECODE, configDigest: `0x${"22".repeat(32)}` });
+    expect(await bind()).toEqual({ ok: false, reason: "deployment_mismatch" });
+    resetOnchainVerificationFixtures();
+    expect(await bind()).toEqual({ ok: false, reason: "deployment_verification_unavailable" });
+  });
+
+  it("rechecks Solana institutional capability at issuance after registration", async () => {
+    const { bindIssuanceToVerifiedDeployment } = await import("@/lib/partner/onchainGateDeployments/bindIssuance");
+    const hashes = hashesForApplication({
+      partnerId: EVM_REF_PARTNER_ID,
+      policyId: "organization_eligible",
+      policyVersion: 1,
+      actionType: "partner_protocol_action",
+      actionScope: "sandbox:partner_protocol",
+      environment: "sandbox",
+      signerKeyId: "solana-attestation-test-1",
+    });
+    const manifest = solanaManifest({
+      partner_hash: hashes.partner_hash,
+      policy_hash: hashes.policy_hash,
+      action_hash: hashes.action_hash,
+      config_digest: expectedSolanaConfigDigest({
+        programId: PROGRAM,
+        gateConfigPda: PDA,
+        programDigest: `0x${"cd".repeat(32)}` as `0x${string}`,
+        partnerHash: hashes.partner_hash,
+        policyHash: hashes.policy_hash,
+        actionHash: hashes.action_hash,
+        environment: hashes.environment_hash,
+        signerKeyId: "solana-attestation-test-1",
+        subjectBindingMode: "optional",
+      }),
+    });
+    const observation = {
+      programId: PROGRAM,
+      gateConfigPda: PDA,
+      programDigest: manifest.program_digest as `0x${string}`,
+      configDigest: manifest.config_digest as `0x${string}`,
+      canonicalMessageLen: 468,
+      schemaVersion: 2,
+      requireInstitutional: true,
+      institutionalCapable: true,
+    };
+    setLocalSolanaProgramTestFixture(PROGRAM, PDA, observation);
+    const registered = await registerOnchainGateDeployment({
+      partnerId: EVM_REF_PARTNER_ID,
+      applicationId: "app-reobserve-solana",
+      policyId: "organization_eligible",
+      policyVersion: 1,
+      appEnvironment: "sandbox",
+      manifest,
+    });
+    expect(registered.ok).toBe(true);
+    if (!registered.ok) return;
+    const bind = () => bindIssuanceToVerifiedDeployment({
+      partnerId: EVM_REF_PARTNER_ID,
+      applicationId: "app-reobserve-solana",
+      deploymentRef: registered.record.deployment_ref,
+      networkId: "solana_devnet",
+      actionType: "partner_protocol_action",
+      actionScope: "sandbox:partner_protocol",
+      kitEnvironment: "sandbox",
+      policyId: "organization_eligible",
+      policyVersion: 1,
+      signerKeyId: "solana-attestation-test-1",
+      institutionalRequired: true,
+    });
+    expect((await bind()).ok).toBe(true);
+    setLocalSolanaProgramTestFixture(PROGRAM, PDA, { ...observation, requireInstitutional: false });
+    expect(await bind()).toEqual({ ok: false, reason: "deployment_mismatch" });
+    setLocalSolanaProgramTestFixture(PROGRAM, PDA, { ...observation, programDigest: `0x${"11".repeat(32)}` as `0x${string}` });
+    expect(await bind()).toEqual({ ok: false, reason: "deployment_mismatch" });
+    resetOnchainVerificationFixtures();
+    expect(await bind()).toEqual({ ok: false, reason: "deployment_verification_unavailable" });
+  });
+
   it("matches and mismatches EVM code and config hashes", async () => {
     const manifest = evmManifest();
     setLocalAnvilFixture(GATE, { codeHash: BYTECODE, configDigest: manifest.config_digest as `0x${string}` });

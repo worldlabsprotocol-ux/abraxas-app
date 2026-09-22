@@ -3,6 +3,9 @@ import type { ChainAttestationSafeReason } from "@/lib/partner/chainAttestation/
 import { getDeploymentByRef, OnchainGateStoreUnavailableError } from "./store";
 import type { OnchainGateDeploymentRecord } from "./types";
 import { ONCHAIN_DEPLOYMENT_TEST_ADAPTER_ENV } from "./contract";
+import { resolveEvmAdapter, resolveSolanaAdapter, verifyEvmAgainstChain, verifySolanaAgainstChain } from "./adapters";
+import { parseOnchainDeploymentManifest } from "./parseManifest";
+import { observedRequireInstitutional } from "./institutional";
 
 export interface LocalIssuanceTestAdapter {
   source: "local_anvil" | "solana_program_test";
@@ -106,6 +109,46 @@ export async function bindIssuanceToVerifiedDeployment(input: {
   const requestedInstitutional = input.institutionalRequired === true;
   if (record.require_institutional !== requestedInstitutional) {
     return { ok: false, reason: "institutional_required" };
+  }
+
+  // A verified database row is a snapshot. Re-observe the deployed code and
+  // configuration before signing, so an upgrade or config change cannot use
+  // an old deployment_ref as continuing authority.
+  const parsed = parseOnchainDeploymentManifest({
+    schema_version: 1,
+    gate_type: record.gate_type,
+    network_id: record.network_id,
+    ...(record.gate_type === "evm"
+      ? { chain_id: record.chain_id, gate_address: record.gate_address, bytecode_hash: record.bytecode_hash }
+      : { program_id: record.program_id, gate_config_pda: record.gate_config_pda, program_digest: record.program_digest }),
+    config_digest: record.config_digest,
+    partner_hash: record.partner_hash,
+    policy_hash: record.policy_hash,
+    action_hash: record.action_hash,
+    action_type: record.action_type,
+    action_scope: record.action_scope,
+    environment: record.environment,
+    signer_key_id: record.signer_key_id,
+    subject_binding_mode: record.subject_binding_mode,
+  });
+  if (!parsed.ok) return { ok: false, reason: "deployment_mismatch" };
+
+  try {
+    if (parsed.manifest.gate_type === "evm") {
+      const verified = await verifyEvmAgainstChain(parsed.manifest, resolveEvmAdapter());
+      if (!verified.ok) return { ok: false, reason: verified.reason === "deployment_verification_unavailable" ? verified.reason : "deployment_mismatch" };
+      if (observedRequireInstitutional({ gateType: "evm", evmObservation: verified.observation }) !== record.require_institutional) {
+        return { ok: false, reason: "deployment_mismatch" };
+      }
+    } else {
+      const verified = await verifySolanaAgainstChain(parsed.manifest, resolveSolanaAdapter());
+      if (!verified.ok) return { ok: false, reason: verified.reason === "deployment_verification_unavailable" ? verified.reason : "deployment_mismatch" };
+      if (observedRequireInstitutional({ gateType: "solana", solanaObservation: verified.observation }) !== record.require_institutional) {
+        return { ok: false, reason: "deployment_mismatch" };
+      }
+    }
+  } catch {
+    return { ok: false, reason: "deployment_verification_unavailable" };
   }
 
   return {
