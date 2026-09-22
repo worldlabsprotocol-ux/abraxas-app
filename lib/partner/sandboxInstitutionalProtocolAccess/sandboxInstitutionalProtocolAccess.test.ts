@@ -15,8 +15,6 @@ import { planIssuersForPack } from "@/lib/verification/issuerTrust/match";
 import { planEligibilityMethods } from "@/lib/partner/eligibilityMethods";
 import { isInstitutionalPolicyId } from "@/lib/organizationEligibility/chainCommitments";
 import {
-  createOrganizationConsent,
-  issueOrganizationEligibility,
   organizationLeaks,
   projectOrganizationPublicView,
   resetOrganizationConsentForTests,
@@ -95,30 +93,46 @@ describe("reviewed sandbox institutional protocol-access policy", () => {
   });
 
   it("binds a fresh organization_eligible result to the reviewed policy without PII", async () => {
-    const consent = createOrganizationConsent({
-      partnerHmac: "x",
-      result_category: "organization_eligible",
-      purpose: "sandbox protocol access demo",
-      action: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
-      action_scope: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
+    const {
+      issueOperatorSandboxInstitutionalResult,
+      bindFreshConsentToOperatorSandboxResult,
+      putOperatorLaunchpadAppForTests,
+      resetOperatorLaunchpadAppsForTests,
+    } = await import("@/lib/partner/sandboxInstitutionalOperatorResult");
+    resetOperatorLaunchpadAppsForTests();
+    putOperatorLaunchpadAppForTests({
+      id: "app-inst-1",
+      public_slug: "inst-app",
+      partner_id: "acme",
+      application_name: "Institutional sandbox",
+      display_name: "Institutional sandbox",
       environment: "sandbox",
+      policy_id: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
+      policy_version: 1,
+      policy_template_id: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
+      allowed_return_urls: ["https://partner.example/callback"],
+      api_key_id: "key-1",
+      production_api_key_id: null,
+      production_key_revealed_at: null,
+      status: "active",
+      idempotency_key: null,
+      created_at: "2026-01-01T00:00:00.000Z",
+      updated_at: "2026-01-01T00:00:00.000Z",
     });
-    const { organizationPartnerHmac } = await import("@/lib/organizationEligibility");
-    const liveConsent = createOrganizationConsent({
-      partnerHmac: organizationPartnerHmac("acme"),
-      result_category: "organization_eligible",
-      purpose: "sandbox protocol access demo",
-      action: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
-      action_scope: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
-      environment: "sandbox",
-    });
-    expect(consent.consent_ref).toBeTruthy();
-    const issued = await issueOrganizationEligibility({
-      partnerId: "acme",
-      consent_ref: liveConsent.consent_ref,
+    const issued = await issueOperatorSandboxInstitutionalResult({
+      applicationId: "app-inst-1",
+      confirm: true,
     });
     expect(issued.result_category).toBe("organization_eligible");
     expect(JSON.stringify(issued)).not.toMatch(/legal_name|beneficial_owner|wallet_address|rpc_url|private_key/i);
+    await bindFreshConsentToOperatorSandboxResult({
+      partnerId: "acme",
+      policyId: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
+      policyVersion: 1,
+      action: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
+      actionScope: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
+      environment: "sandbox",
+    });
     const bound = await resolveInstitutionalAttestationCommitments({
       partnerId: "acme",
       policyId: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
@@ -176,23 +190,54 @@ describe("reviewed sandbox institutional protocol-access policy", () => {
   });
 
   it("denies revocation, cross-partner, and cross-policy reuse", async () => {
-    const { organizationPartnerHmac } = await import("@/lib/organizationEligibility");
-    const liveConsent = createOrganizationConsent({
-      partnerHmac: organizationPartnerHmac("acme"),
-      result_category: "organization_eligible",
-      purpose: "sandbox protocol access demo",
+    const {
+      issueOperatorSandboxInstitutionalResult,
+      bindFreshConsentToOperatorSandboxResult,
+      putOperatorLaunchpadAppForTests,
+    } = await import("@/lib/partner/sandboxInstitutionalOperatorResult");
+    putOperatorLaunchpadAppForTests({
+      id: "app-inst-1",
+      public_slug: "inst-app",
+      partner_id: "acme",
+      application_name: "Institutional sandbox",
+      display_name: "Institutional sandbox",
+      environment: "sandbox",
+      policy_id: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
+      policy_version: 1,
+      policy_template_id: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
+      allowed_return_urls: ["https://partner.example/callback"],
+      api_key_id: "key-1",
+      production_api_key_id: null,
+      production_key_revealed_at: null,
+      status: "active",
+      idempotency_key: null,
+      created_at: "2026-01-01T00:00:00.000Z",
+      updated_at: "2026-01-01T00:00:00.000Z",
+    });
+    const issued = await issueOperatorSandboxInstitutionalResult({
+      applicationId: "app-inst-1",
+      confirm: true,
+    });
+    await bindFreshConsentToOperatorSandboxResult({
+      partnerId: "acme",
+      policyId: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
+      policyVersion: 1,
       action: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
-      action_scope: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
+      actionScope: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
       environment: "sandbox",
     });
-    const issued = await issueOrganizationEligibility({
-      partnerId: "acme",
-      consent_ref: liveConsent.consent_ref,
-    });
     const publicView = projectOrganizationPublicView(issued);
-    expect(publicView.result).toBe("approved");
+    expect(publicView.result).toBe("denied");
     expect(organizationLeaks(publicView)).toEqual([]);
-    expect(JSON.stringify(publicView)).not.toMatch(/legal name|registration|beneficial|private_key|rpc_url/i);
+    const live = await resolveInstitutionalAttestationCommitments({
+      partnerId: "acme",
+      policyId: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
+      policyVersion: 1,
+      action: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
+      actionScope: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
+      environment: "sandbox",
+    });
+    expect(projectOrganizationPublicView(live.record!).result).toBe("approved");
     await expect(resolveInstitutionalAttestationCommitments({
       partnerId: "other-partner",
       policyId: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,

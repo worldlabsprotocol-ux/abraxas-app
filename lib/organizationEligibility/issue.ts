@@ -12,6 +12,10 @@ import { organizationPolicyContract } from "./policies";
 import { consumeOrganizationConsent } from "./consent";
 import { findOrganizationByDerivation, saveOrganizationEligibility } from "./store";
 import type { OrganizationEligibilityRecord } from "./types";
+import {
+  SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
+  SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
+} from "@/lib/partner/sandboxInstitutionalProtocolAccess";
 
 const ISSUE_KEYS = ["consent_ref", "subject_binding_hash"] as const;
 
@@ -37,6 +41,12 @@ export async function issueOrganizationEligibility(input: {
   const consent = consumeOrganizationConsent({ consent_ref: input.consent_ref, partnerHmac: partner_hmac });
   if (!consent) fail("consent_required");
   if (!(ORGANIZATION_RESULT_CATEGORIES as readonly string[]).includes(consent.result_category)) fail("unknown_policy");
+  if (consent.action === SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION) {
+    if (consent.environment === "production" || consent.action_scope !== SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE) {
+      fail("environment_mismatch");
+    }
+    fail("operator_result_required");
+  }
   const policy = organizationPolicyContract(consent.result_category);
   if (!policy || policy.live_policy || policy.self_publishable || policy.wallet_control_qualifies) fail("unknown_policy");
 

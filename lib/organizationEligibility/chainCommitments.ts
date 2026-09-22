@@ -13,7 +13,7 @@ import { organizationPartnerHmac } from "./opaque";
 import { listOrganizationEligibilityMatching } from "./store";
 import { mapReviewedOrganizationIssuer } from "./mapIssuer";
 import type { OrganizationEligibilityRecord } from "./types";
-import type { OrganizationResultCategory } from "./contract";
+import { isOperatorSandboxTestResult } from "@/lib/partner/sandboxInstitutionalOperatorResult/audit";
 
 export const ZERO_COMMITMENT = ZERO_BYTES32;
 
@@ -94,6 +94,7 @@ export async function resolveInstitutionalAttestationCommitments(input: {
     if (scoped.some((row) => row.status === "expired")) fail("expired");
     fail("consent_required");
   }
+  if (reviewed && !isOperatorSandboxTestResult(live)) fail("operator_result_required");
   if (live.environment !== input.environment) fail("environment_mismatch");
   if (reviewed) {
     if (live.policy_id !== SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_RESULT) fail("policy_mismatch");

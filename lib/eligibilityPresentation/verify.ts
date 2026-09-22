@@ -94,21 +94,6 @@ export async function verifyEligibilityPresentation(input: {
   if (stored.status === "revoked") return { ok: false, reason: "revoked", presentation_sufficient: false };
   if (stored.status === "consumed") return { ok: false, reason: "replayed", presentation_sufficient: false };
   if (stored.status !== "issued") return { ok: false, reason: stored.status, presentation_sufficient: false };
-  if ((ORGANIZATION_RESULT_CATEGORIES as readonly string[]).includes(stored.result_category)) {
-    try {
-      await requireLiveOrganizationEligibility({
-        partnerHmac: stored.partner_hmac,
-        result_category: stored.result_category,
-        policy_id: stored.policy_id,
-        policy_version: stored.policy_version,
-        action: stored.action,
-        environment: stored.environment,
-      });
-    } catch (error) {
-      const reason = error instanceof Error && "code" in error ? String((error as { code?: string }).code) : "organization_revoked";
-      return { ok: false, reason, presentation_sufficient: false };
-    }
-  }
 
   const hash = nonceHash(input.expected.verifier_nonce);
   const byNonce = await findPresentationByNonceHash(hash);
@@ -126,6 +111,21 @@ export async function verifyEligibilityPresentation(input: {
   }
   if (receipt.policy_id && receipt.policy_id !== payload.policy_id) {
     return { ok: false, reason: "policy_mismatch", presentation_sufficient: false };
+  }
+  if ((ORGANIZATION_RESULT_CATEGORIES as readonly string[]).includes(stored.result_category)) {
+    try {
+      await requireLiveOrganizationEligibility({
+        partnerId: receipt.partner_id,
+        result_category: stored.result_category,
+        policy_id: stored.policy_id,
+        policy_version: stored.policy_version,
+        action: stored.action,
+        environment: stored.environment,
+      });
+    } catch (error) {
+      const reason = error instanceof Error && "code" in error ? String((error as { code?: string }).code) : "organization_revoked";
+      return { ok: false, reason, presentation_sufficient: false };
+    }
   }
 
   const consumedAt = new Date().toISOString();

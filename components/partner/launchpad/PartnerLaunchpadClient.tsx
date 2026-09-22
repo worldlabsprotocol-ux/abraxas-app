@@ -607,6 +607,7 @@ export function PartnerLaunchpadClient({
           {policyTemplateId === "sandbox_institutional_protocol_access" && (
             <p style={{ ...bodyText, marginTop: "0.75rem" }}>
               Next: {SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SEQUENCE.join(" → ")}.
+              Sandbox test result for technical integration only. It is not a live KYB or Production approval.
             </p>
           )}
           <div style={{ marginTop: "0.75rem" }}>
@@ -758,6 +759,7 @@ export function PartnerLaunchpadClient({
           </ol>
           <p style={bodyText}>
             Policy ID is pinned by the server. Browser input cannot choose partner, policy version, issuer, assurance, signer, network, or production.
+            Sandbox test result for technical integration only. It is not a live KYB or Production approval.
           </p>
         </ContentCard>
       )}
