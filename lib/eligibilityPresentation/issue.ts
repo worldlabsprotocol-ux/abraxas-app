@@ -16,6 +16,7 @@ import {
 import { requireLiveOrganizationEligibility } from "@/lib/organizationEligibility/revoke";
 import { assertReceiptMatchesRequest, loadBoundSourceReceipt } from "./complete";
 import { signPresentationPayload } from "./sign";
+import { operatorSandboxHolderBinding } from "@/lib/partner/sandboxInstitutionalOperatorResult/holderBinding";
 import type { EligibilityPresentationEnvelope, EligibilityPresentationPayload } from "./types";
 
 export const ISSUE_REQUEST_KEYS = ["request_ref", "verifier_nonce"] as const;
@@ -41,6 +42,8 @@ export async function issueEligibilityPresentation(input: {
     && request.result_category !== SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_RESULT) {
     fail("policy_mismatch");
   }
+  const receipt = await loadBoundSourceReceipt(request);
+  assertReceiptMatchesRequest(request, receipt, input.partnerId);
   if ((ORGANIZATION_RESULT_CATEGORIES as readonly string[]).includes(request.result_category)) {
     await requireLiveOrganizationEligibility({
       partnerId: input.partnerId,
@@ -49,11 +52,11 @@ export async function issueEligibilityPresentation(input: {
       policy_version: request.policy_version,
       action: request.action,
       environment: request.environment,
+      subject_binding_hash: isSandboxInstitutionalProtocolAccessPolicyId(request.policy_id)
+        ? operatorSandboxHolderBinding(input.partnerId, receipt.subject_pseudonym_id)
+        : undefined,
     });
   }
-
-  const receipt = await loadBoundSourceReceipt(request);
-  assertReceiptMatchesRequest(request, receipt, input.partnerId);
 
   const presentation_ref = opaquePresentationRef(`${request.request_ref}:${randomBytes(8).toString("hex")}`);
   const issued_at = new Date().toISOString();

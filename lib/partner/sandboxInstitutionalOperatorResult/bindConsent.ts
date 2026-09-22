@@ -14,6 +14,7 @@ import {
   sandboxInstitutionalProtocolAccessProductionDenied,
 } from "@/lib/partner/sandboxInstitutionalProtocolAccess";
 import { isOperatorSandboxTestResult } from "./audit";
+import { operatorSandboxHolderBinding } from "./holderBinding";
 
 function fail(code: string): never {
   throw Object.assign(new Error(code), { code });
@@ -42,6 +43,7 @@ export async function bindFreshConsentToOperatorSandboxResult(input: {
   if (input.receipt.status !== "active" || input.receipt.decision_result !== "approved" || input.receipt.revoked_at) {
     fail("receipt_invalid");
   }
+  const holderBinding = operatorSandboxHolderBinding(input.partnerId, input.receipt.subject_pseudonym_id);
 
   const matches = await listOrganizationEligibilityMatching({
     partner_hmac: organizationPartnerHmac(input.partnerId),
@@ -62,7 +64,10 @@ export async function bindFreshConsentToOperatorSandboxResult(input: {
     }
     fail("consent_required");
   }
-  if (live.consent_bound) return;
+  if (live.consent_bound) {
+    if (live.subject_binding_hash !== holderBinding) fail("consent_required");
+    return;
+  }
 
   const consent = createOrganizationConsent({
     partnerHmac: live.partner_hmac,
@@ -77,5 +82,10 @@ export async function bindFreshConsentToOperatorSandboxResult(input: {
     partnerHmac: live.partner_hmac,
   });
   if (!consumed) fail("consent_required");
-  await saveOrganizationEligibility({ ...live, consent_bound: true, currently_valid: true });
+  await saveOrganizationEligibility({
+    ...live,
+    consent_bound: true,
+    currently_valid: true,
+    subject_binding_hash: holderBinding,
+  });
 }

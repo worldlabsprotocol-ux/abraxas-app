@@ -44,6 +44,8 @@ import {
 import { encodeSolanaEligibilityMessage, bytesToHex, buildSolanaEd25519VerifyInstructionData } from "./solanaMessage";
 import { loadSolanaAttestationSigner } from "./solanaSigner";
 import { projectChainAttestationClient, type ChainAttestationClientView } from "./project";
+import { isSandboxInstitutionalProtocolAccessPolicyId } from "@/lib/partner/sandboxInstitutionalProtocolAccess";
+import { loadSourceReceipt, receiptEnvironment, receiptHasFreshConsent } from "@/lib/eligibilityPresentation/sourceReceipt";
 
 const DEFAULT_TTL_MS = 10 * 60 * 1000;
 
@@ -168,6 +170,22 @@ export async function issueChainEligibilityAttestation(
     return denied(mapped, input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
   }
 
+  let receiptSubjectPseudonymId: string | undefined;
+  if (isSandboxInstitutionalProtocolAccessPolicyId(input.kit.options.policyId)) {
+    const privateReceipt = await loadSourceReceipt(input.receiptId);
+    if (!privateReceipt || privateReceipt.id !== input.receiptId
+      || privateReceipt.partner_id !== input.kit.options.partnerId
+      || privateReceipt.policy_id !== input.kit.options.policyId
+      || privateReceipt.policy_version !== (input.kit.options.policyVersion ?? 1)
+      || receiptEnvironment(privateReceipt) !== input.kit.options.environment
+      || !receiptHasFreshConsent(privateReceipt)
+      || privateReceipt.status !== "active" || privateReceipt.revoked_at
+      || new Date(privateReceipt.expires_at).getTime() <= Date.now()) {
+      return denied("consent_required", input.action_type, input.action_scope, input.network_id, input.kit.options.environment);
+    }
+    receiptSubjectPseudonymId = privateReceipt.subject_pseudonym_id;
+  }
+
   const readiness = evaluateNetworkAction({
     networkId: input.network_id,
     context: {
@@ -204,6 +222,7 @@ export async function issueChainEligibilityAttestation(
       actionScope: input.action_scope,
       environment: input.kit.options.environment,
       walletBindingHash: input.wallet_binding_hash,
+      receiptSubjectPseudonymId,
     });
   } catch (error) {
     const code = error instanceof Error && "code" in error ? String((error as { code?: string }).code) : "organization_revoked";
