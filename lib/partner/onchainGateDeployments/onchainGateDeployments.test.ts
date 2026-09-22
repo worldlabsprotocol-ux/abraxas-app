@@ -8,7 +8,7 @@ vi.mock("@/lib/supabase/admin", async () => {
   return { requireSupabaseAdmin: requireWalletStandardTestAdmin };
 });
 
-import { resetFakeWalletStandardBackend } from "@/lib/partner/walletStandard/fakeDurableBackend";
+import { fakeWalletInserts, resetFakeWalletStandardBackend } from "@/lib/partner/walletStandard/fakeDurableBackend";
 import { EVM_REF_PARTNER_ID, EVM_REF_POLICY_ID, evmFixtureReceipt } from "@/lib/partner/evm/fixtures";
 import { hashAction, hashEnvironment, hashPartnerId, hashPolicy } from "@/lib/partner/chainAttestation/hashes";
 import { AbraxasPartnerKit } from "@/lib/partner/integrationKit";
@@ -29,7 +29,7 @@ import {
   setLocalAnvilFixture,
   setLocalSolanaProgramTestFixture,
 } from "@/lib/partner/onchainGateDeployments";
-import { getDeploymentByRef } from "@/lib/partner/onchainGateDeployments/store";
+import { getDeploymentByRef, updateDeploymentStatus } from "@/lib/partner/onchainGateDeployments/store";
 import { ONCHAIN_DEPLOYMENT_TEST_ADAPTER_ENV } from "@/lib/partner/onchainGateDeployments/contract";
 import { generateStarterKit } from "@/lib/partner/starterKit/generate";
 import { validateStarterKitInput } from "@/lib/partner/starterKit/validate";
@@ -159,6 +159,62 @@ describe("verified onchain gate deployments", () => {
       applicationId: "app-b",
     });
     expect(crossApp).toBeNull();
+  });
+
+  it("does not revoke another application under the same partner", async () => {
+    const manifest = evmManifest();
+    setLocalAnvilFixture(GATE, { codeHash: BYTECODE, configDigest: manifest.config_digest as `0x${string}` });
+    const registered = await registerOnchainGateDeployment({
+      partnerId: EVM_REF_PARTNER_ID,
+      applicationId: "app-owner",
+      policyId: EVM_REF_POLICY_ID,
+      policyVersion: 1,
+      appEnvironment: "sandbox",
+      manifest,
+    });
+    expect(registered.ok).toBe(true);
+    if (!registered.ok) return;
+
+    const events = () => fakeWalletInserts.filter((item) => item.table === "onchain_gate_deployment_events");
+    const before = events().length;
+    const wrongApp = await revokeOnchainGateDeployment({
+      partnerId: EVM_REF_PARTNER_ID,
+      applicationId: "app-other",
+      deploymentRef: registered.record.deployment_ref,
+    });
+    expect(wrongApp).toEqual({ ok: false, reason: "application_mismatch" });
+    expect(events()).toHaveLength(before);
+    const directWrongApp = await updateDeploymentStatus({
+      deploymentRef: registered.record.deployment_ref,
+      partnerId: EVM_REF_PARTNER_ID,
+      applicationId: "app-other",
+      status: "revoked",
+      revokedAt: new Date().toISOString(),
+    });
+    expect(directWrongApp).toBeNull();
+    const unchanged = await getDeploymentByRef({
+      partnerId: EVM_REF_PARTNER_ID,
+      applicationId: "app-owner",
+      deploymentRef: registered.record.deployment_ref,
+    });
+    expect(unchanged?.status).toBe("verified_sandbox");
+    expect(unchanged?.revoked_at).toBeNull();
+
+    const owner = {
+      partnerId: EVM_REF_PARTNER_ID,
+      applicationId: "app-owner",
+      deploymentRef: registered.record.deployment_ref,
+    };
+    expect(await revokeOnchainGateDeployment(owner)).toEqual({ ok: true });
+    expect(events()).toHaveLength(before + 1);
+    expect(events().slice(-1)[0]?.row).toMatchObject({
+      from_status: "verified_sandbox",
+      to_status: "revoked",
+      application_id: "app-owner",
+    });
+    expect((await getDeploymentByRef(owner))?.status).toBe("revoked");
+    expect(await revokeOnchainGateDeployment(owner)).toEqual({ ok: true });
+    expect(events()).toHaveLength(before + 1);
   });
 
   it("matches and mismatches EVM code and config hashes", async () => {

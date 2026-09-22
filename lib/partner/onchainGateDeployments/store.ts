@@ -108,6 +108,7 @@ export async function listDeploymentsForApp(input: {
 export async function updateDeploymentStatus(input: {
   deploymentRef: string;
   partnerId: string;
+  applicationId?: string;
   status: OnchainGateDeploymentStatus;
   productionReviewedAt?: string | null;
   revokedAt?: string | null;
@@ -119,11 +120,17 @@ export async function updateDeploymentStatus(input: {
   };
   if (input.productionReviewedAt !== undefined) patch.production_reviewed_at = input.productionReviewedAt;
   if (input.revokedAt !== undefined) patch.revoked_at = input.revokedAt;
-  const { error } = await sb
+  let query = sb
     .from("onchain_gate_deployments")
     .update(patch)
     .eq("deployment_ref", input.deploymentRef)
     .eq("partner_id", input.partnerId);
+  if (input.applicationId) query = query.eq("application_id", input.applicationId);
+  const { error } = await query;
   if (isSchemaMissing(error) || error) throw new OnchainGateStoreUnavailableError();
-  return getDeploymentByRef({ deploymentRef: input.deploymentRef, partnerId: input.partnerId });
+  return getDeploymentByRef({
+    deploymentRef: input.deploymentRef,
+    partnerId: input.partnerId,
+    applicationId: input.applicationId,
+  });
 }
