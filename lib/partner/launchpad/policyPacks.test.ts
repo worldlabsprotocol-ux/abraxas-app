@@ -28,6 +28,7 @@ const REQUIRED_PACK_IDS: PolicyPackId[] = [
   "collector_redemption",
   "identity_liveness",
   "sandbox_economic_demo",
+  "sandbox_institutional_protocol_access",
 ];
 
 describe("policy packs catalog", () => {
@@ -40,7 +41,9 @@ describe("policy packs catalog", () => {
     for (const pack of POLICY_PACK_LIST) {
       expect(pack.display_name.length).toBeGreaterThan(8);
       expect(pack.holder_explanation.length).toBeGreaterThan(20);
-      expect(pack.required_claims.length).toBeGreaterThan(0);
+      if (pack.id !== "sandbox_institutional_protocol_access") {
+        expect(pack.required_claims.length).toBeGreaterThan(0);
+      }
       expect(pack.minimum_assurance).toMatch(/^L[0-4]$/);
       expect(pack.receipt_lifetime_hours).toBeGreaterThan(0);
       expect(pack.intended_use_examples.length).toBeGreaterThan(0);
@@ -51,8 +54,15 @@ describe("policy packs catalog", () => {
       expect(pack.rules.sandbox_only).toBe(true);
       expect(pack.rules.account_required).toBe(true);
       expect(pack.rules.consent_required).toBe(true);
-      for (const claim of pack.required_claims) {
-        expect(ALLOWED_CLAIMS.has(claim)).toBe(true);
+      if (pack.id === "sandbox_institutional_protocol_access") {
+        expect(pack.required_claims).toEqual([]);
+        expect(pack.permitted_methods).toEqual(["privacy_preserving"]);
+        expect(pack.minimum_assurance).toBe("L2");
+      } else {
+        expect(pack.required_claims.length).toBeGreaterThan(0);
+        for (const claim of pack.required_claims) {
+          expect(ALLOWED_CLAIMS.has(claim)).toBe(true);
+        }
       }
     }
   });
@@ -68,6 +78,7 @@ describe("policy packs catalog", () => {
   it("marks collector redemption and the economic demo sandbox-only; age packs stay gated for production", () => {
     expect(policyPackIsSandboxOnly(POLICY_PACKS.collector_redemption)).toBe(true);
     expect(policyPackIsSandboxOnly(POLICY_PACKS.sandbox_economic_demo)).toBe(true);
+    expect(policyPackIsSandboxOnly(POLICY_PACKS.sandbox_institutional_protocol_access)).toBe(true);
     expect(POLICY_PACKS.sandbox_economic_demo.holder_explanation.toLowerCase()).toContain("not age verification");
     expect(POLICY_PACKS.sandbox_economic_demo.holder_explanation.toLowerCase()).toContain("not usable in production");
     expect(policyPackIsSandboxOnly(POLICY_PACKS.age_18_retail)).toBe(false);

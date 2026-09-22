@@ -20,6 +20,7 @@ export const PARTNER_FLOW_ACTIONS = [
   "redemption_access",
   "higher_assurance_identity",
   "sandbox_demo",
+  "institutional_protocol_access",
 ] as const;
 export type PartnerFlowAction = (typeof PARTNER_FLOW_ACTIONS)[number];
 
@@ -31,6 +32,7 @@ export const PARTNER_FLOW_ACTION_LABELS: Record<PartnerFlowAction, string> = {
   redemption_access: "Collector or redemption",
   higher_assurance_identity: "Higher-assurance identity check",
   sandbox_demo: "Sandbox or testnet demo",
+  institutional_protocol_access: "Sandbox institutional protocol access",
 };
 
 export const PARTNER_FLOW_CAPABILITIES = SANDBOX_TEST_CONSOLE_CAPABILITIES;
@@ -69,6 +71,13 @@ export const PARTNER_FLOW_REVIEW_NOTICE =
 export function launchpadConfigureHref(applicationId?: string | null): string {
   if (!applicationId) return `${PARTNER_ACTIVATION_LAUNCHPAD}?view=configure`;
   return `${PARTNER_ACTIVATION_LAUNCHPAD}?app=${encodeURIComponent(applicationId)}&view=configure`;
+}
+
+export function partnerFlowActionsForTemplate(templateId: string): readonly PartnerFlowAction[] {
+  if (templateId === "sandbox_institutional_protocol_access") {
+    return ["institutional_protocol_access"];
+  }
+  return PARTNER_FLOW_ACTIONS;
 }
 
 export function isPartnerFlowAction(value: string): value is PartnerFlowAction {

@@ -5,6 +5,7 @@ export {
   PARTNER_FLOW_CAPABILITIES,
   PARTNER_FLOW_REVIEW_NOTICE,
   launchpadConfigureHref,
+  partnerFlowActionsForTemplate,
 } from "./contract";
 export { parsePartnerFlowRequestBody } from "./validate";
 export { storedConfigFromActivityRows } from "./activity";

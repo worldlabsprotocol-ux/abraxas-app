@@ -12,6 +12,7 @@ import type { LaunchpadIntegrationDocs } from "@/lib/partner/launchpad/integrati
 import { slugifyLaunchpadApplication } from "@/lib/partner/launchpad/slug";
 import { hasProductionLaunchpadCallback, isProductionLaunchpadCallback } from "@/lib/partner/launchpad/productionCallbackReadiness";
 import { CUSTOM_LAUNCHPAD_CLAIMS, CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID } from "@/lib/partner/launchpad/customPolicy";
+import { SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SEQUENCE } from "@/lib/partner/sandboxInstitutionalProtocolAccess";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 import { PartnerEventDeliveryPanel } from "@/components/partner/launchpad/PartnerEventDeliveryPanel";
 import { PartnerWebhookDeliveryHealthPanel } from "@/components/partner/launchpad/PartnerWebhookDeliveryHealthPanel";
@@ -603,6 +604,11 @@ export function PartnerLaunchpadClient({
               </div>
             </div>
           )}
+          {policyTemplateId === "sandbox_institutional_protocol_access" && (
+            <p style={{ ...bodyText, marginTop: "0.75rem" }}>
+              Next: {SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SEQUENCE.join(" → ")}.
+            </p>
+          )}
           <div style={{ marginTop: "0.75rem" }}>
             <Btn size="sm" onClick={() => setStep("destinations")}>Configure destinations</Btn>
           </div>
@@ -740,6 +746,19 @@ export function PartnerLaunchpadClient({
           <div style={{ marginTop: "0.75rem" }}>
             <Btn size="sm" onClick={() => setStep("readiness")}>Open integration readiness</Btn>
           </div>
+        </ContentCard>
+      )}
+
+      {activeApp && activeApp.policy_template_id === "sandbox_institutional_protocol_access" && (
+        <ContentCard title="Next path">
+          <ol style={{ ...bodyText, paddingLeft: "1.2rem" }}>
+            {SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SEQUENCE.map((stepLabel) => (
+              <li key={stepLabel}>{stepLabel}</li>
+            ))}
+          </ol>
+          <p style={bodyText}>
+            Policy ID is pinned by the server. Browser input cannot choose partner, policy version, issuer, assurance, signer, network, or production.
+          </p>
         </ContentCard>
       )}
 

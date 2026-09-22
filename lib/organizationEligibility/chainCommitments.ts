@@ -1,6 +1,14 @@
 import { ZERO_BYTES32 } from "@/lib/partner/chainAttestation/contract";
 import { hashUtf8, hashSubjectBinding } from "@/lib/partner/chainAttestation/hashes";
 import { organizationPolicyContract } from "./policies";
+import { isSandboxInstitutionalProtocolAccessPolicyId } from "@/lib/partner/sandboxInstitutionalProtocolAccess";
+import {
+  SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
+  SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_VERSION,
+  SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_RESULT,
+  SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
+  sandboxInstitutionalProtocolAccessProductionDenied,
+} from "@/lib/partner/sandboxInstitutionalProtocolAccess";
 import { organizationPartnerHmac } from "./opaque";
 import { listOrganizationEligibilityMatching } from "./store";
 import { mapReviewedOrganizationIssuer } from "./mapIssuer";
@@ -22,7 +30,8 @@ export function institutionalResultCategoryHash(category: string): `0x${string}`
 }
 
 export function isInstitutionalPolicyId(policyId: string): boolean {
-  return organizationPolicyContract(policyId) !== null;
+  return organizationPolicyContract(policyId) !== null
+    || isSandboxInstitutionalProtocolAccessPolicyId(policyId);
 }
 
 export interface InstitutionalAttestationCommitments {
@@ -59,11 +68,22 @@ export async function resolveInstitutionalAttestationCommitments(input: {
     };
   }
 
+  if (sandboxInstitutionalProtocolAccessProductionDenied(input.environment, input.policyId)) {
+    fail("environment_mismatch");
+  }
+
+  const reviewed = isSandboxInstitutionalProtocolAccessPolicyId(input.policyId);
+  if (reviewed) {
+    if (input.action !== SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION) fail("action_mismatch");
+    if (input.actionScope !== SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE) fail("action_mismatch");
+    if (input.policyVersion !== SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_VERSION) fail("policy_mismatch");
+  }
+
   const matches = await listOrganizationEligibilityMatching({
     partner_hmac: organizationPartnerHmac(input.partnerId),
-    result_category: input.policyId,
-    policy_id: input.policyId,
-    policy_version: input.policyVersion,
+    result_category: reviewed ? SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_RESULT : input.policyId,
+    policy_id: reviewed ? SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_RESULT : input.policyId,
+    policy_version: reviewed ? 1 : input.policyVersion,
     action: input.action,
     environment: input.environment,
   });
@@ -75,7 +95,12 @@ export async function resolveInstitutionalAttestationCommitments(input: {
     fail("consent_required");
   }
   if (live.environment !== input.environment) fail("environment_mismatch");
-  if (live.policy_id !== input.policyId || live.policy_version !== input.policyVersion) fail("policy_mismatch");
+  if (reviewed) {
+    if (live.policy_id !== SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_RESULT) fail("policy_mismatch");
+    if (live.result_category !== SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_RESULT) fail("policy_mismatch");
+  } else if (live.policy_id !== input.policyId || live.policy_version !== input.policyVersion) {
+    fail("policy_mismatch");
+  }
   if (live.action !== input.action) fail("action_mismatch");
   if (!live.consent_bound) fail("consent_required");
 

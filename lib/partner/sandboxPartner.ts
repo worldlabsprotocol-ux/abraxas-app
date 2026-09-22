@@ -1,6 +1,8 @@
 // FILE: lib/partner/sandboxPartner.ts
 // Canonical IDs for the internal Abraxas Partner Sandbox (not an external org).
 
+import { isSandboxInstitutionalProtocolAccessPolicyId } from "@/lib/partner/sandboxInstitutionalProtocolAccess";
+
 export const SANDBOX_PARTNER_ID = "abraxas-partner-sandbox";
 export const SANDBOX_POLICY_ID = "partner-sandbox-gate-v1";
 
@@ -9,7 +11,9 @@ export const LEGACY_SANDBOX_PARTNER_ID = "meridian-private-credit";
 export const LEGACY_SANDBOX_POLICY_ID = "meridian-investor-gate-v1";
 
 export function isSandboxPolicyId(policyId: string): boolean {
-  return policyId === SANDBOX_POLICY_ID || policyId === LEGACY_SANDBOX_POLICY_ID;
+  return policyId === SANDBOX_POLICY_ID
+    || policyId === LEGACY_SANDBOX_POLICY_ID
+    || isSandboxInstitutionalProtocolAccessPolicyId(policyId);
 }
 
 export function sandboxPartnerIdForPolicy(policyId: string): string {
