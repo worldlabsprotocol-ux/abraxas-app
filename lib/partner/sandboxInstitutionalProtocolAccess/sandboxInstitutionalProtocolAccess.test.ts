@@ -166,6 +166,7 @@ describe("reviewed sandbox institutional protocol-access policy", () => {
     });
     const bound = await resolveInstitutionalAttestationCommitments({
       partnerId: "acme",
+      receiptSubjectPseudonymId: consentedSandboxReceipt().subject_pseudonym_id,
       policyId: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
       policyVersion: 1,
       action: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
@@ -263,6 +264,7 @@ describe("reviewed sandbox institutional protocol-access policy", () => {
     expect(organizationLeaks(publicView)).toEqual([]);
     const live = await resolveInstitutionalAttestationCommitments({
       partnerId: "acme",
+      receiptSubjectPseudonymId: consentedSandboxReceipt().subject_pseudonym_id,
       policyId: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
       policyVersion: 1,
       action: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,

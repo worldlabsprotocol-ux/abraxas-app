@@ -69,6 +69,9 @@ export async function requireLiveOrganizationEligibility(input: {
   if (reviewed && !isOperatorSandboxTestResult(live)) fail("operator_result_required");
   if (!isOrganizationResultCategory(String(live.result_category ?? ""))) fail("unknown_policy");
   if (live.environment !== input.environment) fail("environment_mismatch");
+  if (reviewed && (!input.subject_binding_hash || live.subject_binding_hash !== input.subject_binding_hash)) {
+    fail("consent_required");
+  }
   if (input.subject_binding_hash && live.subject_binding_hash && live.subject_binding_hash !== input.subject_binding_hash) {
     fail("wallet_binding_mismatch");
   }

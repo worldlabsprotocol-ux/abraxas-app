@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { generateTestSigningKeyPair } from "@/lib/decisionReceipts/signing";
 import {
@@ -39,6 +39,8 @@ import { POST as operatorPost, GET as operatorGet } from "@/app/api/admin/sandbo
 import { resetLaunchpadRateLimitStoreForTests } from "@/lib/partner/launchpad/rateLimit";
 import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
+import { AbraxasPartnerKit } from "@/lib/partner/integrationKit";
+import { issueChainEligibilityAttestation } from "@/lib/partner/chainAttestation/issue";
 
 const KEY = generateTestSigningKeyPair();
 process.env.ABRAXAS_SIGNING_KEY_ID = KEY.signingKeyId;
@@ -270,6 +272,7 @@ describe("operator sandbox institutional test result", () => {
     expect(verified.ok).toBe(true);
     const bound = await resolveInstitutionalAttestationCommitments({
       partnerId: "acme",
+      receiptSubjectPseudonymId: rec.subject_pseudonym_id,
       policyId: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
       policyVersion: 1,
       action: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
@@ -289,6 +292,89 @@ describe("operator sandbox institutional test result", () => {
       },
     });
     expect(planned.ok).toBe(true);
+  });
+
+  it("does not let another holder reuse the operator result after the first holder consents", async () => {
+    const issued = await issueOperatorSandboxInstitutionalResult({ applicationId: "app-inst-1", confirm: true });
+    const first = await createPresentationRequest({
+      partnerId: "acme",
+      policy_id: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
+      policy_version: 1,
+      purpose: "first holder",
+      action: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
+      action_scope: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
+      environment: "sandbox",
+      result_category: "organization_eligible",
+      verifier_nonce: "nonce-first-holder",
+    });
+    const firstReceipt = receipt();
+    putSourceReceiptForTests(firstReceipt);
+    await completePresentationHolderResultForTests({ requestRef: first.request_ref, receipt: firstReceipt, partnerId: "acme" });
+    const bound = await loadOrganizationEligibility(issued.organization_ref);
+    expect(bound?.subject_binding_hash).toMatch(/^0x[0-9a-f]{64}$/);
+    expect(bound?.subject_binding_hash).not.toContain(firstReceipt.subject_pseudonym_id);
+
+    const secondReceipt = receipt({ id: "dr_op_2", subject_pseudonym_id: "ps_other", consent_receipt_id: "cr_op_2" });
+    putSourceReceiptForTests(secondReceipt);
+    await expect(bindFreshConsentToOperatorSandboxResult({
+      partnerId: "acme",
+      policyId: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
+      policyVersion: 1,
+      action: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
+      actionScope: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
+      environment: "sandbox",
+      receipt: secondReceipt,
+    })).rejects.toMatchObject({ code: "consent_required" });
+    await expect(resolveInstitutionalAttestationCommitments({
+      partnerId: "acme",
+      receiptSubjectPseudonymId: secondReceipt.subject_pseudonym_id,
+      policyId: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
+      policyVersion: 1,
+      action: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
+      actionScope: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
+      environment: "sandbox",
+    })).rejects.toMatchObject({ code: "consent_required" });
+    const kit = new AbraxasPartnerKit({
+      partnerId: "acme",
+      policyId: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
+      policyVersion: 1,
+      requirePolicyVersion: true,
+      environment: "sandbox",
+    });
+    vi.spyOn(kit, "verifyReceiptId").mockResolvedValue({
+      outcome: "permitted",
+      action: "permit",
+    } as Awaited<ReturnType<AbraxasPartnerKit["verifyReceiptId"]>>);
+    const denied = await issueChainEligibilityAttestation({
+      kit,
+      receiptId: secondReceipt.id,
+      action_type: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
+      action_scope: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
+      network_id: "solana_devnet",
+    });
+    expect(denied).toMatchObject({ ok: false, reason: "consent_required" });
+
+    const second = await createPresentationRequest({
+      partnerId: "acme",
+      policy_id: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
+      policy_version: 1,
+      purpose: "second holder",
+      action: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
+      action_scope: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
+      environment: "sandbox",
+      result_category: "organization_eligible",
+      verifier_nonce: "nonce-second-holder",
+    });
+    await expect(completePresentationHolderResultForTests({
+      requestRef: second.request_ref,
+      receipt: secondReceipt,
+      partnerId: "acme",
+    })).rejects.toMatchObject({ code: "consent_required" });
+    await expect(issueEligibilityPresentation({
+      partnerId: "acme",
+      request_ref: second.request_ref,
+      verifier_nonce: "nonce-second-holder",
+    })).rejects.toMatchObject({ code: "consent_required" });
   });
 
   it("denies expiry, revocation, cross-partner, production, and replay", async () => {
