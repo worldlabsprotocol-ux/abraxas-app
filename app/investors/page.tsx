@@ -8,6 +8,7 @@ import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
 import { DATA_ROOM_SECTIONS, LEADING_INDICATORS } from "@/lib/investorDataRoom";
 import { LITEPAPER } from "@/lib/protocolLitepaper";
+import { INVESTOR_PROOF_MAP, INVESTOR_PROOF_STATUS_LABEL } from "@/lib/investorProofMap";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -19,8 +20,23 @@ export default function InvestorsPage() {
       <PageHeader
         eyebrow="Investors"
         title="Data room"
-        subtitle="Everything a VC or design partner needs to diligence Abraxas. proof first, claims backed by evidence. No timeline promises; milestone sequence only."
+        subtitle="A current proof map for investors and design partners. Each capability has a visible status, an evidence path, and the next gate before broader use."
       />
+
+      <div style={{ display: "grid", gap: "0.75rem", marginBottom: "2rem" }}>
+        {INVESTOR_PROOF_MAP.map((proof) => (
+          <ContentCard key={proof.id} title={proof.title}>
+            <p style={{ fontFamily: FONT, fontWeight: 700, color: ACCENT, margin: "0 0 0.4rem" }}>
+              {INVESTOR_PROOF_STATUS_LABEL[proof.status]}
+            </p>
+            <p style={{ fontFamily: FONT, color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.5rem" }}>{proof.detail}</p>
+            <p style={{ fontFamily: FONT, color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.5rem" }}>
+              <strong>Next proof:</strong> {proof.nextGate}
+            </p>
+            <Link href={proof.evidenceHref} style={{ color: ACCENT, fontWeight: 700 }}>Inspect evidence →</Link>
+          </ContentCard>
+        ))}
+      </div>
 
       <ContentCard title="North star">
         <p style={{ fontFamily: FONT, fontSize: "0.88rem", color: "var(--text-secondary)", lineHeight: 1.75, margin: "0 0 0.75rem" }}>
@@ -64,11 +80,11 @@ export default function InvestorsPage() {
         ))}
       </div>
 
-      <ContentCard title="Milestone sequence (no dates. dependency order)">
+      <ContentCard title="Milestone sequence">
         <ol style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.8, margin: 0, paddingLeft: "1.25rem" }}>
-          <li><strong style={{ color: "var(--text-primary)" }}>Foundation:</strong> Litepaper, tokenomics framework, live metrics, security posture, chain narrative</li>
-          <li><strong style={{ color: "var(--text-primary)" }}>Traction:</strong> Cielo revenue loop E2E, external protocol LOI, second verified asset</li>
-          <li><strong style={{ color: "var(--text-primary)" }}>Raise-readiness:</strong> Published audit, growing credential reuse, team hires from reserved pool</li>
+          <li><strong style={{ color: "var(--text-primary)" }}>Technical proof:</strong> Sandbox holder consent, public receipt verification, durable one-time presentation, and local partner-owned gates.</li>
+          <li><strong style={{ color: "var(--text-primary)" }}>External proof:</strong> Human testnet deployment, independent chain observation, and an unaffiliated partner integration.</li>
+          <li><strong style={{ color: "var(--text-primary)" }}>Commercial proof:</strong> Measured partner usage and revenue, separately from sandbox activity.</li>
         </ol>
       </ContentCard>
 
@@ -82,7 +98,7 @@ export default function InvestorsPage() {
         <Btn href="/investors/strategy" size="lg">Strategic roadmap →</Btn>
         <Btn href="/docs/litepaper" variant="secondary" size="lg">Read litepaper</Btn>
         <Btn href="/investors/pitch" variant="secondary" size="lg">Pitch deck</Btn>
-        <Btn href="/metrics" variant="ghost" size="lg">Live metrics</Btn>
+        <Btn href="/metrics" variant="ghost" size="lg">Operational metrics</Btn>
         <Btn href="/integrations/relying-parties" variant="ghost" size="lg">Relying parties</Btn>
         <Btn href="/case-studies/cielo" variant="ghost" size="lg">Cielo case study</Btn>
       </div>

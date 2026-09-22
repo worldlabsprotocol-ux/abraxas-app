@@ -88,8 +88,8 @@ export default function MetricsPage() {
     <RedesignPage accent="neutral" maxWidth={900}>
       <PageHeader
         eyebrow="Transparency"
-        title="Live protocol metrics"
-        subtitle="Real counters from Supabase. credentials issued, verification API calls, bookings, and partner interest. Updated every ~2 minutes."
+        title="Operational metrics"
+        subtitle="Counters are shown only when their data source responds. Sandbox tests and internal activity are not customer adoption or revenue."
       />
 
       {!hasVerifyActivity && (
@@ -114,7 +114,7 @@ export default function MetricsPage() {
       )}
 
       {v && v.data_available && (
-        <ContentCard title="Verification network (live)">
+        <ContentCard title="Verification activity">
           <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 1rem" }}>
             Every call to <code style={{ fontFamily: MONO, fontSize: "0.68rem" }}>/api/credentials/verify</code> is logged in{" "}
             <code style={{ fontFamily: MONO, fontSize: "0.68rem" }}>credential_presentations</code>. the same audit trail relying parties use.

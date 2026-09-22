@@ -16,8 +16,8 @@ export default function StrategyPage() {
     <RedesignPage accent="home" maxWidth={900}>
       <PageHeader
         eyebrow="Strategic roadmap"
-        title="Four pillars to $100M protocol credibility"
-        subtitle="Honest milestone sequencing. no timeline promises. Each pillar has live evidence or an explicit in-progress state."
+        title="Four gates to external adoption"
+        subtitle="Sandbox proof, verified testnet deployment, unaffiliated partner use, and measured commercial use."
       />
 
       <div style={{ display: "grid", gap: "1.25rem", marginBottom: "2rem" }}>
@@ -78,8 +78,7 @@ export default function StrategyPage() {
         marginBottom: "2rem",
       }}>
         <p style={{ fontFamily: FONT, fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 1rem" }}>
-          The sequence is deliberate: prove external reliance → institutional case study → audit + bounty → team scale.
-          Skipping any pillar creates diligence gaps VCs will find anyway.
+          Each completed step needs inspectable evidence. A passing build, a sandbox result, and a partner-owned deployment are separate milestones.
         </p>
         <Btn href="/investors/pitch" size="lg">View pitch deck →</Btn>
       </div>

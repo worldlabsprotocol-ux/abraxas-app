@@ -1,69 +1,47 @@
-// FILE: lib/investorDataRoom.ts
-// Data room index — single map of diligence materials.
-
+/** Diligence links point to inspectable product behavior and source-owned status. */
 export const DATA_ROOM_SECTIONS = [
   {
-    title: "Start here",
+    title: "Start with the product",
     items: [
-      { label: "Strategic roadmap (4 pillars)", href: "/investors/strategy", desc: "Relying party · Cielo · audit · team" },
-      { label: "Litepaper", href: "/docs/litepaper", desc: "Problem, solution, proof, economics" },
-      { label: "Chain architecture", href: "/docs/chain", desc: "Why Sui + Solana — intentional split" },
-      { label: "Live metrics", href: "/metrics", desc: "Wallets, credentials, Cielo bookings" },
+      { label: "Good Trouble sandbox", href: "/good-trouble", desc: "Try a labeled 21+ Partner Flow example" },
+      { label: "Receipt verification", href: "/verification", desc: "Inspect a current, partner-bound public result" },
+      { label: "Institutional proof map", href: "/institutional", desc: "Capability status, evidence links, and remaining gates" },
+      { label: "Operational metrics", href: "/metrics", desc: "Source-backed counters when data is available" },
     ],
   },
   {
-    title: "Traction & integrations",
+    title: "Partner integration",
     items: [
-      { label: "Relying party program", href: "/integrations/relying-parties", desc: "How external protocols verify credentials" },
-      { label: "Design partner outreach", href: "/integrations/outreach", desc: "Copy-paste email templates" },
-      { label: "Protocol integrations", href: "/integrations", desc: "SDK, registry, design partner apply" },
-      { label: "Pitch deck", href: "/investors/pitch", desc: "12-slide web deck for VC meetings" },
-      { label: "Investor update template", href: "/investors/updates", desc: "Monthly update structure" },
-      { label: "Cielo E2E health check", href: "/ops/cielo-e2e", desc: "Pre-demo revenue loop verification" },
-      { label: "Cielo Sunrise case study", href: "/case-studies/cielo", desc: "Genesis asset · booking · revenue loop" },
-      { label: "Smyrna case study", href: "/case-studies/smyrna", desc: "Second asset · capital partner template" },
-      { label: "Flagship dossier", href: "/flagship", desc: "Full property, financials, calendar" },
-      { label: "Transparency log", href: "/transparency", desc: "Live operational events from Supabase" },
-      { label: "Economics model", href: "/economics", desc: "Pro forma and unit economics" },
+      { label: "Hosted Partner Flow", href: "/docs/hosted-partner-flow-handoff", desc: "Request, fresh consent, and receipt re-fetch" },
+      { label: "Eligibility presentation protocol", href: "/docs/eligibility-presentation-protocol", desc: "Audience binding and one-time verification" },
+      { label: "Integration Studio", href: "/developers/integration-studio", desc: "Build against named sandbox capabilities" },
+      { label: "Launchpad", href: "/developers/launchpad", desc: "Sandbox app configuration and Production review path" },
     ],
   },
   {
-    title: "Technical diligence",
+    title: "Chain evidence",
     items: [
-      { label: "AIL specification", href: "/docs/ail", desc: "Full product and API spec" },
-      { label: "Architecture", href: "/docs/architecture", desc: "Five-layer stack" },
-      { label: "Passport spec", href: "/docs/passport-spec", desc: "On-chain stamp layout" },
-      { label: "Roadmap", href: "/roadmap", desc: "Live / in progress / up next" },
+      { label: "Solana eligibility gate", href: "/docs/solana-onchain-eligibility-gate", desc: "Partner-owned V2 gate; human devnet deployment remains" },
+      { label: "EVM eligibility gate", href: "/docs/evm-onchain-eligibility-gate", desc: "Partner-owned verifier and local contract tests" },
+      { label: "Verifier conformance", href: "/docs/onchain-verifier-conformance", desc: "Deterministic vectors and local verification" },
+      { label: "Network readiness", href: "/docs/multichain-mainnet-readiness", desc: "Testnet versus Mainnet posture" },
     ],
   },
   {
-    title: "Token & security",
+    title: "Diligence",
     items: [
-      { label: "Tokenomics", href: "/tokenomics", desc: "Live $ABRA + institutional framework" },
-      { label: "Security & bug bounty", href: "/security/bounty", desc: "Audit tracker, scope, pre-registration" },
-      { label: "Security overview", href: "/security", desc: "Practices, key management, kill-switch" },
-      { label: "Legal", href: "/legal", desc: "Terms, privacy, risk disclosures" },
-    ],
-  },
-  {
-    title: "Company",
-    items: [
-      { label: "Institutional overview", href: "/institutional", desc: "Partners, audit trail, pillars" },
-      { label: "Partners", href: "/partners", desc: "Veriff, Utila, CV5, and more" },
-      { label: "Team & execution", href: "/about/team", desc: "Current team, planned growth, advisor bench" },
-      { label: "About explainer", href: "/about", desc: "Mission and visual overview" },
-      { label: "GitHub", href: "https://github.com/worldlabsprotocol-ux/abraxas-app", desc: "Open-source app" },
+      { label: "Security", href: "/security", desc: "Controls and review posture" },
+      { label: "Litepaper", href: "/docs/litepaper", desc: "Problem, design, evidence, and limitations" },
+      { label: "Pitch", href: "/investors/pitch", desc: "Current product thesis and milestones" },
+      { label: "Source code", href: "https://github.com/worldlabsprotocol-ux/abraxas-app", desc: "Public application repository" },
     ],
   },
 ] as const;
 
 export const LEADING_INDICATORS = [
-  "Days from asset submission to verified credential",
-  "Credential reuse rate across external queries",
-  "Captured Cielo bookings and USDC revenue",
-  "zkLogin wallets registered",
-  "Active credentials issued (non-revoked)",
-  "Assets in V5 pipeline by stage",
-  "External protocol integrations (LOIs / live)",
-  "Gross margin by verification workflow",
+  "Independent partner integrations that complete a current receipt check",
+  "Time from request to consented eligibility result",
+  "Receipt revocation and replay rejection measured in production",
+  "Verified testnet gate deployments and conformance passes",
+  "Paid partner usage, reported separately from sandbox tests",
 ] as const;
