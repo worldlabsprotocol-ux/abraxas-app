@@ -5,6 +5,8 @@ import type { OperatorHandoff, TestnetGateKitEnvelope } from "./types";
 
 export function operatorHandoffFromPlan(envelope: TestnetGateKitEnvelope): OperatorHandoff {
   const solana = envelope.gate_type === "solana";
+  const releaseMatchesProgram = solana
+    && LOCALNET_SOLANA_PROGRAM_IDS.abraxas_eligibility_gate === SOLANA_GATE_V2_RELEASE.program_id;
   return {
     live: false,
     broadcast: false,
@@ -66,7 +68,8 @@ export function operatorHandoffFromPlan(envelope: TestnetGateKitEnvelope): Opera
     register_command: "npm run abraxas-gate -- register ./deployment-manifest.json",
     rollback: "Do not register. Admin revoke_trusted_signer on-chain. Registry: revokeOnchainGateDeployment or Launchpad POST { revoke: true, deployment_ref }. Never move funds.",
     operator_deploys_with: "local_solana_toolchain",
-    reviewed_solana_v2_artifact: solana
+    solana_release_status: solana ? (releaseMatchesProgram ? "approved" : "candidate_digest_required") : undefined,
+    reviewed_solana_v2_artifact: releaseMatchesProgram
       ? {
           artifact_id: SOLANA_GATE_V2_RELEASE.artifact_id,
           program_data_digest: SOLANA_GATE_V2_RELEASE.program_data_digest,

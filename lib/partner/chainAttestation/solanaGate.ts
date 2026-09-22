@@ -7,7 +7,7 @@ import {
 } from "./solanaMessage";
 
 /** Local ProgramTest IDs only. Not deployed to devnet or Mainnet. */
-export const LOCAL_SOLANA_GATE_PROGRAM_ID = "GmaDrppBC7P5ARKV8g3djiwP89vz1jLK23V2GBjuAEGB";
+export const LOCAL_SOLANA_GATE_PROGRAM_ID = "4hf3cY57ciPakr4omyTSbksAfW672iGrdo6fiDVQAD4K";
 export const LOCAL_SOLANA_CONSUMER_PROGRAM_ID = "J2xccRtuG43drESLYznHhLhQkLTdfepcKYbiQ9BsJVaf";
 
 export const SOLANA_GATE_CONFIG_SEED = "gate_config";

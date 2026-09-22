@@ -155,6 +155,9 @@ export async function observeSolanaFromAccounts(
     const programDigest = solanaProgramElfKeccak(elf);
     const artifact = lookupSolanaGateArtifact(programDigest);
     if (!artifact) return { ok: false, reason: "unrecognized_gate_artifact" };
+    if (artifact.program_id && artifact.program_id !== manifest.program_id) {
+      return { ok: false, reason: "program_mismatch" };
+    }
 
     const claimed = await fetchAccount(manifest.gate_config_pda);
     if (!claimed || "unavailable" in claimed) return { ok: false, reason: "deployment_verification_unavailable" };
