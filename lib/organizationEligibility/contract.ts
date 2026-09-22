@@ -15,6 +15,10 @@ export const ORGANIZATION_RESULT_CATEGORIES = [
 ] as const;
 export type OrganizationResultCategory = (typeof ORGANIZATION_RESULT_CATEGORIES)[number];
 
+export function isOrganizationResultCategory(value: string): value is OrganizationResultCategory {
+  return ORGANIZATION_RESULT_CATEGORIES.some((category) => category === value);
+}
+
 export const ORGANIZATION_STATUSES = ["issued", "expired", "revoked", "withdrawn"] as const;
 export type OrganizationEligibilityStatus = (typeof ORGANIZATION_STATUSES)[number];
 

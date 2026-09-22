@@ -13,7 +13,9 @@ import { organizationPartnerHmac } from "./opaque";
 import { listOrganizationEligibilityMatching } from "./store";
 import { mapReviewedOrganizationIssuer } from "./mapIssuer";
 import type { OrganizationEligibilityRecord } from "./types";
+import { isOrganizationResultCategory } from "./contract";
 import type { OrganizationResultCategory } from "./contract";
+import { isOperatorSandboxTestResult } from "@/lib/partner/sandboxInstitutionalOperatorResult/audit";
 
 export const ZERO_COMMITMENT = ZERO_BYTES32;
 
@@ -95,10 +97,16 @@ export async function resolveInstitutionalAttestationCommitments(input: {
     fail("consent_required");
   }
   if (live.environment !== input.environment) fail("environment_mismatch");
+  if (reviewed && !isOperatorSandboxTestResult(live)) fail("operator_result_required");
+  const storedCategory = String(live.result_category ?? "");
+  if (!isOrganizationResultCategory(storedCategory)) fail("unknown_policy");
+  const resultCategory: OrganizationResultCategory = storedCategory;
   if (reviewed) {
     if (live.policy_id !== SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_RESULT) fail("policy_mismatch");
-    if (live.result_category !== SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_RESULT) fail("policy_mismatch");
+    if (resultCategory !== SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_RESULT) fail("policy_mismatch");
   } else if (live.policy_id !== input.policyId || live.policy_version !== input.policyVersion) {
+    fail("policy_mismatch");
+  } else if (resultCategory !== input.policyId) {
     fail("policy_mismatch");
   }
   if (live.action !== input.action) fail("action_mismatch");
@@ -106,13 +114,13 @@ export async function resolveInstitutionalAttestationCommitments(input: {
 
   const mapped = mapReviewedOrganizationIssuer({
     issuer_key: "abraxas.organization_eligibility",
-    result_category: live.result_category as OrganizationResultCategory,
+    result_category: resultCategory,
   });
   if (!mapped.ok) fail(mapped.reason);
   if (live.method_category === "wallet_control" || live.method_category === "self_attestation" || live.method_category === "account_login") {
     fail("issuer_mapping_required");
   }
-  const policy = organizationPolicyContract(live.result_category);
+  const policy = organizationPolicyContract(resultCategory);
   if (!policy || policy.wallet_control_qualifies) fail("issuer_mapping_required");
   if (live.subject_binding_hash && input.walletBindingHash && live.subject_binding_hash !== hashSubjectBinding(input.walletBindingHash)) {
     fail("wallet_binding_mismatch");

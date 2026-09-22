@@ -1,6 +1,14 @@
 import { revokePresentationsForOrganization } from "@/lib/eligibilityPresentation/store";
 import { loadOrganizationEligibility, listOrganizationEligibilityMatching, saveOrganizationEligibility } from "./store";
 import { organizationPartnerHmac } from "./opaque";
+import {
+  SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
+  SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_RESULT,
+  isSandboxInstitutionalProtocolAccessPolicyId,
+  sandboxInstitutionalProtocolAccessProductionDenied,
+} from "@/lib/partner/sandboxInstitutionalProtocolAccess";
+import { isOperatorSandboxTestResult } from "@/lib/partner/sandboxInstitutionalOperatorResult/audit";
+import { isOrganizationResultCategory } from "./contract";
 
 function fail(code: string): never {
   throw Object.assign(new Error(code), { code });
@@ -42,17 +50,24 @@ export async function requireLiveOrganizationEligibility(input: {
   actor_ref?: string;
   subject_binding_hash?: string | null;
 }): Promise<void> {
+  if (sandboxInstitutionalProtocolAccessProductionDenied(input.environment, input.policy_id)) {
+    fail("environment_mismatch");
+  }
+  const reviewed = isSandboxInstitutionalProtocolAccessPolicyId(input.policy_id);
+  if (reviewed && input.action !== SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION) fail("action_mismatch");
   const matches = await listOrganizationEligibilityMatching({
     partner_hmac: input.partnerHmac ?? organizationPartnerHmac(input.partnerId ?? ""),
-    result_category: input.result_category,
-    policy_id: input.policy_id,
-    policy_version: input.policy_version,
+    result_category: reviewed ? SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_RESULT : input.result_category,
+    policy_id: reviewed ? SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_RESULT : input.policy_id,
+    policy_version: reviewed ? 1 : input.policy_version,
     action: input.action,
     environment: input.environment,
     actor_ref: input.actor_ref,
   });
   const live = matches.find((row) => row.currently_valid && row.consent_bound && row.status === "issued");
   if (!live) fail(matches.some((row) => row.status === "revoked" || row.status === "withdrawn") ? "organization_revoked" : "consent_required");
+  if (reviewed && !isOperatorSandboxTestResult(live)) fail("operator_result_required");
+  if (!isOrganizationResultCategory(String(live.result_category ?? ""))) fail("unknown_policy");
   if (live.environment !== input.environment) fail("environment_mismatch");
   if (input.subject_binding_hash && live.subject_binding_hash && live.subject_binding_hash !== input.subject_binding_hash) {
     fail("wallet_binding_mismatch");

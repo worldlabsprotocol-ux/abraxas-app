@@ -49,6 +49,13 @@ export const ADMIN_PROTOCOL_NAV_ITEMS: readonly AdminNavItem[] = [
     section: "protocol",
   },
   {
+    id: "sandbox-institutional-result",
+    href: "/admin/sandbox-institutional-result",
+    label: "Sandbox test result",
+    description: "Operator-only sandbox institutional test result. Not live KYB.",
+    section: "protocol",
+  },
+  {
     id: "trust",
     href: "/admin/trust",
     label: "Trust",

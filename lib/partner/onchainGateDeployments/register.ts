@@ -104,6 +104,14 @@ export async function registerOnchainGateDeployment(input: RegisterDeploymentInp
   const parsed = parseOnchainDeploymentManifest(input.manifest);
   if (!parsed.ok) return parsed;
   const manifest = parsed.manifest;
+  if (input.appEnvironment === "production" || manifest.environment === "production") {
+    const { isSandboxInstitutionalProtocolAccessPolicyId } = await import(
+      "@/lib/partner/sandboxInstitutionalProtocolAccess"
+    );
+    if (isSandboxInstitutionalProtocolAccessPolicyId(input.policyId)) {
+      return { ok: false, reason: "environment_mismatch" };
+    }
+  }
   const net = networkAllows(manifest);
   if (net) return { ok: false, reason: net };
   const hashErr = hashesMatch(manifest, input);

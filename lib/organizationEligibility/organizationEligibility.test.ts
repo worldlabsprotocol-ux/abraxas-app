@@ -6,6 +6,11 @@ import {
   ORGANIZATION_DEMO_SQL_EDITOR,
   ORGANIZATION_MIGRATION_FILE,
   ORGANIZATION_PUBLIC_RESULT_FIELDS,
+  ORGANIZATION_RESULT_CATEGORIES,
+  isOrganizationResultCategory,
+  organizationIssueOverride,
+  parseOrganizationConsentBody,
+  saveOrganizationEligibility,
   ORGANIZATION_NO_WALLET_KYB,
   createOrganizationConsent,
   hashOrganizationSubjectBinding,
@@ -417,5 +422,129 @@ describe("private organization eligibility", () => {
     });
     expect(personal.require_institutional).toBe(false);
     expect(personal.organization_commitment).toMatch(/^0x0+$/);
+  });
+
+  it("maps every allowed organization result category through reviewed issuer mapping", async () => {
+    for (const result_category of ORGANIZATION_RESULT_CATEGORIES) {
+      expect(isOrganizationResultCategory(result_category)).toBe(true);
+      resetOrganizationEligibilityForTests();
+      resetOrganizationConsentForTests();
+      const mapped = mapReviewedOrganizationIssuer({
+        issuer_key: "abraxas.organization_eligibility",
+        result_category,
+      });
+      expect(mapped.ok).toBe(true);
+      const consent = createOrganizationConsent({
+        partnerHmac: organizationPartnerHmac("acme"),
+        result_category,
+        purpose: "Confirm one named protocol action",
+        action: "enable_protocol_access",
+        action_scope: "sandbox:protocol_access",
+        environment: "sandbox",
+      });
+      const issued = await issueOrganizationEligibility({
+        partnerId: "acme",
+        consent_ref: consent.consent_ref,
+        organization_seed: `org-${result_category}`,
+        actor_seed: `act-${result_category}`,
+      });
+      expect(issued.result_category).toBe(result_category);
+      const resolved = await resolveInstitutionalAttestationCommitments({
+        partnerId: "acme",
+        policyId: result_category,
+        policyVersion: 1,
+        action: "enable_protocol_access",
+        actionScope: "sandbox:protocol_access",
+        environment: "sandbox",
+      });
+      expect(resolved.require_institutional).toBe(true);
+      expect(resolved.record?.result_category).toBe(result_category);
+    }
+  });
+
+  it("fails closed on unknown or stale stored organization result categories", async () => {
+    expect(isOrganizationResultCategory("legacy_kyb_result")).toBe(false);
+    expect(isOrganizationResultCategory("organization_eligible_v0")).toBe(false);
+    expect(isOrganizationResultCategory("")).toBe(false);
+    expect(parseOrganizationConsentBody({
+      result_category: "legacy_kyb_result",
+      purpose: "Confirm one named protocol action",
+      action: "enable_protocol_access",
+      action_scope: "sandbox:protocol_access",
+      environment: "sandbox",
+    })).toEqual({ error: "unknown_policy" });
+
+    const consent = createOrganizationConsent({
+      partnerHmac: organizationPartnerHmac("acme"),
+      result_category: "organization_eligible",
+      purpose: "Confirm one named protocol action",
+      action: "enable_protocol_access",
+      action_scope: "sandbox:protocol_access",
+      environment: "sandbox",
+    });
+    const issued = await issueOrganizationEligibility({
+      partnerId: "acme",
+      consent_ref: consent.consent_ref,
+      organization_seed: "org-stale-category",
+      actor_seed: "act-stale-category",
+    });
+    await saveOrganizationEligibility({
+      ...issued,
+      result_category: "legacy_kyb_result" as typeof issued.result_category,
+    });
+    await expect(resolveInstitutionalAttestationCommitments({
+      partnerId: "acme",
+      policyId: "organization_eligible",
+      policyVersion: 1,
+      action: "enable_protocol_access",
+      actionScope: "sandbox:protocol_access",
+      environment: "sandbox",
+    })).rejects.toMatchObject({ code: "unknown_policy" });
+  });
+
+  it("rejects client-controlled organization result category overrides", async () => {
+    expect(parseOrganizationConsentBody({
+      result_category: "authorized_signer",
+      purpose: "Confirm signer",
+      action: "enable_protocol_access",
+      action_scope: "sandbox:protocol_access",
+      environment: "sandbox",
+      issuer: "reclaim.privacy_preserving",
+    })).toEqual({ error: "invalid_input" });
+    expect(parseOrganizationConsentBody({
+      result_category: "authorized_signer",
+      purpose: "Confirm signer",
+      action: "enable_protocol_access",
+      action_scope: "sandbox:protocol_access",
+      environment: "sandbox",
+      policy_id: "organization_eligible",
+    })).toEqual({ error: "invalid_input" });
+    expect(organizationIssueOverride({
+      consent_ref: "ocn_test",
+      result_category: "organization_eligible",
+    })).toBe(true);
+
+    const consentRes = await consentPost(new NextRequest("http://localhost/api/v1/organization-eligibility/consent", {
+      method: "POST",
+      body: JSON.stringify({
+        result_category: "legacy_kyb_result",
+        purpose: "Confirm signer",
+        action: "enable_protocol_access",
+        action_scope: "sandbox:protocol_access",
+        environment: "sandbox",
+      }),
+    }));
+    expect(consentRes.status).toBe(400);
+    const consentJson = await consentRes.json() as { error?: string };
+    expect(consentJson.error).toBe("unknown_policy");
+
+    const issueRes = await issuePost(new NextRequest("http://localhost/api/v1/organization-eligibility/issue", {
+      method: "POST",
+      body: JSON.stringify({
+        consent_ref: "ocn_client",
+        result_category: "organization_eligible",
+      }),
+    }));
+    expect(issueRes.status).toBe(400);
   });
 });

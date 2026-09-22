@@ -23,6 +23,7 @@ export {
   createOrganizationConsent,
   parseOrganizationConsentBody,
   resetOrganizationConsentForTests,
+  consumeOrganizationConsent,
   ORGANIZATION_CONSENT_KEYS,
 } from "./consent";
 export { organizationEligibilityServerExample } from "./examples";

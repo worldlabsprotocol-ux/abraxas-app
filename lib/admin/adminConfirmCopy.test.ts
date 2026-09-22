@@ -33,6 +33,8 @@ const BATCH_TWO_KEYS: AdminConfirmActionKey[] = [
   "design_partner.approve",
   "design_partner.reject",
   "partner_key.issue",
+  "sandbox_institutional_result.issue",
+  "sandbox_institutional_result.revoke",
 ];
 
 const ALL_KEYS: AdminConfirmActionKey[] = [...BATCH_ONE_KEYS, ...BATCH_TWO_KEYS];
@@ -50,6 +52,7 @@ const BATCH_TWO_MODIFIED_SURFACES = [
   "components/admin/RevocationControlPanel.tsx",
   "app/admin/design-partners/page.tsx",
   "components/admin/AdminPartnerKeysPanel.tsx",
+  "components/admin/SandboxInstitutionalOperatorResultPanel.tsx",
 ] as const;
 
 function readSource(rel: string): string {
@@ -174,7 +177,7 @@ describe("adminConfirmCopy batch 2 registry", () => {
     expect(body.toLowerCase()).not.toContain("api key");
   });
 
-  it("exports exactly sixteen keys across batch 1 and batch 2", () => {
+  it("exports exactly eighteen keys across batch 1 and batch 2", () => {
     expect(Object.keys(ADMIN_CONFIRM_COPY).sort()).toEqual([...ALL_KEYS].sort());
   });
 });

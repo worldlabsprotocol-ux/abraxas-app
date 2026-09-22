@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { ORGANIZATION_RESULT_CATEGORIES, type OrganizationResultCategory } from "./contract";
+import { isOrganizationResultCategory, type OrganizationResultCategory } from "./contract";
 import { organizationBrowserAuthority, organizationClientOverride } from "./safety";
 
 export const ORGANIZATION_CONSENT_KEYS = [
@@ -39,11 +39,11 @@ export function parseOrganizationConsentBody(body: unknown): Omit<OrganizationCo
   const action = typeof record.action === "string" ? record.action.trim() : "";
   const action_scope = typeof record.action_scope === "string" ? record.action_scope.trim() : "";
   const environment = record.environment;
-  if (!(ORGANIZATION_RESULT_CATEGORIES as readonly string[]).includes(result_category)) return { error: "unknown_policy" };
+  if (!isOrganizationResultCategory(result_category)) return { error: "unknown_policy" };
   if (!purpose || !action || !action_scope) return { error: "invalid_input" };
   if (environment !== "sandbox" && environment !== "production") return { error: "invalid_environment" };
   return {
-    result_category: result_category as OrganizationResultCategory,
+    result_category,
     purpose,
     action,
     action_scope,

@@ -275,7 +275,7 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
     id: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
     display_name: "Sandbox institutional protocol access",
     holder_explanation:
-      `${SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_NOTICE} The holder completes the existing organization or authorized-signer eligibility flow. The partner receives an opaque institutional result bound to activate_protocol_access, not a company file.`,
+      `${SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_NOTICE} Sandbox test result for technical integration only. It is not a live KYB or Production approval. The holder completes the existing organization or authorized-signer eligibility flow after an operator issues a sandbox test result. The partner receives an opaque institutional result bound to activate_protocol_access, not a company file.`,
     required_claims: [],
     minimum_assurance: "L2",
     receipt_lifetime_hours: 24,
