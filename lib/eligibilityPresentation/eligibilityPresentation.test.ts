@@ -186,6 +186,41 @@ describe("eligibility presentation protocol", () => {
       .rejects.toMatchObject({ code: "cross_partner" });
   });
 
+  it("allows only one concurrent verification to consume a presentation", async () => {
+    const verifier_nonce = "nonce-concurrent-consume";
+    const created = await createPresentationRequest({ ...requestBody, partnerId: "acme", verifier_nonce });
+    await completeHolder(created.request_ref);
+    const envelope = await issueEligibilityPresentation({
+      partnerId: "acme",
+      request_ref: created.request_ref,
+      verifier_nonce,
+    });
+    const input = {
+      envelope,
+      expected: {
+        audience_hash: audienceHash("acme"),
+        verifier_nonce,
+        policy_id: requestBody.policy_id,
+        policy_version: 1,
+        action: "retail_access",
+        environment: "sandbox" as const,
+      },
+      fetchReceipt: async () => ({
+        receipt_id: "dr_ep_1",
+        currently_valid: true,
+        decision_result: "approved",
+        status: "active",
+        policy_id: requestBody.policy_id,
+      }),
+    };
+    const results = await Promise.all([
+      verifyEligibilityPresentation(input),
+      verifyEligibilityPresentation(input),
+    ]);
+    expect(results.filter((result) => result.ok)).toHaveLength(1);
+    expect(results.filter((result) => !result.ok).map((result) => result.reason)).toEqual(["replayed"]);
+  });
+
   it("consumes the verifier nonce once and fails replay, expiry, revocation, and withdrawal", async () => {
     const created = await createPresentationRequest({ ...requestBody, partnerId: "acme", verifier_nonce: "nonce-replay" });
     await completeHolder(created.request_ref);

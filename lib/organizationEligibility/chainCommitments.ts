@@ -16,6 +16,7 @@ import type { OrganizationEligibilityRecord } from "./types";
 import { isOrganizationResultCategory } from "./contract";
 import type { OrganizationResultCategory } from "./contract";
 import { isOperatorSandboxTestResult } from "@/lib/partner/sandboxInstitutionalOperatorResult/audit";
+import { operatorSandboxHolderBinding } from "@/lib/partner/sandboxInstitutionalOperatorResult/holderBinding";
 
 export const ZERO_COMMITMENT = ZERO_BYTES32;
 
@@ -58,6 +59,7 @@ export async function resolveInstitutionalAttestationCommitments(input: {
   actionScope: string;
   environment: "sandbox" | "production";
   walletBindingHash?: string | null;
+  receiptSubjectPseudonymId?: string;
 }): Promise<InstitutionalAttestationCommitments> {
   if (!isInstitutionalPolicyId(input.policyId)) {
     return {
@@ -98,6 +100,10 @@ export async function resolveInstitutionalAttestationCommitments(input: {
   }
   if (live.environment !== input.environment) fail("environment_mismatch");
   if (reviewed && !isOperatorSandboxTestResult(live)) fail("operator_result_required");
+  if (reviewed && live.subject_binding_hash !== operatorSandboxHolderBinding(
+    input.partnerId,
+    input.receiptSubjectPseudonymId ?? "",
+  )) fail("consent_required");
   const storedCategory = String(live.result_category ?? "");
   if (!isOrganizationResultCategory(storedCategory)) fail("unknown_policy");
   const resultCategory: OrganizationResultCategory = storedCategory;

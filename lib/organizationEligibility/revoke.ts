@@ -1,8 +1,10 @@
 import { revokePresentationsForOrganization } from "@/lib/eligibilityPresentation/store";
+import { partnerHmac as presentationPartnerHmac } from "@/lib/eligibilityPresentation/opaque";
 import { loadOrganizationEligibility, listOrganizationEligibilityMatching, saveOrganizationEligibility } from "./store";
 import { organizationPartnerHmac } from "./opaque";
 import {
   SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
+  SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
   SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_RESULT,
   isSandboxInstitutionalProtocolAccessPolicyId,
   sandboxInstitutionalProtocolAccessProductionDenied,
@@ -32,9 +34,11 @@ export async function revokeOrganizationEligibility(input: {
   };
   await saveOrganizationEligibility(next);
   await revokePresentationsForOrganization({
-    partnerHmac: record.partner_hmac,
+    partnerHmac: presentationPartnerHmac(input.partnerId),
     result_category: record.result_category,
-    policy_id: record.policy_id,
+    policy_id: isOperatorSandboxTestResult(record)
+      ? SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID
+      : record.policy_id,
     presentation_ref: record.presentation_ref,
   });
 }
@@ -69,6 +73,9 @@ export async function requireLiveOrganizationEligibility(input: {
   if (reviewed && !isOperatorSandboxTestResult(live)) fail("operator_result_required");
   if (!isOrganizationResultCategory(String(live.result_category ?? ""))) fail("unknown_policy");
   if (live.environment !== input.environment) fail("environment_mismatch");
+  if (reviewed && (!input.subject_binding_hash || live.subject_binding_hash !== input.subject_binding_hash)) {
+    fail("consent_required");
+  }
   if (input.subject_binding_hash && live.subject_binding_hash && live.subject_binding_hash !== input.subject_binding_hash) {
     fail("wallet_binding_mismatch");
   }

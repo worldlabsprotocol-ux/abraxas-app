@@ -7,13 +7,16 @@ import { verifyPresentationSignature } from "./sign";
 import {
   findPresentationByNonceHash,
   loadPresentation,
-  savePresentation,
+  consumePresentationIfIssued,
   savePresentationRequest,
   loadPresentationRequest,
 } from "./store";
 import type { EligibilityPresentationEnvelope } from "./types";
 import { ORGANIZATION_RESULT_CATEGORIES } from "@/lib/organizationEligibility/contract";
 import { requireLiveOrganizationEligibility } from "@/lib/organizationEligibility/revoke";
+import { isSandboxInstitutionalProtocolAccessPolicyId } from "@/lib/partner/sandboxInstitutionalProtocolAccess";
+import { operatorSandboxHolderBinding } from "@/lib/partner/sandboxInstitutionalOperatorResult/holderBinding";
+import { loadSourceReceipt, receiptEnvironment, receiptHasFreshConsent } from "./sourceReceipt";
 
 export interface PresentationVerifyExpected {
   audience_hash: string;
@@ -114,6 +117,17 @@ export async function verifyEligibilityPresentation(input: {
   }
   if ((ORGANIZATION_RESULT_CATEGORIES as readonly string[]).includes(stored.result_category)) {
     try {
+      let subjectBinding: string | undefined;
+      if (isSandboxInstitutionalProtocolAccessPolicyId(stored.policy_id)) {
+        const source = await loadSourceReceipt(stored.receipt_verification_ref);
+        if (!source || source.id !== receipt.receipt_id || source.partner_id !== receipt.partner_id
+          || source.policy_id !== stored.policy_id || source.policy_version !== stored.policy_version
+          || receiptEnvironment(source) !== stored.environment || !receiptHasFreshConsent(source)
+          || source.status !== "active" || source.revoked_at) {
+          return { ok: false, reason: "receipt_invalid", presentation_sufficient: false };
+        }
+        subjectBinding = operatorSandboxHolderBinding(source.partner_id, source.subject_pseudonym_id);
+      }
       await requireLiveOrganizationEligibility({
         partnerId: receipt.partner_id,
         result_category: stored.result_category,
@@ -121,6 +135,7 @@ export async function verifyEligibilityPresentation(input: {
         policy_version: stored.policy_version,
         action: stored.action,
         environment: stored.environment,
+        subject_binding_hash: subjectBinding,
       });
     } catch (error) {
       const reason = error instanceof Error && "code" in error ? String((error as { code?: string }).code) : "organization_revoked";
@@ -129,7 +144,12 @@ export async function verifyEligibilityPresentation(input: {
   }
 
   const consumedAt = new Date().toISOString();
-  await savePresentation({ ...stored, status: "consumed", consumed_at: consumedAt });
+  const consumed = await consumePresentationIfIssued({
+    presentationRef: stored.presentation_ref,
+    nonceHash: hash,
+    consumedAt,
+  });
+  if (!consumed) return { ok: false, reason: "replayed", presentation_sufficient: false };
   const request = await loadPresentationRequest(stored.request_ref);
   if (request) {
     await savePresentationRequest({ ...request, status: "consumed", consumed_at: consumedAt });
