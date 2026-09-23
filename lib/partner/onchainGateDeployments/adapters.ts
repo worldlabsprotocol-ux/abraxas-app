@@ -11,6 +11,7 @@ export interface EvmChainObservation {
 
 export interface SolanaChainObservation {
   programId: string;
+  partnerProgramId?: string;
   gateConfigPda: string;
   programDigest: `0x${string}`;
   configDigest: `0x${string}`;
@@ -247,6 +248,9 @@ export async function verifySolanaAgainstChain(
   if ("unavailable" in observed) return { ok: false, reason: "deployment_verification_unavailable" };
   if ("rejected" in observed) return { ok: false, reason: observed.rejected };
   if (observed.programId !== manifest.program_id) return { ok: false, reason: "program_mismatch" };
+  if (adapter.kind === "server_rpc" && observed.partnerProgramId !== manifest.partner_program_id) {
+    return { ok: false, reason: "program_mismatch" };
+  }
   if (observed.gateConfigPda !== manifest.gate_config_pda) return { ok: false, reason: "gate_config_mismatch" };
   if (observed.programDigest.toLowerCase() !== manifest.program_digest.toLowerCase()) {
     return { ok: false, reason: "program_mismatch" };

@@ -81,13 +81,15 @@ export function parseOnchainDeploymentManifest(
     return { ok: true, manifest };
   }
 
-  if (!isBase58Pubkey(body.program_id) || !isBase58Pubkey(body.gate_config_pda)) return { ok: false, reason: "invalid" };
+  if (!isBase58Pubkey(body.program_id) || !isBase58Pubkey(body.partner_program_id) || !isBase58Pubkey(body.gate_config_pda)) return { ok: false, reason: "invalid" };
+  if (body.program_id === body.partner_program_id) return { ok: false, reason: "invalid" };
   if (!isBytes32(body.program_digest)) return { ok: false, reason: "invalid" };
   const manifest: SolanaDeploymentManifest = {
     schema_version: 1,
     gate_type: "solana",
     network_id: networkId,
     program_id: body.program_id,
+    partner_program_id: body.partner_program_id,
     gate_config_pda: body.gate_config_pda,
     program_digest: body.program_digest.toLowerCase() as `0x${string}`,
     config_digest: body.config_digest.toLowerCase() as `0x${string}`,

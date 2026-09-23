@@ -25,6 +25,7 @@ export function projectOnchainGatePublic(record: OnchainGateDeploymentRecord): O
     bytecode_hash: record.bytecode_hash,
     config_digest: record.config_digest,
     program_id: record.program_id,
+    partner_program_id: record.partner_program_id,
     gate_config_pda: record.gate_config_pda,
     program_digest: record.program_digest,
     partner_hash: record.partner_hash,

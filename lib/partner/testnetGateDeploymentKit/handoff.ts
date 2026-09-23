@@ -45,6 +45,7 @@ export function operatorHandoffFromPlan(envelope: TestnetGateKitEnvelope): Opera
           network_id: "solana_devnet",
           program_id: "{{PROGRAM_ID}}",
           gate_config_pda: "{{GATE_CONFIG_PDA}}",
+          partner_program_id: "{{PARTNER_PROGRAM_ID}}",
           program_digest: "{{PROGRAM_DIGEST}}",
           config_digest: "{{CONFIG_DIGEST}}",
           partner_hash: envelope.partner_hash,

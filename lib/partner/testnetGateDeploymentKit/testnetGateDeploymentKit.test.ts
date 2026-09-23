@@ -378,6 +378,7 @@ describe("testnet gate deployment kit", () => {
       gate_type: "solana" as const,
       network_id: "solana_devnet",
       program_id: PROGRAM,
+      partner_program_id: "Stake11111111111111111111111111111111111111",
       gate_config_pda: PDA,
       program_digest: programDigest,
       config_digest: hashes.environment_hash,
@@ -393,6 +394,7 @@ describe("testnet gate deployment kit", () => {
     const { expectedSolanaConfigDigest } = await import("@/lib/partner/onchainGateDeployments");
     const digest = expectedSolanaConfigDigest({
       programId: PROGRAM,
+      partnerProgramId: "Stake11111111111111111111111111111111111111",
       gateConfigPda: PDA,
       programDigest,
       partnerHash: hashes.partner_hash,

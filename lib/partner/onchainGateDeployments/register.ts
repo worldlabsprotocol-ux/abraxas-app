@@ -170,6 +170,7 @@ export async function registerOnchainGateDeployment(input: RegisterDeploymentInp
     bytecode_hash: manifest.gate_type === "evm" ? manifest.bytecode_hash : null,
     config_digest: manifest.config_digest,
     program_id: manifest.gate_type === "solana" ? manifest.program_id : null,
+    partner_program_id: manifest.gate_type === "solana" ? manifest.partner_program_id : null,
     gate_config_pda: manifest.gate_type === "solana" ? manifest.gate_config_pda : null,
     program_digest: manifest.gate_type === "solana" ? manifest.program_digest : null,
     partner_hash: manifest.partner_hash,

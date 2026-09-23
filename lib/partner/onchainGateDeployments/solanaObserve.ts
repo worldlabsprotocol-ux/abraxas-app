@@ -80,6 +80,7 @@ export function programDataElf(programData: SolanaAccountSnapshot): Uint8Array |
 
 function decodeGateConfig(account: SolanaAccountSnapshot, expectedOwner: string): {
   admin: string;
+  partnerProgram: string;
   partnerHash: `0x${string}`;
   policyHash: `0x${string}`;
   actionHash: `0x${string}`;
@@ -97,7 +98,7 @@ function decodeGateConfig(account: SolanaAccountSnapshot, expectedOwner: string)
   if (!account.data.subarray(0, 8).every((byte, index) => byte === disc[index])) return null;
   let offset = 8;
   const admin = readPubkey(account.data, offset); offset += 32;
-  offset += 32; // partner_program
+  const partnerProgram = readPubkey(account.data, offset); offset += 32;
   const networkId = hex32(account.data.subarray(offset, offset + 32)); offset += 32;
   const partnerHash = hex32(account.data.subarray(offset, offset + 32)); offset += 32;
   const policyHash = hex32(account.data.subarray(offset, offset + 32)); offset += 32;
@@ -116,6 +117,7 @@ function decodeGateConfig(account: SolanaAccountSnapshot, expectedOwner: string)
   }
   return {
     admin,
+    partnerProgram,
     partnerHash,
     policyHash,
     actionHash,
@@ -166,6 +168,7 @@ export async function observeSolanaFromAccounts(
 
     const derivedPda = deriveGateConfigPda(manifest.program_id, decoded.admin);
     if (derivedPda !== manifest.gate_config_pda) return { ok: false, reason: "gate_config_mismatch" };
+    if (decoded.partnerProgram !== manifest.partner_program_id) return { ok: false, reason: "program_mismatch" };
 
     if (decoded.partnerHash.toLowerCase() !== manifest.partner_hash.toLowerCase()) {
       return { ok: false, reason: "tenant_mismatch" };
@@ -202,6 +205,7 @@ export async function observeSolanaFromAccounts(
 
     const configDigest = expectedSolanaConfigDigest({
       programId: manifest.program_id,
+      partnerProgramId: decoded.partnerProgram,
       gateConfigPda: derivedPda,
       programDigest,
       partnerHash: manifest.partner_hash,
@@ -213,6 +217,7 @@ export async function observeSolanaFromAccounts(
     });
     const observation: SafeSolanaObservation = {
       programId: manifest.program_id,
+      partnerProgramId: decoded.partnerProgram,
       gateConfigPda: derivedPda,
       programDigest,
       configDigest,

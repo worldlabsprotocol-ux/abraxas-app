@@ -99,6 +99,7 @@ export async function bindIssuanceToVerifiedDeployment(input: {
   if (record.status === "revoked" || record.revoked_at) return { ok: false, reason: "deployment_revoked" };
   if (record.status === "signer_revoked") return { ok: false, reason: "signer_revoked" };
   if (record.status === "signer_update_required") return { ok: false, reason: "signer_update_required" };
+  if (record.gate_type === "solana" && !record.partner_program_id) return { ok: false, reason: "deployment_mismatch" };
 
   if (input.kitEnvironment === "sandbox") {
     if (record.status !== "verified_sandbox") return { ok: false, reason: mapIssuanceDenied(record.status, "sandbox") };
@@ -120,7 +121,7 @@ export async function bindIssuanceToVerifiedDeployment(input: {
     network_id: record.network_id,
     ...(record.gate_type === "evm"
       ? { chain_id: record.chain_id, gate_address: record.gate_address, bytecode_hash: record.bytecode_hash }
-      : { program_id: record.program_id, gate_config_pda: record.gate_config_pda, program_digest: record.program_digest }),
+      : { program_id: record.program_id, partner_program_id: record.partner_program_id, gate_config_pda: record.gate_config_pda, program_digest: record.program_digest }),
     config_digest: record.config_digest,
     partner_hash: record.partner_hash,
     policy_hash: record.policy_hash,

@@ -55,6 +55,7 @@ function setup(overrides: {
 } = {}) {
   const admin = Keypair.generate();
   const program = Keypair.generate();
+  const partnerProgram = Keypair.generate();
   const programData = Keypair.generate();
   const policyId = overrides.policyId ?? EVM_REF_POLICY_ID;
   const hashes = bindings(policyId);
@@ -64,6 +65,7 @@ function setup(overrides: {
   const programDigest = overrides.digest ?? SOLANA_GATE_V2_PROGRAM_DIGEST;
   const configDigest = expectedSolanaConfigDigest({
     programId,
+    partnerProgramId: partnerProgram.publicKey.toBase58(),
     gateConfigPda: pda,
     programDigest,
     partnerHash: hashes.partner_hash,
@@ -78,6 +80,7 @@ function setup(overrides: {
     gate_type: "solana" as const,
     network_id: "solana_devnet",
     program_id: programId,
+    partner_program_id: partnerProgram.publicKey.toBase58(),
     gate_config_pda: overrides.wrongPda ? Keypair.generate().publicKey.toBase58() : pda,
     program_digest: programDigest,
     config_digest: configDigest,
@@ -103,7 +106,7 @@ function setup(overrides: {
     ? new Uint8Array([1, 2, 3])
     : encodeGateConfigAccount({
       admin: admin.publicKey.toBase58(),
-      partnerProgram: programId,
+      partnerProgram: partnerProgram.publicKey.toBase58(),
       networkId: hashNetworkId("solana_devnet"),
       partnerHash: hashes.partner_hash,
       policyHash: hashes.policy_hash,
@@ -133,6 +136,13 @@ describe("structured Solana V2 observation", () => {
   beforeEach(() => {
     delete process.env.VERCEL;
     delete process.env[ONCHAIN_DEPLOYMENT_TEST_ADAPTER_ENV];
+  });
+
+  it("rejects a claimed partner program that differs from the decoded GateConfig", async () => {
+    const { manifest, accounts } = setup();
+    const forged = { ...manifest, partner_program_id: Keypair.generate().publicKey.toBase58() };
+    const observed = await observeSolanaFromAccounts(forged, fetchFrom(accounts));
+    expect(observed).toEqual({ ok: false, reason: "program_mismatch" });
   });
 
   it("binds server RPC observations to the declared Solana cluster", async () => {

@@ -41,6 +41,7 @@ import { join } from "node:path";
 const GATE = "0x1111111111111111111111111111111111111111" as const;
 const BYTECODE = (`0x${"ab".repeat(32)}`) as `0x${string}`;
 const PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
+const PARTNER_PROGRAM = "Stake11111111111111111111111111111111111111";
 const PDA = "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
 
 function evmManifest(overrides: Record<string, unknown> = {}) {
@@ -96,6 +97,7 @@ function solanaManifest(overrides: Record<string, unknown> = {}) {
   const program_digest = (`0x${"cd".repeat(32)}`) as `0x${string}`;
   const config_digest = expectedSolanaConfigDigest({
     programId: PROGRAM,
+    partnerProgramId: PARTNER_PROGRAM,
     gateConfigPda: PDA,
     programDigest: program_digest,
     partnerHash: hashes.partner_hash,
@@ -110,6 +112,7 @@ function solanaManifest(overrides: Record<string, unknown> = {}) {
     gate_type: "solana",
     network_id: "solana_devnet",
     program_id: PROGRAM,
+    partner_program_id: PARTNER_PROGRAM,
     gate_config_pda: PDA,
     program_digest,
     config_digest,
@@ -135,6 +138,28 @@ describe("verified onchain gate deployments", () => {
     delete process.env[SOLANA_ATTESTATION_KEY_ENV];
     delete process.env[SOLANA_ATTESTATION_KEY_ID_ENV];
     delete process.env.ABRAXAS_EVM_GATE_VERIFY_RPC_URL;
+  });
+
+  it("requires a distinct Solana partner program and binds it into the digest", () => {
+    const valid = solanaManifest();
+    expect(parseOnchainDeploymentManifest(valid).ok).toBe(true);
+    const { partner_program_id: _omitted, ...missing } = valid;
+    expect(parseOnchainDeploymentManifest(missing)).toEqual({ ok: false, reason: "invalid" });
+    expect(parseOnchainDeploymentManifest({ ...valid, partner_program_id: valid.program_id })).toEqual({ ok: false, reason: "invalid" });
+    expect(parseOnchainDeploymentManifest({ ...valid, partner_program_id: PDA })).toEqual({ ok: true, manifest: expect.any(Object) });
+    const changed = solanaManifest({ partner_program_id: PDA });
+    expect(changed.config_digest).not.toBe(expectedSolanaConfigDigest({
+      programId: PROGRAM,
+      partnerProgramId: PDA,
+      gateConfigPda: PDA,
+      programDigest: valid.program_digest,
+      partnerHash: valid.partner_hash,
+      policyHash: valid.policy_hash,
+      actionHash: valid.action_hash,
+      environment: hashEnvironment("sandbox"),
+      signerKeyId: valid.signer_key_id,
+      subjectBindingMode: valid.subject_binding_mode,
+    }));
   });
 
   it("isolates tenant and application records", async () => {
@@ -272,6 +297,7 @@ describe("verified onchain gate deployments", () => {
       action_hash: hashes.action_hash,
       config_digest: expectedSolanaConfigDigest({
         programId: PROGRAM,
+        partnerProgramId: PARTNER_PROGRAM,
         gateConfigPda: PDA,
         programDigest: `0x${"cd".repeat(32)}` as `0x${string}`,
         partnerHash: hashes.partner_hash,
@@ -470,6 +496,7 @@ describe("verified onchain gate deployments", () => {
     const program_digest = (`0x${"cd".repeat(32)}`) as `0x${string}`;
     const config_digest = expectedSolanaConfigDigest({
       programId: PROGRAM,
+      partnerProgramId: PARTNER_PROGRAM,
       gateConfigPda: PDA,
       programDigest: program_digest,
       partnerHash: hashes.partner_hash,
@@ -730,6 +757,10 @@ describe("verified onchain gate deployments", () => {
     expect(inst).toContain("DEMO-first");
     expect(inst).toContain("require_institutional");
     expect(inst).not.toMatch(/organization_ref|actor_ref|rpc_url|private_key/i);
+    const partnerProgramMigration = readFileSync(join(process.cwd(), "supabase/migrations/108_onchain_gate_solana_partner_program.sql"), "utf8");
+    expect(partnerProgramMigration).toContain("DEMO-first");
+    expect(partnerProgramMigration).toContain("partner_program_id");
+    expect(partnerProgramMigration).not.toMatch(/rpc_url|private_key|wallet/i);
   });
 
   it("ships starter kit placeholders and docs without live RPC", () => {
@@ -817,6 +848,7 @@ describe("verified onchain gate deployments", () => {
     const program_digest = (`0x${"cd".repeat(32)}`) as `0x${string}`;
     const config_digest = expectedSolanaConfigDigest({
       programId: PROGRAM,
+      partnerProgramId: PARTNER_PROGRAM,
       gateConfigPda: PDA,
       programDigest: program_digest,
       partnerHash: hashes.partner_hash,
@@ -1081,6 +1113,7 @@ describe("verified onchain gate deployments", () => {
     const pda = deriveGateConfigPda(programId, admin.publicKey.toBase58());
     const config_digest = expectedSolanaConfigDigest({
       programId,
+      partnerProgramId: PARTNER_PROGRAM,
       gateConfigPda: pda,
       programDigest: SOLANA_GATE_V2_PROGRAM_DIGEST,
       partnerHash: hashes.partner_hash,
@@ -1092,6 +1125,7 @@ describe("verified onchain gate deployments", () => {
     });
     const manifest = solanaManifest({
       program_id: programId,
+      partner_program_id: PARTNER_PROGRAM,
       gate_config_pda: pda,
       program_digest: SOLANA_GATE_V2_PROGRAM_DIGEST,
       config_digest,
@@ -1113,7 +1147,7 @@ describe("verified onchain gate deployments", () => {
         owner: programId,
         data: encodeGateConfigAccount({
           admin: admin.publicKey.toBase58(),
-          partnerProgram: programId,
+          partnerProgram: PARTNER_PROGRAM,
           networkId: hashNetworkId("solana_devnet"),
           partnerHash: hashes.partner_hash,
           policyHash: hashes.policy_hash,
