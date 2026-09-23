@@ -39,7 +39,6 @@ const ok = keccak === SOLANA_GATE_V2_RELEASE.program_data_digest
   && LOCAL_SOLANA_GATE_PROGRAM_ID === SOLANA_GATE_V2_RELEASE.program_id
   && observed === keccak;
 const candidateComputed = candidate
-  && LOCAL_SOLANA_GATE_PROGRAM_ID !== SOLANA_GATE_V2_RELEASE.program_id
   && candidateRecord.status === "candidate_unreviewed"
   && candidateRecord.program_id === LOCAL_SOLANA_GATE_PROGRAM_ID
   && candidateRecord.program_data_digest === keccak

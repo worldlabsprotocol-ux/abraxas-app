@@ -15,7 +15,7 @@ import {
   SOLANA_GATE_V2_REVOKED_DIGEST,
   SOLANA_UPGRADEABLE_LOADER,
 } from "./solanaArtifacts";
-import { SOLANA_GATE_V2_RELEASE } from "./solanaV2Release";
+import { SOLANA_GATE_V2_RELEASE, SOLANA_GATE_V2_RELEASE_R1 } from "./solanaV2Release";
 import { LOCAL_SOLANA_GATE_PROGRAM_ID } from "@/lib/partner/chainAttestation/solanaGate";
 import { LOCALNET_SOLANA_PROGRAM_IDS } from "@/lib/partner/testnetGateDeploymentKit/contract";
 import { encodeProgramDataAccount, programDataElf } from "./solanaObserve";
@@ -25,7 +25,7 @@ const ELF_PATH = resolve("solana/abraxas-eligibility-gate/target/deploy/abraxas_
 describe("Solana V2 reproducible release digest", () => {
   it("keeps TypeScript release constants aligned with the committed provenance JSON", () => {
     const json = JSON.parse(
-      readFileSync("solana/abraxas-eligibility-gate/release/v2-institutional.artifact.json", "utf8"),
+      readFileSync("solana/abraxas-eligibility-gate/release/v2-institutional-r2.artifact.json", "utf8"),
     ) as { artifact_id: string; program_id: string; program_data_digest: string; elf_sha256: string; status: string };
     expect(json.artifact_id).toBe(SOLANA_GATE_V2_RELEASE.artifact_id);
     expect(json.program_id).toBe(SOLANA_GATE_V2_RELEASE.program_id);
@@ -34,7 +34,7 @@ describe("Solana V2 reproducible release digest", () => {
     expect(json.status).toBe("approved");
   });
 
-  it("binds the candidate public ID across source, Anchor config, and kit without calling it approved", () => {
+  it("binds the reviewed public ID across source, Anchor config, and kit", () => {
     const id = "4hf3cY57ciPakr4omyTSbksAfW672iGrdo6fiDVQAD4K";
     expect(readFileSync("solana/abraxas-eligibility-gate/programs/abraxas-eligibility-gate/src/lib.rs", "utf8"))
       .toContain(`declare_id!("${id}")`);
@@ -42,7 +42,11 @@ describe("Solana V2 reproducible release digest", () => {
       .toContain(`abraxas_eligibility_gate = "${id}"`);
     expect(LOCAL_SOLANA_GATE_PROGRAM_ID).toBe(id);
     expect(LOCALNET_SOLANA_PROGRAM_IDS.abraxas_eligibility_gate).toBe(id);
-    expect(id).not.toBe(SOLANA_GATE_V2_RELEASE.program_id);
+    expect(id).toBe(SOLANA_GATE_V2_RELEASE.program_id);
+    expect(id).not.toBe(SOLANA_GATE_V2_RELEASE_R1.program_id);
+    expect(lookupSolanaGateArtifact(SOLANA_GATE_V2_RELEASE.program_data_digest)?.program_id).toBe(id);
+    expect(lookupSolanaGateArtifact(SOLANA_GATE_V2_RELEASE_R1.program_data_digest)?.program_id)
+      .toBe(SOLANA_GATE_V2_RELEASE_R1.program_id);
   });
 
   it("matches the registry keccak and SHA-256 when the rebuilt ELF is present", () => {
@@ -52,10 +56,6 @@ describe("Solana V2 reproducible release digest", () => {
       return;
     }
     const elf = readFileSync(ELF_PATH);
-    if (LOCAL_SOLANA_GATE_PROGRAM_ID !== SOLANA_GATE_V2_RELEASE.program_id) {
-      expect(solanaProgramElfKeccak(elf)).not.toBe(SOLANA_GATE_V2_RELEASE.program_data_digest);
-      return;
-    }
     expect(solanaProgramElfKeccak(elf)).toBe(SOLANA_GATE_V2_RELEASE.program_data_digest);
     expect(solanaProgramElfSha256(elf)).toBe(SOLANA_GATE_V2_RELEASE.elf_sha256);
     const wrapped = encodeProgramDataAccount(elf, Keypair.generate().publicKey.toBase58());

@@ -2,7 +2,18 @@
 
 Secret-free. This file does not deploy, broadcast, configure RPC, or record keys.
 
-## Reviewed artifact
+## Current reviewed artifact
+
+- Artifact ID: `abraxas_eligibility_gate_v2_institutional_r2`
+- Program ID: `4hf3cY57ciPakr4omyTSbksAfW672iGrdo6fiDVQAD4K`
+- Source commit: `cebf7b788bebf2609b40a8fbfe94ead8f50aec07`
+- Observation digest: `0x6adcb3850f269710bd815bde0cc518cf6d02e167a01398776d8d78df9f566991`
+- ELF SHA-256: `0x37f7310ee6ceab81619964165a8d570a1af3502bf52bc8bf52e46d6d1515cdd8`
+- Reproduction: operator Ubuntu build and independent GitHub CI run `35810088694` matched both hashes and the 278184-byte size.
+- Provenance: `release/v2-institutional-r2.artifact.json`
+- Status: approved artifact, `live: false`. This does not mean a program is deployed or a gate is registered.
+
+## Historical reviewed artifact
 
 - Artifact ID: `abraxas_eligibility_gate_v2_institutional_r1`
 - Program ID: `GmaDrppBC7P5ARKV8g3djiwP89vz1jLK23V2GBjuAEGB`
@@ -14,7 +25,7 @@ Secret-free. This file does not deploy, broadcast, configure RPC, or record keys
 - Institutional `GateConfig.require_institutional` supported
 - Status: approved
 
-This approved artifact is historical and bound to the program ID above. It **does not** approve the new devnet candidate program ID `4hf3cY57ciPakr4omyTSbksAfW672iGrdo6fiDVQAD4K`. A new source-controlled digest review is required before that candidate can pass server verification or registration. There is no deploy button or automatic deployment path.
+The r1 digest remains bound to the r1 program ID above. It cannot be used to verify or register the r2 program ID. There is no deploy button or automatic deployment path.
 
 ## Pinned toolchain
 
@@ -26,7 +37,7 @@ This approved artifact is historical and bound to the program ID above. It **doe
 | cargo-build-sbf | 2.2.20 | documented Solana CLI family |
 | SBF platform-tools | v1.53 (rustc 1.89.0) | required to compile Cargo.lock v4 + edition2024 transitive crates |
 
-## Build the new program-ID candidate
+## Rebuild the current program ID
 
 Run from the repository root in Ubuntu, with the pinned toolchain installed:
 
@@ -36,9 +47,9 @@ PATH="$HOME/.cache/solana/v1.53/platform-tools/rust/bin:$PATH" \
   cargo-build-sbf --tools-version v1.53 --no-rustup-override \
   --manifest-path programs/abraxas-eligibility-gate/Cargo.toml
 cd ../..
-npx tsx scripts/solana-v2-gate-release-digest.ts --candidate
+npx tsx scripts/solana-v2-gate-release-digest.ts
 ```
 
-The candidate command prints only the public program ID and ELF hashes. `release_status: candidate_unreviewed`, `matches_candidate: true`, and `matches_registry: false` are expected. The candidate record is in `release/v2-institutional-r2.candidate.json`; a separate CI runner must reproduce both hashes before the artifact is reviewed into the approved server registry. Stop here before any devnet deployment, `verify`, or `register`. Do not run the default approved-release check against this candidate; it must fail until a new release is approved.
+The digest check must report `matches_registry: true` for the exact r2 program ID and hashes. The pre-approval candidate record remains in `release/v2-institutional-r2.candidate.json` as provenance. Artifact approval only removes the fingerprint blocker; the separate human deployment, GateConfig initialization, chain observation, and registration checks still apply.
 
 Do not commit `target/`, `.so` files, or generated `*-keypair.json`.

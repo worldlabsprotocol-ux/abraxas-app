@@ -1,0 +1,25 @@
+{
+  "artifact_id": "abraxas_eligibility_gate_v2_institutional_r2",
+  "program_id": "4hf3cY57ciPakr4omyTSbksAfW672iGrdo6fiDVQAD4K",
+  "crate": "abraxas-eligibility-gate",
+  "package_version": "0.1.0",
+  "source_commit": "cebf7b788bebf2609b40a8fbfe94ead8f50aec07",
+  "rust_host": "1.88.0",
+  "rust_sbf": "1.89.0",
+  "platform_tools": "v1.53",
+  "cargo_build_sbf": "2.2.20",
+  "anchor": "0.30.1",
+  "solana_program_test": "1.18.26",
+  "build_command": "PATH=\"$HOME/.cache/solana/v1.53/platform-tools/rust/bin:$PATH\" cargo-build-sbf --tools-version v1.53 --no-rustup-override --manifest-path programs/abraxas-eligibility-gate/Cargo.toml",
+  "program_data_digest": "0x6adcb3850f269710bd815bde0cc518cf6d02e167a01398776d8d78df9f566991",
+  "elf_sha256": "0x37f7310ee6ceab81619964165a8d570a1af3502bf52bc8bf52e46d6d1515cdd8",
+  "canonical_message": { "schema": "v2", "length": 468 },
+  "institutional_gate_config": true,
+  "status": "approved",
+  "live": false,
+  "notes": [
+    "Operator local Ubuntu build and independent GitHub CI run 35810088694 produced identical 278184-byte ELF hashes.",
+    "The approved digest is tied to this program ID; a matching ELF alone does not authorize any other program ID.",
+    "No private keys, RPC values, account data, deployment transactions, or ELF binary are recorded here."
+  ]
+}
