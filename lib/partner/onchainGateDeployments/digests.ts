@@ -26,6 +26,7 @@ export function expectedEvmConfigDigest(input: {
 
 export function expectedSolanaConfigDigest(input: {
   programId: string;
+  partnerProgramId: string;
   gateConfigPda: string;
   programDigest: `0x${string}`;
   partnerHash: `0x${string}`;
@@ -37,6 +38,7 @@ export function expectedSolanaConfigDigest(input: {
 }): `0x${string}` {
   return keccak256(concat([
     keccak256(stringToBytes(input.programId)),
+    keccak256(stringToBytes(input.partnerProgramId)),
     keccak256(stringToBytes(input.gateConfigPda)),
     input.programDigest,
     input.partnerHash,
@@ -82,6 +84,7 @@ export function evmDigestFromManifest(manifest: EvmDeploymentManifest, environme
 export function solanaDigestFromManifest(manifest: SolanaDeploymentManifest, environmentHash: `0x${string}`): `0x${string}` {
   return expectedSolanaConfigDigest({
     programId: manifest.program_id,
+    partnerProgramId: manifest.partner_program_id,
     gateConfigPda: manifest.gate_config_pda,
     programDigest: manifest.program_digest,
     partnerHash: manifest.partner_hash,

@@ -27,6 +27,7 @@ export interface SolanaDeploymentManifest {
   gate_type: "solana";
   network_id: string;
   program_id: string;
+  partner_program_id: string;
   gate_config_pda: string;
   program_digest: `0x${string}`;
   config_digest: `0x${string}`;
@@ -53,6 +54,7 @@ export interface OnchainGateDeploymentRecord {
   bytecode_hash: string | null;
   config_digest: string;
   program_id: string | null;
+  partner_program_id: string | null;
   gate_config_pda: string | null;
   program_digest: string | null;
   partner_hash: string;
@@ -80,6 +82,7 @@ export interface OnchainGatePublicView {
   bytecode_hash: string | null;
   config_digest: string;
   program_id: string | null;
+  partner_program_id: string | null;
   gate_config_pda: string | null;
   program_digest: string | null;
   partner_hash: string;

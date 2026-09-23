@@ -26,6 +26,7 @@ function mapRow(row: Record<string, unknown>): OnchainGateDeploymentRecord {
     bytecode_hash: row.bytecode_hash == null ? null : String(row.bytecode_hash),
     config_digest: String(row.config_digest),
     program_id: row.program_id == null ? null : String(row.program_id),
+    partner_program_id: row.partner_program_id == null ? null : String(row.partner_program_id),
     gate_config_pda: row.gate_config_pda == null ? null : String(row.gate_config_pda),
     program_digest: row.program_digest == null ? null : String(row.program_digest),
     partner_hash: String(row.partner_hash),
