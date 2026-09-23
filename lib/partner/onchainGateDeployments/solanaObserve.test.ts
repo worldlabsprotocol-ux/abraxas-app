@@ -211,6 +211,16 @@ describe("structured Solana V2 observation", () => {
     expect(JSON.stringify(observed.observation)).not.toMatch(/rpc|private_key|account bytes|0x[0-9a-f]{80,}/i);
   });
 
+  it("rejects an institutional GateConfig pinned to one organization instead of reusable commitments", async () => {
+    const { manifest, accounts } = setup();
+    const row = accounts.get(manifest.gate_config_pda)!;
+    const data = Buffer.from(row.data);
+    data[8 + 32 * 7 + 2] = 1;
+    accounts.set(manifest.gate_config_pda, { ...row, data });
+    expect(await observeSolanaFromAccounts(manifest, fetchFrom(accounts)))
+      .toEqual({ ok: false, reason: "institutional_required" });
+  });
+
   it("rejects V1-only artifacts when GateConfig requires institutional", async () => {
     const { manifest, accounts } = setup({
       elf: SOLANA_GATE_V1_PROGRAM_ELF,

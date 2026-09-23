@@ -37,3 +37,11 @@ ABRAXAS_GATE_ADMIN_PUBKEY=28M4TxRGsh5fbo7BDfR7gtdAxbsPjmMJiX8LAU32doHt \
 
 The script uses the public Solana devnet RPC by default or the server/operator `ABRAXAS_SOLANA_GATE_VERIFY_RPC_URL`. It verifies the devnet genesis hash before and after reads, the upgradeable loader and both ProgramData ELF keccak/SHA-256 digests against source-controlled release records, and that the admin-derived GateConfig PDA is still absent. It prints no RPC URL or account bytes, reads no keypair, and cannot sign or broadcast. A successful result is an RPC observation, not Launchpad ownership proof or authorization to initialize; repeat it immediately before any human-signed transaction. Any wrong cluster, unknown binary, unavailable RPC, or occupied PDA blocks the step.
 
+After a human initializes GateConfig, use the **same current public signer document and bindings** to compare the full on-chain account against the intended V2 sandbox configuration:
+
+```bash
+npx tsx scripts/solana-gate-config-postcheck.ts /tmp/abraxas-solana-signer-public.json
+```
+
+The postcheck re-verifies both program binaries and the devnet genesis hash, then compares the account owner, PDA bump, admin, partner program, policy/action/network/environment hashes, subject and institutional flags, all-zero reusable organization/actor/category commitments, and the active signer key ID **and public verifier** byte for byte. A missing account or any changed byte fails closed. Its `registry_status: not_registered` is deliberate: passing does not register a deployment or permit attestation issuance. Human review must still confirm Launchpad ownership and run the existing verify/register path with a separate, exact registry manifest. No keypair, transaction, or secret is accepted by this script.
+
