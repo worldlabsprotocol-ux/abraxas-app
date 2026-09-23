@@ -27,4 +27,3 @@ npx tsx scripts/solana-gate-config-initialize-packet.ts /tmp/abraxas-solana-sign
 ```
 
 The packet contains the exact Anchor `initialize_config` instruction bytes (base64), three account metas, the expected config digest, and the public signer verifier. It uses the vetted preflight and rejects the same missing, placeholder, or unqualified inputs. It never reads a keypair, calls RPC, signs, or broadcasts. Its `ownership_verified: false` and `onchain_config_observed: false` are intentional: the packet is not authorization to submit a transaction. Before human signing, independently confirm Launchpad ownership, the devnet program/consumer ELF digests, an uninitialized GateConfig PDA, the active signer, and the packet's policy/action/partner hashes. Do not use a stale packet after any binding or signer change.
-
