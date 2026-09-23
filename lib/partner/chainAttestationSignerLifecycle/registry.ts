@@ -39,8 +39,15 @@ function isReason(value: unknown): value is ChainAttestationSignerReasonClass {
   return typeof value === "string" && (CHAIN_ATTESTATION_SIGNER_REASONS as readonly string[]).includes(value);
 }
 
-function runtimeEnvironment(env: Record<string, string | undefined>): ChainAttestationSignerEnvironment {
-  return env.ABRAXAS_RUNTIME_ENVIRONMENT === "production" || env.NODE_ENV === "production" ? "production" : "sandbox";
+function runtimeEnvironment(env: Record<string, string | undefined>): ChainAttestationSignerEnvironment | null {
+  const runtime = env.ABRAXAS_RUNTIME_ENV?.trim();
+  const explicit = env.ABRAXAS_RUNTIME_ENVIRONMENT?.trim();
+  const expected = runtime === "demo" ? "sandbox" : runtime === "production" ? "production" : null;
+  if (explicit && explicit !== "sandbox" && explicit !== "production") return null;
+  if (expected && explicit && expected !== explicit) return null;
+  if (expected) return expected;
+  if (explicit === "sandbox" || explicit === "production") return explicit;
+  return env.NODE_ENV === "production" ? "production" : "sandbox";
 }
 
 function parseHexSecret(raw: string): Uint8Array | null {
@@ -163,6 +170,7 @@ export function loadChainAttestationSignerRegistry(
   env: Record<string, string | undefined> = process.env,
 ): SignerRegistryLoad {
   const environment = runtimeEnvironment(env);
+  if (!environment) return { ok: false, reason: "inconsistent" };
   const implicits = [implicitEvm(env, environment), implicitSolana(env, environment)].filter(
     (row): row is ChainAttestationSignerRecord => Boolean(row),
   );
