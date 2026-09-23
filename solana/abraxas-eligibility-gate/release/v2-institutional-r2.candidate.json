@@ -1,0 +1,18 @@
+{
+  "artifact_id": "abraxas_eligibility_gate_v2_institutional_r2",
+  "program_id": "4hf3cY57ciPakr4omyTSbksAfW672iGrdo6fiDVQAD4K",
+  "source_commit": "cebf7b788bebf2609b40a8fbfe94ead8f50aec07",
+  "rust_host": "1.88.0",
+  "rust_sbf": "1.89.0",
+  "platform_tools": "v1.53",
+  "cargo_build_sbf": "2.2.20",
+  "program_data_digest": "0x6adcb3850f269710bd815bde0cc518cf6d02e167a01398776d8d78df9f566991",
+  "elf_sha256": "0x37f7310ee6ceab81619964165a8d570a1af3502bf52bc8bf52e46d6d1515cdd8",
+  "status": "candidate_unreviewed",
+  "live": false,
+  "notes": [
+    "Public hashes from the operator's pinned local Ubuntu build; independent CI reproduction is pending.",
+    "Not included in the approved server artifact registry. No deploy or register authorization.",
+    "No ELF binary, private key, RPC value, or deployment transaction is recorded."
+  ]
+}

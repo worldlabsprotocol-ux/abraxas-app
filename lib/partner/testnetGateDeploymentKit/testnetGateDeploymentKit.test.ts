@@ -463,8 +463,9 @@ describe("testnet gate deployment kit", () => {
     expect(handoff.gate_config.require_institutional).toBe(true);
     expect(handoff.gate_config.expected_organization_commitment).toMatch(/^0x0+$/);
     expect(handoff.expected_program_ids?.eligibility_gate).toBe("4hf3cY57ciPakr4omyTSbksAfW672iGrdo6fiDVQAD4K");
-    expect(handoff.solana_release_status).toBe("candidate_digest_required");
-    expect(handoff.reviewed_solana_v2_artifact).toBeUndefined();
+    expect(handoff.solana_release_status).toBe("approved");
+    expect(handoff.reviewed_solana_v2_artifact?.program_data_digest)
+      .toBe("0x6adcb3850f269710bd815bde0cc518cf6d02e167a01398776d8d78df9f566991");
     expect(JSON.stringify(handoff)).not.toMatch(/rpc_url|private_key|legal_name/);
     expect(validateInstitutionalPlanFile({ schema_version: 1, gate_type: "solana" }).ok).toBe(false);
   });

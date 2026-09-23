@@ -1,4 +1,4 @@
-import { SOLANA_GATE_V2_RELEASE } from "./solanaV2Release";
+import { SOLANA_GATE_V2_RELEASE, SOLANA_GATE_V2_RELEASE_R1 } from "./solanaV2Release";
 
 export const SOLANA_GATE_ARTIFACT_REGISTRY_VERSION = "1.1.0" as const;
 
@@ -51,6 +51,19 @@ export const SOLANA_GATE_ARTIFACTS: readonly SolanaGateArtifact[] = [
     canonical_message_lengths: SOLANA_GATE_V2_RELEASE.canonical_message_lengths,
     institutional_capable: true,
     provenance_ref: SOLANA_GATE_V2_RELEASE.provenance_ref,
+    status: "approved",
+    live: false,
+  },
+  {
+    artifact_id: SOLANA_GATE_V2_RELEASE_R1.artifact_id,
+    program_id: SOLANA_GATE_V2_RELEASE_R1.program_id,
+    artifact_class: "v2_institutional",
+    program_data_digest: SOLANA_GATE_V2_RELEASE_R1.program_data_digest,
+    elf_sha256: SOLANA_GATE_V2_RELEASE_R1.elf_sha256,
+    schema_versions_supported: SOLANA_GATE_V2_RELEASE_R1.schema_versions_supported,
+    canonical_message_lengths: SOLANA_GATE_V2_RELEASE_R1.canonical_message_lengths,
+    institutional_capable: true,
+    provenance_ref: SOLANA_GATE_V2_RELEASE_R1.provenance_ref,
     status: "approved",
     live: false,
   },

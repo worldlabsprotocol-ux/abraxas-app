@@ -21,7 +21,7 @@ import {
   SOLANA_GATE_V2_REVOKED_DIGEST,
   SOLANA_UPGRADEABLE_LOADER,
 } from "./solanaArtifacts";
-import { SOLANA_GATE_V2_RELEASE } from "./solanaV2Release";
+import { SOLANA_GATE_V2_RELEASE, SOLANA_GATE_V2_RELEASE_R1 } from "./solanaV2Release";
 import { solanaProgramElfKeccak } from "./solanaElfDigest";
 import { localSolanaFixturesAllowed, resolveSolanaAdapter, serverSolanaRpcAdapter } from "./adapters";
 import { launchpadRequestRejectsClientAuthority } from "./clientAuthority";
@@ -302,7 +302,11 @@ describe("structured Solana V2 observation", () => {
         const candidate = setup({ elf, digest: builtDigest });
         const observed = await observeSolanaFromAccounts(candidate.manifest, fetchFrom(candidate.accounts));
         expect(observed.ok).toBe(false);
-        if (!observed.ok) expect(observed.reason).toBe("unrecognized_gate_artifact");
+        if (!observed.ok) expect(observed.reason).toBe(
+          builtDigest === SOLANA_GATE_V2_RELEASE_R1.program_data_digest
+            ? "program_mismatch"
+            : "unrecognized_gate_artifact",
+        );
       }
     }
 

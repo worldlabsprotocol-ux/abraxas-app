@@ -8,6 +8,14 @@ import { SOLANA_UPGRADEABLE_LOADER } from "@/lib/partner/onchainGateDeployments/
 import { LOCAL_SOLANA_GATE_PROGRAM_ID } from "@/lib/partner/chainAttestation/solanaGate";
 
 const candidate = process.argv.slice(2).includes("--candidate");
+const candidateRecord = JSON.parse(readFileSync(resolve(
+  "solana/abraxas-eligibility-gate/release/v2-institutional-r2.candidate.json",
+), "utf8")) as {
+  program_id: string;
+  program_data_digest: string;
+  elf_sha256: string;
+  status: string;
+};
 
 const elfPath = resolve(
   process.env.SOLANA_V2_RELEASE_ELF
@@ -31,7 +39,10 @@ const ok = keccak === SOLANA_GATE_V2_RELEASE.program_data_digest
   && LOCAL_SOLANA_GATE_PROGRAM_ID === SOLANA_GATE_V2_RELEASE.program_id
   && observed === keccak;
 const candidateComputed = candidate
-  && LOCAL_SOLANA_GATE_PROGRAM_ID !== SOLANA_GATE_V2_RELEASE.program_id
+  && candidateRecord.status === "candidate_unreviewed"
+  && candidateRecord.program_id === LOCAL_SOLANA_GATE_PROGRAM_ID
+  && candidateRecord.program_data_digest === keccak
+  && candidateRecord.elf_sha256 === sha
   && observed === keccak;
 
 console.log(JSON.stringify({
@@ -43,6 +54,7 @@ console.log(JSON.stringify({
   program_id: LOCAL_SOLANA_GATE_PROGRAM_ID,
   release_status: candidate ? "candidate_unreviewed" : "approved_release_check",
   matches_registry: ok,
+  matches_candidate: candidate ? candidateComputed : undefined,
 }, null, 2));
 
 process.exit(candidate ? (candidateComputed ? 0 : 1) : (ok ? 0 : 1));
