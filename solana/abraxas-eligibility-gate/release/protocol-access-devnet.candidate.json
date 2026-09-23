@@ -1,0 +1,11 @@
+{
+  "artifact_id": "abraxas_protocol_access_devnet_candidate",
+  "program_id": "3B9eE1WtrtZQwJrkhFSKxxaZrefRJ73P53xHBBP3Bv1j",
+  "source_commit": "3ef2e8df4f709bf5df277a90dd8e4ad4ef37623a",
+  "ci_run": "35817063788",
+  "bytes": 264184,
+  "program_data_digest": "0x42a94dc3ba45650177c8cb423f55ec1416ed6a883ce5421acf463b304aae06af",
+  "elf_sha256": "0xbf32d70fa01815fe8f9e60341fcf89d8d07d506bbbbe9241aa001089e22ddded",
+  "status": "candidate_unreviewed",
+  "live": false
+}

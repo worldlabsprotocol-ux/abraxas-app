@@ -6,6 +6,15 @@ import { solanaProgramElfKeccak, solanaProgramElfSha256 } from "@/lib/partner/on
 import { encodeProgramDataAccount, programDataElf } from "@/lib/partner/onchainGateDeployments/solanaObserve";
 import { SOLANA_UPGRADEABLE_LOADER } from "@/lib/partner/onchainGateDeployments/solanaArtifacts";
 
+const release = JSON.parse(readFileSync(resolve(
+  "solana/abraxas-eligibility-gate/release/protocol-access-devnet.candidate.json"
+), "utf8")) as {
+  program_id: string;
+  bytes: number;
+  program_data_digest: string;
+  elf_sha256: string;
+  status: string;
+};
 const PROGRAM_ID = "3B9eE1WtrtZQwJrkhFSKxxaZrefRJ73P53xHBBP3Bv1j";
 const source = readFileSync(resolve("solana/abraxas-eligibility-gate/programs/abraxas-protocol-access/src/lib.rs"), "utf8");
 const anchor = readFileSync(resolve("solana/abraxas-eligibility-gate/Anchor.toml"), "utf8");
@@ -26,7 +35,12 @@ const sha = solanaProgramElfSha256(elf);
 const wrapped = encodeProgramDataAccount(elf, "11111111111111111111111111111111");
 const stripped = programDataElf({ owner: SOLANA_UPGRADEABLE_LOADER, data: wrapped });
 const observationDigest = stripped ? solanaProgramElfKeccak(stripped) : null;
-const ok = elf.length > 0 && observationDigest === keccak;
+const ok = elf.length === release.bytes
+  && observationDigest === keccak
+  && release.status === "candidate_unreviewed"
+  && release.program_id === PROGRAM_ID
+  && release.program_data_digest === keccak
+  && release.elf_sha256 === sha;
 console.log(JSON.stringify({
   artifact: "abraxas_protocol_access_devnet_candidate",
   program_id: PROGRAM_ID,
@@ -36,6 +50,7 @@ console.log(JSON.stringify({
   elf_sha256: sha,
   observation_digest: observationDigest,
   status: "candidate_unreviewed",
+  matches_candidate: ok,
   deploy_ready: false,
 }, null, 2));
 process.exit(ok ? 0 : 1);
