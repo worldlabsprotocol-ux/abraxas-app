@@ -757,6 +757,10 @@ describe("verified onchain gate deployments", () => {
     expect(inst).toContain("DEMO-first");
     expect(inst).toContain("require_institutional");
     expect(inst).not.toMatch(/organization_ref|actor_ref|rpc_url|private_key/i);
+    const partnerProgramMigration = readFileSync(join(process.cwd(), "supabase/migrations/108_onchain_gate_solana_partner_program.sql"), "utf8");
+    expect(partnerProgramMigration).toContain("DEMO-first");
+    expect(partnerProgramMigration).toContain("partner_program_id");
+    expect(partnerProgramMigration).not.toMatch(/rpc_url|private_key|wallet/i);
   });
 
   it("ships starter kit placeholders and docs without live RPC", () => {

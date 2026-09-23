@@ -602,6 +602,16 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
     notes:
       "DEMO-first immutable server-derived institutional requirement on verified gate deployments. Safe boolean only. Do not auto-apply from Vercel.",
   },
+  {
+    file: "108_onchain_gate_solana_partner_program.sql",
+    tier: "recommended",
+    creates: [],
+    alters: ["onchain_gate_deployments.partner_program_id"],
+    seeds: [],
+    extensions: [],
+    notes:
+      "DEMO-first Solana GateConfig partner-program binding. Required before new Solana registration; legacy null rows cannot issue. Do not auto-apply from Vercel.",
+  },
 ];
 
 /** Map of which migration file first creates each core object. */
