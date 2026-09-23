@@ -22,3 +22,27 @@ Do not commit `target/`, `.so`, or any generated keypair. A matching candidate d
 The operator build and [GitHub CI run 35817063788](https://github.com/worldlabsprotocol-ux/abraxas-app/actions/runs/35817063788) reproduced the exact candidate: 264184 bytes, keccak `0x42a94dc3ba45650177c8cb423f55ec1416ed6a883ce5421acf463b304aae06af`, SHA-256 `0xbf32d70fa01815fe8f9e60341fcf89d8d07d506bbbbe9241aa001089e22ddded`.
 
 An activated entitlement is checked against its expiry onchain. The existing gate has no post-issue authorization revocation instruction, so a later offchain withdrawal does not immediately invalidate a previously activated onchain entitlement. Server-issued attestations default to 10 minutes and are capped at 15 minutes; the institutional result may shorten that window. This candidate must not be presented as instant onchain revocation. A separate reviewed gate upgrade would be required for that guarantee.
+
+## Human devnet deployment sequence after release review
+
+Run only in the operator's Ubuntu terminal. Confirm the checkout includes the reviewed release record and that the local digest reports `matches_candidate: true`. The keypair file stays outside git. Before broadcasting, check that the program ID is vacant and that the fee payer has enough devnet SOL for the program's rent plus fees:
+
+```bash
+cd ~/abraxas-devnet
+git fetch origin && git switch main && git pull --ff-only
+solana-keygen pubkey "$HOME/.config/abraxas/protocol-access-devnet.json"
+npx tsx scripts/solana-protocol-access-candidate-digest.ts
+solana --url devnet --keypair "$HOME/.config/solana/id.json" balance
+solana --url devnet rent 264184
+solana --url devnet --keypair "$HOME/.config/solana/id.json" program show 3B9eE1WtrtZQwJrkhFSKxxaZrefRJ73P53xHBBP3Bv1j
+```
+
+The public ID must be `3B9eE1WtrtZQwJrkhFSKxxaZrefRJ73P53xHBBP3Bv1j`. If it is already deployed, stop and inspect it rather than overwriting it. If the balance is below rent plus fees, fund the fee payer on devnet before proceeding. A human may then deploy only this reviewed binary:
+
+```bash
+solana --url devnet --keypair "$HOME/.config/solana/id.json" program deploy \
+  solana/abraxas-eligibility-gate/target/deploy/abraxas_protocol_access.so \
+  --program-id "$HOME/.config/abraxas/protocol-access-devnet.json"
+```
+
+Capture the transaction signature. Confirm it finalized, dump the onchain ELF to a temporary path outside git, and compare both hashes against the release record. Any mismatch stops GateConfig initialization and registration. Deployment alone does not create an eligibility grant or a verified deployment.

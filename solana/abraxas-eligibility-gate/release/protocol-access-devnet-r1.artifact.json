@@ -1,0 +1,20 @@
+{
+  "artifact_id": "abraxas_protocol_access_devnet_r1",
+  "program_id": "3B9eE1WtrtZQwJrkhFSKxxaZrefRJ73P53xHBBP3Bv1j",
+  "source_commit": "3ef2e8df4f709bf5df277a90dd8e4ad4ef37623a",
+  "ci_run": "35817063788",
+  "bytes": 264184,
+  "program_data_digest": "0x42a94dc3ba45650177c8cb423f55ec1416ed6a883ce5421acf463b304aae06af",
+  "elf_sha256": "0xbf32d70fa01815fe8f9e60341fcf89d8d07d506bbbbe9241aa001089e22ddded",
+  "toolchain": {
+    "host_rust": "1.88.0",
+    "solana_cli": "2.2.20",
+    "platform_tools": "v1.53"
+  },
+  "networks": [
+    "solana_devnet"
+  ],
+  "status": "reviewed_for_devnet_trial",
+  "live": false,
+  "instant_revocation": false
+}
