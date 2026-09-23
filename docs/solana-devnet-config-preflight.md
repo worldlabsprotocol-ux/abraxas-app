@@ -19,3 +19,11 @@ npx tsx scripts/solana-gate-config-preflight.ts /tmp/abraxas-solana-signer-publi
 The script rejects missing/placeholder IDs, malformed admin keys, private material in the signer document, and any signer that is not active, in-window, sandbox, Ed25519, V2, and allowed for `solana_devnet`. It pins policy `sandbox_institutional_protocol_access` v1, action `activate_protocol_access`, scope `sandbox:protocol_access`, environment `sandbox`, reviewed gate and consumer IDs, subject binding, and reusable zero organization/actor/category commitments. It prints only public hashes, signer key ID/public verifier, and the derived GateConfig PDA.
 
 A successful plan still reports `ownership_verified: false`, `onchain_config_observed: false`, and `broadcast: false`. The next operator step must independently confirm Launchpad ownership and the current onchain program hashes before an initialization transaction is prepared. If the public signer endpoint is unavailable or has no matching active key, stop; do not invent a signer or use a placeholder.
+
+After that independent review, the same public signer document and four bindings can produce an **offline instruction packet**:
+
+```bash
+npx tsx scripts/solana-gate-config-initialize-packet.ts /tmp/abraxas-solana-signer-public.json
+```
+
+The packet contains the exact Anchor `initialize_config` instruction bytes (base64), three account metas, the expected config digest, and the public signer verifier. It uses the vetted preflight and rejects the same missing, placeholder, or unqualified inputs. It never reads a keypair, calls RPC, signs, or broadcasts. Its `ownership_verified: false` and `onchain_config_observed: false` are intentional: the packet is not authorization to submit a transaction. Before human signing, independently confirm Launchpad ownership, the devnet program/consumer ELF digests, an uninitialized GateConfig PDA, the active signer, and the packet's policy/action/partner hashes. Do not use a stale packet after any binding or signer change.
