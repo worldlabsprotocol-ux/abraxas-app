@@ -202,10 +202,17 @@ async fn initialize_protocol(
     fields: MessageFields,
 ) -> Pubkey {
     let (protocol, _) = protocol_pda(&config);
-    let ix = Instruction {
+    let payer = ctx.payer.pubkey();
+    send(ctx, vec![initialize_protocol_ix(payer, config, fields)], &[]).await.unwrap();
+    protocol
+}
+
+fn initialize_protocol_ix(payer: Pubkey, config: Pubkey, fields: MessageFields) -> Instruction {
+    let (protocol, _) = protocol_pda(&config);
+    Instruction {
         program_id: PROTOCOL_ID,
         accounts: abraxas_protocol_access::accounts::InitializeProtocolAccess {
-            payer: ctx.payer.pubkey(),
+            payer,
             config,
             protocol,
             system_program: system_program::ID,
@@ -218,9 +225,33 @@ async fn initialize_protocol(
             expected_environment: fields.environment,
         }
         .data(),
-    };
-    send(ctx, vec![ix], &[]).await.unwrap();
-    protocol
+    }
+}
+
+#[tokio::test]
+async fn mismatched_initializer_cannot_squat_protocol_config() {
+    let mut ctx = start().await;
+    let admin = Keypair::new();
+    let signer = Keypair::new();
+    airdrop(&mut ctx, &admin).await;
+    let fields = MessageFields::default();
+    let config = initialize_gate(&mut ctx, &admin, default_params(signer.pubkey().to_bytes(), fields)).await;
+    let payer = ctx.payer.pubkey();
+    let mut wrong = fields;
+    wrong.partner_hash = h32(1);
+    assert!(custom_code(&send(&mut ctx, vec![initialize_protocol_ix(payer, config, wrong)], &[]).await.unwrap_err()).is_some());
+    wrong = fields;
+    wrong.policy_hash = h32(2);
+    assert!(custom_code(&send(&mut ctx, vec![initialize_protocol_ix(payer, config, wrong)], &[]).await.unwrap_err()).is_some());
+    wrong = fields;
+    wrong.action_hash = h32(3);
+    assert!(custom_code(&send(&mut ctx, vec![initialize_protocol_ix(payer, config, wrong)], &[]).await.unwrap_err()).is_some());
+    wrong = fields;
+    wrong.environment = h32(4);
+    assert!(custom_code(&send(&mut ctx, vec![initialize_protocol_ix(payer, config, wrong)], &[]).await.unwrap_err()).is_some());
+    let (protocol, _) = protocol_pda(&config);
+    assert!(ctx.banks_client.get_account(protocol).await.unwrap().is_none());
+    initialize_protocol(&mut ctx, config, fields).await;
 }
 
 fn authorize_ix(payer: Pubkey, config: Pubkey, attestation_id: [u8; 32]) -> Instruction {
