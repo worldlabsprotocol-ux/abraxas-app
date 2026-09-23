@@ -461,15 +461,13 @@ async fn wrong_action_hash_fails() {
     let mut params = default_params(signer.pubkey().to_bytes(), fields);
     params.action_hash = h32(99);
     let config = initialize_gate(&mut ctx, &admin, params).await;
-    let protocol = initialize_protocol(&mut ctx, config, fields).await;
-    let mut signed = fields;
-    signed.action_hash = h32(99);
-    authorize(&mut ctx, &signer, config, signed).await;
     let payer = ctx.payer.pubkey();
-    let err = send(&mut ctx, vec![activate_ix(payer, config, protocol, signed)], &[])
+    let err = send(&mut ctx, vec![initialize_protocol_ix(payer, config, fields)], &[])
         .await
         .unwrap_err();
     assert!(custom_code(&err).is_some());
+    let (protocol, _) = protocol_pda(&config);
+    assert!(ctx.banks_client.get_account(protocol).await.unwrap().is_none());
 }
 
 #[tokio::test]
