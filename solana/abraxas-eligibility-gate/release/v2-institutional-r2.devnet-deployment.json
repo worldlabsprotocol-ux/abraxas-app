@@ -1,0 +1,19 @@
+{
+  "network_id": "solana_devnet",
+  "program_id": "4hf3cY57ciPakr4omyTSbksAfW672iGrdo6fiDVQAD4K",
+  "deployment_transaction": "51Xhh2Zuj57B4C1kJmH7XVM222u7pmHoTX9YU7iwcBmdA3kTU6rAQW2Z7hkcFUSu9BEg9moLSDZLUJ4bg7CDFvSL",
+  "finality": "finalized",
+  "slot": 502739924,
+  "loader": "BPFLoaderUpgradeab1e11111111111111111111111",
+  "program_data_address": "8uZep2zGjgezuooDeqTQfqKXBW3AvQx51WcqKx8dzjK5",
+  "upgrade_authority": "28M4TxRGsh5fbo7BDfR7gtdAxbsPjmMJiX8LAU32doHt",
+  "elf_bytes": 278184,
+  "program_data_digest": "0x6adcb3850f269710bd815bde0cc518cf6d02e167a01398776d8d78df9f566991",
+  "elf_sha256": "0x37f7310ee6ceab81619964165a8d570a1af3502bf52bc8bf52e46d6d1515cdd8",
+  "verification": "The Solana CLI dumped the deployed ELF; the local release-digest checker returned matches_registry true for both hashes and the program ID.",
+  "gate_config_status": "not_initialized_in_this_handoff",
+  "consumer_status": "not_deployed_in_this_handoff",
+  "server_registry_status": "not_registered",
+  "mainnet": false,
+  "notes": "Public, point-in-time devnet deployment evidence only. It is not a live eligibility or funds-execution claim. No keypair, seed phrase, RPC secret, or transaction payload is stored."
+}

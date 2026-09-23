@@ -1,5 +1,5 @@
 // FILE: app/docs/solana-onchain-eligibility-gate/page.tsx
-// Local/reference Solana eligibility gate. No live deployment claims.
+// Reference Solana gate: devnet binary proof only, no active GateConfig or Mainnet claim.
 
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
@@ -56,9 +56,8 @@ Authorization PDA: ["authorization", config, attestation_id]
 Consumer authority PDA: ["consumer_authority"] (seeds::program = partner program)
 Test result PDA (reference consumer): ["test_result", authorization]
 
-Local/reference program IDs (not deployed):
-gate ${LOCAL_SOLANA_GATE_PROGRAM_ID}
-consumer ${LOCAL_SOLANA_CONSUMER_PROGRAM_ID}
+Reference gate on devnet (unconfigured): ${LOCAL_SOLANA_GATE_PROGRAM_ID}
+Local-only consumer (not deployed): ${LOCAL_SOLANA_CONSUMER_PROGRAM_ID}
 
 Stored on Authorization: hashed partner/policy/action binding, expiry, consumed/revoked, opaque attestation_ref.
 Never stored: receipts, evidence, signatures, wallets beyond the required subject hash, provider payloads.`}
@@ -74,9 +73,12 @@ cargo test --workspace
 # anchor test`}
         </pre>
         <p style={{ ...body, marginTop: "0.75rem" }}>
-          Devnet checklist for a human operator only: generate your own program keypair, set the dedicated attestation
-          signer (not a receipt key), bind partner program ID plus policy/action hashes as admin, then deploy yourself.
-          This repository does not include a deployed program ID, a devnet transaction, or a Mainnet claim.
+          The reviewed reference gate ELF was deployed to devnet at slot 502739924 and dumped back from chain with matching
+          keccak and SHA-256 digests. Its transaction is{" "}
+          <a href="https://explorer.solana.com/tx/51Xhh2Zuj57B4C1kJmH7XVM222u7pmHoTX9YU7iwcBmdA3kTU6rAQW2Z7hkcFUSu9BEg9moLSDZLUJ4bg7CDFvSL?cluster=devnet">
+            51Xhh2…CDFvSL
+          </a>. GateConfig has not been initialized, the partner consumer is not deployed, and the gate is not registered
+          for issuance. No Mainnet claim.
         </p>
       </ContentCard>
 

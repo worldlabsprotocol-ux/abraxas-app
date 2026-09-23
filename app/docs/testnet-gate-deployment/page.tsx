@@ -16,6 +16,7 @@ import {
   APPROVED_EVM_TESTNET_CHAIN_ID,
 } from "@/lib/partner/testnetGateDeploymentKit/contract";
 import { EVM_TESTNET_TEST_PLAN, SOLANA_DEVNET_TEST_PLAN, INSTITUTIONAL_TESTNET_TEST_PLAN } from "@/lib/partner/testnetGateDeploymentKit/testPlans";
+import { SOLANA_GATE_V2_RELEASE } from "@/lib/partner/onchainGateDeployments/solanaV2Release";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -37,10 +38,12 @@ export default function TestnetGateDeploymentDocsPage() {
       />
       <ContentCard title="Reviewed Solana V2 artifact">
         <p style={body}>
-          Operators deploy artifact <code>abraxas_eligibility_gate_v2_institutional_r1</code> only. Confirm the locally built ELF keccak digest
-          <code> 0x956eb9294aa866e8dbd76960841bdb17d3a58ccf801904038cea1169572f9787</code> (SHA-256
-          <code> 0x4036d3ada9835db952b1a73f9f8b549f9a6a22ab5174554a9dd582ed249be1aa</code>) before server verify or register.
-          Rebuild from <code>solana/abraxas-eligibility-gate/REPRODUCIBLE_RELEASE.md</code>. No deploy button and no automatic deployment.
+          The reference gate artifact <code>{SOLANA_GATE_V2_RELEASE.artifact_id}</code> was deployed to Solana devnet at{" "}
+          <code>{SOLANA_GATE_V2_RELEASE.program_id}</code>. Its on-chain ELF matches reviewed keccak{" "}
+          <code>{SOLANA_GATE_V2_RELEASE.program_data_digest}</code> and SHA-256{" "}
+          <code>{SOLANA_GATE_V2_RELEASE.elf_sha256}</code>. This is binary proof only: GateConfig has not been initialized,
+          no partner gate is registered, and no authorization is issuable from this deployment. Independent operators
+          must still follow <code>solana/abraxas-eligibility-gate/REPRODUCIBLE_RELEASE.md</code> and verify their own deployment.
         </p>
       </ContentCard>
       <ContentCard title="Boundary">

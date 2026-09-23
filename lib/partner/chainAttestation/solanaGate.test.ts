@@ -34,7 +34,8 @@ describe("solana onchain eligibility gate SDK", () => {
     expect(mapSolanaGateError(9)).toBe("invalid");
     expect(LOCAL_SOLANA_GATE_PROGRAM_ID).toMatch(/^[1-9A-HJ-NP-Za-km-z]+$/);
     expect(LOCAL_SOLANA_CONSUMER_PROGRAM_ID).toMatch(/^[1-9A-HJ-NP-Za-km-z]+$/);
-    expect(SOLANA_GATE_DEPLOYMENT_NOTICE.toLowerCase()).toContain("not deployed");
+    expect(SOLANA_GATE_DEPLOYMENT_NOTICE.toLowerCase()).toContain("deployed on solana devnet");
+    expect(SOLANA_GATE_DEPLOYMENT_NOTICE.toLowerCase()).toContain("not initialized or registered");
     expect(SOLANA_ONCHAIN_GATE_FLOW).toContain("Ed25519");
     expect(SOLANA_ONCHAIN_GATE_FLOW).not.toMatch(/mainnet deployed/i);
     const accounts = buildAuthorizeAccountKeys({
