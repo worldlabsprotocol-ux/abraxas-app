@@ -7,7 +7,7 @@ skip-lint = false
 [programs.localnet]
 abraxas_eligibility_gate = "4hf3cY57ciPakr4omyTSbksAfW672iGrdo6fiDVQAD4K"
 abraxas_eligibility_consumer = "J2xccRtuG43drESLYznHhLhQkLTdfepcKYbiQ9BsJVaf"
-abraxas_protocol_access = "GD237h8oAdsR89Ga8W6P8PtNcu13hvbvFsLgWtZyHrqB"
+abraxas_protocol_access = "3B9eE1WtrtZQwJrkhFSKxxaZrefRJ73P53xHBBP3Bv1j"
 
 [registry]
 url = "https://api.apr.dev"
