@@ -1,5 +1,5 @@
 // Partner-owned reference consumer for activate_protocol_access.
-// Local/sandbox ProgramTest only. Never transfers SOL/tokens, mints, swaps,
+// Local/sandbox reference only. Never transfers SOL/tokens, mints, swaps,
 // calls token programs, or performs arbitrary CPI.
 // Entitlement is expiry-bound from the verified Authorization expires_at.
 
@@ -31,6 +31,10 @@ pub mod abraxas_protocol_access {
             crate::ID,
             ProtocolAccessError::WrongProgram
         );
+        require!(expected_partner_hash == ctx.accounts.config.partner_hash, ProtocolAccessError::PartnerMismatch);
+        require!(expected_policy_hash == ctx.accounts.config.policy_hash, ProtocolAccessError::PolicyMismatch);
+        require!(expected_action_hash == ctx.accounts.config.action_hash, ProtocolAccessError::ActionMismatch);
+        require!(expected_environment == ctx.accounts.config.environment, ProtocolAccessError::EnvironmentMismatch);
         let protocol = &mut ctx.accounts.protocol;
         protocol.gate_config = ctx.accounts.config.key();
         protocol.expected_partner_hash = expected_partner_hash;
