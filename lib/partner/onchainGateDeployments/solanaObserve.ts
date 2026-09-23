@@ -90,6 +90,7 @@ function decodeGateConfig(account: SolanaAccountSnapshot, expectedOwner: string)
   requireInstitutional: boolean;
   bump: number;
   signers: Array<{ keyId: `0x${string}`; status: number }>;
+  expectedCommitmentsZero: boolean;
 } | null {
   if (account.owner !== expectedOwner) return null;
   const expected = 8 + GATE_CONFIG_BODY;
@@ -106,7 +107,8 @@ function decodeGateConfig(account: SolanaAccountSnapshot, expectedOwner: string)
   const environment = hex32(account.data.subarray(offset, offset + 32)); offset += 32;
   const requireSubject = account.data[offset] === 1; offset += 1;
   const requireInstitutional = account.data[offset] === 1; offset += 1;
-  offset += 96; // expected commitments
+  const expectedCommitmentsZero = account.data.subarray(offset, offset + 96).every((byte) => byte === 0);
+  offset += 96;
   const bump = account.data[offset]; offset += 1;
   const signers: Array<{ keyId: `0x${string}`; status: number }> = [];
   for (let i = 0; i < MAX_SIGNERS; i += 1) {
@@ -127,6 +129,7 @@ function decodeGateConfig(account: SolanaAccountSnapshot, expectedOwner: string)
     requireInstitutional,
     bump,
     signers,
+    expectedCommitmentsZero,
   };
 }
 
@@ -187,6 +190,9 @@ export async function observeSolanaFromAccounts(
     }
     if (manifest.subject_binding_mode === "required" && !decoded.requireSubject) {
       return { ok: false, reason: "invalid" };
+    }
+    if (decoded.requireInstitutional && !decoded.expectedCommitmentsZero) {
+      return { ok: false, reason: "institutional_required" };
     }
 
     const signers = signerClass(decoded.signers, hashSignerKeyId(manifest.signer_key_id));
@@ -265,6 +271,7 @@ export function encodeGateConfigAccount(input: {
   requireInstitutional: boolean;
   bump: number;
   signerKeyId: `0x${string}`;
+  signerPubkey?: `0x${string}`;
   signerStatus?: number;
 }): Uint8Array {
   const body = Buffer.alloc(GATE_CONFIG_BODY);
@@ -289,6 +296,7 @@ export function encodeGateConfigAccount(input: {
   offset += 96;
   body[offset] = input.bump; offset += 1;
   Buffer.from(input.signerKeyId.slice(2), "hex").copy(body, offset);
+  if (input.signerPubkey) Buffer.from(input.signerPubkey.slice(2), "hex").copy(body, offset + 32);
   body[offset + 64] = input.signerStatus ?? SIGNER_ACTIVE;
   return Buffer.concat([Buffer.from(gateConfigDiscriminator()), body]);
 }
