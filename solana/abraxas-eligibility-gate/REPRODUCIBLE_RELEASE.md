@@ -39,6 +39,6 @@ cd ../..
 npx tsx scripts/solana-v2-gate-release-digest.ts --candidate
 ```
 
-The candidate command prints only the public program ID and ELF hashes. `release_status: candidate_unreviewed` and `matches_registry: false` are expected. Stop here and have the new digest and program binding reviewed into the source-controlled artifact registry before any devnet deployment, `verify`, or `register`. Do not run the default approved-release check against this candidate; it must fail until a new release is approved.
+The candidate command prints only the public program ID and ELF hashes. `release_status: candidate_unreviewed`, `matches_candidate: true`, and `matches_registry: false` are expected. The candidate record is in `release/v2-institutional-r2.candidate.json`; a separate CI runner must reproduce both hashes before the artifact is reviewed into the approved server registry. Stop here before any devnet deployment, `verify`, or `register`. Do not run the default approved-release check against this candidate; it must fail until a new release is approved.
 
 Do not commit `target/`, `.so` files, or generated `*-keypair.json`.
