@@ -37,3 +37,11 @@ ABRAXAS_GATE_ADMIN_PUBKEY=28M4TxRGsh5fbo7BDfR7gtdAxbsPjmMJiX8LAU32doHt \
 
 The script uses the public Solana devnet RPC by default or the server/operator `ABRAXAS_SOLANA_GATE_VERIFY_RPC_URL`. It verifies the devnet genesis hash before and after reads, the upgradeable loader and both ProgramData ELF keccak/SHA-256 digests against source-controlled release records, and that the admin-derived GateConfig PDA is still absent. It prints no RPC URL or account bytes, reads no keypair, and cannot sign or broadcast. A successful result is an RPC observation, not Launchpad ownership proof or authorization to initialize; repeat it immediately before any human-signed transaction. Any wrong cluster, unknown binary, unavailable RPC, or occupied PDA blocks the step.
 
+After a human signs and submits `initialize_config`, run the separate **read-only post-init observation** with the same vetted public signer document and four operator bindings:
+
+```bash
+npx tsx scripts/solana-gate-config-observe.ts /tmp/abraxas-solana-signer-public.json
+```
+
+It rechecks the devnet genesis and both program binaries, then compares the on-chain GateConfig owner, PDA, admin, partner program, network, partner/policy/action/environment hashes, institutional/subject flags, zero reusable commitments, bump, and the one active public signer against the vetted plan. Changed, absent, stale, or extra signer slots fail closed. Its output is an observation only: `registered: false`, `ownership_verified: false`, `broadcast: false`. Human review of Launchpad ownership and registry verification remain separate.
+

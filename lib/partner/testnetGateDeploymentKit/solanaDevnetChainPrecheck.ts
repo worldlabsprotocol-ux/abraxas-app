@@ -45,7 +45,7 @@ function programDataAddress(account: Account): string | null {
   return new PublicKey(account.data.subarray(4, 36)).toBase58();
 }
 
-async function inspectProgram(
+export async function inspectProgram(
   reviewed: ReviewedProgram,
   readAccount: PublicSolanaAccountSource,
 ): Promise<"matched" | "missing" | "mismatch" | "unavailable"> {
