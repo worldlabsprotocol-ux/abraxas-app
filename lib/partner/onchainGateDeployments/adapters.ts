@@ -169,11 +169,29 @@ export function serverSolanaRpcAdapter(): SolanaVerificationAdapter | null {
         if (!expectedGenesis) return { unavailable: true };
         const genesisMatches = async () => await jsonRpc(url, "getGenesisHash", []) === expectedGenesis;
         if (!await genesisMatches()) return { unavailable: true };
+        const { resolveChainAttestationVerificationSigner } = await import("@/lib/partner/chainAttestationSignerLifecycle/resolve");
+        const signerInput = {
+          keyId: manifest.signer_key_id, algorithm: "ed25519" as const,
+          environment: manifest.environment, networkId: manifest.network_id,
+          gateType: "solana" as const,
+        };
+        const v2 = resolveChainAttestationVerificationSigner({ ...signerInput, schemaVersion: "2" });
+        const signer = v2.ok ? v2 : resolveChainAttestationVerificationSigner({ ...signerInput, schemaVersion: "1" });
+        if (!signer.ok) return { rejected: "signer_update_required" };
+        const verifier = signer.key.public_verifier;
+        if (!/^0x[0-9a-fA-F]{64}$/.test(verifier) || /^0x0{64}$/i.test(verifier)) {
+          return { rejected: "signer_update_required" };
+        }
         const { observeSolanaFromAccounts } = await import("./solanaObserve");
-        const observed = await observeSolanaFromAccounts(manifest, async (pubkey) => fetchSolanaAccount(url, pubkey));
+        const observed = await observeSolanaFromAccounts(
+          manifest, async (pubkey) => fetchSolanaAccount(url, pubkey), verifier as `0x${string}`,
+        );
         if (!observed.ok) {
           if (observed.reason === "deployment_verification_unavailable") return { unavailable: true };
           return { rejected: observed.reason };
+        }
+        if (!signer.key.schema_versions.includes(String(observed.observation.schemaVersion))) {
+          return { rejected: "signer_update_required" };
         }
         if (!await genesisMatches()) return { unavailable: true };
         return observed.observation;

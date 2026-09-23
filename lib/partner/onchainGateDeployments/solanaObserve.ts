@@ -89,7 +89,7 @@ function decodeGateConfig(account: SolanaAccountSnapshot, expectedOwner: string)
   requireSubject: boolean;
   requireInstitutional: boolean;
   bump: number;
-  signers: Array<{ keyId: `0x${string}`; status: number }>;
+  signers: Array<{ keyId: `0x${string}`; pubkey: `0x${string}`; status: number }>;
   expectedCommitmentsZero: boolean;
 } | null {
   if (account.owner !== expectedOwner) return null;
@@ -110,11 +110,12 @@ function decodeGateConfig(account: SolanaAccountSnapshot, expectedOwner: string)
   const expectedCommitmentsZero = account.data.subarray(offset, offset + 96).every((byte) => byte === 0);
   offset += 96;
   const bump = account.data[offset]; offset += 1;
-  const signers: Array<{ keyId: `0x${string}`; status: number }> = [];
+  const signers: Array<{ keyId: `0x${string}`; pubkey: `0x${string}`; status: number }> = [];
   for (let i = 0; i < MAX_SIGNERS; i += 1) {
     const keyId = hex32(account.data.subarray(offset, offset + 32));
+    const pubkey = hex32(account.data.subarray(offset + 32, offset + 64));
     const status = account.data[offset + 64];
-    signers.push({ keyId, status });
+    signers.push({ keyId, pubkey, status });
     offset += SIGNER_SLOT;
   }
   return {
@@ -134,12 +135,16 @@ function decodeGateConfig(account: SolanaAccountSnapshot, expectedOwner: string)
 }
 
 function signerClass(
-  signers: Array<{ keyId: `0x${string}`; status: number }>,
+  signers: Array<{ keyId: `0x${string}`; pubkey: `0x${string}`; status: number }>,
   expectedKeyHash: `0x${string}`,
+  expectedVerifier?: `0x${string}`,
 ): SolanaSignerClass {
   const wanted = expectedKeyHash.toLowerCase();
-  const match = signers.find((slot) => slot.keyId.toLowerCase() === wanted && slot.status !== SIGNER_EMPTY);
-  if (!match) return "missing";
+  const matches = signers.filter((slot) => slot.keyId.toLowerCase() === wanted && slot.status !== SIGNER_EMPTY);
+  if (matches.length === 0) return "missing";
+  if (matches.length !== 1) return "stale";
+  const match = matches[0];
+  if (expectedVerifier && match.pubkey.toLowerCase() !== expectedVerifier.toLowerCase()) return "stale";
   if (match.status === SIGNER_ACTIVE || match.status === SIGNER_RETIRING) return "active_trusted";
   return "stale";
 }
@@ -147,6 +152,7 @@ function signerClass(
 export async function observeSolanaFromAccounts(
   manifest: SolanaDeploymentManifest,
   fetchAccount: SolanaAccountSource,
+  expectedVerifier?: `0x${string}`,
 ): Promise<{ ok: true; observation: SafeSolanaObservation } | { ok: false; reason: OnchainGateSafeReason }> {
   try {
     const program = await fetchAccount(manifest.program_id);
@@ -195,7 +201,7 @@ export async function observeSolanaFromAccounts(
       return { ok: false, reason: "institutional_required" };
     }
 
-    const signers = signerClass(decoded.signers, hashSignerKeyId(manifest.signer_key_id));
+    const signers = signerClass(decoded.signers, hashSignerKeyId(manifest.signer_key_id), expectedVerifier);
     if (signers === "stale") return { ok: false, reason: "signer_update_required" };
     if (signers === "missing") return { ok: false, reason: "deployment_mismatch" };
 
