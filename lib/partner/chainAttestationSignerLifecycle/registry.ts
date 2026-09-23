@@ -46,7 +46,7 @@ function runtimeEnvironment(env: Record<string, string | undefined>): ChainAttes
   if (explicit && explicit !== "sandbox" && explicit !== "production") return null;
   if (expected && explicit && expected !== explicit) return null;
   if (expected) return expected;
-  if (explicit) return explicit;
+  if (explicit === "sandbox" || explicit === "production") return explicit;
   return env.NODE_ENV === "production" ? "production" : "sandbox";
 }
 
