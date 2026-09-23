@@ -91,5 +91,5 @@ export const CROSS_CHAIN_PROTOCOL_SOLANA_INTERFACE = {
   instruction: "activate_protocol_access",
   gate: "abraxas_eligibility_gate.authorize + consume",
   named_action: CROSS_CHAIN_PROTOCOL_ACTION,
-  program_id_local: "GD237h8oAdsR89Ga8W6P8PtNcu13hvbvFsLgWtZyHrqB",
+  program_id_local: "3B9eE1WtrtZQwJrkhFSKxxaZrefRJ73P53xHBBP3Bv1j",
 } as const;

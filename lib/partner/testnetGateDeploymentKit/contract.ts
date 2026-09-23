@@ -55,7 +55,7 @@ export const APPROVED_SOLANA_TESTNET_ID = "solana_devnet" as const;
 
 export const LOCALNET_SOLANA_PROGRAM_IDS = {
   abraxas_eligibility_gate: "4hf3cY57ciPakr4omyTSbksAfW672iGrdo6fiDVQAD4K",
-  abraxas_protocol_access: "GD237h8oAdsR89Ga8W6P8PtNcu13hvbvFsLgWtZyHrqB",
+  abraxas_protocol_access: "3B9eE1WtrtZQwJrkhFSKxxaZrefRJ73P53xHBBP3Bv1j",
   source: "anchor_toml_localnet",
   live: false as const,
 } as const;

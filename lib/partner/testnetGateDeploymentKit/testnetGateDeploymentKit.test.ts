@@ -87,6 +87,15 @@ describe("testnet gate deployment kit", () => {
     resetOnchainVerificationFixtures();
   });
 
+  it("pins the deployed Solana consumer in the institutional handoff", () => {
+    const planned = planInstitutionalTestnetGate({ target: "institutional-solana-devnet" });
+    expect(planned.ok).toBe(true);
+    if (!planned.ok) return;
+    const handoff = operatorHandoffFromPlan(planned.envelope);
+    expect(handoff.expected_program_ids?.eligibility_gate).toBe("4hf3cY57ciPakr4omyTSbksAfW672iGrdo6fiDVQAD4K");
+    expect(handoff.expected_program_ids?.protocol_access).toBe("3B9eE1WtrtZQwJrkhFSKxxaZrefRJ73P53xHBBP3Bv1j");
+  });
+
   it("plans deterministic manifests for solana and evm", () => {
     const a = planTestnetGate({ target: "evm", now: "2026-09-21T00:00:00.000Z" });
     const b = planTestnetGate({ target: "evm", now: "2026-09-21T00:00:00.000Z" });
