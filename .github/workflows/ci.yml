@@ -195,3 +195,11 @@ jobs:
             --manifest-path programs/abraxas-eligibility-gate/Cargo.toml
       - name: Compare both ELF digests with the reviewed release
         run: npx tsx scripts/solana-v2-gate-release-digest.ts
+      - name: Build protocol-access candidate with pinned SBF tools
+        working-directory: solana/abraxas-eligibility-gate
+        run: |
+          PATH="$HOME/.cache/solana/v1.53/platform-tools/rust/bin:$PATH" \
+            cargo-build-sbf --tools-version v1.53 --no-rustup-override \
+            --manifest-path programs/abraxas-protocol-access/Cargo.toml
+      - name: Print secret-free protocol-access candidate digest
+        run: npx tsx scripts/solana-protocol-access-candidate-digest.ts

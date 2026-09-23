@@ -10,7 +10,7 @@ use abraxas_eligibility_gate::program::AbraxasEligibilityGate;
 use abraxas_eligibility_gate::{Authorization, GateConfig};
 use anchor_lang::prelude::*;
 
-declare_id!("GD237h8oAdsR89Ga8W6P8PtNcu13hvbvFsLgWtZyHrqB");
+declare_id!("3B9eE1WtrtZQwJrkhFSKxxaZrefRJ73P53xHBBP3Bv1j");
 
 pub const PROTOCOL_CONFIG_SEED: &[u8] = b"protocol_access_config";
 pub const ENTITLEMENT_SEED: &[u8] = b"protocol_access";
