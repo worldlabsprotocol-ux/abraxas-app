@@ -80,6 +80,37 @@ describe("chain attestation signer lifecycle", () => {
     process.env[ONCHAIN_DEPLOYMENT_TEST_ADAPTER_ENV] = "1";
   });
 
+  it("classifies a Vercel DEMO signer as sandbox despite NODE_ENV=production", () => {
+    const env = {
+      NODE_ENV: "production",
+      ABRAXAS_RUNTIME_ENV: "demo",
+      [SOLANA_ATTESTATION_KEY_ENV]: "11".repeat(32),
+      [SOLANA_ATTESTATION_KEY_ID_ENV]: "demo-solana-test-1",
+    };
+    const registry = loadChainAttestationSignerRegistry(env);
+    expect(registry.ok).toBe(true);
+    if (registry.ok) {
+      expect(registry.environment).toBe("sandbox");
+      expect(registry.keys.find((key) => key.key_id === "demo-solana-test-1")).toMatchObject({
+        algorithm: "ed25519",
+        environment: "sandbox",
+        status: "active",
+      });
+    }
+    const document = buildChainAttestationSignerDocument({ algorithm: "ed25519", env });
+    expect(document).toMatchObject({ environment: "sandbox", algorithm: "ed25519" });
+  });
+
+  it("fails closed on conflicting DEMO and explicit production signer classes", () => {
+    expect(loadChainAttestationSignerRegistry({
+      NODE_ENV: "production",
+      ABRAXAS_RUNTIME_ENV: "demo",
+      ABRAXAS_RUNTIME_ENVIRONMENT: "production",
+      [SOLANA_ATTESTATION_KEY_ENV]: "11".repeat(32),
+      [SOLANA_ATTESTATION_KEY_ID_ENV]: "demo-solana-test-1",
+    })).toEqual({ ok: false, reason: "inconsistent" });
+  });
+
   it("issues only with an active in-window signer", async () => {
     const account = installEvm();
     const adapterKit = kit();
