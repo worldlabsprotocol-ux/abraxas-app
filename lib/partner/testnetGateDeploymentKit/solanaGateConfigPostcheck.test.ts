@@ -79,10 +79,16 @@ describe("exact read-only Solana GateConfig postcheck", () => {
     expect(data).toHaveLength(136);
     expect(data.subarray(8, 40).toString("hex")).toBe(plan.partner_hash.slice(2));
     expect(data.subarray(40, 72).toString("hex")).toBe(plan.policy_hash.slice(2));
+    expect(data.subarray(72, 104).toString("hex")).toBe(plan.action_hash.slice(2));
+    expect(data.subarray(104, 136).toString("hex")).toBe(plan.environment_hash.slice(2));
     const occupied = accountMap(); occupied.set(result.packet.protocol_config_pda, { owner: plan.partner_program_id, data: new Uint8Array(8) });
     expect(await run(occupied)).toEqual({ ok: false, reason: "protocol_config_already_initialized", broadcast: false });
     const wrongGate = accountMap(); wrongGate.delete(plan.gate_config_pda);
     expect(await run(wrongGate)).toEqual({ ok: false, reason: "gate_config_missing", broadcast: false });
+    const changed = accountMap(); const row = changed.get(plan.gate_config_pda)!;
+    const bytes = Buffer.from(row.data); bytes[8 + 32 + 32 + 32] ^= 1;
+    changed.set(plan.gate_config_pda, { ...row, data: bytes });
+    expect(await run(changed)).toEqual({ ok: false, reason: "gate_config_mismatch", broadcast: false });
   });
   it("exports only a parsed registry manifest after exact onchain observation", async () => {
     const readAccount = async (key: string) => accountMap().get(key) ?? null;
@@ -122,3 +128,4 @@ describe("exact read-only Solana GateConfig postcheck", () => {
     expect(await check(changed)).toEqual({ ok: false, reason: "gate_artifact_mismatch", broadcast: false });
   });
 });
+
