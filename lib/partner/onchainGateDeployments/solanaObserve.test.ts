@@ -28,6 +28,7 @@ import { launchpadRequestRejectsClientAuthority } from "./clientAuthority";
 import { ONCHAIN_DEPLOYMENT_TEST_ADAPTER_ENV } from "./contract";
 
 const SIGNER_ID = "solana-attestation-test-1";
+const SIGNER_VERIFIER = `0x${"11".repeat(32)}` as `0x${string}`;
 
 function bindings(policyId = EVM_REF_POLICY_ID) {
   const hashes = hashesForApplication({
@@ -116,6 +117,7 @@ function setup(overrides: {
       requireInstitutional: overrides.requireInstitutional ?? true,
       bump: 255,
       signerKeyId: hashSignerKeyId(SIGNER_ID),
+      signerPubkey: SIGNER_VERIFIER,
       signerStatus: overrides.signerStatus,
     });
   accounts.set(pda, {
@@ -148,7 +150,15 @@ describe("structured Solana V2 observation", () => {
   it("binds server RPC observations to the declared Solana cluster", async () => {
     const previousFetch = globalThis.fetch;
     const previousRpcUrl = process.env.ABRAXAS_SOLANA_GATE_VERIFY_RPC_URL;
+    const previousRegistry = process.env.ABRAXAS_CHAIN_ATTESTATION_SIGNER_REGISTRY;
     process.env.ABRAXAS_SOLANA_GATE_VERIFY_RPC_URL = "http://127.0.0.1:8899";
+    process.env.ABRAXAS_CHAIN_ATTESTATION_SIGNER_REGISTRY = JSON.stringify({
+      key_id: SIGNER_ID, algorithm: "ed25519", environment: "sandbox",
+      public_verifier: SIGNER_VERIFIER, status: "active",
+      allowed_networks: ["solana_devnet"], allowed_gate_types: ["solana"],
+      schema_versions: ["1", "2"], not_before: "2020-01-01T00:00:00.000Z",
+      expires_at: "2099-01-01T00:00:00.000Z",
+    });
     const { manifest, accounts } = setup();
     const devnetGenesis = "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG";
     let genesisResponses = [devnetGenesis, devnetGenesis];
@@ -178,6 +188,42 @@ describe("structured Solana V2 observation", () => {
         "getGenesisHash", "getAccountInfo", "getAccountInfo", "getAccountInfo", "getGenesisHash",
       ]);
 
+      // The server registry can still name the same key ID while its public
+      // verifier differs from the bytes trusted by GateConfig.
+      process.env.ABRAXAS_CHAIN_ATTESTATION_SIGNER_REGISTRY = JSON.stringify({
+        key_id: SIGNER_ID, algorithm: "ed25519", environment: "sandbox",
+        public_verifier: `0x${"22".repeat(32)}`, status: "active",
+        allowed_networks: ["solana_devnet"], allowed_gate_types: ["solana"],
+        schema_versions: ["1", "2"], not_before: "2020-01-01T00:00:00.000Z",
+        expires_at: "2099-01-01T00:00:00.000Z",
+      });
+      genesisResponses = [devnetGenesis, devnetGenesis];
+      expect(await adapter.observe(manifest)).toEqual({ rejected: "signer_update_required" });
+      process.env.ABRAXAS_CHAIN_ATTESTATION_SIGNER_REGISTRY = JSON.stringify({
+        key_id: SIGNER_ID, algorithm: "ed25519", environment: "sandbox",
+        public_verifier: SIGNER_VERIFIER, status: "revoked",
+        allowed_networks: ["solana_devnet"], allowed_gate_types: ["solana"],
+        schema_versions: ["1", "2"], not_before: "2020-01-01T00:00:00.000Z",
+        expires_at: "2099-01-01T00:00:00.000Z",
+      });
+      genesisResponses = [devnetGenesis];
+      expect(await adapter.observe(manifest)).toEqual({ rejected: "signer_update_required" });
+      process.env.ABRAXAS_CHAIN_ATTESTATION_SIGNER_REGISTRY = JSON.stringify({
+        key_id: SIGNER_ID, algorithm: "ed25519", environment: "sandbox",
+        public_verifier: SIGNER_VERIFIER, status: "active",
+        allowed_networks: ["solana_devnet"], allowed_gate_types: ["solana"],
+        schema_versions: ["1"], not_before: "2020-01-01T00:00:00.000Z",
+        expires_at: "2099-01-01T00:00:00.000Z",
+      });
+      genesisResponses = [devnetGenesis, devnetGenesis];
+      expect(await adapter.observe(manifest)).toEqual({ rejected: "signer_update_required" });
+      process.env.ABRAXAS_CHAIN_ATTESTATION_SIGNER_REGISTRY = JSON.stringify({
+        key_id: SIGNER_ID, algorithm: "ed25519", environment: "sandbox",
+        public_verifier: SIGNER_VERIFIER, status: "active",
+        allowed_networks: ["solana_devnet"], allowed_gate_types: ["solana"],
+        schema_versions: ["1", "2"], not_before: "2020-01-01T00:00:00.000Z",
+        expires_at: "2099-01-01T00:00:00.000Z",
+      });
       methods.length = 0;
       genesisResponses = ["5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d"];
       expect(await adapter.observe(manifest)).toEqual({ unavailable: true });
@@ -193,6 +239,8 @@ describe("structured Solana V2 observation", () => {
       vi.stubGlobal("fetch", previousFetch);
       if (previousRpcUrl === undefined) delete process.env.ABRAXAS_SOLANA_GATE_VERIFY_RPC_URL;
       else process.env.ABRAXAS_SOLANA_GATE_VERIFY_RPC_URL = previousRpcUrl;
+      if (previousRegistry === undefined) delete process.env.ABRAXAS_CHAIN_ATTESTATION_SIGNER_REGISTRY;
+      else process.env.ABRAXAS_CHAIN_ATTESTATION_SIGNER_REGISTRY = previousRegistry;
     }
   });
 
@@ -209,6 +257,14 @@ describe("structured Solana V2 observation", () => {
     expect(observed.observation.signerClass).toBe("active_trusted");
     expect(observed.observation.digestMatchClass).toBe("matched");
     expect(JSON.stringify(observed.observation)).not.toMatch(/rpc|private_key|account bytes|0x[0-9a-f]{80,}/i);
+  });
+
+  it("rejects a gate that trusts a different public verifier under the same signer key ID", async () => {
+    const { manifest, accounts } = setup();
+    expect(await observeSolanaFromAccounts(manifest, fetchFrom(accounts), SIGNER_VERIFIER))
+      .toMatchObject({ ok: true });
+    expect(await observeSolanaFromAccounts(manifest, fetchFrom(accounts), `0x${"22".repeat(32)}`))
+      .toEqual({ ok: false, reason: "signer_update_required" });
   });
 
   it("rejects an institutional GateConfig pinned to one organization instead of reusable commitments", async () => {
