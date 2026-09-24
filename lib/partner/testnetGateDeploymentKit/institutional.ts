@@ -1,6 +1,7 @@
 // V2 institutional gate plan/verify helpers. Opaque hashes only. No PII.
 
-import { concat, keccak256, pad, stringToBytes, toHex } from "viem";
+import { concat, keccak256, pad, toHex } from "viem";
+import { utf8Bytes as stringToBytes } from "@/lib/partner/chainAttestation/utf8";
 import { hashUtf8, hashSignerKeyId } from "@/lib/partner/chainAttestation/hashes";
 import { ZERO_BYTES32 } from "@/lib/partner/chainAttestation/contract";
 import { LOCALNET_SOLANA_PROGRAM_IDS } from "./contract";

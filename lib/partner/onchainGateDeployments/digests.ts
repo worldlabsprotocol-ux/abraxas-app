@@ -1,4 +1,5 @@
-import { concat, keccak256, pad, stringToBytes, toHex } from "viem";
+import { concat, keccak256, pad, toHex } from "viem";
+import { utf8Bytes as stringToBytes } from "@/lib/partner/chainAttestation/utf8";
 import { hashAction, hashEnvironment, hashPartnerId, hashPolicy, hashSignerKeyId } from "@/lib/partner/chainAttestation/hashes";
 import type { EvmDeploymentManifest, SolanaDeploymentManifest } from "./types";
 

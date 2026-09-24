@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
-import { keccak256, stringToBytes } from "viem";
+import { keccak256 } from "viem";
+import { utf8Bytes as stringToBytes } from "@/lib/partner/chainAttestation/utf8";
 
 export function opaqueOrganizationRef(seed: string): string {
   return `org_${createHash("sha256").update(`organization-eligibility:${seed}`).digest("hex").slice(0, 24)}`;

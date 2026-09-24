@@ -1,4 +1,5 @@
-import { keccak256, stringToBytes } from "viem";
+import { keccak256 } from "viem";
+import { utf8Bytes as stringToBytes } from "@/lib/partner/chainAttestation/utf8";
 import { privateKeyToAccount } from "viem/accounts";
 import { isHex } from "viem";
 import nacl from "tweetnacl";

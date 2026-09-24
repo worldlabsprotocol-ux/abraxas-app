@@ -1,4 +1,5 @@
-import { keccak256, stringToBytes } from "viem";
+import { keccak256 } from "viem";
+import { utf8Bytes as stringToBytes } from "@/lib/partner/chainAttestation/utf8";
 
 export function fingerprintPublicVerifier(value: string): `0x${string}` {
   return keccak256(stringToBytes(value.trim().toLowerCase()));
