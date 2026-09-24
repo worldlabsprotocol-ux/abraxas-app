@@ -61,6 +61,25 @@ npx tsx scripts/solana-gate-config-postcheck.ts /tmp/abraxas-solana-signer-publi
 
 The packet derives `protocol_access_config` from the verified gate PDA and pins partner, policy, action, and environment hashes to that gate. It includes the Anchor instruction bytes and four public account metas. It checks that the protocol config PDA is vacant and rechecks the devnet genesis hash. It has no keypair, signing, registration, or send path. An occupied PDA, changed GateConfig, wrong cluster, or modified binary fails closed. A human-operated local consumer initializer and exact post-initialization check are still required before claiming the cross-program action works on devnet.
 
+## Local protocol-access consumer initialization
+
+The GateConfig exact postcheck must pass before this separate transaction. With the same four public bindings, current public signer document, reviewed Launchpad ownership, and `ABRAXAS_GATE_ADMIN_KEYPAIR_PATH` pointing to the local admin keypair outside git (mode 0600), first generate the read-only `--consumer-packet` above. Confirm its protocol PDA is uninitialized and its gate PDA/config digest match the verified gate. The initializer repeats these checks, validates the devnet genesis hash and both source-controlled program fingerprints, simulates, rechecks the vacant consumer PDA, signs one devnet transaction, waits for finalized confirmation, and runs an exact account postcheck:
+
+```bash
+npx tsx scripts/solana-protocol-access-initialize-local.ts \
+  /tmp/abraxas-solana-signer-public.json --ownership-reviewed --confirm
+```
+
+The CLI refuses CI, Vercel, test and non-interactive runtimes, unsafe or mismatched keypairs, wrong cluster, changed artifacts/gate, occupied consumer PDA, or ineligible signers. The output has only public PDAs, config digest and transaction signature. If `send_outcome_unknown` appears, inspect the PDA and transaction history before any retry. If finalized but postcheck fails, stop registration.
+
+Independently re-read the consumer afterward:
+
+```bash
+npx tsx scripts/solana-protocol-access-postcheck.ts /tmp/abraxas-solana-signer-public.json
+```
+
+This compares the complete Anchor `ProtocolAccessConfig` account, including discriminator, gate PDA, partner/policy/action/environment hashes, bump, owner and length. It also re-verifies the gate account, both ELFs and devnet genesis. A passing consumer postcheck remains `registered: false`; separate manifest verify/register and a fresh attestation/consume proof are still required. No Mainnet or Production initialization is supported.
+
 The server RPC verifier also binds the on-chain signer slot to the current server-owned verification-key registry. A matching key ID with a different Ed25519 public verifier is `signer_update_required`; an unavailable, out-of-scope, or revoked registry signer cannot verify a gate. Registration and issuance re-observe this binding, so a signer rotation requires the partner's GateConfig to be updated and verified before new attestations can issue.
 
 ## Local devnet initialization
