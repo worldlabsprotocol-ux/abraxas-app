@@ -47,3 +47,16 @@ The postcheck re-verifies both program binaries and the devnet genesis hash, the
 
 The server RPC verifier also binds the on-chain signer slot to the current server-owned verification-key registry. A matching key ID with a different Ed25519 public verifier is `signer_update_required`; an unavailable, out-of-scope, or revoked registry signer cannot verify a gate. Registration and issuance re-observe this binding, so a signer rotation requires the partner's GateConfig to be updated and verified before new attestations can issue.
 
+## Local devnet initialization
+
+After the public signer endpoint is healthy, Launchpad ownership has been reviewed, and the offline packet and chain precheck agree, a human operator can initialize the **devnet** GateConfig from an interactive Ubuntu terminal. Set the existing four public bindings plus `ABRAXAS_GATE_ADMIN_KEYPAIR_PATH` (absolute path to the local admin keypair, outside git, mode 0600) and optionally `ABRAXAS_SOLANA_GATE_VERIFY_RPC_URL` (HTTPS devnet RPC). The admin keypair must match `ABRAXAS_GATE_ADMIN_PUBKEY`. Do not paste its bytes or recovery phrase into the app, logs, or chat.
+
+```bash
+npx tsx scripts/solana-gate-config-initialize-local.ts \
+  /tmp/abraxas-solana-signer-public.json --ownership-reviewed --confirm
+```
+
+The command refuses CI, Vercel, tests, non-interactive shells, wrong clusters, changed program binaries, an occupied config PDA, a missing/unqualified signer, and a mismatched admin. It simulates the exact Anchor instruction, repeats the public chain precheck, then signs and sends **one** devnet transaction. It waits for finalized confirmation and runs the exact postcheck. The output contains only public PDA, config digest, and transaction signature. `registry_status: not_registered` still requires the separate server verify/register flow; this command does not activate policy or issue an attestation.
+
+If `send_outcome_unknown` appears, do not retry blindly: inspect the PDA and transaction history first. If the transaction finalizes but the postcheck fails, stop registration, inspect the public signature, and use the documented on-chain signer revocation path if needed. No Mainnet or Production initialization is supported.
+
