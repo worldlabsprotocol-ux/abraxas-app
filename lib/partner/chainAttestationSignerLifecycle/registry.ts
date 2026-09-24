@@ -1,7 +1,5 @@
-import { keccak256 } from "viem";
 import { utf8Bytes as stringToBytes } from "@/lib/partner/chainAttestation/utf8";
 import { privateKeyToAccount } from "viem/accounts";
-import { isHex } from "viem";
 import nacl from "tweetnacl";
 import { bytesToHex } from "@/lib/partner/chainAttestation/solanaMessage";
 import { EVM_ATTESTATION_KEY_ENV, EVM_ATTESTATION_KEY_ID_ENV, RECEIPT_SIGNING_KEY_ENVS } from "@/lib/partner/chainAttestation/signer";
@@ -19,6 +17,7 @@ import {
   type ChainAttestationSignerStatus,
 } from "./contract";
 import { fingerprintPublicVerifier } from "./safety";
+import { keccakHex } from "./keccak";
 
 export type SignerRegistryLoad =
   | { ok: true; keys: ChainAttestationSignerRecord[]; environment: ChainAttestationSignerEnvironment }
@@ -65,11 +64,11 @@ function implicitEvm(env: Record<string, string | undefined>, environment: Chain
   if (!raw || !keyId) return null;
   if (RECEIPT_SIGNING_KEY_ENVS.some((name) => env[name]?.trim() && env[name]?.trim() === raw)) return null;
   const hex = raw.startsWith("0x") ? raw : `0x${raw}`;
-  if (!isHex(hex) || hex.length !== 66) return null;
+  if (!/^0x[0-9a-fA-F]{64}$/.test(hex)) return null;
   try {
     const address = privateKeyToAccount(hex as `0x${string}`).address.toLowerCase();
     return {
-      signer_ref: `cas_${keccak256(stringToBytes(keyId)).slice(2, 18)}`,
+      signer_ref: `cas_${keccakHex(stringToBytes(keyId)).slice(2, 18)}`,
       key_id: keyId,
       algorithm: "secp256k1",
       environment,
@@ -104,7 +103,7 @@ function implicitSolana(env: Record<string, string | undefined>, environment: Ch
       : nacl.sign.keyPair.fromSeed(secret.slice(0, 32));
     const verifier = bytesToHex(pair.publicKey);
     return {
-      signer_ref: `cas_${keccak256(stringToBytes(keyId)).slice(2, 18)}`,
+      signer_ref: `cas_${keccakHex(stringToBytes(keyId)).slice(2, 18)}`,
       key_id: keyId,
       algorithm: "ed25519",
       environment,

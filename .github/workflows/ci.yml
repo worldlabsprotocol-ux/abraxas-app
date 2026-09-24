@@ -57,6 +57,9 @@ jobs:
           NEXT_PUBLIC_SOLANA_RPC: https://api.mainnet-beta.solana.com
           NEXT_PUBLIC_VERIFICATION_PROGRAM_ID: ABRAXASverify1111111111111111111111111111111
 
+      - name: Smoke test bundled Solana signer endpoint
+        run: node scripts/ci/smoke-solana-signer-route.mjs
+
   audit-hash-parity:
     runs-on: ubuntu-latest
     services:
