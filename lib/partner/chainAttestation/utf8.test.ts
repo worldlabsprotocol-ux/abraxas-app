@@ -25,7 +25,8 @@ describe("protocol UTF-8 hashing in production bundles", () => {
       "lib/partner/testnetGateDeploymentKit/plan.ts",
     ]) {
       const source = readFileSync(path, "utf8");
-      expect(source, path).not.toMatch(/import\s*\{[^}]*stringToBytes[^}]*\}\s*from\s*["']viem["']/s);
+      expect(source, path).not.toMatch(/import\s*\{[^}]*stringToBytes[^}]*\}\s*from\s*["']viem["']/);
     }
   });
 });
+
