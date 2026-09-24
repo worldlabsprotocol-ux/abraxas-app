@@ -1,4 +1,4 @@
-import { keccak256 } from "viem";
+import { keccakHex } from "@/lib/partner/chainAttestationSignerLifecycle/keccak";
 import { ONCHAIN_DEPLOYMENT_TEST_ADAPTER_ENV, type OnchainGateSafeReason } from "./contract";
 import type { EvmDeploymentManifest, SolanaDeploymentManifest } from "./types";
 import type { SafeSolanaObservation } from "./solanaObserve";
@@ -134,7 +134,7 @@ export function serverEvmRpcAdapter(): EvmVerificationAdapter | null {
         if (typeof digestCall !== "string" || !/^0x[0-9a-fA-F]{64,}$/.test(digestCall)) return { unavailable: true };
         if (await observedChainId() !== expectedChainId) return { unavailable: true };
         return {
-          codeHash: keccak256(code as `0x${string}`),
+          codeHash: keccakHex(Buffer.from(code.slice(2), "hex")),
           configDigest: (`0x${digestCall.replace(/^0x/, "").slice(-64).toLowerCase()}`) as `0x${string}`,
         };
       } catch {
