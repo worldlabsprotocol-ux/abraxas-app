@@ -4,10 +4,12 @@ import { readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { inspectSolanaGateConfigAfterInitialize } from "@/lib/partner/testnetGateDeploymentKit/solanaGateConfigPostcheck";
 import { buildVerifiedSolanaDevnetRegistryManifest } from "@/lib/partner/testnetGateDeploymentKit/solanaDevnetRegistryManifest";
+import { prepareSolanaProtocolAccessPacket } from "@/lib/partner/testnetGateDeploymentKit/solanaProtocolAccessPacket";
 
 const manifestMode = process.argv.length === 4 && process.argv[3] === "--manifest";
-if ((!manifestMode && process.argv.length !== 3) || !process.argv[2] || process.argv[2].startsWith("-")) {
-  process.stderr.write("usage: npx tsx scripts/solana-gate-config-postcheck.ts /path/to/public-signer-document.json [--manifest]\n");
+const consumerMode = process.argv.length === 4 && process.argv[3] === "--consumer-packet";
+if ((!manifestMode && !consumerMode && process.argv.length !== 3) || !process.argv[2] || process.argv[2].startsWith("-")) {
+  process.stderr.write("usage: npx tsx scripts/solana-gate-config-postcheck.ts /path/to/public-signer-document.json [--manifest|--consumer-packet]\n");
   process.exit(2);
 }
 let signerDocument: unknown;
@@ -67,6 +69,7 @@ const input = {
 };
 const result = manifestMode
   ? await buildVerifiedSolanaDevnetRegistryManifest(input)
+  : consumerMode ? await prepareSolanaProtocolAccessPacket(input)
   : await inspectSolanaGateConfigAfterInitialize(input);
 process.stdout.write(`${JSON.stringify(manifestMode && result.ok && "manifest" in result ? result.manifest : result, null, 2)}\n`);
 process.exit(result.ok ? 0 : 1);
