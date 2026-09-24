@@ -1,7 +1,8 @@
 // FILE: lib/partner/chainAttestation/hashes.ts
 // keccak256 hashes for chain-portable attestation fields. No PII.
 
-import { concat, keccak256, pad, stringToBytes, toBytes, toHex } from "viem";
+import { concat, keccak256, pad, toBytes, toHex } from "viem";
+import { utf8Bytes as stringToBytes } from "./utf8";
 import { ZERO_BYTES32, type ChainAttestationEnvironment } from "./contract";
 
 export function hashUtf8(value: string): `0x${string}` {

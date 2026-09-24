@@ -1,4 +1,5 @@
-import { keccak256, stringToBytes } from "viem";
+import { keccak256 } from "viem";
+import { utf8Bytes as stringToBytes } from "@/lib/partner/chainAttestation/utf8";
 import { hashesForApplication } from "@/lib/partner/onchainGateDeployments/digests";
 import { hashUtf8 } from "@/lib/partner/chainAttestation/hashes";
 import { LOCALNET_SOLANA_PROGRAM_IDS, TESTNET_GATE_KIT_VERSION } from "./contract";

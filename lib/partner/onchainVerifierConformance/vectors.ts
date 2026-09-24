@@ -1,4 +1,5 @@
-import { keccak256, stringToBytes, toHex } from "viem";
+import { keccak256, toHex } from "viem";
+import { utf8Bytes as stringToBytes } from "@/lib/partner/chainAttestation/utf8";
 import {
   CHAIN_ATTESTATION_SCHEMA_VERSION,
   type ChainEligibilityAttestationFields,
