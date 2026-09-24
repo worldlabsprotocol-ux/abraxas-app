@@ -5,15 +5,17 @@ import { isAbsolute, relative, resolve } from "node:path";
 import { Connection, Keypair, PublicKey, Transaction, type TransactionInstruction } from "@solana/web3.js";
 import { automatedEnvironmentForbidden } from "@/lib/partner/testnetGateDeploymentKit/deploy";
 import { initializeLocalSolanaGateConfig } from "@/lib/partner/testnetGateDeploymentKit/solanaGateConfigLocalInitialize";
+import { initializeLocalSolanaProtocolAccess } from "@/lib/partner/testnetGateDeploymentKit/solanaProtocolAccessLocalInitialize";
 
 const fail = (reason: string): never => {
   process.stdout.write(`${JSON.stringify({ ok: false, reason, broadcast: false })}\n`);
   process.exit(1);
 };
 const args = process.argv.slice(2);
-if (args.length !== 3 || !args[0] || args[0].startsWith("-")
+const consumerMode = args.length === 4 && args[3] === "--consumer";
+if ((!consumerMode && args.length !== 3) || !args[0] || args[0].startsWith("-")
   || args[1] !== "--ownership-reviewed" || args[2] !== "--confirm") {
-  process.stderr.write("usage: npx tsx scripts/solana-gate-config-initialize-local.ts /path/to/public-signer-document.json --ownership-reviewed --confirm\n");
+  process.stderr.write("usage: npx tsx scripts/solana-gate-config-initialize-local.ts /path/to/public-signer-document.json --ownership-reviewed --confirm [--consumer]\n");
   process.exit(2);
 }
 if (automatedEnvironmentForbidden() || !process.stdin.isTTY || !process.stdout.isTTY) {
@@ -60,7 +62,7 @@ function transaction(ix: TransactionInstruction, blockhash: string): Transaction
   tx.sign(admin);
   return tx;
 }
-const result = await initializeLocalSolanaGateConfig({
+const input = {
   partnerId: process.env.ABRAXAS_GATE_PARTNER_ID ?? "",
   applicationId: process.env.ABRAXAS_GATE_APPLICATION_ID ?? "",
   adminPubkey: process.env.ABRAXAS_GATE_ADMIN_PUBKEY ?? "",
@@ -91,6 +93,9 @@ const result = await initializeLocalSolanaGateConfig({
       return confirmation.value.err === null;
     },
   },
-});
+};
+const result = consumerMode
+  ? await initializeLocalSolanaProtocolAccess(input)
+  : await initializeLocalSolanaGateConfig(input);
 process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
 process.exit(result.ok ? 0 : 1);
