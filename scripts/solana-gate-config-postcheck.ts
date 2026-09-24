@@ -5,11 +5,13 @@ import { resolve } from "node:path";
 import { inspectSolanaGateConfigAfterInitialize } from "@/lib/partner/testnetGateDeploymentKit/solanaGateConfigPostcheck";
 import { buildVerifiedSolanaDevnetRegistryManifest } from "@/lib/partner/testnetGateDeploymentKit/solanaDevnetRegistryManifest";
 import { prepareSolanaProtocolAccessPacket } from "@/lib/partner/testnetGateDeploymentKit/solanaProtocolAccessPacket";
+import { inspectSolanaProtocolAccessAfterInitialize } from "@/lib/partner/testnetGateDeploymentKit/solanaProtocolAccessPostcheck";
 
 const manifestMode = process.argv.length === 4 && process.argv[3] === "--manifest";
 const consumerMode = process.argv.length === 4 && process.argv[3] === "--consumer-packet";
-if ((!manifestMode && !consumerMode && process.argv.length !== 3) || !process.argv[2] || process.argv[2].startsWith("-")) {
-  process.stderr.write("usage: npx tsx scripts/solana-gate-config-postcheck.ts /path/to/public-signer-document.json [--manifest|--consumer-packet]\n");
+const consumerCheckMode = process.argv.length === 4 && process.argv[3] === "--consumer-check";
+if ((!manifestMode && !consumerMode && !consumerCheckMode && process.argv.length !== 3) || !process.argv[2] || process.argv[2].startsWith("-")) {
+  process.stderr.write("usage: npx tsx scripts/solana-gate-config-postcheck.ts /path/to/public-signer-document.json [--manifest|--consumer-packet|--consumer-check]\n");
   process.exit(2);
 }
 let signerDocument: unknown;
@@ -70,6 +72,7 @@ const input = {
 const result = manifestMode
   ? await buildVerifiedSolanaDevnetRegistryManifest(input)
   : consumerMode ? await prepareSolanaProtocolAccessPacket(input)
+  : consumerCheckMode ? await inspectSolanaProtocolAccessAfterInitialize(input)
   : await inspectSolanaGateConfigAfterInitialize(input);
 process.stdout.write(`${JSON.stringify(manifestMode && result.ok && "manifest" in result ? result.manifest : result, null, 2)}\n`);
 process.exit(result.ok ? 0 : 1);

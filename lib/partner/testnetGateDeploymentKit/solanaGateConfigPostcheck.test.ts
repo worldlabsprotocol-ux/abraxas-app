@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createHash } from "node:crypto";
 import { PublicKey } from "@solana/web3.js";
 import { solanaProgramElfKeccak, solanaProgramElfSha256 } from "@/lib/partner/onchainGateDeployments/solanaElfDigest";
 import { encodeGateConfigAccount, encodeProgramDataAccount, encodeUpgradeableProgramAccount } from "@/lib/partner/onchainGateDeployments/solanaObserve";
@@ -9,6 +10,8 @@ import { inspectSolanaGateConfigAfterInitialize } from "./solanaGateConfigPostch
 import { buildVerifiedSolanaDevnetRegistryManifest } from "./solanaDevnetRegistryManifest";
 import { parseOnchainDeploymentManifest } from "@/lib/partner/onchainGateDeployments/parseManifest";
 import { prepareSolanaProtocolAccessPacket } from "./solanaProtocolAccessPacket";
+import { inspectSolanaProtocolAccessAfterInitialize } from "./solanaProtocolAccessPostcheck";
+import { initializeLocalSolanaProtocolAccess } from "./solanaProtocolAccessLocalInitialize";
 
 const admin = "28M4TxRGsh5fbo7BDfR7gtdAxbsPjmMJiX8LAU32doHt";
 const verifier = `0x${"11".repeat(32)}`;
@@ -61,7 +64,58 @@ function check(accounts = accountMap(), genesis = async () => SOLANA_DEVNET_GENE
     readAccount: async (key) => accounts.get(key) ?? null });
 }
 
+const [protocolPda, protocolBump] = PublicKey.findProgramAddressSync(
+  [Buffer.from("protocol_access_config"), pda.toBuffer()], new PublicKey(plan.partner_program_id),
+);
+function protocolAccount() {
+  return { owner: plan.partner_program_id, data: Buffer.concat([
+    createHash("sha256").update("account:ProtocolAccessConfig").digest().subarray(0, 8),
+    pda.toBuffer(),
+    ...[plan.partner_hash, plan.policy_hash, plan.action_hash, plan.environment_hash]
+      .map((hash) => Buffer.from(hash.slice(2), "hex")),
+    Buffer.from([protocolBump]),
+  ]) };
+}
+
 describe("exact read-only Solana GateConfig postcheck", () => {
+  it("checks the initialized consumer account byte for byte", async () => {
+    const accounts = accountMap();
+    const run = () => inspectSolanaProtocolAccessAfterInitialize({ ...binding, reviewed,
+      genesis: async () => SOLANA_DEVNET_GENESIS_HASH,
+      readAccount: async (key) => accounts.get(key) ?? null,
+    });
+    expect(await run()).toEqual({ ok: false, reason: "protocol_config_missing", broadcast: false });
+    accounts.set(protocolPda.toBase58(), protocolAccount());
+    expect(await run()).toMatchObject({ ok: true, protocol_config: "exact_match",
+      protocol_config_pda: protocolPda.toBase58(), registered: false, broadcast: false });
+    const changed = protocolAccount(); changed.data[8 + 32 + 32] ^= 1;
+    accounts.set(protocolPda.toBase58(), changed);
+    expect(await run()).toEqual({ ok: false, reason: "protocol_config_mismatch", broadcast: false });
+  });
+
+  it("allows one human consumer initialization after two clean prechecks", async () => {
+    const accounts = accountMap();
+    let simulated = 0; let sent = 0;
+    const signature = "1".repeat(88);
+    const chain = {
+      genesis: async () => SOLANA_DEVNET_GENESIS_HASH,
+      readAccount: async (key: string) => accounts.get(key) ?? null,
+      simulate: async () => { simulated += 1; return true; },
+      send: async () => { sent += 1; return signature; },
+      confirm: async () => { accounts.set(protocolPda.toBase58(), protocolAccount()); return true; },
+    };
+    const execute = (overrides: Record<string, unknown> = {}) => initializeLocalSolanaProtocolAccess({
+      ...binding, reviewed, confirm: true, ownershipReviewed: true, interactive: true,
+      signerPubkey: admin, runtimeEnv: {}, chain, ...overrides,
+    });
+    expect(await execute({ runtimeEnv: { CI: "true" } })).toMatchObject({ ok: false, reason: "automated_environment_forbidden", broadcast: false });
+    expect(await execute({ signerPubkey: "wrong" })).toMatchObject({ ok: false, reason: "admin_key_mismatch", broadcast: false });
+    expect(sent).toBe(0);
+    expect(await execute()).toMatchObject({ ok: true, signature, protocol_config: "exact_match", broadcast: true, registered: false });
+    expect({ simulated, sent }).toEqual({ simulated: 1, sent: 1 });
+    expect(await execute()).toMatchObject({ ok: false, reason: "protocol_config_already_initialized", broadcast: false });
+    expect(sent).toBe(1);
+  });
   it("builds a consumer packet only after gate verification and vacant consumer PDA", async () => {
     const accounts = accountMap();
     const run = (rows: typeof accounts) => prepareSolanaProtocolAccessPacket({ ...binding, reviewed,
@@ -128,4 +182,3 @@ describe("exact read-only Solana GateConfig postcheck", () => {
     expect(await check(changed)).toEqual({ ok: false, reason: "gate_artifact_mismatch", broadcast: false });
   });
 });
-

@@ -59,7 +59,18 @@ The protocol-access consumer has a **separate** config PDA. After GateConfig pas
 npx tsx scripts/solana-gate-config-postcheck.ts /tmp/abraxas-solana-signer-public.json --consumer-packet
 ```
 
-The packet derives `protocol_access_config` from the verified gate PDA and pins partner, policy, action, and environment hashes to that gate. It includes the Anchor instruction bytes and four public account metas. It checks that the protocol config PDA is vacant and rechecks the devnet genesis hash. It has no keypair, signing, registration, or send path. An occupied PDA, changed GateConfig, wrong cluster, or modified binary fails closed. A human-operated local consumer initializer and exact post-initialization check are still required before claiming the cross-program action works on devnet.
+The packet derives `protocol_access_config` from the verified gate PDA and pins partner, policy, action, and environment hashes to that gate. It includes the Anchor instruction bytes and four public account metas. It checks that the protocol config PDA is vacant and rechecks the devnet genesis hash. It has no keypair, signing, registration, or send path. An occupied PDA, changed GateConfig, wrong cluster, or modified binary fails closed.
+
+After a human has reviewed the same ownership and current signer bindings, the **local Ubuntu operator** can initialize this consumer config using the same mode-0600 admin keypair and four public bindings as the GateConfig step:
+
+```bash
+npx tsx scripts/solana-gate-config-initialize-local.ts \
+  /tmp/abraxas-solana-signer-public.json --ownership-reviewed --confirm --consumer
+npx tsx scripts/solana-gate-config-postcheck.ts \
+  /tmp/abraxas-solana-signer-public.json --consumer-check
+```
+
+The consumer command refuses automation, wrong admin, stale/changed gate, mismatched program ELF, occupied consumer PDA, and failed simulation. It rechecks before sending one devnet transaction and requires finalized confirmation plus an exact byte-for-byte postcheck. A send error is `send_outcome_unknown`; inspect the PDA and transaction history before any retry. Neither this command nor its postcheck registers the deployment or proves a live holder-to-chain action. That still requires a separately verified and registered sandbox deployment, fresh institutional result and consent, current receipt re-fetch, chain attestation, and an observed onchain consume/expiry/replay test.
 
 The server RPC verifier also binds the on-chain signer slot to the current server-owned verification-key registry. A matching key ID with a different Ed25519 public verifier is `signer_update_required`; an unavailable, out-of-scope, or revoked registry signer cannot verify a gate. Registration and issuance re-observe this binding, so a signer rotation requires the partner's GateConfig to be updated and verified before new attestations can issue.
 
