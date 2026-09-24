@@ -2,7 +2,7 @@ import { SOLANA_GATE_V2_RELEASE, SOLANA_GATE_V2_RELEASE_R1 } from "./solanaV2Rel
 
 export const SOLANA_GATE_ARTIFACT_REGISTRY_VERSION = "1.1.0" as const;
 
-export const SOLANA_UPGRADEABLE_LOADER = "BPFLoaderUpgradeabld11111111111111111111111" as const;
+export const SOLANA_UPGRADEABLE_LOADER = "BPFLoaderUpgradeab1e11111111111111111111111" as const;
 export const SOLANA_GATE_CONFIG_SEED = "gate_config" as const;
 export const SOLANA_GATE_ACCOUNT_NAME = "GateConfig" as const;
 

@@ -48,6 +48,10 @@ function input(overrides: {
 }
 
 describe("read-only Solana devnet chain precheck", () => {
+  it("uses the canonical onchain upgradeable-loader owner", () => {
+    expect(SOLANA_UPGRADEABLE_LOADER).toBe("BPFLoaderUpgradeab1e11111111111111111111111");
+  });
+
   it("matches both upgradeable ELF digests and an uninitialized admin PDA", async () => {
     let genesisReads = 0;
     const result = await inspectSolanaDevnetBeforeConfig(input({
