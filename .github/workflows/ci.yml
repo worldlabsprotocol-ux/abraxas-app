@@ -25,6 +25,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Solana operator CLI CommonJS smoke
+        run: |
+          set +e
+          precheck=$(ABRAXAS_SOLANA_GATE_VERIFY_RPC_URL=invalid npx tsx scripts/solana-devnet-chain-precheck.ts 2>&1)
+          precheck_code=$?
+          postcheck=$(npx tsx scripts/solana-gate-config-postcheck.ts 2>&1)
+          postcheck_code=$?
+          initializer=$(npx tsx scripts/solana-gate-config-initialize-local.ts 2>&1)
+          initializer_code=$?
+          set -e
+          test "$precheck_code" -eq 1
+          echo "$precheck" | grep -q '"reason":"rpc_unavailable"'
+          test "$postcheck_code" -eq 2
+          echo "$postcheck" | grep -q 'usage: npx tsx scripts/solana-gate-config-postcheck.ts'
+          test "$initializer_code" -eq 2
+          echo "$initializer" | grep -q 'usage: npx tsx scripts/solana-gate-config-initialize-local.ts'
+
       - name: Homepage guard (protected UI surface)
         run: npm run check:homepage-guard
         env:

@@ -6,6 +6,7 @@ import { Connection, Keypair, PublicKey, Transaction, type TransactionInstructio
 import { automatedEnvironmentForbidden } from "@/lib/partner/testnetGateDeploymentKit/deploy";
 import { initializeLocalSolanaGateConfig } from "@/lib/partner/testnetGateDeploymentKit/solanaGateConfigLocalInitialize";
 
+async function main(): Promise<void> {
 const fail = (reason: string): never => {
   process.stdout.write(`${JSON.stringify({ ok: false, reason, broadcast: false })}\n`);
   process.exit(1);
@@ -94,3 +95,9 @@ const result = await initializeLocalSolanaGateConfig({
 });
 process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
 process.exit(result.ok ? 0 : 1);
+}
+
+void main().catch(() => {
+  process.stdout.write('{"ok":false,"reason":"local_initialize_failed","broadcast":false}\n');
+  process.exit(1);
+});
