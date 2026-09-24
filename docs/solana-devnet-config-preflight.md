@@ -45,6 +45,14 @@ npx tsx scripts/solana-gate-config-postcheck.ts /tmp/abraxas-solana-signer-publi
 
 The postcheck re-verifies both program binaries and the devnet genesis hash, then compares the account owner, PDA bump, admin, partner program, policy/action/network/environment hashes, subject and institutional flags, all-zero reusable organization/actor/category commitments, and the active signer key ID **and public verifier** byte for byte. A missing account or any changed byte fails closed. Its `registry_status: not_registered` is deliberate: passing does not register a deployment or permit attestation issuance. Human review must still confirm Launchpad ownership and run the existing verify/register path with a separate, exact registry manifest. No keypair, transaction, or secret is accepted by this script.
 
+To produce that manifest from the same exact on-chain check, after a successful postcheck run:
+
+```bash
+npx tsx scripts/solana-gate-config-postcheck.ts /tmp/abraxas-solana-signer-public.json --manifest > /tmp/abraxas-solana-devnet-observation.json
+```
+
+On success the output file contains **only the allowlisted registry manifest**, ready as input to the existing `abraxas-gate verify` and `register` commands. Check the command exit code before using the file; a failure writes a typed error instead. The exporter never accepts a browser-chosen program, PDA, digest, policy, action, signer, network, or environment. It derives them from the pinned plan and the exact live account; missing or changed chain data produces no manifest. Re-check the signer document and Launchpad ownership immediately before registration. A manifest is not a deployment ref or issuance permission; registration must independently re-observe the chain and return `verified_sandbox`.
+
 The server RPC verifier also binds the on-chain signer slot to the current server-owned verification-key registry. A matching key ID with a different Ed25519 public verifier is `signer_update_required`; an unavailable, out-of-scope, or revoked registry signer cannot verify a gate. Registration and issuance re-observe this binding, so a signer rotation requires the partner's GateConfig to be updated and verified before new attestations can issue.
 
 ## Local devnet initialization

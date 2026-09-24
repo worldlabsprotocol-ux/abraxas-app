@@ -6,6 +6,8 @@ import { SOLANA_UPGRADEABLE_LOADER } from "@/lib/partner/onchainGateDeployments/
 import { REVIEWED_DEVNET_PROGRAMS, SOLANA_DEVNET_GENESIS_HASH } from "./solanaDevnetChainPrecheck";
 import { planSolanaDevnetGateConfig } from "./solanaConfigPreflight";
 import { inspectSolanaGateConfigAfterInitialize } from "./solanaGateConfigPostcheck";
+import { buildVerifiedSolanaDevnetRegistryManifest } from "./solanaDevnetRegistryManifest";
+import { parseOnchainDeploymentManifest } from "@/lib/partner/onchainGateDeployments/parseManifest";
 
 const admin = "28M4TxRGsh5fbo7BDfR7gtdAxbsPjmMJiX8LAU32doHt";
 const verifier = `0x${"11".repeat(32)}`;
@@ -59,6 +61,25 @@ function check(accounts = accountMap(), genesis = async () => SOLANA_DEVNET_GENE
 }
 
 describe("exact read-only Solana GateConfig postcheck", () => {
+  it("exports only a parsed registry manifest after exact onchain observation", async () => {
+    const readAccount = async (key: string) => accountMap().get(key) ?? null;
+    const result = await buildVerifiedSolanaDevnetRegistryManifest({
+      ...binding, reviewed, genesis: async () => SOLANA_DEVNET_GENESIS_HASH, readAccount,
+    });
+    expect(result).toMatchObject({ ok: true, observed: "exact_match", registered: false, broadcast: false });
+    if (!result.ok) throw new Error(result.reason);
+    expect(parseOnchainDeploymentManifest(result.manifest).ok).toBe(true);
+    expect(result.manifest).toMatchObject({
+      network_id: "solana_devnet", gate_type: "solana", gate_config_pda: pda.toBase58(),
+      partner_hash: plan.partner_hash, policy_hash: plan.policy_hash, action_hash: plan.action_hash,
+      signer_key_id: binding.signerKeyId, environment: "sandbox", subject_binding_mode: "required",
+    });
+    const missing = accountMap(); missing.delete(pda.toBase58());
+    expect(await buildVerifiedSolanaDevnetRegistryManifest({ ...binding, reviewed,
+      genesis: async () => SOLANA_DEVNET_GENESIS_HASH,
+      readAccount: async (key) => missing.get(key) ?? null,
+    })).toEqual({ ok: false, reason: "gate_config_missing", registered: false, broadcast: false });
+  });
   it("matches the full account including signer public key and zero reusable commitments", async () => {
     expect(await check()).toMatchObject({ ok: true, gate_config: "exact_match",
       gate_config_pda: pda.toBase58(), registry_status: "not_registered", broadcast: false });

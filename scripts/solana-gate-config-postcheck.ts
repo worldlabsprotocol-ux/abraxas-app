@@ -3,9 +3,11 @@
 import { readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { inspectSolanaGateConfigAfterInitialize } from "@/lib/partner/testnetGateDeploymentKit/solanaGateConfigPostcheck";
+import { buildVerifiedSolanaDevnetRegistryManifest } from "@/lib/partner/testnetGateDeploymentKit/solanaDevnetRegistryManifest";
 
-if (process.argv.length !== 3 || !process.argv[2] || process.argv[2].startsWith("-")) {
-  process.stderr.write("usage: npx tsx scripts/solana-gate-config-postcheck.ts /path/to/public-signer-document.json\n");
+const manifestMode = process.argv.length === 4 && process.argv[3] === "--manifest";
+if ((!manifestMode && process.argv.length !== 3) || !process.argv[2] || process.argv[2].startsWith("-")) {
+  process.stderr.write("usage: npx tsx scripts/solana-gate-config-postcheck.ts /path/to/public-signer-document.json [--manifest]\n");
   process.exit(2);
 }
 let signerDocument: unknown;
@@ -40,7 +42,7 @@ async function rpc(method: string, params: unknown[]): Promise<unknown> {
   if (parsed.error || parsed.result === undefined) throw new Error("rpc_unavailable");
   return parsed.result;
 }
-const result = await inspectSolanaGateConfigAfterInitialize({
+const input = {
   partnerId: process.env.ABRAXAS_GATE_PARTNER_ID ?? "",
   applicationId: process.env.ABRAXAS_GATE_APPLICATION_ID ?? "",
   adminPubkey: process.env.ABRAXAS_GATE_ADMIN_PUBKEY ?? "",
@@ -62,6 +64,9 @@ const result = await inspectSolanaGateConfigAfterInitialize({
     if (row.data[0].length > 1500000) return { unavailable: true };
     return { owner: row.owner, data: Buffer.from(row.data[0], "base64") };
   },
-});
-process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+};
+const result = manifestMode
+  ? await buildVerifiedSolanaDevnetRegistryManifest(input)
+  : await inspectSolanaGateConfigAfterInitialize(input);
+process.stdout.write(`${JSON.stringify(manifestMode && result.ok && "manifest" in result ? result.manifest : result, null, 2)}\n`);
 process.exit(result.ok ? 0 : 1);
