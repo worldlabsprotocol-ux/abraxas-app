@@ -8,6 +8,7 @@ import { planSolanaDevnetGateConfig } from "./solanaConfigPreflight";
 import { inspectSolanaGateConfigAfterInitialize } from "./solanaGateConfigPostcheck";
 import { buildVerifiedSolanaDevnetRegistryManifest } from "./solanaDevnetRegistryManifest";
 import { parseOnchainDeploymentManifest } from "@/lib/partner/onchainGateDeployments/parseManifest";
+import { prepareSolanaProtocolAccessPacket } from "./solanaProtocolAccessPacket";
 
 const admin = "28M4TxRGsh5fbo7BDfR7gtdAxbsPjmMJiX8LAU32doHt";
 const verifier = `0x${"11".repeat(32)}`;
@@ -61,6 +62,28 @@ function check(accounts = accountMap(), genesis = async () => SOLANA_DEVNET_GENE
 }
 
 describe("exact read-only Solana GateConfig postcheck", () => {
+  it("builds a consumer packet only after gate verification and vacant consumer PDA", async () => {
+    const accounts = accountMap();
+    const run = (rows: typeof accounts) => prepareSolanaProtocolAccessPacket({ ...binding, reviewed,
+      genesis: async () => SOLANA_DEVNET_GENESIS_HASH,
+      readAccount: async (key) => rows.get(key) ?? null,
+    });
+    const result = await run(accounts);
+    expect(result).toMatchObject({ ok: true, packet: { gate_config: "exact_match",
+      protocol_config: "uninitialized", registered: false, broadcast: false,
+      gate_config_pda: plan.gate_config_pda, program_id: plan.partner_program_id } });
+    if (!result.ok) throw new Error(result.reason);
+    expect(result.packet.accounts).toHaveLength(4);
+    expect(result.packet.accounts[0]).toMatchObject({ pubkey: admin, is_signer: true, is_writable: true });
+    const data = Buffer.from(result.packet.instruction_data_base64, "base64");
+    expect(data).toHaveLength(136);
+    expect(data.subarray(8, 40).toString("hex")).toBe(plan.partner_hash.slice(2));
+    expect(data.subarray(40, 72).toString("hex")).toBe(plan.policy_hash.slice(2));
+    const occupied = accountMap(); occupied.set(result.packet.protocol_config_pda, { owner: plan.partner_program_id, data: new Uint8Array(8) });
+    expect(await run(occupied)).toEqual({ ok: false, reason: "protocol_config_already_initialized", broadcast: false });
+    const wrongGate = accountMap(); wrongGate.delete(plan.gate_config_pda);
+    expect(await run(wrongGate)).toEqual({ ok: false, reason: "gate_config_missing", broadcast: false });
+  });
   it("exports only a parsed registry manifest after exact onchain observation", async () => {
     const readAccount = async (key: string) => accountMap().get(key) ?? null;
     const result = await buildVerifiedSolanaDevnetRegistryManifest({

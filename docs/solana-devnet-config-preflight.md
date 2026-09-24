@@ -53,6 +53,14 @@ npx tsx scripts/solana-gate-config-postcheck.ts /tmp/abraxas-solana-signer-publi
 
 On success the output file contains **only the allowlisted registry manifest**, ready as input to the existing `abraxas-gate verify` and `register` commands. Check the command exit code before using the file; a failure writes a typed error instead. The exporter never accepts a browser-chosen program, PDA, digest, policy, action, signer, network, or environment. It derives them from the pinned plan and the exact live account; missing or changed chain data produces no manifest. Re-check the signer document and Launchpad ownership immediately before registration. A manifest is not a deployment ref or issuance permission; registration must independently re-observe the chain and return `verified_sandbox`.
 
+The protocol-access consumer has a **separate** config PDA. After GateConfig passes its exact postcheck, generate a read-only instruction packet:
+
+```bash
+npx tsx scripts/solana-gate-config-postcheck.ts /tmp/abraxas-solana-signer-public.json --consumer-packet
+```
+
+The packet derives `protocol_access_config` from the verified gate PDA and pins partner, policy, action, and environment hashes to that gate. It includes the Anchor instruction bytes and four public account metas. It checks that the protocol config PDA is vacant and rechecks the devnet genesis hash. It has no keypair, signing, registration, or send path. An occupied PDA, changed GateConfig, wrong cluster, or modified binary fails closed. A human-operated local consumer initializer and exact post-initialization check are still required before claiming the cross-program action works on devnet.
+
 The server RPC verifier also binds the on-chain signer slot to the current server-owned verification-key registry. A matching key ID with a different Ed25519 public verifier is `signer_update_required`; an unavailable, out-of-scope, or revoked registry signer cannot verify a gate. Registration and issuance re-observe this binding, so a signer rotation requires the partner's GateConfig to be updated and verified before new attestations can issue.
 
 ## Local devnet initialization
