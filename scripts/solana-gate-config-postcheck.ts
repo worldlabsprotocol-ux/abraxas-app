@@ -6,6 +6,7 @@ import { inspectSolanaGateConfigAfterInitialize } from "@/lib/partner/testnetGat
 import { buildVerifiedSolanaDevnetRegistryManifest } from "@/lib/partner/testnetGateDeploymentKit/solanaDevnetRegistryManifest";
 import { prepareSolanaProtocolAccessPacket } from "@/lib/partner/testnetGateDeploymentKit/solanaProtocolAccessPacket";
 
+async function main(): Promise<void> {
 const manifestMode = process.argv.length === 4 && process.argv[3] === "--manifest";
 const consumerMode = process.argv.length === 4 && process.argv[3] === "--consumer-packet";
 if ((!manifestMode && !consumerMode && process.argv.length !== 3) || !process.argv[2] || process.argv[2].startsWith("-")) {
@@ -73,3 +74,9 @@ const result = manifestMode
   : await inspectSolanaGateConfigAfterInitialize(input);
 process.stdout.write(`${JSON.stringify(manifestMode && result.ok && "manifest" in result ? result.manifest : result, null, 2)}\n`);
 process.exit(result.ok ? 0 : 1);
+}
+
+void main().catch(() => {
+  process.stdout.write('{"ok":false,"reason":"postcheck_failed","broadcast":false}\n');
+  process.exit(1);
+});

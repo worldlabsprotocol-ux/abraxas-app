@@ -2,6 +2,7 @@
 // Public, read-only Solana RPC inspection. Never loads keypairs, signs, or broadcasts.
 import { inspectSolanaDevnetBeforeConfig } from "@/lib/partner/testnetGateDeploymentKit/solanaDevnetChainPrecheck";
 
+async function main(): Promise<void> {
 const adminPubkey = process.env.ABRAXAS_GATE_ADMIN_PUBKEY ?? "";
 const rpcUrl = process.env.ABRAXAS_SOLANA_GATE_VERIFY_RPC_URL?.trim() || "https://api.devnet.solana.com";
 let url: URL;
@@ -50,4 +51,9 @@ const result = await inspectSolanaDevnetBeforeConfig({
 });
 process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
 process.exit(result.ok ? 0 : 1);
+}
 
+void main().catch(() => {
+  process.stdout.write('{"ok":false,"reason":"precheck_failed","broadcast":false}\n');
+  process.exit(1);
+});
