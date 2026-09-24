@@ -24,8 +24,8 @@ function uint256(value: number): Uint8Array {
   const bytes = new Uint8Array(32);
   let remainder = BigInt(value);
   for (let index = 31; index >= 0; index -= 1) {
-    bytes[index] = Number(remainder & 255n);
-    remainder >>= 8n;
+    bytes[index] = Number(remainder & BigInt(255));
+    remainder >>= BigInt(8);
   }
   return bytes;
 }
