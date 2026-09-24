@@ -54,7 +54,7 @@ jobs:
         run: npm run check:trust-contract-drift
 
       - name: Onchain gate deployment and Solana observation tests
-        run: npx vitest run lib/partner/onchainGateDeployments/onchainGateDeployments.test.ts lib/partner/onchainGateDeployments/solanaObserve.test.ts lib/partner/testnetGateDeploymentKit/testnetGateDeploymentKit.test.ts lib/partner/testnetGateDeploymentKit/solanaConfigPreflight.test.ts lib/partner/testnetGateDeploymentKit/solanaConfigInitialize.test.ts lib/partner/testnetGateDeploymentKit/solanaDevnetChainPrecheck.test.ts lib/partner/testnetGateDeploymentKit/solanaGateConfigPostcheck.test.ts lib/partner/testnetGateDeploymentKit/solanaGateConfigLocalInitialize.test.ts
+        run: npx vitest run lib/partner/onchainGateDeployments/onchainGateDeployments.test.ts lib/partner/onchainGateDeployments/solanaObserve.test.ts lib/partner/testnetGateDeploymentKit/testnetGateDeploymentKit.test.ts lib/partner/testnetGateDeploymentKit/solanaConfigPreflight.test.ts lib/partner/testnetGateDeploymentKit/solanaConfigInitialize.test.ts lib/partner/testnetGateDeploymentKit/solanaDevnetChainPrecheck.test.ts lib/partner/testnetGateDeploymentKit/solanaGateConfigPostcheck.test.ts lib/partner/testnetGateDeploymentKit/solanaGateConfigLocalInitialize.test.ts lib/partner/testnetGateDeploymentKit/solanaProtocolAccessLocalInitialize.test.ts
 
       - name: DEMO Solana signer provisioning contract
         run: npx vitest run lib/partner/chainAttestationSignerLifecycle/demoSolanaProvision.test.ts lib/partner/chainAttestation/utf8.test.ts
