@@ -1,12 +1,26 @@
-// FILE: lib/partner/chainAttestation/hashes.ts
 // keccak256 hashes for chain-portable attestation fields. No PII.
 
-import { concat, keccak256, pad, toBytes, toHex } from "viem";
-import { utf8Bytes as stringToBytes } from "./utf8";
+import { utf8Bytes } from "./utf8";
 import { ZERO_BYTES32, type ChainAttestationEnvironment } from "./contract";
+import { keccakHex } from "@/lib/partner/chainAttestationSignerLifecycle/keccak";
+
+function join(parts: Uint8Array[]): Uint8Array {
+  const output = new Uint8Array(parts.reduce((total, part) => total + part.length, 0));
+  let offset = 0;
+  for (const part of parts) { output.set(part, offset); offset += part.length; }
+  return output;
+}
+
+function uint256(value: number): Uint8Array {
+  if (!Number.isSafeInteger(value) || value < 0) throw new Error("invalid_uint256");
+  const bytes = new Uint8Array(32);
+  let remainder = BigInt(value);
+  for (let i = 31; i >= 0; i -= 1) { bytes[i] = Number(remainder & 255n); remainder >>= 8n; }
+  return bytes;
+}
 
 export function hashUtf8(value: string): `0x${string}` {
-  return keccak256(stringToBytes(value));
+  return keccakHex(utf8Bytes(value));
 }
 
 export function hashPartnerId(partnerId: string): `0x${string}` {
@@ -18,11 +32,11 @@ export function hashNetworkId(networkId: string): `0x${string}` {
 }
 
 export function hashPolicy(policyId: string, policyVersion: number): `0x${string}` {
-  return keccak256(concat([stringToBytes(policyId.trim()), pad(toHex(policyVersion), { size: 32 })]));
+  return keccakHex(join([utf8Bytes(policyId.trim()), uint256(policyVersion)]));
 }
 
 export function hashAction(actionType: string, actionScope: string): `0x${string}` {
-  return keccak256(concat([stringToBytes(actionType), stringToBytes("\0"), stringToBytes(actionScope)]));
+  return keccakHex(join([utf8Bytes(actionType), new Uint8Array([0]), utf8Bytes(actionScope)]));
 }
 
 export function hashEnvironment(environment: ChainAttestationEnvironment): `0x${string}` {
@@ -43,11 +57,11 @@ export function hashSubjectBinding(bindingHash: string | null | undefined): `0x$
 export function randomBytes32(): `0x${string}` {
   const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
-  return toHex(bytes);
+  return `0x${Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("")}`;
 }
 
 export function bytes32FromUuid(id: string): `0x${string}` {
-  return keccak256(stringToBytes(id));
+  return keccakHex(utf8Bytes(id));
 }
 
 export function unixSeconds(iso: string): number {
@@ -64,5 +78,9 @@ export function encodeU64Be(value: number): Uint8Array {
 }
 
 export function encodeU32Be(value: number): Uint8Array {
-  return toBytes(value, { size: 4 });
+  if (!Number.isSafeInteger(value) || value < 0 || value > 0xffffffff) throw new Error("invalid_uint32");
+  const bytes = new Uint8Array(4);
+  new DataView(bytes.buffer).setUint32(0, value, false);
+  return bytes;
 }
+
