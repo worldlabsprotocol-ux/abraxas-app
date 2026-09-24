@@ -1,8 +1,8 @@
-import { keccak256 } from "viem";
 import { utf8Bytes as stringToBytes } from "@/lib/partner/chainAttestation/utf8";
+import { keccakHex } from "./keccak";
 
 export function fingerprintPublicVerifier(value: string): `0x${string}` {
-  return keccak256(stringToBytes(value.trim().toLowerCase()));
+  return keccakHex(stringToBytes(value.trim().toLowerCase()));
 }
 
 export function assertNoPrivateAttestationSignerMaterial(payload: unknown): string[] {
