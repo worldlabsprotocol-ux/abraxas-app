@@ -1,7 +1,45 @@
-import { concat, keccak256, pad, toHex } from "viem";
-import { utf8Bytes as stringToBytes } from "@/lib/partner/chainAttestation/utf8";
+import { utf8Bytes } from "@/lib/partner/chainAttestation/utf8";
+import { keccakHex } from "@/lib/partner/chainAttestationSignerLifecycle/keccak";
 import { hashAction, hashEnvironment, hashPartnerId, hashPolicy, hashSignerKeyId } from "@/lib/partner/chainAttestation/hashes";
 import type { EvmDeploymentManifest, SolanaDeploymentManifest } from "./types";
+
+function hexBytes(value: `0x${string}`): Uint8Array {
+  const hex = value.slice(2);
+  if (hex.length % 2 !== 0 || !/^[0-9a-fA-F]*$/.test(hex)) throw new Error("invalid_hex");
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let index = 0; index < bytes.length; index += 1) {
+    bytes[index] = Number.parseInt(hex.slice(index * 2, index * 2 + 2), 16);
+  }
+  return bytes;
+}
+
+function bytes32(value: `0x${string}`): Uint8Array {
+  const bytes = hexBytes(value);
+  if (bytes.length !== 32) throw new Error("invalid_bytes32");
+  return bytes;
+}
+
+function uint256(value: number): Uint8Array {
+  if (!Number.isSafeInteger(value) || value < 0) throw new Error("invalid_uint256");
+  const bytes = new Uint8Array(32);
+  let remainder = BigInt(value);
+  for (let index = 31; index >= 0; index -= 1) {
+    bytes[index] = Number(remainder & 255n);
+    remainder >>= 8n;
+  }
+  return bytes;
+}
+
+function concatBytes(parts: Uint8Array[]): Uint8Array {
+  const output = new Uint8Array(parts.reduce((total, part) => total + part.length, 0));
+  let offset = 0;
+  for (const part of parts) { output.set(part, offset); offset += part.length; }
+  return output;
+}
+
+function digest(parts: Uint8Array[]): `0x${string}` {
+  return keccakHex(concatBytes(parts));
+}
 
 export function expectedEvmConfigDigest(input: {
   chainId: number;
@@ -13,16 +51,17 @@ export function expectedEvmConfigDigest(input: {
   signerKeyId: string;
   subjectBindingMode: string;
 }): `0x${string}` {
-  return keccak256(concat([
-    pad(toHex(input.chainId), { size: 32 }),
-    pad(input.gateAddress, { size: 32 }),
-    input.partnerHash,
-    input.policyHash,
-    input.actionHash,
-    input.environment,
-    keccak256(stringToBytes(input.signerKeyId)),
-    keccak256(stringToBytes(input.subjectBindingMode)),
-  ]));
+  const address = hexBytes(input.gateAddress);
+  if (address.length !== 20) throw new Error("invalid_address");
+  const paddedAddress = new Uint8Array(32);
+  paddedAddress.set(address, 12);
+  return digest([
+    uint256(input.chainId), paddedAddress,
+    bytes32(input.partnerHash), bytes32(input.policyHash), bytes32(input.actionHash),
+    bytes32(input.environment),
+    bytes32(keccakHex(utf8Bytes(input.signerKeyId))),
+    bytes32(keccakHex(utf8Bytes(input.subjectBindingMode))),
+  ]);
 }
 
 export function expectedSolanaConfigDigest(input: {
@@ -37,18 +76,15 @@ export function expectedSolanaConfigDigest(input: {
   signerKeyId: string;
   subjectBindingMode: string;
 }): `0x${string}` {
-  return keccak256(concat([
-    keccak256(stringToBytes(input.programId)),
-    keccak256(stringToBytes(input.partnerProgramId)),
-    keccak256(stringToBytes(input.gateConfigPda)),
-    input.programDigest,
-    input.partnerHash,
-    input.policyHash,
-    input.actionHash,
-    input.environment,
-    keccak256(stringToBytes(input.signerKeyId)),
-    keccak256(stringToBytes(input.subjectBindingMode)),
-  ]));
+  return digest([
+    bytes32(keccakHex(utf8Bytes(input.programId))),
+    bytes32(keccakHex(utf8Bytes(input.partnerProgramId))),
+    bytes32(keccakHex(utf8Bytes(input.gateConfigPda))),
+    bytes32(input.programDigest), bytes32(input.partnerHash), bytes32(input.policyHash),
+    bytes32(input.actionHash), bytes32(input.environment),
+    bytes32(keccakHex(utf8Bytes(input.signerKeyId))),
+    bytes32(keccakHex(utf8Bytes(input.subjectBindingMode))),
+  ]);
 }
 
 export function hashesForApplication(input: {
@@ -96,3 +132,4 @@ export function solanaDigestFromManifest(manifest: SolanaDeploymentManifest, env
     subjectBindingMode: manifest.subject_binding_mode,
   });
 }
+
