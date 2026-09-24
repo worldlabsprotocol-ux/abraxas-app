@@ -11,12 +11,13 @@ function join(parts: Uint8Array[]): Uint8Array {
   return output;
 }
 
-function uint256(value: number): Uint8Array {
-  if (!Number.isSafeInteger(value) || value < 0) throw new Error("invalid_uint256");
-  const bytes = new Uint8Array(32);
-  let remainder = BigInt(value);
-  for (let i = 31; i >= 0; i -= 1) { bytes[i] = Number(remainder & 255n); remainder >>= 8n; }
-  return bytes;
+function legacyPolicyVersionBytes(value: number): Uint8Array {
+  if (!Number.isSafeInteger(value) || value < 0) throw new Error("invalid_policy_version");
+  // Preserve the released policy hash: viem concat([Uint8Array, paddedHex])
+  // treated the 66-character hex string as an array of numeric characters.
+  // Changing this encoding would invalidate existing on-chain GateConfigs.
+  const paddedHex = `0x${value.toString(16).padStart(64, "0")}`;
+  return Uint8Array.from(paddedHex, (character) => Number(character) || 0);
 }
 
 export function hashUtf8(value: string): `0x${string}` {
@@ -32,7 +33,7 @@ export function hashNetworkId(networkId: string): `0x${string}` {
 }
 
 export function hashPolicy(policyId: string, policyVersion: number): `0x${string}` {
-  return keccakHex(join([utf8Bytes(policyId.trim()), uint256(policyVersion)]));
+  return keccakHex(join([utf8Bytes(policyId.trim()), legacyPolicyVersionBytes(policyVersion)]));
 }
 
 export function hashAction(actionType: string, actionScope: string): `0x${string}` {
