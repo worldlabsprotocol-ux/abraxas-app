@@ -166,6 +166,7 @@ export function projectPartner(record: HostedHandoffRecord): HostedHandoffPartne
   const live = refreshStatus(record);
   return {
     ...projectPublic(live),
+    application_id: live.application_id,
     public_receipt_id: live.status === "completed" || live.status === "consumed" ? live.public_receipt_id : null,
     action: live.action,
     policy_version: live.policy_version,
