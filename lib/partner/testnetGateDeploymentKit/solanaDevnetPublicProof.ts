@@ -104,7 +104,7 @@ export async function verifyInstitutionalSolanaDevnetSignature(signature: string
       data: decodeBase58(ix.data),
     }));
     return verifyInstitutionalSolanaDevnetProof({
-      transaction: { signature, slot: observed.slot, blockTime: observed.blockTime,
+      transaction: { signature, slot: observed.slot, blockTime: observed.blockTime ?? null,
         succeeded: observed.meta?.err === null, payer: keys[0] ?? "", instructions },
       readAccount: async (key) => {
         const account = await connection.getAccountInfo(new PublicKey(key), "finalized");
