@@ -90,8 +90,10 @@ export async function POST(req: NextRequest) {
     typed_data: issued.typed_data ?? null,
     signature: issued.signature ?? null,
     solana_message: issued.solana_message ?? null,
+    solana_signature: issued.solana_signature ?? null,
     notice: CHAIN_ATTESTATION_NOT_EXECUTION,
   };
   if (chainAttestationHasForbiddenKeys(partnerBody).length) return fail("invalid", 500);
   return NextResponse.json(partnerBody);
 }
+
