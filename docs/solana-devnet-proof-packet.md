@@ -58,4 +58,32 @@ history before doing anything else. A fresh attestation is required for another
 attempt. The runner reports `replay_simulation_denied`; it does not claim a
 finalized failed replay transaction or an expiry observation.
 
+If the sandbox partner has a current institutional receipt, a verified gate
+deployment ref, and an `abx_test_` key with the `verify:requests` scope, the
+operator can issue and run in one session. This avoids copying an expiring
+attestation into a file manually. The key goes only in an Ubuntu environment
+variable, never in the command line or repository. The command checks the
+reviewed config before issuance, calls the authenticated partner API with the
+fixed `activate_protocol_access` action, writes the signed message to a
+private temporary file, runs the local proof, then removes the file.
+
+```bash
+cd ~/abraxas-devnet
+export ABRAXAS_GATE_ADMIN_KEYPAIR_PATH="$HOME/.config/solana/id.json"
+export ABRAXAS_SANDBOX_PARTNER_API_KEY='abx_test_...'
+npx tsx scripts/solana-devnet-proof-issue-and-run-local.ts \
+  '<current-institutional-receipt-id>' \
+  '<verified-sandbox-deployment-ref>' \
+  /tmp/abraxas-solana-signer-public.json \
+  --ownership-reviewed --confirm
+unset ABRAXAS_SANDBOX_PARTNER_API_KEY
+```
+
+The existing `ABRAXAS_GATE_PARTNER_ID`, `ABRAXAS_GATE_APPLICATION_ID`,
+`ABRAXAS_GATE_ADMIN_PUBKEY`, and `ABRAXAS_GATE_SIGNER_KEY_ID` values remain
+required by the chain postcheck. A key limited to `webhooks:read` cannot issue
+this attestation. Issuance consumes a server nonce even if the subsequent
+transaction fails; obtain a new receipt-bound attestation before retrying.
+
+
 
