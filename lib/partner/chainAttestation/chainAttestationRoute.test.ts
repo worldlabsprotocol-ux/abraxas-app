@@ -91,4 +91,21 @@ describe("chain attestation issuance route", () => {
     expect(json.private_key).toBeUndefined();
     expect(json.signature).toBeUndefined();
   });
+
+  it("returns the Solana signature only to an authenticated partner", async () => {
+    authenticatePartnerMock.mockResolvedValue({ ok: true, ctx: { partnerId: "acme" } });
+    getAppMock.mockResolvedValue({ id: "app-1", partner_id: "acme", policy_id: "policy-1", policy_version: 1, environment: "sandbox" });
+    issueMock.mockResolvedValue({
+      ok: true, encoding: "solana", attestation_id: "att-1",
+      client: { allowed: true, reason: "permitted", action_binding: { action_type: "activate_protocol_access", action_scope: "sandbox:protocol_access", nonce_state: "issued", wallet_binding: "required" }, expires_at: "2026-09-25T00:00:00Z", schema_version: 2, network_id: "solana_devnet", environment: "sandbox" },
+      solana_message: "0x1234", solana_signature: "0xabcd",
+    });
+    const response = await POST(req({ ...validBody, action_type: "activate_protocol_access", network_id: "solana_devnet" }));
+    expect(response.status).toBe(200);
+    const json = await response.json();
+    expect(json.solana_message).toBe("0x1234");
+    expect(json.solana_signature).toBe("0xabcd");
+    expect(json.private_key).toBeUndefined();
+  });
 });
+

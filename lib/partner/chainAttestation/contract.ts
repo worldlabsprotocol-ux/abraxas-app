@@ -105,6 +105,7 @@ export const CHAIN_ATTESTATION_PARTNER_VISIBLE_KEYS = [
   "typed_data",
   "signature",
   "solana_message",
+  "solana_signature",
   "encoding",
 ] as const;
 
@@ -228,3 +229,4 @@ export function isChainAttestationEvmNetwork(value: string): boolean {
 export function isChainAttestationSolanaNetwork(value: string): boolean {
   return (CHAIN_ATTESTATION_SOLANA_NETWORKS as readonly string[]).includes(value);
 }
+
