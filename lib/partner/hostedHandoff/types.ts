@@ -45,6 +45,7 @@ export interface HostedHandoffPublicView {
 }
 
 export interface HostedHandoffPartnerView extends HostedHandoffPublicView {
+  application_id: string;
   public_receipt_id: string | null;
   action: PartnerFlowAction;
   policy_version: number;
