@@ -41,8 +41,9 @@ export default function TestnetGateDeploymentDocsPage() {
           The reference gate artifact <code>{SOLANA_GATE_V2_RELEASE.artifact_id}</code> was deployed to Solana devnet at{" "}
           <code>{SOLANA_GATE_V2_RELEASE.program_id}</code>. Its on-chain ELF matches reviewed keccak{" "}
           <code>{SOLANA_GATE_V2_RELEASE.program_data_digest}</code> and SHA-256{" "}
-          <code>{SOLANA_GATE_V2_RELEASE.elf_sha256}</code>. This is binary proof only: GateConfig has not been initialized,
-          no partner gate is registered, and no authorization is issuable from this deployment. Independent operators
+          <code>{SOLANA_GATE_V2_RELEASE.elf_sha256}</code>. The reviewed devnet GateConfig and protocol-access consumer
+          configuration passed exact postchecks, and the institutional sandbox deployment is registered. A completed
+          authorize-and-consume transaction has not yet been demonstrated. Independent operators
           must still follow <code>solana/abraxas-eligibility-gate/REPRODUCIBLE_RELEASE.md</code> and verify their own deployment.
         </p>
       </ContentCard>
@@ -101,3 +102,4 @@ export default function TestnetGateDeploymentDocsPage() {
     </RedesignPage>
   );
 }
+
