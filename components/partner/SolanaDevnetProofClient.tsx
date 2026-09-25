@@ -6,7 +6,7 @@ type Proof =
   | { ok: true; network_id: "solana_devnet"; signature: string; slot: number;
       gate_program_id: string; consumer_program_id: string; authorization_pda: string;
       entitlement_pda: string; authorization_consumed: true; valid_until: number;
-      currently_valid: boolean; replay_broadcast_proven: false }
+      currently_valid: boolean; replay_broadcast_proven: false; current_deployment?: "matched" }
   | { ok: false; reason: string };
 
 const reasonText: Record<string, string> = {
@@ -20,6 +20,10 @@ const reasonText: Record<string, string> = {
   proof_account_mismatch: "The current account contents do not match the signed attestation.",
   proof_state_mismatch: "The authorization has not been consumed into the expected entitlement state.",
   wrong_cluster: "The configured RPC is not Solana devnet.",
+  gate_artifact_mismatch: "The current gate program differs from the reviewed release.",
+  consumer_artifact_mismatch: "The current consumer program differs from the reviewed release.",
+  gate_config_mismatch: "The current gate configuration differs from the reviewed binding.",
+  protocol_config_mismatch: "The current protocol configuration differs from the reviewed binding.",
   rpc_unavailable: "Solana devnet could not be checked right now. Try again shortly.",
 };
 
@@ -62,6 +66,7 @@ export function SolanaDevnetProofClient({ signature }: { signature: string }) {
         <div role="status" style={{ marginTop: "1.25rem" }}>
           <p style={row}><strong>Verified institutional devnet transaction</strong></p>
           <p style={row}>Authorization consumed: yes · Current access: {proof.currently_valid ? "valid" : "expired"}</p>
+          {proof.current_deployment === "matched" && <p style={row}>Current program binaries and configuration: reviewed match</p>}
           <p style={row}>Finalized in slot {proof.slot} · Valid until {new Date(proof.valid_until * 1000).toLocaleString()}</p>
           <p style={row}>Signature: <a style={mono} href={`https://explorer.solana.com/tx/${proof.signature}?cluster=devnet`} target="_blank" rel="noopener noreferrer">{proof.signature}</a></p>
           <p style={row}>Gate program: <span style={mono}>{proof.gate_program_id}</span></p>

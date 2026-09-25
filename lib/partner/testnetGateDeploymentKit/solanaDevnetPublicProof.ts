@@ -3,6 +3,7 @@ import { buildSolanaEd25519VerifyInstructionData, bytesToHex, decodeSolanaEligib
 import { prepareInstitutionalSolanaDevnetProofPacket } from "@/lib/partner/chainAttestation/solanaDevnetProofPacket";
 import { inspectInstitutionalSolanaDevnetProof } from "./solanaDevnetProofObserve";
 import { SOLANA_DEVNET_GENESIS_HASH } from "./solanaDevnetChainPrecheck";
+import { inspectCurrentInstitutionalDevnetDeployment } from "./solanaDevnetCurrentDeployment";
 
 const ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 export function decodeBase58(value: string): Uint8Array {
@@ -32,7 +33,7 @@ type Account = { owner: string; data: Uint8Array } | null;
 type PublicProof = { ok: true; network_id: "solana_devnet"; signature: string; slot: number;
   gate_program_id: string; consumer_program_id: string; authorization_pda: string; entitlement_pda: string;
   authorization_consumed: true; valid_until: number; currently_valid: boolean;
-  replay_broadcast_proven: false; broadcast: false } | { ok: false; reason: string; broadcast: false };
+  replay_broadcast_proven: false; current_deployment?: "matched"; broadcast: false } | { ok: false; reason: string; broadcast: false };
 
 const same = (a: Uint8Array, b: Uint8Array) => Buffer.from(a).equals(Buffer.from(b));
 function matches(actual: ProofInstruction, expected: TransactionInstruction): boolean {
@@ -103,14 +104,19 @@ export async function verifyInstitutionalSolanaDevnetSignature(signature: string
         isSigner: message.isAccountSigner(index), isWritable: message.isAccountWritable(index) })),
       data: decodeBase58(ix.data),
     }));
-    return verifyInstitutionalSolanaDevnetProof({
+    const readAccount = async (key: string) => {
+      const account = await connection.getAccountInfo(new PublicKey(key), "finalized");
+      return account ? { owner: account.owner.toBase58(), data: account.data } : null;
+    };
+    const proof = await verifyInstitutionalSolanaDevnetProof({
       transaction: { signature, slot: observed.slot, blockTime: observed.blockTime ?? null,
         succeeded: observed.meta?.err === null, payer: keys[0] ?? "", instructions },
-      readAccount: async (key) => {
-        const account = await connection.getAccountInfo(new PublicKey(key), "finalized");
-        return account ? { owner: account.owner.toBase58(), data: account.data } : null;
-      },
+      readAccount,
     });
+    if (!proof.ok) return proof;
+    const current = await inspectCurrentInstitutionalDevnetDeployment(readAccount);
+    if (!current.ok) return fail(current.reason);
+    return { ...proof, current_deployment: "matched" };
   } catch {
     return fail("rpc_unavailable");
   }
