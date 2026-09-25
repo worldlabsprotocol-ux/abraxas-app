@@ -85,5 +85,10 @@ required by the chain postcheck. A key limited to `webhooks:read` cannot issue
 this attestation. Issuance consumes a server nonce even if the subsequent
 transaction fails; obtain a new receipt-bound attestation before retrying.
 
+## Public transaction proof
 
+After the local runner returns a finalized signature, anyone can check it without a keypair or partner session:
 
+`GET https://demo.abraxasworld.xyz/api/solana/devnet/proof?signature=<finalized-signature>`
+
+The endpoint reads Solana devnet at finalized commitment. It requires the reviewed institutional signer and bindings, the exact Ed25519 → Gate authorize → Protocol Access activate instruction sequence, a successful transaction, and live authorization and entitlement accounts that match the signed message. The JSON reports the transaction slot, program IDs, account addresses, expiration, and whether access is currently valid. It does not return the subject or organization commitments. `currently_valid: false` after expiration does not erase the historical transaction. `replay_broadcast_proven: false` means this check does not establish that a second spend/replay was attempted. This devnet result is not production access or a mainnet deployment.
