@@ -26,12 +26,14 @@ export function OnchainGateDeploymentPanel({
   const [safeStatus, setSafeStatus] = useState("no_deployment_registered");
   const [institutionalLabel, setInstitutionalLabel] = useState("Standard eligibility gate.");
   const [signerHint, setSignerHint] = useState("");
+  const [devnetProofRef, setDevnetProofRef] = useState("");
   const [error, setError] = useState("");
   const [manifestText, setManifestText] = useState("");
   const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(async () => {
     setError("");
+    setDevnetProofRef("");
     try {
       const res = await fetch(`/api/launchpad/applications/${applicationId}/onchain-gate-deployments`, {
         credentials: "include",
@@ -41,6 +43,7 @@ export function OnchainGateDeploymentPanel({
         institutional_label?: string;
         error?: string;
         signer_updates?: Array<{ status?: string }>;
+        deployments?: Array<{ deployment_ref?: string; network_id?: string; status?: string; require_institutional?: boolean }>;
       };
       if (!res.ok) {
         setError("Could not load gate deployments.");
@@ -48,6 +51,10 @@ export function OnchainGateDeploymentPanel({
       }
       setSafeStatus(data.safe_status ?? "unavailable");
       setInstitutionalLabel(data.institutional_label ?? "Standard eligibility gate.");
+      const proofDeployment = data.deployments?.find((row) =>
+        row.network_id === "solana_devnet" && row.status === "verified_sandbox" && row.require_institutional === true,
+      );
+      setDevnetProofRef(proofDeployment?.deployment_ref ?? "");
       const update = data.signer_updates?.find((row) => row.status === "signer_update_required" || row.status === "signer_revoked");
       setSignerHint(update?.status ? `Signer package: ${update.status.replace(/_/g, " ")}. Apply the owner instruction on your gate. Abraxas does not send the transaction.` : "");
     } catch {
@@ -93,6 +100,13 @@ export function OnchainGateDeploymentPanel({
         {institutionalLabel}
       </p>
       {signerHint ? <p style={{ ...body, marginBottom: "0.65rem" }}>{signerHint}</p> : null}
+      {devnetProofRef ? (
+        <div style={{ ...body, marginBottom: "0.75rem" }}>
+          <strong style={{ color: "var(--text-primary)" }}>Institutional Solana devnet deployment ref</strong>
+          <div style={{ fontFamily: MONO, overflowWrap: "anywhere", userSelect: "text" }}>{devnetProofRef}</div>
+          <span>Use this ref with a current institutional receipt in the local devnet proof command. Registration alone is not an executed access proof.</span>
+        </div>
+      ) : null}
       {error && <p role="alert" style={{ ...body, color: "var(--danger, #f87171)", marginBottom: "0.7rem" }}>{error}</p>}
       <textarea
         aria-label="Deployment manifest JSON"
@@ -123,3 +137,4 @@ export function OnchainGateDeploymentPanel({
     </ContentCard>
   );
 }
+
