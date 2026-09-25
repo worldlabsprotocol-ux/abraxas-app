@@ -2,7 +2,7 @@
 // FILE: components/partner/launchpad/PartnerLaunchpadClient.tsx
 // Self service Partner Launchpad — guided sandbox integration workspace.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
@@ -125,6 +125,7 @@ export function PartnerLaunchpadClient({
     "Google sign-in creates an Abraxas account. It does not prove age, identity, residency, wallet control, membership, or any other eligibility claim.",
   );
   const [step, setStep] = useState<WizardStep>("application");
+  const initialStepResolved = useRef(false);
   const [error, setError] = useState("");
   const [apiKeyInput, setApiKeyInput] = useState("");
   const [revealedKey, setRevealedKey] = useState<string | null>(null);
@@ -188,14 +189,13 @@ export function PartnerLaunchpadClient({
         setActiveAppId(data.workspace.applications[0].id);
       }
       setAuthenticated(true);
-      if (typeof window !== "undefined") {
-        const view = new URLSearchParams(window.location.search).get("view");
-        if (view === "test") setStep("test");
-        if (view === "configure") setStep("configure");
-        if (view === "versions") setStep("versions");
-        if (view === "networks") setStep("networks");
-        if (view === "destinations") setStep("destinations");
-        if (view === "policy") setStep("policy");
+      if (!initialStepResolved.current) {
+        initialStepResolved.current = true;
+        const view = typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("view")
+          : null;
+        const requestedStep = STEPS.find((item) => item.id === view)?.id;
+        setStep(requestedStep ?? (data.workspace.applications.length > 0 ? "configure" : "application"));
       }
     }
   }, [activeAppId]);
@@ -284,6 +284,9 @@ export function PartnerLaunchpadClient({
     await fetch("/api/launchpad/auth/session", { method: "DELETE", credentials: "include" });
     setAuthenticated(false);
     setWorkspace(null);
+    setActiveAppId(null);
+    setStep("application");
+    initialStepResolved.current = false;
     setRevealedKey(null);
   }
 
@@ -507,7 +510,7 @@ export function PartnerLaunchpadClient({
       {error && <p role="alert" style={{ color: "#ef4444", fontFamily: FONT, fontSize: "0.72rem" }}>{error}</p>}
 
       {step === "application" && (
-        <ContentCard title="Create application">
+        <ContentCard title={activeApp ? "Create another application" : "Create application"}>
           <label style={labelStyle}>
             Application name
             <input value={applicationName} onChange={(e) => setApplicationName(e.target.value)} style={inputStyle} />
