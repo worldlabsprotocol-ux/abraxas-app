@@ -33,5 +33,29 @@ that the authorization PDA is vacant. The attestation expires quickly; generate
 the packet immediately before the transaction. The transaction must keep the
 Ed25519 instruction immediately before `authorize`. After submission, record
 the finalized signature, authorization consumed state, entitlement state, and
-a failed replay attempt. These observations are still outstanding.
+a failed replay attempt. These observations are still outstanding until the
+operator runs the live path below and retains its finalized signature.
+
+For a human-operated devnet transaction, use the same fresh issued attestation
+and public signer document. The local runner loads the fee payer keypair only
+from `ABRAXAS_GATE_ADMIN_KEYPAIR_PATH`, checks the reviewed binaries and exact
+config accounts, simulates, rechecks, sends once, confirms finalization, and
+compares both resulting account byte layouts. It then simulates a replay using
+the same attestation; this replay is **not broadcast**.
+
+```bash
+cd ~/abraxas-devnet
+export ABRAXAS_GATE_ADMIN_KEYPAIR_PATH="$HOME/.config/solana/id.json"
+npx tsx scripts/solana-devnet-proof-run-local.ts \
+  /path/outside/repo/issued-attestation.json \
+  /tmp/abraxas-solana-signer-public.json \
+  --ownership-reviewed --confirm
+```
+
+Use only the devnet fee payer, never a Mainnet key or a signer private key.
+If the send result is uncertain, inspect the authorization PDA and transaction
+history before doing anything else. A fresh attestation is required for another
+attempt. The runner reports `replay_simulation_denied`; it does not claim a
+finalized failed replay transaction or an expiry observation.
+
 
