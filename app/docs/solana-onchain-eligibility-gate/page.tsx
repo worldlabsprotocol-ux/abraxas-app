@@ -1,5 +1,5 @@
 // FILE: app/docs/solana-onchain-eligibility-gate/page.tsx
-// Reference Solana gate: devnet binary proof only, no active GateConfig or Mainnet claim.
+// Reviewed Solana devnet gate and consumer; no Mainnet or executed access claim.
 
 import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
@@ -54,10 +54,14 @@ export default function SolanaOnchainEligibilityGateDocsPage() {
 {`GateConfig PDA: ["gate_config", admin]
 Authorization PDA: ["authorization", config, attestation_id]
 Consumer authority PDA: ["consumer_authority"] (seeds::program = partner program)
-Test result PDA (reference consumer): ["test_result", authorization]
+Protocol config PDA: ["protocol_access_config", config]
+Protocol entitlement PDA: ["protocol_access", protocol_config, subject_hash, organization_commitment]
 
-Reference gate on devnet (unconfigured): ${LOCAL_SOLANA_GATE_PROGRAM_ID}
-Local-only consumer (not deployed): ${LOCAL_SOLANA_CONSUMER_PROGRAM_ID}
+Reviewed gate on devnet: ${LOCAL_SOLANA_GATE_PROGRAM_ID}
+Protocol-access consumer on devnet: ${LOCAL_SOLANA_CONSUMER_PROGRAM_ID}
+GateConfig PDA: 53wiHMzFX9GttuVFQyQTvJGw9XvQmBbTcsGbwXQyk3D6
+Protocol config PDA: BPYeZySvW4k5GKoUnuXi5cPYhq8J3AcZB9tA8mLsbyYL
+Reviewed config digest: 0xdccb2101a22ce8affbcde3b5923cea06ffe6225ceb72f368e83ff796cc1c6103
 
 Stored on Authorization: hashed partner/policy/action binding, expiry, consumed/revoked, opaque attestation_ref.
 Never stored: receipts, evidence, signatures, wallets beyond the required subject hash, provider payloads.`}
@@ -77,8 +81,9 @@ cargo test --workspace
           keccak and SHA-256 digests. Its transaction is{" "}
           <a href="https://explorer.solana.com/tx/51Xhh2Zuj57B4C1kJmH7XVM222u7pmHoTX9YU7iwcBmdA3kTU6rAQW2Z7hkcFUSu9BEg9moLSDZLUJ4bg7CDFvSL?cluster=devnet">
             51Xhh2…CDFvSL
-          </a>. GateConfig has not been initialized, the partner consumer is not deployed, and the gate is not registered
-          for issuance. No Mainnet claim.
+          </a>. The consumer is deployed, both configuration PDAs passed exact postchecks, and the sandbox gate
+          is registered for institutional V2 attestations. A successful on-chain authorize, consume, and replay-denial
+          sequence remains to be demonstrated. No Mainnet claim.
         </p>
       </ContentCard>
 
@@ -100,3 +105,4 @@ cargo test --workspace
     </RedesignPage>
   );
 }
+
