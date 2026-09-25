@@ -20,7 +20,7 @@ import {
 import { SOLANA_ATTESTATION_MESSAGE_PREFIX } from "./contract";
 
 describe("solana onchain eligibility gate SDK", () => {
-  it("derives PDAs and maps errors without claiming a live deployment", () => {
+  it("derives PDAs for the deployed devnet programs and maps errors", () => {
     const admin = Keypair.generate().publicKey;
     const [config] = deriveGateConfigPda(admin);
     const attestationId = new Uint8Array(32).fill(7);
@@ -34,8 +34,10 @@ describe("solana onchain eligibility gate SDK", () => {
     expect(mapSolanaGateError(9)).toBe("invalid");
     expect(LOCAL_SOLANA_GATE_PROGRAM_ID).toMatch(/^[1-9A-HJ-NP-Za-km-z]+$/);
     expect(LOCAL_SOLANA_CONSUMER_PROGRAM_ID).toMatch(/^[1-9A-HJ-NP-Za-km-z]+$/);
+    expect(LOCAL_SOLANA_CONSUMER_PROGRAM_ID).toBe("3B9eE1WtrtZQwJrkhFSKxxaZrefRJ73P53xHBBP3Bv1j");
     expect(SOLANA_GATE_DEPLOYMENT_NOTICE.toLowerCase()).toContain("deployed on solana devnet");
-    expect(SOLANA_GATE_DEPLOYMENT_NOTICE.toLowerCase()).toContain("not initialized or registered");
+    expect(SOLANA_GATE_DEPLOYMENT_NOTICE.toLowerCase()).toContain("sandbox deployment is registered");
+    expect(SOLANA_GATE_DEPLOYMENT_NOTICE.toLowerCase()).toContain("not a demonstrated end-to-end access transaction");
     expect(SOLANA_ONCHAIN_GATE_FLOW).toContain("Ed25519");
     expect(SOLANA_ONCHAIN_GATE_FLOW).not.toMatch(/mainnet deployed/i);
     const accounts = buildAuthorizeAccountKeys({
@@ -89,3 +91,4 @@ describe("solana onchain eligibility gate SDK", () => {
     expect(JSON.stringify(layout)).not.toMatch(/receipt|evidence|wallet_address|private_key/i);
   });
 });
+
