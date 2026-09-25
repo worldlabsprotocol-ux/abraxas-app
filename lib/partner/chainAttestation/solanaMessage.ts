@@ -41,6 +41,27 @@ export function hexToBytes(hex: string): Uint8Array {
   return out;
 }
 
+export function decodeSolanaEligibilityMessage(message: Uint8Array): ChainEligibilityAttestationFields {
+  if (message.length !== 468) throw new Error("invalid_message_length");
+  const prefix = new TextEncoder().encode(SOLANA_ATTESTATION_MESSAGE_PREFIX);
+  if (message.subarray(0, prefix.length).some((byte, i) => byte !== prefix[i])) throw new Error("invalid_message_prefix");
+  let offset = prefix.length;
+  const take = (n: number) => { const bytes = message.subarray(offset, offset + n); offset += n; return bytes; };
+  const domain = hexToBytes(hashUtf8(SOLANA_ATTESTATION_MESSAGE_PREFIX));
+  if (take(32).some((byte, i) => byte !== domain[i])) throw new Error("invalid_message_domain");
+  const u64 = () => { const bytes = take(8); const value = new DataView(bytes.buffer, bytes.byteOffset, 8).getBigUint64(0, false); if (value > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error("invalid_message_time"); return Number(value); };
+  const h32 = () => bytesToHex(take(32));
+  if (u64() !== CHAIN_ATTESTATION_SCHEMA_VERSION) throw new Error("invalid_message_schema");
+  const networkId = h32(); const partnerHash = h32(); const policyHash = h32(); const actionHash = h32();
+  const subjectHash = h32(); const issuedAt = u64(); const expiresAt = u64();
+  const nonce = h32(); const attestationId = h32(); const environment = h32(); const signerKeyId = h32();
+  const organizationCommitment = h32(); const actorCommitment = h32(); const institutionalResultCategory = h32();
+  if (offset !== message.length) throw new Error("invalid_message_length");
+  return { schemaVersion: CHAIN_ATTESTATION_SCHEMA_VERSION, networkId, partnerHash, policyHash, actionHash,
+    subjectHash, issuedAt, expiresAt, nonce, attestationId, environment, signerKeyId,
+    organizationCommitment, actorCommitment, institutionalResultCategory };
+}
+
 export function bytesToHex(bytes: Uint8Array): `0x${string}` {
   return `0x${Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("")}`;
 }
@@ -119,3 +140,4 @@ function writeU16(bytes: Uint8Array, offset: number, value: number): void {
   bytes[offset] = value & 0xff;
   bytes[offset + 1] = (value >> 8) & 0xff;
 }
+
