@@ -100,6 +100,8 @@ cargo test --workspace
           <Link href="/docs/chain-verifiable-attestations">/docs/chain-verifiable-attestations</Link>.
           Signer rotation:{" "}
           <Link href="/docs/chain-attestation-signer-lifecycle">/docs/chain-attestation-signer-lifecycle</Link>.
+          Finalized institutional transaction proof:{" "}
+          <Link href="/proofs/solana-devnet">/proofs/solana-devnet</Link>.
         </p>
       </ContentCard>
     </RedesignPage>
