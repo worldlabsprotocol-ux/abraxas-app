@@ -17,7 +17,7 @@ export const INSTITUTIONAL_DEVNET_ISSUANCE = {
 function localScript(script: string, args: string[], capture = false) {
   return spawnSync("npx", ["tsx", script, ...args], {
     cwd: process.cwd(), env: process.env, shell: false,
-    stdio: capture ? ["inherit", "pipe", "pipe"] as const : "inherit",
+    stdio: capture ? (["inherit", "pipe", "pipe"] as ["inherit", "pipe", "pipe"]) : "inherit",
     encoding: "utf8", timeout: 120_000, maxBuffer: 65536,
   });
 }
