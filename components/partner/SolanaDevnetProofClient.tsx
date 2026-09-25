@@ -34,7 +34,7 @@ export function SolanaDevnetProofClient({ signature }: { signature: string }) {
     })
       .then(async (response) => (await response.json()) as Proof)
       .then((result) => { setProof(result); setLoading(false); })
-      .catch((error: unknown) => {
+      .catch(() => {
         if (controller.signal.aborted) return;
         setProof({ ok: false, reason: "rpc_unavailable" });
         setLoading(false);
