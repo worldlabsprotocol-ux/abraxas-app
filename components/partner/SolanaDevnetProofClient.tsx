@@ -10,7 +10,7 @@ type Proof =
   | { ok: false; reason: string };
 
 const reasonText: Record<string, string> = {
-  invalid_signature: "Enter a Solana transaction signature.",
+  invalid_signature: "Enter a finalized Solana transaction signature (usually 87–88 characters). An application ID, receipt ID, or abx_test API key will not work here.",
   transaction_not_proven: "No finalized, successful institutional access transaction was found for this signature.",
   instruction_mismatch: "The transaction does not contain the reviewed Abraxas instruction sequence.",
   transaction_time_mismatch: "The attestation was outside its validity window when the transaction ran.",
@@ -51,13 +51,14 @@ export function SolanaDevnetProofClient({ signature }: { signature: string }) {
   return (
     <>
       <form action="/proofs/solana-devnet" method="get" style={{ display: "flex", gap: "0.65rem", flexWrap: "wrap" }}>
-        <label htmlFor="solana-proof-signature" style={{ width: "100%" }}>Finalized transaction signature</label>
+        <label htmlFor="solana-proof-signature" style={{ width: "100%" }}>Solana devnet transaction signature</label>
         <input id="solana-proof-signature" name="signature" defaultValue={signature}
           autoComplete="off" spellCheck={false} required maxLength={88}
           placeholder="Paste a Solana devnet transaction signature"
           style={{ flex: "1 1 360px", padding: "0.75rem", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface, #141b2a)", color: "var(--text-primary, white)", ...mono }} />
         <button type="submit" style={{ padding: "0.75rem 1.2rem", borderRadius: 8, cursor: "pointer" }}>Verify transaction</button>
       </form>
+      <p style={row}>Copy the <strong>signature</strong> from a successful access run after it reports <code>broadcast: true</code>. Do not enter an application ID, receipt ID, or API key.</p>
       {loading && <p role="status" style={row}>Checking finalized Solana devnet transaction and current accounts…</p>}
       {!loading && proof?.ok === false && (
         <p role="status" style={row}>{reasonText[proof.reason] ?? "This signature could not be verified as the reviewed institutional devnet proof."}</p>
