@@ -53,6 +53,11 @@ export function HostedHandoffControls({ applicationId }: { applicationId: string
           Create a secure handoff
         </Btn>
         {url && (
+          <a href={url} target="_blank" rel="noopener noreferrer" style={{ alignSelf: "center", fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: "var(--accent)" }}>
+            Open sandbox verification ↗
+          </a>
+        )}
+        {url && (
           <Btn
             size="sm"
             variant="secondary"
@@ -68,8 +73,8 @@ export function HostedHandoffControls({ applicationId }: { applicationId: string
         )}
       </div>
       {url && (
-        <p style={{ fontFamily: FONT, fontSize: "0.72rem", wordBreak: "break-all", color: "var(--text-primary)" }}>
-          {url}
+        <p role="status" style={{ fontFamily: FONT, fontSize: "0.76rem", lineHeight: 1.55, color: "var(--text-secondary)" }}>
+          Open the verification in a new tab. The person completing it reviews the request and gives consent before Abraxas can issue a receipt. Keep this handoff link private.
         </p>
       )}
       <ul style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.55, paddingLeft: "1.1rem" }}>
