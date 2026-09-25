@@ -6,15 +6,15 @@ import {
   SOLANA_ED25519_PROGRAM_ID,
 } from "./solanaMessage";
 
-/** Reviewed reference gate ID on devnet; the consumer remains a local fixture. */
+/** Reviewed gate and protocol-access consumer deployed on Solana devnet. */
 export const LOCAL_SOLANA_GATE_PROGRAM_ID = "4hf3cY57ciPakr4omyTSbksAfW672iGrdo6fiDVQAD4K";
-export const LOCAL_SOLANA_CONSUMER_PROGRAM_ID = "J2xccRtuG43drESLYznHhLhQkLTdfepcKYbiQ9BsJVaf";
+export const LOCAL_SOLANA_CONSUMER_PROGRAM_ID = "3B9eE1WtrtZQwJrkhFSKxxaZrefRJ73P53xHBBP3Bv1j";
 
 export const SOLANA_GATE_CONFIG_SEED = "gate_config";
 export const SOLANA_GATE_AUTHORIZATION_SEED = "authorization";
 export const SOLANA_GATE_CONSUMER_AUTHORITY_SEED = "consumer_authority";
 export const SOLANA_GATE_DEPLOYMENT_NOTICE =
-  "The reference gate is deployed on Solana devnet with the reviewed V2 ELF. GateConfig is not initialized or registered, so this is not an active eligibility integration. The consumer ID is a local fixture. No Mainnet deployment.";
+  "The reviewed V2 gate and protocol-access consumer are deployed on Solana devnet. Their configuration PDAs match the reviewed digest, and the sandbox deployment is registered for institutional V2 attestations. This is a sandbox integration, not a demonstrated end-to-end access transaction or a Mainnet deployment.";
 
 export const SOLANA_GATE_ERROR_MAP = {
   6000: "attestation_unavailable",
@@ -106,3 +106,4 @@ Abraxas signs a narrow Solana authorization (canonical message + dedicated Ed255
 the partner transaction includes the Ed25519 native verify instruction immediately before gate authorize ->
 the partner program CPI-consumes the PDA once. Server durable nonce (migration 101) and the onchain PDA are both required.
 `.trim();
+
