@@ -57,6 +57,85 @@ export function GoodTroublePilotSection({ hideHeader = false }: { hideHeader?: b
       )}
 
       <div style={{
+        padding: "1rem",
+        borderRadius: 16,
+        border: "1px solid rgba(94,234,212,0.22)",
+        background: "rgba(94,234,212,0.06)",
+        marginBottom: "1rem",
+      }}>
+        <h2 id="good-trouble-pilot-heading" style={{
+          fontFamily: FONT,
+          fontSize: "1.05rem",
+          fontWeight: 800,
+          color: "var(--text-primary)",
+          margin: "0 0 0.4rem",
+        }}>
+          Try the Passport flow
+        </h2>
+        <p style={{
+          fontFamily: FONT,
+          fontSize: "0.82rem",
+          color: "var(--text-secondary)",
+          lineHeight: 1.6,
+          margin: "0 0 0.85rem",
+        }}>
+          This sandbox shows the full journey without a purchase. Good Trouble receives an approved eligibility result while your birth date and identity documents stay private.
+        </p>
+        <ol style={{ listStyle: "none", padding: 0, margin: "0 0 0.9rem", display: "grid", gap: "0.45rem" }}>
+          {[
+            "Start at the partner",
+            "Confirm with your Abraxas Passport",
+            "Return with the eligibility result",
+          ].map((step, index) => (
+            <li key={step} style={{
+              display: "grid",
+              gridTemplateColumns: "1.55rem minmax(0, 1fr)",
+              gap: "0.5rem",
+              alignItems: "center",
+              fontFamily: FONT,
+              fontSize: "0.8rem",
+              color: "var(--text-secondary)",
+            }}>
+              <span aria-hidden="true" style={{
+                width: "1.45rem",
+                height: "1.45rem",
+                borderRadius: "999px",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(94,234,212,0.14)",
+                color: "#5EEAD4",
+                fontSize: "0.7rem",
+                fontWeight: 800,
+              }}>
+                {index + 1}
+              </span>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ol>
+        <Btn href="/good-trouble/checkout" size="lg" fullWidth>
+          Start the sandbox flow →
+        </Btn>
+      </div>
+
+      <details style={{
+        border: "1px solid var(--border)",
+        borderRadius: 14,
+        padding: "0.8rem",
+        marginBottom: "1rem",
+      }}>
+        <summary style={{
+          fontFamily: FONT,
+          fontSize: "0.8rem",
+          fontWeight: 750,
+          color: "var(--text-secondary)",
+          cursor: "pointer",
+        }}>
+          Explore the partner implementation
+        </summary>
+        <div style={{ marginTop: "0.85rem" }}>
+      <div style={{
         padding: "0.85rem 1rem", borderRadius: 12, marginBottom: "1rem",
         background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)",
       }}>
@@ -168,6 +247,9 @@ export function GoodTroublePilotSection({ hideHeader = false }: { hideHeader?: b
           {GOOD_TROUBLE_BRAND.website.replace("https://", "")} ↗
         </Link>
       </div>
+        </div>
+      </details>
+
       <PublicJourneyNextSteps title="Integrate this pilot" />
     </section>
   );

@@ -11,9 +11,9 @@ export default function GoodTroublePage() {
   return (
     <RedesignPage accent="partner" maxWidth={900}>
       <PageHeader
-        eyebrow="Integration pilot · Cannabis"
-        title={`${GOOD_TROUBLE_BRAND.name} verification`}
-        subtitle={`${GOOD_TROUBLE_BRAND.tagline} Organic cultivator in ${GOOD_TROUBLE_BRAND.location}. Abraxas Passport retail gate + batch provenance SDK foundation.`}
+        eyebrow="Good Trouble · Abraxas sandbox"
+        title="Private 21+ eligibility"
+        subtitle={`See how ${GOOD_TROUBLE_BRAND.name} can confirm an age requirement without receiving a birth date or identity documents.`}
       />
       <GoodTroublePilotSection hideHeader />
     </RedesignPage>
