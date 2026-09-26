@@ -207,7 +207,7 @@ export function PartnerReceiptVerifyPanel() {
             <Btn href="/passport#passport-verification-activity-heading" size="sm" variant="secondary">
               Open Passport activity →
             </Btn>
-            <Btn href={`/api/receipts/${encodeURIComponent(receipt.receipt_id)}/public`} size="sm" variant="secondary">
+            <Btn href={`/api/receipts/${encodeURIComponent(receipt.receipt_id ?? receiptId)}/public`} size="sm" variant="secondary">
               Open public receipt →
             </Btn>
             <Btn
