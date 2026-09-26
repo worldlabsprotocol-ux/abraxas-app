@@ -28,6 +28,7 @@ export function PartnerEnterClient({
   accessDecisionUrl,
   successPath,
   sandboxReceipt = false,
+  receiptBoundSuccess = false,
 }: {
   partnerId: string;
   partnerName: string;
@@ -35,6 +36,7 @@ export function PartnerEnterClient({
   accessDecisionUrl?: string;
   successPath: string;
   sandboxReceipt?: boolean;
+  receiptBoundSuccess?: boolean;
 }) {
   const searchParams = useSearchParams();
   const [unlocked, setUnlocked] = useState(false);
@@ -159,6 +161,10 @@ export function PartnerEnterClient({
   const receiptVerifierHref = receipt
     ? `/verify?mode=receipt&receipt_id=${encodeURIComponent(receipt.receipt_id)}&partner_id=${encodeURIComponent(receipt.partner_id)}&policy_id=${encodeURIComponent(receipt.policy_id)}${sandboxReceipt ? "&allow_sandbox=1" : ""}`
     : "/verify?mode=receipt";
+  const receiptBoundSuccessId = receipt?.receipt_id ?? receiptId;
+  const successHref = receiptBoundSuccess && receiptBoundSuccessId
+    ? `${successPath}?receipt_id=${encodeURIComponent(receiptBoundSuccessId)}`
+    : successPath;
 
   return (
     <div style={{
@@ -213,7 +219,7 @@ export function PartnerEnterClient({
               Kept private: birth date, ID images, biometrics, and document data.
             </p>
           </div>
-          <Btn href={successPath} size="lg" fullWidth>
+          <Btn href={successHref} size="lg" fullWidth>
             Continue to {partnerName} →
           </Btn>
           {receipt && (
