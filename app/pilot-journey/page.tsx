@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/pilot-journey/page.tsx
-// Public Week 2 walkthrough that points to the working sandbox surfaces.
+// Public walkthrough of the working privacy and partner verification surfaces.
 
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
@@ -41,9 +41,9 @@ export default function PilotJourneyPage() {
   return (
     <RedesignPage accent="neutral" maxWidth={760}>
       <PageHeader
-        eyebrow="Week 2 · Live pilot journey"
+        eyebrow="Live product journey"
         title="From partner request to private proof"
-        subtitle="Follow the working sandbox flow from a partner checkout to an Abraxas Passport result. This is a live product path, not a design mockup."
+        subtitle="Follow the working sandbox path from a partner request to a private Passport result and a verifiable receipt."
       />
 
       <ContentCard title="Try the working flow">
@@ -64,20 +64,23 @@ export default function PilotJourneyPage() {
         </div>
       </ContentCard>
 
-      <ContentCard title="What changed since Week 1">
+      <ContentCard title="What works today">
         <div style={{ display: "grid", gap: "0.8rem" }}>
-          <p style={copyStyle}><strong style={{ color: "var(--text-primary)" }}>Week 1:</strong> the private verification foundation and partner setup.</p>
-          <p style={copyStyle}><strong style={{ color: "var(--text-primary)" }}>Week 2:</strong> a holder-facing Passport, partner handoff and return, signed receipt experience, verified Solana devnet configuration, and a public transaction verifier.</p>
+          <p style={copyStyle}><strong style={{ color: "var(--text-primary)" }}>Partner request and return.</strong><br />A sandbox partner requests a specific eligibility result and receives the customer at its registered callback.</p>
+          <p style={copyStyle}><strong style={{ color: "var(--text-primary)" }}>Private holder consent.</strong><br />Passport shows what will be proved and what remains private before the customer continues.</p>
+          <p style={copyStyle}><strong style={{ color: "var(--text-primary)" }}>Signed receipt verification.</strong><br />The returned receipt can be inspected through the public receipt endpoint and verified without exposing source documents.</p>
+          <p style={copyStyle}><strong style={{ color: "var(--text-primary)" }}>Reviewed Solana configuration.</strong><br />The public verifier checks finalized devnet proof transactions against the registered gate and protocol configuration.</p>
         </div>
       </ContentCard>
 
-      <ContentCard title="Inspect the build">
+      <ContentCard title="Open the live capabilities">
         <p style={{ ...copyStyle, marginBottom: "1rem" }}>
-          Open each live surface directly. The Solana verifier accepts a real finalized devnet transaction signature.
+          Each link opens a working product surface. The receipt verifier accepts an Abraxas receipt ID; the Solana verifier accepts a real finalized devnet transaction signature.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem" }}>
           <Btn href="/passport">Open Passport</Btn>
-          <Btn href="/proofs/solana-devnet" variant="secondary">Open Solana verifier</Btn>
+          <Btn href="/verify?mode=receipt" variant="secondary">Verify a receipt</Btn>
+          <Btn href="/proofs/solana-devnet" variant="secondary">Verify a Solana proof</Btn>
           <Btn href="/developers/launchpad" variant="secondary">Open Partner Launchpad</Btn>
         </div>
       </ContentCard>
