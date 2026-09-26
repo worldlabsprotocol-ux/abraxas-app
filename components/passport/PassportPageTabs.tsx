@@ -1,10 +1,14 @@
 "use client";
 // FILE: components/passport/PassportPageTabs.tsx
-// Top-level switch between Passport setup and holder-facing verify tools.
+// Top-level switch between Passport, holder verification, and privacy controls.
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { buildPassportSetupHref } from "@/lib/passport/passportVerifyAccess";
+import {
+  PASSPORT_PRIVACY_HREF,
+  type PassportPageView,
+} from "@/lib/passport/passportPrivacyNavigation";
 import {
   HOLDER_VERIFY_DEFAULT_PATH,
   PARTNER_RECEIPT_VERIFIER_PATH,
@@ -12,8 +16,6 @@ import {
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
-
-export type PassportPageView = "passport" | "verify";
 
 function holderVerifyMode(mode: string | null): string {
   if (mode === "credential" || mode === "policy") return "credential";
@@ -43,15 +45,16 @@ export function PassportPageTabs({ active }: { active: PassportPageView }) {
     ? buildPartnerVerifierTabHref()
     : buildHolderVerifyTabHref(searchParams);
 
-  const verifyLabel = onVerifyRoute ? "Partner verifier" : "My records & credentials";
+  const verifyLabel = onVerifyRoute ? "Partner verifier" : "My records";
 
   const tabs: Array<{ id: PassportPageView; label: string; href: string }> = [
     { id: "passport", label: "My Passport", href: passportHref },
     { id: "verify", label: verifyLabel, href: verifyHref },
+    { id: "privacy", label: "Privacy & controls", href: PASSPORT_PRIVACY_HREF },
   ];
 
   return (
-    <div style={{
+    <nav aria-label="Passport sections" style={{
       display: "flex", gap: "0.35rem", flexWrap: "wrap",
       padding: "0.25rem", borderRadius: 999, marginBottom: "1.25rem",
       background: "var(--surface-inset)", border: "1px solid var(--border)",
@@ -60,6 +63,7 @@ export function PassportPageTabs({ active }: { active: PassportPageView }) {
         <Link
           key={tab.id}
           href={tab.href}
+          aria-current={active === tab.id ? "page" : undefined}
           style={{
             padding: "0.5rem 1rem", borderRadius: 999, textDecoration: "none",
             fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700,
@@ -90,6 +94,6 @@ export function PassportPageTabs({ active }: { active: PassportPageView }) {
           Holder tools
         </Link>
       )}
-    </div>
+    </nav>
   );
 }

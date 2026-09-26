@@ -58,6 +58,7 @@ export function PassportPrivacyCenter({ suiAddress }: { suiAddress: string | nul
   const queryClient = useQueryClient();
   const [actionError, setActionError] = useState("");
   const [actionMessage, setActionMessage] = useState("");
+  const [confirmDeletion, setConfirmDeletion] = useState(false);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["passport", "privacy", suiAddress],
@@ -72,6 +73,7 @@ export function PassportPrivacyCenter({ suiAddress }: { suiAddress: string | nul
     onSuccess: (result) => {
       setActionMessage(result.message ?? "Request submitted.");
       setActionError("");
+      setConfirmDeletion(false);
       void queryClient.invalidateQueries({ queryKey: ["passport", "privacy", suiAddress] });
     },
     onError: (e: Error) => {
@@ -86,13 +88,6 @@ export function PassportPrivacyCenter({ suiAddress }: { suiAddress: string | nul
   }, [mutation, suiAddress]);
 
   const requestDeletion = useCallback(() => {
-    const confirmed = window.confirm(
-      "Submit an account/data deletion request?\n\n"
-      + "This does NOT immediately delete your data. An operator will review the request. "
-      + "If approved, Passport access and credentials are revoked first. "
-      + "Physical deletion of stored documents requires a separate retention process.",
-    );
-    if (!confirmed) return;
     const key = `deletion:${suiAddress}:${new Date().toISOString().slice(0, 10)}`;
     mutation.mutate({ type: "account_deletion", key });
   }, [mutation, suiAddress]);
@@ -205,19 +200,70 @@ export function PassportPrivacyCenter({ suiAddress }: { suiAddress: string | nul
           >
             Request data export
           </button>
-          <button
-            type="button"
-            disabled={mutation.isPending}
-            onClick={() => void requestDeletion()}
-            style={{
-              padding: "0.45rem 0.85rem", borderRadius: 8, border: "1px solid rgba(239,68,68,0.35)",
-              background: "rgba(239,68,68,0.08)", color: "#FCA5A5",
-              fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600, cursor: "pointer",
-            }}
-          >
-            Request account / data deletion
-          </button>
+          {!confirmDeletion && (
+            <button
+              type="button"
+              disabled={mutation.isPending}
+              onClick={() => setConfirmDeletion(true)}
+              style={{
+                padding: "0.45rem 0.85rem", borderRadius: 8, border: "1px solid rgba(239,68,68,0.35)",
+                background: "rgba(239,68,68,0.08)", color: "#FCA5A5",
+                fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600, cursor: "pointer",
+              }}
+            >
+              Request account / data deletion
+            </button>
+          )}
         </div>
+
+        {confirmDeletion && (
+          <div role="group" aria-labelledby="passport-deletion-review-heading" style={{
+            padding: "0.85rem",
+            borderRadius: 10,
+            border: "1px solid rgba(239,68,68,0.35)",
+            background: "rgba(239,68,68,0.06)",
+            marginBottom: "0.85rem",
+          }}>
+            <p id="passport-deletion-review-heading" style={{
+              fontFamily: FONT, fontSize: "0.76rem", fontWeight: 700,
+              color: "var(--text-primary)", margin: "0 0 0.35rem",
+            }}>
+              Review deletion request
+            </p>
+            <p style={{
+              fontFamily: FONT, fontSize: "0.68rem", lineHeight: 1.55,
+              color: "var(--text-secondary)", margin: "0 0 0.75rem",
+            }}>
+              This submits a review request. It does not immediately erase data. If approved, Passport access and credentials are revoked before retained records are handled under the documented process.
+            </p>
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                disabled={mutation.isPending}
+                onClick={() => void requestDeletion()}
+                style={{
+                  padding: "0.45rem 0.85rem", borderRadius: 8, border: "1px solid rgba(239,68,68,0.5)",
+                  background: "rgba(239,68,68,0.14)", color: "#FCA5A5",
+                  fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, cursor: "pointer",
+                }}
+              >
+                {mutation.isPending ? "Submitting…" : "Confirm request"}
+              </button>
+              <button
+                type="button"
+                disabled={mutation.isPending}
+                onClick={() => setConfirmDeletion(false)}
+                style={{
+                  padding: "0.45rem 0.85rem", borderRadius: 8, border: "1px solid var(--border-strong)",
+                  background: "var(--surface)", color: "var(--text-primary)",
+                  fontFamily: FONT, fontSize: "0.72rem", fontWeight: 600, cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         {data?.export_note && (
           <p style={{ fontFamily: FONT, fontSize: "0.65rem", color: "var(--text-muted)", margin: "0 0 0.5rem", lineHeight: 1.5 }}>

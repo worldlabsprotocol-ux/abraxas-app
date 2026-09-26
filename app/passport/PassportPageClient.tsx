@@ -7,12 +7,15 @@ import { useSearchParams } from "next/navigation";
 import { PassportPageTabs } from "@/components/passport/PassportPageTabs";
 import { PassportCustomerView } from "@/components/passport/PassportCustomerView";
 import { PassportVerifySetupRequired } from "@/components/passport/PassportVerifySetupRequired";
+import { PassportPrivacyCenter } from "@/components/passport/PassportPrivacyCenter";
 import { passportVerifyNeedsSetup } from "@/lib/passport/passportVerifyAccess";
+import { resolvePassportPageView } from "@/lib/passport/passportPrivacyNavigation";
 import { usePartnerFlowHandoff } from "@/lib/passport/partnerFlowHandoff";
 import { ConsentCeremony } from "@/components/passport/ConsentCeremony";
 import { VerificationSuccessPanel } from "@/components/passport/VerificationSuccessPanel";
 import { VeriffDeviceHint } from "@/components/passport/VeriffDeviceHint";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
+import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
 import { usePassportVerification } from "@/lib/hooks/usePassportVerification";
 import { AbxPageHeader } from "@/components/design/AbxPrimitives";
 import { AbxPageShell } from "@/components/design/AbxPageShell";
@@ -79,7 +82,7 @@ function PassportPageInner() {
   const partnerIdParam = searchParams.get("partner_id");
   const returnPathParam = searchParams.get("return");
   const verificationParam = searchParams.get("verification");
-  const pageView = searchParams.get("view") === "verify" ? "verify" : "passport";
+  const pageView = resolvePassportPageView(searchParams.get("view"));
 
   const walletDone = Boolean(suiAddress);
   const hasCredential = Boolean(credential) && identityStatus === "earned";
@@ -193,9 +196,9 @@ function PassportPageInner() {
 
       <AbxPageHeader
         accent="passport"
-        eyebrow={pageView === "verify" ? HOLDER_VERIFY_EYEBROW : PASSPORT_PAGE_EYEBROW}
-        title={pageView === "verify" ? HOLDER_VERIFY_HEADLINE : PASSPORT_PAGE_HEADLINE}
-        lead={pageView === "verify" ? HOLDER_VERIFY_SUBHEAD : PASSPORT_PAGE_SUBHEAD}
+        eyebrow={pageView === "verify" ? HOLDER_VERIFY_EYEBROW : pageView === "privacy" ? "Passport · Privacy" : PASSPORT_PAGE_EYEBROW}
+        title={pageView === "verify" ? HOLDER_VERIFY_HEADLINE : pageView === "privacy" ? "Your data, your controls" : PASSPORT_PAGE_HEADLINE}
+        lead={pageView === "verify" ? HOLDER_VERIFY_SUBHEAD : pageView === "privacy" ? "See what Abraxas holds, request an export, or ask us to delete your account data." : PASSPORT_PAGE_SUBHEAD}
       />
 
         <Suspense fallback={<RedesignPageLoading label="Loading navigation…" compact />}>
@@ -212,6 +215,36 @@ function PassportPageInner() {
             }>
               <VerifyClient audience="holder" />
             </Suspense>
+          </>
+        ) : pageView === "privacy" ? (
+          <>
+            {!suiAddress && !authLoading ? (
+              <section style={{
+                background: "var(--surface-raised)",
+                border: "1px solid var(--border-strong)",
+                borderRadius: 16,
+                padding: "1.25rem",
+                marginBottom: "2rem",
+              }}>
+                <h2 style={{ fontFamily: S, fontSize: "1rem", margin: "0 0 0.5rem" }}>
+                  Sign in to manage your data
+                </h2>
+                <p style={{
+                  fontFamily: S,
+                  fontSize: "0.82rem",
+                  lineHeight: 1.6,
+                  color: "var(--text-secondary)",
+                  margin: "0 0 1rem",
+                }}>
+                  Privacy requests are tied to your Passport account. Sign in to view stored data categories and request an export or deletion.
+                </p>
+                <ZkLoginSignIn />
+              </section>
+            ) : authLoading ? (
+              <RedesignPageLoading label="Loading privacy controls…" compact />
+            ) : (
+              <PassportPrivacyCenter suiAddress={suiAddress} />
+            )}
           </>
         ) : (
           <>
