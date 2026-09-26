@@ -120,7 +120,10 @@ async function main(): Promise<void> {
     replayDenied = replay.value.err !== null;
   } catch { fail("replay_simulation_unavailable", signature); }
   if (!replayDenied) fail("replay_simulation_unexpected_success", signature);
+  const proofUrl = new URL("/proofs/solana-devnet", "https://demo.abraxasworld.xyz");
+  proofUrl.searchParams.set("signature", signature);
   process.stdout.write(`${JSON.stringify({ ok: true, network_id: "solana_devnet", signature,
+    proof_url: proofUrl.toString(), next_step: "Open proof_url to verify the finalized transaction.",
     authorization_pda: packet.authorization, entitlement_pda: packet.entitlement,
     authorization_consumed: true, entitlement_valid_until: observed.valid_until,
     replay_simulation_denied: true, replay_broadcast: false, broadcast: true }, null, 2)}\n`);
