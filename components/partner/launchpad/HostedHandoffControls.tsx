@@ -9,8 +9,12 @@ import { HOSTED_HANDOFF_CHECKLIST, HOSTED_HANDOFF_DOCS, HOSTED_HANDOFF_NOTICE } 
 const FONT = ABRAXAS_FONT_SANS;
 const HANDOFF_REF = /^hpf_[0-9a-f]{16}$/;
 const storageKey = (applicationId: string) => `abraxas:launchpad:handoff:${applicationId}`;
+const PARTNER_ID = /^[a-z0-9][a-z0-9_-]{2,63}$/;
+const APPLICATION_ID = /^[0-9a-f]{8}-[0-9a-f-]{27,35}$/;
+const DEPLOYMENT_REF = /^ogd_[0-9a-f]{32}$/;
+const SIGNER_KEY_ID = /^cask_[0-9a-f]{24}$/;
 
-export function HostedHandoffControls({ applicationId }: { applicationId: string }) {
+export function HostedHandoffControls({ applicationId, partnerId }: { applicationId: string; partnerId: string }) {
   const [url, setUrl] = useState("");
   const [handoffRef, setHandoffRef] = useState("");
   const [error, setError] = useState("");
@@ -18,6 +22,9 @@ export function HostedHandoffControls({ applicationId }: { applicationId: string
   const [copied, setCopied] = useState(false);
   const [status, setStatus] = useState<"created" | "completed" | "consumed" | "cancelled" | "expired" | "">("");
   const [checking, setChecking] = useState(false);
+  const [deploymentRef, setDeploymentRef] = useState("");
+  const [signerKeyId, setSignerKeyId] = useState("");
+  const [commandCopied, setCommandCopied] = useState(false);
 
   async function createHandoff() {
     setBusy(true);
@@ -92,6 +99,44 @@ export function HostedHandoffControls({ applicationId }: { applicationId: string
     if (handoffRef && status === "") void checkStatus();
   }, [checkStatus, handoffRef, status]);
 
+  const loadProofBinding = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/launchpad/applications/${applicationId}/onchain-gate-deployments`, {
+        credentials: "include",
+        cache: "no-store",
+      });
+      const data = await res.json() as {
+        deployments?: Array<{
+          deployment_ref?: string;
+          signer_key_id?: string;
+          network_id?: string;
+          status?: string;
+          require_institutional?: boolean;
+        }>;
+      };
+      if (!res.ok) return;
+      const match = data.deployments?.find((item) =>
+        item.network_id === "solana_devnet"
+        && item.status === "verified_sandbox"
+        && item.require_institutional === true
+        && DEPLOYMENT_REF.test(item.deployment_ref ?? "")
+        && SIGNER_KEY_ID.test(item.signer_key_id ?? ""),
+      );
+      if (match?.deployment_ref && match.signer_key_id) {
+        setDeploymentRef(match.deployment_ref);
+        setSignerKeyId(match.signer_key_id);
+      }
+    } catch {
+      // Status remains useful even when the copyable operator command is unavailable.
+    }
+  }, [applicationId]);
+
+  useEffect(() => {
+    if ((status === "completed" || status === "consumed") && (!deploymentRef || !signerKeyId)) {
+      void loadProofBinding();
+    }
+  }, [deploymentRef, loadProofBinding, signerKeyId, status]);
+
   useEffect(() => {
     if (!handoffRef || status !== "created") return;
     const timer = window.setInterval(() => {
@@ -99,6 +144,29 @@ export function HostedHandoffControls({ applicationId }: { applicationId: string
     }, 5000);
     return () => window.clearInterval(timer);
   }, [checkStatus, handoffRef, status]);
+
+  const commandReady = (status === "completed" || status === "consumed")
+    && HANDOFF_REF.test(handoffRef)
+    && PARTNER_ID.test(partnerId)
+    && APPLICATION_ID.test(applicationId)
+    && DEPLOYMENT_REF.test(deploymentRef)
+    && SIGNER_KEY_ID.test(signerKeyId);
+  const ubuntuCommand = commandReady ? `cd ~/abraxas-devnet
+git pull --ff-only
+curl -fsS https://demo.abraxasworld.xyz/api/chain-attestations/verification-keys/solana -o /tmp/abraxas-solana-signer-public.json
+export ABRAXAS_GATE_PARTNER_ID='${partnerId}'
+export ABRAXAS_GATE_APPLICATION_ID='${applicationId}'
+export ABRAXAS_GATE_ADMIN_KEYPAIR_PATH="$HOME/.config/solana/id.json"
+export ABRAXAS_GATE_ADMIN_PUBKEY="$(solana-keygen pubkey "$ABRAXAS_GATE_ADMIN_KEYPAIR_PATH")"
+export ABRAXAS_GATE_SIGNER_KEY_ID='${signerKeyId}'
+read -rsp "Sandbox abx_test key: " ABRAXAS_SANDBOX_PARTNER_API_KEY; echo
+export ABRAXAS_SANDBOX_PARTNER_API_KEY
+npx tsx scripts/solana-devnet-proof-issue-and-run-local.ts \\
+  '${handoffRef}' \\
+  '${deploymentRef}' \\
+  /tmp/abraxas-solana-signer-public.json \\
+  --ownership-reviewed --confirm
+unset ABRAXAS_SANDBOX_PARTNER_API_KEY` : "";
 
   return (
     <section aria-labelledby="hosted-handoff-heading" style={{ marginTop: "1.15rem" }}>
@@ -156,6 +224,24 @@ export function HostedHandoffControls({ applicationId }: { applicationId: string
             <Btn size="sm" variant="secondary" loading={checking} disabled={checking} onClick={() => void checkStatus()}>
               Check verification status
             </Btn>
+          )}
+          {commandReady && (
+            <div style={{ marginTop: "0.65rem" }}>
+              <Btn
+                size="sm"
+                onClick={() => {
+                  void navigator.clipboard.writeText(ubuntuCommand).then(() => {
+                    setCommandCopied(true);
+                    setTimeout(() => setCommandCopied(false), 1600);
+                  });
+                }}
+              >
+                {commandCopied ? "Ubuntu command copied" : "Copy Ubuntu proof command"}
+              </Btn>
+              <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.5, margin: "0.45rem 0 0" }}>
+                Paste it into Ubuntu. It asks for the sandbox API key privately and never places that key in the command or page.
+              </p>
+            </div>
           )}
         </div>
       )}

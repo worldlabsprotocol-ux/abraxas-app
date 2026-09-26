@@ -658,6 +658,7 @@ export function PartnerLaunchpadClient({
       {step === "configure" && activeApp && (
         <PartnerFlowRequestPanel
           applicationId={activeApp.id}
+          partnerId={workspace?.partner_id ?? ""}
           onContinue={() => setStep("versions")}
         />
       )}

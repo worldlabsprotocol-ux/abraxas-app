@@ -40,9 +40,11 @@ const input: React.CSSProperties = {
 
 export function PartnerFlowRequestPanel({
   applicationId,
+  partnerId,
   onContinue,
 }: {
   applicationId: string;
+  partnerId: string;
   onContinue?: () => void;
 }) {
   const [view, setView] = useState<PartnerFlowRequestView | null>(null);
@@ -275,7 +277,7 @@ export function PartnerFlowRequestPanel({
       )}
 
       {view?.environment === "sandbox" && view.purpose && view.action && view.callback_options.length > 0 && (
-        <HostedHandoffControls applicationId={applicationId} />
+        <HostedHandoffControls applicationId={applicationId} partnerId={partnerId} />
       )}
     </ContentCard>
   );
