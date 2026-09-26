@@ -18,6 +18,7 @@ export default function GoodTroubleEnterPage() {
           verifyPath={goodTroubleProductionVerifyUrl()}
           accessDecisionUrl="/api/good-trouble/access-decision"
           successPath="/good-trouble"
+          sandboxReceipt
         />
       </Suspense>
     </div>
