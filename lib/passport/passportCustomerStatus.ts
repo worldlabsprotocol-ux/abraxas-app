@@ -62,21 +62,20 @@ export function buildPassportProofSummary(input: {
   walletBound: boolean;
   identityUi: IdentityUiState;
 }): string[] {
-  const items: string[] = [];
-
-  if (input.walletBound) {
-    items.push("Account secured");
-  } else {
-    items.push("Account not yet secured");
-  }
+  const items = [
+    input.walletBound
+      ? "Your account is securely connected"
+      : "Secure account connection needed",
+  ];
 
   if (input.identityUi === "verified") {
-    items.push("Verified information on file");
+    items.push("Verified information is ready when a service requests it");
   } else if (input.identityUi === "under_review") {
-    items.push("Verification review in progress");
+    items.push("Verified information is being reviewed");
+  } else if (input.identityUi === "needs_action") {
+    items.push("Verified information needs an update");
   } else {
-    items.push("No partner proof on file yet");
-    items.push("Proof is collected only when a participating service requests it");
+    items.push("A service will ask only if verified information is required");
   }
 
   return items;
