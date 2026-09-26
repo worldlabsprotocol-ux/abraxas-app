@@ -151,7 +151,7 @@ export function GoodTroublePilotSection({ hideHeader = false }: { hideHeader?: b
         <InfoCard label="VC schema (planned)" value={CANNABIS_BATCH_SCHEMA_ID} mono />
       </div>
 
-      <div style={{ marginBottom: "1.25rem" }}>
+      <div id="pilot-inventory" style={{ marginBottom: "1.25rem", scrollMarginTop: "5rem" }}>
         <div style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "0.5rem" }}>
           Sample batches (pilot fixtures)
         </div>
