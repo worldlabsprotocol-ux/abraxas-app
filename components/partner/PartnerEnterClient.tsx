@@ -27,12 +27,14 @@ export function PartnerEnterClient({
   verifyPath,
   accessDecisionUrl,
   successPath,
+  sandboxReceipt = false,
 }: {
   partnerId: string;
   partnerName: string;
   verifyPath: string;
   accessDecisionUrl?: string;
   successPath: string;
+  sandboxReceipt?: boolean;
 }) {
   const searchParams = useSearchParams();
   const [unlocked, setUnlocked] = useState(false);
@@ -40,6 +42,7 @@ export function PartnerEnterClient({
   const [error, setError] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<PublicReceipt | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [receiptIdCopied, setReceiptIdCopied] = useState(false);
 
   const receiptId = searchParams.get("receipt_id");
   const urlPartnerId = searchParams.get("partner_id");
@@ -153,6 +156,10 @@ export function PartnerEnterClient({
       })
     : null;
 
+  const receiptVerifierHref = receipt
+    ? `/verify?mode=receipt&receipt_id=${encodeURIComponent(receipt.receipt_id)}&partner_id=${encodeURIComponent(receipt.partner_id)}&policy_id=${encodeURIComponent(receipt.policy_id)}${sandboxReceipt ? "&allow_sandbox=1" : ""}`
+    : "/verify?mode=receipt";
+
   return (
     <div style={{
       maxWidth: 520, margin: "3rem auto", padding: "1.5rem",
@@ -209,6 +216,49 @@ export function PartnerEnterClient({
           <Btn href={successPath} size="lg" fullWidth>
             Continue to {partnerName} →
           </Btn>
+          {receipt && (
+            <div style={{
+              marginTop: "0.9rem",
+              padding: "0.8rem",
+              borderRadius: 10,
+              border: "1px solid var(--border)",
+              background: "var(--surface)",
+            }}>
+              <p style={{ fontSize: "0.76rem", color: "var(--text-primary)", margin: "0 0 0.35rem", fontWeight: 700 }}>
+                Keep this receipt for the demo
+              </p>
+              <code style={{ display: "block", fontSize: "0.66rem", color: "var(--text-secondary)", overflowWrap: "anywhere", userSelect: "text", marginBottom: "0.65rem" }}>
+                {receipt.receipt_id}
+              </code>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem" }}>
+                <Btn
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(receipt.receipt_id).then(() => {
+                      setReceiptIdCopied(true);
+                      setTimeout(() => setReceiptIdCopied(false), 1500);
+                    });
+                  }}
+                >
+                  {receiptIdCopied ? "Receipt ID copied" : "Copy receipt ID"}
+                </Btn>
+                <Btn href={receiptVerifierHref} size="sm" variant="secondary">
+                  Verify receipt →
+                </Btn>
+                <Btn href={`/api/receipts/${encodeURIComponent(receipt.receipt_id)}/public`} size="sm" variant="ghost">
+                  Public receipt JSON →
+                </Btn>
+              </div>
+              <p style={{ fontSize: "0.7rem", color: "var(--text-muted)", margin: "0.65rem 0 0", lineHeight: 1.5 }}>
+                This is the receipt ID used by receipt tools. It is different from a Launchpad application ID or Solana transaction signature.
+              </p>
+            </div>
+          )}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginTop: "0.75rem" }}>
+            <Btn href="/passport" size="sm" variant="secondary">Open Passport activity →</Btn>
+            <Btn href="/pilot-journey" size="sm" variant="ghost">Return to Week 2 journey →</Btn>
+          </div>
           {safePayload && (
             <details style={{ marginTop: "0.8rem" }}>
               <summary style={{ fontSize: "0.7rem", color: "var(--text-muted)", cursor: "pointer" }}>
