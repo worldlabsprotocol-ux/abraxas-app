@@ -1,5 +1,6 @@
 // FILE: app/layout.tsx
 // Root layout. Light default, dark via ThemeContext toggle.
+// Fonts load in the browser so offline CI builds retain deterministic system fallbacks.
 import type { Metadata } from "next";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/AppProviders";
