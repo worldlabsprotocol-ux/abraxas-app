@@ -24,7 +24,7 @@ export function PassportRecentActivity({
   identityUi: IdentityUiState;
 }) {
   const identityComplete = identityUi === "verified";
-  const identityPending = identityUi === "pending";
+  const identityPending = identityUi === "under_review";
   const steps: SetupStep[] = [
     {
       label: "Create your Passport",
