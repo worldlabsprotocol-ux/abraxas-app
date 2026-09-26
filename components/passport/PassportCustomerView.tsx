@@ -163,6 +163,14 @@ export function PassportCustomerView({
 
       <PartnerVerificationResumeCta />
 
+      {walletDone && (
+        <PassportRecentActivity
+          suiAddress={suiAddress}
+          walletBound={setup.walletBound}
+          identityUi={status.identityUi}
+        />
+      )}
+
       {!walletDone && (
         <section style={CARD} aria-labelledby="passport-signin-heading">
           <h2 id="passport-signin-heading" style={{
@@ -278,11 +286,6 @@ export function PassportCustomerView({
 
           <PassportVerificationActivity />
 
-          <PassportRecentActivity
-            suiAddress={suiAddress}
-            walletBound={setup.walletBound}
-            identityUi={status.identityUi}
-          />
         </>
       )}
 
