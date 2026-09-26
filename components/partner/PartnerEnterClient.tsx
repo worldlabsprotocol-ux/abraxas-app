@@ -26,11 +26,13 @@ export function PartnerEnterClient({
   partnerName,
   verifyPath,
   accessDecisionUrl,
+  successPath,
 }: {
   partnerId: string;
   partnerName: string;
   verifyPath: string;
   accessDecisionUrl?: string;
+  successPath: string;
 }) {
   const searchParams = useSearchParams();
   const [unlocked, setUnlocked] = useState(false);
@@ -81,7 +83,7 @@ export function PartnerEnterClient({
         status: "active",
       });
       setUnlocked(true);
-      setStatus("Verified on the server. Receipt valid, action permitted.");
+      setStatus("Eligibility confirmed. " + partnerName + " received a signed approved result.");
       return;
     }
     const res = await fetch(`/api/receipts/${encodeURIComponent(receiptId)}/public`);
@@ -108,7 +110,7 @@ export function PartnerEnterClient({
 
     setReceipt(data);
     setUnlocked(true);
-    setStatus("Verified. Welcome.");
+    setStatus("Eligibility confirmed. " + partnerName + " received a signed approved result.");
   }, [receiptId, urlPartnerId, urlStatus, partnerId, accessDecisionUrl, searchParams]);
 
   async function refreshReceipt() {
@@ -162,7 +164,7 @@ export function PartnerEnterClient({
         {partnerName.toUpperCase()} · AGE-GATED ENTRY
       </div>
       <h1 style={{ fontSize: "1.15rem", margin: "0 0 0.75rem", fontWeight: 800 }}>
-        {unlocked ? "You're in" : "Verifying access"}
+        {unlocked ? "Eligibility confirmed" : "Verifying access"}
       </h1>
       <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
         {status}
@@ -177,29 +179,39 @@ export function PartnerEnterClient({
 
       {unlocked && (
         <div style={{ marginTop: "1.25rem" }}>
-          <button
-            type="button"
-            style={{
-              width: "100%", padding: "0.85rem", borderRadius: 10, border: "none",
-              background: ACCENT, color: "#000", fontWeight: 800, cursor: "pointer",
-              fontFamily: FONT, fontSize: "0.9rem",
-            }}
-          >
-            Enter {partnerName}
-          </button>
+          <div style={{
+            display: "grid",
+            gap: "0.5rem",
+            padding: "0.8rem",
+            borderRadius: 10,
+            background: "rgba(16,185,129,0.08)",
+            border: "1px solid rgba(16,185,129,0.2)",
+            marginBottom: "0.9rem",
+          }}>
+            <p style={{ fontSize: "0.8rem", color: "var(--text-primary)", margin: 0, fontWeight: 700 }}>
+              Shared: approved eligibility result
+            </p>
+            <p style={{ fontSize: "0.76rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.5 }}>
+              Kept private: birth date, ID images, biometrics, and document data.
+            </p>
+          </div>
+          <Btn href={successPath} size="lg" fullWidth>
+            Continue to {partnerName} →
+          </Btn>
           {safePayload && (
-            <pre style={{
-              marginTop: "1rem", fontSize: "0.62rem", padding: "0.75rem",
-              background: "var(--surface)", borderRadius: 8, overflow: "auto",
-              color: "var(--text-muted)",
-            }}>
-              {JSON.stringify(safePayload, null, 2)}
-            </pre>
+            <details style={{ marginTop: "0.8rem" }}>
+              <summary style={{ fontSize: "0.7rem", color: "var(--text-muted)", cursor: "pointer" }}>
+                Receipt details
+              </summary>
+              <pre style={{
+                marginTop: "0.5rem", fontSize: "0.62rem", padding: "0.75rem",
+                background: "var(--surface)", borderRadius: 8, overflow: "auto",
+                color: "var(--text-muted)",
+              }}>
+                {JSON.stringify(safePayload, null, 2)}
+              </pre>
+            </details>
           )}
-          <p style={{ fontSize: "0.68rem", color: "var(--text-muted)", marginTop: "0.75rem" }}>
-            No ID images, biometrics, or document data are shared with {partnerName}.
-            Only the signed verification result above is returned.
-          </p>
         </div>
       )}
 
