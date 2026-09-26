@@ -269,16 +269,33 @@ export function PassportCustomerView({
         <>
           <section style={CARD} aria-labelledby="passport-proof-heading">
             <h2 id="passport-proof-heading" style={{
-              fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.65rem",
+              fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.35rem",
             }}>
-              Your reusable proof
+              What your Passport can confirm
             </h2>
-            <ul style={{ margin: 0, paddingLeft: "1.1rem" }}>
+            <p style={{
+              fontFamily: FONT,
+              fontSize: "0.8rem",
+              lineHeight: 1.55,
+              color: "var(--text-secondary)",
+              margin: "0 0 0.75rem",
+            }}>
+              A service receives the result it needs, such as eligible or verified. Your private documents stay private.
+            </p>
+            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: "0.45rem" }}>
               {proofItems.map((item) => (
                 <li key={item} style={{
-                  fontFamily: FONT, fontSize: "0.84rem", lineHeight: 1.6, color: "var(--text-secondary)", marginBottom: "0.25rem",
+                  display: "grid",
+                  gridTemplateColumns: "1.2rem minmax(0, 1fr)",
+                  gap: "0.5rem",
+                  alignItems: "start",
+                  fontFamily: FONT,
+                  fontSize: "0.84rem",
+                  lineHeight: 1.55,
+                  color: "var(--text-secondary)",
                 }}>
-                  {item}
+                  <span aria-hidden="true" style={{ color: "#5EEAD4", fontWeight: 800 }}>✓</span>
+                  <span>{item}</span>
                 </li>
               ))}
             </ul>
