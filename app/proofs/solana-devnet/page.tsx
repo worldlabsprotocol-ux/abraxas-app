@@ -25,7 +25,7 @@ export default function SolanaDevnetProofPage({
         <ol>
           <li>Complete the institutional Partner Flow so Abraxas issues a current receipt.</li>
           <li>Run the local Solana devnet access proof with that receipt and your verified deployment ref.</li>
-          <li>After the run reports <code>broadcast: true</code>, copy its <code>signature</code> here.</li>
+          <li>After the run reports <code>broadcast: true</code>, open the printed <code>proof_url</code>. It already contains the transaction signature.</li>
         </ol>
         <p>Setting up a partner? Start in <Link href="/developers/launchpad">Launchpad</Link>. The application ID and deployment ref are setup values, not transaction signatures.</p>
       </ContentCard>
