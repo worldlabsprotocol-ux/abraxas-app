@@ -223,31 +223,38 @@ function ActivityCard({
       <p style={{ fontFamily: FONT, fontSize: "0.8rem", color: "var(--text-primary)", margin: "0.45rem 0 0", fontWeight: 650 }}>
         Shared result: {item.shared_result_category}
       </p>
-      <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0.35rem 0 0", lineHeight: 1.55 }}>
-        Why requested: {item.purpose}
-      </p>
-      <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0.25rem 0 0", lineHeight: 1.55 }}>
-        What the partner received: {item.partner_received}
-      </p>
-      <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0.25rem 0 0", lineHeight: 1.55 }}>
-        What was withheld: {item.withheld.join(", ")}.
-      </p>
-      <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0.25rem 0 0", lineHeight: 1.55 }}>
-        {item.evidence_not_shared}
-      </p>
-      {item.reuse_consent_notice && (
-        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0.25rem 0 0", lineHeight: 1.55 }}>
-          {item.reuse_consent_notice}
-        </p>
-      )}
+      <details style={{ marginTop: "0.5rem" }}>
+        <summary style={{ fontFamily: FONT, fontSize: "0.76rem", fontWeight: 700, cursor: "pointer", color: "#5EEAD4" }}>
+          What was shared and kept private
+        </summary>
+        <div style={{ paddingTop: "0.25rem" }}>
+          <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0.25rem 0 0", lineHeight: 1.55 }}>
+            Why requested: {item.purpose}
+          </p>
+          <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0.25rem 0 0", lineHeight: 1.55 }}>
+            Partner received: {item.partner_received}
+          </p>
+          <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0.25rem 0 0", lineHeight: 1.55 }}>
+            Kept private: {item.withheld.join(", ")}.
+          </p>
+          <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0.25rem 0 0", lineHeight: 1.55 }}>
+            {item.evidence_not_shared}
+          </p>
+          {item.reuse_consent_notice && (
+            <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0.25rem 0 0", lineHeight: 1.55 }}>
+              {item.reuse_consent_notice}
+            </p>
+          )}
+          {item.recovery && (
+            <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", margin: "0.35rem 0 0", lineHeight: 1.55 }}>
+              {item.recovery}
+            </p>
+          )}
+        </div>
+      </details>
       {item.sandbox_only && (
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "#A5B4FC", margin: "0.25rem 0 0", lineHeight: 1.55 }}>
           Sandbox-only. This result is not usable in Production.
-        </p>
-      )}
-      {item.recovery && (
-        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", margin: "0.35rem 0 0", lineHeight: 1.55 }}>
-          {item.recovery}
         </p>
       )}
       {item.partner_entry_href && (
