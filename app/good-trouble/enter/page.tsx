@@ -17,6 +17,7 @@ export default function GoodTroubleEnterPage() {
           partnerName={GOOD_TROUBLE_BRAND.name}
           verifyPath={goodTroubleProductionVerifyUrl()}
           accessDecisionUrl="/api/good-trouble/access-decision"
+          successPath="/good-trouble"
         />
       </Suspense>
     </div>
