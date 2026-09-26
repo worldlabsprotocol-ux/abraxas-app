@@ -256,7 +256,7 @@ export function PartnerEnterClient({
             </div>
           )}
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginTop: "0.75rem" }}>
-            <Btn href="/passport" size="sm" variant="secondary">Open Passport activity →</Btn>
+            <Btn href="/passport#passport-verification-activity-heading" size="sm" variant="secondary">Open Passport activity →</Btn>
             <Btn href="/pilot-journey" size="sm" variant="ghost">View the complete privacy journey →</Btn>
           </div>
           {safePayload && (
