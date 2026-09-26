@@ -225,7 +225,7 @@ export function PartnerEnterClient({
               background: "var(--surface)",
             }}>
               <p style={{ fontSize: "0.76rem", color: "var(--text-primary)", margin: "0 0 0.35rem", fontWeight: 700 }}>
-                Keep this receipt for the demo
+                Your verification receipt
               </p>
               <code style={{ display: "block", fontSize: "0.66rem", color: "var(--text-secondary)", overflowWrap: "anywhere", userSelect: "text", marginBottom: "0.65rem" }}>
                 {receipt.receipt_id}
@@ -257,7 +257,7 @@ export function PartnerEnterClient({
           )}
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginTop: "0.75rem" }}>
             <Btn href="/passport" size="sm" variant="secondary">Open Passport activity →</Btn>
-            <Btn href="/pilot-journey" size="sm" variant="ghost">Return to Week 2 journey →</Btn>
+            <Btn href="/pilot-journey" size="sm" variant="ghost">View the complete privacy journey →</Btn>
           </div>
           {safePayload && (
             <details style={{ marginTop: "0.8rem" }}>
