@@ -1,32 +1,11 @@
 // FILE: app/layout.tsx
 // Root layout. Light default, dark via ThemeContext toggle.
+// Fonts load in the browser so offline CI builds retain deterministic system fallbacks.
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { DemoEnvironmentBanner } from "@/components/judgeDemo/JudgeDemoSandboxBanner";
 import { siteMetadata } from "@/lib/seo/metadata";
-
-const plusJakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-sans",
-  weight: ["400", "500", "600", "700", "800"],
-  display: "swap",
-});
-
-const plusJakartaDisplay = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-display",
-  weight: ["700", "800"],
-  display: "swap",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
-  weight: ["400", "500", "600"],
-  display: "swap",
-});
 
 export const metadata: Metadata = siteMetadata();
 
@@ -65,10 +44,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="en"
       translate="no"
       suppressHydrationWarning
-      className={`${plusJakarta.variable} ${plusJakartaDisplay.variable} ${jetbrainsMono.variable}`}
     >
       <head>
         <meta name="google" content="notranslate" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <script dangerouslySetInnerHTML={{ __html: langInitScript }} />
       </head>
