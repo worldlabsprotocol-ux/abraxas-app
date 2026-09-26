@@ -58,7 +58,7 @@ history before doing anything else. A fresh attestation is required for another
 attempt. The runner reports `replay_simulation_denied`; it does not claim a
 finalized failed replay transaction or an expiry observation.
 
-If the sandbox partner has a current institutional receipt, a verified gate
+If the sandbox partner has a completed institutional handoff (or a current institutional receipt), a verified gate
 deployment ref, and an `abx_test_` key with the `verify:requests` scope, the
 operator can issue and run in one session. This avoids copying an expiring
 attestation into a file manually. The key goes only in an Ubuntu environment
@@ -70,14 +70,17 @@ private temporary file, runs the local proof, then removes the file.
 ```bash
 cd ~/abraxas-devnet
 export ABRAXAS_GATE_ADMIN_KEYPAIR_PATH="$HOME/.config/solana/id.json"
-export ABRAXAS_SANDBOX_PARTNER_API_KEY='abx_test_...'
+read -rsp "Sandbox abx_test key: " ABRAXAS_SANDBOX_PARTNER_API_KEY; echo
+export ABRAXAS_SANDBOX_PARTNER_API_KEY
 npx tsx scripts/solana-devnet-proof-issue-and-run-local.ts \
-  '<current-institutional-receipt-id>' \
+  '<completed-hpf_-handoff-ref-or-current-dr_-receipt-id>' \
   '<verified-sandbox-deployment-ref>' \
   /tmp/abraxas-solana-signer-public.json \
   --ownership-reviewed --confirm
 unset ABRAXAS_SANDBOX_PARTNER_API_KEY
 ```
+
+Launchpad shows the `hpf_` handoff ref after creating a secure handoff. Once the holder completes verification and consent, the local command uses the partner key to look up its `dr_` receipt without exposing it in the browser. The lookup fails closed if the handoff is incomplete or belongs to another application. An application ID (`b8c7...`) is neither a handoff ref nor a receipt ID. The command still requires a separately verified `ogd_` deployment ref.
 
 The existing `ABRAXAS_GATE_PARTNER_ID`, `ABRAXAS_GATE_APPLICATION_ID`,
 `ABRAXAS_GATE_ADMIN_PUBKEY`, and `ABRAXAS_GATE_SIGNER_KEY_ID` values remain

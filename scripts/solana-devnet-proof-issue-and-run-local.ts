@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { join, isAbsolute } from "node:path";
 import { spawnSync } from "node:child_process";
 import { automatedEnvironmentForbidden } from "@/lib/partner/testnetGateDeploymentKit/deploy";
+import { resolveInstitutionalReceiptInput } from "@/lib/partner/testnetGateDeploymentKit/solanaProofHandoff";
 
 export const INSTITUTIONAL_DEVNET_ISSUANCE = {
   action_type: "activate_protocol_access",
@@ -29,14 +30,14 @@ async function main(): Promise<void> {
   };
   const args = process.argv.slice(2);
   if (args.length !== 5 || args[3] !== "--ownership-reviewed" || args[4] !== "--confirm") {
-    process.stderr.write("usage: npx tsx scripts/solana-devnet-proof-issue-and-run-local.ts <receipt-id> <deployment-ref> <public-signer-document.json> --ownership-reviewed --confirm\n");
+    process.stderr.write("usage: npx tsx scripts/solana-devnet-proof-issue-and-run-local.ts <receipt-id-or-completed-handoff-ref> <deployment-ref> <public-signer-document.json> --ownership-reviewed --confirm\n");
     process.exit(2);
   }
   if (process.platform !== "linux" || automatedEnvironmentForbidden() || !process.stdin.isTTY || !process.stdout.isTTY) {
     fail("interactive_ubuntu_only");
   }
-  const [receiptId, deploymentRef, signerDocument] = args;
-  if (!receiptId || receiptId.length > 128 || !deploymentRef || deploymentRef.length > 128
+  const [receiptInput, deploymentRef, signerDocument] = args;
+  if (!receiptInput || receiptInput.length > 128 || !deploymentRef || deploymentRef.length > 128
     || !isAbsolute(signerDocument)) fail("invalid_input");
   const applicationId = process.env.ABRAXAS_GATE_APPLICATION_ID?.trim() ?? "";
   const key = process.env.ABRAXAS_SANDBOX_PARTNER_API_KEY?.trim() ?? "";
@@ -51,6 +52,10 @@ async function main(): Promise<void> {
   if (precheckJson.ok !== true || precheckJson.config_digest !== "0xdccb2101a22ce8affbcde3b5923cea06ffe6225ceb72f368e83ff796cc1c6103") {
     fail("deployment_postcheck_failed");
   }
+
+  const resolved = await resolveInstitutionalReceiptInput(receiptInput, applicationId, key);
+  if (!resolved.ok) fail(resolved.reason);
+  const receiptId = resolved.receiptId;
 
   let response: Response;
   try {

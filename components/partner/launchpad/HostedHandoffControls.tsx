@@ -10,6 +10,7 @@ const FONT = ABRAXAS_FONT_SANS;
 
 export function HostedHandoffControls({ applicationId }: { applicationId: string }) {
   const [url, setUrl] = useState("");
+  const [handoffRef, setHandoffRef] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -17,6 +18,8 @@ export function HostedHandoffControls({ applicationId }: { applicationId: string
   async function createHandoff() {
     setBusy(true);
     setError("");
+    setUrl("");
+    setHandoffRef("");
     try {
       const res = await fetch(`/api/launchpad/applications/${applicationId}/hosted-handoff`, {
         method: "POST",
@@ -24,7 +27,7 @@ export function HostedHandoffControls({ applicationId }: { applicationId: string
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ runtime: "universal_https" }),
       });
-      const data = await res.json() as { hosted_url?: string; error?: string };
+      const data = await res.json() as { hosted_url?: string; handoff_ref?: string; error?: string };
       if (!res.ok || !data.hosted_url) {
         setError(data.error === "not_configured"
           ? "Save Partner Flow configuration and an approved callback first."
@@ -32,6 +35,7 @@ export function HostedHandoffControls({ applicationId }: { applicationId: string
         return;
       }
       setUrl(data.hosted_url);
+      if (data.handoff_ref) setHandoffRef(data.handoff_ref);
     } catch {
       setError("Could not create a handoff.");
     } finally {
@@ -75,6 +79,11 @@ export function HostedHandoffControls({ applicationId }: { applicationId: string
       {url && (
         <p role="status" style={{ fontFamily: FONT, fontSize: "0.76rem", lineHeight: 1.55, color: "var(--text-secondary)" }}>
           Open the verification in a new tab. The person completing it reviews the request and gives consent before Abraxas can issue a receipt. Keep this handoff link private.
+        </p>
+      )}
+      {handoffRef && (
+        <p style={{ fontFamily: FONT, fontSize: "0.76rem", lineHeight: 1.55, color: "var(--text-secondary)" }}>
+          Devnet proof handoff ref: <code style={{ userSelect: "text" }}>{handoffRef}</code>. Once verification is complete, use this ref in the local proof command; it is not a Solana transaction signature.
         </p>
       )}
       <ul style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.55, paddingLeft: "1.1rem" }}>
