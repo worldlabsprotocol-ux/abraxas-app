@@ -1,6 +1,12 @@
 /* FILE: app/globals.css
    Premium RWA/DeFi design tokens. Light default, dark optional. */
 
+:root {
+  --font-sans: "Plus Jakarta Sans";
+  --font-display: "Plus Jakarta Sans";
+  --font-mono: "JetBrains Mono";
+}
+
 :root,
 [data-theme="light"] {
   --bg:             #F5F5F2;
