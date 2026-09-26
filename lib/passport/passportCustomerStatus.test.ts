@@ -31,12 +31,12 @@ describe("passportCustomerStatus", () => {
       walletBindingL3: true,
     });
     const proof = buildPassportProofSummary({ walletBound: true, identityUi: "not_started" });
-    expect(proof).toContain("No partner proof on file yet");
-    expect(proof).not.toContain("Verified information on file");
+    expect(proof).toContain("A service will ask only if verified information is required");
+    expect(proof).not.toContain("Verified information is ready when a service requests it");
   });
 
   it("shows verified proof only with verified identity state", () => {
     const proof = buildPassportProofSummary({ walletBound: true, identityUi: "verified" });
-    expect(proof).toContain("Verified information on file");
+    expect(proof).toContain("Verified information is ready when a service requests it");
   });
 });
