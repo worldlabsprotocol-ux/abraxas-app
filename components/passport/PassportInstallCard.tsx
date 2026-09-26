@@ -37,10 +37,13 @@ export function PassportInstallCard() {
   if (!installPrompt) return null;
 
   async function install() {
+    const prompt = installPrompt;
+    if (!prompt) return;
+
     setInstalling(true);
     try {
-      await installPrompt.prompt();
-      await installPrompt.userChoice;
+      await prompt.prompt();
+      await prompt.userChoice;
       setInstallPrompt(null);
     } finally {
       setInstalling(false);
