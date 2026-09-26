@@ -7,6 +7,8 @@ import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import { HOSTED_HANDOFF_CHECKLIST, HOSTED_HANDOFF_DOCS, HOSTED_HANDOFF_NOTICE } from "@/lib/partner/hostedHandoff/contract";
 
 const FONT = ABRAXAS_FONT_SANS;
+const HANDOFF_REF = /^hpf_[0-9a-f]{16}$/;
+const storageKey = (applicationId: string) => `abraxas:launchpad:handoff:${applicationId}`;
 
 export function HostedHandoffControls({ applicationId }: { applicationId: string }) {
   const [url, setUrl] = useState("");
@@ -38,7 +40,10 @@ export function HostedHandoffControls({ applicationId }: { applicationId: string
         return;
       }
       setUrl(data.hosted_url);
-      if (data.handoff_ref) setHandoffRef(data.handoff_ref);
+      if (data.handoff_ref && HANDOFF_REF.test(data.handoff_ref)) {
+        setHandoffRef(data.handoff_ref);
+        window.sessionStorage.setItem(storageKey(applicationId), data.handoff_ref);
+      }
       setStatus(data.status ?? "created");
     } catch {
       setError("Could not create a handoff.");
@@ -55,11 +60,20 @@ export function HostedHandoffControls({ applicationId }: { applicationId: string
         `/api/launchpad/applications/${applicationId}/hosted-handoff?handoff_ref=${encodeURIComponent(handoffRef)}`,
         { credentials: "include", cache: "no-store" },
       );
-      const data = await res.json() as { status?: typeof status; error?: string };
+      const data = await res.json() as { hosted_url?: string; status?: typeof status; error?: string };
       if (!res.ok || !data.status) {
-        setError(res.status === 401 ? "Partner session expired. Sign in again, then check status." : "Could not check verification status.");
+        if (res.status === 404) {
+          window.sessionStorage.removeItem(storageKey(applicationId));
+          setHandoffRef("");
+          setUrl("");
+          setStatus("");
+          setError("The previous handoff is unavailable. Create a new secure handoff.");
+        } else {
+          setError(res.status === 401 ? "Partner session expired. Sign in again, then check status." : "Could not check verification status.");
+        }
         return;
       }
+      if (data.hosted_url) setUrl(data.hosted_url);
       setStatus(data.status);
       setError("");
     } catch {
@@ -68,6 +82,15 @@ export function HostedHandoffControls({ applicationId }: { applicationId: string
       setChecking(false);
     }
   }, [applicationId, handoffRef]);
+
+  useEffect(() => {
+    const saved = window.sessionStorage.getItem(storageKey(applicationId)) ?? "";
+    if (HANDOFF_REF.test(saved)) setHandoffRef(saved);
+  }, [applicationId]);
+
+  useEffect(() => {
+    if (handoffRef && status === "") void checkStatus();
+  }, [checkStatus, handoffRef, status]);
 
   useEffect(() => {
     if (!handoffRef || status !== "created") return;
