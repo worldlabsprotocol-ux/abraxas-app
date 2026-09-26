@@ -1,43 +1,92 @@
 "use client";
 // FILE: app/pilot-journey/page.tsx
-// Nontechnical pilot journey explanation — not a receipt tester.
+// Public Week 2 walkthrough that points to the working sandbox surfaces.
 
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
-import { HOME_PARTNER_PROOF_FALLBACK } from "@/lib/home/partnerProof";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
 
+const stepStyle = {
+  display: "grid",
+  gridTemplateColumns: "2rem minmax(0, 1fr)",
+  gap: "0.75rem",
+  alignItems: "start",
+} as const;
+
+const numberStyle = {
+  width: "2rem",
+  height: "2rem",
+  borderRadius: "999px",
+  display: "grid",
+  placeItems: "center",
+  background: "var(--accent-soft)",
+  color: "var(--accent)",
+  fontFamily: FONT,
+  fontWeight: 800,
+  fontSize: "0.82rem",
+} as const;
+
+const copyStyle = {
+  margin: 0,
+  fontFamily: FONT,
+  fontSize: "0.9rem",
+  lineHeight: 1.6,
+  color: "var(--text-secondary)",
+} as const;
+
 export default function PilotJourneyPage() {
   return (
-    <RedesignPage accent="neutral" maxWidth={720}>
+    <RedesignPage accent="neutral" maxWidth={760}>
       <PageHeader
-        eyebrow="Pilot journey"
-        title={HOME_PARTNER_PROOF_FALLBACK.title}
-        subtitle={HOME_PARTNER_PROOF_FALLBACK.summary}
+        eyebrow="Week 2 · Live pilot journey"
+        title="From partner request to private proof"
+        subtitle="Follow the working sandbox flow from a partner checkout to an Abraxas Passport result. This is a live product path, not a design mockup."
       />
 
-      <ContentCard title="What this pilot tests">
-        <p style={{ fontFamily: FONT, fontSize: "0.9rem", lineHeight: 1.65, color: "var(--text-secondary)", margin: 0 }}>
-          A participating retailer can ask a customer to complete private eligibility verification with Abraxas before checkout.
-          The customer receives a policy-specific result — not a copy of their identity documents.
+      <ContentCard title="Try the working flow">
+        <div style={{ display: "grid", gap: "1rem" }}>
+          <div style={stepStyle}>
+            <span style={numberStyle}>1</span>
+            <p style={copyStyle}><strong style={{ color: "var(--text-primary)" }}>Start with the partner.</strong><br />Good Trouble asks for one result: confirm the customer is 21 or older.</p>
+          </div>
+          <div style={stepStyle}>
+            <span style={numberStyle}>2</span>
+            <p style={copyStyle}><strong style={{ color: "var(--text-primary)" }}>Use Abraxas Passport.</strong><br />The customer reviews exactly what the partner needs and keeps their birth date and documents private.</p>
+          </div>
+          <div style={stepStyle}>
+            <span style={numberStyle}>3</span>
+            <p style={copyStyle}><strong style={{ color: "var(--text-primary)" }}>Return with a signed result.</strong><br />The partner receives a reusable eligibility result and can verify the receipt.</p>
+          </div>
+          <Btn href="/good-trouble" size="lg">Start the live sandbox →</Btn>
+        </div>
+      </ContentCard>
+
+      <ContentCard title="What changed since Week 1">
+        <div style={{ display: "grid", gap: "0.8rem" }}>
+          <p style={copyStyle}><strong style={{ color: "var(--text-primary)" }}>Week 1:</strong> the private verification foundation and partner setup.</p>
+          <p style={copyStyle}><strong style={{ color: "var(--text-primary)" }}>Week 2:</strong> a holder-facing Passport, partner handoff and return, signed receipt experience, verified Solana devnet configuration, and a public transaction verifier.</p>
+        </div>
+      </ContentCard>
+
+      <ContentCard title="Inspect the build">
+        <p style={{ ...copyStyle, marginBottom: "1rem" }}>
+          Open each live surface directly. The Solana verifier accepts a real finalized devnet transaction signature.
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem" }}>
+          <Btn href="/passport">Open Passport</Btn>
+          <Btn href="/proofs/solana-devnet" variant="secondary">Open Solana verifier</Btn>
+          <Btn href="/developers/launchpad" variant="secondary">Open Partner Launchpad</Btn>
+        </div>
+      </ContentCard>
+
+      <ContentCard title="Sandbox scope">
+        <p style={copyStyle}>
+          This journey uses the real application path and sandbox services. It does not grant production approval, complete a purchase, or move funds.
         </p>
       </ContentCard>
-
-      <ContentCard title="What this is not">
-        <ul style={{ margin: 0, paddingLeft: "1.1rem", fontFamily: FONT, fontSize: "0.86rem", lineHeight: 1.65, color: "var(--text-secondary)" }}>
-          <li>Not a claim of regulatory approval or production certification</li>
-          <li>Not a public partner directory or operational dashboard</li>
-          <li>Not a substitute for any legally required merchant-side ID check</li>
-        </ul>
-      </ContentCard>
-
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem" }}>
-        <Btn href="/integrate" size="lg">For businesses</Btn>
-        <Btn href="/docs/partner-flow" variant="secondary" size="lg">View developer docs</Btn>
-      </div>
     </RedesignPage>
   );
 }
