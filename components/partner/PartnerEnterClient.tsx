@@ -47,15 +47,15 @@ export function PartnerEnterClient({
 
   const validate = useCallback(async () => {
     if (!receiptId) {
-      setError("Missing receipt_id in callback URL.");
+      setError("We could not find a verification result for this return.");
       return;
     }
     if (urlPartnerId && urlPartnerId !== partnerId) {
-      setError("Partner mismatch in callback.");
+      setError("This verification result belongs to a different service.");
       return;
     }
     if (urlStatus === "denied") {
-      setError("Verification was denied.");
+      setError("This verification did not confirm eligibility.");
       return;
     }
 
@@ -71,7 +71,7 @@ export function PartnerEnterClient({
         error?: string;
       };
       if (!data.grant) {
-        throw new Error(data.errors?.join("; ") || data.error || `Access ${data.outcome ?? "denied"}`);
+        throw new Error("We could not confirm this verification result.");
       }
       setReceipt({
         receipt_id: data.receipt_id ?? receiptId,
@@ -141,7 +141,7 @@ export function PartnerEnterClient({
   }
 
   useEffect(() => {
-    void validate().catch(e => setError(e instanceof Error ? e.message : "Validation failed"));
+    void validate().catch(() => setError("We could not confirm this verification result."));
   }, [validate]);
 
   const safePayload = receipt
@@ -164,12 +164,23 @@ export function PartnerEnterClient({
         {partnerName.toUpperCase()} · AGE-GATED ENTRY
       </div>
       <h1 style={{ fontSize: "1.15rem", margin: "0 0 0.75rem", fontWeight: 800 }}>
-        {unlocked ? "Eligibility confirmed" : "Verifying access"}
+        {error ? "Verification needs attention" : unlocked ? "Eligibility confirmed" : "Verifying access"}
       </h1>
-      <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
-        {status}
-      </p>
-      {error && <p style={{ fontSize: "0.82rem", color: "#EF4444", marginTop: "0.5rem" }}>{error}</p>}
+      {!error && (
+        <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
+          {status}
+        </p>
+      )}
+      {error && (
+        <div role="alert" style={{ marginTop: "0.5rem" }}>
+          <p style={{ fontSize: "0.82rem", color: "#FCA5A5", margin: "0 0 0.8rem", lineHeight: 1.55 }}>
+            {error}
+          </p>
+          <Btn href={verifyPath} size="lg" fullWidth>
+            Try verification again →
+          </Btn>
+        </div>
+      )}
 
       {receipt && !unlocked && !error && (
         <Btn onClick={() => void refreshReceipt()} disabled={refreshing} size="sm" style={{ marginTop: "1rem" }}>
@@ -215,11 +226,6 @@ export function PartnerEnterClient({
         </div>
       )}
 
-      {!unlocked && !receiptId && (
-        <div style={{ marginTop: "1rem" }}>
-          <Btn href={verifyPath} size="sm">Continue with Abraxas →</Btn>
-        </div>
-      )}
     </div>
   );
 }
