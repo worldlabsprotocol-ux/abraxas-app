@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Btn } from "@/components/redesign/ui";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import { PARTNER_FLOW_RECEIPT_CHECKS } from "@/lib/partner/partnerFlowIntegratorKit";
@@ -47,10 +48,11 @@ function evaluateChecks(
 }
 
 export function PartnerReceiptVerifyPanel() {
-  const [receiptId, setReceiptId] = useState("");
-  const [partnerId, setPartnerId] = useState("");
-  const [policyId, setPolicyId] = useState("");
-  const [allowSandbox, setAllowSandbox] = useState(false);
+  const searchParams = useSearchParams();
+  const [receiptId, setReceiptId] = useState(() => searchParams.get("receipt_id")?.trim() ?? "");
+  const [partnerId, setPartnerId] = useState(() => searchParams.get("partner_id")?.trim() ?? "");
+  const [policyId, setPolicyId] = useState(() => searchParams.get("policy_id")?.trim() ?? "");
+  const [allowSandbox, setAllowSandbox] = useState(() => searchParams.get("allow_sandbox") === "1");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<PartnerFlowPublicReceipt | null>(null);
