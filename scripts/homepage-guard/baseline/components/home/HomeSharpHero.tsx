@@ -112,7 +112,7 @@ export function HomeSharpHero() {
           textDecoration: "none",
         }}
       >
-        Week 2 live build: follow the working journey →
+        See the live privacy journey →
       </Link>
 
       <div
