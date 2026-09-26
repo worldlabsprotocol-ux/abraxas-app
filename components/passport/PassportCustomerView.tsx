@@ -25,6 +25,8 @@ import {
   PASSPORT_SECURE_ACCOUNT_EXPLAINER,
   PASSPORT_SECURE_ACCOUNT_LABEL,
   PASSPORT_ADVANCED_ROUTE,
+  PASSPORT_USE_PASSPORT_LABEL,
+  PASSPORT_USE_PASSPORT_SUB,
 } from "@/lib/passport/passportCustomerCopy";
 import {
   buildPassportProofSummary,
@@ -263,6 +265,55 @@ export function PassportCustomerView({
         <div style={{ marginBottom: "1rem" }}>
           <PartnerReturnCta handoff={handoff} label="Return to service →" />
         </div>
+      )}
+
+      {walletDone && setup.walletBound && !handoff.isPartnerFlowContext && (
+        <section style={CARD} aria-labelledby="passport-use-heading">
+          <p style={{
+            fontFamily: FONT,
+            fontSize: "0.72rem",
+            fontWeight: 700,
+            color: "#A5B4FC",
+            letterSpacing: "0.04em",
+            textTransform: "uppercase",
+            margin: "0 0 0.35rem",
+          }}>
+            Sandbox example
+          </p>
+          <h2 id="passport-use-heading" style={{
+            fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.35rem",
+          }}>
+            {PASSPORT_USE_PASSPORT_LABEL}
+          </h2>
+          <p style={{
+            fontFamily: FONT,
+            fontSize: "0.82rem",
+            lineHeight: 1.6,
+            color: "var(--text-secondary)",
+            margin: "0 0 0.8rem",
+          }}>
+            {PASSPORT_USE_PASSPORT_SUB}. Try a 21+ partner flow where the service receives only the eligibility result.
+          </p>
+          <Link
+            href="/good-trouble/checkout"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "100%",
+              minHeight: "2.75rem",
+              borderRadius: 10,
+              background: "#EAB308",
+              color: "#111827",
+              fontFamily: FONT,
+              fontSize: "0.84rem",
+              fontWeight: 800,
+              textDecoration: "none",
+            }}
+          >
+            Try the sandbox example →
+          </Link>
+        </section>
       )}
 
       {walletDone && (
