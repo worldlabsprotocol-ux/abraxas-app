@@ -340,7 +340,7 @@ export function PassportVerificationActivity() {
         id="passport-verification-activity-heading"
         style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.5rem" }}
       >
-        Your verification activity
+        Where your Passport was used
       </h2>
       <p style={{ fontFamily: FONT, fontSize: "0.8rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.85rem" }}>
         {data?.notice ?? PASSPORT_ACTIVITY_NOTICE}
