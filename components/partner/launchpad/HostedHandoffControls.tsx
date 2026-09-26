@@ -1,7 +1,7 @@
 "use client";
 // FILE: components/partner/launchpad/HostedHandoffControls.tsx
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import { HOSTED_HANDOFF_CHECKLIST, HOSTED_HANDOFF_DOCS, HOSTED_HANDOFF_NOTICE } from "@/lib/partner/hostedHandoff/contract";
@@ -14,12 +14,15 @@ export function HostedHandoffControls({ applicationId }: { applicationId: string
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [status, setStatus] = useState<"created" | "completed" | "consumed" | "cancelled" | "expired" | "">("");
+  const [checking, setChecking] = useState(false);
 
   async function createHandoff() {
     setBusy(true);
     setError("");
     setUrl("");
     setHandoffRef("");
+    setStatus("");
     try {
       const res = await fetch(`/api/launchpad/applications/${applicationId}/hosted-handoff`, {
         method: "POST",
@@ -27,7 +30,7 @@ export function HostedHandoffControls({ applicationId }: { applicationId: string
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ runtime: "universal_https" }),
       });
-      const data = await res.json() as { hosted_url?: string; handoff_ref?: string; error?: string };
+      const data = await res.json() as { hosted_url?: string; handoff_ref?: string; status?: typeof status; error?: string };
       if (!res.ok || !data.hosted_url) {
         setError(data.error === "not_configured"
           ? "Save Partner Flow configuration and an approved callback first."
@@ -36,12 +39,43 @@ export function HostedHandoffControls({ applicationId }: { applicationId: string
       }
       setUrl(data.hosted_url);
       if (data.handoff_ref) setHandoffRef(data.handoff_ref);
+      setStatus(data.status ?? "created");
     } catch {
       setError("Could not create a handoff.");
     } finally {
       setBusy(false);
     }
   }
+
+  const checkStatus = useCallback(async () => {
+    if (!handoffRef) return;
+    setChecking(true);
+    try {
+      const res = await fetch(
+        `/api/launchpad/applications/${applicationId}/hosted-handoff?handoff_ref=${encodeURIComponent(handoffRef)}`,
+        { credentials: "include", cache: "no-store" },
+      );
+      const data = await res.json() as { status?: typeof status; error?: string };
+      if (!res.ok || !data.status) {
+        setError(res.status === 401 ? "Partner session expired. Sign in again, then check status." : "Could not check verification status.");
+        return;
+      }
+      setStatus(data.status);
+      setError("");
+    } catch {
+      setError("Could not check verification status.");
+    } finally {
+      setChecking(false);
+    }
+  }, [applicationId, handoffRef]);
+
+  useEffect(() => {
+    if (!handoffRef || status !== "created") return;
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void checkStatus();
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [checkStatus, handoffRef, status]);
 
   return (
     <section aria-labelledby="hosted-handoff-heading" style={{ marginTop: "1.15rem" }}>
@@ -82,9 +116,25 @@ export function HostedHandoffControls({ applicationId }: { applicationId: string
         </p>
       )}
       {handoffRef && (
-        <p style={{ fontFamily: FONT, fontSize: "0.76rem", lineHeight: 1.55, color: "var(--text-secondary)" }}>
-          Devnet proof handoff ref: <code style={{ userSelect: "text" }}>{handoffRef}</code>. Once verification is complete, use this ref in the local proof command; it is not a Solana transaction signature.
-        </p>
+        <div style={{ margin: "0.7rem 0" }}>
+          <p role="status" style={{ fontFamily: FONT, fontSize: "0.78rem", lineHeight: 1.55, color: status === "completed" || status === "consumed" ? "#5EEAD4" : "var(--text-secondary)", margin: "0 0 0.45rem" }}>
+            {status === "completed" || status === "consumed"
+              ? "Verification complete. This handoff is ready for the Ubuntu devnet proof command."
+              : status === "expired"
+                ? "This handoff expired. Create a new secure handoff."
+                : status === "cancelled"
+                  ? "This handoff was cancelled. Create a new secure handoff."
+                  : "Waiting for the holder to finish verification and consent…"}
+          </p>
+          <p style={{ fontFamily: FONT, fontSize: "0.76rem", lineHeight: 1.55, color: "var(--text-secondary)", margin: "0 0 0.45rem" }}>
+            Devnet proof handoff ref: <code style={{ userSelect: "text" }}>{handoffRef}</code>
+          </p>
+          {status === "created" && (
+            <Btn size="sm" variant="secondary" loading={checking} disabled={checking} onClick={() => void checkStatus()}>
+              Check verification status
+            </Btn>
+          )}
+        </div>
       )}
       <ul style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.55, paddingLeft: "1.1rem" }}>
         {HOSTED_HANDOFF_CHECKLIST.map((item) => <li key={item}>{item}</li>)}
