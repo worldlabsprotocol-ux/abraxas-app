@@ -226,7 +226,18 @@ unset ABRAXAS_SANDBOX_PARTNER_API_KEY` : "";
             </Btn>
           )}
           {commandReady && (
-            <div style={{ marginTop: "0.65rem" }}>
+            <div style={{
+              marginTop: "0.75rem", padding: "0.85rem", borderRadius: 10,
+              border: "1px solid rgba(94, 234, 212, 0.35)", background: "rgba(20, 184, 166, 0.06)",
+            }}>
+              <p style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 800, margin: "0 0 0.6rem" }}>
+                Finish the devnet proof
+              </p>
+              <ol style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.6, paddingLeft: "1.1rem", margin: "0 0 0.7rem" }}>
+                <li>Copy the prepared command below.</li>
+                <li>Paste it into Ubuntu and enter the sandbox API key when prompted.</li>
+                <li>When it succeeds, open the printed <code>proof_url</code> to see and share the verified result.</li>
+              </ol>
               <Btn
                 size="sm"
                 onClick={() => {
@@ -236,10 +247,10 @@ unset ABRAXAS_SANDBOX_PARTNER_API_KEY` : "";
                   });
                 }}
               >
-                {commandCopied ? "Ubuntu command copied" : "Copy Ubuntu proof command"}
+                {commandCopied ? "Ubuntu command copied" : "1. Copy Ubuntu proof command"}
               </Btn>
               <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.5, margin: "0.45rem 0 0" }}>
-                Paste it into Ubuntu. It asks for the sandbox API key privately and never places that key in the command or page.
+                The API key stays private: it is requested inside Ubuntu and is never placed in the copied command or browser page.
               </p>
             </div>
           )}
