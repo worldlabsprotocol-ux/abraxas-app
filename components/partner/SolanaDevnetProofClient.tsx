@@ -30,6 +30,7 @@ const reasonText: Record<string, string> = {
 export function SolanaDevnetProofClient({ signature }: { signature: string }) {
   const [proof, setProof] = useState<Proof | null>(null);
   const [loading, setLoading] = useState(Boolean(signature));
+  const [copied, setCopied] = useState(false);
   useEffect(() => {
     if (!signature) return;
     const controller = new AbortController();
@@ -64,17 +65,37 @@ export function SolanaDevnetProofClient({ signature }: { signature: string }) {
         <p role="status" style={row}>{reasonText[proof.reason] ?? "This signature could not be verified as the reviewed institutional devnet proof."}</p>
       )}
       {!loading && proof?.ok === true && (
-        <div role="status" style={{ marginTop: "1.25rem" }}>
-          <p style={row}><strong>Verified institutional devnet transaction</strong></p>
-          <p style={row}>Authorization consumed: yes · Current access: {proof.currently_valid ? "valid" : "expired"}</p>
+        <div role="status" aria-live="polite" style={{
+          marginTop: "1.25rem", padding: "1rem", borderRadius: 12,
+          border: "1px solid rgba(94, 234, 212, 0.5)", background: "rgba(20, 184, 166, 0.08)",
+        }}>
+          <p style={{ ...row, color: "#5EEAD4", fontSize: "1.05rem" }}><strong>✓ Verified institutional devnet transaction</strong></p>
+          <p style={row}>Authorization consumed: yes · Current access: <strong>{proof.currently_valid ? "valid" : "expired"}</strong></p>
           {proof.current_deployment === "matched" && <p style={row}>Current program binaries and configuration: reviewed match</p>}
           <p style={row}>Finalized in slot {proof.slot} · Valid until {new Date(proof.valid_until * 1000).toLocaleString()}</p>
-          <p style={row}>Signature: <a style={mono} href={`https://explorer.solana.com/tx/${proof.signature}?cluster=devnet`} target="_blank" rel="noopener noreferrer">{proof.signature}</a></p>
-          <p style={row}>Gate program: <span style={mono}>{proof.gate_program_id}</span></p>
-          <p style={row}>Consumer program: <span style={mono}>{proof.consumer_program_id}</span></p>
-          <p style={row}>Authorization: <span style={mono}>{proof.authorization_pda}</span></p>
-          <p style={row}>Entitlement: <span style={mono}>{proof.entitlement_pda}</span></p>
-          <p style={row}>A broadcast replay attempt has not been proven by this check.</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem", margin: "0.9rem 0" }}>
+            <button type="button" onClick={() => {
+              const publicUrl = new URL("/proofs/solana-devnet", "https://demo.abraxasworld.xyz");
+              publicUrl.searchParams.set("signature", proof.signature);
+              void navigator.clipboard.writeText(publicUrl.toString()).then(() => {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1600);
+              });
+            }} style={{ padding: "0.65rem 1rem", borderRadius: 8, cursor: "pointer" }}>
+              {copied ? "Proof link copied" : "Copy verified proof link"}
+            </button>
+            <a href={`https://explorer.solana.com/tx/${proof.signature}?cluster=devnet`} target="_blank" rel="noopener noreferrer"
+              style={{ alignSelf: "center", fontWeight: 700 }}>View transaction on Solana Explorer ↗</a>
+          </div>
+          <details>
+            <summary style={{ cursor: "pointer", fontWeight: 700 }}>Technical proof details</summary>
+            <p style={row}>Signature: <span style={mono}>{proof.signature}</span></p>
+            <p style={row}>Gate program: <span style={mono}>{proof.gate_program_id}</span></p>
+            <p style={row}>Consumer program: <span style={mono}>{proof.consumer_program_id}</span></p>
+            <p style={row}>Authorization: <span style={mono}>{proof.authorization_pda}</span></p>
+            <p style={row}>Entitlement: <span style={mono}>{proof.entitlement_pda}</span></p>
+            <p style={row}>A broadcast replay attempt has not been proven by this check.</p>
+          </details>
         </div>
       )}
     </>
