@@ -2,6 +2,7 @@
 // FILE: components/home/HomeSharpHero.tsx
 // Hero — headline, CTAs, and verify-once flow visual.
 
+import Link from "next/link";
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_DISPLAY, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import {
@@ -81,7 +82,7 @@ export function HomeSharpHero() {
         {SIMPLIFIED_HOME_MOBILE_PROMPT}
       </p>
 
-      <div className="abx-home-hero-actions" style={{ marginBottom: "1.5rem" }}>
+      <div className="abx-home-hero-actions" style={{ marginBottom: "0.85rem" }}>
         <Btn href={SIMPLIFIED_HOME_CTA_PRIMARY_HREF} size="lg">
           {SIMPLIFIED_HOME_CTA_PRIMARY}
         </Btn>
@@ -92,6 +93,27 @@ export function HomeSharpHero() {
           {SIMPLIFIED_HOME_CTA_BUILD}
         </Btn>
       </div>
+
+      <Link
+        href="/pilot-journey"
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "0.4rem",
+          margin: "0 auto 1.5rem",
+          padding: "0.42rem 0.75rem",
+          borderRadius: 999,
+          border: `1px solid ${GOLD}55`,
+          background: `${GOLD}10`,
+          color: GOLD,
+          fontFamily: FONT,
+          fontSize: "0.78rem",
+          fontWeight: 800,
+          textDecoration: "none",
+        }}
+      >
+        Week 2 live build: follow the working journey →
+      </Link>
 
       <div
         aria-label="Verify once flow"
