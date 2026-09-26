@@ -220,11 +220,37 @@ export default function AdminReceiptsPage() {
           style={{ display: "grid", gridTemplateColumns: selected ? "1fr 1.2fr" : "1fr", gap: "1rem" }}
         >
           <section style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6, overflow: "hidden" }}>
-            <div style={{ padding: "0.5rem 0.75rem", borderBottom: "1px solid rgba(255,255,255,0.06)", fontSize: "0.65rem", color: "rgba(255,255,255,0.35)" }}>
-              {listLoading ? "Loading…" : `${receipts.length} receipts`}
+            <div style={{ padding: "0.5rem 0.75rem", borderBottom: "1px solid rgba(255,255,255,0.06)", fontSize: "0.65rem", color: "rgba(255,255,255,0.35)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
+              <span>{listLoading ? "Loading…" : `${receipts.length} receipts`}</span>
+              <button
+                type="button"
+                onClick={() => void loadList()}
+                disabled={listLoading || !canLoad}
+                style={{ padding: "0.3rem 0.55rem", borderRadius: 4, border: "1px solid rgba(167,139,250,0.35)", background: "rgba(167,139,250,0.08)", color: "#c4b5fd", fontFamily: MONO, fontSize: "0.6rem", cursor: listLoading || !canLoad ? "not-allowed" : "pointer", opacity: listLoading || !canLoad ? 0.5 : 1 }}
+              >
+                {listLoading ? "Refreshing…" : "Refresh"}
+              </button>
             </div>
             {receipts.length === 0 ? (
-              <p style={{ padding: "1.5rem", fontSize: "0.7rem", color: "rgba(255,255,255,0.3)" }}>No receipts yet.</p>
+              <div style={{ padding: "1.35rem", display: "grid", gap: "0.8rem" }}>
+                <div>
+                  <h2 style={{ margin: "0 0 0.35rem", fontSize: "0.78rem", color: "#f0f0f0" }}>Create the first sandbox receipt</h2>
+                  <p style={{ margin: 0, maxWidth: 620, fontSize: "0.68rem", lineHeight: 1.65, color: "rgba(255,255,255,0.48)" }}>
+                    Complete the Good Trouble 21+ journey. After the holder returns with an approved signed result, refresh this list to inspect the receipt and its audit timeline.
+                  </p>
+                </div>
+                <ol style={{ margin: 0, paddingLeft: "1.1rem", fontSize: "0.65rem", lineHeight: 1.7, color: "rgba(255,255,255,0.48)" }}>
+                  <li>Start the partner sandbox journey</li>
+                  <li>Sign in and complete the Passport request</li>
+                  <li>Return here and refresh the receipt list</li>
+                </ol>
+                <Link
+                  href="/good-trouble"
+                  style={{ width: "fit-content", padding: "0.48rem 0.75rem", borderRadius: 5, background: "#10b981", color: "#03120d", fontSize: "0.67rem", fontWeight: 800, textDecoration: "none" }}
+                >
+                  Run sandbox journey →
+                </Link>
+              </div>
             ) : receipts.map(r => (
               <button
                 key={r.receipt_id}
