@@ -3,7 +3,7 @@
 // Integrator tester for GET /api/receipts/{receipt_id}/public — UI only, no contract changes.
 
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Btn } from "@/components/redesign/ui";
 import { StatusBanner } from "@/components/ui/StatusBanner";
@@ -49,15 +49,18 @@ function evaluateChecks(
 
 export function PartnerReceiptVerifyPanel() {
   const searchParams = useSearchParams();
-  const [receiptId, setReceiptId] = useState(() => searchParams.get("receipt_id")?.trim() ?? "");
+  const prefilledReceiptId = searchParams.get("receipt_id")?.trim() ?? "";
+  const [receiptId, setReceiptId] = useState(() => prefilledReceiptId);
   const [partnerId, setPartnerId] = useState(() => searchParams.get("partner_id")?.trim() ?? "");
   const [policyId, setPolicyId] = useState(() => searchParams.get("policy_id")?.trim() ?? "");
   const [allowSandbox, setAllowSandbox] = useState(() => searchParams.get("allow_sandbox") === "1");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<PartnerFlowPublicReceipt | null>(null);
+  const [verificationLinkCopied, setVerificationLinkCopied] = useState(false);
+  const autoLookupStarted = useRef(false);
 
-  async function runLookup() {
+  const runLookup = useCallback(async () => {
     const id = receiptId.trim();
     if (!id) {
       setErr("Enter a receipt_id from your Partner Flow callback.");
@@ -76,7 +79,13 @@ export function PartnerReceiptVerifyPanel() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [receiptId]);
+
+  useEffect(() => {
+    if (!prefilledReceiptId || autoLookupStarted.current) return;
+    autoLookupStarted.current = true;
+    void runLookup();
+  }, [prefilledReceiptId, runLookup]);
 
   const analysis = receipt
     ? evaluateChecks(receipt, partnerId, policyId, allowSandbox)
@@ -86,9 +95,11 @@ export function PartnerReceiptVerifyPanel() {
     <div>
       <StatusBanner
         tone="info"
-        title="Partner Flow receipt verification"
+        title={prefilledReceiptId ? "Checking your verification receipt" : "Partner Flow receipt verification"}
       >
-        For integrators validating session receipts after a holder callback. Run this check from your server in production — this page is a public tester only.
+        {prefilledReceiptId
+          ? "Abraxas is checking the signed public receipt returned by the partner flow. No identity documents are shown here."
+          : "For integrators validating session receipts after a holder callback. Run this check from your server in production — this page is a public tester only."}
       </StatusBanner>
 
       <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "1rem 0" }}>
@@ -151,8 +162,13 @@ export function PartnerReceiptVerifyPanel() {
             }}
           >
             <div style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: 4 }}>
-              {analysis.validation.ok ? "Receipt checks passed" : "Receipt checks failed"}
+              {analysis.validation.ok ? "Receipt verified" : "Receipt checks failed"}
             </div>
+            {analysis.validation.ok && (
+              <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.55, margin: "0.35rem 0 0" }}>
+                The signature, decision, status, expiry, partner, and policy checks passed for this {allowSandbox ? "sandbox " : ""}receipt.
+              </p>
+            )}
             {!analysis.validation.ok && analysis.validation.errors.length > 0 && (
               <ul style={{ margin: "0.35rem 0 0", paddingLeft: "1.1rem", fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)" }}>
                 {analysis.validation.errors.map((e) => (
@@ -185,6 +201,27 @@ export function PartnerReceiptVerifyPanel() {
                 </div>
               </div>
             ))}
+          </div>
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+            <Btn href="/passport#passport-verification-activity-heading" size="sm" variant="secondary">
+              Open Passport activity →
+            </Btn>
+            <Btn href={`/api/receipts/${encodeURIComponent(receipt.receipt_id)}/public`} size="sm" variant="secondary">
+              Open public receipt →
+            </Btn>
+            <Btn
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                void navigator.clipboard.writeText(window.location.href).then(() => {
+                  setVerificationLinkCopied(true);
+                  setTimeout(() => setVerificationLinkCopied(false), 1500);
+                });
+              }}
+            >
+              {verificationLinkCopied ? "Verification link copied" : "Copy verification link"}
+            </Btn>
           </div>
 
           <pre
