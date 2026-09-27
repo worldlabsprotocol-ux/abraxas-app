@@ -25,6 +25,13 @@ describe("public Abraxas product preview boundary", () => {
     expect(gate).toContain("Explore without signing in");
   });
 
+  it("starts from the user's goal and supports a specific use case", () => {
+    expect(preview).toContain("What do you want Abraxas to enable?");
+    expect(preview).toContain("Something specific");
+    expect(preview).toContain("Describe the result your product needs");
+    expect(preview).toContain("recommended");
+  });
+
   it("labels the preview as non-mutating", () => {
     expect(preview).toContain("not saved");
     expect(preview).toContain("no credentials issued");
