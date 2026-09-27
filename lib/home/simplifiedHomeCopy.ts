@@ -9,7 +9,7 @@ export const SIMPLIFIED_HOME_SUBHEAD =
   "Abraxas is a private eligibility protocol. Your evidence stays private. Partners verify a current result on their server.";
 
 export const SIMPLIFIED_HOME_MOBILE_PROMPT =
-  "Start with the interactive policy preview. No sign-in or wallet required.";
+  "Start with your use case. Abraxas recommends a policy with no sign-in or wallet required.";
 
 export const SIMPLIFIED_HOME_TRUST_LINE =
   "Use one private verification again with fresh consent. Abraxas does not execute trades, payments, or transfers.";
@@ -22,7 +22,8 @@ export const SIMPLIFIED_HOME_CTA_BUILD = "Build with Abraxas";
 export const SIMPLIFIED_HOME_CTA_BUILD_HREF = "/developers/integration-studio";
 
 export const SIMPLIFIED_HERO_FLOW = [
-  "Choose a policy",
+  "Choose your goal",
+  "Pick a policy",
   "Review privacy",
   "Copy integration",
 ] as const;
