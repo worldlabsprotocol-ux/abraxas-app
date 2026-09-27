@@ -14,7 +14,7 @@ export default function IntegrationStudioPage() {
       <PageHeader
         eyebrow="Developers · Integration Studio"
         title="Create a sandbox integration"
-        subtitle={`${ACCOUNT_ACCESS_FIRST_PAINT} Discover a pack, create an isolated sandbox app, generate a starter kit, then test. Production stays on the reviewed Launchpad path. Studio does not move funds.`}
+        subtitle={`${ACCOUNT_ACCESS_FIRST_PAINT} Choose a policy, create an isolated sandbox, and run its hosted test. No wallet or identity login is needed for sandbox setup. Production stays on the reviewed Launchpad path.`}
       />
       <IntegrationStudioClient />
     </RedesignPage>
