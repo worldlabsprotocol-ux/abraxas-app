@@ -70,6 +70,13 @@ export const ADMIN_PROTOCOL_NAV_ITEMS: readonly AdminNavItem[] = [
     section: "protocol",
   },
   {
+    id: "support",
+    href: "/admin/support",
+    label: "Holder support",
+    description: "Review Passport holder requests and publish status updates",
+    section: "operations",
+  },
+  {
     id: "connect",
     href: "/admin/connect",
     label: "Connect",
