@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
@@ -28,7 +28,7 @@ describe("PassportRequestInbox", () => {
     await vi.waitFor(() => expect(container).toBeEmptyDOMElement());
   });
 
-  it("shows a reassuring empty state on the dedicated Requests page", async () => {
+  it("shows a reassuring empty state and a three-step sandbox demo on the Requests page", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
       ok: true,
       requests: [],
@@ -37,6 +37,30 @@ describe("PassportRequestInbox", () => {
     render(wrap(<PassportRequestInbox showEmpty />));
     expect(await screen.findByText("No requests waiting")).toBeInTheDocument();
     expect(screen.getByText(/before anything is shared/i)).toBeInTheDocument();
+    expect(screen.getByText("Try the real consent flow")).toBeInTheDocument();
+    expect(screen.getByText("Create a sandbox partner request.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Create demo request →" })).toBeEnabled();
+    expect(screen.getByText(/does not create a production decision/i)).toBeInTheDocument();
+  });
+
+  it("creates the demo through the session-bound Passport endpoint and shows a safe error", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, requests: [] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: "Demo temporarily unavailable" }), { status: 400 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(wrap(<PassportRequestInbox showEmpty />));
+    fireEvent.click(await screen.findByRole("button", { name: "Create demo request →" }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
+      "/api/passport/demo-partner-request",
+      expect.objectContaining({
+        method: "POST",
+        credentials: "include",
+        body: JSON.stringify({ policy_id: "abraxas-core-v1" }),
+      }),
+    ));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Demo temporarily unavailable");
   });
 
   it("puts the review action and plain-language disclosure first", async () => {
