@@ -9,6 +9,7 @@ import { checkLaunchpadRateLimit } from "@/lib/partner/launchpad/rateLimit";
 import {
   isPassportSupportIssue,
   normalizePassportSupportMessage,
+  passportSupportCategory,
   passportSupportIssueLabel,
   toPassportSupportHistoryItem,
 } from "@/lib/passport/passportSupport";
@@ -123,7 +124,7 @@ export async function POST(req: NextRequest) {
     name: "Passport holder",
     email,
     organization: null,
-    category: `passport-support:${body.issue_type}`,
+    category: passportSupportCategory(body.issue_type),
     message: `[${reference}] ${issueLabel}\n\n${message}`,
   });
 
