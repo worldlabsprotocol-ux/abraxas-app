@@ -96,6 +96,7 @@ export async function createStudioSandbox(req: NextRequest) {
     return studioError("invalid_input", 400);
   }
 
+  // The browser nonce makes retries stable without becoming an authentication credential.
   const anonymousSandboxId = String(body.sandbox_id ?? "").trim();
   const anonymousSuffix = anonymousSandboxId.replace(/[^a-f0-9]/gi, "").toLowerCase().slice(0, 12);
   const anonymousName = applicationName
