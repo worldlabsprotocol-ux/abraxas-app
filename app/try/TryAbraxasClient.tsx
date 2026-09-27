@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { normalizePublicPolicyItems } from "@/lib/partner/publicPolicyPreview";
 
 type PublicPolicy = {
   id: string;
@@ -15,8 +16,8 @@ type PublicPolicy = {
   required_claims: string[];
   minimum_assurance: string;
   intended_use_examples: string[];
-  partner_receives: string[];
-  partner_does_not_receive: string[];
+  partner_receives: string | string[];
+  partner_does_not_receive: string | string[];
   production_suitability: string;
 };
 
@@ -92,10 +93,11 @@ function Panel({ children, accent = TEAL }: { children: React.ReactNode; accent?
   );
 }
 
-function List({ items, empty = "None" }: { items: string[]; empty?: string }) {
+function List({ items, empty = "None" }: { items: unknown; empty?: string }) {
+  const normalized = normalizePublicPolicyItems(items);
   return (
     <ul style={{ margin: 0, paddingLeft: "1.1rem", color: "var(--text-secondary)", lineHeight: 1.65, fontSize: "0.82rem" }}>
-      {(items.length ? items : [empty]).map((item) => <li key={item}>{item.replaceAll("_", " ")}</li>)}
+      {(normalized.length ? normalized : [empty]).map((item) => <li key={item}>{item.replaceAll("_", " ")}</li>)}
     </ul>
   );
 }
