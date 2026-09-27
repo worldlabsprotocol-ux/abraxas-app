@@ -12,7 +12,6 @@ import {
   POLICY_PROPOSAL_CAPABILITY_LABELS,
   POLICY_PROPOSAL_ENVIRONMENT_LABELS,
   POLICY_PROPOSAL_ENVIRONMENTS,
-  POLICY_PROPOSAL_NOTICE,
   POLICY_PROPOSAL_PLATFORM_LABELS,
   POLICY_PROPOSAL_PLATFORMS,
   POLICY_PROPOSAL_PRIVATE,
@@ -22,6 +21,12 @@ import {
   POLICY_PROPOSAL_RESULT_LABELS,
   POLICY_PROPOSAL_RESULTS,
 } from "@/lib/partner/policyProposal/contract";
+import {
+  POLICY_FIT_CAPABILITY_TO_PATH,
+  POLICY_FIT_CATEGORY_TO_PACK,
+  isPolicyFitCapability,
+  isPolicyFitCategory,
+} from "@/lib/partner/integrationStudio/policyFit/contract";
 
 const FONT = ABRAXAS_FONT_SANS;
 
@@ -64,54 +69,53 @@ export function PolicyProposalForm({ initialAction, initialResult }: { initialAc
   const [environment, setEnvironment] = useState("sandbox");
   const [platform, setPlatform] = useState("http_generic");
   const [capabilities, setCapabilities] = useState<string[]>(["reusable_result"]);
-  const [status, setStatus] = useState("");
-  const [error, setError] = useState("");
-
-  const body = useMemo(() => ({
-    action,
-    result_needed: result,
-    partner_receives: receives,
-    stays_private: privacy,
-    environment,
-    platform,
-    capabilities,
-    confirm: true,
-  }), [action, result, receives, privacy, environment, platform, capabilities]);
+  const studioHref = useMemo(() => {
+    const pack = isPolicyFitCategory(result)
+      ? POLICY_FIT_CATEGORY_TO_PACK[result]
+      : "sandbox_institutional_protocol_access";
+    const primaryCapability = capabilities.find(isPolicyFitCapability);
+    const path = primaryCapability
+      ? POLICY_FIT_CAPABILITY_TO_PATH[primaryCapability]
+      : "hosted_partner_flow";
+    const params = new URLSearchParams({
+      pack,
+      path,
+      platform: platform === "typescript_nextjs" ? "nextjs" : "universal_https",
+      source: "browser-builder",
+      action,
+      environment,
+    });
+    const capabilityMap: Record<string, string> = {
+      webhook: "webhooks",
+      trading_preflight: "trading_venue",
+      payment_preflight: "payment_authorization",
+      wallet_standard_binding: "wallet_standard_binding",
+      solana_gate: "solana_gate",
+    };
+    capabilities.forEach((capability) => {
+      const mapped = capabilityMap[capability];
+      if (mapped) params.append("capability", mapped);
+    });
+    return `/developers/integration-studio?${params.toString()}`;
+  }, [action, result, environment, platform, capabilities]);
 
   function toggle(list: string[], value: string, setter: (next: string[]) => void) {
     setter(list.includes(value) ? list.filter((item) => item !== value) : [...list, value]);
-  }
-
-  async function submit() {
-    setError("");
-    setStatus("");
-    const res = await fetch("/api/launchpad/policy-proposals", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const json = await res.json() as { error?: string; code?: string; proposal_ref?: string; status_label?: string };
-    if (!res.ok) {
-      setError(json.error ?? json.code ?? (res.status === 401 ? "Sign in to Launchpad to submit." : "Could not submit"));
-      return;
-    }
-    setStatus(`Submitted ${json.proposal_ref}. ${json.status_label}. ${POLICY_PROPOSAL_NOTICE}`);
   }
 
   return (
     <form
       role="form"
       aria-labelledby="policy-proposal-heading"
-      onSubmit={(event) => {
-        event.preventDefault();
-        void submit();
-      }}
+      onSubmit={(event) => event.preventDefault()}
       style={{ display: "grid", gap: "0.85rem", textAlign: "left" }}
     >
       <h3 id="policy-proposal-heading" style={{ fontFamily: FONT, fontSize: "1rem", margin: 0 }}>
-        Tell us the gate your product needs
+        Build the gate your product needs
       </h3>
-      <p style={{ fontFamily: FONT, fontSize: "0.8rem", color: "var(--text-secondary)", margin: 0 }}>{POLICY_PROPOSAL_NOTICE}</p>
+      <p style={{ fontFamily: FONT, fontSize: "0.8rem", color: "var(--text-secondary)", margin: 0 }}>
+        Your choices build a sandbox integration immediately. No sign-in is required until you save credentials or request Production access.
+      </p>
       <fieldset style={{ border: "none", margin: 0, padding: 0 }}>
         <legend style={{ fontFamily: FONT, fontSize: "0.75rem", fontWeight: 800, marginBottom: "0.4rem" }}>Product action</legend>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
@@ -168,11 +172,8 @@ export function PolicyProposalForm({ initialAction, initialResult }: { initialAc
           ))}
         </div>
       </fieldset>
-      {error && <p role="alert" style={{ fontFamily: FONT, fontSize: "0.8rem", color: "#f87171", margin: 0 }}>{error}</p>}
-      {status && <p role="status" style={{ fontFamily: FONT, fontSize: "0.8rem", color: "var(--text-secondary)", margin: 0 }}>{status}</p>}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem" }}>
-        <Btn size="sm" onClick={() => void submit()}>Submit proposal</Btn>
-        <Link href="/developers/integration-studio" style={{ color: "#2DD4BF", fontFamily: FONT, fontSize: "0.8rem", fontWeight: 700 }}>Policy Fit</Link>
+        <Btn href={studioHref} size="sm">Build this integration →</Btn>
         <Link href="/docs/starter-kit" style={{ color: "#2DD4BF", fontFamily: FONT, fontSize: "0.8rem", fontWeight: 700 }}>Starter Kit</Link>
         <Link href="/docs/partner-flow" style={{ color: "#2DD4BF", fontFamily: FONT, fontSize: "0.8rem", fontWeight: 700 }}>Partner Flow</Link>
         <Link href="/design-partner" style={{ color: "#2DD4BF", fontFamily: FONT, fontSize: "0.8rem", fontWeight: 700 }}>Design Partner</Link>
