@@ -26,7 +26,7 @@ export interface ZkLoginPendingSession {
 export interface ZkLoginUserSession {
   suiAddress: string;
   provider: "google" | "apple";
-  oauthSub: string;
+  oauthSub?: string;
   email?: string;
   maxEpoch: number;
   loggedInAt: string;
