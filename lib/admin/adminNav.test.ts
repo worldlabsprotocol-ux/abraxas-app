@@ -21,6 +21,7 @@ describe("adminNav protocol sidebar", () => {
       "sandbox-institutional-result",
       "trust",
       "privacy",
+      "support",
       "connect",
     ]);
     expect(getAdminProtocolNavItems()[0]?.href).toBe("/admin/identity");
@@ -36,6 +37,7 @@ describe("adminNav protocol sidebar", () => {
     expect(resolveActiveAdminNavItem("/admin/identity")?.id).toBe("identity");
     expect(resolveActiveAdminNavItem("/admin/partners")?.id).toBe("partners");
     expect(resolveActiveAdminNavItem("/admin/receipts")?.id).toBe("receipts");
+    expect(resolveActiveAdminNavItem("/admin/support")?.id).toBe("support");
     expect(resolveActiveAdminNavItem("/admin/connect")?.id).toBe("connect");
   });
 
