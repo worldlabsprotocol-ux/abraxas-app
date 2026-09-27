@@ -121,9 +121,27 @@ export interface VerificationRequestPreview {
   sandbox_only?: boolean;
 }
 
+/** True when every stored address on a request belongs to the signed-in Passport. */
+export function requestPreviewMatchesSubject(
+  request: { subject_id?: unknown; sui_address?: unknown },
+  subjectId: string,
+): boolean {
+  const subject = normalizeSuiAddress(subjectId);
+  const stored = [request.subject_id, request.sui_address]
+    .filter((value): value is string => typeof value === "string" && value.trim().length > 0);
+  return stored.every(value => {
+    try {
+      return normalizeSuiAddress(value) === subject;
+    } catch {
+      return false;
+    }
+  });
+}
+
 /** Holder preview before consent — no decision yet */
 export async function getVerificationRequestPreview(
   requestId: string,
+  subjectId?: string,
 ): Promise<VerificationRequestPreview | null> {
   const sb = requireSupabaseAdmin();
   const { data: request } = await sb
@@ -133,6 +151,7 @@ export async function getVerificationRequestPreview(
     .maybeSingle();
 
   if (!request) return null;
+  if (subjectId && !requestPreviewMatchesSubject(request, subjectId)) return null;
 
   const policy = await getPartnerPolicy(request.policy_id as string);
   const requestedClaims = (request.requested_claims as string[]) ?? [];
