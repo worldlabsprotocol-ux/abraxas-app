@@ -113,7 +113,27 @@ describe("Integration Studio self-service sandbox create", () => {
     }));
   });
 
-  it("rejects unsigned requests", async () => {
+  it("creates an isolated sandbox for a new browser without zkLogin or an existing API key", async () => {
+    resolvePartnerConsoleSessionMock.mockResolvedValue(null);
+    const { POST } = await import("@/app/api/developers/integration-studio/route");
+    const res = await POST(post({
+      application_name: "Retail sandbox",
+      policy_template_id: "age_21_retail",
+      return_url: "http://localhost:3000/callback",
+      sandbox_id: "12345678-90ab-cdef-1234-567890abcdef",
+    }, false));
+    expect(res.status).toBe(200);
+    expect(provisionMock).toHaveBeenCalledWith(expect.objectContaining({
+      partnerId: "studio-retail-sandbox-1234567890ab",
+      policyTemplateId: "age_21_retail",
+    }));
+    expect(issueTokenMock).toHaveBeenCalledWith(expect.objectContaining({
+      partnerId: "acme",
+      environment: "sandbox",
+    }));
+  });
+
+  it("requires a stable browser sandbox id when no partner session exists", async () => {
     resolvePartnerConsoleSessionMock.mockResolvedValue(null);
     const { POST } = await import("@/app/api/developers/integration-studio/route");
     const res = await POST(post({
@@ -121,7 +141,7 @@ describe("Integration Studio self-service sandbox create", () => {
       policy_template_id: "age_21_retail",
       return_url: "http://localhost:3000/callback",
     }, false));
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(400);
     expect(provisionMock).not.toHaveBeenCalled();
   });
 
