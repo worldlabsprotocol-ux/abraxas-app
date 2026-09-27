@@ -328,82 +328,81 @@ export function IntegrationStudioClient() {
       </ContentCard>
 
       {contract && (
-        <ContentCard title="Discover · Narrow result">
-          <dl style={{ display: "grid", gap: "0.55rem", margin: 0 }}>
-            {[
-              ["Requirement", contract.requirement],
-              ["Purpose", contract.purpose],
-              ["Minimum disclosed result", contract.disclosed_result],
-              ["Assurance", contract.assurance],
-              ["Withheld", contract.withheld.join(", ")],
-            ].map(([k, v]) => (
-              <div key={k}>
-                <dt style={{ ...body, color: "var(--text-muted)", fontSize: "0.7rem", letterSpacing: "0.06em", textTransform: "uppercase" }}>{k}</dt>
-                <dd style={{ ...body, margin: "0.2rem 0 0", color: "var(--text-primary)" }}>{v}</dd>
-              </div>
-            ))}
-          </dl>
-          <p style={{ ...body, marginTop: "0.85rem" }}>{contract.google_is_account_only}</p>
-          <p style={{ ...body, marginTop: "0.45rem" }}>
-            Partners receive a policy result, not evidence.{" "}
-            <Link href="/docs/selective-disclosure" style={{ color: "var(--accent)", fontWeight: 700 }}>
-              Selective disclosure
-            </Link>
-            {" · "}
-            <Link href="/docs/policy-compatibility" style={{ color: "var(--accent)", fontWeight: 700 }}>
-              Policy compatibility
-            </Link>
-            {" · "}
-            <Link href="/docs/multichain-mainnet-readiness" style={{ color: "var(--accent)", fontWeight: 700 }}>
-              Multi-chain Mainnet readiness
-            </Link>
+        <ContentCard title="Your policy result">
+          <p style={{ ...body, color: "var(--text-primary)" }}>
+            <strong>{contract.display_name}</strong> shares only <code>{contract.disclosed_result}</code>.
           </p>
-          <p style={{ ...body, marginTop: "0.45rem" }}>
-            Identity is default: {String(contract.identity_is_default)}.
-          </p>
-          <ul style={{ ...body, margin: "0.75rem 0 0", paddingLeft: "1.1rem" }}>
-            {contract.methods.map((method) => (
-              <li key={method.id}>
-                <strong>{method.label}</strong>
-                {method.qualifies ? " · can qualify" : " · does not qualify"}
-                {" — "}
-                {method.why}
-              </li>
-            ))}
-          </ul>
+          <details style={{ marginTop: "0.75rem" }}>
+            <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)" }}>
+              See privacy and verification details
+            </summary>
+            <dl style={{ display: "grid", gap: "0.55rem", margin: "0.75rem 0 0" }}>
+              {[
+                ["Requirement", contract.requirement],
+                ["Purpose", contract.purpose],
+                ["Assurance", contract.assurance],
+                ["Stays private", contract.withheld.join(", ")],
+              ].map(([key, value]) => (
+                <div key={key}>
+                  <dt style={{ ...body, color: "var(--text-muted)", fontSize: "0.7rem", textTransform: "uppercase" }}>{key}</dt>
+                  <dd style={{ ...body, margin: "0.15rem 0 0", color: "var(--text-primary)" }}>{value}</dd>
+                </div>
+              ))}
+            </dl>
+            <p style={{ ...body, marginTop: "0.75rem" }}>{contract.google_is_account_only}</p>
+            <ul style={{ ...body, margin: "0.75rem 0 0", paddingLeft: "1.1rem" }}>
+              {contract.methods.map((method) => (
+                <li key={method.id}><strong>{method.label}</strong>{method.qualifies ? " · can qualify" : " · does not qualify"}</li>
+              ))}
+            </ul>
+            <p style={{ ...body, marginTop: "0.75rem" }}>
+              <Link href="/docs/selective-disclosure" style={{ color: "var(--accent)", fontWeight: 700 }}>Selective disclosure</Link>
+              {" · "}
+              <Link href="/docs/policy-compatibility" style={{ color: "var(--accent)", fontWeight: 700 }}>Policy compatibility</Link>
+            </p>
+          </details>
         </ContentCard>
       )}
 
-      <ContentCard title="Discover · Choose an integration path">
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem" }}>
-          {INTEGRATION_STUDIO_PATHS.map((id) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setPathId(id)}
-              style={{
-                padding: "0.45rem 0.75rem",
-                borderRadius: 999,
-                border: pathId === id ? "1px solid rgba(99,102,241,0.55)" : "1px solid var(--border)",
-                background: pathId === id ? "rgba(99,102,241,0.14)" : "var(--surface-inset)",
-                color: "var(--text-primary)",
-                fontFamily: FONT,
-                fontSize: "0.74rem",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              {PATH_LABEL[id]}
-            </button>
-          ))}
-        </div>
+      <ContentCard title="Integration path">
+        <p style={{ ...body, color: "var(--text-primary)" }}>
+          <strong>{PATH_LABEL[pathId]}</strong> is selected.
+        </p>
+        <details style={{ marginTop: "0.75rem" }}>
+          <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)" }}>Choose a different path</summary>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginTop: "0.75rem" }}>
+            {INTEGRATION_STUDIO_PATHS.map((id) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setPathId(id)}
+                style={{
+                  padding: "0.45rem 0.75rem",
+                  borderRadius: 999,
+                  border: pathId === id ? "1px solid rgba(99,102,241,0.55)" : "1px solid var(--border)",
+                  background: pathId === id ? "rgba(99,102,241,0.14)" : "var(--surface-inset)",
+                  color: "var(--text-primary)",
+                  fontFamily: FONT,
+                  fontSize: "0.74rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                {PATH_LABEL[id]}
+              </button>
+            ))}
+          </div>
+        </details>
       </ContentCard>
 
-      <ContentCard title={`Discover · ${createdSnippet.title}`}>
-        <p style={{ ...body, marginBottom: "0.65rem" }}>
-          Existing implementation. Docs:{" "}
-          <Link href={createdSnippet.docs} style={{ color: "var(--accent)", fontWeight: 700 }}>{createdSnippet.docs}</Link>
+      <ContentCard title={`Implementation · ${createdSnippet.title}`}>
+        <p style={{ ...body }}>
+          A working starter is available for this path.{" "}
+          <Link href={createdSnippet.docs} style={{ color: "var(--accent)", fontWeight: 700 }}>Open documentation</Link>
         </p>
+        <details style={{ marginTop: "0.75rem" }}>
+          <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)" }}>How this connection works</summary>
+          <div style={{ marginTop: "0.75rem" }}>
         {pathId === "solana_gate" && (
           <p style={{ ...body, marginBottom: "0.65rem" }}>
             Receipt-gated claim access only. No transaction, mint, wallet custody, or fund movement.
@@ -485,15 +484,20 @@ export function IntegrationStudioClient() {
         >
           {createdSnippet.code}
         </pre>
+          </div>
+        </details>
       </ContentCard>
 
-      <ContentCard title="Integrate · Generate starter kit">
+      <ContentCard title="Generate your starter kit">
         <p style={{ ...body, marginBottom: "0.75rem" }}>
-          Universal HTTPS is the canonical starter. A static or browser-only site cannot verify receipts or hold partner secrets.
+          Choose your platform, then generate a downloadable project with the selected Abraxas connection.
         </p>
-        <ul style={{ ...body, paddingLeft: "1.1rem", marginBottom: "0.75rem", display: "grid", gap: "0.3rem" }}>
-          {STARTER_KIT_MINIMUM_REQUIREMENTS.map((line) => <li key={line}>{line}</li>)}
-        </ul>
+        <details style={{ marginBottom: "0.75rem" }}>
+          <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)" }}>Technical requirements</summary>
+          <ul style={{ ...body, paddingLeft: "1.1rem", margin: "0.65rem 0 0", display: "grid", gap: "0.3rem" }}>
+            {STARTER_KIT_MINIMUM_REQUIREMENTS.map((line) => <li key={line}>{line}</li>)}
+          </ul>
+        </details>
         <p style={{ ...body, marginBottom: "0.55rem", fontWeight: 700, color: "var(--text-primary)" }}>Platform</p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginBottom: "0.75rem" }}>
           {STARTER_KIT_PLATFORM_MATRIX.map((item) => (
@@ -522,35 +526,43 @@ export function IntegrationStudioClient() {
           {" Works with: "}
           {(STARTER_KIT_PLATFORM_MATRIX.find((item) => item.id === platform)?.works ?? []).join(", ")}.
         </p>
-        <p style={{ ...body, marginBottom: "0.55rem", fontWeight: 700, color: "var(--text-primary)" }}>Optional capabilities</p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginBottom: "0.75rem" }}>
-          {["webhooks", "wallet_standard_binding", "trading_venue", "payment_authorization", "portable_action_contract", "solana_gate", "evm_partner_adapter", "onchain_protocol_gate", "solana_onchain_eligibility_gate", "evm_onchain_eligibility_gate"].map((id) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => toggleCapability(id)}
-              style={{
-                padding: "0.45rem 0.75rem",
-                borderRadius: 999,
-                border: optionalCaps.includes(id) ? "1px solid rgba(99,102,241,0.55)" : "1px solid var(--border)",
-                background: optionalCaps.includes(id) ? "rgba(99,102,241,0.14)" : "var(--surface-inset)",
-                color: "var(--text-primary)",
-                fontFamily: FONT,
-                fontSize: "0.74rem",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              {id.replace(/_/g, " ")}
-            </button>
-          ))}
-        </div>
-        <div style={{ marginBottom: "0.85rem" }}>
-          <p style={{ ...body, fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.4rem" }}>What this starter kit does not do</p>
-          <ul style={{ ...body, paddingLeft: "1.1rem", display: "grid", gap: "0.3rem" }}>
-            {STARTER_KIT_DOES_NOT_DO.map((line) => <li key={line}>{line}</li>)}
-          </ul>
-        </div>
+        <details style={{ marginBottom: "0.85rem" }}>
+          <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)" }}>
+            Add optional capabilities{optionalCaps.length ? ` (${optionalCaps.length} selected)` : ""}
+          </summary>
+          <div style={{ marginTop: "0.65rem" }}>
+          <p style={{ ...body, marginBottom: "0.55rem", fontWeight: 700, color: "var(--text-primary)" }}>Optional capabilities</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginBottom: "0.75rem" }}>
+            {["webhooks", "wallet_standard_binding", "trading_venue", "payment_authorization", "portable_action_contract", "solana_gate", "evm_partner_adapter", "onchain_protocol_gate", "solana_onchain_eligibility_gate", "evm_onchain_eligibility_gate"].map((id) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => toggleCapability(id)}
+                style={{
+                  padding: "0.45rem 0.75rem",
+                  borderRadius: 999,
+                  border: optionalCaps.includes(id) ? "1px solid rgba(99,102,241,0.55)" : "1px solid var(--border)",
+                  background: optionalCaps.includes(id) ? "rgba(99,102,241,0.14)" : "var(--surface-inset)",
+                  color: "var(--text-primary)",
+                  fontFamily: FONT,
+                  fontSize: "0.74rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                {id.replace(/_/g, " ")}
+              </button>
+            ))}
+          </div>
+          <div style={{ marginBottom: "0.85rem" }}>
+            <p style={{ ...body, fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.4rem" }}>What this starter kit does not do</p>
+            <ul style={{ ...body, paddingLeft: "1.1rem", display: "grid", gap: "0.3rem" }}>
+              {STARTER_KIT_DOES_NOT_DO.map((line) => <li key={line}>{line}</li>)}
+            </ul>
+          </div>
+  
+          </div>
+        </details>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.75rem" }}>
           <Btn size="sm" loading={kitBusy} disabled={kitBusy} onClick={() => void generateStarter()}>
             Generate starter kit
@@ -581,10 +593,12 @@ export function IntegrationStudioClient() {
       </ContentCard>
 
       <ContentCard title={`Create · ${PARTNER_ACTIVATION_CREATE_CTA}`}>
-        <p style={{ ...body, marginBottom: "0.75rem" }}>{INTEGRATION_STUDIO_PROVISION.notice}</p>
+        <p style={{ ...body, marginBottom: "0.75rem" }}>
+          Create a working sandbox app in the browser. Sign-in is used only to keep your app and credentials private.
+        </p>
         {!signedIn && (
           <p style={{ ...body, marginBottom: "0.85rem" }}>
-            Explore the catalog without a session. Sign in on Partner Launchpad to create an isolated sandbox app on your tenant. The raw sandbox key is shown once.
+            Your plan is complete. Sign in only when you are ready to save this sandbox and receive its private test credential.
           </p>
         )}
         {signedIn && (
@@ -662,9 +676,12 @@ export function IntegrationStudioClient() {
           {!signedIn && (
             <Btn href={INTEGRATION_STUDIO_PROVISION.launchpad_href} size="sm">Sign in on Partner Launchpad →</Btn>
           )}
+          {created && hostedDocs?.hosted_link && (
+            <Btn href={hostedDocs.hosted_link} size="sm">Run hosted sandbox test →</Btn>
+          )}
           {created && (
-            <Btn href={launchpadResumeHref(created.application_id)} size="sm">
-              {PARTNER_ACTIVATION_RESUME_CTA} →
+            <Btn href={launchpadResumeHref(created.application_id)} variant="secondary" size="sm">
+              Open saved sandbox →
             </Btn>
           )}
           <Btn href={created ? launchpadResumeHref(created.application_id) : INTEGRATION_STUDIO_PROVISION.launchpad_href} variant="secondary" size="sm">
@@ -674,16 +691,20 @@ export function IntegrationStudioClient() {
         </div>
       </ContentCard>
 
-      <ContentCard title="Test · Sandbox checklist">
-        <ol style={{ ...body, paddingLeft: "1.15rem", display: "grid", gap: "0.55rem" }}>
-          {activationChecklist.map((item) => (
-            <li key={item.id}>
-              <strong>{item.title}.</strong> {item.body}{" "}
-              <Link href={item.href} style={{ color: "var(--accent)", fontWeight: 700 }}>{item.href}</Link>
-              {item.kit_file ? ` · kit file ${item.kit_file}` : ""}
-            </li>
-          ))}
-        </ol>
+      <ContentCard title="Test your sandbox">
+        <p style={{ ...body }}>Run the hosted flow first. Open the full checklist only when you are ready to verify every integration edge.</p>
+        <details style={{ marginTop: "0.75rem" }}>
+          <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)" }}>Show sandbox checklist</summary>
+          <ol style={{ ...body, paddingLeft: "1.15rem", display: "grid", gap: "0.55rem", marginTop: "0.75rem" }}>
+            {activationChecklist.map((item) => (
+              <li key={item.id}>
+                <strong>{item.title}.</strong> {item.body}{" "}
+                <Link href={item.href} style={{ color: "var(--accent)", fontWeight: 700 }}>{item.href}</Link>
+                {item.kit_file ? ` · kit file ${item.kit_file}` : ""}
+              </li>
+            ))}
+          </ol>
+        </details>
       </ContentCard>
 
       <ContentCard title="Upgrade · Production review">
