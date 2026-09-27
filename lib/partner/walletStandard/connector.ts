@@ -26,8 +26,8 @@ type PhantomProvider = {
 
 function bytesToBase64(value: Uint8Array): string {
   let binary = "";
-  for (let offset = 0; offset < value.length; offset += 0x8000) {
-    binary += String.fromCharCode(...value.subarray(offset, offset + 0x8000));
+  for (let index = 0; index < value.length; index += 1) {
+    binary += String.fromCharCode(value[index] ?? 0);
   }
   return btoa(binary);
 }
