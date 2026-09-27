@@ -456,9 +456,8 @@ export function PartnerLaunchpadClient({
         subtitle="Choose a policy pack, host verification, receive a signed result, and test the loop yourself. Proofs, not profiles."
       />
 
-      <ContentCard title="Propose a policy">
+      <ContentCard title="Build your integration">
         <div id="policy-proposal">
-          <p style={{ ...bodyText, marginBottom: "0.75rem" }}>{POLICY_PROPOSAL_NOTICE}</p>
           <PolicyProposalForm />
         </div>
       </ContentCard>
