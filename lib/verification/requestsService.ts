@@ -34,6 +34,8 @@ import { buildHolderConsentUrl } from "@/lib/privacy/selectiveDisclosure";
 import { resolveCompatibleReusableFact } from "@/lib/passport/reusableEligibility/qualify";
 import { derivedClaimRefs, derivedReasonCodes, persistReuseDerivation } from "@/lib/passport/reusableEligibility/issue";
 import type { InternalReusableFact } from "@/lib/passport/reusableEligibility/contract";
+import { requestPreviewMatchesSubject } from "@/lib/verification/requestPreviewAccess";
+export { requestPreviewMatchesSubject } from "@/lib/verification/requestPreviewAccess";
 
 export { getPartnerPolicy as getPolicy } from "@/lib/policy/getPolicy";
 
@@ -119,23 +121,6 @@ export interface VerificationRequestPreview {
   status: string;
   shared_result_category?: string;
   sandbox_only?: boolean;
-}
-
-/** True when every stored address on a request belongs to the signed-in Passport. */
-export function requestPreviewMatchesSubject(
-  request: { subject_id?: unknown; sui_address?: unknown },
-  subjectId: string,
-): boolean {
-  const subject = normalizeSuiAddress(subjectId);
-  const stored = [request.subject_id, request.sui_address]
-    .filter((value): value is string => typeof value === "string" && value.trim().length > 0);
-  return stored.every(value => {
-    try {
-      return normalizeSuiAddress(value) === subject;
-    } catch {
-      return false;
-    }
-  });
 }
 
 /** Holder preview before consent — no decision yet */
