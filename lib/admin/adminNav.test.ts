@@ -18,6 +18,7 @@ describe("adminNav protocol sidebar", () => {
       "partner-flow",
       "policy-proposals",
       "receipts",
+      "passport-support",
       "sandbox-institutional-result",
       "trust",
       "privacy",
@@ -36,6 +37,7 @@ describe("adminNav protocol sidebar", () => {
     expect(resolveActiveAdminNavItem("/admin/identity")?.id).toBe("identity");
     expect(resolveActiveAdminNavItem("/admin/partners")?.id).toBe("partners");
     expect(resolveActiveAdminNavItem("/admin/receipts")?.id).toBe("receipts");
+    expect(resolveActiveAdminNavItem("/admin/passport-support")?.id).toBe("passport-support");
     expect(resolveActiveAdminNavItem("/admin/connect")?.id).toBe("connect");
   });
 
