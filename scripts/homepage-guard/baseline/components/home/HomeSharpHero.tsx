@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/HomeSharpHero.tsx
-// Hero — headline, CTAs, and verify-once flow visual.
+// Hero — one guided demo entry, then clearly grouped secondary paths.
 
 import Link from "next/link";
 import { Btn } from "@/components/redesign/ui";
@@ -23,6 +23,12 @@ import {
 const FONT = ABRAXAS_FONT_SANS;
 const TEAL = "#2DD4BF";
 const GOLD = "#E8C547";
+
+const SECONDARY_PATHS = [
+  { label: SIMPLIFIED_HOME_CTA_SECONDARY, href: SIMPLIFIED_HOME_CTA_SECONDARY_HREF },
+  { label: "Verify a result", href: "/verification" },
+  { label: SIMPLIFIED_HOME_CTA_BUILD, href: SIMPLIFIED_HOME_CTA_BUILD_HREF },
+] as const;
 
 export function HomeSharpHero() {
   return (
@@ -74,7 +80,7 @@ export function HomeSharpHero() {
           fontSize: "clamp(0.92rem, 2.2vw, 1.02rem)",
           fontWeight: 700,
           color: "var(--text-primary)",
-          margin: "0 auto 1.5rem",
+          margin: "0 auto 1.25rem",
           lineHeight: 1.45,
           maxWidth: 520,
         }}
@@ -82,16 +88,51 @@ export function HomeSharpHero() {
         {SIMPLIFIED_HOME_MOBILE_PROMPT}
       </p>
 
-      <div className="abx-home-hero-actions" style={{ marginBottom: "0.85rem" }}>
+      <div className="abx-home-hero-actions" style={{ marginBottom: "1rem" }}>
         <Btn href={SIMPLIFIED_HOME_CTA_PRIMARY_HREF} size="lg">
-          {SIMPLIFIED_HOME_CTA_PRIMARY}
+          {SIMPLIFIED_HOME_CTA_PRIMARY} →
         </Btn>
-        <Btn href={SIMPLIFIED_HOME_CTA_SECONDARY_HREF} variant="secondary" size="lg">
-          {SIMPLIFIED_HOME_CTA_SECONDARY}
-        </Btn>
-        <Btn href={SIMPLIFIED_HOME_CTA_BUILD_HREF} variant="secondary" size="lg">
-          {SIMPLIFIED_HOME_CTA_BUILD}
-        </Btn>
+      </div>
+
+      <div
+        aria-label="Other Abraxas paths"
+        style={{
+          width: "min(100%, 620px)",
+          margin: "0 auto 1.1rem",
+          padding: "0.8rem 0.9rem",
+          borderRadius: 14,
+          border: "1px solid rgba(255,255,255,0.08)",
+          background: "rgba(255,255,255,0.025)",
+        }}
+      >
+        <p style={{
+          fontFamily: FONT,
+          fontSize: "0.68rem",
+          fontWeight: 800,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          color: "var(--text-muted)",
+          margin: "0 0 0.55rem",
+        }}>
+          Already know where you’re going?
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "0.45rem 0.9rem" }}>
+          {SECONDARY_PATHS.map((path) => (
+            <Link
+              key={path.href}
+              href={path.href}
+              style={{
+                color: TEAL,
+                fontFamily: FONT,
+                fontSize: "0.76rem",
+                fontWeight: 750,
+                textDecoration: "none",
+              }}
+            >
+              {path.label} →
+            </Link>
+          ))}
+        </div>
       </div>
 
       <Link
@@ -116,7 +157,7 @@ export function HomeSharpHero() {
       </Link>
 
       <div
-        aria-label="Verify once flow"
+        aria-label="Passport demo flow"
         className="abx-home-hero-flow"
         style={{
           display: "inline-flex",
