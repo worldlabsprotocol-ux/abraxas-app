@@ -10,6 +10,7 @@ import { PassportVerifySetupRequired } from "@/components/passport/PassportVerif
 import { PassportPrivacyCenter } from "@/components/passport/PassportPrivacyCenter";
 import { PassportSupportCenter } from "@/components/passport/PassportSupportCenter";
 import { PassportActivityCenter } from "@/components/passport/PassportActivityCenter";
+import { PassportRequestInbox } from "@/components/passport/PassportRequestInbox";
 import { passportVerifyNeedsSetup } from "@/lib/passport/passportVerifyAccess";
 import { resolvePassportPageView } from "@/lib/passport/passportPrivacyNavigation";
 import { usePartnerFlowHandoff } from "@/lib/passport/partnerFlowHandoff";
@@ -198,9 +199,9 @@ function PassportPageInner() {
 
       <AbxPageHeader
         accent="passport"
-        eyebrow={pageView === "verify" ? HOLDER_VERIFY_EYEBROW : pageView === "activity" ? "Passport · Activity" : pageView === "privacy" ? "Passport · Privacy" : pageView === "support" ? "Passport · Help" : PASSPORT_PAGE_EYEBROW}
-        title={pageView === "verify" ? HOLDER_VERIFY_HEADLINE : pageView === "activity" ? "Your Passport activity" : pageView === "privacy" ? "Your data, your controls" : pageView === "support" ? "Help and account safety" : PASSPORT_PAGE_HEADLINE}
-        lead={pageView === "verify" ? HOLDER_VERIFY_SUBHEAD : pageView === "activity" ? "See verification use, privacy requests, and help progress in plain language." : pageView === "privacy" ? "See what Abraxas holds, request an export, or ask us to delete your account data." : pageView === "support" ? "Get help in plain language and manage the session on this device." : PASSPORT_PAGE_SUBHEAD}
+        eyebrow={pageView === "verify" ? HOLDER_VERIFY_EYEBROW : pageView === "requests" ? "Passport · Requests" : pageView === "activity" ? "Passport · Activity" : pageView === "privacy" ? "Passport · Privacy" : pageView === "support" ? "Passport · Help" : PASSPORT_PAGE_EYEBROW}
+        title={pageView === "verify" ? HOLDER_VERIFY_HEADLINE : pageView === "requests" ? "Requests waiting for you" : pageView === "activity" ? "Your Passport activity" : pageView === "privacy" ? "Your data, your controls" : pageView === "support" ? "Help and account safety" : PASSPORT_PAGE_HEADLINE}
+        lead={pageView === "verify" ? HOLDER_VERIFY_SUBHEAD : pageView === "requests" ? "Review who is asking, why they need a result, and what would be shared before you decide." : pageView === "activity" ? "See verification use, privacy requests, and help progress in plain language." : pageView === "privacy" ? "See what Abraxas holds, request an export, or ask us to delete your account data." : pageView === "support" ? "Get help in plain language and manage the session on this device." : PASSPORT_PAGE_SUBHEAD}
       />
 
         <Suspense fallback={<RedesignPageLoading label="Loading navigation…" compact />}>
@@ -217,6 +218,36 @@ function PassportPageInner() {
             }>
               <VerifyClient audience="holder" />
             </Suspense>
+          </>
+        ) : pageView === "requests" ? (
+          <>
+            {!suiAddress && !authLoading ? (
+              <section style={{
+                background: "var(--surface-raised)",
+                border: "1px solid var(--border-strong)",
+                borderRadius: 16,
+                padding: "1.25rem",
+                marginBottom: "2rem",
+              }}>
+                <h2 style={{ fontFamily: S, fontSize: "1rem", margin: "0 0 0.5rem" }}>
+                  Sign in to review requests
+                </h2>
+                <p style={{
+                  fontFamily: S,
+                  fontSize: "0.82rem",
+                  lineHeight: 1.6,
+                  color: "var(--text-secondary)",
+                  margin: "0 0 1rem",
+                }}>
+                  Requests are private and connected to your signed-in Passport account.
+                </p>
+                <ZkLoginSignIn />
+              </section>
+            ) : authLoading ? (
+              <RedesignPageLoading label="Loading your requests…" compact />
+            ) : (
+              <PassportRequestInbox showEmpty />
+            )}
           </>
         ) : pageView === "activity" ? (
           <>
