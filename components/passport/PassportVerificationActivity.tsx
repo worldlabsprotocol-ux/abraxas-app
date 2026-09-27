@@ -324,6 +324,7 @@ export function PassportVerificationActivity() {
     },
     onSuccess: async (body) => {
       setPending(null);
+      setConnectionFilter("history");
       setNotice(typeof body.next_step === "string" ? body.next_step : PASSPORT_ACTIVITY_WITHDRAW_SUCCESS);
       await queryClient.invalidateQueries({ queryKey: ["passport", "verification-activity"] });
     },
