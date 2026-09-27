@@ -145,6 +145,8 @@ export function PassportCustomerView({
 
   return (
     <div>
+      {walletDone && <PassportRequestInbox />}
+
       <section style={CARD} aria-labelledby="passport-status-heading">
         <p style={{
           fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)",
@@ -161,8 +163,6 @@ export function PassportCustomerView({
           {status.summary}
         </p>
       </section>
-
-      {walletDone && <PassportRequestInbox />}
 
       {walletDone && (
         <PassportRecentActivity
