@@ -46,8 +46,8 @@ export const PARTNER_COMMERCIAL_PLANS: Record<PartnerCommercialPlanId, PartnerCo
     monthly_base_cents: 0,
     included_receipts: null,
     included_api_calls: null,
-    receipt_overage_cents: null,
-    api_overage_per_thousand_cents: null,
+    receipt_overage_cents: 0,
+    api_overage_per_thousand_cents: 0,
   },
   launch: {
     id: "launch",
