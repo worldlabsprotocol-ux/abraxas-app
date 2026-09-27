@@ -18,6 +18,7 @@ import type { PartnerFlowHandoffController } from "@/lib/passport/partnerFlowHan
 import { PartnerReturnCta } from "@/components/passport/PartnerReturnCta";
 import { PartnerVerificationResumeCta } from "@/components/passport/PartnerVerificationResumeCta";
 import { PassportRecentActivity } from "@/components/passport/PassportRecentActivity";
+import { PassportRequestInbox } from "@/components/passport/PassportRequestInbox";
 import { PassportInstallCard } from "@/components/passport/PassportInstallCard";
 import { AbraxasIdentityCapture } from "@/components/passport/AbraxasIdentityCapture";
 import {
@@ -160,6 +161,8 @@ export function PassportCustomerView({
           {status.summary}
         </p>
       </section>
+
+      {walletDone && <PassportRequestInbox />}
 
       {walletDone && (
         <PassportRecentActivity
