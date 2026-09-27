@@ -25,7 +25,7 @@ export const SIMPLIFIED_HERO_FLOW = [
   "Choose your goal",
   "Pick a policy",
   "Review privacy",
-  "Copy integration",
+  "Run the sandbox",
 ] as const;
 
 export const SIMPLIFIED_HOW_IT_WORKS = [
