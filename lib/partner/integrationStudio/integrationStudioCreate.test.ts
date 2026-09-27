@@ -89,6 +89,7 @@ describe("Integration Studio self-service sandbox create", () => {
       api_key: string | null;
       application: { partner_id: string; api_key?: string; key_prefix: string };
       path_instructions: { hosted_partner_flow: { code: string } };
+      docs: { hosted_link: string; sandbox_testing: string[] };
     };
     expect(json.ok).toBe(true);
     expect(json.environment).toBe("sandbox");
@@ -99,6 +100,9 @@ describe("Integration Studio self-service sandbox create", () => {
     expect(json.application.key_prefix).toBe("abx_test_abcd");
     expect((json as { resume_href?: string }).resume_href).toBe("/developers/launchpad?app=app-1");
     expect(json.path_instructions.hosted_partner_flow.code).toContain("acme");
+    expect(json.docs.hosted_link).toContain("/partner/verify?app=acme-retail");
+    expect(json.docs.hosted_link).toContain("return_url=");
+    expect(json.docs.sandbox_testing.length).toBeGreaterThan(0);
     expect(provisionMock).toHaveBeenCalledWith(expect.objectContaining({
       partnerId: "acme",
       policyTemplateId: "age_21_retail",
