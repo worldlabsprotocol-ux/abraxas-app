@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { buildPassportSetupHref } from "@/lib/passport/passportVerifyAccess";
 import {
+  PASSPORT_ACTIVITY_HREF,
   PASSPORT_PRIVACY_HREF,
   PASSPORT_SUPPORT_HREF,
   type PassportPageView,
@@ -50,6 +51,7 @@ export function PassportPageTabs({ active }: { active: PassportPageView }) {
 
   const tabs: Array<{ id: PassportPageView; label: string; href: string }> = [
     { id: "passport", label: "My Passport", href: passportHref },
+    { id: "activity", label: "Activity", href: PASSPORT_ACTIVITY_HREF },
     { id: "verify", label: verifyLabel, href: verifyHref },
     { id: "privacy", label: "Privacy & controls", href: PASSPORT_PRIVACY_HREF },
     { id: "support", label: "Help & safety", href: PASSPORT_SUPPORT_HREF },
