@@ -9,22 +9,22 @@ export const SIMPLIFIED_HOME_SUBHEAD =
   "Abraxas is a private eligibility protocol. Your evidence stays private. Partners verify a current result on their server.";
 
 export const SIMPLIFIED_HOME_MOBILE_PROMPT =
-  "Prove eligibility, verify a result, or try a sandbox example.";
+  "Start with the guided Passport demo. It shows the complete request, consent, and sharing flow.";
 
 export const SIMPLIFIED_HOME_TRUST_LINE =
   "Use one private verification again with fresh consent. Abraxas does not execute trades, payments, or transfers.";
 
-export const SIMPLIFIED_HOME_CTA_PRIMARY = "Prove eligibility";
-export const SIMPLIFIED_HOME_CTA_SECONDARY = "Verify a result";
-export const SIMPLIFIED_HOME_CTA_PRIMARY_HREF = "/passport";
-export const SIMPLIFIED_HOME_CTA_SECONDARY_HREF = "/verification";
+export const SIMPLIFIED_HOME_CTA_PRIMARY = "Try the Passport demo";
+export const SIMPLIFIED_HOME_CTA_SECONDARY = "Open Passport";
+export const SIMPLIFIED_HOME_CTA_PRIMARY_HREF = "/passport?view=requests";
+export const SIMPLIFIED_HOME_CTA_SECONDARY_HREF = "/passport";
 export const SIMPLIFIED_HOME_CTA_BUILD = "Build with Abraxas";
 export const SIMPLIFIED_HOME_CTA_BUILD_HREF = "/developers/integration-studio";
 
 export const SIMPLIFIED_HERO_FLOW = [
-  "Person",
-  "Partner",
-  "Protocol explorer",
+  "Create request",
+  "Review result",
+  "Approve or decline",
 ] as const;
 
 export const SIMPLIFIED_HOW_IT_WORKS = [
