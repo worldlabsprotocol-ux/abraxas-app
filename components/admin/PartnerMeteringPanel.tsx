@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/admin/PartnerMeteringPanel.tsx
-// Admin partner usage metering view — aggregates only, no pricing.
+// Admin partner usage and estimate-only commercial planning.
 
 import { useCallback, useEffect, useState } from "react";
 import type { ProductionAdminRequest } from "@/lib/admin/productionAdminSessionUi";
@@ -9,11 +9,27 @@ const MONO = "'JetBrains Mono',monospace";
 const FONT = "'Inter',system-ui,sans-serif";
 const ACCENT = "#10B981";
 
+function formatUsd(cents: number | null): string {
+  if (cents == null) return "Custom contract";
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
+}
+
 interface MeteringReport {
   partner_id: string;
   observe_only: boolean;
   enforcement_mode: string;
   plan_id: string;
+  commercial_estimate: {
+    plan_id: string;
+    plan_label: string;
+    currency: "USD";
+    estimate_only: true;
+    collection_status: "not_enabled";
+    estimated_base_cents: number | null;
+    estimated_receipt_overage_cents: number | null;
+    estimated_api_overage_cents: number | null;
+    estimated_total_cents: number | null;
+  };
   totals: {
     partner_flow_receipt_issued: number;
     partner_api_call: number;
@@ -94,7 +110,7 @@ export function PartnerMeteringPanel({ adminRequest }: { adminRequest: Productio
   return (
     <section aria-label="Partner usage metering">
       <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "rgba(255,255,255,0.65)", lineHeight: 1.55, marginBottom: "1rem" }}>
-        Billable-quality usage counts for commercial planning. Observe-only by default — no pricing, invoices, or payment collection.
+        Billable-quality usage and an estimate from the selected commercial plan. Estimates do not charge or block partners.
         Public receipt views are excluded from metering.
       </p>
 
@@ -134,14 +150,15 @@ export function PartnerMeteringPanel({ adminRequest }: { adminRequest: Productio
             }}
           >
             <div style={{ fontFamily: FONT, fontSize: "0.9rem", fontWeight: 700 }}>
-              Observe-only metering
+              {metering.commercial_estimate.plan_label} · {formatUsd(metering.commercial_estimate.estimated_total_cents)}
             </div>
             <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "rgba(255,255,255,0.65)", margin: "0.35rem 0 0" }}>
-              {entitlements?.enforcement_label
-                ?? "Usage is recorded for commercial planning. Partners are not blocked or charged."}
+              {metering.commercial_estimate.collection_status === "not_enabled"
+                ? "Estimate only. Billing collection and usage enforcement are not enabled."
+                : (entitlements?.enforcement_label ?? "Commercial usage estimate.")}
             </p>
             <p style={{ fontFamily: MONO, fontSize: "0.68rem", color: "rgba(255,255,255,0.45)", margin: "0.5rem 0 0" }}>
-              plan={metering.plan_id} · mode={metering.enforcement_mode}
+              plan={metering.plan_id} · mode={metering.enforcement_mode} · base={formatUsd(metering.commercial_estimate.estimated_base_cents)} · receipt overage={formatUsd(metering.commercial_estimate.estimated_receipt_overage_cents)} · API overage={formatUsd(metering.commercial_estimate.estimated_api_overage_cents)}
             </p>
           </div>
 

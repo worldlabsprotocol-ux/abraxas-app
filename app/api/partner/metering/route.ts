@@ -43,6 +43,6 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     metering: report,
-    note: "Observe-only mode — usage is recorded for planning; partners are not blocked or charged.",
+    note: "Usage and commercial estimates are informational. Billing collection and enforcement are not enabled.",
   });
 }
