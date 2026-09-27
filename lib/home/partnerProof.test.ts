@@ -9,7 +9,7 @@ describe("partner proof cards", () => {
     expect(cards).toHaveLength(1);
     expect(cards[0].title).toBe(HOME_PARTNER_PROOF_FALLBACK.title);
     expect(cards[0].badge).toBe(HOME_PARTNER_PROOF_FALLBACK.badge);
-    expect(cards[0].journeyHref).toBe("/good-trouble");
+    expect(cards[0].journeyHref).toBe("/good-trouble/checkout");
   });
 
   it("names the sandbox Good Trouble example on the public homepage", () => {
