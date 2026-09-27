@@ -18,7 +18,6 @@ import type { PartnerFlowHandoffController } from "@/lib/passport/partnerFlowHan
 import { PartnerReturnCta } from "@/components/passport/PartnerReturnCta";
 import { PartnerVerificationResumeCta } from "@/components/passport/PartnerVerificationResumeCta";
 import { PassportRecentActivity } from "@/components/passport/PassportRecentActivity";
-import { PassportVerificationActivity } from "@/components/passport/PassportVerificationActivity";
 import { PassportInstallCard } from "@/components/passport/PassportInstallCard";
 import { AbraxasIdentityCapture } from "@/components/passport/AbraxasIdentityCapture";
 import {
@@ -162,16 +161,17 @@ export function PassportCustomerView({
         </p>
       </section>
 
-      <PassportInstallCard />
-      <PartnerVerificationResumeCta />
-
       {walletDone && (
         <PassportRecentActivity
           suiAddress={suiAddress}
           walletBound={setup.walletBound}
           identityUi={status.identityUi}
+          identityRequired={handoff.isPartnerFlowContext}
         />
       )}
+
+      <PartnerVerificationResumeCta />
+      <PassportInstallCard />
 
       {!walletDone && (
         <section style={CARD} aria-labelledby="passport-signin-heading">
@@ -237,7 +237,7 @@ export function PassportCustomerView({
       )}
 
       {walletDone && setup.walletBound && status.identityUi === "needs_action" && (
-        <section style={CARD}>
+        <section id="passport-identity-action" style={CARD}>
           {idvProvider === "manual" ? (
             <AbraxasIdentityCapture email={email} suiAddress={suiAddress} onSubmitted={onRefresh} capturePolicy={capturePolicy} />
           ) : (
@@ -250,7 +250,7 @@ export function PassportCustomerView({
       )}
 
       {walletDone && setup.walletBound && status.identityUi === "not_started" && handoff.isPartnerFlowContext && !setup.identityComplete && (
-        <section style={CARD}>
+        <section id="passport-identity-action" style={CARD}>
           {idvProvider === "manual" ? (
             <AbraxasIdentityCapture email={email} suiAddress={suiAddress} onSubmitted={onRefresh} capturePolicy={capturePolicy} />
           ) : veriffConfigured ? (
@@ -302,8 +302,6 @@ export function PassportCustomerView({
               ))}
             </ul>
           </section>
-
-          <PassportVerificationActivity />
 
         </>
       )}
