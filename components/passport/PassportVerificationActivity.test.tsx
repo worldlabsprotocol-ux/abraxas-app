@@ -30,7 +30,7 @@ describe("PassportVerificationActivity", () => {
     }), { status: 200 })));
 
     render(wrap(<PassportVerificationActivity />));
-    expect(await screen.findByRole("heading", { name: "Your verification activity" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Connected services" })).toBeInTheDocument();
     expect(await screen.findByText(PASSPORT_ACTIVITY_EMPTY)).toBeInTheDocument();
     expect(screen.queryByText(/receipt/i)).not.toBeInTheDocument();
   });
@@ -69,6 +69,7 @@ describe("PassportVerificationActivity", () => {
     expect(screen.getByText(/Underlying evidence was not shared/)).toBeInTheDocument();
     expect(screen.queryByText(/act_abc123def456/)).not.toBeInTheDocument();
     expect(await screen.findByRole("button", { name: "Withdraw shared result" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Current (1)" })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("confirms withdrawal with accessible dialog copy and updates to revoked", async () => {
