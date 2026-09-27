@@ -16,7 +16,8 @@ import { canSignZkLoginTransactions } from "@/lib/sui/zklogin/signingSession";
 import { startGoogleZkLogin, clearStaleLoginInFlight } from "@/lib/sui/zklogin/startLogin";
 import { isZkLoginConfigured, isLegacyZkLoginRecoveryConfigured } from "@/lib/sui/zklogin/config";
 import { truncateSuiAddress, toSuiDid } from "@/lib/sui/identity";
-import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSession";
+import { ensureBrowserSession, probeBrowserSession } from "@/lib/auth/ensureBrowserSession";
+import { restoreUserSessionFromBrowserSession } from "@/lib/sui/zklogin/restoreBrowserSession";
 import { logAuthEvent } from "@/lib/sui/zklogin/authDebug";
 import {
   clearSignInRecovery,
@@ -58,7 +59,7 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
   const [canSignTransactions, setCanSignTransactions] = useState(() =>
     canSignZkLoginTransactions(readSessionFromStorage()?.suiAddress),
   );
-  const [isLoading, setIsLoading] = useState(() => typeof window === "undefined");
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [signInRecovery, setSignInRecovery] = useState<SignInRecoveryState | null>(null);
 
@@ -84,7 +85,29 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    reloadSession();
+    const loaded = loadUserSession();
+    if (loaded) {
+      reloadSession();
+      return;
+    }
+
+    let cancelled = false;
+    void restoreUserSessionFromBrowserSession().then((restored) => {
+      if (cancelled) return;
+      if (restored) {
+        saveUserSession(restored);
+        setSession(restored);
+        setCanSignTransactions(false);
+        logAuthEvent("session_loaded", { detail: "browser_session_restore" });
+        logAuthEvent("auth_provider_authenticated", { authenticated: true });
+      }
+      setIsLoading(false);
+      logAuthEvent("auth_provider_ready", { ready: true });
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [reloadSession]);
 
   useEffect(() => {
@@ -123,7 +146,10 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
       logAuthEvent(signingReady ? "wallet_signing_ready" : "wallet_signing_missing", {
         hasSigning: signingReady,
       });
-      void ensureBrowserSession(session.suiAddress);
+      void (async () => {
+        if (await probeBrowserSession()) return;
+        await ensureBrowserSession(session.suiAddress);
+      })();
     }
   }, [session]);
 
