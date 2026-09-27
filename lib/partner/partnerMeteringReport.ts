@@ -1,9 +1,10 @@
 // FILE: lib/partner/partnerMeteringReport.ts
-// Partner usage aggregates — counts only, no PII, no pricing.
+// Partner usage aggregates and estimate-only commercial projection — no PII or payment collection.
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { PARTNER_METERING_EVENT_TYPES } from "@/lib/partner/partnerMetering";
 import { getPartnerEntitlements } from "@/lib/partner/partnerEntitlements";
+import { estimatePartnerCommercialUsage, type PartnerCommercialEstimate } from "@/lib/partner/partnerCommercialPlans";
 
 const MAX_RANGE_DAYS = 366;
 const DEFAULT_PAGE_SIZE = 31;
@@ -34,6 +35,7 @@ export interface PartnerMeteringReport {
   observe_only: boolean;
   enforcement_mode: string;
   plan_id: string;
+  commercial_estimate: PartnerCommercialEstimate;
   daily: PartnerMeteringDailyAggregate[];
   monthly: PartnerMeteringMonthlyAggregate[];
   totals: {
@@ -201,6 +203,11 @@ export async function buildPartnerMeteringReport(input: {
     observe_only: true,
     enforcement_mode: entitlements.enforcementMode,
     plan_id: entitlements.planId,
+    commercial_estimate: estimatePartnerCommercialUsage({
+      planId: entitlements.planId,
+      approvedReceipts: totals.partner_flow_receipt_issued,
+      authenticatedApiCalls: totals.partner_api_call,
+    }),
     daily: pagedDaily,
     monthly,
     totals,
