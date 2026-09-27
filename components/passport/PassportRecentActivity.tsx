@@ -86,7 +86,7 @@ export function PassportRecentActivity({
         textTransform: "uppercase",
         margin: "0 0 0.35rem",
       }}>
-        Your next move
+        {guide.eyebrow}
       </p>
       <h2 id="passport-setup-activity-heading" style={{
         fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.35rem",
