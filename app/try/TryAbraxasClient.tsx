@@ -31,6 +31,22 @@ const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 const TEAL = "#2DD4BF";
 const GOLD = "#E8C547";
 
+type SetupGoal = {
+  id: string;
+  title: string;
+  detail: string;
+  match: RegExp;
+};
+
+const SETUP_GOALS: SetupGoal[] = [
+  { id: "age_gated_access", title: "Age-gated access", detail: "Let eligible customers enter, browse, or purchase.", match: /age|21|18/i },
+  { id: "regional_access", title: "Regional access", detail: "Check whether a customer is allowed in a jurisdiction.", match: /residen|jurisdiction|region/i },
+  { id: "member_access", title: "Member or credential access", detail: "Open a product or service to qualified members.", match: /member|credential|collector/i },
+  { id: "wallet_control", title: "Wallet-controlled action", detail: "Require current control before a sensitive action.", match: /wallet/i },
+  { id: "institutional_access", title: "Institutional protocol access", detail: "Gate protocol actions to an eligible organization.", match: /institution|organization|protocol/i },
+  { id: "custom", title: "Something specific", detail: "Describe the result your product needs.", match: /$a/ },
+];
+
 const FALLBACK_POLICIES: PublicPolicy[] = [
   {
     id: "age_21",
@@ -86,6 +102,8 @@ function List({ items, empty = "None" }: { items: string[]; empty?: string }) {
 
 export function TryAbraxasClient() {
   const [policies, setPolicies] = useState<PublicPolicy[]>(FALLBACK_POLICIES);
+  const [goalId, setGoalId] = useState(SETUP_GOALS[0].id);
+  const [customGoal, setCustomGoal] = useState("");
   const [selectedId, setSelectedId] = useState(FALLBACK_POLICIES[0].id);
   const [callbackUrl, setCallbackUrl] = useState("https://your-app.example/abraxas/callback");
   const [copied, setCopied] = useState(false);
@@ -109,6 +127,20 @@ export function TryAbraxasClient() {
   }, []);
 
   const selected = policies.find((policy) => policy.id === selectedId) ?? policies[0];
+  const selectedGoal = SETUP_GOALS.find((goal) => goal.id === goalId) ?? SETUP_GOALS[0];
+  const setupReason = goalId === "custom" && customGoal.trim() ? customGoal.trim() : selectedGoal.title;
+
+  function chooseGoal(goal: SetupGoal) {
+    setGoalId(goal.id);
+    if (goal.id === "custom") return;
+    const recommended = policies.find((policy) => goal.match.test([
+      policy.id,
+      policy.label,
+      policy.user_explanation,
+      ...policy.intended_use_examples,
+    ].join(" ")));
+    if (recommended) setSelectedId(recommended.id);
+  }
 
   const integration = useMemo(() => {
     const safeCallback = callbackUrl.trim() || "https://your-app.example/abraxas/callback";
@@ -122,13 +154,13 @@ const response = await fetch("https://demo.abraxasworld.xyz/api/v1/verify/author
   body: JSON.stringify({
     policy_id: "${selected.id}",
     redirect_uri: "${safeCallback}",
-    requested_action: "access"
+    requested_action: "${setupReason.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "") || "access"}"
   })
 });
 
 const { hosted_connect_url } = await response.json();
 // Redirect the holder to hosted_connect_url.`;
-  }, [callbackUrl, selected.id]);
+  }, [callbackUrl, selected.id, setupReason]);
 
   async function copyIntegration() {
     await navigator.clipboard.writeText(integration);
@@ -141,7 +173,7 @@ const { hosted_connect_url } = await response.json();
       <header style={{ textAlign: "center", margin: "1rem auto 1.6rem", maxWidth: 760 }}>
         <p className="abx-eyebrow-violet" style={{ margin: "0 0 .7rem" }}>INTERACTIVE PRODUCT PREVIEW</p>
         <h1 style={{ fontSize: "clamp(2rem, 6vw, 3.45rem)", letterSpacing: "-.045em", lineHeight: 1.04, margin: "0 0 .8rem" }}>
-          Build a private eligibility flow in three steps.
+          Build a private eligibility flow around your use case.
         </h1>
         <p style={{ color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 auto", maxWidth: 650 }}>
           Explore the real Abraxas policy catalog and integration shape. No Google sign-in, wallet, API key, or admin access is required for this preview.
@@ -149,7 +181,7 @@ const { hosted_connect_url } = await response.json();
       </header>
 
       <div aria-label="Preview steps" style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: ".55rem", marginBottom: "1.3rem" }}>
-        {["1. Choose a policy", "2. Review privacy", "3. Copy integration"].map((step) => (
+        {["1. Choose your goal", "2. Pick the policy", "3. Review privacy", "4. Copy integration"].map((step) => (
           <span key={step} style={{ border: `1px solid ${TEAL}55`, background: `${TEAL}12`, borderRadius: 999, padding: ".45rem .75rem", fontSize: ".75rem", fontWeight: 800 }}>
             {step}
           </span>
@@ -157,8 +189,44 @@ const { hosted_connect_url } = await response.json();
       </div>
 
       <div style={{ display: "grid", gap: "1rem" }}>
+        <Panel accent={GOLD}>
+          <p style={{ fontFamily: MONO, color: GOLD, fontSize: ".68rem", letterSpacing: ".08em", margin: "0 0 .4rem" }}>STEP 1 · YOUR GOAL</p>
+          <h2 style={{ margin: "0 0 .45rem", fontSize: "1.35rem" }}>What do you want Abraxas to enable?</h2>
+          <p style={{ color: "var(--text-secondary)", fontSize: ".82rem", margin: "0 0 1rem", lineHeight: 1.55 }}>
+            Start with the outcome. Abraxas will recommend a policy while you stay free to choose another.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: ".65rem" }}>
+            {SETUP_GOALS.map((goal) => {
+              const active = goal.id === goalId;
+              return (
+                <button key={goal.id} type="button" onClick={() => chooseGoal(goal)} aria-pressed={active} style={{
+                  textAlign: "left", padding: ".9rem", borderRadius: 12, cursor: "pointer",
+                  border: `1px solid ${active ? GOLD : "rgba(255,255,255,.12)"}`,
+                  background: active ? `${GOLD}12` : "rgba(255,255,255,.025)",
+                  color: "var(--text-primary)",
+                }}>
+                  <strong style={{ display: "block", marginBottom: ".3rem" }}>{goal.title}</strong>
+                  <span style={{ display: "block", color: "var(--text-secondary)", fontSize: ".75rem", lineHeight: 1.5 }}>{goal.detail}</span>
+                </button>
+              );
+            })}
+          </div>
+          {goalId === "custom" && (
+            <div style={{ marginTop: ".9rem" }}>
+              <label htmlFor="try-custom-goal" style={{ display: "block", fontSize: ".78rem", fontWeight: 800, marginBottom: ".4rem" }}>
+                Describe the result your product needs
+              </label>
+              <textarea id="try-custom-goal" value={customGoal} onChange={(event) => setCustomGoal(event.target.value)} placeholder="Example: Confirm a supplier is authorized for this transaction without receiving their private documents." style={{
+                width: "100%", minHeight: 86, resize: "vertical", borderRadius: 10,
+                border: "1px solid rgba(255,255,255,.15)", background: "rgba(0,0,0,.22)",
+                color: "var(--text-primary)", padding: ".75rem", fontFamily: FONT, lineHeight: 1.5,
+              }} />
+            </div>
+          )}
+        </Panel>
+
         <Panel>
-          <p style={{ fontFamily: MONO, color: TEAL, fontSize: ".68rem", letterSpacing: ".08em", margin: "0 0 .4rem" }}>STEP 1 · POLICY</p>
+          <p style={{ fontFamily: MONO, color: TEAL, fontSize: ".68rem", letterSpacing: ".08em", margin: "0 0 .4rem" }}>STEP 2 · RECOMMENDED POLICY</p>
           <h2 style={{ margin: "0 0 .45rem", fontSize: "1.35rem" }}>What should your product verify?</h2>
           <p style={{ color: "var(--text-secondary)", fontSize: ".82rem", margin: "0 0 1rem", lineHeight: 1.55 }}>
             These are the same versioned policy packs exposed to Partner Launchpad.
@@ -182,7 +250,7 @@ const { hosted_connect_url } = await response.json();
         </Panel>
 
         <Panel accent={GOLD}>
-          <p style={{ fontFamily: MONO, color: GOLD, fontSize: ".68rem", letterSpacing: ".08em", margin: "0 0 .4rem" }}>STEP 2 · PRIVACY BOUNDARY</p>
+          <p style={{ fontFamily: MONO, color: GOLD, fontSize: ".68rem", letterSpacing: ".08em", margin: "0 0 .4rem" }}>STEP 3 · PRIVACY BOUNDARY</p>
           <h2 style={{ margin: "0 0 .3rem", fontSize: "1.35rem" }}>{selected.label}</h2>
           <p style={{ margin: "0 0 1rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>{selected.user_explanation}</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: ".8rem" }}>
@@ -203,8 +271,22 @@ const { hosted_connect_url } = await response.json();
         </Panel>
 
         <Panel>
-          <p style={{ fontFamily: MONO, color: TEAL, fontSize: ".68rem", letterSpacing: ".08em", margin: "0 0 .4rem" }}>STEP 3 · INTEGRATION</p>
+          <p style={{ fontFamily: MONO, color: TEAL, fontSize: ".68rem", letterSpacing: ".08em", margin: "0 0 .4rem" }}>STEP 4 · INTEGRATION</p>
           <h2 style={{ margin: "0 0 .45rem", fontSize: "1.35rem" }}>Preview the server request</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: ".55rem", margin: "0 0 .9rem" }}>
+            <div style={{ padding: ".7rem", borderRadius: 10, background: "rgba(255,255,255,.035)" }}>
+              <span style={{ display: "block", color: "var(--text-muted)", fontSize: ".65rem", marginBottom: ".2rem" }}>YOUR GOAL</span>
+              <strong style={{ fontSize: ".78rem" }}>{setupReason}</strong>
+            </div>
+            <div style={{ padding: ".7rem", borderRadius: 10, background: "rgba(255,255,255,.035)" }}>
+              <span style={{ display: "block", color: "var(--text-muted)", fontSize: ".65rem", marginBottom: ".2rem" }}>POLICY</span>
+              <strong style={{ fontSize: ".78rem" }}>{selected.label}</strong>
+            </div>
+            <div style={{ padding: ".7rem", borderRadius: 10, background: "rgba(255,255,255,.035)" }}>
+              <span style={{ display: "block", color: "var(--text-muted)", fontSize: ".65rem", marginBottom: ".2rem" }}>SHARED RESULT</span>
+              <strong style={{ fontSize: ".78rem" }}>{selected.disclosed_result.replaceAll("_", " ")}</strong>
+            </div>
+          </div>
           <label htmlFor="try-callback" style={{ display: "block", fontSize: ".78rem", fontWeight: 800, marginBottom: ".4rem" }}>Your callback URL</label>
           <input id="try-callback" type="url" value={callbackUrl} onChange={(event) => setCallbackUrl(event.target.value)} style={{
             width: "100%", borderRadius: 10, border: "1px solid rgba(255,255,255,.15)", background: "rgba(0,0,0,.22)",
