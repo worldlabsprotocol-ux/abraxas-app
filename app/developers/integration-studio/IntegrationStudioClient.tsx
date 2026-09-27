@@ -227,6 +227,12 @@ export function IntegrationStudioClient() {
     setError("");
     setSubmitting(true);
     try {
+      const storageKey = "abraxas_studio_sandbox_id";
+      let sandboxId = window.sessionStorage.getItem(storageKey);
+      if (!sandboxId) {
+        sandboxId = window.crypto.randomUUID();
+        window.sessionStorage.setItem(storageKey, sandboxId);
+      }
       const res = await fetch("/api/developers/integration-studio", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -236,6 +242,7 @@ export function IntegrationStudioClient() {
           policy_template_id: packId,
           return_url: returnUrl,
           environment: "sandbox",
+          sandbox_id: sandboxId,
           idempotency_key: `studio-${packId}-${applicationName.trim().toLowerCase()}`,
         }),
       });
@@ -255,7 +262,10 @@ export function IntegrationStudioClient() {
           : (data.error ?? data.code ?? "Could not create sandbox"));
         return;
       }
-      if (data.application) setCreated(data.application);
+      if (data.application) {
+        setCreated(data.application);
+        setSignedIn(true);
+      }
       if (data.api_key) setRevealedKey(data.api_key);
       if (data.path_instructions) setPathInstructions(data.path_instructions);
       if (data.docs) setHostedDocs(data.docs);
@@ -594,14 +604,8 @@ export function IntegrationStudioClient() {
 
       <ContentCard title={`Create · ${PARTNER_ACTIVATION_CREATE_CTA}`}>
         <p style={{ ...body, marginBottom: "0.75rem" }}>
-          Create a working sandbox app in the browser. Sign-in is used only to keep your app and credentials private.
+          Create an isolated sandbox directly in the browser. No wallet, zkLogin, or existing API key is required. A secure cookie keeps the new sandbox attached to this browser.
         </p>
-        {!signedIn && (
-          <p style={{ ...body, marginBottom: "0.85rem" }}>
-            Your plan is complete. Sign in only when you are ready to save this sandbox and receive its private test credential.
-          </p>
-        )}
-        {signedIn && (
           <form
             onSubmit={(event) => {
               event.preventDefault();
@@ -659,7 +663,6 @@ export function IntegrationStudioClient() {
               {PARTNER_ACTIVATION_CREATE_CTA}
             </Btn>
           </form>
-        )}
         {error && <p style={{ ...body, color: "var(--danger, #f87171)", marginBottom: "0.7rem" }}>{error}</p>}
         {revealedKey && (
           <div style={{ ...body, marginBottom: "0.85rem" }}>
@@ -674,7 +677,7 @@ export function IntegrationStudioClient() {
         )}
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
           {!signedIn && (
-            <Btn href={INTEGRATION_STUDIO_PROVISION.launchpad_href} size="sm">Sign in on Partner Launchpad →</Btn>
+            <Btn href={INTEGRATION_STUDIO_PROVISION.launchpad_href} variant="secondary" size="sm">Open an existing sandbox →</Btn>
           )}
           {created && hostedDocs?.hosted_link && (
             <Btn href={hostedDocs.hosted_link} size="sm">Run hosted sandbox test →</Btn>
