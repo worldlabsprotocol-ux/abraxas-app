@@ -19,6 +19,11 @@ import {
   type PassportActivityItem,
   type PassportActivityView,
 } from "@/lib/passport/verificationActivity/contract";
+import {
+  filterPassportConnections,
+  summarizePassportConnections,
+  type PassportConnectionFilter,
+} from "@/lib/passport/verificationActivity/connections";
 
 const FONT = ABRAXAS_FONT_SANS;
 
@@ -295,6 +300,7 @@ export function PassportVerificationActivity() {
   const queryClient = useQueryClient();
   const [pending, setPending] = useState<PassportActivityItem | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [connectionFilter, setConnectionFilter] = useState<PassportConnectionFilter>("current");
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["passport", "verification-activity"],
     queryFn: fetchActivity,
@@ -324,9 +330,12 @@ export function PassportVerificationActivity() {
   });
 
   const signedOut = error instanceof Error && error.message === "signin";
+  const connectionSummary = summarizePassportConnections(data?.items ?? []);
+  const visibleConnections = filterPassportConnections(data?.items ?? [], connectionFilter);
 
   return (
     <section
+      id="connected-services"
       aria-labelledby="passport-verification-activity-heading"
       style={{
         background: PUBLIC_SURFACE.cardBackground,
@@ -340,21 +349,56 @@ export function PassportVerificationActivity() {
         id="passport-verification-activity-heading"
         style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.5rem" }}
       >
-        Where your Passport was used
+        Connected services
       </h2>
       <p style={{ fontFamily: FONT, fontSize: "0.8rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.85rem" }}>
-        {data?.notice ?? PASSPORT_ACTIVITY_NOTICE}
+        See which services received a result, what stayed private, and stop future reuse whenever a result is current.
       </p>
+
+      {!isLoading && !isError && connectionSummary.total > 0 && (
+        <div style={{ marginBottom: "0.85rem" }}>
+          <p role="status" style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", margin: "0 0 0.55rem" }}>
+            {connectionSummary.current} current · {connectionSummary.history} historical
+          </p>
+          <div role="group" aria-label="Filter connected services" style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+            {([
+              ["current", `Current (${connectionSummary.current})`],
+              ["history", `History (${connectionSummary.history})`],
+              ["all", `All (${connectionSummary.total})`],
+            ] as const).map(([filter, label]) => (
+              <button
+                key={filter}
+                type="button"
+                aria-pressed={connectionFilter === filter}
+                onClick={() => setConnectionFilter(filter)}
+                style={{
+                  padding: "0.38rem 0.65rem",
+                  borderRadius: 999,
+                  border: connectionFilter === filter ? "1px solid rgba(94,234,212,0.55)" : "1px solid var(--border)",
+                  background: connectionFilter === filter ? "rgba(94,234,212,0.1)" : "transparent",
+                  color: connectionFilter === filter ? "#5EEAD4" : "var(--text-secondary)",
+                  fontFamily: FONT,
+                  fontSize: "0.72rem",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {isLoading && (
         <p role="status" style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-muted)", margin: 0 }}>
-          Loading verification activity…
+          Loading connected services…
         </p>
       )}
 
       {signedOut && (
         <p role="status" style={{ fontFamily: FONT, fontSize: "0.84rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.6 }}>
-          Sign in to see your verification activity.
+          Sign in to see your connected services.
         </p>
       )}
 
@@ -376,7 +420,13 @@ export function PassportVerificationActivity() {
         </p>
       )}
 
-      {!isLoading && !isError && (data?.items ?? []).map((item) => (
+      {!isLoading && !isError && connectionSummary.total > 0 && visibleConnections.length === 0 && (
+        <p role="status" style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", margin: "0 0 0.75rem", lineHeight: 1.6 }}>
+          No {connectionFilter === "current" ? "current connections" : "historical results"} in this view.
+        </p>
+      )}
+
+      {!isLoading && !isError && visibleConnections.map((item) => (
         <ActivityCard
           key={item.activity_ref}
           item={item}
@@ -406,6 +456,10 @@ export function PassportVerificationActivity() {
           Showing the most recent results in the last 180 days.
         </p>
       )}
+
+      <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.5, margin: "0.75rem 0 0" }}>
+        {data?.notice ?? PASSPORT_ACTIVITY_NOTICE}
+      </p>
 
       <p style={{ fontFamily: FONT, fontSize: "0.78rem", margin: "0.75rem 0 0" }}>
         <Link href={data?.passport_href ?? "/passport"} style={{ color: "#5EEAD4", fontWeight: 650, textDecoration: "none" }}>
