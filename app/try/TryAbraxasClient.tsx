@@ -109,6 +109,7 @@ export function TryAbraxasClient() {
   const [selectedId, setSelectedId] = useState(FALLBACK_POLICIES[0].id);
   const [callbackUrl, setCallbackUrl] = useState("https://your-app.example/abraxas/callback");
   const [copied, setCopied] = useState(false);
+  const [setupPath, setSetupPath] = useState<"browser" | "developer">("browser");
 
   useEffect(() => {
     let cancelled = false;
@@ -183,7 +184,7 @@ const { hosted_connect_url } = await response.json();
       </header>
 
       <div aria-label="Preview steps" style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: ".55rem", marginBottom: "1.3rem" }}>
-        {["1. Choose your goal", "2. Pick the policy", "3. Review privacy", "4. Copy integration"].map((step) => (
+        {["1. Choose your goal", "2. Pick the policy", "3. Review privacy", "4. Start testing"].map((step) => (
           <span key={step} style={{ border: `1px solid ${TEAL}55`, background: `${TEAL}12`, borderRadius: 999, padding: ".45rem .75rem", fontSize: ".75rem", fontWeight: 800 }}>
             {step}
           </span>
@@ -243,8 +244,10 @@ const { hosted_connect_url } = await response.json();
                   background: active ? `${TEAL}14` : "rgba(255,255,255,.025)",
                   color: "var(--text-primary)",
                 }}>
-                  <strong style={{ display: "block", marginBottom: ".3rem" }}>{policy.label}</strong>
-                  <span style={{ display: "block", color: "var(--text-secondary)", fontSize: ".75rem", lineHeight: 1.5 }}>{policy.user_explanation}</span>
+                  <strong style={{ display: "block", marginBottom: ".35rem" }}>{policy.label}</strong>
+                  <span style={{ display: "block", color: active ? TEAL : "var(--text-muted)", fontFamily: MONO, fontSize: ".66rem", lineHeight: 1.4 }}>
+                    {active ? "RECOMMENDED · SELECTED" : "CHOOSE POLICY"}
+                  </span>
                 </button>
               );
             })}
@@ -265,43 +268,86 @@ const { hosted_connect_url } = await response.json();
               <List items={selected.partner_does_not_receive} />
             </div>
           </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem", marginTop: ".85rem" }}>
-            <span style={{ fontSize: ".72rem", color: "var(--text-secondary)" }}>Result: <code>{selected.disclosed_result}</code></span>
-            <span style={{ fontSize: ".72rem", color: "var(--text-secondary)" }}>Assurance: <code>{selected.minimum_assurance}</code></span>
-            <span style={{ fontSize: ".72rem", color: "var(--text-secondary)" }}>Receipt: <code>{selected.receipt_lifetime_hours}h</code></span>
-          </div>
+          <details style={{ marginTop: ".85rem", color: "var(--text-secondary)", fontSize: ".75rem" }}>
+            <summary style={{ cursor: "pointer", color: "var(--text-muted)", fontWeight: 800 }}>Technical receipt details</summary>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem", marginTop: ".65rem" }}>
+              <span>Result: <code>{selected.disclosed_result}</code></span>
+              <span>Assurance: <code>{selected.minimum_assurance}</code></span>
+              <span>Receipt: <code>{selected.receipt_lifetime_hours}h</code></span>
+            </div>
+          </details>
         </Panel>
 
         <Panel>
-          <p style={{ fontFamily: MONO, color: TEAL, fontSize: ".68rem", letterSpacing: ".08em", margin: "0 0 .4rem" }}>STEP 4 · INTEGRATION</p>
-          <h2 style={{ margin: "0 0 .45rem", fontSize: "1.35rem" }}>Preview the server request</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: ".55rem", margin: "0 0 .9rem" }}>
-            <div style={{ padding: ".7rem", borderRadius: 10, background: "rgba(255,255,255,.035)" }}>
-              <span style={{ display: "block", color: "var(--text-muted)", fontSize: ".65rem", marginBottom: ".2rem" }}>YOUR GOAL</span>
-              <strong style={{ fontSize: ".78rem" }}>{setupReason}</strong>
-            </div>
-            <div style={{ padding: ".7rem", borderRadius: 10, background: "rgba(255,255,255,.035)" }}>
-              <span style={{ display: "block", color: "var(--text-muted)", fontSize: ".65rem", marginBottom: ".2rem" }}>POLICY</span>
-              <strong style={{ fontSize: ".78rem" }}>{selected.label}</strong>
-            </div>
-            <div style={{ padding: ".7rem", borderRadius: 10, background: "rgba(255,255,255,.035)" }}>
-              <span style={{ display: "block", color: "var(--text-muted)", fontSize: ".65rem", marginBottom: ".2rem" }}>SHARED RESULT</span>
-              <strong style={{ fontSize: ".78rem" }}>{selected.disclosed_result.replaceAll("_", " ")}</strong>
-            </div>
+          <p style={{ fontFamily: MONO, color: TEAL, fontSize: ".68rem", letterSpacing: ".08em", margin: "0 0 .4rem" }}>STEP 4 · START TESTING</p>
+          <h2 style={{ margin: "0 0 .45rem", fontSize: "1.35rem" }}>Choose how you want to continue</h2>
+          <p style={{ color: "var(--text-secondary)", fontSize: ".82rem", margin: "0 0 1rem", lineHeight: 1.55 }}>
+            Everything can be set up in the browser. Code is available when a developer is ready to connect the finished flow.
+          </p>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: ".7rem", marginBottom: "1rem" }}>
+            <button type="button" onClick={() => setSetupPath("browser")} aria-pressed={setupPath === "browser"} style={{
+              textAlign: "left", padding: "1rem", borderRadius: 14, cursor: "pointer",
+              border: `1px solid ${setupPath === "browser" ? GOLD : "rgba(255,255,255,.12)"}`,
+              background: setupPath === "browser" ? `${GOLD}12` : "rgba(255,255,255,.025)",
+              color: "var(--text-primary)",
+            }}>
+              <strong style={{ display: "block", marginBottom: ".35rem" }}>Use the browser</strong>
+              <span style={{ color: "var(--text-secondary)", fontSize: ".75rem", lineHeight: 1.5 }}>Save the policy and run a hosted sandbox test. No terminal required.</span>
+            </button>
+            <button type="button" onClick={() => setSetupPath("developer")} aria-pressed={setupPath === "developer"} style={{
+              textAlign: "left", padding: "1rem", borderRadius: 14, cursor: "pointer",
+              border: `1px solid ${setupPath === "developer" ? TEAL : "rgba(255,255,255,.12)"}`,
+              background: setupPath === "developer" ? `${TEAL}12` : "rgba(255,255,255,.025)",
+              color: "var(--text-primary)",
+            }}>
+              <strong style={{ display: "block", marginBottom: ".35rem" }}>Connect with code</strong>
+              <span style={{ color: "var(--text-secondary)", fontSize: ".75rem", lineHeight: 1.5 }}>Copy the server request when your developer is ready.</span>
+            </button>
           </div>
-          <label htmlFor="try-callback" style={{ display: "block", fontSize: ".78rem", fontWeight: 800, marginBottom: ".4rem" }}>Your callback URL</label>
-          <input id="try-callback" type="url" value={callbackUrl} onChange={(event) => setCallbackUrl(event.target.value)} style={{
-            width: "100%", borderRadius: 10, border: "1px solid rgba(255,255,255,.15)", background: "rgba(0,0,0,.22)",
-            color: "var(--text-primary)", padding: ".75rem", fontFamily: MONO, fontSize: ".75rem", marginBottom: ".75rem",
-          }} />
-          <pre className="abx-code-scroll" style={{ whiteSpace: "pre", padding: "1rem", borderRadius: 12, background: "#05080F", border: "1px solid rgba(255,255,255,.1)", color: "#D1FAE5", fontSize: ".7rem", lineHeight: 1.6 }}>
-            <code>{integration}</code>
-          </pre>
-          <button type="button" onClick={() => void copyIntegration()} style={{
-            border: 0, borderRadius: 999, background: TEAL, color: "#04130C", padding: ".7rem 1rem", fontWeight: 900, cursor: "pointer",
-          }}>
-            {copied ? "Copied" : "Copy integration preview"}
-          </button>
+
+          {setupPath === "browser" ? (
+            <div>
+              <div style={{ display: "grid", gap: ".55rem", marginBottom: ".9rem" }}>
+                {[
+                  ["1", "Save your setup", "Open Partner Launchpad and create a sandbox application."],
+                  ["2", "Confirm the policy", `Use ${selected.label} and add your return page.`],
+                  ["3", "Run the hosted test", "Follow the on-screen test flow and review the result."],
+                ].map(([number, title, detail]) => (
+                  <div key={number} style={{ display: "grid", gridTemplateColumns: "2rem 1fr", gap: ".7rem", padding: ".75rem", borderRadius: 12, background: "rgba(255,255,255,.035)" }}>
+                    <span style={{ width: "2rem", height: "2rem", display: "grid", placeItems: "center", borderRadius: 999, background: `${GOLD}18`, color: GOLD, fontWeight: 900 }}>{number}</span>
+                    <div>
+                      <strong style={{ display: "block", fontSize: ".82rem", marginBottom: ".15rem" }}>{title}</strong>
+                      <span style={{ color: "var(--text-secondary)", fontSize: ".75rem", lineHeight: 1.45 }}>{detail}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Link href="/developers/launchpad" style={{ display: "inline-block", textDecoration: "none", borderRadius: 999, padding: ".75rem 1rem", background: GOLD, color: "#09111F", fontWeight: 900 }}>
+                Continue in the browser →
+              </Link>
+              <p style={{ color: "var(--text-muted)", fontSize: ".68rem", margin: ".65rem 0 0" }}>Sandbox setup stays in the website. A developer is only needed when connecting Abraxas to your live product.</p>
+            </div>
+          ) : (
+            <div>
+              <label htmlFor="try-callback" style={{ display: "block", fontSize: ".78rem", fontWeight: 800, marginBottom: ".4rem" }}>Your callback URL</label>
+              <input id="try-callback" type="url" value={callbackUrl} onChange={(event) => setCallbackUrl(event.target.value)} style={{
+                width: "100%", borderRadius: 10, border: "1px solid rgba(255,255,255,.15)", background: "rgba(0,0,0,.22)",
+                color: "var(--text-primary)", padding: ".75rem", fontFamily: MONO, fontSize: ".75rem", marginBottom: ".75rem",
+              }} />
+              <details>
+                <summary style={{ cursor: "pointer", color: TEAL, fontWeight: 850, marginBottom: ".7rem" }}>Show server request</summary>
+                <pre className="abx-code-scroll" style={{ whiteSpace: "pre", padding: "1rem", borderRadius: 12, background: "#05080F", border: "1px solid rgba(255,255,255,.1)", color: "#D1FAE5", fontSize: ".7rem", lineHeight: 1.6 }}>
+                  <code>{integration}</code>
+                </pre>
+              </details>
+              <button type="button" onClick={() => void copyIntegration()} style={{
+                border: 0, borderRadius: 999, background: TEAL, color: "#04130C", padding: ".7rem 1rem", fontWeight: 900, cursor: "pointer",
+              }}>
+                {copied ? "Copied" : "Copy server request"}
+              </button>
+            </div>
+          )}
         </Panel>
 
         <section style={{ textAlign: "center", padding: "1.25rem 1rem" }}>
@@ -313,8 +359,8 @@ const { hosted_connect_url } = await response.json();
             <Link href="/developers/launchpad" style={{ textDecoration: "none", borderRadius: 999, padding: ".75rem 1rem", background: GOLD, color: "#09111F", fontWeight: 900 }}>
               Open Partner Launchpad →
             </Link>
-            <Link href="/apply" style={{ textDecoration: "none", borderRadius: 999, padding: ".75rem 1rem", border: `1px solid ${TEAL}66`, color: TEAL, fontWeight: 850 }}>
-              Apply for access
+            <Link href="/integrations#apply" style={{ textDecoration: "none", borderRadius: 999, padding: ".75rem 1rem", border: `1px solid ${TEAL}66`, color: TEAL, fontWeight: 850 }}>
+              Apply for partner review
             </Link>
             <Link href="/passport" style={{ textDecoration: "none", borderRadius: 999, padding: ".75rem 1rem", color: "var(--text-secondary)", fontWeight: 750 }}>
               Open Passport
