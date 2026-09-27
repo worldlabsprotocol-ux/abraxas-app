@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { GOOD_TROUBLE_BRAND, GOOD_TROUBLE_PARTNER_ID } from "@/lib/goodTrouble/constants";
 import { projectPassportRequestInboxItem } from "./passportRequestInbox";
 
 describe("Passport request inbox projection", () => {
@@ -6,7 +7,7 @@ describe("Passport request inbox projection", () => {
     const item = projectPassportRequestInboxItem({
       row: {
         id: "vr-123",
-        partner_id: "good-trouble-cannabis",
+        partner_id: GOOD_TROUBLE_PARTNER_ID,
         policy_id: "age-21",
         requested_action: "browse_storefront",
         created_at: "2026-09-27T10:00:00.000Z",
@@ -17,7 +18,7 @@ describe("Passport request inbox projection", () => {
     });
 
     expect(item).toMatchObject({
-      partner_label: "Good Trouble Cannabis",
+      partner_label: GOOD_TROUBLE_BRAND.name,
       request_title: "Age 21 eligibility",
       purpose: "browse storefront",
       shared_result: "age eligibility",
@@ -41,6 +42,7 @@ describe("Passport request inbox projection", () => {
       sharedResult: null,
     });
 
+    expect(item.partner_label).toBe("Partner");
     expect(item.request_title).toBe("Passport verification request");
     expect(item.purpose).toBe("Confirm eligibility");
     expect(item.shared_result).toBe("Eligibility result");
