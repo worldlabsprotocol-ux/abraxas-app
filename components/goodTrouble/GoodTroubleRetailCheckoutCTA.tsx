@@ -15,6 +15,12 @@ import {
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
 
+const STEPS = [
+  "Continue to your Abraxas Passport",
+  "Confirm the required verified information",
+  "Return with a signed eligibility result",
+] as const;
+
 export function GoodTroubleRetailCheckoutCTA() {
   // This component runs in the browser so both verification and callback stay
   // on the host the visitor opened (demo, preview, local, or production).
@@ -52,7 +58,7 @@ export function GoodTroubleRetailCheckoutCTA() {
           margin: "0 0 0.5rem",
         }}
       >
-        Confirm 21+ privately
+        Prove you are 21+ without sharing your birth date
       </h2>
       <p
         style={{
@@ -64,30 +70,44 @@ export function GoodTroubleRetailCheckoutCTA() {
           maxWidth: 520,
         }}
       >
-        Good Trouble receives an approved or not approved result. Your birth date and identity documents stay private.
+        Good Trouble receives only the eligibility result needed for this sandbox flow. Your identity documents stay with Abraxas.
       </p>
 
-      <div style={{
-        display: "flex",
-        flexWrap: "wrap",
-        gap: "0.45rem",
-        margin: "0 0 1rem",
-      }}>
-        {["About 60 seconds", "Sandbox", "Passport sign-in"].map((label) => (
-          <span key={label} style={{
-            padding: "0.35rem 0.6rem",
-            borderRadius: 999,
-            border: "1px solid rgba(94,234,212,0.2)",
-            background: "rgba(94,234,212,0.07)",
-            color: "var(--text-secondary)",
-            fontFamily: FONT,
-            fontSize: "0.7rem",
-            fontWeight: 700,
-          }}>
-            {label}
-          </span>
+      <ol style={{ listStyle: "none", margin: "0 0 1rem", padding: 0, display: "grid", gap: "0.5rem" }}>
+        {STEPS.map((step, index) => (
+          <li
+            key={step}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1.6rem minmax(0, 1fr)",
+              gap: "0.55rem",
+              alignItems: "center",
+              fontFamily: FONT,
+              fontSize: "0.8rem",
+              color: "var(--text-secondary)",
+            }}
+          >
+            <span
+              aria-hidden="true"
+              style={{
+                width: "1.5rem",
+                height: "1.5rem",
+                borderRadius: "999px",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(94,234,212,0.12)",
+                color: "#5EEAD4",
+                fontWeight: 800,
+                fontSize: "0.72rem",
+              }}
+            >
+              {index + 1}
+            </span>
+            <span>{step}</span>
+          </li>
         ))}
-      </div>
+      </ol>
 
       <Btn href={verifyUrl} size="lg" fullWidth>
         Continue with Abraxas →

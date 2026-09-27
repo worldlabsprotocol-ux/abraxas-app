@@ -1,5 +1,5 @@
 // FILE: lib/partner/integrationStudio/createSandbox.ts
-// Session-bound sandbox create. Reuses Launchpad provision, keys, and docs.
+// Browser-first sandbox create. New visitors receive an isolated tenant; existing sessions reuse their tenant.
 
 import { NextRequest } from "next/server";
 import {
@@ -75,15 +75,6 @@ export async function createStudioSandbox(req: NextRequest) {
   if (ipLimited) return ipLimited;
 
   const auth = await requireLaunchpadSession(req);
-  if (!auth.ok) return auth.response;
-
-  const tenantLimited = enforceLaunchpadTenantRateLimit(
-    req,
-    STUDIO_CREATE_ROUTE,
-    auth.session.partnerId,
-    5,
-  );
-  if (tenantLimited) return tenantLimited;
 
   let body: Record<string, unknown>;
   try {
@@ -95,18 +86,8 @@ export async function createStudioSandbox(req: NextRequest) {
   if (String(body.environment ?? "sandbox") === "production") {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.forbidden, 403, "production_denied");
   }
-  if (auth.session.environment === "production" && body.issue_production_key === true) {
+  if (auth.ok && auth.session.environment === "production" && body.issue_production_key === true) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.forbidden, 403, "production_denied");
-  }
-
-  const requestedPartnerId = body.partner_id ? String(body.partner_id) : auth.session.partnerId;
-  if (requestedPartnerId !== auth.session.partnerId) {
-    return studioError("forbidden", 403);
-  }
-
-  const policyTemplateId = String(body.policy_template_id ?? body.pack_id ?? "");
-  if (!resolveLaunchpadPolicyTemplate(policyTemplateId)) {
-    return studioError("policy_template_invalid", 400);
   }
 
   const applicationName = String(body.application_name ?? "").trim();
@@ -115,15 +96,48 @@ export async function createStudioSandbox(req: NextRequest) {
     return studioError("invalid_input", 400);
   }
 
+  // The browser nonce makes retries stable without becoming an authentication credential.
+  const anonymousSandboxId = String(body.sandbox_id ?? "").trim();
+  const anonymousSuffix = anonymousSandboxId.replace(/[^a-f0-9]/gi, "").toLowerCase().slice(0, 12);
+  const anonymousName = applicationName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 32);
+  if (!auth.ok && (anonymousSuffix.length < 12 || !anonymousName)) {
+    return studioError("invalid_input", 400);
+  }
+
+  const partnerId = auth.ok
+    ? auth.session.partnerId
+    : `studio-${anonymousName}-${anonymousSuffix}`;
+
+  if (body.partner_id && String(body.partner_id) !== partnerId) {
+    return studioError("forbidden", 403);
+  }
+
+  const tenantLimited = enforceLaunchpadTenantRateLimit(
+    req,
+    STUDIO_CREATE_ROUTE,
+    partnerId,
+    5,
+  );
+  if (tenantLimited) return tenantLimited;
+
+  const policyTemplateId = String(body.policy_template_id ?? body.pack_id ?? "");
+  if (!resolveLaunchpadPolicyTemplate(policyTemplateId)) {
+    return studioError("policy_template_invalid", 400);
+  }
+
   const result = await provisionLaunchpadSandbox({
     applicationName,
     displayName: String(body.display_name ?? applicationName).trim(),
-    partnerId: auth.session.partnerId,
+    partnerId,
     policyTemplateId,
     returnUrl,
     idempotencyKey: body.idempotency_key
       ? String(body.idempotency_key)
-      : `studio-${auth.session.partnerId}-${policyTemplateId}-${applicationName}`,
+      : `studio-${partnerId}-${policyTemplateId}-${applicationName}`,
   });
 
   if (!result.ok) {

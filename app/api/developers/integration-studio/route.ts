@@ -1,5 +1,5 @@
 // FILE: app/api/developers/integration-studio/route.ts
-// Public catalog GET. Session-bound sandbox create POST via Launchpad provision.
+// Public catalog GET. Browser-first isolated sandbox create POST via Launchpad provision.
 
 import { NextRequest, NextResponse } from "next/server";
 import {
@@ -28,7 +28,9 @@ export async function GET(req: NextRequest) {
     ...studioPublicCatalog({ packId, pathId: pathParam }),
     snippet: studioSnippetForPath(pathParam),
     access: "public",
-    partner_session_required_for_provisioning: true,
+    partner_session_required_for_provisioning: false,
+    browser_sandbox_provisioning: true,
+    wallet_required_for_provisioning: false,
   };
 
   const leaks = studioPayloadLeaks(body);

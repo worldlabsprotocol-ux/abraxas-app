@@ -153,7 +153,7 @@ export function HomeSharpHero() {
           textDecoration: "none",
         }}
       >
-        Run the 60-second live demo →
+        See the live privacy journey →
       </Link>
 
       <div
