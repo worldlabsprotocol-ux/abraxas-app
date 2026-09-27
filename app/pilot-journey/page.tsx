@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/pilot-journey/page.tsx
-// Public walkthrough of the working privacy and partner verification surfaces.
+// Public, judge-friendly walkthrough of the working privacy and partner verification surfaces.
 
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
@@ -37,57 +37,92 @@ const copyStyle = {
   color: "var(--text-secondary)",
 } as const;
 
+const actionStyle = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "0.55rem",
+  marginTop: "0.65rem",
+} as const;
+
+const builderHref =
+  "/developers/integration-studio?pack=age_21_retail&path=hosted_partner_flow&platform=nextjs&source=live-demo";
+
 export default function PilotJourneyPage() {
   return (
     <RedesignPage accent="neutral" maxWidth={760}>
       <PageHeader
-        eyebrow="Live product journey"
-        title="From partner request to private proof"
-        subtitle="Follow the working sandbox path from a partner request to a private Passport result and a verifiable receipt."
+        eyebrow="60-second live demo"
+        title="Build it. Run it. Verify it."
+        subtitle="See both sides of Abraxas: a partner configures one private result, then a customer proves it without sharing their underlying evidence."
       />
 
-      <ContentCard title="Try the working flow">
-        <div style={{ display: "grid", gap: "1rem" }}>
+      <ContentCard title="Run the demo">
+        <div style={{ display: "grid", gap: "1.1rem" }}>
           <div style={stepStyle}>
             <span style={numberStyle}>1</span>
-            <p style={copyStyle}><strong style={{ color: "var(--text-primary)" }}>Start with the partner.</strong><br />Good Trouble asks for one result: confirm the customer is 21 or older.</p>
+            <div>
+              <p style={copyStyle}>
+                <strong style={{ color: "var(--text-primary)" }}>Build the integration.</strong><br />
+                Open a ready-to-edit 21+ policy and see the hosted path a partner can connect without a terminal.
+              </p>
+              <div style={actionStyle}>
+                <Btn href={builderHref} variant="secondary">Open the builder</Btn>
+              </div>
+            </div>
           </div>
+
           <div style={stepStyle}>
             <span style={numberStyle}>2</span>
-            <p style={copyStyle}><strong style={{ color: "var(--text-primary)" }}>Use Abraxas Passport.</strong><br />The customer reviews exactly what the partner needs and keeps their birth date and documents private.</p>
+            <div>
+              <p style={copyStyle}>
+                <strong style={{ color: "var(--text-primary)" }}>Run the customer flow.</strong><br />
+                Good Trouble requests only a current 21+ result. Passport shows what is shared and what stays private.
+              </p>
+              <div style={actionStyle}>
+                <Btn href="/good-trouble/checkout" size="lg">Run the live flow →</Btn>
+              </div>
+            </div>
           </div>
+
           <div style={stepStyle}>
             <span style={numberStyle}>3</span>
-            <p style={copyStyle}><strong style={{ color: "var(--text-primary)" }}>Return with a signed result.</strong><br />The partner receives a reusable eligibility result and can verify the receipt.</p>
+            <div>
+              <p style={copyStyle}>
+                <strong style={{ color: "var(--text-primary)" }}>Verify the result.</strong><br />
+                The partner server checks the signed receipt before access is granted. The same receipt can be inspected publicly.
+              </p>
+              <div style={actionStyle}>
+                <Btn href="/verify?mode=receipt" variant="secondary">Open receipt verifier</Btn>
+              </div>
+            </div>
           </div>
-          <Btn href="/good-trouble" size="lg">Start the live sandbox →</Btn>
         </div>
       </ContentCard>
 
-      <ContentCard title="What works today">
-        <div style={{ display: "grid", gap: "0.8rem" }}>
-          <p style={copyStyle}><strong style={{ color: "var(--text-primary)" }}>Partner request and return.</strong><br />A sandbox partner requests a specific eligibility result and receives the customer at its registered callback.</p>
-          <p style={copyStyle}><strong style={{ color: "var(--text-primary)" }}>Private holder consent.</strong><br />Passport shows what will be proved and what remains private before the customer continues.</p>
-          <p style={copyStyle}><strong style={{ color: "var(--text-primary)" }}>Signed receipt verification.</strong><br />The returned receipt can be inspected through the public receipt endpoint and verified without exposing source documents.</p>
-          <p style={copyStyle}><strong style={{ color: "var(--text-primary)" }}>Reviewed Solana configuration.</strong><br />The public verifier checks finalized devnet proof transactions against the registered gate and protocol configuration.</p>
-        </div>
-      </ContentCard>
-
-      <ContentCard title="Open the live capabilities">
-        <p style={{ ...copyStyle, marginBottom: "1rem" }}>
-          Each link opens a working product surface. The receipt verifier accepts an Abraxas receipt ID; the Solana verifier accepts a real finalized devnet transaction signature.
+      <ContentCard title="What the demo proves">
+        <p style={copyStyle}>
+          A real partner request enters Passport, the holder consents to one policy result, and the partner rechecks the signed receipt on its server before unlocking the destination.
         </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem" }}>
-          <Btn href="/passport">Open Passport</Btn>
-          <Btn href="/verify?mode=receipt" variant="secondary">Verify a receipt</Btn>
-          <Btn href="/proofs/solana-devnet" variant="secondary">Verify a Solana proof</Btn>
-          <Btn href="/developers/launchpad" variant="secondary">Open Partner Launchpad</Btn>
-        </div>
+        <details style={{ marginTop: "0.85rem", fontFamily: FONT }}>
+          <summary style={{ cursor: "pointer", color: "var(--text-primary)", fontWeight: 750 }}>
+            Technical proof and additional live surfaces
+          </summary>
+          <div style={{ display: "grid", gap: "0.8rem", marginTop: "0.8rem" }}>
+            <p style={copyStyle}>
+              The receipt verifier checks the signed artifact. The Solana verifier accepts a real finalized devnet transaction signature and checks it against the registered gate and protocol configuration.
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem" }}>
+              <Btn href="/passport" variant="secondary">Passport</Btn>
+              <Btn href="/proofs/solana-devnet" variant="secondary">Solana proof</Btn>
+              <Btn href="/developers/launchpad" variant="secondary">Partner Launchpad</Btn>
+            </div>
+          </div>
+        </details>
       </ContentCard>
 
       <ContentCard title="Sandbox scope">
         <p style={copyStyle}>
-          This journey uses the real application path and sandbox services. It does not grant production approval, complete a purchase, or move funds.
+          This uses the real application path and sandbox services. It does not complete a purchase, move funds, or grant production access.
         </p>
       </ContentCard>
     </RedesignPage>

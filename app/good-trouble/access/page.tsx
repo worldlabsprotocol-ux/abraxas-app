@@ -15,6 +15,8 @@ import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 export const dynamic = "force-dynamic";
 
 const FONT = ABRAXAS_FONT_SANS;
+const builderHref =
+  "/developers/integration-studio?pack=age_21_retail&path=hosted_partner_flow&platform=nextjs&source=good-trouble-result";
 
 export default async function GoodTroubleAccessPage({
   searchParams,
@@ -64,8 +66,9 @@ export default async function GoodTroubleAccessPage({
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem" }}>
                 <Btn href="/good-trouble#pilot-inventory" size="lg">Browse pilot inventory →</Btn>
-                <Btn href="/passport#passport-verification-activity-heading" variant="secondary">Open Passport activity</Btn>
                 <Btn href={receiptVerifierHref} variant="secondary">Verify receipt</Btn>
+                <Btn href={builderHref} variant="secondary">Build this integration</Btn>
+                <Btn href="/passport#passport-verification-activity-heading" variant="ghost">Passport activity</Btn>
               </div>
             </div>
           </ContentCard>
