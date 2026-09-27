@@ -8,6 +8,7 @@ import { PassportPageTabs } from "@/components/passport/PassportPageTabs";
 import { PassportCustomerView } from "@/components/passport/PassportCustomerView";
 import { PassportVerifySetupRequired } from "@/components/passport/PassportVerifySetupRequired";
 import { PassportPrivacyCenter } from "@/components/passport/PassportPrivacyCenter";
+import { PassportSupportCenter } from "@/components/passport/PassportSupportCenter";
 import { passportVerifyNeedsSetup } from "@/lib/passport/passportVerifyAccess";
 import { resolvePassportPageView } from "@/lib/passport/passportPrivacyNavigation";
 import { usePartnerFlowHandoff } from "@/lib/passport/partnerFlowHandoff";
@@ -196,9 +197,9 @@ function PassportPageInner() {
 
       <AbxPageHeader
         accent="passport"
-        eyebrow={pageView === "verify" ? HOLDER_VERIFY_EYEBROW : pageView === "privacy" ? "Passport · Privacy" : PASSPORT_PAGE_EYEBROW}
-        title={pageView === "verify" ? HOLDER_VERIFY_HEADLINE : pageView === "privacy" ? "Your data, your controls" : PASSPORT_PAGE_HEADLINE}
-        lead={pageView === "verify" ? HOLDER_VERIFY_SUBHEAD : pageView === "privacy" ? "See what Abraxas holds, request an export, or ask us to delete your account data." : PASSPORT_PAGE_SUBHEAD}
+        eyebrow={pageView === "verify" ? HOLDER_VERIFY_EYEBROW : pageView === "privacy" ? "Passport · Privacy" : pageView === "support" ? "Passport · Help" : PASSPORT_PAGE_EYEBROW}
+        title={pageView === "verify" ? HOLDER_VERIFY_HEADLINE : pageView === "privacy" ? "Your data, your controls" : pageView === "support" ? "Help and account safety" : PASSPORT_PAGE_HEADLINE}
+        lead={pageView === "verify" ? HOLDER_VERIFY_SUBHEAD : pageView === "privacy" ? "See what Abraxas holds, request an export, or ask us to delete your account data." : pageView === "support" ? "Get help in plain language and manage the session on this device." : PASSPORT_PAGE_SUBHEAD}
       />
 
         <Suspense fallback={<RedesignPageLoading label="Loading navigation…" compact />}>
@@ -215,6 +216,36 @@ function PassportPageInner() {
             }>
               <VerifyClient audience="holder" />
             </Suspense>
+          </>
+        ) : pageView === "support" ? (
+          <>
+            {!suiAddress && !authLoading ? (
+              <section style={{
+                background: "var(--surface-raised)",
+                border: "1px solid var(--border-strong)",
+                borderRadius: 16,
+                padding: "1.25rem",
+                marginBottom: "2rem",
+              }}>
+                <h2 style={{ fontFamily: S, fontSize: "1rem", margin: "0 0 0.5rem" }}>
+                  Sign in to get account help
+                </h2>
+                <p style={{
+                  fontFamily: S,
+                  fontSize: "0.82rem",
+                  lineHeight: 1.6,
+                  color: "var(--text-secondary)",
+                  margin: "0 0 1rem",
+                }}>
+                  Signing in connects your request to the right Passport account without asking you to copy account IDs.
+                </p>
+                <ZkLoginSignIn />
+              </section>
+            ) : authLoading ? (
+              <RedesignPageLoading label="Loading help and safety…" compact />
+            ) : (
+              <PassportSupportCenter />
+            )}
           </>
         ) : pageView === "privacy" ? (
           <>

@@ -7,6 +7,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { buildPassportSetupHref } from "@/lib/passport/passportVerifyAccess";
 import {
   PASSPORT_PRIVACY_HREF,
+  PASSPORT_SUPPORT_HREF,
   type PassportPageView,
 } from "@/lib/passport/passportPrivacyNavigation";
 import {
@@ -51,6 +52,7 @@ export function PassportPageTabs({ active }: { active: PassportPageView }) {
     { id: "passport", label: "My Passport", href: passportHref },
     { id: "verify", label: verifyLabel, href: verifyHref },
     { id: "privacy", label: "Privacy & controls", href: PASSPORT_PRIVACY_HREF },
+    { id: "support", label: "Help & safety", href: PASSPORT_SUPPORT_HREF },
   ];
 
   return (
