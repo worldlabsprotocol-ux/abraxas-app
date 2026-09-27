@@ -2,12 +2,13 @@
 // FILE: components/passport/PassportSupportCenter.tsx
 // Plain-language holder support and current-device session controls.
 
-import { useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { Btn } from "@/components/redesign/ui";
 import {
   PASSPORT_SUPPORT_ISSUES,
   PASSPORT_SUPPORT_MESSAGE_MAX,
+  type PassportSupportHistoryItem,
   type PassportSupportIssue,
 } from "@/lib/passport/passportSupport";
 
@@ -23,6 +24,34 @@ export function PassportSupportCenter() {
   const [error, setError] = useState("");
   const [reference, setReference] = useState("");
   const [confirmSignOut, setConfirmSignOut] = useState(false);
+  const [history, setHistory] = useState<PassportSupportHistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState("");
+
+  const loadHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    setHistoryError("");
+    try {
+      const res = await fetch("/api/passport/support", { credentials: "include" });
+      const data = await res.json() as {
+        error?: string;
+        requests?: PassportSupportHistoryItem[];
+      };
+      if (!res.ok || !data.requests) {
+        setHistoryError(data.error ?? "Support history is unavailable right now.");
+        return;
+      }
+      setHistory(data.requests);
+    } catch {
+      setHistoryError("Support history is unavailable right now.");
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadHistory();
+  }, [loadHistory]);
 
   async function submitSupportRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -44,6 +73,7 @@ export function PassportSupportCenter() {
       }
       setReference(data.reference);
       setMessage("");
+      void loadHistory();
     } catch {
       setError("We could not reach support. Check your connection and try again.");
     } finally {
@@ -166,6 +196,98 @@ export function PassportSupportCenter() {
               Submit support request
             </Btn>
           </form>
+        )}
+      </div>
+
+      <div style={{
+        background: "var(--surface-raised)",
+        border: "1px solid var(--border-strong)",
+        borderRadius: 16,
+        padding: "1.15rem 1.25rem",
+        marginBottom: "1rem",
+      }}>
+        <div style={{
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+          gap: "1rem", marginBottom: "0.55rem",
+        }}>
+          <div style={{
+            fontFamily: MONO, fontSize: "0.58rem", fontWeight: 700,
+            color: ACCENT, letterSpacing: "0.1em", textTransform: "uppercase",
+          }}>
+            Your requests
+          </div>
+          <button
+            type="button"
+            onClick={() => void loadHistory()}
+            disabled={historyLoading}
+            style={{
+              border: 0, background: "transparent", color: "var(--accent)",
+              fontFamily: FONT, fontSize: "0.66rem", fontWeight: 700,
+              cursor: historyLoading ? "wait" : "pointer", padding: 0,
+            }}
+          >
+            Refresh
+          </button>
+        </div>
+        <h2 style={{ fontFamily: FONT, fontSize: "1rem", margin: "0 0 0.4rem" }}>Support history</h2>
+        <p style={{
+          fontFamily: FONT, fontSize: "0.7rem", lineHeight: 1.55,
+          color: "var(--text-secondary)", margin: "0 0 0.8rem",
+        }}>
+          References and status stay connected to this Passport account. Support messages remain private.
+        </p>
+
+        {historyLoading ? (
+          <p role="status" style={{ fontFamily: FONT, fontSize: "0.7rem", color: "var(--text-muted)", margin: 0 }}>
+            Loading requests…
+          </p>
+        ) : historyError ? (
+          <div>
+            <p role="alert" style={{ fontFamily: FONT, fontSize: "0.7rem", color: "#FCA5A5", margin: "0 0 0.65rem" }}>
+              {historyError}
+            </p>
+            <Btn size="sm" variant="secondary" onClick={() => void loadHistory()}>Try again</Btn>
+          </div>
+        ) : history.length === 0 ? (
+          <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: 0 }}>
+            No support requests yet.
+          </p>
+        ) : (
+          <div style={{ display: "grid", gap: "0.5rem" }}>
+            {history.map(request => (
+              <div key={request.reference} style={{
+                padding: "0.7rem 0.75rem", borderRadius: 10,
+                background: "var(--surface)", border: "1px solid var(--border)",
+              }}>
+                <div style={{
+                  display: "flex", justifyContent: "space-between", alignItems: "center",
+                  gap: "0.75rem", flexWrap: "wrap",
+                }}>
+                  <span style={{ fontFamily: FONT, fontSize: "0.74rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                    {request.issue_label}
+                  </span>
+                  <span style={{
+                    fontFamily: FONT, fontSize: "0.62rem", fontWeight: 700,
+                    color: ACCENT, padding: "0.18rem 0.45rem", borderRadius: 999,
+                    background: "rgba(16,185,129,0.09)", border: "1px solid rgba(16,185,129,0.3)",
+                  }}>
+                    {request.status_label}
+                  </span>
+                </div>
+                <div style={{
+                  display: "flex", justifyContent: "space-between", gap: "0.75rem",
+                  flexWrap: "wrap", marginTop: "0.4rem",
+                }}>
+                  <code style={{ fontFamily: MONO, fontSize: "0.64rem", color: "var(--text-secondary)" }}>
+                    {request.reference}
+                  </code>
+                  <time dateTime={request.submitted_at} style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)" }}>
+                    {new Date(request.submitted_at).toLocaleString()}
+                  </time>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
