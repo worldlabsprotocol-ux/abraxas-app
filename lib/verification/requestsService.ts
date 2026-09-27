@@ -34,6 +34,8 @@ import { buildHolderConsentUrl } from "@/lib/privacy/selectiveDisclosure";
 import { resolveCompatibleReusableFact } from "@/lib/passport/reusableEligibility/qualify";
 import { derivedClaimRefs, derivedReasonCodes, persistReuseDerivation } from "@/lib/passport/reusableEligibility/issue";
 import type { InternalReusableFact } from "@/lib/passport/reusableEligibility/contract";
+import { requestPreviewMatchesSubject } from "@/lib/verification/requestPreviewAccess";
+export { requestPreviewMatchesSubject } from "@/lib/verification/requestPreviewAccess";
 
 export { getPartnerPolicy as getPolicy } from "@/lib/policy/getPolicy";
 
@@ -124,6 +126,7 @@ export interface VerificationRequestPreview {
 /** Holder preview before consent — no decision yet */
 export async function getVerificationRequestPreview(
   requestId: string,
+  subjectId?: string,
 ): Promise<VerificationRequestPreview | null> {
   const sb = requireSupabaseAdmin();
   const { data: request } = await sb
@@ -133,6 +136,7 @@ export async function getVerificationRequestPreview(
     .maybeSingle();
 
   if (!request) return null;
+  if (subjectId && !requestPreviewMatchesSubject(request, subjectId)) return null;
 
   const policy = await getPartnerPolicy(request.policy_id as string);
   const requestedClaims = (request.requested_claims as string[]) ?? [];

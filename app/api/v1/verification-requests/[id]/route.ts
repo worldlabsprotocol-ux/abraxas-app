@@ -17,7 +17,7 @@ export async function GET(
   const { id } = await params;
 
   try {
-    const preview = await getVerificationRequestPreview(id);
+    const preview = await getVerificationRequestPreview(id, session.session.suiAddress);
     if (!preview) {
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }
