@@ -8,8 +8,8 @@ import {
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
 import {
-  goodTroubleProductionReturnUrl,
-  goodTroubleProductionVerifyUrl,
+  goodTroubleReturnUrl,
+  goodTroubleVerifyUrl,
 } from "@/lib/goodTrouble/partnerIntegration";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
@@ -22,8 +22,10 @@ const STEPS = [
 ] as const;
 
 export function GoodTroubleRetailCheckoutCTA() {
-  const verifyUrl = goodTroubleProductionVerifyUrl();
-  const returnUrl = goodTroubleProductionReturnUrl();
+  // This component runs in the browser so both verification and callback stay
+  // on the host the visitor opened (demo, preview, local, or production).
+  const verifyUrl = goodTroubleVerifyUrl();
+  const returnUrl = goodTroubleReturnUrl();
 
   return (
     <section
