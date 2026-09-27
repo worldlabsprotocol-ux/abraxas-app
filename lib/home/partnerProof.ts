@@ -22,10 +22,10 @@ export const HOME_PARTNER_PROOF_FALLBACK = {
   title: "Good Trouble",
   badge: "Sandbox example",
   summary: "Prove 21+ eligibility. The partner receives only the result. Evidence stays private.",
-  journeyHref: "/good-trouble",
+  journeyHref: "/good-trouble/checkout",
 } as const;
 
-export const HOME_PARTNER_PROOF_CTA = "Try the sandbox example";
+export const HOME_PARTNER_PROOF_CTA = "Run the live 21+ flow";
 
 export function resolveHomePartnerProofCards(
   authorized: PublicPartnerProofCard[] = [],
