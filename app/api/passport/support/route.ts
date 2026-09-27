@@ -1,16 +1,76 @@
 // FILE: app/api/passport/support/route.ts
-// Holder support intake bound to the signed httpOnly Passport session.
+// Session-bound Passport support intake and privacy-minimized holder history.
 
 import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
 import { checkLaunchpadRateLimit } from "@/lib/partner/launchpad/rateLimit";
 import {
   isPassportSupportIssue,
   normalizePassportSupportMessage,
   passportSupportIssueLabel,
+  toPassportSupportHistoryItem,
 } from "@/lib/passport/passportSupport";
+
+function supportDatabase(): SupabaseClient | null {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+  if (!supabaseUrl || !serviceKey) return null;
+  return createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+}
+
+async function resolveHolderEmail(
+  supabase: SupabaseClient,
+  suiAddress: string,
+): Promise<string | null> {
+  const { data: identity, error } = await supabase
+    .from("sui_zklogin_identities")
+    .select("email")
+    .eq("sui_address", suiAddress)
+    .maybeSingle();
+
+  const email = typeof identity?.email === "string" ? identity.email.trim() : "";
+  return !error && email.includes("@") ? email : null;
+}
+
+export async function GET(req: NextRequest) {
+  const auth = await requireBrowserSession(req);
+  if (!auth.ok) {
+    return NextResponse.json({ ok: false, error: auth.error }, { status: auth.status });
+  }
+
+  const supabase = supportDatabase();
+  if (!supabase) {
+    return NextResponse.json({ ok: false, error: "Support is unavailable right now." }, { status: 503 });
+  }
+
+  const email = await resolveHolderEmail(supabase, auth.session.suiAddress);
+  if (!email) {
+    return NextResponse.json(
+      { ok: false, error: "We could not connect support history to your signed-in account." },
+      { status: 409 },
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("contact_submissions")
+    .select("category,message,created_at")
+    .eq("email", email)
+    .like("category", "passport-support:%")
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  if (error) {
+    return NextResponse.json({ ok: false, error: "Support history is unavailable right now." }, { status: 500 });
+  }
+
+  const requests = (data ?? [])
+    .map(toPassportSupportHistoryItem)
+    .filter(item => item !== null);
+
+  return NextResponse.json({ ok: true, requests });
+}
 
 export async function POST(req: NextRequest) {
   const auth = await requireBrowserSession(req);
@@ -44,21 +104,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
-  if (!supabaseUrl || !serviceKey) {
+  const supabase = supportDatabase();
+  if (!supabase) {
     return NextResponse.json({ ok: false, error: "Support is unavailable right now." }, { status: 503 });
   }
 
-  const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
-  const { data: identity, error: identityError } = await supabase
-    .from("sui_zklogin_identities")
-    .select("email")
-    .eq("sui_address", auth.session.suiAddress)
-    .maybeSingle();
-
-  const email = typeof identity?.email === "string" ? identity.email.trim() : "";
-  if (identityError || !email.includes("@")) {
+  const email = await resolveHolderEmail(supabase, auth.session.suiAddress);
+  if (!email) {
     return NextResponse.json(
       { ok: false, error: "We could not connect this request to your signed-in account." },
       { status: 409 },
