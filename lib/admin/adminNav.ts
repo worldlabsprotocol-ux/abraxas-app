@@ -49,6 +49,13 @@ export const ADMIN_PROTOCOL_NAV_ITEMS: readonly AdminNavItem[] = [
     section: "protocol",
   },
   {
+    id: "passport-support",
+    href: "/admin/passport-support",
+    label: "Passport support",
+    description: "Review holder support requests tied to Passport accounts",
+    section: "protocol",
+  },
+  {
     id: "sandbox-institutional-result",
     href: "/admin/sandbox-institutional-result",
     label: "Sandbox test result",
