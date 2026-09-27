@@ -138,6 +138,59 @@ describe("PassportVerificationActivity", () => {
     expect(screen.queryByRole("button", { name: "Withdraw shared result" })).not.toBeInTheDocument();
   });
 
+  it("withdraws all current results only after explicit confirmation", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    let bulkWithdrawn = false;
+    const currentItem = {
+      activity_ref: "act_current_123456",
+      partner_label: "Example service",
+      policy_label: "Eligibility",
+      version_summary: "Version 1",
+      state: "approved",
+      state_label: "Approved",
+      decided_at: "2026-09-19T12:00:00.000Z",
+      shared_result_category: "eligible",
+      purpose: "Confirm eligibility",
+      partner_received: "Only the policy result.",
+      withheld: ["underlying evidence"],
+      evidence_not_shared: "Underlying evidence was not shared.",
+      sandbox_only: false,
+      current: true,
+      recovery: null,
+      partner_entry_href: null,
+    };
+
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).includes("/withdraw-all")) {
+        expect(init?.body).toBe(JSON.stringify({ confirm: "withdraw_all_current" }));
+        bulkWithdrawn = true;
+        return new Response(JSON.stringify({
+          ok: true,
+          withdrawn: 1,
+          already_withdrawn: 0,
+          failed: 0,
+          next_step: "All current shared results are now in History.",
+        }), { status: 200 });
+      }
+      return new Response(JSON.stringify({
+        ok: true,
+        version: "1.0.0",
+        items: bulkWithdrawn ? [{ ...currentItem, current: false, state: "revoked", state_label: "Revoked" }] : [currentItem],
+        truncated: false,
+        notice: "Partners receive only the policy result.",
+        explanation_href: "/docs/why-verification",
+        passport_href: "/passport",
+      }), { status: 200 });
+    }));
+
+    render(wrap(<PassportVerificationActivity />));
+    await user.click(await screen.findByRole("button", { name: "Withdraw all current results" }));
+    expect(await screen.findByRole("dialog", { name: "Withdraw all current results?" })).toBeInTheDocument();
+    await user.click(screen.getAllByRole("button", { name: "Withdraw all current results" })[1]!);
+    expect(await screen.findByRole("status", { name: /Result status: Revoked, not current/i })).toBeInTheDocument();
+    expect(screen.getByText(/All current shared results are now in History/i)).toBeInTheDocument();
+  });
+
   it("shows unavailable recovery copy", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
       ok: false,

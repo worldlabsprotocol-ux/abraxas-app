@@ -58,6 +58,9 @@ function WithdrawConfirmDialog({
   busy,
   error,
   partnerLabel,
+  title = PASSPORT_ACTIVITY_WITHDRAW_CONFIRM_TITLE,
+  intro,
+  confirmLabel = PASSPORT_ACTIVITY_WITHDRAW_LABEL,
   onConfirm,
   onCancel,
 }: {
@@ -65,6 +68,9 @@ function WithdrawConfirmDialog({
   busy: boolean;
   error: string | null;
   partnerLabel: string;
+  title?: string;
+  intro?: string;
+  confirmLabel?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
@@ -133,11 +139,11 @@ function WithdrawConfirmDialog({
         }}
       >
         <h3 id={titleId} style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: 0 }}>
-          {PASSPORT_ACTIVITY_WITHDRAW_CONFIRM_TITLE}
+          {title}
         </h3>
         <div id={bodyId}>
           <p style={{ fontFamily: FONT, fontSize: "0.8rem", color: "var(--text-secondary)", lineHeight: 1.55, margin: "0.55rem 0 0" }}>
-            Withdraw the shared result for {partnerLabel}.
+            {intro ?? `Withdraw the shared result for ${partnerLabel}.`}
           </p>
           <ul style={{ fontFamily: FONT, fontSize: "0.8rem", color: "var(--text-primary)", lineHeight: 1.55, margin: "0.55rem 0 0", paddingLeft: "1.1rem" }}>
             {PASSPORT_ACTIVITY_WITHDRAW_CONFIRM_POINTS.map((point) => (
@@ -172,7 +178,7 @@ function WithdrawConfirmDialog({
               borderRadius: 8, border: "1px solid rgba(245,158,11,0.55)", background: "rgba(245,158,11,0.16)", color: "#FBBF24",
             }}
           >
-            {busy ? "Withdrawing…" : PASSPORT_ACTIVITY_WITHDRAW_LABEL}
+            {busy ? "Withdrawing…" : confirmLabel}
           </button>
         </div>
       </div>
@@ -301,11 +307,37 @@ export function PassportVerificationActivity() {
   const [pending, setPending] = useState<PassportActivityItem | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [connectionFilter, setConnectionFilter] = useState<PassportConnectionFilter>("current");
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["passport", "verification-activity"],
     queryFn: fetchActivity,
     staleTime: 30_000,
     retry: false,
+  });
+
+  const withdrawAll = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/passport/verification-activity/withdraw-all", {
+        method: "POST",
+        credentials: "include",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ confirm: "withdraw_all_current" }),
+      });
+      const body = await res.json().catch(() => ({})) as {
+        error?: string;
+        next_step?: string;
+      };
+      if (!res.ok && res.status !== 207) {
+        throw new Error(body.error ?? PASSPORT_ACTIVITY_WITHDRAW_UNAVAILABLE);
+      }
+      return body;
+    },
+    onSuccess: async (body) => {
+      setBulkConfirmOpen(false);
+      setConnectionFilter("history");
+      setNotice(body.next_step ?? "Current shared results moved to History.");
+      await queryClient.invalidateQueries({ queryKey: ["passport", "verification-activity"] });
+    },
   });
 
   const withdraw = useMutation({
@@ -388,6 +420,30 @@ export function PassportVerificationActivity() {
               </button>
             ))}
           </div>
+          {connectionSummary.current > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setNotice(null);
+                withdrawAll.reset();
+                setBulkConfirmOpen(true);
+              }}
+              style={{
+                marginTop: "0.65rem",
+                padding: "0.4rem 0.65rem",
+                borderRadius: 8,
+                border: "1px solid rgba(251,191,36,0.42)",
+                background: "transparent",
+                color: "#FBBF24",
+                fontFamily: FONT,
+                fontSize: "0.72rem",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Withdraw all current results
+            </button>
+          )}
         </div>
       )}
 
@@ -438,6 +494,20 @@ export function PassportVerificationActivity() {
           }}
         />
       ))}
+
+      <WithdrawConfirmDialog
+        open={bulkConfirmOpen}
+        busy={withdrawAll.isPending}
+        error={withdrawAll.isError ? (withdrawAll.error instanceof Error ? withdrawAll.error.message : PASSPORT_ACTIVITY_WITHDRAW_UNAVAILABLE) : null}
+        partnerLabel="all current services"
+        title="Withdraw all current results?"
+        intro={`This will withdraw ${connectionSummary.current} current shared ${connectionSummary.current === 1 ? "result" : "results"}.`}
+        confirmLabel="Withdraw all current results"
+        onCancel={() => {
+          if (!withdrawAll.isPending) setBulkConfirmOpen(false);
+        }}
+        onConfirm={() => void withdrawAll.mutateAsync()}
+      />
 
       <WithdrawConfirmDialog
         open={Boolean(pending)}
