@@ -3,6 +3,7 @@
 // Plain-language inbox for pending partner verification requests.
 
 import Link from "next/link";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { PassportRequestInboxItem } from "@/lib/passport/passportRequestInbox";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
@@ -28,12 +29,38 @@ function formatExpiry(iso: string): string {
 }
 
 export function PassportRequestInbox({ showEmpty = false }: { showEmpty?: boolean }) {
+  const [demoBusy, setDemoBusy] = useState(false);
+  const [demoError, setDemoError] = useState<string | null>(null);
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["passport", "request-inbox"],
     queryFn: fetchRequests,
     staleTime: 15_000,
     retry: false,
   });
+
+  async function startDemoRequest() {
+    setDemoBusy(true);
+    setDemoError(null);
+    try {
+      const response = await fetch("/api/passport/demo-partner-request", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ policy_id: "abraxas-core-v1" }),
+      });
+      const body = await response.json().catch(() => ({})) as {
+        consent_url?: string;
+        error?: string;
+      };
+      if (!response.ok || !body.consent_url) {
+        throw new Error(body.error ?? "The demo request could not be created.");
+      }
+      window.location.href = body.consent_url;
+    } catch (error) {
+      setDemoError(error instanceof Error ? error.message : "The demo request could not be created.");
+      setDemoBusy(false);
+    }
+  }
 
   if (!showEmpty && !isLoading && !isError && (data?.length ?? 0) === 0) return null;
 
@@ -76,6 +103,72 @@ export function PassportRequestInbox({ showEmpty = false }: { showEmpty?: boolea
       }}>
         Nothing is shared until you open a request and approve it.
       </p>
+
+      {showEmpty && (
+        <div style={{
+          padding: "0.9rem",
+          borderRadius: 12,
+          border: "1px solid rgba(16,185,129,0.28)",
+          background: "rgba(16,185,129,0.06)",
+          marginBottom: "0.8rem",
+        }}>
+          <p style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 800, margin: "0 0 0.35rem" }}>
+            Try the real consent flow
+          </p>
+          <ol style={{
+            fontFamily: FONT,
+            fontSize: "0.74rem",
+            color: "var(--text-secondary)",
+            lineHeight: 1.6,
+            margin: "0 0 0.7rem",
+            paddingLeft: "1.15rem",
+          }}>
+            <li>Create a sandbox partner request.</li>
+            <li>Review the exact result the partner asks for.</li>
+            <li>Approve or decline before anything is shared.</li>
+          </ol>
+          <button
+            type="button"
+            disabled={demoBusy}
+            onClick={() => void startDemoRequest()}
+            style={{
+              minHeight: 40,
+              padding: "0 0.85rem",
+              borderRadius: 9,
+              border: 0,
+              background: ACCENT,
+              color: "#04130C",
+              fontFamily: FONT,
+              fontSize: "0.74rem",
+              fontWeight: 800,
+              cursor: demoBusy ? "wait" : "pointer",
+              opacity: demoBusy ? 0.7 : 1,
+            }}
+          >
+            {demoBusy ? "Creating request…" : "Create demo request →"}
+          </button>
+          <p style={{
+            fontFamily: FONT,
+            fontSize: "0.66rem",
+            color: "var(--text-muted)",
+            lineHeight: 1.5,
+            margin: "0.55rem 0 0",
+          }}>
+            Sandbox only. This does not create a production decision or represent an external partner.
+          </p>
+          {demoError && (
+            <p role="alert" style={{
+              fontFamily: FONT,
+              fontSize: "0.7rem",
+              color: "#EF4444",
+              lineHeight: 1.5,
+              margin: "0.5rem 0 0",
+            }}>
+              {demoError}
+            </p>
+          )}
+        </div>
+      )}
 
       {isLoading && (
         <p role="status" style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-muted)", margin: 0 }}>
