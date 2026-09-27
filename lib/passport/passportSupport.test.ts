@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   isPassportSupportIssue,
   normalizePassportSupportMessage,
+  parsePassportSupportCategory,
+  passportSupportBodyFromMessage,
+  passportSupportCategory,
   passportSupportIssueLabel,
   toPassportSupportHistoryItem,
 } from "./passportSupport";
@@ -25,19 +28,34 @@ describe("Passport support requests", () => {
       .toBe("Shared result or partner request");
   });
 
+  it("reads old categories as received and writes explicit workflow status", () => {
+    expect(parsePassportSupportCategory("passport-support:verification"))
+      .toEqual({ issue: "verification", status: "received" });
+    expect(passportSupportCategory("verification", "in_review"))
+      .toBe("passport-support:verification:in_review");
+    expect(parsePassportSupportCategory("passport-support:verification:invalid"))
+      .toBeNull();
+  });
+
   it("maps stored rows to a privacy-minimized holder history", () => {
     expect(toPassportSupportHistoryItem({
-      category: "passport-support:verification",
+      category: "passport-support:verification:resolved",
       message: "[PS-12345ABCDE] Identity verification\n\nSensitive original message",
       created_at: "2026-09-27T00:00:00.000Z",
     })).toEqual({
       reference: "PS-12345ABCDE",
       issue_type: "verification",
       issue_label: "Identity verification",
-      status: "received",
-      status_label: "Received",
+      status: "resolved",
+      status_label: "Resolved",
       submitted_at: "2026-09-27T00:00:00.000Z",
     });
+  });
+
+  it("keeps the original message available only to the admin contract", () => {
+    expect(passportSupportBodyFromMessage(
+      "[PS-12345ABCDE] Identity verification\n\nSensitive original message",
+    )).toBe("Sensitive original message");
   });
 
   it("rejects unrelated or malformed stored rows", () => {
