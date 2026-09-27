@@ -1,7 +1,8 @@
 "use client";
 // FILE: components/passport/PassportGate.tsx
-// Sign-in gate for diligence packs. captures investigators inside Abraxas.
+// Sign-in gate for protected Passport actions. Public product exploration stays available.
 
+import Link from "next/link";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { useGoogleSignIn } from "@/lib/hooks/useGoogleSignIn";
 
@@ -46,23 +47,33 @@ export function PassportGate({
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 1rem" }}>
           {description}
         </p>
-        <button
-          type="button"
-          onClick={() => void signIn()}
-          disabled={disabled}
-          style={{
-            padding: "0.65rem 1.25rem", borderRadius: 999,
-            border: "none", background: ACCENT, color: "#04130C",
-            fontFamily: FONT, fontSize: "0.72rem", fontWeight: 800,
-            letterSpacing: "0.06em", textTransform: "uppercase",
-            cursor: busy ? "wait" : "pointer",
-            opacity: busy ? 0.75 : 1,
-          }}
-        >
-          {busy ? "Redirecting…" : "Continue with Google →"}
-        </button>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: ".7rem" }}>
+          <button
+            type="button"
+            onClick={() => void signIn()}
+            disabled={disabled}
+            style={{
+              padding: "0.65rem 1.25rem", borderRadius: 999,
+              border: "none", background: ACCENT, color: "#04130C",
+              fontFamily: FONT, fontSize: "0.72rem", fontWeight: 800,
+              letterSpacing: "0.06em", textTransform: "uppercase",
+              cursor: busy ? "wait" : "pointer",
+              opacity: busy ? 0.75 : 1,
+            }}
+          >
+            {busy ? "Redirecting…" : "Continue with Google →"}
+          </button>
+          <Link href="/try" style={{
+            padding: "0.62rem .9rem", borderRadius: 999,
+            border: `1px solid ${ACCENT}55`, color: ACCENT,
+            fontFamily: FONT, fontSize: ".72rem", fontWeight: 800,
+            textDecoration: "none",
+          }}>
+            Explore without signing in
+          </Link>
+        </div>
         <p style={{ fontFamily: FONT, fontSize: "0.65rem", color: "var(--text-muted)", margin: "0.75rem 0 0", lineHeight: 1.5 }}>
-          Public registry and headline pricing stay open. Detailed packs release after sign-in. closed loop on Abraxas.
+          Sign-in protects saved Passport data and approvals. You can preview policies and integration without an account.
         </p>
       </div>
     );
