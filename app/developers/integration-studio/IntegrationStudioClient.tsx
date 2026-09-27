@@ -10,6 +10,7 @@ import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 import {
   INTEGRATION_STUDIO_PATHS,
   INTEGRATION_STUDIO_PROVISION,
+  isIntegrationStudioPathId,
   listStudioPackSummaries,
   studioPackContract,
   studioPublicCatalog,
@@ -24,6 +25,8 @@ import {
   STARTER_KIT_DOES_NOT_DO,
   STARTER_KIT_MINIMUM_REQUIREMENTS,
   STARTER_KIT_PLATFORM_MATRIX,
+  isStarterKitOptionalCapability,
+  isStarterKitPlatform,
   type StarterKitPlatform,
 } from "@/lib/partner/starterKit/contract";
 import {
@@ -181,12 +184,18 @@ export function IntegrationStudioClient() {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const pack = params.get("pack");
+    const path = params.get("path");
+    const requestedPlatform = params.get("platform");
+    const requestedCapabilities = params.getAll("capability").filter(isStarterKitOptionalCapability);
     const catalogVersion = params.get("catalog_version");
-    if (pack && isPolicyPackId(pack)) {
-      setPackId(pack);
-      if (catalogVersion) {
-        setHandoffNotice(`Planning catalog version ${catalogVersion} is preselected. Creating a sandbox still uses the current Launchpad pin, not an automatic upgrade.`);
-      }
+    if (pack && isPolicyPackId(pack)) setPackId(pack);
+    if (path && isIntegrationStudioPathId(path)) setPathId(path);
+    if (requestedPlatform && isStarterKitPlatform(requestedPlatform)) setPlatform(requestedPlatform);
+    if (requestedCapabilities.length > 0) setOptionalCaps(requestedCapabilities);
+    if (params.get("source") === "browser-builder") {
+      setHandoffNotice("Your browser-built plan is loaded. Review it, then generate the starter kit or continue to the hosted sandbox. No terminal is required.");
+    } else if (pack && catalogVersion) {
+      setHandoffNotice(`Planning catalog version ${catalogVersion} is preselected. Creating a sandbox still uses the current Launchpad pin, not an automatic upgrade.`);
     }
   }, []);
 
