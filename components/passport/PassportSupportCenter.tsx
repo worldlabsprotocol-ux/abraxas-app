@@ -2,7 +2,7 @@
 // FILE: components/passport/PassportSupportCenter.tsx
 // Plain-language holder support and current-device session controls.
 
-import { FormEvent, useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { Btn } from "@/components/redesign/ui";
 import {
@@ -94,7 +94,7 @@ export function PassportSupportCenter() {
             </div>
           </div>
         ) : (
-          <form onSubmit={submitSupportRequest}>
+          <form id="passport-support-form" onSubmit={submitSupportRequest}>
             <label htmlFor="passport-support-issue" style={{
               display: "block", fontFamily: FONT, fontSize: "0.72rem",
               fontWeight: 700, marginBottom: "0.35rem", color: "var(--text-primary)",
@@ -154,7 +154,15 @@ export function PassportSupportCenter() {
                 {error}
               </p>
             )}
-            <Btn size="sm" loading={submitting} disabled={message.trim().length < 10}>
+            <Btn
+              size="sm"
+              loading={submitting}
+              disabled={message.trim().length < 10}
+              onClick={() => {
+                const form = document.getElementById("passport-support-form") as HTMLFormElement | null;
+                form?.requestSubmit();
+              }}
+            >
               Submit support request
             </Btn>
           </form>
