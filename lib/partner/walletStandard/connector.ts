@@ -1,7 +1,12 @@
 // FILE: lib/partner/walletStandard/connector.ts
-// Browser Wallet Standard connector. SignMessage only. Phantom-compatible.
+// Browser Wallet Standard connector. signMessage only. Phantom-compatible.
 
 export const WALLET_STANDARD_SIGN_FEATURE = "solana:signMessage" as const;
+
+type WalletPublicKey = {
+  toBytes?: () => Uint8Array;
+  toBuffer?: () => Uint8Array;
+};
 
 type SignMessageFeature = {
   signMessage: (input: { account: { publicKey: Uint8Array }; message: Uint8Array }) => Promise<Array<{ signature: Uint8Array }>>;
@@ -12,15 +17,35 @@ type StandardWallet = {
   accounts?: Array<{ publicKey: Uint8Array }>;
 };
 
+type PhantomProvider = {
+  isConnected?: boolean;
+  connect?: () => Promise<unknown>;
+  publicKey?: WalletPublicKey | null;
+  signMessage?: (message: Uint8Array) => Promise<{ signature: Uint8Array; publicKey?: WalletPublicKey }>;
+};
+
+function bytesToBase64(value: Uint8Array): string {
+  let binary = "";
+  for (let offset = 0; offset < value.length; offset += 0x8000) {
+    binary += String.fromCharCode(...value.subarray(offset, offset + 0x8000));
+  }
+  return btoa(binary);
+}
+
+function walletPublicKeyBytes(value: WalletPublicKey | null | undefined): Uint8Array | null {
+  if (value?.toBytes) return value.toBytes();
+  if (value?.toBuffer) return new Uint8Array(value.toBuffer());
+  return null;
+}
+
 function asWalletList(): StandardWallet[] {
   const nav = globalThis.navigator as Navigator & { wallets?: { get?: () => StandardWallet[] } };
   const listed = nav.wallets?.get?.();
   return Array.isArray(listed) ? listed : [];
 }
 
-function phantomSignMessage(): ((message: Uint8Array) => Promise<{ signature: Uint8Array; publicKey?: { toBytes?: () => Uint8Array } }>) | null {
-  const phantom = (globalThis as { phantom?: { solana?: { signMessage?: (message: Uint8Array) => Promise<{ signature: Uint8Array }> } } }).phantom?.solana;
-  return phantom?.signMessage ?? null;
+function phantomProvider(): PhantomProvider | null {
+  return (globalThis as { phantom?: { solana?: PhantomProvider } }).phantom?.solana ?? null;
 }
 
 export async function signWalletStandardChallenge(message: string): Promise<
@@ -37,21 +62,24 @@ export async function signWalletStandardChallenge(message: string): Promise<
       if (!signature) return { ok: false, status: "unavailable" };
       return {
         ok: true,
-        signature: Buffer.from(signature).toString("base64"),
-        publicKey: Buffer.from(account.publicKey).toString("base64"),
+        signature: bytesToBase64(signature),
+        publicKey: bytesToBase64(account.publicKey),
       };
     }
   }
-  const phantom = phantomSignMessage();
-  if (phantom) {
-    const signed = await phantom(encoded);
+
+  const phantom = phantomProvider();
+  if (phantom?.signMessage) {
+    if (!phantom.isConnected && phantom.connect) await phantom.connect();
+    const signed = await phantom.signMessage(encoded);
+    const publicKey = walletPublicKeyBytes(signed.publicKey ?? phantom.publicKey);
+    if (!publicKey) return { ok: false, status: "unavailable" };
     return {
       ok: true,
-      signature: Buffer.from(signed.signature).toString("base64"),
-      publicKey: signed.publicKey?.toBytes
-        ? Buffer.from(signed.publicKey.toBytes()).toString("base64")
-        : "",
+      signature: bytesToBase64(signed.signature),
+      publicKey: bytesToBase64(publicKey),
     };
   }
+
   return { ok: false, status: "unavailable" };
 }

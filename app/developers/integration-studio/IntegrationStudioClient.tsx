@@ -21,6 +21,7 @@ import { isPolicyPackId } from "@/lib/partner/launchpad/policyPacks";
 import { launchpadConfigureHref } from "@/lib/partner/launchpad/partnerFlowRequest/contract";
 import { launchpadPolicyVersionHref } from "@/lib/partner/launchpad/policyVersionPlanner/contract";
 import { PolicyFitPlanner } from "@/app/developers/integration-studio/PolicyFitPlanner";
+import { OptionalSolanaWalletPanel } from "@/app/developers/integration-studio/OptionalSolanaWalletPanel";
 import {
   STARTER_KIT_DOES_NOT_DO,
   STARTER_KIT_MINIMUM_REQUIREMENTS,
@@ -693,6 +694,13 @@ export function IntegrationStudioClient() {
           <Btn href={INTEGRATION_STUDIO_PROVISION.partner_portal_href} variant="ghost" size="sm">Partner portal →</Btn>
         </div>
       </ContentCard>
+
+      {created && (
+        <OptionalSolanaWalletPanel
+          applicationId={created.application_id}
+          partnerId={created.partner_id}
+        />
+      )}
 
       <ContentCard title="Test your sandbox">
         <p style={{ ...body }}>Run the hosted flow first. Open the full checklist only when you are ready to verify every integration edge.</p>
