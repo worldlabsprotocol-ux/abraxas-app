@@ -27,7 +27,7 @@ function formatExpiry(iso: string): string {
   return `Expires ${date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}`;
 }
 
-export function PassportRequestInbox() {
+export function PassportRequestInbox({ showEmpty = false }: { showEmpty?: boolean }) {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["passport", "request-inbox"],
     queryFn: fetchRequests,
@@ -35,7 +35,7 @@ export function PassportRequestInbox() {
     retry: false,
   });
 
-  if (!isLoading && !isError && (data?.length ?? 0) === 0) return null;
+  if (!showEmpty && !isLoading && !isError && (data?.length ?? 0) === 0) return null;
 
   return (
     <section
@@ -57,7 +57,7 @@ export function PassportRequestInbox() {
         textTransform: "uppercase",
         margin: "0 0 0.35rem",
       }}>
-        Needs your review
+        {(data?.length ?? 0) > 0 ? "Needs your review" : "Requests"}
       </p>
       <h2 id="passport-request-inbox-heading" style={{
         fontFamily: FONT,
@@ -107,7 +107,23 @@ export function PassportRequestInbox() {
         </div>
       )}
 
-      {!isLoading && !isError && (
+      {!isLoading && !isError && (data?.length ?? 0) === 0 && (
+        <div role="status" style={{
+          padding: "1rem",
+          borderRadius: 12,
+          border: "1px solid var(--border)",
+          background: "var(--surface-inset)",
+        }}>
+          <p style={{ fontFamily: FONT, fontSize: "0.84rem", fontWeight: 800, margin: "0 0 0.3rem" }}>
+            No requests waiting
+          </p>
+          <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.55, margin: 0 }}>
+            When a participating service asks for a result, it will appear here before anything is shared.
+          </p>
+        </div>
+      )}
+
+      {!isLoading && !isError && (data?.length ?? 0) > 0 && (
         <div style={{ display: "grid", gap: "0.65rem" }}>
           {data?.map(request => (
             <article key={request.request_ref} style={{
