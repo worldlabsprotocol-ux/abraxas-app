@@ -239,5 +239,5 @@ describe("trading venue integration profiles", () => {
       const platformBlob = platformKit.files.map((file) => file.contents).join("\n");
       expect(platformBlob).toContain("tokenized_securities_venue");
     }
-  });  });
+  });
 });
