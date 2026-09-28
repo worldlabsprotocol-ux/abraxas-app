@@ -22,6 +22,7 @@ export interface StarterKitResult {
   runtime: string;
   platform: string;
   capabilities: string[];
+  venue_profile_id: string | null;
   files: Array<{ path: string; contents: string }>;
   manifest: Array<{ path: string; bytes: number }>;
   archive_base64: string;
@@ -46,6 +47,7 @@ export function generateStarterKit(selection: ValidStarterKitSelection): Starter
     runtime: selection.runtime,
     platform: selection.platform,
     capabilities: [...selection.capabilities],
+    venue_profile_id: selection.venue_profile_id,
     files,
     manifest: files.map((file) => ({ path: file.path, bytes: file.contents.length })),
     archive_base64: Buffer.from(archive).toString("base64"),
