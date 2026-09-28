@@ -22,6 +22,7 @@ import {
 import {
   VENUE_MAINNET_EXTERNAL_REQUIREMENTS,
   VENUE_PROFILE_NEXT_STEPS,
+  TOKENIZED_SECURITIES_PROFILE_CONTROLS,
   getVenueProfile,
   publicVenueProfileMatrix,
   rejectVenueProfileClientOverride,
@@ -104,6 +105,23 @@ describe("trading venue integration profiles", () => {
     expect(getVenueProfile("disabled_trading_venue")?.posture).toBe("disabled");
   });
 
+  it("preflights tokenized securities access without assuming issuer rights or executing a trade", async () => {
+    const tokenized = adapter("tokenized_securities_venue");
+    const issued = tokenized.issueActionContract();
+    if ("ok" in issued) throw new Error("contract");
+    expect(issued.network_context?.network_id).toBe("tokenized_securities_venue");
+    expect(issued.wallet_binding).toBe("optional");
+    const result = await tokenized.preflight({
+      result: tokenized.evaluateFetchedReceipt(venueFixtureReceipt("approved")),
+      contract: issued,
+    });
+    expect(result.allowed).toBe(true);
+    expect(tokenized.callsVenueApi).toBe(false);
+    expect(TOKENIZED_SECURITIES_PROFILE_CONTROLS.join(" ")).toContain("shareholder rights");
+    expect(TOKENIZED_SECURITIES_PROFILE_CONTROLS.join(" ")).toContain("trading limits");
+    expect(TOKENIZED_SECURITIES_PROFILE_CONTROLS.join(" ")).toContain("settlement");
+  });
+
   it("rejects wrong partner/policy/version/action/scope, expired/revoked/denied receipts, and nonce replay", async () => {
     const client = adapter("hyperliquid_trading_venue");
     const result = client.evaluateFetchedReceipt(venueFixtureReceipt("approved"));
@@ -148,6 +166,7 @@ describe("trading venue integration profiles", () => {
     expect(src).not.toMatch(/fetch\(|axios|placeOrder|getBalance|info\.hyperliquid|window\.ethereum/i);
     expect(selectableSandboxVenueProfiles().map((row) => row.profile_id)).toEqual([
       "generic_trading_venue",
+      "tokenized_securities_venue",
       "hyperliquid_trading_venue",
     ]);
     expect(publicVenueProfileMatrix().every((row) => row.live === false && row.abraxas_executes === false)).toBe(true);
@@ -185,6 +204,7 @@ describe("trading venue integration profiles", () => {
     const blob = kit.files.map((file) => file.contents).join("\n");
     expect(blob).toContain("generic_trading_venue");
     expect(blob).toContain("hyperliquid_trading_venue");
+    expect(blob).toContain("tokenized_securities_venue");
     expect(blob).not.toMatch(/placeOrder|getBalance|submitOrder/i);
     for (const runtime of ["universal_https", "typescript_nextjs", "typescript_express", "javascript_wix_velo", "typescript_serverless"] as const) {
       const platformKit = generateStarterKit({
@@ -198,7 +218,9 @@ describe("trading venue integration profiles", () => {
       });
       expect(platformKit.ok).toBe(true);
       if (!platformKit.ok) continue;
-      expect(platformKit.files.map((file) => file.contents).join("\n")).toContain("hyperliquid_trading_venue");
+      const platformBlob = platformKit.files.map((file) => file.contents).join("\n");
+      expect(platformBlob).toContain("hyperliquid_trading_venue");
+      expect(platformBlob).toContain("tokenized_securities_venue");
     }
   });
 });
