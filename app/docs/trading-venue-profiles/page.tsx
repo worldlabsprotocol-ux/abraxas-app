@@ -12,6 +12,7 @@ import {
   VENUE_PROFILE_NEXT_STEPS,
   VENUE_PROFILE_NO_PARTNERSHIP,
   VENUE_PROFILE_PREFLIGHT_ONLY,
+  TOKENIZED_SECURITIES_PROFILE_CONTROLS,
   publicVenueProfileMatrix,
   tradingVenueProfileExample,
 } from "@/lib/partner/tradingVenue/profiles";
@@ -62,6 +63,28 @@ export default function TradingVenueProfilesDocsPage() {
           Hyperliquid does not endorse, use, or partner with Abraxas by appearing in this registry.
         </p>
       </ContentCard>
+
+      <div id="tokenized-securities">
+        <ContentCard title="Tokenized securities venue">
+          <p style={body}>
+            This sandbox profile helps a regulated or permissioned venue request a narrow investor-eligibility result before enabling market access. The venue remains responsible for the instrument, shareholder rights, disclosures, participant permissioning, trading controls, custody, books and records, corporate actions, reporting, execution, and settlement.
+          </p>
+          <ul style={{ ...body, paddingLeft: "1.2rem", display: "grid", gap: "0.4rem", marginTop: "0.75rem" }}>
+            {TOKENIZED_SECURITIES_PROFILE_CONTROLS.map((line) => <li key={line}>{line}</li>)}
+          </ul>
+          <p style={{ ...body, marginTop: "0.75rem" }}>
+            Primary references:{" "}
+            <Link href="https://www.sec.gov/newsroom/press-releases/2026-90-sec-issues-innovation-exemption-facilitate-trading-tokenized-nms-stock-request-comment">SEC Innovation Exemption</Link>
+            {" · "}
+            <Link href="https://www.sec.gov/newsroom/speeches-statements/corp-fin-statement-tokenized-securities-012826-statement-tokenized-securities">SEC tokenized-securities taxonomy</Link>
+            {" · "}
+            <Link href="https://www.dtcc.com/press-releases/2026/DTCC-FundSERV-Adds-Ondo-Finance-as-First-Tokenization-Member">DTCC Fund/SERV announcement</Link>
+          </p>
+          <pre style={{ fontFamily: MONO, fontSize: "0.67rem", overflowX: "auto", marginTop: "0.85rem", padding: "1rem", borderRadius: 10, border: "1px solid var(--border)" }}>
+            {tradingVenueProfileExample("tokenized_securities_venue")}
+          </pre>
+        </ContentCard>
+      </div>
 
       <ContentCard title="Sandbox next steps">
         <ol style={{ ...body, paddingLeft: "1.2rem", display: "grid", gap: "0.4rem" }}>
