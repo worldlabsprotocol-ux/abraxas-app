@@ -26,6 +26,7 @@ import {
   getLatestPartnerBillingIntent,
 } from "@/lib/partner/billing/store";
 import { getPartnerEntitlements } from "@/lib/partner/partnerEntitlements";
+import { buildPartnerMeteringReport } from "@/lib/partner/partnerMeteringReport";
 
 export const dynamic = "force-dynamic";
 
@@ -107,6 +108,14 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
       const active = (entitlements.planId === "launch" || entitlements.planId === "scale")
         && Boolean(entitlements.paidThrough)
         && Date.parse(entitlements.paidThrough ?? "") > Date.now();
+      const usageTo = new Date();
+      const usageFrom = new Date(usageTo.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const metering = await buildPartnerMeteringReport({
+        partnerId: access.session.partnerId,
+        range: { from: usageFrom.toISOString(), to: usageTo.toISOString() },
+        limit: 1,
+        offset: 0,
+      });
       let latestPayment = latest ? billingIntentView(latest) : null;
       if (latest?.status === "pending" && Date.parse(latest.expiresAt) > Date.now()) {
         try {
@@ -136,6 +145,11 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
           paid_through: active ? entitlements.paidThrough : null,
           monthly_receipt_limit: active ? entitlements.monthlyReceiptLimit : null,
           monthly_api_call_limit: active ? entitlements.monthlyApiCallLimit : null,
+          usage_period: "rolling_30_days",
+          usage: metering ? {
+            receipts: metering.totals.partner_flow_receipt_issued,
+            api_calls: metering.totals.partner_api_call,
+          } : null,
           collection: "solana_usdc",
         },
         payment: latestPayment,
