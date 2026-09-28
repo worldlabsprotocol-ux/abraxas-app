@@ -4,6 +4,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
@@ -93,9 +94,13 @@ type ResumableApp = {
 };
 
 export function IntegrationStudioClient() {
+  const searchParams = useSearchParams();
   const packs = listStudioPackSummaries();
   const [packId, setPackId] = useState(packs[1]?.pack_id ?? packs[0]?.pack_id ?? "age_21_retail");
-  const [pathId, setPathId] = useState<IntegrationStudioPathId>("hosted_partner_flow");
+  const [pathId, setPathId] = useState<IntegrationStudioPathId>(() => {
+    const requested = searchParams.get("path");
+    return requested && isIntegrationStudioPathId(requested) ? requested : "hosted_partner_flow";
+  });
   const [signedIn, setSignedIn] = useState(false);
   const [applicationName, setApplicationName] = useState("");
   const [returnUrl, setReturnUrl] = useState("http://localhost:3000/callback");
