@@ -195,17 +195,35 @@ describe("trading venue integration profiles", () => {
       path: "trading_venue",
       runtime: "typescript_nextjs",
       capabilities: [],
+      venue_profile_id: "tokenized_securities_venue",
     });
     expect(validated.ok).toBe(true);
     if (!validated.ok) return;
+    expect(validated.selection.venue_profile_id).toBe("tokenized_securities_venue");
     const kit = generateStarterKit(validated.selection);
     expect(kit.ok).toBe(true);
     if (!kit.ok) return;
+    expect(kit.venue_profile_id).toBe("tokenized_securities_venue");
     const blob = kit.files.map((file) => file.contents).join("\n");
-    expect(blob).toContain("generic_trading_venue");
-    expect(blob).toContain("hyperliquid_trading_venue");
-    expect(blob).toContain("tokenized_securities_venue");
+    expect(blob).toContain("ABRAXAS_VENUE_PROFILE_ID=tokenized_securities_venue");
+    expect(blob).toContain('venueProfileId: process.env.ABRAXAS_VENUE_PROFILE_ID ?? "tokenized_securities_venue"');
     expect(blob).not.toMatch(/placeOrder|getBalance|submitOrder/i);
+
+    expect(validateStarterKitInput({
+      pack_id: "age_21_retail",
+      path: "trading_venue",
+      runtime: "typescript_nextjs",
+      capabilities: [],
+      venue_profile_id: "made_up_venue",
+    })).toEqual({ ok: false, code: "unknown_venue_profile" });
+    expect(validateStarterKitInput({
+      pack_id: "age_21_retail",
+      path: "hosted_partner_flow",
+      runtime: "typescript_nextjs",
+      capabilities: [],
+      venue_profile_id: "tokenized_securities_venue",
+    })).toEqual({ ok: false, code: "mixed_selection" });
+
     for (const runtime of ["universal_https", "typescript_nextjs", "typescript_express", "javascript_wix_velo", "typescript_serverless"] as const) {
       const platformKit = generateStarterKit({
         ...validated.selection,
@@ -219,7 +237,6 @@ describe("trading venue integration profiles", () => {
       expect(platformKit.ok).toBe(true);
       if (!platformKit.ok) continue;
       const platformBlob = platformKit.files.map((file) => file.contents).join("\n");
-      expect(platformBlob).toContain("hyperliquid_trading_venue");
       expect(platformBlob).toContain("tokenized_securities_venue");
     }
   });

@@ -45,7 +45,7 @@ export { permitProtocolAction };
 `;
 }
 
-function envExample(includeWebhook: boolean): string {
+function envExample(includeWebhook: boolean, venueProfileId: string | null): string {
   return [
     `ABRAXAS_BASE_URL=https://abraxasworld.xyz`,
     `ABRAXAS_PARTNER_ID=${P.partner_id}`,
@@ -55,6 +55,7 @@ function envExample(includeWebhook: boolean): string {
     `ABRAXAS_SANDBOX_API_KEY=${P.api_key}`,
     `ABRAXAS_CALLBACK_URL=${P.callback_url}`,
     includeWebhook ? `ABRAXAS_WEBHOOK_SECRET=${P.webhook_secret}` : "",
+    venueProfileId ? `ABRAXAS_VENUE_PROFILE_ID=${venueProfileId}` : "",
     `# Replace placeholders after Launchpad shows a sandbox key once.`,
     `# Never commit live keys or Production credentials.`,
   ].filter(Boolean).join("\n") + "\n";
@@ -77,6 +78,7 @@ ${STARTER_KIT_MINIMUM_REQUIREMENTS.map((line) => `- ${line}`).join("\n")}
 - Platform: \`${selection.platform}\`
 - Runtime: \`${selection.runtime}\`
 - Optional capabilities: ${selection.capabilities.length ? selection.capabilities.join(", ") : "none"}
+- Venue profile: ${selection.venue_profile_id ? `\`${selection.venue_profile_id}\`` : "not selected"}
 
 ## Eligibility presentation
 Request a presentation from your backend, send the holder to Hosted Partner Flow, then verify the signed envelope and re-fetch \`GET /api/receipts/{id}/public\`. A presentation is never a bearer credential or automatic KYC/KYB approval.
@@ -303,12 +305,15 @@ export async function webhookHandler(req: Request, res: Response) {
 `;
 }
 
-function venuePreflight(runtime: StarterKitRuntime): string {
+function venuePreflight(runtime: StarterKitRuntime, venueProfileId: string | null): string {
   const body = `import { AbraxasTradingVenueAdapter } from "@abraxas/partner-kit/trading-venue";
 import { kit, permitProtocolAction } from ${runtime === "typescript_nextjs" ? '"../../../lib/abraxas"' : '"./lib/abraxas"'};
 
-const venue = new AbraxasTradingVenueAdapter({ kit });
-// Server sandbox config selects generic_trading_venue, tokenized_securities_venue, or hyperliquid_trading_venue.
+const venue = new AbraxasTradingVenueAdapter({
+  kit,
+  venueProfileId: process.env.ABRAXAS_VENUE_PROFILE_ID ?? "${venueProfileId ?? "generic_trading_venue"}",
+});
+// Integration Studio writes the selected profile into server configuration.
 // Never accept venue_profile_id, orders, balances, or Production fields from the browser.
 
 export async function tradingPreflight() {
@@ -749,7 +754,7 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     { path: "README.md", contents: readme(selection) },
     { path: "WHAT_THIS_DOES_NOT_DO.md", contents: doesNotDoDoc() },
     { path: "DEPLOYMENT.md", contents: deployment() },
-    { path: ".env.example", contents: envExample(webhook) },
+    { path: ".env.example", contents: envExample(webhook, selection.venue_profile_id) },
     { path: "package.json", contents: packageJson(selection.runtime) },
     { path: "tests/public-receipt.fixture.json", contents: fixtureJson() },
     { path: "tests/receipt-fixture.test.ts", contents: fixtureTest() },
@@ -760,7 +765,7 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     files.push({ path: "app/api/abraxas/callback/route.ts", contents: receiptRoute("typescript_nextjs") });
     files.push({ path: "src/lib/hosted.ts", contents: hostedHelper() });
     if (webhook) files.push({ path: "app/api/abraxas/webhooks/route.ts", contents: webhookRoute("typescript_nextjs") });
-    if (venue) files.push({ path: "app/api/abraxas/trading-preflight/route.ts", contents: venuePreflight("typescript_nextjs") });
+    if (venue) files.push({ path: "app/api/abraxas/trading-preflight/route.ts", contents: venuePreflight("typescript_nextjs", selection.venue_profile_id) });
     if (payment) files.push({ path: "app/api/abraxas/payment-preflight/route.ts", contents: paymentPreflight("typescript_nextjs") });
     if (portable) files.push({ path: "app/api/abraxas/action-preflight/route.ts", contents: portablePreflight("typescript_nextjs") });
     if (evm) files.push({ path: "app/api/abraxas/evm-preflight/route.ts", contents: evmPreflight("typescript_nextjs") });
@@ -774,7 +779,7 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     files.push({ path: "src/callback.ts", contents: receiptRoute("typescript_express") });
     files.push({ path: "src/lib/hosted.ts", contents: hostedHelper() });
     if (webhook) files.push({ path: "src/webhook.ts", contents: webhookRoute("typescript_express") });
-    if (venue) files.push({ path: "src/trading-preflight.ts", contents: venuePreflight("typescript_express") });
+    if (venue) files.push({ path: "src/trading-preflight.ts", contents: venuePreflight("typescript_express", selection.venue_profile_id) });
     if (payment) files.push({ path: "src/payment-preflight.ts", contents: paymentPreflight("typescript_express") });
     if (portable) files.push({ path: "src/portable-preflight.ts", contents: portablePreflight("typescript_express") });
     if (evm) files.push({ path: "src/evm-preflight.ts", contents: evmPreflight("typescript_express") });
