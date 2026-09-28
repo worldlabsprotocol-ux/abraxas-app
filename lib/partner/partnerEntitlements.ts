@@ -66,6 +66,12 @@ export async function getPartnerEntitlements(partnerId: string): Promise<Partner
 
   if (error || !data) return defaultPartnerEntitlements(partnerId);
 
+  const paidPlan = data.plan_id === "launch" || data.plan_id === "scale";
+  const paidThrough = data.paid_through ? Date.parse(data.paid_through) : Number.NaN;
+  if (paidPlan && (!Number.isFinite(paidThrough) || paidThrough <= Date.now())) {
+    return defaultPartnerEntitlements(partnerId);
+  }
+
   return {
     partnerId: data.partner_id,
     planId: data.plan_id ?? "observe",
