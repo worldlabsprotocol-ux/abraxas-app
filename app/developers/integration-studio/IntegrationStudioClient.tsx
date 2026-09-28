@@ -22,6 +22,7 @@ import { launchpadConfigureHref } from "@/lib/partner/launchpad/partnerFlowReque
 import { launchpadPolicyVersionHref } from "@/lib/partner/launchpad/policyVersionPlanner/contract";
 import { PolicyFitPlanner } from "@/app/developers/integration-studio/PolicyFitPlanner";
 import { OptionalWalletConnectionsPanel } from "@/app/developers/integration-studio/OptionalWalletConnectionsPanel";
+import { SolanaUsdcPlansPanel } from "@/app/developers/integration-studio/SolanaUsdcPlansPanel";
 import {
   STARTER_KIT_DOES_NOT_DO,
   STARTER_KIT_MINIMUM_REQUIREMENTS,
@@ -733,6 +734,10 @@ export function IntegrationStudioClient() {
           policyId={walletApp.policyId}
           policyVersion={walletApp.policyVersion}
         />
+      )}
+
+      {walletApp && (
+        <SolanaUsdcPlansPanel applicationId={walletApp.applicationId} />
       )}
 
       <ContentCard title="Test your sandbox">

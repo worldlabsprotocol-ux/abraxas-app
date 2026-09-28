@@ -611,6 +611,15 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
     extensions: [],
     notes:
       "DEMO-first Solana GateConfig partner-program binding. Required before new Solana registration; legacy null rows cannot issue. Do not auto-apply from Vercel.",
+  },  {
+    file: "109_partner_solana_usdc_billing.sql",
+    tier: "optional",
+    creates: ["partner_billing_intents", "confirm_partner_solana_billing_intent RPC"],
+    alters: ["partner_entitlements"],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Non-custodial Solana USDC plan checkout. Service-role only; apply manually after configuring an explicit cluster, RPC, recipient, and USDC mint.",
   },
 ];
 
@@ -643,6 +652,7 @@ export const OBJECT_PROVENANCE: Record<string, string> = {
   hosted_partner_flow_handoffs: "099_hosted_partner_flow_handoffs.sql",
   chain_attestation_nonces: "101_chain_attestation_nonces.sql",
   onchain_gate_deployments: "102_verified_onchain_gate_deployments.sql",
+  partner_billing_intents: "109_partner_solana_usdc_billing.sql",
   onchain_gate_deployment_events: "102_verified_onchain_gate_deployments.sql",
   chain_attestation_signers: "103_chain_attestation_signer_lifecycle.sql",
   chain_attestation_signer_events: "103_chain_attestation_signer_lifecycle.sql",

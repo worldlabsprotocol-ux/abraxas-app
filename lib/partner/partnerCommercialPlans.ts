@@ -19,7 +19,7 @@ export interface PartnerCommercialEstimate {
   plan_label: string;
   currency: "USD";
   estimate_only: true;
-  collection_status: "not_enabled";
+  collection_status: "not_enabled" | "solana_usdc_available";
   usage: {
     approved_receipts: number;
     authenticated_api_calls: number;
@@ -120,7 +120,9 @@ export function estimatePartnerCommercialUsage(input: {
     plan_label: plan.label,
     currency: "USD",
     estimate_only: true,
-    collection_status: "not_enabled",
+    collection_status: plan.id === "launch" || plan.id === "scale"
+      ? "solana_usdc_available"
+      : "not_enabled",
     usage: {
       approved_receipts: approvedReceipts,
       authenticated_api_calls: authenticatedApiCalls,
