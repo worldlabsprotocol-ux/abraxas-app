@@ -20,6 +20,9 @@ export function PassportConnectionsCard({
   walletBindingStatus: CanonicalWalletBindingStatus;
 }) {
   const walletConnected = walletBindingStatus === "active";
+  const integrationHref = walletConnected
+    ? "/developers/integration-studio?path=nft_collection_gate"
+    : "/developers/integration-studio?path=wallet_standard_binding";
   return (
     <section style={CARD} aria-labelledby="passport-connections-heading">
       <p style={{
@@ -55,12 +58,12 @@ export function PassportConnectionsCard({
           <span><strong>See your activity</strong><br /><span style={{ color: "var(--text-secondary)" }}>Check which services used a result and when.</span></span>
           <span aria-hidden="true">→</span>
         </Link>
-        <Link href="/developers/integration-studio" style={{
+        <Link href={integrationHref} style={{
           display: "flex", justifyContent: "space-between", gap: "0.75rem", alignItems: "center",
           padding: "0.65rem 0.75rem", borderRadius: 10, border: "1px solid var(--border)",
           color: "var(--text-primary)", textDecoration: "none", fontFamily: FONT, fontSize: "0.8rem",
         }}>
-          <span><strong>Build an optional connection</strong><br /><span style={{ color: "var(--text-secondary)" }}>{walletConnected ? "Wallet binding is connected; add a service rule when needed." : "Wallet, NFT collection, and payment paths stay optional."}</span></span>
+          <span><strong>Build an optional connection</strong><br /><span style={{ color: "var(--text-secondary)" }}>{walletConnected ? "Wallet binding is connected; start with an optional NFT collection gate." : "Start with optional wallet binding; NFT and payment paths remain available."}</span></span>
           <span aria-hidden="true">→</span>
         </Link>
       </div>
