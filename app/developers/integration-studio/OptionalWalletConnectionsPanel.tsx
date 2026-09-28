@@ -2,7 +2,7 @@
 // FILE: app/developers/integration-studio/OptionalWalletConnectionsPanel.tsx
 // Optional message-proof bindings for a created sandbox. Never gates sandbox creation.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
@@ -40,6 +40,15 @@ function failureMessage(status: string, wallet: "Solana" | "EVM"): string {
   return `${wallet} could not be connected. Your sandbox is still ready.`;
 }
 
+function restoredNotice(binding: WalletStandardBindView | EvmWalletBindView, wallet: "Solana" | "EVM"): string {
+  if (binding.ok) return `${wallet} wallet control is connected for this sandbox action.`;
+  if (binding.status === "expired") return `The previous ${wallet} binding expired. Connect again when needed.`;
+  if (binding.status === "revoked" || binding.status === "replayed") {
+    return `The previous ${wallet} binding is no longer active. Connect again when needed.`;
+  }
+  return "";
+}
+
 function BindingStatus({ binding }: { binding: WalletStandardBindView | EvmWalletBindView | null }) {
   if (!binding?.binding_ref) return null;
   return (
@@ -67,6 +76,37 @@ export function OptionalWalletConnectionsPanel({
   const [evmBusy, setEvmBusy] = useState(false);
   const [evmBinding, setEvmBinding] = useState<EvmWalletBindView | null>(null);
   const [evmNotice, setEvmNotice] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch(
+          `/api/developers/integration-studio/wallet-bindings?application_id=${encodeURIComponent(applicationId)}`,
+          { credentials: "include" },
+        );
+        const result = await response.json() as {
+          ok?: boolean;
+          solana?: WalletStandardBindView;
+          evm?: EvmWalletBindView;
+        };
+        if (cancelled || !response.ok || !result.ok) return;
+        if (result.solana) {
+          setSolanaBinding(result.solana);
+          setSolanaNotice(restoredNotice(result.solana, "Solana"));
+        }
+        if (result.evm) {
+          setEvmBinding(result.evm);
+          setEvmNotice(restoredNotice(result.evm, "EVM"));
+        }
+      } catch {
+        // Status recovery is optional. Connection controls remain available.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [applicationId]);
 
   async function connectSolanaWallet() {
     setSolanaBusy(true);
