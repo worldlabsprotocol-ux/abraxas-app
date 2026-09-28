@@ -28,6 +28,7 @@ import {
   STARTER_KIT_DOES_NOT_DO,
   STARTER_KIT_MINIMUM_REQUIREMENTS,
   STARTER_KIT_PLATFORM_MATRIX,
+  PATH_IMPLIED_CAPABILITY,
   isStarterKitOptionalCapability,
   isStarterKitPlatform,
   type StarterKitPlatform,
@@ -585,9 +586,10 @@ export function IntegrationStudioClient() {
             Add optional capabilities{optionalCaps.length ? ` (${optionalCaps.length} selected)` : ""}
           </summary>
           <div style={{ marginTop: "0.65rem" }}>
-          <p style={{ ...body, marginBottom: "0.55rem", fontWeight: 700, color: "var(--text-primary)" }}>Optional capabilities</p>
+          <p style={{ ...body, marginBottom: "0.35rem", fontWeight: 700, color: "var(--text-primary)" }}>Optional capabilities</p>
+          <p style={{ ...body, marginBottom: "0.55rem" }}>Your selected path is included automatically. Add only extra capabilities your service needs.</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginBottom: "0.75rem" }}>
-            {["webhooks", "wallet_standard_binding", "nft_collection_gate", "trading_venue", "payment_authorization", "portable_action_contract", "solana_gate", "evm_partner_adapter", "onchain_protocol_gate", "solana_onchain_eligibility_gate", "evm_onchain_eligibility_gate"].map((id) => (
+            {["webhooks", "wallet_standard_binding", "nft_collection_gate", "trading_venue", "payment_authorization", "portable_action_contract", "solana_gate", "evm_partner_adapter", "onchain_protocol_gate", "solana_onchain_eligibility_gate", "evm_onchain_eligibility_gate"].filter((id) => id !== PATH_IMPLIED_CAPABILITY[pathId]).map((id) => (
               <button
                 key={id}
                 type="button"
