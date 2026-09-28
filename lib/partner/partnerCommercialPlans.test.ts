@@ -29,7 +29,8 @@ describe("partner commercial plans", () => {
     expect(estimate.overage.authenticated_api_call_blocks).toBe(3);
     expect(estimate.estimated_receipt_overage_cents).toBe(2_500);
     expect(estimate.estimated_api_overage_cents).toBe(300);
-    expect(estimate.estimated_total_cents).toBe(12_700);\n    expect(estimate.collection_status).toBe("solana_usdc_available");
+    expect(estimate.estimated_total_cents).toBe(12_700);
+    expect(estimate.collection_status).toBe("solana_usdc_available");
   });
 
   it("uses lower Scale overages and rounds API usage by one-thousand-call blocks", () => {
