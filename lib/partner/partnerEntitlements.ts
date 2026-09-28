@@ -13,6 +13,9 @@ export interface PartnerEntitlements {
   enforcementMode: PartnerEnforcementMode;
   updatedAt: string | null;
   updatedBy: string | null;
+  paidThrough: string | null;
+  billingSource: string | null;
+  billingIntentId: string | null;
 }
 
 export interface PartnerEntitlementEvaluation {
@@ -35,6 +38,9 @@ const DEFAULT_ENTITLEMENTS: Omit<PartnerEntitlements, "partnerId"> = {
   enforcementMode: "observe",
   updatedAt: null,
   updatedBy: null,
+  paidThrough: null,
+  billingSource: null,
+  billingIntentId: null,
 };
 
 function sb(): SupabaseClient | null {
@@ -54,7 +60,7 @@ export async function getPartnerEntitlements(partnerId: string): Promise<Partner
 
   const { data, error } = await client
     .from("partner_entitlements")
-    .select("partner_id, plan_id, monthly_receipt_limit, monthly_api_call_limit, enforcement_mode, updated_at, updated_by")
+    .select("partner_id, plan_id, monthly_receipt_limit, monthly_api_call_limit, enforcement_mode, updated_at, updated_by, paid_through, billing_source, billing_intent_id")
     .eq("partner_id", partnerId)
     .maybeSingle();
 
@@ -68,6 +74,9 @@ export async function getPartnerEntitlements(partnerId: string): Promise<Partner
     enforcementMode: (data.enforcement_mode ?? "observe") as PartnerEnforcementMode,
     updatedAt: data.updated_at ?? null,
     updatedBy: data.updated_by ?? null,
+    paidThrough: data.paid_through ?? null,
+    billingSource: data.billing_source ?? null,
+    billingIntentId: data.billing_intent_id ?? null,
   };
 }
 
@@ -77,6 +86,9 @@ export async function upsertPartnerEntitlements(input: {
   monthlyReceiptLimit?: number | null;
   monthlyApiCallLimit?: number | null;
   enforcementMode?: PartnerEnforcementMode;
+  paidThrough?: string | null;
+  billingSource?: string | null;
+  billingIntentId?: string | null;
   updatedBy: string;
 }): Promise<PartnerEntitlements | null> {
   const client = sb();
@@ -90,12 +102,15 @@ export async function upsertPartnerEntitlements(input: {
     enforcement_mode: input.enforcementMode ?? "observe",
     updated_at: new Date().toISOString(),
     updated_by: input.updatedBy,
+    paid_through: input.paidThrough ?? null,
+    billing_source: input.billingSource ?? null,
+    billing_intent_id: input.billingIntentId ?? null,
   };
 
   const { data, error } = await client
     .from("partner_entitlements")
     .upsert(payload, { onConflict: "partner_id" })
-    .select("partner_id, plan_id, monthly_receipt_limit, monthly_api_call_limit, enforcement_mode, updated_at, updated_by")
+    .select("partner_id, plan_id, monthly_receipt_limit, monthly_api_call_limit, enforcement_mode, updated_at, updated_by, paid_through, billing_source, billing_intent_id")
     .single();
 
   if (error || !data) return null;
