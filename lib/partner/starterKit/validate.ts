@@ -3,6 +3,7 @@
 
 import { studioPackContract } from "@/lib/partner/integrationStudio/catalog";
 import { isIntegrationStudioPathId, type IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
+import { getVenueProfile, type VenueProfileId } from "@/lib/partner/tradingVenue/profiles";
 import {
   PATH_IMPLIED_CAPABILITY,
   STARTER_KIT_ALLOWED_INPUT_KEYS,
@@ -23,6 +24,7 @@ export interface ValidStarterKitSelection {
   runtime: StarterKitRuntime;
   platform: StarterKitPlatform;
   capabilities: StarterKitOptionalCapability[];
+  venue_profile_id: VenueProfileId | null;
 }
 
 export type StarterKitValidation =
@@ -48,6 +50,20 @@ export function validateStarterKitInput(raw: unknown): StarterKitValidation {
   }
   if (!studioPackContract(packId)) return { ok: false, code: "unknown_pack" };
   if (!isIntegrationStudioPathId(path)) return { ok: false, code: "unknown_path" };
+
+  const requestedVenueProfile = typeof body.venue_profile_id === "string"
+    ? body.venue_profile_id.trim()
+    : "";
+  if (requestedVenueProfile && path !== "trading_venue") {
+    return { ok: false, code: "mixed_selection" };
+  }
+  const venueProfile = path === "trading_venue"
+    ? getVenueProfile(requestedVenueProfile || "generic_trading_venue")
+    : null;
+  if (path === "trading_venue"
+    && (!venueProfile || !venueProfile.selectable_in_sandbox || venueProfile.posture !== "sandbox_preflight")) {
+    return { ok: false, code: "unknown_venue_profile" };
+  }
 
   let platform: StarterKitPlatform;
   let runtime: StarterKitRuntime;
@@ -88,6 +104,13 @@ export function validateStarterKitInput(raw: unknown): StarterKitValidation {
 
   return {
     ok: true,
-    selection: { pack_id: packId, path, runtime, platform, capabilities },
+    selection: {
+      pack_id: packId,
+      path,
+      runtime,
+      platform,
+      capabilities,
+      venue_profile_id: venueProfile?.profile_id ?? null,
+    },
   };
 }
