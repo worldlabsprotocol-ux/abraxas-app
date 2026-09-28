@@ -19,6 +19,7 @@ export const INTEGRATION_STUDIO_PATHS = [
   "solana_gate",
   "trading_venue",
   "wallet_standard_binding",
+  "nft_collection_gate",
   "payment_authorization",
   "portable_action_contract",
   "evm_partner_adapter",
@@ -85,6 +86,8 @@ export const INTEGRATION_STUDIO_WEBHOOK_NOTICE = PARTNER_EVENT_NOT_AUTHORIZATION
 export const INTEGRATION_STUDIO_SOLANA_NOTICE = SOLANA_NO_FUNDS_BOUNDARY;
 export const INTEGRATION_STUDIO_VENUE_NOTICE = TRADING_VENUE_NO_FUNDS_BOUNDARY;
 export const INTEGRATION_STUDIO_WALLET_NOTICE = WALLET_STANDARD_NOT_IDENTITY;
+export const INTEGRATION_STUDIO_NFT_NOTICE =
+  "Optional collection-gated access. Your server or indexer verifies ownership and any required trait, then re-fetches the current Abraxas receipt before granting one named action. NFT ownership is not identity, payment, custody, or a guarantee of value. Abraxas does not mint, transfer, or deploy NFT contracts.";
 export const INTEGRATION_STUDIO_PAYMENT_NOTICE = PAYMENT_AUTHORIZATION_NO_FUNDS_BOUNDARY;
 export const INTEGRATION_STUDIO_PORTABLE_NOTICE = PORTABLE_ACTION_NOT_EXECUTION;
 export const INTEGRATION_STUDIO_EVM_NOTICE = EVM_NO_EXECUTION_BOUNDARY;
