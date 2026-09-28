@@ -129,6 +129,9 @@ export async function upsertPartnerEntitlements(input: {
     enforcementMode: data.enforcement_mode as PartnerEnforcementMode,
     updatedAt: data.updated_at,
     updatedBy: data.updated_by,
+    paidThrough: data.paid_through ?? null,
+    billingSource: data.billing_source ?? null,
+    billingIntentId: data.billing_intent_id ?? null,
   };
 }
 
