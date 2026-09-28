@@ -50,6 +50,7 @@ const PATH_LABEL: Record<IntegrationStudioPathId, string> = {
   solana_gate: "Solana eligibility gate",
   trading_venue: "Trading venue access",
   wallet_standard_binding: "Wallet Standard binding",
+  nft_collection_gate: "NFT or collection-gated access",
   payment_authorization: "Payment and commerce",
   portable_action_contract: "Portable action contract",
   evm_partner_adapter: "EVM partner eligibility",
@@ -465,6 +466,11 @@ export function IntegrationStudioClient() {
             </ul>
           </div>
         )}
+        {pathId === "nft_collection_gate" && (
+          <p style={{ ...body, marginBottom: "0.65rem" }}>
+            Optional access layer for NFT communities, memberships, and trait-gated drops. Your backend or indexer verifies the wallet owns the configured collection and trait, then re-fetches the current Abraxas receipt before granting one named action. No wallet is required to create the sandbox, and Abraxas never mints, transfers, or holds NFTs.
+          </p>
+        )}
         {pathId === "wallet_standard_binding" && (
           <p style={{ ...body, marginBottom: "0.65rem" }}>
             Optional. Bind a self-custodial wallet to one action contract when a venue or membership check needs it. This is not identity verification and does not reveal a wallet address, balances, or keys. Passport, Partner Flow, and receipt verification still work with no wallet connected.
@@ -576,7 +582,7 @@ export function IntegrationStudioClient() {
           <div style={{ marginTop: "0.65rem" }}>
           <p style={{ ...body, marginBottom: "0.55rem", fontWeight: 700, color: "var(--text-primary)" }}>Optional capabilities</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginBottom: "0.75rem" }}>
-            {["webhooks", "wallet_standard_binding", "trading_venue", "payment_authorization", "portable_action_contract", "solana_gate", "evm_partner_adapter", "onchain_protocol_gate", "solana_onchain_eligibility_gate", "evm_onchain_eligibility_gate"].map((id) => (
+            {["webhooks", "wallet_standard_binding", "nft_collection_gate", "trading_venue", "payment_authorization", "portable_action_contract", "solana_gate", "evm_partner_adapter", "onchain_protocol_gate", "solana_onchain_eligibility_gate", "evm_onchain_eligibility_gate"].map((id) => (
               <button
                 key={id}
                 type="button"
