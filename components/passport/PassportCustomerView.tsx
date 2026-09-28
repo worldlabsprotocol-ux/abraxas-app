@@ -20,6 +20,7 @@ import { PartnerVerificationResumeCta } from "@/components/passport/PartnerVerif
 import { PassportRecentActivity } from "@/components/passport/PassportRecentActivity";
 import { PassportRequestInbox } from "@/components/passport/PassportRequestInbox";
 import { PassportInstallCard } from "@/components/passport/PassportInstallCard";
+import { PassportConnectionsCard } from "@/components/passport/PassportConnectionsCard";
 import { AbraxasIdentityCapture } from "@/components/passport/AbraxasIdentityCapture";
 import {
   PASSPORT_CRYPTO_DISCLOSURE,
@@ -305,6 +306,7 @@ export function PassportCustomerView({
               ))}
             </ul>
           </section>
+          <PassportConnectionsCard walletBindingStatus={walletBindingStatus} />
 
         </>
       )}
