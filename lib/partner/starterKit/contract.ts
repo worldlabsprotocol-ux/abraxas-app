@@ -16,7 +16,7 @@ import { WALLET_STANDARD_NOT_IDENTITY } from "@/lib/partner/walletStandard/contr
 import { EVM_NO_EXECUTION_BOUNDARY } from "@/lib/partner/evm/contract";
 import { CHAIN_ATTESTATION_NOT_EXECUTION } from "@/lib/partner/chainAttestation/contract";
 
-export const STARTER_KIT_VERSION = "1.14.0" as const;
+export const STARTER_KIT_VERSION = "1.15.0" as const;
 export const STARTER_KIT_API_PATH = "/api/developers/integration-studio/starter-kit" as const;
 
 export const STARTER_KIT_RUNTIMES = [
@@ -180,6 +180,7 @@ export const STARTER_KIT_ALLOWED_INPUT_KEYS = [
   "runtime",
   "platform",
   "capabilities",
+  "venue_profile_id",
 ] as const;
 
 export const STARTER_KIT_PATHS = INTEGRATION_STUDIO_PATHS;
