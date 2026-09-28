@@ -115,3 +115,47 @@ export const VENUE_MAINNET_EXTERNAL_REQUIREMENTS = [
   "Partner-owned venue execution: accounts, wallets, market data, risk, orders, and settlement stay with the venue.",
   "No Abraxas venue API, RPC, balance, position, or order path.",
 ] as const;
+
+
+/**
+ * Narrow activity categories a venue may derive from its own records.
+ * Abraxas accepts the category only; it never accepts wallet history, balances, or addresses.
+ */
+export const PARTNER_ACTIVITY_SIGNAL_TYPES = [
+  "repeat_participant",
+  "holder_loyalty",
+  "high_activity",
+] as const;
+export type PartnerActivitySignalType = (typeof PARTNER_ACTIVITY_SIGNAL_TYPES)[number];
+
+export interface PartnerActivitySignal {
+  type: PartnerActivitySignalType;
+  source: "partner_records";
+  consent_recorded: true;
+}
+
+export function validatePartnerActivitySignal(input: unknown):
+  | { ok: true; signal: PartnerActivitySignal }
+  | { ok: false; code: "invalid_activity_signal" | "raw_activity_forbidden" } {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return { ok: false, code: "invalid_activity_signal" };
+  }
+  const body = input as Record<string, unknown>;
+  const allowed = new Set(["type", "source", "consent_recorded"]);
+  if (Object.keys(body).some((key) => !allowed.has(key))) {
+    return { ok: false, code: "raw_activity_forbidden" };
+  }
+  if (!(PARTNER_ACTIVITY_SIGNAL_TYPES as readonly string[]).includes(String(body.type))
+    || body.source !== "partner_records"
+    || body.consent_recorded !== true) {
+    return { ok: false, code: "invalid_activity_signal" };
+  }
+  return {
+    ok: true,
+    signal: {
+      type: body.type as PartnerActivitySignalType,
+      source: "partner_records",
+      consent_recorded: true,
+    },
+  };
+}
