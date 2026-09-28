@@ -1,11 +1,12 @@
 // FILE: lib/partner/tradingVenue/profiles/contract.ts
 // Server-owned trading venue integration profiles. Preflight only. Not a partnership.
 
-export const VENUE_PROFILE_REGISTRY_VERSION = "1.0.0" as const;
+export const VENUE_PROFILE_REGISTRY_VERSION = "1.1.0" as const;
 
 export const VENUE_PROFILE_IDS = [
   "generic_trading_venue",
   "hyperliquid_trading_venue",
+  "tokenized_securities_venue",
   "solana_trading_venue",
   "evm_trading_venue",
   "disabled_trading_venue",
@@ -68,6 +69,15 @@ export const VENUE_PROFILE_NEXT_STEPS = [
 
 export const VENUE_PROFILE_NO_PARTNERSHIP =
   "Named venue labels describe integration posture only. They do not imply that any venue endorses, uses, or partners with Abraxas.";
+
+export const TOKENIZED_SECURITIES_PROFILE_CONTROLS = [
+  "The partner classifies the tokenized instrument and documents whether the token itself carries issuer-backed shareholder rights or represents a separate third-party claim.",
+  "For tokenized NMS stock, the partner verifies rights and privileges against the equivalent traditional share before enabling market access.",
+  "The venue enforces permissioned participant and wallet access, jurisdiction controls, trading limits, and underlying-market halts.",
+  "Smart contracts, network bindings, and upgrade controls remain public or independently auditable where the applicable venue framework requires it.",
+  "The regulated venue and its service providers retain custody, books and records, disclosures, corporate actions, reconciliation, tax, regulatory reporting, execution, and settlement.",
+  "Abraxas supplies only a current policy receipt and one-time enable_market_access preflight. It does not determine security status or certify regulatory compliance.",
+] as const;
 
 export const VENUE_PROFILE_PREFLIGHT_ONLY =
   "Abraxas provides private eligibility preflight only. The venue retains account access, wallet handling, market data, risk, orders, and execution. A webhook is never a grant. Re-fetch a current receipt before each permitted action.";

@@ -4,6 +4,7 @@
 import {
   VENUE_PROFILE_IDS,
   VENUE_PROFILE_NO_PARTNERSHIP,
+  TOKENIZED_SECURITIES_PROFILE_CONTROLS,
   type VenueIntegrationProfile,
   type VenueProfileId,
 } from "./contract";
@@ -43,6 +44,28 @@ export const VENUE_PROFILE_REGISTRY: readonly VenueIntegrationProfile[] = [
     future_requirements: [
       "Keep using this profile for existing sandbox venue preflight until a named venue profile is selected in Launchpad.",
     ],
+  },
+  {
+    profile_id: "tokenized_securities_venue",
+    label: "Tokenized securities venue (sandbox preflight)",
+    ecosystem: "trading_venue",
+    posture: "sandbox_preflight",
+    supported_actions: ENABLE,
+    supported_scopes: SCOPE,
+    policy_result_category: "eligibility",
+    assurance_boundary: "current_public_receipt",
+    wallet_binding: "optional",
+    current_receipt_required: true,
+    durable_replay_required: true,
+    network_id: "tokenized_securities_venue",
+    docs_href: "/docs/trading-venue-profiles#tokenized-securities",
+    kit_path: "/docs/starter-kit",
+    abraxas_executes: false,
+    funds_movement: false,
+    connects_wallet: false,
+    calls_venue_api: false,
+    selectable_in_sandbox: true,
+    future_requirements: TOKENIZED_SECURITIES_PROFILE_CONTROLS,
   },
   {
     profile_id: "hyperliquid_trading_venue",
