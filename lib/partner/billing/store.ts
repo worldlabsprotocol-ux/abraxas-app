@@ -84,6 +84,22 @@ export async function getPartnerBillingIntent(input: {
   return data ? mapIntent(data as Record<string, unknown>) : null;
 }
 
+export async function getLatestPartnerBillingIntent(input: {
+  partnerId: string;
+  applicationId: string;
+}): Promise<PartnerBillingIntent | null> {
+  const sb = requireSupabaseAdmin();
+  const { data, error } = await sb.from("partner_billing_intents")
+    .select("*")
+    .eq("partner_id", input.partnerId)
+    .eq("application_id", input.applicationId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error("billing_store_unavailable");
+  return data ? mapIntent(data as Record<string, unknown>) : null;
+}
+
 export async function expirePartnerBillingIntent(intentId: string, partnerId: string): Promise<void> {
   const sb = requireSupabaseAdmin();
   const { error } = await sb.from("partner_billing_intents")

@@ -23,7 +23,9 @@ import {
   createPartnerBillingIntent,
   expirePartnerBillingIntent,
   getPartnerBillingIntent,
+  getLatestPartnerBillingIntent,
 } from "@/lib/partner/billing/store";
+import { getPartnerEntitlements } from "@/lib/partner/partnerEntitlements";
 
 export const dynamic = "force-dynamic";
 
@@ -92,9 +94,54 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   const access = await authorize(req, params.id, 30);
   if (!access.ok) return access.response;
   const intentId = (req.nextUrl.searchParams.get("intent_id") ?? "").trim();
-  if (!/^[0-9a-f-]{36}$/i.test(intentId)) return launchpadError("invalid_intent", 400);
 
   try {
+    if (!intentId) {
+      const [entitlements, latest] = await Promise.all([
+        getPartnerEntitlements(access.session.partnerId),
+        getLatestPartnerBillingIntent({
+          partnerId: access.session.partnerId,
+          applicationId: access.application.id,
+        }),
+      ]);
+      const active = (entitlements.planId === "launch" || entitlements.planId === "scale")
+        && Boolean(entitlements.paidThrough)
+        && Date.parse(entitlements.paidThrough ?? "") > Date.now();
+      let latestPayment = latest ? billingIntentView(latest) : null;
+      if (latest?.status === "pending" && Date.parse(latest.expiresAt) > Date.now()) {
+        try {
+          const config = readSolanaBillingConfig();
+          if (
+            latest.networkId === config.networkId
+            && latest.recipient === config.recipient.toBase58()
+            && latest.tokenMint === config.tokenMint.toBase58()
+          ) {
+            const request = createSolanaBillingPayment({
+              planId: latest.planId,
+              intentId: latest.intentId,
+              config,
+              reference: new PublicKey(latest.reference),
+            });
+            latestPayment = billingIntentView(latest, request.paymentUrl);
+          }
+        } catch {
+          // Current entitlement status remains readable if checkout configuration changes.
+        }
+      }
+      return launchpadJson({
+        ok: true,
+        billing: {
+          plan_id: active ? entitlements.planId : "sandbox",
+          active,
+          paid_through: active ? entitlements.paidThrough : null,
+          monthly_receipt_limit: active ? entitlements.monthlyReceiptLimit : null,
+          monthly_api_call_limit: active ? entitlements.monthlyApiCallLimit : null,
+          collection: "solana_usdc",
+        },
+        payment: latestPayment,
+      });
+    }
+    if (!/^[0-9a-f-]{36}$/i.test(intentId)) return launchpadError("invalid_intent", 400);
     const intent = await getPartnerBillingIntent({
       intentId,
       partnerId: access.session.partnerId,
