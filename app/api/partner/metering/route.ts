@@ -43,6 +43,6 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     metering: report,
-    note: "Usage and commercial estimates are informational. Billing collection and enforcement are not enabled.",
+    note: "Usage is informational. Solana USDC payment can activate plan allowances; enforcement remains observe-only.",
   });
 }
