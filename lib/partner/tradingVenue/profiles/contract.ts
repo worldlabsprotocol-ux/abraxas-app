@@ -74,6 +74,8 @@ export const TOKENIZED_SECURITIES_PROFILE_CONTROLS = [
   "The partner classifies the tokenized instrument and documents whether the token itself carries issuer-backed shareholder rights or represents a separate third-party claim.",
   "For tokenized NMS stock, the partner verifies rights and privileges against the equivalent traditional share before enabling market access.",
   "The venue enforces permissioned participant and wallet access, jurisdiction controls, trading limits, and underlying-market halts.",
+  "If a venue uses activity bands such as repeat participant, holder loyalty, or a high-activity tier, the venue computes that category from its own records and sends only the narrow category needed for this access decision.",
+  "Abraxas does not rank wallets, inspect transaction history, expose balances, identify whales, or receive raw activity data. The partner must obtain any required consent and re-fetch the current receipt before granting access.",
   "Smart contracts, network bindings, and upgrade controls remain public or independently auditable where the applicable venue framework requires it.",
   "The regulated venue and its service providers retain custody, books and records, disclosures, corporate actions, reconciliation, tax, regulatory reporting, execution, and settlement.",
   "Abraxas supplies only a current policy receipt and one-time enable_market_access preflight. It does not determine security status or certify regulatory compliance.",
