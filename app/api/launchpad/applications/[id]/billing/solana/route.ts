@@ -107,6 +107,27 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
       const active = (entitlements.planId === "launch" || entitlements.planId === "scale")
         && Boolean(entitlements.paidThrough)
         && Date.parse(entitlements.paidThrough ?? "") > Date.now();
+      let latestPayment = latest ? billingIntentView(latest) : null;
+      if (latest?.status === "pending" && Date.parse(latest.expiresAt) > Date.now()) {
+        try {
+          const config = readSolanaBillingConfig();
+          if (
+            latest.networkId === config.networkId
+            && latest.recipient === config.recipient.toBase58()
+            && latest.tokenMint === config.tokenMint.toBase58()
+          ) {
+            const request = createSolanaBillingPayment({
+              planId: latest.planId,
+              intentId: latest.intentId,
+              config,
+              reference: new PublicKey(latest.reference),
+            });
+            latestPayment = billingIntentView(latest, request.paymentUrl);
+          }
+        } catch {
+          // Current entitlement status remains readable if checkout configuration changes.
+        }
+      }
       return launchpadJson({
         ok: true,
         billing: {
@@ -117,7 +138,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
           monthly_api_call_limit: active ? entitlements.monthlyApiCallLimit : null,
           collection: "solana_usdc",
         },
-        payment: latest ? billingIntentView(latest) : null,
+        payment: latestPayment,
       });
     }
     if (!/^[0-9a-f-]{36}$/i.test(intentId)) return launchpadError("invalid_intent", 400);
