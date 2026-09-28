@@ -101,7 +101,7 @@ function accountKeyStrings(transaction: ParsedTransactionWithMeta): string[] {
 }
 
 function rawTokenAmount(value: string | undefined): bigint {
-  if (!value || !/^\d+$/.test(value)) return 0n;
+  if (!value || !/^\d+$/.test(value)) return BigInt(0);
   return BigInt(value);
 }
 
