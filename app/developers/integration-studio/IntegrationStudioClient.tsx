@@ -21,7 +21,7 @@ import { isPolicyPackId } from "@/lib/partner/launchpad/policyPacks";
 import { launchpadConfigureHref } from "@/lib/partner/launchpad/partnerFlowRequest/contract";
 import { launchpadPolicyVersionHref } from "@/lib/partner/launchpad/policyVersionPlanner/contract";
 import { PolicyFitPlanner } from "@/app/developers/integration-studio/PolicyFitPlanner";
-import { OptionalSolanaWalletPanel } from "@/app/developers/integration-studio/OptionalSolanaWalletPanel";
+import { OptionalWalletConnectionsPanel } from "@/app/developers/integration-studio/OptionalWalletConnectionsPanel";
 import {
   STARTER_KIT_DOES_NOT_DO,
   STARTER_KIT_MINIMUM_REQUIREMENTS,
@@ -696,9 +696,11 @@ export function IntegrationStudioClient() {
       </ContentCard>
 
       {created && (
-        <OptionalSolanaWalletPanel
+        <OptionalWalletConnectionsPanel
           applicationId={created.application_id}
           partnerId={created.partner_id}
+          policyId={created.policy_id}
+          policyVersion={created.policy_version}
         />
       )}
 
