@@ -28,7 +28,7 @@ export async function enableMarketAccess(receiptId: string) {
 }
 
 export const VENUE_PROFILE_ARCHITECTURE = `
-server sandbox config -> venueProfileId (generic_trading_venue | hyperliquid_trading_venue)
+server sandbox config -> venueProfileId (generic_trading_venue | tokenized_securities_venue | hyperliquid_trading_venue)
 venue server -> issue enable_market_access contract
 venue server -> re-fetch current public receipt
 venue adapter -> profile + receipt + nonce preflight
