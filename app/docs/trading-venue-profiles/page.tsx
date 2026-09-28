@@ -69,6 +69,9 @@ export default function TradingVenueProfilesDocsPage() {
           <p style={body}>
             This sandbox profile helps a regulated or permissioned venue request a narrow investor-eligibility result before enabling market access. The venue remains responsible for the instrument, shareholder rights, disclosures, participant permissioning, trading controls, custody, books and records, corporate actions, reporting, execution, and settlement.
           </p>
+          <p style={{ ...body, marginTop: "0.75rem" }}>
+            Activity-based access stays partner-owned: a venue may turn its own records into a category such as repeat participant, holder loyalty, or high-activity tier, then ask Abraxas for a narrow decision. Abraxas never receives raw wallet history, balances, addresses, or a whale ranking.
+          </p>
           <ul style={{ ...body, paddingLeft: "1.2rem", display: "grid", gap: "0.4rem", marginTop: "0.75rem" }}>
             {TOKENIZED_SECURITIES_PROFILE_CONTROLS.map((line) => <li key={line}>{line}</li>)}
           </ul>
