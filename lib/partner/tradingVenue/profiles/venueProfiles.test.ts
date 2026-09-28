@@ -120,6 +120,8 @@ describe("trading venue integration profiles", () => {
     expect(TOKENIZED_SECURITIES_PROFILE_CONTROLS.join(" ")).toContain("shareholder rights");
     expect(TOKENIZED_SECURITIES_PROFILE_CONTROLS.join(" ")).toContain("trading limits");
     expect(TOKENIZED_SECURITIES_PROFILE_CONTROLS.join(" ")).toContain("settlement");
+    expect(TOKENIZED_SECURITIES_PROFILE_CONTROLS.join(" ")).toContain("raw activity data");
+    expect(TOKENIZED_SECURITIES_PROFILE_CONTROLS.join(" ")).toContain("does not rank wallets");
   });
 
   it("rejects wrong partner/policy/version/action/scope, expired/revoked/denied receipts, and nonce replay", async () => {
