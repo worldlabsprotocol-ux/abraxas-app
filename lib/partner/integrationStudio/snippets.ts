@@ -20,6 +20,7 @@ import { crossChainProtocolAccessServerExample } from "@/lib/partner/crossChainP
 import { testnetGateDeploymentExample } from "@/lib/partner/testnetGateDeploymentKit/examples";
 import { onchainVerifierConformanceExample } from "@/lib/partner/onchainVerifierConformance/examples";
 import { organizationEligibilityServerExample } from "@/lib/organizationEligibility/examples";
+import { nftCollectionGateServerExample } from "@/lib/partner/nftCollectionGate/examples";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
 
 const DEMO_OPTS = {
@@ -68,6 +69,11 @@ export function studioSnippetForApplication(input: {
       title: "Trading venue access",
       docs: "/docs/trading-venue-profiles",
       code: tradingVenueProfileExample("generic_trading_venue"),
+    },
+    nft_collection_gate: {
+      title: "NFT or collection-gated access",
+      docs: "/docs/chain-verifiable-attestations",
+      code: nftCollectionGateServerExample(),
     },
     wallet_standard_binding: {
       title: "Wallet Standard binding",
@@ -163,6 +169,12 @@ export function studioSnippetForPath(path: IntegrationStudioPathId): { title: st
         title: "Trading venue access",
         docs: "/docs/trading-venue-profiles",
         code: tradingVenueProfileExample("generic_trading_venue"),
+      };
+    case "nft_collection_gate":
+      return {
+        title: "NFT or collection-gated access",
+        docs: "/docs/chain-verifiable-attestations",
+        code: nftCollectionGateServerExample(),
       };
     case "wallet_standard_binding":
       return {
