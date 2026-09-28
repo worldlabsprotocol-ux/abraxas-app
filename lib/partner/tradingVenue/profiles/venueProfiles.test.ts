@@ -237,7 +237,7 @@ describe("trading venue integration profiles", () => {
     expect(kit.venue_profile_id).toBe("tokenized_securities_venue");
     const blob = kit.files.map((file) => file.contents).join("\n");
     expect(blob).toContain("ABRAXAS_VENUE_PROFILE_ID=tokenized_securities_venue");
-    expect(kit.optional_capabilities ?? []).toContain("partner_activity_signal");
+    expect(studioPublicCatalog().starter_kit.optional_capabilities).toContain("partner_activity_signal");
     expect(blob).toContain('venueProfileId: process.env.ABRAXAS_VENUE_PROFILE_ID ?? "tokenized_securities_venue"');
     expect(blob).not.toMatch(/placeOrder|getBalance|submitOrder/i);
 
