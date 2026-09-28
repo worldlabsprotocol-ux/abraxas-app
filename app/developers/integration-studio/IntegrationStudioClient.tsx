@@ -82,6 +82,14 @@ type CreatedApp = {
   environment: "sandbox";
 };
 
+type ResumableApp = {
+  id: string;
+  application_name: string;
+  public_slug: string;
+  policy_id: string;
+  policy_version: number;
+};
+
 export function IntegrationStudioClient() {
   const packs = listStudioPackSummaries();
   const [packId, setPackId] = useState(packs[1]?.pack_id ?? packs[0]?.pack_id ?? "age_21_retail");
@@ -103,7 +111,8 @@ export function IntegrationStudioClient() {
   const [copiedPath, setCopiedPath] = useState("");
   const [pathInstructions, setPathInstructions] = useState<Record<string, { title: string; docs: string; code: string }> | null>(null);
   const [hostedDocs, setHostedDocs] = useState<{ hosted_link?: string; sandbox_testing?: string[] } | null>(null);
-  const [resumeApp, setResumeApp] = useState<{ id: string; application_name: string; public_slug: string } | null>(null);
+  const [resumeApp, setResumeApp] = useState<ResumableApp | null>(null);
+  const [resumePartnerId, setResumePartnerId] = useState("");
   const [handoffNotice, setHandoffNotice] = useState("");
 
   const contract = useMemo(() => studioPackContract(packId), [packId]);
@@ -209,17 +218,23 @@ export function IntegrationStudioClient() {
         setSignedIn(authenticated);
         if (!authenticated) {
           setResumeApp(null);
+          setResumePartnerId("");
           return;
         }
         const workspaceRes = await fetch("/api/launchpad/applications", { credentials: "include" });
         const workspace = await workspaceRes.json() as {
-          workspace?: { applications?: Array<{ id: string; application_name: string; public_slug: string }> };
+          workspace?: {
+            partner_id?: string;
+            applications?: ResumableApp[];
+          };
         };
         const first = workspace.workspace?.applications?.[0];
         setResumeApp(first ?? null);
+        setResumePartnerId(workspace.workspace?.partner_id ?? "");
       } catch {
         setSignedIn(false);
         setResumeApp(null);
+        setResumePartnerId("");
       }
     })();
   }, []);
@@ -279,6 +294,22 @@ export function IntegrationStudioClient() {
       setSubmitting(false);
     }
   }
+
+  const walletApp = created
+    ? {
+        applicationId: created.application_id,
+        partnerId: created.partner_id,
+        policyId: created.policy_id,
+        policyVersion: created.policy_version,
+      }
+    : resumeApp && resumePartnerId
+      ? {
+          applicationId: resumeApp.id,
+          partnerId: resumePartnerId,
+          policyId: resumeApp.policy_id,
+          policyVersion: resumeApp.policy_version,
+        }
+      : null;
 
   return (
     <>
@@ -695,12 +726,12 @@ export function IntegrationStudioClient() {
         </div>
       </ContentCard>
 
-      {created && (
+      {walletApp && (
         <OptionalWalletConnectionsPanel
-          applicationId={created.application_id}
-          partnerId={created.partner_id}
-          policyId={created.policy_id}
-          policyVersion={created.policy_version}
+          applicationId={walletApp.applicationId}
+          partnerId={walletApp.partnerId}
+          policyId={walletApp.policyId}
+          policyVersion={walletApp.policyVersion}
         />
       )}
 
