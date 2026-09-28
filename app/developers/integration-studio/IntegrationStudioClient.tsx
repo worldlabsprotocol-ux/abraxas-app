@@ -19,6 +19,7 @@ import {
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio";
 import { isPolicyPackId } from "@/lib/partner/launchpad/policyPacks";
+import { tradingVenueProfileExample } from "@/lib/partner/tradingVenue/profiles";
 import { launchpadConfigureHref } from "@/lib/partner/launchpad/partnerFlowRequest/contract";
 import { launchpadPolicyVersionHref } from "@/lib/partner/launchpad/policyVersionPlanner/contract";
 import { PolicyFitPlanner } from "@/app/developers/integration-studio/PolicyFitPlanner";
@@ -102,6 +103,7 @@ export function IntegrationStudioClient() {
     const requested = searchParams.get("path");
     return requested && isIntegrationStudioPathId(requested) ? requested : "hosted_partner_flow";
   });
+  const [venueProfileId, setVenueProfileId] = useState("generic_trading_venue");
   const [signedIn, setSignedIn] = useState(false);
   const [applicationName, setApplicationName] = useState("");
   const [returnUrl, setReturnUrl] = useState("http://localhost:3000/callback");
@@ -125,7 +127,11 @@ export function IntegrationStudioClient() {
 
   const contract = useMemo(() => studioPackContract(packId), [packId]);
   const snippet = useMemo(() => studioSnippetForPath(pathId), [pathId]);
-  const createdSnippet = pathInstructions?.[pathId] ?? snippet;
+  const venueProfiles = useMemo(() => studioPublicCatalog().trading_venue.profiles ?? [], []);
+  const baseCreatedSnippet = pathInstructions?.[pathId] ?? snippet;
+  const createdSnippet = pathId === "trading_venue"
+    ? { ...baseCreatedSnippet, code: tradingVenueProfileExample(venueProfileId) }
+    : baseCreatedSnippet;
   const activationChecklist = useMemo(() => buildPartnerActivationChecklist(optionalCaps), [optionalCaps]);
 
   function toggleCapability(id: string) {
@@ -144,6 +150,7 @@ export function IntegrationStudioClient() {
           path: pathId,
           platform,
           capabilities: optionalCaps,
+          ...(pathId === "trading_venue" ? { venue_profile_id: venueProfileId } : {}),
         }),
       });
       const data = await res.json() as {
@@ -461,15 +468,44 @@ export function IntegrationStudioClient() {
         {pathId === "trading_venue" && (
           <div style={{ ...body, marginBottom: "0.65rem" }}>
             <p style={{ margin: 0 }}>
-              Policy pack, then Partner Flow, then a minimum approved receipt, then a venue preflight for Enable market access using a server-configured venue profile (generic or Hyperliquid-class). Lifecycle and webhook events re-check the public receipt. No trades, wallets, tokens, or funds movement. No named exchange partnership. Profile selection is Launchpad sandbox config, never a browser field.
+              Choose the venue model for this starter. Integration Studio writes the choice into server configuration; the browser never chooses a profile during an access check.
             </p>
-            <ul style={{ paddingLeft: "1.1rem", marginTop: "0.5rem", display: "grid", gap: "0.3rem" }}>
-              {(studioPublicCatalog().trading_venue.profiles ?? []).map((profile) => (
-                <li key={profile.profile_id}>
-                  {profile.label} (`{profile.profile_id}`) · {profile.posture.replace(/_/g, " ")} · Abraxas never executes
-                </li>
+            <div style={{ display: "grid", gap: "0.5rem", marginTop: "0.65rem" }}>
+              {venueProfiles.map((profile) => (
+                <button
+                  key={profile.profile_id}
+                  type="button"
+                  onClick={() => setVenueProfileId(profile.profile_id)}
+                  aria-pressed={venueProfileId === profile.profile_id}
+                  style={{
+                    padding: "0.7rem 0.8rem",
+                    borderRadius: 10,
+                    border: venueProfileId === profile.profile_id
+                      ? "1px solid rgba(45,212,191,0.62)"
+                      : "1px solid var(--border)",
+                    background: venueProfileId === profile.profile_id
+                      ? "rgba(45,212,191,0.12)"
+                      : "var(--surface-inset)",
+                    color: "var(--text-primary)",
+                    fontFamily: FONT,
+                    textAlign: "left",
+                    cursor: "pointer",
+                  }}
+                >
+                  <strong style={{ display: "block", fontSize: "0.78rem" }}>{profile.label}</strong>
+                  <span style={{ display: "block", marginTop: "0.2rem", fontSize: "0.7rem", color: "var(--text-secondary)" }}>
+                    {profile.profile_id === "tokenized_securities_venue"
+                      ? "Private eligibility before permissioned tokenized-stock access."
+                      : profile.profile_id === "hyperliquid_trading_venue"
+                        ? "Eligibility preflight for a Hyperliquid-class venue."
+                        : "General receipt-gated market access."}
+                  </span>
+                </button>
               ))}
-            </ul>
+            </div>
+            <p style={{ margin: "0.65rem 0 0", color: "var(--text-muted)" }}>
+              Abraxas returns an access decision only. It never executes a trade, holds an asset, or performs settlement.
+            </p>
           </div>
         )}
         {pathId === "nft_collection_gate" && (
