@@ -14,6 +14,8 @@ type BillingView = {
   paid_through: string | null;
   monthly_receipt_limit: number | null;
   monthly_api_call_limit: number | null;
+  usage_period: "rolling_30_days";
+  usage: { receipts: number; api_calls: number } | null;
 };
 
 type PaymentView = {
@@ -163,8 +165,35 @@ export function SolanaUsdcPlansPanel({ applicationId }: { applicationId: string 
             {PLAN[billing.plan_id as PaidPlan].label} is active
           </p>
           <p style={{ ...body, marginTop: "0.25rem" }}>
-            Paid through {new Date(billing.paid_through).toLocaleString()} · {billing.monthly_receipt_limit?.toLocaleString()} receipts · {billing.monthly_api_call_limit?.toLocaleString()} API calls
+            Paid through {new Date(billing.paid_through).toLocaleString()}
           </p>
+          {billing.usage && billing.monthly_receipt_limit != null && billing.monthly_api_call_limit != null && (
+            <div style={{ display: "grid", gap: "0.55rem", marginTop: "0.65rem" }}>
+              <div>
+                <p style={{ ...body, fontSize: "0.75rem" }}>
+                  {billing.usage.receipts.toLocaleString()} of {billing.monthly_receipt_limit.toLocaleString()} receipts used
+                </p>
+                <progress
+                  aria-label="Receipt allowance used"
+                  max={billing.monthly_receipt_limit}
+                  value={Math.min(billing.usage.receipts, billing.monthly_receipt_limit)}
+                  style={{ width: "100%", accentColor: "var(--accent)" }}
+                />
+              </div>
+              <div>
+                <p style={{ ...body, fontSize: "0.75rem" }}>
+                  {billing.usage.api_calls.toLocaleString()} of {billing.monthly_api_call_limit.toLocaleString()} API calls used
+                </p>
+                <progress
+                  aria-label="API allowance used"
+                  max={billing.monthly_api_call_limit}
+                  value={Math.min(billing.usage.api_calls, billing.monthly_api_call_limit)}
+                  style={{ width: "100%", accentColor: "var(--accent)" }}
+                />
+              </div>
+              <p style={{ ...body, fontSize: "0.7rem" }}>Usage shown for the last 30 days.</p>
+            </div>
+          )}
         </section>
       )}
       <div style={{ display: "grid", gap: "0.65rem", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))" }}>
