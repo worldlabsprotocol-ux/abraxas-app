@@ -8,6 +8,14 @@ import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 
 type PaidPlan = "launch" | "scale";
+type BillingView = {
+  plan_id: "sandbox" | PaidPlan;
+  active: boolean;
+  paid_through: string | null;
+  monthly_receipt_limit: number | null;
+  monthly_api_call_limit: number | null;
+};
+
 type PaymentView = {
   intent_id: string;
   plan_id: PaidPlan;
@@ -37,6 +45,7 @@ const PLAN = {
 export function SolanaUsdcPlansPanel({ applicationId }: { applicationId: string }) {
   const storageKey = `abraxas_billing_intent:${applicationId}`;
   const [payment, setPayment] = useState<PaymentView | null>(null);
+  const [billing, setBilling] = useState<BillingView | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [copied, setCopied] = useState(false);
@@ -59,6 +68,7 @@ export function SolanaUsdcPlansPanel({ applicationId }: { applicationId: string 
       setPayment(result.payment);
       if (result.payment.status === "confirmed") {
         setNotice(`${PLAN[result.payment.plan_id].label} is active for 30 days.`);
+        await loadBillingStatus(true);
       } else if (result.payment.status === "expired") {
         window.localStorage.removeItem(storageKey);
         setNotice("This request expired. Create a new one.");
@@ -72,9 +82,36 @@ export function SolanaUsdcPlansPanel({ applicationId }: { applicationId: string 
     }
   }
 
+  async function loadBillingStatus(quiet = false) {
+    try {
+      const response = await fetch(
+        `/api/launchpad/applications/${encodeURIComponent(applicationId)}/billing/solana`,
+        { credentials: "include" },
+      );
+      const result = await response.json() as {
+        ok?: boolean;
+        error?: string;
+        billing?: BillingView;
+        payment?: PaymentView | null;
+      };
+      if (!response.ok || !result.ok || !result.billing) {
+        if (!quiet) setNotice(result.error ?? "Could not load plan status.");
+        return;
+      }
+      setBilling(result.billing);
+      if (result.payment) {
+        setPayment(result.payment);
+        window.localStorage.setItem(storageKey, result.payment.intent_id);
+      }
+    } catch {
+      if (!quiet) setNotice("Could not load plan status.");
+    }
+  }
+
   useEffect(() => {
     const intentId = window.localStorage.getItem(storageKey);
     if (intentId) void checkPayment(intentId, true);
+    void loadBillingStatus(true);
     // The application id defines a separate local recovery slot.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [applicationId]);
@@ -120,6 +157,16 @@ export function SolanaUsdcPlansPanel({ applicationId }: { applicationId: string 
       <p style={{ ...body, color: "var(--text-primary)", marginBottom: "0.75rem" }}>
         Keep building free in Sandbox, or activate a paid usage plan for 30 days with USDC on Solana.
       </p>
+      {billing?.active && billing.paid_through && (
+        <section role="status" style={{ border: "1px solid rgba(45,212,191,0.5)", background: "rgba(45,212,191,0.08)", borderRadius: 12, padding: "0.8rem", marginBottom: "0.75rem" }}>
+          <p style={{ ...body, color: "var(--text-primary)", fontWeight: 800 }}>
+            {PLAN[billing.plan_id as PaidPlan].label} is active
+          </p>
+          <p style={{ ...body, marginTop: "0.25rem" }}>
+            Paid through {new Date(billing.paid_through).toLocaleString()} · {billing.monthly_receipt_limit?.toLocaleString()} receipts · {billing.monthly_api_call_limit?.toLocaleString()} API calls
+          </p>
+        </section>
+      )}
       <div style={{ display: "grid", gap: "0.65rem", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))" }}>
         {(Object.keys(PLAN) as PaidPlan[]).map((planId) => (
           <section key={planId} style={{ border: "1px solid var(--border)", borderRadius: 12, padding: "0.8rem" }}>
