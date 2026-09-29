@@ -538,6 +538,21 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
       "Operator commercial/ICP/feature-request state for value evidence. Separates technical truth from commercial assertions. Service role only; no holder PII.",
   },
   {
+    file: "115_partner_design_partner_program.sql",
+    tier: "recommended",
+    creates: [
+      "partner_design_partner_program",
+      "partner_design_partner_criteria",
+      "partner_case_study_permissions",
+      "partner_customer_reported_evidence",
+    ],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Design Partner Program — success criteria, decisions, case-study permissions, customer-reported evidence. Composes #497 value evidence. Service role only.",
+  },
+  {
     file: "096_partner_policy_proposals.sql",
     tier: "recommended",
     creates: ["partner_policy_proposals"],
@@ -712,6 +727,10 @@ export const OBJECT_PROVENANCE: Record<string, string> = {
   partner_value_icp_profile: "114_partner_value_operator_state.sql",
   partner_value_feature_requests: "114_partner_value_operator_state.sql",
   partner_value_operator_audit: "114_partner_value_operator_state.sql",
+  partner_design_partner_program: "115_partner_design_partner_program.sql",
+  partner_design_partner_criteria: "115_partner_design_partner_program.sql",
+  partner_case_study_permissions: "115_partner_design_partner_program.sql",
+  partner_customer_reported_evidence: "115_partner_design_partner_program.sql",
   chain_attestation_nonces: "101_chain_attestation_nonces.sql",
   onchain_gate_deployments: "102_verified_onchain_gate_deployments.sql",
   partner_billing_intents: "109_partner_solana_usdc_billing.sql",

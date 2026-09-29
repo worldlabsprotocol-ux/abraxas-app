@@ -40,7 +40,13 @@ export default function AdminValueEvidencePage() {
       setError(String(data.error ?? "Failed to load"));
       return;
     }
-    setPayloadJson(JSON.stringify(scope === "portfolio" ? data.portfolio : data.evidence, null, 2));
+    setPayloadJson(JSON.stringify(
+      scope === "portfolio"
+        ? { portfolio: data.portfolio, design_partner: data.design_partner }
+        : { evidence: data.evidence, design_partner: data.design_partner },
+      null,
+      2,
+    ));
   }
 
   return (
@@ -56,9 +62,9 @@ export default function AdminValueEvidencePage() {
 
       <ContentCard title="Lookup">
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)" }}>
-          Sections: lifecycle, integration velocity, conversion, expansion, repeat activity, evidence reuse,
-          unit-economics readiness, ICP, product discipline, case-study readiness, GTM funnel, fundraising matrix,
-          investor claims. Zero data shows zero — no vanity indicators.
+          Sections: value evidence + design partner program (funnel, scorecard, lost-pilot intelligence, ICP,
+          commercial-model learning, case-study artifact, fundraising slide readiness). Zero partners shows empty state —
+          no vanity indicators.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem", alignItems: "center" }}>
           <select
