@@ -33,6 +33,7 @@ import { PartnerIntegrationPerformancePanel } from "@/components/partner/launchp
 import { PartnerPilotProgressPanel } from "@/components/partner/launchpad/PartnerPilotProgressPanel";
 import { PartnerApplicationOverview } from "@/components/partner/launchpad/PartnerApplicationOverview";
 import { EnvironmentBadge } from "@/components/product/EnvironmentBadge";
+import { EligibilityPolicyCard } from "@/components/product/EligibilityPolicyCard";
 import { PartnerFlowRequestPanel } from "@/components/partner/launchpad/PartnerFlowRequestPanel";
 import { PolicyVersionPlannerPanel } from "@/components/partner/launchpad/PolicyVersionPlannerPanel";
 import { NetworkReadinessPanel } from "@/components/partner/launchpad/NetworkReadinessPanel";
@@ -459,7 +460,7 @@ export function PartnerLaunchpadClient({
       <PageHeader
         eyebrow="Partner Launchpad"
         title="Integrate private eligibility"
-        subtitle="Ask an eligibility policy question, integrate in sandbox, verify signed receipts, run a measured pilot, and request production when ready."
+        subtitle="One integration. Multiple eligibility policies. Add approved eligibility questions through the same Abraxas trust infrastructure without collecting underlying identity data."
       />
 
       {activeApp && (
@@ -541,32 +542,30 @@ export function PartnerLaunchpadClient({
       {step === "policy" && (
         <ContentCard title="Choose a policy pack">
           <p style={bodyText}>
-            Packs are declarative and versioned. The holder proves a narrow claim using the minimum method the pack allows. The partner receives a signed boolean equivalent result, not a profile, ID image, or contact list. Identity or liveness is optional unless the pack requires it. The sandbox economic demo pack is not age verification and is not usable in Production.
+            What can Abraxas verify for your application? Each pack answers one business question with minimum disclosure. The partner receives a signed eligibility result — not a profile, ID image, or contact list.
           </p>
           <p style={{ ...bodyText, color: "#f59e0b" }}>{googleDisclaimer}</p>
-          <div style={{ display: "grid", gap: "0.5rem" }}>
+          <div style={{ display: "grid", gap: "0.65rem" }}>
             {policies.map((policy) => (
-              <button
+              <EligibilityPolicyCard
                 key={policy.id}
-                type="button"
-                onClick={() => setPolicyTemplateId(policy.id)}
-                style={{
-                  textAlign: "left",
-                  padding: "0.75rem",
-                  borderRadius: 12,
-                  border: `1px solid ${policyTemplateId === policy.id ? "var(--accent)" : "var(--border)"}`,
-                  background: policyTemplateId === policy.id ? "rgba(99,102,241,0.08)" : "var(--surface)",
-                  cursor: "pointer",
-                }}
-              >
-                <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: "0.82rem" }}>{policy.label}</div>
-                <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", marginTop: 4 }}>{policy.user_explanation}</div>
-                {policy.production_suitability && (
-                  <div style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)", marginTop: 6 }}>
-                    Suitability: {policy.production_suitability.replace(/_/g, " ")}
-                  </div>
-                )}
-              </button>
+                title={policy.label}
+                question={policy.user_explanation}
+                partnerReceives={policy.partner_receives ?? policy.disclosed_result ?? "Eligibility result"}
+                partnerDoesNotReceive={policy.partner_does_not_receive ?? []}
+                technicalId={policy.id}
+                packId={policy.id}
+                catalogVersion={1}
+                resultFamily={policy.disclosed_result}
+                environment={
+                  policy.production_suitability === "sandbox_only" ? "sandbox" : "available"
+                }
+                policyProductionEligible={policy.production_suitability !== "sandbox_only"}
+                selected={policyTemplateId === policy.id}
+                onSelect={() => setPolicyTemplateId(policy.id)}
+                minimumAssurance={policy.minimum_assurance}
+                receiptLifetimeHours={policy.receipt_lifetime_hours}
+              />
             ))}
             <button
               type="button"

@@ -18,6 +18,7 @@ import {
   DESIGN_PARTNER_NOTICE,
 } from "@/lib/partner/designPartnerProgram";
 import { listPrograms } from "@/lib/partner/designPartnerProgram/store";
+import { buildPolicyAdoptionSummary } from "@/lib/partner/valueEvidence/policyAdoption";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +51,9 @@ export async function GET(req: NextRequest) {
       from,
       to,
     });
+    const policy_adoption = await buildPolicyAdoptionSummary({
+      applications: applications ?? [],
+    });
     const payload = {
       ok: true,
       notice: VALUE_EVIDENCE_NOTICE,
@@ -57,6 +61,7 @@ export async function GET(req: NextRequest) {
       scope: "portfolio",
       portfolio,
       design_partner,
+      policy_adoption,
     };
     if (valueEvidenceLeaks(payload).length > 0 || designPartnerLeaks(payload).length > 0) {
       return NextResponse.json({ error: "redacted" }, { status: 503 });

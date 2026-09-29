@@ -9,6 +9,7 @@ import {
   type JourneyStage,
 } from "@/components/product";
 import { ContentCard } from "@/components/redesign/RedesignContent";
+import { PartnerApplicationPoliciesPanel } from "@/components/partner/launchpad/PartnerApplicationPoliciesPanel";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -74,42 +75,48 @@ export function PartnerApplicationOverview({
   const reuseObserved = (pilotProgress?.measured_results?.evidence_reuse_count ?? 0) > 0;
 
   return (
-    <ContentCard title={application.display_name || application.application_name}>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center", marginBottom: "0.75rem" }}>
-        <EnvironmentBadge environment={application.environment} />
-        <StatusPill label={`Integration ${application.integration_status}`} />
-        <StatusPill label={`Verification ${healthLabel}`} />
-        {pilotProgress?.enrolled && <StatusPill label={`Pilot ${pilotProgress.effective_status ?? "enrolled"}`} />}
-        <StatusPill label={`Evidence reuse ${reuseObserved ? "observed" : "not yet observed"}`} />
-        <StatusPill label={`Production ${productionActivated ? "active" : "not active"}`} />
-      </div>
+    <>
+      <ContentCard title={application.display_name || application.application_name}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center", marginBottom: "0.75rem" }}>
+          <EnvironmentBadge environment={application.environment} />
+          <StatusPill label={`Integration ${application.integration_status}`} />
+          <StatusPill label={`Verification ${healthLabel}`} />
+          {pilotProgress?.enrolled && <StatusPill label={`Pilot ${pilotProgress.effective_status ?? "enrolled"}`} />}
+          <StatusPill label={`Evidence reuse ${reuseObserved ? "observed" : "not yet observed"}`} />
+          <StatusPill label={`Production ${productionActivated ? "active" : "not active"}`} />
+        </div>
 
-      <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
-        <div>
-          <h3 style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 800, margin: "0 0 0.45rem" }}>Policy</h3>
-          <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-primary)", margin: "0 0 0.15rem" }}>
-            {formatPolicyTitle(application.policy_template_id)}
-          </p>
-          <p style={{ fontFamily: MONO, fontSize: "0.62rem", color: "var(--text-muted)", margin: 0 }}>
-            {application.policy_id}
-          </p>
+        <div style={{ display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
+          <div>
+            <h3 style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 800, margin: "0 0 0.45rem" }}>Primary policy</h3>
+            <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-primary)", margin: "0 0 0.15rem" }}>
+              {formatPolicyTitle(application.policy_template_id)}
+            </p>
+            <p style={{ fontFamily: MONO, fontSize: "0.62rem", color: "var(--text-muted)", margin: 0 }}>
+              {application.policy_id}
+            </p>
+          </div>
+          <div>
+            <h3 style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 800, margin: "0 0 0.45rem" }}>Integration journey</h3>
+            <IntegrationJourney stages={journey} />
+          </div>
         </div>
-        <div>
-          <h3 style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 800, margin: "0 0 0.45rem" }}>Integration journey</h3>
-          <IntegrationJourney stages={journey} />
-        </div>
-      </div>
 
-      {pilotProgress?.next_action && (
-        <div style={{ marginTop: "0.85rem" }}>
-          <NextActionCard
-            action={humanizeNextAction(pilotProgress.next_action)}
-            detail="Resolved from your application's measured state."
-            onAction={onNavigate ? () => onNavigate(resolveStepForAction(pilotProgress.next_action)) : undefined}
-          />
-        </div>
-      )}
-    </ContentCard>
+        {pilotProgress?.next_action && (
+          <div style={{ marginTop: "0.85rem" }}>
+            <NextActionCard
+              action={humanizeNextAction(pilotProgress.next_action)}
+              detail="Resolved from your application's measured state."
+              onAction={onNavigate ? () => onNavigate(resolveStepForAction(pilotProgress.next_action)) : undefined}
+            />
+          </div>
+        )}
+      </ContentCard>
+
+      <div style={{ marginTop: "0.85rem" }}>
+        <PartnerApplicationPoliciesPanel applicationId={application.id} onNavigate={onNavigate} />
+      </div>
+    </>
   );
 }
 
@@ -156,7 +163,8 @@ function buildJourneyStages(
 
 function formatPolicyTitle(id: string): string {
   if (id.includes("age_21")) return "Age eligibility — Is this person 21 or older?";
-  if (id.includes("residency") || id.includes("us_")) return "Residency eligibility";
+  if (id.includes("age_18")) return "Age eligibility — Is this person 18 or older?";
+  if (id.includes("residency")) return "U.S. residency — Does this person satisfy the U.S. residency requirement?";
   return id.replace(/_/g, " ");
 }
 

@@ -26,6 +26,7 @@ import {
   type PolicyFitEnvironment,
 } from "@/lib/partner/integrationStudio/policyFit/contract";
 import { studioCapsFromFit, type PolicyFitView } from "@/lib/partner/integrationStudio/policyFit/match";
+import { EligibilityPolicyCard } from "@/components/product/EligibilityPolicyCard";
 
 const FONT = ABRAXAS_FONT_SANS;
 const body: React.CSSProperties = {
@@ -94,9 +95,9 @@ export function PolicyFitPlanner({
   }
 
   return (
-    <ContentCard title="Find the right policy">
+    <ContentCard title="What does your application need to verify?">
       <p style={{ ...body, marginBottom: "0.75rem" }}>
-        Describe the product gate in structured choices. Studio matches existing policy packs only. {POLICY_FIT_REVIEW_NOTICE}
+        Describe the product gate in structured choices. Studio matches the smallest existing policy capable of answering the requirement. {POLICY_FIT_REVIEW_NOTICE}
       </p>
 
       <fieldset style={{ border: 0, margin: 0, padding: 0, marginBottom: "0.85rem" }}>
@@ -187,20 +188,26 @@ export function PolicyFitPlanner({
         <div style={{ marginTop: "1rem" }}>
           {result.fit && result.recommended ? (
             <article aria-labelledby="policy-fit-result-heading">
-              <h3 id="policy-fit-result-heading" style={{ fontFamily: FONT, fontSize: "0.9rem", fontWeight: 800, margin: "0 0 0.45rem" }}>
-                Recommended pack: {result.recommended.pack_display_name}
-              </h3>
-              <p role="status" style={{ ...body, marginBottom: "0.45rem" }}>
-                Fit found. Catalog version {result.recommended.catalog_version}.
+              <p id="policy-fit-result-heading" style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 800, margin: "0 0 0.55rem", color: "var(--text-primary)" }}>
+                Recommended
               </p>
-              <dl style={{ display: "grid", gap: "0.45rem", margin: 0 }}>
+              <EligibilityPolicyCard
+                title={result.recommended.pack_display_name}
+                question={result.recommended.why}
+                partnerReceives={result.recommended.policy_result}
+                partnerDoesNotReceive={result.recommended.withheld}
+                packId={result.recommended.pack_id}
+                catalogVersion={result.recommended.catalog_version}
+                resultFamily={result.recommended.policy_result}
+                environment={result.recommended.production_path.includes("sandbox") ? "sandbox" : "available"}
+                policyProductionEligible={!result.recommended.production_path.includes("sandbox only")}
+                recommendedReason="Recommended because it answers this requirement with the minimum disclosure."
+                minimumAssurance={result.recommended.method_category}
+              />
+              <dl style={{ display: "grid", gap: "0.45rem", margin: "0.75rem 0 0" }}>
                 {[
-                  ["Policy result the partner receives", result.recommended.policy_result],
-                  ["Required method category", result.recommended.method_category],
-                  ["Withheld", result.recommended.withheld.join(", ")],
-                  ["Production path", result.recommended.production_path],
-                  ["Why this pack fits", result.recommended.why],
                   ["Starter Kit platforms", result.recommended.starter_kit_platforms.join(", ")],
+                  ["Production path", result.recommended.production_path],
                 ].map(([k, v]) => (
                   <div key={k}>
                     <dt style={{ ...body, color: "var(--text-muted)", fontSize: "0.7rem", letterSpacing: "0.06em", textTransform: "uppercase" }}>{k}</dt>
