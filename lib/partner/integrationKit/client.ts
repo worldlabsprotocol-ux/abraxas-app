@@ -276,11 +276,43 @@ export class AbraxasPartnerKit {
       }
     }
 
+    if (receipt.currently_valid === false || receipt.lifecycle_status === "superseded" || receipt.lifecycle_status === "revoked") {
+      void this.emitCurrentValidityTelemetry(input.receiptId, receipt, partnerId, policyId);
+    }
+
     const result = errors.length === 0 && validation.ok
       ? safeFromReceipt(receipt, "permitted", [])
       : safeFromReceipt(receipt, outcomeFromValidationErrors(errors), errors);
     void this.emitVerificationTelemetry(input, result, Date.now() - started);
     return result;
+  }
+
+  private async emitCurrentValidityTelemetry(
+    receiptId: string,
+    receipt: PartnerFlowPublicReceipt,
+    partnerId: string,
+    policyId: string,
+  ): Promise<void> {
+    if (this.options.reportVerificationTelemetry === false) return;
+    if (!this.options.applicationId && this.options.reportVerificationTelemetry !== true) return;
+    try {
+      const { recordIntegrationEventBestEffort } = await import("@/lib/partner/integrationObservability/record");
+      await recordIntegrationEventBestEffort({
+        partnerId,
+        applicationId: this.options.applicationId ?? null,
+        environment: this.options.environment,
+        eventType: "receipt_current_validity_failed",
+        lifecycleStage: "receipt",
+        outcome: receipt.lifecycle_status ?? "invalidated",
+        partnerSafeReason: (receipt.partner_safe_reason as import("@/lib/partner/integrationObservability/contract").PartnerSafeFailureCode | null) ?? "receipt_invalid",
+        receiptId,
+        policyId,
+        policyVersion: this.options.policyVersion ?? null,
+        metadata: { outcome_class: receipt.partner_safe_reason ?? "invalid" },
+      });
+    } catch {
+      // Telemetry must never affect verification.
+    }
   }
 
   private async emitVerificationTelemetry(

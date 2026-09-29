@@ -15,6 +15,18 @@ export function outcomeFromValidationErrors(errors: string[]): PartnerIntegratio
   if (errors.some((error) => error.includes("expired") || error === "expires_at_missing" || error === "expires_at_invalid" || error.startsWith("status_not_active:expired"))) {
     return "expired";
   }
+  if (errors.some((error) => error.includes("receipt_superseded") || error === "superseded")) {
+    return "superseded";
+  }
+  if (errors.some((error) => error.includes("evidence_refresh") || error.includes("claim_expired") || error.includes("claim_revoked"))) {
+    return "evidence_refresh_required";
+  }
+  if (errors.some((error) => error.includes("policy_no_longer_valid"))) {
+    return "policy_version_deprecated";
+  }
+  if (errors.some((error) => error.includes("application_inactive"))) {
+    return "invalid";
+  }
   if (errors.some((error) => error.includes("revoked") || error === "receipt_revoked" || error.startsWith("status_not_active:revoked"))) {
     return "revoked";
   }

@@ -33,6 +33,10 @@ export interface PartnerFlowPublicReceipt {
   currently_valid?: boolean;
   validity?: string;
   invalidation_reasons?: string[];
+  issued_valid?: boolean;
+  lifecycle_status?: string;
+  partner_safe_reason?: string | null;
+  validity_checked_at?: string;
 }
 
 export type PartnerFlowReceiptValidationMode = "sandbox" | "production";
@@ -139,8 +143,26 @@ function validateSandboxEnvironmentFields(receipt: PartnerFlowPublicReceipt): st
   return errors;
 }
 
+function validateCurrentValidityFields(receipt: PartnerFlowPublicReceipt): string[] {
+  const errors: string[] = [];
+  if (receipt.lifecycle_status === "superseded") errors.push("receipt_superseded");
+  if (receipt.lifecycle_status === "revoked") errors.push("receipt_revoked");
+  if (receipt.lifecycle_status === "expired") errors.push("receipt_expired");
+  if (receipt.currently_valid === false) {
+    const safe = receipt.partner_safe_reason;
+    if (safe === "evidence_refresh_required") errors.push("evidence_refresh_required");
+    else if (safe === "policy_no_longer_valid") errors.push("policy_no_longer_valid");
+    else if (safe === "application_inactive") errors.push("application_inactive");
+    else if (safe === "receipt_superseded") errors.push("receipt_superseded");
+    else if (safe) errors.push(safe);
+    else errors.push("currently_valid_not_true");
+  }
+  return errors;
+}
+
 function validateProductionEnvironmentFields(receipt: PartnerFlowPublicReceipt): string[] {
   const errors: string[] = [];
+  errors.push(...validateCurrentValidityFields(receipt));
 
   if (receipt.production_usable !== true) {
     errors.push(
@@ -179,7 +201,7 @@ export function validatePartnerFlowPublicReceipt(
   if (expected.mode) {
     const sharedErrors = validateSharedReceiptFields(receipt, expected);
     const modeErrors = expected.mode === "sandbox"
-      ? validateSandboxEnvironmentFields(receipt)
+      ? [...validateSandboxEnvironmentFields(receipt), ...validateCurrentValidityFields(receipt)]
       : validateProductionEnvironmentFields(receipt);
     const errors = [...sharedErrors, ...modeErrors];
     return { ok: errors.length === 0, errors };

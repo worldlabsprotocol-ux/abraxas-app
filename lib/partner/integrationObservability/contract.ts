@@ -17,6 +17,12 @@ export const INTEGRATION_LIFECYCLE_EVENT_TYPES = [
   "hosted_handoff_completed",
   "production_activation_completed",
   "integration_smoke_completed",
+  "receipt_revoked",
+  "receipt_superseded",
+  "evidence_reuse_accepted",
+  "evidence_reuse_rejected",
+  "evidence_refresh_required",
+  "receipt_current_validity_failed",
 ] as const;
 export type IntegrationLifecycleEventType = (typeof INTEGRATION_LIFECYCLE_EVENT_TYPES)[number];
 
@@ -50,6 +56,10 @@ export const PARTNER_SAFE_FAILURE_CODES = [
   "rate_limited",
   "environment_mismatch",
   "hosted_handoff_unavailable",
+  "receipt_superseded",
+  "evidence_refresh_required",
+  "policy_no_longer_valid",
+  "application_inactive",
   "unknown",
 ] as const;
 export type PartnerSafeFailureCode = (typeof PARTNER_SAFE_FAILURE_CODES)[number];
