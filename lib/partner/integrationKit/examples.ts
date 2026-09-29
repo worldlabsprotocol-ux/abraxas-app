@@ -18,10 +18,15 @@ const kit = new AbraxasPartnerKit({
 });
 
 export async function GET(req: NextRequest) {
-  const result = await kit.verifyCallback(req.nextUrl.searchParams);
-  // Permit only outcome === permitted. Draft, deprecated, missing, mismatched,
-  // unknown, and future policy versions fail closed. Only a verified permitted
-  // result authorizes a partner action.
+  const parsed = kit.parseCallback(req.nextUrl.searchParams);
+  if (!parsed.ok) {
+    return NextResponse.json({ action: "deny", errors: parsed.errors }, { status: 400 });
+  }
+  const result = await kit.verifyForAction({
+    receiptId: parsed.params.receipt_id!,
+    callbackRequestId: parsed.params.request_id,
+    expectedRequestId: process.env.ABRAXAS_EXPECTED_REQUEST_ID,
+  });
   if (!permitProtocolAction(result)) {
     return NextResponse.json({ action: "deny", outcome: result.outcome, errors: result.errors }, { status: 403 });
   }

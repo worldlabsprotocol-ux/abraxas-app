@@ -9,6 +9,7 @@ import {
   STARTER_KIT_DOES_NOT_DO,
   STARTER_KIT_MINIMUM_REQUIREMENTS,
   STARTER_KIT_NOTICES,
+  STARTER_KIT_PRODUCTION_CONTRACT,
   STARTER_KIT_PLACEHOLDERS as P,
   type StarterKitOptionalCapability,
   type StarterKitRuntime,
@@ -133,6 +134,27 @@ ${STARTER_KIT_NOTICES.evm}
 `;
 }
 
+function productionContractDoc(): string {
+  return `# Production integration contract
+
+${STARTER_KIT_PRODUCTION_CONTRACT.map((line) => `- ${line}`).join("\n")}
+
+## Recommended verification
+
+\`\`\`ts
+const parsed = kit.parseCallback(searchParams);
+const result = await kit.verifyForAction({
+  receiptId: parsed.params.receipt_id!,
+  expectedRequestId: serverStoredRequestId,
+  callbackRequestId: parsed.params.request_id,
+});
+if (!permitProtocolAction(result)) deny();
+\`\`\`
+
+Hosted handoff (\`POST /api/v1/partner-handoff\`) is the production-safe start path when you need server-bound verify_request correlation.
+`;
+}
+
 function deployment(): string {
   return `# Deployment checklist
 
@@ -188,7 +210,15 @@ function receiptRoute(runtime: StarterKitRuntime): string {
 import { kit, permitProtocolAction } from "../../../lib/abraxas";
 
 export async function GET(req: NextRequest) {
-  const result = await kit.verifyCallback(req.nextUrl.searchParams);
+  const parsed = kit.parseCallback(req.nextUrl.searchParams);
+  if (!parsed.ok) {
+    return NextResponse.json({ action: "deny", errors: parsed.errors }, { status: 400 });
+  }
+  const result = await kit.verifyForAction({
+    receiptId: parsed.params.receipt_id!,
+    callbackRequestId: parsed.params.request_id,
+    expectedRequestId: process.env.ABRAXAS_EXPECTED_REQUEST_ID,
+  });
   if (!permitProtocolAction(result)) {
     return NextResponse.json({ action: "deny", outcome: result.outcome, errors: result.errors }, { status: 403 });
   }
@@ -200,7 +230,13 @@ export async function GET(req: NextRequest) {
 import { kit, permitProtocolAction } from "./lib/abraxas";
 
 export async function receiptCallback(req: Request, res: Response) {
-  const result = await kit.verifyCallback(new URLSearchParams(req.query as Record<string, string>));
+  const parsed = kit.parseCallback(new URLSearchParams(req.query as Record<string, string>));
+  if (!parsed.ok) return res.status(400).json({ action: "deny", errors: parsed.errors });
+  const result = await kit.verifyForAction({
+    receiptId: parsed.params.receipt_id!,
+    callbackRequestId: parsed.params.request_id,
+    expectedRequestId: process.env.ABRAXAS_EXPECTED_REQUEST_ID,
+  });
   if (!permitProtocolAction(result)) {
     return res.status(403).json({ action: "deny", outcome: result.outcome, errors: result.errors });
   }
@@ -814,6 +850,7 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
 
   const files: StarterKitFile[] = [
     { path: "README.md", contents: readme(selection) },
+    { path: "PRODUCTION_INTEGRATION.md", contents: productionContractDoc() },
     { path: "WHAT_THIS_DOES_NOT_DO.md", contents: doesNotDoDoc() },
     { path: "DEPLOYMENT.md", contents: deployment() },
     { path: ".env.example", contents: envExample(webhook, selection.venue_profile_id) },

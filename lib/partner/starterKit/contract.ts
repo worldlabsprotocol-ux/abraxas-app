@@ -69,6 +69,14 @@ export const STARTER_KIT_MINIMUM_REQUIREMENTS = [
 export const STARTER_KIT_CANONICAL_CONTRACT =
   "The universal Abraxas integration is HTTPS, hosted verification redirects, server-side receipt verification, and signed webhooks. Framework choice does not change the policy or receipt contract.";
 
+export const STARTER_KIT_PRODUCTION_CONTRACT = [
+  "Start verification from your server with an allowlisted callback and optional server-issued request_id per action.",
+  "Callback query params carry receipt_id and request_id only. Never trust approved=true or decision from the URL.",
+  "Verify with AbraxasPartnerKit.verifyForAction before any grant.",
+  "Sandbox keys and sandbox receipts must never authorize production grants.",
+  "Production credentials require reviewed production access. This kit does not create them.",
+] as const;
+
 export const STARTER_KIT_OPTIONAL_CAPABILITIES = [
   "webhooks",
   "wallet_standard_binding",

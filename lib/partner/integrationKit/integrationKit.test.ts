@@ -147,4 +147,42 @@ describe("Partner Integration Kit", () => {
     expect(url).toContain("app=acme-app");
     expect(url).not.toContain("abx_");
   });
+
+  it("verifyForAction fails closed on request correlation mismatch", async () => {
+    const base = {
+      receipt_id: "dr_kit",
+      schema_version: "1.0.0",
+      partner_id: "partner-acme",
+      policy_id: "partner-acme-age_21_retail-v1",
+      policy_version: 1,
+      decision_result: "approved",
+      signature_valid: true,
+      expires_at: "2099-01-01T00:00:00.000Z",
+      status: "active",
+      production_usable: false,
+      decision_context: "sandbox_only",
+      currently_valid: true,
+      invalidation_reasons: ["production_not_usable:false"],
+      artifact_type: "eligibility_decition_receipt",
+    };
+    const client = kit({
+      fetchFn: async () => new Response(JSON.stringify({ ...base, artifact_type: "eligibility_decision_receipt" }), { status: 200 }),
+    });
+    const result = await client.verifyForAction({
+      receiptId: "dr_kit",
+      expectedRequestId: "req_expected",
+      callbackRequestId: "req_other",
+    });
+    expect(result.outcome).toBe("wrong_request_correlation");
+    expect(permitProtocolAction(result)).toBe(false);
+  });
+
+  it("parses safe request_id callback correlation", () => {
+    const parsed = parsePartnerCallbackParams(new URLSearchParams({
+      receipt_id: "dr_1",
+      request_id: "req_safe123",
+    }));
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) expect(parsed.params.request_id).toBe("req_safe123");
+  });
 });

@@ -62,5 +62,8 @@ export function outcomeFromValidationErrors(errors: string[]): PartnerIntegratio
   ) {
     return "environment_mismatch";
   }
+  if (matches(errors, ["request_correlation", "wrong_request"])) {
+    return "wrong_request_correlation";
+  }
   return "invalid";
 }

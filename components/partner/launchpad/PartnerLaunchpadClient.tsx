@@ -27,6 +27,7 @@ import {
 import { selectLaunchpadResumeAppId } from "@/lib/partner/activationPath";
 import { PartnerSandboxTestConsolePanel } from "@/components/partner/launchpad/PartnerSandboxTestConsolePanel";
 import { PartnerGoLiveReadinessPanel } from "@/components/partner/launchpad/PartnerGoLiveReadinessPanel";
+import { PartnerIntegrationHandoffPanel } from "@/components/partner/launchpad/PartnerIntegrationHandoffPanel";
 import { PartnerFlowRequestPanel } from "@/components/partner/launchpad/PartnerFlowRequestPanel";
 import { PolicyVersionPlannerPanel } from "@/components/partner/launchpad/PolicyVersionPlannerPanel";
 import { NetworkReadinessPanel } from "@/components/partner/launchpad/NetworkReadinessPanel";
@@ -811,6 +812,7 @@ export function PartnerLaunchpadClient({
 
       {step === "production" && activeApp && (
         <>
+          <PartnerIntegrationHandoffPanel applicationId={activeApp.id} />
           <PartnerGoLiveReadinessPanel
             applicationId={activeApp.id}
             onChanged={() => {
