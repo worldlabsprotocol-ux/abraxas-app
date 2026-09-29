@@ -33,6 +33,7 @@ import { PartnerIntegrationHealthPanel } from "@/components/partner/launchpad/Pa
 import { PartnerIntegrationPerformancePanel } from "@/components/partner/launchpad/PartnerIntegrationPerformancePanel";
 import { PartnerPilotProgressPanel } from "@/components/partner/launchpad/PartnerPilotProgressPanel";
 import { PartnerApplicationOverview } from "@/components/partner/launchpad/PartnerApplicationOverview";
+import { PartnerBindingProductionPanel } from "@/components/partner/launchpad/PartnerBindingProductionPanel";
 import { EnvironmentBadge } from "@/components/product/EnvironmentBadge";
 import { EligibilityPolicyCard } from "@/components/product/EligibilityPolicyCard";
 import { PartnerFlowRequestPanel } from "@/components/partner/launchpad/PartnerFlowRequestPanel";
@@ -827,6 +828,7 @@ export function PartnerLaunchpadClient({
 
       {step === "production" && activeApp && (
         <>
+          <PartnerBindingProductionPanel applicationId={activeApp.id} />
           <PartnerIntegrationHandoffPanel applicationId={activeApp.id} />
           <PartnerGoLiveReadinessPanel
             applicationId={activeApp.id}

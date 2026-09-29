@@ -3,7 +3,7 @@
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { buildLaunchpadPolicyId, resolveLaunchpadPolicyTemplate } from "@/lib/partner/launchpad/policyCatalog";
-import { resolvePolicyPack } from "@/lib/partner/launchpad/policyPacks";
+import { policyPackIsSandboxOnly, resolvePolicyPack } from "@/lib/partner/launchpad/policyPacks";
 import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
 import {
   applicationProductionAuthorized,
@@ -15,6 +15,8 @@ import {
   type PolicyPresentationView,
 } from "@/lib/partner/launchpad/policyPresentation";
 import { loadIntegrationEvents } from "@/lib/partner/pilotEvidence/load";
+import { bindingProductionPartnerNextAction } from "@/lib/partner/launchpad/bindingProduction/evaluate";
+import type { BindingProductionStatus } from "@/lib/partner/launchpad/bindingProduction/contract";
 
 export interface ApplicationPolicyBindingRow {
   id: string;
@@ -27,6 +29,10 @@ export interface ApplicationPolicyBindingRow {
   status: "active" | "retired" | "pending_review";
   sandbox_configured_at: string;
   production_authorized_at: string | null;
+  production_status?: import("./bindingProduction/contract").BindingProductionStatus;
+  production_authorized_by?: string | null;
+  production_suspended_at?: string | null;
+  production_suspended_by?: string | null;
 }
 
 export interface ApplicationPoliciesSummary {
@@ -55,6 +61,7 @@ export async function bindingsSchemaReady(): Promise<boolean> {
 }
 
 function primaryBindingFromApplication(app: LaunchpadApplicationRow): ApplicationPolicyBindingRow {
+  const productionActive = app.environment === "production" && Boolean(app.production_activated_at);
   return {
     id: `primary:${app.id}`,
     application_id: app.id,
@@ -66,6 +73,7 @@ function primaryBindingFromApplication(app: LaunchpadApplicationRow): Applicatio
     status: "active",
     sandbox_configured_at: app.created_at,
     production_authorized_at: app.production_activated_at ?? null,
+    production_status: productionActive ? "production_active" : "sandbox_only",
   };
 }
 
@@ -135,6 +143,21 @@ export async function buildApplicationPoliciesSummary(
       policyDeprecated: binding.status === "retired",
     });
 
+    const productionStatus = (binding.production_status ?? (productionActive && binding.binding_role === "primary"
+      ? "production_active"
+      : "sandbox_only")) as BindingProductionStatus;
+    const productionAuthorized = applicationProductionAuthorized({
+      bindingRole: binding.binding_role,
+      applicationProductionActive: productionActive,
+      pack: pack ?? resolvePolicyPack("age_21_retail")!,
+      productionStatus,
+      productionAuthorizedAt: binding.production_authorized_at,
+    });
+    const canRequestProduction = binding.binding_role === "secondary"
+      && productionActive
+      && !policyPackIsSandboxOnly(pack ?? resolvePolicyPack("age_21_retail")!)
+      && (productionStatus === "sandbox_only" || productionStatus === "production_rejected");
+
     return {
       ...presentation,
       binding_id: binding.id,
@@ -145,10 +168,12 @@ export async function buildApplicationPoliciesSummary(
       availability,
       application_environment: app.environment,
       application_production_active: productionActive,
-      application_production_authorized: applicationProductionAuthorized({
-        bindingRole: binding.binding_role,
+      application_production_authorized: productionAuthorized,
+      production_status: productionStatus,
+      production_next_action: bindingProductionPartnerNextAction({
+        productionStatus,
+        canRequest: canRequestProduction,
         applicationProductionActive: productionActive,
-        pack: pack ?? resolvePolicyPack("age_21_retail")!,
       }),
       compatibility_hint: compatibilityHintForPack(binding.policy_template_id, true),
       request_volume: metrics.request_volume,

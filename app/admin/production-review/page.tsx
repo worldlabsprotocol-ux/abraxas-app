@@ -14,6 +14,19 @@ const FONT = "'Inter',system-ui,sans-serif";
 const MONO = "'JetBrains Mono',monospace";
 const ACCENT = "#10B981";
 
+interface BindingQueueItem {
+  request_id: string;
+  binding_id: string;
+  app_label: string;
+  policy_id: string;
+  policy_version: number;
+  pack_id: string;
+  result_family: string;
+  verified_receipts: number;
+  request_volume: number;
+  blockers: string[];
+}
+
 interface QueueItem {
   request_ref: string;
   request_id: string;
@@ -34,11 +47,13 @@ interface QueueItem {
 
 export default function AdminProductionReviewPage() {
   const [items, setItems] = useState<QueueItem[]>([]);
+  const [bindingItems, setBindingItems] = useState<BindingQueueItem[]>([]);
   const [approved, setApproved] = useState<QueueItem[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [confirmScope, setConfirmScope] = useState<"app" | "binding" | "credential" | null>(null);
   const [confirmDecision, setConfirmDecision] = useState<"approve" | "reject" | "issue" | "rotate" | "revoke" | null>(null);
   const [issuedKey, setIssuedKey] = useState<{ requestId: string; api_key: string; key_prefix: string } | null>(null);
 
@@ -46,16 +61,19 @@ export default function AdminProductionReviewPage() {
     setLoading(true);
     setError("");
     try {
-      const [pendingRes, approvedRes] = await Promise.all([
+      const [pendingRes, approvedRes, bindingRes] = await Promise.all([
         adminFetch("/api/admin/production-review", { cache: "no-store" }),
         adminFetch("/api/admin/production-review?status=approved", { cache: "no-store" }),
+        adminFetch("/api/admin/binding-production-review", { cache: "no-store" }),
       ]);
       const pendingData = await pendingRes.json() as { items?: QueueItem[]; error?: string };
       const approvedData = await approvedRes.json() as { items?: QueueItem[]; error?: string };
+      const bindingData = await bindingRes.json() as { items?: BindingQueueItem[]; error?: string };
       if (!pendingRes.ok) throw new Error(pendingData.error ?? `HTTP ${pendingRes.status}`);
       if (!approvedRes.ok) throw new Error(approvedData.error ?? `HTTP ${approvedRes.status}`);
       setItems(pendingData.items ?? []);
       setApproved(approvedData.items ?? []);
+      setBindingItems(bindingRes.ok ? (bindingData.items ?? []) : []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unavailable");
     } finally {
@@ -64,6 +82,28 @@ export default function AdminProductionReviewPage() {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  async function decideBinding(requestId: string, decision: "approve" | "reject") {
+    setPendingId(requestId);
+    setError("");
+    try {
+      const res = await adminFetch(`/api/admin/binding-production-review/${requestId}/decide`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ decision, confirm: true }),
+      });
+      const data = await res.json() as { error?: string };
+      if (!res.ok) throw new Error(data.error ?? "Binding decision failed");
+      setConfirmId(null);
+      setConfirmScope(null);
+      setConfirmDecision(null);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Binding decision failed");
+    } finally {
+      setPendingId(null);
+    }
+  }
 
   async function decide(requestId: string, decision: "approve" | "reject") {
     setPendingId(requestId);
@@ -81,6 +121,7 @@ export default function AdminProductionReviewPage() {
       const data = await res.json() as { error?: string; remediation_class?: string };
       if (!res.ok) throw new Error(data.remediation_class ?? data.error ?? "Decision failed");
       setConfirmId(null);
+      setConfirmScope(null);
       setConfirmDecision(null);
       await load();
     } catch (err) {
@@ -107,6 +148,7 @@ export default function AdminProductionReviewPage() {
         setIssuedKey(null);
       }
       setConfirmId(null);
+      setConfirmScope(null);
       setConfirmDecision(null);
       await load();
     } catch (err) {
@@ -151,10 +193,10 @@ export default function AdminProductionReviewPage() {
                 {item.request_ref} · {item.policy_id} v{item.policy_version}
               </p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                <button type="button" aria-label={`Activate production for ${item.app_label}`} disabled={pendingId === item.request_id} onClick={() => { setConfirmId(item.request_id); setConfirmDecision("approve"); }} style={{ padding: "0.55rem 0.85rem", borderRadius: 8, border: "none", background: ACCENT, color: "#04110c", fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>Activate production</button>
-                <button type="button" aria-label={`Reject ${item.app_label}`} disabled={pendingId === item.request_id} onClick={() => { setConfirmId(item.request_id); setConfirmDecision("reject"); }} style={{ padding: "0.55rem 0.85rem", borderRadius: 8, border: "1px solid rgba(255,255,255,0.2)", background: "transparent", color: "#fecaca", fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>Reject</button>
+                <button type="button" aria-label={`Activate production for ${item.app_label}`} disabled={pendingId === item.request_id} onClick={() => { setConfirmId(item.request_id); setConfirmScope("app"); setConfirmDecision("approve"); }} style={{ padding: "0.55rem 0.85rem", borderRadius: 8, border: "none", background: ACCENT, color: "#04110c", fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>Activate production</button>
+                <button type="button" aria-label={`Reject ${item.app_label}`} disabled={pendingId === item.request_id} onClick={() => { setConfirmId(item.request_id); setConfirmScope("app"); setConfirmDecision("reject"); }} style={{ padding: "0.55rem 0.85rem", borderRadius: 8, border: "1px solid rgba(255,255,255,0.2)", background: "transparent", color: "#fecaca", fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>Reject</button>
               </div>
-              {confirmId === item.request_id && (confirmDecision === "approve" || confirmDecision === "reject") && (
+              {confirmId === item.request_id && confirmScope === "app" && (confirmDecision === "approve" || confirmDecision === "reject") && (
                 <div role="alertdialog" aria-label="Confirm review decision" style={{ marginTop: "0.75rem", padding: "0.75rem", borderRadius: 8, border: "1px solid rgba(16,185,129,0.35)" }}>
                   <p style={{ fontFamily: FONT, fontSize: "0.78rem", margin: 0 }}>
                     {confirmDecision === "approve"
@@ -163,8 +205,43 @@ export default function AdminProductionReviewPage() {
                   </p>
                   <div style={{ display: "flex", gap: "0.45rem", marginTop: "0.6rem" }}>
                     <button type="button" onClick={() => void decide(item.request_id, confirmDecision)} style={{ padding: "0.45rem 0.75rem", borderRadius: 8, border: "none", background: ACCENT, color: "#04110c", fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>Confirm {confirmDecision}</button>
-                    <button type="button" onClick={() => { setConfirmId(null); setConfirmDecision(null); }} style={{ padding: "0.45rem 0.75rem", borderRadius: 8, border: "1px solid rgba(255,255,255,0.2)", background: "transparent", color: "#f0f0f0", fontFamily: FONT, cursor: "pointer" }}>Cancel</button>
+                    <button type="button" onClick={() => { setConfirmId(null); setConfirmScope(null); setConfirmDecision(null); }} style={{ padding: "0.45rem 0.75rem", borderRadius: 8, border: "1px solid rgba(255,255,255,0.2)", background: "transparent", color: "#f0f0f0", fontFamily: FONT, cursor: "pointer" }}>Cancel</button>
                   </div>
+                </div>
+              )}
+            </article>
+          ))}
+        </div>
+
+        <h2 style={{ fontFamily: FONT, fontSize: "1rem", marginTop: "1.75rem" }}>Binding production review</h2>
+        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "rgba(255,255,255,0.62)", lineHeight: 1.6 }}>
+          Secondary policy bindings require explicit operator approval after application production is active.
+        </p>
+        {!loading && bindingItems.length === 0 && (
+          <p style={{ fontFamily: FONT, color: "rgba(255,255,255,0.5)" }}>No pending binding production requests.</p>
+        )}
+        <div style={{ display: "grid", gap: "0.85rem", marginTop: "0.75rem" }}>
+          {bindingItems.map((item) => (
+            <article key={item.request_id} style={{ border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "1rem", background: "rgba(255,255,255,0.03)" }}>
+              <h3 style={{ fontFamily: FONT, fontSize: "1rem", margin: 0 }}>{item.app_label}</h3>
+              <p style={{ fontFamily: MONO, fontSize: "0.72rem", color: "rgba(255,255,255,0.55)", margin: "0.35rem 0 0.75rem" }}>
+                {item.pack_id} · {item.result_family} · v{item.policy_version} · binding {item.binding_id.slice(0, 8)}…
+              </p>
+              <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "rgba(255,255,255,0.62)", margin: "0 0 0.65rem" }}>
+                Verified receipts: {item.verified_receipts} · Requests: {item.request_volume}
+                {item.blockers.length > 0 ? ` · Blockers: ${item.blockers.join(", ")}` : ""}
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                <button type="button" disabled={pendingId === item.request_id} onClick={() => { setConfirmId(item.request_id); setConfirmScope("binding"); setConfirmDecision("approve"); }} style={{ padding: "0.55rem 0.85rem", borderRadius: 8, border: "none", background: ACCENT, color: "#04110c", fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>Approve binding</button>
+                <button type="button" disabled={pendingId === item.request_id} onClick={() => { setConfirmId(item.request_id); setConfirmScope("binding"); setConfirmDecision("reject"); }} style={{ padding: "0.55rem 0.85rem", borderRadius: 8, border: "1px solid rgba(255,255,255,0.2)", background: "transparent", color: "#fecaca", fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>Reject</button>
+              </div>
+              {confirmId === item.request_id && confirmScope === "binding" && (confirmDecision === "approve" || confirmDecision === "reject") && (
+                <div role="alertdialog" aria-label="Confirm binding production decision" style={{ marginTop: "0.75rem", padding: "0.75rem", borderRadius: 8, border: "1px solid rgba(16,185,129,0.35)" }}>
+                  <p style={{ fontFamily: FONT, fontSize: "0.78rem", margin: "0 0 0.6rem" }}>
+                    Confirm {confirmDecision} for this policy binding only. Other bindings are unchanged.
+                  </p>
+                  <button type="button" onClick={() => void decideBinding(item.request_id, confirmDecision)} style={{ padding: "0.45rem 0.75rem", borderRadius: 8, border: "none", background: ACCENT, color: "#04110c", fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>Confirm {confirmDecision} binding</button>
+                  <button type="button" onClick={() => { setConfirmId(null); setConfirmScope(null); setConfirmDecision(null); }} style={{ marginLeft: "0.45rem", padding: "0.45rem 0.75rem", borderRadius: 8, border: "1px solid rgba(255,255,255,0.2)", background: "transparent", color: "#f0f0f0", fontFamily: FONT, cursor: "pointer" }}>Cancel</button>
                 </div>
               )}
             </article>
@@ -187,24 +264,24 @@ export default function AdminProductionReviewPage() {
               </p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
                 {(item.credential_state === "never_issued" || !item.credential_state) && (
-                  <button type="button" aria-label={`Complete activation for ${item.app_label}`} disabled={pendingId === item.request_id} onClick={() => { setConfirmId(item.request_id); setConfirmDecision("issue"); }} style={{ padding: "0.55rem 0.85rem", borderRadius: 8, border: "none", background: ACCENT, color: "#04110c", fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>Complete activation</button>
+                  <button type="button" aria-label={`Complete activation for ${item.app_label}`} disabled={pendingId === item.request_id} onClick={() => { setConfirmId(item.request_id); setConfirmScope("credential"); setConfirmDecision("issue"); }} style={{ padding: "0.55rem 0.85rem", borderRadius: 8, border: "none", background: ACCENT, color: "#04110c", fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>Complete activation</button>
                 )}
                 {item.credential_state === "revoked" && (
-                  <button type="button" aria-label={`Re-issue Production credential for ${item.app_label}`} disabled={pendingId === item.request_id} onClick={() => { setConfirmId(item.request_id); setConfirmDecision("issue"); }} style={{ padding: "0.55rem 0.85rem", borderRadius: 8, border: "none", background: ACCENT, color: "#04110c", fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>Re-issue after revoke</button>
+                  <button type="button" aria-label={`Re-issue Production credential for ${item.app_label}`} disabled={pendingId === item.request_id} onClick={() => { setConfirmId(item.request_id); setConfirmScope("credential"); setConfirmDecision("issue"); }} style={{ padding: "0.55rem 0.85rem", borderRadius: 8, border: "none", background: ACCENT, color: "#04110c", fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>Re-issue after revoke</button>
                 )}
                 {item.credential_state === "active" && (
                   <>
-                    <button type="button" aria-label={`Rotate Production credential for ${item.app_label}`} disabled={pendingId === item.request_id} onClick={() => { setConfirmId(item.request_id); setConfirmDecision("rotate"); }} style={{ padding: "0.55rem 0.85rem", borderRadius: 8, border: "none", background: ACCENT, color: "#04110c", fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>Rotate Production credential</button>
-                    <button type="button" aria-label={`Revoke Production credential for ${item.app_label}`} disabled={pendingId === item.request_id} onClick={() => { setConfirmId(item.request_id); setConfirmDecision("revoke"); }} style={{ padding: "0.55rem 0.85rem", borderRadius: 8, border: "1px solid rgba(255,255,255,0.2)", background: "transparent", color: "#fecaca", fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>Revoke</button>
+                    <button type="button" aria-label={`Rotate Production credential for ${item.app_label}`} disabled={pendingId === item.request_id} onClick={() => { setConfirmId(item.request_id); setConfirmScope("credential"); setConfirmDecision("rotate"); }} style={{ padding: "0.55rem 0.85rem", borderRadius: 8, border: "none", background: ACCENT, color: "#04110c", fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>Rotate Production credential</button>
+                    <button type="button" aria-label={`Revoke Production credential for ${item.app_label}`} disabled={pendingId === item.request_id} onClick={() => { setConfirmId(item.request_id); setConfirmScope("credential"); setConfirmDecision("revoke"); }} style={{ padding: "0.55rem 0.85rem", borderRadius: 8, border: "1px solid rgba(255,255,255,0.2)", background: "transparent", color: "#fecaca", fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>Revoke</button>
                   </>
                 )}
               </div>
-              {confirmId === item.request_id && confirmDecision && ["issue", "rotate", "revoke"].includes(confirmDecision) && (
+              {confirmId === item.request_id && confirmScope === "credential" && confirmDecision && ["issue", "rotate", "revoke"].includes(confirmDecision) && (
                 <div role="alertdialog" aria-label="Confirm Production credential action" style={{ marginTop: "0.75rem", padding: "0.75rem", borderRadius: 8, border: "1px solid rgba(16,185,129,0.35)" }}>
                   <p style={{ fontFamily: FONT, fontSize: "0.78rem", margin: 0 }}>{PRODUCTION_CREDENTIAL_CONFIRMATION}</p>
                   <div style={{ display: "flex", gap: "0.45rem", marginTop: "0.6rem" }}>
                     <button type="button" onClick={() => void credential(item.request_id, confirmDecision as "issue" | "rotate" | "revoke")} style={{ padding: "0.45rem 0.75rem", borderRadius: 8, border: "none", background: ACCENT, color: "#04110c", fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>Confirm {confirmDecision}</button>
-                    <button type="button" onClick={() => { setConfirmId(null); setConfirmDecision(null); }} style={{ padding: "0.45rem 0.75rem", borderRadius: 8, border: "1px solid rgba(255,255,255,0.2)", background: "transparent", color: "#f0f0f0", fontFamily: FONT, cursor: "pointer" }}>Cancel</button>
+                    <button type="button" onClick={() => { setConfirmId(null); setConfirmScope(null); setConfirmDecision(null); }} style={{ padding: "0.45rem 0.75rem", borderRadius: 8, border: "1px solid rgba(255,255,255,0.2)", background: "transparent", color: "#f0f0f0", fontFamily: FONT, cursor: "pointer" }}>Cancel</button>
                   </div>
                 </div>
               )}

@@ -16,16 +16,24 @@ export function primaryBindingId(applicationId: string): string {
   return `primary:${applicationId}`;
 }
 
+function bindingIsProductionActive(binding: ApplicationPolicyBindingRow): boolean {
+  if (binding.production_status === "production_suspended") return false;
+  if (binding.production_status === "production_active") return Boolean(binding.production_authorized_at);
+  return Boolean(binding.production_authorized_at) && binding.production_status !== "production_rejected";
+}
+
 export function resolveBindingEnvironment(input: {
   binding: ApplicationPolicyBindingRow;
   application: LaunchpadApplicationRow;
 }): "sandbox" | "production" {
-  if (input.binding.binding_role === "secondary") {
+  const appProductionActive = input.application.environment === "production"
+    && Boolean(input.application.production_activated_at);
+  if (!appProductionActive) return "sandbox";
+  if (bindingIsProductionActive(input.binding)) return "production";
+  if (input.binding.binding_role === "primary" && appProductionActive) {
     return input.binding.production_authorized_at ? "production" : "sandbox";
   }
-  const productionActive = input.application.environment === "production"
-    && Boolean(input.application.production_activated_at);
-  return productionActive && input.binding.production_authorized_at ? "production" : "sandbox";
+  return "sandbox";
 }
 
 export function bindingProductionAuthorized(input: {
@@ -34,10 +42,14 @@ export function bindingProductionAuthorized(input: {
 }): boolean {
   const pack = resolvePolicyPack(input.binding.policy_template_id);
   if (!pack || policyPackIsSandboxOnly(pack)) return false;
-  if (input.binding.binding_role === "secondary") {
-    return Boolean(input.binding.production_authorized_at);
-  }
-  return input.application.environment === "production" && Boolean(input.application.production_activated_at);
+  const appProductionActive = input.application.environment === "production"
+    && Boolean(input.application.production_activated_at);
+  if (!appProductionActive) return false;
+  if (input.binding.status !== "active") return false;
+  if (input.binding.production_status === "production_suspended") return false;
+  if (bindingIsProductionActive(input.binding)) return true;
+  if (input.binding.binding_role === "primary" && appProductionActive) return true;
+  return false;
 }
 
 export function materializeResolvedBinding(input: {
@@ -112,8 +124,16 @@ export async function resolveApplicationPolicyBinding(input: {
     return { ok: false, code: "POLICY_BINDING_NOT_FOUND" };
   }
 
-  if (input.requestedEnvironment === "production" && !resolved.production_authorized) {
-    return { ok: false, code: "PRODUCTION_BINDING_NOT_AUTHORIZED" };
+  if (input.requestedEnvironment === "production") {
+    if (!input.application.production_activated_at || input.application.environment !== "production") {
+      return { ok: false, code: "PRODUCTION_BINDING_NOT_AUTHORIZED" };
+    }
+    if (!resolved.production_authorized) {
+      return { ok: false, code: "PRODUCTION_BINDING_NOT_AUTHORIZED" };
+    }
+    if (selected.production_status === "production_suspended") {
+      return { ok: false, code: "PRODUCTION_BINDING_NOT_AUTHORIZED" };
+    }
   }
 
   if (input.requestedEnvironment && input.requestedEnvironment !== resolved.environment) {

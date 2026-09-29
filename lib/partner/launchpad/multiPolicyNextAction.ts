@@ -28,6 +28,14 @@ export function resolveMultiPolicyNextAction(
     return "request_production_review";
   }
 
+  const secondaryNeedsProduction = summary.bindings.find(
+    (b) => b.binding_role === "secondary"
+      && b.production_next_action === "request_binding_production",
+  );
+  if (secondaryNeedsProduction && primary.application_production_authorized) {
+    return "request_secondary_binding_production";
+  }
+
   if (
     summary.available_to_add.length > 0
     && summary.configured_count >= 1
@@ -55,6 +63,7 @@ export function humanizeMultiPolicyNextAction(action: string | null): string | n
     test_sandbox_receipt: "Test sandbox receipt",
     request_production_review: "Request production review",
     add_another_eligibility_policy: "Add another eligibility policy",
+    request_secondary_binding_production: "Request production for secondary policy",
     test_additional_policy_in_sandbox: "Test additional policy in sandbox",
     add_server_verification: "Add server verification",
     complete_production_activation: "Complete production activation",
