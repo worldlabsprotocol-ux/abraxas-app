@@ -15,7 +15,9 @@ import {
   PARTNER_INTEGRATION_REPLAY_BEHAVIOR,
   type PartnerIntegrationOutcome,
 } from "@/lib/partner/integrationKit/contract";
-import { resolvePolicyPack } from "@/lib/partner/launchpad/policyPacks";
+import { resolvePolicyPack, inferPolicyPackFromPolicyId } from "@/lib/partner/launchpad/policyPacks";
+import { assertReceiptMatchesBinding } from "@/lib/partner/launchpad/resolveApplicationPolicyBinding";
+import type { ResolvedApplicationPolicyBinding } from "@/lib/partner/launchpad/policyBindingContract";
 import {
   embedRequestIdInReturnUrl,
   validatePartnerRequestCorrelation,
@@ -33,6 +35,8 @@ export interface AbraxasPartnerKitOptions {
   appSlug?: string;
   applicationId?: string;
   policyPackId?: string;
+  bindingId?: string;
+  resultFamily?: string;
   fetchFn?: typeof fetch;
   /** When true, best-effort privacy-safe verification telemetry is recorded. Never affects outcomes. */
   reportVerificationTelemetry?: boolean;
@@ -213,16 +217,24 @@ export class AbraxasPartnerKit {
     expectedPolicyId?: string;
     expectedPolicyVersion?: number;
     expectedEnvironment?: "sandbox" | "production";
+    expectedBindingId?: string;
+    expectedPackId?: string;
+    expectedResultFamily?: string;
+    binding?: ResolvedApplicationPolicyBinding;
     expectedRequestId?: string;
     callbackRequestId?: string | null;
     expectedPurpose?: string;
     expectedAction?: string;
   }): Promise<PartnerKitSafeResult> {
     const started = Date.now();
-    const partnerId = input.expectedPartnerId ?? this.options.partnerId;
-    const policyId = input.expectedPolicyId ?? this.options.policyId;
-    const environment = input.expectedEnvironment ?? this.options.environment;
-    const policyVersion = input.expectedPolicyVersion ?? this.options.policyVersion;
+    const binding = input.binding ?? null;
+    const partnerId = input.expectedPartnerId ?? binding?.partner_id ?? this.options.partnerId;
+    const policyId = input.expectedPolicyId ?? binding?.policy_id ?? this.options.policyId;
+    const environment = input.expectedEnvironment ?? binding?.environment ?? this.options.environment;
+    const policyVersion = input.expectedPolicyVersion ?? binding?.policy_version ?? this.options.policyVersion;
+    const expectedBindingId = input.expectedBindingId ?? binding?.binding_id ?? this.options.bindingId;
+    const expectedPackId = input.expectedPackId ?? binding?.pack_id ?? this.options.policyPackId;
+    const expectedResultFamily = input.expectedResultFamily ?? binding?.result_family ?? this.options.resultFamily;
 
     const fetched = await this.fetchPublicReceipt(input.receiptId);
     if (!fetched.ok) {
@@ -257,6 +269,28 @@ export class AbraxasPartnerKit {
 
     if (receipt.schema_version && receipt.schema_version !== PARTNER_INTEGRATION_RECEIPT_SCHEMA_VERSION) {
       errors.push(`schema_version_unsupported:${receipt.schema_version}`);
+    }
+
+    if (expectedBindingId && this.options.bindingId && expectedBindingId !== this.options.bindingId) {
+      errors.push("POLICY_BINDING_NOT_FOUND");
+    }
+
+    if (binding) {
+      errors.push(...assertReceiptMatchesBinding({
+        binding,
+        receiptPolicyId: receipt.policy_id,
+        receiptPolicyVersion: (receipt as typeof receipt & { policy_version?: number }).policy_version,
+        receiptPartnerId: receipt.partner_id,
+        receiptEnvironment: environment,
+      }));
+    } else if (expectedPackId || expectedResultFamily) {
+      const inferred = inferPolicyPackFromPolicyId(receipt.policy_id ?? "");
+      if (expectedPackId && inferred?.id !== expectedPackId) {
+        errors.push("RECEIPT_PACK_MISMATCH");
+      }
+      if (expectedResultFamily && inferred?.disclosed_result !== expectedResultFamily) {
+        errors.push("RECEIPT_RESULT_FAMILY_MISMATCH");
+      }
     }
 
     if (input.expectedRequestId) {

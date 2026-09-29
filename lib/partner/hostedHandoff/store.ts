@@ -7,6 +7,8 @@ import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
 import { isLaunchpadReturnUrlAllowlisted } from "@/lib/partner/launchpad/launchpadReturnUrlAllowlist";
 import { opaqueCallbackRef } from "@/lib/partner/launchpad/partnerFlowRequest/view";
 import type { PartnerFlowStoredConfig } from "@/lib/partner/launchpad/partnerFlowRequest/view";
+import { resolveApplicationPolicyBinding } from "@/lib/partner/launchpad/resolveApplicationPolicyBinding";
+import type { ResolvedApplicationPolicyBinding } from "@/lib/partner/launchpad/policyBindingContract";
 import {
   HOSTED_HANDOFF_CHECKLIST,
   HOSTED_HANDOFF_NOTICE,
@@ -45,6 +47,9 @@ function fromRow(row: Record<string, unknown>): HostedHandoffRecord {
     partner_id: String(row.partner_id),
     policy_id: String(row.policy_id),
     policy_version: Number(row.policy_version),
+    binding_id: row.binding_id ? String(row.binding_id) : null,
+    pack_id: row.pack_id ? String(row.pack_id) : null,
+    result_family: row.result_family ? String(row.result_family) : null,
     action: row.action as HostedHandoffRecord["action"],
     purpose: String(row.purpose),
     callback_ref: String(row.callback_ref),
@@ -80,6 +85,9 @@ async function persist(record: HostedHandoffRecord): Promise<void> {
       partner_id: record.partner_id,
       policy_id: record.policy_id,
       policy_version: record.policy_version,
+      binding_id: record.binding_id,
+      pack_id: record.pack_id,
+      result_family: record.result_family,
       action: record.action,
       purpose: record.purpose,
       callback_ref: record.callback_ref,
@@ -170,6 +178,9 @@ export function projectPartner(record: HostedHandoffRecord): HostedHandoffPartne
     public_receipt_id: live.status === "completed" || live.status === "consumed" ? live.public_receipt_id : null,
     action: live.action,
     policy_version: live.policy_version,
+    binding_id: live.binding_id,
+    pack_id: live.pack_id,
+    result_family: live.result_family,
   };
 }
 
@@ -177,6 +188,7 @@ export async function createHostedHandoff(input: {
   application: LaunchpadApplicationRow;
   stored: PartnerFlowStoredConfig;
   runtime: HostedHandoffRuntime;
+  bindingId?: string | null;
   fixture?: boolean;
 }): Promise<HostedHandoffRecord> {
   const urls = input.application.allowed_return_urls ?? [];
@@ -193,7 +205,18 @@ export async function createHostedHandoff(input: {
   if (input.application.environment === "production" && input.application.status !== "active") {
     throw Object.assign(new Error("production_denied"), { code: "production_denied" });
   }
-  const seed = `${input.application.id}:${opaqueNonce()}`;
+
+  const resolved = await resolveApplicationPolicyBinding({
+    application: input.application,
+    partnerId: input.application.partner_id,
+    bindingId: input.bindingId,
+  });
+  if (!resolved.ok) {
+    throw Object.assign(new Error(resolved.code), { code: resolved.code });
+  }
+  const binding: ResolvedApplicationPolicyBinding = resolved.binding;
+
+  const seed = `${input.application.id}:${binding.binding_id}:${opaqueNonce()}`;
   const now = new Date();
   const record: HostedHandoffRecord = {
     id: crypto.randomUUID(),
@@ -201,13 +224,16 @@ export async function createHostedHandoff(input: {
     verify_request: opaqueVerifyRequest(seed),
     application_id: input.application.id,
     partner_id: input.application.partner_id,
-    policy_id: input.application.policy_id,
-    policy_version: input.application.policy_version,
+    policy_id: binding.policy_id,
+    policy_version: binding.policy_version,
+    binding_id: binding.binding_id,
+    pack_id: binding.pack_id,
+    result_family: binding.result_family,
     action: input.stored.action,
     purpose: input.stored.purpose,
     callback_ref: opaqueCallbackRef(callback),
     runtime: input.runtime,
-    environment: input.application.environment === "production" ? "production" : "sandbox",
+    environment: binding.environment,
     status: "created",
     nonce_hash: nonceHash(opaqueNonce()),
     issued_at: now.toISOString(),
@@ -234,6 +260,9 @@ export async function createHostedHandoff(input: {
       metadata: {
         handoff_status: record.status,
         verify_request_ref: record.verify_request.slice(0, 12),
+        binding_id: record.binding_id,
+        pack_id: record.pack_id,
+        result_family: record.result_family,
       },
     });
     await recordIntegrationEventBestEffort({
@@ -324,10 +353,12 @@ export async function bindHandoffToIssuedReceipt(input: {
   partnerId: string;
   policyId: string;
   publicReceiptId: string;
+  bindingId?: string | null;
 }): Promise<void> {
   const record = await loadHandoffByVerifyRequest(input.verifyRequest);
   if (!record) return;
   if (record.partner_id !== input.partnerId || record.policy_id !== input.policyId) return;
+  if (record.binding_id && input.bindingId && record.binding_id !== input.bindingId) return;
   await completeHostedHandoff({
     record,
     partnerId: input.partnerId,

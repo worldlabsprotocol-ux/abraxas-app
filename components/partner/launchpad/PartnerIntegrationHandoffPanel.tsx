@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
+import { PartnerBindingSelector } from "@/components/partner/launchpad/PartnerBindingSelector";
 import { ABRAXAS_FONT_MONO, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -17,6 +18,10 @@ interface HandoffView {
   policy_id: string;
   policy_version: number;
   policy_label: string;
+  binding_id: string | null;
+  pack_id: string | null;
+  result_family: string | null;
+  binding_environment: string;
   hosted_flow_pattern: string;
   hosted_handoff_pattern: string;
   approved_callback_class: string;
@@ -32,13 +37,15 @@ export function PartnerIntegrationHandoffPanel({ applicationId }: { applicationI
   const [handoff, setHandoff] = useState<HandoffView | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bindingId, setBindingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!applicationId) return;
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/launchpad/applications/${applicationId}/integration-handoff`, {
+      const params = bindingId ? `?binding_id=${encodeURIComponent(bindingId)}` : "";
+      const res = await fetch(`/api/launchpad/applications/${applicationId}/integration-handoff${params}`, {
         credentials: "include",
         cache: "no-store",
       });
@@ -55,7 +62,7 @@ export function PartnerIntegrationHandoffPanel({ applicationId }: { applicationI
     } finally {
       setLoading(false);
     }
-  }, [applicationId]);
+  }, [applicationId, bindingId]);
 
   useEffect(() => {
     void load();
@@ -71,12 +78,24 @@ export function PartnerIntegrationHandoffPanel({ applicationId }: { applicationI
       <div style={{ fontFamily: FONT, display: "grid", gap: 12 }}>
         {loading && <p>Loading handoff…</p>}
         {error && <p style={{ color: "var(--danger, #b00020)" }}>{error}</p>}
+        <PartnerBindingSelector
+          applicationId={applicationId}
+          selectedBindingId={bindingId}
+          onSelect={setBindingId}
+          label="Integration policy"
+        />
         {handoff && (
           <>
             <dl style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: "8px 12px", margin: 0 }}>
               <dt>App ID</dt><dd style={{ fontFamily: MONO, margin: 0 }}>{handoff.application_id}</dd>
-              <dt>Environment</dt><dd style={{ margin: 0 }}>{handoff.environment}</dd>
+              <dt>Environment</dt><dd style={{ margin: 0 }}>{handoff.binding_environment ?? handoff.environment}</dd>
               <dt>Policy</dt><dd style={{ margin: 0 }}>{handoff.policy_label} · v{handoff.policy_version}</dd>
+              {handoff.binding_id && (
+                <>
+                  <dt>Binding</dt><dd style={{ fontFamily: MONO, margin: 0 }}>{handoff.binding_id}</dd>
+                  <dt>Result family</dt><dd style={{ fontFamily: MONO, margin: 0 }}>{handoff.result_family}</dd>
+                </>
+              )}
               <dt>Callback class</dt><dd style={{ margin: 0 }}>{handoff.approved_callback_class}</dd>
               <dt>Verify API</dt><dd style={{ fontFamily: MONO, margin: 0 }}>{handoff.verify_recommended_api}</dd>
             </dl>

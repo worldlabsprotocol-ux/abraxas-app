@@ -25,6 +25,7 @@ import { tradingVenueProfileExample } from "@/lib/partner/tradingVenue/profiles"
 import { launchpadConfigureHref } from "@/lib/partner/launchpad/partnerFlowRequest/contract";
 import { launchpadPolicyVersionHref } from "@/lib/partner/launchpad/policyVersionPlanner/contract";
 import { PolicyFitPlanner } from "@/app/developers/integration-studio/PolicyFitPlanner";
+import { PartnerBindingSelector } from "@/components/partner/launchpad/PartnerBindingSelector";
 import { OptionalWalletConnectionsPanel } from "@/app/developers/integration-studio/OptionalWalletConnectionsPanel";
 import { SolanaUsdcPlansPanel } from "@/app/developers/integration-studio/SolanaUsdcPlansPanel";
 import {
@@ -126,6 +127,7 @@ export function IntegrationStudioClient() {
   const [resumeApp, setResumeApp] = useState<ResumableApp | null>(null);
   const [resumePartnerId, setResumePartnerId] = useState("");
   const [handoffNotice, setHandoffNotice] = useState("");
+  const [bindingId, setBindingId] = useState<string | null>(null);
 
   const contract = useMemo(() => studioPackContract(packId), [packId]);
   const snippet = useMemo(() => studioSnippetForPath(pathId), [pathId]);
@@ -152,37 +154,53 @@ export function IntegrationStudioClient() {
     setOptionalCaps((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   }
 
+  const configuredAppId = created?.application_id ?? resumeApp?.id ?? null;
+
   async function generateStarter() {
     setKitError("");
     setKitBusy(true);
     try {
-      const res = await fetch("/api/developers/integration-studio/starter-kit", {
+      const payload = {
+        pack_id: packId,
+        path: pathId,
+        platform,
+        capabilities: optionalCaps,
+        ...(pathId === "trading_venue" ? { venue_profile_id: venueProfileId } : {}),
+      };
+      const endpoint = configuredAppId && signedIn
+        ? `/api/launchpad/applications/${configuredAppId}/starter-kit`
+        : "/api/developers/integration-studio/starter-kit";
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          pack_id: packId,
-          path: pathId,
-          platform,
-          capabilities: optionalCaps,
-          ...(pathId === "trading_venue" ? { venue_profile_id: venueProfileId } : {}),
-        }),
+        credentials: configuredAppId && signedIn ? "include" : "same-origin",
+        body: JSON.stringify(
+          configuredAppId && signedIn
+            ? { ...payload, binding_id: bindingId ?? "" }
+            : payload,
+        ),
       });
       const data = await res.json() as {
         ok?: boolean;
         error?: string;
+        code?: string;
         filename?: string;
+        kit?: { filename?: string; files?: Array<{ path: string; contents: string }>; archive_base64?: string };
         files?: Array<{ path: string; contents: string }>;
         archive_base64?: string;
       };
-      if (!res.ok || !data.ok || !data.files || !data.archive_base64) {
-        setKitError(data.error ?? "Could not generate starter kit");
+      const files = data.kit?.files ?? data.files;
+      const archive = data.kit?.archive_base64 ?? data.archive_base64;
+      const filename = data.kit?.filename ?? data.filename;
+      if (!res.ok || !data.ok || !files || !archive) {
+        setKitError(data.code ?? data.error ?? "Could not generate starter kit");
         setKitFiles([]);
         setKitArchive("");
         return;
       }
-      setKitFiles(data.files);
-      setKitArchive(data.archive_base64);
-      setKitFilename(data.filename ?? "abraxas-starter-kit.zip");
+      setKitFiles(files);
+      setKitArchive(archive);
+      setKitFilename(filename ?? "abraxas-starter-kit.zip");
     } catch {
       setKitError("Could not generate starter kit");
     } finally {
@@ -596,7 +614,20 @@ export function IntegrationStudioClient() {
       <ContentCard title="Generate your starter kit">
         <p style={{ ...body, marginBottom: "0.75rem" }}>
           Choose your platform, then generate a downloadable project with the selected Abraxas connection.
+          {configuredAppId && signedIn
+            ? " Your configured application pins the selected policy binding in generated code."
+            : " Sign in and create a sandbox to pin a live application binding."}
         </p>
+        {configuredAppId && signedIn && (
+          <div style={{ marginBottom: "0.85rem" }}>
+            <PartnerBindingSelector
+              applicationId={configuredAppId}
+              selectedBindingId={bindingId}
+              onSelect={setBindingId}
+              label="Integration policy"
+            />
+          </div>
+        )}
         <details style={{ marginBottom: "0.75rem" }}>
           <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)" }}>Technical requirements</summary>
           <ul style={{ ...body, paddingLeft: "1.1rem", margin: "0.65rem 0 0", display: "grid", gap: "0.3rem" }}>

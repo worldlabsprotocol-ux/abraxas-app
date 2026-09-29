@@ -38,9 +38,11 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     productionKeyRevoked = Boolean(data?.revoked_at);
   }
 
+  const bindingId = req.nextUrl.searchParams.get("binding_id")?.trim() || null;
   const handoff = await buildIntegrationHandoff({
     application: app,
     partnerId: auth.session.partnerId,
+    bindingId,
     productionKeyRevoked,
     webhookRequired: false,
   });

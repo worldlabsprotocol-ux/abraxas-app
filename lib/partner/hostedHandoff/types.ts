@@ -11,6 +11,9 @@ export interface HostedHandoffRecord {
   partner_id: string;
   policy_id: string;
   policy_version: number;
+  binding_id: string | null;
+  pack_id: string | null;
+  result_family: string | null;
   action: PartnerFlowAction;
   purpose: string;
   callback_ref: string;
@@ -49,4 +52,7 @@ export interface HostedHandoffPartnerView extends HostedHandoffPublicView {
   public_receipt_id: string | null;
   action: PartnerFlowAction;
   policy_version: number;
+  binding_id: string | null;
+  pack_id: string | null;
+  result_family: string | null;
 }
