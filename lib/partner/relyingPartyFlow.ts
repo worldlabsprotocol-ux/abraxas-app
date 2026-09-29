@@ -425,6 +425,37 @@ export async function issuePartnerSessionReceipt(input: {
       receiptId = receipt.id;
       receiptExpiresAt = sessionExpires;
       replay_status = "issued";
+
+      if (replacedReceiptId && receiptId) {
+        try {
+          const { recordReceiptSupersessionBestEffort } = await import("@/lib/decisionReceipts/receiptSupersession");
+          await recordReceiptSupersessionBestEffort({
+            supersededReceiptId: replacedReceiptId,
+            supersedingReceiptId: receiptId,
+            partnerId: input.partnerId,
+            policyId: policy.id,
+            policyVersion: policy.version,
+            subjectPseudonymId: receipt.subject_pseudonym_id ?? undefined,
+            launchpadApplicationId: input.launchpadApplicationId ?? null,
+            scope: "session_refresh",
+          });
+          const { recordIntegrationEventBestEffort } = await import("@/lib/partner/integrationObservability/record");
+          await recordIntegrationEventBestEffort({
+            partnerId: input.partnerId,
+            applicationId: input.launchpadApplicationId ?? null,
+            environment: decisionContext === "production" ? "production" : "sandbox",
+            eventType: "receipt_superseded",
+            lifecycleStage: "receipt",
+            outcome: "superseded",
+            receiptId: replacedReceiptId,
+            policyId: policy.id,
+            policyVersion: policy.version,
+            metadata: { outcome_class: "session_refresh" },
+          });
+        } catch {
+          // Supersession must not block issuance.
+        }
+      }
     }
   }
 

@@ -5,6 +5,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminRouteAccess } from "@/lib/admin/requireAdminRouteAccess";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { buildIntegrationTimeline, integrationObservabilityLeaks } from "@/lib/partner/integrationObservability";
+import { getReceiptById } from "@/lib/decisionReceipts/service";
+import { evaluateReceiptCurrentValidity } from "@/lib/decisionReceipts/currentValidity";
 
 export const dynamic = "force-dynamic";
 
@@ -67,5 +69,14 @@ async function buildTimelineResponse(
   if (integrationObservabilityLeaks(timeline).length > 0) {
     return NextResponse.json({ error: "redacted" }, { status: 503 });
   }
-  return NextResponse.json(timeline, { headers: { "Cache-Control": "no-store" } });
+
+  let receipt_validity = null as Awaited<ReturnType<typeof evaluateReceiptCurrentValidity>> | null;
+  if (receiptId) {
+    const record = await getReceiptById(receiptId);
+    if (record) {
+      receipt_validity = await evaluateReceiptCurrentValidity({ record });
+    }
+  }
+
+  return NextResponse.json({ ...timeline, receipt_validity }, { headers: { "Cache-Control": "no-store" } });
 }

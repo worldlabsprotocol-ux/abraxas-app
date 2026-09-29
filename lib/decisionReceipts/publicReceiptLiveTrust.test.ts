@@ -48,6 +48,40 @@ vi.mock("@/lib/credentials/claimsService", () => ({
   getActiveClaims: vi.fn().mockResolvedValue([]),
 }));
 
+vi.mock("@/lib/policy/getPolicy", () => ({
+  getPartnerPolicyAtVersion: vi.fn(async (policyId: string, version: number) => ({
+    id: policyId,
+    partner_id: "partner-a",
+    version,
+    name: "Policy",
+    rules_json: {},
+    status: "active",
+    deprecate_effective_at: null,
+  })),
+}));
+
+vi.mock("@/lib/decisionReceipts/dependencies", () => ({
+  getReceiptDependencies: vi.fn(async () => []),
+}));
+
+vi.mock("@/lib/trust/credentialStatusRegistry", () => ({
+  getClaimById: vi.fn(async (id: string) => ({
+    id,
+    status: "active",
+    expires_at: null,
+    assurance_level: "L2",
+    jurisdiction: "US",
+    issued_at: "2026-01-01T00:00:00.000Z",
+  })),
+  resolveClaimStatusAtRead: vi.fn(({ status }: { status: string }) => status),
+}));
+
+vi.mock("@/lib/trust/issuerFramework", () => ({
+  getIssuerById: vi.fn(async () => ({ issuer_status: "active" })),
+  getIssuerSigningKey: vi.fn(async () => ({ status: "active" })),
+  isIssuerTrustedForClaim: vi.fn(async () => ({ ok: true, reason: "trusted" })),
+}));
+
 function sampleRecord(overrides: Partial<DecisionReceiptRecord> = {}): DecisionReceiptRecord {
   const payload = buildCanonicalPayload({
     receipt_id: "dr_public_contract",
@@ -125,7 +159,15 @@ function mockClaimStatusLookup(statusByClaimId: Record<string, string>) {
     if (table === "receipt_claim_dependencies") {
       return {
         select: vi.fn().mockReturnThis(),
-        in: vi.fn().mockResolvedValue({ data: [], error: null }),
+        eq: vi.fn().mockReturnThis(),
+        order: vi.fn().mockResolvedValue({ data: [], error: null }),
+      };
+    }
+    if (table === "partners") {
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: { status: "active" }, error: null }),
       };
     }
     return {

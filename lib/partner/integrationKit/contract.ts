@@ -23,6 +23,8 @@ export const PARTNER_INTEGRATION_OUTCOMES = [
   "wrong_request_correlation",
   "invalid",
   "retry",
+  "superseded",
+  "evidence_refresh_required",
 ] as const;
 
 export type PartnerIntegrationOutcome = (typeof PARTNER_INTEGRATION_OUTCOMES)[number];
@@ -41,6 +43,10 @@ export const PARTNER_INTEGRATION_TRUSTED_RECEIPT_FIELDS = [
   "production_usable",
   "decision_context",
   "artifact_type",
+  "issued_valid",
+  "lifecycle_status",
+  "partner_safe_reason",
+  "validity_checked_at",
 ] as const;
 
 export const PARTNER_INTEGRATION_CALLBACK_KEYS = [

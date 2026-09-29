@@ -7,6 +7,12 @@ export function partnerSafeFailureCode(errors: string[], outcome?: string): Part
   const blob = errors.join(" ").toLowerCase();
   if (errors.includes("receipt_missing") || blob.includes("receipt_missing")) return "receipt_missing";
   if (blob.includes("expired") || outcome === "expired") return "receipt_expired";
+  if (blob.includes("receipt_superseded") || outcome === "superseded") return "receipt_superseded";
+  if (blob.includes("evidence_refresh") || blob.includes("claim_expired") || blob.includes("claim_revoked")) {
+    return "evidence_refresh_required";
+  }
+  if (blob.includes("policy_no_longer_valid") || outcome === "policy_version_deprecated") return "policy_no_longer_valid";
+  if (blob.includes("application_inactive")) return "application_inactive";
   if (blob.includes("revoked") || outcome === "revoked") return "receipt_revoked";
   if (blob.includes("partner_mismatch") || outcome === "wrong_partner") return "partner_mismatch";
   if (blob.includes("policy_version_mismatch") || outcome === "wrong_policy_version") return "policy_version_mismatch";

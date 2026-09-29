@@ -91,6 +91,11 @@ export interface DecisionReceiptPublicView {
   currently_valid?: boolean;
   validity?: string;
   invalidation_reasons?: string[];
+  /** Issuance-time truth — approved decision with valid signature at issue. */
+  issued_valid?: boolean;
+  lifecycle_status?: "active" | "expired" | "revoked" | "superseded" | "invalidated";
+  partner_safe_reason?: string | null;
+  validity_checked_at?: string;
 }
 
 /** Partner view — full permitted receipt when consent scope allows */
