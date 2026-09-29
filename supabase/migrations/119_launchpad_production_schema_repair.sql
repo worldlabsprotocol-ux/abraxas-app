@@ -59,11 +59,11 @@ UPDATE public.partner_launchpad_applications a
 -- Path B: legacy 085 approve path — approved request + active abx_live_ credential
 UPDATE public.partner_launchpad_applications a
    SET production_activated_at = r.reviewed_at
-  FROM public.partner_production_access_requests r
-  JOIN public.partner_api_keys k
-    ON k.id = a.production_api_key_id
+  FROM public.partner_production_access_requests r,
+       public.partner_api_keys k
+ WHERE k.id = a.production_api_key_id
    AND k.partner_id = a.partner_id
- WHERE r.application_id = a.id
+   AND r.application_id = a.id
    AND r.partner_id = a.partner_id
    AND r.status = 'approved'
    AND r.reviewed_at IS NOT NULL
