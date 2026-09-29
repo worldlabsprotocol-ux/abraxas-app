@@ -25,6 +25,7 @@ import {
   REUSE_LABEL,
   type ReuseClientView,
 } from "@/lib/passport/reusableEligibility/contract";
+import { AbxChoiceCard } from "@/components/protocol/AbxChoiceCard";
 
 export interface AgeAssuranceMethodChooserProps {
   partnerId: string;
@@ -387,21 +388,22 @@ export function AgeAssuranceMethodChooser({
         {(plan?.methods ?? [])
           .filter((method) => method.id !== "account_login" && method.available)
           .map((method) => (
-            <Btn
+            <AbxChoiceCard
               key={method.id}
-              variant={selectedMethodId === method.id ? "primary" : "secondary"}
-              ariaLabel={selectedMethodId === method.id ? `${method.label} (selected)` : method.label}
+              id={`method-${method.id}`}
+              title={method.label}
+              description={selectedMethodId === method.id ? method.why : undefined}
+              meta={method.qualifies ? "Meets policy assurance" : "Optional path"}
+              selected={selectedMethodId === method.id}
               disabled={busy !== null}
-              onClick={() => {
+              onSelect={() => {
                 setSelectedMethodId(method.id);
                 setMethodQualified(false);
                 setIssuedReceipt(false);
                 setError(null);
                 onMethodQualified?.(false);
               }}
-            >
-              {method.label}
-            </Btn>
+            />
           ))}
       </div>
       {selectedMethodId && (

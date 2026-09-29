@@ -1,5 +1,6 @@
 // FILE: lib/motion/index.ts
 // Barrel for the Abraxas motion system.
+export * from "../design/abraxasMotion";
 export * from "./variants";
 export { Reveal } from "./Reveal";
 export { MotionCard } from "./MotionCard";
