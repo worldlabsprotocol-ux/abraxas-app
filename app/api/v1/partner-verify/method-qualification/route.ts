@@ -22,8 +22,10 @@ import {
   clearPartnerContinueBindingCookie,
   signPartnerContinueBindingCookie,
 } from "@/lib/partner/partnerVerifyResumeCookie";
-import { rejectReuseClientAuthority, reuseOptionForContinuation } from "@/lib/passport/reusableEligibility";
+import { buildReuseClientView, rejectReuseClientAuthority } from "@/lib/passport/reusableEligibility";
 import { resolveCompatibleReusableFact } from "@/lib/passport/reusableEligibility/qualify";
+import { recordEvidenceReuseLookupTelemetry } from "@/lib/passport/reusableEligibility/observability";
+import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 import { holderHasAcceptedReclaim } from "@/lib/reclaimAttestation";
 import { reclaimRouteForPolicy } from "@/lib/reclaimAttestation/policyFit";
 
@@ -70,11 +72,22 @@ export async function GET(request: NextRequest) {
     policyId: bound.stored.policyId,
     policyVersion: bound.stored.policyVersion,
   });
-  const reuse = await reuseOptionForContinuation({
+  const resolvedReuse = await resolveCompatibleReusableFact({
     subjectId: session.session.suiAddress,
     targetPolicyId: bound.stored.policyId,
     targetPolicyVersion: bound.stored.policyVersion ?? 1,
+    relyingPartner: bound.stored.partnerId,
   });
+  void recordEvidenceReuseLookupTelemetry({
+    partnerId: bound.stored.partnerId,
+    policyId: bound.stored.policyId,
+    policyVersion: bound.stored.policyVersion ?? 1,
+    environment: isSandboxPolicyId(bound.stored.policyId) ? "sandbox" : "production",
+    verifyRequestId: verifyRequest,
+    decision: resolvedReuse.decision,
+    fact: resolvedReuse.ok ? resolvedReuse.fact : null,
+  });
+  const reuse = buildReuseClientView(resolvedReuse.ok ? "available" : resolvedReuse.state);
   const res = NextResponse.json({
     ...publicQualificationView(matched ? record : null),
     reuse,
@@ -133,6 +146,16 @@ export async function POST(request: NextRequest) {
       subjectId: session.session.suiAddress,
       targetPolicyId: bound.stored.policyId,
       targetPolicyVersion: bound.stored.policyVersion ?? 1,
+      relyingPartner: bound.stored.partnerId,
+    });
+    void recordEvidenceReuseLookupTelemetry({
+      partnerId: bound.stored.partnerId,
+      policyId: bound.stored.policyId,
+      policyVersion: bound.stored.policyVersion ?? 1,
+      environment: isSandboxPolicyId(bound.stored.policyId) ? "sandbox" : "production",
+      verifyRequestId: verifyRequest,
+      decision: resolved.decision,
+      fact: resolved.ok ? resolved.fact : null,
     });
     existingProofCompatible = resolved.ok;
   }

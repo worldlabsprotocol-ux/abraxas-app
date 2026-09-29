@@ -46,6 +46,15 @@ vi.mock("@/lib/decisionReceipts/dependencies", () => ({
   getReceiptDependencies: vi.fn(async () => []),
 }));
 
+vi.mock("@/lib/decisionReceipts/evidenceDependencies", () => ({
+  getReceiptEvidenceDependencies: vi.fn(async () => []),
+}));
+
+vi.mock("@/lib/passport/reusableEligibility/invalidation", () => ({
+  loadSourceReceiptRow: vi.fn(async () => null),
+  getDerivationByDerivedReceipt: vi.fn(async () => null),
+}));
+
 vi.mock("@/lib/trust/credentialStatusRegistry", () => ({
   getClaimById: vi.fn(async (id: string) => ({
     id,

@@ -2,6 +2,7 @@
 // Versioned declarative policy packs — partners select proof, never submit executable policy.
 
 import type { AssuranceLevel, ClaimType } from "@/lib/credentials/claimSchema";
+import type { ReuseEvidenceFreshnessRule } from "@/lib/passport/reusableEligibility/freshness";
 import type { PartnerActivitySignalType } from "@/lib/partner/partnerActivitySignal/contract";
 import type { PartnerPolicyRules } from "@/lib/policy/types";
 import {
@@ -55,6 +56,8 @@ export interface PolicyPack {
   disclosed_result: string;
   receipt_claim: string;
   reuse_policy: "session" | "time_bound";
+  /** Per-pack reusable evidence freshness. Strictest constraint wins at evaluation. */
+  reuse_evidence_freshness?: ReuseEvidenceFreshnessRule;
   permitted_methods: string[];
   /** Optional pack-level allowlist for partner_activity_signal. Absence enables no activity categories. */
   allowed_activity_categories?: readonly PartnerActivitySignalType[];
@@ -91,6 +94,7 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
     disclosed_result: "age_eligible_18",
     receipt_claim: "age_threshold_met",
     reuse_policy: "time_bound",
+    reuse_evidence_freshness: { allow_reuse: true, mode: "source_expiry", max_age_hours: null },
     permitted_methods: ["passport"],
     rules: {
       ...SANDBOX,
@@ -116,6 +120,7 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
     disclosed_result: "age_eligible_21",
     receipt_claim: "age_threshold_met",
     reuse_policy: "time_bound",
+    reuse_evidence_freshness: { allow_reuse: true, mode: "source_expiry", max_age_hours: null },
     permitted_methods: ["passport"],
     allowed_activity_categories: ["repeat_participant", "holder_loyalty"],
     rules: {
@@ -142,6 +147,7 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
     disclosed_result: "residency_check_passed",
     receipt_claim: "jurisdiction_met",
     reuse_policy: "time_bound",
+    reuse_evidence_freshness: { allow_reuse: true, mode: "time_bound", max_age_hours: 48 },
     permitted_methods: ["passport"],
     rules: {
       ...SANDBOX,
@@ -166,6 +172,7 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
     disclosed_result: "wallet_control_confirmed",
     receipt_claim: "wallet_binding_confirmed",
     reuse_policy: "session",
+    reuse_evidence_freshness: { allow_reuse: true, mode: "time_bound", max_age_hours: 12 },
     permitted_methods: ["passport"],
     rules: {
       ...SANDBOX,
@@ -190,6 +197,7 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
     disclosed_result: "credential_active",
     receipt_claim: "identity_verified",
     reuse_policy: "session",
+    reuse_evidence_freshness: { allow_reuse: true, mode: "time_bound", max_age_hours: 12 },
     permitted_methods: ["passport"],
     rules: {
       ...SANDBOX,
@@ -214,6 +222,7 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
     disclosed_result: "redemption_eligible",
     receipt_claim: "product_eligibility",
     reuse_policy: "time_bound",
+    reuse_evidence_freshness: { allow_reuse: true, mode: "source_expiry", max_age_hours: 24 },
     permitted_methods: ["passport"],
     allowed_activity_categories: ["repeat_participant", "holder_loyalty", "high_activity"],
     rules: {
@@ -240,6 +249,7 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
     disclosed_result: "identity_and_liveness_met",
     receipt_claim: "identity_verified",
     reuse_policy: "time_bound",
+    reuse_evidence_freshness: { allow_reuse: true, mode: "time_bound", max_age_hours: 24 },
     permitted_methods: ["passport"],
     rules: {
       ...SANDBOX,
@@ -268,6 +278,7 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
     disclosed_result: "sandbox_demo_eligible",
     receipt_claim: "product_eligibility",
     reuse_policy: "session",
+    reuse_evidence_freshness: { allow_reuse: true, mode: "time_bound", max_age_hours: 2 },
     permitted_methods: ["reuse_existing_proof", "partner_age_check", "privacy_preserving"],
     rules: {
       ...SANDBOX,
@@ -306,6 +317,7 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
     disclosed_result: "organization_eligible",
     receipt_claim: "organization_eligible",
     reuse_policy: "time_bound",
+    reuse_evidence_freshness: { allow_reuse: false, mode: "none", max_age_hours: null },
     permitted_methods: ["privacy_preserving"],
     rules: {
       ...SANDBOX,

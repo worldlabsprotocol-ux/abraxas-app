@@ -8,3 +8,13 @@ export {
 export { reuseOptionForContinuation, resolveCompatibleReusableFact } from "./qualify";
 export { buildReuseClientView, rejectReuseClientAuthority } from "./view";
 export { revokeDerivedFromSourceReceipt } from "./store";
+export {
+  evaluateReusableEvidenceTrust,
+  type ReusableEvidenceTrustResult,
+} from "./trust";
+export {
+  decideEvidenceReuse,
+  pickBestReuseDecision,
+  type EvidenceReuseDecision,
+  type EvidenceReuseDecisionResult,
+} from "./decision";

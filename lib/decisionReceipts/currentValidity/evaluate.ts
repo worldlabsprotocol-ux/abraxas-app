@@ -8,6 +8,8 @@ import { getPartnerPolicyAtVersion } from "@/lib/policy/getPolicy";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
 import { isReceiptSuperseded } from "@/lib/decisionReceipts/receiptSupersession";
+import { getReceiptEvidenceDependencies } from "@/lib/decisionReceipts/evidenceDependencies";
+import { loadSourceReceiptRow } from "@/lib/passport/reusableEligibility/invalidation";
 import {
   RECEIPT_CURRENT_VALIDITY_VERSION,
   type ReceiptCurrentValidityResult,
@@ -101,6 +103,28 @@ export async function evaluateReceiptCurrentValidity(
     allowSandbox: input.expectedEnvironment === "sandbox",
   });
   invalidationReasons.push(...trust.invalidation_reasons);
+
+  try {
+    const evidenceDeps = await getReceiptEvidenceDependencies(record.id);
+    const sourceId = evidenceDeps.find((d) => d.dependency_type === "source_receipt")?.source_credential_id
+      ?? evidenceDeps[0]?.source_credential_id;
+    if (sourceId) {
+      const sourceRow = await loadSourceReceiptRow(sourceId);
+      if (!sourceRow) {
+        invalidationReasons.push("source_evidence_missing");
+      } else if (sourceRow.status === "revoked" || sourceRow.revoked_at) {
+        invalidationReasons.push("source_evidence_revoked");
+      } else if (
+        sourceRow.status === "expired"
+        || (sourceRow.expires_at && new Date(sourceRow.expires_at).getTime() <= now.getTime())
+      ) {
+        invalidationReasons.push("source_evidence_expired");
+      }
+    }
+  } catch {
+    storeUnavailable = true;
+    invalidationReasons.push("validity_store_unavailable");
+  }
 
   const policyVersionActive = await resolvePolicyVersionActive(record.policy_id, record.policy_version, now);
   if (!policyVersionActive) invalidationReasons.push("policy_no_longer_valid");

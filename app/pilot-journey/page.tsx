@@ -111,6 +111,7 @@ export default function PilotJourneyPage() {
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem", marginTop: "0.8rem" }}>
             <Btn href={pilotDemoHref} variant="secondary">Age 21+ pilot demo</Btn>
             <Btn href="/verify?mode=receipt" variant="secondary">Receipt verifier</Btn>
+            <Btn href="/admin/receipts" variant="secondary">Receipt inspector (reuse trust)</Btn>
             <Btn href="/proofs/solana-devnet" variant="secondary">Solana proof</Btn>
             <Btn href="/docs/sandbox-conformance" variant="secondary">Sandbox contract</Btn>
           </div>

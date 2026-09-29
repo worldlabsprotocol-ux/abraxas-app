@@ -83,9 +83,15 @@ export interface InternalReusableFact {
   result_category: string;
   disclosure_boundary: string;
   decision_context: "production" | "sandbox_only";
+  /** Internal provenance — never partner-visible. */
+  source_policy_id: string;
+  source_verification_method: string;
+  verified_at: string;
   source_decision_id: string;
   source_receipt_id: string;
   issued_at: string;
   expires_at: string | null;
   status: "active" | "expired" | "revoked";
+  /** When this fact was derived from another reusable fact. */
+  derived_from_fact_id?: string | null;
 }
