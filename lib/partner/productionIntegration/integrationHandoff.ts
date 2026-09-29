@@ -10,6 +10,8 @@ import {
   PRODUCTION_INTEGRATION_CORE_PATH_NOTE,
 } from "./contract";
 import { evaluateProductionIntegrationReadiness } from "./productionReadiness";
+import { resolveApplicationPolicyBinding } from "@/lib/partner/launchpad/resolveApplicationPolicyBinding";
+import type { ResolvedApplicationPolicyBinding } from "@/lib/partner/launchpad/policyBindingContract";
 
 export interface IntegrationHandoffView {
   contract_version: typeof PRODUCTION_INTEGRATION_CONTRACT_VERSION;
@@ -21,6 +23,10 @@ export interface IntegrationHandoffView {
   policy_version: number;
   policy_template_id: string;
   policy_label: string;
+  binding_id: string | null;
+  pack_id: string | null;
+  result_family: string | null;
+  binding_environment: "sandbox" | "production";
   hosted_flow_pattern: string;
   hosted_handoff_pattern: string;
   approved_callback_class: "localhost_sandbox" | "https_production" | "missing";
@@ -36,10 +42,17 @@ export interface IntegrationHandoffView {
 export async function buildIntegrationHandoff(input: {
   application: LaunchpadApplicationRow;
   partnerId: string;
+  bindingId?: string | null;
   productionKeyRevoked?: boolean;
   webhookRequired?: boolean;
 }): Promise<IntegrationHandoffView> {
   const app = input.application;
+  const bindingResult = await resolveApplicationPolicyBinding({
+    application: app,
+    partnerId: input.partnerId,
+    bindingId: input.bindingId ?? null,
+  });
+  const binding: ResolvedApplicationPolicyBinding | null = bindingResult.ok ? bindingResult.binding : null;
   const evidence = await loadGoLiveEvidence({ application: app, partnerId: input.partnerId });
   const readiness = await evaluateProductionIntegrationReadiness({
     application: app,
@@ -55,7 +68,7 @@ export async function buildIntegrationHandoff(input: {
   if (hasHttps) callbackClass = "https_production";
   else if (hasLocal) callbackClass = "localhost_sandbox";
 
-  const template = resolveLaunchpadPolicyTemplate(app.policy_template_id);
+  const template = resolveLaunchpadPolicyTemplate(binding?.pack_id ?? app.policy_template_id);
   const base = SITE_URL.replace(/\/$/, "");
 
   return {
@@ -64,10 +77,14 @@ export async function buildIntegrationHandoff(input: {
     public_slug: app.public_slug,
     partner_id: app.partner_id,
     environment: app.environment,
-    policy_id: app.policy_id,
-    policy_version: app.policy_version,
-    policy_template_id: app.policy_template_id,
+    policy_id: binding?.policy_id ?? app.policy_id,
+    policy_version: binding?.policy_version ?? app.policy_version,
+    policy_template_id: binding?.pack_id ?? app.policy_template_id,
     policy_label: template?.label ?? app.policy_template_id,
+    binding_id: binding?.binding_id ?? null,
+    pack_id: binding?.pack_id ?? null,
+    result_family: binding?.result_family ?? null,
+    binding_environment: binding?.environment ?? (app.environment === "production" ? "production" : "sandbox"),
     hosted_flow_pattern: `${base}/partner/verify?app=${encodeURIComponent(app.public_slug)}&return_url=<allowlisted_callback>`,
     hosted_handoff_pattern: `POST ${base}/api/v1/partner-handoff (server-only; returns verify_request holder URL)`,
     approved_callback_class: callbackClass,

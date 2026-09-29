@@ -23,6 +23,16 @@ export interface StarterKitResult {
   platform: string;
   capabilities: string[];
   venue_profile_id: string | null;
+  binding_pin?: {
+    application_id: string;
+    binding_id: string;
+    policy_id: string;
+    policy_version: number;
+    pack_id: string;
+    result_family: string;
+    environment: string;
+    policy_label: string;
+  };
   files: Array<{ path: string; contents: string }>;
   manifest: Array<{ path: string; bytes: number }>;
   archive_base64: string;
@@ -48,6 +58,7 @@ export function generateStarterKit(selection: ValidStarterKitSelection): Starter
     platform: selection.platform,
     capabilities: [...selection.capabilities],
     venue_profile_id: selection.venue_profile_id,
+    binding_pin: selection.binding_pin,
     files,
     manifest: files.map((file) => ({ path: file.path, bytes: file.contents.length })),
     archive_base64: Buffer.from(archive).toString("base64"),

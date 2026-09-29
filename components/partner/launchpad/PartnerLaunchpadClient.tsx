@@ -28,6 +28,7 @@ import { selectLaunchpadResumeAppId } from "@/lib/partner/activationPath";
 import { PartnerSandboxTestConsolePanel } from "@/components/partner/launchpad/PartnerSandboxTestConsolePanel";
 import { PartnerGoLiveReadinessPanel } from "@/components/partner/launchpad/PartnerGoLiveReadinessPanel";
 import { PartnerIntegrationHandoffPanel } from "@/components/partner/launchpad/PartnerIntegrationHandoffPanel";
+import { PartnerStarterKitPanel } from "@/components/partner/launchpad/PartnerStarterKitPanel";
 import { PartnerIntegrationHealthPanel } from "@/components/partner/launchpad/PartnerIntegrationHealthPanel";
 import { PartnerIntegrationPerformancePanel } from "@/components/partner/launchpad/PartnerIntegrationPerformancePanel";
 import { PartnerPilotProgressPanel } from "@/components/partner/launchpad/PartnerPilotProgressPanel";
@@ -722,6 +723,10 @@ export function PartnerLaunchpadClient({
           applicationId={activeApp.id}
           onRequestReview={() => setStep("production")}
         />
+      )}
+
+      {step === "test" && activeApp && (
+        <PartnerStarterKitPanel applicationId={activeApp.id} />
       )}
 
       {step === "test" && activeApp && (

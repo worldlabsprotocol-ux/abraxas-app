@@ -8,7 +8,7 @@ import {
 } from "./contract";
 
 export function parseHandoffCreateBody(body: unknown):
-  | { ok: true; runtime: HostedHandoffRuntime }
+  | { ok: true; runtime: HostedHandoffRuntime; binding_id: string | null }
   | { ok: false; code: string } {
   if (!body || typeof body !== "object" || Array.isArray(body)) {
     return { ok: false, code: "invalid_input" };
@@ -26,5 +26,8 @@ export function parseHandoffCreateBody(body: unknown):
   if (!(HOSTED_HANDOFF_RUNTIMES as readonly string[]).includes(runtime)) {
     return { ok: false, code: "runtime_rejected" };
   }
-  return { ok: true, runtime: runtime as HostedHandoffRuntime };
+  const bindingId = typeof record.binding_id === "string" && record.binding_id.trim()
+    ? record.binding_id.trim()
+    : null;
+  return { ok: true, runtime: runtime as HostedHandoffRuntime, binding_id: bindingId };
 }

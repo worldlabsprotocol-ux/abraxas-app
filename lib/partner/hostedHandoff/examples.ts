@@ -8,7 +8,7 @@ Authorization: Bearer YOUR_SANDBOX_API_KEY
 Content-Type: application/json
 X-Abraxas-Application-Id: YOUR_APP_ID
 
-{"runtime":"universal_https"}
+{"runtime":"universal_https","binding_id":"YOUR_BINDING_ID"}
 
 # Response hosted_url contains only verify_request.
 # GET /api/v1/partner-handoff/{ref} then kit.verifyReceiptId(public_receipt_id).
@@ -22,7 +22,7 @@ export async function POST() {
       "content-type": "application/json",
       "x-abraxas-application-id": process.env.ABRAXAS_APP_ID,
     },
-    body: JSON.stringify({ runtime: "nextjs" }),
+    body: JSON.stringify({ runtime: "nextjs", binding_id: process.env.ABRAXAS_BINDING_ID }),
   });
   return Response.json(await res.json());
 }
@@ -35,7 +35,7 @@ export async function POST() {
       "content-type": "application/json",
       "x-abraxas-application-id": process.env.ABRAXAS_APP_ID,
     },
-    body: JSON.stringify({ runtime: "express" }),
+    body: JSON.stringify({ runtime: "express", binding_id: process.env.ABRAXAS_BINDING_ID }),
   });
   res.json(await created.json());
 });
@@ -52,7 +52,7 @@ export async function createHandoff() {
       "content-type": "application/json",
       "x-abraxas-application-id": await getSecret("ABRAXAS_APP_ID"),
     },
-    body: JSON.stringify({ runtime: "wix_velo" }),
+    body: JSON.stringify({ runtime: "wix_velo", binding_id: await getSecret("ABRAXAS_BINDING_ID") }),
   });
   return res.json();
 }
@@ -65,7 +65,7 @@ export async function createHandoff() {
       "content-type": "application/json",
       "x-abraxas-application-id": process.env.ABRAXAS_APP_ID,
     },
-    body: JSON.stringify({ runtime: "serverless" }),
+    body: JSON.stringify({ runtime: "serverless", binding_id: process.env.ABRAXAS_BINDING_ID }),
   });
   return new Response(JSON.stringify(await res.json()), { headers: { "content-type": "application/json" } });
 }

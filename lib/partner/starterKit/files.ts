@@ -19,6 +19,7 @@ import { eligibilityPresentationHttpsExample, eligibilityPresentationServerExamp
 import { organizationEligibilityServerExample } from "@/lib/organizationEligibility/examples";
 import { crossChainProtocolAccessHttpsExample, crossChainProtocolAccessServerExample } from "@/lib/partner/crossChainProtocolAccess/examples";
 import type { ValidStarterKitSelection } from "./validate";
+import type { StarterKitBindingPin } from "./bindingPin";
 
 export type { StarterKitFile };
 
@@ -30,16 +31,24 @@ export function assertSafeStarterPath(path: string): void {
   }
 }
 
-function kitInit(runtime: StarterKitRuntime): string {
+function kitInit(runtime: StarterKitRuntime, pin?: StarterKitBindingPin): string {
   const envKey = runtime === "typescript_nextjs" ? "process.env.ABRAXAS_BASE_URL" : "process.env.ABRAXAS_BASE_URL";
+  const partnerId = pin?.partner_id ?? P.partner_id;
+  const policyId = pin?.policy_id ?? P.policy_id;
+  const policyVersion = pin?.policy_version ?? P.policy_version;
+  const environment = pin?.environment ?? "sandbox";
   return `import { AbraxasPartnerKit, permitProtocolAction } from "@abraxas/partner-kit";
 
 export const kit = new AbraxasPartnerKit({
-  partnerId: process.env.ABRAXAS_PARTNER_ID ?? "${P.partner_id}",
-  policyId: process.env.ABRAXAS_POLICY_ID ?? "${P.policy_id}",
-  policyVersion: Number(process.env.ABRAXAS_POLICY_VERSION ?? "${P.policy_version}"),
+  partnerId: process.env.ABRAXAS_PARTNER_ID ?? "${partnerId}",
+  policyId: process.env.ABRAXAS_POLICY_ID ?? "${policyId}",
+  policyVersion: Number(process.env.ABRAXAS_POLICY_VERSION ?? "${policyVersion}"),
   requirePolicyVersion: true,
-  environment: "sandbox",
+  environment: "${environment}",
+  applicationId: process.env.ABRAXAS_APP_ID ?? "${pin?.application_id ?? P.app_id}",
+  bindingId: process.env.ABRAXAS_BINDING_ID ?? "${pin?.binding_id ?? P.binding_id}",
+  policyPackId: process.env.ABRAXAS_PACK_ID ?? "${pin?.pack_id ?? P.pack_id}",
+  resultFamily: process.env.ABRAXAS_RESULT_FAMILY ?? "${pin?.result_family ?? P.result_family}",
   baseUrl: ${envKey},
 });
 
@@ -47,13 +56,16 @@ export { permitProtocolAction };
 `;
 }
 
-function envExample(includeWebhook: boolean, venueProfileId: string | null): string {
+function envExample(includeWebhook: boolean, venueProfileId: string | null, pin?: StarterKitBindingPin): string {
   return [
     `ABRAXAS_BASE_URL=https://abraxasworld.xyz`,
-    `ABRAXAS_PARTNER_ID=${P.partner_id}`,
-    `ABRAXAS_POLICY_ID=${P.policy_id}`,
-    `ABRAXAS_POLICY_VERSION=${P.policy_version}`,
-    `ABRAXAS_APP_ID=${P.app_id}`,
+    `ABRAXAS_PARTNER_ID=${pin?.partner_id ?? P.partner_id}`,
+    `ABRAXAS_POLICY_ID=${pin?.policy_id ?? P.policy_id}`,
+    `ABRAXAS_POLICY_VERSION=${pin?.policy_version ?? P.policy_version}`,
+    `ABRAXAS_APP_ID=${pin?.application_id ?? P.app_id}`,
+    `ABRAXAS_BINDING_ID=${pin?.binding_id ?? P.binding_id}`,
+    `ABRAXAS_PACK_ID=${pin?.pack_id ?? P.pack_id}`,
+    `ABRAXAS_RESULT_FAMILY=${pin?.result_family ?? P.result_family}`,
     `ABRAXAS_SANDBOX_API_KEY=${P.api_key}`,
     `ABRAXAS_CALLBACK_URL=${P.callback_url}`,
     includeWebhook ? `ABRAXAS_WEBHOOK_SECRET=${P.webhook_secret}` : "",
@@ -63,13 +75,29 @@ function envExample(includeWebhook: boolean, venueProfileId: string | null): str
   ].filter(Boolean).join("\n") + "\n";
 }
 
+function integrationContractDoc(pin?: StarterKitBindingPin): string {
+  if (!pin) return "";
+  return `## Integration contract
+
+- Application: \`${pin.application_id}\`
+- Binding: \`${pin.binding_id}\`
+- Policy: ${pin.policy_label}
+- Pack: \`${pin.pack_id}\`
+- Version: ${pin.policy_version}
+- Result family: \`${pin.result_family}\`
+- Environment: ${pin.environment}
+
+`;
+}
+
 function readme(selection: ValidStarterKitSelection): string {
   const pack = studioPackContract(selection.pack_id)!;
+  const pin = selection.binding_pin;
   return `# Abraxas partner starter kit
 
 Generated from Integration Studio. This is a sandbox starter, not a Production credential.
 
-${STARTER_KIT_CANONICAL_CONTRACT}
+${integrationContractDoc(pin)}${STARTER_KIT_CANONICAL_CONTRACT}
 
 ## Minimum platform requirements
 ${STARTER_KIT_MINIMUM_REQUIREMENTS.map((line) => `- ${line}`).join("\n")}
@@ -145,6 +173,7 @@ ${STARTER_KIT_PRODUCTION_CONTRACT.map((line) => `- ${line}`).join("\n")}
 const parsed = kit.parseCallback(searchParams);
 const result = await kit.verifyForAction({
   receiptId: parsed.params.receipt_id!,
+  expectedBindingId: process.env.ABRAXAS_BINDING_ID,
   expectedRequestId: serverStoredRequestId,
   callbackRequestId: parsed.params.request_id,
 });
@@ -216,6 +245,7 @@ export async function GET(req: NextRequest) {
   }
   const result = await kit.verifyForAction({
     receiptId: parsed.params.receipt_id!,
+    expectedBindingId: process.env.ABRAXAS_BINDING_ID,
     callbackRequestId: parsed.params.request_id,
     expectedRequestId: process.env.ABRAXAS_EXPECTED_REQUEST_ID,
   });
@@ -234,6 +264,7 @@ export async function receiptCallback(req: Request, res: Response) {
   if (!parsed.ok) return res.status(400).json({ action: "deny", errors: parsed.errors });
   const result = await kit.verifyForAction({
     receiptId: parsed.params.receipt_id!,
+    expectedBindingId: process.env.ABRAXAS_BINDING_ID,
     callbackRequestId: parsed.params.request_id,
     expectedRequestId: process.env.ABRAXAS_EXPECTED_REQUEST_ID,
   });
@@ -245,7 +276,7 @@ export async function receiptCallback(req: Request, res: Response) {
 `;
 }
 
-function hostedHelper(): string {
+function hostedHelper(pin?: StarterKitBindingPin): string {
   return `import { kit, permitProtocolAction } from "./abraxas";
 
 export async function startHostedPartnerFlow() {
@@ -254,9 +285,12 @@ export async function startHostedPartnerFlow() {
     headers: {
       authorization: "Bearer " + (process.env.ABRAXAS_SANDBOX_API_KEY ?? "${P.api_key}"),
       "content-type": "application/json",
-      "x-abraxas-application-id": process.env.ABRAXAS_APP_ID ?? "${P.app_id}",
+      "x-abraxas-application-id": process.env.ABRAXAS_APP_ID ?? "${pin?.application_id ?? P.app_id}",
     },
-    body: JSON.stringify({ runtime: "universal_https" }),
+    body: JSON.stringify({
+      runtime: "universal_https",
+      binding_id: process.env.ABRAXAS_BINDING_ID ?? "${pin?.binding_id ?? P.binding_id}",
+    }),
   });
   const data = await res.json();
   if (!data.hosted_url) throw new Error("handoff_unavailable");
@@ -821,6 +855,7 @@ function needs(path: IntegrationStudioPathId, caps: StarterKitOptionalCapability
 }
 
 export function buildStarterKitFiles(selection: ValidStarterKitSelection): StarterKitFile[] {
+  const pin = selection.binding_pin;
   const webhook = needs(selection.path, selection.capabilities, "webhooks");
   const venue = selection.path === "trading_venue" || selection.capabilities.includes("trading_venue");
   const activity = selection.capabilities.includes("partner_activity_signal");
@@ -853,16 +888,16 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     { path: "PRODUCTION_INTEGRATION.md", contents: productionContractDoc() },
     { path: "WHAT_THIS_DOES_NOT_DO.md", contents: doesNotDoDoc() },
     { path: "DEPLOYMENT.md", contents: deployment() },
-    { path: ".env.example", contents: envExample(webhook, selection.venue_profile_id) },
+    { path: ".env.example", contents: envExample(webhook, selection.venue_profile_id, pin) },
     { path: "package.json", contents: packageJson(selection.runtime) },
     { path: "tests/public-receipt.fixture.json", contents: fixtureJson() },
     { path: "tests/receipt-fixture.test.ts", contents: fixtureTest() },
   ];
 
   if (selection.runtime === "typescript_nextjs") {
-    files.push({ path: "src/lib/abraxas.ts", contents: kitInit(selection.runtime) });
+    files.push({ path: "src/lib/abraxas.ts", contents: kitInit(selection.runtime, pin) });
     files.push({ path: "app/api/abraxas/callback/route.ts", contents: receiptRoute("typescript_nextjs") });
-    files.push({ path: "src/lib/hosted.ts", contents: hostedHelper() });
+    files.push({ path: "src/lib/hosted.ts", contents: hostedHelper(pin) });
     if (webhook) files.push({ path: "app/api/abraxas/webhooks/route.ts", contents: webhookRoute("typescript_nextjs") });
     if (venue) files.push({ path: "app/api/abraxas/trading-preflight/route.ts", contents: venuePreflight("typescript_nextjs", selection.venue_profile_id) });
     if (activity) files.push({ path: "app/api/abraxas/activity-preflight/route.ts", contents: activityPreflight("typescript_nextjs", selection.pack_id) });
@@ -875,9 +910,9 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     if (solana) files.push({ path: "src/lib/solana-gate.ts", contents: solanaGate() });
     if (wallet) files.push({ path: "src/lib/wallet-binding.ts", contents: walletBinding() });
   } else if (selection.runtime === "typescript_express") {
-    files.push({ path: "src/lib/abraxas.ts", contents: kitInit(selection.runtime) });
+    files.push({ path: "src/lib/abraxas.ts", contents: kitInit(selection.runtime, pin) });
     files.push({ path: "src/callback.ts", contents: receiptRoute("typescript_express") });
-    files.push({ path: "src/lib/hosted.ts", contents: hostedHelper() });
+    files.push({ path: "src/lib/hosted.ts", contents: hostedHelper(pin) });
     if (webhook) files.push({ path: "src/webhook.ts", contents: webhookRoute("typescript_express") });
     if (venue) files.push({ path: "src/trading-preflight.ts", contents: venuePreflight("typescript_express", selection.venue_profile_id) });
     if (activity) files.push({ path: "src/activity-preflight.ts", contents: activityPreflight("typescript_express", selection.pack_id) });

@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Btn } from "@/components/redesign/ui";
+import { PartnerBindingSelector } from "@/components/partner/launchpad/PartnerBindingSelector";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import { HOSTED_HANDOFF_CHECKLIST, HOSTED_HANDOFF_DOCS, HOSTED_HANDOFF_NOTICE } from "@/lib/partner/hostedHandoff/contract";
 
@@ -15,6 +16,7 @@ const DEPLOYMENT_REF = /^ogd_[0-9a-f]{32}$/;
 const SIGNER_KEY_ID = /^cask_[0-9a-f]{24}$/;
 
 export function HostedHandoffControls({ applicationId, partnerId }: { applicationId: string; partnerId: string }) {
+  const [bindingId, setBindingId] = useState<string | null>(null);
   const [url, setUrl] = useState("");
   const [handoffRef, setHandoffRef] = useState("");
   const [error, setError] = useState("");
@@ -37,7 +39,10 @@ export function HostedHandoffControls({ applicationId, partnerId }: { applicatio
         method: "POST",
         credentials: "include",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ runtime: "universal_https" }),
+        body: JSON.stringify({
+          runtime: "universal_https",
+          ...(bindingId ? { binding_id: bindingId } : {}),
+        }),
       });
       const data = await res.json() as { hosted_url?: string; handoff_ref?: string; status?: typeof status; error?: string };
       if (!res.ok || !data.hosted_url) {
@@ -176,6 +181,14 @@ unset ABRAXAS_SANDBOX_PARTNER_API_KEY` : "";
       <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.55, margin: "0 0 0.65rem" }}>
         {HOSTED_HANDOFF_NOTICE} The holder URL contains only an opaque request reference.
       </p>
+      <div style={{ marginBottom: "0.75rem" }}>
+        <PartnerBindingSelector
+          applicationId={applicationId}
+          selectedBindingId={bindingId}
+          onSelect={setBindingId}
+          label="Integration policy"
+        />
+      </div>
       {error && <p role="alert" style={{ fontFamily: FONT, fontSize: "0.76rem", color: "#f87171" }}>{error}</p>}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.65rem" }}>
         <Btn size="sm" loading={busy} disabled={busy} onClick={() => void createHandoff()}>

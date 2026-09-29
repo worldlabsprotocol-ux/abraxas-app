@@ -53,14 +53,30 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 503, "unavailable");
   }
   try {
-    const record = await createHostedHandoff({ application: app, stored, runtime: parsed.runtime });
+    const record = await createHostedHandoff({
+      application: app,
+      stored,
+      runtime: parsed.runtime,
+      bindingId: parsed.binding_id,
+    });
     const view = projectPublic(record);
     if (handoffLeaks(view).length) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 503, "redacted");
     return launchpadJson({ ok: true, ...view });
   } catch (error) {
     const code = error instanceof Error && "code" in error ? String((error as { code?: string }).code) : "unavailable";
-    const status = code === "callback_rejected" || code === "not_configured" || code === "app_unpinned" ? 400 : 503;
-    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, status, code);
+    const bindingCodes = new Set([
+      "AMBIGUOUS_POLICY_BINDING",
+      "POLICY_BINDING_NOT_FOUND",
+      "POLICY_BINDING_NOT_ACTIVE",
+      "POLICY_BINDING_ENVIRONMENT_MISMATCH",
+      "PRODUCTION_BINDING_NOT_AUTHORIZED",
+    ]);
+    const status = code === "AMBIGUOUS_POLICY_BINDING"
+      ? 409
+      : bindingCodes.has(code) || code === "callback_rejected" || code === "not_configured" || code === "app_unpinned"
+        ? 400
+        : 503;
+    return launchpadError(code, status);
   }
 }
 

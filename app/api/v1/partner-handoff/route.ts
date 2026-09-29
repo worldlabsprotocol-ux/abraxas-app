@@ -14,6 +14,7 @@ import {
   parseHandoffCreateBody,
   projectPartner,
 } from "@/lib/partner/hostedHandoff";
+import { resolveApplicationPolicyBinding } from "@/lib/partner/launchpad/resolveApplicationPolicyBinding";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,20 @@ export async function POST(req: NextRequest) {
   const appPreview = await getLaunchpadApplicationById(applicationIdHeader);
   if (!appPreview) return NextResponse.json({ error: "application_not_found" }, { status: 404 });
 
-  const requiredEnvironment = appPreview.environment === "production" ? "production" : "sandbox";
+  const appForBinding = await getLaunchpadApplicationForPartner(applicationIdHeader, appPreview.partner_id);
+  if (!appForBinding) return NextResponse.json({ error: "application_not_found" }, { status: 404 });
+
+  const bindingPreview = await resolveApplicationPolicyBinding({
+    application: appForBinding,
+    partnerId: appForBinding.partner_id,
+    bindingId: parsed.binding_id,
+  });
+  if (!bindingPreview.ok) {
+    const status = bindingPreview.code === "AMBIGUOUS_POLICY_BINDING" ? 409 : 400;
+    return NextResponse.json({ error: bindingPreview.code }, { status });
+  }
+
+  const requiredEnvironment = bindingPreview.binding.environment;
   const auth = await authenticatePartnerScoped(req, "verify:requests", {
     requiredApplicationId: applicationIdHeader,
     requiredCredentialEnvironment: requiredEnvironment,
@@ -45,12 +59,17 @@ export async function POST(req: NextRequest) {
 
   const app = await getLaunchpadApplicationForPartner(applicationIdHeader, auth.ctx.partnerId);
   if (!app) return NextResponse.json({ error: "application_not_found" }, { status: 404 });
-  if (app.environment === "production" && !app.production_activated_at) {
+  if (requiredEnvironment === "production" && !app.production_activated_at) {
     return NextResponse.json({ error: "production_not_activated" }, { status: 403 });
   }
   try {
     const stored = await loadPartnerFlowStoredConfig(app.id, auth.ctx.partnerId, app.allowed_return_urls);
-    const record = await createHostedHandoff({ application: app, stored, runtime: parsed.runtime });
+    const record = await createHostedHandoff({
+      application: app,
+      stored,
+      runtime: parsed.runtime,
+      bindingId: parsed.binding_id,
+    });
     const view = projectPartner(record);
     if (handoffLeaks(view).length) return NextResponse.json({ error: "redacted" }, { status: 503 });
     return NextResponse.json({ ok: true, ...view, public_receipt_id: null });

@@ -27,6 +27,7 @@ export interface ValidStarterKitSelection {
   platform: StarterKitPlatform;
   capabilities: StarterKitOptionalCapability[];
   venue_profile_id: VenueProfileId | null;
+  binding_pin?: import("./bindingPin").StarterKitBindingPin;
 }
 
 export type StarterKitValidation =
