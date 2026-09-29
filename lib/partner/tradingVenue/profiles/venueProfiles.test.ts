@@ -23,6 +23,8 @@ import {
   VENUE_MAINNET_EXTERNAL_REQUIREMENTS,
   VENUE_PROFILE_NEXT_STEPS,
   TOKENIZED_SECURITIES_PROFILE_CONTROLS,
+  PARTNER_ACTIVITY_SIGNAL_TYPES,
+  validatePartnerActivitySignal,
   getVenueProfile,
   publicVenueProfileMatrix,
   rejectVenueProfileClientOverride,
@@ -122,6 +124,33 @@ describe("trading venue integration profiles", () => {
     expect(TOKENIZED_SECURITIES_PROFILE_CONTROLS.join(" ")).toContain("settlement");
     expect(TOKENIZED_SECURITIES_PROFILE_CONTROLS.join(" ")).toContain("raw activity data");
     expect(TOKENIZED_SECURITIES_PROFILE_CONTROLS.join(" ")).toContain("does not rank wallets");
+  });
+
+  it("accepts only narrow, consented partner activity categories", () => {
+    expect(PARTNER_ACTIVITY_SIGNAL_TYPES).toEqual([
+      "repeat_participant",
+      "holder_loyalty",
+      "high_activity",
+    ]);
+    expect(validatePartnerActivitySignal({
+      type: "holder_loyalty",
+      source: "partner_records",
+      consent_recorded: true,
+    })).toEqual({
+      ok: true,
+      signal: { type: "holder_loyalty", source: "partner_records", consent_recorded: true },
+    });
+    expect(validatePartnerActivitySignal({
+      type: "holder_loyalty",
+      source: "partner_records",
+      consent_recorded: true,
+      wallet_address: "never-send-this",
+    })).toEqual({ ok: false, code: "raw_activity_forbidden" });
+    expect(validatePartnerActivitySignal({
+      type: "whale",
+      source: "partner_records",
+      consent_recorded: true,
+    })).toEqual({ ok: false, code: "invalid_activity_signal" });
   });
 
   it("rejects wrong partner/policy/version/action/scope, expired/revoked/denied receipts, and nonce replay", async () => {

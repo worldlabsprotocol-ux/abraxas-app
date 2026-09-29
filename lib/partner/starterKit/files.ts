@@ -339,6 +339,63 @@ export async function POST() {
   return body;
 }
 
+function activityPreflight(runtime: StarterKitRuntime): string {
+  const body = `import { AbraxasPartnerActivitySignalAdapter } from "@abraxas/partner-kit/partner-activity-signal";
+import { kit, permitProtocolAction } from ${runtime === "typescript_nextjs" ? '"../../../lib/abraxas"' : '"./lib/abraxas"'};
+
+const activity = new AbraxasPartnerActivitySignalAdapter({
+  partnerId: kit.options.partnerId,
+  policyId: kit.options.policyId,
+  policyVersion: kit.options.policyVersion,
+  environment: kit.options.environment,
+  allowedCategories: ["repeat_participant", "holder_loyalty", "high_activity"],
+  purpose: "Confirm one named access decision",
+  actionScope: "sandbox:market_access",
+});
+
+export async function activityPreflight(receiptId: string, payloadHash: string, signal: unknown) {
+  const receipt = await kit.verifyReceiptId(receiptId);
+  if (!permitProtocolAction(receipt)) {
+    return { allowed: false, reason: receipt.outcome };
+  }
+  const binding = activity.issueActivityBinding({
+    receipt_id: receipt.receipt_id!,
+    receipt_payload_hash: payloadHash,
+    activity_signal_type: typeof signal === "object" && signal && "type" in (signal as Record<string, unknown>)
+      ? String((signal as Record<string, unknown>).type)
+      : "repeat_participant",
+  });
+  if ("ok" in binding) {
+    return { allowed: false, reason: binding.reason };
+  }
+  return activity.preflight({
+    result: receipt,
+    receipt_payload_hash: payloadHash,
+    signal,
+    binding,
+  });
+}
+`;
+  if (runtime === "typescript_nextjs") {
+    return `import { NextRequest, NextResponse } from "next/server";
+${body}
+export async function POST(req: NextRequest) {
+  const body = await req.json().catch(() => ({})) as Record<string, unknown>;
+  const result = await activityPreflight(
+    String(body.receipt_id ?? "REPLACE_WITH_RECEIPT_ID_AT_RUNTIME"),
+    String(body.receipt_payload_hash ?? "REPLACE_WITH_PAYLOAD_HASH_AT_RUNTIME"),
+    body.signal ?? { type: "repeat_participant", source: "partner_records", consent_recorded: true },
+  );
+  return NextResponse.json({
+    allowed: result.allowed === true,
+    reason: "reason" in result ? result.reason : "permitted",
+  });
+}
+`;
+  }
+  return body;
+}
+
 function paymentPreflight(runtime: StarterKitRuntime): string {
   const body = `import { AbraxasPaymentAuthorizationAdapter } from "@abraxas/partner-kit/payment-authorization";
 import { kit, permitProtocolAction } from ${runtime === "typescript_nextjs" ? '"../../../lib/abraxas"' : '"./lib/abraxas"'};
@@ -726,6 +783,7 @@ function needs(path: IntegrationStudioPathId, caps: StarterKitOptionalCapability
 export function buildStarterKitFiles(selection: ValidStarterKitSelection): StarterKitFile[] {
   const webhook = needs(selection.path, selection.capabilities, "webhooks");
   const venue = selection.path === "trading_venue" || selection.capabilities.includes("trading_venue");
+  const activity = selection.capabilities.includes("partner_activity_signal");
   const payment = selection.path === "payment_authorization" || selection.capabilities.includes("payment_authorization");
   const solana = selection.path === "solana_gate"
     || selection.capabilities.includes("solana_gate")
@@ -766,6 +824,7 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     files.push({ path: "src/lib/hosted.ts", contents: hostedHelper() });
     if (webhook) files.push({ path: "app/api/abraxas/webhooks/route.ts", contents: webhookRoute("typescript_nextjs") });
     if (venue) files.push({ path: "app/api/abraxas/trading-preflight/route.ts", contents: venuePreflight("typescript_nextjs", selection.venue_profile_id) });
+    if (activity) files.push({ path: "app/api/abraxas/activity-preflight/route.ts", contents: activityPreflight("typescript_nextjs") });
     if (payment) files.push({ path: "app/api/abraxas/payment-preflight/route.ts", contents: paymentPreflight("typescript_nextjs") });
     if (portable) files.push({ path: "app/api/abraxas/action-preflight/route.ts", contents: portablePreflight("typescript_nextjs") });
     if (evm) files.push({ path: "app/api/abraxas/evm-preflight/route.ts", contents: evmPreflight("typescript_nextjs") });
@@ -780,6 +839,7 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     files.push({ path: "src/lib/hosted.ts", contents: hostedHelper() });
     if (webhook) files.push({ path: "src/webhook.ts", contents: webhookRoute("typescript_express") });
     if (venue) files.push({ path: "src/trading-preflight.ts", contents: venuePreflight("typescript_express", selection.venue_profile_id) });
+    if (activity) files.push({ path: "src/activity-preflight.ts", contents: activityPreflight("typescript_express") });
     if (payment) files.push({ path: "src/payment-preflight.ts", contents: paymentPreflight("typescript_express") });
     if (portable) files.push({ path: "src/portable-preflight.ts", contents: portablePreflight("typescript_express") });
     if (evm) files.push({ path: "src/evm-preflight.ts", contents: evmPreflight("typescript_express") });

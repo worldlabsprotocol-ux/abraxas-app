@@ -10,6 +10,10 @@ export {
   VENUE_PROFILE_NO_PARTNERSHIP,
   VENUE_PROFILE_PREFLIGHT_ONLY,
   TOKENIZED_SECURITIES_PROFILE_CONTROLS,
+  PARTNER_ACTIVITY_SIGNAL_TYPES,
+  validatePartnerActivitySignal,
+  type PartnerActivitySignal,
+  type PartnerActivitySignalType,
   VENUE_MAINNET_EXTERNAL_REQUIREMENTS,
 } from "./contract";
 export type {
