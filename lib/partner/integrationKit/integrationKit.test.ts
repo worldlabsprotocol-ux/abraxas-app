@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   AbraxasPartnerKit,
   CONFORMANCE_COMMAND_EXAMPLE,
@@ -184,5 +184,67 @@ describe("Partner Integration Kit", () => {
     }));
     expect(parsed.ok).toBe(true);
     if (parsed.ok) expect(parsed.params.request_id).toBe("req_safe123");
+  });
+
+  it("does not alter verifyForAction when verification telemetry fails", async () => {
+    const { resetIntegrationEventsForTests } = await import("@/lib/partner/integrationObservability/record");
+    resetIntegrationEventsForTests();
+    const base = {
+      receipt_id: "dr_kit",
+      schema_version: "1.0.0",
+      partner_id: "partner-acme",
+      policy_id: "partner-acme-age_21_retail-v1",
+      policy_version: 1,
+      decision_result: "approved",
+      signature_valid: true,
+      expires_at: "2099-01-01T00:00:00.000Z",
+      status: "active",
+      production_usable: false,
+      decision_context: "sandbox_only",
+      currently_valid: true,
+      invalidation_reasons: ["production_not_usable:false"],
+      artifact_type: "eligibility_decision_receipt",
+    };
+    const instrument = await import("@/lib/partner/integrationObservability/instrument");
+    const spy = vi.spyOn(instrument, "instrumentVerifyForActionResult").mockRejectedValueOnce(new Error("telemetry_down"));
+    const client = kit({
+      applicationId: "app-kit",
+      reportVerificationTelemetry: true,
+      fetchFn: async () => new Response(JSON.stringify(base), { status: 200 }),
+    });
+    const result = await client.verifyForAction({ receiptId: "dr_kit" });
+    expect(permitProtocolAction(result)).toBe(true);
+    spy.mockRestore();
+  });
+
+  it("records verification telemetry when applicationId is set", async () => {
+    const { resetIntegrationEventsForTests, listIntegrationEventsForTests } = await import("@/lib/partner/integrationObservability/record");
+    resetIntegrationEventsForTests();
+    const base = {
+      receipt_id: "dr_kit",
+      schema_version: "1.0.0",
+      partner_id: "partner-acme",
+      policy_id: "partner-acme-age_21_retail-v1",
+      policy_version: 1,
+      decision_result: "approved",
+      signature_valid: true,
+      expires_at: "2099-01-01T00:00:00.000Z",
+      status: "active",
+      production_usable: false,
+      decision_context: "sandbox_only",
+      currently_valid: true,
+      invalidation_reasons: ["production_not_usable:false"],
+      artifact_type: "eligibility_decision_receipt",
+    };
+    const client = kit({
+      applicationId: "app-kit",
+      reportVerificationTelemetry: true,
+      fetchFn: async () => new Response(JSON.stringify(base), { status: 200 }),
+    });
+    await client.verifyForAction({ receiptId: "dr_kit" });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    const events = listIntegrationEventsForTests();
+    expect(events.some((event) => event.event_type === "receipt_verification_succeeded")).toBe(true);
+    expect(JSON.stringify(events)).not.toMatch(/abx_live_|email|legal_name/i);
   });
 });

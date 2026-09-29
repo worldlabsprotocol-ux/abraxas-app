@@ -31,8 +31,11 @@ export interface AbraxasPartnerKitOptions {
   environment: "sandbox" | "production";
   baseUrl?: string;
   appSlug?: string;
+  applicationId?: string;
   policyPackId?: string;
   fetchFn?: typeof fetch;
+  /** When true, best-effort privacy-safe verification telemetry is recorded. Never affects outcomes. */
+  reportVerificationTelemetry?: boolean;
 }
 
 export interface PartnerKitSafeResult {
@@ -215,6 +218,7 @@ export class AbraxasPartnerKit {
     expectedPurpose?: string;
     expectedAction?: string;
   }): Promise<PartnerKitSafeResult> {
+    const started = Date.now();
     const partnerId = input.expectedPartnerId ?? this.options.partnerId;
     const policyId = input.expectedPolicyId ?? this.options.policyId;
     const environment = input.expectedEnvironment ?? this.options.environment;
@@ -222,11 +226,13 @@ export class AbraxasPartnerKit {
 
     const fetched = await this.fetchPublicReceipt(input.receiptId);
     if (!fetched.ok) {
-      return emptyResult({
+      const denied = emptyResult({
         outcome: outcomeFromValidationErrors(fetched.errors),
         errors: fetched.errors,
         receipt_id: input.receiptId,
       });
+      void this.emitVerificationTelemetry(input, denied, Date.now() - started);
+      return denied;
     }
 
     const receipt = fetched.receipt;
@@ -270,10 +276,35 @@ export class AbraxasPartnerKit {
       }
     }
 
-    if (errors.length === 0 && validation.ok) {
-      return safeFromReceipt(receipt, "permitted", []);
+    const result = errors.length === 0 && validation.ok
+      ? safeFromReceipt(receipt, "permitted", [])
+      : safeFromReceipt(receipt, outcomeFromValidationErrors(errors), errors);
+    void this.emitVerificationTelemetry(input, result, Date.now() - started);
+    return result;
+  }
+
+  private async emitVerificationTelemetry(
+    input: {
+      receiptId: string;
+      expectedRequestId?: string;
+      expectedEnvironment?: "sandbox" | "production";
+    },
+    result: PartnerKitSafeResult,
+    latencyMs: number,
+  ): Promise<void> {
+    if (this.options.reportVerificationTelemetry === false) return;
+    if (!this.options.applicationId && this.options.reportVerificationTelemetry !== true) return;
+    try {
+      const { instrumentVerifyForActionResult } = await import("@/lib/partner/integrationObservability/instrument");
+      await instrumentVerifyForActionResult({
+        options: this.options,
+        verifyInput: input,
+        result,
+        latencyMs,
+      });
+    } catch {
+      // Telemetry must never affect verification.
     }
-    return safeFromReceipt(receipt, outcomeFromValidationErrors(errors), errors);
   }
 
   async verifyEligibilityPresentation(
