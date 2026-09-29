@@ -553,6 +553,16 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
       "Design Partner Program — success criteria, decisions, case-study permissions, customer-reported evidence. Composes #497 value evidence. Service role only.",
   },
   {
+    file: "116_partner_application_policy_bindings.sql",
+    tier: "recommended",
+    creates: ["partner_launchpad_application_policies"],
+    alters: [],
+    seeds: [],
+    extensions: ["partner_launchpad_add_application_policy_atomic"],
+    notes:
+      "Multi-policy bindings per Launchpad application. Primary policy remains on partner_launchpad_applications. Secondary bindings sandbox-configured until explicit production authorization.",
+  },
+  {
     file: "096_partner_policy_proposals.sql",
     tier: "recommended",
     creates: ["partner_policy_proposals"],
