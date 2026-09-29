@@ -1,5 +1,9 @@
 -- FILE: supabase/migrations/117_hosted_handoff_policy_binding.sql
 -- Pin Hosted Partner Flow handoffs to application policy bindings (migration 116).
+--
+-- Prerequisites:
+--   099_hosted_partner_flow_handoffs.sql (creates hosted_partner_flow_handoffs)
+--   116_partner_application_policy_bindings.sql (binding_id semantics)
 
 ALTER TABLE public.hosted_partner_flow_handoffs
   ADD COLUMN IF NOT EXISTS binding_id text,

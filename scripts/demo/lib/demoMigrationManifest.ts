@@ -553,6 +553,20 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
       "Design Partner Program — success criteria, decisions, case-study permissions, customer-reported evidence. Composes #497 value evidence. Service role only.",
   },
   {
+    file: "119_launchpad_production_schema_repair.sql",
+    tier: "recommended",
+    creates: [],
+    alters: [
+      "partner_launchpad_applications.production_api_key_id",
+      "partner_launchpad_applications.production_activated_at",
+      "partner_api_keys.launchpad_application_id",
+    ],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Forward-only repair for drifted production DBs with 084 but missing 085/095/110 DDL. Idempotent. Does not create hosted_partner_flow_handoffs — apply 099. Apply before 116 when production_activated_at is absent.",
+  },
+  {
     file: "116_partner_application_policy_bindings.sql",
     tier: "recommended",
     creates: ["partner_launchpad_application_policies"],
@@ -560,16 +574,7 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
     seeds: [],
     extensions: ["partner_launchpad_add_application_policy_atomic"],
     notes:
-      "Multi-policy bindings per Launchpad application. Primary policy remains on partner_launchpad_applications. Secondary bindings sandbox-configured until explicit production authorization.",
-  },
-  {
-    file: "118_binding_production_authorization.sql",
-    tier: "recommended",
-    creates: ["partner_binding_production_access_requests"],
-    alters: ["partner_launchpad_application_policies"],
-    seeds: [],
-    extensions: [],
-    notes: "Per-binding production authorization lifecycle, requests table, and RPCs.",
+      "Multi-policy bindings per Launchpad application. Requires 110 (production_activated_at) or 119 repair before apply. Primary policy on partner_launchpad_applications; secondary bindings sandbox until explicit authorization.",
   },
   {
     file: "117_hosted_handoff_policy_binding.sql",
@@ -578,7 +583,16 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
     alters: ["hosted_partner_flow_handoffs"],
     seeds: [],
     extensions: [],
-    notes: "Pins Hosted Partner Flow handoffs to binding_id, pack_id, and result_family.",
+    notes: "Pins Hosted Partner Flow handoffs to binding_id, pack_id, result_family. Requires 099 (hosted_partner_flow_handoffs table).",
+  },
+  {
+    file: "118_binding_production_authorization.sql",
+    tier: "recommended",
+    creates: ["partner_binding_production_access_requests"],
+    alters: ["partner_launchpad_application_policies"],
+    seeds: [],
+    extensions: [],
+    notes: "Per-binding production authorization lifecycle. Requires 116 + 110/095 infrastructure.",
   },
   {
     file: "096_partner_policy_proposals.sql",
@@ -759,6 +773,8 @@ export const OBJECT_PROVENANCE: Record<string, string> = {
   partner_design_partner_criteria: "115_partner_design_partner_program.sql",
   partner_case_study_permissions: "115_partner_design_partner_program.sql",
   partner_customer_reported_evidence: "115_partner_design_partner_program.sql",
+  partner_launchpad_application_policies: "116_partner_application_policy_bindings.sql",
+  partner_binding_production_access_requests: "118_binding_production_authorization.sql",
   chain_attestation_nonces: "101_chain_attestation_nonces.sql",
   onchain_gate_deployments: "102_verified_onchain_gate_deployments.sql",
   partner_billing_intents: "109_partner_solana_usdc_billing.sql",

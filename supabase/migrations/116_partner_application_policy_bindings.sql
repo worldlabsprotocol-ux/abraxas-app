@@ -1,6 +1,11 @@
 -- FILE: supabase/migrations/116_partner_application_policy_bindings.sql
 -- Multi-policy bindings per Launchpad application (canonical extension of #495).
 --
+-- Prerequisites (must exist before apply):
+--   084_partner_launchpad_foundation.sql
+--   110_partner_launchpad_activate_production_atomic.sql (production_activated_at column)
+--     — or 119_launchpad_production_schema_repair.sql on drifted databases
+--
 -- Primary policy remains on partner_launchpad_applications for production activation
 -- and verifyForAction defaults. Secondary bindings are sandbox-configured until
 -- explicit production authorization per binding.
