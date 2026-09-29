@@ -111,7 +111,7 @@ describe("trading venue integration profiles", () => {
     const tokenized = adapter("tokenized_securities_venue");
     const issued = tokenized.issueActionContract();
     if ("ok" in issued) throw new Error("contract");
-    expect(issued.network_context?.network_id).toBe("tokenized_securities_venue");
+    expect(issued.network_context).toBeUndefined();
     expect(issued.wallet_binding).toBe("optional");
     const result = await tokenized.preflight({
       result: tokenized.evaluateFetchedReceipt(venueFixtureReceipt("approved")),
