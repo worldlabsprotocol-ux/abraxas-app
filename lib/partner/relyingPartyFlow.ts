@@ -29,6 +29,7 @@ import { getReceiptByDecisionId } from "@/lib/decisionReceipts/service";
 import { resolveClaimStatusAtRead } from "@/lib/trust/credentialStatusRegistry";
 import { buildEvaluatedClaimRefs, claimTypesFromEvaluation } from "@/lib/decisionReceipts/claimRefs";
 import { issueReceiptForDecision } from "@/lib/decisionReceipts/service";
+import { resolveReceiptDecisionContext } from "@/lib/partner/launchpad/productionActivation";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { createVerificationRequest, getPolicy } from "@/lib/verification/requestsService";
 import { resolveIssuablePolicyForPartner } from "@/lib/policy/changeControl/lifecycle";
@@ -237,6 +238,7 @@ export async function issuePartnerSessionReceipt(input: {
   credentialJti: string;
   verificationRequestId?: string;
   expectedPolicyVersion?: number;
+  launchpadApplicationId?: string | null;
   /** When true, supersede prior session decisions before issuing (refresh after TTL). */
   supersedePriorSession?: boolean;
 }): Promise<{
@@ -400,6 +402,11 @@ export async function issuePartnerSessionReceipt(input: {
         claimTypesFromEvaluation(evaluation.claims),
       );
 
+      const decisionContext = await resolveReceiptDecisionContext({
+        policySandboxOnly: Boolean(policy.rules_json.sandbox_only),
+        launchpadApplicationId: input.launchpadApplicationId,
+      });
+
       const receipt = await issueReceiptForDecision({
         decisionId,
         partnerId: input.partnerId,
@@ -411,7 +418,7 @@ export async function issuePartnerSessionReceipt(input: {
         claimsJson: evaluation.claims,
         evaluatedClaimRefs: claimRefs,
         expiresAt: sessionExpires,
-        decisionContext: policy.rules_json.sandbox_only ? "sandbox_only" : "production",
+        decisionContext,
       });
 
       if (!receipt) throw new Error("Failed to issue session receipt");
@@ -596,6 +603,7 @@ export async function evaluatePartnerFlow(input: {
   purpose?: string;
   appOrigin?: string;
   expectedPolicyVersion?: number;
+  launchpadApplicationId?: string | null;
 }): Promise<PartnerFlowEvaluateResult> {
   if (!await isReturnUrlAllowed(input.partnerId, input.returnUrl)) {
     throw new Error("return_url not allowlisted for partner");
@@ -658,6 +666,7 @@ export async function evaluatePartnerFlow(input: {
         policyId: input.policyId,
         credentialJti: credential.credential_jti,
         expectedPolicyVersion: input.expectedPolicyVersion,
+        launchpadApplicationId: input.launchpadApplicationId,
       });
 
       const redirect_url = buildRedirectUrl(input.returnUrl, {
@@ -734,6 +743,7 @@ export async function completePartnerFlowAfterApproval(input: {
   returnUrl: string;
   verificationRequestId?: string;
   expectedPolicyVersion?: number;
+  launchpadApplicationId?: string | null;
 }): Promise<PartnerFlowEvaluateResult & { ok: true } | { ok: false; error: string }> {
   if (!await isReturnUrlAllowed(input.partnerId, input.returnUrl)) {
     return { ok: false, error: "return_url not allowlisted for partner" };
@@ -762,6 +772,7 @@ export async function completePartnerFlowAfterApproval(input: {
     credentialJti: credential.credential_jti,
     verificationRequestId: input.verificationRequestId,
     expectedPolicyVersion: input.expectedPolicyVersion,
+    launchpadApplicationId: input.launchpadApplicationId,
   });
 
   const { decision_id, partner_result, receipt_id, receipt_expires_at, replay_status, currently_valid, validity, invalidation_reasons } = issued;
@@ -806,6 +817,7 @@ export async function refreshPartnerSessionReceipt(input: {
   policyId: string;
   returnUrl: string;
   expectedPolicyVersion?: number;
+  launchpadApplicationId?: string | null;
 }): Promise<PartnerFlowEvaluateResult> {
   const credential = await getHolderCredentialStatus(input.suiAddress);
   if (credential.status !== "active" || !credential.credential_jti) {
@@ -837,6 +849,7 @@ export async function refreshPartnerSessionReceipt(input: {
     credentialJti: credential.credential_jti,
     supersedePriorSession: true,
     expectedPolicyVersion: input.expectedPolicyVersion,
+    launchpadApplicationId: input.launchpadApplicationId,
   });
 
   const redirect_url = buildRedirectUrl(input.returnUrl, {

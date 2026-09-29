@@ -151,14 +151,14 @@ export default function AdminProductionReviewPage() {
                 {item.request_ref} · {item.policy_id} v{item.policy_version}
               </p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                <button type="button" aria-label={`Approve ${item.app_label}`} disabled={pendingId === item.request_id} onClick={() => { setConfirmId(item.request_id); setConfirmDecision("approve"); }} style={{ padding: "0.55rem 0.85rem", borderRadius: 8, border: "none", background: ACCENT, color: "#04110c", fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>Approve reviewed path</button>
+                <button type="button" aria-label={`Activate production for ${item.app_label}`} disabled={pendingId === item.request_id} onClick={() => { setConfirmId(item.request_id); setConfirmDecision("approve"); }} style={{ padding: "0.55rem 0.85rem", borderRadius: 8, border: "none", background: ACCENT, color: "#04110c", fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>Activate production</button>
                 <button type="button" aria-label={`Reject ${item.app_label}`} disabled={pendingId === item.request_id} onClick={() => { setConfirmId(item.request_id); setConfirmDecision("reject"); }} style={{ padding: "0.55rem 0.85rem", borderRadius: 8, border: "1px solid rgba(255,255,255,0.2)", background: "transparent", color: "#fecaca", fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>Reject</button>
               </div>
               {confirmId === item.request_id && (confirmDecision === "approve" || confirmDecision === "reject") && (
                 <div role="alertdialog" aria-label="Confirm review decision" style={{ marginTop: "0.75rem", padding: "0.75rem", borderRadius: 8, border: "1px solid rgba(16,185,129,0.35)" }}>
                   <p style={{ fontFamily: FONT, fontSize: "0.78rem", margin: 0 }}>
                     {confirmDecision === "approve"
-                      ? "Confirm approval for the reviewed Production integration path only. No key, Mainnet, wallet, or transfer is created."
+                      ? "Confirm canonical production activation: review approval, environment promotion, policy pin, and one abx_live_ credential. Partner reveals the secret once in Launchpad."
                       : "Confirm rejection. The partner sees only a safe remediation class, not internal reasons."}
                   </p>
                   <div style={{ display: "flex", gap: "0.45rem", marginTop: "0.6rem" }}>
@@ -171,10 +171,12 @@ export default function AdminProductionReviewPage() {
           ))}
         </div>
 
-        <h2 style={{ fontFamily: FONT, fontSize: "1rem", marginTop: "1.75rem" }}>Approved — issue Production credential</h2>
-        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "rgba(255,255,255,0.62)", lineHeight: 1.6 }}>{PRODUCTION_CREDENTIAL_CONFIRMATION}</p>
+        <h2 style={{ fontFamily: FONT, fontSize: "1rem", marginTop: "1.75rem" }}>Activated — credential lifecycle</h2>
+        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "rgba(255,255,255,0.62)", lineHeight: 1.6 }}>
+          New activations issue credentials in the same transaction as approval. Use this section for legacy completion, rotation, or revocation only.
+        </p>
         {!loading && approved.length === 0 && (
-          <p style={{ fontFamily: FONT, color: "rgba(255,255,255,0.5)" }}>No approved requests waiting for credential issuance.</p>
+          <p style={{ fontFamily: FONT, color: "rgba(255,255,255,0.5)" }}>No activated integrations in this view.</p>
         )}
         <div style={{ display: "grid", gap: "0.85rem", marginTop: "0.75rem" }}>
           {approved.map((item) => (
@@ -184,8 +186,11 @@ export default function AdminProductionReviewPage() {
                 {item.request_ref} · credential {item.credential_state ?? "never_issued"}
               </p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-                {(item.credential_state === "never_issued" || item.credential_state === "revoked" || !item.credential_state) && (
-                  <button type="button" aria-label={`Issue Production credential for ${item.app_label}`} disabled={pendingId === item.request_id} onClick={() => { setConfirmId(item.request_id); setConfirmDecision("issue"); }} style={{ padding: "0.55rem 0.85rem", borderRadius: 8, border: "none", background: ACCENT, color: "#04110c", fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>Issue Production credential</button>
+                {(item.credential_state === "never_issued" || !item.credential_state) && (
+                  <button type="button" aria-label={`Complete activation for ${item.app_label}`} disabled={pendingId === item.request_id} onClick={() => { setConfirmId(item.request_id); setConfirmDecision("issue"); }} style={{ padding: "0.55rem 0.85rem", borderRadius: 8, border: "none", background: ACCENT, color: "#04110c", fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>Complete activation</button>
+                )}
+                {item.credential_state === "revoked" && (
+                  <button type="button" aria-label={`Re-issue Production credential for ${item.app_label}`} disabled={pendingId === item.request_id} onClick={() => { setConfirmId(item.request_id); setConfirmDecision("issue"); }} style={{ padding: "0.55rem 0.85rem", borderRadius: 8, border: "none", background: ACCENT, color: "#04110c", fontWeight: 700, fontFamily: FONT, cursor: "pointer" }}>Re-issue after revoke</button>
                 )}
                 {item.credential_state === "active" && (
                   <>

@@ -1,8 +1,6 @@
 // FILE: lib/partner/launchpad/productionReview/evaluate.ts
 // Server re-check before an operator Production-review decision. Client fields are never authority.
 
-import { policyPackIsSandboxOnly, resolvePolicyPack } from "@/lib/partner/launchpad/policyPacks";
-import { CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID } from "@/lib/partner/launchpad/customPolicy";
 import { buildGoLiveReadinessView, type GoLiveEvidence } from "@/lib/partner/launchpad/goLiveReadiness/evaluate";
 import { buildPolicyVersionPlannerView } from "@/lib/partner/launchpad/policyVersionPlanner/view";
 import { NETWORK_CAPABILITY_REGISTRY } from "@/lib/partner/networkCapability/registry";
@@ -64,11 +62,6 @@ export function evaluateProductionReviewGates(input: ProductionReviewGateInput):
   const view = buildGoLiveReadinessView(input.evidence, input.displayedCapabilities);
   const requiredFail = view.checks.some((check) => check.required && check.status !== "pass");
   if (requiredFail) blockers.push("readiness_incomplete");
-
-  const pack = resolvePolicyPack(input.application.policy_template_id);
-  const sandboxOnly = input.application.policy_template_id === CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID
-    || (pack ? policyPackIsSandboxOnly(pack) : true);
-  if (sandboxOnly) blockers.push("sandbox_only_policy");
 
   if (
     input.application.policy_id !== input.evidence.policyId

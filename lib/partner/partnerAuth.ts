@@ -4,6 +4,12 @@
 import { createHash, randomBytes } from "crypto";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { NextRequest } from "next/server";
+import {
+  partnerKeyEnvironment,
+  validatePartnerCredentialBoundary,
+  type PartnerCredentialEnvironment,
+} from "@/lib/partner/productionIntegration/credentialBoundary";
+import type { LaunchpadEnvironment } from "@/lib/partner/launchpad/types";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -22,6 +28,21 @@ export interface PartnerAuthContext {
   displayName: string;
   keyPrefix: string;
   scopes: PartnerScope[];
+  launchpadApplicationId: string | null;
+  credentialEnvironment: PartnerCredentialEnvironment | null;
+  credentialStatus: "active" | "revoked";
+}
+
+export interface ScopedPartnerAuthContext extends PartnerAuthContext {
+  applicationEnvironment: LaunchpadEnvironment | null;
+  applicationStatus: string | null;
+  productionActivated: boolean;
+}
+
+export interface PartnerAuthScopeOptions {
+  requiredCredentialEnvironment?: PartnerCredentialEnvironment;
+  requiredApplicationId?: string;
+  requireProductionActive?: boolean;
 }
 
 export interface PartnerAuthFailure {
@@ -78,7 +99,7 @@ export async function authenticatePartner(
   const hash = hashPartnerKey(rawKey);
   const { data, error } = await client
     .from("partner_api_keys")
-    .select("id, partner_id, display_name, key_prefix, scopes, revoked_at")
+    .select("id, partner_id, display_name, key_prefix, scopes, revoked_at, launchpad_application_id")
     .eq("key_hash", hash)
     .maybeSingle();
 
@@ -100,6 +121,8 @@ export async function authenticatePartner(
     .update({ last_used_at: new Date().toISOString() })
     .eq("id", data.id);
 
+  const credentialEnvironment = partnerKeyEnvironment(String(data.key_prefix ?? ""));
+
   return {
     ok: true,
     ctx: {
@@ -108,6 +131,95 @@ export async function authenticatePartner(
       displayName: data.display_name,
       keyPrefix: data.key_prefix,
       scopes,
+      launchpadApplicationId: (data.launchpad_application_id as string | null) ?? null,
+      credentialEnvironment,
+      credentialStatus: "active",
+    },
+  };
+}
+
+async function loadLaunchpadApplicationContext(
+  client: SupabaseClient,
+  applicationId: string,
+  partnerId: string,
+): Promise<{
+  environment: LaunchpadEnvironment | null;
+  status: string | null;
+  productionActivated: boolean;
+} | null> {
+  const { data } = await client
+    .from("partner_launchpad_applications")
+    .select("environment, status, production_activated_at")
+    .eq("id", applicationId)
+    .eq("partner_id", partnerId)
+    .maybeSingle();
+  if (!data) return null;
+  return {
+    environment: data.environment === "production" ? "production" : "sandbox",
+    status: String(data.status ?? ""),
+    productionActivated: Boolean(data.production_activated_at),
+  };
+}
+
+export async function authenticatePartnerScoped(
+  req: NextRequest,
+  requiredScope?: PartnerScope,
+  options: PartnerAuthScopeOptions = {},
+): Promise<{ ok: true; ctx: ScopedPartnerAuthContext } | PartnerAuthFailure> {
+  const auth = await authenticatePartner(req, requiredScope);
+  if (!auth || !auth.ok) {
+    return auth ?? { ok: false, error: "Partner API key required", status: 401 };
+  }
+
+  const client = sb();
+  let applicationEnvironment: LaunchpadEnvironment | null = null;
+  let applicationStatus: string | null = null;
+  let productionActivated = false;
+
+  const appId = options.requiredApplicationId ?? auth.ctx.launchpadApplicationId;
+  if (appId && client) {
+    const appCtx = await loadLaunchpadApplicationContext(client, appId, auth.ctx.partnerId);
+    if (!appCtx) {
+      return { ok: false, error: "Application not found for credential", status: 403 };
+    }
+    applicationEnvironment = appCtx.environment;
+    applicationStatus = appCtx.status;
+    productionActivated = appCtx.productionActivated;
+  }
+
+  const boundary = validatePartnerCredentialBoundary({
+    credential: {
+      keyPrefix: auth.ctx.keyPrefix,
+      partnerId: auth.ctx.partnerId,
+      apiKeyId: auth.ctx.apiKeyId,
+      revoked: false,
+      launchpadApplicationId: auth.ctx.launchpadApplicationId,
+    },
+    expectedEnvironment: options.requiredCredentialEnvironment ?? auth.ctx.credentialEnvironment ?? "sandbox",
+    expectedPartnerId: auth.ctx.partnerId,
+    expectedApplicationId: options.requiredApplicationId,
+    applicationStatus: options.requireProductionActive ? "active" : applicationStatus ?? undefined,
+    productionAccessApproved: options.requireProductionActive ? productionActivated : undefined,
+  });
+
+  if (!boundary.ok) {
+    const error = boundary.errors.includes("credential_wrong_environment")
+      ? "Credential environment mismatch"
+      : boundary.errors.includes("credential_wrong_application")
+        ? "Credential not bound to application"
+        : boundary.errors.includes("live_credential_not_reviewed")
+          ? "Production credential not activated"
+          : "Partner credential rejected";
+    return { ok: false, error, status: 403 };
+  }
+
+  return {
+    ok: true,
+    ctx: {
+      ...auth.ctx,
+      applicationEnvironment,
+      applicationStatus,
+      productionActivated,
     },
   };
 }

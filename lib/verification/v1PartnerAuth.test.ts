@@ -17,6 +17,9 @@ describe("v1 partner scopes", () => {
       displayName: "Test",
       keyPrefix: "abx_test_",
       scopes: ["verify:credential", "verify:registry"],
+      launchpadApplicationId: null,
+      credentialEnvironment: "sandbox",
+      credentialStatus: "active",
     };
     expect(scopeAllowed(ctx, "verify:requests")).toBe(true);
   });
@@ -28,6 +31,9 @@ describe("v1 partner scopes", () => {
       displayName: "Test",
       keyPrefix: "abx_test_",
       scopes: ["verify:registry"],
+      launchpadApplicationId: null,
+      credentialEnvironment: "sandbox",
+      credentialStatus: "active",
     };
     expect(scopeAllowed(ctx, "verify:requests")).toBe(false);
   });
@@ -39,6 +45,9 @@ describe("v1 partner scopes", () => {
       displayName: "Test",
       keyPrefix: "abx_test_",
       scopes: ["verify:requests"],
+      launchpadApplicationId: null,
+      credentialEnvironment: "sandbox",
+      credentialStatus: "active",
     };
     expect(scopeAllowed(ctx, "verify:screening")).toBe(true);
   });
