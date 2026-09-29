@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { validateLaunchpadMigrationChain } from "@/lib/partner/launchpad/launchpadMigrationChain";
 import {
   DEMO_EXCLUDED_MIGRATIONS,
   DEMO_MIGRATION_MANIFEST,
@@ -14,6 +15,10 @@ describe("demoMigrationManifest validation", () => {
 
   it("keeps required migration order aligned with manifest dependencies", () => {
     expect(validateDemoMigrationDependencies()).toEqual([]);
+  });
+
+  it("keeps Launchpad production migration chain dependencies valid", () => {
+    expect(validateLaunchpadMigrationChain()).toEqual([]);
   });
 
   it("excludes superseded migrations 028–031 and the repair migration", () => {

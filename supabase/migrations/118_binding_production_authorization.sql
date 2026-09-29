@@ -1,5 +1,10 @@
 -- FILE: supabase/migrations/118_binding_production_authorization.sql
 -- Per-binding production authorization lifecycle (extends #116 / #500).
+--
+-- Prerequisites:
+--   116_partner_application_policy_bindings.sql
+--   110_partner_launchpad_activate_production_atomic.sql (production_activated_at, activation RPC)
+--   095_partner_launchpad_production_credential_atomic.sql (launchpad_application_id on partner_api_keys)
 
 ALTER TABLE public.partner_launchpad_application_policies
   ADD COLUMN IF NOT EXISTS production_status text NOT NULL DEFAULT 'sandbox_only'
