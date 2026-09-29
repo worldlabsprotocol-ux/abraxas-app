@@ -16,7 +16,7 @@ import { WALLET_STANDARD_NOT_IDENTITY } from "@/lib/partner/walletStandard/contr
 import { EVM_NO_EXECUTION_BOUNDARY } from "@/lib/partner/evm/contract";
 import { CHAIN_ATTESTATION_NOT_EXECUTION } from "@/lib/partner/chainAttestation/contract";
 
-export const STARTER_KIT_VERSION = "1.15.0" as const;
+export const STARTER_KIT_VERSION = "1.16.0" as const;
 export const STARTER_KIT_API_PATH = "/api/developers/integration-studio/starter-kit" as const;
 
 export const STARTER_KIT_RUNTIMES = [
@@ -74,6 +74,7 @@ export const STARTER_KIT_OPTIONAL_CAPABILITIES = [
   "wallet_standard_binding",
   "nft_collection_gate",
   "trading_venue",
+  "partner_activity_signal",
   "payment_authorization",
   "portable_action_contract",
   "solana_gate",
@@ -110,6 +111,7 @@ export const STARTER_KIT_DOES_NOT_DO = [
   "Does not treat a chain eligibility attestation as a payment, transfer, trade, token approval, or gas grant.",
   "Does not rotate partner gate signers automatically or broadcast a signer-update transaction.",
   "Does not treat an eligibility presentation as a bearer credential, passport, or automatic KYC/KYB approval.",
+  "Does not receive raw wallet history, balances, addresses, or whale rankings; activity categories remain partner-owned.",
   "Does not treat activate_protocol_access as a token transfer, mint, spend approval, order, payment, or custody action.",
   "Does not call Utila, collect KYC/KYB evidence, or self-publish planning result categories.",
   "Does not deploy a gate from the browser, Vercel, CI, or an API route.",

@@ -89,4 +89,17 @@ describe("policy packs catalog", () => {
     expect(resolvePolicyPack("executable_partner_code")).toBeNull();
     expect(resolvePolicyPack("custom_sandbox")).toBeNull();
   });
+
+  it("optionally declares pack-level partner activity category allowlists", () => {
+    expect(POLICY_PACKS.age_21_retail.allowed_activity_categories).toEqual([
+      "repeat_participant",
+      "holder_loyalty",
+    ]);
+    expect(POLICY_PACKS.collector_redemption.allowed_activity_categories).toEqual([
+      "repeat_participant",
+      "holder_loyalty",
+      "high_activity",
+    ]);
+    expect(POLICY_PACKS.residency_us.allowed_activity_categories).toBeUndefined();
+  });
 });

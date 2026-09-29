@@ -18,7 +18,9 @@ import {
   studioSnippetForPath,
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio";
-import { isPolicyPackId } from "@/lib/partner/launchpad/policyPacks";
+import { isPolicyPackId, resolvePolicyPack } from "@/lib/partner/launchpad/policyPacks";
+import { PARTNER_ACTIVITY_NO_RAW_DATA } from "@/lib/partner/partnerActivitySignal/contract";
+import { activityCategoriesForPack } from "@/lib/partner/partnerActivitySignal/categories";
 import { tradingVenueProfileExample } from "@/lib/partner/tradingVenue/profiles";
 import { launchpadConfigureHref } from "@/lib/partner/launchpad/partnerFlowRequest/contract";
 import { launchpadPolicyVersionHref } from "@/lib/partner/launchpad/policyVersionPlanner/contract";
@@ -133,6 +135,18 @@ export function IntegrationStudioClient() {
     ? { ...baseCreatedSnippet, code: tradingVenueProfileExample(venueProfileId) }
     : baseCreatedSnippet;
   const activationChecklist = useMemo(() => buildPartnerActivationChecklist(optionalCaps), [optionalCaps]);
+  const optionalCapabilityChoices = useMemo(
+    () => studioPublicCatalog().starter_kit.optional_capabilities.filter(
+      (id) => id !== PATH_IMPLIED_CAPABILITY[pathId],
+    ),
+    [pathId],
+  );
+  const activitySignalSelected = optionalCaps.includes("partner_activity_signal");
+  const activityPackCategories = useMemo(() => {
+    const pack = resolvePolicyPack(packId);
+    if (!pack?.allowed_activity_categories?.length) return [];
+    return activityCategoriesForPack(pack, pack.allowed_activity_categories);
+  }, [packId]);
 
   function toggleCapability(id: string) {
     setOptionalCaps((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
@@ -625,7 +639,7 @@ export function IntegrationStudioClient() {
           <p style={{ ...body, marginBottom: "0.35rem", fontWeight: 700, color: "var(--text-primary)" }}>Optional capabilities</p>
           <p style={{ ...body, marginBottom: "0.55rem" }}>Your selected path is included automatically. Add only extra capabilities your service needs.</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginBottom: "0.75rem" }}>
-            {["webhooks", "wallet_standard_binding", "nft_collection_gate", "trading_venue", "payment_authorization", "portable_action_contract", "solana_gate", "evm_partner_adapter", "onchain_protocol_gate", "solana_onchain_eligibility_gate", "evm_onchain_eligibility_gate"].filter((id) => id !== PATH_IMPLIED_CAPABILITY[pathId]).map((id) => (
+            {optionalCapabilityChoices.map((id) => (
               <button
                 key={id}
                 type="button"
@@ -646,6 +660,29 @@ export function IntegrationStudioClient() {
               </button>
             ))}
           </div>
+          {activitySignalSelected && (
+            <div style={{
+              border: "1px solid var(--border)",
+              borderRadius: 10,
+              padding: "0.65rem 0.75rem",
+              marginBottom: "0.75rem",
+              background: "var(--surface-inset)",
+            }}>
+              <p style={{ ...body, fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
+                Partner activity signal (optional)
+              </p>
+              <p style={{ ...body, marginBottom: "0.45rem" }}>
+                Use a category calculated from your own records alongside an Abraxas receipt. Raw activity data is not sent to Abraxas.
+              </p>
+              <ul style={{ ...body, paddingLeft: "1.1rem", display: "grid", gap: "0.25rem", marginBottom: "0.45rem" }}>
+                <li>Allowed categories for this policy pack: {activityPackCategories.length ? activityPackCategories.join(", ") : "none — choose a pack with an activity allowlist"}</li>
+                <li>Categories come from partner-owned records, not Abraxas verification</li>
+                <li>Holder consent is required before preflight</li>
+                <li>Wallet connection is not required</li>
+              </ul>
+              <p style={{ ...body, marginBottom: 0 }}>{PARTNER_ACTIVITY_NO_RAW_DATA}</p>
+            </div>
+          )}
           <div style={{ marginBottom: "0.85rem" }}>
             <p style={{ ...body, fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.4rem" }}>What this starter kit does not do</p>
             <ul style={{ ...body, paddingLeft: "1.1rem", display: "grid", gap: "0.3rem" }}>

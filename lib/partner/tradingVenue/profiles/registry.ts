@@ -57,7 +57,7 @@ export const VENUE_PROFILE_REGISTRY: readonly VenueIntegrationProfile[] = [
     wallet_binding: "optional",
     current_receipt_required: true,
     durable_replay_required: true,
-    network_id: "tokenized_securities_venue",
+    network_id: null,
     docs_href: "/docs/trading-venue-profiles#tokenized-securities",
     kit_path: "/docs/starter-kit",
     abraxas_executes: false,

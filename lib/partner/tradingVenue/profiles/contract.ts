@@ -115,3 +115,10 @@ export const VENUE_MAINNET_EXTERNAL_REQUIREMENTS = [
   "Partner-owned venue execution: accounts, wallets, market data, risk, orders, and settlement stay with the venue.",
   "No Abraxas venue API, RPC, balance, position, or order path.",
 ] as const;
+
+export {
+  PARTNER_ACTIVITY_SIGNAL_TYPES,
+  validatePartnerActivitySignal,
+  type PartnerActivitySignal,
+  type PartnerActivitySignalType,
+} from "@/lib/partner/partnerActivitySignal/contract";

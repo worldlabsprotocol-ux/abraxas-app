@@ -2,6 +2,8 @@
 // Fail-closed selection validation. No user code. No extra keys.
 
 import { studioPackContract } from "@/lib/partner/integrationStudio/catalog";
+import { packActivityCategories } from "@/lib/partner/partnerActivitySignal/categories";
+import { resolvePolicyPack } from "@/lib/partner/launchpad/policyPacks";
 import { isIntegrationStudioPathId, type IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
 import { getVenueProfile, type VenueProfileId } from "@/lib/partner/tradingVenue/profiles";
 import {
@@ -100,6 +102,13 @@ export function validateStarterKitInput(raw: unknown): StarterKitValidation {
     if (seen.has(item)) return { ok: false, code: "mixed_selection" };
     seen.add(item);
     capabilities.push(item);
+  }
+
+  if (capabilities.includes("partner_activity_signal")) {
+    const pack = resolvePolicyPack(packId);
+    if (!pack || packActivityCategories(pack).length === 0) {
+      return { ok: false, code: "activity_category_unavailable" };
+    }
   }
 
   return {

@@ -28,13 +28,20 @@ const healthyApp = {
 
 describe("sandbox test console", () => {
   it("covers every starter kit platform and keeps fixtures placeholder-only", () => {
-    const fixtures = buildSandboxTestFixtures(["webhooks", "trading_venue", "payment_authorization"]);
+    const fixtures = buildSandboxTestFixtures([
+      "webhooks",
+      "trading_venue",
+      "payment_authorization",
+      "partner_activity_signal",
+    ]);
     expect(fixtures.some((item) => item.id === "callback_request")).toBe(true);
     expect(fixtures.some((item) => item.id === "receipt_approved")).toBe(true);
     expect(fixtures.some((item) => item.id === "receipt_denied")).toBe(true);
     expect(fixtures.some((item) => item.id === "webhook_example")).toBe(true);
     expect(fixtures.some((item) => item.id === "trading_allow")).toBe(true);
     expect(fixtures.some((item) => item.id === "payment_deny")).toBe(true);
+    expect(fixtures.some((item) => item.id === "activity_allow")).toBe(true);
+    expect(fixtures.some((item) => item.id === "activity_replay")).toBe(true);
     const blob = fixtures.map((item) => item.contents).join("\n");
     for (const runtime of STARTER_KIT_RUNTIMES) {
       expect(blob).toContain(runtime);
@@ -49,10 +56,13 @@ describe("sandbox test console", () => {
     expect(core.fixtures.some((item) => item.id === "webhook_example")).toBe(false);
     expect(core.fixtures.some((item) => item.id === "trading_allow")).toBe(false);
     expect(core.checks.find((item) => item.id === "webhooks")?.status).toBe("not_selected");
-    const selected = buildSandboxTestConsoleView(healthyApp, ["webhooks", "not_a_cap"]);
-    expect(selected.selected_capabilities).toEqual(["webhooks"]);
+    const selected = buildSandboxTestConsoleView(healthyApp, ["webhooks", "partner_activity_signal", "not_a_cap"]);
+    expect(selected.selected_capabilities).toEqual(["webhooks", "partner_activity_signal"]);
     expect(selected.fixtures.some((item) => item.id === "webhook_example")).toBe(true);
+    expect(selected.fixtures.some((item) => item.id === "activity_allow")).toBe(true);
     expect(selected.checklist.some((item) => item.id === "webhook_verify")).toBe(true);
+    expect(selected.checklist.some((item) => item.id === "activity_signal_preflight")).toBe(true);
+    expect(selected.checks.find((item) => item.id === "partner_activity_signal")?.status).toBe("action_required");
   });
 
   it("validates callbacks and never treats client policy as authority", () => {
@@ -73,6 +83,7 @@ describe("sandbox test console", () => {
       "trading_venue",
       "payment_authorization",
       "wallet_standard_binding",
+      "partner_activity_signal",
     ]);
     for (const item of items) {
       expect(targetExists(item.href), item.href).toBe(true);
