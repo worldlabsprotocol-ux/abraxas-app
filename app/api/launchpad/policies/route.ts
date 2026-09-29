@@ -3,6 +3,8 @@
 
 import { LAUNCHPAD_POLICY_TEMPLATE_LIST } from "@/lib/partner/launchpad/policyCatalog";
 import { POLICY_PACKS } from "@/lib/partner/launchpad/policyPacks";
+import { buildPolicyPresentation } from "@/lib/partner/launchpad/policyPresentation";
+import { CANONICAL_POLICY_PACK_REGISTRY } from "@/lib/partner/launchpad/policyTruth";
 import { launchpadJson } from "@/lib/partner/launchpad/apiHelpers";
 
 export const dynamic = "force-dynamic";
@@ -11,10 +13,12 @@ export async function GET() {
   return launchpadJson({
     ok: true,
     catalog_version: 1,
+    canonical_registry: CANONICAL_POLICY_PACK_REGISTRY,
     google_account_not_eligibility:
       "Google sign-in creates an Abraxas account. It does not prove age, identity, residency, wallet control, membership, or any other eligibility claim.",
     policies: LAUNCHPAD_POLICY_TEMPLATE_LIST.map((template) => {
       const pack = POLICY_PACKS[template.id];
+      const presentation = buildPolicyPresentation(pack);
       return {
         id: template.id,
         label: template.label,
@@ -30,6 +34,15 @@ export async function GET() {
         partner_receives: pack.partner_receives,
         partner_does_not_receive: pack.partner_does_not_receive,
         production_suitability: pack.production_suitability,
+        presentation: {
+          title: presentation.title,
+          question: presentation.question,
+          requested_label: presentation.requested_label,
+          shared_label: presentation.shared_label,
+          withheld: presentation.withheld,
+          policy_production_eligible: presentation.policy_production_eligible,
+          reuse_notice: presentation.reuse_notice,
+        },
       };
     }),
   });

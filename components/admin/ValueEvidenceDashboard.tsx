@@ -36,6 +36,19 @@ interface PortfolioPayload {
     applications?: Array<Record<string, unknown>>;
     fundraising_slide_readiness?: Record<string, unknown>;
   };
+  policy_adoption?: {
+    canonical_policies_available: number;
+    production_eligible_policies: number;
+    actively_consumed_policies: number;
+    applications_with_multiple_policies: number;
+    production_applications_with_multiple_policies: number;
+    partners_with_multiple_configured_policies: number;
+    partners_with_multiple_production_policies: number;
+    policy_expansion_observed: boolean;
+    evidence_reuse_observed: boolean;
+    aggregates: Array<Record<string, unknown>>;
+    notice: string;
+  };
   evidence?: Record<string, unknown>;
 }
 
@@ -149,6 +162,12 @@ export function ValueEvidenceDashboard() {
               <ContentCard title="Design partner funnel">
                 <FunnelCounts counts={designPartner?.funnel?.counts ?? portfolio?.gtm_funnel ?? {}} />
               </ContentCard>
+
+              {payload.policy_adoption && (
+                <ContentCard title="Policy adoption / expansion">
+                  <PolicyAdoptionPanel adoption={payload.policy_adoption} />
+                </ContentCard>
+              )}
 
               {portfolio?.fundraising_matrix && (
                 <ContentCard title="Fundraising evidence">
@@ -343,6 +362,54 @@ function ApplicationEvidenceView({ evidence, designPartner }: { evidence: Record
         </ContentCard>
       )}
     </>
+  );
+}
+
+function PolicyAdoptionPanel({ adoption }: { adoption: NonNullable<PortfolioPayload["policy_adoption"]> }) {
+  return (
+    <div>
+      <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: "0 0 0.75rem", lineHeight: 1.55 }}>
+        {adoption.notice}
+      </p>
+      <div style={{ display: "grid", gap: "0.65rem", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", marginBottom: "0.85rem" }}>
+        <MetricWithProvenance label="Canonical policies" value={adoption.canonical_policies_available} provenance="measured" />
+        <MetricWithProvenance label="Production eligible" value={adoption.production_eligible_policies} provenance="measured" />
+        <MetricWithProvenance label="Actively consumed" value={adoption.actively_consumed_policies} provenance="measured" />
+        <MetricWithProvenance label="Apps with >1 policy" value={adoption.applications_with_multiple_policies} provenance="measured" />
+        <MetricWithProvenance label="Production apps >1 policy" value={adoption.production_applications_with_multiple_policies} provenance="measured" />
+        <MetricWithProvenance label="Partners >1 configured" value={adoption.partners_with_multiple_configured_policies} provenance="measured" />
+        <MetricWithProvenance label="Partners >1 production" value={adoption.partners_with_multiple_production_policies} provenance="measured" />
+      </div>
+      <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: "0 0 0.55rem" }}>
+        Policy expansion {adoption.policy_expansion_observed ? "observed" : "not yet observed"} · Evidence reuse {adoption.evidence_reuse_observed ? "observed" : "not yet observed"}
+      </p>
+      {adoption.aggregates.length > 0 && (
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: FONT, fontSize: "0.68rem" }}>
+            <thead>
+              <tr>
+                {["Pack", "Result family", "Sandbox apps", "Production apps", "Requests", "Verified", "Reuse"].map((h) => (
+                  <th key={h} style={{ textAlign: "left", padding: "0.35rem", borderBottom: "1px solid var(--border)", color: "var(--text-muted)" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {adoption.aggregates.map((row) => (
+                <tr key={String(row.pack_id)}>
+                  <td style={{ padding: "0.35rem", borderBottom: "1px solid var(--border)" }}>{String(row.pack_id)}</td>
+                  <td style={{ padding: "0.35rem", borderBottom: "1px solid var(--border)" }}>{String(row.result_family)}</td>
+                  <td style={{ padding: "0.35rem", borderBottom: "1px solid var(--border)" }}>{String(row.sandbox_applications)}</td>
+                  <td style={{ padding: "0.35rem", borderBottom: "1px solid var(--border)" }}>{String(row.production_applications)}</td>
+                  <td style={{ padding: "0.35rem", borderBottom: "1px solid var(--border)" }}>{String(row.request_volume)}</td>
+                  <td style={{ padding: "0.35rem", borderBottom: "1px solid var(--border)" }}>{String(row.verified_receipts)}</td>
+                  <td style={{ padding: "0.35rem", borderBottom: "1px solid var(--border)" }}>{String(row.evidence_reuse_count)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -61,7 +61,7 @@ export function HomeArchitectureFlow() {
       >
         <PrivacyProofPanel
           title="Application receives"
-          items={["21+ eligibility: Yes"]}
+          items={["21+ eligibility: Yes", "U.S. residency: Yes", "Other approved eligibility results"]}
           tone="share"
         />
         <PrivacyProofPanel
