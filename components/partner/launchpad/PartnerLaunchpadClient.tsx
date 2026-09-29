@@ -29,6 +29,7 @@ import { PartnerSandboxTestConsolePanel } from "@/components/partner/launchpad/P
 import { PartnerGoLiveReadinessPanel } from "@/components/partner/launchpad/PartnerGoLiveReadinessPanel";
 import { PartnerIntegrationHandoffPanel } from "@/components/partner/launchpad/PartnerIntegrationHandoffPanel";
 import { PartnerIntegrationHealthPanel } from "@/components/partner/launchpad/PartnerIntegrationHealthPanel";
+import { PartnerIntegrationPerformancePanel } from "@/components/partner/launchpad/PartnerIntegrationPerformancePanel";
 import { PartnerFlowRequestPanel } from "@/components/partner/launchpad/PartnerFlowRequestPanel";
 import { PolicyVersionPlannerPanel } from "@/components/partner/launchpad/PolicyVersionPlannerPanel";
 import { NetworkReadinessPanel } from "@/components/partner/launchpad/NetworkReadinessPanel";
@@ -892,6 +893,10 @@ export function PartnerLaunchpadClient({
 
       {activeApp && (
         <PartnerIntegrationHealthPanel applicationId={activeApp.id} />
+      )}
+
+      {activeApp && (
+        <PartnerIntegrationPerformancePanel applicationId={activeApp.id} />
       )}
 
       {activeApp && (
