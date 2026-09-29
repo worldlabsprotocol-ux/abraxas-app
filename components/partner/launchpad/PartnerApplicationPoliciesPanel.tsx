@@ -30,7 +30,18 @@ export function PartnerApplicationPoliciesPanel({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [adding, setAdding] = useState<string | null>(null);
+  const [requestingProduction, setRequestingProduction] = useState<string | null>(null);
   const [showCatalog, setShowCatalog] = useState(false);
+
+  const productionStatusLabel: Record<string, string> = {
+    sandbox_only: "Sandbox only",
+    production_requested: "Under review",
+    production_under_review: "Under review",
+    production_approved: "Approved",
+    production_active: "Production active",
+    production_rejected: "Rejected",
+    production_suspended: "Suspended",
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -51,6 +62,24 @@ export function PartnerApplicationPoliciesPanel({
   }, [applicationId]);
 
   useEffect(() => { void load(); }, [load]);
+
+  async function requestBindingProduction(bindingId: string) {
+    setRequestingProduction(bindingId);
+    setError("");
+    const res = await fetch(`/api/launchpad/applications/${applicationId}/binding-production`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ binding_id: bindingId }),
+    });
+    const data = await res.json() as { error?: string; code?: string };
+    if (!res.ok) {
+      setError(data.code ?? data.error ?? "Could not request binding production");
+    } else {
+      await load();
+    }
+    setRequestingProduction(null);
+  }
 
   async function addPolicy(templateId: string) {
     setAdding(templateId);
@@ -121,30 +150,48 @@ export function PartnerApplicationPoliciesPanel({
       ) : (
         <div style={{ display: "grid", gap: "0.65rem", marginBottom: "0.85rem" }}>
           {summary.bindings.map((binding) => (
-            <EligibilityPolicyCard
-              key={binding.binding_id ?? binding.policy_id}
-              title={binding.title}
-              question={binding.question}
-              partnerReceives={binding.partner_receives}
-              partnerDoesNotReceive={binding.partner_does_not_receive}
-              technicalId={binding.policy_id}
-              packId={String(binding.pack_id)}
-              catalogVersion={binding.policy_version}
-              resultFamily={binding.disclosed_result}
-              environment={
-                binding.application_production_authorized ? "production" : "sandbox"
-              }
-              availability={binding.availability}
-              policyProductionEligible={binding.policy_production_eligible}
-              applicationProductionAuthorized={binding.application_production_authorized}
-              compatibilityHint={binding.compatibility_hint}
-              requestVolume={binding.request_volume}
-              verifiedReceipts={binding.verified_receipts}
-              evidenceReuseCount={binding.evidence_reuse_count}
-              minimumAssurance={binding.minimum_assurance}
-              receiptLifetimeHours={binding.receipt_lifetime_hours}
-              reuseNotice={binding.reuse_notice}
-            />
+            <div key={binding.binding_id ?? binding.policy_id}>
+              <EligibilityPolicyCard
+                title={binding.title}
+                question={binding.question}
+                partnerReceives={binding.partner_receives}
+                partnerDoesNotReceive={binding.partner_does_not_receive}
+                technicalId={binding.policy_id}
+                packId={String(binding.pack_id)}
+                catalogVersion={binding.policy_version}
+                resultFamily={binding.disclosed_result}
+                environment={
+                  binding.application_production_authorized ? "production" : "sandbox"
+                }
+                availability={binding.availability}
+                policyProductionEligible={binding.policy_production_eligible}
+                applicationProductionAuthorized={binding.application_production_authorized}
+                compatibilityHint={binding.compatibility_hint}
+                requestVolume={binding.request_volume}
+                verifiedReceipts={binding.verified_receipts}
+                evidenceReuseCount={binding.evidence_reuse_count}
+                minimumAssurance={binding.minimum_assurance}
+                receiptLifetimeHours={binding.receipt_lifetime_hours}
+                reuseNotice={binding.reuse_notice}
+              />
+              <p style={{ fontFamily: FONT, fontSize: "0.7rem", color: "var(--text-secondary)", margin: "0.35rem 0 0" }}>
+                Production: {productionStatusLabel[binding.production_status] ?? binding.production_status}
+                {binding.production_next_action === "request_binding_production" && binding.binding_id && (
+                  <>
+                    {" · "}
+                    <Btn
+                      size="sm"
+                      variant="secondary"
+                      loading={requestingProduction === binding.binding_id}
+                      disabled={Boolean(requestingProduction)}
+                      onClick={() => void requestBindingProduction(binding.binding_id!)}
+                    >
+                      Request production
+                    </Btn>
+                  </>
+                )}
+              </p>
+            </div>
           ))}
         </div>
       )}

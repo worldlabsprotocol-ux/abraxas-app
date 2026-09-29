@@ -563,6 +563,15 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
       "Multi-policy bindings per Launchpad application. Primary policy remains on partner_launchpad_applications. Secondary bindings sandbox-configured until explicit production authorization.",
   },
   {
+    file: "118_binding_production_authorization.sql",
+    tier: "recommended",
+    creates: ["partner_binding_production_access_requests"],
+    alters: ["partner_launchpad_application_policies"],
+    seeds: [],
+    extensions: [],
+    notes: "Per-binding production authorization lifecycle, requests table, and RPCs.",
+  },
+  {
     file: "117_hosted_handoff_policy_binding.sql",
     tier: "recommended",
     creates: [],

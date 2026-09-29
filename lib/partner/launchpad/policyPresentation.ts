@@ -57,6 +57,8 @@ export interface ApplicationPolicyBindingView extends PolicyPresentationView {
   application_environment: "sandbox" | "production";
   application_production_active: boolean;
   application_production_authorized: boolean;
+  production_status: import("./bindingProduction/contract").BindingProductionStatus;
+  production_next_action: string | null;
   compatibility_hint: CompatibilityHint;
   request_volume: number | null;
   verified_receipts: number | null;
@@ -124,9 +126,13 @@ export function applicationProductionAuthorized(input: {
   bindingRole: "primary" | "secondary";
   applicationProductionActive: boolean;
   pack: PolicyPack;
+  productionStatus?: import("./bindingProduction/contract").BindingProductionStatus;
+  productionAuthorizedAt?: string | null;
 }): boolean {
   if (policyPackIsSandboxOnly(input.pack)) return false;
-  if (input.bindingRole === "primary") return input.applicationProductionActive;
+  if (input.productionStatus === "production_suspended") return false;
+  if (input.productionStatus === "production_active" && input.productionAuthorizedAt) return true;
+  if (input.bindingRole === "primary" && input.applicationProductionActive) return true;
   return false;
 }
 

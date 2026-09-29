@@ -48,6 +48,7 @@ export async function buildPolicyAdoptionSummary(input: {
   const consumedPacks = new Set<string>();
 
   for (const app of input.applications) {
+    const productionActive = app.environment === "production" && Boolean(app.production_activated_at);
     const bindings = bindingsReady
       ? await listApplicationPolicyBindings(app)
       : [{
@@ -55,8 +56,9 @@ export async function buildPolicyAdoptionSummary(input: {
           policy_version: app.policy_version,
           policy_template_id: app.policy_template_id,
           binding_role: "primary" as const,
+          production_status: productionActive ? "production_active" as const : "sandbox_only" as const,
+          production_authorized_at: app.production_activated_at ?? null,
         }];
-    const productionActive = app.environment === "production" && Boolean(app.production_activated_at);
 
     if (bindings.length > 1) {
       applicationsWithMultiple += 1;
@@ -68,7 +70,9 @@ export async function buildPolicyAdoptionSummary(input: {
 
     for (const binding of bindings) {
       configured.add(binding.policy_template_id);
-      if (binding.binding_role === "primary" && productionActive) {
+      const bindingProductionActive = binding.production_status === "production_active"
+        || (binding.binding_role === "primary" && productionActive && Boolean(binding.production_authorized_at));
+      if (bindingProductionActive) {
         production.add(binding.policy_template_id);
       }
 
