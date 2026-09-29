@@ -16,6 +16,10 @@ import {
   type PartnerIntegrationOutcome,
 } from "@/lib/partner/integrationKit/contract";
 import { resolvePolicyPack } from "@/lib/partner/launchpad/policyPacks";
+import {
+  embedRequestIdInReturnUrl,
+  validatePartnerRequestCorrelation,
+} from "@/lib/partner/productionIntegration/requestCorrelation";
 import { pickAllowedKeys, safeCallbackClientErrors } from "@/lib/privacy/selectiveDisclosure";
 import { SHARED_SURFACE_FIELDS } from "@/lib/privacy/selectiveDisclosure/contract";
 
@@ -89,9 +93,12 @@ export class AbraxasPartnerKit {
     this.options = options;
   }
 
-  createHostedVerificationUrl(returnUrl: string): string {
+  createHostedVerificationUrl(returnUrl: string, options?: { requestId?: string }): string {
     const base = (this.options.baseUrl ?? SITE_URL).replace(/\/$/, "");
-    const params = new URLSearchParams({ return_url: returnUrl });
+    const boundReturnUrl = options?.requestId
+      ? embedRequestIdInReturnUrl(returnUrl, options.requestId)
+      : returnUrl;
+    const params = new URLSearchParams({ return_url: boundReturnUrl });
     if (this.options.appSlug) {
       params.set("app", this.options.appSlug);
     } else {
@@ -195,6 +202,78 @@ export class AbraxasPartnerKit {
       });
     }
     return this.evaluateFetchedReceipt(fetched.receipt);
+  }
+
+  async verifyForAction(input: {
+    receiptId: string;
+    expectedPartnerId?: string;
+    expectedPolicyId?: string;
+    expectedPolicyVersion?: number;
+    expectedEnvironment?: "sandbox" | "production";
+    expectedRequestId?: string;
+    callbackRequestId?: string | null;
+    expectedPurpose?: string;
+    expectedAction?: string;
+  }): Promise<PartnerKitSafeResult> {
+    const partnerId = input.expectedPartnerId ?? this.options.partnerId;
+    const policyId = input.expectedPolicyId ?? this.options.policyId;
+    const environment = input.expectedEnvironment ?? this.options.environment;
+    const policyVersion = input.expectedPolicyVersion ?? this.options.policyVersion;
+
+    const fetched = await this.fetchPublicReceipt(input.receiptId);
+    if (!fetched.ok) {
+      return emptyResult({
+        outcome: outcomeFromValidationErrors(fetched.errors),
+        errors: fetched.errors,
+        receipt_id: input.receiptId,
+      });
+    }
+
+    const receipt = fetched.receipt;
+    const errors: string[] = [];
+
+    const mode = environment === "production" ? "production" : "sandbox";
+    const validation = validatePartnerFlowPublicReceipt(receipt, {
+      partnerId,
+      policyId,
+      mode,
+    });
+    errors.push(...validation.errors);
+
+    if (policyVersion != null) {
+      const version = (receipt as typeof receipt & { policy_version?: number }).policy_version;
+      if (version == null || Number.isNaN(Number(version))) {
+        errors.push("policy_version_missing");
+      } else if (Number(version) !== policyVersion) {
+        errors.push(`policy_version_mismatch:expected=${policyVersion},got=${version}`);
+      }
+    }
+
+    if (receipt.schema_version && receipt.schema_version !== PARTNER_INTEGRATION_RECEIPT_SCHEMA_VERSION) {
+      errors.push(`schema_version_unsupported:${receipt.schema_version}`);
+    }
+
+    if (input.expectedRequestId) {
+      const callbackRequestId = input.callbackRequestId ?? null;
+      if (!callbackRequestId || callbackRequestId !== input.expectedRequestId) {
+        errors.push("request_correlation_mismatch");
+      } else {
+        const correlation = validatePartnerRequestCorrelation({
+          requestId: input.expectedRequestId,
+          expectedPartnerId: partnerId,
+          expectedPolicyId: policyId,
+          expectedEnvironment: environment,
+          expectedPurpose: input.expectedPurpose,
+          expectedAction: input.expectedAction,
+        });
+        if (!correlation.ok) errors.push(...correlation.errors);
+      }
+    }
+
+    if (errors.length === 0 && validation.ok) {
+      return safeFromReceipt(receipt, "permitted", []);
+    }
+    return safeFromReceipt(receipt, outcomeFromValidationErrors(errors), errors);
   }
 
   async verifyEligibilityPresentation(

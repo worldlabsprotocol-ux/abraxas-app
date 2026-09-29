@@ -200,6 +200,26 @@ describe("Partner Starter Kit Generator", () => {
     expect(kit.does_not_do).toEqual([...STARTER_KIT_DOES_NOT_DO]);
   });
 
+  it("includes production contract and verifyForAction in generated kits", () => {
+    const validated = validateStarterKitInput({
+      pack_id: "age_21_retail",
+      path: "hosted_partner_flow",
+      runtime: "typescript_nextjs",
+      capabilities: [],
+    });
+    expect(validated.ok).toBe(true);
+    if (!validated.ok) return;
+    const kit = generateStarterKit(validated.selection);
+    expect(kit.ok).toBe(true);
+    if (!kit.ok) return;
+    const blob = kit.files.map((file) => file.contents).join("\n");
+    expect(kit.files.some((file) => file.path === "PRODUCTION_INTEGRATION.md")).toBe(true);
+    expect(blob).toContain("verifyForAction");
+    expect(blob).toContain("Never trust approved=true");
+    expect(blob).not.toMatch(/if\s*\(.*approved.*\)\s*grant/i);
+    expect(blob).not.toMatch(/abx_live_/);
+  });
+
   it("creates a valid STORE ZIP for every supported runtime without Uint8Array for-of", () => {
     const zipSource = readFileSync(join(process.cwd(), "lib/partner/starterKit/zipStore.ts"), "utf8");
     expect(zipSource).not.toMatch(/for\s*\(\s*const\s+\w+\s+of\s+bytes\s*\)/);

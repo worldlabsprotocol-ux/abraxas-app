@@ -10,6 +10,7 @@ const ALLOWED = new Set<string>(PARTNER_INTEGRATION_CALLBACK_KEYS);
 
 export interface ParsedPartnerCallback {
   receipt_id: string | null;
+  request_id: string | null;
   decision: string | null;
   status: string | null;
   decision_id: string | null;
@@ -51,6 +52,7 @@ export function parsePartnerCallbackParams(
     ok: true,
     params: {
       receipt_id: receiptId,
+      request_id: params.get("request_id")?.trim() || null,
       decision: params.get("decision"),
       status: params.get("status"),
       decision_id: params.get("decision_id"),
