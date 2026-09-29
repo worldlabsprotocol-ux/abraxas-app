@@ -31,6 +31,8 @@ import { PartnerIntegrationHandoffPanel } from "@/components/partner/launchpad/P
 import { PartnerIntegrationHealthPanel } from "@/components/partner/launchpad/PartnerIntegrationHealthPanel";
 import { PartnerIntegrationPerformancePanel } from "@/components/partner/launchpad/PartnerIntegrationPerformancePanel";
 import { PartnerPilotProgressPanel } from "@/components/partner/launchpad/PartnerPilotProgressPanel";
+import { PartnerApplicationOverview } from "@/components/partner/launchpad/PartnerApplicationOverview";
+import { EnvironmentBadge } from "@/components/product/EnvironmentBadge";
 import { PartnerFlowRequestPanel } from "@/components/partner/launchpad/PartnerFlowRequestPanel";
 import { PolicyVersionPlannerPanel } from "@/components/partner/launchpad/PolicyVersionPlannerPanel";
 import { NetworkReadinessPanel } from "@/components/partner/launchpad/NetworkReadinessPanel";
@@ -456,9 +458,17 @@ export function PartnerLaunchpadClient({
     <RedesignPage accent="developer" maxWidth={960}>
       <PageHeader
         eyebrow="Partner Launchpad"
-        title="Build your integration"
-        subtitle="Choose a policy pack, host verification, receive a signed result, and test the loop yourself. Proofs, not profiles."
+        title="Integrate private eligibility"
+        subtitle="Ask an eligibility policy question, integrate in sandbox, verify signed receipts, run a measured pilot, and request production when ready."
       />
+
+      {activeApp && (
+        <PartnerApplicationOverview
+          application={activeApp}
+          integrationHealth={integrationHealth}
+          onNavigate={(s) => setStep(s as WizardStep)}
+        />
+      )}
 
       <ContentCard title="Build your integration">
         <div id="policy-proposal">
@@ -500,11 +510,9 @@ export function PartnerLaunchpadClient({
         </ContentCard>
       ) : (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem", flexWrap: "wrap", gap: "0.5rem" }}>
-          <div style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)" }}>
+          <div style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
             {workspace?.display_name ?? partnerId}
-            <span style={badgeStyle(workspace?.environment === "production" ? "#10B981" : "#6366F1")}>
-              {workspace?.environment ?? "sandbox"}
-            </span>
+            <EnvironmentBadge environment={workspace?.environment ?? "sandbox"} />
           </div>
           <Btn variant="ghost" size="sm" onClick={() => void signOut()}>Sign out</Btn>
         </div>

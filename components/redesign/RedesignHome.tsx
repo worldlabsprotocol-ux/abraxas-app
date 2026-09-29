@@ -10,6 +10,7 @@ import { HomeProtocolMap } from "@/components/home/HomeProtocolMap";
 import { HomeUseCases } from "@/components/home/HomeUseCases";
 import { HomeGoodTroubleIntegration } from "@/components/home/HomeGoodTroubleIntegration";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
+import { HomeArchitectureFlow, HomeProblemComparison } from "@/components/product";
 import { HomeProductEvidence } from "@/components/home/HomeProductEvidence";
 import { HomePolicyOutcomeStrip } from "@/components/home/HomePolicyOutcomeStrip";
 import { HomeTrustClose } from "@/components/home/HomeTrustClose";
@@ -31,6 +32,8 @@ function HomeContent() {
     <main style={{ position: "relative", zIndex: 1, paddingBottom: "3.5rem", textAlign: "center" }}>
       <div className="abx-command-shell" style={{ ...MAXW, display: "flex", flexDirection: "column", gap: SECTION_GAP, alignItems: "center", width: "100%" }}>
         <HomeSharpHero />
+        <HomeArchitectureFlow />
+        <HomeProblemComparison />
         <HomeGoodTroubleIntegration />
         <HomeCapabilityMap />
         <HomeProtocolMap />

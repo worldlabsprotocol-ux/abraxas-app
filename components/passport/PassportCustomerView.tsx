@@ -34,6 +34,7 @@ import {
 } from "@/lib/passport/passportCustomerStatus";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import { PUBLIC_SURFACE } from "@/lib/design/publicSurface";
+import { TrustStatus } from "@/components/product/TrustStatus";
 import type { CapturePolicyContext } from "@/lib/idv/capturePolicyContext";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -64,6 +65,22 @@ interface Props {
   onWalletBound?: () => Promise<WalletBindingRefreshState | void>;
   handoff: PartnerFlowHandoffController;
   capturePolicy?: CapturePolicyContext;
+}
+
+function buildPassportTrustItems(identityUi: string, hasCredential: boolean) {
+  const items: Array<{ kind: "verified" | "current" | "reusable" | "refresh_required" | "under_review" | "pending"; detail?: string }> = [];
+  if (identityUi === "verified" && hasCredential) {
+    items.push({ kind: "verified", detail: "Identity verified" });
+    items.push({ kind: "current", detail: "Evidence is current for eligible requests" });
+    items.push({ kind: "reusable", detail: "May satisfy new policy questions with consent" });
+  } else if (identityUi === "under_review") {
+    items.push({ kind: "under_review", detail: "Verification in progress" });
+  } else if (identityUi === "needs_action") {
+    items.push({ kind: "refresh_required", detail: "Refresh required before some requests" });
+  } else {
+    items.push({ kind: "pending", detail: "Verified evidence added when a policy requires it" });
+  }
+  return items;
 }
 
 export function PassportCustomerView({
@@ -153,16 +170,27 @@ export function PassportCustomerView({
           fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)",
           letterSpacing: "0.04em", textTransform: "uppercase", margin: "0 0 0.35rem",
         }}>
-          Passport status
+          Abraxas Passport
         </p>
         <h2 id="passport-status-heading" style={{
           fontFamily: FONT, fontSize: "1.1rem", fontWeight: 800, margin: "0 0 0.35rem", color: "var(--text-primary)",
         }}>
           {status.label}
         </h2>
-        <p style={{ fontFamily: FONT, fontSize: "0.86rem", lineHeight: 1.6, color: "var(--text-secondary)", margin: 0 }}>
+        <p style={{ fontFamily: FONT, fontSize: "0.86rem", lineHeight: 1.6, color: "var(--text-secondary)", margin: "0 0 0.65rem" }}>
           {status.summary}
         </p>
+        <TrustStatus
+          audience="holder"
+          items={buildPassportTrustItems(status.identityUi, hasCredential)}
+        />
+        {proofItems.length > 0 && (
+          <ul style={{ margin: "0.75rem 0 0", padding: "0.75rem 0 0", listStyle: "none", borderTop: "1px solid var(--border)", display: "grid", gap: "0.3rem" }}>
+            {proofItems.map((item) => (
+              <li key={item} style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)" }}>{item}</li>
+            ))}
+          </ul>
+        )}
       </section>
 
       {walletDone && (
