@@ -210,6 +210,27 @@ export async function activateProductionApplication(input: {
       requestStatus: "approved",
     });
 
+    try {
+      const { recordIntegrationEventBestEffort } = await import("@/lib/partner/integrationObservability/record");
+      await recordIntegrationEventBestEffort({
+        partnerId: row.partner_id,
+        applicationId: row.application_id,
+        environment: "production",
+        eventType: "production_activation_completed",
+        lifecycleStage: "activation",
+        outcome: replay ? "idempotency_replay" : "activated",
+        policyId: row.policy_id ?? application.policy_id,
+        policyVersion: row.policy_version ?? application.policy_version,
+        metadata: {
+          idempotency_replay: replay,
+          issues_production_key: row.issues_production_key === true,
+          credential_state: (row.credential_state as string | undefined) ?? "active",
+        },
+      });
+    } catch {
+      // Observability must not block production activation.
+    }
+
     return {
       ok: true,
       code: row.code,

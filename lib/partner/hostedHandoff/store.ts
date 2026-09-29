@@ -217,6 +217,41 @@ export async function createHostedHandoff(input: {
     fixture: input.fixture === true,
   };
   await persist(record);
+  try {
+    const { recordIntegrationEventBestEffort } = await import("@/lib/partner/integrationObservability/record");
+    await recordIntegrationEventBestEffort({
+      partnerId: record.partner_id,
+      applicationId: record.application_id,
+      environment: record.environment,
+      eventType: "hosted_handoff_created",
+      lifecycleStage: "request",
+      outcome: "created",
+      policyId: record.policy_id,
+      policyVersion: record.policy_version,
+      requestId: record.verify_request,
+      handoffRef: record.handoff_ref,
+      correlationId: record.verify_request,
+      metadata: {
+        handoff_status: record.status,
+        verify_request_ref: record.verify_request.slice(0, 12),
+      },
+    });
+    await recordIntegrationEventBestEffort({
+      partnerId: record.partner_id,
+      applicationId: record.application_id,
+      environment: record.environment,
+      eventType: "verification_request_created",
+      lifecycleStage: "request",
+      outcome: "created",
+      policyId: record.policy_id,
+      policyVersion: record.policy_version,
+      requestId: record.verify_request,
+      handoffRef: record.handoff_ref,
+      correlationId: record.verify_request,
+    });
+  } catch {
+    // Observability must not block handoff creation.
+  }
   return record;
 }
 
@@ -261,6 +296,26 @@ export async function completeHostedHandoff(input: {
     consumed_at: new Date().toISOString(),
   };
   await persist(next);
+  try {
+    const { recordIntegrationEventBestEffort } = await import("@/lib/partner/integrationObservability/record");
+    await recordIntegrationEventBestEffort({
+      partnerId: next.partner_id,
+      applicationId: next.application_id,
+      environment: next.environment,
+      eventType: "hosted_handoff_completed",
+      lifecycleStage: "holder",
+      outcome: "completed",
+      policyId: next.policy_id,
+      policyVersion: next.policy_version,
+      requestId: next.verify_request,
+      receiptId: input.publicReceiptId,
+      handoffRef: next.handoff_ref,
+      correlationId: next.verify_request,
+      metadata: { handoff_status: next.status },
+    });
+  } catch {
+    // Observability must not block handoff completion.
+  }
   return next;
 }
 

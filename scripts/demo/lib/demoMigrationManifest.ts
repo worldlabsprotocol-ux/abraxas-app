@@ -493,6 +493,16 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
       "Canonical production activation: review approval + environment + credential + audit in one transaction. Replaces split 085 approve + 095 issue for new operator workflows.",
   },
   {
+    file: "111_partner_integration_events.sql",
+    tier: "recommended",
+    creates: ["partner_integration_events"],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Privacy-safe relying-party integration lifecycle events for partner Launchpad health, operator diagnostics, and audit export. No PII or secrets.",
+  },
+  {
     file: "096_partner_policy_proposals.sql",
     tier: "recommended",
     creates: ["partner_policy_proposals"],
@@ -660,6 +670,7 @@ export const OBJECT_PROVENANCE: Record<string, string> = {
   partner_policy_release_candidates: "097_policy_release_candidates.sql",
   verification_issuer_trust_registry: "098_verification_issuer_trust_registry.sql",
   hosted_partner_flow_handoffs: "099_hosted_partner_flow_handoffs.sql",
+  partner_integration_events: "111_partner_integration_events.sql",
   chain_attestation_nonces: "101_chain_attestation_nonces.sql",
   onchain_gate_deployments: "102_verified_onchain_gate_deployments.sql",
   partner_billing_intents: "109_partner_solana_usdc_billing.sql",
