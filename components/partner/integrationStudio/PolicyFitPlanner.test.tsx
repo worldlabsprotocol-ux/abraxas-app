@@ -14,7 +14,7 @@ afterEach(() => {
 describe("PolicyFitPlanner", () => {
   it("exposes accessible headings and pressed state labels", async () => {
     render(<PolicyFitPlanner onApply={vi.fn()} />);
-    expect(screen.getByRole("heading", { name: "Find the right policy" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "What does your application need to verify?" })).toBeInTheDocument();
     expect(screen.getByText(/What action do you want to gate/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Gate storefront browse or checkout" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByText(/A new or Production policy requires review/i)).toBeInTheDocument();
@@ -53,8 +53,9 @@ describe("PolicyFitPlanner", () => {
 
     render(<PolicyFitPlanner onApply={onApply} />);
     await userEvent.click(screen.getByRole("button", { name: "Find matching policy pack" }));
-    expect(await screen.findByRole("heading", { name: /Recommended pack: Age 21 eligibility/i })).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent(/Fit found/i);
+    expect(await screen.findByText("Recommended")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Age 21 eligibility" })).toBeInTheDocument();
+    expect(screen.getByText(/minimum disclosure/i)).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Use this pack in Studio" }));
     expect(onApply).toHaveBeenCalledWith({
       packId: "age_21_retail",
