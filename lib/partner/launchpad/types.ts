@@ -30,6 +30,7 @@ export type LaunchpadActivityEventType =
   | "production_credential_issued"
   | "production_credential_rotated"
   | "production_credential_revoked"
+  | "production_application_activated"
   | "sandbox_readiness_run"
   | "settlement_intent_created"
   | "settlement_intent_submitted"
@@ -55,6 +56,7 @@ export interface LaunchpadApplicationRow {
   api_key_id: string | null;
   production_api_key_id: string | null;
   production_key_revealed_at: string | null;
+  production_activated_at?: string | null;
   status: LaunchpadApplicationStatus;
   idempotency_key: string | null;
   created_at: string;

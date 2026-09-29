@@ -480,7 +480,17 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
     seeds: [],
     extensions: [],
     notes:
-      "DEMO-first atomic operator Production credential issue/rotate/revoke. One active abx_live_ key per Launchpad app. Does not change environment or activate Mainnet. Do not auto-apply from Vercel.",
+      "Legacy atomic operator Production credential rotate/revoke. New activations must use migration 110. Do not auto-apply from Vercel.",
+  },
+  {
+    file: "110_partner_launchpad_activate_production_atomic.sql",
+    tier: "recommended",
+    creates: ["partner_launchpad_activate_production_atomic RPC"],
+    alters: ["partner_launchpad_applications.production_activated_at"],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Canonical production activation: review approval + environment + credential + audit in one transaction. Replaces split 085 approve + 095 issue for new operator workflows.",
   },
   {
     file: "096_partner_policy_proposals.sql",

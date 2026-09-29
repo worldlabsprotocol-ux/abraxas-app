@@ -138,6 +138,7 @@ export async function POST(request: NextRequest) {
       returnUrl,
       suiAddress: session.session.suiAddress,
       verificationRequestId: body.verification_request_id,
+      launchpadApplicationId: launchpadContext.applicationId,
       expectedPolicyVersion: await resolveLaunchpadPinnedPolicyVersion({
         context: launchpadContext,
         partnerId,

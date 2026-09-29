@@ -156,6 +156,7 @@ export async function POST(request: NextRequest) {
       suiAddress: session.session.suiAddress,
       appOrigin: getPublicAppOriginFromRequest(request),
       expectedPolicyVersion,
+      launchpadApplicationId: launchpadContext.applicationId,
     });
 
     const flowTraceId = resolvePartnerFlowTraceId({

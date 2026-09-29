@@ -46,6 +46,9 @@ function legacyEnvAuth(req: NextRequest): V1PartnerAuth | V1PartnerAuthFailure |
       displayName: "Legacy env key",
       keyPrefix: configured.slice(0, 12),
       scopes: LEGACY_SCOPES,
+      launchpadApplicationId: null,
+      credentialEnvironment: configured.startsWith("abx_live_") ? "production" : "sandbox",
+      credentialStatus: "active",
     },
   };
 }

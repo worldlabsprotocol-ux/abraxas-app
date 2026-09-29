@@ -30,6 +30,12 @@ vi.mock("@/lib/policy/changeControl/schemaReady", () => ({
   probePolicyChangeControlSchema: (...args: unknown[]) => probeMock(...args),
 }));
 
+const activateMock = vi.fn();
+
+vi.mock("@/lib/partner/launchpad/productionActivation", () => ({
+  activateProductionApplication: (...args: unknown[]) => activateMock(...args),
+}));
+
 import { loadProductionCredentialStatus, operateProductionCredential } from "./issue";
 
 const application: LaunchpadApplicationRow = {
@@ -46,6 +52,7 @@ const application: LaunchpadApplicationRow = {
   api_key_id: "key-1",
   production_api_key_id: null,
   production_key_revealed_at: null,
+  production_activated_at: null,
   status: "active",
   idempotency_key: null,
   created_at: "2026-01-01T00:00:00.000Z",
@@ -126,6 +133,14 @@ describe("operateProductionCredential", () => {
     getAppMock.mockResolvedValue({ ...application });
     loadEvidenceMock.mockResolvedValue(evidence);
     probeMock.mockResolvedValue({ ready: true });
+    activateMock.mockResolvedValue({
+      ok: true,
+      credential_state: "active",
+      key_prefix: "abx_live_xxxxxxx",
+      request_id: "req-1",
+      application_id: "app-1",
+      code: "issued",
+    });
   });
 
   it("requires explicit confirmation and never issues on a status read", async () => {
@@ -137,17 +152,17 @@ describe("operateProductionCredential", () => {
     expect(rpcMock.mock.calls.some((call) => call[1]?.p_action === "issue")).toBe(false);
   });
 
-  it("denies pending reviews before calling the write RPC", async () => {
+  it("denies pending reviews before calling canonical activation", async () => {
     requestStatus = "pending";
     const result = await operateProductionCredential({ requestId: "req-1", action: "issue", confirm: true });
     expect(result.code).toBe("review_not_approved");
-    expect(rpcMock.mock.calls.filter((call) => call[1]?.p_action === "issue")).toHaveLength(0);
+    expect(activateMock).not.toHaveBeenCalled();
   });
 
-  it("fails closed when the atomic RPC is missing", async () => {
-    rpcMock.mockResolvedValue({ data: null, error: { message: "Could not find the function public.partner_launchpad_operate_production_credential_atomic" } });
+  it("fails closed when canonical activation is unavailable", async () => {
+    activateMock.mockResolvedValue({ ok: false, code: "production_activation_store_unavailable" });
     const result = await operateProductionCredential({ requestId: "req-1", action: "issue", confirm: true });
-    expect(result).toMatchObject({ ok: false, code: "production_credential_store_unavailable", credential_state: "unavailable" });
+    expect(result).toMatchObject({ ok: false, code: "production_activation_store_unavailable", credential_state: "unavailable" });
   });
 
   it("isolates tenants so the wrong partner app cannot mint a live key", async () => {
@@ -157,27 +172,24 @@ describe("operateProductionCredential", () => {
     expect(rpcMock.mock.calls.filter((call) => call[1]?.p_action === "issue")).toHaveLength(0);
   });
 
-  it("returns the raw key only when the durable RPC reports issued", async () => {
+  it("delegates issue to canonical activation without returning a raw key", async () => {
     const result = await operateProductionCredential({ requestId: "req-1", action: "issue", confirm: true });
     expect(result.ok).toBe(true);
-    expect(result.api_key?.startsWith("abx_live_")).toBe(true);
+    expect(result.api_key).toBeUndefined();
+    expect(activateMock).toHaveBeenCalledWith({ requestId: "req-1", confirm: true });
     expect(result.activates_mainnet).toBe(false);
     expect(result.environment_changed).toBe(false);
-    const write = rpcMock.mock.calls.find((call) => call[1]?.p_action === "issue");
-    expect(write?.[1]?.p_key_prefix).toMatch(/^abx_live_/);
-    expect(write?.[1]?.p_key_hash).toMatch(/^[a-f0-9]{64}$/);
   });
 
-  it("never reveals a raw key on already_issued", async () => {
-    rpcMock.mockImplementation(async (_name: string, args: { p_action?: string }) => {
-      if (args?.p_action === "revoke" && !args.p_key_prefix) return { data: { ok: false, code: "not_found" }, error: null };
-      return {
-        data: { ok: false, code: "already_issued", credential_state: "active", activates_mainnet: false, executes: false, environment_changed: false },
-        error: null,
-      };
+  it("never reveals a raw key on idempotent replay", async () => {
+    activateMock.mockResolvedValue({
+      ok: true,
+      idempotency_replay: true,
+      credential_state: "active",
+      code: "idempotency_replay",
     });
     const result = await operateProductionCredential({ requestId: "req-1", action: "issue", confirm: true });
-    expect(result).toMatchObject({ ok: false, code: "already_issued" });
+    expect(result).toMatchObject({ ok: true, code: "idempotency_replay" });
     expect(result.api_key).toBeUndefined();
     expect(JSON.stringify(result)).not.toMatch(/abx_live_[A-Za-z0-9_-]{12,}/);
   });
@@ -222,10 +234,10 @@ describe("operateProductionCredential", () => {
     expect(result.api_key).toBeUndefined();
   });
 
-  it("re-checks readiness before the write RPC", async () => {
+  it("re-checks readiness before canonical activation", async () => {
     loadEvidenceMock.mockResolvedValue({ ...evidence, activeSandboxKey: false, allowedReturnUrls: [] });
     const result = await operateProductionCredential({ requestId: "req-1", action: "issue", confirm: true });
     expect(result.code).toBe("production_credential_not_ready");
-    expect(rpcMock.mock.calls.filter((call) => call[1]?.p_action === "issue")).toHaveLength(0);
+    expect(activateMock).not.toHaveBeenCalled();
   });
 });

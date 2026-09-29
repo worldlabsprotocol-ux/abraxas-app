@@ -6,7 +6,8 @@ import { resetHostedHandoffsForTests } from "@/lib/partner/hostedHandoff";
 const resolvePartnerConsoleSessionMock = vi.fn();
 const getAppMock = vi.fn();
 const loadStoredMock = vi.fn();
-const authenticatePartnerMock = vi.fn();
+const authenticatePartnerScopedMock = vi.fn();
+const getAppByIdMock = vi.fn();
 
 vi.mock("@/lib/partner/launchpad/partnerConsoleSession", () => ({
   resolvePartnerConsoleSession: (...args: unknown[]) => resolvePartnerConsoleSessionMock(...args),
@@ -19,6 +20,7 @@ vi.mock("@/lib/partner/launchpad/partnerConsoleSession", () => ({
 
 vi.mock("@/lib/partner/launchpad/resolveLaunchpadApplication", () => ({
   getLaunchpadApplicationForPartner: (...args: unknown[]) => getAppMock(...args),
+  getLaunchpadApplicationById: (...args: unknown[]) => getAppByIdMock(...args),
 }));
 
 vi.mock("@/lib/partner/launchpad/partnerFlowRequest", () => ({
@@ -26,7 +28,8 @@ vi.mock("@/lib/partner/launchpad/partnerFlowRequest", () => ({
 }));
 
 vi.mock("@/lib/partner/partnerAuth", () => ({
-  authenticatePartner: (...args: unknown[]) => authenticatePartnerMock(...args),
+  authenticatePartnerScoped: (...args: unknown[]) => authenticatePartnerScopedMock(...args),
+  authenticatePartner: (...args: unknown[]) => authenticatePartnerScopedMock(...args),
 }));
 
 import { POST } from "@/app/api/launchpad/applications/[id]/hosted-handoff/route";
@@ -54,7 +57,8 @@ describe("hosted-handoff launchpad routes", () => {
     resetHostedHandoffsForTests();
     vi.clearAllMocks();
     resolvePartnerConsoleSessionMock.mockResolvedValue({ partnerId: "acme" });
-    authenticatePartnerMock.mockResolvedValue({ ok: true, ctx: { partnerId: "acme" } });
+    authenticatePartnerScopedMock.mockResolvedValue({ ok: true, ctx: { partnerId: "acme", keyPrefix: "abx_test_abc12345" } });
+    getAppByIdMock.mockResolvedValue(app);
     getAppMock.mockResolvedValue(app);
     loadStoredMock.mockResolvedValue({
       purpose: "Confirm adult retail eligibility",
@@ -103,14 +107,15 @@ describe("hosted-handoff launchpad routes", () => {
   });
 
   it("requires partner API credentials for runtime create", async () => {
-    authenticatePartnerMock.mockResolvedValue({ ok: false, status: 401, error: "unauthorized" });
+    authenticatePartnerScopedMock.mockResolvedValue({ ok: false, status: 401, error: "unauthorized" });
     const denied = await runtimePost(new NextRequest("http://localhost/api/v1/partner-handoff", {
       method: "POST",
+      headers: { "x-abraxas-application-id": app.id },
       body: JSON.stringify({ runtime: "universal_https" }),
     }));
     expect(denied.status).toBe(401);
 
-    authenticatePartnerMock.mockResolvedValue({ ok: true, ctx: { partnerId: "acme" } });
+    authenticatePartnerScopedMock.mockResolvedValue({ ok: true, ctx: { partnerId: "acme", keyPrefix: "abx_test_abc12345" } });
     const created = await runtimePost(new NextRequest("http://localhost/api/v1/partner-handoff", {
       method: "POST",
       headers: {

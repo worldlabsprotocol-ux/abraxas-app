@@ -39,8 +39,12 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   if (!parsed.ok) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, parsed.code);
   const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
-  if (app.environment !== "sandbox") {
-    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "sandbox_only");
+  if (app.environment === "production") {
+    if (!app.production_activated_at || app.status !== "active") {
+      return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "production_not_activated");
+    }
+  } else if (app.environment !== "sandbox") {
+    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "invalid_environment");
   }
   let stored;
   try {

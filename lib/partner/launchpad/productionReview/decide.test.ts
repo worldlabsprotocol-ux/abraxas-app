@@ -31,6 +31,12 @@ vi.mock("@/lib/policy/changeControl/schemaReady", () => ({
   probePolicyChangeControlSchema: (...args: unknown[]) => probeMock(...args),
 }));
 
+const activateMock = vi.fn();
+
+vi.mock("@/lib/partner/launchpad/productionActivation", () => ({
+  activateProductionApplication: (...args: unknown[]) => activateMock(...args),
+}));
+
 import { decideProductionReview } from "./decide";
 
 const application: LaunchpadApplicationRow = {
@@ -47,6 +53,7 @@ const application: LaunchpadApplicationRow = {
   api_key_id: "key-1",
   production_api_key_id: null,
   production_key_revealed_at: null,
+  production_activated_at: null,
   status: "active",
   idempotency_key: null,
   created_at: "2026-01-01T00:00:00.000Z",
@@ -110,23 +117,30 @@ describe("decideProductionReview", () => {
     loadEvidenceMock.mockResolvedValue(evidence);
     probeMock.mockResolvedValue({ ready: true });
     recordMock.mockResolvedValue(undefined);
+    activateMock.mockResolvedValue({
+      ok: true,
+      issues_production_key: true,
+      api_key_id: "live-1",
+      policy_id: application.policy_id,
+      policy_version: application.policy_version,
+      idempotency_replay: false,
+    });
   });
 
-  it("approves without issuing keys, activating networks, or executing", async () => {
+  it("activates production through the canonical transaction", async () => {
     const result = await decideProductionReview({ requestId: "req-1", decision: "approve", confirm: true });
     expect(result.ok).toBe(true);
     expect(result.decision).toBe("approved");
-    expect(result.issues_production_key).toBe(false);
     expect(result.activates_mainnet).toBe(false);
     expect(result.executes).toBe(false);
-    expect(JSON.stringify(result)).not.toMatch(/abx_live_|generatePartnerKey|rpc/);
+    expect(activateMock).toHaveBeenCalledWith({ requestId: "req-1", reviewerNotes: "production_activated", confirm: true });
     expect(recordMock).toHaveBeenCalled();
     const event = recordMock.mock.calls[0]?.[1] as { eventType: string; metadata: Record<string, unknown> };
     expect(event.eventType).toBe("production_review_approved");
-    expect(event.metadata.issues_production_key).toBe(false);
+    expect(event.metadata.activates_production).toBe(true);
   });
 
-  it("replays an existing approval without overwriting history", async () => {
+  it("replays an existing approval idempotently", async () => {
     fromMock.mockImplementation(() => ({
       select: () => ({
         eq: () => ({
@@ -138,8 +152,10 @@ describe("decideProductionReview", () => {
         }),
       }),
     }));
+    activateMock.mockResolvedValue({ ok: true, idempotency_replay: true, issues_production_key: false });
     const result = await decideProductionReview({ requestId: "req-1", decision: "approve", confirm: true });
     expect(result).toMatchObject({ ok: true, replay: true, decision: "approved" });
+    expect(activateMock).toHaveBeenCalled();
     expect(recordMock).not.toHaveBeenCalled();
   });
 

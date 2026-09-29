@@ -38,6 +38,7 @@ const APP: LaunchpadApplicationRow = {
   api_key_id: "key-1",
   production_api_key_id: null,
   production_key_revealed_at: null,
+  production_activated_at: null,
   status: "active",
   idempotency_key: null,
   created_at: "2026-09-20T00:00:00.000Z",

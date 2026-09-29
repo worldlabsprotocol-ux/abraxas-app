@@ -6,8 +6,7 @@ import { loadPartnerFlowStoredConfig } from "@/lib/partner/launchpad/partnerFlow
 import { productionCredentialState } from "@/lib/partner/launchpad/productionCredentials/evaluate";
 import { hasProductionLaunchpadCallback } from "@/lib/partner/launchpad/productionCallbackReadiness";
 import { isVerifiedDomainForCallbacks } from "@/lib/partner/launchpad/domainVerification";
-import { policyPackIsSandboxOnly, resolvePolicyPack } from "@/lib/partner/launchpad/policyPacks";
-import { CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID } from "@/lib/partner/launchpad/customPolicy";
+import { isApplicationProductionUsable } from "@/lib/partner/launchpad/productionActivation";
 import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
 import type { ProductionIntegrationBlocker } from "./contract";
 import { validateRegisteredCallback } from "./callbackSecurity";
@@ -57,12 +56,23 @@ export async function evaluateProductionIntegrationReadiness(
   const evidence = input.evidence;
   const goLive = buildGoLiveReadinessView(evidence, input.selectedCapabilities);
 
-  const approved = evidence.request?.status === "approved" || app.environment === "production";
-  if (!approved) {
+  const activated = isApplicationProductionUsable({
+    productionActivatedAt: app.production_activated_at ?? null,
+    environment: app.environment,
+    status: app.status,
+  });
+  const approved = activated || evidence.request?.status === "approved";
+  if (!activated) {
     blockers.push("production_access_not_approved");
-    checks.push({ id: "production_access", status: "fail", detail: "Reviewed production access is required." });
+    checks.push({
+      id: "production_access",
+      status: approved ? "fail" : "fail",
+      detail: approved
+        ? "Production review approved but activation is incomplete."
+        : "Reviewed production activation is required.",
+    });
   } else {
-    checks.push({ id: "production_access", status: "pass", detail: "Production access is approved." });
+    checks.push({ id: "production_access", status: "pass", detail: "Production application is activated." });
   }
 
   const prodCallback = hasProductionLaunchpadCallback(evidence.allowedReturnUrls);
@@ -90,14 +100,19 @@ export async function evaluateProductionIntegrationReadiness(
     checks.push({ id: "policy_pin", status: "pass", detail: `${app.policy_id} v${app.policy_version}` });
   }
 
-  const pack = resolvePolicyPack(app.policy_template_id);
-  const sandboxOnly = app.policy_template_id === CUSTOM_LAUNCHPAD_POLICY_TEMPLATE_ID
-    || (pack ? policyPackIsSandboxOnly(pack) : true);
-  if (sandboxOnly) {
+  if (!activated) {
     blockers.push("sandbox_only_policy");
-    checks.push({ id: "policy_production_eligible", status: "fail", detail: "Policy pack is sandbox-only until promoted." });
+    checks.push({
+      id: "policy_production_eligible",
+      status: "fail",
+      detail: "Policy is production-usable only after canonical activation pins this app context.",
+    });
   } else {
-    checks.push({ id: "policy_production_eligible", status: "pass", detail: "Policy pack is production-eligible." });
+    checks.push({
+      id: "policy_production_eligible",
+      status: "pass",
+      detail: `Policy ${app.policy_id} v${app.policy_version} is pinned for this activated application.`,
+    });
   }
 
   let storedConfig = { purpose: "", action: "", callback_url: null as string | null };

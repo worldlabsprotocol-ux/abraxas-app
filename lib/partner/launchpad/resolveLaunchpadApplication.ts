@@ -4,6 +4,18 @@ import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
 import { isLaunchpadReturnUrlAllowlisted } from "@/lib/partner/launchpad/launchpadReturnUrlAllowlist";
 
+export async function getLaunchpadApplicationById(
+  applicationId: string,
+): Promise<LaunchpadApplicationRow | null> {
+  const sb = requireSupabaseAdmin();
+  const { data } = await sb
+    .from("partner_launchpad_applications")
+    .select("*")
+    .eq("id", applicationId)
+    .maybeSingle();
+  return (data as LaunchpadApplicationRow | null) ?? null;
+}
+
 export async function getLaunchpadApplicationBySlug(
   publicSlug: string,
 ): Promise<LaunchpadApplicationRow | null> {
