@@ -71,6 +71,7 @@ export const PARTNER_ACTIVITY_BINDING_KEYS = [
   "expires_at",
   "nonce",
   "receipt_requirement",
+  "binding_integrity_hash",
 ] as const;
 
 export const PARTNER_ACTIVITY_SAFE_REASON_CODES = [
@@ -85,6 +86,7 @@ export const PARTNER_ACTIVITY_SAFE_REASON_CODES = [
   "activity_category_denied",
   "raw_activity_forbidden",
   "invalid_activity_signal",
+  "binding_integrity_mismatch",
   "receipt_binding_mismatch",
   "binding_expired",
   "replayed",

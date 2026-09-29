@@ -19,13 +19,16 @@ import {
   issuePartnerActivitySignalBinding,
   type PartnerActivitySignalBinding,
 } from "./bind";
+import { activityCategoriesForPack } from "./categories";
 import { preflightPartnerActivitySignal } from "./preflight";
 import type { PartnerActivityClientVisibleResult } from "./clientVisible";
+import type { PolicyPack } from "@/lib/partner/launchpad/policyPacks";
 
 export interface AbraxasPartnerActivitySignalAdapterOptions extends AbraxasPartnerKitOptions {
   allowedCategories: readonly PartnerActivitySignalType[];
   purpose: string;
   actionScope: string;
+  policyPack?: Pick<PolicyPack, "allowed_activity_categories"> | null;
 }
 
 export class AbraxasPartnerActivitySignalAdapter {
@@ -43,7 +46,7 @@ export class AbraxasPartnerActivitySignalAdapter {
 
   constructor(options: AbraxasPartnerActivitySignalAdapterOptions) {
     this.kit = new AbraxasPartnerKit(options);
-    this.allowedCategories = [...options.allowedCategories];
+    this.allowedCategories = activityCategoriesForPack(options.policyPack ?? null, options.allowedCategories);
     this.purpose = options.purpose.trim();
     this.actionScope = options.actionScope.trim();
   }
@@ -92,6 +95,8 @@ export class AbraxasPartnerActivitySignalAdapter {
       signal: input.signal,
       binding: input.binding,
       allowed_categories: this.allowedCategories,
+      expected_purpose: this.purpose,
+      expected_action_scope: this.actionScope,
     });
     return (pickAllowedKeys(result, PARTNER_ACTIVITY_CLIENT_VISIBLE_KEYS) ?? result) as PartnerActivityClientVisibleResult;
   }

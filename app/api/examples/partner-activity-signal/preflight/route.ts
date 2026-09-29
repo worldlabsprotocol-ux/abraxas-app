@@ -15,6 +15,7 @@ import {
   ACTIVITY_REF_POLICY_ID,
 } from "@/lib/partner/partnerActivitySignal";
 import { rejectPartnerActivityClientOverride } from "@/lib/partner/partnerActivitySignal/contract";
+import { POLICY_PACKS } from "@/lib/partner/launchpad/policyPacks";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,7 @@ function client() {
     policyVersion: 1,
     environment: "sandbox",
     allowedCategories: [...PARTNER_ACTIVITY_SIGNAL_TYPES],
+    policyPack: POLICY_PACKS.age_21_retail,
     purpose: "Confirm one named market-access decision",
     actionScope: "sandbox:market_access",
   });

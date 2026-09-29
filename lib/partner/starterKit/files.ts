@@ -2,6 +2,7 @@
 // Fixed templates. Interpolation is placeholder tokens only.
 
 import { studioPackContract } from "@/lib/partner/integrationStudio/catalog";
+import { resolvePolicyPack } from "@/lib/partner/launchpad/policyPacks";
 import type { IntegrationStudioPathId } from "@/lib/partner/integrationStudio/contract";
 import {
   STARTER_KIT_CANONICAL_CONTRACT,
@@ -339,7 +340,9 @@ export async function POST() {
   return body;
 }
 
-function activityPreflight(runtime: StarterKitRuntime): string {
+function activityPreflight(runtime: StarterKitRuntime, packId: string): string {
+  const pack = resolvePolicyPack(packId);
+  const packCategories = pack?.allowed_activity_categories ?? [];
   const body = `import { AbraxasPartnerActivitySignalAdapter } from "@abraxas/partner-kit/partner-activity-signal";
 import { kit, permitProtocolAction } from ${runtime === "typescript_nextjs" ? '"../../../lib/abraxas"' : '"./lib/abraxas"'};
 
@@ -348,7 +351,8 @@ const activity = new AbraxasPartnerActivitySignalAdapter({
   policyId: kit.options.policyId,
   policyVersion: kit.options.policyVersion,
   environment: kit.options.environment,
-  allowedCategories: ["repeat_participant", "holder_loyalty", "high_activity"],
+  allowedCategories: ${JSON.stringify([...packCategories])},
+  policyPack: { allowed_activity_categories: ${JSON.stringify([...packCategories])} },
   purpose: "Confirm one named access decision",
   actionScope: "sandbox:market_access",
 });
@@ -824,7 +828,7 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     files.push({ path: "src/lib/hosted.ts", contents: hostedHelper() });
     if (webhook) files.push({ path: "app/api/abraxas/webhooks/route.ts", contents: webhookRoute("typescript_nextjs") });
     if (venue) files.push({ path: "app/api/abraxas/trading-preflight/route.ts", contents: venuePreflight("typescript_nextjs", selection.venue_profile_id) });
-    if (activity) files.push({ path: "app/api/abraxas/activity-preflight/route.ts", contents: activityPreflight("typescript_nextjs") });
+    if (activity) files.push({ path: "app/api/abraxas/activity-preflight/route.ts", contents: activityPreflight("typescript_nextjs", selection.pack_id) });
     if (payment) files.push({ path: "app/api/abraxas/payment-preflight/route.ts", contents: paymentPreflight("typescript_nextjs") });
     if (portable) files.push({ path: "app/api/abraxas/action-preflight/route.ts", contents: portablePreflight("typescript_nextjs") });
     if (evm) files.push({ path: "app/api/abraxas/evm-preflight/route.ts", contents: evmPreflight("typescript_nextjs") });
@@ -839,7 +843,7 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     files.push({ path: "src/lib/hosted.ts", contents: hostedHelper() });
     if (webhook) files.push({ path: "src/webhook.ts", contents: webhookRoute("typescript_express") });
     if (venue) files.push({ path: "src/trading-preflight.ts", contents: venuePreflight("typescript_express", selection.venue_profile_id) });
-    if (activity) files.push({ path: "src/activity-preflight.ts", contents: activityPreflight("typescript_express") });
+    if (activity) files.push({ path: "src/activity-preflight.ts", contents: activityPreflight("typescript_express", selection.pack_id) });
     if (payment) files.push({ path: "src/payment-preflight.ts", contents: paymentPreflight("typescript_express") });
     if (portable) files.push({ path: "src/portable-preflight.ts", contents: portablePreflight("typescript_express") });
     if (evm) files.push({ path: "src/evm-preflight.ts", contents: evmPreflight("typescript_express") });

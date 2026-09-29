@@ -22,8 +22,17 @@ export {
   issuePartnerActivitySignalBinding,
   normalizePartnerActivitySignalBinding,
   hashActivitySignalBinding,
+  bindingIntegrityHash,
+  verifyBindingIntegrityHash,
   type PartnerActivitySignalBinding,
+  type ActivityBindingIntegrityFields,
 } from "./bind";
+
+export {
+  packActivityCategories,
+  resolveEffectiveActivityCategories,
+  activityCategoriesForPack,
+} from "./categories";
 
 export {
   preflightPartnerActivitySignal,

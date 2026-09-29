@@ -1,5 +1,9 @@
 // FILE: lib/partner/partnerActivitySignal/bind.ts
 // Receipt-bound activity signal contracts. Server-issued only.
+//
+// Authoritative: fields on PartnerActivitySignalBinding issued by issuePartnerActivitySignalBinding().
+// Untrusted input: any binding object received from HTTP/client code — always re-normalize and verify
+// binding_integrity_hash before preflight.
 
 import { createHash } from "node:crypto";
 import type { AbraxasPartnerKit } from "@/lib/partner/integrationKit";
@@ -12,6 +16,7 @@ import {
 } from "./contract";
 
 const DEFAULT_TTL_MS = 15 * 60 * 1000;
+const MAX_TTL_MS = 60 * 60 * 1000;
 
 export interface PartnerActivitySignalBinding {
   partner_id: string;
@@ -27,12 +32,12 @@ export interface PartnerActivitySignalBinding {
   issued_at: string;
   expires_at: string;
   nonce: string;
+  binding_integrity_hash: `0x${string}`;
 }
 
-export function hashActivitySignalBinding(binding: Pick<
-  PartnerActivitySignalBinding,
-  "partner_id" | "policy_id" | "policy_version" | "receipt_id" | "receipt_payload_hash" | "activity_signal_type" | "purpose" | "action_scope" | "nonce"
->): string {
+export type ActivityBindingIntegrityFields = Omit<PartnerActivitySignalBinding, "binding_integrity_hash">;
+
+export function hashActivitySignalBinding(binding: ActivityBindingIntegrityFields): string {
   const canonical = [
     binding.partner_id,
     binding.policy_id,
@@ -42,9 +47,22 @@ export function hashActivitySignalBinding(binding: Pick<
     binding.activity_signal_type,
     binding.purpose,
     binding.action_scope,
+    binding.environment,
+    binding.issued_at,
+    binding.expires_at,
     binding.nonce,
+    binding.receipt_requirement,
   ].join("|");
   return createHash("sha256").update(canonical).digest("hex");
+}
+
+export function bindingIntegrityHash(binding: ActivityBindingIntegrityFields): `0x${string}` {
+  return `0x${hashActivitySignalBinding(binding)}` as `0x${string}`;
+}
+
+export function verifyBindingIntegrityHash(binding: PartnerActivitySignalBinding): boolean {
+  const { binding_integrity_hash, ...rest } = binding;
+  return binding_integrity_hash.toLowerCase() === bindingIntegrityHash(rest);
 }
 
 export function issuePartnerActivitySignalBinding(input: {
@@ -70,8 +88,10 @@ export function issuePartnerActivitySignalBinding(input: {
   if (!purpose || !actionScope) return { ok: false, reason: "invalid" };
 
   const now = input.now ?? new Date();
-  const ttl = Math.min(Math.max(input.ttlMs ?? DEFAULT_TTL_MS, 30_000), 60 * 60 * 1000);
-  return {
+  const ttl = Math.min(Math.max(input.ttlMs ?? DEFAULT_TTL_MS, 30_000), MAX_TTL_MS);
+  const issuedAt = now.toISOString();
+  const expiresAt = new Date(now.getTime() + ttl).toISOString();
+  const body: ActivityBindingIntegrityFields = {
     partner_id: input.kit.options.partnerId,
     policy_id: input.kit.options.policyId,
     policy_version: input.kit.options.policyVersion ?? 1,
@@ -82,16 +102,19 @@ export function issuePartnerActivitySignalBinding(input: {
     action_scope: actionScope,
     environment: input.kit.options.environment,
     receipt_requirement: PARTNER_ACTIVITY_RECEIPT_REQUIREMENT,
-    issued_at: now.toISOString(),
-    expires_at: new Date(now.getTime() + ttl).toISOString(),
+    issued_at: issuedAt,
+    expires_at: expiresAt,
     nonce: createActionNonce(),
+  };
+  return {
+    ...body,
+    binding_integrity_hash: bindingIntegrityHash(body),
   };
 }
 
 export function normalizePartnerActivitySignalBinding(input: {
-  kit: AbraxasPartnerKit;
   binding: unknown;
-}): PartnerActivitySignalBinding | { ok: false; reason: "invalid" | "invalid_activity_signal" } {
+}): PartnerActivitySignalBinding | { ok: false; reason: "invalid" | "invalid_activity_signal" | "binding_integrity_mismatch" } {
   if (!input.binding || typeof input.binding !== "object" || Array.isArray(input.binding)) {
     return { ok: false, reason: "invalid" };
   }
@@ -110,6 +133,10 @@ export function normalizePartnerActivitySignalBinding(input: {
   if (!/^0x[0-9a-fA-F]{64}$/.test(receiptPayloadHash)) {
     return { ok: false, reason: "invalid" };
   }
+  const integrityHash = typeof raw.binding_integrity_hash === "string" ? raw.binding_integrity_hash.trim() : "";
+  if (!/^0x[0-9a-fA-F]{64}$/.test(integrityHash)) {
+    return { ok: false, reason: "invalid" };
+  }
   const environment = raw.environment === "production" ? "production" : raw.environment === "sandbox" ? "sandbox" : null;
   if (!environment) return { ok: false, reason: "invalid" };
   const nonce = typeof raw.nonce === "string" ? raw.nonce.trim() : "";
@@ -121,7 +148,7 @@ export function normalizePartnerActivitySignalBinding(input: {
   if (!nonce || !expiresAt || !issuedAt || !receiptId || !purpose || !actionScope) {
     return { ok: false, reason: "invalid" };
   }
-  return {
+  const binding: PartnerActivitySignalBinding = {
     partner_id: typeof raw.partner_id === "string" ? raw.partner_id : "",
     policy_id: typeof raw.policy_id === "string" ? raw.policy_id : "",
     policy_version: typeof raw.policy_version === "number" ? raw.policy_version : Number.NaN,
@@ -135,5 +162,10 @@ export function normalizePartnerActivitySignalBinding(input: {
     issued_at: issuedAt,
     expires_at: expiresAt,
     nonce,
+    binding_integrity_hash: integrityHash.toLowerCase() as `0x${string}`,
   };
+  if (!verifyBindingIntegrityHash(binding)) {
+    return { ok: false, reason: "binding_integrity_mismatch" };
+  }
+  return binding;
 }

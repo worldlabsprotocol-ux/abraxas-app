@@ -2,6 +2,7 @@
 // Versioned declarative policy packs — partners select proof, never submit executable policy.
 
 import type { AssuranceLevel, ClaimType } from "@/lib/credentials/claimSchema";
+import type { PartnerActivitySignalType } from "@/lib/partner/partnerActivitySignal/contract";
 import type { PartnerPolicyRules } from "@/lib/policy/types";
 import {
   SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION,
@@ -55,6 +56,8 @@ export interface PolicyPack {
   receipt_claim: string;
   reuse_policy: "session" | "time_bound";
   permitted_methods: string[];
+  /** Optional pack-level allowlist for partner_activity_signal. Absence enables no activity categories. */
+  allowed_activity_categories?: readonly PartnerActivitySignalType[];
   rules: PartnerPolicyRules;
 }
 
@@ -114,6 +117,7 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
     receipt_claim: "age_threshold_met",
     reuse_policy: "time_bound",
     permitted_methods: ["passport"],
+    allowed_activity_categories: ["repeat_participant", "holder_loyalty"],
     rules: {
       ...SANDBOX,
       minimum_age: 21,
@@ -211,6 +215,7 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
     receipt_claim: "product_eligibility",
     reuse_policy: "time_bound",
     permitted_methods: ["passport"],
+    allowed_activity_categories: ["repeat_participant", "holder_loyalty", "high_activity"],
     rules: {
       ...SANDBOX,
       session_receipt_hours: 24,
