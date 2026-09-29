@@ -52,11 +52,15 @@ export function projectInternalFact(input: {
     result_category: pack.disclosed_result,
     disclosure_boundary: canonicalizeDisclosureBoundary(pack.disclosed_result, pack.partner_does_not_receive),
     decision_context: context,
+    source_policy_id: input.receipt.policy_id,
+    source_verification_method: pack.minimum_assurance,
+    verified_at: input.receipt.evaluated_at,
     source_decision_id: input.receipt.verification_decision_id,
     source_receipt_id: input.receipt.id,
     issued_at: input.receipt.evaluated_at,
     expires_at: input.receipt.expires_at,
     status,
+    derived_from_fact_id: null,
   };
 }
 

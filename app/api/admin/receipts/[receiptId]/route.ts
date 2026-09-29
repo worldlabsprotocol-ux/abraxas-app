@@ -12,6 +12,8 @@ import { toPublicView, verifyRecordSignature, resolveReceiptStatus } from "@/lib
 import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver";
 import { evaluateReceiptCurrentValidity } from "@/lib/decisionReceipts/currentValidity";
 import { getReceiptDependencies } from "@/lib/decisionReceipts/dependencies";
+import { getReceiptEvidenceDependencies } from "@/lib/decisionReceipts/evidenceDependencies";
+import { getDerivationByDerivedReceipt } from "@/lib/passport/reusableEligibility/invalidation";
 import {
   isRevocationReasonCode,
   revokeDecisionReceiptControlled,
@@ -36,6 +38,8 @@ export async function GET(
   const validity = await resolveReceiptValidity(record);
   const currentValidity = await evaluateReceiptCurrentValidity({ record });
   const dependencies = await getReceiptDependencies(receiptId);
+  const evidenceDependencies = await getReceiptEvidenceDependencies(receiptId);
+  const reuseDerivation = await getDerivationByDerivedReceipt(receiptId).catch(() => null);
 
   return NextResponse.json({
     receipt: {
@@ -52,6 +56,15 @@ export async function GET(
     current_validity: validity,
     canonical_current_validity: currentValidity,
     dependencies,
+    evidence_dependencies: evidenceDependencies,
+    reuse_trust: reuseDerivation
+      ? {
+          derived_from_source: true,
+          requesting_partner_id: reuseDerivation.requesting_partner_id,
+          requesting_policy_id: reuseDerivation.requesting_policy_id,
+          evidence_dependency_count: evidenceDependencies.length,
+        }
+      : { derived_from_source: false, evidence_dependency_count: evidenceDependencies.length },
     audit_timeline: audit,
   });
 }

@@ -513,6 +513,16 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
       "Explicit receipt supersession records for session refresh. Signed receipt artifacts remain immutable; current validity fails closed.",
   },
   {
+    file: "113_decision_receipt_evidence_dependencies.sql",
+    tier: "recommended",
+    creates: ["decision_receipt_evidence_dependencies"],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Internal receipt-to-reusable-evidence dependency records for verify-once current validity. Service role only; no raw evidence.",
+  },
+  {
     file: "096_partner_policy_proposals.sql",
     tier: "recommended",
     creates: ["partner_policy_proposals"],
@@ -682,6 +692,7 @@ export const OBJECT_PROVENANCE: Record<string, string> = {
   hosted_partner_flow_handoffs: "099_hosted_partner_flow_handoffs.sql",
   partner_integration_events: "111_partner_integration_events.sql",
   decision_receipt_supersessions: "112_decision_receipt_supersessions.sql",
+  decision_receipt_evidence_dependencies: "113_decision_receipt_evidence_dependencies.sql",
   chain_attestation_nonces: "101_chain_attestation_nonces.sql",
   onchain_gate_deployments: "102_verified_onchain_gate_deployments.sql",
   partner_billing_intents: "109_partner_solana_usdc_billing.sql",

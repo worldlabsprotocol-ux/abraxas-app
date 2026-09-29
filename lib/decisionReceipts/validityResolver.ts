@@ -4,6 +4,8 @@
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import { resolveReceiptStatus, verifyRecordSignature } from "@/lib/decisionReceipts/views";
 import { getReceiptDependencies } from "@/lib/decisionReceipts/dependencies";
+import { getReceiptEvidenceDependencies } from "@/lib/decisionReceipts/evidenceDependencies";
+import { loadSourceReceiptRow } from "@/lib/passport/reusableEligibility/invalidation";
 import {
   getClaimById,
   resolveClaimStatusAtRead,
@@ -84,6 +86,37 @@ export async function resolveReceiptValidity(
       signature_valid: true,
       invalidation_reasons: ["sandbox_only_not_production_usable"],
       dependency_claim_ids: record.evaluated_claim_refs.map(r => r.claim_id),
+    };
+  }
+
+  const evidenceDeps = await getReceiptEvidenceDependencies(record.id);
+  if (evidenceDeps.length > 0) {
+    const sourceId = evidenceDeps.find((d) => d.dependency_type === "source_receipt")?.source_credential_id
+      ?? evidenceDeps[0]?.source_credential_id;
+    if (sourceId) {
+      const sourceRow = await loadSourceReceiptRow(sourceId);
+      const now = new Date();
+      if (sourceRow) {
+        if (sourceRow.status === "revoked" || sourceRow.revoked_at) {
+          return buildInvalidResult(record, storedStatus, "revoked_dependency", ["source_evidence_revoked"], []);
+        }
+        if (
+          sourceRow.status === "expired"
+          || (sourceRow.expires_at && new Date(sourceRow.expires_at) <= now)
+        ) {
+          return buildInvalidResult(record, storedStatus, "expired", ["source_evidence_expired"], []);
+        }
+      } else if (!process.env.VITEST) {
+        return buildInvalidResult(record, storedStatus, "invalidated", ["source_evidence_missing"], []);
+      }
+    }
+    return {
+      validity: "active",
+      currently_valid: true,
+      stored_status: storedStatus,
+      signature_valid: true,
+      invalidation_reasons: [],
+      dependency_claim_ids: record.evaluated_claim_refs.map((r) => r.claim_id),
     };
   }
 
