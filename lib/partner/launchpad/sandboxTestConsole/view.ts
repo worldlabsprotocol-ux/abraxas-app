@@ -113,6 +113,14 @@ export function buildSandboxTestConsoleView(
         ? "Use the Solana starter path. No funds movement."
         : "Shown only when Solana is selected.",
     },
+    {
+      id: "partner_activity_signal",
+      label: "Partner activity signal preflight",
+      status: selected.includes("partner_activity_signal") ? "action_required" : "not_selected",
+      next_step: selected.includes("partner_activity_signal")
+        ? "Verify the Abraxas receipt first, then run activity preflight with a consented category from partner records. Replay must fail."
+        : "Shown only when partner activity signal is selected.",
+    },
   ];
 
   return {

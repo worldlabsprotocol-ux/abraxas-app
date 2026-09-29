@@ -114,6 +114,45 @@ export function buildSandboxTestFixtures(
       }),
     });
   }
+  if (selected.has("partner_activity_signal")) {
+    fixtures.push({
+      id: "activity_allow",
+      title: "Activity preflight allow — Abraxas receipt verified, partner-owned category permitted",
+      filename: "activity-preflight-allow.fixture.json",
+      capability: "partner_activity_signal",
+      contents: envelope({
+        abraxas_verification: { decision: "approved", currently_valid: true },
+        partner_owned_activity: { type: "repeat_participant", source: "partner_records", consent_recorded: true },
+        allowed: true,
+        reason: "permitted",
+        replay_must_fail: true,
+      }),
+    });
+    fixtures.push({
+      id: "activity_deny",
+      title: "Activity preflight deny — receipt invalid or category not allowed",
+      filename: "activity-preflight-deny.fixture.json",
+      capability: "partner_activity_signal",
+      contents: envelope({
+        abraxas_verification: { decision: "denied", currently_valid: false },
+        partner_owned_activity: { type: "repeat_participant", source: "partner_records", consent_recorded: true },
+        allowed: false,
+        reason: "policy_denied",
+      }),
+    });
+    fixtures.push({
+      id: "activity_replay",
+      title: "Activity preflight replay — same binding must fail on second use",
+      filename: "activity-preflight-replay.fixture.json",
+      capability: "partner_activity_signal",
+      contents: envelope({
+        abraxas_verification: { decision: "approved", currently_valid: true },
+        partner_owned_activity: { type: "repeat_participant", source: "partner_records", consent_recorded: true },
+        replay_binding: true,
+        expected_reason: "replayed",
+      }),
+    });
+  }
   if (selected.has("payment_authorization")) {
     fixtures.push({
       id: "payment_allow",

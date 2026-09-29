@@ -11,6 +11,7 @@ export const SANDBOX_TEST_CONSOLE_CAPABILITIES = [
   "trading_venue",
   "payment_authorization",
   "wallet_standard_binding",
+  "partner_activity_signal",
   "solana_gate",
 ] as const;
 export type SandboxTestConsoleCapability = (typeof SANDBOX_TEST_CONSOLE_CAPABILITIES)[number];
@@ -121,6 +122,14 @@ export function buildSandboxTestChecklist(
       kit_file: null,
       required: false,
       capability: "wallet_standard_binding",
+    },
+    {
+      id: "activity_signal_preflight",
+      title: "Test receipt-bound partner activity preflight (category only, no raw activity)",
+      href: "/verify?mode=receipt",
+      kit_file: null,
+      required: false,
+      capability: "partner_activity_signal",
     },
     {
       id: "sandbox_conformance",
