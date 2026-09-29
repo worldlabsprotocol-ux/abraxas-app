@@ -6,6 +6,15 @@ import type { InternalReusableFact } from "@/lib/passport/reusableEligibility/co
 
 export type EvidenceDependencyType = "reusable_fact" | "source_receipt" | "derived_from";
 
+/** Row shape for inserts. Matches migration 113 nullability. */
+export interface EvidenceDependencyInsertRow {
+  receipt_id: string;
+  fact_id: string;
+  /** Source receipt/credential id when the dependency is receipt-backed; null for fact-only links. */
+  source_credential_id: string | null;
+  dependency_type: EvidenceDependencyType;
+}
+
 export interface ReceiptEvidenceDependency {
   id: string;
   receipt_id: string;
@@ -20,18 +29,18 @@ export async function recordReceiptEvidenceDependencies(input: {
   fact: InternalReusableFact;
 }): Promise<void> {
   const sb = requireSupabaseAdmin();
-  const rows = [
+  const rows: EvidenceDependencyInsertRow[] = [
     {
       receipt_id: input.receiptId,
       fact_id: input.fact.fact_id,
       source_credential_id: input.fact.source_receipt_id,
-      dependency_type: "reusable_fact" as const,
+      dependency_type: "reusable_fact",
     },
     {
       receipt_id: input.receiptId,
       fact_id: input.fact.fact_id,
       source_credential_id: input.fact.source_receipt_id,
-      dependency_type: "source_receipt" as const,
+      dependency_type: "source_receipt",
     },
   ];
   if (input.fact.derived_from_fact_id) {
@@ -39,7 +48,7 @@ export async function recordReceiptEvidenceDependencies(input: {
       receipt_id: input.receiptId,
       fact_id: input.fact.derived_from_fact_id,
       source_credential_id: null,
-      dependency_type: "derived_from" as const,
+      dependency_type: "derived_from",
     });
   }
 
