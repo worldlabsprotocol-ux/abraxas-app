@@ -63,6 +63,20 @@ export const ADMIN_PROTOCOL_NAV_ITEMS: readonly AdminNavItem[] = [
     section: "protocol",
   },
   {
+    id: "pilot-evidence",
+    href: "/admin/pilot-evidence",
+    label: "Pilot evidence",
+    description: "Privacy-safe partner pilot metrics for diligence prep",
+    section: "operations",
+  },
+  {
+    id: "value-evidence",
+    href: "/admin/value-evidence",
+    label: "Value evidence",
+    description: "Business proof layer — lifecycle, conversion, expansion, fundraising readiness",
+    section: "operations",
+  },
+  {
     id: "privacy",
     href: "/admin/privacy",
     label: "Privacy",
