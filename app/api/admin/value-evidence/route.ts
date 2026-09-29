@@ -11,6 +11,13 @@ import {
   VALUE_EVIDENCE_NOTICE,
   valueEvidenceLeaks,
 } from "@/lib/partner/valueEvidence";
+import {
+  buildDesignPartnerApplicationView,
+  buildDesignPartnerPortfolioView,
+  designPartnerLeaks,
+  DESIGN_PARTNER_NOTICE,
+} from "@/lib/partner/designPartnerProgram";
+import { listPrograms } from "@/lib/partner/designPartnerProgram/store";
 
 export const dynamic = "force-dynamic";
 
@@ -35,8 +42,23 @@ export async function GET(req: NextRequest) {
       from,
       to,
     });
-    const payload = { ok: true, notice: VALUE_EVIDENCE_NOTICE, scope: "portfolio", portfolio };
-    if (valueEvidenceLeaks(payload).length > 0) {
+    const programs = await listPrograms(partnerId || undefined);
+    const enrolledIds = new Set(programs.map((p) => p.application_id));
+    const designApps = (applications ?? []).filter((a) => enrolledIds.has(a.id));
+    const design_partner = await buildDesignPartnerPortfolioView({
+      applications: designApps,
+      from,
+      to,
+    });
+    const payload = {
+      ok: true,
+      notice: VALUE_EVIDENCE_NOTICE,
+      design_partner_notice: DESIGN_PARTNER_NOTICE,
+      scope: "portfolio",
+      portfolio,
+      design_partner,
+    };
+    if (valueEvidenceLeaks(payload).length > 0 || designPartnerLeaks(payload).length > 0) {
       return NextResponse.json({ error: "redacted" }, { status: 503 });
     }
     return NextResponse.json(payload, { headers: { "Cache-Control": "no-store" } });
@@ -57,8 +79,16 @@ export async function GET(req: NextRequest) {
   }
 
   const evidence = await buildApplicationValueEvidence({ application: app, from, to });
-  const payload = { ok: true, notice: VALUE_EVIDENCE_NOTICE, scope: "application", evidence };
-  if (valueEvidenceLeaks(payload).length > 0) {
+  const design_partner = await buildDesignPartnerApplicationView({ application: app, from, to });
+  const payload = {
+    ok: true,
+    notice: VALUE_EVIDENCE_NOTICE,
+    design_partner_notice: DESIGN_PARTNER_NOTICE,
+    scope: "application",
+    evidence,
+    design_partner,
+  };
+  if (valueEvidenceLeaks(payload).length > 0 || designPartnerLeaks(payload).length > 0) {
     return NextResponse.json({ error: "redacted" }, { status: 503 });
   }
   return NextResponse.json(payload, { headers: { "Cache-Control": "no-store" } });
