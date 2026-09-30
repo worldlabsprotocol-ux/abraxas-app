@@ -19,10 +19,12 @@ export function PartnerLaunchpadConnectPanel({
   applicationId,
   appName,
   initialPlatform,
+  onIntegrationFilesGenerated,
 }: {
   applicationId: string;
   appName: string;
   initialPlatform?: StarterKitPlatform | null;
+  onIntegrationFilesGenerated?: () => void;
 }) {
   const [selectedPlatform, setSelectedPlatform] = useState<string>(
     initialPlatform ?? "wix_velo",
@@ -118,6 +120,7 @@ export function PartnerLaunchpadConnectPanel({
           applicationId={applicationId}
           defaultPlatform={platform.starterKitPlatform}
           merchantMode
+          onGenerated={onIntegrationFilesGenerated}
         />
       )}
     </>

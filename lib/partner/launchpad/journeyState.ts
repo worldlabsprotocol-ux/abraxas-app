@@ -12,7 +12,8 @@ export type LaunchpadJourneyStateId =
   | "sandbox_created"
   | "connection_required"
   | "connection_in_progress"
-  | "ready_to_test"
+  | "integration_files_prepared"
+  | "ready_for_first_test"
   | "test_passed"
   | "production_review_required"
   | "production_ready"
@@ -42,7 +43,6 @@ export interface LaunchpadJourneyInput {
   activeSandboxKey: boolean;
   starterKitEvidenced: boolean;
   starterKitPlatform?: StarterKitPlatform | null;
-  harnessPassed?: boolean;
   productionActivated?: boolean;
   productionRequestPending?: boolean;
   productionRequestApproved?: boolean;
@@ -53,6 +53,7 @@ export interface MerchantJourneyStage {
   label: string;
   status: MerchantJourneyStageStatus;
   detail?: string;
+  navigable: boolean;
 }
 
 export interface LaunchpadJourneyResolution {
@@ -61,6 +62,8 @@ export interface LaunchpadJourneyResolution {
   completedCount: number;
   totalStages: number;
   currentStage: MerchantJourneyStageId;
+  connectComplete: boolean;
+  integrationFilesReady: boolean;
   primaryAction: {
     label: string;
     detail: string;
@@ -111,19 +114,26 @@ export function isTestAppComplete(input: LaunchpadJourneyInput): boolean {
     && input.activeSandboxKey;
 }
 
+export function hasIntegrationFilesReady(input: LaunchpadJourneyInput): boolean {
+  return input.starterKitEvidenced;
+}
+
 export function isConnectComplete(input: LaunchpadJourneyInput): boolean {
-  // Website connection is evidenced by starter-kit generation or a verified sandbox receipt.
-  // Application "integration ready" only means the Abraxas sandbox app is active.
-  if (input.starterKitEvidenced) return true;
+  // Website connection is proven only by a verified sandbox receipt attributable
+  // to this application (receipt_verification_succeeded integration events).
   return input.verifiedReceiptCount > 0;
 }
 
 export function isTestComplete(input: LaunchpadJourneyInput): boolean {
-  return input.verifiedReceiptCount > 0 || Boolean(input.harnessPassed);
+  return input.verifiedReceiptCount > 0;
 }
 
 export function isGoLiveComplete(input: LaunchpadJourneyInput): boolean {
   return Boolean(input.productionActivated) || input.application.environment === "production";
+}
+
+export function isReadyForFirstTest(input: LaunchpadJourneyInput): boolean {
+  return hasIntegrationFilesReady(input) && !isTestComplete(input);
 }
 
 function resolveStateId(input: LaunchpadJourneyInput): LaunchpadJourneyStateId {
@@ -133,10 +143,8 @@ function resolveStateId(input: LaunchpadJourneyInput): LaunchpadJourneyStateId {
     if (input.productionRequestPending) return "production_review_required";
     return "test_passed";
   }
-  if (isConnectComplete(input)) return "ready_to_test";
-  if (input.starterKitEvidenced || callbackConfigured(input.application.allowed_return_urls)) {
-    return "connection_in_progress";
-  }
+  if (isReadyForFirstTest(input)) return "ready_for_first_test";
+  if (hasIntegrationFilesReady(input)) return "integration_files_prepared";
   if (isTestAppComplete(input)) return "connection_required";
   if (isVerifyComplete(input)) return "sandbox_created";
   return "policy_selected";
@@ -150,30 +158,108 @@ function buildStages(input: LaunchpadJourneyInput): MerchantJourneyStage[] {
     test: isTestComplete(input),
     go_live: isGoLiveComplete(input),
   };
-
-  const firstIncomplete = STAGE_ORDER.find((stage) => !completion[stage]) ?? "go_live";
+  const filesReady = hasIntegrationFilesReady(input);
 
   return STAGE_ORDER.map((id) => {
-    let status: MerchantJourneyStageStatus = "pending";
-    if (completion[id]) status = "complete";
-    else if (!completion.connect && STAGE_ORDER.indexOf(id) > STAGE_ORDER.indexOf("connect")) {
-      status = "blocked";
-    } else if (id === firstIncomplete) {
-      status = "current";
-    }
+    const status = resolveStageStatus(id, input, completion, filesReady);
     return {
       id,
       label: STAGE_LABELS[id],
       status,
-      detail: stageDetail(id, input, completion),
+      detail: stageDetail(id, input, completion, filesReady),
+      navigable: isStageNavigable(id, input, completion, filesReady, status),
     };
   });
+}
+
+function resolveStageStatus(
+  stage: MerchantJourneyStageId,
+  input: LaunchpadJourneyInput,
+  completion: Record<MerchantJourneyStageId, boolean>,
+  filesReady: boolean,
+): MerchantJourneyStageStatus {
+  if (completion[stage]) return "complete";
+
+  switch (stage) {
+    case "verify":
+      return completion.verify ? "complete" : "current";
+    case "test_app":
+      if (!completion.verify) return "pending";
+      return completion.test_app ? "complete" : "current";
+    case "connect":
+      if (!completion.test_app) return "pending";
+      if (completion.connect) return "complete";
+      return "current";
+    case "test":
+      if (!completion.test_app) return "pending";
+      if (completion.test) return "complete";
+      if (!filesReady) return "blocked";
+      return "current";
+    case "go_live":
+      if (!completion.test) return "blocked";
+      return completion.go_live ? "complete" : "current";
+    default:
+      return "pending";
+  }
+}
+
+export function isStageNavigable(
+  stage: MerchantJourneyStageId,
+  input: LaunchpadJourneyInput,
+  completion?: Record<MerchantJourneyStageId, boolean>,
+  filesReady?: boolean,
+  status?: MerchantJourneyStageStatus,
+): boolean {
+  const resolvedCompletion = completion ?? {
+    verify: isVerifyComplete(input),
+    test_app: isTestAppComplete(input),
+    connect: isConnectComplete(input),
+    test: isTestComplete(input),
+    go_live: isGoLiveComplete(input),
+  };
+  const resolvedFilesReady = filesReady ?? hasIntegrationFilesReady(input);
+  const resolvedStatus = status ?? resolveStageStatus(stage, input, resolvedCompletion, resolvedFilesReady);
+
+  if (resolvedStatus === "blocked") return false;
+  if (resolvedStatus === "complete") return true;
+  if (resolvedStatus === "current") return true;
+
+  if (stage === "verify" || stage === "test_app") {
+    return resolvedCompletion.verify || stage === "verify";
+  }
+  if (stage === "connect") return resolvedCompletion.test_app;
+  if (stage === "test") return resolvedCompletion.test_app && resolvedFilesReady;
+  if (stage === "go_live") return resolvedCompletion.test;
+  return false;
+}
+
+export function stageNavigationTarget(
+  stage: MerchantJourneyStageId,
+  input: LaunchpadJourneyInput,
+): MerchantJourneyStageId {
+  const completion = {
+    verify: isVerifyComplete(input),
+    test_app: isTestAppComplete(input),
+    connect: isConnectComplete(input),
+    test: isTestComplete(input),
+    go_live: isGoLiveComplete(input),
+  };
+  const filesReady = hasIntegrationFilesReady(input);
+  if (isStageNavigable(stage, input, completion, filesReady)) return stage;
+  if (stage === "test" && !filesReady) return "connect";
+  if (stage === "go_live" && !completion.test) {
+    return filesReady ? "test" : "connect";
+  }
+  if (!completion.test_app) return "verify";
+  if (!completion.connect && stage !== "connect") return "connect";
+  return "connect";
 }
 
 function stageDetail(
   stage: MerchantJourneyStageId,
   input: LaunchpadJourneyInput,
   completion: Record<MerchantJourneyStageId, boolean>,
+  filesReady: boolean,
 ): string | undefined {
   const appName = input.application.display_name || input.application.application_name || "your app";
   switch (stage) {
@@ -182,12 +268,16 @@ function stageDetail(
     case "test_app":
       return completion.test_app ? "Private sandbox environment ready" : "Create your test application";
     case "connect":
-      return completion.connect
-        ? "Website integration configured"
-        : `Connect Abraxas to ${appName}`;
+      if (completion.connect) return "Website connected — first verification succeeded";
+      if (filesReady) {
+        return "Integration files ready — add the backend module and return handler, then run your first test";
+      }
+      return `Connect Abraxas to ${appName}`;
     case "test":
-      if (!completion.connect) return "Connect your website first";
-      return completion.test ? "Test verification passed" : "Run a customer verification";
+      if (completion.test) return "Test verification passed";
+      if (!filesReady) return "Set up integration files first";
+      if (!completion.connect) return "Run your first end-to-end verification";
+      return "Run a customer verification";
     case "go_live":
       return completion.go_live ? "Production active" : "Activate production when ready";
     default:
@@ -196,12 +286,11 @@ function stageDetail(
 }
 
 function merchantVerificationLabel(input: LaunchpadJourneyInput): string {
-  if (!isConnectComplete(input) && !isTestComplete(input)) {
-    return "Waiting for your first test";
-  }
   if (isTestComplete(input)) return "Test passed";
-  if (isConnectComplete(input)) return "Ready to test";
-  return "Connect your website";
+  if (isReadyForFirstTest(input)) return "Ready for your first test";
+  if (hasIntegrationFilesReady(input)) return "Integration files ready";
+  if (isTestAppComplete(input)) return "Waiting for your first test";
+  return "Choose what to verify";
 }
 
 function environmentLabel(input: LaunchpadJourneyInput): string {
@@ -214,7 +303,8 @@ function buildPrimaryAction(
   stages: MerchantJourneyStage[],
 ): LaunchpadJourneyResolution["primaryAction"] {
   const appName = input.application.display_name || input.application.application_name || "your app";
-  const current = stages.find((stage) => stage.status === "current" || stage.status === "blocked")
+  const current = stages.find((stage) => stage.status === "current")
+    ?? stages.find((stage) => stage.status === "blocked")
     ?? stages[stages.length - 1];
 
   switch (current.id) {
@@ -235,6 +325,15 @@ function buildPrimaryAction(
         enabled: true,
       };
     case "connect":
+      if (hasIntegrationFilesReady(input) && !isConnectComplete(input)) {
+        return {
+          label: "Integration files ready",
+          detail: `Add the backend module and return handler to ${appName}, then run your first test. ${appName} receives the eligibility result, not identity documents or date of birth.`,
+          cta: "Continue setup",
+          stage: "connect",
+          enabled: true,
+        };
+      }
       return {
         label: `Connect ${appName}`,
         detail: `Add Abraxas to your website so customers can complete a private verification. ${appName} receives the eligibility result, not identity documents or date of birth.`,
@@ -243,19 +342,19 @@ function buildPrimaryAction(
         enabled: true,
       };
     case "test":
-      if (!isConnectComplete(input)) {
+      if (!hasIntegrationFilesReady(input)) {
         return {
-          label: "Connect your website first",
-          detail: "Finish connecting Abraxas before running a test verification.",
+          label: "Set up integration first",
+          detail: "Generate platform-specific integration files before running a test verification.",
           cta: "Connect website",
           stage: "connect",
           enabled: true,
-          blockedReason: "connection_required",
+          blockedReason: "integration_files_required",
         };
       }
       return {
-        label: "Run a test verification",
-        detail: "Confirm the customer experience works and you receive the expected eligibility result.",
+        label: "Run your first test",
+        detail: "Complete an end-to-end sandbox verification. A successful receipt verification proves your website is connected.",
         cta: "Run test verification",
         stage: "test",
         enabled: true,
@@ -322,7 +421,8 @@ function buildGoLiveChecklist(input: LaunchpadJourneyInput): LaunchpadJourneyRes
 export function resolveLaunchpadJourneyState(input: LaunchpadJourneyInput): LaunchpadJourneyResolution {
   const stages = buildStages(input);
   const completedCount = stages.filter((stage) => stage.status === "complete").length;
-  const currentStage = stages.find((stage) => stage.status === "current" || stage.status === "blocked")?.id
+  const currentStage = stages.find((stage) => stage.status === "current")?.id
+    ?? stages.find((stage) => stage.status === "blocked")?.id
     ?? "go_live";
 
   return {
@@ -331,11 +431,13 @@ export function resolveLaunchpadJourneyState(input: LaunchpadJourneyInput): Laun
     completedCount,
     totalStages: STAGE_ORDER.length,
     currentStage,
+    connectComplete: isConnectComplete(input),
+    integrationFilesReady: hasIntegrationFilesReady(input),
     primaryAction: buildPrimaryAction(input, stages),
     statusLine: merchantVerificationLabel(input),
     environmentLabel: environmentLabel(input),
     verificationLabel: merchantVerificationLabel(input),
-    testAvailable: isConnectComplete(input),
+    testAvailable: isReadyForFirstTest(input) || isTestComplete(input),
     testPassed: isTestComplete(input),
     privacySummary: isTestComplete(input) ? buildPrivacySummary(input) : undefined,
     goLiveChecklist: buildGoLiveChecklist(input),

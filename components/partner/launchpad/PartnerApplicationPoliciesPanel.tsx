@@ -24,11 +24,13 @@ interface EligibilityPoliciesResponse {
 
 export function PartnerApplicationPoliciesPanel({
   applicationId,
-  connectionComplete = false,
+  websiteConnected = false,
+  integrationFilesReady = false,
   onNavigate,
 }: {
   applicationId: string;
-  connectionComplete?: boolean;
+  websiteConnected?: boolean;
+  integrationFilesReady?: boolean;
   onNavigate?: (step: string) => void;
 }) {
   const [summary, setSummary] = useState<ApplicationPoliciesSummary | null>(null);
@@ -122,7 +124,10 @@ export function PartnerApplicationPoliciesPanel({
     );
   }
 
-  const effectiveNextAction = resolveMultiPolicyNextAction(summary, { connectionComplete }) ?? nextAction;
+  const effectiveNextAction = resolveMultiPolicyNextAction(summary, {
+    websiteConnected,
+    integrationFilesReady,
+  }) ?? nextAction;
 
   const initialTitle = summary.initial_policy_template_id
     ? summary.bindings.find((b) => b.pack_id === summary.initial_policy_template_id)?.title
@@ -213,16 +218,16 @@ export function PartnerApplicationPoliciesPanel({
               effectiveNextAction === "connect_website"
                 ? "Finish connecting your website before running a test verification."
                 : effectiveNextAction.includes("test") || effectiveNextAction.includes("verification")
-                  ? connectionComplete
+                  ? integrationFilesReady
                     ? "Run a test verification to confirm the customer experience."
-                    : "Connect your website first."
+                    : "Set up integration files first."
                   : "Resolved from configured policies and measured integration state."
             }
             buttonLabel={
               effectiveNextAction === "connect_website"
                 ? "Connect website"
                 : effectiveNextAction.includes("test") || effectiveNextAction.includes("verification")
-                  ? connectionComplete ? "Run test verification" : "Connect website"
+                  ? integrationFilesReady ? "Run test verification" : "Connect website"
                   : effectiveNextAction.includes("production")
                     ? "Prepare to go live"
                     : "Continue"

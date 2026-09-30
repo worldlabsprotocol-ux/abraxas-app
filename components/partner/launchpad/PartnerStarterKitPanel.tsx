@@ -29,10 +29,12 @@ export function PartnerStarterKitPanel({
   applicationId,
   defaultPlatform = "universal_https",
   merchantMode = false,
+  onGenerated,
 }: {
   applicationId: string;
   defaultPlatform?: StarterKitPlatform;
   merchantMode?: boolean;
+  onGenerated?: () => void;
 }) {
   const [bindingId, setBindingId] = useState<string | null>(null);
   const [pathId, setPathId] = useState<IntegrationStudioPathId>("hosted_partner_flow");
@@ -86,6 +88,7 @@ export function PartnerStarterKitPanel({
       setArchive(data.archive_base64);
       setFilename(data.filename ?? "abraxas-starter-kit.zip");
       if (data.binding) setBindingSummary(data.binding);
+      onGenerated?.();
     } catch {
       setError("Could not generate integration files");
     } finally {

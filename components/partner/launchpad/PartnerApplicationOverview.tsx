@@ -1,7 +1,6 @@
 "use client";
 // FILE: components/partner/launchpad/PartnerApplicationOverview.tsx
 
-import { useCallback, useEffect, useMemo, useState } from "react";
 import { NextActionCard } from "@/components/product";
 import { PrivacyDisclosureCard } from "@/components/product/PrivacyDisclosureCard";
 import { ContentCard } from "@/components/redesign/RedesignContent";
@@ -10,12 +9,10 @@ import { PartnerLaunchpadMerchantJourney } from "@/components/partner/launchpad/
 import { PartnerLaunchpadTechnicalDetails } from "@/components/partner/launchpad/PartnerLaunchpadTechnicalDetails";
 import {
   merchantPolicySubtitle,
-  resolveLaunchpadJourneyState,
-  type LaunchpadJourneyInput,
+  type LaunchpadJourneyResolution,
 } from "@/lib/partner/launchpad/journeyState";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import type { ApplicationPoliciesSummary } from "@/lib/partner/launchpad/applicationPolicyBindings";
-import type { StarterKitPlatform } from "@/lib/partner/starterKit/contract";
 
 const FONT = ABRAXAS_FONT_SANS;
 
@@ -34,62 +31,19 @@ interface ApplicationSummary {
   key_prefix: string | null;
 }
 
-interface IntegrationHealth {
-  overall: "pass" | "action_required" | "blocked";
-  checks: Array<{ id: string; label: string; status: string }>;
-}
-
 export function PartnerApplicationOverview({
   application,
-  integrationHealth,
+  journey,
+  policySummary,
   productionActivated,
-  activeSandboxKey = Boolean(application.key_prefix),
-  starterKitEvidenced = false,
-  starterKitPlatform = null,
   onNavigate,
 }: {
   application: ApplicationSummary;
-  integrationHealth: IntegrationHealth | null;
+  journey: LaunchpadJourneyResolution;
+  policySummary: ApplicationPoliciesSummary | null;
   productionActivated?: boolean;
-  activeSandboxKey?: boolean;
-  starterKitEvidenced?: boolean;
-  starterKitPlatform?: StarterKitPlatform | null;
   onNavigate?: (step: string) => void;
 }) {
-  const [policySummary, setPolicySummary] = useState<ApplicationPoliciesSummary | null>(null);
-
-  const loadPolicies = useCallback(async () => {
-    const res = await fetch(`/api/launchpad/applications/${application.id}/eligibility-policies`, {
-      credentials: "include",
-      cache: "no-store",
-    });
-    const data = await res.json() as { summary?: ApplicationPoliciesSummary };
-    if (res.ok && data.summary) setPolicySummary(data.summary);
-  }, [application.id]);
-
-  useEffect(() => { void loadPolicies(); }, [loadPolicies]);
-
-  const verifiedReceiptCount = useMemo(
-    () => policySummary?.bindings.reduce((sum, binding) => sum + (binding.verified_receipts ?? 0), 0) ?? 0,
-    [policySummary],
-  );
-
-  const harnessPassed = integrationHealth?.checks.some(
-    (check) => check.id === "harness" && check.status === "pass",
-  ) ?? false;
-
-  const journeyInput: LaunchpadJourneyInput = {
-    application,
-    configuredPolicyCount: policySummary?.configured_count ?? (application.policy_template_id ? 1 : 0),
-    verifiedReceiptCount,
-    activeSandboxKey,
-    starterKitEvidenced,
-    starterKitPlatform,
-    harnessPassed,
-    productionActivated,
-  };
-
-  const journey = useMemo(() => resolveLaunchpadJourneyState(journeyInput), [journeyInput]);
   const primaryBinding = policySummary?.bindings.find((binding) => binding.binding_role === "primary")
     ?? policySummary?.bindings[0];
 
@@ -168,7 +122,8 @@ export function PartnerApplicationOverview({
       <div style={{ marginTop: "0.85rem" }}>
         <PartnerApplicationPoliciesPanel
           applicationId={application.id}
-          connectionComplete={journey.testAvailable}
+          websiteConnected={journey.connectComplete}
+          integrationFilesReady={journey.integrationFilesReady}
           onNavigate={onNavigate}
         />
       </div>

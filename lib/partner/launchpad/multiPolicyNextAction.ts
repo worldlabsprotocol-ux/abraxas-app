@@ -4,7 +4,8 @@
 import type { ApplicationPoliciesSummary } from "@/lib/partner/launchpad/applicationPolicyBindings";
 
 export interface MultiPolicyNextActionContext {
-  connectionComplete?: boolean;
+  websiteConnected?: boolean;
+  integrationFilesReady?: boolean;
 }
 
 export function resolveMultiPolicyNextAction(
@@ -22,7 +23,7 @@ export function resolveMultiPolicyNextAction(
     (b) => (b.verified_receipts ?? 0) > 0,
   );
   if (!hasVerifiedReceipt) {
-    if (context.connectionComplete === false) {
+    if (!context.integrationFilesReady) {
       return "connect_website";
     }
     return "run_test_verification";

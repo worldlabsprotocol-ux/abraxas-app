@@ -32,8 +32,10 @@ import { PartnerStarterKitPanel } from "@/components/partner/launchpad/PartnerSt
 import { PartnerLaunchpadConnectPanel } from "@/components/partner/launchpad/PartnerLaunchpadConnectPanel";
 import {
   mapLegacyLaunchpadStep,
-  resolveLaunchpadJourneyState,
+  stageNavigationTarget,
+  type LaunchpadJourneyResolution,
 } from "@/lib/partner/launchpad/journeyState";
+import type { ApplicationPoliciesSummary } from "@/lib/partner/launchpad/applicationPolicyBindings";
 import { PartnerIntegrationHealthPanel } from "@/components/partner/launchpad/PartnerIntegrationHealthPanel";
 import { PartnerIntegrationPerformancePanel } from "@/components/partner/launchpad/PartnerIntegrationPerformancePanel";
 import { PartnerPilotProgressPanel } from "@/components/partner/launchpad/PartnerPilotProgressPanel";
@@ -148,6 +150,13 @@ export function PartnerLaunchpadClient({
   const [domainVerifications, setDomainVerifications] = useState<DomainVerification[]>([]);
   const [domainChallenge, setDomainChallenge] = useState<{ hostname: string; record_name: string; record_value: string; expires_at: string } | null>(null);
   const [integrationHealth, setIntegrationHealth] = useState<IntegrationHealth | null>(null);
+  const [merchantJourney, setMerchantJourney] = useState<LaunchpadJourneyResolution | null>(null);
+  const [policySummary, setPolicySummary] = useState<ApplicationPoliciesSummary | null>(null);
+  const [journeyEvidence, setJourneyEvidence] = useState<{
+    verified_receipt_count: number;
+    starter_kit_evidenced: boolean;
+    active_sandbox_key: boolean;
+  } | null>(null);
 
   const [applicationName, setApplicationName] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -262,6 +271,34 @@ export function PartnerLaunchpadClient({
   useEffect(() => { void refreshDomainVerification(); }, [refreshDomainVerification]);
   useEffect(() => { void refreshIntegrationHealth(); }, [refreshIntegrationHealth]);
 
+  const refreshMerchantJourney = useCallback(async () => {
+    if (!activeApp) {
+      setMerchantJourney(null);
+      setPolicySummary(null);
+      return;
+    }
+    const res = await fetch(`/api/launchpad/applications/${activeApp.id}/merchant-journey`, {
+      credentials: "include",
+      cache: "no-store",
+    });
+    const data = await res.json() as {
+      journey?: LaunchpadJourneyResolution;
+      summary?: ApplicationPoliciesSummary;
+      evidence?: {
+        verified_receipt_count: number;
+        starter_kit_evidenced: boolean;
+        active_sandbox_key: boolean;
+      };
+    };
+    if (res.ok && data.journey) {
+      setMerchantJourney(data.journey);
+      setPolicySummary(data.summary ?? null);
+      setJourneyEvidence(data.evidence ?? null);
+    }
+  }, [activeApp]);
+
+  useEffect(() => { void refreshMerchantJourney(); }, [refreshMerchantJourney]);
+
   useEffect(() => {
     if (applicationName && !partnerId) {
       setPartnerId(slugifyLaunchpadApplication(applicationName));
@@ -332,6 +369,7 @@ export function PartnerLaunchpadClient({
     setActiveAppId(data.application.application_id);
     setAuthenticated(true);
     await refreshWorkspace();
+    await refreshMerchantJourney();
     setStep("test_app");
   }
 
@@ -351,6 +389,7 @@ export function PartnerLaunchpadClient({
     const activityData = await activityRes.json();
     if (activityData.events) setActivity(activityData.events);
     await refreshIntegrationHealth();
+    await refreshMerchantJourney();
   }
 
   async function addReturnUrl() {
@@ -371,6 +410,7 @@ export function PartnerLaunchpadClient({
     setNewReturnUrl("");
     await refreshWorkspace();
     await refreshIntegrationHealth();
+    await refreshMerchantJourney();
   }
 
   async function removeReturnUrl(url: string) {
@@ -391,6 +431,7 @@ export function PartnerLaunchpadClient({
     if (url === returnUrl && remaining[0]) setReturnUrl(remaining[0]);
     await refreshWorkspace();
     await refreshIntegrationHealth();
+    await refreshMerchantJourney();
   }
 
   async function requestProduction() {
@@ -414,7 +455,8 @@ export function PartnerLaunchpadClient({
     }
     await refreshWorkspace();
     await refreshIntegrationHealth();
-    setStep("production");
+    await refreshMerchantJourney();
+    setStep("go_live");
   }
 
   async function createDomainChallenge() {
@@ -429,6 +471,7 @@ export function PartnerLaunchpadClient({
     setDomainChallenge(data.verification);
     await refreshDomainVerification();
     await refreshIntegrationHealth();
+    await refreshMerchantJourney();
   }
 
   async function verifyDomainChallenge() {
@@ -442,6 +485,7 @@ export function PartnerLaunchpadClient({
     if (!res.ok) { setError(data.error ?? "DNS record is not visible yet. Wait a few minutes and try again."); return; }
     await refreshDomainVerification();
     await refreshIntegrationHealth();
+    await refreshMerchantJourney();
   }
 
   function copyText(text: string) {
@@ -451,26 +495,33 @@ export function PartnerLaunchpadClient({
     });
   }
 
-  const starterKitEvidenced = useMemo(
-    () => activity.some((event) =>
-      event.public_code === "starter_kit_generated"
-      || event.public_code === "starter_kit_downloaded"),
-    [activity],
-  );
   const activeSandboxKey = Boolean(activeApp?.key_prefix);
   const productionActivated = activeApp?.environment === "production";
   const currentStepMeta = STEPS.find((item) => item.id === step);
-  const journey = activeApp
-    ? resolveLaunchpadJourneyState({
+  const journey = merchantJourney;
+
+  function navigateToStage(target: WizardStep) {
+    if (!journey || !activeApp) {
+      setStep(target);
+      return;
+    }
+    const merchantStage = target === "advanced" ? journey.currentStage : target;
+    const resolved = stageNavigationTarget(merchantStage, {
       application: activeApp,
-      configuredPolicyCount: activeApp.policy_template_id ? 1 : 0,
-      verifiedReceiptCount: 0,
-      activeSandboxKey,
-      starterKitEvidenced,
-      harnessPassed: integrationHealth?.checks.some((check) => check.id === "harness" && check.status === "pass"),
-      productionActivated,
-    })
-    : null;
+      configuredPolicyCount: policySummary?.configured_count ?? 1,
+      verifiedReceiptCount: journeyEvidence?.verified_receipt_count ?? 0,
+      activeSandboxKey: journeyEvidence?.active_sandbox_key ?? activeSandboxKey,
+      starterKitEvidenced: journeyEvidence?.starter_kit_evidenced ?? journey.integrationFilesReady,
+    });
+    const stageMeta = journey.stages.find((item) => item.id === merchantStage);
+    if (stageMeta && !stageMeta.navigable) {
+      setError(stageMeta.detail ?? "Complete the previous step first.");
+      setStep(resolved as WizardStep);
+      return;
+    }
+    setError("");
+    setStep(resolved as WizardStep);
+  }
 
   if (loading) {
     return (
@@ -488,14 +539,19 @@ export function PartnerLaunchpadClient({
         subtitle="One integration. Multiple eligibility policies. Add approved eligibility questions through the same Abraxas trust infrastructure without collecting underlying identity data."
       />
 
-      {activeApp && (
+      {activeApp && !journey && (
+        <ContentCard title={activeApp.display_name || activeApp.application_name}>
+          <p style={bodyText}>Loading your integration progress…</p>
+        </ContentCard>
+      )}
+
+      {activeApp && journey && (
         <PartnerApplicationOverview
           application={activeApp}
-          integrationHealth={integrationHealth}
+          journey={journey}
+          policySummary={policySummary}
           productionActivated={productionActivated}
-          activeSandboxKey={activeSandboxKey}
-          starterKitEvidenced={starterKitEvidenced}
-          onNavigate={(s) => setStep(mapLegacyLaunchpadStep(s) as WizardStep)}
+          onNavigate={(s) => navigateToStage(mapLegacyLaunchpadStep(s) as WizardStep)}
         />
       )}
 
@@ -504,18 +560,28 @@ export function PartnerLaunchpadClient({
           {currentStepMeta?.description ?? "Guided merchant integration"}
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }} role="list" aria-label="Launchpad progress">
-          {STEPS.map((s, index) => (
-            <button
-              key={s.id}
-              type="button"
-              role="listitem"
-              onClick={() => setStep(s.id)}
-              style={stepPillStyle(step === s.id)}
-              aria-current={step === s.id ? "step" : undefined}
-            >
-              {index + 1}. {s.label}
-            </button>
-          ))}
+          {STEPS.map((s, index) => {
+            const stageMeta = journey?.stages.find((stage) => stage.id === s.id);
+            const navigable = stageMeta?.navigable ?? true;
+            const isBlocked = stageMeta?.status === "blocked";
+            const isComplete = stageMeta?.status === "complete";
+            const isCurrent = stageMeta?.status === "current" || step === s.id;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                role="listitem"
+                disabled={Boolean(journey && !navigable)}
+                aria-disabled={journey && !navigable ? true : undefined}
+                onClick={() => navigateToStage(s.id)}
+                style={stepPillStyle(isCurrent, isComplete, isBlocked, !navigable)}
+                aria-current={isCurrent ? "step" : undefined}
+                title={stageMeta?.detail}
+              >
+                {isComplete ? "✓ " : `${index + 1}. `}{s.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -712,6 +778,7 @@ export function PartnerLaunchpadClient({
         <PartnerLaunchpadConnectPanel
           applicationId={activeApp.id}
           appName={activeApp.display_name || activeApp.application_name}
+          onIntegrationFilesGenerated={() => void refreshMerchantJourney()}
         />
       )}
 
@@ -751,11 +818,11 @@ export function PartnerLaunchpadClient({
             </ContentCard>
           </>
         ) : (
-          <ContentCard title="Connect your website first">
+          <ContentCard title="Set up integration files first">
             <p style={bodyText}>
-              Finish connecting Abraxas to your website before running a test verification. The guided flow prevents test actions that cannot succeed yet.
+              Generate platform-specific integration files and deploy them to your website before running a test verification. The guided flow prevents test actions that cannot succeed yet.
             </p>
-            <Btn size="sm" onClick={() => setStep("connect")}>Connect website</Btn>
+            <Btn size="sm" onClick={() => navigateToStage("connect")}>Connect website</Btn>
           </ContentCard>
         )
       )}
@@ -1003,17 +1070,45 @@ const scenarioButtonStyle: React.CSSProperties = {
   fontSize: "0.75rem",
 };
 
-function stepPillStyle(active: boolean): React.CSSProperties {
+function stepPillStyle(
+  active: boolean,
+  complete?: boolean,
+  blocked?: boolean,
+  disabled?: boolean,
+): React.CSSProperties {
+  const border = blocked
+    ? "rgba(239,68,68,0.45)"
+    : complete
+      ? "rgba(16,185,129,0.45)"
+      : active
+        ? "var(--accent)"
+        : "var(--border)";
+  const background = blocked
+    ? "rgba(239,68,68,0.08)"
+    : complete
+      ? "rgba(16,185,129,0.08)"
+      : active
+        ? "rgba(99,102,241,0.12)"
+        : "var(--surface)";
+  const color = blocked
+    ? "#EF4444"
+    : complete
+      ? "#10B981"
+      : active
+        ? "var(--accent)"
+        : "var(--text-secondary)";
+
   return {
     fontFamily: FONT,
     fontSize: "0.68rem",
     fontWeight: 700,
     padding: "0.35rem 0.65rem",
     borderRadius: 999,
-    border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
-    background: active ? "rgba(99,102,241,0.12)" : "var(--surface)",
-    color: active ? "var(--accent)" : "var(--text-secondary)",
-    cursor: "pointer",
+    border: `1px solid ${border}`,
+    background,
+    color,
+    cursor: disabled ? "not-allowed" : "pointer",
+    opacity: disabled ? 0.55 : 1,
   };
 }
 

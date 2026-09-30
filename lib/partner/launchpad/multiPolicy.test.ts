@@ -124,10 +124,10 @@ describe("multi-policy next actions", () => {
         evidence_reuse_count: 0,
       }],
       available_to_add: [buildPolicyPresentation(POLICY_PACKS.residency_us)],
-    }), { connectionComplete: false })).toBe("connect_website");
+    }), { integrationFilesReady: false })).toBe("connect_website");
   });
 
-  it("suggests run test verification after connection is complete", () => {
+  it("suggests run test verification after integration files are ready", () => {
     const ageBinding = buildPolicyPresentation(POLICY_PACKS.age_21_retail);
     expect(resolveMultiPolicyNextAction(summary({
       bindings: [{
@@ -147,6 +147,6 @@ describe("multi-policy next actions", () => {
         evidence_reuse_count: 0,
       }],
       available_to_add: [buildPolicyPresentation(POLICY_PACKS.residency_us)],
-    }), { connectionComplete: true })).toBe("run_test_verification");
+    }), { integrationFilesReady: true })).toBe("run_test_verification");
   });
 });
