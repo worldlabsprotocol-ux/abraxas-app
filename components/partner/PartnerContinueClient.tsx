@@ -55,6 +55,7 @@ import {
   resolveVerificationPathStep,
 } from "@/components/protocol/VerificationPath";
 import { ProtocolLoadingState } from "@/components/protocol/ProtocolLoadingState";
+import { HolderDecisionComplete } from "@/components/protocol/HolderDecisionComplete";
 
 function resolveMinimumAge(policyId: string): number | null {
   if (policyId === GOOD_TROUBLE_RETAIL_POLICY_ID) return 21;
@@ -545,15 +546,16 @@ function PartnerContinueInner() {
             <p role="status">{holderCopy.title}…</p>
           )}
 
-          {decodedReturnUrl && handoff.ready && (
+          {handoff.phase === "completed" && handoff.receiptId && decodedReturnUrl && (
             <div style={{ marginTop: "1rem" }}>
-              <Btn
-                variant="secondary"
-                disabled={handoff.inFlight}
-                onClick={() => { void handoff.complete(); }}
-              >
-                {returnLabel}
-              </Btn>
+              <HolderDecisionComplete
+                receiptId={handoff.receiptId}
+                partnerName={partnerName}
+                policyId={policyId}
+                returnLabel={returnLabel}
+                onReturn={() => handoff.navigateToPartner()}
+                returnLoading={handoff.inFlight}
+              />
             </div>
           )}
 

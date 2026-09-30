@@ -101,7 +101,10 @@ describe("PartnerFlowReturnHandler", () => {
       phase: "idle" as const,
       failureCategory: null,
       inFlight: false,
+      receiptId: null,
+      redirectUrl: null,
       complete: vi.fn(),
+      navigateToPartner: vi.fn(),
     };
     const { container } = render(<PartnerFlowReturnHandler handoff={handoff} />);
     expect(container).toBeEmptyDOMElement();
@@ -115,7 +118,7 @@ describe("PartnerFlowReturnHandler", () => {
 
     render(<HandoffHarness context={baseContext} />);
 
-    expect(await screen.findByText("Returning you to the partner app…")).toBeInTheDocument();
+    expect(await screen.findByText("Signing your decision receipt…")).toBeInTheDocument();
 
     resolveFetch(new Response(JSON.stringify({ redirect_url: "https://partner.example/done" }), { status: 200 }));
   });
@@ -127,7 +130,7 @@ describe("PartnerFlowReturnHandler", () => {
 
     render(<HandoffHarness context={baseContext} />);
 
-    expect(await screen.findByText("Couldn't return you to the partner app.")).toBeInTheDocument();
+    expect(await screen.findByText("Couldn't finish the partner handoff.")).toBeInTheDocument();
     expect(screen.queryByText("internal_secret_code")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
   });
@@ -141,7 +144,7 @@ describe("PartnerFlowReturnHandler", () => {
     expect(screen.queryByText("network_down_secret")).not.toBeInTheDocument();
   });
 
-  it("redirects when complete returns redirect_url", async () => {
+  it("stores receipt handoff without auto-redirect when complete succeeds", async () => {
     const locationSpy = { href: "" };
     Object.defineProperty(window, "location", {
       configurable: true,
@@ -149,14 +152,18 @@ describe("PartnerFlowReturnHandler", () => {
     });
 
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ redirect_url: "https://partner.example/done" }), { status: 200 }),
+      new Response(JSON.stringify({
+        redirect_url: "https://partner.example/done",
+        partner_result: { receipt_id: "dr_demo_receipt" },
+      }), { status: 200 }),
     ));
 
     render(<HandoffHarness context={baseContext} />);
 
     await waitFor(() => {
-      expect(locationSpy.href).toBe("https://partner.example/done");
+      expect(locationSpy.href).toBe("");
     });
+    expect(screen.queryByText("Signing your decision receipt…")).not.toBeInTheDocument();
   });
 
   it("retries handoff when Try again is clicked", async () => {

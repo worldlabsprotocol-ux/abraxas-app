@@ -7,7 +7,7 @@ import { navigateToPartnerHandoffRedirect } from "@/lib/partner/partnerClientNav
 import { findProductionPolicyRules } from "@/lib/policy/productionPolicyContract";
 import { isProgressivePartnerHandoffReady } from "@/lib/progressiveProof/handoffReady";
 
-export type PartnerFlowHandoffPhase = "idle" | "completing" | "failed";
+export type PartnerFlowHandoffPhase = "idle" | "completing" | "completed" | "failed";
 export type PartnerFlowHandoffFailureCategory =
   | "partner_flow_completion_failed"
   | "partner_flow_network_failed";
@@ -30,7 +30,10 @@ export interface PartnerFlowHandoffController {
   phase: PartnerFlowHandoffPhase;
   failureCategory: PartnerFlowHandoffFailureCategory | null;
   inFlight: boolean;
+  receiptId: string | null;
+  redirectUrl: string | null;
   complete: () => Promise<void>;
+  navigateToPartner: () => void;
 }
 
 export type PartnerFlowCompleteBody = {
@@ -82,7 +85,10 @@ export function buildPartnerFlowCompleteBody(
 
 export async function postPartnerFlowComplete(
   body: PartnerFlowCompleteBody,
-): Promise<{ ok: true; redirectUrl: string } | { ok: false; category: PartnerFlowHandoffFailureCategory }> {
+): Promise<
+  | { ok: true; redirectUrl: string; receiptId: string | null }
+  | { ok: false; category: PartnerFlowHandoffFailureCategory }
+> {
   try {
     const res = await fetch("/api/v1/partner-flow/complete", {
       method: "POST",
@@ -95,9 +101,16 @@ export async function postPartnerFlowComplete(
         verification_request_id: body.verification_request_id ?? undefined,
       }),
     });
-    const data = await res.json() as { redirect_url?: string };
+    const data = await res.json() as {
+      redirect_url?: string;
+      partner_result?: { receipt_id?: string };
+    };
     if (res.ok && data.redirect_url) {
-      return { ok: true, redirectUrl: data.redirect_url };
+      return {
+        ok: true,
+        redirectUrl: data.redirect_url,
+        receiptId: data.partner_result?.receipt_id ?? null,
+      };
     }
     return { ok: false, category: "partner_flow_completion_failed" };
   } catch {
@@ -111,12 +124,17 @@ export const IDLE_PARTNER_FLOW_HANDOFF: PartnerFlowHandoffController = {
   phase: "idle",
   failureCategory: null,
   inFlight: false,
+  receiptId: null,
+  redirectUrl: null,
   complete: async () => {},
+  navigateToPartner: () => {},
 };
 
 export function usePartnerFlowHandoff(ctx: PartnerFlowHandoffContext): PartnerFlowHandoffController {
   const [phase, setPhase] = useState<PartnerFlowHandoffPhase>("idle");
   const [failureCategory, setFailureCategory] = useState<PartnerFlowHandoffFailureCategory | null>(null);
+  const [receiptId, setReceiptId] = useState<string | null>(null);
+  const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
   const inFlightRef = useRef(false);
 
   const isPartnerFlowContextActive = isPartnerFlowContext(ctx);
@@ -127,12 +145,19 @@ export function usePartnerFlowHandoff(ctx: PartnerFlowHandoffContext): PartnerFl
     if (!ready) {
       setPhase("idle");
       setFailureCategory(null);
+      setReceiptId(null);
+      setRedirectUrl(null);
       inFlightRef.current = false;
     }
   }, [ready]);
 
+  const navigateToPartner = useCallback(() => {
+    if (!redirectUrl) return;
+    navigateToPartnerHandoffRedirect(redirectUrl);
+  }, [redirectUrl]);
+
   const complete = useCallback(async () => {
-    if (!ready || inFlightRef.current) return;
+    if (!ready || inFlightRef.current || phase === "completed") return;
 
     const body = buildPartnerFlowCompleteBody(ctx);
     if (!body) return;
@@ -144,11 +169,10 @@ export function usePartnerFlowHandoff(ctx: PartnerFlowHandoffContext): PartnerFl
     const result = await postPartnerFlowComplete(body);
 
     if (result.ok) {
-      if (!navigateToPartnerHandoffRedirect(result.redirectUrl)) {
-        setFailureCategory("partner_flow_completion_failed");
-        setPhase("failed");
-        inFlightRef.current = false;
-      }
+      setReceiptId(result.receiptId);
+      setRedirectUrl(result.redirectUrl);
+      setPhase("completed");
+      inFlightRef.current = false;
       return;
     }
 
@@ -164,6 +188,7 @@ export function usePartnerFlowHandoff(ctx: PartnerFlowHandoffContext): PartnerFl
     ctx.policyId,
     ctx.verificationRequestId,
     ready,
+    phase,
   ]);
 
   return {
@@ -172,6 +197,9 @@ export function usePartnerFlowHandoff(ctx: PartnerFlowHandoffContext): PartnerFl
     phase,
     failureCategory,
     inFlight,
+    receiptId,
+    redirectUrl,
     complete,
+    navigateToPartner,
   };
 }
