@@ -4,9 +4,9 @@ import { RedesignPageLoading } from "@/components/redesign/RedesignPageLoading";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata = pageMetadata({
-  title: "Abraxas | Reusable verification for regulated apps",
+  title: "Abraxas | Verify what matters. Reveal nothing else.",
   description:
-    "Verify once and share only the policy outcome a partner needs. Abraxas Passport is reusable identity and proof infrastructure for partner flows, with optional identity verification when a policy requires it. Also supports tokenized real world asset (RWA) verification workflows for design partners.",
+    "Abraxas lets applications verify eligibility without collecting underlying identity data. Holders reuse Passport evidence with consent; partners receive signed policy answers only.",
   path: "/",
 });
 

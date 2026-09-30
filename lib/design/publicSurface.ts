@@ -15,12 +15,12 @@ export const PUBLIC_SECTION_GAP = "clamp(2rem, 6vw, 3.25rem)";
 export const PUBLIC_NAV_LINKS = [
   { href: "/", label: "Home", exact: true as const },
   { href: "/passport", label: "Passport", matchPrefixes: ["/passport"] as const },
-  { href: "/developers/integration-studio", label: "Build", matchPrefixes: ["/developers/integration-studio"] as const },
+  { href: "/developers/integration-studio", label: "Studio", matchPrefixes: ["/developers/integration-studio", "/developers/launchpad"] as const },
 ] as const;
 
 /** Compact Explore menu — former top-level routes plus the capability map. */
 export const PUBLIC_NAV_EXPLORE_LINKS = [
-  { href: "/verification", label: "Verify" },
+  { href: "/verification", label: "Verification" },
   { href: "/developers/launchpad", label: "Launchpad" },
   { href: "/docs/partner-flow", label: "Partner Flow" },
   { href: "/docs", label: "Docs" },

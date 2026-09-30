@@ -238,7 +238,7 @@ export function RedesignNav() {
               <>
                 <div style={{ height: 1, background: "var(--border)", margin: "0.35rem 0" }} />
                 <Link href="/account" onClick={() => setOpen(false)} style={mobileSubLink}>My account</Link>
-                <Link href="/build" onClick={() => setOpen(false)} style={mobileSubLink}>Submit asset</Link>
+                <Link href="/developers/integration-studio" onClick={() => setOpen(false)} style={mobileSubLink}>Integration Studio</Link>
               </>
             )}
           </motion.div>

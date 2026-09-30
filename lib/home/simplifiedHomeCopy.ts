@@ -6,7 +6,7 @@ export const SIMPLIFIED_HOME_EYEBROW = "REUSABLE PRIVATE ELIGIBILITY INFRASTRUCT
 export const SIMPLIFIED_HOME_HEADLINE = "Verify what matters. Reveal nothing else.";
 
 export const SIMPLIFIED_HOME_SUBHEAD =
-  "Abraxas lets applications verify eligibility without collecting the underlying identity data. Verify once, establish reusable evidence, and receive signed policy answers.";
+  "Abraxas lets applications verify eligibility without collecting the underlying identity data.";
 
 export const SIMPLIFIED_HOME_MOBILE_PROMPT =
   "One Abraxas Passport. Reusable verified evidence. Each application asks a narrow policy question and receives only its approved answer.";
@@ -14,10 +14,12 @@ export const SIMPLIFIED_HOME_MOBILE_PROMPT =
 export const SIMPLIFIED_HOME_TRUST_LINE =
   "Use verified evidence again with fresh consent. Abraxas evaluates trust privately — applications receive signed eligibility receipts, not identity files.";
 
-export const SIMPLIFIED_HOME_CTA_PRIMARY = "Try Abraxas";
-export const SIMPLIFIED_HOME_CTA_SECONDARY = "Open Passport";
-export const SIMPLIFIED_HOME_CTA_PRIMARY_HREF = "/try";
-export const SIMPLIFIED_HOME_CTA_SECONDARY_HREF = "/passport";
+export const SIMPLIFIED_HOME_CTA_PRIMARY = "Open Passport";
+export const SIMPLIFIED_HOME_CTA_SECONDARY = "Build an integration";
+export const SIMPLIFIED_HOME_CTA_PRIMARY_HREF = "/passport";
+export const SIMPLIFIED_HOME_CTA_SECONDARY_HREF = "/developers/integration-studio";
+export const SIMPLIFIED_HOME_CTA_SANDBOX = "Try sandbox example";
+export const SIMPLIFIED_HOME_CTA_SANDBOX_HREF = "/good-trouble";
 export const SIMPLIFIED_HOME_CTA_BUILD = "Build with Abraxas";
 export const SIMPLIFIED_HOME_CTA_BUILD_HREF = "/developers/integration-studio";
 

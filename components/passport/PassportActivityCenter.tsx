@@ -4,7 +4,10 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
+import { ProductOutcomeState } from "@/components/product/ProductOutcomeState";
 import { PassportVerificationActivity } from "@/components/passport/PassportVerificationActivity";
+import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
+import { PUBLIC_SURFACE } from "@/lib/design/publicSurface";
 import {
   buildPassportAccountActivity,
   type PassportAccountActivityItem,
@@ -12,8 +15,7 @@ import {
 import type { PassportSupportHistoryItem } from "@/lib/passport/passportSupport";
 import type { HolderPrivacyRequestView } from "@/lib/privacy/types";
 
-const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
+const FONT = ABRAXAS_FONT_SANS;
 const ACCENT = "#10B981";
 
 interface ActivitySources {
@@ -69,11 +71,11 @@ function AccountActivityCard({ item }: { item: PassportAccountActivityItem }) {
       <div style={{ display: "flex", justifyContent: "space-between", gap: "0.75rem", alignItems: "start" }}>
         <div>
           <p style={{
-            fontFamily: MONO,
-            fontSize: "0.58rem",
-            fontWeight: 700,
+            fontFamily: FONT,
+            fontSize: "0.62rem",
+            fontWeight: 800,
             color: item.kind === "privacy" ? "#A5B4FC" : ACCENT,
-            letterSpacing: "0.08em",
+            letterSpacing: "0.06em",
             textTransform: "uppercase",
             margin: "0 0 0.3rem",
           }}>
@@ -120,28 +122,28 @@ export function PassportActivityCenter() {
   return (
     <section style={{ marginBottom: "2rem" }}>
       <div style={{
-        background: "var(--surface-raised)",
-        border: "1px solid var(--border-strong)",
-        borderRadius: 16,
-        padding: "1.15rem 1.25rem",
+        background: PUBLIC_SURFACE.cardBackground,
+        border: PUBLIC_SURFACE.cardBorder,
+        borderRadius: PUBLIC_SURFACE.cardRadius,
+        padding: PUBLIC_SURFACE.cardPadding,
         marginBottom: "1rem",
       }}>
-        <div style={{
-          fontFamily: MONO,
-          fontSize: "0.58rem",
-          fontWeight: 700,
+        <p style={{
+          fontFamily: FONT,
+          fontSize: "0.62rem",
+          fontWeight: 800,
           color: ACCENT,
-          letterSpacing: "0.1em",
+          letterSpacing: "0.06em",
           textTransform: "uppercase",
-          marginBottom: "0.5rem",
+          marginBottom: "0.35rem",
         }}>
           Account updates
-        </div>
-        <h2 style={{ fontFamily: FONT, fontSize: "1rem", margin: "0 0 0.4rem" }}>
-          What happened, in one place
+        </p>
+        <h2 style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.4rem" }}>
+          Privacy and support history
         </h2>
-        <p style={{ fontFamily: FONT, fontSize: "0.75rem", lineHeight: 1.6, color: "var(--text-secondary)", margin: "0 0 0.9rem" }}>
-          Follow your privacy requests and help requests without copying account IDs or opening an admin tool.
+        <p style={{ fontFamily: FONT, fontSize: "0.78rem", lineHeight: 1.6, color: "var(--text-secondary)", margin: "0 0 0.9rem" }}>
+          Track export, deletion, and support requests in plain language.
         </p>
 
         {isLoading && (
@@ -151,27 +153,13 @@ export function PassportActivityCenter() {
         )}
 
         {isError && (
-          <div>
-            <p role="status" style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", margin: "0 0 0.7rem" }}>
-              Account updates are unavailable right now.
-            </p>
-            <button
-              type="button"
-              onClick={() => void refetch()}
-              style={{
-                padding: "0.4rem 0.7rem",
-                borderRadius: 8,
-                border: "1px solid var(--border-strong)",
-                background: "var(--surface)",
-                color: "var(--text-primary)",
-                fontFamily: FONT,
-                fontSize: "0.72rem",
-                fontWeight: 700,
-              }}
-            >
-              Try again
-            </button>
-          </div>
+          <ProductOutcomeState
+            kind="error"
+            title="Account updates could not be loaded"
+            detail="Verification history below may still be available."
+            actionLabel="Try again"
+            onAction={() => void refetch()}
+          />
         )}
 
         {!isLoading && !isError && (data?.items.length ?? 0) === 0 && (

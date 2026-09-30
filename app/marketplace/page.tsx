@@ -8,6 +8,8 @@ import { AbxCard, AbxStatusBadge } from "@/components/design/AbxPrimitives";
 import { AbxInnerPage } from "@/components/design/AbxInnerPage";
 import { ABX_FONT_SANS } from "@/lib/design/abraxasDesignSystem";
 import { MotionCard } from "@/lib/motion/MotionCard";
+import { LegacyProductTransition } from "@/components/product/LegacyProductTransition";
+import { LEGACY_MARKETPLACE_COPY } from "@/lib/product/legacyRoutes";
 
 const FONT = ABX_FONT_SANS;
 
@@ -23,6 +25,11 @@ export default function MarketplacePage() {
         lead={`${VAULTS.length} operating vaults · ${totalAum} total AUM`}
         maxWidth={980}
       >
+        <LegacyProductTransition {...LEGACY_MARKETPLACE_COPY} />
+        <details>
+          <summary style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, color: "var(--accent)", cursor: "pointer", marginBottom: "1rem" }}>
+            {LEGACY_MARKETPLACE_COPY.archiveLabel}
+          </summary>
         <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
           {VAULTS.map((v) => {
             const operating = v.status === "operating";
@@ -72,6 +79,7 @@ export default function MarketplacePage() {
             );
           })}
         </div>
+        </details>
       </AbxInnerPage>
     </AbxPageShell>
   );

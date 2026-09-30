@@ -30,9 +30,11 @@ describe("homepage baseline (approved design invariants)", () => {
     const shell = read("components/redesign/RedesignHome.tsx");
     expect(shell).toContain('textAlign: "center"');
     expect(shell).toContain('alignItems: "center"');
+    expect(shell).toContain("HomeArchitectureFlow");
     expect(shell).toContain("HomeCapabilityMap");
-    expect(shell).toContain("HomeProtocolMap");
     expect(shell).toContain("HomeGoodTroubleIntegration");
+    expect(shell).toContain("HomeAudiencePanels");
+    expect(shell).not.toContain("HomeProtocolMap");
   });
 
   it("homepage typography CSS tokens exist", () => {

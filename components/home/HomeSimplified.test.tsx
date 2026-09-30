@@ -38,19 +38,20 @@ describe("simplified homepage sections", () => {
   it("renders hero with semantic heading and both CTAs", () => {
     render(<HomeSharpHero />);
     expect(screen.getByRole("heading", { level: 1, name: SIMPLIFIED_HOME_HEADLINE })).toBeTruthy();
-    expect(screen.getByRole("link", { name: SIMPLIFIED_HOME_CTA_PRIMARY })).toHaveAttribute("href", "/passport");
-    expect(screen.getByRole("link", { name: SIMPLIFIED_HOME_CTA_SECONDARY })).toHaveAttribute("href", "/integrations#apply");
+    expect(screen.getByRole("link", { name: new RegExp(SIMPLIFIED_HOME_CTA_PRIMARY) })).toHaveAttribute("href", "/passport");
+    expect(screen.getByRole("link", { name: new RegExp(SIMPLIFIED_HOME_CTA_SECONDARY) })).toHaveAttribute(
+      "href",
+      "/developers/integration-studio",
+    );
   });
 
   it("renders how-it-works cards without overflow-prone jargon", () => {
     render(<HomeHowItWorks />);
     expect(screen.getByRole("heading", { level: 2, name: /how it works/i })).toBeTruthy();
     expect(screen.getByRole("list", { name: /how abraxas works/i })).toBeTruthy();
-    expect(screen.getByText("Verify")).toBeTruthy();
-    expect(screen.getByText("Keep")).toBeTruthy();
-    expect(screen.getByText("Share")).toBeTruthy();
-    expect(screen.getByText("Keep")).toBeTruthy();
-    expect(screen.getByText("Share")).toBeTruthy();
+    expect(screen.getByText("Verify once")).toBeTruthy();
+    expect(screen.getByText("Reuse evidence")).toBeTruthy();
+    expect(screen.getByText("Share only the answer")).toBeTruthy();
   });
 
   it("renders audience panels and final CTAs", () => {
@@ -60,15 +61,19 @@ describe("simplified homepage sections", () => {
         <HomeTrustClose />
       </>,
     );
-    expect(screen.getByText("For people")).toBeTruthy();
-    expect(screen.getByText("For businesses")).toBeTruthy();
-    expect(screen.getAllByRole("link", { name: SIMPLIFIED_HOME_CTA_PRIMARY })).toHaveLength(1);
-    expect(screen.getAllByRole("link", { name: SIMPLIFIED_HOME_CTA_SECONDARY })).toHaveLength(1);
+    expect(screen.getByText("For holders")).toBeTruthy();
+    expect(screen.getByText("For partners")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Explore Passport" })).toHaveAttribute("href", "/passport");
+    expect(screen.getByRole("link", { name: "Open Integration Studio" })).toHaveAttribute(
+      "href",
+      "/developers/integration-studio",
+    );
+    expect(screen.getByRole("link", { name: new RegExp(SIMPLIFIED_HOME_CTA_PRIMARY) })).toHaveAttribute("href", "/passport");
   });
 
   it("renders partner proof section", () => {
     render(<HomePartnerProof />);
-    expect(screen.getByRole("heading", { level: 2, name: /built with real partners/i })).toBeTruthy();
+    expect(screen.getByRole("heading", { level: 2, name: /sandbox example you can try/i })).toBeTruthy();
   });
 
   it("has zero axe violations across simplified homepage sections", async () => {
