@@ -367,11 +367,57 @@
     text-align: center;
   }
 
+  .abx-page-content {
+    overflow-x: clip;
+  }
+
   .abx-page-content::after {
     right: 0;
     width: min(380px, 95vw);
     height: 240px;
     opacity: 0.5;
+  }
+}
+
+.abx-passport-tabs {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.abx-passport-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.abx-passport-tab-short {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .abx-passport-tab-long {
+    display: none;
+  }
+
+  .abx-passport-tab-short {
+    display: inline;
+  }
+
+  .abx-passport-tabs a {
+    font-size: 0.72rem;
+    padding: 0.45rem 0.8rem;
+  }
+
+  .abx-passport-setup-step {
+    grid-template-columns: 1.75rem minmax(0, 1fr) !important;
+  }
+
+  .abx-passport-setup-status {
+    grid-column: 2 / -1;
+    white-space: normal !important;
+    text-align: left;
   }
 }
 
