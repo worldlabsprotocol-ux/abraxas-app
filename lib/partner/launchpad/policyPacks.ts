@@ -364,6 +364,11 @@ export function inferPolicyPackFromPolicyId(policyId: string): PolicyPack | null
   for (const pack of packs) {
     if (trimmed.includes(pack.id)) return pack;
   }
+  // Legacy pinned policy ids (for example good-trouble-retail-v1) may omit the pack slug.
+  if (/\bretail-v\d/i.test(trimmed)) {
+    const age21Retail = resolvePolicyPack("age_21_retail");
+    if (age21Retail) return age21Retail;
+  }
   return null;
 }
 

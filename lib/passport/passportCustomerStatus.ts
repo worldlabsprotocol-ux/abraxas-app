@@ -6,8 +6,8 @@ import type { IdentityStampStatus } from "@/lib/hooks/usePassportVerification";
 import { resolveIdentityUiState, type IdentityUiState } from "@/lib/passport/identityUiState";
 
 export type PassportCustomerStatusLabel =
-  | "Setup needed"
-  | "Ready to use"
+  | "Needs attention"
+  | "Ready to reuse"
   | "Verification required";
 
 export interface PassportCustomerStatus {
@@ -33,8 +33,8 @@ export function resolvePassportCustomerStatus(input: {
 
   if (!input.walletDone || !input.setup.walletBound) {
     return {
-      label: "Setup needed",
-      summary: "Sign in and secure your Passport to get started.",
+      label: "Needs attention",
+      summary: "Sign in and secure your Passport before sharing private proof with partners.",
       identityUi,
     };
   }
@@ -44,16 +44,16 @@ export function resolvePassportCustomerStatus(input: {
       label: "Verification required",
       summary: identityUi === "under_review"
         ? "Your verified information is being reviewed."
-        : "A participating service needs updated verified information.",
+        : "A partner needs updated verified information before you can continue.",
       identityUi,
     };
   }
 
   return {
-    label: "Ready to use",
+    label: "Ready to reuse",
     summary: identityUi === "verified"
-      ? "Your Passport is ready when participating services request proof."
-      : "Your account is secured. Verified information is only required when a service asks for it.",
+      ? "Your Passport can answer eligible partner requests without sharing underlying identity data."
+      : "Your account is secured. Verified information is only required when a partner asks for it.",
     identityUi,
   };
 }
@@ -69,13 +69,13 @@ export function buildPassportProofSummary(input: {
   ];
 
   if (input.identityUi === "verified") {
-    items.push("Verified information is ready when a service requests it");
+    items.push("Ready for eligible partner requests");
   } else if (input.identityUi === "under_review") {
     items.push("Verified information is being reviewed");
   } else if (input.identityUi === "needs_action") {
-    items.push("Verified information needs an update");
+    items.push("Needs attention before some partner requests");
   } else {
-    items.push("A service will ask only if verified information is required");
+    items.push("Verified only when a partner requires it");
   }
 
   return items;

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard, BulletList } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
+import { NextActionCard } from "@/components/product/NextActionCard";
 import { PublicJourneyNextSteps } from "@/components/product/PublicJourneyNextSteps";
 import { INTEGRATION_SDK_SNIPPET } from "@/lib/protocolIntegrations";
 import { PARTNER_ONBOARDING_HEADLINE, PARTNER_ONBOARDING_DOC_LINKS } from "@/lib/partner/partnerOnboardingPositioning";
@@ -29,23 +30,38 @@ export default function DevelopersPage() {
 
       <ConceptDemoVideo demo={BuildIntegrateCinematicDemo} id="developers-demo" />
 
-      <ContentCard title="Start here">
+      <div style={{ marginBottom: "1rem" }}>
+        <NextActionCard
+          title="Start here"
+          action="Build a sandbox integration"
+          detail="Integration Studio helps you choose a policy, review what partners learn, and create a private test application."
+          href="/developers/integration-studio"
+          buttonLabel="Open Integration Studio"
+        />
+      </div>
+
+      <ContentCard title="Partner journey">
         <BulletList items={PRODUCTION_INTEGRATION_PATH.map((s, i) => `${i + 1}. ${s}`)} />
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
-          <Btn href="/developers/integration-studio" size="sm">Integration Studio →</Btn>
-          <Btn href="/docs/solana" size="sm">Solana integration →</Btn>
-          <Btn href="/docs/trading-venue" size="sm">Trading venue adapter →</Btn>
-          <Btn href="/docs/wallet-standard-binding" size="sm">Wallet Standard binding →</Btn>
-          <Btn href="/docs/payment-authorization" size="sm">Payment authorization →</Btn>
-          <Btn href="/docs/partner-flow" size="sm">Partner Flow docs →</Btn>
-          <Btn href="/docs/relying-party-verify" size="sm">External RP guide →</Btn>
-          <Btn href="/design-partner" size="sm">Request API key →</Btn>
-          <Btn href="/developers/launchpad" size="sm">Partner Launchpad →</Btn>
-          <Btn href="/docs/action-control-plane" size="sm">Action Control Plane →</Btn>
-          <Btn href="/docs/starter-kit" size="sm">Starter kit generator →</Btn>
-          <Btn href={PARTNER_ONBOARDING_DOC_LINKS.developersPartner} variant="secondary" size="sm">Partner portal →</Btn>
-          <Btn href="/integrate" variant="ghost" size="sm">Full integrate guide →</Btn>
+          <Btn href="/developers/launchpad" size="sm" variant="secondary">Partner Launchpad</Btn>
+          <Btn href="/docs/partner-flow" size="sm" variant="ghost">Partner Flow docs</Btn>
+          <Btn href="/design-partner" size="sm" variant="ghost">Request API access</Btn>
         </div>
+        <details style={{ marginTop: "0.85rem" }}>
+          <summary style={{ fontFamily: FONT, fontSize: "0.74rem", fontWeight: 700, color: "var(--accent)", cursor: "pointer" }}>
+            Advanced integration paths
+          </summary>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.65rem" }}>
+            <Btn href="/docs/solana" size="sm" variant="ghost">Solana</Btn>
+            <Btn href="/docs/trading-venue" size="sm" variant="ghost">Trading venue</Btn>
+            <Btn href="/docs/wallet-standard-binding" size="sm" variant="ghost">Wallet binding</Btn>
+            <Btn href="/docs/payment-authorization" size="sm" variant="ghost">Payment authorization</Btn>
+            <Btn href="/docs/relying-party-verify" size="sm" variant="ghost">External RP guide</Btn>
+            <Btn href="/docs/starter-kit" size="sm" variant="ghost">Starter kit</Btn>
+            <Btn href={PARTNER_ONBOARDING_DOC_LINKS.developersPartner} size="sm" variant="ghost">Partner portal</Btn>
+            <Btn href="/integrate" size="sm" variant="ghost">Full integrate guide</Btn>
+          </div>
+        </details>
       </ContentCard>
 
       <ContentCard title="Quick integration">

@@ -1,11 +1,11 @@
 "use client";
 // FILE: components/protocol/HolderDecisionComplete.tsx
-// Holder success surface — privacy boundary + live decision receipt + return action.
+// Holder success surface — partner outcome, privacy boundary, optional return action.
 
+import { useState } from "react";
 import { ABX_FONT_SANS } from "@/lib/design/abraxasDesignSystem";
-import { buildPolicyPresentationFromPolicyId } from "@/lib/partner/launchpad/policyPresentation";
-import { normalizeProtectedFields } from "@/lib/protocol/decisionReceiptDisplay";
-import { PrivacyBoundary, PrivacyBoundaryLegend } from "@/components/protocol/PrivacyBoundary";
+import { buildHolderRequestPresentation } from "@/lib/product/holderRequestPresentation";
+import { PrivacyDisclosureCard } from "@/components/product/PrivacyDisclosureCard";
 import { LiveDecisionReceiptCard } from "@/components/protocol/LiveDecisionReceiptCard";
 import { Btn } from "@/components/redesign/ui";
 
@@ -28,10 +28,8 @@ export function HolderDecisionComplete({
   returnLoading = false,
   showPassportNotice = true,
 }: HolderDecisionCompleteProps) {
-  const presentation = buildPolicyPresentationFromPolicyId(policyId);
-  const protectedFields = normalizeProtectedFields(policyId);
-  const sharedLabel = presentation?.shared_label ?? "Eligibility result";
-  const disclosedResult = presentation?.disclosed_result;
+  const [showDetails, setShowDetails] = useState(false);
+  const copy = buildHolderRequestPresentation(partnerName, policyId);
 
   return (
     <section
@@ -43,33 +41,21 @@ export function HolderDecisionComplete({
           Verification complete
         </p>
         <h2 id="holder-decision-complete-heading" className="abx-holder-decision-complete__title">
-          {sharedLabel}
+          {copy.completionHeadline}
         </h2>
         <p className="abx-holder-decision-complete__subtitle" style={{ fontFamily: ABX_FONT_SANS }}>
-          Requested by {partnerName}. Only the approved result was shared.
+          Only the approved result was shared. Sensitive evidence stayed inside Abraxas.
         </p>
       </header>
 
-      <PrivacyBoundary
-        protectedItems={protectedFields}
-        disclosedLabel={sharedLabel}
-        disclosedResult={disclosedResult}
-        signalActive
+      <PrivacyDisclosureCard
         compact
+        requester={partnerName}
+        requestReason={copy.requestReason}
+        requested={copy.requested}
+        shared={copy.sharedResult}
+        withheld={copy.withheld}
       />
-      <PrivacyBoundaryLegend>
-        Your Passport supported this request. Sensitive evidence stayed inside Abraxas.
-      </PrivacyBoundaryLegend>
-
-      <div className="abx-holder-decision-complete__receipt">
-        <LiveDecisionReceiptCard receiptId={receiptId} partnerName={partnerName} />
-      </div>
-
-      {showPassportNotice && presentation?.reuse_notice ? (
-        <p className="abx-holder-decision-complete__reuse" style={{ fontFamily: ABX_FONT_SANS }}>
-          {presentation.reuse_notice}
-        </p>
-      ) : null}
 
       {onReturn ? (
         <div className="abx-holder-decision-complete__actions">
@@ -78,6 +64,33 @@ export function HolderDecisionComplete({
           </Btn>
         </div>
       ) : null}
+
+      {showPassportNotice ? (
+        <p className="abx-holder-decision-complete__reuse" style={{ fontFamily: ABX_FONT_SANS }}>
+          Your Passport supported this request. Existing verified evidence may satisfy eligible future requests when consent, freshness, and policy rules allow.
+        </p>
+      ) : null}
+
+      <details
+        open={showDetails}
+        onToggle={(event) => setShowDetails((event.target as HTMLDetailsElement).open)}
+        style={{ marginTop: "0.35rem" }}
+      >
+        <summary
+          style={{
+            fontFamily: ABX_FONT_SANS,
+            fontSize: "0.74rem",
+            fontWeight: 700,
+            color: "var(--accent)",
+            cursor: "pointer",
+          }}
+        >
+          Verification details
+        </summary>
+        <div className="abx-holder-decision-complete__receipt" style={{ marginTop: "0.75rem" }}>
+          <LiveDecisionReceiptCard receiptId={receiptId} partnerName={partnerName} />
+        </div>
+      </details>
     </section>
   );
 }

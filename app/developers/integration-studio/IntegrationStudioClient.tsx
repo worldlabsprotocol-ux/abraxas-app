@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ContentCard } from "@/components/redesign/RedesignContent";
+import { NextActionCard } from "@/components/product/NextActionCard";
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 import {
@@ -358,19 +359,54 @@ export function IntegrationStudioClient() {
         }
       : null;
 
+  const studioNextAction = created
+    ? {
+        action: "Test your sandbox integration",
+        detail: `${created.application_id.slice(0, 8)}… is ready in sandbox. Run a verification before requesting production.`,
+        href: launchpadSandboxTestHref(created.application_id),
+        buttonLabel: "Run test verification",
+      }
+    : resumeApp
+      ? {
+          action: `Continue ${resumeApp.application_name}`,
+          detail: "Your sandbox already exists. Launchpad shows the next merchant step from measured integration state.",
+          href: launchpadResumeHref(resumeApp.id),
+          buttonLabel: PARTNER_ACTIVATION_RESUME_CTA,
+        }
+      : {
+          action: "Choose a policy and create a sandbox",
+          detail: "Pick what customers must prove, review the privacy contract, then create a private test application.",
+          href: undefined,
+          buttonLabel: "Create sandbox below",
+        };
+
   return (
     <>
-      {resumeApp && (
-        <ContentCard title={PARTNER_ACTIVATION_RESUME_CTA}>
+      <div style={{ marginBottom: "1rem" }}>
+        <NextActionCard
+          title="What to do next"
+          action={studioNextAction.action}
+          detail={studioNextAction.detail}
+          href={studioNextAction.href}
+          buttonLabel={studioNextAction.buttonLabel}
+        />
+      </div>
+
+      {resumeApp && !created && (
+        <ContentCard title="Current sandbox">
           <p style={{ ...body, marginBottom: "0.75rem" }}>
-            Signed in. Resume {resumeApp.application_name} ({resumeApp.public_slug}) on Partner Launchpad. Readiness stays on existing Launchpad evidence.
+            Signed in as a partner developer. {resumeApp.application_name} ({resumeApp.public_slug}) is active in sandbox.
           </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-            <Btn href={launchpadSandboxTestHref(resumeApp.id)} size="sm">Test your sandbox integration →</Btn>
-            <Btn href={launchpadConfigureHref(resumeApp.id)} variant="secondary" size="sm">Configure Partner Flow →</Btn>
-            <Btn href={launchpadPolicyVersionHref(resumeApp.id)} variant="secondary" size="sm">Policy version →</Btn>
-            <Btn href={launchpadResumeHref(resumeApp.id)} variant="ghost" size="sm">{PARTNER_ACTIVATION_RESUME_CTA} →</Btn>
-          </div>
+          <details>
+            <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)" }}>
+              Developer shortcuts
+            </summary>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
+              <Btn href={launchpadSandboxTestHref(resumeApp.id)} size="sm" variant="secondary">Run test verification</Btn>
+              <Btn href={launchpadConfigureHref(resumeApp.id)} variant="ghost" size="sm">Configure callbacks</Btn>
+              <Btn href={launchpadPolicyVersionHref(resumeApp.id)} variant="ghost" size="sm">Policy version</Btn>
+            </div>
+          </details>
         </ContentCard>
       )}
 

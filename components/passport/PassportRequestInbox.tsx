@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { PassportRequestInboxItem } from "@/lib/passport/passportRequestInbox";
+import { ProductOutcomeState } from "@/components/product/ProductOutcomeState";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import { PUBLIC_SURFACE } from "@/lib/design/publicSurface";
 
@@ -105,48 +106,14 @@ export function PassportRequestInbox({ showEmpty = false }: { showEmpty?: boolea
       </p>
 
       {showEmpty && (
-        <div style={{
-          padding: "0.9rem",
-          borderRadius: 12,
-          border: "1px solid rgba(16,185,129,0.28)",
-          background: "rgba(16,185,129,0.06)",
-          marginBottom: "0.8rem",
-        }}>
-          <p style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 800, margin: "0 0 0.35rem" }}>
-            Try the real consent flow
-          </p>
-          <ol style={{
-            fontFamily: FONT,
-            fontSize: "0.74rem",
-            color: "var(--text-secondary)",
-            lineHeight: 1.6,
-            margin: "0 0 0.7rem",
-            paddingLeft: "1.15rem",
-          }}>
-            <li>Create a sandbox partner request.</li>
-            <li>Review the exact result the partner asks for.</li>
-            <li>Approve or decline before anything is shared.</li>
-          </ol>
-          <button
-            type="button"
-            disabled={demoBusy}
-            onClick={() => void startDemoRequest()}
-            style={{
-              minHeight: 40,
-              padding: "0 0.85rem",
-              borderRadius: 9,
-              border: 0,
-              background: ACCENT,
-              color: "#04130C",
-              fontFamily: FONT,
-              fontSize: "0.74rem",
-              fontWeight: 800,
-              cursor: demoBusy ? "wait" : "pointer",
-              opacity: demoBusy ? 0.7 : 1,
-            }}
-          >
-            {demoBusy ? "Creating request…" : "Create demo request →"}
-          </button>
+        <div style={{ marginBottom: "0.8rem" }}>
+          <ProductOutcomeState
+            kind="empty"
+            title="No partner requests yet"
+            detail="When a partner asks for private proof, it appears here. Review what would be shared before approving anything."
+            actionLabel={demoBusy ? "Creating request…" : "Try sandbox consent flow"}
+            onAction={demoBusy ? undefined : () => void startDemoRequest()}
+          />
           <p style={{
             fontFamily: FONT,
             fontSize: "0.66rem",
@@ -177,27 +144,13 @@ export function PassportRequestInbox({ showEmpty = false }: { showEmpty?: boolea
       )}
 
       {isError && (
-        <div>
-          <p role="status" style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", margin: "0 0 0.65rem" }}>
-            Partner requests could not be loaded.
-          </p>
-          <button
-            type="button"
-            onClick={() => void refetch()}
-            style={{
-              padding: "0.4rem 0.7rem",
-              borderRadius: 8,
-              border: "1px solid var(--border-strong)",
-              background: "var(--surface)",
-              color: "var(--text-primary)",
-              fontFamily: FONT,
-              fontSize: "0.72rem",
-              fontWeight: 700,
-            }}
-          >
-            Try again
-          </button>
-        </div>
+        <ProductOutcomeState
+          kind="error"
+          title="Partner requests could not be loaded"
+          detail="Your inbox is temporarily unavailable. Nothing was changed."
+          actionLabel="Try again"
+          onAction={() => void refetch()}
+        />
       )}
 
       {!isLoading && !isError && (data?.length ?? 0) === 0 && (
