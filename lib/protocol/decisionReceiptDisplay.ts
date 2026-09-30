@@ -26,7 +26,7 @@ export interface DecisionReceiptDisplayModel {
   disclosedResult: string;
   policyLabel: string;
   policyId: string;
-  policyVersion?: number;
+  policyVersion: number | null;
   partnerName?: string;
   partnerId?: string;
   validUntil: string | null;
@@ -46,6 +46,56 @@ export interface DecisionReceiptDisplayModel {
 }
 
 export type ReceiptDisplaySource = DecisionReceiptPublicView | PartnerFlowPublicReceipt;
+
+/** Normalized fields shared by heterogeneous public receipt representations. */
+export interface NormalizedReceiptDisplaySource {
+  receiptId: string;
+  policyId: string;
+  policyVersion: number | null;
+  partnerId: string | undefined;
+  expiresAt: string | null | undefined;
+  evaluatedAt: string | undefined;
+  decisionContext: string | undefined;
+  productionUsable: boolean | undefined;
+  signatureValid: boolean | undefined;
+  decisionResult: string | undefined;
+  status: string | undefined;
+  lifecycleStatus: string | undefined;
+  currentlyValid: boolean | undefined;
+  partnerSafeReason: string | null | undefined;
+  signingKeyId: string | undefined;
+}
+
+function isDecisionReceiptPublicView(
+  receipt: ReceiptDisplaySource,
+): receipt is DecisionReceiptPublicView {
+  return "policy_version" in receipt && typeof receipt.policy_version === "number";
+}
+
+export function normalizeReceiptDisplaySource(
+  receipt: ReceiptDisplaySource,
+  options?: { policyVersion?: number | null },
+): NormalizedReceiptDisplaySource {
+  const publicView = isDecisionReceiptPublicView(receipt) ? receipt : null;
+
+  return {
+    receiptId: receipt.receipt_id ?? "",
+    policyId: receipt.policy_id ?? "",
+    policyVersion: publicView?.policy_version ?? options?.policyVersion ?? null,
+    partnerId: receipt.partner_id,
+    expiresAt: receipt.expires_at,
+    evaluatedAt: publicView?.evaluated_at,
+    decisionContext: receipt.decision_context,
+    productionUsable: receipt.production_usable,
+    signatureValid: receipt.signature_valid,
+    decisionResult: receipt.decision_result,
+    status: receipt.status,
+    lifecycleStatus: receipt.lifecycle_status ?? receipt.status,
+    currentlyValid: receipt.currently_valid,
+    partnerSafeReason: receipt.partner_safe_reason ?? null,
+    signingKeyId: publicView?.signing_key_id,
+  };
+}
 
 const PARTNER_SAFE_USER_MESSAGES: Record<string, string> = {
   receipt_revoked: "Receipt no longer valid",
@@ -107,9 +157,9 @@ export function normalizeProtectedFields(policyId: string): string[] {
   );
 }
 
-function resolveEnvironment(receipt: ReceiptDisplaySource): "production" | "sandbox" {
-  if (receipt.decision_context === "sandbox_only") return "sandbox";
-  if (receipt.production_usable === false) return "sandbox";
+function resolveEnvironment(normalized: NormalizedReceiptDisplaySource): "production" | "sandbox" {
+  if (normalized.decisionContext === "sandbox_only") return "sandbox";
+  if (normalized.productionUsable === false) return "sandbox";
   return "production";
 }
 
@@ -121,20 +171,34 @@ function isExpiredByTime(expiresAt: string | null | undefined, now = new Date())
 
 export function resolveReceiptVisualStatus(
   receipt: ReceiptDisplaySource,
+  options?: { now?: Date; actionPermitted?: boolean; policyVersion?: number | null },
+): DecisionReceiptVisualStatus {
+  return resolveReceiptVisualStatusFromNormalized(
+    normalizeReceiptDisplaySource(receipt, { policyVersion: options?.policyVersion }),
+    options,
+  );
+}
+
+function resolveReceiptVisualStatusFromNormalized(
+  normalized: NormalizedReceiptDisplaySource,
   options?: { now?: Date; actionPermitted?: boolean },
 ): DecisionReceiptVisualStatus {
   const now = options?.now ?? new Date();
 
-  if (receipt.signature_valid === false) return "invalid";
+  if (normalized.signatureValid === false) return "invalid";
 
-  if (receipt.decision_result === "denied") return "denied";
-  if (receipt.decision_result === "manual_review") return "pending";
+  if (normalized.decisionResult === "denied") return "denied";
+  if (normalized.decisionResult === "manual_review") return "pending";
 
-  const environment = resolveEnvironment(receipt);
+  const environment = resolveEnvironment(normalized);
   if (environment === "sandbox") {
-    if (receipt.currently_valid === false) {
-      if (receipt.status === "revoked" || receipt.lifecycle_status === "revoked") return "revoked";
-      if (receipt.status === "expired" || receipt.lifecycle_status === "expired" || isExpiredByTime(receipt.expires_at, now)) {
+    if (normalized.currentlyValid === false) {
+      if (normalized.status === "revoked" || normalized.lifecycleStatus === "revoked") return "revoked";
+      if (
+        normalized.status === "expired" ||
+        normalized.lifecycleStatus === "expired" ||
+        isExpiredByTime(normalized.expiresAt, now)
+      ) {
         return "expired";
       }
       return "invalid";
@@ -142,27 +206,35 @@ export function resolveReceiptVisualStatus(
     return "sandbox";
   }
 
-  if (receipt.status === "revoked" || receipt.lifecycle_status === "revoked") return "revoked";
-  if (receipt.status === "expired" || receipt.lifecycle_status === "expired" || isExpiredByTime(receipt.expires_at, now)) {
+  if (normalized.status === "revoked" || normalized.lifecycleStatus === "revoked") return "revoked";
+  if (
+    normalized.status === "expired" ||
+    normalized.lifecycleStatus === "expired" ||
+    isExpiredByTime(normalized.expiresAt, now)
+  ) {
     return "expired";
   }
 
-  if (receipt.currently_valid === false) {
-    if (receipt.partner_safe_reason === "receipt_revoked") return "revoked";
-    if (receipt.partner_safe_reason === "receipt_expired") return "expired";
+  if (normalized.currentlyValid === false) {
+    if (normalized.partnerSafeReason === "receipt_revoked") return "revoked";
+    if (normalized.partnerSafeReason === "receipt_expired") return "expired";
     return "invalid";
   }
 
-  if (receipt.currently_valid === true && receipt.decision_result === "approved" && receipt.signature_valid === true) {
+  if (
+    normalized.currentlyValid === true &&
+    normalized.decisionResult === "approved" &&
+    normalized.signatureValid === true
+  ) {
     return options?.actionPermitted === false ? "invalid" : "verified";
   }
 
   if (
-    receipt.currently_valid === undefined &&
-    receipt.decision_result === "approved" &&
-    receipt.signature_valid === true &&
-    receipt.status === "active" &&
-    !isExpiredByTime(receipt.expires_at, now)
+    normalized.currentlyValid === undefined &&
+    normalized.decisionResult === "approved" &&
+    normalized.signatureValid === true &&
+    normalized.status === "active" &&
+    !isExpiredByTime(normalized.expiresAt, now)
   ) {
     return options?.actionPermitted === false ? "invalid" : "verified";
   }
@@ -199,45 +271,49 @@ export function buildDecisionReceiptDisplayModel(
     partnerName?: string;
     actionPermitted?: boolean;
     now?: Date;
+    policyVersion?: number | null;
   },
 ): DecisionReceiptDisplayModel {
-  const policyId = receipt.policy_id ?? "";
+  const normalized = normalizeReceiptDisplaySource(receipt, {
+    policyVersion: options?.policyVersion,
+  });
+  const policyId = normalized.policyId;
   const presentation = buildPolicyPresentationFromPolicyId(policyId);
   const profileResolved = resolveDisclosureProfile(presentation?.pack_id as string | undefined);
   const resultCategory = profileResolved.ok
     ? profileResolved.profile.result_category
     : presentation?.disclosed_result ?? "eligibility confirmed";
 
-  const environment = resolveEnvironment(receipt);
-  const visualStatus = resolveReceiptVisualStatus(receipt, options);
-  const partnerId = receipt.partner_id;
+  const environment = resolveEnvironment(normalized);
+  const visualStatus = resolveReceiptVisualStatusFromNormalized(normalized, options);
+  const partnerId = normalized.partnerId;
   const partnerName = options?.partnerName ?? (partnerId ? resolvePartnerDisplayName(partnerId) : undefined);
 
   return {
-    receiptId: receipt.receipt_id ?? "",
+    receiptId: normalized.receiptId,
     visualStatus,
     statusLabel: STATUS_LABELS[visualStatus],
     resultLabel: humanizeDisclosedResult(String(resultCategory)),
     disclosedResult: String(resultCategory),
     policyLabel: presentation?.title ?? policyId,
     policyId,
-    policyVersion: receipt.policy_version,
+    policyVersion: normalized.policyVersion,
     partnerName,
     partnerId,
-    validUntil: receipt.expires_at ?? null,
-    evaluatedAt: receipt.evaluated_at,
+    validUntil: normalized.expiresAt ?? null,
+    evaluatedAt: normalized.evaluatedAt,
     environment,
     environmentLabel: environment === "sandbox" ? "Sandbox" : "Production",
-    signatureValid: receipt.signature_valid === true,
-    currentlyValid: receipt.currently_valid,
+    signatureValid: normalized.signatureValid === true,
+    currentlyValid: normalized.currentlyValid,
     actionPermitted: options?.actionPermitted,
-    denialMessage: partnerSafeDenialMessage(receipt.partner_safe_reason ?? null),
+    denialMessage: partnerSafeDenialMessage(normalized.partnerSafeReason ?? null),
     protectedFields: normalizeProtectedFields(policyId),
     sharedLabel: presentation?.shared_label ?? humanizeDisclosedResult(String(resultCategory)),
     reuseNotice: presentation?.reuse_notice,
-    signingKeyId: "signing_key_id" in receipt ? receipt.signing_key_id : undefined,
-    lifecycleStatus: receipt.lifecycle_status ?? receipt.status,
-    partnerSafeReason: receipt.partner_safe_reason ?? null,
+    signingKeyId: normalized.signingKeyId,
+    lifecycleStatus: normalized.lifecycleStatus,
+    partnerSafeReason: normalized.partnerSafeReason ?? null,
   };
 }
 

@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { DecisionReceiptPublicView } from "@/lib/decisionReceipts/types";
+import type { PartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlowReceipt";
 import {
   buildDecisionReceiptDisplayModel,
   humanizeDisclosedResult,
+  normalizeReceiptDisplaySource,
   partnerSafeDenialMessage,
   receiptDisplayProhibitsIdentityFields,
   resolveReceiptVisualStatus,
@@ -45,6 +47,66 @@ describe("decisionReceiptDisplay", () => {
     expect(model.visualStatus).toBe("verified");
     expect(model.environment).toBe("production");
     expect(model.statusLabel).toBe("Verified");
+    expect(model.policyVersion).toBe(1);
+  });
+
+  it("renders policy_version from DecisionReceiptPublicView", () => {
+    const normalized = normalizeReceiptDisplaySource(sampleReceipt({ policy_version: 3 }));
+    expect(normalized.policyVersion).toBe(3);
+    expect(buildDecisionReceiptDisplayModel(sampleReceipt({ policy_version: 3 })).policyVersion).toBe(3);
+  });
+
+  it("builds PartnerFlowPublicReceipt without inventing policy_version", () => {
+    const partnerReceipt: PartnerFlowPublicReceipt = {
+      receipt_id: "dr_partner_only",
+      partner_id: "good-trouble",
+      policy_id: "partner-age_21_retail-v1",
+      decision_result: "approved",
+      signature_valid: true,
+      status: "active",
+      production_usable: true,
+      decision_context: "production",
+      expires_at: "2099-01-01T00:00:00.000Z",
+      currently_valid: true,
+      lifecycle_status: "active",
+    };
+
+    const normalized = normalizeReceiptDisplaySource(partnerReceipt);
+    expect(normalized.policyVersion).toBeNull();
+
+    const model = buildDecisionReceiptDisplayModel(partnerReceipt, { actionPermitted: true });
+    expect(model.policyVersion).toBeNull();
+    expect(model.visualStatus).toBe("verified");
+    expect(model.evaluatedAt).toBeUndefined();
+    expect(model.signingKeyId).toBeUndefined();
+  });
+
+  it("uses optional builder policyVersion context when receipt omits it", () => {
+    const partnerReceipt: PartnerFlowPublicReceipt = {
+      receipt_id: "dr_partner_ctx",
+      policy_id: "partner-age_21_retail-v1",
+      decision_result: "approved",
+      signature_valid: true,
+      status: "active",
+      currently_valid: true,
+    };
+
+    const model = buildDecisionReceiptDisplayModel(partnerReceipt, { policyVersion: 2 });
+    expect(model.policyVersion).toBe(2);
+  });
+
+  it("keeps verified status when optional technical metadata is absent", () => {
+    const partnerReceipt: PartnerFlowPublicReceipt = {
+      receipt_id: "dr_partner_minimal",
+      policy_id: "partner-age_21_retail-v1",
+      decision_result: "approved",
+      signature_valid: true,
+      status: "active",
+      currently_valid: true,
+    };
+
+    expect(resolveReceiptVisualStatus(partnerReceipt)).toBe("verified");
+    expect(buildDecisionReceiptDisplayModel(partnerReceipt).visualStatus).toBe("verified");
   });
 
   it("shows sandbox clearly for sandbox receipts", () => {
