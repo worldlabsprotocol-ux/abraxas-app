@@ -50,6 +50,11 @@ import {
   holderSafeClientMessage,
   resolveHolderRecovery,
 } from "@/lib/partner/holderExperience";
+import {
+  VerificationPath,
+  resolveVerificationPathStep,
+} from "@/components/protocol/VerificationPath";
+import { ProtocolLoadingState } from "@/components/protocol/ProtocolLoadingState";
 
 function resolveMinimumAge(policyId: string): number | null {
   if (policyId === GOOD_TROUBLE_RETAIL_POLICY_ID) return 21;
@@ -277,6 +282,16 @@ function PartnerContinueInner() {
 
   const continueContextIncomplete = !verifyRequestId || !partnerId;
 
+  const verificationPathStep = resolveVerificationPathStep({
+    showConsent: showPartnerConsent,
+    verifying:
+      setupVisibility.showIdentityVerification ||
+      setupVisibility.showWalletBinding ||
+      methodSelected ||
+      holderState === "under_review",
+    ready: handoff.ready,
+  });
+
   async function bindWallet() {
     if (!suiAddress) return;
     setBindLoading(true);
@@ -406,11 +421,24 @@ function PartnerContinueInner() {
       brief={holderBrief}
     >
       {authLoading || contextLoading ? (
-        <p role="status" aria-live="polite">Loading this partner request…</p>
+        <ProtocolLoadingState kind="preparing_request" detail={partnerName} />
       ) : !suiAddress ? (
         <HolderRecoveryCard recovery={resolveHolderRecovery("session_required", partnerName, partnerHomeUrl)} />
       ) : (
         <>
+          <VerificationPath
+            active={verificationPathStep}
+            completedThrough={
+              handoff.ready
+                ? "ready"
+                : showPartnerConsent
+                  ? "request"
+                  : setupVisibility.showIdentityVerification || setupVisibility.showWalletBinding
+                    ? "consent"
+                    : null
+            }
+            compact
+          />
           <PartnerFlowReturnHandler handoff={handoff} />
 
           {holderState === "under_review" && (
