@@ -17,6 +17,7 @@ import {
 import { loadIntegrationEvents } from "@/lib/partner/pilotEvidence/load";
 import { bindingProductionPartnerNextAction } from "@/lib/partner/launchpad/bindingProduction/evaluate";
 import type { BindingProductionStatus } from "@/lib/partner/launchpad/bindingProduction/contract";
+import { bindingProductionAuthorized } from "@/lib/partner/launchpad/resolveApplicationPolicyBinding";
 
 export interface ApplicationPolicyBindingRow {
   id: string;
@@ -146,13 +147,7 @@ export async function buildApplicationPoliciesSummary(
     const productionStatus = (binding.production_status ?? (productionActive && binding.binding_role === "primary"
       ? "production_active"
       : "sandbox_only")) as BindingProductionStatus;
-    const productionAuthorized = applicationProductionAuthorized({
-      bindingRole: binding.binding_role,
-      applicationProductionActive: productionActive,
-      pack: pack ?? resolvePolicyPack("age_21_retail")!,
-      productionStatus,
-      productionAuthorizedAt: binding.production_authorized_at,
-    });
+    const productionAuthorized = bindingProductionAuthorized({ binding, application: app });
     const canRequestProduction = binding.binding_role === "secondary"
       && productionActive
       && !policyPackIsSandboxOnly(pack ?? resolvePolicyPack("age_21_retail")!)
@@ -188,7 +183,9 @@ export async function buildApplicationPoliciesSummary(
     .map((pack) => buildPolicyPresentation(pack));
 
   const primary = bindings.find((b) => b.binding_role === "primary") ?? bindings[0];
-  const productionActiveCount = bindingViews.filter((b) => b.application_production_authorized).length;
+  const productionActiveCount = bindings.filter((binding) =>
+    bindingProductionAuthorized({ binding, application: app }),
+  ).length;
   const sandboxCount = bindingViews.length - productionActiveCount;
 
   return {

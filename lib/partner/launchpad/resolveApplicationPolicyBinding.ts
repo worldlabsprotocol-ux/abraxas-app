@@ -18,8 +18,9 @@ export function primaryBindingId(applicationId: string): string {
 
 function bindingIsProductionActive(binding: ApplicationPolicyBindingRow): boolean {
   if (binding.production_status === "production_suspended") return false;
+  if (binding.production_status === "production_rejected") return false;
   if (binding.production_status === "production_active") return Boolean(binding.production_authorized_at);
-  return Boolean(binding.production_authorized_at) && binding.production_status !== "production_rejected";
+  return false;
 }
 
 export function resolveBindingEnvironment(input: {
