@@ -30,6 +30,7 @@ import { getLaunchpadApplicationBySlug } from "@/lib/partner/launchpad/resolveLa
 import { loadIntegrationEvents, loadLaunchpadActivity } from "@/lib/partner/pilotEvidence/load";
 import { POLICY_PACKS } from "@/lib/partner/launchpad/policyPacks";
 import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
+import { probeSupabaseTable } from "@/lib/goodTrouble/tableProbe";
 
 const OUT = process.env.READINESS_OUT ?? "/opt/cursor/artifacts/good-trouble-production-readiness.json";
 const APP_SLUG = process.env.GOOD_TROUBLE_APP_SLUG ?? GOOD_TROUBLE_CANONICAL_APP_SLUG;
@@ -58,13 +59,8 @@ function buildSupabaseDeps(): GoodTroubleReadinessDeps | null {
       if (error || !data) return null;
       return data as ProductionCredentialSummary;
     },
-    async tableExists(table: string) {
-      const { data, error } = await sb.rpc("to_regclass", { relation: `public.${table}` }).maybeSingle();
-      if (error) {
-        const { error: probeError } = await sb.from(table).select("id", { head: true, count: "exact" }).limit(0);
-        return probeError ? false : true;
-      }
-      return Boolean(data);
+    async probeTable(table: string) {
+      return probeSupabaseTable(sb, table);
     },
     async loadProductionEvents(applicationId: string) {
       return loadIntegrationEvents({
@@ -83,7 +79,7 @@ async function main() {
     loadApplication: async () => null,
     loadBindings: async () => [],
     loadProductionCredential: async () => null,
-    tableExists: async () => null,
+    probeTable: async () => null,
     loadProductionEvents: async () => null,
   };
 
