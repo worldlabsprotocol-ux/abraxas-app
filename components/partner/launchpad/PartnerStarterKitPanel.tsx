@@ -6,6 +6,7 @@ import { ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
 import { PartnerBindingSelector } from "@/components/partner/launchpad/PartnerBindingSelector";
 import { ABRAXAS_FONT_MONO, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
+import { MERCHANT_CONNECT_PLATFORMS } from "@/lib/partner/launchpad/platformOptions";
 import {
   STARTER_KIT_PLATFORM_MATRIX,
   isStarterKitPlatform,
@@ -22,10 +23,20 @@ const PATH_OPTIONS: Array<{ id: IntegrationStudioPathId; label: string }> = [
   { id: "webhook_events", label: "Webhooks" },
 ];
 
-export function PartnerStarterKitPanel({ applicationId }: { applicationId: string }) {
+const MERCHANT_PLATFORMS = MERCHANT_CONNECT_PLATFORMS.map((item) => item.starterKitPlatform);
+
+export function PartnerStarterKitPanel({
+  applicationId,
+  defaultPlatform = "universal_https",
+  merchantMode = false,
+}: {
+  applicationId: string;
+  defaultPlatform?: StarterKitPlatform;
+  merchantMode?: boolean;
+}) {
   const [bindingId, setBindingId] = useState<string | null>(null);
   const [pathId, setPathId] = useState<IntegrationStudioPathId>("hosted_partner_flow");
-  const [platform, setPlatform] = useState<StarterKitPlatform>("universal_https");
+  const [platform, setPlatform] = useState<StarterKitPlatform>(defaultPlatform);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [files, setFiles] = useState<Array<{ path: string; contents: string }>>([]);
@@ -36,6 +47,10 @@ export function PartnerStarterKitPanel({ applicationId }: { applicationId: strin
     result_family: string;
     environment: string;
   } | null>(null);
+
+  const visiblePlatforms = merchantMode
+    ? STARTER_KIT_PLATFORM_MATRIX.filter((item) => MERCHANT_PLATFORMS.includes(item.id))
+    : STARTER_KIT_PLATFORM_MATRIX;
 
   async function generate() {
     setError("");
@@ -64,7 +79,7 @@ export function PartnerStarterKitPanel({ applicationId }: { applicationId: strin
         binding?: { pack_id: string; result_family: string; environment: string };
       };
       if (!res.ok || !data.ok || !data.files || !data.archive_base64) {
-        setError(data.code ?? data.error ?? "Could not generate starter kit");
+        setError(data.code ?? data.error ?? "Could not generate integration files");
         return;
       }
       setFiles(data.files);
@@ -72,7 +87,7 @@ export function PartnerStarterKitPanel({ applicationId }: { applicationId: strin
       setFilename(data.filename ?? "abraxas-starter-kit.zip");
       if (data.binding) setBindingSummary(data.binding);
     } catch {
-      setError("Could not generate starter kit");
+      setError("Could not generate integration files");
     } finally {
       setBusy(false);
     }
@@ -91,17 +106,29 @@ export function PartnerStarterKitPanel({ applicationId }: { applicationId: strin
   }
 
   return (
-    <ContentCard title="Starter kit">
+    <ContentCard title={merchantMode ? "Set up integration" : "Starter kit"}>
       <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0 0 0.65rem", lineHeight: 1.55 }}>
-        Generate a binding-pinned integration contract. Policy metadata is server-resolved from the selected binding.
+        {merchantMode
+          ? "Download the integration files for your platform. Secrets stay on your server — Abraxas never exposes live credentials here."
+          : "Generate a binding-pinned integration contract. Policy metadata is server-resolved from the selected binding."}
       </p>
-      <PartnerBindingSelector
-        applicationId={applicationId}
-        selectedBindingId={bindingId}
-        onSelect={setBindingId}
-        label="Integration policy"
-      />
-      {bindingSummary && (
+      {!merchantMode && (
+        <PartnerBindingSelector
+          applicationId={applicationId}
+          selectedBindingId={bindingId}
+          onSelect={setBindingId}
+          label="Integration policy"
+        />
+      )}
+      {merchantMode && (
+        <PartnerBindingSelector
+          applicationId={applicationId}
+          selectedBindingId={bindingId}
+          onSelect={setBindingId}
+          label="Verification policy"
+        />
+      )}
+      {!merchantMode && bindingSummary && (
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0.55rem 0 0" }}>
           Pack <code style={{ fontFamily: MONO }}>{bindingSummary.pack_id}</code>
           {" · "}
@@ -110,45 +137,33 @@ export function PartnerStarterKitPanel({ applicationId }: { applicationId: strin
           {bindingSummary.environment}
         </p>
       )}
-      <p style={{ fontFamily: FONT, fontSize: "0.74rem", fontWeight: 700, margin: "0.85rem 0 0.45rem" }}>Integration path</p>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginBottom: "0.65rem" }}>
-        {PATH_OPTIONS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setPathId(item.id)}
-            style={{
-              padding: "0.4rem 0.7rem",
-              borderRadius: 999,
-              border: pathId === item.id ? "1px solid rgba(45,212,191,0.55)" : "1px solid var(--border)",
-              background: pathId === item.id ? "rgba(45,212,191,0.12)" : "var(--surface-inset)",
-              fontFamily: FONT,
-              fontSize: "0.72rem",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
-      <p style={{ fontFamily: FONT, fontSize: "0.74rem", fontWeight: 700, margin: "0 0 0.45rem" }}>Platform</p>
+      {!merchantMode && (
+        <>
+          <p style={{ fontFamily: FONT, fontSize: "0.74rem", fontWeight: 700, margin: "0.85rem 0 0.45rem" }}>Integration path</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginBottom: "0.65rem" }}>
+            {PATH_OPTIONS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setPathId(item.id)}
+                style={pillStyle(pathId === item.id)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      {!merchantMode && (
+        <p style={{ fontFamily: FONT, fontSize: "0.74rem", fontWeight: 700, margin: "0 0 0.45rem" }}>Platform</p>
+      )}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginBottom: "0.75rem" }}>
-        {STARTER_KIT_PLATFORM_MATRIX.map((item) => (
+        {visiblePlatforms.map((item) => (
           <button
             key={item.id}
             type="button"
             onClick={() => isStarterKitPlatform(item.id) && setPlatform(item.id)}
-            style={{
-              padding: "0.4rem 0.7rem",
-              borderRadius: 999,
-              border: platform === item.id ? "1px solid rgba(99,102,241,0.55)" : "1px solid var(--border)",
-              background: platform === item.id ? "rgba(99,102,241,0.14)" : "var(--surface-inset)",
-              fontFamily: FONT,
-              fontSize: "0.72rem",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
+            style={pillStyle(platform === item.id)}
           >
             {item.label}
           </button>
@@ -156,10 +171,12 @@ export function PartnerStarterKitPanel({ applicationId }: { applicationId: strin
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
         <Btn size="sm" loading={busy} disabled={busy} onClick={() => void generate()}>
-          Generate starter kit
+          {merchantMode ? "Generate integration files" : "Generate starter kit"}
         </Btn>
         {archive && (
-          <Btn size="sm" variant="secondary" onClick={downloadArchive}>Download zip</Btn>
+          <Btn size="sm" variant="secondary" onClick={downloadArchive}>
+            Download zip
+          </Btn>
         )}
       </div>
       {error && (
@@ -168,10 +185,28 @@ export function PartnerStarterKitPanel({ applicationId }: { applicationId: strin
         </p>
       )}
       {files.length > 0 && (
-        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", marginTop: "0.65rem" }}>
-          {files.length} files generated with binding-pinned policy metadata.
-        </p>
+        <details style={{ marginTop: "0.75rem" }}>
+          <summary style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, cursor: "pointer" }}>
+            View generated starter kit
+          </summary>
+          <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", marginTop: "0.55rem" }}>
+            {files.length} files generated with binding-pinned policy metadata.
+          </p>
+        </details>
       )}
     </ContentCard>
   );
+}
+
+function pillStyle(active: boolean): React.CSSProperties {
+  return {
+    padding: "0.4rem 0.7rem",
+    borderRadius: 999,
+    border: active ? "1px solid rgba(99,102,241,0.55)" : "1px solid var(--border)",
+    background: active ? "rgba(99,102,241,0.14)" : "var(--surface-inset)",
+    fontFamily: FONT,
+    fontSize: "0.72rem",
+    fontWeight: 600,
+    cursor: "pointer",
+  };
 }

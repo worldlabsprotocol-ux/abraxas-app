@@ -12,12 +12,14 @@ export function NextActionCard({
   detail,
   href,
   onAction,
+  buttonLabel = "Continue",
 }: {
   title?: string;
   action: string;
   detail?: string;
   href?: string;
   onAction?: () => void;
+  buttonLabel?: string;
 }) {
   return (
     <div
@@ -41,7 +43,7 @@ export function NextActionCard({
       )}
       {(href || onAction) && (
         <Btn size="sm" href={href} onClick={onAction}>
-          Continue
+          {buttonLabel}
         </Btn>
       )}
     </div>
