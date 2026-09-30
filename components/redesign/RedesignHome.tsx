@@ -6,15 +6,10 @@ import { WalletContextProvider } from "@/components/WalletContextProvider";
 import { HomeAudiencePanels } from "@/components/home/HomeAudiencePanels";
 import { HomePartnerProof } from "@/components/home/HomePartnerProof";
 import { HomeCapabilityMap } from "@/components/home/HomeCapabilityMap";
-import { HomeProtocolMap } from "@/components/home/HomeProtocolMap";
-import { HomeUseCases } from "@/components/home/HomeUseCases";
 import { HomeGoodTroubleIntegration } from "@/components/home/HomeGoodTroubleIntegration";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
 import { HomeArchitectureFlow, HomeProblemComparison } from "@/components/product";
-import { HomeProductEvidence } from "@/components/home/HomeProductEvidence";
-import { HomePolicyOutcomeStrip } from "@/components/home/HomePolicyOutcomeStrip";
 import { HomeTrustClose } from "@/components/home/HomeTrustClose";
-import { HomeProtocolInAction } from "@/components/home/HomeProtocolInAction";
 import { AmbientGlow } from "./AmbientGlow";
 import { RedesignNav } from "./RedesignNav";
 import { RedesignFooter } from "./RedesignFooter";
@@ -36,12 +31,6 @@ function HomeContent() {
         <HomeProblemComparison />
         <HomeGoodTroubleIntegration />
         <HomeCapabilityMap />
-        <HomeProtocolMap />
-        <HomeUseCases />
-        <HomeProductEvidence />
-        <HomePolicyOutcomeStrip />
-        <HomeProtocolInAction />
-        <HomePartnerProof />
         <HomeAudiencePanels />
         <HomeTrustClose />
       </div>

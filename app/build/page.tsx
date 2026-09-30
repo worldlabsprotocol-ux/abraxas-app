@@ -6,6 +6,8 @@ import Link from "next/link";
 import { AbxPageShell } from "@/components/design/AbxPageShell";
 import { RedesignFooter } from "@/components/redesign/RedesignFooter";
 import { Btn } from "@/components/redesign/ui";
+import { LegacyProductTransition } from "@/components/product/LegacyProductTransition";
+import { LEGACY_BUILD_COPY } from "@/lib/product/legacyRoutes";
 
 const FONT = "'Inter',system-ui,sans-serif";
 const MONO = "'JetBrains Mono',monospace";
@@ -21,12 +23,17 @@ export default function BuildPage() {
   return (
     <AbxPageShell accent="neutral">
       <div style={{ maxWidth: 820, margin: "0 auto", padding: "clamp(1.25rem, 4vw, 2.5rem) clamp(1rem, 3vw, 1.5rem)" }}>
+        <LegacyProductTransition {...LEGACY_BUILD_COPY} />
+        <details>
+          <summary style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, color: ACCENT, cursor: "pointer", marginBottom: "1rem" }}>
+            {LEGACY_BUILD_COPY.archiveLabel}
+          </summary>
         <div style={{ fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: ACCENT, marginBottom: "0.5rem" }}>
           Tokenize
         </div>
-        <h1 style={{ fontFamily: FONT, fontSize: "clamp(1.5rem, 4vw, 2rem)", fontWeight: 800, letterSpacing: "-0.02em", color: "var(--text-primary)", margin: "0 0 0.75rem" }}>
+        <h2 style={{ fontFamily: FONT, fontSize: "clamp(1.25rem, 3.5vw, 1.65rem)", fontWeight: 800, letterSpacing: "-0.02em", color: "var(--text-primary)", margin: "0 0 0.75rem" }}>
           Put your asset on-registry
-        </h1>
+        </h2>
         <p style={{ fontFamily: FONT, fontSize: "0.88rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 2rem", maxWidth: 560 }}>
           Abraxas is the verify layer first — then tokenization. You prove ownership once; buyers and partners check the record instead of re-running diligence.
         </p>
@@ -80,6 +87,7 @@ export default function BuildPage() {
           <Link href="/design-partner" style={{ color: ACCENT }}>design partners</Link>
           {" "}building apps on Abraxas — not required for asset owners.
         </p>
+        </details>
       </div>
       <RedesignFooter />
     </AbxPageShell>

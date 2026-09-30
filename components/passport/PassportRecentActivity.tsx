@@ -138,6 +138,7 @@ export function PassportRecentActivity({
           {steps.map((step, index) => (
             <li
               key={step.label}
+              className="abx-passport-setup-step"
               aria-current={step.current ? "step" : undefined}
               style={{
                 display: "grid",
@@ -184,7 +185,7 @@ export function PassportRecentActivity({
               }}>
                 {step.label}
               </span>
-              <span style={{
+              <span className="abx-passport-setup-status" style={{
                 fontFamily: FONT,
                 fontSize: "0.72rem",
                 fontWeight: 700,

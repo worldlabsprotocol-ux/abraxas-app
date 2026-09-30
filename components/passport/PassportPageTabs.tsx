@@ -50,18 +50,17 @@ export function PassportPageTabs({ active }: { active: PassportPageView }) {
 
   const verifyLabel = onVerifyRoute ? "Partner verifier" : "My records";
 
-  const tabs: Array<{ id: PassportPageView; label: string; href: string }> = [
-    { id: "passport", label: "My Passport", href: passportHref },
-    { id: "requests", label: "Requests", href: PASSPORT_REQUESTS_HREF },
-    { id: "activity", label: "Activity", href: PASSPORT_ACTIVITY_HREF },
-    { id: "verify", label: verifyLabel, href: verifyHref },
-    { id: "privacy", label: "Privacy & controls", href: PASSPORT_PRIVACY_HREF },
-    { id: "support", label: "Help & safety", href: PASSPORT_SUPPORT_HREF },
+  const tabs: Array<{ id: PassportPageView; label: string; shortLabel: string; href: string }> = [
+    { id: "passport", label: "My Passport", shortLabel: "Passport", href: passportHref },
+    { id: "requests", label: "Requests", shortLabel: "Requests", href: PASSPORT_REQUESTS_HREF },
+    { id: "activity", label: "Activity", shortLabel: "Activity", href: PASSPORT_ACTIVITY_HREF },
+    { id: "verify", label: verifyLabel, shortLabel: onVerifyRoute ? "Verifier" : "Records", href: verifyHref },
+    { id: "privacy", label: "Privacy & controls", shortLabel: "Privacy", href: PASSPORT_PRIVACY_HREF },
+    { id: "support", label: "Help & safety", shortLabel: "Help", href: PASSPORT_SUPPORT_HREF },
   ];
 
   return (
-    <nav aria-label="Passport sections" style={{
-      display: "flex", gap: "0.35rem", flexWrap: "wrap",
+    <nav aria-label="Passport sections" className="abx-passport-tabs" style={{
       padding: "0.25rem", borderRadius: 999, marginBottom: "1.25rem",
       background: "var(--surface-inset)", border: "1px solid var(--border)",
     }}>
@@ -75,9 +74,11 @@ export function PassportPageTabs({ active }: { active: PassportPageView }) {
             fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700,
             background: active === tab.id ? ACCENT : "transparent",
             color: active === tab.id ? "#04130C" : "var(--text-secondary)",
+            flexShrink: 0,
           }}
         >
-          {tab.label}
+          <span className="abx-passport-tab-long">{tab.label}</span>
+          <span className="abx-passport-tab-short">{tab.shortLabel}</span>
         </Link>
       ))}
       {onVerifyRoute && (
