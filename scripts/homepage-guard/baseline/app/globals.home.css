@@ -344,6 +344,11 @@
   overflow-x: hidden;
 }
 
+.abx-admin-page {
+  width: 100%;
+  min-width: 0;
+}
+
 .abx-admin-shell::before {
   content: "";
   position: fixed;
@@ -367,7 +372,8 @@
     text-align: center;
   }
 
-  .abx-page-content {
+  .abx-page-content,
+  .abx-admin-page {
     overflow-x: clip;
   }
 

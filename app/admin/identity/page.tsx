@@ -9,6 +9,8 @@ import { useSearchParams } from "next/navigation";
 import { IdentityReviewSubNav } from "@/components/admin/IdentityReviewSubNav";
 import { RevocationControlPanel } from "@/components/admin/RevocationControlPanel";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
+import { OperationalEmptyState } from "@/components/admin/operator";
+import { operatorEmptyQueueCopy } from "@/lib/admin/operatorPresentation";
 import { adminFetch } from "@/lib/admin/adminFetch";
 import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
 import { resolveIdentityReviewQueueTab } from "@/lib/admin/identityReviewQueueStates";
@@ -361,9 +363,14 @@ export default function AdminIdentityPage() {
         )}
 
         {items.length === 0 && !loading ? (
-          <div style={{ fontFamily: FONT, fontSize: "0.82rem", color: "rgba(255,255,255,0.4)" }}>
-            No {activeTab.label.toLowerCase()} identity submissions.
-          </div>
+          <OperationalEmptyState
+            title={operatorEmptyQueueCopy(`${activeTab.label.toLowerCase()} identity review`).title}
+            body={
+              activeTab.id === "pending"
+                ? "No identity submissions are waiting for human review. New captures appear here when holders complete verification."
+                : `No ${activeTab.label.toLowerCase()} identity submissions in this queue view.`
+            }
+          />
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
             {items.map(item => (

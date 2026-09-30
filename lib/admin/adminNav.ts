@@ -35,6 +35,20 @@ export const ADMIN_PROTOCOL_NAV_ITEMS: readonly AdminNavItem[] = [
     section: "protocol",
   },
   {
+    id: "production-review",
+    href: "/admin/production-review",
+    label: "Production review",
+    description: "Application production activation, per-binding authorization, and credential lifecycle",
+    section: "protocol",
+  },
+  {
+    id: "design-partners",
+    href: "/admin/design-partners",
+    label: "Design partners",
+    description: "Review partner applications, sandbox signoff, and promotion readiness",
+    section: "protocol",
+  },
+  {
     id: "policy-proposals",
     href: "/admin/policy-proposals",
     label: "Policy proposals",
