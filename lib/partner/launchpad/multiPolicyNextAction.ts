@@ -3,8 +3,14 @@
 
 import type { ApplicationPoliciesSummary } from "@/lib/partner/launchpad/applicationPolicyBindings";
 
+export interface MultiPolicyNextActionContext {
+  websiteConnected?: boolean;
+  integrationFilesReady?: boolean;
+}
+
 export function resolveMultiPolicyNextAction(
   summary: ApplicationPoliciesSummary,
+  context: MultiPolicyNextActionContext = {},
 ): string | null {
   if (summary.configured_count === 0) {
     return "configure_first_policy";
@@ -17,7 +23,10 @@ export function resolveMultiPolicyNextAction(
     (b) => (b.verified_receipts ?? 0) > 0,
   );
   if (!hasVerifiedReceipt) {
-    return "test_sandbox_receipt";
+    if (!context.integrationFilesReady) {
+      return "connect_website";
+    }
+    return "run_test_verification";
   }
 
   if (
@@ -59,9 +68,11 @@ export function resolveMultiPolicyNextAction(
 export function humanizeMultiPolicyNextAction(action: string | null): string | null {
   if (!action) return null;
   const labels: Record<string, string> = {
-    configure_first_policy: "Configure first policy",
-    test_sandbox_receipt: "Test sandbox receipt",
-    request_production_review: "Request production review",
+    configure_first_policy: "Choose what to verify",
+    connect_website: "Connect website",
+    run_test_verification: "Run test verification",
+    test_sandbox_receipt: "Run test verification",
+    request_production_review: "Prepare to go live",
     add_another_eligibility_policy: "Add another eligibility policy",
     request_secondary_binding_production: "Request production for secondary policy",
     test_additional_policy_in_sandbox: "Test additional policy in sandbox",
@@ -69,4 +80,13 @@ export function humanizeMultiPolicyNextAction(action: string | null): string | n
     complete_production_activation: "Complete production activation",
   };
   return labels[action] ?? action.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+export function multiPolicyNextActionStage(action: string | null): string {
+  if (!action) return "connect";
+  if (action.includes("policy") && action.includes("configure")) return "verify";
+  if (action.includes("connect")) return "connect";
+  if (action.includes("test") || action.includes("receipt") || action.includes("verification")) return "test";
+  if (action.includes("production")) return "go_live";
+  return "connect";
 }

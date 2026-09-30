@@ -104,7 +104,7 @@ describe("multi-policy next actions", () => {
     expect(resolveMultiPolicyNextAction(summary({ configured_count: 0 }))).toBe("configure_first_policy");
   });
 
-  it("suggests sandbox receipt test before expansion", () => {
+  it("suggests connect website before test when connection is incomplete", () => {
     const ageBinding = buildPolicyPresentation(POLICY_PACKS.age_21_retail);
     expect(resolveMultiPolicyNextAction(summary({
       bindings: [{
@@ -124,6 +124,29 @@ describe("multi-policy next actions", () => {
         evidence_reuse_count: 0,
       }],
       available_to_add: [buildPolicyPresentation(POLICY_PACKS.residency_us)],
-    }))).toBe("test_sandbox_receipt");
+    }), { integrationFilesReady: false })).toBe("connect_website");
+  });
+
+  it("suggests run test verification after integration files are ready", () => {
+    const ageBinding = buildPolicyPresentation(POLICY_PACKS.age_21_retail);
+    expect(resolveMultiPolicyNextAction(summary({
+      bindings: [{
+        ...ageBinding,
+        binding_id: "b1",
+        policy_id: "p1",
+        policy_version: 1,
+        binding_role: "primary",
+        configured: true,
+        availability: "configured",
+        application_environment: "sandbox",
+        application_production_active: false,
+        application_production_authorized: false,
+        compatibility_hint: "reusable_available",
+        request_volume: 1,
+        verified_receipts: 0,
+        evidence_reuse_count: 0,
+      }],
+      available_to_add: [buildPolicyPresentation(POLICY_PACKS.residency_us)],
+    }), { integrationFilesReady: true })).toBe("run_test_verification");
   });
 });

@@ -7,7 +7,11 @@ import { Btn } from "@/components/redesign/ui";
 import { EligibilityPolicyCard } from "@/components/product/EligibilityPolicyCard";
 import { NextActionCard } from "@/components/product";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
-import { humanizeMultiPolicyNextAction } from "@/lib/partner/launchpad/multiPolicyNextAction";
+import {
+  humanizeMultiPolicyNextAction,
+  multiPolicyNextActionStage,
+  resolveMultiPolicyNextAction,
+} from "@/lib/partner/launchpad/multiPolicyNextAction";
 import type { ApplicationPoliciesSummary } from "@/lib/partner/launchpad/applicationPolicyBindings";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -20,9 +24,13 @@ interface EligibilityPoliciesResponse {
 
 export function PartnerApplicationPoliciesPanel({
   applicationId,
+  websiteConnected = false,
+  integrationFilesReady = false,
   onNavigate,
 }: {
   applicationId: string;
+  websiteConnected?: boolean;
+  integrationFilesReady?: boolean;
   onNavigate?: (step: string) => void;
 }) {
   const [summary, setSummary] = useState<ApplicationPoliciesSummary | null>(null);
@@ -116,6 +124,11 @@ export function PartnerApplicationPoliciesPanel({
     );
   }
 
+  const effectiveNextAction = resolveMultiPolicyNextAction(summary, {
+    websiteConnected,
+    integrationFilesReady,
+  }) ?? nextAction;
+
   const initialTitle = summary.initial_policy_template_id
     ? summary.bindings.find((b) => b.pack_id === summary.initial_policy_template_id)?.title
       ?? summary.initial_policy_template_id.replace(/_/g, " ")
@@ -196,19 +209,39 @@ export function PartnerApplicationPoliciesPanel({
         </div>
       )}
 
-      {nextAction && (
+      {effectiveNextAction && (
         <div style={{ marginBottom: "0.75rem" }}>
           <NextActionCard
-            action={humanizeMultiPolicyNextAction(nextAction) ?? nextAction}
-            detail="Resolved from configured policies and measured integration state."
+            title="Policy next step"
+            action={humanizeMultiPolicyNextAction(effectiveNextAction) ?? effectiveNextAction}
+            detail={
+              effectiveNextAction === "connect_website"
+                ? "Finish connecting your website before running a test verification."
+                : effectiveNextAction.includes("test") || effectiveNextAction.includes("verification")
+                  ? integrationFilesReady
+                    ? "Run a test verification to confirm the customer experience."
+                    : "Set up integration files first."
+                  : "Resolved from configured policies and measured integration state."
+            }
+            buttonLabel={
+              effectiveNextAction === "connect_website"
+                ? "Connect website"
+                : effectiveNextAction.includes("test") || effectiveNextAction.includes("verification")
+                  ? integrationFilesReady ? "Run test verification" : "Connect website"
+                  : effectiveNextAction.includes("production")
+                    ? "Prepare to go live"
+                    : "Continue"
+            }
             onAction={
-              onNavigate && nextAction.includes("production")
-                ? () => onNavigate("production")
-                : onNavigate && nextAction.includes("receipt")
-                  ? () => onNavigate("test")
-                  : nextAction === "add_another_eligibility_policy"
-                    ? () => setShowCatalog(true)
-                    : undefined
+              onNavigate
+                ? () => onNavigate(
+                  effectiveNextAction === "add_another_eligibility_policy"
+                    ? "verify"
+                    : multiPolicyNextActionStage(effectiveNextAction),
+                )
+                : effectiveNextAction === "add_another_eligibility_policy"
+                  ? () => setShowCatalog(true)
+                  : undefined
             }
           />
         </div>
