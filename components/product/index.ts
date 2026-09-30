@@ -11,6 +11,8 @@ export { PilotCriteriaList } from "./PilotCriteriaList";
 export { EvidenceTimeline } from "./EvidenceTimeline";
 export type { TimelineEvent } from "./EvidenceTimeline";
 export { NextActionCard } from "./NextActionCard";
+export { ProductOutcomeState } from "./ProductOutcomeState";
+export type { ProductOutcomeKind } from "./ProductOutcomeState";
 export { MetricWithProvenance } from "./MetricWithProvenance";
 export type { MetricProvenance } from "./MetricWithProvenance";
 export { PermissionStatusList } from "./PermissionStatus";

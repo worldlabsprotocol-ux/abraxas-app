@@ -70,15 +70,13 @@ interface Props {
 function buildPassportTrustItems(identityUi: string, hasCredential: boolean) {
   const items: Array<{ kind: "verified" | "current" | "reusable" | "refresh_required" | "under_review" | "pending"; detail?: string }> = [];
   if (identityUi === "verified" && hasCredential) {
-    items.push({ kind: "verified", detail: "Identity verified" });
-    items.push({ kind: "current", detail: "Evidence is current for eligible requests" });
-    items.push({ kind: "reusable", detail: "May satisfy new policy questions with consent" });
+    items.push({ kind: "reusable", detail: "Ready for eligible partner requests" });
   } else if (identityUi === "under_review") {
     items.push({ kind: "under_review", detail: "Verification in progress" });
   } else if (identityUi === "needs_action") {
-    items.push({ kind: "refresh_required", detail: "Refresh required before some requests" });
+    items.push({ kind: "refresh_required", detail: "Needs attention before some requests" });
   } else {
-    items.push({ kind: "pending", detail: "Verified evidence added when a policy requires it" });
+    items.push({ kind: "pending", detail: "Verified only when a partner requires it" });
   }
   return items;
 }
@@ -170,7 +168,7 @@ export function PassportCustomerView({
           fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)",
           letterSpacing: "0.04em", textTransform: "uppercase", margin: "0 0 0.35rem",
         }}>
-          Abraxas Passport
+          Your Passport
         </p>
         <h2 id="passport-status-heading" style={{
           fontFamily: FONT, fontSize: "1.1rem", fontWeight: 800, margin: "0 0 0.35rem", color: "var(--text-primary)",

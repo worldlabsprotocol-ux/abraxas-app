@@ -8,7 +8,9 @@ import { consentVerificationRequest, declineVerificationRequest } from "@/lib/ap
 import { resolvePartnerDisplayName } from "@/lib/partner/partnerVerifyDisplay";
 import { holderSafeClientMessage, resolveHolderRecovery } from "@/lib/partner/holderExperience";
 import { PrivacyDisclosureCard } from "@/components/product/PrivacyDisclosureCard";
+import { ProductOutcomeState } from "@/components/product/ProductOutcomeState";
 import { HolderDecisionComplete } from "@/components/protocol/HolderDecisionComplete";
+import { buildHolderRequestPresentation } from "@/lib/product/holderRequestPresentation";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -97,16 +99,24 @@ export function ConsentCeremony({
 
   if (loading) {
     return (
-      <div style={{ padding: "1rem", borderRadius: 14, background: "var(--surface-raised)", border: "1px solid var(--border-strong)", marginBottom: "1.25rem" }}>
-        <p role="status" aria-live="polite" style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", margin: 0 }}>Loading eligibility request…</p>
+      <div style={{ marginBottom: "1.25rem" }}>
+        <ProductOutcomeState
+          kind="info"
+          title="Loading verification request"
+          detail="Reviewing what the partner is asking for and what would be shared."
+        />
       </div>
     );
   }
 
   if (error && !preview) {
     return (
-      <div style={{ padding: "1rem", borderRadius: 14, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", marginBottom: "1.25rem" }}>
-        <p role="alert" aria-live="assertive" style={{ fontFamily: FONT, fontSize: "0.78rem", color: "#EF4444", margin: 0 }}>{holderSafeClientMessage()}</p>
+      <div style={{ marginBottom: "1.25rem" }}>
+        <ProductOutcomeState
+          kind="error"
+          title="This request could not be loaded"
+          detail={holderSafeClientMessage()}
+        />
       </div>
     );
   }
@@ -114,16 +124,12 @@ export function ConsentCeremony({
   if (result) {
     if (result.decision === "declined") {
       return (
-        <div style={{
-          padding: "1rem 1.15rem", borderRadius: 14, marginBottom: "1.25rem",
-          background: "var(--surface-inset)", border: "1px solid var(--border-strong)",
-        }}>
-          <div style={{ fontFamily: FONT, fontSize: "0.92rem", fontWeight: 800, color: "var(--text-secondary)", marginBottom: "0.35rem" }}>
-            Request declined
-          </div>
-          <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.55 }}>
-            No eligibility answer was shared with the partner.
-          </p>
+        <div style={{ marginBottom: "1.25rem" }}>
+          <ProductOutcomeState
+            kind="info"
+            title="Request declined"
+            detail="No eligibility answer was shared with the partner."
+          />
         </div>
       );
     }
@@ -183,21 +189,34 @@ export function ConsentCeremony({
   }
 
   const partnerName = resolvePartnerDisplayName(preview.partner_id);
-  const question = preview.requested_action
-    ? preview.requested_action.replace(/_/g, " ")
-    : preview.policy_name;
-  const sharedItems = preview.claim_labels.filter((c) => c.will_share).map((c) => ({ label: c.label }));
+  const copy = buildHolderRequestPresentation(partnerName, preview.policy_id, {
+    requestedAction: preview.requested_action,
+  });
+  const claimShared = preview.claim_labels.filter((c) => c.will_share).map((c) => ({ label: c.label }));
+  const sharedItems = claimShared.length > 0 ? claimShared : copy.sharedPreview;
   const reuseLikely = identityComplete && preview.claim_labels.length > 0;
 
   return (
     <div style={{ marginBottom: "1.25rem" }}>
+      <p style={{
+        fontFamily: FONT,
+        fontSize: "0.92rem",
+        fontWeight: 800,
+        color: "var(--text-primary)",
+        margin: "0 0 0.75rem",
+        lineHeight: 1.45,
+      }}>
+        {copy.requestHeadline}
+      </p>
       <PrivacyDisclosureCard
         requester={partnerName}
-        requestReason={preview.requested_action ? `Required for: ${question}` : "Eligibility for this transaction"}
-        requested={[{ label: question }]}
-        shared={sharedItems.length > 0 ? sharedItems : [{ label: "Policy outcome only (Yes / No / Review)" }]}
-        withheld={NEVER_SHARED_WITH_PARTNERS.slice(0, 6).map((label) => ({ label }))}
-        reuseMessage={reuseLikely ? "No new identity verification needed. Your existing verified evidence can answer this request." : null}
+        requestReason={copy.requestReason}
+        requested={copy.requested}
+        shared={sharedItems}
+        withheld={copy.withheld.length > 0
+          ? copy.withheld
+          : NEVER_SHARED_WITH_PARTNERS.slice(0, 6).map((label) => ({ label }))}
+        reuseMessage={reuseLikely ? "Your existing verified evidence can answer this request. No new identity verification is needed." : null}
         footer={(
           <>
             {error && (
@@ -213,7 +232,7 @@ export function ConsentCeremony({
                   fontFamily: FONT, fontSize: "0.78rem", fontWeight: 800,
                   cursor: busy ? "wait" : "pointer", minHeight: 44,
                 }}>
-                {busy ? "Authorizing…" : "Authorize request"}
+                {busy ? "Continuing…" : "Continue verification"}
               </button>
               <button type="button" onClick={() => void decline()} disabled={busy}
                 style={{

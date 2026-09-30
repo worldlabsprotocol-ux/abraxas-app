@@ -9,6 +9,9 @@ import { TrustStatus } from "./TrustStatus";
 import { EnvironmentBadge } from "./EnvironmentBadge";
 import { PilotCriteriaList } from "./PilotCriteriaList";
 import { HomeArchitectureFlow } from "./HomeArchitectureFlow";
+import { ProductOutcomeState } from "./ProductOutcomeState";
+import { buildHolderRequestPresentation } from "@/lib/product/holderRequestPresentation";
+import { GOOD_TROUBLE_RETAIL_POLICY_ID } from "@/lib/goodTrouble/constants";
 
 afterEach(() => cleanup());
 
@@ -73,5 +76,34 @@ describe("product UX primitives", () => {
     expect(text).toContain("Signed eligibility receipt");
     expect(text).toContain("Application receives");
     expect(text).toContain("Application does not receive");
+  });
+
+  it("renders actionable empty and error outcome states", () => {
+    const { rerender } = render(
+      <ProductOutcomeState
+        kind="empty"
+        title="No partner requests yet"
+        detail="Requests appear here when a partner asks for private proof."
+        actionLabel="Review activity"
+        href="/passport?view=activity"
+      />,
+    );
+    expect(screen.getByText("No partner requests yet")).toBeTruthy();
+    rerender(
+      <ProductOutcomeState
+        kind="error"
+        title="Could not load requests"
+        detail="Try again in a moment."
+        actionLabel="Try again"
+        onAction={() => undefined}
+      />,
+    );
+    expect(screen.getByRole("alert")).toBeTruthy();
+  });
+
+  it("derives holder-facing Good Trouble request copy from policy presentation", () => {
+    const copy = buildHolderRequestPresentation("Good Trouble", GOOD_TROUBLE_RETAIL_POLICY_ID);
+    expect(copy.requestHeadline).toContain("Good Trouble wants to confirm");
+    expect(copy.sharedResult[0]?.label.toLowerCase()).toMatch(/21|eligible/);
   });
 });
