@@ -1,143 +1,153 @@
 #!/usr/bin/env npx tsx
 /**
- * Good Trouble production readiness checklist (read-only).
+ * Good Trouble production readiness preflight (read-only).
  * Does not modify production data or print secrets.
  *
- * Run: npx tsx scripts/good-trouble-production-readiness.ts
- * Optional: GOOD_TROUBLE_APP_SLUG=good-trouble PARTNER_ID=good-trouble
+ * Run: npm run good-trouble:production-readiness
  */
 
-import { writeFileSync, mkdirSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { createClient } from "@supabase/supabase-js";
+import {
+  GOOD_TROUBLE_CANONICAL_APP_SLUG,
+  GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+  GOOD_TROUBLE_CANONICAL_RESULT_FAMILY,
+} from "@/lib/goodTrouble/canonicalProductionConfig";
+import {
+  buildInvestorTransactionEvidence,
+  buildProductionAcceptanceChecklist,
+  investorEvidenceLeaks,
+} from "@/lib/goodTrouble/productionAcceptanceChecklist";
+import {
+  evaluateGoodTroubleProductionReadiness,
+  formatReadinessReport,
+  productionReadinessLeaks,
+  type GoodTroubleReadinessDeps,
+  type ProductionCredentialSummary,
+} from "@/lib/goodTrouble/productionReadiness";
+import { listApplicationPolicyBindings } from "@/lib/partner/launchpad/applicationPolicyBindings";
+import { getLaunchpadApplicationBySlug } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
+import { loadIntegrationEvents, loadLaunchpadActivity } from "@/lib/partner/pilotEvidence/load";
 import { POLICY_PACKS } from "@/lib/partner/launchpad/policyPacks";
-import { LAUNCHPAD_DRIFTED_PRODUCTION_REPAIR_ORDER } from "@/lib/partner/launchpad/launchpadMigrationChain";
+import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
 
 const OUT = process.env.READINESS_OUT ?? "/opt/cursor/artifacts/good-trouble-production-readiness.json";
-const PARTNER_ID = process.env.PARTNER_ID ?? "good-trouble";
-const APP_SLUG = process.env.GOOD_TROUBLE_APP_SLUG ?? "good-trouble";
+const APP_SLUG = process.env.GOOD_TROUBLE_APP_SLUG ?? GOOD_TROUBLE_CANONICAL_APP_SLUG;
+const PARTNER_ID = process.env.PARTNER_ID ?? GOOD_TROUBLE_CANONICAL_PARTNER_ID;
 
-interface ChecklistItem {
-  id: string;
-  category: "configuration" | "security" | "privacy" | "evidence" | "human";
-  status: "required" | "verify_in_production" | "manual";
-  detail: string;
+function buildSupabaseDeps(): GoodTroubleReadinessDeps | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  if (!url || !key) return null;
+
+  const sb = createClient(url, key, { auth: { persistSession: false } });
+
+  return {
+    async loadApplication(slug: string) {
+      return getLaunchpadApplicationBySlug(slug);
+    },
+    async loadBindings(app: LaunchpadApplicationRow) {
+      return listApplicationPolicyBindings(app);
+    },
+    async loadProductionCredential(keyId: string): Promise<ProductionCredentialSummary | null> {
+      const { data, error } = await sb
+        .from("partner_api_keys")
+        .select("id, partner_id, key_prefix, revoked_at, launchpad_application_id")
+        .eq("id", keyId)
+        .maybeSingle();
+      if (error || !data) return null;
+      return data as ProductionCredentialSummary;
+    },
+    async tableExists(table: string) {
+      const { data, error } = await sb.rpc("to_regclass", { relation: `public.${table}` }).maybeSingle();
+      if (error) {
+        const { error: probeError } = await sb.from(table).select("id", { head: true, count: "exact" }).limit(0);
+        return probeError ? false : true;
+      }
+      return Boolean(data);
+    },
+    async loadProductionEvents(applicationId: string) {
+      return loadIntegrationEvents({
+        partnerId: PARTNER_ID,
+        applicationId,
+        environment: "production",
+        limit: 200,
+      });
+    },
+  };
 }
 
-const CHECKLIST: ChecklistItem[] = [
-  {
-    id: "launchpad_app",
-    category: "configuration",
-    status: "verify_in_production",
-    detail: `Launchpad application exists with public_slug=${APP_SLUG}, partner_id=${PARTNER_ID}, environment=production, production_activated_at set.`,
-  },
-  {
-    id: "age_binding",
-    category: "configuration",
-    status: "verify_in_production",
-    detail: "Primary binding policy_template_id=age_21_retail, production_status=production_active.",
-  },
-  {
-    id: "prod_credential",
-    category: "security",
-    status: "verify_in_production",
-    detail: "Active abx_live_ credential linked to application; not exposed in client bundles.",
-  },
-  {
-    id: "callback_allowlist",
-    category: "security",
-    status: "verify_in_production",
-    detail: "Production callback URL (e.g. goodtroublecanna.com) explicitly allowlisted on application.",
-  },
-  {
-    id: "hosted_handoff",
-    category: "configuration",
-    status: "manual",
-    detail: "Partner backend POST /api/v1/partner-handoff with binding_id for age binding; redirect holder to hosted URL.",
-  },
-  {
-    id: "holder_disclosure",
-    category: "privacy",
-    status: "manual",
-    detail: "Holder sees Good Trouble name, 21+ purpose, age_eligible_21 result; DOB/ID withheld per policy pack.",
-  },
-  {
-    id: "server_verify",
-    category: "security",
-    status: "manual",
-    detail: "On callback: fetch GET /api/receipts/{id}/public + AbraxasPartnerKit.verifyForAction with binding context before grant.",
-  },
-  {
-    id: "reuse_second_request",
-    category: "evidence",
-    status: "manual",
-    detail: "Second age 21+ request for same holder: confirm reuse or refresh per policy; fresh consent if required.",
-  },
-  {
-    id: "pilot_evidence",
-    category: "evidence",
-    status: "verify_in_production",
-    detail: "Admin /admin/pilot-evidence shows first_production_request and partner_verification_succeeded only after live events.",
-  },
-];
-
-const HUMAN_STEPS = [
-  "1. Good Trouble backend: POST /api/v1/partner-handoff (production credential, binding_id for age_21_retail).",
-  "2. Redirect holder to returned hosted Partner Flow URL.",
-  "3. Holder authenticates; confirm privacy brief shows Good Trouble + 21+ result only (no DOB).",
-  "4. Holder completes or reuses Passport evidence; approve consent.",
-  "5. Holder returns to Good Trouble callback with receipt_id.",
-  "6. Good Trouble server: verifyForAction on public receipt with binding + production environment.",
-  "7. Grant access only if verification permits.",
-  "8. Repeat step 1 for same holder to observe evidence reuse vs refresh.",
-  "9. Operator: confirm /admin/pilot-evidence records production events (no synthetic metrics).",
-];
-
-const DIAGNOSTIC_SQL = `
-SELECT
-  to_regclass('public.partner_launchpad_application_policies') AS application_policies,
-  EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema = 'public' AND table_name = 'partner_launchpad_applications'
-      AND column_name = 'production_activated_at'
-  ) AS has_production_activated_at,
-  EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema = 'public' AND table_name = 'partner_api_keys'
-      AND column_name = 'launchpad_application_id'
-  ) AS api_keys_has_launchpad_application_id,
-  to_regclass('public.hosted_partner_flow_handoffs') AS hosted_handoffs,
-  to_regclass('public.partner_binding_production_access_requests') AS binding_production_requests;
-`;
-
-function main() {
-  const pack = POLICY_PACKS.age_21_retail;
-  const report = {
-    generated_at: new Date().toISOString(),
-    partner_id: PARTNER_ID,
-    app_slug: APP_SLUG,
-    policy_pack: "age_21_retail",
-    partner_receives: pack.disclosed_result,
-    partner_does_not_receive: pack.partner_does_not_receive,
-    migration_chain_applied: LAUNCHPAD_DRIFTED_PRODUCTION_REPAIR_ORDER.slice(1),
-    checklist: CHECKLIST,
-    human_acceptance_steps: HUMAN_STEPS,
-    diagnostic_sql: DIAGNOSTIC_SQL.trim(),
-    note: "Read-only checklist. No production mutations. Evidence counts appear only after live events.",
+async function main() {
+  const supabaseDeps = buildSupabaseDeps();
+  const deps: GoodTroubleReadinessDeps = supabaseDeps ?? {
+    loadApplication: async () => null,
+    loadBindings: async () => [],
+    loadProductionCredential: async () => null,
+    tableExists: async () => null,
+    loadProductionEvents: async () => null,
   };
 
-  mkdirSync("/opt/cursor/artifacts", { recursive: true });
-  writeFileSync(OUT, JSON.stringify(report, null, 2));
+  const report = await evaluateGoodTroubleProductionReadiness(deps, {
+    appSlug: APP_SLUG,
+    partnerId: PARTNER_ID,
+  });
 
-  console.log("\nGood Trouble Production Readiness (read-only)\n" + "=".repeat(50));
-  console.log(`Partner: ${PARTNER_ID} · App slug: ${APP_SLUG}`);
-  console.log(`Partner receives: ${pack.disclosed_result}`);
-  console.log(`Partner does NOT receive: ${pack.partner_does_not_receive.join(", ")}`);
-  console.log("\nChecklist:");
-  for (const item of CHECKLIST) {
-    console.log(`  [${item.status}] ${item.id}: ${item.detail}`);
+  const pack = POLICY_PACKS.age_21_retail;
+  const app = await deps.loadApplication(APP_SLUG);
+  let events = app && supabaseDeps ? (await deps.loadProductionEvents(app.id)) ?? [] : [];
+  const bindings = app ? await deps.loadBindings(app) : [];
+  const ageBinding = bindings.find((b) => b.policy_template_id === "age_21_retail") ?? null;
+  const activity = app && supabaseDeps
+    ? await loadLaunchpadActivity({ partnerId: PARTNER_ID, applicationId: app.id, limit: 200 })
+    : [];
+
+  const acceptance = buildProductionAcceptanceChecklist({ preflight: report, events, activity });
+  const investorEvidence = buildInvestorTransactionEvidence({
+    applicationId: app?.id ?? null,
+    bindingId: ageBinding?.id ?? null,
+    resultFamily: GOOD_TROUBLE_CANONICAL_RESULT_FAMILY,
+    events,
+  });
+
+  const output = {
+    ...report,
+    partner_receives: pack.disclosed_result,
+    partner_does_not_receive: pack.partner_does_not_receive,
+    acceptance_checklist: acceptance,
+    investor_evidence: investorEvidence,
+    database_connected: Boolean(supabaseDeps),
+    note: "Read-only preflight. No production mutations. Transaction stages remain pending until live events.",
+  };
+
+  const safeLeakProbe = {
+    checks: report.checks,
+    blockers: report.blockers,
+    acceptance_checklist: acceptance,
+    investor_evidence: investorEvidence,
+  };
+  if (productionReadinessLeaks(safeLeakProbe).length || investorEvidenceLeaks(investorEvidence).length) {
+    console.error("Readiness output failed leak check — aborting write.");
+    process.exit(2);
   }
-  console.log("\nHuman acceptance steps:");
-  for (const step of HUMAN_STEPS) console.log(`  ${step}`);
-  console.log(`\nReport written: ${OUT}\n`);
+
+  mkdirSync("/opt/cursor/artifacts", { recursive: true });
+  writeFileSync(OUT, JSON.stringify(output, null, 2));
+
+  console.log(formatReadinessReport(report));
+  console.log("Acceptance checklist:");
+  for (const stage of acceptance) {
+    console.log(`  [${stage.status}] ${stage.stage}: ${stage.label}`);
+  }
+  console.log(`\nReport written: ${OUT}`);
+  if (!supabaseDeps) {
+    console.log("\nWARNING: Supabase unavailable — database checks returned UNKNOWN/FAIL.");
+  }
+  if (!report.ready) {
+    process.exit(1);
+  }
 }
 
-main();
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});
