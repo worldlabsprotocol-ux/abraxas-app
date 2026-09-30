@@ -26,6 +26,10 @@ import {
 import { resolvePolicyPack } from "@/lib/partner/launchpad/policyPacks";
 import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
 import type { IntegrationEventRow } from "@/lib/partner/integrationObservability/record";
+import {
+  tableProbeToReadinessStatus,
+  type TableProbeResult,
+} from "@/lib/goodTrouble/tableProbe";
 
 export type ReadinessStatus = "PASS" | "FAIL" | "UNKNOWN";
 
@@ -61,7 +65,7 @@ export interface GoodTroubleReadinessDeps {
   loadApplication: (slug: string) => Promise<LaunchpadApplicationRow | null>;
   loadBindings: (app: LaunchpadApplicationRow) => Promise<ApplicationPolicyBindingRow[]>;
   loadProductionCredential: (keyId: string) => Promise<ProductionCredentialSummary | null>;
-  tableExists: (table: string) => Promise<boolean | null>;
+  probeTable: (table: string) => Promise<TableProbeResult | null>;
   loadProductionEvents: (
     applicationId: string,
   ) => Promise<IntegrationEventRow[] | null>;
@@ -106,6 +110,31 @@ function findAgeBinding(bindings: ApplicationPolicyBindingRow[]): ApplicationPol
   return bindings.find(
     (b) => b.policy_template_id === GOOD_TROUBLE_CANONICAL_POLICY_TEMPLATE && b.status === "active",
   ) ?? null;
+}
+
+function readinessCheckFromTableProbe(
+  probe: TableProbeResult | null,
+  passDetail: string,
+  missingDetail: string,
+  unavailableDetail: string,
+): { status: ReadinessStatus; detail: string; identifiers?: ReadinessCheck["identifiers"] } {
+  if (probe === null) {
+    return { status: "UNKNOWN", detail: unavailableDetail };
+  }
+  const status = tableProbeToReadinessStatus(probe.state);
+  if (status === "PASS") return { status, detail: passDetail };
+  if (status === "FAIL") return { status, detail: missingDetail };
+  return {
+    status,
+    detail: probe.detail || unavailableDetail,
+    identifiers: probe.diagnostic
+      ? {
+          probe_code: probe.diagnostic.code,
+          probe_category: probe.diagnostic.category,
+          probe_fingerprint: probe.diagnostic.fingerprint,
+        }
+      : undefined,
+  };
 }
 
 function callbackMatchesGoodTrouble(url: string): boolean {
@@ -424,16 +453,19 @@ export async function evaluateGoodTroubleProductionReadiness(
   }
 
   // --- HOSTED FLOW ---
-  const handoffTable = await deps.tableExists("hosted_partner_flow_handoffs");
+  const handoffProbe = await deps.probeTable("hosted_partner_flow_handoffs");
+  const handoffCheck = readinessCheckFromTableProbe(
+    handoffProbe,
+    "hosted_partner_flow_handoffs is reachable via PostgREST.",
+    "hosted_partner_flow_handoffs is confirmed missing.",
+    "Cannot verify hosted handoff table (database unavailable).",
+  );
   checks.push(check({
     id: "hosted_handoff_table",
     category: "hosted_flow",
-    status: handoffTable === null ? "UNKNOWN" : handoffTable ? "PASS" : "FAIL",
-    detail: handoffTable === null
-      ? "Cannot verify hosted handoff table (database unavailable)."
-      : handoffTable
-        ? "hosted_partner_flow_handoffs table exists."
-        : "hosted_partner_flow_handoffs table missing.",
+    status: handoffCheck.status,
+    detail: handoffCheck.detail,
+    identifiers: handoffCheck.identifiers,
   }));
 
   const handoffRoute = fileExists(resolve(process.cwd(), "app/api/v1/partner-handoff/route.ts"));
@@ -510,16 +542,19 @@ export async function evaluateGoodTroubleProductionReadiness(
   }));
 
   // --- OBSERVABILITY ---
-  const eventsTable = await deps.tableExists("partner_integration_events");
+  const eventsProbe = await deps.probeTable("partner_integration_events");
+  const eventsCheck = readinessCheckFromTableProbe(
+    eventsProbe,
+    "partner_integration_events is reachable via PostgREST.",
+    "partner_integration_events is confirmed missing.",
+    "Cannot verify integration events table (database unavailable).",
+  );
   checks.push(check({
     id: "integration_events_pipeline",
     category: "observability",
-    status: eventsTable === null ? "UNKNOWN" : eventsTable ? "PASS" : "FAIL",
-    detail: eventsTable === null
-      ? "Cannot verify integration events table."
-      : eventsTable
-        ? "partner_integration_events table exists."
-        : "Integration events table missing.",
+    status: eventsCheck.status,
+    detail: eventsCheck.detail,
+    identifiers: eventsCheck.identifiers,
   }));
 
   const pilotEvidenceRoute = fileExists(resolve(process.cwd(), "app/admin/pilot-evidence/page.tsx"));

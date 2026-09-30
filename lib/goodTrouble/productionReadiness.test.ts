@@ -25,6 +25,7 @@ import {
   investorEvidenceLeaks,
 } from "@/lib/goodTrouble/productionAcceptanceChecklist";
 import type { IntegrationEventRow } from "@/lib/partner/integrationObservability/record";
+import type { TableProbeResult, TableProbeState } from "@/lib/goodTrouble/tableProbe";
 
 const APP_ID = "11111111-1111-1111-1111-111111111111";
 const BINDING_ID = "b-age-prod";
@@ -85,21 +86,42 @@ function deps(input: {
   app?: LaunchpadApplicationRow | null;
   bindings?: ApplicationPolicyBindingRow[];
   credential?: ProductionCredentialSummary | null;
-  tables?: Record<string, boolean>;
+  tables?: Record<string, TableProbeState | null>;
   events?: IntegrationEventRow[];
 }): GoodTroubleReadinessDeps {
   const app = input.app === undefined ? productionApp() : input.app;
   const bindings = input.bindings ?? [ageBinding()];
   const credential = input.credential === undefined ? activeCredential() : input.credential;
-  const tables = input.tables ?? {
-    hosted_partner_flow_handoffs: true,
-    partner_integration_events: true,
+  const tables: Record<string, TableProbeState | null> = {
+    hosted_partner_flow_handoffs: "exists",
+    partner_integration_events: "exists",
+    ...input.tables,
   };
+
+  function probeResult(state: TableProbeState | null | undefined, table: string): TableProbeResult | null {
+    if (state === null) return null;
+    if (state === "exists") {
+      return { state: "exists", detail: `${table} is reachable via PostgREST.` };
+    }
+    if (state === "missing") {
+      return { state: "missing", detail: `${table} is confirmed missing.` };
+    }
+    return {
+      state: "unknown",
+      detail: `${table} probe inconclusive: PostgREST schema cache unavailable [PGRST205].`,
+      diagnostic: {
+        code: "PGRST205",
+        category: "schema_cache_unavailable",
+        fingerprint: "test00000000",
+      },
+    };
+  }
+
   return {
     loadApplication: async () => app,
     loadBindings: async () => bindings,
     loadProductionCredential: async () => credential,
-    tableExists: async (table) => tables[table] ?? true,
+    probeTable: async (table) => probeResult(tables[table] ?? "exists", table),
     loadProductionEvents: async () => input.events ?? [],
     fileExists: () => true,
   };
@@ -187,6 +209,53 @@ describe("Good Trouble production readiness", () => {
     );
     const legacyPolicyCheck = report.checks.find((c) => c.id === "not_legacy_policy");
     expect(legacyPolicyCheck?.status).toBe("FAIL");
+  });
+
+  it("reports PASS when table probe confirms existence", async () => {
+    const report = await evaluateGoodTroubleProductionReadiness(
+      deps({ tables: { hosted_partner_flow_handoffs: "exists", partner_integration_events: "exists" } }),
+    );
+    const handoff = report.checks.find((c) => c.id === "hosted_handoff_table");
+    const events = report.checks.find((c) => c.id === "integration_events_pipeline");
+    expect(handoff?.status).toBe("PASS");
+    expect(events?.status).toBe("PASS");
+  });
+
+  it("reports FAIL only when table probe confirms absence", async () => {
+    const report = await evaluateGoodTroubleProductionReadiness(
+      deps({ tables: { hosted_partner_flow_handoffs: "missing" } }),
+    );
+    const handoff = report.checks.find((c) => c.id === "hosted_handoff_table");
+    expect(handoff?.status).toBe("FAIL");
+    expect(handoff?.detail).toContain("confirmed missing");
+  });
+
+  it("reports UNKNOWN (not FAIL) when table probe is inconclusive", async () => {
+    const report = await evaluateGoodTroubleProductionReadiness(
+      deps({ tables: { hosted_partner_flow_handoffs: "unknown", partner_integration_events: "unknown" } }),
+    );
+    const handoff = report.checks.find((c) => c.id === "hosted_handoff_table");
+    const events = report.checks.find((c) => c.id === "integration_events_pipeline");
+    expect(handoff?.status).toBe("UNKNOWN");
+    expect(events?.status).toBe("UNKNOWN");
+    expect(handoff?.detail).not.toContain("confirmed missing");
+    expect(report.ready).toBe(false);
+    expect(report.blockers).not.toContain("hosted_handoff_table");
+    expect(report.blockers).not.toContain("integration_events_pipeline");
+  });
+
+  it("keeps launchpad_application failure when tables are reachable", async () => {
+    const report = await evaluateGoodTroubleProductionReadiness(
+      deps({
+        app: null,
+        tables: { hosted_partner_flow_handoffs: "exists", partner_integration_events: "exists" },
+      }),
+    );
+    const launchpad = report.checks.find((c) => c.id === "launchpad_application");
+    expect(launchpad?.status).toBe("FAIL");
+    expect(launchpad?.detail).toContain("No Launchpad application with public_slug=good-trouble");
+    expect(report.blockers).toEqual(["launchpad_application"]);
+    expect(report.ready).toBe(false);
   });
 });
 
