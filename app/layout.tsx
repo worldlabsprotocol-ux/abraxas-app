@@ -3,6 +3,7 @@
 // Fonts load in the browser so offline CI builds retain deterministic system fallbacks.
 import type { Metadata } from "next";
 import "./globals.css";
+import "./globals.receipt-live.css";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { DemoEnvironmentBanner } from "@/components/judgeDemo/JudgeDemoSandboxBanner";
 import { siteMetadata } from "@/lib/seo/metadata";

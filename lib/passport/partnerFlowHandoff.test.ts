@@ -11,6 +11,7 @@ describe("postPartnerFlowComplete", () => {
       ok: true,
       json: async () => ({
         redirect_url: "https://www.goodtroublecanna.com/callback?receipt_id=r1",
+        partner_result: { receipt_id: "dr_r1" },
       }),
     }));
 
@@ -23,6 +24,7 @@ describe("postPartnerFlowComplete", () => {
     expect(result).toEqual({
       ok: true,
       redirectUrl: "https://www.goodtroublecanna.com/callback?receipt_id=r1",
+      receiptId: "dr_r1",
     });
   });
 

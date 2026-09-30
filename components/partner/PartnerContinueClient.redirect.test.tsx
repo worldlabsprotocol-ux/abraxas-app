@@ -8,6 +8,7 @@ import { GOOD_TROUBLE_PARTNER_ID, GOOD_TROUBLE_RETAIL_POLICY_ID } from "@/lib/go
 import { PartnerContinueClient } from "./PartnerContinueClient";
 
 const mockComplete = vi.fn();
+const mockNavigateToPartner = vi.fn();
 let mockSearchParams = new URLSearchParams();
 
 vi.mock("next/navigation", () => ({
@@ -40,11 +41,14 @@ vi.mock("@/lib/hooks/usePassportVerification", () => ({
 vi.mock("@/lib/passport/partnerFlowHandoff", () => ({
   usePartnerFlowHandoff: () => ({
     ready: true,
-    phase: "failed",
+    phase: "completed",
     inFlight: false,
     isPartnerFlowContext: true,
-    failureCategory: "partner_flow_completion_failed",
+    failureCategory: null,
+    receiptId: "dr_gt_test",
+    redirectUrl: "https://www.goodtroublecanna.com/age-verification-result",
     complete: mockComplete,
+    navigateToPartner: mockNavigateToPartner,
   }),
 }));
 
@@ -64,6 +68,23 @@ describe("PartnerContinueClient partner redirect trust", () => {
         return new Response(JSON.stringify({
           partner_id: GOOD_TROUBLE_PARTNER_ID,
           policy_id: GOOD_TROUBLE_RETAIL_POLICY_ID,
+        }), { status: 200 });
+      }
+      if (url.includes("/api/receipts/dr_gt_test/public")) {
+        return new Response(JSON.stringify({
+          receipt_id: "dr_gt_test",
+          schema_version: "1.0.0",
+          policy_id: GOOD_TROUBLE_RETAIL_POLICY_ID,
+          policy_version: 1,
+          partner_id: GOOD_TROUBLE_PARTNER_ID,
+          decision_result: "approved",
+          signature_valid: true,
+          status: "active",
+          production_usable: true,
+          decision_context: "production",
+          expires_at: "2099-01-01T00:00:00.000Z",
+          currently_valid: true,
+          lifecycle_status: "active",
         }), { status: 200 });
       }
       if (url.includes("/api/age-assurance/providers")) {
@@ -96,11 +117,12 @@ describe("PartnerContinueClient partner redirect trust", () => {
   it("uses the server handoff contract instead of navigating to the raw return param", async () => {
     render(<PartnerContinueClient />);
 
-    const button = await screen.findByRole("button", { name: /return/i });
+    const button = await screen.findByRole("button", { name: /return to good trouble/i });
     await userEvent.click(button);
 
     await waitFor(() => {
-      expect(mockComplete).toHaveBeenCalledTimes(1);
+      expect(mockNavigateToPartner).toHaveBeenCalledTimes(1);
     });
+    expect(mockComplete).not.toHaveBeenCalled();
   });
 });

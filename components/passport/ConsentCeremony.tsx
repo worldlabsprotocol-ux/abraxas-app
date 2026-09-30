@@ -8,7 +8,7 @@ import { consentVerificationRequest, declineVerificationRequest } from "@/lib/ap
 import { resolvePartnerDisplayName } from "@/lib/partner/partnerVerifyDisplay";
 import { holderSafeClientMessage, resolveHolderRecovery } from "@/lib/partner/holderExperience";
 import { PrivacyDisclosureCard } from "@/components/product/PrivacyDisclosureCard";
-import { TrustStatus } from "@/components/product/TrustStatus";
+import { HolderDecisionComplete } from "@/components/protocol/HolderDecisionComplete";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -34,14 +34,18 @@ export function ConsentCeremony({
   requestId: string;
   identityComplete?: boolean;
   suiAddress?: string;
-  onComplete?: (result: { decision: string; decision_reference: string }) => void;
+  onComplete?: (result: { decision: string; decision_reference: string; receipt_id?: string | null }) => void;
   onDismiss?: () => void;
 }) {
   const [preview, setPreview] = useState<ConsentPreview | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ decision: PolicyDecision | "declined"; decision_reference: string } | null>(null);
+  const [result, setResult] = useState<{
+    decision: PolicyDecision | "declined";
+    decision_reference: string;
+    receipt_id?: string | null;
+  } | null>(null);
 
   useEffect(() => {
     fetch(`/api/v1/verification-requests/${requestId}`, { credentials: "include" })
@@ -60,8 +64,16 @@ export function ConsentCeremony({
     try {
       const data = await consentVerificationRequest(requestId);
       const decision = (data.decision ?? "manual_review") as PolicyDecision;
-      setResult({ decision, decision_reference: data.decision_reference ?? "" });
-      onComplete?.({ decision, decision_reference: data.decision_reference ?? "" });
+      setResult({
+        decision,
+        decision_reference: data.decision_reference ?? "",
+        receipt_id: data.receipt_id ?? null,
+      });
+      onComplete?.({
+        decision,
+        decision_reference: data.decision_reference ?? "",
+        receipt_id: data.receipt_id ?? null,
+      });
     } catch {
       setError(holderSafeClientMessage());
     } finally {
@@ -116,6 +128,19 @@ export function ConsentCeremony({
       );
     }
 
+    if (result.decision === "approved" && result.receipt_id && preview) {
+      return (
+        <div style={{ marginBottom: "1.25rem" }}>
+          <HolderDecisionComplete
+            receiptId={result.receipt_id}
+            partnerName={resolvePartnerDisplayName(preview.partner_id)}
+            policyId={preview.policy_id}
+            showPassportNotice
+          />
+        </div>
+      );
+    }
+
     const meta = POLICY_DECISIONS[result.decision];
     const sharedLabel = result.decision === "approved" ? "Policy answer shared" : meta.label;
     return (
@@ -134,12 +159,9 @@ export function ConsentCeremony({
             withheld={NEVER_SHARED_WITH_PARTNERS.slice(0, 4).map((label) => ({ label }))}
           />
         )}
-        <TrustStatus
-          audience="holder"
-          items={[
-            { kind: result.decision === "approved" ? "current" : "under_review", detail: meta.description },
-          ]}
-        />
+        <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-muted)", margin: "0.35rem 0 0", lineHeight: 1.55 }}>
+          {meta.description}
+        </p>
       </div>
     );
   }

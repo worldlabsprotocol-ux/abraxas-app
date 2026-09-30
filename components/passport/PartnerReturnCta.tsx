@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/passport/PartnerReturnCta.tsx
-// Partner-flow return control — uses shared handoff.complete(), never raw return href.
+// Partner-flow return control — issues receipt then navigates via shared handoff controller.
 
 import { Btn } from "@/components/redesign/ui";
 import type { PartnerFlowHandoffController } from "@/lib/passport/partnerFlowHandoff";
@@ -22,7 +22,7 @@ export function PartnerReturnCta({
 }: Props) {
   if (!handoff.isPartnerFlowContext) return null;
 
-  const disabled = handoff.inFlight || !handoff.ready;
+  const disabled = handoff.inFlight || (!handoff.ready && handoff.phase !== "completed");
 
   return (
     <Btn
@@ -31,7 +31,13 @@ export function PartnerReturnCta({
       fullWidth={fullWidth}
       disabled={disabled}
       loading={handoff.inFlight}
-      onClick={() => void handoff.complete()}
+      onClick={() => {
+        if (handoff.phase === "completed") {
+          handoff.navigateToPartner();
+          return;
+        }
+        void handoff.complete();
+      }}
     >
       {label}
     </Btn>

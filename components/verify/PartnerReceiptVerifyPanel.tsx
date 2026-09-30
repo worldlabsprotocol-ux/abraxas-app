@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/verify/PartnerReceiptVerifyPanel.tsx
-// Integrator tester for GET /api/receipts/{receipt_id}/public — UI only, no contract changes.
+// Integrator tester for GET /api/receipts/{receipt_id}/public — live receipt verification UI.
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -10,10 +10,11 @@ import { StatusBanner } from "@/components/ui/StatusBanner";
 import { PARTNER_FLOW_RECEIPT_CHECKS } from "@/lib/partner/partnerFlowIntegratorKit";
 import type { PartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlowReceipt";
 import { validatePartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlowReceipt";
+import { partnerSafeDenialMessage } from "@/lib/protocol/decisionReceiptDisplay";
+import { PartnerReceiptVerificationResult } from "@/components/verify/PartnerReceiptVerificationResult";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
-const ACCENT = "#10B981";
 
 function evaluateChecks(
   receipt: PartnerFlowPublicReceipt,
@@ -57,6 +58,7 @@ export function PartnerReceiptVerifyPanel() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<PartnerFlowPublicReceipt | null>(null);
+  const [motionPhase, setMotionPhase] = useState<"idle" | "verifying" | "resolved">("idle");
   const [verificationLinkCopied, setVerificationLinkCopied] = useState(false);
   const autoLookupStarted = useRef(false);
 
@@ -67,15 +69,18 @@ export function PartnerReceiptVerifyPanel() {
       return;
     }
     setLoading(true);
+    setMotionPhase("verifying");
     setErr(null);
     setReceipt(null);
     try {
       const res = await fetch(`/api/receipts/${encodeURIComponent(id)}/public`);
       const data = await res.json() as PartnerFlowPublicReceipt & { error?: string };
-      if (!res.ok) throw new Error(data.error ?? "Receipt lookup failed");
+      if (!res.ok) throw new Error(partnerSafeDenialMessage("verification_incomplete") ?? "Receipt lookup failed");
       setReceipt(data);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Receipt lookup failed");
+      setMotionPhase("resolved");
+    } catch {
+      setErr(partnerSafeDenialMessage("verification_incomplete") ?? "Receipt lookup failed");
+      setMotionPhase("resolved");
     } finally {
       setLoading(false);
     }
@@ -139,7 +144,7 @@ export function PartnerReceiptVerifyPanel() {
       </div>
 
       {err && (
-        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "#EF4444", margin: "0 0 1rem" }}>{err}</p>
+        <p role="alert" style={{ fontFamily: FONT, fontSize: "0.78rem", color: "#EF4444", margin: "0 0 1rem" }}>{err}</p>
       )}
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1.25rem" }}>
@@ -153,55 +158,45 @@ export function PartnerReceiptVerifyPanel() {
 
       {receipt && analysis && (
         <div style={{ display: "grid", gap: "0.75rem" }}>
-          <div
-            style={{
-              padding: "0.85rem 1rem",
-              borderRadius: 12,
-              border: `1px solid ${analysis.validation.ok ? `${ACCENT}44` : "rgba(239,68,68,0.35)"}`,
-              background: analysis.validation.ok ? `${ACCENT}10` : "rgba(239,68,68,0.08)",
-            }}
-          >
-            <div style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 800, color: "var(--text-primary)", marginBottom: 4 }}>
-              {analysis.validation.ok ? "Receipt verified" : "Receipt checks failed"}
-            </div>
-            {analysis.validation.ok && (
-              <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.55, margin: "0.35rem 0 0" }}>
-                The signature, decision, status, expiry, partner, and policy checks passed for this {allowSandbox ? "sandbox " : ""}receipt.
-              </p>
-            )}
-            {!analysis.validation.ok && analysis.validation.errors.length > 0 && (
-              <ul style={{ margin: "0.35rem 0 0", paddingLeft: "1.1rem", fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)" }}>
-                {analysis.validation.errors.map((e) => (
-                  <li key={e}>{e}</li>
-                ))}
-              </ul>
-            )}
-          </div>
+          <PartnerReceiptVerificationResult
+            receipt={receipt}
+            validation={analysis.validation}
+            partnerId={partnerId}
+            policyId={policyId}
+            allowSandbox={allowSandbox}
+            motionPhase={motionPhase}
+            showTechnicalJson
+          />
 
-          <div style={{ display: "grid", gap: "0.35rem" }}>
-            {analysis.rows.map((row) => (
-              <div
-                key={row.check}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "auto 1fr",
-                  gap: "0.65rem",
-                  padding: "0.55rem 0.65rem",
-                  borderRadius: 8,
-                  border: "1px solid var(--border)",
-                  background: "var(--surface)",
-                }}
-              >
-                <span style={{ fontFamily: MONO, fontSize: "0.72rem", fontWeight: 800, color: row.pass ? ACCENT : "#EF4444" }}>
-                  {row.pass ? "✓" : "○"}
-                </span>
-                <div>
-                  <div style={{ fontFamily: MONO, fontSize: "0.68rem", color: "var(--text-primary)" }}>{row.check}</div>
-                  <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)" }}>{row.why}</div>
+          <details style={{ marginTop: "0.25rem" }}>
+            <summary style={{ fontFamily: MONO, fontSize: "0.68rem", cursor: "pointer", color: "var(--text-muted)" }}>
+              Integrator check list
+            </summary>
+            <div style={{ display: "grid", gap: "0.35rem", marginTop: "0.65rem" }}>
+              {analysis.rows.map((row) => (
+                <div
+                  key={row.check}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "auto 1fr",
+                    gap: "0.65rem",
+                    padding: "0.55rem 0.65rem",
+                    borderRadius: 8,
+                    border: "1px solid var(--border)",
+                    background: "var(--surface)",
+                  }}
+                >
+                  <span style={{ fontFamily: MONO, fontSize: "0.72rem", fontWeight: 800, color: row.pass ? "#10B981" : "#EF4444" }}>
+                    {row.pass ? "✓" : "○"}
+                  </span>
+                  <div>
+                    <div style={{ fontFamily: MONO, fontSize: "0.68rem", color: "var(--text-primary)" }}>{row.check}</div>
+                    <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)" }}>{row.why}</div>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </details>
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
             <Btn href="/passport#passport-verification-activity-heading" size="sm" variant="secondary">
@@ -223,33 +218,16 @@ export function PartnerReceiptVerifyPanel() {
               {verificationLinkCopied ? "Verification link copied" : "Copy verification link"}
             </Btn>
           </div>
-
-          <pre
-            style={{
-              fontFamily: MONO,
-              fontSize: "0.65rem",
-              lineHeight: 1.55,
-              padding: "0.85rem",
-              borderRadius: 10,
-              overflow: "auto",
-              background: "var(--surface-inset)",
-              border: "1px solid var(--border)",
-              color: "var(--text-secondary)",
-              margin: 0,
-            }}
-          >
-            {JSON.stringify(receipt, null, 2)}
-          </pre>
         </div>
       )}
 
       <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "1rem", lineHeight: 1.55 }}>
         Looking up a tokenized asset instead? Use the{" "}
-        <Link href="/verify?mode=registry" style={{ color: ACCENT, fontWeight: 600, textDecoration: "none" }}>
+        <Link href="/verify?mode=registry" style={{ color: "#10B981", fontWeight: 600, textDecoration: "none" }}>
           Registry lookup
         </Link>{" "}
         tab. Credential JWT testing lives under{" "}
-        <Link href="/verify?mode=credential" style={{ color: ACCENT, fontWeight: 600, textDecoration: "none" }}>
+        <Link href="/verify?mode=credential" style={{ color: "#10B981", fontWeight: 600, textDecoration: "none" }}>
           Credential JWT
         </Link>.
       </p>
