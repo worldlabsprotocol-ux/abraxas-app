@@ -140,7 +140,7 @@ function createMemoryStorage() {
 function buildBrowseStartFixture() {
   const flowId = "gtb_" + "a".repeat(64);
   return {
-    verifyUrl: `https://abraxasworld.xyz/partner/verify?partner_id=good-trouble-cannabis&policy_id=${BROWSE_POLICY_ID}&purpose=browse&return_url=https%3A%2F%2Fwww.goodtroublecanna.com%2Fbrowse-verification-result%3Fgtb%3D${flowId}`,
+    verifyUrl: `https://abraxasworld.xyz/partner/verify?partner_id=good-trouble&policy_id=${BROWSE_POLICY_ID}&purpose=browse&return_url=https%3A%2F%2Fwww.goodtroublecanna.com%2Fbrowse-verification-result%3Fgtb%3D${flowId}`,
     flowId,
     verifier: "b".repeat(64),
     policyId: BROWSE_POLICY_ID,

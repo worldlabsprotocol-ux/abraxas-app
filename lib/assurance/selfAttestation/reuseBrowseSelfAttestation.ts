@@ -10,6 +10,10 @@ import {
 import { isAllowedPartnerReturnUrl } from "@/lib/partner/returnUrlAllowlist";
 import { getPolicy } from "@/lib/verification/requestsService";
 import { isBrowseAccessPolicy } from "@/lib/policy/selfAttestationGuards";
+import {
+  GOOD_TROUBLE_BROWSE_POLICY_ID,
+  isGoodTroubleBrowsePartnerId,
+} from "@/lib/partner/goodTroubleBrowseFlow";
 import { getActiveSelfAttestations } from "./selfAttestationLedger";
 import {
   buildBrowseReceiptPayload,
@@ -52,20 +56,39 @@ export async function reuseBrowseSelfAttestation(
 
   const policy = await getPolicy(input.policyId);
   if (!policy) return { ok: false, code: "policy_not_found" };
-  if (policy.partner_id !== input.partnerId) {
+  const partnerMatchesPolicy = policy.partner_id === input.partnerId
+    || (
+      input.policyId === GOOD_TROUBLE_BROWSE_POLICY_ID
+      && isGoodTroubleBrowsePartnerId(input.partnerId)
+      && isGoodTroubleBrowsePartnerId(policy.partner_id)
+    );
+  if (!partnerMatchesPolicy) {
     return { ok: false, code: "partner_policy_mismatch" };
   }
   if (!isBrowseAccessPolicy(policy.rules_json)) {
     return { ok: false, code: "policy_not_browse" };
   }
 
+  const authoritativePartnerId = policy.partner_id;
   const holderRef = normalizeSuiAddress(input.holderRef);
-  const rows = await getActiveSelfAttestations({
+  let rows = await getActiveSelfAttestations({
     holderRef,
     partnerId: input.partnerId,
     policyId: input.policyId,
     purpose: "browse",
   });
+  if (
+    rows.length === 0
+    && input.partnerId !== authoritativePartnerId
+    && input.policyId === GOOD_TROUBLE_BROWSE_POLICY_ID
+  ) {
+    rows = await getActiveSelfAttestations({
+      holderRef,
+      partnerId: authoritativePartnerId,
+      policyId: input.policyId,
+      purpose: "browse",
+    });
+  }
 
   const active = rows.find(
     (row) => row.age_band === "over_21" && row.browse_receipt_id,
@@ -77,7 +100,7 @@ export async function reuseBrowseSelfAttestation(
   const nonce = randomBytes(16).toString("base64url");
   const payload = buildBrowseReceiptPayload({
     receiptId: active.browse_receipt_id,
-    partnerId: input.partnerId,
+    partnerId: authoritativePartnerId,
     policyId: input.policyId,
     ageBand: "over_21",
     issuedAt: active.attested_at,

@@ -16,6 +16,7 @@ import {
   GOOD_TROUBLE_BROWSE_STATUS,
   GOOD_TROUBLE_BROWSE_SUPPORTING,
   isGoodTroubleBrowseFlow,
+  isGoodTroubleBrowsePartnerId,
   isGoodTroubleHostedDirectHandoff,
   resolveGoodTroubleFlowPurpose,
 } from "./goodTroubleBrowseFlow";
@@ -84,6 +85,17 @@ describe("isGoodTroubleBrowseFlow", () => {
       policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
       purpose: null,
     })).toBe(true);
+  });
+
+  it("matches canonical Good Trouble browse partner id from Wix BROWSE_FLOW", () => {
+    expect(isGoodTroubleBrowseFlow({
+      partnerId: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+      policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
+      purpose: "browse",
+    })).toBe(true);
+    expect(isGoodTroubleBrowsePartnerId(GOOD_TROUBLE_CANONICAL_PARTNER_ID)).toBe(true);
+    expect(isGoodTroubleBrowsePartnerId(GOOD_TROUBLE_PARTNER_ID)).toBe(true);
+    expect(isGoodTroubleBrowsePartnerId("example-partner")).toBe(false);
   });
 });
 
@@ -195,6 +207,12 @@ describe("SelfAttestationBrowseForm customer copy", () => {
 
 describe("isGoodTroubleHostedDirectHandoff", () => {
   it("skips duplicate orientation for hosted browse and canonical purchase", () => {
+    expect(isGoodTroubleHostedDirectHandoff({
+      hostedBootstrapEligible: true,
+      partnerId: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+      policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
+      purpose: "browse",
+    })).toBe(true);
     expect(isGoodTroubleHostedDirectHandoff({
       hostedBootstrapEligible: true,
       partnerId: GOOD_TROUBLE_PARTNER_ID,

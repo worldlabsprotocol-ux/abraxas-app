@@ -5,6 +5,10 @@ import { randomBytes } from "crypto";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { getPolicy } from "@/lib/verification/requestsService";
 import { isBrowseAccessPolicy } from "@/lib/policy/selfAttestationGuards";
+import {
+  GOOD_TROUBLE_BROWSE_POLICY_ID,
+  isGoodTroubleBrowsePartnerId,
+} from "@/lib/partner/goodTroubleBrowseFlow";
 import { deriveSelfAttestedAgeBand, parseIsoDateUtc } from "./calculateAgeBand";
 import {
   generateBrowseReceiptId,
@@ -74,9 +78,16 @@ export async function submitSelfAttestation(
   if (!policy) {
     return { ok: false, code: "policy_not_found", status: 400 };
   }
-  if (policy.partner_id !== input.partnerId) {
+  const partnerMatchesPolicy = policy.partner_id === input.partnerId
+    || (
+      input.policyId === GOOD_TROUBLE_BROWSE_POLICY_ID
+      && isGoodTroubleBrowsePartnerId(input.partnerId)
+      && isGoodTroubleBrowsePartnerId(policy.partner_id)
+    );
+  if (!partnerMatchesPolicy) {
     return { ok: false, code: "partner_policy_mismatch", status: 400 };
   }
+  const authoritativePartnerId = policy.partner_id;
   if (!isBrowseAccessPolicy(policy.rules_json)) {
     emitSelfAttestationAuditEvent({
       event: "self_attest_denied",
@@ -110,7 +121,7 @@ export async function submitSelfAttestation(
 
   const inserted = await insertSelfAttestationRecord({
     holderRef,
-    partnerId: input.partnerId,
+    partnerId: authoritativePartnerId,
     policyId: input.policyId,
     ageBand,
     purpose,
@@ -145,7 +156,7 @@ export async function submitSelfAttestation(
   if (browseReceiptId) {
     const payload = buildBrowseReceiptPayload({
       receiptId: browseReceiptId,
-      partnerId: input.partnerId,
+      partnerId: authoritativePartnerId,
       policyId: input.policyId,
       ageBand,
       issuedAt: inserted.row.attested_at,

@@ -6,7 +6,21 @@ import {
   GOOD_TROUBLE_PARTNER_ID,
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
+import { GOOD_TROUBLE_CANONICAL_PARTNER_ID } from "@/lib/goodTrouble/canonicalProductionConfig";
 import { isCanonicalGoodTroublePurchaseFlow } from "@/lib/partner/goodTroublePurchaseFlow";
+
+/** Canonical browse launch identity — matches Wix PARTNER_ID / BROWSE_FLOW. */
+export const GOOD_TROUBLE_BROWSE_CANONICAL_PARTNER_ID = GOOD_TROUBLE_CANONICAL_PARTNER_ID;
+
+/** Legacy browse compatibility — in-flight merchant URLs only. */
+export const GOOD_TROUBLE_BROWSE_LEGACY_PARTNER_ID = GOOD_TROUBLE_PARTNER_ID;
+
+/** Authoritative Good Trouble browse partner ids (canonical + explicit legacy). */
+export function isGoodTroubleBrowsePartnerId(partnerId: string): boolean {
+  const id = partnerId.trim();
+  return id === GOOD_TROUBLE_BROWSE_CANONICAL_PARTNER_ID
+    || id === GOOD_TROUBLE_BROWSE_LEGACY_PARTNER_ID;
+}
 
 export class GoodTroubleFlowTupleMismatchError extends Error {
   readonly code = "flow_tuple_mismatch" as const;
@@ -27,7 +41,7 @@ export function isGoodTroubleBrowseFlow(input: {
   policyId: string;
   purpose?: string | null;
 }): boolean {
-  if (input.partnerId !== GOOD_TROUBLE_PARTNER_ID) return false;
+  if (!isGoodTroubleBrowsePartnerId(input.partnerId)) return false;
   if (input.policyId !== GOOD_TROUBLE_BROWSE_POLICY_ID) return false;
 
   const purpose = input.purpose?.trim();
@@ -46,7 +60,7 @@ export function resolveGoodTroubleFlowPurpose(input: {
   purpose?: string | null;
   returnUrl?: string | null;
 }): "browse" | "purchase" | null {
-  if (input.partnerId !== GOOD_TROUBLE_PARTNER_ID) return null;
+  if (!isGoodTroubleBrowsePartnerId(input.partnerId)) return null;
 
   const purpose = input.purpose?.trim() || null;
   const returnUrl = input.returnUrl?.trim() || "";

@@ -8,6 +8,7 @@ import {
   __testOnlySetHashFn,
   createBrowseVerificationStartService,
 } from "../backend/abraxasVerificationService.js";
+import { PARTNER_ID } from "../backend/constants.js";
 import {
   BROWSE_POLICY_ID,
   clearStalePurchaseSessionArtifacts,
@@ -57,6 +58,7 @@ describe("Good Trouble browse journey integration", () => {
     expect(result.policyId).toBe(BROWSE_POLICY_ID);
     expect(result.purpose).toBe("browse");
     expect(result.verifyUrl).toContain("policy_id=good-trouble-browse-v1");
+    expect(result.verifyUrl).toContain(`partner_id=${PARTNER_ID}`);
     expect(result.verifyUrl).toContain("purpose=browse");
     expect(result.verifyUrl).toContain("browse-verification-result");
     expect(result.verifyUrl).not.toContain(PURCHASE_POLICY_ID);

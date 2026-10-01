@@ -71,6 +71,7 @@ describe("separate start lifecycles", () => {
     expect(payload.policyId).toBe(BROWSE_POLICY_ID);
     expect(payload.flowId.startsWith("gtb_")).toBe(true);
     expect(payload.verifyUrl).toContain("good-trouble-browse-v1");
+    expect(payload.verifyUrl).toContain("partner_id=good-trouble");
     expect(payload.verifyUrl).toContain("purpose=browse");
     expect(payload.flowRecord.purpose).toBe("browse");
     const partnerUrl = new URL(payload.verifyUrl);

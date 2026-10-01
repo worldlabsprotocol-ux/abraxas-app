@@ -6,7 +6,10 @@ import {
   GOOD_TROUBLE_PARTNER_ID,
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
-import { isGoodTroubleBrowseFlow } from "@/lib/partner/goodTroubleBrowseFlow";
+import {
+  isGoodTroubleBrowseFlow,
+  isGoodTroubleBrowsePartnerId,
+} from "@/lib/partner/goodTroubleBrowseFlow";
 import {
   normalizeGoodTroubleBrowseReturnUrl,
   normalizePartnerVerifyInput,
@@ -41,7 +44,7 @@ export function derivePurposeFromAuthoritativePolicy(input: {
   policyId: string;
   urlPurpose?: string | null;
 }): string | null {
-  if (input.partnerId !== GOOD_TROUBLE_PARTNER_ID) {
+  if (!isGoodTroubleBrowsePartnerId(input.partnerId)) {
     return input.urlPurpose?.trim() || null;
   }
 
