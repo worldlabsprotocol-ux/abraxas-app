@@ -28,6 +28,8 @@ import { recordEvidenceReuseLookupTelemetry } from "@/lib/passport/reusableEligi
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 import { holderHasAcceptedReclaim } from "@/lib/reclaimAttestation";
 import { reclaimRouteForPolicy } from "@/lib/reclaimAttestation/policyFit";
+import { resolveHolderIdentityEvidenceComplete } from "@/lib/partner/resolveHolderIdentityEvidenceComplete";
+import { isCanonicalGoodTroublePurchaseFlow } from "@/lib/partner/goodTroublePurchaseFlow";
 
 export const dynamic = "force-dynamic";
 
@@ -173,6 +175,25 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  const canonicalPurchase = isCanonicalGoodTroublePurchaseFlow({
+    partnerId: bound.stored.partnerId,
+    policyId: bound.stored.policyId,
+    purpose: bound.stored.purpose,
+  });
+  if (canonicalPurchase && methodId !== "identity_liveness" && methodId !== "reuse_existing_proof") {
+    return NextResponse.json({
+      ok: false,
+      code: "canonical_single_path",
+      method_qualified: false,
+      issuedReceipt: false,
+      error: "This verification path is not available for Good Trouble purchase.",
+    }, { status: 400 });
+  }
+
+  const identityEvidenceComplete = methodId === "identity_liveness"
+    ? await resolveHolderIdentityEvidenceComplete(session.session.suiAddress)
+    : undefined;
+
   const evaluated = evaluateMethodQualification({
     methodId,
     verifyRequestId: verifyRequest,
@@ -185,6 +206,7 @@ export async function POST(request: NextRequest) {
     existingProofCompatible,
     reclaimRequired,
     reclaimSessionAccepted,
+    identityEvidenceComplete,
   });
 
   if (!evaluated.ok) {
