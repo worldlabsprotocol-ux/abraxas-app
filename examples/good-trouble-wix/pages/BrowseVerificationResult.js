@@ -10,8 +10,12 @@ import {
   GTB_PARAM,
 } from "public/abraxasClientConstants";
 
+import {
+  persistBrowseVerifiedState,
+} from "public/ageGateAccessState";
+
 import wixLocation from "wix-location";
-import { session } from "wix-storage-frontend";
+import { local, session } from "wix-storage-frontend";
 
 const ALLOWED_CALLBACK_PARAMS = new Set([
   "browse_receipt",
@@ -74,11 +78,21 @@ function clearVerifier(flowId) {
 }
 
 /** L0 browse UI flag — may dismiss age popup; never checkout authority. */
-function setBrowseAccessState() {
+function setBrowseAccessState(expiresAtIso) {
+  const verifiedAt = Date.now();
   try {
-    session.setItem(BROWSE_ACCESS_STORAGE_KEY, String(Date.now()));
+    session.setItem(BROWSE_ACCESS_STORAGE_KEY, String(verifiedAt));
   } catch {
     // Fail closed for navigation only; user can retry.
+  }
+
+  const expiresAt = expiresAtIso ? Date.parse(expiresAtIso) : NaN;
+  if (Number.isFinite(expiresAt) && expiresAt > verifiedAt) {
+    try {
+      persistBrowseVerifiedState(local, { expiresAt, verifiedAt });
+    } catch {
+      // Session flag remains; local persistence is best-effort.
+    }
   }
 }
 
@@ -126,7 +140,7 @@ async function handleCallback() {
 
     if (result?.verified === true && result?.purpose === "browse") {
       clearVerifier(flowId);
-      setBrowseAccessState();
+      setBrowseAccessState(result.expires_at);
       setStatus(SUCCESS_MESSAGE);
       restoreReturnDestination();
       return;

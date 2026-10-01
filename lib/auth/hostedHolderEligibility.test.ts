@@ -21,12 +21,12 @@ describe("isHostedHolderBootstrapEligible", () => {
     })).toBe(true);
   });
 
-  it("rejects legacy browse flow", () => {
+  it("allows Good Trouble browse flow without Google-first sign-in", () => {
     expect(isHostedHolderBootstrapEligible({
       partnerId: GOOD_TROUBLE_PARTNER_ID,
       policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
       purpose: "browse",
-    })).toBe(false);
+    })).toBe(true);
   });
 
   it("keeps canonical Good Trouble purchase policy at L2 minimum assurance", () => {

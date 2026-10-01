@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 import { Btn } from "@/components/redesign/ui";
 import {
+  GOOD_TROUBLE_PURCHASE_CONTEXT,
   GOOD_TROUBLE_PURCHASE_DOB_CONTINUE,
   GOOD_TROUBLE_PURCHASE_DOB_INTRO,
 } from "@/lib/partner/goodTroublePurchaseFlow";
@@ -49,6 +50,9 @@ export function GoodTroublePurchaseDobForm({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+      <p style={{ margin: 0, fontSize: "0.78rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+        {GOOD_TROUBLE_PURCHASE_CONTEXT}
+      </p>
       <p style={{ margin: 0, fontSize: "0.95rem", lineHeight: 1.65 }}>
         {GOOD_TROUBLE_PURCHASE_DOB_INTRO}
       </p>

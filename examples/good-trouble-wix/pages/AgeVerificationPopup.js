@@ -34,6 +34,10 @@ import {
   createPopupInitializationGuard,
 } from "public/ageVerificationPopupLogic";
 
+import {
+  shouldSkipAgeGate,
+} from "public/ageGateAccessState";
+
 const popupInitGuard =
   createPopupInitializationGuard();
 
@@ -148,7 +152,17 @@ $w.onReady(() => {
           },
         });
 
-      void popupController.onReady();
+      void popupController.onReady(() => {
+        const skip = shouldSkipAgeGate({
+          localStorage: local,
+          sessionStorage: session,
+        });
+        if (skip.skip && wixWindow.lightbox) {
+          wixWindow.lightbox.close();
+          return true;
+        }
+        return false;
+      });
 
       wireButtons();
     });

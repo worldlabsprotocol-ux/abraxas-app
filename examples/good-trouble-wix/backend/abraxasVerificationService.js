@@ -226,7 +226,11 @@ export async function completeBrowseVerificationService(browseReceipt, flowId, v
     if (record?.policyId && result.payload?.policy_id !== record.policyId) {
       return { verified: false, transientFailure: false };
     }
-    return { verified: true, transientFailure: false };
+    return {
+      verified: true,
+      transientFailure: false,
+      expires_at: result.payload?.expires_at ?? null,
+    };
   };
 
   return completeBrowseVerificationCore({

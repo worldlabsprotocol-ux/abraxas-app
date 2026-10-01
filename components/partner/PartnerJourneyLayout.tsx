@@ -28,6 +28,7 @@ export interface PartnerJourneyLayoutProps {
   eyebrow?: string;
   title?: string;
   hideStatus?: boolean;
+  hideHeader?: boolean;
   brief?: HolderRequestBrief | null;
   children: React.ReactNode;
 }
@@ -42,6 +43,7 @@ export function PartnerJourneyLayout({
   eyebrow,
   title,
   hideStatus = false,
+  hideHeader = false,
   brief = null,
   children,
 }: PartnerJourneyLayoutProps) {
@@ -67,37 +69,39 @@ export function PartnerJourneyLayout({
         padding={ABX_SPACING.cardPadding}
         style={{ width: "min(100%, 560px)", maxWidth: "100%", boxShadow: PARTNER_ACCENT.glow, overflowWrap: "anywhere" }}
       >
-        <header style={{ marginBottom: "1.25rem" }}>
-          <p
-            style={{
-              margin: "0 0 0.35rem",
-              fontFamily: FONT,
-              ...ABX_TYPOGRAPHY.eyebrow,
-              color: PARTNER_ACCENT.color,
-            }}
-          >
-            {eyebrow ?? "Partner verification"}
-          </p>
-          <h1
-            style={{
-              margin: "0 0 0.5rem",
-              fontFamily: FONT,
-              ...ABX_TYPOGRAPHY.h1,
-            }}
-          >
-            {title ?? `Continue with ${partnerName}`}
-          </h1>
-          {intro && (
-            <p style={{ margin: "0 0 0.5rem", fontSize: "0.9rem", lineHeight: 1.6, color: "var(--text-secondary, #d1d5db)" }}>
-              {intro}
+        {!hideHeader && (
+          <header style={{ marginBottom: "1.25rem" }}>
+            <p
+              style={{
+                margin: "0 0 0.35rem",
+                fontFamily: FONT,
+                ...ABX_TYPOGRAPHY.eyebrow,
+                color: PARTNER_ACCENT.color,
+              }}
+            >
+              {eyebrow ?? "Partner verification"}
             </p>
-          )}
-          {!hideStatus && statusMessage && (
-            <p role="status" style={{ margin: 0, fontSize: "0.86rem", lineHeight: 1.55, color: "var(--text-muted, #b8c0cc)" }}>
-              {statusMessage}
-            </p>
-          )}
-        </header>
+            <h1
+              style={{
+                margin: "0 0 0.5rem",
+                fontFamily: FONT,
+                ...ABX_TYPOGRAPHY.h1,
+              }}
+            >
+              {title ?? `Continue with ${partnerName}`}
+            </h1>
+            {intro && (
+              <p style={{ margin: "0 0 0.5rem", fontSize: "0.9rem", lineHeight: 1.6, color: "var(--text-secondary, #d1d5db)" }}>
+                {intro}
+              </p>
+            )}
+            {!hideStatus && statusMessage && (
+              <p role="status" style={{ margin: 0, fontSize: "0.86rem", lineHeight: 1.55, color: "var(--text-muted, #b8c0cc)" }}>
+                {statusMessage}
+              </p>
+            )}
+          </header>
+        )}
 
         {brief && <HolderRequestBriefCard brief={brief} />}
 

@@ -15,11 +15,13 @@ export const POPUP_STATE = {
   RECOVERABLE_ERROR: "recoverable_error",
 };
 
-export const ABRAXAS_BROWSE_LABEL = "Verify age with Abraxas Passport";
+export const ABRAXAS_BROWSE_LABEL = "Verify 21+ with Abraxas";
 export const ABRAXAS_PURCHASE_LABEL = "Verify eligibility for purchase";
 
 export const ABRAXAS_LABEL = ABRAXAS_BROWSE_LABEL;
 export const ABRAXAS_LABEL_STARTING = "Starting…";
+export const ABRAXAS_SUPPORT =
+  "Verify once. Good Trouble only receives your 21+ result.";
 
 export const BROWSE_POLICY_ID = "good-trouble-browse-v1";
 export const BROWSE_FLOW_ID_PREFIX = "gtb_";
@@ -35,8 +37,7 @@ export const PURCHASE_SESSION_KEYS_TO_CLEAR = [
   "good_trouble_return_destination",
 ];
 
-export const STATUS_READY =
-  "Enter your birthday once on Abraxas. Good Trouble receives only a yes-or-no result.";
+export const STATUS_READY = ABRAXAS_SUPPORT;
 export const STATUS_STARTING = "Starting age verification with Abraxas…";
 export const STATUS_PREVIEW_PASSED =
   "Preview check passed: Abraxas Passport backend flow is working.";
@@ -45,9 +46,7 @@ export const STATUS_SESSION_UNAVAILABLE =
 export const STATUS_GENERIC_FAILURE =
   "Verification could not be started. Please try again or use the traditional option.";
 
-export const TRADITIONAL_SUPPORT = "Quick age self-attestation for this visit.";
-export const ABRAXAS_SUPPORT =
-  "Abraxas verifies the required policy without sharing your ID photos or date of birth with Good Trouble.";
+export const TRADITIONAL_SUPPORT = "Quick self-attestation for this visit only.";
 
 /** Stable allowlisted backend start error codes surfaced to the popup. */
 export const ALLOWLISTED_START_ERROR_CODES = new Set([
@@ -252,8 +251,12 @@ export function createPopupController(deps) {
     getState: () => state,
     isAbraxasInFlight: () => abraxasInFlight,
 
-    async onReady() {
+    async onReady(skipCheck) {
+      if (skipCheck?.()) {
+        return { ok: true, code: "age_gate_already_satisfied" };
+      }
       await enterReady();
+      return { ok: true, code: "ready" };
     },
 
     async onTraditionalYesClick() {

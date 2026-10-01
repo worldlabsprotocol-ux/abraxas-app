@@ -12,6 +12,7 @@ import {
   GOOD_TROUBLE_BROWSE_SIGN_IN_STATUS,
   GOOD_TROUBLE_BROWSE_SIGN_IN_VALUE_COPY,
   GOOD_TROUBLE_BROWSE_SIGN_IN_VALUE_HEADING,
+  isGoodTroubleHostedDirectHandoff,
 } from "@/lib/partner/goodTroubleBrowseFlow";
 import { resolvePartnerContinuationIntro } from "@/lib/partner/partnerVerifyDisplay";
 import type { PartnerJourneyPrimaryAction } from "@/lib/partner/partnerJourneyStateMachine";
@@ -147,13 +148,23 @@ export function PartnerVerifyShell({
 }: PartnerVerifyShellProps) {
   const continuationContext = { policyId, purpose };
   const onSignInScreen = showSignIn(phase);
+  const directHandoff = isGoodTroubleHostedDirectHandoff({
+    hostedBootstrapEligible,
+    partnerId,
+    policyId,
+    purpose,
+  });
   const useDobFirstSignInCopy = isDobFirstBrowse && onSignInScreen;
-  const intro = useDobFirstSignInCopy
-    ? GOOD_TROUBLE_BROWSE_SIGN_IN_INTRO
-    : resolvePartnerContinuationIntro(partnerId, continuationContext);
-  const resolvedStatus = useDobFirstSignInCopy
-    ? GOOD_TROUBLE_BROWSE_SIGN_IN_STATUS
-    : (statusMessage || policyRequirement);
+  const intro = directHandoff && !onSignInScreen
+    ? ""
+    : useDobFirstSignInCopy
+      ? GOOD_TROUBLE_BROWSE_SIGN_IN_INTRO
+      : resolvePartnerContinuationIntro(partnerId, continuationContext);
+  const resolvedStatus = directHandoff && !onSignInScreen
+    ? (statusMessage || "")
+    : useDobFirstSignInCopy
+      ? GOOD_TROUBLE_BROWSE_SIGN_IN_STATUS
+      : (statusMessage || policyRequirement);
   const brief: HolderRequestBrief = buildHolderRequestBrief({
     partnerId,
     partnerName,
@@ -185,17 +196,19 @@ export function PartnerVerifyShell({
   const verificationFirst = hostedBootstrapEligible && (phase === "bootstrapping" || phase === "preparing" || phase === "verifying");
 
   const recoveryPhases = phase === "error" || phase === "return_failed" || phase === "expired" || phase === "missing" || phase === "cancelled" || phase === "invalid_binding" || phase === "method_not_qualified" || phase === "provider_unavailable" || phase === "denied" || phase === "approved";
+  const hideOrientationChrome = directHandoff && !recoveryPhases && !onSignInScreen;
 
   return (
     <PartnerJourneyLayout
       partnerName={partnerName}
       intro={intro}
       statusMessage={resolvedStatus}
-      hideStatus={recoveryPhases}
+      hideStatus={recoveryPhases || hideOrientationChrome}
+      hideHeader={hideOrientationChrome}
       partnerHomeUrl={showReturnButton(phase) ? partnerHomeUrl : null}
       partnerReturnLabel={partnerReturnLabel}
-      showAccountFooter={!useDobFirstSignInCopy}
-      brief={useDobFirstSignInCopy ? null : brief}
+      showAccountFooter={!useDobFirstSignInCopy && !hideOrientationChrome}
+      brief={useDobFirstSignInCopy || hideOrientationChrome ? null : brief}
     >
       {recoveryPhases ? (
         <HolderRecoveryCard
@@ -300,7 +313,7 @@ export function PartnerVerifyShell({
             {GOOD_TROUBLE_BROWSE_SIGN_IN_CLARIFICATION}
           </p>
         </aside>
-      ) : verificationFirst ? (
+      ) : verificationFirst && !hideOrientationChrome ? (
         <aside
           aria-label="Privacy notice"
           style={{
@@ -319,7 +332,7 @@ export function PartnerVerifyShell({
           </strong>
           Only 21+ eligibility — not your date of birth, identity document, or document number.
         </aside>
-      ) : (
+      ) : !hideOrientationChrome ? (
         <aside
           aria-label="Privacy notice"
           style={{
@@ -338,7 +351,7 @@ export function PartnerVerifyShell({
           </strong>
           Google sign in confirms your account only. The partner receives a policy result, not your ID photos or date of birth through this screen.
         </aside>
-      )}
+      ) : null}
     </PartnerJourneyLayout>
   );
 }

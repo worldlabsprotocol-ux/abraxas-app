@@ -6,6 +6,7 @@ import {
   GOOD_TROUBLE_PARTNER_ID,
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
+import { isCanonicalGoodTroublePurchaseFlow } from "@/lib/partner/goodTroublePurchaseFlow";
 
 export class GoodTroubleFlowTupleMismatchError extends Error {
   readonly code = "flow_tuple_mismatch" as const;
@@ -100,6 +101,28 @@ export function resolveGoodTroubleFlowPurpose(input: {
   return null;
 }
 
+/**
+ * Merchant already chose Abraxas — skip duplicate verify/continue orientation chrome.
+ * Consent/disclosure remains at the actual share/return step.
+ */
+export function isGoodTroubleHostedDirectHandoff(input: {
+  hostedBootstrapEligible: boolean;
+  partnerId: string;
+  policyId: string;
+  purpose?: string | null;
+}): boolean {
+  if (!input.hostedBootstrapEligible) return false;
+  return isGoodTroubleBrowseFlow({
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    purpose: input.purpose,
+  }) || isCanonicalGoodTroublePurchaseFlow({
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    purpose: input.purpose,
+  });
+}
+
 export const GOOD_TROUBLE_BROWSE_INTRO =
   "A private age check for Good Trouble.";
 
@@ -107,12 +130,12 @@ export const GOOD_TROUBLE_BROWSE_STATUS =
   "Good Trouble receives only a yes or no 21+ result.";
 
 /** Minimal /partner/continue browse screen copy. */
-export const GOOD_TROUBLE_BROWSE_EYEBROW = "PRIVATE AGE CHECK";
+export const GOOD_TROUBLE_BROWSE_EYEBROW = "BROWSE ACCESS";
 
 export const GOOD_TROUBLE_BROWSE_HEADING = "Confirm you're 21+";
 
 export const GOOD_TROUBLE_BROWSE_SUPPORTING =
-  "Enter your birthday once. Good Trouble receives only a yes or no result.";
+  "Verify once. Good Trouble only receives your 21+ result.";
 
 export const GOOD_TROUBLE_BROWSE_DOB_HEADING = "Enter your birthday";
 
