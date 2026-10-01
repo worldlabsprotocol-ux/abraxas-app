@@ -135,19 +135,18 @@ describe("PartnerContinueClient Good Trouble browse journey", () => {
     cleanup();
   });
 
-  it("renders the simplified browse screen immediately after sign-in", async () => {
+  it("renders DOB intake directly after sign-in without duplicate orientation chrome", async () => {
     render(<PartnerContinueClient />);
-
-    await waitFor(() => {
-      expect(screen.getByText(GOOD_TROUBLE_BROWSE_EYEBROW)).toBeTruthy();
-    });
-
-    expect(screen.getByRole("heading", { name: GOOD_TROUBLE_BROWSE_HEADING })).toBeTruthy();
-    expect(screen.getByText(GOOD_TROUBLE_BROWSE_SUPPORTING)).toBeTruthy();
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON })).toBeTruthy();
     });
+
+    expect(screen.getByText(GOOD_TROUBLE_BROWSE_HEADING)).toBeTruthy();
+    expect(screen.queryByText(GOOD_TROUBLE_BROWSE_EYEBROW)).toBeNull();
+    expect(screen.queryByText(GOOD_TROUBLE_BROWSE_SUPPORTING)).toBeNull();
+    expect(screen.queryByText(/What this request covers/i)).toBeNull();
+    expect(screen.queryByRole("heading", { name: /Continue with Good Trouble/i })).toBeNull();
     expect(screen.getByLabelText("Month")).toBeTruthy();
     expect(screen.queryByText("Return pending")).toBeNull();
     expect(screen.queryByText("PartnerFlowReturnHandler")).toBeNull();
@@ -181,7 +180,7 @@ describe("PartnerContinueClient Good Trouble browse journey", () => {
     });
   });
 
-  it("shows browse chrome during context load when browse policy is in URL without purpose", async () => {
+  it("shows minimal browse chrome during context load when browse policy is in URL without purpose", async () => {
     mockSearchParams = new URLSearchParams({
       verify_request: "vr-browse-1",
       partner_id: GOOD_TROUBLE_PARTNER_ID,
@@ -192,9 +191,9 @@ describe("PartnerContinueClient Good Trouble browse journey", () => {
     render(<PartnerContinueClient />);
 
     await waitFor(() => {
-      expect(screen.getByText(GOOD_TROUBLE_BROWSE_EYEBROW)).toBeTruthy();
+      expect(screen.getByText(GOOD_TROUBLE_BROWSE_HEADING)).toBeTruthy();
     });
-    expect(screen.getByRole("heading", { name: GOOD_TROUBLE_BROWSE_HEADING })).toBeTruthy();
+    expect(screen.queryByText(GOOD_TROUBLE_BROWSE_EYEBROW)).toBeNull();
     expect(screen.queryByText(/Verify eligibility for purchase/i)).toBeNull();
     expect(screen.queryByText(/Continue with ID Verification/i)).toBeNull();
     expect(screen.queryByText(/Return pending/i)).toBeNull();
@@ -446,11 +445,12 @@ describe("PartnerContinueClient holder recovery", () => {
     const { container } = render(<PartnerContinueClient />);
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: GOOD_TROUBLE_PURCHASE_TITLE })).toBeTruthy();
       expect(screen.getByRole("button", { name: GOOD_TROUBLE_PURCHASE_DOB_CONTINUE })).toBeTruthy();
     });
 
     expect(screen.getAllByText(GOOD_TROUBLE_PURCHASE_DOB_INTRO).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("heading", { name: /Continue with Good Trouble/i })).toBeNull();
+    expect(screen.queryByText(/What this request covers/i)).toBeNull();
     expect(screen.getByText("Age")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /Secure your Passport/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /Use selected method/i })).toBeNull();

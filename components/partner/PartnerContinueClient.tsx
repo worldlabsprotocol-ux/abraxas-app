@@ -32,6 +32,7 @@ import {
   GOOD_TROUBLE_BROWSE_EYEBROW,
   GOOD_TROUBLE_BROWSE_HEADING,
   GOOD_TROUBLE_BROWSE_SUPPORTING,
+  isGoodTroubleHostedDirectHandoff,
 } from "@/lib/partner/goodTroubleBrowseFlow";
 import {
   resolvePartnerHolderPresentation,
@@ -307,6 +308,12 @@ function PartnerContinueInner() {
     policyId,
     purpose: purposeParam,
   });
+  const directHandoff = isGoodTroubleHostedDirectHandoff({
+    hostedBootstrapEligible,
+    partnerId,
+    policyId,
+    purpose: purposeParam,
+  });
 
   const hostedBootstrap = useHostedHolderBootstrap({
     enabled: hostedBootstrapEligible && Boolean(partnerId && policyId && (decodedReturnUrl || verifyRequestId)),
@@ -430,12 +437,14 @@ function PartnerContinueInner() {
     return (
       <PartnerJourneyLayout
         partnerName={partnerName}
-        intro={GOOD_TROUBLE_BROWSE_SUPPORTING}
+        intro={directHandoff ? "" : GOOD_TROUBLE_BROWSE_SUPPORTING}
         statusMessage=""
-        eyebrow={GOOD_TROUBLE_BROWSE_EYEBROW}
-        title={GOOD_TROUBLE_BROWSE_HEADING}
+        eyebrow={directHandoff ? undefined : GOOD_TROUBLE_BROWSE_EYEBROW}
+        title={directHandoff ? undefined : GOOD_TROUBLE_BROWSE_HEADING}
         hideStatus
+        hideHeader={directHandoff}
         showAccountFooter={false}
+        brief={null}
       >
         {authLoading || contextLoading || (hostedBootstrapEligible && hostedBootstrap.bootstrapping) ? (
           <p role="status">Preparing verification…</p>
@@ -455,13 +464,21 @@ function PartnerContinueInner() {
             <p role="status">Return to the partner site and try again.</p>
           )
         ) : (
-          <SelfAttestationBrowseForm
-            partnerId={partnerId}
-            policyId={GOOD_TROUBLE_BROWSE_POLICY_ID}
-            partnerName={partnerName}
-            returnUrl={decodedReturnUrl}
-            partnerHomeUrl={partnerHomeUrl}
-          />
+          <>
+            {directHandoff && (
+              <p style={{ margin: "0 0 1rem", fontWeight: 700, fontSize: "1rem" }}>
+                {GOOD_TROUBLE_BROWSE_HEADING}
+              </p>
+            )}
+            <SelfAttestationBrowseForm
+              partnerId={partnerId}
+              policyId={GOOD_TROUBLE_BROWSE_POLICY_ID}
+              partnerName={partnerName}
+              returnUrl={decodedReturnUrl}
+              partnerHomeUrl={partnerHomeUrl}
+              hideTraditionalFallback={directHandoff}
+            />
+          </>
         )}
       </PartnerJourneyLayout>
     );
@@ -476,13 +493,14 @@ function PartnerContinueInner() {
   return (
     <PartnerJourneyLayout
       partnerName={partnerName}
-      intro={resolvePartnerContinuationIntro(partnerId, { policyId, purpose: purposeParam })}
+      intro={directHandoff ? "" : resolvePartnerContinuationIntro(partnerId, { policyId, purpose: purposeParam })}
       statusMessage={statusMessage}
       partnerHomeUrl={simplifiedPurchase ? null : partnerHomeUrl}
       partnerReturnLabel={returnLabel}
-      title={simplifiedPurchase ? GOOD_TROUBLE_PURCHASE_TITLE : undefined}
-      hideStatus={simplifiedPurchase || undefined}
-      brief={simplifiedPurchase ? null : holderBrief}
+      title={directHandoff ? undefined : (simplifiedPurchase ? GOOD_TROUBLE_PURCHASE_TITLE : undefined)}
+      hideStatus={simplifiedPurchase || directHandoff || undefined}
+      hideHeader={directHandoff}
+      brief={directHandoff || simplifiedPurchase ? null : holderBrief}
     >
       {authLoading || contextLoading || (hostedBootstrapEligible && hostedBootstrap.bootstrapping) ? (
         <ProtocolLoadingState

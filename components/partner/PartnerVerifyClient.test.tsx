@@ -238,7 +238,7 @@ describe("PartnerVerifyClient canonical Good Trouble purchase bootstrap", () => 
   });
 });
 
-describe("PartnerVerifyClient Good Trouble DOB-first browse sign-in", () => {
+describe("PartnerVerifyClient Good Trouble browse hosted handoff", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockAuthState.suiAddress = null;
@@ -250,36 +250,61 @@ describe("PartnerVerifyClient Good Trouble DOB-first browse sign-in", () => {
       return_url: "https://www.goodtroublecanna.com/browse-verification-result",
     });
     mockSignInWithGoogle.mockResolvedValue(true);
+    mockEnsureReady.mockResolvedValue({ ok: true });
+    mockEvaluateResponse.mockResolvedValue(new Response(JSON.stringify({
+      next: "passport",
+      passport_url: "https://abraxas.test/partner/continue?verify_request=vr-browse&purpose=browse",
+    }), { status: 200 }));
+
+    global.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/api/auth/hosted-holder/bootstrap")) {
+        mockAuthState.suiAddress = "0xhosted";
+        return new Response(JSON.stringify({
+          ok: true,
+          sui_address: "0xhosted",
+          session_kind: "hosted",
+        }), { status: 200 });
+      }
+      if (url.includes("/api/v1/partner-flow/evaluate")) {
+        return mockEvaluateResponse();
+      }
+      if (url.includes("/api/v1/partner-verify/resume")) {
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    }) as typeof fetch;
   });
 
   afterEach(() => {
     cleanup();
   });
 
-  it("shows Passport value copy for the exact Good Trouble browse tuple", async () => {
+  it("bootstraps hosted session without Google for the exact Good Trouble browse tuple", async () => {
     render(<PartnerVerifyClient />);
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON })).toBeTruthy();
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/auth/hosted-holder/bootstrap"),
+        expect.objectContaining({ method: "POST" }),
+      );
     });
-    expect(screen.getByText(/Create a private Passport for faster future access/i)).toBeTruthy();
-    expect(screen.queryByText(/Signing in is not age verification/i)).toBeNull();
+    expect(mockSignInWithGoogle).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON })).toBeNull();
+    expect(screen.queryByRole("heading", { name: /Continue with Good Trouble/i })).toBeNull();
+    expect(screen.queryByText(/What this request covers/i)).toBeNull();
   });
 
-  it("starts OAuth only once per click on the Passport button", async () => {
+  it("does not start OAuth when hosted bootstrap is in progress", async () => {
     render(<PartnerVerifyClient />);
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON })).toBeTruthy();
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/auth/hosted-holder/bootstrap"),
+        expect.any(Object),
+      );
     });
-
-    const button = screen.getByRole("button", { name: GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON });
-    fireEvent.click(button);
-    fireEvent.click(button);
-
-    await waitFor(() => {
-      expect(mockSignInWithGoogle).toHaveBeenCalledTimes(1);
-    });
+    expect(mockSignInWithGoogle).not.toHaveBeenCalled();
   });
 
   it("redirects to DOB continue after browse evaluate — never pending review", async () => {
@@ -305,7 +330,7 @@ describe("PartnerVerifyClient Good Trouble DOB-first browse sign-in", () => {
     expect(screen.queryByText(/under review/i)).toBeNull();
   });
 
-  it("normalizes legacy missing-policy browse URL and shows DOB-first sign-in", async () => {
+  it("normalizes legacy missing-policy browse URL and starts hosted bootstrap", async () => {
     mockSearchParams = new URLSearchParams({
       partner_id: GOOD_TROUBLE_PARTNER_ID,
       return_url: `https://www.goodtroublecanna.com/browse-verification-result?gtb=gtb_${"a".repeat(64)}`,
@@ -314,8 +339,12 @@ describe("PartnerVerifyClient Good Trouble DOB-first browse sign-in", () => {
     render(<PartnerVerifyClient />);
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON })).toBeTruthy();
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/auth/hosted-holder/bootstrap"),
+        expect.any(Object),
+      );
     });
+    expect(screen.queryByRole("button", { name: GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON })).toBeNull();
   });
 
   it("posts normalized browse tuple to evaluate for legacy missing-policy URL", async () => {
@@ -352,7 +381,7 @@ describe("PartnerVerifyClient Good Trouble DOB-first browse sign-in", () => {
     render(<PartnerVerifyClient />);
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON })).toBeTruthy();
+      expect(screen.getByText(/Already have a Passport/i)).toBeTruthy();
     });
     expect(mockEvaluateResponse).not.toHaveBeenCalled();
   });
