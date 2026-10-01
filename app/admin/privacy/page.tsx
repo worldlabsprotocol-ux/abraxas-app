@@ -5,11 +5,14 @@
 export const dynamic = "force-dynamic";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
+import { OperationalEmptyState } from "@/components/admin/operator/OperationalEmptyState";
+import { OperationalErrorState } from "@/components/admin/operator/OperationalErrorState";
 import { adminFetch } from "@/lib/admin/adminFetch";
 import type { AdminConfirmActionKey } from "@/lib/admin/adminConfirmCopy";
 import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
+import { RedesignPage } from "@/components/redesign/RedesignPage";
+import { ContentCard, PageHeader } from "@/components/redesign/RedesignContent";
 
 const MONO = "'JetBrains Mono',monospace";
 const FONT = "'Inter',system-ui,sans-serif";
@@ -32,34 +35,53 @@ const PRIVACY_CONFIRM_ACTIONS: Partial<Record<string, AdminConfirmActionKey>> = 
   legal_hold: "privacy.legal_hold",
 };
 
+const STATUS_FILTERS = [
+  { value: "", label: "Active queue" },
+  { value: "requested", label: "Requested" },
+  { value: "under_review", label: "Under review" },
+  { value: "approved", label: "Approved" },
+  { value: "legal_hold", label: "Legal hold" },
+  { value: "access_revoked_pending_purge", label: "Access revoked" },
+] as const;
+
 export default function AdminPrivacyPage() {
   const [requests, setRequests] = useState<RequestRow[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState("");
   const [message, setMessage] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const { requestConfirm, confirmDialogProps } = useAdminConfirm();
 
   const loadList = useCallback(async () => {
     setLoading(true);
-    setError("");
+    setLoadError("");
     try {
-      const res = await adminFetch("/api/admin/privacy/requests");
+      const url = statusFilter
+        ? `/api/admin/privacy/requests?status=${encodeURIComponent(statusFilter)}`
+        : "/api/admin/privacy/requests";
+      const res = await adminFetch(url);
       const data = await res.json() as { requests?: RequestRow[]; error?: string };
-      if (!res.ok) throw new Error(data.error ?? "Failed to load");
+      if (!res.ok) {
+        setRequests([]);
+        setLoadError(data.error ?? "Privacy queue unavailable.");
+        return;
+      }
       setRequests(data.requests ?? []);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Load failed");
+    } catch {
+      setRequests([]);
+      setLoadError("Privacy queue unavailable.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [statusFilter]);
 
   useEffect(() => { void loadList(); }, [loadList]);
 
   async function runAction(requestId: string, action: string) {
     setLoading(true);
     setMessage("");
-    setError("");
+    setActionError("");
     try {
       const res = await adminFetch(`/api/admin/privacy/requests/${requestId}`, {
         method: "POST",
@@ -69,16 +91,16 @@ export default function AdminPrivacyPage() {
           idempotency_key: `admin:${action}:${requestId}`,
         }),
       });
-      const data = await res.json() as { error?: string; access_revoked?: boolean };
+      const data = await res.json() as { error?: string; access_revoked?: boolean; request?: { status?: string } };
       if (!res.ok) throw new Error(data.error ?? "Action failed");
       setMessage(
         action === "approve_deletion" && data.access_revoked
           ? "Access revoked. Physical deletion still pending retention policy."
-          : `Action ${action} completed.`,
+          : `Action completed — backend status: ${data.request?.status ?? "updated"}.`,
       );
       await loadList();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Action failed");
+      setActionError(e instanceof Error ? e.message : "Action failed");
     } finally {
       setLoading(false);
     }
@@ -103,75 +125,90 @@ export default function AdminPrivacyPage() {
   }
 
   return (
-    <div style={{ padding: "1.5rem", maxWidth: 960, margin: "0 auto", color: "#f0f0f0", fontFamily: FONT }}>
-      <div style={{ marginBottom: "1rem" }}>
-        <Link href="/admin/receipts" style={{ color: "#10B981", fontSize: "0.78rem" }}>← Admin</Link>
+    <RedesignPage accent="admin" maxWidth={960}>
+      <PageHeader
+        eyebrow="Admin · Privacy"
+        title="Privacy request queue"
+        subtitle="Review holder export and deletion requests. Deletion approval revokes access only — no automatic storage purge."
+      />
+
+      <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "1rem" }}>
+        {STATUS_FILTERS.map(filter => (
+          <button
+            key={filter.value || "active"}
+            type="button"
+            disabled={loading}
+            onClick={() => setStatusFilter(filter.value)}
+            style={{
+              padding: "0.3rem 0.55rem", borderRadius: 999,
+              border: statusFilter === filter.value ? "1px solid var(--accent)" : "1px solid var(--border)",
+              background: statusFilter === filter.value ? "rgba(16,185,129,0.1)" : "transparent",
+              color: statusFilter === filter.value ? "#6EE7B7" : "var(--text-secondary)",
+              fontFamily: FONT, fontSize: "0.65rem", fontWeight: 700, cursor: "pointer",
+            }}
+          >
+            {filter.label}
+          </button>
+        ))}
       </div>
-      <h1 style={{ fontSize: "1.1rem", marginBottom: "0.35rem" }}>Privacy request queue</h1>
-      <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.55)", lineHeight: 1.6, marginBottom: "1rem" }}>
-        Review holder export and deletion requests. Deletion approval revokes access only — no automatic storage purge.
-      </p>
 
-      {error && <p style={{ color: "#FCA5A5", fontSize: "0.78rem" }}>{error}</p>}
-      {message && <p style={{ color: "#10B981", fontSize: "0.78rem" }}>{message}</p>}
-      {loading && <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.78rem" }}>Loading…</p>}
+      {loadError && (
+        <OperationalErrorState
+          title="Privacy queue unavailable"
+          message={`${loadError} Queue count is unknown — not zero.`}
+          onRetry={() => void loadList()}
+        />
+      )}
 
-      {requests.map(req => (
-        <div key={req.id} style={{
-          border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10,
-          padding: "0.85rem", marginBottom: "0.65rem", background: "#0d1017",
-        }}>
-          <div style={{ fontFamily: MONO, fontSize: "0.68rem", marginBottom: "0.35rem" }}>
-            {req.request_type} · {req.status} · ref {req.request_ref}
-          </div>
-          <div style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.6)", marginBottom: "0.5rem" }}>
-            Subject pseudonym: {req.subject_pseudonym_id.slice(0, 12)}… · {new Date(req.created_at).toISOString()}
-          </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-            <ActionBtn
-              label="Review"
-              disabled={actionsDisabled}
-              onClick={() => void runAction(req.id, "start_review")}
-            />
-            {req.request_type === "data_export" && (
-              <ActionBtn
-                label="Approve export"
-                disabled={actionsDisabled}
-                onClick={() => promptAction(req, "approve_export")}
-              />
-            )}
-            {req.request_type === "account_deletion" && (
-              <ActionBtn
-                label="Approve deletion (revoke access)"
-                disabled={actionsDisabled}
-                onClick={() => promptAction(req, "approve_deletion")}
-              />
-            )}
-            <ActionBtn
-              label="Legal hold"
-              disabled={actionsDisabled}
-              onClick={() => promptAction(req, "legal_hold")}
-            />
-            <ActionBtn
-              label="Complete"
-              disabled={actionsDisabled}
-              onClick={() => void runAction(req.id, "complete")}
-            />
-            <ActionBtn
-              label="Deny"
-              disabled={actionsDisabled}
-              onClick={() => promptAction(req, "deny")}
-            />
-          </div>
-        </div>
-      ))}
+      {actionError && (
+        <p role="alert" style={{ color: "#FCA5A5", fontSize: "0.78rem", fontFamily: FONT }}>{actionError}</p>
+      )}
+      {message && (
+        <p style={{ color: "#10B981", fontSize: "0.78rem", fontFamily: FONT }}>{message}</p>
+      )}
+      {loading && !loadError && (
+        <p role="status" style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.78rem", fontFamily: FONT }}>Loading…</p>
+      )}
 
-      {!loading && requests.length === 0 && (
-        <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.5)" }}>No privacy requests in queue.</p>
+      {!loadError && !loading && requests.length === 0 && (
+        <OperationalEmptyState
+          title="No privacy requests in this view"
+          body="The queue loaded successfully and reports zero items for the selected filter."
+        />
+      )}
+
+      {!loadError && requests.length > 0 && (
+        <ContentCard title="Requests">
+          {requests.map(req => (
+            <div key={req.id} style={{
+              border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10,
+              padding: "0.85rem", marginBottom: "0.65rem", background: "#0d1017",
+            }}>
+              <div style={{ fontFamily: MONO, fontSize: "0.68rem", marginBottom: "0.35rem" }}>
+                {req.request_type} · {req.status_label ?? req.status} · ref {req.request_ref}
+              </div>
+              <div style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.6)", marginBottom: "0.5rem" }}>
+                Subject pseudonym: {req.subject_pseudonym_id.slice(0, 12)}… · received {new Date(req.created_at).toISOString()}
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+                <ActionBtn label="Review" disabled={actionsDisabled} onClick={() => void runAction(req.id, "start_review")} />
+                {req.request_type === "data_export" && (
+                  <ActionBtn label="Approve export" disabled={actionsDisabled} onClick={() => promptAction(req, "approve_export")} />
+                )}
+                {req.request_type === "account_deletion" && (
+                  <ActionBtn label="Approve deletion (revoke access)" disabled={actionsDisabled} onClick={() => promptAction(req, "approve_deletion")} />
+                )}
+                <ActionBtn label="Legal hold" disabled={actionsDisabled} onClick={() => promptAction(req, "legal_hold")} />
+                <ActionBtn label="Complete" disabled={actionsDisabled} onClick={() => void runAction(req.id, "complete")} />
+                <ActionBtn label="Deny" disabled={actionsDisabled} onClick={() => promptAction(req, "deny")} />
+              </div>
+            </div>
+          ))}
+        </ContentCard>
       )}
 
       <AdminConfirmDialog {...confirmDialogProps} />
-    </div>
+    </RedesignPage>
   );
 }
 

@@ -160,6 +160,62 @@ export function operatorEmptyQueueCopy(queueName: string): { title: string; body
   };
 }
 
+const DESIGN_PARTNER_STATUS_LABELS: Record<string, string> = {
+  submitted: "Awaiting operator review",
+  approved: "Approved — sandbox provisioning",
+  rejected: "Rejected",
+  onboarded: "Onboarded as partner",
+};
+
+export function designPartnerStatusLabel(status: string | null | undefined): string {
+  if (!status) return "Unknown";
+  return DESIGN_PARTNER_STATUS_LABELS[status] ?? status.replace(/_/g, " ");
+}
+
+export function presentDesignPartnerOperatorView(input: {
+  company: string;
+  status: string;
+  promotedPartnerId: string | null;
+  integrationType: string;
+  useCase: string | null;
+  phase?: string | null;
+  blockerCodes?: string[];
+}): OperatorQueuePresentation {
+  const onboarded = Boolean(input.promotedPartnerId) || input.status === "onboarded";
+  const rejected = input.status === "rejected";
+  const blocked = (input.blockerCodes?.length ?? 0) > 0;
+  const tone: OperatorReviewState = rejected
+    ? "completed"
+    : onboarded
+      ? "completed"
+      : input.status === "submitted"
+        ? "needs_review"
+        : blocked
+          ? "blocked"
+          : "waiting";
+
+  return {
+    reviewType: "Design partner progress",
+    subjectLabel: input.company,
+    stateLabel: designPartnerStatusLabel(input.status),
+    stateTone: tone,
+    reasonEntered: input.useCase
+      ? `Use case: ${input.useCase}`
+      : `Integration type: ${input.integrationType}`,
+    waitingLabel: input.status === "submitted" ? "Awaiting initial operator review" : null,
+    attention: input.status === "submitted" ? "urgent" : blocked ? "watch" : "none",
+    nextAction: input.status === "submitted"
+      ? "Review application details, then approve or reject."
+      : input.status === "approved" && !onboarded
+        ? "Complete sandbox signoff and promote to relying party when ready."
+        : onboarded
+          ? "Monitor sandbox pilot progress and production readiness."
+          : rejected
+            ? "No further action unless partner reapplies."
+            : "Review current integration progress.",
+  };
+}
+
 export function operatorActionConsequence(input: {
   scope: "application" | "binding" | "credential";
   action: string;

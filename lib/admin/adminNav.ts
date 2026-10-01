@@ -14,6 +14,13 @@ export interface AdminNavItem {
 /** Protocol console routes shown in the Phase 3b sidebar. */
 export const ADMIN_PROTOCOL_NAV_ITEMS: readonly AdminNavItem[] = [
   {
+    id: "dashboard",
+    href: "/admin/dashboard",
+    label: "Needs attention",
+    description: "Pending operator work across authoritative queues",
+    section: "operations",
+  },
+  {
     id: "identity",
     href: "/admin/identity",
     label: "Identity",

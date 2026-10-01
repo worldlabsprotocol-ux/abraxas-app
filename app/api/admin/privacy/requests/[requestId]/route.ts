@@ -2,7 +2,7 @@
 // Admin review actions for a privacy request.
 
 import { NextRequest, NextResponse } from "next/server";
-import { checkAdminAccess, resolveAdminAccess } from "@/lib/adminAuth";
+import { checkProductionSensitiveAdminAccess, resolveAdminAccess } from "@/lib/adminAuth";
 import { resolveAdminActorCategory } from "@/lib/admin/adminActorCategory";
 import {
   approveDeletionPrivacyRequest,
@@ -19,7 +19,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ requestId: string }> },
 ) {
-  if (!await checkAdminAccess(req)) {
+  if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -47,7 +47,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ requestId: string }> },
 ) {
-  if (!await checkAdminAccess(req)) {
+  if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
