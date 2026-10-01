@@ -3,8 +3,8 @@
 // Mirror lib/partner/verifyPartnerFlowReceipt.ts — keep in sync manually.
 
 const ABRAXAS_ORIGIN = "https://abraxasworld.xyz";
-const EXPECTED_PARTNER_ID = "good-trouble-cannabis";
-const EXPECTED_POLICY_ID = "good-trouble-retail-v1";
+const EXPECTED_PARTNER_ID = "good-trouble";
+const EXPECTED_POLICY_ID = "good-trouble-age_21_retail-v1";
 const SUPPORTED_SCHEMA_VERSION = "1.0.0";
 const EXPECTED_ARTIFACT_TYPE = "eligibility_decision_receipt";
 const SANDBOX_ONLY_INVALIDATION_REASON = "production_not_usable:false";

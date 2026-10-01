@@ -9,8 +9,8 @@ const RETAIL_RECEIPT = {
   signature_valid: true,
   decision_result: "approved",
   status: "active",
-  partner_id: "good-trouble-cannabis",
-  policy_id: "good-trouble-retail-v1",
+  partner_id: "good-trouble",
+  policy_id: "good-trouble-age_21_retail-v1",
   schema_version: "1.0.0",
   artifact_type: "eligibility_decision_receipt",
   production_usable: false,
@@ -64,7 +64,7 @@ describe("regulated checkout authorization", () => {
       receipt: RETAIL_RECEIPT,
       flowConsumed: true,
       flowPurpose: "purchase",
-      flowPolicyId: "good-trouble-retail-v1",
+      flowPolicyId: "good-trouble-age_21_retail-v1",
     }).authorized).toBe(true);
   });
 

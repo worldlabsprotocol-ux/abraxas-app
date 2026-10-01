@@ -160,7 +160,8 @@ export async function createBrowseVerificationStartService(captchaToken, deps = 
     || !flowId.startsWith(FLOW_ID_PREFIX_BROWSE)
     || !verifyUrl.includes(BROWSE_POLICY_ID)
     || !verifyUrl.includes("purpose=browse")
-    || verifyUrl.includes("good-trouble-retail-v1")
+    || verifyUrl.includes("good-trouble-age_21_retail-v1")
+    || verifyUrl.includes("app=good-trouble")
     || verifyUrl.includes("age-verification-result")
   ) {
     return buildFlowStartFailure({

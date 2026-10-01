@@ -59,7 +59,7 @@ describe("purchaseVerificationLogic", () => {
         flowId: `gtf_${"a".repeat(64)}`,
         verifier: "b".repeat(64),
         purpose: "purchase",
-        policyId: "good-trouble-retail-v1",
+        policyId: "good-trouble-age_21_retail-v1",
       },
       viewMode: "Site",
     });

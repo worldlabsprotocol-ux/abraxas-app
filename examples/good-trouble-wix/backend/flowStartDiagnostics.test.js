@@ -25,7 +25,7 @@ describe("flowStartDiagnostics", () => {
       stage: "capacity_precheck",
       code: "rate_limited",
       purpose: "purchase",
-      policyId: "good-trouble-retail-v1",
+      policyId: "good-trouble-age_21_retail-v1",
       correlationId: "abc123",
     });
 
@@ -36,7 +36,7 @@ describe("flowStartDiagnostics", () => {
       stage: "capacity_precheck",
       code: "rate_limited",
       purpose: "purchase",
-      policyId: "good-trouble-retail-v1",
+      policyId: "good-trouble-age_21_retail-v1",
       correlationId: "abc123",
     });
     expect(JSON.stringify(payload)).not.toMatch(/verifier|challenge|receipt|token|dob/i);
@@ -53,7 +53,7 @@ describe("flowStartDiagnostics", () => {
       code: "nonce_insert_failed",
       stage: "nonce_insert",
       purpose: "purchase",
-      policyId: "good-trouble-retail-v1",
+      policyId: "good-trouble-age_21_retail-v1",
       correlationId: "corr_1",
     });
 
@@ -63,7 +63,7 @@ describe("flowStartDiagnostics", () => {
         code: "nonce_insert_failed",
         stage: "nonce_insert",
         purpose: "purchase",
-        policyId: "good-trouble-retail-v1",
+        policyId: "good-trouble-age_21_retail-v1",
         correlationId: "corr_1",
       },
     });
@@ -76,7 +76,7 @@ describe("flowStartDiagnostics", () => {
       flowId: `gtf_${"a".repeat(64)}`,
       verifier: "b".repeat(64),
       purpose: "purchase",
-      policyId: "good-trouble-retail-v1",
+      policyId: "good-trouble-age_21_retail-v1",
       correlationId: "corr_2",
     });
 

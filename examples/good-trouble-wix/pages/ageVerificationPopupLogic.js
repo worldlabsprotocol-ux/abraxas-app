@@ -23,7 +23,7 @@ export const ABRAXAS_LABEL_STARTING = "Starting…";
 
 export const BROWSE_POLICY_ID = "good-trouble-browse-v1";
 export const BROWSE_FLOW_ID_PREFIX = "gtb_";
-export const PURCHASE_POLICY_ID = "good-trouble-retail-v1";
+export const PURCHASE_POLICY_ID = "good-trouble-age_21_retail-v1";
 export const PURCHASE_FLOW_ID_PREFIX = "gtf_";
 export const BROWSE_CALLBACK_PATH = "browse-verification-result";
 export const PURCHASE_CALLBACK_PATH = "age-verification-result";

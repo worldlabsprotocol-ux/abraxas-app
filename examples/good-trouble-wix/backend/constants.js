@@ -4,15 +4,27 @@
 export const ABRAXAS_ORIGIN =
   "https://abraxasworld.xyz";
 
+/** Canonical Launchpad partner — 21+ sandbox pilot. */
 export const PARTNER_ID =
-  "good-trouble-cannabis";
+  "good-trouble";
 
+/** Canonical Launchpad application slug (?app=). */
+export const APP_SLUG =
+  "good-trouble";
+
+/** Canonical age_21_retail policy. */
 export const POLICY_ID =
-  "good-trouble-retail-v1";
+  "good-trouble-age_21_retail-v1";
 
-/** Tier 1 browse policy — L0 self-attestation only (not purchase). */
+/**
+ * Tier 1 browse policy — legacy compatibility track only (not canonical 21+ pilot).
+ * Browse remains on good-trouble-cannabis until separately migrated.
+ */
 export const BROWSE_POLICY_ID =
   "good-trouble-browse-v1";
+
+export const BROWSE_PARTNER_ID =
+  "good-trouble-cannabis";
 
 export const FLOW_PURPOSE_BROWSE = "browse";
 export const FLOW_PURPOSE_PURCHASE = "purchase";
