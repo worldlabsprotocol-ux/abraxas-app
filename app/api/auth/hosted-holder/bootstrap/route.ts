@@ -1,11 +1,13 @@
 // FILE: app/api/auth/hosted-holder/bootstrap/route.ts
-// Mint an Abraxas-native hosted holder session for eligible partner flows (no Google required).
+// Mint or reuse an Abraxas-native hosted holder session for eligible partner flows.
 
 import { NextRequest, NextResponse } from "next/server";
 import { isHostedHolderBootstrapEligible } from "@/lib/auth/hostedHolderEligibility";
 import {
   attachHostedHolderBrowserSession,
   createHostedHolderIdentity,
+  HOSTED_HOLDER_PROVIDER,
+  resolveExistingBootstrapBrowserSession,
 } from "@/lib/auth/hostedHolderSession";
 import { isAllowedPartnerReturnUrl } from "@/lib/partner/returnUrlAllowlist";
 import { normalizePartnerVerifyInput } from "@/lib/partner/normalizePartnerVerifyInput";
@@ -18,6 +20,24 @@ const NO_STORE_HEADERS = {
   Pragma: "no-cache",
 };
 
+function bootstrapSuccessResponse(input: {
+  suiAddress: string;
+  sessionKind: "hosted" | "oauth";
+  provider: string;
+  reused: boolean;
+}): NextResponse {
+  return NextResponse.json(
+    {
+      ok: true,
+      sui_address: input.suiAddress,
+      session_kind: input.sessionKind,
+      provider: input.provider,
+      reused: input.reused,
+    },
+    { headers: NO_STORE_HEADERS },
+  );
+}
+
 export async function POST(req: NextRequest) {
   let body: {
     partner_id?: string;
@@ -26,12 +46,22 @@ export async function POST(req: NextRequest) {
     return_url?: string;
     purpose?: string;
     verify_request?: string;
+    sui_address?: string;
+    suiAddress?: string;
   };
 
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400, headers: NO_STORE_HEADERS });
+  }
+
+  // Client-provided identity hints are ignored — recovery is cookie-only.
+  if (body.sui_address?.trim() || body.suiAddress?.trim()) {
+    return NextResponse.json(
+      { error: "Client-provided identity is not accepted", code: "client_identity_rejected" },
+      { status: 400, headers: NO_STORE_HEADERS },
+    );
   }
 
   let partnerId = (body.relying_party_id ?? body.partner_id ?? "").trim();
@@ -109,17 +139,35 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const existing = await resolveExistingBootstrapBrowserSession(req);
+  if (existing?.kind === "hosted") {
+    const res = bootstrapSuccessResponse({
+      suiAddress: existing.suiAddress,
+      sessionKind: "hosted",
+      provider: HOSTED_HOLDER_PROVIDER,
+      reused: true,
+    });
+    await attachHostedHolderBrowserSession(res, existing.suiAddress);
+    return res;
+  }
+
+  if (existing?.kind === "oauth") {
+    return bootstrapSuccessResponse({
+      suiAddress: existing.suiAddress,
+      sessionKind: "oauth",
+      provider: existing.provider,
+      reused: true,
+    });
+  }
+
   try {
     const record = await createHostedHolderIdentity();
-    const res = NextResponse.json(
-      {
-        ok: true,
-        sui_address: record.suiAddress,
-        session_kind: "hosted",
-        provider: record.provider,
-      },
-      { headers: NO_STORE_HEADERS },
-    );
+    const res = bootstrapSuccessResponse({
+      suiAddress: record.suiAddress,
+      sessionKind: "hosted",
+      provider: record.provider,
+      reused: false,
+    });
 
     const attached = await attachHostedHolderBrowserSession(res, record.suiAddress);
     if (!attached) {

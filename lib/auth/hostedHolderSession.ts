@@ -8,8 +8,9 @@ import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import {
   attachBrowserSessionCookie,
   issueBrowserSessionToken,
+  resolveBrowserSession,
 } from "@/lib/auth/browserSession";
-import type { NextResponse } from "next/server";
+import type { NextRequest, NextResponse } from "next/server";
 
 export const HOSTED_HOLDER_PROVIDER = "abraxas_hosted" as const;
 
@@ -97,6 +98,34 @@ export async function findHostedHolderBySuiAddress(
 
 export function isHostedHolderProvider(provider: string | null | undefined): boolean {
   return provider === HOSTED_HOLDER_PROVIDER;
+}
+
+export type ExistingBootstrapBrowserSession =
+  | { kind: "hosted"; suiAddress: string }
+  | { kind: "oauth"; suiAddress: string; provider: string };
+
+/**
+ * Server-authoritative reuse check — identity comes only from the HttpOnly browser
+ * session cookie, never from client-provided sui_address or localStorage.
+ */
+export async function resolveExistingBootstrapBrowserSession(
+  req: NextRequest,
+): Promise<ExistingBootstrapBrowserSession | null> {
+  const session = await resolveBrowserSession(req);
+  if (!session) return null;
+
+  const identity = await findHostedHolderBySuiAddress(session.suiAddress);
+  if (!identity) return null;
+
+  if (isHostedHolderProvider(identity.provider)) {
+    return { kind: "hosted", suiAddress: session.suiAddress };
+  }
+
+  return {
+    kind: "oauth",
+    suiAddress: session.suiAddress,
+    provider: identity.provider,
+  };
 }
 
 export async function attachHostedHolderBrowserSession(

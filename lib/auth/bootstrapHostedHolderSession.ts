@@ -2,6 +2,7 @@
 // Client helper — establish hosted holder session without Google OAuth redirect.
 
 import { saveUserSession, type ZkLoginUserSession } from "@/lib/sui/zklogin/session";
+import { restoreUserSessionFromBrowserSession } from "@/lib/sui/zklogin/restoreBrowserSession";
 
 export interface BootstrapHostedHolderInput {
   partnerId: string;
@@ -31,6 +32,9 @@ export async function bootstrapHostedHolderSession(
     const data = await res.json().catch(() => ({})) as {
       ok?: boolean;
       sui_address?: string;
+      session_kind?: "hosted" | "oauth";
+      provider?: string;
+      reused?: boolean;
       error?: string;
       code?: string;
     };
@@ -43,14 +47,28 @@ export async function bootstrapHostedHolderSession(
       return { ok: false, error: data.error ?? `Bootstrap failed (${res.status})` };
     }
 
+    if (data.session_kind === "oauth") {
+      const restored = await restoreUserSessionFromBrowserSession();
+      if (restored) {
+        saveUserSession(restored);
+        return { ok: true, suiAddress: restored.suiAddress };
+      }
+    }
+
+    const provider = data.provider === "abraxas_hosted"
+      ? "abraxas_hosted"
+      : data.provider === "apple"
+        ? "apple"
+        : "google";
+
     const session: ZkLoginUserSession = {
       suiAddress: data.sui_address,
-      provider: "abraxas_hosted",
+      provider,
       oauthSub: undefined,
       email: undefined,
       maxEpoch: 0,
       loggedInAt: new Date().toISOString(),
-      sessionKind: "hosted",
+      sessionKind: data.session_kind === "hosted" ? "hosted" : "oauth",
     };
     saveUserSession(session);
 

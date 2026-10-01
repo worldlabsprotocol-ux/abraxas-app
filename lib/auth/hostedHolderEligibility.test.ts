@@ -10,6 +10,7 @@ import {
   GOOD_TROUBLE_PARTNER_ID,
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
+import { inferPolicyPackFromPolicyId } from "@/lib/partner/launchpad/policyPacks";
 import { isHostedHolderBootstrapEligible } from "./hostedHolderEligibility";
 
 describe("isHostedHolderBootstrapEligible", () => {
@@ -26,6 +27,11 @@ describe("isHostedHolderBootstrapEligible", () => {
       policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
       purpose: "browse",
     })).toBe(false);
+  });
+
+  it("keeps canonical Good Trouble purchase policy at L2 minimum assurance", () => {
+    const pack = inferPolicyPackFromPolicyId(GOOD_TROUBLE_CANONICAL_POLICY_ID);
+    expect(pack?.minimum_assurance).toBe("L2");
   });
 
   it("rejects unrelated partner/policy tuples", () => {

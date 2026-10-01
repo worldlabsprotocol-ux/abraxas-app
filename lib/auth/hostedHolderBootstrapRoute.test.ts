@@ -9,14 +9,19 @@ import {
 
 const mockCreateHosted = vi.fn();
 const mockAttachSession = vi.fn();
+const mockResolveExisting = vi.fn();
 const mockIsAllowed = vi.fn();
 const mockRequireAdmin = vi.fn();
 
-vi.mock("@/lib/auth/hostedHolderSession", () => ({
-  createHostedHolderIdentity: (...args: unknown[]) => mockCreateHosted(...args),
-  attachHostedHolderBrowserSession: (...args: unknown[]) => mockAttachSession(...args),
-  HOSTED_HOLDER_PROVIDER: "abraxas_hosted",
-}));
+vi.mock("@/lib/auth/hostedHolderSession", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/auth/hostedHolderSession")>();
+  return {
+    ...actual,
+    createHostedHolderIdentity: (...args: unknown[]) => mockCreateHosted(...args),
+    attachHostedHolderBrowserSession: (...args: unknown[]) => mockAttachSession(...args),
+    resolveExistingBootstrapBrowserSession: (...args: unknown[]) => mockResolveExisting(...args),
+  };
+});
 
 vi.mock("@/lib/partner/returnUrlAllowlist", () => ({
   isAllowedPartnerReturnUrl: (...args: unknown[]) => mockIsAllowed(...args),
@@ -37,6 +42,7 @@ describe("POST /api/auth/hosted-holder/bootstrap", () => {
       provider: "abraxas_hosted",
     });
     mockAttachSession.mockResolvedValue(true);
+    mockResolveExisting.mockResolvedValue(null);
     process.env.ABRAXAS_BROWSER_SESSION_SECRET = "test-secret";
   });
 
