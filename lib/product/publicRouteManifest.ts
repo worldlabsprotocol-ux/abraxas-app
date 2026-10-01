@@ -4,6 +4,7 @@
 export const PUBLIC_PRODUCT_ROUTES = [
   "/",
   "/passport",
+  "/pricing",
   "/verification",
   "/verify",
   "/developers",
