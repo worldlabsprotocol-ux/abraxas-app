@@ -1,12 +1,15 @@
 // FILE: lib/partner/webhooks/webhookDeadLetter.ts
 // Failed delivery listing and admin manual retry (same event_id + payload).
 
+import { toPartnerVisibleDeliveryState } from "@/lib/partner/eventDelivery/mapping";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import type { PartnerWebhookEventType } from "@/lib/partner/webhooks/types";
 import { isPartnerWebhookEnabled } from "@/lib/partner/webhooks/webhookOutbox";
 
 const OUTBOX = "partner_webhook_outbox";
 const RETRY_AUDIT = "partner_webhook_retry_audit";
+
+export type WebhookOperationalState = "failing" | "dead-lettered";
 
 export interface FailedWebhookDeliveryRecord {
   outbox_id: string;
@@ -17,6 +20,13 @@ export interface FailedWebhookDeliveryRecord {
   attempt_count: number;
   occurred_at: string;
   updated_at: string;
+  operational_state: WebhookOperationalState;
+  recoverable: boolean;
+}
+
+export function failedDeliveryOperationalState(attemptCount: number): WebhookOperationalState {
+  const visible = toPartnerVisibleDeliveryState({ status: "failed", attempt_count: attemptCount });
+  return visible === "dead-lettered" ? "dead-lettered" : "failing";
 }
 
 export async function listFailedWebhookDeliveries(input?: {
@@ -36,16 +46,22 @@ export async function listFailedWebhookDeliveries(input?: {
   }
 
   const { data } = await query;
-  return (data ?? []).map(row => ({
-    outbox_id: row.id as string,
-    partner_id: row.partner_id as string,
-    event_type: row.event_type as PartnerWebhookEventType,
-    event_id: row.event_id as string,
-    last_error_code: (row.last_error_code as string | null) ?? null,
-    attempt_count: row.attempt_count as number,
-    occurred_at: row.occurred_at as string,
-    updated_at: row.updated_at as string,
-  }));
+  return (data ?? []).map(row => {
+    const attemptCount = row.attempt_count as number;
+    const operationalState = failedDeliveryOperationalState(attemptCount);
+    return {
+      outbox_id: row.id as string,
+      partner_id: row.partner_id as string,
+      event_type: row.event_type as PartnerWebhookEventType,
+      event_id: row.event_id as string,
+      last_error_code: (row.last_error_code as string | null) ?? null,
+      attempt_count: attemptCount,
+      occurred_at: row.occurred_at as string,
+      updated_at: row.updated_at as string,
+      operational_state: operationalState,
+      recoverable: true,
+    };
+  });
 }
 
 /**

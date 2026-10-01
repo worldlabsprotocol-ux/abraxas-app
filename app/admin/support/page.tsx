@@ -29,21 +29,27 @@ interface SupportRequest {
 export default function AdminPassportSupportPage() {
   const [requests, setRequests] = useState<SupportRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [updatingId, setUpdatingId] = useState("");
   const [error, setError] = useState("");
 
   const refresh = useCallback(async () => {
     setLoading(true);
     setError("");
+    setLoadFailed(false);
     try {
       const res = await adminFetch("/api/admin/passport-support");
       const data = await res.json() as { error?: string; requests?: SupportRequest[] };
       if (!res.ok || !data.requests) {
+        setRequests([]);
+        setLoadFailed(true);
         setError(data.error ?? "Support queue is unavailable.");
         return;
       }
       setRequests(data.requests);
     } catch {
+      setRequests([]);
+      setLoadFailed(true);
       setError("Support queue is unavailable.");
     } finally {
       setLoading(false);
@@ -76,7 +82,9 @@ export default function AdminPassportSupportPage() {
     }
   }
 
-  const openCount = requests.filter(request => request.status !== "resolved").length;
+  const openCount = loadFailed
+    ? null
+    : requests.filter(request => request.status !== "resolved").length;
 
   return (
     <RedesignPage accent="admin" maxWidth={980}>
@@ -87,8 +95,12 @@ export default function AdminPassportSupportPage() {
       />
 
       <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1rem" }}>
-        <span style={summaryStyle}>{openCount} open</span>
-        <span style={summaryStyle}>{requests.length} total</span>
+        <span style={summaryStyle}>
+          {openCount === null ? "Open: unavailable" : `${openCount} open`}
+        </span>
+        <span style={summaryStyle}>
+          {loadFailed ? "Total: unknown" : `${requests.length} total`}
+        </span>
         <button type="button" onClick={() => void refresh()} disabled={loading} style={refreshStyle}>
           Refresh
         </button>
@@ -103,6 +115,10 @@ export default function AdminPassportSupportPage() {
       <ContentCard title="Support inbox">
         {loading ? (
           <p role="status" style={emptyStyle}>Loading holder requests…</p>
+        ) : loadFailed ? (
+          <p role="alert" style={{ ...emptyStyle, color: "#FCA5A5" }}>
+            Support queue unavailable — count unknown, not zero.
+          </p>
         ) : requests.length === 0 ? (
           <p style={emptyStyle}>No Passport support requests yet.</p>
         ) : (

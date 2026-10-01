@@ -2,7 +2,7 @@
 // Admin receipt inspector — policy version, claim refs, signature, audit timeline.
 
 import { NextRequest, NextResponse } from "next/server";
-import { checkAdminAccess, resolveAdminAccess } from "@/lib/adminAuth";
+import { checkProductionSensitiveAdminAccess, resolveAdminAccess } from "@/lib/adminAuth";
 import { resolveAdminActorCategory } from "@/lib/admin/adminActorCategory";
 import {
   getReceiptAuditTimeline,
@@ -23,7 +23,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ receiptId: string }> },
 ) {
-  if (!await checkAdminAccess(req)) {
+  if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -73,7 +73,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ receiptId: string }> },
 ) {
-  if (!await checkAdminAccess(req)) {
+  if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

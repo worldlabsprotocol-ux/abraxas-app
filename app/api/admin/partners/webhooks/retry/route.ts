@@ -2,12 +2,12 @@
 // Admin manual retry for failed webhook deliveries.
 
 import { NextRequest, NextResponse } from "next/server";
-import { checkAdminAccess } from "@/lib/adminAuth";
+import { checkProductionSensitiveAdminAccess } from "@/lib/adminAuth";
 import { webhookEndpointFormErrorMessage } from "@/lib/partner/webhooks/webhookEndpointFormValidation";
 import { requeueFailedWebhookDelivery } from "@/lib/partner/webhooks/webhookDeadLetter";
 
 export async function POST(req: NextRequest) {
-  if (!await checkAdminAccess(req)) {
+  if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

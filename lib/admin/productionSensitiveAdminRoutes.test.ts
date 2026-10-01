@@ -38,7 +38,33 @@ vi.mock("@supabase/supabase-js", () => ({
 
 import { GET as partnerKeysGET } from "@/app/api/admin/partner-keys/route";
 import { GET as webhookObservabilityGET } from "@/app/api/admin/partners/webhooks/observability/route";
+import { GET as webhookFailedGET } from "@/app/api/admin/partners/webhooks/failed-deliveries/route";
+import { POST as webhookRetryPOST } from "@/app/api/admin/partners/webhooks/retry/route";
+import { GET as privacyRequestsGET } from "@/app/api/admin/privacy/requests/route";
+import { GET as operatorAttentionGET } from "@/app/api/admin/operator-attention/route";
 import { GET as intakeHealthGET } from "@/app/api/admin/design-partners/intake-health/route";
+import { GET as productionReviewGET } from "@/app/api/admin/production-review/route";
+
+vi.mock("@/lib/partner/webhooks/webhookDeadLetter", () => ({
+  listFailedWebhookDeliveries: vi.fn().mockResolvedValue([]),
+  requeueFailedWebhookDelivery: vi.fn(),
+}));
+
+vi.mock("@/lib/admin/operatorAttention", () => ({
+  loadOperatorAttentionSnapshot: vi.fn().mockResolvedValue({
+    generated_at: "2026-01-01T00:00:00.000Z",
+    sources: [],
+    disclaimer: "test",
+  }),
+}));
+
+vi.mock("@/lib/privacy/privacyControlPlane", () => ({
+  listPrivacyRequestsForAdmin: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock("@/lib/partner/launchpad/productionReview", () => ({
+  loadProductionReviewQueue: vi.fn().mockResolvedValue({ ok: true, items: [] }),
+}));
 
 vi.mock("@/lib/partner/webhooks/webhookOperatorObservability", () => ({
   getPartnerWebhookObservability: vi.fn().mockResolvedValue({
@@ -196,6 +222,61 @@ describe("production-sensitive admin routes", () => {
       expect(res.status).not.toBe(401);
       const body = await res.json() as { error?: string };
       expect(body.error).not.toBe("Unauthorized");
+    });
+  });
+
+  describe("upgraded webhook routes", () => {
+    it("returns 401 for PIN-only on failed-deliveries Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest("http://localhost/api/admin/partners/webhooks/failed-deliveries", {
+        headers: { "x-admin-pin": "test-admin-pin" },
+      });
+      const res = await webhookFailedGET(req);
+      expect(res.status).toBe(401);
+    });
+
+    it("returns 401 for PIN-only on webhook retry Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest("http://localhost/api/admin/partners/webhooks/retry", {
+        method: "POST",
+        headers: { "x-admin-pin": "test-admin-pin" },
+        body: JSON.stringify({ outbox_id: "x" }),
+      });
+      const res = await webhookRetryPOST(req);
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe("privacy requests route", () => {
+    it("returns 401 for PIN-only requests on Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest("http://localhost/api/admin/privacy/requests", {
+        headers: { "x-admin-pin": "test-admin-pin" },
+      });
+      const res = await privacyRequestsGET(req);
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe("operator attention route", () => {
+    it("returns 401 for PIN-only requests on Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest("http://localhost/api/admin/operator-attention", {
+        headers: { "x-admin-pin": "test-admin-pin" },
+      });
+      const res = await operatorAttentionGET(req);
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe("requireAdminRouteAccess production-review", () => {
+    it("returns 401 for PIN-only requests on Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest("http://localhost/api/admin/production-review", {
+        headers: { "x-admin-pin": "test-admin-pin" },
+      });
+      const res = await productionReviewGET(req);
+      expect(res.status).toBe(401);
     });
   });
 

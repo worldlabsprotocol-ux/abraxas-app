@@ -9,6 +9,7 @@ import { PartnerSandboxSignoffPanel } from "@/components/admin/PartnerSandboxSig
 import { DesignPartnerPilotSummaryBar } from "@/components/admin/DesignPartnerPilotSummaryBar";
 import { DesignPartnerIntakeHealthCard } from "@/components/admin/DesignPartnerIntakeHealthCard";
 import { DesignPartnerApplicationDetailPanel } from "@/components/admin/DesignPartnerApplicationDetailPanel";
+import { DesignPartnerOperatorProgress } from "@/components/admin/DesignPartnerOperatorProgress";
 import { AdminCopyButton } from "@/components/admin/AdminCopyButton";
 import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
 import {
@@ -429,6 +430,12 @@ export default function AdminDesignPartnersPage() {
             {app.use_case}
           </p>
         )}
+        <div style={{ marginTop: "0.65rem" }}>
+          <DesignPartnerOperatorProgress
+            app={app}
+            pilotSummary={pilotSummaries[app.id] ?? null}
+          />
+        </div>
         <button
           type="button"
           id={detailToggleId}

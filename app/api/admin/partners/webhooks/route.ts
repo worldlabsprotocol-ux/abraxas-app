@@ -2,7 +2,7 @@
 // Admin partner webhook configuration.
 
 import { NextRequest, NextResponse } from "next/server";
-import { checkAdminAccess } from "@/lib/adminAuth";
+import { checkProductionSensitiveAdminAccess } from "@/lib/adminAuth";
 import {
   listPartnerWebhookConfigs,
   setPartnerWebhookEnabled,
@@ -12,7 +12,7 @@ import { webhookEndpointFormErrorMessage } from "@/lib/partner/webhooks/webhookE
 import { WEBHOOK_NOTIFICATION_DISCLAIMER } from "@/lib/partner/webhooks/webhookPayloadContract";
 
 export async function GET(req: NextRequest) {
-  if (!await checkAdminAccess(req)) {
+  if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!await checkAdminAccess(req)) {
+  if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  if (!await checkAdminAccess(req)) {
+  if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

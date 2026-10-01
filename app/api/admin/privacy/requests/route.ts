@@ -2,12 +2,12 @@
 // Admin queue for privacy requests.
 
 import { NextRequest, NextResponse } from "next/server";
-import { checkAdminAccess } from "@/lib/adminAuth";
+import { checkProductionSensitiveAdminAccess } from "@/lib/adminAuth";
 import { listPrivacyRequestsForAdmin } from "@/lib/privacy/privacyControlPlane";
 import { isPrivacyRequestStatus } from "@/lib/privacy/types";
 
 export async function GET(req: NextRequest) {
-  if (!await checkAdminAccess(req)) {
+  if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

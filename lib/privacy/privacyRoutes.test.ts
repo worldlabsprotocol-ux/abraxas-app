@@ -7,7 +7,7 @@ import {
 
 const createPrivacyRequestMock = vi.fn();
 const listPrivacyRequestsForSubjectMock = vi.fn();
-const checkAdminAccessMock = vi.fn();
+const checkProductionSensitiveAdminAccessMock = vi.fn();
 const resolveAdminAccessMock = vi.fn();
 const approveDeletionPrivacyRequestMock = vi.fn();
 const requireBrowserSessionMock = vi.fn();
@@ -30,7 +30,7 @@ vi.mock("@/lib/privacy/privacyControlPlane", () => ({
 }));
 
 vi.mock("@/lib/adminAuth", () => ({
-  checkAdminAccess: (...args: unknown[]) => checkAdminAccessMock(...args),
+  checkProductionSensitiveAdminAccess: (...args: unknown[]) => checkProductionSensitiveAdminAccessMock(...args),
   resolveAdminAccess: (...args: unknown[]) => resolveAdminAccessMock(...args),
 }));
 
@@ -48,7 +48,7 @@ const HOLDER_REQUEST = {
 describe("privacy API routes", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    checkAdminAccessMock.mockResolvedValue(true);
+    checkProductionSensitiveAdminAccessMock.mockResolvedValue(true);
     resolveAdminAccessMock.mockResolvedValue({ authorized: true, method: "pin_header" });
     requireBrowserSessionMock.mockResolvedValue({
       ok: true,
@@ -112,7 +112,7 @@ describe("privacy API routes", () => {
   });
 
   it("admin deletion approve requires admin auth", async () => {
-    checkAdminAccessMock.mockResolvedValue(false);
+    checkProductionSensitiveAdminAccessMock.mockResolvedValue(false);
 
     const res = await adminPost(
       new NextRequest("http://localhost/api/admin/privacy/requests/r1", {
