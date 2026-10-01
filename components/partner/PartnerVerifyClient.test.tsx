@@ -8,11 +8,16 @@ import {
   GOOD_TROUBLE_PARTNER_ID,
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
+import {
+  GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+  GOOD_TROUBLE_CANONICAL_POLICY_ID,
+} from "@/lib/goodTrouble/canonicalProductionConfig";
 import { GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON } from "@/lib/partner/goodTroubleBrowseFlow";
 import { PartnerVerifyClient } from "./PartnerVerifyClient";
 
 const mockEnsureReady = vi.fn();
 const mockSignInWithGoogle = vi.fn();
+const mockRefreshSession = vi.fn();
 const mockEvaluateResponse = vi.fn();
 const mockAuthState = {
   suiAddress: "0xabc" as string | null,
@@ -34,6 +39,7 @@ vi.mock("@/components/sui/SuiAuthProvider", () => ({
     suiAddress: mockAuthState.suiAddress,
     isLoading: mockAuthState.isLoading,
     signInWithGoogle: (...args: unknown[]) => mockSignInWithGoogle(...args),
+    refreshSession: (...args: unknown[]) => mockRefreshSession(...args),
   }),
 }));
 
@@ -162,6 +168,73 @@ describe("PartnerVerifyClient auth/session gating", () => {
     mockAuthState.suiAddress = null;
     render(<PartnerVerifyClient previewPhase="signing_in" previewSignInConfigured />);
     expect(screen.getByRole("button", { name: /Signing you in/i })).toBeTruthy();
+  });
+});
+
+describe("PartnerVerifyClient canonical Good Trouble purchase bootstrap", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuthState.suiAddress = null;
+    mockAuthState.isLoading = false;
+    mockSearchParams = new URLSearchParams({
+      app: "good-trouble",
+      return_url: "https://www.goodtroublecanna.com/age-verification-result?gtf=gtf_test123",
+    });
+    mockEnsureReady.mockResolvedValue({ ok: true });
+    mockEvaluateResponse.mockResolvedValue(new Response(JSON.stringify({
+      next: "passport",
+      passport_url: "https://abraxas.test/partner/continue?verify_request=vr-purchase",
+    }), { status: 200 }));
+
+    global.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/auth/hosted-holder/bootstrap")) {
+        mockAuthState.suiAddress = "0xhosted";
+        return new Response(JSON.stringify({
+          ok: true,
+          sui_address: "0xhosted",
+          session_kind: "hosted",
+        }), { status: 200 });
+      }
+      if (url.includes("/api/launchpad/public/verify-config")) {
+        return new Response(JSON.stringify({
+          config: {
+            partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+            policy_id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
+            return_url: "https://www.goodtroublecanna.com/age-verification-result?gtf=gtf_test123",
+            display_name: "Good Trouble",
+            user_explanation: "Confirm you are 21 or older.",
+            disclosed_result: "21+ eligibility",
+            environment: "production",
+          },
+        }), { status: 200 });
+      }
+      if (url.includes("/api/v1/partner-flow/evaluate")) {
+        return mockEvaluateResponse();
+      }
+      if (url.includes("/api/v1/partner-verify/resume")) {
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    }) as typeof fetch;
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("does not redirect unauthenticated holders to Google for canonical purchase flow", async () => {
+    render(<PartnerVerifyClient />);
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/auth/hosted-holder/bootstrap"),
+        expect.objectContaining({ method: "POST" }),
+      );
+    });
+
+    expect(mockSignInWithGoogle).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: /Continue with Google/i })).toBeNull();
   });
 });
 

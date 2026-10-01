@@ -16,6 +16,10 @@ import {
   GOOD_TROUBLE_PARTNER_ID,
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
+import {
+  GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+  GOOD_TROUBLE_CANONICAL_POLICY_ID,
+} from "@/lib/goodTrouble/canonicalProductionConfig";
 import { PartnerContinueClient } from "./PartnerContinueClient";
 
 const mockAuthState = {
@@ -35,6 +39,8 @@ vi.mock("@/components/sui/SuiAuthProvider", () => ({
     suiAddress: mockAuthState.suiAddress,
     isLoading: mockAuthState.isLoading,
     session: mockAuthState.session,
+    refreshSession: vi.fn(),
+    signInWithGoogle: vi.fn(),
   }),
 }));
 
@@ -317,6 +323,42 @@ describe("PartnerContinueClient holder recovery", () => {
       expect(screen.getByText(/could not be found/i)).toBeTruthy();
     });
     expect(container.textContent).not.toMatch(/evil\.example|dr_secret|receipt_id|SQLSTATE/i);
+  });
+
+  it("bootstraps canonical Good Trouble purchase continue flow without mandatory Google", async () => {
+    mockAuthState.suiAddress = null;
+    mockAuthState.isLoading = false;
+    mockSearchParams = new URLSearchParams({
+      verify_request: "vr-canonical",
+      partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+      policy_id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
+    });
+    global.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/auth/hosted-holder/bootstrap")) {
+        mockAuthState.suiAddress = "0xhosted";
+        return new Response(JSON.stringify({ ok: true, sui_address: "0xhosted" }), { status: 200 });
+      }
+      if (url.includes("/api/v1/verification-requests/vr-canonical")) {
+        return new Response(JSON.stringify({
+          partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+          policy_id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
+        }), { status: 200 });
+      }
+      if (url.includes("continue-binding") || url.includes("method-qualification")) {
+        return new Response(JSON.stringify({ ok: true, method_qualified: false }), { status: 200 });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    }) as typeof fetch;
+
+    render(<PartnerContinueClient />);
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/auth/hosted-holder/bootstrap"),
+        expect.objectContaining({ method: "POST" }),
+      );
+    });
+    expect(screen.queryByText(/Sign in to continue/i)).toBeNull();
   });
 
   it("asks the holder to sign in again after session loss without exposing wallet copy", async () => {
