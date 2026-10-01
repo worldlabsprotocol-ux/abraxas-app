@@ -344,6 +344,7 @@ export async function completeBrowseVerificationCore(params) {
     purpose: "browse",
     policyId: claim.record.policyId,
     flowConsumed: true,
+    expires_at: validation.expires_at ?? null,
   };
 }
 

@@ -195,11 +195,21 @@ describe("ageVerificationPopupLogic state machine", () => {
     await controller.onReady();
   });
 
-  it("starts ready with Abraxas button enabled and privacy-preserving copy", () => {
+  it("starts ready with Abraxas button enabled and privacy-preserving copy", async () => {
+    const ready = await controller.onReady();
+    expect(ready).toEqual({ ok: true, code: "ready" });
     expect(controller.getState()).toBe(POPUP_STATE.READY);
     expect(deps.setAbraxasButtonEnabled).toHaveBeenLastCalledWith(true);
     expect(deps.setAbraxasButtonLabel).toHaveBeenCalledWith(ABRAXAS_LABEL);
     expect(deps.setStatus).toHaveBeenCalledWith(STATUS_READY);
+    expect(ABRAXAS_LABEL).toBe("Verify 21+ with Abraxas");
+  });
+
+  it("can skip ready state when age gate is already satisfied", async () => {
+    deps.setStatus.mockClear();
+    const ready = await controller.onReady(() => true);
+    expect(ready).toEqual({ ok: true, code: "age_gate_already_satisfied" });
+    expect(deps.setStatus).not.toHaveBeenCalled();
   });
 
   it("invokes backend exactly once with no client arguments on click", async () => {
