@@ -10,10 +10,8 @@ import {
 import { isAllowedPartnerReturnUrl } from "@/lib/partner/returnUrlAllowlist";
 import { getPolicy } from "@/lib/verification/requestsService";
 import { isBrowseAccessPolicy } from "@/lib/policy/selfAttestationGuards";
-import {
-  GOOD_TROUBLE_BROWSE_POLICY_ID,
-  isGoodTroubleBrowsePartnerId,
-} from "@/lib/partner/goodTroubleBrowseFlow";
+import { GOOD_TROUBLE_BROWSE_POLICY_ID } from "@/lib/goodTrouble/constants";
+import { isGoodTroubleBrowsePartnerId } from "@/lib/partner/goodTroubleBrowseFlow";
 import { getActiveSelfAttestations } from "./selfAttestationLedger";
 import {
   buildBrowseReceiptPayload,

@@ -5,10 +5,8 @@ import { randomBytes } from "crypto";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { getPolicy } from "@/lib/verification/requestsService";
 import { isBrowseAccessPolicy } from "@/lib/policy/selfAttestationGuards";
-import {
-  GOOD_TROUBLE_BROWSE_POLICY_ID,
-  isGoodTroubleBrowsePartnerId,
-} from "@/lib/partner/goodTroubleBrowseFlow";
+import { GOOD_TROUBLE_BROWSE_POLICY_ID } from "@/lib/goodTrouble/constants";
+import { isGoodTroubleBrowsePartnerId } from "@/lib/partner/goodTroubleBrowseFlow";
 import { deriveSelfAttestedAgeBand, parseIsoDateUtc } from "./calculateAgeBand";
 import {
   generateBrowseReceiptId,
