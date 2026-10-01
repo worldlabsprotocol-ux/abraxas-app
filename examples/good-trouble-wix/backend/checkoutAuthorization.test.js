@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 import { authorizeRegulatedCheckout } from "./checkoutAuthorization.js";
-import { validateSandboxReceipt } from "./abraxasReceiptValidator.js";
+import { validateProductionReceipt } from "./abraxasReceiptValidator.js";
 import { validateBrowseAccessPayload } from "./browseReceiptValidator.js";
 
 const RETAIL_RECEIPT = {
@@ -13,11 +13,12 @@ const RETAIL_RECEIPT = {
   policy_id: "good-trouble-age_21_retail-v1",
   schema_version: "1.0.0",
   artifact_type: "eligibility_decision_receipt",
-  production_usable: false,
-  decision_context: "sandbox_only",
-  invalidation_reasons: ["production_not_usable:false"],
+  production_usable: true,
+  currently_valid: true,
+  decision_context: "production",
+  invalidation_reasons: [],
   expires_at: new Date(Date.now() + 3600000).toISOString(),
-  evaluated_claim_refs: [],
+  evaluated_claim_refs: [{ status: "active", claim_type: "identity_verified" }],
   assurance_level: "L2",
 };
 
@@ -50,7 +51,7 @@ describe("regulated checkout authorization", () => {
   });
 
   it("rejects browse receipts at checkout", () => {
-    expect(validateSandboxReceipt(BROWSE_RECEIPT).verified).toBe(false);
+    expect(validateProductionReceipt(BROWSE_RECEIPT).verified).toBe(false);
     expect(authorizeRegulatedCheckout({ receipt: BROWSE_RECEIPT, flowConsumed: true }).authorized).toBe(false);
   });
 
@@ -59,7 +60,7 @@ describe("regulated checkout authorization", () => {
   });
 
   it("accepts validated authoritative retail receipt when flow consumed", () => {
-    expect(validateSandboxReceipt(RETAIL_RECEIPT).verified).toBe(true);
+    expect(validateProductionReceipt(RETAIL_RECEIPT).verified).toBe(true);
     expect(authorizeRegulatedCheckout({
       receipt: RETAIL_RECEIPT,
       flowConsumed: true,

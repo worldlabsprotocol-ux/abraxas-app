@@ -164,13 +164,13 @@ describe("PKCE proof validation", () => {
 });
 
 describe("integration constants", () => {
-  it("uses strict sandbox mode and exact partner/policy ids", () => {
+  it("uses production purchase validation mode and exact partner/policy ids", () => {
     expect(INTEGRATION_CONSTANTS).toEqual({
-      mode: "sandbox",
+      mode: "production",
       browse: expect.objectContaining({ purpose: "browse", policyId: BROWSE_POLICY_ID }),
       purchase: expect.objectContaining({ purpose: "purchase", policyId: POLICY_ID }),
     });
-    expect(RECEIPT_VALIDATION_MODE).toBe("sandbox");
+    expect(RECEIPT_VALIDATION_MODE).toBe("production");
   });
 });
 

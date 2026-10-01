@@ -33,6 +33,11 @@ import { extractLaunchpadFlowContext } from "@/lib/partner/launchpad/extractLaun
 import { recordEvaluateLaunchpadActivity, recordFlowFailureActivity } from "@/lib/partner/launchpad/mapPartnerFlowActivity";
 import { resolveLaunchpadPinnedPolicyVersion } from "@/lib/partner/launchpad/resolvePinnedPolicyVersion";
 import { PolicyChangeControlError } from "@/lib/policy/changeControl/codes";
+import { bindPartnerFlowContinuationForEvaluate } from "@/lib/partner/bindPartnerFlowContinuationForEvaluate";
+import {
+  attachPartnerContinueBindingCookie,
+  signPartnerContinueBindingCookie,
+} from "@/lib/partner/partnerVerifyResumeCookie";
 
 export const dynamic = "force-dynamic";
 
@@ -291,7 +296,28 @@ export async function POST(request: NextRequest) {
       hasRedirectUrl: Boolean(result.redirect_url),
     });
 
-    return NextResponse.json({ ...enrichPartnerFlowResponse(result), flow_trace_id: flowTraceId });
+    const res = NextResponse.json({ ...enrichPartnerFlowResponse(result), flow_trace_id: flowTraceId });
+
+    if (result.verification_request_id) {
+      const bound = await bindPartnerFlowContinuationForEvaluate({
+        request,
+        verifyRequestId: result.verification_request_id,
+        partnerId,
+        policyId,
+        returnUrl,
+        purpose: resolvedPurpose,
+        policyVersion: result.policy_version,
+        appSlug: body.app?.trim() || undefined,
+      });
+      if (bound.ok) {
+        const bindingToken = await signPartnerContinueBindingCookie({
+          verifyRequestId: result.verification_request_id,
+        });
+        if (bindingToken) attachPartnerContinueBindingCookie(res, bindingToken);
+      }
+    }
+
+    return res;
   } catch (e) {
     if (e instanceof PolicyChangeControlError) {
       const flowTraceId = resolvePartnerFlowTraceId({});

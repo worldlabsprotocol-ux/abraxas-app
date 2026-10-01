@@ -2,7 +2,7 @@
 // Server-validated, fresh, consumed, partner-bound, purpose-bound L2+ purchase gate.
 
 import { rejectBrowseReceiptForCheckout } from "./browseReceiptValidator.js";
-import { validateSandboxReceipt } from "./abraxasReceiptValidator.js";
+import { validateProductionReceipt } from "./abraxasReceiptValidator.js";
 import {
   BROWSE_ACCESS_STORAGE_KEY,
   FLOW_PURPOSE_PURCHASE,
@@ -74,8 +74,8 @@ export function authorizePurchaseEligibility(input) {
     return { authorized: false, code: browseReject.code };
   }
 
-  const sandbox = validateSandboxReceipt(input.receipt, { now });
-  if (!sandbox.verified) {
+  const validated = validateProductionReceipt(input.receipt, { now });
+  if (!validated.verified) {
     return { authorized: false, code: "authoritative_receipt_invalid" };
   }
 
