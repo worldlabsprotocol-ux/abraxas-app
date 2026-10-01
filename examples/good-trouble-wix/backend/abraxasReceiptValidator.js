@@ -57,6 +57,19 @@ function sandboxErrors(receipt) {
   return errors;
 }
 
+function productionErrors(receipt) {
+  const errors = [];
+  if (receipt.production_usable !== true) {
+    errors.push(receipt.production_usable === undefined
+      ? "production_usable_missing"
+      : "production_usable_not_true");
+  }
+  if (receipt.currently_valid !== true) errors.push("currently_valid_not_true");
+  if (receipt.decision_context !== "production") errors.push("production_decision_context_mismatch");
+  if ((receipt.invalidation_reasons ?? []).length > 0) errors.push("production_has_invalidation_reasons");
+  return errors;
+}
+
 /**
  * @param {unknown} receipt
  * @param {{ now?: Date }} [opts]
@@ -69,14 +82,26 @@ export function validateSandboxReceipt(receipt, opts = {}) {
   return { verified: errors.length === 0 };
 }
 
-/** Strict sandbox mode identifier — mirrors verifyPartnerFlowReceipt mode: "sandbox". */
-export const RECEIPT_VALIDATION_MODE = "sandbox";
+/**
+ * @param {unknown} receipt
+ * @param {{ now?: Date }} [opts]
+ * @returns {{ verified: boolean }}
+ */
+export function validateProductionReceipt(receipt, opts = {}) {
+  const now = opts.now ?? new Date();
+  if (!receipt || typeof receipt !== "object") return { verified: false };
+  const errors = [...sharedErrors(receipt, now), ...productionErrors(receipt)];
+  return { verified: errors.length === 0 };
+}
+
+/** Canonical purchase pilot validates production receipts from Abraxas. */
+export const RECEIPT_VALIDATION_MODE = "production";
 
 /**
  * @param {string} receiptId
  * @returns {Promise<{ verified: boolean, mode: typeof RECEIPT_VALIDATION_MODE }>}
  */
-export async function fetchAndValidateSandboxReceipt(receiptId) {
+export async function fetchAndValidatePurchaseReceipt(receiptId) {
   const id = typeof receiptId === "string" ? receiptId.trim() : "";
   if (!id || id.length > 200 || !RECEIPT_ID_RE.test(id)) {
     return { verified: false, mode: RECEIPT_VALIDATION_MODE };
@@ -101,6 +126,13 @@ export async function fetchAndValidateSandboxReceipt(receiptId) {
     return { verified: false, mode: RECEIPT_VALIDATION_MODE };
   }
 
-  const result = validateSandboxReceipt(receipt);
+  const result = RECEIPT_VALIDATION_MODE === "production"
+    ? validateProductionReceipt(receipt)
+    : validateSandboxReceipt(receipt);
   return { ...result, mode: RECEIPT_VALIDATION_MODE };
+}
+
+/** @deprecated Use fetchAndValidatePurchaseReceipt */
+export async function fetchAndValidateSandboxReceipt(receiptId) {
+  return fetchAndValidatePurchaseReceipt(receiptId);
 }

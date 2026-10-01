@@ -108,11 +108,11 @@ export const PURCHASE_VERIFIED_SESSION_FLAG = "good_trouble_purchase_verified_pi
 export const PILOT_VERIFIED_SESSION_FLAG = PURCHASE_VERIFIED_SESSION_FLAG;
 
 /**
- * The current Good Trouble pilot uses sandbox receipt validation.
- * This is not production-authoritative age verification.
+ * Canonical purchase pilot validates production Abraxas receipts.
+ * Browse remains sandbox/L0 and uses separate validators.
  */
 export const RECEIPT_VALIDATION_MODE =
-  "sandbox";
+  "production";
 
 export const FLOW_ID_PREFIX_PURCHASE = "gtf_";
 export const FLOW_ID_PREFIX_BROWSE = "gtb_";
