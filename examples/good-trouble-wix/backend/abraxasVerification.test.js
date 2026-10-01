@@ -49,7 +49,7 @@ const VALID_SANDBOX_RECEIPT = {
   schema_version: "1.0.0",
   artifact_type: "eligibility_decision_receipt",
   expires_at: "2099-01-01T00:00:00.000Z",
-  evaluated_claim_refs: [{ status: "active", claim_type: "product_eligibility" }],
+  evaluated_claim_refs: [{ status: "active", claim_type: "identity_verified" }],
   production_usable: false,
   decision_context: "sandbox_only",
   invalidation_reasons: ["production_not_usable:false"],
@@ -180,8 +180,9 @@ describe("buildVerificationStartPayload", () => {
 
     expect(payload.verifyUrl.startsWith(`${ABRAXAS_ORIGIN}/partner/verify?`)).toBe(true);
     const url = new URL(payload.verifyUrl);
-    expect(url.searchParams.get("partner_id")).toBe(PARTNER_ID);
-    expect(url.searchParams.get("policy_id")).toBe(POLICY_ID);
+    expect(url.searchParams.get("app")).toBe("good-trouble");
+    expect(url.searchParams.get("partner_id")).toBeNull();
+    expect(url.searchParams.get("policy_id")).toBeNull();
 
     const returnUrl = url.searchParams.get("return_url");
     expect(returnUrl).toBeTruthy();

@@ -6,6 +6,11 @@ import {
   GOOD_TROUBLE_RETAIL_POLICY_ID,
   GOOD_TROUBLE_ENTER_PATH,
 } from "@/lib/goodTrouble/constants";
+import {
+  GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+  GOOD_TROUBLE_CANONICAL_POLICY_ID,
+  GOOD_TROUBLE_EXPECTED_CALLBACK_URL,
+} from "@/lib/goodTrouble/canonicalProductionConfig";
 import { SITE_URL } from "@/lib/siteUrl";
 import type { PreflightOptions } from "@/lib/integration/preflightTypes";
 
@@ -17,7 +22,17 @@ export const INTEGRATION_PREFLIGHT_ENV_KEYS = {
   policyId: "INTEGRATION_PREFLIGHT_POLICY_ID",
   returnUrl: "INTEGRATION_PREFLIGHT_RETURN_URL",
   productionMode: "INTEGRATION_PREFLIGHT_PRODUCTION_MODE",
+  track: "INTEGRATION_PREFLIGHT_TRACK",
 } as const;
+
+export type IntegrationPreflightTrack = "legacy" | "canonical";
+
+export function resolveIntegrationPreflightTrack(
+  env: Record<string, string | undefined> = process.env,
+): IntegrationPreflightTrack {
+  const raw = env[INTEGRATION_PREFLIGHT_ENV_KEYS.track]?.trim().toLowerCase();
+  return raw === "canonical" ? "canonical" : "legacy";
+}
 
 export function normalizeBaseUrl(raw: string | undefined): string {
   return (raw ?? "").trim().replace(/\/$/, "");
@@ -42,15 +57,23 @@ export function resolvePreflightOptions(
   env: Record<string, string | undefined> = process.env,
 ): PreflightOptions {
   const baseUrl = normalizeBaseUrl(env[INTEGRATION_PREFLIGHT_ENV_KEYS.baseUrl]);
+  const track = resolveIntegrationPreflightTrack(env);
+  const defaultPartnerId = track === "canonical"
+    ? GOOD_TROUBLE_CANONICAL_PARTNER_ID
+    : GOOD_TROUBLE_PARTNER_ID;
+  const defaultPolicyId = track === "canonical"
+    ? GOOD_TROUBLE_CANONICAL_POLICY_ID
+    : GOOD_TROUBLE_RETAIL_POLICY_ID;
   const partnerId =
-    env[INTEGRATION_PREFLIGHT_ENV_KEYS.partnerId]?.trim() || GOOD_TROUBLE_PARTNER_ID;
+    env[INTEGRATION_PREFLIGHT_ENV_KEYS.partnerId]?.trim() || defaultPartnerId;
   const policyId =
-    env[INTEGRATION_PREFLIGHT_ENV_KEYS.policyId]?.trim() || GOOD_TROUBLE_RETAIL_POLICY_ID;
+    env[INTEGRATION_PREFLIGHT_ENV_KEYS.policyId]?.trim() || defaultPolicyId;
 
   const explicitReturn = env[INTEGRATION_PREFLIGHT_ENV_KEYS.returnUrl]?.trim();
-  const returnUrl =
-    explicitReturn ||
-    (baseUrl ? `${baseUrl}${GOOD_TROUBLE_ENTER_PATH}` : `${SITE_URL}${GOOD_TROUBLE_ENTER_PATH}`);
+  const defaultReturn = track === "canonical"
+    ? GOOD_TROUBLE_EXPECTED_CALLBACK_URL
+    : (baseUrl ? `${baseUrl}${GOOD_TROUBLE_ENTER_PATH}` : `${SITE_URL}${GOOD_TROUBLE_ENTER_PATH}`);
+  const returnUrl = explicitReturn || defaultReturn;
 
   return {
     baseUrl,

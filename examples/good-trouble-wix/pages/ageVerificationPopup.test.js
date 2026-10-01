@@ -80,7 +80,7 @@ describe("Wix deployment contract", () => {
     expect(LOGIC_SOURCE).not.toContain("createPurchaseVerificationStart");
     expect(LOGIC_SOURCE).not.toContain("createAbraxasVerificationStart");
     expect(validateBrowseVerificationStart({
-      verifyUrl: `https://abraxasworld.xyz/partner/verify?partner_id=good-trouble-cannabis&policy_id=${PURCHASE_POLICY_ID}&return_url=https%3A%2F%2Fwww.goodtroublecanna.com%2F${PURCHASE_CALLBACK_PATH}`,
+      verifyUrl: `https://abraxasworld.xyz/partner/verify?app=good-trouble&return_url=https%3A%2F%2Fwww.goodtroublecanna.com%2F${PURCHASE_CALLBACK_PATH}`,
       flowId: `${PURCHASE_FLOW_ID_PREFIX}${"a".repeat(64)}`,
       verifier: "b".repeat(64),
       policyId: PURCHASE_POLICY_ID,

@@ -84,7 +84,7 @@ describe("separate start lifecycles", () => {
     expect(payload.purpose).toBe(FLOW_PURPOSE_PURCHASE);
     expect(payload.policyId).toBe(POLICY_ID);
     expect(payload.flowId.startsWith("gtf_")).toBe(true);
-    expect(payload.verifyUrl).toContain("good-trouble-retail-v1");
+    expect(payload.verifyUrl).toContain("app=good-trouble");
     expect(payload.flowRecord.purpose).toBe("purchase");
     const returnMatch = payload.verifyUrl.match(/return_url=([^&]+)/);
     const returnUrl = decodeURIComponent(returnMatch?.[1] ?? "");

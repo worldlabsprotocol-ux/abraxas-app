@@ -96,7 +96,7 @@ describe("Good Trouble browse journey integration", () => {
 
   it("rejects purchase-shaped backend responses at the popup guard", () => {
     const purchaseLeak = {
-      verifyUrl: `https://abraxasworld.xyz/partner/verify?partner_id=good-trouble-cannabis&policy_id=${PURCHASE_POLICY_ID}&return_url=https%3A%2F%2Fwww.goodtroublecanna.com%2F${PURCHASE_CALLBACK_PATH}%3Fgtv%3Dgtf_${"a".repeat(64)}`,
+      verifyUrl: `https://abraxasworld.xyz/partner/verify?app=good-trouble&return_url=https%3A%2F%2Fwww.goodtroublecanna.com%2F${PURCHASE_CALLBACK_PATH}%3Fgtv%3Dgtf_${"a".repeat(64)}`,
       flowId: `${PURCHASE_FLOW_ID_PREFIX}${"a".repeat(64)}`,
       verifier: "b".repeat(64),
       policyId: PURCHASE_POLICY_ID,

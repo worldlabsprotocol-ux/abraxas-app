@@ -72,11 +72,13 @@ export async function buildVerificationStartPayload(params) {
   const correlationId = randomHex(8);
 
   const returnUrl = `${flowConfig.returnUrlBase}?${flowConfig.callbackParam}=${encodeURIComponent(flowId)}`;
-  const search = new URLSearchParams({
-    partner_id: flowConfig.partnerId,
-    policy_id: flowConfig.policyId,
-    return_url: returnUrl,
-  });
+  const search = new URLSearchParams({ return_url: returnUrl });
+  if (flowConfig.appSlug) {
+    search.set("app", flowConfig.appSlug);
+  } else {
+    search.set("partner_id", flowConfig.partnerId);
+    search.set("policy_id", flowConfig.policyId);
+  }
   if (flowConfig.purpose === "browse") {
     search.set("purpose", "browse");
   }
