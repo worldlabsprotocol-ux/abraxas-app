@@ -21,6 +21,10 @@ import {
 } from "@/lib/partner/eligibilityMethods";
 import { GOOGLE_ACCOUNT_NOT_ELIGIBILITY } from "@/lib/partner/launchpad/policyPacks";
 import {
+  GOOD_TROUBLE_PURCHASE_REUSE_ACTION,
+  GOOD_TROUBLE_PURCHASE_VERIFY_ACTION,
+} from "@/lib/partner/goodTroublePurchaseFlow";
+import {
   REUSE_CONFIRM_POINTS,
   REUSE_LABEL,
   type ReuseClientView,
@@ -46,6 +50,8 @@ export interface AgeAssuranceMethodChooserProps {
   browsePolicyId?: string;
   /** Purchase flow: one action card without repeated privacy paragraphs. */
   compactCheckout?: boolean;
+  /** Canonical Good Trouble purchase — single obvious age verification action. */
+  simplifiedPurchaseFlow?: boolean;
 }
 
 type ProviderListResponse = {
@@ -69,6 +75,7 @@ export function AgeAssuranceMethodChooser({
   flowTier = "checkout",
   browsePolicyId = GOOD_TROUBLE_BROWSE_POLICY_ID,
   compactCheckout = false,
+  simplifiedPurchaseFlow = false,
 }: AgeAssuranceMethodChooserProps) {
   const [loading, setLoading] = useState(true);
   const [providers, setProviders] = useState<AgeAssuranceProviderPublicMeta[]>([]);
@@ -119,6 +126,19 @@ export function AgeAssuranceMethodChooser({
     setLoading(true);
     setError(null);
     try {
+      if (simplifiedPurchaseFlow) {
+        if (verifyRequestId) {
+          const reuseRes = await fetch(
+            `/api/v1/partner-verify/method-qualification?verify_request=${encodeURIComponent(verifyRequestId)}`,
+            { credentials: "include" },
+          );
+          const reuseBody = await reuseRes.json().catch(() => ({})) as { reuse?: ReuseClientView };
+          if (reuseBody.reuse) setReuseView(reuseBody.reuse);
+          setExistingEligible(reuseBody.reuse?.available === true);
+        }
+        return;
+      }
+
       const params = new URLSearchParams({
         partner_id: partnerId,
         policy_id: policyId,
@@ -154,11 +174,13 @@ export function AgeAssuranceMethodChooser({
         setReclaimAvailable(false);
       }
     } catch {
-      setError("Could not load verification options.");
+      if (!simplifiedPurchaseFlow) {
+        setError("Could not load verification options.");
+      }
     } finally {
       setLoading(false);
     }
-  }, [partnerId, policyId, threshold, verifyRequestId]);
+  }, [partnerId, policyId, threshold, verifyRequestId, simplifiedPurchaseFlow]);
 
   useEffect(() => {
     void loadProviders();
@@ -237,6 +259,41 @@ export function AgeAssuranceMethodChooser({
     }
   }
 
+  if (simplifiedPurchaseFlow) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        {loading && (
+          <p role="status" style={{ margin: 0, fontSize: "0.85rem", color: "var(--text-muted)" }}>
+            Checking for saved verification…
+          </p>
+        )}
+
+        {!loading && existingEligible && (
+          <div>
+            <ul style={{ margin: "0 0 0.75rem", paddingLeft: "1.1rem", fontSize: "0.85rem", lineHeight: 1.55 }}>
+              {(reuseView?.explanation?.length ? reuseView.explanation : REUSE_CONFIRM_POINTS).map((point) => (
+                <li key={point}>{point}</li>
+              ))}
+            </ul>
+            <Btn disabled={busy !== null} onClick={() => void reuseExistingProof()}>
+              {busy === "reuse" ? "Confirming…" : GOOD_TROUBLE_PURCHASE_REUSE_ACTION}
+            </Btn>
+          </div>
+        )}
+
+        {(!existingEligible || loading) && (
+          <Btn disabled={busy !== null} onClick={() => onFallbackId()}>
+            {GOOD_TROUBLE_PURCHASE_VERIFY_ACTION}
+          </Btn>
+        )}
+
+        {error && (
+          <p role="alert" style={{ color: "var(--text-secondary)" }}>{error}</p>
+        )}
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <StatusBanner tone="pending" title={copy.title}>
@@ -249,7 +306,7 @@ export function AgeAssuranceMethodChooser({
     ? planEligibilityMethods({
       pack,
       existingProofCompatible: existingEligible,
-      partnerAgeCheckConfigured: true,
+      partnerAgeCheckConfigured: false,
       partnerAgeCheckAssurance: pack.minimum_assurance,
       privacyPreservingAvailable: pack.id === "sandbox_economic_demo"
         || reclaimAvailable

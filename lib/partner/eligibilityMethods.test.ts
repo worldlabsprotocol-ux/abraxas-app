@@ -29,7 +29,7 @@ describe("eligibility method planner", () => {
     expect(attest?.available).toBe(false);
   });
 
-  it("lets a partner age check satisfy the policy only when its assurance qualifies", () => {
+  it("never treats partner age check as qualifying for identity-required authoritative policies", () => {
     const tooLow = planEligibilityMethods({
       pack: POLICY_PACKS.age_21_retail,
       partnerAgeCheckConfigured: true,
@@ -38,8 +38,21 @@ describe("eligibility method planner", () => {
     expect(tooLow.methods.find((method) => method.id === "partner_age_check")?.qualifies).toBe(false);
     expect(assuranceMeetsMinimum("L1", "L2")).toBe(false);
 
-    const ok = planEligibilityMethods({
+    const atL2 = planEligibilityMethods({
       pack: POLICY_PACKS.age_21_retail,
+      partnerAgeCheckConfigured: true,
+      partnerAgeCheckAssurance: "L2",
+    });
+    const partner = atL2.methods.find((method) => method.id === "partner_age_check");
+    expect(partner?.qualifies).toBe(false);
+    expect(partner?.available).toBe(false);
+    expect(partner?.primary).toBe(false);
+    expect(atL2.methods.find((method) => method.id === "identity_liveness")?.qualifies).toBe(true);
+  });
+
+  it("lets a partner age check satisfy non-identity sandbox policies when assurance qualifies", () => {
+    const ok = planEligibilityMethods({
+      pack: POLICY_PACKS.sandbox_economic_demo,
       partnerAgeCheckConfigured: true,
       partnerAgeCheckAssurance: "L2",
     });
@@ -76,7 +89,7 @@ describe("eligibility method planner", () => {
     expect(plan.methods.find((method) => method.id === "privacy_preserving")?.primary).toBe(true);
   });
 
-  it("does not make identity the sole primary CTA when no non-ID method qualifies", () => {
+  it("does not offer partner age check for identity-required policies when no non-ID method qualifies", () => {
     const plan = planEligibilityMethods({
       pack: POLICY_PACKS.age_21_retail,
       partnerAgeCheckConfigured: true,
@@ -84,7 +97,8 @@ describe("eligibility method planner", () => {
     });
     expect(plan.no_non_id_method_satisfies).toBe(true);
     expect(plan.methods.find((method) => method.id === "identity_liveness")?.primary).toBe(false);
-    expect(plan.methods.find((method) => method.id === "partner_age_check")?.available).toBe(true);
+    expect(plan.methods.find((method) => method.id === "partner_age_check")?.available).toBe(false);
+    expect(plan.methods.find((method) => method.id === "partner_age_check")?.qualifies).toBe(false);
   });
 
   it("labels the sandbox economic demo as not age verification and not production-usable", () => {

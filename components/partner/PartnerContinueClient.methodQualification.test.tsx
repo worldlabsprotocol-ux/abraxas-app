@@ -132,13 +132,13 @@ describe("Partner Continue method qualification gating", () => {
     await waitFor(() => {
       expect(screen.getByText(/Choose how to satisfy this requirement/i)).toBeTruthy();
     });
-    expect(screen.queryByText(/Approve & share claims/i)).toBeNull();
-    expect(focusableNames().some((name) => /Approve & share claims/i.test(name))).toBe(false);
+    expect(screen.queryByRole("button", { name: /Continue verification/i })).toBeNull();
+    expect(focusableNames().some((name) => /Continue verification/i.test(name))).toBe(false);
 
     await userEvent.click(screen.getByRole("button", { name: /Privacy-preserving verification/i }));
-    expect(screen.queryByText(/Approve & share claims/i)).toBeNull();
+    expect(screen.queryByRole("button", { name: /Continue verification/i })).toBeNull();
     expect(screen.getByRole("button", { name: /Use selected method/i })).toBeTruthy();
-    expect(focusableNames().some((name) => /Approve & share claims/i.test(name))).toBe(false);
+    expect(focusableNames().some((name) => /Continue verification/i.test(name))).toBe(false);
   });
 
   it("starts the sandbox method without issuing a receipt or rendering consent", async () => {
@@ -154,7 +154,7 @@ describe("Partner Continue method qualification gating", () => {
           && call[1]?.method === "POST",
       )).toBe(true);
     });
-    expect(screen.queryByText(/Approve & share claims/i)).toBeNull();
+    expect(screen.queryByRole("button", { name: /Continue verification/i })).toBeNull();
     expect((global.fetch as unknown as ReturnType<typeof vi.fn>).mock.calls.every(
       (call) => !String(call[0]).includes("/consent"),
     )).toBe(true);
@@ -167,12 +167,12 @@ describe("Partner Continue method qualification gating", () => {
     });
     await userEvent.click(screen.getByRole("button", { name: /Privacy-preserving verification/i }));
     expect(screen.queryByText(/The selected method has not qualified yet/i)).toBeNull();
-    expect(screen.queryByText(/Approve & share claims/i)).toBeNull();
+    expect(screen.queryByRole("button", { name: /Continue verification/i })).toBeNull();
     await userEvent.click(screen.getByRole("button", { name: /Use selected method/i }));
     await waitFor(() => {
       expect(screen.getByText("The selected method has not qualified yet.")).toBeTruthy();
     });
-    expect(screen.queryByText(/Approve & share claims/i)).toBeNull();
+    expect(screen.queryByRole("button", { name: /Continue verification/i })).toBeNull();
     expect(screen.getByRole("button", { name: /Use selected method/i })).toBeTruthy();
   });
 
@@ -182,16 +182,16 @@ describe("Partner Continue method qualification gating", () => {
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /Privacy-preserving verification/i })).toBeTruthy();
     });
-    expect(screen.queryByText(/Approve & share claims/i)).toBeNull();
+    expect(screen.queryByRole("button", { name: /Continue verification/i })).toBeNull();
     await userEvent.click(screen.getByRole("button", { name: /Privacy-preserving verification/i }));
     await userEvent.click(screen.getByRole("button", { name: /Use selected method/i }));
     await waitFor(() => {
-      expect(screen.getByText(/Approve & share claims/i)).toBeTruthy();
+      expect(screen.getByRole("button", { name: /Continue verification/i })).toBeTruthy();
     });
     expect(screen.queryByText("The selected method has not qualified yet.")).toBeNull();
     expect(screen.queryByRole("button", { name: /Use selected method/i })).toBeNull();
     const chooser = screen.getByText(/Choose how to satisfy this requirement/i);
-    const approve = screen.getByText(/Approve & share claims/i);
+    const approve = screen.getByRole("button", { name: /Continue verification/i });
     expect(chooser.compareDocumentPosition(approve) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect((global.fetch as unknown as ReturnType<typeof vi.fn>).mock.calls.every(
       (call) => !String(call[0]).includes("/consent"),

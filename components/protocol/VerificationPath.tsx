@@ -6,29 +6,41 @@ import { ABX_FONT_MONO, ABX_FONT_SANS, ABX_STATUS_COLORS } from "@/lib/design/ab
 
 export type VerificationPathStep = "request" | "consent" | "verify" | "ready";
 
-const STEPS: ReadonlyArray<{ id: VerificationPathStep; label: string; hint: string }> = [
+const DEFAULT_STEPS: ReadonlyArray<{ id: VerificationPathStep; label: string; hint: string }> = [
   { id: "request", label: "Request", hint: "Who is asking and why" },
   { id: "consent", label: "Consent", hint: "What crosses the boundary" },
   { id: "verify", label: "Verify", hint: "Establish or reuse evidence" },
   { id: "ready", label: "Ready", hint: "Signed answer prepared" },
 ];
 
-function stepIndex(step: VerificationPathStep): number {
-  return STEPS.findIndex((s) => s.id === step);
+export const GOOD_TROUBLE_PURCHASE_PATH_STEPS: ReadonlyArray<{ id: VerificationPathStep; label: string; hint: string }> = [
+  { id: "request", label: "Request", hint: "What Good Trouble needs" },
+  { id: "verify", label: "Verify age", hint: "Private age check" },
+  { id: "consent", label: "Share result", hint: "Approve the 21+ answer" },
+  { id: "ready", label: "Done", hint: "Return to Good Trouble" },
+];
+
+function stepIndexIn(
+  steps: ReadonlyArray<{ id: VerificationPathStep; label: string; hint: string }>,
+  step: VerificationPathStep,
+): number {
+  return steps.findIndex((s) => s.id === step);
 }
 
 export function VerificationPath({
   active,
   completedThrough,
   compact = false,
+  steps = DEFAULT_STEPS,
 }: {
   active: VerificationPathStep;
   /** Steps strictly before this are marked complete */
   completedThrough?: VerificationPathStep | null;
   compact?: boolean;
+  steps?: ReadonlyArray<{ id: VerificationPathStep; label: string; hint: string }>;
 }) {
-  const activeIdx = stepIndex(active);
-  const completedIdx = completedThrough ? stepIndex(completedThrough) : activeIdx - 1;
+  const activeIdx = stepIndexIn(steps, active);
+  const completedIdx = completedThrough ? stepIndexIn(steps, completedThrough) : activeIdx - 1;
 
   return (
     <nav
@@ -36,7 +48,7 @@ export function VerificationPath({
       aria-label="Verification progress"
     >
       <ol className="abx-verification-path__list">
-        {STEPS.map((step, index) => {
+        {steps.map((step, index) => {
           const done = index <= completedIdx;
           const current = index === activeIdx;
           const pending = index > activeIdx && !done;
@@ -72,7 +84,7 @@ export function VerificationPath({
                   </span>
                 ) : null}
               </div>
-              {index < STEPS.length - 1 ? (
+              {index < steps.length - 1 ? (
                 <div
                   className={`abx-verification-path__connector ${done ? "abx-verification-path__connector--done" : ""}`}
                   aria-hidden

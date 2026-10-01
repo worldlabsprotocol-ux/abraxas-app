@@ -57,9 +57,15 @@ import {
   resolveHolderRecovery,
 } from "@/lib/partner/holderExperience";
 import {
+  GOOD_TROUBLE_PURCHASE_PATH_STEPS,
   VerificationPath,
   resolveVerificationPathStep,
 } from "@/components/protocol/VerificationPath";
+import {
+  GOOD_TROUBLE_PURCHASE_TITLE,
+  GOOD_TROUBLE_PURCHASE_VERIFY_ACTION,
+  isCanonicalGoodTroublePurchaseFlow,
+} from "@/lib/partner/goodTroublePurchaseFlow";
 import { ProtocolLoadingState } from "@/components/protocol/ProtocolLoadingState";
 import { HolderDecisionComplete } from "@/components/protocol/HolderDecisionComplete";
 
@@ -211,6 +217,11 @@ function PartnerContinueInner() {
   }).isDobFirstBrowse;
   const isDobFirstBrowse = flowContext?.isDobFirstBrowse ?? provisionalBrowse;
   const flowTier: "browse" | "checkout" = isDobFirstBrowse ? "browse" : "checkout";
+  const simplifiedPurchase = isCanonicalGoodTroublePurchaseFlow({
+    partnerId,
+    policyId,
+    purpose: purposeParam,
+  });
 
   const {
     identityStatus,
@@ -315,9 +326,18 @@ function PartnerContinueInner() {
       setupVisibility.showIdentityVerification ||
       setupVisibility.showWalletBinding ||
       methodSelected ||
+      showIdFallback ||
       holderState === "under_review",
     ready: handoff.ready,
   });
+
+  const verificationPathCompletedThrough = handoff.ready
+    ? "consent" as const
+    : showPartnerConsent
+      ? "verify" as const
+      : methodQualified
+        ? "verify" as const
+        : null;
 
   async function bindWallet() {
     if (!suiAddress) return;
@@ -443,9 +463,11 @@ function PartnerContinueInner() {
       partnerName={partnerName}
       intro={resolvePartnerContinuationIntro(partnerId, { policyId, purpose: purposeParam })}
       statusMessage={statusMessage}
-      partnerHomeUrl={partnerHomeUrl}
+      partnerHomeUrl={simplifiedPurchase ? null : partnerHomeUrl}
       partnerReturnLabel={returnLabel}
-      brief={holderBrief}
+      title={simplifiedPurchase ? GOOD_TROUBLE_PURCHASE_TITLE : undefined}
+      hideStatus={simplifiedPurchase || undefined}
+      brief={simplifiedPurchase ? null : holderBrief}
     >
       {authLoading || contextLoading || (hostedBootstrapEligible && hostedBootstrap.bootstrapping) ? (
         <ProtocolLoadingState
@@ -488,15 +510,8 @@ function PartnerContinueInner() {
         <>
           <VerificationPath
             active={verificationPathStep}
-            completedThrough={
-              handoff.ready
-                ? "ready"
-                : showPartnerConsent
-                  ? "request"
-                  : setupVisibility.showIdentityVerification || setupVisibility.showWalletBinding
-                    ? "consent"
-                    : null
-            }
+            completedThrough={verificationPathCompletedThrough}
+            steps={simplifiedPurchase ? GOOD_TROUBLE_PURCHASE_PATH_STEPS : undefined}
             compact
           />
           <PartnerFlowReturnHandler handoff={handoff} />
@@ -540,6 +555,7 @@ function PartnerContinueInner() {
                   flowTier={flowTier}
                   browsePolicyId={GOOD_TROUBLE_BROWSE_POLICY_ID}
                   compactCheckout={false}
+                  simplifiedPurchaseFlow={simplifiedPurchase}
                   onFallbackId={() => setShowIdFallback(true)}
                   onMethodQualified={(qualified) => {
                     setMethodSelected(true);
@@ -551,12 +567,16 @@ function PartnerContinueInner() {
                 />
               ) : (
                 <>
-                  <p style={{ margin: "0 0 0.75rem", fontSize: "0.9rem", lineHeight: 1.6, fontWeight: 600 }}>
-                    {holderCopy.title}
-                  </p>
-                  <p style={{ margin: "0 0 0.75rem", fontSize: "0.9rem", lineHeight: 1.6 }}>
-                    {holderCopy.message}
-                  </p>
+                  {!simplifiedPurchase && (
+                    <>
+                      <p style={{ margin: "0 0 0.75rem", fontSize: "0.9rem", lineHeight: 1.6, fontWeight: 600 }}>
+                        {holderCopy.title}
+                      </p>
+                      <p style={{ margin: "0 0 0.75rem", fontSize: "0.9rem", lineHeight: 1.6 }}>
+                        {holderCopy.message}
+                      </p>
+                    </>
+                  )}
                   {idvProvider === "manual" && captureStarted ? (
                     <AbraxasIdentityCapture
                       email={email}
@@ -572,20 +592,22 @@ function PartnerContinueInner() {
                     />
                   ) : (
                     <Btn disabled={starting} onClick={() => void startIdentityVerification()}>
-                      {starting ? "Starting…" : holderCopy.action_label ?? "Continue verification"}
+                      {starting ? "Starting…" : (simplifiedPurchase ? GOOD_TROUBLE_PURCHASE_VERIFY_ACTION : holderCopy.action_label ?? "Continue verification")}
                     </Btn>
                   )}
                   {!veriffConfigured && idvProvider === "veriff" && (
                     <HolderRecoveryCard recovery={resolveHolderRecovery("provider_unavailable", partnerName, partnerHomeUrl)} />
                   )}
-                  <div style={{ marginTop: "0.75rem" }}>
-                    <Btn
-                      variant="secondary"
-                      onClick={() => setShowIdFallback(false)}
-                    >
-                      Back to verification options
-                    </Btn>
-                  </div>
+                  {!simplifiedPurchase && (
+                    <div style={{ marginTop: "0.75rem" }}>
+                      <Btn
+                        variant="secondary"
+                        onClick={() => setShowIdFallback(false)}
+                      >
+                        Back to verification options
+                      </Btn>
+                    </div>
+                  )}
                 </>
               )}
             </div>

@@ -99,8 +99,10 @@ export function planEligibilityMethods(input: {
   const requiresIdentity = policyPackRequiresIdentityEvidence(pack);
   const existing = Boolean(input.existingProofCompatible);
   const partnerConfigured = Boolean(input.partnerAgeCheckConfigured);
+  // Authoritative identity policies reject partner_age_check server-side (sandbox_evidence_rejected).
   const partnerQualifies = partnerConfigured
-    && assuranceMeetsMinimum(input.partnerAgeCheckAssurance, pack.minimum_assurance);
+    && assuranceMeetsMinimum(input.partnerAgeCheckAssurance, pack.minimum_assurance)
+    && !requiresIdentity;
   const privacy = Boolean(input.privacyPreservingAvailable);
   const selfAttestAllowed = browseOnly && input.browseSelfAttestAllowed !== false;
   const institutional = policyPackIsInstitutionalProtocolAccess(pack);
@@ -135,7 +137,7 @@ export function planEligibilityMethods(input: {
       qualifies: partnerQualifies && !institutional,
       circle_settlement_eligible: partnerQualifies && !browseOnly && !institutional,
       primary: !existing && partnerQualifies && !institutional,
-      available: partnerConfigured && !institutional,
+      available: partnerConfigured && !requiresIdentity && !institutional,
     },
     {
       id: "privacy_preserving",

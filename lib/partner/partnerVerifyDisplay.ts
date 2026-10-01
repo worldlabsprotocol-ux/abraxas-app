@@ -2,6 +2,11 @@
 // Human-readable partner verification copy for institutional UI.
 
 import { GOOD_TROUBLE_BRAND, GOOD_TROUBLE_PARTNER_ID, GOOD_TROUBLE_RETAIL_POLICY_ID } from "@/lib/goodTrouble/constants";
+import { GOOD_TROUBLE_CANONICAL_PARTNER_ID, GOOD_TROUBLE_CANONICAL_POLICY_ID } from "@/lib/goodTrouble/canonicalProductionConfig";
+import {
+  GOOD_TROUBLE_PURCHASE_INTRO,
+  isCanonicalGoodTroublePurchaseFlow,
+} from "@/lib/partner/goodTroublePurchaseFlow";
 import {
   GOOD_TROUBLE_BROWSE_INTRO,
   GOOD_TROUBLE_BROWSE_STATUS,
@@ -10,6 +15,10 @@ import {
 
 const PARTNER_LABELS: Record<string, { name: string; returnLabel: string }> = {
   [GOOD_TROUBLE_PARTNER_ID]: {
+    name: GOOD_TROUBLE_BRAND.name,
+    returnLabel: `Return to ${GOOD_TROUBLE_BRAND.name}`,
+  },
+  [GOOD_TROUBLE_CANONICAL_PARTNER_ID]: {
     name: GOOD_TROUBLE_BRAND.name,
     returnLabel: `Return to ${GOOD_TROUBLE_BRAND.name}`,
   },
@@ -45,6 +54,13 @@ export function resolvePartnerContinuationIntro(
   })) {
     return GOOD_TROUBLE_BROWSE_INTRO;
   }
+  if (isCanonicalGoodTroublePurchaseFlow({
+    partnerId,
+    policyId: context?.policyId ?? "",
+    purpose: context?.purpose,
+  })) {
+    return GOOD_TROUBLE_PURCHASE_INTRO;
+  }
   const name = resolvePartnerDisplayName(partnerId);
   return `${name} uses Abraxas to confirm only the selected policy. Sign-in opens an account. You then choose a qualifying method. Identity or liveness is not the default first step.`;
 }
@@ -60,10 +76,19 @@ export function resolvePartnerContinuationStatus(
   })) {
     return GOOD_TROUBLE_BROWSE_STATUS;
   }
+  if (isCanonicalGoodTroublePurchaseFlow({
+    partnerId,
+    policyId: context?.policyId ?? "",
+    purpose: context?.purpose,
+  })) {
+    return "";
+  }
   return "Complete the step below so we can share the required result with the partner.";
 }
 
 export function resolvePartnerHomeUrl(partnerId: string): string | null {
-  if (partnerId === GOOD_TROUBLE_PARTNER_ID) return GOOD_TROUBLE_BRAND.website;
+  if (partnerId === GOOD_TROUBLE_PARTNER_ID || partnerId === GOOD_TROUBLE_CANONICAL_PARTNER_ID) {
+    return GOOD_TROUBLE_BRAND.website;
+  }
   return null;
 }
