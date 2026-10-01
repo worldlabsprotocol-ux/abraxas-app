@@ -79,12 +79,13 @@ export async function ensureBrowserSessionReady(suiAddress: string): Promise<{
   ok: boolean;
   error?: string;
 }> {
-  const minted = await ensureBrowserSession(suiAddress);
-  if (!minted.ok) return minted;
-
   for (let attempt = 0; attempt < READY_PROBE_ATTEMPTS; attempt += 1) {
     if (await probeBrowserSession()) {
       return { ok: true };
+    }
+    if (attempt === 0) {
+      const minted = await ensureBrowserSession(suiAddress);
+      if (!minted.ok) return minted;
     }
     await new Promise((resolve) => setTimeout(resolve, READY_PROBE_DELAY_MS));
   }

@@ -21,9 +21,14 @@ import {
   resolveHolderRecovery,
   type HolderRequestBrief,
 } from "@/lib/partner/holderExperience";
+import {
+  HOSTED_HOLDER_OPTIONAL_SIGN_IN_LABEL,
+  HOSTED_HOLDER_PRIMARY_ACTION,
+} from "@/lib/auth/hostedHolderEligibility";
 
 export type PartnerVerifyPhase =
   | "loading"
+  | "bootstrapping"
   | "sign_in"
   | "signing_in"
   | "preparing"
@@ -61,11 +66,14 @@ export interface PartnerVerifyShellProps {
   primaryAction?: PartnerJourneyPrimaryAction;
   environment?: string | null;
   disclosedResult?: string | null;
+  hostedBootstrapEligible?: boolean;
+  onOptionalSignIn?: () => void;
 }
 
 function recoveryForPhase(phase: PartnerVerifyPhase) {
   switch (phase) {
     case "loading":
+    case "bootstrapping":
     case "preparing":
     case "verifying":
     case "signing_in":
@@ -134,6 +142,8 @@ export function PartnerVerifyShell({
   partnerHomeUrl,
   environment = null,
   disclosedResult = null,
+  hostedBootstrapEligible = false,
+  onOptionalSignIn,
 }: PartnerVerifyShellProps) {
   const continuationContext = { policyId, purpose };
   const onSignInScreen = showSignIn(phase);
@@ -171,7 +181,8 @@ export function PartnerVerifyShell({
     );
   }
 
-  const busy = phase === "signing_in" || phase === "preparing" || phase === "verifying" || phase === "returning";
+  const busy = phase === "bootstrapping" || phase === "signing_in" || phase === "preparing" || phase === "verifying" || phase === "returning";
+  const verificationFirst = hostedBootstrapEligible && (phase === "bootstrapping" || phase === "preparing" || phase === "verifying");
 
   const recoveryPhases = phase === "error" || phase === "return_failed" || phase === "expired" || phase === "missing" || phase === "cancelled" || phase === "invalid_binding" || phase === "method_not_qualified" || phase === "provider_unavailable" || phase === "denied" || phase === "approved";
 
@@ -202,7 +213,13 @@ export function PartnerVerifyShell({
         />
       ) : (
         <>
-          {showSignIn(phase) && signInConfigured && (
+          {verificationFirst && (
+            <p role="status" aria-live="polite" style={{ fontSize: "0.86rem", margin: 0, lineHeight: 1.6 }}>
+              {statusMessage || HOSTED_HOLDER_PRIMARY_ACTION}
+            </p>
+          )}
+
+          {showSignIn(phase) && signInConfigured && !hostedBootstrapEligible && (
             <>
             <Btn
               onClick={onSignIn}
@@ -217,6 +234,27 @@ export function PartnerVerifyShell({
               Google sign-in opens an Abraxas account only. It is not eligibility proof. After sign-in you choose how to satisfy this policy. Identity or liveness is not the default first step.
             </p>
             </>
+          )}
+
+          {showSignIn(phase) && signInConfigured && hostedBootstrapEligible && onOptionalSignIn && (
+            <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--text-muted)" }}>
+              <button
+                type="button"
+                onClick={onOptionalSignIn}
+                disabled={primaryDisabled || busy}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  color: "var(--accent)",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                }}
+              >
+                {HOSTED_HOLDER_OPTIONAL_SIGN_IN_LABEL}
+              </button>
+            </p>
           )}
 
           {showSignIn(phase) && !signInConfigured && (
@@ -261,6 +299,25 @@ export function PartnerVerifyShell({
           <p style={{ margin: 0, fontSize: "0.72rem", color: "var(--text-muted, #9ca3af)" }}>
             {GOOD_TROUBLE_BROWSE_SIGN_IN_CLARIFICATION}
           </p>
+        </aside>
+      ) : verificationFirst ? (
+        <aside
+          aria-label="Privacy notice"
+          style={{
+            marginTop: "1.25rem",
+            padding: "0.85rem 1rem",
+            borderRadius: 12,
+            border: "1px solid rgba(45,212,191,0.18)",
+            background: "rgba(45,212,191,0.06)",
+            fontSize: "0.78rem",
+            lineHeight: 1.6,
+            color: "var(--text-secondary, #d1d5db)",
+          }}
+        >
+          <strong style={{ display: "block", marginBottom: "0.35rem", color: "#2DD4BF" }}>
+            What Good Trouble receives
+          </strong>
+          Only 21+ eligibility — not your date of birth, identity document, or document number.
         </aside>
       ) : (
         <aside

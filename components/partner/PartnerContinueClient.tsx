@@ -5,6 +5,12 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
+import { useHostedHolderBootstrap } from "@/lib/partner/useHostedHolderBootstrap";
+import { isHostedHolderBootstrapEligible } from "@/lib/auth/hostedHolderEligibility";
+import {
+  HOSTED_HOLDER_OPTIONAL_SIGN_IN_LABEL,
+  HOSTED_HOLDER_PRIMARY_ACTION,
+} from "@/lib/auth/hostedHolderEligibility";
 import { AbraxasIdentityCapture } from "@/components/passport/AbraxasIdentityCapture";
 import { ConsentCeremony } from "@/components/passport/ConsentCeremony";
 import { PartnerFlowReturnHandler } from "@/components/partner/PartnerFlowReturnHandler";
@@ -64,7 +70,7 @@ function resolveMinimumAge(policyId: string): number | null {
 
 function PartnerContinueInner() {
   const searchParams = useSearchParams();
-  const { suiAddress, session, isLoading: authLoading } = useSuiAuth();
+  const { suiAddress, session, isLoading: authLoading, refreshSession, signInWithGoogle } = useSuiAuth();
   const email = session?.email ?? "";
   const [consentDismissed, setConsentDismissed] = useState(false);
   const [starting, setStarting] = useState(false);
@@ -283,6 +289,26 @@ function PartnerContinueInner() {
 
   const continueContextIncomplete = !verifyRequestId || !partnerId;
 
+  const hostedBootstrapEligible = isHostedHolderBootstrapEligible({
+    partnerId,
+    policyId,
+    purpose: purposeParam,
+  });
+
+  const hostedBootstrap = useHostedHolderBootstrap({
+    enabled: !isDobFirstBrowse && Boolean(partnerId && policyId && (decodedReturnUrl || verifyRequestId)),
+    suiAddress,
+    authLoading,
+    partnerId,
+    policyId,
+    returnUrl: decodedReturnUrl,
+    purpose: purposeParam,
+    verifyRequestId,
+    onBootstrapped: () => {
+      refreshSession();
+    },
+  });
+
   const verificationPathStep = resolveVerificationPathStep({
     showConsent: showPartnerConsent,
     verifying:
@@ -421,10 +447,43 @@ function PartnerContinueInner() {
       partnerReturnLabel={returnLabel}
       brief={holderBrief}
     >
-      {authLoading || contextLoading ? (
-        <ProtocolLoadingState kind="preparing_request" detail={partnerName} />
+      {authLoading || contextLoading || (hostedBootstrapEligible && hostedBootstrap.bootstrapping) ? (
+        <ProtocolLoadingState
+          kind="preparing_request"
+          detail={hostedBootstrapEligible ? `${partnerName} verification` : partnerName}
+        />
       ) : !suiAddress ? (
-        <HolderRecoveryCard recovery={resolveHolderRecovery("session_required", partnerName, partnerHomeUrl)} />
+        hostedBootstrapEligible ? (
+          <div>
+            <p role="status" style={{ fontSize: "0.86rem", lineHeight: 1.6, margin: "0 0 0.75rem" }}>
+              {hostedBootstrap.state === "failed"
+                ? "Verification could not be started securely. Try again or sign in with an existing Passport."
+                : "Preparing your verification request…"}
+            </p>
+            {hostedBootstrap.state === "failed" ? (
+              <Btn onClick={() => hostedBootstrap.retry()}>{HOSTED_HOLDER_PRIMARY_ACTION}</Btn>
+            ) : null}
+            <p style={{ margin: "0.75rem 0 0", fontSize: "0.78rem", color: "var(--text-muted)" }}>
+              <button
+                type="button"
+                onClick={() => void signInWithGoogle?.()}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  color: "var(--accent)",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                }}
+              >
+                {HOSTED_HOLDER_OPTIONAL_SIGN_IN_LABEL}
+              </button>
+            </p>
+          </div>
+        ) : (
+          <HolderRecoveryCard recovery={resolveHolderRecovery("session_required", partnerName, partnerHomeUrl)} />
+        )
       ) : (
         <>
           <VerificationPath

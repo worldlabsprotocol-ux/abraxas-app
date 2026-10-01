@@ -5,7 +5,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
+import { isHostedHolderBootstrapEligible } from "@/lib/auth/hostedHolderEligibility";
 import { ensureBrowserSessionReady } from "@/lib/auth/ensureBrowserSession";
+import { useHostedHolderBootstrap } from "@/lib/partner/useHostedHolderBootstrap";
 import { useGoogleSignIn } from "@/lib/hooks/useGoogleSignIn";
 import {
   createPartnerVerifyCorrelationId,
@@ -70,7 +72,7 @@ export function PartnerVerifyClient({
   previewSignInConfigured = false,
 }: PartnerVerifyClientProps) {
   const searchParams = useSearchParams();
-  const { suiAddress, isLoading: authLoading, signInWithGoogle } = useSuiAuth();
+  const { suiAddress, isLoading: authLoading, signInWithGoogle, refreshSession } = useSuiAuth();
   const { signIn, busy: signInBusy, configured: signInConfigured } = useGoogleSignIn();
 
   const [phase, setPhase] = useState<PartnerVerifyPhase>(previewPhase ?? "loading");
@@ -116,6 +118,26 @@ export function PartnerVerifyClient({
   const invalidLinkMessage = launchpadActive
     ? (launchpadResolution.loading ? null : launchpadResolution.error)
     : (verifyInput.ok ? null : verifyInput.invalidLinkMessage);
+
+  const hostedBootstrapEligible = isHostedHolderBootstrapEligible({
+    partnerId: relyingPartyId,
+    policyId,
+    purpose,
+  });
+
+  const hostedBootstrap = useHostedHolderBootstrap({
+    enabled: !previewPhase && !invalidLinkMessage && Boolean(relyingPartyId && policyId && returnUrl),
+    suiAddress,
+    authLoading,
+    partnerId: relyingPartyId,
+    policyId,
+    returnUrl,
+    purpose,
+    onBootstrapped: () => {
+      refreshSession();
+      evaluateOnceRef.current = false;
+    },
+  });
 
   const partnerName = launchpadResolution.resolved?.displayName ?? resolvePartnerDisplayName(relyingPartyId);
   const partnerReturnLabel = resolvePartnerReturnLabel(relyingPartyId);
@@ -323,6 +345,26 @@ export function PartnerVerifyClient({
       return;
     }
     if (!suiAddress) {
+      if (hostedBootstrapEligible) {
+        if (hostedBootstrap.bootstrapping || hostedBootstrap.state === "idle") {
+          setPhase("bootstrapping");
+          setStatusMessage("Preparing your verification request…");
+          return;
+        }
+        if (hostedBootstrap.state === "failed") {
+          setPhase("error");
+          setStatusMessage("Verification could not be started securely. Try again.");
+          return;
+        }
+        if (hostedBootstrap.state === "ineligible") {
+          setPhase("sign_in");
+          setStatusMessage("Sign in to continue with Abraxas.");
+          return;
+        }
+        // pending ready — refreshSession should populate suiAddress on next tick
+        setPhase("bootstrapping");
+        return;
+      }
       setPhase("sign_in");
       setStatusMessage("Sign in to continue with Abraxas.");
       return;
@@ -330,7 +372,17 @@ export function PartnerVerifyClient({
     if (oauthReturnReady || !evaluateOnceRef.current) {
       void runEvaluate();
     }
-  }, [authLoading, invalidLinkMessage, suiAddress, oauthReturnReady, runEvaluate, previewPhase]);
+  }, [
+    authLoading,
+    invalidLinkMessage,
+    suiAddress,
+    oauthReturnReady,
+    runEvaluate,
+    previewPhase,
+    hostedBootstrapEligible,
+    hostedBootstrap.bootstrapping,
+    hostedBootstrap.state,
+  ]);
 
   const handleSignIn = useCallback(async () => {
     if (signInOnceRef.current || signInBusy || isLoginInFlight()) return;
@@ -413,6 +465,8 @@ export function PartnerVerifyClient({
       partnerHomeUrl={partnerHomeUrl}
       environment={launchpadResolution.resolved?.environment ?? null}
       disclosedResult={launchpadResolution.resolved?.disclosedResult ?? null}
+      hostedBootstrapEligible={hostedBootstrapEligible}
+      onOptionalSignIn={() => { void handleSignIn(); }}
     />
   );
 }
