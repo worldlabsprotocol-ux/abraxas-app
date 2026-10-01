@@ -21,6 +21,7 @@ export const PUBLIC_NAV_LINKS = [
 /** Compact Explore menu — former top-level routes plus the capability map. */
 export const PUBLIC_NAV_EXPLORE_LINKS = [
   { href: "/verification", label: "Verification" },
+  { href: "/pricing", label: "Pricing" },
   { href: "/developers/launchpad", label: "Launchpad" },
   { href: "/docs/partner-flow", label: "Partner Flow" },
   { href: "/docs", label: "Docs" },
