@@ -20,3 +20,6 @@ export { PermissionStatusList } from "./PermissionStatus";
 export { EligibilityPolicyCard } from "./EligibilityPolicyCard";
 export { HomeArchitectureFlow } from "./HomeArchitectureFlow";
 export { HomeProblemComparison } from "./HomeProblemComparison";
+export { VerifyOnceThesisDiagram } from "./VerifyOnceThesisDiagram";
+export { HolderRequestFlowStrip } from "./HolderRequestFlowStrip";
+export type { HolderRequestFlowStripProps } from "./HolderRequestFlowStrip";

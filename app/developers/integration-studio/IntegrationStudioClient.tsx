@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ContentCard } from "@/components/redesign/RedesignContent";
 import { NextActionCard } from "@/components/product/NextActionCard";
+import { Reveal } from "@/lib/motion/Reveal";
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 import {
@@ -382,7 +383,7 @@ export function IntegrationStudioClient() {
 
   return (
     <>
-      <div style={{ marginBottom: "1rem" }}>
+      <Reveal style={{ marginBottom: "1rem" }}>
         <NextActionCard
           title="What to do next"
           action={studioNextAction.action}
@@ -390,35 +391,40 @@ export function IntegrationStudioClient() {
           href={studioNextAction.href}
           buttonLabel={studioNextAction.buttonLabel}
         />
-      </div>
+      </Reveal>
 
       {resumeApp && !created && (
-        <ContentCard title="Current sandbox">
-          <p style={{ ...body, marginBottom: "0.75rem" }}>
-            Signed in as a partner developer. {resumeApp.application_name} ({resumeApp.public_slug}) is active in sandbox.
-          </p>
-          <details>
-            <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)" }}>
-              Developer shortcuts
-            </summary>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
-              <Btn href={launchpadSandboxTestHref(resumeApp.id)} size="sm" variant="secondary">Run test verification</Btn>
-              <Btn href={launchpadConfigureHref(resumeApp.id)} variant="ghost" size="sm">Configure callbacks</Btn>
-              <Btn href={launchpadPolicyVersionHref(resumeApp.id)} variant="ghost" size="sm">Policy version</Btn>
-            </div>
-          </details>
-        </ContentCard>
+        <Reveal delay={0.05}>
+          <ContentCard title="Current sandbox">
+            <p style={{ ...body, marginBottom: "0.75rem" }}>
+              Signed in as a partner developer. {resumeApp.application_name} ({resumeApp.public_slug}) is active in sandbox.
+            </p>
+            <details>
+              <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)" }}>
+                Developer shortcuts
+              </summary>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
+                <Btn href={launchpadSandboxTestHref(resumeApp.id)} size="sm" variant="secondary">Run test verification</Btn>
+                <Btn href={launchpadConfigureHref(resumeApp.id)} variant="ghost" size="sm">Configure callbacks</Btn>
+                <Btn href={launchpadPolicyVersionHref(resumeApp.id)} variant="ghost" size="sm">Policy version</Btn>
+              </div>
+            </details>
+          </ContentCard>
+        </Reveal>
       )}
 
-      <PolicyFitPlanner
-        onApply={(selection) => {
-          if (!isPolicyPackId(selection.packId)) return;
-          setPackId(selection.packId);
-          setPathId(selection.pathId);
-          setOptionalCaps(selection.capabilities);
-        }}
-      />
+      <Reveal delay={0.08}>
+        <PolicyFitPlanner
+          onApply={(selection) => {
+            if (!isPolicyPackId(selection.packId)) return;
+            setPackId(selection.packId);
+            setPathId(selection.pathId);
+            setOptionalCaps(selection.capabilities);
+          }}
+        />
+      </Reveal>
 
+      <Reveal delay={0.1}>
       <ContentCard title="Discover · Choose a policy pack">
         <p style={{ ...body, marginBottom: "0.75rem" }}>
           These are the same packs Partner Launchpad uses. Identity or liveness is never the default path.
@@ -451,6 +457,7 @@ export function IntegrationStudioClient() {
           ))}
         </div>
       </ContentCard>
+      </Reveal>
 
       {contract && (
         <ContentCard title="Your policy result">

@@ -8,8 +8,9 @@ import { HomePartnerProof } from "@/components/home/HomePartnerProof";
 import { HomeCapabilityMap } from "@/components/home/HomeCapabilityMap";
 import { HomeGoodTroubleIntegration } from "@/components/home/HomeGoodTroubleIntegration";
 import { HomeSharpHero } from "@/components/home/HomeSharpHero";
-import { HomeArchitectureFlow, HomeProblemComparison } from "@/components/product";
+import { HomeArchitectureFlow, VerifyOnceThesisDiagram } from "@/components/product";
 import { HomeTrustClose } from "@/components/home/HomeTrustClose";
+import { Reveal } from "@/lib/motion/Reveal";
 import { AmbientGlow } from "./AmbientGlow";
 import { RedesignNav } from "./RedesignNav";
 import { RedesignFooter } from "./RedesignFooter";
@@ -26,13 +27,27 @@ function HomeContent() {
   return (
     <main style={{ position: "relative", zIndex: 1, paddingBottom: "3.5rem", textAlign: "center" }}>
       <div className="abx-command-shell" style={{ ...MAXW, display: "flex", flexDirection: "column", gap: SECTION_GAP, alignItems: "center", width: "100%" }}>
-        <HomeSharpHero />
-        <HomeArchitectureFlow />
-        <HomeProblemComparison />
-        <HomeGoodTroubleIntegration />
-        <HomeCapabilityMap />
-        <HomeAudiencePanels />
-        <HomeTrustClose />
+        <Reveal as="section">
+          <HomeSharpHero />
+        </Reveal>
+        <Reveal as="section" delay={0.04}>
+          <VerifyOnceThesisDiagram />
+        </Reveal>
+        <Reveal as="section" delay={0.06}>
+          <HomeArchitectureFlow />
+        </Reveal>
+        <Reveal as="section" delay={0.08}>
+          <HomeGoodTroubleIntegration />
+        </Reveal>
+        <Reveal as="section" delay={0.1}>
+          <HomeCapabilityMap />
+        </Reveal>
+        <Reveal as="section" delay={0.12}>
+          <HomeAudiencePanels />
+        </Reveal>
+        <Reveal as="section" delay={0.14}>
+          <HomeTrustClose />
+        </Reveal>
       </div>
     </main>
   );

@@ -69,13 +69,13 @@ describe("product UX primitives", () => {
     expect(text).toContain("Evidence reuse observed");
   });
 
-  it("communicates architecture on homepage flow component", () => {
+  it("communicates user value on homepage flow component", () => {
     const { container } = render(<HomeArchitectureFlow />);
     const text = container.textContent ?? "";
-    expect(text).toContain("Abraxas Passport");
-    expect(text).toContain("Signed eligibility receipt");
-    expect(text).toContain("Application receives");
-    expect(text).toContain("Application does not receive");
+    expect(text).toContain("What the application receives");
+    expect(text).toContain("Passport stores evidence privately");
+    expect(text).toContain("Shared with the application");
+    expect(text).toContain("Not shared with the application");
   });
 
   it("renders actionable empty and error outcome states", () => {

@@ -3,7 +3,9 @@
 // Holder success surface — partner outcome, privacy boundary, optional return action.
 
 import { useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { ABX_FONT_SANS } from "@/lib/design/abraxasDesignSystem";
+import { abxMotionDuration } from "@/lib/design/abraxasMotion";
 import { buildHolderRequestPresentation } from "@/lib/product/holderRequestPresentation";
 import { PrivacyDisclosureCard } from "@/components/product/PrivacyDisclosureCard";
 import { LiveDecisionReceiptCard } from "@/components/protocol/LiveDecisionReceiptCard";
@@ -29,14 +31,21 @@ export function HolderDecisionComplete({
   showPassportNotice = true,
 }: HolderDecisionCompleteProps) {
   const [showDetails, setShowDetails] = useState(false);
+  const reduceMotion = useReducedMotion();
   const copy = buildHolderRequestPresentation(partnerName, policyId);
+  const duration = reduceMotion ? 0 : abxMotionDuration("protocol") / 1000;
 
   return (
     <section
       className="abx-holder-decision-complete"
       aria-labelledby="holder-decision-complete-heading"
     >
-      <header className="abx-holder-decision-complete__header">
+      <motion.header
+        className="abx-holder-decision-complete__header"
+        initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration, ease: [0.22, 1, 0.36, 1] }}
+      >
         <p className="abx-holder-decision-complete__eyebrow" style={{ fontFamily: ABX_FONT_SANS }}>
           Verification complete
         </p>
@@ -46,8 +55,13 @@ export function HolderDecisionComplete({
         <p className="abx-holder-decision-complete__subtitle" style={{ fontFamily: ABX_FONT_SANS }}>
           Only the approved result was shared. Sensitive evidence stayed inside Abraxas.
         </p>
-      </header>
+      </motion.header>
 
+      <motion.div
+        initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration, delay: reduceMotion ? 0 : 0.12, ease: [0.22, 1, 0.36, 1] }}
+      >
       <PrivacyDisclosureCard
         compact
         requester={partnerName}
@@ -56,6 +70,7 @@ export function HolderDecisionComplete({
         shared={copy.sharedResult}
         withheld={copy.withheld}
       />
+      </motion.div>
 
       {onReturn ? (
         <div className="abx-holder-decision-complete__actions">

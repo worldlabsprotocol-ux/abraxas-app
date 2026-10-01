@@ -35,6 +35,7 @@ import {
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import { PUBLIC_SURFACE } from "@/lib/design/publicSurface";
 import { TrustStatus } from "@/components/product/TrustStatus";
+import { PassportReuseStrip } from "@/components/passport/PassportReuseStrip";
 import type { CapturePolicyContext } from "@/lib/idv/capturePolicyContext";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -182,6 +183,7 @@ export function PassportCustomerView({
           audience="holder"
           items={buildPassportTrustItems(status.identityUi, hasCredential)}
         />
+        {hasCredential && status.identityUi === "verified" ? <PassportReuseStrip /> : null}
         {proofItems.length > 0 && (
           <ul style={{ margin: "0.75rem 0 0", padding: "0.75rem 0 0", listStyle: "none", borderTop: "1px solid var(--border)", display: "grid", gap: "0.3rem" }}>
             {proofItems.map((item) => (
