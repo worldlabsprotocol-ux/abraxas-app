@@ -26,6 +26,7 @@ import { solanaProgramElfKeccak } from "./solanaElfDigest";
 import { localSolanaFixturesAllowed, resolveSolanaAdapter, serverSolanaRpcAdapter } from "./adapters";
 import { launchpadRequestRejectsClientAuthority } from "./clientAuthority";
 import { ONCHAIN_DEPLOYMENT_TEST_ADAPTER_ENV } from "./contract";
+import { onchainGatePayloadLeaks } from "./parseManifest";
 
 const SIGNER_ID = "solana-attestation-test-1";
 const SIGNER_VERIFIER = `0x${"11".repeat(32)}` as `0x${string}`;
@@ -256,7 +257,20 @@ describe("structured Solana V2 observation", () => {
     expect(observed.observation.artifactClass).toBe("v2_institutional");
     expect(observed.observation.signerClass).toBe("active_trusted");
     expect(observed.observation.digestMatchClass).toBe("matched");
-    expect(JSON.stringify(observed.observation)).not.toMatch(/rpc|private_key|account bytes|0x[0-9a-f]{80,}/i);
+    expect(onchainGatePayloadLeaks(observed.observation)).toEqual([]);
+    expect(JSON.stringify(observed.observation)).not.toMatch(/account bytes|0x[0-9a-f]{80,}/i);
+  });
+
+  it("detects forbidden observation leaks without false positives on base58 Rpc substrings", () => {
+    const withRpcInAddress = {
+      programId: "4hxVRTEZQW4abyAvDJ7AWrvWrZ45vqBkSfMg2NoCX7XU",
+      partnerProgramId: "FA8vukPnETYmhqtHXHs1YRCgASaxNuJ8RpcZVgMpDCjU",
+      safeReason: "permitted",
+    };
+    expect(onchainGatePayloadLeaks(withRpcInAddress)).toEqual([]);
+
+    expect(onchainGatePayloadLeaks({ ...withRpcInAddress, rpc_url: "http://127.0.0.1:8899" })).toContain("rpc_url");
+    expect(onchainGatePayloadLeaks({ ...withRpcInAddress, private_key: "0xdeadbeef" })).toContain("private_key");
   });
 
   it("rejects a gate that trusts a different public verifier under the same signer key ID", async () => {
