@@ -1163,6 +1163,342 @@ details > summary::-webkit-details-marker {
   text-align: center;
 }
 
+/* Verify-once thesis diagram */
+.abx-thesis-diagram {
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.abx-thesis-diagram__canvas {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  text-align: left;
+}
+
+.abx-thesis-diagram__column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.abx-thesis-diagram__column--apps {
+  gap: 0.65rem;
+  width: 100%;
+}
+
+.abx-thesis-diagram__flow-arrow {
+  color: #2DD4BF;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.abx-thesis-diagram__evidence-chip {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #E8C547;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(232, 197, 71, 0.35);
+  background: rgba(232, 197, 71, 0.08);
+}
+
+.abx-thesis-diagram__node {
+  padding: 0.55rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-strong);
+  background: rgba(255, 255, 255, 0.03);
+  text-align: center;
+  min-width: 120px;
+}
+
+.abx-thesis-diagram__node--holder {
+  border-color: rgba(45, 212, 191, 0.35);
+  background: rgba(45, 212, 191, 0.08);
+}
+
+.abx-thesis-diagram__node-label {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.abx-thesis-diagram__node-sublabel {
+  display: block;
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}
+
+.abx-thesis-diagram__passport {
+  width: 100%;
+  max-width: 280px;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  border: 1px solid var(--border-strong);
+  background: linear-gradient(145deg, rgba(45, 212, 191, 0.06) 0%, rgba(9, 17, 31, 0.95) 100%);
+  transition: border-color var(--abx-motion-protocol, 420ms) var(--abx-ease-out, ease);
+}
+
+.abx-thesis-diagram__passport--ready {
+  box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.12), 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+
+.abx-thesis-diagram__passport-label {
+  display: block;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #2DD4BF;
+  margin-bottom: 0.35rem;
+}
+
+.abx-thesis-diagram__passport-state {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.65rem;
+}
+
+.abx-thesis-diagram__protected-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.28rem;
+}
+
+.abx-thesis-diagram__protected-list li {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.abx-thesis-diagram__withheld-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(248, 113, 113, 0.85);
+  flex-shrink: 0;
+}
+
+.abx-thesis-diagram__boundary {
+  width: 100%;
+  max-width: 280px;
+  text-align: center;
+  padding: 0.35rem 0;
+  border-top: 1px dashed rgba(167, 139, 250, 0.45);
+  border-bottom: 1px dashed rgba(167, 139, 250, 0.45);
+  font-size: 0.5rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #C4B5FD;
+}
+
+.abx-thesis-diagram__app-card {
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  display: grid;
+  gap: 0.45rem;
+}
+
+.abx-thesis-diagram__app-card--active {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.06);
+}
+
+.abx-thesis-diagram__app-name {
+  display: block;
+  font-size: 0.52rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.abx-thesis-diagram__app-question {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 0.15rem;
+}
+
+.abx-thesis-diagram__app-answer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.abx-thesis-diagram__answer-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.abx-thesis-diagram__answer-code {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #10B981;
+}
+
+.abx-thesis-diagram__reuse-badge {
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.abx-thesis-diagram__legend {
+  margin: 1rem auto 0;
+  max-width: 560px;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.abx-thesis-diagram__contrast {
+  display: flex;
+  justify-content: center;
+  gap: 1.25rem;
+  margin-top: 0.65rem;
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.abx-passport-reuse-strip {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid rgba(45, 212, 191, 0.3);
+  background: rgba(45, 212, 191, 0.06);
+  margin-top: 0.75rem;
+}
+
+.abx-passport-reuse-strip__title {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #2DD4BF;
+  margin: 0;
+}
+
+.abx-passport-reuse-strip__body {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.abx-holder-flow-strip {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.75rem 0 1rem;
+  padding: 0.65rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.abx-holder-flow-strip__step {
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+.abx-holder-flow-strip__arrow {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+@media (min-width: 768px) {
+  .abx-thesis-diagram__canvas {
+    grid-template-columns: minmax(100px, 0.75fr) minmax(200px, 1fr) minmax(220px, 1.1fr);
+    align-items: start;
+    gap: 1.25rem;
+  }
+
+  .abx-thesis-diagram__column--holder {
+    padding-top: 1.5rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .abx-holder-flow-strip {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+
+  .abx-holder-flow-strip__arrow {
+    transform: rotate(90deg);
+    justify-self: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .abx-thesis-diagram__passport {
+    transition: none;
+  }
+}
+
+.abx-home-architecture__step {
+  transition: border-color var(--abx-motion-surface, 280ms) var(--abx-ease-out, ease),
+    background var(--abx-motion-surface, 280ms) var(--abx-ease-out, ease);
+}
+
+.abx-home-architecture__panel {
+  transition: border-color var(--abx-motion-surface, 280ms) var(--abx-ease-out, ease),
+    transform var(--abx-motion-surface, 280ms) var(--abx-ease-out, ease);
+}
+
+@media (hover: hover) {
+  .abx-home-architecture__panel:hover {
+    transform: translateY(-1px);
+  }
+
+  .abx-thesis-diagram__app-card--active:hover {
+    border-color: rgba(16, 185, 129, 0.5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .abx-home-architecture__step,
+  .abx-home-architecture__panel {
+    transition: none;
+  }
+}
+
 /* Decision receipt card */
 .abx-decision-receipt {
   border-radius: 14px;

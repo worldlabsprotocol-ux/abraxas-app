@@ -8,6 +8,7 @@ import { consentVerificationRequest, declineVerificationRequest } from "@/lib/ap
 import { resolvePartnerDisplayName } from "@/lib/partner/partnerVerifyDisplay";
 import { holderSafeClientMessage, resolveHolderRecovery } from "@/lib/partner/holderExperience";
 import { PrivacyDisclosureCard } from "@/components/product/PrivacyDisclosureCard";
+import { HolderRequestFlowStrip } from "@/components/product/HolderRequestFlowStrip";
 import { ProductOutcomeState } from "@/components/product/ProductOutcomeState";
 import { HolderDecisionComplete } from "@/components/protocol/HolderDecisionComplete";
 import { buildHolderRequestPresentation } from "@/lib/product/holderRequestPresentation";
@@ -208,6 +209,11 @@ export function ConsentCeremony({
       }}>
         {copy.requestHeadline}
       </p>
+      <HolderRequestFlowStrip
+        partnerName={partnerName}
+        question={copy.requested[0]?.label ?? "Eligibility question"}
+        sharedLabel={sharedItems[0]?.label.replace(/\s*\(if approved\)$/i, "") ?? "Eligibility result"}
+      />
       <PrivacyDisclosureCard
         requester={partnerName}
         requestReason={copy.requestReason}
