@@ -14,9 +14,9 @@ const DEFAULT_STEPS: ReadonlyArray<{ id: VerificationPathStep; label: string; hi
 ];
 
 export const GOOD_TROUBLE_PURCHASE_PATH_STEPS: ReadonlyArray<{ id: VerificationPathStep; label: string; hint: string }> = [
-  { id: "request", label: "Request", hint: "What Good Trouble needs" },
-  { id: "verify", label: "Verify age", hint: "Private age check" },
-  { id: "consent", label: "Share result", hint: "Approve the 21+ answer" },
+  { id: "request", label: "Age", hint: "Confirm you're 21+" },
+  { id: "verify", label: "Verify", hint: "Private age check" },
+  { id: "consent", label: "Share", hint: "Approve the 21+ answer" },
   { id: "ready", label: "Done", hint: "Return to Good Trouble" },
 ];
 

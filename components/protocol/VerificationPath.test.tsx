@@ -10,9 +10,9 @@ import {
 describe("VerificationPath Good Trouble purchase steps", () => {
   it("orders verify before consent for canonical purchase progress", () => {
     expect(GOOD_TROUBLE_PURCHASE_PATH_STEPS.map((step) => step.label)).toEqual([
-      "Request",
-      "Verify age",
-      "Share result",
+      "Age",
+      "Verify",
+      "Share",
       "Done",
     ]);
   });
@@ -27,9 +27,9 @@ describe("VerificationPath Good Trouble purchase steps", () => {
       />,
     );
 
-    expect(screen.getByText("Request").closest("li")?.className).toContain("--done");
-    expect(screen.getByText("Verify age").closest("li")?.className).toContain("--current");
-    expect(screen.getByText("Share result").closest("li")?.className).not.toContain("--done");
+    expect(screen.getByText("Age").closest("li")?.className).toContain("--done");
+    expect(screen.getByText("Verify").closest("li")?.className).toContain("--current");
+    expect(screen.getByText("Share").closest("li")?.className).not.toContain("--done");
     expect(screen.getByText("Done").closest("li")?.className).not.toContain("--done");
   });
 

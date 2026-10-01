@@ -20,9 +20,28 @@ export function isCanonicalGoodTroublePurchaseFlow(input: {
 
 export const GOOD_TROUBLE_PURCHASE_TITLE = "Confirm you're 21+" as const;
 
-export const GOOD_TROUBLE_PURCHASE_INTRO =
-  "Good Trouble wants to confirm you're 21 or older. Verify your age privately — Good Trouble receives only whether you meet the 21+ requirement, not your birth date or identity documents." as const;
+export const GOOD_TROUBLE_PURCHASE_DOB_INTRO =
+  "Good Trouble only needs to know whether you're 21 or older. Your birth date and identity documents stay private." as const;
+
+export const GOOD_TROUBLE_PURCHASE_VERIFY_INTRO =
+  "We need to verify that the age information is yours. Good Trouble still receives only your 21+ result." as const;
+
+export const GOOD_TROUBLE_PURCHASE_DOB_CONTINUE = "Continue" as const;
 
 export const GOOD_TROUBLE_PURCHASE_VERIFY_ACTION = "Verify my age" as const;
 
-export const GOOD_TROUBLE_PURCHASE_REUSE_ACTION = "Use my existing verification" as const;
+export const GOOD_TROUBLE_PURCHASE_REUSE_ACTION = "Use existing verification" as const;
+
+export const GOOD_TROUBLE_PURCHASE_SHARE_TITLE = "Ready to share" as const;
+
+export const GOOD_TROUBLE_PURCHASE_SHARE_ACTION = "Share 21+ result" as const;
+
+export const GOOD_TROUBLE_PURCHASE_DONE_TITLE = "Verification complete" as const;
+
+export const GOOD_TROUBLE_PURCHASE_UNDER_21_TITLE = "Not eligible" as const;
+
+export const GOOD_TROUBLE_PURCHASE_UNDER_21_MESSAGE =
+  "You must be 21 or older to continue with Good Trouble." as const;
+
+/** @deprecated Use GOOD_TROUBLE_PURCHASE_DOB_INTRO */
+export const GOOD_TROUBLE_PURCHASE_INTRO = GOOD_TROUBLE_PURCHASE_DOB_INTRO;

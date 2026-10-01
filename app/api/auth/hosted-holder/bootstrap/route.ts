@@ -12,6 +12,7 @@ import {
 import { isAllowedPartnerReturnUrl } from "@/lib/partner/returnUrlAllowlist";
 import { normalizePartnerVerifyInput } from "@/lib/partner/normalizePartnerVerifyInput";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { ensureHostedHolderWalletBinding } from "@/lib/credentials/ensureHostedHolderWalletBinding";
 
 export const dynamic = "force-dynamic";
 
@@ -141,6 +142,11 @@ export async function POST(req: NextRequest) {
 
   const existing = await resolveExistingBootstrapBrowserSession(req);
   if (existing?.kind === "hosted") {
+    try {
+      await ensureHostedHolderWalletBinding(existing.suiAddress);
+    } catch {
+      // Non-fatal — partner flow can proceed; binding may repair later for OAuth holders only.
+    }
     const res = bootstrapSuccessResponse({
       suiAddress: existing.suiAddress,
       sessionKind: "hosted",
@@ -162,6 +168,11 @@ export async function POST(req: NextRequest) {
 
   try {
     const record = await createHostedHolderIdentity();
+    try {
+      await ensureHostedHolderWalletBinding(record.suiAddress);
+    } catch {
+      // Session still minted; wallet binding best-effort for hosted holders.
+    }
     const res = bootstrapSuccessResponse({
       suiAddress: record.suiAddress,
       sessionKind: "hosted",

@@ -15,6 +15,7 @@ import { AbraxasIdentityCapture } from "@/components/passport/AbraxasIdentityCap
 import { ConsentCeremony } from "@/components/passport/ConsentCeremony";
 import { PartnerFlowReturnHandler } from "@/components/partner/PartnerFlowReturnHandler";
 import { AgeAssuranceMethodChooser } from "@/components/partner/AgeAssuranceMethodChooser";
+import { GoodTroublePurchaseContinueFlow } from "@/components/partner/GoodTroublePurchaseContinueFlow";
 import { SelfAttestationBrowseForm } from "@/components/partner/SelfAttestationBrowseForm";
 import { PartnerJourneyLayout } from "@/components/partner/PartnerJourneyLayout";
 import { usePartnerFlowHandoff } from "@/lib/passport/partnerFlowHandoff";
@@ -71,6 +72,7 @@ import { HolderDecisionComplete } from "@/components/protocol/HolderDecisionComp
 
 function resolveMinimumAge(policyId: string): number | null {
   if (policyId === GOOD_TROUBLE_RETAIL_POLICY_ID) return 21;
+  if (policyId.includes("age_21_retail")) return 21;
   return null;
 }
 
@@ -506,6 +508,22 @@ function PartnerContinueInner() {
         ) : (
           <HolderRecoveryCard recovery={resolveHolderRecovery("session_required", partnerName, partnerHomeUrl)} />
         )
+      ) : simplifiedPurchase && verifyRequestId ? (
+        <GoodTroublePurchaseContinueFlow
+          partnerId={partnerId}
+          policyId={policyId}
+          partnerName={partnerName}
+          verifyRequestId={verifyRequestId}
+          returnUrl={decodedReturnUrl}
+          suiAddress={suiAddress}
+          email={email}
+          identityStatus={identityStatus}
+          identityComplete={setup.identityComplete}
+          veriffConfigured={veriffConfigured}
+          idvProvider={idvProvider}
+          handoff={handoff}
+          refresh={refresh}
+        />
       ) : (
         <>
           <VerificationPath

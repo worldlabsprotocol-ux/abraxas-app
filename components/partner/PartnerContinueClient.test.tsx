@@ -21,7 +21,8 @@ import {
   GOOD_TROUBLE_CANONICAL_POLICY_ID,
 } from "@/lib/goodTrouble/canonicalProductionConfig";
 import {
-  GOOD_TROUBLE_PURCHASE_INTRO,
+  GOOD_TROUBLE_PURCHASE_DOB_CONTINUE,
+  GOOD_TROUBLE_PURCHASE_DOB_INTRO,
   GOOD_TROUBLE_PURCHASE_TITLE,
   GOOD_TROUBLE_PURCHASE_VERIFY_ACTION,
 } from "@/lib/partner/goodTroublePurchaseFlow";
@@ -379,16 +380,8 @@ describe("PartnerContinueClient holder recovery", () => {
     expect(screen.queryByText(/Sign in to continue/i)).toBeNull();
   });
 
-  it("shows one obvious verify action for canonical Good Trouble purchase holders", async () => {
-    mockAuthState.suiAddress = "0xabc";
-    mockAuthState.isLoading = false;
-    mockSearchParams = new URLSearchParams({
-      verify_request: "vr-canonical-purchase",
-      partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
-      policy_id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
-    });
-
-    global.fetch = vi.fn(async (input: RequestInfo | URL) => {
+  function mockCanonicalPurchaseFetch(options?: { dobPrequal?: "none" | "over_21" | "under_21" }) {
+    return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (url.includes("/api/v1/verification-requests/vr-canonical-purchase")) {
         return new Response(JSON.stringify({
@@ -402,37 +395,65 @@ describe("PartnerContinueClient holder recovery", () => {
           return_url: "https://www.goodtroublecanna.com/age-verification-result?gtv=gtv_test",
         }), { status: 200 });
       }
+      if (url.includes("/api/v1/partner-verify/method-qualification") && init?.method === "POST") {
+        return new Response(JSON.stringify({
+          ok: false,
+          code: "canonical_single_path",
+          method_qualified: false,
+        }), { status: 400 });
+      }
       if (url.includes("/api/v1/partner-verify/method-qualification")) {
         return new Response(JSON.stringify({
           ok: true,
           method_qualified: false,
           issuedReceipt: false,
+          reuse: { available: false, state: "none" },
         }), { status: 200 });
       }
-      if (url.includes("/api/age-assurance/providers")) {
+      if (url.includes("/api/v1/partner-verify/good-trouble/dob-prequal") && init?.method === "POST") {
         return new Response(JSON.stringify({
           ok: true,
-          providers: [],
-          existing_proof: { status: "none", eligible_for_reuse: false },
+          age_band: "over_21",
+          eligible_for_idv: true,
+          valid_for_authoritative_decision: false,
         }), { status: 200 });
       }
-      if (url.includes("/api/reclaim/availability")) {
-        return new Response(JSON.stringify({ available: false }), { status: 200 });
+      if (url.includes("/api/v1/partner-verify/good-trouble/dob-prequal")) {
+        const band = options?.dobPrequal ?? "none";
+        if (band === "none") {
+          return new Response(JSON.stringify({ ok: true, prequal_complete: false }), { status: 200 });
+        }
+        return new Response(JSON.stringify({
+          ok: true,
+          prequal_complete: true,
+          age_band: band,
+          eligible_for_idv: band === "over_21",
+        }), { status: 200 });
       }
       throw new Error(`Unexpected fetch: ${url}`);
     }) as typeof fetch;
+  }
+
+  it("shows DOB intake first for canonical Good Trouble purchase holders", async () => {
+    mockAuthState.suiAddress = "0xabc";
+    mockSearchParams = new URLSearchParams({
+      verify_request: "vr-canonical-purchase",
+      partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+      policy_id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
+    });
+    global.fetch = mockCanonicalPurchaseFetch();
 
     const { container } = render(<PartnerContinueClient />);
 
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: GOOD_TROUBLE_PURCHASE_TITLE })).toBeTruthy();
-      expect(screen.getByRole("button", { name: GOOD_TROUBLE_PURCHASE_VERIFY_ACTION })).toBeTruthy();
+      expect(screen.getByRole("button", { name: GOOD_TROUBLE_PURCHASE_DOB_CONTINUE })).toBeTruthy();
     });
 
-    expect(screen.getByText(GOOD_TROUBLE_PURCHASE_INTRO)).toBeTruthy();
-    expect(screen.getByText("Verify age")).toBeTruthy();
-    expect(screen.queryByText("Share result")?.closest("li")?.className ?? "").not.toContain("--done");
-    expect(screen.queryByText("Consent")?.closest("li")?.className ?? "").not.toContain("--done");
+    expect(screen.getAllByText(GOOD_TROUBLE_PURCHASE_DOB_INTRO).length).toBeGreaterThan(0);
+    expect(screen.getByText("Age")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Secure your Passport/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Use selected method/i })).toBeNull();
 
     const text = container.textContent ?? "";
     for (const phrase of GOOD_TROUBLE_PURCHASE_PROHIBITED_PHRASES) {
@@ -440,47 +461,30 @@ describe("PartnerContinueClient holder recovery", () => {
     }
   });
 
-  it("starts the existing qualifying verification flow when Verify my age is clicked", async () => {
+  it("routes DOB 21+ to Verify my age without generic method chooser", async () => {
     mockAuthState.suiAddress = "0xabc";
     mockSearchParams = new URLSearchParams({
       verify_request: "vr-canonical-purchase",
       partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
       policy_id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
     });
-
-    global.fetch = vi.fn(async (input: RequestInfo | URL) => {
-      const url = String(input);
-      if (url.includes("/api/v1/verification-requests/vr-canonical-purchase")) {
-        return new Response(JSON.stringify({
-          partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
-          policy_id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
-        }), { status: 200 });
-      }
-      if (url.includes("continue-binding") || url.includes("method-qualification")) {
-        return new Response(JSON.stringify({ ok: true, method_qualified: false }), { status: 200 });
-      }
-      if (url.includes("/api/age-assurance/providers")) {
-        return new Response(JSON.stringify({ ok: true, providers: [] }), { status: 200 });
-      }
-      if (url.includes("/api/reclaim/availability")) {
-        return new Response(JSON.stringify({ available: false }), { status: 200 });
-      }
-      throw new Error(`Unexpected fetch: ${url}`);
-    }) as typeof fetch;
-
+    global.fetch = mockCanonicalPurchaseFetch();
     render(<PartnerContinueClient />);
     const user = userEvent.setup();
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: GOOD_TROUBLE_PURCHASE_VERIFY_ACTION })).toBeTruthy();
+      expect(screen.getByRole("button", { name: GOOD_TROUBLE_PURCHASE_DOB_CONTINUE })).toBeTruthy();
     });
 
-    await user.click(screen.getByRole("button", { name: GOOD_TROUBLE_PURCHASE_VERIFY_ACTION }));
+    await user.type(screen.getByLabelText("Month"), "01");
+    await user.type(screen.getByLabelText("Day"), "15");
+    await user.type(screen.getByLabelText("Year"), "1990");
+    await user.click(screen.getByRole("button", { name: GOOD_TROUBLE_PURCHASE_DOB_CONTINUE }));
 
     await waitFor(() => {
-      expect(screen.getAllByRole("button", { name: GOOD_TROUBLE_PURCHASE_VERIFY_ACTION }).length).toBeGreaterThan(0);
+      expect(screen.getByRole("button", { name: GOOD_TROUBLE_PURCHASE_VERIFY_ACTION })).toBeTruthy();
     });
-    expect(screen.queryByText("Back to verification options")).toBeNull();
+    expect(screen.queryByRole("button", { name: /Use selected method/i })).toBeNull();
   });
 
   it("asks the holder to sign in again after session loss without exposing wallet copy", async () => {
