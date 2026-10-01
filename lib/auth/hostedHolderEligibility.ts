@@ -24,9 +24,8 @@ export function isHostedHolderBootstrapEligible(input: HostedHolderFlowContext):
   const policyId = input.policyId.trim();
   if (!partnerId || !policyId) return false;
 
-  // Legacy browse gate always keeps Google-first account creation.
   if (isGoodTroubleBrowseFlow({ partnerId, policyId, purpose: input.purpose })) {
-    return false;
+    return true;
   }
 
   return (

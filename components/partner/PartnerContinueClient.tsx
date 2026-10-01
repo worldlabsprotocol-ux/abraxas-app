@@ -309,7 +309,7 @@ function PartnerContinueInner() {
   });
 
   const hostedBootstrap = useHostedHolderBootstrap({
-    enabled: !isDobFirstBrowse && Boolean(partnerId && policyId && (decodedReturnUrl || verifyRequestId)),
+    enabled: hostedBootstrapEligible && Boolean(partnerId && policyId && (decodedReturnUrl || verifyRequestId)),
     suiAddress,
     authLoading,
     partnerId,
@@ -437,10 +437,23 @@ function PartnerContinueInner() {
         hideStatus
         showAccountFooter={false}
       >
-        {authLoading || contextLoading ? (
-          <p role="status">Loading…</p>
+        {authLoading || contextLoading || (hostedBootstrapEligible && hostedBootstrap.bootstrapping) ? (
+          <p role="status">Preparing verification…</p>
         ) : !suiAddress ? (
-          <p role="status">Return to the partner site and sign in again.</p>
+          hostedBootstrapEligible ? (
+            <div>
+              <p role="status" style={{ fontSize: "0.86rem", lineHeight: 1.6, margin: "0 0 0.75rem" }}>
+                {hostedBootstrap.state === "failed"
+                  ? "Verification could not be started. Try again."
+                  : "Starting your private age check…"}
+              </p>
+              {hostedBootstrap.state === "failed" ? (
+                <Btn onClick={() => hostedBootstrap.retry()}>{HOSTED_HOLDER_PRIMARY_ACTION}</Btn>
+              ) : null}
+            </div>
+          ) : (
+            <p role="status">Return to the partner site and try again.</p>
+          )
         ) : (
           <SelfAttestationBrowseForm
             partnerId={partnerId}

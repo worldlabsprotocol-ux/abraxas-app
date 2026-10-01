@@ -107,12 +107,12 @@ export const GOOD_TROUBLE_BROWSE_STATUS =
   "Good Trouble receives only a yes or no 21+ result.";
 
 /** Minimal /partner/continue browse screen copy. */
-export const GOOD_TROUBLE_BROWSE_EYEBROW = "PRIVATE AGE CHECK";
+export const GOOD_TROUBLE_BROWSE_EYEBROW = "BROWSE ACCESS";
 
 export const GOOD_TROUBLE_BROWSE_HEADING = "Confirm you're 21+";
 
 export const GOOD_TROUBLE_BROWSE_SUPPORTING =
-  "Enter your birthday once. Good Trouble receives only a yes or no result.";
+  "Verify once. Good Trouble only receives your 21+ result.";
 
 export const GOOD_TROUBLE_BROWSE_DOB_HEADING = "Enter your birthday";
 

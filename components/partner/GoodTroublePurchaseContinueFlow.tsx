@@ -15,10 +15,12 @@ import {
   type VerificationPathStep,
 } from "@/components/protocol/VerificationPath";
 import {
+  GOOD_TROUBLE_PURCHASE_CONTEXT,
   GOOD_TROUBLE_PURCHASE_REUSE_ACTION,
   GOOD_TROUBLE_PURCHASE_UNDER_21_MESSAGE,
   GOOD_TROUBLE_PURCHASE_UNDER_21_TITLE,
   GOOD_TROUBLE_PURCHASE_VERIFY_ACTION,
+  GOOD_TROUBLE_PURCHASE_VERIFY_HEADING,
   GOOD_TROUBLE_PURCHASE_VERIFY_INTRO,
 } from "@/lib/partner/goodTroublePurchaseFlow";
 import { holderSafeClientMessage } from "@/lib/partner/holderExperience";
@@ -342,7 +344,10 @@ export function GoodTroublePurchaseContinueFlow({
 
       {phase === "verify" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <p style={{ margin: 0, fontWeight: 700, fontSize: "1rem" }}>Verify your age</p>
+          <p style={{ margin: 0, fontSize: "0.78rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+            {GOOD_TROUBLE_PURCHASE_CONTEXT}
+          </p>
+          <p style={{ margin: 0, fontWeight: 700, fontSize: "1rem" }}>{GOOD_TROUBLE_PURCHASE_VERIFY_HEADING}</p>
           <p style={{ margin: 0, fontSize: "0.95rem", lineHeight: 1.65 }}>
             {GOOD_TROUBLE_PURCHASE_VERIFY_INTRO}
           </p>
