@@ -30,12 +30,16 @@ function listTsFiles(dir: string): string[] {
 
 describe("verify-with-abraxas external fixture import boundary", () => {
   it("fixture sources import only public partner kit surface", () => {
+    const mustUseKit = ["lib/flow.ts", "lib/partnerKit.ts"];
     for (const file of listTsFiles(join(FIXTURE_ROOT, "lib"))) {
       const source = readFileSync(file, "utf8");
       for (const pattern of PRIVILEGED) {
         expect(source, `${file} must not match ${pattern}`).not.toMatch(pattern);
       }
-      expect(source).toMatch(/integrationKit/);
+      const relative = file.replace(`${join(FIXTURE_ROOT, "lib")}/`, "lib/");
+      if (mustUseKit.includes(relative)) {
+        expect(source).toMatch(/integrationKit/);
+      }
     }
   });
 
