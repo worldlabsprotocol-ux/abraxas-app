@@ -131,14 +131,27 @@ function PartnerContinueInner() {
             purpose?: string | null;
           };
           let bindingReturnUrl = "";
+          let bindingPartnerId = "";
+          let bindingPolicyId = "";
+          let bindingPurpose: string | null = null;
           try {
             const bindingRes = await fetch(
               `/api/v1/partner-verify/continue-binding?verify_request=${encodeURIComponent(verifyRequestId)}`,
               { credentials: "include" },
             );
             if (bindingRes.ok) {
-              const binding = await bindingRes.json() as { return_url?: string };
+              const binding = await bindingRes.json() as {
+                return_url?: string;
+                partner_id?: string;
+                policy_id?: string;
+                purpose?: string | null;
+              };
               if (typeof binding.return_url === "string") bindingReturnUrl = binding.return_url;
+              if (typeof binding.partner_id === "string") bindingPartnerId = binding.partner_id;
+              if (typeof binding.policy_id === "string") bindingPolicyId = binding.policy_id;
+              if (binding.purpose === null || typeof binding.purpose === "string") {
+                bindingPurpose = binding.purpose ?? null;
+              }
             }
           } catch {
             // Continue with preview when the binding cookie is absent (evaluate-created flows).
@@ -149,9 +162,9 @@ function PartnerContinueInner() {
               ...urlContext,
               returnUrl: bindingReturnUrl || urlContext.returnUrl,
             }, {
-              partnerId: preview.partner_id ?? "",
-              policyId: preview.policy_id ?? "",
-              purpose: preview.purpose ?? null,
+              partnerId: preview.partner_id ?? bindingPartnerId,
+              policyId: preview.policy_id ?? bindingPolicyId,
+              purpose: preview.purpose ?? bindingPurpose,
             }));
             setContextLoading(false);
           }

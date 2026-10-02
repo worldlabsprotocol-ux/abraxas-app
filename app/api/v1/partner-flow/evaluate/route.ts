@@ -24,7 +24,8 @@ import {
   GoodTroubleFlowTupleMismatchError,
   resolveGoodTroubleFlowPurpose,
 } from "@/lib/partner/goodTroubleBrowseFlow";
-import { normalizePartnerVerifyInput } from "@/lib/partner/normalizePartnerVerifyInput";
+import { normalizePartnerVerifyInput, isGoodTroubleBrowseCallbackReturnUrl } from "@/lib/partner/normalizePartnerVerifyInput";
+import { GOOD_TROUBLE_BROWSE_POLICY_ID } from "@/lib/goodTrouble/constants";
 import {
   enforcePartnerFlowRateLimit,
   recordPartnerFlowRequestOutcome,
@@ -129,6 +130,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  if (isGoodTroubleBrowseCallbackReturnUrl(returnUrl) && policyId !== GOOD_TROUBLE_BROWSE_POLICY_ID) {
+    return NextResponse.json(
+      { error: "Browse callback requires the Good Trouble browse policy", code: "tuple_conflict" },
+      { status: 400 },
+    );
+  }
+
   let resolvedPurpose = normalized.params.purpose?.trim() || undefined;
   try {
     const goodTroublePurpose = resolveGoodTroubleFlowPurpose({
@@ -145,6 +153,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: e.message, code: e.code }, { status: 400 });
     }
     throw e;
+  }
+
+  if (isGoodTroubleBrowseCallbackReturnUrl(returnUrl)) {
+    resolvedPurpose = "browse";
   }
 
   try {

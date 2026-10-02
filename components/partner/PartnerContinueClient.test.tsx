@@ -180,6 +180,55 @@ describe("PartnerContinueClient Good Trouble browse journey", () => {
     });
   });
 
+  it("renders canonical Good Trouble browse DOB path — never purchase Verify step", async () => {
+    mockSearchParams = new URLSearchParams({
+      verify_request: "vr-canonical-browse",
+    });
+
+    global.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/v1/verification-requests/vr-canonical-browse")) {
+        return new Response(JSON.stringify({
+          partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+          policy_id: GOOD_TROUBLE_BROWSE_POLICY_ID,
+          purpose: "browse",
+        }), { status: 200 });
+      }
+      if (url.includes("/api/age-assurance/browse-reuse")) {
+        return new Response(JSON.stringify({ ok: false, code: "no_reusable_browse_proof" }), { status: 404 });
+      }
+      if (url.includes("/api/v1/partner-verify/method-qualification")) {
+        return new Response(JSON.stringify({
+          ok: true,
+          method_qualified: false,
+          issuedReceipt: false,
+        }), { status: 200 });
+      }
+      if (url.includes("/api/v1/partner-verify/continue-binding")) {
+        return new Response(JSON.stringify({
+          ok: true,
+          partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+          policy_id: GOOD_TROUBLE_BROWSE_POLICY_ID,
+          purpose: "browse",
+          return_url: "https://www.goodtroublecanna.com/browse-verification-result?gtb=gtb_test",
+        }), { status: 200 });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    }) as typeof fetch;
+
+    render(<PartnerContinueClient />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON })).toBeTruthy();
+    });
+
+    expect(screen.getByText(GOOD_TROUBLE_BROWSE_HEADING)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: GOOD_TROUBLE_PURCHASE_VERIFY_ACTION })).toBeNull();
+    expect(screen.queryByText("Verify")).toBeNull();
+    expect(screen.queryByRole("button", { name: /Secure your Passport/i })).toBeNull();
+    expect(screen.queryByText(/Use selected method/i)).toBeNull();
+  });
+
   it("shows minimal browse chrome during context load when browse policy is in URL without purpose", async () => {
     mockSearchParams = new URLSearchParams({
       verify_request: "vr-browse-1",

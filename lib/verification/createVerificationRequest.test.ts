@@ -45,6 +45,41 @@ describe("P0-CNS-3: createVerificationRequest tenancy", () => {
     })).rejects.toThrow(PolicyOwnershipError);
   });
 
+  it("allows Good Trouble browse policy ownership across canonical and legacy partner ids", async () => {
+    const { getPartnerPolicy } = await import("@/lib/policy/getPolicy");
+    vi.mocked(getPartnerPolicy).mockResolvedValue({
+      id: "good-trouble-browse-v1",
+      partner_id: "good-trouble",
+      version: 2,
+      name: "GT Browse",
+      rules_json: { browse_access_only: true, required_claims: [] },
+      status: "active",
+    });
+
+    const legacyLaunch = await createVerificationRequest({
+      partnerId: "good-trouble-cannabis",
+      policyId: "good-trouble-browse-v1",
+      purpose: "browse",
+    });
+    expect(legacyLaunch.request_id).toBe("req_1");
+
+    vi.mocked(getPartnerPolicy).mockResolvedValue({
+      id: "good-trouble-browse-v1",
+      partner_id: "good-trouble-cannabis",
+      version: 1,
+      name: "GT Browse legacy",
+      rules_json: { browse_access_only: true, required_claims: [] },
+      status: "deprecated",
+    });
+
+    const canonicalLaunch = await createVerificationRequest({
+      partnerId: "good-trouble",
+      policyId: "good-trouble-browse-v1",
+      purpose: "browse",
+    });
+    expect(canonicalLaunch.request_id).toBe("req_1");
+  });
+
   it("creates request when policy belongs to partner", async () => {
     const { getPartnerPolicy } = await import("@/lib/policy/getPolicy");
     vi.mocked(getPartnerPolicy).mockResolvedValue({

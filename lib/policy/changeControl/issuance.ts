@@ -1,6 +1,7 @@
 // FILE: lib/policy/changeControl/issuance.ts
 // Fail-closed issuance and evaluation gates. Drafts never issue production receipts.
 
+import { policyOwnedByPartner } from "@/lib/policy/assertPolicyOwnership";
 import type { PartnerPolicy } from "@/lib/policy/types";
 import { isPolicyDraft, isPublishedPolicyStatus } from "@/lib/policy/policyLifecycle";
 import {
@@ -53,7 +54,7 @@ export function evaluatePolicyVersionGate(input: PolicyVersionGateInput): Policy
     };
   }
 
-  if (input.policy.partner_id !== input.partnerId) {
+  if (!policyOwnedByPartner(input.policy, input.partnerId)) {
     return { ok: false, policy: input.policy, code: "policy_wrong_partner" };
   }
 

@@ -7,6 +7,7 @@ import {
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
 import { isGoodTroubleBrowsePartnerId } from "@/lib/partner/goodTroubleBrowseFlow";
+import { isGoodTroubleRegulatedPurchasePolicyId } from "@/lib/partner/goodTroublePurchaseFlow";
 
 export const GOOD_TROUBLE_LEGACY_BROWSE_INVALID_LINK_MESSAGE =
   "This verification link is invalid. Return to Good Trouble and try again.";
@@ -180,7 +181,7 @@ export function normalizePartnerVerifyInput(input: {
     }
 
     if (
-      policyId === GOOD_TROUBLE_RETAIL_POLICY_ID
+      isGoodTroubleRegulatedPurchasePolicyId(policyId)
       && (purpose === "browse" || parsedReturn?.pathname === GOOD_TROUBLE_BROWSE_CALLBACK_PATH)
     ) {
       return failGoodTroubleInvalid("tuple_conflict");
