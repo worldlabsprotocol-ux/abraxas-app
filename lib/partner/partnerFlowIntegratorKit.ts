@@ -140,13 +140,23 @@ export function buildPartnerFlowEntryUrl(input: {
   policyId: string;
   returnUrl: string;
   origin?: string;
+  purpose?: string;
+  expectedContentHash?: string | null;
+  appSlug?: string | null;
 }): string {
   const base = (input.origin ?? PARTNER_FLOW_CANONICAL_HOST).replace(/\/$/, "");
-  const params = new URLSearchParams({
-    partner_id: input.partnerId,
-    policy_id: input.policyId,
-    return_url: input.returnUrl,
-  });
+  const params = new URLSearchParams();
+  if (input.appSlug?.trim()) {
+    params.set("app", input.appSlug.trim());
+  } else {
+    params.set("partner_id", input.partnerId);
+    params.set("policy_id", input.policyId);
+  }
+  params.set("return_url", input.returnUrl);
+  if (input.purpose?.trim()) params.set("purpose", input.purpose.trim());
+  if (input.expectedContentHash?.trim()) {
+    params.set("expected_content_hash", input.expectedContentHash.trim().toLowerCase());
+  }
   return `${base}/partner/verify?${params.toString()}`;
 }
 

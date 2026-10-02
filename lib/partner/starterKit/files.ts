@@ -221,6 +221,20 @@ describe("local receipt fixture", () => {
 `;
 }
 
+function provenancePublisherExample(): string {
+  return `# Content provenance publisher pattern
+
+1. Compute SHA-256 over the exact artifact bytes in your application.
+2. Create a Hosted Partner Flow request with \`expected_content_hash\` when starting verification.
+3. Redirect the holder to \`/partner/verify\` (or your Launchpad app slug).
+4. On callback, verify \`GET /api/receipts/{receipt_id}/public\` server-side only.
+5. Read narrow provenance facts from your verified receipt/claims — never trust query params alone.
+6. Resume the native publishing action only when verification passes.
+
+Reference implementation: /demo/reference-publisher
+`;
+}
+
 function fixtureJson(): string {
   return `${JSON.stringify({
     environment: "sandbox",
@@ -885,6 +899,9 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
 
   const files: StarterKitFile[] = [
     { path: "README.md", contents: readme(selection) },
+    ...(selection.pack_id === "content_origin_disclosure"
+      ? [{ path: "PROVENANCE_PUBLISHER.md", contents: provenancePublisherExample() }]
+      : []),
     { path: "PRODUCTION_INTEGRATION.md", contents: productionContractDoc() },
     { path: "WHAT_THIS_DOES_NOT_DO.md", contents: doesNotDoDoc() },
     { path: "DEPLOYMENT.md", contents: deployment() },

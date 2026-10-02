@@ -87,6 +87,7 @@ export function PartnerVerifyClient({
 
   const launchpadAppSlug = searchParams.get("app");
   const launchpadReturnUrl = searchParams.get("return_url");
+  const expectedContentHash = searchParams.get("expected_content_hash");
   const launchpadResolution = useLaunchpadVerifyResolution(launchpadAppSlug, launchpadReturnUrl);
   const launchpadActive = Boolean(launchpadAppSlug);
 
@@ -260,6 +261,7 @@ export function PartnerVerifyClient({
           purpose: purpose || undefined,
           return_url: returnUrl,
           app: launchpadAppSlug || undefined,
+          expected_content_hash: expectedContentHash || undefined,
         }),
       });
       const data = await res.json() as FlowResult;
