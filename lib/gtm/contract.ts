@@ -95,6 +95,7 @@ export const GTM_ACQUISITION_EVENT_TYPES = [
   "discovery_completed",
   "proof_pack_viewed",
   "sandbox_created",
+  "evaluation_started",
   "reuse_demo_started",
   "reuse_demo_completed",
   "design_partner_cta_clicked",
