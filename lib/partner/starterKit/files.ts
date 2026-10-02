@@ -224,12 +224,34 @@ describe("local receipt fixture", () => {
 function provenancePublisherExample(): string {
   return `# Content provenance publisher pattern
 
-1. Compute SHA-256 over the exact artifact bytes in your application.
-2. Create a Hosted Partner Flow request with \`expected_content_hash\` when starting verification.
-3. Redirect the holder to \`/partner/verify\` (or your Launchpad app slug).
-4. On callback, verify \`GET /api/receipts/{receipt_id}/public\` server-side only.
-5. Read narrow provenance facts from your verified receipt/claims — never trust query params alone.
-6. Resume the native publishing action only when verification passes.
+External developers can implement this flow with only a sandbox partner id, policy id, and public Abraxas APIs.
+
+## Minimum integration path
+
+1. **Create / request proof** — compute SHA-256 over the exact artifact bytes in your application.
+2. **Bind expected artifact** — include \`expected_content_hash\` when starting Hosted Partner Flow (\`/partner/verify\` or your Launchpad app slug).
+3. **Launch Hosted Partner Flow** — redirect the holder to Abraxas; keep your publish attempt id in your return URL.
+4. **Receive callback** — browser returns with \`receipt_id\` query params only; treat them as hints, not authorization.
+5. **Server verify (required)** — on your backend:
+   - \`AbraxasPartnerKit.verifyCallback()\` → fetches and validates \`GET /api/receipts/{receipt_id}/public\`
+   - \`AbraxasPartnerKit.fetchNarrowPartnerResult()\` → fetches \`GET /api/receipts/{receipt_id}/narrow-result\`
+   - Confirm partner id, policy id, signature, expiry, sandbox/production mode, and request correlation.
+6. **Read narrow result** — from the narrow-result response only:
+   - \`provenance.creator_attested\`
+   - \`provenance.ai_assistance_disclosed\` (category string, L0 disclosure)
+   - \`provenance.source_integrity_verified\`
+   - \`provenance.assertion_classes\`
+7. **Resume application** — publish only when verification passes and the narrow result matches your bound publish attempt.
+
+## Artifact correlation
+
+Your application already knows the expected content hash. Abraxas evaluates that hash during Hosted Partner Flow; an approved receipt plus narrow provenance result means the holder disclosed for the artifact you authorized. Do not put content hashes in browser-visible return URLs.
+
+## Never do this
+
+- Do not query Abraxas internal tables (\`credential_claims\`, \`decision_receipts\`, etc.).
+- Do not use Supabase service role or admin modules.
+- Do not trust callback query params without server-side receipt + narrow-result verification.
 
 Reference implementation: /demo/reference-publisher
 `;

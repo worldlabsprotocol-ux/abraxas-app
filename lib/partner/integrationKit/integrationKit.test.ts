@@ -217,6 +217,36 @@ describe("Partner Integration Kit", () => {
     spy.mockRestore();
   });
 
+  it("fetchNarrowPartnerResult validates partner and policy binding", async () => {
+    const narrow = {
+      schema_version: "1.0.0",
+      receipt_id: "dr_kit",
+      partner_id: "partner-acme",
+      policy_id: "partner-acme-age_21_retail-v1",
+      decision: "approved",
+      result_family: "age_eligible_21",
+      over_21: true,
+      identity_verified: true,
+    };
+    const client = kit({
+      fetchFn: async (url) => {
+        if (String(url).includes("/narrow-result")) {
+          return new Response(JSON.stringify(narrow), { status: 200 });
+        }
+        return new Response(JSON.stringify({ error: "missing" }), { status: 404 });
+      },
+    });
+    const ok = await client.fetchNarrowPartnerResult("dr_kit");
+    expect(ok.ok).toBe(true);
+    if (ok.ok) expect(ok.result.over_21).toBe(true);
+
+    const mismatch = await kit({
+      partnerId: "other-partner",
+      fetchFn: async () => new Response(JSON.stringify(narrow), { status: 200 }),
+    }).fetchNarrowPartnerResult("dr_kit");
+    expect(mismatch.ok).toBe(false);
+  });
+
   it("records verification telemetry when applicationId is set", async () => {
     const { resetIntegrationEventsForTests, listIntegrationEventsForTests } = await import("@/lib/partner/integrationObservability/record");
     resetIntegrationEventsForTests();

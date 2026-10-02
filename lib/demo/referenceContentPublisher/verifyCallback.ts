@@ -3,10 +3,9 @@
 
 import { AbraxasPartnerKit, permitProtocolAction } from "@/lib/partner/integrationKit";
 import { validatePartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlowReceipt";
-import { getReceiptById } from "@/lib/decisionReceipts/service";
-import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import type { ProvenancePartnerFacts } from "@/lib/partner/provenancePartnerResult";
 import { validateCallbackSearchParams } from "@/examples/partner-access-nextjs-starter/lib/callbackParams";
+import { PARTNER_CALLBACK_PARAMS } from "@/lib/protocol/compatibility";
 import { getPublicAppOrigin } from "@/lib/app/publicAppOrigin";
 import { resolveReferencePublisherConfig } from "./config";
 import { loadReferencePublisherDraft, updateReferencePublisherDraft } from "./sessionStore";
@@ -19,41 +18,6 @@ export interface ReferencePublisherVerifyResult {
   receipt_id: string | null;
 }
 
-async function loadProvenanceFactsFromReceipt(receiptId: string): Promise<ProvenancePartnerFacts | null> {
-  const record = await getReceiptById(receiptId);
-  if (!record || record.decision_result !== "approved") return null;
-
-  const claimIds = record.evaluated_claim_refs.map((ref) => ref.claim_id).filter(Boolean);
-  if (!claimIds.length) return null;
-
-  const sb = requireSupabaseAdmin();
-  const { data } = await sb
-    .from("credential_claims")
-    .select("claim_type, claim_value")
-    .in("id", claimIds);
-
-  const claims = data ?? [];
-  const aiClaim = claims.find((row) => row.claim_type === "ai_assistance_disclosed");
-  const aiValue = aiClaim?.claim_value as { category?: string } | undefined;
-  const category = typeof aiValue?.category === "string" ? aiValue.category : null;
-
-  const hasCreator = claims.some((row) => row.claim_type === "creator_attested");
-  const hasIntegrity = claims.some((row) => row.claim_type === "source_integrity_verified");
-
-  if (!hasCreator || !hasIntegrity || !category) return null;
-
-  return {
-    creator_attested: true,
-    ai_assistance_disclosed: category,
-    source_integrity_verified: true,
-    assertion_classes: {
-      creator_attested: "attestation",
-      ai_assistance_disclosed: "disclosure",
-      source_integrity_verified: "integrity",
-    },
-  };
-}
-
 export async function verifyReferencePublisherCallback(input: {
   searchParams: URLSearchParams;
   origin?: string;
@@ -61,7 +25,12 @@ export async function verifyReferencePublisherCallback(input: {
 }): Promise<ReferencePublisherVerifyResult> {
   const config = resolveReferencePublisherConfig(input.origin);
   const publishAttemptId = input.searchParams.get("publish_attempt_id")?.trim() ?? "";
-  const callbackValidation = validateCallbackSearchParams(input.searchParams);
+  const abraxasCallbackParams = new URLSearchParams();
+  for (const key of PARTNER_CALLBACK_PARAMS) {
+    const value = input.searchParams.get(key);
+    if (value != null) abraxasCallbackParams.set(key, value);
+  }
+  const callbackValidation = validateCallbackSearchParams(abraxasCallbackParams);
 
   if (!publishAttemptId) {
     return { ok: false, published: false, errors: ["publish_attempt_missing"], provenance: null, receipt_id: null };
@@ -130,19 +99,32 @@ export async function verifyReferencePublisherCallback(input: {
     })
     : { ok: false, errors: safe.errors };
 
-  const provenance = await loadProvenanceFactsFromReceipt(receiptId);
-  const allowed = permitProtocolAction(safe) && validation.ok && Boolean(provenance);
+  const narrow = await kit.fetchNarrowPartnerResult(receiptId);
+  const provenance = narrow.ok ? kit.extractProvenanceFromNarrowResult(narrow.result) : null;
+  const narrowErrors = narrow.ok ? [] : narrow.errors;
+
+  const allowed = permitProtocolAction(safe)
+    && validation.ok
+    && narrow.ok
+    && narrow.result.decision === "approved"
+    && Boolean(provenance);
 
   if (!allowed) {
+    const errors = [
+      ...safe.errors,
+      ...validation.errors,
+      ...narrowErrors,
+      ...(provenance ? [] : ["provenance_facts_missing"]),
+    ];
     updateReferencePublisherDraft(publishAttemptId, {
       state: "proof_failed",
-      failure_reason: [...safe.errors, ...validation.errors].join(","),
+      failure_reason: errors.join(","),
       receipt_id: receiptId,
     });
     return {
       ok: false,
       published: false,
-      errors: [...safe.errors, ...validation.errors, ...(provenance ? [] : ["provenance_facts_missing"])],
+      errors,
       provenance,
       receipt_id: receiptId,
     };
