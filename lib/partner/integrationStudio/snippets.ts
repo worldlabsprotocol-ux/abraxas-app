@@ -4,6 +4,7 @@
 import {
   genericTypescriptExample,
   nextjsRouteHandlerExample,
+  verifyWithAbraxasExample,
 } from "@/lib/partner/integrationKit/examples";
 import { nextjsWebhookHandlerExample } from "@/lib/partner/eventDelivery/examples";
 import { solanaServerVerifyExample } from "@/lib/partner/solana/examples";
@@ -44,8 +45,18 @@ export function studioSnippetForApplication(input: {
     environment: "sandbox" as const,
   };
   return {
+    verify_with_abraxas: {
+      title: "Verify with Abraxas",
+      docs: "/docs/VERIFY_WITH_ABRAXAS_QUICKSTART",
+      code: verifyWithAbraxasExample({
+        ...opts,
+        applicationId: input.publicSlug,
+        policyPackId: "age_21_retail",
+      }),
+      hosted_link_hint: "Server creates verification_url via AbraxasPartnerKit.createVerificationRequest",
+    },
     hosted_partner_flow: {
-      title: "Hosted Partner Flow",
+      title: "Hosted Partner Flow (advanced)",
       docs: "/docs/partner-flow",
       code: genericTypescriptExample(opts),
       hosted_link_hint: `/partner/verify?app=${encodeURIComponent(input.publicSlug)}`,
@@ -140,6 +151,12 @@ export function studioSnippetForApplication(input: {
 
 export function studioSnippetForPath(path: IntegrationStudioPathId): { title: string; docs: string; code: string } {
   switch (path) {
+    case "verify_with_abraxas":
+      return {
+        title: "Verify with Abraxas",
+        docs: "/docs/VERIFY_WITH_ABRAXAS_QUICKSTART",
+        code: verifyWithAbraxasExample({ ...DEMO_OPTS, applicationId: "your-app-id", policyPackId: "age_21_retail" }),
+      };
     case "hosted_partner_flow":
       return {
         title: "Hosted Partner Flow",

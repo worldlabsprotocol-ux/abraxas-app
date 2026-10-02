@@ -124,7 +124,7 @@ export const POLICY_FIT_ACTION_CATEGORIES: Record<PolicyFitAction, readonly Poli
 };
 
 export const POLICY_FIT_CAPABILITY_TO_PATH: Record<PolicyFitCapability, IntegrationStudioPathId> = {
-  reusable_result: "hosted_partner_flow",
+  reusable_result: "verify_with_abraxas",
   webhook: "webhook_events",
   trading_preflight: "trading_venue",
   payment_preflight: "payment_authorization",

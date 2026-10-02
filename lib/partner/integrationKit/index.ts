@@ -26,9 +26,33 @@ export {
   type PartnerKitSafeResult,
 } from "@/lib/partner/integrationKit/client";
 export {
+  resolvePolicyIntegrationCapabilities,
+  validateVerificationRequestCapabilities,
+  type PolicyIntegrationCapabilities,
+} from "@/lib/partner/integrationKit/policyCapabilities";
+export {
+  MemoryPartnerRequestStateStore,
+  generatePartnerRequestId,
+  type PartnerRequestStateStore,
+  type PartnerVerificationRequestState,
+} from "@/lib/partner/integrationKit/partnerRequestStateStore";
+export {
+  UNIVERSAL_INTEGRATION_ERROR_CATEGORIES,
+  categorizeIntegrationErrors,
+  embedPartnerStateInReturnUrl,
+  isUniversalRequestId,
+  type UniversalIntegrationErrorCategory,
+  type CreateVerificationRequestInput,
+  type VerificationRequestResult,
+  type VerificationRequestMode,
+  type VerifyCallbackWithNarrowResultInput,
+  type VerifyCallbackWithNarrowResultResult,
+} from "@/lib/partner/integrationKit/verificationRequest";
+export {
   nextjsRouteHandlerExample,
   expressHandlerExample,
   genericTypescriptExample,
+  verifyWithAbraxasExample,
   CONFORMANCE_COMMAND_EXAMPLE,
 } from "@/lib/partner/integrationKit/examples";
 

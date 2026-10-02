@@ -49,6 +49,7 @@ export const kit = new AbraxasPartnerKit({
   bindingId: process.env.ABRAXAS_BINDING_ID ?? "${pin?.binding_id ?? P.binding_id}",
   policyPackId: process.env.ABRAXAS_PACK_ID ?? "${pin?.pack_id ?? P.pack_id}",
   resultFamily: process.env.ABRAXAS_RESULT_FAMILY ?? "${pin?.result_family ?? P.result_family}",
+  apiKey: process.env.ABRAXAS_SANDBOX_API_KEY,
   baseUrl: ${envKey},
 });
 
@@ -308,6 +309,39 @@ export async function receiptCallback(req: Request, res: Response) {
     return res.status(403).json({ action: "deny", outcome: result.outcome, errors: result.errors });
   }
   return res.json({ action: "permit", outcome: "permitted" });
+}
+`;
+}
+
+function universalVerifyHelper(pin?: StarterKitBindingPin): string {
+  return `import { kit, permitProtocolAction } from "./abraxas";
+
+/** Recommended Verify with Abraxas path — durable hosted handoff; persist request_id in your database before redirect. */
+export async function startVerification(returnUrl: string, options?: { expectedContentHash?: string; partnerState?: string }) {
+  const request = await kit.createVerificationRequest({
+    returnUrl,
+    expectedContentHash: options?.expectedContentHash,
+    partnerState: options?.partnerState,
+    bindingId: process.env.ABRAXAS_BINDING_ID ?? "${pin?.binding_id ?? P.binding_id}",
+    mode: "hosted_handoff",
+  });
+  if (!request.ok) throw new Error(request.errors.join(","));
+  return request;
+}
+
+export async function finishVerification(searchParams: URLSearchParams, expectedRequestId: string) {
+  const verified = await kit.verifyCallbackWithNarrowResult({
+    search: searchParams,
+    expectedRequestId,
+  });
+  if (!verified.ok || !permitProtocolAction(verified.verification)) {
+    return { grant: false, category: verified.category, errors: verified.errors };
+  }
+  return { grant: true, narrow: verified.narrow };
+}
+
+export function policyCapabilities() {
+  return kit.policyIntegrationCapabilities();
 }
 `;
 }
@@ -933,9 +967,14 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
     { path: "tests/receipt-fixture.test.ts", contents: fixtureTest() },
   ];
 
+  const universalPath = selection.path === "verify_with_abraxas" || selection.path === "hosted_partner_flow";
+
   if (selection.runtime === "typescript_nextjs") {
     files.push({ path: "src/lib/abraxas.ts", contents: kitInit(selection.runtime, pin) });
     files.push({ path: "app/api/abraxas/callback/route.ts", contents: receiptRoute("typescript_nextjs") });
+    if (universalPath) {
+      files.push({ path: "src/lib/verify.ts", contents: universalVerifyHelper(pin) });
+    }
     files.push({ path: "src/lib/hosted.ts", contents: hostedHelper(pin) });
     if (webhook) files.push({ path: "app/api/abraxas/webhooks/route.ts", contents: webhookRoute("typescript_nextjs") });
     if (venue) files.push({ path: "app/api/abraxas/trading-preflight/route.ts", contents: venuePreflight("typescript_nextjs", selection.venue_profile_id) });
@@ -951,6 +990,9 @@ export function buildStarterKitFiles(selection: ValidStarterKitSelection): Start
   } else if (selection.runtime === "typescript_express") {
     files.push({ path: "src/lib/abraxas.ts", contents: kitInit(selection.runtime, pin) });
     files.push({ path: "src/callback.ts", contents: receiptRoute("typescript_express") });
+    if (universalPath) {
+      files.push({ path: "src/lib/verify.ts", contents: universalVerifyHelper(pin) });
+    }
     files.push({ path: "src/lib/hosted.ts", contents: hostedHelper(pin) });
     if (webhook) files.push({ path: "src/webhook.ts", contents: webhookRoute("typescript_express") });
     if (venue) files.push({ path: "src/trading-preflight.ts", contents: venuePreflight("typescript_express", selection.venue_profile_id) });

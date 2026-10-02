@@ -151,7 +151,7 @@ function buildMatch(intent: PolicyFitIntent, category: PolicyFitCategory, score:
   const paths = pathsFor(intent.capabilities);
   const selectedPath = intent.capabilities.find((cap) => cap !== "reusable_result")
     ? POLICY_FIT_CAPABILITY_TO_PATH[intent.capabilities.find((cap) => cap !== "reusable_result")!]
-    : "hosted_partner_flow";
+    : "verify_with_abraxas";
   return {
     pack_id: pack.id,
     pack_display_name: pack.display_name,
@@ -219,7 +219,7 @@ export function matchPolicyFit(intent: PolicyFitIntent): PolicyFitView {
     review_notice: POLICY_FIT_REVIEW_NOTICE,
     studio_selection: {
       pack_id: recommended?.pack_id ?? null,
-      path: recommended?.selected_path ?? "hosted_partner_flow",
+      path: recommended?.selected_path ?? "verify_with_abraxas",
       capabilities: intent.capabilities,
     },
   };
