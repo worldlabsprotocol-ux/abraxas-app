@@ -68,6 +68,7 @@ export function PassportRequestInbox({ showEmpty = false }: { showEmpty?: boolea
   return (
     <section
       aria-labelledby="passport-request-inbox-heading"
+      className="abx-passport-request-object"
       style={{
         background: PUBLIC_SURFACE.cardBackground,
         border: PUBLIC_SURFACE.cardBorder,

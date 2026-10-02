@@ -6,6 +6,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useState, type CSSProperties } from "react";
 import { ABX_FONT_MONO, ABX_FONT_SANS, ABX_STATUS_COLORS, type AbxStatusTone } from "@/lib/design/abraxasDesignSystem";
 import { abxMotionDuration } from "@/lib/design/abraxasMotion";
+import { abxMotionTransition, abxProofResolveVariants } from "@/lib/motion/abxMotionFramer";
 import {
   formatReceiptTimestamp,
   type DecisionReceiptDisplayModel,
@@ -103,13 +104,11 @@ export function DecisionReceiptCard(props: DecisionReceiptCardProps) {
     <motion.article
       className={`abx-decision-receipt ${compact ? "abx-decision-receipt--compact" : ""} ${resolved.environment === "sandbox" ? "abx-decision-receipt--sandbox" : ""} ${className}`.trim()}
       style={style}
-      initial={reduceMotion ? false : { opacity: 0, y: 10, scale: 0.98 }}
-      animate={
-        verifying
-          ? { opacity: 0.88, y: 0, scale: 0.99 }
-          : { opacity: 1, y: 0, scale: 1 }
-      }
-      transition={{ duration: abxMotionDuration("protocol") / 1000, ease: [0.22, 1, 0.36, 1] }}
+      variants={abxProofResolveVariants({ reduce: !!reduceMotion })}
+      initial={reduceMotion ? false : "hidden"}
+      animate={verifying ? { opacity: 0.88, y: 0, scale: 0.99 } : "show"}
+      transition={abxMotionTransition(motionPhase === "resolved" ? "verify" : "protocol", { tier: "calm" })}
+      data-motion-phase={motionPhase}
       aria-label={`Decision receipt: ${resolved.disclosedLabel}`}
       aria-busy={verifying}
     >

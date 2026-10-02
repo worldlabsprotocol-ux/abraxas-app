@@ -1,10 +1,11 @@
 "use client";
 // FILE: components/home/cinematic/thesis/AbraxasTransactionSection.tsx
-// Application → Abraxas boundary → signed narrow result.
+// Application → Abraxas → signed result — directional handoff on scroll.
 
 import { motion, useReducedMotion } from "framer-motion";
+import { useStickyScrollProgress } from "@/lib/motion/cinematic/useStickyScrollProgress";
 import { ABX_FONT_DISPLAY, ABX_FONT_MONO, ABX_FONT_SANS } from "@/lib/design/abraxasDesignSystem";
-import { abxMotionDuration } from "@/lib/design/abraxasMotion";
+import { abxMotionTransition } from "@/lib/motion/abxMotionFramer";
 import {
   TRANSACTION_PARTNER_ASK,
   TRANSACTION_PARTNER_RECEIVES,
@@ -22,61 +23,84 @@ const STEPS = [
 
 export function AbraxasTransactionSection() {
   const reduce = useReducedMotion();
-  const duration = reduce ? 0 : abxMotionDuration("transfer") / 1000;
+  const { ref, progress } = useStickyScrollProgress(120);
+  const effective = reduce ? 1 : progress;
 
   return (
-    <section aria-labelledby="abraxas-transaction-heading" className="abx-cinematic-transaction abx-home-section-center">
-      <h2
-        id="abraxas-transaction-heading"
-        style={{
-          fontFamily: DISPLAY,
-          fontSize: "clamp(1.15rem, 3vw, 1.65rem)",
-          fontWeight: 900,
-          letterSpacing: "-0.03em",
-          margin: "0 0 1.5rem",
-          color: "var(--text-primary)",
-        }}
-      >
-        THE ABRAXAS TRANSACTION
-      </h2>
+    <section
+      ref={ref as React.RefObject<HTMLElement>}
+      aria-labelledby="abraxas-transaction-heading"
+      className="abx-cinematic-transaction abx-cinematic-transaction--sticky abx-home-section-center"
+    >
+      <div className="abx-cinematic-transaction__sticky">
+        <h2
+          id="abraxas-transaction-heading"
+          style={{
+            fontFamily: DISPLAY,
+            fontSize: "clamp(1.15rem, 3vw, 1.65rem)",
+            fontWeight: 900,
+            letterSpacing: "-0.03em",
+            margin: "0 0 1.5rem",
+            color: "var(--text-primary)",
+          }}
+        >
+          THE ABRAXAS TRANSACTION
+        </h2>
 
-      <div className="abx-cinematic-transaction__flow">
-        {STEPS.map((step, index) => (
-          <motion.div
-            key={step.label}
-            className={`abx-cinematic-transaction__node ${index === 1 ? "abx-cinematic-transaction__node--gate" : ""}`}
-            initial={reduce ? false : { opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.4 }}
-            transition={{ duration, delay: reduce ? 0 : index * 0.12 }}
-          >
-            <span className="abx-cinematic-transaction__node-label" style={{ fontFamily: MONO }}>
-              {step.label}
-            </span>
-            <span className="abx-cinematic-transaction__node-detail" style={{ fontFamily: FONT }}>
-              {step.detail}
-            </span>
-            {index < STEPS.length - 1 ? (
-              <span className="abx-cinematic-transaction__arrow" aria-hidden="true">
-                ↓
-              </span>
-            ) : null}
-          </motion.div>
-        ))}
+        <div className="abx-cinematic-transaction__flow abx-cinematic-transaction__flow--horizontal">
+          {STEPS.map((step, index) => {
+            const stepProgress = Math.min(1, Math.max(0, (effective - index * 0.28) * 2.2));
+            const active = stepProgress > 0.35;
+            return (
+              <motion.div
+                key={step.label}
+                className={`abx-cinematic-transaction__node ${index === 1 ? "abx-cinematic-transaction__node--gate" : ""} ${active ? "abx-cinematic-transaction__node--active" : ""}`}
+                animate={
+                  reduce
+                    ? undefined
+                    : {
+                        opacity: 0.45 + stepProgress * 0.55,
+                        y: (1 - stepProgress) * 10,
+                        scale: 0.97 + stepProgress * 0.03,
+                      }
+                }
+                transition={abxMotionTransition("transfer", { tier: "cinematic" })}
+              >
+                <span className="abx-cinematic-transaction__node-label" style={{ fontFamily: MONO }}>
+                  {step.label}
+                </span>
+                <span className="abx-cinematic-transaction__node-detail" style={{ fontFamily: FONT }}>
+                  {step.detail}
+                </span>
+                {index < STEPS.length - 1 ? (
+                  <span
+                    className="abx-cinematic-transaction__arrow abx-cinematic-transaction__arrow--forward"
+                    aria-hidden="true"
+                    style={{ opacity: Math.min(1, stepProgress + 0.2) }}
+                  >
+                    →
+                  </span>
+                ) : null}
+              </motion.div>
+            );
+          })}
+        </div>
+
+        <motion.p
+          style={{
+            fontFamily: FONT,
+            fontSize: "0.82rem",
+            color: "var(--text-muted)",
+            margin: "1.25rem auto 0",
+            maxWidth: 480,
+            lineHeight: 1.55,
+          }}
+          animate={{ opacity: reduce ? 1 : 0.4 + effective * 0.6 }}
+          transition={abxMotionTransition("surface", { tier: "cinematic" })}
+        >
+          Underlying evidence stays inside Abraxas. Only the approved answer crosses to the application.
+        </motion.p>
       </div>
-
-      <p
-        style={{
-          fontFamily: FONT,
-          fontSize: "0.82rem",
-          color: "var(--text-muted)",
-          margin: "1.25rem auto 0",
-          maxWidth: 480,
-          lineHeight: 1.55,
-        }}
-      >
-        Underlying evidence stays inside Abraxas. Only the approved answer crosses to the application.
-      </p>
     </section>
   );
 }

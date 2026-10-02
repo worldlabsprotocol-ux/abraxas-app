@@ -42,6 +42,7 @@ import { PartnerPilotProgressPanel } from "@/components/partner/launchpad/Partne
 import { PartnerApplicationOverview } from "@/components/partner/launchpad/PartnerApplicationOverview";
 import { PartnerBindingProductionPanel } from "@/components/partner/launchpad/PartnerBindingProductionPanel";
 import { EnvironmentBadge } from "@/components/product/EnvironmentBadge";
+import { ModeCCommandRail } from "@/components/product/ModeCCommandRail";
 import { EligibilityPolicyCard } from "@/components/product/EligibilityPolicyCard";
 import { PartnerFlowRequestPanel } from "@/components/partner/launchpad/PartnerFlowRequestPanel";
 import { PolicyVersionPlannerPanel } from "@/components/partner/launchpad/PolicyVersionPlannerPanel";
@@ -538,6 +539,37 @@ export function PartnerLaunchpadClient({
         title="Integrate private eligibility"
         subtitle="One integration. Multiple eligibility policies. Add approved eligibility questions through the same Abraxas trust infrastructure without collecting underlying identity data."
       />
+
+      {activeApp && journey && (
+        <ModeCCommandRail
+          items={[
+            {
+              id: "env",
+              label: "Environment",
+              value: productionActivated ? "Production activated" : "Sandbox",
+              tone: productionActivated ? "live" : "sandbox",
+            },
+            {
+              id: "policy",
+              label: "Policy",
+              value: activeApp.policy_id,
+              tone: "neutral",
+            },
+            {
+              id: "app",
+              label: "Application",
+              value: activeApp.display_name || activeApp.application_name,
+              tone: "neutral",
+            },
+            {
+              id: "readiness",
+              label: "Readiness",
+              value: journey.statusLine || journey.primaryAction.label,
+              tone: journey.primaryAction.enabled ? (journey.testPassed ? "ready" : "neutral") : "blocked",
+            },
+          ]}
+        />
+      )}
 
       {activeApp && !journey && (
         <ContentCard title={activeApp.display_name || activeApp.application_name}>

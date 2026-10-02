@@ -6,3 +6,4 @@ export { PassportHeroObject } from "./PassportHeroObject";
 export { ProductProofSection } from "./ProductProofSection";
 export { ReuseOrbitSection } from "./ReuseOrbitSection";
 export { DeveloperStorySection } from "./DeveloperStorySection";
+export { NarrativeSectionBridge } from "./NarrativeSectionBridge";
