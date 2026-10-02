@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Btn } from "@/components/redesign/ui";
 import { StatusBanner } from "@/components/ui/StatusBanner";
-import { AbraxasIdentityCapture } from "@/components/passport/AbraxasIdentityCapture";
 import { PartnerFlowReturnHandler } from "@/components/partner/PartnerFlowReturnHandler";
 import { GoodTroublePurchaseDobForm } from "@/components/partner/GoodTroublePurchaseDobForm";
 import { GoodTroublePurchaseShareStep } from "@/components/partner/GoodTroublePurchaseShareStep";
@@ -15,13 +14,9 @@ import {
   type VerificationPathStep,
 } from "@/components/protocol/VerificationPath";
 import {
-  GOOD_TROUBLE_PURCHASE_CONTEXT,
   GOOD_TROUBLE_PURCHASE_REUSE_ACTION,
   GOOD_TROUBLE_PURCHASE_UNDER_21_MESSAGE,
   GOOD_TROUBLE_PURCHASE_UNDER_21_TITLE,
-  GOOD_TROUBLE_PURCHASE_VERIFY_ACTION,
-  GOOD_TROUBLE_PURCHASE_VERIFY_HEADING,
-  GOOD_TROUBLE_PURCHASE_VERIFY_INTRO,
 } from "@/lib/partner/goodTroublePurchaseFlow";
 import { holderSafeClientMessage } from "@/lib/partner/holderExperience";
 import { REUSE_CONFIRM_POINTS, type ReuseClientView } from "@/lib/passport/reusableEligibility/contract";
@@ -34,8 +29,6 @@ type GtPhase =
   | "reuse"
   | "dob"
   | "under_21"
-  | "verify"
-  | "review"
   | "share"
   | "done";
 
@@ -45,14 +38,7 @@ export function GoodTroublePurchaseContinueFlow({
   partnerName,
   verifyRequestId,
   returnUrl,
-  suiAddress,
-  email,
-  identityStatus,
-  identityComplete,
-  veriffConfigured,
-  idvProvider,
   handoff,
-  refresh,
 }: {
   partnerId: string;
   policyId: string;
@@ -72,38 +58,6 @@ export function GoodTroublePurchaseContinueFlow({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reuseView, setReuseView] = useState<ReuseClientView | null>(null);
-  const [methodQualified, setMethodQualified] = useState(false);
-  const [startingIdv, setStartingIdv] = useState(false);
-  const [captureStarted, setCaptureStarted] = useState(false);
-
-  async function qualifyIdentityEvidence() {
-    setBusy(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/v1/partner-verify/method-qualification", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          verify_request: verifyRequestId,
-          method_id: "identity_liveness",
-        }),
-      });
-      const data = await res.json() as { method_qualified?: boolean; issuedReceipt?: boolean; error?: string };
-      if (res.ok && data.method_qualified === true && data.issuedReceipt !== true) {
-        setMethodQualified(true);
-        setPhase("share");
-        return;
-      }
-      if (identityComplete) {
-        setError(holderSafeClientMessage(data.error ?? "Verification completed but could not advance. Try again."));
-      }
-    } catch {
-      setError(holderSafeClientMessage("Could not confirm verification. Try again."));
-    } finally {
-      setBusy(false);
-    }
-  }
 
   const loadState = useCallback(async () => {
     setError(null);
@@ -119,7 +73,6 @@ export function GoodTroublePurchaseContinueFlow({
       };
       if (qualBody.reuse) setReuseView(qualBody.reuse);
       const qualified = qualRes.ok && qualBody.method_qualified === true && qualBody.issuedReceipt !== true;
-      setMethodQualified(qualified);
 
       if (handoff.ready || handoff.phase === "completed") {
         setPhase("done");
@@ -133,72 +86,57 @@ export function GoodTroublePurchaseContinueFlow({
         setPhase("reuse");
         return;
       }
-      if (identityComplete) {
-        await qualifyIdentityEvidence();
-        return;
-      }
-      if (identityStatus === "pending") {
-        setPhase("review");
-        return;
-      }
-
-      const dobRes = await fetch(
-        `/api/v1/partner-verify/good-trouble/dob-prequal?verify_request=${encodeURIComponent(verifyRequestId)}`,
-        { credentials: "include" },
-      );
-      const dobBody = await dobRes.json() as {
-        prequal_complete?: boolean;
-        age_band?: "over_21" | "under_21";
-      };
-      if (dobBody.prequal_complete && dobBody.age_band === "under_21") {
-        setPhase("under_21");
-        return;
-      }
-      if (dobBody.prequal_complete && dobBody.age_band === "over_21") {
-        setPhase("verify");
-        return;
-      }
       setPhase("dob");
     } catch {
       setError(holderSafeClientMessage("Could not load your verification step. Refresh and try again."));
       setPhase("dob");
     }
-  }, [verifyRequestId, handoff.ready, handoff.phase, identityComplete, identityStatus]);
+  }, [verifyRequestId, handoff.ready, handoff.phase]);
 
   useEffect(() => {
     void loadState();
   }, [loadState]);
 
-  useEffect(() => {
-    if (!identityComplete || methodQualified) return;
-    void qualifyIdentityEvidence();
-  }, [identityComplete, methodQualified, verifyRequestId]);
-
-  async function submitDob(isoDate: string) {
+  async function submitDobAndQualify(isoDate: string) {
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch("/api/v1/partner-verify/good-trouble/dob-prequal", {
+      const attestRes = await fetch("/api/age-assurance/self-attest", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date_of_birth: isoDate,
+          partner_id: partnerId,
+          policy_id: policyId,
+          purpose: "purchase",
+        }),
+      });
+      const attestData = await attestRes.json() as { ok?: boolean; age_band?: "over_21" | "under_21" };
+      if (!attestRes.ok || !attestData.ok) {
+        setError(holderSafeClientMessage("Enter a valid date of birth and try again."));
+        return;
+      }
+      if (attestData.age_band === "under_21") {
+        setPhase("under_21");
+        return;
+      }
+
+      const qualRes = await fetch("/api/v1/partner-verify/method-qualification", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           verify_request: verifyRequestId,
-          date_of_birth: isoDate,
-          partner_id: partnerId,
-          policy_id: policyId,
+          method_id: "self_attestation",
         }),
       });
-      const data = await res.json() as { age_band?: "over_21" | "under_21"; code?: string };
-      if (!res.ok) {
-        setError(holderSafeClientMessage("Enter a valid date of birth and try again."));
+      const qualData = await qualRes.json() as { method_qualified?: boolean; error?: string };
+      if (!qualRes.ok || qualData.method_qualified !== true) {
+        setError(holderSafeClientMessage(qualData.error ?? "Could not confirm eligibility. Try again."));
         return;
       }
-      if (data.age_band === "under_21") {
-        setPhase("under_21");
-        return;
-      }
-      setPhase("verify");
+      setPhase("share");
     } catch {
       setError(holderSafeClientMessage("Could not check your age. Try again."));
     } finally {
@@ -225,7 +163,6 @@ export function GoodTroublePurchaseContinueFlow({
         setPhase("dob");
         return;
       }
-      setMethodQualified(true);
       setPhase("share");
     } catch {
       setError(holderSafeClientMessage("Could not reuse verification. Try again."));
@@ -234,52 +171,9 @@ export function GoodTroublePurchaseContinueFlow({
     }
   }
 
-  async function startIdentityVerification() {
-    if (idvProvider === "manual") {
-      setCaptureStarted(true);
-      return;
-    }
-    setStartingIdv(true);
-    setError(null);
-    try {
-      const sessionRes = await fetch("/api/idv/create-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sui_address: suiAddress, document_type: "PASSPORT" }),
-      });
-      const sessionData = await sessionRes.json() as { session_url?: string | null; error?: string };
-      if (!sessionRes.ok || !sessionData.session_url) {
-        setError(holderSafeClientMessage(sessionData.error ?? "Age verification could not be started."));
-        return;
-      }
-      void refresh();
-      await new Promise<void>((resolve, reject) => {
-        if (document.querySelector('script[src="https://cdn.veriff.me/incontext/js/v1/veriff.js"]')) {
-          resolve();
-          return;
-        }
-        const s = document.createElement("script");
-        s.src = "https://cdn.veriff.me/incontext/js/v1/veriff.js";
-        s.onload = () => resolve();
-        s.onerror = () => reject(new Error("script"));
-        document.body.appendChild(s);
-      });
-      const w = window as unknown as {
-        veriffSDK: { createVeriffFrame: (opts: { url: string }) => void };
-      };
-      w.veriffSDK.createVeriffFrame({ url: sessionData.session_url });
-      setPhase("review");
-    } catch {
-      setError(holderSafeClientMessage("Age verification could not be started. Try again."));
-    } finally {
-      setStartingIdv(false);
-    }
-  }
-
   const progress = useMemo((): { active: VerificationPathStep; completedThrough: VerificationPathStep | null } => {
     if (phase === "done") return { active: "ready", completedThrough: "consent" };
     if (phase === "share") return { active: "consent", completedThrough: "verify" };
-    if (phase === "review" || phase === "verify") return { active: "verify", completedThrough: "request" };
     if (phase === "reuse" || phase === "dob" || phase === "under_21" || phase === "loading") {
       return { active: "request", completedThrough: null };
     }
@@ -323,7 +217,7 @@ export function GoodTroublePurchaseContinueFlow({
               textAlign: "left",
             }}
           >
-            Verify a different way
+            Confirm a different way
           </button>
         </div>
       )}
@@ -332,57 +226,13 @@ export function GoodTroublePurchaseContinueFlow({
         <GoodTroublePurchaseDobForm
           busy={busy}
           error={error}
-          onSubmit={(iso) => void submitDob(iso)}
+          onSubmit={(iso) => void submitDobAndQualify(iso)}
         />
       )}
 
       {phase === "under_21" && (
         <StatusBanner tone="info" title={GOOD_TROUBLE_PURCHASE_UNDER_21_TITLE}>
           {GOOD_TROUBLE_PURCHASE_UNDER_21_MESSAGE}
-        </StatusBanner>
-      )}
-
-      {phase === "verify" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <p style={{ margin: 0, fontSize: "0.78rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
-            {GOOD_TROUBLE_PURCHASE_CONTEXT}
-          </p>
-          <p style={{ margin: 0, fontWeight: 700, fontSize: "1rem" }}>{GOOD_TROUBLE_PURCHASE_VERIFY_HEADING}</p>
-          <p style={{ margin: 0, fontSize: "0.95rem", lineHeight: 1.65 }}>
-            {GOOD_TROUBLE_PURCHASE_VERIFY_INTRO}
-          </p>
-          {idvProvider === "manual" && captureStarted ? (
-            <AbraxasIdentityCapture
-              email={email}
-              suiAddress={suiAddress}
-              pendingReview={identityStatus === "pending"}
-              capturePolicy={{
-                verificationRequestId: verifyRequestId,
-                policyId,
-                partnerId,
-                minimumAge: 21,
-              }}
-              onSubmitted={() => {
-                setPhase("review");
-                void refresh();
-              }}
-            />
-          ) : (
-            <Btn disabled={startingIdv || busy} onClick={() => void startIdentityVerification()}>
-              {startingIdv ? "Starting…" : GOOD_TROUBLE_PURCHASE_VERIFY_ACTION}
-            </Btn>
-          )}
-          {!veriffConfigured && idvProvider === "veriff" && (
-            <p role="alert" style={{ color: "var(--text-secondary)" }}>
-              Age verification is temporarily unavailable. Return to Good Trouble and try again later.
-            </p>
-          )}
-        </div>
-      )}
-
-      {phase === "review" && (
-        <StatusBanner tone="pending" title="Verification in progress">
-          Your age verification is being reviewed. This page will update when it is ready.
         </StatusBanner>
       )}
 

@@ -5,6 +5,7 @@ import type { CredentialClaimRecord } from "@/lib/credentials/claimSchema";
 import {
   SELF_ATTESTATION_CLAIM_TYPE,
   SELF_ATTESTATION_PROVENANCE,
+  type SelfAttestationPurpose,
 } from "@/lib/assurance/selfAttestation/constants";
 import type { PartnerPolicyRules, RequiredClaimRule } from "@/lib/policy/types";
 
@@ -29,6 +30,19 @@ export function isBrowseAccessPolicy(rules: PartnerPolicyRules): boolean {
   return rules.browse_access_only === true;
 }
 
+export function isAgeEligibilityOnlyPolicy(rules: PartnerPolicyRules): boolean {
+  return rules.age_eligibility_only === true;
+}
+
+export function isSelfAttestationEligiblePolicy(rules: PartnerPolicyRules): boolean {
+  return isBrowseAccessPolicy(rules) || isAgeEligibilityOnlyPolicy(rules);
+}
+
+export function expectedSelfAttestationPurpose(rules: PartnerPolicyRules): SelfAttestationPurpose {
+  if (isAgeEligibilityOnlyPolicy(rules)) return "purchase";
+  return "browse";
+}
+
 export function selfAttestationForbiddenForRule(rule: RequiredClaimRule): boolean {
   const claimType = String(rule.claim_type);
   if (REGULATED_CLAIM_TYPES_BLOCKED_FOR_SELF_ATTEST.includes(
@@ -42,18 +56,19 @@ export function selfAttestationForbiddenForRule(rule: RequiredClaimRule): boolea
   return false;
 }
 
-export function selfAttestationClaimMeetsBrowseRule(
+export function selfAttestationClaimMeetsEligibilityRule(
   claim: CredentialClaimRecord,
   rule: RequiredClaimRule,
   partnerId?: string,
   policyId?: string,
+  expectedPurpose: SelfAttestationPurpose = "browse",
 ): boolean {
   if (!isSelfAttestationClaim(claim)) return false;
   if (claim.assurance_level !== "L0") return false;
 
   if (partnerId && claim.claim_value?.partner_id !== partnerId) return false;
   if (policyId && claim.claim_value?.policy_id !== policyId) return false;
-  if (claim.claim_value?.purpose !== "browse") return false;
+  if (claim.claim_value?.purpose !== expectedPurpose) return false;
 
   if (rule.must_equal !== undefined) {
     const outcome = claim.claim_value.outcome ?? claim.claim_value.value;
@@ -61,6 +76,16 @@ export function selfAttestationClaimMeetsBrowseRule(
   }
 
   return true;
+}
+
+/** @deprecated Prefer selfAttestationClaimMeetsEligibilityRule with explicit purpose. */
+export function selfAttestationClaimMeetsBrowseRule(
+  claim: CredentialClaimRecord,
+  rule: RequiredClaimRule,
+  partnerId?: string,
+  policyId?: string,
+): boolean {
+  return selfAttestationClaimMeetsEligibilityRule(claim, rule, partnerId, policyId, "browse");
 }
 
 export function assertSelfAttestationNeverAuthoritative(claimType: string): void {

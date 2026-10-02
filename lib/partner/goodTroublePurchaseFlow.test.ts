@@ -40,7 +40,8 @@ describe("isCanonicalGoodTroublePurchaseFlow", () => {
     })).toBe(false);
   });
 
-  it("exposes plain-language verify action copy", () => {
-    expect(GOOD_TROUBLE_PURCHASE_VERIFY_ACTION).toBe("Verify my age");
+  it("exposes plain-language continue action copy without IDV escalation", () => {
+    expect(GOOD_TROUBLE_PURCHASE_VERIFY_ACTION).toBe("Continue");
+    expect(GOOD_TROUBLE_PURCHASE_VERIFY_ACTION).not.toContain("Verify my age");
   });
 });

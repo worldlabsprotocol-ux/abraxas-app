@@ -80,6 +80,16 @@ export function rejectBrowseReceiptForCheckout(receiptOrPayload) {
   if (record.purpose === "browse") {
     return { authorized: false, code: "browse_purpose_not_checkout" };
   }
+  const pilotAgeEligibility = (record.evaluated_claim_refs ?? []).some(
+    (ref) => ref.claim_type === "self_attested_age_band",
+  );
+  if (
+    record.assurance_level === "L0"
+    && record.artifact_type === "eligibility_decision_receipt"
+    && pilotAgeEligibility
+  ) {
+    return { authorized: false, code: "requires_authoritative_receipt" };
+  }
   if (record.assurance_level === "L0") {
     return { authorized: false, code: "l0_not_checkout_authority" };
   }

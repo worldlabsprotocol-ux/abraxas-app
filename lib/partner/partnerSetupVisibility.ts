@@ -33,7 +33,7 @@ export function resolvePartnerSetupVisibility({
       && !canonicalPurchase
       && partnerId !== GOOD_TROUBLE_PARTNER_ID,
     showIdentityVerification:
-      walletReady && !identityComplete && !underReview && !dobFirstBrowse,
+      walletReady && !identityComplete && !underReview && !dobFirstBrowse && !canonicalPurchase,
     showDobFirstBrowseForm: walletReady && dobFirstBrowse && !underReview,
   };
 }

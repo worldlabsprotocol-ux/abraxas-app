@@ -47,7 +47,7 @@ export const PURCHASE_FLOW = {
   returnUrlBase: PURCHASE_RETURN_URL_BASE,
   flowIdPrefix: FLOW_ID_PREFIX_PURCHASE,
   callbackParam: GTV_PARAM,
-  assuranceLabel: "L2+",
+  assuranceLabel: "L0 age eligibility",
 };
 
 /** @param {unknown} purpose */

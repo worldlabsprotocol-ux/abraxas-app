@@ -10,6 +10,12 @@ const EXPECTED_ARTIFACT_TYPE = "eligibility_decision_receipt";
 const SANDBOX_ONLY_INVALIDATION_REASON = "production_not_usable:false";
 const RECEIPT_ID_RE = /^dr_[A-Za-z0-9_-]{8,128}$/;
 
+function isPilotAgeEligibilityReceipt(receipt) {
+  return (receipt.evaluated_claim_refs ?? []).some(
+    (ref) => ref.claim_type === "self_attested_age_band",
+  );
+}
+
 function sharedErrors(receipt, now) {
   const errors = [];
   if (receipt.signature_valid !== true) errors.push("signature_invalid");
@@ -24,7 +30,15 @@ function sharedErrors(receipt, now) {
   }
   if (receipt.valid_for_purchase === false) errors.push("not_valid_for_purchase");
   if (receipt.purpose === "browse") errors.push("browse_purpose_not_checkout");
-  if (receipt.assurance_level === "L0") errors.push("l0_not_checkout_authority");
+  if (receipt.assurance_level === "L0" && !isPilotAgeEligibilityReceipt(receipt)) {
+    errors.push("l0_not_checkout_authority");
+  }
+  if (isPilotAgeEligibilityReceipt(receipt)) {
+    const hasIdentityClaim = (receipt.evaluated_claim_refs ?? []).some(
+      (ref) => ref.claim_type === "identity_verified" || ref.claim_type === "liveness_passed",
+    );
+    if (hasIdentityClaim) errors.push("pilot_receipt_must_not_claim_identity");
+  }
 
   if (!receipt.expires_at) {
     errors.push("expires_at_missing");

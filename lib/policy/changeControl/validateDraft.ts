@@ -35,7 +35,7 @@ export function validatePolicyDraftForPublish(policy: PartnerPolicy | null): Dra
   if (!policy.name?.trim()) errors.push("policy_name_required");
 
   const hasClaims = (rules.required_claims ?? []).length > 0;
-  if (!hasClaims && !rules.allow_core_only && !rules.browse_access_only) {
+  if (!hasClaims && !rules.allow_core_only && !rules.browse_access_only && !rules.age_eligibility_only) {
     errors.push("required_claims_or_browse_or_core_only");
   }
 

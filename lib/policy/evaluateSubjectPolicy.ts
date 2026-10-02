@@ -8,7 +8,10 @@ import { assertPolicyBelongsToPartner } from "@/lib/policy/assertPolicyOwnership
 import { getPartnerPolicy, getPartnerPolicyAtVersion } from "@/lib/policy/getPolicy";
 import { resolveEffectivePolicyRules } from "@/lib/policy/resolveEffectivePolicyRules";
 import { loadPolicyTrustContext } from "@/lib/trust/loadPolicyTrustContext";
-import { isBrowseAccessPolicy } from "@/lib/policy/selfAttestationGuards";
+import {
+  expectedSelfAttestationPurpose,
+  isSelfAttestationEligiblePolicy,
+} from "@/lib/policy/selfAttestationGuards";
 import { getActiveSelfAttestations } from "@/lib/assurance/selfAttestation/selfAttestationLedger";
 import { ledgerRowsToClaims } from "@/lib/assurance/selfAttestation/selfAttestationClaims";
 import type { CredentialClaimRecord } from "@/lib/credentials/claimSchema";
@@ -41,12 +44,12 @@ export async function evaluatePolicyForSubject(input: {
   const effectiveRules = resolveEffectivePolicyRules(policy);
   let mergedClaims = [...claims, ...(input.additionalClaims ?? [])];
 
-  if (isBrowseAccessPolicy(effectiveRules)) {
+  if (isSelfAttestationEligiblePolicy(effectiveRules)) {
     const rows = await getActiveSelfAttestations({
       holderRef: subject,
-      partnerId: input.partnerId,
+      partnerId: policy.partner_id,
       policyId: policy.id,
-      purpose: "browse",
+      purpose: expectedSelfAttestationPurpose(effectiveRules),
     });
     mergedClaims = [...mergedClaims, ...ledgerRowsToClaims(rows)];
   }
@@ -62,6 +65,7 @@ export async function evaluatePolicyForSubject(input: {
     jurisdiction: trustContext.jurisdiction,
     partnerId: input.partnerId,
     policyId: policy.id,
+    policyRules: effectiveRules,
     trustRulesByClaimType: trustContext.trustRulesByClaimType,
   });
 
