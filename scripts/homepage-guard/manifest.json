@@ -43,8 +43,8 @@
   "criticalMarkers": [
     {
       "id": "hero-centered",
-      "file": "components/home/HomeSharpHero.tsx",
-      "mustContain": ["abx-home-hero", "abx-home-hero-actions"]
+      "file": "components/home/cinematic/thesis/CinematicHero.tsx",
+      "mustContain": ["abx-home-hero", "abx-home-hero-actions", "CINEMATIC_THESIS_LINE_1"]
     },
     {
       "id": "home-shell-centered",
@@ -69,7 +69,7 @@
     {
       "id": "command-center-map",
       "file": "components/redesign/RedesignHome.tsx",
-      "mustContain": ["HomeArchitectureFlow", "HomeCapabilityMap", "HomeGoodTroubleIntegration", "HomeAudiencePanels", "HomeTrustClose"]
+      "mustContain": ["CinematicHero", "ScrollDisclosureStory", "VerifyOnceThesisDiagram", "HomeGoodTroubleIntegration", "HomeAudiencePanels", "HomeTrustClose"]
     },
     {
       "id": "good-trouble-sandbox",
