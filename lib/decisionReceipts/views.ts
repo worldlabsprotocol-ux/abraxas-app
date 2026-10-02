@@ -8,6 +8,7 @@ import type {
 } from "@/lib/decisionReceipts/types";
 import { verifyRecordSignatureWithRegistry } from "@/lib/decisionReceipts/verificationKeyLifecycle";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
+import { assertCustodySafePayload } from "@/lib/custody/guardrails";
 import { pickAllowedKeys } from "@/lib/privacy/selectiveDisclosure";
 import { SHARED_SURFACE_FIELDS } from "@/lib/privacy/selectiveDisclosure/contract";
 
@@ -79,5 +80,9 @@ export function assertNoPiiInPublicView(view: DecisionReceiptPublicView): void {
     if (json.includes(`"${term}"`)) {
       throw new Error(`Public receipt view must not contain ${term}`);
     }
+  }
+  const custody = assertCustodySafePayload(view, "public_receipt");
+  if (!custody.ok) {
+    throw new Error(`Public receipt custody guardrail violation: ${custody.violations[0]?.code ?? "unknown"}`);
   }
 }

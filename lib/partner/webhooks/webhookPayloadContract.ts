@@ -13,6 +13,7 @@ import {
   outcomeForPublicEventType,
 } from "@/lib/partner/eventDelivery/contract";
 import { toPublicPartnerEventType } from "@/lib/partner/eventDelivery/mapping";
+import { assertCustodySafePayload } from "@/lib/custody/guardrails";
 import { pickAllowedKeys } from "@/lib/privacy/selectiveDisclosure/enforce";
 import {
   WEBHOOK_PAYLOAD_ALLOWED_KEYS,
@@ -74,7 +75,15 @@ export function buildPartnerWebhookPayload(input: {
   if (input.validityClass) payload.validity_class = input.validityClass;
   if (input.expiresAt) payload.expires_at = input.expiresAt;
 
-  return (pickAllowedKeys(payload, WEBHOOK_PAYLOAD_ALLOWED_KEYS) ?? payload) as unknown as PartnerWebhookPayload;
+  const sanitized = (pickAllowedKeys(payload, WEBHOOK_PAYLOAD_ALLOWED_KEYS) ?? payload) as unknown as PartnerWebhookPayload;
+  const custody = assertCustodySafePayload(sanitized, "partner_webhook");
+  if (!custody.ok) {
+    throw Object.assign(new Error("webhook_custody_guardrail_violation"), {
+      code: "webhook_custody_guardrail_violation",
+      violations: custody.violations,
+    });
+  }
+  return sanitized;
 }
 
 export function webhookPayloadHasNoPii(payload: PartnerWebhookPayload): boolean {
