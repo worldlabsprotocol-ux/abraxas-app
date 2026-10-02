@@ -28,7 +28,7 @@ async function authorize(req: NextRequest, applicationId: string, limit: number)
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return { ok: false as const, response: auth.response };
 
-  const limited = enforceLaunchpadTenantRateLimit(
+  const limited = await enforceLaunchpadTenantRateLimit(
     req,
     "/api/launchpad/go-live",
     auth.session.partnerId,

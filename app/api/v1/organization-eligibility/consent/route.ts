@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   }
   const parsed = parseOrganizationConsentBody(body);
   if ("error" in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
-  const record = createOrganizationConsent({
+  const record = await createOrganizationConsent({
     partnerHmac: organizationPartnerHmac(auth.ctx.partnerId),
     ...parsed,
   });

@@ -37,7 +37,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 }
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
-  const limited = enforceLaunchpadRateLimit(req, "/api/launchpad/webhooks", 10);
+  const limited = await enforceLaunchpadRateLimit(req, "/api/launchpad/webhooks", 10);
   if (limited) return limited;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
 }
 
 export async function PATCH(req: NextRequest, { params }: RouteContext) {
-  const limited = enforceLaunchpadRateLimit(req, "/api/launchpad/webhooks/enable", 10);
+  const limited = await enforceLaunchpadRateLimit(req, "/api/launchpad/webhooks/enable", 10);
   if (limited) return limited;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
@@ -97,7 +97,7 @@ export async function PATCH(req: NextRequest, { params }: RouteContext) {
 }
 
 export async function DELETE(req: NextRequest, { params }: RouteContext) {
-  const limited = enforceLaunchpadRateLimit(req, "/api/launchpad/webhooks/delete", 10);
+  const limited = await enforceLaunchpadRateLimit(req, "/api/launchpad/webhooks/delete", 10);
   if (limited) return limited;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;

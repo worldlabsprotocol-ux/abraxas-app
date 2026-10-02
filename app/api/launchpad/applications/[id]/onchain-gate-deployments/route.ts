@@ -25,7 +25,7 @@ type RouteContext = { params: { id: string } };
 export async function GET(req: NextRequest, { params }: RouteContext) {
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
-  const limited = enforceLaunchpadTenantRateLimit(req, "/api/launchpad/onchain-gate-deployments", auth.session.partnerId, 30);
+  const limited = await enforceLaunchpadTenantRateLimit(req, "/api/launchpad/onchain-gate-deployments", auth.session.partnerId, 30);
   if (limited) return limited;
   const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 export async function POST(req: NextRequest, { params }: RouteContext) {
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
-  const limited = enforceLaunchpadTenantRateLimit(req, "/api/launchpad/onchain-gate-deployments", auth.session.partnerId, 8);
+  const limited = await enforceLaunchpadTenantRateLimit(req, "/api/launchpad/onchain-gate-deployments", auth.session.partnerId, 8);
   if (limited) return limited;
   let json: unknown = {};
   try {

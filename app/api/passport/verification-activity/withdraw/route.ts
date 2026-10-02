@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(holderWithdrawalClientError("sign_in_required"), { status: 401 });
   }
 
-  const limited = checkLaunchpadRateLimit(req, "/api/passport/verification-activity/withdraw", 10);
+  const limited = await checkLaunchpadRateLimit(req, "/api/passport/verification-activity/withdraw", 10);
   if (!limited.allowed) {
     return NextResponse.json({ ok: false, error: "Try again shortly." }, { status: 429 });
   }

@@ -10,7 +10,7 @@ const headers = { "Cache-Control": "no-store, must-revalidate" };
 
 /** Public, read-only check of one finalized institutional devnet transaction. */
 export async function GET(req: NextRequest) {
-  const limited = enforceLaunchpadRateLimit(req, "/api/solana/devnet/proof", 10);
+  const limited = await enforceLaunchpadRateLimit(req, "/api/solana/devnet/proof", 10);
   if (limited) return limited;
   const query = req.nextUrl.searchParams;
   if (Array.from(query.keys()).some((key) => key !== "signature") || query.getAll("signature").length !== 1) {

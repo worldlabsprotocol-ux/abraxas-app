@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Sign in required" }, { status: 401 });
   }
 
-  const limited = checkLaunchpadRateLimit(
+  const limited = await checkLaunchpadRateLimit(
     req,
     "/api/passport/verification-activity/withdraw-all",
     3,

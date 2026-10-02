@@ -5,6 +5,7 @@ import { NextRequest } from "next/server";
 import {
   checkLaunchpadRateLimit,
   checkLaunchpadTenantRateLimit,
+  launchpadRateLimitBackendInfo,
   resetLaunchpadRateLimitStoreForTests,
 } from "@/lib/partner/launchpad/rateLimit";
 
@@ -13,25 +14,31 @@ describe("launchpad rate limit", () => {
     resetLaunchpadRateLimitStoreForTests();
   });
 
-  it("blocks after limit is exceeded", () => {
+  it("blocks after limit is exceeded", async () => {
     const req = new NextRequest("http://localhost/api/launchpad/applications", {
       headers: { "x-forwarded-for": "203.0.113.10" },
     });
-    expect(checkLaunchpadRateLimit(req, "/api/launchpad/applications", 2).allowed).toBe(true);
-    expect(checkLaunchpadRateLimit(req, "/api/launchpad/applications", 2).allowed).toBe(true);
-    const blocked = checkLaunchpadRateLimit(req, "/api/launchpad/applications", 2);
+    expect((await checkLaunchpadRateLimit(req, "/api/launchpad/applications", 2)).allowed).toBe(true);
+    expect((await checkLaunchpadRateLimit(req, "/api/launchpad/applications", 2)).allowed).toBe(true);
+    const blocked = await checkLaunchpadRateLimit(req, "/api/launchpad/applications", 2);
     expect(blocked.allowed).toBe(false);
     if (!blocked.allowed) {
       expect(blocked.retryAfterSec).toBeGreaterThan(0);
     }
   });
 
-  it("scopes sandbox readiness limits by tenant", () => {
+  it("scopes sandbox readiness limits by tenant", async () => {
     const req = new NextRequest("http://localhost/api/launchpad/sandbox-readiness/run", {
       headers: { "x-forwarded-for": "203.0.113.11" },
     });
-    expect(checkLaunchpadTenantRateLimit(req, "/api/launchpad/sandbox-readiness/run", "partner-a", 1).allowed).toBe(true);
-    expect(checkLaunchpadTenantRateLimit(req, "/api/launchpad/sandbox-readiness/run", "partner-a", 1).allowed).toBe(false);
-    expect(checkLaunchpadTenantRateLimit(req, "/api/launchpad/sandbox-readiness/run", "partner-b", 1).allowed).toBe(true);
+    expect((await checkLaunchpadTenantRateLimit(req, "/api/launchpad/sandbox-readiness/run", "partner-a", 1)).allowed).toBe(true);
+    expect((await checkLaunchpadTenantRateLimit(req, "/api/launchpad/sandbox-readiness/run", "partner-a", 1)).allowed).toBe(false);
+    expect((await checkLaunchpadTenantRateLimit(req, "/api/launchpad/sandbox-readiness/run", "partner-b", 1)).allowed).toBe(true);
+  });
+
+  it("reports backend info without claiming production scale", () => {
+    const info = launchpadRateLimitBackendInfo();
+    expect(["memory", "upstash"]).toContain(info.backend);
+    expect(info.upstash_config).toBeDefined();
   });
 });

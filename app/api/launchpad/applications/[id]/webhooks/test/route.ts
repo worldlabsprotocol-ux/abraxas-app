@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 type RouteContext = { params: { id: string } };
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
-  const limited = enforceLaunchpadRateLimit(req, "/api/launchpad/webhooks/test", 6);
+  const limited = await enforceLaunchpadRateLimit(req, "/api/launchpad/webhooks/test", 6);
   if (limited) return limited;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;

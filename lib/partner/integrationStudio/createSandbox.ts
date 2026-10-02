@@ -71,7 +71,7 @@ function safeApplicationView(input: {
 }
 
 export async function createStudioSandbox(req: NextRequest) {
-  const ipLimited = enforceLaunchpadRateLimit(req, STUDIO_CREATE_ROUTE, 8);
+  const ipLimited = await enforceLaunchpadRateLimit(req, STUDIO_CREATE_ROUTE, 8);
   if (ipLimited) return ipLimited;
 
   const auth = await requireLaunchpadSession(req);
@@ -116,7 +116,7 @@ export async function createStudioSandbox(req: NextRequest) {
     return studioError("forbidden", 403);
   }
 
-  const tenantLimited = enforceLaunchpadTenantRateLimit(
+  const tenantLimited = await enforceLaunchpadTenantRateLimit(
     req,
     STUDIO_CREATE_ROUTE,
     partnerId,

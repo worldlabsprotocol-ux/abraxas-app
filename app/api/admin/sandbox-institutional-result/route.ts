@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
   if (sandboxInstitutionalOperatorCsrfRejected(req)) {
     return fail("csrf_required", 403);
   }
-  const limited = checkLaunchpadRateLimit(req, "admin:sandbox-institutional-result", 6, 60);
+  const limited = await checkLaunchpadRateLimit(req, "admin:sandbox-institutional-result", 6, 60);
   if (!limited.allowed) return fail("rate_limited", 429);
   const body = await req.json().catch(() => null);
   const record = body && typeof body === "object" ? body as Record<string, unknown> : {};
