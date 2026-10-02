@@ -16,6 +16,13 @@ import { getActiveSelfAttestations } from "@/lib/assurance/selfAttestation/selfA
 import { ledgerRowsToClaims } from "@/lib/assurance/selfAttestation/selfAttestationClaims";
 import type { CredentialClaimRecord } from "@/lib/credentials/claimSchema";
 import type { PartnerPolicy, PolicyEvaluationResult } from "@/lib/policy/types";
+import { isContentOriginDisclosurePolicyId } from "@/lib/provenance/constants";
+import { evaluateContentOriginDisclosure } from "@/lib/provenance/contentOriginDisclosure";
+import { getActiveArtifactBinding } from "@/lib/provenance/artifactStore";
+import {
+  loadProvenanceSession,
+  loadProvenanceSubmission,
+} from "@/lib/provenance/provenanceSessionStore";
 
 export interface SubjectPolicyEvaluation {
   policy: PartnerPolicy;
@@ -31,6 +38,9 @@ export async function evaluatePolicyForSubject(input: {
   policyVersion?: number;
   /** Server-derived claims only. Never pass client, query, or cookie-decoded values. */
   additionalClaims?: CredentialClaimRecord[];
+  /** Artifact hash for content provenance evaluation — server-derived only. */
+  submittedContentHash?: string | null;
+  verificationRequestId?: string | null;
 }): Promise<SubjectPolicyEvaluation> {
   const policy = input.policyVersion != null
     ? await getPartnerPolicyAtVersion(input.policyId, input.policyVersion)
@@ -61,13 +71,51 @@ export async function evaluatePolicyForSubject(input: {
     jurisdiction: residency ?? claims.find(c => c.jurisdiction)?.jurisdiction,
   });
 
-  const evaluation = evaluatePolicyRules(effectiveRules, mergedClaims, {
-    jurisdiction: trustContext.jurisdiction,
-    partnerId: input.partnerId,
-    policyId: policy.id,
-    policyRules: effectiveRules,
-    trustRulesByClaimType: trustContext.trustRulesByClaimType,
-  });
+  let evaluation: PolicyEvaluationResult;
+  if (isContentOriginDisclosurePolicyId(policy.id)) {
+    const session = input.verificationRequestId
+      ? loadProvenanceSession(input.verificationRequestId)
+      : null;
+    const submittedContentHash = input.submittedContentHash
+      ?? loadProvenanceSubmission({ subjectId: subject, policyId: policy.id })
+      ?? session?.expectedContentHash
+      ?? null;
+
+    if (!submittedContentHash) {
+      evaluation = {
+        decision: "denied",
+        claims: {},
+        reason_codes: ["artifact_hash_required"],
+        valid_until: null,
+        missing_claims: [
+          "creator_attested",
+          "ai_assistance_disclosed",
+          "source_integrity_verified",
+        ],
+        decision_context: "sandbox_only",
+        production_usable: false,
+      };
+    } else {
+      const binding = await getActiveArtifactBinding({
+        subjectId: subject,
+        contentHash: submittedContentHash,
+      });
+      evaluation = evaluateContentOriginDisclosure({
+        claims: mergedClaims,
+        submittedContentHash,
+        artifactBinding: binding,
+        expectedContentHash: session?.expectedContentHash ?? submittedContentHash,
+      });
+    }
+  } else {
+    evaluation = evaluatePolicyRules(effectiveRules, mergedClaims, {
+      jurisdiction: trustContext.jurisdiction,
+      partnerId: input.partnerId,
+      policyId: policy.id,
+      policyRules: effectiveRules,
+      trustRulesByClaimType: trustContext.trustRulesByClaimType,
+    });
+  }
 
   return { policy, evaluation, claims: mergedClaims };
 }

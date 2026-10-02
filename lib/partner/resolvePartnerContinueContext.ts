@@ -14,6 +14,7 @@ import {
 import { isGoodTroubleRegulatedPurchasePolicyId } from "@/lib/partner/goodTroublePurchaseFlow";
 import { findProductionPolicyRules } from "@/lib/policy/productionPolicyContract";
 import { isBrowseAccessPolicy } from "@/lib/policy/selfAttestationGuards";
+import { isContentOriginDisclosurePolicyId } from "@/lib/provenance/constants";
 
 export type PartnerContinueUrlParams = {
   partnerId: string;
@@ -31,6 +32,7 @@ export type PartnerContinueServerContext = {
 
 export type ResolvedPartnerContinueContext = PartnerContinueUrlParams & {
   isDobFirstBrowse: boolean;
+  isContentOriginDisclosure: boolean;
   authoritative: boolean;
 };
 
@@ -130,6 +132,7 @@ export function resolvePartnerContinueContext(
     returnUrl,
     verifyRequestId: url.verifyRequestId,
     isDobFirstBrowse,
+    isContentOriginDisclosure: isContentOriginDisclosurePolicyId(policyId),
     authoritative,
   };
 }

@@ -60,6 +60,13 @@ import {
   buildBrowseReturnUrl,
   reuseBrowseSelfAttestation,
 } from "@/lib/assurance/selfAttestation/reuseBrowseSelfAttestation";
+import { isContentOriginDisclosureFlow } from "@/lib/provenance/partnerFlow";
+import { evaluateContentOriginDisclosurePartnerFlow } from "@/lib/provenance/provenancePartnerFlowOrchestration";
+import {
+  isContentOriginDisclosurePolicyId,
+  resolveProvenanceSandboxCredentialJti,
+} from "@/lib/provenance/constants";
+import { buildProvenancePartnerVerificationResult } from "@/lib/partner/provenancePartnerResult";
 
 const APP_URL = getPublicAppOrigin();
 const ISSUER = process.env.ABRAXAS_ISSUER_URL ?? APP_URL;
@@ -211,8 +218,19 @@ async function evaluateHolderPolicy(
   partnerId: string,
   policyId: string,
   policyVersion?: number,
+  options?: {
+    submittedContentHash?: string | null;
+    verificationRequestId?: string | null;
+  },
 ) {
-  return evaluatePolicyForSubject({ suiAddress, policyId, partnerId, policyVersion });
+  return evaluatePolicyForSubject({
+    suiAddress,
+    policyId,
+    partnerId,
+    policyVersion,
+    submittedContentHash: options?.submittedContentHash,
+    verificationRequestId: options?.verificationRequestId,
+  });
 }
 
 async function denyIfPartnerFlowRevoked(input: {
@@ -353,6 +371,9 @@ export async function issuePartnerSessionReceipt(input: {
       input.partnerId,
       input.policyId,
       issuable.version,
+      {
+        verificationRequestId: input.verificationRequestId,
+      },
     );
     const sessionExpires = computeSessionReceiptExpiresAt(policy.rules_json);
 
@@ -515,7 +536,7 @@ export async function issuePartnerSessionReceipt(input: {
   const identityVerified = Boolean(evaluation.claims.identity_verified);
   const productEligibilityRequired = policyExplicitlyRequiresProductEligibility(policy.rules_json);
   const productEligibilityVerified = Boolean(evaluation.claims.product_eligibility);
-  const partner_result = buildPartnerVerificationResult({
+  const basePartnerResult = buildPartnerVerificationResult({
     decision: evaluation.decision === "approved" ? "approved" : evaluation.decision === "manual_review" ? "manual_review" : "denied",
     credentialJti: input.credentialJti,
     issuer: ISSUER,
@@ -531,6 +552,9 @@ export async function issuePartnerSessionReceipt(input: {
     assuranceLevel: identityVerified ? "L2" : null,
     reasonCodes: evaluation.reason_codes,
   });
+  const partner_result = isContentOriginDisclosurePolicyId(policy.id)
+    ? buildProvenancePartnerVerificationResult({ base: basePartnerResult, evaluation })
+    : basePartnerResult;
 
   return {
     decision_id: decisionId,
@@ -745,6 +769,19 @@ export async function evaluatePartnerFlow(input: {
   });
   const effectivePurpose = resolvedPurpose ?? input.purpose;
 
+  if (isContentOriginDisclosureFlow({ policyId: input.policyId })) {
+    return evaluateContentOriginDisclosurePartnerFlow({
+      suiAddress: input.suiAddress,
+      partnerId: input.partnerId,
+      policyId: input.policyId,
+      returnUrl: input.returnUrl,
+      purpose: input.purpose,
+      appOrigin: input.appOrigin,
+      expectedPolicyVersion: input.expectedPolicyVersion,
+      launchpadApplicationId: input.launchpadApplicationId,
+    });
+  }
+
   if (isGoodTroubleBrowseFlow({
     partnerId: input.partnerId,
     policyId: input.policyId,
@@ -893,7 +930,13 @@ export async function completePartnerFlowAfterApproval(input: {
   }
 
   const credential = await getHolderCredentialStatus(input.suiAddress);
-  if (credential.status !== "active" || !credential.credential_jti) {
+  const provenanceFlow = isContentOriginDisclosurePolicyId(input.policyId);
+  const credentialJti = credential.status === "active" && credential.credential_jti
+    ? credential.credential_jti
+    : provenanceFlow
+      ? resolveProvenanceSandboxCredentialJti(input.suiAddress)
+      : null;
+  if (!credentialJti) {
     return { ok: false, error: "Credential not yet active" };
   }
 
@@ -912,7 +955,7 @@ export async function completePartnerFlowAfterApproval(input: {
     suiAddress: input.suiAddress,
     partnerId: input.partnerId,
     policyId: input.policyId,
-    credentialJti: credential.credential_jti,
+    credentialJti,
     verificationRequestId: input.verificationRequestId,
     expectedPolicyVersion: input.expectedPolicyVersion,
     launchpadApplicationId: input.launchpadApplicationId,
@@ -926,7 +969,7 @@ export async function completePartnerFlowAfterApproval(input: {
     decision_id,
     receipt_id,
     receipt_expires_at,
-    credential_id: credential.credential_jti,
+    credential_id: credentialJti,
     policy_id: input.policyId,
     partner_id: input.partnerId,
   });
