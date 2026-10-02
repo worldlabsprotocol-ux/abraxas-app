@@ -5,12 +5,18 @@
 // app stays calm for users who ask for reduced motion.
 
 import type { Variants, Transition } from "framer-motion";
+import { ABX_MOTION } from "@/lib/design/abraxasMotion";
+import { abxMotionTransition } from "./abxMotionFramer";
 
-// ── Shared spring / easing presets ──────────────────────────────
+function msToSec(ms: number): number {
+  return ms / 1000;
+}
+
+// ── Shared spring / easing presets (derived from semantic roles) ──
 export const springSoft: Transition = { type: "spring", stiffness: 320, damping: 30, mass: 0.8 };
 export const springSnappy: Transition = { type: "spring", stiffness: 460, damping: 26 };
-export const easeOutFast: Transition = { duration: 0.18, ease: [0.22, 1, 0.36, 1] };
-export const easeOutSmooth: Transition = { duration: 0.55, ease: [0.22, 1, 0.36, 1] };
+export const easeOutFast: Transition = abxMotionTransition("micro");
+export const easeOutSmooth: Transition = abxMotionTransition("reveal");
 
 // ── Entrance: fade + rise ───────────────────────────────────────
 export const fadeUp: Variants = {
@@ -59,8 +65,8 @@ export const buttonHover = { scale: 1.035, transition: springSnappy };
 // ── Page / view transition ──────────────────────────────────────
 export const pageTransition: Variants = {
   hidden: { opacity: 0, y: 12 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
-  exit: { opacity: 0, y: -8, transition: { duration: 0.2, ease: "easeIn" } },
+  show: { opacity: 1, y: 0, transition: abxMotionTransition("surface", { tier: "calm" }) },
+  exit: { opacity: 0, y: -8, transition: { duration: msToSec(ABX_MOTION.micro.durationMs), ease: "easeIn" } },
 };
 
 // ── Modal / overlay ─────────────────────────────────────────────

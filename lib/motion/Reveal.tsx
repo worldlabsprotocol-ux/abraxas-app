@@ -5,12 +5,20 @@
 
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import type { CSSProperties, ReactNode } from "react";
+import type { AbxMotionRole, AbxMotionTier } from "@/lib/design/abraxasMotion";
+import { abxFadeUpVariants, abxMotionTransition, abxRevealDistance, abxStaggerDelay } from "./abxMotionFramer";
 
 interface RevealProps {
   children: ReactNode;
   delay?: number;
-  /** vertical travel distance in px (default 24) */
+  /** Index for staggered sequences (uses --abx-stagger-sm when delay omitted) */
+  staggerIndex?: number;
+  /** vertical travel distance in px (default from motion tokens) */
   y?: number;
+  /** Semantic motion role — drives duration and easing */
+  motionRole?: AbxMotionRole;
+  /** Surface intensity tier */
+  tier?: AbxMotionTier;
   /** play every time it enters the viewport instead of just once */
   repeat?: boolean;
   style?: CSSProperties;
@@ -20,21 +28,26 @@ interface RevealProps {
 
 export function Reveal({
   children,
-  delay = 0,
-  y = 24,
+  delay,
+  staggerIndex,
+  y,
+  motionRole = "reveal",
+  tier,
   repeat = false,
   style,
   className,
   as = "div",
 }: RevealProps) {
   const reduce = useReducedMotion();
+  const resolvedDelay = delay ?? (staggerIndex != null ? abxStaggerDelay(staggerIndex) : 0);
+  const travel = y ?? abxRevealDistance();
 
   const variants: Variants = {
-    hidden: { opacity: 0, y: reduce ? 0 : y },
+    hidden: abxFadeUpVariants(motionRole, { y: travel, reduce: !!reduce, tier }).hidden!,
     show: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1], delay },
+      transition: abxMotionTransition(motionRole, { delay: reduce ? 0 : resolvedDelay, tier }),
     },
   };
 
