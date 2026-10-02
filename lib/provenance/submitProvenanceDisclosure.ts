@@ -70,7 +70,7 @@ export async function submitProvenanceDisclosure(
 
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-  saveProvenanceSubmission({
+  await saveProvenanceSubmission({
     subjectId: subject,
     policyId: input.policyId,
     contentHash,

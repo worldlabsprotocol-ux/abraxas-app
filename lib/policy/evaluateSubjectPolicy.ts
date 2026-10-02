@@ -74,10 +74,10 @@ export async function evaluatePolicyForSubject(input: {
   let evaluation: PolicyEvaluationResult;
   if (isContentOriginDisclosurePolicyId(policy.id)) {
     const session = input.verificationRequestId
-      ? loadProvenanceSession(input.verificationRequestId)
+      ? await loadProvenanceSession(input.verificationRequestId)
       : null;
     const submittedContentHash = input.submittedContentHash
-      ?? loadProvenanceSubmission({ subjectId: subject, policyId: policy.id })
+      ?? await loadProvenanceSubmission({ subjectId: subject, policyId: policy.id })
       ?? session?.expectedContentHash
       ?? null;
 

@@ -38,7 +38,7 @@ export async function issueOrganizationEligibility(input: {
   now?: number;
 }): Promise<OrganizationEligibilityRecord> {
   const partner_hmac = organizationPartnerHmac(input.partnerId);
-  const consent = consumeOrganizationConsent({ consent_ref: input.consent_ref, partnerHmac: partner_hmac });
+  const consent = await consumeOrganizationConsent({ consent_ref: input.consent_ref, partnerHmac: partner_hmac });
   if (!consent) fail("consent_required");
   if (!isOrganizationResultCategory(consent.result_category)) fail("unknown_policy");
   if (consent.action === SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_ACTION) {

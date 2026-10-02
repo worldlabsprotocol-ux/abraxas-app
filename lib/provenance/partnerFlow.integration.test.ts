@@ -300,10 +300,10 @@ describe("content provenance partner flow", () => {
     expect(() => assertNoPiiInPublicView(view)).not.toThrow();
   });
 
-  it("uses server-side submission context for evaluation after holder proof", () => {
+  it("uses server-side submission context for evaluation after holder proof", async () => {
     resetProvenanceSessionsForTests();
     const hash = hashFor("session");
-    saveProvenanceSubmission({ subjectId: SUBJECT, policyId: POLICY_ID, contentHash: hash });
+    await saveProvenanceSubmission({ subjectId: SUBJECT, policyId: POLICY_ID, contentHash: hash });
     const facts = extractProvenancePartnerFacts(
       evaluateContentOriginDisclosure({
         claims: activeClaims({ artifactId: "art_session", contentHash: hash }),
