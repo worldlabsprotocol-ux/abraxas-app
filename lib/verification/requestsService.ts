@@ -381,6 +381,7 @@ export async function consentAndDecide(input: {
     policyId: policy.id,
     policyVersion: policy.version,
     subjectId: subject,
+    applicationId: (request.launchpad_application_id as string | null) ?? null,
     decisionResult: evaluation.decision,
     reasonCodes: evaluation.reason_codes,
     claimsJson: evaluation.claims,

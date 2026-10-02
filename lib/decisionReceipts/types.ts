@@ -113,6 +113,8 @@ export interface IssueDecisionReceiptInput {
   policyId: string;
   policyVersion: number;
   subjectId: string;
+  /** Launchpad application boundary for institutional pairwise receipt pseudonyms. */
+  applicationId?: string | null;
   decisionResult: DecisionReceiptResult;
   reasonCodes: string[];
   evaluatedClaimRefs: EvaluatedClaimRef[];

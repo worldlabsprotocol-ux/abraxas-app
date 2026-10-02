@@ -9,7 +9,7 @@ import { buildCanonicalPayload } from "@/lib/decisionReceipts/canonical";
 import { signReceiptPayload } from "@/lib/decisionReceipts/signing";
 import { resolveIssuanceSigningKey } from "@/lib/decisionReceipts/verificationKeyLifecycle";
 import { recordReceiptClaimDependencies } from "@/lib/decisionReceipts/dependencies";
-import { subjectPseudonymId } from "@/lib/decisionReceipts/pseudonym";
+import { resolveReceiptSubjectPseudonym } from "@/lib/decisionReceipts/receiptSubjectPseudonym";
 import { toPartnerView, toPublicView } from "@/lib/decisionReceipts/views";
 import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver";
 import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation";
@@ -119,7 +119,16 @@ export async function issueDecisionReceipt(
   const receiptId = generateReceiptId();
   const evaluatedAt = input.evaluatedAt ?? new Date().toISOString();
   const walletBindingRef = await resolveWalletBindingRef(input.subjectId);
-  const pseudonym = subjectPseudonymId(input.subjectId);
+  const pseudonymResult = await resolveReceiptSubjectPseudonym({
+    claimsSubjectKey: input.subjectId,
+    partnerId: input.partnerId,
+    applicationId: input.applicationId,
+    verificationDecisionId: input.verificationDecisionId,
+  });
+  if (!pseudonymResult.ok) {
+    throw new Error("pairwise_key_missing");
+  }
+  const pseudonym = pseudonymResult.pseudonym;
 
   const canonical = buildCanonicalPayload({
     receipt_id: receiptId,
@@ -286,6 +295,7 @@ export async function issueReceiptForDecision(input: {
   policyId: string;
   policyVersion: number;
   subjectId: string;
+  applicationId?: string | null;
   decisionResult: IssueDecisionReceiptInput["decisionResult"];
   reasonCodes: string[];
   claimsJson: Record<string, unknown>;
@@ -302,6 +312,7 @@ export async function issueReceiptForDecision(input: {
       policyId: input.policyId,
       policyVersion: input.policyVersion,
       subjectId: input.subjectId,
+      applicationId: input.applicationId,
       decisionResult: input.decisionResult,
       reasonCodes: input.reasonCodes,
       evaluatedClaimRefs: input.evaluatedClaimRefs,

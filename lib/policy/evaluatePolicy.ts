@@ -136,13 +136,14 @@ function claimMeetsRule(
     if (String(outcome) !== String(rule.must_equal)) return false;
   }
 
-  if (trustContext && (trustContext.trustRulesByClaimType || rule.accepted_issuers?.length)) {
-    const dbRule = trustContext.trustRulesByClaimType?.get(rule.claim_type);
-    const acceptedIssuers = rule.accepted_issuers ?? dbRule?.accepted_issuer_ids ?? [];
-    if (acceptedIssuers.length > 0 && !acceptedIssuers.includes(claim.issuer_id)) {
-      return false;
-    }
+  const dbRule = trustContext?.trustRulesByClaimType?.get(rule.claim_type);
+  const acceptedIssuers = rule.accepted_issuers ?? dbRule?.accepted_issuer_ids ?? [];
+  if (acceptedIssuers.length > 0) {
+    if (!trustContext) return false;
+    if (!acceptedIssuers.includes(claim.issuer_id)) return false;
+  }
 
+  if (trustContext) {
     const minFromRule = dbRule?.minimum_assurance_level;
     if (minFromRule && claim.assurance_level) {
       if (ASSURANCE_RANK[claim.assurance_level] < ASSURANCE_RANK[minFromRule]) return false;
@@ -173,8 +174,11 @@ function trustFailureReason(
 
   const dbRule = trustContext?.trustRulesByClaimType?.get(rule.claim_type);
   const acceptedIssuers = rule.accepted_issuers ?? dbRule?.accepted_issuer_ids ?? [];
-  if (acceptedIssuers.length > 0 && !acceptedIssuers.includes(claim.issuer_id)) {
-    return `untrusted_issuer:${claim.issuer_id}`;
+  if (acceptedIssuers.length > 0) {
+    if (!trustContext) return `trust_context_required:${rule.claim_type}`;
+    if (!acceptedIssuers.includes(claim.issuer_id)) {
+      return `untrusted_issuer:${claim.issuer_id}`;
+    }
   }
 
   const minFromRule = rule.min_assurance ?? dbRule?.minimum_assurance_level;

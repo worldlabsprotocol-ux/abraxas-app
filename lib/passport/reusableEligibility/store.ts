@@ -25,11 +25,19 @@ function mapReceipt(row: Record<string, unknown>): SourceReceiptRow {
 
 export async function listHolderSourceReceipts(subjectId: string): Promise<SourceReceiptRow[]> {
   const sb = requireSupabaseAdmin();
-  const pseudonym = subjectPseudonymId(subjectId);
+  const { data: decisions, error: decisionError } = await sb
+    .from("verification_decisions")
+    .select("id")
+    .eq("subject_id", subjectId);
+  if (decisionError) throw new Error("unavailable");
+
+  const decisionIds = (decisions ?? []).map((row) => row.id as string).filter(Boolean);
+  if (!decisionIds.length) return [];
+
   const { data, error } = await sb
     .from("decision_receipts")
     .select("id, verification_decision_id, partner_id, policy_id, policy_version, subject_pseudonym_id, decision_result, decision_context, evaluated_at, expires_at, revoked_at, status")
-    .eq("subject_pseudonym_id", pseudonym)
+    .in("verification_decision_id", decisionIds)
     .eq("decision_result", "approved")
     .order("evaluated_at", { ascending: false })
     .limit(40);

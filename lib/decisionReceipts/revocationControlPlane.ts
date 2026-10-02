@@ -249,18 +249,28 @@ export async function listSubjectPartnerAccess(
     status_reason_code: claim.revocation_reference,
   }));
 
-  let receiptQuery = sb
-    .from("decision_receipts")
-    .select("id, verification_decision_id, partner_id, policy_id, status, revoked_at, revocation_reason_code")
-    .eq("subject_pseudonym_id", pseudonym);
+  const { data: decisionRows } = await sb
+    .from("verification_decisions")
+    .select("id")
+    .eq("subject_id", subject);
+  const decisionIds = (decisionRows ?? []).map((row) => row.id as string).filter(Boolean);
 
-  if (scopedPartnerId) {
-    receiptQuery = receiptQuery.eq("partner_id", scopedPartnerId);
+  let receiptRows: Record<string, unknown>[] = [];
+  if (decisionIds.length) {
+    let receiptQuery = sb
+      .from("decision_receipts")
+      .select("id, verification_decision_id, partner_id, policy_id, status, revoked_at, revocation_reason_code")
+      .in("verification_decision_id", decisionIds);
+
+    if (scopedPartnerId) {
+      receiptQuery = receiptQuery.eq("partner_id", scopedPartnerId);
+    }
+
+    const { data } = await receiptQuery
+      .order("evaluated_at", { ascending: false })
+      .limit(50);
+    receiptRows = (data ?? []) as Record<string, unknown>[];
   }
-
-  const { data: receiptRows } = await receiptQuery
-    .order("evaluated_at", { ascending: false })
-    .limit(50);
 
   const receipts = (receiptRows ?? []).map(row => ({
     receipt_id: row.id as string,

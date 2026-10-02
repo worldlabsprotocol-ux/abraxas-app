@@ -440,6 +440,7 @@ export async function issuePartnerSessionReceipt(input: {
         policyId: policy.id,
         policyVersion: policy.version,
         subjectId: subject,
+        applicationId: input.launchpadApplicationId ?? null,
         decisionResult: evaluation.decision === "approved" ? "approved" : evaluation.decision === "manual_review" ? "manual_review" : "denied",
         reasonCodes: evaluation.reason_codes,
         claimsJson: evaluation.claims,

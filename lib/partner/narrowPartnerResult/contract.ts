@@ -27,6 +27,7 @@ export const NARROW_PARTNER_RESULT_ALLOWED_FIELDS = [
   "over_21",
   "identity_verified",
   "assurance_level",
+  "pairwise_subject_ref",
 ] as const;
 
 export interface NarrowPartnerResult {
@@ -41,6 +42,8 @@ export interface NarrowPartnerResult {
   over_21?: boolean;
   identity_verified?: boolean;
   assurance_level?: string | null;
+  /** Partner-bound subject reference for institutional-compatible flows. Never globally correlatable. */
+  pairwise_subject_ref?: string;
 }
 
 export const NARROW_PARTNER_RESULT_NOTICE =
