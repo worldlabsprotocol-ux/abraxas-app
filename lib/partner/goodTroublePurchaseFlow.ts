@@ -27,6 +27,7 @@ export function isCanonicalGoodTroublePurchaseFlow(input: {
 
 export const GOOD_TROUBLE_PURCHASE_TITLE = "Confirm you're 21+" as const;
 
+/** Truthful L0 copy — not government-ID or POS ID verification. */
 export const GOOD_TROUBLE_PURCHASE_CONTEXT =
   "Order eligibility — Good Trouble receives only your 21+ result." as const;
 

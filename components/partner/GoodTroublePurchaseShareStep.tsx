@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Btn } from "@/components/redesign/ui";
 import { consentVerificationRequest } from "@/lib/api/passport";
 import { holderSafeClientMessage } from "@/lib/partner/holderExperience";
@@ -10,24 +10,26 @@ import {
 } from "@/lib/partner/goodTroublePurchaseFlow";
 import { HolderDecisionComplete } from "@/components/protocol/HolderDecisionComplete";
 import { resolvePartnerDisplayName, resolvePartnerReturnLabel } from "@/lib/partner/partnerVerifyDisplay";
+import {
+  navigateAgeEligibilityPurchaseReturn,
+  postAgeEligibilityPurchaseReturn,
+} from "@/lib/passport/ageEligibilityPurchaseReturn";
 
 export function GoodTroublePurchaseShareStep({
   verifyRequestId,
   partnerId,
   policyId,
   returnUrl,
-  onReturn,
-  returnLoading,
 }: {
   verifyRequestId: string;
   partnerId: string;
   policyId: string;
   returnUrl: string;
-  onReturn: () => void;
-  returnLoading?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
+  const [returnBusy, setReturnBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [returnError, setReturnError] = useState<string | null>(null);
   const [receiptId, setReceiptId] = useState<string | null>(null);
   const partnerName = resolvePartnerDisplayName(partnerId);
   const returnLabel = resolvePartnerReturnLabel(partnerId);
@@ -53,16 +55,41 @@ export function GoodTroublePurchaseShareStep({
     }
   }
 
+  const returnToPartner = useCallback(async () => {
+    if (!receiptId) return;
+    setReturnBusy(true);
+    setReturnError(null);
+    const result = await postAgeEligibilityPurchaseReturn({
+      verificationRequestId: verifyRequestId,
+      receiptId,
+      returnUrl,
+    });
+    if (result.ok) {
+      navigateAgeEligibilityPurchaseReturn(result.redirectUrl);
+      return;
+    }
+    setReturnError(holderSafeClientMessage(result.message));
+    setReturnBusy(false);
+  }, [receiptId, returnUrl, verifyRequestId]);
+
   if (receiptId && returnUrl) {
     return (
-      <HolderDecisionComplete
-        receiptId={receiptId}
-        partnerName={partnerName}
-        policyId={policyId}
-        returnLabel={returnLabel}
-        onReturn={onReturn}
-        returnLoading={returnLoading}
-      />
+      <>
+        <HolderDecisionComplete
+          receiptId={receiptId}
+          partnerName={partnerName}
+          policyId={policyId}
+          returnLabel={returnLabel}
+          onReturn={() => void returnToPartner()}
+          returnLoading={returnBusy}
+          showPassportNotice={false}
+        />
+        {returnError ? (
+          <p role="alert" style={{ margin: "0.75rem 0 0", color: "var(--text-secondary)" }}>
+            {returnError}
+          </p>
+        ) : null}
+      </>
     );
   }
 

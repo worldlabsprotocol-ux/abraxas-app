@@ -8,7 +8,14 @@ import {
 import type { PartnerPolicyRules } from "@/lib/policy/types";
 import { isAgeEligibilityOnlyPolicy, isBrowseAccessPolicy } from "@/lib/policy/selfAttestationGuards";
 
-/** Target rules for good-trouble-age_21_retail-v1 pilot (migration 122). */
+/**
+ * Target rules for good-trouble-age_21_retail-v1 pilot (migration 122).
+ *
+ * Missouri compliance boundary: this L0 self-attested age band is a narrow 21+
+ * eligibility result for pilot flows. It is NOT government-ID verification, NOT
+ * identity verification, and NOT a compliant replacement for dispensary point-of-sale
+ * photo-ID requirements. Good Trouble remains responsible for regulated sale checks.
+ */
 export const GOOD_TROUBLE_PILOT_AGE_ELIGIBILITY_RULES: PartnerPolicyRules = {
   age_eligibility_only: true,
   minimum_assurance_cap: "L0",
