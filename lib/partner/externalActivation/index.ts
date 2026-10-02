@@ -16,4 +16,8 @@ export { buildDeveloperIntegrationSummary } from "./configSummary";
 export { computeDeveloperTimeToProofMetrics } from "./metrics";
 export { buildDeveloperIntegrationHealth } from "./developerHealth";
 export { developerErrorRemediation, listDeveloperErrorRemediation } from "./errorRemediation";
-export { runSandboxFirstProof, type SandboxFirstProofResult } from "./firstProof";
+export { runSandboxFirstProof, sandboxFirstProofSubjectId, type SandboxFirstProofResult } from "./firstProof";
+export {
+  assessDeterministicFirstProofEligibility,
+  buildSandboxEconomicDemoEvidence,
+} from "./firstProofEligibility";

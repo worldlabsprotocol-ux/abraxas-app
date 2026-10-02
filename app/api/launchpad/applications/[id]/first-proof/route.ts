@@ -38,7 +38,14 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   });
 
   if (!result.ok) {
-    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, result.code);
+    const status = result.code === "live_holder_required" ? 422 : 400;
+    return launchpadJson({
+      ok: false,
+      code: result.code,
+      error: result.detail,
+      ...(result.remediation_href ? { remediation_href: result.remediation_href } : {}),
+      ...(result.reason_codes ? { reason_codes: result.reason_codes } : {}),
+    }, status);
   }
 
   return launchpadJson({ ...result });

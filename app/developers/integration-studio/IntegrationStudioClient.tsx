@@ -321,13 +321,20 @@ export function IntegrationStudioClient() {
       const data = await res.json() as {
         ok?: boolean;
         code?: string;
+        error?: string;
+        remediation_href?: string;
         receipt_id?: string;
         request_id?: string;
         callback_url?: string;
         success?: { requested: string; returned: string; shared: string[]; withheld: string[] };
       };
       if (!res.ok || !data.ok || !data.receipt_id || !data.request_id || !data.callback_url) {
-        setFirstProofError(data.code ?? "first_proof_failed");
+        const detail = data.error ?? data.code ?? "first_proof_failed";
+        setFirstProofError(
+          data.code === "live_holder_required" && data.remediation_href
+            ? `${detail} Use Launchpad Test (${data.remediation_href}).`
+            : detail,
+        );
         return;
       }
       setFirstProofResult({
