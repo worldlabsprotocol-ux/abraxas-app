@@ -1,5 +1,5 @@
 // FILE: examples/good-trouble-wix/pages/PurchaseVerificationEntry.js
-// Wix Velo page code — regulated purchase eligibility (L2+) entry point.
+// Wix Velo page code — regulated purchase eligibility (L0+) entry point.
 
 import { createPurchaseVerificationStart } from "backend/abraxasVerification.web";
 
@@ -9,6 +9,11 @@ import {
 } from "public/abraxasClientConstants";
 
 import { createPurchaseVerificationController } from "public/purchaseVerificationLogic";
+
+import {
+  parsePurchaseEntryFromQuery,
+  resolvePurchaseReturnDestinationForStart,
+} from "public/purchaseReturnDestination";
 
 import wixLocationFrontend from "wix-location-frontend";
 import wixWindow from "wix-window";
@@ -20,8 +25,27 @@ let purchaseController = null;
 
 $w.onReady(() => {
   if (wixWindow.rendering.env !== "browser") return;
+  captureOrderNowOriginFromQuery();
   wirePurchaseButton();
 });
+
+function captureOrderNowOriginFromQuery() {
+  try {
+    const fromQuery = parsePurchaseEntryFromQuery(wixLocationFrontend.query ?? {});
+    if (!fromQuery) return;
+    session.setItem(PURCHASE_RETURN_DESTINATION_STORAGE_KEY, fromQuery);
+  } catch {
+    // Non-authoritative capture; backend stores destination at start.
+  }
+}
+
+function readStoredReturnDestination() {
+  try {
+    return session.getItem(PURCHASE_RETURN_DESTINATION_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
 
 function wirePurchaseButton() {
   const button = $w("#purchaseAbraxasButton");
@@ -33,19 +57,28 @@ function wirePurchaseButton() {
       if (status) status.text = message;
     },
 
-    startPurchaseVerification: () => createPurchaseVerificationStart(),
+    startPurchaseVerification: (returnDestinationPath) =>
+      createPurchaseVerificationStart(returnDestinationPath),
 
     getViewMode: () => wixWindowFrontend.viewMode,
+
+    getReturnDestination() {
+      return resolvePurchaseReturnDestinationForStart({
+        sessionDestination: readStoredReturnDestination(),
+        queryFrom: parsePurchaseEntryFromQuery(wixLocationFrontend.query ?? {}),
+        currentUrl: String(wixLocationFrontend.url || ""),
+      });
+    },
 
     storeVerifier(flowId, verifier) {
       session.setItem(`${PURCHASE_VERIFIER_STORAGE_PREFIX}${flowId}`, verifier);
     },
 
-    saveReturnDestination() {
+    saveReturnDestination(destinationPath) {
       try {
-        const currentUrl = String(wixLocationFrontend.url || "");
-        const path = currentUrl.split("?")[0].replace(/^https?:\/\/[^/]+/, "") || "/";
-        session.setItem(PURCHASE_RETURN_DESTINATION_STORAGE_KEY, path);
+        if (destinationPath) {
+          session.setItem(PURCHASE_RETURN_DESTINATION_STORAGE_KEY, destinationPath);
+        }
       } catch {
         // non-authoritative
       }

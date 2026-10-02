@@ -55,8 +55,9 @@ function resolveStore(deps) {
  * @param {"browse" | "purchase"} purpose
  * @param {string | null | undefined} captchaToken
  * @param {object} [deps]
+ * @param {string | null | undefined} [returnDestinationPath]
  */
-async function startFlow(purpose, captchaToken, deps = {}) {
+async function startFlow(purpose, captchaToken, deps = {}, returnDestinationPath = null) {
   const context = flowStartContext(purpose);
 
   try {
@@ -88,7 +89,12 @@ async function startFlow(purpose, captchaToken, deps = {}) {
 
     let payload;
     try {
-      payload = await buildVerificationStartPayload({ hashFn, now, purpose });
+      payload = await buildVerificationStartPayload({
+        hashFn,
+        now,
+        purpose,
+        returnDestinationPath: purpose === "purchase" ? returnDestinationPath : null,
+      });
     } catch {
       return buildFlowStartFailure({
         code: "payload_build_failed",
@@ -176,8 +182,12 @@ export async function createBrowseVerificationStartService(captchaToken, deps = 
   return result;
 }
 
-export async function createPurchaseVerificationStartService(captchaToken, deps = {}) {
-  return startFlow("purchase", captchaToken, deps);
+export async function createPurchaseVerificationStartService(
+  captchaToken,
+  deps = {},
+  returnDestinationPath = null,
+) {
+  return startFlow("purchase", captchaToken, deps, returnDestinationPath);
 }
 
 /** @deprecated Use createPurchaseVerificationStartService */

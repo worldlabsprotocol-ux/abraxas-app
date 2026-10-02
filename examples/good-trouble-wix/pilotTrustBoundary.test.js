@@ -16,7 +16,7 @@ describe("good_trouble purchase verified pilot trust boundary", () => {
   it("is written only in the purchase callback page after backend verified:true", () => {
     const callbackSource = readFileSync(join(ROOT, "pages/AgeVerificationResult.js"), "utf8");
     expect(callbackSource).toContain("PURCHASE_VERIFIED_SESSION_FLAG");
-    expect(callbackSource).toMatch(/result\?\.verified === true/);
+    expect(callbackSource).toMatch(/shouldContinueAfterPurchaseVerification\(result\)/);
     expect(callbackSource).not.toMatch(/status\s*===\s*["']approved["']/);
   });
 
