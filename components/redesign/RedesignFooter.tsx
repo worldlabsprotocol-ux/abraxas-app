@@ -9,8 +9,11 @@ import {
   FOOTER_PRODUCT_LINKS,
 } from "@/lib/design/footerLinks";
 import { PUBLIC_FONT_SANS } from "@/lib/design/publicSurface";
+import { ABRAXAS_FONT_DISPLAY } from "@/lib/abraxasTypography";
+import { FOOTER_THESIS_LINE_1, FOOTER_THESIS_LINE_2 } from "@/lib/home/cinematicHomeCopy";
 
 const FONT = PUBLIC_FONT_SANS;
+const DISPLAY = ABRAXAS_FONT_DISPLAY;
 
 const FOOTER_TAGLINE =
   "Reusable private verification for people and participating services.";
@@ -53,9 +56,11 @@ export function RedesignFooter() {
         padding: "2rem clamp(1rem, 3vw, 2rem) 2.5rem",
       }}>
         <div style={{ marginBottom: "1.5rem" }}>
-          <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 900, color: "var(--accent)", marginBottom: "0.35rem" }}>
-            ABRAXAS
-          </div>
+          <p className="abx-cinematic-footer-thesis" style={{ fontFamily: DISPLAY }}>
+            {FOOTER_THESIS_LINE_1}
+            <br />
+            {FOOTER_THESIS_LINE_2}
+          </p>
           <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-muted)", lineHeight: 1.55, margin: 0, maxWidth: 420 }}>
             {FOOTER_TAGLINE}
           </p>

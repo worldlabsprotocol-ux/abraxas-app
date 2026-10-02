@@ -1204,6 +1204,266 @@
   }
 }
 
+/* Cinematic homepage — thesis motion system */
+@keyframes abx-marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.abx-cinematic-shell {
+  --abx-cinematic-gap: clamp(3rem, 8vw, 5rem);
+}
+
+.abx-cinematic-hero {
+  padding: clamp(2.5rem, 8vw, 5rem) 0 clamp(1.5rem, 4vw, 2rem);
+  min-height: min(72vh, 720px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.abx-cinematic-hero__secondary-cta {
+  transition: border-color var(--abx-motion-surface, 220ms) var(--abx-ease-out),
+    background var(--abx-motion-surface, 220ms) var(--abx-ease-out);
+}
+.abx-cinematic-hero__secondary-cta:hover {
+  border-color: rgba(45, 212, 191, 0.35);
+  background: rgba(45, 212, 191, 0.06);
+}
+
+.abx-cinematic-story {
+  width: 100%;
+  text-align: left;
+}
+.abx-cinematic-story__eyebrow {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: rgba(232, 197, 71, 0.75);
+  margin: 0 0 1.25rem;
+}
+.abx-cinematic-story__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+@media (min-width: 768px) {
+  .abx-cinematic-story__grid {
+    grid-template-columns: 1.1fr 0.9fr;
+  }
+}
+.abx-cinematic-story__statement {
+  font-size: clamp(1.1rem, 3vw, 1.65rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--text-primary);
+  margin: 0;
+}
+.abx-cinematic-story__statement--resolve { color: #2DD4BF; }
+.abx-cinematic-story__statement--close { color: #E8C547; }
+
+.abx-cinematic-transaction__flow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 420px;
+  margin: 0 auto;
+}
+.abx-cinematic-transaction__node {
+  width: 100%;
+  padding: 1rem 1.15rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  position: relative;
+}
+.abx-cinematic-transaction__node--gate {
+  border-color: rgba(232, 197, 71, 0.35);
+  background: linear-gradient(145deg, rgba(232, 197, 71, 0.08), rgba(9, 17, 31, 0.85));
+  box-shadow: 0 0 40px rgba(232, 197, 71, 0.08);
+}
+.abx-cinematic-transaction__node-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+}
+.abx-cinematic-transaction__node-detail {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.abx-cinematic-transaction__arrow {
+  display: block;
+  text-align: center;
+  color: rgba(45, 212, 191, 0.7);
+  font-size: 1.1rem;
+  padding: 0.15rem 0;
+}
+
+.abx-cinematic-passport__object {
+  position: relative;
+  width: min(100%, 340px);
+  margin: 0 auto;
+  padding: 1.75rem 1.5rem;
+  border-radius: 20px;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: linear-gradient(160deg, rgba(16, 185, 129, 0.1) 0%, rgba(9, 17, 31, 0.95) 55%);
+  text-align: left;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.abx-cinematic-passport__glow {
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at 30% 0%, rgba(45, 212, 191, 0.15), transparent 55%);
+  pointer-events: none;
+}
+.abx-cinematic-passport__label,
+.abx-cinematic-passport__state,
+.abx-cinematic-passport__field-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin: 0 0 0.35rem;
+  position: relative;
+}
+.abx-cinematic-passport__field-value {
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #2DD4BF;
+  margin: 0 0 0.75rem;
+  position: relative;
+}
+.abx-cinematic-passport__shared {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin: 0;
+  position: relative;
+}
+.abx-cinematic-passport__divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 0.85rem 0;
+}
+
+.abx-cinematic-proof__steps {
+  display: grid;
+  gap: 0.85rem;
+  max-width: 520px;
+  margin: 0 auto;
+  text-align: left;
+}
+.abx-cinematic-proof__step {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.025);
+}
+.abx-cinematic-proof__step-index {
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #09111F;
+  background: #2DD4BF;
+}
+.abx-cinematic-proof__step-title {
+  margin: 0 0 0.2rem;
+  font-weight: 800;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+}
+.abx-cinematic-proof__step-body {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.abx-cinematic-orbit__canvas {
+  position: relative;
+  width: min(100%, 520px);
+  min-height: 280px;
+  margin: 0 auto;
+}
+.abx-cinematic-orbit__core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 0.85rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(232, 197, 71, 0.35);
+  background: rgba(232, 197, 71, 0.08);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #E8C547;
+  z-index: 1;
+}
+.abx-cinematic-orbit__ask {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%)
+    rotate(calc(var(--orbit-i) * 60deg))
+    translateY(-110px)
+    rotate(calc(var(--orbit-i) * -60deg));
+  padding: 0.4rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.abx-cinematic-footer-thesis {
+  font-size: clamp(1rem, 2.5vw, 1.35rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--text-primary);
+  margin: 0 0 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .abx-kinetic-marquee__track {
+    animation: none !important;
+  }
+  .abx-cinematic-passport__object {
+    transform: none !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .abx-cinematic-orbit__ask {
+    transform: translate(-50%, -50%)
+      rotate(calc(var(--orbit-i) * 60deg))
+      translateY(-88px)
+      rotate(calc(var(--orbit-i) * -60deg));
+    font-size: 0.65rem;
+  }
+}
+
 /* Decision receipt card */
 .abx-decision-receipt {
   border-radius: 14px;
