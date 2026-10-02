@@ -13,15 +13,15 @@ import {
   BUSINESS_DEV_TOOLS_NOTE,
   BUSINESS_INTEGRATION_PILLARS,
   BUSINESS_PAGE_CTA_PRIMARY,
+  BUSINESS_PAGE_CTA_PRIMARY_HREF,
   BUSINESS_PAGE_CTA_SECONDARY,
+  BUSINESS_PAGE_CTA_SECONDARY_HREF,
   BUSINESS_PAGE_EYEBROW,
   BUSINESS_PAGE_HEADLINE,
   BUSINESS_PAGE_SUBHEAD,
   BUSINESS_PARTNER_PROOF_BADGE,
   BUSINESS_PARTNER_PROOF_TITLE,
 } from "@/lib/integrate/businessPageCopy";
-import { PARTNER_APPLICATION_PATH } from "@/lib/integrate/partnerJourney";
-
 const FONT = ABX_FONT_SANS;
 
 export default function IntegratePage() {
@@ -34,8 +34,8 @@ export default function IntegratePage() {
         lead={BUSINESS_PAGE_SUBHEAD}
         actions={(
           <>
-            <Btn href={PARTNER_APPLICATION_PATH} size="lg">{BUSINESS_PAGE_CTA_PRIMARY}</Btn>
-            <Btn href="/docs/partner-flow" variant="secondary" size="lg">{BUSINESS_PAGE_CTA_SECONDARY}</Btn>
+            <Btn href={BUSINESS_PAGE_CTA_PRIMARY_HREF} size="lg">{BUSINESS_PAGE_CTA_PRIMARY}</Btn>
+            <Btn href={BUSINESS_PAGE_CTA_SECONDARY_HREF} variant="secondary" size="lg">{BUSINESS_PAGE_CTA_SECONDARY}</Btn>
           </>
         )}
       >
@@ -75,10 +75,11 @@ export default function IntegratePage() {
             {BUSINESS_PARTNER_PROOF_TITLE}
           </h3>
           <p style={{ margin: "0 0 0.85rem", fontFamily: FONT, fontSize: "0.86rem", lineHeight: 1.6, color: "var(--text-secondary)" }}>
-            Private eligibility verification for an age gated retail experience.
+            One provider verification supported two application results with zero raw KYC recollections in the reference harness.
+            Good Trouble separately demonstrates narrow 21+ disclosure for retail.
           </p>
-          <Link href="/pilot-journey" style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>
-            See the pilot journey →
+          <Link href="/proof" style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>
+            View tailored proof pack →
           </Link>
         </AbxCard>
 

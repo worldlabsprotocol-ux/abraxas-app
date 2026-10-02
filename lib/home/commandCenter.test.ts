@@ -106,7 +106,8 @@ describe("command-center homepage contract", () => {
     expect(nav).toContain("aria-expanded={open}");
     expect(PUBLIC_NAV_LINKS.map((link) => link.label)).toEqual([
       "Home",
-      "Passport",
+      "Why Abraxas",
+      "Proof",
       "Build",
     ]);
   });

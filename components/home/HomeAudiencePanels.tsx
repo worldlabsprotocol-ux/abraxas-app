@@ -15,8 +15,8 @@ const FONT = ABRAXAS_FONT_SANS;
 const GOLD = "#E8C547";
 
 const PANELS = [
-  { ...SIMPLIFIED_AUDIENCE_PEOPLE, href: SIMPLIFIED_HOME_CTA_PRIMARY_HREF, cta: "Explore Passport" },
-  { ...SIMPLIFIED_AUDIENCE_BUSINESS, href: SIMPLIFIED_HOME_CTA_SECONDARY_HREF, cta: "Open Integration Studio" },
+  { ...SIMPLIFIED_AUDIENCE_BUSINESS, href: SIMPLIFIED_HOME_CTA_PRIMARY_HREF, cta: "See reuse proof" },
+  { ...SIMPLIFIED_AUDIENCE_PEOPLE, href: "/passport", cta: "Explore Passport" },
 ] as const;
 
 export function HomeAudiencePanels() {

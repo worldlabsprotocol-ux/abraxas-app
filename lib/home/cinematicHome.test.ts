@@ -1,6 +1,8 @@
 // FILE: lib/home/cinematicHome.test.ts
 import { describe, expect, it } from "vitest";
 import {
+  CINEMATIC_CTA_PRIMARY,
+  CINEMATIC_CTA_PRIMARY_HREF,
   CINEMATIC_THESIS_LINE_1,
   CINEMATIC_THESIS_LINE_2,
   PRODUCT_PROOF_FOOTNOTE,
@@ -12,6 +14,11 @@ describe("cinematic home copy", () => {
   it("uses thesis lines without unsupported claims", () => {
     expect(CINEMATIC_THESIS_LINE_1).toBe("VERIFY WHAT MATTERS.");
     expect(CINEMATIC_THESIS_LINE_2).toBe("REVEAL NOTHING ELSE.");
+  });
+
+  it("routes buyer-primary CTA to proof pack", () => {
+    expect(CINEMATIC_CTA_PRIMARY.toLowerCase()).toContain("reuse");
+    expect(CINEMATIC_CTA_PRIMARY_HREF).toBe("/proof");
   });
 
   it("uses synthetic identity fields only", () => {

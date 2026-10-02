@@ -14,10 +14,11 @@ export const SIMPLIFIED_HOME_MOBILE_PROMPT =
 export const SIMPLIFIED_HOME_TRUST_LINE =
   "Use verified evidence again with fresh consent. Abraxas evaluates trust privately — applications receive signed eligibility receipts, not identity files.";
 
-export const SIMPLIFIED_HOME_CTA_PRIMARY = "Open Passport";
-export const SIMPLIFIED_HOME_CTA_SECONDARY = "Build an integration";
-export const SIMPLIFIED_HOME_CTA_PRIMARY_HREF = "/passport";
-export const SIMPLIFIED_HOME_CTA_SECONDARY_HREF = "/developers/integration-studio";
+export const SIMPLIFIED_HOME_CTA_PRIMARY = "See reuse across two apps";
+export const SIMPLIFIED_HOME_CTA_SECONDARY = "Build in sandbox";
+export const SIMPLIFIED_HOME_CTA_PRIMARY_HREF = "/proof";
+export const SIMPLIFIED_HOME_CTA_SECONDARY_HREF =
+  "/developers/integration-studio?outcome=reuse_across_app&source=gtm-home";
 export const SIMPLIFIED_HOME_CTA_SANDBOX = "Try sandbox example";
 export const SIMPLIFIED_HOME_CTA_SANDBOX_HREF = "/good-trouble";
 export const SIMPLIFIED_HOME_CTA_BUILD = "Build with Abraxas";
@@ -50,12 +51,12 @@ export const SIMPLIFIED_HOW_IT_WORKS = [
 
 export const SIMPLIFIED_AUDIENCE_PEOPLE = {
   title: "For holders",
-  body: "See who is asking, what they want to know, what will be shared, and what stays private.",
+  body: "Passport is the holder-facing layer for consent and reusable evidence — one part of Abraxas infrastructure.",
 } as const;
 
 export const SIMPLIFIED_AUDIENCE_BUSINESS = {
-  title: "For partners",
-  body: "Ask eligibility questions as policies, integrate in sandbox, verify receipts, and measure pilot progress.",
+  title: "For platforms",
+  body: "Keep your KYC provider. Reuse verified evidence across applications and receive server-verifiable answers.",
 } as const;
 
 export const SIMPLIFIED_TRUST_STATEMENT =

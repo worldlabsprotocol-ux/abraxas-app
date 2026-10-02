@@ -3,6 +3,8 @@
 
 export const PUBLIC_PRODUCT_ROUTES = [
   "/",
+  "/proof",
+  "/integrate",
   "/passport",
   "/pricing",
   "/verification",

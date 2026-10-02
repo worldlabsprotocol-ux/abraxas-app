@@ -24,18 +24,18 @@ export default function DevelopersPage() {
     <RedesignPage accent="developer" maxWidth={880}>
       <PageHeader
         eyebrow="Developers"
-        title="Create a sandbox integration"
-        subtitle={`${PARTNER_ONBOARDING_HEADLINE} Partner Flow, Passport, and signed receipts are available in beta. Consented passwordless partner accounts and optional email/newsletter scopes are in development, not live.`}
+        title="Prove it works in sandbox"
+        subtitle="Get a server-verifiable eligibility answer, a starter kit, and a private test application. Partner Flow and receipt verification are available in beta. Advanced paths stay behind outcome-based routing in Integration Studio."
       />
 
       <ConceptDemoVideo demo={BuildIntegrateCinematicDemo} id="developers-demo" />
 
       <div style={{ marginBottom: "1rem" }}>
         <NextActionCard
-          title="Start here"
-          action="Build a sandbox integration"
-          detail="Integration Studio helps you choose a policy, review what partners learn, and create a private test application."
-          href="/developers/integration-studio"
+          title="What you get"
+          action="Server-verifiable answers your application can trust"
+          detail="Choose an outcome, review the privacy contract, generate integration code, and create a sandbox application — often in one session."
+          href="/developers/integration-studio?outcome=reuse_across_app&source=gtm-developers"
           buttonLabel="Open Integration Studio"
         />
       </div>
