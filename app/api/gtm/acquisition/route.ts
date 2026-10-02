@@ -2,18 +2,35 @@
 // Privacy-safe GTM acquisition events — sanitized categories only.
 
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import {
   buildSanitizedAcquisitionEvent,
   isGtmAcquisitionEventType,
 } from "@/lib/gtm/acquisitionEvents";
 import { recordGtmAcquisitionEvent } from "@/lib/gtm/acquisitionStore";
+import { checkLaunchpadRateLimit } from "@/lib/partner/launchpad/rateLimit";
 
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request) {
+const MAX_BODY_BYTES = 4096;
+
+export async function POST(request: NextRequest) {
+  const limited = await checkLaunchpadRateLimit(request, "/api/gtm/acquisition", 120, 60);
+  if (!limited.allowed) {
+    return NextResponse.json(
+      { ok: false, error: "rate_limited", retry_after_sec: limited.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
+
+  const rawBody = await request.text();
+  if (rawBody.length > MAX_BODY_BYTES) {
+    return NextResponse.json({ ok: false, error: "payload_too_large" }, { status: 413 });
+  }
+
   let body: unknown;
   try {
-    body = await request.json();
+    body = rawBody ? JSON.parse(rawBody) : null;
   } catch {
     return NextResponse.json({ ok: false, error: "invalid_json" }, { status: 400 });
   }
