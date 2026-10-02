@@ -2,6 +2,10 @@
 // Server-derived holder request brief. No return URLs or policy internals.
 
 import { inferPolicyPackFromPolicyId, policyPackIsSandboxOnly } from "@/lib/partner/launchpad/policyPacks";
+import {
+  buildGoodTroubleAgeEligibilityPurchaseBrief,
+  isGoodTroubleAgeEligibilityPurchaseBrief,
+} from "@/lib/partner/goodTroubleHolderBrief";
 import { resolvePartnerDisplayName } from "@/lib/partner/partnerVerifyDisplay";
 import { HOLDER_GOOGLE_ACCOUNT_ONLY } from "./contract";
 import { HOLDER_APPROVED_METHOD } from "@/lib/verification/issuerTrust/contract";
@@ -33,8 +37,15 @@ export function buildHolderRequestBrief(input: {
   disclosedResult?: string | null;
   userExplanation?: string | null;
 }): HolderRequestBrief {
-  const pack = input.policyId ? inferPolicyPackFromPolicyId(input.policyId) : null;
   const requestor = (input.partnerName?.trim() || resolvePartnerDisplayName(input.partnerId ?? "")) || "This partner";
+  if (isGoodTroubleAgeEligibilityPurchaseBrief(input)) {
+    return buildGoodTroubleAgeEligibilityPurchaseBrief({
+      partnerName: requestor,
+      environment: input.environment,
+    });
+  }
+
+  const pack = input.policyId ? inferPolicyPackFromPolicyId(input.policyId) : null;
   const sandbox = input.environment === "sandbox" || Boolean(pack && policyPackIsSandboxOnly(pack));
   const purpose = input.userExplanation?.trim()
     || pack?.holder_explanation

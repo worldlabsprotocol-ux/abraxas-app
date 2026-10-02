@@ -2,6 +2,7 @@
 // Tenant-scoped Partner Flow continuation — server-authoritative, fail closed.
 
 import { normalizePartnerReturnUrlForAllowlist } from "@/lib/connect/returnUrlAllowlistSemantics";
+import { partnerContinuationReturnUrlsMatch } from "@/lib/partner/continuationReturnUrlMatch";
 import { inferPolicyPackFromPolicyId, policyPackRequiresIdentityEvidence } from "@/lib/partner/launchpad/policyPacks";
 import { normalizePartnerVerifyInput } from "@/lib/partner/normalizePartnerVerifyInput";
 
@@ -166,7 +167,10 @@ export function assertContinuationMatchesStored(input: {
   ) {
     return { ok: false, code: "altered_version" };
   }
-  if (input.returnUrl && input.returnUrl.trim() !== stored.returnUrl) {
+  if (
+    input.returnUrl
+    && !partnerContinuationReturnUrlsMatch(stored.returnUrl, input.returnUrl)
+  ) {
     return { ok: false, code: "open_redirect" };
   }
   return { ok: true };
