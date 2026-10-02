@@ -6,6 +6,7 @@ import { POLICY_PACKS } from "@/lib/partner/launchpad/policyPacks";
 import type { ProvenanceClaimType, ProvenancePolicyQuestion } from "./types";
 
 export const PROVENANCE_POLICY_PACK_IDS = [
+  "content_origin_disclosure",
   "content_ai_disclosure",
   "content_source_integrity",
 ] as const;
@@ -13,6 +14,13 @@ export const PROVENANCE_POLICY_PACK_IDS = [
 export type ProvenancePolicyPackId = (typeof PROVENANCE_POLICY_PACK_IDS)[number];
 
 export const PROVENANCE_POLICY_QUESTIONS: Record<ProvenancePolicyPackId, ProvenancePolicyQuestion> = {
+  content_origin_disclosure: {
+    pack_id: "content_origin_disclosure",
+    question: "Does this artifact meet origin disclosure requirements (creator attestation, AI disclosure, and fingerprint integrity)?",
+    required_claim: "creator_attested",
+    disclosed_result: "content_origin_disclosed",
+    minimum_assurance: "L1",
+  },
   content_ai_disclosure: {
     pack_id: "content_ai_disclosure",
     question: "Has the creator disclosed whether generative AI materially contributed to this artifact?",

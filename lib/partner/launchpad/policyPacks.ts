@@ -36,6 +36,7 @@ export type PolicyPackId =
   | "identity_liveness"
   | "sandbox_economic_demo"
   | "sandbox_institutional_protocol_access"
+  | "content_origin_disclosure"
   | "content_ai_disclosure"
   | "content_source_integrity";
 
@@ -287,6 +288,51 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
       session_receipt_hours: 2,
       product_eligibility_action: "sandbox_economic_demo",
       required_claims: [{ claim_type: "product_eligibility", min_assurance: "L1" }],
+    },
+  }),
+  content_origin_disclosure: pack({
+    id: "content_origin_disclosure",
+    display_name: "Content origin disclosure",
+    holder_explanation:
+      "Confirm you created or submitted this content, disclose how AI was used, and verify this exact file matches its fingerprint. This is your attestation and disclosure — not AI detection or rights verification.",
+    required_claims: [
+      "creator_attested",
+      "ai_assistance_disclosed",
+      "source_integrity_verified",
+    ],
+    minimum_assurance: "L1",
+    receipt_lifetime_hours: 24,
+    intended_use_examples: [
+      "Publishing platforms asking about creator attestation and AI disclosure before listing",
+      "Marketplaces verifying a submitted file matches an established fingerprint",
+      "Creator tools collecting disclosure without receiving the raw artifact",
+    ],
+    partner_receives:
+      "Signed narrow result: creator_attested, ai_assistance_disclosed category, and source_integrity_verified. Not authorship verification, rights, or AI detection scores.",
+    partner_does_not_receive: [
+      "raw file bytes",
+      "legal name",
+      "government ID",
+      "email",
+      "AI detector scores",
+      "human verification claims",
+      "unrelated Passport data",
+    ],
+    production_suitability: "sandbox_only",
+    disclosed_result: "content_origin_disclosed",
+    receipt_claim: "content_origin_disclosed",
+    reuse_policy: "time_bound",
+    reuse_evidence_freshness: { allow_reuse: true, mode: "time_bound", max_age_hours: 24 },
+    permitted_methods: ["passport"],
+    rules: {
+      ...SANDBOX,
+      session_receipt_hours: 24,
+      product_eligibility_action: "content_origin_disclosure",
+      required_claims: [
+        { claim_type: "creator_attested", min_assurance: "L0" },
+        { claim_type: "ai_assistance_disclosed", min_assurance: "L0" },
+        { claim_type: "source_integrity_verified", min_assurance: "L1" },
+      ],
     },
   }),
   content_ai_disclosure: pack({

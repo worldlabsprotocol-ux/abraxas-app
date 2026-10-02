@@ -70,6 +70,8 @@ import {
 } from "@/lib/partner/goodTroublePurchaseFlow";
 import { ProtocolLoadingState } from "@/components/protocol/ProtocolLoadingState";
 import { HolderDecisionComplete } from "@/components/protocol/HolderDecisionComplete";
+import { ProvenanceContinueFlow } from "@/components/partner/ProvenanceContinueFlow";
+import { isContentOriginDisclosurePolicyId } from "@/lib/provenance/constants";
 
 function resolveMinimumAge(policyId: string): number | null {
   if (policyId === GOOD_TROUBLE_RETAIL_POLICY_ID) return 21;
@@ -92,6 +94,7 @@ function PartnerContinueInner() {
   const [boundReturnUrl, setBoundReturnUrl] = useState("");
   const [methodSelected, setMethodSelected] = useState(false);
   const [methodQualified, setMethodQualified] = useState(false);
+  const [provenanceEvidenceComplete, setProvenanceEvidenceComplete] = useState(false);
 
   const verifyRequestId = searchParams.get("verify_request");
   const urlPartnerId = searchParams.get("partner_id") ?? "";
@@ -224,6 +227,8 @@ function PartnerContinueInner() {
   const partnerId = flowContext?.partnerId ?? urlPartnerId;
   const policyId = flowContext?.policyId ?? urlPolicyId;
   const purposeParam = flowContext?.purpose ?? urlPurpose;
+  const isContentOriginDisclosure = flowContext?.isContentOriginDisclosure
+    ?? isContentOriginDisclosurePolicyId(policyId);
   const provisionalBrowse = resolvePartnerContinueContext({
     partnerId: urlPartnerId,
     policyId: urlPolicyId,
@@ -273,6 +278,7 @@ function PartnerContinueInner() {
     policyId,
     verificationRequestId: verifyRequestId,
     walletBound: setup.walletBound,
+    provenanceEvidenceComplete,
   });
 
   const partnerName = resolvePartnerDisplayName(partnerId);
@@ -442,6 +448,34 @@ function PartnerContinueInner() {
         brief={holderBrief}
       >
         <HolderRecoveryCard recovery={resolveHolderRecovery("missing", partnerName, partnerHomeUrl)} />
+      </PartnerJourneyLayout>
+    );
+  }
+
+  if (isContentOriginDisclosure) {
+    return (
+      <PartnerJourneyLayout
+        partnerName={partnerName}
+        intro="Answer a few questions about your content."
+        statusMessage=""
+        hideStatus
+        brief={holderBrief}
+      >
+        {authLoading || contextLoading ? (
+          <p role="status">Preparing verification…</p>
+        ) : !suiAddress ? (
+          <p role="status">Sign in to continue this content disclosure request.</p>
+        ) : (
+          <>
+            <PartnerFlowReturnHandler handoff={handoff} />
+            <ProvenanceContinueFlow
+              partnerName={partnerName}
+              partnerId={partnerId}
+              policyId={policyId}
+              onSubmitted={() => setProvenanceEvidenceComplete(true)}
+            />
+          </>
+        )}
       </PartnerJourneyLayout>
     );
   }

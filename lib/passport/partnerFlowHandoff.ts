@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { navigateToPartnerHandoffRedirect } from "@/lib/partner/partnerClientNavigation";
 import { findProductionPolicyRules } from "@/lib/policy/productionPolicyContract";
 import { isProgressivePartnerHandoffReady } from "@/lib/progressiveProof/handoffReady";
+import { isContentOriginDisclosurePolicyId } from "@/lib/provenance/constants";
 
 export type PartnerFlowHandoffPhase = "idle" | "completing" | "completed" | "failed";
 export type PartnerFlowHandoffFailureCategory =
@@ -22,6 +23,8 @@ export interface PartnerFlowHandoffContext {
   verificationRequestId: string | null;
   /** Progressive proof — wallet binding for policy evaluation. */
   walletBound?: boolean;
+  /** Content provenance disclosure submitted for artifact-bound evaluation. */
+  provenanceEvidenceComplete?: boolean;
 }
 
 export interface PartnerFlowHandoffController {
@@ -51,6 +54,10 @@ export function isPartnerFlowContext(
 
 export function isPartnerFlowHandoffReady(ctx: PartnerFlowHandoffContext): boolean {
   if (!isPartnerFlowContext(ctx) || !ctx.suiAddress) return false;
+
+  if (ctx.policyId && isContentOriginDisclosurePolicyId(ctx.policyId)) {
+    return ctx.provenanceEvidenceComplete === true;
+  }
 
   const policyRules = ctx.policyId ? findProductionPolicyRules(ctx.policyId) : null;
 
