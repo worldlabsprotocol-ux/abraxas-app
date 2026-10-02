@@ -3,15 +3,23 @@
 
 import type { ProofClassification } from "./contract";
 import { PROOF_CLASSIFICATION_LABELS } from "./contract";
+import {
+  REFERENCE_HARNESS_FUNNEL_INVARIANTS,
+  REFERENCE_HARNESS_OPERATOR_INVARIANTS,
+  REFERENCE_HARNESS_PRIVACY_INVARIANTS,
+  REFERENCE_HARNESS_REVOCATION_INVARIANT,
+} from "./referenceProofInvariants";
 
-/** Observed reference harness metrics — not production customer ROI. */
+/** Observed reference harness metrics — bound to canonical gate-A invariants, not live harness reads. */
 export const INSTITUTIONAL_REFERENCE_METRICS = {
-  provider_verifications: 1,
-  applications_receiving_results: 2,
-  raw_kyc_recollections: 0,
-  forbidden_fields_in_partner_payload: 0,
-  operator_actions_after_trust_config: 0,
-  post_revocation_reuse: "blocked" as const,
+  provider_verifications: REFERENCE_HARNESS_FUNNEL_INVARIANTS.provider_verifications,
+  applications_receiving_results: REFERENCE_HARNESS_FUNNEL_INVARIANTS.application_verifications,
+  raw_kyc_recollections: REFERENCE_HARNESS_FUNNEL_INVARIANTS.raw_kyc_recollections,
+  forbidden_fields_in_partner_payload:
+    REFERENCE_HARNESS_PRIVACY_INVARIANTS.forbidden_fields_in_partner_payload,
+  operator_actions_after_trust_config:
+    REFERENCE_HARNESS_OPERATOR_INVARIANTS.operator_actions_after_trust_config,
+  post_revocation_reuse: REFERENCE_HARNESS_REVOCATION_INVARIANT,
   cross_application_public_identity: "distinct application-specific results" as const,
 } as const;
 
@@ -73,11 +81,11 @@ export const INSTITUTIONAL_REFERENCE_STORY: readonly ProofStoryBeat[] = [
 
 export const GOOD_TROUBLE_PROOF_ROLE = {
   classification: "reference_proof" as ProofClassification,
-  title: "Good Trouble — narrow-result proof",
+  title: "Good Trouble — production-shaped narrow-disclosure demo",
   summary:
-    "Production-shaped demo showing a private 21+ eligibility answer returned to a retail application without birth date or identity documents in the partner payload.",
+    "Screen-recorded retail flow showing a private 21+ eligibility answer without birth date or identity documents in the partner payload.",
   limits:
-    "Sandbox and production-demo evidence for age-gated retail — not institutional multi-app reuse and not a substitute for legally required in-person ID checks.",
+    "Production-shaped partner demo for age-gated retail — not an institutional customer, not multi-app reuse proof, and not a substitute for legally required in-person ID checks.",
 } as const;
 
 export const INSTITUTIONAL_PROOF_ROLE = {

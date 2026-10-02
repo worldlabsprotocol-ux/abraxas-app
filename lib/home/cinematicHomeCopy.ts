@@ -5,7 +5,7 @@ export const CINEMATIC_THESIS_LINE_1 = "VERIFY WHAT MATTERS.";
 export const CINEMATIC_THESIS_LINE_2 = "REVEAL NOTHING ELSE.";
 
 export const CINEMATIC_HERO_SUPPORT =
-  "Stop re-verifying the same customer across every app. Keep your KYC provider — Abraxas handles what happens after verification.";
+  "For multi-app platforms on an existing KYC provider.";
 
 export const CINEMATIC_CTA_PRIMARY = "See reuse across two apps";
 export const CINEMATIC_CTA_PRIMARY_HREF = "/proof";

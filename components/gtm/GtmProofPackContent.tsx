@@ -70,8 +70,6 @@ export function GtmProofPackContent({ discovery, onRestartDiscovery }: GtmProofP
           }
         : {}),
     });
-    void recordGtmClientEvent("reuse_demo_started", { proof_pack: routing.proof_pack });
-    void recordGtmClientEvent("reuse_demo_completed", { proof_pack: routing.proof_pack });
   }, [discovery, routing.proof_pack, routing.recommended_studio_href]);
 
   return (
