@@ -175,6 +175,28 @@ describe("trust contract drift rules", () => {
     expect(sanitized).toContain("[redacted:jwt]");
   });
 
+  it("skips deleted home component paths in the diff while validating the production demo privacy anchor", () => {
+    const root = mkdtempSync(join(tmpdir(), "tcd-deleted-home-"));
+    writeFixtureRepo(root, {
+      ...baseFixtureFiles(),
+      "components/home/HomeGoodTroubleProductionDemoVideo.test.tsx": `it("does not render an iframe and uses native video metadata preload", () => {});`,
+    });
+
+    const outcome = executeTrustContractDriftCheck({
+      repoRoot: root,
+      changedFiles: [
+        "components/home/HomePrivacyVideoPlayer.test.tsx",
+        "components/home/HomeGoodTroubleProductionDemoVideo.test.tsx",
+      ],
+    });
+
+    expect(outcome.status).toBe("findings_report");
+    expect(outcome.exitCode).toBe(0);
+    expect(outcome.stdout).not.toContain("malformed_canonical_anchor");
+    expect(outcome.readLog).toContain("components/home/HomeGoodTroubleProductionDemoVideo.test.tsx");
+    expect(outcome.readLog).not.toContain("components/home/HomePrivacyVideoPlayer.test.tsx");
+  });
+
   it("formats findings reports separately from tool failures", () => {
     const findingsReport = formatFindingsReport({
       changedFiles: ["components/home/HomeSharpHero.tsx"],

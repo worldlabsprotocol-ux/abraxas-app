@@ -146,6 +146,11 @@ function scanTargets(ruleId: string, changedFiles: string[]): string[] {
   return changedFiles.filter((file) => matchesAny(file, rule.scanPatterns));
 }
 
+/** Scan targets that still exist on disk — deleted paths stay in the diff but are not readable. */
+function existingScanTargets(ruleId: string, changedFiles: string[], repoRoot: string): string[] {
+  return scanTargets(ruleId, changedFiles).filter((file) => existsSync(resolve(repoRoot, file)));
+}
+
 const RECEIPT_CHECK_LINE_PATTERN = /check:\s*"([^"]+)"/;
 
 function parseReceiptCheckField(checkValue: string): string {
@@ -243,6 +248,17 @@ function checkReceiptDrift(ctx: RuleContext): DriftFinding[] {
         "Align PARTNER_FLOW_RECEIPT_CHECKS with PARTNER_FLOW_RECEIPT_SECURITY_FIELDS and verifyPartnerFlowReceipt expectations.",
     },
   ];
+}
+
+function validateHomepageProductionDemoPrivacyAnchor(readFile: (relPath: string) => string): void {
+  const anchor = CANONICAL_ANCHORS.homepageProductionDemoPrivacy;
+  const content = readFile(anchor.file);
+  if (!content.includes(anchor.excerpt)) {
+    throw new TrustContractToolError(
+      "malformed_canonical_anchor",
+      `Canonical anchor homepageProductionDemoPrivacy is missing required excerpt in ${anchor.file}.`,
+    );
+  }
 }
 
 function checkPrivacyWording(ctx: RuleContext, targets: string[]): DriftFinding[] {
@@ -351,19 +367,43 @@ export function runTrustContractDriftRules(ctx: RuleContext): {
   const findings: DriftFinding[] = [];
 
   if (rulesRun.includes("provisioning.self_serve_conflict")) {
-    findings.push(...checkProvisioningConflict(ctx, scanTargets("provisioning.self_serve_conflict", changedFiles)));
+    findings.push(
+      ...checkProvisioningConflict(
+        ctx,
+        existingScanTargets("provisioning.self_serve_conflict", changedFiles, ctx.repoRoot),
+      ),
+    );
   }
   if (rulesRun.includes("receipt.public_verification_drift")) {
     findings.push(...checkReceiptDrift(ctx));
   }
   if (rulesRun.includes("privacy.callback_wording_review")) {
-    findings.push(...checkPrivacyWording(ctx, scanTargets("privacy.callback_wording_review", changedFiles)));
+    const homeComponentsChanged = changedFiles.some((file) => /^components\/home\//.test(file));
+    if (homeComponentsChanged) {
+      validateHomepageProductionDemoPrivacyAnchor(ctx.readFile);
+    }
+    findings.push(
+      ...checkPrivacyWording(
+        ctx,
+        existingScanTargets("privacy.callback_wording_review", changedFiles, ctx.repoRoot),
+      ),
+    );
   }
   if (rulesRun.includes("availability.sandbox_production_wording")) {
-    findings.push(...checkAvailabilityWording(ctx, scanTargets("availability.sandbox_production_wording", changedFiles)));
+    findings.push(
+      ...checkAvailabilityWording(
+        ctx,
+        existingScanTargets("availability.sandbox_production_wording", changedFiles, ctx.repoRoot),
+      ),
+    );
   }
   if (rulesRun.includes("activation.risky_commercial_claim")) {
-    findings.push(...checkRiskyActivationTerms(ctx, scanTargets("activation.risky_commercial_claim", changedFiles)));
+    findings.push(
+      ...checkRiskyActivationTerms(
+        ctx,
+        existingScanTargets("activation.risky_commercial_claim", changedFiles, ctx.repoRoot),
+      ),
+    );
   }
 
   return { changedFiles, rulesRun, findings };
