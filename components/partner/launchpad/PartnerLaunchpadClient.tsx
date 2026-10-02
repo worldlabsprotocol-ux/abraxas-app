@@ -828,7 +828,8 @@ export function PartnerLaunchpadClient({
             </ContentCard>
             <ContentCard title="Run test verification">
               <p style={bodyText}>
-                Use the integration test harness to simulate receipt verification with the same trust path used in production.
+                The harness below evaluates signed sandbox receipts in memory. It does not issue a persisted receipt or narrow result.
+                For your first verified narrow result, use <strong>Run first verification</strong> in Integration Studio or complete a live Hosted Partner Flow, then call <code>verifyCallbackWithNarrowResult</code> on your server.
               </p>
               <div style={{ display: "grid", gap: "0.4rem", marginBottom: "0.75rem" }}>
                 {LAUNCHPAD_TEST_SCENARIOS.slice(0, 3).map((scenario) => (

@@ -48,6 +48,12 @@ import {
   launchpadResumeHref,
   launchpadSandboxTestHref,
 } from "@/lib/partner/activationPath";
+import {
+  EXTERNAL_ACTIVATION_FAST_PROOF_PACK,
+  EXTERNAL_ACTIVATION_QUICKSTART,
+  FIRST_PROOF_NOTICE,
+  FIRST_PROOF_SUCCESS_TITLE,
+} from "@/lib/partner/externalActivation/contract";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -112,7 +118,7 @@ export function IntegrationStudioClient() {
   });
   const [pathId, setPathId] = useState<IntegrationStudioPathId>(() => {
     const requested = searchParams.get("path");
-    return requested && isIntegrationStudioPathId(requested) ? requested : "hosted_partner_flow";
+    return requested && isIntegrationStudioPathId(requested) ? requested : "verify_with_abraxas";
   });
   const [venueProfileId, setVenueProfileId] = useState("generic_trading_venue");
   const [signedIn, setSignedIn] = useState(false);
@@ -136,6 +142,14 @@ export function IntegrationStudioClient() {
   const [resumePartnerId, setResumePartnerId] = useState("");
   const [handoffNotice, setHandoffNotice] = useState("");
   const [bindingId, setBindingId] = useState<string | null>(null);
+  const [firstProofBusy, setFirstProofBusy] = useState(false);
+  const [firstProofError, setFirstProofError] = useState("");
+  const [firstProofResult, setFirstProofResult] = useState<{
+    receipt_id: string;
+    request_id: string;
+    callback_url: string;
+    success?: { requested: string; returned: string; shared: string[]; withheld: string[] };
+  } | null>(null);
 
   const contract = useMemo(() => studioPackContract(packId), [packId]);
   const snippet = useMemo(() => studioSnippetForPath(pathId), [pathId]);
@@ -294,6 +308,48 @@ export function IntegrationStudioClient() {
     })();
   }, []);
 
+  async function runFirstProof(applicationId: string) {
+    setFirstProofError("");
+    setFirstProofBusy(true);
+    try {
+      const res = await fetch(`/api/launchpad/applications/${applicationId}/first-proof`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({}),
+      });
+      const data = await res.json() as {
+        ok?: boolean;
+        code?: string;
+        error?: string;
+        remediation_href?: string;
+        receipt_id?: string;
+        request_id?: string;
+        callback_url?: string;
+        success?: { requested: string; returned: string; shared: string[]; withheld: string[] };
+      };
+      if (!res.ok || !data.ok || !data.receipt_id || !data.request_id || !data.callback_url) {
+        const detail = data.error ?? data.code ?? "first_proof_failed";
+        setFirstProofError(
+          data.code === "live_holder_required" && data.remediation_href
+            ? `${detail} Use Launchpad Test (${data.remediation_href}).`
+            : detail,
+        );
+        return;
+      }
+      setFirstProofResult({
+        receipt_id: data.receipt_id,
+        request_id: data.request_id,
+        callback_url: data.callback_url,
+        success: data.success,
+      });
+    } catch {
+      setFirstProofError("first_proof_failed");
+    } finally {
+      setFirstProofBusy(false);
+    }
+  }
+
   async function createSandbox() {
     setError("");
     setSubmitting(true);
@@ -443,6 +499,28 @@ export function IntegrationStudioClient() {
             setOptionalCaps(selection.capabilities);
           }}
         />
+      </Reveal>
+
+      <Reveal delay={0.09}>
+        <ContentCard title="Fast first proof (recommended for new developers)">
+          <p style={body}>
+            For the shortest path to your first narrow sandbox result, choose{" "}
+            <strong>{EXTERNAL_ACTIVATION_FAST_PROOF_PACK.replace(/_/g, " ")}</strong> or any sandbox pack, then follow{" "}
+            <Link href={EXTERNAL_ACTIVATION_QUICKSTART} style={{ color: "var(--accent)", fontWeight: 700 }}>
+              Verify with Abraxas
+            </Link>
+            . Production remains reviewed.
+          </p>
+          {packId !== EXTERNAL_ACTIVATION_FAST_PROOF_PACK && (
+            <Btn
+              size="sm"
+              variant="secondary"
+              onClick={() => setPackId(EXTERNAL_ACTIVATION_FAST_PROOF_PACK)}
+            >
+              Switch to fast first-proof pack
+            </Btn>
+          )}
+        </ContentCard>
       </Reveal>
 
       <Reveal delay={0.1}>
@@ -890,14 +968,55 @@ export function IntegrationStudioClient() {
         {error && <p style={{ ...body, color: "var(--danger, #f87171)", marginBottom: "0.7rem" }}>{error}</p>}
         {revealedKey && (
           <div style={{ ...body, marginBottom: "0.85rem" }}>
-            <p style={{ margin: "0 0 0.4rem" }}>Sandbox key. Shown once. Copy it now.</p>
+            <p style={{ margin: "0 0 0.4rem", fontWeight: 800 }}>Sandbox key — shown once. Server-side secret only.</p>
             <code style={{ fontFamily: MONO, fontSize: "0.72rem", wordBreak: "break-all" }}>{revealedKey}</code>
+            <pre style={{
+              fontFamily: MONO,
+              fontSize: "0.62rem",
+              marginTop: "0.55rem",
+              padding: "0.75rem",
+              borderRadius: 10,
+              border: "1px solid var(--border)",
+              background: "var(--surface-inset)",
+              overflowX: "auto",
+            }}>
+              {`ABRAXAS_SANDBOX_API_KEY=${revealedKey}\nABRAXAS_APP_ID=${created?.application_id ?? "<application_id>"}\nABRAXAS_PARTNER_ID=${created?.partner_id ?? "<partner_id>"}\nABRAXAS_POLICY_ID=${created?.policy_id ?? "<policy_id>"}\nABRAXAS_CALLBACK_URL=${returnUrl}`}
+            </pre>
           </div>
         )}
         {created && (
-          <p style={{ ...body, marginBottom: "0.85rem" }}>
-            App {created.public_slug} · prefix {created.key_prefix} · policy {created.policy_id}
-          </p>
+          <div style={{ ...body, marginBottom: "0.85rem" }}>
+            <p style={{ margin: "0 0 0.35rem" }}>
+              <strong>Integration summary</strong> — Application {created.application_id} · Policy {created.policy_id} · Environment Sandbox · Method Verify with Abraxas
+            </p>
+            <p style={{ margin: 0 }}>Callback {returnUrl} · Credential {created.key_prefix}… (active after first reveal)</p>
+          </div>
+        )}
+        {created && (
+          <div style={{ ...body, marginBottom: "0.85rem" }}>
+            <p style={{ margin: "0 0 0.45rem", fontWeight: 800 }}>Run first sandbox verification</p>
+            <p style={{ margin: "0 0 0.55rem" }}>{FIRST_PROOF_NOTICE}</p>
+            <Btn size="sm" loading={firstProofBusy} disabled={firstProofBusy} onClick={() => void runFirstProof(created.application_id)}>
+              Run first verification
+            </Btn>
+            {firstProofError && <p style={{ color: "var(--danger, #f87171)", marginTop: "0.55rem" }}>{firstProofError}</p>}
+            {firstProofResult && (
+              <div style={{ marginTop: "0.75rem", padding: "0.75rem", borderRadius: 10, border: "1px solid rgba(45,212,191,0.35)", background: "rgba(45,212,191,0.08)" }}>
+                <p style={{ margin: "0 0 0.35rem", fontWeight: 800 }}>{FIRST_PROOF_SUCCESS_TITLE}</p>
+                {firstProofResult.success && (
+                  <>
+                    <p style={{ margin: "0 0 0.25rem" }}>Your application requested: {firstProofResult.success.requested}</p>
+                    <p style={{ margin: "0 0 0.25rem" }}>Abraxas returned: {firstProofResult.success.returned}</p>
+                    <p style={{ margin: "0 0 0.25rem" }}>Shared: {firstProofResult.success.shared.join(", ")}</p>
+                    <p style={{ margin: 0 }}>Not shared: {firstProofResult.success.withheld.join(", ")}</p>
+                  </>
+                )}
+                <p style={{ margin: "0.55rem 0 0", fontFamily: MONO, fontSize: "0.62rem", wordBreak: "break-all" }}>
+                  receipt_id={firstProofResult.receipt_id} · request_id={firstProofResult.request_id}
+                </p>
+              </div>
+            )}
+          </div>
         )}
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
           {!signedIn && (
@@ -932,7 +1051,10 @@ export function IntegrationStudioClient() {
       )}
 
       <ContentCard title="Test your sandbox">
-        <p style={{ ...body }}>Run the hosted flow first. Open the full checklist only when you are ready to verify every integration edge.</p>
+        <p style={{ ...body }}>
+          Use <strong>Run first verification</strong> above for a persisted sandbox receipt and narrow result.
+          The Launchpad harness tests receipt trust on synthetic receipts — it does not replace a live callback verification.
+        </p>
         <details style={{ marginTop: "0.75rem" }}>
           <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)" }}>Show sandbox checklist</summary>
           <ol style={{ ...body, paddingLeft: "1.15rem", display: "grid", gap: "0.55rem", marginTop: "0.75rem" }}>

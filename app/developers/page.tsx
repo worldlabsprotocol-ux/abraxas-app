@@ -33,10 +33,20 @@ export default function DevelopersPage() {
       <div style={{ marginBottom: "1rem" }}>
         <NextActionCard
           title="Start here"
-          action="Build a sandbox integration"
-          detail="Integration Studio helps you choose a policy, review what partners learn, and create a private test application."
+          action="Integrate Abraxas"
+          detail="Integration Studio is the canonical self-serve path: choose a policy, create a sandbox, copy Verify with Abraxas server code, and run your first sandbox verification — no operator required."
           href="/developers/integration-studio"
           buttonLabel="Open Integration Studio"
+        />
+      </div>
+
+      <div style={{ marginBottom: "1rem" }}>
+        <NextActionCard
+          title="Verify with Abraxas"
+          action="Copy the canonical quickstart"
+          detail="One server-side integration primitive: createVerificationRequest → hosted handoff → verifyCallbackWithNarrowResult → resume your native action."
+          href="/docs/VERIFY_WITH_ABRAXAS_QUICKSTART"
+          buttonLabel="Read quickstart"
         />
       </div>
 
@@ -45,7 +55,8 @@ export default function DevelopersPage() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
           <Btn href="/developers/launchpad" size="sm" variant="secondary">Partner Launchpad</Btn>
           <Btn href="/docs/partner-flow" size="sm" variant="ghost">Partner Flow docs</Btn>
-          <Btn href="/design-partner" size="sm" variant="ghost">Request API access</Btn>
+          <Btn href="/docs/VERIFY_WITH_ABRAXAS_QUICKSTART" size="sm" variant="ghost">Verify with Abraxas</Btn>
+          <Btn href="/design-partner" size="sm" variant="ghost">Request production access</Btn>
         </div>
         <details style={{ marginTop: "0.85rem" }}>
           <summary style={{ fontFamily: FONT, fontSize: "0.74rem", fontWeight: 700, color: "var(--accent)", cursor: "pointer" }}>

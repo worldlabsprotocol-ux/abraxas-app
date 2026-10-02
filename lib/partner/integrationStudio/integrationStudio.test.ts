@@ -45,7 +45,7 @@ describe("Integration Studio", () => {
       "webhook_verification",
       "policy_version",
     ]);
-    expect(INTEGRATION_STUDIO_PROVISION.requires_partner_session).toBe(true);
+    expect(INTEGRATION_STUDIO_PROVISION.requires_partner_session).toBe(false);
     expect(INTEGRATION_STUDIO_PROVISION.self_serve_sandbox).toBe(true);
     expect(INTEGRATION_STUDIO_PROVISION.self_serve_production).toBe(false);
     expect(INTEGRATION_STUDIO_PROVISION.create_sandbox_cta).toBe("Create a sandbox integration");
@@ -164,7 +164,7 @@ describe("Integration Studio", () => {
       solana: { funds_movement: boolean };
     };
     expect(json.access).toBe("public");
-    expect(json.partner_session_required_for_provisioning).toBe(true);
+    expect(json.partner_session_required_for_provisioning).toBe(false);
     const provision = (json as unknown as { provision: { create_sandbox_cta: string; self_serve_production: boolean } }).provision;
     expect(provision.create_sandbox_cta).toBe("Create a sandbox integration");
     expect(provision.self_serve_production).toBe(false);

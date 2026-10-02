@@ -1,5 +1,7 @@
 # Verify with Abraxas — developer quickstart
 
+**Canonical developer entry:** [Integration Studio](/developers/integration-studio) → create sandbox → generate starter kit → run first sandbox verification.
+
 One policy-agnostic integration primitive for relying applications. Abraxas owns the proof interaction; your application owns the customer experience.
 
 **PartnerKit is source-level code in this repository** (`lib/partner/integrationKit`). It is not a published npm package yet.
