@@ -12,6 +12,8 @@ import { isContentOriginDisclosurePolicyId } from "@/lib/provenance/constants";
 import { policyExplicitlyRequiresProductEligibility } from "@/lib/policy/evaluatePolicy";
 import { getPartnerPolicyAtVersion } from "@/lib/policy/getPolicy";
 import type { PolicyEvaluationResult } from "@/lib/policy/types";
+import { resolveAbraxasSubjectFromClaimsKey } from "@/lib/identity/subject/subjectStore";
+import { defaultPairwiseBoundary, pairwiseSubjectRef } from "@/lib/identity/pairwiseSubject/derive";
 import {
   NARROW_PARTNER_RESULT_ALLOWED_FIELDS,
   NARROW_PARTNER_RESULT_FORBIDDEN_KEYS,
@@ -37,18 +39,48 @@ function sanitizeNarrowResult(payload: NarrowPartnerResult): NarrowPartnerResult
 async function loadVerificationDecisionClaims(decisionId: string): Promise<{
   decision: string;
   claims_json: Record<string, unknown>;
+  subject_id: string;
+  request_id: string | null;
 } | null> {
   const sb = requireSupabaseAdmin();
   const { data } = await sb
     .from("verification_decisions")
-    .select("decision, claims_json")
+    .select("decision, claims_json, subject_id, request_id")
     .eq("id", decisionId)
     .maybeSingle();
   if (!data) return null;
   return {
     decision: data.decision as string,
     claims_json: (data.claims_json as Record<string, unknown>) ?? {},
+    subject_id: data.subject_id as string,
+    request_id: (data.request_id as string | null) ?? null,
   };
+}
+
+async function resolvePairwiseSubjectRef(input: {
+  claimsSubjectKey: string;
+  partnerId: string;
+  requestId: string | null;
+}): Promise<string | undefined> {
+  const identitySubject = await resolveAbraxasSubjectFromClaimsKey(input.claimsSubjectKey);
+  if (!identitySubject) return undefined;
+
+  let applicationId: string | null = null;
+  if (input.requestId) {
+    const sb = requireSupabaseAdmin();
+    const { data } = await sb
+      .from("verification_requests")
+      .select("launchpad_application_id")
+      .eq("id", input.requestId)
+      .maybeSingle();
+    applicationId = (data?.launchpad_application_id as string | null) ?? null;
+  }
+
+  const derived = pairwiseSubjectRef({
+    abraxasSubjectId: identitySubject.id,
+    boundary: defaultPairwiseBoundary(input.partnerId, applicationId),
+  });
+  return derived.ok ? derived.ref : undefined;
 }
 
 function buildAgeNarrowFacts(input: {
@@ -145,8 +177,15 @@ export async function buildNarrowPartnerResultForReceipt(
     })
     : {};
 
+  const pairwiseRef = await resolvePairwiseSubjectRef({
+    claimsSubjectKey: decision.subject_id,
+    partnerId: record.partner_id,
+    requestId: decision.request_id,
+  });
+
   return sanitizeNarrowResult({
     ...base,
     ...approvedFacts,
+    ...(pairwiseRef ? { pairwise_subject_ref: pairwiseRef } : {}),
   });
 }
