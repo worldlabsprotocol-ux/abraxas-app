@@ -208,7 +208,8 @@ export type ClaimIssuanceSource =
   | "walletBindingClaim_zklogin"
   | "walletBindingClaim_siwe"
   | "submitSelfAttestation"
-  | "provenanceClaims"
+  /** Holder disclosure orchestration — artifact bind + L0/L1 provenance claims via upsertClaims. */
+  | "submitProvenanceDisclosure"
   | "not_implemented";
 
 export interface ClaimContractRow {
@@ -364,24 +365,33 @@ export const CLAIM_CONTRACT: Record<ClaimType, ClaimContractRow> = {
     issuedBy: ["submitProvenanceDisclosure"],
     storedIn: "credential_claims + content_artifact_records (hash only)",
     resolvedBy: "getActiveClaims → artifact fingerprint binding",
-    evaluatedBy: "evaluateContentOriginDisclosure",
-    regressionTests: ["lib/provenance/provenance.test.ts"],
+    evaluatedBy: "evaluateContentOriginDisclosure (attestation class, L0)",
+    regressionTests: [
+      "lib/provenance/provenance.test.ts",
+      "lib/provenance/partnerFlow.integration.test.ts",
+    ],
   },
   ai_assistance_disclosed: {
     claimType: "ai_assistance_disclosed",
     issuedBy: ["submitProvenanceDisclosure"],
     storedIn: "credential_claims + content_artifact_records (hash only)",
-    resolvedBy: "getActiveClaims → disclosure category",
-    evaluatedBy: "evaluateContentOriginDisclosure",
-    regressionTests: ["lib/provenance/provenance.test.ts"],
+    resolvedBy: "getActiveClaims → holder disclosure category (not AI detection)",
+    evaluatedBy: "evaluateContentOriginDisclosure (disclosure class, L0)",
+    regressionTests: [
+      "lib/provenance/provenance.test.ts",
+      "lib/provenance/partnerFlow.integration.test.ts",
+    ],
   },
   source_integrity_verified: {
     claimType: "source_integrity_verified",
     issuedBy: ["submitProvenanceDisclosure"],
     storedIn: "credential_claims + content_artifact_records (hash only)",
-    resolvedBy: "getActiveClaims → fingerprint match at evaluation",
-    evaluatedBy: "evaluateContentOriginDisclosure",
-    regressionTests: ["lib/provenance/provenance.test.ts"],
+    resolvedBy: "getActiveClaims → submitted hash vs artifact binding",
+    evaluatedBy: "evaluateContentOriginDisclosure (integrity class, L1)",
+    regressionTests: [
+      "lib/provenance/provenance.test.ts",
+      "lib/provenance/partnerFlow.integration.test.ts",
+    ],
   },
   capture_provenance_verified: {
     claimType: "capture_provenance_verified",

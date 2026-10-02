@@ -46,16 +46,18 @@ async function denyIfRevoked(input: {
   operation: "evaluate" | "complete";
   verificationRequestId?: string;
 }): Promise<PartnerFlowEvaluateResult | null> {
-  const gate = await checkPartnerFlowRevocationGate({
-    suiAddress: input.suiAddress,
+  const denied = await checkPartnerFlowRevocationGate({
+    subjectId: input.suiAddress,
     partnerId: input.partnerId,
     policyId: input.policyId,
+    operation: input.operation,
     verificationRequestId: input.verificationRequestId,
   });
-  if (!gate.blocked) return null;
+  if (!denied) return null;
+  const policy = await getPolicy(input.policyId);
   return {
-    next: "denied",
-    reason_codes: gate.reason_codes,
+    ...denied,
+    policy_version: policy?.version,
   };
 }
 
