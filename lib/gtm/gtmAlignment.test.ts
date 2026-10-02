@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { describe, expect, it, beforeEach } from "vitest";
 import {
   GTM_ONE_SENTENCE_DESCRIPTION,
+  GTM_PRIMARY_COMMERCIAL_MESSAGE,
   GTM_PRIMARY_CTA_HREF,
   GTM_PRIMARY_CTA_LABEL,
 } from "./contract";
@@ -28,6 +29,12 @@ import {
   INSTITUTIONAL_PROOF_ROLE,
   INSTITUTIONAL_REFERENCE_METRICS,
 } from "./proofPack";
+import {
+  REFERENCE_HARNESS_FUNNEL_INVARIANTS,
+  REFERENCE_HARNESS_OPERATOR_INVARIANTS,
+  REFERENCE_HARNESS_PRIVACY_INVARIANTS,
+  REFERENCE_HARNESS_REVOCATION_INVARIANT,
+} from "./referenceProofInvariants";
 import {
   HOME_PRIMARY_CTA,
   HOME_PRIMARY_CTA_HREF,
@@ -60,9 +67,11 @@ describe("gtm alignment", () => {
     const hero = read("components/home/cinematic/thesis/CinematicHero.tsx");
     const copy = read("lib/home/cinematicHomeCopy.ts");
     const buyer = read("components/home/HomeBuyerContextSection.tsx");
-    expect(copy).toMatch(/Keep your KYC provider/i);
-    expect(copy).toMatch(/Stop re-verifying/i);
-    expect(buyer).toContain("HOME_KEEP_KYC_PROVIDER");
+    const homeCopy = read("lib/gtm/homeCopy.ts");
+    expect(copy).toMatch(/existing KYC provider/i);
+    expect(buyer).toMatch(/Keep your KYC provider|HOME_KEEP_KYC_PROVIDER/i);
+    expect(homeCopy).toMatch(/GTM_PRIMARY_COMMERCIAL_MESSAGE|HOME_BUYER_PROBLEM/i);
+    expect(GTM_PRIMARY_COMMERCIAL_MESSAGE).toMatch(/Stop re-verifying/i);
     expect(hero).toContain("CINEMATIC_CTA_PRIMARY");
     expect(HOME_PRIMARY_CTA).toBe(GTM_PRIMARY_CTA_LABEL);
     expect(HOME_PRIMARY_CTA_HREF).toBe(GTM_PRIMARY_CTA_HREF);
@@ -81,6 +90,34 @@ describe("gtm alignment", () => {
     const proofPage = read("components/gtm/GtmProofPackContent.tsx");
     expect(proofPage).toMatch(/reference harness/i);
     expect(INSTITUTIONAL_REFERENCE_METRICS.raw_kyc_recollections).toBe(0);
+  });
+
+  it("binds displayed reference metrics to canonical gate-A invariants", () => {
+    expect(INSTITUTIONAL_REFERENCE_METRICS.provider_verifications).toBe(
+      REFERENCE_HARNESS_FUNNEL_INVARIANTS.provider_verifications,
+    );
+    expect(INSTITUTIONAL_REFERENCE_METRICS.applications_receiving_results).toBe(
+      REFERENCE_HARNESS_FUNNEL_INVARIANTS.application_verifications,
+    );
+    expect(INSTITUTIONAL_REFERENCE_METRICS.raw_kyc_recollections).toBe(
+      REFERENCE_HARNESS_FUNNEL_INVARIANTS.raw_kyc_recollections,
+    );
+    expect(INSTITUTIONAL_REFERENCE_METRICS.forbidden_fields_in_partner_payload).toBe(
+      REFERENCE_HARNESS_PRIVACY_INVARIANTS.forbidden_fields_in_partner_payload,
+    );
+    expect(INSTITUTIONAL_REFERENCE_METRICS.operator_actions_after_trust_config).toBe(
+      REFERENCE_HARNESS_OPERATOR_INVARIANTS.operator_actions_after_trust_config,
+    );
+    expect(INSTITUTIONAL_REFERENCE_METRICS.post_revocation_reuse).toBe(
+      REFERENCE_HARNESS_REVOCATION_INVARIANT,
+    );
+  });
+
+  it("rejects tampered discovery payloads without crashing routing", () => {
+    expect(parseDiscoveryAnswers({ industry: "fintech_digital_assets" })).toBeNull();
+    expect(parseDiscoveryAnswers({ industry: "fintech_digital_assets", app_count_band: "99" })).toBeNull();
+    expect(parseDiscoveryAnswers({ industry: "bad", app_count_band: "2_3", has_kyc_vendor: "yes", primary_pain: "other" })).toBeNull();
+    expect(routeFromDiscovery(null).proof_pack).toBe("generic_reusable");
   });
 
   it("runs four-question discovery with privacy-safe persistence", () => {
