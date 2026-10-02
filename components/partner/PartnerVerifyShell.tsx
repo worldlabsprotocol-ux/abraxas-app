@@ -14,6 +14,7 @@ import {
   GOOD_TROUBLE_BROWSE_SIGN_IN_VALUE_HEADING,
   isGoodTroubleHostedDirectHandoff,
 } from "@/lib/partner/goodTroubleBrowseFlow";
+import { isGoodTroubleAgeEligibilityPurchaseBrief } from "@/lib/partner/goodTroubleHolderBrief";
 import { resolvePartnerContinuationIntro } from "@/lib/partner/partnerVerifyDisplay";
 import type { PartnerJourneyPrimaryAction } from "@/lib/partner/partnerJourneyStateMachine";
 import { HolderRecoveryCard } from "@/components/partner/HolderRecoveryCard";
@@ -154,6 +155,11 @@ export function PartnerVerifyShell({
     policyId,
     purpose,
   });
+  const goodTroublePurchaseL0 = isGoodTroubleAgeEligibilityPurchaseBrief({
+    partnerId,
+    policyId,
+    purpose,
+  });
   const useDobFirstSignInCopy = isDobFirstBrowse && onSignInScreen;
   const intro = directHandoff && !onSignInScreen
     ? ""
@@ -197,6 +203,7 @@ export function PartnerVerifyShell({
 
   const recoveryPhases = phase === "error" || phase === "return_failed" || phase === "expired" || phase === "missing" || phase === "cancelled" || phase === "invalid_binding" || phase === "method_not_qualified" || phase === "provider_unavailable" || phase === "denied" || phase === "approved";
   const hideOrientationChrome = directHandoff && !recoveryPhases && !onSignInScreen;
+  const hidePurchaseBrief = goodTroublePurchaseL0 && (recoveryPhases || hideOrientationChrome || onSignInScreen);
 
   return (
     <PartnerJourneyLayout
@@ -208,7 +215,7 @@ export function PartnerVerifyShell({
       partnerHomeUrl={showReturnButton(phase) ? partnerHomeUrl : null}
       partnerReturnLabel={partnerReturnLabel}
       showAccountFooter={!useDobFirstSignInCopy && !hideOrientationChrome}
-      brief={useDobFirstSignInCopy || hideOrientationChrome ? null : brief}
+      brief={useDobFirstSignInCopy || hideOrientationChrome || hidePurchaseBrief ? null : brief}
     >
       {recoveryPhases ? (
         <HolderRecoveryCard

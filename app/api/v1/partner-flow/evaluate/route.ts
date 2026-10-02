@@ -24,7 +24,8 @@ import {
   GoodTroubleFlowTupleMismatchError,
   resolveGoodTroubleFlowPurpose,
 } from "@/lib/partner/goodTroubleBrowseFlow";
-import { normalizePartnerVerifyInput, isGoodTroubleBrowseCallbackReturnUrl } from "@/lib/partner/normalizePartnerVerifyInput";
+import { isGoodTroubleBrowseCallbackReturnUrl } from "@/lib/partner/normalizePartnerVerifyInput";
+import { normalizePartnerVerifyWithLaunchpad } from "@/lib/partner/launchpad/resolveLaunchpadVerifyInput";
 import { GOOD_TROUBLE_BROWSE_POLICY_ID } from "@/lib/goodTrouble/constants";
 import {
   enforcePartnerFlowRateLimit,
@@ -89,7 +90,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const normalized = normalizePartnerVerifyInput({
+  const launchpadContext = extractLaunchpadFlowContext(body);
+
+  const normalized = await normalizePartnerVerifyWithLaunchpad({
+    app: body.app,
     partnerId: body.partner_id,
     relyingPartyId: body.relying_party_id,
     policyId: body.policy_id,
@@ -112,8 +116,6 @@ export async function POST(request: NextRequest) {
     permission,
     permissionVersion,
   } = normalized.params;
-
-  const launchpadContext = extractLaunchpadFlowContext(body);
 
   const allowed = await isAllowedPartnerReturnUrl(partnerId, returnUrl);
   if (!allowed) {
@@ -160,11 +162,13 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const expectedPolicyVersion = await resolveLaunchpadPinnedPolicyVersion({
-      context: launchpadContext,
-      partnerId,
-      policyId,
-    });
+    const launchpadApplicationId = normalized.launchpad?.applicationId ?? launchpadContext.applicationId;
+    const expectedPolicyVersion = normalized.launchpad?.policyVersion
+      ?? await resolveLaunchpadPinnedPolicyVersion({
+        context: { ...launchpadContext, applicationId: launchpadApplicationId },
+        partnerId,
+        policyId,
+      });
     const result = await evaluatePartnerFlow({
       partnerId,
       policyId,
@@ -173,7 +177,7 @@ export async function POST(request: NextRequest) {
       suiAddress: session.session.suiAddress,
       appOrigin: getPublicAppOriginFromRequest(request),
       expectedPolicyVersion,
-      launchpadApplicationId: launchpadContext.applicationId,
+      launchpadApplicationId,
     });
 
     const flowTraceId = resolvePartnerFlowTraceId({

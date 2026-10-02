@@ -3,6 +3,9 @@
 
 import type { NextRequest } from "next/server";
 import {
+  preferAuthoritativeContinuationReturnUrl,
+} from "@/lib/partner/continuationReturnUrlMatch";
+import {
   assertContinuationMatchesStored,
   continuationIsUsable,
   createPartnerFlowContinuationRecord,
@@ -37,6 +40,8 @@ export async function bindPartnerFlowContinuationForEvaluate(input: {
   const partnerId = input.partnerId.trim();
   const policyId = input.policyId.trim();
   const returnUrl = input.returnUrl.trim();
+  const authoritativeReturnUrl = (storedUrl: string) =>
+    preferAuthoritativeContinuationReturnUrl(storedUrl, returnUrl);
 
   if (!verifyRequestId || !partnerId || !policyId || !returnUrl) {
     return { ok: false, code: "missing" };
@@ -55,6 +60,10 @@ export async function bindPartnerFlowContinuationForEvaluate(input: {
         policyVersion: input.policyVersion,
       });
       if (matched.ok) {
+        const resolvedReturnUrl = authoritativeReturnUrl(existing.returnUrl);
+        if (resolvedReturnUrl !== existing.returnUrl) {
+          await store.save({ ...existing, returnUrl: resolvedReturnUrl });
+        }
         return { ok: true, verifyRequestId };
       }
     }
@@ -72,6 +81,10 @@ export async function bindPartnerFlowContinuationForEvaluate(input: {
           policyVersion: input.policyVersion,
         });
         if (matched.ok) {
+          const resolvedReturnUrl = authoritativeReturnUrl(stored.returnUrl);
+          if (resolvedReturnUrl !== stored.returnUrl) {
+            await store.save({ ...stored, returnUrl: resolvedReturnUrl });
+          }
           await store.attachVerifyRequestId(resume.jti, verifyRequestId);
           return { ok: true, verifyRequestId };
         }

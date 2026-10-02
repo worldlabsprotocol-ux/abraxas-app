@@ -40,6 +40,7 @@ interface FlowResult {
   passport_url?: string;
   reason_codes?: string[];
   error?: string;
+  code?: string;
   journey_state?: string;
   customer_message?: string;
 }
@@ -132,9 +133,16 @@ export function PartnerVerifyClient({
     purpose,
   });
 
+  const launchpadPending = launchpadActive && launchpadResolution.loading;
   const invalidLinkMessage = launchpadActive
     ? (launchpadResolution.loading ? null : launchpadResolution.error)
     : (verifyInput.ok ? null : verifyInput.invalidLinkMessage);
+  const flowParamsReady = Boolean(
+    relyingPartyId.trim()
+    && policyId.trim()
+    && returnUrl.trim()
+    && !launchpadPending,
+  );
 
   const hostedBootstrapEligible = isHostedHolderBootstrapEligible({
     partnerId: relyingPartyId,
@@ -143,7 +151,7 @@ export function PartnerVerifyClient({
   });
 
   const hostedBootstrap = useHostedHolderBootstrap({
-    enabled: !previewPhase && !invalidLinkMessage && Boolean(relyingPartyId && policyId && returnUrl),
+    enabled: !previewPhase && !invalidLinkMessage && flowParamsReady,
     suiAddress,
     authLoading,
     partnerId: relyingPartyId,
@@ -182,6 +190,7 @@ export function PartnerVerifyClient({
     const resolvedPolicyId = policyId.trim();
     const resolvedReturnUrl = returnUrl.trim();
     if (!partnerId || !resolvedReturnUrl || !resolvedPolicyId) return;
+    if (!flowParamsReady && launchpadActive) return;
     savePartnerVerifyResume({
       partnerId,
       policyId: resolvedPolicyId,
@@ -193,6 +202,8 @@ export function PartnerVerifyClient({
     });
   }, [
     invalidLinkMessage,
+    flowParamsReady,
+    launchpadActive,
     relyingPartyId,
     policyId,
     returnUrl,
@@ -207,7 +218,7 @@ export function PartnerVerifyClient({
   }, [suiAddress]);
 
   const runEvaluate = useCallback(async () => {
-    if (invalidLinkMessage || !suiAddress) return;
+    if (invalidLinkMessage || !suiAddress || !flowParamsReady) return;
     if (evaluateOnceRef.current) return;
     evaluateOnceRef.current = true;
 
@@ -255,6 +266,7 @@ export function PartnerVerifyClient({
 
       if (!res.ok) {
         const message = data.error ?? "Evaluation failed";
+        const code = typeof data.code === "string" ? data.code : undefined;
         if (res.status === 401 && isBrowserSessionAuthError(message)) {
           logPartnerVerifyAuthEvent("partner_evaluate_result", {
             correlationId: cid,
@@ -267,7 +279,14 @@ export function PartnerVerifyClient({
           setStatusMessage("Sign in to continue with Abraxas.");
           return;
         }
-        throw new Error("verification_failed");
+        evaluateOnceRef.current = false;
+        setPhase(code === "open_redirect" || code === "launchpad_return_url_rejected" ? "invalid_binding" : "error");
+        setStatusMessage(
+          code === "launchpad_return_url_rejected" || code === "tuple_conflict"
+            ? "This verification link does not match Good Trouble. Start again from ORDER NOW."
+            : "Verification could not be completed.",
+        );
+        return;
       }
 
       logPartnerVerifyAuthEvent("partner_evaluate_result", {
@@ -348,6 +367,8 @@ export function PartnerVerifyClient({
     purpose,
     returnUrl,
     isDobFirstBrowse,
+    flowParamsReady,
+    launchpadAppSlug,
   ]);
 
   useEffect(() => {
@@ -357,6 +378,11 @@ export function PartnerVerifyClient({
       return;
     }
     if (previewPhase) return;
+    if (launchpadPending) {
+      setPhase("loading");
+      setStatusMessage("Preparing verification…");
+      return;
+    }
     if (invalidLinkMessage) {
       setPhase("invalid_link");
       return;
@@ -396,6 +422,7 @@ export function PartnerVerifyClient({
     oauthReturnReady,
     runEvaluate,
     previewPhase,
+    launchpadPending,
     hostedBootstrapEligible,
     hostedBootstrap.bootstrapping,
     hostedBootstrap.state,
