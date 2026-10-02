@@ -52,6 +52,7 @@ function sanitizeClaimValue(value: Record<string, unknown>): Record<string, unkn
     "legal_name", "date_of_birth", "passport_number", "document_image_url",
     "selfie_url", "home_address", "provider_case_notes", "provider_subject_ref",
     "address_line", "provider_internal_case_id", "risk_notes", "provider_payload",
+    "ssn", "email", "phone", "provider_case_id",
   ];
   const clean: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(value)) {
