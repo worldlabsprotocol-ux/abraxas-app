@@ -5,6 +5,21 @@
   --font-sans: "Plus Jakarta Sans";
   --font-display: "Plus Jakarta Sans";
   --font-mono: "JetBrains Mono";
+  /* Abraxas motion tokens — semantic roles (see lib/design/abraxasMotion.ts) */
+  --abx-motion-micro: 140ms;
+  --abx-motion-surface: 220ms;
+  --abx-motion-protocol: 420ms;
+  --abx-motion-reveal: 560ms;
+  --abx-motion-redact: 480ms;
+  --abx-motion-verify: 360ms;
+  --abx-motion-transfer: 520ms;
+  --abx-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --abx-ease-reveal: cubic-bezier(0.16, 1, 0.3, 1);
+  --abx-ease-redact: cubic-bezier(0.4, 0, 0.2, 1);
+  --abx-stagger-sm: 0.06s;
+  --abx-stagger-md: 0.12s;
+  --abx-reveal-distance: 18px;
+  --abx-cinematic-gap: clamp(3rem, 8vw, 5rem);
 }
 
 :root,
@@ -290,6 +305,137 @@ details > summary::-webkit-details-marker {
   }
   .abx-institutional-slideshow .abx-bottom-nav {
     display: none;
+  }
+}
+
+/* Mode B — cinematic product surfaces (holder journeys, partner flow) */
+.abx-product-shell {
+  --abx-product-gap: clamp(1rem, 3vw, 1.5rem);
+}
+
+.abx-product-journey__return-link {
+  transition:
+    border-color var(--abx-motion-surface) var(--abx-ease-out),
+    background var(--abx-motion-surface) var(--abx-ease-out),
+    transform var(--abx-motion-micro) var(--abx-ease-out);
+}
+
+.abx-product-journey__return-link:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.abx-product-journey__return-link:active {
+  transform: scale(0.985);
+}
+
+.abx-holder-request-brief {
+  transition: border-color var(--abx-motion-surface) var(--abx-ease-out);
+}
+
+.abx-provenance-flow__section-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.abx-provenance-flow__section-lead {
+  margin: 0 0 0.75rem;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.abx-provenance-flow__section-lead--l0 {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.abx-provenance-flow__file-label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.abx-provenance-flow__file-input,
+.abx-provenance-flow__select {
+  width: 100%;
+  max-width: 100%;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  font-size: 0.86rem;
+}
+
+.abx-provenance-flow__checkbox {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.abx-provenance-flow__fingerprint {
+  margin-top: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.abx-provenance-flow__fingerprint--l1 {
+  border-color: rgba(96, 165, 250, 0.35);
+  background: linear-gradient(145deg, rgba(96, 165, 250, 0.08) 0%, rgba(9, 17, 31, 0.92) 100%);
+}
+
+.abx-provenance-flow__assurance-badge {
+  display: inline-block;
+  margin-bottom: 0.35rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.abx-provenance-flow__assurance-badge--l0 {
+  border: 1px solid rgba(244, 162, 97, 0.35);
+  color: #F4A261;
+  background: rgba(244, 162, 97, 0.08);
+}
+
+.abx-provenance-flow__assurance-badge--l1 {
+  border: 1px solid rgba(96, 165, 250, 0.35);
+  color: #60A5FA;
+  background: rgba(96, 165, 250, 0.08);
+}
+
+.abx-provenance-flow__hash {
+  display: block;
+  margin-top: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+@media (max-width: 640px) {
+  .abx-provenance-flow .abx-privacy-boundary {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .abx-product-journey__return-link {
+    transition: none;
   }
 }
 

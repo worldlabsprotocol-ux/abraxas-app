@@ -17,11 +17,11 @@ import { HomeGoodTroubleIntegration } from "@/components/home/HomeGoodTroubleInt
 import { HomeTrustClose } from "@/components/home/HomeTrustClose";
 import { VerifyOnceThesisDiagram } from "@/components/product";
 import { KineticMarquee } from "@/lib/motion/cinematic";
-import { Reveal } from "@/lib/motion/Reveal";
 import {
   CINEMATIC_THESIS_LINE_1,
   CINEMATIC_THESIS_LINE_2,
 } from "@/lib/home/cinematicHomeCopy";
+import { abxMotionCssVars } from "@/lib/design/abraxasMotion";
 import { AmbientGlow } from "./AmbientGlow";
 import { RedesignNav } from "./RedesignNav";
 import { RedesignFooter } from "./RedesignFooter";
@@ -31,8 +31,6 @@ const MAXW: React.CSSProperties = {
   margin: "0 auto",
   padding: "0 clamp(1.25rem, 4vw, 2rem)",
 };
-
-const SECTION_GAP = "clamp(3rem, 8vw, 5rem)";
 
 function HomeContent() {
   return (
@@ -48,54 +46,54 @@ function HomeContent() {
           ...MAXW,
           display: "flex",
           flexDirection: "column",
-          gap: SECTION_GAP,
+          gap: "var(--abx-cinematic-gap, clamp(3rem, 8vw, 5rem))",
           alignItems: "center",
           width: "100%",
         }}
       >
-        <Reveal as="section">
+        <section>
           <CinematicHero />
-        </Reveal>
+        </section>
 
-        <Reveal as="section" delay={0.04}>
+        <section>
           <ScrollDisclosureStory />
-        </Reveal>
+        </section>
 
-        <Reveal as="section" delay={0.06}>
+        <section>
           <AbraxasTransactionSection />
-        </Reveal>
+        </section>
 
-        <Reveal as="section" delay={0.08}>
+        <section>
           <PassportHeroObject />
-        </Reveal>
+        </section>
 
-        <Reveal as="section" delay={0.1}>
+        <section>
           <ProductProofSection />
-        </Reveal>
+        </section>
 
-        <Reveal as="section" delay={0.12}>
+        <section>
           <VerifyOnceThesisDiagram />
-        </Reveal>
+        </section>
 
-        <Reveal as="section" delay={0.14}>
+        <section>
           <ReuseOrbitSection />
-        </Reveal>
+        </section>
 
-        <Reveal as="section" delay={0.16}>
+        <section>
           <DeveloperStorySection />
-        </Reveal>
+        </section>
 
-        <Reveal as="section" delay={0.18}>
+        <section>
           <HomeGoodTroubleIntegration />
-        </Reveal>
+        </section>
 
-        <Reveal as="section" delay={0.2}>
+        <section>
           <HomeAudiencePanels />
-        </Reveal>
+        </section>
 
-        <Reveal as="section" delay={0.22}>
+        <section>
           <HomeTrustClose />
-        </Reveal>
+        </section>
       </div>
     </main>
   );
@@ -104,7 +102,12 @@ function HomeContent() {
 export function RedesignHome() {
   return (
     <WalletContextProvider>
-      <div data-theme="dark" className="abx-institutional-shell abx-command-center abx-cinematic-shell">
+      <div
+        data-theme="dark"
+        data-motion-tier="cinematic"
+        className="abx-institutional-shell abx-command-center abx-cinematic-shell"
+        style={abxMotionCssVars()}
+      >
         <AmbientGlow />
         <RedesignNav />
         <HomeContent />

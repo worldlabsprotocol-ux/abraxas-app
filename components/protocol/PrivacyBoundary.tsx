@@ -5,7 +5,7 @@
 import { motion, useReducedMotion } from "framer-motion";
 import type { ReactNode } from "react";
 import { ABX_FONT_MONO, ABX_FONT_SANS } from "@/lib/design/abraxasDesignSystem";
-import { abxMotionDuration } from "@/lib/design/abraxasMotion";
+import { abxMotionTransition } from "@/lib/motion/abxMotionFramer";
 
 export interface PrivacyBoundaryProps {
   protectedItems: string[];
@@ -26,7 +26,9 @@ export function PrivacyBoundary({
   className = "",
 }: PrivacyBoundaryProps) {
   const reduceMotion = useReducedMotion();
-  const duration = reduceMotion ? 0 : abxMotionDuration("protocol") / 1000;
+  const transition = reduceMotion
+    ? { duration: 0 }
+    : abxMotionTransition("protocol", { tier: "calm" });
 
   return (
     <div
@@ -57,7 +59,7 @@ export function PrivacyBoundary({
             className="abx-privacy-boundary__signal"
             initial={reduceMotion ? false : { opacity: 0, scale: 0.92, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration, ease: [0.22, 1, 0.36, 1] }}
+            transition={transition}
             aria-hidden
           />
         )}
@@ -75,7 +77,7 @@ export function PrivacyBoundary({
               ? { opacity: 1, y: 0, scale: 1 }
               : { opacity: 0.55, y: 4, scale: 0.98 }
           }
-          transition={{ duration, ease: [0.22, 1, 0.36, 1] }}
+          transition={transition}
         >
           <span className="abx-privacy-boundary__disclosed-badge" style={{ fontFamily: ABX_FONT_MONO }}>
             Verified

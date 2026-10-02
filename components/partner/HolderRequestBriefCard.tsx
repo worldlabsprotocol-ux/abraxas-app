@@ -34,7 +34,7 @@ const value: CSSProperties = {
 
 export function HolderRequestBriefCard({ brief }: { brief: HolderRequestBrief }) {
   return (
-    <section aria-labelledby="holder-request-brief-heading" style={wrap}>
+    <section aria-labelledby="holder-request-brief-heading" className="abx-holder-request-brief" style={wrap}>
       <h2
         id="holder-request-brief-heading"
         style={{ margin: "0 0 0.65rem", fontSize: "0.92rem", fontWeight: 800 }}

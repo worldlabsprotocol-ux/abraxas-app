@@ -53,3 +53,12 @@ export function abxMotionCssVars(): Record<string, string> {
 export function abxMotionDuration(role: AbxMotionRole): number {
   return ABX_MOTION[role].durationMs;
 }
+
+export function abxMotionTierForSurface(surface: string): AbxMotionTier {
+  for (const [tier, surfaces] of Object.entries(ABX_MOTION_TIER_SURFACES) as Array<
+    [AbxMotionTier, string[]]
+  >) {
+    if (surfaces.includes(surface)) return tier;
+  }
+  return "expressive";
+}
