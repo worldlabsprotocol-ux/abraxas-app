@@ -148,10 +148,12 @@ export function classifyTableProbeError(
 export async function probeSupabaseTable(
   client: SupabaseClient,
   table: string,
+  options?: { headColumn?: string },
 ): Promise<TableProbeResult> {
+  const column = options?.headColumn?.trim() || "id";
   const { error } = await client
     .from(table)
-    .select("id", { head: true, count: "exact" })
+    .select(column, { head: true, count: "exact" })
     .limit(0);
 
   if (!error) {
@@ -163,6 +165,9 @@ export async function probeSupabaseTable(
 
   return classifyProbeError(error, table);
 }
+
+/** Alias for scale-operations schema probes with non-id primary keys. */
+export const probeTableExists = probeSupabaseTable;
 
 export function tableProbeToReadinessStatus(state: TableProbeState): "PASS" | "FAIL" | "UNKNOWN" {
   if (state === "exists") return "PASS";

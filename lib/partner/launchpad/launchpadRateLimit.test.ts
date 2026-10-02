@@ -1,6 +1,6 @@
 // FILE: lib/partner/launchpad/launchpadRateLimit.test.ts
 
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import { NextRequest } from "next/server";
 import {
   checkLaunchpadRateLimit,
@@ -10,8 +10,18 @@ import {
 } from "@/lib/partner/launchpad/rateLimit";
 
 describe("launchpad rate limit", () => {
+  const env = { ...process.env };
+
   beforeEach(() => {
     resetLaunchpadRateLimitStoreForTests();
+    delete process.env.VERCEL;
+    process.env.VERCEL_ENV = "preview";
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+  });
+
+  afterEach(() => {
+    process.env = { ...env };
   });
 
   it("blocks after limit is exceeded", async () => {
@@ -38,7 +48,23 @@ describe("launchpad rate limit", () => {
 
   it("reports backend info without claiming production scale", () => {
     const info = launchpadRateLimitBackendInfo();
-    expect(["memory", "upstash"]).toContain(info.backend);
+    expect(["memory", "upstash", "distributed_unavailable"]).toContain(info.backend);
     expect(info.upstash_config).toBeDefined();
+  });
+
+  it("fails closed in production when Upstash is not configured", async () => {
+    const env = { ...process.env };
+    process.env.VERCEL = "1";
+    process.env.VERCEL_ENV = "production";
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    const req = new NextRequest("http://localhost/api/launchpad/applications", {
+      headers: { "x-forwarded-for": "203.0.113.10" },
+    });
+    const blocked = await checkLaunchpadRateLimit(req, "/api/launchpad/applications", 10);
+    expect(blocked.allowed).toBe(false);
+
+    process.env = { ...env };
   });
 });

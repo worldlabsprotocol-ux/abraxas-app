@@ -16,12 +16,15 @@ describe("scale readiness report", () => {
     expect(report.checks.some((row) => row.id === "production_review_gate")).toBe(true);
   });
 
-  it("reports durable provenance and consent stores after migration 125 wiring", async () => {
+  it("reports durable provenance, consent, and oauth JTI stores", async () => {
     const report = await buildScaleReadinessReport();
     const provenance = report.checks.find((row) => row.id === "provenance_session_store");
     const consent = report.checks.find((row) => row.id === "organization_consent_store");
+    const oauth = report.checks.find((row) => row.id === "oauth_jti_replay_guard");
     expect(provenance?.signal).toBe("healthy");
     expect(consent?.signal).toBe("healthy");
+    expect(oauth?.signal).toBe("healthy");
+    expect(oauth?.detail).not.toContain("process-local");
   });
 
   it("confirms sandbox self-service is enabled", async () => {

@@ -15,6 +15,10 @@ import {
 import { listFailedWebhookDeliveries } from "@/lib/partner/webhooks/webhookDeadLetter";
 import { INTEGRATION_STUDIO_PROVISION } from "@/lib/partner/integrationStudio/contract";
 import {
+  probeAllScaleOperationsMigrations,
+  SCALE_OPERATIONS_MIGRATION_ORDER,
+} from "@/lib/operations/scaleOperationsMigrations";
+import {
   SCALE_READINESS_SCOPE_NOTICE,
   SCALE_READINESS_VERSION,
   type ScaleReadinessCheck,
@@ -33,7 +37,7 @@ function check(id: string, signal: ScaleReadinessSignal, detail: string, severit
   return { id, signal, detail, severity };
 }
 
-function sourceUsesProcessMemory(relativePath: string, pattern: RegExp): boolean {
+function sourceUsesDurableStore(relativePath: string, pattern: RegExp): boolean {
   try {
     const source = readFileSync(join(process.cwd(), relativePath), "utf8");
     return pattern.test(source);
@@ -73,36 +77,95 @@ async function probeWebhookOutbox(): Promise<ScaleReadinessCheck> {
   }
 }
 
-async function probeDurableTables(): Promise<ScaleReadinessCheck> {
+async function probeScaleOperationsSchema(): Promise<ScaleReadinessCheck[]> {
   if (process.env.VITEST) {
-    return check("durable_transient_state", "unknown", "Skipped in test runtime.", "P1");
+    return SCALE_OPERATIONS_MIGRATION_ORDER.map((migration) => check(
+      `scale_migration_${migration.replace(".sql", "")}`,
+      "unknown",
+      "Skipped in test runtime.",
+      "P1",
+    ));
   }
+
   try {
     const { requireSupabaseAdmin } = await import("@/lib/supabase/admin");
     const sb = requireSupabaseAdmin();
-    const tables = [
-      "provenance_flow_sessions",
-      "provenance_content_submissions",
-      "organization_eligibility_consents",
-      "sandbox_readiness_runs",
-    ];
-    for (const table of tables) {
-      const { error } = await sb.from(table).select("id").limit(1);
-      if (error) {
-        const msg = `${error.message} ${error.code ?? ""}`.toLowerCase();
-        if (msg.includes("does not exist") || msg.includes("42p01")) {
-          return check(
-            "durable_transient_state",
-            isPartnerFlowProductionRuntime() ? "blocked" : "degraded",
-            `Migration 125 table missing: ${table}`,
-            "P1",
-          );
-        }
-      }
-    }
-    return check("durable_transient_state", "healthy", "Scale operations durable tables reachable.", "P1");
+    const probes = await probeAllScaleOperationsMigrations(sb);
+    return probes.map((probe) => {
+      const signal: ScaleReadinessSignal = probe.signal === "available"
+        ? "healthy"
+        : probe.signal === "missing"
+          ? (isPartnerFlowProductionRuntime() ? "blocked" : "degraded")
+          : "unknown";
+      const missing = probe.tables.filter((row) => row.signal === "missing").map((row) => row.table);
+      return check(
+        `scale_migration_${probe.migration.replace(".sql", "")}`,
+        signal,
+        missing.length
+          ? `Scale migration tables missing: ${missing.join(", ")}`
+          : `Scale migration ${probe.migration} tables reachable.`,
+        probe.migration.includes("125") ? "P0" : "P1",
+      );
+    });
   } catch {
-    return check("durable_transient_state", "unknown", "Could not probe durable transient tables.", "P1");
+    return SCALE_OPERATIONS_MIGRATION_ORDER.map((migration) => check(
+      `scale_migration_${migration.replace(".sql", "")}`,
+      "unknown",
+      `Could not probe ${migration}.`,
+      "P1",
+    ));
+  }
+}
+
+async function probeOAuthJtiReplayStore(): Promise<ScaleReadinessCheck> {
+  const wired = sourceUsesDurableStore("lib/sui/zklogin/oauthJtiReplayStore.ts", /requireSupabaseAdmin/)
+    && sourceUsesDurableStore("lib/sui/zklogin/oauthLoginState.ts", /consumeZkLoginOAuthJti/);
+
+  if (!wired) {
+    return check(
+      "oauth_jti_replay_guard",
+      "blocked",
+      "OAuth JTI replay guard is not wired to durable storage.",
+      "P0",
+    );
+  }
+
+  if (process.env.VITEST) {
+    return check(
+      "oauth_jti_replay_guard",
+      "healthy",
+      "OAuth JTI replay guard uses durable atomic consume (test runtime uses isolated memory fallback).",
+      "P1",
+    );
+  }
+
+  try {
+    const { requireSupabaseAdmin } = await import("@/lib/supabase/admin");
+    const sb = requireSupabaseAdmin();
+    const { error } = await sb
+      .from("zklogin_oauth_jti_consumed")
+      .select("jti_hash", { head: true, count: "exact" })
+      .limit(0);
+    if (error) {
+      const msg = `${error.message} ${error.code ?? ""}`.toLowerCase();
+      if (msg.includes("does not exist") || msg.includes("42p01")) {
+        return check(
+          "oauth_jti_replay_guard",
+          isPartnerFlowProductionRuntime() ? "blocked" : "degraded",
+          "Migration 126 table zklogin_oauth_jti_consumed missing.",
+          "P0",
+        );
+      }
+      return check("oauth_jti_replay_guard", "unknown", "Could not probe OAuth JTI replay table.", "P1");
+    }
+    return check(
+      "oauth_jti_replay_guard",
+      "healthy",
+      "OAuth JTI replay guard durable table reachable with hashed JTIs only.",
+      "P1",
+    );
+  } catch {
+    return check("oauth_jti_replay_guard", "unknown", "Could not probe OAuth JTI replay table.", "P1");
   }
 }
 
@@ -112,19 +175,22 @@ export async function buildScaleReadinessReport(): Promise<ScaleReadinessReport>
   const launchpadRate = launchpadRateLimitBackendInfo();
   const upstashHealth = await probePartnerFlowUpstashHealth();
 
+  const partnerFlowRateHealthy = partnerFlowRate.backend === "upstash";
+  const partnerFlowRateBlocked = isPartnerFlowProductionRuntime()
+    && ["distributed_unavailable", "distributed_config_incomplete", "identity_unavailable"].includes(partnerFlowRate.backend);
+
   checks.push(check(
     "partner_flow_rate_limit",
-    partnerFlowRate.backend === "upstash" ? "healthy"
-      : isPartnerFlowProductionRuntime() ? "degraded" : "healthy",
-    `Partner Flow rate limit backend: ${partnerFlowRate.backend}. Public receipt/narrow-result fail closed when misconfigured in production.`,
+    partnerFlowRateHealthy ? "healthy" : partnerFlowRateBlocked ? "blocked" : "healthy",
+    `Partner Flow rate limit backend: ${partnerFlowRate.backend}. Production requires Upstash; no silent memory fallback.`,
     "P1",
   ));
 
+  const launchpadBlocked = isPartnerFlowProductionRuntime() && launchpadRate.backend === "distributed_unavailable";
   checks.push(check(
     "launchpad_rate_limit",
-    launchpadRate.backend === "upstash" ? "healthy"
-      : isPartnerFlowProductionRuntime() ? "degraded" : "healthy",
-    `Launchpad rate limit backend: ${launchpadRate.backend}.`,
+    launchpadRate.backend === "upstash" ? "healthy" : launchpadBlocked ? "blocked" : "healthy",
+    `Launchpad rate limit backend: ${launchpadRate.backend}. Production requires Upstash; no silent memory fallback.`,
     "P1",
   ));
 
@@ -160,9 +226,9 @@ export async function buildScaleReadinessReport(): Promise<ScaleReadinessReport>
 
   checks.push(check(
     "provenance_session_store",
-    sourceUsesProcessMemory("lib/provenance/provenanceSessionStore.ts", /requireSupabaseAdmin/)
+    sourceUsesDurableStore("lib/provenance/provenanceSessionStore.ts", /requireSupabaseAdmin/)
       ? "healthy" : "blocked",
-    sourceUsesProcessMemory("lib/provenance/provenanceSessionStore.ts", /requireSupabaseAdmin/)
+    sourceUsesDurableStore("lib/provenance/provenanceSessionStore.ts", /requireSupabaseAdmin/)
       ? "Provenance sessions persist durably when schema available."
       : "Provenance sessions still process-local only.",
     "P0",
@@ -170,9 +236,9 @@ export async function buildScaleReadinessReport(): Promise<ScaleReadinessReport>
 
   checks.push(check(
     "organization_consent_store",
-    sourceUsesProcessMemory("lib/organizationEligibility/consent.ts", /requireSupabaseAdmin/)
+    sourceUsesDurableStore("lib/organizationEligibility/consent.ts", /requireSupabaseAdmin/)
       ? "healthy" : "blocked",
-    sourceUsesProcessMemory("lib/organizationEligibility/consent.ts", /requireSupabaseAdmin/)
+    sourceUsesDurableStore("lib/organizationEligibility/consent.ts", /requireSupabaseAdmin/)
       ? "Organization consents persist durably with atomic consume."
       : "Organization consents still process-local only.",
     "P0",
@@ -180,12 +246,19 @@ export async function buildScaleReadinessReport(): Promise<ScaleReadinessReport>
 
   checks.push(check(
     "sandbox_readiness_idempotency",
-    sourceUsesProcessMemory("lib/partner/launchpad/sandboxReadiness/idempotency.ts", /requireSupabaseAdmin/)
+    sourceUsesDurableStore("lib/partner/launchpad/sandboxReadiness/idempotency.ts", /requireSupabaseAdmin/)
       ? "healthy" : "degraded",
-    sourceUsesProcessMemory("lib/partner/launchpad/sandboxReadiness/idempotency.ts", /requireSupabaseAdmin/)
+    sourceUsesDurableStore("lib/partner/launchpad/sandboxReadiness/idempotency.ts", /requireSupabaseAdmin/)
       ? "Sandbox readiness runs are durably idempotent."
       : "Sandbox readiness idempotency is process-local.",
     "P1",
+  ));
+
+  checks.push(check(
+    "transient_state_purge",
+    "healthy",
+    "Bounded transient purge available via lib/operations/transientStatePurge (lazy expiry on read active; no Vercel cron registered).",
+    "P2",
   ));
 
   checks.push(check(
@@ -211,20 +284,8 @@ export async function buildScaleReadinessReport(): Promise<ScaleReadinessReport>
     "P1",
   ));
 
-  checks.push(await probeDurableTables());
-
-  const oauthLocal = sourceUsesProcessMemory(
-    "lib/sui/zklogin/oauthLoginState.ts",
-    /consumedJtis:\s*Map/,
-  );
-  if (oauthLocal) {
-    checks.push(check(
-      "oauth_jti_replay_guard",
-      "degraded",
-      "OAuth login JTI replay guard is still process-local. See docs/OAUTH_REPLAY_DURABLE_JTI_PROPOSAL.md.",
-      "P1",
-    ));
-  }
+  checks.push(...await probeScaleOperationsSchema());
+  checks.push(await probeOAuthJtiReplayStore());
 
   return {
     schema_version: SCALE_READINESS_VERSION,

@@ -41,6 +41,7 @@ describe("partnerFlowRateLimit", () => {
     delete process.env.ABRAXAS_BROWSER_SESSION_SECRET;
     delete process.env.ABRAXAS_SIGNING_KEY;
     delete process.env.VERCEL;
+    process.env.VERCEL_ENV = "preview";
     delete process.env.UPSTASH_REDIS_REST_URL;
     delete process.env.UPSTASH_REDIS_REST_TOKEN;
     resetPartnerFlowRateLimitStoreForTests();
@@ -224,7 +225,22 @@ describe("partnerFlowRateLimit", () => {
     expect(info.backend).toBe("memory");
     expect(info.distributedStoreActive).toBe(false);
     expect(info.distributedStoreConfigured).toBe(false);
-    expect(info.note).toMatch(/in-process memory/i);
+    expect(info.note).toMatch(/Local development uses in-process memory/i);
+  });
+
+  it("fails closed in production when Upstash is not configured (no memory fallback)", async () => {
+    process.env.VERCEL = "1";
+    process.env.VERCEL_ENV = "production";
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    const req = requestWithHeaders({});
+    const result = await checkPartnerFlowRateLimit(req, "/api/v1/partner-flow/evaluate", {
+      sessionSubject: "0xabc",
+    });
+
+    expect(result.allowed).toBe(false);
+    expect(result.backend).toBe("distributed_unavailable");
   });
 
   it("reports upstash backend when configured and reachable", async () => {

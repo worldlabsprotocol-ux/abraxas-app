@@ -45,6 +45,16 @@ describe("process-local state audit", () => {
     expect(source).toContain("requireSupabaseAdmin");
   });
 
+  it("oauth JTI replay store uses durable persistence path", () => {
+    const source = read("lib/sui/zklogin/oauthJtiReplayStore.ts");
+    expect(source).toContain("zklogin_oauth_jti_consumed");
+    expect(source).toContain("requireSupabaseAdmin");
+    expect(source).not.toMatch(/consumedJtis:\s*Map/);
+    const loginState = read("lib/sui/zklogin/oauthLoginState.ts");
+    expect(loginState).toContain("consumeZkLoginOAuthJti");
+    expect(loginState).not.toMatch(/consumedJtis:\s*Map/);
+  });
+
   it("reference publisher verify path does not import privileged internals", () => {
     const source = read("lib/demo/referenceContentPublisher/verifyCallback.ts");
     expect(source).not.toMatch(/requireSupabaseAdmin|credential_claims|getReceiptById/);

@@ -8,6 +8,7 @@ import {
   getPartnerFlowUpstashConfigState,
   isPartnerFlowUpstashConfigured,
 } from "@/lib/partner/partnerFlowUpstashStore";
+import { isPartnerFlowProductionRuntime } from "@/lib/partner/partnerFlowRateLimit";
 
 const LAUNCHPAD_UPSTASH_PREFIX = "abraxas-launchpad-rate-v1";
 const buckets = new Map<string, { count: number; resetAt: number }>();
@@ -94,15 +95,26 @@ export async function checkLaunchpadRateLimit(
   const key = clientKey(req, route);
   const upstash = await checkUpstash(key, limit, windowSec);
   if (upstash) return upstash;
+
+  if (isPartnerFlowProductionRuntime()) {
+    return { allowed: false, retryAfterSec: windowSec };
+  }
+
   return checkMemory(key, limit, windowSec);
 }
 
 export function launchpadRateLimitBackendInfo(): {
-  backend: "upstash" | "memory";
+  backend: "upstash" | "memory" | "distributed_unavailable";
   upstash_config: ReturnType<typeof getPartnerFlowUpstashConfigState>;
 } {
+  if (isPartnerFlowUpstashConfigured()) {
+    return {
+      backend: "upstash",
+      upstash_config: getPartnerFlowUpstashConfigState(),
+    };
+  }
   return {
-    backend: isPartnerFlowUpstashConfigured() ? "upstash" : "memory",
+    backend: isPartnerFlowProductionRuntime() ? "distributed_unavailable" : "memory",
     upstash_config: getPartnerFlowUpstashConfigState(),
   };
 }
