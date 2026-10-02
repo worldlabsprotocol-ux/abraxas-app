@@ -752,6 +752,7 @@ export async function evaluatePartnerFlow(input: {
   appOrigin?: string;
   expectedPolicyVersion?: number;
   launchpadApplicationId?: string | null;
+  expectedContentHash?: string | null;
 }): Promise<PartnerFlowEvaluateResult> {
   if (!await isReturnUrlAllowed(input.partnerId, input.returnUrl)) {
     throw new Error("return_url not allowlisted for partner");
@@ -779,6 +780,7 @@ export async function evaluatePartnerFlow(input: {
       appOrigin: input.appOrigin,
       expectedPolicyVersion: input.expectedPolicyVersion,
       launchpadApplicationId: input.launchpadApplicationId,
+      expectedContentHash: input.expectedContentHash,
     });
   }
 

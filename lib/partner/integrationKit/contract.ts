@@ -3,6 +3,7 @@
 
 export const PARTNER_INTEGRATION_KIT_VERSION = "1.1.0" as const;
 export const PARTNER_INTEGRATION_RECEIPT_SCHEMA_VERSION = "1.0.0" as const;
+export const PARTNER_INTEGRATION_NARROW_RESULT_SCHEMA_VERSION = "1.0.0" as const;
 
 export const PARTNER_INTEGRATION_OUTCOMES = [
   "permitted",

@@ -104,7 +104,11 @@ type ResumableApp = {
 export function IntegrationStudioClient() {
   const searchParams = useSearchParams();
   const packs = listStudioPackSummaries();
-  const [packId, setPackId] = useState(packs[1]?.pack_id ?? packs[0]?.pack_id ?? "age_21_retail");
+  const [packId, setPackId] = useState(() => {
+    const requested = searchParams.get("pack");
+    if (requested && isPolicyPackId(requested)) return requested;
+    return packs[1]?.pack_id ?? packs[0]?.pack_id ?? "age_21_retail";
+  });
   const [pathId, setPathId] = useState<IntegrationStudioPathId>(() => {
     const requested = searchParams.get("path");
     return requested && isIntegrationStudioPathId(requested) ? requested : "hosted_partner_flow";
@@ -444,7 +448,17 @@ export function IntegrationStudioClient() {
       <ContentCard title="Discover · Choose a policy pack">
         <p style={{ ...body, marginBottom: "0.75rem" }}>
           These are the same packs Partner Launchpad uses. Identity or liveness is never the default path.
+          Content provenance verifies a holder&apos;s disclosure for a specific artifact without receiving the underlying file.
         </p>
+        {packId === "content_origin_disclosure" && contract ? (
+          <div style={{ ...body, marginBottom: "0.85rem", padding: "0.85rem", borderRadius: 12, border: "1px solid rgba(45,212,191,0.25)", background: "rgba(45,212,191,0.06)" }}>
+            <strong>What this proves:</strong> creator attestation (L0), AI assistance disclosure (L0), and source integrity for the bound fingerprint (L1).
+            <br />
+            <strong>What it does not prove:</strong> authorship, copyright, originality, or AI detection scores.
+            <br />
+            <Link href="/demo/reference-publisher" style={{ color: "var(--accent)", fontWeight: 700 }}>Open reference publisher demo</Link>
+          </div>
+        ) : null}
         {handoffNotice && (
           <p role="status" style={{ ...body, marginBottom: "0.75rem", color: "var(--text-primary)", fontWeight: 700 }}>
             {handoffNotice}

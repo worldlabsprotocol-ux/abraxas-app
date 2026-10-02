@@ -11,10 +11,13 @@ import { outcomeFromValidationErrors } from "@/lib/partner/integrationKit/outcom
 import {
   PARTNER_INTEGRATION_GOOGLE_BOUNDARY,
   PARTNER_INTEGRATION_KIT_VERSION,
+  PARTNER_INTEGRATION_NARROW_RESULT_SCHEMA_VERSION,
   PARTNER_INTEGRATION_RECEIPT_SCHEMA_VERSION,
   PARTNER_INTEGRATION_REPLAY_BEHAVIOR,
   type PartnerIntegrationOutcome,
 } from "@/lib/partner/integrationKit/contract";
+import type { NarrowPartnerResult } from "@/lib/partner/narrowPartnerResult/contract";
+import type { ProvenancePartnerFacts } from "@/lib/partner/provenancePartnerResult";
 import { resolvePolicyPack, inferPolicyPackFromPolicyId } from "@/lib/partner/launchpad/policyPacks";
 import { assertReceiptMatchesBinding } from "@/lib/partner/launchpad/resolveApplicationPolicyBinding";
 import type { ResolvedApplicationPolicyBinding } from "@/lib/partner/launchpad/policyBindingContract";
@@ -119,6 +122,42 @@ export class AbraxasPartnerKit {
     search: URLSearchParams | Record<string, string | string[] | undefined>,
   ) {
     return parsePartnerCallbackParams(search);
+  }
+
+  async fetchNarrowPartnerResult(receiptId: string): Promise<
+    { ok: true; result: NarrowPartnerResult } | { ok: false; errors: string[] }
+  > {
+    const fetchFn = this.options.fetchFn ?? fetch;
+    const base = (this.options.baseUrl ?? SITE_URL).replace(/\/$/, "");
+    try {
+      const res = await fetchFn(`${base}/api/receipts/${encodeURIComponent(receiptId)}/narrow-result`, {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      });
+      if (res.status >= 500) {
+        return { ok: false, errors: ["narrow_result_fetch_failed", "retry"] };
+      }
+      if (!res.ok) {
+        return { ok: false, errors: ["narrow_result_missing"] };
+      }
+      const result = (await res.json()) as NarrowPartnerResult;
+      if (result.schema_version !== PARTNER_INTEGRATION_NARROW_RESULT_SCHEMA_VERSION) {
+        return { ok: false, errors: [`narrow_result_schema_unsupported:${result.schema_version ?? "missing"}`] };
+      }
+      if (result.partner_id !== this.options.partnerId) {
+        return { ok: false, errors: [`narrow_result_partner_mismatch:expected=${this.options.partnerId},got=${result.partner_id ?? "missing"}`] };
+      }
+      if (result.policy_id !== this.options.policyId) {
+        return { ok: false, errors: [`narrow_result_policy_mismatch:expected=${this.options.policyId},got=${result.policy_id ?? "missing"}`] };
+      }
+      return { ok: true, result };
+    } catch {
+      return { ok: false, errors: ["narrow_result_fetch_failed", "retry"] };
+    }
+  }
+
+  extractProvenanceFromNarrowResult(result: NarrowPartnerResult): ProvenancePartnerFacts | null {
+    return result.provenance ?? null;
   }
 
   async fetchPublicReceipt(receiptId: string): Promise<

@@ -37,7 +37,7 @@ export function maybeRecordPartnerApiMeteringFromUsage(entry: PartnerUsageEntry)
   if (entry.success === false) return;
 
   const endpoint = entry.endpoint?.trim();
-  if (!endpoint || endpoint.includes("/api/receipts/public")) return;
+  if (!endpoint || endpoint.includes("/api/receipts/public") || endpoint.includes("/api/receipts/narrow-result")) return;
 
   const correlationId = resolvePartnerApiMeteringCorrelationId({
     recordId: entry.recordId,

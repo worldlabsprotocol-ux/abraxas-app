@@ -16,6 +16,7 @@ export const POLICY_FIT_ACTIONS = [
   "redemption_access",
   "higher_assurance_identity",
   "sandbox_demo",
+  "content_provenance_publish",
 ] as const;
 export type PolicyFitAction = (typeof POLICY_FIT_ACTIONS)[number];
 
@@ -27,6 +28,7 @@ export const POLICY_FIT_ACTION_LABELS: Record<PolicyFitAction, string> = {
   redemption_access: "Gate collector or redemption access",
   higher_assurance_identity: "Gate a higher-assurance identity check",
   sandbox_demo: "Exercise a sandbox or testnet demo",
+  content_provenance_publish: "Request provenance disclosure before publishing",
 };
 
 export const POLICY_FIT_CATEGORIES = [
@@ -38,6 +40,7 @@ export const POLICY_FIT_CATEGORIES = [
   "identity_liveness",
   "collector_redemption",
   "sandbox_demo",
+  "content_provenance",
 ] as const;
 export type PolicyFitCategory = (typeof POLICY_FIT_CATEGORIES)[number];
 
@@ -50,6 +53,7 @@ export const POLICY_FIT_CATEGORY_LABELS: Record<PolicyFitCategory, string> = {
   identity_liveness: "Identity plus liveness",
   collector_redemption: "Collector or redemption",
   sandbox_demo: "Sandbox economic demo",
+  content_provenance: "Content provenance disclosure",
 };
 
 export const POLICY_FIT_ENVIRONMENTS = ["sandbox", "future_production"] as const;
@@ -105,6 +109,7 @@ export const POLICY_FIT_CATEGORY_TO_PACK: Record<PolicyFitCategory, PolicyPackId
   identity_liveness: "identity_liveness",
   collector_redemption: "collector_redemption",
   sandbox_demo: "sandbox_economic_demo",
+  content_provenance: "content_origin_disclosure",
 };
 
 export const POLICY_FIT_ACTION_CATEGORIES: Record<PolicyFitAction, readonly PolicyFitCategory[]> = {
@@ -115,6 +120,7 @@ export const POLICY_FIT_ACTION_CATEGORIES: Record<PolicyFitAction, readonly Poli
   redemption_access: ["collector_redemption"],
   higher_assurance_identity: ["identity_liveness"],
   sandbox_demo: ["sandbox_demo"],
+  content_provenance_publish: ["content_provenance"],
 };
 
 export const POLICY_FIT_CAPABILITY_TO_PATH: Record<PolicyFitCapability, IntegrationStudioPathId> = {

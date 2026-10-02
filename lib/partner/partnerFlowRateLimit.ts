@@ -18,6 +18,7 @@ export const PARTNER_FLOW_RATE_LIMIT_ENDPOINTS = [
   "/api/v1/partner-flow/purchase-return",
   "/api/v1/partner-flow/refresh",
   "/api/receipts/public",
+  "/api/receipts/narrow-result",
   "/api/v1/verification-requests/consent",
   "/api/age-assurance/self-attest",
   "/api/age-assurance/browse-reuse",
@@ -64,6 +65,7 @@ const ENDPOINT_ENV_KEYS: Record<PartnerFlowRateLimitEndpoint, string> = {
   "/api/v1/partner-flow/purchase-return": "PARTNER_FLOW_RATE_LIMIT_PURCHASE_RETURN",
   "/api/v1/partner-flow/refresh": "PARTNER_FLOW_RATE_LIMIT_REFRESH",
   "/api/receipts/public": "PARTNER_FLOW_RATE_LIMIT_PUBLIC_RECEIPT",
+  "/api/receipts/narrow-result": "PARTNER_FLOW_RATE_LIMIT_NARROW_RESULT",
   "/api/v1/verification-requests/consent": "PARTNER_FLOW_RATE_LIMIT_CONSENT",
   "/api/age-assurance/self-attest": "PARTNER_FLOW_RATE_LIMIT_SELF_ATTEST",
   "/api/age-assurance/browse-reuse": "PARTNER_FLOW_RATE_LIMIT_BROWSE_REUSE",
@@ -76,6 +78,7 @@ const DEFAULT_LIMITS: Record<PartnerFlowRateLimitEndpoint, number> = {
   "/api/v1/partner-flow/purchase-return": 30,
   "/api/v1/partner-flow/refresh": 20,
   "/api/receipts/public": 120,
+  "/api/receipts/narrow-result": 120,
   "/api/v1/verification-requests/consent": 30,
   "/api/age-assurance/self-attest": 20,
   "/api/age-assurance/browse-reuse": 30,
@@ -84,6 +87,7 @@ const DEFAULT_LIMITS: Record<PartnerFlowRateLimitEndpoint, number> = {
 
 const IP_BASED_ENDPOINTS = new Set<PartnerFlowRateLimitEndpoint>([
   "/api/receipts/public",
+  "/api/receipts/narrow-result",
 ]);
 
 /** Shared bucket when no trustworthy client IP exists (not client-spoofable). */

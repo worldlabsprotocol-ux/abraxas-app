@@ -99,6 +99,14 @@ export const PARTNER_FLOW_DOCUMENTED_OPERATIONS: readonly PartnerFlowDocumentedO
     implementation: "app/api/receipts/[receiptId]/public/route.ts",
     summary: "Public eligibility decision receipt (no auth, no PII)",
   },
+  {
+    method: "GET",
+    path: "/api/receipts/{receiptId}/narrow-result",
+    operationId: "getNarrowPartnerResult",
+    category: "public_receipt",
+    implementation: "app/api/receipts/[receiptId]/narrow-result/route.ts",
+    summary: "Public narrow partner result — authorized policy facts only (no raw claims, artifact ids, or content hashes)",
+  },
 ] as const;
 
 /** Implemented routes intentionally excluded from Partner Flow OpenAPI (different auth surface). */

@@ -40,6 +40,8 @@ import {
   attachPartnerContinueBindingCookie,
   signPartnerContinueBindingCookie,
 } from "@/lib/partner/partnerVerifyResumeCookie";
+import { normalizeExpectedContentHash } from "@/lib/provenance/expectedContentHash";
+import { isContentOriginDisclosureFlow } from "@/lib/provenance/partnerFlow";
 
 export const dynamic = "force-dynamic";
 
@@ -83,6 +85,7 @@ export async function POST(request: NextRequest) {
     app?: string;
     launchpad_application_id?: string;
     application_id?: string;
+    expected_content_hash?: string;
   };
   try {
     body = await request.json();
@@ -161,6 +164,23 @@ export async function POST(request: NextRequest) {
     resolvedPurpose = "browse";
   }
 
+  const expectedContentHash = normalizeExpectedContentHash(body.expected_content_hash);
+  if (
+    body.expected_content_hash?.trim()
+    && !expectedContentHash
+  ) {
+    return NextResponse.json(
+      { error: "expected_content_hash must be a lowercase SHA-256 hex digest", code: "invalid_content_hash" },
+      { status: 400 },
+    );
+  }
+  if (expectedContentHash && !isContentOriginDisclosureFlow({ policyId })) {
+    return NextResponse.json(
+      { error: "expected_content_hash is only supported for content provenance policies", code: "content_hash_policy_mismatch" },
+      { status: 400 },
+    );
+  }
+
   try {
     const launchpadApplicationId = normalized.launchpad?.applicationId ?? launchpadContext.applicationId;
     const expectedPolicyVersion = normalized.launchpad?.policyVersion
@@ -178,6 +198,7 @@ export async function POST(request: NextRequest) {
       appOrigin: getPublicAppOriginFromRequest(request),
       expectedPolicyVersion,
       launchpadApplicationId,
+      expectedContentHash,
     });
 
     const flowTraceId = resolvePartnerFlowTraceId({
