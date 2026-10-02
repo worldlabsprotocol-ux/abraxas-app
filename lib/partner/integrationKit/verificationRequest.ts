@@ -15,6 +15,7 @@ import {
 } from "@/lib/partner/integrationKit/partnerRequestStateStore";
 import type { NarrowPartnerResult } from "@/lib/partner/narrowPartnerResult/contract";
 import type { PartnerKitSafeResult } from "@/lib/partner/integrationKit/client";
+import type { ParsedPartnerCallback } from "@/lib/partner/integrationKit/callback";
 
 function verificationPermitsAction(result: PartnerKitSafeResult): boolean {
   return result.outcome === "permitted" && result.action === "permit";
@@ -325,11 +326,9 @@ async function emitRequestCreatedTelemetry(
 
 export async function verifyCallbackWithNarrowResultForKit(
   kit: {
-    parseCallback: (search: URLSearchParams | Record<string, string | string[] | undefined>) => {
-      ok: boolean;
-      params?: { receipt_id?: string; request_id?: string | null };
-      errors?: string[];
-    };
+    parseCallback: (
+      search: URLSearchParams | Record<string, string | string[] | undefined>,
+    ) => { ok: true; params: ParsedPartnerCallback } | { ok: false; errors: string[] };
     verifyForAction: (input: {
       receiptId: string;
       expectedRequestId?: string;

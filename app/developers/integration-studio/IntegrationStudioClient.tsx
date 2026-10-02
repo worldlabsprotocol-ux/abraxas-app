@@ -53,6 +53,7 @@ const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
 
 const PATH_LABEL: Record<IntegrationStudioPathId, string> = {
+  verify_with_abraxas: "Verify with Abraxas",
   hosted_partner_flow: "Hosted Partner Flow",
   server_receipt_verify: "Server receipt verification",
   webhook_events: "Webhook / event delivery",

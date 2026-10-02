@@ -59,12 +59,11 @@ export function VerifyWithAbraxas({
   return (
     <div className={className}>
       <Btn
-        type="button"
         size={size}
         disabled={disabled || !verificationUrl}
+        loading={state === "loading" || state === "redirecting"}
         onClick={launch}
         style={THEME_STYLES[theme]}
-        aria-busy={state === "loading" || state === "redirecting"}
       >
         {displayLabel}
       </Btn>
