@@ -23,6 +23,10 @@ import {
   mapGoodTroublePurchaseQualifyError,
 } from "@/lib/partner/goodTroublePurchaseSelfAttestErrors";
 import { REUSE_CONFIRM_POINTS, type ReuseClientView } from "@/lib/passport/reusableEligibility/contract";
+import {
+  GoodTroublePrivacySequence,
+  type GoodTroublePrivacyPhase,
+} from "@/components/partner/GoodTroublePrivacySequence";
 import type { usePartnerFlowHandoff } from "@/lib/passport/partnerFlowHandoff";
 
 type Handoff = ReturnType<typeof usePartnerFlowHandoff>;
@@ -191,12 +195,22 @@ export function GoodTroublePurchaseContinueFlow({
     return { active: "request", completedThrough: null };
   }, [phase]);
 
+  const privacyPhase: GoodTroublePrivacyPhase = (() => {
+    if (phase === "done") return "return";
+    if (phase === "share") return "share";
+    if (phase === "under_21") return "result";
+    if (phase === "dob") return "dob";
+    if (phase === "reuse") return "derive";
+    return "derive";
+  })();
+
   if (phase === "loading") {
     return <p role="status">Loading…</p>;
   }
 
   return (
     <>
+      <GoodTroublePrivacySequence phase={privacyPhase} />
       <VerificationPath
         active={progress.active}
         completedThrough={progress.completedThrough}

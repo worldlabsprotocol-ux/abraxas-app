@@ -36,6 +36,7 @@ import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import { PUBLIC_SURFACE } from "@/lib/design/publicSurface";
 import { TrustStatus } from "@/components/product/TrustStatus";
 import { PassportReuseStrip } from "@/components/passport/PassportReuseStrip";
+import { PassportIdentityObject, type PassportLifecycleState } from "@/components/passport/PassportIdentityObject";
 import type { CapturePolicyContext } from "@/lib/idv/capturePolicyContext";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -164,28 +165,31 @@ export function PassportCustomerView({
     <div>
       {walletDone && <PassportRequestInbox />}
 
-      <section style={CARD} aria-labelledby="passport-status-heading">
-        <p style={{
-          fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)",
-          letterSpacing: "0.04em", textTransform: "uppercase", margin: "0 0 0.35rem",
-        }}>
-          Your Passport
-        </p>
-        <h2 id="passport-status-heading" style={{
-          fontFamily: FONT, fontSize: "1.1rem", fontWeight: 800, margin: "0 0 0.35rem", color: "var(--text-primary)",
-        }}>
-          {status.label}
-        </h2>
-        <p style={{ fontFamily: FONT, fontSize: "0.86rem", lineHeight: 1.6, color: "var(--text-secondary)", margin: "0 0 0.65rem" }}>
-          {status.summary}
-        </p>
+      <PassportIdentityObject
+        state={(
+          status.identityUi === "verified" && hasCredential
+            ? "reusable"
+            : status.identityUi === "verified"
+              ? "verified"
+              : status.identityUi === "needs_action"
+                ? "attention"
+                : walletDone
+                  ? "basic"
+                  : "unsigned"
+        ) satisfies PassportLifecycleState}
+        holderLabel={status.label}
+        detail={status.summary}
+        completionPercent={(setup.step / 3) * 100}
+      />
+      <section className="abx-passport-object__meta" style={{ ...CARD, marginTop: "0.85rem" }} aria-labelledby="passport-status-heading">
+        <h2 id="passport-status-heading" className="sr-only">{status.label}</h2>
         <TrustStatus
           audience="holder"
           items={buildPassportTrustItems(status.identityUi, hasCredential)}
         />
         {hasCredential && status.identityUi === "verified" ? <PassportReuseStrip /> : null}
         {proofItems.length > 0 && (
-          <ul style={{ margin: "0.75rem 0 0", padding: "0.75rem 0 0", listStyle: "none", borderTop: "1px solid var(--border)", display: "grid", gap: "0.3rem" }}>
+          <ul className="abx-passport-object__proof-list">
             {proofItems.map((item) => (
               <li key={item} style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)" }}>{item}</li>
             ))}

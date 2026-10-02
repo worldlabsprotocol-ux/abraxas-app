@@ -35,18 +35,9 @@ export function DataRedactionText({
         {fields.map((field, index) => {
           const redacted = index >= visibleCount;
           return (
-            <motion.li
+            <li
               key={field}
-              layout={!reduce}
-              animate={{
-                opacity: redacted ? 0.12 : 1,
-                filter: redacted ? "blur(4px)" : "blur(0px)",
-                scale: redacted ? 0.98 : 1,
-              }}
-              transition={{
-                duration: reduce ? 0 : abxMotionDuration("redact") / 1000,
-                ease: [0.4, 0, 0.2, 1],
-              }}
+              className={`abx-data-redaction__row ${redacted ? "abx-data-redaction__row--redacted" : ""}`}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -56,6 +47,11 @@ export function DataRedactionText({
                 borderRadius: 10,
                 border: "1px solid rgba(255,255,255,0.08)",
                 background: redacted ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.03)",
+                opacity: redacted ? 0.12 : 1,
+                transform: redacted ? "scale(0.98)" : "scale(1)",
+                transition: reduce
+                  ? "none"
+                  : `opacity ${abxMotionDuration("redact")}ms cubic-bezier(0.4, 0, 0.2, 1), transform ${abxMotionDuration("redact")}ms cubic-bezier(0.4, 0, 0.2, 1)`,
               }}
             >
               <span
@@ -79,7 +75,7 @@ export function DataRedactionText({
               >
                 {redacted ? "—" : "••••••"}
               </span>
-            </motion.li>
+            </li>
           );
         })}
       </ul>

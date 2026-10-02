@@ -27,6 +27,7 @@ import { tradingVenueProfileExample } from "@/lib/partner/tradingVenue/profiles"
 import { launchpadConfigureHref } from "@/lib/partner/launchpad/partnerFlowRequest/contract";
 import { launchpadPolicyVersionHref } from "@/lib/partner/launchpad/policyVersionPlanner/contract";
 import { PolicyFitPlanner } from "@/app/developers/integration-studio/PolicyFitPlanner";
+import { ModeCCommandRail } from "@/components/product/ModeCCommandRail";
 import { PartnerBindingSelector } from "@/components/partner/launchpad/PartnerBindingSelector";
 import { OptionalWalletConnectionsPanel } from "@/app/developers/integration-studio/OptionalWalletConnectionsPanel";
 import { SolanaUsdcPlansPanel } from "@/app/developers/integration-studio/SolanaUsdcPlansPanel";
@@ -381,8 +382,23 @@ export function IntegrationStudioClient() {
           buttonLabel: "Create sandbox below",
         };
 
+  const railEnvironment = created || resumeApp ? "Sandbox" : "Not provisioned";
+  const railApplication = resumeApp?.application_name ?? created?.application_id ?? "—";
+  const railReadiness = studioNextAction.action;
+
   return (
     <>
+      <Reveal style={{ marginBottom: "1rem" }}>
+        <ModeCCommandRail
+          items={[
+            { id: "env", label: "Environment", value: railEnvironment, tone: "sandbox" },
+            { id: "policy", label: "Policy", value: packId.replace(/_/g, " "), tone: "neutral" },
+            { id: "app", label: "Application", value: railApplication, tone: "neutral" },
+            { id: "readiness", label: "Readiness", value: railReadiness, tone: created ? "ready" : "neutral" },
+          ]}
+        />
+      </Reveal>
+
       <Reveal style={{ marginBottom: "1rem" }}>
         <NextActionCard
           title="What to do next"

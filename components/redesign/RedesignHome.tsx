@@ -1,12 +1,13 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Cinematic public homepage — thesis-first scroll narrative, then product proof.
+// Cinematic public homepage — continuous thesis scroll narrative.
 
 import { WalletContextProvider } from "@/components/WalletContextProvider";
 import {
   AbraxasTransactionSection,
   CinematicHero,
   DeveloperStorySection,
+  NarrativeSectionBridge,
   PassportHeroObject,
   ProductProofSection,
   ReuseOrbitSection,
@@ -71,6 +72,8 @@ function HomeContent() {
           <ProductProofSection />
         </section>
 
+        <NarrativeSectionBridge label="Verify once" />
+
         <section>
           <VerifyOnceThesisDiagram />
         </section>
@@ -82,6 +85,8 @@ function HomeContent() {
         <section>
           <DeveloperStorySection />
         </section>
+
+        <NarrativeSectionBridge label="Production proof" />
 
         <section>
           <HomeGoodTroubleIntegration />

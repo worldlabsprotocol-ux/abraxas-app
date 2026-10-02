@@ -3,7 +3,7 @@
 // Holder proof interaction for content origin disclosure — plain language, hash-only.
 
 import { useMemo, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Btn } from "@/components/redesign/ui";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import { PrivacyBoundary, PrivacyBoundaryLegend } from "@/components/protocol/PrivacyBoundary";
@@ -114,6 +114,15 @@ export function ProvenanceContinueFlow({
     <div className="abx-provenance-flow" style={{ display: "grid", gap: "1.25rem" }}>
       <VerificationPath
         active={pathStep}
+        completedThrough={
+          pathStep === "integrity"
+            ? "disclose"
+            : pathStep === "disclose"
+              ? "attest"
+              : pathStep === "attest"
+                ? "artifact"
+                : null
+        }
         compact
         steps={PROVENANCE_DISCLOSURE_PATH_STEPS}
       />
