@@ -69,7 +69,7 @@
     {
       "id": "command-center-map",
       "file": "components/redesign/RedesignHome.tsx",
-      "mustContain": ["CinematicHero", "ScrollDisclosureStory", "VerifyOnceThesisDiagram", "HomeGoodTroubleIntegration", "HomeAudiencePanels", "HomeTrustClose"]
+      "mustContain": ["CinematicHero", "HomeBuyerContextSection", "HomeTwoAppReferenceProof", "ScrollDisclosureStory", "VerifyOnceThesisDiagram", "HomeGoodTroubleIntegration", "HomeAudiencePanels", "HomeTrustClose"]
     },
     {
       "id": "good-trouble-production-demo",

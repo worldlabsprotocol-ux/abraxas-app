@@ -24,6 +24,7 @@ import {
   RELYING_PARTY_CHECKLIST,
   RELYING_PARTY_DEFINITION,
 } from "@/lib/relyingPartyProgram";
+import { recordGtmClientEvent } from "@/lib/gtm/clientTelemetry";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -34,8 +35,8 @@ export default function DesignPartnerPage() {
     <RedesignPage accent="developer" maxWidth={880}>
       <PageHeader
         eyebrow="Design partner program"
-        title="Apply to integrate Abraxas Partner Flow"
-        subtitle={`${RELYING_PARTY_DEFINITION} Applications are reviewed manually, sandbox and production access are operator provisioned, not self serve.`}
+        title="Prove reuse across two apps"
+        subtitle={`14-day two-app reuse evaluation for qualified platforms with an existing KYC provider, 2+ gated workflows, and an assigned engineering owner. ${RELYING_PARTY_DEFINITION} Applications are reviewed manually — production access is not automatic.`}
       />
 
       <Suspense fallback={null}>
@@ -112,7 +113,15 @@ export default function DesignPartnerPage() {
           <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
             Submit integration intent. Abraxas reviews manually; sandbox credentials may be issued after approval — not instantly.
           </p>
-          <Btn href={PARTNER_APPLICATION_PATH} size="sm">Submit application</Btn>
+          <Btn
+            href={PARTNER_APPLICATION_PATH}
+            size="sm"
+            onClick={() => {
+              void recordGtmClientEvent("design_partner_cta_clicked");
+            }}
+          >
+            Submit application
+          </Btn>
         </div>
         <div className="abx-glass-panel" style={{ padding: "1rem", borderRadius: 14 }}>
           <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 800, marginBottom: "0.35rem" }}>2 · Sandbox test</div>
@@ -141,7 +150,15 @@ export default function DesignPartnerPage() {
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem", marginBottom: "2rem" }}>
-        <Btn href={PARTNER_APPLICATION_PATH} size="lg">Apply for review</Btn>
+        <Btn
+          href={PARTNER_APPLICATION_PATH}
+          size="lg"
+          onClick={() => {
+            void recordGtmClientEvent("design_partner_cta_clicked");
+          }}
+        >
+          Start reuse evaluation
+        </Btn>
         <Btn href="/integrate" variant="secondary" size="lg">Integrate overview</Btn>
         <Btn href="/developers/integration-studio" variant="secondary" size="lg">Integration Studio</Btn>
         <Btn href="/developers/launchpad" variant="ghost" size="lg">Partner Launchpad</Btn>

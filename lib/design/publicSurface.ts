@@ -14,18 +14,19 @@ export const PUBLIC_SECTION_GAP = "clamp(2rem, 6vw, 3.25rem)";
 
 export const PUBLIC_NAV_LINKS = [
   { href: "/", label: "Home", exact: true as const },
-  { href: "/passport", label: "Passport", matchPrefixes: ["/passport"] as const },
-  { href: "/developers/integration-studio", label: "Studio", matchPrefixes: ["/developers/integration-studio", "/developers/launchpad"] as const },
+  { href: "/integrate", label: "Why Abraxas", matchPrefixes: ["/integrate", "/proof"] as const },
+  { href: "/proof", label: "Proof", exact: true as const },
+  { href: "/developers/integration-studio", label: "Build", matchPrefixes: ["/developers/integration-studio", "/developers/launchpad", "/developers"] as const },
 ] as const;
 
 /** Compact Explore menu — former top-level routes plus the capability map. */
 export const PUBLIC_NAV_EXPLORE_LINKS = [
-  { href: "/verification", label: "Verification" },
   { href: "/pricing", label: "Pricing" },
+  { href: "/design-partner", label: "Design partner" },
+  { href: "/passport", label: "Passport" },
   { href: "/developers/launchpad", label: "Launchpad" },
   { href: "/docs/partner-flow", label: "Partner Flow" },
   { href: "/docs", label: "Docs" },
-  { href: "/#capability-map", label: "Capability map" },
 ] as const;
 
 export const PUBLIC_NAV_MAP_LINKS = [

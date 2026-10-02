@@ -14,8 +14,10 @@ import {
   ScrollDisclosureStory,
 } from "@/components/home/cinematic/thesis";
 import { HomeAudiencePanels } from "@/components/home/HomeAudiencePanels";
+import { HomeBuyerContextSection } from "@/components/home/HomeBuyerContextSection";
 import { HomeGoodTroubleIntegration } from "@/components/home/HomeGoodTroubleIntegration";
 import { HomeTrustClose } from "@/components/home/HomeTrustClose";
+import { HomeTwoAppReferenceProof } from "@/components/home/HomeTwoAppReferenceProof";
 import { VerifyOnceThesisDiagram } from "@/components/product";
 import { KineticMarquee } from "@/lib/motion/cinematic";
 import {
@@ -57,6 +59,14 @@ function HomeContent() {
         </section>
 
         <section>
+          <HomeBuyerContextSection />
+        </section>
+
+        <section>
+          <HomeTwoAppReferenceProof />
+        </section>
+
+        <section>
           <ScrollDisclosureStory />
         </section>
 
@@ -65,14 +75,16 @@ function HomeContent() {
         </section>
 
         <section>
-          <PassportHeroObject />
-        </section>
-
-        <section>
           <ProductProofSection />
         </section>
 
-        <NarrativeSectionBridge label="Verify once" />
+        <NarrativeSectionBridge label="Narrow disclosure proof" />
+
+        <section>
+          <HomeGoodTroubleIntegration />
+        </section>
+
+        <NarrativeSectionBridge label="How it works" />
 
         <section>
           <VerifyOnceThesisDiagram />
@@ -86,10 +98,10 @@ function HomeContent() {
           <DeveloperStorySection />
         </section>
 
-        <NarrativeSectionBridge label="Production proof" />
+        <NarrativeSectionBridge label="Holder experience" />
 
         <section>
-          <HomeGoodTroubleIntegration />
+          <PassportHeroObject />
         </section>
 
         <section>

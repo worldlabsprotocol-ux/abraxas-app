@@ -48,6 +48,13 @@ import {
   launchpadResumeHref,
   launchpadSandboxTestHref,
 } from "@/lib/partner/activationPath";
+import { IntegrationStudioOutcomePicker } from "@/components/gtm/IntegrationStudioOutcomePicker";
+import {
+  INTEGRATION_STUDIO_OUTCOMES,
+  isIntegrationStudioOutcomeId,
+  type IntegrationStudioOutcomeId,
+} from "@/lib/gtm/integrationStudioOutcomes";
+import { recordGtmClientEvent } from "@/lib/gtm/clientTelemetry";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -136,6 +143,10 @@ export function IntegrationStudioClient() {
   const [resumePartnerId, setResumePartnerId] = useState("");
   const [handoffNotice, setHandoffNotice] = useState("");
   const [bindingId, setBindingId] = useState<string | null>(null);
+  const [selectedOutcomeId, setSelectedOutcomeId] = useState<IntegrationStudioOutcomeId | null>(() => {
+    const requested = searchParams.get("outcome");
+    return requested && isIntegrationStudioOutcomeId(requested) ? requested : null;
+  });
 
   const contract = useMemo(() => studioPackContract(packId), [packId]);
   const snippet = useMemo(() => studioSnippetForPath(pathId), [pathId]);
@@ -257,6 +268,13 @@ export function IntegrationStudioClient() {
     if (path && isIntegrationStudioPathId(path)) setPathId(path);
     if (requestedPlatform && isStarterKitPlatform(requestedPlatform)) setPlatform(requestedPlatform);
     if (requestedCapabilities.length > 0) setOptionalCaps(requestedCapabilities);
+    const outcome = params.get("outcome");
+    if (outcome && isIntegrationStudioOutcomeId(outcome)) {
+      setSelectedOutcomeId(outcome);
+      const mapped = INTEGRATION_STUDIO_OUTCOMES[outcome];
+      setPathId(mapped.defaultPathId);
+      setPackId(mapped.defaultPackId);
+    }
     if (params.get("source") === "browser-builder") {
       setHandoffNotice("Your browser-built plan is loaded. Review it, then generate the starter kit or continue to the hosted sandbox. No terminal is required.");
     } else if (pack && catalogVersion) {
@@ -336,6 +354,10 @@ export function IntegrationStudioClient() {
       if (data.application) {
         setCreated(data.application);
         setSignedIn(true);
+        void recordGtmClientEvent("sandbox_created", {
+          recommended_path: pathId,
+          environment: "sandbox",
+        });
       }
       if (data.api_key) setRevealedKey(data.api_key);
       if (data.path_instructions) setPathInstructions(data.path_instructions);
@@ -434,6 +456,17 @@ export function IntegrationStudioClient() {
         </Reveal>
       )}
 
+      <Reveal delay={0.06}>
+        <IntegrationStudioOutcomePicker
+          selectedOutcomeId={selectedOutcomeId}
+          onSelect={({ outcomeId, pathId: nextPath, packId: nextPack }) => {
+            setSelectedOutcomeId(outcomeId);
+            setPathId(nextPath);
+            setPackId(nextPack);
+          }}
+        />
+      </Reveal>
+
       <Reveal delay={0.08}>
         <PolicyFitPlanner
           onApply={(selection) => {
@@ -527,12 +560,12 @@ export function IntegrationStudioClient() {
         </ContentCard>
       )}
 
-      <ContentCard title="Integration path">
+      <ContentCard title="Advanced integration path">
         <p style={{ ...body, color: "var(--text-primary)" }}>
-          <strong>{PATH_LABEL[pathId]}</strong> is selected.
+          Recommended default: <strong>{PATH_LABEL[pathId]}</strong>
         </p>
         <details style={{ marginTop: "0.75rem" }}>
-          <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)" }}>Choose a different path</summary>
+          <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)" }}>Choose a different technical path</summary>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginTop: "0.75rem" }}>
             {INTEGRATION_STUDIO_PATHS.map((id) => (
               <button

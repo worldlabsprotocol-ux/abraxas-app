@@ -5,12 +5,13 @@ export const CINEMATIC_THESIS_LINE_1 = "VERIFY WHAT MATTERS.";
 export const CINEMATIC_THESIS_LINE_2 = "REVEAL NOTHING ELSE.";
 
 export const CINEMATIC_HERO_SUPPORT =
-  "Applications need answers. They don't need your identity.";
+  "For multi-app platforms on an existing KYC provider.";
 
-export const CINEMATIC_CTA_PRIMARY = "See how it works";
-export const CINEMATIC_CTA_PRIMARY_HREF = "/pilot-journey";
-export const CINEMATIC_CTA_SECONDARY = "Build with Abraxas";
-export const CINEMATIC_CTA_SECONDARY_HREF = "/developers/integration-studio";
+export const CINEMATIC_CTA_PRIMARY = "See reuse across two apps";
+export const CINEMATIC_CTA_PRIMARY_HREF = "/proof";
+export const CINEMATIC_CTA_SECONDARY = "Build in sandbox";
+export const CINEMATIC_CTA_SECONDARY_HREF =
+  "/developers/integration-studio?outcome=reuse_across_app&source=gtm-home";
 
 export const SCROLL_STORY_EYEBROW = "THE INTERNET ASKS FOR TOO MUCH";
 export const SCROLL_STORY_RESOLVE = "AN APPLICATION ONLY NEEDED ONE ANSWER.";
