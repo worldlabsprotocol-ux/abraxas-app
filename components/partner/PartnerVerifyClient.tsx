@@ -94,21 +94,38 @@ export function PartnerVerifyClient({
     [searchParams],
   );
 
-  const relyingPartyId = launchpadResolution.resolved?.partnerId
-    ?? (verifyInput.ok ? verifyInput.params.partnerId : (
-      searchParams.get("relying_party_id")
-      ?? searchParams.get("partner_id")
-      ?? ""
-    ));
+  const explicitVerifyParams = verifyInput.ok ? verifyInput.params : null;
+  const explicitBrowseTuple = explicitVerifyParams
+    ? isGoodTroubleBrowseFlow({
+      partnerId: explicitVerifyParams.partnerId,
+      policyId: explicitVerifyParams.policyId,
+      purpose: explicitVerifyParams.purpose,
+    })
+    : false;
+
+  const relyingPartyId = explicitBrowseTuple
+    ? explicitVerifyParams!.partnerId
+    : (launchpadResolution.resolved?.partnerId
+      ?? (verifyInput.ok ? verifyInput.params.partnerId : (
+        searchParams.get("relying_party_id")
+        ?? searchParams.get("partner_id")
+        ?? ""
+      )));
   const permission = verifyInput.ok ? (verifyInput.params.permission ?? "") : (searchParams.get("permission") ?? "");
   const permissionVersion = verifyInput.ok
     ? (verifyInput.params.permissionVersion ?? "")
     : (searchParams.get("permission_version") ?? "");
-  const policyId = launchpadResolution.resolved?.policyId
-    ?? (verifyInput.ok ? verifyInput.params.policyId : (searchParams.get("policy_id") ?? ""));
-  const purpose = verifyInput.ok ? (verifyInput.params.purpose ?? "") : (searchParams.get("purpose") ?? "");
-  const returnUrl = launchpadResolution.resolved?.returnUrl
-    ?? (verifyInput.ok ? verifyInput.params.returnUrl : (searchParams.get("return_url") ?? ""));
+  const policyId = explicitBrowseTuple
+    ? explicitVerifyParams!.policyId
+    : (launchpadResolution.resolved?.policyId
+      ?? (verifyInput.ok ? verifyInput.params.policyId : (searchParams.get("policy_id") ?? "")));
+  const purpose = explicitBrowseTuple
+    ? (explicitVerifyParams!.purpose ?? "")
+    : (verifyInput.ok ? (verifyInput.params.purpose ?? "") : (searchParams.get("purpose") ?? ""));
+  const returnUrl = explicitBrowseTuple
+    ? explicitVerifyParams!.returnUrl
+    : (launchpadResolution.resolved?.returnUrl
+      ?? (verifyInput.ok ? verifyInput.params.returnUrl : (searchParams.get("return_url") ?? "")));
   const isDobFirstBrowse = isGoodTroubleBrowseFlow({
     partnerId: relyingPartyId,
     policyId,

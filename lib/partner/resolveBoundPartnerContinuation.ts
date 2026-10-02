@@ -9,6 +9,7 @@ import {
   type PartnerFlowContinuationRecord,
 } from "@/lib/partner/partnerFlowContinuation";
 import { createSupabaseContinuationStore } from "@/lib/partner/partnerFlowContinuationStore";
+import { policyOwnedByPartner } from "@/lib/policy/assertPolicyOwnership";
 import { getPartnerPolicy, getPartnerPolicyAtVersion } from "@/lib/policy/getPolicy";
 import { requireSupabaseAdmin, SupabaseAdminConfigurationError } from "@/lib/supabase/admin";
 import {
@@ -103,7 +104,7 @@ async function bindAuthoritativePolicyVersion(stored: PartnerFlowContinuationRec
     if (!policy) {
       return { ok: false, code: stored.policyVersion != null ? "altered_version" : "missing" };
     }
-    if (String(policy.partner_id ?? "").trim() !== stored.partnerId.trim()) {
+    if (!policyOwnedByPartner(policy, stored.partnerId.trim())) {
       return { ok: false, code: "cross_partner" };
     }
     if (String(policy.id ?? "").trim() !== stored.policyId.trim()) {

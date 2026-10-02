@@ -5,6 +5,13 @@ import {
   GOOD_TROUBLE_CANONICAL_PARTNER_ID,
   GOOD_TROUBLE_CANONICAL_POLICY_ID,
 } from "@/lib/goodTrouble/canonicalProductionConfig";
+import { GOOD_TROUBLE_RETAIL_POLICY_ID } from "@/lib/goodTrouble/constants";
+
+/** Regulated Good Trouble purchase policies — legacy sandbox and canonical production. */
+export function isGoodTroubleRegulatedPurchasePolicyId(policyId: string): boolean {
+  const id = policyId.trim();
+  return id === GOOD_TROUBLE_RETAIL_POLICY_ID || id === GOOD_TROUBLE_CANONICAL_POLICY_ID;
+}
 
 export function isCanonicalGoodTroublePurchaseFlow(input: {
   partnerId: string;

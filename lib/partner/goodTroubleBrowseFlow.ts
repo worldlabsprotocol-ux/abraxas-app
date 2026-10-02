@@ -4,10 +4,12 @@
 import {
   GOOD_TROUBLE_BROWSE_POLICY_ID,
   GOOD_TROUBLE_PARTNER_ID,
-  GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
 import { GOOD_TROUBLE_CANONICAL_PARTNER_ID } from "@/lib/goodTrouble/canonicalProductionConfig";
-import { isCanonicalGoodTroublePurchaseFlow } from "@/lib/partner/goodTroublePurchaseFlow";
+import {
+  isCanonicalGoodTroublePurchaseFlow,
+  isGoodTroubleRegulatedPurchasePolicyId,
+} from "@/lib/partner/goodTroublePurchaseFlow";
 
 /** Canonical browse launch identity — matches Wix PARTNER_ID / BROWSE_FLOW. */
 export const GOOD_TROUBLE_BROWSE_CANONICAL_PARTNER_ID = GOOD_TROUBLE_CANONICAL_PARTNER_ID;
@@ -91,7 +93,7 @@ export function resolveGoodTroubleFlowPurpose(input: {
     return "browse";
   }
 
-  if (input.policyId === GOOD_TROUBLE_RETAIL_POLICY_ID) {
+  if (isGoodTroubleRegulatedPurchasePolicyId(input.policyId)) {
     if (purpose === "browse") {
       throw new GoodTroubleFlowTupleMismatchError(
         "Retail policy cannot be combined with browse purpose",
