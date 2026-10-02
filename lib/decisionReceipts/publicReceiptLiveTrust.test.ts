@@ -319,9 +319,19 @@ describe("revocation atomic rpc + partner scope", () => {
       .mockResolvedValueOnce(sampleRecord({ id: "dr_partner_b", partner_id: "partner-b" }));
 
     fromMock.mockImplementation((table: string) => {
+      if (table === "verification_decisions") {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockResolvedValue({
+            data: [{ id: "dec-a" }, { id: "dec-b" }],
+            error: null,
+          }),
+        };
+      }
       if (table === "decision_receipts") {
         const chain = {
           select: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
           eq: vi.fn().mockReturnThis(),
           order: vi.fn().mockReturnThis(),
           limit: vi.fn().mockResolvedValue({

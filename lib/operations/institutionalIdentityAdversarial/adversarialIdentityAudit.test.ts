@@ -58,9 +58,21 @@ describe("adversarial institutional identity audit", () => {
   });
 
   describe("PART 2 — global identifier leak audit", () => {
-    it("public receipt STILL contains global subject_pseudonym_id (P0 privacy gap)", () => {
-      const claimsKey = claimsSubjectKeyForAbraxasSubject(generateAbraxasSubjectId());
-      const pseudonym = subjectPseudonymId(claimsKey);
+    it("institutional public receipt contains pairwise subject_pseudonym_id, not global pseudonym", () => {
+      const abraxasSubjectId = generateAbraxasSubjectId();
+      const claimsKey = claimsSubjectKeyForAbraxasSubject(abraxasSubjectId);
+      const globalPseudonym = subjectPseudonymId(claimsKey);
+      const pairwiseA = pairwiseSubjectRef({
+        abraxasSubjectId,
+        boundary: defaultPairwiseBoundary("partner-a", "app-a"),
+      });
+      const pairwiseB = pairwiseSubjectRef({
+        abraxasSubjectId,
+        boundary: defaultPairwiseBoundary("partner-b", "app-a"),
+      });
+      expect(pairwiseA.ok && pairwiseB.ok).toBe(true);
+      if (!pairwiseA.ok || !pairwiseB.ok) return;
+
       const record = {
         id: "dr_audit",
         verification_decision_id: "dec",
@@ -68,7 +80,7 @@ describe("adversarial institutional identity audit", () => {
         partner_id: "partner-a",
         policy_id: "policy-v1",
         policy_version: 1,
-        subject_pseudonym_id: pseudonym,
+        subject_pseudonym_id: pairwiseA.ref,
         wallet_binding_ref: null,
         decision_result: "approved" as const,
         reason_codes: [],
@@ -88,11 +100,10 @@ describe("adversarial institutional identity audit", () => {
         created_at: new Date().toISOString(),
       };
       const publicView = toPublicView(record);
-      expect(publicView.subject_pseudonym_id).toBe(pseudonym);
+      expect(publicView.subject_pseudonym_id).toBe(pairwiseA.ref);
+      expect(publicView.subject_pseudonym_id).not.toBe(globalPseudonym);
+      expect(publicView.subject_pseudonym_id).not.toBe(pairwiseB.ref);
       expect(PUBLIC_RECEIPT_ALLOWED_FIELDS).toContain("subject_pseudonym_id");
-
-      const sameSubjectPartnerB = subjectPseudonymId(claimsKey);
-      expect(sameSubjectPartnerB).toBe(pseudonym);
     });
 
     it("PartnerKit trusted receipt fields and webhooks exclude subject pseudonym", () => {
@@ -388,16 +399,24 @@ describe("adversarial institutional identity audit", () => {
   });
 
   describe("PART 19 — institutional claim honesty check", () => {
-    it("documents exact truth: narrow/callback lack global pseudonym but public receipt retains it", () => {
+    it("documents exact truth: institutional public receipt pseudonym is pairwise-bound and matches narrow ref", () => {
+      const abraxasSubjectId = generateAbraxasSubjectId();
+      const pairwise = pairwiseSubjectRef({
+        abraxasSubjectId,
+        boundary: defaultPairwiseBoundary("partner-a", "app-a"),
+      });
+      expect(pairwise.ok).toBe(true);
       const claim = {
         narrow_has_pairwise: true,
         callback_has_pseudonym: PARTNER_INTEGRATION_CALLBACK_KEYS.includes("subject_pseudonym_id" as never),
-        public_receipt_has_global_pseudonym: PUBLIC_RECEIPT_ALLOWED_FIELDS.includes("subject_pseudonym_id" as never),
+        public_receipt_exposes_pairwise_pseudonym: PUBLIC_RECEIPT_ALLOWED_FIELDS.includes("subject_pseudonym_id" as never),
+        signed_receipt_pseudonym_is_pairwise: pairwise.ok && pairwise.ref.startsWith("psr_"),
         provider_can_authorize_app: false,
       };
       expect(claim.narrow_has_pairwise).toBe(true);
       expect(claim.callback_has_pseudonym).toBe(false);
-      expect(claim.public_receipt_has_global_pseudonym).toBe(true);
+      expect(claim.public_receipt_exposes_pairwise_pseudonym).toBe(true);
+      expect(claim.signed_receipt_pseudonym_is_pairwise).toBe(true);
       expect(claim.provider_can_authorize_app).toBe(false);
     });
   });

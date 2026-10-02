@@ -354,6 +354,7 @@ describe("institutional identity service graph", () => {
       policyId: POLICY_ID,
       policyVersion: 1,
       subjectId: claimsKey,
+      applicationId: APP_A,
       decisionResult: "approved",
       reasonCodes: evaluation.reason_codes,
       claimsJson: evaluation.claims,
@@ -462,8 +463,12 @@ describe("institutional identity service graph", () => {
     expect(pairwiseA.ok && pairwiseB.ok).toBe(true);
     if (pairwiseA.ok && pairwiseB.ok) {
       expect(pairwiseA.ref).not.toBe(pairwiseB.ref);
+      expect(publicView.subject_pseudonym_id).toBe(pairwiseA.ref);
+      expect(publicView.subject_pseudonym_id).not.toBe(globalPseudonym);
+      expect(publicView.subject_pseudonym_id).not.toBe(pairwiseB.ref);
+      expect(narrow?.pairwise_subject_ref).toBe(pairwiseA.ref);
+      expect(receipt!.subject_pseudonym_id).toBe(pairwiseA.ref);
     }
-    expect(publicView.subject_pseudonym_id).toBe(globalPseudonym);
 
     const requiredStages = [
       "provider.processProviderEvent",
