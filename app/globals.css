@@ -1698,6 +1698,10 @@ details > summary::-webkit-details-marker {
   min-height: 280px;
   margin: 0 auto;
 }
+.abx-cinematic-orbit__ring {
+  position: absolute;
+  inset: 0;
+}
 .abx-cinematic-orbit__core {
   position: absolute;
   left: 50%;
@@ -1711,7 +1715,9 @@ details > summary::-webkit-details-marker {
   font-weight: 800;
   letter-spacing: 0.1em;
   color: #E8C547;
-  z-index: 1;
+  z-index: 2;
+  max-width: calc(100% - 2rem);
+  text-align: center;
 }
 .abx-cinematic-orbit__ask {
   position: absolute;
@@ -1750,12 +1756,35 @@ details > summary::-webkit-details-marker {
 }
 
 @media (max-width: 640px) {
+  .abx-cinematic-orbit__canvas {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: auto;
+    gap: 0.85rem;
+    padding: 0.25rem 0 0.5rem;
+  }
+  .abx-cinematic-orbit__ring {
+    position: static;
+    inset: auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.4rem;
+    width: 100%;
+    max-width: 360px;
+  }
+  .abx-cinematic-orbit__core {
+    position: static;
+    transform: none;
+    margin: 0;
+  }
   .abx-cinematic-orbit__ask {
-    transform: translate(-50%, -50%)
-      rotate(calc(var(--orbit-i) * 60deg))
-      translateY(-88px)
-      rotate(calc(var(--orbit-i) * -60deg));
+    position: static;
+    transform: none;
     font-size: 0.65rem;
+    white-space: normal;
+    text-align: center;
   }
 }
 

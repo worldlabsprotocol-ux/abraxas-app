@@ -72,9 +72,9 @@
       "mustContain": ["CinematicHero", "ScrollDisclosureStory", "VerifyOnceThesisDiagram", "HomeGoodTroubleIntegration", "HomeAudiencePanels", "HomeTrustClose"]
     },
     {
-      "id": "good-trouble-sandbox",
+      "id": "good-trouble-production-demo",
       "file": "lib/home/goodTroubleIntegrationDemo.ts",
-      "mustContain": ["See Abraxas in action", "SANDBOX EXAMPLE"]
+      "mustContain": ["Private eligibility in production.", "ABRAXAS × GOOD TROUBLE", "gtdemoofficial.mp4"]
     }
   ],
   "protectedAssetPaths": [

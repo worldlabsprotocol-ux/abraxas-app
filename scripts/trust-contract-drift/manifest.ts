@@ -45,6 +45,11 @@ export const CANONICAL_ANCHORS = {
     file: "lib/activation/activationCopy.ts",
     exportName: "ACTIVATION_FORBIDDEN_TERMS",
   },
+  /** Homepage production demo must stay on native video — no third-party iframe embeds. */
+  homepageProductionDemoPrivacy: {
+    file: "components/home/HomeGoodTroubleProductionDemoVideo.test.tsx",
+    excerpt: "does not render an iframe",
+  },
 } as const;
 
 export const DRIFT_RULES: DriftRuleDefinition[] = [
