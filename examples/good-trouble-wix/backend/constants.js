@@ -16,15 +16,13 @@ export const APP_SLUG =
 export const POLICY_ID =
   "good-trouble-age_21_retail-v1";
 
-/**
- * Tier 1 browse policy — legacy compatibility track only (not canonical 21+ pilot).
- * Browse remains on good-trouble-cannabis until separately migrated.
- */
+/** Tier 1 browse policy — L0 self-attestation only (not purchase eligibility). */
 export const BROWSE_POLICY_ID =
   "good-trouble-browse-v1";
 
+/** Canonical browse partner — same identity as regulated purchase. */
 export const BROWSE_PARTNER_ID =
-  "good-trouble-cannabis";
+  PARTNER_ID;
 
 export const FLOW_PURPOSE_BROWSE = "browse";
 export const FLOW_PURPOSE_PURCHASE = "purchase";

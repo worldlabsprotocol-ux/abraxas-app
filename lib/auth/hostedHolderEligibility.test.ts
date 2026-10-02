@@ -23,6 +23,11 @@ describe("isHostedHolderBootstrapEligible", () => {
 
   it("allows Good Trouble browse flow without Google-first sign-in", () => {
     expect(isHostedHolderBootstrapEligible({
+      partnerId: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+      policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
+      purpose: "browse",
+    })).toBe(true);
+    expect(isHostedHolderBootstrapEligible({
       partnerId: GOOD_TROUBLE_PARTNER_ID,
       policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
       purpose: "browse",

@@ -3,7 +3,9 @@
 
 import { BROWSE_RECEIPT_ARTIFACT_TYPE } from "./browseConstants.js";
 
-const EXPECTED_PARTNER_ID = "good-trouble-cannabis";
+import { PARTNER_ID } from "./constants.js";
+
+const EXPECTED_PARTNER_ID = PARTNER_ID;
 const BROWSE_POLICY_ID = "good-trouble-browse-v1";
 
 /**

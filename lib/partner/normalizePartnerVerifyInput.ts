@@ -6,6 +6,7 @@ import {
   GOOD_TROUBLE_PARTNER_ID,
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
+import { isGoodTroubleBrowsePartnerId } from "@/lib/partner/goodTroubleBrowseFlow";
 
 export const GOOD_TROUBLE_LEGACY_BROWSE_INVALID_LINK_MESSAGE =
   "This verification link is invalid. Return to Good Trouble and try again.";
@@ -81,7 +82,7 @@ export function shouldNormalizeGoodTroubleBrowseReturnUrl(input: {
   purpose?: string | null;
   returnUrl: string;
 }): boolean {
-  if (input.partnerId !== GOOD_TROUBLE_PARTNER_ID) return false;
+  if (!isGoodTroubleBrowsePartnerId(input.partnerId)) return false;
   if (input.policyId !== GOOD_TROUBLE_BROWSE_POLICY_ID) return false;
 
   const purpose = input.purpose?.trim();
@@ -167,7 +168,7 @@ export function normalizePartnerVerifyInput(input: {
     };
   }
 
-  const isGoodTrouble = partnerId === GOOD_TROUBLE_PARTNER_ID;
+  const isGoodTrouble = isGoodTroubleBrowsePartnerId(partnerId);
   const parsedReturn = parseHttpsReturnUrl(returnUrl);
 
   if (isGoodTrouble) {

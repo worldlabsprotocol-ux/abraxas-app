@@ -166,7 +166,7 @@ export const PRODUCTION_PARTNER_POLICIES: ProductionPartnerPolicy[] = [
   },
   {
     id: "good-trouble-browse-v1",
-    partnerId: "good-trouble-cannabis",
+    partnerId: "good-trouble",
     sandboxOnly: true,
     enforcementNote: "Tier 1 browse access — L0 self-attestation only; not valid for purchase.",
     rules: {
