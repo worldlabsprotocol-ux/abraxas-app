@@ -75,7 +75,7 @@ export const INTEGRATION_STUDIO_CHECKLIST = [
 ] as const;
 
 export const INTEGRATION_STUDIO_PROVISION = {
-  requires_partner_session: true as const,
+  requires_partner_session: false as const,
   self_serve_sandbox: true as const,
   self_serve_production: false as const,
   create_sandbox_cta: "Create a sandbox integration",

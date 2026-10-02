@@ -203,6 +203,18 @@ export async function createStudioSandbox(req: NextRequest) {
           idempotency_replay: false,
         },
       });
+      await recordLaunchpadActivity(sb, {
+        applicationId: result.result.application_id,
+        partnerId: result.result.partner_id,
+        eventType: "partner_flow_request_configured",
+        publicCode: "starter_kit_generated",
+        metadata: {
+          source: "integration_studio",
+          starter_kit: true,
+          runtime: "universal_https",
+          path: "verify_with_abraxas",
+        },
+      });
     } catch {
       // Audit must never leak provision details or fail the one-time key response.
     }

@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const packId = req.nextUrl.searchParams.get("pack") ?? "age_21_retail";
-  const pathParam = req.nextUrl.searchParams.get("path") ?? "hosted_partner_flow";
+  const pathParam = req.nextUrl.searchParams.get("path") ?? "verify_with_abraxas";
 
   if (!studioPackContract(packId)) {
     return NextResponse.json({ error: "unknown_pack" }, { status: 400 });
