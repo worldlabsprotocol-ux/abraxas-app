@@ -15,6 +15,7 @@ import {
 export const PARTNER_FLOW_RATE_LIMIT_ENDPOINTS = [
   "/api/v1/partner-flow/evaluate",
   "/api/v1/partner-flow/complete",
+  "/api/v1/partner-flow/purchase-return",
   "/api/v1/partner-flow/refresh",
   "/api/receipts/public",
   "/api/v1/verification-requests/consent",
@@ -60,6 +61,7 @@ const SECRET_CANDIDATES = [
 const ENDPOINT_ENV_KEYS: Record<PartnerFlowRateLimitEndpoint, string> = {
   "/api/v1/partner-flow/evaluate": "PARTNER_FLOW_RATE_LIMIT_EVALUATE",
   "/api/v1/partner-flow/complete": "PARTNER_FLOW_RATE_LIMIT_COMPLETE",
+  "/api/v1/partner-flow/purchase-return": "PARTNER_FLOW_RATE_LIMIT_PURCHASE_RETURN",
   "/api/v1/partner-flow/refresh": "PARTNER_FLOW_RATE_LIMIT_REFRESH",
   "/api/receipts/public": "PARTNER_FLOW_RATE_LIMIT_PUBLIC_RECEIPT",
   "/api/v1/verification-requests/consent": "PARTNER_FLOW_RATE_LIMIT_CONSENT",
@@ -71,6 +73,7 @@ const ENDPOINT_ENV_KEYS: Record<PartnerFlowRateLimitEndpoint, string> = {
 const DEFAULT_LIMITS: Record<PartnerFlowRateLimitEndpoint, number> = {
   "/api/v1/partner-flow/evaluate": 30,
   "/api/v1/partner-flow/complete": 30,
+  "/api/v1/partner-flow/purchase-return": 30,
   "/api/v1/partner-flow/refresh": 20,
   "/api/receipts/public": 120,
   "/api/v1/verification-requests/consent": 30,

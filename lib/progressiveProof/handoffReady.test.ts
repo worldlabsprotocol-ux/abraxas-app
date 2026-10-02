@@ -6,6 +6,7 @@ import {
   GOOD_TROUBLE_BROWSE_POLICY_ID,
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
+import { GOOD_TROUBLE_CANONICAL_POLICY_ID } from "@/lib/goodTrouble/canonicalProductionConfig";
 import { findProductionPolicyRules } from "@/lib/policy/productionPolicyContract";
 
 describe("isProgressivePartnerHandoffReady", () => {
@@ -27,6 +28,20 @@ describe("isProgressivePartnerHandoffReady", () => {
 
   it("does not enable partner handoff for browse policies (receipt redirect path)", () => {
     const rules = findProductionPolicyRules(GOOD_TROUBLE_BROWSE_POLICY_ID)!;
+    expect(isProgressivePartnerHandoffReady({
+      signedIn: true,
+      walletBound: true,
+      identityCredentialEarned: false,
+      hasCredential: false,
+      policyRules: rules,
+      policyDecision: "approved",
+      missingClaims: [],
+    })).toBe(false);
+  });
+
+  it("does not enable IDV handoff for L0 age-eligibility purchase (explicit purchase-return path)", () => {
+    const rules = findProductionPolicyRules(GOOD_TROUBLE_CANONICAL_POLICY_ID)!;
+    expect(rules?.age_eligibility_only).toBe(true);
     expect(isProgressivePartnerHandoffReady({
       signedIn: true,
       walletBound: true,

@@ -2,7 +2,10 @@
 // Policy-aware partner handoff readiness — browse policies do not require full IDV credential.
 
 import type { PartnerPolicyRules } from "@/lib/policy/types";
-import { isBrowseAccessPolicy } from "@/lib/policy/selfAttestationGuards";
+import {
+  isAgeEligibilityOnlyPolicy,
+  isBrowseAccessPolicy,
+} from "@/lib/policy/selfAttestationGuards";
 import { evaluateProgressiveProof } from "@/lib/progressiveProof/evaluate";
 
 export interface PartnerHandoffReadinessInput {
@@ -29,6 +32,11 @@ export function isProgressivePartnerHandoffReady(input: PartnerHandoffReadinessI
 
   // Browse completes via SelfAttestationBrowseForm receipt redirect — not partner handoff.
   if (isBrowseAccessPolicy(input.policyRules)) {
+    return false;
+  }
+
+  // L0 age-eligibility purchase completes via consent + explicit purchase-return — not IDV handoff.
+  if (isAgeEligibilityOnlyPolicy(input.policyRules)) {
     return false;
   }
 

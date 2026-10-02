@@ -6,8 +6,7 @@ import { StatusBanner } from "@/components/ui/StatusBanner";
 import { PartnerFlowReturnHandler } from "@/components/partner/PartnerFlowReturnHandler";
 import { GoodTroublePurchaseDobForm } from "@/components/partner/GoodTroublePurchaseDobForm";
 import { GoodTroublePurchaseShareStep } from "@/components/partner/GoodTroublePurchaseShareStep";
-import { HolderDecisionComplete } from "@/components/protocol/HolderDecisionComplete";
-import { resolvePartnerDisplayName, resolvePartnerReturnLabel } from "@/lib/partner/partnerVerifyDisplay";
+import { resolvePartnerDisplayName } from "@/lib/partner/partnerVerifyDisplay";
 import {
   GOOD_TROUBLE_PURCHASE_PATH_STEPS,
   VerificationPath,
@@ -254,19 +253,6 @@ export function GoodTroublePurchaseContinueFlow({
           partnerId={partnerId}
           policyId={policyId}
           returnUrl={returnUrl}
-          onReturn={() => handoff.navigateToPartner()}
-          returnLoading={handoff.inFlight}
-        />
-      )}
-
-      {phase === "done" && handoff.receiptId && returnUrl && (
-        <HolderDecisionComplete
-          receiptId={handoff.receiptId}
-          partnerName={resolvePartnerDisplayName(partnerId)}
-          policyId={policyId}
-          returnLabel={resolvePartnerReturnLabel(partnerId)}
-          onReturn={() => handoff.navigateToPartner()}
-          returnLoading={handoff.inFlight}
         />
       )}
 
