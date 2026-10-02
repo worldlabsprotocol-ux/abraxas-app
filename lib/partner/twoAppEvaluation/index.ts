@@ -16,3 +16,4 @@ export * from "./partnerSummary";
 export * from "./evidencePacket";
 export * from "./buildEvaluation";
 export * from "./provisionPair";
+export * from "./classifyOperator";

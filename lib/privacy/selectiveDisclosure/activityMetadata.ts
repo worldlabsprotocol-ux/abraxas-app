@@ -55,6 +55,9 @@ export const LAUNCHPAD_ACTIVITY_METADATA_ALLOWED_KEYS = [
   "evaluation_role",
   "target_policy_pack",
   "evidence_class",
+  "classification_source",
+  "classified_at",
+  "classification_operator_ref",
 ] as const;
 
 const FORBIDDEN_ACTIVITY_KEYS = [

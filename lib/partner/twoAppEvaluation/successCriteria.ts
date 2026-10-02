@@ -6,7 +6,7 @@ import type { TwoAppEvaluationRecord, TwoAppSuccessCriteriaResult } from "./cont
 import type { AppEvaluationChecklist } from "./contract";
 import type { ReuseObservation } from "./contract";
 import type { TwoAppReuseMetrics } from "./contract";
-import { isExternalClassification } from "./classification";
+import { getEffectiveClassification, isExternalClassification } from "./classification";
 
 export function evaluateSuccessCriteria(input: {
   record: TwoAppEvaluationRecord;
@@ -16,9 +16,8 @@ export function evaluateSuccessCriteria(input: {
   metrics: TwoAppReuseMetrics;
 }): TwoAppSuccessCriteriaResult {
   const pack = POLICY_PACKS[input.record.target_policy_pack as keyof typeof POLICY_PACKS];
-  const externalPartner = isExternalClassification(
-    input.record.operator_classification_override ?? input.record.evidence_classification,
-  );
+  const effectiveClassification = getEffectiveClassification(input.record);
+  const externalPartner = isExternalClassification(effectiveClassification);
   const twoApps = input.record.app_a.application_id !== input.record.app_b.application_id;
   const appAOk = input.app_a.server_verification_passed;
   const appBOk = input.app_b.server_verification_passed;
@@ -32,8 +31,18 @@ export function evaluateSuccessCriteria(input: {
   const publicInterfaces = appAOk && appBOk;
   const privacyOk = Boolean(pack?.partner_does_not_receive?.length);
 
+  const technicalSuccess =
+    twoApps
+    && appAOk
+    && appBOk
+    && reuseAccepted
+    && noSecondProvider !== false
+    && publicInterfaces
+    && privacyOk;
+
   const result: TwoAppSuccessCriteriaResult = {
     external_partner_context: externalPartner,
+    technical_success_met: technicalSuccess,
     two_distinct_applications: twoApps,
     app_a_server_verified: appAOk,
     app_b_server_verified: appBOk,
@@ -45,16 +54,7 @@ export function evaluateSuccessCriteria(input: {
     all_met: false,
   };
 
-  result.all_met =
-    result.external_partner_context
-    && result.two_distinct_applications
-    && result.app_a_server_verified
-    && result.app_b_server_verified
-    && result.reuse_accepted_observed
-    && result.no_second_provider_verification_for_reuse !== false
-    && result.public_partner_interfaces_used
-    && result.privacy_checks_pass
-    && result.evidence_exportable;
+  result.all_met = result.technical_success_met;
 
   return result;
 }

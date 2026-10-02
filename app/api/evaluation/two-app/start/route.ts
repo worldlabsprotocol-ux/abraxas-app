@@ -77,6 +77,8 @@ export async function POST(req: NextRequest) {
     app_b: result.record.app_b,
     target_policy_pack: result.record.target_policy_pack,
     evidence_classification: result.record.evidence_classification,
+    classification_source: result.record.classification_source,
+    external_proof_eligibility: "NOT_ESTABLISHED",
     api_keys: result.api_keys,
     journey_href: `/evaluation/two-app?id=${result.record.evaluation_id}`,
     notice: "Sandbox evaluation only. Evidence status remains NOT YET OBSERVED until reuse is observed.",

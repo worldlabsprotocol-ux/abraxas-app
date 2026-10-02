@@ -27,6 +27,7 @@ export type TwoAppEvaluationStage = (typeof TWO_APP_EVALUATION_STAGES)[number];
 export const TWO_APP_EVIDENCE_CLASSIFICATIONS = [
   "REFERENCE_TEST",
   "INTERNAL_SANDBOX",
+  "UNCLASSIFIED_SANDBOX",
   "EXTERNAL_SANDBOX",
   "PRODUCTION",
 ] as const;
@@ -62,6 +63,15 @@ export interface TwoAppEvaluationRecord {
   app_b: { application_id: string; display_name: string };
   evidence_classification: TwoAppEvidenceClassification;
   operator_classification_override: TwoAppEvidenceClassification | null;
+  classification_source:
+    | "unclassified"
+    | "inferred_reference"
+    | "inferred_internal"
+    | "design_partner_promotion"
+    | "operator_review"
+    | null;
+  classified_at: string | null;
+  classification_operator_ref: string | null;
   discovery_completed_at: string | null;
   blocked_category: TwoAppEvaluationBlockerCategory | null;
   blocked_note: string | null;
@@ -119,6 +129,9 @@ export interface TwoAppPayloadComparison {
   quality: "conceptual" | "observed" | "not_yet_observed";
 }
 
+export type TwoAppTechnicalEvaluationStatus = "NOT_YET_OBSERVED" | "PARTIAL" | "COMPLETE";
+export type TwoAppExternalProofEligibility = "ESTABLISHED" | "NOT_ESTABLISHED";
+
 export interface TwoAppEvaluationEvidencePacket {
   contract_version: typeof TWO_APP_EVALUATION_VERSION;
   evaluation_id: string;
@@ -127,7 +140,11 @@ export interface TwoAppEvaluationEvidencePacket {
   app_b_ref: string;
   environment: "sandbox";
   evidence_classification: TwoAppEvidenceClassification;
-  evidence_status: "NOT_YET_OBSERVED" | "PARTIAL" | "COMPLETE";
+  classification_source: TwoAppEvaluationRecord["classification_source"];
+  classified_at: string | null;
+  technical_evaluation_status: TwoAppTechnicalEvaluationStatus;
+  external_proof_eligibility: TwoAppExternalProofEligibility;
+  evidence_status: TwoAppTechnicalEvaluationStatus;
   started_at: string;
   completed_at: string | null;
   stage_timeline: Array<{ stage: TwoAppEvaluationStage; at: string | null; source: string }>;
@@ -145,6 +162,7 @@ export interface TwoAppEvaluationEvidencePacket {
 
 export interface TwoAppSuccessCriteriaResult {
   external_partner_context: boolean;
+  technical_success_met: boolean;
   two_distinct_applications: boolean;
   app_a_server_verified: boolean;
   app_b_server_verified: boolean;
@@ -170,6 +188,8 @@ export interface TwoAppEvaluationView {
   partner_summary: TwoAppPartnerSummary | null;
   blockers: TwoAppEvaluationBlockerCategory[];
   evidence_packet_ready: boolean;
+  technical_evaluation_status: TwoAppTechnicalEvaluationStatus;
+  external_proof_eligibility: TwoAppExternalProofEligibility;
   commercial_success_event: "EXTERNAL_TWO_APP_REUSE_COMPLETED" | "NOT_YET_OBSERVED";
 }
 
@@ -182,6 +202,6 @@ export interface TwoAppPartnerSummary {
 }
 
 export const TWO_APP_EVALUATION_NOTICE =
-  "Two-app evaluation evidence is derived from privacy-safe integration lifecycle events. Status remains NOT YET OBSERVED until an external partner completes the flow with observed reuse.";
+  "Two-app evaluation evidence is derived from privacy-safe integration lifecycle events. Technical success does not establish external customer proof until classification is positively established by operator review or approved design-partner promotion.";
 
 export const EXTERNAL_TWO_APP_REUSE_EVENT = "EXTERNAL_TWO_APP_REUSE_COMPLETED" as const;

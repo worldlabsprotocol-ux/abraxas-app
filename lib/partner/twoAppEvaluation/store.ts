@@ -24,6 +24,9 @@ function activityMetadata(record: TwoAppEvaluationRecord): Record<string, string
     evaluation_role: "app_a",
     target_policy_pack: record.target_policy_pack,
     evidence_class: record.evidence_classification,
+    classification_source: record.classification_source,
+    classified_at: record.classified_at,
+    classification_operator_ref: record.classification_operator_ref,
     display_label: record.app_a.display_name,
     lifecycle_class: "two_app_evaluation",
   };
@@ -53,6 +56,9 @@ export async function saveTwoAppEvaluationRecord(record: TwoAppEvaluationRecord)
         evaluation_role: "app_b",
         target_policy_pack: record.target_policy_pack,
         evidence_class: record.evidence_classification,
+        classification_source: record.classification_source,
+        classified_at: record.classified_at,
+        classification_operator_ref: record.classification_operator_ref,
         display_label: record.app_b.display_name,
         lifecycle_class: "two_app_evaluation",
       },
@@ -102,8 +108,15 @@ export async function loadTwoAppEvaluationRecord(
       target_policy_pack: String(meta.target_policy_pack ?? TWO_APP_DEFAULT_POLICY_PACK),
       app_a: { application_id: appAId, display_name: String(appA.display_name) },
       app_b: { application_id: appBId, display_name: String(appB.display_name) },
-      evidence_classification: String(meta.evidence_class ?? "EXTERNAL_SANDBOX") as TwoAppEvidenceClassification,
+      evidence_classification: String(meta.evidence_class ?? "UNCLASSIFIED_SANDBOX") as TwoAppEvidenceClassification,
       operator_classification_override: null,
+      classification_source: typeof meta.classification_source === "string"
+        ? meta.classification_source as TwoAppEvaluationRecord["classification_source"]
+        : "unclassified",
+      classified_at: typeof meta.classified_at === "string" ? meta.classified_at : null,
+      classification_operator_ref: typeof meta.classification_operator_ref === "string"
+        ? meta.classification_operator_ref
+        : null,
       discovery_completed_at: null,
       blocked_category: null,
       blocked_note: null,

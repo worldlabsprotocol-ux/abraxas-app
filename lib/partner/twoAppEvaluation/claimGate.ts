@@ -3,7 +3,7 @@
 
 import type { TwoAppEvaluationEvidencePacket } from "./contract";
 import type { TwoAppSuccessCriteriaResult } from "./contract";
-import { isExternalClassification } from "./classification";
+import { isPositiveExternalClassification } from "./classification";
 
 export interface ExternalReuseClaimGateResult {
   allowed: boolean;
@@ -18,7 +18,9 @@ export function canClaimExternalReuseProof(input: {
 }): ExternalReuseClaimGateResult {
   const reasons: string[] = [];
 
-  if (!isExternalClassification(input.evidence_classification)) {
+  if (input.evidence_classification === "UNCLASSIFIED_SANDBOX") {
+    reasons.push("classification_unclassified");
+  } else if (!isPositiveExternalClassification(input.evidence_classification)) {
     reasons.push("classification_not_external");
   }
   if (!input.success_criteria.two_distinct_applications) {

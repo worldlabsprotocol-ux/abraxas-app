@@ -13,6 +13,8 @@ import { evaluateSuccessCriteria } from "./successCriteria";
 import { buildPayloadComparison } from "./payloadComparison";
 import { buildPartnerSummary } from "./partnerSummary";
 import { buildTwoAppEvidencePacket } from "./evidencePacket";
+import { canClaimExternalReuseProof } from "./claimGate";
+import { getEffectiveClassification } from "./classification";
 
 export async function buildTwoAppEvaluationView(
   record: TwoAppEvaluationRecord,
@@ -81,7 +83,25 @@ export async function buildTwoAppEvaluationView(
     explicit: record.blocked_category,
   });
 
-  const partner_summary = buildPartnerSummary({ success: success_criteria, time_to_value });
+  const partner_summary = buildPartnerSummary({
+    success: success_criteria,
+    time_to_value,
+    evidence_classification: getEffectiveClassification(record),
+  });
+
+  const reuseObserved = reuse.status === "accepted";
+  const claimGate = canClaimExternalReuseProof({
+    evidence_classification: getEffectiveClassification(record),
+    success_criteria,
+    reuse_observed: reuseObserved,
+    evidence_internally_consistent: record.app_a.application_id !== record.app_b.application_id,
+  });
+
+  const technicalEvaluationStatus = success_criteria.technical_success_met
+    ? "COMPLETE"
+    : reuseObserved || app_a.server_verification_passed
+      ? "PARTIAL"
+      : "NOT_YET_OBSERVED";
 
   const view: TwoAppEvaluationView = {
     record,
@@ -97,7 +117,9 @@ export async function buildTwoAppEvaluationView(
     partner_summary,
     blockers,
     evidence_packet_ready: success_criteria.evidence_exportable,
-    commercial_success_event: success_criteria.all_met
+    technical_evaluation_status: technicalEvaluationStatus,
+    external_proof_eligibility: claimGate.allowed ? "ESTABLISHED" : "NOT_ESTABLISHED",
+    commercial_success_event: claimGate.allowed
       ? EXTERNAL_TWO_APP_REUSE_EVENT
       : "NOT_YET_OBSERVED",
   };

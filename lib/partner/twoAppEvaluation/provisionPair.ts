@@ -6,7 +6,7 @@ import { SITE_URL } from "@/lib/siteUrl";
 import type { TwoAppEvaluationRecord } from "./contract";
 import { TWO_APP_DEFAULT_POLICY_PACK } from "./contract";
 import { createEvaluationId, saveTwoAppEvaluationRecord } from "./store";
-import { inferEvidenceClassification } from "./classification";
+import { resolveEvidenceClassification } from "./classification";
 
 export type ProvisionTwoAppPairInput = {
   partnerId: string;
@@ -15,7 +15,6 @@ export type ProvisionTwoAppPairInput = {
   returnUrl?: string;
   targetPolicyPack?: string;
   discoveryCompletedAt?: string | null;
-  operatorClassificationOverride?: TwoAppEvaluationRecord["operator_classification_override"];
 };
 
 export type ProvisionTwoAppPairResult =
@@ -60,10 +59,7 @@ export async function provisionTwoAppSandboxPair(
 
   if (!appB.ok) return { ok: false, code: appB.code };
 
-  const classification = inferEvidenceClassification({
-    partnerId,
-    operatorOverride: input.operatorClassificationOverride ?? null,
-  });
+  const resolved = await resolveEvidenceClassification({ partnerId });
 
   const record: TwoAppEvaluationRecord = {
     evaluation_id: evaluationId,
@@ -79,8 +75,11 @@ export async function provisionTwoAppSandboxPair(
       application_id: appB.result.application_id,
       display_name: appBName,
     },
-    evidence_classification: classification,
-    operator_classification_override: input.operatorClassificationOverride ?? null,
+    evidence_classification: resolved.classification,
+    operator_classification_override: null,
+    classification_source: resolved.source,
+    classified_at: resolved.classified_at,
+    classification_operator_ref: null,
     discovery_completed_at: input.discoveryCompletedAt ?? null,
     blocked_category: null,
     blocked_note: null,

@@ -23,6 +23,9 @@ type EvaluationPayload = {
   stage: string;
   commercial_success_event: string;
   evidence_classification: string;
+  classification_source: string | null;
+  technical_evaluation_status: string;
+  external_proof_eligibility: string;
   reuse: { status: string; safe_reason: string | null };
   reuse_metrics: {
     underlying_verification_events: number | null;
@@ -183,8 +186,20 @@ export function TwoAppEvaluationJourney({ evaluationId }: { evaluationId: string
             <p style={body}>
               Stage: <strong style={{ color: "var(--accent)", fontFamily: MONO }}>{data.stage.replace(/_/g, " ")}</strong>
               {" · "}
-              Classification: <strong style={{ color: "var(--text-primary)" }}>{data.evidence_classification.replace(/_/g, " ")}</strong>
+              Classification: <strong style={{ color: data.evidence_classification === "UNCLASSIFIED_SANDBOX" ? "#FBBF24" : "var(--text-primary)" }}>
+                {data.evidence_classification.replace(/_/g, " ")}
+              </strong>
             </p>
+            <p style={{ ...body, fontSize: "0.78rem", color: "var(--text-muted)" }}>
+              Technical evaluation: {data.technical_evaluation_status.replace(/_/g, " ")}
+              {" · "}
+              External proof eligibility: {data.external_proof_eligibility.replace(/_/g, " ")}
+            </p>
+            {data.evidence_classification === "UNCLASSIFIED_SANDBOX" && (
+              <p style={{ ...body, fontSize: "0.76rem", color: "#FBBF24", marginTop: "0.35rem" }}>
+                Evaluator identity is unclassified. Technical success does not establish external customer proof.
+              </p>
+            )}
             <p style={{ ...body, fontSize: "0.78rem", color: "var(--text-muted)" }}>
               Commercial success event: {data.commercial_success_event.replace(/_/g, " ")}
             </p>
