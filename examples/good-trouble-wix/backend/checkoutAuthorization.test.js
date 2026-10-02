@@ -18,8 +18,8 @@ const RETAIL_RECEIPT = {
   decision_context: "production",
   invalidation_reasons: [],
   expires_at: new Date(Date.now() + 3600000).toISOString(),
-  evaluated_claim_refs: [{ status: "active", claim_type: "identity_verified" }],
-  assurance_level: "L2",
+  evaluated_claim_refs: [{ status: "active", claim_type: "self_attested_age_band" }],
+  assurance_level: "L0",
 };
 
 const BROWSE_RECEIPT = {

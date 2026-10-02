@@ -12,8 +12,10 @@ import type {
   RequiredClaimRule,
 } from "@/lib/policy/types";
 import {
+  expectedSelfAttestationPurpose,
   isSelfAttestationClaim,
-  selfAttestationClaimMeetsBrowseRule,
+  isSelfAttestationEligiblePolicy,
+  selfAttestationClaimMeetsEligibilityRule,
   selfAttestationForbiddenForRule,
 } from "@/lib/policy/selfAttestationGuards";
 import { SELF_ATTESTATION_CLAIM_TYPE } from "@/lib/assurance/selfAttestation/constants";
@@ -85,11 +87,16 @@ function claimMeetsRule(
       const issued = new Date(claim.issued_at).getTime();
       if (Date.now() - issued > maxAgeHours * 60 * 60 * 1000) return false;
     }
-    return selfAttestationClaimMeetsBrowseRule(
+    const rules = trustContext?.policyRules;
+    const expectedPurpose = rules && isSelfAttestationEligiblePolicy(rules)
+      ? expectedSelfAttestationPurpose(rules)
+      : "browse";
+    return selfAttestationClaimMeetsEligibilityRule(
       claim,
       rule,
       trustContext?.partnerId,
       trustContext?.policyId,
+      expectedPurpose,
     );
   }
 

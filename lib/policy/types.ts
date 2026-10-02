@@ -53,6 +53,8 @@ export interface PartnerPolicyRules {
   product_eligibility_action?: string;
   /** Tier 1 browse-only policy — accepts L0 self-attestation only. */
   browse_access_only?: boolean;
+  /** Age eligibility pilot — L0 self-attestation for purchase/order flows (not identity verification). */
+  age_eligibility_only?: boolean;
   allowed_purposes?: string[];
   minimum_assurance_cap?: "L0";
   account_required?: boolean;
@@ -63,6 +65,8 @@ export interface PolicyEvaluationContext {
   jurisdiction?: string | null;
   partnerId?: string;
   policyId?: string;
+  /** Effective policy rules for self-attestation purpose resolution. */
+  policyRules?: PartnerPolicyRules;
   /** DB-backed trust rules loaded for this evaluation */
   trustRulesByClaimType?: Map<string, {
     accepted_issuer_ids: string[];

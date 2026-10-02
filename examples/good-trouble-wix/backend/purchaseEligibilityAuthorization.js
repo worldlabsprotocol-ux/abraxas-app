@@ -1,5 +1,5 @@
 // FILE: examples/good-trouble-wix/backend/purchaseEligibilityAuthorization.js
-// Server-validated, fresh, consumed, partner-bound, purpose-bound L2+ purchase gate.
+// Server-validated, fresh, consumed, partner-bound purchase gate (L0 pilot or L2+ legacy).
 
 import { rejectBrowseReceiptForCheckout } from "./browseReceiptValidator.js";
 import { validateProductionReceipt } from "./abraxasReceiptValidator.js";
@@ -95,8 +95,14 @@ export function authorizePurchaseEligibility(input) {
     return { authorized: false, code: "receipt_purpose_browse" };
   }
 
+  const refs = record.evaluated_claim_refs ?? [];
+  const pilotAgeEligibility = refs.some((ref) => ref.claim_type === "self_attested_age_band");
   const assurance = record.assurance_level ?? record.minimum_assurance;
-  if (assurance && assuranceRank(String(assurance)) < MIN_PURCHASE_ASSURANCE) {
+  if (
+    assurance
+    && !pilotAgeEligibility
+    && assuranceRank(String(assurance)) < MIN_PURCHASE_ASSURANCE
+  ) {
     return { authorized: false, code: "insufficient_assurance" };
   }
 

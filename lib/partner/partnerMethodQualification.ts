@@ -9,6 +9,9 @@ import {
   policyPackRequiresIdentityEvidence,
   type PolicyPack,
 } from "@/lib/partner/launchpad/policyPacks";
+import type { PartnerPolicyRules } from "@/lib/policy/types";
+import { isSelfAttestationEligiblePolicy } from "@/lib/policy/selfAttestationGuards";
+import { policyRequiresIdentityEvidenceForPurchase } from "@/lib/goodTrouble/pilotAgeEligibilityPolicy";
 
 export const METHOD_NOT_QUALIFIED = "method_not_qualified" as const;
 
@@ -52,6 +55,8 @@ export function evaluateMethodQualification(input: {
   existingProofCompatible?: boolean;
   reclaimSessionAccepted?: boolean;
   reclaimRequired?: boolean;
+  policyRules?: PartnerPolicyRules;
+  selfAttestationActive?: boolean;
 }): MethodQualificationResult {
   const verifyRequestId = input.verifyRequestId.trim();
   const storedPartnerId = input.storedPartnerId.trim();
@@ -75,6 +80,9 @@ export function evaluateMethodQualification(input: {
 
   const pack = resolvePackForMethodQualification(storedPolicyId);
   const sandboxPack = pack ? policyPackIsEconomicDemo(pack) : false;
+  const requiresIdentity = input.policyRules
+    ? policyRequiresIdentityEvidenceForPurchase(input.policyRules)
+    : (pack ? policyPackRequiresIdentityEvidence(pack) : true);
   const methodId = input.methodId as EligibilityMethodId;
   if (methodId === "account_login") {
     return { ok: false, code: "login_is_not_eligibility", qualified: false, issuedReceipt: false };
@@ -99,7 +107,27 @@ export function evaluateMethodQualification(input: {
     };
   }
   if (methodId === "self_attestation") {
-    return { ok: false, code: "self_attestation_cannot_qualify", qualified: false, issuedReceipt: false };
+    const rules = input.policyRules;
+    if (!rules || !isSelfAttestationEligiblePolicy(rules)) {
+      return { ok: false, code: "self_attestation_cannot_qualify", qualified: false, issuedReceipt: false };
+    }
+    if (!input.selfAttestationActive) {
+      return { ok: false, code: METHOD_NOT_QUALIFIED, qualified: false, issuedReceipt: false };
+    }
+    return {
+      ok: true,
+      record: {
+        verifyRequestId,
+        partnerId: storedPartnerId,
+        policyId: storedPolicyId,
+        policyVersion: input.storedPolicyVersion,
+        methodId,
+        state: "qualified",
+        qualified: true,
+        issuedReceipt: false,
+        sandboxOnly: Boolean(rules.sandbox_only === true),
+      },
+    };
   }
 
   if (methodId === "privacy_preserving" && input.reclaimRequired && !input.reclaimSessionAccepted) {
@@ -167,11 +195,11 @@ export function evaluateMethodQualification(input: {
     };
   }
 
-  if (!sandboxPack && SANDBOX_COMPLETABLE.includes(methodId) && policyPackRequiresIdentityEvidence(pack)) {
+  if (!sandboxPack && SANDBOX_COMPLETABLE.includes(methodId) && requiresIdentity) {
     return { ok: false, code: "sandbox_evidence_rejected", qualified: false, issuedReceipt: false };
   }
 
-  if (methodId === "identity_liveness" && policyPackRequiresIdentityEvidence(pack)) {
+  if (methodId === "identity_liveness" && requiresIdentity) {
     if (!input.identityEvidenceComplete) {
       return { ok: false, code: "identity_not_complete", qualified: false, issuedReceipt: false };
     }

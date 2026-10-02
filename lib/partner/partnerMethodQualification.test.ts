@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { GOOD_TROUBLE_PILOT_AGE_ELIGIBILITY_RULES } from "@/lib/goodTrouble/pilotAgeEligibilityPolicy";
 import {
   evaluateMethodQualification,
   qualificationMatchesBinding,
@@ -38,6 +39,21 @@ describe("evaluateMethodQualification", () => {
     expect(evaluateMethodQualification({ ...SANDBOX, methodId: "self_attestation" }).code).toBe(
       "self_attestation_cannot_qualify",
     );
+  });
+
+  it("qualifies self_attestation for Good Trouble pilot age eligibility policy", () => {
+    const result = evaluateMethodQualification({
+      methodId: "self_attestation",
+      storedPartnerId: "good-trouble",
+      storedPolicyId: "good-trouble-age_21_retail-v1",
+      verifyRequestId: "vr-pilot-1",
+      policyRules: GOOD_TROUBLE_PILOT_AGE_ELIGIBILITY_RULES,
+      selfAttestationActive: true,
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.record.methodId).toBe("self_attestation");
+    expect(result.record.issuedReceipt).toBe(false);
   });
 
   it("rejects privacy_preserving until an accepted Reclaim session exists when required", () => {

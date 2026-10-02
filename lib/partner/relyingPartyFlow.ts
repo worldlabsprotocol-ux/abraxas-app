@@ -49,6 +49,12 @@ import {
   isGoodTroubleBrowseFlow,
   resolveGoodTroubleFlowPurpose,
 } from "@/lib/partner/goodTroubleBrowseFlow";
+import { isCanonicalGoodTroublePurchaseFlow } from "@/lib/partner/goodTroublePurchaseFlow";
+import {
+  expectedSelfAttestationPurpose,
+  isAgeEligibilityOnlyPolicy,
+} from "@/lib/policy/selfAttestationGuards";
+import { getActiveSelfAttestations } from "@/lib/assurance/selfAttestation/selfAttestationLedger";
 import { GOOD_TROUBLE_BROWSE_POLICY_ID } from "@/lib/goodTrouble/constants";
 import {
   buildBrowseReturnUrl,
@@ -556,6 +562,93 @@ export async function startPartnerFlow(input: PartnerFlowStartInput): Promise<{
   return { partner_verify_url: partnerVerifyUrl };
 }
 
+/** Good Trouble L0 purchase pilot — self-attestation only; never ID, camera, or liveness. */
+export async function evaluateGoodTroublePurchaseFlow(input: {
+  suiAddress: string;
+  partnerId: string;
+  policyId: string;
+  returnUrl: string;
+  purpose?: "purchase";
+  appOrigin?: string;
+  expectedPolicyVersion?: number;
+}): Promise<PartnerFlowEvaluateResult> {
+  const subject = normalizeSuiAddress(input.suiAddress);
+
+  const revoked = await denyIfPartnerFlowRevoked({
+    suiAddress: subject,
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    operation: "evaluate",
+  });
+  if (revoked) return revoked;
+
+  const policy = await getPolicy(input.policyId);
+  if (!policy || !isAgeEligibilityOnlyPolicy(policy.rules_json)) {
+    throw new Error("purchase_age_eligibility_policy_required");
+  }
+
+  const attestationPurpose = expectedSelfAttestationPurpose(policy.rules_json);
+  const existingAttestation = await getActiveSelfAttestations({
+    holderRef: subject,
+    partnerId: policy.partner_id,
+    policyId: input.policyId,
+    purpose: attestationPurpose,
+  });
+  if (existingAttestation.some((row) => row.age_band === "over_21")) {
+    const request = await createVerificationRequest({
+      partnerId: input.partnerId,
+      policyId: input.policyId,
+      purpose: input.purpose ?? "purchase",
+      requestedAction: policy.rules_json.product_eligibility_action ?? "partner_eligibility",
+      suiAddress: subject,
+      returnUrl: input.returnUrl,
+      appOrigin: input.appOrigin,
+      expectedPolicyVersion: input.expectedPolicyVersion ?? policy.version,
+    });
+    const passport_url = buildPassportUrl({
+      verificationRequestId: request.request_id,
+      partnerId: input.partnerId,
+      policyId: input.policyId,
+      returnUrl: input.returnUrl,
+      purpose: "purchase",
+      appOrigin: input.appOrigin,
+    });
+    return {
+      next: "passport",
+      verification_request_id: request.request_id,
+      passport_url,
+      policy_version: policy.version,
+    };
+  }
+
+  const request = await createVerificationRequest({
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    purpose: input.purpose ?? "purchase",
+    requestedAction: policy.rules_json.product_eligibility_action ?? "partner_eligibility",
+    suiAddress: subject,
+    returnUrl: input.returnUrl,
+    appOrigin: input.appOrigin,
+    expectedPolicyVersion: input.expectedPolicyVersion ?? policy.version,
+  });
+
+  const passport_url = buildPassportUrl({
+    verificationRequestId: request.request_id,
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    returnUrl: input.returnUrl,
+    purpose: "purchase",
+    appOrigin: input.appOrigin,
+  });
+
+  return {
+    next: "passport",
+    verification_request_id: request.request_id,
+    passport_url,
+    policy_version: policy.version,
+  };
+}
+
 /** Good Trouble L0 browse — self-attestation only; never purchase, ID, or manual review. */
 export async function evaluateGoodTroubleBrowseFlow(input: {
   suiAddress: string;
@@ -665,6 +758,25 @@ export async function evaluatePartnerFlow(input: {
       appOrigin: input.appOrigin,
       purpose: "browse",
     });
+  }
+
+  if (isCanonicalGoodTroublePurchaseFlow({
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    purpose: effectivePurpose,
+  })) {
+    const purchasePolicy = await getPolicy(input.policyId);
+    if (purchasePolicy && isAgeEligibilityOnlyPolicy(purchasePolicy.rules_json)) {
+      return evaluateGoodTroublePurchaseFlow({
+        suiAddress: input.suiAddress,
+        partnerId: input.partnerId,
+        policyId: input.policyId,
+        returnUrl: input.returnUrl,
+        appOrigin: input.appOrigin,
+        purpose: "purchase",
+        expectedPolicyVersion: input.expectedPolicyVersion,
+      });
+    }
   }
 
   const subject = normalizeSuiAddress(input.suiAddress);

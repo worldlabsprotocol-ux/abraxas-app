@@ -180,6 +180,25 @@ export const PRODUCTION_PARTNER_POLICIES: ProductionPartnerPolicy[] = [
       session_receipt_hours: 4,
     },
   },
+  {
+    id: "good-trouble-age_21_retail-v1",
+    partnerId: "good-trouble",
+    sandboxOnly: false,
+    enforcementNote: "Good Trouble pilot purchase — L0 age eligibility only; no identity verification.",
+    rules: {
+      age_eligibility_only: true,
+      minimum_assurance_cap: "L0",
+      minimum_age: 21,
+      allowed_purposes: ["purchase"],
+      required_claims: [
+        { claim_type: "self_attested_age_band", must_equal: "over_21", max_age_hours: 24 },
+      ],
+      session_receipt_hours: 24,
+      account_required: true,
+      consent_required: true,
+      sandbox_only: false,
+    },
+  },
 ];
 
 export type ClaimIssuanceSource =
