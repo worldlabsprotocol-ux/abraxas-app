@@ -19,6 +19,10 @@ import {
   GOOD_TROUBLE_PURCHASE_UNDER_21_TITLE,
 } from "@/lib/partner/goodTroublePurchaseFlow";
 import { holderSafeClientMessage } from "@/lib/partner/holderExperience";
+import {
+  mapGoodTroublePurchaseAttestError,
+  mapGoodTroublePurchaseQualifyError,
+} from "@/lib/partner/goodTroublePurchaseSelfAttestErrors";
 import { REUSE_CONFIRM_POINTS, type ReuseClientView } from "@/lib/passport/reusableEligibility/contract";
 import type { usePartnerFlowHandoff } from "@/lib/passport/partnerFlowHandoff";
 
@@ -112,9 +116,13 @@ export function GoodTroublePurchaseContinueFlow({
           purpose: "purchase",
         }),
       });
-      const attestData = await attestRes.json() as { ok?: boolean; age_band?: "over_21" | "under_21" };
+      const attestData = await attestRes.json() as {
+        ok?: boolean;
+        age_band?: "over_21" | "under_21";
+        code?: string;
+      };
       if (!attestRes.ok || !attestData.ok) {
-        setError(holderSafeClientMessage("Enter a valid date of birth and try again."));
+        setError(mapGoodTroublePurchaseAttestError(attestData.code));
         return;
       }
       if (attestData.age_band === "under_21") {
@@ -131,9 +139,13 @@ export function GoodTroublePurchaseContinueFlow({
           method_id: "self_attestation",
         }),
       });
-      const qualData = await qualRes.json() as { method_qualified?: boolean; error?: string };
+      const qualData = await qualRes.json() as {
+        method_qualified?: boolean;
+        error?: string;
+        code?: string;
+      };
       if (!qualRes.ok || qualData.method_qualified !== true) {
-        setError(holderSafeClientMessage(qualData.error ?? "Could not confirm eligibility. Try again."));
+        setError(mapGoodTroublePurchaseQualifyError(qualData.code));
         return;
       }
       setPhase("share");

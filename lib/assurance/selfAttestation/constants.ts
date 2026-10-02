@@ -1,5 +1,5 @@
 // FILE: lib/assurance/selfAttestation/constants.ts
-// Tier 1 self-attestation constants — L0 browse only.
+// Tier 1 self-attestation constants — L0 browse and age-eligibility purchase.
 
 export const SELF_ATTESTATION_CLAIM_TYPE = "self_attested_age_band" as const;
 export const SELF_ATTESTATION_PROVENANCE = "user_self_attestation" as const;
@@ -13,7 +13,6 @@ export const ALLOWED_SELF_ATTESTATION_PURPOSES: readonly SelfAttestationPurpose[
 
 export const BLOCKED_SELF_ATTESTATION_PURPOSES = [
   "checkout",
-  "purchase",
   "delivery",
   "account_recovery",
   "regulated",
