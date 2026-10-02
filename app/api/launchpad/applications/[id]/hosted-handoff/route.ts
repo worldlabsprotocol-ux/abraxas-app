@@ -26,7 +26,7 @@ type RouteContext = { params: { id: string } };
 export async function POST(req: NextRequest, { params }: RouteContext) {
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
-  const limited = enforceLaunchpadTenantRateLimit(req, "/api/launchpad/hosted-handoff", auth.session.partnerId, 20);
+  const limited = await enforceLaunchpadTenantRateLimit(req, "/api/launchpad/hosted-handoff", auth.session.partnerId, 20);
   if (limited) return limited;
   let body: unknown = {};
   try {
@@ -83,7 +83,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
 export async function GET(req: NextRequest, { params }: RouteContext) {
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
-  const limited = enforceLaunchpadTenantRateLimit(req, "/api/launchpad/hosted-handoff", auth.session.partnerId, 30);
+  const limited = await enforceLaunchpadTenantRateLimit(req, "/api/launchpad/hosted-handoff", auth.session.partnerId, 30);
   if (limited) return limited;
   const ref = req.nextUrl.searchParams.get("handoff_ref")?.trim() ?? "";
   if (!ref) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "missing_ref");

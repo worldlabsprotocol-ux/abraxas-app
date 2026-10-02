@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 type RouteContext = { params: { id: string } };
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
-  const limited = enforceLaunchpadRateLimit(req, "/api/launchpad/integration-handoff", 30);
+  const limited = await enforceLaunchpadRateLimit(req, "/api/launchpad/integration-handoff", 30);
   if (limited) return limited;
 
   const auth = await requireLaunchpadSession(req);

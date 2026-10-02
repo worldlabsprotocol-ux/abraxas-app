@@ -99,7 +99,10 @@ const memoryBuckets = new Map<string, MemoryBucket>();
 let misconfigWarningLogged = false;
 
 export function isPartnerFlowProductionRuntime(): boolean {
-  return process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
+  if (process.env.VERCEL_ENV === "production") return true;
+  if (process.env.ABRAXAS_RUNTIME_ENV === "production") return true;
+  if (process.env.VERCEL === "1") return false;
+  return process.env.NODE_ENV === "production";
 }
 
 export function isPartnerFlowRateLimitEnabled(): boolean {
@@ -320,23 +323,13 @@ export async function checkPartnerFlowRateLimit(
 
   if (!secretResolution.configured || !secretResolution.secret) {
     if (isPartnerFlowProductionRuntime()) {
-      if (isIpBased) {
-        return {
-          allowed: false,
-          limit,
-          attemptsInWindow: 0,
-          retryAfterSec: windowSec,
-          backend: "identity_unavailable",
-        };
-      }
-
       warnRateLimitMisconfigured();
       return {
-        allowed: true,
+        allowed: false,
         limit,
         attemptsInWindow: 0,
         retryAfterSec: windowSec,
-        backend: "disabled",
+        backend: "identity_unavailable",
       };
     }
 
@@ -387,6 +380,16 @@ export async function checkPartnerFlowRateLimit(
         backend: "distributed_unavailable",
       };
     }
+  }
+
+  if (isPartnerFlowProductionRuntime()) {
+    return {
+      allowed: false,
+      limit,
+      attemptsInWindow: 0,
+      retryAfterSec: windowSec,
+      backend: "distributed_unavailable",
+    };
   }
 
   const memoryResult = checkMemoryRateLimit(bucketKey, limit, windowMs, now);
@@ -469,18 +472,21 @@ export async function getPartnerFlowRateLimitBackendInfo(): Promise<PartnerFlowR
   let backend: PartnerFlowRateLimitBackendInfo["backend"] = enabled ? "memory" : "disabled";
   if (!enabled) {
     backend = "disabled";
+  } else if (!secret.configured && isPartnerFlowProductionRuntime()) {
+    backend = "identity_unavailable";
   } else if (upstashConfigIncomplete) {
     backend = "distributed_config_incomplete";
   } else if (distributedStoreActive) {
     backend = "upstash";
   } else if (upstashConfigured && upstashHealth.reachable === false) {
     backend = "distributed_unavailable";
+  } else if (isPartnerFlowProductionRuntime()) {
+    backend = "distributed_unavailable";
   } else {
     backend = "memory";
   }
 
-  let note = "Rate limits use in-process memory only (basic per-instance protection). "
-    + "Configure Upstash Redis (UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN) for network-wide protection on Vercel.";
+  let note = "Local development uses in-process memory rate limits. Production requires Upstash Redis.";
 
   if (upstashConfigIncomplete) {
     note = "Upstash Redis configuration is incomplete (only one of UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN is set). "
@@ -489,11 +495,13 @@ export async function getPartnerFlowRateLimitBackendInfo(): Promise<PartnerFlowR
     note = "Network-wide protection active via Upstash Redis. Limits are shared across all Vercel instances.";
   } else if (upstashConfigured && upstashHealth.reachable === false) {
     note = `Upstash Redis is configured but unreachable (${upstashHealth.errorCode ?? "unknown"}). `
-      + "Public receipt requests fail closed until connectivity is restored. Limits are not silently downgraded.";
+      + "Rate-limited routes fail closed until connectivity is restored. Limits are not silently downgraded.";
+  } else if (isPartnerFlowProductionRuntime() && !upstashConfigured) {
+    note = "Production requires Upstash Redis for Partner Flow rate limits. Routes fail closed; no per-instance memory fallback.";
   }
 
   if (enabled && !secret.configured && isPartnerFlowProductionRuntime()) {
-    note = "CRITICAL: No strong HMAC secret configured. Public receipt rate limiting fails closed; other endpoints are not rate limited.";
+    note = "CRITICAL: No strong HMAC secret configured. All Partner Flow rate-limited routes fail closed in production.";
   }
 
   return {

@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: auth.error }, { status: auth.status });
   }
 
-  const rate = checkLaunchpadRateLimit(req, "passport-support", 3, 60 * 60);
+  const rate = await checkLaunchpadRateLimit(req, "passport-support", 3, 60 * 60);
   if (!rate.allowed) {
     return NextResponse.json(
       { ok: false, error: "Too many support requests. Please try again later." },

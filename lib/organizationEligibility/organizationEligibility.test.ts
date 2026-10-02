@@ -103,7 +103,7 @@ describe("private organization eligibility", () => {
   });
 
   it("binds exact organization, actor, partner, policy, action, and environment", async () => {
-    const consent = createOrganizationConsent({
+    const consent = await createOrganizationConsent({
       partnerHmac: organizationPartnerHmac("acme"),
       result_category: "authorized_signer",
       purpose: "Confirm one named protocol action",
@@ -158,7 +158,7 @@ describe("private organization eligibility", () => {
       consent_ref: "missing",
     })).rejects.toMatchObject({ code: "consent_required" });
 
-    const consent = createOrganizationConsent({
+    const consent = await createOrganizationConsent({
       partnerHmac: organizationPartnerHmac("acme"),
       result_category: "jurisdiction_eligible",
       purpose: "Confirm jurisdiction",
@@ -175,7 +175,7 @@ describe("private organization eligibility", () => {
     expect(expired?.status).toBe("expired");
     expect(projectOrganizationPublicView(expired!).result).toBe("expired");
 
-    const liveConsent = createOrganizationConsent({
+    const liveConsent = await createOrganizationConsent({
       partnerHmac: organizationPartnerHmac("acme"),
       result_category: "organization_eligible",
       purpose: "Confirm organization",
@@ -187,7 +187,7 @@ describe("private organization eligibility", () => {
     await revokeOrganizationEligibility({ partnerId: "acme", organization_ref: live.organization_ref });
     expect(projectOrganizationPublicView((await loadOrganizationEligibility(live.organization_ref))!).result).toBe("revoked");
 
-    const withdrawConsent = createOrganizationConsent({
+    const withdrawConsent = await createOrganizationConsent({
       partnerHmac: organizationPartnerHmac("acme"),
       result_category: "institutional_counterparty_eligible",
       purpose: "Confirm counterparty",
@@ -201,7 +201,7 @@ describe("private organization eligibility", () => {
   });
 
   it("denies presentations and hashed chain bindings after revocation", async () => {
-    const consent = createOrganizationConsent({
+    const consent = await createOrganizationConsent({
       partnerHmac: organizationPartnerHmac("acme"),
       result_category: "authorized_signer",
       purpose: "Confirm signer",
@@ -368,7 +368,7 @@ describe("private organization eligibility", () => {
   });
 
   it("resolves opaque chain commitments from the current organization result only", async () => {
-    const consent = createOrganizationConsent({
+    const consent = await createOrganizationConsent({
       partnerHmac: organizationPartnerHmac("acme"),
       result_category: "organization_eligible",
       purpose: "Confirm one named protocol action",
@@ -434,7 +434,7 @@ describe("private organization eligibility", () => {
         result_category,
       });
       expect(mapped.ok).toBe(true);
-      const consent = createOrganizationConsent({
+      const consent = await createOrganizationConsent({
         partnerHmac: organizationPartnerHmac("acme"),
         result_category,
         purpose: "Confirm one named protocol action",
@@ -474,7 +474,7 @@ describe("private organization eligibility", () => {
       environment: "sandbox",
     })).toEqual({ error: "unknown_policy" });
 
-    const consent = createOrganizationConsent({
+    const consent = await createOrganizationConsent({
       partnerHmac: organizationPartnerHmac("acme"),
       result_category: "organization_eligible",
       purpose: "Confirm one named protocol action",

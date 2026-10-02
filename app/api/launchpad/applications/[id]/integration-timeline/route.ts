@@ -17,7 +17,7 @@ type RouteContext = { params: { id: string } };
 export async function GET(req: NextRequest, { params }: RouteContext) {
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
-  const limited = enforceLaunchpadTenantRateLimit(req, "/api/launchpad/integration-timeline", auth.session.partnerId, 30);
+  const limited = await enforceLaunchpadTenantRateLimit(req, "/api/launchpad/integration-timeline", auth.session.partnerId, 30);
   if (limited) return limited;
 
   const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);

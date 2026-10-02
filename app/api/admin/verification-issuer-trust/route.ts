@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const denied = await requireAdminRouteAccess(req);
   if (denied) return denied;
-  const limited = checkLaunchpadRateLimit(req, "admin:verification-issuer-trust", 20, 60);
+  const limited = await checkLaunchpadRateLimit(req, "admin:verification-issuer-trust", 20, 60);
   if (!limited.allowed) {
     return NextResponse.json({ error: "verification_issuer_trust_rate_limited" }, { status: 429 });
   }

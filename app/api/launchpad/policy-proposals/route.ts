@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
   if (policyProposalCsrfRejected(req)) return launchpadError("policy_proposal_csrf_required", 403);
-  const limited = enforceLaunchpadTenantRateLimit(req, "launchpad:policy-proposal", auth.session.partnerId, 8);
+  const limited = await enforceLaunchpadTenantRateLimit(req, "launchpad:policy-proposal", auth.session.partnerId, 8);
   if (limited) return limited;
   const body = await req.json().catch(() => null);
   if (partnerProposalOverride(body)) return launchpadError("policy_proposal_client_override_rejected", 400);

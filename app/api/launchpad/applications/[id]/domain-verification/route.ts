@@ -22,7 +22,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 }
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
-  const limited = enforceLaunchpadRateLimit(req, "/api/launchpad/domain-verification", 10);
+  const limited = await enforceLaunchpadRateLimit(req, "/api/launchpad/domain-verification", 10);
   if (limited) return limited;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;

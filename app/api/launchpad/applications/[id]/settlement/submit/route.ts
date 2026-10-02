@@ -44,7 +44,7 @@ function httpStatus(code: string, ok: boolean): number {
 export async function POST(req: NextRequest, { params }: RouteContext) {
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
-  const limited = enforceLaunchpadTenantRateLimit(
+  const limited = await enforceLaunchpadTenantRateLimit(
     req,
     "/api/launchpad/settlement/submit",
     auth.session.partnerId,

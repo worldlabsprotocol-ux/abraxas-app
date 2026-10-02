@@ -22,7 +22,7 @@ type RouteContext = { params: { id: string } };
 export async function POST(req: NextRequest, { params }: RouteContext) {
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
-  const limited = enforceLaunchpadTenantRateLimit(req, "/api/launchpad/chain-attestation", auth.session.partnerId, 10);
+  const limited = await enforceLaunchpadTenantRateLimit(req, "/api/launchpad/chain-attestation", auth.session.partnerId, 10);
   if (limited) return limited;
 
   let json: unknown = {};

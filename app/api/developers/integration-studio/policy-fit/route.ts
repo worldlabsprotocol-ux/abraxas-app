@@ -15,7 +15,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const limited = checkLaunchpadRateLimit(req, POLICY_FIT_API_PATH, 30);
+  const limited = await checkLaunchpadRateLimit(req, POLICY_FIT_API_PATH, 30);
   if (!limited.allowed) {
     return NextResponse.json({ error: "Try again shortly." }, { status: 429 });
   }

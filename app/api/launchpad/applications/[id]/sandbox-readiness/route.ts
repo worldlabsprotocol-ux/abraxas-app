@@ -46,7 +46,7 @@ function reportBody(
 export async function GET(req: NextRequest, { params }: RouteContext) {
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
-  const limited = enforceLaunchpadTenantRateLimit(
+  const limited = await enforceLaunchpadTenantRateLimit(
     req,
     "/api/launchpad/sandbox-readiness",
     auth.session.partnerId,
@@ -67,7 +67,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 export async function POST(req: NextRequest, { params }: RouteContext) {
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
-  const limited = enforceLaunchpadTenantRateLimit(
+  const limited = await enforceLaunchpadTenantRateLimit(
     req,
     "/api/launchpad/sandbox-readiness/run",
     auth.session.partnerId,

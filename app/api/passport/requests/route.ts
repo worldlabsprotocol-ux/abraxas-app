@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Sign in required" }, { status: 401 });
   }
 
-  const limited = checkLaunchpadRateLimit(req, "/api/passport/requests", 30);
+  const limited = await checkLaunchpadRateLimit(req, "/api/passport/requests", 30);
   if (!limited.allowed) {
     return NextResponse.json({ ok: false, error: "Try again shortly." }, { status: 429 });
   }

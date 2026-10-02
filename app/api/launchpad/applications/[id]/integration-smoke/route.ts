@@ -18,7 +18,7 @@ type RouteContext = { params: { id: string } };
 export async function POST(req: NextRequest, { params }: RouteContext) {
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
-  const limited = enforceLaunchpadTenantRateLimit(req, "/api/launchpad/integration-smoke", auth.session.partnerId, 6);
+  const limited = await enforceLaunchpadTenantRateLimit(req, "/api/launchpad/integration-smoke", auth.session.partnerId, 6);
   if (limited) return limited;
 
   const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);

@@ -69,7 +69,7 @@ export async function bindFreshConsentToOperatorSandboxResult(input: {
     return;
   }
 
-  const consent = createOrganizationConsent({
+  const consent = await createOrganizationConsent({
     partnerHmac: live.partner_hmac,
     result_category: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_RESULT,
     purpose: live.purpose,
@@ -77,7 +77,7 @@ export async function bindFreshConsentToOperatorSandboxResult(input: {
     action_scope: live.action_scope,
     environment: "sandbox",
   });
-  const consumed = consumeOrganizationConsent({
+  const consumed = await consumeOrganizationConsent({
     consent_ref: consent.consent_ref,
     partnerHmac: live.partner_hmac,
   });

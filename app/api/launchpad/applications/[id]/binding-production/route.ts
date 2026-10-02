@@ -37,7 +37,7 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
 export async function POST(req: NextRequest, { params }: RouteContext) {
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
-  const limited = enforceLaunchpadTenantRateLimit(req, "/api/launchpad/binding-production", auth.session.partnerId, 10);
+  const limited = await enforceLaunchpadTenantRateLimit(req, "/api/launchpad/binding-production", auth.session.partnerId, 10);
   if (limited) return limited;
 
   const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);

@@ -168,7 +168,7 @@ export async function evaluateContentOriginDisclosurePartnerFlow(input: {
     expectedPolicyVersion: input.expectedPolicyVersion ?? policy?.version,
   });
 
-  saveProvenanceSession({
+  await saveProvenanceSession({
     verificationRequestId: request.request_id,
     partnerId: input.partnerId,
     policyId: input.policyId,
@@ -206,7 +206,7 @@ export async function issueProvenanceSessionReceipt(input: {
     contentHash: input.submittedContentHash,
   });
   const session = input.verificationRequestId
-    ? loadProvenanceSession(input.verificationRequestId)
+    ? await loadProvenanceSession(input.verificationRequestId)
     : null;
 
   const evaluation = evaluateContentOriginDisclosure({

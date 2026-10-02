@@ -6,18 +6,21 @@ import {
   resetZkLoginOAuthStateForTests,
   ZKLOGIN_OAUTH_STATE_TYP,
 } from "./oauthLoginState";
+import { resetZkLoginOAuthJtiReplayStoreForTests } from "./oauthJtiReplayStore";
 
 describe("oauthLoginState security", () => {
   const env = { ...process.env };
 
   beforeEach(() => {
     resetZkLoginOAuthStateForTests();
+    resetZkLoginOAuthJtiReplayStoreForTests();
     process.env.ABRAXAS_BROWSER_SESSION_SECRET = "test-browser-session-secret-value";
   });
 
   afterEach(() => {
     process.env = { ...env };
     resetZkLoginOAuthStateForTests();
+    resetZkLoginOAuthJtiReplayStoreForTests();
   });
 
   it("mints cryptographically random unique state values per attempt", async () => {
@@ -58,6 +61,17 @@ describe("oauthLoginState security", () => {
     expect(first.ok).toBe(true);
     expect(second.ok).toBe(false);
     if (!second.ok) expect(second.reason).toBe("replayed");
+  });
+
+  it("50 concurrent consumes against same JTI: exactly one succeeds", async () => {
+    const minted = await mintZkLoginOAuthState("canonical");
+    const results = await Promise.all(
+      Array.from({ length: 50 }, () => consumeZkLoginOAuthState(minted!.oauthState, minted!.jti)),
+    );
+    const successes = results.filter((row) => row.ok);
+    const replays = results.filter((row) => !row.ok && row.reason === "replayed");
+    expect(successes).toHaveLength(1);
+    expect(replays).toHaveLength(49);
   });
 
   it("rejects expired state", async () => {

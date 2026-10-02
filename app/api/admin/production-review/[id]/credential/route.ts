@@ -37,7 +37,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   if (denied) return denied;
   const csrf = productionCredentialCsrfRejected(req);
   if (csrf) return NextResponse.json({ error: "production_credential_csrf_required" }, { status: 403 });
-  const limited = checkLaunchpadRateLimit(req, "admin:production-credential", 6, 60);
+  const limited = await checkLaunchpadRateLimit(req, "admin:production-credential", 6, 60);
   if (!limited.allowed) {
     return NextResponse.json({ error: "production_credential_rate_limited" }, { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } });
   }
