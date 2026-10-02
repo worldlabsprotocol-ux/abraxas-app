@@ -27,6 +27,13 @@ import {
 } from "@/lib/partner/productionIntegration/requestCorrelation";
 import { pickAllowedKeys, safeCallbackClientErrors } from "@/lib/privacy/selectiveDisclosure";
 import { SHARED_SURFACE_FIELDS } from "@/lib/privacy/selectiveDisclosure/contract";
+import { resolvePolicyIntegrationCapabilities } from "@/lib/partner/integrationKit/policyCapabilities";
+import type {
+  CreateVerificationRequestInput,
+  VerificationRequestResult,
+  VerifyCallbackWithNarrowResultInput,
+  VerifyCallbackWithNarrowResultResult,
+} from "@/lib/partner/integrationKit/verificationRequest";
 
 export interface AbraxasPartnerKitOptions {
   partnerId: string;
@@ -37,6 +44,8 @@ export interface AbraxasPartnerKitOptions {
   baseUrl?: string;
   appSlug?: string;
   applicationId?: string;
+  /** Server-side only. Never expose to browser bundles. Used for hosted handoff request creation. */
+  apiKey?: string;
   policyPackId?: string;
   bindingId?: string;
   resultFamily?: string;
@@ -116,6 +125,41 @@ export class AbraxasPartnerKit {
       params.set("policy_id", this.options.policyId);
     }
     return `${base}/partner/verify?${params.toString()}`;
+  }
+
+  /** Policy-agnostic Verify with Abraxas — server-side request creation only. */
+  async createVerificationRequest(input: CreateVerificationRequestInput): Promise<VerificationRequestResult> {
+    const { createVerificationRequestForKit } = await import("@/lib/partner/integrationKit/verificationRequest");
+    return createVerificationRequestForKit(
+      {
+        partnerId: this.options.partnerId,
+        policyId: this.options.policyId,
+        environment: this.options.environment,
+        baseUrl: this.options.baseUrl,
+        appSlug: this.options.appSlug,
+        applicationId: this.options.applicationId,
+        apiKey: this.options.apiKey,
+        policyPackId: this.options.policyPackId,
+        bindingId: this.options.bindingId,
+        fetchFn: this.options.fetchFn,
+      },
+      input,
+    );
+  }
+
+  /** Verify callback, public receipt, and narrow authorized result in one server-side call. */
+  async verifyCallbackWithNarrowResult(
+    input: VerifyCallbackWithNarrowResultInput,
+  ): Promise<VerifyCallbackWithNarrowResultResult> {
+    const { verifyCallbackWithNarrowResultForKit } = await import("@/lib/partner/integrationKit/verificationRequest");
+    return verifyCallbackWithNarrowResultForKit(this, input);
+  }
+
+  policyIntegrationCapabilities() {
+    return resolvePolicyIntegrationCapabilities({
+      policyPackId: this.options.policyPackId,
+      policyId: this.options.policyId,
+    });
   }
 
   parseCallback(

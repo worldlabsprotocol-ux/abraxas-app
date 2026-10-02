@@ -37,6 +37,7 @@ describe("Integration Studio", () => {
 
   it("exposes the real checklist and self-service sandbox copy", () => {
     expect(INTEGRATION_STUDIO_CHECKLIST.map((item) => item.id)).toEqual([
+      "verify_with_abraxas",
       "hosted_verify",
       "approved_receipt",
       "server_verification",
@@ -55,6 +56,7 @@ describe("Integration Studio", () => {
   });
 
   it("reuses kit, webhook, and Solana snippets without fund movement or secrets", () => {
+    const universal = studioSnippetForPath("verify_with_abraxas").code;
     const hosted = studioSnippetForPath("hosted_partner_flow").code;
     const verify = studioSnippetForPath("server_receipt_verify").code;
     const webhook = studioSnippetForPath("webhook_events").code;
@@ -72,8 +74,11 @@ describe("Integration Studio", () => {
     const testnetKit = studioSnippetForPath("testnet_gate_deployment").code;
     const institutional = studioSnippetForPath("institutional_eligibility_gate").code;
     const verifier = studioSnippetForPath("onchain_verifier_conformance").code;
+    expect(universal).toContain("createVerificationRequest");
+    expect(universal).toContain("verifyCallbackWithNarrowResult");
+    expect(universal).not.toMatch(/abx_test_|abx_live_/);
     expect(hosted).toContain("AbraxasPartnerKit");
-    expect(verify).toContain("verifyCallback");
+    expect(verify).toContain("verifyForAction");
     expect(webhook).toContain("verifyPartnerWebhookEvent");
     expect(solana).toContain("AbraxasSolanaPartnerAdapter");
     expect(solana).not.toMatch(/createTransaction|sendAndConfirm|mintTo/);
@@ -109,6 +114,7 @@ describe("Integration Studio", () => {
     expect(institutional).not.toMatch(/createTransfer|utila\.api|legal_name/i);
     expect(verifier).toContain("abraxas-conformance");
     expect(verifier).not.toMatch(/createTransfer|private_key|rpc_url/i);
+    expect(studioPublicCatalog().selected_path).toBe("verify_with_abraxas");
     const catalog = studioPublicCatalog({ pathId: "wallet_standard_binding" });
     expect(catalog.solana.creates_transactions).toBe(false);
     expect(catalog.solana.funds_movement).toBe(false);
