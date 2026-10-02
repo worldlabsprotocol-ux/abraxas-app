@@ -208,6 +208,7 @@ export type ClaimIssuanceSource =
   | "walletBindingClaim_zklogin"
   | "walletBindingClaim_siwe"
   | "submitSelfAttestation"
+  | "provenanceClaims"
   | "not_implemented";
 
 export interface ClaimContractRow {
@@ -357,6 +358,38 @@ export const CLAIM_CONTRACT: Record<ClaimType, ClaimContractRow> = {
       "lib/assurance/selfAttestation/tieredAgeAssurance.test.ts",
       "lib/goodTrouble/migration081SelfAttestationLedger.sqlParity.test.ts",
     ],
+  },
+  creator_attested: {
+    claimType: "creator_attested",
+    issuedBy: ["provenanceClaims"],
+    storedIn: "credential_claims + content_artifact_records (hash only)",
+    resolvedBy: "getActiveClaims → artifact fingerprint binding",
+    evaluatedBy: "evaluateProvenancePolicy",
+    regressionTests: ["lib/provenance/provenance.test.ts"],
+  },
+  ai_assistance_disclosed: {
+    claimType: "ai_assistance_disclosed",
+    issuedBy: ["provenanceClaims"],
+    storedIn: "credential_claims + content_artifact_records (hash only)",
+    resolvedBy: "getActiveClaims → disclosure category",
+    evaluatedBy: "evaluateProvenancePolicy",
+    regressionTests: ["lib/provenance/provenance.test.ts"],
+  },
+  source_integrity_verified: {
+    claimType: "source_integrity_verified",
+    issuedBy: ["provenanceClaims"],
+    storedIn: "credential_claims + content_artifact_records (hash only)",
+    resolvedBy: "getActiveClaims → fingerprint match at evaluation",
+    evaluatedBy: "evaluateProvenancePolicy",
+    regressionTests: ["lib/provenance/provenance.test.ts"],
+  },
+  capture_provenance_verified: {
+    claimType: "capture_provenance_verified",
+    issuedBy: ["not_implemented"],
+    storedIn: "credential_claims (planned) + optional adapter evidence",
+    resolvedBy: "getActiveClaims",
+    evaluatedBy: "evaluateProvenancePolicy (future adapter)",
+    regressionTests: [],
   },
 };
 

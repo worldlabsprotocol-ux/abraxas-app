@@ -13,6 +13,9 @@ import {
 } from "./constants.js";
 import { BROWSE_FLOW, PURCHASE_FLOW } from "./flowPurpose.js";
 import {
+  resolvePurchaseStartDestination,
+} from "./returnDestinationPath.js";
+import {
   validateFlowId,
   validateReceiptId,
   validateVerifier,
@@ -38,6 +41,7 @@ function randomHex(byteLength) {
  * @property {string} correlationId
  * @property {"browse" | "purchase"} purpose
  * @property {string} policyId
+ * @property {string} [returnDestinationPath]
  */
 
 /**
@@ -60,7 +64,12 @@ export async function hashValue(value, hashFn) {
 
 /**
  * Build Partner Flow entry URL. Callback carries opaque flowId — never the verifier.
- * @param {{ hashFn: (v: string) => Promise<string> | string, now?: Date, purpose?: "browse" | "purchase" }} params
+ * @param {{
+ *   hashFn: (v: string) => Promise<string> | string,
+ *   now?: Date,
+ *   purpose?: "browse" | "purchase",
+ *   returnDestinationPath?: string | null,
+ * }} params
  */
 export async function buildVerificationStartPayload(params) {
   const flowConfig = params.purpose === "browse" ? BROWSE_FLOW : PURCHASE_FLOW;
@@ -70,6 +79,11 @@ export async function buildVerificationStartPayload(params) {
   const verifierChallenge = await hashValue(verifier, params.hashFn);
   const expiresAt = new Date(now.getTime() + FLOW_TTL_MS);
   const correlationId = randomHex(8);
+  const returnDestinationPath = flowConfig.purpose === "purchase"
+    ? resolvePurchaseStartDestination({
+      requestedPath: params.returnDestinationPath,
+    })
+    : undefined;
 
   const returnUrl = `${flowConfig.returnUrlBase}?${flowConfig.callbackParam}=${encodeURIComponent(flowId)}`;
   const search = new URLSearchParams({ return_url: returnUrl });
@@ -103,6 +117,7 @@ export async function buildVerificationStartPayload(params) {
       validationAttempts: 0,
       consumedAt: null,
       correlationId,
+      ...(returnDestinationPath ? { returnDestinationPath } : {}),
     },
   };
 }
@@ -273,6 +288,7 @@ export async function completeAbraxasVerificationCore(params) {
     purpose: "purchase",
     policyId: claim.record.policyId,
     flowConsumed: true,
+    returnDestination: claim.record.returnDestinationPath ?? null,
   };
 }
 

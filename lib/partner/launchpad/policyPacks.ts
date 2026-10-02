@@ -35,7 +35,9 @@ export type PolicyPackId =
   | "collector_redemption"
   | "identity_liveness"
   | "sandbox_economic_demo"
-  | "sandbox_institutional_protocol_access";
+  | "sandbox_institutional_protocol_access"
+  | "content_ai_disclosure"
+  | "content_source_integrity";
 
 export type PolicyPackProductionSuitability =
   | "sandbox_only"
@@ -285,6 +287,74 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
       session_receipt_hours: 2,
       product_eligibility_action: "sandbox_economic_demo",
       required_claims: [{ claim_type: "product_eligibility", min_assurance: "L1" }],
+    },
+  }),
+  content_ai_disclosure: pack({
+    id: "content_ai_disclosure",
+    display_name: "AI assistance disclosure",
+    holder_explanation:
+      "Disclose whether generative AI materially contributed to your work. This is your declared disclosure — not an AI detection result.",
+    required_claims: ["ai_assistance_disclosed"],
+    minimum_assurance: "L0",
+    receipt_lifetime_hours: 24,
+    intended_use_examples: [
+      "Publishing platforms asking whether AI assistance was disclosed for a submission",
+      "Photography marketplaces requiring creator disclosure before listing",
+      "Creator platforms collecting disclosure without receiving the raw file",
+    ],
+    partner_receives: "Signed result ai_assistance_disclosed. Not an AI probability score or detection verdict.",
+    partner_does_not_receive: [
+      "raw image or manuscript",
+      "legal name",
+      "government ID",
+      "email",
+      "AI detector scores",
+      "prompt history",
+      "unrelated Passport data",
+    ],
+    production_suitability: "sandbox_only",
+    disclosed_result: "ai_assistance_disclosed",
+    receipt_claim: "ai_assistance_disclosed",
+    reuse_policy: "time_bound",
+    reuse_evidence_freshness: { allow_reuse: true, mode: "time_bound", max_age_hours: 24 },
+    permitted_methods: ["passport"],
+    rules: {
+      ...SANDBOX,
+      session_receipt_hours: 24,
+      required_claims: [{ claim_type: "ai_assistance_disclosed", min_assurance: "L0" }],
+    },
+  }),
+  content_source_integrity: pack({
+    id: "content_source_integrity",
+    display_name: "Source integrity check",
+    holder_explanation:
+      "Confirm the artifact you submit matches a fingerprint you previously established with Abraxas. This verifies integrity — not human authorship or rights.",
+    required_claims: ["source_integrity_verified"],
+    minimum_assurance: "L1",
+    receipt_lifetime_hours: 12,
+    intended_use_examples: [
+      "Marketplaces re-checking an uploaded file against an established fingerprint",
+      "Licensing workflows confirming the submitted file has not changed since attestation",
+    ],
+    partner_receives: "Signed result source_integrity_verified. Not originality, authorship, or rights ownership.",
+    partner_does_not_receive: [
+      "raw source file",
+      "legal name",
+      "government ID",
+      "email",
+      "creator history",
+      "unrelated Passport data",
+    ],
+    production_suitability: "sandbox_only",
+    disclosed_result: "source_integrity_verified",
+    receipt_claim: "source_integrity_verified",
+    reuse_policy: "time_bound",
+    reuse_evidence_freshness: { allow_reuse: true, mode: "time_bound", max_age_hours: 12 },
+    permitted_methods: ["passport"],
+    rules: {
+      ...SANDBOX,
+      session_receipt_hours: 12,
+      required_claims: [{ claim_type: "source_integrity_verified", min_assurance: "L1" }],
     },
   }),
   sandbox_institutional_protocol_access: pack({

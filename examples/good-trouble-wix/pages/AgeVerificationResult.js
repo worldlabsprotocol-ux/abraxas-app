@@ -16,6 +16,17 @@ import {
   PURCHASE_VERIFIER_STORAGE_PREFIX,
 } from "public/abraxasClientConstants";
 
+import {
+  CHECKING_VERIFICATION_MESSAGE,
+  parseAllowlistedCallbackParams,
+  POST_VERIFICATION_REDIRECT_DELAY_MS,
+  resolvePostVerificationRedirectDestination,
+  shouldContinueAfterPurchaseVerification,
+  SUCCESS_CONTINUATION_MESSAGE,
+} from "public/purchaseCallbackLogic";
+
+import { hasUntrustedRedirectQueryParams } from "public/purchaseReturnDestination";
+
 import wixLocation from "wix-location";
 
 import {
@@ -43,9 +54,6 @@ const GENERIC_FAILURE =
 
 const RESTART_MESSAGE =
   "This verification was opened in a different browser or tab. Please start again from the age gate.";
-
-const SUCCESS_MESSAGE =
-  "Age verification complete. Returning you to Good Trouble…";
 
 let completionStarted = false;
 
@@ -112,26 +120,6 @@ function verifierStorageKey(flowId) {
   return `${PURCHASE_VERIFIER_STORAGE_PREFIX}${flowId}`;
 }
 
-function parseAllowlistedCallbackParams() {
-  const query =
-    wixLocation.query;
-
-  const parsed = {};
-
-  for (
-    const key of Object.keys(query)
-  ) {
-    if (
-      ALLOWED_CALLBACK_PARAMS.has(key)
-    ) {
-      parsed[key] =
-        query[key];
-    }
-  }
-
-  return parsed;
-}
-
 function clearVerifier(flowId) {
   try {
     session.removeItem(
@@ -160,36 +148,33 @@ function setPurchaseVerifiedState() {
   }
 }
 
-function restoreReturnDestination() {
+function readSessionReturnDestination() {
   try {
-    const destination =
-      session.getItem(
-        PURCHASE_RETURN_DESTINATION_STORAGE_KEY
-      );
-
-    session.removeItem(
-      PURCHASE_RETURN_DESTINATION_STORAGE_KEY
-    );
-
-    if (
-      destination &&
-      typeof destination === "string" &&
-      destination.startsWith("/") &&
-      !destination.startsWith("//")
-    ) {
-      setTimeout(() => {
-        wixLocation.to(destination);
-      }, 1200);
-
-      return;
-    }
-
-    setTimeout(() => {
-      wixLocation.to("/");
-    }, 1200);
+    return session.getItem(PURCHASE_RETURN_DESTINATION_STORAGE_KEY);
   } catch {
-    // Keep the success message visible if navigation fails.
+    return null;
   }
+}
+
+function clearSessionReturnDestination() {
+  try {
+    session.removeItem(PURCHASE_RETURN_DESTINATION_STORAGE_KEY);
+  } catch {
+    // Non-authoritative cleanup.
+  }
+}
+
+function continueToShoppingDestination(serverDestination) {
+  const destination = resolvePostVerificationRedirectDestination({
+    serverDestination,
+    sessionDestination: readSessionReturnDestination(),
+  });
+
+  clearSessionReturnDestination();
+
+  setTimeout(() => {
+    wixLocation.to(destination);
+  }, POST_VERIFICATION_REDIRECT_DELAY_MS);
 }
 
 async function handleCallback() {
@@ -200,7 +185,7 @@ async function handleCallback() {
   completionStarted = true;
 
   setStatus(
-    "Completing verification…"
+    CHECKING_VERIFICATION_MESSAGE
   );
 
   if (!sessionStorageAvailable()) {
@@ -212,8 +197,16 @@ async function handleCallback() {
     return;
   }
 
+  const query = wixLocation.query ?? {};
+
+  if (hasUntrustedRedirectQueryParams(query)) {
+    setStatus(GENERIC_FAILURE);
+    showRestart();
+    return;
+  }
+
   const params =
-    parseAllowlistedCallbackParams();
+    parseAllowlistedCallbackParams(query, ALLOWED_CALLBACK_PARAMS);
 
   const rawFlowId =
     params[GTV_PARAM];
@@ -262,15 +255,15 @@ async function handleCallback() {
         verifier
       );
 
-    if (result?.verified === true && result?.purpose === "purchase") {
+    if (shouldContinueAfterPurchaseVerification(result)) {
       clearVerifier(flowId);
       setPurchaseVerifiedState();
 
       setStatus(
-        SUCCESS_MESSAGE
+        SUCCESS_CONTINUATION_MESSAGE
       );
 
-      restoreReturnDestination();
+      continueToShoppingDestination(result.returnDestination);
       return;
     }
 
@@ -280,7 +273,7 @@ async function handleCallback() {
       result?.retryable === true
     ) {
       setStatus(
-        "Still confirming verification. Please wait a moment…"
+        CHECKING_VERIFICATION_MESSAGE
       );
 
       completionStarted = false;
@@ -302,6 +295,10 @@ async function handleCallback() {
     ) {
       setStatus(
         RESTART_MESSAGE
+      );
+    } else if (result?.code === "flow_already_consumed") {
+      setStatus(
+        "This verification was already used. Please start again from ORDER NOW."
       );
     } else {
       setStatus(

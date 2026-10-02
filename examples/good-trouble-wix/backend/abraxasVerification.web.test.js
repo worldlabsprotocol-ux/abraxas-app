@@ -23,7 +23,7 @@ describe("purchase web method pilot CAPTCHA bypass", () => {
 
     const result = await createPurchaseVerificationStart();
 
-    expect(start).toHaveBeenCalledExactlyOnceWith(null, { skipCaptcha: true });
+    expect(start).toHaveBeenCalledExactlyOnceWith(null, { skipCaptcha: true }, null);
     expect(result.error).toBeUndefined();
     expect(new URL(result.verifyUrl).origin).toBe(ABRAXAS_ORIGIN);
     expect(result.flowId).toMatch(FLOW_ID_RE);

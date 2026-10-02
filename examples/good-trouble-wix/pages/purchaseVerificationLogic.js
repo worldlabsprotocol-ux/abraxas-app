@@ -127,7 +127,8 @@ export function interpretPurchaseStartResult(params) {
  *   startPurchaseVerification: () => Promise<object>,
  *   getViewMode?: () => string | Promise<string>,
  *   storeVerifier: (flowId: string, verifier: string) => void,
- *   saveReturnDestination: () => void,
+ *   saveReturnDestination: (destinationPath: string | null) => void,
+ *   getReturnDestination: () => string | null,
  *   navigateToVerifyUrl: (url: string) => void,
  * }} deps
  */
@@ -137,7 +138,8 @@ export function createPurchaseVerificationController(deps) {
       deps.setStatus(PURCHASE_STATUS_STARTING);
 
       try {
-        const result = await deps.startPurchaseVerification();
+        const returnDestinationPath = deps.getReturnDestination?.() ?? null;
+        const result = await deps.startPurchaseVerification(returnDestinationPath);
         const viewMode = deps.getViewMode ? await deps.getViewMode() : "Site";
         const interpreted = interpretPurchaseStartResult({ result, viewMode });
 
@@ -156,7 +158,7 @@ export function createPurchaseVerificationController(deps) {
           return { ok: true, code: "preview_backend_passed", result: interpreted.result };
         }
 
-        deps.saveReturnDestination();
+        deps.saveReturnDestination(returnDestinationPath);
         deps.storeVerifier(interpreted.result.flowId, interpreted.result.verifier);
         deps.navigateToVerifyUrl(interpreted.result.verifyUrl);
         return { ok: true, code: "redirecting", result: interpreted.result };
