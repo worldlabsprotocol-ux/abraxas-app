@@ -198,6 +198,20 @@ export function GtmProofPackContent({ discovery, onRestartDiscovery }: GtmProofP
           ))}
         </ul>
       </ContentCard>
+
+      <ContentCard title="Prove it with your stack">
+        <p style={body}>
+          Reference proof shows what Abraxas architecture can do in a harness.
+          Your evaluation proves whether <strong style={{ color: "var(--text-primary)" }}>your team</strong> can reach the same reuse outcome in sandbox — with evidence that stays separate from reference metrics.
+        </p>
+        <p style={{ ...body, fontSize: "0.78rem", color: "var(--text-muted)" }}>
+          Status until you complete the flow: <strong style={{ color: "var(--text-primary)" }}>NOT YET OBSERVED</strong>
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem", marginTop: "0.75rem" }}>
+          <Btn href="/evaluation/two-app" size="lg">Start two-app evaluation</Btn>
+          <Btn href="/design-partner" variant="secondary" size="lg">Design partner program</Btn>
+        </div>
+      </ContentCard>
     </div>
   );
 }

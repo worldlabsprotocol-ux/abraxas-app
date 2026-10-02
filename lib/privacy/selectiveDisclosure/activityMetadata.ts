@@ -50,6 +50,11 @@ export const LAUNCHPAD_ACTIVITY_METADATA_ALLOWED_KEYS = [
   "candidate_ref",
   "handoff_ref",
   "lifecycle_class",
+  "evaluation_id",
+  "companion_app_ref",
+  "evaluation_role",
+  "target_policy_pack",
+  "evidence_class",
 ] as const;
 
 const FORBIDDEN_ACTIVITY_KEYS = [

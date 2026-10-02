@@ -149,19 +149,48 @@ export default function DesignPartnerPage() {
         </div>
       </div>
 
+      <ContentCard title="What you receive">
+        <BulletList items={[
+          "Guided two-app sandbox (App A + App B)",
+          "Starter kit and server verification path",
+          "Privacy-safe evidence summary when reuse is observed",
+          "Blocker review — not automatic production approval",
+        ]} />
+        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.6, margin: "0.75rem 0 0" }}>
+          Qualification: existing KYC/IDV workflow, 2+ gated applications, engineering owner, sandbox-first evaluation.
+        </p>
+      </ContentCard>
+
+      <ContentCard title="What Abraxas needs from you">
+        <BulletList items={[
+          "Assigned technical owner for integration",
+          "A test workflow and policy requirement",
+          "Feedback on blockers and time-to-value",
+        ]} />
+      </ContentCard>
+
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem", marginBottom: "2rem" }}>
         <Btn
-          href={PARTNER_APPLICATION_PATH}
+          href="/evaluation/two-app"
           size="lg"
           onClick={() => {
             void recordGtmClientEvent("design_partner_cta_clicked");
           }}
         >
-          Start reuse evaluation
+          Start two-app evaluation
+        </Btn>
+        <Btn
+          href={PARTNER_APPLICATION_PATH}
+          variant="secondary"
+          size="lg"
+          onClick={() => {
+            void recordGtmClientEvent("design_partner_cta_clicked");
+          }}
+        >
+          Apply for design partner review
         </Btn>
         <Btn href="/integrate" variant="secondary" size="lg">Integrate overview</Btn>
-        <Btn href="/developers/integration-studio" variant="secondary" size="lg">Integration Studio</Btn>
-        <Btn href="/developers/launchpad" variant="ghost" size="lg">Partner Launchpad</Btn>
+        <Btn href="/developers/integration-studio" variant="ghost" size="lg">Integration Studio</Btn>
       </div>
     </RedesignPage>
   );
