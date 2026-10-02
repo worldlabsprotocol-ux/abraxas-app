@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-02T06:59:11.092Z",
+  "updatedAt": "2026-10-02T08:22:15.134Z",
   "files": {
     "components/redesign/RedesignHome.tsx": "f6254c97a96a139c09319e3bee5e2121c404b6adc80b743702c084d36f70db69",
     "components/redesign/AbraxasBootScreen.tsx": "c8e2d8815064f0bf65f0421303b35b3c7187354a90810ce689ac9a1918fbfe9f",
@@ -23,10 +23,10 @@
     "components/home/HomeCapabilityMap.tsx": "29aa0dd34b37da1dad5bafca9fd1c1312168e55318dd21b2507fe94bd2450804",
     "components/home/HomeProtocolMap.tsx": "b8208d46eae70367d6689d4a956dc67379b72fdcfd5a41320e2a0bd4630d1211",
     "components/home/HomeUseCases.tsx": "02c62f9a2614fbeefb934d9d7e7a22d58dd4ffaf30f6723554543f683ac461fe",
-    "components/home/HomeGoodTroubleIntegration.tsx": "79442fc8f4ee9817a75ed733da5b47cb8e6f00abbef3894c19b7faacd6eb47aa",
-    "lib/home/goodTroubleIntegrationDemo.ts": "df9581577fb2b4cd625686d98a6185d7ad2836f912565bf5c1f0f5359b6bd201",
+    "components/home/HomeGoodTroubleIntegration.tsx": "b45e9ce411ba7b18b51d6b3a2dee04c53e3a4fc8cb7983c7a83f1f8c172ebc2b",
+    "lib/home/goodTroubleIntegrationDemo.ts": "0b28d7d4c4211e1fa15fd4348abca8b4ea352e9fd0e0745f80c5aec23a589184",
     "lib/product/publicFlowManifest.ts": "0f1a0deb66bdc2da3a486bd95036c71ccf72b90d7e69c31b74a7176effa7a142",
-    "app/globals.home.css": "55e21f93d95ddc2fc02f095e36ceaad9cf55548349f03c7a5f42a4406906f6de",
+    "app/globals.home.css": "ef11eb1dce7cf2000da22e396a4281692667ac5bf9ed912e4dad4d18829e1a8c",
     "assets/icon-48.png": "3d3dcbcaf12e30ae599c8b003b63c71825b6aaea3169dfdddc8cd85759a11711",
     "assets/assets/partner-network/premiere-lookbook-cover.jpg": "71aa8838b2c3cd3a53e35b528f2020df4e4f5eab9cabd5c3d5c770c32479f3b1",
     "assets/assets/partner-network/smakd-brand-lifestyle.jpg": "90375709e494c54ccf4e5f21b32aad940221064b5653157a81dc3e5c60fbbcf9",

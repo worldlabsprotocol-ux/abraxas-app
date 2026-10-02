@@ -1,12 +1,12 @@
 "use client";
 // FILE: components/home/HomeGoodTroubleIntegration.tsx
-// Homepage sandbox example — Good Trouble Partner Flow.
+// Homepage production demo — Abraxas × Good Trouble private eligibility.
 
 import { useState } from "react";
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_DISPLAY, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import { HOME_GOOD_TROUBLE_INTEGRATION } from "@/lib/home/goodTroubleIntegrationDemo";
-import { HomePrivacyVideoPlayer } from "@/components/home/HomePrivacyVideoPlayer";
+import { HomeGoodTroubleProductionDemoVideo } from "@/components/home/HomeGoodTroubleProductionDemoVideo";
 
 const FONT = ABRAXAS_FONT_SANS;
 const DISPLAY = ABRAXAS_FONT_DISPLAY;
@@ -18,7 +18,7 @@ export function HomeGoodTroubleIntegration() {
   const [videoActive, setVideoActive] = useState(false);
   const copy = HOME_GOOD_TROUBLE_INTEGRATION;
 
-  function watchIntegration() {
+  function watchProductionDemo() {
     setVideoActive(true);
     const section = document.getElementById(copy.sectionId);
     if (section && typeof section.scrollIntoView === "function") {
@@ -128,7 +128,7 @@ export function HomeGoodTroubleIntegration() {
             <Btn href={copy.secondaryHref} ariaLabel={copy.primaryCta}>
               {copy.primaryCta}
             </Btn>
-            <Btn onClick={watchIntegration} variant="secondary" ariaLabel={copy.secondaryCta}>
+            <Btn onClick={watchProductionDemo} variant="secondary" ariaLabel={copy.secondaryCta}>
               {copy.secondaryCta}
             </Btn>
           </div>
@@ -158,8 +158,7 @@ export function HomeGoodTroubleIntegration() {
               pointerEvents: "none",
             }}
           />
-          <HomePrivacyVideoPlayer
-            title={copy.videoTitle}
+          <HomeGoodTroubleProductionDemoVideo
             active={videoActive}
             onActivate={() => setVideoActive(true)}
           />
@@ -173,7 +172,7 @@ export function HomeGoodTroubleIntegration() {
               textAlign: "center",
             }}
           >
-            Good Trouble is a sandbox Partner Flow example. Abraxas never completes checkout or moves funds.
+            {copy.mediaFootnote}
           </p>
         </div>
       </div>
@@ -187,7 +186,7 @@ export function HomeGoodTroubleIntegration() {
         }
         @media (min-width: 900px) {
           .abx-home-good-trouble__grid {
-            grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+            grid-template-columns: minmax(0, 1fr) minmax(0, 0.95fr);
             gap: clamp(1.5rem, 4vw, 2.5rem);
           }
         }

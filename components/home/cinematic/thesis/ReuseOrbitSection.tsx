@@ -32,22 +32,24 @@ export function ReuseOrbitSection() {
         <div className="abx-cinematic-orbit__core" style={{ fontFamily: ABX_FONT_MONO }}>
           PRIVATE EVIDENCE
         </div>
-        {REUSE_ORBIT_ASKS.map((ask, index) => (
-          <motion.span
-            key={ask}
-            className="abx-cinematic-orbit__ask"
-            style={{
-              fontFamily: FONT,
-              ["--orbit-i" as string]: index,
-            }}
-            initial={reduce ? false : { opacity: 0, scale: 0.92 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: reduce ? 0 : index * 0.06, duration: 0.4 }}
-          >
-            {ask}
-          </motion.span>
-        ))}
+        <div className="abx-cinematic-orbit__ring" aria-hidden="true">
+          {REUSE_ORBIT_ASKS.map((ask, index) => (
+            <motion.span
+              key={ask}
+              className="abx-cinematic-orbit__ask"
+              style={{
+                fontFamily: FONT,
+                ["--orbit-i" as string]: index,
+              }}
+              initial={reduce ? false : { opacity: 0, scale: 0.92 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: reduce ? 0 : index * 0.06, duration: 0.4 }}
+            >
+              {ask}
+            </motion.span>
+          ))}
+        </div>
       </div>
 
       <p

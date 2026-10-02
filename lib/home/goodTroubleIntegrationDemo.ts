@@ -1,37 +1,45 @@
 // FILE: lib/home/goodTroubleIntegrationDemo.ts
-// Homepage Good Trouble integration demo copy and video constants.
+// Homepage Good Trouble production demo copy and native video constants.
 
 import { GOOD_TROUBLE_INTEGRATION_PATH } from "@/lib/goodTrouble/constants";
 
-export const GOOD_TROUBLE_INTEGRATION_VIDEO_ID = "GheS92n0i_M" as const;
+export const GOOD_TROUBLE_PRODUCTION_DEMO_VIDEO_SRC = "/videos/gtdemoofficial.mp4" as const;
 
-export const GOOD_TROUBLE_INTEGRATION_EMBED_ORIGIN = "https://www.youtube-nocookie.com" as const;
+/** Display dimensions after rotation metadata (portrait screen recording). */
+export const GOOD_TROUBLE_PRODUCTION_DEMO_DISPLAY_WIDTH = 976;
+export const GOOD_TROUBLE_PRODUCTION_DEMO_DISPLAY_HEIGHT = 2074;
 
-export function goodTroubleIntegrationEmbedUrl(videoId: string = GOOD_TROUBLE_INTEGRATION_VIDEO_ID): string {
-  return `${GOOD_TROUBLE_INTEGRATION_EMBED_ORIGIN}/embed/${videoId}?autoplay=1&rel=0`;
-}
+export const GOOD_TROUBLE_PRODUCTION_DEMO_ASPECT_RATIO =
+  `${GOOD_TROUBLE_PRODUCTION_DEMO_DISPLAY_WIDTH} / ${GOOD_TROUBLE_PRODUCTION_DEMO_DISPLAY_HEIGHT}` as const;
 
-export function goodTroubleIntegrationThumbnailUrl(videoId: string = GOOD_TROUBLE_INTEGRATION_VIDEO_ID): string {
-  return `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
-}
-
-export function goodTroubleIntegrationWatchUrl(videoId: string = GOOD_TROUBLE_INTEGRATION_VIDEO_ID): string {
-  return `https://www.youtube.com/watch?v=${videoId}`;
-}
+export const GOOD_TROUBLE_PRODUCTION_DEMO_METADATA = {
+  src: GOOD_TROUBLE_PRODUCTION_DEMO_VIDEO_SRC,
+  durationSeconds: 42,
+  codecVideo: "h264",
+  codecAudio: "aac",
+  fileSizeBytes: 39_361_452,
+  fileSizeLabel: "38 MB",
+  preload: "metadata" as const,
+} as const;
 
 export const HOME_GOOD_TROUBLE_INTEGRATION = {
   sectionId: "good-trouble-integration",
-  eyebrow: "SANDBOX EXAMPLE",
-  headline: "See Abraxas in action",
+  eyebrow: "ABRAXAS × GOOD TROUBLE",
+  headline: "Private eligibility in production.",
   body:
-    "Prove you are 21+ for a cannabis retail request. The partner receives only an eligibility result. Your ID, date of birth, and documents stay private. This is a sandbox Partner Flow, not a live dispensary checkout.",
+    "This production demo shows a private 21+ age eligibility flow. Good Trouble receives the narrow eligibility result, not the holder's birth date. The relying application owns the customer experience. Abraxas owns the proof interaction.",
   primaryCta: "Try the sandbox example",
-  secondaryCta: "Watch how it works",
+  secondaryCta: "Watch the production demo",
   secondaryHref: GOOD_TROUBLE_INTEGRATION_PATH,
-  videoTitle: "Good Trouble sandbox example powered by Abraxas",
+  videoTitle: "Abraxas and Good Trouble private eligibility production demo",
   proofSteps: [
-    { step: 1, label: "You prove 21+ eligibility" },
-    { step: 2, label: "The partner receives only the result" },
-    { step: 3, label: "Your evidence stays private" },
+    { step: 1, label: "Customer intent in Good Trouble" },
+    { step: 2, label: "Proof only when necessary" },
+    { step: 3, label: "Narrow 21+ answer returned" },
+    { step: 4, label: "Customer resumes native experience" },
   ],
+  mediaFootnote:
+    "L0 age eligibility demonstration. Not government ID verification or a substitute for legally required ID checks.",
+  videoCaption:
+    "Screen recording of the production Good Trouble purchase flow showing private 21+ eligibility with Abraxas.",
 } as const;
