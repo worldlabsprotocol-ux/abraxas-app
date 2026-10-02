@@ -14,6 +14,11 @@ const PRIVILEGED = [
   /lib\/goodTrouble\//,
 ];
 
+const FORBIDDEN_CORRECTNESS_PATTERNS = [
+  /^const completedActions = new Set/m,
+  /^const STORE = new Map/m,
+];
+
 function listTsFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const full = join(dir, entry.name);
@@ -32,5 +37,22 @@ describe("verify-with-abraxas external fixture import boundary", () => {
       }
       expect(source).toMatch(/integrationKit/);
     }
+  });
+
+  it("production flow modules do not use module-scoped correctness Maps/Sets", () => {
+    for (const file of ["lib/flow.ts", "lib/partnerKit.ts", "lib/config.ts"]) {
+      const source = readFileSync(join(FIXTURE_ROOT, file), "utf8");
+      for (const pattern of FORBIDDEN_CORRECTNESS_PATTERNS) {
+        expect(source, `${file} must not use module singleton ${pattern}`).not.toMatch(pattern);
+      }
+    }
+  });
+
+  it("store factories are injectable and labeled for test/local simulation", () => {
+    const requestStore = readFileSync(join(FIXTURE_ROOT, "lib/partnerRequestStore.ts"), "utf8");
+    const actionStore = readFileSync(join(FIXTURE_ROOT, "lib/protectedActionStore.ts"), "utf8");
+    expect(requestStore).toMatch(/TEST\/LOCAL ONLY/);
+    expect(actionStore).toMatch(/TEST\/LOCAL ONLY/);
+    expect(requestStore).toMatch(/createExternalPartnerRequestStore/);
   });
 });

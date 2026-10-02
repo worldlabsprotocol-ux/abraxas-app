@@ -103,18 +103,19 @@ const kit = new AbraxasPartnerKit({
   baseUrl: process.env.ABRAXAS_BASE_URL,
 });
 
-// 1. Create verification request (redirect or hosted handoff)
+// 1. Create durable hosted handoff (requires sandbox API key + application id)
 const request = await kit.createVerificationRequest({
   returnUrl: "https://your-app.example.com/auth/abraxas/callback",
   // expectedContentHash: "…", // required only when policy pack requires source integrity
 });
 if (!request.ok) throw new Error(request.errors.join(", "));
+// Persist request.request_id in your database (Postgres/Redis/KV) before redirect
 
 // 2. Pass request.verification_url to your UI (or use VerifyWithAbraxas)
-// 3. After callback, verify server-side — browser params are not proof
+// 3. After callback, load request_id from durable storage — any serverless instance
 const verified = await kit.verifyCallbackWithNarrowResult({
   search: callbackSearchParams,
-  expectedRequestId: request.request_id,
+  expectedRequestId: storedRequestId,
 });
 if (!verified.ok || !permitProtocolAction(verified.verification)) {
   return { grant: false, category: verified.category, errors: verified.errors };

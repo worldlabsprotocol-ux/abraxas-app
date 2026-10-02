@@ -21,10 +21,9 @@ import type { ProvenancePartnerFacts } from "@/lib/partner/provenancePartnerResu
 import { resolvePolicyPack, inferPolicyPackFromPolicyId } from "@/lib/partner/launchpad/policyPacks";
 import { assertReceiptMatchesBinding } from "@/lib/partner/launchpad/resolveApplicationPolicyBinding";
 import type { ResolvedApplicationPolicyBinding } from "@/lib/partner/launchpad/policyBindingContract";
-import {
-  embedRequestIdInReturnUrl,
-  validatePartnerRequestCorrelation,
-} from "@/lib/partner/productionIntegration/requestCorrelation";
+import { embedRequestIdInReturnUrl } from "@/lib/partner/productionIntegration/requestCorrelation";
+import type { PartnerRequestStateStore } from "@/lib/partner/integrationKit/partnerRequestStateStore";
+import { validateUniversalRequestCorrelation } from "@/lib/partner/integrationKit/requestCorrelationValidation";
 import { pickAllowedKeys, safeCallbackClientErrors } from "@/lib/privacy/selectiveDisclosure";
 import { SHARED_SURFACE_FIELDS } from "@/lib/privacy/selectiveDisclosure/contract";
 import { resolvePolicyIntegrationCapabilities } from "@/lib/partner/integrationKit/policyCapabilities";
@@ -46,6 +45,8 @@ export interface AbraxasPartnerKitOptions {
   applicationId?: string;
   /** Server-side only. Never expose to browser bundles. Used for hosted handoff request creation. */
   apiKey?: string;
+  /** Partner-owned durable store for redirect-mode req_* correlation (Postgres, Redis, KV). */
+  requestStateStore?: PartnerRequestStateStore;
   policyPackId?: string;
   bindingId?: string;
   resultFamily?: string;
@@ -141,6 +142,7 @@ export class AbraxasPartnerKit {
         apiKey: this.options.apiKey,
         policyPackId: this.options.policyPackId,
         bindingId: this.options.bindingId,
+        requestStateStore: this.options.requestStateStore,
         fetchFn: this.options.fetchFn,
       },
       input,
@@ -376,22 +378,15 @@ export class AbraxasPartnerKit {
       }
     }
 
-    if (input.expectedRequestId) {
-      const callbackRequestId = input.callbackRequestId ?? null;
-      if (!callbackRequestId || callbackRequestId !== input.expectedRequestId) {
-        errors.push("request_correlation_mismatch");
-      } else {
-        const correlation = validatePartnerRequestCorrelation({
-          requestId: input.expectedRequestId,
-          expectedPartnerId: partnerId,
-          expectedPolicyId: policyId,
-          expectedEnvironment: environment,
-          expectedPurpose: input.expectedPurpose,
-          expectedAction: input.expectedAction,
-        });
-        if (!correlation.ok) errors.push(...correlation.errors);
-      }
-    }
+    errors.push(...await validateUniversalRequestCorrelation({
+      expectedRequestId: input.expectedRequestId,
+      callbackRequestId: input.callbackRequestId,
+      partnerId,
+      policyId,
+      environment,
+      purpose: input.expectedPurpose,
+      requestStateStore: this.options.requestStateStore,
+    }));
 
     if (receipt.currently_valid === false || receipt.lifecycle_status === "superseded" || receipt.lifecycle_status === "revoked") {
       void this.emitCurrentValidityTelemetry(input.receiptId, receipt, partnerId, policyId);

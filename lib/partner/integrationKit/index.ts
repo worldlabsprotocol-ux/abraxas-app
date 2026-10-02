@@ -31,6 +31,12 @@ export {
   type PolicyIntegrationCapabilities,
 } from "@/lib/partner/integrationKit/policyCapabilities";
 export {
+  MemoryPartnerRequestStateStore,
+  generatePartnerRequestId,
+  type PartnerRequestStateStore,
+  type PartnerVerificationRequestState,
+} from "@/lib/partner/integrationKit/partnerRequestStateStore";
+export {
   UNIVERSAL_INTEGRATION_ERROR_CATEGORIES,
   categorizeIntegrationErrors,
   embedPartnerStateInReturnUrl,

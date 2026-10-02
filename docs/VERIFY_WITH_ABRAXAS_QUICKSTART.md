@@ -4,6 +4,12 @@ One policy-agnostic integration primitive for relying applications. Abraxas owns
 
 **PartnerKit is source-level code in this repository** (`lib/partner/integrationKit`). It is not a published npm package yet.
 
+## Canonical path (multi-instance safe)
+
+The recommended integration uses **durable Hosted Partner Handoff** (`vr_*` request ids stored by Abraxas). Your server persists the returned `request_id` in **your own durable store** (Postgres, Redis, KV) before redirecting the holder. Any serverless instance can verify the callback.
+
+Redirect mode (`req_*`) is a **legacy/advanced** path and requires a partner-implemented `PartnerRequestStateStore` — never process memory.
+
 ## 1. Create a sandbox application
 
 Use [Integration Studio](/developers/integration-studio) or Partner Launchpad to create a sandbox integration. You receive:
@@ -13,16 +19,16 @@ Use [Integration Studio](/developers/integration-studio) or Partner Launchpad to
 
 ## 2. Choose a policy
 
-Select an existing application/policy binding (for example age 21 retail or content origin disclosure). Do not fork the SDK per policy — pass `policyPackId` and optional `expectedContentHash` when the pack requires artifact binding.
+Select an existing application/policy binding (for example age 21 retail or content origin disclosure). Pass `policyPackId` and optional `expectedContentHash` when the pack requires artifact binding.
 
 ## 3. Configure callback
 
-Allowlist your HTTPS callback URL on the partner application. The browser returns here after proof; **callback query params are not authorization**.
+Allowlist your HTTPS callback URL on the partner application. **Callback query params are not authorization.**
 
-## 4. Store sandbox secret server-side
+## 4. Store sandbox credentials server-side
 
 ```bash
-ABRAXAS_SANDBOX_API_KEY=abx_test_…   # never in client bundles
+ABRAXAS_SANDBOX_API_KEY=abx_test_…   # required for canonical path; never in client bundles
 ABRAXAS_APP_ID=app_…
 ABRAXAS_PARTNER_ID=partner-…
 ABRAXAS_POLICY_ID=partner-…-v1
@@ -32,13 +38,9 @@ ABRAXAS_BASE_URL=https://abraxasworld.xyz
 
 ## 5. Install / import PartnerKit
 
-In this monorepo:
-
 ```typescript
 import { AbraxasPartnerKit, permitProtocolAction } from "@/lib/partner/integrationKit";
 ```
-
-External repos should copy or submodule the public kit surface only — no Supabase admin, no internal DB services.
 
 ## 6. Create verification request (server)
 
@@ -58,35 +60,42 @@ const request = await kit.createVerificationRequest({
   // expectedContentHash: "<sha256-hex>", // content_origin_disclosure packs only
 });
 if (!request.ok) throw new Error(request.errors.join(", "));
-// request.request_id, request.verification_url, request.expires_at
+
+// Persist request.request_id in YOUR durable database before redirect (any instance can verify later)
+await db.savePendingVerification({ requestId: request.request_id, orderId });
 ```
+
+Missing sandbox credentials fail closed (`api_key_required`) — there is **no silent downgrade** to redirect mode.
 
 ## 7. Launch Hosted Partner Flow
 
-Pass `request.verification_url` to your UI (`<VerifyWithAbraxas verificationUrl={…} />`) or redirect from your own button. **Never expose API keys to the browser.**
+Pass `request.verification_url` to your UI or redirect. **Never expose API keys to the browser.**
 
 ## 8. Verify callback server-side
 
 ```typescript
+const pending = await db.loadPendingVerification(orderId);
 const verified = await kit.verifyCallbackWithNarrowResult({
   search: callbackSearchParams,
-  expectedRequestId: storedRequestId, // bind to the action you initiated
+  expectedRequestId: pending.requestId,
 });
 if (!verified.ok || !permitProtocolAction(verified.verification)) {
-  // fail closed — category: invalid_callback, receipt_expired, policy_mismatch, …
+  // fail closed
 }
 ```
 
 ## 9. Retrieve narrow result
 
-Use `verified.narrow` only — policy-specific authorized facts (for example `over_21` or provenance disclosure fields). No DOB, raw documents, artifact_id, or unrelated Passport data.
+Use `verified.narrow` only — policy-specific authorized facts. No DOB, raw documents, artifact_id, or unrelated Passport data.
 
 ## 10. Resume native action
 
-Grant your gated action only after server verification. Guard duplicate callbacks with partner-owned idempotency (receipt verification can repeat safely).
+Grant your gated action only after server verification. Use durable idempotency keys so duplicate callbacks cannot repeat protected actions.
 
 ---
 
-**Advanced:** direct `/partner/verify` URL construction and manual receipt validation remain documented at `/docs/partner-flow` and `/docs/integration-kit`.
+**Legacy redirect mode:** pass `mode: "redirect"` and configure `requestStateStore` on the kit. See `PartnerRequestStateStore` in PartnerKit exports.
 
-**Reference implementations:** Good Trouble (age), Reference Content Publisher (provenance), `examples/verify-with-abraxas-external/`.
+**Advanced:** direct `/partner/verify` URL construction remains at `/docs/partner-flow`.
+
+**Reference:** `examples/verify-with-abraxas-external/` (durable store adapters, import-boundary tests).

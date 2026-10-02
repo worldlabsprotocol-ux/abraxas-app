@@ -4,11 +4,15 @@
 import { buildPartnerFlowEntryUrl } from "@/lib/partner/partnerFlowIntegratorKit";
 import {
   embedRequestIdInReturnUrl,
-  issuePartnerRequestCorrelation,
   isOpaqueVerifyRequest,
   PARTNER_REQUEST_ID_PREFIX,
   PARTNER_VERIFY_REQUEST_PREFIX,
 } from "@/lib/partner/productionIntegration/requestCorrelation";
+import type { PartnerRequestStateStore } from "@/lib/partner/integrationKit/partnerRequestStateStore";
+import {
+  generatePartnerRequestId,
+  type PartnerVerificationRequestState,
+} from "@/lib/partner/integrationKit/partnerRequestStateStore";
 import type { NarrowPartnerResult } from "@/lib/partner/narrowPartnerResult/contract";
 import type { PartnerKitSafeResult } from "@/lib/partner/integrationKit/client";
 
@@ -131,7 +135,15 @@ export function categorizeIntegrationErrors(errors: string[]): UniversalIntegrat
   if (errors.some((e) => e === "handoff_unavailable" || e === "handoff_create_failed")) {
     return "temporarily_unavailable";
   }
-  if (errors.some((e) => e === "expected_content_hash_required" || e === "return_url_invalid")) {
+  if (errors.some((e) =>
+    e === "expected_content_hash_required"
+    || e === "return_url_invalid"
+    || e === "sandbox_credentials_required"
+    || e === "application_id_required"
+    || e === "api_key_required"
+    || e === "redirect_requires_request_state_store_or_request_id"
+    || e === "request_state_store_required"
+  )) {
     return "invalid_request";
   }
   return "receipt_invalid";
@@ -147,14 +159,17 @@ export interface CreateVerificationRequestContext {
   apiKey?: string;
   policyPackId?: string;
   bindingId?: string;
+  requestStateStore?: PartnerRequestStateStore;
   fetchFn?: typeof fetch;
 }
+
+const REDIRECT_REQUEST_TTL_MS = 30 * 60 * 1000;
 
 export async function createVerificationRequestForKit(
   ctx: CreateVerificationRequestContext,
   input: CreateVerificationRequestInput,
 ): Promise<VerificationRequestResult> {
-  const mode = input.mode ?? (ctx.apiKey && ctx.applicationId ? "hosted_handoff" : "redirect");
+  const mode: VerificationRequestMode = input.mode ?? "hosted_handoff";
   const capabilities = resolvePolicyIntegrationCapabilities({
     policyPackId: ctx.policyPackId,
     policyId: ctx.policyId,
@@ -245,14 +260,25 @@ export async function createVerificationRequestForKit(
     return { ok: false, category: "invalid_request", errors: ["invalid_request_id"] };
   }
   if (!requestId) {
-    const binding = issuePartnerRequestCorrelation({
+    if (!ctx.requestStateStore) {
+      return {
+        ok: false,
+        category: "invalid_request",
+        errors: ["redirect_requires_request_state_store_or_request_id"],
+      };
+    }
+    requestId = generatePartnerRequestId();
+    const expiresAt = new Date(Date.now() + REDIRECT_REQUEST_TTL_MS).toISOString();
+    const state: PartnerVerificationRequestState = {
+      requestId,
       partnerId: ctx.partnerId,
       policyId: ctx.policyId,
-      purpose: input.purpose,
-      callbackNormalized: returnUrl,
       environment: ctx.environment,
-    });
-    requestId = binding.requestId;
+      returnUrl,
+      purpose: input.purpose,
+      expiresAt,
+    };
+    await ctx.requestStateStore.put(state);
   }
   const boundReturnUrl = embedRequestIdInReturnUrl(returnUrl, requestId);
   const verificationUrl = buildPartnerFlowEntryUrl({

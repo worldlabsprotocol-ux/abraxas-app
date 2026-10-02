@@ -49,6 +49,7 @@ export const kit = new AbraxasPartnerKit({
   bindingId: process.env.ABRAXAS_BINDING_ID ?? "${pin?.binding_id ?? P.binding_id}",
   policyPackId: process.env.ABRAXAS_PACK_ID ?? "${pin?.pack_id ?? P.pack_id}",
   resultFamily: process.env.ABRAXAS_RESULT_FAMILY ?? "${pin?.result_family ?? P.result_family}",
+  apiKey: process.env.ABRAXAS_SANDBOX_API_KEY,
   baseUrl: ${envKey},
 });
 
@@ -315,13 +316,14 @@ export async function receiptCallback(req: Request, res: Response) {
 function universalVerifyHelper(pin?: StarterKitBindingPin): string {
   return `import { kit, permitProtocolAction } from "./abraxas";
 
-/** Recommended Verify with Abraxas path — server creates request, browser launches only verification_url. */
+/** Recommended Verify with Abraxas path — durable hosted handoff; persist request_id in your database before redirect. */
 export async function startVerification(returnUrl: string, options?: { expectedContentHash?: string; partnerState?: string }) {
   const request = await kit.createVerificationRequest({
     returnUrl,
     expectedContentHash: options?.expectedContentHash,
     partnerState: options?.partnerState,
     bindingId: process.env.ABRAXAS_BINDING_ID ?? "${pin?.binding_id ?? P.binding_id}",
+    mode: "hosted_handoff",
   });
   if (!request.ok) throw new Error(request.errors.join(","));
   return request;
