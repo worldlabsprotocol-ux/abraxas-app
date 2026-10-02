@@ -2,9 +2,9 @@
 // FILE: components/home/cinematic/thesis/ScrollDisclosureStory.tsx
 // Sticky scroll-driven selective disclosure — private evidence contracts to a narrow answer.
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { DataRedactionText } from "@/lib/motion/cinematic/DataRedactionText";
-import { useStickyScrollProgress } from "@/lib/motion/cinematic/useStickyScrollProgress";
+import { useCinematicNarrativeProgress } from "@/lib/motion/cinematic/useCinematicNarrativeProgress";
 import { ABX_FONT_DISPLAY, ABX_FONT_SANS } from "@/lib/design/abraxasDesignSystem";
 import { abxMotionTransition } from "@/lib/motion/abxMotionFramer";
 import {
@@ -18,19 +18,17 @@ const FONT = ABX_FONT_SANS;
 const DISPLAY = ABX_FONT_DISPLAY;
 
 export function ScrollDisclosureStory() {
-  const reduce = useReducedMotion();
-  const { ref, progress } = useStickyScrollProgress();
-  const effectiveProgress = reduce ? 1 : progress;
+  const { ref, progress: effectiveProgress, isStatic } = useCinematicNarrativeProgress();
 
-  const vaultScale = reduce ? 1 : 1 - effectiveProgress * 0.08;
-  const vaultOpacity = reduce ? 1 : 1 - effectiveProgress * 0.15;
-  const veilHeight = reduce ? "0%" : `${Math.min(100, effectiveProgress * 115)}%`;
+  const vaultScale = isStatic ? 1 : 1 - effectiveProgress * 0.05;
+  const veilHeight = isStatic ? "0%" : `${Math.min(100, effectiveProgress * 110)}%`;
 
   return (
     <section
       ref={ref as React.RefObject<HTMLElement>}
       aria-labelledby="scroll-disclosure-heading"
       className="abx-cinematic-story abx-cinematic-story--sticky abx-home-section-center"
+      data-scroll-progress={effectiveProgress.toFixed(2)}
     >
       <div className="abx-cinematic-story__sticky">
         <p className="abx-cinematic-story__eyebrow">{SCROLL_STORY_EYEBROW}</p>
@@ -39,13 +37,11 @@ export function ScrollDisclosureStory() {
         </h2>
 
         <div className="abx-cinematic-story__grid abx-cinematic-story__grid--vault">
-          <motion.div
+          <div
             className="abx-cinematic-story__vault"
             style={{
-              scale: vaultScale,
-              opacity: vaultOpacity,
+              transform: `scale(${vaultScale})`,
             }}
-            transition={abxMotionTransition("redact", { tier: "cinematic" })}
           >
             <div className="abx-cinematic-story__vault-label" aria-hidden>
               Private evidence space
@@ -55,21 +51,21 @@ export function ScrollDisclosureStory() {
               <DataRedactionText
                 fields={SYNTHETIC_IDENTITY_FIELDS}
                 progress={effectiveProgress}
-                resolvedLabel={effectiveProgress > 0.62 ? "21+ VERIFIED" : undefined}
+                resolvedLabel={effectiveProgress > 0.58 ? "21+ VERIFIED" : undefined}
               />
             </div>
-          </motion.div>
+          </div>
 
           <div className="abx-cinematic-story__statements">
-            {effectiveProgress < 0.45 ? (
+            {effectiveProgress < 0.42 ? (
               <p className="abx-cinematic-story__statement" style={{ fontFamily: FONT }}>
                 Synthetic identity fields — demonstration only.
               </p>
             ) : null}
-            {effectiveProgress >= 0.45 && effectiveProgress < 0.78 ? (
+            {effectiveProgress >= 0.42 && effectiveProgress < 0.72 ? (
               <motion.p
                 key="resolve"
-                initial={reduce ? false : { opacity: 0, y: 12 }}
+                initial={isStatic ? false : { opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={abxMotionTransition("verify", { tier: "cinematic" })}
                 className="abx-cinematic-story__statement abx-cinematic-story__statement--resolve"
@@ -78,10 +74,10 @@ export function ScrollDisclosureStory() {
                 {SCROLL_STORY_RESOLVE}
               </motion.p>
             ) : null}
-            {effectiveProgress >= 0.78 ? (
+            {effectiveProgress >= 0.72 ? (
               <motion.p
                 key="close"
-                initial={reduce ? false : { opacity: 0, y: 8 }}
+                initial={isStatic ? false : { opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={abxMotionTransition("verify", { tier: "cinematic" })}
                 className="abx-cinematic-story__statement abx-cinematic-story__statement--close"

@@ -2,8 +2,8 @@
 // FILE: components/home/cinematic/thesis/AbraxasTransactionSection.tsx
 // Application → Abraxas → signed result — directional handoff on scroll.
 
-import { motion, useReducedMotion } from "framer-motion";
-import { useStickyScrollProgress } from "@/lib/motion/cinematic/useStickyScrollProgress";
+import { motion } from "framer-motion";
+import { useCinematicNarrativeProgress } from "@/lib/motion/cinematic/useCinematicNarrativeProgress";
 import { ABX_FONT_DISPLAY, ABX_FONT_MONO, ABX_FONT_SANS } from "@/lib/design/abraxasDesignSystem";
 import { abxMotionTransition } from "@/lib/motion/abxMotionFramer";
 import {
@@ -21,16 +21,23 @@ const STEPS = [
   { label: "SIGNED RESULT", detail: TRANSACTION_PARTNER_RECEIVES },
 ] as const;
 
+/** Single active node per scroll window — avoids three competing highlights. */
+function stepFocus(progress: number, index: number): number {
+  const centers = [0.18, 0.5, 0.82];
+  const width = 0.22;
+  const distance = Math.abs(progress - centers[index]);
+  return Math.max(0, 1 - distance / width);
+}
+
 export function AbraxasTransactionSection() {
-  const reduce = useReducedMotion();
-  const { ref, progress } = useStickyScrollProgress(120);
-  const effective = reduce ? 1 : progress;
+  const { ref, progress: effective, isStatic } = useCinematicNarrativeProgress(120);
 
   return (
     <section
       ref={ref as React.RefObject<HTMLElement>}
       aria-labelledby="abraxas-transaction-heading"
       className="abx-cinematic-transaction abx-cinematic-transaction--sticky abx-home-section-center"
+      data-scroll-progress={effective.toFixed(2)}
     >
       <div className="abx-cinematic-transaction__sticky">
         <h2
@@ -49,22 +56,17 @@ export function AbraxasTransactionSection() {
 
         <div className="abx-cinematic-transaction__flow abx-cinematic-transaction__flow--horizontal">
           {STEPS.map((step, index) => {
-            const stepProgress = Math.min(1, Math.max(0, (effective - index * 0.28) * 2.2));
-            const active = stepProgress > 0.35;
+            const focus = isStatic ? (index === 2 ? 1 : 0.35) : stepFocus(effective, index);
+            const active = focus > 0.55;
             return (
-              <motion.div
+              <div
                 key={step.label}
                 className={`abx-cinematic-transaction__node ${index === 1 ? "abx-cinematic-transaction__node--gate" : ""} ${active ? "abx-cinematic-transaction__node--active" : ""}`}
-                animate={
-                  reduce
-                    ? undefined
-                    : {
-                        opacity: 0.45 + stepProgress * 0.55,
-                        y: (1 - stepProgress) * 10,
-                        scale: 0.97 + stepProgress * 0.03,
-                      }
-                }
-                transition={abxMotionTransition("transfer", { tier: "cinematic" })}
+                style={{
+                  opacity: 0.38 + focus * 0.62,
+                  transform: `translateY(${(1 - focus) * 8}px) scale(${0.98 + focus * 0.02})`,
+                  transition: isStatic ? "none" : "opacity 180ms ease-out, transform 180ms ease-out",
+                }}
               >
                 <span className="abx-cinematic-transaction__node-label" style={{ fontFamily: MONO }}>
                   {step.label}
@@ -76,12 +78,12 @@ export function AbraxasTransactionSection() {
                   <span
                     className="abx-cinematic-transaction__arrow abx-cinematic-transaction__arrow--forward"
                     aria-hidden="true"
-                    style={{ opacity: Math.min(1, stepProgress + 0.2) }}
+                    style={{ opacity: Math.min(1, focus * 0.85 + 0.15) }}
                   >
                     →
                   </span>
                 ) : null}
-              </motion.div>
+              </div>
             );
           })}
         </div>
@@ -95,7 +97,7 @@ export function AbraxasTransactionSection() {
             maxWidth: 480,
             lineHeight: 1.55,
           }}
-          animate={{ opacity: reduce ? 1 : 0.4 + effective * 0.6 }}
+          animate={{ opacity: isStatic ? 1 : 0.45 + effective * 0.55 }}
           transition={abxMotionTransition("surface", { tier: "cinematic" })}
         >
           Underlying evidence stays inside Abraxas. Only the approved answer crosses to the application.

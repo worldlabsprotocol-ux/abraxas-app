@@ -26,8 +26,8 @@ export function AmbientGlow() {
         animate={reduce ? undefined : { opacity: [0.35, 0.55, 0.35] }}
         transition={{ duration: 11, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
         style={{
-          position: "absolute", bottom: "2%", left: "-10%",
-          width: 640, height: 460,
+          position: "absolute", bottom: "2%", left: "0%",
+          width: "min(640px, 85vw)", height: 460,
           background: "radial-gradient(50% 50% at 50% 50%, rgba(99,102,241,0.16) 0%, rgba(79,70,229,0.06) 45%, rgba(4,5,10,0) 72%)",
           filter: "blur(32px)",
         }}
@@ -37,8 +37,8 @@ export function AmbientGlow() {
         animate={reduce ? undefined : { opacity: [0.4, 0.62, 0.4] }}
         transition={{ duration: 13, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
         style={{
-          position: "absolute", top: "8%", right: "-12%",
-          width: 540, height: 440,
+          position: "absolute", top: "8%", right: "0%",
+          width: "min(540px, 80vw)", height: 440,
           background: "radial-gradient(50% 50% at 50% 50%, rgba(167,139,250,0.12) 0%, rgba(139,92,246,0.04) 45%, rgba(4,5,10,0) 72%)",
           filter: "blur(34px)",
         }}

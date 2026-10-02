@@ -56,19 +56,13 @@ function HomeContent() {
           <CinematicHero />
         </section>
 
-        <NarrativeSectionBridge label="Selective disclosure" />
-
         <section>
           <ScrollDisclosureStory />
         </section>
 
-        <NarrativeSectionBridge label="The transaction" direction="forward" />
-
         <section>
           <AbraxasTransactionSection />
         </section>
-
-        <NarrativeSectionBridge label="Your Passport" />
 
         <section>
           <PassportHeroObject />
@@ -87,8 +81,6 @@ function HomeContent() {
         <section>
           <ReuseOrbitSection />
         </section>
-
-        <NarrativeSectionBridge label="Infrastructure" />
 
         <section>
           <DeveloperStorySection />

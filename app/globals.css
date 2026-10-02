@@ -440,11 +440,16 @@ details > summary::-webkit-details-marker {
 }
 
 /* Phase 2 — cinematic homepage choreography */
+.abx-cinematic-home,
+.abx-cinematic-shell {
+  overflow-x: clip;
+}
+
 .abx-cinematic-story--sticky,
 .abx-cinematic-transaction--sticky,
 .abx-cinematic-orbit--sticky,
 .abx-home-good-trouble--narrative {
-  min-height: clamp(120vh, 140vh, 160vh);
+  min-height: clamp(105vh, 125vh, 140vh);
   position: relative;
 }
 
@@ -526,6 +531,12 @@ details > summary::-webkit-details-marker {
 
 .abx-cinematic-orbit__core--fact {
   z-index: 3;
+  transition: box-shadow var(--abx-motion-verify) var(--abx-ease-out),
+    border-color var(--abx-motion-verify) var(--abx-ease-out);
+}
+
+.abx-cinematic-orbit__core--resolved {
+  box-shadow: 0 0 0 1px rgba(45,212,191,0.35), 0 12px 40px rgba(0,0,0,0.35);
 }
 
 .abx-cinematic-orbit__ring--hub .abx-cinematic-orbit__ask--hub {
@@ -533,6 +544,12 @@ details > summary::-webkit-details-marker {
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%) rotate(var(--orbit-angle)) translateY(-105px) rotate(calc(var(--orbit-angle) * -1));
+  opacity: 0.35;
+  transition: opacity var(--abx-motion-surface) var(--abx-ease-out);
+}
+
+.abx-cinematic-orbit__ask--hub.is-visible {
+  opacity: 1;
 }
 
 .abx-narrative-bridge {
@@ -663,6 +680,23 @@ details > summary::-webkit-details-marker {
   line-height: 1.5;
   color: var(--text-muted);
   text-align: center;
+}
+
+.abx-home-good-trouble--video-focus {
+  min-height: auto;
+}
+
+.abx-home-good-trouble--video-focus .abx-home-good-trouble__sticky {
+  position: static;
+}
+
+.abx-home-good-trouble--video-focus .abx-home-good-trouble__sequence,
+.abx-home-good-trouble--video-focus .abx-home-good-trouble__narrowing {
+  opacity: 0.55;
+}
+
+.abx-home-good-trouble__sequence--settled .abx-home-good-trouble__sequence-step {
+  opacity: 1;
 }
 
 .abx-home-good-trouble__actions {
@@ -853,6 +887,18 @@ details > summary::-webkit-details-marker {
 }
 
 @media (max-width: 720px) {
+  .abx-cinematic-story--sticky,
+  .abx-cinematic-transaction--sticky,
+  .abx-cinematic-orbit--sticky,
+  .abx-home-good-trouble--narrative {
+    min-height: auto;
+  }
+  .abx-cinematic-story__sticky,
+  .abx-cinematic-transaction__sticky,
+  .abx-cinematic-orbit__sticky,
+  .abx-home-good-trouble__sticky {
+    position: static;
+  }
   .abx-cinematic-transaction__flow--horizontal {
     grid-template-columns: 1fr;
   }
@@ -868,6 +914,9 @@ details > summary::-webkit-details-marker {
     min-height: auto;
   }
   .abx-cinematic-orbit__spokes {
+    display: none;
+  }
+  .abx-narrative-bridge {
     display: none;
   }
 }
