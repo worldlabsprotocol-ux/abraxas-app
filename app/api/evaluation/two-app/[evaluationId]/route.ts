@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { enforceLaunchpadRateLimit, launchpadError } from "@/lib/partner/launchpad/apiHelpers";
 import { loadTwoAppEvaluationRecord } from "@/lib/partner/twoAppEvaluation/store";
+import { authorizeTwoAppEvaluationAccess } from "@/lib/partner/twoAppEvaluation/evaluationAccess";
 import { buildTwoAppEvaluationView, buildTwoAppEvaluationEvidenceExport } from "@/lib/partner/twoAppEvaluation/buildEvaluation";
 import { TWO_APP_EVALUATION_NOTICE } from "@/lib/partner/twoAppEvaluation/contract";
 
@@ -20,6 +21,9 @@ export async function GET(
 
   const record = await loadTwoAppEvaluationRecord(evaluationId);
   if (!record) return launchpadError("not_found", 404);
+
+  const denied = await authorizeTwoAppEvaluationAccess(req, record);
+  if (denied) return denied;
 
   const exportEvidence = req.nextUrl.searchParams.get("export") === "evidence";
   const view = await buildTwoAppEvaluationView(record);

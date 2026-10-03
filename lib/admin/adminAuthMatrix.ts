@@ -54,6 +54,9 @@ export const REQUIRE_ADMIN_ROUTE_ACCESS_APIS = [
   "/api/admin/integration-diagnostics",
   "/api/admin/pilot-evidence",
   "/api/admin/value-evidence",
+  "/api/admin/revocation",
+  "/api/admin/revocation/subject-access",
+  "/api/admin/identity/approve",
 ] as const;
 
 /** Upgraded to checkProductionSensitiveAdminAccess in operational readiness closure. */
@@ -72,15 +75,12 @@ export const UPGRADED_PRODUCTION_SENSITIVE_APIS = [
 export const LEGACY_CHECK_ADMIN_ACCESS_APIS = [
   "/api/admin/identity/pending-count",
   "/api/admin/identity/queue",
-  "/api/admin/identity/approve",
   "/api/admin/identity/document-url",
   "/api/admin/partners",
   "/api/admin/partners/onboarding",
   "/api/admin/partners/entitlements",
   "/api/admin/partners/metering",
   "/api/admin/partner-flow/health",
-  "/api/admin/revocation",
-  "/api/admin/revocation/subject-access",
 ] as const;
 
 /** Frontend PIN-in-page gates — legacy, not authoritative for Production mutations. */

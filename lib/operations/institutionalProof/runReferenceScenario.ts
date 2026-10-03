@@ -78,6 +78,25 @@ export interface ReferenceScenarioResult {
   failure_category: ProofFailureCategory | null;
 }
 
+function fallbackNarrowResult(input: {
+  receiptId: string;
+  partnerId: string;
+  policyId: string;
+}): NarrowPartnerResult {
+  return {
+    schema_version: "1.0.0",
+    receipt_id: input.receiptId,
+    partner_id: input.partnerId,
+    policy_id: input.policyId,
+    decision: "approved",
+    result_family: "policy_result",
+    currently_valid: true,
+    production_usable: false,
+    trust_environment: "sandbox",
+    invalidation_reasons: ["sandbox_only_not_production_usable"],
+  };
+}
+
 function enrichSandboxPublicReceipt(
   view: ReturnType<typeof toPublicView>,
   record: DecisionReceiptRecord,
@@ -264,7 +283,11 @@ export async function runInstitutionalReferenceScenario(): Promise<ReferenceScen
           receiptId: receiptA.id,
           requestId: "vr_app_a_reference",
           publicReceipt: publicA,
-          narrowResult: narrowA ?? { schema_version: "1.0.0", receipt_id: receiptA.id, partner_id: REFERENCE_INSTITUTIONAL_PLATFORM, policy_id: REFERENCE_POLICY_ID, decision: "approved", result_family: "policy_result" },
+          narrowResult: narrowA ?? fallbackNarrowResult({
+            receiptId: receiptA.id,
+            partnerId: REFERENCE_INSTITUTIONAL_PLATFORM,
+            policyId: REFERENCE_POLICY_ID,
+          }),
         });
         applicationVerifications += 1;
         partnerVerifiedAt = new Date().toISOString();
@@ -388,7 +411,11 @@ export async function runInstitutionalReferenceScenario(): Promise<ReferenceScen
               receiptId: receiptB.id,
               requestId: "vr_app_b_reference",
               publicReceipt: publicB,
-              narrowResult: narrowB ?? { schema_version: "1.0.0", receipt_id: receiptB.id, partner_id: REFERENCE_INSTITUTIONAL_PLATFORM, policy_id: REFERENCE_POLICY_ID, decision: "approved", result_family: "policy_result" },
+              narrowResult: narrowB ?? fallbackNarrowResult({
+                receiptId: receiptB.id,
+                partnerId: REFERENCE_INSTITUTIONAL_PLATFORM,
+                policyId: REFERENCE_POLICY_ID,
+              }),
             });
             extB = {
               receipt_id: receiptB.id,

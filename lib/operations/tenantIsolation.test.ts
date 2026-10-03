@@ -1,13 +1,19 @@
 // FILE: lib/operations/tenantIsolation.test.ts
 // Tenant boundary tests for public result surfaces and PartnerKit client validation.
 
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AbraxasPartnerKit } from "@/lib/partner/integrationKit";
 import { buildNarrowPartnerResultForReceipt } from "@/lib/partner/narrowPartnerResult/build";
 
 const getReceiptById = vi.fn();
+const evaluateDecisionReceiptTrust = vi.fn();
+
 vi.mock("@/lib/decisionReceipts/service", () => ({
   getReceiptById: (...args: unknown[]) => getReceiptById(...args),
+}));
+
+vi.mock("@/lib/decisionReceipts/trustEvaluation", () => ({
+  evaluateDecisionReceiptTrust: (...args: unknown[]) => evaluateDecisionReceiptTrust(...args),
 }));
 
 vi.mock("@/lib/supabase/admin", () => ({
@@ -27,6 +33,15 @@ vi.mock("@/lib/decisionReceipts/views", () => ({
 }));
 
 describe("tenant isolation", () => {
+  beforeEach(() => {
+    evaluateDecisionReceiptTrust.mockResolvedValue({
+      currently_valid: true,
+      signature_valid: true,
+      production_usable: false,
+      invalidation_reasons: [],
+    });
+  });
+
   it("PartnerKit rejects narrow-result when configured partner does not match receipt partner", async () => {
     const kit = new AbraxasPartnerKit({
       partnerId: "partner-a",
@@ -39,6 +54,10 @@ describe("tenant isolation", () => {
         policy_id: "partner-b-age_21_retail-v1",
         decision: "approved",
         result_family: "age_eligible_21",
+        currently_valid: true,
+        production_usable: false,
+        trust_environment: "sandbox",
+        invalidation_reasons: [],
       }), { status: 200 }),
     });
     const result = await kit.fetchNarrowPartnerResult("dr_x");
@@ -57,6 +76,10 @@ describe("tenant isolation", () => {
         policy_id: "partner-a-other-v1",
         decision: "approved",
         result_family: "policy_result",
+        currently_valid: true,
+        production_usable: false,
+        trust_environment: "sandbox",
+        invalidation_reasons: [],
       }), { status: 200 }),
     });
     const result = await kit.fetchNarrowPartnerResult("dr_x");
@@ -82,6 +105,31 @@ describe("tenant isolation", () => {
     expect(serialized).not.toContain("content_hash");
     expect(serialized).not.toContain("claim_value");
     expect(result?.partner_id).toBe("sandbox-content-publisher");
+  });
+
+  it("PartnerKit rejects narrow-result when currently_valid is false", async () => {
+    const kit = new AbraxasPartnerKit({
+      partnerId: "partner-a",
+      policyId: "partner-a-age_21_retail-v1",
+      environment: "sandbox",
+      fetchFn: async () => new Response(JSON.stringify({
+        schema_version: "1.0.0",
+        receipt_id: "dr_x",
+        partner_id: "partner-a",
+        policy_id: "partner-a-age_21_retail-v1",
+        decision: "approved",
+        result_family: "age_eligible_21",
+        currently_valid: false,
+        production_usable: false,
+        trust_environment: "sandbox",
+        invalidation_reasons: ["receipt_revoked"],
+      }), { status: 200 }),
+    });
+    const result = await kit.fetchNarrowPartnerResult("dr_x");
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContain("narrow_result_not_currently_valid");
+    }
   });
 
   it("repeated narrow-result reads return stable shape without side effects", async () => {

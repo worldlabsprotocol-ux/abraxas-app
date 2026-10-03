@@ -23,6 +23,10 @@ export const NARROW_PARTNER_RESULT_ALLOWED_FIELDS = [
   "partner_id",
   "decision",
   "result_family",
+  "currently_valid",
+  "production_usable",
+  "trust_environment",
+  "invalidation_reasons",
   "provenance",
   "over_21",
   "identity_verified",
@@ -38,6 +42,10 @@ export interface NarrowPartnerResult {
   decision: "approved" | "denied" | "manual_review";
   /** Catalog disclosed_result for the policy pack (e.g. content_origin_disclosed). */
   result_family: string;
+  currently_valid: boolean;
+  production_usable: boolean;
+  trust_environment: "sandbox" | "production";
+  invalidation_reasons: string[];
   provenance?: ProvenancePartnerFacts;
   over_21?: boolean;
   identity_verified?: boolean;
@@ -47,4 +55,4 @@ export interface NarrowPartnerResult {
 }
 
 export const NARROW_PARTNER_RESULT_NOTICE =
-  "Narrow partner results expose only policy-authorized facts derived from the signed receipt decision. They never include raw claims, artifact identifiers, or content hashes.";
+  "Narrow partner results expose only policy-authorized facts derived from the signed receipt decision when currently_valid is true. Sandbox results are for testing only and are not production_usable. They never include raw claims, artifact identifiers, or content hashes.";

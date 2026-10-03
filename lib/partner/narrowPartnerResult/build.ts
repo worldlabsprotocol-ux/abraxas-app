@@ -3,7 +3,7 @@
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { getReceiptById } from "@/lib/decisionReceipts/service";
-import { verifyRecordSignature } from "@/lib/decisionReceipts/views";
+import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation";
 import { assertCustodySafePayload } from "@/lib/custody/guardrails";
 import { pickAllowedKeys } from "@/lib/privacy/selectiveDisclosure";
 import { inferPolicyPackFromPolicyId } from "@/lib/partner/launchpad/policyPacks";
@@ -35,6 +35,18 @@ function sanitizeNarrowResult(payload: NarrowPartnerResult): NarrowPartnerResult
   return picked as NarrowPartnerResult;
 }
 
+function trustEnvelope(trust: Awaited<ReturnType<typeof evaluateDecisionReceiptTrust>>): Pick<
+  NarrowPartnerResult,
+  "currently_valid" | "production_usable" | "trust_environment" | "invalidation_reasons"
+> {
+  return {
+    currently_valid: trust.currently_valid,
+    production_usable: trust.production_usable,
+    trust_environment: trust.production_usable ? "production" : "sandbox",
+    invalidation_reasons: trust.invalidation_reasons,
+  };
+}
+
 async function loadVerificationDecisionClaims(decisionId: string): Promise<{
   decision: string;
   claims_json: Record<string, unknown>;
@@ -55,7 +67,6 @@ async function loadVerificationDecisionClaims(decisionId: string): Promise<{
     request_id: (data.request_id as string | null) ?? null,
   };
 }
-
 
 function buildAgeNarrowFacts(input: {
   disclosedResult: string;
@@ -122,6 +133,7 @@ export async function buildNarrowPartnerResultForReceipt(
   const record = await getReceiptById(receiptId);
   if (!record) return null;
 
+  const trust = await evaluateDecisionReceiptTrust(record, { allowSandbox: true });
   const pack = inferPolicyPackFromPolicyId(record.policy_id);
   const resultFamily = pack?.disclosed_result ?? "policy_result";
 
@@ -132,24 +144,23 @@ export async function buildNarrowPartnerResultForReceipt(
     partner_id: record.partner_id,
     decision: record.decision_result,
     result_family: resultFamily,
+    ...trustEnvelope(trust),
   };
 
-  if (record.decision_result !== "approved" || !verifyRecordSignature(record)) {
+  if (record.decision_result !== "approved" || !trust.signature_valid || !trust.currently_valid) {
     return sanitizeNarrowResult(base);
   }
 
   const decision = await loadVerificationDecisionClaims(record.verification_decision_id);
-  if (!decision) {
+  if (!decision || decision.decision !== "approved") {
     return sanitizeNarrowResult(base);
   }
 
-  const approvedFacts = decision.decision === "approved"
-    ? await buildApprovedFacts({
-      policyId: record.policy_id,
-      policyVersion: record.policy_version,
-      claims: decision.claims_json,
-    })
-    : {};
+  const approvedFacts = await buildApprovedFacts({
+    policyId: record.policy_id,
+    policyVersion: record.policy_version,
+    claims: decision.claims_json,
+  });
 
   const institutional = await isInstitutionalClaimsSubject(decision.subject_id);
   const pairwiseRef = institutional ? record.subject_pseudonym_id : undefined;

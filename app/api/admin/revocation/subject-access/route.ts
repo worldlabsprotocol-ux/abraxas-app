@@ -2,15 +2,14 @@
 // Safe subject partner-access view for admin revocation UI — no PII.
 
 import { NextRequest, NextResponse } from "next/server";
-import { checkAdminAccess } from "@/lib/adminAuth";
+import { requireAdminRouteAccess } from "@/lib/admin/requireAdminRouteAccess";
 import { listSubjectPartnerAccess } from "@/lib/decisionReceipts/revocationControlPlane";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  if (!await checkAdminAccess(req)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = await requireAdminRouteAccess(req);
+  if (denied) return denied;
 
   const subjectId = req.nextUrl.searchParams.get("subject_id")?.trim();
   const partnerId = req.nextUrl.searchParams.get("partner_id")?.trim() || undefined;

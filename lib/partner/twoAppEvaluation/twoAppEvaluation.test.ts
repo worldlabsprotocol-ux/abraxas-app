@@ -15,6 +15,8 @@ import {
 } from "@/lib/partner/integrationObservability/record";
 import { recordLaunchpadActivityForTests, resetLaunchpadActivityForTests } from "@/lib/partner/pilotEvidence/load";
 import type { TwoAppEvaluationRecord } from "./contract";
+import { TWO_APP_DEFAULT_POLICY_PACK } from "./contract";
+import { POLICY_PACKS } from "@/lib/partner/launchpad/policyPacks";
 import { buildTwoAppEvaluationView } from "./buildEvaluation";
 import { canClaimExternalReuseProof } from "./claimGate";
 import {
@@ -95,6 +97,13 @@ async function seedFullTechnicalSuccess(record: TwoAppEvaluationRecord): Promise
 }
 
 describe("two-app evaluation lifecycle", () => {
+  it("default policy pack enables reuse on the canonical sandbox path", () => {
+    expect(TWO_APP_DEFAULT_POLICY_PACK).toBe("identity_liveness");
+    const pack = POLICY_PACKS[TWO_APP_DEFAULT_POLICY_PACK];
+    expect(pack.reuse_evidence_freshness?.allow_reuse).toBe(true);
+    expect(POLICY_PACKS.sandbox_institutional_protocol_access.reuse_evidence_freshness?.allow_reuse).toBe(false);
+  });
+
   beforeEach(() => {
     resetTwoAppEvaluationStoreForTests();
     resetLaunchpadApplicationMemoryForTests();

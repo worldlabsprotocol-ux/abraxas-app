@@ -5,9 +5,14 @@ import { buildNarrowPartnerResultForReceipt } from "./build";
 
 const getReceiptById = vi.fn();
 const requireSupabaseAdmin = vi.fn();
+const evaluateDecisionReceiptTrust = vi.fn();
 
 vi.mock("@/lib/decisionReceipts/service", () => ({
   getReceiptById: (...args: unknown[]) => getReceiptById(...args),
+}));
+
+vi.mock("@/lib/decisionReceipts/trustEvaluation", () => ({
+  evaluateDecisionReceiptTrust: (...args: unknown[]) => evaluateDecisionReceiptTrust(...args),
 }));
 
 vi.mock("@/lib/supabase/admin", () => ({
@@ -22,6 +27,13 @@ describe("narrow partner result build", () => {
   beforeEach(() => {
     getReceiptById.mockReset();
     requireSupabaseAdmin.mockReset();
+    evaluateDecisionReceiptTrust.mockReset();
+    evaluateDecisionReceiptTrust.mockResolvedValue({
+      currently_valid: true,
+      signature_valid: true,
+      production_usable: false,
+      invalidation_reasons: [],
+    });
   });
 
   it("returns provenance facts without artifact_id or content_hash", async () => {

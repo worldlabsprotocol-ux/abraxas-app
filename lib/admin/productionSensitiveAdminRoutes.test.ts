@@ -44,6 +44,9 @@ import { GET as privacyRequestsGET } from "@/app/api/admin/privacy/requests/rout
 import { GET as operatorAttentionGET } from "@/app/api/admin/operator-attention/route";
 import { GET as intakeHealthGET } from "@/app/api/admin/design-partners/intake-health/route";
 import { GET as productionReviewGET } from "@/app/api/admin/production-review/route";
+import { POST as revocationPOST } from "@/app/api/admin/revocation/route";
+import { GET as revocationSubjectAccessGET } from "@/app/api/admin/revocation/subject-access/route";
+import { POST as identityApprovePOST } from "@/app/api/admin/identity/approve/route";
 
 vi.mock("@/lib/partner/webhooks/webhookDeadLetter", () => ({
   listFailedWebhookDeliveries: vi.fn().mockResolvedValue([]),
@@ -276,6 +279,51 @@ describe("production-sensitive admin routes", () => {
         headers: { "x-admin-pin": "test-admin-pin" },
       });
       const res = await productionReviewGET(req);
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe("revocation control plane routes", () => {
+    it("returns 401 for PIN-only on revocation POST Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest("http://localhost/api/admin/revocation", {
+        method: "POST",
+        headers: { "x-admin-pin": "test-admin-pin" },
+        body: JSON.stringify({ target_type: "receipt", receipt_id: "dr_x", reason_code: "operator_revoked" }),
+      });
+      const res = await revocationPOST(req);
+      expect(res.status).toBe(401);
+    });
+
+    it("returns 401 for PIN-only on revocation subject-access Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest("http://localhost/api/admin/revocation/subject-access?subject_id=sub_x", {
+        headers: { "x-admin-pin": "test-admin-pin" },
+      });
+      const res = await revocationSubjectAccessGET(req);
+      expect(res.status).toBe(401);
+    });
+
+    it("allows allowlisted browser session on revocation subject-access Production origin", async () => {
+      productionEnv();
+      resolveBrowserSessionMock.mockResolvedValue({ suiAddress: SUI });
+      const req = new NextRequest("http://localhost/api/admin/revocation/subject-access?subject_id=sub_x", {
+        headers: { cookie: "abraxas_browser_session=test-token" },
+      });
+      const res = await revocationSubjectAccessGET(req);
+      expect(res.status).not.toBe(401);
+    });
+  });
+
+  describe("identity approve route", () => {
+    it("returns 401 for PIN-only on Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest("http://localhost/api/admin/identity/approve", {
+        method: "POST",
+        headers: { "x-admin-pin": "test-admin-pin" },
+        body: JSON.stringify({ document_id: "doc_x", action: "reject" }),
+      });
+      const res = await identityApprovePOST(req);
       expect(res.status).toBe(401);
     });
   });

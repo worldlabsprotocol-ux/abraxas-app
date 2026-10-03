@@ -196,6 +196,15 @@ export class AbraxasPartnerKit {
       if (result.policy_id !== this.options.policyId) {
         return { ok: false, errors: [`narrow_result_policy_mismatch:expected=${this.options.policyId},got=${result.policy_id ?? "missing"}`] };
       }
+      if (result.currently_valid === false) {
+        return {
+          ok: false,
+          errors: [
+            "narrow_result_not_currently_valid",
+            ...(result.invalidation_reasons ?? []),
+          ],
+        };
+      }
       return { ok: true, result };
     } catch {
       return { ok: false, errors: ["narrow_result_fetch_failed", "retry"] };

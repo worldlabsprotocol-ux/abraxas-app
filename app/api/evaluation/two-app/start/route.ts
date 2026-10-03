@@ -12,6 +12,7 @@ import { provisionTwoAppSandboxPair } from "@/lib/partner/twoAppEvaluation/provi
 import { TWO_APP_DEFAULT_POLICY_PACK } from "@/lib/partner/twoAppEvaluation/contract";
 import { buildSanitizedAcquisitionEvent } from "@/lib/gtm/acquisitionEvents";
 import { recordGtmAcquisitionEvent } from "@/lib/gtm/acquisitionStore";
+import { attachTwoAppEvaluationOwnerCookieForRecord } from "@/lib/partner/twoAppEvaluation/evaluationSession";
 
 export const dynamic = "force-dynamic";
 
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
     }),
   );
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     ok: true,
     evaluation_id: result.record.evaluation_id,
     partner_id: result.record.partner_id,
@@ -83,4 +84,10 @@ export async function POST(req: NextRequest) {
     journey_href: `/evaluation/two-app?id=${result.record.evaluation_id}`,
     notice: "Sandbox evaluation only. Evidence status remains NOT YET OBSERVED until reuse is observed.",
   });
+  await attachTwoAppEvaluationOwnerCookieForRecord(
+    response,
+    result.record.evaluation_id,
+    result.record.partner_id,
+  );
+  return response;
 }
