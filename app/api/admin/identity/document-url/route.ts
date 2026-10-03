@@ -3,16 +3,15 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { checkAdminAccess } from "@/lib/adminAuth";
+import { requireAdminRouteAccess } from "@/lib/admin/requireAdminRouteAccess";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 const SIGNED_URL_TTL_SEC = 3600;
 
 export async function GET(req: NextRequest) {
-  if (!await checkAdminAccess(req)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = await requireAdminRouteAccess(req);
+  if (denied) return denied;
   if (!SB_URL || !SB_KEY) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
   }

@@ -47,6 +47,10 @@ import { GET as productionReviewGET } from "@/app/api/admin/production-review/ro
 import { POST as revocationPOST } from "@/app/api/admin/revocation/route";
 import { GET as revocationSubjectAccessGET } from "@/app/api/admin/revocation/subject-access/route";
 import { POST as identityApprovePOST } from "@/app/api/admin/identity/approve/route";
+import { GET as identityDocumentUrlGET } from "@/app/api/admin/identity/document-url/route";
+import { POST as credentialsRevokePOST } from "@/app/api/credentials/revoke/route";
+import { PATCH as partnersPATCH } from "@/app/api/admin/partners/route";
+import { POST as onboardingPoliciesPOST } from "@/app/api/admin/partners/onboarding/policies/route";
 
 vi.mock("@/lib/partner/webhooks/webhookDeadLetter", () => ({
   listFailedWebhookDeliveries: vi.fn().mockResolvedValue([]),
@@ -312,6 +316,61 @@ describe("production-sensitive admin routes", () => {
       });
       const res = await revocationSubjectAccessGET(req);
       expect(res.status).not.toBe(401);
+    });
+  });
+
+  describe("identity document-url route", () => {
+    it("returns 401 for PIN-only on Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest("http://localhost/api/admin/identity/document-url?path=identity/test/doc.jpg", {
+        headers: { "x-admin-pin": "test-admin-pin" },
+      });
+      const res = await identityDocumentUrlGET(req);
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe("credentials revoke route", () => {
+    it("returns 401 for PIN-only on Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest("http://localhost/api/credentials/revoke", {
+        method: "POST",
+        headers: { "x-admin-pin": "test-admin-pin" },
+        body: JSON.stringify({ sui_address: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef" }),
+      });
+      const res = await credentialsRevokePOST(req);
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe("partners route", () => {
+    it("returns 401 for PIN-only PATCH on Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest("http://localhost/api/admin/partners", {
+        method: "PATCH",
+        headers: { "x-admin-pin": "test-admin-pin" },
+        body: JSON.stringify({ partner_id: "partner-a", status: "active" }),
+      });
+      const res = await partnersPATCH(req);
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe("onboarding policies route", () => {
+    it("returns 401 for PIN-only publish on Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest("http://localhost/api/admin/partners/onboarding/policies", {
+        method: "POST",
+        headers: { "x-admin-pin": "test-admin-pin" },
+        body: JSON.stringify({
+          action: "publish",
+          partner_id: "partner-a",
+          policy_id: "partner-a-age_21_retail-v1",
+          version: 1,
+        }),
+      });
+      const res = await onboardingPoliciesPOST(req);
+      expect(res.status).toBe(401);
     });
   });
 

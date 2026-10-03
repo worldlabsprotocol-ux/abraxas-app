@@ -206,7 +206,7 @@ export function TwoAppEvaluationJourney({ evaluationId }: { evaluationId: string
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.65rem" }}>
               <Btn size="sm" variant="secondary" onClick={() => activeId && void load(activeId)}>Refresh status</Btn>
               <Btn href={`/developers/launchpad`} size="sm" variant="ghost">Open Launchpad</Btn>
-              <Btn href={`/developers/integration-studio?outcome=reuse_across_app&source=two-app-eval`} size="sm" variant="ghost">Integration Studio</Btn>
+              <Btn href={`/developers/integration-studio?outcome=reuse_across_app&path=verify_with_abraxas&pack=identity_liveness&source=two-app-eval`} size="sm" variant="ghost">Integration Studio</Btn>
             </div>
           </ContentCard>
 

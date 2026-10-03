@@ -57,6 +57,10 @@ export const REQUIRE_ADMIN_ROUTE_ACCESS_APIS = [
   "/api/admin/revocation",
   "/api/admin/revocation/subject-access",
   "/api/admin/identity/approve",
+  "/api/admin/identity/document-url",
+  "/api/admin/partners",
+  "/api/admin/partners/onboarding/policies",
+  "/api/credentials/revoke",
 ] as const;
 
 /** Upgraded to checkProductionSensitiveAdminAccess in operational readiness closure. */
@@ -75,8 +79,6 @@ export const UPGRADED_PRODUCTION_SENSITIVE_APIS = [
 export const LEGACY_CHECK_ADMIN_ACCESS_APIS = [
   "/api/admin/identity/pending-count",
   "/api/admin/identity/queue",
-  "/api/admin/identity/document-url",
-  "/api/admin/partners",
   "/api/admin/partners/onboarding",
   "/api/admin/partners/entitlements",
   "/api/admin/partners/metering",

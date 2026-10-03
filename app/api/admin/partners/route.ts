@@ -3,7 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { checkAdminAccess } from "@/lib/adminAuth";
+import { requireAdminRouteAccess } from "@/lib/admin/requireAdminRouteAccess";
 import { assertPilotPartnerCreateStatus } from "@/lib/admin/partnerOnboardingConsole";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -26,9 +26,8 @@ type PartnerRow = {
 };
 
 export async function GET(req: NextRequest) {
-  if (!await checkAdminAccess(req)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = await requireAdminRouteAccess(req);
+  if (denied) return denied;
   if (!SB_URL || !SB_KEY) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
   }
@@ -66,9 +65,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!await checkAdminAccess(req)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = await requireAdminRouteAccess(req);
+  if (denied) return denied;
   if (!SB_URL || !SB_KEY) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
   }
@@ -130,9 +128,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  if (!await checkAdminAccess(req)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = await requireAdminRouteAccess(req);
+  if (denied) return denied;
   if (!SB_URL || !SB_KEY) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
   }
