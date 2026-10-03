@@ -39,13 +39,13 @@ export const INTEGRATION_STUDIO_OUTCOMES: Record<IntegrationStudioOutcomeId, Int
     buyerSummary:
       "Keep your KYC provider. Stop rebuilding verification for every new gated product when compatible evidence can be reused.",
     engineeringSummary:
-      "Default: institutional eligibility gate with sandbox institutional protocol access policy. Server-verify each application result.",
-    defaultPathId: "institutional_eligibility_gate",
-    defaultPackId: "sandbox_institutional_protocol_access",
+      "Default: identity plus liveness pack with reuse-enabled evidence freshness. Server-verify each application result.",
+    defaultPathId: "verify_with_abraxas",
+    defaultPackId: "identity_liveness",
     studioHref: studioHref(
       "reuse_across_app",
-      "institutional_eligibility_gate",
-      "sandbox_institutional_protocol_access",
+      "verify_with_abraxas",
+      "identity_liveness",
     ),
     icpPriority: true,
   },

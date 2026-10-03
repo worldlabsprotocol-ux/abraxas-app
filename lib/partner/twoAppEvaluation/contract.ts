@@ -51,7 +51,7 @@ export const TWO_APP_EVALUATION_BLOCKER_CATEGORIES = [
 
 export type TwoAppEvaluationBlockerCategory = (typeof TWO_APP_EVALUATION_BLOCKER_CATEGORIES)[number];
 
-export const TWO_APP_DEFAULT_POLICY_PACK = "sandbox_institutional_protocol_access" as const;
+export const TWO_APP_DEFAULT_POLICY_PACK = "identity_liveness" as const;
 
 export interface TwoAppEvaluationRecord {
   evaluation_id: string;

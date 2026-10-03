@@ -2,16 +2,15 @@
 // Approve, reject, or request resubmission for manual identity review.
 
 import { NextRequest, NextResponse } from "next/server";
-import { checkAdminAccess } from "@/lib/adminAuth";
+import { requireAdminRouteAccess } from "@/lib/admin/requireAdminRouteAccess";
 import { executeAdminReviewAction, type AdminReviewAction } from "@/lib/idv/adminReviewService";
 import { parseAuthoritativeDateOfBirth } from "@/lib/idv/ageEligibility";
 
 const VALID_ACTIONS = new Set<AdminReviewAction>(["approve", "reject", "request_resubmission"]);
 
 export async function POST(req: NextRequest) {
-  if (!await checkAdminAccess(req)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = await requireAdminRouteAccess(req);
+  if (denied) return denied;
 
   const body = await req.json().catch(() => ({})) as {
     document_id?: string;

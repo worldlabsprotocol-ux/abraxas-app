@@ -149,6 +149,80 @@ describe("trustEvaluation — authoritative fail-closed contract", () => {
     expect(result.validity).toBe("policy_mismatch");
   });
 
+  it("permits sandbox-only receipt when allowSandbox is true", () => {
+    const payload = buildCanonicalPayload({
+      receipt_id: "dr_trust_eval_sandbox_ok",
+      decision_id: "vd_trust_eval_sandbox_ok",
+      policy_id: "good-trouble-retail-v1",
+      policy_version: 1,
+      partner_id: "good-trouble-cannabis",
+      subject_pseudonym_id: subjectPseudonymId("0xabc"),
+      wallet_binding_ref: null,
+      consent_receipt_id: null,
+      decision_result: "approved",
+      reason_codes: [],
+      evaluated_claim_refs: [],
+      issuer_refs: [],
+      decision_context: "sandbox_only",
+      evaluated_at: "2026-07-30T00:00:00.000Z",
+      expires_at: "2099-01-01T00:00:00.000Z",
+    });
+    const { payloadHash, signature } = signReceiptPayload(payload, TEST_KEY.privateKeyJwk);
+    const result = evaluateDecisionReceiptTrustSync(
+      sampleRecord({
+        id: payload.receipt_id,
+        verification_decision_id: payload.decision_id,
+        decision_context: "sandbox_only",
+        payload_hash: payloadHash,
+        signature,
+      }),
+      {
+        partnerId: "good-trouble-cannabis",
+        policyId: "good-trouble-retail-v1",
+        allowSandbox: true,
+      },
+    );
+    expect(result.currently_valid).toBe(true);
+    expect(result.production_usable).toBe(false);
+    expect(result.validity).toBe("sandbox_only");
+  });
+
+  it("fails sandbox-only receipt without allowSandbox", () => {
+    const payload = buildCanonicalPayload({
+      receipt_id: "dr_trust_eval_sandbox",
+      decision_id: "vd_trust_eval_sandbox",
+      policy_id: "good-trouble-retail-v1",
+      policy_version: 1,
+      partner_id: "good-trouble-cannabis",
+      subject_pseudonym_id: subjectPseudonymId("0xabc"),
+      wallet_binding_ref: null,
+      consent_receipt_id: null,
+      decision_result: "approved",
+      reason_codes: [],
+      evaluated_claim_refs: [],
+      issuer_refs: [],
+      decision_context: "sandbox_only",
+      evaluated_at: "2026-07-30T00:00:00.000Z",
+      expires_at: "2099-01-01T00:00:00.000Z",
+    });
+    const { payloadHash, signature } = signReceiptPayload(payload, TEST_KEY.privateKeyJwk);
+    const result = evaluateDecisionReceiptTrustSync(
+      sampleRecord({
+        id: payload.receipt_id,
+        verification_decision_id: payload.decision_id,
+        decision_context: "sandbox_only",
+        payload_hash: payloadHash,
+        signature,
+      }),
+      {
+        partnerId: "good-trouble-cannabis",
+        policyId: "good-trouble-retail-v1",
+      },
+    );
+    expect(result.currently_valid).toBe(false);
+    expect(result.validity).toBe("sandbox_only");
+  });
+
   it("fails manual review decision", () => {
     const result = evaluatePublicReceiptTrust(
       {

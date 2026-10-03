@@ -6,12 +6,11 @@ import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { revokeSubjectClaims } from "@/lib/credentials/claimsService";
 import { appendAuditEvent } from "@/lib/verification/audit";
-import { checkAdminAccess } from "@/lib/adminAuth";
+import { requireAdminRouteAccess } from "@/lib/admin/requireAdminRouteAccess";
 
 export async function POST(req: NextRequest) {
-  if (!await checkAdminAccess(req)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = await requireAdminRouteAccess(req);
+  if (denied) return denied;
 
   const body = await req.json().catch(() => ({})) as {
     sui_address?: string;

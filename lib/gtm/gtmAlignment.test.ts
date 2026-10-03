@@ -169,6 +169,12 @@ describe("gtm alignment", () => {
     expect(route.summary.toLowerCase()).toContain("reuse");
   });
 
+  it("aligns reuse-across-app studio default with canonical two-app evaluation pack", () => {
+    expect(INTEGRATION_STUDIO_OUTCOMES.reuse_across_app.defaultPackId).toBe("identity_liveness");
+    expect(INTEGRATION_STUDIO_OUTCOMES.reuse_across_app.defaultPathId).toBe("verify_with_abraxas");
+    expect(INTEGRATION_STUDIO_OUTCOMES.reuse_across_app.studioHref).toContain("identity_liveness");
+  });
+
   it("exposes Integration Studio outcome-first entry with advanced paths available", () => {
     expect(INTEGRATION_STUDIO_OUTCOME_LIST.length).toBeGreaterThanOrEqual(5);
     expect(INTEGRATION_STUDIO_OUTCOMES.reuse_across_app.icpPriority).toBe(true);

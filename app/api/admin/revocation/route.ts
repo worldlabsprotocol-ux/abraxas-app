@@ -2,7 +2,8 @@
 // Admin-only credential and partner receipt revocation control plane.
 
 import { NextRequest, NextResponse } from "next/server";
-import { checkAdminAccess, resolveAdminAccess } from "@/lib/adminAuth";
+import { requireAdminRouteAccess } from "@/lib/admin/requireAdminRouteAccess";
+import { resolveAdminAccess } from "@/lib/adminAuth";
 import { resolveAdminActorCategory } from "@/lib/admin/adminActorCategory";
 import {
   isRevocationReasonCode,
@@ -15,9 +16,8 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  if (!await checkAdminAccess(req)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = await requireAdminRouteAccess(req);
+  if (denied) return denied;
 
   const body = (await req.json().catch(() => ({}))) as {
     target_type?: "receipt" | "credential_claim" | "subject_access";

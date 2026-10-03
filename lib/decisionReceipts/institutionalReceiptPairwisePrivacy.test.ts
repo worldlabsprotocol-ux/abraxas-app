@@ -68,7 +68,16 @@ function makeSelectChain(table: string) {
       }
       if (table === "verification_decisions") {
         const row = verificationDecisions[filters.id ?? ""];
-        return row ? { data: row, error: null } : { data: null, error: null };
+        return row
+          ? {
+            data: {
+              decision: "approved",
+              claims_json: {},
+              ...row,
+            },
+            error: null,
+          }
+          : { data: null, error: null };
       }
       if (table === "verification_requests") {
         return { data: verificationRequests[filters.id ?? ""] ?? null, error: null };
@@ -117,6 +126,11 @@ vi.mock("@/lib/decisionReceipts/verificationKeyLifecycle", () => ({
 
 vi.mock("@/lib/decisionReceipts/dependencies", () => ({
   recordReceiptClaimDependencies: async () => {},
+  getReceiptDependencies: async () => [],
+}));
+
+vi.mock("@/lib/decisionReceipts/evidenceDependencies", () => ({
+  getReceiptEvidenceDependencies: async () => [],
 }));
 
 vi.mock("@/lib/verification/audit", () => ({

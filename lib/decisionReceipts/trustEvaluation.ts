@@ -119,6 +119,16 @@ function applyTrustGates(
   }
 
   if (!base.currently_valid) {
+    if (allowSandbox && base.validity === "sandbox_only") {
+      return {
+        currently_valid: true,
+        validity: "sandbox_only",
+        signature_valid: true,
+        production_usable: false,
+        invalidation_reasons: base.invalidation_reasons,
+      };
+    }
+
     return {
       currently_valid: false,
       validity: base.validity,
