@@ -20,7 +20,7 @@ export default function TwoAppEvaluationPage() {
       <PageHeader
         eyebrow="Design partner evaluation"
         title="Prove reuse across two apps"
-        subtitle="Configure App A, get a first verified result, then reuse compatible evidence in App B — with server-side verification on both. Evidence stays NOT YET OBSERVED until your team completes the flow."
+        subtitle="Configure App A, verify the first result on your server, then reuse the same trusted evidence in App B — without collecting identity again. Progress updates from real integration events."
       />
       <Suspense fallback={<RedesignPageLoading label="Loading evaluation…" />}>
         <TwoAppEvaluationClient />

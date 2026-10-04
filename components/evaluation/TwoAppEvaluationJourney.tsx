@@ -3,10 +3,19 @@
 // Guided two-app reuse evaluation journey — event-backed checklists only.
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Btn } from "@/components/redesign/ui";
 import { ContentCard } from "@/components/redesign/RedesignContent";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
+import {
+  buildEvaluationProgressSteps,
+  deriveEvaluationNextStep,
+  humanStageLabel,
+} from "@/lib/partner/twoAppEvaluation/evaluationUx";
+import { EvaluationProgressStrip } from "@/components/evaluation/EvaluationProgressStrip";
+import { EvaluationNextStepCard } from "@/components/evaluation/EvaluationNextStepCard";
+import { ReuseCausalityPanel } from "@/components/evaluation/ReuseCausalityPanel";
+import { PolicyDisclosurePanel } from "@/components/evaluation/PolicyDisclosurePanel";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -42,8 +51,18 @@ type EvaluationPayload = {
     reuse_status: string;
     metrics_quality: string;
   };
-  app_a: { display_name: string; items: ChecklistItem[]; server_verification_passed: boolean };
-  app_b: { display_name: string; items: ChecklistItem[]; server_verification_passed: boolean };
+  app_a: {
+    application_id: string;
+    display_name: string;
+    items: ChecklistItem[];
+    server_verification_passed: boolean;
+  };
+  app_b: {
+    application_id: string;
+    display_name: string;
+    items: ChecklistItem[];
+    server_verification_passed: boolean;
+  };
   partner_summary: { headline: string; bullets: string[]; evidence_status: string } | null;
   blockers: string[];
   target_policy_pack: string;
@@ -98,6 +117,32 @@ function Checklist({ title, items }: { title: string; items: ChecklistItem[] }) 
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+function CopyField({ label, value }: { label: string; value: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <div>
+      <div style={{ fontFamily: MONO, fontSize: "0.72rem", color: "var(--text-muted)" }}>{label}</div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", alignItems: "center", marginTop: "0.2rem" }}>
+        <div style={{ fontFamily: MONO, fontSize: "0.78rem", wordBreak: "break-all", flex: "1 1 12rem" }}>{value}</div>
+        <Btn size="sm" variant="ghost" onClick={() => void copy()}>
+          {copied ? "Copied" : "Copy"}
+        </Btn>
+      </div>
     </div>
   );
 }
@@ -186,13 +231,34 @@ export function TwoAppEvaluationJourney({ evaluationId }: { evaluationId: string
     && data.app_a.server_verification_passed
     && data.app_b.server_verification_passed;
 
+  const progressSteps = useMemo(() => {
+    if (!data) return [];
+    return buildEvaluationProgressSteps({
+      stage: data.stage,
+      app_a_verified: data.app_a.server_verification_passed,
+      app_b_verified: data.app_b.server_verification_passed,
+      reuse_accepted: data.reuse.status === "accepted",
+    });
+  }, [data]);
+
+  const nextStep = useMemo(() => {
+    if (!data || !activeId) return null;
+    return deriveEvaluationNextStep({
+      stage: data.stage,
+      app_a: data.app_a,
+      app_b: data.app_b,
+      reuse_status: data.reuse.status,
+      evaluation_id: activeId,
+    });
+  }, [data, activeId]);
+
   return (
     <div style={{ display: "grid", gap: "1rem", textAlign: "left" }}>
       {!activeId && (
         <ContentCard title="Start two-app evaluation">
           <p style={body}>
             Create App A and App B sandbox applications with one compatible reuse policy.
-            Evidence remains <strong style={{ color: "var(--text-primary)" }}>NOT YET OBSERVED</strong> until your team completes verification and reuse.
+            Evidence remains <strong style={{ color: "var(--text-primary)" }}>not yet observed</strong> until your team completes verification and reuse.
           </p>
           <Btn size="lg" onClick={() => void startEvaluation()} disabled={starting}>
             {starting ? "Creating sandbox pair…" : "Create two-app sandbox"}
@@ -231,11 +297,18 @@ export function TwoAppEvaluationJourney({ evaluationId }: { evaluationId: string
                 }}
               >
                 <div style={{ fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.35rem" }}>{label}</div>
-                <div style={{ fontFamily: MONO, fontSize: "0.72rem", color: "var(--text-muted)" }}>application_id</div>
-                <div style={{ fontFamily: MONO, fontSize: "0.78rem", wordBreak: "break-all" }}>{app.application_id}</div>
-                <div style={{ fontFamily: MONO, fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.45rem" }}>sandbox API key</div>
-                <div style={{ fontFamily: MONO, fontSize: "0.78rem", wordBreak: "break-all", color: apiKey ? "var(--text-primary)" : "#FBBF24" }}>
-                  {apiKey ?? "Not returned (idempotent replay). Rotate in Launchpad after sign-in."}
+                <CopyField label="application_id" value={app.application_id} />
+                <div style={{ marginTop: "0.45rem" }}>
+                  {apiKey ? (
+                    <CopyField label="sandbox API key" value={apiKey} />
+                  ) : (
+                    <div>
+                      <div style={{ fontFamily: MONO, fontSize: "0.72rem", color: "var(--text-muted)" }}>sandbox API key</div>
+                      <div style={{ fontFamily: MONO, fontSize: "0.78rem", color: "#FBBF24", marginTop: "0.2rem" }}>
+                        Not returned (idempotent replay). Rotate in Launchpad after sign-in.
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div style={{ marginTop: "0.55rem" }}>
                   <Btn href={`/developers/launchpad?app=${encodeURIComponent(app.application_id)}&view=configure`} size="sm" variant="ghost">
@@ -269,31 +342,41 @@ export function TwoAppEvaluationJourney({ evaluationId }: { evaluationId: string
 
       {data && (
         <>
+          <EvaluationProgressStrip steps={progressSteps} stageLabel={humanStageLabel(data.stage)} />
+
+          {nextStep && activeId && (
+            <EvaluationNextStepCard
+              next={nextStep}
+              evaluationId={activeId}
+              onRefresh={() => void load(activeId)}
+            />
+          )}
+
+          <ContentCard title="What each application receives">
+            <p style={{ ...body, marginBottom: "0.65rem" }}>
+              Policy pack: <strong style={{ color: "var(--text-primary)", fontFamily: MONO }}>{data.target_policy_pack.replace(/_/g, " ")}</strong>
+            </p>
+            <PolicyDisclosurePanel packId={data.target_policy_pack} />
+          </ContentCard>
+
           <ContentCard title="Evaluation status">
             <p style={body}>
-              Stage: <strong style={{ color: "var(--accent)", fontFamily: MONO }}>{data.stage.replace(/_/g, " ")}</strong>
+              Stage: <strong style={{ color: "var(--accent)" }}>{humanStageLabel(data.stage)}</strong>
               {" · "}
               Classification: <strong style={{ color: data.evidence_classification === "UNCLASSIFIED_SANDBOX" ? "#FBBF24" : "var(--text-primary)" }}>
                 {data.evidence_classification.replace(/_/g, " ")}
               </strong>
-            </p>
-            <p style={{ ...body, fontSize: "0.78rem", color: "var(--text-muted)" }}>
-              Technical evaluation: {data.technical_evaluation_status.replace(/_/g, " ")}
-              {" · "}
-              External proof eligibility: {data.external_proof_eligibility.replace(/_/g, " ")}
             </p>
             {data.evidence_classification === "UNCLASSIFIED_SANDBOX" && (
               <p style={{ ...body, fontSize: "0.76rem", color: "#FBBF24", marginTop: "0.35rem" }}>
                 Evaluator identity is unclassified. Technical success does not establish external customer proof.
               </p>
             )}
-            <p style={{ ...body, fontSize: "0.78rem", color: "var(--text-muted)" }}>
-              Commercial success event: {data.commercial_success_event.replace(/_/g, " ")}
-            </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.65rem" }}>
-              <Btn size="sm" variant="secondary" onClick={() => activeId && void load(activeId)}>Refresh status</Btn>
-              <Btn href={`/developers/launchpad`} size="sm" variant="ghost">Open Launchpad</Btn>
-              <Btn href={`/developers/integration-studio?outcome=reuse_across_app&path=verify_with_abraxas&pack=identity_liveness&source=two-app-eval`} size="sm" variant="ghost">Integration Studio</Btn>
+              <Btn size="sm" variant="secondary" onClick={() => activeId && void load(activeId)} disabled={loading}>
+                {loading ? "Refreshing…" : "Refresh status"}
+              </Btn>
+              <Btn href="/developers/launchpad" size="sm" variant="ghost">Launchpad</Btn>
             </div>
           </ContentCard>
 
@@ -303,30 +386,18 @@ export function TwoAppEvaluationJourney({ evaluationId }: { evaluationId: string
 
           <ContentCard title="Step 2 — Configure App B and reuse compatible evidence">
             <p style={{ ...body, marginBottom: "0.75rem" }}>
-              Now prove the same trusted evidence can satisfy another application without starting verification from scratch.
+              Prove the same trusted evidence can satisfy another application without starting verification from scratch.
             </p>
             <Checklist title={data.app_b.display_name} items={data.app_b.items} />
           </ContentCard>
 
           {reuseConfirmed && (
-            <ContentCard title="VERIFICATION REUSED">
-              <p style={{ ...body, fontWeight: 700, color: "#2DD4BF" }}>Reuse observed in your sandbox evaluation.</p>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 140px), 1fr))", gap: "0.55rem", marginTop: "0.75rem" }}>
-                {[
-                  ["Underlying verification events", data.reuse_metrics.underlying_verification_events ?? "—"],
-                  ["Applications with verified results", data.reuse_metrics.applications_with_verified_results],
-                  ["Additional raw KYC recollections", data.reuse_metrics.additional_raw_kyc_recollections ?? "—"],
-                  ["Reuse status", data.reuse_metrics.reuse_status],
-                ].map(([label, value]) => (
-                  <div key={String(label)} style={{ padding: "0.75rem", borderRadius: 12, border: "1px solid var(--border)", background: "var(--surface-inset)" }}>
-                    <div style={{ fontFamily: MONO, fontSize: "1rem", fontWeight: 800, color: "var(--accent)" }}>{value}</div>
-                    <div style={{ ...body, fontSize: "0.72rem", marginTop: "0.2rem" }}>{label}</div>
-                  </div>
-                ))}
-              </div>
-              <p style={{ ...body, fontSize: "0.72rem", marginTop: "0.65rem", color: "var(--text-muted)" }}>
-                Observed evaluation metrics only — not reference harness numbers.
-              </p>
+            <ContentCard title="Reuse observed">
+              <ReuseCausalityPanel
+                appAName={data.app_a.display_name}
+                appBName={data.app_b.display_name}
+                metrics={data.reuse_metrics}
+              />
             </ContentCard>
           )}
 
