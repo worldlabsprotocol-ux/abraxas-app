@@ -5,6 +5,7 @@ export {
   HOLDER_RECOVERY_STATES,
 } from "./contract";
 export { buildHolderRequestBrief, type HolderRequestBrief } from "./brief";
+export { buildHolderOpeningPresentation, type HolderOpeningPresentation } from "./opening";
 export {
   holderCopyLeaks,
   holderSafeClientMessage,

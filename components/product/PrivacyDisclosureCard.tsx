@@ -14,6 +14,9 @@ export interface PrivacyDisclosureCardProps {
   requested: Array<{ label: string; detail?: string }>;
   shared: Array<{ label: string; detail?: string }>;
   withheld: Array<{ label: string }>;
+  requestedTitle?: string;
+  sharedTitle?: string;
+  withheldTitle?: string;
   reuseMessage?: string | null;
   refreshRequired?: boolean;
   incompatible?: boolean;
@@ -27,6 +30,9 @@ export function PrivacyDisclosureCard({
   requested,
   shared,
   withheld,
+  requestedTitle = "Requested",
+  sharedTitle = "Shared",
+  withheldTitle = "Withheld",
   reuseMessage,
   refreshRequired,
   incompatible,
@@ -81,9 +87,9 @@ export function PrivacyDisclosureCard({
           gridTemplateColumns: compact ? "1fr" : "repeat(auto-fit, minmax(180px, 1fr))",
         }}
       >
-        <DisclosureColumn title="Requested" items={requested} tone="neutral" />
-        <DisclosureColumn title="Shared" items={shared} tone="share" prefix="✓" />
-        <DisclosureColumn title="Withheld" items={withheld} tone="withhold" prefix="✗" />
+        <DisclosureColumn title={requestedTitle} items={requested} tone="neutral" />
+        <DisclosureColumn title={sharedTitle} items={shared} tone="share" prefix="✓" />
+        <DisclosureColumn title={withheldTitle} items={withheld} tone="withhold" prefix="✗" />
       </div>
 
       {footer}

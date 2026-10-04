@@ -14,12 +14,12 @@ export const REUSE_METHOD_ID = "reuse_existing_proof" as const;
 export const REUSE_LABEL = "Use an existing private verification";
 
 export const REUSE_CONFIRM_POINTS = [
-  "A previous private verification may satisfy this request.",
-  "The new partner receives only this policy’s result.",
-  "The original partner and original receipt are not disclosed.",
-  "You may instead complete another qualifying method.",
-  "Selecting reuse does not issue a result.",
-  "Explicit consent is still required before a new partner-bound result is issued.",
+  "You already completed compatible verification.",
+  "Abraxas will check whether that verified information still satisfies this application’s requirements.",
+  "If it does, a new result is created for this application — not a copy of a previous result.",
+  "This application receives only the approved eligibility answer.",
+  "You may complete a new verification instead if you prefer.",
+  "Explicit consent is still required before the new result is issued.",
 ] as const;
 
 export const REUSE_CONSENT_STILL_REQUIRED =

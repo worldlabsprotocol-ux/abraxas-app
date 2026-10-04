@@ -61,6 +61,8 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
       verified_receipt_count: loaded.input.verifiedReceiptCount,
       starter_kit_evidenced: loaded.input.starterKitEvidenced,
       active_sandbox_key: loaded.input.activeSandboxKey,
+      hosted_handoff_completed_count: loaded.integration.hosted_handoff_completed_count,
+      receipt_verification_succeeded_count: loaded.integration.receipt_verification_succeeded_count,
     },
   });
 }

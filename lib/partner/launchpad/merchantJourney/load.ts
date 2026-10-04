@@ -61,6 +61,7 @@ export interface MerchantJourneyLoadResult {
   input: LaunchpadJourneyInput;
   journey: LaunchpadJourneyResolution;
   summary: Awaited<ReturnType<typeof buildApplicationPoliciesSummary>>;
+  integration: MerchantJourneyIntegrationEvidence;
 }
 
 export async function loadMerchantJourneyForApplication(input: {
@@ -93,6 +94,7 @@ export async function loadMerchantJourneyForApplication(input: {
     activityRows = [];
   }
 
+  const integration = integrationEvidenceFromEvents(events);
   const journeyInput = buildLaunchpadJourneyInput({
     application: launchpadApplicationToJourneyApplication({
       ...input.application,
@@ -100,7 +102,7 @@ export async function loadMerchantJourneyForApplication(input: {
     }),
     summary,
     activity: activityEvidenceFromRows(activityRows),
-    integration: integrationEvidenceFromEvents(events),
+    integration,
     activeSandboxKey: input.activeSandboxKey,
     productionActivated: input.productionActivated,
     productionRequestPending: input.productionRequestPending,
@@ -111,5 +113,6 @@ export async function loadMerchantJourneyForApplication(input: {
     input: journeyInput,
     journey: resolveLaunchpadJourneyState(journeyInput),
     summary,
+    integration,
   };
 }
