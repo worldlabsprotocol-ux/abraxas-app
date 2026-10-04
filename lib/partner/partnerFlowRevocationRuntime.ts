@@ -2,6 +2,7 @@
 // Pre-issuance Partner Flow revocation gate — fail closed before receipt/metering side effects.
 
 import { normalizeSuiAddress } from "@mysten/sui/utils";
+import { getActiveClaims } from "@/lib/credentials/claimsService";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { getPartnerPolicy } from "@/lib/policy/getPolicy";
 import { assertPolicyBelongsToPartner } from "@/lib/policy/assertPolicyOwnership";
@@ -66,21 +67,38 @@ export async function findRevokedPolicyClaims(input: {
   const claimTypes = requiredClaimTypesForPolicy(policy);
   const subject = normalizeSuiAddress(input.subjectId);
   const sb = requireSupabaseAdmin();
+  const activeClaims = await getActiveClaims(subject);
 
-  let query = sb
-    .from("credential_claims")
-    .select("claim_type, status")
-    .eq("subject_id", subject)
-    .in("status", ["revoked", "suspended", "under_review"]);
+  const typesToCheck = claimTypes.length > 0 ? claimTypes : null;
 
-  if (claimTypes.length > 0) {
-    query = query.in("claim_type", claimTypes);
+  const findRevokedForType = async (claimType: string | null) => {
+    let query = sb
+      .from("credential_claims")
+      .select("claim_type, status")
+      .eq("subject_id", subject)
+      .in("status", ["revoked", "suspended", "under_review"]);
+
+    if (claimType) {
+      query = query.eq("claim_type", claimType);
+    }
+
+    const { data } = await query.order("issued_at", { ascending: false }).limit(1);
+    return data?.[0] as { claim_type: string; status: string } | undefined;
+  };
+
+  if (typesToCheck) {
+    for (const claimType of typesToCheck) {
+      if (activeClaims.some(claim => claim.claim_type === claimType)) continue;
+      const row = await findRevokedForType(claimType);
+      if (row) return row;
+    }
+    return null;
   }
 
-  const { data } = await query.order("issued_at", { ascending: false }).limit(1);
-  const row = data?.[0];
+  const row = await findRevokedForType(null);
   if (!row) return null;
-  return { claim_type: row.claim_type as string, status: row.status as string };
+  if (activeClaims.some(claim => claim.claim_type === row.claim_type)) return null;
+  return row;
 }
 
 async function resolveSessionReceipt(input: {

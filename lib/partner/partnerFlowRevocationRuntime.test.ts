@@ -14,9 +14,14 @@ const findReceiptForVerificationRequest = vi.fn();
 const findSessionReceiptForSupersede = vi.fn();
 const getReceiptByDecisionId = vi.fn();
 const getReceiptById = vi.fn();
+const getActiveClaims = vi.fn();
 
 vi.mock("@/lib/supabase/admin", () => ({
   requireSupabaseAdmin: vi.fn(() => ({ from: fromMock })),
+}));
+
+vi.mock("@/lib/credentials/claimsService", () => ({
+  getActiveClaims: (...args: unknown[]) => getActiveClaims(...args),
 }));
 
 vi.mock("@/lib/policy/getPolicy", () => ({
@@ -42,6 +47,7 @@ vi.mock("@/lib/decisionReceipts/service", () => ({
 describe("partnerFlowRevocationRuntime", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    getActiveClaims.mockResolvedValue([]);
     getPartnerPolicy.mockResolvedValue({
       id: "partner-policy-v1",
       partner_id: "partner-a",
@@ -86,6 +92,53 @@ describe("partnerFlowRevocationRuntime", () => {
 
     expect(denied?.next).toBe("denied");
     expect(denied?.invalidation_reasons).toContain("access_revoked");
+  });
+
+  it("does not block wallet_control when a sibling wallet claim is active", async () => {
+    getPartnerPolicy.mockResolvedValue({
+      id: "partner-policy-v1",
+      partner_id: "partner-a",
+      version: 1,
+      rules_json: {
+        required_claims: [{ claim_type: "wallet_binding_confirmed", min_assurance: "L1" }],
+      },
+    });
+    getActiveClaims.mockResolvedValue([
+      {
+        id: "claim-sui-active",
+        subject_id: "0xabc",
+        claim_type: "wallet_binding_confirmed",
+        status: "active",
+      },
+    ]);
+    fromMock.mockImplementation((table: string) => {
+      if (table === "credential_claims") {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockResolvedValue({
+            data: [{ claim_type: "wallet_binding_confirmed", status: "revoked" }],
+            error: null,
+          }),
+        };
+      }
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+      };
+    });
+
+    const denied = await checkPartnerFlowRevocationGate({
+      subjectId: "0xabc",
+      partnerId: "partner-a",
+      policyId: "partner-policy-v1",
+      operation: "evaluate",
+    });
+
+    expect(denied).toBeNull();
   });
 
   it("blocks evaluate when policy claim is revoked", async () => {
