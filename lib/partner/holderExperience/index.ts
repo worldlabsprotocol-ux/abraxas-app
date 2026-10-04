@@ -3,6 +3,7 @@ export {
   HOLDER_GOOGLE_ACCOUNT_ONLY,
   HOLDER_PASSPORT_HREF,
   HOLDER_RECOVERY_STATES,
+  type HolderRecoveryState,
 } from "./contract";
 export { buildHolderRequestBrief, type HolderRequestBrief } from "./brief";
 export { buildHolderOpeningPresentation, type HolderOpeningPresentation } from "./opening";
