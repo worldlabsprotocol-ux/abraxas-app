@@ -2,7 +2,7 @@
 // Regression: hosted handoff vr_* tokens must not hit verify_request_id uuid column.
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ContinuationStoreUnavailableError } from "./partnerFlowContinuation";
+import { ContinuationStoreUnavailableError, ContinuationUniqueConflictError } from "./partnerFlowContinuation";
 
 const OPAQUE = "vr_81cfe12715d8c338";
 const UUID = "00000000-0000-4000-8000-0000000000aa";
@@ -119,6 +119,35 @@ describe("createSupabaseContinuationStore opaque verify_request routing", () => 
     await store.peekByVerifyRequestId(UUID);
 
     expect(chain.eq).toHaveBeenCalledWith("verify_request_id", UUID);
+  });
+
+  it("surfaces opaque unique conflicts as ContinuationUniqueConflictError", async () => {
+    const chain = {
+      upsert: vi.fn().mockResolvedValue({
+        error: {
+          code: "23505",
+          message: 'duplicate key value violates unique constraint "idx_partner_flow_continuations_opaque_verify_request"',
+        },
+      }),
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn(),
+      is: vi.fn().mockReturnThis(),
+      update: vi.fn().mockReturnThis(),
+    };
+    mockFrom.mockReturnValue(chain);
+
+    const { createSupabaseContinuationStore } = await import("./partnerFlowContinuationStore");
+    const store = createSupabaseContinuationStore();
+    await expect(store.save({
+      jti: "jti-new",
+      partnerId: "ref-wc-postrev-5ffe",
+      policyId: "ref-wc-postrev-5ffe-wallet_control-v1",
+      returnUrl: "https://example.com/callback",
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 900_000).toISOString(),
+      verifyRequestId: OPAQUE,
+    })).rejects.toBeInstanceOf(ContinuationUniqueConflictError);
   });
 
   it("maps postgres uuid rejection to continuation_store_unavailable", async () => {

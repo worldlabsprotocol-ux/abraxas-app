@@ -7,9 +7,11 @@ import {
   continuationVerifyRequestLookupColumn,
   readContinuationVerifyRequestId,
 } from "@/lib/partner/partnerFlowContinuationIdentifiers";
+import { isPostgresUniqueViolation } from "@/lib/partner/partnerFlowContinuationPostgresErrors";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import {
   ContinuationStoreUnavailableError,
+  ContinuationUniqueConflictError,
   type PartnerFlowContinuationRecord,
   type PartnerFlowContinuationStore,
 } from "@/lib/partner/partnerFlowContinuation";
@@ -19,7 +21,11 @@ function mapRow(row: Record<string, unknown>): PartnerFlowContinuationRecord {
     jti: String(row.jti ?? ""),
     partnerId: String(row.partner_id ?? ""),
     policyId: String(row.policy_id ?? ""),
-    policyVersion: typeof row.policy_version === "number" ? row.policy_version : undefined,
+    policyVersion: typeof row.policy_version === "number"
+      ? row.policy_version
+      : typeof row.policy_version === "string" && row.policy_version.trim()
+        ? Number.parseInt(row.policy_version, 10)
+        : undefined,
     returnUrl: String(row.return_url ?? ""),
     permission: typeof row.permission === "string" ? row.permission : undefined,
     permissionVersion: typeof row.permission_version === "string" ? row.permission_version : undefined,
@@ -65,6 +71,13 @@ export function createSupabaseContinuationStore(): PartnerFlowContinuationStore 
         expires_at: record.expiresAt,
         created_at: record.createdAt,
       });
+      if (
+        isPostgresUniqueViolation(error)
+        && verifyColumns.opaque_verify_request
+        && record.verifyRequestId
+      ) {
+        throw new ContinuationUniqueConflictError(record.verifyRequestId);
+      }
       assertStoreAvailable(error);
     },
     async peek(jti) {
