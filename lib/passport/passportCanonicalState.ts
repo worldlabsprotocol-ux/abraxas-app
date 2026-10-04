@@ -14,8 +14,12 @@ export interface WalletBindingSummary {
   id: string;
   chain: string;
   address: string;
+  addressShort?: string;
   status: string;
+  controlStatus?: string;
+  freshnessLabel?: string;
   addedAt: string;
+  expiresAt?: string | null;
 }
 
 export interface PartnerShareSummary {
@@ -110,8 +114,12 @@ export function buildPassportCanonicalState(input: {
     id: string;
     chain: string;
     wallet_address: string;
+    address_short?: string;
     binding_status: string;
     verified_at: string;
+    expires_at?: string | null;
+    control_status?: string;
+    freshness_label?: string;
   }>;
   shares?: Array<{
     id: string;
@@ -132,8 +140,12 @@ export function buildPassportCanonicalState(input: {
     id: w.id,
     chain: w.chain,
     address: w.wallet_address,
+    addressShort: w.address_short,
     status: w.binding_status,
+    controlStatus: w.control_status,
+    freshnessLabel: w.freshness_label,
     addedAt: w.verified_at,
+    expiresAt: w.expires_at ?? null,
   }));
   const activeWallets = bindings.filter(w => w.status === "active");
 

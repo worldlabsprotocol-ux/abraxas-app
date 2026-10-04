@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
-import { listSubjectWallets } from "@/lib/walletAuthority/service";
+import { listHolderWalletViews } from "@/lib/walletAuthority/service";
 
 export async function GET(req: NextRequest) {
   const session = await requireBrowserSession(req);
@@ -10,16 +10,22 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: session.error }, { status: session.status });
   }
 
-  const wallets = await listSubjectWallets(session.session.suiAddress);
+  const wallets = await listHolderWalletViews(session.session.suiAddress);
   return NextResponse.json({
     wallets: wallets.map(w => ({
       id: w.id,
       chain: w.chain,
-      chain_id: w.chain_id,
-      wallet_address: w.wallet_address,
-      binding_status: w.binding_status,
-      binding_method: w.binding_method,
-      verified_at: w.verified_at,
+      chain_label: w.chainLabel,
+      network: w.network,
+      wallet_address: w.address,
+      address_short: w.addressShort,
+      binding_status: w.bindingStatus,
+      binding_method: w.controlMethod,
+      verified_at: w.verifiedAt,
+      expires_at: w.expiresAt,
+      control_status: w.controlStatus,
+      control_status_label: w.controlStatusLabel,
+      freshness_label: w.freshnessLabel,
     })),
   });
 }
