@@ -75,6 +75,9 @@ function mockFetchSequence(handlers: Array<(url: string, init?: RequestInit) => 
     if (url.includes("/api/auth/browser-session") && init?.method === "DELETE") {
       return new Response(JSON.stringify({ ok: true }), { status: 200 });
     }
+    if (url.includes("/api/wallet-authority/wallets")) {
+      return new Response(JSON.stringify({ wallets: [] }), { status: 200 });
+    }
     const handler = handlers[Math.min(call, handlers.length - 1)];
     call += 1;
     return handler(url, init);
@@ -127,6 +130,9 @@ describe("PassportCustomerView browser session gating", () => {
       if (url.includes("/api/auth/browser-session")) {
         return new Response(JSON.stringify({ ok: true }), { status: 200 });
       }
+      if (url.includes("/api/wallet-authority/wallets")) {
+        return new Response(JSON.stringify({ wallets: [] }), { status: 200 });
+      }
       if (url.includes("/api/wallet-authority/repair")) {
         return new Response(JSON.stringify({
           ok: false,
@@ -165,6 +171,9 @@ describe("PassportCustomerView browser session gating", () => {
           return new Response(JSON.stringify({ ok: false }), { status: 401 });
         }
         return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+      if (url.includes("/api/wallet-authority/wallets")) {
+        return new Response(JSON.stringify({ wallets: [] }), { status: 200 });
       }
       if (url.includes("/api/wallet-authority/repair")) {
         return new Response(JSON.stringify({

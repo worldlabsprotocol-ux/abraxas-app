@@ -21,6 +21,7 @@ import { PassportRecentActivity } from "@/components/passport/PassportRecentActi
 import { PassportRequestInbox } from "@/components/passport/PassportRequestInbox";
 import { PassportInstallCard } from "@/components/passport/PassportInstallCard";
 import { PassportConnectionsCard } from "@/components/passport/PassportConnectionsCard";
+import { PassportWalletsSection } from "@/components/passport/PassportWalletsSection";
 import { AbraxasIdentityCapture } from "@/components/passport/AbraxasIdentityCapture";
 import {
   PASSPORT_CRYPTO_DISCLOSURE,
@@ -301,6 +302,10 @@ export function PassportCustomerView({
         <div style={{ marginBottom: "1rem" }}>
           <PartnerReturnCta handoff={handoff} label="Return to service →" />
         </div>
+      )}
+
+      {walletDone && browserSessionReady && (
+        <PassportWalletsSection onChanged={onRefresh} />
       )}
 
       {walletDone && (

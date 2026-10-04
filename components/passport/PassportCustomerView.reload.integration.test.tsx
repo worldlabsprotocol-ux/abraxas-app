@@ -60,6 +60,9 @@ describe("PassportCustomerView reload secured state", () => {
         }
         return new Response(JSON.stringify({ ok: true }), { status: 200 });
       }
+      if (url.includes("/api/wallet-authority/wallets")) {
+        return new Response(JSON.stringify({ wallets: [] }), { status: 200 });
+      }
       if (url.includes("/api/wallet-authority/repair")) {
         return new Response(JSON.stringify({
           ok: true,

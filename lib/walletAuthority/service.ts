@@ -6,9 +6,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { appendAuditEvent } from "@/lib/verification/audit";
 import {
+  getActiveWalletControlClaims,
   revokeWalletControlClaimForBinding,
   upsertWalletControlClaim,
 } from "@/lib/credentials/claimsService";
+import { buildHolderWalletViews, type HolderWalletView } from "@/lib/walletControl/holderWalletView";
 import { WalletPersistenceError } from "@/lib/credentials/walletPersistenceErrors";
 import { buildWalletControlClaim } from "@/lib/walletControl/claim";
 import { walletControlEvidenceRef } from "@/lib/walletControl/contract";
@@ -85,6 +87,12 @@ async function assertWalletNotActiveOnOtherSubject(
   if (existing && (existing.subject_id as string) !== subject) {
     throw new Error("Wallet already bound to another Passport subject");
   }
+}
+
+export async function listHolderWalletViews(subjectId: string): Promise<HolderWalletView[]> {
+  const bindings = await listSubjectWallets(subjectId);
+  const claims = await getActiveWalletControlClaims(subjectId);
+  return buildHolderWalletViews({ bindings, claims });
 }
 
 export async function listSubjectWallets(subjectId: string): Promise<WalletBindingRecord[]> {
