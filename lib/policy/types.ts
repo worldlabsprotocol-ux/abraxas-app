@@ -94,6 +94,8 @@ export interface PolicyEvaluationResult {
   reason_codes: string[];
   valid_until: string | null;
   missing_claims: string[];
+  /** Claim ids that satisfied each required claim type at evaluation time. */
+  matched_claim_ids?: Record<string, string>;
   /** Present when evaluation is sandbox-only — not usable for payments, investments, or transfers. */
   decision_context?: "sandbox_only" | "production";
   production_usable?: boolean;

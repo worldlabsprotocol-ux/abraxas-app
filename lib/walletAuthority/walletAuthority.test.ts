@@ -100,7 +100,8 @@ vi.mock("@/lib/supabase/admin", () => ({
 }));
 
 vi.mock("@/lib/credentials/claimsService", () => ({
-  upsertClaims: vi.fn(async () => undefined),
+  upsertWalletControlClaim: vi.fn(async () => "claim-test-id"),
+  revokeWalletControlClaimForBinding: vi.fn(async () => true),
 }));
 
 vi.mock("@/lib/verification/audit", () => ({

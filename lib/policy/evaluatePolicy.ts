@@ -2,6 +2,8 @@
 // Evaluate partner policy against a subject's active claims with issuer trust enforcement.
 
 import type { CredentialClaimRecord, AssuranceLevel } from "@/lib/credentials/claimSchema";
+import { WALLET_CONTROL_CLAIM_TYPE } from "@/lib/walletControl/contract";
+import { sanitizeWalletControlClaimForPartner } from "@/lib/walletControl/claim";
 import { isSandboxClaim } from "@/lib/credentials/sandboxClaims";
 import { resolveClaimStatusAtRead } from "@/lib/trust/credentialStatusRegistry";
 import { PRODUCT_ELIGIBILITY_OVER_21 } from "@/lib/idv/ageEligibility";
@@ -227,12 +229,8 @@ export function evaluatePolicyRules(
   }
 
   const required = resolveStoredRequiredClaims(rules);
-  const claimsByType = new Map<string, CredentialClaimRecord>();
-  for (const c of claims) {
-    if (!claimsByType.has(c.claim_type)) claimsByType.set(c.claim_type, c);
-  }
-
   const disclosed: Record<string, unknown> = {};
+  const matchedClaimIds: Record<string, string> = {};
   const missing: string[] = [];
   const reasonCodes: string[] = [];
 
@@ -249,13 +247,15 @@ export function evaluatePolicyRules(
   }
 
   for (const rule of required) {
-    const claim = claimsByType.get(rule.claim_type);
-    if (!claimMeetsRule(claim, rule, policySandboxOnly, context)) {
+    const claim = findBestClaimForRule(claims, rule, policySandboxOnly, context);
+    if (!claim) {
+      const fallback = claims.find(c => c.claim_type === rule.claim_type);
       missing.push(rule.claim_type);
-      reasonCodes.push(trustFailureReason(claim, rule, context));
+      reasonCodes.push(trustFailureReason(fallback, rule, context));
       continue;
     }
-    disclosed[rule.claim_type] = sanitizeClaimForPartner(claim!);
+    matchedClaimIds[rule.claim_type] = claim.id;
+    disclosed[rule.claim_type] = sanitizeClaimForPartner(claim);
   }
 
   if (missing.length > 0) {
@@ -281,14 +281,36 @@ export function evaluatePolicyRules(
     decision: "approved",
     claims: disclosed,
     reason_codes: [],
-    valid_until: computeValidUntil(claims, required),
+    valid_until: computeValidUntil(
+      required
+        .map(rule => claims.find(c => c.id === matchedClaimIds[rule.claim_type]))
+        .filter((c): c is CredentialClaimRecord => Boolean(c)),
+      required,
+    ),
     missing_claims: [],
+    matched_claim_ids: matchedClaimIds,
     decision_context: decisionContext,
     production_usable: productionUsable,
   };
 }
 
+function findBestClaimForRule(
+  claims: CredentialClaimRecord[],
+  rule: RequiredClaimRule,
+  policySandboxOnly: boolean,
+  context?: PolicyEvaluationContext,
+): CredentialClaimRecord | undefined {
+  const candidates = claims
+    .filter(c => c.claim_type === rule.claim_type)
+    .sort((a, b) => new Date(b.issued_at).getTime() - new Date(a.issued_at).getTime());
+
+  return candidates.find(claim => claimMeetsRule(claim, rule, policySandboxOnly, context));
+}
+
 function sanitizeClaimForPartner(claim: CredentialClaimRecord): Record<string, unknown> {
+  if (claim.claim_type === WALLET_CONTROL_CLAIM_TYPE) {
+    return sanitizeWalletControlClaimForPartner(claim);
+  }
   return {
     claim_type: claim.claim_type,
     assurance_level: claim.assurance_level,

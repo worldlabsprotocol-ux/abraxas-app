@@ -427,6 +427,7 @@ export async function issuePartnerSessionReceipt(input: {
       const claimRefs = buildEvaluatedClaimRefs(
         await getActiveClaims(subject),
         claimTypesFromEvaluation(evaluation.claims),
+        evaluation.matched_claim_ids,
       );
 
       const decisionContext = await resolveReceiptDecisionContext({

@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticateV1Partner } from "@/lib/verification/v1PartnerAuth";
 import { getDecisionStatusForPartner } from "@/lib/verification/decisionAccess";
 import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
+import { sanitizePartnerDecisionClaims } from "@/lib/walletControl/partnerClaims";
 
 export async function GET(
   req: NextRequest,
@@ -49,7 +50,10 @@ export async function GET(
     decision_id: decision.id,
     decision: decision.decision,
     status: decision.status,
-    claims: decision.claims_json,
+    claims: sanitizePartnerDecisionClaims(
+      decision.claims_json,
+      decision.policy_id,
+    ),
     valid_until: decision.valid_until,
     reason_codes: decision.reason_codes,
     decided_at: decision.decided_at,
