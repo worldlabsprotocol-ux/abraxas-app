@@ -42,12 +42,12 @@ export function TwoAppEvaluationCallbackClient() {
   const journeyHref = twoAppEvalJourneyHref(evaluationId);
 
   const outcomeLabel = view.holder_outcome === "approved"
-    ? "Holder flow returned with a receipt hint"
+    ? "Verification step completed"
     : view.holder_outcome === "denied"
-      ? "Holder flow returned denied"
+      ? "Verification not approved"
       : view.holder_outcome === "pending_review"
-        ? "Holder flow pending review"
-        : "Holder returned to callback URL";
+        ? "Verification pending review"
+        : "Returned from verification";
 
   return (
     <div style={{ display: "grid", gap: "1rem", textAlign: "left" }}>
@@ -69,7 +69,7 @@ export function TwoAppEvaluationCallbackClient() {
             }}
           >
             <div style={{ fontFamily: MONO, fontSize: "0.72rem", color: "var(--text-muted)", marginBottom: "0.25rem" }}>
-              Receipt hint (not authorization)
+              Result reference (not authorization)
             </div>
             <div style={{ fontFamily: MONO, fontSize: "0.82rem", wordBreak: "break-all", color: "var(--text-primary)" }}>
               {view.hints.receipt_id}
@@ -77,13 +77,13 @@ export function TwoAppEvaluationCallbackClient() {
           </div>
         )}
         <p style={{ ...body, fontSize: "0.78rem", marginTop: "0.75rem", color: "var(--text-muted)" }}>
-          Next: run server-side verification with your sandbox API key —{" "}
+          Next on your server: verify the signed result with your sandbox API key —{" "}
           <code style={{ fontFamily: MONO }}>GET /api/receipts/{"{receipt_id}"}/public</code>
-          {" "}and Integration Kit narrow-result verification. The evaluation checklist updates when verification events are recorded.
+          {" "}— before granting access. The evaluation checklist updates when your server records verification.
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
           <Btn href={journeyHref} size="sm">
-            Return to evaluation checklist
+            Continue evaluation checklist
           </Btn>
           <Btn href="/developers/launchpad" size="sm" variant="secondary">
             Open Launchpad
