@@ -58,6 +58,7 @@ import {
   buildHolderRequestBrief,
   holderSafeClientMessage,
   resolveHolderRecovery,
+  type HolderRecoveryState,
 } from "@/lib/partner/holderExperience";
 import { HolderOpeningBrief } from "@/components/partner/HolderOpeningBrief";
 import {
@@ -92,6 +93,7 @@ function PartnerContinueInner() {
   const [showIdFallback, setShowIdFallback] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [contextLoading, setContextLoading] = useState(true);
+  const [contextResolveFailure, setContextResolveFailure] = useState<HolderRecoveryState | null>(null);
   const [flowContext, setFlowContext] = useState<ResolvedPartnerContinueContext | null>(null);
   const [boundReturnUrl, setBoundReturnUrl] = useState("");
   const [methodSelected, setMethodSelected] = useState(false);
@@ -119,10 +121,65 @@ function PartnerContinueInner() {
 
       if (!verifyRequestId) {
         if (!cancelled) {
+          setContextResolveFailure(null);
           setFlowContext(resolvePartnerContinueContext(urlContext));
           setContextLoading(false);
         }
         return;
+      }
+
+      if (verifyRequestId.startsWith("vr_")) {
+        try {
+          const res = await fetch(
+            `/api/v1/hosted-handoff/continue-context?verify_request=${encodeURIComponent(verifyRequestId)}`,
+            { credentials: "include" },
+          );
+          if (res.ok) {
+            const preview = await res.json() as {
+              partner_id?: string;
+              policy_id?: string;
+              purpose?: string | null;
+              return_url?: string;
+            };
+            if (!cancelled) {
+              setContextResolveFailure(null);
+              if (typeof preview.return_url === "string") {
+                setBoundReturnUrl(preview.return_url);
+              }
+              setFlowContext(resolvePartnerContinueContext({
+                ...urlContext,
+                returnUrl: preview.return_url ?? urlContext.returnUrl,
+              }, {
+                partnerId: preview.partner_id ?? "",
+                policyId: preview.policy_id ?? "",
+                purpose: preview.purpose ?? null,
+              }));
+              setContextLoading(false);
+            }
+            return;
+          }
+          const body = await res.json().catch(() => ({})) as { code?: string };
+          if (!cancelled) {
+            const code = body.code ?? "missing";
+            setContextResolveFailure(
+              code === "expired"
+                ? "expired"
+                : code === "completed" || code === "cancelled"
+                  ? "cancelled"
+                  : "missing",
+            );
+            setFlowContext(null);
+            setContextLoading(false);
+          }
+          return;
+        } catch {
+          if (!cancelled) {
+            setContextResolveFailure("missing");
+            setFlowContext(null);
+            setContextLoading(false);
+          }
+          return;
+        }
       }
 
       try {
@@ -162,6 +219,7 @@ function PartnerContinueInner() {
             // Continue with preview when the binding cookie is absent (evaluate-created flows).
           }
           if (!cancelled) {
+            setContextResolveFailure(null);
             if (bindingReturnUrl) setBoundReturnUrl(bindingReturnUrl);
             setFlowContext(resolvePartnerContinueContext({
               ...urlContext,
@@ -180,6 +238,7 @@ function PartnerContinueInner() {
       }
 
       if (!cancelled) {
+        setContextResolveFailure(null);
         setFlowContext(resolvePartnerContinueContext(urlContext));
         setContextLoading(false);
       }
@@ -448,8 +507,8 @@ function PartnerContinueInner() {
       })
     : null;
 
-  if (!authLoading && !contextLoading && continueContextIncomplete) {
-    const recovery = resolveHolderRecovery("missing", partnerName, partnerHomeUrl);
+  if (!authLoading && !contextLoading && (contextResolveFailure || continueContextIncomplete)) {
+    const recovery = resolveHolderRecovery(contextResolveFailure ?? "missing", partnerName, partnerHomeUrl);
     return (
       <PartnerJourneyLayout
         partnerName={partnerName}

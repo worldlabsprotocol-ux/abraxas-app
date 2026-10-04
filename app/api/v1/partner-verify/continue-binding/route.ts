@@ -13,6 +13,8 @@ import {
   PARTNER_CONTINUE_BINDING_COOKIE,
   verifyPartnerContinueBindingCookie,
 } from "@/lib/partner/partnerVerifyResumeCookie";
+import { resolveHostedHandoffForContinue } from "@/lib/partner/hostedHandoff/resolveForContinue";
+import { isOpaqueVerifyRequest } from "@/lib/partner/productionIntegration/requestCorrelation";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +40,13 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const stored = await createSupabaseContinuationStore().peekByVerifyRequestId(verifyRequest);
+    let stored = await createSupabaseContinuationStore().peekByVerifyRequestId(verifyRequest);
+    if (!stored && isOpaqueVerifyRequest(verifyRequest)) {
+      const resolved = await resolveHostedHandoffForContinue(verifyRequest);
+      if (resolved.ok) {
+        stored = resolved.continuation;
+      }
+    }
     if (!stored) {
       return NextResponse.json({ ok: false, code: "missing" }, { status: 404 });
     }
