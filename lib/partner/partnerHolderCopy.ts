@@ -44,14 +44,14 @@ const COPY: Record<PartnerHolderState, Omit<PartnerHolderPresentation, "state">>
     privacy_note: PRIVACY_NOTES.auth_not_age,
   },
   checking_existing_proof: {
-    title: "Checking for existing proof",
-    message: "Looking for an active Abraxas age credential that satisfies this partner's policy…",
+    title: "Checking for existing verification",
+    message: "Looking for verified information that may satisfy this application's requirements…",
     action_label: null,
   },
   existing_proof_accepted: {
-    title: "Use your existing Abraxas age proof",
-    message: "You already have active age verification. Reuse it to share only the eligibility result with this partner. No new evidence is required.",
-    action_label: "Use my existing Abraxas age proof",
+    title: "Use your existing verification",
+    message: "You already completed compatible verification. Abraxas will check whether that verified information still satisfies this application's requirements. If it does, a new result is created for this application — not a copy sent from another app.",
+    action_label: "Use existing verification",
     privacy_note: PRIVACY_NOTES.partner_minimal,
   },
   choose_private_method: {

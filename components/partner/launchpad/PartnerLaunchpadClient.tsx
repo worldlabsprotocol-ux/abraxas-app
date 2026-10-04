@@ -40,6 +40,8 @@ import { PartnerIntegrationHealthPanel } from "@/components/partner/launchpad/Pa
 import { PartnerIntegrationPerformancePanel } from "@/components/partner/launchpad/PartnerIntegrationPerformancePanel";
 import { PartnerPilotProgressPanel } from "@/components/partner/launchpad/PartnerPilotProgressPanel";
 import { PartnerApplicationOverview } from "@/components/partner/launchpad/PartnerApplicationOverview";
+import { PartnerApplicationPoliciesPanel } from "@/components/partner/launchpad/PartnerApplicationPoliciesPanel";
+import { humanIntegrationEventLabel } from "@/lib/partner/launchpad/firstSuccessUx";
 import { PartnerBindingProductionPanel } from "@/components/partner/launchpad/PartnerBindingProductionPanel";
 import { EnvironmentBadge } from "@/components/product/EnvironmentBadge";
 import { ModeCCommandRail } from "@/components/product/ModeCCommandRail";
@@ -157,6 +159,8 @@ export function PartnerLaunchpadClient({
     verified_receipt_count: number;
     starter_kit_evidenced: boolean;
     active_sandbox_key: boolean;
+    hosted_handoff_completed_count?: number;
+    receipt_verification_succeeded_count?: number;
   } | null>(null);
 
   const [applicationName, setApplicationName] = useState("");
@@ -216,7 +220,7 @@ export function PartnerLaunchpadClient({
           : null;
         const requestedStep = STEPS.find((item) => item.id === view)?.id
           ?? (view ? mapLegacyLaunchpadStep(view) : undefined);
-        setStep(requestedStep ?? (data.workspace.applications.length > 0 ? "connect" : "verify"));
+        setStep(requestedStep ?? "verify");
       }
     }
   }, [activeAppId]);
@@ -289,6 +293,8 @@ export function PartnerLaunchpadClient({
         verified_receipt_count: number;
         starter_kit_evidenced: boolean;
         active_sandbox_key: boolean;
+        hosted_handoff_completed_count?: number;
+        receipt_verification_succeeded_count?: number;
       };
     };
     if (res.ok && data.journey) {
@@ -299,6 +305,15 @@ export function PartnerLaunchpadClient({
   }, [activeApp]);
 
   useEffect(() => { void refreshMerchantJourney(); }, [refreshMerchantJourney]);
+
+  useEffect(() => {
+    if (!merchantJourney) return;
+    const view = typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("view")
+      : null;
+    if (view) return;
+    setStep(merchantJourney.currentStage as WizardStep);
+  }, [merchantJourney]);
 
   useEffect(() => {
     if (applicationName && !partnerId) {
@@ -577,44 +592,43 @@ export function PartnerLaunchpadClient({
         </ContentCard>
       )}
 
-      {activeApp && journey && (
+      {activeApp && journey && journeyEvidence && (
         <PartnerApplicationOverview
           application={activeApp}
           journey={journey}
           policySummary={policySummary}
+          evidence={journeyEvidence}
           productionActivated={productionActivated}
           onNavigate={(s) => navigateToStage(mapLegacyLaunchpadStep(s) as WizardStep)}
         />
+      )}
+
+      {activeApp && journey && !journeyEvidence && (
+        <ContentCard title={activeApp.display_name || activeApp.application_name}>
+          <p style={bodyText}>Loading your integration progress…</p>
+        </ContentCard>
       )}
 
       <div style={{ marginBottom: "0.85rem" }}>
         <p style={{ ...bodyText, fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
           {currentStepMeta?.description ?? "Guided merchant integration"}
         </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }} role="list" aria-label="Launchpad progress">
-          {STEPS.map((s, index) => {
-            const stageMeta = journey?.stages.find((stage) => stage.id === s.id);
-            const navigable = stageMeta?.navigable ?? true;
-            const isBlocked = stageMeta?.status === "blocked";
-            const isComplete = stageMeta?.status === "complete";
-            const isCurrent = stageMeta?.status === "current" || step === s.id;
-            return (
+        {!journey && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }} role="list" aria-label="Launchpad progress">
+            {STEPS.map((s, index) => (
               <button
                 key={s.id}
                 type="button"
                 role="listitem"
-                disabled={Boolean(journey && !navigable)}
-                aria-disabled={journey && !navigable ? true : undefined}
                 onClick={() => navigateToStage(s.id)}
-                style={stepPillStyle(isCurrent, isComplete, isBlocked, !navigable)}
-                aria-current={isCurrent ? "step" : undefined}
-                title={stageMeta?.detail}
+                style={stepPillStyle(step === s.id, false, false, false)}
+                aria-current={step === s.id ? "step" : undefined}
               >
-                {isComplete ? "✓ " : `${index + 1}. `}{s.label}
+                {`${index + 1}. `}{s.label}
               </button>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {!authenticated && !workspace?.applications.length ? (
@@ -771,7 +785,9 @@ export function PartnerLaunchpadClient({
               </p>
               {revealedKey ? (
                 <div style={{ marginBottom: "0.75rem" }}>
-                  <p style={bodyText}>Copy your sandbox API key now. It will not be shown again.</p>
+                  <p style={bodyText}>
+                    <strong>This is a secret.</strong> Copy your sandbox API key now and store it server-side only. It will not be shown again. Never put API keys in browser code or client bundles.
+                  </p>
                   <pre style={codeBlockStyle}>{revealedKey}</pre>
                   <Btn size="sm" onClick={() => copyText(revealedKey)}>Copy API key</Btn>
                   {copyFeedback && <span style={{ marginLeft: 8, fontFamily: FONT, fontSize: "0.72rem" }} role="status">{copyFeedback}</span>}
@@ -952,6 +968,14 @@ export function PartnerLaunchpadClient({
           </Btn>
           {showAdvancedOptions && (
             <div style={{ marginTop: "0.85rem", display: "grid", gap: "0.85rem" }}>
+              {journey?.testPassed && (
+                <PartnerApplicationPoliciesPanel
+                  applicationId={activeApp.id}
+                  websiteConnected={journey.connectComplete}
+                  integrationFilesReady={journey.integrationFilesReady}
+                  onNavigate={(s) => navigateToStage(mapLegacyLaunchpadStep(s) as WizardStep)}
+                />
+              )}
               <div id="policy-proposal">
                 <PolicyProposalForm />
               </div>
@@ -1005,7 +1029,7 @@ export function PartnerLaunchpadClient({
                   <ul style={{ margin: 0, paddingLeft: "1.1rem", fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)" }}>
                     {activity.slice(0, 12).map((event) => (
                       <li key={event.id} style={{ marginBottom: 4 }}>
-                        {event.event_type.replace(/_/g, " ")} · {event.public_code ?? "—"} · {new Date(event.created_at).toLocaleString()}
+                        {humanIntegrationEventLabel(event.event_type)} · {event.public_code ?? "—"} · {new Date(event.created_at).toLocaleString()}
                       </li>
                     ))}
                   </ul>

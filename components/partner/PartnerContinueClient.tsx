@@ -54,10 +54,12 @@ import {
 import { sanitizePartnerContinueBrowserSearch } from "@/lib/partner/partnerFlowContinuation";
 import { HolderRecoveryCard } from "@/components/partner/HolderRecoveryCard";
 import {
+  buildHolderOpeningPresentation,
   buildHolderRequestBrief,
   holderSafeClientMessage,
   resolveHolderRecovery,
 } from "@/lib/partner/holderExperience";
+import { HolderOpeningBrief } from "@/components/partner/HolderOpeningBrief";
 import {
   GOOD_TROUBLE_PURCHASE_PATH_STEPS,
   VerificationPath,
@@ -437,6 +439,14 @@ function PartnerContinueInner() {
     policyId,
     purpose: purposeParam,
   });
+  const holderOpening = policyId
+    ? buildHolderOpeningPresentation({
+        partnerName,
+        policyId,
+        brief: holderBrief,
+        purpose: purposeParam,
+      })
+    : null;
 
   if (!authLoading && !contextLoading && continueContextIncomplete) {
     return (
@@ -540,15 +550,25 @@ function PartnerContinueInner() {
   return (
     <PartnerJourneyLayout
       partnerName={partnerName}
-      intro={directHandoff ? "" : resolvePartnerContinuationIntro(partnerId, { policyId, purpose: purposeParam })}
-      statusMessage={statusMessage}
+      intro={holderOpening ? "" : (directHandoff ? "" : resolvePartnerContinuationIntro(partnerId, { policyId, purpose: purposeParam }))}
+      statusMessage={holderOpening ? "" : statusMessage}
       partnerHomeUrl={simplifiedPurchase ? null : partnerHomeUrl}
       partnerReturnLabel={returnLabel}
-      title={directHandoff ? undefined : (simplifiedPurchase ? GOOD_TROUBLE_PURCHASE_TITLE : undefined)}
-      hideStatus={simplifiedPurchase || directHandoff || undefined}
-      hideHeader={directHandoff}
-      brief={directHandoff || simplifiedPurchase ? null : holderBrief}
+      title={
+        directHandoff
+          ? undefined
+          : simplifiedPurchase
+            ? GOOD_TROUBLE_PURCHASE_TITLE
+            : holderOpening
+              ? undefined
+              : undefined
+      }
+      hideStatus={Boolean(holderOpening) || simplifiedPurchase || directHandoff || undefined}
+      hideHeader={directHandoff || Boolean(holderOpening)}
     >
+      {!directHandoff && !simplifiedPurchase && holderOpening && (
+        <HolderOpeningBrief opening={holderOpening} />
+      )}
       {authLoading || contextLoading || (hostedBootstrapEligible && hostedBootstrap.bootstrapping) ? (
         <ProtocolLoadingState
           kind="preparing_request"
