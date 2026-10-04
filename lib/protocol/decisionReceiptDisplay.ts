@@ -253,6 +253,13 @@ const STATUS_LABELS: Record<DecisionReceiptVisualStatus, string> = {
   unknown: "Unable to verify",
 };
 
+/** Holder-facing validity label for receipt surfaces. */
+export function humanizeReceiptCurrentValidity(currentlyValid: boolean | undefined): string {
+  if (currentlyValid === true) return "Current";
+  if (currentlyValid === false) return "No longer valid";
+  return "Still valid";
+}
+
 export function formatReceiptTimestamp(value: string | null | undefined): string | null {
   if (!value) return null;
   const parsed = new Date(value);

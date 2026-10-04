@@ -11,6 +11,7 @@ import { HOLDER_GOOGLE_ACCOUNT_ONLY } from "./contract";
 import { HOLDER_APPROVED_METHOD } from "@/lib/verification/issuerTrust/contract";
 import { applyDisclosureProfile, resolveDisclosureProfile } from "@/lib/privacy/selectiveDisclosure";
 import { GENERIC_MINIMAL_PROFILE } from "@/lib/privacy/selectiveDisclosure/profiles";
+import { humanizeHolderResult } from "./presentation";
 
 export interface HolderRequestBrief {
   requestor: string;
@@ -50,13 +51,14 @@ export function buildHolderRequestBrief(input: {
   const purpose = input.userExplanation?.trim()
     || pack?.holder_explanation
     || (input.purpose ? `Confirm the requested ${input.purpose.replace(/_/g, " ")} result.` : "Confirm the selected policy result.");
+  const disclosed = pack?.disclosed_result ?? null;
   const result = input.disclosedResult?.trim()
-    || pack?.partner_receives
-    || "A yes/no policy result. Not your documents or date of birth.";
+    ? humanizeHolderResult(input.disclosedResult.trim())
+    : disclosed
+      ? humanizeHolderResult(disclosed)
+      : "Eligibility confirmed";
   const withheld = profileWithheld(pack);
-  const resultCategory = pack?.disclosed_result
-    ? `Policy result: ${pack.disclosed_result}`
-    : "eligibility confirmed";
+  const resultCategory = disclosed ?? "eligibility confirmed";
 
   const brief: HolderRequestBrief = {
     requestor,

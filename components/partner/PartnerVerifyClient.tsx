@@ -66,11 +66,15 @@ function stripPartnerAuthReadyFromUrl(): boolean {
 interface PartnerVerifyClientProps {
   previewPhase?: PartnerVerifyPhase | null;
   previewSignInConfigured?: boolean;
+  previewEnvironment?: string | null;
+  previewPartnerName?: string | null;
 }
 
 export function PartnerVerifyClient({
   previewPhase = null,
   previewSignInConfigured = false,
+  previewEnvironment = null,
+  previewPartnerName = null,
 }: PartnerVerifyClientProps) {
   const searchParams = useSearchParams();
   const { suiAddress, isLoading: authLoading, signInWithGoogle, refreshSession } = useSuiAuth();
@@ -165,7 +169,9 @@ export function PartnerVerifyClient({
     },
   });
 
-  const partnerName = launchpadResolution.resolved?.displayName ?? resolvePartnerDisplayName(relyingPartyId);
+  const partnerName = previewPartnerName
+    ?? launchpadResolution.resolved?.displayName
+    ?? resolvePartnerDisplayName(relyingPartyId);
   const partnerReturnLabel = resolvePartnerReturnLabel(relyingPartyId);
   const partnerHomeUrl = resolvePartnerHomeUrl(relyingPartyId);
   const policyRequirement = launchpadResolution.resolved?.userExplanation
@@ -509,7 +515,7 @@ export function PartnerVerifyClient({
       invalidLinkMessage={invalidLinkMessage}
       partnerReturnLabel={partnerReturnLabel}
       partnerHomeUrl={partnerHomeUrl}
-      environment={launchpadResolution.resolved?.environment ?? null}
+      environment={previewEnvironment ?? launchpadResolution.resolved?.environment ?? null}
       disclosedResult={launchpadResolution.resolved?.disclosedResult ?? null}
       hostedBootstrapEligible={hostedBootstrapEligible}
       onOptionalSignIn={() => { void handleSignIn(); }}
