@@ -212,6 +212,7 @@ export async function grantCieloVerifiedGuestConsent(
   const evaluatedClaimRefs = buildEvaluatedClaimRefs(
     claims,
     claimTypes.length ? claimTypes : requestedClaims,
+    evaluation.matched_claim_ids,
   );
 
   const receipt = await issueReceiptForDecision({

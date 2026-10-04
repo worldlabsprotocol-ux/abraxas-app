@@ -118,6 +118,8 @@ export interface IssueDecisionReceiptInput {
   decisionResult: DecisionReceiptResult;
   reasonCodes: string[];
   evaluatedClaimRefs: EvaluatedClaimRef[];
+  /** Opaque wallet_bindings.id used for evidence dependency — never an address. */
+  walletBindingRef?: string | null;
   evaluatedAt?: string;
   expiresAt?: string | null;
   decisionContext?: DecisionReceiptContext;

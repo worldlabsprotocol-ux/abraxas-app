@@ -284,6 +284,7 @@ export async function completeAuthorizationConsent(input: {
   const evaluatedClaimRefs = buildEvaluatedClaimRefs(
     claims,
     claimTypes.length ? claimTypes : (policy.rules_json.required_claims ?? []).map(r => r.claim_type),
+    evaluation.matched_claim_ids,
   );
 
   let receiptId: string | null = null;

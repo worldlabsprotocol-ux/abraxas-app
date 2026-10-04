@@ -372,6 +372,7 @@ export async function consentAndDecide(input: {
     : buildEvaluatedClaimRefs(
       claims,
       claimTypes.length ? claimTypes : Object.keys(evaluation.claims),
+      evaluation.matched_claim_ids,
     );
 
   const receipt = await issueReceiptForDecision({

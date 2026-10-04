@@ -8,6 +8,7 @@ import type {
 } from "@/lib/decisionReceipts/types";
 import { verifyRecordSignatureWithRegistry } from "@/lib/decisionReceipts/verificationKeyLifecycle";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
+import { inferPolicyPackFromPolicyId } from "@/lib/partner/launchpad/policyPacks";
 import { assertCustodySafePayload } from "@/lib/custody/guardrails";
 import { pickAllowedKeys } from "@/lib/privacy/selectiveDisclosure";
 import { SHARED_SURFACE_FIELDS } from "@/lib/privacy/selectiveDisclosure/contract";
@@ -63,11 +64,15 @@ export function toPartnerView(
   record: DecisionReceiptRecord,
   consentScopeAllowed: boolean,
 ): DecisionReceiptPartnerView {
+  const pack = inferPolicyPackFromPolicyId(record.policy_id);
+  const withholdWalletBindingRef = pack?.id === "wallet_control";
   return {
     ...toPublicView(record),
     decision_id: record.verification_decision_id,
     consent_receipt_id: record.consent_receipt_id,
-    wallet_binding_ref: consentScopeAllowed ? record.wallet_binding_ref : null,
+    wallet_binding_ref: consentScopeAllowed && !withholdWalletBindingRef
+      ? record.wallet_binding_ref
+      : null,
     consent_scope_allowed: consentScopeAllowed,
   };
 }
@@ -75,7 +80,16 @@ export function toPartnerView(
 /** Ensure public output contains no raw PII field names */
 export function assertNoPiiInPublicView(view: DecisionReceiptPublicView): void {
   const json = JSON.stringify(view);
-  const forbidden = ["subject_id", "sui_address", "claim_value", "email", "passport", "date_of_birth"];
+  const forbidden = [
+    "subject_id",
+    "sui_address",
+    "claim_value",
+    "email",
+    "passport",
+    "date_of_birth",
+    "wallet_address",
+    "wallet_binding_id",
+  ];
   for (const term of forbidden) {
     if (json.includes(`"${term}"`)) {
       throw new Error(`Public receipt view must not contain ${term}`);

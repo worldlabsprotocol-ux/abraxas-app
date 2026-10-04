@@ -9,6 +9,7 @@ import { buildCanonicalPayload } from "@/lib/decisionReceipts/canonical";
 import { signReceiptPayload } from "@/lib/decisionReceipts/signing";
 import { resolveIssuanceSigningKey } from "@/lib/decisionReceipts/verificationKeyLifecycle";
 import { recordReceiptClaimDependencies } from "@/lib/decisionReceipts/dependencies";
+import { parseWalletControlEvidenceRef } from "@/lib/walletControl/contract";
 import { resolveReceiptSubjectPseudonym } from "@/lib/decisionReceipts/receiptSubjectPseudonym";
 import { toPartnerView, toPublicView } from "@/lib/decisionReceipts/views";
 import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver";
@@ -54,17 +55,23 @@ function mapRow(row: Record<string, unknown>): DecisionReceiptRecord {
   };
 }
 
-async function resolveWalletBindingRef(subjectId: string): Promise<string | null> {
+async function resolveWalletBindingRefFromClaimRefs(
+  claimRefs: IssueDecisionReceiptInput["evaluatedClaimRefs"],
+): Promise<string | null> {
+  const walletClaimRef = claimRefs.find(ref => ref.claim_type === "wallet_binding_confirmed");
+  if (!walletClaimRef) return null;
+
   const sb = requireSupabaseAdmin();
   const { data } = await sb
-    .from("wallet_bindings")
-    .select("id")
-    .eq("subject_id", subjectId)
-    .is("revoked_at", null)
-    .order("verified_at", { ascending: false })
-    .limit(1)
+    .from("credential_claims")
+    .select("evidence_reference")
+    .eq("id", walletClaimRef.claim_id)
     .maybeSingle();
-  return (data?.id as string | undefined) ?? null;
+
+  const bindingId = parseWalletControlEvidenceRef(
+    (data?.evidence_reference as string | null) ?? null,
+  );
+  return bindingId;
 }
 
 export async function getReceiptByDecisionId(
@@ -118,7 +125,8 @@ export async function issueDecisionReceipt(
 
   const receiptId = generateReceiptId();
   const evaluatedAt = input.evaluatedAt ?? new Date().toISOString();
-  const walletBindingRef = await resolveWalletBindingRef(input.subjectId);
+  const walletBindingRef = input.walletBindingRef
+    ?? await resolveWalletBindingRefFromClaimRefs(input.evaluatedClaimRefs);
   const pseudonymResult = await resolveReceiptSubjectPseudonym({
     claimsSubjectKey: input.subjectId,
     partnerId: input.partnerId,
@@ -300,6 +308,7 @@ export async function issueReceiptForDecision(input: {
   reasonCodes: string[];
   claimsJson: Record<string, unknown>;
   evaluatedClaimRefs: IssueDecisionReceiptInput["evaluatedClaimRefs"];
+  walletBindingRef?: string | null;
   expiresAt?: string | null;
   decisionContext?: DecisionReceiptContext;
   anchorReference?: string | null;
@@ -316,6 +325,7 @@ export async function issueReceiptForDecision(input: {
       decisionResult: input.decisionResult,
       reasonCodes: input.reasonCodes,
       evaluatedClaimRefs: input.evaluatedClaimRefs,
+      walletBindingRef: input.walletBindingRef ?? null,
       expiresAt: input.expiresAt,
       decisionContext: input.decisionContext,
       idempotencyKey: input.decisionId,
