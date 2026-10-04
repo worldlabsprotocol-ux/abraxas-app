@@ -449,15 +449,17 @@ function PartnerContinueInner() {
     : null;
 
   if (!authLoading && !contextLoading && continueContextIncomplete) {
+    const recovery = resolveHolderRecovery("missing", partnerName, partnerHomeUrl);
     return (
       <PartnerJourneyLayout
         partnerName={partnerName}
-        intro="This Partner Flow link cannot continue."
+        intro=""
         statusMessage=""
         hideStatus
-        brief={holderBrief}
+        hideHeader
+        brief={null}
       >
-        <HolderRecoveryCard recovery={resolveHolderRecovery("missing", partnerName, partnerHomeUrl)} />
+        <HolderRecoveryCard recovery={recovery} />
       </PartnerJourneyLayout>
     );
   }

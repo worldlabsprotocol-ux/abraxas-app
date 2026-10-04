@@ -12,7 +12,7 @@ export function BuildIntegrateCinematicDemo({ compact = false }: { compact?: boo
   const { containerRef, act, actCount, actProgress } = useCinematicTimer(ACT_MS);
 
   const captions = [
-    "One API key. No KYC stack to rebuild.",
+    "Sandbox API key on your server. No KYC stack to rebuild.",
     "POST verify. decision + proof_id in the response.",
     "Webhooks fire when asset state changes. Proofs refresh automatically.",
   ];
@@ -41,9 +41,9 @@ export function BuildIntegrateCinematicDemo({ compact = false }: { compact?: boo
                 DEVELOPER PATH
               </div>
               <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: CONCEPT_TYPE.mono, lineHeight: 1.8, color: "rgba(255,255,255,0.7)" }}>
-                <span style={{ color: ACCENT.emerald }}>→</span> npm install @abraxas/verify-client<br />
-                <span style={{ color: actProgress > 0.4 ? ACCENT.emerald : "rgba(255,255,255,0.3)" }}>→</span> abx_live_ API key<br />
-                <span style={{ color: actProgress > 0.7 ? ACCENT.emerald : "rgba(255,255,255,0.3)" }}>→</span> embed in your app
+                <span style={{ color: ACCENT.emerald }}>→</span> abx_test_* sandbox key (server only)<br />
+                <span style={{ color: actProgress > 0.4 ? ACCENT.emerald : "rgba(255,255,255,0.3)" }}>→</span> create verification request<br />
+                <span style={{ color: actProgress > 0.7 ? ACCENT.emerald : "rgba(255,255,255,0.3)" }}>→</span> verify signed result server-side
               </div>
             </PremiumGlassCard>
           </motion.div>

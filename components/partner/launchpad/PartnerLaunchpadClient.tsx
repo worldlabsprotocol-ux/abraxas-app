@@ -25,6 +25,7 @@ import {
   shouldRenderPolicyChangeControlUi,
 } from "@/lib/partner/launchpad/policyChangeControlUi";
 import { selectLaunchpadResumeAppId } from "@/lib/partner/activationPath";
+import { launchpadErrorFromResponse } from "@/lib/partner/launchpad/publicErrorMessages";
 import { PartnerSandboxTestConsolePanel } from "@/components/partner/launchpad/PartnerSandboxTestConsolePanel";
 import { PartnerGoLiveReadinessPanel } from "@/components/partner/launchpad/PartnerGoLiveReadinessPanel";
 import { PartnerIntegrationHandoffPanel } from "@/components/partner/launchpad/PartnerIntegrationHandoffPanel";
@@ -378,7 +379,7 @@ export function PartnerLaunchpadClient({
     });
     const data = await res.json();
     if (!res.ok) {
-      setError(data.error ?? data.code ?? "Provisioning failed");
+      setError(launchpadErrorFromResponse(data, "Provisioning failed"));
       return;
     }
     if (data.api_key) setRevealedKey(data.api_key);

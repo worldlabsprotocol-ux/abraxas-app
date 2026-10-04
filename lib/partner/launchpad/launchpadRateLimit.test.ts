@@ -52,6 +52,22 @@ describe("launchpad rate limit", () => {
     expect(info.upstash_config).toBeDefined();
   });
 
+  it("returns safe public copy from enforceLaunchpadRateLimit", async () => {
+    const { enforceLaunchpadRateLimit } = await import("@/lib/partner/launchpad/apiHelpers");
+    const req = new NextRequest("http://localhost/api/launchpad/applications", {
+      headers: { "x-forwarded-for": "203.0.113.99" },
+    });
+    expect(await enforceLaunchpadRateLimit(req, "/api/launchpad/applications", 1)).toBeNull();
+    const blocked = await enforceLaunchpadRateLimit(req, "/api/launchpad/applications", 1);
+    expect(blocked).not.toBeNull();
+    expect(blocked!.status).toBe(429);
+    const body = await blocked!.json() as { code: string; error: string; retry_after_sec?: number };
+    expect(body.code).toBe("launchpad_rate_limited");
+    expect(body.error).toMatch(/Too many sandbox requests/i);
+    expect(body.error).not.toBe("launchpad_rate_limited");
+    expect(typeof body.retry_after_sec).toBe("number");
+  });
+
   it("fails closed in production when Upstash is not configured", async () => {
     const env = { ...process.env };
     process.env.VERCEL = "1";

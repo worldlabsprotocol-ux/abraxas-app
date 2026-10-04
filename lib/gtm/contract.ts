@@ -13,6 +13,8 @@ export const GTM_PRIMARY_COMMERCIAL_MESSAGE =
 
 export const GTM_PRIMARY_CTA_LABEL = "See reuse across two apps" as const;
 export const GTM_PRIMARY_CTA_HREF = "/proof" as const;
+export const GTM_HANDS_ON_REUSE_HREF = "/evaluation/two-app" as const;
+export const GTM_HANDS_ON_REUSE_CTA_LABEL = "Try reuse across two apps" as const;
 
 export const GTM_SECONDARY_CTA_LABEL = "Build in sandbox" as const;
 export const GTM_SECONDARY_CTA_HREF =
