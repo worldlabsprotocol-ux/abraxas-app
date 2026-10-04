@@ -6,6 +6,7 @@ import { describe, expect, it, beforeEach } from "vitest";
 import {
   GTM_ONE_SENTENCE_DESCRIPTION,
   GTM_PRIMARY_COMMERCIAL_MESSAGE,
+  GTM_HANDS_ON_REUSE_HREF,
   GTM_PRIMARY_CTA_HREF,
   GTM_PRIMARY_CTA_LABEL,
 } from "./contract";
@@ -134,6 +135,20 @@ describe("gtm alignment", () => {
         new URLSearchParams("industry=fintech_digital_assets&app_count_band=2_3&has_kyc_vendor=yes&primary_pain=repeat_verification"),
       ),
     ).toEqual(expect.objectContaining(sampleDiscovery));
+  });
+
+  it("shows sandbox-first developer cinematic without npm or live-key first-success cues", () => {
+    const cinematic = read("components/home/cinematic/BuildIntegrateCinematicDemo.tsx");
+    expect(cinematic).toMatch(/abx_test_\*/i);
+    expect(cinematic).not.toMatch(/npm install @abraxas\/verify-client/);
+    expect(cinematic).not.toMatch(/abx_live_/);
+  });
+
+  it("routes proof primary reuse CTA to two-app evaluation", () => {
+    const proofPage = read("components/gtm/GtmProofPackContent.tsx");
+    expect(proofPage).toContain('href={GTM_HANDS_ON_REUSE_HREF}');
+    expect(proofPage).toContain("{GTM_HANDS_ON_REUSE_CTA_LABEL}");
+    expect(proofPage).toContain(GTM_HANDS_ON_REUSE_HREF);
   });
 
   it("routes multi-app fintech with KYC vendor to institutional reuse proof", () => {

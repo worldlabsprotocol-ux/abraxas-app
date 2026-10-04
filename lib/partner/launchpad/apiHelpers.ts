@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requirePartnerConsoleSession } from "@/lib/partner/launchpad/partnerConsoleSession";
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
+import { launchpadPublicErrorBody } from "@/lib/partner/launchpad/publicErrorMessages";
 import { checkLaunchpadRateLimit, checkLaunchpadTenantRateLimit } from "@/lib/partner/launchpad/rateLimit";
 
 export function launchpadJson(
@@ -17,9 +18,14 @@ export function launchpadError(
   code: string,
   status: number,
   message?: string,
+  retryAfterSec?: number,
 ): NextResponse {
   return NextResponse.json(
-    { ok: false, code, error: message ?? code },
+    launchpadPublicErrorBody(
+      code,
+      typeof retryAfterSec === "number" ? { retryAfterSec } : undefined,
+      message,
+    ),
     { status },
   );
 }
@@ -46,7 +52,7 @@ export async function enforceLaunchpadRateLimit(
 ): Promise<NextResponse | null> {
   const result = await checkLaunchpadRateLimit(req, route, limit);
   if (!result.allowed) {
-    return launchpadError("launchpad_rate_limited", 429);
+    return launchpadError("launchpad_rate_limited", 429, undefined, result.retryAfterSec);
   }
   return null;
 }
@@ -60,8 +66,11 @@ export async function enforceLaunchpadTenantRateLimit(
 ): Promise<NextResponse | null> {
   const ip = await checkLaunchpadRateLimit(req, route, limit);
   const tenant = await checkLaunchpadTenantRateLimit(req, route, tenantId, limit);
-  if (!ip.allowed || !tenant.allowed) {
-    return launchpadError(code, 429);
+  if (!ip.allowed) {
+    return launchpadError(code, 429, undefined, ip.retryAfterSec);
+  }
+  if (!tenant.allowed) {
+    return launchpadError(code, 429, undefined, tenant.retryAfterSec);
   }
   return null;
 }

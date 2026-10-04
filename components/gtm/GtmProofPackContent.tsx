@@ -8,7 +8,11 @@ import { Btn } from "@/components/redesign/ui";
 import { ContentCard } from "@/components/redesign/RedesignContent";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 import type { GtmDiscoveryAnswers, ProofClassification } from "@/lib/gtm/contract";
-import { GTM_PRIMARY_CTA_LABEL } from "@/lib/gtm/contract";
+import {
+  GTM_HANDS_ON_REUSE_CTA_LABEL,
+  GTM_HANDS_ON_REUSE_HREF,
+  GTM_PRIMARY_CTA_LABEL,
+} from "@/lib/gtm/contract";
 import { routeFromDiscovery } from "@/lib/gtm/routing";
 import {
   GOOD_TROUBLE_PROOF_ROLE,
@@ -59,7 +63,7 @@ export function GtmProofPackContent({ discovery, onRestartDiscovery }: GtmProofP
   useEffect(() => {
     void recordGtmClientEvent("proof_pack_viewed", {
       proof_pack: routing.proof_pack,
-      recommended_path: routing.recommended_studio_href,
+      recommended_path: GTM_HANDS_ON_REUSE_HREF,
       environment: "reference",
       ...(discovery
         ? {
@@ -82,7 +86,7 @@ export function GtmProofPackContent({ discovery, onRestartDiscovery }: GtmProofP
           </p>
         )}
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem", marginTop: "0.85rem" }}>
-          <Btn href={routing.recommended_studio_href} size="lg">{GTM_PRIMARY_CTA_LABEL.replace("See ", "Try ")}</Btn>
+          <Btn href={GTM_HANDS_ON_REUSE_HREF} size="lg">{GTM_HANDS_ON_REUSE_CTA_LABEL}</Btn>
           <Btn href="/integrate" variant="secondary" size="lg">Talk through your stack</Btn>
           {onRestartDiscovery ? (
             <Btn variant="ghost" size="sm" onClick={onRestartDiscovery}>

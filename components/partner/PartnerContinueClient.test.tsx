@@ -390,6 +390,7 @@ describe("PartnerContinueClient holder recovery", () => {
       expect(screen.getByText(/could not be found/i)).toBeTruthy();
     });
     expect(container.textContent).not.toMatch(/evil\.example|dr_secret|receipt_id|SQLSTATE/i);
+    expect(container.textContent).not.toMatch(/SHARED RESULT CATEGORY|WITHHELD|SHARED ✓/i);
   });
 
   it("bootstraps canonical Good Trouble purchase continue flow without mandatory Google", async () => {

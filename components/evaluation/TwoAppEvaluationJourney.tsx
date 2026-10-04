@@ -16,6 +16,7 @@ import { EvaluationProgressStrip } from "@/components/evaluation/EvaluationProgr
 import { EvaluationNextStepCard } from "@/components/evaluation/EvaluationNextStepCard";
 import { ReuseCausalityPanel } from "@/components/evaluation/ReuseCausalityPanel";
 import { PolicyDisclosurePanel } from "@/components/evaluation/PolicyDisclosurePanel";
+import { launchpadErrorFromResponse } from "@/lib/partner/launchpad/publicErrorMessages";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -207,9 +208,11 @@ export function TwoAppEvaluationJourney({ evaluationId }: { evaluationId: string
         app_b?: StartCredentials["app_b"];
         api_keys?: StartCredentials["api_keys"];
         error?: string;
+        code?: string;
+        retry_after_sec?: number;
       };
       if (!res.ok || !json.evaluation_id || !json.partner_id || !json.app_a || !json.app_b) {
-        throw new Error(json.error ?? "start_failed");
+        throw new Error(launchpadErrorFromResponse(json, "Could not start the two-app evaluation."));
       }
       setStartCredentials({
         evaluation_id: json.evaluation_id,
@@ -269,6 +272,13 @@ export function TwoAppEvaluationJourney({ evaluationId }: { evaluationId: string
       {error && (
         <ContentCard title="Something needs attention">
           <p style={{ ...body, color: "#FBBF24" }}>{error}</p>
+          {error.includes("Too many sandbox") ? (
+            <p style={{ ...body, marginTop: "0.65rem", fontSize: "0.78rem" }}>
+              Existing sandbox applications and evaluations are unchanged. Paste a sandbox API key in{" "}
+              <Link href="/developers/launchpad" style={{ color: "var(--accent)", fontWeight: 700 }}>Launchpad</Link>
+              {" "}to resume work, or reopen a saved evaluation link after the limit clears.
+            </p>
+          ) : null}
         </ContentCard>
       )}
 
