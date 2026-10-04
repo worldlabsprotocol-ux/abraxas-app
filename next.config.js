@@ -63,14 +63,15 @@ const nextConfig = {
         ...config.resolve.fallback,
         fs: false, os: false, path: false, crypto: false, stream: false,
       };
+      // Client bundles only — server API routes (EVM SIWE bind, gate validation) need viem.
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        "@walletconnect/solana-adapter": false,
+        "@reown/appkit": false,
+        "viem": false,
+        "wagmi": false,
+      };
     }
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      "@walletconnect/solana-adapter": false,
-      "@reown/appkit": false,
-      "viem": false,
-      "wagmi": false,
-    };
     return config;
   },
 };
