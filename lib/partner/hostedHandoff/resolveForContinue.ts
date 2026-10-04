@@ -4,7 +4,8 @@
 import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
 import { opaqueCallbackRef } from "@/lib/partner/launchpad/partnerFlowRequest/view";
 import {
-  continuationIsUsable,
+  assertContinuationMatchesStored,
+  ContinuationUniqueConflictError,
   createPartnerFlowContinuationRecord,
   type PartnerFlowContinuationRecord,
 } from "@/lib/partner/partnerFlowContinuation";
@@ -61,22 +62,49 @@ function handoffUnavailableStatus(record: HostedHandoffRecord): HostedHandoffCon
   return "unavailable";
 }
 
+function hostedHandoffContinuationExpired(record: PartnerFlowContinuationRecord, now = Date.now()): boolean {
+  const expires = Date.parse(record.expiresAt);
+  return !Number.isFinite(expires) || expires <= now;
+}
+
+function reuseHostedHandoffContinuation(input: {
+  existing: PartnerFlowContinuationRecord | null;
+  handoff: HostedHandoffRecord;
+  returnUrl: string;
+}): PartnerFlowContinuationRecord | null {
+  const { existing } = input;
+  if (!existing) return null;
+  if (existing.consumedAt) {
+    throw Object.assign(new Error("continuation_consumed"), { code: "unavailable" });
+  }
+  if (hostedHandoffContinuationExpired(existing)) {
+    throw Object.assign(new Error("continuation_expired"), { code: "unavailable" });
+  }
+  const matched = assertContinuationMatchesStored({
+    stored: existing,
+    partnerId: input.handoff.partner_id,
+    policyId: input.handoff.policy_id,
+    returnUrl: input.returnUrl,
+    policyVersion: input.handoff.policy_version,
+  });
+  if (!matched.ok) {
+    throw Object.assign(new Error("continuation_binding_conflict"), { code: "unavailable" });
+  }
+  return existing;
+}
+
 async function ensureHostedHandoffContinuation(input: {
   handoff: HostedHandoffRecord;
   returnUrl: string;
   appSlug: string | null;
 }): Promise<PartnerFlowContinuationRecord> {
   const store = createSupabaseContinuationStore();
-  const existing = await store.peekByVerifyRequestId(input.handoff.verify_request);
-  if (continuationIsUsable(existing)) {
-    if (
-      existing.partnerId === input.handoff.partner_id
-      && existing.policyId === input.handoff.policy_id
-      && existing.returnUrl === input.returnUrl
-    ) {
-      return existing;
-    }
-  }
+  const reused = reuseHostedHandoffContinuation({
+    existing: await store.peekByVerifyRequestId(input.handoff.verify_request),
+    handoff: input.handoff,
+    returnUrl: input.returnUrl,
+  });
+  if (reused) return reused;
 
   const created = createPartnerFlowContinuationRecord({
     partnerId: input.handoff.partner_id,
@@ -95,8 +123,20 @@ async function ensureHostedHandoffContinuation(input: {
     expiresAt: input.handoff.expires_at,
     verifyRequestId: input.handoff.verify_request,
   };
-  await store.save(continuation);
-  return continuation;
+  try {
+    await store.save(continuation);
+    return continuation;
+  } catch (error) {
+    if (error instanceof ContinuationUniqueConflictError) {
+      const winner = reuseHostedHandoffContinuation({
+        existing: await store.peekByVerifyRequestId(input.handoff.verify_request),
+        handoff: input.handoff,
+        returnUrl: input.returnUrl,
+      });
+      if (winner) return winner;
+    }
+    throw error;
+  }
 }
 
 /** Resolve a server-bound hosted handoff for holder /partner/continue. Does not consume. */

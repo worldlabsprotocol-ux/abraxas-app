@@ -150,6 +150,30 @@ describe("resolveHostedHandoffForContinue", () => {
     expect(resolved.ok).toBe(true);
     expect(save).not.toHaveBeenCalled();
   });
+
+  it("recovers from opaque unique conflict by returning the existing continuation", async () => {
+    const created = await createHostedHandoff({ application: app, stored, runtime: "universal_https" });
+    const winner = {
+      jti: "jti-winner",
+      partnerId: "acme",
+      policyId: app.policy_id!,
+      returnUrl: "http://localhost:3000/callback",
+      purpose: stored.purpose,
+      createdAt: new Date().toISOString(),
+      expiresAt: created.expires_at,
+      verifyRequestId: created.verify_request,
+    };
+    peekByVerifyRequestId
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(winner);
+    const { ContinuationUniqueConflictError } = await import("@/lib/partner/partnerFlowContinuation");
+    save.mockRejectedValueOnce(new ContinuationUniqueConflictError(created.verify_request));
+
+    const resolved = await resolveHostedHandoffForContinue(created.verify_request);
+    expect(resolved.ok).toBe(true);
+    if (!resolved.ok) return;
+    expect(resolved.continuation.jti).toBe("jti-winner");
+  });
 });
 
 describe("resolveHandoffCallbackUrl", () => {

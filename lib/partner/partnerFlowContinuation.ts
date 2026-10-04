@@ -55,6 +55,15 @@ export class ContinuationStoreUnavailableError extends Error {
   }
 }
 
+export class ContinuationUniqueConflictError extends Error {
+  readonly code = "continuation_unique_conflict" as const;
+
+  constructor(readonly verifyRequestId: string) {
+    super("continuation_unique_conflict");
+    this.name = "ContinuationUniqueConflictError";
+  }
+}
+
 export type PartnerFlowContinuationStore = {
   save(record: PartnerFlowContinuationRecord): Promise<void>;
   peek(jti: string): Promise<PartnerFlowContinuationRecord | null>;
