@@ -1,6 +1,12 @@
 // FILE: lib/partner/partnerFlowContinuationStore.ts
 // Database-backed continuations only. Missing 091 objects fail closed.
 
+import {
+  assertAttachableVerificationRequestId,
+  continuationVerifyRequestColumns,
+  continuationVerifyRequestLookupColumn,
+  readContinuationVerifyRequestId,
+} from "@/lib/partner/partnerFlowContinuationIdentifiers";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import {
   ContinuationStoreUnavailableError,
@@ -22,7 +28,7 @@ function mapRow(row: Record<string, unknown>): PartnerFlowContinuationRecord {
     createdAt: String(row.created_at ?? ""),
     expiresAt: String(row.expires_at ?? ""),
     consumedAt: row.consumed_at ? String(row.consumed_at) : null,
-    verifyRequestId: row.verify_request_id ? String(row.verify_request_id) : null,
+    verifyRequestId: readContinuationVerifyRequestId(row),
   };
 }
 
@@ -42,6 +48,7 @@ export function createSupabaseContinuationStore(): PartnerFlowContinuationStore 
   return {
     async save(record) {
       const sb = adminClient();
+      const verifyColumns = continuationVerifyRequestColumns(record.verifyRequestId);
       const { error } = await sb.from("partner_flow_continuations").upsert({
         jti: record.jti,
         partner_id: record.partnerId,
@@ -52,7 +59,8 @@ export function createSupabaseContinuationStore(): PartnerFlowContinuationStore 
         permission_version: record.permissionVersion ?? null,
         purpose: record.purpose ?? null,
         app_slug: record.appSlug ?? null,
-        verify_request_id: record.verifyRequestId ?? null,
+        verify_request_id: verifyColumns.verify_request_id,
+        opaque_verify_request: verifyColumns.opaque_verify_request,
         consumed_at: record.consumedAt ?? null,
         expires_at: record.expiresAt,
         created_at: record.createdAt,
@@ -71,10 +79,11 @@ export function createSupabaseContinuationStore(): PartnerFlowContinuationStore 
     },
     async peekByVerifyRequestId(verifyRequestId) {
       const sb = adminClient();
+      const lookupColumn = continuationVerifyRequestLookupColumn(verifyRequestId);
       const { data, error } = await sb
         .from("partner_flow_continuations")
         .select("*")
-        .eq("verify_request_id", verifyRequestId)
+        .eq(lookupColumn, verifyRequestId)
         .maybeSingle();
       assertStoreAvailable(error);
       return data ? mapRow(data as Record<string, unknown>) : null;
@@ -103,10 +112,14 @@ export function createSupabaseContinuationStore(): PartnerFlowContinuationStore 
       return mapRow(existing as Record<string, unknown>);
     },
     async attachVerifyRequestId(jti, verifyRequestId) {
+      assertAttachableVerificationRequestId(verifyRequestId);
       const sb = adminClient();
       const { error } = await sb
         .from("partner_flow_continuations")
-        .update({ verify_request_id: verifyRequestId })
+        .update({
+          verify_request_id: verifyRequestId,
+          opaque_verify_request: null,
+        })
         .eq("jti", jti);
       assertStoreAvailable(error);
     },

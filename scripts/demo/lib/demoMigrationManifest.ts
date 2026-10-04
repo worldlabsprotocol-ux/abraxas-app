@@ -431,6 +431,16 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
       "Partner Flow OAuth continuations. Idempotent; DEMO already has the table. Required on Production for OAuth resume. Not Circle. Do not apply 089/090 to Production.",
   },
   {
+    file: "130_partner_flow_continuations_opaque_verify_request.sql",
+    tier: "required",
+    creates: [],
+    alters: ["partner_flow_continuations.opaque_verify_request"],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Adds opaque_verify_request text for hosted handoff vr_* tokens. verify_request_id uuid remains verification_requests.id only. Apply before or with code that routes opaque tokens to the new column.",
+  },
+  {
     file: "092_wallet_standard_action_bindings.sql",
     tier: "required",
     creates: [

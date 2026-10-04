@@ -65,4 +65,52 @@ describe("GET /api/v1/hosted-handoff/continue-context", () => {
     ));
     expect(res.status).toBe(404);
   });
+
+  it("maps store failures to 503 unavailable without leaking database errors", async () => {
+    resolveHostedHandoffForContinue.mockResolvedValue({ ok: false, code: "unavailable" });
+    const res = await GET(new NextRequest(
+      "http://localhost/api/v1/hosted-handoff/continue-context?verify_request=vr_81cfe12715d8c338",
+    ));
+    expect(res.status).toBe(503);
+    const json = await res.json() as { code?: string; message?: string };
+    expect(json.code).toBe("unavailable");
+    expect(json.message).toBeUndefined();
+  });
+
+  it("maps completed hosted handoffs to 409", async () => {
+    resolveHostedHandoffForContinue.mockResolvedValue({ ok: false, code: "completed" });
+    const res = await GET(new NextRequest(
+      "http://localhost/api/v1/hosted-handoff/continue-context?verify_request=vr_81cfe12715d8c338",
+    ));
+    expect(res.status).toBe(409);
+  });
+
+  it("ignores query return_url override attempts", async () => {
+    resolveHostedHandoffForContinue.mockResolvedValue({
+      ok: true,
+      preview: {
+        verify_request: "vr_81cfe12715d8c338",
+        handoff_ref: "hpf_a6a02874a1bdef71",
+        partner_id: "ref-wc-postrev-5ffe",
+        policy_id: "ref-wc-postrev-5ffe-wallet_control-v1",
+        policy_version: 1,
+        purpose: "Confirm wallet control",
+        application_id: "8d30e3b1-3409-4bef-8d04-66335f38e96e",
+        public_slug: "ref-wc-postrev-proof",
+        display_label: "Proof app",
+        environment: "sandbox",
+        action: "wallet_bound_action",
+        result_family: "wallet_control_confirmed",
+        expires_at: "2099-01-01T00:00:00.000Z",
+        return_url: "https://example.com/callback",
+      },
+      continuation: { jti: "jti-1" },
+    });
+
+    const res = await GET(new NextRequest(
+      "http://localhost/api/v1/hosted-handoff/continue-context?verify_request=vr_81cfe12715d8c338&return_url=https://evil.example/steal",
+    ));
+    const json = await res.json() as { return_url?: string };
+    expect(json.return_url).toBe("https://example.com/callback");
+  });
 });

@@ -61,6 +61,8 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+const PRODUCTION_OPAQUE = "vr_81cfe12715d8c338";
+
 describe("resolveHostedHandoffForContinue", () => {
   it("resolves a freshly created handoff by verify_request", async () => {
     peekByVerifyRequestId.mockResolvedValue(null);
@@ -73,6 +75,27 @@ describe("resolveHostedHandoffForContinue", () => {
     expect(resolved.preview.return_url).toBe("http://localhost:3000/callback");
     expect(resolved.continuation.verifyRequestId).toBe(created.verify_request);
     expect(save).toHaveBeenCalled();
+  });
+
+  it("persists continuation for production-shaped opaque vr_* without consuming handoff", async () => {
+    peekByVerifyRequestId.mockResolvedValue(null);
+    const created = await createHostedHandoff({ application: app, stored, runtime: "universal_https" });
+    putHandoffForTests({ ...created, verify_request: PRODUCTION_OPAQUE });
+
+    const first = await resolveHostedHandoffForContinue(PRODUCTION_OPAQUE);
+    const second = await resolveHostedHandoffForContinue(PRODUCTION_OPAQUE);
+    const handoff = await loadHandoffByVerifyRequest(PRODUCTION_OPAQUE);
+
+    expect(first.ok).toBe(true);
+    expect(second.ok).toBe(true);
+    expect(handoff?.status).toBe("created");
+    expect(handoff?.consumed_at).toBeNull();
+    expect(save).toHaveBeenCalledWith(expect.objectContaining({
+      verifyRequestId: PRODUCTION_OPAQUE,
+      partnerId: "acme",
+      policyId: app.policy_id,
+      returnUrl: "http://localhost:3000/callback",
+    }));
   });
 
   it("resolves from durable lookup after clearing process memory", async () => {
