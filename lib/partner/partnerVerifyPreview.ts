@@ -16,6 +16,13 @@ const ALLOWED_PREVIEW_PHASES = new Set<PartnerVerifyPhase>([
   "denied",
   "error",
   "invalid_link",
+  "return_failed",
+  "expired",
+  "cancelled",
+  "invalid_binding",
+  "method_not_qualified",
+  "provider_unavailable",
+  "approved",
 ]);
 
 export function isPartnerVerifyPreviewControlsEnabled(): boolean {
@@ -42,4 +49,24 @@ export function resolvePartnerVerifyPreviewSignInConfigured(
   const raw = searchParams.preview_signin_configured;
   const value = Array.isArray(raw) ? raw[0] : raw;
   return value === "1";
+}
+
+export function resolvePartnerVerifyPreviewEnvironment(
+  searchParams: Record<string, string | string[] | undefined>,
+  enabled: boolean,
+): string | null {
+  if (!enabled) return null;
+  const raw = searchParams.preview_environment;
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  return value?.trim() || null;
+}
+
+export function resolvePartnerVerifyPreviewPartnerName(
+  searchParams: Record<string, string | string[] | undefined>,
+  enabled: boolean,
+): string | null {
+  if (!enabled) return null;
+  const raw = searchParams.preview_partner_name;
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  return value?.trim() || null;
 }

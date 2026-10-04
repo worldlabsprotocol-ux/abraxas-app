@@ -10,5 +10,16 @@ export {
   holderCopyLeaks,
   holderSafeClientMessage,
   resolveHolderRecovery,
+  HOLDER_RETURN_FAILURE_TECHNICAL,
   type HolderRecoveryView,
 } from "./recovery";
+export {
+  buildHolderVerificationPresentation,
+  humanizeCurrentValidity,
+  humanizeHolderResult,
+  humanizeInvalidityReason,
+  mapVerifyPhaseToChecking,
+  primarySurfaceFreeOfJargon,
+  resolveHolderCheckingCopy,
+  type HolderVerificationPresentation,
+} from "./presentation";
