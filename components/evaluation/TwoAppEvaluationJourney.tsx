@@ -18,6 +18,14 @@ type ChecklistItem = {
   failure_reason: string | null;
 };
 
+type StartCredentials = {
+  evaluation_id: string;
+  partner_id: string;
+  app_a: { application_id: string; display_name: string };
+  app_b: { application_id: string; display_name: string };
+  api_keys: { app_a: string | null; app_b: string | null };
+};
+
 type EvaluationPayload = {
   evaluation_id: string;
   stage: string;
@@ -100,6 +108,8 @@ export function TwoAppEvaluationJourney({ evaluationId }: { evaluationId: string
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(evaluationId);
+  const [startCredentials, setStartCredentials] = useState<StartCredentials | null>(null);
+  const [credentialsAcknowledged, setCredentialsAcknowledged] = useState(false);
 
   const load = useCallback(async (id: string) => {
     setLoading(true);
@@ -144,8 +154,26 @@ export function TwoAppEvaluationJourney({ evaluationId }: { evaluationId: string
           return_url: `${window.location.origin}/evaluation/two-app/callback`,
         }),
       });
-      const json = await res.json() as { ok?: boolean; evaluation_id?: string; error?: string };
-      if (!res.ok || !json.evaluation_id) throw new Error(json.error ?? "start_failed");
+      const json = await res.json() as {
+        ok?: boolean;
+        evaluation_id?: string;
+        partner_id?: string;
+        app_a?: StartCredentials["app_a"];
+        app_b?: StartCredentials["app_b"];
+        api_keys?: StartCredentials["api_keys"];
+        error?: string;
+      };
+      if (!res.ok || !json.evaluation_id || !json.partner_id || !json.app_a || !json.app_b) {
+        throw new Error(json.error ?? "start_failed");
+      }
+      setStartCredentials({
+        evaluation_id: json.evaluation_id,
+        partner_id: json.partner_id,
+        app_a: json.app_a,
+        app_b: json.app_b,
+        api_keys: json.api_keys ?? { app_a: null, app_b: null },
+      });
+      setCredentialsAcknowledged(false);
       await load(json.evaluation_id);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to start evaluation");
@@ -179,6 +207,65 @@ export function TwoAppEvaluationJourney({ evaluationId }: { evaluationId: string
       )}
 
       {loading && <p style={body}>Loading evaluation status…</p>}
+
+      {startCredentials && !credentialsAcknowledged && (
+        <ContentCard title="Sandbox credentials — shown once">
+          <p style={body}>
+            Store these server-side only. Abraxas does not show raw sandbox API keys again after you leave this screen.
+            Use a key to sign in at{" "}
+            <Link href="/developers/launchpad" style={{ color: "var(--accent)", fontWeight: 700 }}>Launchpad</Link>
+            {" "}and configure each application.
+          </p>
+          <div style={{ display: "grid", gap: "0.65rem", marginTop: "0.75rem" }}>
+            {([
+              ["App A", startCredentials.app_a, startCredentials.api_keys.app_a],
+              ["App B", startCredentials.app_b, startCredentials.api_keys.app_b],
+            ] as const).map(([label, app, apiKey]) => (
+              <div
+                key={app.application_id}
+                style={{
+                  padding: "0.75rem",
+                  borderRadius: 12,
+                  border: "1px solid var(--border)",
+                  background: "var(--surface-inset)",
+                }}
+              >
+                <div style={{ fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.35rem" }}>{label}</div>
+                <div style={{ fontFamily: MONO, fontSize: "0.72rem", color: "var(--text-muted)" }}>application_id</div>
+                <div style={{ fontFamily: MONO, fontSize: "0.78rem", wordBreak: "break-all" }}>{app.application_id}</div>
+                <div style={{ fontFamily: MONO, fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.45rem" }}>sandbox API key</div>
+                <div style={{ fontFamily: MONO, fontSize: "0.78rem", wordBreak: "break-all", color: apiKey ? "var(--text-primary)" : "#FBBF24" }}>
+                  {apiKey ?? "Not returned (idempotent replay). Rotate in Launchpad after sign-in."}
+                </div>
+                <div style={{ marginTop: "0.55rem" }}>
+                  <Btn href={`/developers/launchpad?app=${encodeURIComponent(app.application_id)}&view=configure`} size="sm" variant="ghost">
+                    Configure {label}
+                  </Btn>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p style={{ ...body, fontSize: "0.76rem", marginTop: "0.65rem", color: "var(--text-muted)" }}>
+            Partner ID: <span style={{ fontFamily: MONO }}>{startCredentials.partner_id}</span>
+            {" · "}
+            Quickstart:{" "}
+            <Link href="/docs/VERIFY_WITH_ABRAXAS_QUICKSTART" style={{ color: "var(--accent)", fontWeight: 700 }}>
+              Verify with Abraxas
+            </Link>
+          </p>
+          <div style={{ marginTop: "0.75rem" }}>
+            <Btn
+              size="sm"
+              onClick={() => {
+                setCredentialsAcknowledged(true);
+                setStartCredentials(null);
+              }}
+            >
+              I stored the credentials server-side
+            </Btn>
+          </div>
+        </ContentCard>
+      )}
 
       {data && (
         <>
