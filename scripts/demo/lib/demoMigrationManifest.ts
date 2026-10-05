@@ -451,6 +451,16 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
       "Adds partner_flow_continuation_peek_by_opaque RPC for reliable vr_* continuation lookup. Apply with #561 code.",
   },
   {
+    file: "132_partner_flow_continuation_ensure_by_opaque.sql",
+    tier: "required",
+    creates: [],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Adds ensure_partner_flow_continuation_by_opaque RPC for atomic hosted-handoff continuation resolution (#565). Apply with #565 code.",
+  },
+  {
     file: "092_wallet_standard_action_bindings.sql",
     tier: "required",
     creates: [
