@@ -8,14 +8,19 @@ const OPAQUE = "vr_81cfe12715d8c338";
 const UUID = "00000000-0000-4000-8000-0000000000aa";
 
 const mockFrom = vi.fn();
+const mockRpc = vi.fn();
 
 vi.mock("@/lib/supabase/admin", () => ({
-  requireSupabaseAdmin: () => ({ from: (...args: unknown[]) => mockFrom(...args) }),
+  requireSupabaseAdmin: () => ({
+    from: (...args: unknown[]) => mockFrom(...args),
+    rpc: (...args: unknown[]) => mockRpc(...args),
+  }),
 }));
 
 describe("createSupabaseContinuationStore opaque verify_request routing", () => {
   beforeEach(() => {
     mockFrom.mockReset();
+    mockRpc.mockReset();
   });
 
   it("would fail #555 production when vr_* is written to verify_request_id uuid column", async () => {
@@ -58,35 +63,26 @@ describe("createSupabaseContinuationStore opaque verify_request routing", () => 
     }));
   });
 
-  it("peeks opaque tokens via opaque_verify_request column", async () => {
-    const chain = {
-      upsert: vi.fn(),
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      maybeSingle: vi.fn().mockResolvedValue({
-        data: {
-          jti: "jti-opaque",
-          partner_id: "ref-wc-postrev-5ffe",
-          policy_id: "ref-wc-postrev-5ffe-wallet_control-v1",
-          return_url: "https://example.com/callback",
-          created_at: new Date().toISOString(),
-          expires_at: new Date(Date.now() + 900_000).toISOString(),
-          consumed_at: null,
-          verify_request_id: null,
-          opaque_verify_request: OPAQUE,
-        },
-        error: null,
-      }),
-      is: vi.fn().mockReturnThis(),
-      update: vi.fn().mockReturnThis(),
+  it("peeks opaque tokens via partner_flow_continuation_peek_by_opaque RPC", async () => {
+    const rowPayload = {
+      jti: "jti-opaque",
+      partner_id: "ref-wc-postrev-5ffe",
+      policy_id: "ref-wc-postrev-5ffe-wallet_control-v1",
+      return_url: "https://example.com/callback",
+      created_at: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 900_000).toISOString(),
+      consumed_at: null,
+      verify_request_id: null,
+      opaque_verify_request: OPAQUE,
     };
-    mockFrom.mockReturnValue(chain);
+    mockRpc.mockResolvedValue({ data: [rowPayload], error: null });
 
     const { createSupabaseContinuationStore } = await import("./partnerFlowContinuationStore");
     const store = createSupabaseContinuationStore();
     const row = await store.peekByVerifyRequestId(OPAQUE);
 
-    expect(chain.eq).toHaveBeenCalledWith("opaque_verify_request", OPAQUE);
+    expect(mockRpc).toHaveBeenCalledWith("partner_flow_continuation_peek_by_opaque", { p_opaque: OPAQUE });
+    expect(mockFrom).not.toHaveBeenCalled();
     expect(row?.verifyRequestId).toBe(OPAQUE);
   });
 
@@ -150,7 +146,18 @@ describe("createSupabaseContinuationStore opaque verify_request routing", () => 
     })).rejects.toBeInstanceOf(ContinuationUniqueConflictError);
   });
 
-  it("maps postgres uuid rejection to continuation_store_unavailable", async () => {
+  it("maps opaque RPC failures to continuation_store_unavailable", async () => {
+    mockRpc.mockResolvedValue({
+      data: null,
+      error: { code: "PGRST202", message: "function not found" },
+    });
+
+    const { createSupabaseContinuationStore } = await import("./partnerFlowContinuationStore");
+    const store = createSupabaseContinuationStore();
+    await expect(store.peekByVerifyRequestId(OPAQUE)).rejects.toBeInstanceOf(ContinuationStoreUnavailableError);
+  });
+
+  it("maps legacy UUID lookup postgres rejection to continuation_store_unavailable", async () => {
     const chain = {
       upsert: vi.fn(),
       select: vi.fn().mockReturnThis(),
@@ -159,7 +166,7 @@ describe("createSupabaseContinuationStore opaque verify_request routing", () => 
         data: null,
         error: {
           code: "22P02",
-          message: `invalid input syntax for type uuid: "${OPAQUE}"`,
+          message: `invalid input syntax for type uuid: "${UUID}"`,
         },
       }),
       is: vi.fn().mockReturnThis(),
@@ -169,6 +176,6 @@ describe("createSupabaseContinuationStore opaque verify_request routing", () => 
 
     const { createSupabaseContinuationStore } = await import("./partnerFlowContinuationStore");
     const store = createSupabaseContinuationStore();
-    await expect(store.peekByVerifyRequestId(OPAQUE)).rejects.toBeInstanceOf(ContinuationStoreUnavailableError);
+    await expect(store.peekByVerifyRequestId(UUID)).rejects.toBeInstanceOf(ContinuationStoreUnavailableError);
   });
 });

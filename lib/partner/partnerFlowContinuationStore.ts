@@ -4,9 +4,10 @@
 import {
   assertAttachableVerificationRequestId,
   continuationVerifyRequestColumns,
-  continuationVerifyRequestLookupColumn,
+  normalizeContinuationVerifyRequestId,
   readContinuationVerifyRequestId,
 } from "@/lib/partner/partnerFlowContinuationIdentifiers";
+import { isOpaqueVerifyRequest } from "@/lib/partner/productionIntegration/requestCorrelation";
 import { isPostgresUniqueViolation } from "@/lib/partner/partnerFlowContinuationPostgresErrors";
 import { canonicalPartnerFlowInstant } from "@/lib/partner/parsePartnerFlowInstant";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
@@ -16,6 +17,8 @@ import {
   type PartnerFlowContinuationRecord,
   type PartnerFlowContinuationStore,
 } from "@/lib/partner/partnerFlowContinuation";
+
+const OPAQUE_PEEK_RPC = "partner_flow_continuation_peek_by_opaque";
 
 function readExpiresAt(row: Record<string, unknown>): { raw: string; mapped: string } {
   const raw = String(row.expires_at ?? "");
@@ -102,12 +105,21 @@ export function createSupabaseContinuationStore(): PartnerFlowContinuationStore 
       return data ? mapRow(data as Record<string, unknown>) : null;
     },
     async peekByVerifyRequestId(verifyRequestId) {
+      const trimmed = normalizeContinuationVerifyRequestId(verifyRequestId);
+      if (!trimmed) return null;
+
       const sb = adminClient();
-      const lookupColumn = continuationVerifyRequestLookupColumn(verifyRequestId);
+      if (isOpaqueVerifyRequest(trimmed)) {
+        const { data, error } = await sb.rpc(OPAQUE_PEEK_RPC, { p_opaque: trimmed });
+        assertStoreAvailable(error);
+        const row = Array.isArray(data) ? data[0] : data;
+        return row ? mapRow(row as Record<string, unknown>) : null;
+      }
+
       const { data, error } = await sb
         .from("partner_flow_continuations")
         .select("*")
-        .eq(lookupColumn, verifyRequestId)
+        .eq("verify_request_id", trimmed)
         .maybeSingle();
       assertStoreAvailable(error);
       return data ? mapRow(data as Record<string, unknown>) : null;
