@@ -12,6 +12,7 @@ import {
 import { createSupabaseContinuationStore } from "@/lib/partner/partnerFlowContinuationStore";
 import { isOpaqueVerifyRequest } from "@/lib/partner/productionIntegration/requestCorrelation";
 import { parsePartnerFlowInstant } from "@/lib/partner/parsePartnerFlowInstant";
+import { logHostedHandoffContinueDiagnostic } from "./continueContextDiagnostics";
 import { loadHandoffByVerifyRequest } from "./store";
 import type { HostedHandoffRecord } from "./types";
 
@@ -63,23 +64,55 @@ function handoffUnavailableStatus(record: HostedHandoffRecord): HostedHandoffCon
   return "unavailable";
 }
 
-function hostedHandoffContinuationExpired(record: PartnerFlowContinuationRecord, now = Date.now()): boolean {
-  const expires = parsePartnerFlowInstant(record.expiresAt);
-  if (expires === null) return true;
-  return expires <= now;
+function hostedHandoffContinuationExpired(
+  record: PartnerFlowContinuationRecord,
+  now = Date.now(),
+): { expired: boolean; parsedExpiryEpoch: number | null } {
+  const parsedExpiryEpoch = parsePartnerFlowInstant(record.expiresAt);
+  if (parsedExpiryEpoch === null) return { expired: true, parsedExpiryEpoch: null };
+  return { expired: parsedExpiryEpoch <= now, parsedExpiryEpoch };
 }
 
 function reuseHostedHandoffContinuation(input: {
   existing: PartnerFlowContinuationRecord | null;
   handoff: HostedHandoffRecord;
   returnUrl: string;
+  verifyRequestRef?: string;
 }): PartnerFlowContinuationRecord | null {
   const { existing } = input;
   if (!existing) return null;
   if (existing.consumedAt) {
+    logHostedHandoffContinueDiagnostic({
+      stage: "continuation_reuse_consumed",
+      verifyRequestRef: input.verifyRequestRef ?? input.handoff.verify_request,
+      handoffRef: input.handoff.handoff_ref,
+      continuationJti: existing.jti,
+      errorClass: "Error",
+      internalCode: "continuation_consumed",
+      consumed: true,
+      peekFound: true,
+      functionName: "reuseHostedHandoffContinuation",
+    });
     throw Object.assign(new Error("continuation_consumed"), { code: "unavailable" });
   }
-  if (hostedHandoffContinuationExpired(existing)) {
+  const expiry = hostedHandoffContinuationExpired(existing);
+  if (expiry.expired) {
+    logHostedHandoffContinueDiagnostic({
+      stage: "continuation_reuse_expired",
+      verifyRequestRef: input.verifyRequestRef ?? input.handoff.verify_request,
+      handoffRef: input.handoff.handoff_ref,
+      continuationJti: existing.jti,
+      errorClass: "Error",
+      internalCode: "continuation_expired",
+      rawExpiresAt: existing._diagRawExpiresAt ?? existing.expiresAt,
+      mappedExpiresAt: existing.expiresAt,
+      parsedExpiryEpoch: expiry.parsedExpiryEpoch,
+      nowEpoch: Date.now(),
+      expired: true,
+      consumed: false,
+      peekFound: true,
+      functionName: "reuseHostedHandoffContinuation",
+    });
     throw Object.assign(new Error("continuation_expired"), { code: "unavailable" });
   }
   const matched = assertContinuationMatchesStored({
@@ -90,9 +123,29 @@ function reuseHostedHandoffContinuation(input: {
     policyVersion: input.handoff.policy_version,
   });
   if (!matched.ok) {
+    logHostedHandoffContinueDiagnostic({
+      stage: "continuation_reuse_binding",
+      verifyRequestRef: input.verifyRequestRef ?? input.handoff.verify_request,
+      handoffRef: input.handoff.handoff_ref,
+      continuationJti: existing.jti,
+      errorClass: "Error",
+      internalCode: "continuation_binding_conflict",
+      bindingOk: false,
+      bindingCode: matched.code,
+      consumed: false,
+      expired: false,
+      peekFound: true,
+      functionName: "reuseHostedHandoffContinuation",
+    });
     throw Object.assign(new Error("continuation_binding_conflict"), { code: "unavailable" });
   }
   return existing;
+}
+
+function postgresErrorCode(error: unknown): string | undefined {
+  if (!error || typeof error !== "object" || !("code" in error)) return undefined;
+  const code = (error as { code?: unknown }).code;
+  return typeof code === "string" ? code : undefined;
 }
 
 async function ensureHostedHandoffContinuation(input: {
@@ -101,10 +154,43 @@ async function ensureHostedHandoffContinuation(input: {
   appSlug: string | null;
 }): Promise<PartnerFlowContinuationRecord> {
   const store = createSupabaseContinuationStore();
+  const verifyRequestRef = input.handoff.verify_request;
+  let existing: PartnerFlowContinuationRecord | null;
+  try {
+    existing = await store.peekByVerifyRequestId(verifyRequestRef);
+  } catch (error) {
+    logHostedHandoffContinueDiagnostic({
+      stage: "continuation_peek",
+      verifyRequestRef,
+      handoffRef: input.handoff.handoff_ref,
+      errorClass: error instanceof Error ? error.name : "Error",
+      internalCode: error instanceof Error && "code" in error
+        ? String((error as { code?: string }).code)
+        : "continuation_peek_throw",
+      postgresCode: postgresErrorCode(error),
+      peekFound: false,
+      functionName: "ensureHostedHandoffContinuation.peekByVerifyRequestId",
+    });
+    throw error;
+  }
+
+  logHostedHandoffContinueDiagnostic({
+    stage: "continuation_peek",
+    verifyRequestRef,
+    handoffRef: input.handoff.handoff_ref,
+    continuationJti: existing?.jti,
+    peekFound: Boolean(existing),
+    consumed: Boolean(existing?.consumedAt),
+    rawExpiresAt: existing?._diagRawExpiresAt,
+    mappedExpiresAt: existing?.expiresAt,
+    functionName: "ensureHostedHandoffContinuation.peekByVerifyRequestId",
+  });
+
   const reused = reuseHostedHandoffContinuation({
-    existing: await store.peekByVerifyRequestId(input.handoff.verify_request),
+    existing,
     handoff: input.handoff,
     returnUrl: input.returnUrl,
+    verifyRequestRef,
   });
   if (reused) return reused;
 
@@ -117,6 +203,15 @@ async function ensureHostedHandoffContinuation(input: {
     policyVersion: input.handoff.policy_version,
   });
   if (!created) {
+    logHostedHandoffContinueDiagnostic({
+      stage: "continuation_create_rejected",
+      verifyRequestRef,
+      handoffRef: input.handoff.handoff_ref,
+      errorClass: "Error",
+      internalCode: "continuation_rejected",
+      peekFound: false,
+      functionName: "ensureHostedHandoffContinuation",
+    });
     throw Object.assign(new Error("continuation_rejected"), { code: "unavailable" });
   }
 
@@ -130,13 +225,59 @@ async function ensureHostedHandoffContinuation(input: {
     return continuation;
   } catch (error) {
     if (error instanceof ContinuationUniqueConflictError) {
+      let winnerExisting: PartnerFlowContinuationRecord | null;
+      try {
+        winnerExisting = await store.peekByVerifyRequestId(verifyRequestRef);
+      } catch (peekError) {
+        logHostedHandoffContinueDiagnostic({
+          stage: "continuation_conflict_recovery",
+          verifyRequestRef,
+          handoffRef: input.handoff.handoff_ref,
+          errorClass: peekError instanceof Error ? peekError.name : "Error",
+          internalCode: "continuation_conflict_peek_throw",
+          postgresCode: postgresErrorCode(peekError),
+          dbWriteAttempted: true,
+          dbWriteResult: "unique_conflict",
+          peekFound: false,
+          functionName: "ensureHostedHandoffContinuation.conflictPeek",
+        });
+        throw peekError;
+      }
+
+      logHostedHandoffContinueDiagnostic({
+        stage: "continuation_conflict_recovery",
+        verifyRequestRef,
+        handoffRef: input.handoff.handoff_ref,
+        continuationJti: winnerExisting?.jti,
+        internalCode: "continuation_unique_conflict",
+        dbWriteAttempted: true,
+        dbWriteResult: "unique_conflict",
+        peekFound: Boolean(winnerExisting),
+        functionName: "ensureHostedHandoffContinuation",
+      });
+
       const winner = reuseHostedHandoffContinuation({
-        existing: await store.peekByVerifyRequestId(input.handoff.verify_request),
+        existing: winnerExisting,
         handoff: input.handoff,
         returnUrl: input.returnUrl,
+        verifyRequestRef,
       });
       if (winner) return winner;
     }
+
+    logHostedHandoffContinueDiagnostic({
+      stage: "continuation_save_throw",
+      verifyRequestRef,
+      handoffRef: input.handoff.handoff_ref,
+      errorClass: error instanceof Error ? error.name : "Error",
+      internalCode: error instanceof Error && "code" in error
+        ? String((error as { code?: string }).code)
+        : "continuation_save_throw",
+      postgresCode: postgresErrorCode(error),
+      dbWriteAttempted: true,
+      dbWriteResult: "throw",
+      functionName: "ensureHostedHandoffContinuation.save",
+    });
     throw error;
   }
 }
@@ -153,14 +294,31 @@ export async function resolveHostedHandoffForContinue(
   let handoff: HostedHandoffRecord | null;
   try {
     handoff = await loadHandoffByVerifyRequest(trimmed);
-  } catch {
+  } catch (error) {
+    logHostedHandoffContinueDiagnostic({
+      stage: "handoff_load_throw",
+      verifyRequestRef: trimmed,
+      errorClass: error instanceof Error ? error.name : "Error",
+      internalCode: "handoff_load_throw",
+      functionName: "resolveHostedHandoffForContinue.loadHandoffByVerifyRequest",
+    });
     return { ok: false, code: "unavailable" };
   }
   if (!handoff) {
     return { ok: false, code: "missing" };
   }
   if (handoff.status !== "created") {
-    return { ok: false, code: handoffUnavailableStatus(handoff) };
+    const code = handoffUnavailableStatus(handoff);
+    if (code === "unavailable") {
+      logHostedHandoffContinueDiagnostic({
+        stage: "handoff_status",
+        verifyRequestRef: trimmed,
+        handoffRef: handoff.handoff_ref,
+        internalCode: handoff.status,
+        functionName: "resolveHostedHandoffForContinue",
+      });
+    }
+    return { ok: false, code };
   }
   const expires = parsePartnerFlowInstant(handoff.expires_at);
   if (expires === null || expires <= Date.now()) {
@@ -170,7 +328,15 @@ export async function resolveHostedHandoffForContinue(
   let app;
   try {
     app = await getLaunchpadApplicationForPartner(handoff.application_id, handoff.partner_id);
-  } catch {
+  } catch (error) {
+    logHostedHandoffContinueDiagnostic({
+      stage: "application_load_throw",
+      verifyRequestRef: trimmed,
+      handoffRef: handoff.handoff_ref,
+      errorClass: error instanceof Error ? error.name : "Error",
+      internalCode: "application_load_throw",
+      functionName: "resolveHostedHandoffForContinue.getLaunchpadApplicationForPartner",
+    });
     return { ok: false, code: "unavailable" };
   }
   if (!app) {
@@ -179,6 +345,13 @@ export async function resolveHostedHandoffForContinue(
 
   const returnUrl = resolveHandoffCallbackUrl(app.allowed_return_urls ?? [], handoff.callback_ref);
   if (!returnUrl) {
+    logHostedHandoffContinueDiagnostic({
+      stage: "callback_ref_unresolved",
+      verifyRequestRef: trimmed,
+      handoffRef: handoff.handoff_ref,
+      internalCode: "callback_ref_unresolved",
+      functionName: "resolveHostedHandoffForContinue.resolveHandoffCallbackUrl",
+    });
     return { ok: false, code: "unavailable" };
   }
 
@@ -190,10 +363,18 @@ export async function resolveHostedHandoffForContinue(
       appSlug: app.public_slug,
     });
   } catch (error) {
-    const code = error instanceof Error && "code" in error
-      ? String((error as { code?: string }).code)
-      : "unavailable";
-    return { ok: false, code: code === "unavailable" ? "unavailable" : "unavailable" };
+    logHostedHandoffContinueDiagnostic({
+      stage: "continuation_ensure_throw",
+      verifyRequestRef: trimmed,
+      handoffRef: handoff.handoff_ref,
+      errorClass: error instanceof Error ? error.name : "Error",
+      internalCode: error instanceof Error && "code" in error
+        ? String((error as { code?: string }).code)
+        : "continuation_ensure_throw",
+      postgresCode: postgresErrorCode(error),
+      functionName: "resolveHostedHandoffForContinue.ensureHostedHandoffContinuation",
+    });
+    return { ok: false, code: "unavailable" };
   }
 
   return {

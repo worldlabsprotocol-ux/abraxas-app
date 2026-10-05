@@ -43,6 +43,8 @@ export type PartnerFlowContinuationRecord = PartnerFlowContinuationInput & {
   expiresAt: string;
   consumedAt?: string | null;
   verifyRequestId?: string | null;
+  /** Populated on DB reads only — diagnostic forensics, never persisted. */
+  _diagRawExpiresAt?: string;
 };
 
 export const CONTINUATION_STORE_UNAVAILABLE = "continuation_store_unavailable" as const;
