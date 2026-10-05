@@ -67,6 +67,73 @@ describe("AdminPartnerKeysPanel", () => {
     expect(screen.getByTestId("partner-key-scope-verify-credential")).not.toBeChecked();
   });
 
+  it("renders verify:requests as an independently selectable admin scope", () => {
+    render(<AdminPartnerKeysPanel adminRequest={createAdminRequest()} />);
+
+    const verifyRequestsScope = screen.getByTestId("partner-key-scope-verify-requests");
+    expect(verifyRequestsScope).toBeInTheDocument();
+    expect(verifyRequestsScope).not.toBeChecked();
+    expect(screen.getByText(/Verification request APIs/i)).toBeInTheDocument();
+  });
+
+  it("allows issuing a key with only verify:requests selected", async () => {
+    const user = userEvent.setup();
+    render(<AdminPartnerKeysPanel adminRequest={createAdminRequest()} />);
+
+    await user.click(screen.getByTestId("partner-key-scope-webhooks-read"));
+    await user.click(screen.getByTestId("partner-key-scope-verify-requests"));
+
+    expect(screen.getByTestId("partner-key-scope-verify-requests")).toBeChecked();
+    expect(screen.getByTestId("partner-key-scope-webhooks-read")).not.toBeChecked();
+    expect(screen.getByTestId("partner-key-scope-verify-credential")).not.toBeChecked();
+    expect(screen.getByTestId("partner-key-scope-verify-registry")).not.toBeChecked();
+
+    await user.type(screen.getByTestId("partner-key-partner-input"), "ref-wc-postrev-5ffe");
+    await user.type(screen.getByTestId("partner-key-display-name-input"), "Handoff sandbox");
+    await user.click(screen.getByTestId("partner-key-generate-button"));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/admin/partner-keys",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            partner_id: "ref-wc-postrev-5ffe",
+            display_name: "Handoff sandbox",
+            environment: "test",
+            scopes: ["verify:requests"],
+          }),
+        }),
+      );
+    });
+  });
+
+  it("applies the verification requests preset without adding unrelated scopes", async () => {
+    const user = userEvent.setup();
+    render(<AdminPartnerKeysPanel adminRequest={createAdminRequest()} />);
+
+    await user.click(screen.getByTestId("partner-key-preset-verification-requests"));
+
+    expect(screen.getByTestId("partner-key-scope-verify-requests")).toBeChecked();
+    expect(screen.getByTestId("partner-key-scope-webhooks-read")).not.toBeChecked();
+    expect(screen.getByTestId("partner-key-scope-verify-credential")).not.toBeChecked();
+    expect(screen.getByTestId("partner-key-scope-verify-registry")).not.toBeChecked();
+    expect(screen.getByTestId("partner-key-scope-verify-screening")).not.toBeChecked();
+    expect(screen.getByTestId("partner-key-scope-metering-read")).not.toBeChecked();
+  });
+
+  it("keeps the Verify APIs preset limited to credential and registry scopes", async () => {
+    const user = userEvent.setup();
+    render(<AdminPartnerKeysPanel adminRequest={createAdminRequest()} />);
+
+    await user.click(screen.getByTestId("partner-key-preset-verify"));
+
+    expect(screen.getByTestId("partner-key-scope-verify-credential")).toBeChecked();
+    expect(screen.getByTestId("partner-key-scope-verify-registry")).toBeChecked();
+    expect(screen.getByTestId("partner-key-scope-verify-requests")).not.toBeChecked();
+    expect(screen.getByTestId("partner-key-scope-webhooks-read")).not.toBeChecked();
+  });
+
   it("disables live issuance for sandbox-only partners after lookup", async () => {
     const user = userEvent.setup();
     render(<AdminPartnerKeysPanel adminRequest={createAdminRequest()} />);

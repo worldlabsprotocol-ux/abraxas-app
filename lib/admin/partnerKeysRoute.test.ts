@@ -108,6 +108,38 @@ describe("admin partner-keys route", () => {
     expect(insertMock).not.toHaveBeenCalled();
   });
 
+  it("accepts explicit verify:requests scopes for sandbox issuance", async () => {
+    singleMock.mockResolvedValueOnce({
+      data: {
+        id: "key-handoff",
+        partner_id: "ref-wc-postrev-5ffe",
+        display_name: "Handoff sandbox",
+        key_prefix: "abx_test_handoff1",
+        scopes: ["verify:requests"],
+        created_at: "2026-08-08T00:00:00.000Z",
+      },
+      error: null,
+    });
+
+    const res = await POST(postRequest({
+      partner_id: "ref-wc-postrev-5ffe",
+      display_name: "Handoff sandbox",
+      environment: "test",
+      scopes: ["verify:requests"],
+    }));
+    const body = await res.json() as { api_key?: string; key?: { scopes?: string[] } };
+
+    expect(res.status).toBe(200);
+    expect(body.key?.scopes).toEqual(["verify:requests"]);
+    expect(insertMock).toHaveBeenCalledWith({
+      partner_id: "ref-wc-postrev-5ffe",
+      display_name: "Handoff sandbox",
+      key_prefix: expect.stringMatching(/^abx_test_/),
+      key_hash: expect.any(String),
+      scopes: ["verify:requests"],
+    });
+  });
+
   it("accepts explicit webhooks:read scopes for sandbox issuance", async () => {
     const res = await POST(postRequest({
       partner_id: "sandbox-partner",
