@@ -53,6 +53,9 @@ export const WEBHOOK_SANDBOX_SCOPE_PRESET: PartnerScope[] = ["webhooks:read"];
 
 export const VERIFY_API_SCOPE_PRESET: PartnerScope[] = [...LEGACY_VERIFY_DEFAULT_SCOPES];
 
+/** Partner handoff and verification-request routes (POST /api/v1/partner-handoff, etc.). */
+export const VERIFICATION_REQUESTS_SCOPE_PRESET: PartnerScope[] = ["verify:requests"];
+
 export function partnerAllowsProductionKeys(allowedEnvironments: readonly string[]): boolean {
   return allowedEnvironments.includes("production");
 }
