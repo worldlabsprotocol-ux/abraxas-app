@@ -15,6 +15,7 @@ import {
   OPAQUE_CONTINUATION_PEEK_RPC,
   OPAQUE_CONTINUATION_PEEK_RPC_ARG,
 } from "@/lib/partner/hostedHandoff/continuationOpaqueRpcDiagnostics";
+import type { ContinueContextTraceCollector } from "@/lib/partner/hostedHandoff/continueContextTrace";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import {
   ContinuationStoreUnavailableError,
@@ -22,6 +23,12 @@ import {
   type PartnerFlowContinuationRecord,
   type PartnerFlowContinuationStore,
 } from "@/lib/partner/partnerFlowContinuation";
+
+export type SupabaseContinuationStoreOptions = {
+  trace?: ContinueContextTraceCollector;
+  /** Distinguish conflict-recovery peek RPC checkpoints in trace output. */
+  traceContext?: "primary" | "recovery";
+};
 
 function readExpiresAt(row: Record<string, unknown>): { raw: string; mapped: string } {
   const raw = String(row.expires_at ?? "");
@@ -76,9 +83,19 @@ async function peekOpaqueContinuationByRpc(
   sb: ReturnType<typeof requireSupabaseAdmin>,
   verifyRequestRef: string,
   normalized: string,
+  trace?: ContinueContextTraceCollector,
+  traceContext: SupabaseContinuationStoreOptions["traceContext"] = "primary",
 ): Promise<PartnerFlowContinuationRecord | null> {
+  trace?.record("opaque_rpc_helper_enter");
+  const beforeRpc = traceContext === "recovery" ? "recovery_before_rpc" : "before_rpc";
+  const afterRpc = traceContext === "recovery" ? "recovery_after_rpc" : "after_rpc";
+  const rpcError = traceContext === "recovery" ? "recovery_rpc_error" : "rpc_error";
+
   const rpcArgs = { [OPAQUE_CONTINUATION_PEEK_RPC_ARG]: normalized };
+  trace?.record(beforeRpc);
   const { data, error } = await sb.rpc(OPAQUE_CONTINUATION_PEEK_RPC, rpcArgs);
+  if (error) trace?.record(rpcError);
+  else trace?.record(afterRpc);
 
   const row = unwrapOpaqueRpcRow(data);
   let mapped: PartnerFlowContinuationRecord | null = null;
@@ -87,12 +104,15 @@ async function peekOpaqueContinuationByRpc(
   let mapErrorClass: string | undefined;
 
   if (row) {
+    trace?.record("row_candidate");
     mapAttempted = true;
     try {
       mapped = mapRow(row);
       mapSucceeded = true;
+      trace?.record("map_success");
     } catch (mapError) {
       mapErrorClass = mapError instanceof Error ? mapError.name : "Error";
+      trace?.record("map_failed");
     }
   }
 
@@ -120,9 +140,15 @@ async function peekOpaqueContinuationByRpc(
   return mapped;
 }
 
-export function createSupabaseContinuationStore(): PartnerFlowContinuationStore {
+export function createSupabaseContinuationStore(
+  options?: SupabaseContinuationStoreOptions,
+): PartnerFlowContinuationStore {
+  const trace = options?.trace;
+  const traceContext = options?.traceContext ?? "primary";
+
   return {
     async save(record) {
+      trace?.record("save_enter");
       const sb = adminClient();
       const verifyColumns = continuationVerifyRequestColumns(record.verifyRequestId);
       const { error } = await sb.from("partner_flow_continuations").upsert({
@@ -161,21 +187,40 @@ export function createSupabaseContinuationStore(): PartnerFlowContinuationStore 
       return data ? mapRow(data as Record<string, unknown>) : null;
     },
     async peekByVerifyRequestId(verifyRequestId) {
+      if (traceContext === "primary") trace?.record("peek_enter");
       const trimmed = normalizeContinuationVerifyRequestId(verifyRequestId);
-      if (!trimmed) return null;
+      if (!trimmed) {
+        trace?.record("normalization_failed");
+        trace?.record("peek_return_null");
+        return null;
+      }
+      trace?.record("identifier_normalized");
 
+      trace?.record("admin_client_acquired");
       const sb = adminClient();
       if (isOpaqueVerifyRequest(trimmed)) {
-        return peekOpaqueContinuationByRpc(sb, verifyRequestId, trimmed);
+        trace?.record("opaque_branch");
+        const found = await peekOpaqueContinuationByRpc(
+          sb,
+          verifyRequestId,
+          trimmed,
+          trace,
+          traceContext,
+        );
+        trace?.record(found ? "peek_return_found" : "peek_return_null");
+        return found;
       }
 
+      trace?.record("table_branch");
       const { data, error } = await sb
         .from("partner_flow_continuations")
         .select("*")
         .eq("verify_request_id", trimmed)
         .maybeSingle();
       assertStoreAvailable(error);
-      return data ? mapRow(data as Record<string, unknown>) : null;
+      const found = data ? mapRow(data as Record<string, unknown>) : null;
+      trace?.record(found ? "peek_return_found" : "peek_return_null");
+      return found;
     },
     async consume(jti) {
       const sb = adminClient();
