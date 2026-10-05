@@ -11,6 +11,7 @@ import {
 } from "@/lib/partner/partnerFlowContinuation";
 import { createSupabaseContinuationStore } from "@/lib/partner/partnerFlowContinuationStore";
 import { isOpaqueVerifyRequest } from "@/lib/partner/productionIntegration/requestCorrelation";
+import { parsePartnerFlowInstant } from "@/lib/partner/parsePartnerFlowInstant";
 import { loadHandoffByVerifyRequest } from "./store";
 import type { HostedHandoffRecord } from "./types";
 
@@ -57,14 +58,15 @@ function handoffUnavailableStatus(record: HostedHandoffRecord): HostedHandoffCon
   if (record.status === "completed" || record.status === "consumed") return "completed";
   if (record.status === "cancelled") return "cancelled";
   if (record.status !== "created") return "unavailable";
-  const expires = Date.parse(record.expires_at);
-  if (!Number.isFinite(expires) || expires <= Date.now()) return "expired";
+  const expires = parsePartnerFlowInstant(record.expires_at);
+  if (expires === null || expires <= Date.now()) return "expired";
   return "unavailable";
 }
 
 function hostedHandoffContinuationExpired(record: PartnerFlowContinuationRecord, now = Date.now()): boolean {
-  const expires = Date.parse(record.expiresAt);
-  return !Number.isFinite(expires) || expires <= now;
+  const expires = parsePartnerFlowInstant(record.expiresAt);
+  if (expires === null) return true;
+  return expires <= now;
 }
 
 function reuseHostedHandoffContinuation(input: {
@@ -160,8 +162,8 @@ export async function resolveHostedHandoffForContinue(
   if (handoff.status !== "created") {
     return { ok: false, code: handoffUnavailableStatus(handoff) };
   }
-  const expires = Date.parse(handoff.expires_at);
-  if (!Number.isFinite(expires) || expires <= Date.now()) {
+  const expires = parsePartnerFlowInstant(handoff.expires_at);
+  if (expires === null || expires <= Date.now()) {
     return { ok: false, code: "expired" };
   }
 

@@ -82,6 +82,17 @@ function resolveMinimumAge(policyId: string): number | null {
   return null;
 }
 
+function mapHostedHandoffContinueFailure(
+  code: string | undefined,
+  status: number,
+): HolderRecoveryState {
+  if (code === "expired" || status === 410) return "expired";
+  if (code === "completed" || code === "cancelled") return "cancelled";
+  if (code === "missing" || status === 404) return "missing";
+  if (code === "unavailable" || status >= 500) return "provider_unavailable";
+  return "provider_unavailable";
+}
+
 function PartnerContinueInner() {
   const searchParams = useSearchParams();
   const { suiAddress, session, isLoading: authLoading, refreshSession, signInWithGoogle } = useSuiAuth();
@@ -128,6 +139,11 @@ function PartnerContinueInner() {
         return;
       }
 
+      if (!cancelled) {
+        setContextLoading(true);
+        setContextResolveFailure(null);
+      }
+
       if (verifyRequestId.startsWith("vr_")) {
         try {
           const res = await fetch(
@@ -160,21 +176,14 @@ function PartnerContinueInner() {
           }
           const body = await res.json().catch(() => ({})) as { code?: string };
           if (!cancelled) {
-            const code = body.code ?? "missing";
-            setContextResolveFailure(
-              code === "expired"
-                ? "expired"
-                : code === "completed" || code === "cancelled"
-                  ? "cancelled"
-                  : "missing",
-            );
+            setContextResolveFailure(mapHostedHandoffContinueFailure(body.code, res.status));
             setFlowContext(null);
             setContextLoading(false);
           }
           return;
         } catch {
           if (!cancelled) {
-            setContextResolveFailure("missing");
+            setContextResolveFailure("provider_unavailable");
             setFlowContext(null);
             setContextLoading(false);
           }
@@ -248,7 +257,7 @@ function PartnerContinueInner() {
     return () => {
       cancelled = true;
     };
-  }, [verifyRequestId, urlPartnerId, urlPolicyId, urlPurpose, decodedReturnUrl]);
+  }, [verifyRequestId, urlPartnerId, urlPolicyId, urlPurpose]);
 
   useEffect(() => {
     setMethodSelected(false);
@@ -381,7 +390,8 @@ function PartnerContinueInner() {
     underReview: holderState === "under_review",
   });
 
-  const continueContextIncomplete = !verifyRequestId || !partnerId;
+  const isOpaqueHostedHandoff = Boolean(verifyRequestId?.startsWith("vr_"));
+  const continueContextIncomplete = !verifyRequestId || (!partnerId && !isOpaqueHostedHandoff);
 
   const hostedBootstrapEligible = isHostedHolderBootstrapEligible({
     partnerId,

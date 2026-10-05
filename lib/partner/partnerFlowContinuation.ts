@@ -5,6 +5,7 @@ import { normalizePartnerReturnUrlForAllowlist } from "@/lib/connect/returnUrlAl
 import { partnerContinuationReturnUrlsMatch } from "@/lib/partner/continuationReturnUrlMatch";
 import { inferPolicyPackFromPolicyId, policyPackRequiresIdentityEvidence } from "@/lib/partner/launchpad/policyPacks";
 import { normalizePartnerVerifyInput } from "@/lib/partner/normalizePartnerVerifyInput";
+import { parsePartnerFlowInstant } from "@/lib/partner/parsePartnerFlowInstant";
 
 export const PARTNER_FLOW_CONTINUATION_TTL_MS = 30 * 60 * 1000;
 export const PARTNER_CONTINUE_PATH_PREFIX = "/partner/continue?";
@@ -148,8 +149,8 @@ export function continuationIsUsable(
 ): record is PartnerFlowContinuationRecord {
   if (!record) return false;
   if (record.consumedAt) return false;
-  const expires = Date.parse(record.expiresAt);
-  if (!Number.isFinite(expires) || expires <= now) return false;
+  const expires = parsePartnerFlowInstant(record.expiresAt);
+  if (expires === null || expires <= now) return false;
   return sanitizePartnerFlowContinuation(record) !== null;
 }
 
