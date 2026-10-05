@@ -2,6 +2,11 @@
 // Holder resolve for server-bound hosted handoffs (vr_*). Open/review does not consume.
 
 import { NextRequest, NextResponse } from "next/server";
+import {
+  attachContinueContextTraceHeader,
+  createContinueContextTraceCollector,
+  isContinueContextTraceAuthorized,
+} from "@/lib/partner/hostedHandoff/continueContextTrace";
 import { resolveHostedHandoffForContinue } from "@/lib/partner/hostedHandoff/resolveForContinue";
 import {
   attachPartnerContinueBindingCookie,
@@ -18,17 +23,25 @@ function httpStatusForCode(code: string): number {
 }
 
 export async function GET(request: NextRequest) {
+  const traceEnabled = isContinueContextTraceAuthorized(request);
+  const trace = traceEnabled ? createContinueContextTraceCollector() : undefined;
+  trace?.record("route_enter");
+
   const verifyRequest = request.nextUrl.searchParams.get("verify_request")?.trim() ?? "";
   if (!verifyRequest) {
-    return NextResponse.json({ ok: false, code: "missing" }, { status: 400 });
+    const res = NextResponse.json({ ok: false, code: "missing" }, { status: 400 });
+    attachContinueContextTraceHeader(res.headers, trace);
+    return res;
   }
 
-  const resolved = await resolveHostedHandoffForContinue(verifyRequest);
+  const resolved = await resolveHostedHandoffForContinue(verifyRequest, { trace });
   if (!resolved.ok) {
-    return NextResponse.json(
+    const res = NextResponse.json(
       { ok: false, code: resolved.code },
       { status: httpStatusForCode(resolved.code) },
     );
+    attachContinueContextTraceHeader(res.headers, trace);
+    return res;
   }
 
   const { preview } = resolved;
@@ -56,5 +69,6 @@ export async function GET(request: NextRequest) {
     attachPartnerContinueBindingCookie(res, bindingToken);
   }
 
+  attachContinueContextTraceHeader(res.headers, trace);
   return res;
 }

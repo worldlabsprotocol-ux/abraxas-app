@@ -13,8 +13,13 @@ import { createSupabaseContinuationStore } from "@/lib/partner/partnerFlowContin
 import { isOpaqueVerifyRequest } from "@/lib/partner/productionIntegration/requestCorrelation";
 import { parsePartnerFlowInstant } from "@/lib/partner/parsePartnerFlowInstant";
 import { logHostedHandoffContinueDiagnostic } from "./continueContextDiagnostics";
+import type { ContinueContextTraceCollector } from "./continueContextTrace";
 import { loadHandoffByVerifyRequest } from "./store";
 import type { HostedHandoffRecord } from "./types";
+
+export type HostedHandoffContinueResolveOptions = {
+  trace?: ContinueContextTraceCollector;
+};
 
 export type HostedHandoffContinueResolveCode =
   | "missing"
@@ -152,8 +157,11 @@ async function ensureHostedHandoffContinuation(input: {
   handoff: HostedHandoffRecord;
   returnUrl: string;
   appSlug: string | null;
+  trace?: ContinueContextTraceCollector;
 }): Promise<PartnerFlowContinuationRecord> {
-  const store = createSupabaseContinuationStore();
+  input.trace?.record("ensure_enter");
+  input.trace?.record("store_created");
+  const store = createSupabaseContinuationStore({ trace: input.trace, traceContext: "primary" });
   const verifyRequestRef = input.handoff.verify_request;
   let existing: PartnerFlowContinuationRecord | null;
   try {
@@ -192,7 +200,10 @@ async function ensureHostedHandoffContinuation(input: {
     returnUrl: input.returnUrl,
     verifyRequestRef,
   });
-  if (reused) return reused;
+  if (reused) {
+    input.trace?.record("reuse_return");
+    return reused;
+  }
 
   const created = createPartnerFlowContinuationRecord({
     partnerId: input.handoff.partner_id,
@@ -225,9 +236,15 @@ async function ensureHostedHandoffContinuation(input: {
     return continuation;
   } catch (error) {
     if (error instanceof ContinuationUniqueConflictError) {
+      input.trace?.record("save_conflict");
+      input.trace?.record("recovery_peek_enter");
       let winnerExisting: PartnerFlowContinuationRecord | null;
       try {
-        winnerExisting = await store.peekByVerifyRequestId(verifyRequestRef);
+        const recoveryStore = createSupabaseContinuationStore({
+          trace: input.trace,
+          traceContext: "recovery",
+        });
+        winnerExisting = await recoveryStore.peekByVerifyRequestId(verifyRequestRef);
       } catch (peekError) {
         logHostedHandoffContinueDiagnostic({
           stage: "continuation_conflict_recovery",
@@ -262,7 +279,10 @@ async function ensureHostedHandoffContinuation(input: {
         returnUrl: input.returnUrl,
         verifyRequestRef,
       });
-      if (winner) return winner;
+      if (winner) {
+        input.trace?.record("reuse_return");
+        return winner;
+      }
     }
 
     logHostedHandoffContinueDiagnostic({
@@ -285,7 +305,9 @@ async function ensureHostedHandoffContinuation(input: {
 /** Resolve a server-bound hosted handoff for holder /partner/continue. Does not consume. */
 export async function resolveHostedHandoffForContinue(
   verifyRequest: string,
+  options?: HostedHandoffContinueResolveOptions,
 ): Promise<HostedHandoffContinueResolveResult> {
+  options?.trace?.record("resolver_enter");
   const trimmed = verifyRequest.trim();
   if (!isOpaqueVerifyRequest(trimmed)) {
     return { ok: false, code: "missing" };
@@ -361,8 +383,10 @@ export async function resolveHostedHandoffForContinue(
       handoff,
       returnUrl,
       appSlug: app.public_slug,
+      trace: options?.trace,
     });
   } catch (error) {
+    options?.trace?.record("ensure_throw");
     logHostedHandoffContinueDiagnostic({
       stage: "continuation_ensure_throw",
       verifyRequestRef: trimmed,
@@ -377,6 +401,7 @@ export async function resolveHostedHandoffForContinue(
     return { ok: false, code: "unavailable" };
   }
 
+  options?.trace?.record("resolver_return");
   return {
     ok: true,
     preview: {

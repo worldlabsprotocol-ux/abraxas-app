@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
+import { CONTINUE_CONTEXT_TRACE_HEADER } from "@/lib/partner/hostedHandoff/continueContextTrace";
 import { GET } from "./route";
 
 const resolveHostedHandoffForContinue = vi.fn();
@@ -13,8 +14,12 @@ vi.mock("@/lib/partner/partnerVerifyResumeCookie", () => ({
   attachPartnerContinueBindingCookie: vi.fn(),
 }));
 
+const prevCron = process.env.CRON_SECRET;
+
 afterEach(() => {
   vi.clearAllMocks();
+  if (prevCron === undefined) delete process.env.CRON_SECRET;
+  else process.env.CRON_SECRET = prevCron;
 });
 
 describe("GET /api/v1/hosted-handoff/continue-context", () => {
@@ -83,6 +88,34 @@ describe("GET /api/v1/hosted-handoff/continue-context", () => {
       "http://localhost/api/v1/hosted-handoff/continue-context?verify_request=vr_81cfe12715d8c338",
     ));
     expect(res.status).toBe(409);
+  });
+
+  it("does not expose trace header on normal public requests", async () => {
+    delete process.env.CRON_SECRET;
+    resolveHostedHandoffForContinue.mockResolvedValue({ ok: false, code: "missing" });
+    const res = await GET(new NextRequest(
+      "http://localhost/api/v1/hosted-handoff/continue-context?verify_request=vr_test1234567890",
+    ));
+    expect(res.headers.get(CONTINUE_CONTEXT_TRACE_HEADER)).toBeNull();
+  });
+
+  it("exposes safe trace header when Authorization matches CRON_SECRET", async () => {
+    process.env.CRON_SECRET = "trace-secret";
+    resolveHostedHandoffForContinue.mockImplementation(async (_vr, options) => {
+      options?.trace?.record("resolver_enter");
+      options?.trace?.record("peek_return_null");
+      return { ok: false, code: "unavailable" };
+    });
+
+    const res = await GET(new NextRequest(
+      "http://localhost/api/v1/hosted-handoff/continue-context?verify_request=vr_test1234567890",
+      { headers: { authorization: "Bearer trace-secret" } },
+    ));
+    expect(res.status).toBe(503);
+    const traceHeader = res.headers.get(CONTINUE_CONTEXT_TRACE_HEADER);
+    expect(traceHeader).toBe("route_enter,resolver_enter,peek_return_null");
+    expect(traceHeader).not.toContain("trace-secret");
+    expect(traceHeader).not.toContain("vr_");
   });
 
   it("ignores query return_url override attempts", async () => {
