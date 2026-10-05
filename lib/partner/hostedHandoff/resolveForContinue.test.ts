@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
 import type { PartnerFlowStoredConfig } from "@/lib/partner/launchpad/partnerFlowRequest/view";
+import type { PartnerFlowContinuationRecord } from "@/lib/partner/partnerFlowContinuation";
 import {
   createHostedHandoff,
   loadHandoffByVerifyRequest,
@@ -37,15 +38,20 @@ const stored: PartnerFlowStoredConfig = {
   display_label: "Acme",
 };
 
-const peekByVerifyRequestId = vi.fn();
-const save = vi.fn(async (record: unknown) => {
-  peekByVerifyRequestId.mockResolvedValue(record);
+const ensuredRecords = new Map<string, PartnerFlowContinuationRecord>();
+const ensureByOpaqueVerifyRequest = vi.fn(async (record: PartnerFlowContinuationRecord) => {
+  const key = record.verifyRequestId ?? "";
+  const existing = ensuredRecords.get(key);
+  if (existing) return { record: existing, wasCreated: false };
+  ensuredRecords.set(key, record);
+  return { record, wasCreated: true };
 });
 
 vi.mock("@/lib/partner/partnerFlowContinuationStore", () => ({
   createSupabaseContinuationStore: () => ({
-    peekByVerifyRequestId,
-    save,
+    ensureByOpaqueVerifyRequest,
+    peekByVerifyRequestId: vi.fn(),
+    save: vi.fn(),
     peek: vi.fn(),
     consume: vi.fn(),
     attachVerifyRequestId: vi.fn(),
@@ -56,6 +62,11 @@ vi.mock("@/lib/partner/launchpad/resolveLaunchpadApplication", () => ({
   getLaunchpadApplicationForPartner: vi.fn(async () => app),
 }));
 
+beforeEach(() => {
+  ensuredRecords.clear();
+  ensureByOpaqueVerifyRequest.mockClear();
+});
+
 afterEach(() => {
   resetHostedHandoffsForTests();
   vi.clearAllMocks();
@@ -65,7 +76,6 @@ const PRODUCTION_OPAQUE = "vr_81cfe12715d8c338";
 
 describe("resolveHostedHandoffForContinue", () => {
   it("resolves a freshly created handoff by verify_request", async () => {
-    peekByVerifyRequestId.mockResolvedValue(null);
     const created = await createHostedHandoff({ application: app, stored, runtime: "universal_https" });
     const resolved = await resolveHostedHandoffForContinue(created.verify_request);
     expect(resolved.ok).toBe(true);
@@ -74,11 +84,10 @@ describe("resolveHostedHandoffForContinue", () => {
     expect(resolved.preview.policy_id).toBe(app.policy_id);
     expect(resolved.preview.return_url).toBe("http://localhost:3000/callback");
     expect(resolved.continuation.verifyRequestId).toBe(created.verify_request);
-    expect(save).toHaveBeenCalled();
+    expect(ensureByOpaqueVerifyRequest).toHaveBeenCalled();
   });
 
   it("persists continuation for production-shaped opaque vr_* without consuming handoff", async () => {
-    peekByVerifyRequestId.mockResolvedValue(null);
     const created = await createHostedHandoff({ application: app, stored, runtime: "universal_https" });
     putHandoffForTests({ ...created, verify_request: PRODUCTION_OPAQUE });
 
@@ -90,16 +99,15 @@ describe("resolveHostedHandoffForContinue", () => {
     expect(second.ok).toBe(true);
     expect(handoff?.status).toBe("created");
     expect(handoff?.consumed_at).toBeNull();
-    expect(save).toHaveBeenCalledWith(expect.objectContaining({
+    expect(ensureByOpaqueVerifyRequest).toHaveBeenCalledWith(expect.objectContaining({
       verifyRequestId: PRODUCTION_OPAQUE,
       partnerId: "acme",
       policyId: app.policy_id,
       returnUrl: "http://localhost:3000/callback",
-    }));
+    }), expect.any(Object));
   });
 
   it("resolves from durable lookup after clearing process memory", async () => {
-    peekByVerifyRequestId.mockResolvedValue(null);
     const created = await createHostedHandoff({ application: app, stored, runtime: "universal_https" });
     resetHostedHandoffsForTests();
     putHandoffForTests(created);
@@ -124,7 +132,6 @@ describe("resolveHostedHandoffForContinue", () => {
   });
 
   it("does not treat open/review resolve as consumption", async () => {
-    peekByVerifyRequestId.mockResolvedValue(null);
     const created = await createHostedHandoff({ application: app, stored, runtime: "universal_https" });
     const first = await resolveHostedHandoffForContinue(created.verify_request);
     const second = await loadHandoffByVerifyRequest(created.verify_request);
@@ -145,13 +152,14 @@ describe("resolveHostedHandoffForContinue", () => {
       expiresAt: created.expires_at,
       verifyRequestId: created.verify_request,
     };
-    peekByVerifyRequestId.mockResolvedValue(continuation);
+    ensuredRecords.set(created.verify_request, continuation);
     const resolved = await resolveHostedHandoffForContinue(created.verify_request);
     expect(resolved.ok).toBe(true);
-    expect(save).not.toHaveBeenCalled();
+    if (!resolved.ok) return;
+    expect(resolved.continuation.jti).toBe("jti-1");
   });
 
-  it("recovers from opaque unique conflict by returning the existing continuation", async () => {
+  it("returns existing continuation from atomic ensure without save recovery", async () => {
     const created = await createHostedHandoff({ application: app, stored, runtime: "universal_https" });
     const winner = {
       jti: "jti-winner",
@@ -163,11 +171,7 @@ describe("resolveHostedHandoffForContinue", () => {
       expiresAt: created.expires_at,
       verifyRequestId: created.verify_request,
     };
-    peekByVerifyRequestId
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(winner);
-    const { ContinuationUniqueConflictError } = await import("@/lib/partner/partnerFlowContinuation");
-    save.mockRejectedValueOnce(new ContinuationUniqueConflictError(created.verify_request));
+    ensuredRecords.set(created.verify_request, winner);
 
     const resolved = await resolveHostedHandoffForContinue(created.verify_request);
     expect(resolved.ok).toBe(true);

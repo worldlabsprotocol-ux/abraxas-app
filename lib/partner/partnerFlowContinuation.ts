@@ -67,10 +67,19 @@ export class ContinuationUniqueConflictError extends Error {
   }
 }
 
+export type OpaqueContinuationEnsureResult = {
+  record: PartnerFlowContinuationRecord;
+  wasCreated: boolean;
+};
+
 export type PartnerFlowContinuationStore = {
   save(record: PartnerFlowContinuationRecord): Promise<void>;
   peek(jti: string): Promise<PartnerFlowContinuationRecord | null>;
   peekByVerifyRequestId(verifyRequestId: string): Promise<PartnerFlowContinuationRecord | null>;
+  ensureByOpaqueVerifyRequest(
+    record: PartnerFlowContinuationRecord,
+    options?: { verifyRequestRef?: string },
+  ): Promise<OpaqueContinuationEnsureResult>;
   consume(jti: string): Promise<PartnerFlowContinuationRecord | null>;
   attachVerifyRequestId(jti: string, verifyRequestId: string): Promise<void>;
 };
@@ -277,6 +286,12 @@ export function createMemoryContinuationStore(
     async peekByVerifyRequestId(verifyRequestId) {
       return Array.from(rows.values()).find((row) => row.verifyRequestId === verifyRequestId) ?? null;
     },
+    async ensureByOpaqueVerifyRequest(record) {
+      const existing = await this.peekByVerifyRequestId(record.verifyRequestId ?? "");
+      if (existing) return { record: existing, wasCreated: false };
+      await this.save(record);
+      return { record, wasCreated: true };
+    },
     async consume(jti) {
       const existing = rows.get(jti);
       if (!existing || existing.consumedAt) return null;
@@ -300,6 +315,7 @@ export function createUnavailableContinuationStore(): PartnerFlowContinuationSto
     save: fail,
     peek: fail,
     peekByVerifyRequestId: fail,
+    ensureByOpaqueVerifyRequest: fail,
     consume: fail,
     attachVerifyRequestId: fail,
   };

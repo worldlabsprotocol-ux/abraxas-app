@@ -5,7 +5,6 @@ import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resol
 import { opaqueCallbackRef } from "@/lib/partner/launchpad/partnerFlowRequest/view";
 import {
   assertContinuationMatchesStored,
-  ContinuationUniqueConflictError,
   createPartnerFlowContinuationRecord,
   type PartnerFlowContinuationRecord,
 } from "@/lib/partner/partnerFlowContinuation";
@@ -163,47 +162,6 @@ async function ensureHostedHandoffContinuation(input: {
   input.trace?.record("store_created");
   const store = createSupabaseContinuationStore({ trace: input.trace, traceContext: "primary" });
   const verifyRequestRef = input.handoff.verify_request;
-  let existing: PartnerFlowContinuationRecord | null;
-  try {
-    existing = await store.peekByVerifyRequestId(verifyRequestRef);
-  } catch (error) {
-    logHostedHandoffContinueDiagnostic({
-      stage: "continuation_peek",
-      verifyRequestRef,
-      handoffRef: input.handoff.handoff_ref,
-      errorClass: error instanceof Error ? error.name : "Error",
-      internalCode: error instanceof Error && "code" in error
-        ? String((error as { code?: string }).code)
-        : "continuation_peek_throw",
-      postgresCode: postgresErrorCode(error),
-      peekFound: false,
-      functionName: "ensureHostedHandoffContinuation.peekByVerifyRequestId",
-    });
-    throw error;
-  }
-
-  logHostedHandoffContinueDiagnostic({
-    stage: "continuation_peek",
-    verifyRequestRef,
-    handoffRef: input.handoff.handoff_ref,
-    continuationJti: existing?.jti,
-    peekFound: Boolean(existing),
-    consumed: Boolean(existing?.consumedAt),
-    rawExpiresAt: existing?._diagRawExpiresAt,
-    mappedExpiresAt: existing?.expiresAt,
-    functionName: "ensureHostedHandoffContinuation.peekByVerifyRequestId",
-  });
-
-  const reused = reuseHostedHandoffContinuation({
-    existing,
-    handoff: input.handoff,
-    returnUrl: input.returnUrl,
-    verifyRequestRef,
-  });
-  if (reused) {
-    input.trace?.record("reuse_return");
-    return reused;
-  }
 
   const created = createPartnerFlowContinuationRecord({
     partnerId: input.handoff.partner_id,
@@ -231,75 +189,50 @@ async function ensureHostedHandoffContinuation(input: {
     expiresAt: input.handoff.expires_at,
     verifyRequestId: input.handoff.verify_request,
   };
+
+  let ensured;
   try {
-    await store.save(continuation);
-    return continuation;
+    ensured = await store.ensureByOpaqueVerifyRequest(continuation, { verifyRequestRef });
   } catch (error) {
-    if (error instanceof ContinuationUniqueConflictError) {
-      input.trace?.record("save_conflict");
-      input.trace?.record("recovery_peek_enter");
-      let winnerExisting: PartnerFlowContinuationRecord | null;
-      try {
-        const recoveryStore = createSupabaseContinuationStore({
-          trace: input.trace,
-          traceContext: "recovery",
-        });
-        winnerExisting = await recoveryStore.peekByVerifyRequestId(verifyRequestRef);
-      } catch (peekError) {
-        logHostedHandoffContinueDiagnostic({
-          stage: "continuation_conflict_recovery",
-          verifyRequestRef,
-          handoffRef: input.handoff.handoff_ref,
-          errorClass: peekError instanceof Error ? peekError.name : "Error",
-          internalCode: "continuation_conflict_peek_throw",
-          postgresCode: postgresErrorCode(peekError),
-          dbWriteAttempted: true,
-          dbWriteResult: "unique_conflict",
-          peekFound: false,
-          functionName: "ensureHostedHandoffContinuation.conflictPeek",
-        });
-        throw peekError;
-      }
-
-      logHostedHandoffContinueDiagnostic({
-        stage: "continuation_conflict_recovery",
-        verifyRequestRef,
-        handoffRef: input.handoff.handoff_ref,
-        continuationJti: winnerExisting?.jti,
-        internalCode: "continuation_unique_conflict",
-        dbWriteAttempted: true,
-        dbWriteResult: "unique_conflict",
-        peekFound: Boolean(winnerExisting),
-        functionName: "ensureHostedHandoffContinuation",
-      });
-
-      const winner = reuseHostedHandoffContinuation({
-        existing: winnerExisting,
-        handoff: input.handoff,
-        returnUrl: input.returnUrl,
-        verifyRequestRef,
-      });
-      if (winner) {
-        input.trace?.record("reuse_return");
-        return winner;
-      }
-    }
-
     logHostedHandoffContinueDiagnostic({
-      stage: "continuation_save_throw",
+      stage: "continuation_opaque_ensure",
       verifyRequestRef,
       handoffRef: input.handoff.handoff_ref,
       errorClass: error instanceof Error ? error.name : "Error",
       internalCode: error instanceof Error && "code" in error
         ? String((error as { code?: string }).code)
-        : "continuation_save_throw",
+        : "continuation_opaque_ensure_throw",
       postgresCode: postgresErrorCode(error),
-      dbWriteAttempted: true,
-      dbWriteResult: "throw",
-      functionName: "ensureHostedHandoffContinuation.save",
+      functionName: "ensureHostedHandoffContinuation.ensureByOpaqueVerifyRequest",
     });
     throw error;
   }
+
+  logHostedHandoffContinueDiagnostic({
+    stage: "continuation_opaque_ensure",
+    verifyRequestRef,
+    handoffRef: input.handoff.handoff_ref,
+    continuationJti: ensured.record.jti,
+    internalCode: ensured.wasCreated ? "continuation_created" : "continuation_reused",
+    peekFound: !ensured.wasCreated,
+    consumed: Boolean(ensured.record.consumedAt),
+    rawExpiresAt: ensured.record._diagRawExpiresAt,
+    mappedExpiresAt: ensured.record.expiresAt,
+    functionName: "ensureHostedHandoffContinuation.ensureByOpaqueVerifyRequest",
+  });
+
+  const reused = reuseHostedHandoffContinuation({
+    existing: ensured.record,
+    handoff: input.handoff,
+    returnUrl: input.returnUrl,
+    verifyRequestRef,
+  });
+  if (reused) {
+    input.trace?.record("reuse_return");
+    return reused;
+  }
+
+  throw Object.assign(new Error("continuation_unavailable"), { code: "unavailable" });
 }
 
 /** Resolve a server-bound hosted handoff for holder /partner/continue. Does not consume. */
