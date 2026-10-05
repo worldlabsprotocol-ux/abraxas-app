@@ -161,6 +161,8 @@ describe("opaque ensure atomic RPC (#565)", () => {
     ).rejects.toBeInstanceOf(ContinuationStoreUnavailableError);
   });
 
+  // In-memory semantics: single-threaded JS, not PostgreSQL READ COMMITTED MVCC.
+  // Real concurrency parity requires MIGRATION_132_PG_URL (see sqlParity test).
   it("postgres semantics store keeps one row under concurrent ensure", async () => {
     const store = createPostgresSemanticsContinuationStore();
     const results = await Promise.all([

@@ -3,6 +3,10 @@
 -- Replaces fragile peek-then-insert-then-recover-peek when PostgREST peek returns zero rows
 -- while the unique index proves the row exists.
 -- Idempotent. Safe on DEMO and Production.
+--
+-- Concurrency: INSERT and conflict-winner SELECT are separate SQL commands inside this
+-- function so READ COMMITTED takes a fresh snapshot on the SELECT after ON CONFLICT
+-- DO NOTHING (a single-statement CTE+UNION fallback can miss the winner's row).
 
 CREATE OR REPLACE FUNCTION public.ensure_partner_flow_continuation_by_opaque(
   p_opaque text,
@@ -38,17 +42,21 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 VOLATILE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = pg_catalog, public
 AS $$
 DECLARE
-  v_opaque text := btrim(p_opaque);
+  v_opaque text := pg_catalog.btrim(p_opaque);
+  v_row public.partner_flow_continuations%ROWTYPE;
+  v_attempt integer := 0;
+  v_max_attempts constant integer := 2;
 BEGIN
   IF v_opaque IS NULL OR v_opaque = '' THEN
     RETURN;
   END IF;
 
-  RETURN QUERY
-  WITH inserted AS (
+  WHILE v_attempt < v_max_attempts LOOP
+    v_attempt := v_attempt + 1;
+
     INSERT INTO public.partner_flow_continuations AS c (
       jti,
       partner_id,
@@ -83,44 +91,57 @@ BEGIN
     )
     ON CONFLICT (opaque_verify_request) WHERE opaque_verify_request IS NOT NULL
     DO NOTHING
-    RETURNING
-      true AS was_created,
-      c.jti,
-      c.partner_id,
-      c.policy_id,
-      c.policy_version,
-      c.return_url,
-      c.permission,
-      c.permission_version,
-      c.purpose,
-      c.app_slug,
-      c.verify_request_id,
-      c.consumed_at,
-      c.expires_at,
-      c.created_at,
-      c.opaque_verify_request
-  )
-  SELECT * FROM inserted
-  UNION ALL
-  SELECT
-    false AS was_created,
-    c.jti,
-    c.partner_id,
-    c.policy_id,
-    c.policy_version,
-    c.return_url,
-    c.permission,
-    c.permission_version,
-    c.purpose,
-    c.app_slug,
-    c.verify_request_id,
-    c.consumed_at,
-    c.expires_at,
-    c.created_at,
-    c.opaque_verify_request
-  FROM public.partner_flow_continuations c
-  WHERE c.opaque_verify_request = v_opaque
-    AND NOT EXISTS (SELECT 1 FROM inserted);
+    RETURNING * INTO v_row;
+
+    IF FOUND THEN
+      RETURN QUERY
+      SELECT
+        true,
+        v_row.jti,
+        v_row.partner_id,
+        v_row.policy_id,
+        v_row.policy_version,
+        v_row.return_url,
+        v_row.permission,
+        v_row.permission_version,
+        v_row.purpose,
+        v_row.app_slug,
+        v_row.verify_request_id,
+        v_row.consumed_at,
+        v_row.expires_at,
+        v_row.created_at,
+        v_row.opaque_verify_request;
+      RETURN;
+    END IF;
+
+    SELECT * INTO v_row
+      FROM public.partner_flow_continuations c
+     WHERE c.opaque_verify_request = v_opaque
+     LIMIT 1;
+
+    IF FOUND THEN
+      RETURN QUERY
+      SELECT
+        false,
+        v_row.jti,
+        v_row.partner_id,
+        v_row.policy_id,
+        v_row.policy_version,
+        v_row.return_url,
+        v_row.permission,
+        v_row.permission_version,
+        v_row.purpose,
+        v_row.app_slug,
+        v_row.verify_request_id,
+        v_row.consumed_at,
+        v_row.expires_at,
+        v_row.created_at,
+        v_row.opaque_verify_request;
+      RETURN;
+    END IF;
+  END LOOP;
+
+  RETURN;
 END;
 $$;
 
