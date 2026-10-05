@@ -14,6 +14,7 @@ export type HostedHandoffContinueDiagnosticStage =
   | "callback_ref_unresolved"
   | "continuation_peek"
   | "continuation_opaque_rpc"
+  | "continuation_opaque_ensure"
   | "continuation_reuse_consumed"
   | "continuation_reuse_expired"
   | "continuation_reuse_binding"
@@ -45,6 +46,7 @@ export type HostedHandoffContinueDiagnosticPayload = {
   dbWriteResult?: string;
   functionName?: string;
   opaqueRpc?: Record<string, unknown>;
+  opaqueEnsure?: Record<string, unknown>;
 };
 
 const JWT_PATTERN = /^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
@@ -119,6 +121,12 @@ export function buildHostedHandoffContinueDiagnosticPayload(
 
   if (input.opaqueRpc) {
     for (const [key, value] of Object.entries(input.opaqueRpc)) {
+      if (value !== undefined) payload[key] = value;
+    }
+  }
+
+  if (input.opaqueEnsure) {
+    for (const [key, value] of Object.entries(input.opaqueEnsure)) {
       if (value !== undefined) payload[key] = value;
     }
   }

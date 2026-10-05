@@ -11,6 +11,10 @@ import { isOpaqueVerifyRequest } from "@/lib/partner/productionIntegration/reque
 import { isPostgresUniqueViolation } from "@/lib/partner/partnerFlowContinuationPostgresErrors";
 import { canonicalPartnerFlowInstant } from "@/lib/partner/parsePartnerFlowInstant";
 import {
+  logContinuationOpaqueEnsureDiagnostic,
+  ENSURE_OPAQUE_CONTINUATION_RPC,
+} from "@/lib/partner/hostedHandoff/continuationOpaqueEnsureDiagnostics";
+import {
   logContinuationOpaqueRpcDiagnostic,
   OPAQUE_CONTINUATION_PEEK_RPC,
   OPAQUE_CONTINUATION_PEEK_RPC_ARG,
@@ -20,6 +24,7 @@ import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import {
   ContinuationStoreUnavailableError,
   ContinuationUniqueConflictError,
+  type OpaqueContinuationEnsureResult,
   type PartnerFlowContinuationRecord,
   type PartnerFlowContinuationStore,
 } from "@/lib/partner/partnerFlowContinuation";
@@ -77,6 +82,19 @@ function adminClient() {
 function unwrapOpaqueRpcRow(data: unknown): Record<string, unknown> | null {
   const row = Array.isArray(data) ? data[0] : data;
   return row && typeof row === "object" ? (row as Record<string, unknown>) : null;
+}
+
+function mapEnsureOpaqueRpcRow(
+  data: unknown,
+): OpaqueContinuationEnsureResult | null {
+  const row = unwrapOpaqueRpcRow(data);
+  if (!row) return null;
+  const wasCreated = row.was_created === true;
+  const { was_created: _wasCreated, ...continuationRow } = row;
+  return {
+    wasCreated,
+    record: mapRow(continuationRow),
+  };
 }
 
 async function peekOpaqueContinuationByRpc(
@@ -185,6 +203,58 @@ export function createSupabaseContinuationStore(
         .maybeSingle();
       assertStoreAvailable(error);
       return data ? mapRow(data as Record<string, unknown>) : null;
+    },
+    async ensureByOpaqueVerifyRequest(record, options) {
+      trace?.record("atomic_rpc_enter");
+      const verifyRequestRef = options?.verifyRequestRef ?? record.verifyRequestId ?? undefined;
+      const normalized = normalizeContinuationVerifyRequestId(record.verifyRequestId ?? "");
+      if (!normalized || !isOpaqueVerifyRequest(normalized)) {
+        trace?.record("atomic_rpc_error");
+        throw new ContinuationStoreUnavailableError();
+      }
+
+      const sb = adminClient();
+      const { data, error } = await sb.rpc(ENSURE_OPAQUE_CONTINUATION_RPC, {
+        p_opaque: normalized,
+        p_jti: record.jti,
+        p_partner_id: record.partnerId,
+        p_policy_id: record.policyId,
+        p_policy_version: record.policyVersion ?? null,
+        p_return_url: record.returnUrl,
+        p_expires_at: record.expiresAt,
+        p_created_at: record.createdAt,
+        p_permission: record.permission ?? null,
+        p_permission_version: record.permissionVersion ?? null,
+        p_purpose: record.purpose ?? null,
+        p_app_slug: record.appSlug ?? null,
+      });
+
+      let mapped: OpaqueContinuationEnsureResult | null = null;
+      let mapErrorClass: string | undefined;
+      if (!error) {
+        try {
+          mapped = mapEnsureOpaqueRpcRow(data);
+        } catch (mapError) {
+          mapErrorClass = mapError instanceof Error ? mapError.name : "Error";
+        }
+      }
+
+      logContinuationOpaqueEnsureDiagnostic({
+        verifyRequestRef,
+        normalizedIdentifier: normalized,
+        wasCreated: mapped?.wasCreated,
+        error,
+        mappedJti: mapped?.record.jti,
+      });
+
+      if (error || mapErrorClass || !mapped) {
+        trace?.record("atomic_rpc_error");
+        assertStoreAvailable(error);
+        throw new ContinuationStoreUnavailableError();
+      }
+
+      trace?.record(mapped.wasCreated ? "atomic_rpc_return_created" : "atomic_rpc_return_existing");
+      return mapped;
     },
     async peekByVerifyRequestId(verifyRequestId) {
       if (traceContext === "primary") trace?.record("peek_enter");

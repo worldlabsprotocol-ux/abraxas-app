@@ -8,7 +8,9 @@ import {
 } from "@/lib/partner/partnerFlowContinuationIdentifiers";
 import { isPostgresUniqueViolation } from "@/lib/partner/partnerFlowContinuationPostgresErrors";
 import {
+  ContinuationStoreUnavailableError,
   ContinuationUniqueConflictError,
+  type OpaqueContinuationEnsureResult,
   type PartnerFlowContinuationRecord,
   type PartnerFlowContinuationStore,
 } from "@/lib/partner/partnerFlowContinuation";
@@ -93,6 +95,31 @@ export function createPostgresSemanticsContinuationStore(): PartnerFlowContinuat
       if (!jti) return null;
       const row = byJti.get(jti);
       return row ? fromRow(row) : null;
+    },
+    async ensureByOpaqueVerifyRequest(record): Promise<OpaqueContinuationEnsureResult> {
+      const row = toRow(record);
+      const opaque = row.opaque_verify_request?.trim();
+      if (!opaque) throw new ContinuationStoreUnavailableError();
+
+      const existingJti = byOpaque.get(opaque);
+      if (existingJti) {
+        const existing = byJti.get(existingJti);
+        if (!existing) throw new ContinuationStoreUnavailableError();
+        return { record: fromRow(existing), wasCreated: false };
+      }
+
+      if (
+        row.verify_request_id
+        && byUuid.has(row.verify_request_id)
+        && byUuid.get(row.verify_request_id) !== row.jti
+      ) {
+        throw new ContinuationUniqueConflictError(row.verify_request_id);
+      }
+
+      byJti.set(row.jti, row);
+      byOpaque.set(opaque, row.jti);
+      if (row.verify_request_id) byUuid.set(row.verify_request_id, row.jti);
+      return { record: fromRow(row), wasCreated: true };
     },
     async consume(jti) {
       const row = byJti.get(jti);

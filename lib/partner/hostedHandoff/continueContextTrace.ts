@@ -33,6 +33,10 @@ export const CONTINUE_CONTEXT_TRACE_CHECKPOINTS = [
   "recovery_before_rpc",
   "recovery_after_rpc",
   "recovery_rpc_error",
+  "atomic_rpc_enter",
+  "atomic_rpc_return_existing",
+  "atomic_rpc_return_created",
+  "atomic_rpc_error",
   "ensure_throw",
   "resolver_return",
 ] as const;
