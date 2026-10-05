@@ -20,3 +20,10 @@ export function parsePartnerFlowInstant(value: string): number | null {
 
   return null;
 }
+
+/** Canonical ISO instant for persisted timestamptz reads. Returns null when unparseable. */
+export function canonicalPartnerFlowInstant(value: string): string | null {
+  const ms = parsePartnerFlowInstant(value);
+  if (ms === null) return null;
+  return new Date(ms).toISOString();
+}

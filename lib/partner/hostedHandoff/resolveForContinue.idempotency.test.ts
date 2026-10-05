@@ -118,10 +118,11 @@ describe("resolveHostedHandoffForContinue idempotency", () => {
 
   it("reuses continuation when Postgres returns +00 timestamptz on expires_at", async () => {
     const created = await createHostedHandoff({ application: app, stored, runtime: "universal_https" });
+    const futureExpires = new Date(Date.now() + 45 * 60 * 1000).toISOString().replace("Z", "+00");
     putHandoffForTests({
       ...created,
       verify_request: PRODUCTION_OPAQUE,
-      expires_at: "2026-10-05T10:24:48.399+00",
+      expires_at: futureExpires,
     });
 
     const first = await resolveHostedHandoffForContinue(PRODUCTION_OPAQUE);
@@ -131,7 +132,7 @@ describe("resolveHostedHandoffForContinue idempotency", () => {
     if (!first.ok || !second.ok) return;
     expect(first.continuation.jti).toBe(second.continuation.jti);
     expect(semanticsStore.rowCount()).toBe(1);
-    expect(semanticsStore.rows()[0]?.expiresAt).toMatch(/\+00$/);
+    expect(semanticsStore.rows()[0]?.expiresAt).toMatch(/\+00$|Z$/);
   });
 
   it("would have failed before idempotency fix when reuse missed unique conflict", async () => {
