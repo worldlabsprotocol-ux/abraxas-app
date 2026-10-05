@@ -8,6 +8,7 @@ import {
   resetHostedHandoffsForTests,
 } from "./store";
 import { resolveHostedHandoffForContinue } from "./resolveForContinue";
+import { ENSURE_OPAQUE_CONTINUATION_RPC } from "./continuationOpaqueEnsureDiagnostics";
 
 const OPAQUE = "vr_81cfe12715d8c338";
 
@@ -53,6 +54,21 @@ vi.mock("@/lib/partner/launchpad/resolveLaunchpadApplication", () => ({
   getLaunchpadApplicationForPartner: vi.fn(async () => app),
 }));
 
+function ensureRowPayload(wasCreated: boolean) {
+  return {
+    was_created: wasCreated,
+    jti: wasCreated ? "jti-created" : "jti-existing",
+    partner_id: "acme",
+    policy_id: app.policy_id,
+    return_url: "http://localhost:3000/callback",
+    created_at: new Date().toISOString(),
+    expires_at: new Date(Date.now() + 900_000).toISOString(),
+    consumed_at: null,
+    verify_request_id: null,
+    opaque_verify_request: OPAQUE,
+  };
+}
+
 function newTrace() {
   return createContinueContextTraceCollector();
 }
@@ -76,9 +92,9 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-describe("continueContextTrace scenarios (#563)", () => {
-  it("A. R1 no existing row traces peek through save_enter", async () => {
-    mockRpc.mockResolvedValue({ data: [], error: null });
+describe("continueContextTrace scenarios (#563 / #565)", () => {
+  it("A. R1 no existing row traces atomic ensure create path", async () => {
+    mockRpc.mockResolvedValue({ data: [ensureRowPayload(true)], error: null });
     const trace = newTrace();
     const created = await createHostedHandoff({ application: app, stored, runtime: "universal_https" });
     putHandoffForTests({ ...created, verify_request: OPAQUE });
@@ -91,33 +107,21 @@ describe("continueContextTrace scenarios (#563)", () => {
       "resolver_enter",
       "ensure_enter",
       "store_created",
-      "peek_enter",
-      "identifier_normalized",
-      "opaque_branch",
-      "admin_client_acquired",
-      "opaque_rpc_helper_enter",
-      "before_rpc",
-      "after_rpc",
-      "peek_return_null",
-      "save_enter",
+      "atomic_rpc_enter",
+      "atomic_rpc_return_created",
+      "reuse_return",
       "resolver_return",
     ]));
-    expect(checkpoints).not.toContain("reuse_return");
+    expect(checkpoints).not.toContain("save_enter");
+    expect(checkpoints).not.toContain("peek_enter");
+    expect(mockRpc).toHaveBeenCalledWith(
+      ENSURE_OPAQUE_CONTINUATION_RPC,
+      expect.objectContaining({ p_opaque: OPAQUE }),
+    );
   });
 
-  it("B. R2 existing row traces row reuse without save_enter", async () => {
-    const rowPayload = {
-      jti: "jti-existing",
-      partner_id: "acme",
-      policy_id: app.policy_id,
-      return_url: "http://localhost:3000/callback",
-      created_at: new Date().toISOString(),
-      expires_at: new Date(Date.now() + 900_000).toISOString(),
-      consumed_at: null,
-      verify_request_id: null,
-      opaque_verify_request: OPAQUE,
-    };
-    mockRpc.mockResolvedValue({ data: [rowPayload], error: null });
+  it("B. R2 existing row traces atomic ensure reuse without save_enter", async () => {
+    mockRpc.mockResolvedValue({ data: [ensureRowPayload(false)], error: null });
 
     const trace = newTrace();
     const created = await createHostedHandoff({ application: app, stored, runtime: "universal_https" });
@@ -128,20 +132,16 @@ describe("continueContextTrace scenarios (#563)", () => {
 
     const checkpoints = trace.checkpoints();
     expect(checkpoints).toEqual(expect.arrayContaining([
-      "peek_enter",
-      "opaque_branch",
-      "before_rpc",
-      "after_rpc",
-      "row_candidate",
-      "map_success",
-      "peek_return_found",
+      "atomic_rpc_enter",
+      "atomic_rpc_return_existing",
       "reuse_return",
       "resolver_return",
     ]));
     expect(checkpoints).not.toContain("save_enter");
+    expect(checkpoints).not.toContain("peek_enter");
   });
 
-  it("C. RPC error traces before_rpc, rpc_error, ensure_throw", async () => {
+  it("C. RPC error traces atomic_rpc_error and ensure_throw", async () => {
     mockRpc.mockResolvedValue({
       data: null,
       error: { code: "PGRST202", message: "function not found" },
@@ -158,14 +158,14 @@ describe("continueContextTrace scenarios (#563)", () => {
 
     const checkpoints = trace.checkpoints();
     expect(checkpoints).toEqual(expect.arrayContaining([
-      "before_rpc",
-      "rpc_error",
+      "atomic_rpc_enter",
+      "atomic_rpc_error",
       "ensure_throw",
     ]));
     expect(checkpoints).not.toContain("save_enter");
   });
 
-  it("D. normalization failure traces normalization_failed without RPC", async () => {
+  it("D. normalization failure on peek still traces without RPC", async () => {
     const { createSupabaseContinuationStore } = await import("@/lib/partner/partnerFlowContinuationStore");
     const trace = createContinueContextTraceCollector();
     const store = createSupabaseContinuationStore({ trace });
@@ -182,27 +182,8 @@ describe("continueContextTrace scenarios (#563)", () => {
     expect(mockRpc).not.toHaveBeenCalled();
   });
 
-  it("E. conflict recovery traces save_conflict and recovery RPC checkpoints", async () => {
-    const rowPayload = {
-      jti: "jti-winner",
-      partner_id: "acme",
-      policy_id: app.policy_id,
-      return_url: "http://localhost:3000/callback",
-      created_at: new Date().toISOString(),
-      expires_at: new Date(Date.now() + 900_000).toISOString(),
-      consumed_at: null,
-      verify_request_id: null,
-      opaque_verify_request: OPAQUE,
-    };
-
-    mockRpc
-      .mockResolvedValueOnce({ data: [], error: null })
-      .mockResolvedValueOnce({ data: [rowPayload], error: null });
-
-    const chain = mockFrom();
-    chain.upsert.mockResolvedValueOnce({
-      error: { code: "23505", message: "duplicate key value violates unique constraint" },
-    });
+  it("E. atomic ensure idempotently returns existing without save_conflict recovery", async () => {
+    mockRpc.mockResolvedValue({ data: [ensureRowPayload(false)], error: null });
 
     const trace = newTrace();
     const created = await createHostedHandoff({ application: app, stored, runtime: "universal_https" });
@@ -210,18 +191,16 @@ describe("continueContextTrace scenarios (#563)", () => {
 
     const resolved = await resolveHostedHandoffForContinue(OPAQUE, { trace });
     expect(resolved.ok).toBe(true);
+    if (!resolved.ok) return;
+    expect(resolved.continuation.jti).toBe("jti-existing");
 
     const checkpoints = trace.checkpoints();
     expect(checkpoints).toEqual(expect.arrayContaining([
-      "save_enter",
-      "save_conflict",
-      "recovery_peek_enter",
-      "recovery_before_rpc",
-      "recovery_after_rpc",
-      "row_candidate",
-      "map_success",
-      "peek_return_found",
+      "atomic_rpc_enter",
+      "atomic_rpc_return_existing",
       "reuse_return",
     ]));
+    expect(checkpoints).not.toContain("save_conflict");
+    expect(checkpoints).not.toContain("recovery_peek_enter");
   });
 });

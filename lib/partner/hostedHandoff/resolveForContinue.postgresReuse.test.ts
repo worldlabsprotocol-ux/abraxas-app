@@ -13,11 +13,12 @@ import { resolveHostedHandoffForContinue } from "./resolveForContinue";
 
 const PRODUCTION_OPAQUE = "vr_25f3eb26b6652937";
 
-/** PostgREST often returns timestamptz as `T` + `+00` without `:00` — Date.parse is NaN on that shape. */
-const POSTGREST_CONTINUATION_EXPIRES = "2026-10-05T12:53:01.053+00";
-
-/** SQL ::text observation from live production continuation row. */
-const POSTGRES_TEXT_CONTINUATION_EXPIRES = "2026-10-05 12:53:01.053+00";
+function futurePostgresExpiryShapes() {
+  const iso = new Date(Date.now() + 45 * 60 * 1000).toISOString();
+  const postgrest = iso.replace("Z", "+00").replace("+00:00", "+00");
+  const postgresText = iso.replace("T", " ").replace("Z", "+00");
+  return { postgrest, postgresText };
+}
 
 const app: LaunchpadApplicationRow = {
   id: "8d30e3b1-3409-4bef-8d04-66335f38e96e",
@@ -66,6 +67,12 @@ function wrapWithPostgresReadSerialization(
     save: (record) => inner.save(record),
     peek: async (jti) => rewrite(await inner.peek(jti)),
     peekByVerifyRequestId: async (verifyRequestId) => rewrite(await inner.peekByVerifyRequestId(verifyRequestId)),
+    ensureByOpaqueVerifyRequest: async (record, options) => {
+      const result = await inner.ensureByOpaqueVerifyRequest(record, options);
+      const rewritten = rewrite(result.record);
+      if (!rewritten) throw new Error("ensure rewrite failed");
+      return { ...result, record: rewritten };
+    },
     consume: async (jti) => rewrite(await inner.consume(jti)),
     attachVerifyRequestId: (jti, verifyRequestId) => inner.attachVerifyRequestId(jti, verifyRequestId),
   };
@@ -99,13 +106,15 @@ function legacyContinuationExpired(expiresAt: string, now = Date.now()): boolean
 
 describe("resolveHostedHandoffForContinue postgres continuation reuse", () => {
   it("documents Date.parse failure on PostgREST T+00 shape", () => {
-    expect(Number.isFinite(Date.parse(POSTGREST_CONTINUATION_EXPIRES))).toBe(false);
-    expect(parsePartnerFlowInstant(POSTGREST_CONTINUATION_EXPIRES)).not.toBeNull();
-    expect(legacyContinuationExpired(POSTGREST_CONTINUATION_EXPIRES)).toBe(true);
-    expect(parsePartnerFlowInstant(POSTGREST_CONTINUATION_EXPIRES)! > Date.now()).toBe(true);
+    const { postgrest } = futurePostgresExpiryShapes();
+    expect(Number.isFinite(Date.parse(postgrest))).toBe(false);
+    expect(parsePartnerFlowInstant(postgrest)).not.toBeNull();
+    expect(legacyContinuationExpired(postgrest)).toBe(true);
+    expect(parsePartnerFlowInstant(postgrest)! > Date.now()).toBe(true);
   });
 
-  it("reuses continuation when peek returns PostgREST T+00 timestamptz", async () => {
+  it("reuses continuation when ensure returns PostgREST T+00 timestamptz", async () => {
+    const { postgrest } = futurePostgresExpiryShapes();
     storeWrapper = wrapWithPostgresReadSerialization(
       semanticsStore,
       (saved) => saved.replace("Z", "+00:00").replace("+00:00", "+00").replace(" ", "T"),
@@ -115,7 +124,7 @@ describe("resolveHostedHandoffForContinue postgres continuation reuse", () => {
     putHandoffForTests({
       ...created,
       verify_request: PRODUCTION_OPAQUE,
-      expires_at: POSTGREST_CONTINUATION_EXPIRES.replace("T", " ").replace("+00", "+00:00"),
+      expires_at: postgrest.replace("T", " ").replace("+00", "+00:00"),
     });
 
     const first = await resolveHostedHandoffForContinue(PRODUCTION_OPAQUE);
@@ -132,17 +141,18 @@ describe("resolveHostedHandoffForContinue postgres continuation reuse", () => {
     expect(semanticsStore.rows()[0]?.expiresAt).toMatch(/\+00/);
   });
 
-  it("reuses continuation when peek returns exact production SQL text shape", async () => {
+  it("reuses continuation when ensure returns exact production SQL text shape", async () => {
+    const { postgresText } = futurePostgresExpiryShapes();
     storeWrapper = wrapWithPostgresReadSerialization(
       semanticsStore,
-      () => POSTGRES_TEXT_CONTINUATION_EXPIRES,
+      () => postgresText,
     );
 
     const created = await createHostedHandoff({ application: app, stored, runtime: "universal_https" });
     putHandoffForTests({
       ...created,
       verify_request: PRODUCTION_OPAQUE,
-      expires_at: POSTGRES_TEXT_CONTINUATION_EXPIRES,
+      expires_at: postgresText,
     });
 
     const first = await resolveHostedHandoffForContinue(PRODUCTION_OPAQUE);

@@ -41,14 +41,18 @@ const stored: PartnerFlowStoredConfig = {
 };
 
 let semanticsStore = createPostgresSemanticsContinuationStore();
-let saveCalls = 0;
+let ensureCalls = 0;
 
 vi.mock("@/lib/partner/partnerFlowContinuationStore", () => ({
   createSupabaseContinuationStore: () => ({
-    save: async (record: Parameters<typeof semanticsStore.save>[0]) => {
-      saveCalls += 1;
-      return semanticsStore.save(record);
+    ensureByOpaqueVerifyRequest: async (
+      record: Parameters<typeof semanticsStore.ensureByOpaqueVerifyRequest>[0],
+      options?: Parameters<typeof semanticsStore.ensureByOpaqueVerifyRequest>[1],
+    ) => {
+      ensureCalls += 1;
+      return semanticsStore.ensureByOpaqueVerifyRequest(record, options);
     },
+    save: (record: Parameters<typeof semanticsStore.save>[0]) => semanticsStore.save(record),
     peek: (jti: string) => semanticsStore.peek(jti),
     peekByVerifyRequestId: (verifyRequestId: string) =>
       semanticsStore.peekByVerifyRequestId(verifyRequestId),
@@ -65,7 +69,7 @@ vi.mock("@/lib/partner/launchpad/resolveLaunchpadApplication", () => ({
 beforeEach(() => {
   resetHostedHandoffsForTests();
   semanticsStore = createPostgresSemanticsContinuationStore();
-  saveCalls = 0;
+  ensureCalls = 0;
 });
 
 afterEach(() => {
@@ -93,6 +97,6 @@ describe("resolveHostedHandoffForContinue opaque lookup reuse (#561)", () => {
     expect(semanticsStore.rowCount()).toBe(1);
     expect(semanticsStore.rows()[0]?.consumedAt).toBeNull();
     expect(semanticsStore.rows()[0]?.verifyRequestId).toBe(PRODUCTION_OPAQUE);
-    expect(saveCalls).toBe(1);
+    expect(ensureCalls).toBe(3);
   });
 });
