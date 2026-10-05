@@ -116,6 +116,24 @@ describe("resolveHostedHandoffForContinue idempotency", () => {
     expect(semanticsStore.rowCount()).toBe(1);
   });
 
+  it("reuses continuation when Postgres returns +00 timestamptz on expires_at", async () => {
+    const created = await createHostedHandoff({ application: app, stored, runtime: "universal_https" });
+    putHandoffForTests({
+      ...created,
+      verify_request: PRODUCTION_OPAQUE,
+      expires_at: "2026-10-05T10:24:48.399+00",
+    });
+
+    const first = await resolveHostedHandoffForContinue(PRODUCTION_OPAQUE);
+    const second = await resolveHostedHandoffForContinue(PRODUCTION_OPAQUE);
+
+    expect(first.ok && second.ok).toBe(true);
+    if (!first.ok || !second.ok) return;
+    expect(first.continuation.jti).toBe(second.continuation.jti);
+    expect(semanticsStore.rowCount()).toBe(1);
+    expect(semanticsStore.rows()[0]?.expiresAt).toMatch(/\+00$/);
+  });
+
   it("would have failed before idempotency fix when reuse missed unique conflict", async () => {
     const created = await createHostedHandoff({ application: app, stored, runtime: "universal_https" });
     putHandoffForTests({ ...created, verify_request: PRODUCTION_OPAQUE });
