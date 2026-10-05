@@ -84,10 +84,12 @@ export function createPostgresSemanticsContinuationStore(): PartnerFlowContinuat
       return row ? fromRow(row) : null;
     },
     async peekByVerifyRequestId(verifyRequestId) {
-      const column = continuationVerifyRequestLookupColumn(verifyRequestId);
+      const trimmed = verifyRequestId.trim();
+      if (!trimmed) return null;
+      const column = continuationVerifyRequestLookupColumn(trimmed);
       const jti = column === "opaque_verify_request"
-        ? byOpaque.get(verifyRequestId)
-        : byUuid.get(verifyRequestId);
+        ? byOpaque.get(trimmed)
+        : byUuid.get(trimmed);
       if (!jti) return null;
       const row = byJti.get(jti);
       return row ? fromRow(row) : null;

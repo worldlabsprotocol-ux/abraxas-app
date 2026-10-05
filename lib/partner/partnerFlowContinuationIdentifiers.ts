@@ -32,7 +32,16 @@ export function continuationVerifyRequestColumns(
 export function continuationVerifyRequestLookupColumn(
   verifyRequestId: string,
 ): "opaque_verify_request" | "verify_request_id" {
-  return isOpaqueVerifyRequest(verifyRequestId) ? "opaque_verify_request" : "verify_request_id";
+  const trimmed = verifyRequestId.trim();
+  if (!trimmed) return "verify_request_id";
+  return isOpaqueVerifyRequest(trimmed) ? "opaque_verify_request" : "verify_request_id";
+}
+
+export function normalizeContinuationVerifyRequestId(
+  verifyRequestId: string,
+): string | null {
+  const trimmed = verifyRequestId.trim();
+  return trimmed || null;
 }
 
 export function readContinuationVerifyRequestId(row: Record<string, unknown>): string | null {

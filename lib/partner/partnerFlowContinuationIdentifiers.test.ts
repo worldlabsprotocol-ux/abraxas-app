@@ -3,6 +3,7 @@ import {
   assertAttachableVerificationRequestId,
   continuationVerifyRequestColumns,
   continuationVerifyRequestLookupColumn,
+  normalizeContinuationVerifyRequestId,
   readContinuationVerifyRequestId,
 } from "./partnerFlowContinuationIdentifiers";
 
@@ -36,5 +37,25 @@ describe("partnerFlowContinuationIdentifiers", () => {
 
   it("rejects attaching opaque tokens to verify_request_id", () => {
     expect(() => assertAttachableVerificationRequestId(OPAQUE)).toThrow(/opaque_verify_request_not_attachable/);
+  });
+
+  it("normalizes whitespace before opaque lookup classification", () => {
+    expect(continuationVerifyRequestLookupColumn(` ${OPAQUE} `)).toBe("opaque_verify_request");
+    expect(normalizeContinuationVerifyRequestId(` ${OPAQUE} `)).toBe(OPAQUE);
+    expect(normalizeContinuationVerifyRequestId("   ")).toBeNull();
+  });
+
+  it("prefers opaque_verify_request when both identifiers are present on read", () => {
+    expect(readContinuationVerifyRequestId({
+      verify_request_id: UUID,
+      opaque_verify_request: OPAQUE,
+    })).toBe(OPAQUE);
+  });
+
+  it("returns null verifyRequestId for malformed rows with neither identifier", () => {
+    expect(readContinuationVerifyRequestId({
+      verify_request_id: null,
+      opaque_verify_request: null,
+    })).toBeNull();
   });
 });

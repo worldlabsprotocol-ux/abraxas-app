@@ -441,6 +441,16 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
       "Adds opaque_verify_request text for hosted handoff vr_* tokens. verify_request_id uuid remains verification_requests.id only. Apply before or with code that routes opaque tokens to the new column.",
   },
   {
+    file: "131_partner_flow_continuation_opaque_peek.sql",
+    tier: "required",
+    creates: [],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Adds partner_flow_continuation_peek_by_opaque RPC for reliable vr_* continuation lookup. Apply with #561 code.",
+  },
+  {
     file: "092_wallet_standard_action_bindings.sql",
     tier: "required",
     creates: [
