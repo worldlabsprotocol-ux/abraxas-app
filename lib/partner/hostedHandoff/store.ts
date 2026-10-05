@@ -16,6 +16,7 @@ import {
   HOSTED_HANDOFF_VERSION,
   type HostedHandoffRuntime,
 } from "./contract";
+import { canonicalPartnerFlowInstant, parsePartnerFlowInstant } from "@/lib/partner/parsePartnerFlowInstant";
 import { nonceHash, opaqueHandoffRef, opaqueNonce, opaqueVerifyRequest } from "./opaque";
 import type { HostedHandoffPartnerView, HostedHandoffPublicView, HostedHandoffRecord } from "./types";
 
@@ -58,7 +59,7 @@ function fromRow(row: Record<string, unknown>): HostedHandoffRecord {
     status: row.status as HostedHandoffRecord["status"],
     nonce_hash: String(row.nonce_hash),
     issued_at: String(row.issued_at),
-    expires_at: String(row.expires_at),
+    expires_at: canonicalPartnerFlowInstant(String(row.expires_at ?? "")) ?? String(row.expires_at ?? ""),
     consumed_at: row.consumed_at ? String(row.consumed_at) : null,
     public_receipt_id: row.public_receipt_id ? String(row.public_receipt_id) : null,
     fixture: row.fixture === true,
@@ -66,7 +67,8 @@ function fromRow(row: Record<string, unknown>): HostedHandoffRecord {
 }
 
 function refreshStatus(record: HostedHandoffRecord, now = Date.now()): HostedHandoffRecord {
-  if (record.status === "created" && new Date(record.expires_at).getTime() <= now) {
+  const expires = parsePartnerFlowInstant(record.expires_at);
+  if (record.status === "created" && (expires === null || expires <= now)) {
     return { ...record, status: "expired" };
   }
   return record;

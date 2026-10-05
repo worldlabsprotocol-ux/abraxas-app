@@ -8,6 +8,7 @@ import {
   readContinuationVerifyRequestId,
 } from "@/lib/partner/partnerFlowContinuationIdentifiers";
 import { isPostgresUniqueViolation } from "@/lib/partner/partnerFlowContinuationPostgresErrors";
+import { canonicalPartnerFlowInstant } from "@/lib/partner/parsePartnerFlowInstant";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import {
   ContinuationStoreUnavailableError,
@@ -15,6 +16,11 @@ import {
   type PartnerFlowContinuationRecord,
   type PartnerFlowContinuationStore,
 } from "@/lib/partner/partnerFlowContinuation";
+
+function readExpiresAt(row: Record<string, unknown>): string {
+  const raw = String(row.expires_at ?? "");
+  return canonicalPartnerFlowInstant(raw) ?? raw;
+}
 
 function mapRow(row: Record<string, unknown>): PartnerFlowContinuationRecord {
   return {
@@ -32,7 +38,7 @@ function mapRow(row: Record<string, unknown>): PartnerFlowContinuationRecord {
     purpose: typeof row.purpose === "string" ? row.purpose : undefined,
     appSlug: typeof row.app_slug === "string" ? row.app_slug : undefined,
     createdAt: String(row.created_at ?? ""),
-    expiresAt: String(row.expires_at ?? ""),
+    expiresAt: readExpiresAt(row),
     consumedAt: row.consumed_at ? String(row.consumed_at) : null,
     verifyRequestId: readContinuationVerifyRequestId(row),
   };

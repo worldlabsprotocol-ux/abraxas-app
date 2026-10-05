@@ -41,4 +41,31 @@ describe("createSupabaseContinuationStore", () => {
     await expect(store.consume("jti-1")).rejects.toBeInstanceOf(ContinuationStoreUnavailableError);
     await expect(store.peekByVerifyRequestId("vr-1")).rejects.toBeInstanceOf(ContinuationStoreUnavailableError);
   });
+
+  it("canonicalizes Postgres timestamptz expires_at on peek", async () => {
+    const chain = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: {
+          jti: "jti-1",
+          partner_id: "p",
+          policy_id: "pol",
+          return_url: "https://example.com/callback",
+          created_at: "2026-10-05 10:09:52.199+00",
+          expires_at: "2026-10-05 10:53:01.053+00",
+          consumed_at: null,
+          opaque_verify_request: "vr_live0000000001",
+        },
+        error: null,
+      }),
+    };
+    mockFrom.mockReturnValue(chain);
+
+    const { createSupabaseContinuationStore } = await import("./partnerFlowContinuationStore");
+    const store = createSupabaseContinuationStore();
+    const row = await store.peekByVerifyRequestId("vr_live0000000001");
+
+    expect(row?.expiresAt).toBe("2026-10-05T10:53:01.053Z");
+  });
 });
