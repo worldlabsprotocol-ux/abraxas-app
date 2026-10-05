@@ -17,12 +17,16 @@ import {
   type PartnerFlowContinuationStore,
 } from "@/lib/partner/partnerFlowContinuation";
 
-function readExpiresAt(row: Record<string, unknown>): string {
+function readExpiresAt(row: Record<string, unknown>): { raw: string; mapped: string } {
   const raw = String(row.expires_at ?? "");
-  return canonicalPartnerFlowInstant(raw) ?? raw;
+  return {
+    raw,
+    mapped: canonicalPartnerFlowInstant(raw) ?? raw,
+  };
 }
 
 function mapRow(row: Record<string, unknown>): PartnerFlowContinuationRecord {
+  const expiresAt = readExpiresAt(row);
   return {
     jti: String(row.jti ?? ""),
     partnerId: String(row.partner_id ?? ""),
@@ -38,9 +42,10 @@ function mapRow(row: Record<string, unknown>): PartnerFlowContinuationRecord {
     purpose: typeof row.purpose === "string" ? row.purpose : undefined,
     appSlug: typeof row.app_slug === "string" ? row.app_slug : undefined,
     createdAt: String(row.created_at ?? ""),
-    expiresAt: readExpiresAt(row),
+    expiresAt: expiresAt.mapped,
     consumedAt: row.consumed_at ? String(row.consumed_at) : null,
     verifyRequestId: readContinuationVerifyRequestId(row),
+    _diagRawExpiresAt: expiresAt.raw,
   };
 }
 
