@@ -129,7 +129,7 @@ function PassportPageInner() {
     returnPath: returnPathParam,
     partnerId: partnerIdParam,
     policyId: policyIdParam,
-    verificationRequestId: verifyRequestId,
+    verifyRequestRef: verifyRequestId,
     walletBound: setup.walletBound,
   });
 

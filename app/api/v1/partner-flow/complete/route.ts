@@ -29,6 +29,10 @@ import { extractLaunchpadFlowContext } from "@/lib/partner/launchpad/extractLaun
 import { recordCompleteLaunchpadActivity, recordFlowFailureActivity } from "@/lib/partner/launchpad/mapPartnerFlowActivity";
 import { resolveLaunchpadPinnedPolicyVersion } from "@/lib/partner/launchpad/resolvePinnedPolicyVersion";
 import { PolicyChangeControlError } from "@/lib/policy/changeControl/codes";
+import {
+  PartnerFlowCompleteRequestError,
+  resolvePartnerFlowCompleteCorrelation,
+} from "@/lib/partner/partnerFlowCompleteCorrelation";
 
 export const dynamic = "force-dynamic";
 
@@ -66,6 +70,7 @@ export async function POST(request: NextRequest) {
     policy_id?: string;
     return_url?: string;
     verification_request_id?: string;
+    verify_request?: string;
     flow_trace_id?: string;
     app?: string;
     launchpad_application_id?: string;
@@ -104,23 +109,36 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const verificationRequestId = body.verification_request_id?.trim();
+  let correlation;
+  try {
+    correlation = resolvePartnerFlowCompleteCorrelation({
+      verification_request_id: body.verification_request_id,
+      verify_request: body.verify_request,
+    });
+  } catch (e) {
+    if (e instanceof PartnerFlowCompleteRequestError) {
+      return NextResponse.json({ error: e.message, code: e.code }, { status: 400 });
+    }
+    throw e;
+  }
+
+  const correlationId = correlation.correlationId;
 
   let flowTraceId: string | undefined;
-  if (verificationRequestId) {
-    flowTraceId = resolvePartnerFlowTraceId({ verificationRequestId });
+  if (correlationId) {
+    flowTraceId = resolvePartnerFlowTraceId({ verificationRequestId: correlationId });
     try {
       rejectMismatchedClientFlowTrace(body.flow_trace_id, flowTraceId);
     } catch (e) {
       if (e instanceof FlowTraceMismatchError) {
         void auditPartnerFlowStepBestEffort({
-          flowTraceId: resolvePartnerFlowTraceId({ verificationRequestId }),
+          flowTraceId: resolvePartnerFlowTraceId({ verificationRequestId: correlationId }),
           action: "partner_flow.rejected",
           partnerId,
           policyId,
           subjectId: session.session.suiAddress,
           outcome: "rejected",
-          verificationRequestId,
+          verificationRequestId: correlationId,
           error: e.message,
           errorCode: "flow_trace_id_mismatch",
         });
@@ -137,7 +155,7 @@ export async function POST(request: NextRequest) {
       policyId,
       returnUrl,
       suiAddress: session.session.suiAddress,
-      verificationRequestId: body.verification_request_id,
+      verificationRequestId: correlationId ?? undefined,
       launchpadApplicationId: launchpadContext.applicationId,
       expectedPolicyVersion: await resolveLaunchpadPinnedPolicyVersion({
         context: launchpadContext,
@@ -160,7 +178,11 @@ export async function POST(request: NextRequest) {
         { status: 409 },
       );
     }
-    throw e;
+    console.error("[partner-flow/complete]", e instanceof Error ? e.message : e);
+    return NextResponse.json(
+      { error: "Partner flow completion failed", code: "completion_failed" },
+      { status: 500 },
+    );
   }
 
   if (!result.ok) {
@@ -172,7 +194,7 @@ export async function POST(request: NextRequest) {
       policyId,
       subjectId: session.session.suiAddress,
       outcome: "error",
-      verificationRequestId: body.verification_request_id,
+      verificationRequestId: correlationId ?? undefined,
       error: result.error,
     });
     void logPartnerUsage({
@@ -212,7 +234,7 @@ export async function POST(request: NextRequest) {
           policyId,
           subjectId: session.session.suiAddress,
           outcome: "rejected",
-          verificationRequestId: body.verification_request_id,
+          verificationRequestId: correlationId ?? undefined,
           error: e.message,
           errorCode: "flow_trace_id_mismatch",
         });
@@ -231,14 +253,14 @@ export async function POST(request: NextRequest) {
         policyVersion: result.policy_version,
         subjectId: session.session.suiAddress,
         outcome: result.replay_status === "issued" ? "issued" : "idempotent_replay",
-        verificationRequestId: body.verification_request_id,
+        verificationRequestId: correlationId ?? undefined,
         decisionId: result.decision_id,
         receiptId: result.partner_result?.receipt_id,
         reasonCodes: result.partner_result?.reason_codes,
         validity: result.validity,
         currentlyValid: result.currently_valid,
-        idempotencyKey: body.verification_request_id
-          ? buildPartnerFlowVerificationRequestIdempotencyKey(body.verification_request_id)
+        idempotencyKey: correlationId
+          ? buildPartnerFlowVerificationRequestIdempotencyKey(correlationId)
           : null,
       }, result.replay_status, "complete");
     }
@@ -251,7 +273,7 @@ export async function POST(request: NextRequest) {
       policyVersion: result.policy_version,
       subjectId: session.session.suiAddress,
       outcome: result.next,
-      verificationRequestId: body.verification_request_id,
+      verificationRequestId: correlationId ?? undefined,
       decisionId: result.decision_id,
       receiptId: result.partner_result?.receipt_id,
       reasonCodes: result.partner_result?.reason_codes,
@@ -324,7 +346,7 @@ export async function POST(request: NextRequest) {
     policyId,
     decision: result.next,
     proofId: result.partner_result?.receipt_id,
-    recordId: body.verification_request_id,
+    recordId: correlationId ?? undefined,
   });
 
   recordPartnerFlowRequestOutcome({

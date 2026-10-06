@@ -2,9 +2,14 @@
 // Anti-mixup request correlation. Not PII, not a bearer authorization token.
 
 import { createHash, randomBytes } from "node:crypto";
+import {
+  isOpaqueVerifyRequest as isOpaqueVerifyRequestGuard,
+  PARTNER_VERIFY_REQUEST_PREFIX as VERIFY_REQUEST_PREFIX,
+} from "@/lib/partner/partnerFlowContinuationIdentifiers";
 
 export const PARTNER_REQUEST_ID_PREFIX = "req_" as const;
-export const PARTNER_VERIFY_REQUEST_PREFIX = "vr_" as const;
+export const PARTNER_VERIFY_REQUEST_PREFIX = VERIFY_REQUEST_PREFIX;
+export { isOpaqueVerifyRequestGuard as isOpaqueVerifyRequest };
 
 export interface PartnerRequestCorrelationBinding {
   requestId: string;
@@ -91,10 +96,6 @@ export function extractRequestIdFromReturnUrl(returnUrl: string): string | null 
   } catch {
     return null;
   }
-}
-
-export function isOpaqueVerifyRequest(value: string): boolean {
-  return value.startsWith(PARTNER_VERIFY_REQUEST_PREFIX) && value.length >= 12;
 }
 
 export function correlationFingerprint(binding: Pick<PartnerRequestCorrelationBinding, "partnerId" | "policyId" | "requestId">): string {

@@ -22,7 +22,7 @@ const baseContext: PartnerFlowHandoffContext = {
   returnPath: "https://partner.example/callback",
   partnerId: "demo_partner",
   policyId: "demo-policy-v1",
-  verificationRequestId: "vr_demo",
+  verifyRequestRef: "vr_demo0000001",
 };
 
 function HandoffHarness({
@@ -57,19 +57,19 @@ beforeEach(() => {
 });
 
 describe("buildPartnerFlowCompleteBody", () => {
-  it("preserves exact completion body including verification_request_id", () => {
+  it("sends opaque verify_request instead of verification_request_id", () => {
     expect(buildPartnerFlowCompleteBody(baseContext)).toEqual({
       partner_id: "demo_partner",
       policy_id: "demo-policy-v1",
       return_url: "https://partner.example/callback",
-      verification_request_id: "vr_demo",
+      verify_request: "vr_demo0000001",
     });
   });
 
-  it("omits verification_request_id when null", () => {
+  it("omits verify_request when null", () => {
     expect(buildPartnerFlowCompleteBody({
       ...baseContext,
-      verificationRequestId: null,
+      verifyRequestRef: null,
     })).toEqual({
       partner_id: "demo_partner",
       policy_id: "demo-policy-v1",
@@ -123,16 +123,26 @@ describe("PartnerFlowReturnHandler", () => {
     resolveFetch(new Response(JSON.stringify({ redirect_url: "https://partner.example/done" }), { status: 200 }));
   });
 
-  it("shows fixed handoff failure copy without raw API error text", async () => {
+  it("shows server-unavailable copy for 5xx without raw API error text", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ error: "internal_secret_code" }), { status: 500 }),
+      new Response(JSON.stringify({ error: "internal_secret_code", code: "completion_failed" }), { status: 500 }),
     ));
 
     render(<HandoffHarness context={baseContext} />);
 
-    expect(await screen.findByText("Couldn't finish the partner handoff.")).toBeInTheDocument();
+    expect(await screen.findByText("Verification is temporarily unavailable.")).toBeInTheDocument();
     expect(screen.queryByText("internal_secret_code")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
+  });
+
+  it("shows invalid handoff copy for expired handoff responses", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ error: "handoff expired", code: "handoff_expired" }), { status: 410 }),
+    ));
+
+    render(<HandoffHarness context={baseContext} />);
+
+    expect(await screen.findByText("This handoff link is no longer valid.")).toBeInTheDocument();
   });
 
   it("shows network failure copy on fetch throw", async () => {
