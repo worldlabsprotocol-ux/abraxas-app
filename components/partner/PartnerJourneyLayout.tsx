@@ -32,7 +32,10 @@ export interface PartnerJourneyLayoutProps {
   title?: string;
   hideStatus?: boolean;
   hideHeader?: boolean;
+  hideIntro?: boolean;
   brief?: HolderRequestBrief | null;
+  policyId?: string;
+  purpose?: string | null;
   children: React.ReactNode;
 }
 
@@ -47,7 +50,10 @@ export function PartnerJourneyLayout({
   title,
   hideStatus = false,
   hideHeader = false,
+  hideIntro = false,
   brief = null,
+  policyId = "",
+  purpose = null,
   children,
 }: PartnerJourneyLayoutProps) {
   const reduce = useReducedMotion();
@@ -97,14 +103,14 @@ export function PartnerJourneyLayout({
               </p>
               <h1
                 style={{
-                  margin: "0 0 0.5rem",
+                  margin: brief ? "0 0 0.35rem" : "0 0 0.5rem",
                   fontFamily: FONT,
-                  ...ABX_TYPOGRAPHY.h1,
+                  ...(brief ? { fontSize: "1.05rem", fontWeight: 800 } : ABX_TYPOGRAPHY.h1),
                 }}
               >
-                {title ?? `Continue with ${partnerName}`}
+                {title ?? (brief ? "Review this request" : `Continue with ${partnerName}`)}
               </h1>
-              {intro && (
+              {intro && !hideIntro && !brief && (
                 <p style={{ margin: "0 0 0.5rem", fontSize: "0.9rem", lineHeight: 1.6, color: "var(--text-secondary, #d1d5db)" }}>
                   {intro}
                 </p>
@@ -117,7 +123,14 @@ export function PartnerJourneyLayout({
             </header>
           )}
 
-          {brief && <HolderRequestBriefCard brief={brief} />}
+          {brief && (
+            <HolderRequestBriefCard
+              brief={brief}
+              partnerName={partnerName}
+              policyId={policyId}
+              purpose={purpose}
+            />
+          )}
 
           {children}
 

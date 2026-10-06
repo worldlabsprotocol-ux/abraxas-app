@@ -431,6 +431,46 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
       "Partner Flow OAuth continuations. Idempotent; DEMO already has the table. Required on Production for OAuth resume. Not Circle. Do not apply 089/090 to Production.",
   },
   {
+    file: "130_partner_flow_continuations_opaque_verify_request.sql",
+    tier: "required",
+    creates: [],
+    alters: ["partner_flow_continuations.opaque_verify_request"],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Adds opaque_verify_request text for hosted handoff vr_* tokens. verify_request_id uuid remains verification_requests.id only. Apply before or with code that routes opaque tokens to the new column.",
+  },
+  {
+    file: "131_partner_flow_continuation_opaque_peek.sql",
+    tier: "required",
+    creates: [],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Adds partner_flow_continuation_peek_by_opaque RPC for reliable vr_* continuation lookup. Apply with #561 code.",
+  },
+  {
+    file: "132_partner_flow_continuation_ensure_by_opaque.sql",
+    tier: "required",
+    creates: [],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Adds ensure_partner_flow_continuation_by_opaque RPC for atomic hosted-handoff continuation resolution (#565). Apply with #565 code.",
+  },
+  {
+    file: "133_partner_flow_continuation_atomic_rpc_disambiguation.sql",
+    tier: "required",
+    creates: [],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Fixes PL/pgSQL 42702 ambiguity in ensure_partner_flow_continuation_by_opaque via #variable_conflict use_column (#566). Apply after 132.",
+  },
+  {
     file: "092_wallet_standard_action_bindings.sql",
     tier: "required",
     creates: [

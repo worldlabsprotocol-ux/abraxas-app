@@ -4,6 +4,8 @@ import {
   normalizePartnerKeyScopes,
   partnerAllowsProductionKeys,
   resolveIssuanceEnvironment,
+  VERIFICATION_REQUESTS_SCOPE_PRESET,
+  VERIFY_API_SCOPE_PRESET,
 } from "@/lib/partner/partnerKeyIssuance";
 
 describe("partnerKeyIssuance", () => {
@@ -57,5 +59,21 @@ describe("partnerKeyIssuance", () => {
       scopes: ["webhooks:read", "verify:credential"],
       usedLegacyDefault: false,
     });
+  });
+
+  it("accepts verify:requests as a standalone explicit scope", () => {
+    expect(
+      normalizePartnerKeyScopes(["verify:requests"], { scopesProvided: true }),
+    ).toEqual({
+      ok: true,
+      scopes: ["verify:requests"],
+      usedLegacyDefault: false,
+    });
+  });
+
+  it("keeps verification request and verify API presets distinct", () => {
+    expect(VERIFICATION_REQUESTS_SCOPE_PRESET).toEqual(["verify:requests"]);
+    expect(VERIFY_API_SCOPE_PRESET).toEqual(["verify:credential", "verify:registry"]);
+    expect(VERIFY_API_SCOPE_PRESET).not.toContain("verify:requests");
   });
 });

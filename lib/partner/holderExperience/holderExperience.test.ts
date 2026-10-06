@@ -22,7 +22,8 @@ describe("holder verification experience", () => {
     expect(brief.purpose.length).toBeGreaterThan(8);
     expect(brief.result.toLowerCase()).not.toContain("date of birth");
     expect(brief.withheld.join(" ").toLowerCase()).toContain("date of birth");
-    expect(brief.shared_result_category.toLowerCase()).toContain("age_eligible_21");
+    expect(brief.shared_result_category).toBe("age_eligible_21");
+    expect(brief.result).toBe("Age requirement met");
     expect(brief.method_explanation).toBe("This policy requires an approved verification method.");
     expect(brief.identity_not_default.toLowerCase()).toContain("never the default");
     expect(holderCopyLeaks(JSON.stringify(brief))).toEqual([]);

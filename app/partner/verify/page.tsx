@@ -6,6 +6,8 @@ import { PartnerVerifyClient } from "@/components/partner/PartnerVerifyClient";
 import { RedesignPageLoading } from "@/components/redesign/RedesignPageLoading";
 import {
   isPartnerVerifyPreviewControlsEnabled,
+  resolvePartnerVerifyPreviewEnvironment,
+  resolvePartnerVerifyPreviewPartnerName,
   resolvePartnerVerifyPreviewPhase,
   resolvePartnerVerifyPreviewSignInConfigured,
 } from "@/lib/partner/partnerVerifyPreview";
@@ -23,12 +25,16 @@ export default function PartnerVerifyPage({ searchParams = {} }: PartnerVerifyPa
     searchParams,
     previewControlsEnabled,
   );
+  const previewEnvironment = resolvePartnerVerifyPreviewEnvironment(searchParams, previewControlsEnabled);
+  const previewPartnerName = resolvePartnerVerifyPreviewPartnerName(searchParams, previewControlsEnabled);
 
   return (
     <Suspense fallback={<RedesignPageLoading label="Loading verification…" compact />}>
       <PartnerVerifyClient
         previewPhase={previewPhase}
         previewSignInConfigured={previewSignInConfigured}
+        previewEnvironment={previewEnvironment}
+        previewPartnerName={previewPartnerName}
       />
     </Suspense>
   );

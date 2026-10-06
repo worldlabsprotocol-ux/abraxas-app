@@ -71,12 +71,12 @@ async function expectAccessibleShell(
   const results = await runAxe(container);
   expect(results.violations).toEqual([]);
 
-  expect(screen.getByRole("heading", { name: /Continue with Good Trouble/i })).toBeTruthy();
+  expect(screen.getByRole("heading", { name: /Review this request|Continue with Good Trouble/i })).toBeTruthy();
 
   if (phase === "sign_in" || phase === "signing_in") {
     const buttonLabel = props.isDobFirstBrowse
       ? /Create or open my Passport|Signing you in/i
-      : /Continue with Google|Signing you in/i;
+      : /Continue|Signing you in/i;
     expect(screen.getByRole("button", { name: buttonLabel })).toBeTruthy();
   }
 }
@@ -89,7 +89,7 @@ describe("PartnerVerifyShell customer UI", () => {
 
   it("renders sign-in state with accessible primary action", async () => {
     await expectAccessibleShell(baseProps, "sign_in", "Sign in to continue with Abraxas.");
-    expect(screen.getByText(/Signing in is not age verification/i)).toBeTruthy();
+    expect(screen.getAllByText(/They'll receive|Stays private/i).length).toBeGreaterThan(0);
   });
 
   it("has zero axe violations in loading state", async () => {
@@ -115,8 +115,8 @@ describe("PartnerVerifyShell customer UI", () => {
 
     const results = await runAxe(container);
     expect(results.violations).toEqual([]);
-    expect(screen.getByRole("button", { name: /Try again/i })).toBeTruthy();
-    expect(screen.getByText(/Who is requesting/i)).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: /Try again/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Requesting service|They'll receive/i).length).toBeGreaterThan(0);
     expect(container.textContent).not.toMatch(/receipt_id|abx_live_|0xabc/i);
   });
 
@@ -128,7 +128,7 @@ describe("PartnerVerifyShell customer UI", () => {
         statusMessage="This requirement could not be met."
       />,
     );
-    expect(screen.getByText(/Required eligibility was not established/i)).toBeTruthy();
+    expect(screen.getByText(/We couldn't confirm this request/i)).toBeTruthy();
     expect(container.textContent).not.toMatch(/receipt_id/i);
   });
 
@@ -142,8 +142,8 @@ describe("PartnerVerifyShell customer UI", () => {
         statusMessage="Returning you to the partner."
       />,
     );
-    expect(screen.getByText(/Sandbox result only/i)).toBeTruthy();
-    expect(screen.getAllByText(/not Production-usable/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Confirmed/i)).toBeTruthy();
+    expect(screen.getAllByText(/sandbox|not production-usable/i).length).toBeGreaterThan(0);
   });
 
   it("covers expired, missing, cancelled, invalid-binding, session, method, and provider states", () => {
@@ -227,8 +227,7 @@ describe("PartnerVerifyShell Good Trouble DOB-first browse sign-in copy", () => 
     );
 
     expect(screen.queryByText(GOOD_TROUBLE_BROWSE_SIGN_IN_INTRO)).toBeNull();
-    expect(screen.getByRole("button", { name: /Continue with Google/i })).toBeTruthy();
-    expect(screen.getByText(/Signing in is not age verification/i)).toBeTruthy();
+    expect(screen.getByRole("button", { name: /^Continue$/i })).toBeTruthy();
   });
 
   it("does not show DOB-first sign-in copy for browse policy with purchase purpose", () => {
@@ -244,8 +243,7 @@ describe("PartnerVerifyShell Good Trouble DOB-first browse sign-in copy", () => 
     );
 
     expect(screen.queryByText(GOOD_TROUBLE_BROWSE_SIGN_IN_INTRO)).toBeNull();
-    expect(screen.getByRole("button", { name: /Continue with Google/i })).toBeTruthy();
-    expect(screen.getByText(/Signing in is not age verification/i)).toBeTruthy();
+    expect(screen.getByRole("button", { name: /^Continue$/i })).toBeTruthy();
   });
 
   it("does not show DOB-first sign-in copy for another partner", () => {
@@ -261,8 +259,7 @@ describe("PartnerVerifyShell Good Trouble DOB-first browse sign-in copy", () => 
     );
 
     expect(screen.queryByText(GOOD_TROUBLE_BROWSE_SIGN_IN_INTRO)).toBeNull();
-    expect(screen.getByRole("button", { name: /Continue with Google/i })).toBeTruthy();
-    expect(screen.getByText(/Signing in is not age verification/i)).toBeTruthy();
+    expect(screen.getByRole("button", { name: /^Continue$/i })).toBeTruthy();
   });
 
   it("keeps generic regulated purchase wording unchanged", () => {
@@ -274,9 +271,7 @@ describe("PartnerVerifyShell Good Trouble DOB-first browse sign-in copy", () => 
       />,
     );
 
-    expect(screen.getByText(/Signing in is not age verification/i)).toBeTruthy();
-    expect(screen.getAllByText(/policy result/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Signing in confirms your account only/i)).toBeTruthy();
+    expect(screen.getAllByText(/They'll receive|Stays private/i).length).toBeGreaterThan(0);
     expect(screen.queryByText(GOOD_TROUBLE_BROWSE_SIGN_IN_INTRO)).toBeNull();
   });
 

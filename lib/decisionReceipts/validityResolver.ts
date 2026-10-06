@@ -156,10 +156,7 @@ export async function resolveReceiptValidity(
       const walletEligibility = await evaluateWalletControlClaimLiveEligibilityById(claimId);
       if (!walletEligibility.eligible) {
         const reason = walletEligibility.reason ?? "source_evidence_revoked";
-        const validity: ReceiptValidityState = reason.startsWith("claim_")
-          ? "revoked_dependency"
-          : "revoked_dependency";
-        return buildInvalidResult(record, storedStatus, validity, [reason], claimIds);
+        return buildInvalidResult(record, storedStatus, "revoked_dependency", [reason], claimIds);
       }
     }
 

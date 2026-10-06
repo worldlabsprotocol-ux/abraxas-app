@@ -54,12 +54,15 @@ import {
 import { sanitizePartnerContinueBrowserSearch } from "@/lib/partner/partnerFlowContinuation";
 import { HolderRecoveryCard } from "@/components/partner/HolderRecoveryCard";
 import {
+  buildHolderAuthorizationCopy,
   buildHolderOpeningPresentation,
   buildHolderRequestBrief,
+  buildHolderVerificationPresentation,
   holderSafeClientMessage,
   resolveHolderRecovery,
+  type HolderRecoveryState,
 } from "@/lib/partner/holderExperience";
-import { HolderOpeningBrief } from "@/components/partner/HolderOpeningBrief";
+import { HolderAuthorizationCard, type HolderAuthorizationPhase } from "@/components/partner/HolderAuthorizationCard";
 import {
   GOOD_TROUBLE_PURCHASE_PATH_STEPS,
   VerificationPath,
@@ -71,7 +74,6 @@ import {
   isCanonicalGoodTroublePurchaseFlow,
 } from "@/lib/partner/goodTroublePurchaseFlow";
 import { ProtocolLoadingState } from "@/components/protocol/ProtocolLoadingState";
-import { HolderDecisionComplete } from "@/components/protocol/HolderDecisionComplete";
 import { ProvenanceContinueFlow } from "@/components/partner/ProvenanceContinueFlow";
 import { isContentOriginDisclosurePolicyId } from "@/lib/provenance/constants";
 
@@ -79,6 +81,17 @@ function resolveMinimumAge(policyId: string): number | null {
   if (policyId === GOOD_TROUBLE_RETAIL_POLICY_ID) return 21;
   if (policyId.includes("age_21_retail")) return 21;
   return null;
+}
+
+function mapHostedHandoffContinueFailure(
+  code: string | undefined,
+  status: number,
+): HolderRecoveryState {
+  if (code === "expired" || status === 410) return "expired";
+  if (code === "completed" || code === "cancelled") return "cancelled";
+  if (code === "missing" || status === 404) return "missing";
+  if (code === "unavailable" || status >= 500) return "provider_unavailable";
+  return "provider_unavailable";
 }
 
 function PartnerContinueInner() {
@@ -92,6 +105,7 @@ function PartnerContinueInner() {
   const [showIdFallback, setShowIdFallback] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [contextLoading, setContextLoading] = useState(true);
+  const [contextResolveFailure, setContextResolveFailure] = useState<HolderRecoveryState | null>(null);
   const [flowContext, setFlowContext] = useState<ResolvedPartnerContinueContext | null>(null);
   const [boundReturnUrl, setBoundReturnUrl] = useState("");
   const [methodSelected, setMethodSelected] = useState(false);
@@ -119,10 +133,63 @@ function PartnerContinueInner() {
 
       if (!verifyRequestId) {
         if (!cancelled) {
+          setContextResolveFailure(null);
           setFlowContext(resolvePartnerContinueContext(urlContext));
           setContextLoading(false);
         }
         return;
+      }
+
+      if (!cancelled) {
+        setContextLoading(true);
+        setContextResolveFailure(null);
+      }
+
+      if (verifyRequestId.startsWith("vr_")) {
+        try {
+          const res = await fetch(
+            `/api/v1/hosted-handoff/continue-context?verify_request=${encodeURIComponent(verifyRequestId)}`,
+            { credentials: "include" },
+          );
+          if (res.ok) {
+            const preview = await res.json() as {
+              partner_id?: string;
+              policy_id?: string;
+              purpose?: string | null;
+              return_url?: string;
+            };
+            if (!cancelled) {
+              setContextResolveFailure(null);
+              if (typeof preview.return_url === "string") {
+                setBoundReturnUrl(preview.return_url);
+              }
+              setFlowContext(resolvePartnerContinueContext({
+                ...urlContext,
+                returnUrl: preview.return_url ?? urlContext.returnUrl,
+              }, {
+                partnerId: preview.partner_id ?? "",
+                policyId: preview.policy_id ?? "",
+                purpose: preview.purpose ?? null,
+              }));
+              setContextLoading(false);
+            }
+            return;
+          }
+          const body = await res.json().catch(() => ({})) as { code?: string };
+          if (!cancelled) {
+            setContextResolveFailure(mapHostedHandoffContinueFailure(body.code, res.status));
+            setFlowContext(null);
+            setContextLoading(false);
+          }
+          return;
+        } catch {
+          if (!cancelled) {
+            setContextResolveFailure("provider_unavailable");
+            setFlowContext(null);
+            setContextLoading(false);
+          }
+          return;
+        }
       }
 
       try {
@@ -162,6 +229,7 @@ function PartnerContinueInner() {
             // Continue with preview when the binding cookie is absent (evaluate-created flows).
           }
           if (!cancelled) {
+            setContextResolveFailure(null);
             if (bindingReturnUrl) setBoundReturnUrl(bindingReturnUrl);
             setFlowContext(resolvePartnerContinueContext({
               ...urlContext,
@@ -180,6 +248,7 @@ function PartnerContinueInner() {
       }
 
       if (!cancelled) {
+        setContextResolveFailure(null);
         setFlowContext(resolvePartnerContinueContext(urlContext));
         setContextLoading(false);
       }
@@ -189,7 +258,7 @@ function PartnerContinueInner() {
     return () => {
       cancelled = true;
     };
-  }, [verifyRequestId, urlPartnerId, urlPolicyId, urlPurpose, decodedReturnUrl]);
+  }, [verifyRequestId, urlPartnerId, urlPolicyId, urlPurpose]);
 
   useEffect(() => {
     setMethodSelected(false);
@@ -278,7 +347,7 @@ function PartnerContinueInner() {
     returnPath: decodedReturnUrl,
     partnerId,
     policyId,
-    verificationRequestId: verifyRequestId,
+    verifyRequestRef: verifyRequestId,
     walletBound: setup.walletBound,
     provenanceEvidenceComplete,
   });
@@ -322,7 +391,8 @@ function PartnerContinueInner() {
     underReview: holderState === "under_review",
   });
 
-  const continueContextIncomplete = !verifyRequestId || !partnerId;
+  const isOpaqueHostedHandoff = Boolean(verifyRequestId?.startsWith("vr_"));
+  const continueContextIncomplete = !verifyRequestId || (!partnerId && !isOpaqueHostedHandoff);
 
   const hostedBootstrapEligible = isHostedHolderBootstrapEligible({
     partnerId,
@@ -447,9 +517,33 @@ function PartnerContinueInner() {
         purpose: purposeParam,
       })
     : null;
+  const holderPresentation = policyId
+    ? buildHolderVerificationPresentation({
+        partnerName,
+        policyId,
+        brief: holderBrief,
+        purpose: purposeParam,
+      })
+    : null;
+  const holderAuthorizationCopy = holderPresentation
+    ? buildHolderAuthorizationCopy({
+        partnerName,
+        policyId,
+        brief: holderBrief,
+        proofSource: holderPresentation.proofSource,
+      })
+    : null;
+  const useConciseAuthorization = Boolean(holderAuthorizationCopy && !directHandoff && !simplifiedPurchase && !isDobFirstBrowse);
+  const authorizationPhase: HolderAuthorizationPhase = handoff.phase === "completed" && handoff.receiptId
+    ? "success"
+    : handoff.phase === "failed" && handoff.failureCategory
+      ? "failure"
+      : handoff.phase === "completing" || (handoff.ready && handoff.phase !== "completed")
+        ? "checking"
+        : "request";
 
-  if (!authLoading && !contextLoading && continueContextIncomplete) {
-    const recovery = resolveHolderRecovery("missing", partnerName, partnerHomeUrl);
+  if (!authLoading && !contextLoading && (contextResolveFailure || continueContextIncomplete)) {
+    const recovery = resolveHolderRecovery(contextResolveFailure ?? "missing", partnerName, partnerHomeUrl);
     return (
       <PartnerJourneyLayout
         partnerName={partnerName}
@@ -565,12 +659,40 @@ function PartnerContinueInner() {
               ? undefined
               : undefined
       }
-      hideStatus={Boolean(holderOpening) || simplifiedPurchase || directHandoff || undefined}
-      hideHeader={directHandoff || Boolean(holderOpening)}
+      hideStatus={Boolean(useConciseAuthorization || holderOpening) || simplifiedPurchase || directHandoff || undefined}
+      hideHeader={directHandoff || Boolean(useConciseAuthorization || holderOpening)}
     >
-      {!directHandoff && !simplifiedPurchase && holderOpening && (
-        <HolderOpeningBrief opening={holderOpening} />
-      )}
+      {useConciseAuthorization && holderAuthorizationCopy && suiAddress && !contextLoading && !authLoading ? (
+        <HolderAuthorizationCard
+          phase={authorizationPhase}
+          copy={holderAuthorizationCopy}
+          showSandboxNote={holderPresentation?.isSandbox}
+          sandboxNote={holderPresentation?.sandboxDetail}
+          onReturn={handoff.phase === "completed" && decodedReturnUrl ? () => handoff.navigateToPartner() : undefined}
+          returnLoading={handoff.inFlight}
+          returnLabel={returnLabel}
+          failure={
+            handoff.phase === "failed" && handoff.failureCategory
+              ? {
+                  title: handoff.failureCategory === "partner_flow_handoff_invalid"
+                    ? "This request expired."
+                    : handoff.failureCategory === "partner_flow_server_unavailable"
+                      ? "We couldn't verify this wallet right now."
+                      : "We couldn't finish this request.",
+                  message: handoff.failureCategory === "partner_flow_handoff_invalid"
+                    ? "Return to the partner and start again."
+                    : handoff.failureCategory === "partner_flow_server_unavailable"
+                      ? "Try again in a moment."
+                      : "Check your connection and try again.",
+                  actionLabel: handoff.failureCategory === "partner_flow_handoff_invalid" ? undefined : "Try again",
+                  onAction: handoff.failureCategory === "partner_flow_handoff_invalid"
+                    ? undefined
+                    : () => void handoff.complete(),
+                }
+              : null
+          }
+        />
+      ) : null}
       {authLoading || contextLoading || (hostedBootstrapEligible && hostedBootstrap.bootstrapping) ? (
         <ProtocolLoadingState
           kind="preparing_request"
@@ -626,13 +748,15 @@ function PartnerContinueInner() {
         />
       ) : (
         <>
-          <VerificationPath
-            active={verificationPathStep}
-            completedThrough={verificationPathCompletedThrough}
-            steps={simplifiedPurchase ? GOOD_TROUBLE_PURCHASE_PATH_STEPS : undefined}
-            compact
-          />
-          <PartnerFlowReturnHandler handoff={handoff} />
+          <div style={useConciseAuthorization ? { opacity: 0.72, marginBottom: "0.65rem" } : undefined}>
+            <VerificationPath
+              active={verificationPathStep}
+              completedThrough={verificationPathCompletedThrough}
+              steps={simplifiedPurchase ? GOOD_TROUBLE_PURCHASE_PATH_STEPS : undefined}
+              compact
+            />
+          </div>
+          <PartnerFlowReturnHandler handoff={handoff} suppressSurface={useConciseAuthorization} />
 
           {holderState === "under_review" && (
             <StatusBanner tone="pending" title={holderCopy.title}>
@@ -741,21 +865,8 @@ function PartnerContinueInner() {
             </div>
           )}
 
-          {setup.identityComplete && !handoff.ready && (
+          {!useConciseAuthorization && setup.identityComplete && !handoff.ready && (
             <p role="status">{holderCopy.title}…</p>
-          )}
-
-          {handoff.phase === "completed" && handoff.receiptId && decodedReturnUrl && (
-            <div style={{ marginTop: "1rem" }}>
-              <HolderDecisionComplete
-                receiptId={handoff.receiptId}
-                partnerName={partnerName}
-                policyId={policyId}
-                returnLabel={returnLabel}
-                onReturn={() => handoff.navigateToPartner()}
-                returnLoading={handoff.inFlight}
-              />
-            </div>
           )}
 
           {error && <p role="alert" aria-live="assertive" style={{ marginTop: "0.75rem", color: "var(--text-secondary)" }}>{error}</p>}

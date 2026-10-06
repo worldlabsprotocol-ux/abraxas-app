@@ -1,0 +1,149 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { NextRequest } from "next/server";
+import { CONTINUE_CONTEXT_TRACE_HEADER } from "@/lib/partner/hostedHandoff/continueContextTrace";
+import { GET } from "./route";
+
+const resolveHostedHandoffForContinue = vi.fn();
+
+vi.mock("@/lib/partner/hostedHandoff/resolveForContinue", () => ({
+  resolveHostedHandoffForContinue: (...args: unknown[]) => resolveHostedHandoffForContinue(...args),
+}));
+
+vi.mock("@/lib/partner/partnerVerifyResumeCookie", () => ({
+  signPartnerContinueBindingCookie: vi.fn(async () => "binding-token"),
+  attachPartnerContinueBindingCookie: vi.fn(),
+}));
+
+const prevCron = process.env.CRON_SECRET;
+
+afterEach(() => {
+  vi.clearAllMocks();
+  if (prevCron === undefined) delete process.env.CRON_SECRET;
+  else process.env.CRON_SECRET = prevCron;
+});
+
+describe("GET /api/v1/hosted-handoff/continue-context", () => {
+  it("returns holder preview for a resolvable hosted handoff", async () => {
+    resolveHostedHandoffForContinue.mockResolvedValue({
+      ok: true,
+      preview: {
+        verify_request: "vr_test1234567890",
+        handoff_ref: "hpf_test1234567890",
+        partner_id: "acme",
+        policy_id: "acme-wallet_control-v1",
+        policy_version: 1,
+        purpose: "Confirm wallet control",
+        application_id: "11111111-1111-1111-1111-111111111111",
+        public_slug: "acme-proof",
+        display_label: "Acme Proof",
+        environment: "sandbox",
+        action: "wallet_bound_action",
+        result_family: "wallet_control_confirmed",
+        expires_at: "2099-01-01T00:00:00.000Z",
+        return_url: "https://example.com/callback",
+      },
+      continuation: { jti: "jti-1" },
+    });
+
+    const res = await GET(new NextRequest(
+      "http://localhost/api/v1/hosted-handoff/continue-context?verify_request=vr_test1234567890",
+    ));
+    expect(res.status).toBe(200);
+    const json = await res.json() as { partner_id?: string; return_url?: string; callback_bound?: boolean };
+    expect(json.partner_id).toBe("acme");
+    expect(json.return_url).toBe("https://example.com/callback");
+    expect(json.callback_bound).toBe(true);
+  });
+
+  it("maps expired hosted handoffs to 410", async () => {
+    resolveHostedHandoffForContinue.mockResolvedValue({ ok: false, code: "expired" });
+    const res = await GET(new NextRequest(
+      "http://localhost/api/v1/hosted-handoff/continue-context?verify_request=vr_expired00000000",
+    ));
+    expect(res.status).toBe(410);
+  });
+
+  it("maps missing hosted handoffs to 404", async () => {
+    resolveHostedHandoffForContinue.mockResolvedValue({ ok: false, code: "missing" });
+    const res = await GET(new NextRequest(
+      "http://localhost/api/v1/hosted-handoff/continue-context?verify_request=vr_missing00000000",
+    ));
+    expect(res.status).toBe(404);
+  });
+
+  it("maps store failures to 503 unavailable without leaking database errors", async () => {
+    resolveHostedHandoffForContinue.mockResolvedValue({ ok: false, code: "unavailable" });
+    const res = await GET(new NextRequest(
+      "http://localhost/api/v1/hosted-handoff/continue-context?verify_request=vr_81cfe12715d8c338",
+    ));
+    expect(res.status).toBe(503);
+    const json = await res.json() as { code?: string; message?: string };
+    expect(json.code).toBe("unavailable");
+    expect(json.message).toBeUndefined();
+  });
+
+  it("maps completed hosted handoffs to 409", async () => {
+    resolveHostedHandoffForContinue.mockResolvedValue({ ok: false, code: "completed" });
+    const res = await GET(new NextRequest(
+      "http://localhost/api/v1/hosted-handoff/continue-context?verify_request=vr_81cfe12715d8c338",
+    ));
+    expect(res.status).toBe(409);
+  });
+
+  it("does not expose trace header on normal public requests", async () => {
+    delete process.env.CRON_SECRET;
+    resolveHostedHandoffForContinue.mockResolvedValue({ ok: false, code: "missing" });
+    const res = await GET(new NextRequest(
+      "http://localhost/api/v1/hosted-handoff/continue-context?verify_request=vr_test1234567890",
+    ));
+    expect(res.headers.get(CONTINUE_CONTEXT_TRACE_HEADER)).toBeNull();
+  });
+
+  it("exposes safe trace header when Authorization matches CRON_SECRET", async () => {
+    process.env.CRON_SECRET = "trace-secret";
+    resolveHostedHandoffForContinue.mockImplementation(async (_vr, options) => {
+      options?.trace?.record("resolver_enter");
+      options?.trace?.record("peek_return_null");
+      return { ok: false, code: "unavailable" };
+    });
+
+    const res = await GET(new NextRequest(
+      "http://localhost/api/v1/hosted-handoff/continue-context?verify_request=vr_test1234567890",
+      { headers: { authorization: "Bearer trace-secret" } },
+    ));
+    expect(res.status).toBe(503);
+    const traceHeader = res.headers.get(CONTINUE_CONTEXT_TRACE_HEADER);
+    expect(traceHeader).toBe("route_enter,resolver_enter,peek_return_null");
+    expect(traceHeader).not.toContain("trace-secret");
+    expect(traceHeader).not.toContain("vr_");
+  });
+
+  it("ignores query return_url override attempts", async () => {
+    resolveHostedHandoffForContinue.mockResolvedValue({
+      ok: true,
+      preview: {
+        verify_request: "vr_81cfe12715d8c338",
+        handoff_ref: "hpf_a6a02874a1bdef71",
+        partner_id: "ref-wc-postrev-5ffe",
+        policy_id: "ref-wc-postrev-5ffe-wallet_control-v1",
+        policy_version: 1,
+        purpose: "Confirm wallet control",
+        application_id: "8d30e3b1-3409-4bef-8d04-66335f38e96e",
+        public_slug: "ref-wc-postrev-proof",
+        display_label: "Proof app",
+        environment: "sandbox",
+        action: "wallet_bound_action",
+        result_family: "wallet_control_confirmed",
+        expires_at: "2099-01-01T00:00:00.000Z",
+        return_url: "https://example.com/callback",
+      },
+      continuation: { jti: "jti-1" },
+    });
+
+    const res = await GET(new NextRequest(
+      "http://localhost/api/v1/hosted-handoff/continue-context?verify_request=vr_81cfe12715d8c338&return_url=https://evil.example/steal",
+    ));
+    const json = await res.json() as { return_url?: string };
+    expect(json.return_url).toBe("https://example.com/callback");
+  });
+});

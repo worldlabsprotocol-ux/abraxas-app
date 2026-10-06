@@ -5,6 +5,7 @@ import { normalizePartnerReturnUrlForAllowlist } from "@/lib/connect/returnUrlAl
 import { partnerContinuationReturnUrlsMatch } from "@/lib/partner/continuationReturnUrlMatch";
 import { inferPolicyPackFromPolicyId, policyPackRequiresIdentityEvidence } from "@/lib/partner/launchpad/policyPacks";
 import { normalizePartnerVerifyInput } from "@/lib/partner/normalizePartnerVerifyInput";
+import { parsePartnerFlowInstant } from "@/lib/partner/parsePartnerFlowInstant";
 
 export const PARTNER_FLOW_CONTINUATION_TTL_MS = 30 * 60 * 1000;
 export const PARTNER_CONTINUE_PATH_PREFIX = "/partner/continue?";
@@ -42,6 +43,8 @@ export type PartnerFlowContinuationRecord = PartnerFlowContinuationInput & {
   expiresAt: string;
   consumedAt?: string | null;
   verifyRequestId?: string | null;
+  /** Populated on DB reads only — diagnostic forensics, never persisted. */
+  _diagRawExpiresAt?: string;
 };
 
 export const CONTINUATION_STORE_UNAVAILABLE = "continuation_store_unavailable" as const;
@@ -55,10 +58,28 @@ export class ContinuationStoreUnavailableError extends Error {
   }
 }
 
+export class ContinuationUniqueConflictError extends Error {
+  readonly code = "continuation_unique_conflict" as const;
+
+  constructor(readonly verifyRequestId: string) {
+    super("continuation_unique_conflict");
+    this.name = "ContinuationUniqueConflictError";
+  }
+}
+
+export type OpaqueContinuationEnsureResult = {
+  record: PartnerFlowContinuationRecord;
+  wasCreated: boolean;
+};
+
 export type PartnerFlowContinuationStore = {
   save(record: PartnerFlowContinuationRecord): Promise<void>;
   peek(jti: string): Promise<PartnerFlowContinuationRecord | null>;
   peekByVerifyRequestId(verifyRequestId: string): Promise<PartnerFlowContinuationRecord | null>;
+  ensureByOpaqueVerifyRequest(
+    record: PartnerFlowContinuationRecord,
+    options?: { verifyRequestRef?: string },
+  ): Promise<OpaqueContinuationEnsureResult>;
   consume(jti: string): Promise<PartnerFlowContinuationRecord | null>;
   attachVerifyRequestId(jti: string, verifyRequestId: string): Promise<void>;
 };
@@ -139,8 +160,8 @@ export function continuationIsUsable(
 ): record is PartnerFlowContinuationRecord {
   if (!record) return false;
   if (record.consumedAt) return false;
-  const expires = Date.parse(record.expiresAt);
-  if (!Number.isFinite(expires) || expires <= now) return false;
+  const expires = parsePartnerFlowInstant(record.expiresAt);
+  if (expires === null || expires <= now) return false;
   return sanitizePartnerFlowContinuation(record) !== null;
 }
 
@@ -265,6 +286,12 @@ export function createMemoryContinuationStore(
     async peekByVerifyRequestId(verifyRequestId) {
       return Array.from(rows.values()).find((row) => row.verifyRequestId === verifyRequestId) ?? null;
     },
+    async ensureByOpaqueVerifyRequest(record) {
+      const existing = await this.peekByVerifyRequestId(record.verifyRequestId ?? "");
+      if (existing) return { record: existing, wasCreated: false };
+      await this.save(record);
+      return { record, wasCreated: true };
+    },
     async consume(jti) {
       const existing = rows.get(jti);
       if (!existing || existing.consumedAt) return null;
@@ -288,6 +315,7 @@ export function createUnavailableContinuationStore(): PartnerFlowContinuationSto
     save: fail,
     peek: fail,
     peekByVerifyRequestId: fail,
+    ensureByOpaqueVerifyRequest: fail,
     consume: fail,
     attachVerifyRequestId: fail,
   };

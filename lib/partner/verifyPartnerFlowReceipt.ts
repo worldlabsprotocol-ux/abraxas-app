@@ -5,10 +5,21 @@ import {
   evaluatePublicReceiptTrust,
   type TrustEvaluationResult,
 } from "@/lib/decisionReceipts/trustEvaluation";
+import {
+  CANONICAL_SANDBOX_ONLY_INVALIDATION_REASON,
+  isPureSandboxOnlyLimitation,
+  isSandboxOnlyInvalidationReasonSet,
+  LEGACY_SANDBOX_ONLY_INVALIDATION_REASON,
+} from "@/lib/partner/sandboxReceiptTrustContract";
 
 export const SUPPORTED_RECEIPT_SCHEMA_VERSION = "1.0.0";
 export const EXPECTED_RECEIPT_ARTIFACT_TYPE = "eligibility_decision_receipt";
-export const SANDBOX_ONLY_INVALIDATION_REASON = "production_not_usable:false";
+/** @deprecated Prefer CANONICAL_SANDBOX_ONLY_INVALIDATION_REASON from sandboxReceiptTrustContract. */
+export const SANDBOX_ONLY_INVALIDATION_REASON = LEGACY_SANDBOX_ONLY_INVALIDATION_REASON;
+export {
+  CANONICAL_SANDBOX_ONLY_INVALIDATION_REASON,
+  LEGACY_SANDBOX_ONLY_INVALIDATION_REASON,
+} from "@/lib/partner/sandboxReceiptTrustContract";
 
 export interface PartnerFlowPublicReceipt {
   receipt_id?: string;
@@ -135,9 +146,36 @@ function validateSandboxEnvironmentFields(receipt: PartnerFlowPublicReceipt): st
     errors.push(`sandbox_decision_context_mismatch:${receipt.decision_context ?? "missing"}`);
   }
 
-  const reasons = receipt.invalidation_reasons ?? [];
-  if (reasons.length !== 1 || reasons[0] !== SANDBOX_ONLY_INVALIDATION_REASON) {
+  if (!isSandboxOnlyInvalidationReasonSet(receipt.invalidation_reasons)) {
     errors.push("sandbox_invalidation_reason_mismatch");
+  }
+
+  return errors;
+}
+
+function validateSandboxOperationalValidity(receipt: PartnerFlowPublicReceipt): string[] {
+  const errors: string[] = [];
+  const pureSandboxOnly = isPureSandboxOnlyLimitation(receipt);
+
+  if (receipt.lifecycle_status === "superseded") errors.push("receipt_superseded");
+  if (receipt.lifecycle_status === "revoked") errors.push("receipt_revoked");
+  if (receipt.lifecycle_status === "expired") errors.push("receipt_expired");
+
+  const safe = receipt.partner_safe_reason;
+  if (safe === "evidence_refresh_required") errors.push("evidence_refresh_required");
+  else if (safe === "policy_no_longer_valid") errors.push("policy_no_longer_valid");
+  else if (safe === "application_inactive") errors.push("application_inactive");
+  else if (safe === "receipt_superseded") errors.push("receipt_superseded");
+  else if (safe === "receipt_revoked") errors.push("receipt_revoked");
+  else if (safe === "receipt_expired") errors.push("receipt_expired");
+  else if (safe === "signature_invalid") errors.push("signature_invalid");
+  else if (safe === "verification_incomplete") errors.push("verification_incomplete");
+  else if (safe === "partner_inactive") errors.push("partner_inactive");
+  else if (safe === "receipt_invalid") errors.push("receipt_invalid");
+  else if (receipt.currently_valid === false && !pureSandboxOnly) {
+    if (safe === "environment_mismatch") errors.push(safe);
+    else if (safe) errors.push(safe);
+    else errors.push("currently_valid_not_true");
   }
 
   return errors;
@@ -201,7 +239,7 @@ export function validatePartnerFlowPublicReceipt(
   if (expected.mode) {
     const sharedErrors = validateSharedReceiptFields(receipt, expected);
     const modeErrors = expected.mode === "sandbox"
-      ? [...validateSandboxEnvironmentFields(receipt), ...validateCurrentValidityFields(receipt)]
+      ? [...validateSandboxEnvironmentFields(receipt), ...validateSandboxOperationalValidity(receipt)]
       : validateProductionEnvironmentFields(receipt);
     const errors = [...sharedErrors, ...modeErrors];
     return { ok: errors.length === 0, errors };

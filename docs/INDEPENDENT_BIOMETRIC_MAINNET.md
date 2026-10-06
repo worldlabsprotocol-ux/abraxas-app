@@ -18,7 +18,7 @@ ABRAXAS_BROWSER_SESSION_SECRET=...        # optional; falls back to signing key
 ```env
 SUI_NETWORK=devnet
 NEXT_PUBLIC_SUI_NETWORK=devnet
-SUI_RPC_URL=https://rpc-devnet.suiscan.xyz
+SUI_RPC_URL=https://fullnode.devnet.sui.io:443
 SUI_SPONSOR_SECRET_KEY=suiprivkey1...
 SUI_ISSUANCE_CAP_OBJECT_ID=0x...
 ```

@@ -537,6 +537,123 @@ describe("PartnerContinueClient holder recovery", () => {
     expect(screen.queryByRole("button", { name: /Use selected method/i })).toBeNull();
   });
 
+  it("resolves opaque vr_* via hosted continue-context and renders verification UI", async () => {
+    mockAuthState.suiAddress = "0xabc";
+    mockAuthState.isLoading = false;
+    mockSearchParams = new URLSearchParams({
+      verify_request: "vr_e0cad2cb197ddc3d",
+    });
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/v1/hosted-handoff/continue-context")) {
+        return new Response(JSON.stringify({
+          partner_id: "ref-wc-postrev-5ffe",
+          policy_id: "ref-wc-postrev-5ffe-wallet_control-v1",
+          purpose: "Confirm you control an eligible wallet",
+          return_url: "https://example.com/callback",
+        }), { status: 200 });
+      }
+      if (url.includes("/api/v1/partner-verify/method-qualification")) {
+        return new Response(JSON.stringify({
+          ok: true,
+          method_qualified: false,
+          issuedReceipt: false,
+        }), { status: 200 });
+      }
+      if (url.includes("/api/v1/verification-requests/")) {
+        throw new Error(`Legacy verification-requests must not be called for vr_*: ${url}`);
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    }) as typeof fetch;
+    global.fetch = fetchMock;
+
+    render(<PartnerContinueClient />);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/could not be found/i)).toBeNull();
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/api/v1/hosted-handoff/continue-context?verify_request=vr_e0cad2cb197ddc3d"),
+      expect.objectContaining({ credentials: "include" }),
+    );
+    expect(
+      fetchMock.mock.calls.filter(([url]) => String(url).includes("/api/v1/hosted-handoff/continue-context")),
+    ).toHaveLength(1);
+  });
+
+  it("maps hosted continue-context unavailable to provider recovery, not missing", async () => {
+    mockAuthState.suiAddress = "0xabc";
+    mockSearchParams = new URLSearchParams({
+      verify_request: "vr_unavailable00001",
+    });
+    global.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/v1/hosted-handoff/continue-context")) {
+        return new Response(JSON.stringify({ code: "unavailable" }), { status: 503 });
+      }
+      if (url.includes("/api/v1/partner-verify/method-qualification")) {
+        return new Response(JSON.stringify({ ok: true, method_qualified: false }), { status: 200 });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    }) as typeof fetch;
+
+    render(<PartnerContinueClient />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/verification method is unavailable/i)).toBeTruthy();
+    });
+    expect(screen.queryByText(/could not be found/i)).toBeNull();
+  });
+
+  it("maps hosted continue-context missing to the missing recovery state", async () => {
+    mockAuthState.suiAddress = "0xabc";
+    mockSearchParams = new URLSearchParams({
+      verify_request: "vr_missing00000001",
+    });
+    global.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/v1/hosted-handoff/continue-context")) {
+        return new Response(JSON.stringify({ code: "missing" }), { status: 404 });
+      }
+      if (url.includes("/api/v1/partner-verify/method-qualification")) {
+        return new Response(JSON.stringify({ ok: true, method_qualified: false }), { status: 200 });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    }) as typeof fetch;
+
+    render(<PartnerContinueClient />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/could not be found/i)).toBeTruthy();
+    });
+  });
+
+  it("maps hosted continue-context expired to the expired recovery state", async () => {
+    mockAuthState.suiAddress = "0xabc";
+    mockSearchParams = new URLSearchParams({
+      verify_request: "vr_expired00000001",
+    });
+    global.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/v1/hosted-handoff/continue-context")) {
+        return new Response(JSON.stringify({ code: "expired" }), { status: 410 });
+      }
+      if (url.includes("/api/v1/partner-verify/method-qualification")) {
+        return new Response(JSON.stringify({ ok: true, method_qualified: false }), { status: 200 });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    }) as typeof fetch;
+
+    render(<PartnerContinueClient />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/request expired/i)).toBeTruthy();
+    });
+    expect(screen.queryByText(/could not be found/i)).toBeNull();
+  });
+
   it("asks the holder to sign in again after session loss without exposing wallet copy", async () => {
     mockAuthState.suiAddress = null;
     mockAuthState.isLoading = false;
