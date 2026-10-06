@@ -9,6 +9,8 @@ import type { PartnerFlowHandoffController } from "@/lib/passport/partnerFlowHan
 
 interface Props {
   handoff: PartnerFlowHandoffController;
+  /** When true, auto-complete still runs but completing/failed banners are omitted (inline card owns UX). */
+  suppressSurface?: boolean;
 }
 
 function failureCopy(category: NonNullable<PartnerFlowHandoffController["failureCategory"]>): {
@@ -39,7 +41,7 @@ function failureCopy(category: NonNullable<PartnerFlowHandoffController["failure
   }
 }
 
-export function PartnerFlowReturnHandler({ handoff }: Props) {
+export function PartnerFlowReturnHandler({ handoff, suppressSurface = false }: Props) {
   const autoCompleteStarted = useRef(false);
 
   useEffect(() => {
@@ -59,6 +61,7 @@ export function PartnerFlowReturnHandler({ handoff }: Props) {
   if (handoff.phase === "completed") return null;
 
   if (handoff.phase === "completing") {
+    if (suppressSurface) return null;
     return (
       <div style={{ marginBottom: "1.25rem" }}>
         <StatusBanner tone="pending" title="Signing your decision receipt…" loading>
@@ -69,6 +72,7 @@ export function PartnerFlowReturnHandler({ handoff }: Props) {
   }
 
   if (handoff.phase === "failed" && handoff.failureCategory) {
+    if (suppressSurface) return null;
     const copy = failureCopy(handoff.failureCategory);
 
     return (
