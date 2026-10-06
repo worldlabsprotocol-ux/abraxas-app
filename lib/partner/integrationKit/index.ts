@@ -1,5 +1,5 @@
 // FILE: lib/partner/integrationKit/index.ts
-// Official Partner Integration Kit entry.
+// Re-exports canonical PartnerKit from @abraxas/partner-kit (app-local telemetry wrapper on client).
 
 export {
   PARTNER_INTEGRATION_KIT_VERSION,
@@ -14,29 +14,18 @@ export {
   PARTNER_INTEGRATION_SANDBOX_BEHAVIOR,
   PARTNER_INTEGRATION_GOOGLE_BOUNDARY,
   PARTNER_INTEGRATION_SOURCE_LEVEL,
+  PARTNER_INTEGRATION_VERIFY_FOR_ACTION_NOTE,
+  PRODUCTION_INTEGRATION_SERVER_VERIFICATION_STEPS,
   type PartnerIntegrationOutcome,
-} from "@/lib/partner/integrationKit/contract";
-
-export { parsePartnerCallbackParams } from "@/lib/partner/integrationKit/callback";
-export { outcomeFromValidationErrors } from "@/lib/partner/integrationKit/outcomes";
-export {
-  AbraxasPartnerKit,
-  permitProtocolAction,
-  type AbraxasPartnerKitOptions,
-  type PartnerKitSafeResult,
-} from "@/lib/partner/integrationKit/client";
-export {
+  parsePartnerCallbackParams,
+  outcomeFromValidationErrors,
   resolvePolicyIntegrationCapabilities,
   validateVerificationRequestCapabilities,
   type PolicyIntegrationCapabilities,
-} from "@/lib/partner/integrationKit/policyCapabilities";
-export {
   MemoryPartnerRequestStateStore,
   generatePartnerRequestId,
   type PartnerRequestStateStore,
   type PartnerVerificationRequestState,
-} from "@/lib/partner/integrationKit/partnerRequestStateStore";
-export {
   UNIVERSAL_INTEGRATION_ERROR_CATEGORIES,
   categorizeIntegrationErrors,
   embedPartnerStateInReturnUrl,
@@ -47,16 +36,24 @@ export {
   type VerificationRequestMode,
   type VerifyCallbackWithNarrowResultInput,
   type VerifyCallbackWithNarrowResultResult,
-} from "@/lib/partner/integrationKit/verificationRequest";
-export {
   nextjsRouteHandlerExample,
   expressHandlerExample,
   genericTypescriptExample,
   verifyWithAbraxasExample,
   CONFORMANCE_COMMAND_EXAMPLE,
-} from "@/lib/partner/integrationKit/examples";
+  type ResolvedApplicationPolicyBinding,
+  type NarrowPartnerResult,
+  type ProvenancePartnerFacts,
+} from "@abraxas/partner-kit";
+
+export {
+  AbraxasPartnerKit,
+  permitProtocolAction,
+  type AbraxasPartnerKitOptions,
+  type PartnerKitSafeResult,
+} from "@/lib/partner/integrationKit/client";
 
 export {
   verifyPartnerWebhookEvent,
   verifyWebhookThenReceipt,
-} from "@/lib/partner/eventDelivery/verify";
+} from "@abraxas/partner-kit/webhooks";

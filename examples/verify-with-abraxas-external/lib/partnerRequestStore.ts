@@ -1,7 +1,7 @@
 // FILE: examples/verify-with-abraxas-external/lib/partnerRequestStore.ts
 // Partner-owned durable request correlation — implement with Postgres/Redis/KV in production.
 
-import type { PartnerRequestStateStore, PartnerVerificationRequestState } from "@/lib/partner/integrationKit/partnerRequestStateStore";
+import type { PartnerRequestStateStore, PartnerVerificationRequestState } from "@abraxas/partner-kit";
 
 /** Production implementations replace this with Postgres, Redis, Vercel KV, etc. */
 export interface ExternalPartnerRequestStore extends PartnerRequestStateStore {}
