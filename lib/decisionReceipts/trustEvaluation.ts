@@ -5,6 +5,10 @@ import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import type { PartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlowReceipt";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 import {
+  CANONICAL_SANDBOX_ONLY_INVALIDATION_REASON,
+  LEGACY_SANDBOX_ONLY_INVALIDATION_REASON,
+} from "@/lib/partner/sandboxReceiptTrustContract";
+import {
   resolveReceiptValidity,
   type ReceiptValidityResult,
   type ReceiptValidityState,
@@ -120,13 +124,21 @@ function applyTrustGates(
 
   if (!base.currently_valid) {
     if (allowSandbox && base.validity === "sandbox_only") {
-      return {
-        currently_valid: true,
-        validity: "sandbox_only",
-        signature_valid: true,
-        production_usable: false,
-        invalidation_reasons: base.invalidation_reasons,
-      };
+      const onlySandboxLimitation = base.invalidation_reasons.length > 0
+        && base.invalidation_reasons.every((reason) =>
+          reason === CANONICAL_SANDBOX_ONLY_INVALIDATION_REASON
+          || reason === LEGACY_SANDBOX_ONLY_INVALIDATION_REASON
+          || reason === "sandbox_only_not_production_usable",
+        );
+      if (onlySandboxLimitation) {
+        return {
+          currently_valid: true,
+          validity: "sandbox_only",
+          signature_valid: true,
+          production_usable: false,
+          invalidation_reasons: base.invalidation_reasons,
+        };
+      }
     }
 
     return {

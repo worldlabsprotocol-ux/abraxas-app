@@ -277,6 +277,7 @@ export async function revokeWalletBinding(input: {
 
   await revokeWalletControlClaimForBinding({
     subjectId: subject,
+    bindingId: input.bindingId,
     evidenceReference: walletControlEvidenceRef(input.bindingId),
     reason: input.reason,
   });
@@ -289,6 +290,25 @@ export async function revokeWalletBinding(input: {
     object_id: input.bindingId,
     metadata: { reason: input.reason },
   });
+
+  if (!process.env.VITEST) {
+    try {
+      const { recordIntegrationEventBestEffort } = await import("@/lib/partner/integrationObservability/record");
+      await recordIntegrationEventBestEffort({
+        partnerId: "system",
+        environment: "sandbox",
+        eventType: "evidence_refresh_required",
+        lifecycleStage: "policy",
+        outcome: "evidence_revoked",
+        metadata: {
+          binding_id: input.bindingId,
+          reason: input.reason,
+        },
+      });
+    } catch {
+      // Observability must not block holder revocation.
+    }
+  }
 
   return true;
 }

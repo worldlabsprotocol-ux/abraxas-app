@@ -14,7 +14,14 @@ export function mapPartnerSafeReceiptReason(
     return blob.includes("claim_expired") ? "evidence_refresh_required" : "receipt_expired";
   }
   if (blob.includes("signature_invalid")) return "signature_invalid";
-  if (blob.includes("claim_revoked") || blob.includes("claim_suspended") || blob.includes("claim_under_review")) {
+  if (
+    blob.includes("claim_revoked")
+    || blob.includes("claim_suspended")
+    || blob.includes("claim_under_review")
+    || blob.includes("source_evidence_revoked")
+    || blob.includes("wallet_binding_missing")
+    || blob.includes("wallet_binding_lineage_ambiguous")
+  ) {
     return "evidence_refresh_required";
   }
   if (blob.includes("policy_no_longer_valid") || blob.includes("policy_version")) return "policy_no_longer_valid";
