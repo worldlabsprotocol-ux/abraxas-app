@@ -31,6 +31,21 @@ describe("HolderAuthorizationCard", () => {
     expect(screen.getByText(/Checking your verified wallet/i)).toBeTruthy();
   });
 
+  it("renders verification-required state without success copy", () => {
+    render(
+      <HolderAuthorizationCard
+        phase="verification_required"
+        copy={copy}
+        onVerify={() => {}}
+      />,
+    );
+    expect(screen.getByText(/Wallet verification needed/i)).toBeTruthy();
+    expect(screen.getByText(/no longer current/i)).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Verify wallet/i })).toBeTruthy();
+    expect(screen.queryByText(/Wallet control · Yes/i)).toBeNull();
+    expect(screen.queryByText(/^Confirmed$/i)).toBeNull();
+  });
+
   it("renders success state with narrow result summary", () => {
     render(
       <HolderAuthorizationCard

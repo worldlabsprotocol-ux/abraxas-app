@@ -11,8 +11,14 @@ import {
 import { findProductionPolicyRules } from "@/lib/policy/productionPolicyContract";
 import { isProgressivePartnerHandoffReady } from "@/lib/progressiveProof/handoffReady";
 import { isContentOriginDisclosurePolicyId } from "@/lib/provenance/constants";
+import type { HolderAuthorizationState } from "@/lib/partner/partnerFlowCurrentAuthorization";
 
-export type PartnerFlowHandoffPhase = "idle" | "completing" | "completed" | "failed";
+export type PartnerFlowHandoffPhase =
+  | "idle"
+  | "completing"
+  | "completed"
+  | "verification_required"
+  | "failed";
 export type PartnerFlowHandoffFailureCategory =
   | "partner_flow_completion_failed"
   | "partner_flow_network_failed"
@@ -42,6 +48,7 @@ export interface PartnerFlowHandoffController {
   inFlight: boolean;
   receiptId: string | null;
   redirectUrl: string | null;
+  authorizationState: HolderAuthorizationState | null;
   complete: () => Promise<void>;
   navigateToPartner: () => void;
 }
@@ -120,7 +127,12 @@ function classifyCompleteFailure(
 export async function postPartnerFlowComplete(
   body: PartnerFlowCompleteBody,
 ): Promise<
-  | { ok: true; redirectUrl: string; receiptId: string | null }
+  | {
+    ok: true;
+    authorizationState: HolderAuthorizationState;
+    redirectUrl: string | null;
+    receiptId: string | null;
+  }
   | { ok: false; category: PartnerFlowHandoffFailureCategory }
 > {
   try {
@@ -158,13 +170,30 @@ export async function postPartnerFlowComplete(
       return { ok: false, category: "partner_flow_network_failed" };
     }
 
-    if (res.ok && typeof data.redirect_url === "string" && data.redirect_url) {
-      const partnerResult = data.partner_result as { receipt_id?: string } | undefined;
+    const authorizationState = data.holder_authorization_state as HolderAuthorizationState | undefined;
+    const partnerResult = data.partner_result as { receipt_id?: string } | undefined;
+    const receiptId = partnerResult?.receipt_id ?? null;
+
+    if (res.ok && authorizationState === "verification_required") {
       return {
         ok: true,
-        redirectUrl: data.redirect_url,
-        receiptId: partnerResult?.receipt_id ?? null,
+        authorizationState: "verification_required",
+        redirectUrl: null,
+        receiptId,
       };
+    }
+
+    if (res.ok && authorizationState === "authorized" && typeof data.redirect_url === "string" && data.redirect_url) {
+      return {
+        ok: true,
+        authorizationState: "authorized",
+        redirectUrl: data.redirect_url,
+        receiptId,
+      };
+    }
+
+    if (res.ok && data.next === "denied") {
+      return { ok: false, category: "partner_flow_completion_failed" };
     }
 
     return { ok: false, category: classifyCompleteFailure(res, data) };
@@ -181,6 +210,7 @@ export const IDLE_PARTNER_FLOW_HANDOFF: PartnerFlowHandoffController = {
   inFlight: false,
   receiptId: null,
   redirectUrl: null,
+  authorizationState: null,
   complete: async () => {},
   navigateToPartner: () => {},
 };
@@ -190,6 +220,7 @@ export function usePartnerFlowHandoff(ctx: PartnerFlowHandoffContext): PartnerFl
   const [failureCategory, setFailureCategory] = useState<PartnerFlowHandoffFailureCategory | null>(null);
   const [receiptId, setReceiptId] = useState<string | null>(null);
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
+  const [authorizationState, setAuthorizationState] = useState<HolderAuthorizationState | null>(null);
   const inFlightRef = useRef(false);
 
   const isPartnerFlowContextActive = isPartnerFlowContext(ctx);
@@ -202,6 +233,7 @@ export function usePartnerFlowHandoff(ctx: PartnerFlowHandoffContext): PartnerFl
       setFailureCategory(null);
       setReceiptId(null);
       setRedirectUrl(null);
+      setAuthorizationState(null);
       inFlightRef.current = false;
     }
   }, [ready]);
@@ -212,7 +244,7 @@ export function usePartnerFlowHandoff(ctx: PartnerFlowHandoffContext): PartnerFl
   }, [redirectUrl]);
 
   const complete = useCallback(async () => {
-    if (!ready || inFlightRef.current || phase === "completed") return;
+    if (!ready || inFlightRef.current || phase === "completed" || phase === "verification_required") return;
 
     const body = buildPartnerFlowCompleteBody(ctx);
     if (!body) return;
@@ -226,7 +258,8 @@ export function usePartnerFlowHandoff(ctx: PartnerFlowHandoffContext): PartnerFl
     if (result.ok) {
       setReceiptId(result.receiptId);
       setRedirectUrl(result.redirectUrl);
-      setPhase("completed");
+      setAuthorizationState(result.authorizationState);
+      setPhase(result.authorizationState === "verification_required" ? "verification_required" : "completed");
       inFlightRef.current = false;
       return;
     }
@@ -254,6 +287,7 @@ export function usePartnerFlowHandoff(ctx: PartnerFlowHandoffContext): PartnerFl
     inFlight,
     receiptId,
     redirectUrl,
+    authorizationState,
     complete,
     navigateToPartner,
   };

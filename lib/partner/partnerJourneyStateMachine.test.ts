@@ -16,6 +16,7 @@ describe("partner journey state machine", () => {
   it("maps server next steps to authoritative journey states", () => {
     expect(mapFlowNextStepToJourneyState("authenticate")).toBe("sign_in_required");
     expect(mapFlowNextStepToJourneyState("passport")).toBe("additional_verification_required");
+    expect(mapFlowNextStepToJourneyState("verification_required")).toBe("additional_verification_required");
     expect(mapFlowNextStepToJourneyState("enter")).toBe("approved");
     expect(mapFlowNextStepToJourneyState("denied")).toBe("denied");
     expect(mapFlowNextStepToJourneyState("pending_review")).toBe("manual_review_required");

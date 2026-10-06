@@ -13,10 +13,7 @@ import {
   findReceiptForVerificationRequest,
   findSessionReceiptForSupersede,
 } from "@/lib/partner/sessionDecision";
-import {
-  partnerFlowReceiptAccessBlocked,
-  partnerFlowRevocationDeniedFields,
-} from "@/lib/partner/partnerFlowReceiptAccess";
+import { partnerFlowRevocationDeniedFields } from "@/lib/partner/partnerFlowReceiptAccess";
 import type { PartnerFlowEvaluateResult } from "@/lib/partner/relyingPartyFlow";
 import { subjectHasPrivacyAccessRevoked } from "@/lib/privacy/privacySubjectAccess";
 
@@ -206,11 +203,14 @@ export async function checkPartnerFlowRevocationGate(
 }
 
 export function isPartnerFlowRevocationDenied(
-  result: Pick<PartnerFlowEvaluateResult, "next" | "invalidation_reasons" | "currently_valid">,
+  result: Pick<PartnerFlowEvaluateResult, "next" | "holder_authorization_state" | "invalidation_reasons" | "currently_valid">,
 ): boolean {
+  if (result.holder_authorization_state === "denied") return true;
   if (result.next !== "denied") return false;
-  return partnerFlowReceiptAccessBlocked({
-    currently_valid: result.currently_valid ?? false,
-    invalidation_reasons: result.invalidation_reasons ?? [],
-  });
+  return (result.invalidation_reasons ?? []).some((reason) =>
+    reason === "receipt_revoked"
+    || reason === "claim_revoked"
+    || reason === "access_revoked"
+    || reason.startsWith("claim_revoked:"),
+  );
 }

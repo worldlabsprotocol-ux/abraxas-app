@@ -19,6 +19,9 @@ export interface HolderAuthorizationCopy {
   disclosureTitle: string;
   disclosureShared: string[];
   disclosureWithheld: string[];
+  verificationRequiredTitle: string;
+  verificationRequiredBody: string;
+  verificationRequiredActionLabel: string;
 }
 
 function walletControlWithheld(): string[] {
@@ -55,6 +58,10 @@ export function buildHolderAuthorizationCopy(input: {
       disclosureTitle: "What was shared?",
       disclosureShared: ["Wallet control: Yes"],
       disclosureWithheld: walletControlWithheld(),
+      verificationRequiredTitle: "Wallet verification needed",
+      verificationRequiredBody:
+        "Your previous wallet verification is no longer current. Verify a wallet to continue.",
+      verificationRequiredActionLabel: "Verify wallet",
     };
   }
 
@@ -72,5 +79,9 @@ export function buildHolderAuthorizationCopy(input: {
     disclosureTitle: "What was shared?",
     disclosureShared: [`${resultLabel}: Yes`],
     disclosureWithheld: input.brief.withheld,
+    verificationRequiredTitle: "Verification needed",
+    verificationRequiredBody:
+      "Your previous proof is no longer current. Complete verification to continue.",
+    verificationRequiredActionLabel: "Verify",
   };
 }

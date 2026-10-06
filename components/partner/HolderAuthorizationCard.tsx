@@ -9,7 +9,12 @@ import { abxMotionDuration } from "@/lib/design/abraxasMotion";
 import type { HolderAuthorizationCopy } from "@/lib/partner/holderExperience/authorizationCopy";
 import { Btn } from "@/components/redesign/ui";
 
-export type HolderAuthorizationPhase = "request" | "checking" | "success" | "failure";
+export type HolderAuthorizationPhase =
+  | "request"
+  | "checking"
+  | "success"
+  | "verification_required"
+  | "failure";
 
 export interface HolderAuthorizationFailure {
   title: string;
@@ -28,6 +33,8 @@ export interface HolderAuthorizationCardProps {
   returnLoading?: boolean;
   returnLabel?: string;
   failure?: HolderAuthorizationFailure | null;
+  onVerify?: () => void;
+  verifyLoading?: boolean;
   showSandboxNote?: boolean;
   sandboxNote?: string;
 }
@@ -49,6 +56,8 @@ export function HolderAuthorizationCard({
   returnLoading = false,
   returnLabel = "Return to Partner",
   failure = null,
+  onVerify,
+  verifyLoading = false,
   showSandboxNote = false,
   sandboxNote,
 }: HolderAuthorizationCardProps) {
@@ -123,6 +132,22 @@ export function HolderAuthorizationCard({
                 <p style={{ margin: "0.55rem 0 0", fontSize: "0.8rem", color: "var(--text-muted, #94a3b8)" }}>
                   {copy.reuseLine}
                 </p>
+              ) : null}
+            </>
+          )}
+
+          {phase === "verification_required" && (
+            <>
+              <h2 style={{ margin: "0 0 0.55rem", fontSize: "1rem", fontWeight: 800, lineHeight: 1.35 }}>
+                {copy.verificationRequiredTitle}
+              </h2>
+              <p style={{ margin: "0 0 0.85rem", fontSize: "0.88rem", lineHeight: 1.55, color: "var(--text-secondary, #cbd5e1)" }}>
+                {copy.verificationRequiredBody}
+              </p>
+              {onVerify ? (
+                <Btn disabled={verifyLoading} onClick={onVerify}>
+                  {verifyLoading ? "Verifying…" : copy.verificationRequiredActionLabel}
+                </Btn>
               ) : null}
             </>
           )}

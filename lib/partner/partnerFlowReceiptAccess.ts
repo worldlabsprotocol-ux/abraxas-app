@@ -10,12 +10,33 @@ export function isPartnerFlowRevocationReason(invalidationReason: string): boole
     || invalidationReason.startsWith("claim_revoked:");
 }
 
+/** @deprecated Prefer resolvePartnerFlowTrustGate / resolveHolderAuthorizationState. */
 export function partnerFlowReceiptAccessBlocked(input: {
   currently_valid: boolean;
   invalidation_reasons: string[];
 }): boolean {
   if (input.currently_valid) return false;
   return input.invalidation_reasons.some(isPartnerFlowRevocationReason);
+}
+
+export function partnerFlowVerificationRequiredFields(input: {
+  currently_valid: false;
+  validity: string;
+  invalidation_reasons: string[];
+}): {
+  next: "verification_required";
+  holder_authorization_state: "verification_required";
+  currently_valid: false;
+  validity: string;
+  invalidation_reasons: string[];
+} {
+  return {
+    next: "verification_required",
+    holder_authorization_state: "verification_required",
+    currently_valid: false,
+    validity: input.validity,
+    invalidation_reasons: input.invalidation_reasons,
+  };
 }
 
 export function partnerFlowRevocationDeniedFields(input: {
