@@ -17,6 +17,8 @@ import {
 } from "@/lib/trust/issuerFramework";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 import { CANONICAL_SANDBOX_ONLY_INVALIDATION_REASON } from "@/lib/partner/sandboxReceiptTrustContract";
+import { evaluateWalletControlClaimLiveEligibilityById } from "@/lib/walletControl/claimBindingLineage";
+import { WALLET_CONTROL_CLAIM_TYPE } from "@/lib/walletControl/contract";
 
 export type ReceiptValidityState =
   | "active"
@@ -76,17 +78,6 @@ export async function resolveReceiptValidity(
       signature_valid: true,
       invalidation_reasons: ["receipt_expired"],
       dependency_claim_ids: [],
-    };
-  }
-
-  if (record.decision_context === "sandbox_only" || isSandboxPolicyId(record.policy_id)) {
-    return {
-      validity: "sandbox_only",
-      currently_valid: false,
-      stored_status: storedStatus,
-      signature_valid: true,
-      invalidation_reasons: [CANONICAL_SANDBOX_ONLY_INVALIDATION_REASON],
-      dependency_claim_ids: record.evaluated_claim_refs.map(r => r.claim_id),
     };
   }
 
@@ -161,6 +152,14 @@ export async function resolveReceiptValidity(
       return buildInvalidResult(record, storedStatus, "expired", [`claim_expired:${claimId}`], claimIds);
     }
 
+    if (claimType === WALLET_CONTROL_CLAIM_TYPE) {
+      const walletEligibility = await evaluateWalletControlClaimLiveEligibilityById(claimId);
+      if (!walletEligibility.eligible) {
+        const reason = walletEligibility.reason ?? "source_evidence_revoked";
+        return buildInvalidResult(record, storedStatus, "revoked_dependency", [reason], claimIds);
+      }
+    }
+
     const issuer = await getIssuerById(issuerId);
     if (!issuer || issuer.issuer_status !== "active") {
       return buildInvalidResult(record, storedStatus, "issuer_untrusted", [`issuer_inactive:${issuerId}`], claimIds);
@@ -191,6 +190,17 @@ export async function resolveReceiptValidity(
 
   if (invalidationReasons.length > 0) {
     return buildInvalidResult(record, storedStatus, "invalidated", invalidationReasons, claimIds);
+  }
+
+  if (record.decision_context === "sandbox_only" || isSandboxPolicyId(record.policy_id)) {
+    return {
+      validity: "sandbox_only",
+      currently_valid: false,
+      stored_status: storedStatus,
+      signature_valid: true,
+      invalidation_reasons: [CANONICAL_SANDBOX_ONLY_INVALIDATION_REASON],
+      dependency_claim_ids: claimIds,
+    };
   }
 
   return {

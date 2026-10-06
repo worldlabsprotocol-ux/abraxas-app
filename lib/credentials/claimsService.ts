@@ -6,6 +6,12 @@ import { getSupabaseAdmin, requireSupabaseAdmin } from "@/lib/supabase/admin";
 import type { ClaimStatus, CredentialClaimRecord } from "@/lib/credentials/claimSchema";
 import { WalletPersistenceError } from "@/lib/credentials/walletPersistenceErrors";
 import { appendAuditEvent } from "@/lib/verification/audit";
+import {
+  filterWalletControlClaimsForPolicyEvaluation,
+  walletControlClaimDerivedFromBinding,
+  type WalletBindingAuthorityRow,
+} from "@/lib/walletControl/claimBindingLineage";
+import { walletControlEvidenceRef } from "@/lib/walletControl/contract";
 
 function mapRow(row: Record<string, unknown>): CredentialClaimRecord {
   return {
@@ -83,37 +89,80 @@ export async function revokeWalletControlClaimForBinding(input: {
   subjectId: string;
   evidenceReference: string;
   reason: string;
+  bindingId?: string;
 }): Promise<boolean> {
+  const bindingId = input.bindingId ?? input.evidenceReference.replace(/^wb:/, "");
+  const revoked = await revokeWalletControlClaimsForBinding({
+    subjectId: input.subjectId,
+    bindingId,
+    reason: input.reason,
+  });
+  return revoked.length > 0;
+}
+
+export async function revokeWalletControlClaimsForBinding(input: {
+  subjectId: string;
+  bindingId: string;
+  reason: string;
+}): Promise<string[]> {
   const sb = requireSupabaseAdmin();
   const subject = normalizeSuiAddress(input.subjectId);
   const now = new Date().toISOString();
+  const evidenceReference = walletControlEvidenceRef(input.bindingId);
 
-  const { data } = await sb
-    .from("credential_claims")
-    .update({
-      status: "revoked",
-      revocation_reference: input.reason,
-      updated_at: now,
-    })
+  const { data: bindingRow } = await sb
+    .from("wallet_bindings")
+    .select("id, subject_id, binding_status, revoked_at, verified_at, binding_method")
+    .eq("id", input.bindingId)
     .eq("subject_id", subject)
-    .eq("claim_type", "wallet_binding_confirmed")
-    .eq("evidence_reference", input.evidenceReference)
-    .eq("status", "active")
-    .select("id")
     .maybeSingle();
 
-  if (!data) return false;
+  const binding = (bindingRow as WalletBindingAuthorityRow | null) ?? null;
 
-  await appendAuditEvent({
-    actor_type: "system",
-    actor_id: "claims_service",
-    action: "claims.wallet_control_revoked",
-    object_type: "credential_claim",
-    object_id: data.id as string,
-    metadata: { reason: input.reason, evidence_reference: input.evidenceReference },
-  });
+  const { data: activeClaims } = await sb
+    .from("credential_claims")
+    .select("*")
+    .eq("subject_id", subject)
+    .eq("claim_type", "wallet_binding_confirmed")
+    .eq("status", "active");
 
-  return true;
+  const revokedIds: string[] = [];
+  for (const row of activeClaims ?? []) {
+    const claim = mapRow(row as Record<string, unknown>);
+    if (!walletControlClaimDerivedFromBinding(claim, input.bindingId, binding)) {
+      continue;
+    }
+
+    const { data: updated } = await sb
+      .from("credential_claims")
+      .update({
+        status: "revoked",
+        revocation_reference: input.reason,
+        updated_at: now,
+      })
+      .eq("id", claim.id)
+      .eq("status", "active")
+      .select("id")
+      .maybeSingle();
+
+    if (!updated) continue;
+
+    revokedIds.push(claim.id);
+    await appendAuditEvent({
+      actor_type: "system",
+      actor_id: "claims_service",
+      action: "claims.wallet_control_revoked",
+      object_type: "credential_claim",
+      object_id: claim.id,
+      metadata: {
+        reason: input.reason,
+        evidence_reference: evidenceReference,
+        binding_id: input.bindingId,
+      },
+    });
+  }
+
+  return revokedIds;
 }
 
 export async function getActiveWalletControlClaims(subjectId: string): Promise<CredentialClaimRecord[]> {
@@ -170,6 +219,13 @@ export async function upsertClaims(
     object_id: claims[0]?.subject_id,
     metadata: { claim_types: claims.map(c => c.claim_type) },
   });
+}
+
+export async function getActiveClaimsForPolicyEvaluation(
+  subjectId: string,
+): Promise<CredentialClaimRecord[]> {
+  const claims = await getActiveClaims(subjectId);
+  return filterWalletControlClaimsForPolicyEvaluation(claims);
 }
 
 export async function getActiveClaims(subjectId: string): Promise<CredentialClaimRecord[]> {

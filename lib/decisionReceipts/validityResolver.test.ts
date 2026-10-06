@@ -1,5 +1,35 @@
-import { describe, expect, it, beforeEach, afterEach } from "vitest";
+import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import { resolveReceiptValidity } from "./validityResolver";
+
+vi.mock("@/lib/trust/credentialStatusRegistry", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/trust/credentialStatusRegistry")>();
+  return {
+    ...actual,
+    getClaimById: vi.fn(async (claimId: string) => ({
+      id: claimId,
+      status: "active",
+      expires_at: null,
+      claim_type: "identity_verified",
+      issuer_id: "issuer:abraxas",
+      assurance_level: "L2",
+      issued_at: "2026-07-30T00:00:00.000Z",
+    })),
+  };
+});
+
+vi.mock("@/lib/trust/issuerFramework", () => ({
+  getIssuerById: vi.fn(async () => ({ issuer_status: "active" })),
+  getIssuerSigningKey: vi.fn(async () => ({ status: "active" })),
+  isIssuerTrustedForClaim: vi.fn(async () => ({ ok: true, reason: "" })),
+}));
+
+vi.mock("@/lib/decisionReceipts/dependencies", () => ({
+  getReceiptDependencies: vi.fn(async () => []),
+}));
+
+vi.mock("@/lib/decisionReceipts/evidenceDependencies", () => ({
+  getReceiptEvidenceDependencies: vi.fn(async () => []),
+}));
 import { buildCanonicalPayload } from "./canonical";
 import {
   generateTestSigningKeyPair,
