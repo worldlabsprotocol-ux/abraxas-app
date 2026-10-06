@@ -16,6 +16,7 @@ import {
   isIssuerTrustedForClaim,
 } from "@/lib/trust/issuerFramework";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
+import { CANONICAL_SANDBOX_ONLY_INVALIDATION_REASON } from "@/lib/partner/sandboxReceiptTrustContract";
 
 export type ReceiptValidityState =
   | "active"
@@ -84,7 +85,7 @@ export async function resolveReceiptValidity(
       currently_valid: false,
       stored_status: storedStatus,
       signature_valid: true,
-      invalidation_reasons: ["sandbox_only_not_production_usable"],
+      invalidation_reasons: [CANONICAL_SANDBOX_ONLY_INVALIDATION_REASON],
       dependency_claim_ids: record.evaluated_claim_refs.map(r => r.claim_id),
     };
   }

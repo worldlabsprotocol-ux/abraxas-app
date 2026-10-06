@@ -5,6 +5,10 @@ import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import type { PartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlowReceipt";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 import {
+  CANONICAL_SANDBOX_ONLY_INVALIDATION_REASON,
+  LEGACY_SANDBOX_ONLY_INVALIDATION_REASON,
+} from "@/lib/partner/sandboxReceiptTrustContract";
+import {
   resolveReceiptValidity,
   type ReceiptValidityResult,
   type ReceiptValidityState,
@@ -141,7 +145,7 @@ function applyTrustGates(
   if (!allowSandbox && !production_usable) {
     let productionReason = "production_not_usable";
     if (context?.productionUsableRaw === false) {
-      productionReason = "production_not_usable:false";
+      productionReason = LEGACY_SANDBOX_ONLY_INVALIDATION_REASON;
     } else if (context?.productionUsableRaw !== true) {
       productionReason = "production_not_usable:missing";
     }
@@ -329,7 +333,7 @@ export function evaluateDecisionReceiptTrustSync(
       currently_valid: false,
       validity: "sandbox_only",
       signature_valid: true,
-      invalidation_reasons: ["sandbox_only_not_production_usable"],
+      invalidation_reasons: [CANONICAL_SANDBOX_ONLY_INVALIDATION_REASON],
     };
   } else {
     base = {

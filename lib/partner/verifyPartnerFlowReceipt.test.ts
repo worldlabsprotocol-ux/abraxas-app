@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  CANONICAL_SANDBOX_ONLY_INVALIDATION_REASON,
+  LEGACY_SANDBOX_ONLY_INVALIDATION_REASON,
+} from "@/lib/partner/sandboxReceiptTrustContract";
+import {
   EXPECTED_RECEIPT_ARTIFACT_TYPE,
   SANDBOX_ONLY_INVALIDATION_REASON,
   SUPPORTED_RECEIPT_SCHEMA_VERSION,
@@ -42,7 +46,17 @@ export const SANDBOX_RECEIPT_FIXTURE: PartnerFlowPublicReceipt = baseReceipt({
   decision_context: "sandbox_only",
   currently_valid: false,
   validity: "sandbox_only",
-  invalidation_reasons: [SANDBOX_ONLY_INVALIDATION_REASON],
+  lifecycle_status: "invalidated",
+  partner_safe_reason: "environment_mismatch",
+  invalidation_reasons: [CANONICAL_SANDBOX_ONLY_INVALIDATION_REASON],
+});
+
+export const LEGACY_SANDBOX_RECEIPT_FIXTURE: PartnerFlowPublicReceipt = baseReceipt({
+  production_usable: false,
+  decision_context: "sandbox_only",
+  currently_valid: false,
+  validity: "sandbox_only",
+  invalidation_reasons: [LEGACY_SANDBOX_ONLY_INVALIDATION_REASON],
 });
 
 export const PRODUCTION_RECEIPT_FIXTURE: PartnerFlowPublicReceipt = baseReceipt({
@@ -102,8 +116,18 @@ describe("validatePartnerFlowPublicReceipt legacy", () => {
 });
 
 describe("validatePartnerFlowPublicReceipt strict sandbox mode", () => {
-  it("accepts the sandbox fixture", () => {
+  it("accepts the canonical sandbox fixture", () => {
     const result = validatePartnerFlowPublicReceipt(SANDBOX_RECEIPT_FIXTURE, {
+      ...EXPECTED,
+      mode: "sandbox",
+      now: NOW,
+    });
+    expect(result.ok).toBe(true);
+    expect(result.errors).toEqual([]);
+  });
+
+  it("accepts the legacy sandbox fixture", () => {
+    const result = validatePartnerFlowPublicReceipt(LEGACY_SANDBOX_RECEIPT_FIXTURE, {
       ...EXPECTED,
       mode: "sandbox",
       now: NOW,
@@ -143,12 +167,22 @@ describe("validatePartnerFlowPublicReceipt strict sandbox mode", () => {
     const result = validatePartnerFlowPublicReceipt(
       {
         ...SANDBOX_RECEIPT_FIXTURE,
-        invalidation_reasons: [SANDBOX_ONLY_INVALIDATION_REASON, "claim_revoked"],
+        invalidation_reasons: [CANONICAL_SANDBOX_ONLY_INVALIDATION_REASON, "claim_revoked"],
       },
       { ...EXPECTED, mode: "sandbox", now: NOW },
     );
     expect(result.ok).toBe(false);
     expect(result.errors).toContain("sandbox_invalidation_reason_mismatch");
+  });
+
+  it("permits currently_valid false when sandbox-only limitation is explicit", () => {
+    const result = validatePartnerFlowPublicReceipt(SANDBOX_RECEIPT_FIXTURE, {
+      ...EXPECTED,
+      mode: "sandbox",
+      now: NOW,
+    });
+    expect(result.ok).toBe(true);
+    expect(result.errors).not.toContain("environment_mismatch");
   });
 
   it("rejects revoked claim refs", () => {
