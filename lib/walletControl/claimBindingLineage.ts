@@ -9,6 +9,7 @@ import {
   WALLET_CONTROL_CLAIM_TYPE,
   parseWalletControlEvidenceRef,
 } from "@/lib/walletControl/contract";
+import { evaluatePostRevocationWalletControlProvenance } from "@/lib/walletControl/postRevocationProvenance";
 
 /** Legacy signed_challenge / zklogin rows co-issued with wallet_bindings in one flow. */
 export const WALLET_CONTROL_CO_ISSUED_TOLERANCE_MS = 2_000;
@@ -20,6 +21,7 @@ export interface WalletBindingAuthorityRow {
   revoked_at: string | null;
   verified_at: string;
   binding_method: string | null;
+  proof_signature?: string | null;
 }
 
 export function parseBindingIdFromWalletControlClaim(
@@ -75,7 +77,7 @@ async function loadBindingById(bindingId: string): Promise<WalletBindingAuthorit
   const sb = requireSupabaseAdmin();
   const { data } = await sb
     .from("wallet_bindings")
-    .select("id, subject_id, binding_status, revoked_at, verified_at, binding_method")
+    .select("id, subject_id, binding_status, revoked_at, verified_at, binding_method, proof_signature")
     .eq("id", bindingId)
     .maybeSingle();
   return (data as WalletBindingAuthorityRow | null) ?? null;
@@ -94,7 +96,7 @@ export async function resolveWalletBindingForControlClaim(
   const subject = normalizeSuiAddress(claim.subject_id);
   const { data: bindings } = await sb
     .from("wallet_bindings")
-    .select("id, subject_id, binding_status, revoked_at, verified_at, binding_method")
+    .select("id, subject_id, binding_status, revoked_at, verified_at, binding_method, proof_signature")
     .eq("subject_id", subject);
 
   const matches = (bindings ?? []).filter((row) =>
@@ -174,6 +176,11 @@ export async function evaluateWalletControlClaimLiveEligibility(
   }
   if (!isWalletBindingAuthoritativelyActive(binding)) {
     return { eligible: false, reason: "source_evidence_revoked" };
+  }
+
+  const postRevocation = await evaluatePostRevocationWalletControlProvenance(claim, binding);
+  if (!postRevocation.eligible) {
+    return { eligible: false, reason: postRevocation.reason };
   }
 
   return { eligible: true, reason: null };

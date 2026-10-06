@@ -21,6 +21,8 @@ export function mapPartnerSafeReceiptReason(
     || blob.includes("source_evidence_revoked")
     || blob.includes("wallet_binding_missing")
     || blob.includes("wallet_binding_lineage_ambiguous")
+    || blob.includes("wallet_control_provenance_insufficient")
+    || blob.includes("wallet_control_proof_predates_revocation")
   ) {
     return "evidence_refresh_required";
   }

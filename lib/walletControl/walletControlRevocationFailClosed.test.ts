@@ -30,6 +30,30 @@ vi.mock("@/lib/supabase/admin", () => ({
   getSupabaseAdmin: () => ({ from: fromMock }),
 }));
 
+function auditEventsChain(revokedAt: string | null = null) {
+  return {
+    select: () => ({
+      eq: () => ({
+        eq: () => ({
+          eq: () => ({
+            order: () => ({
+              limit: async () => ({
+                data: revokedAt
+                  ? [{
+                    object_id: BINDING_ID,
+                    created_at: revokedAt,
+                    metadata: { reason: "holder_unlinked" },
+                  }]
+                  : [],
+              }),
+            }),
+          }),
+        }),
+      }),
+    }),
+  };
+}
+
 function chain(resolved: unknown) {
   const builder = {
     select: vi.fn(() => builder),
@@ -153,6 +177,7 @@ function installRevokedBindingTables(claimStatus: "active" | "revoked" = "active
     binding_method: "signed_challenge",
   };
   fromMock.mockImplementation((table: string) => {
+    if (table === "audit_events") return auditEventsChain();
     if (table === "credential_claims") {
       return chain({ data: claimRow({ status: claimStatus }) });
     }
@@ -225,10 +250,17 @@ describe("wallet control revocation fail-closed", () => {
       binding_method: "signed_challenge",
     };
     fromMock.mockImplementation((table: string) => {
+      if (table === "audit_events") return auditEventsChain();
       if (table === "credential_claims") {
         return chain({
           data: claimRow({
-            claim_value: { wallet_binding_id: BINDING_ID, chain: "sui" },
+            claim_value: {
+              wallet_binding_id: BINDING_ID,
+              chain: "sui",
+              binding_method: "signed_challenge",
+              challenge_id: "60a39a6a50f7567afff83f96a29a9605",
+              proof_signature: "sig",
+            },
             evidence_reference: `wb:${BINDING_ID}`,
           }),
         });
@@ -263,6 +295,73 @@ describe("wallet control revocation fail-closed", () => {
     });
     expect(trust.currently_valid).toBe(true);
     expect(trust.invalidation_reasons).toContain(CANONICAL_SANDBOX_ONLY_INVALIDATION_REASON);
+  });
+
+  it("denies receipt depending on repair-minted post-revocation claim", async () => {
+    const binding = {
+      id: BINDING_ID,
+      subject_id: SUBJECT,
+      binding_status: "active",
+      revoked_at: null,
+      verified_at: "2026-10-06T17:57:27.377892+00",
+      binding_method: "zklogin",
+    };
+    fromMock.mockImplementation((table: string) => {
+      if (table === "audit_events") {
+        return auditEventsChain("2026-10-06T15:09:04.347Z");
+      }
+      if (table === "credential_claims") {
+        return chain({
+          data: {
+            id: CLAIM_ID,
+            subject_id: SUBJECT,
+            claim_type: "wallet_binding_confirmed",
+            claim_value: {
+              chain: "sui",
+              binding_method: "zklogin",
+              control_method: "zklogin",
+              wallet_binding_id: BINDING_ID,
+            },
+            issuer_id: "issuer:abraxas",
+            assurance_level: "L2",
+            issued_at: "2026-10-06T17:57:27.377892+00",
+            expires_at: "2026-10-07T05:57:27.377892+00",
+            status: "active",
+            evidence_reference: `wb:${BINDING_ID}`,
+          },
+        });
+      }
+      if (table === "wallet_bindings") {
+        return walletBindingsTable(binding);
+      }
+      if (table === "receipt_claim_dependencies") {
+        return {
+          select: () => ({
+            eq: () => ({
+              order: () => Promise.resolve({ data: [], error: null }),
+            }),
+          }),
+        };
+      }
+      if (table === "decision_receipt_evidence_dependencies") {
+        return {
+          select: () => ({
+            eq: () => Promise.resolve({ data: [], error: null }),
+          }),
+        };
+      }
+      return chain({ data: null });
+    });
+
+    const record = sandboxWalletReceiptRecord();
+    const trust = await evaluateDecisionReceiptTrust(record, {
+      partnerId: PARTNER_ID,
+      policyId: POLICY_ID,
+      allowSandbox: true,
+    });
+    expect(trust.signature_valid).toBe(true);
+    expect(trust.currently_valid).toBe(false);
+    expect(trust.invalidation_reasons).toContain("wallet_control_provenance_insufficient");
   });
 
   it("PartnerKit denies fetched receipt when public validity includes revoked evidence", async () => {
