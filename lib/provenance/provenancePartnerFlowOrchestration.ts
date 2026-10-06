@@ -12,6 +12,7 @@ import {
 } from "@/lib/partner/relyingPartyFlow";
 import { applyPartnerFlowTrustGate } from "@/lib/partner/partnerFlowCurrentAuthorization";
 import { checkPartnerFlowRevocationGate } from "@/lib/partner/partnerFlowRevocationRuntime";
+import { resolveWalletControlZeroEvidenceOutcome } from "@/lib/walletControl/recoverableWalletControlRevocation";
 import { buildProvenancePartnerVerificationResult } from "@/lib/partner/provenancePartnerResult";
 import { getPublicAppOrigin } from "@/lib/app/publicAppOrigin";
 import { resolveProvenanceSandboxCredentialJti } from "./constants";
@@ -51,6 +52,14 @@ async function denyIfRevoked(input: {
     verificationRequestId: input.verificationRequestId,
   });
   if (!denied) return null;
+
+  const recoverable = resolveWalletControlZeroEvidenceOutcome({
+    policyId: input.policyId,
+    invalidationReasons: denied.invalidation_reasons,
+    validity: denied.validity,
+  });
+  if (recoverable) return recoverable;
+
   const policy = await getPolicy(input.policyId);
   return {
     ...denied,
