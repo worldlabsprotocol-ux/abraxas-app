@@ -59,8 +59,7 @@ where c.claim_type = 'wallet_binding_confirmed'
 update public.wallet_bindings b
 set
   binding_status = 'revoked',
-  revoked_at = hr.holder_revoked_at,
-  updated_at = pg_catalog.now()
+  revoked_at = hr.holder_revoked_at
 from _wc_holder_revocations hr
 where b.id::text = hr.binding_id
   and b.revoked_at is null
