@@ -461,6 +461,16 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
       "Adds ensure_partner_flow_continuation_by_opaque RPC for atomic hosted-handoff continuation resolution (#565). Apply with #565 code.",
   },
   {
+    file: "133_partner_flow_continuation_atomic_rpc_disambiguation.sql",
+    tier: "required",
+    creates: [],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Fixes PL/pgSQL 42702 ambiguity in ensure_partner_flow_continuation_by_opaque via #variable_conflict use_column (#566). Apply after 132.",
+  },
+  {
     file: "092_wallet_standard_action_bindings.sql",
     tier: "required",
     creates: [
