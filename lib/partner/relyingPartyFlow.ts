@@ -958,6 +958,15 @@ export async function completePartnerFlowAfterApproval(input: {
     return { ok: true, ...revoked };
   }
 
+  const { supersedeStalePartnerFlowDecisionIfNeeded } = await import("@/lib/partner/partnerFlowStaleEvidenceReissue");
+  const staleSupersession = await supersedeStalePartnerFlowDecisionIfNeeded({
+    suiAddress: input.suiAddress,
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    verificationRequestId: input.verificationRequestId,
+    launchpadApplicationId: input.launchpadApplicationId,
+  });
+
   const issued = await issuePartnerSessionReceipt({
     suiAddress: input.suiAddress,
     partnerId: input.partnerId,
@@ -966,10 +975,34 @@ export async function completePartnerFlowAfterApproval(input: {
     verificationRequestId: input.verificationRequestId,
     expectedPolicyVersion: input.expectedPolicyVersion,
     launchpadApplicationId: input.launchpadApplicationId,
+    supersedePriorSession: staleSupersession.superseded,
   });
 
-  const { decision_id, partner_result, receipt_id, receipt_expires_at, replay_status, currently_valid, validity, invalidation_reasons } = issued;
+  const { decision_id, partner_result, receipt_id, receipt_expires_at, replay_status, currently_valid, validity, invalidation_reasons, replaced_receipt_id } = issued;
   const policy = await getPolicy(input.policyId);
+
+  const priorStaleReceiptId = staleSupersession.replaced_receipt_id;
+  if (
+    priorStaleReceiptId
+    && receipt_id
+    && priorStaleReceiptId !== receipt_id
+    && replay_status === "issued"
+  ) {
+    try {
+      const { recordReceiptSupersessionBestEffort } = await import("@/lib/decisionReceipts/receiptSupersession");
+      await recordReceiptSupersessionBestEffort({
+        supersededReceiptId: priorStaleReceiptId,
+        supersedingReceiptId: receipt_id,
+        partnerId: input.partnerId,
+        policyId: input.policyId,
+        policyVersion: policy?.version ?? 1,
+        launchpadApplicationId: input.launchpadApplicationId ?? null,
+        scope: "session_refresh",
+      });
+    } catch {
+      // Supersession metadata must not block authorization.
+    }
+  }
 
   const redirect_url = buildRedirectUrl(input.returnUrl, {
     status: partner_result.decision,

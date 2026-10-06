@@ -186,7 +186,7 @@ export async function supersedeActiveSessionDecisions(input: {
   const sb = requireSupabaseAdmin();
   const { error } = await sb
     .from("verification_decisions")
-    .update({ status: "superseded" })
+    .update({ status: "superseded", idempotency_key: null })
     .eq("partner_id", input.partnerId)
     .eq("subject_id", input.subjectId)
     .eq("policy_id", input.policyId)

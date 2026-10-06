@@ -84,6 +84,13 @@ export async function ensureZkLoginWalletBinding(
   }
 
   const before = await getCanonicalWalletBindingSnapshot(subject);
+  if (before.binding_status === "revoked") {
+    await emitBindingFailedAudit(subject, "holder_revocation_requires_explicit_proof");
+    return {
+      status: "failed",
+      reason_code: "holder_revocation_requires_explicit_proof",
+    };
+  }
   if (before.persisted) {
     return {
       status: "ok",

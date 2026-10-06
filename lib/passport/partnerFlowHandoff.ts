@@ -50,6 +50,8 @@ export interface PartnerFlowHandoffController {
   redirectUrl: string | null;
   authorizationState: HolderAuthorizationState | null;
   complete: () => Promise<void>;
+  /** Re-run partner-flow completion after fresh wallet-control proof. */
+  retryAuthorization: () => Promise<HolderAuthorizationState | null>;
   navigateToPartner: () => void;
 }
 
@@ -212,6 +214,7 @@ export const IDLE_PARTNER_FLOW_HANDOFF: PartnerFlowHandoffController = {
   redirectUrl: null,
   authorizationState: null,
   complete: async () => {},
+  retryAuthorization: async () => null,
   navigateToPartner: () => {},
 };
 
@@ -243,11 +246,13 @@ export function usePartnerFlowHandoff(ctx: PartnerFlowHandoffContext): PartnerFl
     navigateToPartnerHandoffRedirect(redirectUrl);
   }, [redirectUrl]);
 
-  const complete = useCallback(async () => {
-    if (!ready || inFlightRef.current || phase === "completed" || phase === "verification_required") return;
+  const runComplete = useCallback(async (allowVerificationRetry: boolean): Promise<HolderAuthorizationState | null> => {
+    if (!ready || inFlightRef.current || phase === "completing") return null;
+    if (phase === "completed" && authorizationState === "authorized") return authorizationState;
+    if (phase === "verification_required" && !allowVerificationRetry) return authorizationState;
 
     const body = buildPartnerFlowCompleteBody(ctx);
-    if (!body) return;
+    if (!body) return null;
 
     inFlightRef.current = true;
     setPhase("completing");
@@ -261,23 +266,27 @@ export function usePartnerFlowHandoff(ctx: PartnerFlowHandoffContext): PartnerFl
       setAuthorizationState(result.authorizationState);
       setPhase(result.authorizationState === "verification_required" ? "verification_required" : "completed");
       inFlightRef.current = false;
-      return;
+      return result.authorizationState;
     }
 
     setFailureCategory(result.category);
     setPhase("failed");
     inFlightRef.current = false;
+    return null;
   }, [
-    ctx.suiAddress,
-    ctx.identityStatus,
-    ctx.hasCredential,
-    ctx.returnPath,
-    ctx.partnerId,
-    ctx.policyId,
-    ctx.verifyRequestRef,
+    ctx,
     ready,
     phase,
+    authorizationState,
   ]);
+
+  const complete = useCallback(async () => {
+    await runComplete(false);
+  }, [runComplete]);
+
+  const retryAuthorization = useCallback(async () => {
+    return runComplete(true);
+  }, [runComplete]);
 
   return {
     isPartnerFlowContext: isPartnerFlowContextActive,
@@ -289,6 +298,7 @@ export function usePartnerFlowHandoff(ctx: PartnerFlowHandoffContext): PartnerFl
     redirectUrl,
     authorizationState,
     complete,
+    retryAuthorization,
     navigateToPartner,
   };
 }

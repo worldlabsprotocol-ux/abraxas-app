@@ -22,13 +22,14 @@ export async function POST(req: NextRequest) {
     const snapshot = await getCanonicalWalletBindingSnapshot(session.session.suiAddress);
 
     if (result.status === "failed" || !snapshot.persisted) {
+      const revokedRequiresProof = result.reason_code === "holder_revocation_requires_explicit_proof";
       return NextResponse.json({
         ok: false,
         wallet_binding_status: "failed",
         reason_code: result.reason_code ?? "binding_not_persisted",
-        repairable: snapshot.repairable,
+        repairable: revokedRequiresProof ? false : snapshot.repairable,
         persisted: snapshot.persisted,
-      }, { status: 503 });
+      }, { status: revokedRequiresProof ? 409 : 503 });
     }
 
     return NextResponse.json({
