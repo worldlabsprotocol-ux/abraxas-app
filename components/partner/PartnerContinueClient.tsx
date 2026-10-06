@@ -54,13 +54,15 @@ import {
 import { sanitizePartnerContinueBrowserSearch } from "@/lib/partner/partnerFlowContinuation";
 import { HolderRecoveryCard } from "@/components/partner/HolderRecoveryCard";
 import {
+  buildHolderAuthorizationCopy,
   buildHolderOpeningPresentation,
   buildHolderRequestBrief,
+  buildHolderVerificationPresentation,
   holderSafeClientMessage,
   resolveHolderRecovery,
   type HolderRecoveryState,
 } from "@/lib/partner/holderExperience";
-import { HolderOpeningBrief } from "@/components/partner/HolderOpeningBrief";
+import { HolderAuthorizationCard, type HolderAuthorizationPhase } from "@/components/partner/HolderAuthorizationCard";
 import {
   GOOD_TROUBLE_PURCHASE_PATH_STEPS,
   VerificationPath,
@@ -72,7 +74,6 @@ import {
   isCanonicalGoodTroublePurchaseFlow,
 } from "@/lib/partner/goodTroublePurchaseFlow";
 import { ProtocolLoadingState } from "@/components/protocol/ProtocolLoadingState";
-import { HolderDecisionComplete } from "@/components/protocol/HolderDecisionComplete";
 import { ProvenanceContinueFlow } from "@/components/partner/ProvenanceContinueFlow";
 import { isContentOriginDisclosurePolicyId } from "@/lib/provenance/constants";
 
@@ -516,6 +517,30 @@ function PartnerContinueInner() {
         purpose: purposeParam,
       })
     : null;
+  const holderPresentation = policyId
+    ? buildHolderVerificationPresentation({
+        partnerName,
+        policyId,
+        brief: holderBrief,
+        purpose: purposeParam,
+      })
+    : null;
+  const holderAuthorizationCopy = holderPresentation
+    ? buildHolderAuthorizationCopy({
+        partnerName,
+        policyId,
+        brief: holderBrief,
+        proofSource: holderPresentation.proofSource,
+      })
+    : null;
+  const useConciseAuthorization = Boolean(holderAuthorizationCopy && !directHandoff && !simplifiedPurchase && !isDobFirstBrowse);
+  const authorizationPhase: HolderAuthorizationPhase = handoff.phase === "completed" && handoff.receiptId
+    ? "success"
+    : handoff.phase === "failed" && handoff.failureCategory
+      ? "failure"
+      : handoff.phase === "completing" || (handoff.ready && handoff.phase !== "completed")
+        ? "checking"
+        : "request";
 
   if (!authLoading && !contextLoading && (contextResolveFailure || continueContextIncomplete)) {
     const recovery = resolveHolderRecovery(contextResolveFailure ?? "missing", partnerName, partnerHomeUrl);
@@ -634,12 +659,40 @@ function PartnerContinueInner() {
               ? undefined
               : undefined
       }
-      hideStatus={Boolean(holderOpening) || simplifiedPurchase || directHandoff || undefined}
-      hideHeader={directHandoff || Boolean(holderOpening)}
+      hideStatus={Boolean(useConciseAuthorization || holderOpening) || simplifiedPurchase || directHandoff || undefined}
+      hideHeader={directHandoff || Boolean(useConciseAuthorization || holderOpening)}
     >
-      {!directHandoff && !simplifiedPurchase && holderOpening && (
-        <HolderOpeningBrief opening={holderOpening} />
-      )}
+      {useConciseAuthorization && holderAuthorizationCopy && suiAddress && !contextLoading && !authLoading ? (
+        <HolderAuthorizationCard
+          phase={authorizationPhase}
+          copy={holderAuthorizationCopy}
+          showSandboxNote={holderPresentation?.isSandbox}
+          sandboxNote={holderPresentation?.sandboxDetail}
+          onReturn={handoff.phase === "completed" && decodedReturnUrl ? () => handoff.navigateToPartner() : undefined}
+          returnLoading={handoff.inFlight}
+          returnLabel={returnLabel}
+          failure={
+            handoff.phase === "failed" && handoff.failureCategory
+              ? {
+                  title: handoff.failureCategory === "partner_flow_handoff_invalid"
+                    ? "This request expired."
+                    : handoff.failureCategory === "partner_flow_server_unavailable"
+                      ? "We couldn't verify this wallet right now."
+                      : "We couldn't finish this request.",
+                  message: handoff.failureCategory === "partner_flow_handoff_invalid"
+                    ? "Return to the partner and start again."
+                    : handoff.failureCategory === "partner_flow_server_unavailable"
+                      ? "Try again in a moment."
+                      : "Check your connection and try again.",
+                  actionLabel: handoff.failureCategory === "partner_flow_handoff_invalid" ? undefined : "Try again",
+                  onAction: handoff.failureCategory === "partner_flow_handoff_invalid"
+                    ? undefined
+                    : () => void handoff.complete(),
+                }
+              : null
+          }
+        />
+      ) : null}
       {authLoading || contextLoading || (hostedBootstrapEligible && hostedBootstrap.bootstrapping) ? (
         <ProtocolLoadingState
           kind="preparing_request"
@@ -695,13 +748,15 @@ function PartnerContinueInner() {
         />
       ) : (
         <>
-          <VerificationPath
-            active={verificationPathStep}
-            completedThrough={verificationPathCompletedThrough}
-            steps={simplifiedPurchase ? GOOD_TROUBLE_PURCHASE_PATH_STEPS : undefined}
-            compact
-          />
-          <PartnerFlowReturnHandler handoff={handoff} />
+          <div style={useConciseAuthorization ? { opacity: 0.72, marginBottom: "0.65rem" } : undefined}>
+            <VerificationPath
+              active={verificationPathStep}
+              completedThrough={verificationPathCompletedThrough}
+              steps={simplifiedPurchase ? GOOD_TROUBLE_PURCHASE_PATH_STEPS : undefined}
+              compact
+            />
+          </div>
+          <PartnerFlowReturnHandler handoff={handoff} suppressSurface={useConciseAuthorization} />
 
           {holderState === "under_review" && (
             <StatusBanner tone="pending" title={holderCopy.title}>
@@ -810,21 +865,8 @@ function PartnerContinueInner() {
             </div>
           )}
 
-          {setup.identityComplete && !handoff.ready && (
+          {!useConciseAuthorization && setup.identityComplete && !handoff.ready && (
             <p role="status">{holderCopy.title}…</p>
-          )}
-
-          {handoff.phase === "completed" && handoff.receiptId && decodedReturnUrl && (
-            <div style={{ marginTop: "1rem" }}>
-              <HolderDecisionComplete
-                receiptId={handoff.receiptId}
-                partnerName={partnerName}
-                policyId={policyId}
-                returnLabel={returnLabel}
-                onReturn={() => handoff.navigateToPartner()}
-                returnLoading={handoff.inFlight}
-              />
-            </div>
           )}
 
           {error && <p role="alert" aria-live="assertive" style={{ marginTop: "0.75rem", color: "var(--text-secondary)" }}>{error}</p>}

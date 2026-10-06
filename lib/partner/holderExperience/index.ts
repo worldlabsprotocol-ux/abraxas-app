@@ -7,6 +7,7 @@ export {
 } from "./contract";
 export { buildHolderRequestBrief, type HolderRequestBrief } from "./brief";
 export { buildHolderOpeningPresentation, type HolderOpeningPresentation } from "./opening";
+export { buildHolderAuthorizationCopy, type HolderAuthorizationCopy } from "./authorizationCopy";
 export {
   holderCopyLeaks,
   holderSafeClientMessage,
