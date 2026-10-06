@@ -76,5 +76,9 @@ export {
 export { INTEGRATION_POLICY_PACKS } from "./policy/packInference.js";
 export type { IntegrationPackId, IntegrationPolicyPack } from "./policy/packInference.js";
 export type { ResolvedApplicationPolicyBinding } from "./policy/policyBindingContract.js";
-export type { NarrowPartnerResult } from "./narrowResult/contract.js";
+export {
+  NARROW_PARTNER_RESULT_ALLOWED_FIELDS,
+  NARROW_PARTNER_RESULT_SCHEMA_VERSION,
+  type NarrowPartnerResult,
+} from "./narrowResult/contract.js";
 export type { ProvenancePartnerFacts } from "./provenance/types.js";

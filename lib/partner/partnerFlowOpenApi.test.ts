@@ -98,12 +98,25 @@ describe("partnerFlowOpenApi contract", () => {
     expect(spec).toContain("additionalProperties: false");
   });
 
-  it("separates browser session, passport handoff, and public receipt tags", () => {
+  it("separates partner server, browser session, passport handoff, and public receipt tags", () => {
+    expect(spec).toContain("name: PartnerServer");
     expect(spec).toContain("name: BrowserSession");
     expect(spec).toContain("name: PassportHandoff");
     expect(spec).toContain("name: PublicReceipt");
+    expect(spec).toContain("PartnerBearerCredential:");
     expect(spec).toContain("BrowserSession:");
     expect(spec).toContain("abraxas_browser_session");
+    expect(spec).toContain("X-Abraxas-Application-Id");
+  });
+
+  it("documents partner handoff and narrow-result operations", () => {
+    expect(spec).toContain("operationId: createPartnerHandoff");
+    expect(spec).toContain("operationId: getPartnerHandoff");
+    expect(spec).toContain("operationId: getNarrowPartnerResult");
+    expect(spec).toContain("verification_required");
+    expect(spec).toContain("holder_authorization_state");
+    expect(spec).toContain("wallet_control_confirmed");
+    expect(spec).toContain("x-abraxas-partner-webhook");
   });
 
   it("docs hub links to partner-flow-api page", () => {

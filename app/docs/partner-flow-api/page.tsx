@@ -12,8 +12,10 @@ import {
   PARTNER_FLOW_DOCUMENTED_OPERATIONS,
   PARTNER_FLOW_EXCLUDED_OPERATIONS,
   PARTNER_FLOW_RECEIPT_VALIDATION_RULES,
+  PARTNER_FLOW_HANDOFF_CURL_EXAMPLE,
   PARTNER_FLOW_PUBLIC_RECEIPT_CURL_EXAMPLE,
   PARTNER_FLOW_PUBLIC_RECEIPT_JS_EXAMPLE,
+  PARTNER_FLOW_OPENAPI_SPEC_VERSION,
 } from "@/lib/partner/partnerFlowOpenApiContract";
 import { PARTNER_FLOW_CALLBACK_PII_NOTE } from "@/lib/partner/partnerFlowIntegratorKit";
 import {
@@ -54,6 +56,9 @@ export default function PartnerFlowApiDocsPage() {
   const passportOps = PARTNER_FLOW_DOCUMENTED_OPERATIONS.filter(
     (op) => op.category === "passport_handoff",
   );
+  const serverOps = PARTNER_FLOW_DOCUMENTED_OPERATIONS.filter(
+    (op) => op.category === "partner_server",
+  );
   const publicOps = PARTNER_FLOW_DOCUMENTED_OPERATIONS.filter(
     (op) => op.category === "public_receipt",
   );
@@ -62,12 +67,12 @@ export default function PartnerFlowApiDocsPage() {
     <RedesignPage accent="developer" maxWidth={920}>
       <PageHeader
         eyebrow="Integrators · Partner Flow API"
-        title="Partner Flow OpenAPI contract"
-        subtitle="Machine-readable specification for browser-redirect Partner Flow, evaluate, Passport handoff, complete, refresh, and public receipt verification."
+        title="Partner Integration OpenAPI contract"
+        subtitle="Machine-readable specification for hosted handoff, browser Partner Flow, public receipt verification, narrow results, and webhook semantics."
       />
 
       <p style={{ ...body, marginBottom: "1.25rem" }}>
-        OpenAPI 3.1 spec:{" "}
+        OpenAPI 3.1 spec v{PARTNER_FLOW_OPENAPI_SPEC_VERSION}:{" "}
         <a href={PARTNER_FLOW_OPENAPI_PUBLIC_PATH} style={{ color: "var(--accent)" }}>
           {PARTNER_FLOW_OPENAPI_CANONICAL_URL}
         </a>
@@ -79,22 +84,32 @@ export default function PartnerFlowApiDocsPage() {
         <Link href="/docs/partner-flow" style={{ color: "var(--accent)" }}>
           Partner Flow integrator kit
         </Link>
+        . PartnerKit:{" "}
+        <Link href="/docs/integration-kit" style={{ color: "var(--accent)" }}>
+          @abraxas/partner-kit
+        </Link>
         .
       </p>
 
       <ContentCard title="Auth boundaries">
         <BulletList
           items={[
-            "Browser entry & session, holder on abraxasworld.xyz; `abraxas_browser_session` cookie; no partner API key in client code.",
-            "Passport handoff, same browser session during first-time ID verification (`next=passport`).",
-            "Public receipt, partner backend fetches `GET /api/receipts/{receiptId}/public` (no auth, CORS enabled).",
-            "Server-to-server API-key routes are intentionally excluded from this contract (see below).",
+            "Partner server API — `Authorization: Bearer abx_test_*` (sandbox) or `abx_live_*` (production) plus `X-Abraxas-Application-Id` for hosted handoff. Server-side only.",
+            "Browser entry & session — holder on abraxasworld.xyz; `abraxas_browser_session` cookie; no partner API key in client code.",
+            "Passport handoff — same browser session during first-time ID verification (`next=passport`).",
+            "Public receipt & narrow result — partner backend fetches without auth (CORS enabled, rate limited).",
+            "Inbound webhooks — partner verifies HMAC on POST to your endpoint (documented in spec extensions, not an Abraxas route).",
+            "Other server-to-server API-key routes are intentionally excluded (see below).",
           ]}
         />
       </ContentCard>
 
       <ContentCard title="Documented operations">
         <p style={{ ...body, marginBottom: "0.75rem" }}>
+          <strong>Partner server (hosted handoff)</strong>
+        </p>
+        <BulletList items={serverOps.map((op) => `${op.method} ${op.path} — ${op.summary}`)} />
+        <p style={{ ...body, margin: "1rem 0 0.75rem" }}>
           <strong>Browser entry & session</strong>
         </p>
         <BulletList items={browserOps.map((op) => `${op.method} ${op.path} — ${op.summary}`)} />
@@ -122,6 +137,10 @@ export default function PartnerFlowApiDocsPage() {
           Sandbox policies: set explicit <code style={{ fontFamily: MONO }}>allowSandbox: true</code>{" "}
           only for pilot testing — never in production gates.
         </p>
+      </ContentCard>
+
+      <ContentCard title="Example, create hosted handoff (curl)">
+        <pre style={pre}>{PARTNER_FLOW_HANDOFF_CURL_EXAMPLE}</pre>
       </ContentCard>
 
       <ContentCard title="Example, fetch public receipt (curl)">
