@@ -20,6 +20,10 @@ import { maybeRecordPartnerFlowReceiptMetering } from "@/lib/partner/partnerMete
 import { maybeEnqueuePartnerReceiptIssued } from "@/lib/partner/webhooks/webhookHooks";
 import { isPartnerFlowRevocationDenied } from "@/lib/partner/partnerFlowRevocationRuntime";
 import {
+  isPartnerFlowAuthorizationSuccess,
+  isPartnerFlowVerificationRequired,
+} from "@/lib/partner/partnerFlowCurrentAuthorization";
+import {
   enforcePartnerFlowRateLimit,
   recordPartnerFlowRequestOutcome,
 } from "@/lib/partner/partnerFlowRouteGuard";
@@ -147,7 +151,7 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      if (result.replay_status && !isPartnerFlowRevocationDenied(result)) {
+      if (result.replay_status && !isPartnerFlowRevocationDenied(result) && !isPartnerFlowVerificationRequired(result)) {
         await auditPartnerFlowReceiptOutcome({
           flowTraceId,
           partnerId,
@@ -208,7 +212,7 @@ export async function POST(request: NextRequest) {
 
     maybeRecordPartnerFlowReceiptMetering({
       partnerId,
-      replayStatus: isPartnerFlowRevocationDenied(result) ? null : result.replay_status,
+      replayStatus: isPartnerFlowAuthorizationSuccess(result) ? result.replay_status : null,
       decision: result.partner_result?.decision,
       receiptId: result.partner_result?.receipt_id,
       policyId,
@@ -217,7 +221,7 @@ export async function POST(request: NextRequest) {
 
     maybeEnqueuePartnerReceiptIssued({
       partnerId,
-      replayStatus: isPartnerFlowRevocationDenied(result) ? null : result.replay_status,
+      replayStatus: isPartnerFlowAuthorizationSuccess(result) ? result.replay_status : null,
       decision: result.partner_result?.decision,
       receiptId: result.partner_result?.receipt_id,
       policyId,

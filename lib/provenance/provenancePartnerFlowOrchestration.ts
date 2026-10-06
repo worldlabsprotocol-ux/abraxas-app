@@ -10,10 +10,7 @@ import {
   issuePartnerSessionReceipt,
   type PartnerFlowEvaluateResult,
 } from "@/lib/partner/relyingPartyFlow";
-import {
-  partnerFlowReceiptAccessBlocked,
-  partnerFlowRevocationDeniedFields,
-} from "@/lib/partner/partnerFlowReceiptAccess";
+import { applyPartnerFlowTrustGate } from "@/lib/partner/partnerFlowCurrentAuthorization";
 import { checkPartnerFlowRevocationGate } from "@/lib/partner/partnerFlowRevocationRuntime";
 import { buildProvenancePartnerVerificationResult } from "@/lib/partner/provenancePartnerResult";
 import { getPublicAppOrigin } from "@/lib/app/publicAppOrigin";
@@ -130,20 +127,7 @@ export async function evaluateContentOriginDisclosurePartnerFlow(input: {
         partner_id: input.partnerId,
       });
 
-      if (partnerFlowReceiptAccessBlocked({
-        currently_valid: issued.currently_valid,
-        invalidation_reasons: issued.invalidation_reasons,
-      })) {
-        return {
-          ...partnerFlowRevocationDeniedFields({
-            currently_valid: issued.currently_valid,
-            validity: issued.validity,
-            invalidation_reasons: issued.invalidation_reasons,
-          }),
-        };
-      }
-
-      return {
+      return applyPartnerFlowTrustGate({
         next: "enter",
         redirect_url,
         partner_result: issued.partner_result,
@@ -152,7 +136,11 @@ export async function evaluateContentOriginDisclosurePartnerFlow(input: {
         validity: issued.validity,
         invalidation_reasons: issued.invalidation_reasons,
         decision_id: issued.decision_id,
-      };
+      }, {
+        currently_valid: issued.currently_valid,
+        validity: issued.validity,
+        invalidation_reasons: issued.invalidation_reasons,
+      });
     }
   }
 

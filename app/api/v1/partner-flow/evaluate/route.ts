@@ -18,6 +18,10 @@ import {
   maybeEnqueuePartnerReceiptIssued,
 } from "@/lib/partner/webhooks/webhookHooks";
 import { isPartnerFlowRevocationDenied } from "@/lib/partner/partnerFlowRevocationRuntime";
+import {
+  isPartnerFlowAuthorizationSuccess,
+  isPartnerFlowVerificationRequired,
+} from "@/lib/partner/partnerFlowCurrentAuthorization";
 import { enrichPartnerFlowResponse } from "@/lib/partner/enrichPartnerFlowResponse";
 import { getPublicAppOriginFromRequest } from "@/lib/app/publicAppOrigin";
 import {
@@ -225,7 +229,7 @@ export async function POST(request: NextRequest) {
         replayStatus: result.replay_status,
       });
 
-      if (result.replay_status && !isPartnerFlowRevocationDenied(result)) {
+      if (result.replay_status && !isPartnerFlowRevocationDenied(result) && !isPartnerFlowVerificationRequired(result)) {
         await auditPartnerFlowReceiptOutcome({
           flowTraceId,
           partnerId,
@@ -264,7 +268,7 @@ export async function POST(request: NextRequest) {
 
     maybeRecordPartnerFlowReceiptMetering({
       partnerId,
-      replayStatus: isPartnerFlowRevocationDenied(result) ? null : result.replay_status,
+      replayStatus: isPartnerFlowAuthorizationSuccess(result) ? result.replay_status : null,
       decision: result.partner_result?.decision,
       receiptId: result.partner_result?.receipt_id,
       policyId,
@@ -273,7 +277,7 @@ export async function POST(request: NextRequest) {
 
     maybeEnqueuePartnerReceiptIssued({
       partnerId,
-      replayStatus: isPartnerFlowRevocationDenied(result) ? null : result.replay_status,
+      replayStatus: isPartnerFlowAuthorizationSuccess(result) ? result.replay_status : null,
       decision: result.partner_result?.decision,
       receiptId: result.partner_result?.receipt_id,
       policyId,
@@ -329,8 +333,8 @@ export async function POST(request: NextRequest) {
       policyId,
       correlationId: flowTraceId,
       next: result.next,
-      replayStatus: isPartnerFlowRevocationDenied(result) ? null : result.replay_status,
-      hasRedirectUrl: Boolean(result.redirect_url),
+      replayStatus: isPartnerFlowAuthorizationSuccess(result) ? result.replay_status : null,
+      hasRedirectUrl: isPartnerFlowAuthorizationSuccess(result) && Boolean(result.redirect_url),
     });
 
     const res = NextResponse.json({ ...enrichPartnerFlowResponse(result), flow_trace_id: flowTraceId });

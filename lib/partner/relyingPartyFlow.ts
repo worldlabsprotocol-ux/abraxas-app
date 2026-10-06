@@ -40,10 +40,8 @@ import { computeSessionReceiptExpiresAt } from "@/lib/partner/sessionReceipt";
 import { buildPartnerVerificationResult } from "@/lib/partner/partnerVerificationResult";
 import type { PartnerVerificationResult } from "@/lib/partner/partnerVerificationResult";
 import { policyExplicitlyRequiresProductEligibility } from "@/lib/policy/evaluatePolicy";
-import {
-  partnerFlowReceiptAccessBlocked,
-  partnerFlowRevocationDeniedFields,
-} from "@/lib/partner/partnerFlowReceiptAccess";
+import { applyPartnerFlowTrustGate, type HolderAuthorizationState } from "@/lib/partner/partnerFlowCurrentAuthorization";
+import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 import { checkPartnerFlowRevocationGate } from "@/lib/partner/partnerFlowRevocationRuntime";
 import type { PartnerPolicyRules } from "@/lib/policy/types";
 import {
@@ -77,7 +75,8 @@ export type PartnerFlowNextStep =
   | "passport"
   | "enter"
   | "denied"
-  | "pending_review";
+  | "pending_review"
+  | "verification_required";
 
 export interface HolderCredentialStatus {
   status: "none" | "pending_review" | "active" | "expired" | "revoked";
@@ -104,6 +103,8 @@ export interface PartnerFlowEvaluateResult {
   policy_version?: number;
   /** P1-3 additive — prior receipt superseded by a refresh replacement issuance. */
   replaced_receipt_id?: string | null;
+  /** Authoritative holder authorization — distinct from workflow/handoff completion. */
+  holder_authorization_state?: HolderAuthorizationState;
 }
 
 export interface PartnerFlowStartInput {
@@ -529,9 +530,12 @@ export async function issuePartnerSessionReceipt(input: {
     }
   }
 
+  const allowSandbox = storedReceipt.decision_context === "sandbox_only"
+    || isSandboxPolicyId(input.policyId);
   const trust = await evaluateDecisionReceiptTrust(storedReceipt, {
     partnerId: input.partnerId,
     policyId: input.policyId,
+    allowSandbox,
   });
 
   const { policy, evaluation } = await evaluateHolderPolicy(
@@ -869,14 +873,7 @@ export async function evaluatePartnerFlow(input: {
         partner_id: input.partnerId,
       });
 
-      if (partnerFlowReceiptAccessBlocked({ currently_valid, invalidation_reasons })) {
-        return {
-          ...partnerFlowRevocationDeniedFields({ currently_valid, validity, invalidation_reasons }),
-          policy_version: policy.version,
-        };
-      }
-
-      return {
+      return applyPartnerFlowTrustGate({
         next: "enter",
         redirect_url,
         partner_result: { ...partner_result, receipt_id, receipt_expires_at },
@@ -886,7 +883,7 @@ export async function evaluatePartnerFlow(input: {
         invalidation_reasons,
         decision_id,
         policy_version: policy.version,
-      };
+      }, { currently_valid, validity, invalidation_reasons });
     }
 
     if (evaluation.decision === "manual_review") {
@@ -984,15 +981,7 @@ export async function completePartnerFlowAfterApproval(input: {
     partner_id: input.partnerId,
   });
 
-  if (partnerFlowReceiptAccessBlocked({ currently_valid, invalidation_reasons })) {
-    return {
-      ok: true,
-      ...partnerFlowRevocationDeniedFields({ currently_valid, validity, invalidation_reasons }),
-      policy_version: policy?.version,
-    };
-  }
-
-  return {
+  const gated = applyPartnerFlowTrustGate({
     ok: true,
     next: partner_result.decision === "approved" ? "enter" : "denied",
     redirect_url,
@@ -1003,7 +992,9 @@ export async function completePartnerFlowAfterApproval(input: {
     invalidation_reasons,
     decision_id,
     policy_version: policy?.version,
-  };
+  }, { currently_valid, validity, invalidation_reasons });
+
+  return { ok: true, ...gated };
 }
 
 /** Re-issue session receipt when prior receipt expired but credential remains valid. */
@@ -1058,14 +1049,7 @@ export async function refreshPartnerSessionReceipt(input: {
     partner_id: input.partnerId,
   });
 
-  if (partnerFlowReceiptAccessBlocked({ currently_valid, invalidation_reasons })) {
-    return {
-      ...partnerFlowRevocationDeniedFields({ currently_valid, validity, invalidation_reasons }),
-      policy_version: policy.version,
-    };
-  }
-
-  return {
+  return applyPartnerFlowTrustGate({
     next: "enter",
     redirect_url,
     partner_result: { ...partner_result, receipt_id, receipt_expires_at },
@@ -1076,7 +1060,7 @@ export async function refreshPartnerSessionReceipt(input: {
     decision_id,
     policy_version: policy.version,
     replaced_receipt_id,
-  };
+  }, { currently_valid, validity, invalidation_reasons });
 }
 
 export { isReturnUrlAllowed as isAllowedPartnerReturnUrl } from "@/lib/connect/returnUrlAllowlist";

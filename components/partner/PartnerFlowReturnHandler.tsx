@@ -58,7 +58,7 @@ export function PartnerFlowReturnHandler({ handoff, suppressSurface = false }: P
 
   if (!handoff.isPartnerFlowContext) return null;
 
-  if (handoff.phase === "completed") return null;
+  if (handoff.phase === "completed" || handoff.phase === "verification_required") return null;
 
   if (handoff.phase === "completing") {
     if (suppressSurface) return null;

@@ -11,6 +11,7 @@ describe("postPartnerFlowComplete", () => {
       ok: true,
       json: async () => ({
         redirect_url: "https://www.goodtroublecanna.com/callback?receipt_id=r1",
+        holder_authorization_state: "authorized",
         partner_result: { receipt_id: "dr_r1" },
       }),
     }));
@@ -23,8 +24,35 @@ describe("postPartnerFlowComplete", () => {
 
     expect(result).toEqual({
       ok: true,
+      authorizationState: "authorized",
       redirectUrl: "https://www.goodtroublecanna.com/callback?receipt_id=r1",
       receiptId: "dr_r1",
+    });
+  });
+
+  it("returns verification_required without redirect when current authorization is stale", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        next: "verification_required",
+        holder_authorization_state: "verification_required",
+        currently_valid: false,
+        invalidation_reasons: ["source_evidence_revoked"],
+        partner_result: { receipt_id: "dr_stale" },
+      }),
+    }));
+
+    const result = await postPartnerFlowComplete({
+      partner_id: "ref-wc-postrev-5ffe",
+      policy_id: "ref-wc-postrev-5ffe-wallet_control-v1",
+      return_url: "https://partner.example/callback",
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      authorizationState: "verification_required",
+      redirectUrl: null,
+      receiptId: "dr_stale",
     });
   });
 
@@ -48,6 +76,7 @@ describe("postPartnerFlowComplete", () => {
       ok: true,
       json: async () => ({
         redirect_url: "https://partner.example/done",
+        holder_authorization_state: "authorized",
         partner_result: { receipt_id: "dr_1" },
       }),
     });

@@ -180,6 +180,7 @@ export function mapFlowNextStepToJourneyState(next: PartnerFlowNextStep): Partne
     case "enter": return "approved";
     case "denied": return "denied";
     case "pending_review": return "manual_review_required";
+    case "verification_required": return "additional_verification_required";
     default: return "evaluating_policy";
   }
 }

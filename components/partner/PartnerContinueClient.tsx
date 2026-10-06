@@ -420,24 +420,32 @@ function PartnerContinueInner() {
     },
   });
 
-  const verificationPathStep = resolveVerificationPathStep({
-    showConsent: showPartnerConsent,
-    verifying:
-      setupVisibility.showIdentityVerification ||
-      setupVisibility.showWalletBinding ||
-      methodSelected ||
-      showIdFallback ||
-      holderState === "under_review",
-    ready: handoff.ready,
-  });
-
-  const verificationPathCompletedThrough = handoff.ready
-    ? "consent" as const
-    : showPartnerConsent
+  const verificationPathStep = handoff.authorizationState === "authorized"
+    ? "ready" as const
+    : handoff.authorizationState === "verification_required"
       ? "verify" as const
-      : methodQualified
-        ? "verify" as const
-        : null;
+      : resolveVerificationPathStep({
+          showConsent: showPartnerConsent,
+          verifying:
+            setupVisibility.showIdentityVerification ||
+            setupVisibility.showWalletBinding ||
+            methodSelected ||
+            showIdFallback ||
+            holderState === "under_review",
+          ready: handoff.ready,
+        });
+
+  const verificationPathCompletedThrough = handoff.authorizationState === "authorized"
+    ? "ready" as const
+    : handoff.authorizationState === "verification_required"
+      ? "consent" as const
+      : handoff.ready
+        ? "consent" as const
+        : showPartnerConsent
+          ? "verify" as const
+          : methodQualified
+            ? "verify" as const
+            : null;
 
   async function bindWallet() {
     if (!suiAddress) return;
@@ -534,13 +542,15 @@ function PartnerContinueInner() {
       })
     : null;
   const useConciseAuthorization = Boolean(holderAuthorizationCopy && !directHandoff && !simplifiedPurchase && !isDobFirstBrowse);
-  const authorizationPhase: HolderAuthorizationPhase = handoff.phase === "completed" && handoff.receiptId
+  const authorizationPhase: HolderAuthorizationPhase = handoff.authorizationState === "authorized"
     ? "success"
-    : handoff.phase === "failed" && handoff.failureCategory
-      ? "failure"
-      : handoff.phase === "completing" || (handoff.ready && handoff.phase !== "completed")
-        ? "checking"
-        : "request";
+    : handoff.authorizationState === "verification_required"
+      ? "verification_required"
+      : handoff.phase === "failed" && handoff.failureCategory
+        ? "failure"
+        : handoff.phase === "completing" || (handoff.ready && handoff.phase === "idle")
+          ? "checking"
+          : "request";
 
   if (!authLoading && !contextLoading && (contextResolveFailure || continueContextIncomplete)) {
     const recovery = resolveHolderRecovery(contextResolveFailure ?? "missing", partnerName, partnerHomeUrl);
@@ -668,9 +678,19 @@ function PartnerContinueInner() {
           copy={holderAuthorizationCopy}
           showSandboxNote={holderPresentation?.isSandbox}
           sandboxNote={holderPresentation?.sandboxDetail}
-          onReturn={handoff.phase === "completed" && decodedReturnUrl ? () => handoff.navigateToPartner() : undefined}
+          onReturn={
+            handoff.authorizationState === "authorized" && decodedReturnUrl
+              ? () => handoff.navigateToPartner()
+              : undefined
+          }
           returnLoading={handoff.inFlight}
           returnLabel={returnLabel}
+          onVerify={
+            handoff.authorizationState === "verification_required" && setupVisibility.showWalletBinding
+              ? () => void bindWallet()
+              : undefined
+          }
+          verifyLoading={bindLoading}
           failure={
             handoff.phase === "failed" && handoff.failureCategory
               ? {
@@ -772,7 +792,9 @@ function PartnerContinueInner() {
             <HolderRecoveryCard recovery={resolveHolderRecovery("method_not_qualified", partnerName, partnerHomeUrl)} />
           )}
 
-          {setupVisibility.showWalletBinding && (
+          {setupVisibility.showWalletBinding
+            && handoff.authorizationState !== "authorized"
+            && !(useConciseAuthorization && handoff.authorizationState === "verification_required") && (
             <div style={{ marginBottom: "1rem" }}>
               <p style={{ margin: "0 0 0.75rem", fontSize: "0.9rem", lineHeight: 1.6 }}>
                 {PASSPORT_SECURE_ACCOUNT_EXPLAINER}
