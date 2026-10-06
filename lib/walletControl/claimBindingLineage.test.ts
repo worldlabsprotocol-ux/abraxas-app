@@ -47,9 +47,35 @@ function chain(resolved: unknown) {
   const builder = {
     select: vi.fn(() => builder),
     eq: vi.fn(() => builder),
+    order: vi.fn(() => builder),
+    limit: vi.fn(async () => ({ data: [] })),
     maybeSingle: vi.fn(async () => resolved),
   };
   return builder;
+}
+
+function auditEventsChain(revokedAt: string | null = null) {
+  return {
+    select: () => ({
+      eq: () => ({
+        eq: () => ({
+          eq: () => ({
+            order: () => ({
+              limit: async () => ({
+                data: revokedAt
+                  ? [{
+                    object_id: BINDING_ID,
+                    created_at: revokedAt,
+                    metadata: { reason: "holder_unlinked" },
+                  }]
+                  : [],
+              }),
+            }),
+          }),
+        }),
+      }),
+    }),
+  };
 }
 
 describe("claimBindingLineage", () => {
@@ -103,6 +129,7 @@ describe("claimBindingLineage", () => {
       binding_method: "signed_challenge",
     };
     fromMock.mockImplementation((table: string) => {
+      if (table === "audit_events") return auditEventsChain();
       if (table === "wallet_bindings") {
         return {
           select: () => ({
@@ -123,8 +150,9 @@ describe("claimBindingLineage", () => {
     expect(result.reason).toBe("source_evidence_revoked");
   });
 
-  it("permits active binding with canonical evidence_reference", async () => {
+  it("permits active binding with canonical evidence_reference when never holder-revoked", async () => {
     fromMock.mockImplementation((table: string) => {
+      if (table === "audit_events") return auditEventsChain();
       if (table === "wallet_bindings") {
         return chain({
           data: {
@@ -145,5 +173,32 @@ describe("claimBindingLineage", () => {
     );
     expect(result.eligible).toBe(true);
     expect(result.reason).toBeNull();
+  });
+
+  it("rejects pre-revocation signed proof when holder later unlinked", async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === "audit_events") {
+        return auditEventsChain("2026-10-06T15:09:03.772Z");
+      }
+      if (table === "wallet_bindings") {
+        return chain({
+          data: {
+            id: BINDING_ID,
+            subject_id: SUBJECT,
+            binding_status: "active",
+            revoked_at: null,
+            verified_at: "2026-08-06T13:34:03.434Z",
+            binding_method: "signed_challenge",
+          },
+        });
+      }
+      return chain({ data: null });
+    });
+
+    const result = await evaluateWalletControlClaimLiveEligibility(
+      walletClaim({ evidence_reference: walletControlEvidenceRef(BINDING_ID) }),
+    );
+    expect(result.eligible).toBe(false);
+    expect(result.reason).toBe("wallet_control_proof_predates_revocation");
   });
 });
