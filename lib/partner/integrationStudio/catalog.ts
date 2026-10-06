@@ -106,7 +106,7 @@ export function studioPublicCatalog(input?: { packId?: string; pathId?: Integrat
     packs: listStudioPackSummaries(),
     contract: pack,
     paths: INTEGRATION_STUDIO_PATHS,
-    selected_path: input?.pathId ?? "hosted_partner_flow",
+    selected_path: input?.pathId ?? "verify_with_abraxas",
     checklist: INTEGRATION_STUDIO_CHECKLIST,
     provision: INTEGRATION_STUDIO_PROVISION,
     webhook_is_not_authorization: INTEGRATION_STUDIO_WEBHOOK_NOTICE,

@@ -35,7 +35,7 @@ type RouteContext = { params: { id: string } };
 async function authorize(req: NextRequest, applicationId: string, limit: number) {
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return { ok: false as const, response: auth.response };
-  const limited = enforceLaunchpadTenantRateLimit(
+  const limited = await enforceLaunchpadTenantRateLimit(
     req,
     "launchpad-solana-billing",
     auth.session.partnerId,

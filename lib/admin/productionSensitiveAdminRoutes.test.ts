@@ -38,7 +38,40 @@ vi.mock("@supabase/supabase-js", () => ({
 
 import { GET as partnerKeysGET } from "@/app/api/admin/partner-keys/route";
 import { GET as webhookObservabilityGET } from "@/app/api/admin/partners/webhooks/observability/route";
+import { GET as webhookFailedGET } from "@/app/api/admin/partners/webhooks/failed-deliveries/route";
+import { POST as webhookRetryPOST } from "@/app/api/admin/partners/webhooks/retry/route";
+import { GET as privacyRequestsGET } from "@/app/api/admin/privacy/requests/route";
+import { GET as operatorAttentionGET } from "@/app/api/admin/operator-attention/route";
 import { GET as intakeHealthGET } from "@/app/api/admin/design-partners/intake-health/route";
+import { GET as productionReviewGET } from "@/app/api/admin/production-review/route";
+import { POST as revocationPOST } from "@/app/api/admin/revocation/route";
+import { GET as revocationSubjectAccessGET } from "@/app/api/admin/revocation/subject-access/route";
+import { POST as identityApprovePOST } from "@/app/api/admin/identity/approve/route";
+import { GET as identityDocumentUrlGET } from "@/app/api/admin/identity/document-url/route";
+import { POST as credentialsRevokePOST } from "@/app/api/credentials/revoke/route";
+import { PATCH as partnersPATCH } from "@/app/api/admin/partners/route";
+import { POST as onboardingPoliciesPOST } from "@/app/api/admin/partners/onboarding/policies/route";
+
+vi.mock("@/lib/partner/webhooks/webhookDeadLetter", () => ({
+  listFailedWebhookDeliveries: vi.fn().mockResolvedValue([]),
+  requeueFailedWebhookDelivery: vi.fn(),
+}));
+
+vi.mock("@/lib/admin/operatorAttention", () => ({
+  loadOperatorAttentionSnapshot: vi.fn().mockResolvedValue({
+    generated_at: "2026-01-01T00:00:00.000Z",
+    sources: [],
+    disclaimer: "test",
+  }),
+}));
+
+vi.mock("@/lib/privacy/privacyControlPlane", () => ({
+  listPrivacyRequestsForAdmin: vi.fn().mockResolvedValue([]),
+}));
+
+vi.mock("@/lib/partner/launchpad/productionReview", () => ({
+  loadProductionReviewQueue: vi.fn().mockResolvedValue({ ok: true, items: [] }),
+}));
 
 vi.mock("@/lib/partner/webhooks/webhookOperatorObservability", () => ({
   getPartnerWebhookObservability: vi.fn().mockResolvedValue({
@@ -196,6 +229,161 @@ describe("production-sensitive admin routes", () => {
       expect(res.status).not.toBe(401);
       const body = await res.json() as { error?: string };
       expect(body.error).not.toBe("Unauthorized");
+    });
+  });
+
+  describe("upgraded webhook routes", () => {
+    it("returns 401 for PIN-only on failed-deliveries Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest("http://localhost/api/admin/partners/webhooks/failed-deliveries", {
+        headers: { "x-admin-pin": "test-admin-pin" },
+      });
+      const res = await webhookFailedGET(req);
+      expect(res.status).toBe(401);
+    });
+
+    it("returns 401 for PIN-only on webhook retry Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest("http://localhost/api/admin/partners/webhooks/retry", {
+        method: "POST",
+        headers: { "x-admin-pin": "test-admin-pin" },
+        body: JSON.stringify({ outbox_id: "x" }),
+      });
+      const res = await webhookRetryPOST(req);
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe("privacy requests route", () => {
+    it("returns 401 for PIN-only requests on Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest("http://localhost/api/admin/privacy/requests", {
+        headers: { "x-admin-pin": "test-admin-pin" },
+      });
+      const res = await privacyRequestsGET(req);
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe("operator attention route", () => {
+    it("returns 401 for PIN-only requests on Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest("http://localhost/api/admin/operator-attention", {
+        headers: { "x-admin-pin": "test-admin-pin" },
+      });
+      const res = await operatorAttentionGET(req);
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe("requireAdminRouteAccess production-review", () => {
+    it("returns 401 for PIN-only requests on Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest("http://localhost/api/admin/production-review", {
+        headers: { "x-admin-pin": "test-admin-pin" },
+      });
+      const res = await productionReviewGET(req);
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe("revocation control plane routes", () => {
+    it("returns 401 for PIN-only on revocation POST Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest("http://localhost/api/admin/revocation", {
+        method: "POST",
+        headers: { "x-admin-pin": "test-admin-pin" },
+        body: JSON.stringify({ target_type: "receipt", receipt_id: "dr_x", reason_code: "operator_revoked" }),
+      });
+      const res = await revocationPOST(req);
+      expect(res.status).toBe(401);
+    });
+
+    it("returns 401 for PIN-only on revocation subject-access Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest("http://localhost/api/admin/revocation/subject-access?subject_id=sub_x", {
+        headers: { "x-admin-pin": "test-admin-pin" },
+      });
+      const res = await revocationSubjectAccessGET(req);
+      expect(res.status).toBe(401);
+    });
+
+    it("allows allowlisted browser session on revocation subject-access Production origin", async () => {
+      productionEnv();
+      resolveBrowserSessionMock.mockResolvedValue({ suiAddress: SUI });
+      const req = new NextRequest("http://localhost/api/admin/revocation/subject-access?subject_id=sub_x", {
+        headers: { cookie: "abraxas_browser_session=test-token" },
+      });
+      const res = await revocationSubjectAccessGET(req);
+      expect(res.status).not.toBe(401);
+    });
+  });
+
+  describe("identity document-url route", () => {
+    it("returns 401 for PIN-only on Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest("http://localhost/api/admin/identity/document-url?path=identity/test/doc.jpg", {
+        headers: { "x-admin-pin": "test-admin-pin" },
+      });
+      const res = await identityDocumentUrlGET(req);
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe("credentials revoke route", () => {
+    it("returns 401 for PIN-only on Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest("http://localhost/api/credentials/revoke", {
+        method: "POST",
+        headers: { "x-admin-pin": "test-admin-pin" },
+        body: JSON.stringify({ sui_address: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef" }),
+      });
+      const res = await credentialsRevokePOST(req);
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe("partners route", () => {
+    it("returns 401 for PIN-only PATCH on Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest("http://localhost/api/admin/partners", {
+        method: "PATCH",
+        headers: { "x-admin-pin": "test-admin-pin" },
+        body: JSON.stringify({ partner_id: "partner-a", status: "active" }),
+      });
+      const res = await partnersPATCH(req);
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe("onboarding policies route", () => {
+    it("returns 401 for PIN-only publish on Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest("http://localhost/api/admin/partners/onboarding/policies", {
+        method: "POST",
+        headers: { "x-admin-pin": "test-admin-pin" },
+        body: JSON.stringify({
+          action: "publish",
+          partner_id: "partner-a",
+          policy_id: "partner-a-age_21_retail-v1",
+          version: 1,
+        }),
+      });
+      const res = await onboardingPoliciesPOST(req);
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe("identity approve route", () => {
+    it("returns 401 for PIN-only on Production origin", async () => {
+      productionEnv();
+      const req = new NextRequest("http://localhost/api/admin/identity/approve", {
+        method: "POST",
+        headers: { "x-admin-pin": "test-admin-pin" },
+        body: JSON.stringify({ document_id: "doc_x", action: "reject" }),
+      });
+      const res = await identityApprovePOST(req);
+      expect(res.status).toBe(401);
     });
   });
 

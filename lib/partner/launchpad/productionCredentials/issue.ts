@@ -4,6 +4,7 @@
 
 import { requireSupabaseAdmin, SupabaseAdminConfigurationError } from "@/lib/supabase/admin";
 import { generatePartnerKey } from "@/lib/partner/partnerAuth";
+import { activateProductionApplication } from "@/lib/partner/launchpad/productionActivation";
 import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
 import { loadGoLiveEvidence } from "@/lib/partner/launchpad/goLiveReadiness/load";
 import { probePolicyChangeControlSchema } from "@/lib/policy/changeControl/schemaReady";
@@ -131,10 +132,35 @@ export async function operateProductionCredential(input: {
       };
     }
 
+    if (input.action === "issue") {
+      const activated = await activateProductionApplication({
+        requestId: input.requestId,
+        confirm: true,
+      });
+      if (!activated.ok) {
+        return {
+          ok: false,
+          code: activated.code ?? "production_credential_store_unavailable",
+          credential_state: "unavailable",
+          ...NONE,
+        };
+      }
+      return {
+        ok: true,
+        action: "issue",
+        credential_state: activated.credential_state ?? "active",
+        key_prefix: activated.key_prefix,
+        request_id: activated.request_id,
+        application_id: activated.application_id,
+        code: activated.idempotency_replay ? "idempotency_replay" : "issued",
+        ...NONE,
+      };
+    }
+
     let prefix: string | null = null;
     let hash: string | null = null;
     let raw: string | undefined;
-    if (input.action === "issue" || input.action === "rotate") {
+    if (input.action === "rotate") {
       const minted = generatePartnerKey("live");
       if (!minted.raw.startsWith("abx_live_") || minted.prefix.startsWith("abx_test_")) {
         return { ok: false, code: "production_credential_store_unavailable", ...NONE };

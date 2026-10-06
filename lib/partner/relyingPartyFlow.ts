@@ -24,11 +24,13 @@ import {
   resolvePartnerFlowIdempotencyKey,
   type PartnerFlowReplayStatus,
 } from "@/lib/partner/partnerFlowIdempotency";
+import { resolvePartnerFlowReceiptCorrelation } from "@/lib/partner/partnerFlowCompleteCorrelation";
 import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation";
 import { getReceiptByDecisionId } from "@/lib/decisionReceipts/service";
 import { resolveClaimStatusAtRead } from "@/lib/trust/credentialStatusRegistry";
 import { buildEvaluatedClaimRefs, claimTypesFromEvaluation } from "@/lib/decisionReceipts/claimRefs";
 import { issueReceiptForDecision } from "@/lib/decisionReceipts/service";
+import { resolveReceiptDecisionContext } from "@/lib/partner/launchpad/productionActivation";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { createVerificationRequest, getPolicy } from "@/lib/verification/requestsService";
 import { resolveIssuablePolicyForPartner } from "@/lib/policy/changeControl/lifecycle";
@@ -48,11 +50,24 @@ import {
   isGoodTroubleBrowseFlow,
   resolveGoodTroubleFlowPurpose,
 } from "@/lib/partner/goodTroubleBrowseFlow";
+import { isCanonicalGoodTroublePurchaseFlow } from "@/lib/partner/goodTroublePurchaseFlow";
+import {
+  expectedSelfAttestationPurpose,
+  isAgeEligibilityOnlyPolicy,
+} from "@/lib/policy/selfAttestationGuards";
+import { getActiveSelfAttestations } from "@/lib/assurance/selfAttestation/selfAttestationLedger";
 import { GOOD_TROUBLE_BROWSE_POLICY_ID } from "@/lib/goodTrouble/constants";
 import {
   buildBrowseReturnUrl,
   reuseBrowseSelfAttestation,
 } from "@/lib/assurance/selfAttestation/reuseBrowseSelfAttestation";
+import { isContentOriginDisclosureFlow } from "@/lib/provenance/partnerFlow";
+import { evaluateContentOriginDisclosurePartnerFlow } from "@/lib/provenance/provenancePartnerFlowOrchestration";
+import {
+  isContentOriginDisclosurePolicyId,
+  resolveProvenanceSandboxCredentialJti,
+} from "@/lib/provenance/constants";
+import { buildProvenancePartnerVerificationResult } from "@/lib/partner/provenancePartnerResult";
 
 const APP_URL = getPublicAppOrigin();
 const ISSUER = process.env.ABRAXAS_ISSUER_URL ?? APP_URL;
@@ -204,8 +219,19 @@ async function evaluateHolderPolicy(
   partnerId: string,
   policyId: string,
   policyVersion?: number,
+  options?: {
+    submittedContentHash?: string | null;
+    verificationRequestId?: string | null;
+  },
 ) {
-  return evaluatePolicyForSubject({ suiAddress, policyId, partnerId, policyVersion });
+  return evaluatePolicyForSubject({
+    suiAddress,
+    policyId,
+    partnerId,
+    policyVersion,
+    submittedContentHash: options?.submittedContentHash,
+    verificationRequestId: options?.verificationRequestId,
+  });
 }
 
 async function denyIfPartnerFlowRevoked(input: {
@@ -237,6 +263,7 @@ export async function issuePartnerSessionReceipt(input: {
   credentialJti: string;
   verificationRequestId?: string;
   expectedPolicyVersion?: number;
+  launchpadApplicationId?: string | null;
   /** When true, supersede prior session decisions before issuing (refresh after TTL). */
   supersedePriorSession?: boolean;
 }): Promise<{
@@ -251,18 +278,24 @@ export async function issuePartnerSessionReceipt(input: {
   replaced_receipt_id?: string | null;
 }> {
   const subject = normalizeSuiAddress(input.suiAddress);
+  const {
+    correlationId,
+    verificationRequestUuid,
+    opaqueVerifyRequest,
+  } = resolvePartnerFlowReceiptCorrelation(input.verificationRequestId);
+
   const idempotencyKey = resolvePartnerFlowIdempotencyKey({
     partnerId: input.partnerId,
     subjectId: subject,
     policyId: input.policyId,
-    verificationRequestId: input.verificationRequestId,
+    verificationRequestId: correlationId,
   });
 
   const identity = {
     partnerId: input.partnerId,
     subjectId: subject,
     policyId: input.policyId,
-    verificationRequestId: input.verificationRequestId,
+    verificationRequestId: correlationId,
   };
 
   let replay_status: PartnerFlowReplayStatus = "idempotent_replay";
@@ -271,10 +304,9 @@ export async function issuePartnerSessionReceipt(input: {
   let receiptExpiresAt: string | undefined;
   let replacedReceiptId: string | null = null;
 
-  const vrId = input.verificationRequestId?.trim();
-  if (vrId) {
+  if (verificationRequestUuid) {
     const byVr = await findDecisionByVerificationRequest({
-      verificationRequestId: vrId,
+      verificationRequestId: verificationRequestUuid,
       subjectId: subject,
     });
     if (byVr) {
@@ -310,9 +342,9 @@ export async function issuePartnerSessionReceipt(input: {
   }
 
   if (!decisionId) {
-    if (vrId) {
+    if (verificationRequestUuid) {
       const staleVrContext = await findReceiptForVerificationRequest({
-        verificationRequestId: vrId,
+        verificationRequestId: verificationRequestUuid,
         subjectId: subject,
       });
       if (staleVrContext?.receipt.status === "revoked") {
@@ -345,11 +377,14 @@ export async function issuePartnerSessionReceipt(input: {
       input.partnerId,
       input.policyId,
       issuable.version,
+      {
+        verificationRequestId: input.verificationRequestId,
+      },
     );
     const sessionExpires = computeSessionReceiptExpiresAt(policy.rules_json);
 
     const decisionInsertBase = {
-      request_id: input.verificationRequestId ?? null,
+      request_id: verificationRequestUuid ?? null,
       partner_id: input.partnerId,
       subject_id: subject,
       policy_id: policy.id,
@@ -398,7 +433,13 @@ export async function issuePartnerSessionReceipt(input: {
       const claimRefs = buildEvaluatedClaimRefs(
         await getActiveClaims(subject),
         claimTypesFromEvaluation(evaluation.claims),
+        evaluation.matched_claim_ids,
       );
+
+      const decisionContext = await resolveReceiptDecisionContext({
+        policySandboxOnly: Boolean(policy.rules_json.sandbox_only),
+        launchpadApplicationId: input.launchpadApplicationId,
+      });
 
       const receipt = await issueReceiptForDecision({
         decisionId,
@@ -406,18 +447,50 @@ export async function issuePartnerSessionReceipt(input: {
         policyId: policy.id,
         policyVersion: policy.version,
         subjectId: subject,
+        applicationId: input.launchpadApplicationId ?? null,
         decisionResult: evaluation.decision === "approved" ? "approved" : evaluation.decision === "manual_review" ? "manual_review" : "denied",
         reasonCodes: evaluation.reason_codes,
         claimsJson: evaluation.claims,
         evaluatedClaimRefs: claimRefs,
         expiresAt: sessionExpires,
-        decisionContext: policy.rules_json.sandbox_only ? "sandbox_only" : "production",
+        decisionContext,
       });
 
       if (!receipt) throw new Error("Failed to issue session receipt");
       receiptId = receipt.id;
       receiptExpiresAt = sessionExpires;
       replay_status = "issued";
+
+      if (replacedReceiptId && receiptId) {
+        try {
+          const { recordReceiptSupersessionBestEffort } = await import("@/lib/decisionReceipts/receiptSupersession");
+          await recordReceiptSupersessionBestEffort({
+            supersededReceiptId: replacedReceiptId,
+            supersedingReceiptId: receiptId,
+            partnerId: input.partnerId,
+            policyId: policy.id,
+            policyVersion: policy.version,
+            subjectPseudonymId: receipt.subject_pseudonym_id ?? undefined,
+            launchpadApplicationId: input.launchpadApplicationId ?? null,
+            scope: "session_refresh",
+          });
+          const { recordIntegrationEventBestEffort } = await import("@/lib/partner/integrationObservability/record");
+          await recordIntegrationEventBestEffort({
+            partnerId: input.partnerId,
+            applicationId: input.launchpadApplicationId ?? null,
+            environment: decisionContext === "production" ? "production" : "sandbox",
+            eventType: "receipt_superseded",
+            lifecycleStage: "receipt",
+            outcome: "superseded",
+            receiptId: replacedReceiptId,
+            policyId: policy.id,
+            policyVersion: policy.version,
+            metadata: { outcome_class: "session_refresh" },
+          });
+        } catch {
+          // Supersession must not block issuance.
+        }
+      }
     }
   }
 
@@ -431,11 +504,11 @@ export async function issuePartnerSessionReceipt(input: {
     throw new Error("Partner session receipt identity incomplete");
   }
 
-      if (vrId && receiptId) {
+  if (opaqueVerifyRequest && receiptId) {
     try {
       const { bindHandoffToIssuedReceipt } = await import("@/lib/partner/hostedHandoff");
       await bindHandoffToIssuedReceipt({
-        verifyRequest: vrId,
+        verifyRequest: opaqueVerifyRequest,
         partnerId: input.partnerId,
         policyId: input.policyId,
         publicReceiptId: receiptId,
@@ -471,7 +544,7 @@ export async function issuePartnerSessionReceipt(input: {
   const identityVerified = Boolean(evaluation.claims.identity_verified);
   const productEligibilityRequired = policyExplicitlyRequiresProductEligibility(policy.rules_json);
   const productEligibilityVerified = Boolean(evaluation.claims.product_eligibility);
-  const partner_result = buildPartnerVerificationResult({
+  const basePartnerResult = buildPartnerVerificationResult({
     decision: evaluation.decision === "approved" ? "approved" : evaluation.decision === "manual_review" ? "manual_review" : "denied",
     credentialJti: input.credentialJti,
     issuer: ISSUER,
@@ -487,6 +560,9 @@ export async function issuePartnerSessionReceipt(input: {
     assuranceLevel: identityVerified ? "L2" : null,
     reasonCodes: evaluation.reason_codes,
   });
+  const partner_result = isContentOriginDisclosurePolicyId(policy.id)
+    ? buildProvenancePartnerVerificationResult({ base: basePartnerResult, evaluation })
+    : basePartnerResult;
 
   return {
     decision_id: decisionId,
@@ -516,6 +592,93 @@ export async function startPartnerFlow(input: PartnerFlowStartInput): Promise<{
   });
 
   return { partner_verify_url: partnerVerifyUrl };
+}
+
+/** Good Trouble L0 purchase pilot — self-attestation only; never ID, camera, or liveness. */
+export async function evaluateGoodTroublePurchaseFlow(input: {
+  suiAddress: string;
+  partnerId: string;
+  policyId: string;
+  returnUrl: string;
+  purpose?: "purchase";
+  appOrigin?: string;
+  expectedPolicyVersion?: number;
+}): Promise<PartnerFlowEvaluateResult> {
+  const subject = normalizeSuiAddress(input.suiAddress);
+
+  const revoked = await denyIfPartnerFlowRevoked({
+    suiAddress: subject,
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    operation: "evaluate",
+  });
+  if (revoked) return revoked;
+
+  const policy = await getPolicy(input.policyId);
+  if (!policy || !isAgeEligibilityOnlyPolicy(policy.rules_json)) {
+    throw new Error("purchase_age_eligibility_policy_required");
+  }
+
+  const attestationPurpose = expectedSelfAttestationPurpose(policy.rules_json);
+  const existingAttestation = await getActiveSelfAttestations({
+    holderRef: subject,
+    partnerId: policy.partner_id,
+    policyId: input.policyId,
+    purpose: attestationPurpose,
+  });
+  if (existingAttestation.some((row) => row.age_band === "over_21")) {
+    const request = await createVerificationRequest({
+      partnerId: input.partnerId,
+      policyId: input.policyId,
+      purpose: input.purpose ?? "purchase",
+      requestedAction: policy.rules_json.product_eligibility_action ?? "partner_eligibility",
+      suiAddress: subject,
+      returnUrl: input.returnUrl,
+      appOrigin: input.appOrigin,
+      expectedPolicyVersion: input.expectedPolicyVersion ?? policy.version,
+    });
+    const passport_url = buildPassportUrl({
+      verificationRequestId: request.request_id,
+      partnerId: input.partnerId,
+      policyId: input.policyId,
+      returnUrl: input.returnUrl,
+      purpose: "purchase",
+      appOrigin: input.appOrigin,
+    });
+    return {
+      next: "passport",
+      verification_request_id: request.request_id,
+      passport_url,
+      policy_version: policy.version,
+    };
+  }
+
+  const request = await createVerificationRequest({
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    purpose: input.purpose ?? "purchase",
+    requestedAction: policy.rules_json.product_eligibility_action ?? "partner_eligibility",
+    suiAddress: subject,
+    returnUrl: input.returnUrl,
+    appOrigin: input.appOrigin,
+    expectedPolicyVersion: input.expectedPolicyVersion ?? policy.version,
+  });
+
+  const passport_url = buildPassportUrl({
+    verificationRequestId: request.request_id,
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    returnUrl: input.returnUrl,
+    purpose: "purchase",
+    appOrigin: input.appOrigin,
+  });
+
+  return {
+    next: "passport",
+    verification_request_id: request.request_id,
+    passport_url,
+    policy_version: policy.version,
+  };
 }
 
 /** Good Trouble L0 browse — self-attestation only; never purchase, ID, or manual review. */
@@ -596,6 +759,8 @@ export async function evaluatePartnerFlow(input: {
   purpose?: string;
   appOrigin?: string;
   expectedPolicyVersion?: number;
+  launchpadApplicationId?: string | null;
+  expectedContentHash?: string | null;
 }): Promise<PartnerFlowEvaluateResult> {
   if (!await isReturnUrlAllowed(input.partnerId, input.returnUrl)) {
     throw new Error("return_url not allowlisted for partner");
@@ -613,6 +778,20 @@ export async function evaluatePartnerFlow(input: {
   });
   const effectivePurpose = resolvedPurpose ?? input.purpose;
 
+  if (isContentOriginDisclosureFlow({ policyId: input.policyId })) {
+    return evaluateContentOriginDisclosurePartnerFlow({
+      suiAddress: input.suiAddress,
+      partnerId: input.partnerId,
+      policyId: input.policyId,
+      returnUrl: input.returnUrl,
+      purpose: input.purpose,
+      appOrigin: input.appOrigin,
+      expectedPolicyVersion: input.expectedPolicyVersion,
+      launchpadApplicationId: input.launchpadApplicationId,
+      expectedContentHash: input.expectedContentHash,
+    });
+  }
+
   if (isGoodTroubleBrowseFlow({
     partnerId: input.partnerId,
     policyId: input.policyId,
@@ -626,6 +805,25 @@ export async function evaluatePartnerFlow(input: {
       appOrigin: input.appOrigin,
       purpose: "browse",
     });
+  }
+
+  if (isCanonicalGoodTroublePurchaseFlow({
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    purpose: effectivePurpose,
+  })) {
+    const purchasePolicy = await getPolicy(input.policyId);
+    if (purchasePolicy && isAgeEligibilityOnlyPolicy(purchasePolicy.rules_json)) {
+      return evaluateGoodTroublePurchaseFlow({
+        suiAddress: input.suiAddress,
+        partnerId: input.partnerId,
+        policyId: input.policyId,
+        returnUrl: input.returnUrl,
+        appOrigin: input.appOrigin,
+        purpose: "purchase",
+        expectedPolicyVersion: input.expectedPolicyVersion,
+      });
+    }
   }
 
   const subject = normalizeSuiAddress(input.suiAddress);
@@ -658,6 +856,7 @@ export async function evaluatePartnerFlow(input: {
         policyId: input.policyId,
         credentialJti: credential.credential_jti,
         expectedPolicyVersion: input.expectedPolicyVersion,
+        launchpadApplicationId: input.launchpadApplicationId,
       });
 
       const redirect_url = buildRedirectUrl(input.returnUrl, {
@@ -734,13 +933,20 @@ export async function completePartnerFlowAfterApproval(input: {
   returnUrl: string;
   verificationRequestId?: string;
   expectedPolicyVersion?: number;
+  launchpadApplicationId?: string | null;
 }): Promise<PartnerFlowEvaluateResult & { ok: true } | { ok: false; error: string }> {
   if (!await isReturnUrlAllowed(input.partnerId, input.returnUrl)) {
     return { ok: false, error: "return_url not allowlisted for partner" };
   }
 
   const credential = await getHolderCredentialStatus(input.suiAddress);
-  if (credential.status !== "active" || !credential.credential_jti) {
+  const provenanceFlow = isContentOriginDisclosurePolicyId(input.policyId);
+  const credentialJti = credential.status === "active" && credential.credential_jti
+    ? credential.credential_jti
+    : provenanceFlow
+      ? resolveProvenanceSandboxCredentialJti(input.suiAddress)
+      : null;
+  if (!credentialJti) {
     return { ok: false, error: "Credential not yet active" };
   }
 
@@ -759,9 +965,10 @@ export async function completePartnerFlowAfterApproval(input: {
     suiAddress: input.suiAddress,
     partnerId: input.partnerId,
     policyId: input.policyId,
-    credentialJti: credential.credential_jti,
+    credentialJti,
     verificationRequestId: input.verificationRequestId,
     expectedPolicyVersion: input.expectedPolicyVersion,
+    launchpadApplicationId: input.launchpadApplicationId,
   });
 
   const { decision_id, partner_result, receipt_id, receipt_expires_at, replay_status, currently_valid, validity, invalidation_reasons } = issued;
@@ -772,7 +979,7 @@ export async function completePartnerFlowAfterApproval(input: {
     decision_id,
     receipt_id,
     receipt_expires_at,
-    credential_id: credential.credential_jti,
+    credential_id: credentialJti,
     policy_id: input.policyId,
     partner_id: input.partnerId,
   });
@@ -806,6 +1013,7 @@ export async function refreshPartnerSessionReceipt(input: {
   policyId: string;
   returnUrl: string;
   expectedPolicyVersion?: number;
+  launchpadApplicationId?: string | null;
 }): Promise<PartnerFlowEvaluateResult> {
   const credential = await getHolderCredentialStatus(input.suiAddress);
   if (credential.status !== "active" || !credential.credential_jti) {
@@ -837,6 +1045,7 @@ export async function refreshPartnerSessionReceipt(input: {
     credentialJti: credential.credential_jti,
     supersedePriorSession: true,
     expectedPolicyVersion: input.expectedPolicyVersion,
+    launchpadApplicationId: input.launchpadApplicationId,
   });
 
   const redirect_url = buildRedirectUrl(input.returnUrl, {

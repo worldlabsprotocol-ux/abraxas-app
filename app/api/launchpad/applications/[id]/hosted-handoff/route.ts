@@ -26,7 +26,7 @@ type RouteContext = { params: { id: string } };
 export async function POST(req: NextRequest, { params }: RouteContext) {
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
-  const limited = enforceLaunchpadTenantRateLimit(req, "/api/launchpad/hosted-handoff", auth.session.partnerId, 20);
+  const limited = await enforceLaunchpadTenantRateLimit(req, "/api/launchpad/hosted-handoff", auth.session.partnerId, 20);
   if (limited) return limited;
   let body: unknown = {};
   try {
@@ -39,8 +39,12 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   if (!parsed.ok) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, parsed.code);
   const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
-  if (app.environment !== "sandbox") {
-    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "sandbox_only");
+  if (app.environment === "production") {
+    if (!app.production_activated_at || app.status !== "active") {
+      return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "production_not_activated");
+    }
+  } else if (app.environment !== "sandbox") {
+    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "invalid_environment");
   }
   let stored;
   try {
@@ -49,21 +53,37 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 503, "unavailable");
   }
   try {
-    const record = await createHostedHandoff({ application: app, stored, runtime: parsed.runtime });
+    const record = await createHostedHandoff({
+      application: app,
+      stored,
+      runtime: parsed.runtime,
+      bindingId: parsed.binding_id,
+    });
     const view = projectPublic(record);
     if (handoffLeaks(view).length) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 503, "redacted");
     return launchpadJson({ ok: true, ...view });
   } catch (error) {
     const code = error instanceof Error && "code" in error ? String((error as { code?: string }).code) : "unavailable";
-    const status = code === "callback_rejected" || code === "not_configured" || code === "app_unpinned" ? 400 : 503;
-    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, status, code);
+    const bindingCodes = new Set([
+      "AMBIGUOUS_POLICY_BINDING",
+      "POLICY_BINDING_NOT_FOUND",
+      "POLICY_BINDING_NOT_ACTIVE",
+      "POLICY_BINDING_ENVIRONMENT_MISMATCH",
+      "PRODUCTION_BINDING_NOT_AUTHORIZED",
+    ]);
+    const status = code === "AMBIGUOUS_POLICY_BINDING"
+      ? 409
+      : bindingCodes.has(code) || code === "callback_rejected" || code === "not_configured" || code === "app_unpinned"
+        ? 400
+        : 503;
+    return launchpadError(code, status);
   }
 }
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
-  const limited = enforceLaunchpadTenantRateLimit(req, "/api/launchpad/hosted-handoff", auth.session.partnerId, 30);
+  const limited = await enforceLaunchpadTenantRateLimit(req, "/api/launchpad/hosted-handoff", auth.session.partnerId, 30);
   if (limited) return limited;
   const ref = req.nextUrl.searchParams.get("handoff_ref")?.trim() ?? "";
   if (!ref) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "missing_ref");

@@ -10,6 +10,7 @@ import {
   abxAccentCssVars,
   type AbxTabAccent,
 } from "@/lib/design/abraxasDesignSystem";
+import { abxMotionCssVars, abxMotionTierForSurface } from "@/lib/design/abraxasMotion";
 
 export interface AbxPageShellProps {
   children: ReactNode;
@@ -26,13 +27,17 @@ export function AbxPageShell({
   withFooter = true,
   contentStyle,
 }: AbxPageShellProps) {
+  const motionTier = abxMotionTierForSurface(accent === "passport" ? "passport" : accent === "developer" ? "launchpad" : accent);
+
   return (
     <RedesignShell>
       <div
-        className="abx-page-content"
+        className="abx-page-content abx-product-shell"
         data-abx-accent={accent}
+        data-motion-tier={motionTier}
         style={{
           ...abxAccentCssVars(accent),
+          ...abxMotionCssVars(),
           maxWidth,
           margin: "0 auto",
           padding: `${ABX_SPACING.sectionGap} ${ABX_SPACING.pagePadding} 0`,

@@ -13,6 +13,7 @@ import { EVM_NO_EXECUTION_BOUNDARY } from "@/lib/partner/evm/contract";
 export const INTEGRATION_STUDIO_PATH = "/developers/integration-studio" as const;
 
 export const INTEGRATION_STUDIO_PATHS = [
+  "verify_with_abraxas",
   "hosted_partner_flow",
   "server_receipt_verify",
   "webhook_events",
@@ -37,8 +38,13 @@ export type IntegrationStudioPathId = (typeof INTEGRATION_STUDIO_PATHS)[number];
 
 export const INTEGRATION_STUDIO_CHECKLIST = [
   {
+    id: "verify_with_abraxas",
+    title: "Verify with Abraxas (recommended)",
+    body: "Use AbraxasPartnerKit.createVerificationRequest on your server, launch Hosted Partner Flow, then verifyCallbackWithNarrowResult before resuming your native action.",
+  },
+  {
     id: "hosted_verify",
-    title: "Hosted verify",
+    title: "Hosted verify (advanced)",
     body: "Redirect the holder to /partner/verify with your partner_id and policy_id. Callback query keys are not authorization.",
   },
   {

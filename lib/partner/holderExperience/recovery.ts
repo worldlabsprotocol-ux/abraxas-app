@@ -38,16 +38,16 @@ const VIEWS: Record<HolderRecoveryState, Omit<HolderRecoveryView, "state">> = {
     next_label: "Restart from the partner link",
   },
   denied: {
-    title: "Required eligibility was not established",
-    explanation: "The partner does not receive the underlying evidence. If you think this is a mistake, contact the requesting partner.",
+    title: "We couldn't confirm this request",
+    explanation: "Abraxas could not verify the required eligibility for this request. If you think this is a mistake, contact the requesting partner.",
     next_action: "contact_requesting_partner",
-    next_label: "Contact the requesting partner",
+    next_label: "Try again",
   },
   invalid_binding: {
-    title: "This return could not be completed",
-    explanation: "The partner return is stored on the original request. Query parameters cannot send you somewhere else. Restart from the partner’s verification link.",
+    title: "We couldn't return you to the requesting service",
+    explanation: "Your verification result was not redirected somewhere unexpected. Restart from the partner's verification link to try again.",
     next_action: "restart_partner_link",
-    next_label: "Restart from the partner link",
+    next_label: "Try again",
   },
   session_required: {
     title: "Sign in to continue",
@@ -70,18 +70,21 @@ const VIEWS: Record<HolderRecoveryState, Omit<HolderRecoveryView, "state">> = {
     href: HOLDER_PASSPORT_HREF,
   },
   approved: {
-    title: "The partner receives only the policy result",
-    explanation: "Underlying evidence stays with you. If you are not returned automatically, use the partner return on this page.",
+    title: "Confirmed",
+    explanation: "The requesting service received only the approved result. Your private evidence stayed with you.",
     next_action: "contact_requesting_partner",
-    next_label: "Return to the requesting partner",
+    next_label: "Continue to service",
   },
   sandbox_approved: {
-    title: "Sandbox result only",
-    explanation: "The partner receives only the policy result. This sandbox or test result is not Production-usable.",
+    title: "Confirmed — test request",
+    explanation: "The requesting service received only the approved sandbox result. This cannot be used as a production verification.",
     next_action: "contact_requesting_partner",
-    next_label: "Return to the requesting partner",
+    next_label: "Continue to service",
   },
 };
+
+export const HOLDER_RETURN_FAILURE_TECHNICAL =
+  "Abraxas only returns to the destination registered with the original request. Query parameters cannot override that return URL.";
 
 export function resolveHolderRecovery(
   state: HolderRecoveryState,

@@ -2,6 +2,7 @@
 // Versioned declarative policy packs — partners select proof, never submit executable policy.
 
 import type { AssuranceLevel, ClaimType } from "@/lib/credentials/claimSchema";
+import type { ReuseEvidenceFreshnessRule } from "@/lib/passport/reusableEligibility/freshness";
 import type { PartnerActivitySignalType } from "@/lib/partner/partnerActivitySignal/contract";
 import type { PartnerPolicyRules } from "@/lib/policy/types";
 import {
@@ -34,7 +35,10 @@ export type PolicyPackId =
   | "collector_redemption"
   | "identity_liveness"
   | "sandbox_economic_demo"
-  | "sandbox_institutional_protocol_access";
+  | "sandbox_institutional_protocol_access"
+  | "content_origin_disclosure"
+  | "content_ai_disclosure"
+  | "content_source_integrity";
 
 export type PolicyPackProductionSuitability =
   | "sandbox_only"
@@ -55,6 +59,8 @@ export interface PolicyPack {
   disclosed_result: string;
   receipt_claim: string;
   reuse_policy: "session" | "time_bound";
+  /** Per-pack reusable evidence freshness. Strictest constraint wins at evaluation. */
+  reuse_evidence_freshness?: ReuseEvidenceFreshnessRule;
   permitted_methods: string[];
   /** Optional pack-level allowlist for partner_activity_signal. Absence enables no activity categories. */
   allowed_activity_categories?: readonly PartnerActivitySignalType[];
@@ -91,6 +97,7 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
     disclosed_result: "age_eligible_18",
     receipt_claim: "age_threshold_met",
     reuse_policy: "time_bound",
+    reuse_evidence_freshness: { allow_reuse: true, mode: "source_expiry", max_age_hours: null },
     permitted_methods: ["passport"],
     rules: {
       ...SANDBOX,
@@ -116,6 +123,7 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
     disclosed_result: "age_eligible_21",
     receipt_claim: "age_threshold_met",
     reuse_policy: "time_bound",
+    reuse_evidence_freshness: { allow_reuse: true, mode: "source_expiry", max_age_hours: null },
     permitted_methods: ["passport"],
     allowed_activity_categories: ["repeat_participant", "holder_loyalty"],
     rules: {
@@ -142,6 +150,7 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
     disclosed_result: "residency_check_passed",
     receipt_claim: "jurisdiction_met",
     reuse_policy: "time_bound",
+    reuse_evidence_freshness: { allow_reuse: true, mode: "time_bound", max_age_hours: 48 },
     permitted_methods: ["passport"],
     rules: {
       ...SANDBOX,
@@ -166,6 +175,7 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
     disclosed_result: "wallet_control_confirmed",
     receipt_claim: "wallet_binding_confirmed",
     reuse_policy: "session",
+    reuse_evidence_freshness: { allow_reuse: true, mode: "time_bound", max_age_hours: 12 },
     permitted_methods: ["passport"],
     rules: {
       ...SANDBOX,
@@ -190,6 +200,7 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
     disclosed_result: "credential_active",
     receipt_claim: "identity_verified",
     reuse_policy: "session",
+    reuse_evidence_freshness: { allow_reuse: true, mode: "time_bound", max_age_hours: 12 },
     permitted_methods: ["passport"],
     rules: {
       ...SANDBOX,
@@ -214,6 +225,7 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
     disclosed_result: "redemption_eligible",
     receipt_claim: "product_eligibility",
     reuse_policy: "time_bound",
+    reuse_evidence_freshness: { allow_reuse: true, mode: "source_expiry", max_age_hours: 24 },
     permitted_methods: ["passport"],
     allowed_activity_categories: ["repeat_participant", "holder_loyalty", "high_activity"],
     rules: {
@@ -240,6 +252,7 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
     disclosed_result: "identity_and_liveness_met",
     receipt_claim: "identity_verified",
     reuse_policy: "time_bound",
+    reuse_evidence_freshness: { allow_reuse: true, mode: "time_bound", max_age_hours: 24 },
     permitted_methods: ["passport"],
     rules: {
       ...SANDBOX,
@@ -268,12 +281,126 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
     disclosed_result: "sandbox_demo_eligible",
     receipt_claim: "product_eligibility",
     reuse_policy: "session",
+    reuse_evidence_freshness: { allow_reuse: true, mode: "time_bound", max_age_hours: 2 },
     permitted_methods: ["reuse_existing_proof", "partner_age_check", "privacy_preserving"],
     rules: {
       ...SANDBOX,
       session_receipt_hours: 2,
       product_eligibility_action: "sandbox_economic_demo",
       required_claims: [{ claim_type: "product_eligibility", min_assurance: "L1" }],
+    },
+  }),
+  content_origin_disclosure: pack({
+    id: "content_origin_disclosure",
+    display_name: "Content origin disclosure",
+    holder_explanation:
+      "Confirm you created or submitted this content, disclose how AI was used, and verify this exact file matches its fingerprint. This is your attestation and disclosure — not AI detection or rights verification.",
+    required_claims: [
+      "creator_attested",
+      "ai_assistance_disclosed",
+      "source_integrity_verified",
+    ],
+    minimum_assurance: "L1",
+    receipt_lifetime_hours: 24,
+    intended_use_examples: [
+      "Publishing platforms asking about creator attestation and AI disclosure before listing",
+      "Marketplaces verifying a submitted file matches an established fingerprint",
+      "Creator tools collecting disclosure without receiving the raw artifact",
+    ],
+    partner_receives:
+      "Signed narrow result: creator_attested, ai_assistance_disclosed category, and source_integrity_verified. Not authorship verification, rights, or AI detection scores.",
+    partner_does_not_receive: [
+      "raw file bytes",
+      "legal name",
+      "government ID",
+      "email",
+      "AI detector scores",
+      "human verification claims",
+      "unrelated Passport data",
+    ],
+    production_suitability: "sandbox_only",
+    disclosed_result: "content_origin_disclosed",
+    receipt_claim: "content_origin_disclosed",
+    reuse_policy: "time_bound",
+    reuse_evidence_freshness: { allow_reuse: true, mode: "time_bound", max_age_hours: 24 },
+    permitted_methods: ["passport"],
+    rules: {
+      ...SANDBOX,
+      session_receipt_hours: 24,
+      product_eligibility_action: "content_origin_disclosure",
+      required_claims: [
+        { claim_type: "creator_attested", min_assurance: "L0" },
+        { claim_type: "ai_assistance_disclosed", min_assurance: "L0" },
+        { claim_type: "source_integrity_verified", min_assurance: "L1" },
+      ],
+    },
+  }),
+  content_ai_disclosure: pack({
+    id: "content_ai_disclosure",
+    display_name: "AI assistance disclosure",
+    holder_explanation:
+      "Disclose whether generative AI materially contributed to your work. This is your declared disclosure — not an AI detection result.",
+    required_claims: ["ai_assistance_disclosed"],
+    minimum_assurance: "L0",
+    receipt_lifetime_hours: 24,
+    intended_use_examples: [
+      "Publishing platforms asking whether AI assistance was disclosed for a submission",
+      "Photography marketplaces requiring creator disclosure before listing",
+      "Creator platforms collecting disclosure without receiving the raw file",
+    ],
+    partner_receives: "Signed result ai_assistance_disclosed. Not an AI probability score or detection verdict.",
+    partner_does_not_receive: [
+      "raw image or manuscript",
+      "legal name",
+      "government ID",
+      "email",
+      "AI detector scores",
+      "prompt history",
+      "unrelated Passport data",
+    ],
+    production_suitability: "sandbox_only",
+    disclosed_result: "ai_assistance_disclosed",
+    receipt_claim: "ai_assistance_disclosed",
+    reuse_policy: "time_bound",
+    reuse_evidence_freshness: { allow_reuse: true, mode: "time_bound", max_age_hours: 24 },
+    permitted_methods: ["passport"],
+    rules: {
+      ...SANDBOX,
+      session_receipt_hours: 24,
+      required_claims: [{ claim_type: "ai_assistance_disclosed", min_assurance: "L0" }],
+    },
+  }),
+  content_source_integrity: pack({
+    id: "content_source_integrity",
+    display_name: "Source integrity check",
+    holder_explanation:
+      "Confirm the artifact you submit matches a fingerprint you previously established with Abraxas. This verifies integrity — not human authorship or rights.",
+    required_claims: ["source_integrity_verified"],
+    minimum_assurance: "L1",
+    receipt_lifetime_hours: 12,
+    intended_use_examples: [
+      "Marketplaces re-checking an uploaded file against an established fingerprint",
+      "Licensing workflows confirming the submitted file has not changed since attestation",
+    ],
+    partner_receives: "Signed result source_integrity_verified. Not originality, authorship, or rights ownership.",
+    partner_does_not_receive: [
+      "raw source file",
+      "legal name",
+      "government ID",
+      "email",
+      "creator history",
+      "unrelated Passport data",
+    ],
+    production_suitability: "sandbox_only",
+    disclosed_result: "source_integrity_verified",
+    receipt_claim: "source_integrity_verified",
+    reuse_policy: "time_bound",
+    reuse_evidence_freshness: { allow_reuse: true, mode: "time_bound", max_age_hours: 12 },
+    permitted_methods: ["passport"],
+    rules: {
+      ...SANDBOX,
+      session_receipt_hours: 12,
+      required_claims: [{ claim_type: "source_integrity_verified", min_assurance: "L1" }],
     },
   }),
   sandbox_institutional_protocol_access: pack({
@@ -306,6 +433,7 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
     disclosed_result: "organization_eligible",
     receipt_claim: "organization_eligible",
     reuse_policy: "time_bound",
+    reuse_evidence_freshness: { allow_reuse: false, mode: "none", max_age_hours: null },
     permitted_methods: ["privacy_preserving"],
     rules: {
       ...SANDBOX,
@@ -351,6 +479,11 @@ export function inferPolicyPackFromPolicyId(policyId: string): PolicyPack | null
   const packs = [...POLICY_PACK_LIST].sort((a, b) => b.id.length - a.id.length);
   for (const pack of packs) {
     if (trimmed.includes(pack.id)) return pack;
+  }
+  // Legacy pinned policy ids (for example good-trouble-retail-v1) may omit the pack slug.
+  if (/\bretail-v\d/i.test(trimmed)) {
+    const age21Retail = resolvePolicyPack("age_21_retail");
+    if (age21Retail) return age21Retail;
   }
   return null;
 }

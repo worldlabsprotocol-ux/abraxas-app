@@ -5,7 +5,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
+import { isHostedHolderBootstrapEligible } from "@/lib/auth/hostedHolderEligibility";
 import { ensureBrowserSessionReady } from "@/lib/auth/ensureBrowserSession";
+import { useHostedHolderBootstrap } from "@/lib/partner/useHostedHolderBootstrap";
 import { useGoogleSignIn } from "@/lib/hooks/useGoogleSignIn";
 import {
   createPartnerVerifyCorrelationId,
@@ -38,6 +40,7 @@ interface FlowResult {
   passport_url?: string;
   reason_codes?: string[];
   error?: string;
+  code?: string;
   journey_state?: string;
   customer_message?: string;
 }
@@ -63,14 +66,18 @@ function stripPartnerAuthReadyFromUrl(): boolean {
 interface PartnerVerifyClientProps {
   previewPhase?: PartnerVerifyPhase | null;
   previewSignInConfigured?: boolean;
+  previewEnvironment?: string | null;
+  previewPartnerName?: string | null;
 }
 
 export function PartnerVerifyClient({
   previewPhase = null,
   previewSignInConfigured = false,
+  previewEnvironment = null,
+  previewPartnerName = null,
 }: PartnerVerifyClientProps) {
   const searchParams = useSearchParams();
-  const { suiAddress, isLoading: authLoading, signInWithGoogle } = useSuiAuth();
+  const { suiAddress, isLoading: authLoading, signInWithGoogle, refreshSession } = useSuiAuth();
   const { signIn, busy: signInBusy, configured: signInConfigured } = useGoogleSignIn();
 
   const [phase, setPhase] = useState<PartnerVerifyPhase>(previewPhase ?? "loading");
@@ -84,6 +91,7 @@ export function PartnerVerifyClient({
 
   const launchpadAppSlug = searchParams.get("app");
   const launchpadReturnUrl = searchParams.get("return_url");
+  const expectedContentHash = searchParams.get("expected_content_hash");
   const launchpadResolution = useLaunchpadVerifyResolution(launchpadAppSlug, launchpadReturnUrl);
   const launchpadActive = Boolean(launchpadAppSlug);
 
@@ -92,32 +100,78 @@ export function PartnerVerifyClient({
     [searchParams],
   );
 
-  const relyingPartyId = launchpadResolution.resolved?.partnerId
-    ?? (verifyInput.ok ? verifyInput.params.partnerId : (
-      searchParams.get("relying_party_id")
-      ?? searchParams.get("partner_id")
-      ?? ""
-    ));
+  const explicitVerifyParams = verifyInput.ok ? verifyInput.params : null;
+  const explicitBrowseTuple = explicitVerifyParams
+    ? isGoodTroubleBrowseFlow({
+      partnerId: explicitVerifyParams.partnerId,
+      policyId: explicitVerifyParams.policyId,
+      purpose: explicitVerifyParams.purpose,
+    })
+    : false;
+
+  const relyingPartyId = explicitBrowseTuple
+    ? explicitVerifyParams!.partnerId
+    : (launchpadResolution.resolved?.partnerId
+      ?? (verifyInput.ok ? verifyInput.params.partnerId : (
+        searchParams.get("relying_party_id")
+        ?? searchParams.get("partner_id")
+        ?? ""
+      )));
   const permission = verifyInput.ok ? (verifyInput.params.permission ?? "") : (searchParams.get("permission") ?? "");
   const permissionVersion = verifyInput.ok
     ? (verifyInput.params.permissionVersion ?? "")
     : (searchParams.get("permission_version") ?? "");
-  const policyId = launchpadResolution.resolved?.policyId
-    ?? (verifyInput.ok ? verifyInput.params.policyId : (searchParams.get("policy_id") ?? ""));
-  const purpose = verifyInput.ok ? (verifyInput.params.purpose ?? "") : (searchParams.get("purpose") ?? "");
-  const returnUrl = launchpadResolution.resolved?.returnUrl
-    ?? (verifyInput.ok ? verifyInput.params.returnUrl : (searchParams.get("return_url") ?? ""));
+  const policyId = explicitBrowseTuple
+    ? explicitVerifyParams!.policyId
+    : (launchpadResolution.resolved?.policyId
+      ?? (verifyInput.ok ? verifyInput.params.policyId : (searchParams.get("policy_id") ?? "")));
+  const purpose = explicitBrowseTuple
+    ? (explicitVerifyParams!.purpose ?? "")
+    : (verifyInput.ok ? (verifyInput.params.purpose ?? "") : (searchParams.get("purpose") ?? ""));
+  const returnUrl = explicitBrowseTuple
+    ? explicitVerifyParams!.returnUrl
+    : (launchpadResolution.resolved?.returnUrl
+      ?? (verifyInput.ok ? verifyInput.params.returnUrl : (searchParams.get("return_url") ?? "")));
   const isDobFirstBrowse = isGoodTroubleBrowseFlow({
     partnerId: relyingPartyId,
     policyId,
     purpose,
   });
 
+  const launchpadPending = launchpadActive && launchpadResolution.loading;
   const invalidLinkMessage = launchpadActive
     ? (launchpadResolution.loading ? null : launchpadResolution.error)
     : (verifyInput.ok ? null : verifyInput.invalidLinkMessage);
+  const flowParamsReady = Boolean(
+    relyingPartyId.trim()
+    && policyId.trim()
+    && returnUrl.trim()
+    && !launchpadPending,
+  );
 
-  const partnerName = launchpadResolution.resolved?.displayName ?? resolvePartnerDisplayName(relyingPartyId);
+  const hostedBootstrapEligible = isHostedHolderBootstrapEligible({
+    partnerId: relyingPartyId,
+    policyId,
+    purpose,
+  });
+
+  const hostedBootstrap = useHostedHolderBootstrap({
+    enabled: !previewPhase && !invalidLinkMessage && flowParamsReady,
+    suiAddress,
+    authLoading,
+    partnerId: relyingPartyId,
+    policyId,
+    returnUrl,
+    purpose,
+    onBootstrapped: () => {
+      refreshSession();
+      evaluateOnceRef.current = false;
+    },
+  });
+
+  const partnerName = previewPartnerName
+    ?? launchpadResolution.resolved?.displayName
+    ?? resolvePartnerDisplayName(relyingPartyId);
   const partnerReturnLabel = resolvePartnerReturnLabel(relyingPartyId);
   const partnerHomeUrl = resolvePartnerHomeUrl(relyingPartyId);
   const policyRequirement = launchpadResolution.resolved?.userExplanation
@@ -143,6 +197,7 @@ export function PartnerVerifyClient({
     const resolvedPolicyId = policyId.trim();
     const resolvedReturnUrl = returnUrl.trim();
     if (!partnerId || !resolvedReturnUrl || !resolvedPolicyId) return;
+    if (!flowParamsReady && launchpadActive) return;
     savePartnerVerifyResume({
       partnerId,
       policyId: resolvedPolicyId,
@@ -154,6 +209,8 @@ export function PartnerVerifyClient({
     });
   }, [
     invalidLinkMessage,
+    flowParamsReady,
+    launchpadActive,
     relyingPartyId,
     policyId,
     returnUrl,
@@ -168,7 +225,7 @@ export function PartnerVerifyClient({
   }, [suiAddress]);
 
   const runEvaluate = useCallback(async () => {
-    if (invalidLinkMessage || !suiAddress) return;
+    if (invalidLinkMessage || !suiAddress || !flowParamsReady) return;
     if (evaluateOnceRef.current) return;
     evaluateOnceRef.current = true;
 
@@ -210,12 +267,14 @@ export function PartnerVerifyClient({
           purpose: purpose || undefined,
           return_url: returnUrl,
           app: launchpadAppSlug || undefined,
+          expected_content_hash: expectedContentHash || undefined,
         }),
       });
       const data = await res.json() as FlowResult;
 
       if (!res.ok) {
         const message = data.error ?? "Evaluation failed";
+        const code = typeof data.code === "string" ? data.code : undefined;
         if (res.status === 401 && isBrowserSessionAuthError(message)) {
           logPartnerVerifyAuthEvent("partner_evaluate_result", {
             correlationId: cid,
@@ -228,7 +287,14 @@ export function PartnerVerifyClient({
           setStatusMessage("Sign in to continue with Abraxas.");
           return;
         }
-        throw new Error("verification_failed");
+        evaluateOnceRef.current = false;
+        setPhase(code === "open_redirect" || code === "launchpad_return_url_rejected" ? "invalid_binding" : "error");
+        setStatusMessage(
+          code === "launchpad_return_url_rejected" || code === "tuple_conflict"
+            ? "This verification link does not match Good Trouble. Start again from ORDER NOW."
+            : "Verification could not be completed.",
+        );
+        return;
       }
 
       logPartnerVerifyAuthEvent("partner_evaluate_result", {
@@ -309,6 +375,8 @@ export function PartnerVerifyClient({
     purpose,
     returnUrl,
     isDobFirstBrowse,
+    flowParamsReady,
+    launchpadAppSlug,
   ]);
 
   useEffect(() => {
@@ -318,11 +386,36 @@ export function PartnerVerifyClient({
       return;
     }
     if (previewPhase) return;
+    if (launchpadPending) {
+      setPhase("loading");
+      setStatusMessage("Preparing verification…");
+      return;
+    }
     if (invalidLinkMessage) {
       setPhase("invalid_link");
       return;
     }
     if (!suiAddress) {
+      if (hostedBootstrapEligible) {
+        if (hostedBootstrap.bootstrapping || hostedBootstrap.state === "idle") {
+          setPhase("bootstrapping");
+          setStatusMessage("Preparing your verification request…");
+          return;
+        }
+        if (hostedBootstrap.state === "failed") {
+          setPhase("error");
+          setStatusMessage("Verification could not be started securely. Try again.");
+          return;
+        }
+        if (hostedBootstrap.state === "ineligible") {
+          setPhase("sign_in");
+          setStatusMessage("Sign in to continue with Abraxas.");
+          return;
+        }
+        // pending ready — refreshSession should populate suiAddress on next tick
+        setPhase("bootstrapping");
+        return;
+      }
       setPhase("sign_in");
       setStatusMessage("Sign in to continue with Abraxas.");
       return;
@@ -330,7 +423,18 @@ export function PartnerVerifyClient({
     if (oauthReturnReady || !evaluateOnceRef.current) {
       void runEvaluate();
     }
-  }, [authLoading, invalidLinkMessage, suiAddress, oauthReturnReady, runEvaluate, previewPhase]);
+  }, [
+    authLoading,
+    invalidLinkMessage,
+    suiAddress,
+    oauthReturnReady,
+    runEvaluate,
+    previewPhase,
+    launchpadPending,
+    hostedBootstrapEligible,
+    hostedBootstrap.bootstrapping,
+    hostedBootstrap.state,
+  ]);
 
   const handleSignIn = useCallback(async () => {
     if (signInOnceRef.current || signInBusy || isLoginInFlight()) return;
@@ -411,8 +515,10 @@ export function PartnerVerifyClient({
       invalidLinkMessage={invalidLinkMessage}
       partnerReturnLabel={partnerReturnLabel}
       partnerHomeUrl={partnerHomeUrl}
-      environment={launchpadResolution.resolved?.environment ?? null}
+      environment={previewEnvironment ?? launchpadResolution.resolved?.environment ?? null}
       disclosedResult={launchpadResolution.resolved?.disclosedResult ?? null}
+      hostedBootstrapEligible={hostedBootstrapEligible}
+      onOptionalSignIn={() => { void handleSignIn(); }}
     />
   );
 }

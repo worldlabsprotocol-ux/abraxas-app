@@ -115,7 +115,7 @@ function sanitizeResumeParams(
   const appSlug = params.appSlug?.trim();
   const policyVersion = params.policyVersion;
 
-  if (!partnerId || !returnUrl || (!policyId && !permission)) return null;
+  if (!returnUrl || (!partnerId && !appSlug) || (!policyId && !permission && !appSlug)) return null;
   if (!isSafeReturnUrlForResume(returnUrl)) return null;
   if (policyVersion != null && (!Number.isInteger(policyVersion) || policyVersion < 1)) return null;
 
@@ -126,6 +126,7 @@ function sanitizeResumeParams(
     permission,
     permissionVersion,
     purpose,
+    appSlug,
   });
   if (!isRestorablePartnerVerifyPath(built)) return null;
 
@@ -143,9 +144,13 @@ function sanitizeResumeParams(
 
 export function buildPartnerVerifyPath(params: PartnerVerifyResumeParams): string {
   const search = new URLSearchParams({
-    partner_id: params.partnerId.trim(),
     return_url: params.returnUrl.trim(),
   });
+  if (params.appSlug?.trim()) {
+    search.set("app", params.appSlug.trim());
+  } else {
+    search.set("partner_id", params.partnerId.trim());
+  }
   if (params.policyId.trim()) search.set("policy_id", params.policyId.trim());
   if (params.permission?.trim()) search.set("permission", params.permission.trim());
   if (params.permissionVersion?.trim()) {
@@ -234,9 +239,9 @@ export function loadPartnerVerifyResume(): PartnerVerifyResumeState | null {
     };
 
     if (
-      !isNonEmptyString(state.partnerId)
-      || !isNonEmptyString(state.returnUrl)
-      || (!isNonEmptyString(state.policyId) && !isNonEmptyString(state.permission))
+      !isNonEmptyString(state.returnUrl)
+      || (!isNonEmptyString(state.partnerId) && !isNonEmptyString(state.appSlug))
+      || (!isNonEmptyString(state.policyId) && !isNonEmptyString(state.permission) && !isNonEmptyString(state.appSlug))
       || !isNonEmptyString(state.savedAt)
     ) {
       clearPartnerVerifyResume();

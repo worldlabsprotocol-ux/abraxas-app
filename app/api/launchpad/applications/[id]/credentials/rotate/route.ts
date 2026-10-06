@@ -19,7 +19,7 @@ export const dynamic = "force-dynamic";
 type RouteContext = { params: { id: string } };
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
-  const limited = enforceLaunchpadRateLimit(req, "/api/launchpad/credentials/rotate", 10);
+  const limited = await enforceLaunchpadRateLimit(req, "/api/launchpad/credentials/rotate", 10);
   if (limited) return limited;
 
   const auth = await requireLaunchpadSession(req);

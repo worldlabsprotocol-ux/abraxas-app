@@ -24,7 +24,9 @@ import {
   GoodTroubleFlowTupleMismatchError,
   resolveGoodTroubleFlowPurpose,
 } from "@/lib/partner/goodTroubleBrowseFlow";
-import { normalizePartnerVerifyInput } from "@/lib/partner/normalizePartnerVerifyInput";
+import { isGoodTroubleBrowseCallbackReturnUrl } from "@/lib/partner/normalizePartnerVerifyInput";
+import { normalizePartnerVerifyWithLaunchpad } from "@/lib/partner/launchpad/resolveLaunchpadVerifyInput";
+import { GOOD_TROUBLE_BROWSE_POLICY_ID } from "@/lib/goodTrouble/constants";
 import {
   enforcePartnerFlowRateLimit,
   recordPartnerFlowRequestOutcome,
@@ -33,6 +35,13 @@ import { extractLaunchpadFlowContext } from "@/lib/partner/launchpad/extractLaun
 import { recordEvaluateLaunchpadActivity, recordFlowFailureActivity } from "@/lib/partner/launchpad/mapPartnerFlowActivity";
 import { resolveLaunchpadPinnedPolicyVersion } from "@/lib/partner/launchpad/resolvePinnedPolicyVersion";
 import { PolicyChangeControlError } from "@/lib/policy/changeControl/codes";
+import { bindPartnerFlowContinuationForEvaluate } from "@/lib/partner/bindPartnerFlowContinuationForEvaluate";
+import {
+  attachPartnerContinueBindingCookie,
+  signPartnerContinueBindingCookie,
+} from "@/lib/partner/partnerVerifyResumeCookie";
+import { normalizeExpectedContentHash } from "@/lib/provenance/expectedContentHash";
+import { isContentOriginDisclosureFlow } from "@/lib/provenance/partnerFlow";
 
 export const dynamic = "force-dynamic";
 
@@ -76,6 +85,7 @@ export async function POST(request: NextRequest) {
     app?: string;
     launchpad_application_id?: string;
     application_id?: string;
+    expected_content_hash?: string;
   };
   try {
     body = await request.json();
@@ -83,7 +93,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const normalized = normalizePartnerVerifyInput({
+  const launchpadContext = extractLaunchpadFlowContext(body);
+
+  const normalized = await normalizePartnerVerifyWithLaunchpad({
+    app: body.app,
     partnerId: body.partner_id,
     relyingPartyId: body.relying_party_id,
     policyId: body.policy_id,
@@ -107,8 +120,6 @@ export async function POST(request: NextRequest) {
     permissionVersion,
   } = normalized.params;
 
-  const launchpadContext = extractLaunchpadFlowContext(body);
-
   const allowed = await isAllowedPartnerReturnUrl(partnerId, returnUrl);
   if (!allowed) {
     void recordFlowFailureActivity({
@@ -120,6 +131,13 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json(
       { error: "return_url is not allowed for this relying party" },
+      { status: 400 },
+    );
+  }
+
+  if (isGoodTroubleBrowseCallbackReturnUrl(returnUrl) && policyId !== GOOD_TROUBLE_BROWSE_POLICY_ID) {
+    return NextResponse.json(
+      { error: "Browse callback requires the Good Trouble browse policy", code: "tuple_conflict" },
       { status: 400 },
     );
   }
@@ -142,12 +160,35 @@ export async function POST(request: NextRequest) {
     throw e;
   }
 
+  if (isGoodTroubleBrowseCallbackReturnUrl(returnUrl)) {
+    resolvedPurpose = "browse";
+  }
+
+  const expectedContentHash = normalizeExpectedContentHash(body.expected_content_hash);
+  if (
+    body.expected_content_hash?.trim()
+    && !expectedContentHash
+  ) {
+    return NextResponse.json(
+      { error: "expected_content_hash must be a lowercase SHA-256 hex digest", code: "invalid_content_hash" },
+      { status: 400 },
+    );
+  }
+  if (expectedContentHash && !isContentOriginDisclosureFlow({ policyId })) {
+    return NextResponse.json(
+      { error: "expected_content_hash is only supported for content provenance policies", code: "content_hash_policy_mismatch" },
+      { status: 400 },
+    );
+  }
+
   try {
-    const expectedPolicyVersion = await resolveLaunchpadPinnedPolicyVersion({
-      context: launchpadContext,
-      partnerId,
-      policyId,
-    });
+    const launchpadApplicationId = normalized.launchpad?.applicationId ?? launchpadContext.applicationId;
+    const expectedPolicyVersion = normalized.launchpad?.policyVersion
+      ?? await resolveLaunchpadPinnedPolicyVersion({
+        context: { ...launchpadContext, applicationId: launchpadApplicationId },
+        partnerId,
+        policyId,
+      });
     const result = await evaluatePartnerFlow({
       partnerId,
       policyId,
@@ -156,6 +197,8 @@ export async function POST(request: NextRequest) {
       suiAddress: session.session.suiAddress,
       appOrigin: getPublicAppOriginFromRequest(request),
       expectedPolicyVersion,
+      launchpadApplicationId,
+      expectedContentHash,
     });
 
     const flowTraceId = resolvePartnerFlowTraceId({
@@ -290,7 +333,28 @@ export async function POST(request: NextRequest) {
       hasRedirectUrl: Boolean(result.redirect_url),
     });
 
-    return NextResponse.json({ ...enrichPartnerFlowResponse(result), flow_trace_id: flowTraceId });
+    const res = NextResponse.json({ ...enrichPartnerFlowResponse(result), flow_trace_id: flowTraceId });
+
+    if (result.verification_request_id) {
+      const bound = await bindPartnerFlowContinuationForEvaluate({
+        request,
+        verifyRequestId: result.verification_request_id,
+        partnerId,
+        policyId,
+        returnUrl,
+        purpose: resolvedPurpose,
+        policyVersion: result.policy_version,
+        appSlug: body.app?.trim() || undefined,
+      });
+      if (bound.ok) {
+        const bindingToken = await signPartnerContinueBindingCookie({
+          verifyRequestId: result.verification_request_id,
+        });
+        if (bindingToken) attachPartnerContinueBindingCookie(res, bindingToken);
+      }
+    }
+
+    return res;
   } catch (e) {
     if (e instanceof PolicyChangeControlError) {
       const flowTraceId = resolvePartnerFlowTraceId({});

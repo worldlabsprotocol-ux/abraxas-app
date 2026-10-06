@@ -17,6 +17,8 @@ export interface SelfAttestationBrowseFormProps {
   partnerName: string;
   returnUrl: string;
   partnerHomeUrl?: string | null;
+  /** Merchant already routed through Abraxas — hide the non-Abraxas age-check escape hatch. */
+  hideTraditionalFallback?: boolean;
   onConfirmed?: () => void;
   onUnder21?: () => void;
 }
@@ -63,6 +65,7 @@ export function SelfAttestationBrowseForm({
   partnerName,
   returnUrl,
   partnerHomeUrl,
+  hideTraditionalFallback = false,
   onConfirmed,
   onUnder21,
 }: SelfAttestationBrowseFormProps) {
@@ -361,7 +364,7 @@ export function SelfAttestationBrowseForm({
         {busy ? GOOD_TROUBLE_BROWSE_CHECKING_STATE : GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON}
       </button>
 
-      {partnerHomeUrl && (
+      {partnerHomeUrl && !hideTraditionalFallback && (
         <p style={{ marginTop: "1rem" }}>
           <a
             href={partnerHomeUrl}

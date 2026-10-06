@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const limited = enforceLaunchpadRateLimit(req, "/api/launchpad/applications", 10);
+  const limited = await enforceLaunchpadRateLimit(req, "/api/launchpad/applications", 10);
   if (limited) return limited;
 
   const sessionAuth = await requireLaunchpadSession(req);
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.forbidden, 403);
   }
   if (sessionPartnerId) {
-    const tenantLimited = enforceLaunchpadTenantRateLimit(
+    const tenantLimited = await enforceLaunchpadTenantRateLimit(
       req,
       "/api/launchpad/applications",
       sessionPartnerId,

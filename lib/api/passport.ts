@@ -162,6 +162,8 @@ export async function consentVerificationRequest(
   decision_reference: string;
   valid_until: string | null;
   reason_codes: string[];
+  receipt_id: string | null;
+  receipt_public_url: string | null;
 }> {
   const res = await fetch(`/api/v1/verification-requests/${requestId}/consent`, {
     method: "POST",
@@ -175,6 +177,8 @@ export async function consentVerificationRequest(
     decision_reference: string;
     valid_until: string | null;
     reason_codes: string[];
+    receipt_id: string | null;
+    receipt_public_url: string | null;
   };
 }
 

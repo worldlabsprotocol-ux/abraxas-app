@@ -21,6 +21,7 @@ import { PassportRecentActivity } from "@/components/passport/PassportRecentActi
 import { PassportRequestInbox } from "@/components/passport/PassportRequestInbox";
 import { PassportInstallCard } from "@/components/passport/PassportInstallCard";
 import { PassportConnectionsCard } from "@/components/passport/PassportConnectionsCard";
+import { PassportWalletsSection } from "@/components/passport/PassportWalletsSection";
 import { AbraxasIdentityCapture } from "@/components/passport/AbraxasIdentityCapture";
 import {
   PASSPORT_CRYPTO_DISCLOSURE,
@@ -34,6 +35,9 @@ import {
 } from "@/lib/passport/passportCustomerStatus";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import { PUBLIC_SURFACE } from "@/lib/design/publicSurface";
+import { TrustStatus } from "@/components/product/TrustStatus";
+import { PassportReuseStrip } from "@/components/passport/PassportReuseStrip";
+import { PassportIdentityObject, type PassportLifecycleState } from "@/components/passport/PassportIdentityObject";
 import type { CapturePolicyContext } from "@/lib/idv/capturePolicyContext";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -64,6 +68,20 @@ interface Props {
   onWalletBound?: () => Promise<WalletBindingRefreshState | void>;
   handoff: PartnerFlowHandoffController;
   capturePolicy?: CapturePolicyContext;
+}
+
+function buildPassportTrustItems(identityUi: string, hasCredential: boolean) {
+  const items: Array<{ kind: "verified" | "current" | "reusable" | "refresh_required" | "under_review" | "pending"; detail?: string }> = [];
+  if (identityUi === "verified" && hasCredential) {
+    items.push({ kind: "reusable", detail: "Ready for eligible partner requests" });
+  } else if (identityUi === "under_review") {
+    items.push({ kind: "under_review", detail: "Verification in progress" });
+  } else if (identityUi === "needs_action") {
+    items.push({ kind: "refresh_required", detail: "Needs attention before some requests" });
+  } else {
+    items.push({ kind: "pending", detail: "Verified only when a partner requires it" });
+  }
+  return items;
 }
 
 export function PassportCustomerView({
@@ -148,21 +166,36 @@ export function PassportCustomerView({
     <div>
       {walletDone && <PassportRequestInbox />}
 
-      <section style={CARD} aria-labelledby="passport-status-heading">
-        <p style={{
-          fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)",
-          letterSpacing: "0.04em", textTransform: "uppercase", margin: "0 0 0.35rem",
-        }}>
-          Passport status
-        </p>
-        <h2 id="passport-status-heading" style={{
-          fontFamily: FONT, fontSize: "1.1rem", fontWeight: 800, margin: "0 0 0.35rem", color: "var(--text-primary)",
-        }}>
-          {status.label}
-        </h2>
-        <p style={{ fontFamily: FONT, fontSize: "0.86rem", lineHeight: 1.6, color: "var(--text-secondary)", margin: 0 }}>
-          {status.summary}
-        </p>
+      <PassportIdentityObject
+        state={(
+          status.identityUi === "verified" && hasCredential
+            ? "reusable"
+            : status.identityUi === "verified"
+              ? "verified"
+              : status.identityUi === "needs_action"
+                ? "attention"
+                : walletDone
+                  ? "basic"
+                  : "unsigned"
+        ) satisfies PassportLifecycleState}
+        holderLabel={status.label}
+        detail={status.summary}
+        completionPercent={(setup.step / 3) * 100}
+      />
+      <section className="abx-passport-object__meta" style={{ ...CARD, marginTop: "0.85rem" }} aria-labelledby="passport-status-heading">
+        <h2 id="passport-status-heading" className="sr-only">{status.label}</h2>
+        <TrustStatus
+          audience="holder"
+          items={buildPassportTrustItems(status.identityUi, hasCredential)}
+        />
+        {hasCredential && status.identityUi === "verified" ? <PassportReuseStrip /> : null}
+        {proofItems.length > 0 && (
+          <ul className="abx-passport-object__proof-list">
+            {proofItems.map((item) => (
+              <li key={item} style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)" }}>{item}</li>
+            ))}
+          </ul>
+        )}
       </section>
 
       {walletDone && (
@@ -269,6 +302,10 @@ export function PassportCustomerView({
         <div style={{ marginBottom: "1rem" }}>
           <PartnerReturnCta handoff={handoff} label="Return to service →" />
         </div>
+      )}
+
+      {walletDone && browserSessionReady && (
+        <PassportWalletsSection onChanged={onRefresh} />
       )}
 
       {walletDone && (

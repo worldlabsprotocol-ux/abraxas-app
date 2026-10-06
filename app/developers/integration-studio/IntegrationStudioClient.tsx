@@ -6,6 +6,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ContentCard } from "@/components/redesign/RedesignContent";
+import { NextActionCard } from "@/components/product/NextActionCard";
+import { Reveal } from "@/lib/motion/Reveal";
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 import {
@@ -25,6 +27,8 @@ import { tradingVenueProfileExample } from "@/lib/partner/tradingVenue/profiles"
 import { launchpadConfigureHref } from "@/lib/partner/launchpad/partnerFlowRequest/contract";
 import { launchpadPolicyVersionHref } from "@/lib/partner/launchpad/policyVersionPlanner/contract";
 import { PolicyFitPlanner } from "@/app/developers/integration-studio/PolicyFitPlanner";
+import { ModeCCommandRail } from "@/components/product/ModeCCommandRail";
+import { PartnerBindingSelector } from "@/components/partner/launchpad/PartnerBindingSelector";
 import { OptionalWalletConnectionsPanel } from "@/app/developers/integration-studio/OptionalWalletConnectionsPanel";
 import { SolanaUsdcPlansPanel } from "@/app/developers/integration-studio/SolanaUsdcPlansPanel";
 import {
@@ -44,11 +48,19 @@ import {
   launchpadResumeHref,
   launchpadSandboxTestHref,
 } from "@/lib/partner/activationPath";
+import { IntegrationStudioOutcomePicker } from "@/components/gtm/IntegrationStudioOutcomePicker";
+import {
+  INTEGRATION_STUDIO_OUTCOMES,
+  isIntegrationStudioOutcomeId,
+  type IntegrationStudioOutcomeId,
+} from "@/lib/gtm/integrationStudioOutcomes";
+import { recordGtmClientEvent } from "@/lib/gtm/clientTelemetry";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
 
 const PATH_LABEL: Record<IntegrationStudioPathId, string> = {
+  verify_with_abraxas: "Verify with Abraxas",
   hosted_partner_flow: "Hosted Partner Flow",
   server_receipt_verify: "Server receipt verification",
   webhook_events: "Webhook / event delivery",
@@ -100,7 +112,11 @@ type ResumableApp = {
 export function IntegrationStudioClient() {
   const searchParams = useSearchParams();
   const packs = listStudioPackSummaries();
-  const [packId, setPackId] = useState(packs[1]?.pack_id ?? packs[0]?.pack_id ?? "age_21_retail");
+  const [packId, setPackId] = useState(() => {
+    const requested = searchParams.get("pack");
+    if (requested && isPolicyPackId(requested)) return requested;
+    return packs[1]?.pack_id ?? packs[0]?.pack_id ?? "age_21_retail";
+  });
   const [pathId, setPathId] = useState<IntegrationStudioPathId>(() => {
     const requested = searchParams.get("path");
     return requested && isIntegrationStudioPathId(requested) ? requested : "hosted_partner_flow";
@@ -126,6 +142,11 @@ export function IntegrationStudioClient() {
   const [resumeApp, setResumeApp] = useState<ResumableApp | null>(null);
   const [resumePartnerId, setResumePartnerId] = useState("");
   const [handoffNotice, setHandoffNotice] = useState("");
+  const [bindingId, setBindingId] = useState<string | null>(null);
+  const [selectedOutcomeId, setSelectedOutcomeId] = useState<IntegrationStudioOutcomeId | null>(() => {
+    const requested = searchParams.get("outcome");
+    return requested && isIntegrationStudioOutcomeId(requested) ? requested : null;
+  });
 
   const contract = useMemo(() => studioPackContract(packId), [packId]);
   const snippet = useMemo(() => studioSnippetForPath(pathId), [pathId]);
@@ -152,37 +173,53 @@ export function IntegrationStudioClient() {
     setOptionalCaps((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   }
 
+  const configuredAppId = created?.application_id ?? resumeApp?.id ?? null;
+
   async function generateStarter() {
     setKitError("");
     setKitBusy(true);
     try {
-      const res = await fetch("/api/developers/integration-studio/starter-kit", {
+      const payload = {
+        pack_id: packId,
+        path: pathId,
+        platform,
+        capabilities: optionalCaps,
+        ...(pathId === "trading_venue" ? { venue_profile_id: venueProfileId } : {}),
+      };
+      const endpoint = configuredAppId && signedIn
+        ? `/api/launchpad/applications/${configuredAppId}/starter-kit`
+        : "/api/developers/integration-studio/starter-kit";
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          pack_id: packId,
-          path: pathId,
-          platform,
-          capabilities: optionalCaps,
-          ...(pathId === "trading_venue" ? { venue_profile_id: venueProfileId } : {}),
-        }),
+        credentials: configuredAppId && signedIn ? "include" : "same-origin",
+        body: JSON.stringify(
+          configuredAppId && signedIn
+            ? { ...payload, binding_id: bindingId ?? "" }
+            : payload,
+        ),
       });
       const data = await res.json() as {
         ok?: boolean;
         error?: string;
+        code?: string;
         filename?: string;
+        kit?: { filename?: string; files?: Array<{ path: string; contents: string }>; archive_base64?: string };
         files?: Array<{ path: string; contents: string }>;
         archive_base64?: string;
       };
-      if (!res.ok || !data.ok || !data.files || !data.archive_base64) {
-        setKitError(data.error ?? "Could not generate starter kit");
+      const files = data.kit?.files ?? data.files;
+      const archive = data.kit?.archive_base64 ?? data.archive_base64;
+      const filename = data.kit?.filename ?? data.filename;
+      if (!res.ok || !data.ok || !files || !archive) {
+        setKitError(data.code ?? data.error ?? "Could not generate starter kit");
         setKitFiles([]);
         setKitArchive("");
         return;
       }
-      setKitFiles(data.files);
-      setKitArchive(data.archive_base64);
-      setKitFilename(data.filename ?? "abraxas-starter-kit.zip");
+      setKitFiles(files);
+      setKitArchive(archive);
+      setKitFilename(filename ?? "abraxas-starter-kit.zip");
     } catch {
       setKitError("Could not generate starter kit");
     } finally {
@@ -231,6 +268,13 @@ export function IntegrationStudioClient() {
     if (path && isIntegrationStudioPathId(path)) setPathId(path);
     if (requestedPlatform && isStarterKitPlatform(requestedPlatform)) setPlatform(requestedPlatform);
     if (requestedCapabilities.length > 0) setOptionalCaps(requestedCapabilities);
+    const outcome = params.get("outcome");
+    if (outcome && isIntegrationStudioOutcomeId(outcome)) {
+      setSelectedOutcomeId(outcome);
+      const mapped = INTEGRATION_STUDIO_OUTCOMES[outcome];
+      setPathId(mapped.defaultPathId);
+      setPackId(mapped.defaultPackId);
+    }
     if (params.get("source") === "browser-builder") {
       setHandoffNotice("Your browser-built plan is loaded. Review it, then generate the starter kit or continue to the hosted sandbox. No terminal is required.");
     } else if (pack && catalogVersion) {
@@ -310,6 +354,10 @@ export function IntegrationStudioClient() {
       if (data.application) {
         setCreated(data.application);
         setSignedIn(true);
+        void recordGtmClientEvent("sandbox_created", {
+          recommended_path: pathId,
+          environment: "sandbox",
+        });
       }
       if (data.api_key) setRevealedKey(data.api_key);
       if (data.path_instructions) setPathInstructions(data.path_instructions);
@@ -340,35 +388,111 @@ export function IntegrationStudioClient() {
         }
       : null;
 
+  const studioNextAction = created
+    ? {
+        action: "Test your sandbox integration",
+        detail: `${created.application_id.slice(0, 8)}… is ready in sandbox. Run a verification before requesting production.`,
+        href: launchpadSandboxTestHref(created.application_id),
+        buttonLabel: "Run test verification",
+      }
+    : resumeApp
+      ? {
+          action: `Continue ${resumeApp.application_name}`,
+          detail: "Your sandbox already exists. Launchpad shows the next merchant step from measured integration state.",
+          href: launchpadResumeHref(resumeApp.id),
+          buttonLabel: PARTNER_ACTIVATION_RESUME_CTA,
+        }
+      : {
+          action: "Choose a policy and create a sandbox",
+          detail: "Pick what customers must prove, review the privacy contract, then create a private test application.",
+          href: undefined,
+          buttonLabel: "Create sandbox below",
+        };
+
+  const railEnvironment = created || resumeApp ? "Sandbox" : "Not provisioned";
+  const railApplication = resumeApp?.application_name ?? created?.application_id ?? "—";
+  const railReadiness = studioNextAction.action;
+
   return (
     <>
-      {resumeApp && (
-        <ContentCard title={PARTNER_ACTIVATION_RESUME_CTA}>
-          <p style={{ ...body, marginBottom: "0.75rem" }}>
-            Signed in. Resume {resumeApp.application_name} ({resumeApp.public_slug}) on Partner Launchpad. Readiness stays on existing Launchpad evidence.
-          </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-            <Btn href={launchpadSandboxTestHref(resumeApp.id)} size="sm">Test your sandbox integration →</Btn>
-            <Btn href={launchpadConfigureHref(resumeApp.id)} variant="secondary" size="sm">Configure Partner Flow →</Btn>
-            <Btn href={launchpadPolicyVersionHref(resumeApp.id)} variant="secondary" size="sm">Policy version →</Btn>
-            <Btn href={launchpadResumeHref(resumeApp.id)} variant="ghost" size="sm">{PARTNER_ACTIVATION_RESUME_CTA} →</Btn>
-          </div>
-        </ContentCard>
+      <Reveal style={{ marginBottom: "1rem" }}>
+        <ModeCCommandRail
+          items={[
+            { id: "env", label: "Environment", value: railEnvironment, tone: "sandbox" },
+            { id: "policy", label: "Policy", value: packId.replace(/_/g, " "), tone: "neutral" },
+            { id: "app", label: "Application", value: railApplication, tone: "neutral" },
+            { id: "readiness", label: "Readiness", value: railReadiness, tone: created ? "ready" : "neutral" },
+          ]}
+        />
+      </Reveal>
+
+      <Reveal style={{ marginBottom: "1rem" }}>
+        <NextActionCard
+          title="What to do next"
+          action={studioNextAction.action}
+          detail={studioNextAction.detail}
+          href={studioNextAction.href}
+          buttonLabel={studioNextAction.buttonLabel}
+        />
+      </Reveal>
+
+      {resumeApp && !created && (
+        <Reveal delay={0.05}>
+          <ContentCard title="Current sandbox">
+            <p style={{ ...body, marginBottom: "0.75rem" }}>
+              Signed in as a partner developer. {resumeApp.application_name} ({resumeApp.public_slug}) is active in sandbox.
+            </p>
+            <details>
+              <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)" }}>
+                Developer shortcuts
+              </summary>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
+                <Btn href={launchpadSandboxTestHref(resumeApp.id)} size="sm" variant="secondary">Run test verification</Btn>
+                <Btn href={launchpadConfigureHref(resumeApp.id)} variant="ghost" size="sm">Configure callbacks</Btn>
+                <Btn href={launchpadPolicyVersionHref(resumeApp.id)} variant="ghost" size="sm">Policy version</Btn>
+              </div>
+            </details>
+          </ContentCard>
+        </Reveal>
       )}
 
-      <PolicyFitPlanner
-        onApply={(selection) => {
-          if (!isPolicyPackId(selection.packId)) return;
-          setPackId(selection.packId);
-          setPathId(selection.pathId);
-          setOptionalCaps(selection.capabilities);
-        }}
-      />
+      <Reveal delay={0.06}>
+        <IntegrationStudioOutcomePicker
+          selectedOutcomeId={selectedOutcomeId}
+          onSelect={({ outcomeId, pathId: nextPath, packId: nextPack }) => {
+            setSelectedOutcomeId(outcomeId);
+            setPathId(nextPath);
+            setPackId(nextPack);
+          }}
+        />
+      </Reveal>
 
+      <Reveal delay={0.08}>
+        <PolicyFitPlanner
+          onApply={(selection) => {
+            if (!isPolicyPackId(selection.packId)) return;
+            setPackId(selection.packId);
+            setPathId(selection.pathId);
+            setOptionalCaps(selection.capabilities);
+          }}
+        />
+      </Reveal>
+
+      <Reveal delay={0.1}>
       <ContentCard title="Discover · Choose a policy pack">
         <p style={{ ...body, marginBottom: "0.75rem" }}>
           These are the same packs Partner Launchpad uses. Identity or liveness is never the default path.
+          Content provenance verifies a holder&apos;s disclosure for a specific artifact without receiving the underlying file.
         </p>
+        {packId === "content_origin_disclosure" && contract ? (
+          <div style={{ ...body, marginBottom: "0.85rem", padding: "0.85rem", borderRadius: 12, border: "1px solid rgba(45,212,191,0.25)", background: "rgba(45,212,191,0.06)" }}>
+            <strong>What this proves:</strong> creator attestation (L0), AI assistance disclosure (L0), and source integrity for the bound fingerprint (L1).
+            <br />
+            <strong>What it does not prove:</strong> authorship, copyright, originality, or AI detection scores.
+            <br />
+            <Link href="/demo/reference-publisher" style={{ color: "var(--accent)", fontWeight: 700 }}>Open reference publisher demo</Link>
+          </div>
+        ) : null}
         {handoffNotice && (
           <p role="status" style={{ ...body, marginBottom: "0.75rem", color: "var(--text-primary)", fontWeight: 700 }}>
             {handoffNotice}
@@ -397,6 +521,7 @@ export function IntegrationStudioClient() {
           ))}
         </div>
       </ContentCard>
+      </Reveal>
 
       {contract && (
         <ContentCard title="Your policy result">
@@ -435,12 +560,12 @@ export function IntegrationStudioClient() {
         </ContentCard>
       )}
 
-      <ContentCard title="Integration path">
+      <ContentCard title="Advanced integration path">
         <p style={{ ...body, color: "var(--text-primary)" }}>
-          <strong>{PATH_LABEL[pathId]}</strong> is selected.
+          Recommended default: <strong>{PATH_LABEL[pathId]}</strong>
         </p>
         <details style={{ marginTop: "0.75rem" }}>
-          <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)" }}>Choose a different path</summary>
+          <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)" }}>Choose a different technical path</summary>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem", marginTop: "0.75rem" }}>
             {INTEGRATION_STUDIO_PATHS.map((id) => (
               <button
@@ -596,7 +721,20 @@ export function IntegrationStudioClient() {
       <ContentCard title="Generate your starter kit">
         <p style={{ ...body, marginBottom: "0.75rem" }}>
           Choose your platform, then generate a downloadable project with the selected Abraxas connection.
+          {configuredAppId && signedIn
+            ? " Your configured application pins the selected policy binding in generated code."
+            : " Sign in and create a sandbox to pin a live application binding."}
         </p>
+        {configuredAppId && signedIn && (
+          <div style={{ marginBottom: "0.85rem" }}>
+            <PartnerBindingSelector
+              applicationId={configuredAppId}
+              selectedBindingId={bindingId}
+              onSelect={setBindingId}
+              label="Integration policy"
+            />
+          </div>
+        )}
         <details style={{ marginBottom: "0.75rem" }}>
           <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)" }}>Technical requirements</summary>
           <ul style={{ ...body, paddingLeft: "1.1rem", margin: "0.65rem 0 0", display: "grid", gap: "0.3rem" }}>

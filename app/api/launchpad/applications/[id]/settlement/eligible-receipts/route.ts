@@ -21,7 +21,7 @@ type RouteContext = { params: { id: string } };
 export async function GET(req: NextRequest, { params }: RouteContext) {
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
-  const limited = enforceLaunchpadTenantRateLimit(
+  const limited = await enforceLaunchpadTenantRateLimit(
     req,
     "/api/launchpad/settlement/eligible-receipts",
     auth.session.partnerId,

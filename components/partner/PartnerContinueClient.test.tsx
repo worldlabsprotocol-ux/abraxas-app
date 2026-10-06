@@ -16,7 +16,30 @@ import {
   GOOD_TROUBLE_PARTNER_ID,
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
+import {
+  GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+  GOOD_TROUBLE_CANONICAL_POLICY_ID,
+} from "@/lib/goodTrouble/canonicalProductionConfig";
+import {
+  GOOD_TROUBLE_PURCHASE_DOB_CONTINUE,
+  GOOD_TROUBLE_PURCHASE_DOB_INTRO,
+  GOOD_TROUBLE_PURCHASE_TITLE,
+  GOOD_TROUBLE_PURCHASE_VERIFY_ACTION,
+} from "@/lib/partner/goodTroublePurchaseFlow";
+import userEvent from "@testing-library/user-event";
 import { PartnerContinueClient } from "./PartnerContinueClient";
+
+const GOOD_TROUBLE_PURCHASE_PROHIBITED_PHRASES = [
+  "Partner-provided eligibility check",
+  "Choose a qualifying method first",
+  "selecting a method does not issue",
+  "signed result",
+  "result category",
+  "assurance L2",
+  "meets policy assurance",
+  "age_eligible_21",
+  "Return to Passport",
+] as const;
 
 const mockAuthState = {
   suiAddress: "0xabc" as string | null,
@@ -35,6 +58,8 @@ vi.mock("@/components/sui/SuiAuthProvider", () => ({
     suiAddress: mockAuthState.suiAddress,
     isLoading: mockAuthState.isLoading,
     session: mockAuthState.session,
+    refreshSession: vi.fn(),
+    signInWithGoogle: vi.fn(),
   }),
 }));
 
@@ -110,19 +135,18 @@ describe("PartnerContinueClient Good Trouble browse journey", () => {
     cleanup();
   });
 
-  it("renders the simplified browse screen immediately after sign-in", async () => {
+  it("renders DOB intake directly after sign-in without duplicate orientation chrome", async () => {
     render(<PartnerContinueClient />);
-
-    await waitFor(() => {
-      expect(screen.getByText(GOOD_TROUBLE_BROWSE_EYEBROW)).toBeTruthy();
-    });
-
-    expect(screen.getByRole("heading", { name: GOOD_TROUBLE_BROWSE_HEADING })).toBeTruthy();
-    expect(screen.getByText(GOOD_TROUBLE_BROWSE_SUPPORTING)).toBeTruthy();
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON })).toBeTruthy();
     });
+
+    expect(screen.getByText(GOOD_TROUBLE_BROWSE_HEADING)).toBeTruthy();
+    expect(screen.queryByText(GOOD_TROUBLE_BROWSE_EYEBROW)).toBeNull();
+    expect(screen.queryByText(GOOD_TROUBLE_BROWSE_SUPPORTING)).toBeNull();
+    expect(screen.queryByText(/What this request covers/i)).toBeNull();
+    expect(screen.queryByRole("heading", { name: /Continue with Good Trouble/i })).toBeNull();
     expect(screen.getByLabelText("Month")).toBeTruthy();
     expect(screen.queryByText("Return pending")).toBeNull();
     expect(screen.queryByText("PartnerFlowReturnHandler")).toBeNull();
@@ -156,7 +180,56 @@ describe("PartnerContinueClient Good Trouble browse journey", () => {
     });
   });
 
-  it("shows browse chrome during context load when browse policy is in URL without purpose", async () => {
+  it("renders canonical Good Trouble browse DOB path — never purchase Verify step", async () => {
+    mockSearchParams = new URLSearchParams({
+      verify_request: "vr-canonical-browse",
+    });
+
+    global.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/v1/verification-requests/vr-canonical-browse")) {
+        return new Response(JSON.stringify({
+          partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+          policy_id: GOOD_TROUBLE_BROWSE_POLICY_ID,
+          purpose: "browse",
+        }), { status: 200 });
+      }
+      if (url.includes("/api/age-assurance/browse-reuse")) {
+        return new Response(JSON.stringify({ ok: false, code: "no_reusable_browse_proof" }), { status: 404 });
+      }
+      if (url.includes("/api/v1/partner-verify/method-qualification")) {
+        return new Response(JSON.stringify({
+          ok: true,
+          method_qualified: false,
+          issuedReceipt: false,
+        }), { status: 200 });
+      }
+      if (url.includes("/api/v1/partner-verify/continue-binding")) {
+        return new Response(JSON.stringify({
+          ok: true,
+          partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+          policy_id: GOOD_TROUBLE_BROWSE_POLICY_ID,
+          purpose: "browse",
+          return_url: "https://www.goodtroublecanna.com/browse-verification-result?gtb=gtb_test",
+        }), { status: 200 });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    }) as typeof fetch;
+
+    render(<PartnerContinueClient />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON })).toBeTruthy();
+    });
+
+    expect(screen.getByText(GOOD_TROUBLE_BROWSE_HEADING)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: GOOD_TROUBLE_PURCHASE_VERIFY_ACTION })).toBeNull();
+    expect(screen.queryByText("Verify")).toBeNull();
+    expect(screen.queryByRole("button", { name: /Secure your Passport/i })).toBeNull();
+    expect(screen.queryByText(/Use selected method/i)).toBeNull();
+  });
+
+  it("shows minimal browse chrome during context load when browse policy is in URL without purpose", async () => {
     mockSearchParams = new URLSearchParams({
       verify_request: "vr-browse-1",
       partner_id: GOOD_TROUBLE_PARTNER_ID,
@@ -167,9 +240,9 @@ describe("PartnerContinueClient Good Trouble browse journey", () => {
     render(<PartnerContinueClient />);
 
     await waitFor(() => {
-      expect(screen.getByText(GOOD_TROUBLE_BROWSE_EYEBROW)).toBeTruthy();
+      expect(screen.getByText(GOOD_TROUBLE_BROWSE_HEADING)).toBeTruthy();
     });
-    expect(screen.getByRole("heading", { name: GOOD_TROUBLE_BROWSE_HEADING })).toBeTruthy();
+    expect(screen.queryByText(GOOD_TROUBLE_BROWSE_EYEBROW)).toBeNull();
     expect(screen.queryByText(/Verify eligibility for purchase/i)).toBeNull();
     expect(screen.queryByText(/Continue with ID Verification/i)).toBeNull();
     expect(screen.queryByText(/Return pending/i)).toBeNull();
@@ -317,6 +390,268 @@ describe("PartnerContinueClient holder recovery", () => {
       expect(screen.getByText(/could not be found/i)).toBeTruthy();
     });
     expect(container.textContent).not.toMatch(/evil\.example|dr_secret|receipt_id|SQLSTATE/i);
+    expect(container.textContent).not.toMatch(/SHARED RESULT CATEGORY|WITHHELD|SHARED ✓/i);
+  });
+
+  it("bootstraps canonical Good Trouble purchase continue flow without mandatory Google", async () => {
+    mockAuthState.suiAddress = null;
+    mockAuthState.isLoading = false;
+    mockSearchParams = new URLSearchParams({
+      verify_request: "vr-canonical",
+      partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+      policy_id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
+    });
+    global.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/auth/hosted-holder/bootstrap")) {
+        mockAuthState.suiAddress = "0xhosted";
+        return new Response(JSON.stringify({ ok: true, sui_address: "0xhosted" }), { status: 200 });
+      }
+      if (url.includes("/api/v1/verification-requests/vr-canonical")) {
+        return new Response(JSON.stringify({
+          partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+          policy_id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
+        }), { status: 200 });
+      }
+      if (url.includes("continue-binding") || url.includes("method-qualification")) {
+        return new Response(JSON.stringify({ ok: true, method_qualified: false }), { status: 200 });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    }) as typeof fetch;
+
+    render(<PartnerContinueClient />);
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/api/auth/hosted-holder/bootstrap"),
+        expect.objectContaining({ method: "POST" }),
+      );
+    });
+    expect(screen.queryByText(/Sign in to continue/i)).toBeNull();
+  });
+
+  function mockCanonicalPurchaseFetch(options?: { dobPrequal?: "none" | "over_21" | "under_21" }) {
+    return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/api/v1/verification-requests/vr-canonical-purchase")) {
+        return new Response(JSON.stringify({
+          partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+          policy_id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
+        }), { status: 200 });
+      }
+      if (url.includes("/api/v1/partner-verify/continue-binding")) {
+        return new Response(JSON.stringify({
+          ok: true,
+          return_url: "https://www.goodtroublecanna.com/age-verification-result?gtv=gtv_test",
+        }), { status: 200 });
+      }
+      if (url.includes("/api/v1/partner-verify/method-qualification") && init?.method === "POST") {
+        return new Response(JSON.stringify({
+          ok: false,
+          code: "canonical_single_path",
+          method_qualified: false,
+        }), { status: 400 });
+      }
+      if (url.includes("/api/v1/partner-verify/method-qualification")) {
+        return new Response(JSON.stringify({
+          ok: true,
+          method_qualified: false,
+          issuedReceipt: false,
+          reuse: { available: false, state: "none" },
+        }), { status: 200 });
+      }
+      if (url.includes("/api/v1/partner-verify/good-trouble/dob-prequal") && init?.method === "POST") {
+        return new Response(JSON.stringify({
+          ok: true,
+          age_band: "over_21",
+          eligible_for_idv: true,
+          valid_for_authoritative_decision: false,
+        }), { status: 200 });
+      }
+      if (url.includes("/api/v1/partner-verify/good-trouble/dob-prequal")) {
+        const band = options?.dobPrequal ?? "none";
+        if (band === "none") {
+          return new Response(JSON.stringify({ ok: true, prequal_complete: false }), { status: 200 });
+        }
+        return new Response(JSON.stringify({
+          ok: true,
+          prequal_complete: true,
+          age_band: band,
+          eligible_for_idv: band === "over_21",
+        }), { status: 200 });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    }) as typeof fetch;
+  }
+
+  it("shows DOB intake first for canonical Good Trouble purchase holders", async () => {
+    mockAuthState.suiAddress = "0xabc";
+    mockSearchParams = new URLSearchParams({
+      verify_request: "vr-canonical-purchase",
+      partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+      policy_id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
+    });
+    global.fetch = mockCanonicalPurchaseFetch();
+
+    const { container } = render(<PartnerContinueClient />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: GOOD_TROUBLE_PURCHASE_DOB_CONTINUE })).toBeTruthy();
+    });
+
+    expect(screen.getAllByText(GOOD_TROUBLE_PURCHASE_DOB_INTRO).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("heading", { name: /Continue with Good Trouble/i })).toBeNull();
+    expect(screen.queryByText(/What this request covers/i)).toBeNull();
+    expect(screen.getByText("Age")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Secure your Passport/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Use selected method/i })).toBeNull();
+
+    const text = container.textContent ?? "";
+    for (const phrase of GOOD_TROUBLE_PURCHASE_PROHIBITED_PHRASES) {
+      expect(text).not.toContain(phrase);
+    }
+  });
+
+  it("routes DOB 21+ to Verify my age without generic method chooser", async () => {
+    mockAuthState.suiAddress = "0xabc";
+    mockSearchParams = new URLSearchParams({
+      verify_request: "vr-canonical-purchase",
+      partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+      policy_id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
+    });
+    global.fetch = mockCanonicalPurchaseFetch();
+    render(<PartnerContinueClient />);
+    const user = userEvent.setup();
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: GOOD_TROUBLE_PURCHASE_DOB_CONTINUE })).toBeTruthy();
+    });
+
+    await user.type(screen.getByLabelText("Month"), "01");
+    await user.type(screen.getByLabelText("Day"), "15");
+    await user.type(screen.getByLabelText("Year"), "1990");
+    await user.click(screen.getByRole("button", { name: GOOD_TROUBLE_PURCHASE_DOB_CONTINUE }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: GOOD_TROUBLE_PURCHASE_VERIFY_ACTION })).toBeTruthy();
+    });
+    expect(screen.queryByRole("button", { name: /Use selected method/i })).toBeNull();
+  });
+
+  it("resolves opaque vr_* via hosted continue-context and renders verification UI", async () => {
+    mockAuthState.suiAddress = "0xabc";
+    mockAuthState.isLoading = false;
+    mockSearchParams = new URLSearchParams({
+      verify_request: "vr_e0cad2cb197ddc3d",
+    });
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/v1/hosted-handoff/continue-context")) {
+        return new Response(JSON.stringify({
+          partner_id: "ref-wc-postrev-5ffe",
+          policy_id: "ref-wc-postrev-5ffe-wallet_control-v1",
+          purpose: "Confirm you control an eligible wallet",
+          return_url: "https://example.com/callback",
+        }), { status: 200 });
+      }
+      if (url.includes("/api/v1/partner-verify/method-qualification")) {
+        return new Response(JSON.stringify({
+          ok: true,
+          method_qualified: false,
+          issuedReceipt: false,
+        }), { status: 200 });
+      }
+      if (url.includes("/api/v1/verification-requests/")) {
+        throw new Error(`Legacy verification-requests must not be called for vr_*: ${url}`);
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    }) as typeof fetch;
+    global.fetch = fetchMock;
+
+    render(<PartnerContinueClient />);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/could not be found/i)).toBeNull();
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/api/v1/hosted-handoff/continue-context?verify_request=vr_e0cad2cb197ddc3d"),
+      expect.objectContaining({ credentials: "include" }),
+    );
+    expect(
+      fetchMock.mock.calls.filter(([url]) => String(url).includes("/api/v1/hosted-handoff/continue-context")),
+    ).toHaveLength(1);
+  });
+
+  it("maps hosted continue-context unavailable to provider recovery, not missing", async () => {
+    mockAuthState.suiAddress = "0xabc";
+    mockSearchParams = new URLSearchParams({
+      verify_request: "vr_unavailable00001",
+    });
+    global.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/v1/hosted-handoff/continue-context")) {
+        return new Response(JSON.stringify({ code: "unavailable" }), { status: 503 });
+      }
+      if (url.includes("/api/v1/partner-verify/method-qualification")) {
+        return new Response(JSON.stringify({ ok: true, method_qualified: false }), { status: 200 });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    }) as typeof fetch;
+
+    render(<PartnerContinueClient />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/verification method is unavailable/i)).toBeTruthy();
+    });
+    expect(screen.queryByText(/could not be found/i)).toBeNull();
+  });
+
+  it("maps hosted continue-context missing to the missing recovery state", async () => {
+    mockAuthState.suiAddress = "0xabc";
+    mockSearchParams = new URLSearchParams({
+      verify_request: "vr_missing00000001",
+    });
+    global.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/v1/hosted-handoff/continue-context")) {
+        return new Response(JSON.stringify({ code: "missing" }), { status: 404 });
+      }
+      if (url.includes("/api/v1/partner-verify/method-qualification")) {
+        return new Response(JSON.stringify({ ok: true, method_qualified: false }), { status: 200 });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    }) as typeof fetch;
+
+    render(<PartnerContinueClient />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/could not be found/i)).toBeTruthy();
+    });
+  });
+
+  it("maps hosted continue-context expired to the expired recovery state", async () => {
+    mockAuthState.suiAddress = "0xabc";
+    mockSearchParams = new URLSearchParams({
+      verify_request: "vr_expired00000001",
+    });
+    global.fetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/v1/hosted-handoff/continue-context")) {
+        return new Response(JSON.stringify({ code: "expired" }), { status: 410 });
+      }
+      if (url.includes("/api/v1/partner-verify/method-qualification")) {
+        return new Response(JSON.stringify({ ok: true, method_qualified: false }), { status: 200 });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    }) as typeof fetch;
+
+    render(<PartnerContinueClient />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/request expired/i)).toBeTruthy();
+    });
+    expect(screen.queryByText(/could not be found/i)).toBeNull();
   });
 
   it("asks the holder to sign in again after session loss without exposing wallet copy", async () => {

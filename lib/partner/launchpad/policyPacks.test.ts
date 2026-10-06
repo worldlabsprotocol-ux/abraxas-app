@@ -17,6 +17,9 @@ const ALLOWED_CLAIMS = new Set<ClaimType>([
   "residency_country",
   "wallet_binding_confirmed",
   "product_eligibility",
+  "creator_attested",
+  "ai_assistance_disclosed",
+  "source_integrity_verified",
 ]);
 
 const REQUIRED_PACK_IDS: PolicyPackId[] = [
@@ -29,6 +32,9 @@ const REQUIRED_PACK_IDS: PolicyPackId[] = [
   "identity_liveness",
   "sandbox_economic_demo",
   "sandbox_institutional_protocol_access",
+  "content_origin_disclosure",
+  "content_ai_disclosure",
+  "content_source_integrity",
 ];
 
 describe("policy packs catalog", () => {

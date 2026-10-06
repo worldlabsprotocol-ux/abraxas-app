@@ -43,8 +43,8 @@
   "criticalMarkers": [
     {
       "id": "hero-centered",
-      "file": "components/home/HomeSharpHero.tsx",
-      "mustContain": ["abx-home-hero", "abx-home-hero-actions"]
+      "file": "components/home/cinematic/thesis/CinematicHero.tsx",
+      "mustContain": ["abx-home-hero", "abx-home-hero-actions", "CINEMATIC_THESIS_LINE_1"]
     },
     {
       "id": "home-shell-centered",
@@ -69,12 +69,12 @@
     {
       "id": "command-center-map",
       "file": "components/redesign/RedesignHome.tsx",
-      "mustContain": ["HomeCapabilityMap", "HomeProtocolMap", "HomeUseCases", "HomeGoodTroubleIntegration"]
+      "mustContain": ["CinematicHero", "HomeBuyerContextSection", "HomeTwoAppReferenceProof", "ScrollDisclosureStory", "VerifyOnceThesisDiagram", "HomeGoodTroubleIntegration", "HomeAudiencePanels", "HomeTrustClose"]
     },
     {
-      "id": "good-trouble-sandbox",
+      "id": "good-trouble-production-demo",
       "file": "lib/home/goodTroubleIntegrationDemo.ts",
-      "mustContain": ["See Abraxas in action", "SANDBOX EXAMPLE"]
+      "mustContain": ["Private eligibility in production.", "ABRAXAS × GOOD TROUBLE", "gtdemoofficial.mp4"]
     }
   ],
   "protectedAssetPaths": [

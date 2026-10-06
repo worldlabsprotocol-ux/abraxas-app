@@ -59,7 +59,7 @@ describe("purchaseVerificationLogic", () => {
         flowId: `gtf_${"a".repeat(64)}`,
         verifier: "b".repeat(64),
         purpose: "purchase",
-        policyId: "good-trouble-retail-v1",
+        policyId: "good-trouble-age_21_retail-v1",
       },
       viewMode: "Site",
     });
@@ -79,6 +79,7 @@ describe("purchaseVerificationLogic", () => {
         verifier: "b".repeat(64),
       })),
       getViewMode: vi.fn(async () => "Site"),
+      getReturnDestination: vi.fn(() => "/cart"),
       storeVerifier: vi.fn(),
       saveReturnDestination: vi.fn(),
       navigateToVerifyUrl: vi.fn(),
@@ -88,6 +89,8 @@ describe("purchaseVerificationLogic", () => {
     const result = await controller.start();
 
     expect(result).toEqual({ ok: true, code: "redirecting", result: expect.any(Object) });
+    expect(deps.startPurchaseVerification).toHaveBeenCalledWith("/cart");
+    expect(deps.saveReturnDestination).toHaveBeenCalledWith("/cart");
     expect(deps.storeVerifier).toHaveBeenCalledOnce();
     expect(deps.navigateToVerifyUrl).toHaveBeenCalledOnce();
   });
@@ -101,6 +104,7 @@ describe("purchaseVerificationLogic", () => {
         verifier: "b".repeat(64),
       })),
       getViewMode: vi.fn(async () => "Preview"),
+      getReturnDestination: vi.fn(() => "/cart"),
       storeVerifier: vi.fn(),
       saveReturnDestination: vi.fn(),
       navigateToVerifyUrl: vi.fn(),

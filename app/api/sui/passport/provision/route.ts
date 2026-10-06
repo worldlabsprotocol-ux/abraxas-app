@@ -12,6 +12,7 @@ import {
 import { getSuiClient } from "@/lib/sui/serverClient";
 import { getSuiDeployment, getActiveSuiNetwork, passportTypeFilter, suiExplorerObject, suiExplorerTx } from "@/lib/sui/config";
 import { parseSuiPassportObject } from "@/lib/sui/parsePassport";
+import { classifySuiRpcError } from "@/lib/sui/rpcReadiness";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -176,8 +177,16 @@ export async function POST(req: NextRequest) {
       ...statusPayload(sui, db, onChain, true, true),
     });
   } catch (e: unknown) {
+    const rpcFailure = classifySuiRpcError(e);
+    if (rpcFailure) {
+      console.error("[provision]", rpcFailure.code, rpcFailure.rpc_host, rpcFailure.http_status);
+      return NextResponse.json(
+        { error: rpcFailure.message, code: rpcFailure.code },
+        { status: 503 },
+      );
+    }
     const message = e instanceof Error ? e.message : "Provision failed";
     console.error("[provision]", message);
-    return NextResponse.json({ error: message }, { status: 502 });
+    return NextResponse.json({ error: message, code: "provision_failed" }, { status: 502 });
   }
 }

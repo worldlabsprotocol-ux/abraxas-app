@@ -25,11 +25,13 @@ export interface ZkLoginPendingSession {
 
 export interface ZkLoginUserSession {
   suiAddress: string;
-  provider: "google" | "apple";
+  provider: "google" | "apple" | "abraxas_hosted";
   oauthSub?: string;
   email?: string;
   maxEpoch: number;
   loggedInAt: string;
+  /** Abraxas-native hosted session (no Google OAuth). */
+  sessionKind?: "hosted" | "oauth";
 }
 
 export function savePendingSession(session: ZkLoginPendingSession): void {

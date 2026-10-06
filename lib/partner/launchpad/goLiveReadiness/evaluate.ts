@@ -302,10 +302,12 @@ export function buildGoLiveReadinessView(
   ];
 
   const requiredPass = checks.filter((check) => check.required).every((check) => check.status === "pass");
-  const reviewGates = requiredPass && productionCallback && domainVerified && !sandboxOnlyPack && !approved && !pending;
+  const reviewGates = requiredPass && productionCallback && domainVerified && !approved && !pending;
 
   let lifecycle: GoLiveLifecycle = "needs_setup";
-  if (approved) lifecycle = "approved_for_production";
+  if (evidence.environment === "production" && evidence.status === "active") {
+    lifecycle = "production_active";
+  } else if (approved) lifecycle = "approved_for_production";
   else if (pending) lifecycle = "under_review";
   else if (reviewGates) lifecycle = "ready_to_request_review";
 

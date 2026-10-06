@@ -37,6 +37,7 @@ describe("Integration Studio policy fit", () => {
       intent({ action: "redemption_access", category: "collector_redemption" }),
       intent({ action: "higher_assurance_identity", category: "identity_liveness" }),
       intent({ action: "sandbox_demo", category: "sandbox_demo" }),
+      intent({ action: "content_provenance_publish", category: "content_provenance" }),
     ];
     const packs = new Set<string>();
     for (const item of cases) {
@@ -47,10 +48,12 @@ describe("Integration Studio policy fit", () => {
       expect(view.studio_selection.pack_id).toBe(view.recommended?.pack_id);
       packs.add(view.recommended!.pack_id);
     }
-    const launchpadReviewed = POLICY_PACK_LIST.filter(
-      (pack) => pack.id === "sandbox_institutional_protocol_access",
+    const excludedFromPlanner = POLICY_PACK_LIST.filter(
+      (pack) => pack.id === "sandbox_institutional_protocol_access"
+        || pack.id === "content_ai_disclosure"
+        || pack.id === "content_source_integrity",
     ).length;
-    expect(packs.size).toBe(POLICY_PACK_LIST.length - launchpadReviewed);
+    expect(packs.size).toBe(POLICY_PACK_LIST.length - excludedFromPlanner);
   });
 
   it("returns a no-fit path for mismatched or Production-only sandbox packs", () => {
@@ -146,7 +149,7 @@ describe("Integration Studio policy fit", () => {
   });
 
   it("covers every action-to-category mapping used by the planner", () => {
-    expect(Object.keys(POLICY_FIT_ACTION_CATEGORIES).length).toBe(7);
-    expect(Object.keys(POLICY_FIT_CATEGORY_TO_PACK).length).toBe(8);
+    expect(Object.keys(POLICY_FIT_ACTION_CATEGORIES).length).toBe(8);
+    expect(Object.keys(POLICY_FIT_CATEGORY_TO_PACK).length).toBe(9);
   });
 });

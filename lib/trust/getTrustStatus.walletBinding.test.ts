@@ -26,6 +26,8 @@ vi.mock("@supabase/supabase-js", () => ({
 
 import { getTrustStatus, WALLET_BINDING_READ_FAILED_CODE } from "./getTrustStatus";
 
+const SUI_BINDING_ID = "11111111-1111-4111-8111-111111111111";
+
 function intentChallengesTable() {
   return {
     select: (cols?: string) => {
@@ -199,6 +201,7 @@ describe("getTrustStatus wallet binding truth", () => {
                   eq: () => ({
                     maybeSingle: async () => ({
                       data: {
+                        id: SUI_BINDING_ID,
                         binding_method: "zklogin",
                         binding_status: "active",
                         revoked_at: null,
@@ -216,7 +219,10 @@ describe("getTrustStatus wallet binding truth", () => {
               eq: () => ({
                 eq: () => ({
                   eq: () => ({
-                    maybeSingle: async () => ({ data: { id: "claim-1" } }),
+                    eq: () => ({
+                      maybeSingle: async () => ({ data: { id: "claim-1" }, error: null }),
+                    }),
+                    is: async () => ({ data: [], error: null }),
                   }),
                 }),
               }),

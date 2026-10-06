@@ -1,17 +1,20 @@
 // FILE: lib/partner/resolvePartnerContinueContext.ts
 // Authoritative partner /continue flow context — server policy wins over loose URL params.
 
+import { GOOD_TROUBLE_BROWSE_POLICY_ID } from "@/lib/goodTrouble/constants";
 import {
-  GOOD_TROUBLE_BROWSE_POLICY_ID,
-  GOOD_TROUBLE_PARTNER_ID,
-  GOOD_TROUBLE_RETAIL_POLICY_ID,
-} from "@/lib/goodTrouble/constants";
-import { isGoodTroubleBrowseFlow } from "@/lib/partner/goodTroubleBrowseFlow";
+  isGoodTroubleBrowseFlow,
+  isGoodTroubleBrowsePartnerId,
+} from "@/lib/partner/goodTroubleBrowseFlow";
 import {
   normalizeGoodTroubleBrowseReturnUrl,
   normalizePartnerVerifyInput,
   shouldNormalizeGoodTroubleBrowseReturnUrl,
 } from "@/lib/partner/normalizePartnerVerifyInput";
+import { isGoodTroubleRegulatedPurchasePolicyId } from "@/lib/partner/goodTroublePurchaseFlow";
+import { findProductionPolicyRules } from "@/lib/policy/productionPolicyContract";
+import { isBrowseAccessPolicy } from "@/lib/policy/selfAttestationGuards";
+import { isContentOriginDisclosurePolicyId } from "@/lib/provenance/constants";
 
 export type PartnerContinueUrlParams = {
   partnerId: string;
@@ -29,6 +32,7 @@ export type PartnerContinueServerContext = {
 
 export type ResolvedPartnerContinueContext = PartnerContinueUrlParams & {
   isDobFirstBrowse: boolean;
+  isContentOriginDisclosure: boolean;
   authoritative: boolean;
 };
 
@@ -41,7 +45,7 @@ export function derivePurposeFromAuthoritativePolicy(input: {
   policyId: string;
   urlPurpose?: string | null;
 }): string | null {
-  if (input.partnerId !== GOOD_TROUBLE_PARTNER_ID) {
+  if (!isGoodTroubleBrowsePartnerId(input.partnerId)) {
     return input.urlPurpose?.trim() || null;
   }
 
@@ -49,12 +53,26 @@ export function derivePurposeFromAuthoritativePolicy(input: {
     return "browse";
   }
 
-  if (input.policyId === GOOD_TROUBLE_RETAIL_POLICY_ID) {
-    const urlPurpose = input.urlPurpose?.trim();
-    return urlPurpose === "purchase" ? "purchase" : "purchase";
+  if (isGoodTroubleRegulatedPurchasePolicyId(input.policyId)) {
+    return "purchase";
   }
 
   return input.urlPurpose?.trim() || null;
+}
+
+/** Authoritative L0 browse — policy rules win over loose URL purpose. */
+export function isAuthoritativeBrowseAccessFlow(input: {
+  policyId: string;
+  purpose?: string | null;
+}): boolean {
+  const policyId = input.policyId.trim();
+  if (!policyId) return false;
+  if (input.purpose?.trim() === "purchase") return false;
+
+  if (policyId === GOOD_TROUBLE_BROWSE_POLICY_ID) return true;
+
+  const rules = findProductionPolicyRules(policyId);
+  return rules ? isBrowseAccessPolicy(rules) : false;
 }
 
 export function resolvePartnerContinueContext(
@@ -96,7 +114,7 @@ export function resolvePartnerContinueContext(
     partnerId,
     policyId,
     purpose,
-  });
+  }) || isAuthoritativeBrowseAccessFlow({ policyId, purpose });
 
   const returnUrl = shouldNormalizeGoodTroubleBrowseReturnUrl({
     partnerId,
@@ -114,6 +132,7 @@ export function resolvePartnerContinueContext(
     returnUrl,
     verifyRequestId: url.verifyRequestId,
     isDobFirstBrowse,
+    isContentOriginDisclosure: isContentOriginDisclosurePolicyId(policyId),
     authoritative,
   };
 }

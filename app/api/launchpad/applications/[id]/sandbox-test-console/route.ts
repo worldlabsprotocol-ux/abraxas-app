@@ -24,7 +24,7 @@ async function loadConsole(req: NextRequest, applicationId: string) {
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return { ok: false as const, response: auth.response };
 
-  const limited = enforceLaunchpadTenantRateLimit(
+  const limited = await enforceLaunchpadTenantRateLimit(
     req,
     "/api/launchpad/sandbox-test-console",
     auth.session.partnerId,

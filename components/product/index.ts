@@ -1,0 +1,25 @@
+// FILE: components/product/index.ts
+
+export { PrivacyDisclosureCard } from "./PrivacyDisclosureCard";
+export type { PrivacyDisclosureCardProps } from "./PrivacyDisclosureCard";
+export { TrustStatus } from "./TrustStatus";
+export type { TrustStatusItem, TrustStatusKind } from "./TrustStatus";
+export { EnvironmentBadge } from "./EnvironmentBadge";
+export { IntegrationJourney, buildDefaultJourneyStages } from "./IntegrationJourney";
+export type { JourneyStage, JourneyStageId, JourneyStageStatus } from "./IntegrationJourney";
+export { PilotCriteriaList } from "./PilotCriteriaList";
+export { EvidenceTimeline } from "./EvidenceTimeline";
+export type { TimelineEvent } from "./EvidenceTimeline";
+export { NextActionCard } from "./NextActionCard";
+export { ProductOutcomeState } from "./ProductOutcomeState";
+export type { ProductOutcomeKind } from "./ProductOutcomeState";
+export { LegacyProductTransition } from "./LegacyProductTransition";
+export { MetricWithProvenance } from "./MetricWithProvenance";
+export type { MetricProvenance } from "./MetricWithProvenance";
+export { PermissionStatusList } from "./PermissionStatus";
+export { EligibilityPolicyCard } from "./EligibilityPolicyCard";
+export { HomeArchitectureFlow } from "./HomeArchitectureFlow";
+export { HomeProblemComparison } from "./HomeProblemComparison";
+export { VerifyOnceThesisDiagram } from "./VerifyOnceThesisDiagram";
+export { HolderRequestFlowStrip } from "./HolderRequestFlowStrip";
+export type { HolderRequestFlowStripProps } from "./HolderRequestFlowStrip";

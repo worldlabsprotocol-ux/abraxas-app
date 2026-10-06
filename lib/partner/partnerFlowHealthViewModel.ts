@@ -66,6 +66,7 @@ const ENDPOINT_FRIENDLY_NAMES: Record<string, string> = {
   "/api/v1/partner-flow/complete": "Flow completion",
   "/api/v1/partner-flow/refresh": "Session refresh",
   "/api/receipts/public": "Public receipt lookup",
+  "/api/receipts/narrow-result": "Narrow partner result lookup",
   "/api/v1/verification-requests/consent": "Verification consent",
 };
 

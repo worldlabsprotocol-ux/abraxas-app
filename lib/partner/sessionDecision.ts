@@ -2,6 +2,7 @@
 // Idempotent session decision lookup — reuse active decision within TTL.
 
 import { normalizeSuiAddress } from "@mysten/sui/utils";
+import { isVerificationRequestUuid } from "@/lib/partner/partnerFlowContinuationIdentifiers";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { getReceiptByDecisionId } from "@/lib/decisionReceipts/service";
 import type { StoredPartnerFlowDecisionIdentity } from "@/lib/partner/partnerFlowIdempotency";
@@ -74,6 +75,9 @@ export async function findReceiptForVerificationRequest(input: {
   verificationRequestId: string;
   subjectId: string;
 }): Promise<{ decision_id: string; receipt_id: string; receipt: NonNullable<Awaited<ReturnType<typeof getReceiptByDecisionId>>> } | null> {
+  if (!isVerificationRequestUuid(input.verificationRequestId)) {
+    return null;
+  }
   const sb = requireSupabaseAdmin();
   const subject = normalizeSuiAddress(input.subjectId);
   const { data, error } = await sb
@@ -103,6 +107,9 @@ export async function findDecisionByVerificationRequest(input: {
   verificationRequestId: string;
   subjectId: string;
 }): Promise<ActiveSessionDecision | null> {
+  if (!isVerificationRequestUuid(input.verificationRequestId)) {
+    return null;
+  }
   const sb = requireSupabaseAdmin();
   const { data, error } = await sb
     .from("verification_decisions")

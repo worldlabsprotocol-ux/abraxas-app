@@ -227,7 +227,7 @@ describe("wixNonceStore capacity enforcement", () => {
         code: "capacity_count_invalid",
         stage: "capacity_precheck",
         purpose: "purchase",
-        policyId: "good-trouble-retail-v1",
+        policyId: "good-trouble-age_21_retail-v1",
       },
     });
     expect(wixDataMock.insert).not.toHaveBeenCalled();

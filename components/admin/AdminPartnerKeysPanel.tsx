@@ -7,6 +7,7 @@ import { AdminConfirmDialog } from "@/components/admin/AdminConfirmDialog";
 import { useAdminConfirm } from "@/lib/admin/useAdminConfirm";
 import {
   PARTNER_SCOPE_OPTIONS,
+  VERIFICATION_REQUESTS_SCOPE_PRESET,
   VERIFY_API_SCOPE_PRESET,
   WEBHOOK_SANDBOX_SCOPE_PRESET,
   partnerAllowsProductionKeys,
@@ -29,7 +30,7 @@ interface PartnerKeyRow {
   last_used_at: string | null;
 }
 
-type ScopePreset = "webhook_sandbox" | "verify_apis" | "custom";
+type ScopePreset = "webhook_sandbox" | "verify_apis" | "verification_requests" | "custom";
 
 export function AdminPartnerKeysPanel({ adminRequest }: { adminRequest: ProductionAdminRequest }) {
   const [keys, setKeys] = useState<PartnerKeyRow[]>([]);
@@ -120,6 +121,10 @@ export function AdminPartnerKeysPanel({ adminRequest }: { adminRequest: Producti
     }
     if (preset === "verify_apis") {
       setSelectedScopes([...VERIFY_API_SCOPE_PRESET]);
+      return;
+    }
+    if (preset === "verification_requests") {
+      setSelectedScopes([...VERIFICATION_REQUESTS_SCOPE_PRESET]);
       return;
     }
   }
@@ -300,6 +305,10 @@ export function AdminPartnerKeysPanel({ adminRequest }: { adminRequest: Producti
             <button type="button" data-testid="partner-key-preset-verify" onClick={() => applyScopePreset("verify_apis")}
               style={presetButtonStyle(scopePreset === "verify_apis")}>
               Verify APIs
+            </button>
+            <button type="button" data-testid="partner-key-preset-verification-requests" onClick={() => applyScopePreset("verification_requests")}
+              style={presetButtonStyle(scopePreset === "verification_requests")}>
+              Verification requests
             </button>
           </div>
           <div data-testid="partner-key-scope-list" style={{ display: "grid", gap: "0.35rem" }}>

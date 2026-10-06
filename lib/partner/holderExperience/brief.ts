@@ -2,11 +2,16 @@
 // Server-derived holder request brief. No return URLs or policy internals.
 
 import { inferPolicyPackFromPolicyId, policyPackIsSandboxOnly } from "@/lib/partner/launchpad/policyPacks";
+import {
+  buildGoodTroubleAgeEligibilityPurchaseBrief,
+  isGoodTroubleAgeEligibilityPurchaseBrief,
+} from "@/lib/partner/goodTroubleHolderBrief";
 import { resolvePartnerDisplayName } from "@/lib/partner/partnerVerifyDisplay";
 import { HOLDER_GOOGLE_ACCOUNT_ONLY } from "./contract";
 import { HOLDER_APPROVED_METHOD } from "@/lib/verification/issuerTrust/contract";
 import { applyDisclosureProfile, resolveDisclosureProfile } from "@/lib/privacy/selectiveDisclosure";
 import { GENERIC_MINIMAL_PROFILE } from "@/lib/privacy/selectiveDisclosure/profiles";
+import { humanizeHolderResult } from "./presentation";
 
 export interface HolderRequestBrief {
   requestor: string;
@@ -33,19 +38,27 @@ export function buildHolderRequestBrief(input: {
   disclosedResult?: string | null;
   userExplanation?: string | null;
 }): HolderRequestBrief {
-  const pack = input.policyId ? inferPolicyPackFromPolicyId(input.policyId) : null;
   const requestor = (input.partnerName?.trim() || resolvePartnerDisplayName(input.partnerId ?? "")) || "This partner";
+  if (isGoodTroubleAgeEligibilityPurchaseBrief(input)) {
+    return buildGoodTroubleAgeEligibilityPurchaseBrief({
+      partnerName: requestor,
+      environment: input.environment,
+    });
+  }
+
+  const pack = input.policyId ? inferPolicyPackFromPolicyId(input.policyId) : null;
   const sandbox = input.environment === "sandbox" || Boolean(pack && policyPackIsSandboxOnly(pack));
   const purpose = input.userExplanation?.trim()
     || pack?.holder_explanation
     || (input.purpose ? `Confirm the requested ${input.purpose.replace(/_/g, " ")} result.` : "Confirm the selected policy result.");
+  const disclosed = pack?.disclosed_result ?? null;
   const result = input.disclosedResult?.trim()
-    || pack?.partner_receives
-    || "A yes/no policy result. Not your documents or date of birth.";
+    ? humanizeHolderResult(input.disclosedResult.trim())
+    : disclosed
+      ? humanizeHolderResult(disclosed)
+      : "Eligibility confirmed";
   const withheld = profileWithheld(pack);
-  const resultCategory = pack?.disclosed_result
-    ? `Policy result: ${pack.disclosed_result}`
-    : "eligibility confirmed";
+  const resultCategory = disclosed ?? "eligibility confirmed";
 
   const brief: HolderRequestBrief = {
     requestor,

@@ -21,7 +21,11 @@ export type ClaimType =
   | "asset_ownership_reviewed"
   | "asset_title_verified"
   | "transfer_eligibility"
-  | "residency_country";
+  | "residency_country"
+  | "creator_attested"
+  | "ai_assistance_disclosed"
+  | "source_integrity_verified"
+  | "capture_provenance_verified";
 
 export interface CredentialClaimRecord {
   id: string;
@@ -361,6 +365,10 @@ export function claimTypeLabel(type: ClaimType): string {
     asset_title_verified: "Asset title verified",
     transfer_eligibility: "Transfer eligibility",
     residency_country: "Residency country",
+    creator_attested: "Creator attestation (not verified authorship)",
+    ai_assistance_disclosed: "AI assistance disclosure (not detection)",
+    source_integrity_verified: "Source integrity verified",
+    capture_provenance_verified: "Capture provenance verified",
   };
   return labels[type] ?? type;
 }

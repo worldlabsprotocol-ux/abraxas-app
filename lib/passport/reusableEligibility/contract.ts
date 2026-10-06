@@ -14,12 +14,12 @@ export const REUSE_METHOD_ID = "reuse_existing_proof" as const;
 export const REUSE_LABEL = "Use an existing private verification";
 
 export const REUSE_CONFIRM_POINTS = [
-  "A previous private verification may satisfy this request.",
-  "The new partner receives only this policy’s result.",
-  "The original partner and original receipt are not disclosed.",
-  "You may instead complete another qualifying method.",
-  "Selecting reuse does not issue a result.",
-  "Explicit consent is still required before a new partner-bound result is issued.",
+  "You already completed compatible verification.",
+  "Abraxas will check whether that verified information still satisfies this application’s requirements.",
+  "If it does, a new result is created for this application — not a copy of a previous result.",
+  "This application receives only the approved eligibility answer.",
+  "You may complete a new verification instead if you prefer.",
+  "Explicit consent is still required before the new result is issued.",
 ] as const;
 
 export const REUSE_CONSENT_STILL_REQUIRED =
@@ -83,9 +83,15 @@ export interface InternalReusableFact {
   result_category: string;
   disclosure_boundary: string;
   decision_context: "production" | "sandbox_only";
+  /** Internal provenance — never partner-visible. */
+  source_policy_id: string;
+  source_verification_method: string;
+  verified_at: string;
   source_decision_id: string;
   source_receipt_id: string;
   issued_at: string;
   expires_at: string | null;
   status: "active" | "expired" | "revoked";
+  /** When this fact was derived from another reusable fact. */
+  derived_from_fact_id?: string | null;
 }

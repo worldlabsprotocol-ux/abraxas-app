@@ -9,12 +9,15 @@ import {
   type PartnerFlowContinuationRecord,
 } from "@/lib/partner/partnerFlowContinuation";
 import { createSupabaseContinuationStore } from "@/lib/partner/partnerFlowContinuationStore";
+import { policyOwnedByPartner } from "@/lib/policy/assertPolicyOwnership";
 import { getPartnerPolicy, getPartnerPolicyAtVersion } from "@/lib/policy/getPolicy";
 import { requireSupabaseAdmin, SupabaseAdminConfigurationError } from "@/lib/supabase/admin";
 import {
   PARTNER_CONTINUE_BINDING_COOKIE,
   verifyPartnerContinueBindingCookie,
 } from "@/lib/partner/partnerVerifyResumeCookie";
+import { isOpaqueVerifyRequest } from "@/lib/partner/productionIntegration/requestCorrelation";
+import { loadHandoffByVerifyRequest } from "@/lib/partner/hostedHandoff/store";
 
 export type BoundContinuationResult =
   | { ok: true; stored: PartnerFlowContinuationRecord; bindingPresent: boolean }
@@ -103,7 +106,7 @@ async function bindAuthoritativePolicyVersion(stored: PartnerFlowContinuationRec
     if (!policy) {
       return { ok: false, code: stored.policyVersion != null ? "altered_version" : "missing" };
     }
-    if (String(policy.partner_id ?? "").trim() !== stored.partnerId.trim()) {
+    if (!policyOwnedByPartner(policy, stored.partnerId.trim())) {
       return { ok: false, code: "cross_partner" };
     }
     if (String(policy.id ?? "").trim() !== stored.policyId.trim()) {
@@ -158,17 +161,47 @@ export async function resolveBoundPartnerContinuation(input: {
     return { ok: false, code: "stale", bindingPresent, clearBinding: false };
   }
 
-  const vr = await loadVerificationBinding(verifyRequestId);
-  if (!vr.ok) {
-    return { ok: false, code: vr.code, bindingPresent, clearBinding: false };
-  }
-  const matched = bindVerificationToContinuation({
-    stored,
-    row: vr.row,
-    sessionSubject,
-  });
-  if (!matched.ok) {
-    return { ok: false, code: matched.code, bindingPresent, clearBinding: false };
+  if (isOpaqueVerifyRequest(verifyRequestId)) {
+    let handoff;
+    try {
+      handoff = await loadHandoffByVerifyRequest(verifyRequestId);
+    } catch {
+      return { ok: false, code: CONTINUATION_STORE_UNAVAILABLE, bindingPresent, clearBinding: false };
+    }
+    if (!handoff) {
+      return { ok: false, code: "missing", bindingPresent, clearBinding: false };
+    }
+    if (handoff.status !== "created") {
+      const code = handoff.status === "expired"
+        ? "stale"
+        : handoff.status === "completed" || handoff.status === "consumed"
+          ? "replay"
+          : "missing";
+      return { ok: false, code, bindingPresent, clearBinding: false };
+    }
+    const handoffExpires = Date.parse(handoff.expires_at);
+    if (!Number.isFinite(handoffExpires) || handoffExpires <= Date.now()) {
+      return { ok: false, code: "stale", bindingPresent, clearBinding: false };
+    }
+    if (handoff.partner_id.trim() !== stored.partnerId.trim()) {
+      return { ok: false, code: "cross_partner", bindingPresent, clearBinding: false };
+    }
+    if (handoff.policy_id.trim() !== stored.policyId.trim()) {
+      return { ok: false, code: "altered_policy", bindingPresent, clearBinding: false };
+    }
+  } else {
+    const vr = await loadVerificationBinding(verifyRequestId);
+    if (!vr.ok) {
+      return { ok: false, code: vr.code, bindingPresent, clearBinding: false };
+    }
+    const matched = bindVerificationToContinuation({
+      stored,
+      row: vr.row,
+      sessionSubject,
+    });
+    if (!matched.ok) {
+      return { ok: false, code: matched.code, bindingPresent, clearBinding: false };
+    }
   }
   const policy = await bindAuthoritativePolicyVersion(stored);
   if (!policy.ok) {

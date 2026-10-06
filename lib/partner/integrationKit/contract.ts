@@ -3,6 +3,7 @@
 
 export const PARTNER_INTEGRATION_KIT_VERSION = "1.1.0" as const;
 export const PARTNER_INTEGRATION_RECEIPT_SCHEMA_VERSION = "1.0.0" as const;
+export const PARTNER_INTEGRATION_NARROW_RESULT_SCHEMA_VERSION = "1.0.0" as const;
 
 export const PARTNER_INTEGRATION_OUTCOMES = [
   "permitted",
@@ -20,8 +21,11 @@ export const PARTNER_INTEGRATION_OUTCOMES = [
   "policy_version_not_adopted",
   "invalid_signature",
   "environment_mismatch",
+  "wrong_request_correlation",
   "invalid",
   "retry",
+  "superseded",
+  "evidence_refresh_required",
 ] as const;
 
 export type PartnerIntegrationOutcome = (typeof PARTNER_INTEGRATION_OUTCOMES)[number];
@@ -40,10 +44,15 @@ export const PARTNER_INTEGRATION_TRUSTED_RECEIPT_FIELDS = [
   "production_usable",
   "decision_context",
   "artifact_type",
+  "issued_valid",
+  "lifecycle_status",
+  "partner_safe_reason",
+  "validity_checked_at",
 ] as const;
 
 export const PARTNER_INTEGRATION_CALLBACK_KEYS = [
   "receipt_id",
+  "request_id",
   "decision",
   "status",
   "decision_id",
@@ -102,3 +111,8 @@ export const PARTNER_INTEGRATION_GOOGLE_BOUNDARY =
 
 export const PARTNER_INTEGRATION_SOURCE_LEVEL =
   "The Partner Integration Kit is source level code in this repository (lib/partner/integrationKit). It is not a published npm package.";
+
+export const PARTNER_INTEGRATION_VERIFY_FOR_ACTION_NOTE =
+  "verifyForAction runs fetch, cryptographic validation, partner/policy/version/environment checks, and optional request correlation in one fail-closed call.";
+
+export { PRODUCTION_INTEGRATION_SERVER_VERIFICATION_STEPS } from "@/lib/partner/productionIntegration/contract";

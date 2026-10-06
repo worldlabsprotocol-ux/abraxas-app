@@ -26,6 +26,101 @@ function mapRow(row: Record<string, unknown>): CredentialClaimRecord {
   };
 }
 
+export async function upsertWalletControlClaim(
+  claim: Omit<CredentialClaimRecord, "id" | "status">,
+): Promise<string> {
+  if (!claim.evidence_reference) {
+    throw new WalletPersistenceError(
+      "claim_insert_failed",
+      "Wallet control claims require evidence_reference",
+    );
+  }
+
+  const sb = requireSupabaseAdmin();
+  const subject = normalizeSuiAddress(claim.subject_id);
+  const { data, error } = await sb.rpc("upsert_wallet_control_claim_atomic", {
+    p_subject_id: subject,
+    p_evidence_reference: claim.evidence_reference,
+    p_claim_value: claim.claim_value,
+    p_issuer_id: claim.issuer_id,
+    p_assurance_level: claim.assurance_level,
+    p_issued_at: claim.issued_at,
+    p_expires_at: claim.expires_at,
+    p_jurisdiction: claim.jurisdiction,
+    p_policy_scope: claim.policy_scope,
+  });
+
+  if (error) {
+    throw new WalletPersistenceError(
+      "rpc_failed",
+      "Wallet control claim RPC failed",
+      error.message,
+    );
+  }
+
+  const result = data as { ok?: boolean; claim_id?: string; code?: string; detail?: string } | null;
+  if (!result?.ok || !result.claim_id) {
+    throw new WalletPersistenceError(
+      "rpc_rejected",
+      "Wallet control claim RPC rejected the write",
+      result?.detail ?? result?.code ?? "rpc_rejected",
+    );
+  }
+
+  await appendAuditEvent({
+    actor_type: "system",
+    actor_id: "claims_service",
+    action: "claims.wallet_control_upserted",
+    object_type: "credential_claim",
+    object_id: result.claim_id,
+    metadata: { evidence_reference: claim.evidence_reference },
+  });
+
+  return result.claim_id;
+}
+
+export async function revokeWalletControlClaimForBinding(input: {
+  subjectId: string;
+  evidenceReference: string;
+  reason: string;
+}): Promise<boolean> {
+  const sb = requireSupabaseAdmin();
+  const subject = normalizeSuiAddress(input.subjectId);
+  const now = new Date().toISOString();
+
+  const { data } = await sb
+    .from("credential_claims")
+    .update({
+      status: "revoked",
+      revocation_reference: input.reason,
+      updated_at: now,
+    })
+    .eq("subject_id", subject)
+    .eq("claim_type", "wallet_binding_confirmed")
+    .eq("evidence_reference", input.evidenceReference)
+    .eq("status", "active")
+    .select("id")
+    .maybeSingle();
+
+  if (!data) return false;
+
+  await appendAuditEvent({
+    actor_type: "system",
+    actor_id: "claims_service",
+    action: "claims.wallet_control_revoked",
+    object_type: "credential_claim",
+    object_id: data.id as string,
+    metadata: { reason: input.reason, evidence_reference: input.evidenceReference },
+  });
+
+  return true;
+}
+
+export async function getActiveWalletControlClaims(subjectId: string): Promise<CredentialClaimRecord[]> {
+  const claims = await getActiveClaims(subjectId);
+  return claims.filter(c => c.claim_type === "wallet_binding_confirmed");
+}
+
 export async function upsertClaims(
   claims: Omit<CredentialClaimRecord, "id" | "status">[],
 ): Promise<void> {

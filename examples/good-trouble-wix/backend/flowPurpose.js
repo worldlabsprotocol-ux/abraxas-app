@@ -2,6 +2,8 @@
 // Explicit browse (L0) vs purchase (L2+) verification lifecycles.
 
 import {
+  APP_SLUG,
+  BROWSE_PARTNER_ID,
   BROWSE_POLICY_ID,
   BROWSE_RETURN_URL_BASE,
   FLOW_ID_PREFIX_BROWSE,
@@ -29,7 +31,8 @@ import {
 export const BROWSE_FLOW = {
   purpose: "browse",
   policyId: BROWSE_POLICY_ID,
-  partnerId: PARTNER_ID,
+  partnerId: BROWSE_PARTNER_ID,
+  appSlug: null,
   returnUrlBase: BROWSE_RETURN_URL_BASE,
   flowIdPrefix: FLOW_ID_PREFIX_BROWSE,
   callbackParam: GTB_PARAM,
@@ -40,10 +43,11 @@ export const PURCHASE_FLOW = {
   purpose: "purchase",
   policyId: POLICY_ID,
   partnerId: PARTNER_ID,
+  appSlug: APP_SLUG,
   returnUrlBase: PURCHASE_RETURN_URL_BASE,
   flowIdPrefix: FLOW_ID_PREFIX_PURCHASE,
   callbackParam: GTV_PARAM,
-  assuranceLabel: "L2+",
+  assuranceLabel: "L0 age eligibility",
 };
 
 /** @param {unknown} purpose */
@@ -60,11 +64,13 @@ export function resolveFlowPurposeConfig(purpose) {
  */
 export function buildPartnerVerifyUrl(config, flowId) {
   const returnUrl = `${config.returnUrlBase}?${config.callbackParam}=${encodeURIComponent(flowId)}`;
-  const search = new URLSearchParams({
-    partner_id: config.partnerId,
-    policy_id: config.policyId,
-    return_url: returnUrl,
-  });
+  const search = new URLSearchParams({ return_url: returnUrl });
+  if (config.appSlug) {
+    search.set("app", config.appSlug);
+  } else {
+    search.set("partner_id", config.partnerId);
+    search.set("policy_id", config.policyId);
+  }
   if (config.purpose === "browse") {
     search.set("purpose", "browse");
   }

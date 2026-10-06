@@ -1,13 +1,13 @@
 // FILE: lib/partner/launchpad/productionApproval.ts
-// Atomic production access approval and one time production key reveal.
+// Legacy admin entry points — delegate to canonical production activation.
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
-import { generatePartnerKey } from "@/lib/partner/partnerAuth";
 import { recordLaunchpadActivity } from "@/lib/partner/launchpad/recordActivity";
-import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
+import {
+  activateProductionApplication,
+} from "@/lib/partner/launchpad/productionActivation";
 import {
   decryptProductionKeyForReveal,
-  encryptProductionKeyForReveal,
 } from "@/lib/partner/launchpad/productionKeyEnvelope";
 
 export type ApproveProductionResult =
@@ -22,63 +22,31 @@ export type ApproveProductionResult =
     }
   | { ok: false; code: "not_found" | "invalid_state" | "approval_failed" | "conflict" | "not_configured" };
 
+/** @deprecated Use activateProductionApplication via admin production-review decide route. */
 export async function approveLaunchpadProductionAccess(input: {
   requestId: string;
   reviewerNotes?: string;
 }): Promise<ApproveProductionResult> {
-  const sb = requireSupabaseAdmin();
-  const { raw, prefix, hash } = generatePartnerKey("live");
-
-  const { data, error } = await sb.rpc("partner_launchpad_approve_production_atomic", {
-    p_request_id: input.requestId,
-    p_key_prefix: prefix,
-    p_key_hash: hash,
-    p_reviewer_notes: input.reviewerNotes ?? null,
+  const result = await activateProductionApplication({
+    requestId: input.requestId,
+    reviewerNotes: input.reviewerNotes,
+    confirm: true,
   });
 
-  if (error) {
-    console.error("[launchpad/production] approve rpc failed", { message: error.message });
+  if (!result.ok || !result.application_id || !result.partner_id || !result.api_key_id) {
+    if (result.code === "not_found") return { ok: false, code: "not_found" };
+    if (result.code === "invalid_state") return { ok: false, code: "invalid_state" };
+    if (result.code === "already_issued") return { ok: false, code: "conflict" };
     return { ok: false, code: "approval_failed" };
-  }
-
-  const row = data as {
-    ok?: boolean;
-    code?: string;
-    application_id?: string;
-    partner_id?: string;
-    api_key_id?: string;
-    key_prefix?: string;
-  };
-
-  if (!row?.ok || !row.application_id || !row.partner_id || !row.api_key_id) {
-    if (row?.code === "not_found") return { ok: false, code: "not_found" };
-    if (row?.code === "invalid_state") return { ok: false, code: "invalid_state" };
-    if (row?.code === "conflict") return { ok: false, code: "conflict" };
-    return { ok: false, code: "approval_failed" };
-  }
-
-  const idempotencyReplay = row.code === "idempotency_replay";
-
-  if (!idempotencyReplay && raw) {
-    const encrypted = encryptProductionKeyForReveal(row.application_id, raw);
-    if (encrypted) {
-      await sb
-        .from("partner_launchpad_applications")
-        .update({
-          production_key_encrypted: encrypted,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", row.application_id);
-    }
   }
 
   return {
     ok: true,
-    idempotency_replay: idempotencyReplay,
-    application_id: row.application_id,
-    partner_id: row.partner_id,
-    api_key_id: row.api_key_id,
-    key_prefix: row.key_prefix ?? prefix,
+    idempotency_replay: result.idempotency_replay === true,
+    application_id: result.application_id,
+    partner_id: result.partner_id,
+    api_key_id: result.api_key_id,
+    key_prefix: result.key_prefix ?? "",
   };
 }
 
@@ -129,12 +97,12 @@ export async function revealProductionCredentialOnce(
   const sb = requireSupabaseAdmin();
   const { data: app } = await sb
     .from("partner_launchpad_applications")
-    .select("id, partner_id, production_api_key_id, production_key_revealed_at, production_key_encrypted")
+    .select("id, partner_id, production_api_key_id, production_key_revealed_at, production_key_encrypted, production_activated_at")
     .eq("id", applicationId)
     .eq("partner_id", partnerId)
     .maybeSingle();
 
-  if (!app || !app.production_api_key_id) {
+  if (!app || !app.production_api_key_id || !app.production_activated_at) {
     return { ok: false, code: "not_ready" };
   }
 

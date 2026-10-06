@@ -67,11 +67,18 @@ function baseDeps(overrides: Partial<PreflightDeps> = {}): PreflightDeps {
 }
 
 describe("resolvePreflightOptions", () => {
-  it("defaults to Good Trouble pilot ids for documentation examples", () => {
+  it("defaults to legacy Good Trouble pilot ids unless canonical track is selected", () => {
     const opts = resolvePreflightOptions({});
     expect(opts.partnerId).toBe(GOOD_TROUBLE_PARTNER_ID);
     expect(opts.policyId).toBe(GOOD_TROUBLE_RETAIL_POLICY_ID);
     expect(opts.returnUrl).toBe(`${SITE_URL}/good-trouble/enter`);
+  });
+
+  it("targets canonical Launchpad application when INTEGRATION_PREFLIGHT_TRACK=canonical", () => {
+    const opts = resolvePreflightOptions({ INTEGRATION_PREFLIGHT_TRACK: "canonical" });
+    expect(opts.partnerId).toBe("good-trouble");
+    expect(opts.policyId).toBe("good-trouble-age_21_retail-v1");
+    expect(opts.returnUrl).toBe("https://www.goodtroublecanna.com/age-verification-result");
   });
 
   it("detects production mode from canonical base URL", () => {

@@ -25,8 +25,28 @@ import {
   shouldRenderPolicyChangeControlUi,
 } from "@/lib/partner/launchpad/policyChangeControlUi";
 import { selectLaunchpadResumeAppId } from "@/lib/partner/activationPath";
+import { launchpadErrorFromResponse } from "@/lib/partner/launchpad/publicErrorMessages";
 import { PartnerSandboxTestConsolePanel } from "@/components/partner/launchpad/PartnerSandboxTestConsolePanel";
 import { PartnerGoLiveReadinessPanel } from "@/components/partner/launchpad/PartnerGoLiveReadinessPanel";
+import { PartnerIntegrationHandoffPanel } from "@/components/partner/launchpad/PartnerIntegrationHandoffPanel";
+import { PartnerStarterKitPanel } from "@/components/partner/launchpad/PartnerStarterKitPanel";
+import { PartnerLaunchpadConnectPanel } from "@/components/partner/launchpad/PartnerLaunchpadConnectPanel";
+import {
+  mapLegacyLaunchpadStep,
+  stageNavigationTarget,
+  type LaunchpadJourneyResolution,
+} from "@/lib/partner/launchpad/journeyState";
+import type { ApplicationPoliciesSummary } from "@/lib/partner/launchpad/applicationPolicyBindings";
+import { PartnerIntegrationHealthPanel } from "@/components/partner/launchpad/PartnerIntegrationHealthPanel";
+import { PartnerIntegrationPerformancePanel } from "@/components/partner/launchpad/PartnerIntegrationPerformancePanel";
+import { PartnerPilotProgressPanel } from "@/components/partner/launchpad/PartnerPilotProgressPanel";
+import { PartnerApplicationOverview } from "@/components/partner/launchpad/PartnerApplicationOverview";
+import { PartnerApplicationPoliciesPanel } from "@/components/partner/launchpad/PartnerApplicationPoliciesPanel";
+import { humanIntegrationEventLabel } from "@/lib/partner/launchpad/firstSuccessUx";
+import { PartnerBindingProductionPanel } from "@/components/partner/launchpad/PartnerBindingProductionPanel";
+import { EnvironmentBadge } from "@/components/product/EnvironmentBadge";
+import { ModeCCommandRail } from "@/components/product/ModeCCommandRail";
+import { EligibilityPolicyCard } from "@/components/product/EligibilityPolicyCard";
 import { PartnerFlowRequestPanel } from "@/components/partner/launchpad/PartnerFlowRequestPanel";
 import { PolicyVersionPlannerPanel } from "@/components/partner/launchpad/PolicyVersionPlannerPanel";
 import { NetworkReadinessPanel } from "@/components/partner/launchpad/NetworkReadinessPanel";
@@ -40,7 +60,7 @@ import { POLICY_PROPOSAL_NOTICE } from "@/lib/partner/policyProposal/contract";
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
 
-type WizardStep = "application" | "policy" | "destinations" | "configure" | "versions" | "networks" | "provisioned" | "test" | "readiness" | "production";
+type WizardStep = "verify" | "test_app" | "connect" | "test" | "go_live" | "advanced";
 
 interface PolicyTemplate {
   id: string;
@@ -99,17 +119,12 @@ interface IntegrationHealth {
   checks: Array<{ id: string; label: string; status: "pass" | "action_required" | "blocked"; detail: string }>;
 }
 
-const STEPS: { id: WizardStep; label: string }[] = [
-  { id: "application", label: "Application" },
-  { id: "policy", label: "Policy pack" },
-  { id: "destinations", label: "Destinations" },
-  { id: "configure", label: "Partner Flow" },
-  { id: "versions", label: "Policy version" },
-  { id: "networks", label: "Networks" },
-  { id: "provisioned", label: "Credentials" },
-  { id: "test", label: "Harness" },
-  { id: "readiness", label: "Readiness" },
-  { id: "production", label: "Production" },
+const STEPS: { id: WizardStep; label: string; description: string }[] = [
+  { id: "verify", label: "Verify", description: "What do you need to verify?" },
+  { id: "test_app", label: "Test app", description: "Your private verification test environment" },
+  { id: "connect", label: "Connect", description: "Connect Abraxas to your website or app" },
+  { id: "test", label: "Test", description: "Run a customer verification" },
+  { id: "go_live", label: "Go live", description: "Activate production" },
 ];
 
 export function PartnerLaunchpadClient({
@@ -124,7 +139,8 @@ export function PartnerLaunchpadClient({
   const [googleDisclaimer, setGoogleDisclaimer] = useState(
     "Google sign-in creates an Abraxas account. It does not prove age, identity, residency, wallet control, membership, or any other eligibility claim.",
   );
-  const [step, setStep] = useState<WizardStep>("application");
+  const [step, setStep] = useState<WizardStep>("verify");
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const initialStepResolved = useRef(false);
   const [error, setError] = useState("");
   const [apiKeyInput, setApiKeyInput] = useState("");
@@ -138,6 +154,15 @@ export function PartnerLaunchpadClient({
   const [domainVerifications, setDomainVerifications] = useState<DomainVerification[]>([]);
   const [domainChallenge, setDomainChallenge] = useState<{ hostname: string; record_name: string; record_value: string; expires_at: string } | null>(null);
   const [integrationHealth, setIntegrationHealth] = useState<IntegrationHealth | null>(null);
+  const [merchantJourney, setMerchantJourney] = useState<LaunchpadJourneyResolution | null>(null);
+  const [policySummary, setPolicySummary] = useState<ApplicationPoliciesSummary | null>(null);
+  const [journeyEvidence, setJourneyEvidence] = useState<{
+    verified_receipt_count: number;
+    starter_kit_evidenced: boolean;
+    active_sandbox_key: boolean;
+    hosted_handoff_completed_count?: number;
+    receipt_verification_succeeded_count?: number;
+  } | null>(null);
 
   const [applicationName, setApplicationName] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -194,8 +219,9 @@ export function PartnerLaunchpadClient({
         const view = typeof window !== "undefined"
           ? new URLSearchParams(window.location.search).get("view")
           : null;
-        const requestedStep = STEPS.find((item) => item.id === view)?.id;
-        setStep(requestedStep ?? (data.workspace.applications.length > 0 ? "configure" : "application"));
+        const requestedStep = STEPS.find((item) => item.id === view)?.id
+          ?? (view ? mapLegacyLaunchpadStep(view) : undefined);
+        setStep(requestedStep ?? "verify");
       }
     }
   }, [activeAppId]);
@@ -251,6 +277,45 @@ export function PartnerLaunchpadClient({
   useEffect(() => { void refreshDomainVerification(); }, [refreshDomainVerification]);
   useEffect(() => { void refreshIntegrationHealth(); }, [refreshIntegrationHealth]);
 
+  const refreshMerchantJourney = useCallback(async () => {
+    if (!activeApp) {
+      setMerchantJourney(null);
+      setPolicySummary(null);
+      return;
+    }
+    const res = await fetch(`/api/launchpad/applications/${activeApp.id}/merchant-journey`, {
+      credentials: "include",
+      cache: "no-store",
+    });
+    const data = await res.json() as {
+      journey?: LaunchpadJourneyResolution;
+      summary?: ApplicationPoliciesSummary;
+      evidence?: {
+        verified_receipt_count: number;
+        starter_kit_evidenced: boolean;
+        active_sandbox_key: boolean;
+        hosted_handoff_completed_count?: number;
+        receipt_verification_succeeded_count?: number;
+      };
+    };
+    if (res.ok && data.journey) {
+      setMerchantJourney(data.journey);
+      setPolicySummary(data.summary ?? null);
+      setJourneyEvidence(data.evidence ?? null);
+    }
+  }, [activeApp]);
+
+  useEffect(() => { void refreshMerchantJourney(); }, [refreshMerchantJourney]);
+
+  useEffect(() => {
+    if (!merchantJourney) return;
+    const view = typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("view")
+      : null;
+    if (view) return;
+    setStep(merchantJourney.currentStage as WizardStep);
+  }, [merchantJourney]);
+
   useEffect(() => {
     if (applicationName && !partnerId) {
       setPartnerId(slugifyLaunchpadApplication(applicationName));
@@ -285,7 +350,7 @@ export function PartnerLaunchpadClient({
     setAuthenticated(false);
     setWorkspace(null);
     setActiveAppId(null);
-    setStep("application");
+    setStep("verify");
     initialStepResolved.current = false;
     setRevealedKey(null);
   }
@@ -314,14 +379,15 @@ export function PartnerLaunchpadClient({
     });
     const data = await res.json();
     if (!res.ok) {
-      setError(data.error ?? data.code ?? "Provisioning failed");
+      setError(launchpadErrorFromResponse(data, "Provisioning failed"));
       return;
     }
     if (data.api_key) setRevealedKey(data.api_key);
     setActiveAppId(data.application.application_id);
     setAuthenticated(true);
     await refreshWorkspace();
-    setStep("provisioned");
+    await refreshMerchantJourney();
+    setStep("test_app");
   }
 
   async function runScenario(scenarioId: string) {
@@ -340,6 +406,7 @@ export function PartnerLaunchpadClient({
     const activityData = await activityRes.json();
     if (activityData.events) setActivity(activityData.events);
     await refreshIntegrationHealth();
+    await refreshMerchantJourney();
   }
 
   async function addReturnUrl() {
@@ -360,6 +427,7 @@ export function PartnerLaunchpadClient({
     setNewReturnUrl("");
     await refreshWorkspace();
     await refreshIntegrationHealth();
+    await refreshMerchantJourney();
   }
 
   async function removeReturnUrl(url: string) {
@@ -380,13 +448,14 @@ export function PartnerLaunchpadClient({
     if (url === returnUrl && remaining[0]) setReturnUrl(remaining[0]);
     await refreshWorkspace();
     await refreshIntegrationHealth();
+    await refreshMerchantJourney();
   }
 
   async function requestProduction() {
     if (!activeApp) return;
     if (!productionCallbackReady || !productionDomainVerified) {
       setError("Add an HTTPS callback and verify its domain before requesting Production review.");
-      setStep("destinations");
+      setStep("test_app");
       return;
     }
     const res = await fetch(`/api/launchpad/applications/${activeApp.id}/go-live`, {
@@ -398,12 +467,13 @@ export function PartnerLaunchpadClient({
     const data = await res.json();
     if (!res.ok) {
       setError(data.error ?? "Review request was not accepted");
-      setStep("production");
+      setStep("go_live");
       return;
     }
     await refreshWorkspace();
     await refreshIntegrationHealth();
-    setStep("production");
+    await refreshMerchantJourney();
+    setStep("go_live");
   }
 
   async function createDomainChallenge() {
@@ -418,6 +488,7 @@ export function PartnerLaunchpadClient({
     setDomainChallenge(data.verification);
     await refreshDomainVerification();
     await refreshIntegrationHealth();
+    await refreshMerchantJourney();
   }
 
   async function verifyDomainChallenge() {
@@ -431,6 +502,7 @@ export function PartnerLaunchpadClient({
     if (!res.ok) { setError(data.error ?? "DNS record is not visible yet. Wait a few minutes and try again."); return; }
     await refreshDomainVerification();
     await refreshIntegrationHealth();
+    await refreshMerchantJourney();
   }
 
   function copyText(text: string) {
@@ -438,6 +510,34 @@ export function PartnerLaunchpadClient({
       setCopyFeedback("Copied");
       setTimeout(() => setCopyFeedback(""), 2000);
     });
+  }
+
+  const activeSandboxKey = Boolean(activeApp?.key_prefix);
+  const productionActivated = activeApp?.environment === "production";
+  const currentStepMeta = STEPS.find((item) => item.id === step);
+  const journey = merchantJourney;
+
+  function navigateToStage(target: WizardStep) {
+    if (!journey || !activeApp) {
+      setStep(target);
+      return;
+    }
+    const merchantStage = target === "advanced" ? journey.currentStage : target;
+    const resolved = stageNavigationTarget(merchantStage, {
+      application: activeApp,
+      configuredPolicyCount: policySummary?.configured_count ?? 1,
+      verifiedReceiptCount: journeyEvidence?.verified_receipt_count ?? 0,
+      activeSandboxKey: journeyEvidence?.active_sandbox_key ?? activeSandboxKey,
+      starterKitEvidenced: journeyEvidence?.starter_kit_evidenced ?? journey.integrationFilesReady,
+    });
+    const stageMeta = journey.stages.find((item) => item.id === merchantStage);
+    if (stageMeta && !stageMeta.navigable) {
+      setError(stageMeta.detail ?? "Complete the previous step first.");
+      setStep(resolved as WizardStep);
+      return;
+    }
+    setError("");
+    setStep(resolved as WizardStep);
   }
 
   if (loading) {
@@ -452,29 +552,84 @@ export function PartnerLaunchpadClient({
     <RedesignPage accent="developer" maxWidth={960}>
       <PageHeader
         eyebrow="Partner Launchpad"
-        title="Build your integration"
-        subtitle="Choose a policy pack, host verification, receive a signed result, and test the loop yourself. Proofs, not profiles."
+        title="Integrate private eligibility"
+        subtitle="One integration. Multiple eligibility policies. Add approved eligibility questions through the same Abraxas trust infrastructure without collecting underlying identity data."
       />
 
-      <ContentCard title="Build your integration">
-        <div id="policy-proposal">
-          <PolicyProposalForm />
-        </div>
-      </ContentCard>
+      {activeApp && journey && (
+        <ModeCCommandRail
+          items={[
+            {
+              id: "env",
+              label: "Environment",
+              value: productionActivated ? "Production activated" : "Sandbox",
+              tone: productionActivated ? "live" : "sandbox",
+            },
+            {
+              id: "policy",
+              label: "Policy",
+              value: activeApp.policy_id,
+              tone: "neutral",
+            },
+            {
+              id: "app",
+              label: "Application",
+              value: activeApp.display_name || activeApp.application_name,
+              tone: "neutral",
+            },
+            {
+              id: "readiness",
+              label: "Readiness",
+              value: journey.statusLine || journey.primaryAction.label,
+              tone: journey.primaryAction.enabled ? (journey.testPassed ? "ready" : "neutral") : "blocked",
+            },
+          ]}
+        />
+      )}
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", marginBottom: "1rem" }} role="list" aria-label="Launchpad progress">
-        {STEPS.map((s, index) => (
-          <button
-            key={s.id}
-            type="button"
-            role="listitem"
-            onClick={() => setStep(s.id)}
-            style={stepPillStyle(step === s.id)}
-            aria-current={step === s.id ? "step" : undefined}
-          >
-            {index + 1}. {s.label}
-          </button>
-        ))}
+      {activeApp && !journey && (
+        <ContentCard title={activeApp.display_name || activeApp.application_name}>
+          <p style={bodyText}>Loading your integration progress…</p>
+        </ContentCard>
+      )}
+
+      {activeApp && journey && journeyEvidence && (
+        <PartnerApplicationOverview
+          application={activeApp}
+          journey={journey}
+          policySummary={policySummary}
+          evidence={journeyEvidence}
+          productionActivated={productionActivated}
+          onNavigate={(s) => navigateToStage(mapLegacyLaunchpadStep(s) as WizardStep)}
+        />
+      )}
+
+      {activeApp && journey && !journeyEvidence && (
+        <ContentCard title={activeApp.display_name || activeApp.application_name}>
+          <p style={bodyText}>Loading your integration progress…</p>
+        </ContentCard>
+      )}
+
+      <div style={{ marginBottom: "0.85rem" }}>
+        <p style={{ ...bodyText, fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
+          {currentStepMeta?.description ?? "Guided merchant integration"}
+        </p>
+        {!journey && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }} role="list" aria-label="Launchpad progress">
+            {STEPS.map((s, index) => (
+              <button
+                key={s.id}
+                type="button"
+                role="listitem"
+                onClick={() => navigateToStage(s.id)}
+                style={stepPillStyle(step === s.id, false, false, false)}
+                aria-current={step === s.id ? "step" : undefined}
+              >
+                {`${index + 1}. `}{s.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {!authenticated && !workspace?.applications.length ? (
@@ -496,11 +651,9 @@ export function PartnerLaunchpadClient({
         </ContentCard>
       ) : (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem", flexWrap: "wrap", gap: "0.5rem" }}>
-          <div style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)" }}>
+          <div style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
             {workspace?.display_name ?? partnerId}
-            <span style={badgeStyle(workspace?.environment === "production" ? "#10B981" : "#6366F1")}>
-              {workspace?.environment ?? "sandbox"}
-            </span>
+            <EnvironmentBadge environment={workspace?.environment ?? "sandbox"} />
           </div>
           <Btn variant="ghost" size="sm" onClick={() => void signOut()}>Sign out</Btn>
         </div>
@@ -508,53 +661,33 @@ export function PartnerLaunchpadClient({
 
       {error && <p role="alert" style={{ color: "#ef4444", fontFamily: FONT, fontSize: "0.72rem" }}>{error}</p>}
 
-      {step === "application" && (
-        <ContentCard title={activeApp ? "Create another application" : "Create application"}>
-          <label style={labelStyle}>
-            Application name
-            <input value={applicationName} onChange={(e) => setApplicationName(e.target.value)} style={inputStyle} />
-          </label>
-          <label style={labelStyle}>
-            Partner display name
-            <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} style={inputStyle} />
-          </label>
-          <label style={labelStyle}>
-            Partner identifier
-            <input value={partnerId} onChange={(e) => setPartnerId(e.target.value)} style={inputStyle} />
-          </label>
-          <Btn size="sm" onClick={() => setStep("policy")}>Continue to policy packs</Btn>
-        </ContentCard>
-      )}
-
-      {step === "policy" && (
-        <ContentCard title="Choose a policy pack">
+      {step === "verify" && (
+        <ContentCard title="What do you need to verify?">
           <p style={bodyText}>
-            Packs are declarative and versioned. The holder proves a narrow claim using the minimum method the pack allows. The partner receives a signed boolean equivalent result, not a profile, ID image, or contact list. Identity or liveness is optional unless the pack requires it. The sandbox economic demo pack is not age verification and is not usable in Production.
+            What can Abraxas verify for your application? Each pack answers one business question with minimum disclosure. The partner receives a signed eligibility result — not a profile, ID image, or contact list.
           </p>
           <p style={{ ...bodyText, color: "#f59e0b" }}>{googleDisclaimer}</p>
-          <div style={{ display: "grid", gap: "0.5rem" }}>
+          <div style={{ display: "grid", gap: "0.65rem" }}>
             {policies.map((policy) => (
-              <button
+              <EligibilityPolicyCard
                 key={policy.id}
-                type="button"
-                onClick={() => setPolicyTemplateId(policy.id)}
-                style={{
-                  textAlign: "left",
-                  padding: "0.75rem",
-                  borderRadius: 12,
-                  border: `1px solid ${policyTemplateId === policy.id ? "var(--accent)" : "var(--border)"}`,
-                  background: policyTemplateId === policy.id ? "rgba(99,102,241,0.08)" : "var(--surface)",
-                  cursor: "pointer",
-                }}
-              >
-                <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: "0.82rem" }}>{policy.label}</div>
-                <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", marginTop: 4 }}>{policy.user_explanation}</div>
-                {policy.production_suitability && (
-                  <div style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)", marginTop: 6 }}>
-                    Suitability: {policy.production_suitability.replace(/_/g, " ")}
-                  </div>
-                )}
-              </button>
+                title={policy.label}
+                question={policy.user_explanation}
+                partnerReceives={policy.partner_receives ?? policy.disclosed_result ?? "Eligibility result"}
+                partnerDoesNotReceive={policy.partner_does_not_receive ?? []}
+                technicalId={policy.id}
+                packId={policy.id}
+                catalogVersion={1}
+                resultFamily={policy.disclosed_result}
+                environment={
+                  policy.production_suitability === "sandbox_only" ? "sandbox" : "available"
+                }
+                policyProductionEligible={policy.production_suitability !== "sandbox_only"}
+                selected={policyTemplateId === policy.id}
+                onSelect={() => setPolicyTemplateId(policy.id)}
+                minimumAssurance={policy.minimum_assurance}
+                receiptLifetimeHours={policy.receipt_lifetime_hours}
+              />
             ))}
             <button
               type="button"
@@ -612,17 +745,58 @@ export function PartnerLaunchpadClient({
               Sandbox test result for technical integration only. It is not a live KYB or Production approval.
             </p>
           )}
-          <div style={{ marginTop: "0.75rem" }}>
-            <Btn size="sm" onClick={() => setStep("destinations")}>Configure destinations</Btn>
-          </div>
+          {!activeApp && (
+            <>
+              <label style={labelStyle}>
+                What should we call this application?
+                <input value={applicationName} onChange={(e) => setApplicationName(e.target.value)} style={inputStyle} />
+              </label>
+              <label style={labelStyle}>
+                Display name
+                <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder={applicationName || "Your business name"} style={inputStyle} />
+              </label>
+              <label style={labelStyle}>
+                Where should customers return after verification?
+                <input value={returnUrl} onChange={(e) => setReturnUrl(e.target.value)} placeholder="https://your-site.example.com/verification-result" style={inputStyle} />
+              </label>
+              <details style={{ marginBottom: "0.75rem" }}>
+                <summary style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, cursor: "pointer" }}>Advanced options</summary>
+                <label style={{ ...labelStyle, marginTop: "0.65rem" }}>
+                  Partner identifier
+                  <input value={partnerId} onChange={(e) => setPartnerId(e.target.value)} style={inputStyle} />
+                </label>
+              </details>
+              <Btn size="sm" onClick={() => void provisionApplication()}>Create test app</Btn>
+            </>
+          )}
+          {activeApp && (
+            <div style={{ marginTop: "0.75rem" }}>
+              <Btn size="sm" onClick={() => setStep("test_app")}>Continue to test app</Btn>
+            </div>
+          )}
         </ContentCard>
       )}
 
-      {step === "destinations" && (
-        <ContentCard title="Approved return URLs">
+      {step === "test_app" && (
+        <ContentCard title="Your private verification test environment">
           {activeApp ? (
             <>
-              <p style={bodyText}>Add a new callback before removing an old one. This keeps your sandbox flow usable while you deploy.</p>
+              <p style={bodyText}>
+                Your sandbox application is active. Copy credentials once, confirm where customers return after verification, then connect your website.
+              </p>
+              {revealedKey ? (
+                <div style={{ marginBottom: "0.75rem" }}>
+                  <p style={bodyText}>
+                    <strong>This is a secret.</strong> Copy your sandbox API key now and store it server-side only. It will not be shown again. Never put API keys in browser code or client bundles.
+                  </p>
+                  <pre style={codeBlockStyle}>{revealedKey}</pre>
+                  <Btn size="sm" onClick={() => copyText(revealedKey)}>Copy API key</Btn>
+                  {copyFeedback && <span style={{ marginLeft: 8, fontFamily: FONT, fontSize: "0.72rem" }} role="status">{copyFeedback}</span>}
+                </div>
+              ) : (
+                <p style={bodyText}>Sandbox credential prefix: <code style={{ fontFamily: MONO }}>{activeApp.key_prefix ?? "abx_test_…"}</code></p>
+              )}
+              <p style={bodyText}>Return destination after verification</p>
               <div style={{ display: "grid", gap: "0.45rem", marginBottom: "0.85rem" }}>
                 {activeApp.allowed_return_urls.map((url) => (
                   <div key={url} style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap", padding: "0.6rem", border: "1px solid var(--border)", borderRadius: 10 }}>
@@ -632,185 +806,92 @@ export function PartnerLaunchpadClient({
                 ))}
               </div>
               <label style={labelStyle}>
-                Add callback URL
-                <input value={newReturnUrl} onChange={(e) => setNewReturnUrl(e.target.value)} placeholder="https://your-app.example.com/auth/abraxas/callback" style={inputStyle} />
+                Add return URL
+                <input value={newReturnUrl} onChange={(e) => setNewReturnUrl(e.target.value)} placeholder="https://your-app.example.com/verification-result" style={inputStyle} />
               </label>
               <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                <Btn size="sm" onClick={() => void addReturnUrl()}>Add callback URL</Btn>
-                <Btn size="sm" onClick={() => setStep("configure")}>Configure Partner Flow</Btn>
-                <Btn size="sm" variant="secondary" onClick={() => setStep("test")}>Open test harness</Btn>
+                <Btn size="sm" onClick={() => void addReturnUrl()}>Add return URL</Btn>
+                <Btn size="sm" onClick={() => setStep("connect")}>Connect website</Btn>
               </div>
             </>
           ) : (
             <>
-              <label style={labelStyle}>
-                Development callback URL
-                <input value={returnUrl} onChange={(e) => setReturnUrl(e.target.value)} style={inputStyle} />
-              </label>
-              <p style={bodyText}>Only listed HTTPS or localhost destinations can receive verification results.</p>
-              <Btn size="sm" onClick={() => void provisionApplication()}>Provision sandbox</Btn>
+              <p style={bodyText}>Choose a verification requirement first, then Abraxas creates your private sandbox application.</p>
+              <Btn size="sm" onClick={() => setStep("verify")}>Choose verification</Btn>
             </>
           )}
         </ContentCard>
       )}
 
-      {step === "configure" && activeApp && (
-        <PartnerFlowRequestPanel
+      {step === "connect" && activeApp && (
+        <PartnerLaunchpadConnectPanel
           applicationId={activeApp.id}
-          partnerId={workspace?.partner_id ?? ""}
-          onContinue={() => setStep("versions")}
+          appName={activeApp.display_name || activeApp.application_name}
+          onIntegrationFilesGenerated={() => void refreshMerchantJourney()}
         />
       )}
 
-      {step === "versions" && activeApp && (
-        <PolicyVersionPlannerPanel
-          applicationId={activeApp.id}
-          onContinue={() => setStep("networks")}
-        />
+      {step === "test" && activeApp && (
+        journey?.testAvailable ? (
+          <>
+            <ContentCard title="Run a customer verification">
+              <p style={bodyText}>
+                Confirm the customer experience works end to end. You should receive the eligibility result on your server — not date of birth, documents, or identity images.
+              </p>
+              <PartnerSandboxTestConsolePanel
+                applicationId={activeApp.id}
+                onRequestReview={() => setStep("go_live")}
+              />
+            </ContentCard>
+            <ContentCard title="Run test verification">
+              <p style={bodyText}>
+                Use the integration test harness to simulate receipt verification with the same trust path used in production.
+              </p>
+              <div style={{ display: "grid", gap: "0.4rem", marginBottom: "0.75rem" }}>
+                {LAUNCHPAD_TEST_SCENARIOS.slice(0, 3).map((scenario) => (
+                  <button key={scenario.id} type="button" onClick={() => void runScenario(scenario.id)} style={scenarioButtonStyle}>
+                    <span style={{ fontWeight: 700 }}>{scenario.label}</span>
+                    <span style={{ fontSize: "0.68rem", color: "var(--text-muted)" }}>{scenario.description}</span>
+                  </button>
+                ))}
+              </div>
+              {testResult && (
+                <pre style={codeBlockStyle} aria-live="polite">{JSON.stringify(testResult, null, 2)}</pre>
+              )}
+              {journey.testPassed && (
+                <p style={{ ...bodyText, color: "#10B981", fontWeight: 700 }}>
+                  Test passed. Prepare to go live when your production checklist is complete.
+                </p>
+              )}
+              <Btn size="sm" onClick={() => setStep("go_live")}>Prepare to go live</Btn>
+            </ContentCard>
+          </>
+        ) : (
+          <ContentCard title="Set up integration files first">
+            <p style={bodyText}>
+              Generate platform-specific integration files and deploy them to your website before running a test verification. The guided flow prevents test actions that cannot succeed yet.
+            </p>
+            <Btn size="sm" onClick={() => navigateToStage("connect")}>Connect website</Btn>
+          </ContentCard>
+        )
       )}
 
-      {step === "networks" && activeApp && (
+      {step === "go_live" && activeApp && (
         <>
-          <NetworkReadinessPanel
-            applicationId={activeApp.id}
-            onContinue={() => setStep("test")}
-          />
-          <OnchainGateDeploymentPanel applicationId={activeApp.id} />
-          <TestnetGateDeploymentKitCard planned />
-          <OnchainVerifierConformanceCard verifiedSandbox />
-        </>
-      )}
-
-      {step === "provisioned" && (
-        <ContentCard title="Sandbox credentials">
-          {revealedKey ? (
-            <div style={{ marginBottom: "0.75rem" }}>
-              <p style={bodyText}>Copy your API key now. It will not be shown again.</p>
-              <pre style={codeBlockStyle}>{revealedKey}</pre>
-              <Btn size="sm" onClick={() => copyText(revealedKey)}>Copy API key</Btn>
-              {copyFeedback && <span style={{ marginLeft: 8, fontFamily: FONT, fontSize: "0.72rem" }} role="status">{copyFeedback}</span>}
-            </div>
-          ) : (
-            <p style={bodyText}>Key prefix: <code style={{ fontFamily: MONO }}>{activeApp?.key_prefix ?? "abx_test_…"}</code></p>
-          )}
-          {docs?.hosted_link && (
-            <div style={{ marginTop: "0.75rem" }}>
-              <p style={bodyText}>Hosted verification link</p>
-              <pre style={codeBlockStyle}>{docs.hosted_link}</pre>
-              <Btn size="sm" variant="secondary" onClick={() => copyText(docs.hosted_link)}>Copy hosted link</Btn>
-            </div>
-          )}
-          <div style={{ marginTop: "0.75rem" }}>
-            <Btn size="sm" onClick={() => setStep("test")}>Open test harness</Btn>
-          </div>
-        </ContentCard>
-      )}
-
-      {step === "test" && activeApp && (
-        <PartnerSandboxTestConsolePanel
-          applicationId={activeApp.id}
-          onRequestReview={() => setStep("production")}
-        />
-      )}
-
-      {step === "test" && activeApp && (
-        <PartnerGoLiveReadinessPanel
-          applicationId={activeApp.id}
-          onChanged={() => {
-            void refreshWorkspace();
-            void refreshIntegrationHealth();
-          }}
-        />
-      )}
-
-      {step === "test" && activeApp && (
-        <ContentCard title="Partner test harness">
-          <p style={bodyText}>
-            Each case signs a receipt and evaluates it with the same public trust path used in production. Failures stay failures. Sandbox receipts never count as production ready.
-          </p>
-          <p style={bodyText}>Configured policy: <code style={{ fontFamily: MONO }}>{activeApp.policy_id}</code> ({activeApp.policy_template_id})</p>
-          <div style={{ display: "grid", gap: "0.4rem", marginBottom: "0.75rem" }}>
-            {LAUNCHPAD_TEST_SCENARIOS.map((scenario) => (
-              <button key={scenario.id} type="button" onClick={() => void runScenario(scenario.id)} style={scenarioButtonStyle}>
-                <span style={{ fontWeight: 700 }}>{scenario.label}</span>
-                <span style={{ fontSize: "0.68rem", color: "var(--text-muted)" }}>{scenario.description}</span>
-              </button>
-            ))}
-          </div>
-          {testResult && (
-            <pre style={codeBlockStyle} aria-live="polite">{JSON.stringify(testResult, null, 2)}</pre>
-          )}
-          {docs && (
-            <details style={{ marginTop: "0.75rem" }}>
-              <summary style={{ fontFamily: FONT, fontWeight: 700, cursor: "pointer" }}>Integration instructions</summary>
-              <pre style={codeBlockStyle}>{docs.javascript_example}</pre>
-              <Btn size="sm" variant="secondary" onClick={() => copyText(docs.javascript_example)}>Copy JavaScript example</Btn>
-            </details>
-          )}
-          <div style={{ marginTop: "0.75rem" }}>
-            <Btn size="sm" onClick={() => setStep("readiness")}>Open integration readiness</Btn>
-          </div>
-        </ContentCard>
-      )}
-
-      {activeApp && activeApp.policy_template_id === "sandbox_institutional_protocol_access" && (
-        <ContentCard title="Next path">
-          <ol style={{ ...bodyText, paddingLeft: "1.2rem" }}>
-            {SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SEQUENCE.map((stepLabel) => (
-              <li key={stepLabel}>{stepLabel}</li>
-            ))}
-          </ol>
-          <p style={bodyText}>
-            Policy ID is pinned by the server. Browser input cannot choose partner, policy version, issuer, assurance, signer, network, or production.
-            Sandbox test result for technical integration only. It is not a live KYB or Production approval.
-          </p>
-        </ContentCard>
-      )}
-
-      {activeApp && (
-        <PartnerActionControlPlanePanel applicationId={activeApp.id} />
-      )}
-
-      {(step === "readiness" || Boolean(activeApp)) && activeApp && (
-        <PartnerSandboxReadinessPanel
-          applicationId={activeApp.id}
-          onChanged={() => {
-            void refreshWorkspace();
-            void refreshIntegrationHealth();
-          }}
-        />
-      )}
-
-      {activeApp && (
-        <CircleSettlementLaunchpadPanel applicationId={activeApp.id} />
-      )}
-
-      {activeApp && docs && (
-        <ContentCard title="Integration Kit">
-          <p style={bodyText}>
-            Proofs, not profiles. You receive a signed eligibility result. You never receive documents, date of birth, email, wallet address, or credential JWTs.
-          </p>
-          <p style={bodyText}>Policy pack: <code style={{ fontFamily: MONO }}>{activeApp.policy_template_id}</code> · Policy <code style={{ fontFamily: MONO }}>{activeApp.policy_id}</code></p>
-          <p style={bodyText}>Hosted verification URL</p>
-          <pre style={codeBlockStyle}>{docs.hosted_link}</pre>
-          <p style={bodyText}>Next.js route handler</p>
-          <pre style={codeBlockStyle}>{docs.typescript_verification_example}</pre>
-          <p style={bodyText}>Express handler</p>
-          <pre style={codeBlockStyle}>{docs.kit_express_example}</pre>
-          <p style={bodyText}>Generic TypeScript</p>
-          <pre style={codeBlockStyle}>{docs.kit_generic_example}</pre>
-          <p style={bodyText}>Conformance command</p>
-          <pre style={codeBlockStyle}>{docs.conformance_command}</pre>
-          <p style={bodyText}>
-            Public receipt verifier: <Link href="/docs/partner-flow" style={{ color: "var(--accent)" }}>Partner Flow docs</Link>
-            {" · "}
-            <Link href="/docs/policy-packs" style={{ color: "var(--accent)" }}>Policy packs</Link>
-          </p>
-        </ContentCard>
-      )}
-
-      {step === "production" && activeApp && (
-        <>
+          <ContentCard title="Prepare to go live">
+            <p style={bodyText}>
+              Production stays fail-closed until Abraxas reviews your integration. Complete the checklist below, then request production access.
+            </p>
+            <ul style={{ ...bodyText, paddingLeft: "1.1rem", marginBottom: "0.85rem" }}>
+              {(journey?.goLiveChecklist ?? []).map((item) => (
+                <li key={item.id} style={{ color: item.complete ? "#10B981" : "var(--text-secondary)" }}>
+                  {item.complete ? "✓ " : "○ "}{item.label}
+                </li>
+              ))}
+            </ul>
+          </ContentCard>
+          <PartnerBindingProductionPanel applicationId={activeApp.id} />
+          <PartnerIntegrationHandoffPanel applicationId={activeApp.id} />
           <PartnerGoLiveReadinessPanel
             applicationId={activeApp.id}
             onChanged={() => {
@@ -818,13 +899,13 @@ export function PartnerLaunchpadClient({
               void refreshIntegrationHealth();
             }}
           />
-          <ContentCard title="Callback domain for Production review">
+          <ContentCard title="Request production access">
             <p style={bodyText}>
-              Reviewers expect an HTTPS allowlisted callback on a domain you control. Localhost stays sandbox-only. This step does not issue a production key.
+              Reviewers expect an HTTPS return URL on a domain you control. Localhost stays sandbox-only. This step does not automatically activate production.
             </p>
             {!productionCallbackReady && (
               <p style={{ ...bodyText, color: "#f59e0b" }}>
-                Add an HTTPS callback URL in Destinations first. Localhost is sandbox only.
+                Add an HTTPS return URL in your test app settings first.
               </p>
             )}
             {productionCallbackReady && !productionDomainVerified && (
@@ -842,7 +923,7 @@ export function PartnerLaunchpadClient({
               </div>
             )}
             {productionDomainVerified && (
-              <p style={{ ...bodyText, color: "#10B981" }}>Domain verified. You can request Production review when the other server checks pass.</p>
+              <p style={{ ...bodyText, color: "#10B981" }}>Domain verified. Request production access when the checklist is complete.</p>
             )}
             <div style={{ marginTop: "0.75rem" }}>
               <Btn
@@ -864,52 +945,128 @@ export function PartnerLaunchpadClient({
         </>
       )}
 
-      {activeApp && activity.length > 0 && (
-        <ContentCard title="Recent activity">
-          <ul style={{ margin: 0, paddingLeft: "1.1rem", fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)" }}>
-            {activity.slice(0, 12).map((event) => (
-              <li key={event.id} style={{ marginBottom: 4 }}>
-                {event.event_type.replace(/_/g, " ")} · {event.public_code ?? "—"} · {new Date(event.created_at).toLocaleString()}
-              </li>
+      {activeApp && activeApp.policy_template_id === "sandbox_institutional_protocol_access" && (
+        <ContentCard title="Next path">
+          <ol style={{ ...bodyText, paddingLeft: "1.2rem" }}>
+            {SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SEQUENCE.map((stepLabel) => (
+              <li key={stepLabel}>{stepLabel}</li>
             ))}
-          </ul>
+          </ol>
+          <p style={bodyText}>
+            Policy ID is pinned by the server. Browser input cannot choose partner, policy version, issuer, assurance, signer, network, or production.
+            Sandbox test result for technical integration only. It is not a live KYB or Production approval.
+          </p>
         </ContentCard>
       )}
 
       {activeApp && (
-        <PolicyChangeControlLaunchpadSlot
-          available={pccUiAvailable}
-          applicationId={activeApp.id}
-          onChanged={() => {
-            void refreshWorkspace();
-            void refreshIntegrationHealth();
-          }}
-        />
-      )}
-
-      {activeApp && (
-        <PartnerWebhookDeliveryHealthPanel applicationId={activeApp.id} />
-      )}
-
-      {activeApp && (
-        <PartnerEventDeliveryPanel applicationId={activeApp.id} />
-      )}
-
-      {activeApp && integrationHealth && (
-        <ContentCard title="Integration health">
-          <p style={bodyText}>Abraxas checks this configuration server-side. Fix only the items marked as action required or blocked.</p>
-          <div style={{ display: "grid", gap: "0.45rem" }}>
-            {healthChecks.map((check) => {
-              const color = check.status === "pass" ? "#10B981" : check.status === "action_required" ? "#f59e0b" : "#ef4444";
-              return <div key={check.id} style={{ border: "1px solid var(--border)", borderRadius: 10, padding: "0.65rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", fontFamily: FONT, fontSize: "0.74rem", fontWeight: 700 }}>
-                  <span>{check.label}</span><span style={{ color }}>{check.status.replace(/_/g, " ")}</span>
+        <ContentCard title="Developer details">
+          <p style={bodyText}>
+            Advanced configuration, bindings, webhooks, harness scenarios, and integration observability live here. The guided journey above stays merchant-focused.
+          </p>
+          <Btn size="sm" variant="secondary" onClick={() => setShowAdvancedOptions((current) => !current)}>
+            {showAdvancedOptions ? "Hide developer details" : "Show developer details"}
+          </Btn>
+          {showAdvancedOptions && (
+            <div style={{ marginTop: "0.85rem", display: "grid", gap: "0.85rem" }}>
+              {journey?.testPassed && (
+                <PartnerApplicationPoliciesPanel
+                  applicationId={activeApp.id}
+                  websiteConnected={journey.connectComplete}
+                  integrationFilesReady={journey.integrationFilesReady}
+                  onNavigate={(s) => navigateToStage(mapLegacyLaunchpadStep(s) as WizardStep)}
+                />
+              )}
+              <div id="policy-proposal">
+                <PolicyProposalForm />
+              </div>
+              <PartnerFlowRequestPanel
+                applicationId={activeApp.id}
+                partnerId={workspace?.partner_id ?? ""}
+              />
+              <PolicyVersionPlannerPanel applicationId={activeApp.id} />
+              <NetworkReadinessPanel applicationId={activeApp.id} />
+              <OnchainGateDeploymentPanel applicationId={activeApp.id} />
+              <TestnetGateDeploymentKitCard planned />
+              <OnchainVerifierConformanceCard verifiedSandbox />
+              <PartnerStarterKitPanel applicationId={activeApp.id} />
+              <PartnerActionControlPlanePanel applicationId={activeApp.id} />
+              <PartnerSandboxReadinessPanel
+                applicationId={activeApp.id}
+                onChanged={() => {
+                  void refreshWorkspace();
+                  void refreshIntegrationHealth();
+                }}
+              />
+              <CircleSettlementLaunchpadPanel applicationId={activeApp.id} />
+              {docs && (
+                <ContentCard title="Integration kit examples">
+                  <p style={bodyText}>Hosted verification URL</p>
+                  <pre style={codeBlockStyle}>{docs.hosted_link}</pre>
+                  <p style={bodyText}>Next.js route handler</p>
+                  <pre style={codeBlockStyle}>{docs.typescript_verification_example}</pre>
+                  <p style={bodyText}>
+                    <Link href="/docs/partner-flow" style={{ color: "var(--accent)" }}>Partner Flow docs</Link>
+                    {" · "}
+                    <Link href="/docs/policy-packs" style={{ color: "var(--accent)" }}>Policy packs</Link>
+                  </p>
+                </ContentCard>
+              )}
+              <ContentCard title="Integration test harness">
+                <div style={{ display: "grid", gap: "0.4rem", marginBottom: "0.75rem" }}>
+                  {LAUNCHPAD_TEST_SCENARIOS.map((scenario) => (
+                    <button key={scenario.id} type="button" onClick={() => void runScenario(scenario.id)} style={scenarioButtonStyle}>
+                      <span style={{ fontWeight: 700 }}>{scenario.label}</span>
+                      <span style={{ fontSize: "0.68rem", color: "var(--text-muted)" }}>{scenario.description}</span>
+                    </button>
+                  ))}
                 </div>
-                <p style={{ ...bodyText, margin: "0.3rem 0 0" }}>{check.detail}</p>
-              </div>;
-            })}
-          </div>
-          <Btn size="sm" variant="secondary" onClick={() => void refreshIntegrationHealth()}>Refresh health</Btn>
+                {testResult && (
+                  <pre style={codeBlockStyle} aria-live="polite">{JSON.stringify(testResult, null, 2)}</pre>
+                )}
+              </ContentCard>
+              {activity.length > 0 && (
+                <ContentCard title="Recent activity">
+                  <ul style={{ margin: 0, paddingLeft: "1.1rem", fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)" }}>
+                    {activity.slice(0, 12).map((event) => (
+                      <li key={event.id} style={{ marginBottom: 4 }}>
+                        {humanIntegrationEventLabel(event.event_type)} · {event.public_code ?? "—"} · {new Date(event.created_at).toLocaleString()}
+                      </li>
+                    ))}
+                  </ul>
+                </ContentCard>
+              )}
+              <PolicyChangeControlLaunchpadSlot
+                available={pccUiAvailable}
+                applicationId={activeApp.id}
+                onChanged={() => {
+                  void refreshWorkspace();
+                  void refreshIntegrationHealth();
+                }}
+              />
+              <PartnerIntegrationHealthPanel applicationId={activeApp.id} />
+              <PartnerIntegrationPerformancePanel applicationId={activeApp.id} />
+              <PartnerPilotProgressPanel applicationId={activeApp.id} />
+              <PartnerWebhookDeliveryHealthPanel applicationId={activeApp.id} />
+              <PartnerEventDeliveryPanel applicationId={activeApp.id} />
+              {integrationHealth && (
+                <ContentCard title="Integration health">
+                  <div style={{ display: "grid", gap: "0.45rem" }}>
+                    {healthChecks.map((check) => {
+                      const color = check.status === "pass" ? "#10B981" : check.status === "action_required" ? "#f59e0b" : "#ef4444";
+                      return <div key={check.id} style={{ border: "1px solid var(--border)", borderRadius: 10, padding: "0.65rem" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: "0.5rem", fontFamily: FONT, fontSize: "0.74rem", fontWeight: 700 }}>
+                          <span>{check.label}</span><span style={{ color }}>{check.status.replace(/_/g, " ")}</span>
+                        </div>
+                        <p style={{ ...bodyText, margin: "0.3rem 0 0" }}>{check.detail}</p>
+                      </div>;
+                    })}
+                  </div>
+                  <Btn size="sm" variant="secondary" onClick={() => void refreshIntegrationHealth()}>Refresh health</Btn>
+                </ContentCard>
+              )}
+            </div>
+          )}
         </ContentCard>
       )}
     </RedesignPage>
@@ -970,17 +1127,45 @@ const scenarioButtonStyle: React.CSSProperties = {
   fontSize: "0.75rem",
 };
 
-function stepPillStyle(active: boolean): React.CSSProperties {
+function stepPillStyle(
+  active: boolean,
+  complete?: boolean,
+  blocked?: boolean,
+  disabled?: boolean,
+): React.CSSProperties {
+  const border = blocked
+    ? "rgba(239,68,68,0.45)"
+    : complete
+      ? "rgba(16,185,129,0.45)"
+      : active
+        ? "var(--accent)"
+        : "var(--border)";
+  const background = blocked
+    ? "rgba(239,68,68,0.08)"
+    : complete
+      ? "rgba(16,185,129,0.08)"
+      : active
+        ? "rgba(99,102,241,0.12)"
+        : "var(--surface)";
+  const color = blocked
+    ? "#EF4444"
+    : complete
+      ? "#10B981"
+      : active
+        ? "var(--accent)"
+        : "var(--text-secondary)";
+
   return {
     fontFamily: FONT,
     fontSize: "0.68rem",
     fontWeight: 700,
     padding: "0.35rem 0.65rem",
     borderRadius: 999,
-    border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`,
-    background: active ? "rgba(99,102,241,0.12)" : "var(--surface)",
-    color: active ? "var(--accent)" : "var(--text-secondary)",
-    cursor: "pointer",
+    border: `1px solid ${border}`,
+    background,
+    color,
+    cursor: disabled ? "not-allowed" : "pointer",
+    opacity: disabled ? 0.55 : 1,
   };
 }
 

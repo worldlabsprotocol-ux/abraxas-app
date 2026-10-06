@@ -1,63 +1,66 @@
 // FILE: lib/home/simplifiedHomeCopy.ts
-// Minimal homepage copy — human, high-impact positioning.
+// Homepage copy — reusable private eligibility infrastructure.
 
-export const SIMPLIFIED_HOME_EYEBROW = "PRIVATE ELIGIBILITY PROTOCOL";
+export const SIMPLIFIED_HOME_EYEBROW = "REUSABLE PRIVATE ELIGIBILITY INFRASTRUCTURE";
 
-export const SIMPLIFIED_HOME_HEADLINE = "Prove only what a service needs.";
+export const SIMPLIFIED_HOME_HEADLINE = "Verify what matters. Reveal nothing else.";
 
 export const SIMPLIFIED_HOME_SUBHEAD =
-  "Abraxas is a private eligibility protocol. Your evidence stays private. Partners verify a current result on their server.";
+  "Abraxas lets applications verify eligibility without collecting the underlying identity data.";
 
 export const SIMPLIFIED_HOME_MOBILE_PROMPT =
-  "Start with your use case. Abraxas recommends a policy with no sign-in or wallet required.";
+  "One Abraxas Passport. Reusable verified evidence. Each application asks a narrow policy question and receives only its approved answer.";
 
 export const SIMPLIFIED_HOME_TRUST_LINE =
-  "Use one private verification again with fresh consent. Abraxas does not execute trades, payments, or transfers.";
+  "Use verified evidence again with fresh consent. Abraxas evaluates trust privately — applications receive signed eligibility receipts, not identity files.";
 
-export const SIMPLIFIED_HOME_CTA_PRIMARY = "Try Abraxas";
-export const SIMPLIFIED_HOME_CTA_SECONDARY = "Open Passport";
-export const SIMPLIFIED_HOME_CTA_PRIMARY_HREF = "/try";
-export const SIMPLIFIED_HOME_CTA_SECONDARY_HREF = "/passport";
+export const SIMPLIFIED_HOME_CTA_PRIMARY = "See reuse across two apps";
+export const SIMPLIFIED_HOME_CTA_SECONDARY = "Build in sandbox";
+export const SIMPLIFIED_HOME_CTA_PRIMARY_HREF = "/proof";
+export const SIMPLIFIED_HOME_CTA_SECONDARY_HREF =
+  "/developers/integration-studio?outcome=reuse_across_app&source=gtm-home";
+export const SIMPLIFIED_HOME_CTA_SANDBOX = "Try sandbox example";
+export const SIMPLIFIED_HOME_CTA_SANDBOX_HREF = "/good-trouble";
 export const SIMPLIFIED_HOME_CTA_BUILD = "Build with Abraxas";
 export const SIMPLIFIED_HOME_CTA_BUILD_HREF = "/developers/integration-studio";
 
 export const SIMPLIFIED_HERO_FLOW = [
-  "Choose your goal",
-  "Pick a policy",
-  "Review privacy",
-  "Run the sandbox",
+  "Verify once",
+  "Establish reusable evidence",
+  "Application asks a policy question",
+  "Receive a signed answer",
 ] as const;
 
 export const SIMPLIFIED_HOW_IT_WORKS = [
   {
     id: "verify",
-    title: "Verify",
-    body: "Complete the appropriate check when it is needed.",
+    title: "Verify once",
+    body: "Complete verification when needed and carry reusable evidence in your Abraxas Passport.",
   },
   {
-    id: "keep",
-    title: "Keep",
-    body: "Carry reusable proof in your Abraxas Passport.",
+    id: "reuse",
+    title: "Reuse evidence",
+    body: "Eligible requests can be satisfied from existing verified evidence — no repeated ID upload.",
   },
   {
     id: "share",
-    title: "Share",
-    body: "Provide only the result a participating service requires.",
+    title: "Share only the answer",
+    body: "Applications receive a signed eligibility receipt. Underlying identity data stays withheld.",
   },
 ] as const;
 
 export const SIMPLIFIED_AUDIENCE_PEOPLE = {
-  title: "For people",
-  body: "Less repetition. Less unnecessary data sharing. More control.",
+  title: "For holders",
+  body: "Passport is the holder-facing layer for consent and reusable evidence — one part of Abraxas infrastructure.",
 } as const;
 
 export const SIMPLIFIED_AUDIENCE_BUSINESS = {
-  title: "For businesses",
-  body: "Request policy specific proof without collecting more personal information than necessary.",
+  title: "For platforms",
+  body: "Keep your KYC provider. Reuse verified evidence across applications and receive server-verifiable answers.",
 } as const;
 
 export const SIMPLIFIED_TRUST_STATEMENT =
-  "Google sign-in opens an account. Eligibility is a result defined by each partner policy. Identity or liveness appears only when a policy truly requires it.";
+  "Google sign-in opens an account. Eligibility is a policy-specific signed answer. Identity documents appear only when a policy truly requires them.";
 
 export const SIMPLIFIED_FINAL_LINE = "Ready to verify once?";
 

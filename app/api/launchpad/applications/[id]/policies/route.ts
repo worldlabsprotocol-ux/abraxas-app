@@ -99,7 +99,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 }
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
-  const limited = enforceLaunchpadRateLimit(req, "/api/launchpad/applications/policies", 20);
+  const limited = await enforceLaunchpadRateLimit(req, "/api/launchpad/applications/policies", 20);
   if (limited) return limited;
 
   const auth = await requireLaunchpadSession(req);

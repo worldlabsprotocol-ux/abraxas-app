@@ -22,17 +22,21 @@ describe("homepage baseline (approved design invariants)", () => {
     expect(src).toContain("abx-home-section-center");
   });
 
-  it("hero uses centered layout classes", () => {
-    const hero = read("components/home/HomeSharpHero.tsx");
+  it("cinematic hero uses thesis headline and abx-home-hero shell", () => {
+    const hero = read("components/home/cinematic/thesis/CinematicHero.tsx");
     expect(hero).toContain("abx-home-hero");
     expect(hero).toContain("abx-home-hero-actions");
+    expect(hero).toContain("CINEMATIC_THESIS_LINE_1");
 
     const shell = read("components/redesign/RedesignHome.tsx");
+    expect(shell).toContain("CinematicHero");
     expect(shell).toContain('textAlign: "center"');
     expect(shell).toContain('alignItems: "center"');
-    expect(shell).toContain("HomeCapabilityMap");
-    expect(shell).toContain("HomeProtocolMap");
+    expect(shell).toContain("ScrollDisclosureStory");
+    expect(shell).toContain("VerifyOnceThesisDiagram");
     expect(shell).toContain("HomeGoodTroubleIntegration");
+    expect(shell).toContain("HomeAudiencePanels");
+    expect(shell).toContain("HomeTrustClose");
   });
 
   it("homepage typography CSS tokens exist", () => {
@@ -41,6 +45,8 @@ describe("homepage baseline (approved design invariants)", () => {
     expect(css).toContain(".abx-home-proof-card");
     expect(css).toContain(".abx-home-proof-media");
     expect(css).toContain(".abx-command-center");
+    expect(css).toContain(".abx-cinematic-hero");
+    expect(css).toContain("@keyframes abx-marquee-scroll");
   });
 
   it("protocol proof asset modules are present", () => {
@@ -50,5 +56,13 @@ describe("homepage baseline (approved design invariants)", () => {
     expect(logos).toContain("cielo");
     expect(logos).toContain("chickasaw");
     expect(logos).toContain("good-trouble");
+  });
+
+  it("motion primitives honor reduced motion", () => {
+    const marquee = read("lib/motion/cinematic/KineticMarquee.tsx");
+    expect(marquee).toContain("useReducedMotion");
+    const css = read("app/globals.css");
+    expect(css).toContain("prefers-reduced-motion: reduce");
+    expect(css).toContain(".abx-kinetic-marquee__track");
   });
 });

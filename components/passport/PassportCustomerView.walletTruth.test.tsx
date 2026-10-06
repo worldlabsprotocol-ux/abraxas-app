@@ -57,6 +57,9 @@ describe("PassportCustomerView wallet truth", () => {
         }
         return new Response(JSON.stringify({ ok: true }), { status: 200 });
       }
+      if (url.includes("/api/wallet-authority/wallets")) {
+        return new Response(JSON.stringify({ wallets: [] }), { status: 200 });
+      }
       return new Response("{}", { status: 404 });
     }));
   });
@@ -120,6 +123,9 @@ describe("PassportCustomerView wallet truth", () => {
           return new Response(JSON.stringify({ ok: true }), { status: 200 });
         }
         return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+      if (url.includes("/api/wallet-authority/wallets")) {
+        return new Response(JSON.stringify({ wallets: [] }), { status: 200 });
       }
       if (url.includes("/api/wallet-authority/repair")) {
         return new Response(JSON.stringify({

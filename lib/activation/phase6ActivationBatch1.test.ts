@@ -107,6 +107,8 @@ describe("phase 6 activation static guards", () => {
     const home = read("components/redesign/RedesignHome.tsx");
     expect(home).not.toContain("AbraxasBootScreen");
     expect(home).not.toContain("bootReady");
+    expect(home).toContain("HomeArchitectureFlow");
+    expect(home).toContain("HomeProblemComparison");
     expect(home).toContain("HomeProtocolMap");
     expect(home).toContain("HomeAudiencePanels");
     expect(home).toContain("HomeTrustClose");

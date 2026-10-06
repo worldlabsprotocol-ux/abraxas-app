@@ -2,23 +2,24 @@
 
 import { describe, expect, it } from "vitest";
 import { authorizeRegulatedCheckout } from "./checkoutAuthorization.js";
-import { validateSandboxReceipt } from "./abraxasReceiptValidator.js";
+import { validateProductionReceipt } from "./abraxasReceiptValidator.js";
 import { validateBrowseAccessPayload } from "./browseReceiptValidator.js";
 
 const RETAIL_RECEIPT = {
   signature_valid: true,
   decision_result: "approved",
   status: "active",
-  partner_id: "good-trouble-cannabis",
-  policy_id: "good-trouble-retail-v1",
+  partner_id: "good-trouble",
+  policy_id: "good-trouble-age_21_retail-v1",
   schema_version: "1.0.0",
   artifact_type: "eligibility_decision_receipt",
-  production_usable: false,
-  decision_context: "sandbox_only",
-  invalidation_reasons: ["production_not_usable:false"],
+  production_usable: true,
+  currently_valid: true,
+  decision_context: "production",
+  invalidation_reasons: [],
   expires_at: new Date(Date.now() + 3600000).toISOString(),
-  evaluated_claim_refs: [],
-  assurance_level: "L2",
+  evaluated_claim_refs: [{ status: "active", claim_type: "self_attested_age_band" }],
+  assurance_level: "L0",
 };
 
 const BROWSE_RECEIPT = {
@@ -27,7 +28,7 @@ const BROWSE_RECEIPT = {
   purpose: "browse",
   assurance_level: "L0",
   age_band: "over_21",
-  partner_id: "good-trouble-cannabis",
+  partner_id: "good-trouble",
   policy_id: "good-trouble-browse-v1",
   expires_at: new Date(Date.now() + 3600000).toISOString(),
 };
@@ -50,7 +51,7 @@ describe("regulated checkout authorization", () => {
   });
 
   it("rejects browse receipts at checkout", () => {
-    expect(validateSandboxReceipt(BROWSE_RECEIPT).verified).toBe(false);
+    expect(validateProductionReceipt(BROWSE_RECEIPT).verified).toBe(false);
     expect(authorizeRegulatedCheckout({ receipt: BROWSE_RECEIPT, flowConsumed: true }).authorized).toBe(false);
   });
 
@@ -59,12 +60,12 @@ describe("regulated checkout authorization", () => {
   });
 
   it("accepts validated authoritative retail receipt when flow consumed", () => {
-    expect(validateSandboxReceipt(RETAIL_RECEIPT).verified).toBe(true);
+    expect(validateProductionReceipt(RETAIL_RECEIPT).verified).toBe(true);
     expect(authorizeRegulatedCheckout({
       receipt: RETAIL_RECEIPT,
       flowConsumed: true,
       flowPurpose: "purchase",
-      flowPolicyId: "good-trouble-retail-v1",
+      flowPolicyId: "good-trouble-age_21_retail-v1",
     }).authorized).toBe(true);
   });
 

@@ -19,7 +19,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   if (policyRcCsrfRejected(req)) {
     return NextResponse.json({ error: "policy_release_candidate_csrf_required" }, { status: 403 });
   }
-  const limited = checkLaunchpadRateLimit(req, "admin:policy-release-candidate-decide", 8, 60);
+  const limited = await checkLaunchpadRateLimit(req, "admin:policy-release-candidate-decide", 8, 60);
   if (!limited.allowed) {
     return NextResponse.json({ error: "policy_release_candidate_rate_limited" }, { status: 429 });
   }

@@ -116,7 +116,7 @@ describe("consent-bound reusable eligibility facts", () => {
     const view = buildReuseClientView("available");
     expect(view.available).toBe(true);
     expect(view.consent_still_required).toBe(true);
-    expect(view.explanation.join(" ")).toMatch(/does not issue a result/i);
+    expect(view.explanation.join(" ")).toMatch(/explicit consent is still required/i);
     expect(JSON.stringify(view)).not.toContain(SOURCE_RECEIPT);
     expect(JSON.stringify(view)).not.toContain("origin-partner");
     expect(JSON.stringify(view)).not.toContain(fact.fact_id);

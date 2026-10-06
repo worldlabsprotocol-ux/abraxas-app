@@ -7,14 +7,20 @@ import type { EvaluatedClaimRef } from "@/lib/decisionReceipts/types";
 export function buildEvaluatedClaimRefs(
   claims: CredentialClaimRecord[],
   claimTypes: string[],
+  matchedClaimIds?: Record<string, string>,
 ): EvaluatedClaimRef[] {
+  const byId = new Map(claims.map(claim => [claim.id, claim]));
   const byType = new Map<string, CredentialClaimRecord>();
   for (const claim of claims) {
     if (!byType.has(claim.claim_type)) byType.set(claim.claim_type, claim);
   }
 
   return claimTypes
-    .map(type => byType.get(type))
+    .map(type => {
+      const matchedId = matchedClaimIds?.[type];
+      if (matchedId) return byId.get(matchedId) ?? byType.get(type);
+      return byType.get(type);
+    })
     .filter((c): c is CredentialClaimRecord => Boolean(c))
     .map(claim => ({
       claim_id: claim.id,

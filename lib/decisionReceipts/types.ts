@@ -91,6 +91,11 @@ export interface DecisionReceiptPublicView {
   currently_valid?: boolean;
   validity?: string;
   invalidation_reasons?: string[];
+  /** Issuance-time truth — approved decision with valid signature at issue. */
+  issued_valid?: boolean;
+  lifecycle_status?: "active" | "expired" | "revoked" | "superseded" | "invalidated";
+  partner_safe_reason?: string | null;
+  validity_checked_at?: string;
 }
 
 /** Partner view — full permitted receipt when consent scope allows */
@@ -108,9 +113,13 @@ export interface IssueDecisionReceiptInput {
   policyId: string;
   policyVersion: number;
   subjectId: string;
+  /** Launchpad application boundary for institutional pairwise receipt pseudonyms. */
+  applicationId?: string | null;
   decisionResult: DecisionReceiptResult;
   reasonCodes: string[];
   evaluatedClaimRefs: EvaluatedClaimRef[];
+  /** Opaque wallet_bindings.id used for evidence dependency — never an address. */
+  walletBindingRef?: string | null;
   evaluatedAt?: string;
   expiresAt?: string | null;
   decisionContext?: DecisionReceiptContext;

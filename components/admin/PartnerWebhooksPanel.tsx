@@ -64,7 +64,19 @@ interface FailedDelivery {
   attempt_count: number;
   occurred_at: string;
   updated_at: string;
+  operational_state: "failing" | "dead-lettered";
+  recoverable: boolean;
 }
+
+const OPERATIONAL_STATE_LABELS: Record<FailedDelivery["operational_state"], string> = {
+  failing: "Failing",
+  "dead-lettered": "Dead-lettered",
+};
+
+const OPERATIONAL_STATE_COLORS: Record<FailedDelivery["operational_state"], string> = {
+  failing: "#FBBF24",
+  "dead-lettered": "#FCA5A5",
+};
 
 const SETUP_STEPS = [
   "Save endpoint",
@@ -87,6 +99,7 @@ export function PartnerWebhooksPanel({ adminRequest }: { adminRequest: Productio
   const [alerts, setAlerts] = useState<AlertsStatus | null>(null);
   const [activeAlerts, setActiveAlerts] = useState<ActiveAlert[]>([]);
   const [failedDeliveries, setFailedDeliveries] = useState<FailedDelivery[]>([]);
+  const [failedLoadError, setFailedLoadError] = useState("");
   const [disclaimer, setDisclaimer] = useState("");
   const [secretReveal, setSecretReveal] = useState("");
   const [notice, setNotice] = useState("");
@@ -109,6 +122,7 @@ export function PartnerWebhooksPanel({ adminRequest }: { adminRequest: Productio
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
+    setFailedLoadError("");
     try {
       const failedUrl = partnerId.trim()
         ? `/api/admin/partners/webhooks/failed-deliveries?partner_id=${encodeURIComponent(partnerId.trim())}`
@@ -133,7 +147,6 @@ export function PartnerWebhooksPanel({ adminRequest }: { adminRequest: Productio
 
       if (!configRes.ok) throw new Error(configBody.message ?? configBody.error ?? "Failed to load webhook configs");
       if (!healthRes.ok) throw new Error(healthBody.error ?? "Failed to load delivery health");
-      if (!failedRes.ok) throw new Error(failedBody.error ?? "Failed to load failed deliveries");
 
       setConfigs(configBody.configs ?? []);
       setDisclaimer(configBody.disclaimer ?? "");
@@ -141,7 +154,14 @@ export function PartnerWebhooksPanel({ adminRequest }: { adminRequest: Productio
       setDispatch(healthBody.dispatch ?? null);
       setAlerts(healthBody.alerts ?? null);
       setActiveAlerts(healthBody.active_alerts ?? []);
-      setFailedDeliveries(failedBody.deliveries ?? []);
+
+      if (!failedRes.ok) {
+        setFailedDeliveries([]);
+        setFailedLoadError(failedBody.error ?? "Failed deliveries unavailable.");
+      } else {
+        setFailedDeliveries(failedBody.deliveries ?? []);
+        setFailedLoadError("");
+      }
 
       const existing = configBody.configs?.find(c => c.partner_id === partnerId.trim());
       if (existing) setEndpointUrl(existing.endpoint_url);
@@ -240,7 +260,7 @@ export function PartnerWebhooksPanel({ adminRequest }: { adminRequest: Productio
     });
   }
 
-  async function retryFailed(outboxId: string) {
+  async function executeRetryFailed(outboxId: string) {
     setLoading(true);
     setError("");
     setNotice("");
@@ -250,15 +270,29 @@ export function PartnerWebhooksPanel({ adminRequest }: { adminRequest: Productio
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ outbox_id: outboxId }),
       });
-      const body = await res.json() as { message?: string; error?: string };
-      if (!res.ok) throw new Error(body.message ?? webhookEndpointFormErrorMessage(body.error ?? "Retry failed"));
-      setNotice(body.message ?? "Delivery requeued.");
+      const body = await res.json() as { ok?: boolean; message?: string; error?: string };
+      if (!res.ok || !body.ok) {
+        throw new Error(body.message ?? webhookEndpointFormErrorMessage(body.error ?? "Retry failed"));
+      }
+      setNotice(body.message ?? "Delivery requeued — recovery confirmed by backend.");
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Retry failed");
     } finally {
       setLoading(false);
     }
+  }
+
+  function promptRetryFailed(item: FailedDelivery) {
+    requestConfirm({
+      actionKey: "webhook.retry_delivery",
+      context: {
+        partnerId: item.partner_id,
+        eventType: item.event_type,
+        operationalState: item.operational_state,
+      },
+      onConfirmed: () => executeRetryFailed(item.outbox_id),
+    });
   }
 
   const selected = configs.find(c => c.partner_id === partnerId.trim());
@@ -372,7 +406,11 @@ export function PartnerWebhooksPanel({ adminRequest }: { adminRequest: Productio
         <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "rgba(255,255,255,0.5)", margin: 0 }}>
           Metadata only — no payloads, secrets, or response bodies. Manual retry requeues the same event ID without creating a new receipt.
         </p>
-        {failedDeliveries.length === 0 ? (
+        {failedLoadError ? (
+          <p role="alert" style={{ fontFamily: FONT, fontSize: "0.72rem", color: "#FCA5A5", margin: 0 }}>
+            {failedLoadError} — count unknown, not zero.
+          </p>
+        ) : failedDeliveries.length === 0 ? (
           <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "rgba(255,255,255,0.45)", margin: 0 }}>No failed deliveries.</p>
         ) : (
           <div style={{ display: "grid", gap: "0.5rem" }}>
@@ -381,8 +419,17 @@ export function PartnerWebhooksPanel({ adminRequest }: { adminRequest: Productio
                 border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, padding: "0.65rem 0.75rem",
                 display: "grid", gap: "0.35rem",
               }}>
-                <div style={{ fontFamily: MONO, fontSize: "0.62rem", color: "rgba(255,255,255,0.75)" }}>
-                  {item.partner_id} · {item.event_type}
+                <div style={{ display: "flex", gap: "0.45rem", alignItems: "center", flexWrap: "wrap" }}>
+                  <span style={{
+                    fontFamily: MONO, fontSize: "0.58rem", fontWeight: 700, padding: "0.15rem 0.45rem", borderRadius: 999,
+                    border: `1px solid ${OPERATIONAL_STATE_COLORS[item.operational_state]}55`,
+                    color: OPERATIONAL_STATE_COLORS[item.operational_state],
+                  }}>
+                    {OPERATIONAL_STATE_LABELS[item.operational_state]}
+                  </span>
+                  <span style={{ fontFamily: MONO, fontSize: "0.62rem", color: "rgba(255,255,255,0.75)" }}>
+                    {item.partner_id} · {item.event_type}
+                  </span>
                 </div>
                 <div style={{ fontFamily: MONO, fontSize: "0.6rem", color: "rgba(255,255,255,0.55)" }}>
                   event_id {item.event_id}
@@ -393,8 +440,8 @@ export function PartnerWebhooksPanel({ adminRequest }: { adminRequest: Productio
                 <div style={{ fontFamily: MONO, fontSize: "0.58rem", color: "rgba(255,255,255,0.4)" }}>
                   occurred {formatTs(item.occurred_at)} · updated {formatTs(item.updated_at)}
                 </div>
-                <button type="button" disabled={loading || !selected?.enabled || selected.partner_id !== item.partner_id}
-                  onClick={() => void retryFailed(item.outbox_id)}
+                <button type="button" disabled={loading || confirmDialogProps.busy || !selected?.enabled || selected.partner_id !== item.partner_id || !item.recoverable}
+                  onClick={() => promptRetryFailed(item)}
                   style={{ justifySelf: "start", padding: "0.35rem 0.7rem", borderRadius: 6, border: "1px solid rgba(255,255,255,0.15)", background: "transparent", color: "#f0f0f0", fontSize: "0.65rem", cursor: "pointer" }}>
                   Retry delivery
                 </button>

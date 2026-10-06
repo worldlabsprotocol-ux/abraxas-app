@@ -63,6 +63,13 @@ export const PARTNER_ONBOARDING_AVAILABLE_NOW: PartnerCapabilityItem[] = [
     detail: "Start a policy request, verify the signed receipt on the server, and bind claim access without moving funds.",
     availability: "available_now",
   },
+  {
+    id: "pairwise-identity",
+    label: "Application-specific subject references",
+    detail:
+      "Distinct application-facing subject references for new provider-backed institutional individual flows — partners cannot correlate users across services from public receipt surfaces.",
+    availability: "available_now",
+  },
 ];
 
 export const PARTNER_ONBOARDING_IN_DEVELOPMENT: PartnerCapabilityItem[] = [
@@ -70,12 +77,6 @@ export const PARTNER_ONBOARDING_IN_DEVELOPMENT: PartnerCapabilityItem[] = [
     id: "passwordless-account",
     label: "Consented passwordless partner account creation",
     detail: "Create or recover a partner local account from an Abraxas verification, not deployed yet.",
-    availability: "in_development",
-  },
-  {
-    id: "pairwise-identity",
-    label: "Pairwise partner identity",
-    detail: "Per-partner subject identifiers so partners cannot correlate users across services.",
     availability: "in_development",
   },
   {
@@ -111,7 +112,7 @@ export const PARTNER_ONBOARDING_PRIVACY_PRINCIPLES = [
   "Newsletter enrollment must be optional and separately consented.",
   "Each partner owns its local accounts, sessions, preferences, purchases, rewards, and communications.",
   "Abraxas must not silently enroll users in third party services.",
-  "Future partner identity must be pairwise so partners cannot correlate users across services.",
+  "New provider-backed institutional individual flows use application-specific subject references so partners cannot correlate users across services from public receipt surfaces.",
 ] as const;
 
 export const PARTNER_ONBOARDING_HOW_IT_WORKS = [

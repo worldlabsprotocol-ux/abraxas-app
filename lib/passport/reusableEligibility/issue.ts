@@ -5,6 +5,7 @@ import { createHash } from "crypto";
 import type { EvaluatedClaimRef } from "@/lib/decisionReceipts/types";
 import { inferPolicyPackFromPolicyId } from "@/lib/partner/launchpad/policyPacks";
 import type { InternalReusableFact } from "./contract";
+import { recordReceiptEvidenceDependencies } from "@/lib/decisionReceipts/evidenceDependencies";
 import { recordDerivation } from "./store";
 
 export function derivedClaimRefs(fact: InternalReusableFact, policyId: string): EvaluatedClaimRef[] {
@@ -42,4 +43,8 @@ export async function persistReuseDerivation(input: {
   verifyRequestId: string;
 }): Promise<void> {
   await recordDerivation(input);
+  await recordReceiptEvidenceDependencies({
+    receiptId: input.derivedReceiptId,
+    fact: input.fact,
+  });
 }

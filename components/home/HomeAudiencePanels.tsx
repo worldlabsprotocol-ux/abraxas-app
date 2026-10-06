@@ -2,16 +2,22 @@
 // FILE: components/home/HomeAudiencePanels.tsx
 // For people / For businesses — two concise panels.
 
+import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import {
   SIMPLIFIED_AUDIENCE_BUSINESS,
   SIMPLIFIED_AUDIENCE_PEOPLE,
+  SIMPLIFIED_HOME_CTA_PRIMARY_HREF,
+  SIMPLIFIED_HOME_CTA_SECONDARY_HREF,
 } from "@/lib/home/simplifiedHomeCopy";
 
 const FONT = ABRAXAS_FONT_SANS;
 const GOLD = "#E8C547";
 
-const PANELS = [SIMPLIFIED_AUDIENCE_PEOPLE, SIMPLIFIED_AUDIENCE_BUSINESS] as const;
+const PANELS = [
+  { ...SIMPLIFIED_AUDIENCE_BUSINESS, href: SIMPLIFIED_HOME_CTA_PRIMARY_HREF, cta: "See reuse proof" },
+  { ...SIMPLIFIED_AUDIENCE_PEOPLE, href: "/passport", cta: "Explore Passport" },
+] as const;
 
 export function HomeAudiencePanels() {
   return (
@@ -42,9 +48,10 @@ export function HomeAudiencePanels() {
             <h3 style={{ margin: "0 0 0.45rem", fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, color: GOLD }}>
               {panel.title}
             </h3>
-            <p style={{ margin: 0, fontFamily: FONT, fontSize: "0.86rem", lineHeight: 1.6, color: "var(--text-secondary)" }}>
+            <p style={{ margin: "0 0 0.85rem", fontFamily: FONT, fontSize: "0.86rem", lineHeight: 1.6, color: "var(--text-secondary)" }}>
               {panel.body}
             </p>
+            <Btn href={panel.href} size="sm" variant="secondary">{panel.cta}</Btn>
           </article>
         ))}
       </div>

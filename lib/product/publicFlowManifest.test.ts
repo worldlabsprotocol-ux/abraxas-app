@@ -65,9 +65,10 @@ describe("public home flow manifest", () => {
   });
 
   it("keeps former top-level nav destinations one click away", () => {
-    expect(PUBLIC_NAV_LINKS.map((link) => link.label)).toEqual(["Home", "Passport", "Build"]);
+    expect(PUBLIC_NAV_LINKS.map((link) => link.label)).toEqual(["Home", "Passport", "Studio"]);
     expect(PUBLIC_NAV_EXPLORE_LINKS.map((link) => link.label)).toEqual([
-      "Verify",
+      "Verification",
+      "Pricing",
       "Launchpad",
       "Partner Flow",
       "Docs",

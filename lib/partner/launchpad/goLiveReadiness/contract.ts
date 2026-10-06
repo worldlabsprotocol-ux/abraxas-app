@@ -10,6 +10,7 @@ export const GO_LIVE_LIFECYCLE = [
   "needs_setup",
   "under_review",
   "approved_for_production",
+  "production_active",
 ] as const;
 export type GoLiveLifecycle = (typeof GO_LIVE_LIFECYCLE)[number];
 
@@ -18,6 +19,7 @@ export const GO_LIVE_LIFECYCLE_LABEL: Record<GoLiveLifecycle, string> = {
   needs_setup: "Needs setup",
   under_review: "Under review",
   approved_for_production: "Approved for Production",
+  production_active: "Production active",
 };
 
 export const GO_LIVE_CAPABILITIES = [

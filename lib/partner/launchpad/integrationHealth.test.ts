@@ -43,7 +43,7 @@ describe("Launchpad integration health", () => {
       harnessCompleted: REQUIRED_HARNESS_SCENARIOS,
     });
     expect(health.overall).toBe("action_required");
-    expect(health.checks.find((check) => check.id === "production")?.detail).toContain("All automated safety checks passed");
+    expect(health.checks.find((check) => check.id === "production")?.detail).toContain("Safety checks passed");
     expect(health.checks.find((check) => check.id === "policy_pack")?.detail).toContain("Age 21");
     expect(health.checks.find((check) => check.id === "webhook")?.status).toBe("action_required");
     expect(health.checks.find((check) => check.id === "webhook_schema")?.status).toBe("action_required");

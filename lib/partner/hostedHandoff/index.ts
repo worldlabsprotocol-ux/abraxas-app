@@ -19,5 +19,11 @@ export {
   resetHostedHandoffsForTests,
   putHandoffForTests,
 } from "./store";
+export {
+  resolveHandoffCallbackUrl,
+  resolveHostedHandoffForContinue,
+  type HostedHandoffContinuePreview,
+  type HostedHandoffContinueResolveResult,
+} from "./resolveForContinue";
 export { runSandboxHandoffFixture } from "./fixture";
 export { hostedHandoffHttpExamples } from "./examples";

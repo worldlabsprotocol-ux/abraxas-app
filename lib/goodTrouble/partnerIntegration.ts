@@ -1,5 +1,7 @@
 // FILE: lib/goodTrouble/partnerIntegration.ts
 // Good Trouble as reference relying-party integration (config-only, no GT-specific flow logic).
+// Purchase/browse flows preserve GT-specific semantics; sandbox age entry aligns with the universal
+// Verify-with-Abraxas redirect contract via buildPartnerVerifyUrl (Hosted Partner Flow + server verify).
 // For the labeled pilot example object, see lib/goodTrouble/pilotExample.ts.
 // New protocols should use lib/partner/referenceRelyingPartyConfig.ts (env-driven).
 

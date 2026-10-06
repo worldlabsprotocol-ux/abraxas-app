@@ -18,7 +18,8 @@ type ConsumeFailureReason =
   | "expired"
   | "replayed"
   | "cookie_mismatch"
-  | "misconfigured";
+  | "misconfigured"
+  | "store_unavailable";
 
 export type MintZkLoginOAuthStateResult = {
   oauthState: string;
@@ -28,8 +29,6 @@ export type MintZkLoginOAuthStateResult = {
 export type ConsumeZkLoginOAuthStateResult =
   | { ok: true; mode: ZkLoginLoginMode; jti: string }
   | { ok: false; reason: ConsumeFailureReason };
-
-const consumedJtis = new Map<string, number>();
 
 function stateSecret(): Uint8Array | null {
   const raw =
@@ -43,15 +42,8 @@ function parseLoginMode(raw: unknown): ZkLoginLoginMode {
   return raw === "legacy_recovery" ? "legacy_recovery" : "canonical";
 }
 
-function pruneConsumedJtis(nowMs = Date.now()): void {
-  const horizon = nowMs - ZKLOGIN_OAUTH_STATE_TTL_SEC * 1000;
-  consumedJtis.forEach((consumedAt, jti) => {
-    if (consumedAt < horizon) consumedJtis.delete(jti);
-  });
-}
-
 export function resetZkLoginOAuthStateForTests(): void {
-  consumedJtis.clear();
+  // OAuth state is stateless; JTI replay store reset lives in oauthJtiReplayStore tests.
 }
 
 export async function mintZkLoginOAuthState(
@@ -111,12 +103,20 @@ export async function consumeZkLoginOAuthState(
   if (!jti || !mode) return { ok: false, reason: "tampered" };
   if (jti !== verifier) return { ok: false, reason: "cookie_mismatch" };
 
-  pruneConsumedJtis();
-  if (consumedJtis.has(jti)) {
-    return { ok: false, reason: "replayed" };
+  const exp = payload.exp;
+  const expiresAtIso = typeof exp === "number"
+    ? new Date(exp * 1000).toISOString()
+    : new Date(Date.now() + ZKLOGIN_OAUTH_STATE_TTL_SEC * 1000).toISOString();
+
+  const { consumeZkLoginOAuthJti } = await import("./oauthJtiReplayStore");
+  const consumed = await consumeZkLoginOAuthJti({ jti, expiresAtIso });
+  if (!consumed.ok) {
+    if (consumed.reason === "replayed") {
+      return { ok: false, reason: "replayed" };
+    }
+    return { ok: false, reason: "store_unavailable" };
   }
 
-  consumedJtis.set(jti, Date.now());
   return { ok: true, mode, jti };
 }
 

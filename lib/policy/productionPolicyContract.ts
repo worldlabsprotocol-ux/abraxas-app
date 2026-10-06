@@ -166,7 +166,7 @@ export const PRODUCTION_PARTNER_POLICIES: ProductionPartnerPolicy[] = [
   },
   {
     id: "good-trouble-browse-v1",
-    partnerId: "good-trouble-cannabis",
+    partnerId: "good-trouble",
     sandboxOnly: true,
     enforcementNote: "Tier 1 browse access — L0 self-attestation only; not valid for purchase.",
     rules: {
@@ -180,6 +180,25 @@ export const PRODUCTION_PARTNER_POLICIES: ProductionPartnerPolicy[] = [
       session_receipt_hours: 4,
     },
   },
+  {
+    id: "good-trouble-age_21_retail-v1",
+    partnerId: "good-trouble",
+    sandboxOnly: false,
+    enforcementNote: "Good Trouble pilot purchase — L0 age eligibility only; no identity verification.",
+    rules: {
+      age_eligibility_only: true,
+      minimum_assurance_cap: "L0",
+      minimum_age: 21,
+      allowed_purposes: ["purchase"],
+      required_claims: [
+        { claim_type: "self_attested_age_band", must_equal: "over_21", max_age_hours: 24 },
+      ],
+      session_receipt_hours: 24,
+      account_required: true,
+      consent_required: true,
+      sandbox_only: false,
+    },
+  },
 ];
 
 export type ClaimIssuanceSource =
@@ -189,6 +208,8 @@ export type ClaimIssuanceSource =
   | "walletBindingClaim_zklogin"
   | "walletBindingClaim_siwe"
   | "submitSelfAttestation"
+  /** Holder disclosure orchestration — artifact bind + L0/L1 provenance claims via upsertClaims. */
+  | "submitProvenanceDisclosure"
   | "not_implemented";
 
 export interface ClaimContractRow {
@@ -338,6 +359,47 @@ export const CLAIM_CONTRACT: Record<ClaimType, ClaimContractRow> = {
       "lib/assurance/selfAttestation/tieredAgeAssurance.test.ts",
       "lib/goodTrouble/migration081SelfAttestationLedger.sqlParity.test.ts",
     ],
+  },
+  creator_attested: {
+    claimType: "creator_attested",
+    issuedBy: ["submitProvenanceDisclosure"],
+    storedIn: "credential_claims + content_artifact_records (hash only)",
+    resolvedBy: "getActiveClaims → artifact fingerprint binding",
+    evaluatedBy: "evaluateContentOriginDisclosure (attestation class, L0)",
+    regressionTests: [
+      "lib/provenance/provenance.test.ts",
+      "lib/provenance/partnerFlow.integration.test.ts",
+    ],
+  },
+  ai_assistance_disclosed: {
+    claimType: "ai_assistance_disclosed",
+    issuedBy: ["submitProvenanceDisclosure"],
+    storedIn: "credential_claims + content_artifact_records (hash only)",
+    resolvedBy: "getActiveClaims → holder disclosure category (not AI detection)",
+    evaluatedBy: "evaluateContentOriginDisclosure (disclosure class, L0)",
+    regressionTests: [
+      "lib/provenance/provenance.test.ts",
+      "lib/provenance/partnerFlow.integration.test.ts",
+    ],
+  },
+  source_integrity_verified: {
+    claimType: "source_integrity_verified",
+    issuedBy: ["submitProvenanceDisclosure"],
+    storedIn: "credential_claims + content_artifact_records (hash only)",
+    resolvedBy: "getActiveClaims → submitted hash vs artifact binding",
+    evaluatedBy: "evaluateContentOriginDisclosure (integrity class, L1)",
+    regressionTests: [
+      "lib/provenance/provenance.test.ts",
+      "lib/provenance/partnerFlow.integration.test.ts",
+    ],
+  },
+  capture_provenance_verified: {
+    claimType: "capture_provenance_verified",
+    issuedBy: ["not_implemented"],
+    storedIn: "credential_claims (planned) + optional adapter evidence",
+    resolvedBy: "getActiveClaims",
+    evaluatedBy: "evaluateProvenancePolicy (future adapter)",
+    regressionTests: [],
   },
 };
 

@@ -1,8 +1,8 @@
 // FILE: examples/good-trouble-wix/backend/purchaseEligibilityAuthorization.js
-// Server-validated, fresh, consumed, partner-bound, purpose-bound L2+ purchase gate.
+// Server-validated, fresh, consumed, partner-bound purchase gate (L0 pilot or L2+ legacy).
 
 import { rejectBrowseReceiptForCheckout } from "./browseReceiptValidator.js";
-import { validateSandboxReceipt } from "./abraxasReceiptValidator.js";
+import { validateProductionReceipt } from "./abraxasReceiptValidator.js";
 import {
   BROWSE_ACCESS_STORAGE_KEY,
   FLOW_PURPOSE_PURCHASE,
@@ -74,8 +74,8 @@ export function authorizePurchaseEligibility(input) {
     return { authorized: false, code: browseReject.code };
   }
 
-  const sandbox = validateSandboxReceipt(input.receipt, { now });
-  if (!sandbox.verified) {
+  const validated = validateProductionReceipt(input.receipt, { now });
+  if (!validated.verified) {
     return { authorized: false, code: "authoritative_receipt_invalid" };
   }
 
@@ -95,8 +95,14 @@ export function authorizePurchaseEligibility(input) {
     return { authorized: false, code: "receipt_purpose_browse" };
   }
 
+  const refs = record.evaluated_claim_refs ?? [];
+  const pilotAgeEligibility = refs.some((ref) => ref.claim_type === "self_attested_age_band");
   const assurance = record.assurance_level ?? record.minimum_assurance;
-  if (assurance && assuranceRank(String(assurance)) < MIN_PURCHASE_ASSURANCE) {
+  if (
+    assurance
+    && !pilotAgeEligibility
+    && assuranceRank(String(assurance)) < MIN_PURCHASE_ASSURANCE
+  ) {
     return { authorized: false, code: "insufficient_assurance" };
   }
 

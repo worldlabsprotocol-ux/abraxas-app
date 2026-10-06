@@ -65,6 +65,9 @@ describe("sandbox readiness routes", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resetLaunchpadRateLimitStoreForTests();
+    process.env.VERCEL_ENV = "preview";
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
     resolvePartnerConsoleSessionMock.mockResolvedValue({
       partnerId: "acme",
       apiKeyId: "key-1",

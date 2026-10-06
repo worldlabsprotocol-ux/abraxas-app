@@ -134,7 +134,7 @@ describe("operator sandbox institutional test result", () => {
       applicationId: "app-inst-1",
       confirm: false,
     })).rejects.toMatchObject({ code: "confirmation_required" });
-    const consent = createOrganizationConsent({
+    const consent = await createOrganizationConsent({
       partnerHmac: organizationPartnerHmac("acme"),
       result_category: "organization_eligible",
       purpose: "try to self issue",

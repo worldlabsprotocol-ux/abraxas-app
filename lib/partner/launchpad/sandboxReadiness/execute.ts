@@ -220,7 +220,7 @@ export async function runSandboxReadinessStage(input: RunSandboxStageInput): Pro
 
   const idempotencyKey = input.idempotencyKey?.trim();
   if (idempotencyKey) {
-    const existing = recallSandboxRun({
+    const existing = await recallSandboxRun({
       partnerId: input.partnerId,
       applicationId: input.application.id,
       stage: input.stage,
@@ -268,7 +268,7 @@ export async function runSandboxReadinessStage(input: RunSandboxStageInput): Pro
   }
 
   if (idempotencyKey) {
-    rememberSandboxRun({
+    await rememberSandboxRun({
       applicationId: input.application.id,
       partnerId: input.partnerId,
       stage: input.stage,

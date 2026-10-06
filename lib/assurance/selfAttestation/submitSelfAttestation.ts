@@ -4,7 +4,13 @@
 import { randomBytes } from "crypto";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { getPolicy } from "@/lib/verification/requestsService";
-import { isBrowseAccessPolicy } from "@/lib/policy/selfAttestationGuards";
+import {
+  expectedSelfAttestationPurpose,
+  isBrowseAccessPolicy,
+  isSelfAttestationEligiblePolicy,
+} from "@/lib/policy/selfAttestationGuards";
+import { GOOD_TROUBLE_BROWSE_POLICY_ID } from "@/lib/goodTrouble/constants";
+import { isGoodTroubleBrowsePartnerId } from "@/lib/partner/goodTroubleBrowseFlow";
 import { deriveSelfAttestedAgeBand, parseIsoDateUtc } from "./calculateAgeBand";
 import {
   generateBrowseReceiptId,
@@ -19,7 +25,7 @@ import {
   isBlockedSelfAttestationPurpose,
   normalizeSelfAttestationPurpose,
 } from "./purposePolicy";
-import type { SelfAttestedAgeBand } from "./constants";
+import type { SelfAttestedAgeBand, SelfAttestationPurpose } from "./constants";
 
 export interface SelfAttestSubmitInput {
   dateOfBirth: string;
@@ -34,8 +40,8 @@ export type SelfAttestSubmitResult =
       ok: true;
       age_band: SelfAttestedAgeBand;
       assurance_level: "L0";
-      purpose: "browse";
-      valid_for_purchase: false;
+      purpose: SelfAttestationPurpose;
+      valid_for_purchase: boolean;
       expires_at: string;
       browse_receipt?: string;
       browse_receipt_id?: string;
@@ -74,19 +80,39 @@ export async function submitSelfAttestation(
   if (!policy) {
     return { ok: false, code: "policy_not_found", status: 400 };
   }
-  if (policy.partner_id !== input.partnerId) {
+  const partnerMatchesPolicy = policy.partner_id === input.partnerId
+    || (
+      input.policyId === GOOD_TROUBLE_BROWSE_POLICY_ID
+      && isGoodTroubleBrowsePartnerId(input.partnerId)
+      && isGoodTroubleBrowsePartnerId(policy.partner_id)
+    );
+  if (!partnerMatchesPolicy) {
     return { ok: false, code: "partner_policy_mismatch", status: 400 };
   }
-  if (!isBrowseAccessPolicy(policy.rules_json)) {
+  const authoritativePartnerId = policy.partner_id;
+  if (!isSelfAttestationEligiblePolicy(policy.rules_json)) {
     emitSelfAttestationAuditEvent({
       event: "self_attest_denied",
       holderRef: input.holderRef,
       partnerId: input.partnerId,
       policyId: input.policyId,
       purpose,
-      code: "policy_not_browse",
+      code: "policy_not_self_attest_eligible",
     });
-    return { ok: false, code: "policy_not_browse", status: 400 };
+    return { ok: false, code: "policy_not_self_attest_eligible", status: 400 };
+  }
+
+  const expectedPurpose = expectedSelfAttestationPurpose(policy.rules_json);
+  if (purpose !== expectedPurpose) {
+    emitSelfAttestationAuditEvent({
+      event: "self_attest_denied",
+      holderRef: input.holderRef,
+      partnerId: input.partnerId,
+      policyId: input.policyId,
+      purpose,
+      code: "purpose_policy_mismatch",
+    });
+    return { ok: false, code: "purpose_policy_mismatch", status: 400 };
   }
 
   const parsed = parseIsoDateUtc(input.dateOfBirth);
@@ -106,11 +132,12 @@ export async function submitSelfAttestation(
   const ageBand = deriveSelfAttestedAgeBand(parsed.dobUtc, minimumAge);
   const holderRef = normalizeSuiAddress(input.holderRef);
   const nonce = randomBytes(16).toString("base64url");
-  const browseReceiptId = ageBand === "over_21" ? generateBrowseReceiptId() : null;
+  const isBrowse = isBrowseAccessPolicy(policy.rules_json);
+  const browseReceiptId = isBrowse && ageBand === "over_21" ? generateBrowseReceiptId() : null;
 
   const inserted = await insertSelfAttestationRecord({
     holderRef,
-    partnerId: input.partnerId,
+    partnerId: authoritativePartnerId,
     policyId: input.policyId,
     ageBand,
     purpose,
@@ -135,17 +162,17 @@ export async function submitSelfAttestation(
       ok: true,
       age_band: ageBand,
       assurance_level: "L0",
-      purpose: "browse",
+      purpose,
       valid_for_purchase: false,
       expires_at: inserted.row.expires_at,
     };
   }
 
   let browseReceipt: string | undefined;
-  if (browseReceiptId) {
+  if (isBrowse && browseReceiptId) {
     const payload = buildBrowseReceiptPayload({
       receiptId: browseReceiptId,
-      partnerId: input.partnerId,
+      partnerId: authoritativePartnerId,
       policyId: input.policyId,
       ageBand,
       issuedAt: inserted.row.attested_at,
@@ -171,8 +198,8 @@ export async function submitSelfAttestation(
     ok: true,
     age_band: ageBand,
     assurance_level: "L0",
-    purpose: "browse",
-    valid_for_purchase: false,
+    purpose,
+    valid_for_purchase: purpose === "purchase",
     expires_at: inserted.row.expires_at,
     browse_receipt: browseReceipt,
     browse_receipt_id: browseReceiptId ?? undefined,

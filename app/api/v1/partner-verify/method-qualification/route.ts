@@ -22,10 +22,20 @@ import {
   clearPartnerContinueBindingCookie,
   signPartnerContinueBindingCookie,
 } from "@/lib/partner/partnerVerifyResumeCookie";
-import { rejectReuseClientAuthority, reuseOptionForContinuation } from "@/lib/passport/reusableEligibility";
+import { buildReuseClientView, rejectReuseClientAuthority } from "@/lib/passport/reusableEligibility";
 import { resolveCompatibleReusableFact } from "@/lib/passport/reusableEligibility/qualify";
+import { recordEvidenceReuseLookupTelemetry } from "@/lib/passport/reusableEligibility/observability";
+import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 import { holderHasAcceptedReclaim } from "@/lib/reclaimAttestation";
 import { reclaimRouteForPolicy } from "@/lib/reclaimAttestation/policyFit";
+import { resolveHolderIdentityEvidenceComplete } from "@/lib/partner/resolveHolderIdentityEvidenceComplete";
+import { isCanonicalGoodTroublePurchaseFlow } from "@/lib/partner/goodTroublePurchaseFlow";
+import { getPolicy } from "@/lib/verification/requestsService";
+import {
+  expectedSelfAttestationPurpose,
+  isAgeEligibilityOnlyPolicy,
+} from "@/lib/policy/selfAttestationGuards";
+import { getActiveSelfAttestations } from "@/lib/assurance/selfAttestation/selfAttestationLedger";
 
 export const dynamic = "force-dynamic";
 
@@ -70,11 +80,22 @@ export async function GET(request: NextRequest) {
     policyId: bound.stored.policyId,
     policyVersion: bound.stored.policyVersion,
   });
-  const reuse = await reuseOptionForContinuation({
+  const resolvedReuse = await resolveCompatibleReusableFact({
     subjectId: session.session.suiAddress,
     targetPolicyId: bound.stored.policyId,
     targetPolicyVersion: bound.stored.policyVersion ?? 1,
+    relyingPartner: bound.stored.partnerId,
   });
+  void recordEvidenceReuseLookupTelemetry({
+    partnerId: bound.stored.partnerId,
+    policyId: bound.stored.policyId,
+    policyVersion: bound.stored.policyVersion ?? 1,
+    environment: isSandboxPolicyId(bound.stored.policyId) ? "sandbox" : "production",
+    verifyRequestId: verifyRequest,
+    decision: resolvedReuse.decision,
+    fact: resolvedReuse.ok ? resolvedReuse.fact : null,
+  });
+  const reuse = buildReuseClientView(resolvedReuse.ok ? "available" : resolvedReuse.state);
   const res = NextResponse.json({
     ...publicQualificationView(matched ? record : null),
     reuse,
@@ -133,6 +154,16 @@ export async function POST(request: NextRequest) {
       subjectId: session.session.suiAddress,
       targetPolicyId: bound.stored.policyId,
       targetPolicyVersion: bound.stored.policyVersion ?? 1,
+      relyingPartner: bound.stored.partnerId,
+    });
+    void recordEvidenceReuseLookupTelemetry({
+      partnerId: bound.stored.partnerId,
+      policyId: bound.stored.policyId,
+      policyVersion: bound.stored.policyVersion ?? 1,
+      environment: isSandboxPolicyId(bound.stored.policyId) ? "sandbox" : "production",
+      verifyRequestId: verifyRequest,
+      decision: resolved.decision,
+      fact: resolved.ok ? resolved.fact : null,
     });
     existingProofCompatible = resolved.ok;
   }
@@ -150,6 +181,52 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  const policyRow = await getPolicy(bound.stored.policyId);
+  const policyRules = policyRow?.rules_json;
+  const ageEligibilityPurchase = Boolean(
+    policyRules && isAgeEligibilityOnlyPolicy(policyRules),
+  );
+
+  const canonicalPurchase = isCanonicalGoodTroublePurchaseFlow({
+    partnerId: bound.stored.partnerId,
+    policyId: bound.stored.policyId,
+    purpose: bound.stored.purpose,
+  });
+  if (canonicalPurchase && ageEligibilityPurchase) {
+    if (methodId !== "self_attestation" && methodId !== "reuse_existing_proof") {
+      return NextResponse.json({
+        ok: false,
+        code: "canonical_age_eligibility_path",
+        method_qualified: false,
+        issuedReceipt: false,
+        error: "This verification path is not available for Good Trouble purchase.",
+      }, { status: 400 });
+    }
+  } else if (canonicalPurchase && methodId !== "identity_liveness" && methodId !== "reuse_existing_proof") {
+    return NextResponse.json({
+      ok: false,
+      code: "canonical_single_path",
+      method_qualified: false,
+      issuedReceipt: false,
+      error: "This verification path is not available for Good Trouble purchase.",
+    }, { status: 400 });
+  }
+
+  let selfAttestationActive = false;
+  if (methodId === "self_attestation" && policyRules && isAgeEligibilityOnlyPolicy(policyRules)) {
+    const rows = await getActiveSelfAttestations({
+      holderRef: session.session.suiAddress,
+      partnerId: policyRow!.partner_id,
+      policyId: bound.stored.policyId,
+      purpose: expectedSelfAttestationPurpose(policyRules),
+    });
+    selfAttestationActive = rows.some((row) => row.age_band === "over_21");
+  }
+
+  const identityEvidenceComplete = methodId === "identity_liveness"
+    ? await resolveHolderIdentityEvidenceComplete(session.session.suiAddress)
+    : undefined;
+
   const evaluated = evaluateMethodQualification({
     methodId,
     verifyRequestId: verifyRequest,
@@ -162,6 +239,9 @@ export async function POST(request: NextRequest) {
     existingProofCompatible,
     reclaimRequired,
     reclaimSessionAccepted,
+    identityEvidenceComplete,
+    policyRules,
+    selfAttestationActive,
   });
 
   if (!evaluated.ok) {

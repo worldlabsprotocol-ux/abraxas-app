@@ -87,11 +87,16 @@ export function PassportTrustCard({
     );
   }
 
+  const livingTrust = enhanced && walletReady && trust?.credential.active && trust.identity.status === "approved";
+
   return (
-    <div style={{
+    <div
+      className={livingTrust ? "abx-passport-trust--enhanced" : undefined}
+      style={{
       background: "var(--surface-raised)", border: `1px solid ${walletReady ? `${ACCENT}44` : "var(--border)"}`,
       borderRadius: 16, padding: "1.15rem 1.25rem", marginBottom: "1.5rem",
-    }}>
+    }}
+    >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.75rem", marginBottom: "0.35rem" }}>
         <div style={{ fontFamily: MONO, fontSize: "0.58rem", fontWeight: 700, color: ACCENT, letterSpacing: "0.1em", textTransform: "uppercase" }}>
           {copy.title}

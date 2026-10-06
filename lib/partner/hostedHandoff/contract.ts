@@ -27,7 +27,7 @@ export const HOSTED_HANDOFF_STATUSES = [
 ] as const;
 export type HostedHandoffStatus = (typeof HOSTED_HANDOFF_STATUSES)[number];
 
-export const HOSTED_HANDOFF_ALLOWED_KEYS = ["runtime"] as const;
+export const HOSTED_HANDOFF_ALLOWED_KEYS = ["runtime", "binding_id"] as const;
 
 export const HOSTED_HANDOFF_FORBIDDEN_KEYS = [
   "partner_id",

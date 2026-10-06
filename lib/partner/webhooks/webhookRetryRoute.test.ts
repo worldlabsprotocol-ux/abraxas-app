@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 const requeueMock = vi.fn();
 
 vi.mock("@/lib/adminAuth", () => ({
-  checkAdminAccess: vi.fn().mockResolvedValue(true),
+  checkProductionSensitiveAdminAccess: vi.fn().mockResolvedValue(true),
 }));
 
 vi.mock("@/lib/partner/webhooks/webhookDeadLetter", () => ({

@@ -107,6 +107,10 @@ export const PUBLIC_RECEIPT_ALLOWED_FIELDS = [
   "subject_pseudonym_id",
   "validity",
   "invalidation_reasons",
+  "issued_valid",
+  "lifecycle_status",
+  "partner_safe_reason",
+  "validity_checked_at",
 ] as const;
 
 export const PARTNER_KIT_ALLOWED_FIELDS = [

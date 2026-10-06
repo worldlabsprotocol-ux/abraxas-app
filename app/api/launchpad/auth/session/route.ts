@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const limited = enforceLaunchpadRateLimit(req, "/api/launchpad/auth/session", 20);
+  const limited = await enforceLaunchpadRateLimit(req, "/api/launchpad/auth/session", 20);
   if (limited) return limited;
 
   const auth = await authenticatePartner(req);

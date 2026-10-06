@@ -56,6 +56,26 @@ describe("backend claim contract audit", () => {
     }
   });
 
+  it("documents provenance claims issued via submitProvenanceDisclosure", () => {
+    const provenanceClaims = [
+      "creator_attested",
+      "ai_assistance_disclosed",
+      "source_integrity_verified",
+    ] as const satisfies readonly ClaimType[];
+
+    for (const claimType of provenanceClaims) {
+      const row = CLAIM_CONTRACT[claimType];
+      expect(row.issuedBy).toEqual(["submitProvenanceDisclosure"]);
+      expect(row.storedIn).toContain("content_artifact_records");
+      expect(row.evaluatedBy).toContain("evaluateContentOriginDisclosure");
+      expect(row.regressionTests.length).toBeGreaterThan(0);
+    }
+
+    expect(CLAIM_CONTRACT.creator_attested.evaluatedBy).toContain("L0");
+    expect(CLAIM_CONTRACT.ai_assistance_disclosed.resolvedBy).toContain("disclosure");
+    expect(CLAIM_CONTRACT.source_integrity_verified.evaluatedBy).toContain("L1");
+  });
+
   it("reports issued-but-unused claim types only when not required by any policy", () => {
     const allClaimTypes = Object.keys(CLAIM_CONTRACT) as ClaimType[];
     const issuedButNotRequired = allClaimTypes.filter(claimType => {

@@ -28,7 +28,11 @@ export async function restoreUserSessionFromBrowserSession(
     const profile = await response.json() as BrowserSessionProfile;
     if (!isNormalizedSuiAddress(profile.sui_address)) return null;
 
-    const provider = profile.provider === "apple" ? "apple" : "google";
+    const provider = profile.provider === "abraxas_hosted"
+      ? "abraxas_hosted"
+      : profile.provider === "apple"
+        ? "apple"
+        : "google";
     const email = typeof profile.email === "string" && profile.email.includes("@")
       ? profile.email
       : undefined;
@@ -39,6 +43,7 @@ export async function restoreUserSessionFromBrowserSession(
       email,
       maxEpoch: 0,
       loggedInAt: new Date().toISOString(),
+      sessionKind: provider === "abraxas_hosted" ? "hosted" : "oauth",
     };
   } catch {
     return null;

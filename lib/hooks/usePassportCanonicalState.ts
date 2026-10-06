@@ -17,8 +17,12 @@ async function fetchWalletBindings() {
     id: string;
     chain: string;
     wallet_address: string;
+    address_short?: string;
     binding_status: string;
     verified_at: string;
+    expires_at?: string | null;
+    control_status?: string;
+    freshness_label?: string;
   }> };
   return data.wallets ?? [];
 }

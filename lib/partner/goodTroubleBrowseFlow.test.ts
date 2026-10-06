@@ -16,8 +16,14 @@ import {
   GOOD_TROUBLE_BROWSE_STATUS,
   GOOD_TROUBLE_BROWSE_SUPPORTING,
   isGoodTroubleBrowseFlow,
+  isGoodTroubleBrowsePartnerId,
+  isGoodTroubleHostedDirectHandoff,
   resolveGoodTroubleFlowPurpose,
 } from "./goodTroubleBrowseFlow";
+import {
+  GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+  GOOD_TROUBLE_CANONICAL_POLICY_ID,
+} from "@/lib/goodTrouble/canonicalProductionConfig";
 import {
   resolvePartnerContinuationIntro,
   resolvePartnerContinuationStatus,
@@ -79,6 +85,17 @@ describe("isGoodTroubleBrowseFlow", () => {
       policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
       purpose: null,
     })).toBe(true);
+  });
+
+  it("matches canonical Good Trouble browse partner id from Wix BROWSE_FLOW", () => {
+    expect(isGoodTroubleBrowseFlow({
+      partnerId: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+      policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
+      purpose: "browse",
+    })).toBe(true);
+    expect(isGoodTroubleBrowsePartnerId(GOOD_TROUBLE_CANONICAL_PARTNER_ID)).toBe(true);
+    expect(isGoodTroubleBrowsePartnerId(GOOD_TROUBLE_PARTNER_ID)).toBe(true);
+    expect(isGoodTroubleBrowsePartnerId("example-partner")).toBe(false);
   });
 });
 
@@ -188,13 +205,53 @@ describe("SelfAttestationBrowseForm customer copy", () => {
   });
 });
 
+describe("isGoodTroubleHostedDirectHandoff", () => {
+  it("skips duplicate orientation for hosted browse and canonical purchase", () => {
+    expect(isGoodTroubleHostedDirectHandoff({
+      hostedBootstrapEligible: true,
+      partnerId: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+      policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
+      purpose: "browse",
+    })).toBe(true);
+    expect(isGoodTroubleHostedDirectHandoff({
+      hostedBootstrapEligible: true,
+      partnerId: GOOD_TROUBLE_PARTNER_ID,
+      policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
+      purpose: "browse",
+    })).toBe(true);
+    expect(isGoodTroubleHostedDirectHandoff({
+      hostedBootstrapEligible: true,
+      partnerId: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+      policyId: GOOD_TROUBLE_CANONICAL_POLICY_ID,
+    })).toBe(true);
+  });
+
+  it("keeps orientation when hosted bootstrap is unavailable", () => {
+    expect(isGoodTroubleHostedDirectHandoff({
+      hostedBootstrapEligible: false,
+      partnerId: GOOD_TROUBLE_PARTNER_ID,
+      policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
+      purpose: "browse",
+    })).toBe(false);
+  });
+});
+
 describe("Good Trouble browse screen chrome", () => {
   it("uses the minimal browse heading and supporting line", () => {
-    expect(GOOD_TROUBLE_BROWSE_EYEBROW).toBe("PRIVATE AGE CHECK");
+    expect(GOOD_TROUBLE_BROWSE_EYEBROW).toBe("BROWSE ACCESS");
     expect(GOOD_TROUBLE_BROWSE_HEADING).toBe("Confirm you're 21+");
     expect(GOOD_TROUBLE_BROWSE_SUPPORTING).toBe(
-      "Enter your birthday once. Good Trouble receives only a yes or no result.",
+      "Verify once. Good Trouble only receives your 21+ result.",
     );
     expect(GOOD_TROUBLE_BROWSE_PRIMARY_BUTTON).toBe("Continue");
+  });
+});
+
+describe("PartnerContinueClient hosted direct handoff contract", () => {
+  it("hides duplicate orientation chrome when merchant already chose Abraxas", () => {
+    expect(PARTNER_CONTINUE_SOURCE).toContain("isGoodTroubleHostedDirectHandoff");
+    expect(PARTNER_CONTINUE_SOURCE).toContain("hideHeader={directHandoff}");
+    expect(PARTNER_VERIFY_SHELL_SOURCE).toContain("hideHeader={hideOrientationChrome}");
+    expect(PARTNER_VERIFY_SHELL_SOURCE).toContain("isGoodTroubleHostedDirectHandoff");
   });
 });

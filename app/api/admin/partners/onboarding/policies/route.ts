@@ -2,7 +2,7 @@
 // Draft policy creation and publish for partner onboarding (P1-1 immutable workflow).
 
 import { NextRequest, NextResponse } from "next/server";
-import { checkAdminAccess } from "@/lib/adminAuth";
+import { requireAdminRouteAccess } from "@/lib/admin/requireAdminRouteAccess";
 import { logAdminPartnerConfigAudit } from "@/lib/admin/partnerOnboardingAudit";
 import { DEFAULT_PILOT_POLICY_RULES } from "@/lib/admin/partnerOnboardingConsole";
 import {
@@ -19,9 +19,8 @@ import {
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 
 export async function POST(req: NextRequest) {
-  if (!await checkAdminAccess(req)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = await requireAdminRouteAccess(req);
+  if (denied) return denied;
 
   const body = (await req.json().catch(() => ({}))) as {
     action?: "create_initial_draft" | "update_draft" | "publish";

@@ -5,6 +5,8 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
+import { Btn } from "@/components/redesign/ui";
+import { ProductOutcomeState } from "@/components/product/ProductOutcomeState";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import { PUBLIC_SURFACE } from "@/lib/design/publicSurface";
 import {
@@ -225,8 +227,11 @@ function ActivityCard({
           {item.state_label}{item.current ? " · Current" : " · Not current"}
         </p>
       </div>
-      <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0.35rem 0 0", lineHeight: 1.55 }}>
-        {item.policy_label} · {item.version_summary}
+      <p style={{ fontFamily: FONT, fontSize: "0.8rem", color: "var(--text-primary)", margin: "0.35rem 0 0", lineHeight: 1.55, fontWeight: 650 }}>
+        Requested: {item.policy_label}
+      </p>
+      <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-muted)", margin: "0.15rem 0 0" }}>
+        {item.version_summary}
       </p>
       <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-muted)", margin: "0.2rem 0 0" }}>
         {formatWhen(item.decided_at)}
@@ -382,10 +387,10 @@ export function PassportVerificationActivity() {
         id="passport-verification-activity-heading"
         style={{ fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.5rem" }}
       >
-        Connected services
+        Verification activity
       </h2>
       <p style={{ fontFamily: FONT, fontSize: "0.8rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.85rem" }}>
-        See which services received a result, what stayed private, and stop future reuse whenever a result is current.
+        See which partners received a result, what stayed private, and when each verification happened.
       </p>
 
       {!isLoading && !isError && connectionSummary.total > 0 && (
@@ -454,18 +459,24 @@ export function PassportVerificationActivity() {
       )}
 
       {signedOut && (
-        <p role="status" style={{ fontFamily: FONT, fontSize: "0.84rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.6 }}>
-          Sign in to see your connected services.
-        </p>
+        <ProductOutcomeState
+          kind="info"
+          title="Sign in to view verification activity"
+          detail="Your partner verification history appears here after you sign in to Passport."
+          actionLabel="Open Passport"
+          href="/passport"
+        />
       )}
 
       {isError && !signedOut && (
-        <p role="status" style={{ fontFamily: FONT, fontSize: "0.84rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.6 }}>
-          {PASSPORT_ACTIVITY_UNAVAILABLE}
-        </p>
+        <ProductOutcomeState
+          kind="error"
+          title="Verification activity is temporarily unavailable"
+          detail={PASSPORT_ACTIVITY_UNAVAILABLE}
+        />
       )}
 
-      {!isLoading && !isError && (data?.items.length ?? 0) === 0 && (
+      {!isLoading && !isError && !signedOut && (data?.items.length ?? 0) === 0 && (
         <p role="status" style={{ fontFamily: FONT, fontSize: "0.84rem", color: "var(--text-secondary)", margin: 0, lineHeight: 1.6 }}>
           {PASSPORT_ACTIVITY_EMPTY}
         </p>

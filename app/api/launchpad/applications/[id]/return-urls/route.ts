@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 type RouteContext = { params: { id: string } };
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
-  const limited = enforceLaunchpadRateLimit(req, "/api/launchpad/return-urls", 20);
+  const limited = await enforceLaunchpadRateLimit(req, "/api/launchpad/return-urls", 20);
   if (limited) return limited;
 
   const auth = await requireLaunchpadSession(req);
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
 }
 
 export async function DELETE(req: NextRequest, { params }: RouteContext) {
-  const limited = enforceLaunchpadRateLimit(req, "/api/launchpad/return-urls", 20);
+  const limited = await enforceLaunchpadRateLimit(req, "/api/launchpad/return-urls", 20);
   if (limited) return limited;
 
   const auth = await requireLaunchpadSession(req);

@@ -80,7 +80,7 @@ describe("Wix deployment contract", () => {
     expect(LOGIC_SOURCE).not.toContain("createPurchaseVerificationStart");
     expect(LOGIC_SOURCE).not.toContain("createAbraxasVerificationStart");
     expect(validateBrowseVerificationStart({
-      verifyUrl: `https://abraxasworld.xyz/partner/verify?partner_id=good-trouble-cannabis&policy_id=${PURCHASE_POLICY_ID}&return_url=https%3A%2F%2Fwww.goodtroublecanna.com%2F${PURCHASE_CALLBACK_PATH}`,
+      verifyUrl: `https://abraxasworld.xyz/partner/verify?app=good-trouble&return_url=https%3A%2F%2Fwww.goodtroublecanna.com%2F${PURCHASE_CALLBACK_PATH}`,
       flowId: `${PURCHASE_FLOW_ID_PREFIX}${"a".repeat(64)}`,
       verifier: "b".repeat(64),
       policyId: PURCHASE_POLICY_ID,
@@ -140,7 +140,7 @@ function createMemoryStorage() {
 function buildBrowseStartFixture() {
   const flowId = "gtb_" + "a".repeat(64);
   return {
-    verifyUrl: `https://abraxasworld.xyz/partner/verify?partner_id=good-trouble-cannabis&policy_id=${BROWSE_POLICY_ID}&purpose=browse&return_url=https%3A%2F%2Fwww.goodtroublecanna.com%2Fbrowse-verification-result%3Fgtb%3D${flowId}`,
+    verifyUrl: `https://abraxasworld.xyz/partner/verify?partner_id=good-trouble&policy_id=${BROWSE_POLICY_ID}&purpose=browse&return_url=https%3A%2F%2Fwww.goodtroublecanna.com%2Fbrowse-verification-result%3Fgtb%3D${flowId}`,
     flowId,
     verifier: "b".repeat(64),
     policyId: BROWSE_POLICY_ID,
@@ -195,11 +195,21 @@ describe("ageVerificationPopupLogic state machine", () => {
     await controller.onReady();
   });
 
-  it("starts ready with Abraxas button enabled and privacy-preserving copy", () => {
+  it("starts ready with Abraxas button enabled and privacy-preserving copy", async () => {
+    const ready = await controller.onReady();
+    expect(ready).toEqual({ ok: true, code: "ready" });
     expect(controller.getState()).toBe(POPUP_STATE.READY);
     expect(deps.setAbraxasButtonEnabled).toHaveBeenLastCalledWith(true);
     expect(deps.setAbraxasButtonLabel).toHaveBeenCalledWith(ABRAXAS_LABEL);
     expect(deps.setStatus).toHaveBeenCalledWith(STATUS_READY);
+    expect(ABRAXAS_LABEL).toBe("Verify 21+ with Abraxas");
+  });
+
+  it("can skip ready state when age gate is already satisfied", async () => {
+    deps.setStatus.mockClear();
+    const ready = await controller.onReady(() => true);
+    expect(ready).toEqual({ ok: true, code: "age_gate_already_satisfied" });
+    expect(deps.setStatus).not.toHaveBeenCalled();
   });
 
   it("invokes backend exactly once with no client arguments on click", async () => {

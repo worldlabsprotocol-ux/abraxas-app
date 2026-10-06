@@ -2,7 +2,7 @@
 // Admin receipt inspector — policy version, claim refs, signature, audit timeline.
 
 import { NextRequest, NextResponse } from "next/server";
-import { checkAdminAccess, resolveAdminAccess } from "@/lib/adminAuth";
+import { checkProductionSensitiveAdminAccess, resolveAdminAccess } from "@/lib/adminAuth";
 import { resolveAdminActorCategory } from "@/lib/admin/adminActorCategory";
 import {
   getReceiptAuditTimeline,
@@ -10,7 +10,10 @@ import {
 } from "@/lib/decisionReceipts/service";
 import { toPublicView, verifyRecordSignature, resolveReceiptStatus } from "@/lib/decisionReceipts/views";
 import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver";
+import { evaluateReceiptCurrentValidity } from "@/lib/decisionReceipts/currentValidity";
 import { getReceiptDependencies } from "@/lib/decisionReceipts/dependencies";
+import { getReceiptEvidenceDependencies } from "@/lib/decisionReceipts/evidenceDependencies";
+import { getDerivationByDerivedReceipt } from "@/lib/passport/reusableEligibility/invalidation";
 import {
   isRevocationReasonCode,
   revokeDecisionReceiptControlled,
@@ -20,7 +23,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ receiptId: string }> },
 ) {
-  if (!await checkAdminAccess(req)) {
+  if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -33,7 +36,10 @@ export async function GET(
 
   const audit = await getReceiptAuditTimeline(receiptId);
   const validity = await resolveReceiptValidity(record);
+  const currentValidity = await evaluateReceiptCurrentValidity({ record });
   const dependencies = await getReceiptDependencies(receiptId);
+  const evidenceDependencies = await getReceiptEvidenceDependencies(receiptId);
+  const reuseDerivation = await getDerivationByDerivedReceipt(receiptId).catch(() => null);
 
   return NextResponse.json({
     receipt: {
@@ -48,7 +54,17 @@ export async function GET(
     signature_status: verifyRecordSignature(record) ? "valid" : "invalid",
     resolved_status: resolveReceiptStatus(record),
     current_validity: validity,
+    canonical_current_validity: currentValidity,
     dependencies,
+    evidence_dependencies: evidenceDependencies,
+    reuse_trust: reuseDerivation
+      ? {
+          derived_from_source: true,
+          requesting_partner_id: reuseDerivation.requesting_partner_id,
+          requesting_policy_id: reuseDerivation.requesting_policy_id,
+          evidence_dependency_count: evidenceDependencies.length,
+        }
+      : { derived_from_source: false, evidence_dependency_count: evidenceDependencies.length },
     audit_timeline: audit,
   });
 }
@@ -57,7 +73,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ receiptId: string }> },
 ) {
-  if (!await checkAdminAccess(req)) {
+  if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -89,6 +105,27 @@ export async function POST(
   if (!result.ok) {
     const status = result.error === "receipt_not_found" ? 404 : 400;
     return NextResponse.json({ error: result.error }, { status });
+  }
+
+  if (!result.alreadyRevoked) {
+    try {
+      const record = await getReceiptById(receiptId);
+      const { recordIntegrationEventBestEffort } = await import("@/lib/partner/integrationObservability/record");
+      await recordIntegrationEventBestEffort({
+        partnerId: record?.partner_id ?? "unknown",
+        environment: record?.decision_context === "production" ? "production" : "sandbox",
+        eventType: "receipt_revoked",
+        lifecycleStage: "receipt",
+        outcome: "revoked",
+        partnerSafeReason: "receipt_revoked",
+        receiptId: result.receiptId,
+        policyId: record?.policy_id ?? null,
+        policyVersion: record?.policy_version ?? null,
+        metadata: { public_code: result.reasonCode },
+      });
+    } catch {
+      // Revocation telemetry must not block revocation.
+    }
   }
 
   return NextResponse.json({

@@ -11,15 +11,19 @@ import {
 } from "./adminNav";
 
 describe("adminNav protocol sidebar", () => {
-  it("lists the protocol routes in required order with Identity first", () => {
+  it("lists operator routes including production review and design partners", () => {
     expect(adminNavItemIds()).toEqual([
       "identity",
       "partners",
       "partner-flow",
+      "production-review",
+      "design-partners",
       "policy-proposals",
       "receipts",
       "sandbox-institutional-result",
       "trust",
+      "pilot-evidence",
+      "value-evidence",
       "privacy",
       "support",
       "connect",
@@ -36,6 +40,8 @@ describe("adminNav protocol sidebar", () => {
   it("resolves active nav item for protocol routes", () => {
     expect(resolveActiveAdminNavItem("/admin/identity")?.id).toBe("identity");
     expect(resolveActiveAdminNavItem("/admin/partners")?.id).toBe("partners");
+    expect(resolveActiveAdminNavItem("/admin/production-review")?.id).toBe("production-review");
+    expect(resolveActiveAdminNavItem("/admin/design-partners")?.id).toBe("design-partners");
     expect(resolveActiveAdminNavItem("/admin/receipts")?.id).toBe("receipts");
     expect(resolveActiveAdminNavItem("/admin/support")?.id).toBe("support");
     expect(resolveActiveAdminNavItem("/admin/connect")?.id).toBe("connect");

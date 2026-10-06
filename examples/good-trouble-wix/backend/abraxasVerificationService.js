@@ -55,8 +55,9 @@ function resolveStore(deps) {
  * @param {"browse" | "purchase"} purpose
  * @param {string | null | undefined} captchaToken
  * @param {object} [deps]
+ * @param {string | null | undefined} [returnDestinationPath]
  */
-async function startFlow(purpose, captchaToken, deps = {}) {
+async function startFlow(purpose, captchaToken, deps = {}, returnDestinationPath = null) {
   const context = flowStartContext(purpose);
 
   try {
@@ -88,7 +89,12 @@ async function startFlow(purpose, captchaToken, deps = {}) {
 
     let payload;
     try {
-      payload = await buildVerificationStartPayload({ hashFn, now, purpose });
+      payload = await buildVerificationStartPayload({
+        hashFn,
+        now,
+        purpose,
+        returnDestinationPath: purpose === "purchase" ? returnDestinationPath : null,
+      });
     } catch {
       return buildFlowStartFailure({
         code: "payload_build_failed",
@@ -160,7 +166,8 @@ export async function createBrowseVerificationStartService(captchaToken, deps = 
     || !flowId.startsWith(FLOW_ID_PREFIX_BROWSE)
     || !verifyUrl.includes(BROWSE_POLICY_ID)
     || !verifyUrl.includes("purpose=browse")
-    || verifyUrl.includes("good-trouble-retail-v1")
+    || verifyUrl.includes("good-trouble-age_21_retail-v1")
+    || verifyUrl.includes("app=good-trouble")
     || verifyUrl.includes("age-verification-result")
   ) {
     return buildFlowStartFailure({
@@ -175,8 +182,12 @@ export async function createBrowseVerificationStartService(captchaToken, deps = 
   return result;
 }
 
-export async function createPurchaseVerificationStartService(captchaToken, deps = {}) {
-  return startFlow("purchase", captchaToken, deps);
+export async function createPurchaseVerificationStartService(
+  captchaToken,
+  deps = {},
+  returnDestinationPath = null,
+) {
+  return startFlow("purchase", captchaToken, deps, returnDestinationPath);
 }
 
 /** @deprecated Use createPurchaseVerificationStartService */
@@ -225,7 +236,11 @@ export async function completeBrowseVerificationService(browseReceipt, flowId, v
     if (record?.policyId && result.payload?.policy_id !== record.policyId) {
       return { verified: false, transientFailure: false };
     }
-    return { verified: true, transientFailure: false };
+    return {
+      verified: true,
+      transientFailure: false,
+      expires_at: result.payload?.expires_at ?? null,
+    };
   };
 
   return completeBrowseVerificationCore({

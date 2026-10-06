@@ -6,7 +6,7 @@ export const PRODUCTION_REVIEW_DOCS = "/docs/production-review" as const;
 export const PRODUCTION_REVIEW_VERSION = "1.0.0" as const;
 
 export const PRODUCTION_REVIEW_NOTICE =
-  "Operator review approval means only that this Launchpad app is approved for the reviewed Production integration path. It does not issue a production API key, activate Mainnet, create a wallet, submit a transaction, trade, payment, or transfer, issue a receipt, or change policy pins, callbacks, or capabilities.";
+  "Activating production runs one canonical transaction: review approval, environment promotion, policy pin confirmation, and one abx_live_ credential issuance. The raw secret is encrypted for one-time partner reveal. Activation does not create a wallet, submit a transaction, trade, payment, or transfer.";
 
 export const PRODUCTION_REVIEW_DECISIONS = ["approve", "reject"] as const;
 export type ProductionReviewDecision = (typeof PRODUCTION_REVIEW_DECISIONS)[number];

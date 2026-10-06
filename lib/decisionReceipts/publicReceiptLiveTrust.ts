@@ -10,11 +10,17 @@ import {
   evaluatePublicReceiptTrust,
   type TrustEvaluationResult,
 } from "@/lib/decisionReceipts/trustEvaluation";
+import { evaluateReceiptCurrentValidity } from "@/lib/decisionReceipts/currentValidity";
+import type { ReceiptLifecycleStatus, PartnerSafeReceiptInvalidationReason } from "@/lib/decisionReceipts/currentValidity";
 
 export type PublicReceiptLiveTrustView = DecisionReceiptPublicView & {
   currently_valid: boolean;
   validity: string;
   invalidation_reasons: string[];
+  issued_valid: boolean;
+  lifecycle_status: ReceiptLifecycleStatus;
+  partner_safe_reason: PartnerSafeReceiptInvalidationReason | null;
+  validity_checked_at: string;
 };
 
 export async function resolveLiveClaimStatuses(
@@ -55,12 +61,22 @@ export function applyLiveClaimStatusesToRefs(
 export function attachLiveTrustToPublicView(
   view: DecisionReceiptPublicView,
   trust: TrustEvaluationResult,
+  currentValidity?: {
+    issued_valid: boolean;
+    lifecycle_status: ReceiptLifecycleStatus;
+    partner_safe_reason: PartnerSafeReceiptInvalidationReason | null;
+    validity_checked_at: string;
+  },
 ): PublicReceiptLiveTrustView {
   const attached = {
     ...view,
     currently_valid: trust.currently_valid,
     validity: trust.validity,
     invalidation_reasons: trust.invalidation_reasons,
+    issued_valid: currentValidity?.issued_valid ?? (trust.signature_valid && view.decision_result === "approved"),
+    lifecycle_status: currentValidity?.lifecycle_status ?? (trust.currently_valid ? "active" : "invalidated"),
+    partner_safe_reason: currentValidity?.partner_safe_reason ?? null,
+    validity_checked_at: currentValidity?.validity_checked_at ?? new Date().toISOString(),
   };
   return (pickAllowedKeys(attached, SHARED_SURFACE_FIELDS.public_receipt) ?? attached) as unknown as PublicReceiptLiveTrustView;
 }
@@ -75,11 +91,33 @@ export async function buildPublicReceiptWithLiveTrust(
     ...baseView,
     evaluated_claim_refs: applyLiveClaimStatusesToRefs(baseView.evaluated_claim_refs, liveStatuses),
   };
+  const currentValidity = await evaluateReceiptCurrentValidity({
+    record,
+    expectedPartnerId: record.partner_id,
+    expectedPolicyId: record.policy_id,
+  });
   const trust = evaluatePublicReceiptTrust(enrichedView, {
     partnerId: record.partner_id,
     policyId: record.policy_id,
+    now: new Date(currentValidity.checked_at),
   });
-  return attachLiveTrustToPublicView(enrichedView, trust);
+  trust.currently_valid = currentValidity.currently_valid;
+  trust.invalidation_reasons = currentValidity.invalidation_reasons;
+  if (currentValidity.lifecycle_status === "superseded") {
+    trust.validity = "access_revoked";
+  } else if (currentValidity.lifecycle_status === "revoked" || currentValidity.lifecycle_status === "invalidated") {
+    trust.validity = "invalidated";
+  } else if (currentValidity.lifecycle_status === "expired") {
+    trust.validity = "expired";
+  } else {
+    trust.validity = "active";
+  }
+  return attachLiveTrustToPublicView(enrichedView, trust, {
+    issued_valid: currentValidity.issued_valid,
+    lifecycle_status: currentValidity.lifecycle_status,
+    partner_safe_reason: currentValidity.partner_safe_reason,
+    validity_checked_at: currentValidity.checked_at,
+  });
 }
 
 export function publicReceiptLiveTrustHasNoPii(view: PublicReceiptLiveTrustView): boolean {

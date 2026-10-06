@@ -4,6 +4,10 @@ import {
   GOOD_TROUBLE_PARTNER_ID,
   GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
+import {
+  GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+  GOOD_TROUBLE_CANONICAL_POLICY_ID,
+} from "@/lib/goodTrouble/canonicalProductionConfig";
 import { resolvePartnerSetupVisibility } from "@/lib/partner/partnerSetupVisibility";
 
 describe("resolvePartnerSetupVisibility", () => {
@@ -43,6 +47,22 @@ describe("resolvePartnerSetupVisibility", () => {
     expect(resolvePartnerSetupVisibility({
       partnerId: GOOD_TROUBLE_PARTNER_ID,
       policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
+      purpose: "purchase",
+      walletReady: true,
+      walletBound: false,
+      identityComplete: false,
+      underReview: false,
+    })).toEqual({
+      showWalletBinding: false,
+      showIdentityVerification: true,
+      showDobFirstBrowseForm: false,
+    });
+  });
+
+  it("does not show wallet binding for canonical Good Trouble purchase", () => {
+    expect(resolvePartnerSetupVisibility({
+      partnerId: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+      policyId: GOOD_TROUBLE_CANONICAL_POLICY_ID,
       purpose: "purchase",
       walletReady: true,
       walletBound: false,

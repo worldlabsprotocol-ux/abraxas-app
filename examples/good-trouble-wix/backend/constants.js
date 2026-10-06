@@ -4,15 +4,25 @@
 export const ABRAXAS_ORIGIN =
   "https://abraxasworld.xyz";
 
+/** Canonical Launchpad partner — 21+ sandbox pilot. */
 export const PARTNER_ID =
-  "good-trouble-cannabis";
+  "good-trouble";
 
+/** Canonical Launchpad application slug (?app=). */
+export const APP_SLUG =
+  "good-trouble";
+
+/** Canonical age_21_retail policy. */
 export const POLICY_ID =
-  "good-trouble-retail-v1";
+  "good-trouble-age_21_retail-v1";
 
-/** Tier 1 browse policy — L0 self-attestation only (not purchase). */
+/** Tier 1 browse policy — L0 self-attestation only (not purchase eligibility). */
 export const BROWSE_POLICY_ID =
   "good-trouble-browse-v1";
+
+/** Canonical browse partner — same identity as regulated purchase. */
+export const BROWSE_PARTNER_ID =
+  PARTNER_ID;
 
 export const FLOW_PURPOSE_BROWSE = "browse";
 export const FLOW_PURPOSE_PURCHASE = "purchase";
@@ -77,6 +87,12 @@ export const BROWSE_VERIFIER_STORAGE_PREFIX = "abraxas_gt_browse_verifier_";
 /** @deprecated Use PURCHASE_VERIFIER_STORAGE_PREFIX */
 export const VERIFIER_STORAGE_PREFIX = PURCHASE_VERIFIER_STORAGE_PREFIX;
 
+/** Last-resort post-verification destination when no trusted path was captured at start. */
+export const PURCHASE_POST_VERIFICATION_FALLBACK = "/";
+
+/** Query param used only on purchase entry page load to capture ORDER NOW origin (not callback). */
+export const PURCHASE_FROM_QUERY_PARAM = "from";
+
 /** Purchase return destination saved before Abraxas redirect (same-origin path). */
 export const PURCHASE_RETURN_DESTINATION_STORAGE_KEY = "good_trouble_return_destination_purchase";
 
@@ -96,11 +112,11 @@ export const PURCHASE_VERIFIED_SESSION_FLAG = "good_trouble_purchase_verified_pi
 export const PILOT_VERIFIED_SESSION_FLAG = PURCHASE_VERIFIED_SESSION_FLAG;
 
 /**
- * The current Good Trouble pilot uses sandbox receipt validation.
- * This is not production-authoritative age verification.
+ * Canonical purchase pilot validates production Abraxas receipts.
+ * Browse remains sandbox/L0 and uses separate validators.
  */
 export const RECEIPT_VALIDATION_MODE =
-  "sandbox";
+  "production";
 
 export const FLOW_ID_PREFIX_PURCHASE = "gtf_";
 export const FLOW_ID_PREFIX_BROWSE = "gtb_";

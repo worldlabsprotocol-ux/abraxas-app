@@ -17,6 +17,12 @@ export const BROWSE_VERIFIER_STORAGE_PREFIX = "abraxas_gt_browse_verifier_";
 /** @deprecated Use PURCHASE_VERIFIER_STORAGE_PREFIX */
 export const VERIFIER_STORAGE_PREFIX = PURCHASE_VERIFIER_STORAGE_PREFIX;
 
+/** Last-resort post-verification destination when no trusted path was captured at start. */
+export const PURCHASE_POST_VERIFICATION_FALLBACK = "/";
+
+/** Query param on purchase entry only — captures ORDER NOW origin (never used on callback). */
+export const PURCHASE_FROM_QUERY_PARAM = "from";
+
 /** Purchase return destination saved before Abraxas redirect (same-origin path). */
 export const PURCHASE_RETURN_DESTINATION_STORAGE_KEY = "good_trouble_return_destination_purchase";
 

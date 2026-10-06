@@ -11,6 +11,7 @@ export function isMobileBrowser(userAgent?: string): boolean {
 /** Mobile viewport heuristic (used with UA for WalletConnect offer). */
 export function isMobileViewport(): boolean {
   if (typeof window === "undefined") return false;
+  if (typeof window.matchMedia !== "function") return false;
   return window.matchMedia("(max-width: 768px)").matches;
 }
 

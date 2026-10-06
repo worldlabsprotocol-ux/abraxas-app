@@ -2,11 +2,11 @@
 // Admin failed webhook deliveries (non-PII metadata only).
 
 import { NextRequest, NextResponse } from "next/server";
-import { checkAdminAccess } from "@/lib/adminAuth";
+import { checkProductionSensitiveAdminAccess } from "@/lib/adminAuth";
 import { listFailedWebhookDeliveries } from "@/lib/partner/webhooks/webhookDeadLetter";
 
 export async function GET(req: NextRequest) {
-  if (!await checkAdminAccess(req)) {
+  if (!await checkProductionSensitiveAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

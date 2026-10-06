@@ -5,10 +5,17 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
+import { useHostedHolderBootstrap } from "@/lib/partner/useHostedHolderBootstrap";
+import { isHostedHolderBootstrapEligible } from "@/lib/auth/hostedHolderEligibility";
+import {
+  HOSTED_HOLDER_OPTIONAL_SIGN_IN_LABEL,
+  HOSTED_HOLDER_PRIMARY_ACTION,
+} from "@/lib/auth/hostedHolderEligibility";
 import { AbraxasIdentityCapture } from "@/components/passport/AbraxasIdentityCapture";
 import { ConsentCeremony } from "@/components/passport/ConsentCeremony";
 import { PartnerFlowReturnHandler } from "@/components/partner/PartnerFlowReturnHandler";
 import { AgeAssuranceMethodChooser } from "@/components/partner/AgeAssuranceMethodChooser";
+import { GoodTroublePurchaseContinueFlow } from "@/components/partner/GoodTroublePurchaseContinueFlow";
 import { SelfAttestationBrowseForm } from "@/components/partner/SelfAttestationBrowseForm";
 import { PartnerJourneyLayout } from "@/components/partner/PartnerJourneyLayout";
 import { usePartnerFlowHandoff } from "@/lib/passport/partnerFlowHandoff";
@@ -25,6 +32,7 @@ import {
   GOOD_TROUBLE_BROWSE_EYEBROW,
   GOOD_TROUBLE_BROWSE_HEADING,
   GOOD_TROUBLE_BROWSE_SUPPORTING,
+  isGoodTroubleHostedDirectHandoff,
 } from "@/lib/partner/goodTroubleBrowseFlow";
 import {
   resolvePartnerHolderPresentation,
@@ -46,19 +54,48 @@ import {
 import { sanitizePartnerContinueBrowserSearch } from "@/lib/partner/partnerFlowContinuation";
 import { HolderRecoveryCard } from "@/components/partner/HolderRecoveryCard";
 import {
+  buildHolderOpeningPresentation,
   buildHolderRequestBrief,
   holderSafeClientMessage,
   resolveHolderRecovery,
+  type HolderRecoveryState,
 } from "@/lib/partner/holderExperience";
+import { HolderOpeningBrief } from "@/components/partner/HolderOpeningBrief";
+import {
+  GOOD_TROUBLE_PURCHASE_PATH_STEPS,
+  VerificationPath,
+  resolveVerificationPathStep,
+} from "@/components/protocol/VerificationPath";
+import {
+  GOOD_TROUBLE_PURCHASE_TITLE,
+  GOOD_TROUBLE_PURCHASE_VERIFY_ACTION,
+  isCanonicalGoodTroublePurchaseFlow,
+} from "@/lib/partner/goodTroublePurchaseFlow";
+import { ProtocolLoadingState } from "@/components/protocol/ProtocolLoadingState";
+import { HolderDecisionComplete } from "@/components/protocol/HolderDecisionComplete";
+import { ProvenanceContinueFlow } from "@/components/partner/ProvenanceContinueFlow";
+import { isContentOriginDisclosurePolicyId } from "@/lib/provenance/constants";
 
 function resolveMinimumAge(policyId: string): number | null {
   if (policyId === GOOD_TROUBLE_RETAIL_POLICY_ID) return 21;
+  if (policyId.includes("age_21_retail")) return 21;
   return null;
+}
+
+function mapHostedHandoffContinueFailure(
+  code: string | undefined,
+  status: number,
+): HolderRecoveryState {
+  if (code === "expired" || status === 410) return "expired";
+  if (code === "completed" || code === "cancelled") return "cancelled";
+  if (code === "missing" || status === 404) return "missing";
+  if (code === "unavailable" || status >= 500) return "provider_unavailable";
+  return "provider_unavailable";
 }
 
 function PartnerContinueInner() {
   const searchParams = useSearchParams();
-  const { suiAddress, session, isLoading: authLoading } = useSuiAuth();
+  const { suiAddress, session, isLoading: authLoading, refreshSession, signInWithGoogle } = useSuiAuth();
   const email = session?.email ?? "";
   const [consentDismissed, setConsentDismissed] = useState(false);
   const [starting, setStarting] = useState(false);
@@ -67,10 +104,12 @@ function PartnerContinueInner() {
   const [showIdFallback, setShowIdFallback] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [contextLoading, setContextLoading] = useState(true);
+  const [contextResolveFailure, setContextResolveFailure] = useState<HolderRecoveryState | null>(null);
   const [flowContext, setFlowContext] = useState<ResolvedPartnerContinueContext | null>(null);
   const [boundReturnUrl, setBoundReturnUrl] = useState("");
   const [methodSelected, setMethodSelected] = useState(false);
   const [methodQualified, setMethodQualified] = useState(false);
+  const [provenanceEvidenceComplete, setProvenanceEvidenceComplete] = useState(false);
 
   const verifyRequestId = searchParams.get("verify_request");
   const urlPartnerId = searchParams.get("partner_id") ?? "";
@@ -93,10 +132,63 @@ function PartnerContinueInner() {
 
       if (!verifyRequestId) {
         if (!cancelled) {
+          setContextResolveFailure(null);
           setFlowContext(resolvePartnerContinueContext(urlContext));
           setContextLoading(false);
         }
         return;
+      }
+
+      if (!cancelled) {
+        setContextLoading(true);
+        setContextResolveFailure(null);
+      }
+
+      if (verifyRequestId.startsWith("vr_")) {
+        try {
+          const res = await fetch(
+            `/api/v1/hosted-handoff/continue-context?verify_request=${encodeURIComponent(verifyRequestId)}`,
+            { credentials: "include" },
+          );
+          if (res.ok) {
+            const preview = await res.json() as {
+              partner_id?: string;
+              policy_id?: string;
+              purpose?: string | null;
+              return_url?: string;
+            };
+            if (!cancelled) {
+              setContextResolveFailure(null);
+              if (typeof preview.return_url === "string") {
+                setBoundReturnUrl(preview.return_url);
+              }
+              setFlowContext(resolvePartnerContinueContext({
+                ...urlContext,
+                returnUrl: preview.return_url ?? urlContext.returnUrl,
+              }, {
+                partnerId: preview.partner_id ?? "",
+                policyId: preview.policy_id ?? "",
+                purpose: preview.purpose ?? null,
+              }));
+              setContextLoading(false);
+            }
+            return;
+          }
+          const body = await res.json().catch(() => ({})) as { code?: string };
+          if (!cancelled) {
+            setContextResolveFailure(mapHostedHandoffContinueFailure(body.code, res.status));
+            setFlowContext(null);
+            setContextLoading(false);
+          }
+          return;
+        } catch {
+          if (!cancelled) {
+            setContextResolveFailure("provider_unavailable");
+            setFlowContext(null);
+            setContextLoading(false);
+          }
+          return;
+        }
       }
 
       try {
@@ -110,27 +202,41 @@ function PartnerContinueInner() {
             purpose?: string | null;
           };
           let bindingReturnUrl = "";
+          let bindingPartnerId = "";
+          let bindingPolicyId = "";
+          let bindingPurpose: string | null = null;
           try {
             const bindingRes = await fetch(
               `/api/v1/partner-verify/continue-binding?verify_request=${encodeURIComponent(verifyRequestId)}`,
               { credentials: "include" },
             );
             if (bindingRes.ok) {
-              const binding = await bindingRes.json() as { return_url?: string };
+              const binding = await bindingRes.json() as {
+                return_url?: string;
+                partner_id?: string;
+                policy_id?: string;
+                purpose?: string | null;
+              };
               if (typeof binding.return_url === "string") bindingReturnUrl = binding.return_url;
+              if (typeof binding.partner_id === "string") bindingPartnerId = binding.partner_id;
+              if (typeof binding.policy_id === "string") bindingPolicyId = binding.policy_id;
+              if (binding.purpose === null || typeof binding.purpose === "string") {
+                bindingPurpose = binding.purpose ?? null;
+              }
             }
           } catch {
             // Continue with preview when the binding cookie is absent (evaluate-created flows).
           }
           if (!cancelled) {
+            setContextResolveFailure(null);
             if (bindingReturnUrl) setBoundReturnUrl(bindingReturnUrl);
             setFlowContext(resolvePartnerContinueContext({
               ...urlContext,
               returnUrl: bindingReturnUrl || urlContext.returnUrl,
             }, {
-              partnerId: preview.partner_id ?? "",
-              policyId: preview.policy_id ?? "",
-              purpose: preview.purpose ?? null,
+              partnerId: preview.partner_id ?? bindingPartnerId,
+              policyId: preview.policy_id ?? bindingPolicyId,
+              purpose: preview.purpose ?? bindingPurpose,
             }));
             setContextLoading(false);
           }
@@ -141,6 +247,7 @@ function PartnerContinueInner() {
       }
 
       if (!cancelled) {
+        setContextResolveFailure(null);
         setFlowContext(resolvePartnerContinueContext(urlContext));
         setContextLoading(false);
       }
@@ -150,7 +257,7 @@ function PartnerContinueInner() {
     return () => {
       cancelled = true;
     };
-  }, [verifyRequestId, urlPartnerId, urlPolicyId, urlPurpose, decodedReturnUrl]);
+  }, [verifyRequestId, urlPartnerId, urlPolicyId, urlPurpose]);
 
   useEffect(() => {
     setMethodSelected(false);
@@ -190,6 +297,8 @@ function PartnerContinueInner() {
   const partnerId = flowContext?.partnerId ?? urlPartnerId;
   const policyId = flowContext?.policyId ?? urlPolicyId;
   const purposeParam = flowContext?.purpose ?? urlPurpose;
+  const isContentOriginDisclosure = flowContext?.isContentOriginDisclosure
+    ?? isContentOriginDisclosurePolicyId(policyId);
   const provisionalBrowse = resolvePartnerContinueContext({
     partnerId: urlPartnerId,
     policyId: urlPolicyId,
@@ -199,6 +308,11 @@ function PartnerContinueInner() {
   }).isDobFirstBrowse;
   const isDobFirstBrowse = flowContext?.isDobFirstBrowse ?? provisionalBrowse;
   const flowTier: "browse" | "checkout" = isDobFirstBrowse ? "browse" : "checkout";
+  const simplifiedPurchase = isCanonicalGoodTroublePurchaseFlow({
+    partnerId,
+    policyId,
+    purpose: purposeParam,
+  });
 
   const {
     identityStatus,
@@ -232,8 +346,9 @@ function PartnerContinueInner() {
     returnPath: decodedReturnUrl,
     partnerId,
     policyId,
-    verificationRequestId: verifyRequestId,
+    verifyRequestRef: verifyRequestId,
     walletBound: setup.walletBound,
+    provenanceEvidenceComplete,
   });
 
   const partnerName = resolvePartnerDisplayName(partnerId);
@@ -275,7 +390,53 @@ function PartnerContinueInner() {
     underReview: holderState === "under_review",
   });
 
-  const continueContextIncomplete = !verifyRequestId || !partnerId;
+  const isOpaqueHostedHandoff = Boolean(verifyRequestId?.startsWith("vr_"));
+  const continueContextIncomplete = !verifyRequestId || (!partnerId && !isOpaqueHostedHandoff);
+
+  const hostedBootstrapEligible = isHostedHolderBootstrapEligible({
+    partnerId,
+    policyId,
+    purpose: purposeParam,
+  });
+  const directHandoff = isGoodTroubleHostedDirectHandoff({
+    hostedBootstrapEligible,
+    partnerId,
+    policyId,
+    purpose: purposeParam,
+  });
+
+  const hostedBootstrap = useHostedHolderBootstrap({
+    enabled: hostedBootstrapEligible && Boolean(partnerId && policyId && (decodedReturnUrl || verifyRequestId)),
+    suiAddress,
+    authLoading,
+    partnerId,
+    policyId,
+    returnUrl: decodedReturnUrl,
+    purpose: purposeParam,
+    verifyRequestId,
+    onBootstrapped: () => {
+      refreshSession();
+    },
+  });
+
+  const verificationPathStep = resolveVerificationPathStep({
+    showConsent: showPartnerConsent,
+    verifying:
+      setupVisibility.showIdentityVerification ||
+      setupVisibility.showWalletBinding ||
+      methodSelected ||
+      showIdFallback ||
+      holderState === "under_review",
+    ready: handoff.ready,
+  });
+
+  const verificationPathCompletedThrough = handoff.ready
+    ? "consent" as const
+    : showPartnerConsent
+      ? "verify" as const
+      : methodQualified
+        ? "verify" as const
+        : null;
 
   async function bindWallet() {
     if (!suiAddress) return;
@@ -347,17 +508,55 @@ function PartnerContinueInner() {
     policyId,
     purpose: purposeParam,
   });
+  const holderOpening = policyId
+    ? buildHolderOpeningPresentation({
+        partnerName,
+        policyId,
+        brief: holderBrief,
+        purpose: purposeParam,
+      })
+    : null;
 
-  if (!authLoading && !contextLoading && continueContextIncomplete) {
+  if (!authLoading && !contextLoading && (contextResolveFailure || continueContextIncomplete)) {
+    const recovery = resolveHolderRecovery(contextResolveFailure ?? "missing", partnerName, partnerHomeUrl);
     return (
       <PartnerJourneyLayout
         partnerName={partnerName}
-        intro="This Partner Flow link cannot continue."
+        intro=""
+        statusMessage=""
+        hideStatus
+        hideHeader
+        brief={null}
+      >
+        <HolderRecoveryCard recovery={recovery} />
+      </PartnerJourneyLayout>
+    );
+  }
+
+  if (isContentOriginDisclosure) {
+    return (
+      <PartnerJourneyLayout
+        partnerName={partnerName}
+        intro="Answer a few questions about your content."
         statusMessage=""
         hideStatus
         brief={holderBrief}
       >
-        <HolderRecoveryCard recovery={resolveHolderRecovery("missing", partnerName, partnerHomeUrl)} />
+        {authLoading || contextLoading ? (
+          <p role="status">Preparing verification…</p>
+        ) : !suiAddress ? (
+          <p role="status">Sign in to continue this content disclosure request.</p>
+        ) : (
+          <>
+            <PartnerFlowReturnHandler handoff={handoff} />
+            <ProvenanceContinueFlow
+              partnerName={partnerName}
+              partnerId={partnerId}
+              policyId={policyId}
+              onSubmitted={() => setProvenanceEvidenceComplete(true)}
+            />
+          </>
+        )}
       </PartnerJourneyLayout>
     );
   }
@@ -366,25 +565,48 @@ function PartnerContinueInner() {
     return (
       <PartnerJourneyLayout
         partnerName={partnerName}
-        intro={GOOD_TROUBLE_BROWSE_SUPPORTING}
+        intro={directHandoff ? "" : GOOD_TROUBLE_BROWSE_SUPPORTING}
         statusMessage=""
-        eyebrow={GOOD_TROUBLE_BROWSE_EYEBROW}
-        title={GOOD_TROUBLE_BROWSE_HEADING}
+        eyebrow={directHandoff ? undefined : GOOD_TROUBLE_BROWSE_EYEBROW}
+        title={directHandoff ? undefined : GOOD_TROUBLE_BROWSE_HEADING}
         hideStatus
+        hideHeader={directHandoff}
         showAccountFooter={false}
+        brief={null}
       >
-        {authLoading || contextLoading ? (
-          <p role="status">Loading…</p>
+        {authLoading || contextLoading || (hostedBootstrapEligible && hostedBootstrap.bootstrapping) ? (
+          <p role="status">Preparing verification…</p>
         ) : !suiAddress ? (
-          <p role="status">Return to the partner site and sign in again.</p>
+          hostedBootstrapEligible ? (
+            <div>
+              <p role="status" style={{ fontSize: "0.86rem", lineHeight: 1.6, margin: "0 0 0.75rem" }}>
+                {hostedBootstrap.state === "failed"
+                  ? "Verification could not be started. Try again."
+                  : "Starting your private age check…"}
+              </p>
+              {hostedBootstrap.state === "failed" ? (
+                <Btn onClick={() => hostedBootstrap.retry()}>{HOSTED_HOLDER_PRIMARY_ACTION}</Btn>
+              ) : null}
+            </div>
+          ) : (
+            <p role="status">Return to the partner site and try again.</p>
+          )
         ) : (
-          <SelfAttestationBrowseForm
-            partnerId={partnerId}
-            policyId={GOOD_TROUBLE_BROWSE_POLICY_ID}
-            partnerName={partnerName}
-            returnUrl={decodedReturnUrl}
-            partnerHomeUrl={partnerHomeUrl}
-          />
+          <>
+            {directHandoff && (
+              <p style={{ margin: "0 0 1rem", fontWeight: 700, fontSize: "1rem" }}>
+                {GOOD_TROUBLE_BROWSE_HEADING}
+              </p>
+            )}
+            <SelfAttestationBrowseForm
+              partnerId={partnerId}
+              policyId={GOOD_TROUBLE_BROWSE_POLICY_ID}
+              partnerName={partnerName}
+              returnUrl={decodedReturnUrl}
+              partnerHomeUrl={partnerHomeUrl}
+              hideTraditionalFallback={directHandoff}
+            />
+          </>
         )}
       </PartnerJourneyLayout>
     );
@@ -399,18 +621,86 @@ function PartnerContinueInner() {
   return (
     <PartnerJourneyLayout
       partnerName={partnerName}
-      intro={resolvePartnerContinuationIntro(partnerId, { policyId, purpose: purposeParam })}
-      statusMessage={statusMessage}
-      partnerHomeUrl={partnerHomeUrl}
+      intro={holderOpening ? "" : (directHandoff ? "" : resolvePartnerContinuationIntro(partnerId, { policyId, purpose: purposeParam }))}
+      statusMessage={holderOpening ? "" : statusMessage}
+      partnerHomeUrl={simplifiedPurchase ? null : partnerHomeUrl}
       partnerReturnLabel={returnLabel}
-      brief={holderBrief}
+      title={
+        directHandoff
+          ? undefined
+          : simplifiedPurchase
+            ? GOOD_TROUBLE_PURCHASE_TITLE
+            : holderOpening
+              ? undefined
+              : undefined
+      }
+      hideStatus={Boolean(holderOpening) || simplifiedPurchase || directHandoff || undefined}
+      hideHeader={directHandoff || Boolean(holderOpening)}
     >
-      {authLoading || contextLoading ? (
-        <p role="status" aria-live="polite">Loading this partner request…</p>
+      {!directHandoff && !simplifiedPurchase && holderOpening && (
+        <HolderOpeningBrief opening={holderOpening} />
+      )}
+      {authLoading || contextLoading || (hostedBootstrapEligible && hostedBootstrap.bootstrapping) ? (
+        <ProtocolLoadingState
+          kind="preparing_request"
+          detail={hostedBootstrapEligible ? `${partnerName} verification` : partnerName}
+        />
       ) : !suiAddress ? (
-        <HolderRecoveryCard recovery={resolveHolderRecovery("session_required", partnerName, partnerHomeUrl)} />
+        hostedBootstrapEligible ? (
+          <div>
+            <p role="status" style={{ fontSize: "0.86rem", lineHeight: 1.6, margin: "0 0 0.75rem" }}>
+              {hostedBootstrap.state === "failed"
+                ? "Verification could not be started securely. Try again or sign in with an existing Passport."
+                : "Preparing your verification request…"}
+            </p>
+            {hostedBootstrap.state === "failed" ? (
+              <Btn onClick={() => hostedBootstrap.retry()}>{HOSTED_HOLDER_PRIMARY_ACTION}</Btn>
+            ) : null}
+            <p style={{ margin: "0.75rem 0 0", fontSize: "0.78rem", color: "var(--text-muted)" }}>
+              <button
+                type="button"
+                onClick={() => void signInWithGoogle?.()}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  color: "var(--accent)",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                }}
+              >
+                {HOSTED_HOLDER_OPTIONAL_SIGN_IN_LABEL}
+              </button>
+            </p>
+          </div>
+        ) : (
+          <HolderRecoveryCard recovery={resolveHolderRecovery("session_required", partnerName, partnerHomeUrl)} />
+        )
+      ) : simplifiedPurchase && verifyRequestId ? (
+        <GoodTroublePurchaseContinueFlow
+          partnerId={partnerId}
+          policyId={policyId}
+          partnerName={partnerName}
+          verifyRequestId={verifyRequestId}
+          returnUrl={decodedReturnUrl}
+          suiAddress={suiAddress}
+          email={email}
+          identityStatus={identityStatus}
+          identityComplete={setup.identityComplete}
+          veriffConfigured={veriffConfigured}
+          idvProvider={idvProvider}
+          handoff={handoff}
+          refresh={refresh}
+        />
       ) : (
         <>
+          <VerificationPath
+            active={verificationPathStep}
+            completedThrough={verificationPathCompletedThrough}
+            steps={simplifiedPurchase ? GOOD_TROUBLE_PURCHASE_PATH_STEPS : undefined}
+            compact
+          />
           <PartnerFlowReturnHandler handoff={handoff} />
 
           {holderState === "under_review" && (
@@ -452,6 +742,7 @@ function PartnerContinueInner() {
                   flowTier={flowTier}
                   browsePolicyId={GOOD_TROUBLE_BROWSE_POLICY_ID}
                   compactCheckout={false}
+                  simplifiedPurchaseFlow={simplifiedPurchase}
                   onFallbackId={() => setShowIdFallback(true)}
                   onMethodQualified={(qualified) => {
                     setMethodSelected(true);
@@ -463,12 +754,16 @@ function PartnerContinueInner() {
                 />
               ) : (
                 <>
-                  <p style={{ margin: "0 0 0.75rem", fontSize: "0.9rem", lineHeight: 1.6, fontWeight: 600 }}>
-                    {holderCopy.title}
-                  </p>
-                  <p style={{ margin: "0 0 0.75rem", fontSize: "0.9rem", lineHeight: 1.6 }}>
-                    {holderCopy.message}
-                  </p>
+                  {!simplifiedPurchase && (
+                    <>
+                      <p style={{ margin: "0 0 0.75rem", fontSize: "0.9rem", lineHeight: 1.6, fontWeight: 600 }}>
+                        {holderCopy.title}
+                      </p>
+                      <p style={{ margin: "0 0 0.75rem", fontSize: "0.9rem", lineHeight: 1.6 }}>
+                        {holderCopy.message}
+                      </p>
+                    </>
+                  )}
                   {idvProvider === "manual" && captureStarted ? (
                     <AbraxasIdentityCapture
                       email={email}
@@ -484,20 +779,22 @@ function PartnerContinueInner() {
                     />
                   ) : (
                     <Btn disabled={starting} onClick={() => void startIdentityVerification()}>
-                      {starting ? "Starting…" : holderCopy.action_label ?? "Continue verification"}
+                      {starting ? "Starting…" : (simplifiedPurchase ? GOOD_TROUBLE_PURCHASE_VERIFY_ACTION : holderCopy.action_label ?? "Continue verification")}
                     </Btn>
                   )}
                   {!veriffConfigured && idvProvider === "veriff" && (
                     <HolderRecoveryCard recovery={resolveHolderRecovery("provider_unavailable", partnerName, partnerHomeUrl)} />
                   )}
-                  <div style={{ marginTop: "0.75rem" }}>
-                    <Btn
-                      variant="secondary"
-                      onClick={() => setShowIdFallback(false)}
-                    >
-                      Back to verification options
-                    </Btn>
-                  </div>
+                  {!simplifiedPurchase && (
+                    <div style={{ marginTop: "0.75rem" }}>
+                      <Btn
+                        variant="secondary"
+                        onClick={() => setShowIdFallback(false)}
+                      >
+                        Back to verification options
+                      </Btn>
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -517,15 +814,16 @@ function PartnerContinueInner() {
             <p role="status">{holderCopy.title}…</p>
           )}
 
-          {decodedReturnUrl && handoff.ready && (
+          {handoff.phase === "completed" && handoff.receiptId && decodedReturnUrl && (
             <div style={{ marginTop: "1rem" }}>
-              <Btn
-                variant="secondary"
-                disabled={handoff.inFlight}
-                onClick={() => { void handoff.complete(); }}
-              >
-                {returnLabel}
-              </Btn>
+              <HolderDecisionComplete
+                receiptId={handoff.receiptId}
+                partnerName={partnerName}
+                policyId={policyId}
+                returnLabel={returnLabel}
+                onReturn={() => handoff.navigateToPartner()}
+                returnLoading={handoff.inFlight}
+              />
             </div>
           )}
 

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+  GOOD_TROUBLE_CANONICAL_POLICY_ID,
+} from "@/lib/goodTrouble/canonicalProductionConfig";
+import {
   GOOD_TROUBLE_BROWSE_POLICY_ID,
   GOOD_TROUBLE_PARTNER_ID,
   GOOD_TROUBLE_RETAIL_POLICY_ID,
@@ -27,6 +31,14 @@ describe("derivePurposeFromAuthoritativePolicy", () => {
     expect(derivePurposeFromAuthoritativePolicy({
       partnerId: GOOD_TROUBLE_PARTNER_ID,
       policyId: GOOD_TROUBLE_RETAIL_POLICY_ID,
+      urlPurpose: "browse",
+    })).toBe("purchase");
+  });
+
+  it("maps canonical purchase policy to purchase purpose", () => {
+    expect(derivePurposeFromAuthoritativePolicy({
+      partnerId: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+      policyId: GOOD_TROUBLE_CANONICAL_POLICY_ID,
       urlPurpose: "browse",
     })).toBe("purchase");
   });
@@ -108,6 +120,27 @@ describe("resolvePartnerContinueContext", () => {
 
     expect(resolved.purpose).toBe("browse");
     expect(resolved.isDobFirstBrowse).toBe(true);
+  });
+
+  it("enables DOB-first browse for canonical Good Trouble partner + browse policy", () => {
+    const resolved = resolvePartnerContinueContext(
+      {
+        partnerId: "",
+        policyId: "",
+        purpose: null,
+        returnUrl: RETURN_URL,
+        verifyRequestId: "vr-canonical-browse",
+      },
+      {
+        partnerId: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+        policyId: GOOD_TROUBLE_BROWSE_POLICY_ID,
+        purpose: "browse",
+      },
+    );
+
+    expect(resolved.isDobFirstBrowse).toBe(true);
+    expect(resolved.purpose).toBe("browse");
+    expect(resolved.policyId).toBe(GOOD_TROUBLE_BROWSE_POLICY_ID);
   });
 
   it("normalizes browse callback return URL with rc=test-site for authoritative browse flow", () => {

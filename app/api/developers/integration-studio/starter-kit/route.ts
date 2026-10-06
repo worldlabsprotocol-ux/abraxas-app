@@ -21,7 +21,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const limited = checkLaunchpadRateLimit(req, "/api/developers/integration-studio/starter-kit", 20);
+  const limited = await checkLaunchpadRateLimit(req, "/api/developers/integration-studio/starter-kit", 20);
   if (!limited.allowed) {
     return NextResponse.json(
       { ok: false, error: "rate_limited" },

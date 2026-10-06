@@ -105,7 +105,7 @@ describe("production review control plane", () => {
     }).blockers).toContain("revocation_unresolved");
   });
 
-  it("denies policy/version mismatch and sandbox-only packs", () => {
+  it("denies policy/version mismatch but allows sandbox-only packs pending app-scoped activation", () => {
     expect(evaluateProductionReviewGates({
       request: { id: "req-1", application_id: "app-1", partner_id: "acme", status: "pending" },
       application: app({ policy_version: 9 }),
@@ -117,7 +117,7 @@ describe("production review control plane", () => {
       application: app({ policy_template_id: "sandbox_economic_demo" }),
       evidence: evidence({ policyTemplateId: "sandbox_economic_demo" }),
       durableSchemaReady: true,
-    }).blockers).toContain("sandbox_only_policy");
+    }).blockers).not.toContain("sandbox_only_policy");
     expect(evaluateProductionReviewGates({
       request: { id: "req-1", application_id: "app-1", partner_id: "acme", status: "pending" },
       application: app({
@@ -129,7 +129,7 @@ describe("production review control plane", () => {
         policyId: "sandbox_institutional_protocol_access",
       }),
       durableSchemaReady: true,
-    }).blockers).toContain("sandbox_only_policy");
+    }).blockers).not.toContain("sandbox_only_policy");
   });
 
   it("denies disabled, planned, and unconfigured Mainnet networks", () => {

@@ -33,6 +33,7 @@ import { getPublicAppOrigin } from "@/lib/app/publicAppOrigin";
 import { buildHolderConsentUrl } from "@/lib/privacy/selectiveDisclosure";
 import { resolveCompatibleReusableFact } from "@/lib/passport/reusableEligibility/qualify";
 import { derivedClaimRefs, derivedReasonCodes, persistReuseDerivation } from "@/lib/passport/reusableEligibility/issue";
+import { recordEvidenceReuseTelemetry } from "@/lib/passport/reusableEligibility/observability";
 import type { InternalReusableFact } from "@/lib/passport/reusableEligibility/contract";
 import { requestPreviewMatchesSubject } from "@/lib/verification/requestPreviewAccess";
 export { requestPreviewMatchesSubject } from "@/lib/verification/requestPreviewAccess";
@@ -236,11 +237,37 @@ export async function consentAndDecide(input: {
     });
     if (qualified.ok) {
       if (qualified.record.methodId === "reuse_existing_proof") {
+        const policyVersion = qualified.record.policyVersion
+          ?? (typeof request.policy_version === "number" ? request.policy_version : 1);
         const resolved = await resolveCompatibleReusableFact({
           subjectId: subject,
           targetPolicyId: policyId,
-          targetPolicyVersion: qualified.record.policyVersion
-            ?? (typeof request.policy_version === "number" ? request.policy_version : 1),
+          targetPolicyVersion: policyVersion,
+          relyingPartner: partnerId,
+        });
+        void recordEvidenceReuseTelemetry({
+          partnerId,
+          policyId,
+          policyVersion,
+          environment: isSandboxPolicyId(policyId) ? "sandbox" : "production",
+          verifyRequestId: input.requestId,
+          fact: resolved.ok ? resolved.fact : null,
+          decision: resolved.decision ?? {
+            decision: "not_compatible",
+            reason: resolved.state,
+            assurance_level: "unknown",
+            freshness_state: "expired",
+            trust: {
+              reusable: false,
+              assurance_sufficient: false,
+              freshness: "expired",
+              compatibility: "incompatible",
+              source_active: false,
+              environment_allowed: false,
+              consent_required: true,
+              reasons: [resolved.state],
+            },
+          },
         });
         if (!resolved.ok) {
           throw new Error("A compatible private verification is no longer available.");
@@ -345,6 +372,7 @@ export async function consentAndDecide(input: {
     : buildEvaluatedClaimRefs(
       claims,
       claimTypes.length ? claimTypes : Object.keys(evaluation.claims),
+      evaluation.matched_claim_ids,
     );
 
   const receipt = await issueReceiptForDecision({
@@ -354,6 +382,7 @@ export async function consentAndDecide(input: {
     policyId: policy.id,
     policyVersion: policy.version,
     subjectId: subject,
+    applicationId: (request.launchpad_application_id as string | null) ?? null,
     decisionResult: evaluation.decision,
     reasonCodes: evaluation.reason_codes,
     claimsJson: evaluation.claims,

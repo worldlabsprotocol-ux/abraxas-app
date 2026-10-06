@@ -1,5 +1,5 @@
 // FILE: lib/assurance/selfAttestation/purposePolicy.ts
-// Self-attestation purpose restrictions — browse only.
+// Self-attestation purpose restrictions — browse and age-eligibility purchase.
 
 import {
   ALLOWED_SELF_ATTESTATION_PURPOSES,
@@ -16,6 +16,7 @@ export function normalizeSelfAttestationPurpose(raw: unknown): SelfAttestationPu
 }
 
 export function isBlockedSelfAttestationPurpose(raw: unknown): boolean {
+  if (normalizeSelfAttestationPurpose(raw)) return false;
   const value = typeof raw === "string" ? raw.trim().toLowerCase() : "";
   return BLOCKED_SELF_ATTESTATION_PURPOSES.includes(value as typeof BLOCKED_SELF_ATTESTATION_PURPOSES[number]);
 }

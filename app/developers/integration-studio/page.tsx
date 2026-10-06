@@ -13,8 +13,8 @@ export default function IntegrationStudioPage() {
     <RedesignPage accent="developer" maxWidth={920}>
       <PageHeader
         eyebrow="Developers · Integration Studio"
-        title="Create a sandbox integration"
-        subtitle={`${ACCOUNT_ACCESS_FIRST_PAINT} Choose a policy, create an isolated sandbox, and run its hosted test. No wallet or identity login is needed for sandbox setup. Production stays on the reviewed Launchpad path.`}
+        title="What are you trying to accomplish?"
+        subtitle={`${ACCOUNT_ACCESS_FIRST_PAINT} Start with the business outcome, then review the privacy contract, configure the smallest policy, generate integration code, and test in sandbox. Production activation stays on the reviewed Launchpad path.`}
       />
       <IntegrationStudioClient />
     </RedesignPage>

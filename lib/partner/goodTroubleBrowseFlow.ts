@@ -4,8 +4,25 @@
 import {
   GOOD_TROUBLE_BROWSE_POLICY_ID,
   GOOD_TROUBLE_PARTNER_ID,
-  GOOD_TROUBLE_RETAIL_POLICY_ID,
 } from "@/lib/goodTrouble/constants";
+import { GOOD_TROUBLE_CANONICAL_PARTNER_ID } from "@/lib/goodTrouble/canonicalProductionConfig";
+import {
+  isCanonicalGoodTroublePurchaseFlow,
+  isGoodTroubleRegulatedPurchasePolicyId,
+} from "@/lib/partner/goodTroublePurchaseFlow";
+
+/** Canonical browse launch identity — matches Wix PARTNER_ID / BROWSE_FLOW. */
+export const GOOD_TROUBLE_BROWSE_CANONICAL_PARTNER_ID = GOOD_TROUBLE_CANONICAL_PARTNER_ID;
+
+/** Legacy browse compatibility — in-flight merchant URLs only. */
+export const GOOD_TROUBLE_BROWSE_LEGACY_PARTNER_ID = GOOD_TROUBLE_PARTNER_ID;
+
+/** Authoritative Good Trouble browse partner ids (canonical + explicit legacy). */
+export function isGoodTroubleBrowsePartnerId(partnerId: string): boolean {
+  const id = partnerId.trim();
+  return id === GOOD_TROUBLE_BROWSE_CANONICAL_PARTNER_ID
+    || id === GOOD_TROUBLE_BROWSE_LEGACY_PARTNER_ID;
+}
 
 export class GoodTroubleFlowTupleMismatchError extends Error {
   readonly code = "flow_tuple_mismatch" as const;
@@ -26,7 +43,7 @@ export function isGoodTroubleBrowseFlow(input: {
   policyId: string;
   purpose?: string | null;
 }): boolean {
-  if (input.partnerId !== GOOD_TROUBLE_PARTNER_ID) return false;
+  if (!isGoodTroubleBrowsePartnerId(input.partnerId)) return false;
   if (input.policyId !== GOOD_TROUBLE_BROWSE_POLICY_ID) return false;
 
   const purpose = input.purpose?.trim();
@@ -45,7 +62,7 @@ export function resolveGoodTroubleFlowPurpose(input: {
   purpose?: string | null;
   returnUrl?: string | null;
 }): "browse" | "purchase" | null {
-  if (input.partnerId !== GOOD_TROUBLE_PARTNER_ID) return null;
+  if (!isGoodTroubleBrowsePartnerId(input.partnerId)) return null;
 
   const purpose = input.purpose?.trim() || null;
   const returnUrl = input.returnUrl?.trim() || "";
@@ -76,7 +93,7 @@ export function resolveGoodTroubleFlowPurpose(input: {
     return "browse";
   }
 
-  if (input.policyId === GOOD_TROUBLE_RETAIL_POLICY_ID) {
+  if (isGoodTroubleRegulatedPurchasePolicyId(input.policyId)) {
     if (purpose === "browse") {
       throw new GoodTroubleFlowTupleMismatchError(
         "Retail policy cannot be combined with browse purpose",
@@ -100,6 +117,28 @@ export function resolveGoodTroubleFlowPurpose(input: {
   return null;
 }
 
+/**
+ * Merchant already chose Abraxas — skip duplicate verify/continue orientation chrome.
+ * Consent/disclosure remains at the actual share/return step.
+ */
+export function isGoodTroubleHostedDirectHandoff(input: {
+  hostedBootstrapEligible: boolean;
+  partnerId: string;
+  policyId: string;
+  purpose?: string | null;
+}): boolean {
+  if (!input.hostedBootstrapEligible) return false;
+  return isGoodTroubleBrowseFlow({
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    purpose: input.purpose,
+  }) || isCanonicalGoodTroublePurchaseFlow({
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    purpose: input.purpose,
+  });
+}
+
 export const GOOD_TROUBLE_BROWSE_INTRO =
   "A private age check for Good Trouble.";
 
@@ -107,12 +146,12 @@ export const GOOD_TROUBLE_BROWSE_STATUS =
   "Good Trouble receives only a yes or no 21+ result.";
 
 /** Minimal /partner/continue browse screen copy. */
-export const GOOD_TROUBLE_BROWSE_EYEBROW = "PRIVATE AGE CHECK";
+export const GOOD_TROUBLE_BROWSE_EYEBROW = "BROWSE ACCESS";
 
 export const GOOD_TROUBLE_BROWSE_HEADING = "Confirm you're 21+";
 
 export const GOOD_TROUBLE_BROWSE_SUPPORTING =
-  "Enter your birthday once. Good Trouble receives only a yes or no result.";
+  "Verify once. Good Trouble only receives your 21+ result.";
 
 export const GOOD_TROUBLE_BROWSE_DOB_HEADING = "Enter your birthday";
 

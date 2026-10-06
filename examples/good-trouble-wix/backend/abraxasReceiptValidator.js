@@ -3,12 +3,18 @@
 // Mirror lib/partner/verifyPartnerFlowReceipt.ts — keep in sync manually.
 
 const ABRAXAS_ORIGIN = "https://abraxasworld.xyz";
-const EXPECTED_PARTNER_ID = "good-trouble-cannabis";
-const EXPECTED_POLICY_ID = "good-trouble-retail-v1";
+const EXPECTED_PARTNER_ID = "good-trouble";
+const EXPECTED_POLICY_ID = "good-trouble-age_21_retail-v1";
 const SUPPORTED_SCHEMA_VERSION = "1.0.0";
 const EXPECTED_ARTIFACT_TYPE = "eligibility_decision_receipt";
 const SANDBOX_ONLY_INVALIDATION_REASON = "production_not_usable:false";
 const RECEIPT_ID_RE = /^dr_[A-Za-z0-9_-]{8,128}$/;
+
+function isPilotAgeEligibilityReceipt(receipt) {
+  return (receipt.evaluated_claim_refs ?? []).some(
+    (ref) => ref.claim_type === "self_attested_age_band",
+  );
+}
 
 function sharedErrors(receipt, now) {
   const errors = [];
@@ -24,7 +30,15 @@ function sharedErrors(receipt, now) {
   }
   if (receipt.valid_for_purchase === false) errors.push("not_valid_for_purchase");
   if (receipt.purpose === "browse") errors.push("browse_purpose_not_checkout");
-  if (receipt.assurance_level === "L0") errors.push("l0_not_checkout_authority");
+  if (receipt.assurance_level === "L0" && !isPilotAgeEligibilityReceipt(receipt)) {
+    errors.push("l0_not_checkout_authority");
+  }
+  if (isPilotAgeEligibilityReceipt(receipt)) {
+    const hasIdentityClaim = (receipt.evaluated_claim_refs ?? []).some(
+      (ref) => ref.claim_type === "identity_verified" || ref.claim_type === "liveness_passed",
+    );
+    if (hasIdentityClaim) errors.push("pilot_receipt_must_not_claim_identity");
+  }
 
   if (!receipt.expires_at) {
     errors.push("expires_at_missing");
@@ -57,6 +71,19 @@ function sandboxErrors(receipt) {
   return errors;
 }
 
+function productionErrors(receipt) {
+  const errors = [];
+  if (receipt.production_usable !== true) {
+    errors.push(receipt.production_usable === undefined
+      ? "production_usable_missing"
+      : "production_usable_not_true");
+  }
+  if (receipt.currently_valid !== true) errors.push("currently_valid_not_true");
+  if (receipt.decision_context !== "production") errors.push("production_decision_context_mismatch");
+  if ((receipt.invalidation_reasons ?? []).length > 0) errors.push("production_has_invalidation_reasons");
+  return errors;
+}
+
 /**
  * @param {unknown} receipt
  * @param {{ now?: Date }} [opts]
@@ -69,14 +96,26 @@ export function validateSandboxReceipt(receipt, opts = {}) {
   return { verified: errors.length === 0 };
 }
 
-/** Strict sandbox mode identifier — mirrors verifyPartnerFlowReceipt mode: "sandbox". */
-export const RECEIPT_VALIDATION_MODE = "sandbox";
+/**
+ * @param {unknown} receipt
+ * @param {{ now?: Date }} [opts]
+ * @returns {{ verified: boolean }}
+ */
+export function validateProductionReceipt(receipt, opts = {}) {
+  const now = opts.now ?? new Date();
+  if (!receipt || typeof receipt !== "object") return { verified: false };
+  const errors = [...sharedErrors(receipt, now), ...productionErrors(receipt)];
+  return { verified: errors.length === 0 };
+}
+
+/** Canonical purchase pilot validates production receipts from Abraxas. */
+export const RECEIPT_VALIDATION_MODE = "production";
 
 /**
  * @param {string} receiptId
  * @returns {Promise<{ verified: boolean, mode: typeof RECEIPT_VALIDATION_MODE }>}
  */
-export async function fetchAndValidateSandboxReceipt(receiptId) {
+export async function fetchAndValidatePurchaseReceipt(receiptId) {
   const id = typeof receiptId === "string" ? receiptId.trim() : "";
   if (!id || id.length > 200 || !RECEIPT_ID_RE.test(id)) {
     return { verified: false, mode: RECEIPT_VALIDATION_MODE };
@@ -101,6 +140,13 @@ export async function fetchAndValidateSandboxReceipt(receiptId) {
     return { verified: false, mode: RECEIPT_VALIDATION_MODE };
   }
 
-  const result = validateSandboxReceipt(receipt);
+  const result = RECEIPT_VALIDATION_MODE === "production"
+    ? validateProductionReceipt(receipt)
+    : validateSandboxReceipt(receipt);
   return { ...result, mode: RECEIPT_VALIDATION_MODE };
+}
+
+/** @deprecated Use fetchAndValidatePurchaseReceipt */
+export async function fetchAndValidateSandboxReceipt(receiptId) {
+  return fetchAndValidatePurchaseReceipt(receiptId);
 }

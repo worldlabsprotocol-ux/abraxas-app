@@ -14,6 +14,13 @@ export interface AdminNavItem {
 /** Protocol console routes shown in the Phase 3b sidebar. */
 export const ADMIN_PROTOCOL_NAV_ITEMS: readonly AdminNavItem[] = [
   {
+    id: "dashboard",
+    href: "/admin/dashboard",
+    label: "Needs attention",
+    description: "Pending operator work across authoritative queues",
+    section: "operations",
+  },
+  {
     id: "identity",
     href: "/admin/identity",
     label: "Identity",
@@ -32,6 +39,20 @@ export const ADMIN_PROTOCOL_NAV_ITEMS: readonly AdminNavItem[] = [
     href: "/admin/partner-flow",
     label: "Partner Flow",
     description: "Partner Flow health, Production readiness checks, and operational signals",
+    section: "protocol",
+  },
+  {
+    id: "production-review",
+    href: "/admin/production-review",
+    label: "Production review",
+    description: "Application production activation, per-binding authorization, and credential lifecycle",
+    section: "protocol",
+  },
+  {
+    id: "design-partners",
+    href: "/admin/design-partners",
+    label: "Design partners",
+    description: "Review partner applications, sandbox signoff, and promotion readiness",
     section: "protocol",
   },
   {
@@ -61,6 +82,20 @@ export const ADMIN_PROTOCOL_NAV_ITEMS: readonly AdminNavItem[] = [
     label: "Trust",
     description: "Issuers, credentials, and trust-layer inspection",
     section: "protocol",
+  },
+  {
+    id: "pilot-evidence",
+    href: "/admin/pilot-evidence",
+    label: "Pilot evidence",
+    description: "Privacy-safe partner pilot metrics for diligence prep",
+    section: "operations",
+  },
+  {
+    id: "value-evidence",
+    href: "/admin/value-evidence",
+    label: "Value evidence",
+    description: "Business proof layer — lifecycle, conversion, expansion, fundraising readiness",
+    section: "operations",
   },
   {
     id: "privacy",

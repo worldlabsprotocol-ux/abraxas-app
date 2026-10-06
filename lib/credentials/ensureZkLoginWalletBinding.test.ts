@@ -3,6 +3,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const SUBJECT = "0x" + "a".repeat(64);
+const SUI_BINDING_ID = "11111111-1111-4111-8111-111111111111";
 
 const mockRequireSupabaseAdmin = vi.fn();
 const mockAppendAuditEvent = vi.fn();
@@ -46,7 +47,10 @@ function makeSupabase(state: {
           eq: () => ({
             eq: () => ({
               eq: () => ({
-                maybeSingle: async () => ({ data: state.claim ?? null, error: null }),
+                eq: () => ({
+                  maybeSingle: async () => ({ data: state.claim ?? null, error: null }),
+                }),
+                is: async () => ({ data: state.claim ? [state.claim] : [], error: null }),
               }),
             }),
           }),
@@ -73,7 +77,7 @@ describe("ensureZkLoginWalletBinding", () => {
 
   it("returns ok when canonical binding and claim already exist", async () => {
     mockRequireSupabaseAdmin.mockReturnValue(makeSupabase({
-      binding: { binding_method: "zklogin", binding_status: "active", revoked_at: null },
+      binding: { id: SUI_BINDING_ID, binding_method: "zklogin", binding_status: "active", revoked_at: null },
       claim: { id: "claim-1" },
     }));
 
@@ -108,7 +112,10 @@ describe("ensureZkLoginWalletBinding", () => {
             eq: () => ({
               eq: () => ({
                 eq: () => ({
-                  maybeSingle: async () => ({ data: claim, error: null }),
+                  eq: () => ({
+                    maybeSingle: async () => ({ data: claim, error: null }),
+                  }),
+                  is: async () => ({ data: claim ? [claim] : [], error: null }),
                 }),
               }),
             }),
@@ -118,9 +125,9 @@ describe("ensureZkLoginWalletBinding", () => {
       throw new Error(`unexpected table ${table}`);
     });
     sb.rpc = vi.fn(async () => {
-      binding = { binding_method: "zklogin", binding_status: "active", revoked_at: null };
+      binding = { id: SUI_BINDING_ID, binding_method: "zklogin", binding_status: "active", revoked_at: null };
       claim = { id: "claim-1" };
-      return { data: { ok: true, claim_id: "claim-1" }, error: null };
+      return { data: { ok: true, claim_id: "claim-1", binding_id: SUI_BINDING_ID }, error: null };
     });
     mockRequireSupabaseAdmin.mockReturnValue(sb);
 

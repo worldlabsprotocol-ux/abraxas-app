@@ -1,5 +1,5 @@
 // FILE: lib/assurance/selfAttestation/constants.ts
-// Tier 1 self-attestation constants — L0 browse only.
+// Tier 1 self-attestation constants — L0 browse and age-eligibility purchase.
 
 export const SELF_ATTESTATION_CLAIM_TYPE = "self_attested_age_band" as const;
 export const SELF_ATTESTATION_PROVENANCE = "user_self_attestation" as const;
@@ -7,13 +7,12 @@ export const SELF_ATTESTATION_ASSURANCE = "L0" as const;
 export const SELF_ATTESTATION_ISSUER = "issuer:abraxas-self-attest" as const;
 
 export type SelfAttestedAgeBand = "over_21" | "under_21";
-export type SelfAttestationPurpose = "browse";
+export type SelfAttestationPurpose = "browse" | "purchase";
 
-export const ALLOWED_SELF_ATTESTATION_PURPOSES: readonly SelfAttestationPurpose[] = ["browse"];
+export const ALLOWED_SELF_ATTESTATION_PURPOSES: readonly SelfAttestationPurpose[] = ["browse", "purchase"];
 
 export const BLOCKED_SELF_ATTESTATION_PURPOSES = [
   "checkout",
-  "purchase",
   "delivery",
   "account_recovery",
   "regulated",

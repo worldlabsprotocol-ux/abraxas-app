@@ -5,9 +5,15 @@ import { normalizeSuiAddress } from "@mysten/sui/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { appendAuditEvent } from "@/lib/verification/audit";
-import { upsertClaims } from "@/lib/credentials/claimsService";
+import {
+  getActiveWalletControlClaims,
+  revokeWalletControlClaimForBinding,
+  upsertWalletControlClaim,
+} from "@/lib/credentials/claimsService";
+import { buildHolderWalletViews, type HolderWalletView } from "@/lib/walletControl/holderWalletView";
 import { WalletPersistenceError } from "@/lib/credentials/walletPersistenceErrors";
-import { walletBindingClaim, CLAIM_ISSUERS } from "@/lib/credentials/claimSchema";
+import { buildWalletControlClaim } from "@/lib/walletControl/claim";
+import { walletControlEvidenceRef } from "@/lib/walletControl/contract";
 import {
   createEvmChallengePayload,
   normalizeEvmAddress,
@@ -81,6 +87,12 @@ async function assertWalletNotActiveOnOtherSubject(
   if (existing && (existing.subject_id as string) !== subject) {
     throw new Error("Wallet already bound to another Passport subject");
   }
+}
+
+export async function listHolderWalletViews(subjectId: string): Promise<HolderWalletView[]> {
+  const bindings = await listSubjectWallets(subjectId);
+  const claims = await getActiveWalletControlClaims(subjectId);
+  return buildHolderWalletViews({ bindings, claims });
 }
 
 export async function listSubjectWallets(subjectId: string): Promise<WalletBindingRecord[]> {
@@ -213,30 +225,26 @@ export async function confirmEvmBinding(input: {
     throw new Error(error?.message ?? "Failed to save binding");
   }
 
-  const claim = walletBindingClaim({
+  const bindingId = binding.id as string;
+  await upsertWalletControlClaim(buildWalletControlClaim({
     subjectId: subject,
+    walletBindingId: bindingId,
     walletAddress: wallet,
-    bindingMethod: "siwe_evm",
-  });
-  await upsertClaims([{
-    ...claim,
-    claim_value: {
-      ...claim.claim_value,
-      chain: "evm",
-      chain_id: challenge.chain_id,
-      binding_method: "siwe",
-    },
-    issuer_id: CLAIM_ISSUERS.abraxas,
-    assurance_level: "L3",
-  }]);
+    chain: "evm",
+    chainId: challenge.chain_id as number,
+    network: `eip155:${challenge.chain_id}`,
+    controlMethod: "siwe_evm",
+    assuranceLevel: "L3",
+    verifiedAt: now,
+  }));
 
   await appendAuditEvent({
     actor_type: "subject",
     actor_id: subject,
     action: "wallet.bound",
     object_type: "wallet_binding",
-    object_id: binding.id as string,
-    metadata: { chain: "evm", wallet_address: wallet },
+    object_id: bindingId,
+    metadata: { chain: "evm", binding_id: bindingId },
   });
 
   return mapBinding(binding as Record<string, unknown>);
@@ -266,6 +274,12 @@ export async function revokeWalletBinding(input: {
     .maybeSingle();
 
   if (!data) return false;
+
+  await revokeWalletControlClaimForBinding({
+    subjectId: subject,
+    evidenceReference: walletControlEvidenceRef(input.bindingId),
+    reason: input.reason,
+  });
 
   await appendAuditEvent({
     actor_type: "subject",

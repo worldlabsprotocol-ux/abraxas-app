@@ -12,18 +12,32 @@ import {
   GOOD_TROUBLE_BROWSE_SIGN_IN_STATUS,
   GOOD_TROUBLE_BROWSE_SIGN_IN_VALUE_COPY,
   GOOD_TROUBLE_BROWSE_SIGN_IN_VALUE_HEADING,
+  isGoodTroubleHostedDirectHandoff,
 } from "@/lib/partner/goodTroubleBrowseFlow";
+import { isGoodTroubleAgeEligibilityPurchaseBrief } from "@/lib/partner/goodTroubleHolderBrief";
 import { resolvePartnerContinuationIntro } from "@/lib/partner/partnerVerifyDisplay";
 import type { PartnerJourneyPrimaryAction } from "@/lib/partner/partnerJourneyStateMachine";
-import { HolderRecoveryCard } from "@/components/partner/HolderRecoveryCard";
 import {
   buildHolderRequestBrief,
+  buildHolderVerificationPresentation,
+  mapVerifyPhaseToChecking,
   resolveHolderRecovery,
+  HOLDER_RETURN_FAILURE_TECHNICAL,
   type HolderRequestBrief,
 } from "@/lib/partner/holderExperience";
+import {
+  HOSTED_HOLDER_OPTIONAL_SIGN_IN_LABEL,
+  HOSTED_HOLDER_PRIMARY_ACTION,
+} from "@/lib/auth/hostedHolderEligibility";
+import {
+  HolderSuccessState,
+  VerificationFailure,
+  VerificationProgress,
+} from "@/components/partner/holder";
 
 export type PartnerVerifyPhase =
   | "loading"
+  | "bootstrapping"
   | "sign_in"
   | "signing_in"
   | "preparing"
@@ -61,11 +75,14 @@ export interface PartnerVerifyShellProps {
   primaryAction?: PartnerJourneyPrimaryAction;
   environment?: string | null;
   disclosedResult?: string | null;
+  hostedBootstrapEligible?: boolean;
+  onOptionalSignIn?: () => void;
 }
 
 function recoveryForPhase(phase: PartnerVerifyPhase) {
   switch (phase) {
     case "loading":
+    case "bootstrapping":
     case "preparing":
     case "verifying":
     case "signing_in":
@@ -134,16 +151,33 @@ export function PartnerVerifyShell({
   partnerHomeUrl,
   environment = null,
   disclosedResult = null,
+  hostedBootstrapEligible = false,
+  onOptionalSignIn,
 }: PartnerVerifyShellProps) {
   const continuationContext = { policyId, purpose };
   const onSignInScreen = showSignIn(phase);
+  const directHandoff = isGoodTroubleHostedDirectHandoff({
+    hostedBootstrapEligible,
+    partnerId,
+    policyId,
+    purpose,
+  });
+  const goodTroublePurchaseL0 = isGoodTroubleAgeEligibilityPurchaseBrief({
+    partnerId,
+    policyId,
+    purpose,
+  });
   const useDobFirstSignInCopy = isDobFirstBrowse && onSignInScreen;
-  const intro = useDobFirstSignInCopy
-    ? GOOD_TROUBLE_BROWSE_SIGN_IN_INTRO
-    : resolvePartnerContinuationIntro(partnerId, continuationContext);
-  const resolvedStatus = useDobFirstSignInCopy
-    ? GOOD_TROUBLE_BROWSE_SIGN_IN_STATUS
-    : (statusMessage || policyRequirement);
+  const intro = directHandoff && !onSignInScreen
+    ? ""
+    : useDobFirstSignInCopy
+      ? GOOD_TROUBLE_BROWSE_SIGN_IN_INTRO
+      : resolvePartnerContinuationIntro(partnerId, continuationContext);
+  const resolvedStatus = directHandoff && !onSignInScreen
+    ? (statusMessage || "")
+    : useDobFirstSignInCopy
+      ? GOOD_TROUBLE_BROWSE_SIGN_IN_STATUS
+      : (statusMessage || policyRequirement);
   const brief: HolderRequestBrief = buildHolderRequestBrief({
     partnerId,
     partnerName,
@@ -153,7 +187,14 @@ export function PartnerVerifyShell({
     disclosedResult,
     userExplanation: policyRequirement,
   });
+  const presentation = buildHolderVerificationPresentation({
+    partnerName,
+    policyId,
+    brief,
+    purpose,
+  });
   const recovery = resolveHolderRecovery(recoveryForPhase(phase), partnerName, partnerHomeUrl);
+  const checkingPhase = mapVerifyPhaseToChecking(phase);
 
   if (phase === "invalid_link" && invalidLinkMessage) {
     return (
@@ -165,44 +206,76 @@ export function PartnerVerifyShell({
         partnerHomeUrl={partnerHomeUrl}
         partnerReturnLabel={partnerReturnLabel}
         brief={brief}
+        policyId={policyId}
+        purpose={purpose}
       >
-        <HolderRecoveryCard recovery={recovery} />
+        <VerificationFailure recovery={recovery} />
       </PartnerJourneyLayout>
     );
   }
 
-  const busy = phase === "signing_in" || phase === "preparing" || phase === "verifying" || phase === "returning";
+  const busy = phase === "bootstrapping" || phase === "signing_in" || phase === "preparing" || phase === "verifying" || phase === "returning";
+  const verificationFirst = hostedBootstrapEligible && (phase === "bootstrapping" || phase === "preparing" || phase === "verifying");
 
   const recoveryPhases = phase === "error" || phase === "return_failed" || phase === "expired" || phase === "missing" || phase === "cancelled" || phase === "invalid_binding" || phase === "method_not_qualified" || phase === "provider_unavailable" || phase === "denied" || phase === "approved";
+  const hideOrientationChrome = directHandoff && !recoveryPhases && !onSignInScreen;
+  const hidePurchaseBrief = goodTroublePurchaseL0 && (recoveryPhases || hideOrientationChrome || onSignInScreen);
+  const showBrief = !useDobFirstSignInCopy && !hideOrientationChrome && !hidePurchaseBrief;
+
+  const sandboxApproved = phase === "approved" && presentation.isSandbox;
+  const approvedRecovery = sandboxApproved
+    ? resolveHolderRecovery("sandbox_approved", partnerName, partnerHomeUrl)
+    : recovery;
 
   return (
     <PartnerJourneyLayout
       partnerName={partnerName}
       intro={intro}
       statusMessage={resolvedStatus}
-      hideStatus={recoveryPhases}
+      hideStatus={recoveryPhases || hideOrientationChrome || Boolean(showBrief)}
+      hideIntro={Boolean(showBrief)}
+      hideHeader={hideOrientationChrome}
       partnerHomeUrl={showReturnButton(phase) ? partnerHomeUrl : null}
       partnerReturnLabel={partnerReturnLabel}
-      showAccountFooter={!useDobFirstSignInCopy}
-      brief={useDobFirstSignInCopy ? null : brief}
+      showAccountFooter={!useDobFirstSignInCopy && !hideOrientationChrome && !showBrief}
+      brief={showBrief ? brief : null}
+      policyId={policyId}
+      purpose={purpose}
     >
-      {recoveryPhases ? (
-        <HolderRecoveryCard
+      {phase === "approved" ? (
+        <HolderSuccessState
+          presentation={presentation}
+          isSandbox={presentation.isSandbox}
+          returnLabel={approvedRecovery.next_label}
+        />
+      ) : recoveryPhases ? (
+        <VerificationFailure
           recovery={{
-            ...(phase === "approved" && brief.environment_label.startsWith("Sandbox")
-              ? resolveHolderRecovery("sandbox_approved", partnerName, partnerHomeUrl)
-              : recovery),
-            next_label: phase === "error" || phase === "return_failed" ? "Try again" : (
-              phase === "approved" && brief.environment_label.startsWith("Sandbox")
-                ? resolveHolderRecovery("sandbox_approved", partnerName, partnerHomeUrl).next_label
-                : recovery.next_label
-            ),
+            ...recovery,
+            next_label: phase === "error" || phase === "return_failed" || phase === "denied"
+              ? "Try again"
+              : recovery.next_label,
           }}
-          onPrimary={phase === "error" || phase === "return_failed" || phase === "method_not_qualified" ? onTryAgain : undefined}
+          onPrimary={
+            phase === "error" || phase === "return_failed" || phase === "method_not_qualified" || phase === "denied"
+              ? onTryAgain
+              : undefined
+          }
+          technicalDetail={
+            phase === "invalid_binding" || phase === "error" || phase === "return_failed"
+              ? HOLDER_RETURN_FAILURE_TECHNICAL
+              : null
+          }
         />
       ) : (
         <>
-          {showSignIn(phase) && signInConfigured && (
+          {verificationFirst && (
+            <p role="status" aria-live="polite" style={{ fontSize: "0.86rem", margin: 0, lineHeight: 1.6 }}>
+              {statusMessage || HOSTED_HOLDER_PRIMARY_ACTION}
+            </p>
+          )}
+
+          {showSignIn(phase) && signInConfigured && !hostedBootstrapEligible && (
             <>
             <Btn
               onClick={onSignIn}
@@ -211,12 +284,33 @@ export function PartnerVerifyShell({
             >
               {phase === "signing_in"
                 ? "Signing you in…"
-                : (useDobFirstSignInCopy ? GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON : "Continue with Google")}
+                : (useDobFirstSignInCopy ? GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON : "Continue")}
             </Btn>
             <p style={{ margin: "0.65rem 0 0", fontSize: "0.82rem", lineHeight: 1.55, color: "var(--text-muted)" }}>
-              Google sign-in opens an Abraxas account only. It is not eligibility proof. After sign-in you choose how to satisfy this policy. Identity or liveness is not the default first step.
+              Google sign-in opens an Abraxas account only. It is not eligibility proof. After sign-in you choose how to satisfy this request.
             </p>
             </>
+          )}
+
+          {showSignIn(phase) && signInConfigured && hostedBootstrapEligible && onOptionalSignIn && (
+            <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--text-muted)" }}>
+              <button
+                type="button"
+                onClick={onOptionalSignIn}
+                disabled={primaryDisabled || busy}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  color: "var(--accent)",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                }}
+              >
+                {HOSTED_HOLDER_OPTIONAL_SIGN_IN_LABEL}
+              </button>
+            </p>
           )}
 
           {showSignIn(phase) && !signInConfigured && (
@@ -226,9 +320,14 @@ export function PartnerVerifyShell({
           )}
 
           {!showSignIn(phase) && busy && (
-            <p role="status" aria-live="polite" style={{ fontSize: "0.86rem", margin: 0 }}>
-              {statusMessage}
-            </p>
+            <>
+              <VerificationProgress phase={checkingPhase === "idle" ? "checking_request" : checkingPhase} />
+              {statusMessage && checkingPhase === "idle" ? (
+                <p role="status" aria-live="polite" style={{ fontSize: "0.86rem", margin: "0.5rem 0 0" }}>
+                  {statusMessage}
+                </p>
+              ) : null}
+            </>
           )}
 
           {phase === "pending_review" && (
@@ -262,7 +361,7 @@ export function PartnerVerifyShell({
             {GOOD_TROUBLE_BROWSE_SIGN_IN_CLARIFICATION}
           </p>
         </aside>
-      ) : (
+      ) : verificationFirst && !hideOrientationChrome ? (
         <aside
           aria-label="Privacy notice"
           style={{
@@ -277,11 +376,11 @@ export function PartnerVerifyShell({
           }}
         >
           <strong style={{ display: "block", marginBottom: "0.35rem", color: "#2DD4BF" }}>
-            Signing in is not age verification
+            What Good Trouble receives
           </strong>
-          Google sign in confirms your account only. The partner receives a policy result, not your ID photos or date of birth through this screen.
+          Only 21+ eligibility — not your date of birth, identity document, or document number.
         </aside>
-      )}
+      ) : null}
     </PartnerJourneyLayout>
   );
 }

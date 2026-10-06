@@ -1,9 +1,11 @@
 // FILE: lib/walletAuthority/evmSiwe.test.ts
 import { describe, it, expect } from "vitest";
 import { privateKeyToAccount } from "viem/accounts";
+import { isAddress } from "viem";
 import {
   buildSiweMessage,
   createEvmChallengePayload,
+  normalizeEvmAddress,
   validateSiweMessage,
   verifyEvmBindingSignature,
 } from "@/lib/walletAuthority/evmSiwe";
@@ -25,6 +27,18 @@ function baseExpected() {
     expiresAt: payload.expiresAt,
   };
 }
+
+describe("normalizeEvmAddress", () => {
+  it("uses live viem isAddress (Passport EVM bind prerequisite)", () => {
+    expect(typeof isAddress).toBe("function");
+    expect(isAddress(account.address)).toBe(true);
+    expect(normalizeEvmAddress(account.address)).toBe(account.address);
+  });
+
+  it("rejects invalid addresses before challenge creation", () => {
+    expect(() => normalizeEvmAddress("not-an-address")).toThrow(/Invalid EVM address format/);
+  });
+});
 
 describe("SIWE message validation", () => {
   it("accepts a valid message", () => {

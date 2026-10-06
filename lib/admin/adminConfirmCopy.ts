@@ -17,6 +17,7 @@ export type AdminConfirmActionKey =
   | "privacy.deny"
   | "privacy.legal_hold"
   | "webhook.rotate_secret"
+  | "webhook.retry_delivery"
   | "policy.publish"
   | "revocation.partner_scoped"
   | "design_partner.promote"
@@ -158,6 +159,19 @@ export const ADMIN_CONFIRM_COPY: Record<AdminConfirmActionKey, AdminConfirmCopy>
     confirmLabel: "Rotate signing secret",
     cancelLabel: "Cancel",
     risk: "high",
+    requireNote: false,
+    noteOptional: false,
+    requireReasonCode: false,
+  },
+  "webhook.retry_delivery": {
+    title: "Recover failed webhook delivery?",
+    body:
+      "This requeues the {{operationalState}} delivery for partner {{partnerId}} ({{eventType}}). "
+      + "The same event ID is preserved — no new receipt or billable event is created. "
+      + "Recovery is confirmed only after the backend accepts the requeue.",
+    confirmLabel: "Requeue delivery",
+    cancelLabel: "Cancel",
+    risk: "medium",
     requireNote: false,
     noteOptional: false,
     requireReasonCode: false,

@@ -1,5 +1,5 @@
 // FILE: examples/good-trouble-wix/backend/tieredLifecycleSecurity.test.js
-// Browse (L0) vs purchase (L2+) lifecycle security — fail-closed on all downgrade paths.
+// Browse (L0) vs purchase lifecycle security — fail-closed on all downgrade paths.
 
 import { createHash } from "node:crypto";
 import { describe, expect, it, beforeEach } from "vitest";
@@ -28,7 +28,7 @@ import {
   __testOnlySetHashFn,
 } from "./abraxasVerificationService.js";
 import { authorizePurchaseEligibility } from "./purchaseEligibilityAuthorization.js";
-import { validateSandboxReceipt } from "./abraxasReceiptValidator.js";
+import { validateProductionReceipt, validateSandboxReceipt } from "./abraxasReceiptValidator.js";
 
 const hashFn = (value) => createHash("sha256").update(value, "utf8").digest("hex");
 
@@ -41,12 +41,23 @@ const VALID_PURCHASE_RECEIPT = {
   schema_version: "1.0.0",
   artifact_type: "eligibility_decision_receipt",
   expires_at: "2099-01-01T00:00:00.000Z",
+  evaluated_claim_refs: [{ status: "active", claim_type: "self_attested_age_band" }],
+  production_usable: true,
+  currently_valid: true,
+  decision_context: "production",
+  invalidation_reasons: [],
+  assurance_level: "L0",
+  purpose: "purchase",
+};
+
+const LEGACY_L2_PURCHASE_RECEIPT = {
+  ...VALID_PURCHASE_RECEIPT,
   evaluated_claim_refs: [{ status: "active", claim_type: "product_eligibility" }],
   production_usable: false,
+  currently_valid: false,
   decision_context: "sandbox_only",
   invalidation_reasons: ["production_not_usable:false"],
   assurance_level: "L2",
-  purpose: "purchase",
 };
 
 const VALID_BROWSE_RECEIPT = {
@@ -71,6 +82,7 @@ describe("separate start lifecycles", () => {
     expect(payload.policyId).toBe(BROWSE_POLICY_ID);
     expect(payload.flowId.startsWith("gtb_")).toBe(true);
     expect(payload.verifyUrl).toContain("good-trouble-browse-v1");
+    expect(payload.verifyUrl).toContain("partner_id=good-trouble");
     expect(payload.verifyUrl).toContain("purpose=browse");
     expect(payload.flowRecord.purpose).toBe("browse");
     const partnerUrl = new URL(payload.verifyUrl);
@@ -84,7 +96,7 @@ describe("separate start lifecycles", () => {
     expect(payload.purpose).toBe(FLOW_PURPOSE_PURCHASE);
     expect(payload.policyId).toBe(POLICY_ID);
     expect(payload.flowId.startsWith("gtf_")).toBe(true);
-    expect(payload.verifyUrl).toContain("good-trouble-retail-v1");
+    expect(payload.verifyUrl).toContain("app=good-trouble");
     expect(payload.flowRecord.purpose).toBe("purchase");
     const returnMatch = payload.verifyUrl.match(/return_url=([^&]+)/);
     const returnUrl = decodeURIComponent(returnMatch?.[1] ?? "");
@@ -218,7 +230,7 @@ describe("URL tampering and client flags", () => {
   });
 });
 
-describe("purchase eligibility requires consumed L2+ receipt", () => {
+describe("purchase eligibility requires consumed production receipt", () => {
   it("rejects when flow not consumed", () => {
     expect(authorizePurchaseEligibility({
       receipt: VALID_PURCHASE_RECEIPT,
@@ -226,14 +238,24 @@ describe("purchase eligibility requires consumed L2+ receipt", () => {
     }).authorized).toBe(false);
   });
 
-  it("authorizes fresh consumed partner-bound purchase receipt", () => {
-    expect(validateSandboxReceipt(VALID_PURCHASE_RECEIPT).verified).toBe(true);
+  it("authorizes fresh consumed partner-bound pilot purchase receipt", () => {
+    expect(validateProductionReceipt(VALID_PURCHASE_RECEIPT).verified).toBe(true);
     expect(authorizePurchaseEligibility({
       receipt: VALID_PURCHASE_RECEIPT,
       flowPurpose: FLOW_PURPOSE_PURCHASE,
       flowPolicyId: POLICY_ID,
       flowConsumed: true,
     }).authorized).toBe(true);
+  });
+
+  it("rejects legacy sandbox L2 receipt at production checkout", () => {
+    expect(validateSandboxReceipt(LEGACY_L2_PURCHASE_RECEIPT).verified).toBe(true);
+    expect(authorizePurchaseEligibility({
+      receipt: LEGACY_L2_PURCHASE_RECEIPT,
+      flowPurpose: FLOW_PURPOSE_PURCHASE,
+      flowPolicyId: POLICY_ID,
+      flowConsumed: true,
+    }).authorized).toBe(false);
   });
 
   it("rejects expired purchase receipt", () => {
@@ -244,8 +266,30 @@ describe("purchase eligibility requires consumed L2+ receipt", () => {
     }).authorized).toBe(false);
   });
 
-  it("rejects L0 assurance on purchase receipt", () => {
-    const l0 = { ...VALID_PURCHASE_RECEIPT, assurance_level: "L0" };
+  it("accepts L0 pilot age-eligibility purchase receipt with self_attested_age_band", () => {
+    const pilot = {
+      ...VALID_PURCHASE_RECEIPT,
+      assurance_level: "L0",
+      production_usable: true,
+      currently_valid: true,
+      decision_context: "production",
+      invalidation_reasons: [],
+      evaluated_claim_refs: [{ status: "active", claim_type: "self_attested_age_band" }],
+    };
+    expect(authorizePurchaseEligibility({
+      receipt: pilot,
+      flowPurpose: FLOW_PURPOSE_PURCHASE,
+      flowPolicyId: POLICY_ID,
+      flowConsumed: true,
+    }).authorized).toBe(true);
+  });
+
+  it("rejects L0 purchase receipt without pilot self_attested_age_band claim", () => {
+    const l0 = {
+      ...VALID_PURCHASE_RECEIPT,
+      assurance_level: "L0",
+      evaluated_claim_refs: [{ status: "active", claim_type: "product_eligibility" }],
+    };
     expect(authorizePurchaseEligibility({
       receipt: l0,
       flowConsumed: true,
