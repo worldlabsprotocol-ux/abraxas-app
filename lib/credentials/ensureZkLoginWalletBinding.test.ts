@@ -85,6 +85,27 @@ describe("ensureZkLoginWalletBinding", () => {
     expect(result.status).toBe("ok");
   });
 
+  it("does not repair holder-revoked bindings without explicit wallet proof", async () => {
+    mockRequireSupabaseAdmin.mockReturnValue(makeSupabase({
+      binding: {
+        id: SUI_BINDING_ID,
+        binding_method: "zklogin",
+        binding_status: "revoked",
+        revoked_at: "2026-10-06T00:00:00.000Z",
+      },
+      claim: null,
+    }));
+
+    const result = await ensureZkLoginWalletBinding(SUBJECT);
+    expect(result).toEqual({
+      status: "failed",
+      reason_code: "holder_revocation_requires_explicit_proof",
+    });
+    expect(mockAppendAuditEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "wallet.binding_failed" }),
+    );
+  });
+
   it("repairs missing binding through atomic RPC", async () => {
     let binding = null as Record<string, unknown> | null;
     let claim = null as Record<string, unknown> | null;

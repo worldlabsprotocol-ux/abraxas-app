@@ -63,6 +63,8 @@ import {
   type HolderRecoveryState,
 } from "@/lib/partner/holderExperience";
 import { HolderAuthorizationCard, type HolderAuthorizationPhase } from "@/components/partner/HolderAuthorizationCard";
+import { WalletControlRecoveryPanel } from "@/components/partner/WalletControlRecoveryPanel";
+import { inferPolicyPackFromPolicyId } from "@/lib/partner/launchpad/policyPacks";
 import {
   GOOD_TROUBLE_PURCHASE_PATH_STEPS,
   VerificationPath,
@@ -111,6 +113,7 @@ function PartnerContinueInner() {
   const [methodSelected, setMethodSelected] = useState(false);
   const [methodQualified, setMethodQualified] = useState(false);
   const [provenanceEvidenceComplete, setProvenanceEvidenceComplete] = useState(false);
+  const [walletRecoveryActive, setWalletRecoveryActive] = useState(false);
 
   const verifyRequestId = searchParams.get("verify_request");
   const urlPartnerId = searchParams.get("partner_id") ?? "";
@@ -542,6 +545,16 @@ function PartnerContinueInner() {
       })
     : null;
   const useConciseAuthorization = Boolean(holderAuthorizationCopy && !directHandoff && !simplifiedPurchase && !isDobFirstBrowse);
+  const isWalletControlPolicy = inferPolicyPackFromPolicyId(policyId)?.id === "wallet_control";
+
+  async function handleWalletControlVerified() {
+    setError(null);
+    void refresh();
+    const nextAuthorization = await handoff.retryAuthorization();
+    if (nextAuthorization !== "authorized") {
+      setWalletRecoveryActive(false);
+    }
+  }
   const authorizationPhase: HolderAuthorizationPhase = handoff.authorizationState === "authorized"
     ? "success"
     : handoff.authorizationState === "verification_required"
@@ -686,11 +699,11 @@ function PartnerContinueInner() {
           returnLoading={handoff.inFlight}
           returnLabel={returnLabel}
           onVerify={
-            handoff.authorizationState === "verification_required" && setupVisibility.showWalletBinding
-              ? () => void bindWallet()
+            handoff.authorizationState === "verification_required" && isWalletControlPolicy && !walletRecoveryActive
+              ? () => setWalletRecoveryActive(true)
               : undefined
           }
-          verifyLoading={bindLoading}
+          verifyLoading={bindLoading || handoff.inFlight}
           failure={
             handoff.phase === "failed" && handoff.failureCategory
               ? {
@@ -711,6 +724,15 @@ function PartnerContinueInner() {
                 }
               : null
           }
+        />
+      ) : null}
+      {useConciseAuthorization
+        && isWalletControlPolicy
+        && handoff.authorizationState === "verification_required"
+        && walletRecoveryActive ? (
+        <WalletControlRecoveryPanel
+          onVerified={() => handleWalletControlVerified()}
+          onCancel={() => setWalletRecoveryActive(false)}
         />
       ) : null}
       {authLoading || contextLoading || (hostedBootstrapEligible && hostedBootstrap.bootstrapping) ? (
