@@ -16,6 +16,10 @@ import {
 import { partnerFlowRevocationDeniedFields } from "@/lib/partner/partnerFlowReceiptAccess";
 import type { PartnerFlowEvaluateResult } from "@/lib/partner/relyingPartyFlow";
 import { subjectHasPrivacyAccessRevoked } from "@/lib/privacy/privacySubjectAccess";
+import {
+  isRecoverableWalletControlRevokedClaim,
+  isWalletControlPolicyId,
+} from "@/lib/walletControl/recoverableWalletControlRevocation";
 
 export type PartnerFlowRuntimeOperation = "evaluate" | "complete" | "refresh";
 
@@ -52,6 +56,12 @@ function requiredClaimTypesForPolicy(
   return required.map(rule => rule.claim_type);
 }
 
+type RevokedPolicyClaimRow = {
+  claim_type: string;
+  status: string;
+  revocation_reference?: string | null;
+};
+
 export async function findRevokedPolicyClaims(input: {
   subjectId: string;
   partnerId: string;
@@ -65,13 +75,21 @@ export async function findRevokedPolicyClaims(input: {
   const subject = normalizeSuiAddress(input.subjectId);
   const sb = requireSupabaseAdmin();
   const activeClaims = await getActiveClaims(subject);
+  const walletControlPolicy = isWalletControlPolicyId(input.policyId);
 
   const typesToCheck = claimTypes.length > 0 ? claimTypes : null;
+
+  const shouldFailClosedOnRevokedClaim = (row: RevokedPolicyClaimRow): boolean => {
+    if (walletControlPolicy && isRecoverableWalletControlRevokedClaim(row)) {
+      return false;
+    }
+    return true;
+  };
 
   const findRevokedForType = async (claimType: string | null) => {
     let query = sb
       .from("credential_claims")
-      .select("claim_type, status")
+      .select("claim_type, status, revocation_reference")
       .eq("subject_id", subject)
       .in("status", ["revoked", "suspended", "under_review"]);
 
@@ -80,14 +98,14 @@ export async function findRevokedPolicyClaims(input: {
     }
 
     const { data } = await query.order("issued_at", { ascending: false }).limit(1);
-    return data?.[0] as { claim_type: string; status: string } | undefined;
+    return data?.[0] as RevokedPolicyClaimRow | undefined;
   };
 
   if (typesToCheck) {
     for (const claimType of typesToCheck) {
       if (activeClaims.some(claim => claim.claim_type === claimType)) continue;
       const row = await findRevokedForType(claimType);
-      if (row) return row;
+      if (row && shouldFailClosedOnRevokedClaim(row)) return row;
     }
     return null;
   }
@@ -95,6 +113,7 @@ export async function findRevokedPolicyClaims(input: {
   const row = await findRevokedForType(null);
   if (!row) return null;
   if (activeClaims.some(claim => claim.claim_type === row.claim_type)) return null;
+  if (!shouldFailClosedOnRevokedClaim(row)) return null;
   return row;
 }
 

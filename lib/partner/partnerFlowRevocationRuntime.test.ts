@@ -141,6 +141,49 @@ describe("partnerFlowRevocationRuntime", () => {
     expect(denied).toBeNull();
   });
 
+  it("does not block wallet_control when only holder_unlinked revoked claim exists", async () => {
+    getPartnerPolicy.mockResolvedValue({
+      id: "ref-wc-postrev-5ffe-wallet_control-v1",
+      partner_id: "partner-a",
+      version: 1,
+      rules_json: {
+        required_claims: [{ claim_type: "wallet_binding_confirmed", min_assurance: "L1" }],
+      },
+    });
+    fromMock.mockImplementation((table: string) => {
+      if (table === "credential_claims") {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
+          in: vi.fn().mockReturnThis(),
+          order: vi.fn().mockReturnThis(),
+          limit: vi.fn().mockResolvedValue({
+            data: [{
+              claim_type: "wallet_binding_confirmed",
+              status: "revoked",
+              revocation_reference: "holder_unlinked",
+            }],
+            error: null,
+          }),
+        };
+      }
+      return {
+        select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+      };
+    });
+
+    const denied = await checkPartnerFlowRevocationGate({
+      subjectId: "0xabc",
+      partnerId: "partner-a",
+      policyId: "ref-wc-postrev-5ffe-wallet_control-v1",
+      operation: "complete",
+    });
+
+    expect(denied).toBeNull();
+  });
+
   it("blocks evaluate when policy claim is revoked", async () => {
     fromMock.mockImplementation((table: string) => {
       if (table === "credential_claims") {

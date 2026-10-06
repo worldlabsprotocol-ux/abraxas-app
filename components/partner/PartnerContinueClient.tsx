@@ -816,7 +816,7 @@ function PartnerContinueInner() {
 
           {setupVisibility.showWalletBinding
             && handoff.authorizationState !== "authorized"
-            && !(useConciseAuthorization && handoff.authorizationState === "verification_required") && (
+            && !(useConciseAuthorization && isWalletControlPolicy) && (
             <div style={{ marginBottom: "1rem" }}>
               <p style={{ margin: "0 0 0.75rem", fontSize: "0.9rem", lineHeight: 1.6 }}>
                 {PASSPORT_SECURE_ACCOUNT_EXPLAINER}

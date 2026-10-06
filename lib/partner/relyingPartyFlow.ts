@@ -43,6 +43,7 @@ import { policyExplicitlyRequiresProductEligibility } from "@/lib/policy/evaluat
 import { applyPartnerFlowTrustGate, type HolderAuthorizationState } from "@/lib/partner/partnerFlowCurrentAuthorization";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 import { checkPartnerFlowRevocationGate } from "@/lib/partner/partnerFlowRevocationRuntime";
+import { resolveWalletControlZeroEvidenceOutcome } from "@/lib/walletControl/recoverableWalletControlRevocation";
 import type { PartnerPolicyRules } from "@/lib/policy/types";
 import {
   isGoodTroubleBrowseFlow,
@@ -250,6 +251,14 @@ async function denyIfPartnerFlowRevoked(input: {
     verificationRequestId: input.verificationRequestId,
   });
   if (!denied) return null;
+
+  const recoverable = resolveWalletControlZeroEvidenceOutcome({
+    policyId: input.policyId,
+    invalidationReasons: denied.invalidation_reasons,
+    validity: denied.validity,
+  });
+  if (recoverable) return recoverable;
+
   const policy = await getPolicy(input.policyId);
   return {
     ...denied,
@@ -890,6 +899,13 @@ export async function evaluatePartnerFlow(input: {
       return { next: "pending_review", reason_codes: evaluation.reason_codes, policy_version: policy.version };
     }
 
+    const zeroEvidence = resolveWalletControlZeroEvidenceOutcome({
+      policyId: input.policyId,
+      reasonCodes: evaluation.reason_codes,
+      policyVersion: policy.version,
+    });
+    if (zeroEvidence) return zeroEvidence;
+
     return { next: "denied", reason_codes: evaluation.reason_codes, policy_version: policy.version };
   }
 
@@ -958,6 +974,22 @@ export async function completePartnerFlowAfterApproval(input: {
     return { ok: true, ...revoked };
   }
 
+  const { policy, evaluation } = await evaluateHolderPolicy(
+    input.suiAddress,
+    input.partnerId,
+    input.policyId,
+    input.expectedPolicyVersion,
+    { verificationRequestId: input.verificationRequestId },
+  );
+  const zeroEvidenceBeforeIssue = resolveWalletControlZeroEvidenceOutcome({
+    policyId: input.policyId,
+    reasonCodes: evaluation.reason_codes,
+    policyVersion: policy.version,
+  });
+  if (zeroEvidenceBeforeIssue) {
+    return { ok: true, ...zeroEvidenceBeforeIssue };
+  }
+
   const { supersedeStalePartnerFlowDecisionIfNeeded } = await import("@/lib/partner/partnerFlowStaleEvidenceReissue");
   const staleSupersession = await supersedeStalePartnerFlowDecisionIfNeeded({
     suiAddress: input.suiAddress,
@@ -979,7 +1011,6 @@ export async function completePartnerFlowAfterApproval(input: {
   });
 
   const { decision_id, partner_result, receipt_id, receipt_expires_at, replay_status, currently_valid, validity, invalidation_reasons, replaced_receipt_id } = issued;
-  const policy = await getPolicy(input.policyId);
 
   const priorStaleReceiptId = staleSupersession.replaced_receipt_id;
   if (
@@ -1059,6 +1090,13 @@ export async function refreshPartnerSessionReceipt(input: {
     input.expectedPolicyVersion,
   );
   if (evaluation.decision !== "approved") {
+    const zeroEvidence = resolveWalletControlZeroEvidenceOutcome({
+      policyId: input.policyId,
+      reasonCodes: evaluation.reason_codes,
+      policyVersion: policy.version,
+    });
+    if (zeroEvidence) return zeroEvidence;
+
     return { next: "denied", reason_codes: evaluation.reason_codes, policy_version: policy.version };
   }
 
