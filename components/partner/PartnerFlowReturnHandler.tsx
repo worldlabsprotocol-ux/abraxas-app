@@ -11,6 +11,34 @@ interface Props {
   handoff: PartnerFlowHandoffController;
 }
 
+function failureCopy(category: NonNullable<PartnerFlowHandoffController["failureCategory"]>): {
+  title: string;
+  body: string;
+} {
+  switch (category) {
+    case "partner_flow_network_failed":
+      return {
+        title: "Connection problem during handoff.",
+        body: "Check your network and try again.",
+      };
+    case "partner_flow_server_unavailable":
+      return {
+        title: "Verification is temporarily unavailable.",
+        body: "Abraxas could not finish this step right now. Try again in a moment.",
+      };
+    case "partner_flow_handoff_invalid":
+      return {
+        title: "This handoff link is no longer valid.",
+        body: "Return to the partner app and start the verification request again.",
+      };
+    default:
+      return {
+        title: "Couldn't finish the partner handoff.",
+        body: "Your Abraxas verification step finished, but the receipt handoff didn't complete. Try again, or open the partner app and ask them to restart the flow.",
+      };
+  }
+}
+
 export function PartnerFlowReturnHandler({ handoff }: Props) {
   const autoCompleteStarted = useRef(false);
 
@@ -40,14 +68,14 @@ export function PartnerFlowReturnHandler({ handoff }: Props) {
     );
   }
 
-  if (handoff.phase === "failed") {
-    const isNetworkFailure = handoff.failureCategory === "partner_flow_network_failed";
+  if (handoff.phase === "failed" && handoff.failureCategory) {
+    const copy = failureCopy(handoff.failureCategory);
 
     return (
       <div style={{ marginBottom: "1.25rem" }}>
         <StatusBanner
           tone="error"
-          title={isNetworkFailure ? "Connection problem during handoff." : "Couldn't finish the partner handoff."}
+          title={copy.title}
           action={(
             <Btn
               size="sm"
@@ -58,9 +86,7 @@ export function PartnerFlowReturnHandler({ handoff }: Props) {
             </Btn>
           )}
         >
-          {isNetworkFailure
-            ? "Check your network and try again."
-            : "Your Abraxas verification step finished, but the receipt handoff didn't complete. Try again, or open the partner app and ask them to restart the flow."}
+          {copy.body}
         </StatusBanner>
       </div>
     );

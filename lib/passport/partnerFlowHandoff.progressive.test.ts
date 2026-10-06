@@ -8,7 +8,7 @@ const baseContext = {
   suiAddress: "0x1234567890abcdef1234567890abcdef12345678",
   returnPath: "https://partner.example/callback",
   partnerId: "good-trouble-cannabis",
-  verificationRequestId: "vr_test",
+  verifyRequestRef: "vr_test",
 };
 
 describe("isPartnerFlowHandoffReady progressive wiring", () => {

@@ -24,6 +24,7 @@ import {
   resolvePartnerFlowIdempotencyKey,
   type PartnerFlowReplayStatus,
 } from "@/lib/partner/partnerFlowIdempotency";
+import { resolvePartnerFlowReceiptCorrelation } from "@/lib/partner/partnerFlowCompleteCorrelation";
 import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation";
 import { getReceiptByDecisionId } from "@/lib/decisionReceipts/service";
 import { resolveClaimStatusAtRead } from "@/lib/trust/credentialStatusRegistry";
@@ -277,18 +278,24 @@ export async function issuePartnerSessionReceipt(input: {
   replaced_receipt_id?: string | null;
 }> {
   const subject = normalizeSuiAddress(input.suiAddress);
+  const {
+    correlationId,
+    verificationRequestUuid,
+    opaqueVerifyRequest,
+  } = resolvePartnerFlowReceiptCorrelation(input.verificationRequestId);
+
   const idempotencyKey = resolvePartnerFlowIdempotencyKey({
     partnerId: input.partnerId,
     subjectId: subject,
     policyId: input.policyId,
-    verificationRequestId: input.verificationRequestId,
+    verificationRequestId: correlationId,
   });
 
   const identity = {
     partnerId: input.partnerId,
     subjectId: subject,
     policyId: input.policyId,
-    verificationRequestId: input.verificationRequestId,
+    verificationRequestId: correlationId,
   };
 
   let replay_status: PartnerFlowReplayStatus = "idempotent_replay";
@@ -297,10 +304,9 @@ export async function issuePartnerSessionReceipt(input: {
   let receiptExpiresAt: string | undefined;
   let replacedReceiptId: string | null = null;
 
-  const vrId = input.verificationRequestId?.trim();
-  if (vrId) {
+  if (verificationRequestUuid) {
     const byVr = await findDecisionByVerificationRequest({
-      verificationRequestId: vrId,
+      verificationRequestId: verificationRequestUuid,
       subjectId: subject,
     });
     if (byVr) {
@@ -336,9 +342,9 @@ export async function issuePartnerSessionReceipt(input: {
   }
 
   if (!decisionId) {
-    if (vrId) {
+    if (verificationRequestUuid) {
       const staleVrContext = await findReceiptForVerificationRequest({
-        verificationRequestId: vrId,
+        verificationRequestId: verificationRequestUuid,
         subjectId: subject,
       });
       if (staleVrContext?.receipt.status === "revoked") {
@@ -378,7 +384,7 @@ export async function issuePartnerSessionReceipt(input: {
     const sessionExpires = computeSessionReceiptExpiresAt(policy.rules_json);
 
     const decisionInsertBase = {
-      request_id: input.verificationRequestId ?? null,
+      request_id: verificationRequestUuid ?? null,
       partner_id: input.partnerId,
       subject_id: subject,
       policy_id: policy.id,
@@ -498,11 +504,11 @@ export async function issuePartnerSessionReceipt(input: {
     throw new Error("Partner session receipt identity incomplete");
   }
 
-      if (vrId && receiptId) {
+  if (opaqueVerifyRequest && receiptId) {
     try {
       const { bindHandoffToIssuedReceipt } = await import("@/lib/partner/hostedHandoff");
       await bindHandoffToIssuedReceipt({
-        verifyRequest: vrId,
+        verifyRequest: opaqueVerifyRequest,
         partnerId: input.partnerId,
         policyId: input.policyId,
         publicReceiptId: receiptId,

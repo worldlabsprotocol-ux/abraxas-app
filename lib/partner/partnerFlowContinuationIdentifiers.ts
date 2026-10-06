@@ -1,13 +1,17 @@
 // FILE: lib/partner/partnerFlowContinuationIdentifiers.ts
 // Route verification-request identifier families to the correct durable columns.
 
-import { isOpaqueVerifyRequest } from "@/lib/partner/productionIntegration/requestCorrelation";
+export const PARTNER_VERIFY_REQUEST_PREFIX = "vr_" as const;
 
 const UUID_VERIFY_REQUEST_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export function isVerificationRequestUuid(value: string): boolean {
   return UUID_VERIFY_REQUEST_PATTERN.test(value.trim());
+}
+
+export function isOpaqueVerifyRequest(value: string): boolean {
+  return value.startsWith(PARTNER_VERIFY_REQUEST_PREFIX) && value.length >= 12;
 }
 
 export type ContinuationVerifyRequestColumns = {

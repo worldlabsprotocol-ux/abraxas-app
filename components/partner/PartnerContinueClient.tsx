@@ -346,7 +346,7 @@ function PartnerContinueInner() {
     returnPath: decodedReturnUrl,
     partnerId,
     policyId,
-    verificationRequestId: verifyRequestId,
+    verifyRequestRef: verifyRequestId,
     walletBound: setup.walletBound,
     provenanceEvidenceComplete,
   });

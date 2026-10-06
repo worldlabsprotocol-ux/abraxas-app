@@ -1,5 +1,9 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { findActiveSessionDecision } from "@/lib/partner/sessionDecision";
+import {
+  findActiveSessionDecision,
+  findDecisionByVerificationRequest,
+  findReceiptForVerificationRequest,
+} from "@/lib/partner/sessionDecision";
 
 const mockMaybeSingle = vi.fn();
 const mockLimit = vi.fn(() => ({ maybeSingle: mockMaybeSingle }));
@@ -35,6 +39,24 @@ describe("P0-RCP-1: session decision idempotency lookup", () => {
       policyId: "good-trouble-retail-v1",
     });
     expect(result).toBeNull();
+  });
+
+  it("findDecisionByVerificationRequest returns null for opaque vr_* without querying UUID column", async () => {
+    const result = await findDecisionByVerificationRequest({
+      verificationRequestId: "vr_testopaque00000001",
+      subjectId: "0xabc",
+    });
+    expect(result).toBeNull();
+    expect(mockMaybeSingle).not.toHaveBeenCalled();
+  });
+
+  it("findReceiptForVerificationRequest returns null for opaque vr_* without querying UUID column", async () => {
+    const result = await findReceiptForVerificationRequest({
+      verificationRequestId: "vr_testopaque00000001",
+      subjectId: "0xabc",
+    });
+    expect(result).toBeNull();
+    expect(mockMaybeSingle).not.toHaveBeenCalled();
   });
 
   it("returns existing decision and receipt when session is still valid", async () => {

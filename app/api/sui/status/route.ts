@@ -6,6 +6,8 @@ import { getSuiDeployment, isSuiMainnetDeployed, resolveSuiDeployment } from "@/
 import { getPublicSuiConfig } from "@/lib/sui/network";
 import { getSponsorEnvDiagnostics, isPassportIssuerConfigured } from "@/lib/sui/passportIssuer";
 import { ZKLOGIN_PREPARE_API_VERSION, ZKLOGIN_PREPARE_PATH } from "@/lib/sui/zklogin/constants";
+import { getRpcDiagnostics } from "@/lib/sui/rpcDiagnostics";
+import { probeConfiguredSuiJsonRpc } from "@/lib/sui/rpcReadiness";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +35,14 @@ export async function GET() {
     blockers.push("Sponsor wallet + IssuanceCap not fully configured for mainnet provision");
   }
 
+  const rpcDiagnostics = getRpcDiagnostics();
+  const rpcProbe = await probeConfiguredSuiJsonRpc();
+  if (!rpcProbe.ok) {
+    blockers.push(
+      `Configured Sui JSON-RPC unavailable (${rpcProbe.rpc_host}${rpcProbe.http_status ? ` HTTP ${rpcProbe.http_status}` : ""})`,
+    );
+  }
+
   return NextResponse.json({
     ...config,
     deployment: {
@@ -52,6 +62,12 @@ export async function GET() {
       ? `${deployment.packageId}::${deployment.module}::Passport`
       : null,
     blockers,
+    rpc: {
+      ...rpcDiagnostics,
+      probe_ok: rpcProbe.ok,
+      probe_detail: rpcProbe.ok ? null : rpcProbe.detail,
+      probe_http_status: rpcProbe.ok ? null : rpcProbe.http_status ?? null,
+    },
     mainnet_path: "/api/sui/mainnet/readiness",
     auth_stack: {
       version: ZKLOGIN_PREPARE_API_VERSION,
