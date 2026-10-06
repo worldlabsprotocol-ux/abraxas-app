@@ -78,9 +78,9 @@ export function DesignPartnerApplicationForm({
       >
         <div style={{ fontFamily: FONT, fontSize: "0.88rem", fontWeight: 700, color: ACCENT }}>Application received</div>
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0.35rem 0 0.75rem", lineHeight: 1.6 }}>
-          We review design partner applications manually. If approved, Abraxas operators will assist with
-          sandbox provisioning — partner_id, policy_id, allowlisted return_url, and a server-side API key —
-          not instant production access or self-serve key issuance.
+          We review design partner applications manually for custom policies, structured pilots, and commercial collaboration.
+          Sandbox integration does not require approval — use Integration Studio to create an application and abx_test_* credential anytime.
+          Production access remains review-gated with no automatic live key issuance.
         </p>
         <ol style={{
           margin: "0 0 0.75rem",
@@ -95,8 +95,8 @@ export function DesignPartnerApplicationForm({
           ))}
         </ol>
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0 0 0.5rem", lineHeight: 1.55 }}>
-          If approved, your Abraxas operator will share the external pilot playbook during secure sandbox handoff.
-          For pilot support after handoff, use the operator contact provided with your credentials — not public tickets.
+          If approved, Abraxas will share the structured pilot playbook and commercial next steps.
+          For sandbox integration support, continue in Partner Launchpad — design partner approval is not required to test.
         </p>
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0 0 0.75rem", lineHeight: 1.55 }}>
           {PARTNER_RECEIPT_MIRROR_NOTE}
@@ -117,8 +117,10 @@ export function DesignPartnerApplicationForm({
         For age-gated digital commerce teams integrating Partner Flow. We prioritize partners with a clear conversion metric and a defined eligibility gate.
       </p>
       <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-muted)", lineHeight: 1.6, margin: "0 0 0.75rem" }}>
-        <strong style={{ color: "var(--text-secondary)" }}>What happens next:</strong> manual review (typically within a few business days).
-        No self-serve production access or automatic API-key issuance. Sandbox credentials are operator-provisioned after approval.
+        <strong style={{ color: "var(--text-secondary)" }}>Optional relationship track:</strong> manual review (typically within a few business days) for custom policy collaboration and structured pilots.
+        Sandbox integration is self-service via{" "}
+        <Link href="/developers/integration-studio" style={{ color: ACCENT, fontWeight: 600 }}>Integration Studio</Link>.
+        Production access requires reviewed activation and is never automatic.
       </p>
       <BulletList items={[...DESIGN_PARTNER_CRITERIA]} />
 

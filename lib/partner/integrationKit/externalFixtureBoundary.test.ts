@@ -38,7 +38,7 @@ describe("verify-with-abraxas external fixture import boundary", () => {
       }
       const relative = file.replace(`${join(FIXTURE_ROOT, "lib")}/`, "lib/");
       if (mustUseKit.includes(relative)) {
-        expect(source).toMatch(/integrationKit/);
+        expect(source).toMatch(/@abraxas\/partner-kit/);
       }
     }
   });

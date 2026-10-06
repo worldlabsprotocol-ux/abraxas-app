@@ -4,7 +4,11 @@
 
 import { DEFAULT_POLICY_ID } from "@/lib/partner/partnerDecision";
 import { getSdkDefaultBaseUrl } from "@/lib/app/publicAppOrigin";
-import { PARTNER_APPLICATION_PATH } from "@/lib/integrate/partnerJourney";
+import {
+  CANONICAL_SANDBOX_STUDIO_PATH,
+  DESIGN_PARTNER_PATH,
+  PARTNER_APPLICATION_PATH,
+} from "@/lib/integrate/partnerJourney";
 
 export const EXTERNAL_RP_BASE_URL = getSdkDefaultBaseUrl();
 
@@ -13,7 +17,7 @@ export const EXTERNAL_RP_HEADLINE =
 
 export const EXTERNAL_RP_SUMMARY = {
   whatTheyDo: [
-    `Apply at ${PARTNER_APPLICATION_PATH} for manual review — operators may provision API credentials after approval`,
+    `Create a sandbox application at ${CANONICAL_SANDBOX_STUDIO_PATH} and store abx_test_* server-side`,
     "Call POST /api/credentials/verify server-side at your transaction gate",
     "Gate on decision === \"approved\" (or handle denied / manual_review)",
     "Optionally GET /api/proof/{proof_id} to independently confirm signature_valid === true",
@@ -202,8 +206,8 @@ export const CURL_PROOF_EXAMPLE = `curl -s ${EXTERNAL_RP_BASE_URL}/api/proof/apr
 export const EXTERNAL_RP_ONBOARDING_STEPS = [
   {
     step: 1,
-    title: "Apply for manual review",
-    body: `Submit a design partner application at ${PARTNER_APPLICATION_PATH}. Abraxas operators review applications manually and may provision sandbox or production credentials — there is no automatic API-key issuance.`,
+    title: "Create a sandbox application",
+    body: `Open ${CANONICAL_SANDBOX_STUDIO_PATH} to receive a one-time abx_test_* credential. Optional design partner intake at ${DESIGN_PARTNER_PATH} is for custom policies and structured pilots — not required for sandbox.`,
   },
   {
     step: 2,

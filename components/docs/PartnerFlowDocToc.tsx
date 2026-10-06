@@ -5,9 +5,11 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import {
+  CANONICAL_SANDBOX_SUMMARY,
   PARTNER_FLOW_CONFORMANCE_COMMAND,
   PARTNER_FLOW_FIRST_TASKS,
   PARTNER_FLOW_MOBILE_RECEIPT_JUMP_LABEL,
+  PRODUCTION_ACCESS_NOTE,
   PARTNER_RECEIPT_DOCS_ANCHOR,
 } from "@/lib/integrate/partnerJourney";
 
@@ -26,7 +28,7 @@ export const PARTNER_FLOW_DOC_SECTIONS = [
   { id: "errors", label: "Errors" },
   { id: "redirect-example", label: "Redirect example" },
   { id: "planned-passwordless-onboarding", label: "Planned onboarding" },
-  { id: "provisioning", label: "Provisioning" },
+  { id: "provisioning", label: "Sandbox provisioning" },
 ] as const;
 
 const RECEIPT_SECTION_ID = "receipt-verification";
@@ -55,8 +57,9 @@ export function PartnerFlowStartHereCard() {
         ))}
       </ol>
       <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-muted)", lineHeight: 1.55, margin: "0 0 0.65rem" }}>
-        <strong style={{ color: "var(--text-secondary)" }}>Sandbox limitation:</strong> sandbox policies and test credentials are operator-provisioned after approval.
-        Production-usable receipts require production policy context — no self-serve production access.
+        <strong style={{ color: "var(--text-secondary)" }}>Sandbox:</strong> {CANONICAL_SANDBOX_SUMMARY}
+        {" "}
+        <strong style={{ color: "var(--text-secondary)" }}>Production:</strong> {PRODUCTION_ACCESS_NOTE}
       </p>
       <pre
         style={{

@@ -118,7 +118,7 @@ describe("Partner Integration Kit", () => {
     expect(PARTNER_INTEGRATION_REPLAY_BEHAVIOR.toLowerCase()).toContain("do not treat public get as replay protection");
     expect(CONFORMANCE_COMMAND_EXAMPLE).toContain("npm run partner:conformance");
     expect(PARTNER_INTEGRATION_KIT_VERSION).toBe("1.1.0");
-    expect(PARTNER_INTEGRATION_SOURCE_LEVEL.toLowerCase()).toContain("not a published npm package");
+    expect(PARTNER_INTEGRATION_SOURCE_LEVEL.toLowerCase()).toMatch(/prepared|publishable|npm/);
   });
 
   it("maps typed policy-version fail-closed codes", () => {

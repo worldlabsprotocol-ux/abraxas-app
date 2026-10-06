@@ -101,17 +101,24 @@ export default function DesignPartnerPage() {
 
       <ContentCard title="Production checklist (after approval)">
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
-          Production relying-party access requires operator provisioning and passing the same gates Abraxas holds internally.
-          No automatic production key issuance.
+          Production relying-party access requires reviewed activation and passing the same gates Abraxas holds internally.
+          Sandbox integration is self-service; no automatic production key issuance.
         </p>
         <BulletList items={PRODUCTION_INTEGRATION_PATH.map((step, i) => `${i + 1}. ${step}`)} />
       </ContentCard>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: "0.65rem", marginBottom: "1.25rem" }}>
         <div className="abx-glass-panel" style={{ padding: "1rem", borderRadius: 14 }}>
-          <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 800, marginBottom: "0.35rem" }}>1 · Apply</div>
+          <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 800, marginBottom: "0.35rem" }}>1 · Sandbox (self-service)</div>
           <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
-            Submit integration intent. Abraxas reviews manually; sandbox credentials may be issued after approval — not instantly.
+            Create a sandbox application in Integration Studio or Launchpad and receive a one-time abx_test_* credential. No design partner approval required.
+          </p>
+          <Btn href="/developers/integration-studio" size="sm" variant="secondary" style={{ marginBottom: "0.65rem" }}>
+            Open Integration Studio
+          </Btn>
+          <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 800, marginBottom: "0.35rem" }}>Optional · Design partner apply</div>
+          <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
+            Submit integration intent for custom policies, structured pilots, or commercial collaboration. Abraxas reviews manually.
           </p>
           <Btn
             href={PARTNER_APPLICATION_PATH}

@@ -16,8 +16,8 @@ export interface DriftRuleDefinition {
 export const CANONICAL_ANCHORS = {
   manualProvisioning: {
     file: "lib/activation/activationCopy.ts",
-    excerpt: "There is no self serve production access.",
-    lineHint: 47,
+    excerpt: "Production access requires reviewed activation",
+    lineHint: 12,
   },
   partnerOnboarding: {
     file: "docs/PARTNER_ONBOARDING_CHECKLIST.md",
@@ -38,7 +38,7 @@ export const CANONICAL_ANCHORS = {
   },
   sandboxAvailability: {
     file: "lib/activation/activationCopy.ts",
-    excerpt: "sandbox and production policies are issued manually after review",
+    excerpt: "Sandbox applications and abx_test_* credentials are self-service via Integration Studio and Partner Launchpad",
     lineHint: 12,
   },
   activationForbiddenTerms: {

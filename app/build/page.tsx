@@ -83,9 +83,9 @@ export default function BuildPage() {
         </div>
 
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.6 }}>
-          API keys and agent integrations are for{" "}
-          <Link href="/design-partner" style={{ color: ACCENT }}>design partners</Link>
-          {" "}building apps on Abraxas — not required for asset owners.
+          Partner integrations start in{" "}
+          <Link href="/developers/integration-studio" style={{ color: ACCENT }}>Integration Studio</Link>
+          . Design partner intake is optional for custom pilots — not required for asset owners.
         </p>
         </details>
       </div>

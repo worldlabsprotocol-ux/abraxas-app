@@ -2,7 +2,7 @@
 // End-to-end external integration: configure → create → verify → narrow result → resume.
 
 import { permitProtocolAction } from "@/lib/partner/integrationKit";
-import type { PartnerVerificationRequestState } from "@/lib/partner/integrationKit/partnerRequestStateStore";
+import type { PartnerVerificationRequestState } from "@abraxas/partner-kit";
 import type { ExternalVerifyConfig } from "./config";
 import { createExternalPartnerKit } from "./partnerKit";
 import type { ExternalPartnerRequestStore } from "./partnerRequestStore";

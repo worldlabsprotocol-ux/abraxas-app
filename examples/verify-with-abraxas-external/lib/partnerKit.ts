@@ -1,7 +1,7 @@
 // FILE: examples/verify-with-abraxas-external/lib/partnerKit.ts
 // Thin wrapper over the public PartnerKit — no Abraxas internals.
 
-import { AbraxasPartnerKit } from "@/lib/partner/integrationKit";
+import { AbraxasPartnerKit } from "@abraxas/partner-kit";
 import type { ExternalVerifyConfig } from "./config";
 
 export function createExternalPartnerKit(

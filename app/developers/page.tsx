@@ -45,7 +45,7 @@ export default function DevelopersPage() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
           <Btn href="/developers/launchpad" size="sm" variant="secondary">Partner Launchpad</Btn>
           <Btn href="/docs/partner-flow" size="sm" variant="ghost">Partner Flow docs</Btn>
-          <Btn href="/design-partner" size="sm" variant="ghost">Request API access</Btn>
+          <Btn href="/design-partner" size="sm" variant="ghost">Design partner program</Btn>
         </div>
         <details style={{ marginTop: "0.85rem" }}>
           <summary style={{ fontFamily: FONT, fontSize: "0.74rem", fontWeight: 700, color: "var(--accent)", cursor: "pointer" }}>

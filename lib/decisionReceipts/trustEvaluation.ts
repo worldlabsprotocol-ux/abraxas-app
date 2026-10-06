@@ -5,6 +5,12 @@ import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import type { PartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlowReceipt";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 import {
+  evaluatePublicReceiptTrust as evaluatePublicReceiptTrustCanonical,
+  type TrustEvaluationResult as CanonicalTrustEvaluationResult,
+  type TrustEvaluationContext as CanonicalTrustEvaluationContext,
+  type TrustValidityState as CanonicalTrustValidityState,
+} from "@abraxas/partner-kit/trust";
+import {
   CANONICAL_SANDBOX_ONLY_INVALIDATION_REASON,
   LEGACY_SANDBOX_ONLY_INVALIDATION_REASON,
 } from "@/lib/partner/sandboxReceiptTrustContract";
@@ -45,19 +51,6 @@ function productionUsableForRecord(input: {
   policy_id: string;
 }): boolean {
   return input.decision_context === "production" && !isSandboxPolicyId(input.policy_id);
-}
-
-function resolveSyncClaimInvalidation(
-  claimRefs: PartnerFlowPublicReceipt["evaluated_claim_refs"],
-): string | null {
-  if (!claimRefs?.length) return null;
-  for (const ref of claimRefs) {
-    const status = ref.status?.toLowerCase();
-    if (status === "revoked") return "claim_revoked";
-    if (status === "suspended" || status === "under_review") return "access_revoked";
-    if (status === "expired") return "claim_expired";
-  }
-  return null;
 }
 
 function applyTrustGates(
@@ -187,121 +180,15 @@ export async function evaluateDecisionReceiptTrust(
   return applyTrustGates(base, record, context);
 }
 
-/** Sync evaluation for public receipt views (no claim dependency walk). */
+/** Sync evaluation for public receipt views — delegated to @abraxas/partner-kit/trust. */
 export function evaluatePublicReceiptTrust(
   receipt: PartnerFlowPublicReceipt | null | undefined,
   context: TrustEvaluationContext & { partnerId: string; policyId: string },
 ): TrustEvaluationResult {
-  const now = context.now ?? new Date();
-
-  if (!receipt || typeof receipt !== "object") {
-    return {
-      currently_valid: false,
-      validity: "invalidated",
-      signature_valid: false,
-      production_usable: false,
-      invalidation_reasons: ["receipt_missing"],
-    };
-  }
-
-  const signature_valid = receipt.signature_valid === true;
-  const storedStatus = receipt.status;
-  const production_usable = receipt.production_usable === true;
-
-  let base: Pick<ReceiptValidityResult, "currently_valid" | "signature_valid" | "invalidation_reasons"> & {
-    validity: TrustValidityState;
-  };
-
-  if (!signature_valid) {
-    base = {
-      currently_valid: false,
-      validity: "signature_invalid",
-      signature_valid: false,
-      invalidation_reasons: ["signature_invalid"],
-    };
-  } else if (storedStatus === "revoked") {
-    base = {
-      currently_valid: false,
-      validity: "access_revoked",
-      signature_valid: true,
-      invalidation_reasons: ["receipt_revoked"],
-    };
-  } else if (storedStatus == null || storedStatus === "") {
-    base = {
-      currently_valid: false,
-      validity: "invalidated",
-      signature_valid: true,
-      invalidation_reasons: ["status_not_active:missing"],
-    };
-  } else if (storedStatus !== "active") {
-    base = {
-      currently_valid: false,
-      validity: storedStatus === "expired" ? "expired" : "invalidated",
-      signature_valid: true,
-      invalidation_reasons: [`status_not_active:${storedStatus}`],
-    };
-  } else if (receipt.expires_at == null || receipt.expires_at === "") {
-    base = {
-      currently_valid: false,
-      validity: "expired",
-      signature_valid: true,
-      invalidation_reasons: ["expires_at_missing"],
-    };
-  } else if (Number.isNaN(new Date(receipt.expires_at).getTime())) {
-    base = {
-      currently_valid: false,
-      validity: "expired",
-      signature_valid: true,
-      invalidation_reasons: ["expires_at_invalid"],
-    };
-  } else if (new Date(receipt.expires_at).getTime() <= now.getTime()) {
-    base = {
-      currently_valid: false,
-      validity: "expired",
-      signature_valid: true,
-      invalidation_reasons: ["receipt_expired"],
-    };
-  } else {
-    const claimInvalidation = resolveSyncClaimInvalidation(receipt.evaluated_claim_refs);
-    if (claimInvalidation) {
-      base = {
-        currently_valid: false,
-        validity: "access_revoked",
-        signature_valid: true,
-        invalidation_reasons: [claimInvalidation],
-      };
-    } else if (
-      receipt.currently_valid === false
-      && Array.isArray(receipt.invalidation_reasons)
-      && receipt.invalidation_reasons.length > 0
-    ) {
-      base = {
-        currently_valid: false,
-        validity: (receipt.validity as TrustValidityState | undefined) ?? "access_revoked",
-        signature_valid: true,
-        invalidation_reasons: receipt.invalidation_reasons,
-      };
-    } else {
-      base = {
-        currently_valid: true,
-        validity: "active",
-        signature_valid: true,
-        invalidation_reasons: [],
-      };
-    }
-  }
-
-  return applyTrustGates(
-    base,
-    {
-      decision_result: receipt.decision_result ?? "missing",
-      partner_id: receipt.partner_id ?? "",
-      policy_id: receipt.policy_id ?? "",
-      decision_context: production_usable ? "production" : "sandbox_only",
-    },
-    { ...context, productionUsableRaw: receipt.production_usable },
-  );
+  return evaluatePublicReceiptTrustCanonical(receipt, context) as TrustEvaluationResult;
 }
+
+export type { CanonicalTrustEvaluationResult, CanonicalTrustEvaluationContext, CanonicalTrustValidityState };
 
 /** Sync record-level pre-check before async dependency walk. */
 export function evaluateDecisionReceiptTrustSync(

@@ -35,6 +35,7 @@
   ],
   "exclude": [
     "node_modules",
+    "packages",
     "solana",
     "abraxas-program",
     "programs",

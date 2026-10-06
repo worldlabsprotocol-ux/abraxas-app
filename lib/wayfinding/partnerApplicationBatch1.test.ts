@@ -85,12 +85,12 @@ describe("phase 8 partner application batch 1", () => {
     expect(PROTECTED_PATHS).toHaveLength(9);
   });
 
-  it("aligns canonical apply path across activation and external guide", () => {
+  it("aligns canonical sandbox and design-partner paths across activation and external guide", () => {
     expect(PARTNER_APPLICATION_PATH).toBe("/integrations#apply");
-    expect(AUDIENCE_PARTNER.href).toBe(PARTNER_APPLICATION_PATH);
+    expect(AUDIENCE_PARTNER.href).toBe("/developers/integration-studio");
     expect(METRICS_EMPTY_HREF).toBe(PARTNER_APPLICATION_PATH);
     expect(getExternalRelyingPartyIntegrationGuide().apply).toContain("/integrations#apply");
-    expect(getExternalRelyingPartyIntegrationGuide().apply).not.toContain("/design-partner");
+    expect(getExternalRelyingPartyIntegrationGuide().onboarding_steps[0]?.body).toContain("/developers/integration-studio");
   });
 
   it("removes KYC wording from relying party definition and sandbox checklist", () => {
@@ -107,7 +107,8 @@ describe("phase 8 partner application batch 1", () => {
     expect(integrations).not.toContain("~4 lines");
     expect(integrations).not.toContain("live integration surfaces");
     expect(integrations).not.toContain("re-KYC");
-    expect(INTEGRATIONS_HUB_SUBHEAD.toLowerCase()).toContain("manual");
+    expect(INTEGRATIONS_HUB_SUBHEAD.toLowerCase()).toContain("integration studio");
+    expect(INTEGRATIONS_HUB_SUBHEAD.toLowerCase()).toContain("design partner");
   });
 
   it("prioritizes receipt verification docs over receipt tester in post-apply flows", () => {

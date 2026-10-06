@@ -14,10 +14,11 @@ import {
   type IntegrationStatus,
 } from "@/lib/protocolIntegrations";
 import {
+  CANONICAL_SANDBOX_LAUNCHPAD_PATH,
+  CANONICAL_SANDBOX_STUDIO_PATH,
   INTEGRATIONS_APPLY_NOTE,
   INTEGRATIONS_HUB_SUBHEAD,
   INTEGRATIONS_SDK_NOTE,
-  PARTNER_APPLICATION_PATH,
   PARTNER_RECEIPT_DOCS_ANCHOR,
   PARTNER_RECEIPT_VERIFIER_PATH,
 } from "@/lib/integrate/partnerJourney";
@@ -66,8 +67,9 @@ export default function IntegrationsPage() {
           <strong style={{ color: "var(--text-primary)" }}>{INTEGRATIONS_APPLY_NOTE}</strong>
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-          <Btn href={PARTNER_APPLICATION_PATH} size="sm">Apply for manual review</Btn>
-          <Btn href="/docs/partner-flow" variant="secondary" size="sm">Partner Flow docs</Btn>
+          <Btn href={CANONICAL_SANDBOX_STUDIO_PATH} size="sm">Open Integration Studio</Btn>
+          <Btn href={CANONICAL_SANDBOX_LAUNCHPAD_PATH} variant="secondary" size="sm">Partner Launchpad</Btn>
+          <Btn href="/docs/partner-flow" variant="ghost" size="sm">Partner Flow docs</Btn>
           <Btn href={PARTNER_RECEIPT_DOCS_ANCHOR} variant="ghost" size="sm">Receipt verification</Btn>
         </div>
       </div>

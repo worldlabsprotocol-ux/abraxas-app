@@ -5,9 +5,10 @@
 import Link from "next/link";
 import { Btn } from "@/components/redesign/ui";
 import {
+  CANONICAL_SANDBOX_STUDIO_PATH,
+  DESIGN_PARTNER_PATH,
   INTEGRATOR_SANDBOX_BOUNDARY,
   INTEGRATOR_START_HERE_STEPS,
-  PARTNER_APPLICATION_PATH,
   PARTNER_POST_APPLY_HEADLINE,
   PARTNER_POST_APPLY_STEPS,
   PARTNER_RECEIPT_DOCS_ANCHOR,
@@ -23,8 +24,8 @@ const ACCENT = "var(--accent)";
 
 const AVAILABILITY_LABEL: Record<IntegratorAvailability, string> = {
   now: "Available now",
-  after_approval: "After manual approval",
-  operator_provisioned: "Operator-provisioned",
+  production_review: "Production review",
+  optional: "Optional",
 };
 
 export function IntegratorStartHerePanel({ id = "start-here" }: { id?: string }) {
@@ -212,8 +213,9 @@ export function IntegratorStartHerePanel({ id = "start-here" }: { id?: string })
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "1rem" }}>
-        <Btn href="/docs/partner-flow" size="sm">Partner Flow docs</Btn>
-        <Btn href={PARTNER_APPLICATION_PATH} variant="secondary" size="sm">Apply for review</Btn>
+        <Btn href={CANONICAL_SANDBOX_STUDIO_PATH} size="sm">Open Integration Studio</Btn>
+        <Btn href="/docs/partner-flow" variant="secondary" size="sm">Partner Flow docs</Btn>
+        <Btn href={DESIGN_PARTNER_PATH} variant="ghost" size="sm">Design partner program</Btn>
         <Btn href={PARTNER_RECEIPT_DOCS_ANCHOR} variant="ghost" size="sm">Receipt verification</Btn>
         <Btn href={PARTNER_RECEIPT_VERIFIER_PATH} variant="ghost" size="sm">Receipt tester (mirror)</Btn>
       </div>
