@@ -273,7 +273,7 @@ export default function PartnerFlowDocsPage() {
               `Delivery history: ${PARTNER_WEBHOOK_SANDBOX_GUIDE.endpoints.delivery_history}`,
               `Test enqueue (sandbox key + webhooks:read, user-initiated only): ${PARTNER_WEBHOOK_SANDBOX_GUIDE.endpoints.sandbox_test_enqueue}`,
               PARTNER_WEBHOOK_SANDBOX_GUIDE.queuedDisclaimer,
-              "Webhook endpoint URL and signing secret are configured by Abraxas ops, not self serve.",
+              "Webhook endpoint URL and signing secret are self-service in Partner Launchpad (per partner).",
             ]} />
             <div style={{ marginTop: "0.75rem" }}>
               <Btn href={PARTNER_WEBHOOK_SANDBOX_GUIDE.portalPath} size="sm">Open partner portal</Btn>
@@ -310,10 +310,13 @@ export default function PartnerFlowDocsPage() {
               <code style={{ fontFamily: MONO }}>webhooks:read</code> via Abraxas ops for webhook testing.
             </p>
             <p style={{ ...body, marginTop: "0.75rem" }}>
-              Approved design partners: your Abraxas operator shares the full 14-day external pilot playbook during
-              secure sandbox handoff. Use this section plus{" "}
-              <Link href="/design-partner" style={{ color: "var(--accent)", fontWeight: 600 }}>/design-partner</Link>{" "}
-              while you wait. Production activation is a separate later step.
+              Start in sandbox immediately via{" "}
+              <Link href="/developers/integration-studio" style={{ color: "var(--accent)", fontWeight: 600 }}>Integration Studio</Link>
+              {" "}or{" "}
+              <Link href="/developers/launchpad" style={{ color: "var(--accent)", fontWeight: 600 }}>Partner Launchpad</Link>.
+              Optional{" "}
+              <Link href="/design-partner" style={{ color: "var(--accent)", fontWeight: 600 }}>design partner</Link>{" "}
+              intake is for custom policies and structured pilots. Production activation is a separate reviewed step.
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
               <Btn href="/design-partner" size="sm">Design partner program</Btn>
@@ -366,19 +369,37 @@ export default function PartnerFlowDocsPage() {
             </p>
           </div>
 
-          <SectionCard id="provisioning" title="Operator provisioning">
+          <SectionCard id="provisioning" title="Sandbox provisioning (self-service)">
             <p style={body}>
-              Partner rows, policies, callback allowlists, and sandbox credentials are provisioned by Abraxas operators after manual review.
-              Approved partners then use the Partner Portal to validate their assigned integration. There is no self-serve Production provisioning or automatic API-key issuance.
+              Create a sandbox application in Integration Studio or Partner Launchpad and receive a one-time{" "}
+              <code style={{ fontFamily: MONO, fontSize: "0.72rem" }}>abx_test_*</code> credential. Store it server-side only.
+              Configure your policy, callback allowlist, and hosted handoff from your backend. Production access requires reviewed activation and is never automatic.
+            </p>
+            <ol style={{ ...body, paddingLeft: "1.2rem", display: "grid", gap: "0.35rem", marginTop: "0.65rem" }}>
+              <li>Open <Link href="/developers/integration-studio" style={{ color: ACCENT, fontWeight: 600 }}>Integration Studio</Link> or <Link href="/developers/launchpad" style={{ color: ACCENT, fontWeight: 600 }}>Partner Launchpad</Link>.</li>
+              <li>Choose and configure an eligibility policy for your use case.</li>
+              <li>Create a sandbox application and copy the one-time sandbox API key.</li>
+              <li>Store the credential server-side; never expose it in client bundles.</li>
+              <li>Configure your allowed HTTPS callback URL on the application.</li>
+              <li>Create a hosted handoff from your backend (<code style={{ fontFamily: MONO, fontSize: "0.68rem" }}>POST /api/v1/partner-handoff</code>).</li>
+              <li>Verify the current public receipt server-side before granting access.</li>
+            </ol>
+            <p style={{ ...body, marginTop: "0.75rem", fontWeight: 600, color: "var(--text-primary)" }}>
+              Production access
+            </p>
+            <p style={body}>
+              Complete sandbox readiness in Launchpad, submit a production request, and pass Abraxas operator review.
+              Live <code style={{ fontFamily: MONO, fontSize: "0.72rem" }}>abx_live_*</code> credentials are issued only after approval.
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
-              <Link href="/integrations#apply">
-                <Btn size="sm">Apply for review</Btn>
-              </Link>
+              <Btn href="/developers/integration-studio" size="sm">Open Integration Studio</Btn>
+              <Btn href="/developers/launchpad" size="sm" variant="secondary">Partner Launchpad</Btn>
               <Link href="/docs/partner-verification-requests">
-                <Btn size="sm" variant="secondary">Server verification requests</Btn>
+                <Btn size="sm" variant="ghost">Server verification requests</Btn>
               </Link>
-              <Btn href="/developers/launchpad" size="sm" variant="ghost">Partner Launchpad</Btn>
+              <Link href="/design-partner">
+                <Btn size="sm" variant="ghost">Design partner program</Btn>
+              </Link>
             </div>
             <PublicJourneyNextSteps title="Generate a starter or open Studio" />
           </SectionCard>

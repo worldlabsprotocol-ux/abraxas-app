@@ -16,9 +16,9 @@ import {
   TrustContractToolError,
 } from "./rules";
 
-const CANONICAL_ACTIVATION = `export const AUDIENCE_OPERATOR = {
-  body: "Abraxas operators review applications and issue sandbox or production policies. There is no self serve production access.",
-};`;
+const CANONICAL_ACTIVATION = `export const ACTIVATION_AVAILABILITY =
+  "Passport sign-in and Partner Flow are in public beta. Sandbox applications and abx_test_* credentials are self-service via Integration Studio and Partner Launchpad. Production access requires reviewed activation.";
+`;
 
 const CANONICAL_OPENAPI = `export const PARTNER_FLOW_RECEIPT_SECURITY_FIELDS = [
   "signature_valid",

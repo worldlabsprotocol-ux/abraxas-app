@@ -2,17 +2,19 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  CANONICAL_SANDBOX_STUDIO_PATH,
   INTEGRATOR_START_HERE_STEPS,
   INTEGRATOR_SANDBOX_BOUNDARY,
   PARTNER_FLOW_FIRST_TASKS,
 } from "./partnerJourney";
 
 describe("partnerJourney", () => {
-  it("defines four ordered integrator steps", () => {
+  it("defines four ordered integrator steps starting with sandbox create", () => {
     expect(INTEGRATOR_START_HERE_STEPS).toHaveLength(4);
-    expect(INTEGRATOR_START_HERE_STEPS[0].title.toLowerCase()).toContain("apply");
+    expect(INTEGRATOR_START_HERE_STEPS[0].title.toLowerCase()).toContain("sandbox");
+    expect(INTEGRATOR_START_HERE_STEPS[0].cta.href).toBe(CANONICAL_SANDBOX_STUDIO_PATH);
     expect(INTEGRATOR_START_HERE_STEPS[1].cta.href).toBe("/docs/partner-flow");
-    expect(INTEGRATOR_START_HERE_STEPS[2].title.toLowerCase()).toContain("sandbox");
+    expect(INTEGRATOR_START_HERE_STEPS[2].title.toLowerCase()).toContain("launchpad");
     expect(INTEGRATOR_START_HERE_STEPS[3].body.toLowerCase()).toContain("receipt");
   });
 
@@ -22,7 +24,8 @@ describe("partnerJourney", () => {
       INTEGRATOR_SANDBOX_BOUNDARY.productionDetail,
       ...PARTNER_FLOW_FIRST_TASKS,
     ].join(" ").toLowerCase();
-    expect(copy).toContain("manual");
+    expect(copy).toContain("production");
+    expect(copy).toContain("review");
     expect(copy).not.toMatch(/\binstant\b.*\bproduction\b/);
   });
 });

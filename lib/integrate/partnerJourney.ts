@@ -1,7 +1,7 @@
 // FILE: lib/integrate/partnerJourney.ts
 // Shared integrator journey copy — Partner Flow start path (UI only).
 
-export type IntegratorAvailability = "now" | "after_approval" | "operator_provisioned";
+export type IntegratorAvailability = "now" | "production_review" | "optional";
 
 export interface IntegratorStartStep {
   step: number;
@@ -11,8 +11,29 @@ export interface IntegratorStartStep {
   availability: IntegratorAvailability;
 }
 
-/** Canonical design-partner application destination for all partner-facing surfaces. */
+/** Canonical self-service sandbox entry points. */
+export const CANONICAL_SANDBOX_STUDIO_PATH = "/developers/integration-studio";
+export const CANONICAL_SANDBOX_LAUNCHPAD_PATH = "/developers/launchpad";
+export const DESIGN_PARTNER_PATH = "/design-partner";
+
+/** Canonical design-partner application destination for relationship-track intake. */
 export const PARTNER_APPLICATION_PATH = "/integrations#apply";
+
+export const CANONICAL_SANDBOX_SUMMARY =
+  "Create a sandbox application in Integration Studio or Partner Launchpad and receive a one-time abx_test_* credential. Store it server-side only. Production access is not granted automatically.";
+
+export const PRODUCTION_ACCESS_NOTE =
+  "Production access requires reviewed activation: complete sandbox readiness in Launchpad, submit a production request, and pass Abraxas operator review. Live abx_live_* credentials are issued only after approval.";
+
+export const PARTNER_FLOW_SANDBOX_STEPS = [
+  "Open Integration Studio or Partner Launchpad.",
+  "Choose and configure an eligibility policy for your use case.",
+  "Create a sandbox application and copy the one-time abx_test_* API key.",
+  "Store the credential server-side only; never expose it in client bundles.",
+  "Configure your allowed HTTPS callback URL on the application.",
+  "Create a hosted handoff from your backend (POST /api/v1/partner-handoff).",
+  "Redirect the holder to hosted_url; verify the current result server-side before granting access.",
+] as const;
 
 export const HOLDER_VERIFY_DEFAULT_PATH = "/passport?view=verify&mode=registry";
 
@@ -116,27 +137,27 @@ export const PARTNER_FLOW_DOCS_PATH = "/docs/partner-flow";
 export const PARTNER_RECEIPT_DOCS_ANCHOR = "/docs/partner-flow#receipt-verification";
 
 export const INTEGRATIONS_HUB_SUBHEAD =
-  "Public beta · design partner applications reviewed manually. Submit integration intent below, sandbox policies and callback allowlists are operator provisioned after approval, not self serve.";
+  "Public beta · start in sandbox immediately via Integration Studio or Partner Launchpad. Design partner applications are optional for custom policies, structured pilots, and commercial collaboration.";
 
 export const INTEGRATIONS_APPLY_NOTE =
-  "Apply once at this form. Abraxas operators review applications manually. There is no self serve production portal or automatic API-key issuance.";
+  "Developers can create a sandbox application and receive a one-time abx_test_* credential without waiting for approval. Production access requires reviewed activation and is never automatic.";
 
 export const INTEGRATIONS_SDK_NOTE =
-  "Example server side pattern only. API credentials are operator provisioned after manual approval, not self serve.";
+  "Example server side pattern only. Sandbox credentials come from Integration Studio or Launchpad; store abx_test_* keys server-side only.";
 
 export const PARTNER_RECEIPT_MIRROR_NOTE =
   "The public receipt tester mirrors GET /api/receipts/{receipt_id}/public, it is not a production access gate. Your server must verify before granting access.";
 
-export const PARTNER_POST_APPLY_HEADLINE = "After you apply";
+export const PARTNER_POST_APPLY_HEADLINE = "After you apply as a design partner";
 
 export const PARTNER_POST_APPLY_SUBHEAD =
-  "While Abraxas operators review your application (typically a few business days), start with the Partner Flow contract and server side receipt checks.";
+  "Design partner review is optional and separate from sandbox integration. While Abraxas reviews your application (typically a few business days), you can still build in sandbox using Integration Studio.";
 
 export const PARTNER_POST_APPLY_STEPS = [
-  "Read /docs/partner flow, entry URL, callback params, and lifecycle.",
-  "Implement server side receipt verification, GET /api/receipts/{receipt_id}/public before granting access (/docs/partner flow#receipt-verification).",
-  "When operators provision sandbox partner_id, policy_id, and allowlisted return_url, test with the receipt tester (public mirror only).",
-  "Run npm run partner:conformance after sandbox credentials are issued.",
+  "Create a sandbox application in Integration Studio if you have not already.",
+  "Read /docs/partner flow, entry URL params, lifecycle, and receipt checks.",
+  "Implement callback handler, fetch public receipt server side; never trust URL params alone.",
+  "Run npm run partner:conformance after your sandbox application is configured.",
 ] as const;
 
 export const PARTNER_FLOW_MOBILE_RECEIPT_JUMP_LABEL = "Receipt verification (server)";
@@ -176,13 +197,24 @@ export const PARTNER_CONVERSION_FORBIDDEN_TERMS = [
   "live integrations",
 ] as const;
 
+/** Patterns that must not appear on public onboarding surfaces (sandbox requires operator/founder). */
+export const LEGACY_SANDBOX_GATE_PATTERNS = [
+  "sandbox credentials are operator-provisioned",
+  "sandbox credentials are operator provisioned",
+  "operator-provisioned after approval",
+  "operator provisioned after approval",
+  "operator-provisioned sandbox",
+  "wait for us before you can test",
+  "apply and wait for sandbox",
+] as const;
+
 export const INTEGRATOR_START_HERE_STEPS: IntegratorStartStep[] = [
   {
     step: 1,
-    title: "Apply for manual review",
+    title: "Create a sandbox application",
     body:
-      "Submit a design partner application for age gated digital commerce. Abraxas operators review applications manually, there is no self serve production portal and no automatic API-key issuance.",
-    cta: { label: "Apply for review", href: PARTNER_APPLICATION_PATH },
+      "Open Integration Studio, choose a policy, and receive a one-time abx_test_* credential. No design partner approval is required to start sandbox integration.",
+    cta: { label: "Open Integration Studio", href: CANONICAL_SANDBOX_STUDIO_PATH },
     availability: "now",
   },
   {
@@ -195,11 +227,11 @@ export const INTEGRATOR_START_HERE_STEPS: IntegratorStartStep[] = [
   },
   {
     step: 3,
-    title: "Use sandbox when provisioned",
+    title: "Test in Launchpad",
     body:
-      "After approval, operators may provision sandbox policies and callback allowlists. Test with the receipt tester using operator provided receipt IDs. Sandbox receipts are not production usable unless your validator explicitly opts in with allowSandbox.",
-    cta: { label: "Receipt tester", href: PARTNER_RECEIPT_VERIFIER_PATH },
-    availability: "after_approval",
+      "Use Partner Launchpad to configure callbacks, run the sandbox test console, and validate signed receipts. Sandbox receipts require allowSandbox in your validator and are not production usable.",
+    cta: { label: "Partner Launchpad", href: CANONICAL_SANDBOX_LAUNCHPAD_PATH },
+    availability: "now",
   },
   {
     step: 4,
@@ -211,12 +243,12 @@ export const INTEGRATOR_START_HERE_STEPS: IntegratorStartStep[] = [
 ];
 
 export const INTEGRATOR_SANDBOX_BOUNDARY = {
-  sandboxLabel: "Sandbox (operator provisioned test policies)",
+  sandboxLabel: "Sandbox (self-service via Studio / Launchpad)",
   sandboxDetail:
-    "May be issued after manual approval. Receipts from sandbox policies require allowSandbox in your validator. Not valid for production gates.",
-  productionLabel: "Production (operator-provisioned)",
+    "Create an application and receive abx_test_* once. Receipts from sandbox policies require allowSandbox in your validator. Not valid for production gates.",
+  productionLabel: "Production (review-gated)",
   productionDetail:
-    "Requires approved partner row, active policy, allowlisted callback URLs, and production_usable receipts. No self serve provisioning.",
+    `${PRODUCTION_ACCESS_NOTE} No self serve production credential issuance.`,
   receiptTesterLabel: "Partner Flow receipt tester",
   receiptTesterDetail:
     "Paste a receipt_id from your callback and mirror the server side GET /api/receipts/{receipt_id}/public check.",
@@ -232,8 +264,8 @@ PARTNER_FLOW_RP_BASE_URL=https://abraxasworld.xyz \\
 npm run partner:conformance`;
 
 export const PARTNER_FLOW_FIRST_TASKS = [
-  `Apply at ${PARTNER_APPLICATION_PATH}, describe your age gated checkout or eligibility gate.`,
+  `Create a sandbox application in ${CANONICAL_SANDBOX_STUDIO_PATH}.`,
   "Read /docs/partner flow, entry URL params, lifecycle, and receipt checks.",
   "Implement callback handler, fetch public receipt server side; never trust URL params alone.",
-  "Run npm run partner:conformance after operators provision partner_id, policy_id, and return_url.",
+  "Run npm run partner:conformance after your sandbox application and callback URL are configured.",
 ] as const;

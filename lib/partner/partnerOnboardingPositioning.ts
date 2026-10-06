@@ -53,8 +53,8 @@ export const PARTNER_ONBOARDING_AVAILABLE_NOW: PartnerCapabilityItem[] = [
   },
   {
     id: "sandbox-design-partner",
-    label: "Sandbox design partner integration",
-    detail: "Create a sandbox integration after partner sign-in. Upgrade to Production after readiness review.",
+    label: "Self-service sandbox integration",
+    detail: "Create a sandbox application in Integration Studio or Launchpad and receive abx_test_* once. Production activation after readiness review.",
     availability: "available_now",
   },
   {

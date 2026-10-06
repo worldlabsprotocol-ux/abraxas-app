@@ -75,8 +75,8 @@ export function PartnerSandboxIntegrationPanel({
   const integrationSummary = capabilities.verifyCapable && capabilities.webhookCapable
     ? PARTNER_SANDBOX_INTEGRATION_SUMMARY
     : capabilities.verifyCapable
-      ? "Partner Flow track for this key: browser redirect plus public receipt verification. Complete operator provisioning before testing."
-      : "Webhook track for this key: outbound HTTPS notifications with webhooks:read. Complete operator provisioning before testing.";
+      ? "Partner Flow track for this key: browser redirect plus public receipt verification. Configure your sandbox application in Launchpad before testing."
+      : "Webhook track for this key: outbound HTTPS notifications with webhooks:read. Configure your sandbox application in Launchpad before testing.";
 
   return (
     <>

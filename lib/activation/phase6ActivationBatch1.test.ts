@@ -229,7 +229,7 @@ describe("HomeAudienceFork routing", () => {
     const partnerLink = screen.getAllByRole("link", { name: new RegExp(AUDIENCE_PARTNER.cta) })
       .find((link) => link.getAttribute("href") === AUDIENCE_PARTNER.href);
     expect(partnerLink).toBeTruthy();
-    expect(screen.getByText(/operator managed/i)).toBeInTheDocument();
+    expect(screen.getByText(/review-gated production/i)).toBeInTheDocument();
   });
 });
 

@@ -88,14 +88,14 @@ describe("phase 7 partner conversion batch 1", () => {
     expect(PROTECTED_PATHS).toHaveLength(9);
   });
 
-  it("uses canonical apply path across partner journey and external onboarding", () => {
+  it("uses canonical sandbox path across partner journey and external onboarding", () => {
     expect(PARTNER_APPLICATION_PATH).toBe("/integrations#apply");
-    expect(INTEGRATOR_START_HERE_STEPS[0]?.cta.href).toBe(PARTNER_APPLICATION_PATH);
-    expect(EXTERNAL_RP_ONBOARDING_STEPS[0]?.body).toContain(PARTNER_APPLICATION_PATH);
-    expect(EXTERNAL_RP_ONBOARDING_STEPS[0]?.body.toLowerCase()).toContain("manual");
-    expect(EXTERNAL_RP_ONBOARDING_STEPS[0]?.body.toLowerCase()).toContain("no automatic api-key issuance");
+    expect(INTEGRATOR_START_HERE_STEPS[0]?.cta.href).toBe("/developers/integration-studio");
+    expect(EXTERNAL_RP_ONBOARDING_STEPS[0]?.body).toContain("/developers/integration-studio");
+    expect(EXTERNAL_RP_ONBOARDING_STEPS[0]?.body.toLowerCase()).toContain("abx_test_");
+    expect(EXTERNAL_RP_ONBOARDING_STEPS[0]?.body.toLowerCase()).toContain("not required for sandbox");
     expect(read("app/design-partner/page.tsx")).toContain("PARTNER_APPLICATION_PATH");
-    expect(read("app/design-partner/page.tsx")).not.toMatch(/href="\/design-partner"/);
+    expect(read("app/design-partner/page.tsx")).toContain("/developers/integration-studio");
   });
 
   it("routes holders away from partner receipt verifier as the default nav target", () => {

@@ -78,7 +78,8 @@ export default function RelyingPartyVerifyDocsPage() {
           ))}
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
-          <Btn href="/design-partner" size="sm">Request API key →</Btn>
+          <Btn href="/developers/integration-studio" size="sm">Open Integration Studio →</Btn>
+          <Btn href="/design-partner" variant="secondary" size="sm">Design partner program →</Btn>
           <Btn href="/api/docs/relying-party" variant="secondary" size="sm">JSON guide →</Btn>
           <Btn href="/api/proof/reference/ABX-RE-HOSP-001" variant="ghost" size="sm">Live Cielo demo →</Btn>
         </div>
