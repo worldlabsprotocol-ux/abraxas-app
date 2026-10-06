@@ -9,7 +9,7 @@
     "partner-kit:build": "npm run build -w @abraxas/partner-kit",
     "partner-kit:test": "npm run test -w @abraxas/partner-kit",
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run partner-kit:build && next build",
     "start": "next start",
     "lint": "next lint",
     "db:seed": "DOTENV_CONFIG_PATH=.env.local npx ts-node -r dotenv/config scripts/seed.ts",
