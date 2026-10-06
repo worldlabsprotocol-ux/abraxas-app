@@ -1,19 +1,32 @@
 openapi: 3.1.0
 info:
-  title: Abraxas Partner Flow API
-  version: 1.0.0
+  title: Abraxas Partner Integration API
+  version: 1.1.0
   description: |
-    Machine-readable contract for the **browser-redirect Partner Flow** integration path.
-    External protocols redirect holders to Abraxas, receive a signed session receipt on a
-    callback URL, and verify eligibility server-side via the public receipt endpoint.
+    Machine-readable contract for the **canonical external partner integration surface** on Abraxas.
+    Covers server-side hosted handoff creation, browser-redirect Partner Flow, public receipt
+    verification, narrow partner results, and inbound webhook delivery semantics.
+
+    ## Authorization is never implied by callbacks or webhooks
+
+    - **Browser callback / deep link** — notification only; query parameters are not authorization.
+    - **Webhook delivery** — notification only; signature proves Abraxas origin, not current holder authorization.
+    - **Receipt existence** — a signed receipt may be historically authentic but **not currently valid**.
+    - **Partner backend must re-fetch** `GET /api/receipts/{receiptId}/public` (or narrow result) and evaluate
+      `currently_valid`, `holder_authorization_state` (browser flow), and policy binding **before permitting action**.
+
+    Use **PartnerKit** (`verifyForAction`, `permitProtocolAction`) from the monorepo workspace package
+    `@abraxas/partner-kit` (prepared for publication — not yet on public npm). See `/docs/PARTNER_KIT.md`.
 
     ## Auth boundaries
 
     | Surface | Credential | Operations in this document |
     |---------|------------|---------------------------|
+    | **Partner server API** | `Authorization: Bearer abx_test_*` or `abx_live_*` + `X-Abraxas-Application-Id` | `POST /api/v1/partner-handoff`, `GET /api/v1/partner-handoff/{handoffRef}` |
     | **Browser entry & UI** | Holder browser on `https://abraxasworld.xyz` | `GET /partner/verify`, `GET /passport` |
     | **Browser session API** | `abraxas_browser_session` httpOnly cookie (set after zkLogin/wallet sign-in) | `POST /api/v1/partner-flow/*`, verification-request consent routes |
-    | **Public receipt** | None — call from partner backend only | `GET /api/receipts/{receiptId}/public` |
+    | **Public receipt** | None — call from partner backend only | `GET /api/receipts/{receiptId}/public`, `GET /api/receipts/{receiptId}/narrow-result` |
+    | **Inbound webhooks** | Partner endpoint verifies HMAC signature | Documented under `x-abraxas-partner-webhook` (not an Abraxas HTTP route) |
 
   x-abraxas-excluded-operations:
     - method: POST
@@ -40,6 +53,52 @@ info:
 
   x-abraxas-compatibility-manifest: https://abraxasworld.xyz/api/protocol/compatibility
   x-abraxas-compatibility-version: "1.0.0"
+
+  x-abraxas-partner-kit: |
+    Canonical server-side verification helpers live in `@abraxas/partner-kit` (workspace package).
+    Key entry points: `verifyForAction`, `permitProtocolAction`, `verifyCallbackWithNarrowResult`,
+    `AbraxasPartnerKit.verifyReceiptId`. Webhook verification: `@abraxas/partner-kit/webhooks`.
+
+  x-abraxas-authorization-semantics: |
+    **holder_authorization_state** (browser Partner Flow responses):
+    - `authorized` — current evidence satisfies policy; `next=enter` may redirect with receipt.
+    - `verification_required` — no current authorization; holder may recover/reverify (HTTP 200, not success).
+    - `denied` — fail-closed non-recoverable state; `next=denied`.
+
+    HTTP 200 with `verification_required` or `denied` is **not** authorization success.
+    Distinguish: `signature_valid` (historical authenticity) ≠ `currently_valid` (live trust) ≠ safe to authorize.
+
+  x-abraxas-partner-webhook: |
+    Abraxas delivers signed POST requests to the partner-configured HTTPS endpoint.
+    **Webhooks are not authorization** — re-fetch and verify the public receipt after notification.
+
+    ### Request headers (partner must verify)
+    - `x-abraxas-webhook-timestamp` — Unix seconds; reject if skew > 300s (default).
+    - `x-abraxas-webhook-id` — unique delivery id; use for idempotency deduplication.
+    - `x-abraxas-webhook-signature` — `v1=<hex>` HMAC-SHA256 over `{timestamp}.{rawBody}` with signing secret `abx_whsec_*`.
+
+    ### Payload envelope (allowlisted keys only — no PII)
+    `event_id`, `schema_version`, `event_type`, `timestamp`, `occurred_at`, `partner_id`,
+    `policy_id`, `policy_version`, `receipt_id`, `decision_id`, `outcome`, `reason_code`,
+    `event_ref`, `validity_class`, `expires_at`, `must_reverify`, `is_grant`, `signature`.
+
+    ### Event types (representative)
+    `partner.receipt.issued`, `partner.receipt.revoked`, `partner.access.revoked`, `partner.credential.revoked`,
+    `receipt.expired`, `receipt.expiring`, `receipt.revoked`, `receipt.invalidated`, `decision.denied`,
+    `integration.health_changed`, `partner.webhook.test`.
+
+    ### Retry expectations
+    Abraxas retries failed deliveries with backoff (≈1m, 5m, 15m, 1h, 4h; max 6 attempts).
+    Partners should respond 2xx quickly; processing may be async. Dedupe on `event_id` / `x-abraxas-webhook-id`.
+
+    Verify with PartnerKit: `verifyWebhookSignature` from `@abraxas/partner-kit/webhooks`.
+
+  x-abraxas-error-inconsistency: |
+    **Documented inconsistency (not normalized in this spec):**
+    - Partner handoff routes return `{ error: "<snake_case_token>" }` (e.g. `invalid_input`, `unauthorized`).
+    - Browser Partner Flow routes often return `{ error: "<human-readable message>" }` (e.g. `Sign in required in this browser`).
+    - Public receipt routes return `{ error: "Receipt not found" }` or `{ error: "unavailable" }`.
+    Retryability and correlation IDs are not uniformly exposed on external error responses.
 
   x-abraxas-receipt-validation: |
     **Fail closed by default** (production). Integrators must verify on the public receipt view:
@@ -83,16 +142,221 @@ servers:
     description: Canonical production host
 
 tags:
+  - name: PartnerServer
+    description: Server-to-server partner API — Bearer credential (`abx_test_*` sandbox, `abx_live_*` production) plus required `X-Abraxas-Application-Id`. **Never expose credentials in browser or mobile apps.**
   - name: BrowserEntry
     description: Holder-facing redirect entry (no API key; construct HTTPS links server-side).
   - name: BrowserSession
-    description: Partner Flow JSON APIs — require `abraxas_browser_session` cookie on the Abraxas origin (`credentials: include`). **Never embed partner API keys in browser code.**
+    description: >-
+      Partner Flow JSON APIs — require `abraxas_browser_session` cookie on the Abraxas origin
+      (credentials include). **Never embed partner API keys in browser code.**
   - name: PassportHandoff
     description: Holder consent preview and decision during first-time ID verification (`next=passport`).
   - name: PublicReceipt
-    description: Unsigned-fetch public receipt — partner backend only; CORS enabled.
+    description: Unsigned-fetch public receipt and narrow partner result — partner backend only; CORS enabled; rate limited.
 
 paths:
+  /api/v1/partner-handoff:
+    post:
+      tags: [PartnerServer]
+      operationId: createPartnerHandoff
+      summary: Create hosted Partner Flow handoff (server-only)
+      description: |
+        Creates a server-bound handoff. Returns `hosted_url` for the holder browser and `verify_request`
+        for correlation. Policy, callback, purpose, and return URL are resolved **server-side** from the
+        Launchpad application — do not send `partner_ref`, `application_ref`, `policy_id`, `purpose`, or
+        `return_url` in the body.
+
+        A handoff is **not** OAuth, **not** a receipt grant, and **not** authorization. After holder
+        completion, call `GET /api/v1/partner-handoff/{handoffRef}` and verify the current public receipt.
+      security:
+        - PartnerBearerCredential: [verify:requests]
+      parameters:
+        - $ref: "#/components/parameters/AbraxasApplicationId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HostedHandoffCreateRequest"
+            examples:
+              defaultRuntime:
+                summary: Default runtime (universal_https)
+                value: {}
+              explicitRuntime:
+                summary: Explicit runtime and binding
+                value:
+                  runtime: nextjs
+                  binding_id: "00000000-0000-4000-8000-000000000001"
+      responses:
+        "200":
+          description: Handoff created — send holder only `hosted_url`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HostedHandoffCreateResponse"
+              example:
+                ok: true
+                version: "1.0.0"
+                notice: "A handoff is not an OAuth callback, not a receipt grant..."
+                hosted_url: "https://abraxasworld.xyz/partner/continue?verify_request=00000000-0000-4000-8000-0000000000aa"
+                handoff_ref: "hpf_a1b2c3d4e5f67890"
+                verify_request: "00000000-0000-4000-8000-0000000000aa"
+                runtime: universal_https
+                environment: sandbox
+                status: created
+                expires_at: "2026-01-15T12:30:00.000Z"
+                callback_bound: true
+                must_reverify: true
+                is_grant: false
+                activates_production: false
+                activates_mainnet: false
+                issues_credentials: false
+                application_id: "11111111-1111-1111-1111-111111111111"
+                public_receipt_id: null
+                action: retail_access
+                policy_version: 1
+                binding_id: null
+                pack_id: age_21_retail
+                result_family: age_eligible_21
+        "400":
+          description: Malformed body, unknown/forbidden fields, binding error, or callback misconfiguration.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerHandoffError"
+              examples:
+                invalidInput:
+                  value: { error: invalid_input }
+                appRequired:
+                  value: { error: app_required }
+                clientOverride:
+                  value: { error: client_override_rejected }
+                unknownField:
+                  value: { error: unknown_field }
+                runtimeRejected:
+                  value: { error: runtime_rejected }
+                callbackRejected:
+                  value: { error: callback_rejected }
+                notConfigured:
+                  value: { error: not_configured }
+                ambiguousBinding:
+                  value: { error: AMBIGUOUS_POLICY_BINDING }
+        "401":
+          $ref: "#/components/responses/PartnerUnauthorized"
+        "403":
+          description: Wrong credential scope, environment, or production not activated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerHandoffError"
+              examples:
+                unauthorized:
+                  value: { error: unauthorized }
+                productionNotActivated:
+                  value: { error: production_not_activated }
+        "404":
+          description: Application not found for partner.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerHandoffError"
+              example:
+                error: application_not_found
+        "409":
+          description: Ambiguous policy binding when multiple bindings match.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerHandoffError"
+              example:
+                error: AMBIGUOUS_POLICY_BINDING
+        "503":
+          description: Dependency failure or response redaction safety trip.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerHandoffError"
+              examples:
+                redacted:
+                  value: { error: redacted }
+                unavailable:
+                  value: { error: unavailable }
+
+  /api/v1/partner-handoff/{handoffRef}:
+    get:
+      tags: [PartnerServer]
+      operationId: getPartnerHandoff
+      summary: Lookup handoff status and receipt id (server-only)
+      description: |
+        Poll handoff completion from the partner backend. When `status` is `completed`, `public_receipt_id`
+        is populated. Use `?consume=1` to atomically mark receipt lookup consumed (replay-safe).
+
+        After obtaining `public_receipt_id`, verify current authorization via public receipt — never trust
+        handoff status alone.
+      security:
+        - PartnerBearerCredential: [verify:requests]
+      parameters:
+        - name: handoffRef
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^hpf_[a-f0-9]{16}$"
+          example: hpf_a1b2c3d4e5f67890
+        - name: consume
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ["1"]
+          description: When `1`, consume completed handoff receipt lookup (denies replay).
+      responses:
+        "200":
+          description: Handoff view with optional `public_receipt_id` when completed/consumed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HostedHandoffLookupResponse"
+              example:
+                ok: true
+                version: "1.0.0"
+                handoff_ref: "hpf_a1b2c3d4e5f67890"
+                status: completed
+                public_receipt_id: "dr_00000000000000000000000000000001"
+                partner_must_call: "AbraxasPartnerKit.verifyReceiptId"
+        "400":
+          description: Handoff not ready, replay denied, or tenant mismatch.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerHandoffError"
+              examples:
+                notReady:
+                  value: { error: not_ready }
+                replayDenied:
+                  value: { error: replay_denied }
+                tenantMismatch:
+                  value: { error: tenant_mismatch }
+        "401":
+          $ref: "#/components/responses/PartnerUnauthorized"
+        "404":
+          description: Handoff not found for authenticated partner.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerHandoffError"
+              example:
+                error: not_found
+        "503":
+          description: Response redaction safety trip.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PartnerHandoffError"
+              example:
+                error: redacted
+
   /partner/verify:
     get:
       tags: [BrowserEntry]
@@ -355,9 +619,109 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
               example:
                 error: Receipt not found
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "503":
+          description: Trust evaluation unavailable — retry with backoff.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: unavailable
+
+  /api/receipts/{receiptId}/narrow-result:
+    get:
+      tags: [PublicReceipt]
+      operationId: getNarrowPartnerResult
+      summary: Narrow partner result — privacy-minimized policy facts
+      description: |
+        Returns only policy-authorized facts when `currently_valid` is true. **Never includes** wallet
+        address, wallet graph, DOB, identity documents, raw identity evidence, provider payloads,
+        artifact identifiers, or content hashes.
+
+        For `wallet_control` policies, `result_family` is `wallet_control_confirmed` without wallet
+        address disclosure. Use with PartnerKit `verifyCallbackWithNarrowResult` for callback correlation.
+      parameters:
+        - $ref: "#/components/parameters/ReceiptId"
+      responses:
+        "200":
+          description: Narrow partner result (no-store, CORS `*`).
+          headers:
+            Cache-Control:
+              schema: { type: string }
+              example: "no-store, must-revalidate"
+            Access-Control-Allow-Origin:
+              schema: { type: string }
+              example: "*"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NarrowPartnerResult"
+              examples:
+                ageEligible:
+                  summary: Age policy narrow result
+                  value:
+                    schema_version: "1.0.0"
+                    receipt_id: "dr_00000000000000000000000000000001"
+                    policy_id: "partner-acme-age_21_retail-v1"
+                    partner_id: "partner-acme"
+                    decision: approved
+                    result_family: age_eligible_21
+                    currently_valid: true
+                    production_usable: true
+                    trust_environment: production
+                    invalidation_reasons: []
+                    over_21: true
+                    identity_verified: true
+                    assurance_level: "L2"
+                walletControl:
+                  summary: Wallet control — no address disclosed
+                  value:
+                    schema_version: "1.0.0"
+                    receipt_id: "dr_00000000000000000000000000000002"
+                    policy_id: "partner-acme-wallet_control-v1"
+                    partner_id: "partner-acme"
+                    decision: approved
+                    result_family: wallet_control_confirmed
+                    currently_valid: true
+                    production_usable: false
+                    trust_environment: sandbox
+                    invalidation_reasons: []
+        "404":
+          description: Receipt not found — fail closed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: Receipt not found
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "503":
+          description: Narrow result build unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: unavailable
 
 components:
   securitySchemes:
+    PartnerBearerCredential:
+      type: http
+      scheme: bearer
+      bearerFormat: AbraxasPartnerKey
+      description: |
+        Server-side partner credential only. Prefix determines environment:
+        - `abx_test_*` — sandbox integrations
+        - `abx_live_*` — production integrations (requires activated application)
+
+        Also accepted: `X-Abraxas-Api-Key: abx_test_…` or `abx_live_…`.
+        Required scope for handoff routes: `verify:requests`.
+        **Never embed in browser, mobile app, or client-side code.**
+
     BrowserSession:
       type: apiKey
       in: cookie
@@ -407,8 +771,34 @@ components:
       in: path
       required: true
       schema: { type: string }
+    AbraxasApplicationId:
+      name: X-Abraxas-Application-Id
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: |
+        Launchpad application UUID. Binds the handoff to server-resolved policy, callback, and environment.
+        Separate from bearer authentication — both are required for `POST /api/v1/partner-handoff`.
 
   responses:
+    PartnerUnauthorized:
+      description: Missing, invalid, or revoked partner credential, or insufficient scope.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/PartnerHandoffError"
+          example:
+            error: unauthorized
+    RateLimited:
+      description: Rate limit exceeded — retry with exponential backoff.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: rate_limited
     BadRequest:
       description: Invalid request, allowlist rejection, flow error, or flow_trace_id mismatch.
       content:
@@ -516,7 +906,19 @@ components:
 
     PartnerFlowNextStep:
       type: string
-      enum: [authenticate, passport, enter, denied, pending_review]
+      enum: [authenticate, passport, enter, denied, pending_review, verification_required]
+      description: |
+        Workflow next step. HTTP 200 may carry `verification_required` or `denied` — not authorization success.
+        Pair with `holder_authorization_state` for current authorization semantics.
+
+    HolderAuthorizationState:
+      type: string
+      enum: [authorized, verification_required, denied]
+      description: |
+        Current holder authorization derived from live trust evaluation.
+        - `authorized` — current evidence satisfies policy.
+        - `verification_required` — recoverable; holder may reverify (zero-evidence recovery path).
+        - `denied` — fail-closed non-recoverable (revocation, policy denial).
 
     PartnerVerificationResult:
       type: object
@@ -572,10 +974,13 @@ components:
       properties:
         next:
           $ref: "#/components/schemas/PartnerFlowNextStep"
+        holder_authorization_state:
+          $ref: "#/components/schemas/HolderAuthorizationState"
+          description: Authoritative current authorization — distinct from workflow completion.
         redirect_url:
           type: string
           format: uri
-          description: Partner callback URL with frozen query parameters when `next=enter`.
+          description: Partner callback URL with frozen query parameters when `next=enter` and authorized.
         passport_url:
           type: string
           format: uri
@@ -588,6 +993,16 @@ components:
         reason_codes:
           type: array
           items: { type: string }
+        currently_valid:
+          type: boolean
+          description: Live trust for `partner_result.receipt_id` at evaluation time.
+        validity:
+          type: string
+          description: Live trust state label (e.g. active, access_revoked).
+        invalidation_reasons:
+          type: array
+          items: { type: string }
+          description: Stable non-PII codes when not currently valid.
         flow_trace_id:
           type: string
 
@@ -794,7 +1209,9 @@ components:
           enum: [eligibility_decision_receipt]
         currently_valid:
           type: boolean
-          description: Server-computed live trust at fetch time. Must be true for access.
+          description: |
+            Server-computed live trust at fetch time. Must be true for access.
+            **Distinct from** `signature_valid` (historical authenticity).
         validity:
           type: string
           description: Live trust state (e.g. active, access_revoked, expired).
@@ -803,12 +1220,250 @@ components:
           description: Stable non-PII invalidation codes when currently_valid is false.
           items:
             type: string
-            enum:
-              - receipt_revoked
-              - claim_revoked
-              - access_revoked
-              - receipt_expired
-              - signature_invalid
+        issued_valid:
+          type: boolean
+          description: Whether receipt was valid at issuance time (historical).
+        lifecycle_status:
+          type: string
+          enum: [active, expired, revoked, invalidated]
+          description: Receipt lifecycle state at fetch time.
+        partner_safe_reason:
+          type: string
+          nullable: true
+          description: Partner-safe invalidation reason when not currently valid (no PII).
+        validity_checked_at:
+          type: string
+          format: date-time
+          description: ISO timestamp when live trust was evaluated.
+
+    HostedHandoffRuntime:
+      type: string
+      enum: [universal_https, nextjs, express, wix_velo, serverless, mobile_https]
+
+    HostedHandoffStatus:
+      type: string
+      enum: [created, completed, cancelled, expired, consumed]
+
+    HostedHandoffCreateRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        runtime:
+          $ref: "#/components/schemas/HostedHandoffRuntime"
+          default: universal_https
+        binding_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Optional policy binding UUID when application has multiple bindings.
+      description: |
+        Only `runtime` and `binding_id` are accepted. Server resolves policy, callback, purpose, and environment.
+
+    HostedHandoffPartnerView:
+      type: object
+      required:
+        - version
+        - notice
+        - hosted_url
+        - handoff_ref
+        - verify_request
+        - runtime
+        - environment
+        - status
+        - expires_at
+        - callback_bound
+        - must_reverify
+        - is_grant
+        - activates_production
+        - activates_mainnet
+        - issues_credentials
+        - application_id
+        - action
+        - policy_version
+        - binding_id
+        - pack_id
+        - result_family
+      properties:
+        version: { type: string, example: "1.0.0" }
+        notice: { type: string }
+        hosted_url: { type: string, format: uri }
+        handoff_ref: { type: string }
+        verify_request: { type: string, format: uuid }
+        runtime:
+          $ref: "#/components/schemas/HostedHandoffRuntime"
+        environment:
+          type: string
+          enum: [sandbox, production]
+        status:
+          $ref: "#/components/schemas/HostedHandoffStatus"
+        expires_at: { type: string, format: date-time }
+        checklist:
+          type: array
+          items: { type: string }
+        callback_bound:
+          type: boolean
+          enum: [true]
+        must_reverify:
+          type: boolean
+          enum: [true]
+        is_grant:
+          type: boolean
+          enum: [false]
+        activates_production:
+          type: boolean
+          enum: [false]
+        activates_mainnet:
+          type: boolean
+          enum: [false]
+        issues_credentials:
+          type: boolean
+          enum: [false]
+        application_id: { type: string, format: uuid }
+        public_receipt_id:
+          type: string
+          nullable: true
+          description: Populated after completion; null at creation.
+        action: { type: string }
+        policy_version: { type: integer }
+        binding_id:
+          type: string
+          format: uuid
+          nullable: true
+        pack_id:
+          type: string
+          nullable: true
+        result_family:
+          type: string
+          nullable: true
+          description: Policy pack disclosed result (e.g. age_eligible_21, wallet_control_confirmed).
+
+    HostedHandoffCreateResponse:
+      allOf:
+        - type: object
+          required: [ok]
+          properties:
+            ok:
+              type: boolean
+              enum: [true]
+        - $ref: "#/components/schemas/HostedHandoffPartnerView"
+
+    HostedHandoffLookupResponse:
+      allOf:
+        - type: object
+          required: [ok, partner_must_call]
+          properties:
+            ok:
+              type: boolean
+              enum: [true]
+            partner_must_call:
+              type: string
+              example: AbraxasPartnerKit.verifyReceiptId
+        - $ref: "#/components/schemas/HostedHandoffPartnerView"
+
+    PartnerHandoffError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          description: |
+            Machine-readable error token. Handoff routes use snake_case tokens; browser Partner Flow
+            routes may return human-readable `error` strings — see x-abraxas-error-inconsistency in info.
+
+    NarrowPartnerResult:
+      type: object
+      additionalProperties: false
+      required:
+        - schema_version
+        - receipt_id
+        - policy_id
+        - partner_id
+        - decision
+        - result_family
+        - currently_valid
+        - production_usable
+        - trust_environment
+        - invalidation_reasons
+      properties:
+        schema_version:
+          type: string
+          example: "1.0.0"
+        receipt_id: { type: string }
+        policy_id: { type: string }
+        partner_id: { type: string }
+        decision:
+          type: string
+          enum: [approved, denied, manual_review]
+        result_family:
+          type: string
+          description: Catalog disclosed_result (e.g. wallet_control_confirmed, age_eligible_21).
+        currently_valid: { type: boolean }
+        production_usable: { type: boolean }
+        trust_environment:
+          type: string
+          enum: [sandbox, production]
+        invalidation_reasons:
+          type: array
+          items: { type: string }
+        provenance:
+          type: object
+          additionalProperties: false
+          description: Optional provenance partner facts when policy authorizes disclosure.
+        over_21:
+          type: boolean
+          description: Present for age policies when currently_valid and decision approved.
+        identity_verified:
+          type: boolean
+        assurance_level:
+          type: string
+          nullable: true
+        pairwise_subject_ref:
+          type: string
+          description: Partner-bound subject reference; never globally correlatable.
+      description: |
+        Privacy-minimized partner view. Forbidden keys (never returned): wallet_address, wallet,
+        date_of_birth, dob, legal_name, artifact_id, content_hash, claim_value, evaluated_claim_refs,
+        claims_json, subject_id, credential_jwt, credential_id.
+
+    PartnerWebhookPayload:
+      type: object
+      description: Inbound webhook POST body delivered to partner endpoint (not an Abraxas route).
+      additionalProperties: false
+      required: [event_id, event_type, partner_id, occurred_at]
+      properties:
+        event_id: { type: string }
+        schema_version: { type: string }
+        event_type:
+          type: string
+          description: See x-abraxas-partner-webhook event types.
+        timestamp: { type: string }
+        occurred_at: { type: string, format: date-time }
+        partner_id: { type: string }
+        policy_id: { type: string, nullable: true }
+        policy_version: { type: integer, nullable: true }
+        receipt_id: { type: string, nullable: true }
+        decision_id: { type: string, nullable: true }
+        outcome: { type: string, nullable: true }
+        reason_code: { type: string, nullable: true }
+        event_ref: { type: string, nullable: true }
+        validity_class: { type: string, nullable: true }
+        expires_at: { type: string, format: date-time, nullable: true }
+        must_reverify:
+          type: boolean
+          enum: [true]
+        is_grant:
+          type: boolean
+          enum: [false]
+        signature:
+          type: object
+          additionalProperties: false
+          description: Optional metadata describing HMAC header names (not the HMAC digest).
+          properties:
+            alg: { type: string }
+            version: { type: string }
+            header: { type: string }
+            timestamp_header: { type: string }
+            id_header: { type: string }
 
     PartnerFlowReceiptValidationExpectations:
       type: object
