@@ -16,7 +16,7 @@ info:
       `currently_valid`, `holder_authorization_state` (browser flow), and policy binding **before permitting action**.
 
     Use **PartnerKit** (`verifyForAction`, `permitProtocolAction`) from the monorepo workspace package
-    `@abraxas/partner-kit` (prepared for publication — not yet on public npm). See `/docs/PARTNER_KIT.md`.
+    `@abraxas/partner-kit` (prepared for publication — not yet on public npm). See `/docs/integration-kit`.
 
     ## Auth boundaries
 

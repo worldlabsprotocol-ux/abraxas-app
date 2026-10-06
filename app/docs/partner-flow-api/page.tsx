@@ -85,7 +85,7 @@ export default function PartnerFlowApiDocsPage() {
           Partner Flow integrator kit
         </Link>
         . PartnerKit:{" "}
-        <Link href="/docs/PARTNER_KIT" style={{ color: "var(--accent)" }}>
+        <Link href="/docs/integration-kit" style={{ color: "var(--accent)" }}>
           @abraxas/partner-kit
         </Link>
         .
