@@ -59,10 +59,18 @@
     "smoke:launchpad:staging": "npx tsx scripts/launchpad-staging-smoke/run.ts",
     "walkthrough:progressive-proof:preview": "npx tsx scripts/progressive-proof/preview-validation.ts",
     "walkthrough:progressive-proof:browse-e2e": "npx tsx scripts/progressive-proof/preview-browse-e2e.ts",
-    "audit:progressive-proof:preview": "npx tsx scripts/progressive-proof/preview-audit.ts"
+    "audit:progressive-proof:preview": "npx tsx scripts/progressive-proof/preview-audit.ts",
+    "android:sync": "npx cap sync android",
+    "android:open": "npx cap open android",
+    "android:debug": "cd android && ./gradlew assembleDebug",
+    "android:release": "cd android && ./gradlew assembleRelease"
   },
   "dependencies": {
     "@abraxas/partner-kit": "workspace:*",
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/browser": "^8.0.5",
+    "@capacitor/core": "^8.5.2",
     "@coral-xyz/anchor": "^0.30.1",
     "@moonpay/platform-sdk-web": "^1.6.0",
     "@mysten/sui": "^1.45.2",
@@ -103,6 +111,7 @@
   },
   "devDependencies": {
     "@apidevtools/swagger-parser": "^13.0.0",
+    "@capacitor/cli": "^8.5.2",
     "@playwright/test": "^1.63.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
