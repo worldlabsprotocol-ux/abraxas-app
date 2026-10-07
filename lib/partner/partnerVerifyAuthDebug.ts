@@ -6,6 +6,7 @@ import { sanitizeAuthDebugPayload } from "@/lib/sui/zklogin/authDebug";
 export type PartnerVerifyAuthEvent =
   | "auth_start"
   | "oauth_callback_received"
+  | "native_handoff_prepared"
   | "zklogin_complete"
   | "browser_session_ready"
   | "partner_resume_restored"
