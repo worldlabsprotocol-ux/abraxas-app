@@ -98,6 +98,7 @@
     "stripe": "^16.0.0",
     "tweetnacl": "^1.0.3",
     "viem": "^2.23.2",
+    "zod": "^3.22.4",
     "zustand": "^5.0.13"
   },
   "devDependencies": {
