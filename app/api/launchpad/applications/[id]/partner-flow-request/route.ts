@@ -23,7 +23,7 @@ import {
 } from "@/lib/partner/launchpad/partnerFlowRequest";
 
 export const dynamic = "force-dynamic";
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 async function assemble(applicationId: string, partnerId: string) {
   const app = await getLaunchpadApplicationForPartner(applicationId, partnerId);
@@ -55,6 +55,7 @@ async function assemble(applicationId: string, partnerId: string) {
 }
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
   const limited = await enforceLaunchpadTenantRateLimit(
@@ -68,7 +69,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   if (clientPartner && clientPartner !== auth.session.partnerId) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.forbidden, 403);
   }
-  const assembled = await assemble(params.id, auth.session.partnerId);
+  const assembled = await assemble(routeParams.id, auth.session.partnerId);
   if (!assembled.ok) {
     return launchpadError(
       assembled.status === 404 ? LAUNCHPAD_PUBLIC_ERRORS.application_not_found : LAUNCHPAD_PUBLIC_ERRORS.forbidden,
@@ -79,6 +80,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 }
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
   const limited = await enforceLaunchpadTenantRateLimit(
@@ -104,7 +106,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     const status = parsed.error === "callback_rejected" ? 400 : 400;
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, status, parsed.error);
   }
-  const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+  const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
   const allowedActions = partnerFlowActionsForTemplate(app.policy_template_id);
   if (!allowedActions.includes(parsed.input.action)) {
@@ -136,7 +138,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     }
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 503, "unavailable");
   }
-  const assembled = await assemble(params.id, auth.session.partnerId);
+  const assembled = await assemble(routeParams.id, auth.session.partnerId);
   if (!assembled.ok) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, assembled.status);
   }

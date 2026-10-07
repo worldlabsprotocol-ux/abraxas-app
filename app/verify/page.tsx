@@ -14,15 +14,16 @@ import { PassportPageTabs } from "@/components/passport/PassportPageTabs";
 import { resolveRegistryAsset } from "@/lib/data/registryAssets";
 
 interface PageProps {
-  searchParams?: { q?: string; mode?: string };
+  searchParams?: Promise<{ q?: string; mode?: string }>;
 }
 
-export default function VerifyPage({ searchParams }: PageProps) {
-  const q = searchParams?.q?.trim();
+export default async function VerifyPage({ searchParams }: PageProps) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const q = resolvedSearchParams?.q?.trim();
   if (q) {
     const asset = resolveRegistryAsset(q);
     if (asset) {
-      const mode = searchParams?.mode;
+      const mode = resolvedSearchParams?.mode;
       redirect(mode ? `/verify/${encodeURIComponent(asset.abxId)}?mode=${mode}` : `/verify/${encodeURIComponent(asset.abxId)}`);
     }
   }

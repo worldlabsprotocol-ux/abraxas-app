@@ -5,12 +5,13 @@ import { SolanaDevnetProofClient } from "@/components/partner/SolanaDevnetProofC
 
 export const dynamic = "force-dynamic";
 
-export default function SolanaDevnetProofPage({
+export default async function SolanaDevnetProofPage({
   searchParams,
 }: {
-  searchParams: { signature?: string | string[] };
+  searchParams: Promise<{ signature?: string | string[] }>;
 }) {
-  const signature = typeof searchParams.signature === "string" ? searchParams.signature.trim() : "";
+  const resolvedSearchParams = await searchParams;
+  const signature = typeof resolvedSearchParams.signature === "string" ? resolvedSearchParams.signature.trim() : "";
   return (
     <RedesignPage accent="developer" maxWidth={900}>
       <PageHeader

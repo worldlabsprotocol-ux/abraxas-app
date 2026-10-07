@@ -14,7 +14,7 @@ import { loadMerchantJourneyForApplication } from "@/lib/partner/launchpad/merch
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 async function activeSandboxKey(applicationId: string, apiKeyId: string | null): Promise<boolean> {
   if (!apiKeyId) return false;
@@ -32,6 +32,7 @@ async function activeSandboxKey(applicationId: string, apiKeyId: string | null):
 }
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
   const limited = await enforceLaunchpadTenantRateLimit(
@@ -42,7 +43,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   );
   if (limited) return limited;
 
-  const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+  const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
 
   const sandboxKey = await activeSandboxKey(app.id, app.api_key_id);

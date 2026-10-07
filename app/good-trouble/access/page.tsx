@@ -21,9 +21,10 @@ const builderHref =
 export default async function GoodTroubleAccessPage({
   searchParams,
 }: {
-  searchParams: { receipt_id?: string | string[] };
+  searchParams: Promise<{ receipt_id?: string | string[] }>;
 }) {
-  const rawReceiptId = searchParams.receipt_id;
+  const resolvedSearchParams = await searchParams;
+  const rawReceiptId = resolvedSearchParams.receipt_id;
   const receiptId = (Array.isArray(rawReceiptId) ? rawReceiptId[0] : rawReceiptId)?.trim() ?? "";
   const result = receiptId
     ? await decideGoodTroubleAccess({ receipt_id: receiptId }).catch(() => null)

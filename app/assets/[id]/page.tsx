@@ -17,8 +17,9 @@ async function fetchAsset(id: string) {
   } catch { return null; }
 }
 
-export default async function AssetDetailPage({ params }: { params: { id: string } }) {
-  const data = await fetchAsset(params.id);
+export default async function AssetDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const data = await fetchAsset(id);
   if (!data?.asset) notFound();
 
   return (

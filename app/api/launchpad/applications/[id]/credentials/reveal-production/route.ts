@@ -12,16 +12,17 @@ import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const limited = await enforceLaunchpadRateLimit(req, "/api/launchpad/credentials/reveal-production", 5);
   if (limited) return limited;
 
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
 
-  const result = await revealProductionCredentialOnce(params.id, auth.session.partnerId);
+  const result = await revealProductionCredentialOnce(routeParams.id, auth.session.partnerId);
   if (!result.ok) {
     if (result.code === "not_ready") {
       return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "production_key_not_ready");

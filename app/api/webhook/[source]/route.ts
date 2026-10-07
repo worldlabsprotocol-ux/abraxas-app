@@ -19,8 +19,9 @@ const SECRETS: Record<string, string> = {
   lbma:        process.env.WEBHOOK_SECRET_LBMA      ?? "",
 };
 
-export async function POST(req: NextRequest, { params }: { params: { source: string } }) {
-  const { source } = params;
+export async function POST(req: NextRequest, { params }: { params: Promise<{  source: string  }> }) {
+  const routeParams = await params;
+  const { source  } = await params;
   const expectedSecret = SECRETS[source];
   const incomingSecret = req.headers.get("x-webhook-secret");
 

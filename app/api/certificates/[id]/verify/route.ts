@@ -9,9 +9,10 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{  id: string  }> }
 ) {
-  const { id } = params;
+  const routeParams = await params;
+  const { id  } = await params;
   if (!id) return NextResponse.json({ error:"Certificate ID required" }, { status:400 });
 
   const result = await verifyCertificate(id);

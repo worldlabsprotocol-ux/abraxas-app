@@ -57,8 +57,9 @@ async function getPassport(id: string): Promise<PassportData | null> {
   return null;
 }
 
-export default async function PassportPage({ params }: { params: { id: string } }) {
-  const data = await getPassport(params.id);
+export default async function PassportPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const data = await getPassport(id);
 
   const BG = "#040608";
 
@@ -134,7 +135,7 @@ export default async function PassportPage({ params }: { params: { id: string } 
             {/* Details grid */}
             <div style={{ display:"grid", gap:"0.25rem", marginBottom:"1.5rem" }}>
               {([
-                ["Credential ID",   params.id],
+                ["Credential ID",   id],
                 ["Type",            data.credential_type === "identity" ? "Identity (KYC)" : `RWA · ${data.asset_type?.replace(/_/g," ")}`],
                 ["Jurisdiction",    data.jurisdiction ?? "-"],
                 ...(data.credential_type === "identity" ? [
@@ -173,13 +174,13 @@ export default async function PassportPage({ params }: { params: { id: string } 
                              color:"rgba(255,255,255,0.4)", lineHeight:1.6,
                              wordBreak:"break-all" }}>
                 POST https://abraxas-app.vercel.app/api/credentials/verify<br/>
-                {"{"} "credential_jti": "{params.id}", "verifier_id": "your-protocol" {"}"}
+                {"{"} "credential_jti": "{id}", "verifier_id": "your-protocol" {"}"}
               </div>
             </div>
 
             {/* Social share */}
             <div style={{ display:"flex", gap:"0.5rem" }}>
-              <a href={`https://twitter.com/intent/tweet?text=Just+verified+on+%40abraxasxyz+%E2%80%94+my+asset+is+now+credentialed+across+every+integrated+protocol.+No+re-KYC.+One+verification.+https%3A%2F%2Fabraxas-app.vercel.app%2Fpassport%2F${params.id}`}
+              <a href={`https://twitter.com/intent/tweet?text=Just+verified+on+%40abraxasxyz+%E2%80%94+my+asset+is+now+credentialed+across+every+integrated+protocol.+No+re-KYC.+One+verification.+https%3A%2F%2Fabraxas-app.vercel.app%2Fpassport%2F${id}`}
                  target="_blank" rel="noopener noreferrer"
                  style={{ flex:1, display:"block", padding:"0.6rem",
                            borderRadius:5, border:`1px solid ${BDR}`,
@@ -206,7 +207,7 @@ export default async function PassportPage({ params }: { params: { id: string } 
           <div style={{ padding:"2rem", textAlign:"center" }}>
             <div style={{ fontSize:"0.72rem", color:"rgba(255,255,255,0.35)",
                            marginBottom:"1rem" }}>
-              No credential found for ID: {params.id}
+              No credential found for ID: {id}
             </div>
             <Link href="/terminal" style={{ color:G, fontSize:"0.65rem",
                                              textDecoration:"none", fontWeight:700,

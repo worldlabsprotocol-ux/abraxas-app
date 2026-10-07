@@ -8,9 +8,10 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { assetId: string } },
+  { params }: { params: Promise<{  assetId: string  }> },
 ) {
-  const result = await issueProductionReferenceProof(params.assetId);
+  const routeParams = await params;
+  const result = await issueProductionReferenceProof(routeParams.assetId);
 
   if ("error" in result && result.error === "not_allowed") {
     return NextResponse.json(

@@ -13,12 +13,13 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export async function POST(req: NextRequest, { params }: { params: { assetId: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{  assetId: string  }> }) {
+  const routeParams = await params;
   if (req.headers.get("x-admin-secret") !== process.env.ADMIN_SECRET) {
     return NextResponse.json({ error:"Unauthorized" }, { status: 401 });
   }
 
-  const { assetId } = params;
+  const { assetId  } = await params;
   const body = await req.json().catch(()=>({}));
   const { reviewerWallet, notes } = body;
 

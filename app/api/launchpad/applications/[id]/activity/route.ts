@@ -13,13 +13,14 @@ import { projectLaunchpadActivityEvent } from "@/lib/privacy/selectiveDisclosure
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
 
-  const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+  const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
   if (!app) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
   }
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   const { data } = await sb
     .from("partner_launchpad_activity")
     .select("id, event_type, public_code, metadata, created_at")
-    .eq("application_id", params.id)
+    .eq("application_id", routeParams.id)
     .eq("partner_id", auth.session.partnerId)
     .order("created_at", { ascending: false })
     .limit(limit);

@@ -15,18 +15,19 @@ import {
 export const dynamic = "force-dynamic";
 
 type PartnerVerifyPageProps = {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export default function PartnerVerifyPage({ searchParams = {} }: PartnerVerifyPageProps) {
+export default async function PartnerVerifyPage({ searchParams }: PartnerVerifyPageProps) {
+  const resolvedSearchParams = searchParams ? await searchParams : {};
   const previewControlsEnabled = isPartnerVerifyPreviewControlsEnabled();
-  const previewPhase = resolvePartnerVerifyPreviewPhase(searchParams, previewControlsEnabled);
+  const previewPhase = resolvePartnerVerifyPreviewPhase(resolvedSearchParams, previewControlsEnabled);
   const previewSignInConfigured = resolvePartnerVerifyPreviewSignInConfigured(
-    searchParams,
+    resolvedSearchParams,
     previewControlsEnabled,
   );
-  const previewEnvironment = resolvePartnerVerifyPreviewEnvironment(searchParams, previewControlsEnabled);
-  const previewPartnerName = resolvePartnerVerifyPreviewPartnerName(searchParams, previewControlsEnabled);
+  const previewEnvironment = resolvePartnerVerifyPreviewEnvironment(resolvedSearchParams, previewControlsEnabled);
+  const previewPartnerName = resolvePartnerVerifyPreviewPartnerName(resolvedSearchParams, previewControlsEnabled);
 
   return (
     <Suspense fallback={<RedesignPageLoading label="Loading verification…" compact />}>

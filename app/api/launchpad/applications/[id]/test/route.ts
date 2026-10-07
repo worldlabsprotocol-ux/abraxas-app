@@ -12,9 +12,10 @@ import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const limited = await enforceLaunchpadRateLimit(req, "/api/launchpad/test", 30);
   if (limited) return limited;
 
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   }
 
   const result = await runLaunchpadTestScenario({
-    applicationId: params.id,
+    applicationId: routeParams.id,
     partnerId: auth.session.partnerId,
     scenarioId: String(body.scenario_id ?? ""),
     returnUrl: body.return_url,

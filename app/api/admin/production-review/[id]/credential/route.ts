@@ -16,12 +16,13 @@ import { PRODUCTION_CREDENTIAL_ACTIONS } from "@/lib/partner/launchpad/productio
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const denied = await requireAdminRouteAccess(req);
   if (denied) return denied;
-  const result = await loadProductionCredentialStatus(params.id);
+  const result = await loadProductionCredentialStatus(routeParams.id);
   if (!result.ok) {
     const status = result.code === "not_found" ? 404 : 503;
     return NextResponse.json({ error: result.code, ...omitRaw(result) }, { status });
@@ -33,6 +34,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 }
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const denied = await requireAdminRouteAccess(req);
   if (denied) return denied;
   const csrf = productionCredentialCsrfRejected(req);
@@ -51,7 +53,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     return NextResponse.json({ error: "invalid_input" }, { status: 400 });
   }
   const result = await operateProductionCredential({
-    requestId: params.id,
+    requestId: routeParams.id,
     action: action as (typeof PRODUCTION_CREDENTIAL_ACTIONS)[number],
     confirm: record.confirm === true,
   });

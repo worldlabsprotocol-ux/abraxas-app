@@ -13,9 +13,10 @@ import { PRODUCTION_REVIEW_DECISIONS } from "@/lib/partner/launchpad/productionR
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const denied = await requireAdminRouteAccess(req);
   if (denied) return denied;
 
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   }
 
   const result = await decideProductionReview({
-    requestId: params.id,
+    requestId: routeParams.id,
     decision,
     confirm: record.confirm === true,
     remediationClass: typeof record.remediation_class === "string" ? record.remediation_class : null,

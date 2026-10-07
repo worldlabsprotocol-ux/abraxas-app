@@ -10,15 +10,16 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { proofId: string } },
+  { params }: { params: Promise<{  proofId: string  }> },
 ) {
-  const verified = await getSelfVerifiedAuthenticationProof(params.proofId);
+  const routeParams = await params;
+  const verified = await getSelfVerifiedAuthenticationProof(routeParams.proofId);
   if (!verified) {
     return NextResponse.json(
       {
         error: "Proof not found",
-        proof_id: params.proofId,
-        agent: toAgentProofNotFoundView(params.proofId),
+        proof_id: routeParams.proofId,
+        agent: toAgentProofNotFoundView(routeParams.proofId),
       },
       { status: 404 },
     );

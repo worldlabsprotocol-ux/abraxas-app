@@ -15,16 +15,17 @@ import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const limited = await enforceLaunchpadRateLimit(req, "/api/launchpad/return-urls", 20);
   if (limited) return limited;
 
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
 
-  const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+  const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
   if (!app) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
   }
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   const { error } = await sb
     .from("partner_launchpad_applications")
     .update({ allowed_return_urls: merged, updated_at: new Date().toISOString() })
-    .eq("id", params.id)
+    .eq("id", routeParams.id)
     .eq("partner_id", auth.session.partnerId);
 
   if (error) {
@@ -63,13 +64,14 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
 }
 
 export async function DELETE(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const limited = await enforceLaunchpadRateLimit(req, "/api/launchpad/return-urls", 20);
   if (limited) return limited;
 
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
 
-  const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+  const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
 
   let body: { return_url?: string };
@@ -87,7 +89,7 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
   const { error } = await sb
     .from("partner_launchpad_applications")
     .update({ allowed_return_urls: next.allowedUrls, updated_at: new Date().toISOString() })
-    .eq("id", params.id)
+    .eq("id", routeParams.id)
     .eq("partner_id", auth.session.partnerId);
 
   if (error) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 500);

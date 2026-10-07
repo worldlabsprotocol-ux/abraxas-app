@@ -9,9 +9,10 @@ import {
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const denied = await requireAdminRouteAccess(req);
   if (denied) return denied;
 
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
 
   if (decision === "rejected") {
     const result = await rejectLaunchpadProductionAccess({
-      requestId: params.id,
+      requestId: routeParams.id,
       reviewerNotes: body.reviewer_notes,
     });
     if (!result.ok) {
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   }
 
   const result = await approveLaunchpadProductionAccess({
-    requestId: params.id,
+    requestId: routeParams.id,
     reviewerNotes: body.reviewer_notes,
   });
 

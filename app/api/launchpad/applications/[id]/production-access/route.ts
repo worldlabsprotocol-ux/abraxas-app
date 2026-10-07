@@ -6,7 +6,7 @@ import { GET as goLiveGet, POST as goLivePost } from "@/app/api/launchpad/applic
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 export async function GET(req: NextRequest, ctx: RouteContext) {
   return goLiveGet(req, ctx);

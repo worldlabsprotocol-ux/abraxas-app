@@ -14,12 +14,13 @@ export const dynamic = "force-dynamic";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { evaluationId: string } },
+  { params }: { params: Promise<{  evaluationId: string  }> },
 ) {
+  const routeParams = await params;
   const denied = await requireAdminRouteAccess(req);
   if (denied) return denied;
 
-  const evaluationId = params.evaluationId?.trim();
+  const evaluationId = routeParams.evaluationId?.trim();
   if (!evaluationId) {
     return NextResponse.json({ ok: false, error: "invalid_input" }, { status: 400 });
   }

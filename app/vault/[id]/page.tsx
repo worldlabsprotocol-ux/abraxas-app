@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { VAULTS, fmtUSD } from "@/lib/appData";
 import { AGENTS } from "@/lib/agentEngine";
 import { useProtocolStream } from "@/lib/protocolStream";
@@ -169,10 +169,11 @@ function CircuitPanel({ vaultId }: { vaultId: string }) {
   );
 }
 
-export default function VaultDetailPage({ params }: { params: { id: string } }) {
+export default function VaultDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
-  const v      = VAULTS.find((x) => x.id === params.id);
-  const agent  = AGENTS.find((a) => a.vaultId === params.id);
+  const v      = VAULTS.find((x) => x.id === id);
+  const agent  = AGENTS.find((a) => a.vaultId === id);
 
   if (!v) {
     return (

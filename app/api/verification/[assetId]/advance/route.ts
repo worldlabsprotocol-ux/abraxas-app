@@ -15,9 +15,10 @@ export const dynamic = "force-dynamic";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { assetId: string } }
+  { params }: { params: Promise<{  assetId: string  }> }
 ) {
-  const { assetId } = params;
+  const routeParams = await params;
+  const { assetId  } = await params;
   const body = await req.json().catch(() => null);
   if (!body?.partnerId || !body?.stageResult) {
     return NextResponse.json({ error:"partnerId and stageResult required" }, { status:400 });

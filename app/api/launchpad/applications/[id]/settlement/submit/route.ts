@@ -14,7 +14,7 @@ import { CIRCLE_PUBLIC_CODES } from "@/lib/settlement/circle/codes";
 import { submitCircleSettlementIntent } from "@/lib/settlement/circle/execute";
 
 export const dynamic = "force-dynamic";
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 function httpStatus(code: string, ok: boolean): number {
   if (ok) return 200;
@@ -42,6 +42,7 @@ function httpStatus(code: string, ok: boolean): number {
 }
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
   const limited = await enforceLaunchpadTenantRateLimit(
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   );
   if (limited) return limited;
 
-  const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+  const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
 
   let body: Record<string, unknown>;

@@ -11,17 +11,18 @@ const META: Record<string, { name: string; asset: string; apy: string }> = {
   "494": { name: "ABRAXAS MUSIC IP POSITION",    asset: "Music IP Royalties", apy: "8.6%"  },
 };
 
-export async function GET(_req: NextRequest, { params }: { params: { vaultId: string } }) {
-  const m = META[params.vaultId] ?? { name: "ABRAXAS POSITION", asset: "RWA", apy: "9%" };
+export async function GET(_req: NextRequest, { params }: { params: Promise<{  vaultId: string  }> }) {
+  const routeParams = await params;
+  const m = META[routeParams.vaultId] ?? { name: "ABRAXAS POSITION", asset: "RWA", apy: "9%" };
 
   return NextResponse.json({
     name:        m.name,
     symbol:      "ABRAP",
-    description: `Abraxas vault position. VAULT-${params.vaultId} · ${m.apy} APY · ${m.asset} · Non-custodial · Solana Token-2022.`,
+    description: `Abraxas vault position. VAULT-${routeParams.vaultId} · ${m.apy} APY · ${m.asset} · Non-custodial · Solana Token-2022.`,
     image:       "https://abraxas-app.vercel.app/icon.png",
-    external_url: `https://abraxas-app.vercel.app/vault/${params.vaultId}`,
+    external_url: `https://abraxas-app.vercel.app/vault/${routeParams.vaultId}`,
     attributes: [
-      { trait_type: "Vault",       value: `VAULT-${params.vaultId}` },
+      { trait_type: "Vault",       value: `VAULT-${routeParams.vaultId}` },
       { trait_type: "Asset Class", value: m.asset    },
       { trait_type: "APY",         value: m.apy      },
       { trait_type: "Standard",    value: "Token-2022" },
