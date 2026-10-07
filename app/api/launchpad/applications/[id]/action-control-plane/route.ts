@@ -16,7 +16,7 @@ import { sanitizeActionControlPlaneValue } from "@/lib/partner/actionControlPlan
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 const PRODUCTION_ACTIONS = new Set([
   "activate_production",
@@ -27,6 +27,7 @@ const PRODUCTION_ACTIONS = new Set([
 ]);
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
   const limited = await enforceLaunchpadTenantRateLimit(
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   );
   if (limited) return limited;
 
-  const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+  const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
 
   const view = await buildActionControlPlaneForApplication({
@@ -48,6 +49,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 }
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
   const limited = await enforceLaunchpadTenantRateLimit(
@@ -58,7 +60,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   );
   if (limited) return limited;
 
-  const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+  const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
 
   let body: { action?: string };

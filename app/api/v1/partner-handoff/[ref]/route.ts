@@ -11,14 +11,15 @@ import {
 } from "@/lib/partner/hostedHandoff";
 
 export const dynamic = "force-dynamic";
-type RouteContext = { params: { ref: string } };
+type RouteContext = { params: Promise<{  ref: string  }> };
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const auth = await authenticatePartner(req, "verify:requests");
   if (!auth || !auth.ok) {
     return NextResponse.json({ error: "unauthorized" }, { status: auth?.status ?? 401 });
   }
-  const record = await loadHandoff(params.ref);
+  const record = await loadHandoff(routeParams.ref);
   if (!record || record.partner_id !== auth.ctx.partnerId) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }

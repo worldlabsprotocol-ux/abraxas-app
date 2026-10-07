@@ -16,15 +16,16 @@ import { loadPartnerPilotSummary, parsePilotTimeWindow } from "@/lib/partner/pil
 import { pilotEvidenceLeaks, PILOT_EVIDENCE_NOTICE } from "@/lib/partner/pilotEvidence";
 
 export const dynamic = "force-dynamic";
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
   const limited = await enforceLaunchpadTenantRateLimit(req, "/api/launchpad/pilot-evidence", auth.session.partnerId, 30);
   if (limited) return limited;
 
-  const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+  const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
 
   const { from, to, environment: envParam } = parsePilotTimeWindow(req.nextUrl.searchParams);

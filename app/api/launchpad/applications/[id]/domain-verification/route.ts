@@ -9,24 +9,26 @@ import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
   const sb = requireSupabaseAdmin();
   const { data } = await sb.from("partner_launchpad_domain_verifications")
     .select("hostname, challenge_token, status, expires_at, verified_at, last_checked_at, last_error")
-    .eq("application_id", params.id).eq("partner_id", auth.session.partnerId).order("created_at", { ascending: false });
+    .eq("application_id", routeParams.id).eq("partner_id", auth.session.partnerId).order("created_at", { ascending: false });
   return launchpadJson({ ok: true, verifications: data ?? [] });
 }
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const limited = await enforceLaunchpadRateLimit(req, "/api/launchpad/domain-verification", 10);
   if (limited) return limited;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
-  const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+  const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
 
   let body: { return_url?: string; action?: string };
@@ -39,7 +41,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   const sb = requireSupabaseAdmin();
   if (body.action === "verify") {
     const { data: verification } = await sb.from("partner_launchpad_domain_verifications")
-      .select("id, challenge_token, status, expires_at").eq("application_id", params.id)
+      .select("id, challenge_token, status, expires_at").eq("application_id", routeParams.id)
       .eq("partner_id", auth.session.partnerId).eq("hostname", hostname).maybeSingle();
     if (!verification) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "domain_challenge_required");
     if (verification.status === "verified") return launchpadJson({ ok: true, verified: true, hostname });
@@ -63,7 +65,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
 
   const token = createDomainVerificationToken();
   const { data, error } = await sb.from("partner_launchpad_domain_verifications").upsert({
-    application_id: params.id, partner_id: auth.session.partnerId, hostname, challenge_token: token,
+    application_id: routeParams.id, partner_id: auth.session.partnerId, hostname, challenge_token: token,
     status: "pending", expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), verified_at: null, last_checked_at: null, last_error: null, updated_at: new Date().toISOString(),
   }, { onConflict: "application_id,hostname" }).select("hostname, challenge_token, expires_at").single();
   if (error || !data) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 500, "domain_challenge_create_failed");

@@ -18,7 +18,7 @@ import {
 import { SANDBOX_TEST_CONSOLE_PRODUCTION } from "@/lib/partner/launchpad/sandboxTestConsole/contract";
 
 export const dynamic = "force-dynamic";
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 async function loadConsole(req: NextRequest, applicationId: string) {
   const auth = await requireLaunchpadSession(req);
@@ -67,12 +67,14 @@ async function loadConsole(req: NextRequest, applicationId: string) {
 }
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
-  const loaded = await loadConsole(req, params.id);
+  const routeParams = await params;
+  const loaded = await loadConsole(req, routeParams.id);
   if (!loaded.ok) return loaded.response;
   return launchpadJson(loaded.body);
 }
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
   let body: Record<string, unknown> = {};
@@ -88,7 +90,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   ) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.forbidden, 403, SANDBOX_TEST_CONSOLE_PRODUCTION.deny_code);
   }
-  const loaded = await loadConsole(req, params.id);
+  const loaded = await loadConsole(req, routeParams.id);
   if (!loaded.ok) return loaded.response;
   return launchpadJson({
     ...loaded.body,

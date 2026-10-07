@@ -34,7 +34,7 @@ import {
 import type { PartnerPolicyRules } from "@/lib/policy/types";
 
 export const dynamic = "force-dynamic";
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 const POLICY_WRITE_ACTIONS = new Set([
   "create_draft",
@@ -66,9 +66,10 @@ function mapError(error: unknown) {
 }
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
-  const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+  const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
 
   try {
@@ -99,12 +100,13 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 }
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const limited = await enforceLaunchpadRateLimit(req, "/api/launchpad/applications/policies", 20);
   if (limited) return limited;
 
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
-  const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+  const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
 
   let body: {

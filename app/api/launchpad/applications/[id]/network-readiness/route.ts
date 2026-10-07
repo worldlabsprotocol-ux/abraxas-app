@@ -18,9 +18,10 @@ import {
 } from "@/lib/partner/networkCapability";
 
 export const dynamic = "force-dynamic";
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
   const limited = await enforceLaunchpadTenantRateLimit(
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   if (rejectNetworkClientOverride(query)) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "unknown_input");
   }
-  const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+  const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
   const evidence = await loadGoLiveEvidence({ application: app, partnerId: auth.session.partnerId });
   const view = buildNetworkReadinessView(evidence);
@@ -48,6 +49,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 }
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
   const limited = await enforceLaunchpadTenantRateLimit(
@@ -70,7 +72,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   if (record.activate_production === true || record.environment === "production" || record.mainnet === true) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.forbidden, 403, "production_denied");
   }
-  const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+  const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
   const evidence = await loadGoLiveEvidence({ application: app, partnerId: auth.session.partnerId });
   const view = buildNetworkReadinessView(evidence);

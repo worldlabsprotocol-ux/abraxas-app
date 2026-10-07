@@ -7,9 +7,10 @@ export const dynamic = "force-dynamic";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{  id: string  }> }
 ) {
-  const { id } = params;
+  const routeParams = await params;
+  const { id  } = await params;
   const body = await req.json().catch(()=>null);
   if (!body?.status) return NextResponse.json({error:"status required"},{status:400});
 

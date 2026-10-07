@@ -18,7 +18,8 @@ import { INVEST_CONFIGS } from "@/components/terminal/investorConfigs";
 const REPORT_PRICE_USDC = "0.10"; // a few cents, adjust as needed
 const PAY_TO_ADDRESS = "circuit.skr"; // your treasury
 
-export async function GET(req: NextRequest, { params }: { params: { assetId: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{  assetId: string  }> }) {
+  const routeParams = await params;
   const paymentProof = req.headers.get("X-PAYMENT");
 
   if (!paymentProof) {
@@ -32,7 +33,7 @@ export async function GET(req: NextRequest, { params }: { params: { assetId: str
           maxAmountRequired: REPORT_PRICE_USDC,
           asset: "USDC",
           payTo: PAY_TO_ADDRESS,
-          resource: `/api/reports/${params.assetId}`,
+          resource: `/api/reports/${routeParams.assetId}`,
           description: "Full verification report, confidence checks, and lending score for this asset",
         }],
       },
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest, { params }: { params: { assetId: str
   // facilitator call from the current x402 docs here. Until that's
   // wired in, this trusts the header, which is NOT safe for production,
   // treat this as the protocol shape, not a finished payment verifier.
-  const asset = INVEST_CONFIGS[params.assetId];
+  const asset = INVEST_CONFIGS[routeParams.assetId];
   if (!asset) {
     return NextResponse.json({ error: "Asset not found" }, { status: 404 });
   }

@@ -9,7 +9,7 @@ import { REGISTRY_ASSETS, resolveRegistryAsset } from "@/lib/data/registryAssets
 import { resolveVerifierQuery } from "@/lib/verifyRegistry";
 
 interface PageProps {
-  params: { recordId: string };
+  params: Promise<{ recordId: string }>;
 }
 
 export function generateStaticParams() {
@@ -17,7 +17,8 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const asset = resolveRegistryAsset(params.recordId);
+  const { recordId } = await params;
+  const asset = resolveRegistryAsset(recordId);
   if (!asset) {
     return { title: "Record not found · Abraxas Verify" };
   }
@@ -44,8 +45,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default function VerifyRecordPage({ params }: PageProps) {
-  const asset = resolveRegistryAsset(params.recordId);
+export default async function VerifyRecordPage({ params }: PageProps) {
+  const { recordId } = await params;
+  const asset = resolveRegistryAsset(recordId);
   if (!asset) notFound();
 
   return (

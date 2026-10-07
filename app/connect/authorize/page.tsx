@@ -4,12 +4,13 @@ export const dynamic = "force-dynamic";
 
 import ConnectAuthorizeClient from "./ConnectAuthorizeClient";
 
-export default function ConnectAuthorizePage({
+export default async function ConnectAuthorizePage({
   searchParams,
 }: {
-  searchParams: { request?: string };
+  searchParams: Promise<{ request?: string }>;
 }) {
-  const requestId = searchParams.request ?? "";
+  const resolvedSearchParams = await searchParams;
+  const requestId = resolvedSearchParams.request ?? "";
   if (!requestId) {
     return (
       <div style={{ padding: "2rem", color: "#f26b6b", fontFamily: "monospace" }}>

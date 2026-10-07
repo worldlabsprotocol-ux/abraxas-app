@@ -14,9 +14,10 @@ import { loadWebhookDeliveryHealth } from "@/lib/partner/launchpad/webhookDelive
 import { webhookHealthCopyLeaks } from "@/lib/partner/launchpad/webhookDeliveryHealth/classify";
 
 export const dynamic = "force-dynamic";
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
 
@@ -32,12 +33,12 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   const clientApp = req.nextUrl.searchParams.get("application_id");
   if (
     (clientPartner && clientPartner !== auth.session.partnerId)
-    || (clientApp && clientApp !== params.id)
+    || (clientApp && clientApp !== routeParams.id)
   ) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.forbidden, 403);
   }
 
-  const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+  const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
 
   try {
@@ -56,6 +57,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 }
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
   void params;

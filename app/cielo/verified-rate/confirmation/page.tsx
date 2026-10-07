@@ -5,11 +5,12 @@ import { AbxPageShell } from "@/components/design/AbxPageShell";
 import { VerifiedRateConfirmationClient } from "@/components/cielo/VerifiedRateConfirmationClient";
 
 interface PageProps {
-  searchParams?: { ref?: string };
+  searchParams?: Promise<{ ref?: string }>;
 }
 
-export default function VerifiedRateConfirmationPage({ searchParams }: PageProps) {
-  const ref = searchParams?.ref?.trim();
+export default async function VerifiedRateConfirmationPage({ searchParams }: PageProps) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const ref = resolvedSearchParams?.ref?.trim();
 
   return (
     <AbxPageShell accent="neutral">

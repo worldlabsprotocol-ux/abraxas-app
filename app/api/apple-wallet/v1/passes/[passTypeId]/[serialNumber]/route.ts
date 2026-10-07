@@ -10,10 +10,11 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { passTypeId: string; serialNumber: string } },
+  { params }: { params: Promise<{  passTypeId: string; serialNumber: string  }> },
 ) {
+  const routeParams = await params;
   const auth = req.headers.get("authorization")?.replace(/^ApplePass /i, "");
-  if (auth && auth !== params.serialNumber) {
+  if (auth && auth !== routeParams.serialNumber) {
     return new NextResponse(null, { status: 401 });
   }
 
@@ -23,7 +24,7 @@ export async function GET(
       message: "Pass signing not configured. Returns JSON preview until passkit-generator is wired.",
       passPreview: buildPassJson({
         suiAddress: "0x0",
-        credentialId: params.serialNumber,
+        credentialId: routeParams.serialNumber,
       }),
     }, { status: 503 });
   }
@@ -32,12 +33,12 @@ export async function GET(
   return NextResponse.json({
     ok: true,
     configured: true,
-    serialNumber: params.serialNumber,
-    passTypeIdentifier: params.passTypeId,
+    serialNumber: routeParams.serialNumber,
+    passTypeIdentifier: routeParams.passTypeId,
     message: "Pass update endpoint ready — wire passkit-generator to emit signed .pkpass bytes.",
     passPreview: buildPassJson({
       suiAddress: "0x0",
-      credentialId: params.serialNumber,
+      credentialId: routeParams.serialNumber,
     }),
   });
 }

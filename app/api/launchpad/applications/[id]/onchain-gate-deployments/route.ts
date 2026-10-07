@@ -20,14 +20,15 @@ import { ONCHAIN_GATE_NOT_DEPLOYER } from "@/lib/partner/onchainGateDeployments/
 import { launchpadRequestRejectsClientAuthority } from "@/lib/partner/onchainGateDeployments/clientAuthority";
 
 export const dynamic = "force-dynamic";
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
   const limited = await enforceLaunchpadTenantRateLimit(req, "/api/launchpad/onchain-gate-deployments", auth.session.partnerId, 30);
   if (limited) return limited;
-  const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+  const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
   const rows = await listAppDeployments(app.partner_id, app.id);
   if (!rows) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 503, "store_unavailable");
@@ -44,6 +45,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 }
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
   const limited = await enforceLaunchpadTenantRateLimit(req, "/api/launchpad/onchain-gate-deployments", auth.session.partnerId, 8);
@@ -60,7 +62,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   }
   const rec = json && typeof json === "object" && !Array.isArray(json) ? json as Record<string, unknown> : {};
   if (rec.revoke === true && typeof rec.deployment_ref === "string") {
-    const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+    const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
     if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
     const revoked = await revokeOnchainGateDeployment({
       partnerId: app.partner_id,
@@ -71,7 +73,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     return launchpadJson({ ok: true, notice: ONCHAIN_GATE_NOT_DEPLOYER });
   }
   const manifest = rec.manifest ?? json;
-  const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+  const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
   const registered = await registerOnchainGateDeployment({
     partnerId: app.partner_id,

@@ -8,9 +8,10 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { wallet: string } }
+  { params }: { params: Promise<{  wallet: string  }> }
 ) {
-  const { wallet } = params;
+  const routeParams = await params;
+  const { wallet  } = await params;
   if (!wallet) return NextResponse.json({ error:"wallet required" }, { status:400 });
 
   const assets = await getWalletAssets(wallet);

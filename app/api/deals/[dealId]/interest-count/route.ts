@@ -11,12 +11,13 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-export async function GET(req: Request, { params }: { params: { dealId: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{  dealId: string  }> }) {
+  const routeParams = await params;
   try {
     const { count } = await supabase
       .from("investment_interest")
       .select("*", { count: "exact", head: true })
-      .eq("asset_id", params.dealId);
+      .eq("asset_id", routeParams.dealId);
     return NextResponse.json({ count: count ?? 0 });
   } catch {
     // Table name may not match your real schema yet, fail to 0

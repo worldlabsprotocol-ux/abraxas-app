@@ -30,7 +30,7 @@ import { buildPartnerMeteringReport } from "@/lib/partner/partnerMeteringReport"
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 async function authorize(req: NextRequest, applicationId: string, limit: number) {
   const auth = await requireLaunchpadSession(req);
@@ -56,7 +56,8 @@ function unavailable(error: unknown) {
 }
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
-  const access = await authorize(req, params.id, 12);
+  const routeParams = await params;
+  const access = await authorize(req, routeParams.id, 12);
   if (!access.ok) return access.response;
 
   let body: { plan_id?: unknown };
@@ -92,7 +93,8 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
 }
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
-  const access = await authorize(req, params.id, 30);
+  const routeParams = await params;
+  const access = await authorize(req, routeParams.id, 30);
   if (!access.ok) return access.response;
   const intentId = (req.nextUrl.searchParams.get("intent_id") ?? "").trim();
 
