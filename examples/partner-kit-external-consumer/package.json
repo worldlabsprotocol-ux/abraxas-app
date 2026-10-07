@@ -1,0 +1,11 @@
+{
+  "name": "partner-kit-external-consumer-fixture",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node test/imports.mjs"
+  },
+  "dependencies": {
+    "@abraxas/partner-kit": "file:../../dist/partner-kit-release/abraxas-partner-kit-0.1.0.tgz"
+  }
+}

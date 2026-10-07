@@ -7,7 +7,9 @@
   ],
   "scripts": {
     "partner-kit:build": "npm run build -w @abraxas/partner-kit",
+    "partner-kit:pack": "bash scripts/partner-kit-pack-release.sh",
     "partner-kit:test": "npm run test -w @abraxas/partner-kit",
+    "partner-kit:external-install-test": "vitest run lib/partner/partnerKitExternalArtifact.test.ts",
     "dev": "next dev",
     "build": "npm run partner-kit:build && next build",
     "start": "next start",
@@ -73,7 +75,6 @@
     "@solana/wallet-adapter-react": "^0.15.39",
     "@solana/wallet-adapter-react-ui": "^0.9.29",
     "@solana/wallet-adapter-solflare": "^0.6.33",
-    "@solana/wallet-adapter-wallets": "^0.19.38",
     "@solana/web3.js": "^1.98.4",
     "@supabase/postgrest-js": "2.108.2",
     "@supabase/supabase-js": "^2.105.4",
@@ -97,6 +98,7 @@
     "stripe": "^16.0.0",
     "tweetnacl": "^1.0.3",
     "viem": "^2.23.2",
+    "zod": "^3.22.4",
     "zustand": "^5.0.13"
   },
   "devDependencies": {

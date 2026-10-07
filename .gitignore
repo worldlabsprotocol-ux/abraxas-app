@@ -54,6 +54,9 @@ fix_*.py
 # Local artifact generation and visual QA
 /output/
 /tmp/
+/dist/partner-kit-release/
+/examples/partner-kit-external-consumer/node_modules/
+/examples/partner-kit-external-consumer/package-lock.json
 
 # Foundry
 /contracts/evm-eligibility-verifier/out/

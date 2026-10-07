@@ -149,8 +149,9 @@ export default function DesignPartnerPage() {
         <div className="abx-glass-panel" style={{ padding: "1rem", borderRadius: 14 }}>
           <div style={{ fontFamily: FONT, fontSize: "0.85rem", fontWeight: 800, marginBottom: "0.35rem" }}>3 · Conformance</div>
           <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
-            After operators provision partner_id, policy_id, and return_url, run{" "}
-            <code style={{ fontFamily: MONO, fontSize: "0.65rem" }}>npm run partner:conformance</code>.
+            After your sandbox app is configured in Integration Studio or Launchpad, run{" "}
+            <code style={{ fontFamily: MONO, fontSize: "0.65rem" }}>npm run partner:conformance</code>{" "}
+            with your partner_id, policy_id, and allowlisted return_url.
           </p>
           <Btn href="/docs/partner-flow#start-here" variant="secondary" size="sm">Conformance command</Btn>
         </div>

@@ -91,6 +91,19 @@ export default function PartnerFlowApiDocsPage() {
         .
       </p>
 
+      <ContentCard title="External institutional handoff">
+        <BulletList
+          items={[
+            `Developer entry: ${SITE_URL}/developers/integration-studio`,
+            `Quickstart: ${SITE_URL}/docs/VERIFY_WITH_ABRAXAS_QUICKSTART`,
+            `OpenAPI: ${PARTNER_FLOW_OPENAPI_CANONICAL_URL}`,
+            "PartnerKit: versioned tarball — see repository docs/PARTNER_KIT_DISTRIBUTION.md (public npm pending license decision)",
+            "Security package: repository docs/EXTERNAL_SECURITY_REVIEW_PACKAGE.md",
+            `Production review: ${SITE_URL}/docs/production-review`,
+          ]}
+        />
+      </ContentCard>
+
       <ContentCard title="Auth boundaries">
         <BulletList
           items={[

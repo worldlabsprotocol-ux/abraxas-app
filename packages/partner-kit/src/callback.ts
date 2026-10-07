@@ -18,17 +18,27 @@ export interface ParsedPartnerCallback {
   partner_id: string | null;
 }
 
+function callbackRecordToSearchParams(
+  search: Record<string, string | string[] | undefined>,
+): URLSearchParams {
+  const entries: [string, string][] = [];
+  for (const [key, value] of Object.entries(search)) {
+    if (value == null) continue;
+    if (Array.isArray(value)) {
+      for (const item of value) entries.push([key, item]);
+    } else {
+      entries.push([key, value]);
+    }
+  }
+  return new URLSearchParams(entries);
+}
+
 export function parsePartnerCallbackParams(
   search: URLSearchParams | Record<string, string | string[] | undefined>,
 ): { ok: true; params: ParsedPartnerCallback } | { ok: false; errors: string[] } {
   const params = search instanceof URLSearchParams
     ? search
-    : new URLSearchParams(
-        Object.entries(search).flatMap(([key, value]) => {
-          if (value == null) return [];
-          return Array.isArray(value) ? value.map((item) => [key, item] as [string, string]) : [[key, value]];
-        }),
-      );
+    : callbackRecordToSearchParams(search);
 
   const errors: string[] = [];
   for (const key of Array.from(params.keys())) {
