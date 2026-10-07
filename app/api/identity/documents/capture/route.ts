@@ -10,6 +10,7 @@ import { requireBrowserSession } from "@/lib/auth/browserSession";
 import { getIdvProvider } from "@/lib/idv/idvProvider";
 import { analyzeBiometricCapture } from "@/lib/idv/biometric/analyzeCapture";
 import { checkCaptureRateLimit, logCaptureAudit } from "@/lib/idv/biometric/captureGuard";
+import { validateCaptureImageBytes } from "@/lib/idv/biometric/captureImageFormat";
 import { resolveCaptureBiometricPolicy } from "@/lib/idv/biometric/resolveCapturePolicy";
 import { persistBiometricAssessment } from "@/lib/idv/biometric/persistAssessment";
 import { buildOpaqueCaptureStoragePath, opaqueStoragePathHasNoPii } from "@/lib/idv/passportDocumentStoragePath";
@@ -75,10 +76,21 @@ async function uploadCaptureBuffer(
 
 function validateImageFile(file: File, label: string) {
   if (!ALLOWED_TYPES.has(file.type)) {
-    throw new Error(`Invalid file type for ${label}. Use JPG or PNG.`);
+    throw new Error(`Invalid file type for ${label}. Use JPG, PNG, or WEBP.`);
   }
   if (file.size > MAX_BYTES) {
     throw new Error(`File too large for ${label}. Max 8 MB.`);
+  }
+}
+
+function assertCaptureImageBytes(file: File, buffer: Buffer, label: string) {
+  const validated = validateCaptureImageBytes({
+    declaredMime: file.type,
+    buffer,
+    label,
+  });
+  if (!validated.ok) {
+    throw new Error(validated.message);
   }
 }
 
@@ -174,6 +186,8 @@ export async function POST(req: NextRequest) {
 
     const idBuffer = Buffer.from(await idFront.arrayBuffer());
     const selfieBuffer = Buffer.from(await selfie.arrayBuffer());
+    assertCaptureImageBytes(idFront, idBuffer, "ID");
+    assertCaptureImageBytes(selfie, selfieBuffer, "selfie");
     const captureSessionId = randomUUID();
 
     logCaptureAudit({
