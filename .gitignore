@@ -76,3 +76,4 @@ fix_*.py
 /android/keystore.properties
 /android/**/*.keystore
 /android/**/*.jks
+/abraxas-holder-*.apk
