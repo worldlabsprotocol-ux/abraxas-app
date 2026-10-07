@@ -41,7 +41,7 @@ import {
   HOLDER_VERIFY_SUBHEAD,
 } from "@/lib/integrate/partnerJourney";
 import { consumeNativeHandoffFromQuery } from "@/lib/sui/zklogin/consumeNativeHandoff";
-import { NATIVE_HANDOFF_QUERY } from "@/lib/sui/zklogin/nativeHandoff";
+import { NATIVE_HANDOFF_CODE_QUERY } from "@/lib/sui/zklogin/nativeHandoff";
 
 const S = ABRAXAS_FONT_SANS;
 
@@ -83,12 +83,12 @@ function PassportPageInner() {
   } = usePassportVerification(suiAddress, email || null);
 
   useEffect(() => {
-    if (!searchParams.get(NATIVE_HANDOFF_QUERY)) return;
+    if (!searchParams.get(NATIVE_HANDOFF_CODE_QUERY)) return;
     void consumeNativeHandoffFromQuery(searchParams).then((restored) => {
       if (!restored) return;
       refreshSession();
       const params = new URLSearchParams(searchParams.toString());
-      params.delete(NATIVE_HANDOFF_QUERY);
+      params.delete(NATIVE_HANDOFF_CODE_QUERY);
       const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}`;
       window.history.replaceState(null, "", next);
     });

@@ -1,18 +1,21 @@
 // FILE: app/api/auth/zklogin/native-handoff/prepare/route.ts
-// Complete native external-browser zkLogin and mint a WebView handoff token.
+// Complete native external-browser zkLogin and mint an opaque WebView handoff code.
 
 import { NextRequest, NextResponse } from "next/server";
 import { decodeJwt } from "@mysten/sui/zklogin";
 import {
   clearNativeZkLoginPending,
+  loadNativeConsumeVerifierHash,
   loadNativeZkLoginPending,
 } from "@/lib/sui/zklogin/nativePendingStore";
-import { mintNativeHandoffToken } from "@/lib/sui/zklogin/nativeHandoff";
+import { mintNativeHandoffCode } from "@/lib/sui/zklogin/nativeHandoff";
 import {
   consumeZkLoginOAuthState,
   inspectZkLoginOAuthState,
   parseOAuthStateFromCallbackHash,
 } from "@/lib/sui/zklogin/oauthLoginState";
+import { verifyNativeOAuthNonce } from "@/lib/sui/zklogin/verifyNativeOAuthNonce";
+import { checkNativeAuthRateLimit } from "@/lib/sui/zklogin/nativeAuthRateLimit";
 import { SITE_URL } from "@/lib/siteUrl";
 
 const NO_STORE_HEADERS = {
@@ -23,6 +26,14 @@ const NO_STORE_HEADERS = {
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
+  const limited = await checkNativeAuthRateLimit(req, "handoff-prepare", 20);
+  if (!limited.allowed) {
+    return NextResponse.json(
+      { error: "Too many sign-in attempts" },
+      { status: 429, headers: { ...NO_STORE_HEADERS, "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
+
   const body = (await req.json().catch(() => ({}))) as {
     id_token?: string;
     oauth_state?: string;
@@ -51,8 +62,13 @@ export async function POST(req: NextRequest) {
   }
 
   const pending = await loadNativeZkLoginPending(consumed.jti);
-  if (!pending) {
+  const consumeVerifierHash = await loadNativeConsumeVerifierHash(consumed.jti);
+  if (!pending || !consumeVerifierHash) {
     return NextResponse.json({ error: "Native sign-in context expired" }, { status: 401, headers: NO_STORE_HEADERS });
+  }
+
+  if (!verifyNativeOAuthNonce(idToken, pending)) {
+    return NextResponse.json({ error: "Sign-in expired" }, { status: 401, headers: NO_STORE_HEADERS });
   }
 
   const decoded = decodeJwt(idToken);
@@ -76,34 +92,45 @@ export async function POST(req: NextRequest) {
   const registerData = (await registerRes.json().catch(() => ({}))) as {
     sui_address?: string;
     email?: string | null;
+    user_salt?: string;
     error?: string;
     code?: string;
   };
 
-  if (!registerRes.ok || !registerData.sui_address) {
+  if (!registerRes.ok || !registerData.sui_address || !registerData.user_salt) {
     return NextResponse.json(
       { error: registerData.error ?? "Registration failed", code: registerData.code },
       { status: registerRes.status || 400, headers: NO_STORE_HEADERS },
     );
   }
 
-  await clearNativeZkLoginPending(consumed.jti);
-
-  const handoffToken = await mintNativeHandoffToken({
-    suiAddress: registerData.sui_address,
-    email: registerData.email,
-    provider: pending.provider,
+  const handoffCode = await mintNativeHandoffCode({
+    oauthJti: consumed.jti,
+    consumeVerifierHash,
+    payload: {
+      suiAddress: registerData.sui_address,
+      email: registerData.email ?? undefined,
+      provider: pending.provider,
+      oauthSub: sub,
+      maxEpoch: pending.maxEpoch,
+      userSalt: registerData.user_salt,
+      ephemeralSecretKey: pending.ephemeralSecretKey,
+      randomness: pending.randomness,
+      loginMode: consumed.mode,
+      idToken,
+    },
   });
 
-  if (!handoffToken) {
+  await clearNativeZkLoginPending(consumed.jti);
+
+  if (!handoffCode) {
     return NextResponse.json({ error: "Handoff unavailable" }, { status: 503, headers: NO_STORE_HEADERS });
   }
 
   return NextResponse.json(
     {
       ok: true,
-      handoff_token: handoffToken,
-      sui_address: registerData.sui_address,
+      handoff_code: handoffCode,
     },
     { headers: NO_STORE_HEADERS },
   );

@@ -17,6 +17,8 @@ import { fetchLoginMaxEpoch } from "./fetchLoginEpoch";
 import { ZKLOGIN_SIGN_IN_COPY } from "./signInCopy";
 import { isNativeHolderApp, resolveHolderAuthPlatform } from "./holderPlatform";
 import { openNativeOAuthUrl } from "./startNativeOAuth";
+import { NATIVE_CONSUME_VERIFIER_SESSION_KEY } from "./nativeHandoff";
+import { writeSessionStorage } from "./browserStorage";
 
 export async function startGoogleZkLogin(
   options?: { mode?: ZkLoginLoginMode },
@@ -88,14 +90,24 @@ export async function startGoogleZkLogin(
       return { ok: false, error: ZKLOGIN_SIGN_IN_COPY.errors.signInExpired };
     }
 
-    const stateData = (await stateRes.json()) as { oauth_state?: string };
+    const stateData = (await stateRes.json()) as {
+      oauth_state?: string;
+      native_consume_verifier?: string;
+    };
     const oauthState = stateData.oauth_state?.trim();
     if (!oauthState) {
       clearLoginInFlight();
       return { ok: false, error: ZKLOGIN_SIGN_IN_COPY.errors.signInExpired };
     }
 
-    if (!isNativeHolderApp()) {
+    if (isNativeHolderApp()) {
+      const consumeVerifier = stateData.native_consume_verifier?.trim();
+      if (!consumeVerifier) {
+        clearLoginInFlight();
+        return { ok: false, error: ZKLOGIN_SIGN_IN_COPY.errors.signInExpired };
+      }
+      writeSessionStorage(NATIVE_CONSUME_VERIFIER_SESSION_KEY, consumeVerifier);
+    } else {
       savePendingSession(pendingSession);
     }
 
