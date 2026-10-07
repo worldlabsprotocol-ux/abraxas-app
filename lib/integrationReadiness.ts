@@ -45,9 +45,9 @@ export const HOW_TO_INTEGRATE_STEPS = [
   },
   {
     step: 4,
-    title: "Complete the onboarding checklist",
-    href: PARTNER_INTEGRATION_PATHS.integratorGuide,
-    detail: "Operator steps in docs/PARTNER_ONBOARDING_CHECKLIST.md — partner row, policy, allowed_return_urls.",
+    title: "Create sandbox and configure callbacks",
+    href: "/developers/integration-studio",
+    detail: "Self-service: create a sandbox app, copy the one-time abx_test_* key (server-side only), configure policy and HTTPS callback in Launchpad. Production wiring uses reviewed activation — see /docs/production-review.",
   },
 ] as const;
 

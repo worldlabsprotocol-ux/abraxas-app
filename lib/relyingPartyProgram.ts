@@ -14,7 +14,7 @@ export const RELYING_PARTY_CHECKLIST = [
   {
     step: 2,
     title: "Test in sandbox",
-    body: "When operators provision sandbox credentials, test Partner Flow receipts with operator-provided IDs. Use the public receipt tester only as a mirror of your server-side check. Registry demos (e.g. /verify/ABX-RE-HOSP-001) are separate artifacts.",
+    body: "Create a sandbox application in Integration Studio or Launchpad to receive a one-time abx_test_* credential. Test Partner Flow receipts with your server-side public receipt check. The public receipt tester is a mirror only — never grant access from the UI alone. Registry demos (e.g. /verify/ABX-RE-HOSP-001) are separate artifacts.",
   },
   {
     step: 3,

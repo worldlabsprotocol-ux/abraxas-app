@@ -11,7 +11,7 @@ export const PUBLIC_DEMO_ORIGIN = `https://${PUBLIC_DEMO_HOST}`;
 
 export const PUBLIC_SURFACE_REDIRECTS = [
   { source: "/partner", destination: "/docs/partner-flow" },
-  { source: "/onboarding", destination: "/design-partner" },
+  { source: "/onboarding", destination: "/developers/integration-studio?source=onboarding" },
 ] as const;
 
 export const ACCOUNT_ACCESS_FIRST_PAINT =

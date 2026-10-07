@@ -4,15 +4,23 @@ PartnerKit is the canonical server-side integration surface for external partner
 
 ## Publication status
 
-The package **`@abraxas/partner-kit`** is **prepared/publishable** from this repository (`packages/partner-kit`). It is **not yet published** to the public npm registry.
+| Channel | Status |
+|---------|--------|
+| Monorepo workspace | `@abraxas/partner-kit` via `workspace:*` |
+| Versioned tarball | See [PARTNER_KIT_DISTRIBUTION.md](./PARTNER_KIT_DISTRIBUTION.md) |
+| Public npm | **Not published** — `UNLICENSED`; pending explicit licensing decision |
 
-Until publication, integrators working inside the Abraxas monorepo should depend on the workspace package. External teams should request a release candidate tarball or wait for npm publication.
+**Do not run `npm install @abraxas/partner-kit` from the public registry** — it is not published. External teams: install from the versioned tarball per [PARTNER_KIT_DISTRIBUTION.md](./PARTNER_KIT_DISTRIBUTION.md).
 
-## Install-first developer experience
+## Install (tarball)
 
 ```bash
-npm install @abraxas/partner-kit
+npm install ./abraxas-partner-kit-0.1.0.tgz
 ```
+
+## Server-side only
+
+Store API credentials in server environment variables. Never embed in browser or mobile client code.
 
 ```typescript
 import { AbraxasPartnerKit, permitProtocolAction } from "@abraxas/partner-kit";
@@ -27,7 +35,6 @@ const kit = new AbraxasPartnerKit({
   baseUrl: process.env.ABRAXAS_BASE_URL ?? "https://abraxasworld.xyz",
 });
 
-// After holder returns to your callback URL:
 const result = await kit.verifyForAction({
   receiptId: callbackReceiptId,
   callbackRequestId: callbackRequestId,
@@ -58,6 +65,7 @@ if (!permitProtocolAction(result)) {
 
 ## Related docs
 
-- [Partner Flow integration](/docs/PARTNER_FLOW_INTEGRATION.md)
-- [Partner verification requests](/docs/PARTNER_VERIFICATION_REQUESTS.md)
-- [Partner webhooks](/docs/PARTNER_WEBHOOKS.md) — use `@abraxas/partner-kit/webhooks` for signature verification
+- [Distribution](./PARTNER_KIT_DISTRIBUTION.md)
+- [External handoff](./EXTERNAL_INTEGRATION_HANDOFF.md)
+- [Partner Flow integration](./PARTNER_FLOW_INTEGRATION.md)
+- [Partner webhooks](./PARTNER_WEBHOOKS.md) — `@abraxas/partner-kit/webhooks`

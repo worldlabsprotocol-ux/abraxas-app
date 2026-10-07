@@ -26,7 +26,7 @@ const ML_TRACE_EXCLUDES = [
 
 const PUBLIC_SURFACE_REDIRECTS = [
   { source: "/partner", destination: "/docs/partner-flow", permanent: false },
-  { source: "/onboarding", destination: "/design-partner", permanent: false },
+  { source: "/onboarding", destination: "/developers/integration-studio?source=onboarding", permanent: false },
 ];
 
 const nextConfig = {
