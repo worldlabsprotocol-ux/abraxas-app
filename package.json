@@ -7,7 +7,9 @@
   ],
   "scripts": {
     "partner-kit:build": "npm run build -w @abraxas/partner-kit",
+    "partner-kit:pack": "bash scripts/partner-kit-pack-release.sh",
     "partner-kit:test": "npm run test -w @abraxas/partner-kit",
+    "partner-kit:external-install-test": "vitest run lib/partner/partnerKitExternalArtifact.test.ts",
     "dev": "next dev",
     "build": "npm run partner-kit:build && next build",
     "start": "next start",

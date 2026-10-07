@@ -2,23 +2,23 @@
 
 Server-side PartnerKit for Abraxas receipt verification and hosted partner flow integration.
 
-**Status:** Prepared for publication — not yet available on the public npm registry.
+## Distribution
 
-## Install (monorepo / future npm)
+| Channel | Status |
+|---------|--------|
+| Monorepo workspace | `npm install @abraxas/partner-kit@workspace:*` |
+| Versioned tarball | See repository `docs/PARTNER_KIT_DISTRIBUTION.md` |
+| Public npm | **Not published** — `UNLICENSED`; pending licensing decision |
+
+External teams: install from `abraxas-partner-kit-0.1.0.tgz` — not from the public npm registry.
 
 ```bash
-npm install @abraxas/partner-kit
-```
-
-From this repository during development:
-
-```bash
-npm install @abraxas/partner-kit@workspace:*
+npm install ./abraxas-partner-kit-0.1.0.tgz
 ```
 
 ## Server-side only
 
-- Store `ABRAXAS_SANDBOX_API_KEY` / production API credentials in server environment variables.
+- Store `abx_test_*` / `abx_live_*` credentials in server environment variables.
 - Never embed API keys in browser bundles or mobile client code.
 - Callback query parameters and webhooks are **not** authorization — always call `verifyForAction` before granting access.
 
@@ -52,17 +52,14 @@ export async function handleCallback(search: URLSearchParams) {
 }
 ```
 
+## Subpath exports
+
+- `@abraxas/partner-kit` — kit client, verification request helpers
+- `@abraxas/partner-kit/trust` — public receipt trust evaluation
+- `@abraxas/partner-kit/webhooks` — webhook signature verification
+
 ## Sandbox vs production
 
-- Sandbox and production credentials are distinct (`abx_sandbox_*` vs production keys).
+- Sandbox and production credentials are distinct (`abx_test_*` vs `abx_live_*`).
 - Sandbox receipts have `production_usable: false` — production mode rejects them fail-closed.
 - Pin `environment: "sandbox" | "production"` on the kit instance to match your credential scope.
-
-## Public API
-
-See package exports in `src/index.ts`. Core entry points:
-
-- `createVerificationRequest` — hosted handoff or redirect-mode request
-- `verifyCallbackWithNarrowResult` — callback + current receipt + narrow result
-- `verifyForAction` — **safety center** — fetch, validate, and fail-closed authorization check
-- `permitProtocolAction(result)` — explicit permit gate

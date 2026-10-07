@@ -40,7 +40,7 @@ describe("public origin helpers", () => {
   it("redirects dead public routes to working starts", () => {
     expect(PUBLIC_SURFACE_REDIRECTS).toEqual([
       { source: "/partner", destination: "/docs/partner-flow" },
-      { source: "/onboarding", destination: "/design-partner" },
+      { source: "/onboarding", destination: "/developers/integration-studio?source=onboarding" },
     ]);
   });
 });

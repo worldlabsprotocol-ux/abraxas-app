@@ -55,6 +55,15 @@ describe("onboarding truth repair — canonical sandbox path", () => {
     expect(page).not.toContain('redirect("/design-partner")');
   });
 
+  it("aligns edge redirects with canonical sandbox studio path", () => {
+    const nextConfig = read("next.config.js");
+    const publicOrigin = read("lib/product/publicOrigin.ts");
+    expect(nextConfig).toContain("/developers/integration-studio?source=onboarding");
+    expect(nextConfig).not.toContain('destination: "/design-partner"');
+    expect(publicOrigin).toContain("/developers/integration-studio?source=onboarding");
+    expect(publicOrigin).not.toContain('destination: "/design-partner"');
+  });
+
   it("does not state sandbox requires operator provisioning on public surfaces", () => {
     for (const rel of PUBLIC_ONBOARDING_SURFACES) {
       const text = read(rel).toLowerCase();
@@ -62,6 +71,15 @@ describe("onboarding truth repair — canonical sandbox path", () => {
         expect(text, `${rel} contains legacy gate: ${pattern}`).not.toContain(pattern.toLowerCase());
       }
     }
+  });
+
+  it("does not state sandbox requires operator provisioning in root README", () => {
+    const readme = read("README.md").toLowerCase();
+    for (const pattern of LEGACY_SANDBOX_GATE_PATTERNS) {
+      expect(readme, `README contains legacy gate: ${pattern}`).not.toContain(pattern.toLowerCase());
+    }
+    expect(readme).toContain("integration studio");
+    expect(readme).toContain("abx_test_");
   });
 
   it("preserves production review boundary in activation copy", () => {
