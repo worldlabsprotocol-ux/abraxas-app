@@ -15,6 +15,8 @@ import {
 import { logAuthEvent, toAuthErrorCode } from "./authDebug";
 import { fetchLoginMaxEpoch } from "./fetchLoginEpoch";
 import { ZKLOGIN_SIGN_IN_COPY } from "./signInCopy";
+import { isNativeHolderApp, resolveHolderAuthPlatform } from "./holderPlatform";
+import { openNativeOAuthUrl } from "./startNativeOAuth";
 
 export async function startGoogleZkLogin(
   options?: { mode?: ZkLoginLoginMode },
@@ -55,11 +57,30 @@ export async function startGoogleZkLogin(
 
     const maxEpoch = epochResult.maxEpoch;
 
+    const ephemeralKeypair = Ed25519Keypair.generate();
+    const randomness = generateRandomness();
+    const nonce = generateNonce(ephemeralKeypair.getPublicKey(), maxEpoch, randomness);
+
+    const holderPlatform = resolveHolderAuthPlatform();
+    const pendingSession = {
+      ephemeralSecretKey: ephemeralKeypair.getSecretKey(),
+      randomness,
+      maxEpoch,
+      provider: "google" as const,
+      loginMode: mode,
+      startedAt: new Date().toISOString(),
+    };
+
     const stateRes = await fetch("/api/auth/zklogin/login-state", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ login_mode: mode }),
+      body: JSON.stringify({
+        login_mode: mode,
+        ...(holderPlatform
+          ? { holder_platform: holderPlatform, pending: pendingSession }
+          : {}),
+      }),
     });
 
     if (!stateRes.ok) {
@@ -74,18 +95,9 @@ export async function startGoogleZkLogin(
       return { ok: false, error: ZKLOGIN_SIGN_IN_COPY.errors.signInExpired };
     }
 
-    const ephemeralKeypair = Ed25519Keypair.generate();
-    const randomness = generateRandomness();
-    const nonce = generateNonce(ephemeralKeypair.getPublicKey(), maxEpoch, randomness);
-
-    savePendingSession({
-      ephemeralSecretKey: ephemeralKeypair.getSecretKey(),
-      randomness,
-      maxEpoch,
-      provider: "google",
-      loginMode: mode,
-      startedAt: new Date().toISOString(),
-    });
+    if (!isNativeHolderApp()) {
+      savePendingSession(pendingSession);
+    }
 
     const url = buildGoogleOAuthUrl(nonce, oauthState, mode);
     if (!url) {
@@ -93,8 +105,14 @@ export async function startGoogleZkLogin(
       return { ok: false, error: "Could not build OAuth URL" };
     }
 
-    logAuthEvent("oauth_redirect");
-    window.location.assign(url);
+    logAuthEvent("oauth_redirect", {
+      detail: isNativeHolderApp() ? "native_external_browser" : "in_app_navigation",
+    });
+    if (isNativeHolderApp()) {
+      await openNativeOAuthUrl(url);
+    } else {
+      window.location.assign(url);
+    }
     return { ok: true };
   } catch (e) {
     clearLoginInFlight();

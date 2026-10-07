@@ -40,6 +40,8 @@ import {
   HOLDER_VERIFY_HEADLINE,
   HOLDER_VERIFY_SUBHEAD,
 } from "@/lib/integrate/partnerJourney";
+import { consumeNativeHandoffFromQuery } from "@/lib/sui/zklogin/consumeNativeHandoff";
+import { NATIVE_HANDOFF_QUERY } from "@/lib/sui/zklogin/nativeHandoff";
 
 const S = ABRAXAS_FONT_SANS;
 
@@ -79,6 +81,18 @@ function PassportPageInner() {
     isStatusFetchError,
     statusFetchError,
   } = usePassportVerification(suiAddress, email || null);
+
+  useEffect(() => {
+    if (!searchParams.get(NATIVE_HANDOFF_QUERY)) return;
+    void consumeNativeHandoffFromQuery(searchParams).then((restored) => {
+      if (!restored) return;
+      refreshSession();
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete(NATIVE_HANDOFF_QUERY);
+      const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}`;
+      window.history.replaceState(null, "", next);
+    });
+  }, [searchParams, refreshSession]);
 
   const verifyRequestId = searchParams.get("verify_request");
   const policyIdParam = searchParams.get("policy_id");

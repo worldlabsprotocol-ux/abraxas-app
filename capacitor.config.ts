@@ -25,6 +25,7 @@ const config: CapacitorConfig = {
   webDir: "www",
   server: {
     url: `https://${HOST}/passport`,
+    hostname: HOST,
     cleartext: false,
     allowNavigation: ALLOW_NAVIGATION,
     androidScheme: "https",

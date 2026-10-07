@@ -6,6 +6,7 @@ import {
   isZkLoginConfigured,
   ZKLOGIN_CALLBACK_PATH,
 } from "@/lib/sui/zklogin/config";
+import * as holderPlatform from "@/lib/sui/zklogin/holderPlatform";
 
 const ENV_KEYS = [
   "NEXT_PUBLIC_APP_URL",
@@ -34,11 +35,26 @@ describe("zkLogin OAuth redirect URI — same-origin", () => {
       else process.env[key] = saved[key];
     }
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it("uses browser origin on production canonical host", () => {
     vi.stubGlobal("window", {
       location: { origin: "https://abraxasworld.xyz" },
+    });
+
+    expect(getZkLoginRedirectUri()).toBe(
+      `https://abraxasworld.xyz${ZKLOGIN_CALLBACK_PATH}`,
+    );
+  });
+
+  it("pins OAuth redirect to canonical host inside native holder shell", () => {
+    vi.spyOn(holderPlatform, "isNativeHolderApp").mockReturnValue(true);
+    vi.spyOn(holderPlatform, "getNativeHolderRedirectUri").mockReturnValue(
+      `https://abraxasworld.xyz${ZKLOGIN_CALLBACK_PATH}`,
+    );
+    vi.stubGlobal("window", {
+      location: { origin: "https://localhost" },
     });
 
     expect(getZkLoginRedirectUri()).toBe(

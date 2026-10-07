@@ -25,7 +25,11 @@ export async function POST(req: NextRequest) {
     return res;
   }
 
-  const res = NextResponse.json({ login_mode: result.mode });
+  const res = NextResponse.json({
+    login_mode: result.mode,
+    holder_platform: result.holderPlatform,
+    oauth_jti: result.jti,
+  });
   clearZkLoginOAuthStateCookie(res);
   return res;
 }

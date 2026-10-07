@@ -20,6 +20,7 @@ import {
   parseOAuthStateFromCallbackHash,
   ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE,
 } from "./oauthLoginState";
+import type { HolderAuthPlatform } from "./holderPlatform";
 import {
   resolveSuggestedLoginMode,
   ZkLoginSignInRecoveryError,
@@ -64,7 +65,13 @@ export function mapRegisterFailureToUserError(
   return body.error ?? "Could not register zkLogin identity";
 }
 
-export async function resolveVerifiedLoginMode(callbackHash?: string): Promise<ZkLoginLoginMode> {
+export type VerifiedLoginState = {
+  mode: ZkLoginLoginMode;
+  holderPlatform: HolderAuthPlatform | null;
+  oauthJti: string | null;
+};
+
+export async function resolveVerifiedLoginState(callbackHash?: string): Promise<VerifiedLoginState> {
   const oauthState = callbackHash ? parseOAuthStateFromCallbackHash(callbackHash) : null;
   if (!oauthState) {
     throw new Error(ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE);
@@ -81,12 +88,28 @@ export async function resolveVerifiedLoginMode(callbackHash?: string): Promise<Z
     throw new Error(ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE);
   }
 
-  const data = (await res.json()) as { login_mode?: string };
+  const data = (await res.json()) as {
+    login_mode?: string;
+    holder_platform?: string | null;
+    oauth_jti?: string | null;
+  };
   if (data.login_mode === "legacy_recovery" || data.login_mode === "canonical") {
-    return data.login_mode;
+    const holderPlatform = data.holder_platform === "android_native" || data.holder_platform === "ios_native"
+      ? data.holder_platform
+      : null;
+    return {
+      mode: data.login_mode,
+      holderPlatform,
+      oauthJti: data.oauth_jti ?? null,
+    };
   }
 
   throw new Error(ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE);
+}
+
+export async function resolveVerifiedLoginMode(callbackHash?: string): Promise<ZkLoginLoginMode> {
+  const verified = await resolveVerifiedLoginState(callbackHash);
+  return verified.mode;
 }
 
 function hasFreshOAuthCallback(callbackHash?: string): boolean {
@@ -112,6 +135,11 @@ export async function completeGoogleZkLogin(
 
   const freshOAuthCallback = hasFreshOAuthCallback(options?.callbackHash);
   const pending = loadPendingSession();
+  let verifiedState: VerifiedLoginState | null = null;
+
+  if (freshOAuthCallback) {
+    verifiedState = await resolveVerifiedLoginState(options?.callbackHash);
+  }
 
   if (!pending) {
     if (freshOAuthCallback) {
@@ -159,7 +187,10 @@ export async function completeGoogleZkLogin(
 
   let loginMode: ZkLoginLoginMode;
   try {
-    loginMode = await resolveVerifiedLoginMode(options?.callbackHash);
+    if (!verifiedState) {
+      verifiedState = await resolveVerifiedLoginState(options?.callbackHash);
+    }
+    loginMode = verifiedState.mode;
   } catch (e) {
     clearUntrustedZkLoginMaterial();
     const err = e instanceof Error ? e.message : ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE;
