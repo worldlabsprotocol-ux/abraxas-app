@@ -4,6 +4,7 @@
 import { randomBytes } from "crypto";
 import { errors, SignJWT, jwtVerify } from "jose";
 import type { ZkLoginLoginMode } from "./audienceCohorts";
+import type { HolderAuthPlatform } from "./holderPlatform";
 
 export const ZKLOGIN_OAUTH_STATE_COOKIE = "abraxas_zklogin_oauth_state";
 export const ZKLOGIN_OAUTH_STATE_TYP = "zklogin_oauth_state";
@@ -27,8 +28,13 @@ export type MintZkLoginOAuthStateResult = {
 };
 
 export type ConsumeZkLoginOAuthStateResult =
-  | { ok: true; mode: ZkLoginLoginMode; jti: string }
+  | { ok: true; mode: ZkLoginLoginMode; jti: string; holderPlatform: HolderAuthPlatform | null }
   | { ok: false; reason: ConsumeFailureReason };
+
+function parseHolderPlatform(raw: unknown): HolderAuthPlatform | null {
+  if (raw === "android_native" || raw === "ios_native") return raw;
+  return null;
+}
 
 function stateSecret(): Uint8Array | null {
   const raw =
@@ -48,17 +54,20 @@ export function resetZkLoginOAuthStateForTests(): void {
 
 export async function mintZkLoginOAuthState(
   modeInput: unknown,
+  holderPlatformInput?: unknown,
 ): Promise<MintZkLoginOAuthStateResult | null> {
   const secret = stateSecret();
   if (!secret) return null;
 
   const mode = parseLoginMode(modeInput);
+  const holderPlatform = parseHolderPlatform(holderPlatformInput);
   const jti = randomBytes(24).toString("base64url");
 
   const oauthState = await new SignJWT({
     typ: ZKLOGIN_OAUTH_STATE_TYP,
     mode,
     jti,
+    ...(holderPlatform ? { holder_platform: holderPlatform } : {}),
   })
     .setProtectedHeader({ alg: "HS256" })
     .setJti(jti)
@@ -79,9 +88,6 @@ export async function consumeZkLoginOAuthState(
   const token = oauthState?.trim();
   if (!token) return { ok: false, reason: "missing" };
 
-  const verifier = cookieJti?.trim();
-  if (!verifier) return { ok: false, reason: "cookie_mismatch" };
-
   let payload: Record<string, unknown>;
   try {
     const verified = await jwtVerify(token, secret);
@@ -99,9 +105,16 @@ export async function consumeZkLoginOAuthState(
 
   const jti = typeof payload.jti === "string" ? payload.jti : null;
   const mode = payload.mode === "legacy_recovery" ? "legacy_recovery" : payload.mode === "canonical" ? "canonical" : null;
+  const holderPlatform = parseHolderPlatform(payload.holder_platform);
 
   if (!jti || !mode) return { ok: false, reason: "tampered" };
-  if (jti !== verifier) return { ok: false, reason: "cookie_mismatch" };
+
+  const verifier = cookieJti?.trim();
+  const nativeHandoff = holderPlatform !== null;
+  if (!nativeHandoff) {
+    if (!verifier) return { ok: false, reason: "cookie_mismatch" };
+    if (jti !== verifier) return { ok: false, reason: "cookie_mismatch" };
+  }
 
   const exp = payload.exp;
   const expiresAtIso = typeof exp === "number"
@@ -117,7 +130,35 @@ export async function consumeZkLoginOAuthState(
     return { ok: false, reason: "store_unavailable" };
   }
 
-  return { ok: true, mode, jti };
+  return { ok: true, mode, jti, holderPlatform };
+}
+
+export async function inspectZkLoginOAuthState(
+  oauthState: string | null | undefined,
+): Promise<{
+  mode: ZkLoginLoginMode;
+  holderPlatform: HolderAuthPlatform | null;
+  jti: string;
+} | null> {
+  const secret = stateSecret();
+  if (!secret) return null;
+  const token = oauthState?.trim();
+  if (!token) return null;
+  try {
+    const verified = await jwtVerify(token, secret);
+    const payload = verified.payload as Record<string, unknown>;
+    if (payload.typ !== ZKLOGIN_OAUTH_STATE_TYP) return null;
+    const jti = typeof payload.jti === "string" ? payload.jti : null;
+    const mode = payload.mode === "legacy_recovery" ? "legacy_recovery" : payload.mode === "canonical" ? "canonical" : null;
+    if (!jti || !mode) return null;
+    return {
+      mode,
+      holderPlatform: parseHolderPlatform(payload.holder_platform),
+      jti,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export function parseOAuthStateFromCallbackHash(hash: string): string | null {

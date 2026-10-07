@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Abraxas</string>
+    <string name="title_activity_main">Abraxas</string>
+    <string name="package_name">xyz.abraxasworld.app</string>
+    <string name="custom_url_scheme">xyz.abraxasworld.app</string>
+</resources>

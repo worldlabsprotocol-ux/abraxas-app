@@ -17,9 +17,10 @@ import { projectChainAttestationClient, chainAttestationHasForbiddenKeys } from 
 import { CHAIN_ATTESTATION_NOT_EXECUTION } from "@/lib/partner/chainAttestation/contract";
 
 export const dynamic = "force-dynamic";
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
   const limited = await enforceLaunchpadTenantRateLimit(req, "/api/launchpad/chain-attestation", auth.session.partnerId, 10);
@@ -34,11 +35,11 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   }
   const parsed = parseChainAttestationRequest(json);
   if (!parsed.ok) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400);
-  if (parsed.value.application_id && parsed.value.application_id !== params.id) {
+  if (parsed.value.application_id && parsed.value.application_id !== routeParams.id) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.forbidden, 403);
   }
 
-  const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+  const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
   if (app.environment !== "sandbox") {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "sandbox_only");

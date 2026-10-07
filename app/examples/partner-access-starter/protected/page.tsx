@@ -17,7 +17,7 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export default function ProtectedStarterPage() {
+export default async function ProtectedStarterPage() {
   const runtime = assessStarterRuntime();
 
   if (!runtime.enabled) {
@@ -29,7 +29,8 @@ export default function ProtectedStarterPage() {
     redirect(`${STARTER_ROUTES.entry}?reason=not_ready`);
   }
 
-  const token = cookies().get(STARTER_SESSION_COOKIE)?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get(STARTER_SESSION_COOKIE)?.value;
 
   if (!token) {
     redirect(`${STARTER_ROUTES.entry}?reason=session_required`);

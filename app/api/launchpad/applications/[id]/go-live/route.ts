@@ -22,7 +22,7 @@ import {
 } from "@/lib/partner/launchpad/goLiveReadiness";
 
 export const dynamic = "force-dynamic";
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 async function authorize(req: NextRequest, applicationId: string, limit: number) {
   const auth = await requireLaunchpadSession(req);
@@ -44,7 +44,8 @@ async function authorize(req: NextRequest, applicationId: string, limit: number)
 }
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
-  const loaded = await authorize(req, params.id, 30);
+  const routeParams = await params;
+  const loaded = await authorize(req, routeParams.id, 30);
   if (!loaded.ok) return loaded.response;
 
   const evidence = await loadGoLiveEvidence({
@@ -59,7 +60,8 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 }
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
-  const loaded = await authorize(req, params.id, 8);
+  const routeParams = await params;
+  const loaded = await authorize(req, routeParams.id, 8);
   if (!loaded.ok) return loaded.response;
 
   let body: Record<string, unknown> = {};

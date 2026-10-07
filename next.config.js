@@ -2,7 +2,7 @@
 /** @type {import('next').NextConfig} */
 
 // Keep only linux/x64 CPU ONNX + sharp binaries in serverless traces.
-// Applied via experimental.outputFileTracingExcludes (global **/* plus the capture route).
+// Applied via outputFileTracingExcludes (global **/* plus the capture route).
 const ML_TRACE_EXCLUDES = [
   "**/node_modules/onnxruntime-node/bin/napi-v3/darwin/**",
   "**/node_modules/onnxruntime-node/bin/napi-v3/win32/**",
@@ -34,14 +34,10 @@ const nextConfig = {
   async redirects() {
     return PUBLIC_SURFACE_REDIRECTS;
   },
-  // Next.js 14: keep native Node packages out of the server webpack graph.
-    experimental: {
-    instrumentationHook: true,
-    serverComponentsExternalPackages: ["onnxruntime-node"],
-    outputFileTracingExcludes: {
-      "**/*": ML_TRACE_EXCLUDES,
-      "/api/identity/documents/capture": ML_TRACE_EXCLUDES,
-    },
+  serverExternalPackages: ["onnxruntime-node"],
+  outputFileTracingExcludes: {
+    "**/*": ML_TRACE_EXCLUDES,
+    "/api/identity/documents/capture": ML_TRACE_EXCLUDES,
   },
   images: {
     remotePatterns: [

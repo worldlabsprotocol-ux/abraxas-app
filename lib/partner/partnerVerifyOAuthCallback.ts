@@ -5,6 +5,7 @@ import { ensureBrowserSessionReady } from "@/lib/auth/ensureBrowserSession";
 import { completeGoogleZkLogin } from "@/lib/sui/zklogin/completeLogin";
 import { clearLoginInFlight, clearStaleLoginInFlight } from "@/lib/sui/zklogin/loginInFlight";
 import { parseIdTokenFromCallbackHash, loadUserSession } from "@/lib/sui/zklogin/session";
+import { NATIVE_HANDOFF_CODE_QUERY } from "@/lib/sui/zklogin/nativeHandoff";
 import { clearPartnerVerifyResume } from "@/lib/partner/partnerVerifyResume";
 import { isRestorablePartnerContinuePath } from "@/lib/partner/partnerFlowContinuation";
 import {
@@ -33,6 +34,25 @@ export async function completePartnerVerifyOAuthCallback(
   let session;
 
   if (idToken) {
+    const nativeRes = await fetch("/api/auth/zklogin/native-handoff/prepare", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id_token: idToken, callback_hash: callbackHash }),
+    });
+    if (nativeRes.ok) {
+      const nativeData = (await nativeRes.json()) as { handoff_code?: string };
+      const handoffCode = nativeData.handoff_code?.trim();
+      if (handoffCode) {
+        clearLoginInFlight();
+        logPartnerVerifyAuthEvent("native_handoff_prepared", { correlationId });
+        const query = `${NATIVE_HANDOFF_CODE_QUERY}=${encodeURIComponent(handoffCode)}`;
+        return {
+          redirectPath: `xyz.abraxasworld.app://passport?${query}`,
+          correlationId,
+        };
+      }
+    }
+
     session = await completeGoogleZkLogin(idToken, { callbackHash });
     logPartnerVerifyAuthEvent("zklogin_complete", { correlationId });
   } else {

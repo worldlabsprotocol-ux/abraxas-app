@@ -29,6 +29,10 @@ export default function ZkLoginCallbackPage() {
     async function finish() {
       try {
         const { redirectPath } = await completePartnerVerifyOAuthCallback(window.location.hash);
+        if (redirectPath.includes("://")) {
+          window.location.assign(redirectPath);
+          return;
+        }
         router.replace(redirectPath);
       } catch (err) {
         clearLoginInFlight();

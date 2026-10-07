@@ -68,3 +68,12 @@ fix_*.py
 /solana/**/*.so
 /solana/**/*-keypair.json
 
+# Android holder shell (Capacitor)
+/android/.gradle/
+/android/build/
+/android/app/build/
+/android/local.properties
+/android/keystore.properties
+/android/**/*.keystore
+/android/**/*.jks
+/abraxas-holder-*.apk

@@ -121,7 +121,7 @@ export async function GET(_req: NextRequest) {
     );
   }
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const token = cookieStore.get(STARTER_SESSION_COOKIE)?.value;
 
   if (!token) {

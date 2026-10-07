@@ -15,16 +15,17 @@ import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const limited = await enforceLaunchpadRateLimit(req, "/api/launchpad/integration-handoff", 30);
   if (limited) return limited;
 
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
 
-  const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+  const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
 
   let productionKeyRevoked = false;

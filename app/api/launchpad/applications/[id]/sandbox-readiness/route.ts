@@ -19,7 +19,7 @@ import {
 import type { SandboxStageRunResult } from "@/lib/partner/launchpad/sandboxReadiness/execute";
 
 export const dynamic = "force-dynamic";
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 function reportBody(
   report: Awaited<ReturnType<typeof buildSandboxReadinessReport>>,
@@ -44,6 +44,7 @@ function reportBody(
 }
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
   const limited = await enforceLaunchpadTenantRateLimit(
@@ -54,7 +55,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   );
   if (limited) return limited;
 
-  const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+  const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
 
   const report = await buildSandboxReadinessReport({
@@ -65,6 +66,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 }
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
   const limited = await enforceLaunchpadTenantRateLimit(
@@ -75,7 +77,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   );
   if (limited) return limited;
 
-  const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+  const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
 
   let body: {

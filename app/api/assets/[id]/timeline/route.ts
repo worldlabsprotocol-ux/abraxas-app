@@ -8,13 +8,14 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{  id: string  }> }
 ) {
-  const events = await getAssetTimeline(params.id);
+  const routeParams = await params;
+  const events = await getAssetTimeline(routeParams.id);
   return NextResponse.json({
     events,
     count:   events.length,
-    assetId: params.id,
+    assetId: routeParams.id,
   }, {
     headers: { "Access-Control-Allow-Origin":"*" },
   });

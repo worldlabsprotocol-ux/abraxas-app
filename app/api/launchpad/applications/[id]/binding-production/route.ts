@@ -13,12 +13,13 @@ import { buildApplicationPoliciesSummary } from "@/lib/partner/launchpad/applica
 import { requestBindingProduction } from "@/lib/partner/launchpad/bindingProduction/request";
 
 export const dynamic = "force-dynamic";
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 export async function GET(_req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const auth = await requireLaunchpadSession(_req);
   if (!auth.ok) return auth.response;
-  const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+  const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
   const summary = await buildApplicationPoliciesSummary(app);
   return launchpadJson({
@@ -35,12 +36,13 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
 }
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
   const limited = await enforceLaunchpadTenantRateLimit(req, "/api/launchpad/binding-production", auth.session.partnerId, 10);
   if (limited) return limited;
 
-  const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+  const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
 
   let body: unknown;
@@ -55,7 +57,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   const note = typeof record.note === "string" ? record.note.trim() : null;
 
   const result = await requestBindingProduction({
-    applicationId: params.id,
+    applicationId: routeParams.id,
     partnerId: auth.session.partnerId,
     bindingId,
     note,

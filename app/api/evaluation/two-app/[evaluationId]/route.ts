@@ -11,12 +11,13 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { evaluationId: string } },
+  { params }: { params: Promise<{  evaluationId: string  }> },
 ) {
+  const routeParams = await params;
   const limited = await enforceLaunchpadRateLimit(req, "/api/evaluation/two-app/status", 60);
   if (limited) return limited;
 
-  const evaluationId = params.evaluationId?.trim();
+  const evaluationId = routeParams.evaluationId?.trim();
   if (!evaluationId) return launchpadError("invalid_input", 400);
 
   const record = await loadTwoAppEvaluationRecord(evaluationId);

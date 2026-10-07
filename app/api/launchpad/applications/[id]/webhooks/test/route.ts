@@ -14,14 +14,15 @@ import { PARTNER_WEBHOOK_TEST_EVENT_TYPE } from "@/lib/partner/webhooks/types";
 import { toLaunchpadWebhookPublicFailureCode } from "@/lib/partner/eventDelivery/publicFailure";
 
 export const dynamic = "force-dynamic";
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const limited = await enforceLaunchpadRateLimit(req, "/api/launchpad/webhooks/test", 6);
   if (limited) return limited;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
-  const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+  const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
 
   const result = await enqueueLaunchpadWebhookTest(auth.session.partnerId);

@@ -10,6 +10,7 @@ import {
   isClientZkLoginConfigured,
   resolveClientOAuthClientIdForMode,
 } from "@/lib/sui/zklogin/clientEnv";
+import { getNativeHolderRedirectUri, isNativeHolderApp } from "@/lib/sui/zklogin/holderPlatform";
 
 export type ZkLoginProvider = "google" | "apple";
 
@@ -32,6 +33,9 @@ export function getZkLoginRedirectUri(): string {
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? process.env.ABRAXAS_ISSUER_URL ?? "").replace(/\/$/, "");
   const runtimeDemo = process.env.ABRAXAS_RUNTIME_ENV?.trim() === "demo" || appUrl === PUBLIC_DEMO_ORIGIN;
   if (typeof window !== "undefined") {
+    if (isNativeHolderApp()) {
+      return getNativeHolderRedirectUri();
+    }
     try {
       if (new URL(window.location.origin).hostname === PUBLIC_DEMO_HOST || runtimeDemo) {
         return DEMO_OAUTH_CALLBACK;

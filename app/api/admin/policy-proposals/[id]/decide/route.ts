@@ -11,9 +11,10 @@ import {
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const denied = await requireAdminRouteAccess(req);
   if (denied) return denied;
   if (policyProposalCsrfRejected(req)) {
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   }
   const record = body && typeof body === "object" ? body as Record<string, unknown> : {};
   const result = await decidePolicyProposal({
-    proposalId: params.id,
+    proposalId: routeParams.id,
     body,
     confirm: record.confirm === true,
   });

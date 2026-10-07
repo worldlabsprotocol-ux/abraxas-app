@@ -6,6 +6,8 @@ export type AuthDebugEvent =
   | "oauth_redirect"
   | "oauth_callback"
   | "oauth_callback_error"
+  | "native_handoff_consumed"
+  | "native_handoff_consume_failed"
   | "zklogin_complete"
   | "zklogin_complete_error"
   | "session_saved"

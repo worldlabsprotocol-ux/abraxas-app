@@ -36,14 +36,24 @@ describe("oauthLoginState security", () => {
     const minted = await mintZkLoginOAuthState("canonical");
     expect(minted).not.toBeNull();
     const consumed = await consumeZkLoginOAuthState(minted!.oauthState, minted!.jti);
-    expect(consumed).toEqual({ ok: true, mode: "canonical", jti: minted!.jti });
+    expect(consumed).toEqual({
+      ok: true,
+      mode: "canonical",
+      jti: minted!.jti,
+      holderPlatform: null,
+    });
   });
 
   it("binds legacy_recovery mode to signed state", async () => {
     const minted = await mintZkLoginOAuthState("legacy_recovery");
     expect(minted).not.toBeNull();
     const consumed = await consumeZkLoginOAuthState(minted!.oauthState, minted!.jti);
-    expect(consumed).toEqual({ ok: true, mode: "legacy_recovery", jti: minted!.jti });
+    expect(consumed).toEqual({
+      ok: true,
+      mode: "legacy_recovery",
+      jti: minted!.jti,
+      holderPlatform: null,
+    });
   });
 
   it("rejects tampered state", async () => {

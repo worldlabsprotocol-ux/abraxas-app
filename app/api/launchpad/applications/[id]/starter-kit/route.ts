@@ -18,15 +18,16 @@ import { starterKitPinFromBinding } from "@/lib/partner/starterKit/bindingPin";
 import { studioPayloadLeaks } from "@/lib/partner/integrationStudio/safety";
 
 export const dynamic = "force-dynamic";
-type RouteContext = { params: { id: string } };
+type RouteContext = { params: Promise<{  id: string  }> };
 
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  const routeParams = await params;
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
   const limited = await enforceLaunchpadTenantRateLimit(req, "/api/launchpad/starter-kit", auth.session.partnerId, 20);
   if (limited) return limited;
 
-  const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
+  const app = await getLaunchpadApplicationForPartner(routeParams.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
 
   let body: unknown;
