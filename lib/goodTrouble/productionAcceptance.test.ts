@@ -164,7 +164,10 @@ describe("Good Trouble production acceptance — holder disclosure", () => {
       userExplanation: pack.holder_explanation,
     });
     expect(brief.requestor).toContain("Good Trouble");
-    expect(brief.shared_result_category).toContain("age_eligible_21");
+    expect(pack.disclosed_result).toBe("age_eligible_21");
+    expect(brief.shared_result_category).toBe("21+ eligibility confirmed");
+    expect(brief.result.toLowerCase()).toMatch(/21\+/);
+    expect(brief.shared_result_category.toLowerCase()).not.toContain("age_eligible_21");
     expect(brief.withheld.join(" ").toLowerCase()).toMatch(/date of birth|government id/);
     expect(JSON.stringify(brief).toLowerCase()).not.toContain("1990-01-01");
   });

@@ -2,7 +2,7 @@
 
 Partners can evolve eligibility policies over time without silently changing what old signed receipts mean, and without switching an active integration onto a newer version until they explicitly adopt it.
 
-**Status:** Code is in this PR. Schema migration `088_policy_change_control.sql` is **DEMO-only**. Do not apply to MAIN / Production Supabase. Do not merge this PR to enable production activation.
+**Status:** Application code is production-ready and fail-closed when schema is absent. Migration `088_policy_change_control.sql` remains the **DEMO** operator path (`ocntwbxarpjeixdnzide`). Production enablement uses `137_production_policy_change_control.sql` on `bztwutzprwsdrtqdpymf` **only after explicit operator approval** — applying schema does not adopt policy versions or activate production.
 
 ---
 
@@ -38,7 +38,7 @@ Partners can evolve eligibility policies over time without silently changing wha
 
 ## Production schema availability
 
-Migration 088 remains DEMO-only. Production binaries must not query missing relations.
+Until `137_production_policy_change_control.sql` is applied on production (`bztwutzprwsdrtqdpymf`), Launchpad Policies routes fail closed with `policy_schema_unavailable`. Production binaries must not query missing relations.
 
 | Route | Missing 088 schema |
 |---|---|
@@ -92,3 +92,47 @@ select to_regclass('public.partner_policy_lifecycle_audit'),
 ```
 
 Do not apply this file to MAIN / Production.
+
+## Production operator runbook (requires explicit approval)
+
+Authorized target: production Supabase `bztwutzprwsdrtqdpymf`.
+
+1. Confirm prerequisites: migration 055 immutability index present; migration 122 L0 v2 active; Good Trouble app still pins v1.
+2. Apply `supabase/migrations/137_production_policy_change_control.sql` in SQL Editor (idempotent).
+3. Run post-apply verification queries (below).
+4. Sign into Launchpad as Good Trouble partner → Policies → **Adopt v2** (or `POST …/policies` with `{ "action": "adopt", "version": 2 }`).
+5. Confirm `partner_launchpad_applications.policy_version = 2` and adoption audit row exists.
+6. Run sandbox handoff proof — do **not** activate production until proof passes.
+
+Post-apply verification:
+
+```sql
+select column_name
+  from information_schema.columns
+ where table_schema = 'public'
+   and table_name = 'partner_policies'
+   and column_name = 'deprecate_effective_at';
+
+select to_regclass('public.partner_policy_lifecycle_audit'),
+       to_regclass('public.partner_policy_adoptions');
+
+select public_slug, policy_version, production_activated_at
+  from partner_launchpad_applications
+ where public_slug = 'good-trouble';
+```
+
+Post-adopt verification:
+
+```sql
+select from_version, to_version, adopted_at
+  from partner_policy_adoptions
+ where application_id = '690d0c89-7b98-4946-8ad2-7469f5ca89d9'
+ order by adopted_at desc
+ limit 1;
+
+select event_type, from_version, to_version, created_at
+  from partner_policy_lifecycle_audit
+ where application_id = '690d0c89-7b98-4946-8ad2-7469f5ca89d9'
+ order by created_at desc
+ limit 3;
+```
