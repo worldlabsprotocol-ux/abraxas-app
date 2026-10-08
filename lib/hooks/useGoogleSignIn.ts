@@ -9,7 +9,7 @@ import {
   NATIVE_HANDOFF_SETTLED_EVENT,
 } from "@/lib/sui/zklogin/nativeHandoffClient";
 import { isNativeHolderApp } from "@/lib/sui/zklogin/holderPlatform";
-import { isLoginInFlight } from "@/lib/sui/zklogin/loginInFlight";
+import { isLoginInFlight, LOGIN_IN_FLIGHT_STALE_MS } from "@/lib/sui/zklogin/loginInFlight";
 
 export function useGoogleSignIn() {
   const auth = useSuiAuthOptional();
@@ -75,6 +75,17 @@ export function useGoogleSignIn() {
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [auth?.isAuthenticated]);
+
+  useEffect(() => {
+    if (!busy && !legacyBusy) return;
+    const timer = window.setTimeout(() => {
+      clearStaleLoginInFlight();
+      inFlightRef.current = false;
+      setBusy(false);
+      setLegacyBusy(false);
+    }, LOGIN_IN_FLIGHT_STALE_MS);
+    return () => window.clearTimeout(timer);
+  }, [busy, legacyBusy]);
 
   return {
     signIn,

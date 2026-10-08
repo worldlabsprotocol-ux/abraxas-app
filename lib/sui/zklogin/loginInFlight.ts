@@ -4,7 +4,8 @@
 
 const LOGIN_IN_FLIGHT_KEY = "abraxas_zklogin_login_in_flight";
 const LOGIN_IN_FLIGHT_TS_KEY = "abraxas_zklogin_login_in_flight_ts";
-const STALE_MS = 90_000;
+export const LOGIN_IN_FLIGHT_STALE_MS = 90_000;
+const STALE_MS = LOGIN_IN_FLIGHT_STALE_MS;
 
 export function isLoginInFlight(): boolean {
   if (typeof window === "undefined") return false;

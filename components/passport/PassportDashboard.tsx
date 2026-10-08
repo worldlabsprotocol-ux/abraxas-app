@@ -270,7 +270,7 @@ export function PassportDashboard({
           }}>
             Google sign-in creates your Abraxas account and Sui wallet — no seed phrase.
           </p>
-          <ZkLoginSignIn />
+          <ZkLoginSignIn showLegacyRecovery />
         </section>
       )}
 

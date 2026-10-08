@@ -3,7 +3,16 @@
 
 import { resolveNavSignInUiState } from "@/lib/nav/navSignInButtonState";
 
-export function shouldShowLegacySignInOption(input: {
+/** Customer surfaces defer legacy recovery; founder repair stays on /passport/advanced. */
+export function shouldShowLegacySignInOption(_input: {
+  configured: boolean;
+  legacyRecoveryConfigured: boolean;
+}): boolean {
+  return false;
+}
+
+/** Advanced Passport surfaces may expose legacy recovery when configured. */
+export function shouldShowLegacySignInOptionOnAdvanced(input: {
   configured: boolean;
   legacyRecoveryConfigured: boolean;
 }): boolean {

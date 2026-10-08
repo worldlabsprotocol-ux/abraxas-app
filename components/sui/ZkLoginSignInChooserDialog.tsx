@@ -12,7 +12,6 @@ import {
 import { createPortal } from "react-dom";
 import { useGoogleSignIn } from "@/lib/hooks/useGoogleSignIn";
 import { ZKLOGIN_SIGN_IN_COPY } from "@/lib/sui/zklogin/signInCopy";
-import { shouldShowLegacySignInOption } from "@/lib/sui/zklogin/signInChooserState";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -40,25 +39,14 @@ export function ZkLoginSignInChooserDialog({
 
   const {
     signIn,
-    signInExistingAccount,
     busy,
-    legacyBusy,
-    configured,
-    legacyRecoveryConfigured,
     disabled,
-    legacyDisabled,
     error,
   } = useGoogleSignIn();
-
-  const showLegacy = shouldShowLegacySignInOption({ configured, legacyRecoveryConfigured });
 
   const handleCanonical = useCallback(() => {
     void signIn();
   }, [signIn]);
-
-  const handleLegacy = useCallback(() => {
-    void signInExistingAccount();
-  }, [signInExistingAccount]);
 
   useEffect(() => {
     if (!open) return;
@@ -125,14 +113,6 @@ export function ZkLoginSignInChooserDialog({
     fontWeight: 700,
     cursor: disabled ? "not-allowed" : "pointer",
     opacity: busy ? 0.75 : 1,
-  };
-
-  const secondaryStyle: CSSProperties = {
-    ...primaryStyle,
-    background: "transparent",
-    color: "var(--text-secondary)",
-    border: `1px solid ${ACCENT}55`,
-    opacity: legacyBusy ? 0.75 : 1,
   };
 
   const helperStyle: CSSProperties = {
@@ -223,39 +203,6 @@ export function ZkLoginSignInChooserDialog({
           {busy ? ZKLOGIN_SIGN_IN_COPY.redirecting : ZKLOGIN_SIGN_IN_COPY.canonicalButton}
         </button>
         <p style={helperStyle}>{ZKLOGIN_SIGN_IN_COPY.canonicalHelper}</p>
-
-        {showLegacy && (
-          <>
-            <div
-              role="separator"
-              aria-hidden="true"
-              style={{
-                height: 1,
-                background: "var(--border)",
-                margin: "1rem 0 0.85rem",
-              }}
-            />
-            <p style={{
-              fontFamily: FONT,
-              fontSize: "0.78rem",
-              fontWeight: 700,
-              color: "var(--text-secondary)",
-              margin: "0 0 0.55rem",
-            }}>
-              {ZKLOGIN_SIGN_IN_COPY.legacySectionHeading}
-            </p>
-            <button
-              type="button"
-              onClick={handleLegacy}
-              disabled={legacyDisabled}
-              aria-label={ZKLOGIN_SIGN_IN_COPY.legacyAriaLabel}
-              style={secondaryStyle}
-            >
-              {legacyBusy ? ZKLOGIN_SIGN_IN_COPY.redirecting : ZKLOGIN_SIGN_IN_COPY.legacyButton}
-            </button>
-            <p style={helperStyle}>{ZKLOGIN_SIGN_IN_COPY.legacyHelper}</p>
-          </>
-        )}
 
         {error && (
           <p

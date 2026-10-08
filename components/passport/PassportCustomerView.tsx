@@ -6,7 +6,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
-import { PassportSignInRecoveryPanel } from "@/components/passport/PassportSignInRecoveryPanel";
+import { PassportSignInErrorBanner } from "@/components/passport/PassportSignInErrorBanner";
+import { clearStaleLoginInFlight } from "@/lib/sui/zklogin/loginInFlight";
 import { PassportReauthenticationPanel } from "@/components/passport/PassportReauthenticationPanel";
 import { PassportSessionProbeFailedPanel } from "@/components/passport/PassportSessionProbeFailedPanel";
 import { Btn } from "@/components/redesign/ui";
@@ -64,6 +65,7 @@ interface Props {
   via: string | null;
   starting: boolean;
   error: string | null;
+  onClearSignInError?: () => void;
   idvProvider: "veriff" | "manual";
   veriffConfigured: boolean;
   onStartIdCheck: () => void;
@@ -100,6 +102,7 @@ export function PassportCustomerView({
   via,
   starting,
   error,
+  onClearSignInError,
   idvProvider,
   veriffConfigured,
   onStartIdCheck,
@@ -109,6 +112,7 @@ export function PassportCustomerView({
   capturePolicy,
 }: Props) {
   const { signInRecovery, dismissSignInRecovery } = useSuiAuth();
+  const signInErrorMessage = error ?? signInRecovery?.message ?? null;
   const [bindLoading, setBindLoading] = useState(false);
   const [bindError, setBindError] = useState<string | null>(null);
   const {
@@ -215,29 +219,15 @@ export function PassportCustomerView({
       <PartnerVerificationResumeCta />
       <PassportInstallCard />
 
-      {!walletDone && signInRecovery && (
-        <PassportSignInRecoveryPanel
-          recovery={signInRecovery}
-          onDismiss={dismissSignInRecovery}
-        />
-      )}
-
-      {!walletDone && error && (
-        <section
-          aria-live="polite"
-          style={{
-            ...CARD,
-            background: "rgba(239,68,68,0.08)",
-            border: "1px solid rgba(239,68,68,0.35)",
+      {!walletDone && signInErrorMessage && (
+        <PassportSignInErrorBanner
+          message={signInErrorMessage}
+          onRetry={() => {
+            clearStaleLoginInFlight();
+            dismissSignInRecovery();
+            onClearSignInError?.();
           }}
-        >
-          <p style={{
-            fontFamily: FONT, fontSize: "0.84rem", lineHeight: 1.55,
-            color: "#EF4444", margin: 0,
-          }}>
-            {error}
-          </p>
-        </section>
+        />
       )}
 
       {!walletDone && (

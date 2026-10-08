@@ -32,14 +32,14 @@ describe("zkLogin sign-in chooser structure", () => {
     const dialog = read("components/sui/ZkLoginSignInChooserDialog.tsx");
     expect(dialog).toContain("useGoogleSignIn");
     expect(dialog).toContain("ZKLOGIN_SIGN_IN_COPY.canonicalButton");
-    expect(dialog).toContain("ZKLOGIN_SIGN_IN_COPY.legacyButton");
-    expect(dialog).toContain("shouldShowLegacySignInOption");
+    expect(dialog).not.toContain("legacyButton");
+    expect(dialog).not.toContain("signInExistingAccount");
     expect(dialog).toContain('role="dialog"');
     expect(dialog).toContain("aria-modal");
   });
 
   it("routes Create Passport through the shared chooser when sign-in is configured", () => {
-    const hero = read("components/home/HomeSharpHero.tsx");
+    const hero = read("components/home/HomeTrustClose.tsx");
     expect(hero).toContain("useZkLoginSignInChooserOptional");
     expect(hero).toContain("openChooser");
     expect(hero).toContain("canOpenSignInChooser");
