@@ -157,7 +157,7 @@ describe("Good Trouble browse migration 120/121 regression coverage", () => {
     })).toBe(false);
   });
 
-  it("9. purchase tuple and L2 requirements are unchanged", async () => {
+  it("9. purchase tuple uses canonical L0 age eligibility (migration 122)", async () => {
     expect(GOOD_TROUBLE_CANONICAL_POLICY_ID).toBe("good-trouble-age_21_retail-v1");
     expect(isCanonicalGoodTroublePurchaseFlow({
       partnerId: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
@@ -169,7 +169,7 @@ describe("Good Trouble browse migration 120/121 regression coverage", () => {
     expect(PURCHASE_FLOW.partnerId).toBe(GOOD_TROUBLE_CANONICAL_PARTNER_ID);
     expect(PURCHASE_FLOW.policyId).toBe(GOOD_TROUBLE_CANONICAL_POLICY_ID);
     expect(PURCHASE_FLOW.purpose).toBe("purchase");
-    expect(PURCHASE_FLOW.assuranceLabel).toBe("L2+");
+    expect(PURCHASE_FLOW.assuranceLabel).toBe("L0 age eligibility");
     expect(PURCHASE_FLOW.policyId).not.toBe(GOOD_TROUBLE_BROWSE_POLICY_ID);
   });
 
