@@ -6,6 +6,7 @@ import { useState, type ReactNode } from "react";
 import { ThemeProvider } from "@/components/ThemeContext";
 import { SuiAuthProvider } from "@/components/sui/SuiAuthProvider";
 import { ZkLoginSignInChooserProvider } from "@/components/sui/ZkLoginSignInChooserProvider";
+import { NativeHolderHandoffListener } from "@/components/sui/NativeHolderHandoffListener";
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -25,6 +26,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <SuiAuthProvider>
+          <NativeHolderHandoffListener />
           <ZkLoginSignInChooserProvider>{children}</ZkLoginSignInChooserProvider>
         </SuiAuthProvider>
       </ThemeProvider>

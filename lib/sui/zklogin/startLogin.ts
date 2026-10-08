@@ -17,8 +17,7 @@ import { fetchLoginMaxEpoch } from "./fetchLoginEpoch";
 import { ZKLOGIN_SIGN_IN_COPY } from "./signInCopy";
 import { isNativeHolderApp, resolveHolderAuthPlatform } from "./holderPlatform";
 import { openNativeOAuthUrl } from "./startNativeOAuth";
-import { NATIVE_CONSUME_VERIFIER_SESSION_KEY } from "./nativeHandoff";
-import { writeSessionStorage } from "./browserStorage";
+import { storeNativeConsumeVerifier } from "./nativeHandoffClient";
 
 export async function startGoogleZkLogin(
   options?: { mode?: ZkLoginLoginMode },
@@ -106,7 +105,7 @@ export async function startGoogleZkLogin(
         clearLoginInFlight();
         return { ok: false, error: ZKLOGIN_SIGN_IN_COPY.errors.signInExpired };
       }
-      writeSessionStorage(NATIVE_CONSUME_VERIFIER_SESSION_KEY, consumeVerifier);
+      storeNativeConsumeVerifier(consumeVerifier);
     } else {
       savePendingSession(pendingSession);
     }

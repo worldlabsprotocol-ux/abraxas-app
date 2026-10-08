@@ -83,14 +83,21 @@ function PassportPageInner() {
   } = usePassportVerification(suiAddress, email || null);
 
   useEffect(() => {
-    if (!searchParams.get(NATIVE_HANDOFF_CODE_QUERY)) return;
+    const handoffCode = searchParams.get(NATIVE_HANDOFF_CODE_QUERY);
+    if (!handoffCode) return;
+
     void consumeNativeHandoffFromQuery(searchParams).then((restored) => {
-      if (!restored) return;
-      refreshSession();
       const params = new URLSearchParams(searchParams.toString());
       params.delete(NATIVE_HANDOFF_CODE_QUERY);
       const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}`;
       window.history.replaceState(null, "", next);
+
+      if (!restored) {
+        setError("Sign-in could not be completed after returning from Google. Please try again.");
+        return;
+      }
+
+      refreshSession();
     });
   }, [searchParams, refreshSession]);
 

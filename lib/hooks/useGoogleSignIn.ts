@@ -1,9 +1,11 @@
 // FILE: lib/hooks/useGoogleSignIn.ts
 // Shared Google sign-in handler — keeps button disabled through OAuth redirect.
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
 import { clearStaleLoginInFlight } from "@/lib/sui/zklogin/startLogin";
+import { NATIVE_HANDOFF_SETTLED_EVENT } from "@/lib/sui/zklogin/nativeHandoffClient";
+import { isNativeHolderApp } from "@/lib/sui/zklogin/holderPlatform";
 
 export function useGoogleSignIn() {
   const auth = useSuiAuthOptional();
@@ -44,6 +46,28 @@ export function useGoogleSignIn() {
     () => runSignIn(auth?.signInWithExistingAccount, setLegacyBusy),
     [auth?.signInWithExistingAccount, runSignIn],
   );
+
+  useEffect(() => {
+    const resetBusy = () => {
+      inFlightRef.current = false;
+      setBusy(false);
+      setLegacyBusy(false);
+    };
+
+    const onHandoffSettled = () => resetBusy();
+    window.addEventListener(NATIVE_HANDOFF_SETTLED_EVENT, onHandoffSettled);
+
+    const onVisibility = () => {
+      if (!isNativeHolderApp() || document.visibilityState !== "visible") return;
+      if (auth?.isAuthenticated) resetBusy();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      window.removeEventListener(NATIVE_HANDOFF_SETTLED_EVENT, onHandoffSettled);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [auth?.isAuthenticated]);
 
   return {
     signIn,
