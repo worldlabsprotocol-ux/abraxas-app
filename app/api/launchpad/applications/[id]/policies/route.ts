@@ -112,6 +112,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   let body: {
     action?: string;
     version?: number;
+    expected_version?: number;
     rules_json?: PartnerPolicyRules;
     name?: string;
     deprecate_effective_at?: string | null;
@@ -189,6 +190,11 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
         if (typeof body.version !== "number") {
           return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 400, "version required");
         }
+        if (body.expected_version !== undefined && (
+          !Number.isSafeInteger(body.expected_version) || body.expected_version !== app.policy_version
+        )) {
+          return launchpadError("policy_version_mismatched", 409, "Application pin changed. Refresh before adopting.");
+        }
         const result = await adoptPolicyVersionForApplication({
           application: app,
           toVersion: body.version,
@@ -249,3 +255,4 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     return mapError(error);
   }
 }
+
