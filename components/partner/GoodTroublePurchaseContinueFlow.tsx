@@ -33,6 +33,8 @@ type Handoff = ReturnType<typeof usePartnerFlowHandoff>;
 
 type GtPhase =
   | "loading"
+  | "session_required"
+  | "handoff_unavailable"
   | "reuse"
   | "dob"
   | "under_21"
@@ -74,17 +76,26 @@ export function GoodTroublePurchaseContinueFlow({
         { credentials: "include" },
       );
       const qualBody = await qualRes.json() as {
+        code?: string;
         method_qualified?: boolean;
         issuedReceipt?: boolean;
         reuse?: ReuseClientView;
       };
-      if (qualBody.reuse) setReuseView(qualBody.reuse);
-      const qualified = qualRes.ok && qualBody.method_qualified === true && qualBody.issuedReceipt !== true;
-
       if (handoff.ready || handoff.phase === "completed") {
         setPhase("done");
         return;
       }
+      if (!qualRes.ok) {
+        if (qualRes.status === 401) {
+          setPhase("session_required");
+        } else {
+          setPhase("handoff_unavailable");
+        }
+        return;
+      }
+      if (qualBody.reuse) setReuseView(qualBody.reuse);
+      const qualified = qualBody.method_qualified === true && qualBody.issuedReceipt !== true;
+
       if (qualified) {
         setPhase("share");
         return;
@@ -96,7 +107,7 @@ export function GoodTroublePurchaseContinueFlow({
       setPhase("dob");
     } catch {
       setError(holderSafeClientMessage("Could not load your verification step. Refresh and try again."));
-      setPhase("dob");
+      setPhase("handoff_unavailable");
     }
   }, [verifyRequestId, handoff.ready, handoff.phase]);
 
@@ -206,6 +217,14 @@ export function GoodTroublePurchaseContinueFlow({
 
   if (phase === "loading") {
     return <p role="status">Loading…</p>;
+  }
+
+  if (phase === "session_required") {
+    return <StatusBanner tone="error" title="Session required">Your browser session could not be confirmed. Return to Good Trouble and open a fresh verification link.</StatusBanner>;
+  }
+
+  if (phase === "handoff_unavailable") {
+    return <StatusBanner tone="error" title="Verification link unavailable">This verification link could not be confirmed. Return to Good Trouble and open a fresh link.</StatusBanner>;
   }
 
   return (

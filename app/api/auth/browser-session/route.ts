@@ -11,6 +11,7 @@ import {
   resolveBrowserSession,
 } from "@/lib/auth/browserSession";
 import { verifyGoogleZkLoginIdToken } from "@/lib/auth/verifyZkLoginIdToken";
+import { recordHolderSessionDiagnostic } from "@/lib/auth/holderSessionDiagnostic";
 
 const NO_STORE_HEADERS = {
   "Cache-Control": "no-store",
@@ -24,9 +25,9 @@ function probeResponse(ok: boolean, status: number): NextResponse {
 export async function GET(req: NextRequest) {
   const session = await resolveBrowserSession(req);
   if (!session) {
-    return probeResponse(false, 401);
+    return recordHolderSessionDiagnostic(probeResponse(false, 401), "browser_session", "authentication");
   }
-  return probeResponse(true, 200);
+  return recordHolderSessionDiagnostic(probeResponse(true, 200), "browser_session", "ok");
 }
 
 export async function POST(req: NextRequest) {
