@@ -77,8 +77,18 @@ export async function adoptPolicyVersionForApplication(input: {
     if (result.code === "policy_version_mismatched") {
       throw new PolicyChangeControlError("policy_version_mismatched", "Application pin changed concurrently");
     }
-    if (result.code === "not_found") {
+    if (result.code === "not_found" || result.code === "policy_version_unknown") {
       throw new PolicyChangeControlError("policy_version_unknown");
+    }
+    if (
+      result.code === "policy_version_draft" ||
+      result.code === "policy_version_deprecated" ||
+      result.code === "policy_version_not_yet_effective"
+    ) {
+      throw new PolicyChangeControlError(result.code);
+    }
+    if (result.code === "adoption_audit_incomplete") {
+      throw new Error("policy_adoption_audit_incomplete");
     }
     throw new Error("policy_adoption_write_failed");
   }

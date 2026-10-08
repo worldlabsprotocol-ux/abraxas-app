@@ -42,4 +42,14 @@ describe("137_production_policy_change_control migration contract", () => {
     expect(sql.toLowerCase()).toContain("grant execute on function public.partner_policy_adopt_version_atomic");
     expect(sql.toLowerCase()).toContain("revoke all on function public.partner_policy_adopt_version_atomic");
   });
+
+  it("hardens adopt RPC with independent policy, pin, replay, and actor validation", () => {
+    expect(sql).toContain("set search_path = pg_catalog, public");
+    expect(sql).toContain("from public.partner_policies");
+    expect(sql).toContain("policy_version_draft");
+    expect(sql).toContain("adoption_audit_incomplete");
+    expect(sql).toContain("v_app.partner_id");
+    expect(sql).toContain("v_actor_id := v_app.partner_id");
+    expect(sql).toContain("p_actor_id is not null and p_actor_id <> v_app.partner_id");
+  });
 });

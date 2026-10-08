@@ -281,12 +281,18 @@ set search_path = pg_catalog, public
 as $$
 declare
   v_app public.partner_launchpad_applications%rowtype;
+  v_target public.partner_policies%rowtype;
   v_now timestamptz := pg_catalog.now();
+  v_actor_id text;
+  v_adoption_complete boolean;
 begin
   if p_application_id is null or p_partner_id is null or p_policy_id is null then
     return jsonb_build_object('ok', false, 'code', 'invalid_input');
   end if;
-  if p_from_version is null or p_to_version is null or p_to_version < 1 then
+  if p_from_version is null or p_to_version is null or p_from_version < 1 or p_to_version < 1 then
+    return jsonb_build_object('ok', false, 'code', 'invalid_input');
+  end if;
+  if p_from_version = p_to_version then
     return jsonb_build_object('ok', false, 'code', 'invalid_input');
   end if;
 
@@ -294,35 +300,86 @@ begin
     into v_app
     from public.partner_launchpad_applications
    where id = p_application_id
-     and partner_id = p_partner_id
-     and policy_id = p_policy_id
    for update;
 
   if not found then
     return jsonb_build_object('ok', false, 'code', 'not_found');
   end if;
 
+  if v_app.partner_id <> p_partner_id or v_app.policy_id <> p_policy_id then
+    return jsonb_build_object('ok', false, 'code', 'not_found');
+  end if;
+
+  v_actor_id := v_app.partner_id;
+  if p_actor_id is not null and p_actor_id <> v_app.partner_id then
+    return jsonb_build_object('ok', false, 'code', 'invalid_input');
+  end if;
+
+  select exists (
+    select 1
+      from public.partner_policy_adoptions
+     where application_id = p_application_id
+       and partner_id = v_app.partner_id
+       and policy_id = v_app.policy_id
+       and to_version = p_to_version
+  ) and exists (
+    select 1
+      from public.partner_policy_lifecycle_audit
+     where application_id = p_application_id
+       and partner_id = v_app.partner_id
+       and policy_id = v_app.policy_id
+       and event_type = 'adopted'
+       and to_version = p_to_version
+  )
+    into v_adoption_complete;
+
   if v_app.policy_version = p_to_version then
-    return jsonb_build_object(
-      'ok', true,
-      'code', 'idempotent_replay',
-      'application', to_jsonb(v_app),
-      'from_version', v_app.policy_version,
-      'to_version', p_to_version,
-      'idempotent_replay', true
-    );
+    if v_adoption_complete then
+      return jsonb_build_object(
+        'ok', true,
+        'code', 'idempotent_replay',
+        'application', to_jsonb(v_app),
+        'from_version', v_app.policy_version,
+        'to_version', p_to_version,
+        'idempotent_replay', true
+      );
+    end if;
+    return jsonb_build_object('ok', false, 'code', 'adoption_audit_incomplete');
   end if;
 
   if v_app.policy_version <> p_from_version then
     return jsonb_build_object('ok', false, 'code', 'policy_version_mismatched');
   end if;
 
+  select *
+    into v_target
+    from public.partner_policies
+   where id = v_app.policy_id
+     and version = p_to_version
+     and partner_id = v_app.partner_id;
+
+  if not found then
+    return jsonb_build_object('ok', false, 'code', 'policy_version_unknown');
+  end if;
+
+  if v_target.status = 'draft' then
+    return jsonb_build_object('ok', false, 'code', 'policy_version_draft');
+  end if;
+
+  if v_target.status <> 'active' then
+    return jsonb_build_object('ok', false, 'code', 'policy_version_deprecated');
+  end if;
+
+  if v_target.effective_at is not null and v_target.effective_at > v_now then
+    return jsonb_build_object('ok', false, 'code', 'policy_version_not_yet_effective');
+  end if;
+
   update public.partner_launchpad_applications
      set policy_version = p_to_version,
          updated_at = v_now
    where id = p_application_id
-     and partner_id = p_partner_id
-     and policy_id = p_policy_id
+     and partner_id = v_app.partner_id
+     and policy_id = v_app.policy_id
      and policy_version = p_from_version;
 
   if not found then
@@ -334,8 +391,8 @@ begin
        set policy_version = p_to_version,
            updated_at = v_now
      where application_id = p_application_id
-       and partner_id = p_partner_id
-       and policy_id = p_policy_id
+       and partner_id = v_app.partner_id
+       and policy_id = v_app.policy_id
        and binding_role = 'primary';
   end if;
 
@@ -348,11 +405,11 @@ begin
     actor_id
   ) values (
     p_application_id,
-    p_partner_id,
-    p_policy_id,
+    v_app.partner_id,
+    v_app.policy_id,
     p_from_version,
     p_to_version,
-    p_actor_id
+    v_actor_id
   );
 
   insert into public.partner_policy_lifecycle_audit (
@@ -366,12 +423,12 @@ begin
     from_version,
     to_version
   ) values (
-    p_policy_id,
+    v_app.policy_id,
     p_to_version,
-    p_partner_id,
+    v_app.partner_id,
     'adopted',
     'partner',
-    p_actor_id,
+    v_actor_id,
     p_application_id,
     p_from_version,
     p_to_version
@@ -392,16 +449,34 @@ begin
   );
 exception
   when unique_violation then
-    if exists (
+    select *
+      into v_app
+      from public.partner_launchpad_applications
+     where id = p_application_id;
+
+    if not found or v_app.policy_version <> p_to_version then
+      return jsonb_build_object('ok', false, 'code', 'adoption_write_failed');
+    end if;
+
+    select exists (
       select 1
-        from public.partner_launchpad_applications
-       where id = p_application_id
-         and policy_version = p_to_version
-    ) then
-      select *
-        into v_app
-        from public.partner_launchpad_applications
-       where id = p_application_id;
+        from public.partner_policy_adoptions
+       where application_id = p_application_id
+         and partner_id = v_app.partner_id
+         and policy_id = v_app.policy_id
+         and to_version = p_to_version
+    ) and exists (
+      select 1
+        from public.partner_policy_lifecycle_audit
+       where application_id = p_application_id
+         and partner_id = v_app.partner_id
+         and policy_id = v_app.policy_id
+         and event_type = 'adopted'
+         and to_version = p_to_version
+    )
+      into v_adoption_complete;
+
+    if v_adoption_complete then
       return jsonb_build_object(
         'ok', true,
         'code', 'idempotent_replay',
@@ -411,13 +486,15 @@ exception
         'idempotent_replay', true
       );
     end if;
-    return jsonb_build_object('ok', false, 'code', 'adoption_write_failed');
+
+    return jsonb_build_object('ok', false, 'code', 'adoption_audit_incomplete');
   when others then
     return jsonb_build_object('ok', false, 'code', 'adoption_write_failed');
 end;
 $$;
 
-revoke all on function public.partner_policy_adopt_version_atomic(uuid, text, text, int, int, text) from public, anon, authenticated;
+revoke all on function public.partner_policy_adopt_version_atomic(uuid, text, text, int, int, text) from public;
+revoke all on function public.partner_policy_adopt_version_atomic(uuid, text, text, int, int, text) from anon, authenticated;
 grant execute on function public.partner_policy_adopt_version_atomic(uuid, text, text, int, int, text) to service_role;
 
 commit;
