@@ -984,6 +984,17 @@ export function PartnerLaunchpadClient({
                 applicationId={activeApp.id}
                 partnerId={workspace?.partner_id ?? ""}
               />
+              <PolicyChangeControlLaunchpadSlot
+                available={pccUiAvailable}
+                applicationId={activeApp.id}
+                goodTroubleSandbox={workspace?.partner_id === "good-trouble"
+                  && activeApp.id === "690d0c89-7b98-4946-8ad2-7469f5ca89d9"
+                  && activeApp.environment === "sandbox"}
+                onChanged={() => {
+                  void refreshWorkspace();
+                  void refreshIntegrationHealth();
+                }}
+              />
               <PolicyVersionPlannerPanel applicationId={activeApp.id} />
               <NetworkReadinessPanel applicationId={activeApp.id} />
               <OnchainGateDeploymentPanel applicationId={activeApp.id} />
@@ -1036,14 +1047,6 @@ export function PartnerLaunchpadClient({
                   </ul>
                 </ContentCard>
               )}
-              <PolicyChangeControlLaunchpadSlot
-                available={pccUiAvailable}
-                applicationId={activeApp.id}
-                onChanged={() => {
-                  void refreshWorkspace();
-                  void refreshIntegrationHealth();
-                }}
-              />
               <PartnerIntegrationHealthPanel applicationId={activeApp.id} />
               <PartnerIntegrationPerformancePanel applicationId={activeApp.id} />
               <PartnerPilotProgressPanel applicationId={activeApp.id} />
@@ -1180,3 +1183,4 @@ function badgeStyle(color: string): React.CSSProperties {
     color,
   };
 }
+
