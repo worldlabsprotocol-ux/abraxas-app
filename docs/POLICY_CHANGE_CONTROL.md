@@ -2,7 +2,7 @@
 
 Partners can evolve eligibility policies over time without silently changing what old signed receipts mean, and without switching an active integration onto a newer version until they explicitly adopt it.
 
-**Status:** Application code is production-ready and fail-closed when schema is absent. Migration `088_policy_change_control.sql` remains the **DEMO** operator path (`ocntwbxarpjeixdnzide`). Production enablement uses `136_production_policy_change_control.sql` on `bztwutzprwsdrtqdpymf` **only after explicit operator approval** — applying schema does not adopt policy versions or activate production.
+**Status:** Application code is production-ready and fail-closed when schema is absent. Migration `088_policy_change_control.sql` remains the **DEMO** operator path (`ocntwbxarpjeixdnzide`). Production enablement uses `137_production_policy_change_control.sql` on `bztwutzprwsdrtqdpymf` **only after explicit operator approval** — applying schema does not adopt policy versions or activate production.
 
 ---
 
@@ -38,7 +38,7 @@ Partners can evolve eligibility policies over time without silently changing wha
 
 ## Production schema availability
 
-Until `136_production_policy_change_control.sql` is applied on production (`bztwutzprwsdrtqdpymf`), Launchpad Policies routes fail closed with `policy_schema_unavailable`. Production binaries must not query missing relations.
+Until `137_production_policy_change_control.sql` is applied on production (`bztwutzprwsdrtqdpymf`), Launchpad Policies routes fail closed with `policy_schema_unavailable`. Production binaries must not query missing relations.
 
 | Route | Missing 088 schema |
 |---|---|
@@ -98,7 +98,7 @@ Do not apply this file to MAIN / Production.
 Authorized target: production Supabase `bztwutzprwsdrtqdpymf`.
 
 1. Confirm prerequisites: migration 055 immutability index present; migration 122 L0 v2 active; Good Trouble app still pins v1.
-2. Apply `supabase/migrations/136_production_policy_change_control.sql` in SQL Editor (idempotent).
+2. Apply `supabase/migrations/137_production_policy_change_control.sql` in SQL Editor (idempotent).
 3. Run post-apply verification queries (below).
 4. Sign into Launchpad as Good Trouble partner → Policies → **Adopt v2** (or `POST …/policies` with `{ "action": "adopt", "version": 2 }`).
 5. Confirm `partner_launchpad_applications.policy_version = 2` and adoption audit row exists.

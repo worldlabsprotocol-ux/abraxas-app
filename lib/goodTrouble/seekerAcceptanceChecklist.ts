@@ -1,6 +1,6 @@
 // FILE: lib/goodTrouble/seekerAcceptanceChecklist.ts
 // Physical Solana Seeker acceptance checklist for canonical Good Trouble age_eligible_21 purchase.
-// Manual steps — run on-device with production credentials after preflight passes.
+// Manual steps — run on-device with sandbox credentials after preflight passes.
 
 import {
   GOOD_TROUBLE_CANONICAL_HANDOFF,
@@ -100,7 +100,7 @@ export function buildSeekerAcceptanceChecklist(): SeekerAcceptanceCheck[] {
       section: "PARTNER_HANDOFF",
       label: "Partner creates hosted handoff server-side",
       steps: [
-        `POST ${ctx.hostedOrigin}${GOOD_TROUBLE_CANONICAL_HANDOFF.endpoint} with abx_live_* key.`,
+        `POST ${ctx.hostedOrigin}${GOOD_TROUBLE_CANONICAL_HANDOFF.endpoint} with abx_test_* sandbox key.`,
         "Body: { runtime: universal_https, binding_id: <age_21_retail binding> }.",
         "Redirect holder to hosted_url only — never embed API key in client.",
       ],
@@ -153,7 +153,7 @@ export function buildSeekerAcceptanceChecklist(): SeekerAcceptanceCheck[] {
       label: "Narrow signed receipt issued after policy pass",
       steps: [
         "After consent, holder sees DecisionReceiptCard with age_eligible_21.",
-        "Confirm receipt has production_usable, signature_valid, currently_valid.",
+        "Confirm receipt has signature_valid and currently_valid (sandbox receipt; production_usable not required).",
         "Tap Return to Good Trouble explicitly (no auto-redirect before review).",
       ],
       expected: `Callback ${ctx.callbackUrl} receives receipt_id and gtv; no DOB, ID images, or email in receipt.`,
@@ -166,7 +166,7 @@ export function buildSeekerAcceptanceChecklist(): SeekerAcceptanceCheck[] {
       label: "Partner verifies receipt server-side before access",
       steps: [
         "Good Trouble backend calls GET /api/receipts/{receipt_id}/public.",
-        "Run AbraxasPartnerKit.verifyForAction with production binding.",
+        "Run AbraxasPartnerKit.verifyForAction with sandbox binding and policyVersion pin.",
         "Record permit/deny access decision with request correlation.",
       ],
       expected: "permit only when signature_valid, approved, active, and policy/binding match.",
@@ -257,6 +257,16 @@ export function buildSeekerAcceptanceChecklist(): SeekerAcceptanceCheck[] {
       notes: null,
     },
   ];
+}
+
+/** Sandbox Seeker checks must never require live credentials or production-usable receipts. */
+export function seekerChecklistRequiresLiveCredentials(checks: SeekerAcceptanceCheck[]): boolean {
+  const serialized = JSON.stringify(checks);
+  if (serialized.includes("abx_live_")) return true;
+  const lower = serialized.toLowerCase();
+  if (lower.includes("production_usable not required")) return false;
+  return /\bproduction[_-]?usable\b/.test(lower)
+    && /\b(must have|must include|requires|required)\b/.test(lower);
 }
 
 export function seekerChecklistSummary(checks: SeekerAcceptanceCheck[]): {

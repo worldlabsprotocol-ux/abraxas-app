@@ -13,11 +13,25 @@ export interface OperationalActivationCheck {
 export interface OperationalActivationReport {
   generated_at: string;
   target_supabase_project_ref: string;
+  /** Prerequisites met to begin production activation review — not the same as activation complete. */
   ready_for_production_activation: boolean;
+  /** Production credential issued, activation timestamp set, and environment promoted. */
+  production_activation_complete: boolean;
   ready_for_sandbox_proof: boolean;
   checks: OperationalActivationCheck[];
   founder_actions: string[];
 }
+
+const ACTIVATION_PREREQUISITE_CHECK_IDS = [
+  "migration_122_l0_policy",
+  "launchpad_application",
+  "policy_version_pin",
+  "callback_allowlist",
+  "hosted_handoff_contract",
+  "sandbox_credential",
+  "sandbox_readiness",
+  "sandbox_proof_executed",
+] as const;
 
 /** Build checklist from evaluated readiness evidence (read-only inputs). */
 export function buildOperationalActivationReport(input: {
@@ -151,11 +165,20 @@ export function buildOperationalActivationReport(input: {
     "Fix .env.local Supabase anon key mismatch: NEXT_PUBLIC_SUPABASE_URL points to bztwutzprwsdrtqdpymf but anon key JWT ref is ocntwbxarpjeixdnzide.",
   );
 
-  const blocked = checks.filter((c) => c.status === "BLOCKED").length;
+  const production_activation_complete = input.productionActivated
+    && input.productionApiKeyPresent
+    && input.launchpadEnvironment === "production";
+
+  const ready_for_production_activation = ACTIVATION_PREREQUISITE_CHECK_IDS.every((id) => {
+    const check = checks.find((item) => item.id === id);
+    return check?.status === "PASS";
+  });
+
   return {
     generated_at: new Date().toISOString(),
     target_supabase_project_ref: input.supabaseProjectRef,
-    ready_for_production_activation: blocked === 0,
+    ready_for_production_activation,
+    production_activation_complete,
     ready_for_sandbox_proof: input.sandboxReadinessReady && input.sandboxCredentialActive,
     checks,
     founder_actions,

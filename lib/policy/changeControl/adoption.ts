@@ -6,11 +6,21 @@ import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
 import { getPartnerPolicyAtVersion } from "@/lib/policy/getPolicy";
 import { PolicyChangeControlError } from "@/lib/policy/changeControl/codes";
 import { evaluatePolicyVersionGate } from "@/lib/policy/changeControl/issuance";
-import { appendPolicyLifecycleAudit } from "@/lib/policy/changeControl/audit";
 import {
   assertPolicyChangeControlSchemaReady,
   isPolicySchemaMissingError,
 } from "@/lib/policy/changeControl/schemaReady";
+
+const ADOPT_RPC = "partner_policy_adopt_version_atomic";
+
+type AdoptRpcResult = {
+  ok?: boolean;
+  code?: string;
+  application?: LaunchpadApplicationRow;
+  from_version?: number;
+  to_version?: number;
+  idempotent_replay?: boolean;
+};
 
 export async function adoptPolicyVersionForApplication(input: {
   application: LaunchpadApplicationRow;
@@ -46,65 +56,41 @@ export async function adoptPolicyVersionForApplication(input: {
   await assertPolicyChangeControlSchemaReady();
 
   const sb = requireSupabaseAdmin();
-  const { data: updated, error: updateError } = await sb
-    .from("partner_launchpad_applications")
-    .update({ policy_version: input.toVersion, updated_at: new Date().toISOString() })
-    .eq("id", app.id)
-    .eq("partner_id", app.partner_id)
-    .eq("policy_id", app.policy_id)
-    .eq("policy_version", app.policy_version)
-    .select("*")
-    .maybeSingle();
-
-  if (updateError) throw new Error("policy_adoption_update_failed");
-  if (!updated) {
-    throw new PolicyChangeControlError("policy_version_mismatched", "Application pin changed concurrently");
-  }
-
-  const { error: bindingError } = await sb
-    .from("partner_launchpad_application_policies")
-    .update({
-      policy_version: input.toVersion,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("application_id", app.id)
-    .eq("partner_id", app.partner_id)
-    .eq("policy_id", app.policy_id)
-    .eq("binding_role", "primary");
-  if (bindingError && !isPolicySchemaMissingError(bindingError)) {
-    throw new Error("policy_adoption_binding_sync_failed");
-  }
-
-  const { error: adoptionError } = await sb.from("partner_policy_adoptions").insert({
-    application_id: app.id,
-    partner_id: app.partner_id,
-    policy_id: app.policy_id,
-    from_version: app.policy_version,
-    to_version: input.toVersion,
-    actor_id: input.actorId ?? null,
+  const { data, error } = await sb.rpc(ADOPT_RPC, {
+    p_application_id: app.id,
+    p_partner_id: app.partner_id,
+    p_policy_id: app.policy_id,
+    p_from_version: app.policy_version,
+    p_to_version: input.toVersion,
+    p_actor_id: input.actorId ?? null,
   });
-  if (adoptionError && !adoptionError.message.toLowerCase().includes("duplicate")) {
-    if (isPolicySchemaMissingError(adoptionError)) {
+
+  if (error) {
+    if (isPolicySchemaMissingError(error)) {
       throw new PolicyChangeControlError("policy_schema_unavailable");
+    }
+    throw new Error("policy_adoption_rpc_failed");
+  }
+
+  const result = (data ?? {}) as AdoptRpcResult;
+  if (!result.ok) {
+    if (result.code === "policy_version_mismatched") {
+      throw new PolicyChangeControlError("policy_version_mismatched", "Application pin changed concurrently");
+    }
+    if (result.code === "not_found") {
+      throw new PolicyChangeControlError("policy_version_unknown");
     }
     throw new Error("policy_adoption_write_failed");
   }
 
-  await appendPolicyLifecycleAudit({
-    policyId: app.policy_id,
-    version: input.toVersion,
-    partnerId: app.partner_id,
-    eventType: "adopted",
-    actorId: input.actorId,
-    applicationId: app.id,
-    fromVersion: app.policy_version,
-    toVersion: input.toVersion,
-  });
+  if (!result.application) {
+    throw new Error("policy_adoption_rpc_failed");
+  }
 
   return {
-    application: updated as LaunchpadApplicationRow,
-    from_version: app.policy_version,
-    to_version: input.toVersion,
-    idempotent_replay: false,
+    application: result.application,
+    from_version: result.from_version ?? app.policy_version,
+    to_version: result.to_version ?? input.toVersion,
+    idempotent_replay: result.idempotent_replay === true,
   };
 }

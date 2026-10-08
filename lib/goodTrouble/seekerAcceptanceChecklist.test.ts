@@ -9,6 +9,7 @@ import {
 import {
   buildSeekerAcceptanceChecklist,
   buildSeekerAcceptanceContext,
+  seekerChecklistRequiresLiveCredentials,
   seekerChecklistSummary,
   SEEKER_ACCEPTANCE_SECTION_IDS,
 } from "@/lib/goodTrouble/seekerAcceptanceChecklist";
@@ -47,5 +48,11 @@ describe("seekerAcceptanceChecklist", () => {
   it("marks checklist complete only when all checks pass", () => {
     const checks = buildSeekerAcceptanceChecklist().map((c) => ({ ...c, status: "pass" as const }));
     expect(seekerChecklistSummary(checks).complete).toBe(true);
+  });
+
+  it("never requires live credentials or production-usable receipts", () => {
+    const checks = buildSeekerAcceptanceChecklist();
+    expect(seekerChecklistRequiresLiveCredentials(checks)).toBe(false);
+    expect(JSON.stringify(checks)).not.toMatch(/abx_live_/);
   });
 });

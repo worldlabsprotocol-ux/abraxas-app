@@ -1,4 +1,4 @@
--- 136_production_policy_change_control.sql
+-- 137_production_policy_change_control.sql
 -- Production enablement for Policy Change Control (088-equivalent schema).
 --
 -- Operator apply ONLY to production Supabase bztwutzprwsdrtqdpymf after explicit approval.
@@ -26,7 +26,7 @@ begin;
 do $$
 begin
   if to_regclass('public.partner_policies') is null then
-    raise exception '136: partner_policies missing — apply 055 first';
+    raise exception '137: partner_policies missing — apply 055 first';
   end if;
 
   if not exists (
@@ -36,11 +36,11 @@ begin
        and tablename = 'partner_policies'
        and indexname = 'partner_policies_one_active_per_id'
   ) then
-    raise exception '136: partner_policies_one_active_per_id missing — apply 055 first';
+    raise exception '137: partner_policies_one_active_per_id missing — apply 055 first';
   end if;
 
   if to_regclass('public.partner_launchpad_applications') is null then
-    raise exception '136: partner_launchpad_applications missing — apply 084 first';
+    raise exception '137: partner_launchpad_applications missing — apply 084 first';
   end if;
 
   if exists (
@@ -56,7 +56,7 @@ begin
     select 1 from information_schema.tables
      where table_schema = 'public' and table_name = 'partner_policy_adoptions'
   ) then
-    raise notice '136: Policy Change Control schema already present — idempotent no-op';
+    raise notice '137: Policy Change Control schema already present — idempotent no-op';
   end if;
 end $$;
 
@@ -262,3 +262,162 @@ commit;
 -- select column_name from information_schema.columns
 --  where table_schema = 'public' and table_name = 'partner_policies' and column_name = 'deprecate_effective_at';
 -- select to_regclass('public.partner_policy_lifecycle_audit'), to_regclass('public.partner_policy_adoptions');
+
+-- ── Atomic policy version adoption (single transaction) ─────────
+begin;
+
+create or replace function public.partner_policy_adopt_version_atomic(
+  p_application_id uuid,
+  p_partner_id text,
+  p_policy_id text,
+  p_from_version int,
+  p_to_version int,
+  p_actor_id text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+  v_app public.partner_launchpad_applications%rowtype;
+  v_now timestamptz := pg_catalog.now();
+begin
+  if p_application_id is null or p_partner_id is null or p_policy_id is null then
+    return jsonb_build_object('ok', false, 'code', 'invalid_input');
+  end if;
+  if p_from_version is null or p_to_version is null or p_to_version < 1 then
+    return jsonb_build_object('ok', false, 'code', 'invalid_input');
+  end if;
+
+  select *
+    into v_app
+    from public.partner_launchpad_applications
+   where id = p_application_id
+     and partner_id = p_partner_id
+     and policy_id = p_policy_id
+   for update;
+
+  if not found then
+    return jsonb_build_object('ok', false, 'code', 'not_found');
+  end if;
+
+  if v_app.policy_version = p_to_version then
+    return jsonb_build_object(
+      'ok', true,
+      'code', 'idempotent_replay',
+      'application', to_jsonb(v_app),
+      'from_version', v_app.policy_version,
+      'to_version', p_to_version,
+      'idempotent_replay', true
+    );
+  end if;
+
+  if v_app.policy_version <> p_from_version then
+    return jsonb_build_object('ok', false, 'code', 'policy_version_mismatched');
+  end if;
+
+  update public.partner_launchpad_applications
+     set policy_version = p_to_version,
+         updated_at = v_now
+   where id = p_application_id
+     and partner_id = p_partner_id
+     and policy_id = p_policy_id
+     and policy_version = p_from_version;
+
+  if not found then
+    return jsonb_build_object('ok', false, 'code', 'policy_version_mismatched');
+  end if;
+
+  if to_regclass('public.partner_launchpad_application_policies') is not null then
+    update public.partner_launchpad_application_policies
+       set policy_version = p_to_version,
+           updated_at = v_now
+     where application_id = p_application_id
+       and partner_id = p_partner_id
+       and policy_id = p_policy_id
+       and binding_role = 'primary';
+  end if;
+
+  insert into public.partner_policy_adoptions (
+    application_id,
+    partner_id,
+    policy_id,
+    from_version,
+    to_version,
+    actor_id
+  ) values (
+    p_application_id,
+    p_partner_id,
+    p_policy_id,
+    p_from_version,
+    p_to_version,
+    p_actor_id
+  );
+
+  insert into public.partner_policy_lifecycle_audit (
+    policy_id,
+    version,
+    partner_id,
+    event_type,
+    actor_type,
+    actor_id,
+    application_id,
+    from_version,
+    to_version
+  ) values (
+    p_policy_id,
+    p_to_version,
+    p_partner_id,
+    'adopted',
+    'partner',
+    p_actor_id,
+    p_application_id,
+    p_from_version,
+    p_to_version
+  );
+
+  select *
+    into v_app
+    from public.partner_launchpad_applications
+   where id = p_application_id;
+
+  return jsonb_build_object(
+    'ok', true,
+    'code', 'adopted',
+    'application', to_jsonb(v_app),
+    'from_version', p_from_version,
+    'to_version', p_to_version,
+    'idempotent_replay', false
+  );
+exception
+  when unique_violation then
+    if exists (
+      select 1
+        from public.partner_launchpad_applications
+       where id = p_application_id
+         and policy_version = p_to_version
+    ) then
+      select *
+        into v_app
+        from public.partner_launchpad_applications
+       where id = p_application_id;
+      return jsonb_build_object(
+        'ok', true,
+        'code', 'idempotent_replay',
+        'application', to_jsonb(v_app),
+        'from_version', p_from_version,
+        'to_version', p_to_version,
+        'idempotent_replay', true
+      );
+    end if;
+    return jsonb_build_object('ok', false, 'code', 'adoption_write_failed');
+  when others then
+    return jsonb_build_object('ok', false, 'code', 'adoption_write_failed');
+end;
+$$;
+
+revoke all on function public.partner_policy_adopt_version_atomic(uuid, text, text, int, int, text) from public, anon, authenticated;
+grant execute on function public.partner_policy_adopt_version_atomic(uuid, text, text, int, int, text) to service_role;
+
+commit;

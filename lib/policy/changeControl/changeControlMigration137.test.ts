@@ -2,9 +2,9 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const MIGRATION_PATH = resolve(process.cwd(), "supabase/migrations/136_production_policy_change_control.sql");
+const MIGRATION_PATH = resolve(process.cwd(), "supabase/migrations/137_production_policy_change_control.sql");
 
-describe("136_production_policy_change_control migration contract", () => {
+describe("137_production_policy_change_control migration contract", () => {
   const sql = readFileSync(MIGRATION_PATH, "utf8");
 
   it("targets production with explicit operator approval gate", () => {
@@ -34,5 +34,12 @@ describe("136_production_policy_change_control migration contract", () => {
   it("documents manual rollback steps", () => {
     expect(sql).toContain("Rollback (manual");
     expect(sql).toContain("drop table if exists public.partner_policy_adoptions");
+  });
+
+  it("defines atomic adoption RPC granted to service_role only", () => {
+    expect(sql).toContain("partner_policy_adopt_version_atomic");
+    expect(sql).toContain("partner_policy_lifecycle_audit");
+    expect(sql.toLowerCase()).toContain("grant execute on function public.partner_policy_adopt_version_atomic");
+    expect(sql.toLowerCase()).toContain("revoke all on function public.partner_policy_adopt_version_atomic");
   });
 });

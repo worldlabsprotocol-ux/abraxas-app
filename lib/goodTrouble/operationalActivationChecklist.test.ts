@@ -29,5 +29,31 @@ describe("operationalActivationChecklist", () => {
     expect(report.ready_for_production_activation).toBe(false);
     expect(report.ready_for_sandbox_proof).toBe(true);
     expect(report.founder_actions.some((a) => a.includes("policy_version"))).toBe(true);
+    expect(report.production_activation_complete).toBe(false);
+  });
+
+  it("distinguishes activation readiness from completed production activation", () => {
+    const report = buildOperationalActivationReport({
+      supabaseProjectRef: "bztwutzprwsdrtqdpymf",
+      migration122Applied: true,
+      activePolicyVersion: 2,
+      activePolicyL0: true,
+      launchpadAppExists: true,
+      launchpadAppPolicyVersion: 2,
+      launchpadEnvironment: "sandbox",
+      productionActivated: false,
+      productionApiKeyPresent: false,
+      sandboxCredentialActive: true,
+      callbackAllowlisted: true,
+      callbackUrl: "https://www.goodtroublecanna.com/age-verification-result",
+      policyId: "good-trouble-age_21_retail-v1",
+      partnerHandoffFailClosed: true,
+      sandboxReadinessReady: true,
+      verifiedReceiptCount: 1,
+    });
+
+    expect(report.ready_for_production_activation).toBe(true);
+    expect(report.production_activation_complete).toBe(false);
+    expect(report.checks.find((c) => c.id === "production_activation")?.status).toBe("BLOCKED");
   });
 });
