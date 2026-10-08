@@ -55,6 +55,9 @@ function PassportPageInner() {
   const email = session?.email ?? "";
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [handoffCompleting, setHandoffCompleting] = useState(
+    () => Boolean(searchParams.get(NATIVE_HANDOFF_CODE_QUERY)),
+  );
   const [partnerConsentDismissed, setPartnerConsentDismissed] = useState(false);
   const [showSuccessPanel, setShowSuccessPanel] = useState(false);
 
@@ -84,8 +87,12 @@ function PassportPageInner() {
 
   useEffect(() => {
     const handoffCode = searchParams.get(NATIVE_HANDOFF_CODE_QUERY);
-    if (!handoffCode) return;
+    if (!handoffCode) {
+      setHandoffCompleting(false);
+      return;
+    }
 
+    setHandoffCompleting(true);
     void consumeNativeHandoffFromQuery(searchParams).then((restored) => {
       const params = new URLSearchParams(searchParams.toString());
       params.delete(NATIVE_HANDOFF_CODE_QUERY);
@@ -98,6 +105,8 @@ function PassportPageInner() {
       }
 
       refreshSession();
+    }).finally(() => {
+      setHandoffCompleting(false);
     });
   }, [searchParams, refreshSession]);
 
@@ -410,6 +419,7 @@ function PassportPageInner() {
             <PassportCustomerView
               walletDone={walletDone}
               authLoading={authLoading}
+              handoffCompleting={handoffCompleting}
               suiAddress={suiAddress}
               email={email}
               setup={setup}
