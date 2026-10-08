@@ -160,6 +160,16 @@ describe("launchpad policy change control routes", () => {
     expect(body.idempotent_replay).toBe(false);
   });
 
+  it("rejects adoption for applications owned by another partner", async () => {
+    appMock.mockResolvedValue(null);
+    const res = await POST(new NextRequest("http://localhost/api/launchpad/applications/app-1/policies", {
+      method: "POST",
+      body: JSON.stringify({ action: "adopt", version: 2 }),
+    }), { params: { id: "app-1" } });
+    expect(res.status).toBe(404);
+    expect(adoptMock).not.toHaveBeenCalled();
+  });
+
   it("returns fixture results labeled simulated and without PII", async () => {
     fixturePolicyMock.mockResolvedValue({
       id: "policy-v1",

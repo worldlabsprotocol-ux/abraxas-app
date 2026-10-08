@@ -623,6 +623,17 @@ export async function evaluateGoodTroublePurchaseFlow(input: {
     throw new Error("purchase_age_eligibility_policy_required");
   }
 
+  if (
+    input.expectedPolicyVersion != null
+    && input.expectedPolicyVersion !== policy.version
+  ) {
+    return {
+      next: "denied",
+      reason_codes: ["policy_version_not_adopted"],
+      policy_version: input.expectedPolicyVersion,
+    };
+  }
+
   const attestationPurpose = expectedSelfAttestationPurpose(policy.rules_json);
   const existingAttestation = await getActiveSelfAttestations({
     holderRef: subject,

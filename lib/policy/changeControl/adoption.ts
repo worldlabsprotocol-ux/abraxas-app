@@ -61,6 +61,20 @@ export async function adoptPolicyVersionForApplication(input: {
     throw new PolicyChangeControlError("policy_version_mismatched", "Application pin changed concurrently");
   }
 
+  const { error: bindingError } = await sb
+    .from("partner_launchpad_application_policies")
+    .update({
+      policy_version: input.toVersion,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("application_id", app.id)
+    .eq("partner_id", app.partner_id)
+    .eq("policy_id", app.policy_id)
+    .eq("binding_role", "primary");
+  if (bindingError && !isPolicySchemaMissingError(bindingError)) {
+    throw new Error("policy_adoption_binding_sync_failed");
+  }
+
   const { error: adoptionError } = await sb.from("partner_policy_adoptions").insert({
     application_id: app.id,
     partner_id: app.partner_id,
