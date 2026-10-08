@@ -92,8 +92,7 @@ export async function POST(req: NextRequest) {
     const preview = resolved.preview;
     if ((partnerId && partnerId !== preview.partner_id)
       || (policyId && policyId !== preview.policy_id)
-      || (returnUrl && returnUrl !== preview.return_url)
-      || (purpose && purpose !== preview.purpose)) {
+      || (purpose && purpose !== preview.purpose.trim())) {
       return recordHolderSessionDiagnostic(NextResponse.json(
         { error: "Hosted verification binding mismatch", code: "hosted_binding_mismatch" },
         { status: 400, headers: NO_STORE_HEADERS },
@@ -101,8 +100,10 @@ export async function POST(req: NextRequest) {
     }
     partnerId = preview.partner_id;
     policyId = preview.policy_id;
+    // Callback always comes from the reviewed handoff. The client hint may be
+    // presentation-normalized (for example, a Good Trouble browse URL).
     returnUrl = preview.return_url;
-    body.purpose = preview.purpose;
+    body.purpose = preview.purpose.trim();
   } else if (verifyRequest) {
     try {
       const sb = requireSupabaseAdmin();

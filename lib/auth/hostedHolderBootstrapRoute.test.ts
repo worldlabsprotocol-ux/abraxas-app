@@ -154,6 +154,18 @@ describe("POST /api/auth/hosted-holder/bootstrap", () => {
     expect(mockCreateHosted).not.toHaveBeenCalled();
   });
 
+  it("uses the server-bound callback instead of a client return URL hint", async () => {
+    const { POST } = await import("@/app/api/auth/hosted-holder/bootstrap/route");
+    const res = await POST(new NextRequest("http://localhost/api/auth/hosted-holder/bootstrap", {
+      method: "POST", body: JSON.stringify({ ...opaqueBody, return_url: "https://evil.example/return" }),
+    }));
+    expect(res.status).toBe(200);
+    expect(mockIsAllowed).toHaveBeenCalledWith(
+      GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+      "https://www.goodtroublecanna.com/age-verification-result",
+    );
+  });
+
   it("reuses a server-authenticated OAuth session without creating a hosted identity", async () => {
     mockResolveExisting.mockResolvedValue({ kind: "oauth", suiAddress: "0x" + "b".repeat(64), provider: "google" });
     const { POST } = await import("@/app/api/auth/hosted-holder/bootstrap/route");
