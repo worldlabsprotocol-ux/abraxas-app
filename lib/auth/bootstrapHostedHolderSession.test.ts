@@ -38,6 +38,7 @@ describe("hosted holder bootstrap confirmation", () => {
       ok: true, sui_address: `0x${"a".repeat(64)}`, session_kind: "hosted", provider: "abraxas_hosted",
     }), { status: 200 })));
     mockProbe.mockResolvedValue(true);
+    mockRestore.mockResolvedValue({ suiAddress: `0x${"a".repeat(64)}`, provider: "abraxas_hosted" });
     expect((await bootstrapHostedHolderSession(input)).ok).toBe(true);
     expect(mockSave).toHaveBeenCalledOnce();
   });
@@ -54,5 +55,15 @@ describe("hosted holder bootstrap confirmation", () => {
     mockRestore.mockResolvedValue({ suiAddress: `0x${"b".repeat(64)}`, provider: "google" });
     expect((await bootstrapHostedHolderSession(input)).ok).toBe(true);
     expect(mockSave).toHaveBeenCalledOnce();
+  });
+
+  it("refuses a valid cookie belonging to another holder", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      ok: true, sui_address: `0x${"a".repeat(64)}`, session_kind: "hosted", provider: "abraxas_hosted",
+    }), { status: 200 })));
+    mockProbe.mockResolvedValue(true);
+    mockRestore.mockResolvedValue({ suiAddress: `0x${"b".repeat(64)}`, provider: "google" });
+    expect((await bootstrapHostedHolderSession(input)).ok).toBe(false);
+    expect(mockSave).not.toHaveBeenCalled();
   });
 });

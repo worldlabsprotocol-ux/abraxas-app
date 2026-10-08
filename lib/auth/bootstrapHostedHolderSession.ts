@@ -54,13 +54,14 @@ export async function bootstrapHostedHolderSession(
       return { ok: false, error: "Browser session could not be confirmed" };
     }
 
+    const restored = await restoreUserSessionFromBrowserSession();
+    if (!restored || restored.suiAddress !== data.sui_address) {
+      return { ok: false, error: "Browser session did not match the hosted request" };
+    }
+
     if (data.session_kind === "oauth") {
-      const restored = await restoreUserSessionFromBrowserSession();
-      if (restored) {
-        saveUserSession(restored);
-        return { ok: true, suiAddress: restored.suiAddress };
-      }
-      return { ok: false, error: "Existing account session could not be restored" };
+      saveUserSession(restored);
+      return { ok: true, suiAddress: restored.suiAddress };
     }
 
     const provider = data.provider === "abraxas_hosted"
