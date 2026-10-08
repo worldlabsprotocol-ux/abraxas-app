@@ -25,6 +25,7 @@ export function useHostedHolderBootstrap(input: {
 }) {
   const [state, setState] = useState<HostedHolderBootstrapState>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const attemptedRef = useRef(false);
 
   const eligible = isHostedHolderBootstrapEligible({
@@ -34,10 +35,7 @@ export function useHostedHolderBootstrap(input: {
   });
 
   useEffect(() => {
-    if (!input.enabled || input.authLoading || input.suiAddress) {
-      if (input.suiAddress) setState("ready");
-      return;
-    }
+    if (!input.enabled || input.authLoading) return;
 
     if (!eligible) {
       setState("ineligible");
@@ -49,13 +47,17 @@ export function useHostedHolderBootstrap(input: {
     setState("pending");
     setError(null);
 
-    void bootstrapHostedHolderSession({
-      partnerId: input.partnerId,
-      policyId: input.policyId,
-      returnUrl: input.returnUrl,
-      purpose: input.purpose,
-      verifyRequestId: input.verifyRequestId,
-    }).then((result) => {
+    void (async () => {
+      // A cached client identity is not proof that the HttpOnly API session
+      // survived a browser-context change. Bootstrap always checks the server's
+      // handoff and cookie before this holder can proceed.
+      const result = await bootstrapHostedHolderSession({
+        partnerId: input.partnerId,
+        policyId: input.policyId,
+        returnUrl: input.returnUrl,
+        purpose: input.purpose,
+        verifyRequestId: input.verifyRequestId,
+      });
       if (result.ok) {
         setState("ready");
         input.onBootstrapped?.(result.suiAddress);
@@ -68,7 +70,7 @@ export function useHostedHolderBootstrap(input: {
       setState("failed");
       setError(result.error);
       attemptedRef.current = false;
-    });
+    })();
   }, [
     input.enabled,
     input.authLoading,
@@ -80,12 +82,14 @@ export function useHostedHolderBootstrap(input: {
     input.verifyRequestId,
     input.onBootstrapped,
     eligible,
+    retryCount,
   ]);
 
   const retry = () => {
     attemptedRef.current = false;
     setState("idle");
     setError(null);
+    setRetryCount((count) => count + 1);
   };
 
   return {

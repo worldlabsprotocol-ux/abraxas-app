@@ -36,6 +36,7 @@ import {
   isAgeEligibilityOnlyPolicy,
 } from "@/lib/policy/selfAttestationGuards";
 import { getActiveSelfAttestations } from "@/lib/assurance/selfAttestation/selfAttestationLedger";
+import { recordHolderSessionDiagnostic } from "@/lib/auth/holderSessionDiagnostic";
 
 export const dynamic = "force-dynamic";
 
@@ -46,12 +47,12 @@ function failStatus(code: string): number {
 export async function GET(request: NextRequest) {
   const session = await requireBrowserSession(request);
   if (!session.ok) {
-    return NextResponse.json({ error: session.error, method_qualified: false, issuedReceipt: false }, { status: session.status });
+    return recordHolderSessionDiagnostic(NextResponse.json({ error: session.error, method_qualified: false, issuedReceipt: false }, { status: session.status }), "method_qualification", "authentication");
   }
 
   const verifyRequest = request.nextUrl.searchParams.get("verify_request")?.trim() ?? "";
   if (!verifyRequest) {
-    return NextResponse.json({ ok: false, code: "missing", method_qualified: false, issuedReceipt: false }, { status: 400 });
+    return recordHolderSessionDiagnostic(NextResponse.json({ ok: false, code: "missing", method_qualified: false, issuedReceipt: false }, { status: 400 }), "method_qualification", "invalid_request");
   }
 
   const bound = await resolveBoundPartnerContinuation({
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest) {
     }, { status: failStatus(bound.code) });
     if (bound.clearBinding) clearPartnerContinueBindingCookie(res);
     clearPartnerMethodQualificationCookie(res);
-    return res;
+    return recordHolderSessionDiagnostic(res, "method_qualification", bound.code === "stale" ? "expired" : bound.code === "replay" ? "replay" : bound.code === CONTINUATION_STORE_UNAVAILABLE ? "unavailable" : "binding");
   }
 
   const qToken = request.cookies.get(PARTNER_METHOD_QUALIFICATION_COOKIE)?.value;
@@ -101,13 +102,13 @@ export async function GET(request: NextRequest) {
     reuse,
   });
   if (!matched) clearPartnerMethodQualificationCookie(res);
-  return res;
+  return recordHolderSessionDiagnostic(res, "method_qualification", "ok");
 }
 
 export async function POST(request: NextRequest) {
   const session = await requireBrowserSession(request);
   if (!session.ok) {
-    return NextResponse.json({ error: session.error, method_qualified: false, issuedReceipt: false }, { status: session.status });
+    return recordHolderSessionDiagnostic(NextResponse.json({ error: session.error, method_qualified: false, issuedReceipt: false }, { status: session.status }), "method_qualification", "authentication");
   }
 
   let body: Record<string, unknown> = {};
@@ -145,7 +146,7 @@ export async function POST(request: NextRequest) {
     }, { status: failStatus(bound.code) });
     if (bound.clearBinding) clearPartnerContinueBindingCookie(res);
     clearPartnerMethodQualificationCookie(res);
-    return res;
+    return recordHolderSessionDiagnostic(res, "method_qualification", bound.code === "stale" ? "expired" : bound.code === "replay" ? "replay" : bound.code === CONTINUATION_STORE_UNAVAILABLE ? "unavailable" : "binding");
   }
 
   let existingProofCompatible = false;
@@ -267,5 +268,5 @@ export async function POST(request: NextRequest) {
   });
   if (token) attachPartnerMethodQualificationCookie(res, token);
   if (rebound) attachPartnerContinueBindingCookie(res, rebound);
-  return res;
+  return recordHolderSessionDiagnostic(res, "method_qualification", "ok");
 }

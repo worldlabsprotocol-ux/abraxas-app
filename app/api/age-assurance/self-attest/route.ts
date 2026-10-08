@@ -9,6 +9,7 @@ import {
 import { assertSelfAttestOrigin } from "@/lib/assurance/selfAttestation/originGuard";
 import { submitSelfAttestation } from "@/lib/assurance/selfAttestation/submitSelfAttestation";
 import { enforcePartnerFlowRateLimit } from "@/lib/partner/partnerFlowRouteGuard";
+import { recordHolderSessionDiagnostic } from "@/lib/auth/holderSessionDiagnostic";
 
 export const dynamic = "force-dynamic";
 
@@ -16,12 +17,12 @@ export async function POST(request: NextRequest) {
   const started = Date.now();
   const origin = assertSelfAttestOrigin(request);
   if (!origin.ok) {
-    return ageAssuranceErrorResponse(origin.code, "Request origin not allowed", 403);
+    return recordHolderSessionDiagnostic(ageAssuranceErrorResponse(origin.code, "Request origin not allowed", 403), "self_attestation", "invalid_request");
   }
 
   const session = await requireAgeAssuranceSession(request);
   if (!session.ok) {
-    return ageAssuranceErrorResponse("auth_required", session.error, session.status);
+    return recordHolderSessionDiagnostic(ageAssuranceErrorResponse("auth_required", session.error, session.status), "self_attestation", "authentication");
   }
 
   const rateLimited = await enforcePartnerFlowRateLimit({
@@ -67,10 +68,10 @@ export async function POST(request: NextRequest) {
   });
 
   if (!result.ok) {
-    return ageAssuranceErrorResponse(result.code, "Self-attestation could not be completed", result.status);
+    return recordHolderSessionDiagnostic(ageAssuranceErrorResponse(result.code, "Self-attestation could not be completed", result.status), "self_attestation", "invalid_request");
   }
 
-  return NextResponse.json({
+  return recordHolderSessionDiagnostic(NextResponse.json({
     ok: true,
     age_band: result.age_band,
     assurance_level: result.assurance_level,
@@ -79,5 +80,5 @@ export async function POST(request: NextRequest) {
     expires_at: result.expires_at,
     ...(result.browse_receipt ? { browse_receipt: result.browse_receipt } : {}),
     ...(result.browse_receipt_id ? { browse_receipt_id: result.browse_receipt_id } : {}),
-  });
+  }), "self_attestation", "ok");
 }

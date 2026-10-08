@@ -13,6 +13,9 @@ import { isAllowedPartnerReturnUrl } from "@/lib/partner/returnUrlAllowlist";
 import { normalizePartnerVerifyInput } from "@/lib/partner/normalizePartnerVerifyInput";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { ensureHostedHolderWalletBinding } from "@/lib/credentials/ensureHostedHolderWalletBinding";
+import { recordHolderSessionDiagnostic } from "@/lib/auth/holderSessionDiagnostic";
+import { isOpaqueVerifyRequest } from "@/lib/partner/productionIntegration/requestCorrelation";
+import { resolveHostedHandoffForContinue } from "@/lib/partner/hostedHandoff/resolveForContinue";
 
 export const dynamic = "force-dynamic";
 
@@ -54,15 +57,15 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400, headers: NO_STORE_HEADERS });
+    return recordHolderSessionDiagnostic(NextResponse.json({ error: "Invalid JSON" }, { status: 400, headers: NO_STORE_HEADERS }), "hosted_bootstrap", "invalid_request");
   }
 
   // Client-provided identity hints are ignored — recovery is cookie-only.
   if (body.sui_address?.trim() || body.suiAddress?.trim()) {
-    return NextResponse.json(
+    return recordHolderSessionDiagnostic(NextResponse.json(
       { error: "Client-provided identity is not accepted", code: "client_identity_rejected" },
       { status: 400, headers: NO_STORE_HEADERS },
-    );
+    ), "hosted_bootstrap", "invalid_request");
   }
 
   let partnerId = (body.relying_party_id ?? body.partner_id ?? "").trim();
@@ -71,7 +74,37 @@ export async function POST(req: NextRequest) {
   const purpose = body.purpose?.trim() || undefined;
   const verifyRequest = body.verify_request?.trim() || undefined;
 
-  if (verifyRequest) {
+  if (verifyRequest && isOpaqueVerifyRequest(verifyRequest)) {
+    const resolved = await resolveHostedHandoffForContinue(verifyRequest);
+    if (!resolved.ok) {
+      const status = resolved.code === "expired" ? 410
+        : resolved.code === "completed" || resolved.code === "cancelled" ? 409
+          : resolved.code === "unavailable" ? 503 : 404;
+      const category = resolved.code === "expired" ? "expired"
+        : resolved.code === "completed" || resolved.code === "cancelled" ? "replay"
+          : resolved.code === "unavailable" ? "unavailable" : "binding";
+      return recordHolderSessionDiagnostic(NextResponse.json(
+        { error: "Hosted verification link is unavailable", code: resolved.code },
+        { status, headers: NO_STORE_HEADERS },
+      ), "hosted_bootstrap", category);
+    }
+
+    const preview = resolved.preview;
+    if ((partnerId && partnerId !== preview.partner_id)
+      || (policyId && policyId !== preview.policy_id)
+      || (purpose && purpose !== preview.purpose.trim())) {
+      return recordHolderSessionDiagnostic(NextResponse.json(
+        { error: "Hosted verification binding mismatch", code: "hosted_binding_mismatch" },
+        { status: 400, headers: NO_STORE_HEADERS },
+      ), "hosted_bootstrap", "binding");
+    }
+    partnerId = preview.partner_id;
+    policyId = preview.policy_id;
+    // Callback always comes from the reviewed handoff. The client hint may be
+    // presentation-normalized (for example, a Good Trouble browse URL).
+    returnUrl = preview.return_url;
+    body.purpose = preview.purpose.trim();
+  } else if (verifyRequest) {
     try {
       const sb = requireSupabaseAdmin();
       const { data } = await sb
@@ -81,15 +114,15 @@ export async function POST(req: NextRequest) {
         .maybeSingle();
 
       if (!data) {
-        return NextResponse.json({ error: "Verification request not found" }, { status: 404, headers: NO_STORE_HEADERS });
+        return recordHolderSessionDiagnostic(NextResponse.json({ error: "Verification request not found" }, { status: 404, headers: NO_STORE_HEADERS }), "hosted_bootstrap", "binding");
       }
 
       if (data.status === "cancelled" || data.status === "decided" || data.status === "expired") {
-        return NextResponse.json({ error: "Verification request is no longer active" }, { status: 409, headers: NO_STORE_HEADERS });
+        return recordHolderSessionDiagnostic(NextResponse.json({ error: "Verification request is no longer active" }, { status: 409, headers: NO_STORE_HEADERS }), "hosted_bootstrap", "replay");
       }
 
       if (data.expires_at && new Date(String(data.expires_at)) < new Date()) {
-        return NextResponse.json({ error: "Verification request expired" }, { status: 409, headers: NO_STORE_HEADERS });
+        return recordHolderSessionDiagnostic(NextResponse.json({ error: "Verification request expired" }, { status: 409, headers: NO_STORE_HEADERS }), "hosted_bootstrap", "expired");
       }
 
       partnerId = String(data.partner_id);
@@ -99,7 +132,7 @@ export async function POST(req: NextRequest) {
         body.purpose = String(data.purpose);
       }
     } catch {
-      return NextResponse.json({ error: "Verification request lookup failed" }, { status: 503, headers: NO_STORE_HEADERS });
+      return recordHolderSessionDiagnostic(NextResponse.json({ error: "Verification request lookup failed" }, { status: 503, headers: NO_STORE_HEADERS }), "hosted_bootstrap", "unavailable");
     }
   }
 
@@ -111,10 +144,10 @@ export async function POST(req: NextRequest) {
   });
 
   if (!normalized.ok) {
-    return NextResponse.json(
+    return recordHolderSessionDiagnostic(NextResponse.json(
       { error: normalized.invalidLinkMessage, code: normalized.code },
       { status: 400, headers: NO_STORE_HEADERS },
-    );
+    ), "hosted_bootstrap", "invalid_request");
   }
 
   partnerId = normalized.params.partnerId;
@@ -126,18 +159,18 @@ export async function POST(req: NextRequest) {
     policyId,
     purpose: normalized.params.purpose,
   })) {
-    return NextResponse.json(
+    return recordHolderSessionDiagnostic(NextResponse.json(
       { error: "Hosted holder bootstrap is not available for this flow", code: "hosted_bootstrap_ineligible" },
       { status: 403, headers: NO_STORE_HEADERS },
-    );
+    ), "hosted_bootstrap", "invalid_request");
   }
 
   const allowed = await isAllowedPartnerReturnUrl(partnerId, returnUrl);
   if (!allowed) {
-    return NextResponse.json(
+    return recordHolderSessionDiagnostic(NextResponse.json(
       { error: "return_url is not allowed for this relying party" },
       { status: 400, headers: NO_STORE_HEADERS },
-    );
+    ), "hosted_bootstrap", "binding");
   }
 
   const existing = await resolveExistingBootstrapBrowserSession(req);
@@ -153,17 +186,23 @@ export async function POST(req: NextRequest) {
       provider: HOSTED_HOLDER_PROVIDER,
       reused: true,
     });
-    await attachHostedHolderBrowserSession(res, existing.suiAddress);
-    return res;
+    const attached = await attachHostedHolderBrowserSession(res, existing.suiAddress);
+    if (!attached) {
+      return recordHolderSessionDiagnostic(NextResponse.json(
+        { error: "Session signing unavailable" },
+        { status: 503, headers: NO_STORE_HEADERS },
+      ), "hosted_bootstrap", "unavailable");
+    }
+    return recordHolderSessionDiagnostic(res, "hosted_bootstrap", "ok");
   }
 
   if (existing?.kind === "oauth") {
-    return bootstrapSuccessResponse({
+    return recordHolderSessionDiagnostic(bootstrapSuccessResponse({
       suiAddress: existing.suiAddress,
       sessionKind: "oauth",
       provider: existing.provider,
       reused: true,
-    });
+    }), "hosted_bootstrap", "ok");
   }
 
   try {
@@ -182,16 +221,16 @@ export async function POST(req: NextRequest) {
 
     const attached = await attachHostedHolderBrowserSession(res, record.suiAddress);
     if (!attached) {
-      return NextResponse.json(
+      return recordHolderSessionDiagnostic(NextResponse.json(
         { error: "Session signing unavailable" },
         { status: 503, headers: NO_STORE_HEADERS },
-      );
+      ), "hosted_bootstrap", "unavailable");
     }
 
-    return res;
+    return recordHolderSessionDiagnostic(res, "hosted_bootstrap", "ok");
   } catch (error) {
     const message = error instanceof Error ? error.message : "hosted_holder_bootstrap_failed";
     const status = message === "hosted_holder_secret_unavailable" ? 503 : 500;
-    return NextResponse.json({ error: message }, { status, headers: NO_STORE_HEADERS });
+    return recordHolderSessionDiagnostic(NextResponse.json({ error: message }, { status, headers: NO_STORE_HEADERS }), "hosted_bootstrap", "unavailable");
   }
 }
