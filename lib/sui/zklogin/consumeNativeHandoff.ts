@@ -14,15 +14,20 @@ import { clearLoginInFlight } from "./loginInFlight";
 import {
   clearNativeConsumeVerifier,
   dispatchNativeHandoffSettled,
+  isTerminalNativeHandoffConsumeStatus,
+  isValidHandoffCode,
   readNativeConsumeVerifier,
 } from "./nativeHandoffClient";
 
-export async function consumeNativeHandoffFromQuery(
-  searchParams: URLSearchParams,
-): Promise<ZkLoginUserSession | null> {
-  const handoffCode = searchParams.get(NATIVE_HANDOFF_CODE_QUERY)?.trim();
-  if (!handoffCode) return null;
+const consumeInflight = new Map<string, Promise<ZkLoginUserSession | null>>();
 
+export function resetNativeHandoffConsumeInflightForTests(): void {
+  consumeInflight.clear();
+}
+
+async function consumeNativeHandoffInternal(
+  handoffCode: string,
+): Promise<ZkLoginUserSession | null> {
   const consumeVerifier = readNativeConsumeVerifier();
   if (!consumeVerifier) {
     logAuthEvent("native_handoff_consume_failed", { errorCode: "missing_consume_verifier" });
@@ -42,7 +47,10 @@ export async function consumeNativeHandoffFromQuery(
   });
 
   if (!res.ok) {
-    logAuthEvent("native_handoff_consume_failed");
+    logAuthEvent("native_handoff_consume_failed", { errorCode: String(res.status) });
+    if (isTerminalNativeHandoffConsumeStatus(res.status)) {
+      clearNativeConsumeVerifier();
+    }
     clearLoginInFlight();
     dispatchNativeHandoffSettled({ ok: false, reason: "consume_rejected" });
     return null;
@@ -62,6 +70,7 @@ export async function consumeNativeHandoffFromQuery(
 
   if (!data.sui_address || !data.id_token || !data.user_salt || !data.randomness || !data.ephemeral_secret_key) {
     logAuthEvent("native_handoff_consume_failed", { errorCode: "incomplete_handoff_payload" });
+    clearNativeConsumeVerifier();
     clearLoginInFlight();
     dispatchNativeHandoffSettled({ ok: false, reason: "incomplete_handoff_payload" });
     return null;
@@ -103,4 +112,20 @@ export async function consumeNativeHandoffFromQuery(
     window.dispatchEvent(new Event("abraxas:zklogin-session"));
   }
   return session;
+}
+
+export async function consumeNativeHandoffFromQuery(
+  searchParams: URLSearchParams,
+): Promise<ZkLoginUserSession | null> {
+  const handoffCode = searchParams.get(NATIVE_HANDOFF_CODE_QUERY)?.trim();
+  if (!handoffCode || !isValidHandoffCode(handoffCode)) return null;
+
+  const inflight = consumeInflight.get(handoffCode);
+  if (inflight) return inflight;
+
+  const promise = consumeNativeHandoffInternal(handoffCode).finally(() => {
+    consumeInflight.delete(handoffCode);
+  });
+  consumeInflight.set(handoffCode, promise);
+  return promise;
 }

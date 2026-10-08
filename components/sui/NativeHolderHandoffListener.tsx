@@ -6,12 +6,14 @@ import { useEffect } from "react";
 import { getNativeHolderOrigin, isNativeHolderApp } from "@/lib/sui/zklogin/holderPlatform";
 import {
   buildPassportHandoffUrl,
+  createNativeHandoffIngressHandler,
   handoffCodeFromSearch,
-  parseHandoffCodeFromUrl,
 } from "@/lib/sui/zklogin/nativeHandoffClient";
 
 function navigateToHandoffCode(code: string): void {
   const target = buildPassportHandoffUrl(code);
+  if (!target) return;
+
   const currentCode = handoffCodeFromSearch(window.location.search);
   const passportPath = `${getNativeHolderOrigin()}/passport`;
   if (currentCode === code && window.location.href.startsWith(passportPath)) {
@@ -26,29 +28,26 @@ export function NativeHolderHandoffListener() {
 
     let cancelled = false;
     const cleanups: Array<() => void> = [];
+    const ingress = createNativeHandoffIngressHandler(navigateToHandoffCode);
 
     void (async () => {
       const { App } = await import("@capacitor/app");
 
-      const launch = await App.getLaunchUrl().catch(() => undefined);
-      if (!cancelled && launch?.url) {
-        const code = parseHandoffCodeFromUrl(launch.url);
-        if (code) navigateToHandoffCode(code);
-      }
-
       const openSub = await App.addListener("appUrlOpen", ({ url }) => {
-        const code = parseHandoffCodeFromUrl(url);
-        if (code) navigateToHandoffCode(code);
+        ingress.handleUrl(url);
       });
       cleanups.push(() => openSub.remove());
 
+      const launch = await App.getLaunchUrl().catch(() => undefined);
+      if (!cancelled && launch?.url) {
+        ingress.handleUrl(launch.url);
+      }
+
       const stateSub = await App.addListener("appStateChange", ({ isActive }) => {
         if (!isActive) return;
-        const code = handoffCodeFromSearch(window.location.search);
-        if (code) return;
+        if (handoffCodeFromSearch(window.location.search)) return;
         void App.getLaunchUrl().then((row) => {
-          const fromLaunch = row?.url ? parseHandoffCodeFromUrl(row.url) : null;
-          if (fromLaunch) navigateToHandoffCode(fromLaunch);
+          if (row?.url) ingress.handleUrl(row.url);
         }).catch(() => undefined);
       });
       cleanups.push(() => stateSub.remove());

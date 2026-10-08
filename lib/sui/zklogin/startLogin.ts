@@ -105,7 +105,7 @@ export async function startGoogleZkLogin(
         clearLoginInFlight();
         return { ok: false, error: ZKLOGIN_SIGN_IN_COPY.errors.signInExpired };
       }
-      storeNativeConsumeVerifier(consumeVerifier);
+      storeNativeConsumeVerifier(consumeVerifier, oauthState);
     } else {
       savePendingSession(pendingSession);
     }
