@@ -429,6 +429,7 @@ function PassportPageInner() {
               via={via}
               starting={starting}
               error={error}
+              onClearSignInError={() => setError(null)}
               idvProvider={idvProvider}
               veriffConfigured={veriffConfigured}
               onStartIdCheck={startIdentityVerification}

@@ -12,9 +12,17 @@ import { ZKLOGIN_SIGN_IN_COPY } from "@/lib/sui/zklogin/signInCopy";
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
 
-export function ZkLoginSignIn({ compact = false }: { compact?: boolean }) {
+export function ZkLoginSignIn({
+  compact = false,
+  showLegacyRecovery = false,
+}: {
+  compact?: boolean;
+  /** Legacy recovery is deferred from customer Passport; enabled on /passport/advanced. */
+  showLegacyRecovery?: boolean;
+}) {
   const { isAuthenticated, suiAddress, signOut, error } = useSuiAuth();
   const { signIn, signInExistingAccount, busy, legacyBusy, configured, legacyRecoveryConfigured, disabled, legacyDisabled } = useGoogleSignIn();
+  const legacyVisible = showLegacyRecovery && legacyRecoveryConfigured;
   const [showAddress, setShowAddress] = useState(false);
 
   if (isAuthenticated && suiAddress) {
@@ -83,7 +91,7 @@ export function ZkLoginSignIn({ compact = false }: { compact?: boolean }) {
           <span aria-hidden="true" style={{ fontWeight: 800 }}>G</span>
           {busy ? ZKLOGIN_SIGN_IN_COPY.redirecting : ZKLOGIN_SIGN_IN_COPY.canonicalButton}
         </button>
-        {legacyRecoveryConfigured && (
+        {legacyVisible && (
           <button
             type="button"
             onClick={() => void signInExistingAccount()}
@@ -114,7 +122,7 @@ export function ZkLoginSignIn({ compact = false }: { compact?: boolean }) {
           {ZKLOGIN_SIGN_IN_COPY.canonicalHelper}
         </p>
       )}
-      {legacyRecoveryConfigured && !compact && (
+      {legacyVisible && !compact && (
         <p style={{
           fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
           lineHeight: 1.55, margin: "0.35rem 0 0", maxWidth: 520,

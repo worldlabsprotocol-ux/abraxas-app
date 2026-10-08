@@ -21,14 +21,14 @@ describe("Passport sign-in recovery structure", () => {
     expect(provider).toContain("clearSignInRecovery");
   });
 
-  it("renders a persistent recovery panel on Passport when wallet is missing", () => {
+  it("keeps legacy recovery panel on advanced Passport only", () => {
     const dashboard = read("components/passport/PassportDashboard.tsx");
     const customer = read("components/passport/PassportCustomerView.tsx");
     const panel = read("components/passport/PassportSignInRecoveryPanel.tsx");
     expect(dashboard).toContain("PassportSignInRecoveryPanel");
     expect(dashboard).toContain("signInRecovery");
-    expect(customer).toContain("PassportSignInRecoveryPanel");
-    expect(customer).toContain("signInRecovery");
+    expect(customer).not.toContain("PassportSignInRecoveryPanel");
+    expect(customer).toContain("PassportSignInErrorBanner");
     expect(panel).toContain("recoveryPrimaryActionLabel");
     expect(panel).toContain("recoveryDismissButton");
   });
