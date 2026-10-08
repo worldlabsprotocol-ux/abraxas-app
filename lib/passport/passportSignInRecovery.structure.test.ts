@@ -23,11 +23,22 @@ describe("Passport sign-in recovery structure", () => {
 
   it("renders a persistent recovery panel on Passport when wallet is missing", () => {
     const dashboard = read("components/passport/PassportDashboard.tsx");
+    const customer = read("components/passport/PassportCustomerView.tsx");
     const panel = read("components/passport/PassportSignInRecoveryPanel.tsx");
     expect(dashboard).toContain("PassportSignInRecoveryPanel");
     expect(dashboard).toContain("signInRecovery");
+    expect(customer).toContain("PassportSignInRecoveryPanel");
+    expect(customer).toContain("signInRecovery");
     expect(panel).toContain("recoveryPrimaryActionLabel");
     expect(panel).toContain("recoveryDismissButton");
+  });
+
+  it("blocks unsigned Passport UI while native handoff consumption is in flight", () => {
+    const page = read("app/passport/PassportPageClient.tsx");
+    const customer = read("components/passport/PassportCustomerView.tsx");
+    expect(page).toContain("handoffCompleting");
+    expect(customer).toContain("handoffCompleting");
+    expect(customer).toContain("Completing sign-in after Google");
   });
 
   it("routes callback recovery errors with suggested login mode", () => {

@@ -4,8 +4,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
 import { clearStaleLoginInFlight } from "@/lib/sui/zklogin/startLogin";
-import { NATIVE_HANDOFF_SETTLED_EVENT } from "@/lib/sui/zklogin/nativeHandoffClient";
+import {
+  handoffCodeFromSearch,
+  NATIVE_HANDOFF_SETTLED_EVENT,
+} from "@/lib/sui/zklogin/nativeHandoffClient";
 import { isNativeHolderApp } from "@/lib/sui/zklogin/holderPlatform";
+import { isLoginInFlight } from "@/lib/sui/zklogin/loginInFlight";
 
 export function useGoogleSignIn() {
   const auth = useSuiAuthOptional();
@@ -59,7 +63,10 @@ export function useGoogleSignIn() {
 
     const onVisibility = () => {
       if (!isNativeHolderApp() || document.visibilityState !== "visible") return;
-      if (auth?.isAuthenticated) resetBusy();
+      const resumedHandoff = Boolean(handoffCodeFromSearch(window.location.search));
+      if (auth?.isAuthenticated || resumedHandoff || !isLoginInFlight()) {
+        resetBusy();
+      }
     };
     document.addEventListener("visibilitychange", onVisibility);
 

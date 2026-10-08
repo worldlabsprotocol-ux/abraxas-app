@@ -5,6 +5,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
+import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
+import { PassportSignInRecoveryPanel } from "@/components/passport/PassportSignInRecoveryPanel";
 import { PassportReauthenticationPanel } from "@/components/passport/PassportReauthenticationPanel";
 import { PassportSessionProbeFailedPanel } from "@/components/passport/PassportSessionProbeFailedPanel";
 import { Btn } from "@/components/redesign/ui";
@@ -52,6 +54,7 @@ const CARD = {
 interface Props {
   walletDone: boolean;
   authLoading?: boolean;
+  handoffCompleting?: boolean;
   suiAddress: string | null;
   email: string;
   setup: PassportSetupState;
@@ -87,6 +90,7 @@ function buildPassportTrustItems(identityUi: string, hasCredential: boolean) {
 export function PassportCustomerView({
   walletDone,
   authLoading = false,
+  handoffCompleting = false,
   suiAddress,
   email,
   setup,
@@ -104,6 +108,7 @@ export function PassportCustomerView({
   handoff,
   capturePolicy,
 }: Props) {
+  const { signInRecovery, dismissSignInRecovery } = useSuiAuth();
   const [bindLoading, setBindLoading] = useState(false);
   const [bindError, setBindError] = useState<string | null>(null);
   const {
@@ -152,11 +157,11 @@ export function PassportCustomerView({
     }
   }
 
-  if (authLoading || browserSessionLoading) {
+  if (authLoading || browserSessionLoading || handoffCompleting) {
     return (
       <section style={CARD} aria-live="polite">
         <p style={{ fontFamily: FONT, fontSize: "0.85rem", color: "var(--text-secondary)", margin: 0 }}>
-          Loading your Passport…
+          {handoffCompleting ? "Completing sign-in after Google…" : "Loading your Passport…"}
         </p>
       </section>
     );
@@ -209,6 +214,31 @@ export function PassportCustomerView({
 
       <PartnerVerificationResumeCta />
       <PassportInstallCard />
+
+      {!walletDone && signInRecovery && (
+        <PassportSignInRecoveryPanel
+          recovery={signInRecovery}
+          onDismiss={dismissSignInRecovery}
+        />
+      )}
+
+      {!walletDone && error && (
+        <section
+          aria-live="polite"
+          style={{
+            ...CARD,
+            background: "rgba(239,68,68,0.08)",
+            border: "1px solid rgba(239,68,68,0.35)",
+          }}
+        >
+          <p style={{
+            fontFamily: FONT, fontSize: "0.84rem", lineHeight: 1.55,
+            color: "#EF4444", margin: 0,
+          }}>
+            {error}
+          </p>
+        </section>
+      )}
 
       {!walletDone && (
         <section style={CARD} aria-labelledby="passport-signin-heading">
