@@ -14,6 +14,8 @@ import { normalizePartnerVerifyInput } from "@/lib/partner/normalizePartnerVerif
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { ensureHostedHolderWalletBinding } from "@/lib/credentials/ensureHostedHolderWalletBinding";
 import { recordHolderSessionDiagnostic } from "@/lib/auth/holderSessionDiagnostic";
+import { isOpaqueVerifyRequest } from "@/lib/partner/productionIntegration/requestCorrelation";
+import { resolveHostedHandoffForContinue } from "@/lib/partner/hostedHandoff/resolveForContinue";
 
 export const dynamic = "force-dynamic";
 
@@ -72,7 +74,36 @@ export async function POST(req: NextRequest) {
   const purpose = body.purpose?.trim() || undefined;
   const verifyRequest = body.verify_request?.trim() || undefined;
 
-  if (verifyRequest) {
+  if (verifyRequest && isOpaqueVerifyRequest(verifyRequest)) {
+    const resolved = await resolveHostedHandoffForContinue(verifyRequest);
+    if (!resolved.ok) {
+      const status = resolved.code === "expired" ? 410
+        : resolved.code === "completed" || resolved.code === "cancelled" ? 409
+          : resolved.code === "unavailable" ? 503 : 404;
+      const category = resolved.code === "expired" ? "expired"
+        : resolved.code === "completed" || resolved.code === "cancelled" ? "replay"
+          : resolved.code === "unavailable" ? "unavailable" : "binding";
+      return recordHolderSessionDiagnostic(NextResponse.json(
+        { error: "Hosted verification link is unavailable", code: resolved.code },
+        { status, headers: NO_STORE_HEADERS },
+      ), "hosted_bootstrap", category);
+    }
+
+    const preview = resolved.preview;
+    if ((partnerId && partnerId !== preview.partner_id)
+      || (policyId && policyId !== preview.policy_id)
+      || (returnUrl && returnUrl !== preview.return_url)
+      || (purpose && purpose !== preview.purpose)) {
+      return recordHolderSessionDiagnostic(NextResponse.json(
+        { error: "Hosted verification binding mismatch", code: "hosted_binding_mismatch" },
+        { status: 400, headers: NO_STORE_HEADERS },
+      ), "hosted_bootstrap", "binding");
+    }
+    partnerId = preview.partner_id;
+    policyId = preview.policy_id;
+    returnUrl = preview.return_url;
+    body.purpose = preview.purpose;
+  } else if (verifyRequest) {
     try {
       const sb = requireSupabaseAdmin();
       const { data } = await sb

@@ -622,8 +622,13 @@ function PartnerContinueInner() {
         showAccountFooter={false}
         brief={null}
       >
-        {authLoading || contextLoading || (hostedBootstrapEligible && hostedBootstrap.bootstrapping) ? (
+        {authLoading || contextLoading || (hostedBootstrapEligible && (hostedBootstrap.state === "idle" || hostedBootstrap.bootstrapping)) ? (
           <p role="status">Preparing verification…</p>
+        ) : hostedBootstrapEligible && hostedBootstrap.state === "failed" ? (
+          <div role="status">
+            <p>We could not confirm your browser session. Return to the partner for a fresh link, or try again.</p>
+            <Btn onClick={() => hostedBootstrap.retry()}>{HOSTED_HOLDER_PRIMARY_ACTION}</Btn>
+          </div>
         ) : !suiAddress ? (
           hostedBootstrapEligible ? (
             <div>
@@ -735,11 +740,16 @@ function PartnerContinueInner() {
           onCancel={() => setWalletRecoveryActive(false)}
         />
       ) : null}
-      {authLoading || contextLoading || (hostedBootstrapEligible && hostedBootstrap.bootstrapping) ? (
+      {authLoading || contextLoading || (hostedBootstrapEligible && (hostedBootstrap.state === "idle" || hostedBootstrap.bootstrapping)) ? (
         <ProtocolLoadingState
           kind="preparing_request"
           detail={hostedBootstrapEligible ? `${partnerName} verification` : partnerName}
         />
+      ) : hostedBootstrapEligible && hostedBootstrap.state === "failed" ? (
+        <div role="status">
+          <p>We could not confirm your browser session. Return to {partnerName} for a fresh link, or try again.</p>
+          <Btn onClick={() => hostedBootstrap.retry()}>{HOSTED_HOLDER_PRIMARY_ACTION}</Btn>
+        </div>
       ) : !suiAddress ? (
         hostedBootstrapEligible ? (
           <div>

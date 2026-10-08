@@ -3,6 +3,7 @@
 
 import { saveUserSession, type ZkLoginUserSession } from "@/lib/sui/zklogin/session";
 import { restoreUserSessionFromBrowserSession } from "@/lib/sui/zklogin/restoreBrowserSession";
+import { probeBrowserSession } from "@/lib/auth/ensureBrowserSession";
 
 export interface BootstrapHostedHolderInput {
   partnerId: string;
@@ -47,12 +48,19 @@ export async function bootstrapHostedHolderSession(
       return { ok: false, error: data.error ?? `Bootstrap failed (${res.status})` };
     }
 
+    // Do not publish a client-side holder identity until the browser proves it
+    // retained the HttpOnly session set by bootstrap (or an existing OAuth cookie).
+    if (!await probeBrowserSession()) {
+      return { ok: false, error: "Browser session could not be confirmed" };
+    }
+
     if (data.session_kind === "oauth") {
       const restored = await restoreUserSessionFromBrowserSession();
       if (restored) {
         saveUserSession(restored);
         return { ok: true, suiAddress: restored.suiAddress };
       }
+      return { ok: false, error: "Existing account session could not be restored" };
     }
 
     const provider = data.provider === "abraxas_hosted"
