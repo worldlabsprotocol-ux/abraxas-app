@@ -6,11 +6,14 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
 import { ZkLoginSignInChooserDialog } from "./ZkLoginSignInChooserDialog";
+import { useSuiAuthOptional } from "./SuiAuthProvider";
+import { NATIVE_HANDOFF_SETTLED_EVENT } from "@/lib/sui/zklogin/nativeHandoffClient";
 
 type ZkLoginSignInChooserContextValue = {
   openChooser: () => void;
@@ -21,10 +24,21 @@ type ZkLoginSignInChooserContextValue = {
 const ZkLoginSignInChooserContext = createContext<ZkLoginSignInChooserContextValue | null>(null);
 
 export function ZkLoginSignInChooserProvider({ children }: { children: ReactNode }) {
+  const auth = useSuiAuthOptional();
   const [isOpen, setIsOpen] = useState(false);
 
   const openChooser = useCallback(() => setIsOpen(true), []);
   const closeChooser = useCallback(() => setIsOpen(false), []);
+
+  useEffect(() => {
+    if (auth?.isAuthenticated) closeChooser();
+  }, [auth?.isAuthenticated, closeChooser]);
+
+  useEffect(() => {
+    const onSettled = () => closeChooser();
+    window.addEventListener(NATIVE_HANDOFF_SETTLED_EVENT, onSettled);
+    return () => window.removeEventListener(NATIVE_HANDOFF_SETTLED_EVENT, onSettled);
+  }, [closeChooser]);
 
   const value = useMemo(
     () => ({ openChooser, closeChooser, isOpen }),

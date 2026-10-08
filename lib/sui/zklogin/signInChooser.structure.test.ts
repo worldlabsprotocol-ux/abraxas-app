@@ -15,6 +15,7 @@ describe("zkLogin sign-in chooser structure", () => {
   it("mounts a single shared chooser provider at app root", () => {
     const providers = read("components/providers/AppProviders.tsx");
     expect(providers).toContain("ZkLoginSignInChooserProvider");
+    expect(providers).toContain("NativeHolderHandoffListener");
     expect(providers).toContain("<SuiAuthProvider>");
   });
 

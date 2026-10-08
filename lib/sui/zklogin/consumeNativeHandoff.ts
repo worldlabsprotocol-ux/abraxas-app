@@ -7,23 +7,32 @@ import {
   type ZkLoginUserSession,
 } from "./session";
 import { saveSigningSession } from "./signingSession";
-import {
-  NATIVE_CONSUME_VERIFIER_SESSION_KEY,
-  NATIVE_HANDOFF_CODE_QUERY,
-} from "./nativeHandoff";
+import { NATIVE_HANDOFF_CODE_QUERY } from "./nativeHandoff";
 import { logAuthEvent } from "./authDebug";
-import { readSessionStorage, removeSessionStorage } from "./browserStorage";
 import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSession";
+import { clearLoginInFlight } from "./loginInFlight";
+import {
+  clearNativeConsumeVerifier,
+  dispatchNativeHandoffSettled,
+  isTerminalNativeHandoffConsumeStatus,
+  isValidHandoffCode,
+  readNativeConsumeVerifier,
+} from "./nativeHandoffClient";
 
-export async function consumeNativeHandoffFromQuery(
-  searchParams: URLSearchParams,
+const consumeInflight = new Map<string, Promise<ZkLoginUserSession | null>>();
+
+export function resetNativeHandoffConsumeInflightForTests(): void {
+  consumeInflight.clear();
+}
+
+async function consumeNativeHandoffInternal(
+  handoffCode: string,
 ): Promise<ZkLoginUserSession | null> {
-  const handoffCode = searchParams.get(NATIVE_HANDOFF_CODE_QUERY)?.trim();
-  if (!handoffCode) return null;
-
-  const consumeVerifier = readSessionStorage(NATIVE_CONSUME_VERIFIER_SESSION_KEY)?.trim();
+  const consumeVerifier = readNativeConsumeVerifier();
   if (!consumeVerifier) {
     logAuthEvent("native_handoff_consume_failed", { errorCode: "missing_consume_verifier" });
+    clearLoginInFlight();
+    dispatchNativeHandoffSettled({ ok: false, reason: "missing_consume_verifier" });
     return null;
   }
 
@@ -37,10 +46,13 @@ export async function consumeNativeHandoffFromQuery(
     }),
   });
 
-  removeSessionStorage(NATIVE_CONSUME_VERIFIER_SESSION_KEY);
-
   if (!res.ok) {
-    logAuthEvent("native_handoff_consume_failed");
+    logAuthEvent("native_handoff_consume_failed", { errorCode: String(res.status) });
+    if (isTerminalNativeHandoffConsumeStatus(res.status)) {
+      clearNativeConsumeVerifier();
+    }
+    clearLoginInFlight();
+    dispatchNativeHandoffSettled({ ok: false, reason: "consume_rejected" });
     return null;
   }
 
@@ -58,8 +70,13 @@ export async function consumeNativeHandoffFromQuery(
 
   if (!data.sui_address || !data.id_token || !data.user_salt || !data.randomness || !data.ephemeral_secret_key) {
     logAuthEvent("native_handoff_consume_failed", { errorCode: "incomplete_handoff_payload" });
+    clearNativeConsumeVerifier();
+    clearLoginInFlight();
+    dispatchNativeHandoffSettled({ ok: false, reason: "incomplete_handoff_payload" });
     return null;
   }
+
+  clearNativeConsumeVerifier();
 
   const session: ZkLoginUserSession = {
     suiAddress: data.sui_address,
@@ -88,6 +105,27 @@ export async function consumeNativeHandoffFromQuery(
     });
   }
 
+  clearLoginInFlight();
   logAuthEvent("native_handoff_consumed");
+  dispatchNativeHandoffSettled({ ok: true });
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("abraxas:zklogin-session"));
+  }
   return session;
+}
+
+export async function consumeNativeHandoffFromQuery(
+  searchParams: URLSearchParams,
+): Promise<ZkLoginUserSession | null> {
+  const handoffCode = searchParams.get(NATIVE_HANDOFF_CODE_QUERY)?.trim();
+  if (!handoffCode || !isValidHandoffCode(handoffCode)) return null;
+
+  const inflight = consumeInflight.get(handoffCode);
+  if (inflight) return inflight;
+
+  const promise = consumeNativeHandoffInternal(handoffCode).finally(() => {
+    consumeInflight.delete(handoffCode);
+  });
+  consumeInflight.set(handoffCode, promise);
+  return promise;
 }
