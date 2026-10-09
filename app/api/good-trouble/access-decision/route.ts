@@ -2,12 +2,12 @@
 // Reference partner server gate. Callback params are not authorization.
 
 import { NextRequest, NextResponse } from "next/server";
-import { decideGoodTroubleAccess } from "@/lib/goodTrouble/accessDecision";
+import { verifyGoodTroubleSandboxAccess } from "@/lib/goodTrouble/sandboxPartnerVerification";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const result = await decideGoodTroubleAccess(req.nextUrl.searchParams);
+  const result = await verifyGoodTroubleSandboxAccess({ search: req.nextUrl.searchParams });
   const status = result.grant ? 200 : result.outcome === "retry" ? 503 : 403;
   return NextResponse.json({
     grant: result.grant,
@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
     action: result.action,
     errors: result.errors,
     receipt_id: result.receipt_id,
+    protected_action_replayed: result.protected_action_replayed ?? false,
     callback_trusted: false,
   }, { status });
 }
