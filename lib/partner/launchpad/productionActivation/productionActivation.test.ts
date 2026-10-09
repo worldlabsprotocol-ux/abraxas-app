@@ -189,6 +189,24 @@ describe("resolveReceiptDecisionContext", () => {
       launchpadApplicationId: null,
     })).resolves.toBe("sandbox_only");
   });
+
+  it("returns sandbox_only for Launchpad sandbox applications without production activation", async () => {
+    fromMock.mockReturnValue({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: {
+          production_activated_at: null,
+          environment: "sandbox",
+          status: "active",
+        },
+      }),
+    });
+    await expect(resolveReceiptDecisionContext({
+      policySandboxOnly: false,
+      launchpadApplicationId: APP.id,
+    })).resolves.toBe("sandbox_only");
+  });
 });
 
 describe("credential boundary enforcement", () => {

@@ -12,6 +12,8 @@ import {
 } from "@/lib/decisionReceipts/trustEvaluation";
 import { evaluateReceiptCurrentValidity } from "@/lib/decisionReceipts/currentValidity";
 import type { ReceiptLifecycleStatus, PartnerSafeReceiptInvalidationReason } from "@/lib/decisionReceipts/currentValidity";
+import { parseSelfAttestationSyntheticClaimId } from "@/lib/assurance/selfAttestation/receiptDependency";
+import { getSelfAttestationById } from "@/lib/assurance/selfAttestation/selfAttestationLedger";
 
 export type PublicReceiptLiveTrustView = DecisionReceiptPublicView & {
   currently_valid: boolean;
@@ -45,6 +47,24 @@ export async function resolveLiveClaimStatuses(
     }
     statuses.set(id, status);
   }
+
+  for (const claimId of claimIds) {
+    const ledgerId = parseSelfAttestationSyntheticClaimId(claimId);
+    if (!ledgerId || statuses.has(claimId)) continue;
+    const row = await getSelfAttestationById(ledgerId);
+    if (!row) {
+      statuses.set(claimId, "revoked");
+      continue;
+    }
+    if (row.revoked_at) {
+      statuses.set(claimId, "revoked");
+    } else if (new Date(row.expires_at).getTime() <= now) {
+      statuses.set(claimId, "expired");
+    } else {
+      statuses.set(claimId, "active");
+    }
+  }
+
   return statuses;
 }
 

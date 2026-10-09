@@ -25,11 +25,29 @@ export async function resolveReceiptDecisionContext(input: {
       ) {
         return "production";
       }
+      if (data?.environment === "sandbox") {
+        return "sandbox_only";
+      }
     } catch {
       // Fail closed to policy default when store is unavailable.
     }
   }
   return input.policySandboxOnly ? "sandbox_only" : "production";
+}
+
+/** Hosted handoff environment is authoritative for receipt trust labeling. */
+export function resolveHostedHandoffReceiptDecisionContext(input: {
+  handoffEnvironment: "sandbox" | "production";
+  policySandboxOnly: boolean;
+  launchpadApplicationId?: string | null;
+}): Promise<ReceiptDecisionContext> {
+  if (input.handoffEnvironment === "sandbox") {
+    return Promise.resolve("sandbox_only");
+  }
+  return resolveReceiptDecisionContext({
+    policySandboxOnly: input.policySandboxOnly,
+    launchpadApplicationId: input.launchpadApplicationId,
+  });
 }
 
 export function isApplicationProductionUsable(input: {

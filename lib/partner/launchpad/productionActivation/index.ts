@@ -16,6 +16,7 @@ export {
 } from "./goLiveState";
 export {
   resolveReceiptDecisionContext,
+  resolveHostedHandoffReceiptDecisionContext,
   isApplicationProductionUsable,
   type ReceiptDecisionContext,
 } from "./resolveReceiptDecisionContext";
