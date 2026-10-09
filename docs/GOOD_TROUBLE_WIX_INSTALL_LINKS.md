@@ -29,6 +29,8 @@ Deploy all modules listed in `examples/good-trouble-wix/WIX_DEPLOYMENT_MANIFEST.
 | `abraxasVerification.web.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/backend/abraxasVerification.web.js |
 | `nonceLifecycle.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/backend/nonceLifecycle.js |
 | `flowOwnership.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/backend/flowOwnership.js |
+| `pkceEscrowPepper.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/backend/pkceEscrowPepper.js |
+| `pkceEscrowPepperWix.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/backend/pkceEscrowPepperWix.js |
 | `returnDestinationPath.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/backend/returnDestinationPath.js |
 
 ## Page / lightbox code
@@ -61,6 +63,12 @@ Deploy all modules listed in `examples/good-trouble-wix/WIX_DEPLOYMENT_MANIFEST.
 | Purchase Verification Entry | `purchase-verification` | `purchaseStatusText` | Start status (optional) |
 
 Operator docs: `docs/GOOD_TROUBLE_WIX_SEEKER_HANDOFF.md`, `examples/good-trouble-wix/WIX_DEPLOYMENT_MANIFEST.md`.
+
+## Wix Secrets Manager (required for purchase escrow)
+
+| Secret name | Notes |
+|-------------|--------|
+| `GOOD_TROUBLE_PKCE_ESCROW_PEPPER` | Generate ≥32 bytes (e.g. `openssl rand -hex 32`). Backend-only via `wix-secrets-backend`; purchase flows fail closed without it. |
 
 ## Mobile acceptance (Solana Seeker)
 

@@ -28,6 +28,8 @@ Deploy in this order (Public → Backend → Pages/lightbox):
 | 5 | `examples/good-trouble-wix/backend/flowPurpose.js` | Backend file | `src/backend/flowPurpose.js` | **New** | `./constants.js` |
 | 6 | `examples/good-trouble-wix/backend/pkceProof.js` | Backend file | `src/backend/pkceProof.js` | Replace | `./constants.js`, `node:crypto` |
 | 6b | `examples/good-trouble-wix/backend/flowOwnership.js` | Backend file | `src/backend/flowOwnership.js` | **New** | `node:crypto` |
+| 6c | `examples/good-trouble-wix/backend/pkceEscrowPepper.js` | Backend file | `src/backend/pkceEscrowPepper.js` | **New** | — |
+| 6d | `examples/good-trouble-wix/backend/pkceEscrowPepperWix.js` | Backend file | `src/backend/pkceEscrowPepperWix.js` | **New** | `wix-secrets-backend`, `./pkceEscrowPepper.js` |
 | 7 | `examples/good-trouble-wix/backend/sha256Adapter.js` | Backend file | `src/backend/sha256Adapter.js` | Replace | `node:crypto` |
 | 8 | `examples/good-trouble-wix/backend/flowCapacity.js` | Backend file | `src/backend/flowCapacity.js` | Replace | — |
 | 8b | `examples/good-trouble-wix/backend/flowStartDiagnostics.js` | Backend file | `src/backend/flowStartDiagnostics.js` | **New** | `./flowPurpose.js` |
@@ -38,9 +40,9 @@ Deploy in this order (Public → Backend → Pages/lightbox):
 | 12 | `examples/good-trouble-wix/backend/browseReceiptRemoteValidator.js` | Backend file | `src/backend/browseReceiptRemoteValidator.js` | **New** | `./constants.js`, `./browseReceiptValidator.js` |
 | 13 | `examples/good-trouble-wix/backend/purchaseEligibilityAuthorization.js` | Backend file | `src/backend/purchaseEligibilityAuthorization.js` | **New** | `./browseReceiptValidator.js`, `./abraxasReceiptValidator.js`, `./constants.js` |
 | 14 | `examples/good-trouble-wix/backend/checkoutAuthorization.js` | Backend file | `src/backend/checkoutAuthorization.js` | **New** | `./purchaseEligibilityAuthorization.js`, `./constants.js` |
-| 15 | `examples/good-trouble-wix/backend/nonceLifecycle.js` | Backend file | `src/backend/nonceLifecycle.js` | Replace | `./constants.js`, `./flowPurpose.js`, `./flowOwnership.js`, `./pkceProof.js`, `node:crypto` |
+| 15 | `examples/good-trouble-wix/backend/nonceLifecycle.js` | Backend file | `src/backend/nonceLifecycle.js` | Replace | `./constants.js`, `./flowPurpose.js`, `./flowOwnership.js`, `./returnDestinationPath.js`, `./pkceProof.js`, `node:crypto` |
 | 16 | `examples/good-trouble-wix/backend/wixNonceStore.js` | Backend file | `src/backend/wixNonceStore.js` | Replace | `wix-data`, `./constants.js` |
-| 17 | `examples/good-trouble-wix/backend/abraxasVerificationService.js` | Backend file | `src/backend/abraxasVerificationService.js` | Replace | receipt validators, `nonceLifecycle`, `wixNonceStore` (dynamic), `captchaGate`, `constants` |
+| 17 | `examples/good-trouble-wix/backend/abraxasVerificationService.js` | Backend file | `src/backend/abraxasVerificationService.js` | Replace | receipt validators, `nonceLifecycle`, `pkceEscrowPepper`, `pkceEscrowPepperWix`, `wixNonceStore` (dynamic), `captchaGate`, `constants` |
 | 18 | `examples/good-trouble-wix/backend/abraxasVerification.web.js` | Backend file | `src/backend/abraxasVerification.web.js` | Replace | `wix-web-module`, `./abraxasVerificationService.js` |
 | 19 | `examples/good-trouble-wix/pages/AgeVerificationPopup.js` | Lightbox code | Age Verification popup panel | Replace | `backend/abraxasVerification.web`, `public/*`, Wix frontend modules |
 | 20 | `examples/good-trouble-wix/pages/BrowseVerificationResult.js` | Page code | `/browse-verification-result` page | **New page** | `backend/abraxasVerification.web`, `public/abraxasClientConstants`, `wix-location`, `wix-storage-frontend` |
@@ -4035,13 +4037,370 @@ $w.onReady(() => {
 });
 ```
 
+### public/purchaseFlowOwnership.js
+
+```javascript
+// FILE: examples/good-trouble-wix/public/purchaseFlowOwnership.js
+// Cross-tab purchase flow ownership cookie — complements sessionStorage verifier (same browser, not authorization alone).
+
+/** First-party cookie name — value is flowId|ownershipSecret (never the PKCE verifier). */
+export const PURCHASE_FLOW_OWNERSHIP_COOKIE = "gt_pkce_flow_own";
+
+export const FLOW_OWNERSHIP_COOKIE_MAX_AGE_SEC = 600;
+
+const COOKIE_SEPARATOR = "|";
+
+/**
+ * @param {string} flowId
+ * @param {string} ownershipSecret
+ */
+export function buildFlowOwnershipCookieValue(flowId, ownershipSecret) {
+  const id = typeof flowId === "string" ? flowId.trim() : "";
+  const secret = typeof ownershipSecret === "string" ? ownershipSecret.trim() : "";
+  if (!id || !secret) return "";
+  return `${id}${COOKIE_SEPARATOR}${secret}`;
+}
+
+/**
+ * @param {string | null | undefined} rawCookieHeader
+ * @param {string} expectedFlowId
+ */
+export function parseFlowOwnershipFromCookieHeader(rawCookieHeader, expectedFlowId) {
+  const flowId = typeof expectedFlowId === "string" ? expectedFlowId.trim() : "";
+  if (!flowId || !rawCookieHeader) return null;
+
+  const parts = rawCookieHeader.split(";").map((p) => p.trim());
+  for (const part of parts) {
+    if (!part.startsWith(`${PURCHASE_FLOW_OWNERSHIP_COOKIE}=`)) continue;
+    const encoded = part.slice(PURCHASE_FLOW_OWNERSHIP_COOKIE.length + 1);
+    let decoded = "";
+    try {
+      decoded = decodeURIComponent(encoded);
+    } catch {
+      return null;
+    }
+    const sep = decoded.indexOf(COOKIE_SEPARATOR);
+    if (sep <= 0) return null;
+    const cookieFlowId = decoded.slice(0, sep).trim();
+    const secret = decoded.slice(sep + 1).trim();
+    if (cookieFlowId !== flowId || !secret) return null;
+    return { flowId: cookieFlowId, ownershipSecret: secret };
+  }
+  return null;
+}
+
+/**
+ * @param {string} documentCookie
+ * @param {string} expectedFlowId
+ */
+export function parseFlowOwnershipFromDocumentCookie(documentCookie, expectedFlowId) {
+  return parseFlowOwnershipFromCookieHeader(documentCookie, expectedFlowId);
+}
+
+/**
+ * @param {(value: string) => void} setCookie
+ * @param {string} flowId
+ * @param {string} ownershipSecret
+ */
+export function persistFlowOwnershipCookie(setCookie, flowId, ownershipSecret) {
+  const payload = buildFlowOwnershipCookieValue(flowId, ownershipSecret);
+  if (!payload) return;
+  const encoded = encodeURIComponent(payload);
+  setCookie(
+    `${PURCHASE_FLOW_OWNERSHIP_COOKIE}=${encoded}; Max-Age=${FLOW_OWNERSHIP_COOKIE_MAX_AGE_SEC}; Path=/; Secure; SameSite=Lax`,
+  );
+}
+
+/**
+ * @param {(name: string) => void} removeCookie
+ * @param {string} [flowId]
+ */
+export function clearFlowOwnershipCookie(removeCookie, flowId) {
+  void flowId;
+  removeCookie(
+    `${PURCHASE_FLOW_OWNERSHIP_COOKIE}=; Max-Age=0; Path=/; Secure; SameSite=Lax`,
+  );
+}
+```
+
+### public/purchaseCallbackCompletion.js
+
+```javascript
+// FILE: examples/good-trouble-wix/public/purchaseCallbackCompletion.js
+// Resolve PKCE material for purchase callback — sessionStorage first, flow-ownership cookie second.
+
+import { parseFlowOwnershipFromDocumentCookie } from "./purchaseFlowOwnership.js";
+
+export const LOST_SESSION_CONTEXT_MESSAGE =
+  "This verification was opened in a different browser or tab without your checkout session. Return to Good Trouble and tap ORDER NOW to start again.";
+
+export const RESTART_VERIFICATION_LABEL = "Restart verification";
+
+/**
+ * @param {{
+ *   flowId: string,
+ *   sessionGet: (key: string) => string | null,
+ *   verifierStorageKey: (flowId: string) => string,
+ *   documentCookie?: string,
+ * }} input
+ * @returns {{ verifier: string, flowOwnershipSecret: string }}
+ */
+export function resolvePurchaseCallbackPkceMaterial(input) {
+  const flowId = input.flowId.trim();
+  const verifier = input.sessionGet(input.verifierStorageKey(flowId))?.trim() ?? "";
+  const cookie = typeof input.documentCookie === "string" ? input.documentCookie : "";
+  const ownership = parseFlowOwnershipFromDocumentCookie(cookie, flowId);
+  const flowOwnershipSecret = ownership?.ownershipSecret?.trim() ?? "";
+
+  return {
+    verifier,
+    flowOwnershipSecret,
+  };
+}
+
+/**
+ * @param {{ verifier: string, flowOwnershipSecret: string }} material
+ */
+export function hasPurchaseCallbackPkceProof(material) {
+  return Boolean(material.verifier?.trim() || material.flowOwnershipSecret?.trim());
+}
+
+/**
+ * @param {string | undefined | null} code
+ */
+export function mapPurchaseCallbackFailureMessage(code) {
+  if (code === "missing_flow_ownership" || code === "invalid_flow_ownership") {
+    return LOST_SESSION_CONTEXT_MESSAGE;
+  }
+  if (code === "verifier_mismatch" || code === "missing_verifier") {
+    return LOST_SESSION_CONTEXT_MESSAGE;
+  }
+  if (code === "flow_already_consumed") {
+    return "This verification was already used. Please start again from ORDER NOW.";
+  }
+  if (code === "flow_expired") {
+    return "This verification session expired. Return to Good Trouble and tap ORDER NOW again.";
+  }
+  return "Verification could not be completed. Please try again or use the traditional age option.";
+}
+```
+
+### backend/flowOwnership.js
+
+```javascript
+// FILE: examples/good-trouble-wix/backend/flowOwnership.js
+// Purchase-flow PKCE escrow — verifier sealed server-side; recovery requires flow ownership secret (never gtv/receipt alone).
+
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHmac,
+  randomBytes,
+  timingSafeEqual,
+} from "node:crypto";
+
+export const OWNERSHIP_SECRET_BYTES = 32;
+const ESCROW_VERSION = "v1";
+
+/**
+ * @param {string} flowId
+ * @param {string} ownershipSecret
+ * @param {string} pepper
+ */
+export function hashFlowOwnershipProof(flowId, ownershipSecret, pepper) {
+  if (!pepper) {
+    throw Object.assign(new Error("pkce_escrow_secret_unavailable"), {
+      code: "pkce_escrow_secret_unavailable",
+    });
+  }
+  return createHmac("sha256", pepper)
+    .update(`${flowId}:${ownershipSecret}`, "utf8")
+    .digest("hex");
+}
+
+/**
+ * @param {unknown} secret
+ * @returns {{ ok: true, secret: string } | { ok: false, code: string }}
+ */
+export function validateFlowOwnershipSecret(secret) {
+  const trimmed = typeof secret === "string" ? secret.trim() : "";
+  if (!trimmed) return { ok: false, code: "missing_flow_ownership" };
+  if (trimmed.length !== OWNERSHIP_SECRET_BYTES * 2) {
+    return { ok: false, code: "invalid_flow_ownership" };
+  }
+  if (!/^[a-f0-9]+$/.test(trimmed)) {
+    return { ok: false, code: "invalid_flow_ownership" };
+  }
+  return { ok: true, secret: trimmed };
+}
+
+function deriveEscrowKey(flowId, ownershipSecret, pepper) {
+  return createHmac("sha256", pepper)
+    .update(`escrow:${flowId}:${ownershipSecret}`, "utf8")
+    .digest();
+}
+
+/**
+ * @param {{ flowId: string, verifier: string, ownershipSecret: string, pepper: string }} input
+ */
+export function sealVerifierForFlow(input) {
+  const key = deriveEscrowKey(input.flowId, input.ownershipSecret, input.pepper);
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", key, iv);
+  const enc = Buffer.concat([
+    cipher.update(input.verifier, "utf8"),
+    cipher.final(),
+  ]);
+  const tag = cipher.getAuthTag();
+  return `${ESCROW_VERSION}:${iv.toString("hex")}:${tag.toString("hex")}:${enc.toString("hex")}`;
+}
+
+/**
+ * @param {{ flowId: string, ownershipSecret: string, verifierSealed: string, pepper: string }} input
+ */
+export function unsealVerifierForFlow(input) {
+  const parts = input.verifierSealed.split(":");
+  if (parts.length !== 4 || parts[0] !== ESCROW_VERSION) {
+    throw new Error("invalid_sealed_verifier");
+  }
+  const iv = Buffer.from(parts[1], "hex");
+  const tag = Buffer.from(parts[2], "hex");
+  const enc = Buffer.from(parts[3], "hex");
+  const key = deriveEscrowKey(input.flowId, input.ownershipSecret, input.pepper);
+  const decipher = createDecipheriv("aes-256-gcm", key, iv);
+  decipher.setAuthTag(tag);
+  const plain = Buffer.concat([decipher.update(enc), decipher.final()]);
+  return plain.toString("utf8");
+}
+
+/**
+ * @param {{ flowId: string, verifier: string, pepper: string }} input
+ */
+export function createPurchaseFlowOwnershipArtifacts(input) {
+  const ownershipSecret = randomBytes(OWNERSHIP_SECRET_BYTES).toString("hex");
+  const pepper = input.pepper;
+  return {
+    ownershipSecret,
+    ownershipProofHash: hashFlowOwnershipProof(input.flowId, ownershipSecret, pepper),
+    verifierSealed: sealVerifierForFlow({
+      flowId: input.flowId,
+      verifier: input.verifier,
+      ownershipSecret,
+      pepper,
+    }),
+  };
+}
+
+/**
+ * @param {string} expectedHash
+ * @param {string} candidateHash
+ */
+export function ownershipProofHashesMatch(expectedHash, candidateHash) {
+  if (typeof expectedHash !== "string" || typeof candidateHash !== "string") return false;
+  if (expectedHash.length !== 64 || candidateHash.length !== 64) return false;
+  try {
+    return timingSafeEqual(Buffer.from(expectedHash, "hex"), Buffer.from(candidateHash, "hex"));
+  } catch {
+    return false;
+  }
+}
+```
+
+### backend/pkceEscrowPepper.js
+
+```javascript
+// FILE: examples/good-trouble-wix/backend/pkceEscrowPepper.js
+// PKCE escrow pepper from Wix Secrets Manager — backend only, never exposed to frontend.
+
+/** Wix Secrets Manager secret name (configure in Developer Tools → Secrets). */
+export const PKCE_ESCROW_PEPPER_SECRET_NAME = "GOOD_TROUBLE_PKCE_ESCROW_PEPPER";
+
+/** Minimum entropy: 32 bytes. */
+export const PKCE_ESCROW_PEPPER_MIN_BYTES = 32;
+
+/**
+ * @param {unknown} raw
+ * @returns {{ ok: true, pepper: string } | { ok: false, code: "pkce_escrow_secret_invalid" | "pkce_escrow_secret_missing" }}
+ */
+export function validatePkceEscrowPepperSecret(raw) {
+  const trimmed = typeof raw === "string" ? raw.trim() : "";
+  if (!trimmed) {
+    return { ok: false, code: "pkce_escrow_secret_missing" };
+  }
+
+  if (/^[a-fA-F0-9]+$/.test(trimmed) && trimmed.length >= PKCE_ESCROW_PEPPER_MIN_BYTES * 2) {
+    return { ok: true, pepper: trimmed.toLowerCase() };
+  }
+
+  try {
+    const decoded = Buffer.from(trimmed, "base64");
+    if (decoded.length >= PKCE_ESCROW_PEPPER_MIN_BYTES) {
+      return { ok: true, pepper: trimmed };
+    }
+  } catch {
+    // fall through
+  }
+
+  if (Buffer.byteLength(trimmed, "utf8") >= PKCE_ESCROW_PEPPER_MIN_BYTES) {
+    return { ok: true, pepper: trimmed };
+  }
+
+  return { ok: false, code: "pkce_escrow_secret_invalid" };
+}
+
+/**
+ * @param {object} [deps]
+ * @param {string} [deps.pepperOverride] test-only injected pepper (must pass validatePkceEscrowPepperSecret)
+ * @param {(name: string) => Promise<string>} [deps.getSecret] Wix Secrets Manager `getSecret`
+ * @returns {Promise<{ ok: true, pepper: string } | { ok: false, code: string }>}
+ */
+export async function fetchPkceEscrowPepper(deps = {}) {
+  if (deps.pepperOverride != null) {
+    return validatePkceEscrowPepperSecret(deps.pepperOverride);
+  }
+
+  const getSecret = deps.getSecret;
+  if (typeof getSecret !== "function") {
+    return { ok: false, code: "pkce_escrow_secret_unavailable" };
+  }
+
+  let raw;
+  try {
+    raw = await getSecret(PKCE_ESCROW_PEPPER_SECRET_NAME);
+  } catch {
+    return { ok: false, code: "pkce_escrow_secret_unavailable" };
+  }
+
+  const validated = validatePkceEscrowPepperSecret(raw);
+  if (!validated.ok) {
+    return validated;
+  }
+  return validated;
+}
+```
+
+### backend/pkceEscrowPepperWix.js
+
+```javascript
+// FILE: examples/good-trouble-wix/backend/pkceEscrowPepperWix.js
+// Production Wix Secrets Manager binding — import only from backend service modules.
+
+import { getSecret } from "wix-secrets-backend";
+import { fetchPkceEscrowPepper } from "./pkceEscrowPepper.js";
+
+/** Load escrow pepper via Wix Secrets Manager (fail closed on missing/invalid). */
+export function loadPkceEscrowPepperFromWixSecrets() {
+  return fetchPkceEscrowPepper({ getSecret });
+}
+```
+
 ## D. Secrets and configuration
 
 ### Wix Secrets Manager (names only — never paste values into Public/page code)
 
 | Secret name | Intended location | Purpose |
 |-------------|-------------------|---------|
-| *(none required for current pilot)* | — | Receipt validation uses public Abraxas verify endpoints; no API key in Wix for browse/purchase web methods |
+| `GOOD_TROUBLE_PKCE_ESCROW_PEPPER` | **Backend only** (Wix Secrets Manager) | **Required for purchase PKCE escrow.** At least 32 bytes of entropy (e.g. 64 hex chars from `openssl rand -hex 32`). Never expose in Public/page code, URLs, logs, or API responses. Browse-only flows do not use this secret. |
 
 > If CAPTCHA is re-enabled later, add provider secrets to Backend only and remove `skipCaptcha: true` from `abraxasVerification.web.js`.
 

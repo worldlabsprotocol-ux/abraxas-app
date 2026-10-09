@@ -47,6 +47,7 @@ vi.mock("wix-data", () => ({
 const { createWixNonceStore } = await import("./wixNonceStore.js");
 const { createAbraxasVerificationStartService } = await import("./abraxasVerificationService.js");
 const { createMemoryNonceStore } = await import("./memoryNonceStore.js");
+const { withTestEscrowPepperDeps } = await import("./testPkceEscrowFixtures.js");
 
 describe("wixNonceStore deployment contract", () => {
   it("documents Admin-only collection permissions and backend-only suppressAuth", () => {
@@ -197,11 +198,11 @@ describe("wixNonceStore capacity enforcement", () => {
     const store = createWixNonceStore();
     const now = new Date("2026-01-01T00:00:00.000Z");
 
-    const result = await createAbraxasVerificationStartService(null, {
+    const result = await createAbraxasVerificationStartService(null, withTestEscrowPepperDeps({
       store,
       skipCaptcha: true,
       now,
-    });
+    }));
 
     expect(result).toMatchObject({
       error: "rate_limited",
@@ -215,11 +216,11 @@ describe("wixNonceStore capacity enforcement", () => {
     const store = createWixNonceStore();
     const now = new Date("2026-01-01T00:00:00.000Z");
 
-    const result = await createAbraxasVerificationStartService(null, {
+    const result = await createAbraxasVerificationStartService(null, withTestEscrowPepperDeps({
       store,
       skipCaptcha: true,
       now,
-    });
+    }));
 
     expect(result).toMatchObject({
       error: "capacity_count_invalid",
@@ -237,10 +238,10 @@ describe("wixNonceStore capacity enforcement", () => {
 describe("anonymous web-method flow vs direct collection access", () => {
   it("allows anonymous backend flow start when store is injected (no membership required)", async () => {
     const store = createMemoryNonceStore();
-    const result = await createAbraxasVerificationStartService(null, {
+    const result = await createAbraxasVerificationStartService(null, withTestEscrowPepperDeps({
       store,
       skipCaptcha: true,
-    });
+    }));
     expect(result.error).toBeUndefined();
     expect(result.flowId).toMatch(/^gtf_[a-f0-9]{64}$/);
     expect(result.verifier).toMatch(/^[a-f0-9]{64}$/);

@@ -37,6 +37,7 @@ import {
   __testOnlySetHashFn,
 } from "./abraxasVerificationService.js";
 import { sha256Hex as defaultSha256Hex } from "./sha256Adapter.js";
+import { TEST_ESCROW_PEPPER_HEX, withTestEscrowPepperDeps } from "./testPkceEscrowFixtures.js";
 
 const hashFn = (value) => createHash("sha256").update(value, "utf8").digest("hex");
 
@@ -57,7 +58,11 @@ const VALID_SANDBOX_RECEIPT = {
 };
 
 async function seedFlow(store, overrides = {}) {
-  const payload = await buildVerificationStartPayload({ hashFn, purpose: "purchase" });
+  const payload = await buildVerificationStartPayload({
+    hashFn,
+    purpose: "purchase",
+    escrowPepper: TEST_ESCROW_PEPPER_HEX,
+  });
   const record = await store.insert({
     ...payload.flowRecord,
     ...overrides,
@@ -78,10 +83,10 @@ describe("default SHA-256 auto-wiring (no manual init)", () => {
   it("uses node:crypto sha256 for start flow when no hash override is configured", async () => {
     __testOnlySetHashFn(null);
     const store = createMemoryNonceStore();
-    const result = await createAbraxasVerificationStartService("captcha-token", {
+    const result = await createAbraxasVerificationStartService("captcha-token", withTestEscrowPepperDeps({
       store,
       skipCaptcha: true,
-    });
+    }));
 
     expect(result.error).toBeUndefined();
     expect(result.flowId).toMatch(FLOW_ID_RE);
@@ -95,7 +100,11 @@ describe("default SHA-256 auto-wiring (no manual init)", () => {
   it("uses node:crypto sha256 for completion flow when no hash override is configured", async () => {
     __testOnlySetHashFn(null);
     const store = createMemoryNonceStore();
-    const payload = await buildVerificationStartPayload({ hashFn: defaultSha256Hex, purpose: "purchase" });
+    const payload = await buildVerificationStartPayload({
+      hashFn: defaultSha256Hex,
+      purpose: "purchase",
+      escrowPepper: TEST_ESCROW_PEPPER_HEX,
+    });
     await store.insert(payload.flowRecord);
 
     const result = await completeAbraxasVerificationService(
@@ -177,7 +186,11 @@ describe("integration constants", () => {
 
 describe("buildVerificationStartPayload", () => {
   it("puts opaque flowId in return_url gtv — never the verifier", async () => {
-    const payload = await buildVerificationStartPayload({ hashFn, purpose: "purchase" });
+    const payload = await buildVerificationStartPayload({
+    hashFn,
+    purpose: "purchase",
+    escrowPepper: TEST_ESCROW_PEPPER_HEX,
+  });
 
     expect(payload.verifyUrl.startsWith(`${ABRAXAS_ORIGIN}/partner/verify?`)).toBe(true);
     const url = new URL(payload.verifyUrl);
@@ -194,7 +207,11 @@ describe("buildVerificationStartPayload", () => {
   });
 
   it("stores only verifier challenge — no raw verifier", async () => {
-    const payload = await buildVerificationStartPayload({ hashFn, purpose: "purchase" });
+    const payload = await buildVerificationStartPayload({
+    hashFn,
+    purpose: "purchase",
+    escrowPepper: TEST_ESCROW_PEPPER_HEX,
+  });
     expect(payload.flowRecord).toMatchObject({
       flowId: payload.flowId,
       state: NONCE_STATE.PENDING,
@@ -209,11 +226,11 @@ describe("buildVerificationStartPayload", () => {
 describe("createAbraxasVerificationStart service", () => {
   it("returns verifyUrl, flowId, and verifier over TLS response", async () => {
     const store = createMemoryNonceStore();
-    const result = await createAbraxasVerificationStartService("captcha-token", {
+    const result = await createAbraxasVerificationStartService("captcha-token", withTestEscrowPepperDeps({
       store,
       hashFn,
       skipCaptcha: true,
-    });
+    }));
 
     expect(result.error).toBeUndefined();
     expect(result.verifyUrl).toMatch(/^https:\/\/abraxasworld\.xyz\/partner\/verify\?/);
@@ -227,11 +244,11 @@ describe("createAbraxasVerificationStart service", () => {
 
   it("does not require Wix membership", async () => {
     const store = createMemoryNonceStore();
-    const result = await createAbraxasVerificationStartService("captcha-token", {
+    const result = await createAbraxasVerificationStartService("captcha-token", withTestEscrowPepperDeps({
       store,
       hashFn,
       skipCaptcha: true,
-    });
+    }));
     expect(result.flowId).toBeTruthy();
     expect(result.verifier).toBeTruthy();
   });
@@ -261,15 +278,20 @@ describe("createAbraxasVerificationStart service", () => {
     const store = createMemoryNonceStore();
     const now = new Date("2026-01-01T00:00:00.000Z");
     for (let i = 0; i < 100; i += 1) {
-      const payload = await buildVerificationStartPayload({ hashFn, now, purpose: "purchase" });
+      const payload = await buildVerificationStartPayload({
+        hashFn,
+        now,
+        purpose: "purchase",
+        escrowPepper: TEST_ESCROW_PEPPER_HEX,
+      });
       await store.insert(payload.flowRecord);
     }
-    const result = await createAbraxasVerificationStartService("captcha-token", {
+    const result = await createAbraxasVerificationStartService("captcha-token", withTestEscrowPepperDeps({
       store,
       hashFn,
       skipCaptcha: true,
       now,
-    });
+    }));
     expect(result.error).toBe("rate_limited");
     expect(result.diagnostic).toMatchObject({
       code: "rate_limited",
@@ -291,11 +313,11 @@ describe("createAbraxasVerificationStart service", () => {
       removeById: store.removeById.bind(store),
     };
 
-    const result = await createPurchaseVerificationStartService(null, {
+    const result = await createPurchaseVerificationStartService(null, withTestEscrowPepperDeps({
       store: failingStore,
       hashFn,
       skipCaptcha: true,
-    });
+    }));
 
     expect(result.error).toBe("nonce_insert_failed");
     expect(result.diagnostic).toMatchObject({
@@ -310,11 +332,11 @@ describe("createAbraxasVerificationStart service", () => {
 
   it("purchase start success includes verifyUrl, gtf_ flowId, verifier, and purpose metadata", async () => {
     const store = createMemoryNonceStore();
-    const result = await createPurchaseVerificationStartService(null, {
+    const result = await createPurchaseVerificationStartService(null, withTestEscrowPepperDeps({
       store,
       hashFn,
       skipCaptcha: true,
-    });
+    }));
 
     expect(result.error).toBeUndefined();
     expect(result.verifyUrl).toMatch(/^https:\/\/abraxasworld\.xyz\/partner\/verify\?/);
@@ -328,20 +350,44 @@ describe("createAbraxasVerificationStart service", () => {
   it("purges expired pending flows before capacity evaluation", async () => {
     const store = createMemoryNonceStore();
     const past = new Date("2020-01-01T00:00:00.000Z");
-    const payload = await buildVerificationStartPayload({ hashFn, now: past, purpose: "purchase" });
+    const payload = await buildVerificationStartPayload({
+      hashFn,
+      now: past,
+      purpose: "purchase",
+      escrowPepper: TEST_ESCROW_PEPPER_HEX,
+    });
     await store.insert({
       ...payload.flowRecord,
       expiresAt: new Date(past.getTime() + 1000),
     });
     const now = new Date("2026-01-01T00:00:00.000Z");
-    const result = await createAbraxasVerificationStartService("captcha-token", {
+    const result = await createAbraxasVerificationStartService("captcha-token", withTestEscrowPepperDeps({
       store,
       hashFn,
       skipCaptcha: true,
       now,
-    });
+    }));
     expect(result.error).toBeUndefined();
     expect(result.flowId).toBeTruthy();
+  });
+
+  it("fails closed when PKCE escrow pepper is missing (no Wix secret)", async () => {
+    const store = createMemoryNonceStore();
+    const result = await createPurchaseVerificationStartService(null, {
+      store,
+      hashFn,
+      skipCaptcha: true,
+    });
+    expect(result).toMatchObject({
+      error: "pkce_escrow_secret_unavailable",
+      diagnostic: {
+        code: "pkce_escrow_secret_unavailable",
+        stage: "payload_build",
+        purpose: "purchase",
+      },
+    });
+    expect(result).not.toHaveProperty("verifier");
+    expect(result).not.toHaveProperty("flowOwnershipSecret");
   });
 });
 
@@ -418,7 +464,12 @@ describe("completeAbraxasVerificationCore — PKCE", () => {
   it("rejects expired flow", async () => {
     const store = createMemoryNonceStore();
     const past = new Date("2020-01-01T00:00:00.000Z");
-    const payload = await buildVerificationStartPayload({ hashFn, now: past, purpose: "purchase" });
+    const payload = await buildVerificationStartPayload({
+      hashFn,
+      now: past,
+      purpose: "purchase",
+      escrowPepper: TEST_ESCROW_PEPPER_HEX,
+    });
     await store.insert({
       ...payload.flowRecord,
       expiresAt: new Date(past.getTime() + 1000),
@@ -609,8 +660,16 @@ describe("Wix webMethod source contract", () => {
 
 describe("PKCE entropy and independence", () => {
   it("generates independent random flowId and verifier with 256-bit entropy each", async () => {
-    const a = await buildVerificationStartPayload({ hashFn, purpose: "purchase" });
-    const b = await buildVerificationStartPayload({ hashFn, purpose: "purchase" });
+    const a = await buildVerificationStartPayload({
+      hashFn,
+      purpose: "purchase",
+      escrowPepper: TEST_ESCROW_PEPPER_HEX,
+    });
+    const b = await buildVerificationStartPayload({
+      hashFn,
+      purpose: "purchase",
+      escrowPepper: TEST_ESCROW_PEPPER_HEX,
+    });
     expect(a.flowId).not.toBe(b.flowId);
     expect(a.verifier).not.toBe(b.verifier);
     expect(a.verifier).toMatch(VERIFIER_RE);

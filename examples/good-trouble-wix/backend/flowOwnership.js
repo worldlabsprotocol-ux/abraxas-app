@@ -12,28 +12,17 @@ import {
 export const OWNERSHIP_SECRET_BYTES = 32;
 const ESCROW_VERSION = "v1";
 
-/** @type {string | null} */
-let configuredEscrowPepper = null;
-
-export function configureFlowEscrowPepper(pepper) {
-  configuredEscrowPepper = typeof pepper === "string" && pepper.trim()
-    ? pepper.trim()
-    : null;
-}
-
-function resolveEscrowPepper() {
-  if (configuredEscrowPepper) return configuredEscrowPepper;
-  const fromEnv = process.env.GOOD_TROUBLE_PKCE_ESCROW_PEPPER?.trim();
-  if (fromEnv) return fromEnv;
-  return "good-trouble-wix-pkce-escrow-pepper-v1";
-}
-
 /**
  * @param {string} flowId
  * @param {string} ownershipSecret
- * @param {string} [pepper]
+ * @param {string} pepper
  */
-export function hashFlowOwnershipProof(flowId, ownershipSecret, pepper = resolveEscrowPepper()) {
+export function hashFlowOwnershipProof(flowId, ownershipSecret, pepper) {
+  if (!pepper) {
+    throw Object.assign(new Error("pkce_escrow_secret_unavailable"), {
+      code: "pkce_escrow_secret_unavailable",
+    });
+  }
   return createHmac("sha256", pepper)
     .update(`${flowId}:${ownershipSecret}`, "utf8")
     .digest("hex");
@@ -62,11 +51,10 @@ function deriveEscrowKey(flowId, ownershipSecret, pepper) {
 }
 
 /**
- * @param {{ flowId: string, verifier: string, ownershipSecret: string, pepper?: string }} input
+ * @param {{ flowId: string, verifier: string, ownershipSecret: string, pepper: string }} input
  */
 export function sealVerifierForFlow(input) {
-  const pepper = input.pepper ?? resolveEscrowPepper();
-  const key = deriveEscrowKey(input.flowId, input.ownershipSecret, pepper);
+  const key = deriveEscrowKey(input.flowId, input.ownershipSecret, input.pepper);
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", key, iv);
   const enc = Buffer.concat([
@@ -78,10 +66,9 @@ export function sealVerifierForFlow(input) {
 }
 
 /**
- * @param {{ flowId: string, ownershipSecret: string, verifierSealed: string, pepper?: string }} input
+ * @param {{ flowId: string, ownershipSecret: string, verifierSealed: string, pepper: string }} input
  */
 export function unsealVerifierForFlow(input) {
-  const pepper = input.pepper ?? resolveEscrowPepper();
   const parts = input.verifierSealed.split(":");
   if (parts.length !== 4 || parts[0] !== ESCROW_VERSION) {
     throw new Error("invalid_sealed_verifier");
@@ -89,7 +76,7 @@ export function unsealVerifierForFlow(input) {
   const iv = Buffer.from(parts[1], "hex");
   const tag = Buffer.from(parts[2], "hex");
   const enc = Buffer.from(parts[3], "hex");
-  const key = deriveEscrowKey(input.flowId, input.ownershipSecret, pepper);
+  const key = deriveEscrowKey(input.flowId, input.ownershipSecret, input.pepper);
   const decipher = createDecipheriv("aes-256-gcm", key, iv);
   decipher.setAuthTag(tag);
   const plain = Buffer.concat([decipher.update(enc), decipher.final()]);
@@ -97,11 +84,11 @@ export function unsealVerifierForFlow(input) {
 }
 
 /**
- * @param {{ flowId: string, verifier: string, pepper?: string }} input
+ * @param {{ flowId: string, verifier: string, pepper: string }} input
  */
 export function createPurchaseFlowOwnershipArtifacts(input) {
   const ownershipSecret = randomBytes(OWNERSHIP_SECRET_BYTES).toString("hex");
-  const pepper = input.pepper ?? resolveEscrowPepper();
+  const pepper = input.pepper;
   return {
     ownershipSecret,
     ownershipProofHash: hashFlowOwnershipProof(input.flowId, ownershipSecret, pepper),

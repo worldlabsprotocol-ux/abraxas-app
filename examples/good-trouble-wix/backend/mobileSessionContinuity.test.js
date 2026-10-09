@@ -13,7 +13,7 @@ import {
   createPurchaseVerificationStartService,
   __testOnlySetHashFn,
 } from "./abraxasVerificationService.js";
-import { configureFlowEscrowPepper } from "./flowOwnership.js";
+import { withTestEscrowPepperDeps } from "./testPkceEscrowFixtures.js";
 
 const hashFn = (value) => createHash("sha256").update(value, "utf8").digest("hex");
 
@@ -28,11 +28,14 @@ const RECEIPT_BAD = "dr_mobile_bad_0001";
 
 beforeEach(() => {
   __testOnlySetHashFn(hashFn);
-  configureFlowEscrowPepper("mobile-continuity-test-pepper");
 });
 
 async function startPurchase(store) {
-  return createPurchaseVerificationStartService(null, { store, skipCaptcha: true }, "/goods");
+  return createPurchaseVerificationStartService(
+    null,
+    withTestEscrowPepperDeps({ store, skipCaptcha: true }),
+    "/goods",
+  );
 }
 
 describe("mobile PKCE session continuity adversarial matrix", () => {
@@ -47,7 +50,7 @@ describe("mobile PKCE session continuity adversarial matrix", () => {
           start.flowId,
           start.verifier,
           "",
-          { store, validateReceipt: async () => VALID_RECEIPT },
+          withTestEscrowPepperDeps({ store, validateReceipt: async () => VALID_RECEIPT }),
         );
       },
       expectVerified: true,
@@ -62,7 +65,7 @@ describe("mobile PKCE session continuity adversarial matrix", () => {
           start.flowId,
           "",
           start.flowOwnershipSecret,
-          { store, validateReceipt: async () => VALID_RECEIPT },
+          withTestEscrowPepperDeps({ store, validateReceipt: async () => VALID_RECEIPT }),
         );
       },
       expectVerified: true,
@@ -77,7 +80,7 @@ describe("mobile PKCE session continuity adversarial matrix", () => {
           start.flowId,
           "",
           "",
-          { store, validateReceipt: async () => VALID_RECEIPT },
+          withTestEscrowPepperDeps({ store, validateReceipt: async () => VALID_RECEIPT }),
         );
       },
       expectVerified: false,
@@ -93,7 +96,7 @@ describe("mobile PKCE session continuity adversarial matrix", () => {
           start.flowId,
           "",
           "e".repeat(64),
-          { store, validateReceipt: async () => VALID_RECEIPT },
+          withTestEscrowPepperDeps({ store, validateReceipt: async () => VALID_RECEIPT }),
         );
       },
       expectVerified: false,
@@ -109,7 +112,7 @@ describe("mobile PKCE session continuity adversarial matrix", () => {
           start.flowId,
           "b".repeat(64),
           "",
-          { store, validateReceipt: async () => VALID_RECEIPT },
+          withTestEscrowPepperDeps({ store, validateReceipt: async () => VALID_RECEIPT }),
         );
       },
       expectVerified: false,
@@ -125,14 +128,14 @@ describe("mobile PKCE session continuity adversarial matrix", () => {
           start.flowId,
           start.verifier,
           "",
-          { store, validateReceipt: async () => VALID_RECEIPT },
+          withTestEscrowPepperDeps({ store, validateReceipt: async () => VALID_RECEIPT }),
         );
         const second = await completePurchaseVerificationService(
           RECEIPT_OK,
           start.flowId,
           start.verifier,
           "",
-          { store, validateReceipt: async () => VALID_RECEIPT },
+          withTestEscrowPepperDeps({ store, validateReceipt: async () => VALID_RECEIPT }),
         );
         return { first, second };
       },

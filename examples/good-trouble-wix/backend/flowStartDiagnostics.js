@@ -80,6 +80,9 @@ export const ALLOWLISTED_FLOW_START_ERROR_CODES = new Set([
   "payload_build_failed",
   "start_incomplete",
   "start_internal_error",
+  "pkce_escrow_secret_unavailable",
+  "pkce_escrow_secret_missing",
+  "pkce_escrow_secret_invalid",
 ]);
 
 const PURPOSE_POLICY = {
