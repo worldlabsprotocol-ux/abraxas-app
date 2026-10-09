@@ -2,7 +2,10 @@
 // Wix deployment: copy to src/public/ageGateAccessState.js
 // Privacy-safe age-gate skip state — derived from server-validated browse receipts only.
 
-import { BROWSE_ACCESS_STORAGE_KEY } from "../public/abraxasClientConstants.js";
+import {
+  BROWSE_ACCESS_STORAGE_KEY,
+  PURCHASE_VERIFIED_LOCAL_STORAGE_KEY,
+} from "../public/abraxasClientConstants.js";
 import {
   TRADITIONAL_AGE_GATE_STORAGE_KEY,
   TRADITIONAL_AGE_GATE_TTL_MS,
@@ -10,6 +13,8 @@ import {
 
 /** Server-authoritative browse expiry persisted after validated callback. */
 export const BROWSE_VERIFIED_LOCAL_STORAGE_KEY = "good_trouble_abraxas_browse_verified";
+
+export { PURCHASE_VERIFIED_LOCAL_STORAGE_KEY };
 
 /**
  * @param {Storage} storage
@@ -40,6 +45,48 @@ export function readBrowseVerifiedState(storage, now = Date.now()) {
  * @param {Storage} storage
  * @param {{ expiresAt: number, verifiedAt?: number }} input
  */
+/**
+ * @param {Storage} storage
+ * @param {number} [now]
+ * @returns {{ valid: true, expiresAt: number, verifiedAt: number } | { valid: false }}
+ */
+export function readPurchaseVerifiedState(storage, now = Date.now()) {
+  try {
+    const raw = storage.getItem(PURCHASE_VERIFIED_LOCAL_STORAGE_KEY);
+    if (!raw) return { valid: false };
+    const parsed = JSON.parse(raw);
+    const expiresAt = Number(parsed?.expiresAt);
+    const verifiedAt = Number(parsed?.verifiedAt);
+    if (!Number.isFinite(expiresAt) || !Number.isFinite(verifiedAt)) {
+      return { valid: false };
+    }
+    if (expiresAt <= now) {
+      storage.removeItem(PURCHASE_VERIFIED_LOCAL_STORAGE_KEY);
+      return { valid: false };
+    }
+    return { valid: true, expiresAt, verifiedAt };
+  } catch {
+    return { valid: false };
+  }
+}
+
+/**
+ * @param {Storage} storage
+ * @param {{ expiresAt: number, verifiedAt?: number }} input
+ */
+export function persistPurchaseVerifiedState(storage, input) {
+  const expiresAt = Number(input.expiresAt);
+  const verifiedAt = Number.isFinite(input.verifiedAt) ? input.verifiedAt : Date.now();
+  if (!Number.isFinite(expiresAt) || expiresAt <= verifiedAt) return;
+  storage.setItem(
+    PURCHASE_VERIFIED_LOCAL_STORAGE_KEY,
+    JSON.stringify({
+      expiresAt,
+      verifiedAt,
+    }),
+  );
+}
+
 export function persistBrowseVerifiedState(storage, input) {
   const expiresAt = Number(input.expiresAt);
   const verifiedAt = Number.isFinite(input.verifiedAt) ? input.verifiedAt : Date.now();
@@ -100,6 +147,9 @@ export function hasValidTraditionalAttestation(storage, now = Date.now()) {
  */
 export function shouldSkipAgeGate(input) {
   const now = input.now ?? Date.now();
+  if (readPurchaseVerifiedState(input.localStorage, now).valid) {
+    return { skip: true, reason: "abraxas_purchase_verified" };
+  }
   if (readBrowseVerifiedState(input.localStorage, now).valid) {
     return { skip: true, reason: "abraxas_browse_verified" };
   }

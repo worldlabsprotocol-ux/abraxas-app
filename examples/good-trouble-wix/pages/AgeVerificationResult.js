@@ -27,9 +27,12 @@ import {
 
 import { hasUntrustedRedirectQueryParams } from "public/purchaseReturnDestination";
 
+import { persistPurchaseVerifiedState } from "public/ageGateAccessState";
+
 import wixLocation from "wix-location";
 
 import {
+  local,
   session,
 } from "wix-storage-frontend";
 
@@ -137,14 +140,24 @@ function clearVerifier(flowId) {
  * as authoritative proof and does not independently authorize
  * regulated purchases or other restricted activity.
  */
-function setPurchaseVerifiedState() {
+function setPurchaseVerifiedState(expiresAtIso) {
+  const verifiedAt = Date.now();
   try {
     session.setItem(
       PURCHASE_VERIFIED_SESSION_FLAG,
-      "1"
+      String(verifiedAt),
     );
   } catch {
     // Fail closed. The user can restart the flow.
+  }
+
+  const expiresAt = expiresAtIso ? Date.parse(expiresAtIso) : NaN;
+  if (Number.isFinite(expiresAt) && expiresAt > verifiedAt) {
+    try {
+      persistPurchaseVerifiedState(local, { expiresAt, verifiedAt });
+    } catch {
+      // Session flag remains; local persistence is best-effort for age-gate UI only.
+    }
   }
 }
 
@@ -257,7 +270,7 @@ async function handleCallback() {
 
     if (shouldContinueAfterPurchaseVerification(result)) {
       clearVerifier(flowId);
-      setPurchaseVerifiedState();
+      setPurchaseVerifiedState(result.expires_at);
 
       setStatus(
         SUCCESS_CONTINUATION_MESSAGE

@@ -5,9 +5,12 @@ import {
   BROWSE_VERIFIED_LOCAL_STORAGE_KEY,
   hasValidTraditionalAttestation,
   persistBrowseVerifiedState,
+  persistPurchaseVerifiedState,
   readBrowseVerifiedState,
+  readPurchaseVerifiedState,
   shouldSkipAgeGate,
 } from "./ageGateAccessState.js";
+import { PURCHASE_VERIFIED_LOCAL_STORAGE_KEY } from "../public/abraxasClientConstants.js";
 import {
   TRADITIONAL_AGE_GATE_STORAGE_KEY,
   buildTraditionalAgeAttestationValue,
@@ -46,6 +49,33 @@ describe("ageGateAccessState", () => {
     });
     expect(readBrowseVerifiedState(storage, expiresAt + 1)).toEqual({ valid: false });
     expect(storage.getItem(BROWSE_VERIFIED_LOCAL_STORAGE_KEY)).toBeNull();
+  });
+
+  it("persists and reads server-authoritative purchase expiry", () => {
+    const storage = createMemoryStorage();
+    const now = Date.parse("2026-01-01T00:00:00.000Z");
+    const expiresAt = now + 24 * 60 * 60 * 1000;
+    persistPurchaseVerifiedState(storage, { expiresAt, verifiedAt: now });
+    expect(readPurchaseVerifiedState(storage, now)).toEqual({
+      valid: true,
+      expiresAt,
+      verifiedAt: now,
+    });
+    expect(readPurchaseVerifiedState(storage, expiresAt + 1)).toEqual({ valid: false });
+    expect(storage.getItem(PURCHASE_VERIFIED_LOCAL_STORAGE_KEY)).toBeNull();
+  });
+
+  it("skips the age gate for validated Abraxas purchase state", () => {
+    const localStorage = createMemoryStorage();
+    const sessionStorage = createMemoryStorage();
+    const now = Date.now();
+    persistPurchaseVerifiedState(localStorage, {
+      expiresAt: now + 60_000,
+      verifiedAt: now,
+    });
+    expect(shouldSkipAgeGate({ localStorage, sessionStorage, now }).reason).toBe(
+      "abraxas_purchase_verified",
+    );
   });
 
   it("skips the age gate for validated Abraxas browse state", () => {

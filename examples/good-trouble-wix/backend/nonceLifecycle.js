@@ -289,6 +289,7 @@ export async function completeAbraxasVerificationCore(params) {
     policyId: claim.record.policyId,
     flowConsumed: true,
     returnDestination: claim.record.returnDestinationPath ?? null,
+    expires_at: validation.expires_at ?? null,
   };
 }
 

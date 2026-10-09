@@ -44,5 +44,13 @@ export const BROWSE_ACCESS_STORAGE_KEY = "good_trouble_browse_access_l0";
  */
 export const PURCHASE_VERIFIED_SESSION_FLAG = "good_trouble_purchase_verified_pilot";
 
+/**
+ * Server-validated purchase eligibility expiry — localStorage only (UI age-gate skip).
+ * Written only after Wix backend completePurchaseVerification returns verified:true.
+ * NOT checkout authority; never read by backend web methods.
+ */
+export const PURCHASE_VERIFIED_LOCAL_STORAGE_KEY =
+  "good_trouble_abraxas_purchase_verified";
+
 /** @deprecated Use PURCHASE_VERIFIED_SESSION_FLAG */
 export const PILOT_VERIFIED_SESSION_FLAG = PURCHASE_VERIFIED_SESSION_FLAG;
