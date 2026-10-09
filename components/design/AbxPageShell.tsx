@@ -32,17 +32,19 @@ export function AbxPageShell({
   return (
     <RedesignShell>
       <div
-        className="abx-page-content abx-product-shell"
+        className={`abx-page-content abx-product-shell${accent === "developer" || accent === "partner" ? " abx-partner-surface" : ""}`}
         data-abx-accent={accent}
         data-motion-tier={motionTier}
         style={{
           ...abxAccentCssVars(accent),
           ...abxMotionCssVars(),
           maxWidth,
+          width: "100%",
           margin: "0 auto",
           padding: `${ABX_SPACING.sectionGap} ${ABX_SPACING.pagePadding} 0`,
           position: "relative",
           zIndex: 1,
+          boxSizing: "border-box",
           ...contentStyle,
         }}
       >

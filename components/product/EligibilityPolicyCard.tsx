@@ -87,12 +87,16 @@ export function EligibilityPolicyCard({
 
   return (
     <article
+      className="abx-card"
       style={{
         borderRadius: 14,
         border: selected ? "1px solid rgba(16,185,129,0.5)" : "1px solid var(--border)",
         background: selected ? "rgba(16,185,129,0.06)" : "var(--surface)",
         padding: compact ? "0.75rem 0.85rem" : "0.9rem 1rem",
         cursor: interactive ? "pointer" : undefined,
+        minWidth: 0,
+        maxWidth: "100%",
+        boxSizing: "border-box",
       }}
       onClick={interactive ? onSelect : undefined}
       role={interactive ? "button" : undefined}
@@ -105,8 +109,8 @@ export function EligibilityPolicyCard({
         }
       } : undefined}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: "0.75rem", marginBottom: "0.65rem" }}>
-        <div>
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "start", gap: "0.75rem", marginBottom: "0.65rem" }}>
+        <div style={{ flex: "1 1 12rem", minWidth: 0 }}>
           <h3 style={{ fontFamily: FONT, fontSize: "0.92rem", fontWeight: 800, margin: "0 0 0.25rem", color: "var(--text-primary)" }}>
             {title}
           </h3>
@@ -114,7 +118,7 @@ export function EligibilityPolicyCard({
             {question}
           </p>
           {technicalId && (
-            <p style={{ fontFamily: MONO, fontSize: "0.62rem", color: "var(--text-muted)", margin: 0 }}>
+            <p className="abx-break-anywhere" style={{ fontFamily: MONO, fontSize: "0.62rem", color: "var(--text-muted)", margin: 0 }}>
               {technicalId}
             </p>
           )}

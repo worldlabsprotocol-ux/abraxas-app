@@ -641,14 +641,14 @@ export function PartnerLaunchpadClient({
           <p style={bodyText}>
             Paste a sandbox API key to resume a workspace, or continue below to provision a new sandbox application.
           </p>
-          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1rem" }}>
+          <div className="abx-launchpad-action-row" style={{ marginBottom: "1rem" }}>
             <input
               type="password"
               value={apiKeyInput}
               onChange={(e) => setApiKeyInput(e.target.value)}
               placeholder="abx_test_…"
               aria-label="Sandbox API key"
-              style={inputStyle}
+              style={{ ...inputStyle, flex: "1 1 12rem", width: "100%" }}
             />
             <Btn size="sm" onClick={() => void signInWithKey()}>Sign in</Btn>
           </div>
@@ -803,8 +803,8 @@ export function PartnerLaunchpadClient({
               <p style={bodyText}>Return destination after verification</p>
               <div style={{ display: "grid", gap: "0.45rem", marginBottom: "0.85rem" }}>
                 {activeApp.allowed_return_urls.map((url) => (
-                  <div key={url} style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap", padding: "0.6rem", border: "1px solid var(--border)", borderRadius: 10 }}>
-                    <code style={{ ...bodyText, margin: 0, flex: "1 1 260px", fontFamily: MONO, fontSize: "0.68rem", overflowWrap: "anywhere" }}>{url}</code>
+                  <div key={url} className="abx-launchpad-url-row">
+                    <code className="abx-launchpad-url-row__text" style={{ fontFamily: MONO }}>{url}</code>
                     <Btn size="sm" variant="ghost" onClick={() => void removeReturnUrl(url)} disabled={activeApp.allowed_return_urls.length <= 1}>Remove</Btn>
                   </div>
                 ))}
@@ -1126,6 +1126,8 @@ const codeBlockStyle: React.CSSProperties = {
   padding: "0.85rem",
   borderRadius: 10,
   overflow: "auto",
+  maxWidth: "100%",
+  boxSizing: "border-box",
   background: "var(--surface-inset)",
   border: "1px solid var(--border)",
   color: "var(--text-secondary)",

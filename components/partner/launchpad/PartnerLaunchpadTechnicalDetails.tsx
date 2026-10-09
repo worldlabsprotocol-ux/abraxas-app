@@ -71,12 +71,7 @@ export function PartnerLaunchpadTechnicalDetails({
         {rows.map((row) => (
           <div
             key={row.label}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "minmax(120px, 34%) 1fr",
-              gap: "0.65rem",
-              alignItems: "start",
-            }}
+            className="abx-responsive-kv"
           >
             <span style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>{row.label}</span>
             <code
