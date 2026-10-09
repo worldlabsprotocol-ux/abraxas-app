@@ -132,6 +132,24 @@ export function coalesceGoodTroublePurchaseReturnUrl(
   return `${storedParts.origin}${storedParts.pathname}?${GOOD_TROUBLE_GTV_PARAM}=${encodeURIComponent(hintToken)}`;
 }
 
+/** Merge partner return URL hints (client, resume) without widening origin/path/token binding. */
+export function mergePartnerReturnUrlHints(...parts: (string | null | undefined)[]): string {
+  let merged = "";
+  for (const part of parts) {
+    const hint = part?.trim();
+    if (!hint) continue;
+    if (!merged) {
+      merged = hint;
+      continue;
+    }
+    merged = preferAuthoritativeContinuationReturnUrl(
+      merged,
+      coalesceGoodTroublePurchaseReturnUrl(merged, hint),
+    );
+  }
+  return merged;
+}
+
 export function preferAuthoritativeContinuationReturnUrl(
   stored: string,
   candidate: string,

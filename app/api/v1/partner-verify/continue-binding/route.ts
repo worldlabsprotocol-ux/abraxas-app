@@ -14,6 +14,11 @@ import {
   verifyPartnerContinueBindingCookie,
 } from "@/lib/partner/partnerVerifyResumeCookie";
 import { resolveHostedHandoffForContinue } from "@/lib/partner/hostedHandoff/resolveForContinue";
+import {
+  readPartnerVerifyResumeReturnUrl,
+  resolvePartnerReturnUrlHintForRequest,
+  upgradeStoredContinuationWithPartnerHint,
+} from "@/lib/partner/partnerReturnUrlHint";
 import { isOpaqueVerifyRequest } from "@/lib/partner/productionIntegration/requestCorrelation";
 
 export const dynamic = "force-dynamic";
@@ -41,8 +46,17 @@ export async function GET(request: NextRequest) {
 
   try {
     let stored = await createSupabaseContinuationStore().peekByVerifyRequestId(verifyRequest);
+    if (stored) {
+      const partnerHint = await resolvePartnerReturnUrlHintForRequest(request, null);
+      if (partnerHint) {
+        stored = await upgradeStoredContinuationWithPartnerHint({ stored, partnerHint });
+      }
+    }
     if (!stored && isOpaqueVerifyRequest(verifyRequest)) {
-      const resolved = await resolveHostedHandoffForContinue(verifyRequest);
+      const resumeHint = await readPartnerVerifyResumeReturnUrl(request);
+      const resolved = await resolveHostedHandoffForContinue(verifyRequest, {
+        partnerReturnUrlHint: resumeHint,
+      });
       if (resolved.ok) {
         stored = resolved.continuation;
       }

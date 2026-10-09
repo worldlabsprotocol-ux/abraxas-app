@@ -16,6 +16,7 @@ import { ensureHostedHolderWalletBinding } from "@/lib/credentials/ensureHostedH
 import { recordHolderSessionDiagnostic } from "@/lib/auth/holderSessionDiagnostic";
 import { isOpaqueVerifyRequest } from "@/lib/partner/productionIntegration/requestCorrelation";
 import { resolveHostedHandoffForContinue } from "@/lib/partner/hostedHandoff/resolveForContinue";
+import { resolvePartnerReturnUrlHintForRequest } from "@/lib/partner/partnerReturnUrlHint";
 
 export const dynamic = "force-dynamic";
 
@@ -75,8 +76,9 @@ export async function POST(req: NextRequest) {
   const verifyRequest = body.verify_request?.trim() || undefined;
 
   if (verifyRequest && isOpaqueVerifyRequest(verifyRequest)) {
+    const partnerReturnUrlHint = await resolvePartnerReturnUrlHintForRequest(req, body.return_url);
     const resolved = await resolveHostedHandoffForContinue(verifyRequest, {
-      partnerReturnUrlHint: body.return_url,
+      partnerReturnUrlHint: partnerReturnUrlHint || null,
     });
     if (!resolved.ok) {
       const status = resolved.code === "expired" ? 410

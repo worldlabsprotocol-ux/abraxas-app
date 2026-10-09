@@ -376,7 +376,7 @@ export async function resolveHostedHandoffForContinue(
       action: handoff.action,
       result_family: handoff.result_family,
       expires_at: handoff.expires_at,
-      return_url: returnUrl,
+      return_url: continuation.returnUrl,
     },
     continuation,
   };
