@@ -49,7 +49,8 @@ const VALID_SANDBOX_RECEIPT = {
   schema_version: "1.0.0",
   artifact_type: "eligibility_decision_receipt",
   expires_at: "2099-01-01T00:00:00.000Z",
-  evaluated_claim_refs: [{ status: "active", claim_type: "identity_verified" }],
+  policy_version: 2,
+  evaluated_claim_refs: [{ status: "active", claim_type: "self_attested_age_band" }],
   production_usable: false,
   decision_context: "sandbox_only",
   invalidation_reasons: ["production_not_usable:false"],
@@ -164,13 +165,13 @@ describe("PKCE proof validation", () => {
 });
 
 describe("integration constants", () => {
-  it("uses production purchase validation mode and exact partner/policy ids", () => {
+  it("uses sandbox purchase validation mode and exact partner/policy ids", () => {
     expect(INTEGRATION_CONSTANTS).toEqual({
-      mode: "production",
+      mode: "sandbox",
       browse: expect.objectContaining({ purpose: "browse", policyId: BROWSE_POLICY_ID }),
       purchase: expect.objectContaining({ purpose: "purchase", policyId: POLICY_ID }),
     });
-    expect(RECEIPT_VALIDATION_MODE).toBe("production");
+    expect(RECEIPT_VALIDATION_MODE).toBe("sandbox");
   });
 });
 

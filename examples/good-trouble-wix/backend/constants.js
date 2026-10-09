@@ -111,12 +111,14 @@ export const PURCHASE_VERIFIED_SESSION_FLAG = "good_trouble_purchase_verified_pi
 /** @deprecated Use PURCHASE_VERIFIED_SESSION_FLAG */
 export const PILOT_VERIFIED_SESSION_FLAG = PURCHASE_VERIFIED_SESSION_FLAG;
 
+/** Canonical Launchpad sandbox policy pin (Colosseum pilot). */
+export const GOOD_TROUBLE_SANDBOX_POLICY_VERSION = 2;
+
 /**
- * Canonical purchase pilot validates production Abraxas receipts.
- * Browse remains sandbox/L0 and uses separate validators.
+ * Canonical purchase pilot validates sandbox Partner Flow receipts (L0 self-attestation).
+ * Production receipts remain supported when decision_context is production.
  */
-export const RECEIPT_VALIDATION_MODE =
-  "production";
+export const RECEIPT_VALIDATION_MODE = "sandbox";
 
 export const FLOW_ID_PREFIX_PURCHASE = "gtf_";
 export const FLOW_ID_PREFIX_BROWSE = "gtb_";

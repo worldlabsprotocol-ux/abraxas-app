@@ -205,7 +205,11 @@ export async function completePurchaseVerificationService(receiptId, flowId, ver
   const defaultValidateReceipt = async (id) => {
     try {
       const result = await fetchAndValidateSandboxReceipt(id);
-      return { verified: result.verified, transientFailure: false };
+      return {
+        verified: result.verified,
+        transientFailure: Boolean(result.transientFailure),
+        expires_at: result.expires_at ?? null,
+      };
     } catch {
       return { verified: false, transientFailure: true };
     }

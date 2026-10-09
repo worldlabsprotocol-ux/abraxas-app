@@ -2,6 +2,11 @@
 // Strict Partner Flow public receipt validation for Good Trouble Wix sandbox.
 // Mirror lib/partner/verifyPartnerFlowReceipt.ts — keep in sync manually.
 
+import {
+  GOOD_TROUBLE_SANDBOX_POLICY_VERSION,
+  RECEIPT_VALIDATION_MODE,
+} from "./constants.js";
+
 const ABRAXAS_ORIGIN = "https://abraxasworld.xyz";
 const EXPECTED_PARTNER_ID = "good-trouble";
 const EXPECTED_POLICY_ID = "good-trouble-age_21_retail-v1";
@@ -9,6 +14,8 @@ const SUPPORTED_SCHEMA_VERSION = "1.0.0";
 const EXPECTED_ARTIFACT_TYPE = "eligibility_decision_receipt";
 const SANDBOX_ONLY_INVALIDATION_REASON = "production_not_usable:false";
 const RECEIPT_ID_RE = /^dr_[A-Za-z0-9_-]{8,128}$/;
+
+export { RECEIPT_VALIDATION_MODE };
 
 function isPilotAgeEligibilityReceipt(receipt) {
   return (receipt.evaluated_claim_refs ?? []).some(
@@ -23,6 +30,12 @@ function sharedErrors(receipt, now) {
   if (receipt.status !== "active") errors.push(`status_not_active:${receipt.status ?? "missing"}`);
   if (receipt.partner_id !== EXPECTED_PARTNER_ID) errors.push("partner_mismatch");
   if (receipt.policy_id !== EXPECTED_POLICY_ID) errors.push("policy_mismatch");
+  if (
+    receipt.policy_version != null
+    && Number(receipt.policy_version) !== GOOD_TROUBLE_SANDBOX_POLICY_VERSION
+  ) {
+    errors.push("policy_version_mismatch");
+  }
   if (receipt.schema_version !== SUPPORTED_SCHEMA_VERSION) errors.push("schema_version_unsupported");
   if (receipt.artifact_type !== EXPECTED_ARTIFACT_TYPE) errors.push("artifact_type_mismatch");
   if (receipt.artifact_type === "browse_access_receipt") {
@@ -86,7 +99,19 @@ function productionErrors(receipt) {
 
 /**
  * @param {unknown} receipt
- * @param {{ now?: Date }} [opts]
+ * @returns {"sandbox" | "production"}
+ */
+export function resolvePurchaseReceiptValidationMode(receipt) {
+  if (!receipt || typeof receipt !== "object") return RECEIPT_VALIDATION_MODE;
+  if (receipt.decision_context === "production" || receipt.production_usable === true) {
+    return "production";
+  }
+  return "sandbox";
+}
+
+/**
+ * @param {unknown} receipt
+ * @param {{ now?: Date, mode?: "sandbox" | "production" }} [opts]
  * @returns {{ verified: boolean }}
  */
 export function validateSandboxReceipt(receipt, opts = {}) {
@@ -108,12 +133,9 @@ export function validateProductionReceipt(receipt, opts = {}) {
   return { verified: errors.length === 0 };
 }
 
-/** Canonical purchase pilot validates production receipts from Abraxas. */
-export const RECEIPT_VALIDATION_MODE = "production";
-
 /**
  * @param {string} receiptId
- * @returns {Promise<{ verified: boolean, mode: typeof RECEIPT_VALIDATION_MODE }>}
+ * @returns {Promise<{ verified: boolean, mode: "sandbox" | "production", expires_at?: string | null, transientFailure?: boolean }>}
  */
 export async function fetchAndValidatePurchaseReceipt(receiptId) {
   const id = typeof receiptId === "string" ? receiptId.trim() : "";
@@ -128,10 +150,16 @@ export async function fetchAndValidatePurchaseReceipt(receiptId) {
       { method: "GET", headers: { Accept: "application/json" } },
     );
   } catch {
-    return { verified: false, mode: RECEIPT_VALIDATION_MODE };
+    return { verified: false, mode: RECEIPT_VALIDATION_MODE, transientFailure: true };
   }
 
-  if (!response.ok) return { verified: false, mode: RECEIPT_VALIDATION_MODE };
+  if (!response.ok) {
+    return {
+      verified: false,
+      mode: RECEIPT_VALIDATION_MODE,
+      transientFailure: response.status >= 500,
+    };
+  }
 
   let receipt;
   try {
@@ -140,10 +168,15 @@ export async function fetchAndValidatePurchaseReceipt(receiptId) {
     return { verified: false, mode: RECEIPT_VALIDATION_MODE };
   }
 
-  const result = RECEIPT_VALIDATION_MODE === "production"
+  const mode = resolvePurchaseReceiptValidationMode(receipt);
+  const result = mode === "production"
     ? validateProductionReceipt(receipt)
     : validateSandboxReceipt(receipt);
-  return { ...result, mode: RECEIPT_VALIDATION_MODE };
+  return {
+    ...result,
+    mode,
+    expires_at: typeof receipt.expires_at === "string" ? receipt.expires_at : null,
+  };
 }
 
 /** @deprecated Use fetchAndValidatePurchaseReceipt */
