@@ -14,6 +14,7 @@ export const INTEGRATION_LIFECYCLE_EVENT_TYPES = [
   "access_decision_permit",
   "access_decision_deny",
   "hosted_handoff_created",
+  "hosted_handoff_create_failed",
   "hosted_handoff_completed",
   "production_activation_completed",
   "integration_smoke_completed",

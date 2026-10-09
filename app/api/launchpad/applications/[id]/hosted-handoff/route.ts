@@ -77,6 +77,23 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       : bindingCodes.has(code) || code === "callback_rejected" || code === "not_configured" || code === "app_unpinned"
         ? 400
         : 503;
+    try {
+      const { recordIntegrationEventBestEffort } = await import("@/lib/partner/integrationObservability/record");
+      await recordIntegrationEventBestEffort({
+        partnerId: auth.session.partnerId,
+        applicationId: app.id,
+        environment: app.environment === "production" ? "production" : "sandbox",
+        eventType: "hosted_handoff_create_failed",
+        lifecycleStage: "request",
+        outcome: "failed",
+        partnerSafeReason: "hosted_handoff_unavailable",
+        policyId: app.policy_id,
+        policyVersion: app.policy_version,
+        metadata: { public_code: code, outcome_class: status >= 500 ? "server_unavailable" : "client_blocked" },
+      });
+    } catch {
+      // Observability must not block handoff errors.
+    }
     return launchpadError(code, status);
   }
 }

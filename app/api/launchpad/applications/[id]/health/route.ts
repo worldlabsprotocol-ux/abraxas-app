@@ -12,6 +12,10 @@ import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { probePolicyChangeControlSchema } from "@/lib/policy/changeControl/schemaReady";
 import { launchpadPolicyChangeControlHealthSlice } from "@/lib/policy/changeControl/health";
+import {
+  deploymentIncludesSandboxReceiptTrustFix,
+  readLaunchpadDeploymentFingerprint,
+} from "@/lib/partner/launchpad/deploymentFingerprint";
 
 export const dynamic = "force-dynamic";
 type RouteContext = { params: Promise<{  id: string  }> };
@@ -65,7 +69,9 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     overview: policyOverview,
     pinnedVersion: app.policy_version,
   });
-  return launchpadJson(buildLaunchpadIntegrationHealth({
+  const deployment = readLaunchpadDeploymentFingerprint();
+  return launchpadJson({
+    ...buildLaunchpadIntegrationHealth({
     application: app,
     activeSandboxKey: Boolean(app.api_key_id && active.has(app.api_key_id)),
     activeProductionKey: Boolean(app.production_api_key_id && active.has(app.production_api_key_id)),
@@ -81,5 +87,8 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     schemaSkipCode: webhook.schema_skip_code,
     productionCompatibility: webhook.production_compatibility,
     policyChangeControl,
-  }));
+  }),
+    deployment,
+    good_trouble_sandbox_receipt_trust_fix: deploymentIncludesSandboxReceiptTrustFix(deployment),
+  });
 }

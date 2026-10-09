@@ -48,6 +48,10 @@ import { EnvironmentBadge } from "@/components/product/EnvironmentBadge";
 import { ModeCCommandRail } from "@/components/product/ModeCCommandRail";
 import { EligibilityPolicyCard } from "@/components/product/EligibilityPolicyCard";
 import { PartnerFlowRequestPanel } from "@/components/partner/launchpad/PartnerFlowRequestPanel";
+import {
+  GoodTroubleColosseumHandoffCard,
+  isGoodTroubleColosseumSandboxApp,
+} from "@/components/partner/launchpad/GoodTroubleColosseumHandoffCard";
 import { PolicyVersionPlannerPanel } from "@/components/partner/launchpad/PolicyVersionPlannerPanel";
 import { NetworkReadinessPanel } from "@/components/partner/launchpad/NetworkReadinessPanel";
 import { OnchainGateDeploymentPanel } from "@/components/partner/launchpad/OnchainGateDeploymentPanel";
@@ -834,6 +838,16 @@ export function PartnerLaunchpadClient({
       {step === "test" && activeApp && (
         journey?.testAvailable ? (
           <>
+            {workspace?.partner_id && isGoodTroubleColosseumSandboxApp({
+              applicationId: activeApp.id,
+              partnerId: workspace.partner_id,
+              environment: activeApp.environment,
+            }) && (
+              <GoodTroubleColosseumHandoffCard
+                applicationId={activeApp.id}
+                partnerId={workspace.partner_id}
+              />
+            )}
             <ContentCard title="Run a customer verification">
               <p style={bodyText}>
                 Confirm the customer experience works end to end. You should receive the eligibility result on your server — not date of birth, documents, or identity images.
