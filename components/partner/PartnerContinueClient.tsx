@@ -19,6 +19,7 @@ import { GoodTroublePurchaseContinueFlow } from "@/components/partner/GoodTroubl
 import { SelfAttestationBrowseForm } from "@/components/partner/SelfAttestationBrowseForm";
 import { PartnerJourneyLayout } from "@/components/partner/PartnerJourneyLayout";
 import { usePartnerFlowHandoff } from "@/lib/passport/partnerFlowHandoff";
+import { loadPartnerVerifyResume } from "@/lib/partner/partnerVerifyResume";
 import { usePassportVerification } from "@/lib/hooks/usePassportVerification";
 import { computePassportSetupState } from "@/lib/idv/identityVerificationStates";
 import {
@@ -150,10 +151,11 @@ function PartnerContinueInner() {
 
       if (verifyRequestId.startsWith("vr_")) {
         try {
-          const res = await fetch(
-            `/api/v1/hosted-handoff/continue-context?verify_request=${encodeURIComponent(verifyRequestId)}`,
-            { credentials: "include" },
-          );
+          const resumeReturnUrl = loadPartnerVerifyResume()?.returnUrl?.trim();
+          const continueContextUrl = resumeReturnUrl
+            ? `/api/v1/hosted-handoff/continue-context?verify_request=${encodeURIComponent(verifyRequestId)}&return_url=${encodeURIComponent(resumeReturnUrl)}`
+            : `/api/v1/hosted-handoff/continue-context?verify_request=${encodeURIComponent(verifyRequestId)}`;
+          const res = await fetch(continueContextUrl, { credentials: "include" });
           if (res.ok) {
             const preview = await res.json() as {
               partner_id?: string;

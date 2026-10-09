@@ -5,6 +5,7 @@ import {
   GOOD_TROUBLE_BROWSE_CALLBACK_PATH,
   GOOD_TROUBLE_BROWSE_RC_PARAM,
   GOOD_TROUBLE_GTB_PARAM,
+  GOOD_TROUBLE_FLOW_ID_RE,
   GOOD_TROUBLE_GTV_PARAM,
   GOOD_TROUBLE_PURCHASE_CALLBACK_PATH,
   GOOD_TROUBLE_RETURN_HOST,
@@ -83,6 +84,54 @@ export function partnerContinuationReturnUrlsMatch(stored: string, candidate: st
 }
 
 /** Pick the richer authoritative URL (prefers the variant that includes a flow token). */
+/**
+ * Merge allowlisted Good Trouble purchase callback with partner hint that carries gtv.
+ * Strips untrusted hint query params — only the opaque gtf_* flow id is kept.
+ */
+/** True when client hint may upgrade a bare allowlisted purchase callback with gtv. */
+export function goodTroublePurchaseReturnUrlBindingAllowed(
+  stored: string,
+  clientHint: string,
+): boolean {
+  if (partnerContinuationReturnUrlsMatch(stored, clientHint)) return true;
+  const coalesced = coalesceGoodTroublePurchaseReturnUrl(stored, clientHint);
+  if (coalesced === stored.trim()) return false;
+  const storedParts = decomposeContinuationReturnUrl(stored);
+  const coalescedParts = decomposeContinuationReturnUrl(coalesced);
+  if (!storedParts || !coalescedParts) return false;
+  return (
+    storedParts.origin === coalescedParts.origin
+    && storedParts.pathname === coalescedParts.pathname
+    && Boolean(coalescedParts.flowToken?.startsWith("gtf_"))
+  );
+}
+
+export function coalesceGoodTroublePurchaseReturnUrl(
+  storedOrAllowlisted: string,
+  partnerHint: string,
+): string {
+  const stored = storedOrAllowlisted.trim();
+  const hint = partnerHint.trim();
+  if (!hint) return stored;
+
+  const storedParts = decomposeContinuationReturnUrl(stored);
+  const hintParts = decomposeContinuationReturnUrl(hint);
+  if (!storedParts || !hintParts) return stored;
+  if (storedParts.origin !== hintParts.origin) return stored;
+  if (storedParts.pathname !== hintParts.pathname) return stored;
+  if (!isGoodTroublePurchaseCallbackPath(storedParts.pathname)) return stored;
+
+  const hintToken = hintParts.flowToken;
+  if (!hintToken?.startsWith("gtf_") || !GOOD_TROUBLE_FLOW_ID_RE.test(hintToken)) {
+    return stored;
+  }
+  if (storedParts.flowToken && storedParts.flowToken !== hintToken) {
+    return stored;
+  }
+
+  return `${storedParts.origin}${storedParts.pathname}?${GOOD_TROUBLE_GTV_PARAM}=${encodeURIComponent(hintToken)}`;
+}
+
 export function preferAuthoritativeContinuationReturnUrl(
   stored: string,
   candidate: string,

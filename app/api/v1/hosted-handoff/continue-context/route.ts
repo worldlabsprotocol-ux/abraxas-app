@@ -34,7 +34,11 @@ export async function GET(request: NextRequest) {
     return res;
   }
 
-  const resolved = await resolveHostedHandoffForContinue(verifyRequest, { trace });
+  const partnerReturnUrlHint = request.nextUrl.searchParams.get("return_url")?.trim() ?? null;
+  const resolved = await resolveHostedHandoffForContinue(verifyRequest, {
+    trace,
+    partnerReturnUrlHint,
+  });
   if (!resolved.ok) {
     const res = NextResponse.json(
       { ok: false, code: resolved.code },

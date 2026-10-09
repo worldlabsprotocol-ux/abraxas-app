@@ -75,7 +75,9 @@ export async function POST(req: NextRequest) {
   const verifyRequest = body.verify_request?.trim() || undefined;
 
   if (verifyRequest && isOpaqueVerifyRequest(verifyRequest)) {
-    const resolved = await resolveHostedHandoffForContinue(verifyRequest);
+    const resolved = await resolveHostedHandoffForContinue(verifyRequest, {
+      partnerReturnUrlHint: body.return_url,
+    });
     if (!resolved.ok) {
       const status = resolved.code === "expired" ? 410
         : resolved.code === "completed" || resolved.code === "cancelled" ? 409
@@ -100,8 +102,6 @@ export async function POST(req: NextRequest) {
     }
     partnerId = preview.partner_id;
     policyId = preview.policy_id;
-    // Callback always comes from the reviewed handoff. The client hint may be
-    // presentation-normalized (for example, a Good Trouble browse URL).
     returnUrl = preview.return_url;
     body.purpose = preview.purpose.trim();
   } else if (verifyRequest) {
