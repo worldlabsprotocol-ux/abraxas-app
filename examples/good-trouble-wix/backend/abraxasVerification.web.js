@@ -32,8 +32,13 @@ export const completeBrowseVerification = webMethod(
 
 export const completePurchaseVerification = webMethod(
   Permissions.Anyone,
-  async (receiptId, flowId, verifier) =>
-    completePurchaseVerificationService(receiptId, flowId, verifier),
+  async (receiptId, flowId, verifier, flowOwnershipSecret) =>
+    completePurchaseVerificationService(
+      receiptId,
+      flowId,
+      verifier,
+      flowOwnershipSecret ?? "",
+    ),
 );
 
 /** @deprecated Use completePurchaseVerification */

@@ -140,6 +140,7 @@ async function startFlow(purpose, captchaToken, deps = {}, returnDestinationPath
       purpose: payload.purpose,
       policyId: payload.policyId,
       correlationId: payload.flowRecord.correlationId,
+      flowOwnershipSecret: payload.flowOwnershipSecret ?? null,
     });
   } catch (error) {
     return buildFlowStartFailure({
@@ -198,7 +199,23 @@ export async function createAbraxasVerificationStartService(captchaToken, deps =
   });
 }
 
-export async function completePurchaseVerificationService(receiptId, flowId, verifier, deps = {}) {
+export async function completePurchaseVerificationService(
+  receiptId,
+  flowId,
+  verifier,
+  fourthArg = "",
+  fifthArg = {},
+) {
+  let flowOwnershipSecret = "";
+  /** @type {object} */
+  let deps = {};
+  if (typeof fourthArg === "string") {
+    flowOwnershipSecret = fourthArg;
+    deps = fifthArg ?? {};
+  } else {
+    deps = fourthArg ?? {};
+  }
+
   const store = await resolveStore(deps);
   const hashFn = resolveHashFn(deps.hashFn);
 
@@ -220,6 +237,7 @@ export async function completePurchaseVerificationService(receiptId, flowId, ver
     receiptId,
     flowId,
     verifier,
+    flowOwnershipSecret,
     hashFn,
     validateReceipt: deps.validateReceipt ?? defaultValidateReceipt,
   });

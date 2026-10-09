@@ -25,6 +25,15 @@ import {
   SUCCESS_CONTINUATION_MESSAGE,
 } from "public/purchaseCallbackLogic";
 
+import {
+  hasPurchaseCallbackPkceProof,
+  mapPurchaseCallbackFailureMessage,
+  resolvePurchaseCallbackPkceMaterial,
+  RESTART_VERIFICATION_LABEL,
+} from "public/purchaseCallbackCompletion";
+
+import { clearFlowOwnershipCookie } from "public/purchaseFlowOwnership";
+
 import { hasUntrustedRedirectQueryParams } from "public/purchaseReturnDestination";
 
 import { persistPurchaseVerifiedState } from "public/ageGateAccessState";
@@ -56,7 +65,7 @@ const GENERIC_FAILURE =
   "Verification could not be completed. Please try again or use the traditional age option.";
 
 const RESTART_MESSAGE =
-  "This verification was opened in a different browser or tab. Please start again from the age gate.";
+  "This verification was opened in a different browser or tab without your checkout session. Return to Good Trouble and tap ORDER NOW to start again.";
 
 let completionStarted = false;
 
@@ -74,6 +83,8 @@ function configureRestartButton() {
   }
 
   restartButton.hide();
+
+  restartButton.label = RESTART_VERIFICATION_LABEL;
 
   restartButton.onClick(() => {
     wixLocation.to("/");
@@ -246,16 +257,15 @@ async function handleCallback() {
     return;
   }
 
-  const verifier =
-    session.getItem(
-      verifierStorageKey(flowId)
-    );
+  const pkceMaterial = resolvePurchaseCallbackPkceMaterial({
+    flowId,
+    sessionGet: (key) => session.getItem(key),
+    verifierStorageKey,
+    documentCookie: typeof document !== "undefined" ? document.cookie : "",
+  });
 
-  if (!verifier) {
-    setStatus(
-      RESTART_MESSAGE
-    );
-
+  if (!hasPurchaseCallbackPkceProof(pkceMaterial)) {
+    setStatus(RESTART_MESSAGE);
     showRestart();
     return;
   }
@@ -265,11 +275,20 @@ async function handleCallback() {
       await completePurchaseVerification(
         receiptId,
         flowId,
-        verifier
+        pkceMaterial.verifier,
+        pkceMaterial.flowOwnershipSecret,
       );
 
     if (shouldContinueAfterPurchaseVerification(result)) {
       clearVerifier(flowId);
+      try {
+        clearFlowOwnershipCookie((cookie) => {
+          // eslint-disable-next-line no-undef
+          document.cookie = cookie;
+        }, flowId);
+      } catch {
+        // Non-authoritative cleanup.
+      }
       setPurchaseVerifiedState(result.expires_at);
 
       setStatus(
@@ -300,24 +319,7 @@ async function handleCallback() {
 
     clearVerifier(flowId);
 
-    if (
-      result?.code ===
-        "verifier_mismatch" ||
-      result?.code ===
-        "missing_verifier"
-    ) {
-      setStatus(
-        RESTART_MESSAGE
-      );
-    } else if (result?.code === "flow_already_consumed") {
-      setStatus(
-        "This verification was already used. Please start again from ORDER NOW."
-      );
-    } else {
-      setStatus(
-        GENERIC_FAILURE
-      );
-    }
+    setStatus(mapPurchaseCallbackFailureMessage(result?.code));
 
     showRestart();
   } catch {
