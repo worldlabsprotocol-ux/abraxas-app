@@ -2,7 +2,11 @@
 // Idempotent session decision lookup — reuse active decision within TTL.
 
 import { normalizeSuiAddress } from "@mysten/sui/utils";
-import { isVerificationRequestUuid } from "@/lib/partner/partnerFlowContinuationIdentifiers";
+import {
+  isOpaqueVerifyRequest,
+  isVerificationRequestUuid,
+} from "@/lib/partner/partnerFlowContinuationIdentifiers";
+import { buildPartnerFlowVerificationRequestIdempotencyKey } from "@/lib/partner/partnerFlowIdempotency";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { getReceiptByDecisionId } from "@/lib/decisionReceipts/service";
 import type { StoredPartnerFlowDecisionIdentity } from "@/lib/partner/partnerFlowIdempotency";
@@ -97,6 +101,26 @@ export async function findReceiptForVerificationRequest(input: {
 
   return {
     decision_id: data.id as string,
+    receipt_id: receipt.id,
+    receipt,
+  };
+}
+
+/** Receipt lookup for opaque hosted handoffs (vr_*), keyed by server idempotency. */
+export async function findReceiptForOpaqueVerifyRequest(input: {
+  verifyRequestId: string;
+  subjectId: string;
+}): Promise<{ decision_id: string; receipt_id: string; receipt: NonNullable<Awaited<ReturnType<typeof getReceiptByDecisionId>>> } | null> {
+  if (!isOpaqueVerifyRequest(input.verifyRequestId)) return null;
+  const subject = normalizeSuiAddress(input.subjectId);
+  const stored = await findDecisionByIdempotencyKey(
+    buildPartnerFlowVerificationRequestIdempotencyKey(input.verifyRequestId.trim()),
+  );
+  if (!stored || stored.subject_id !== subject) return null;
+  const receipt = await getReceiptByDecisionId(stored.decision_id);
+  if (!receipt) return null;
+  return {
+    decision_id: stored.decision_id,
     receipt_id: receipt.id,
     receipt,
   };

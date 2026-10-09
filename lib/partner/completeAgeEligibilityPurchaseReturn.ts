@@ -17,10 +17,15 @@ import {
   partnerContinuationReturnUrlsMatch,
 } from "@/lib/partner/continuationReturnUrlMatch";
 import { isCanonicalGoodTroublePurchaseFlow } from "@/lib/partner/goodTroublePurchaseFlow";
-import { findReceiptForVerificationRequest } from "@/lib/partner/sessionDecision";
+import {
+  findReceiptForOpaqueVerifyRequest,
+  findReceiptForVerificationRequest,
+} from "@/lib/partner/sessionDecision";
 import { isAgeEligibilityOnlyPolicy } from "@/lib/policy/selfAttestationGuards";
 import { getPolicy } from "@/lib/verification/requestsService";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { isOpaqueVerifyRequest } from "@/lib/partner/partnerFlowContinuationIdentifiers";
+import { loadHandoffByVerifyRequest } from "@/lib/partner/hostedHandoff/store";
 
 export type AgeEligibilityPurchaseReturnResult =
   | {
@@ -108,6 +113,37 @@ function assertPurchaseReturnContinuation(input: {
  * Build the authoritative Good Trouble purchase callback after consent.
  * Uses stored continuation return_url (preserves gtv/PKCE state); never client return_url.
  */
+async function resolvePurchaseReturnBinding(input: {
+  verificationRequestId: string;
+  sessionSubject: string;
+}): Promise<
+  | {
+    ok: true;
+    partnerId: string;
+    policyId: string;
+    purpose: string | null;
+  }
+  | { ok: false; code: string }
+> {
+  if (isOpaqueVerifyRequest(input.verificationRequestId)) {
+    const handoff = await loadHandoffByVerifyRequest(input.verificationRequestId);
+    if (!handoff) return { ok: false, code: "missing" };
+    if (handoff.status !== "completed" && handoff.status !== "consumed") {
+      return { ok: false, code: "not_decided" };
+    }
+    if (handoff.partner_id.trim().length === 0 || handoff.policy_id.trim().length === 0) {
+      return { ok: false, code: "missing" };
+    }
+    return {
+      ok: true,
+      partnerId: handoff.partner_id,
+      policyId: handoff.policy_id,
+      purpose: handoff.purpose,
+    };
+  }
+  return loadDecidedVerificationRequest(input);
+}
+
 export async function completeAgeEligibilityPurchaseReturn(input: {
   suiAddress: string;
   verificationRequestId: string;
@@ -120,7 +156,7 @@ export async function completeAgeEligibilityPurchaseReturn(input: {
     return { ok: false, error: "verification_request_id required", code: "missing" };
   }
 
-  const vr = await loadDecidedVerificationRequest({
+  const vr = await resolvePurchaseReturnBinding({
     verificationRequestId,
     sessionSubject,
   });
@@ -172,10 +208,15 @@ export async function completeAgeEligibilityPurchaseReturn(input: {
     return { ok: false, error: "Return URL not allowlisted", code: "open_redirect" };
   }
 
-  const issued = await findReceiptForVerificationRequest({
-    verificationRequestId,
-    subjectId: sessionSubject,
-  });
+  const issued = isOpaqueVerifyRequest(verificationRequestId)
+    ? await findReceiptForOpaqueVerifyRequest({
+      verifyRequestId: verificationRequestId,
+      subjectId: sessionSubject,
+    })
+    : await findReceiptForVerificationRequest({
+      verificationRequestId,
+      subjectId: sessionSubject,
+    });
   if (!issued) {
     return { ok: false, error: "Decision receipt not found", code: "missing_receipt" };
   }

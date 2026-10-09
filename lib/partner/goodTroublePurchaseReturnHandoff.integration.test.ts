@@ -24,6 +24,12 @@ const mockFindReceipt = vi.fn();
 const mockGetReceiptById = vi.fn();
 const mockIsReturnUrlAllowed = vi.fn();
 const mockLoadVr = vi.fn();
+const mockLoadHandoff = vi.fn();
+const mockFindOpaqueReceipt = vi.fn();
+
+vi.mock("@/lib/partner/hostedHandoff/store", () => ({
+  loadHandoffByVerifyRequest: (...args: unknown[]) => mockLoadHandoff(...args),
+}));
 
 vi.mock("@/lib/partner/partnerFlowContinuationStore", () => ({
   createSupabaseContinuationStore: () => ({
@@ -38,6 +44,7 @@ vi.mock("@/lib/verification/requestsService", () => ({
 
 vi.mock("@/lib/partner/sessionDecision", () => ({
   findReceiptForVerificationRequest: (...args: unknown[]) => mockFindReceipt(...args),
+  findReceiptForOpaqueVerifyRequest: (...args: unknown[]) => mockFindOpaqueReceipt(...args),
 }));
 
 vi.mock("@/lib/decisionReceipts/service", () => ({
@@ -238,6 +245,54 @@ describe("Good Trouble purchase return handoff integration", () => {
     const params = Object.fromEntries(url.searchParams.entries());
     expect(scanValueForAgePrivacyViolations(params).ok).toBe(true);
     expect(extractGoodTroubleFlowToken(result.redirect_url)).toBe(FLOW_TOKEN);
+  });
+
+  it("9. opaque vr_* return resolves receipt via idempotency without verification_requests UUID", async () => {
+    const opaque = "vr_gt_return_opaque1";
+    mockLoadHandoff.mockResolvedValue({
+      partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+      policy_id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
+      purpose: "purchase",
+      status: "completed",
+    });
+    mockGetPolicy.mockResolvedValue({
+      id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
+      partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+      version: 2,
+      rules_json: { age_eligibility_only: true, minimum_assurance_cap: "L0" },
+    });
+    mockPeekByVerifyRequestId.mockResolvedValue(stubContinuation({ verifyRequestId: opaque }));
+    mockIsReturnUrlAllowed.mockResolvedValue(true);
+    mockFindOpaqueReceipt.mockResolvedValue({
+      decision_id: DECISION_ID,
+      receipt_id: RECEIPT_ID,
+      receipt: { id: RECEIPT_ID },
+    });
+    mockFindReceipt.mockResolvedValue(null);
+    mockGetReceiptById.mockResolvedValue({
+      id: RECEIPT_ID,
+      partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+      policy_id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
+      decision_result: "approved",
+      expires_at: futureIso(86_400_000),
+    });
+    mockConsume.mockImplementation(async (jti: string) => ({
+      ...stubContinuation({ verifyRequestId: opaque }),
+      jti,
+      consumedAt: new Date().toISOString(),
+    }));
+
+    const { completeAgeEligibilityPurchaseReturn } = await import("./completeAgeEligibilityPurchaseReturn");
+    const result = await completeAgeEligibilityPurchaseReturn({
+      suiAddress: SUBJECT,
+      verificationRequestId: opaque,
+      receiptId: RECEIPT_ID,
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(mockLoadVr).not.toHaveBeenCalled();
+    expect(mockFindOpaqueReceipt).toHaveBeenCalled();
+    expect(new URL(result.redirect_url).searchParams.get("receipt_id")).toBe(RECEIPT_ID);
   });
 
   it("8. browse age-access state architecture remains separate from purchase authorization", async () => {

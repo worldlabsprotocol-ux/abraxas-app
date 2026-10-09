@@ -25,5 +25,10 @@ export {
   type HostedHandoffContinuePreview,
   type HostedHandoffContinueResolveResult,
 } from "./resolveForContinue";
+export {
+  consentOpaqueHostedHandoff,
+  HostedHandoffConsentError,
+  type HostedHandoffConsentResult,
+} from "./consentAndIssueReceipt";
 export { runSandboxHandoffFixture } from "./fixture";
 export { hostedHandoffHttpExamples } from "./examples";
