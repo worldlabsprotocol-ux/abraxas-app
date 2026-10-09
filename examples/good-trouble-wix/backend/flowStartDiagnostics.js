@@ -28,6 +28,7 @@ import { BROWSE_FLOW, PURCHASE_FLOW } from "./flowPurpose.js";
  * @property {FlowPurpose} purpose
  * @property {string} policyId
  * @property {string | null} [correlationId]
+ * @property {string | null} [flowOwnershipSecret]
  */
 
 /** @typedef {FlowStartSuccess | FlowStartFailure} FlowStartResult */
@@ -180,6 +181,7 @@ export function buildFlowStartFailure(params) {
  *   purpose: FlowPurpose,
  *   policyId: string,
  *   correlationId?: string | null,
+ *   flowOwnershipSecret?: string | null,
  * }} payload
  * @returns {FlowStartResult}
  */
@@ -201,5 +203,8 @@ export function buildFlowStartSuccess(payload) {
     purpose: payload.purpose,
     policyId: payload.policyId,
     correlationId: payload.correlationId ?? null,
+    ...(payload.flowOwnershipSecret
+      ? { flowOwnershipSecret: payload.flowOwnershipSecret }
+      : {}),
   };
 }

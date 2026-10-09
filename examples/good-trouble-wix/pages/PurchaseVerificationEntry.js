@@ -9,6 +9,7 @@ import {
 } from "public/abraxasClientConstants";
 
 import { createPurchaseVerificationController } from "public/purchaseVerificationLogic";
+import { persistFlowOwnershipCookie } from "public/purchaseFlowOwnership";
 
 import {
   parsePurchaseEntryFromQuery,
@@ -88,6 +89,18 @@ function wirePurchaseButton() {
 
     storeVerifier(flowId, verifier) {
       session.setItem(`${PURCHASE_VERIFIER_STORAGE_PREFIX}${flowId}`, verifier);
+    },
+
+    storeFlowOwnership(flowId, ownershipSecret) {
+      try {
+        persistFlowOwnershipCookie((cookie) => {
+          // Wix Velo browser — document.cookie assignment for first-party flow binding.
+          // eslint-disable-next-line no-undef
+          document.cookie = cookie;
+        }, flowId, ownershipSecret);
+      } catch {
+        // SessionStorage verifier path remains; cookie enables same-browser cross-tab return.
+      }
     },
 
     saveReturnDestination(destinationPath) {

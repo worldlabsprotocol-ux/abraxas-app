@@ -21,10 +21,13 @@ Deploy in this order (Public → Backend → Pages/lightbox):
 | 2d | `examples/good-trouble-wix/public/purchaseReturnDestination.js` | Public file | `src/public/purchaseReturnDestination.js` | Replace | `./abraxasClientConstants.js` |
 | 2e | `examples/good-trouble-wix/public/ageGateAccessState.js` | Public file | `src/public/ageGateAccessState.js` | Replace | `./abraxasClientConstants.js`, `./ageVerificationPopupLogic.js` |
 | 2f | `examples/good-trouble-wix/public/siteAgeGatePolicy.js` | Public file | `src/public/siteAgeGatePolicy.js` | **New** | `./ageGateAccessState.js` |
+| 2g | `examples/good-trouble-wix/public/purchaseFlowOwnership.js` | Public file | `src/public/purchaseFlowOwnership.js` | **New** | — |
+| 2h | `examples/good-trouble-wix/public/purchaseCallbackCompletion.js` | Public file | `src/public/purchaseCallbackCompletion.js` | **New** | `./purchaseFlowOwnership.js`, `./purchaseCallbackLogic.js` |
 | 3 | `examples/good-trouble-wix/backend/constants.js` | Backend file | `src/backend/constants.js` | Replace | `../public/abraxasClientConstants.js` |
 | 4 | `examples/good-trouble-wix/backend/browseConstants.js` | Backend file | `src/backend/browseConstants.js` | **New** | — |
 | 5 | `examples/good-trouble-wix/backend/flowPurpose.js` | Backend file | `src/backend/flowPurpose.js` | **New** | `./constants.js` |
 | 6 | `examples/good-trouble-wix/backend/pkceProof.js` | Backend file | `src/backend/pkceProof.js` | Replace | `./constants.js`, `node:crypto` |
+| 6b | `examples/good-trouble-wix/backend/flowOwnership.js` | Backend file | `src/backend/flowOwnership.js` | **New** | `node:crypto` |
 | 7 | `examples/good-trouble-wix/backend/sha256Adapter.js` | Backend file | `src/backend/sha256Adapter.js` | Replace | `node:crypto` |
 | 8 | `examples/good-trouble-wix/backend/flowCapacity.js` | Backend file | `src/backend/flowCapacity.js` | Replace | — |
 | 8b | `examples/good-trouble-wix/backend/flowStartDiagnostics.js` | Backend file | `src/backend/flowStartDiagnostics.js` | **New** | `./flowPurpose.js` |
@@ -35,7 +38,7 @@ Deploy in this order (Public → Backend → Pages/lightbox):
 | 12 | `examples/good-trouble-wix/backend/browseReceiptRemoteValidator.js` | Backend file | `src/backend/browseReceiptRemoteValidator.js` | **New** | `./constants.js`, `./browseReceiptValidator.js` |
 | 13 | `examples/good-trouble-wix/backend/purchaseEligibilityAuthorization.js` | Backend file | `src/backend/purchaseEligibilityAuthorization.js` | **New** | `./browseReceiptValidator.js`, `./abraxasReceiptValidator.js`, `./constants.js` |
 | 14 | `examples/good-trouble-wix/backend/checkoutAuthorization.js` | Backend file | `src/backend/checkoutAuthorization.js` | **New** | `./purchaseEligibilityAuthorization.js`, `./constants.js` |
-| 15 | `examples/good-trouble-wix/backend/nonceLifecycle.js` | Backend file | `src/backend/nonceLifecycle.js` | Replace | `./constants.js`, `./flowPurpose.js`, `./pkceProof.js`, `node:crypto` |
+| 15 | `examples/good-trouble-wix/backend/nonceLifecycle.js` | Backend file | `src/backend/nonceLifecycle.js` | Replace | `./constants.js`, `./flowPurpose.js`, `./flowOwnership.js`, `./pkceProof.js`, `node:crypto` |
 | 16 | `examples/good-trouble-wix/backend/wixNonceStore.js` | Backend file | `src/backend/wixNonceStore.js` | Replace | `wix-data`, `./constants.js` |
 | 17 | `examples/good-trouble-wix/backend/abraxasVerificationService.js` | Backend file | `src/backend/abraxasVerificationService.js` | Replace | receipt validators, `nonceLifecycle`, `wixNonceStore` (dynamic), `captchaGate`, `constants` |
 | 18 | `examples/good-trouble-wix/backend/abraxasVerification.web.js` | Backend file | `src/backend/abraxasVerification.web.js` | Replace | `wix-web-module`, `./abraxasVerificationService.js` |
@@ -104,7 +107,7 @@ Allowlisted query params: `status`, `decision_id`, `receipt_id`, `receipt_expire
 
 ### 5. CMS collection `AbraxasVerificationNonces`
 
-Admin-only read/write. Required fields include: `flowId`, `verifierChallenge`, `state`, `createdAt`, `expiresAt`, `claimExpiresAt`, `claimToken`, `validationAttempts`, `consumedAt`, `correlationId`, `purpose`, `policyId`.
+Admin-only read/write. Required fields include: `flowId`, `verifierChallenge`, `state`, `createdAt`, `expiresAt`, `claimExpiresAt`, `claimToken`, `validationAttempts`, `consumedAt`, `correlationId`, `purpose`, `policyId`. Purchase flows also persist `ownershipProofHash` and `verifierSealed` (server-side PKCE escrow — optional on legacy rows until they expire).
 
 ---
 

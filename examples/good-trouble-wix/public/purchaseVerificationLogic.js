@@ -63,6 +63,7 @@ export function formatPurchasePreviewDiagnostic(diagnostic) {
  *     verifyUrl?: string,
  *     flowId?: string,
  *     verifier?: string,
+ *     flowOwnershipSecret?: string,
  *   } | null,
  *   viewMode?: string,
  * }} params
@@ -89,7 +90,7 @@ export function interpretPurchaseStartResult(params) {
     };
   }
 
-  const { verifyUrl, flowId, verifier } = result ?? {};
+  const { verifyUrl, flowId, verifier, flowOwnershipSecret } = result ?? {};
   if (!verifyUrl || !flowId || !verifier) {
     return {
       ok: false,
@@ -114,6 +115,7 @@ export function interpretPurchaseStartResult(params) {
       verifyUrl,
       flowId,
       verifier,
+      flowOwnershipSecret: typeof flowOwnershipSecret === "string" ? flowOwnershipSecret : "",
       purpose: result?.purpose,
       policyId: result?.policyId,
       correlationId: result?.correlationId ?? null,
@@ -127,6 +129,7 @@ export function interpretPurchaseStartResult(params) {
  *   startPurchaseVerification: () => Promise<object>,
  *   getViewMode?: () => string | Promise<string>,
  *   storeVerifier: (flowId: string, verifier: string) => void,
+ *   storeFlowOwnership?: (flowId: string, ownershipSecret: string) => void,
  *   saveReturnDestination: (destinationPath: string | null) => void,
  *   getReturnDestination: () => string | null,
  *   navigateToVerifyUrl: (url: string) => void,
@@ -160,6 +163,12 @@ export function createPurchaseVerificationController(deps) {
 
         deps.saveReturnDestination(returnDestinationPath);
         deps.storeVerifier(interpreted.result.flowId, interpreted.result.verifier);
+        if (interpreted.result.flowOwnershipSecret && deps.storeFlowOwnership) {
+          deps.storeFlowOwnership(
+            interpreted.result.flowId,
+            interpreted.result.flowOwnershipSecret,
+          );
+        }
         deps.navigateToVerifyUrl(interpreted.result.verifyUrl);
         return { ok: true, code: "redirecting", result: interpreted.result };
       } catch {

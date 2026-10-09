@@ -16,6 +16,13 @@ import {
   resolvePurchaseStartDestination,
 } from "./returnDestinationPath.js";
 import {
+  createPurchaseFlowOwnershipArtifacts,
+  hashFlowOwnershipProof,
+  ownershipProofHashesMatch,
+  unsealVerifierForFlow,
+  validateFlowOwnershipSecret,
+} from "./flowOwnership.js";
+import {
   validateFlowId,
   validateReceiptId,
   validateVerifier,
@@ -42,6 +49,8 @@ function randomHex(byteLength) {
  * @property {"browse" | "purchase"} purpose
  * @property {string} policyId
  * @property {string} [returnDestinationPath]
+ * @property {string} [ownershipProofHash]
+ * @property {string} [verifierSealed]
  */
 
 /**
@@ -97,6 +106,30 @@ export async function buildVerificationStartPayload(params) {
     search.set("purpose", "browse");
   }
 
+  const flowRecord = {
+    flowId,
+    verifierChallenge,
+    state: NONCE_STATE.PENDING,
+    purpose: flowConfig.purpose,
+    policyId: flowConfig.policyId,
+    createdAt: now,
+    expiresAt,
+    claimExpiresAt: null,
+    claimToken: null,
+    validationAttempts: 0,
+    consumedAt: null,
+    correlationId,
+    ...(returnDestinationPath ? { returnDestinationPath } : {}),
+  };
+
+  let flowOwnershipSecret = null;
+  if (flowConfig.purpose === "purchase") {
+    const ownership = createPurchaseFlowOwnershipArtifacts({ flowId, verifier });
+    flowRecord.ownershipProofHash = ownership.ownershipProofHash;
+    flowRecord.verifierSealed = ownership.verifierSealed;
+    flowOwnershipSecret = ownership.ownershipSecret;
+  }
+
   return {
     verifyUrl: `${ABRAXAS_ORIGIN}/partner/verify?${search.toString()}`,
     flowId,
@@ -104,22 +137,53 @@ export async function buildVerificationStartPayload(params) {
     policyId: flowConfig.policyId,
     /** Returned over TLS web method only — frontend stores in sessionStorage, never in URL. */
     verifier,
-    flowRecord: {
-      flowId,
-      verifierChallenge,
-      state: NONCE_STATE.PENDING,
-      purpose: flowConfig.purpose,
-      policyId: flowConfig.policyId,
-      createdAt: now,
-      expiresAt,
-      claimExpiresAt: null,
-      claimToken: null,
-      validationAttempts: 0,
-      consumedAt: null,
-      correlationId,
-      ...(returnDestinationPath ? { returnDestinationPath } : {}),
-    },
+    /** Purchase-only — bind cross-tab callback to same browser via cookie + server escrow. */
+    flowOwnershipSecret,
+    flowRecord,
   };
+}
+
+/**
+ * Resolve PKCE verifier from direct client proof or sealed escrow + ownership secret.
+ * @param {object} params
+ * @param {FlowStore} params.store
+ * @param {string} params.flowId
+ * @param {string} [params.verifier]
+ * @param {string} [params.flowOwnershipSecret]
+ * @returns {Promise<{ ok: true, verifier: string } | { ok: false, code: string }>}
+ */
+export async function resolveVerifierForFlowCompletion(params) {
+  const direct = validateVerifier(params.verifier);
+  if (direct.ok) return direct;
+
+  const ownership = validateFlowOwnershipSecret(params.flowOwnershipSecret);
+  if (!ownership.ok) {
+    return { ok: false, code: direct.code };
+  }
+
+  const flowCheck = validateFlowId(params.flowId);
+  if (!flowCheck.ok) return { ok: false, code: flowCheck.code };
+
+  const record = await params.store.findByFlowId(flowCheck.flowId);
+  if (!record?.ownershipProofHash || !record?.verifierSealed) {
+    return { ok: false, code: "missing_verifier_escrow" };
+  }
+
+  const candidateHash = hashFlowOwnershipProof(flowCheck.flowId, ownership.secret);
+  if (!ownershipProofHashesMatch(record.ownershipProofHash, candidateHash)) {
+    return { ok: false, code: "invalid_flow_ownership" };
+  }
+
+  try {
+    const unsealed = unsealVerifierForFlow({
+      flowId: flowCheck.flowId,
+      ownershipSecret: ownership.secret,
+      verifierSealed: record.verifierSealed,
+    });
+    return validateVerifier(unsealed);
+  } catch {
+    return { ok: false, code: "invalid_flow_ownership" };
+  }
 }
 
 /**
@@ -223,7 +287,8 @@ function resolveRecordPurpose(record) {
  * @param {FlowStore} params.store
  * @param {string} params.receiptId
  * @param {string} params.flowId opaque gtv flow identifier from callback URL
- * @param {string} params.verifier from sessionStorage (same browser context)
+ * @param {string} [params.verifier] from sessionStorage (same tab)
+ * @param {string} [params.flowOwnershipSecret] from first-party cookie when sessionStorage tab differs
  * @param {(input: string) => Promise<string> | string} params.hashFn
  * @param {(receiptId: string) => Promise<{ verified: boolean, transientFailure?: boolean }>} params.validateReceipt
  * @param {Date} [params.now]
@@ -239,7 +304,12 @@ export async function completeAbraxasVerificationCore(params) {
     return { verified: false, code: flowCheck.code };
   }
 
-  const verifierCheck = validateVerifier(params.verifier);
+  const verifierCheck = await resolveVerifierForFlowCompletion({
+    store: params.store,
+    flowId: flowCheck.flowId,
+    verifier: params.verifier,
+    flowOwnershipSecret: params.flowOwnershipSecret,
+  });
   if (!verifierCheck.ok) {
     return { verified: false, code: verifierCheck.code };
   }
