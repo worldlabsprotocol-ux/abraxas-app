@@ -33,11 +33,13 @@ export function PartnerBindingSelector({
   applicationId,
   selectedBindingId,
   onSelect,
+  onBindingsLoaded,
   label = "Integration policy",
 }: {
   applicationId: string;
   selectedBindingId: string | null;
   onSelect: (bindingId: string) => void;
+  onBindingsLoaded?: (bindings: BindingSummary[]) => void;
   label?: string;
 }) {
   const [bindings, setBindings] = useState<BindingSummary[]>([]);
@@ -52,12 +54,13 @@ export function PartnerBindingSelector({
     const data = await res.json() as PoliciesResponse;
     if (res.ok) {
       setBindings(data.summary.bindings);
+      onBindingsLoaded?.(data.summary.bindings);
       if (!selectedBindingId && data.summary.bindings.length === 1 && data.summary.bindings[0]?.binding_id) {
         onSelect(data.summary.bindings[0].binding_id);
       }
     }
     setLoading(false);
-  }, [applicationId, onSelect, selectedBindingId]);
+  }, [applicationId, onBindingsLoaded, onSelect, selectedBindingId]);
 
   useEffect(() => { void load(); }, [load]);
 

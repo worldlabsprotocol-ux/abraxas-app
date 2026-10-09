@@ -3,6 +3,15 @@ import { NextRequest } from "next/server";
 import { resetLaunchpadRateLimitStoreForTests } from "@/lib/partner/launchpad/rateLimit";
 import { resetHostedHandoffsForTests } from "@/lib/partner/hostedHandoff";
 
+vi.mock("@/lib/partner/launchpad/rateLimit", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/partner/launchpad/rateLimit")>();
+  return {
+    ...actual,
+    checkLaunchpadRateLimit: vi.fn(async () => ({ allowed: true as const })),
+    checkLaunchpadTenantRateLimit: vi.fn(async () => ({ allowed: true as const })),
+  };
+});
+
 const resolvePartnerConsoleSessionMock = vi.fn();
 const getAppMock = vi.fn();
 const loadStoredMock = vi.fn();
@@ -84,6 +93,35 @@ describe("hosted-handoff launchpad routes", () => {
       body: JSON.stringify({ runtime: "nextjs", return_url: "https://evil.example" }),
     }), { params: { id: app.id } });
     expect(forged.status).toBe(400);
+  });
+
+  it("creates a handoff for canonical Good Trouble sandbox shape (primary binding fallback)", async () => {
+    getAppMock.mockResolvedValue({
+      ...app,
+      id: "690d0c89-7b98-4946-8ad2-7469f5ca89d9",
+      public_slug: "good-trouble",
+      partner_id: "good-trouble",
+      policy_id: "good-trouble-age_21_retail-v1",
+      policy_version: 2,
+      policy_template_id: "age_21_retail",
+      allowed_return_urls: ["https://www.goodtroublecanna.com/age-verification-result"],
+    });
+    loadStoredMock.mockResolvedValue({
+      purpose: "Confirm adult retail eligibility",
+      action: "retail_access",
+      callback_url: "https://www.goodtroublecanna.com/age-verification-result",
+      capabilities: [],
+      display_label: "Good Trouble",
+    });
+    const created = await POST(new NextRequest("http://localhost/api/launchpad/applications/690d0c89/hosted-handoff", {
+      method: "POST",
+      headers: { "content-type": "application/json", cookie: "abraxas_partner_console_session=test" },
+      body: JSON.stringify({ runtime: "universal_https" }),
+    }), { params: { id: "690d0c89-7b98-4946-8ad2-7469f5ca89d9" } });
+    expect(created.status).toBe(200);
+    const json = await created.json() as { hosted_url: string; policy_version?: number; handoff_ref: string };
+    expect(json.hosted_url).toContain("verify_request=");
+    expect(json.handoff_ref).toMatch(/^hpf_[0-9a-f]{16}$/);
   });
 
   it("creates a public hosted URL and runs the sandbox fixture", async () => {
