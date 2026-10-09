@@ -73,6 +73,15 @@ describe("Wix deployment contract", () => {
     expect(POPUP_SOURCE).toContain("clearStalePurchaseArtifacts");
   });
 
+  it("closes the lightbox synchronously when shouldSkipAgeGate is true", () => {
+    expect(POPUP_SOURCE).toContain("immediateSkip");
+    const onReadyIndex = POPUP_SOURCE.indexOf("$w.onReady");
+    const immediateIndex = POPUP_SOURCE.indexOf("immediateSkip");
+    const controllerIndex = POPUP_SOURCE.indexOf("popupController =\n        createPopupController");
+    expect(immediateIndex).toBeGreaterThan(onReadyIndex);
+    expect(controllerIndex).toBeGreaterThan(immediateIndex);
+  });
+
   it("regression: homepage popup must never start purchase lifecycle artifacts", () => {
     expect(POPUP_SOURCE).not.toContain(PURCHASE_POLICY_ID);
     expect(POPUP_SOURCE).not.toContain(PURCHASE_CALLBACK_PATH);

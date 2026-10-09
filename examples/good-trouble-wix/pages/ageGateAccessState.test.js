@@ -10,7 +10,10 @@ import {
   readPurchaseVerifiedState,
   shouldSkipAgeGate,
 } from "./ageGateAccessState.js";
-import { PURCHASE_VERIFIED_LOCAL_STORAGE_KEY } from "../public/abraxasClientConstants.js";
+import {
+  PURCHASE_VERIFIED_LOCAL_STORAGE_KEY,
+  PURCHASE_VERIFIED_SESSION_FLAG,
+} from "../public/abraxasClientConstants.js";
 import {
   TRADITIONAL_AGE_GATE_STORAGE_KEY,
   buildTraditionalAgeAttestationValue,
@@ -63,6 +66,16 @@ describe("ageGateAccessState", () => {
     });
     expect(readPurchaseVerifiedState(storage, expiresAt + 1)).toEqual({ valid: false });
     expect(storage.getItem(PURCHASE_VERIFIED_LOCAL_STORAGE_KEY)).toBeNull();
+  });
+
+  it("skips the age gate for purchase session mirror before localStorage is written", () => {
+    const localStorage = createMemoryStorage();
+    const sessionStorage = createMemoryStorage();
+    const now = Date.now();
+    sessionStorage.setItem(PURCHASE_VERIFIED_SESSION_FLAG, String(now));
+    expect(shouldSkipAgeGate({ localStorage, sessionStorage, now }).reason).toBe(
+      "abraxas_purchase_session",
+    );
   });
 
   it("skips the age gate for validated Abraxas purchase state", () => {

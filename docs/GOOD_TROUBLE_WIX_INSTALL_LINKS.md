@@ -1,18 +1,19 @@
 # Good Trouble Wix — GitHub install links
 
-Copy sources from branch `cursor/good-trouble-e2e-partner-journey-5ffe` (or `main` after merge).  
+Copy sources from branch `cursor/good-trouble-age-security-hardening-5ffe` (or `main` after merge).  
 Base repo: [worldlabsprotocol-ux/abraxas-app](https://github.com/worldlabsprotocol-ux/abraxas-app).
 
 ## Public (`src/public/`)
 
 | Wix file | GitHub source |
 |----------|----------------|
-| `abraxasClientConstants.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-e2e-partner-journey-5ffe/examples/good-trouble-wix/public/abraxasClientConstants.js |
-| `ageGateAccessState.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-e2e-partner-journey-5ffe/examples/good-trouble-wix/public/ageGateAccessState.js |
-| `ageVerificationPopupLogic.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-e2e-partner-journey-5ffe/examples/good-trouble-wix/public/ageVerificationPopupLogic.js |
-| `purchaseCallbackLogic.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-e2e-partner-journey-5ffe/examples/good-trouble-wix/public/purchaseCallbackLogic.js |
-| `purchaseReturnDestination.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-e2e-partner-journey-5ffe/examples/good-trouble-wix/public/purchaseReturnDestination.js |
-| `purchaseVerificationLogic.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-e2e-partner-journey-5ffe/examples/good-trouble-wix/public/purchaseVerificationLogic.js |
+| `abraxasClientConstants.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-age-security-hardening-5ffe/examples/good-trouble-wix/public/abraxasClientConstants.js |
+| `ageGateAccessState.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-age-security-hardening-5ffe/examples/good-trouble-wix/public/ageGateAccessState.js |
+| `ageVerificationPopupLogic.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-age-security-hardening-5ffe/examples/good-trouble-wix/public/ageVerificationPopupLogic.js |
+| `purchaseCallbackLogic.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-age-security-hardening-5ffe/examples/good-trouble-wix/public/purchaseCallbackLogic.js |
+| `purchaseReturnDestination.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-age-security-hardening-5ffe/examples/good-trouble-wix/public/purchaseReturnDestination.js |
+| `purchaseVerificationLogic.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-age-security-hardening-5ffe/examples/good-trouble-wix/public/purchaseVerificationLogic.js |
+| `siteAgeGatePolicy.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-age-security-hardening-5ffe/examples/good-trouble-wix/public/siteAgeGatePolicy.js |
 
 ## Backend (`src/backend/`)
 
@@ -20,21 +21,22 @@ Deploy all modules listed in `examples/good-trouble-wix/WIX_DEPLOYMENT_MANIFEST.
 
 | Wix file | GitHub source |
 |----------|----------------|
-| `constants.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-e2e-partner-journey-5ffe/examples/good-trouble-wix/backend/constants.js |
-| `abraxasReceiptValidator.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-e2e-partner-journey-5ffe/examples/good-trouble-wix/backend/abraxasReceiptValidator.js |
-| `abraxasVerificationService.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-e2e-partner-journey-5ffe/examples/good-trouble-wix/backend/abraxasVerificationService.js |
-| `abraxasVerification.web.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-e2e-partner-journey-5ffe/examples/good-trouble-wix/backend/abraxasVerification.web.js |
-| `nonceLifecycle.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-e2e-partner-journey-5ffe/examples/good-trouble-wix/backend/nonceLifecycle.js |
-| `returnDestinationPath.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-e2e-partner-journey-5ffe/examples/good-trouble-wix/backend/returnDestinationPath.js |
+| `constants.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-age-security-hardening-5ffe/examples/good-trouble-wix/backend/constants.js |
+| `abraxasReceiptValidator.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-age-security-hardening-5ffe/examples/good-trouble-wix/backend/abraxasReceiptValidator.js |
+| `abraxasVerificationService.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-age-security-hardening-5ffe/examples/good-trouble-wix/backend/abraxasVerificationService.js |
+| `abraxasVerification.web.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-age-security-hardening-5ffe/examples/good-trouble-wix/backend/abraxasVerification.web.js |
+| `nonceLifecycle.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-age-security-hardening-5ffe/examples/good-trouble-wix/backend/nonceLifecycle.js |
+| `returnDestinationPath.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-age-security-hardening-5ffe/examples/good-trouble-wix/backend/returnDestinationPath.js |
 
 ## Page / lightbox code
 
 | Wix target | GitHub source |
 |------------|----------------|
-| Age Verification lightbox | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-e2e-partner-journey-5ffe/examples/good-trouble-wix/pages/AgeVerificationPopup.js |
-| `/age-verification-result` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-e2e-partner-journey-5ffe/examples/good-trouble-wix/pages/AgeVerificationResult.js |
-| `/browse-verification-result` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-e2e-partner-journey-5ffe/examples/good-trouble-wix/pages/BrowseVerificationResult.js |
-| Purchase Verification Entry (`/purchase-verification` recommended) | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-e2e-partner-journey-5ffe/examples/good-trouble-wix/pages/PurchaseVerificationEntry.js |
+| Age Verification lightbox | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-age-security-hardening-5ffe/examples/good-trouble-wix/pages/AgeVerificationPopup.js |
+| `/age-verification-result` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-age-security-hardening-5ffe/examples/good-trouble-wix/pages/AgeVerificationResult.js |
+| `/browse-verification-result` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-age-security-hardening-5ffe/examples/good-trouble-wix/pages/BrowseVerificationResult.js |
+| Purchase Verification Entry (`/purchase-verification` recommended) | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-age-security-hardening-5ffe/examples/good-trouble-wix/pages/PurchaseVerificationEntry.js |
+| Master Page (site-wide age lightbox suppress) | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-age-security-hardening-5ffe/examples/good-trouble-wix/pages/GoodTroubleMasterPage.js |
 
 ## Post-verification destination
 
