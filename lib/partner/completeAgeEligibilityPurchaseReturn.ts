@@ -13,8 +13,12 @@ import {
 } from "@/lib/partner/partnerFlowContinuation";
 import { createSupabaseContinuationStore } from "@/lib/partner/partnerFlowContinuationStore";
 import {
+  coalesceGoodTroublePurchaseReturnUrl,
+  extractGoodTroubleFlowToken,
+  goodTroublePurchaseReturnUrlBindingAllowed,
   isGoodTroublePurchaseCallbackPath,
   partnerContinuationReturnUrlsMatch,
+  preferAuthoritativeContinuationReturnUrl,
 } from "@/lib/partner/continuationReturnUrlMatch";
 import { isCanonicalGoodTroublePurchaseFlow } from "@/lib/partner/goodTroublePurchaseFlow";
 import {
@@ -96,7 +100,7 @@ function assertPurchaseReturnContinuation(input: {
   }
   if (
     input.clientReturnUrl
-    && !partnerContinuationReturnUrlsMatch(input.stored.returnUrl, input.clientReturnUrl)
+    && !goodTroublePurchaseReturnUrlBindingAllowed(input.stored.returnUrl, input.clientReturnUrl)
   ) {
     return { ok: false, code: "open_redirect" };
   }
@@ -246,6 +250,32 @@ export async function completeAgeEligibilityPurchaseReturn(input: {
     return { ok: false, error: "Receipt decision not approved", code: "denied" };
   }
 
+  let redirectBase = stored.returnUrl;
+  const clientHint = input.clientReturnUrl?.trim();
+  if (clientHint) {
+    if (!goodTroublePurchaseReturnUrlBindingAllowed(stored.returnUrl, clientHint)) {
+      return {
+        ok: false,
+        error: "Return URL binding rejected",
+        code: "open_redirect",
+      };
+    }
+    const coalescedHint = coalesceGoodTroublePurchaseReturnUrl(stored.returnUrl, clientHint);
+    redirectBase = preferAuthoritativeContinuationReturnUrl(stored.returnUrl, coalescedHint);
+  } else {
+    redirectBase = stored.returnUrl;
+  }
+
+  if (isGoodTroublePurchaseCallbackPath(new URL(redirectBase).pathname)) {
+    if (!extractGoodTroubleFlowToken(redirectBase)) {
+      return {
+        ok: false,
+        error: "Good Trouble purchase return requires flow binding (gtv)",
+        code: "missing_flow_token",
+      };
+    }
+  }
+
   const redirectParams: Record<string, string> = {
     status: "approved",
     decision_id: issued.decision_id,
@@ -257,7 +287,26 @@ export async function completeAgeEligibilityPurchaseReturn(input: {
     redirectParams.receipt_expires_at = receipt.expires_at;
   }
 
-  const redirect_url = buildRedirectUrl(stored.returnUrl, redirectParams);
+  const redirect_url = buildRedirectUrl(redirectBase, redirectParams);
+
+  if (
+    isGoodTroublePurchaseCallbackPath(new URL(redirect_url).pathname)
+    && !extractGoodTroubleFlowToken(redirect_url)
+  ) {
+    return {
+      ok: false,
+      error: "Good Trouble purchase return requires flow binding (gtv)",
+      code: "missing_flow_token",
+    };
+  }
+
+  if (
+    redirectBase !== stored.returnUrl
+    && continuationIsUsable(stored)
+    && !alreadyReturned
+  ) {
+    await store.save({ ...stored, returnUrl: redirectBase });
+  }
 
   if (alreadyReturned) {
     return {

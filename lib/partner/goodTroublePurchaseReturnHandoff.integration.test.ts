@@ -18,6 +18,7 @@ const DECISION_ID = "vd_gt_return_1";
 const SUBJECT = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
 
 const mockPeekByVerifyRequestId = vi.fn();
+const mockSave = vi.fn();
 const mockConsume = vi.fn();
 const mockGetPolicy = vi.fn();
 const mockFindReceipt = vi.fn();
@@ -36,6 +37,7 @@ vi.mock("@/lib/partner/hostedHandoff/store", () => ({
 vi.mock("@/lib/partner/partnerFlowContinuationStore", () => ({
   createSupabaseContinuationStore: () => ({
     peekByVerifyRequestId: (...args: unknown[]) => mockPeekByVerifyRequestId(...args),
+    save: (...args: unknown[]) => mockSave(...args),
     consume: (...args: unknown[]) => mockConsume(...args),
   }),
 }));
@@ -159,6 +161,42 @@ describe("Good Trouble purchase return handoff integration", () => {
     expect(url.searchParams.get("status")).toBe("approved");
     expect(url.searchParams.get("decision_id")).toBe(DECISION_ID);
     expect(mockConsume).toHaveBeenCalledWith("jti-return-1");
+  });
+
+  it("1b. upgrades bare stored callback when client supplies matching gtv hint", async () => {
+    stubHappyPath();
+    mockPeekByVerifyRequestId.mockResolvedValue(stubContinuation({
+      returnUrl: GOOD_TROUBLE_EXPECTED_CALLBACK_URL,
+    }));
+    const { completeAgeEligibilityPurchaseReturn } = await import("./completeAgeEligibilityPurchaseReturn");
+    const result = await completeAgeEligibilityPurchaseReturn({
+      suiAddress: SUBJECT,
+      verificationRequestId: VERIFY_REQUEST_ID,
+      receiptId: RECEIPT_ID,
+      clientReturnUrl: STORED_RETURN,
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const url = new URL(result.redirect_url);
+    expect(url.searchParams.get("gtv")).toBe(FLOW_TOKEN);
+    expect(url.searchParams.get("receipt_id")).toBe(RECEIPT_ID);
+    expect(mockSave).toHaveBeenCalled();
+  });
+
+  it("1c. fails closed when continuation lacks gtv and no client hint", async () => {
+    stubHappyPath();
+    mockPeekByVerifyRequestId.mockResolvedValue(stubContinuation({
+      returnUrl: GOOD_TROUBLE_EXPECTED_CALLBACK_URL,
+    }));
+    const { completeAgeEligibilityPurchaseReturn } = await import("./completeAgeEligibilityPurchaseReturn");
+    const result = await completeAgeEligibilityPurchaseReturn({
+      suiAddress: SUBJECT,
+      verificationRequestId: VERIFY_REQUEST_ID,
+      receiptId: RECEIPT_ID,
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("missing_flow_token");
   });
 
   it("2. uses stored authoritative continuation, not client return_url override", async () => {

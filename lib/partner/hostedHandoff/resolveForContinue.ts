@@ -13,11 +13,17 @@ import { isOpaqueVerifyRequest } from "@/lib/partner/productionIntegration/reque
 import { parsePartnerFlowInstant } from "@/lib/partner/parsePartnerFlowInstant";
 import { logHostedHandoffContinueDiagnostic } from "./continueContextDiagnostics";
 import type { ContinueContextTraceCollector } from "./continueContextTrace";
+import {
+  coalesceGoodTroublePurchaseReturnUrl,
+  preferAuthoritativeContinuationReturnUrl,
+} from "@/lib/partner/continuationReturnUrlMatch";
 import { loadHandoffByVerifyRequest } from "./store";
 import type { HostedHandoffRecord } from "./types";
 
 export type HostedHandoffContinueResolveOptions = {
   trace?: ContinueContextTraceCollector;
+  /** Wix /partner/verify return_url hint (may include gtv) — never trusted without allowlist + path checks. */
+  partnerReturnUrlHint?: string | null;
 };
 
 export type HostedHandoffContinueResolveCode =
@@ -119,11 +125,15 @@ function reuseHostedHandoffContinuation(input: {
     });
     throw Object.assign(new Error("continuation_expired"), { code: "unavailable" });
   }
+  const bindingReturnUrl = preferAuthoritativeContinuationReturnUrl(
+    input.returnUrl,
+    existing.returnUrl,
+  );
   const matched = assertContinuationMatchesStored({
     stored: existing,
     partnerId: input.handoff.partner_id,
     policyId: input.handoff.policy_id,
-    returnUrl: input.returnUrl,
+    returnUrl: bindingReturnUrl,
     policyVersion: input.handoff.policy_version,
   });
   if (!matched.ok) {
@@ -228,6 +238,16 @@ async function ensureHostedHandoffContinuation(input: {
     verifyRequestRef,
   });
   if (reused) {
+    const upgradedReturnUrl = preferAuthoritativeContinuationReturnUrl(
+      reused.returnUrl,
+      input.returnUrl,
+    );
+    if (upgradedReturnUrl !== reused.returnUrl) {
+      const upgraded = { ...reused, returnUrl: upgradedReturnUrl };
+      await store.save(upgraded);
+      input.trace?.record("reuse_return");
+      return upgraded;
+    }
     input.trace?.record("reuse_return");
     return reused;
   }
@@ -298,8 +318,8 @@ export async function resolveHostedHandoffForContinue(
     return { ok: false, code: "missing" };
   }
 
-  const returnUrl = resolveHandoffCallbackUrl(app.allowed_return_urls ?? [], handoff.callback_ref);
-  if (!returnUrl) {
+  const allowlistedReturnUrl = resolveHandoffCallbackUrl(app.allowed_return_urls ?? [], handoff.callback_ref);
+  if (!allowlistedReturnUrl) {
     logHostedHandoffContinueDiagnostic({
       stage: "callback_ref_unresolved",
       verifyRequestRef: trimmed,
@@ -309,6 +329,11 @@ export async function resolveHostedHandoffForContinue(
     });
     return { ok: false, code: "unavailable" };
   }
+
+  const returnUrl = coalesceGoodTroublePurchaseReturnUrl(
+    allowlistedReturnUrl,
+    options?.partnerReturnUrlHint ?? "",
+  );
 
   let continuation: PartnerFlowContinuationRecord;
   try {
