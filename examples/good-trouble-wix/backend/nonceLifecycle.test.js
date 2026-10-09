@@ -8,6 +8,7 @@ import {
   VERIFIER_BYTES,
   VERIFIER_RE,
 } from "./constants.js";
+import { TEST_ESCROW_PEPPER_HEX } from "./testPkceEscrowFixtures.js";
 
 const { mockRandomBytes } = vi.hoisted(() => ({
   mockRandomBytes: vi.fn(),
@@ -85,34 +86,38 @@ describe("buildVerificationStartPayload entropy", () => {
   });
 
   it("generates verifier as 64 lowercase hex characters", async () => {
-    const payload = await buildVerificationStartPayload({ hashFn });
+    const payload = await buildVerificationStartPayload({ hashFn, purpose: "browse" });
     expect(payload.verifier).toMatch(VERIFIER_RE);
     expect(payload.verifier).toHaveLength(64);
     expect(payload.verifier).toBe(payload.verifier.toLowerCase());
   });
 
   it("generates flow ID matching FLOW_ID_RE", async () => {
-    const payload = await buildVerificationStartPayload({ hashFn });
+    const payload = await buildVerificationStartPayload({ hashFn, purpose: "browse" });
     expect(payload.flowId).toMatch(FLOW_ID_RE);
   });
 
   it("generates independent verifier and flow ID values", async () => {
-    const a = await buildVerificationStartPayload({ hashFn });
-    const b = await buildVerificationStartPayload({ hashFn });
+    const a = await buildVerificationStartPayload({ hashFn, purpose: "browse" });
+    const b = await buildVerificationStartPayload({ hashFn, purpose: "browse" });
     expect(a.flowId).not.toBe(b.flowId);
     expect(a.verifier).not.toBe(b.verifier);
     expect(a.flowId).not.toContain(a.verifier);
   });
 
   it("binds PKCE challenge to SHA-256(verifier) without storing raw verifier", async () => {
-    const payload = await buildVerificationStartPayload({ hashFn });
+    const payload = await buildVerificationStartPayload({ hashFn, purpose: "browse" });
     expect(payload.flowRecord.verifierChallenge).toBe(await hashFn(payload.verifier));
     expect(payload.flowRecord).not.toHaveProperty("verifier");
     expect(payload.verifyUrl).not.toContain(payload.verifier);
   });
 
   it("uses VERIFIER_BYTES for 256-bit entropy", async () => {
-    const payload = await buildVerificationStartPayload({ hashFn });
+    const payload = await buildVerificationStartPayload({
+      hashFn,
+      purpose: "purchase",
+      escrowPepper: TEST_ESCROW_PEPPER_HEX,
+    });
     expect(VERIFIER_BYTES).toBe(32);
     expect(payload.verifier).toHaveLength(VERIFIER_BYTES * 2);
     expect(payload.flowId.replace("gtf_", "")).toHaveLength(VERIFIER_BYTES * 2);
@@ -134,7 +139,11 @@ describe("buildVerificationStartPayload with injected node:crypto randomBytes", 
       .mockReturnValueOnce(flowSeed)
       .mockReturnValueOnce(correlationSeed);
 
-    const payload = await buildVerificationStartPayload({ hashFn });
+    const payload = await buildVerificationStartPayload({
+      hashFn,
+      purpose: "purchase",
+      escrowPepper: TEST_ESCROW_PEPPER_HEX,
+    });
 
     expect(mockRandomBytes).toHaveBeenNthCalledWith(1, VERIFIER_BYTES);
     expect(mockRandomBytes).toHaveBeenNthCalledWith(2, VERIFIER_BYTES);

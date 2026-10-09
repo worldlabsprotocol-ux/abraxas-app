@@ -78,6 +78,7 @@ export async function hashValue(value, hashFn) {
  *   now?: Date,
  *   purpose?: "browse" | "purchase",
  *   returnDestinationPath?: string | null,
+ *   escrowPepper?: string | null,
  * }} params
  */
 export async function buildVerificationStartPayload(params) {
@@ -124,7 +125,13 @@ export async function buildVerificationStartPayload(params) {
 
   let flowOwnershipSecret = null;
   if (flowConfig.purpose === "purchase") {
-    const ownership = createPurchaseFlowOwnershipArtifacts({ flowId, verifier });
+    const escrowPepper = params.escrowPepper;
+    if (!escrowPepper) {
+      throw Object.assign(new Error("pkce_escrow_secret_unavailable"), {
+        code: "pkce_escrow_secret_unavailable",
+      });
+    }
+    const ownership = createPurchaseFlowOwnershipArtifacts({ flowId, verifier, pepper: escrowPepper });
     flowRecord.ownershipProofHash = ownership.ownershipProofHash;
     flowRecord.verifierSealed = ownership.verifierSealed;
     flowOwnershipSecret = ownership.ownershipSecret;
@@ -150,6 +157,7 @@ export async function buildVerificationStartPayload(params) {
  * @param {string} params.flowId
  * @param {string} [params.verifier]
  * @param {string} [params.flowOwnershipSecret]
+ * @param {string} [params.escrowPepper]
  * @returns {Promise<{ ok: true, verifier: string } | { ok: false, code: string }>}
  */
 export async function resolveVerifierForFlowCompletion(params) {
@@ -169,7 +177,12 @@ export async function resolveVerifierForFlowCompletion(params) {
     return { ok: false, code: "missing_verifier_escrow" };
   }
 
-  const candidateHash = hashFlowOwnershipProof(flowCheck.flowId, ownership.secret);
+  const pepper = params.escrowPepper;
+  if (!pepper) {
+    return { ok: false, code: "pkce_escrow_secret_unavailable" };
+  }
+
+  const candidateHash = hashFlowOwnershipProof(flowCheck.flowId, ownership.secret, pepper);
   if (!ownershipProofHashesMatch(record.ownershipProofHash, candidateHash)) {
     return { ok: false, code: "invalid_flow_ownership" };
   }
@@ -179,6 +192,7 @@ export async function resolveVerifierForFlowCompletion(params) {
       flowId: flowCheck.flowId,
       ownershipSecret: ownership.secret,
       verifierSealed: record.verifierSealed,
+      pepper,
     });
     return validateVerifier(unsealed);
   } catch {
@@ -309,6 +323,7 @@ export async function completeAbraxasVerificationCore(params) {
     flowId: flowCheck.flowId,
     verifier: params.verifier,
     flowOwnershipSecret: params.flowOwnershipSecret,
+    escrowPepper: params.escrowPepper,
   });
   if (!verifierCheck.ok) {
     return { verified: false, code: verifierCheck.code };

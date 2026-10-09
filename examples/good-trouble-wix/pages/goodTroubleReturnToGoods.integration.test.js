@@ -16,6 +16,7 @@ import {
   shouldContinueAfterPurchaseVerification,
 } from "../public/purchaseCallbackLogic.js";
 import { resolvePurchaseReturnDestinationForStart } from "../public/purchaseReturnDestination.js";
+import { withTestEscrowPepperDeps } from "../backend/testPkceEscrowFixtures.js";
 
 const hashFn = (value) => createHash("sha256").update(value, "utf8").digest("hex");
 
@@ -35,7 +36,7 @@ describe("Good Trouble hosted return → The Goods", () => {
     const store = createMemoryNonceStore();
     const start = await createPurchaseVerificationStartService(
       null,
-      { store, skipCaptcha: true },
+      withTestEscrowPepperDeps({ store, skipCaptcha: true }),
       null,
     );
 

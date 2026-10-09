@@ -28,6 +28,8 @@ import {
   completeBrowseVerificationCore,
 } from "./nonceLifecycle.js";
 import { sha256Hex as defaultSha256Hex } from "./sha256Adapter.js";
+import { fetchPkceEscrowPepper } from "./pkceEscrowPepper.js";
+import { loadPkceEscrowPepperFromWixSecrets } from "./pkceEscrowPepperWix.js";
 
 /** @type {((value: string) => Promise<string> | string) | null} */
 let configuredHashFn = null;
@@ -49,6 +51,23 @@ function resolveHashFn(depsHashFn) {
 function resolveStore(deps) {
   if (deps.store) return deps.store;
   return createWixNonceStore();
+}
+
+/**
+ * @param {object} [deps]
+ * @returns {Promise<{ ok: true, pepper: string } | { ok: false, code: string }>}
+ */
+async function resolveEscrowPepperForService(deps = {}) {
+  if (typeof deps.escrowPepper === "string" && deps.escrowPepper.trim()) {
+    return fetchPkceEscrowPepper({ pepperOverride: deps.escrowPepper });
+  }
+  if (deps.pepperOverride != null) {
+    return fetchPkceEscrowPepper(deps);
+  }
+  if (typeof deps.getSecret === "function") {
+    return fetchPkceEscrowPepper({ getSecret: deps.getSecret });
+  }
+  return loadPkceEscrowPepperFromWixSecrets();
 }
 
 /**
@@ -87,6 +106,20 @@ async function startFlow(purpose, captchaToken, deps = {}, returnDestinationPath
       });
     }
 
+    let escrowPepper = null;
+    if (purpose === "purchase") {
+      const pepperResult = await resolveEscrowPepperForService(deps);
+      if (!pepperResult.ok) {
+        return buildFlowStartFailure({
+          code: pepperResult.code,
+          stage: FLOW_START_STAGES.PAYLOAD_BUILD,
+          purpose: context.purpose,
+          policyId: context.policyId,
+        });
+      }
+      escrowPepper = pepperResult.pepper;
+    }
+
     let payload;
     try {
       payload = await buildVerificationStartPayload({
@@ -94,10 +127,14 @@ async function startFlow(purpose, captchaToken, deps = {}, returnDestinationPath
         now,
         purpose,
         returnDestinationPath: purpose === "purchase" ? returnDestinationPath : null,
+        escrowPepper,
       });
-    } catch {
+    } catch (error) {
+      const code = error instanceof Error && "code" in error
+        ? String(error.code)
+        : "payload_build_failed";
       return buildFlowStartFailure({
-        code: "payload_build_failed",
+        code,
         stage: FLOW_START_STAGES.PAYLOAD_BUILD,
         purpose: context.purpose,
         policyId: context.policyId,
@@ -232,12 +269,23 @@ export async function completePurchaseVerificationService(
     }
   };
 
+  let escrowPepper = null;
+  const needsEscrowPepper = !verifier?.trim() && Boolean(flowOwnershipSecret?.trim());
+  if (needsEscrowPepper) {
+    const pepperResult = await resolveEscrowPepperForService(deps);
+    if (!pepperResult.ok) {
+      return { verified: false, code: pepperResult.code };
+    }
+    escrowPepper = pepperResult.pepper;
+  }
+
   return completeAbraxasVerificationCore({
     store,
     receiptId,
     flowId,
     verifier,
     flowOwnershipSecret,
+    escrowPepper,
     hashFn,
     validateReceipt: deps.validateReceipt ?? defaultValidateReceipt,
   });

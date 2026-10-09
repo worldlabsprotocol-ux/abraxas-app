@@ -13,6 +13,7 @@ import {
   shouldSkipAgeGate,
 } from "./ageGateAccessState.js";
 import { shouldContinueAfterPurchaseVerification } from "./purchaseCallbackLogic.js";
+import { withTestEscrowPepperDeps } from "../backend/testPkceEscrowFixtures.js";
 
 const hashFn = (value) => createHash("sha256").update(value, "utf8").digest("hex");
 
@@ -39,7 +40,11 @@ describe("Good Trouble purchase → age gate skip", () => {
 
   it("suppresses redundant sandbox age popup after verified purchase callback state", async () => {
     const store = createMemoryNonceStore();
-    const start = await createPurchaseVerificationStartService(null, { store, skipCaptcha: true }, "/");
+    const start = await createPurchaseVerificationStartService(
+      null,
+      withTestEscrowPepperDeps({ store, skipCaptcha: true }),
+      "/",
+    );
     const expiresAtIso = "2099-01-01T00:00:00.000Z";
 
     const complete = await completePurchaseVerificationService(

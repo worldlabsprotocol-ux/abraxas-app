@@ -29,6 +29,7 @@ import {
 } from "./abraxasVerificationService.js";
 import { authorizePurchaseEligibility } from "./purchaseEligibilityAuthorization.js";
 import { validateProductionReceipt, validateSandboxReceipt } from "./abraxasReceiptValidator.js";
+import { TEST_ESCROW_PEPPER_HEX, withTestEscrowPepperDeps } from "./testPkceEscrowFixtures.js";
 
 const hashFn = (value) => createHash("sha256").update(value, "utf8").digest("hex");
 
@@ -92,7 +93,11 @@ describe("separate start lifecycles", () => {
   });
 
   it("purchase start uses retail policy and purchase callback", async () => {
-    const payload = await buildVerificationStartPayload({ hashFn, purpose: "purchase" });
+    const payload = await buildVerificationStartPayload({
+      hashFn,
+      purpose: "purchase",
+      escrowPepper: TEST_ESCROW_PEPPER_HEX,
+    });
     expect(payload.purpose).toBe(FLOW_PURPOSE_PURCHASE);
     expect(payload.policyId).toBe(POLICY_ID);
     expect(payload.flowId.startsWith("gtf_")).toBe(true);
@@ -127,7 +132,11 @@ describe("purpose confusion fails closed", () => {
 
   it("browse completion rejects purchase-purpose flow record", async () => {
     const store = createMemoryNonceStore();
-    const purchase = await buildVerificationStartPayload({ hashFn, purpose: "purchase" });
+    const purchase = await buildVerificationStartPayload({
+      hashFn,
+      purpose: "purchase",
+      escrowPepper: TEST_ESCROW_PEPPER_HEX,
+    });
     await store.insert(purchase.flowRecord);
 
     const result = await completeBrowseVerificationService(
@@ -156,7 +165,11 @@ describe("purpose confusion fails closed", () => {
 describe("replay and verifier binding", () => {
   it("consumed purchase flow cannot complete again", async () => {
     const store = createMemoryNonceStore();
-    const purchase = await buildVerificationStartPayload({ hashFn, purpose: "purchase" });
+    const purchase = await buildVerificationStartPayload({
+      hashFn,
+      purpose: "purchase",
+      escrowPepper: TEST_ESCROW_PEPPER_HEX,
+    });
     const inserted = await store.insert({ ...purchase.flowRecord, state: "consumed", consumedAt: new Date() });
 
     const result = await completeAbraxasVerificationCore({
@@ -174,7 +187,11 @@ describe("replay and verifier binding", () => {
 
   it("verifier mismatch fails closed", async () => {
     const store = createMemoryNonceStore();
-    const purchase = await buildVerificationStartPayload({ hashFn, purpose: "purchase" });
+    const purchase = await buildVerificationStartPayload({
+      hashFn,
+      purpose: "purchase",
+      escrowPepper: TEST_ESCROW_PEPPER_HEX,
+    });
     await store.insert(purchase.flowRecord);
 
     const result = await completePurchaseVerificationService(
@@ -307,7 +324,10 @@ describe("service start separation", () => {
 
   it("createPurchaseVerificationStartService returns purchase purpose", async () => {
     const store = createMemoryNonceStore();
-    const result = await createPurchaseVerificationStartService(null, { store, skipCaptcha: true });
+    const result = await createPurchaseVerificationStartService(null, withTestEscrowPepperDeps({
+      store,
+      skipCaptcha: true,
+    }));
     expect(result.purpose).toBe("purchase");
     expect(result.policyId).toBe(POLICY_ID);
   });

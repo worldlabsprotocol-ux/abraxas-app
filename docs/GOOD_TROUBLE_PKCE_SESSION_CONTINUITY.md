@@ -21,7 +21,7 @@
 - **Fail closed** without ownership proof: no escrow release, no receipt shortcut.
 - **No cross-device / cross-browser continuity** (no proof of flow ownership without start-time binding).
 
-Optional: set Wix secret `GOOD_TROUBLE_PKCE_ESCROW_PEPPER` in production backend environment.
+**Required:** create Wix Secrets Manager secret `GOOD_TROUBLE_PKCE_ESCROW_PEPPER` (≥32 random bytes). Backend loads it via `wix-secrets-backend` (`pkceEscrowPepperWix.js`) — not `process.env`. Purchase start and escrow recovery **fail closed** if the secret is missing, invalid, or unavailable.
 
 ## CMS migration
 

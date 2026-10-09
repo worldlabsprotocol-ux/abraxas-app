@@ -1,9 +1,12 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMemoryNonceStore } from "./memoryNonceStore.js";
 import { FLOW_ID_RE, VERIFIER_RE, ABRAXAS_ORIGIN } from "./constants.js";
 import * as service from "./abraxasVerificationService.js";
 import { createWixNonceStore } from "./wixNonceStore.js";
 import { createPurchaseVerificationStart } from "./abraxasVerification.web.js";
+import { PKCE_ESCROW_PEPPER_SECRET_NAME } from "./pkceEscrowPepper.js";
+import { TEST_ESCROW_PEPPER_HEX } from "./testPkceEscrowFixtures.js";
+import { __testOnlySetWixSecret, __testOnlyClearWixSecrets } from "wix-secrets-backend";
 
 vi.mock("wix-web-module", () => ({
   Permissions: { Anyone: "Anyone" },
@@ -12,7 +15,14 @@ vi.mock("wix-web-module", () => ({
 
 vi.mock("./wixNonceStore.js", () => ({ createWixNonceStore: vi.fn() }));
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  __testOnlyClearWixSecrets();
+});
+
+beforeEach(() => {
+  __testOnlySetWixSecret(PKCE_ESCROW_PEPPER_SECRET_NAME, TEST_ESCROW_PEPPER_HEX);
+});
 
 describe("purchase web method pilot CAPTCHA bypass", () => {
   it("explicitly bypasses CAPTCHA and returns a real successful purchase start", async () => {

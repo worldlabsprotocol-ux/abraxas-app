@@ -14,6 +14,7 @@ import {
   shouldContinueAfterPurchaseVerification,
 } from "./purchaseCallbackLogic.js";
 import { hasUntrustedRedirectQueryParams } from "./purchaseReturnDestination.js";
+import { withTestEscrowPepperDeps } from "../backend/testPkceEscrowFixtures.js";
 
 const hashFn = (value) => createHash("sha256").update(value, "utf8").digest("hex");
 
@@ -38,7 +39,7 @@ describe("Good Trouble purchase callback continuation", () => {
 
   it("stores authoritative destination at start and returns it only after verification", async () => {
     const store = createMemoryNonceStore();
-    const start = await createPurchaseVerificationStartService(null, { store, skipCaptcha: true }, "/cart");
+    const start = await createPurchaseVerificationStartService(null, withTestEscrowPepperDeps({ store, skipCaptcha: true }), "/cart");
     expect(start.error).toBeUndefined();
 
     const stored = await store.findByFlowId(start.flowId);
@@ -64,7 +65,7 @@ describe("Good Trouble purchase callback continuation", () => {
 
   it("does not redirect on invalid receipt", async () => {
     const store = createMemoryNonceStore();
-    const start = await createPurchaseVerificationStartService(null, { store, skipCaptcha: true }, "/cart");
+    const start = await createPurchaseVerificationStartService(null, withTestEscrowPepperDeps({ store, skipCaptcha: true }), "/cart");
 
     const complete = await completePurchaseVerificationService(
       "dr_invalid_12345678",
@@ -82,7 +83,7 @@ describe("Good Trouble purchase callback continuation", () => {
 
   it("rejects replay after flow consumed", async () => {
     const store = createMemoryNonceStore();
-    const start = await createPurchaseVerificationStartService(null, { store, skipCaptcha: true }, "/cart");
+    const start = await createPurchaseVerificationStartService(null, withTestEscrowPepperDeps({ store, skipCaptcha: true }), "/cart");
 
     await completePurchaseVerificationService(
       "dr_pilot_valid_12345678",
@@ -115,7 +116,7 @@ describe("Good Trouble purchase callback continuation", () => {
     const store = createMemoryNonceStore();
     const start = await createPurchaseVerificationStartService(
       null,
-      { store, skipCaptcha: true },
+      withTestEscrowPepperDeps({ store, skipCaptcha: true }),
       "//evil.example/phish",
     );
 
@@ -125,7 +126,7 @@ describe("Good Trouble purchase callback continuation", () => {
 
   it("does not redirect when verifier mismatches", async () => {
     const store = createMemoryNonceStore();
-    const start = await createPurchaseVerificationStartService(null, { store, skipCaptcha: true }, "/cart");
+    const start = await createPurchaseVerificationStartService(null, withTestEscrowPepperDeps({ store, skipCaptcha: true }), "/cart");
 
     const complete = await completePurchaseVerificationService(
       "dr_pilot_valid_12345678",
