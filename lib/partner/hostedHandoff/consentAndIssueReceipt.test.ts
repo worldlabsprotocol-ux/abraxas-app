@@ -247,6 +247,10 @@ describe("consentOpaqueHostedHandoff", () => {
     expect(result.idempotent_replay).toBe(true);
     expect(result.receipt_id).toBe("dr_existing");
     expect(issueReceiptMock).not.toHaveBeenCalled();
+    expect(bindReceiptMock).toHaveBeenCalledWith(expect.objectContaining({
+      verifyRequest: OPAQUE,
+      publicReceiptId: "dr_existing",
+    }));
   });
 
   it("rejects expired handoffs", async () => {

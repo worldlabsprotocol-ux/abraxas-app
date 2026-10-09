@@ -25,7 +25,7 @@ import { isAgeEligibilityOnlyPolicy } from "@/lib/policy/selfAttestationGuards";
 import { getPolicy } from "@/lib/verification/requestsService";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { isOpaqueVerifyRequest } from "@/lib/partner/partnerFlowContinuationIdentifiers";
-import { loadHandoffByVerifyRequest } from "@/lib/partner/hostedHandoff/store";
+import { bindHandoffToIssuedReceipt, loadHandoffByVerifyRequest } from "@/lib/partner/hostedHandoff/store";
 
 export type AgeEligibilityPurchaseReturnResult =
   | {
@@ -129,7 +129,18 @@ async function resolvePurchaseReturnBinding(input: {
     const handoff = await loadHandoffByVerifyRequest(input.verificationRequestId);
     if (!handoff) return { ok: false, code: "missing" };
     if (handoff.status !== "completed" && handoff.status !== "consumed") {
-      return { ok: false, code: "not_decided" };
+      const issued = await findReceiptForOpaqueVerifyRequest({
+        verifyRequestId: input.verificationRequestId,
+        subjectId: input.sessionSubject,
+      });
+      if (!issued) return { ok: false, code: "not_decided" };
+      await bindHandoffToIssuedReceipt({
+        verifyRequest: input.verificationRequestId,
+        partnerId: handoff.partner_id,
+        policyId: handoff.policy_id,
+        publicReceiptId: issued.receipt_id,
+        bindingId: handoff.binding_id,
+      });
     }
     if (handoff.partner_id.trim().length === 0 || handoff.policy_id.trim().length === 0) {
       return { ok: false, code: "missing" };
@@ -197,10 +208,8 @@ export async function completeAgeEligibilityPurchaseReturn(input: {
     };
   }
 
-  if (stored.consumedAt) {
-    return { ok: false, error: "Return already completed", code: "replay" };
-  }
-  if (!continuationIsUsable(stored)) {
+  const alreadyReturned = Boolean(stored.consumedAt);
+  if (!alreadyReturned && !continuationIsUsable(stored)) {
     return { ok: false, error: "Return binding expired", code: "stale" };
   }
 
@@ -250,9 +259,25 @@ export async function completeAgeEligibilityPurchaseReturn(input: {
 
   const redirect_url = buildRedirectUrl(stored.returnUrl, redirectParams);
 
+  if (alreadyReturned) {
+    return {
+      ok: true,
+      redirect_url,
+      receipt_id: receiptId,
+      decision_id: issued.decision_id,
+      replay: true,
+    };
+  }
+
   const consumed = await store.consume(stored.jti);
   if (!consumed) {
-    return { ok: false, error: "Return already completed", code: "replay" };
+    return {
+      ok: true,
+      redirect_url,
+      receipt_id: receiptId,
+      decision_id: issued.decision_id,
+      replay: true,
+    };
   }
 
   return {
