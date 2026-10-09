@@ -13,12 +13,9 @@ import {
 } from "@/lib/partner/partnerFlowContinuation";
 import { createSupabaseContinuationStore } from "@/lib/partner/partnerFlowContinuationStore";
 import {
-  coalesceGoodTroublePurchaseReturnUrl,
   extractGoodTroubleFlowToken,
   goodTroublePurchaseReturnUrlBindingAllowed,
   isGoodTroublePurchaseCallbackPath,
-  partnerContinuationReturnUrlsMatch,
-  preferAuthoritativeContinuationReturnUrl,
 } from "@/lib/partner/continuationReturnUrlMatch";
 import { isCanonicalGoodTroublePurchaseFlow } from "@/lib/partner/goodTroublePurchaseFlow";
 import {
@@ -30,6 +27,11 @@ import { getPolicy } from "@/lib/verification/requestsService";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { isOpaqueVerifyRequest } from "@/lib/partner/partnerFlowContinuationIdentifiers";
 import { bindHandoffToIssuedReceipt, loadHandoffByVerifyRequest } from "@/lib/partner/hostedHandoff/store";
+import {
+  buildPurchaseReturnDiagnostic,
+  logGoodTroublePurchaseReturnDiagnostic,
+} from "@/lib/partner/goodTroublePurchaseReturnDiagnostics";
+import { resolveAndPersistGoodTroublePurchaseReturnUrl } from "@/lib/partner/resolveGoodTroublePurchaseReturnUrl";
 
 export type AgeEligibilityPurchaseReturnResult =
   | {
@@ -250,29 +252,51 @@ export async function completeAgeEligibilityPurchaseReturn(input: {
     return { ok: false, error: "Receipt decision not approved", code: "denied" };
   }
 
-  let redirectBase = stored.returnUrl;
   const clientHint = input.clientReturnUrl?.trim();
-  if (clientHint) {
-    if (!goodTroublePurchaseReturnUrlBindingAllowed(stored.returnUrl, clientHint)) {
-      return {
-        ok: false,
-        error: "Return URL binding rejected",
-        code: "open_redirect",
-      };
-    }
-    const coalescedHint = coalesceGoodTroublePurchaseReturnUrl(stored.returnUrl, clientHint);
-    redirectBase = preferAuthoritativeContinuationReturnUrl(stored.returnUrl, coalescedHint);
-  } else {
-    redirectBase = stored.returnUrl;
+  if (clientHint && !goodTroublePurchaseReturnUrlBindingAllowed(stored.returnUrl, clientHint)) {
+    logGoodTroublePurchaseReturnDiagnostic(buildPurchaseReturnDiagnostic({
+      stage: "return_failed",
+      code: "open_redirect",
+      verifyRequestId: verificationRequestId,
+      storedReturnUrl: stored.returnUrl,
+      mergedHint: clientHint,
+    }));
+    return {
+      ok: false,
+      error: "Return URL binding rejected",
+      code: "open_redirect",
+    };
   }
+
+  const resolvedReturn = await resolveAndPersistGoodTroublePurchaseReturnUrl({
+    stored,
+    hints: [clientHint],
+  });
+  const redirectBase = resolvedReturn.redirectBase;
 
   if (isGoodTroublePurchaseCallbackPath(new URL(redirectBase).pathname)) {
     if (!extractGoodTroubleFlowToken(redirectBase)) {
+      logGoodTroublePurchaseReturnDiagnostic(buildPurchaseReturnDiagnostic({
+        stage: "return_url_bare",
+        code: "missing_flow_token_bare_binding",
+        verifyRequestId: verificationRequestId,
+        storedReturnUrl: stored.returnUrl,
+        mergedHint: clientHint,
+      }));
       return {
         ok: false,
         error: "Good Trouble purchase return requires flow binding (gtv)",
         code: "missing_flow_token",
       };
+    }
+    if (resolvedReturn.storedUpgraded) {
+      logGoodTroublePurchaseReturnDiagnostic(buildPurchaseReturnDiagnostic({
+        stage: "return_url_upgraded",
+        code: "gtv_restored",
+        verifyRequestId: verificationRequestId,
+        storedReturnUrl: redirectBase,
+        mergedHint: clientHint,
+      }));
     }
   }
 
@@ -298,14 +322,6 @@ export async function completeAgeEligibilityPurchaseReturn(input: {
       error: "Good Trouble purchase return requires flow binding (gtv)",
       code: "missing_flow_token",
     };
-  }
-
-  if (
-    redirectBase !== stored.returnUrl
-    && continuationIsUsable(stored)
-    && !alreadyReturned
-  ) {
-    await store.save({ ...stored, returnUrl: redirectBase });
   }
 
   if (alreadyReturned) {

@@ -76,7 +76,11 @@ export async function POST(req: NextRequest) {
   const verifyRequest = body.verify_request?.trim() || undefined;
 
   if (verifyRequest && isOpaqueVerifyRequest(verifyRequest)) {
-    const partnerReturnUrlHint = await resolvePartnerReturnUrlHintForRequest(req, body.return_url);
+    const partnerReturnUrlHint = await resolvePartnerReturnUrlHintForRequest(
+      req,
+      body.return_url,
+      verifyRequest,
+    );
     const resolved = await resolveHostedHandoffForContinue(verifyRequest, {
       partnerReturnUrlHint: partnerReturnUrlHint || null,
     });

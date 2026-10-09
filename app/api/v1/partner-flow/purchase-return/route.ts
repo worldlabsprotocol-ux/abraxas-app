@@ -6,6 +6,11 @@ import { requireBrowserSession } from "@/lib/auth/browserSession";
 import { completeAgeEligibilityPurchaseReturn } from "@/lib/partner/completeAgeEligibilityPurchaseReturn";
 import { resolvePartnerReturnUrlHintForRequest } from "@/lib/partner/partnerReturnUrlHint";
 import {
+  buildPurchaseReturnDiagnostic,
+  logGoodTroublePurchaseReturnDiagnostic,
+} from "@/lib/partner/goodTroublePurchaseReturnDiagnostics";
+import { GOOD_TROUBLE_GTV_BINDING_COOKIE } from "@/lib/partner/goodTroubleGtvBindingCookie";
+import {
   enforcePartnerFlowRateLimit,
   recordPartnerFlowRequestOutcome,
 } from "@/lib/partner/partnerFlowRouteGuard";
@@ -59,7 +64,16 @@ export async function POST(request: NextRequest) {
   const clientReturnUrl = await resolvePartnerReturnUrlHintForRequest(
     request,
     body.return_url?.trim(),
+    verificationRequestId,
   );
+
+  logGoodTroublePurchaseReturnDiagnostic(buildPurchaseReturnDiagnostic({
+    stage: "callback_received",
+    code: "purchase_return_post",
+    verifyRequestId: verificationRequestId,
+    mergedHint: clientReturnUrl,
+    bindingCookiePresent: Boolean(request.cookies.get(GOOD_TROUBLE_GTV_BINDING_COOKIE)?.value),
+  }));
 
   const result = await completeAgeEligibilityPurchaseReturn({
     suiAddress: session.session.suiAddress,

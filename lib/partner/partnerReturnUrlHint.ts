@@ -17,6 +17,7 @@ import {
   PARTNER_VERIFY_RESUME_COOKIE,
   verifyPartnerVerifyResumeCookie,
 } from "@/lib/partner/partnerVerifyResumeCookie";
+import { readGoodTroubleGtvBindingReturnUrl } from "@/lib/partner/goodTroubleGtvBindingCookie";
 
 export { mergePartnerReturnUrlHints };
 
@@ -41,9 +42,13 @@ export async function readPartnerVerifyResumeReturnUrl(
 export async function resolvePartnerReturnUrlHintForRequest(
   request: NextRequest,
   clientHint?: string | null,
+  verifyRequestId?: string | null,
 ): Promise<string> {
   const resumeReturnUrl = await readPartnerVerifyResumeReturnUrl(request);
-  return mergePartnerReturnUrlHints(clientHint, resumeReturnUrl);
+  const gtvBindingReturnUrl = verifyRequestId
+    ? await readGoodTroubleGtvBindingReturnUrl(request, verifyRequestId)
+    : null;
+  return mergePartnerReturnUrlHints(clientHint, resumeReturnUrl, gtvBindingReturnUrl);
 }
 
 export async function upgradeStoredContinuationWithPartnerHint(input: {
