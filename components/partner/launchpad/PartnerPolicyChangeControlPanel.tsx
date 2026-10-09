@@ -300,7 +300,7 @@ const box: React.CSSProperties = {
 const grid: React.CSSProperties = {
   display: "grid",
   gap: "0.65rem",
-  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+  gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))",
   marginBottom: "0.75rem",
 };
 

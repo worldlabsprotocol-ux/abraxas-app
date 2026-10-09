@@ -41,12 +41,8 @@ export function PartnerLaunchpadConnectPanel({
         <div
           role="radiogroup"
           aria-label="Website platform"
-          style={{
-            display: "grid",
-            gap: "0.55rem",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            marginBottom: "0.85rem",
-          }}
+          className="abx-responsive-stack-grid"
+          style={{ marginBottom: "0.85rem" }}
         >
           {MERCHANT_CONNECT_PLATFORMS.map((item) => (
             <button

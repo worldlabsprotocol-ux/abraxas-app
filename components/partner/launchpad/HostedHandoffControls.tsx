@@ -199,7 +199,7 @@ unset ABRAXAS_SANDBOX_PARTNER_API_KEY` : "";
         />
       </div>
       {error && <p role="alert" style={{ fontFamily: FONT, fontSize: "0.76rem", color: "#f87171" }}>{error}</p>}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.65rem" }}>
+      <div className="abx-launchpad-action-row" style={{ marginBottom: "0.65rem" }}>
         <Btn size="sm" loading={busy} disabled={busy} onClick={() => void createHandoff()}>
           Create a secure handoff
         </Btn>
@@ -240,7 +240,8 @@ unset ABRAXAS_SANDBOX_PARTNER_API_KEY` : "";
                   : "Waiting for the holder to finish verification and consent…"}
           </p>
           <p style={{ fontFamily: FONT, fontSize: "0.76rem", lineHeight: 1.55, color: "var(--text-secondary)", margin: "0 0 0.45rem" }}>
-            Devnet proof handoff ref: <code style={{ userSelect: "text" }}>{handoffRef}</code>
+            Devnet proof handoff ref:{" "}
+            <code className="abx-break-anywhere" style={{ userSelect: "text" }}>{handoffRef}</code>
           </p>
           {status === "created" && (
             <Btn size="sm" variant="secondary" loading={checking} disabled={checking} onClick={() => void checkStatus()}>

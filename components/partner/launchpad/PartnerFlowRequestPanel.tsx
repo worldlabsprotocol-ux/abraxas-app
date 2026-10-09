@@ -29,6 +29,9 @@ const body: React.CSSProperties = {
 const input: React.CSSProperties = {
   display: "block",
   width: "100%",
+  maxWidth: "100%",
+  minWidth: 0,
+  boxSizing: "border-box",
   marginTop: "0.3rem",
   padding: "0.55rem 0.7rem",
   borderRadius: 10,
@@ -230,7 +233,7 @@ export function PartnerFlowRequestPanel({
         Policy pack and version are pinned on the sandbox app ({view?.policy_template_id ?? "—"} · v{view?.policy_version ?? "—"}). They cannot be edited here.
       </p>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1rem" }}>
+      <div className="abx-launchpad-action-row" style={{ marginBottom: "1rem" }}>
         <Btn size="sm" loading={busy} disabled={busy} onClick={() => void save()}>Save request configuration</Btn>
         {onContinue && (
           <Btn size="sm" variant="secondary" onClick={onContinue}>Continue to test console</Btn>

@@ -86,26 +86,26 @@ export function PartnerIntegrationHandoffPanel({ applicationId }: { applicationI
         />
         {handoff && (
           <>
-            <dl style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: "8px 12px", margin: 0 }}>
-              <dt>App ID</dt><dd style={{ fontFamily: MONO, margin: 0 }}>{handoff.application_id}</dd>
-              <dt>Environment</dt><dd style={{ margin: 0 }}>{handoff.binding_environment ?? handoff.environment}</dd>
-              <dt>Policy</dt><dd style={{ margin: 0 }}>{handoff.policy_label} · v{handoff.policy_version}</dd>
+            <dl className="abx-responsive-dl">
+              <dt>App ID</dt><dd style={{ fontFamily: MONO }}>{handoff.application_id}</dd>
+              <dt>Environment</dt><dd>{handoff.binding_environment ?? handoff.environment}</dd>
+              <dt>Policy</dt><dd>{handoff.policy_label} · v{handoff.policy_version}</dd>
               {handoff.binding_id && (
                 <>
-                  <dt>Binding</dt><dd style={{ fontFamily: MONO, margin: 0 }}>{handoff.binding_id}</dd>
-                  <dt>Result family</dt><dd style={{ fontFamily: MONO, margin: 0 }}>{handoff.result_family}</dd>
+                  <dt>Binding</dt><dd style={{ fontFamily: MONO }}>{handoff.binding_id}</dd>
+                  <dt>Result family</dt><dd style={{ fontFamily: MONO }}>{handoff.result_family}</dd>
                 </>
               )}
-              <dt>Callback class</dt><dd style={{ margin: 0 }}>{handoff.approved_callback_class}</dd>
-              <dt>Verify API</dt><dd style={{ fontFamily: MONO, margin: 0 }}>{handoff.verify_recommended_api}</dd>
+              <dt>Callback class</dt><dd>{handoff.approved_callback_class}</dd>
+              <dt>Verify API</dt><dd style={{ fontFamily: MONO }}>{handoff.verify_recommended_api}</dd>
             </dl>
             <div>
               <strong>Hosted flow</strong>
-              <pre style={{ fontFamily: MONO, fontSize: 12, overflowX: "auto", whiteSpace: "pre-wrap" }}>{handoff.hosted_flow_pattern}</pre>
+              <pre className="abx-code-scroll" style={{ fontFamily: MONO, fontSize: 12, whiteSpace: "pre-wrap", margin: "0.35rem 0 0" }}>{handoff.hosted_flow_pattern}</pre>
             </div>
             <div>
               <strong>Server verification</strong>
-              <pre style={{ fontFamily: MONO, fontSize: 12, overflowX: "auto", whiteSpace: "pre-wrap" }}>{handoff.server_verification_pattern}</pre>
+              <pre className="abx-code-scroll" style={{ fontFamily: MONO, fontSize: 12, whiteSpace: "pre-wrap", margin: "0.35rem 0 0" }}>{handoff.server_verification_pattern}</pre>
             </div>
             <div>
               <strong>Starter Kit</strong>

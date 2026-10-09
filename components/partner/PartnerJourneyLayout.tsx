@@ -62,7 +62,7 @@ export function PartnerJourneyLayout({
     <div
       data-theme="dark"
       data-motion-tier="calm"
-      className="partner-journey-layout abx-product-journey"
+      className="partner-journey-layout abx-product-journey abx-partner-surface"
       style={{
         ...abxAccentCssVars("partner"),
         ...abxMotionCssVars(),
@@ -74,7 +74,11 @@ export function PartnerJourneyLayout({
         fontFamily: FONT,
         color: "var(--text-primary, #f4f4f5)",
         background: ABX_PAGE_BACKGROUNDS.partnerJourney,
-        overflowX: "hidden",
+        overflowX: "clip",
+        width: "100%",
+        maxWidth: "100%",
+        minWidth: 0,
+        boxSizing: "border-box",
       }}
     >
       <motion.div
