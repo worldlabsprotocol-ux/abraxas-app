@@ -4,8 +4,10 @@
 
 import { ContentCard } from "@/components/redesign/RedesignContent";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
-import { GOOD_TROUBLE_CANONICAL_PARTNER_ID } from "@/lib/goodTrouble/canonicalProductionConfig";
-import { GOOD_TROUBLE_SANDBOX_APPLICATION_ID } from "@/lib/goodTrouble/sandboxPartnerVerification";
+import {
+  GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+  GOOD_TROUBLE_SANDBOX_APPLICATION_ID,
+} from "@/lib/goodTrouble/canonicalProductionConfig";
 import { HostedHandoffControls } from "@/components/partner/launchpad/HostedHandoffControls";
 
 const FONT = ABRAXAS_FONT_SANS;

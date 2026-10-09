@@ -16,12 +16,12 @@ import {
   GOOD_TROUBLE_CANONICAL_PARTNER_ID,
   GOOD_TROUBLE_CANONICAL_POLICY_ID,
   GOOD_TROUBLE_CANONICAL_RESULT_FAMILY,
+  GOOD_TROUBLE_SANDBOX_APPLICATION_ID,
 } from "@/lib/goodTrouble/canonicalProductionConfig";
 import { POLICY_PACKS } from "@/lib/partner/launchpad/policyPacks";
 import { SITE_URL } from "@/lib/siteUrl";
 
-/** Launchpad sandbox application (Good Trouble pilot). */
-export const GOOD_TROUBLE_SANDBOX_APPLICATION_ID = "690d0c89-7b98-4946-8ad2-7469f5ca89d9" as const;
+export { GOOD_TROUBLE_SANDBOX_APPLICATION_ID };
 
 /** Active L0 self-attestation policy pin for hosted purchase (not government-ID verified age). */
 export const GOOD_TROUBLE_SANDBOX_POLICY_VERSION = 2 as const;

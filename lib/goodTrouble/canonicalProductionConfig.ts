@@ -11,6 +11,8 @@ import {
 
 export const GOOD_TROUBLE_CANONICAL_PARTNER_ID = "good-trouble" as const;
 export const GOOD_TROUBLE_CANONICAL_APP_SLUG = "good-trouble" as const;
+/** Launchpad sandbox application UUID (Good Trouble Colosseum pilot). */
+export const GOOD_TROUBLE_SANDBOX_APPLICATION_ID = "690d0c89-7b98-4946-8ad2-7469f5ca89d9" as const;
 export const GOOD_TROUBLE_CANONICAL_POLICY_TEMPLATE = "age_21_retail" as const;
 export const GOOD_TROUBLE_CANONICAL_RESULT_FAMILY = "age_eligible_21" as const;
 export const GOOD_TROUBLE_CANONICAL_POLICY_ID = buildLaunchpadPolicyId(
