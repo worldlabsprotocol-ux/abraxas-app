@@ -14,6 +14,13 @@ vi.mock("@/lib/verification/requestsService", () => ({
   consentAndDecide: (...args: unknown[]) => mockConsentAndDecide(...args),
 }));
 
+vi.mock("@/lib/partner/hostedHandoff/consentAndIssueReceipt", () => ({
+  consentOpaqueHostedHandoff: vi.fn(),
+  HostedHandoffConsentError: class extends Error {
+    code = "missing";
+  },
+}));
+
 vi.mock("@/lib/partner/requirePartnerMethodQualification", () => ({
   requireQualifiedPartnerMethod: (...args: unknown[]) => mockRequireQualified(...args),
 }));

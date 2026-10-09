@@ -7,6 +7,11 @@ import { getPublicAppOriginFromRequest } from "@/lib/app/publicAppOrigin";
 import { requireQualifiedPartnerMethod } from "@/lib/partner/requirePartnerMethodQualification";
 import { consentAndDecide } from "@/lib/verification/requestsService";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { isOpaqueVerifyRequest } from "@/lib/partner/partnerFlowContinuationIdentifiers";
+import {
+  consentOpaqueHostedHandoff,
+  HostedHandoffConsentError,
+} from "@/lib/partner/hostedHandoff/consentAndIssueReceipt";
 import {
   enforcePartnerFlowRateLimit,
   recordPartnerFlowRequestOutcome,
@@ -43,6 +48,35 @@ export async function POST(
   const { id } = await params;
 
   try {
+    if (isOpaqueVerifyRequest(id)) {
+      const result = await consentOpaqueHostedHandoff({
+        verifyRequest: id,
+        suiAddress: session.session.suiAddress,
+        request: req,
+      });
+      const appOrigin = getPublicAppOriginFromRequest(req);
+      recordPartnerFlowRequestOutcome({
+        request: req,
+        endpoint: ENDPOINT,
+        method: "POST",
+        started,
+        sessionSubject: session.session.suiAddress,
+        httpStatus: 200,
+      });
+      return NextResponse.json({
+        decision: result.decision,
+        claims: result.claims,
+        valid_until: result.valid_until,
+        decision_reference: result.decision_id,
+        receipt_id: result.receipt_id,
+        receipt_public_url: result.receipt_id
+          ? `${appOrigin}/api/receipts/${result.receipt_id}/public`
+          : null,
+        reason_codes: result.reason_codes,
+        idempotent_replay: result.idempotent_replay,
+      });
+    }
+
     const sb = requireSupabaseAdmin();
     const { data: requestRow } = await sb
       .from("verification_requests")
@@ -104,6 +138,26 @@ export async function POST(
       reason_codes: result.reason_codes,
     });
   } catch (e: unknown) {
+    if (e instanceof HostedHandoffConsentError) {
+      const status = e.code === "missing" ? 404
+        : e.code === "stale" ? 410
+        : e.code === "replay" ? 409
+        : e.code === "method_not_qualified" || e.code === "denied" ? 403
+        : 400;
+      recordPartnerFlowRequestOutcome({
+        request: req,
+        endpoint: ENDPOINT,
+        method: "POST",
+        started,
+        sessionSubject: session.session.suiAddress,
+        httpStatus: status,
+      });
+      return NextResponse.json({
+        error: e.message,
+        code: e.code,
+        issuedReceipt: false,
+      }, { status });
+    }
     const msg = e instanceof Error ? e.message : "Consent failed";
     recordPartnerFlowRequestOutcome({
       request: req,
