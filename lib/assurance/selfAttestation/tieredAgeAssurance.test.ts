@@ -26,6 +26,11 @@ import {
 import { validateSandboxReceipt } from "../../../examples/good-trouble-wix/backend/abraxasReceiptValidator.js";
 import { authorizeRegulatedCheckout } from "../../../examples/good-trouble-wix/backend/checkoutAuthorization.js";
 import { validateBrowseAccessPayload } from "../../../examples/good-trouble-wix/backend/browseReceiptValidator.js";
+import {
+  PARTNER_ID as WIX_PARTNER_ID,
+  POLICY_ID as WIX_SANDBOX_POLICY_ID,
+  BROWSE_POLICY_ID as WIX_BROWSE_POLICY_ID,
+} from "../../../examples/good-trouble-wix/backend/constants.js";
 import type { CredentialClaimRecord } from "@/lib/credentials/claimSchema";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { generateTestSigningKeyPair } from "@/lib/decisionReceipts/signing";
@@ -141,9 +146,9 @@ describe("self-attestation service privacy", () => {
     expect(logged).not.toContain("2000-06-15");
   });
 
-  it("rejects checkout purpose", () => {
+  it("rejects disallowed purposes while allowing browse and purchase pilot", () => {
     expect(isBlockedSelfAttestationPurpose("checkout")).toBe(true);
-    expect(isBlockedSelfAttestationPurpose("purchase")).toBe(true);
+    expect(isBlockedSelfAttestationPurpose("purchase")).toBe(false);
     expect(isBlockedSelfAttestationPurpose("delivery")).toBe(true);
     expect(isBlockedSelfAttestationPurpose("browse")).toBe(false);
   });
@@ -251,16 +256,17 @@ describe("Wix checkout boundary", () => {
     signature_valid: true,
     decision_result: "approved",
     status: "active",
-    partner_id: GOOD_TROUBLE_PARTNER_ID,
-    policy_id: GOOD_TROUBLE_RETAIL_POLICY_ID,
+    partner_id: WIX_PARTNER_ID,
+    policy_id: WIX_SANDBOX_POLICY_ID,
     schema_version: "1.0.0",
     artifact_type: "eligibility_decision_receipt",
     production_usable: false,
     decision_context: "sandbox_only",
     invalidation_reasons: ["production_not_usable:false"],
     expires_at: new Date(Date.now() + 3600000).toISOString(),
-    evaluated_claim_refs: [],
-    assurance_level: "L2",
+    evaluated_claim_refs: [{ status: "active", claim_type: "self_attested_age_band" }],
+    assurance_level: "L0",
+    purpose: "purchase",
   };
 
   const browseReceipt = {
@@ -269,8 +275,8 @@ describe("Wix checkout boundary", () => {
     purpose: "browse",
     assurance_level: "L0",
     age_band: "over_21",
-    partner_id: GOOD_TROUBLE_PARTNER_ID,
-    policy_id: GOOD_TROUBLE_BROWSE_POLICY_ID,
+    partner_id: WIX_PARTNER_ID,
+    policy_id: WIX_BROWSE_POLICY_ID,
     expires_at: new Date(Date.now() + 3600000).toISOString(),
   };
 
@@ -291,14 +297,16 @@ describe("Wix checkout boundary", () => {
     expect(authorizeRegulatedCheckout({ receipt: browseReceipt }).authorized).toBe(false);
   });
 
-  it("authoritative sandbox receipt can authorize checkout validation path", () => {
+  it("sandbox L0 pilot receipt validates for Wix callback but not regulated checkout", () => {
     expect(validateSandboxReceipt(authoritativeReceipt).verified).toBe(true);
-    expect(authorizeRegulatedCheckout({
+    const checkout = authorizeRegulatedCheckout({
       receipt: authoritativeReceipt,
       flowConsumed: true,
       flowPurpose: "purchase",
-      flowPolicyId: GOOD_TROUBLE_RETAIL_POLICY_ID,
-    }).authorized).toBe(true);
+      flowPolicyId: WIX_SANDBOX_POLICY_ID,
+    });
+    expect(checkout.authorized).toBe(false);
+    expect(checkout.code).toBe("authoritative_receipt_invalid");
   });
 
   it("browse payload validator accepts L0 browse receipt shape", () => {
