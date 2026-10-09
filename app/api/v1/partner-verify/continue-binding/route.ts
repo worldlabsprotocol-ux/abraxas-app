@@ -19,6 +19,7 @@ import {
   resolvePartnerReturnUrlHintForRequest,
   upgradeStoredContinuationWithPartnerHint,
 } from "@/lib/partner/partnerReturnUrlHint";
+import { maybeAttachGoodTroubleGtvBindingFromReturnUrl } from "@/lib/partner/goodTroubleGtvBindingCookie";
 import { isOpaqueVerifyRequest } from "@/lib/partner/productionIntegration/requestCorrelation";
 
 export const dynamic = "force-dynamic";
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
   try {
     let stored = await createSupabaseContinuationStore().peekByVerifyRequestId(verifyRequest);
     if (stored) {
-      const partnerHint = await resolvePartnerReturnUrlHintForRequest(request, null);
+      const partnerHint = await resolvePartnerReturnUrlHintForRequest(request, null, verifyRequest);
       if (partnerHint) {
         stored = await upgradeStoredContinuationWithPartnerHint({ stored, partnerHint });
       }
@@ -64,13 +65,19 @@ export async function GET(request: NextRequest) {
     if (!stored) {
       return NextResponse.json({ ok: false, code: "missing" }, { status: 404 });
     }
-    return NextResponse.json({
+    const res = NextResponse.json({
       ok: true,
       partner_id: stored.partnerId,
       policy_id: stored.policyId,
       purpose: stored.purpose ?? null,
       return_url: stored.returnUrl,
     });
+    await maybeAttachGoodTroubleGtvBindingFromReturnUrl(
+      res,
+      verifyRequest,
+      stored.returnUrl,
+    );
+    return res;
   } catch (error) {
     if (error instanceof ContinuationStoreUnavailableError) {
       return NextResponse.json({ ok: false, code: CONTINUATION_STORE_UNAVAILABLE }, { status: 503 });

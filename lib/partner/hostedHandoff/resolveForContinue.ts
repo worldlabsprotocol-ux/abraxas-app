@@ -238,9 +238,10 @@ async function ensureHostedHandoffContinuation(input: {
     verifyRequestRef,
   });
   if (reused) {
+    const coalesced = coalesceGoodTroublePurchaseReturnUrl(reused.returnUrl, input.returnUrl);
     const upgradedReturnUrl = preferAuthoritativeContinuationReturnUrl(
       reused.returnUrl,
-      input.returnUrl,
+      coalesced,
     );
     if (upgradedReturnUrl !== reused.returnUrl) {
       const upgraded = { ...reused, returnUrl: upgradedReturnUrl };

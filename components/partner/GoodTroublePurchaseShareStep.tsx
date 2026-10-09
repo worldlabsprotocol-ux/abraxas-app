@@ -15,6 +15,8 @@ import {
   navigateAgeEligibilityPurchaseReturn,
   postAgeEligibilityPurchaseReturn,
 } from "@/lib/passport/ageEligibilityPurchaseReturn";
+import { mergePartnerReturnUrlHints } from "@/lib/partner/continuationReturnUrlMatch";
+import { loadPartnerVerifyResume } from "@/lib/partner/partnerVerifyResume";
 
 export function GoodTroublePurchaseShareStep({
   verifyRequestId,
@@ -60,10 +62,14 @@ export function GoodTroublePurchaseShareStep({
     if (!receiptId) return;
     setReturnBusy(true);
     setReturnError(null);
+    const mergedReturnUrl = mergePartnerReturnUrlHints(
+      returnUrl,
+      loadPartnerVerifyResume()?.returnUrl,
+    );
     const result = await postAgeEligibilityPurchaseReturn({
       verificationRequestId: verifyRequestId,
       receiptId,
-      returnUrl,
+      returnUrl: mergedReturnUrl || returnUrl,
     });
     if (result.ok) {
       navigateAgeEligibilityPurchaseReturn(result.redirectUrl);

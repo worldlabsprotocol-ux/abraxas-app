@@ -44,6 +44,7 @@ import {
   attachPartnerContinueBindingCookie,
   signPartnerContinueBindingCookie,
 } from "@/lib/partner/partnerVerifyResumeCookie";
+import { maybeAttachGoodTroubleGtvBindingFromReturnUrl } from "@/lib/partner/goodTroubleGtvBindingCookie";
 import { normalizeExpectedContentHash } from "@/lib/provenance/expectedContentHash";
 import { isContentOriginDisclosureFlow } from "@/lib/provenance/partnerFlow";
 
@@ -355,6 +356,11 @@ export async function POST(request: NextRequest) {
           verifyRequestId: result.verification_request_id,
         });
         if (bindingToken) attachPartnerContinueBindingCookie(res, bindingToken);
+        await maybeAttachGoodTroubleGtvBindingFromReturnUrl(
+          res,
+          result.verification_request_id,
+          returnUrl,
+        );
       }
     }
 

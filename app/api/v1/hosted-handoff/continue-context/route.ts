@@ -9,6 +9,7 @@ import {
 } from "@/lib/partner/hostedHandoff/continueContextTrace";
 import { resolveHostedHandoffForContinue } from "@/lib/partner/hostedHandoff/resolveForContinue";
 import { resolvePartnerReturnUrlHintForRequest } from "@/lib/partner/partnerReturnUrlHint";
+import { maybeAttachGoodTroubleGtvBindingFromReturnUrl } from "@/lib/partner/goodTroubleGtvBindingCookie";
 import {
   attachPartnerContinueBindingCookie,
   signPartnerContinueBindingCookie,
@@ -39,6 +40,7 @@ export async function GET(request: NextRequest) {
   const partnerReturnUrlHint = await resolvePartnerReturnUrlHintForRequest(
     request,
     queryReturnUrlHint,
+    verifyRequest,
   );
   const resolved = await resolveHostedHandoffForContinue(verifyRequest, {
     trace,
@@ -77,6 +79,12 @@ export async function GET(request: NextRequest) {
   if (bindingToken) {
     attachPartnerContinueBindingCookie(res, bindingToken);
   }
+
+  await maybeAttachGoodTroubleGtvBindingFromReturnUrl(
+    res,
+    preview.verify_request,
+    preview.return_url,
+  );
 
   attachContinueContextTraceHeader(res.headers, trace);
   return res;
