@@ -20,14 +20,15 @@ Deploy in this order (Public → Backend → Pages/lightbox):
 | 2c | `examples/good-trouble-wix/public/purchaseCallbackLogic.js` | Public file | `src/public/purchaseCallbackLogic.js` | Replace | `./abraxasClientConstants.js`, `./purchaseReturnDestination.js` |
 | 2d | `examples/good-trouble-wix/public/purchaseReturnDestination.js` | Public file | `src/public/purchaseReturnDestination.js` | Replace | `./abraxasClientConstants.js` |
 | 2e | `examples/good-trouble-wix/public/ageGateAccessState.js` | Public file | `src/public/ageGateAccessState.js` | Replace | `./abraxasClientConstants.js`, `./ageVerificationPopupLogic.js` |
+| 2f | `examples/good-trouble-wix/public/siteAgeGatePolicy.js` | Public file | `src/public/siteAgeGatePolicy.js` | **New** | `./ageGateAccessState.js` |
 | 3 | `examples/good-trouble-wix/backend/constants.js` | Backend file | `src/backend/constants.js` | Replace | `../public/abraxasClientConstants.js` |
 | 4 | `examples/good-trouble-wix/backend/browseConstants.js` | Backend file | `src/backend/browseConstants.js` | **New** | — |
 | 5 | `examples/good-trouble-wix/backend/flowPurpose.js` | Backend file | `src/backend/flowPurpose.js` | **New** | `./constants.js` |
 | 6 | `examples/good-trouble-wix/backend/pkceProof.js` | Backend file | `src/backend/pkceProof.js` | Replace | `./constants.js`, `node:crypto` |
 | 7 | `examples/good-trouble-wix/backend/sha256Adapter.js` | Backend file | `src/backend/sha256Adapter.js` | Replace | `node:crypto` |
-| 8 | `examples/good-trouble-wix/backend/flowCapacity.js`
+| 8 | `examples/good-trouble-wix/backend/flowCapacity.js` | Backend file | `src/backend/flowCapacity.js` | Replace | — |
 | 8b | `examples/good-trouble-wix/backend/flowStartDiagnostics.js` | Backend file | `src/backend/flowStartDiagnostics.js` | **New** | `./flowPurpose.js` |
-| 8c | `examples/good-trouble-wix/backend/wixDataCount.js` | Backend file | `src/backend/wixDataCount.js` | **New** | — | | Backend file | `src/backend/flowCapacity.js` | Replace | — |
+| 8c | `examples/good-trouble-wix/backend/wixDataCount.js` | Backend file | `src/backend/wixDataCount.js` | **New** | — |
 | 9 | `examples/good-trouble-wix/backend/captchaGate.js` | Backend file | `src/backend/captchaGate.js` | Replace | — |
 | 10 | `examples/good-trouble-wix/backend/browseReceiptValidator.js` | Backend file | `src/backend/browseReceiptValidator.js` | **New** | `./browseConstants.js` |
 | 11 | `examples/good-trouble-wix/backend/abraxasReceiptValidator.js` | Backend file | `src/backend/abraxasReceiptValidator.js` | Replace | — |
@@ -42,6 +43,7 @@ Deploy in this order (Public → Backend → Pages/lightbox):
 | 20 | `examples/good-trouble-wix/pages/BrowseVerificationResult.js` | Page code | `/browse-verification-result` page | **New page** | `backend/abraxasVerification.web`, `public/abraxasClientConstants`, `wix-location`, `wix-storage-frontend` |
 | 21 | `examples/good-trouble-wix/pages/AgeVerificationResult.js` | Page code | `/age-verification-result` page | Replace | `backend/abraxasVerification.web`, `public/abraxasClientConstants`, `wix-location`, `wix-storage-frontend` |
 | 22 | `examples/good-trouble-wix/pages/PurchaseVerificationEntry.js` | Page code | Cart / pre-checkout page (operator slug) | **New page** | `backend/abraxasVerification.web`, `public/purchaseVerificationLogic`, `public/abraxasClientConstants`, `wix-location-frontend`, `wix-window`, `wix-storage-frontend` |
+| 23 | `examples/good-trouble-wix/pages/GoodTroubleMasterPage.js` | Master Page code | Site → Custom Code → Master Page | **New** | `public/siteAgeGatePolicy`, `wix-location-frontend`, `wix-window`, `wix-storage-frontend` |
 
 **Browse receipt validation (authoritative Wix backend filenames):**
 
@@ -108,11 +110,7 @@ Admin-only read/write. Required fields include: `flowId`, `verifierChallenge`, `
 
 ## C. Copy-ready source
 
-
 ### public/abraxasClientConstants.js
-
-- **Wix destination:** Public file
-- **Wix path/name:** `src/public/abraxasClientConstants.js`
 
 ```javascript
 // FILE: examples/good-trouble-wix/public/abraxasClientConstants.js
@@ -133,6 +131,18 @@ export const BROWSE_VERIFIER_STORAGE_PREFIX = "abraxas_gt_browse_verifier_";
 
 /** @deprecated Use PURCHASE_VERIFIER_STORAGE_PREFIX */
 export const VERIFIER_STORAGE_PREFIX = PURCHASE_VERIFIER_STORAGE_PREFIX;
+
+/**
+ * Live Wix slug for "The Goods" shop page.
+ * Confirmed: https://www.goodtroublecanna.com/goods (pages-sitemap.xml, title "The Goods").
+ */
+export const GOOD_TROUBLE_THE_GOODS_SHOP_PATH = "/goods";
+
+/** Last-resort post-verification destination when no trusted path was captured at start. */
+export const PURCHASE_POST_VERIFICATION_FALLBACK = GOOD_TROUBLE_THE_GOODS_SHOP_PATH;
+
+/** Query param on purchase entry only — captures ORDER NOW origin (never used on callback). */
+export const PURCHASE_FROM_QUERY_PARAM = "from";
 
 /** Purchase return destination saved before Abraxas redirect (same-origin path). */
 export const PURCHASE_RETURN_DESTINATION_STORAGE_KEY = "good_trouble_return_destination_purchase";
@@ -155,19 +165,23 @@ export const BROWSE_ACCESS_STORAGE_KEY = "good_trouble_browse_access_l0";
  */
 export const PURCHASE_VERIFIED_SESSION_FLAG = "good_trouble_purchase_verified_pilot";
 
+/**
+ * Server-validated purchase eligibility expiry — localStorage only (UI age-gate skip).
+ * Written only after Wix backend completePurchaseVerification returns verified:true.
+ * NOT checkout authority; never read by backend web methods.
+ */
+export const PURCHASE_VERIFIED_LOCAL_STORAGE_KEY =
+  "good_trouble_abraxas_purchase_verified";
+
 /** @deprecated Use PURCHASE_VERIFIED_SESSION_FLAG */
 export const PILOT_VERIFIED_SESSION_FLAG = PURCHASE_VERIFIED_SESSION_FLAG;
-
 ```
 
-### pages/ageVerificationPopupLogic.js
-
-- **Wix destination:** Public file
-- **Wix path/name:** `src/public/ageVerificationPopupLogic.js`
+### public/ageVerificationPopupLogic.js
 
 ```javascript
-// FILE: examples/good-trouble-wix/pages/ageVerificationPopupLogic.js
-// Wix deployment: copy to src/public/ageVerificationPopupLogic.js
+// FILE: examples/good-trouble-wix/public/ageVerificationPopupLogic.js
+// Wix deployment: src/public/ageVerificationPopupLogic.js
 // Abraxas Passport verification gate + traditional self-attestation for Age Verification popup.
 // Abraxas is the visible verification gate — not a CAPTCHA substitute.
 
@@ -183,15 +197,30 @@ export const POPUP_STATE = {
   RECOVERABLE_ERROR: "recoverable_error",
 };
 
-export const ABRAXAS_BROWSE_LABEL = "Continue browsing with Abraxas";
+export const ABRAXAS_BROWSE_LABEL = "Verify 21+ with Abraxas";
 export const ABRAXAS_PURCHASE_LABEL = "Verify eligibility for purchase";
 
 export const ABRAXAS_LABEL = ABRAXAS_BROWSE_LABEL;
 export const ABRAXAS_LABEL_STARTING = "Starting…";
+export const ABRAXAS_SUPPORT =
+  "Verify once. Good Trouble only receives your 21+ result.";
 
-export const STATUS_READY =
-  "Enter your date of birth on Abraxas to continue browsing. Good Trouble will not receive your birth date.";
-export const STATUS_STARTING = "Starting secure browsing verification with Abraxas…";
+export const BROWSE_POLICY_ID = "good-trouble-browse-v1";
+export const BROWSE_FLOW_ID_PREFIX = "gtb_";
+export const PURCHASE_POLICY_ID = "good-trouble-age_21_retail-v1";
+export const PURCHASE_FLOW_ID_PREFIX = "gtf_";
+export const BROWSE_CALLBACK_PATH = "browse-verification-result";
+export const PURCHASE_CALLBACK_PATH = "age-verification-result";
+
+/** Session keys that must not leak purchase state into a fresh browse start. */
+export const PURCHASE_SESSION_KEYS_TO_CLEAR = [
+  "good_trouble_return_destination_purchase",
+  "good_trouble_purchase_verified_pilot",
+  "good_trouble_return_destination",
+];
+
+export const STATUS_READY = ABRAXAS_SUPPORT;
+export const STATUS_STARTING = "Starting age verification with Abraxas…";
 export const STATUS_PREVIEW_PASSED =
   "Preview check passed: Abraxas Passport backend flow is working.";
 export const STATUS_SESSION_UNAVAILABLE =
@@ -199,9 +228,7 @@ export const STATUS_SESSION_UNAVAILABLE =
 export const STATUS_GENERIC_FAILURE =
   "Verification could not be started. Please try again or use the traditional option.";
 
-export const TRADITIONAL_SUPPORT = "Quick age self-attestation for this visit.";
-export const ABRAXAS_SUPPORT =
-  "Abraxas verifies the required policy without sharing your ID photos or date of birth with Good Trouble.";
+export const TRADITIONAL_SUPPORT = "Quick self-attestation for this visit only.";
 
 /** Stable allowlisted backend start error codes surfaced to the popup. */
 export const ALLOWLISTED_START_ERROR_CODES = new Set([
@@ -275,6 +302,80 @@ export function safeStartErrorMessage(code) {
 }
 
 /**
+ * Remove purchase-only session artifacts so a browse click never reuses gtf_ state.
+ * @param {(key: string) => void} removeItem
+ */
+export function clearStalePurchaseSessionArtifacts(removeItem) {
+  for (const key of PURCHASE_SESSION_KEYS_TO_CLEAR) {
+    try {
+      removeItem(key);
+    } catch {
+      // Non-authoritative cleanup.
+    }
+  }
+}
+
+/**
+ * Fail closed if the backend returned purchase or mixed lifecycle metadata.
+ * @param {object | null | undefined} result
+ * @returns {{ ok: true, result: object } | { ok: false, code: string }}
+ */
+export function validateBrowseVerificationStart(result) {
+  if (!result || result.error) {
+    return { ok: false, code: result?.error ?? "start_failed" };
+  }
+
+  const verifyUrl = typeof result.verifyUrl === "string" ? result.verifyUrl : "";
+  const flowId = typeof result.flowId === "string" ? result.flowId : "";
+  const verifier = typeof result.verifier === "string" ? result.verifier : "";
+  const policyId = typeof result.policyId === "string" ? result.policyId : "";
+  const purpose = typeof result.purpose === "string" ? result.purpose : "";
+
+  if (!verifyUrl || !flowId || !verifier) {
+    return { ok: false, code: "start_incomplete" };
+  }
+
+  if (!flowId.startsWith(BROWSE_FLOW_ID_PREFIX)) {
+    return { ok: false, code: "browse_start_not_browse_flow" };
+  }
+
+  if (flowId.startsWith(PURCHASE_FLOW_ID_PREFIX)) {
+    return { ok: false, code: "browse_start_purchase_flow_leak" };
+  }
+
+  if (policyId && policyId !== BROWSE_POLICY_ID) {
+    return { ok: false, code: "browse_start_wrong_policy" };
+  }
+
+  if (purpose && purpose !== "browse") {
+    return { ok: false, code: "browse_start_wrong_purpose" };
+  }
+
+  const normalizedUrl = verifyUrl.toLowerCase();
+  if (normalizedUrl.includes(PURCHASE_POLICY_ID)) {
+    return { ok: false, code: "browse_start_retail_policy" };
+  }
+
+  if (normalizedUrl.includes(PURCHASE_CALLBACK_PATH)) {
+    return { ok: false, code: "browse_start_purchase_callback" };
+  }
+
+  if (!normalizedUrl.includes(BROWSE_POLICY_ID)) {
+    return { ok: false, code: "browse_start_missing_browse_policy" };
+  }
+
+  if (!normalizedUrl.includes("purpose=browse")) {
+    return { ok: false, code: "browse_start_missing_purpose" };
+  }
+
+  if (!normalizedUrl.includes(BROWSE_CALLBACK_PATH)) {
+    return { ok: false, code: "browse_start_missing_browse_callback" };
+  }
+
+  return { ok: true, result };
+}
+
+/**
  * @param {{
  *   setAbraxasButtonEnabled: (enabled: boolean) => void | Promise<void>,
  *   setAbraxasButtonLabel: (label: string) => void,
@@ -291,6 +392,7 @@ export function safeStartErrorMessage(code) {
  *   getViewMode?: () => string | Promise<string>,
  *   persistTraditionalAgeAttestation?: (storage: Storage) => void,
  *   onTraditionalYesComplete?: () => void | Promise<void>,
+ *   clearStalePurchaseArtifacts?: () => void,
  *   storage?: Storage,
  * }} deps
  */
@@ -331,8 +433,12 @@ export function createPopupController(deps) {
     getState: () => state,
     isAbraxasInFlight: () => abraxasInFlight,
 
-    async onReady() {
+    async onReady(skipCheck) {
+      if (skipCheck?.()) {
+        return { ok: true, code: "age_gate_already_satisfied" };
+      }
       await enterReady();
+      return { ok: true, code: "ready" };
     },
 
     async onTraditionalYesClick() {
@@ -363,22 +469,23 @@ export function createPopupController(deps) {
         return { ok: false, code: "session_storage_unavailable" };
       }
 
+      if (deps.clearStalePurchaseArtifacts) {
+        deps.clearStalePurchaseArtifacts();
+      }
+
       try {
         const result = await deps.startAbraxasVerification();
 
-        if (result?.error) {
-          const code = ALLOWLISTED_START_ERROR_CODES.has(result.error)
-            ? result.error
+        const validated = validateBrowseVerificationStart(result);
+        if (!validated.ok) {
+          const code = ALLOWLISTED_START_ERROR_CODES.has(validated.code)
+            ? validated.code
             : "start_failed";
           await enterRecoverableError(code);
           return { ok: false, code };
         }
 
-        const { verifyUrl, flowId, verifier } = result;
-        if (!verifyUrl || !flowId || !verifier) {
-          await enterRecoverableError("start_incomplete");
-          return { ok: false, code: "start_incomplete" };
-        }
+        const { verifyUrl, flowId, verifier } = validated.result;
 
         const viewMode = deps.getViewMode ? await deps.getViewMode() : "Site";
         if (isEditorPreviewViewMode(viewMode)) {
@@ -404,1054 +511,618 @@ export function createPopupController(deps) {
     },
   };
 }
-
 ```
 
-### pages/AgeVerificationPopup.js
-
-- **Wix destination:** Lightbox code
-- **Wix path/name:** `Age Verification popup (Velo panel)`
+### public/purchaseVerificationLogic.js
 
 ```javascript
-// FILE: examples/good-trouble-wix/pages/AgeVerificationPopup.js
-// Wix Velo page code — Age Verification popup (lightbox or page).
-// Wix deployment: paste into the Age Verification popup page code panel.
-//
-// Required element IDs:
-// #yesButton
-// #noButton
-// #abraxasButton
-// #abraxasStatusText
+// FILE: examples/good-trouble-wix/public/purchaseVerificationLogic.js
+// Wix deployment: src/public/purchaseVerificationLogic.js
 
-import { createBrowseVerificationStart } from "backend/abraxasVerification.web";
+export const PURCHASE_STATUS_STARTING =
+  "Starting purchase eligibility verification…";
 
-import {
-  BROWSE_RETURN_DESTINATION_STORAGE_KEY,
-  BROWSE_VERIFIER_STORAGE_PREFIX,
-} from "public/abraxasClientConstants";
+export const PURCHASE_STATUS_GENERIC_FAILURE =
+  "Verification could not be started. Please try again.";
 
-import wixLocationFrontend from "wix-location-frontend";
-import wixWindow from "wix-window";
-import wixWindowFrontend from "wix-window-frontend";
+export const PURCHASE_STATUS_RATE_LIMITED =
+  "Verification is busy. Please wait a moment and try again.";
 
-import {
-  local,
-  session,
-} from "wix-storage-frontend";
+/** Stable backend codes that may surface distinct user-facing copy. */
+export const ALLOWLISTED_PURCHASE_START_ERROR_CODES = new Set([
+  "rate_limited",
+  "capacity_count_invalid",
+  "nonce_insert_failed",
+]);
 
-import {
-  createPopupController,
-  createPopupInitializationGuard,
-} from "public/ageVerificationPopupLogic";
-
-const popupInitGuard =
-  createPopupInitializationGuard();
+export const PURCHASE_START_ERROR_MESSAGES = {
+  rate_limited: PURCHASE_STATUS_RATE_LIMITED,
+  capacity_count_invalid: PURCHASE_STATUS_GENERIC_FAILURE,
+  nonce_insert_failed: PURCHASE_STATUS_GENERIC_FAILURE,
+  start_incomplete: PURCHASE_STATUS_GENERIC_FAILURE,
+  start_exception: PURCHASE_STATUS_GENERIC_FAILURE,
+  start_internal_error: PURCHASE_STATUS_GENERIC_FAILURE,
+};
 
 /**
- * @type {ReturnType<typeof createPopupController> | null}
+ * @param {string} viewMode
+ * @returns {boolean}
  */
-let popupController = null;
-
-$w.onReady(() => {
-  if (wixWindow.rendering.env !== "browser") {
-    return;
-  }
-
-  const initialized =
-    popupInitGuard.initializeOnce(() => {
-      popupController =
-        createPopupController({
-          async setAbraxasButtonEnabled(
-            enabled
-          ) {
-            await setButtonEnabled(
-              "#abraxasButton",
-              enabled
-            );
-          },
-
-          setAbraxasButtonLabel(label) {
-            setButtonLabel(
-              "#abraxasButton",
-              label
-            );
-          },
-
-          setStatus(message) {
-            const statusText =
-              $w("#abraxasStatusText");
-
-            if (statusText) {
-              statusText.text =
-                message;
-            }
-          },
-
-          startAbraxasVerification: () =>
-            createBrowseVerificationStart(),
-
-          sessionStorageAvailable,
-
-          storeVerifier(
-            flowId,
-            verifier
-          ) {
-            session.setItem(
-              verifierStorageKey(flowId),
-              verifier
-            );
-          },
-
-          saveReturnDestination() {
-            try {
-              const currentUrl =
-                String(
-                  wixLocationFrontend.url ||
-                    ""
-                );
-
-              const path =
-                currentUrl
-                  .split("?")[0]
-                  .replace(
-                    /^https?:\/\/[^/]+/,
-                    ""
-                  ) || "/";
-
-              session.setItem(
-                BROWSE_RETURN_DESTINATION_STORAGE_KEY,
-                path
-              );
-            } catch {
-              // Saving the destination is helpful,
-              // but it is not authoritative.
-            }
-          },
-
-          navigateToVerifyUrl(url) {
-            wixLocationFrontend.to(url);
-          },
-
-          getViewMode: () =>
-            wixWindowFrontend.viewMode,
-
-          storage: local,
-
-          onTraditionalYesComplete() {
-            if (wixWindow.lightbox) {
-              wixWindow.lightbox.close();
-            }
-          },
-        });
-
-      void popupController.onReady();
-
-      wireButtons();
-    });
-
-  if (!initialized.ok) {
-    return;
-  }
-});
-
-async function setButtonEnabled(
-  selector,
-  enabled
-) {
-  const element =
-    $w(selector);
-
-  if (!element) {
-    return;
-  }
-
-  if (enabled) {
-    await element.enable();
-  } else {
-    await element.disable();
-  }
+export function isEditorPreviewViewMode(viewMode) {
+  return viewMode === "Preview" || viewMode === "Editor";
 }
 
-function setButtonLabel(
-  selector,
-  label
-) {
-  const element =
-    $w(selector);
+/**
+ * @param {string} code
+ * @returns {string}
+ */
+export function safePurchaseStartErrorMessage(code) {
+  return PURCHASE_START_ERROR_MESSAGES[code] ?? PURCHASE_STATUS_GENERIC_FAILURE;
+}
 
-  if (!element) {
-    return;
+/**
+ * Preview-only operator hint. Never includes verifier, receipt, token, or PII.
+ * @param {{ code?: string, stage?: string, correlationId?: string | null } | null | undefined} diagnostic
+ * @returns {string | null}
+ */
+export function formatPurchasePreviewDiagnostic(diagnostic) {
+  if (!diagnostic?.code) return null;
+  const parts = [diagnostic.code];
+  if (diagnostic.stage) parts.push(`@${diagnostic.stage}`);
+  if (diagnostic.correlationId) parts.push(`ref=${diagnostic.correlationId}`);
+  return parts.join(" ");
+}
+
+/**
+ * @param {{
+ *   result?: {
+ *     error?: string,
+ *     diagnostic?: { code?: string, stage?: string, correlationId?: string | null },
+ *     verifyUrl?: string,
+ *     flowId?: string,
+ *     verifier?: string,
+ *   } | null,
+ *   viewMode?: string,
+ * }} params
+ * @returns {{ ok: true, result: object } | { ok: false, code: string, message: string, previewDetail?: string }}
+ */
+export function interpretPurchaseStartResult(params) {
+  const result = params.result;
+  const viewMode = params.viewMode ?? "Site";
+  const preview = isEditorPreviewViewMode(viewMode);
+  const previewDetail = preview
+    ? formatPurchasePreviewDiagnostic(result?.diagnostic)
+    : null;
+
+  if (result?.error) {
+    const code = result.error;
+    const message = ALLOWLISTED_PURCHASE_START_ERROR_CODES.has(code)
+      ? safePurchaseStartErrorMessage(code)
+      : PURCHASE_STATUS_GENERIC_FAILURE;
+    return {
+      ok: false,
+      code,
+      message,
+      ...(previewDetail ? { previewDetail } : {}),
+    };
   }
 
-  element.label =
-    label;
-}
-
-function wireButtons() {
-  $w("#yesButton").onClick(() => {
-    void popupController?.onTraditionalYesClick();
-  });
-
-  $w("#abraxasButton").onClick(() => {
-    void popupController?.onAbraxasClick();
-  });
-
-  // #noButton intentionally keeps its
-  // Wix-configured default behavior.
-}
-
-function sessionStorageAvailable() {
-  try {
-    const probe =
-      "__abraxas_gt_probe__";
-
-    session.setItem(
-      probe,
-      "1"
-    );
-
-    session.removeItem(
-      probe
-    );
-
-    return true;
-  } catch {
-    return false;
+  const { verifyUrl, flowId, verifier } = result ?? {};
+  if (!verifyUrl || !flowId || !verifier) {
+    return {
+      ok: false,
+      code: "start_incomplete",
+      message: PURCHASE_STATUS_GENERIC_FAILURE,
+      ...(previewDetail ? { previewDetail: previewDetail ?? "start_incomplete" } : {}),
+    };
   }
+
+  if (!flowId.startsWith("gtf_")) {
+    return {
+      ok: false,
+      code: "start_incomplete",
+      message: PURCHASE_STATUS_GENERIC_FAILURE,
+      ...(previewDetail ? { previewDetail: previewDetail ?? "invalid_flow_id_prefix" } : {}),
+    };
+  }
+
+  return {
+    ok: true,
+    result: {
+      verifyUrl,
+      flowId,
+      verifier,
+      purpose: result?.purpose,
+      policyId: result?.policyId,
+      correlationId: result?.correlationId ?? null,
+    },
+  };
 }
 
-function verifierStorageKey(flowId) {
-  return `${BROWSE_VERIFIER_STORAGE_PREFIX}${flowId}`;
+/**
+ * @param {{
+ *   setStatus: (message: string) => void,
+ *   startPurchaseVerification: () => Promise<object>,
+ *   getViewMode?: () => string | Promise<string>,
+ *   storeVerifier: (flowId: string, verifier: string) => void,
+ *   saveReturnDestination: (destinationPath: string | null) => void,
+ *   getReturnDestination: () => string | null,
+ *   navigateToVerifyUrl: (url: string) => void,
+ * }} deps
+ */
+export function createPurchaseVerificationController(deps) {
+  return {
+    async start() {
+      deps.setStatus(PURCHASE_STATUS_STARTING);
+
+      try {
+        const returnDestinationPath = deps.getReturnDestination?.() ?? null;
+        const result = await deps.startPurchaseVerification(returnDestinationPath);
+        const viewMode = deps.getViewMode ? await deps.getViewMode() : "Site";
+        const interpreted = interpretPurchaseStartResult({ result, viewMode });
+
+        if (!interpreted.ok) {
+          const suffix = interpreted.previewDetail
+            ? ` (${interpreted.previewDetail})`
+            : "";
+          deps.setStatus(`${interpreted.message}${suffix}`);
+          return interpreted;
+        }
+
+        if (isEditorPreviewViewMode(viewMode)) {
+          deps.setStatus(
+            `Preview check passed: purchase flow ready (${interpreted.result.flowId.slice(0, 8)}…).`,
+          );
+          return { ok: true, code: "preview_backend_passed", result: interpreted.result };
+        }
+
+        deps.saveReturnDestination(returnDestinationPath);
+        deps.storeVerifier(interpreted.result.flowId, interpreted.result.verifier);
+        deps.navigateToVerifyUrl(interpreted.result.verifyUrl);
+        return { ok: true, code: "redirecting", result: interpreted.result };
+      } catch {
+        const viewMode = deps.getViewMode ? await deps.getViewMode() : "Site";
+        const preview = isEditorPreviewViewMode(viewMode);
+        deps.setStatus(
+          preview
+            ? `${PURCHASE_STATUS_GENERIC_FAILURE} (start_exception)`
+            : PURCHASE_STATUS_GENERIC_FAILURE,
+        );
+        return { ok: false, code: "start_exception", message: PURCHASE_STATUS_GENERIC_FAILURE };
+      }
+    },
+  };
 }
 ```
 
-### pages/BrowseVerificationResult.js
-
-- **Wix destination:** Page code
-- **Wix path/name:** `Browse Verification Result page`
+### public/purchaseCallbackLogic.js
 
 ```javascript
-// FILE: examples/good-trouble-wix/pages/BrowseVerificationResult.js
-// Wix Velo page code — /browse-verification-result (L0 browse callback).
+// FILE: examples/good-trouble-wix/public/purchaseCallbackLogic.js
+// Wix deployment: src/public/purchaseCallbackLogic.js
 
-import { completeBrowseVerification } from "backend/abraxasVerification.web";
+import { PURCHASE_POST_VERIFICATION_FALLBACK } from "./abraxasClientConstants.js";
+import {
+  isSafeReturnDestinationPath,
+  normalizeReturnDestinationPath,
+} from "./purchaseReturnDestination.js";
+
+export const CHECKING_VERIFICATION_MESSAGE = "Checking verification...";
+export const SUCCESS_CONTINUATION_MESSAGE = "Verification complete. Continuing your order…";
+export const POST_VERIFICATION_REDIRECT_DELAY_MS = 400;
+
+/**
+ * @param {{
+ *   verified?: boolean,
+ *   purpose?: string,
+ *   returnDestination?: string | null,
+ * }} result
+ */
+export function shouldContinueAfterPurchaseVerification(result) {
+  return result?.verified === true && result?.purpose === "purchase";
+}
+
+/**
+ * @param {{
+ *   serverDestination?: string | null,
+ *   sessionDestination?: string | null,
+ * }} input
+ * @returns {string}
+ */
+export function resolvePostVerificationRedirectDestination(input) {
+  const fromServer = normalizeReturnDestinationPath(input.serverDestination);
+  if (fromServer) return fromServer;
+
+  const fromSession = normalizeReturnDestinationPath(input.sessionDestination);
+  if (fromSession) return fromSession;
+
+  return PURCHASE_POST_VERIFICATION_FALLBACK;
+}
+
+/**
+ * @param {string} destination
+ * @returns {boolean}
+ */
+export function canRedirectToDestination(destination) {
+  return isSafeReturnDestinationPath(destination)
+    || destination === PURCHASE_POST_VERIFICATION_FALLBACK;
+}
+
+/**
+ * @param {Record<string, unknown>} query
+ * @param {Set<string>} allowedParams
+ */
+export function parseAllowlistedCallbackParams(query, allowedParams) {
+  const parsed = {};
+  for (const key of Object.keys(query ?? {})) {
+    if (allowedParams.has(key)) {
+      parsed[key] = query[key];
+    }
+  }
+  return parsed;
+}
+
+export { PURCHASE_POST_VERIFICATION_FALLBACK };
+```
+
+### public/purchaseReturnDestination.js
+
+```javascript
+// FILE: examples/good-trouble-wix/public/purchaseReturnDestination.js
+// Wix deployment: src/public/purchaseReturnDestination.js
+
+import {
+  GOOD_TROUBLE_THE_GOODS_SHOP_PATH,
+  PURCHASE_FROM_QUERY_PARAM,
+} from "./abraxasClientConstants.js";
+
+/** Never use verification or entry pages as post-verification shopping destinations. */
+const BLOCKED_RETURN_PATHS = new Set([
+  "/age-verification-result",
+  "/browse-verification-result",
+  "/purchase-verification",
+]);
+
+/**
+ * @param {string | null | undefined} destination
+ * @returns {boolean}
+ */
+export function isSafeReturnDestinationPath(destination) {
+  if (!destination || typeof destination !== "string") return false;
+  const trimmed = destination.trim();
+  if (!trimmed.startsWith("/") || trimmed.startsWith("//")) return false;
+  if (trimmed.includes("://")) return false;
+  if (trimmed.includes("?")) return false;
+  if (trimmed.includes("#")) return false;
+  const pathOnly = trimmed.split("?")[0].split("#")[0];
+  if (BLOCKED_RETURN_PATHS.has(pathOnly)) return false;
+  if (pathOnly.length > 256) return false;
+  return true;
+}
+
+/**
+ * @param {string | null | undefined} path
+ * @returns {string | null}
+ */
+export function normalizeReturnDestinationPath(path) {
+  if (!isSafeReturnDestinationPath(path)) return null;
+  return path.trim().split("?")[0].split("#")[0];
+}
+
+/**
+ * @param {Record<string, unknown>} query
+ */
+export function parsePurchaseEntryFromQuery(query) {
+  const raw = query?.[PURCHASE_FROM_QUERY_PARAM];
+  if (typeof raw !== "string") return null;
+  return normalizeReturnDestinationPath(raw);
+}
+
+/**
+ * @param {string | null | undefined} url
+ * @returns {string | null}
+ */
+export function extractSameOriginPath(url) {
+  if (!url || typeof url !== "string") return null;
+  const path = url.split("?")[0].replace(/^https?:\/\/[^/]+/, "") || "/";
+  return normalizeReturnDestinationPath(path);
+}
+
+/**
+ * @param {{
+ *   sessionDestination?: string | null,
+ *   queryFrom?: string | null,
+ *   currentUrl?: string | null,
+ * }} input
+ * @returns {string | null}
+ */
+export function resolvePurchaseReturnDestinationForStart(input) {
+  const fromQuery = normalizeReturnDestinationPath(input.queryFrom);
+  if (fromQuery) return fromQuery;
+
+  const fromSession = normalizeReturnDestinationPath(input.sessionDestination);
+  if (fromSession) return fromSession;
+
+  const fromCurrent = extractSameOriginPath(input.currentUrl);
+  if (fromCurrent) return fromCurrent;
+
+  return GOOD_TROUBLE_THE_GOODS_SHOP_PATH;
+}
+
+/**
+ * @param {Record<string, unknown>} query
+ */
+export function hasUntrustedRedirectQueryParams(query) {
+  const blocked = ["next", "redirect", "return_url", "destination", "continue", "goto"];
+  return blocked.some((key) => typeof query?.[key] === "string" && query[key]);
+}
+```
+
+### public/ageGateAccessState.js
+
+```javascript
+// FILE: examples/good-trouble-wix/public/ageGateAccessState.js
+// Wix deployment: src/public/ageGateAccessState.js
+// Privacy-safe age-gate skip state — derived from server-validated browse receipts only.
 
 import {
   BROWSE_ACCESS_STORAGE_KEY,
-  BROWSE_RETURN_DESTINATION_STORAGE_KEY,
-  BROWSE_VERIFIER_STORAGE_PREFIX,
-  GTB_PARAM,
-} from "public/abraxasClientConstants";
-
-import wixLocation from "wix-location";
-import { session } from "wix-storage-frontend";
-
-const ALLOWED_CALLBACK_PARAMS = new Set([
-  "browse_receipt",
-  "partner_id",
-  "policy_id",
-  "purpose",
-  GTB_PARAM,
-]);
-
-const GENERIC_FAILURE =
-  "Browsing access could not be confirmed. Please try again.";
-
-const RESTART_MESSAGE =
-  "This verification was opened in a different browser or tab. Please start again from the age gate.";
-
-const SUCCESS_MESSAGE =
-  "Browsing access confirmed. Returning you to Good Trouble…";
-
-let completionStarted = false;
-
-$w.onReady(() => {
-  void handleCallback();
-});
-
-function setStatus(message) {
-  const statusText = $w("#abraxasStatusText");
-  if (statusText) statusText.text = message;
-}
-
-function sessionStorageAvailable() {
-  try {
-    const probe = "__abraxas_gt_browse_probe__";
-    session.setItem(probe, "1");
-    session.removeItem(probe);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function verifierStorageKey(flowId) {
-  return `${BROWSE_VERIFIER_STORAGE_PREFIX}${flowId}`;
-}
-
-function parseAllowlistedCallbackParams() {
-  const query = wixLocation.query;
-  const parsed = {};
-  for (const key of Object.keys(query)) {
-    if (ALLOWED_CALLBACK_PARAMS.has(key)) parsed[key] = query[key];
-  }
-  return parsed;
-}
-
-function clearVerifier(flowId) {
-  try {
-    session.removeItem(verifierStorageKey(flowId));
-  } catch {
-    // non-authoritative cleanup
-  }
-}
-
-/** L0 browse UI flag — may dismiss age popup; never checkout authority. */
-function setBrowseAccessState() {
-  try {
-    session.setItem(BROWSE_ACCESS_STORAGE_KEY, String(Date.now()));
-  } catch {
-    // Fail closed for navigation only; user can retry.
-  }
-}
-
-function restoreReturnDestination() {
-  try {
-    const destination = session.getItem(BROWSE_RETURN_DESTINATION_STORAGE_KEY);
-    session.removeItem(BROWSE_RETURN_DESTINATION_STORAGE_KEY);
-    if (destination && typeof destination === "string" && destination.startsWith("/") && !destination.startsWith("//")) {
-      setTimeout(() => { wixLocation.to(destination); }, 1200);
-      return;
-    }
-    setTimeout(() => { wixLocation.to("/"); }, 1200);
-  } catch {
-    // Keep success message visible.
-  }
-}
-
-async function handleCallback() {
-  if (completionStarted) return;
-  completionStarted = true;
-  setStatus("Confirming browsing access…");
-
-  if (!sessionStorageAvailable()) {
-    setStatus("Verification is unavailable in this browser. Please restart from the age gate.");
-    return;
-  }
-
-  const params = parseAllowlistedCallbackParams();
-  const flowId = typeof params[GTB_PARAM] === "string" ? params[GTB_PARAM].trim() : "";
-  const browseReceipt = typeof params.browse_receipt === "string" ? params.browse_receipt.trim() : "";
-
-  if (!flowId || !browseReceipt) {
-    setStatus(GENERIC_FAILURE);
-    return;
-  }
-
-  const verifier = session.getItem(verifierStorageKey(flowId));
-  if (!verifier) {
-    setStatus(RESTART_MESSAGE);
-    return;
-  }
-
-  try {
-    const result = await completeBrowseVerification(browseReceipt, flowId, verifier);
-
-    if (result?.verified === true && result?.purpose === "browse") {
-      clearVerifier(flowId);
-      setBrowseAccessState();
-      setStatus(SUCCESS_MESSAGE);
-      restoreReturnDestination();
-      return;
-    }
-
-    if (result?.code === "receipt_fetch_transient_failure" && result?.retryable === true) {
-      setStatus("Still confirming browsing access. Please wait a moment…");
-      completionStarted = false;
-      setTimeout(() => { void handleCallback(); }, 2000);
-      return;
-    }
-
-    clearVerifier(flowId);
-    setStatus(GENERIC_FAILURE);
-  } catch {
-    clearVerifier(flowId);
-    setStatus(GENERIC_FAILURE);
-  }
-}
-
-```
-
-### pages/AgeVerificationResult.js
-
-- **Wix destination:** Page code
-- **Wix path/name:** `Age Verification Result page`
-
-```javascript
-// FILE: examples/good-trouble-wix/pages/AgeVerificationResult.js
-// Wix Velo page code — /age-verification-result callback page.
-//
-// Required element ID:
-// #abraxasStatusText
-//
-// Optional element ID:
-// #restartAbraxasButton
-
-import { completePurchaseVerification } from "backend/abraxasVerification.web";
-
-import {
-  GTV_PARAM,
-  PURCHASE_RETURN_DESTINATION_STORAGE_KEY,
+  PURCHASE_VERIFIED_LOCAL_STORAGE_KEY,
   PURCHASE_VERIFIED_SESSION_FLAG,
-  PURCHASE_VERIFIER_STORAGE_PREFIX,
-} from "public/abraxasClientConstants";
-
-import wixLocation from "wix-location";
-
+} from "./abraxasClientConstants.js";
 import {
-  session,
-} from "wix-storage-frontend";
+  TRADITIONAL_AGE_GATE_STORAGE_KEY,
+  TRADITIONAL_AGE_GATE_TTL_MS,
+} from "./ageVerificationPopupLogic.js";
+
+/** Server-authoritative browse expiry persisted after validated callback. */
+export const BROWSE_VERIFIED_LOCAL_STORAGE_KEY = "good_trouble_abraxas_browse_verified";
+
+export { PURCHASE_VERIFIED_LOCAL_STORAGE_KEY };
 
 /**
- * Abraxas callback parameters.
- * Never treat status=approved by itself as verification.
+ * @param {Storage} storage
+ * @param {number} [now]
+ * @returns {{ valid: true, expiresAt: number, verifiedAt: number } | { valid: false }}
  */
-const ALLOWED_CALLBACK_PARAMS =
-  new Set([
-    "status",
-    "decision_id",
-    "receipt_id",
-    "receipt_expires_at",
-    "credential_id",
-    "policy_id",
-    "partner_id",
-    GTV_PARAM,
-  ]);
-
-const GENERIC_FAILURE =
-  "Verification could not be completed. Please try again or use the traditional age option.";
-
-const RESTART_MESSAGE =
-  "This verification was opened in a different browser or tab. Please start again from the age gate.";
-
-const SUCCESS_MESSAGE =
-  "Age verification complete. Returning you to Good Trouble…";
-
-let completionStarted = false;
-
-$w.onReady(() => {
-  configureRestartButton();
-  void handleCallback();
-});
-
-function configureRestartButton() {
-  const restartButton =
-    $w("#restartAbraxasButton");
-
-  if (!restartButton) {
-    return;
-  }
-
-  restartButton.hide();
-
-  restartButton.onClick(() => {
-    wixLocation.to("/");
-  });
-}
-
-function setStatus(message) {
-  const statusText =
-    $w("#abraxasStatusText");
-
-  if (statusText) {
-    statusText.text =
-      message;
-  }
-}
-
-function showRestart() {
-  const restartButton =
-    $w("#restartAbraxasButton");
-
-  if (restartButton) {
-    restartButton.show();
-  }
-}
-
-function sessionStorageAvailable() {
+export function readBrowseVerifiedState(storage, now = Date.now()) {
   try {
-    const probe =
-      "__abraxas_gt_probe__";
+    const raw = storage.getItem(BROWSE_VERIFIED_LOCAL_STORAGE_KEY);
+    if (!raw) return { valid: false };
+    const parsed = JSON.parse(raw);
+    const expiresAt = Number(parsed?.expiresAt);
+    const verifiedAt = Number(parsed?.verifiedAt);
+    if (!Number.isFinite(expiresAt) || !Number.isFinite(verifiedAt)) {
+      return { valid: false };
+    }
+    if (expiresAt <= now) {
+      storage.removeItem(BROWSE_VERIFIED_LOCAL_STORAGE_KEY);
+      return { valid: false };
+    }
+    return { valid: true, expiresAt, verifiedAt };
+  } catch {
+    return { valid: false };
+  }
+}
 
-    session.setItem(
-      probe,
-      "1"
-    );
+/**
+ * @param {Storage} storage
+ * @param {{ expiresAt: number, verifiedAt?: number }} input
+ */
+/**
+ * @param {Storage} storage
+ * @param {number} [now]
+ * @returns {{ valid: true, expiresAt: number, verifiedAt: number } | { valid: false }}
+ */
+export function readPurchaseVerifiedState(storage, now = Date.now()) {
+  try {
+    const raw = storage.getItem(PURCHASE_VERIFIED_LOCAL_STORAGE_KEY);
+    if (!raw) return { valid: false };
+    const parsed = JSON.parse(raw);
+    const expiresAt = Number(parsed?.expiresAt);
+    const verifiedAt = Number(parsed?.verifiedAt);
+    if (!Number.isFinite(expiresAt) || !Number.isFinite(verifiedAt)) {
+      return { valid: false };
+    }
+    if (expiresAt <= now) {
+      storage.removeItem(PURCHASE_VERIFIED_LOCAL_STORAGE_KEY);
+      return { valid: false };
+    }
+    return { valid: true, expiresAt, verifiedAt };
+  } catch {
+    return { valid: false };
+  }
+}
 
-    session.removeItem(
-      probe
-    );
+/**
+ * @param {Storage} storage
+ * @param {{ expiresAt: number, verifiedAt?: number }} input
+ */
+export function persistPurchaseVerifiedState(storage, input) {
+  const expiresAt = Number(input.expiresAt);
+  const verifiedAt = Number.isFinite(input.verifiedAt) ? input.verifiedAt : Date.now();
+  if (!Number.isFinite(expiresAt) || expiresAt <= verifiedAt) return;
+  storage.setItem(
+    PURCHASE_VERIFIED_LOCAL_STORAGE_KEY,
+    JSON.stringify({
+      expiresAt,
+      verifiedAt,
+    }),
+  );
+}
 
+export function persistBrowseVerifiedState(storage, input) {
+  const expiresAt = Number(input.expiresAt);
+  const verifiedAt = Number.isFinite(input.verifiedAt) ? input.verifiedAt : Date.now();
+  if (!Number.isFinite(expiresAt) || expiresAt <= verifiedAt) return;
+  storage.setItem(
+    BROWSE_VERIFIED_LOCAL_STORAGE_KEY,
+    JSON.stringify({
+      expiresAt,
+      verifiedAt,
+    }),
+  );
+}
+
+/**
+ * Session convenience flag — same TTL as local authoritative state when available.
+ * @param {Storage} storage
+ * @param {number} [now]
+ */
+export function hasActiveBrowseSessionFlag(storage, now = Date.now()) {
+  try {
+    const raw = storage.getItem(BROWSE_ACCESS_STORAGE_KEY);
+    if (!raw) return false;
+    const verifiedAt = Number(raw);
+    if (!Number.isFinite(verifiedAt)) return true;
+    return now - verifiedAt < 24 * 60 * 60 * 1000;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Purchase pilot session mirror — UI only; must match authoritative localStorage when possible.
+ * @param {Storage} storage
+ * @param {Storage} localStorage
+ * @param {number} [now]
+ */
+export function hasActivePurchaseSessionFlag(storage, localStorage, now = Date.now()) {
+  if (readPurchaseVerifiedState(localStorage, now).valid) {
+    return true;
+  }
+  try {
+    const raw = storage.getItem(PURCHASE_VERIFIED_SESSION_FLAG);
+    if (!raw) return false;
+    const verifiedAt = Number(raw);
+    if (!Number.isFinite(verifiedAt)) return true;
+    return now - verifiedAt < 24 * 60 * 60 * 1000;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * @param {Storage} storage
+ * @param {number} [now]
+ */
+export function hasValidTraditionalAttestation(storage, now = Date.now()) {
+  try {
+    const raw = storage.getItem(TRADITIONAL_AGE_GATE_STORAGE_KEY);
+    if (!raw) return false;
+    const expiresAt = Number(raw);
+    if (!Number.isFinite(expiresAt)) return false;
+    if (expiresAt <= now) {
+      storage.removeItem(TRADITIONAL_AGE_GATE_STORAGE_KEY);
+      return false;
+    }
     return true;
   } catch {
     return false;
   }
 }
 
-function verifierStorageKey(flowId) {
-  return `${PURCHASE_VERIFIER_STORAGE_PREFIX}${flowId}`;
+/**
+ * UI-only skip for the age popup. Never checkout authority.
+ * @param {{
+ *   localStorage: Storage,
+ *   sessionStorage: Storage,
+ *   now?: number,
+ * }} input
+ */
+export function shouldSkipAgeGate(input) {
+  const now = input.now ?? Date.now();
+  if (readPurchaseVerifiedState(input.localStorage, now).valid) {
+    return { skip: true, reason: "abraxas_purchase_verified" };
+  }
+  if (hasActivePurchaseSessionFlag(input.sessionStorage, input.localStorage, now)) {
+    return { skip: true, reason: "abraxas_purchase_session" };
+  }
+  if (readBrowseVerifiedState(input.localStorage, now).valid) {
+    return { skip: true, reason: "abraxas_browse_verified" };
+  }
+  if (hasActiveBrowseSessionFlag(input.sessionStorage, now)) {
+    return { skip: true, reason: "abraxas_browse_session" };
+  }
+  if (hasValidTraditionalAttestation(input.localStorage, now)) {
+    return { skip: true, reason: "traditional_self_attested" };
+  }
+  return { skip: false, reason: null };
 }
 
-function parseAllowlistedCallbackParams() {
-  const query =
-    wixLocation.query;
+export const TRADITIONAL_AGE_GATE_TTL_EXPORT = TRADITIONAL_AGE_GATE_TTL_MS;
+```
 
-  const parsed = {};
+### public/siteAgeGatePolicy.js
 
-  for (
-    const key of Object.keys(query)
-  ) {
-    if (
-      ALLOWED_CALLBACK_PARAMS.has(key)
-    ) {
-      parsed[key] =
-        query[key];
-    }
-  }
+```javascript
+// FILE: examples/good-trouble-wix/public/siteAgeGatePolicy.js
+// Wix deployment: src/public/siteAgeGatePolicy.js
+// UI-only coordination for Wix automatic age lightboxes — never checkout authority.
 
-  return parsed;
-}
+import { shouldSkipAgeGate } from "./ageGateAccessState.js";
 
-function clearVerifier(flowId) {
-  try {
-    session.removeItem(
-      verifierStorageKey(flowId)
-    );
-  } catch {
-    // The verifier will expire with the session.
-  }
+/** Paths where an automatic age lightbox must not interrupt Abraxas callbacks. */
+export const AGE_GATE_SUPPRESS_LIGHTBOX_PATHS = [
+  "/age-verification-result",
+  "/browse-verification-result",
+  "/purchase-verification",
+];
+
+/**
+ * @param {string | null | undefined} pathOrUrl
+ * @returns {string}
+ */
+export function normalizeSitePath(pathOrUrl) {
+  const raw = String(pathOrUrl ?? "").trim();
+  if (!raw) return "/";
+  const withoutQuery = raw.split("?")[0].split("#")[0];
+  const pathOnly = withoutQuery.replace(/^https?:\/\/[^/]+/i, "") || "/";
+  if (!pathOnly.startsWith("/")) return `/${pathOnly}`;
+  return pathOnly.length > 1 && pathOnly.endsWith("/")
+    ? pathOnly.slice(0, -1)
+    : pathOnly;
 }
 
 /**
- * Pilot UI convenience only.
- *
- * This session flag is not accepted by Abraxas or the Wix backend
- * as authoritative proof and does not independently authorize
- * regulated purchases or other restricted activity.
+ * @param {string} normalizedPath
  */
-function setPurchaseVerifiedState() {
-  try {
-    session.setItem(
-      PURCHASE_VERIFIED_SESSION_FLAG,
-      "1"
-    );
-  } catch {
-    // Fail closed. The user can restart the flow.
-  }
-}
-
-function restoreReturnDestination() {
-  try {
-    const destination =
-      session.getItem(
-        PURCHASE_RETURN_DESTINATION_STORAGE_KEY
-      );
-
-    session.removeItem(
-      PURCHASE_RETURN_DESTINATION_STORAGE_KEY
-    );
-
-    if (
-      destination &&
-      typeof destination === "string" &&
-      destination.startsWith("/") &&
-      !destination.startsWith("//")
-    ) {
-      setTimeout(() => {
-        wixLocation.to(destination);
-      }, 1200);
-
-      return;
-    }
-
-    setTimeout(() => {
-      wixLocation.to("/");
-    }, 1200);
-  } catch {
-    // Keep the success message visible if navigation fails.
-  }
-}
-
-async function handleCallback() {
-  if (completionStarted) {
-    return;
-  }
-
-  completionStarted = true;
-
-  setStatus(
-    "Completing verification…"
+export function isAgeGateCallbackOrEntryPath(normalizedPath) {
+  const path = normalizeSitePath(normalizedPath);
+  return AGE_GATE_SUPPRESS_LIGHTBOX_PATHS.some(
+    (prefix) => path === prefix || path.startsWith(`${prefix}/`),
   );
-
-  if (!sessionStorageAvailable()) {
-    setStatus(
-      "Verification is unavailable in this browser. Please restart from the age gate."
-    );
-
-    showRestart();
-    return;
-  }
-
-  const params =
-    parseAllowlistedCallbackParams();
-
-  const rawFlowId =
-    params[GTV_PARAM];
-
-  const rawReceiptId =
-    params.receipt_id;
-
-  const flowId =
-    typeof rawFlowId === "string"
-      ? rawFlowId.trim()
-      : "";
-
-  const receiptId =
-    typeof rawReceiptId === "string"
-      ? rawReceiptId.trim()
-      : "";
-
-  if (!flowId || !receiptId) {
-    setStatus(
-      GENERIC_FAILURE
-    );
-
-    showRestart();
-    return;
-  }
-
-  const verifier =
-    session.getItem(
-      verifierStorageKey(flowId)
-    );
-
-  if (!verifier) {
-    setStatus(
-      RESTART_MESSAGE
-    );
-
-    showRestart();
-    return;
-  }
-
-  try {
-    const result =
-      await completePurchaseVerification(
-        receiptId,
-        flowId,
-        verifier
-      );
-
-    if (result?.verified === true && result?.purpose === "purchase") {
-      clearVerifier(flowId);
-      setPurchaseVerifiedState();
-
-      setStatus(
-        SUCCESS_MESSAGE
-      );
-
-      restoreReturnDestination();
-      return;
-    }
-
-    if (
-      result?.code ===
-        "receipt_fetch_transient_failure" &&
-      result?.retryable === true
-    ) {
-      setStatus(
-        "Still confirming verification. Please wait a moment…"
-      );
-
-      completionStarted = false;
-
-      setTimeout(() => {
-        void handleCallback();
-      }, 2000);
-
-      return;
-    }
-
-    clearVerifier(flowId);
-
-    if (
-      result?.code ===
-        "verifier_mismatch" ||
-      result?.code ===
-        "missing_verifier"
-    ) {
-      setStatus(
-        RESTART_MESSAGE
-      );
-    } else {
-      setStatus(
-        GENERIC_FAILURE
-      );
-    }
-
-    showRestart();
-  } catch {
-    clearVerifier(flowId);
-
-    setStatus(
-      GENERIC_FAILURE
-    );
-
-    showRestart();
-  }
-}
-```
-
-### pages/PurchaseVerificationEntry.js
-
-- **Wix destination:** Page code
-- **Wix path/name:** `Purchase Verification Entry page`
-
-```javascript
-// FILE: examples/good-trouble-wix/pages/PurchaseVerificationEntry.js
-// Wix Velo page code — regulated purchase eligibility (L2+) entry point.
-
-import { createPurchaseVerificationStart } from "backend/abraxasVerification.web";
-
-import {
-  PURCHASE_RETURN_DESTINATION_STORAGE_KEY,
-  PURCHASE_VERIFIER_STORAGE_PREFIX,
-} from "public/abraxasClientConstants";
-
-import { createPurchaseVerificationController } from "public/purchaseVerificationLogic";
-
-import wixLocationFrontend from "wix-location-frontend";
-import wixWindow from "wix-window";
-import wixWindowFrontend from "wix-window-frontend";
-import { session } from "wix-storage-frontend";
-
-/** @type {ReturnType<typeof createPurchaseVerificationController> | null} */
-let purchaseController = null;
-
-$w.onReady(() => {
-  if (wixWindow.rendering.env !== "browser") return;
-  wirePurchaseButton();
-});
-
-function wirePurchaseButton() {
-  const button = $w("#purchaseAbraxasButton");
-  if (!button) return;
-
-  purchaseController = createPurchaseVerificationController({
-    setStatus(message) {
-      const status = $w("#purchaseStatusText");
-      if (status) status.text = message;
-    },
-
-    startPurchaseVerification: () => createPurchaseVerificationStart(),
-
-    getViewMode: () => wixWindowFrontend.viewMode,
-
-    storeVerifier(flowId, verifier) {
-      session.setItem(`${PURCHASE_VERIFIER_STORAGE_PREFIX}${flowId}`, verifier);
-    },
-
-    saveReturnDestination() {
-      try {
-        const currentUrl = String(wixLocationFrontend.url || "");
-        const path = currentUrl.split("?")[0].replace(/^https?:\/\/[^/]+/, "") || "/";
-        session.setItem(PURCHASE_RETURN_DESTINATION_STORAGE_KEY, path);
-      } catch {
-        // non-authoritative
-      }
-    },
-
-    navigateToVerifyUrl(url) {
-      wixLocationFrontend.to(url);
-    },
-  });
-
-  button.onClick(() => {
-    void purchaseController?.start();
-  });
-}
-```
-### backend/abraxasVerification.web.js
-
-- **Wix destination:** Backend file
-- **Wix path/name:** `src/backend/abraxasVerification.web.js`
-
-```javascript
-// FILE: examples/good-trouble-wix/backend/abraxasVerification.web.js
-// Wix Velo web methods — separate browse (L0) and purchase (L2+) lifecycles.
-
-import { Permissions, webMethod } from "wix-web-module";
-import {
-  completeBrowseVerificationService,
-  completePurchaseVerificationService,
-  createBrowseVerificationStartService,
-  createPurchaseVerificationStartService,
-} from "./abraxasVerificationService.js";
-
-export const createBrowseVerificationStart = webMethod(
-  Permissions.Anyone,
-  async () => createBrowseVerificationStartService(null, { skipCaptcha: true }),
-);
-
-export const createPurchaseVerificationStart = webMethod(
-  Permissions.Anyone,
-  async () => createPurchaseVerificationStartService(null, { skipCaptcha: true }),
-);
-
-/** @deprecated Use createPurchaseVerificationStart for regulated purchase flows. */
-export const createAbraxasVerificationStart = createPurchaseVerificationStart;
-
-export const completeBrowseVerification = webMethod(
-  Permissions.Anyone,
-  async (browseReceipt, flowId, verifier) =>
-    completeBrowseVerificationService(browseReceipt, flowId, verifier),
-);
-
-export const completePurchaseVerification = webMethod(
-  Permissions.Anyone,
-  async (receiptId, flowId, verifier) =>
-    completePurchaseVerificationService(receiptId, flowId, verifier),
-);
-
-/** @deprecated Use completePurchaseVerification */
-export const completeAbraxasVerification = completePurchaseVerification;
-
-```
-
-### backend/abraxasVerificationService.js
-
-- **Wix destination:** Backend file
-- **Wix path/name:** `src/backend/abraxasVerificationService.js`
-
-```javascript
-// FILE: examples/good-trouble-wix/backend/abraxasVerificationService.js
-// Testable Abraxas verification service — separate browse (L0) and purchase (L2+) lifecycles.
-
-import { fetchAndValidateSandboxReceipt } from "./abraxasReceiptValidator.js";
-import { verifyBrowseReceiptRemotely } from "./browseReceiptRemoteValidator.js";
-import { authorizeCaptchaToken } from "./captchaGate.js";
-import { MAX_OUTSTANDING_PENDING_FLOWS } from "./constants.js";
-import {
-  buildFlowStartFailure,
-  buildFlowStartSuccess,
-  flowStartContext,
-  FLOW_START_STAGES,
-  mapThrownErrorToStartCode,
-} from "./flowStartDiagnostics.js";
-import {
-  assertCapacityAvailable,
-  finalizeFlowStart,
-} from "./flowCapacity.js";
-import {
-  buildVerificationStartPayload,
-  completeAbraxasVerificationCore,
-  completeBrowseVerificationCore,
-} from "./nonceLifecycle.js";
-import { sha256Hex as defaultSha256Hex } from "./sha256Adapter.js";
-
-/** @type {((value: string) => Promise<string> | string) | null} */
-let configuredHashFn = null;
-
-export function configureAbraxasHashFn(hashFn) {
-  configuredHashFn = hashFn;
-}
-
-export function __testOnlySetHashFn(hashFn) {
-  configuredHashFn = hashFn;
-}
-
-function resolveHashFn(depsHashFn) {
-  if (depsHashFn) return depsHashFn;
-  if (configuredHashFn) return configuredHashFn;
-  return defaultSha256Hex;
-}
-
-async function resolveStore(deps) {
-  if (deps.store) return deps.store;
-  const { createWixNonceStore } = await import("./wixNonceStore.js");
-  return createWixNonceStore();
 }
 
 /**
- * @param {"browse" | "purchase"} purpose
- * @param {string | null | undefined} captchaToken
- * @param {object} [deps]
+ * Close or skip Wix Studio automatic age lightbox when Abraxas already verified the session.
+ * @param {{
+ *   localStorage: Storage,
+ *   sessionStorage: Storage,
+ *   pagePath?: string | null,
+ *   now?: number,
+ * }} input
  */
-async function startFlow(purpose, captchaToken, deps = {}) {
-  const context = flowStartContext(purpose);
-
-  try {
-    if (!deps.skipCaptcha) {
-      const captcha = await authorizeCaptchaToken(captchaToken, deps.authorizeCaptcha);
-      if (!captcha.ok) {
-        return buildFlowStartFailure({
-          code: captcha.code,
-          stage: FLOW_START_STAGES.CAPTCHA_GATE,
-          purpose: context.purpose,
-          policyId: context.policyId,
-        });
-      }
-    }
-
-    const store = await resolveStore(deps);
-    const hashFn = resolveHashFn(deps.hashFn);
-    const now = deps.now ?? new Date();
-
-    const capacity = await assertCapacityAvailable(store, MAX_OUTSTANDING_PENDING_FLOWS, now);
-    if (!capacity.ok) {
-      return buildFlowStartFailure({
-        code: capacity.code,
-        stage: FLOW_START_STAGES.CAPACITY_PRECHECK,
-        purpose: context.purpose,
-        policyId: context.policyId,
-      });
-    }
-
-    let payload;
-    try {
-      payload = await buildVerificationStartPayload({ hashFn, now, purpose });
-    } catch {
-      return buildFlowStartFailure({
-        code: "payload_build_failed",
-        stage: FLOW_START_STAGES.PAYLOAD_BUILD,
-        purpose: context.purpose,
-        policyId: context.policyId,
-      });
-    }
-
-    let inserted;
-    try {
-      inserted = await store.insert(payload.flowRecord);
-    } catch {
-      return buildFlowStartFailure({
-        code: "nonce_insert_failed",
-        stage: FLOW_START_STAGES.NONCE_INSERT,
-        purpose: context.purpose,
-        policyId: context.policyId,
-        correlationId: payload.flowRecord.correlationId,
-      });
-    }
-
-    const finalized = await finalizeFlowStart(
-      store,
-      inserted._id,
-      MAX_OUTSTANDING_PENDING_FLOWS,
-      now,
-    );
-    if (!finalized.ok) {
-      return buildFlowStartFailure({
-        code: finalized.code,
-        stage: FLOW_START_STAGES.CAPACITY_FINALIZE,
-        purpose: context.purpose,
-        policyId: context.policyId,
-        correlationId: payload.flowRecord.correlationId,
-      });
-    }
-
-    return buildFlowStartSuccess({
-      verifyUrl: payload.verifyUrl,
-      flowId: payload.flowId,
-      verifier: payload.verifier,
-      purpose: payload.purpose,
-      policyId: payload.policyId,
-      correlationId: payload.flowRecord.correlationId,
-    });
-  } catch (error) {
-    return buildFlowStartFailure({
-      code: mapThrownErrorToStartCode(error),
-      stage: FLOW_START_STAGES.CAPACITY_PRECHECK,
-      purpose: context.purpose,
-      policyId: context.policyId,
-    });
+export function shouldSuppressAutomaticAgeLightbox(input) {
+  const pagePath = normalizeSitePath(input.pagePath);
+  if (isAgeGateCallbackOrEntryPath(pagePath)) {
+    return { suppress: true, reason: "callback_or_entry_page" };
   }
-}
 
-export async function createBrowseVerificationStartService(captchaToken, deps = {}) {
-  return startFlow("browse", captchaToken, deps);
-}
-
-export async function createPurchaseVerificationStartService(captchaToken, deps = {}) {
-  return startFlow("purchase", captchaToken, deps);
-}
-
-/** @deprecated Use createPurchaseVerificationStartService */
-export async function createAbraxasVerificationStartService(captchaToken, deps = {}) {
-  return createPurchaseVerificationStartService(captchaToken, {
-    ...deps,
-    skipCaptcha: deps.skipCaptcha ?? true,
+  const skip = shouldSkipAgeGate({
+    localStorage: input.localStorage,
+    sessionStorage: input.sessionStorage,
+    now: input.now,
   });
-}
+  if (skip.skip) {
+    return { suppress: true, reason: skip.reason };
+  }
 
-export async function completePurchaseVerificationService(receiptId, flowId, verifier, deps = {}) {
-  const store = await resolveStore(deps);
-  const hashFn = resolveHashFn(deps.hashFn);
-
-  const defaultValidateReceipt = async (id) => {
-    try {
-      const result = await fetchAndValidateSandboxReceipt(id);
-      return { verified: result.verified, transientFailure: false };
-    } catch {
-      return { verified: false, transientFailure: true };
-    }
-  };
-
-  return completeAbraxasVerificationCore({
-    store,
-    receiptId,
-    flowId,
-    verifier,
-    hashFn,
-    validateReceipt: deps.validateReceipt ?? defaultValidateReceipt,
-  });
-}
-
-export async function completeBrowseVerificationService(browseReceipt, flowId, verifier, deps = {}) {
-  const store = await resolveStore(deps);
-  const hashFn = resolveHashFn(deps.hashFn);
-
-  const defaultValidateBrowse = async (token, record) => {
-    const result = await verifyBrowseReceiptRemotely(token, { fetchImpl: deps.fetchImpl });
-    if (result.transientFailure) {
-      return { verified: false, transientFailure: true };
-    }
-    if (!result.verified) {
-      return { verified: false, transientFailure: false };
-    }
-    if (record?.policyId && result.payload?.policy_id !== record.policyId) {
-      return { verified: false, transientFailure: false };
-    }
-    return { verified: true, transientFailure: false };
-  };
-
-  return completeBrowseVerificationCore({
-    store,
-    browseReceipt,
-    flowId,
-    verifier,
-    hashFn,
-    validateBrowseReceipt: deps.validateBrowseReceipt ?? defaultValidateBrowse,
-  });
-}
-
-/** @deprecated Use completePurchaseVerificationService */
-export async function completeAbraxasVerificationService(receiptId, flowId, verifier, deps = {}) {
-  return completePurchaseVerificationService(receiptId, flowId, verifier, deps);
+  return { suppress: false, reason: null };
 }
 ```
-### backend/constants.js
 
-- **Wix destination:** Backend file
-- **Wix path/name:** `src/backend/constants.js`
+### backend/constants.js
 
 ```javascript
 // FILE: examples/good-trouble-wix/backend/constants.js
@@ -1460,15 +1131,25 @@ export async function completeAbraxasVerificationService(receiptId, flowId, veri
 export const ABRAXAS_ORIGIN =
   "https://abraxasworld.xyz";
 
+/** Canonical Launchpad partner — 21+ sandbox pilot. */
 export const PARTNER_ID =
-  "good-trouble-cannabis";
+  "good-trouble";
 
+/** Canonical Launchpad application slug (?app=). */
+export const APP_SLUG =
+  "good-trouble";
+
+/** Canonical age_21_retail policy. */
 export const POLICY_ID =
-  "good-trouble-retail-v1";
+  "good-trouble-age_21_retail-v1";
 
-/** Tier 1 browse policy — L0 self-attestation only (not purchase). */
+/** Tier 1 browse policy — L0 self-attestation only (not purchase eligibility). */
 export const BROWSE_POLICY_ID =
   "good-trouble-browse-v1";
+
+/** Canonical browse partner — same identity as regulated purchase. */
+export const BROWSE_PARTNER_ID =
+  PARTNER_ID;
 
 export const FLOW_PURPOSE_BROWSE = "browse";
 export const FLOW_PURPOSE_PURCHASE = "purchase";
@@ -1517,29 +1198,57 @@ export const CONSUMED_FLOW_RETENTION_MS =
   24 * 60 * 60 * 1000;
 
 /**
- * Browser-safe constants live in the public module so Wix page code
- * never imports from a backend-only file.
+ * Callback query-param names — duplicated here so Wix backend modules never
+ * import from ../public (Wix Velo backend cannot resolve public re-exports).
+ * Keep values in sync with public/abraxasClientConstants.js.
  */
-export {
-  GTB_PARAM,
-  GTV_PARAM,
-  BROWSE_ACCESS_STORAGE_KEY,
-  BROWSE_RETURN_DESTINATION_STORAGE_KEY,
-  BROWSE_VERIFIER_STORAGE_PREFIX,
-  PURCHASE_RETURN_DESTINATION_STORAGE_KEY,
-  PURCHASE_VERIFIED_SESSION_FLAG,
-  PURCHASE_VERIFIER_STORAGE_PREFIX,
-  PILOT_VERIFIED_SESSION_FLAG,
-  RETURN_DESTINATION_STORAGE_KEY,
-  VERIFIER_STORAGE_PREFIX,
-} from "../public/abraxasClientConstants.js";
+export const GTV_PARAM = "gtv";
+export const GTB_PARAM = "gtb";
+
+/** Purchase verifier prefix — `${PURCHASE_VERIFIER_STORAGE_PREFIX}${flowId}`. */
+export const PURCHASE_VERIFIER_STORAGE_PREFIX = "abraxas_gt_purchase_verifier_";
+
+/** Browse verifier prefix — `${BROWSE_VERIFIER_STORAGE_PREFIX}${flowId}`. */
+export const BROWSE_VERIFIER_STORAGE_PREFIX = "abraxas_gt_browse_verifier_";
+
+/** @deprecated Use PURCHASE_VERIFIER_STORAGE_PREFIX */
+export const VERIFIER_STORAGE_PREFIX = PURCHASE_VERIFIER_STORAGE_PREFIX;
+
+/** Live Wix slug — "The Goods" shop (see public/abraxasClientConstants.js). */
+export const GOOD_TROUBLE_THE_GOODS_SHOP_PATH = "/goods";
+
+/** Last-resort post-verification destination when no trusted path was captured at start. */
+export const PURCHASE_POST_VERIFICATION_FALLBACK = GOOD_TROUBLE_THE_GOODS_SHOP_PATH;
+
+/** Query param used only on purchase entry page load to capture ORDER NOW origin (not callback). */
+export const PURCHASE_FROM_QUERY_PARAM = "from";
+
+/** Purchase return destination saved before Abraxas redirect (same-origin path). */
+export const PURCHASE_RETURN_DESTINATION_STORAGE_KEY = "good_trouble_return_destination_purchase";
+
+/** Browse return destination saved before Abraxas browse redirect. */
+export const BROWSE_RETURN_DESTINATION_STORAGE_KEY = "good_trouble_return_destination_browse";
+
+/** @deprecated Use PURCHASE_RETURN_DESTINATION_STORAGE_KEY */
+export const RETURN_DESTINATION_STORAGE_KEY = PURCHASE_RETURN_DESTINATION_STORAGE_KEY;
+
+/** L0 browse UI flag — sessionStorage only. */
+export const BROWSE_ACCESS_STORAGE_KEY = "good_trouble_browse_access_l0";
+
+/** Purchase pilot UI convenience flag — sessionStorage only. */
+export const PURCHASE_VERIFIED_SESSION_FLAG = "good_trouble_purchase_verified_pilot";
+
+/** @deprecated Use PURCHASE_VERIFIED_SESSION_FLAG */
+export const PILOT_VERIFIED_SESSION_FLAG = PURCHASE_VERIFIED_SESSION_FLAG;
+
+/** Canonical Launchpad sandbox policy pin (Colosseum pilot). */
+export const GOOD_TROUBLE_SANDBOX_POLICY_VERSION = 2;
 
 /**
- * The current Good Trouble pilot uses sandbox receipt validation.
- * This is not production-authoritative age verification.
+ * Canonical purchase pilot validates sandbox Partner Flow receipts (L0 self-attestation).
+ * Production receipts remain supported when decision_context is production.
  */
-export const RECEIPT_VALIDATION_MODE =
-  "sandbox";
+export const RECEIPT_VALIDATION_MODE = "sandbox";
 
 export const FLOW_ID_PREFIX_PURCHASE = "gtf_";
 export const FLOW_ID_PREFIX_BROWSE = "gtb_";
@@ -1587,10 +1296,1048 @@ export const NONCE_TTL_MS =
   FLOW_TTL_MS;
 ```
 
-### backend/nonceLifecycle.js
+### backend/browseConstants.js
 
-- **Wix destination:** Backend file
-- **Wix path/name:** `src/backend/nonceLifecycle.js`
+```javascript
+// FILE: examples/good-trouble-wix/backend/browseConstants.js
+// Browse-tier constants for Good Trouble Wix integration.
+
+export const BROWSE_RECEIPT_ARTIFACT_TYPE = "browse_access_receipt";
+export const BROWSE_POLICY_ID = "good-trouble-browse-v1";
+export const BROWSE_ACCESS_STORAGE_KEY = "good_trouble_browse_access_l0";
+```
+
+### backend/flowPurpose.js
+
+```javascript
+// FILE: examples/good-trouble-wix/backend/flowPurpose.js
+// Explicit browse (L0) vs purchase (L2+) verification lifecycles.
+
+import {
+  APP_SLUG,
+  BROWSE_PARTNER_ID,
+  BROWSE_POLICY_ID,
+  BROWSE_RETURN_URL_BASE,
+  FLOW_ID_PREFIX_BROWSE,
+  FLOW_ID_PREFIX_PURCHASE,
+  GTB_PARAM,
+  GTV_PARAM,
+  PARTNER_ID,
+  POLICY_ID,
+  PURCHASE_RETURN_URL_BASE,
+} from "./constants.js";
+
+/** @typedef {"browse" | "purchase"} FlowPurpose */
+
+/**
+ * @typedef {object} FlowPurposeConfig
+ * @property {FlowPurpose} purpose
+ * @property {string} policyId
+ * @property {string} partnerId
+ * @property {string} returnUrlBase
+ * @property {string} flowIdPrefix
+ * @property {string} callbackParam
+ * @property {string} assuranceLabel
+ */
+
+export const BROWSE_FLOW = {
+  purpose: "browse",
+  policyId: BROWSE_POLICY_ID,
+  partnerId: BROWSE_PARTNER_ID,
+  appSlug: null,
+  returnUrlBase: BROWSE_RETURN_URL_BASE,
+  flowIdPrefix: FLOW_ID_PREFIX_BROWSE,
+  callbackParam: GTB_PARAM,
+  assuranceLabel: "L0",
+};
+
+export const PURCHASE_FLOW = {
+  purpose: "purchase",
+  policyId: POLICY_ID,
+  partnerId: PARTNER_ID,
+  appSlug: APP_SLUG,
+  returnUrlBase: PURCHASE_RETURN_URL_BASE,
+  flowIdPrefix: FLOW_ID_PREFIX_PURCHASE,
+  callbackParam: GTV_PARAM,
+  assuranceLabel: "L0 age eligibility",
+};
+
+/** @param {unknown} purpose */
+export function resolveFlowPurposeConfig(purpose) {
+  const value = typeof purpose === "string" ? purpose.trim().toLowerCase() : "";
+  if (value === "browse") return BROWSE_FLOW;
+  if (value === "purchase") return PURCHASE_FLOW;
+  return null;
+}
+
+/**
+ * @param {FlowPurposeConfig} config
+ * @param {string} flowId
+ */
+export function buildPartnerVerifyUrl(config, flowId) {
+  const returnUrl = `${config.returnUrlBase}?${config.callbackParam}=${encodeURIComponent(flowId)}`;
+  const search = new URLSearchParams({ return_url: returnUrl });
+  if (config.appSlug) {
+    search.set("app", config.appSlug);
+  } else {
+    search.set("partner_id", config.partnerId);
+    search.set("policy_id", config.policyId);
+  }
+  if (config.purpose === "browse") {
+    search.set("purpose", "browse");
+  }
+  return `https://abraxasworld.xyz/partner/verify?${search.toString()}`;
+}
+```
+
+### backend/pkceProof.js
+
+```javascript
+// FILE: examples/good-trouble-wix/backend/pkceProof.js
+// PKCE-style proof-of-possession — never trust frontend-supplied visitor identity.
+
+import { timingSafeEqual as nodeTimingSafeEqual } from "node:crypto";
+import {
+  FLOW_ID_RE,
+  MAX_INPUT_LENGTH,
+  RECEIPT_ID_RE,
+  VERIFIER_RE,
+} from "./constants.js";
+
+/**
+ * Timing-safe string equality.
+ * @param {string} a
+ * @param {string} b
+ */
+export function timingSafeEqualStrings(a, b) {
+  if (typeof a !== "string" || typeof b !== "string") return false;
+  try {
+    const bufA = Buffer.from(a, "utf8");
+    const bufB = Buffer.from(b, "utf8");
+    if (bufA.length !== bufB.length) return false;
+    return nodeTimingSafeEqual(bufA, bufB);
+  } catch {
+    if (a.length !== b.length) return false;
+    let mismatch = 0;
+    for (let i = 0; i < a.length; i += 1) {
+      mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    }
+    return mismatch === 0;
+  }
+}
+
+/**
+ * @param {unknown} flowId
+ * @returns {{ ok: true, flowId: string } | { ok: false, code: string }}
+ */
+export function validateFlowId(flowId) {
+  const trimmed = typeof flowId === "string" ? flowId.trim() : "";
+  if (!trimmed || trimmed.length > MAX_INPUT_LENGTH.flowId) {
+    return { ok: false, code: "invalid_flow_id" };
+  }
+  if (!FLOW_ID_RE.test(trimmed)) {
+    return { ok: false, code: "invalid_flow_id" };
+  }
+  return { ok: true, flowId: trimmed };
+}
+
+/**
+ * @param {unknown} verifier
+ * @returns {{ ok: true, verifier: string } | { ok: false, code: string }}
+ */
+export function validateVerifier(verifier) {
+  const trimmed = typeof verifier === "string" ? verifier.trim() : "";
+  if (!trimmed || trimmed.length > MAX_INPUT_LENGTH.verifier) {
+    return { ok: false, code: "missing_verifier" };
+  }
+  if (!VERIFIER_RE.test(trimmed)) {
+    return { ok: false, code: "invalid_verifier" };
+  }
+  return { ok: true, verifier: trimmed };
+}
+
+/**
+ * @param {unknown} receiptId
+ * @returns {{ ok: true, receiptId: string } | { ok: false, code: string }}
+ */
+export function validateReceiptId(receiptId) {
+  const trimmed = typeof receiptId === "string" ? receiptId.trim() : "";
+  if (!trimmed || trimmed.length > MAX_INPUT_LENGTH.receiptId) {
+    return { ok: false, code: "missing_receipt_id" };
+  }
+  if (!RECEIPT_ID_RE.test(trimmed)) {
+    return { ok: false, code: "invalid_receipt_id" };
+  }
+  return { ok: true, receiptId: trimmed };
+}
+
+/**
+ * Verify PKCE proof-of-possession: SHA-256(verifier) must match stored challenge.
+ * @param {string} verifier
+ * @param {string} storedChallenge
+ * @param {(input: string) => Promise<string> | string} hashFn
+ */
+export async function verifyVerifierChallenge(verifier, storedChallenge, hashFn) {
+  const derived = await hashFn(verifier);
+  if (!timingSafeEqualStrings(derived, storedChallenge)) {
+    return { ok: false, code: "verifier_mismatch" };
+  }
+  return { ok: true };
+}
+```
+
+### backend/sha256Adapter.js
+
+```javascript
+// FILE: examples/good-trouble-wix/backend/sha256Adapter.js
+// Backend-only SHA-256 for PKCE verifier challenges.
+// Uses node:crypto createHash — supported in Wix Node.js backend (same runtime as pkceProof.js).
+
+import { createHash } from "node:crypto";
+
+/**
+ * SHA-256 digest as lowercase 64-character hex.
+ * @param {string} value UTF-8 input
+ * @returns {string}
+ */
+export function sha256HexSync(value) {
+  if (typeof value !== "string") {
+    throw new TypeError("sha256 input must be a string");
+  }
+  return createHash("sha256").update(value, "utf8").digest("hex");
+}
+
+/**
+ * Async wrapper for callers that expect a Promise (PKCE lifecycle).
+ * @param {string} value UTF-8 input
+ * @returns {Promise<string>}
+ */
+export async function sha256Hex(value) {
+  return sha256HexSync(value);
+}
+```
+
+### backend/flowCapacity.js
+
+```javascript
+// FILE: examples/good-trouble-wix/backend/flowCapacity.js
+// Shared capacity enforcement — purge stale rows before counting; rollback on overrun.
+
+/**
+ * @param {import("./nonceLifecycle.js").FlowStore} store
+ * @param {Date} [now]
+ */
+export async function purgeStaleFlows(store, now = new Date()) {
+  if (typeof store.purgeStale === "function") {
+    await store.purgeStale(now);
+  }
+}
+
+/**
+ * Pre-insert capacity gate (after purge). Not fully atomic alone — pair with finalizeFlowStart.
+ * @returns {Promise<{ ok: true } | { ok: false, code: "rate_limited" }>}
+ */
+export async function assertCapacityAvailable(store, maxPending, now = new Date()) {
+  await purgeStaleFlows(store, now);
+  if (typeof store.countPending !== "function") return { ok: true };
+  const pending = await store.countPending(now);
+  if (pending >= maxPending) {
+    return { ok: false, code: "rate_limited" };
+  }
+  return { ok: true };
+}
+
+/**
+ * Post-insert capacity check — removes the just-inserted row if concurrent starts exceeded cap.
+ * @param {import("./nonceLifecycle.js").FlowStore} store
+ * @param {string} recordId
+ * @param {number} maxPending
+ * @param {Date} [now]
+ */
+export async function finalizeFlowStart(store, recordId, maxPending, now = new Date()) {
+  await purgeStaleFlows(store, now);
+  if (typeof store.countPending !== "function" || typeof store.removeById !== "function") {
+    return { ok: true };
+  }
+  const pending = await store.countPending(now);
+  if (pending > maxPending) {
+    await store.removeById(recordId);
+    return { ok: false, code: "rate_limited" };
+  }
+  return { ok: true };
+}
+```
+
+### backend/flowStartDiagnostics.js
+
+```javascript
+// FILE: examples/good-trouble-wix/backend/flowStartDiagnostics.js
+// Privacy-safe structured diagnostics for verification flow start failures.
+
+import { BROWSE_FLOW, PURCHASE_FLOW } from "./flowPurpose.js";
+
+/** @typedef {"browse" | "purchase"} FlowPurpose */
+
+/**
+ * @typedef {object} FlowStartDiagnostic
+ * @property {string} code
+ * @property {string} stage
+ * @property {FlowPurpose} purpose
+ * @property {string} policyId
+ * @property {string | null} correlationId
+ */
+
+/**
+ * @typedef {object} FlowStartFailure
+ * @property {string} error
+ * @property {FlowStartDiagnostic} diagnostic
+ */
+
+/**
+ * @typedef {object} FlowStartSuccess
+ * @property {string} verifyUrl
+ * @property {string} flowId
+ * @property {string} verifier
+ * @property {FlowPurpose} purpose
+ * @property {string} policyId
+ * @property {string | null} [correlationId]
+ */
+
+/** @typedef {FlowStartSuccess | FlowStartFailure} FlowStartResult */
+
+/**
+ * @param {unknown} result
+ * @returns {result is FlowStartFailure}
+ */
+export function isFlowStartFailure(result) {
+  return Boolean(
+    result
+    && typeof result === "object"
+    && "error" in result
+    && typeof result.error === "string",
+  );
+}
+
+/**
+ * @param {unknown} result
+ * @returns {result is FlowStartSuccess}
+ */
+export function isFlowStartSuccess(result) {
+  return Boolean(
+    result
+    && typeof result === "object"
+    && !isFlowStartFailure(result)
+    && "verifyUrl" in result
+    && "flowId" in result
+    && "verifier" in result,
+  );
+}
+
+export const FLOW_START_STAGES = {
+  CAPTCHA_GATE: "captcha_gate",
+  CAPACITY_PRECHECK: "capacity_precheck",
+  PAYLOAD_BUILD: "payload_build",
+  NONCE_INSERT: "nonce_insert",
+  CAPACITY_FINALIZE: "capacity_finalize",
+  RESPONSE_BUILD: "response_build",
+};
+
+/** Stable codes safe to return to Preview UI and backend logs. */
+export const ALLOWLISTED_FLOW_START_ERROR_CODES = new Set([
+  "captcha_required",
+  "captcha_invalid",
+  "rate_limited",
+  "capacity_count_invalid",
+  "nonce_insert_failed",
+  "payload_build_failed",
+  "start_incomplete",
+  "start_internal_error",
+]);
+
+const PURPOSE_POLICY = {
+  browse: {
+    purpose: BROWSE_FLOW.purpose,
+    policyId: BROWSE_FLOW.policyId,
+  },
+  purchase: {
+    purpose: PURCHASE_FLOW.purpose,
+    policyId: PURCHASE_FLOW.policyId,
+  },
+};
+
+/**
+ * @param {FlowPurpose} purpose
+ */
+export function flowStartContext(purpose) {
+  return PURPOSE_POLICY[purpose] ?? PURPOSE_POLICY.purchase;
+}
+
+/**
+ * @param {unknown} error
+ * @returns {string}
+ */
+export function mapThrownErrorToStartCode(error) {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  if (message.includes("Invalid pending-flow count returned by Wix Data")) {
+    return "capacity_count_invalid";
+  }
+  if (message.includes("wix-data") || message.includes("WixData")) {
+    return "nonce_insert_failed";
+  }
+  return "start_internal_error";
+}
+
+/**
+ * Privacy-safe backend log payload. Never include verifier, challenge, receipt, token, or PII.
+ * @param {{
+ *   stage: string,
+ *   code: string,
+ *   purpose: FlowPurpose,
+ *   policyId: string,
+ *   correlationId?: string | null,
+ * }} entry
+ */
+export function logFlowStartFailure(entry) {
+  const payload = {
+    event: "abraxas_flow_start_failed",
+    stage: entry.stage,
+    code: entry.code,
+    purpose: entry.purpose,
+    policyId: entry.policyId,
+    correlationId: entry.correlationId ?? null,
+  };
+  console.info(JSON.stringify(payload));
+  return payload;
+}
+
+/**
+ * @param {{
+ *   code: string,
+ *   stage: string,
+ *   purpose: FlowPurpose,
+ *   policyId: string,
+ *   correlationId?: string | null,
+ * }} params
+ * @returns {FlowStartFailure}
+ */
+export function buildFlowStartFailure(params) {
+  const code = ALLOWLISTED_FLOW_START_ERROR_CODES.has(params.code)
+    ? params.code
+    : "start_internal_error";
+
+  logFlowStartFailure({
+    stage: params.stage,
+    code,
+    purpose: params.purpose,
+    policyId: params.policyId,
+    correlationId: params.correlationId ?? null,
+  });
+
+  return {
+    error: code,
+    diagnostic: {
+      code,
+      stage: params.stage,
+      purpose: params.purpose,
+      policyId: params.policyId,
+      correlationId: params.correlationId ?? null,
+    },
+  };
+}
+
+/**
+ * @param {{
+ *   verifyUrl: string,
+ *   flowId: string,
+ *   verifier: string,
+ *   purpose: FlowPurpose,
+ *   policyId: string,
+ *   correlationId?: string | null,
+ * }} payload
+ * @returns {FlowStartResult}
+ */
+export function buildFlowStartSuccess(payload) {
+  if (!payload.verifyUrl || !payload.flowId || !payload.verifier) {
+    return buildFlowStartFailure({
+      code: "start_incomplete",
+      stage: FLOW_START_STAGES.RESPONSE_BUILD,
+      purpose: payload.purpose,
+      policyId: payload.policyId,
+      correlationId: payload.correlationId ?? null,
+    });
+  }
+
+  return {
+    verifyUrl: payload.verifyUrl,
+    flowId: payload.flowId,
+    verifier: payload.verifier,
+    purpose: payload.purpose,
+    policyId: payload.policyId,
+    correlationId: payload.correlationId ?? null,
+  };
+}
+```
+
+### backend/wixDataCount.js
+
+```javascript
+// FILE: examples/good-trouble-wix/backend/wixDataCount.js
+// Normalizes Wix Data count() results — some Velo runtimes return object-shaped counts.
+
+/**
+ * @param {unknown} value
+ * @returns {number | null} Safe non-negative integer count, or null when unusable.
+ */
+export function normalizeWixDataCount(value) {
+  if (typeof value === "number" && Number.isSafeInteger(value) && value >= 0) {
+    return value;
+  }
+
+  if (value && typeof value === "object") {
+    const candidate = value.totalCount ?? value.count ?? value.total;
+    if (typeof candidate === "number" && Number.isSafeInteger(candidate) && candidate >= 0) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+```
+
+### backend/captchaGate.js
+
+```javascript
+// FILE: examples/good-trouble-wix/backend/captchaGate.js
+// Wix reCAPTCHA backend authorization — verified server-side; never trust client-only checks.
+
+const MAX_CAPTCHA_TOKEN_LENGTH = 4096;
+
+/**
+ * Authorize a Wix reCAPTCHA token via wix-captcha-backend.authorize().
+ * @param {unknown} captchaToken
+ * @param {(token: string) => Promise<unknown>} authorizeFn defaults to production Wix module when configured
+ */
+export async function authorizeCaptchaToken(captchaToken, authorizeFn) {
+  const token = typeof captchaToken === "string" ? captchaToken.trim() : "";
+  if (!token || token.length > MAX_CAPTCHA_TOKEN_LENGTH) {
+    return { ok: false, code: "captcha_required" };
+  }
+  if (typeof authorizeFn !== "function") {
+    return { ok: false, code: "captcha_not_configured" };
+  }
+  try {
+    await authorizeFn(token);
+    return { ok: true };
+  } catch {
+    return { ok: false, code: "captcha_invalid" };
+  }
+}
+```
+
+### backend/browseReceiptValidator.js
+
+```javascript
+// FILE: examples/good-trouble-wix/backend/browseReceiptValidator.js
+// L0 browse-access receipt validation — UI gate only, not purchase authorization.
+
+import { BROWSE_RECEIPT_ARTIFACT_TYPE } from "./browseConstants.js";
+
+import { PARTNER_ID } from "./constants.js";
+
+const EXPECTED_PARTNER_ID = PARTNER_ID;
+const BROWSE_POLICY_ID = "good-trouble-browse-v1";
+
+/**
+ * @param {unknown} payload
+ * @param {{ now?: Date, partnerId?: string, policyId?: string }} [opts]
+ * @returns {{ verified: boolean, errors: string[] }}
+ */
+export function validateBrowseAccessPayload(payload, opts = {}) {
+  const now = opts.now ?? new Date();
+  const errors = [];
+  const partnerId = opts.partnerId ?? EXPECTED_PARTNER_ID;
+  const policyId = opts.policyId ?? BROWSE_POLICY_ID;
+
+  if (!payload || typeof payload !== "object") {
+    return { verified: false, errors: ["payload_missing"] };
+  }
+
+  const record = payload;
+
+  if (record.artifact_type !== BROWSE_RECEIPT_ARTIFACT_TYPE) {
+    errors.push("artifact_type_mismatch");
+  }
+  if (record.valid_for_purchase !== false) {
+    errors.push("not_browse_receipt");
+  }
+  if (record.purpose !== "browse") {
+    errors.push("purpose_mismatch");
+  }
+  if (record.assurance_level !== "L0") {
+    errors.push("assurance_not_l0");
+  }
+  if (record.age_band !== "over_21") {
+    errors.push("age_band_mismatch");
+  }
+  if (record.partner_id !== partnerId) {
+    errors.push("partner_mismatch");
+  }
+  if (record.policy_id !== policyId) {
+    errors.push("policy_mismatch");
+  }
+  if (!record.expires_at) {
+    errors.push("expires_at_missing");
+  } else {
+    const expiresAt = Date.parse(record.expires_at);
+    if (!Number.isFinite(expiresAt)) errors.push("expires_at_invalid");
+    else if (expiresAt <= now.getTime()) errors.push("receipt_expired");
+  }
+
+  for (const forbidden of ["date_of_birth", "dob", "legal_name", "address", "document_number"]) {
+    if (forbidden in record) errors.push(`forbidden_field:${forbidden}`);
+  }
+
+  return { verified: errors.length === 0, errors };
+}
+
+/**
+ * Browse receipts must never authorize regulated checkout.
+ * @param {unknown} receiptOrPayload
+ * @returns {{ authorized: false, code: string }}
+ */
+export function rejectBrowseReceiptForCheckout(receiptOrPayload) {
+  if (!receiptOrPayload || typeof receiptOrPayload !== "object") {
+    return { authorized: false, code: "receipt_missing" };
+  }
+  const record = receiptOrPayload;
+  if (record.artifact_type === BROWSE_RECEIPT_ARTIFACT_TYPE) {
+    return { authorized: false, code: "browse_receipt_not_valid_for_purchase" };
+  }
+  if (record.valid_for_purchase === false) {
+    return { authorized: false, code: "not_valid_for_purchase" };
+  }
+  if (record.purpose === "browse") {
+    return { authorized: false, code: "browse_purpose_not_checkout" };
+  }
+  const pilotAgeEligibility = (record.evaluated_claim_refs ?? []).some(
+    (ref) => ref.claim_type === "self_attested_age_band",
+  );
+  if (
+    record.assurance_level === "L0"
+    && record.artifact_type === "eligibility_decision_receipt"
+    && pilotAgeEligibility
+  ) {
+    return { authorized: false, code: "requires_authoritative_receipt" };
+  }
+  if (record.assurance_level === "L0") {
+    return { authorized: false, code: "l0_not_checkout_authority" };
+  }
+  return { authorized: false, code: "requires_authoritative_receipt" };
+}
+```
+
+### backend/abraxasReceiptValidator.js
+
+```javascript
+// FILE: examples/good-trouble-wix/backend/abraxasReceiptValidator.js
+// Strict Partner Flow public receipt validation for Good Trouble Wix sandbox.
+// Mirror lib/partner/verifyPartnerFlowReceipt.ts — keep in sync manually.
+
+import {
+  GOOD_TROUBLE_SANDBOX_POLICY_VERSION,
+  RECEIPT_VALIDATION_MODE,
+} from "./constants.js";
+
+const ABRAXAS_ORIGIN = "https://abraxasworld.xyz";
+const EXPECTED_PARTNER_ID = "good-trouble";
+const EXPECTED_POLICY_ID = "good-trouble-age_21_retail-v1";
+const SUPPORTED_SCHEMA_VERSION = "1.0.0";
+const EXPECTED_ARTIFACT_TYPE = "eligibility_decision_receipt";
+const SANDBOX_ONLY_INVALIDATION_REASON = "production_not_usable:false";
+const RECEIPT_ID_RE = /^dr_[A-Za-z0-9_-]{8,128}$/;
+
+export { RECEIPT_VALIDATION_MODE };
+
+function isPilotAgeEligibilityReceipt(receipt) {
+  return (receipt.evaluated_claim_refs ?? []).some(
+    (ref) => ref.claim_type === "self_attested_age_band",
+  );
+}
+
+function sharedErrors(receipt, now) {
+  const errors = [];
+  if (receipt.signature_valid !== true) errors.push("signature_invalid");
+  if (receipt.decision_result !== "approved") errors.push(`decision_not_approved:${receipt.decision_result ?? "missing"}`);
+  if (receipt.status !== "active") errors.push(`status_not_active:${receipt.status ?? "missing"}`);
+  if (receipt.partner_id !== EXPECTED_PARTNER_ID) errors.push("partner_mismatch");
+  if (receipt.policy_id !== EXPECTED_POLICY_ID) errors.push("policy_mismatch");
+  if (
+    receipt.policy_version != null
+    && Number(receipt.policy_version) !== GOOD_TROUBLE_SANDBOX_POLICY_VERSION
+  ) {
+    errors.push("policy_version_mismatch");
+  }
+  if (receipt.schema_version !== SUPPORTED_SCHEMA_VERSION) errors.push("schema_version_unsupported");
+  if (receipt.artifact_type !== EXPECTED_ARTIFACT_TYPE) errors.push("artifact_type_mismatch");
+  if (receipt.artifact_type === "browse_access_receipt") {
+    errors.push("browse_receipt_not_purchase_authority");
+  }
+  if (receipt.valid_for_purchase === false) errors.push("not_valid_for_purchase");
+  if (receipt.purpose === "browse") errors.push("browse_purpose_not_checkout");
+  if (receipt.assurance_level === "L0" && !isPilotAgeEligibilityReceipt(receipt)) {
+    errors.push("l0_not_checkout_authority");
+  }
+  if (isPilotAgeEligibilityReceipt(receipt)) {
+    const hasIdentityClaim = (receipt.evaluated_claim_refs ?? []).some(
+      (ref) => ref.claim_type === "identity_verified" || ref.claim_type === "liveness_passed",
+    );
+    if (hasIdentityClaim) errors.push("pilot_receipt_must_not_claim_identity");
+  }
+
+  if (!receipt.expires_at) {
+    errors.push("expires_at_missing");
+  } else {
+    const expiresAt = Date.parse(receipt.expires_at);
+    if (!Number.isFinite(expiresAt)) errors.push("expires_at_invalid");
+    else if (expiresAt <= now.getTime()) errors.push("receipt_expired");
+  }
+
+  for (const ref of receipt.evaluated_claim_refs ?? []) {
+    const status = (ref.status ?? "").toLowerCase();
+    if (status && status !== "active") errors.push(`claim_not_active:${ref.claim_type ?? "unknown"}`);
+  }
+
+  return errors;
+}
+
+function sandboxErrors(receipt) {
+  const errors = [];
+  if (receipt.production_usable !== false) {
+    errors.push(receipt.production_usable === undefined
+      ? "sandbox_production_usable_missing"
+      : "sandbox_production_usable_not_false");
+  }
+  if (receipt.decision_context !== "sandbox_only") errors.push("sandbox_decision_context_mismatch");
+  const reasons = receipt.invalidation_reasons ?? [];
+  if (reasons.length !== 1 || reasons[0] !== SANDBOX_ONLY_INVALIDATION_REASON) {
+    errors.push("sandbox_invalidation_reason_mismatch");
+  }
+  return errors;
+}
+
+function productionErrors(receipt) {
+  const errors = [];
+  if (receipt.production_usable !== true) {
+    errors.push(receipt.production_usable === undefined
+      ? "production_usable_missing"
+      : "production_usable_not_true");
+  }
+  if (receipt.currently_valid !== true) errors.push("currently_valid_not_true");
+  if (receipt.decision_context !== "production") errors.push("production_decision_context_mismatch");
+  if ((receipt.invalidation_reasons ?? []).length > 0) errors.push("production_has_invalidation_reasons");
+  return errors;
+}
+
+/**
+ * @param {unknown} receipt
+ * @returns {"sandbox" | "production"}
+ */
+export function resolvePurchaseReceiptValidationMode(receipt) {
+  if (!receipt || typeof receipt !== "object") return RECEIPT_VALIDATION_MODE;
+  if (receipt.decision_context === "production" || receipt.production_usable === true) {
+    return "production";
+  }
+  return "sandbox";
+}
+
+/**
+ * @param {unknown} receipt
+ * @param {{ now?: Date, mode?: "sandbox" | "production" }} [opts]
+ * @returns {{ verified: boolean }}
+ */
+export function validateSandboxReceipt(receipt, opts = {}) {
+  const now = opts.now ?? new Date();
+  if (!receipt || typeof receipt !== "object") return { verified: false };
+  const errors = [...sharedErrors(receipt, now), ...sandboxErrors(receipt)];
+  return { verified: errors.length === 0 };
+}
+
+/**
+ * @param {unknown} receipt
+ * @param {{ now?: Date }} [opts]
+ * @returns {{ verified: boolean }}
+ */
+export function validateProductionReceipt(receipt, opts = {}) {
+  const now = opts.now ?? new Date();
+  if (!receipt || typeof receipt !== "object") return { verified: false };
+  const errors = [...sharedErrors(receipt, now), ...productionErrors(receipt)];
+  return { verified: errors.length === 0 };
+}
+
+/**
+ * @param {string} receiptId
+ * @returns {Promise<{ verified: boolean, mode: "sandbox" | "production", expires_at?: string | null, transientFailure?: boolean }>}
+ */
+export async function fetchAndValidatePurchaseReceipt(receiptId) {
+  const id = typeof receiptId === "string" ? receiptId.trim() : "";
+  if (!id || id.length > 200 || !RECEIPT_ID_RE.test(id)) {
+    return { verified: false, mode: RECEIPT_VALIDATION_MODE };
+  }
+
+  let response;
+  try {
+    response = await fetch(
+      `${ABRAXAS_ORIGIN}/api/receipts/${encodeURIComponent(id)}/public`,
+      { method: "GET", headers: { Accept: "application/json" } },
+    );
+  } catch {
+    return { verified: false, mode: RECEIPT_VALIDATION_MODE, transientFailure: true };
+  }
+
+  if (!response.ok) {
+    return {
+      verified: false,
+      mode: RECEIPT_VALIDATION_MODE,
+      transientFailure: response.status >= 500,
+    };
+  }
+
+  let receipt;
+  try {
+    receipt = await response.json();
+  } catch {
+    return { verified: false, mode: RECEIPT_VALIDATION_MODE };
+  }
+
+  const mode = resolvePurchaseReceiptValidationMode(receipt);
+  const result = mode === "production"
+    ? validateProductionReceipt(receipt)
+    : validateSandboxReceipt(receipt);
+  return {
+    ...result,
+    mode,
+    expires_at: typeof receipt.expires_at === "string" ? receipt.expires_at : null,
+  };
+}
+
+/** @deprecated Use fetchAndValidatePurchaseReceipt */
+export async function fetchAndValidateSandboxReceipt(receiptId) {
+  return fetchAndValidatePurchaseReceipt(receiptId);
+}
+```
+
+### backend/browseReceiptRemoteValidator.js
+
+```javascript
+// FILE: examples/good-trouble-wix/backend/browseReceiptRemoteValidator.js
+// Server-side browse receipt validation via Abraxas — Wix never sees DOB.
+
+import { ABRAXAS_ORIGIN, BROWSE_POLICY_ID, PARTNER_ID } from "./constants.js";
+import { validateBrowseAccessPayload } from "./browseReceiptValidator.js";
+
+/**
+ * @param {string} browseReceiptJwt
+ * @param {{ fetchImpl?: typeof fetch, now?: Date }} [opts]
+ * @returns {Promise<{ verified: boolean, transientFailure?: boolean, payload?: object }>}
+ */
+export async function verifyBrowseReceiptRemotely(browseReceiptJwt, opts = {}) {
+  const token = typeof browseReceiptJwt === "string" ? browseReceiptJwt.trim() : "";
+  if (!token || token.length > 8192) {
+    return { verified: false, transientFailure: false };
+  }
+
+  const fetchImpl = opts.fetchImpl ?? fetch;
+  let response;
+  try {
+    response = await fetchImpl(`${ABRAXAS_ORIGIN}/api/age-assurance/browse-receipt/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        browse_receipt: token,
+        partner_id: PARTNER_ID,
+        policy_id: BROWSE_POLICY_ID,
+      }),
+    });
+  } catch {
+    return { verified: false, transientFailure: true };
+  }
+
+  if (!response.ok) {
+    return { verified: false, transientFailure: response.status >= 500 };
+  }
+
+  let body;
+  try {
+    body = await response.json();
+  } catch {
+    return { verified: false, transientFailure: false };
+  }
+
+  if (!body?.verified) {
+    return { verified: false, transientFailure: false };
+  }
+
+  const payload = {
+    artifact_type: "browse_access_receipt",
+    valid_for_purchase: false,
+    purpose: "browse",
+    assurance_level: "L0",
+    partner_id: PARTNER_ID,
+    policy_id: BROWSE_POLICY_ID,
+    expires_at: body.expires_at,
+    age_band: body.age_band,
+  };
+
+  const local = validateBrowseAccessPayload(payload, { now: opts.now });
+  return local.verified
+    ? { verified: true, transientFailure: false, payload }
+    : { verified: false, transientFailure: false };
+}
+```
+
+### backend/purchaseEligibilityAuthorization.js
+
+```javascript
+// FILE: examples/good-trouble-wix/backend/purchaseEligibilityAuthorization.js
+// Server-validated, fresh, consumed, partner-bound purchase gate (L0 pilot or L2+ legacy).
+
+import { rejectBrowseReceiptForCheckout } from "./browseReceiptValidator.js";
+import { validateProductionReceipt } from "./abraxasReceiptValidator.js";
+import {
+  BROWSE_ACCESS_STORAGE_KEY,
+  FLOW_PURPOSE_PURCHASE,
+  PARTNER_ID,
+  POLICY_ID,
+  PURCHASE_VERIFIED_SESSION_FLAG,
+} from "./constants.js";
+
+const MIN_PURCHASE_ASSURANCE = 2;
+
+function assuranceRank(level) {
+  if (level === "L0") return 0;
+  if (level === "L1") return 1;
+  if (level === "L2") return 2;
+  if (level === "L3") return 3;
+  if (level === "L4") return 4;
+  return -1;
+}
+
+/**
+ * @param {{
+ *   receipt?: unknown,
+ *   flowPurpose?: string | null,
+ *   flowConsumed?: boolean,
+ *   flowPolicyId?: string | null,
+ *   urlStatus?: string | null,
+ *   urlPolicyId?: string | null,
+ *   urlPurpose?: string | null,
+ *   sessionStoragePurchaseFlag?: string | null,
+ *   sessionStorageBrowseFlag?: string | null,
+ *   selfAttestedBrowseOnly?: boolean,
+ *   now?: Date,
+ * }} input
+ * @returns {{ authorized: boolean, code?: string }}
+ */
+export function authorizePurchaseEligibility(input) {
+  const now = input.now ?? new Date();
+
+  if (input.urlStatus === "approved") {
+    return { authorized: false, code: "url_status_not_authoritative" };
+  }
+  if (input.sessionStoragePurchaseFlag) {
+    return { authorized: false, code: "session_flag_not_authoritative" };
+  }
+  if (input.sessionStorageBrowseFlag) {
+    return { authorized: false, code: "browse_session_flag_not_checkout" };
+  }
+  if (input.selfAttestedBrowseOnly) {
+    return { authorized: false, code: "self_attestation_not_checkout" };
+  }
+  if (input.urlPurpose === "browse") {
+    return { authorized: false, code: "url_purpose_browse_not_purchase" };
+  }
+  if (input.urlPolicyId && input.urlPolicyId !== POLICY_ID) {
+    return { authorized: false, code: "url_policy_mismatch" };
+  }
+  if (input.flowPurpose && input.flowPurpose !== FLOW_PURPOSE_PURCHASE) {
+    return { authorized: false, code: "flow_purpose_mismatch" };
+  }
+  if (input.flowPolicyId && input.flowPolicyId !== POLICY_ID) {
+    return { authorized: false, code: "flow_policy_mismatch" };
+  }
+  if (input.flowConsumed !== true) {
+    return { authorized: false, code: "flow_not_consumed" };
+  }
+
+  const browseReject = rejectBrowseReceiptForCheckout(input.receipt);
+  if (browseReject.code !== "requires_authoritative_receipt") {
+    return { authorized: false, code: browseReject.code };
+  }
+
+  const validated = validateProductionReceipt(input.receipt, { now });
+  if (!validated.verified) {
+    return { authorized: false, code: "authoritative_receipt_invalid" };
+  }
+
+  const record = input.receipt && typeof input.receipt === "object"
+    ? input.receipt
+    : null;
+  if (!record) {
+    return { authorized: false, code: "receipt_missing" };
+  }
+  if (record.partner_id !== PARTNER_ID) {
+    return { authorized: false, code: "partner_mismatch" };
+  }
+  if (record.policy_id !== POLICY_ID) {
+    return { authorized: false, code: "policy_mismatch" };
+  }
+  if (record.purpose === "browse") {
+    return { authorized: false, code: "receipt_purpose_browse" };
+  }
+
+  const refs = record.evaluated_claim_refs ?? [];
+  const pilotAgeEligibility = refs.some((ref) => ref.claim_type === "self_attested_age_band");
+  const assurance = record.assurance_level ?? record.minimum_assurance;
+  if (
+    assurance
+    && !pilotAgeEligibility
+    && assuranceRank(String(assurance)) < MIN_PURCHASE_ASSURANCE
+  ) {
+    return { authorized: false, code: "insufficient_assurance" };
+  }
+
+  return { authorized: true };
+}
+
+export {
+  BROWSE_ACCESS_STORAGE_KEY,
+  PURCHASE_VERIFIED_SESSION_FLAG,
+};
+```
+
+### backend/checkoutAuthorization.js
+
+```javascript
+// FILE: examples/good-trouble-wix/backend/checkoutAuthorization.js
+// Regulated checkout requires authoritative L2+ receipt — never browse or client flags.
+
+import { authorizePurchaseEligibility } from "./purchaseEligibilityAuthorization.js";
+
+/**
+ * @param {Parameters<typeof authorizePurchaseEligibility>[0]} input
+ */
+export function authorizeRegulatedCheckout(input) {
+  return authorizePurchaseEligibility(input);
+}
+
+export function isPilotSessionFlagAuthoritative() {
+  return false;
+}
+
+export { PURCHASE_VERIFIED_SESSION_FLAG as PILOT_VERIFIED_SESSION_FLAG } from "./constants.js";
+```
+
+### backend/nonceLifecycle.js
 
 ```javascript
 // FILE: examples/good-trouble-wix/backend/nonceLifecycle.js
@@ -1607,6 +2354,9 @@ import {
   VERIFIER_BYTES,
 } from "./constants.js";
 import { BROWSE_FLOW, PURCHASE_FLOW } from "./flowPurpose.js";
+import {
+  resolvePurchaseStartDestination,
+} from "./returnDestinationPath.js";
 import {
   validateFlowId,
   validateReceiptId,
@@ -1633,6 +2383,7 @@ function randomHex(byteLength) {
  * @property {string} correlationId
  * @property {"browse" | "purchase"} purpose
  * @property {string} policyId
+ * @property {string} [returnDestinationPath]
  */
 
 /**
@@ -1655,7 +2406,12 @@ export async function hashValue(value, hashFn) {
 
 /**
  * Build Partner Flow entry URL. Callback carries opaque flowId — never the verifier.
- * @param {{ hashFn: (v: string) => Promise<string> | string, now?: Date, purpose?: "browse" | "purchase" }} params
+ * @param {{
+ *   hashFn: (v: string) => Promise<string> | string,
+ *   now?: Date,
+ *   purpose?: "browse" | "purchase",
+ *   returnDestinationPath?: string | null,
+ * }} params
  */
 export async function buildVerificationStartPayload(params) {
   const flowConfig = params.purpose === "browse" ? BROWSE_FLOW : PURCHASE_FLOW;
@@ -1665,13 +2421,20 @@ export async function buildVerificationStartPayload(params) {
   const verifierChallenge = await hashValue(verifier, params.hashFn);
   const expiresAt = new Date(now.getTime() + FLOW_TTL_MS);
   const correlationId = randomHex(8);
+  const returnDestinationPath = flowConfig.purpose === "purchase"
+    ? resolvePurchaseStartDestination({
+      requestedPath: params.returnDestinationPath,
+    })
+    : undefined;
 
   const returnUrl = `${flowConfig.returnUrlBase}?${flowConfig.callbackParam}=${encodeURIComponent(flowId)}`;
-  const search = new URLSearchParams({
-    partner_id: flowConfig.partnerId,
-    policy_id: flowConfig.policyId,
-    return_url: returnUrl,
-  });
+  const search = new URLSearchParams({ return_url: returnUrl });
+  if (flowConfig.appSlug) {
+    search.set("app", flowConfig.appSlug);
+  } else {
+    search.set("partner_id", flowConfig.partnerId);
+    search.set("policy_id", flowConfig.policyId);
+  }
   if (flowConfig.purpose === "browse") {
     search.set("purpose", "browse");
   }
@@ -1696,6 +2459,7 @@ export async function buildVerificationStartPayload(params) {
       validationAttempts: 0,
       consumedAt: null,
       correlationId,
+      ...(returnDestinationPath ? { returnDestinationPath } : {}),
     },
   };
 }
@@ -1866,6 +2630,8 @@ export async function completeAbraxasVerificationCore(params) {
     purpose: "purchase",
     policyId: claim.record.policyId,
     flowConsumed: true,
+    returnDestination: claim.record.returnDestinationPath ?? null,
+    expires_at: validation.expires_at ?? null,
   };
 }
 
@@ -1937,6 +2703,7 @@ export async function completeBrowseVerificationCore(params) {
     purpose: "browse",
     policyId: claim.record.policyId,
     flowConsumed: true,
+    expires_at: validation.expires_at ?? null,
   };
 }
 
@@ -1945,318 +2712,9 @@ export const INTEGRATION_CONSTANTS = {
   browse: BROWSE_FLOW,
   purchase: PURCHASE_FLOW,
 };
-
-```
-
-### backend/flowPurpose.js
-
-- **Wix destination:** Backend file
-- **Wix path/name:** `src/backend/flowPurpose.js`
-
-```javascript
-// FILE: examples/good-trouble-wix/backend/flowPurpose.js
-// Explicit browse (L0) vs purchase (L2+) verification lifecycles.
-
-import {
-  BROWSE_POLICY_ID,
-  BROWSE_RETURN_URL_BASE,
-  FLOW_ID_PREFIX_BROWSE,
-  FLOW_ID_PREFIX_PURCHASE,
-  GTB_PARAM,
-  GTV_PARAM,
-  PARTNER_ID,
-  POLICY_ID,
-  PURCHASE_RETURN_URL_BASE,
-} from "./constants.js";
-
-/** @typedef {"browse" | "purchase"} FlowPurpose */
-
-/**
- * @typedef {object} FlowPurposeConfig
- * @property {FlowPurpose} purpose
- * @property {string} policyId
- * @property {string} partnerId
- * @property {string} returnUrlBase
- * @property {string} flowIdPrefix
- * @property {string} callbackParam
- * @property {string} assuranceLabel
- */
-
-export const BROWSE_FLOW = {
-  purpose: "browse",
-  policyId: BROWSE_POLICY_ID,
-  partnerId: PARTNER_ID,
-  returnUrlBase: BROWSE_RETURN_URL_BASE,
-  flowIdPrefix: FLOW_ID_PREFIX_BROWSE,
-  callbackParam: GTB_PARAM,
-  assuranceLabel: "L0",
-};
-
-export const PURCHASE_FLOW = {
-  purpose: "purchase",
-  policyId: POLICY_ID,
-  partnerId: PARTNER_ID,
-  returnUrlBase: PURCHASE_RETURN_URL_BASE,
-  flowIdPrefix: FLOW_ID_PREFIX_PURCHASE,
-  callbackParam: GTV_PARAM,
-  assuranceLabel: "L2+",
-};
-
-/** @param {unknown} purpose */
-export function resolveFlowPurposeConfig(purpose) {
-  const value = typeof purpose === "string" ? purpose.trim().toLowerCase() : "";
-  if (value === "browse") return BROWSE_FLOW;
-  if (value === "purchase") return PURCHASE_FLOW;
-  return null;
-}
-
-/**
- * @param {FlowPurposeConfig} config
- * @param {string} flowId
- */
-export function buildPartnerVerifyUrl(config, flowId) {
-  const returnUrl = `${config.returnUrlBase}?${config.callbackParam}=${encodeURIComponent(flowId)}`;
-  const search = new URLSearchParams({
-    partner_id: config.partnerId,
-    policy_id: config.policyId,
-    return_url: returnUrl,
-  });
-  if (config.purpose === "browse") {
-    search.set("purpose", "browse");
-  }
-  return `https://abraxasworld.xyz/partner/verify?${search.toString()}`;
-}
-
-```
-
-### backend/pkceProof.js
-
-- **Wix destination:** Backend file
-- **Wix path/name:** `src/backend/pkceProof.js`
-
-```javascript
-// FILE: examples/good-trouble-wix/backend/pkceProof.js
-// PKCE-style proof-of-possession — never trust frontend-supplied visitor identity.
-
-import { timingSafeEqual as nodeTimingSafeEqual } from "node:crypto";
-import {
-  FLOW_ID_RE,
-  MAX_INPUT_LENGTH,
-  RECEIPT_ID_RE,
-  VERIFIER_RE,
-} from "./constants.js";
-
-/**
- * Timing-safe string equality.
- * @param {string} a
- * @param {string} b
- */
-export function timingSafeEqualStrings(a, b) {
-  if (typeof a !== "string" || typeof b !== "string") return false;
-  try {
-    const bufA = Buffer.from(a, "utf8");
-    const bufB = Buffer.from(b, "utf8");
-    if (bufA.length !== bufB.length) return false;
-    return nodeTimingSafeEqual(bufA, bufB);
-  } catch {
-    if (a.length !== b.length) return false;
-    let mismatch = 0;
-    for (let i = 0; i < a.length; i += 1) {
-      mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
-    }
-    return mismatch === 0;
-  }
-}
-
-/**
- * @param {unknown} flowId
- * @returns {{ ok: true, flowId: string } | { ok: false, code: string }}
- */
-export function validateFlowId(flowId) {
-  const trimmed = typeof flowId === "string" ? flowId.trim() : "";
-  if (!trimmed || trimmed.length > MAX_INPUT_LENGTH.flowId) {
-    return { ok: false, code: "invalid_flow_id" };
-  }
-  if (!FLOW_ID_RE.test(trimmed)) {
-    return { ok: false, code: "invalid_flow_id" };
-  }
-  return { ok: true, flowId: trimmed };
-}
-
-/**
- * @param {unknown} verifier
- * @returns {{ ok: true, verifier: string } | { ok: false, code: string }}
- */
-export function validateVerifier(verifier) {
-  const trimmed = typeof verifier === "string" ? verifier.trim() : "";
-  if (!trimmed || trimmed.length > MAX_INPUT_LENGTH.verifier) {
-    return { ok: false, code: "missing_verifier" };
-  }
-  if (!VERIFIER_RE.test(trimmed)) {
-    return { ok: false, code: "invalid_verifier" };
-  }
-  return { ok: true, verifier: trimmed };
-}
-
-/**
- * @param {unknown} receiptId
- * @returns {{ ok: true, receiptId: string } | { ok: false, code: string }}
- */
-export function validateReceiptId(receiptId) {
-  const trimmed = typeof receiptId === "string" ? receiptId.trim() : "";
-  if (!trimmed || trimmed.length > MAX_INPUT_LENGTH.receiptId) {
-    return { ok: false, code: "missing_receipt_id" };
-  }
-  if (!RECEIPT_ID_RE.test(trimmed)) {
-    return { ok: false, code: "invalid_receipt_id" };
-  }
-  return { ok: true, receiptId: trimmed };
-}
-
-/**
- * Verify PKCE proof-of-possession: SHA-256(verifier) must match stored challenge.
- * @param {string} verifier
- * @param {string} storedChallenge
- * @param {(input: string) => Promise<string> | string} hashFn
- */
-export async function verifyVerifierChallenge(verifier, storedChallenge, hashFn) {
-  const derived = await hashFn(verifier);
-  if (!timingSafeEqualStrings(derived, storedChallenge)) {
-    return { ok: false, code: "verifier_mismatch" };
-  }
-  return { ok: true };
-}
-
-```
-
-### backend/sha256Adapter.js
-
-- **Wix destination:** Backend file
-- **Wix path/name:** `src/backend/sha256Adapter.js`
-
-```javascript
-// FILE: examples/good-trouble-wix/backend/sha256Adapter.js
-// Backend-only SHA-256 for PKCE verifier challenges.
-// Uses node:crypto createHash — supported in Wix Node.js backend (same runtime as pkceProof.js).
-
-import { createHash } from "node:crypto";
-
-/**
- * SHA-256 digest as lowercase 64-character hex.
- * @param {string} value UTF-8 input
- * @returns {string}
- */
-export function sha256HexSync(value) {
-  if (typeof value !== "string") {
-    throw new TypeError("sha256 input must be a string");
-  }
-  return createHash("sha256").update(value, "utf8").digest("hex");
-}
-
-/**
- * Async wrapper for callers that expect a Promise (PKCE lifecycle).
- * @param {string} value UTF-8 input
- * @returns {Promise<string>}
- */
-export async function sha256Hex(value) {
-  return sha256HexSync(value);
-}
-
-```
-
-### backend/flowCapacity.js
-
-- **Wix destination:** Backend file
-- **Wix path/name:** `src/backend/flowCapacity.js`
-
-```javascript
-// FILE: examples/good-trouble-wix/backend/flowCapacity.js
-// Shared capacity enforcement — purge stale rows before counting; rollback on overrun.
-
-/**
- * @param {import("./nonceLifecycle.js").FlowStore} store
- * @param {Date} [now]
- */
-export async function purgeStaleFlows(store, now = new Date()) {
-  if (typeof store.purgeStale === "function") {
-    await store.purgeStale(now);
-  }
-}
-
-/**
- * Pre-insert capacity gate (after purge). Not fully atomic alone — pair with finalizeFlowStart.
- * @returns {Promise<{ ok: true } | { ok: false, code: "rate_limited" }>}
- */
-export async function assertCapacityAvailable(store, maxPending, now = new Date()) {
-  await purgeStaleFlows(store, now);
-  if (typeof store.countPending !== "function") return { ok: true };
-  const pending = await store.countPending(now);
-  if (pending >= maxPending) {
-    return { ok: false, code: "rate_limited" };
-  }
-  return { ok: true };
-}
-
-/**
- * Post-insert capacity check — removes the just-inserted row if concurrent starts exceeded cap.
- * @param {import("./nonceLifecycle.js").FlowStore} store
- * @param {string} recordId
- * @param {number} maxPending
- * @param {Date} [now]
- */
-export async function finalizeFlowStart(store, recordId, maxPending, now = new Date()) {
-  await purgeStaleFlows(store, now);
-  if (typeof store.countPending !== "function" || typeof store.removeById !== "function") {
-    return { ok: true };
-  }
-  const pending = await store.countPending(now);
-  if (pending > maxPending) {
-    await store.removeById(recordId);
-    return { ok: false, code: "rate_limited" };
-  }
-  return { ok: true };
-}
-
-```
-
-### backend/captchaGate.js
-
-- **Wix destination:** Backend file
-- **Wix path/name:** `src/backend/captchaGate.js`
-
-```javascript
-// FILE: examples/good-trouble-wix/backend/captchaGate.js
-// Wix reCAPTCHA backend authorization — verified server-side; never trust client-only checks.
-
-const MAX_CAPTCHA_TOKEN_LENGTH = 4096;
-
-/**
- * Authorize a Wix reCAPTCHA token via wix-captcha-backend.authorize().
- * @param {unknown} captchaToken
- * @param {(token: string) => Promise<unknown>} authorizeFn defaults to production Wix module when configured
- */
-export async function authorizeCaptchaToken(captchaToken, authorizeFn) {
-  const token = typeof captchaToken === "string" ? captchaToken.trim() : "";
-  if (!token || token.length > MAX_CAPTCHA_TOKEN_LENGTH) {
-    return { ok: false, code: "captcha_required" };
-  }
-  if (typeof authorizeFn !== "function") {
-    return { ok: false, code: "captcha_not_configured" };
-  }
-  try {
-    await authorizeFn(token);
-    return { ok: true };
-  } catch {
-    return { ok: false, code: "captcha_invalid" };
-  }
-}
-
 ```
 
 ### backend/wixNonceStore.js
-
-- **Wix destination:** Backend file
-- **Wix path/name:** `src/backend/wixNonceStore.js`
 
 ```javascript
 // FILE: examples/good-trouble-wix/backend/wixNonceStore.js
@@ -2346,839 +2804,1233 @@ export function createWixNonceStore() {
   };
 }
 ```
-### backend/abraxasReceiptValidator.js
 
-- **Wix destination:** Backend file
-- **Wix path/name:** `src/backend/abraxasReceiptValidator.js`
+### backend/abraxasVerificationService.js
 
 ```javascript
-// FILE: examples/good-trouble-wix/backend/abraxasReceiptValidator.js
-// Strict Partner Flow public receipt validation for Good Trouble Wix sandbox.
-// Mirror lib/partner/verifyPartnerFlowReceipt.ts — keep in sync manually.
+// FILE: examples/good-trouble-wix/backend/abraxasVerificationService.js
+// Testable Abraxas verification service — separate browse (L0) and purchase (L2+) lifecycles.
 
-const ABRAXAS_ORIGIN = "https://abraxasworld.xyz";
-const EXPECTED_PARTNER_ID = "good-trouble-cannabis";
-const EXPECTED_POLICY_ID = "good-trouble-retail-v1";
-const SUPPORTED_SCHEMA_VERSION = "1.0.0";
-const EXPECTED_ARTIFACT_TYPE = "eligibility_decision_receipt";
-const SANDBOX_ONLY_INVALIDATION_REASON = "production_not_usable:false";
-const RECEIPT_ID_RE = /^dr_[A-Za-z0-9_-]{8,128}$/;
-
-function sharedErrors(receipt, now) {
-  const errors = [];
-  if (receipt.signature_valid !== true) errors.push("signature_invalid");
-  if (receipt.decision_result !== "approved") errors.push(`decision_not_approved:${receipt.decision_result ?? "missing"}`);
-  if (receipt.status !== "active") errors.push(`status_not_active:${receipt.status ?? "missing"}`);
-  if (receipt.partner_id !== EXPECTED_PARTNER_ID) errors.push("partner_mismatch");
-  if (receipt.policy_id !== EXPECTED_POLICY_ID) errors.push("policy_mismatch");
-  if (receipt.schema_version !== SUPPORTED_SCHEMA_VERSION) errors.push("schema_version_unsupported");
-  if (receipt.artifact_type !== EXPECTED_ARTIFACT_TYPE) errors.push("artifact_type_mismatch");
-  if (receipt.artifact_type === "browse_access_receipt") {
-    errors.push("browse_receipt_not_purchase_authority");
-  }
-  if (receipt.valid_for_purchase === false) errors.push("not_valid_for_purchase");
-  if (receipt.purpose === "browse") errors.push("browse_purpose_not_checkout");
-  if (receipt.assurance_level === "L0") errors.push("l0_not_checkout_authority");
-
-  if (!receipt.expires_at) {
-    errors.push("expires_at_missing");
-  } else {
-    const expiresAt = Date.parse(receipt.expires_at);
-    if (!Number.isFinite(expiresAt)) errors.push("expires_at_invalid");
-    else if (expiresAt <= now.getTime()) errors.push("receipt_expired");
-  }
-
-  for (const ref of receipt.evaluated_claim_refs ?? []) {
-    const status = (ref.status ?? "").toLowerCase();
-    if (status && status !== "active") errors.push(`claim_not_active:${ref.claim_type ?? "unknown"}`);
-  }
-
-  return errors;
-}
-
-function sandboxErrors(receipt) {
-  const errors = [];
-  if (receipt.production_usable !== false) {
-    errors.push(receipt.production_usable === undefined
-      ? "sandbox_production_usable_missing"
-      : "sandbox_production_usable_not_false");
-  }
-  if (receipt.decision_context !== "sandbox_only") errors.push("sandbox_decision_context_mismatch");
-  const reasons = receipt.invalidation_reasons ?? [];
-  if (reasons.length !== 1 || reasons[0] !== SANDBOX_ONLY_INVALIDATION_REASON) {
-    errors.push("sandbox_invalidation_reason_mismatch");
-  }
-  return errors;
-}
-
-/**
- * @param {unknown} receipt
- * @param {{ now?: Date }} [opts]
- * @returns {{ verified: boolean }}
- */
-export function validateSandboxReceipt(receipt, opts = {}) {
-  const now = opts.now ?? new Date();
-  if (!receipt || typeof receipt !== "object") return { verified: false };
-  const errors = [...sharedErrors(receipt, now), ...sandboxErrors(receipt)];
-  return { verified: errors.length === 0 };
-}
-
-/** Strict sandbox mode identifier — mirrors verifyPartnerFlowReceipt mode: "sandbox". */
-export const RECEIPT_VALIDATION_MODE = "sandbox";
-
-/**
- * @param {string} receiptId
- * @returns {Promise<{ verified: boolean, mode: typeof RECEIPT_VALIDATION_MODE }>}
- */
-export async function fetchAndValidateSandboxReceipt(receiptId) {
-  const id = typeof receiptId === "string" ? receiptId.trim() : "";
-  if (!id || id.length > 200 || !RECEIPT_ID_RE.test(id)) {
-    return { verified: false, mode: RECEIPT_VALIDATION_MODE };
-  }
-
-  let response;
-  try {
-    response = await fetch(
-      `${ABRAXAS_ORIGIN}/api/receipts/${encodeURIComponent(id)}/public`,
-      { method: "GET", headers: { Accept: "application/json" } },
-    );
-  } catch {
-    return { verified: false, mode: RECEIPT_VALIDATION_MODE };
-  }
-
-  if (!response.ok) return { verified: false, mode: RECEIPT_VALIDATION_MODE };
-
-  let receipt;
-  try {
-    receipt = await response.json();
-  } catch {
-    return { verified: false, mode: RECEIPT_VALIDATION_MODE };
-  }
-
-  const result = validateSandboxReceipt(receipt);
-  return { ...result, mode: RECEIPT_VALIDATION_MODE };
-}
-
-```
-
-### backend/browseConstants.js
-
-- **Wix destination:** Backend file
-- **Wix path/name:** `src/backend/browseConstants.js`
-
-```javascript
-// FILE: examples/good-trouble-wix/backend/browseConstants.js
-// Browse-tier constants for Good Trouble Wix integration.
-
-export const BROWSE_RECEIPT_ARTIFACT_TYPE = "browse_access_receipt";
-export const BROWSE_POLICY_ID = "good-trouble-browse-v1";
-export const BROWSE_ACCESS_STORAGE_KEY = "good_trouble_browse_access_l0";
-
-```
-
-### backend/browseReceiptValidator.js
-
-- **Wix destination:** Backend file
-- **Wix path/name:** `src/backend/browseReceiptValidator.js`
-
-```javascript
-// FILE: examples/good-trouble-wix/backend/browseReceiptValidator.js
-// L0 browse-access receipt validation — UI gate only, not purchase authorization.
-
-import { BROWSE_RECEIPT_ARTIFACT_TYPE } from "./browseConstants.js";
-
-const EXPECTED_PARTNER_ID = "good-trouble-cannabis";
-const BROWSE_POLICY_ID = "good-trouble-browse-v1";
-
-/**
- * @param {unknown} payload
- * @param {{ now?: Date, partnerId?: string, policyId?: string }} [opts]
- * @returns {{ verified: boolean, errors: string[] }}
- */
-export function validateBrowseAccessPayload(payload, opts = {}) {
-  const now = opts.now ?? new Date();
-  const errors = [];
-  const partnerId = opts.partnerId ?? EXPECTED_PARTNER_ID;
-  const policyId = opts.policyId ?? BROWSE_POLICY_ID;
-
-  if (!payload || typeof payload !== "object") {
-    return { verified: false, errors: ["payload_missing"] };
-  }
-
-  const record = payload;
-
-  if (record.artifact_type !== BROWSE_RECEIPT_ARTIFACT_TYPE) {
-    errors.push("artifact_type_mismatch");
-  }
-  if (record.valid_for_purchase !== false) {
-    errors.push("not_browse_receipt");
-  }
-  if (record.purpose !== "browse") {
-    errors.push("purpose_mismatch");
-  }
-  if (record.assurance_level !== "L0") {
-    errors.push("assurance_not_l0");
-  }
-  if (record.age_band !== "over_21") {
-    errors.push("age_band_mismatch");
-  }
-  if (record.partner_id !== partnerId) {
-    errors.push("partner_mismatch");
-  }
-  if (record.policy_id !== policyId) {
-    errors.push("policy_mismatch");
-  }
-  if (!record.expires_at) {
-    errors.push("expires_at_missing");
-  } else {
-    const expiresAt = Date.parse(record.expires_at);
-    if (!Number.isFinite(expiresAt)) errors.push("expires_at_invalid");
-    else if (expiresAt <= now.getTime()) errors.push("receipt_expired");
-  }
-
-  for (const forbidden of ["date_of_birth", "dob", "legal_name", "address", "document_number"]) {
-    if (forbidden in record) errors.push(`forbidden_field:${forbidden}`);
-  }
-
-  return { verified: errors.length === 0, errors };
-}
-
-/**
- * Browse receipts must never authorize regulated checkout.
- * @param {unknown} receiptOrPayload
- * @returns {{ authorized: false, code: string }}
- */
-export function rejectBrowseReceiptForCheckout(receiptOrPayload) {
-  if (!receiptOrPayload || typeof receiptOrPayload !== "object") {
-    return { authorized: false, code: "receipt_missing" };
-  }
-  const record = receiptOrPayload;
-  if (record.artifact_type === BROWSE_RECEIPT_ARTIFACT_TYPE) {
-    return { authorized: false, code: "browse_receipt_not_valid_for_purchase" };
-  }
-  if (record.valid_for_purchase === false) {
-    return { authorized: false, code: "not_valid_for_purchase" };
-  }
-  if (record.purpose === "browse") {
-    return { authorized: false, code: "browse_purpose_not_checkout" };
-  }
-  if (record.assurance_level === "L0") {
-    return { authorized: false, code: "l0_not_checkout_authority" };
-  }
-  return { authorized: false, code: "requires_authoritative_receipt" };
-}
-
-```
-
-### backend/browseReceiptRemoteValidator.js
-
-- **Wix destination:** Backend file
-- **Wix path/name:** `src/backend/browseReceiptRemoteValidator.js`
-
-```javascript
-// FILE: examples/good-trouble-wix/backend/browseReceiptRemoteValidator.js
-// Server-side browse receipt validation via Abraxas — Wix never sees DOB.
-
-import { ABRAXAS_ORIGIN, BROWSE_POLICY_ID, PARTNER_ID } from "./constants.js";
-import { validateBrowseAccessPayload } from "./browseReceiptValidator.js";
-
-/**
- * @param {string} browseReceiptJwt
- * @param {{ fetchImpl?: typeof fetch, now?: Date }} [opts]
- * @returns {Promise<{ verified: boolean, transientFailure?: boolean, payload?: object }>}
- */
-export async function verifyBrowseReceiptRemotely(browseReceiptJwt, opts = {}) {
-  const token = typeof browseReceiptJwt === "string" ? browseReceiptJwt.trim() : "";
-  if (!token || token.length > 8192) {
-    return { verified: false, transientFailure: false };
-  }
-
-  const fetchImpl = opts.fetchImpl ?? fetch;
-  let response;
-  try {
-    response = await fetchImpl(`${ABRAXAS_ORIGIN}/api/age-assurance/browse-receipt/verify`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({
-        browse_receipt: token,
-        partner_id: PARTNER_ID,
-        policy_id: BROWSE_POLICY_ID,
-      }),
-    });
-  } catch {
-    return { verified: false, transientFailure: true };
-  }
-
-  if (!response.ok) {
-    return { verified: false, transientFailure: response.status >= 500 };
-  }
-
-  let body;
-  try {
-    body = await response.json();
-  } catch {
-    return { verified: false, transientFailure: false };
-  }
-
-  if (!body?.verified) {
-    return { verified: false, transientFailure: false };
-  }
-
-  const payload = {
-    artifact_type: "browse_access_receipt",
-    valid_for_purchase: false,
-    purpose: "browse",
-    assurance_level: "L0",
-    partner_id: PARTNER_ID,
-    policy_id: BROWSE_POLICY_ID,
-    expires_at: body.expires_at,
-    age_band: body.age_band,
-  };
-
-  const local = validateBrowseAccessPayload(payload, { now: opts.now });
-  return local.verified
-    ? { verified: true, transientFailure: false, payload }
-    : { verified: false, transientFailure: false };
-}
-
-```
-
-### backend/purchaseEligibilityAuthorization.js
-
-- **Wix destination:** Backend file
-- **Wix path/name:** `src/backend/purchaseEligibilityAuthorization.js`
-
-```javascript
-// FILE: examples/good-trouble-wix/backend/purchaseEligibilityAuthorization.js
-// Server-validated, fresh, consumed, partner-bound, purpose-bound L2+ purchase gate.
-
-import { rejectBrowseReceiptForCheckout } from "./browseReceiptValidator.js";
-import { validateSandboxReceipt } from "./abraxasReceiptValidator.js";
+import { fetchAndValidateSandboxReceipt } from "./abraxasReceiptValidator.js";
+import { verifyBrowseReceiptRemotely } from "./browseReceiptRemoteValidator.js";
+import { authorizeCaptchaToken } from "./captchaGate.js";
 import {
-  BROWSE_ACCESS_STORAGE_KEY,
-  FLOW_PURPOSE_PURCHASE,
-  PARTNER_ID,
-  POLICY_ID,
-  PURCHASE_VERIFIED_SESSION_FLAG,
+  BROWSE_POLICY_ID,
+  FLOW_ID_PREFIX_BROWSE,
+  MAX_OUTSTANDING_PENDING_FLOWS,
 } from "./constants.js";
+import {
+  buildFlowStartFailure,
+  buildFlowStartSuccess,
+  flowStartContext,
+  FLOW_START_STAGES,
+  isFlowStartFailure,
+  mapThrownErrorToStartCode,
+} from "./flowStartDiagnostics.js";
+import { createWixNonceStore } from "./wixNonceStore.js";
+import {
+  assertCapacityAvailable,
+  finalizeFlowStart,
+} from "./flowCapacity.js";
+import {
+  buildVerificationStartPayload,
+  completeAbraxasVerificationCore,
+  completeBrowseVerificationCore,
+} from "./nonceLifecycle.js";
+import { sha256Hex as defaultSha256Hex } from "./sha256Adapter.js";
 
-const MIN_PURCHASE_ASSURANCE = 2;
+/** @type {((value: string) => Promise<string> | string) | null} */
+let configuredHashFn = null;
 
-function assuranceRank(level) {
-  if (level === "L0") return 0;
-  if (level === "L1") return 1;
-  if (level === "L2") return 2;
-  if (level === "L3") return 3;
-  if (level === "L4") return 4;
-  return -1;
+export function configureAbraxasHashFn(hashFn) {
+  configuredHashFn = hashFn;
+}
+
+export function __testOnlySetHashFn(hashFn) {
+  configuredHashFn = hashFn;
+}
+
+function resolveHashFn(depsHashFn) {
+  if (depsHashFn) return depsHashFn;
+  if (configuredHashFn) return configuredHashFn;
+  return defaultSha256Hex;
+}
+
+function resolveStore(deps) {
+  if (deps.store) return deps.store;
+  return createWixNonceStore();
 }
 
 /**
- * @param {{
- *   receipt?: unknown,
- *   flowPurpose?: string | null,
- *   flowConsumed?: boolean,
- *   flowPolicyId?: string | null,
- *   urlStatus?: string | null,
- *   urlPolicyId?: string | null,
- *   urlPurpose?: string | null,
- *   sessionStoragePurchaseFlag?: string | null,
- *   sessionStorageBrowseFlag?: string | null,
- *   selfAttestedBrowseOnly?: boolean,
- *   now?: Date,
- * }} input
- * @returns {{ authorized: boolean, code?: string }}
+ * @param {"browse" | "purchase"} purpose
+ * @param {string | null | undefined} captchaToken
+ * @param {object} [deps]
+ * @param {string | null | undefined} [returnDestinationPath]
  */
-export function authorizePurchaseEligibility(input) {
-  const now = input.now ?? new Date();
+async function startFlow(purpose, captchaToken, deps = {}, returnDestinationPath = null) {
+  const context = flowStartContext(purpose);
 
-  if (input.urlStatus === "approved") {
-    return { authorized: false, code: "url_status_not_authoritative" };
-  }
-  if (input.sessionStoragePurchaseFlag) {
-    return { authorized: false, code: "session_flag_not_authoritative" };
-  }
-  if (input.sessionStorageBrowseFlag) {
-    return { authorized: false, code: "browse_session_flag_not_checkout" };
-  }
-  if (input.selfAttestedBrowseOnly) {
-    return { authorized: false, code: "self_attestation_not_checkout" };
-  }
-  if (input.urlPurpose === "browse") {
-    return { authorized: false, code: "url_purpose_browse_not_purchase" };
-  }
-  if (input.urlPolicyId && input.urlPolicyId !== POLICY_ID) {
-    return { authorized: false, code: "url_policy_mismatch" };
-  }
-  if (input.flowPurpose && input.flowPurpose !== FLOW_PURPOSE_PURCHASE) {
-    return { authorized: false, code: "flow_purpose_mismatch" };
-  }
-  if (input.flowPolicyId && input.flowPolicyId !== POLICY_ID) {
-    return { authorized: false, code: "flow_policy_mismatch" };
-  }
-  if (input.flowConsumed !== true) {
-    return { authorized: false, code: "flow_not_consumed" };
-  }
-
-  const browseReject = rejectBrowseReceiptForCheckout(input.receipt);
-  if (browseReject.code !== "requires_authoritative_receipt") {
-    return { authorized: false, code: browseReject.code };
-  }
-
-  const sandbox = validateSandboxReceipt(input.receipt, { now });
-  if (!sandbox.verified) {
-    return { authorized: false, code: "authoritative_receipt_invalid" };
-  }
-
-  const record = input.receipt && typeof input.receipt === "object"
-    ? input.receipt
-    : null;
-  if (!record) {
-    return { authorized: false, code: "receipt_missing" };
-  }
-  if (record.partner_id !== PARTNER_ID) {
-    return { authorized: false, code: "partner_mismatch" };
-  }
-  if (record.policy_id !== POLICY_ID) {
-    return { authorized: false, code: "policy_mismatch" };
-  }
-  if (record.purpose === "browse") {
-    return { authorized: false, code: "receipt_purpose_browse" };
-  }
-
-  const assurance = record.assurance_level ?? record.minimum_assurance;
-  if (assurance && assuranceRank(String(assurance)) < MIN_PURCHASE_ASSURANCE) {
-    return { authorized: false, code: "insufficient_assurance" };
-  }
-
-  return { authorized: true };
-}
-
-export {
-  BROWSE_ACCESS_STORAGE_KEY,
-  PURCHASE_VERIFIED_SESSION_FLAG,
-};
-
-```
-
-### backend/checkoutAuthorization.js
-
-- **Wix destination:** Backend file
-- **Wix path/name:** `src/backend/checkoutAuthorization.js`
-
-```javascript
-// FILE: examples/good-trouble-wix/backend/checkoutAuthorization.js
-// Regulated checkout requires authoritative L2+ receipt — never browse or client flags.
-
-import { authorizePurchaseEligibility } from "./purchaseEligibilityAuthorization.js";
-
-/**
- * @param {Parameters<typeof authorizePurchaseEligibility>[0]} input
- */
-export function authorizeRegulatedCheckout(input) {
-  return authorizePurchaseEligibility(input);
-}
-
-export function isPilotSessionFlagAuthoritative() {
-  return false;
-}
-
-export { PURCHASE_VERIFIED_SESSION_FLAG as PILOT_VERIFIED_SESSION_FLAG } from "./constants.js";
-
-```
-
----
-### pages/purchaseVerificationLogic.js
-
-- **Wix destination:** Public file
-- **Wix path/name:** `src/public/purchaseVerificationLogic.js`
-
-```javascript
-// FILE: examples/good-trouble-wix/pages/purchaseVerificationLogic.js
-// Wix deployment: copy to src/public/purchaseVerificationLogic.js
-
-export const PURCHASE_STATUS_STARTING =
-  "Starting purchase eligibility verification…";
-
-export const PURCHASE_STATUS_GENERIC_FAILURE =
-  "Verification could not be started. Please try again.";
-
-export const PURCHASE_STATUS_RATE_LIMITED =
-  "Verification is busy. Please wait a moment and try again.";
-
-/** Stable backend codes that may surface distinct user-facing copy. */
-export const ALLOWLISTED_PURCHASE_START_ERROR_CODES = new Set([
-  "rate_limited",
-  "capacity_count_invalid",
-  "nonce_insert_failed",
-]);
-
-export const PURCHASE_START_ERROR_MESSAGES = {
-  rate_limited: PURCHASE_STATUS_RATE_LIMITED,
-  capacity_count_invalid: PURCHASE_STATUS_GENERIC_FAILURE,
-  nonce_insert_failed: PURCHASE_STATUS_GENERIC_FAILURE,
-  start_incomplete: PURCHASE_STATUS_GENERIC_FAILURE,
-  start_exception: PURCHASE_STATUS_GENERIC_FAILURE,
-  start_internal_error: PURCHASE_STATUS_GENERIC_FAILURE,
-};
-
-/**
- * @param {string} viewMode
- * @returns {boolean}
- */
-export function isEditorPreviewViewMode(viewMode) {
-  return viewMode === "Preview" || viewMode === "Editor";
-}
-
-/**
- * @param {string} code
- * @returns {string}
- */
-export function safePurchaseStartErrorMessage(code) {
-  return PURCHASE_START_ERROR_MESSAGES[code] ?? PURCHASE_STATUS_GENERIC_FAILURE;
-}
-
-/**
- * Preview-only operator hint. Never includes verifier, receipt, token, or PII.
- * @param {{ code?: string, stage?: string, correlationId?: string | null } | null | undefined} diagnostic
- * @returns {string | null}
- */
-export function formatPurchasePreviewDiagnostic(diagnostic) {
-  if (!diagnostic?.code) return null;
-  const parts = [diagnostic.code];
-  if (diagnostic.stage) parts.push(`@${diagnostic.stage}`);
-  if (diagnostic.correlationId) parts.push(`ref=${diagnostic.correlationId}`);
-  return parts.join(" ");
-}
-
-/**
- * @param {{
- *   result?: {
- *     error?: string,
- *     diagnostic?: { code?: string, stage?: string, correlationId?: string | null },
- *     verifyUrl?: string,
- *     flowId?: string,
- *     verifier?: string,
- *   } | null,
- *   viewMode?: string,
- * }} params
- * @returns {{ ok: true, result: object } | { ok: false, code: string, message: string, previewDetail?: string }}
- */
-export function interpretPurchaseStartResult(params) {
-  const result = params.result;
-  const viewMode = params.viewMode ?? "Site";
-  const preview = isEditorPreviewViewMode(viewMode);
-  const previewDetail = preview
-    ? formatPurchasePreviewDiagnostic(result?.diagnostic)
-    : null;
-
-  if (result?.error) {
-    const code = result.error;
-    const message = ALLOWLISTED_PURCHASE_START_ERROR_CODES.has(code)
-      ? safePurchaseStartErrorMessage(code)
-      : PURCHASE_STATUS_GENERIC_FAILURE;
-    return {
-      ok: false,
-      code,
-      message,
-      ...(previewDetail ? { previewDetail } : {}),
-    };
-  }
-
-  const { verifyUrl, flowId, verifier } = result ?? {};
-  if (!verifyUrl || !flowId || !verifier) {
-    return {
-      ok: false,
-      code: "start_incomplete",
-      message: PURCHASE_STATUS_GENERIC_FAILURE,
-      ...(previewDetail ? { previewDetail: previewDetail ?? "start_incomplete" } : {}),
-    };
-  }
-
-  if (!flowId.startsWith("gtf_")) {
-    return {
-      ok: false,
-      code: "start_incomplete",
-      message: PURCHASE_STATUS_GENERIC_FAILURE,
-      ...(previewDetail ? { previewDetail: previewDetail ?? "invalid_flow_id_prefix" } : {}),
-    };
-  }
-
-  return {
-    ok: true,
-    result: {
-      verifyUrl,
-      flowId,
-      verifier,
-      purpose: result?.purpose,
-      policyId: result?.policyId,
-      correlationId: result?.correlationId ?? null,
-    },
-  };
-}
-
-/**
- * @param {{
- *   setStatus: (message: string) => void,
- *   startPurchaseVerification: () => Promise<object>,
- *   getViewMode?: () => string | Promise<string>,
- *   storeVerifier: (flowId: string, verifier: string) => void,
- *   saveReturnDestination: () => void,
- *   navigateToVerifyUrl: (url: string) => void,
- * }} deps
- */
-export function createPurchaseVerificationController(deps) {
-  return {
-    async start() {
-      deps.setStatus(PURCHASE_STATUS_STARTING);
-
-      try {
-        const result = await deps.startPurchaseVerification();
-        const viewMode = deps.getViewMode ? await deps.getViewMode() : "Site";
-        const interpreted = interpretPurchaseStartResult({ result, viewMode });
-
-        if (!interpreted.ok) {
-          const suffix = interpreted.previewDetail
-            ? ` (${interpreted.previewDetail})`
-            : "";
-          deps.setStatus(`${interpreted.message}${suffix}`);
-          return interpreted;
-        }
-
-        if (isEditorPreviewViewMode(viewMode)) {
-          deps.setStatus(
-            `Preview check passed: purchase flow ready (${interpreted.result.flowId.slice(0, 8)}…).`,
-          );
-          return { ok: true, code: "preview_backend_passed", result: interpreted.result };
-        }
-
-        deps.saveReturnDestination();
-        deps.storeVerifier(interpreted.result.flowId, interpreted.result.verifier);
-        deps.navigateToVerifyUrl(interpreted.result.verifyUrl);
-        return { ok: true, code: "redirecting", result: interpreted.result };
-      } catch {
-        const viewMode = deps.getViewMode ? await deps.getViewMode() : "Site";
-        const preview = isEditorPreviewViewMode(viewMode);
-        deps.setStatus(
-          preview
-            ? `${PURCHASE_STATUS_GENERIC_FAILURE} (start_exception)`
-            : PURCHASE_STATUS_GENERIC_FAILURE,
-        );
-        return { ok: false, code: "start_exception", message: PURCHASE_STATUS_GENERIC_FAILURE };
+  try {
+    if (!deps.skipCaptcha) {
+      const captcha = await authorizeCaptchaToken(captchaToken, deps.authorizeCaptcha);
+      if (!captcha.ok) {
+        return buildFlowStartFailure({
+          code: captcha.code,
+          stage: FLOW_START_STAGES.CAPTCHA_GATE,
+          purpose: context.purpose,
+          policyId: context.policyId,
+        });
       }
-    },
-  };
-}
-```
+    }
 
-### backend/flowStartDiagnostics.js
+    const store = await resolveStore(deps);
+    const hashFn = resolveHashFn(deps.hashFn);
+    const now = deps.now ?? new Date();
 
-- **Wix destination:** Backend file
-- **Wix path/name:** `src/backend/flowStartDiagnostics.js`
+    const capacity = await assertCapacityAvailable(store, MAX_OUTSTANDING_PENDING_FLOWS, now);
+    if (!capacity.ok) {
+      return buildFlowStartFailure({
+        code: capacity.code,
+        stage: FLOW_START_STAGES.CAPACITY_PRECHECK,
+        purpose: context.purpose,
+        policyId: context.policyId,
+      });
+    }
 
-```javascript
-// FILE: examples/good-trouble-wix/backend/flowStartDiagnostics.js
-// Privacy-safe structured diagnostics for verification flow start failures.
+    let payload;
+    try {
+      payload = await buildVerificationStartPayload({
+        hashFn,
+        now,
+        purpose,
+        returnDestinationPath: purpose === "purchase" ? returnDestinationPath : null,
+      });
+    } catch {
+      return buildFlowStartFailure({
+        code: "payload_build_failed",
+        stage: FLOW_START_STAGES.PAYLOAD_BUILD,
+        purpose: context.purpose,
+        policyId: context.policyId,
+      });
+    }
 
-import { BROWSE_FLOW, PURCHASE_FLOW } from "./flowPurpose.js";
+    let inserted;
+    try {
+      inserted = await store.insert(payload.flowRecord);
+    } catch {
+      return buildFlowStartFailure({
+        code: "nonce_insert_failed",
+        stage: FLOW_START_STAGES.NONCE_INSERT,
+        purpose: context.purpose,
+        policyId: context.policyId,
+        correlationId: payload.flowRecord.correlationId,
+      });
+    }
 
-/** @typedef {"browse" | "purchase"} FlowPurpose */
+    const finalized = await finalizeFlowStart(
+      store,
+      inserted._id,
+      MAX_OUTSTANDING_PENDING_FLOWS,
+      now,
+    );
+    if (!finalized.ok) {
+      return buildFlowStartFailure({
+        code: finalized.code,
+        stage: FLOW_START_STAGES.CAPACITY_FINALIZE,
+        purpose: context.purpose,
+        policyId: context.policyId,
+        correlationId: payload.flowRecord.correlationId,
+      });
+    }
 
-export const FLOW_START_STAGES = {
-  CAPTCHA_GATE: "captcha_gate",
-  CAPACITY_PRECHECK: "capacity_precheck",
-  PAYLOAD_BUILD: "payload_build",
-  NONCE_INSERT: "nonce_insert",
-  CAPACITY_FINALIZE: "capacity_finalize",
-  RESPONSE_BUILD: "response_build",
-};
-
-/** Stable codes safe to return to Preview UI and backend logs. */
-export const ALLOWLISTED_FLOW_START_ERROR_CODES = new Set([
-  "captcha_required",
-  "captcha_invalid",
-  "rate_limited",
-  "capacity_count_invalid",
-  "nonce_insert_failed",
-  "payload_build_failed",
-  "start_incomplete",
-  "start_internal_error",
-]);
-
-const PURPOSE_POLICY = {
-  browse: {
-    purpose: BROWSE_FLOW.purpose,
-    policyId: BROWSE_FLOW.policyId,
-  },
-  purchase: {
-    purpose: PURCHASE_FLOW.purpose,
-    policyId: PURCHASE_FLOW.policyId,
-  },
-};
-
-/**
- * @param {FlowPurpose} purpose
- */
-export function flowStartContext(purpose) {
-  return PURPOSE_POLICY[purpose] ?? PURPOSE_POLICY.purchase;
-}
-
-/**
- * @param {unknown} error
- * @returns {string}
- */
-export function mapThrownErrorToStartCode(error) {
-  const message = error instanceof Error ? error.message : String(error ?? "");
-  if (message.includes("Invalid pending-flow count returned by Wix Data")) {
-    return "capacity_count_invalid";
-  }
-  if (message.includes("wix-data") || message.includes("WixData")) {
-    return "nonce_insert_failed";
-  }
-  return "start_internal_error";
-}
-
-/**
- * Privacy-safe backend log payload. Never include verifier, challenge, receipt, token, or PII.
- * @param {{
- *   stage: string,
- *   code: string,
- *   purpose: FlowPurpose,
- *   policyId: string,
- *   correlationId?: string | null,
- * }} entry
- */
-export function logFlowStartFailure(entry) {
-  const payload = {
-    event: "abraxas_flow_start_failed",
-    stage: entry.stage,
-    code: entry.code,
-    purpose: entry.purpose,
-    policyId: entry.policyId,
-    correlationId: entry.correlationId ?? null,
-  };
-  console.info(JSON.stringify(payload));
-  return payload;
-}
-
-/**
- * @param {{
- *   code: string,
- *   stage: string,
- *   purpose: FlowPurpose,
- *   policyId: string,
- *   correlationId?: string | null,
- * }} params
- */
-export function buildFlowStartFailure(params) {
-  const code = ALLOWLISTED_FLOW_START_ERROR_CODES.has(params.code)
-    ? params.code
-    : "start_internal_error";
-
-  logFlowStartFailure({
-    stage: params.stage,
-    code,
-    purpose: params.purpose,
-    policyId: params.policyId,
-    correlationId: params.correlationId ?? null,
-  });
-
-  return {
-    error: code,
-    diagnostic: {
-      code,
-      stage: params.stage,
-      purpose: params.purpose,
-      policyId: params.policyId,
-      correlationId: params.correlationId ?? null,
-    },
-  };
-}
-
-/**
- * @param {{
- *   verifyUrl: string,
- *   flowId: string,
- *   verifier: string,
- *   purpose: FlowPurpose,
- *   policyId: string,
- *   correlationId?: string | null,
- * }} payload
- */
-export function buildFlowStartSuccess(payload) {
-  if (!payload.verifyUrl || !payload.flowId || !payload.verifier) {
-    return buildFlowStartFailure({
-      code: "start_incomplete",
-      stage: FLOW_START_STAGES.RESPONSE_BUILD,
+    return buildFlowStartSuccess({
+      verifyUrl: payload.verifyUrl,
+      flowId: payload.flowId,
+      verifier: payload.verifier,
       purpose: payload.purpose,
       policyId: payload.policyId,
-      correlationId: payload.correlationId ?? null,
+      correlationId: payload.flowRecord.correlationId,
+    });
+  } catch (error) {
+    return buildFlowStartFailure({
+      code: mapThrownErrorToStartCode(error),
+      stage: FLOW_START_STAGES.CAPACITY_PRECHECK,
+      purpose: context.purpose,
+      policyId: context.policyId,
+    });
+  }
+}
+
+export async function createBrowseVerificationStartService(captchaToken, deps = {}) {
+  const result = await startFlow("browse", captchaToken, deps);
+  if (isFlowStartFailure(result)) return result;
+
+  const flowId = result.flowId;
+  const policyId = result.policyId;
+  const purpose = result.purpose;
+  const verifyUrl = result.verifyUrl;
+
+  if (
+    purpose !== "browse"
+    || policyId !== BROWSE_POLICY_ID
+    || !flowId.startsWith(FLOW_ID_PREFIX_BROWSE)
+    || !verifyUrl.includes(BROWSE_POLICY_ID)
+    || !verifyUrl.includes("purpose=browse")
+    || verifyUrl.includes("good-trouble-age_21_retail-v1")
+    || verifyUrl.includes("app=good-trouble")
+    || verifyUrl.includes("age-verification-result")
+  ) {
+    return buildFlowStartFailure({
+      code: "start_internal_error",
+      stage: FLOW_START_STAGES.RESPONSE_BUILD,
+      purpose: "browse",
+      policyId: BROWSE_POLICY_ID,
+      correlationId: result.correlationId ?? null,
     });
   }
 
-  return {
-    verifyUrl: payload.verifyUrl,
-    flowId: payload.flowId,
-    verifier: payload.verifier,
-    purpose: payload.purpose,
-    policyId: payload.policyId,
-    correlationId: payload.correlationId ?? null,
+  return result;
+}
+
+export async function createPurchaseVerificationStartService(
+  captchaToken,
+  deps = {},
+  returnDestinationPath = null,
+) {
+  return startFlow("purchase", captchaToken, deps, returnDestinationPath);
+}
+
+/** @deprecated Use createPurchaseVerificationStartService */
+export async function createAbraxasVerificationStartService(captchaToken, deps = {}) {
+  return createPurchaseVerificationStartService(captchaToken, {
+    ...deps,
+    skipCaptcha: deps.skipCaptcha ?? true,
+  });
+}
+
+export async function completePurchaseVerificationService(receiptId, flowId, verifier, deps = {}) {
+  const store = await resolveStore(deps);
+  const hashFn = resolveHashFn(deps.hashFn);
+
+  const defaultValidateReceipt = async (id) => {
+    try {
+      const result = await fetchAndValidateSandboxReceipt(id);
+      return {
+        verified: result.verified,
+        transientFailure: Boolean(result.transientFailure),
+        expires_at: result.expires_at ?? null,
+      };
+    } catch {
+      return { verified: false, transientFailure: true };
+    }
   };
+
+  return completeAbraxasVerificationCore({
+    store,
+    receiptId,
+    flowId,
+    verifier,
+    hashFn,
+    validateReceipt: deps.validateReceipt ?? defaultValidateReceipt,
+  });
+}
+
+export async function completeBrowseVerificationService(browseReceipt, flowId, verifier, deps = {}) {
+  const store = await resolveStore(deps);
+  const hashFn = resolveHashFn(deps.hashFn);
+
+  const defaultValidateBrowse = async (token, record) => {
+    const result = await verifyBrowseReceiptRemotely(token, { fetchImpl: deps.fetchImpl });
+    if (result.transientFailure) {
+      return { verified: false, transientFailure: true };
+    }
+    if (!result.verified) {
+      return { verified: false, transientFailure: false };
+    }
+    if (record?.policyId && result.payload?.policy_id !== record.policyId) {
+      return { verified: false, transientFailure: false };
+    }
+    return {
+      verified: true,
+      transientFailure: false,
+      expires_at: result.payload?.expires_at ?? null,
+    };
+  };
+
+  return completeBrowseVerificationCore({
+    store,
+    browseReceipt,
+    flowId,
+    verifier,
+    hashFn,
+    validateBrowseReceipt: deps.validateBrowseReceipt ?? defaultValidateBrowse,
+  });
+}
+
+/** @deprecated Use completePurchaseVerificationService */
+export async function completeAbraxasVerificationService(receiptId, flowId, verifier, deps = {}) {
+  return completePurchaseVerificationService(receiptId, flowId, verifier, deps);
 }
 ```
 
-### backend/wixDataCount.js
-
-- **Wix destination:** Backend file
-- **Wix path/name:** `src/backend/wixDataCount.js`
+### backend/abraxasVerification.web.js
 
 ```javascript
-// FILE: examples/good-trouble-wix/backend/wixDataCount.js
-// Normalizes Wix Data count() results — some Velo runtimes return object-shaped counts.
+// FILE: examples/good-trouble-wix/backend/abraxasVerification.web.js
+// Wix Velo web methods — separate browse (L0) and purchase (L2+) lifecycles.
+
+import { Permissions, webMethod } from "wix-web-module";
+import {
+  completeBrowseVerificationService,
+  completePurchaseVerificationService,
+  createBrowseVerificationStartService,
+  createPurchaseVerificationStartService,
+} from "./abraxasVerificationService.js";
+
+export const createBrowseVerificationStart = webMethod(
+  Permissions.Anyone,
+  async () => createBrowseVerificationStartService(null, { skipCaptcha: true }),
+);
+
+// The Good Trouble pilot intentionally starts purchase verification without CAPTCHA.
+export const createPurchaseVerificationStart = webMethod(
+  Permissions.Anyone,
+  async (returnDestinationPath) =>
+    createPurchaseVerificationStartService(null, { skipCaptcha: true }, returnDestinationPath ?? null),
+);
+
+/** @deprecated Use createPurchaseVerificationStart for regulated purchase flows. */
+export const createAbraxasVerificationStart = createPurchaseVerificationStart;
+
+export const completeBrowseVerification = webMethod(
+  Permissions.Anyone,
+  async (browseReceipt, flowId, verifier) =>
+    completeBrowseVerificationService(browseReceipt, flowId, verifier),
+);
+
+export const completePurchaseVerification = webMethod(
+  Permissions.Anyone,
+  async (receiptId, flowId, verifier) =>
+    completePurchaseVerificationService(receiptId, flowId, verifier),
+);
+
+/** @deprecated Use completePurchaseVerification */
+export const completeAbraxasVerification = completePurchaseVerification;
+```
+
+### pages/AgeVerificationPopup.js
+
+```javascript
+// FILE: examples/good-trouble-wix/pages/AgeVerificationPopup.js
+// Wix Velo page code — Age Verification popup (lightbox or page).
+// Wix deployment: paste into the Age Verification popup page code panel.
+//
+// Required element IDs:
+// #yesButton
+// #noButton
+// #abraxasButton
+// #abraxasStatusText
+
+import { createBrowseVerificationStart } from "backend/abraxasVerification.web";
+
+import {
+  BROWSE_RETURN_DESTINATION_STORAGE_KEY,
+  BROWSE_VERIFIER_STORAGE_PREFIX,
+  PILOT_VERIFIED_SESSION_FLAG,
+  PURCHASE_RETURN_DESTINATION_STORAGE_KEY,
+  PURCHASE_VERIFIED_SESSION_FLAG,
+  RETURN_DESTINATION_STORAGE_KEY,
+} from "public/abraxasClientConstants";
+
+import wixLocationFrontend from "wix-location-frontend";
+import wixWindow from "wix-window";
+import wixWindowFrontend from "wix-window-frontend";
+
+import {
+  local,
+  session,
+} from "wix-storage-frontend";
+
+import {
+  clearStalePurchaseSessionArtifacts,
+  createPopupController,
+  createPopupInitializationGuard,
+} from "public/ageVerificationPopupLogic";
+
+import {
+  shouldSkipAgeGate,
+} from "public/ageGateAccessState";
+
+const popupInitGuard =
+  createPopupInitializationGuard();
 
 /**
- * @param {unknown} value
- * @returns {number | null} Safe non-negative integer count, or null when unusable.
+ * @type {ReturnType<typeof createPopupController> | null}
  */
-export function normalizeWixDataCount(value) {
-  if (typeof value === "number" && Number.isSafeInteger(value) && value >= 0) {
-    return value;
+let popupController = null;
+
+$w.onReady(() => {
+  if (wixWindow.rendering.env !== "browser") {
+    return;
   }
 
-  if (value && typeof value === "object") {
-    const candidate = value.totalCount ?? value.count ?? value.total;
-    if (typeof candidate === "number" && Number.isSafeInteger(candidate) && candidate >= 0) {
-      return candidate;
-    }
+  const immediateSkip = shouldSkipAgeGate({
+    localStorage: local,
+    sessionStorage: session,
+  });
+  if (immediateSkip.skip && wixWindow.lightbox) {
+    wixWindow.lightbox.close();
+    return;
   }
 
-  return null;
+  const initialized =
+    popupInitGuard.initializeOnce(() => {
+      popupController =
+        createPopupController({
+          async setAbraxasButtonEnabled(
+            enabled
+          ) {
+            await setButtonEnabled(
+              "#abraxasButton",
+              enabled
+            );
+          },
+
+          setAbraxasButtonLabel(label) {
+            setButtonLabel(
+              "#abraxasButton",
+              label
+            );
+          },
+
+          setStatus(message) {
+            const statusText =
+              $w("#abraxasStatusText");
+
+            if (statusText) {
+              statusText.text =
+                message;
+            }
+          },
+
+          startAbraxasVerification: () =>
+            createBrowseVerificationStart(),
+
+          clearStalePurchaseArtifacts() {
+            clearStalePurchaseSessionArtifacts((key) => {
+              session.removeItem(key);
+            });
+            try {
+              session.removeItem(PURCHASE_VERIFIED_SESSION_FLAG);
+              session.removeItem(PILOT_VERIFIED_SESSION_FLAG);
+              session.removeItem(PURCHASE_RETURN_DESTINATION_STORAGE_KEY);
+              session.removeItem(RETURN_DESTINATION_STORAGE_KEY);
+            } catch {
+              // Non-authoritative cleanup.
+            }
+          },
+
+          sessionStorageAvailable,
+
+          storeVerifier(
+            flowId,
+            verifier
+          ) {
+            session.setItem(
+              verifierStorageKey(flowId),
+              verifier
+            );
+          },
+
+          saveReturnDestination() {
+            try {
+              const currentUrl =
+                String(
+                  wixLocationFrontend.url ||
+                    ""
+                );
+
+              const path =
+                currentUrl
+                  .split("?")[0]
+                  .replace(
+                    /^https?:\/\/[^/]+/,
+                    ""
+                  ) || "/";
+
+              session.setItem(
+                BROWSE_RETURN_DESTINATION_STORAGE_KEY,
+                path
+              );
+            } catch {
+              // Saving the destination is helpful,
+              // but it is not authoritative.
+            }
+          },
+
+          navigateToVerifyUrl(url) {
+            wixLocationFrontend.to(url);
+          },
+
+          getViewMode: () =>
+            wixWindowFrontend.viewMode,
+
+          storage: local,
+
+          onTraditionalYesComplete() {
+            if (wixWindow.lightbox) {
+              wixWindow.lightbox.close();
+            }
+          },
+        });
+
+      void popupController.onReady(() => {
+        const skip = shouldSkipAgeGate({
+          localStorage: local,
+          sessionStorage: session,
+        });
+        if (skip.skip && wixWindow.lightbox) {
+          wixWindow.lightbox.close();
+          return true;
+        }
+        return false;
+      });
+
+      wireButtons();
+    });
+
+  if (!initialized.ok) {
+    return;
+  }
+});
+
+async function setButtonEnabled(
+  selector,
+  enabled
+) {
+  const element =
+    $w(selector);
+
+  if (!element) {
+    return;
+  }
+
+  if (enabled) {
+    await element.enable();
+  } else {
+    await element.disable();
+  }
+}
+
+function setButtonLabel(
+  selector,
+  label
+) {
+  const element =
+    $w(selector);
+
+  if (!element) {
+    return;
+  }
+
+  element.label =
+    label;
+}
+
+function wireButtons() {
+  $w("#yesButton").onClick(() => {
+    void popupController?.onTraditionalYesClick();
+  });
+
+  $w("#abraxasButton").onClick(() => {
+    void popupController?.onAbraxasClick();
+  });
+
+  // #noButton intentionally keeps its
+  // Wix-configured default behavior.
+}
+
+function sessionStorageAvailable() {
+  try {
+    const probe =
+      "__abraxas_gt_probe__";
+
+    session.setItem(
+      probe,
+      "1"
+    );
+
+    session.removeItem(
+      probe
+    );
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function verifierStorageKey(flowId) {
+  return `${BROWSE_VERIFIER_STORAGE_PREFIX}${flowId}`;
 }
 ```
 
-### Purchase verification start — operator diagnostics
+### pages/BrowseVerificationResult.js
 
-When the Purchase Verification Entry page shows **“Verification could not be started. Please try again.”**, the backend web method failed before redirect. The unpublished `/age-verification-result` callback **does not** block start — it only affects return completion.
+```javascript
+// FILE: examples/good-trouble-wix/pages/BrowseVerificationResult.js
+// Wix Velo page code — /browse-verification-result (L0 browse callback).
 
-**Preview / Editor:** status text appends an allowlisted diagnostic suffix, e.g. `rate_limited @capacity_precheck ref=<correlationId>`.
+import { completeBrowseVerification } from "backend/abraxasVerification.web";
 
-**Production:** users see only the generic message; backend logs emit structured JSON:
+import {
+  BROWSE_ACCESS_STORAGE_KEY,
+  BROWSE_RETURN_DESTINATION_STORAGE_KEY,
+  BROWSE_VERIFIER_STORAGE_PREFIX,
+  GTB_PARAM,
+} from "public/abraxasClientConstants";
 
-```json
-{"event":"abraxas_flow_start_failed","stage":"capacity_precheck","code":"rate_limited","purpose":"purchase","policyId":"good-trouble-retail-v1","correlationId":"..."}
+import {
+  persistBrowseVerifiedState,
+} from "public/ageGateAccessState";
+
+import wixLocation from "wix-location";
+import { local, session } from "wix-storage-frontend";
+
+const ALLOWED_CALLBACK_PARAMS = new Set([
+  "browse_receipt",
+  "partner_id",
+  "policy_id",
+  "purpose",
+  GTB_PARAM,
+]);
+
+const GENERIC_FAILURE =
+  "Browsing access could not be confirmed. Please try again.";
+
+const RESTART_MESSAGE =
+  "This verification was opened in a different browser or tab. Please start again from the age gate.";
+
+const SUCCESS_MESSAGE =
+  "Browsing access confirmed. Returning you to Good Trouble…";
+
+let completionStarted = false;
+
+$w.onReady(() => {
+  void handleCallback();
+});
+
+function setStatus(message) {
+  const statusText = $w("#abraxasStatusText");
+  if (statusText) statusText.text = message;
+}
+
+function sessionStorageAvailable() {
+  try {
+    const probe = "__abraxas_gt_browse_probe__";
+    session.setItem(probe, "1");
+    session.removeItem(probe);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function verifierStorageKey(flowId) {
+  return `${BROWSE_VERIFIER_STORAGE_PREFIX}${flowId}`;
+}
+
+function parseAllowlistedCallbackParams() {
+  const query = wixLocation.query;
+  const parsed = {};
+  for (const key of Object.keys(query)) {
+    if (ALLOWED_CALLBACK_PARAMS.has(key)) parsed[key] = query[key];
+  }
+  return parsed;
+}
+
+function clearVerifier(flowId) {
+  try {
+    session.removeItem(verifierStorageKey(flowId));
+  } catch {
+    // non-authoritative cleanup
+  }
+}
+
+/** L0 browse UI flag — may dismiss age popup; never checkout authority. */
+function setBrowseAccessState(expiresAtIso) {
+  const verifiedAt = Date.now();
+  try {
+    session.setItem(BROWSE_ACCESS_STORAGE_KEY, String(verifiedAt));
+  } catch {
+    // Fail closed for navigation only; user can retry.
+  }
+
+  const expiresAt = expiresAtIso ? Date.parse(expiresAtIso) : NaN;
+  if (Number.isFinite(expiresAt) && expiresAt > verifiedAt) {
+    try {
+      persistBrowseVerifiedState(local, { expiresAt, verifiedAt });
+    } catch {
+      // Session flag remains; local persistence is best-effort.
+    }
+  }
+}
+
+function restoreReturnDestination() {
+  try {
+    const destination = session.getItem(BROWSE_RETURN_DESTINATION_STORAGE_KEY);
+    session.removeItem(BROWSE_RETURN_DESTINATION_STORAGE_KEY);
+    if (destination && typeof destination === "string" && destination.startsWith("/") && !destination.startsWith("//")) {
+      setTimeout(() => { wixLocation.to(destination); }, 1200);
+      return;
+    }
+    setTimeout(() => { wixLocation.to("/"); }, 1200);
+  } catch {
+    // Keep success message visible.
+  }
+}
+
+async function handleCallback() {
+  if (completionStarted) return;
+  completionStarted = true;
+  setStatus("Confirming browsing access…");
+
+  if (!sessionStorageAvailable()) {
+    setStatus("Verification is unavailable in this browser. Please restart from the age gate.");
+    return;
+  }
+
+  const params = parseAllowlistedCallbackParams();
+  const flowId = typeof params[GTB_PARAM] === "string" ? params[GTB_PARAM].trim() : "";
+  const browseReceipt = typeof params.browse_receipt === "string" ? params.browse_receipt.trim() : "";
+
+  if (!flowId || !browseReceipt) {
+    setStatus(GENERIC_FAILURE);
+    return;
+  }
+
+  const verifier = session.getItem(verifierStorageKey(flowId));
+  if (!verifier) {
+    setStatus(RESTART_MESSAGE);
+    return;
+  }
+
+  try {
+    const result = await completeBrowseVerification(browseReceipt, flowId, verifier);
+
+    if (result?.verified === true && result?.purpose === "browse") {
+      clearVerifier(flowId);
+      setBrowseAccessState(result.expires_at);
+      setStatus(SUCCESS_MESSAGE);
+      restoreReturnDestination();
+      return;
+    }
+
+    if (result?.code === "receipt_fetch_transient_failure" && result?.retryable === true) {
+      setStatus("Still confirming browsing access. Please wait a moment…");
+      completionStarted = false;
+      setTimeout(() => { void handleCallback(); }, 2000);
+      return;
+    }
+
+    clearVerifier(flowId);
+    setStatus(GENERIC_FAILURE);
+  } catch {
+    clearVerifier(flowId);
+    setStatus(GENERIC_FAILURE);
+  }
+}
 ```
 
-| Diagnostic code | Stage | Likely cause | Operator action |
-|-----------------|-------|--------------|-----------------|
-| `rate_limited` | `capacity_precheck` or `capacity_finalize` | ≥100 unexpired `pending` rows in `AbraxasVerificationNonces` | Run scheduled `purgeStale()`; clear stale test rows |
-| `capacity_count_invalid` | `capacity_precheck` | Wix Data `count()` returned non-integer (fixed in `wixDataCount.js`) | Deploy updated `wixNonceStore.js` + `wixDataCount.js` |
-| `nonce_insert_failed` | `nonce_insert` | CMS field type mismatch (`purpose`, `policyId` must be **Text**) | Fix collection schema; redeploy backend |
-| `start_incomplete` | frontend | Web method returned without `verifyUrl` / `flowId` / `verifier` | Redeploy `abraxasVerification.web.js` + service |
-| `start_exception` | frontend | Uncaught web-method error (missing export, import failure) | Ensure `createPurchaseVerificationStart` is deployed with **Anyone** permission |
+### pages/AgeVerificationResult.js
 
-Successful start always returns `verifyUrl`, `flowId` beginning `gtf_`, and `verifier` (verifier never logged).
+```javascript
+// FILE: examples/good-trouble-wix/pages/AgeVerificationResult.js
+// Wix Velo page code — /age-verification-result callback page.
+//
+// Required element ID:
+// #abraxasStatusText
+//
+// Optional element ID:
+// #restartAbraxasButton
 
----
+import { completePurchaseVerification } from "backend/abraxasVerification.web";
+
+import {
+  GTV_PARAM,
+  PURCHASE_RETURN_DESTINATION_STORAGE_KEY,
+  PURCHASE_VERIFIED_SESSION_FLAG,
+  PURCHASE_VERIFIER_STORAGE_PREFIX,
+} from "public/abraxasClientConstants";
+
+import {
+  CHECKING_VERIFICATION_MESSAGE,
+  parseAllowlistedCallbackParams,
+  POST_VERIFICATION_REDIRECT_DELAY_MS,
+  resolvePostVerificationRedirectDestination,
+  shouldContinueAfterPurchaseVerification,
+  SUCCESS_CONTINUATION_MESSAGE,
+} from "public/purchaseCallbackLogic";
+
+import { hasUntrustedRedirectQueryParams } from "public/purchaseReturnDestination";
+
+import { persistPurchaseVerifiedState } from "public/ageGateAccessState";
+
+import wixLocation from "wix-location";
+
+import {
+  local,
+  session,
+} from "wix-storage-frontend";
+
+/**
+ * Abraxas callback parameters.
+ * Never treat status=approved by itself as verification.
+ */
+const ALLOWED_CALLBACK_PARAMS =
+  new Set([
+    "status",
+    "decision_id",
+    "receipt_id",
+    "receipt_expires_at",
+    "credential_id",
+    "policy_id",
+    "partner_id",
+    GTV_PARAM,
+  ]);
+
+const GENERIC_FAILURE =
+  "Verification could not be completed. Please try again or use the traditional age option.";
+
+const RESTART_MESSAGE =
+  "This verification was opened in a different browser or tab. Please start again from the age gate.";
+
+let completionStarted = false;
+
+$w.onReady(() => {
+  configureRestartButton();
+  void handleCallback();
+});
+
+function configureRestartButton() {
+  const restartButton =
+    $w("#restartAbraxasButton");
+
+  if (!restartButton) {
+    return;
+  }
+
+  restartButton.hide();
+
+  restartButton.onClick(() => {
+    wixLocation.to("/");
+  });
+}
+
+function setStatus(message) {
+  const statusText =
+    $w("#abraxasStatusText");
+
+  if (statusText) {
+    statusText.text =
+      message;
+  }
+}
+
+function showRestart() {
+  const restartButton =
+    $w("#restartAbraxasButton");
+
+  if (restartButton) {
+    restartButton.show();
+  }
+}
+
+function sessionStorageAvailable() {
+  try {
+    const probe =
+      "__abraxas_gt_probe__";
+
+    session.setItem(
+      probe,
+      "1"
+    );
+
+    session.removeItem(
+      probe
+    );
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function verifierStorageKey(flowId) {
+  return `${PURCHASE_VERIFIER_STORAGE_PREFIX}${flowId}`;
+}
+
+function clearVerifier(flowId) {
+  try {
+    session.removeItem(
+      verifierStorageKey(flowId)
+    );
+  } catch {
+    // The verifier will expire with the session.
+  }
+}
+
+/**
+ * Pilot UI convenience only.
+ *
+ * This session flag is not accepted by Abraxas or the Wix backend
+ * as authoritative proof and does not independently authorize
+ * regulated purchases or other restricted activity.
+ */
+function setPurchaseVerifiedState(expiresAtIso) {
+  const verifiedAt = Date.now();
+  try {
+    session.setItem(
+      PURCHASE_VERIFIED_SESSION_FLAG,
+      String(verifiedAt),
+    );
+  } catch {
+    // Fail closed. The user can restart the flow.
+  }
+
+  const expiresAt = expiresAtIso ? Date.parse(expiresAtIso) : NaN;
+  if (Number.isFinite(expiresAt) && expiresAt > verifiedAt) {
+    try {
+      persistPurchaseVerifiedState(local, { expiresAt, verifiedAt });
+    } catch {
+      // Session flag remains; local persistence is best-effort for age-gate UI only.
+    }
+  }
+}
+
+function readSessionReturnDestination() {
+  try {
+    return session.getItem(PURCHASE_RETURN_DESTINATION_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function clearSessionReturnDestination() {
+  try {
+    session.removeItem(PURCHASE_RETURN_DESTINATION_STORAGE_KEY);
+  } catch {
+    // Non-authoritative cleanup.
+  }
+}
+
+function continueToShoppingDestination(serverDestination) {
+  const destination = resolvePostVerificationRedirectDestination({
+    serverDestination,
+    sessionDestination: readSessionReturnDestination(),
+  });
+
+  clearSessionReturnDestination();
+
+  setTimeout(() => {
+    wixLocation.to(destination);
+  }, POST_VERIFICATION_REDIRECT_DELAY_MS);
+}
+
+async function handleCallback() {
+  if (completionStarted) {
+    return;
+  }
+
+  completionStarted = true;
+
+  setStatus(
+    CHECKING_VERIFICATION_MESSAGE
+  );
+
+  if (!sessionStorageAvailable()) {
+    setStatus(
+      "Verification is unavailable in this browser. Please restart from the age gate."
+    );
+
+    showRestart();
+    return;
+  }
+
+  const query = wixLocation.query ?? {};
+
+  if (hasUntrustedRedirectQueryParams(query)) {
+    setStatus(GENERIC_FAILURE);
+    showRestart();
+    return;
+  }
+
+  const params =
+    parseAllowlistedCallbackParams(query, ALLOWED_CALLBACK_PARAMS);
+
+  const rawFlowId =
+    params[GTV_PARAM];
+
+  const rawReceiptId =
+    params.receipt_id;
+
+  const flowId =
+    typeof rawFlowId === "string"
+      ? rawFlowId.trim()
+      : "";
+
+  const receiptId =
+    typeof rawReceiptId === "string"
+      ? rawReceiptId.trim()
+      : "";
+
+  if (!flowId || !receiptId) {
+    setStatus(
+      GENERIC_FAILURE
+    );
+
+    showRestart();
+    return;
+  }
+
+  const verifier =
+    session.getItem(
+      verifierStorageKey(flowId)
+    );
+
+  if (!verifier) {
+    setStatus(
+      RESTART_MESSAGE
+    );
+
+    showRestart();
+    return;
+  }
+
+  try {
+    const result =
+      await completePurchaseVerification(
+        receiptId,
+        flowId,
+        verifier
+      );
+
+    if (shouldContinueAfterPurchaseVerification(result)) {
+      clearVerifier(flowId);
+      setPurchaseVerifiedState(result.expires_at);
+
+      setStatus(
+        SUCCESS_CONTINUATION_MESSAGE
+      );
+
+      continueToShoppingDestination(result.returnDestination);
+      return;
+    }
+
+    if (
+      result?.code ===
+        "receipt_fetch_transient_failure" &&
+      result?.retryable === true
+    ) {
+      setStatus(
+        CHECKING_VERIFICATION_MESSAGE
+      );
+
+      completionStarted = false;
+
+      setTimeout(() => {
+        void handleCallback();
+      }, 2000);
+
+      return;
+    }
+
+    clearVerifier(flowId);
+
+    if (
+      result?.code ===
+        "verifier_mismatch" ||
+      result?.code ===
+        "missing_verifier"
+    ) {
+      setStatus(
+        RESTART_MESSAGE
+      );
+    } else if (result?.code === "flow_already_consumed") {
+      setStatus(
+        "This verification was already used. Please start again from ORDER NOW."
+      );
+    } else {
+      setStatus(
+        GENERIC_FAILURE
+      );
+    }
+
+    showRestart();
+  } catch {
+    clearVerifier(flowId);
+
+    setStatus(
+      GENERIC_FAILURE
+    );
+
+    showRestart();
+  }
+}
+```
+
+### pages/PurchaseVerificationEntry.js
+
+```javascript
+// FILE: examples/good-trouble-wix/pages/PurchaseVerificationEntry.js
+// Wix Velo page code — regulated purchase eligibility (L0+) entry point.
+
+import { createPurchaseVerificationStart } from "backend/abraxasVerification.web";
+
+import {
+  PURCHASE_RETURN_DESTINATION_STORAGE_KEY,
+  PURCHASE_VERIFIER_STORAGE_PREFIX,
+} from "public/abraxasClientConstants";
+
+import { createPurchaseVerificationController } from "public/purchaseVerificationLogic";
+
+import {
+  parsePurchaseEntryFromQuery,
+  resolvePurchaseReturnDestinationForStart,
+} from "public/purchaseReturnDestination";
+
+import { shouldSkipAgeGate } from "public/ageGateAccessState";
+
+import {
+  GOOD_TROUBLE_THE_GOODS_SHOP_PATH,
+} from "public/abraxasClientConstants";
+
+import wixLocationFrontend from "wix-location-frontend";
+import wixWindow from "wix-window";
+import wixWindowFrontend from "wix-window-frontend";
+import { local, session } from "wix-storage-frontend";
+
+/** @type {ReturnType<typeof createPurchaseVerificationController> | null} */
+let purchaseController = null;
+
+$w.onReady(() => {
+  if (wixWindow.rendering.env !== "browser") return;
+
+  const skip = shouldSkipAgeGate({
+    localStorage: local,
+    sessionStorage: session,
+  });
+  if (skip.skip) {
+    wixLocationFrontend.to(GOOD_TROUBLE_THE_GOODS_SHOP_PATH);
+    return;
+  }
+
+  captureOrderNowOriginFromQuery();
+  wirePurchaseButton();
+});
+
+function captureOrderNowOriginFromQuery() {
+  try {
+    const fromQuery = parsePurchaseEntryFromQuery(wixLocationFrontend.query ?? {});
+    if (!fromQuery) return;
+    session.setItem(PURCHASE_RETURN_DESTINATION_STORAGE_KEY, fromQuery);
+  } catch {
+    // Non-authoritative capture; backend stores destination at start.
+  }
+}
+
+function readStoredReturnDestination() {
+  try {
+    return session.getItem(PURCHASE_RETURN_DESTINATION_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function wirePurchaseButton() {
+  const button = $w("#purchaseAbraxasButton");
+  if (!button) return;
+
+  purchaseController = createPurchaseVerificationController({
+    setStatus(message) {
+      const status = $w("#purchaseStatusText");
+      if (status) status.text = message;
+    },
+
+    startPurchaseVerification: (returnDestinationPath) =>
+      createPurchaseVerificationStart(returnDestinationPath),
+
+    getViewMode: () => wixWindowFrontend.viewMode,
+
+    getReturnDestination() {
+      return resolvePurchaseReturnDestinationForStart({
+        sessionDestination: readStoredReturnDestination(),
+        queryFrom: parsePurchaseEntryFromQuery(wixLocationFrontend.query ?? {}),
+        currentUrl: String(wixLocationFrontend.url || ""),
+      });
+    },
+
+    storeVerifier(flowId, verifier) {
+      session.setItem(`${PURCHASE_VERIFIER_STORAGE_PREFIX}${flowId}`, verifier);
+    },
+
+    saveReturnDestination(destinationPath) {
+      try {
+        if (destinationPath) {
+          session.setItem(PURCHASE_RETURN_DESTINATION_STORAGE_KEY, destinationPath);
+        }
+      } catch {
+        // non-authoritative
+      }
+    },
+
+    navigateToVerifyUrl(url) {
+      wixLocationFrontend.to(url);
+    },
+  });
+
+  button.onClick(() => {
+    void purchaseController?.start();
+  });
+}
+```
+
+### pages/GoodTroubleMasterPage.js
+
+```javascript
+// FILE: examples/good-trouble-wix/pages/GoodTroubleMasterPage.js
+// Wix Velo Master Page / site-wide code — paste into Site → Custom Code → Master Page (or equivalent).
+//
+// Closes Wix Studio automatic age lightboxes when Abraxas purchase/browse verification
+// already completed. Does NOT authorize checkout — server web methods remain authoritative.
+
+import { shouldSuppressAutomaticAgeLightbox } from "public/siteAgeGatePolicy";
+
+import wixLocationFrontend from "wix-location-frontend";
+import wixWindow from "wix-window";
+import { local, session } from "wix-storage-frontend";
+
+$w.onReady(() => {
+  if (wixWindow.rendering.env !== "browser") {
+    return;
+  }
+
+  try {
+    const path = String(wixLocationFrontend.url || "/");
+    const decision = shouldSuppressAutomaticAgeLightbox({
+      localStorage: local,
+      sessionStorage: session,
+      pagePath: path,
+    });
+
+    if (decision.suppress && wixWindow.lightbox) {
+      wixWindow.lightbox.close();
+    }
+  } catch {
+    // Non-authoritative UI coordination only.
+  }
+});
+```
 
 ## D. Secrets and configuration
 

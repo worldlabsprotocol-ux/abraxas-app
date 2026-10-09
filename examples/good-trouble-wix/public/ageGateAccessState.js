@@ -5,6 +5,7 @@
 import {
   BROWSE_ACCESS_STORAGE_KEY,
   PURCHASE_VERIFIED_LOCAL_STORAGE_KEY,
+  PURCHASE_VERIFIED_SESSION_FLAG,
 } from "./abraxasClientConstants.js";
 import {
   TRADITIONAL_AGE_GATE_STORAGE_KEY,
@@ -118,6 +119,27 @@ export function hasActiveBrowseSessionFlag(storage, now = Date.now()) {
 }
 
 /**
+ * Purchase pilot session mirror — UI only; must match authoritative localStorage when possible.
+ * @param {Storage} storage
+ * @param {Storage} localStorage
+ * @param {number} [now]
+ */
+export function hasActivePurchaseSessionFlag(storage, localStorage, now = Date.now()) {
+  if (readPurchaseVerifiedState(localStorage, now).valid) {
+    return true;
+  }
+  try {
+    const raw = storage.getItem(PURCHASE_VERIFIED_SESSION_FLAG);
+    if (!raw) return false;
+    const verifiedAt = Number(raw);
+    if (!Number.isFinite(verifiedAt)) return true;
+    return now - verifiedAt < 24 * 60 * 60 * 1000;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * @param {Storage} storage
  * @param {number} [now]
  */
@@ -149,6 +171,9 @@ export function shouldSkipAgeGate(input) {
   const now = input.now ?? Date.now();
   if (readPurchaseVerifiedState(input.localStorage, now).valid) {
     return { skip: true, reason: "abraxas_purchase_verified" };
+  }
+  if (hasActivePurchaseSessionFlag(input.sessionStorage, input.localStorage, now)) {
+    return { skip: true, reason: "abraxas_purchase_session" };
   }
   if (readBrowseVerifiedState(input.localStorage, now).valid) {
     return { skip: true, reason: "abraxas_browse_verified" };

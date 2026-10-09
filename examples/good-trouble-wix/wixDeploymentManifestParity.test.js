@@ -20,7 +20,7 @@ const AUTHORITATIVE_BROWSE_VALIDATORS = [
 
 function parseSectionAInventoryPaths(manifest) {
   const sectionA = manifest.split("## B.")[0];
-  const matches = [...sectionA.matchAll(/`(examples\/good-trouble-wix\/[^`]+)`/g)];
+  const matches = [...sectionA.matchAll(/`(examples\/good-trouble-wix\/[^`]+\.js)`/g)];
   return matches.map((match) => match[1]);
 }
 

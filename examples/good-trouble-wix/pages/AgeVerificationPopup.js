@@ -51,6 +51,15 @@ $w.onReady(() => {
     return;
   }
 
+  const immediateSkip = shouldSkipAgeGate({
+    localStorage: local,
+    sessionStorage: session,
+  });
+  if (immediateSkip.skip && wixWindow.lightbox) {
+    wixWindow.lightbox.close();
+    return;
+  }
+
   const initialized =
     popupInitGuard.initializeOnce(() => {
       popupController =
