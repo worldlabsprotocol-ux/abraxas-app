@@ -19,6 +19,10 @@ import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
 import { CANONICAL_SANDBOX_ONLY_INVALIDATION_REASON } from "@/lib/partner/sandboxReceiptTrustContract";
 import { evaluateWalletControlClaimLiveEligibilityById } from "@/lib/walletControl/claimBindingLineage";
 import { WALLET_CONTROL_CLAIM_TYPE } from "@/lib/walletControl/contract";
+import {
+  parseSelfAttestationSyntheticClaimId,
+  validateSelfAttestationReceiptDependency,
+} from "@/lib/assurance/selfAttestation/receiptDependency";
 
 export type ReceiptValidityState =
   | "active"
@@ -127,6 +131,25 @@ export async function resolveReceiptValidity(
     const claimType = dep.claim_type as string;
     const issuerId = dep.issuer_id as string;
     const signingKeyId = "signing_key_id" in dep ? (dep.signing_key_id as string | null) : null;
+
+    if (parseSelfAttestationSyntheticClaimId(claimId)) {
+      const selfAttest = await validateSelfAttestationReceiptDependency({
+        claimId,
+        claimType,
+        issuerId,
+      });
+      if (!selfAttest.ok) {
+        if (selfAttest.reason.startsWith("claim_revoked:")) {
+          return buildInvalidResult(record, storedStatus, "revoked_dependency", [selfAttest.reason], claimIds);
+        }
+        if (selfAttest.reason.startsWith("claim_expired:")) {
+          return buildInvalidResult(record, storedStatus, "expired", [selfAttest.reason], claimIds);
+        }
+        invalidationReasons.push(selfAttest.reason);
+        continue;
+      }
+      continue;
+    }
 
     const claimRow = await getClaimById(claimId);
     if (!claimRow) {

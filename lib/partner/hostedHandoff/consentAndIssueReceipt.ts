@@ -25,7 +25,8 @@ import {
   claimTypesFromEvaluation,
 } from "@/lib/decisionReceipts/claimRefs";
 import { getReceiptByDecisionId, issueReceiptForDecision } from "@/lib/decisionReceipts/service";
-import { resolveReceiptDecisionContext } from "@/lib/partner/launchpad/productionActivation";
+import { resolveHostedHandoffReceiptDecisionContext } from "@/lib/partner/launchpad/productionActivation";
+import { SELF_ATTESTATION_CLAIM_TYPE } from "@/lib/assurance/selfAttestation/constants";
 import {
   findDecisionByIdempotencyKey,
 } from "@/lib/partner/sessionDecision";
@@ -209,7 +210,7 @@ export async function consentOpaqueHostedHandoff(input: {
       partnerId: handoff.partner_id,
       policyId: handoff.policy_id,
       policyVersion: handoff.policy_version,
-      environment: isSandboxPolicyId(handoff.policy_id) ? "sandbox" : "production",
+      environment: handoff.environment,
       verifyRequestId: verifyRequest,
       fact: resolved.ok ? resolved.fact : null,
       decision: resolved.decision ?? {
@@ -332,16 +333,22 @@ export async function consentOpaqueHostedHandoff(input: {
       expires_at: evaluation.valid_until,
     }).select("id").single();
 
-    const claimTypes = claimTypesFromEvaluation(evaluation.claims);
+    const matchedClaimTypes = evaluation.matched_claim_ids
+      ? Object.keys(evaluation.matched_claim_ids)
+      : claimTypesFromEvaluation(evaluation.claims);
+    const claimTypesForRefs = matchedClaimTypes.length
+      ? matchedClaimTypes
+      : (isAgeEligibilityOnlyPolicy(policy.rules_json) ? [SELF_ATTESTATION_CLAIM_TYPE] : []);
     const evaluatedClaimRefs = reuseFact
       ? derivedClaimRefs(reuseFact, policy.id)
       : buildEvaluatedClaimRefs(
         claims,
-        claimTypes.length ? claimTypes : Object.keys(evaluation.claims),
+        claimTypesForRefs,
         evaluation.matched_claim_ids,
       );
 
-    const decisionContext = await resolveReceiptDecisionContext({
+    const decisionContext = await resolveHostedHandoffReceiptDecisionContext({
+      handoffEnvironment: handoff.environment,
       policySandboxOnly: Boolean(policy.rules_json.sandbox_only),
       launchpadApplicationId: handoff.application_id,
     });
@@ -359,9 +366,7 @@ export async function consentOpaqueHostedHandoff(input: {
       claimsJson: evaluation.claims,
       evaluatedClaimRefs,
       expiresAt: evaluation.valid_until ?? new Date(Date.now() + 30 * 60_000).toISOString(),
-      decisionContext: isSandboxPolicyId(policy.id) || evaluation.decision_context === "sandbox_only"
-        ? "sandbox_only"
-        : "production",
+      decisionContext,
     });
     if (!receipt) {
       throw new HostedHandoffConsentError("store_unavailable", "Failed to issue decision receipt");

@@ -94,6 +94,16 @@ export async function getActiveSelfAttestations(input: {
   return (data as SelfAttestationLedgerRow[] | null) ?? [];
 }
 
+export async function getSelfAttestationById(
+  id: string,
+  sb?: SupabaseClient,
+): Promise<SelfAttestationLedgerRow | null> {
+  const client = sb ?? getSupabase();
+  if (!client) return null;
+  const { data } = await client.from(TABLE).select("*").eq("id", id).maybeSingle();
+  return (data as SelfAttestationLedgerRow | null) ?? null;
+}
+
 export async function getSelfAttestationByReceiptId(
   receiptId: string,
   sb?: SupabaseClient,

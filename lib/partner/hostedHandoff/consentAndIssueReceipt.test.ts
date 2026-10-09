@@ -66,7 +66,7 @@ vi.mock("@/lib/verification/requestsService", () => ({
 }));
 
 vi.mock("@/lib/partner/launchpad/productionActivation", () => ({
-  resolveReceiptDecisionContext: vi.fn(async () => "sandbox_only"),
+  resolveHostedHandoffReceiptDecisionContext: vi.fn(async () => "sandbox_only"),
 }));
 
 vi.mock("@/lib/partner/verificationDecisionsSchema", () => ({
@@ -175,15 +175,23 @@ describe("consentOpaqueHostedHandoff", () => {
         id: GOOD_TROUBLE_POLICY,
         partner_id: GOOD_TROUBLE_PARTNER,
         version: 2,
-        rules_json: { age_eligibility_only: true },
+        rules_json: { age_eligibility_only: true, minimum_assurance_cap: "L0" },
       },
       evaluation: {
         decision: "approved",
-        claims: { over_21: true },
+        claims: { self_attested_age_band: { outcome: "over_21" } },
         reason_codes: [],
         valid_until: new Date(Date.now() + 86_400_000).toISOString(),
+        matched_claim_ids: { self_attested_age_band: "self-attest:ledger-row-1" },
       },
-      claims: [],
+      claims: [{
+        id: "self-attest:ledger-row-1",
+        claim_type: "self_attested_age_band",
+        issuer_id: "issuer:abraxas-self-attest",
+        status: "active",
+        issued_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 86_400_000).toISOString(),
+      }],
     });
     insertDecisionMock.mockResolvedValue({ data: { id: "dec-1" }, error: null });
     insertConsentMock.mockResolvedValue({ data: { id: "consent-1" }, error: null });
@@ -200,6 +208,11 @@ describe("consentOpaqueHostedHandoff", () => {
     });
     expect(result.receipt_id).toBe("dr_gt_1");
     expect(result.decision).toBe("approved");
+    expect(issueReceiptMock).toHaveBeenCalledWith(expect.objectContaining({
+      decisionContext: "sandbox_only",
+      partnerId: GOOD_TROUBLE_PARTNER,
+      policyVersion: 2,
+    }));
     expect(bindReceiptMock).toHaveBeenCalledWith(expect.objectContaining({
       verifyRequest: OPAQUE,
       publicReceiptId: "dr_gt_1",

@@ -100,7 +100,7 @@ export async function evaluateReceiptCurrentValidity(
   const trust = await evaluateDecisionReceiptTrust(record, {
     partnerId: input.expectedPartnerId ?? record.partner_id,
     policyId: input.expectedPolicyId ?? record.policy_id,
-    allowSandbox: input.expectedEnvironment === "sandbox",
+    allowSandbox: input.expectedEnvironment === "sandbox" || record.decision_context === "sandbox_only",
   });
   invalidationReasons.push(...trust.invalidation_reasons);
 
