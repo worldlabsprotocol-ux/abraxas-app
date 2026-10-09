@@ -67,6 +67,25 @@ export type HostedHandoffConsentResult = {
   idempotent_replay: boolean;
 };
 
+/** Close hosted handoff lifecycle when consent already issued a receipt (idempotent replays). */
+async function ensureOpaqueHandoffReceiptBound(input: {
+  verifyRequest: string;
+  handoff: HostedHandoffRecord;
+  receiptId: string | null;
+}): Promise<void> {
+  const receiptId = input.receiptId?.trim();
+  if (!receiptId) return;
+  if (input.handoff.status === "completed" || input.handoff.status === "consumed") return;
+  if (input.handoff.status !== "created") return;
+  await bindHandoffToIssuedReceipt({
+    verifyRequest: input.verifyRequest,
+    partnerId: input.handoff.partner_id,
+    policyId: input.handoff.policy_id,
+    publicReceiptId: receiptId,
+    bindingId: input.handoff.binding_id,
+  });
+}
+
 function assertHandoffShareable(handoff: HostedHandoffRecord): void {
   if (handoff.status === "expired") {
     throw new HostedHandoffConsentError("stale", "Hosted handoff expired");
@@ -145,6 +164,11 @@ export async function consentOpaqueHostedHandoff(input: {
     policyId: handoff.policy_id,
   });
   if (existing) {
+    await ensureOpaqueHandoffReceiptBound({
+      verifyRequest,
+      handoff,
+      receiptId: existing.receipt_id,
+    });
     return existing;
   }
 
@@ -395,6 +419,11 @@ export async function consentOpaqueHostedHandoff(input: {
   } else {
     const receipt = await getReceiptByDecisionId(decisionId);
     receiptId = receipt?.id ?? handoff.public_receipt_id;
+    await ensureOpaqueHandoffReceiptBound({
+      verifyRequest,
+      handoff,
+      receiptId,
+    });
   }
 
   await appendAuditEvent({

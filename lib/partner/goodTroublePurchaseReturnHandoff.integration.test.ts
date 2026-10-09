@@ -25,10 +25,12 @@ const mockGetReceiptById = vi.fn();
 const mockIsReturnUrlAllowed = vi.fn();
 const mockLoadVr = vi.fn();
 const mockLoadHandoff = vi.fn();
+const mockBindHandoff = vi.fn();
 const mockFindOpaqueReceipt = vi.fn();
 
 vi.mock("@/lib/partner/hostedHandoff/store", () => ({
   loadHandoffByVerifyRequest: (...args: unknown[]) => mockLoadHandoff(...args),
+  bindHandoffToIssuedReceipt: (...args: unknown[]) => mockBindHandoff(...args),
 }));
 
 vi.mock("@/lib/partner/partnerFlowContinuationStore", () => ({
@@ -135,6 +137,7 @@ function stubHappyPath() {
 describe("Good Trouble purchase return handoff integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockBindHandoff.mockResolvedValue(undefined);
   });
 
   it("1. successful return builds redirect with gtv and receipt_id", async () => {
@@ -204,8 +207,9 @@ describe("Good Trouble purchase return handoff integration", () => {
     expect(result.code).toBe("open_redirect");
   });
 
-  it("5. replayed completion fails safely", async () => {
+  it("5. idempotent return after continuation consumed replays redirect safely", async () => {
     stubHappyPath();
+    mockPeekByVerifyRequestId.mockResolvedValue(stubContinuation({ consumedAt: new Date().toISOString() }));
     mockConsume.mockResolvedValue(null);
     const { completeAgeEligibilityPurchaseReturn } = await import("./completeAgeEligibilityPurchaseReturn");
     const result = await completeAgeEligibilityPurchaseReturn({
@@ -213,9 +217,11 @@ describe("Good Trouble purchase return handoff integration", () => {
       verificationRequestId: VERIFY_REQUEST_ID,
       receiptId: RECEIPT_ID,
     });
-    expect(result.ok).toBe(false);
-    if (result.ok) return;
-    expect(result.code).toBe("replay");
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.replay).toBe(true);
+    expect(new URL(result.redirect_url).searchParams.get("receipt_id")).toBe(RECEIPT_ID);
+    expect(mockConsume).not.toHaveBeenCalled();
   });
 
   it("6. rejects receipt_id mismatch", async () => {
@@ -245,6 +251,51 @@ describe("Good Trouble purchase return handoff integration", () => {
     const params = Object.fromEntries(url.searchParams.entries());
     expect(scanValueForAgePrivacyViolations(params).ok).toBe(true);
     expect(extractGoodTroubleFlowToken(result.redirect_url)).toBe(FLOW_TOKEN);
+  });
+
+  it("9b. opaque vr_* return succeeds when handoff still created but receipt issued", async () => {
+    const opaque = "vr_gt_return_created1";
+    mockLoadHandoff.mockResolvedValue({
+      partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+      policy_id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
+      purpose: "purchase",
+      status: "created",
+      binding_id: "primary:690d0c89-7b98-4946-8ad2-7469f5ca89d9",
+    });
+    mockGetPolicy.mockResolvedValue({
+      id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
+      partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+      version: 2,
+      rules_json: { age_eligibility_only: true, minimum_assurance_cap: "L0" },
+    });
+    mockPeekByVerifyRequestId.mockResolvedValue(stubContinuation({ verifyRequestId: opaque }));
+    mockIsReturnUrlAllowed.mockResolvedValue(true);
+    mockFindOpaqueReceipt.mockResolvedValue({
+      decision_id: DECISION_ID,
+      receipt_id: RECEIPT_ID,
+      receipt: { id: RECEIPT_ID },
+    });
+    mockGetReceiptById.mockResolvedValue({
+      id: RECEIPT_ID,
+      partner_id: GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+      policy_id: GOOD_TROUBLE_CANONICAL_POLICY_ID,
+      decision_result: "approved",
+      expires_at: futureIso(86_400_000),
+    });
+    mockConsume.mockImplementation(async (jti: string) => ({
+      ...stubContinuation({ verifyRequestId: opaque }),
+      jti,
+      consumedAt: new Date().toISOString(),
+    }));
+
+    const { completeAgeEligibilityPurchaseReturn } = await import("./completeAgeEligibilityPurchaseReturn");
+    const result = await completeAgeEligibilityPurchaseReturn({
+      suiAddress: SUBJECT,
+      verificationRequestId: opaque,
+      receiptId: RECEIPT_ID,
+    });
+    expect(result.ok).toBe(true);
+    expect(mockBindHandoff).toHaveBeenCalled();
   });
 
   it("9. opaque vr_* return resolves receipt via idempotency without verification_requests UUID", async () => {
