@@ -18,6 +18,22 @@ const PURCHASE_ATTEST_ERRORS: Record<string, string> = {
   dob_too_old: "Enter a valid date of birth.",
 };
 
+const PURCHASE_RETURN_ERRORS: Record<string, string> = {
+  missing_flow_token:
+    "Good Trouble could not confirm this checkout session. Return to Good Trouble, tap ORDER NOW again, and finish verification in the same browser tab where you started.",
+  open_redirect:
+    "This return link does not match your Good Trouble checkout. Start again from ORDER NOW on Good Trouble.",
+  stale:
+    "This verification session expired. Return to Good Trouble and open a fresh verification link.",
+  missing:
+    "We could not find your return link. Return to Good Trouble and open verification again from ORDER NOW.",
+};
+
+export function mapGoodTroublePurchaseReturnError(code?: string | null): string {
+  if (!code) return holderSafeClientMessage();
+  return PURCHASE_RETURN_ERRORS[code] ?? holderSafeClientMessage();
+}
+
 export function mapGoodTroublePurchaseAttestError(code?: string | null): string {
   if (!code) return holderSafeClientMessage();
   return PURCHASE_ATTEST_ERRORS[code] ?? holderSafeClientMessage();

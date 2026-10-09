@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Btn } from "@/components/redesign/ui";
 import { consentVerificationRequest } from "@/lib/api/passport";
 import { holderSafeClientMessage } from "@/lib/partner/holderExperience";
+import { mapGoodTroublePurchaseReturnError } from "@/lib/partner/goodTroublePurchaseSelfAttestErrors";
 import {
   GOOD_TROUBLE_PURCHASE_SHARE_ACTION,
   GOOD_TROUBLE_PURCHASE_SHARE_TITLE,
@@ -68,7 +69,7 @@ export function GoodTroublePurchaseShareStep({
       navigateAgeEligibilityPurchaseReturn(result.redirectUrl);
       return;
     }
-    setReturnError(holderSafeClientMessage(result.message));
+    setReturnError(mapGoodTroublePurchaseReturnError(result.code));
     setReturnBusy(false);
   }, [receiptId, returnUrl, verifyRequestId]);
 

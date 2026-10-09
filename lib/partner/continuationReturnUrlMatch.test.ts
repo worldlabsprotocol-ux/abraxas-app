@@ -3,6 +3,7 @@ import {
   coalesceGoodTroublePurchaseReturnUrl,
   decomposeContinuationReturnUrl,
   extractGoodTroubleFlowToken,
+  mergePartnerReturnUrlHints,
   partnerContinuationReturnUrlsMatch,
   preferAuthoritativeContinuationReturnUrl,
 } from "./continuationReturnUrlMatch";
@@ -69,5 +70,10 @@ describe("partnerContinuationReturnUrlsMatch", () => {
     expect(coalesceGoodTroublePurchaseReturnUrl(BASE, hint)).toBe(
       `${BASE}?gtv=${encodeURIComponent(FLOW_TOKEN)}`,
     );
+  });
+
+  it("mergePartnerReturnUrlHints upgrades bare bound URL from resume hint", () => {
+    const merged = mergePartnerReturnUrlHints(BASE, `${BASE}?gtv=${FLOW_TOKEN}`);
+    expect(extractGoodTroubleFlowToken(merged)).toBe(FLOW_TOKEN);
   });
 });

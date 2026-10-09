@@ -20,6 +20,7 @@ import { SelfAttestationBrowseForm } from "@/components/partner/SelfAttestationB
 import { PartnerJourneyLayout } from "@/components/partner/PartnerJourneyLayout";
 import { usePartnerFlowHandoff } from "@/lib/passport/partnerFlowHandoff";
 import { loadPartnerVerifyResume } from "@/lib/partner/partnerVerifyResume";
+import { mergePartnerReturnUrlHints } from "@/lib/partner/continuationReturnUrlMatch";
 import { usePassportVerification } from "@/lib/hooks/usePassportVerification";
 import { computePassportSetupState } from "@/lib/idv/identityVerificationStates";
 import {
@@ -121,7 +122,10 @@ function PartnerContinueInner() {
   const urlPolicyId = searchParams.get("policy_id") ?? "";
   const urlPurpose = searchParams.get("purpose");
   const ageAssuranceStatus = searchParams.get("age_assurance");
-  const decodedReturnUrl = boundReturnUrl;
+  const decodedReturnUrl = useMemo(() => {
+    const resumeReturnUrl = loadPartnerVerifyResume()?.returnUrl?.trim();
+    return mergePartnerReturnUrlHints(boundReturnUrl, resumeReturnUrl);
+  }, [boundReturnUrl]);
 
   useEffect(() => {
     let cancelled = false;

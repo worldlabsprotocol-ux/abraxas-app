@@ -8,6 +8,7 @@ import {
   isContinueContextTraceAuthorized,
 } from "@/lib/partner/hostedHandoff/continueContextTrace";
 import { resolveHostedHandoffForContinue } from "@/lib/partner/hostedHandoff/resolveForContinue";
+import { resolvePartnerReturnUrlHintForRequest } from "@/lib/partner/partnerReturnUrlHint";
 import {
   attachPartnerContinueBindingCookie,
   signPartnerContinueBindingCookie,
@@ -34,10 +35,14 @@ export async function GET(request: NextRequest) {
     return res;
   }
 
-  const partnerReturnUrlHint = request.nextUrl.searchParams.get("return_url")?.trim() ?? null;
+  const queryReturnUrlHint = request.nextUrl.searchParams.get("return_url")?.trim() ?? null;
+  const partnerReturnUrlHint = await resolvePartnerReturnUrlHintForRequest(
+    request,
+    queryReturnUrlHint,
+  );
   const resolved = await resolveHostedHandoffForContinue(verifyRequest, {
     trace,
-    partnerReturnUrlHint,
+    partnerReturnUrlHint: partnerReturnUrlHint || null,
   });
   if (!resolved.ok) {
     const res = NextResponse.json(

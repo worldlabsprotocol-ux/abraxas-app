@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
 import { completeAgeEligibilityPurchaseReturn } from "@/lib/partner/completeAgeEligibilityPurchaseReturn";
+import { resolvePartnerReturnUrlHintForRequest } from "@/lib/partner/partnerReturnUrlHint";
 import {
   enforcePartnerFlowRateLimit,
   recordPartnerFlowRequestOutcome,
@@ -55,11 +56,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const clientReturnUrl = await resolvePartnerReturnUrlHintForRequest(
+    request,
+    body.return_url?.trim(),
+  );
+
   const result = await completeAgeEligibilityPurchaseReturn({
     suiAddress: session.session.suiAddress,
     verificationRequestId,
     receiptId: body.receipt_id?.trim(),
-    clientReturnUrl: body.return_url?.trim(),
+    clientReturnUrl: clientReturnUrl || undefined,
   });
 
   if (!result.ok) {
