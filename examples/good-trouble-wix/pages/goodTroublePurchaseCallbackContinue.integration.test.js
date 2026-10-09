@@ -120,7 +120,7 @@ describe("Good Trouble purchase callback continuation", () => {
     );
 
     const stored = await store.findByFlowId(start.flowId);
-    expect(stored?.returnDestinationPath).toBe("/");
+    expect(stored?.returnDestinationPath).toBe("/goods");
   });
 
   it("does not redirect when verifier mismatches", async () => {

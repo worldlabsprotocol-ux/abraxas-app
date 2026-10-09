@@ -7,6 +7,7 @@ import { PURCHASE_POST_VERIFICATION_FALLBACK } from "./constants.js";
 export const BLOCKED_RETURN_PATHS = new Set([
   "/age-verification-result",
   "/browse-verification-result",
+  "/purchase-verification",
 ]);
 
 /**

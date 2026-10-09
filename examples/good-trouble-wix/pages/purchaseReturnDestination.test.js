@@ -20,9 +20,9 @@ describe("purchaseReturnDestination", () => {
     })).toBe("/checkout");
   });
 
-  it("never uses callback page as destination", () => {
+  it("never uses callback page as destination (falls back to The Goods)", () => {
     expect(resolvePurchaseReturnDestinationForStart({
       currentUrl: "https://www.goodtroublecanna.com/age-verification-result",
-    })).toBeNull();
+    })).toBe("/goods");
   });
 });

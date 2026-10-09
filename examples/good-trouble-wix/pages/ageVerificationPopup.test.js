@@ -29,7 +29,7 @@ const POPUP_SOURCE = readFileSync(
   "utf8",
 );
 const LOGIC_SOURCE = readFileSync(
-  new URL("./ageVerificationPopupLogic.js", import.meta.url),
+  new URL("../public/ageVerificationPopupLogic.js", import.meta.url),
   "utf8",
 );
 const WEB_SOURCE = readFileSync(

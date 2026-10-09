@@ -15,16 +15,32 @@ import {
   resolvePurchaseReturnDestinationForStart,
 } from "public/purchaseReturnDestination";
 
+import { shouldSkipAgeGate } from "public/ageGateAccessState";
+
+import {
+  GOOD_TROUBLE_THE_GOODS_SHOP_PATH,
+} from "public/abraxasClientConstants";
+
 import wixLocationFrontend from "wix-location-frontend";
 import wixWindow from "wix-window";
 import wixWindowFrontend from "wix-window-frontend";
-import { session } from "wix-storage-frontend";
+import { local, session } from "wix-storage-frontend";
 
 /** @type {ReturnType<typeof createPurchaseVerificationController> | null} */
 let purchaseController = null;
 
 $w.onReady(() => {
   if (wixWindow.rendering.env !== "browser") return;
+
+  const skip = shouldSkipAgeGate({
+    localStorage: local,
+    sessionStorage: session,
+  });
+  if (skip.skip) {
+    wixLocationFrontend.to(GOOD_TROUBLE_THE_GOODS_SHOP_PATH);
+    return;
+  }
+
   captureOrderNowOriginFromQuery();
   wirePurchaseButton();
 });

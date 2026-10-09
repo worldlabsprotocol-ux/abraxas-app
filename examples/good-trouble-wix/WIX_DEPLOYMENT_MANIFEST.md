@@ -1,10 +1,10 @@
 # WIX_DEPLOYMENT_MANIFEST.md
 
-Good Trouble × Abraxas — two-tier age lifecycle (browse L0 + purchase L2+).
+Good Trouble × Abraxas — browse L0 + purchase sandbox (Colosseum pilot).
 
-**Source of truth:** `main` branch after merge of PR #260.  
-**Audit date:** 2026-09-08.  
-**Wix test suite:** 130/130 passing on `main`.
+**Layout (2026-10):** All Velo `public/*` imports live under `examples/good-trouble-wix/public/`.  
+**Post-verification default:** `/goods` (“The Goods” — https://www.goodtroublecanna.com/goods).  
+**Install links:** `docs/GOOD_TROUBLE_WIX_INSTALL_LINKS.md`.
 
 ---
 
@@ -14,9 +14,12 @@ Deploy in this order (Public → Backend → Pages/lightbox):
 
 | Order | Repository path | Wix destination | Wix filename / target | Replace or new | Direct dependencies |
 |------:|-----------------|-------------------|----------------------|----------------|---------------------|
-| 1 | `examples/good-trouble-wix/public/abraxasClientConstants.js` | Public file | `src/public/abraxasClientConstants.js` | New (or replace if split) | — |
-| 2 | `examples/good-trouble-wix/pages/ageVerificationPopupLogic.js`
-| 2b | `examples/good-trouble-wix/pages/purchaseVerificationLogic.js` | Public file | `src/public/purchaseVerificationLogic.js` | **New** | — | | Public file | `src/public/ageVerificationPopupLogic.js` | Replace | — |
+| 1 | `examples/good-trouble-wix/public/abraxasClientConstants.js` | Public file | `src/public/abraxasClientConstants.js` | Replace | — |
+| 2 | `examples/good-trouble-wix/public/ageVerificationPopupLogic.js` | Public file | `src/public/ageVerificationPopupLogic.js` | Replace | — |
+| 2b | `examples/good-trouble-wix/public/purchaseVerificationLogic.js` | Public file | `src/public/purchaseVerificationLogic.js` | Replace | — |
+| 2c | `examples/good-trouble-wix/public/purchaseCallbackLogic.js` | Public file | `src/public/purchaseCallbackLogic.js` | Replace | `./abraxasClientConstants.js`, `./purchaseReturnDestination.js` |
+| 2d | `examples/good-trouble-wix/public/purchaseReturnDestination.js` | Public file | `src/public/purchaseReturnDestination.js` | Replace | `./abraxasClientConstants.js` |
+| 2e | `examples/good-trouble-wix/public/ageGateAccessState.js` | Public file | `src/public/ageGateAccessState.js` | Replace | `./abraxasClientConstants.js`, `./ageVerificationPopupLogic.js` |
 | 3 | `examples/good-trouble-wix/backend/constants.js` | Backend file | `src/backend/constants.js` | Replace | `../public/abraxasClientConstants.js` |
 | 4 | `examples/good-trouble-wix/backend/browseConstants.js` | Backend file | `src/backend/browseConstants.js` | **New** | — |
 | 5 | `examples/good-trouble-wix/backend/flowPurpose.js` | Backend file | `src/backend/flowPurpose.js` | **New** | `./constants.js` |

@@ -87,8 +87,11 @@ export const BROWSE_VERIFIER_STORAGE_PREFIX = "abraxas_gt_browse_verifier_";
 /** @deprecated Use PURCHASE_VERIFIER_STORAGE_PREFIX */
 export const VERIFIER_STORAGE_PREFIX = PURCHASE_VERIFIER_STORAGE_PREFIX;
 
+/** Live Wix slug — "The Goods" shop (see public/abraxasClientConstants.js). */
+export const GOOD_TROUBLE_THE_GOODS_SHOP_PATH = "/goods";
+
 /** Last-resort post-verification destination when no trusted path was captured at start. */
-export const PURCHASE_POST_VERIFICATION_FALLBACK = "/";
+export const PURCHASE_POST_VERIFICATION_FALLBACK = GOOD_TROUBLE_THE_GOODS_SHOP_PATH;
 
 /** Query param used only on purchase entry page load to capture ORDER NOW origin (not callback). */
 export const PURCHASE_FROM_QUERY_PARAM = "from";

@@ -20,6 +20,7 @@ describe("returnDestinationPath", () => {
     expect(isSafeReturnDestinationPath("https://evil.example")).toBe(false);
     expect(isSafeReturnDestinationPath("/age-verification-result")).toBe(false);
     expect(isSafeReturnDestinationPath("/browse-verification-result")).toBe(false);
+    expect(isSafeReturnDestinationPath("/purchase-verification")).toBe(false);
     expect(isSafeReturnDestinationPath("/cart?next=//evil.example")).toBe(false);
   });
 
@@ -34,7 +35,7 @@ describe("returnDestinationPath", () => {
     expect(resolveAuthoritativeReturnDestination({
       serverDestination: null,
       sessionDestination: null,
-    })).toBe(PURCHASE_POST_VERIFICATION_FALLBACK);
+    })).toBe("/goods");
   });
 
   it("stores requested path at purchase start", () => {
