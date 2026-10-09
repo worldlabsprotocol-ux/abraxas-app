@@ -5,11 +5,11 @@ import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { ContentCard, PageHeader } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
 import { decideGoodTroubleAccess } from "@/lib/goodTrouble/accessDecision";
+import { GOOD_TROUBLE_BRAND } from "@/lib/goodTrouble/constants";
 import {
-  GOOD_TROUBLE_BRAND,
-  GOOD_TROUBLE_PARTNER_ID,
-  GOOD_TROUBLE_RETAIL_POLICY_ID,
-} from "@/lib/goodTrouble/constants";
+  GOOD_TROUBLE_CANONICAL_PARTNER_ID,
+  GOOD_TROUBLE_CANONICAL_POLICY_ID,
+} from "@/lib/goodTrouble/canonicalProductionConfig";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +32,7 @@ export default async function GoodTroubleAccessPage({
   const granted = result?.grant === true;
 
   const receiptVerifierHref = receiptId
-    ? `/verify?mode=receipt&receipt_id=${encodeURIComponent(receiptId)}&partner_id=${encodeURIComponent(GOOD_TROUBLE_PARTNER_ID)}&policy_id=${encodeURIComponent(GOOD_TROUBLE_RETAIL_POLICY_ID)}&allow_sandbox=1`
+    ? `/verify?mode=receipt&receipt_id=${encodeURIComponent(receiptId)}&partner_id=${encodeURIComponent(GOOD_TROUBLE_CANONICAL_PARTNER_ID)}&policy_id=${encodeURIComponent(GOOD_TROUBLE_CANONICAL_POLICY_ID)}&allow_sandbox=1`
     : "/verify?mode=receipt";
 
   return (
