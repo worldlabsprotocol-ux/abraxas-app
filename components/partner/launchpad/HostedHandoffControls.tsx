@@ -6,6 +6,7 @@ import { Btn } from "@/components/redesign/ui";
 import { PartnerBindingSelector } from "@/components/partner/launchpad/PartnerBindingSelector";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import { HOSTED_HANDOFF_CHECKLIST, HOSTED_HANDOFF_DOCS, HOSTED_HANDOFF_NOTICE } from "@/lib/partner/hostedHandoff/contract";
+import { hostedHandoffCreateErrorMessage, type LaunchpadHandoffErrorBody } from "@/lib/partner/hostedHandoff/launchpadCreateErrors";
 
 const FONT = ABRAXAS_FONT_SANS;
 const HANDOFF_REF = /^hpf_[0-9a-f]{16}$/;
@@ -27,8 +28,13 @@ export function HostedHandoffControls({ applicationId, partnerId }: { applicatio
   const [deploymentRef, setDeploymentRef] = useState("");
   const [signerKeyId, setSignerKeyId] = useState("");
   const [commandCopied, setCommandCopied] = useState(false);
+  const [policyBindings, setPolicyBindings] = useState<Array<{ binding_id: string | null }>>([]);
 
   async function createHandoff() {
+    if (policyBindings.length > 1 && !bindingId) {
+      setError("Select which integration policy to use, then create the handoff again.");
+      return;
+    }
     setBusy(true);
     setError("");
     setUrl("");
@@ -44,11 +50,13 @@ export function HostedHandoffControls({ applicationId, partnerId }: { applicatio
           ...(bindingId ? { binding_id: bindingId } : {}),
         }),
       });
-      const data = await res.json() as { hosted_url?: string; handoff_ref?: string; status?: typeof status; error?: string };
+      const data = await res.json() as LaunchpadHandoffErrorBody & {
+        hosted_url?: string;
+        handoff_ref?: string;
+        status?: typeof status;
+      };
       if (!res.ok || !data.hosted_url) {
-        setError(data.error === "not_configured"
-          ? "Save Partner Flow configuration and an approved callback first."
-          : "Could not create a handoff.");
+        setError(hostedHandoffCreateErrorMessage(res.status, data));
         return;
       }
       setUrl(data.hosted_url);
@@ -186,6 +194,7 @@ unset ABRAXAS_SANDBOX_PARTNER_API_KEY` : "";
           applicationId={applicationId}
           selectedBindingId={bindingId}
           onSelect={setBindingId}
+          onBindingsLoaded={setPolicyBindings}
           label="Integration policy"
         />
       </div>
