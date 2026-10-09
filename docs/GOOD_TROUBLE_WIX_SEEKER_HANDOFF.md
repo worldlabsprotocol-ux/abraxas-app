@@ -66,7 +66,7 @@ On `verified: true` from `completePurchaseVerification`, `/age-verification-resu
 1. Marks nonce flow **consumed** (replay denied).
 2. Sets session flag `good_trouble_purchase_verified_pilot`.
 3. Persists **localStorage** `good_trouble_abraxas_purchase_verified` with receipt `expires_at` (from server).
-4. Redirects to trusted same-origin path (usually `/`).
+4. Redirects to trusted same-origin path — default **`/goods`** (“The Goods” shop; live slug confirmed on goodtroublecanna.com).
 
 Age popup `shouldSkipAgeGate` reads purchase localStorage first, then browse, then traditional self-attestation.
 

@@ -17,8 +17,14 @@ export const BROWSE_VERIFIER_STORAGE_PREFIX = "abraxas_gt_browse_verifier_";
 /** @deprecated Use PURCHASE_VERIFIER_STORAGE_PREFIX */
 export const VERIFIER_STORAGE_PREFIX = PURCHASE_VERIFIER_STORAGE_PREFIX;
 
+/**
+ * Live Wix slug for "The Goods" shop page.
+ * Confirmed: https://www.goodtroublecanna.com/goods (pages-sitemap.xml, title "The Goods").
+ */
+export const GOOD_TROUBLE_THE_GOODS_SHOP_PATH = "/goods";
+
 /** Last-resort post-verification destination when no trusted path was captured at start. */
-export const PURCHASE_POST_VERIFICATION_FALLBACK = "/";
+export const PURCHASE_POST_VERIFICATION_FALLBACK = GOOD_TROUBLE_THE_GOODS_SHOP_PATH;
 
 /** Query param on purchase entry only — captures ORDER NOW origin (never used on callback). */
 export const PURCHASE_FROM_QUERY_PARAM = "from";

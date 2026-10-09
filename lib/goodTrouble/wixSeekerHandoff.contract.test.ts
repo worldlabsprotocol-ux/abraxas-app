@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 
 const ROOT = resolve(process.cwd(), "examples/good-trouble-wix");
 const DOCS = readFileSync(resolve(process.cwd(), "docs/GOOD_TROUBLE_WIX_SEEKER_HANDOFF.md"), "utf8");
-const AGE_GATE = readFileSync(resolve(ROOT, "pages/ageGateAccessState.js"), "utf8");
+const AGE_GATE = readFileSync(resolve(ROOT, "public/ageGateAccessState.js"), "utf8");
 const CALLBACK = readFileSync(resolve(ROOT, "pages/AgeVerificationResult.js"), "utf8");
 const VALIDATOR = readFileSync(resolve(ROOT, "backend/abraxasReceiptValidator.js"), "utf8");
 
@@ -16,6 +16,7 @@ describe("Good Trouble Wix Seeker handoff contract", () => {
     expect(DOCS).toContain("age-verification-result");
     expect(DOCS).toContain("good_trouble_abraxas_purchase_verified");
     expect(DOCS).toContain("policy version **2**");
+    expect(DOCS).toContain("/goods");
   });
 
   it("wires purchase verified state into age gate skip after callback", () => {

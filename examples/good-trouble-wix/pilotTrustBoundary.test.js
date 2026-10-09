@@ -48,7 +48,7 @@ describe("good_trouble purchase verified pilot trust boundary", () => {
 
   it("is not used in popup start path (traditional yesButton remains separate)", () => {
     const popupSource = readFileSync(join(ROOT, "pages/AgeVerificationPopup.js"), "utf8");
-    const logicSource = readFileSync(join(ROOT, "pages/ageVerificationPopupLogic.js"), "utf8");
+    const logicSource = readFileSync(join(ROOT, "public/ageVerificationPopupLogic.js"), "utf8");
     expect(popupSource).not.toMatch(/setItem\([^)]*PURCHASE_VERIFIED_SESSION_FLAG/);
     expect(logicSource).not.toMatch(/setItem\([^)]*good_trouble_purchase_verified_pilot/);
     expect(popupSource).toContain("#yesButton");
@@ -58,7 +58,7 @@ describe("good_trouble purchase verified pilot trust boundary", () => {
 
   it("does not gate traditional yesButton behind Abraxas or CAPTCHA", () => {
     const popupSource = readFileSync(join(ROOT, "pages/AgeVerificationPopup.js"), "utf8");
-    const logicSource = readFileSync(join(ROOT, "pages/ageVerificationPopupLogic.js"), "utf8");
+    const logicSource = readFileSync(join(ROOT, "public/ageVerificationPopupLogic.js"), "utf8");
     expect(popupSource).not.toMatch(/setButtonEnabled\("#yesButton",\s*false\)/);
     expect(logicSource).not.toContain("setProtectedButtonsEnabled");
     const traditionalHandler = logicSource.match(
@@ -75,7 +75,7 @@ describe("good_trouble purchase verified pilot trust boundary", () => {
 
   it("does not require captcha element or token for the Abraxas route", () => {
     const popupSource = readFileSync(join(ROOT, "pages/AgeVerificationPopup.js"), "utf8");
-    const logicSource = readFileSync(join(ROOT, "pages/ageVerificationPopupLogic.js"), "utf8");
+    const logicSource = readFileSync(join(ROOT, "public/ageVerificationPopupLogic.js"), "utf8");
     expect(popupSource).not.toMatch(/\$w\("#abraxasCaptcha"\)/);
     expect(popupSource).not.toContain("captcha.token");
     expect(logicSource).not.toContain("onCaptchaVerified");
@@ -84,7 +84,7 @@ describe("good_trouble purchase verified pilot trust boundary", () => {
 
   it("does not grant pilot verified state when only starting a flow", () => {
     const popupSource = readFileSync(join(ROOT, "pages/AgeVerificationPopup.js"), "utf8");
-    const logicSource = readFileSync(join(ROOT, "pages/ageVerificationPopupLogic.js"), "utf8");
+    const logicSource = readFileSync(join(ROOT, "public/ageVerificationPopupLogic.js"), "utf8");
     const webSource = readFileSync(join(BACKEND_DIR, "abraxasVerification.web.js"), "utf8");
     expect(popupSource).not.toMatch(/setItem\([^)]*PURCHASE_VERIFIED_SESSION_FLAG/);
     expect(logicSource).not.toMatch(/setItem\([^)]*good_trouble_purchase_verified_pilot/);
@@ -93,7 +93,7 @@ describe("good_trouble purchase verified pilot trust boundary", () => {
   });
 
   it("uses traditional self-attestation localStorage only — not Abraxas pilot flag", () => {
-    const logicSource = readFileSync(join(ROOT, "pages/ageVerificationPopupLogic.js"), "utf8");
+    const logicSource = readFileSync(join(ROOT, "public/ageVerificationPopupLogic.js"), "utf8");
     expect(logicSource).toContain("good_trouble_age_self_attested");
     expect(logicSource).not.toMatch(/setItem\([^)]*good_trouble_purchase_verified_pilot/);
     expect(logicSource).toContain("PURCHASE_SESSION_KEYS_TO_CLEAR");
