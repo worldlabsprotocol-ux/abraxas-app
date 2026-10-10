@@ -2,7 +2,8 @@
 // Canonical Good Trouble purchase DOB prequal — transient DOB, age-band cookie only.
 
 import { NextRequest, NextResponse } from "next/server";
-import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { requirePartnerFlowHolder } from "@/lib/partner/partnerFlowHolderContext";
+import { GOOD_TROUBLE_AGE_21_RETAIL_SOLANA_POLICY_ID } from "@/lib/goodTrouble/goodTroubleSolanaPolicyIds";
 import { evaluateGoodTroublePurchaseDobPrequal } from "@/lib/partner/goodTroublePurchaseDobPrequal";
 import {
   attachGoodTroubleDobPrequalCookie,
@@ -16,9 +17,12 @@ import { isCanonicalGoodTroublePurchaseFlow } from "@/lib/partner/goodTroublePur
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  const session = await requireBrowserSession(request);
-  if (!session.ok) {
-    return NextResponse.json({ ok: false, error: session.error }, { status: session.status });
+  const holderAuth = await requirePartnerFlowHolder(request);
+  if (!holderAuth.ok) {
+    return NextResponse.json(
+      { ok: false, error: holderAuth.error, code: holderAuth.code },
+      { status: holderAuth.status },
+    );
   }
 
   const verifyRequest = request.nextUrl.searchParams.get("verify_request")?.trim() ?? "";
@@ -41,10 +45,14 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const session = await requireBrowserSession(request);
-  if (!session.ok) {
-    return NextResponse.json({ ok: false, error: session.error }, { status: session.status });
+  const holderAuth = await requirePartnerFlowHolder(request);
+  if (!holderAuth.ok) {
+    return NextResponse.json(
+      { ok: false, error: holderAuth.error, code: holderAuth.code },
+      { status: holderAuth.status },
+    );
   }
+  const sessionSubject = holderAuth.holder.subjectId;
 
   let body: {
     verify_request?: string;
@@ -67,10 +75,21 @@ export async function POST(request: NextRequest) {
   const bound = await resolveBoundPartnerContinuation({
     request,
     verifyRequestId: verifyRequest,
-    sessionSubject: session.session.suiAddress,
+    sessionSubject,
   });
   if (!bound.ok) {
     return NextResponse.json({ ok: false, code: bound.code }, { status: 400 });
+  }
+
+  if (
+    bound.stored.policyId === GOOD_TROUBLE_AGE_21_RETAIL_SOLANA_POLICY_ID
+    || holderAuth.holder.mode === "solana_native"
+  ) {
+    return NextResponse.json({
+      ok: false,
+      code: "identity_evidence_required",
+      error: "This policy requires Passport identity verification, not self-attested date of birth.",
+    }, { status: 403 });
   }
 
   if (!isCanonicalGoodTroublePurchaseFlow({

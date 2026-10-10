@@ -2,16 +2,19 @@
 // Holder declines a partner verification request — no claims shared.
 
 import { NextRequest, NextResponse } from "next/server";
-import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { requirePartnerFlowHolder } from "@/lib/partner/partnerFlowHolderContext";
 import { declineVerificationRequest } from "@/lib/verification/requestsService";
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await requireBrowserSession(req);
-  if (!session.ok) {
-    return NextResponse.json({ error: session.error }, { status: session.status });
+  const holderAuth = await requirePartnerFlowHolder(req);
+  if (!holderAuth.ok) {
+    return NextResponse.json(
+      { error: holderAuth.error, code: holderAuth.code },
+      { status: holderAuth.status },
+    );
   }
 
   const { id } = await params;
@@ -19,7 +22,7 @@ export async function POST(
   try {
     const result = await declineVerificationRequest({
       requestId: id,
-      suiAddress: session.session.suiAddress,
+      suiAddress: holderAuth.holder.subjectId,
     });
     return NextResponse.json(result);
   } catch (e: unknown) {

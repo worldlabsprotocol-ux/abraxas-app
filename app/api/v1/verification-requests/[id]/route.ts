@@ -2,22 +2,25 @@
 // Holder preview of a partner verification request (before consent).
 
 import { NextRequest, NextResponse } from "next/server";
-import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { requirePartnerFlowHolder } from "@/lib/partner/partnerFlowHolderContext";
 import { getVerificationRequestPreview } from "@/lib/verification/requestsService";
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await requireBrowserSession(req);
-  if (!session.ok) {
-    return NextResponse.json({ error: session.error }, { status: session.status });
+  const holderAuth = await requirePartnerFlowHolder(req);
+  if (!holderAuth.ok) {
+    return NextResponse.json(
+      { error: holderAuth.error, code: holderAuth.code },
+      { status: holderAuth.status },
+    );
   }
 
   const { id } = await params;
 
   try {
-    const preview = await getVerificationRequestPreview(id, session.session.suiAddress);
+    const preview = await getVerificationRequestPreview(id, holderAuth.holder.subjectId);
     if (!preview) {
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }

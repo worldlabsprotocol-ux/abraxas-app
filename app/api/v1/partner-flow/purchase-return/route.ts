@@ -2,7 +2,7 @@
 // Explicit holder return for L0 age-eligibility purchase — authoritative continuation only.
 
 import { NextRequest, NextResponse } from "next/server";
-import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { requirePartnerFlowHolder } from "@/lib/partner/partnerFlowHolderContext";
 import { completeAgeEligibilityPurchaseReturn } from "@/lib/partner/completeAgeEligibilityPurchaseReturn";
 import {
   enforcePartnerFlowRateLimit,
@@ -15,24 +15,28 @@ const ENDPOINT = "/api/v1/partner-flow/purchase-return" as const;
 
 export async function POST(request: NextRequest) {
   const started = Date.now();
-  const session = await requireBrowserSession(request);
-  if (!session.ok) {
+  const holderAuth = await requirePartnerFlowHolder(request);
+  if (!holderAuth.ok) {
     recordPartnerFlowRequestOutcome({
       request,
       endpoint: ENDPOINT,
       method: "POST",
       started,
-      httpStatus: session.status,
+      httpStatus: holderAuth.status,
     });
-    return NextResponse.json({ error: session.error }, { status: session.status });
+    return NextResponse.json(
+      { error: holderAuth.error, code: holderAuth.code },
+      { status: holderAuth.status },
+    );
   }
+  const sessionSubject = holderAuth.holder.subjectId;
 
   const rateLimited = await enforcePartnerFlowRateLimit({
     request,
     endpoint: ENDPOINT,
     method: "POST",
     started,
-    sessionSubject: session.session.suiAddress,
+    sessionSubject,
   });
   if (rateLimited) return rateLimited;
 
@@ -56,7 +60,7 @@ export async function POST(request: NextRequest) {
   }
 
   const result = await completeAgeEligibilityPurchaseReturn({
-    suiAddress: session.session.suiAddress,
+    suiAddress: sessionSubject,
     verificationRequestId,
     receiptId: body.receipt_id?.trim(),
     clientReturnUrl: body.return_url?.trim(),
@@ -71,7 +75,7 @@ export async function POST(request: NextRequest) {
       endpoint: ENDPOINT,
       method: "POST",
       started,
-      sessionSubject: session.session.suiAddress,
+      sessionSubject,
       httpStatus: status,
     });
     return NextResponse.json(
@@ -85,7 +89,7 @@ export async function POST(request: NextRequest) {
     endpoint: ENDPOINT,
     method: "POST",
     started,
-    sessionSubject: session.session.suiAddress,
+    sessionSubject,
     httpStatus: 200,
   });
 

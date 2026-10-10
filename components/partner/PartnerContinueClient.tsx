@@ -5,6 +5,9 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
+import { useHolderSession } from "@/lib/hooks/useHolderSession";
+import { isSolanaNativeProductEnabledClient } from "@/lib/auth/solanaNative/clientFeatureFlag";
+import { HolderSignInPanel } from "@/components/auth/HolderSignInPanel";
 import { useHostedHolderBootstrap } from "@/lib/partner/useHostedHolderBootstrap";
 import { isHostedHolderBootstrapEligible } from "@/lib/auth/hostedHolderEligibility";
 import {
@@ -95,8 +98,17 @@ function mapHostedHandoffContinueFailure(
 
 function PartnerContinueInner() {
   const searchParams = useSearchParams();
-  const { suiAddress, session, isLoading: authLoading, refreshSession, signInWithGoogle } = useSuiAuth();
-  const email = session?.email ?? "";
+  const solanaNative = isSolanaNativeProductEnabledClient();
+  const { suiAddress: legacySui, session, isLoading: authLoading, refreshSession, signInWithGoogle } = useSuiAuth();
+  const { session: holderSession, loading: holderLoading } = useHolderSession(solanaNative);
+  const signedIn = solanaNative
+    ? Boolean(holderSession?.passportSubjectReady)
+    : Boolean(legacySui);
+  const suiAddress: string | null = solanaNative
+    ? (holderSession?.claimsSubjectKey ?? null)
+    : legacySui;
+  const email = solanaNative ? "" : (session?.email ?? "");
+  const authLoadingCombined = solanaNative ? holderLoading : authLoading;
   const [consentDismissed, setConsentDismissed] = useState(false);
   const [starting, setStarting] = useState(false);
   const [bindLoading, setBindLoading] = useState(false);
@@ -324,7 +336,7 @@ function PartnerContinueInner() {
     walletBindingL3,
   } = usePassportVerification(suiAddress, email || null);
 
-  const walletDone = Boolean(suiAddress);
+  const walletDone = signedIn;
   const hasCredential = Boolean(credential) && identityStatus === "earned";
   const minimumAge = resolveMinimumAge(policyId);
 
@@ -356,7 +368,7 @@ function PartnerContinueInner() {
   const returnLabel = resolvePartnerReturnLabel(partnerId);
 
   const holderState: PartnerHolderState = useMemo(() => {
-    if (!suiAddress) return "confirm_account";
+    if (!signedIn) return "confirm_account";
     if (credential && new Date(credential.expires_at) < new Date()) return "verification_expired";
     if (identityStatus === "pending") return "under_review";
     if (handoff.ready) return "age_confirmed";
@@ -365,7 +377,7 @@ function PartnerContinueInner() {
     if (setup.walletBound && !setup.identityComplete) return "verify_age";
     if (decodedReturnUrl && handoff.ready) return "return_to_partner";
     return "verify_age";
-  }, [suiAddress, credential, identityStatus, handoff.ready, decodedReturnUrl, setup, ageAssuranceStatus, showIdFallback]);
+  }, [signedIn, credential, identityStatus, handoff.ready, decodedReturnUrl, setup, ageAssuranceStatus, showIdFallback]);
 
   const holderCopy = resolvePartnerHolderPresentation(holderState, partnerName);
   const qualifyingMethodSucceeded = methodQualified;
@@ -472,7 +484,11 @@ function PartnerContinueInner() {
       const sessionRes = await fetch("/api/idv/create-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sui_address: suiAddress, document_type: "PASSPORT" }),
+        credentials: "include",
+        body: JSON.stringify({
+          ...(suiAddress ? { sui_address: suiAddress } : {}),
+          document_type: "PASSPORT",
+        }),
       });
       const sessionData = await sessionRes.json() as { session_url?: string | null; error?: string };
       if (!sessionRes.ok || !sessionData.session_url) {
@@ -542,9 +558,9 @@ function PartnerContinueInner() {
         hideStatus
         brief={holderBrief}
       >
-        {authLoading || contextLoading ? (
+        {authLoadingCombined || contextLoading ? (
           <p role="status">Preparing verification…</p>
-        ) : !suiAddress ? (
+        ) : !signedIn ? (
           <p role="status">Sign in to continue this content disclosure request.</p>
         ) : (
           <>
@@ -574,9 +590,9 @@ function PartnerContinueInner() {
         showAccountFooter={false}
         brief={null}
       >
-        {authLoading || contextLoading || (hostedBootstrapEligible && hostedBootstrap.bootstrapping) ? (
+        {authLoadingCombined || contextLoading || (hostedBootstrapEligible && hostedBootstrap.bootstrapping) ? (
           <p role="status">Preparing verification…</p>
-        ) : !suiAddress ? (
+        ) : !signedIn ? (
           hostedBootstrapEligible ? (
             <div>
               <p role="status" style={{ fontSize: "0.86rem", lineHeight: 1.6, margin: "0 0 0.75rem" }}>
@@ -640,39 +656,45 @@ function PartnerContinueInner() {
       {!directHandoff && !simplifiedPurchase && holderOpening && (
         <HolderOpeningBrief opening={holderOpening} />
       )}
-      {authLoading || contextLoading || (hostedBootstrapEligible && hostedBootstrap.bootstrapping) ? (
+      {authLoadingCombined || contextLoading || (hostedBootstrapEligible && hostedBootstrap.bootstrapping) ? (
         <ProtocolLoadingState
           kind="preparing_request"
           detail={hostedBootstrapEligible ? `${partnerName} verification` : partnerName}
         />
-      ) : !suiAddress ? (
+      ) : !signedIn ? (
         hostedBootstrapEligible ? (
           <div>
             <p role="status" style={{ fontSize: "0.86rem", lineHeight: 1.6, margin: "0 0 0.75rem" }}>
               {hostedBootstrap.state === "failed"
-                ? "Verification could not be started securely. Try again or sign in with an existing Passport."
+                ? "Verification could not be started securely. Try again or sign in with Phantom."
                 : "Preparing your verification request…"}
             </p>
             {hostedBootstrap.state === "failed" ? (
               <Btn onClick={() => hostedBootstrap.retry()}>{HOSTED_HOLDER_PRIMARY_ACTION}</Btn>
             ) : null}
-            <p style={{ margin: "0.75rem 0 0", fontSize: "0.78rem", color: "var(--text-muted)" }}>
-              <button
-                type="button"
-                onClick={() => void signInWithGoogle?.()}
-                style={{
-                  background: "none",
-                  border: "none",
-                  padding: 0,
-                  color: "var(--accent)",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  textDecoration: "underline",
-                }}
-              >
-                {HOSTED_HOLDER_OPTIONAL_SIGN_IN_LABEL}
-              </button>
-            </p>
+            {solanaNative ? (
+              <div style={{ marginTop: "0.75rem" }}>
+                <HolderSignInPanel />
+              </div>
+            ) : (
+              <p style={{ margin: "0.75rem 0 0", fontSize: "0.78rem", color: "var(--text-muted)" }}>
+                <button
+                  type="button"
+                  onClick={() => void signInWithGoogle?.()}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    color: "var(--accent)",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                  }}
+                >
+                  {HOSTED_HOLDER_OPTIONAL_SIGN_IN_LABEL}
+                </button>
+              </p>
+            )}
           </div>
         ) : (
           <HolderRecoveryCard recovery={resolveHolderRecovery("session_required", partnerName, partnerHomeUrl)} />
@@ -684,7 +706,7 @@ function PartnerContinueInner() {
           partnerName={partnerName}
           verifyRequestId={verifyRequestId}
           returnUrl={decodedReturnUrl}
-          suiAddress={suiAddress}
+          suiAddress={suiAddress ?? ""}
           email={email}
           identityStatus={identityStatus}
           identityComplete={setup.identityComplete}

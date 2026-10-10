@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { requirePartnerFlowHolder } from "@/lib/partner/partnerFlowHolderContext";
+import {
+  resolveEffectivePartnerPolicyId,
+  solanaHolderPolicySubstitutionAllowed,
+} from "@/lib/partner/solanaNativePartnerPolicyRouting";
 import { completePartnerFlowAfterApproval, PartnerFlowIdempotencyConflictError } from "@/lib/partner/relyingPartyFlow";
 import { isAllowedPartnerReturnUrl } from "@/lib/partner/returnUrlAllowlist";
 import {
@@ -44,24 +48,28 @@ const ENDPOINT = "/api/v1/partner-flow/complete" as const;
  */
 export async function POST(request: NextRequest) {
   const started = Date.now();
-  const session = await requireBrowserSession(request);
-  if (!session.ok) {
+  const holderAuth = await requirePartnerFlowHolder(request);
+  if (!holderAuth.ok) {
     recordPartnerFlowRequestOutcome({
       request,
       endpoint: ENDPOINT,
       method: "POST",
       started,
-      httpStatus: session.status,
+      httpStatus: holderAuth.status,
     });
-    return NextResponse.json({ error: session.error }, { status: session.status });
+    return NextResponse.json(
+      { error: holderAuth.error, code: holderAuth.code },
+      { status: holderAuth.status },
+    );
   }
+  const sessionSubject = holderAuth.holder.subjectId;
 
   const rateLimited = await enforcePartnerFlowRateLimit({
     request,
     endpoint: ENDPOINT,
     method: "POST",
     started,
-    sessionSubject: session.session.suiAddress,
+    sessionSubject,
   });
   if (rateLimited) return rateLimited;
 
@@ -136,7 +144,7 @@ export async function POST(request: NextRequest) {
           action: "partner_flow.rejected",
           partnerId,
           policyId,
-          subjectId: session.session.suiAddress,
+          subjectId: sessionSubject,
           outcome: "rejected",
           verificationRequestId: correlationId,
           error: e.message,
@@ -150,11 +158,22 @@ export async function POST(request: NextRequest) {
 
   let result;
   try {
+    const policyResolution = resolveEffectivePartnerPolicyId({
+      requestedPolicyId: policyId,
+      holderMode: holderAuth.holder.mode,
+    });
+    if (!solanaHolderPolicySubstitutionAllowed(policyId, policyResolution.policyId)) {
+      return NextResponse.json(
+        { error: "Policy not authorized for this holder session", code: "policy_substitution_denied" },
+        { status: 403 },
+      );
+    }
+
     result = await completePartnerFlowAfterApproval({
       partnerId,
-      policyId,
+      policyId: policyResolution.policyId,
       returnUrl,
-      suiAddress: session.session.suiAddress,
+      suiAddress: sessionSubject,
       verificationRequestId: correlationId ?? undefined,
       launchpadApplicationId: launchpadContext.applicationId,
       expectedPolicyVersion: await resolveLaunchpadPinnedPolicyVersion({
@@ -192,7 +211,7 @@ export async function POST(request: NextRequest) {
       action: "partner_flow.complete",
       partnerId,
       policyId,
-      subjectId: session.session.suiAddress,
+      subjectId: sessionSubject,
       outcome: "error",
       verificationRequestId: correlationId ?? undefined,
       error: result.error,
@@ -210,7 +229,7 @@ export async function POST(request: NextRequest) {
       endpoint: ENDPOINT,
       method: "POST",
       started,
-      sessionSubject: session.session.suiAddress,
+      sessionSubject: sessionSubject,
       partnerId,
       policyId,
       httpStatus: 400,
@@ -232,7 +251,7 @@ export async function POST(request: NextRequest) {
           action: "partner_flow.rejected",
           partnerId,
           policyId,
-          subjectId: session.session.suiAddress,
+          subjectId: sessionSubject,
           outcome: "rejected",
           verificationRequestId: correlationId ?? undefined,
           error: e.message,
@@ -251,7 +270,7 @@ export async function POST(request: NextRequest) {
         partnerId,
         policyId,
         policyVersion: result.policy_version,
-        subjectId: session.session.suiAddress,
+        subjectId: sessionSubject,
         outcome: result.replay_status === "issued" ? "issued" : "idempotent_replay",
         verificationRequestId: correlationId ?? undefined,
         decisionId: result.decision_id,
@@ -271,7 +290,7 @@ export async function POST(request: NextRequest) {
       partnerId,
       policyId,
       policyVersion: result.policy_version,
-      subjectId: session.session.suiAddress,
+      subjectId: sessionSubject,
       outcome: result.next,
       verificationRequestId: correlationId ?? undefined,
       decisionId: result.decision_id,
@@ -288,7 +307,7 @@ export async function POST(request: NextRequest) {
         endpoint: ENDPOINT,
         method: "POST",
         started,
-        sessionSubject: session.session.suiAddress,
+        sessionSubject: sessionSubject,
         partnerId,
         policyId,
         httpStatus: 503,
@@ -354,7 +373,7 @@ export async function POST(request: NextRequest) {
     endpoint: ENDPOINT,
     method: "POST",
     started,
-    sessionSubject: session.session.suiAddress,
+    sessionSubject: sessionSubject,
     partnerId,
     policyId,
     httpStatus: 200,

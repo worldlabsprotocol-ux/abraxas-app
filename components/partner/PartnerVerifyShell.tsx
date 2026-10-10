@@ -29,6 +29,7 @@ import {
   HOSTED_HOLDER_OPTIONAL_SIGN_IN_LABEL,
   HOSTED_HOLDER_PRIMARY_ACTION,
 } from "@/lib/auth/hostedHolderEligibility";
+import { WalletFirstSignIn } from "@/components/auth/WalletFirstSignIn";
 import {
   HolderSuccessState,
   VerificationFailure,
@@ -77,6 +78,9 @@ export interface PartnerVerifyShellProps {
   disclosedResult?: string | null;
   hostedBootstrapEligible?: boolean;
   onOptionalSignIn?: () => void;
+  /** Phantom-first sign-in for Solana-native partner flows (#508). */
+  walletPrimarySignIn?: boolean;
+  onWalletSignInSuccess?: () => void;
 }
 
 function recoveryForPhase(phase: PartnerVerifyPhase) {
@@ -153,6 +157,8 @@ export function PartnerVerifyShell({
   disclosedResult = null,
   hostedBootstrapEligible = false,
   onOptionalSignIn,
+  walletPrimarySignIn = false,
+  onWalletSignInSuccess,
 }: PartnerVerifyShellProps) {
   const continuationContext = { policyId, purpose };
   const onSignInScreen = showSignIn(phase);
@@ -275,7 +281,18 @@ export function PartnerVerifyShell({
             </p>
           )}
 
-          {showSignIn(phase) && signInConfigured && !hostedBootstrapEligible && (
+          {showSignIn(phase) && signInConfigured && !hostedBootstrapEligible && walletPrimarySignIn && (
+            <>
+              <WalletFirstSignIn
+                onSuccess={() => onWalletSignInSuccess?.()}
+              />
+              <p style={{ margin: "0.65rem 0 0", fontSize: "0.82rem", lineHeight: 1.55, color: "var(--text-muted)" }}>
+                Wallet sign-in proves control of your Phantom wallet — not government ID or age. You will review the exact disclosure before sharing anything.
+              </p>
+            </>
+          )}
+
+          {showSignIn(phase) && signInConfigured && !hostedBootstrapEligible && !walletPrimarySignIn && (
             <>
             <Btn
               onClick={onSignIn}
