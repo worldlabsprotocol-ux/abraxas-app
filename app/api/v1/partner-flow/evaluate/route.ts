@@ -46,6 +46,7 @@ import {
 } from "@/lib/partner/partnerVerifyResumeCookie";
 import { normalizeExpectedContentHash } from "@/lib/provenance/expectedContentHash";
 import { isContentOriginDisclosureFlow } from "@/lib/provenance/partnerFlow";
+import { resolvePartnerEvaluateReuseHint } from "@/lib/partner/partnerEvaluateReuseHint";
 
 export const dynamic = "force-dynamic";
 
@@ -353,7 +354,26 @@ export async function POST(request: NextRequest) {
       hasRedirectUrl: Boolean(result.redirect_url),
     });
 
-    const res = NextResponse.json({ ...enrichPartnerFlowResponse(result), flow_trace_id: flowTraceId });
+    const enriched = enrichPartnerFlowResponse(result);
+    let evidenceReuseHint = null;
+    if (result.next === "passport" || result.next === "pending_review") {
+      try {
+        evidenceReuseHint = await resolvePartnerEvaluateReuseHint({
+          subjectId: sessionSubject,
+          partnerId,
+          policyId: effectivePolicyId,
+          policyVersion: result.policy_version ?? expectedPolicyVersion ?? 1,
+        });
+      } catch {
+        evidenceReuseHint = null;
+      }
+    }
+
+    const res = NextResponse.json({
+      ...enriched,
+      flow_trace_id: flowTraceId,
+      evidence_reuse_hint: evidenceReuseHint,
+    });
 
     if (result.verification_request_id) {
       const bound = await bindPartnerFlowContinuationForEvaluate({
