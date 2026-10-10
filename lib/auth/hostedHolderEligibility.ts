@@ -5,6 +5,9 @@ import {
   GOOD_TROUBLE_CANONICAL_PARTNER_ID,
   GOOD_TROUBLE_CANONICAL_POLICY_ID,
 } from "@/lib/goodTrouble/canonicalProductionConfig";
+import { GOOD_TROUBLE_AGE_21_RETAIL_SOLANA_POLICY_ID } from "@/lib/goodTrouble/goodTroubleSolanaPolicyIds";
+import { CIELO_PARTNER_ID, CIELO_VERIFIED_GUEST_POLICY_ID } from "@/lib/cielo/cieloIds";
+import { CIELO_VERIFIED_GUEST_SOLANA_POLICY_ID } from "@/lib/cielo/cieloSolanaPolicyIds";
 import { isGoodTroubleBrowseFlow } from "@/lib/partner/goodTroubleBrowseFlow";
 
 export interface HostedHolderFlowContext {
@@ -28,8 +31,25 @@ export function isHostedHolderBootstrapEligible(input: HostedHolderFlowContext):
     return true;
   }
 
-  return (
+  if (
     partnerId === GOOD_TROUBLE_CANONICAL_PARTNER_ID
-    && policyId === GOOD_TROUBLE_CANONICAL_POLICY_ID
-  );
+    && (
+      policyId === GOOD_TROUBLE_CANONICAL_POLICY_ID
+      || policyId === GOOD_TROUBLE_AGE_21_RETAIL_SOLANA_POLICY_ID
+    )
+  ) {
+    return true;
+  }
+
+  if (
+    partnerId === CIELO_PARTNER_ID
+    && (
+      policyId === CIELO_VERIFIED_GUEST_POLICY_ID
+      || policyId === CIELO_VERIFIED_GUEST_SOLANA_POLICY_ID
+    )
+  ) {
+    return true;
+  }
+
+  return false;
 }

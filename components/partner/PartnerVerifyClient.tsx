@@ -6,7 +6,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { isHostedHolderBootstrapEligible } from "@/lib/auth/hostedHolderEligibility";
-import { ensureBrowserSessionReady } from "@/lib/auth/ensureBrowserSession";
+import { ensurePartnerHolderSessionReady } from "@/lib/auth/ensurePartnerHolderSession";
+import { isSolanaNativeProductEnabledClient } from "@/lib/auth/solanaNative/clientFeatureFlag";
+import { useHolderSession } from "@/lib/hooks/useHolderSession";
 import { useHostedHolderBootstrap } from "@/lib/partner/useHostedHolderBootstrap";
 import { useGoogleSignIn } from "@/lib/hooks/useGoogleSignIn";
 import {
@@ -77,8 +79,18 @@ export function PartnerVerifyClient({
   previewPartnerName = null,
 }: PartnerVerifyClientProps) {
   const searchParams = useSearchParams();
-  const { suiAddress, isLoading: authLoading, signInWithGoogle, refreshSession } = useSuiAuth();
-  const { signIn, busy: signInBusy, configured: signInConfigured } = useGoogleSignIn();
+  const solanaNative = isSolanaNativeProductEnabledClient();
+  const { suiAddress: legacySui, isLoading: authLoading, signInWithGoogle, refreshSession } = useSuiAuth();
+  const { session: holderSession, loading: holderLoading, refresh: refreshHolderSession } = useHolderSession(solanaNative);
+  const holderReady = solanaNative
+    ? Boolean(holderSession?.passportSubjectReady)
+    : Boolean(legacySui);
+  const suiAddress = solanaNative
+    ? (holderSession?.claimsSubjectKey ?? null)
+    : legacySui;
+  const { signIn, busy: signInBusy, configured: googleSignInConfigured } = useGoogleSignIn();
+  const signInConfigured = solanaNative || googleSignInConfigured;
+  const authLoadingCombined = solanaNative ? holderLoading : authLoading;
 
   const [phase, setPhase] = useState<PartnerVerifyPhase>(previewPhase ?? "loading");
   const [statusMessage, setStatusMessage] = useState("Preparing verification…");
@@ -225,7 +237,7 @@ export function PartnerVerifyClient({
   }, [suiAddress]);
 
   const runEvaluate = useCallback(async () => {
-    if (invalidLinkMessage || !suiAddress || !flowParamsReady) return;
+    if (invalidLinkMessage || !holderReady || !flowParamsReady) return;
     if (evaluateOnceRef.current) return;
     evaluateOnceRef.current = true;
 
@@ -238,7 +250,10 @@ export function PartnerVerifyClient({
     logPartnerVerifyAuthEvent("partner_evaluate_started", { correlationId: cid });
 
     try {
-      const browserSession = await ensureBrowserSessionReady(suiAddress);
+      const browserSession = await ensurePartnerHolderSessionReady({
+        solanaNative,
+        legacySubjectAddress: legacySui,
+      });
       if (!browserSession.ok) {
         logPartnerVerifyAuthEvent("partner_evaluate_result", {
           correlationId: cid,
@@ -367,7 +382,9 @@ export function PartnerVerifyClient({
     }
   }, [
     invalidLinkMessage,
-    suiAddress,
+    holderReady,
+    solanaNative,
+    legacySui,
     relyingPartyId,
     permission,
     permissionVersion,
@@ -380,7 +397,7 @@ export function PartnerVerifyClient({
   ]);
 
   useEffect(() => {
-    if (authLoading) {
+    if (authLoadingCombined) {
       if (previewPhase) return;
       setPhase("loading");
       return;
@@ -395,7 +412,7 @@ export function PartnerVerifyClient({
       setPhase("invalid_link");
       return;
     }
-    if (!suiAddress) {
+    if (!holderReady) {
       if (hostedBootstrapEligible) {
         if (hostedBootstrap.bootstrapping || hostedBootstrap.state === "idle") {
           setPhase("bootstrapping");
@@ -424,9 +441,9 @@ export function PartnerVerifyClient({
       void runEvaluate();
     }
   }, [
-    authLoading,
+    authLoadingCombined,
     invalidLinkMessage,
-    suiAddress,
+    holderReady,
     oauthReturnReady,
     runEvaluate,
     previewPhase,
@@ -491,12 +508,19 @@ export function PartnerVerifyClient({
     signInOnceRef.current = false;
     clearLoginInFlight();
     clearStaleLoginInFlight();
-    if (suiAddress) {
+    if (holderReady) {
       void runEvaluate();
       return;
     }
     setPhase("sign_in");
-  }, [runEvaluate, suiAddress]);
+  }, [runEvaluate, holderReady]);
+
+  const handleWalletSignInSuccess = useCallback(() => {
+    void refreshHolderSession().then(() => {
+      evaluateOnceRef.current = false;
+      void runEvaluate();
+    });
+  }, [refreshHolderSession, runEvaluate]);
 
   return (
     <PartnerVerifyShell
@@ -519,6 +543,8 @@ export function PartnerVerifyClient({
       disclosedResult={launchpadResolution.resolved?.disclosedResult ?? null}
       hostedBootstrapEligible={hostedBootstrapEligible}
       onOptionalSignIn={() => { void handleSignIn(); }}
+      walletPrimarySignIn={solanaNative}
+      onWalletSignInSuccess={handleWalletSignInSuccess}
     />
   );
 }

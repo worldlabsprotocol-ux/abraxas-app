@@ -2,7 +2,7 @@
 // Resume /partner/continue only from the database continuation store.
 
 import { NextRequest, NextResponse } from "next/server";
-import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { requirePartnerFlowHolder } from "@/lib/partner/partnerFlowHolderContext";
 import { activatePartnerFlowContinuation } from "@/lib/partner/activatePartnerFlowContinuation";
 import { CONTINUATION_STORE_UNAVAILABLE } from "@/lib/partner/partnerFlowContinuation";
 import { createSupabaseContinuationStore } from "@/lib/partner/partnerFlowContinuationStore";
@@ -17,9 +17,12 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
-  const session = await requireBrowserSession(request);
-  if (!session.ok) {
-    return NextResponse.json({ error: session.error, code: "auth_required" }, { status: session.status });
+  const holderAuth = await requirePartnerFlowHolder(request);
+  if (!holderAuth.ok) {
+    return NextResponse.json(
+      { error: holderAuth.error, code: holderAuth.code ?? "auth_required" },
+      { status: holderAuth.status },
+    );
   }
 
   const token = request.cookies.get(PARTNER_VERIFY_RESUME_COOKIE)?.value;
@@ -44,7 +47,7 @@ export async function POST(request: NextRequest) {
   const result = await activatePartnerFlowContinuation({
     store: createSupabaseContinuationStore(),
     jti: payload?.jti ?? null,
-    suiAddress: session.session.suiAddress,
+    suiAddress: holderAuth.holder.subjectId,
     claimedPartnerId: claimed.partnerId,
     claimedPolicyId: claimed.policyId,
     claimedPolicyVersion: claimed.policyVersion,

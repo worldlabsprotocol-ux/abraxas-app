@@ -2,7 +2,7 @@
 // Return binding comes from the database continuation, not cookie fields.
 
 import { NextRequest, NextResponse } from "next/server";
-import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { requirePartnerFlowHolder } from "@/lib/partner/partnerFlowHolderContext";
 import {
   CONTINUATION_STORE_UNAVAILABLE,
   ContinuationStoreUnavailableError,
@@ -19,9 +19,12 @@ import { isOpaqueVerifyRequest } from "@/lib/partner/productionIntegration/reque
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  const session = await requireBrowserSession(request);
-  if (!session.ok) {
-    return NextResponse.json({ error: session.error }, { status: session.status });
+  const holderAuth = await requirePartnerFlowHolder(request);
+  if (!holderAuth.ok) {
+    return NextResponse.json(
+      { error: holderAuth.error, code: holderAuth.code },
+      { status: holderAuth.status },
+    );
   }
 
   const verifyRequest = request.nextUrl.searchParams.get("verify_request")?.trim() ?? "";

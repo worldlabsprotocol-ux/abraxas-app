@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { requirePartnerFlowHolder } from "@/lib/partner/partnerFlowHolderContext";
+import { resolveEffectivePartnerPolicyId } from "@/lib/partner/solanaNativePartnerPolicyRouting";
 import {
   inspectPartnerPolicyForAgent,
   validatePartnerProofAgentRequest,
@@ -15,9 +16,12 @@ export const dynamic = "force-dynamic";
  * Does not issue receipts or override policy.
  */
 export async function POST(request: NextRequest) {
-  const session = await requireBrowserSession(request);
-  if (!session.ok) {
-    return NextResponse.json({ error: session.error }, { status: session.status });
+  const holderAuth = await requirePartnerFlowHolder(request);
+  if (!holderAuth.ok) {
+    return NextResponse.json(
+      { error: holderAuth.error, code: holderAuth.code },
+      { status: holderAuth.status },
+    );
   }
 
   let body: { partner_id?: string; policy_id?: string; return_url?: string };
@@ -40,10 +44,15 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const effectivePolicyId = resolveEffectivePartnerPolicyId({
+      requestedPolicyId: policyId,
+      holderMode: holderAuth.holder.mode,
+    }).policyId;
+
     const result = await inspectPartnerPolicyForAgent({
       partner_id: partnerId,
-      policy_id: policyId,
-      sui_address: session.session.suiAddress,
+      policy_id: effectivePolicyId,
+      sui_address: holderAuth.holder.subjectId,
     });
     const partnerName = resolvePartnerDisplayName(partnerId);
     return NextResponse.json({

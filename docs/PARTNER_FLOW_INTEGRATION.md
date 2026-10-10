@@ -7,7 +7,7 @@ Generic relying-party verification flow. Good Trouble (`good-trouble-cannabis`) 
 ### First visit
 1. User lands on partner site → clicks **Continue with Abraxas**
 2. Redirect to `/partner/verify?partner_id=…&policy_id=…&return_url=…`
-3. User authenticates (Google zkLogin or wallet)
+3. User authenticates (Phantom wallet when `ABRAXAS_SOLANA_NATIVE`, otherwise Google zkLogin or legacy wallet)
 4. `POST /api/v1/partner-flow/evaluate` — no valid credential → Passport
 5. ID + biometric capture → manual review → credential issued
 6. `POST /api/v1/partner-flow/complete` → signed session receipt
@@ -34,7 +34,7 @@ sequenceDiagram
 
   User->>Partner: Continue with Abraxas
   Partner->>Verify: redirect (partner_id, policy_id, return_url)
-  Verify->>User: Sign in (zkLogin / wallet)
+  Verify->>User: Sign in (Phantom / zkLogin)
   Verify->>API: POST /evaluate
 
   alt No credential / expired / revoked
