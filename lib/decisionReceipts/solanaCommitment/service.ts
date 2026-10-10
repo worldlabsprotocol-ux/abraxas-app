@@ -46,7 +46,7 @@ export async function enqueueSolanaReceiptCommitment(
 
   const digest = buildReceiptCommitmentDigest(record.payload_hash);
   const memo = serializeReceiptCommitmentMemo(
-    buildReceiptCommitmentMemo({ commitmentDigest: digest, receiptId: record.id }),
+    buildReceiptCommitmentMemo({ commitmentDigest: digest }),
   );
 
   const row = await upsertPendingCommitment({

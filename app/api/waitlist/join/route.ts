@@ -1,13 +1,9 @@
 // FILE: app/api/waitlist/join/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseForRoute } from "@/lib/supabase/routeAdmin";
 
 export async function POST(req: NextRequest) {
+  const supabase = supabaseForRoute();
   try {
     const { email } = await req.json() as { email?: string };
     if (!email || !email.includes("@")) {

@@ -3,14 +3,10 @@
 // Asset stays off Markets. $ABRA is NOT refunded (spent on verification work).
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseForRoute } from "@/lib/supabase/routeAdmin";
 
 export async function POST(req: NextRequest, { params }: { params: { assetId: string } }) {
+  const supabase = supabaseForRoute();
   if (req.headers.get("x-admin-secret") !== process.env.ADMIN_SECRET) {
     return NextResponse.json({ error:"Unauthorized" }, { status: 401 });
   }
