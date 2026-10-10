@@ -9,6 +9,9 @@ export const CINEMATIC_HERO_SUPPORT =
 
 export const CINEMATIC_CTA_PRIMARY = "See reuse across two apps";
 export const CINEMATIC_CTA_PRIMARY_HREF = "/proof";
+/** Founder-approved [ui-change] secondary — simulated judge/investor tour (Build #513). */
+export const CINEMATIC_CTA_DEMO = "Explore the demo";
+export const CINEMATIC_CTA_DEMO_HREF = "/experience/tour";
 export const CINEMATIC_CTA_SECONDARY = "Build in sandbox";
 export const CINEMATIC_CTA_SECONDARY_HREF =
   "/developers/integration-studio?outcome=reuse_across_app&source=gtm-home";
