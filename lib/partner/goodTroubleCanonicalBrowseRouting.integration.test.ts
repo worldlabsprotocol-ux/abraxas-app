@@ -73,7 +73,14 @@ async function loadWixBrowseStart() {
   const { buildVerificationStartPayload } = await import(
     "../../examples/good-trouble-wix/backend/nonceLifecycle.js"
   );
-  return buildVerificationStartPayload({ hashFn, purpose: "browse" });
+  const { TEST_ESCROW_PEPPER_HEX } = await import(
+    "../../examples/good-trouble-wix/backend/testPkceEscrowFixtures.js"
+  );
+  return buildVerificationStartPayload({
+    hashFn,
+    purpose: "browse",
+    escrowPepper: TEST_ESCROW_PEPPER_HEX,
+  });
 }
 
 describe("Good Trouble canonical browse routing integration", () => {

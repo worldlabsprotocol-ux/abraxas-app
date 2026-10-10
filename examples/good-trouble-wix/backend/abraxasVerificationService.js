@@ -107,7 +107,7 @@ async function startFlow(purpose, captchaToken, deps = {}, returnDestinationPath
     }
 
     let escrowPepper = null;
-    if (purpose === "purchase") {
+    if (purpose === "purchase" || purpose === "browse") {
       const pepperResult = await resolveEscrowPepperForService(deps);
       if (!pepperResult.ok) {
         return buildFlowStartFailure({
@@ -202,11 +202,13 @@ export async function createBrowseVerificationStartService(captchaToken, deps = 
     purpose !== "browse"
     || policyId !== BROWSE_POLICY_ID
     || !flowId.startsWith(FLOW_ID_PREFIX_BROWSE)
+    || !result.flowOwnershipSecret
     || !verifyUrl.includes(BROWSE_POLICY_ID)
     || !verifyUrl.includes("purpose=browse")
     || verifyUrl.includes("good-trouble-age_21_retail-v1")
     || verifyUrl.includes("app=good-trouble")
     || verifyUrl.includes("age-verification-result")
+    || verifyUrl.match(/gtf_/)
   ) {
     return buildFlowStartFailure({
       code: "start_internal_error",
@@ -291,9 +293,35 @@ export async function completePurchaseVerificationService(
   });
 }
 
-export async function completeBrowseVerificationService(browseReceipt, flowId, verifier, deps = {}) {
+export async function completeBrowseVerificationService(
+  browseReceipt,
+  flowId,
+  verifier,
+  fourthArg = "",
+  fifthArg = {},
+) {
+  let flowOwnershipSecret = "";
+  /** @type {object} */
+  let deps = {};
+  if (typeof fourthArg === "string") {
+    flowOwnershipSecret = fourthArg;
+    deps = fifthArg ?? {};
+  } else {
+    deps = fourthArg ?? {};
+  }
+
   const store = await resolveStore(deps);
   const hashFn = resolveHashFn(deps.hashFn);
+
+  let escrowPepper = null;
+  const needsEscrowPepper = !verifier?.trim() && Boolean(flowOwnershipSecret?.trim());
+  if (needsEscrowPepper) {
+    const pepperResult = await resolveEscrowPepperForService(deps);
+    if (!pepperResult.ok) {
+      return { verified: false, code: pepperResult.code };
+    }
+    escrowPepper = pepperResult.pepper;
+  }
 
   const defaultValidateBrowse = async (token, record) => {
     const result = await verifyBrowseReceiptRemotely(token, { fetchImpl: deps.fetchImpl });
@@ -318,6 +346,8 @@ export async function completeBrowseVerificationService(browseReceipt, flowId, v
     browseReceipt,
     flowId,
     verifier,
+    flowOwnershipSecret,
+    escrowPepper,
     hashFn,
     validateBrowseReceipt: deps.validateBrowseReceipt ?? defaultValidateBrowse,
   });

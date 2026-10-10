@@ -13,6 +13,8 @@ const REQUIRED_PUBLIC_MODULES = [
   "abraxasClientConstants.js",
   "ageGateAccessState.js",
   "ageVerificationPopupLogic.js",
+  "browseCallbackCompletion.js",
+  "browseCallbackLogic.js",
   "purchaseCallbackLogic.js",
   "purchaseReturnDestination.js",
   "purchaseVerificationLogic.js",

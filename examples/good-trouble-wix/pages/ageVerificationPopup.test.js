@@ -154,6 +154,7 @@ function buildBrowseStartFixture() {
     verifier: "b".repeat(64),
     policyId: BROWSE_POLICY_ID,
     purpose: "browse",
+    flowOwnershipSecret: "c".repeat(64),
   };
 }
 

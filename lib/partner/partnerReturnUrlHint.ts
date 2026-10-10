@@ -3,7 +3,9 @@
 
 import type { NextRequest } from "next/server";
 import {
+  coalesceGoodTroubleBrowseReturnUrl,
   coalesceGoodTroublePurchaseReturnUrl,
+  goodTroubleBrowseReturnUrlBindingAllowed,
   goodTroublePurchaseReturnUrlBindingAllowed,
   preferAuthoritativeContinuationReturnUrl,
   mergePartnerReturnUrlHints,
@@ -17,6 +19,7 @@ import {
   PARTNER_VERIFY_RESUME_COOKIE,
   verifyPartnerVerifyResumeCookie,
 } from "@/lib/partner/partnerVerifyResumeCookie";
+import { readGoodTroubleGtbBindingReturnUrl } from "@/lib/partner/goodTroubleGtbBindingCookie";
 import { readGoodTroubleGtvBindingReturnUrl } from "@/lib/partner/goodTroubleGtvBindingCookie";
 
 export { mergePartnerReturnUrlHints };
@@ -48,7 +51,15 @@ export async function resolvePartnerReturnUrlHintForRequest(
   const gtvBindingReturnUrl = verifyRequestId
     ? await readGoodTroubleGtvBindingReturnUrl(request, verifyRequestId)
     : null;
-  return mergePartnerReturnUrlHints(clientHint, resumeReturnUrl, gtvBindingReturnUrl);
+  const gtbBindingReturnUrl = verifyRequestId
+    ? await readGoodTroubleGtbBindingReturnUrl(request, verifyRequestId)
+    : null;
+  return mergePartnerReturnUrlHints(
+    clientHint,
+    resumeReturnUrl,
+    gtvBindingReturnUrl,
+    gtbBindingReturnUrl,
+  );
 }
 
 export async function upgradeStoredContinuationWithPartnerHint(input: {
@@ -59,10 +70,18 @@ export async function upgradeStoredContinuationWithPartnerHint(input: {
   if (!hint || !continuationIsUsable(input.stored) || input.stored.consumedAt) {
     return input.stored;
   }
-  if (!goodTroublePurchaseReturnUrlBindingAllowed(input.stored.returnUrl, hint)) {
+  const purchaseAllowed = goodTroublePurchaseReturnUrlBindingAllowed(input.stored.returnUrl, hint);
+  const browseAllowed = goodTroubleBrowseReturnUrlBindingAllowed(input.stored.returnUrl, hint);
+  if (!purchaseAllowed && !browseAllowed) {
     return input.stored;
   }
-  const coalesced = coalesceGoodTroublePurchaseReturnUrl(input.stored.returnUrl, hint);
+  let coalesced = input.stored.returnUrl;
+  if (purchaseAllowed) {
+    coalesced = coalesceGoodTroublePurchaseReturnUrl(coalesced, hint);
+  }
+  if (browseAllowed) {
+    coalesced = coalesceGoodTroubleBrowseReturnUrl(coalesced, hint);
+  }
   const resolved = preferAuthoritativeContinuationReturnUrl(input.stored.returnUrl, coalesced);
   if (resolved === input.stored.returnUrl) return input.stored;
 

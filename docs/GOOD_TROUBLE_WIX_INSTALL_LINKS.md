@@ -1,21 +1,24 @@
 # Good Trouble Wix — GitHub install links
 
-Copy sources from branch `cursor/good-trouble-pkce-session-continuity-5ffe` (or `main` after merge).  
+Copy sources from branch `cursor/good-trouble-browse-seeker-demo-5ffe` (or `main` after merge).  
 Base repo: [worldlabsprotocol-ux/abraxas-app](https://github.com/worldlabsprotocol-ux/abraxas-app).
 
 ## Public (`src/public/`)
 
 | Wix file | GitHub source |
 |----------|----------------|
-| `abraxasClientConstants.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/public/abraxasClientConstants.js |
-| `ageGateAccessState.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/public/ageGateAccessState.js |
-| `ageVerificationPopupLogic.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/public/ageVerificationPopupLogic.js |
-| `purchaseCallbackLogic.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/public/purchaseCallbackLogic.js |
-| `purchaseReturnDestination.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/public/purchaseReturnDestination.js |
-| `purchaseVerificationLogic.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/public/purchaseVerificationLogic.js |
-| `siteAgeGatePolicy.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/public/siteAgeGatePolicy.js |
-| `purchaseFlowOwnership.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/public/purchaseFlowOwnership.js |
-| `purchaseCallbackCompletion.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/public/purchaseCallbackCompletion.js |
+| `abraxasClientConstants.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/public/abraxasClientConstants.js |
+| `ageGateAccessState.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/public/ageGateAccessState.js |
+| `ageVerificationPopupLogic.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/public/ageVerificationPopupLogic.js |
+| `browseCallbackLogic.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/public/browseCallbackLogic.js |
+| `browseCallbackCompletion.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/public/browseCallbackCompletion.js |
+| `browseFlowOwnership.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/public/browseFlowOwnership.js |
+| `purchaseCallbackLogic.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/public/purchaseCallbackLogic.js |
+| `purchaseReturnDestination.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/public/purchaseReturnDestination.js |
+| `purchaseVerificationLogic.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/public/purchaseVerificationLogic.js |
+| `siteAgeGatePolicy.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/public/siteAgeGatePolicy.js |
+| `purchaseFlowOwnership.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/public/purchaseFlowOwnership.js |
+| `purchaseCallbackCompletion.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/public/purchaseCallbackCompletion.js |
 
 ## Backend (`src/backend/`)
 
@@ -23,25 +26,25 @@ Deploy all modules listed in `examples/good-trouble-wix/WIX_DEPLOYMENT_MANIFEST.
 
 | Wix file | GitHub source |
 |----------|----------------|
-| `constants.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/backend/constants.js |
-| `abraxasReceiptValidator.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/backend/abraxasReceiptValidator.js |
-| `abraxasVerificationService.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/backend/abraxasVerificationService.js |
-| `abraxasVerification.web.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/backend/abraxasVerification.web.js |
-| `nonceLifecycle.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/backend/nonceLifecycle.js |
-| `flowOwnership.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/backend/flowOwnership.js |
-| `pkceEscrowPepper.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/backend/pkceEscrowPepper.js |
-| `pkceEscrowPepperWix.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/backend/pkceEscrowPepperWix.js |
-| `returnDestinationPath.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/backend/returnDestinationPath.js |
+| `constants.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/backend/constants.js |
+| `abraxasReceiptValidator.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/backend/abraxasReceiptValidator.js |
+| `abraxasVerificationService.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/backend/abraxasVerificationService.js |
+| `abraxasVerification.web.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/backend/abraxasVerification.web.js |
+| `nonceLifecycle.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/backend/nonceLifecycle.js |
+| `flowOwnership.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/backend/flowOwnership.js |
+| `pkceEscrowPepper.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/backend/pkceEscrowPepper.js |
+| `pkceEscrowPepperWix.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/backend/pkceEscrowPepperWix.js |
+| `returnDestinationPath.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/backend/returnDestinationPath.js |
 
 ## Page / lightbox code
 
 | Wix target | GitHub source |
 |------------|----------------|
-| Age Verification lightbox | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/pages/AgeVerificationPopup.js |
-| `/age-verification-result` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/pages/AgeVerificationResult.js |
-| `/browse-verification-result` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/pages/BrowseVerificationResult.js |
-| Purchase Verification Entry (`/purchase-verification` recommended) | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/pages/PurchaseVerificationEntry.js |
-| Master Page (site-wide age lightbox suppress) | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-pkce-session-continuity-5ffe/examples/good-trouble-wix/pages/GoodTroubleMasterPage.js |
+| Age Verification lightbox | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/pages/AgeVerificationPopup.js |
+| `/age-verification-result` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/pages/AgeVerificationResult.js |
+| `/browse-verification-result` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/pages/BrowseVerificationResult.js |
+| Purchase Verification Entry (`/purchase-verification` recommended) | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/pages/PurchaseVerificationEntry.js |
+| Master Page (site-wide age lightbox suppress) | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/pages/GoodTroubleMasterPage.js |
 
 ## Post-verification destination
 
@@ -59,16 +62,17 @@ Deploy all modules listed in `examples/good-trouble-wix/WIX_DEPLOYMENT_MANIFEST.
 | Age Verification Result | `age-verification-result` | `abraxasStatusText` | Checking verification… |
 | Age Verification Result | `age-verification-result` | `restartAbraxasButton` | Optional restart → `/` |
 | Browse Verification Result | `browse-verification-result` | `abraxasStatusText` | Browse callback status |
+| Browse Verification Result | `browse-verification-result` | `restartAbraxasButton` | Optional restart → `/` on failure |
 | Purchase Verification Entry | `purchase-verification` | `purchaseAbraxasButton` | Hosted purchase / 21+ sandbox flow |
 | Purchase Verification Entry | `purchase-verification` | `purchaseStatusText` | Start status (optional) |
 
 Operator docs: `docs/GOOD_TROUBLE_WIX_SEEKER_HANDOFF.md`, `examples/good-trouble-wix/WIX_DEPLOYMENT_MANIFEST.md`.
 
-## Wix Secrets Manager (required for purchase escrow)
+## Wix Secrets Manager (required for browse + purchase PKCE escrow)
 
 | Secret name | Notes |
 |-------------|--------|
-| `GOOD_TROUBLE_PKCE_ESCROW_PEPPER` | Generate ≥32 bytes (e.g. `openssl rand -hex 32`). Backend-only via `wix-secrets-backend`; purchase flows fail closed without it. |
+| `GOOD_TROUBLE_PKCE_ESCROW_PEPPER` | Generate ≥32 bytes (e.g. `openssl rand -hex 32`). Backend-only via `wix-secrets-backend`. **Browse L0 and purchase** flows fail closed at start/completion without it. Same secret as purchase escrow; browse uses independent `gt_browse_pkce_flow_own` cookie and `gtb_` flow ids (never mixed with `gtv` / `gt_pkce_flow_own`). |
 
 ## Mobile acceptance (Solana Seeker)
 

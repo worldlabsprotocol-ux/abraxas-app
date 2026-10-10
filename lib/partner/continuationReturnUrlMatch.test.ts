@@ -77,3 +77,22 @@ describe("partnerContinuationReturnUrlsMatch", () => {
     expect(extractGoodTroubleFlowToken(merged)).toBe(FLOW_TOKEN);
   });
 });
+
+const GTB = `gtb_${"c".repeat(64)}`;
+const BROWSE_BASE = "https://www.goodtroublecanna.com/browse-verification-result";
+
+describe("Good Trouble browse return URL coalescing", () => {
+  it("mergePartnerReturnUrlHints upgrades bare browse callback with gtb hint", () => {
+    const hint = `${BROWSE_BASE}?gtb=${GTB}&rc=test-site`;
+    const merged = mergePartnerReturnUrlHints(BROWSE_BASE, hint);
+    expect(extractGoodTroubleFlowToken(merged)).toBe(GTB);
+  });
+
+  it("does not coalesce gtv purchase hint onto browse callback", () => {
+    const merged = mergePartnerReturnUrlHints(
+      BROWSE_BASE,
+      `${BASE}?gtv=${FLOW_TOKEN}`,
+    );
+    expect(merged).toBe(BROWSE_BASE);
+  });
+});

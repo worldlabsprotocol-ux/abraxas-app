@@ -26,7 +26,14 @@ async function loadWixBrowseStart() {
   const { BROWSE_FLOW } = await import(
     "../../examples/good-trouble-wix/backend/flowPurpose.js"
   );
-  const payload = await buildVerificationStartPayload({ hashFn, purpose: "browse" });
+  const { TEST_ESCROW_PEPPER_HEX } = await import(
+    "../../examples/good-trouble-wix/backend/testPkceEscrowFixtures.js"
+  );
+  const payload = await buildVerificationStartPayload({
+    hashFn,
+    purpose: "browse",
+    escrowPepper: TEST_ESCROW_PEPPER_HEX,
+  });
   return { payload, browseFlow: BROWSE_FLOW };
 }
 

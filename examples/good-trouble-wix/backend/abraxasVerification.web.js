@@ -26,8 +26,13 @@ export const createAbraxasVerificationStart = createPurchaseVerificationStart;
 
 export const completeBrowseVerification = webMethod(
   Permissions.Anyone,
-  async (browseReceipt, flowId, verifier) =>
-    completeBrowseVerificationService(browseReceipt, flowId, verifier),
+  async (browseReceipt, flowId, verifier, flowOwnershipSecret) =>
+    completeBrowseVerificationService(
+      browseReceipt,
+      flowId,
+      verifier,
+      flowOwnershipSecret ?? "",
+    ),
 );
 
 export const completePurchaseVerification = webMethod(

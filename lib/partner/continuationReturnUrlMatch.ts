@@ -4,6 +4,7 @@
 import {
   GOOD_TROUBLE_BROWSE_CALLBACK_PATH,
   GOOD_TROUBLE_BROWSE_RC_PARAM,
+  GOOD_TROUBLE_BROWSE_RC_VALUE,
   GOOD_TROUBLE_GTB_PARAM,
   GOOD_TROUBLE_FLOW_ID_RE,
   GOOD_TROUBLE_GTV_PARAM,
@@ -106,6 +107,52 @@ export function goodTroublePurchaseReturnUrlBindingAllowed(
   );
 }
 
+export function goodTroubleBrowseReturnUrlBindingAllowed(
+  stored: string,
+  clientHint: string,
+): boolean {
+  if (partnerContinuationReturnUrlsMatch(stored, clientHint)) return true;
+  const coalesced = coalesceGoodTroubleBrowseReturnUrl(stored, clientHint);
+  if (coalesced === stored.trim()) return false;
+  const storedParts = decomposeContinuationReturnUrl(stored);
+  const coalescedParts = decomposeContinuationReturnUrl(coalesced);
+  if (!storedParts || !coalescedParts) return false;
+  return (
+    storedParts.origin === coalescedParts.origin
+    && storedParts.pathname === coalescedParts.pathname
+    && Boolean(coalescedParts.flowToken?.startsWith("gtb_"))
+  );
+}
+
+export function coalesceGoodTroubleBrowseReturnUrl(
+  storedOrAllowlisted: string,
+  partnerHint: string,
+): string {
+  const stored = storedOrAllowlisted.trim();
+  const hint = partnerHint.trim();
+  if (!hint) return stored;
+
+  const storedParts = decomposeContinuationReturnUrl(stored);
+  const hintParts = decomposeContinuationReturnUrl(hint);
+  if (!storedParts || !hintParts) return stored;
+  if (storedParts.origin !== hintParts.origin) return stored;
+  if (storedParts.pathname !== hintParts.pathname) return stored;
+  if (!isGoodTroubleBrowseCallbackPath(storedParts.pathname)) return stored;
+
+  const hintToken = hintParts.flowToken;
+  if (!hintToken?.startsWith("gtb_") || !GOOD_TROUBLE_FLOW_ID_RE.test(hintToken)) {
+    return stored;
+  }
+  if (storedParts.flowToken && storedParts.flowToken !== hintToken) {
+    return stored;
+  }
+
+  const url = new URL(`${storedParts.origin}${storedParts.pathname}`);
+  url.searchParams.set(GOOD_TROUBLE_GTB_PARAM, hintToken);
+  url.searchParams.set(GOOD_TROUBLE_BROWSE_RC_PARAM, GOOD_TROUBLE_BROWSE_RC_VALUE);
+  return url.toString();
+}
+
 export function coalesceGoodTroublePurchaseReturnUrl(
   storedOrAllowlisted: string,
   partnerHint: string,
@@ -145,6 +192,10 @@ export function mergePartnerReturnUrlHints(...parts: (string | null | undefined)
     merged = preferAuthoritativeContinuationReturnUrl(
       merged,
       coalesceGoodTroublePurchaseReturnUrl(merged, hint),
+    );
+    merged = preferAuthoritativeContinuationReturnUrl(
+      merged,
+      coalesceGoodTroubleBrowseReturnUrl(merged, hint),
     );
   }
   return merged;

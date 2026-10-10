@@ -139,10 +139,13 @@ describe("Good Trouble purchase callback continuation", () => {
     expect(complete.code).toBe("verifier_mismatch");
   });
 
-  it("does not redirect on purpose mismatch (browse flow completed as purchase)", async () => {
+  it("does not redirect when purchase completion receives browse gtb_ flow id", async () => {
     const store = createMemoryNonceStore();
     const { createBrowseVerificationStartService } = await import("../backend/abraxasVerificationService.js");
-    const browse = await createBrowseVerificationStartService(null, { store, skipCaptcha: true });
+    const browse = await createBrowseVerificationStartService(null, withTestEscrowPepperDeps({
+      store,
+      skipCaptcha: true,
+    }));
 
     const complete = await completePurchaseVerificationService(
       "dr_pilot_valid_12345678",
@@ -152,13 +155,16 @@ describe("Good Trouble purchase callback continuation", () => {
     );
 
     expect(shouldContinueAfterPurchaseVerification(complete)).toBe(false);
-    expect(complete.code).toBe("flow_purpose_mismatch");
+    expect(["invalid_flow_id", "flow_purpose_mismatch"]).toContain(complete.code);
   });
 
   it("browse start remains unaffected", async () => {
     const store = createMemoryNonceStore();
     const { createBrowseVerificationStartService } = await import("../backend/abraxasVerificationService.js");
-    const browse = await createBrowseVerificationStartService(null, { store, skipCaptcha: true });
+    const browse = await createBrowseVerificationStartService(null, withTestEscrowPepperDeps({
+      store,
+      skipCaptcha: true,
+    }));
     const stored = await store.findByFlowId(browse.flowId);
     expect(stored?.returnDestinationPath).toBeUndefined();
   });

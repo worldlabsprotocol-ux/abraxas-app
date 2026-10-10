@@ -11,14 +11,36 @@ import {
 } from "public/abraxasClientConstants";
 
 import {
-  persistBrowseVerifiedState,
-} from "public/ageGateAccessState";
+  BROWSE_CALLBACK_COMPLETION_TIMEOUT_MS,
+  BROWSE_CALLBACK_MAX_TRANSIENT_RETRIES,
+  BROWSE_CALLBACK_TRANSIENT_RETRY_MS,
+  BROWSE_SUCCESS_MESSAGE,
+  CHECKING_BROWSE_MESSAGE,
+  parseAllowlistedCallbackParams,
+  POST_BROWSE_REDIRECT_DELAY_MS,
+  resolveBrowsePostVerificationRedirectDestination,
+  shouldContinueAfterBrowseVerification,
+  canRedirectAfterBrowseVerification,
+} from "public/browseCallbackLogic";
+
+import {
+  hasBrowseCallbackPkceProof,
+  mapBrowseCallbackFailureMessage,
+  resolveBrowseCallbackPkceMaterial,
+  RESTART_BROWSE_VERIFICATION_LABEL,
+  LOST_BROWSE_SESSION_CONTEXT_MESSAGE,
+} from "public/browseCallbackCompletion";
+
+import { clearBrowseFlowOwnershipCookie } from "public/browseFlowOwnership";
+
+import { persistBrowseVerifiedState } from "public/ageGateAccessState";
 
 import wixLocation from "wix-location";
 import { local, session } from "wix-storage-frontend";
 
 const ALLOWED_CALLBACK_PARAMS = new Set([
   "browse_receipt",
+  "browse_receipt_id",
   "partner_id",
   "policy_id",
   "purpose",
@@ -28,21 +50,51 @@ const ALLOWED_CALLBACK_PARAMS = new Set([
 const GENERIC_FAILURE =
   "Browsing access could not be confirmed. Please try again.";
 
-const RESTART_MESSAGE =
-  "This verification was opened in a different browser or tab. Please start again from the age gate.";
-
-const SUCCESS_MESSAGE =
-  "Browsing access confirmed. Returning you to Good Trouble…";
-
 let completionStarted = false;
+let transientRetries = 0;
+let completionTimeoutId = null;
 
 $w.onReady(() => {
+  configureRestartButton();
   void handleCallback();
 });
+
+function configureRestartButton() {
+  const restartButton = $w("#restartAbraxasButton");
+  if (!restartButton) return;
+  restartButton.hide();
+  restartButton.label = RESTART_BROWSE_VERIFICATION_LABEL;
+  restartButton.onClick(() => {
+    wixLocation.to("/");
+  });
+}
 
 function setStatus(message) {
   const statusText = $w("#abraxasStatusText");
   if (statusText) statusText.text = message;
+}
+
+function showRestart() {
+  const restartButton = $w("#restartAbraxasButton");
+  if (restartButton) restartButton.show();
+}
+
+function clearCompletionTimeout() {
+  if (completionTimeoutId) {
+    clearTimeout(completionTimeoutId);
+    completionTimeoutId = null;
+  }
+}
+
+function armCompletionTimeout(flowId) {
+  clearCompletionTimeout();
+  completionTimeoutId = setTimeout(() => {
+    completionStarted = false;
+    transientRetries = 0;
+    if (flowId) clearVerifier(flowId);
+    setStatus(GENERIC_FAILURE);
+    showRestart();
+  }, BROWSE_CALLBACK_COMPLETION_TIMEOUT_MS);
 }
 
 function sessionStorageAvailable() {
@@ -58,15 +110,6 @@ function sessionStorageAvailable() {
 
 function verifierStorageKey(flowId) {
   return `${BROWSE_VERIFIER_STORAGE_PREFIX}${flowId}`;
-}
-
-function parseAllowlistedCallbackParams() {
-  const query = wixLocation.query;
-  const parsed = {};
-  for (const key of Object.keys(query)) {
-    if (ALLOWED_CALLBACK_PARAMS.has(key)) parsed[key] = query[key];
-  }
-  return parsed;
 }
 
 function clearVerifier(flowId) {
@@ -91,72 +134,121 @@ function setBrowseAccessState(expiresAtIso) {
     try {
       persistBrowseVerifiedState(local, { expiresAt, verifiedAt });
     } catch {
-      // Session flag remains; local persistence is best-effort.
+      // Session flag remains; local persistence is best-effort for age-gate UI only.
     }
   }
 }
 
-function restoreReturnDestination() {
+function redirectAfterVerified(result) {
+  let sessionDestination = null;
   try {
-    const destination = session.getItem(BROWSE_RETURN_DESTINATION_STORAGE_KEY);
+    sessionDestination = session.getItem(BROWSE_RETURN_DESTINATION_STORAGE_KEY);
     session.removeItem(BROWSE_RETURN_DESTINATION_STORAGE_KEY);
-    if (destination && typeof destination === "string" && destination.startsWith("/") && !destination.startsWith("//")) {
-      setTimeout(() => { wixLocation.to(destination); }, 1200);
-      return;
-    }
-    setTimeout(() => { wixLocation.to("/"); }, 1200);
   } catch {
-    // Keep success message visible.
+    // Fall back to server path or /goods.
   }
+
+  const destination = resolveBrowsePostVerificationRedirectDestination({
+    serverDestination: result?.returnDestination ?? null,
+    sessionDestination,
+  });
+
+  if (!canRedirectAfterBrowseVerification(destination)) {
+    setStatus(BROWSE_SUCCESS_MESSAGE);
+    return;
+  }
+
+  setStatus(BROWSE_SUCCESS_MESSAGE);
+  setTimeout(() => {
+    wixLocation.to(destination);
+  }, POST_BROWSE_REDIRECT_DELAY_MS);
 }
 
 async function handleCallback() {
   if (completionStarted) return;
   completionStarted = true;
-  setStatus("Confirming browsing access…");
+  setStatus(CHECKING_BROWSE_MESSAGE);
 
   if (!sessionStorageAvailable()) {
     setStatus("Verification is unavailable in this browser. Please restart from the age gate.");
+    showRestart();
     return;
   }
 
-  const params = parseAllowlistedCallbackParams();
+  const params = parseAllowlistedCallbackParams(wixLocation.query, ALLOWED_CALLBACK_PARAMS);
   const flowId = typeof params[GTB_PARAM] === "string" ? params[GTB_PARAM].trim() : "";
   const browseReceipt = typeof params.browse_receipt === "string" ? params.browse_receipt.trim() : "";
 
+  armCompletionTimeout(flowId);
+
   if (!flowId || !browseReceipt) {
+    clearCompletionTimeout();
     setStatus(GENERIC_FAILURE);
+    showRestart();
     return;
   }
 
-  const verifier = session.getItem(verifierStorageKey(flowId));
-  if (!verifier) {
-    setStatus(RESTART_MESSAGE);
+  const pkceMaterial = resolveBrowseCallbackPkceMaterial({
+    flowId,
+    sessionGet: (key) => session.getItem(key),
+    verifierStorageKey,
+    documentCookie: typeof document !== "undefined" ? document.cookie : "",
+  });
+
+  if (!hasBrowseCallbackPkceProof(pkceMaterial)) {
+    clearCompletionTimeout();
+    setStatus(LOST_BROWSE_SESSION_CONTEXT_MESSAGE);
+    showRestart();
     return;
   }
 
   try {
-    const result = await completeBrowseVerification(browseReceipt, flowId, verifier);
+    const result = await completeBrowseVerification(
+      browseReceipt,
+      flowId,
+      pkceMaterial.verifier,
+      pkceMaterial.flowOwnershipSecret,
+    );
 
-    if (result?.verified === true && result?.purpose === "browse") {
+    if (shouldContinueAfterBrowseVerification(result)) {
+      clearCompletionTimeout();
       clearVerifier(flowId);
+      try {
+        clearBrowseFlowOwnershipCookie((cookie) => {
+          // eslint-disable-next-line no-undef
+          document.cookie = cookie;
+        });
+      } catch {
+        // Non-authoritative cleanup.
+      }
       setBrowseAccessState(result.expires_at);
-      setStatus(SUCCESS_MESSAGE);
-      restoreReturnDestination();
+      redirectAfterVerified(result);
       return;
     }
 
     if (result?.code === "receipt_fetch_transient_failure" && result?.retryable === true) {
-      setStatus("Still confirming browsing access. Please wait a moment…");
+      transientRetries += 1;
+      if (transientRetries >= BROWSE_CALLBACK_MAX_TRANSIENT_RETRIES) {
+        clearCompletionTimeout();
+        clearVerifier(flowId);
+        setStatus(mapBrowseCallbackFailureMessage("flow_exhausted", GENERIC_FAILURE));
+        showRestart();
+        return;
+      }
+      setStatus(mapBrowseCallbackFailureMessage(result.code, GENERIC_FAILURE));
       completionStarted = false;
-      setTimeout(() => { void handleCallback(); }, 2000);
+      setTimeout(() => { void handleCallback(); }, BROWSE_CALLBACK_TRANSIENT_RETRY_MS);
       return;
     }
 
+    clearCompletionTimeout();
     clearVerifier(flowId);
-    setStatus(GENERIC_FAILURE);
+    setStatus(mapBrowseCallbackFailureMessage(result?.code, GENERIC_FAILURE));
+    showRestart();
   } catch {
+    clearCompletionTimeout();
     clearVerifier(flowId);
     setStatus(GENERIC_FAILURE);
+    showRestart();
   }
 }

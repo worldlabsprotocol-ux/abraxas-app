@@ -16,7 +16,7 @@ import {
   resolvePurchaseStartDestination,
 } from "./returnDestinationPath.js";
 import {
-  createPurchaseFlowOwnershipArtifacts,
+  createFlowOwnershipArtifacts,
   hashFlowOwnershipProof,
   ownershipProofHashesMatch,
   unsealVerifierForFlow,
@@ -124,14 +124,14 @@ export async function buildVerificationStartPayload(params) {
   };
 
   let flowOwnershipSecret = null;
-  if (flowConfig.purpose === "purchase") {
+  if (flowConfig.purpose === "purchase" || flowConfig.purpose === "browse") {
     const escrowPepper = params.escrowPepper;
     if (!escrowPepper) {
       throw Object.assign(new Error("pkce_escrow_secret_unavailable"), {
         code: "pkce_escrow_secret_unavailable",
       });
     }
-    const ownership = createPurchaseFlowOwnershipArtifacts({ flowId, verifier, pepper: escrowPepper });
+    const ownership = createFlowOwnershipArtifacts({ flowId, verifier, pepper: escrowPepper });
     flowRecord.ownershipProofHash = ownership.ownershipProofHash;
     flowRecord.verifierSealed = ownership.verifierSealed;
     flowOwnershipSecret = ownership.ownershipSecret;
@@ -144,7 +144,7 @@ export async function buildVerificationStartPayload(params) {
     policyId: flowConfig.policyId,
     /** Returned over TLS web method only — frontend stores in sessionStorage, never in URL. */
     verifier,
-    /** Purchase-only — bind cross-tab callback to same browser via cookie + server escrow. */
+    /** Bind cross-tab callback to same browser via cookie + server escrow (separate cookies per purpose). */
     flowOwnershipSecret,
     flowRecord,
   };
@@ -384,7 +384,9 @@ export async function completeAbraxasVerificationCore(params) {
  * @param {FlowStore} params.store
  * @param {string} params.browseReceipt
  * @param {string} params.flowId
- * @param {string} params.verifier
+ * @param {string} [params.verifier]
+ * @param {string} [params.flowOwnershipSecret]
+ * @param {string} [params.escrowPepper]
  * @param {(input: string) => Promise<string> | string} params.hashFn
  * @param {(token: string, record: FlowRecord) => Promise<{ verified: boolean, transientFailure?: boolean }>} params.validateBrowseReceipt
  * @param {Date} [params.now]
@@ -400,7 +402,13 @@ export async function completeBrowseVerificationCore(params) {
     return { verified: false, code: flowCheck.code };
   }
 
-  const verifierCheck = validateVerifier(params.verifier);
+  const verifierCheck = await resolveVerifierForFlowCompletion({
+    store: params.store,
+    flowId: flowCheck.flowId,
+    verifier: params.verifier,
+    flowOwnershipSecret: params.flowOwnershipSecret,
+    escrowPepper: params.escrowPepper,
+  });
   if (!verifierCheck.ok) {
     return { verified: false, code: verifierCheck.code };
   }

@@ -1,5 +1,6 @@
 // FILE: examples/good-trouble-wix/backend/flowOwnership.js
-// Purchase-flow PKCE escrow — verifier sealed server-side; recovery requires flow ownership secret (never gtv/receipt alone).
+// Partner-flow PKCE escrow (purchase gtf_* and browse gtb_*) — verifier sealed server-side;
+// recovery requires a fresh flow ownership secret (never gtv/gtb/receipt alone).
 
 import {
   createCipheriv,
@@ -86,7 +87,7 @@ export function unsealVerifierForFlow(input) {
 /**
  * @param {{ flowId: string, verifier: string, pepper: string }} input
  */
-export function createPurchaseFlowOwnershipArtifacts(input) {
+export function createFlowOwnershipArtifacts(input) {
   const ownershipSecret = randomBytes(OWNERSHIP_SECRET_BYTES).toString("hex");
   const pepper = input.pepper;
   return {
@@ -100,6 +101,9 @@ export function createPurchaseFlowOwnershipArtifacts(input) {
     }),
   };
 }
+
+/** @deprecated Use createFlowOwnershipArtifacts */
+export const createPurchaseFlowOwnershipArtifacts = createFlowOwnershipArtifacts;
 
 /**
  * @param {string} expectedHash

@@ -196,8 +196,8 @@ export const PUBLIC_JOURNEY_SURFACES = [
   },
   {
     route: "/good-trouble",
-    purpose: "Good Trouble sandbox Partner Flow for 21+ eligibility. Not a live checkout.",
-    primaryCta: { label: "Start sandbox verification", href: "/good-trouble/checkout" },
+    purpose: "Good Trouble browse-first Seeker demo (L0) plus separate purchase sandbox. Not live checkout.",
+    primaryCta: { label: "Browse-first Seeker demo", href: "/good-trouble" },
     file: "app/good-trouble/page.tsx",
   },
 ] as const;
