@@ -47,7 +47,7 @@ function Inner() {
             Passport verified-rate pilot
           </div>
           <p style={{ fontFamily: CIELO_FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.55, margin: 0 }}>
-            Abraxas verifies guest eligibility ({CIELO_VERIFIED_GUEST_POLICY_ID}) and issues a signed decision receipt.
+            Abraxas evaluates policy {CIELO_VERIFIED_GUEST_POLICY_ID} (wallet/account pilot — not a 21+ age certificate) and issues a signed decision receipt.
             A verified-rate request is not a confirmed stay and does not replace Airbnb booking.
           </p>
         </div>

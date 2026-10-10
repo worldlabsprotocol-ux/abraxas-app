@@ -25,7 +25,8 @@ export interface RentalOperatorTenantConfig {
   /** Pinned partner_policies.policy_id (versioned). */
   policyId: string;
   displayName: string;
-  policyPackId: PolicyPackId;
+  /** Null when tenant uses a pinned partner policy only (e.g. cielo-verified-guest-v1). */
+  policyPackId: PolicyPackId | null;
   integrationSurface: RentalOperatorIntegrationSurface;
   /** External OTA/booking channel URL — Abraxas does not control checkout. */
   externalBookingUrl?: string | null;
@@ -57,6 +58,10 @@ export function validateRentalOperatorPolicyBinding(input: {
 }
 
 export function rentalOperatorHolderPurpose(tenant: RentalOperatorTenantConfig): string {
+  if (!tenant.policyPackId) {
+    return "Confirm eligibility under the operator's pinned Abraxas policy. "
+      + "This is not booking confirmation, availability, or payment.";
+  }
   const pack = POLICY_PACKS[tenant.policyPackId];
   return (
     pack.holder_explanation

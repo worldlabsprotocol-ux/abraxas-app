@@ -96,7 +96,8 @@ export async function recordRentalOperatorFunnelEvent(
     requestId: input.requestId ?? null,
     receiptId: input.receiptId ?? null,
     metadata: {
-      policy_pack_id: tenant.policyPackId,
+      policy_pack_id: tenant.policyPackId ?? null,
+      pinned_policy_id: tenant.policyId,
       integration_surface: tenant.integrationSurface,
       ...(input.metadata ?? {}),
     },

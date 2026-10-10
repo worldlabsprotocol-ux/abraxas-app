@@ -76,14 +76,14 @@ export function runHospitalityPortabilityProof(): HospitalityPortabilityProofRes
     ["cielo", CIELO_SUNRISE_RENTAL_TENANT, "/cielo/verified-rate"] as const,
     ["synthetic_b", SYNTHETIC_RENTAL_OPERATOR_B, "/auth/abraxas/callback"] as const,
   ]) {
-    const binding = validateRentalOperatorPolicyBinding({
-      policyPackId: tenant.policyPackId,
-    });
+    const binding = tenant.policyPackId
+      ? validateRentalOperatorPolicyBinding({ policyPackId: tenant.policyPackId })
+      : { ok: true as const };
     steps.push({
       id: `${label}_policy_pack_binding`,
       tenant: label === "cielo" ? "cielo" : "synthetic_b",
       outcome: binding.ok ? "pass" : "fail",
-      detail: binding.ok ? tenant.policyPackId : binding.errors.join(", "),
+      detail: tenant.policyPackId ?? `pinned:${tenant.policyId}`,
     });
 
     const integration = rentalOperatorPartnerIntegrationConfig(tenant, enterPath);

@@ -65,3 +65,4 @@ fix_*.py
 /solana/**/*.so
 /solana/**/*-keypair.json
 
+reports/*-staging-readiness.json
