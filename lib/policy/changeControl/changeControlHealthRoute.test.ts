@@ -63,7 +63,7 @@ import { GET } from "@/app/api/launchpad/applications/[id]/health/route";
 
 function thenable(data: unknown) {
   const chain: Record<string, unknown> = {};
-  for (const method of ["select", "eq", "in", "limit"]) {
+  for (const method of ["select", "eq", "in", "limit", "order"]) {
     chain[method] = () => chain;
   }
   chain.then = (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
@@ -139,6 +139,7 @@ describe("launchpad health policy schema availability", () => {
     expect(overviewMock).not.toHaveBeenCalled();
     expect(JSON.stringify(body)).not.toMatch(/42P01|PGRST|does not exist/);
     expect(REQUIRED_HARNESS_SCENARIOS.length).toBeGreaterThan(0);
+    expect(body.universal_readiness?.phase).toBeTruthy();
   });
 
   it("stays blocked when overview errors are swallowed after a ready probe", async () => {
