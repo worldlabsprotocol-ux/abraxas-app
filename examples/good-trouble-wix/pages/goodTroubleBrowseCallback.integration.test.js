@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { createMemoryNonceStore } from "../backend/memoryNonceStore.js";
+import { withTestEscrowPepperDeps } from "../backend/testPkceEscrowFixtures.js";
 import {
   __testOnlySetHashFn,
   completeBrowseVerificationService,
@@ -44,7 +45,7 @@ describe("Good Trouble browse callback integration", () => {
 
   it("rejects purchase-shaped completion at browse core", async () => {
     const store = createMemoryNonceStore();
-    const start = await createBrowseVerificationStartService(null, { store, skipCaptcha: true });
+    const start = await createBrowseVerificationStartService(null, withTestEscrowPepperDeps({ store, skipCaptcha: true }));
     const purchaseFlowId = start.flowId.replace(/^gtb_/, "gtf_");
     const result = await completeBrowseVerificationService(
       "jwt-browse",
@@ -60,7 +61,7 @@ describe("Good Trouble browse callback integration", () => {
 
   it("accepts browse verification only when purpose is browse", async () => {
     const store = createMemoryNonceStore();
-    const start = await createBrowseVerificationStartService(null, { store, skipCaptcha: true });
+    const start = await createBrowseVerificationStartService(null, withTestEscrowPepperDeps({ store, skipCaptcha: true }));
     const result = await completeBrowseVerificationService(
       "jwt-browse",
       start.flowId,
@@ -72,5 +73,29 @@ describe("Good Trouble browse callback integration", () => {
     );
     expect(shouldContinueAfterBrowseVerification(result)).toBe(true);
     expect(result.purpose).toBe("browse");
+  });
+
+  it("recovers PKCE via flow ownership when sessionStorage verifier is lost", async () => {
+    const store = createMemoryNonceStore();
+    const deps = withTestEscrowPepperDeps({ store, skipCaptcha: true });
+    const start = await createBrowseVerificationStartService(null, deps);
+    const result = await completeBrowseVerificationService(
+      "jwt-browse",
+      start.flowId,
+      "",
+      start.flowOwnershipSecret,
+      {
+        ...deps,
+        validateBrowseReceipt: async () => ({ verified: true, transientFailure: false }),
+      },
+    );
+    expect(shouldContinueAfterBrowseVerification(result)).toBe(true);
+  });
+
+  it("callback page resolves PKCE from session or browse ownership cookie", () => {
+    expect(CALLBACK_SOURCE).toContain("resolveBrowseCallbackPkceMaterial");
+    expect(CALLBACK_SOURCE).toContain("browseFlowOwnership");
+    expect(CALLBACK_SOURCE).toContain("BROWSE_CALLBACK_COMPLETION_TIMEOUT_MS");
+    expect(CALLBACK_SOURCE).toContain("persistBrowseVerifiedState");
   });
 });

@@ -86,27 +86,47 @@ describe("buildVerificationStartPayload entropy", () => {
   });
 
   it("generates verifier as 64 lowercase hex characters", async () => {
-    const payload = await buildVerificationStartPayload({ hashFn, purpose: "browse" });
+    const payload = await buildVerificationStartPayload({
+      hashFn,
+      purpose: "browse",
+      escrowPepper: TEST_ESCROW_PEPPER_HEX,
+    });
     expect(payload.verifier).toMatch(VERIFIER_RE);
     expect(payload.verifier).toHaveLength(64);
     expect(payload.verifier).toBe(payload.verifier.toLowerCase());
   });
 
   it("generates flow ID matching FLOW_ID_RE", async () => {
-    const payload = await buildVerificationStartPayload({ hashFn, purpose: "browse" });
+    const payload = await buildVerificationStartPayload({
+      hashFn,
+      purpose: "browse",
+      escrowPepper: TEST_ESCROW_PEPPER_HEX,
+    });
     expect(payload.flowId).toMatch(FLOW_ID_RE);
   });
 
   it("generates independent verifier and flow ID values", async () => {
-    const a = await buildVerificationStartPayload({ hashFn, purpose: "browse" });
-    const b = await buildVerificationStartPayload({ hashFn, purpose: "browse" });
+    const a = await buildVerificationStartPayload({
+      hashFn,
+      purpose: "browse",
+      escrowPepper: TEST_ESCROW_PEPPER_HEX,
+    });
+    const b = await buildVerificationStartPayload({
+      hashFn,
+      purpose: "browse",
+      escrowPepper: TEST_ESCROW_PEPPER_HEX,
+    });
     expect(a.flowId).not.toBe(b.flowId);
     expect(a.verifier).not.toBe(b.verifier);
     expect(a.flowId).not.toContain(a.verifier);
   });
 
   it("binds PKCE challenge to SHA-256(verifier) without storing raw verifier", async () => {
-    const payload = await buildVerificationStartPayload({ hashFn, purpose: "browse" });
+    const payload = await buildVerificationStartPayload({
+      hashFn,
+      purpose: "browse",
+      escrowPepper: TEST_ESCROW_PEPPER_HEX,
+    });
     expect(payload.flowRecord.verifierChallenge).toBe(await hashFn(payload.verifier));
     expect(payload.flowRecord).not.toHaveProperty("verifier");
     expect(payload.verifyUrl).not.toContain(payload.verifier);

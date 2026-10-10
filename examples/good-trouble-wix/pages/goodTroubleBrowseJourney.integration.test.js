@@ -4,6 +4,7 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { createMemoryNonceStore } from "../backend/memoryNonceStore.js";
+import { withTestEscrowPepperDeps } from "../backend/testPkceEscrowFixtures.js";
 import {
   __testOnlySetHashFn,
   createBrowseVerificationStartService,
@@ -48,10 +49,10 @@ describe("Good Trouble browse journey integration", () => {
 
   it("browse service always returns gtb_, browse policy, browse callback, and purpose=browse", async () => {
     const store = createMemoryNonceStore();
-    const result = await createBrowseVerificationStartService(null, {
+    const result = await createBrowseVerificationStartService(null, withTestEscrowPepperDeps({
       store,
       skipCaptcha: true,
-    });
+    }));
 
     expect(result.error).toBeUndefined();
     expect(result.flowId).toMatch(/^gtb_[a-f0-9]{64}$/);
@@ -73,10 +74,10 @@ describe("Good Trouble browse journey integration", () => {
       setAbraxasButtonEnabled: vi.fn(async () => {}),
       setAbraxasButtonLabel: vi.fn(),
       setStatus: vi.fn(),
-      startAbraxasVerification: () => createBrowseVerificationStartService(null, {
+      startAbraxasVerification: () => createBrowseVerificationStartService(null, withTestEscrowPepperDeps({
         store,
         skipCaptcha: true,
-      }),
+      })),
       clearStalePurchaseArtifacts: () => {
         clearStalePurchaseSessionArtifacts((key) => storage.removeItem(key));
       },
@@ -110,10 +111,10 @@ describe("Good Trouble browse journey integration", () => {
 
   it("accepts only browse-shaped backend responses at the popup guard", async () => {
     const store = createMemoryNonceStore();
-    const backend = await createBrowseVerificationStartService(null, {
+    const backend = await createBrowseVerificationStartService(null, withTestEscrowPepperDeps({
       store,
       skipCaptcha: true,
-    });
+    }));
     const validated = validateBrowseVerificationStart(backend);
     expect(validated.ok).toBe(true);
     expect(validated.result.verifyUrl).toContain("policy_id=good-trouble-browse-v1&");

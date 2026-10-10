@@ -21,6 +21,13 @@ import {
 
 import { resolveBrowseReturnDestinationForStart } from "public/browseCallbackLogic";
 
+import {
+  clearBrowseFlowOwnershipCookie,
+  persistBrowseFlowOwnershipCookie,
+} from "public/browseFlowOwnership";
+
+import { clearFlowOwnershipCookie } from "public/purchaseFlowOwnership";
+
 import wixLocationFrontend from "wix-location-frontend";
 import wixWindow from "wix-window";
 import wixWindowFrontend from "wix-window-frontend";
@@ -104,6 +111,14 @@ $w.onReady(() => {
               session.removeItem(PILOT_VERIFIED_SESSION_FLAG);
               session.removeItem(PURCHASE_RETURN_DESTINATION_STORAGE_KEY);
               session.removeItem(RETURN_DESTINATION_STORAGE_KEY);
+              clearFlowOwnershipCookie((cookie) => {
+                // eslint-disable-next-line no-undef
+                document.cookie = cookie;
+              });
+              clearBrowseFlowOwnershipCookie((cookie) => {
+                // eslint-disable-next-line no-undef
+                document.cookie = cookie;
+              });
             } catch {
               // Non-authoritative cleanup.
             }
@@ -119,6 +134,17 @@ $w.onReady(() => {
               verifierStorageKey(flowId),
               verifier
             );
+          },
+
+          storeFlowOwnership(flowId, ownershipSecret) {
+            try {
+              persistBrowseFlowOwnershipCookie((cookie) => {
+                // eslint-disable-next-line no-undef
+                document.cookie = cookie;
+              }, flowId, ownershipSecret);
+            } catch {
+              // Best-effort; sessionStorage verifier remains primary in same tab.
+            }
           },
 
           saveReturnDestination() {

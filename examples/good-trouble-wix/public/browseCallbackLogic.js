@@ -14,6 +14,10 @@ export const CHECKING_BROWSE_MESSAGE = "Confirming browsing access…";
 export const BROWSE_SUCCESS_MESSAGE = "Verification confirmed";
 export const BROWSE_POST_VERIFICATION_FALLBACK = GOOD_TROUBLE_THE_GOODS_SHOP_PATH;
 export const POST_BROWSE_REDIRECT_DELAY_MS = 1200;
+/** Max time to remain on "Confirming…" before fail-closed restart (ms). */
+export const BROWSE_CALLBACK_COMPLETION_TIMEOUT_MS = 90_000;
+export const BROWSE_CALLBACK_TRANSIENT_RETRY_MS = 2000;
+export const BROWSE_CALLBACK_MAX_TRANSIENT_RETRIES = 15;
 
 /** @deprecated Use BROWSE_POST_VERIFICATION_FALLBACK */
 export const BROWSE_POST_VERIFICATION_FALLBACK_LEGACY = PURCHASE_POST_VERIFICATION_FALLBACK;

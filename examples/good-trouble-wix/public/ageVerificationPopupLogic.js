@@ -153,6 +153,13 @@ export function validateBrowseVerificationStart(result) {
     return { ok: false, code: "start_incomplete" };
   }
 
+  const flowOwnershipSecret = typeof result.flowOwnershipSecret === "string"
+    ? result.flowOwnershipSecret.trim()
+    : "";
+  if (!flowOwnershipSecret) {
+    return { ok: false, code: "pkce_escrow_secret_unavailable" };
+  }
+
   if (!flowId.startsWith(BROWSE_FLOW_ID_PREFIX)) {
     return { ok: false, code: "browse_start_not_browse_flow" };
   }
@@ -206,6 +213,7 @@ export function validateBrowseVerificationStart(result) {
  *   }>,
  *   sessionStorageAvailable: () => boolean,
  *   storeVerifier: (flowId: string, verifier: string) => void,
+ *   storeFlowOwnership?: (flowId: string, ownershipSecret: string) => void,
  *   navigateToVerifyUrl: (url: string) => void,
  *   getViewMode?: () => string | Promise<string>,
  *   persistTraditionalAgeAttestation?: (storage: Storage) => void,
@@ -316,6 +324,9 @@ export function createPopupController(deps) {
         }
 
         deps.storeVerifier(flowId, verifier);
+        if (validated.result.flowOwnershipSecret && deps.storeFlowOwnership) {
+          deps.storeFlowOwnership(flowId, validated.result.flowOwnershipSecret);
+        }
         if (deps.saveReturnDestination) {
           deps.saveReturnDestination();
         }

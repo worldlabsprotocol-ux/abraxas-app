@@ -78,7 +78,13 @@ beforeEach(() => {
 
 describe("separate start lifecycles", () => {
   it("browse start uses browse policy, callback param, and purpose=browse", async () => {
-    const payload = await buildVerificationStartPayload({ hashFn, purpose: "browse" });
+    const payload = await buildVerificationStartPayload({
+      hashFn,
+      purpose: "browse",
+      escrowPepper: TEST_ESCROW_PEPPER_HEX,
+    });
+    expect(payload.flowOwnershipSecret).toBeTruthy();
+    expect(payload.flowRecord.verifierSealed).toBeTruthy();
     expect(payload.purpose).toBe(FLOW_PURPOSE_BROWSE);
     expect(payload.policyId).toBe(BROWSE_POLICY_ID);
     expect(payload.flowId.startsWith("gtb_")).toBe(true);
@@ -113,7 +119,11 @@ describe("separate start lifecycles", () => {
 describe("purpose confusion fails closed", () => {
   it("purchase completion rejects browse-purpose flow record", async () => {
     const store = createMemoryNonceStore();
-    const browse = await buildVerificationStartPayload({ hashFn, purpose: "browse" });
+    const browse = await buildVerificationStartPayload({
+      hashFn,
+      purpose: "browse",
+      escrowPepper: TEST_ESCROW_PEPPER_HEX,
+    });
     await store.insert(browse.flowRecord);
 
     const result = await completePurchaseVerificationService(
@@ -317,7 +327,10 @@ describe("purchase eligibility requires consumed production receipt", () => {
 describe("service start separation", () => {
   it("createBrowseVerificationStartService returns browse purpose", async () => {
     const store = createMemoryNonceStore();
-    const result = await createBrowseVerificationStartService(null, { store, skipCaptcha: true });
+    const result = await createBrowseVerificationStartService(null, withTestEscrowPepperDeps({
+      store,
+      skipCaptcha: true,
+    }));
     expect(result.purpose).toBe("browse");
     expect(result.policyId).toBe(BROWSE_POLICY_ID);
   });
