@@ -61,6 +61,7 @@ Deploy all modules listed in `examples/good-trouble-wix/WIX_DEPLOYMENT_MANIFEST.
 | Age Verification Result | `age-verification-result` | `abraxasStatusText` | Checking verification… |
 | Age Verification Result | `age-verification-result` | `restartAbraxasButton` | Optional restart → `/` |
 | Browse Verification Result | `browse-verification-result` | `abraxasStatusText` | Browse callback status |
+| Browse Verification Result | `browse-verification-result` | `restartAbraxasButton` | Optional restart → `/` on failure |
 | Purchase Verification Entry | `purchase-verification` | `purchaseAbraxasButton` | Hosted purchase / 21+ sandbox flow |
 | Purchase Verification Entry | `purchase-verification` | `purchaseStatusText` | Start status (optional) |
 
