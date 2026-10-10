@@ -4,12 +4,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { submitVerifiedRateRequest } from "@/lib/cielo/verifiedRateService";
 import { recordCieloFunnelEvent } from "@/lib/cielo/cieloFunnelEvents";
-import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { requireCieloHolderContext } from "@/lib/cielo/cieloHolderRequestContext";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const auth = await requireBrowserSession(req);
+  const auth = await requireCieloHolderContext(req);
   if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await submitVerifiedRateRequest({
-      suiAddress: auth.session.suiAddress,
+      suiAddress: auth.ctx.claimsSubjectKey,
       decisionId: body.verification_decision_id,
       consentReceiptId: body.consent_receipt_id,
       checkIn: body.check_in,

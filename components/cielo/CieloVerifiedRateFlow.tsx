@@ -14,6 +14,7 @@ import { CIELO_VERIFIED_GUEST_POLICY_ID } from "@/lib/cielo/cieloIds";
 import { HolderTrustSurface } from "@/components/holder/HolderTrustSurface";
 import { WalletFirstSignIn } from "@/components/auth/WalletFirstSignIn";
 import { isWalletFirstAuthEnabledClient } from "@/lib/auth/walletLogin/clientFeatureFlag";
+import { isSolanaNativeProductEnabledClient } from "@/lib/auth/solanaNative/clientFeatureFlag";
 import { useHolderSession } from "@/lib/hooks/useHolderSession";
 
 const FONT = "'Inter',system-ui,sans-serif";
@@ -37,9 +38,16 @@ const RETURN_PATH = "/cielo/verified-rate";
 export function CieloVerifiedRateFlow() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const walletFirst = isWalletFirstAuthEnabledClient();
+  const solanaNative = isSolanaNativeProductEnabledClient();
+  const walletFirst = solanaNative || isWalletFirstAuthEnabledClient();
   const { suiAddress, isAuthenticated, signInWithGoogle, refreshSession } = useSuiAuth();
   const { session: holderSession, refresh: refreshHolderSession } = useHolderSession(walletFirst);
+  const holderReady = solanaNative
+    ? Boolean(holderSession?.passportSubjectReady)
+    : isAuthenticated && Boolean(suiAddress);
+  const activeSubject = solanaNative
+    ? holderSession?.claimsSubjectKey ?? null
+    : suiAddress;
 
   const [step, setStep] = useState<FlowStep>("passport");
   const [evaluation, setEvaluation] = useState<CieloVerifiedGuestEvaluation | null>(null);
@@ -66,14 +74,16 @@ export function CieloVerifiedRateFlow() {
   const passportReturn = encodeURIComponent(RETURN_PATH);
 
   const loadStatus = useCallback(async () => {
-    if (!suiAddress) {
+    if (!activeSubject) {
       setEvaluation(null);
       return;
     }
     setLoading(true);
     setErr(null);
     try {
-      const sessionReady = await ensureBrowserSessionReady(suiAddress);
+      const sessionReady = solanaNative
+        ? { ok: holderReady }
+        : await ensureBrowserSessionReady(suiAddress!);
       if (!sessionReady.ok) {
         throw new Error(sessionReady.error ?? "Sign in again to continue");
       }
@@ -87,7 +97,7 @@ export function CieloVerifiedRateFlow() {
     } finally {
       setLoading(false);
     }
-  }, [suiAddress, fixture]);
+  }, [activeSubject, fixture, holderReady, solanaNative, suiAddress]);
 
   useEffect(() => {
     void loadStatus();
@@ -121,7 +131,7 @@ export function CieloVerifiedRateFlow() {
   );
 
   async function grantConsent() {
-    if (!suiAddress) return;
+    if (!holderReady) return;
     setLoading(true);
     setErr(null);
     try {
@@ -147,7 +157,7 @@ export function CieloVerifiedRateFlow() {
   }
 
   async function submitRequest() {
-    if (!suiAddress || !consentResult) return;
+    if (!holderReady || !consentResult) return;
     if (!guestName.trim() || !contactEmail.trim()) {
       setErr("Name and email are required.");
       return;
@@ -225,7 +235,7 @@ export function CieloVerifiedRateFlow() {
                 {CIELO_HOLDER_COPY.walletSessionNoPassport}
               </p>
             ) : null}
-            {!isAuthenticated || !suiAddress ? (
+            {!holderReady ? (
               <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.75rem" }}>
                 {walletFirst ? CIELO_HOLDER_COPY.signInWalletLead : "Sign in with Google to create your Abraxas Passport account."}
               </p>
@@ -255,7 +265,7 @@ export function CieloVerifiedRateFlow() {
             ) : null}
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-              {!isAuthenticated ? (
+              {!holderReady ? (
                 walletFirst ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem", width: "100%" }}>
                     <WalletFirstSignIn
@@ -267,13 +277,15 @@ export function CieloVerifiedRateFlow() {
                         void loadStatus();
                       }}
                     />
-                    <button
-                      type="button"
-                      onClick={() => void signInWithGoogle({ continuePath: RETURN_PATH })}
-                      style={ghostBtnStyle}
-                    >
-                      {CIELO_HOLDER_COPY.legacyGoogleSignIn}
-                    </button>
+                    {!solanaNative ? (
+                      <button
+                        type="button"
+                        onClick={() => void signInWithGoogle({ continuePath: RETURN_PATH })}
+                        style={ghostBtnStyle}
+                      >
+                        {CIELO_HOLDER_COPY.legacyGoogleSignIn}
+                      </button>
+                    ) : null}
                   </div>
                 ) : (
                   <button

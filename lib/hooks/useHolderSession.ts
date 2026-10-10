@@ -7,6 +7,8 @@ export type HolderSessionSnapshot = {
   loginMethod: "zklogin" | "solana_wallet";
   solanaAddress: string | null;
   suiAddress: string | null;
+  holderAccountId: string | null;
+  claimsSubjectKey: string | null;
   passportSubjectReady: boolean;
 };
 
@@ -39,6 +41,8 @@ export function useHolderSession(enabled = true) {
           loginMethod: data.login_method,
           solanaAddress: data.solana_address ?? null,
           suiAddress: data.sui_address ?? null,
+          holderAccountId: (data as { holder_account_id?: string }).holder_account_id ?? null,
+          claimsSubjectKey: (data as { claims_subject_key?: string }).claims_subject_key ?? null,
           passportSubjectReady: Boolean(data.passport_subject_ready),
         });
       } else {

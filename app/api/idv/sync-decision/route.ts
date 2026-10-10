@@ -6,7 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { processVeriffDecision } from "@/lib/idv/processVeriffDecision";
 import { parseVeriffDecisionPayload } from "@/lib/idv/veriffDecision";
-import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { requireHolderRequestContext, holderClaimsSubjectKey } from "@/lib/holder/holderRequestContext";
 
 const VERIFF_KEY = process.env.VERIFF_API_KEY ?? "";
 const VERIFF_BASE = "https://stationapi.veriff.com/v1";
@@ -137,15 +137,16 @@ async function syncDecisionForSui(
 }
 
 export async function GET(req: NextRequest) {
-  const auth = await requireBrowserSession(req);
+  const auth = await requireHolderRequestContext(req);
   if (!auth.ok) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
+    return NextResponse.json({ error: auth.error, code: auth.code }, { status: auth.status });
   }
 
+  const subject = holderClaimsSubjectKey(auth.ctx);
   const raw = req.nextUrl.searchParams.get("sui") ?? req.nextUrl.searchParams.get("sui_address");
   if (raw) {
     try {
-      if (normalizeSuiAddress(raw) !== auth.session.suiAddress) {
+      if (normalizeSuiAddress(raw) !== subject) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
     } catch {
@@ -153,15 +154,16 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return syncDecisionForSui(auth.session.suiAddress);
+  return syncDecisionForSui(subject);
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await requireBrowserSession(req);
+  const auth = await requireHolderRequestContext(req);
   if (!auth.ok) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
+    return NextResponse.json({ error: auth.error, code: auth.code }, { status: auth.status });
   }
 
+  const subject = holderClaimsSubjectKey(auth.ctx);
   const body = await req.json().catch(() => ({})) as {
     sui_address?: string;
     sui?: string;
@@ -170,7 +172,7 @@ export async function POST(req: NextRequest) {
   const raw = body.sui_address ?? body.sui;
   if (raw) {
     try {
-      if (normalizeSuiAddress(raw) !== auth.session.suiAddress) {
+      if (normalizeSuiAddress(raw) !== subject) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
     } catch {
@@ -178,5 +180,5 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return syncDecisionForSui(auth.session.suiAddress, body.session_id?.trim());
+  return syncDecisionForSui(subject, body.session_id?.trim());
 }

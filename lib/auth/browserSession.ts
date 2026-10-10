@@ -6,6 +6,8 @@ import { SignJWT, jwtVerify } from "jose";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { createClient } from "@supabase/supabase-js";
 import type { NextRequest, NextResponse } from "next/server";
+import { resolveHolderSession } from "@/lib/auth/holderBrowserSession";
+import { isSolanaNativeProductEnabled } from "@/lib/auth/solanaNative/featureFlag";
 
 export const BROWSER_SESSION_COOKIE = "abraxas_browser_session";
 const SESSION_TTL_SEC = 60 * 60 * 24 * 7; // 7 days
@@ -55,7 +57,18 @@ export async function resolveBrowserSession(req: NextRequest): Promise<BrowserSe
   try {
     const { payload } = await jwtVerify(token, secret);
 
-    if (payload.ver === 2 && payload.login === "solana_wallet") {
+    if ((payload.ver === 2 || payload.ver === 3) && payload.login === "solana_wallet") {
+      if (isSolanaNativeProductEnabled()) {
+        const holder = await resolveHolderSession(req);
+        if (
+          holder?.loginMethod === "solana_wallet"
+          && holder.claimsSubjectKey
+          && holder.holderAccountId
+        ) {
+          return { suiAddress: normalizeSuiAddress(holder.claimsSubjectKey) };
+        }
+      }
+
       const suiOnly = typeof payload.sui === "string" ? payload.sui : null;
       if (!suiOnly) return null;
       const normalized = normalizeSuiAddress(suiOnly);

@@ -110,6 +110,18 @@ export const PRODUCTION_PARTNER_POLICIES: ProductionPartnerPolicy[] = [
     },
   },
   {
+    id: "cielo-verified-guest-solana-v1",
+    partnerId: "cielo",
+    sandboxOnly: false,
+    rules: {
+      required_claims: [
+        { claim_type: "wallet_binding_confirmed", max_age_hours: 720, min_assurance: "L3" },
+      ],
+      account_required: true,
+      consent_required: true,
+    },
+  },
+  {
     id: "partner-sandbox-gate-v1",
     partnerId: "abraxas-partner-sandbox",
     sandboxOnly: true,

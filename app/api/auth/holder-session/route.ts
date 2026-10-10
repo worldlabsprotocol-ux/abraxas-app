@@ -17,6 +17,8 @@ export async function GET(req: NextRequest) {
     login_method: session.loginMethod,
     solana_address: session.solanaAddress,
     sui_address: session.suiAddress,
+    holder_account_id: session.holderAccountId,
+    claims_subject_key: session.claimsSubjectKey,
     passport_subject_ready: session.passportSubjectReady,
   }, { headers: NO_STORE });
 }

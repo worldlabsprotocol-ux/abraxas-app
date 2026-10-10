@@ -81,7 +81,10 @@ export async function fetchIdentityStatus(
   const params = new URLSearchParams();
   if (suiAddress) params.set("sui_address", suiAddress);
   if (email) params.set("email", email);
-  const res = await fetch(`/api/identity/status?${params}`, { credentials: "include" });
+  const qs = params.toString();
+  const res = await fetch(qs ? `/api/identity/status?${qs}` : "/api/identity/status", {
+    credentials: "include",
+  });
   const data = await res.json() as IdentityStatusResponse & { error?: string };
   if (!res.ok) {
     throw new Error(data.error ?? `Identity status failed (${res.status})`);
@@ -89,25 +92,31 @@ export async function fetchIdentityStatus(
   return data;
 }
 
-export async function syncVeriffDecision(suiAddress: string): Promise<VeriffSyncResponse> {
+export async function syncVeriffDecision(suiAddress?: string | null): Promise<VeriffSyncResponse> {
   const res = await fetch("/api/idv/sync-decision", {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sui_address: suiAddress }),
+    body: JSON.stringify(suiAddress ? { sui_address: suiAddress } : {}),
   });
   return res.json() as Promise<VeriffSyncResponse>;
 }
 
-export async function fetchCredentialMe(suiAddress: string): Promise<MeCredentialResponse> {
-  const res = await fetch(`/api/credentials/me?sui=${encodeURIComponent(suiAddress)}`, {
+export async function fetchCredentialMe(suiAddress?: string | null): Promise<MeCredentialResponse> {
+  const path = suiAddress
+    ? `/api/credentials/me?sui=${encodeURIComponent(suiAddress)}`
+    : "/api/credentials/me";
+  const res = await fetch(path, {
     credentials: "include",
   });
   return res.json() as Promise<MeCredentialResponse>;
 }
 
-export async function verifyCredentialSelf(suiAddress: string): Promise<VerificationResult> {
-  const res = await fetch(`/api/credentials/verify-self?sui=${encodeURIComponent(suiAddress)}`);
+export async function verifyCredentialSelf(suiAddress?: string | null): Promise<VerificationResult> {
+  const path = suiAddress
+    ? `/api/credentials/verify-self?sui=${encodeURIComponent(suiAddress)}`
+    : "/api/credentials/verify-self";
+  const res = await fetch(path, { credentials: "include" });
   return res.json() as Promise<VerificationResult>;
 }
 
@@ -193,7 +202,7 @@ export async function declineVerificationRequest(requestId: string): Promise<{ s
 }
 
 export function meResponseToStoredCredential(
-  addr: string,
+  addr: string | null,
   data: MeCredentialResponse,
 ): StoredCredential | null {
   if (!data.verified || !data.credential_jwt || !data.credential_jti || !data.expires_at) {
@@ -205,7 +214,7 @@ export function meResponseToStoredCredential(
     expires_at: data.expires_at,
     jurisdiction: data.jurisdiction ?? "",
     level: data.verification_level ?? "standard",
-    sui_address: addr,
+    sui_address: addr ?? "",
     document_type: data.document_type,
   };
 }

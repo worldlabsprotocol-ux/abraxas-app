@@ -3,17 +3,33 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { verifyCredentialJwt } from "@/lib/credentials/verifyJwt";
 import type { VerificationResult } from "@/lib/credentials/types";
+import { requireHolderRequestContext, holderClaimsSubjectKey } from "@/lib/holder/holderRequestContext";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
 export async function GET(req: NextRequest): Promise<NextResponse<VerificationResult>> {
-  const sui = req.nextUrl.searchParams.get("sui");
-  if (!sui) {
-    return NextResponse.json({ verified: false, error: "sui param required" }, { status: 400 });
+  const auth = await requireHolderRequestContext(req);
+  if (!auth.ok) {
+    return NextResponse.json({ verified: false, error: auth.error }, { status: auth.status });
   }
+
+  const subject = holderClaimsSubjectKey(auth.ctx);
+  const requested = req.nextUrl.searchParams.get("sui");
+  if (requested) {
+    try {
+      if (normalizeSuiAddress(requested) !== subject) {
+        return NextResponse.json({ verified: false, error: "Forbidden" }, { status: 403 });
+      }
+    } catch {
+      return NextResponse.json({ verified: false, error: "Invalid sui param" }, { status: 400 });
+    }
+  }
+
+  const sui = subject;
 
   if (!SB_URL || !SB_KEY) {
     return NextResponse.json({ verified: false, error: "DB not configured" }, { status: 500 });

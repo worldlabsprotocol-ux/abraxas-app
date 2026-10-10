@@ -5,10 +5,12 @@
 import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
 import { WalletFirstSignIn } from "@/components/auth/WalletFirstSignIn";
 import { isWalletFirstAuthEnabledClient } from "@/lib/auth/walletLogin/clientFeatureFlag";
+import { isSolanaNativeProductEnabledClient } from "@/lib/auth/solanaNative/clientFeatureFlag";
 import { useHolderSession } from "@/lib/hooks/useHolderSession";
 
 export function HolderSignInPanel(props: { continuePath?: string | null }) {
-  const walletFirst = isWalletFirstAuthEnabledClient();
+  const solanaNative = isSolanaNativeProductEnabledClient();
+  const walletFirst = solanaNative || isWalletFirstAuthEnabledClient();
   const { session, refresh } = useHolderSession(walletFirst);
 
   if (!walletFirst) {
@@ -30,10 +32,12 @@ export function HolderSignInPanel(props: { continuePath?: string | null }) {
         </p>
         <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.55 }}>
           {session.passportSubjectReady
-            ? "Your Passport account is linked. Refresh if content does not update."
-            : "Wallet sign-in is active. Identity verification and Sui-backed Passport steps still require completing or linking your Abraxas account — wallet possession alone is not verified identity."}
+            ? (solanaNative
+              ? "Your canonical Passport is ready. Continue with identity verification when a partner requires it."
+              : "Your Passport account is linked. Refresh if content does not update.")
+            : "Wallet sign-in is active. Finish account linking before identity verification — wallet possession alone is not verified identity."}
         </p>
-        {!session.passportSubjectReady ? (
+        {!session.passportSubjectReady && !solanaNative ? (
           <div style={{ marginTop: "0.75rem" }}>
             <ZkLoginSignIn />
           </div>
@@ -48,20 +52,22 @@ export function HolderSignInPanel(props: { continuePath?: string | null }) {
         continuePath={props.continuePath}
         onSuccess={() => void refresh()}
       />
-      <div style={{ borderTop: "1px solid var(--border)", paddingTop: "0.75rem" }}>
-        <p style={{
-          margin: "0 0 0.5rem",
-          fontSize: "0.68rem",
-          fontWeight: 600,
-          color: "var(--text-muted)",
-          textTransform: "uppercase",
-          letterSpacing: "0.08em",
-        }}
-        >
-          Existing Abraxas account
-        </p>
-        <ZkLoginSignIn />
-      </div>
+      {!solanaNative ? (
+        <div style={{ borderTop: "1px solid var(--border)", paddingTop: "0.75rem" }}>
+          <p style={{
+            margin: "0 0 0.5rem",
+            fontSize: "0.68rem",
+            fontWeight: 600,
+            color: "var(--text-muted)",
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+          }}
+          >
+            Legacy Google account (migration)
+          </p>
+          <ZkLoginSignIn />
+        </div>
+      ) : null}
     </div>
   );
 }
