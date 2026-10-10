@@ -19,8 +19,10 @@ export interface ProcessDecisionResult {
 }
 
 function parseHolder(vendorData?: string): string | null {
+  const abxMatch = vendorData?.match(/^abx:(.+)$/);
   const suiMatch = vendorData?.match(/^sui:(.+)$/);
   const legacyMatch = vendorData?.match(/^wallet:(.+)$/);
+  if (abxMatch?.[1]) return abxMatch[1].trim();
   return suiMatch?.[1] ?? legacyMatch?.[1] ?? null;
 }
 

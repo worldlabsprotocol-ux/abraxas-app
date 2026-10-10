@@ -15,6 +15,7 @@ export function idvSupabase(): SupabaseClient | null {
 export interface IdentityVerificationRow {
   wallet_address?: string;
   sui_address?: string;
+  holder_account_id?: string | null;
   user_email?: string | null;
   status?: string;
   identity_verification_status?: string | null;
@@ -38,6 +39,7 @@ export async function transitionIdentityVerification(
   patch: Partial<IdentityVerificationRow> & {
     identity_verification_status?: IdentityVerificationStatus;
     credential_status?: CredentialStatus;
+    holder_account_id?: string | null;
   },
   source: string,
 ): Promise<void> {

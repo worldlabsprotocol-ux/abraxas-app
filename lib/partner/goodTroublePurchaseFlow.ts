@@ -6,11 +6,14 @@ import {
   GOOD_TROUBLE_CANONICAL_POLICY_ID,
 } from "@/lib/goodTrouble/canonicalProductionConfig";
 import { GOOD_TROUBLE_RETAIL_POLICY_ID } from "@/lib/goodTrouble/constants";
+import { GOOD_TROUBLE_AGE_21_RETAIL_SOLANA_POLICY_ID } from "@/lib/goodTrouble/goodTroubleSolanaPolicyIds";
 
 /** Regulated Good Trouble purchase policies — legacy sandbox and canonical production. */
 export function isGoodTroubleRegulatedPurchasePolicyId(policyId: string): boolean {
   const id = policyId.trim();
-  return id === GOOD_TROUBLE_RETAIL_POLICY_ID || id === GOOD_TROUBLE_CANONICAL_POLICY_ID;
+  return id === GOOD_TROUBLE_RETAIL_POLICY_ID
+    || id === GOOD_TROUBLE_CANONICAL_POLICY_ID
+    || id === GOOD_TROUBLE_AGE_21_RETAIL_SOLANA_POLICY_ID;
 }
 
 export function isCanonicalGoodTroublePurchaseFlow(input: {
@@ -19,7 +22,13 @@ export function isCanonicalGoodTroublePurchaseFlow(input: {
   purpose?: string | null;
 }): boolean {
   if (input.partnerId.trim() !== GOOD_TROUBLE_CANONICAL_PARTNER_ID) return false;
-  if (input.policyId.trim() !== GOOD_TROUBLE_CANONICAL_POLICY_ID) return false;
+  const policy = input.policyId.trim();
+  if (
+    policy !== GOOD_TROUBLE_CANONICAL_POLICY_ID
+    && policy !== GOOD_TROUBLE_AGE_21_RETAIL_SOLANA_POLICY_ID
+  ) {
+    return false;
+  }
   const purpose = input.purpose?.trim();
   if (purpose === "browse") return false;
   return true;

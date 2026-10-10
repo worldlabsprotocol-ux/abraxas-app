@@ -19,6 +19,8 @@ import { VerificationSuccessPanel } from "@/components/passport/VerificationSucc
 import { VeriffDeviceHint } from "@/components/passport/VeriffDeviceHint";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { HolderSignInPanel } from "@/components/auth/HolderSignInPanel";
+import { useHolderSession } from "@/lib/hooks/useHolderSession";
+import { isSolanaNativeProductEnabledClient } from "@/lib/auth/solanaNative/clientFeatureFlag";
 import { usePassportVerification } from "@/lib/hooks/usePassportVerification";
 import { AbxPageHeader } from "@/components/design/AbxPrimitives";
 import { AbxPageShell } from "@/components/design/AbxPageShell";
@@ -49,8 +51,18 @@ export function PassportPageClient() {
 
 function PassportPageInner() {
   const searchParams = useSearchParams();
-  const { suiAddress, session, isLoading: authLoading, refreshSession } = useSuiAuth();
-  const email = session?.email ?? "";
+  const solanaNative = isSolanaNativeProductEnabledClient();
+  const { suiAddress: zkSui, session, isLoading: authLoading, refreshSession } = useSuiAuth();
+  const { session: holderSession, loading: holderSessionLoading } = useHolderSession(solanaNative);
+  const passportSubjectKey: string | null = solanaNative && holderSession?.claimsSubjectKey
+    ? holderSession.claimsSubjectKey
+    : (zkSui ?? null);
+  const suiAddress = passportSubjectKey;
+  const email = solanaNative ? "" : (session?.email ?? "");
+  const signedIn = solanaNative
+    ? Boolean(holderSession?.passportSubjectReady)
+    : Boolean(zkSui);
+  const authLoadingCombined = solanaNative ? holderSessionLoading : authLoading;
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [partnerConsentDismissed, setPartnerConsentDismissed] = useState(false);
@@ -87,7 +99,7 @@ function PassportPageInner() {
   const verificationParam = searchParams.get("verification");
   const pageView = resolvePassportPageView(searchParams.get("view"));
 
-  const walletDone = Boolean(suiAddress);
+  const walletDone = signedIn;
   const hasCredential = Boolean(credential) && identityStatus === "earned";
 
   const setup = setupFromHook ?? computePassportSetupState({
@@ -144,15 +156,17 @@ function PassportPageInner() {
     });
 
   async function startIdentityVerification() {
-    if (!suiAddress) {
-      setError("Sign in with Google first to create your account.");
+    if (!signedIn) {
+      setError(solanaNative
+        ? "Sign in with Phantom to start identity verification."
+        : "Sign in with Google first to create your account.");
       return;
     }
     if (idvProvider === "manual") {
       setError(null);
       return;
     }
-    if (!email.includes("@")) {
+    if (!solanaNative && !email.includes("@")) {
       setError("Your Google account must include an email for ID verification.");
       return;
     }
@@ -163,7 +177,11 @@ function PassportPageInner() {
       const sessionRes = await fetch("/api/idv/create-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sui_address: suiAddress, document_type: "PASSPORT" }),
+        credentials: "include",
+        body: JSON.stringify({
+          ...(suiAddress ? { sui_address: suiAddress } : {}),
+          document_type: "PASSPORT",
+        }),
       });
       const sessionData = await sessionRes.json() as {
         session_url?: string | null;
@@ -221,7 +239,7 @@ function PassportPageInner() {
           </>
         ) : pageView === "requests" ? (
           <>
-            {!suiAddress && !authLoading ? (
+            {!signedIn && !authLoadingCombined ? (
               <section style={{
                 background: "var(--surface-raised)",
                 border: "1px solid var(--border-strong)",
@@ -243,7 +261,7 @@ function PassportPageInner() {
                 </p>
                 <HolderSignInPanel />
               </section>
-            ) : authLoading ? (
+            ) : authLoadingCombined ? (
               <RedesignPageLoading label="Loading your requests…" compact />
             ) : (
               <PassportRequestInbox showEmpty />
@@ -251,7 +269,7 @@ function PassportPageInner() {
           </>
         ) : pageView === "activity" ? (
           <>
-            {!suiAddress && !authLoading ? (
+            {!signedIn && !authLoadingCombined ? (
               <section style={{
                 background: "var(--surface-raised)",
                 border: "1px solid var(--border-strong)",
@@ -273,7 +291,7 @@ function PassportPageInner() {
                 </p>
                 <HolderSignInPanel />
               </section>
-            ) : authLoading ? (
+            ) : authLoadingCombined ? (
               <RedesignPageLoading label="Loading your activity…" compact />
             ) : (
               <PassportActivityCenter />
@@ -281,7 +299,7 @@ function PassportPageInner() {
           </>
         ) : pageView === "support" ? (
           <>
-            {!suiAddress && !authLoading ? (
+            {!signedIn && !authLoadingCombined ? (
               <section style={{
                 background: "var(--surface-raised)",
                 border: "1px solid var(--border-strong)",
@@ -303,7 +321,7 @@ function PassportPageInner() {
                 </p>
                 <HolderSignInPanel />
               </section>
-            ) : authLoading ? (
+            ) : authLoadingCombined ? (
               <RedesignPageLoading label="Loading help and safety…" compact />
             ) : (
               <PassportSupportCenter />
@@ -311,7 +329,7 @@ function PassportPageInner() {
           </>
         ) : pageView === "privacy" ? (
           <>
-            {!suiAddress && !authLoading ? (
+            {!signedIn && !authLoadingCombined ? (
               <section style={{
                 background: "var(--surface-raised)",
                 border: "1px solid var(--border-strong)",
@@ -333,7 +351,7 @@ function PassportPageInner() {
                 </p>
                 <HolderSignInPanel />
               </section>
-            ) : authLoading ? (
+            ) : authLoadingCombined ? (
               <RedesignPageLoading label="Loading privacy controls…" compact />
             ) : (
               <PassportPrivacyCenter suiAddress={suiAddress} />

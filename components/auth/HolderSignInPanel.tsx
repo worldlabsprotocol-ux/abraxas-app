@@ -32,10 +32,12 @@ export function HolderSignInPanel(props: { continuePath?: string | null }) {
         </p>
         <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.55 }}>
           {session.passportSubjectReady
-            ? "Your Passport account is linked. Refresh if content does not update."
-            : "Wallet sign-in is active. Identity verification and Sui-backed Passport steps still require completing or linking your Abraxas account — wallet possession alone is not verified identity."}
+            ? (solanaNative
+              ? "Your canonical Passport is ready. Continue with identity verification when a partner requires it."
+              : "Your Passport account is linked. Refresh if content does not update.")
+            : "Wallet sign-in is active. Finish account linking before identity verification — wallet possession alone is not verified identity."}
         </p>
-        {!session.passportSubjectReady ? (
+        {!session.passportSubjectReady && !solanaNative ? (
           <div style={{ marginTop: "0.75rem" }}>
             <ZkLoginSignIn />
           </div>

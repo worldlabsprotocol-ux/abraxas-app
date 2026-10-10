@@ -12,8 +12,10 @@ import {
   type CredentialStatus,
 } from "@/lib/idv/identityVerificationStates";
 import { getIdvProvider, isVeriffLive } from "@/lib/idv/idvProvider";
-import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { requireHolderRequestContext, holderClaimsSubjectKey } from "@/lib/holder/holderRequestContext";
 import { readCanonicalWalletBindingTruth } from "@/lib/trust/readCanonicalWalletBinding";
+import { readSolanaWalletBindingTruth } from "@/lib/trust/readSolanaWalletBindingTruth";
+import { mapPassportPresentationState } from "@/lib/passport/passportPresentationState";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -37,6 +39,9 @@ type StatusPayload = {
   setup: ReturnType<typeof computePassportSetupState>;
   veriff_configured: boolean;
   idv_provider: string;
+  presentation_state?: ReturnType<typeof mapPassportPresentationState>;
+  holder_account_id?: string | null;
+  login_method?: "solana_wallet" | "legacy_sui";
 };
 
 type PartialStatusPayload = Omit<
@@ -66,15 +71,14 @@ async function finalizeStatusPayload(
   supabase: SupabaseClient,
   sui: string,
   partial: PartialStatusPayload,
+  options: {
+    walletDone: boolean;
+    walletTruth: Awaited<ReturnType<typeof readCanonicalWalletBindingTruth>>;
+    loginMethod: "solana_wallet" | "legacy_sui";
+    holderAccountId?: string | null;
+  },
 ): Promise<StatusPayload> {
-  const walletTruth = await readCanonicalWalletBindingTruth(sui, supabase);
-  const walletBindingL3 = walletTruth.persisted;
-
-  const { data: walletRow } = await supabase
-    .from("sui_zklogin_identities")
-    .select("sui_address")
-    .eq("sui_address", normalizeSuiAddress(sui))
-    .maybeSingle();
+  const walletBindingL3 = options.walletTruth.persisted;
 
   const identityStatus = partial.identity_verification_status
     ?? mapLegacyStatusToIdentity(partial.status);
@@ -82,7 +86,7 @@ async function finalizeStatusPayload(
     ?? (partial.status === "approved" && partial.credential_jti ? "active" : "not_issued");
 
   const setup = computePassportSetupState({
-    walletDone: Boolean(walletRow),
+    walletDone: options.walletDone,
     identityStatus,
     credentialStatus,
     walletBindingL3,
@@ -93,11 +97,14 @@ async function finalizeStatusPayload(
     identity_verification_status: identityStatus,
     credential_status: credentialStatus,
     wallet_binding_l3: walletBindingL3,
-    wallet_binding_status: walletTruth.status,
-    ...(walletTruth.read_error ? { wallet_binding_read_error: walletTruth.read_error } : {}),
+    wallet_binding_status: options.walletTruth.status,
+    ...(options.walletTruth.read_error ? { wallet_binding_read_error: options.walletTruth.read_error } : {}),
     setup,
     veriff_configured: partial.veriff_configured ?? isVeriffLive(),
     idv_provider: partial.idv_provider ?? getIdvProvider(),
+    presentation_state: mapPassportPresentationState({ identityStatus, credentialStatus }),
+    holder_account_id: options.holderAccountId ?? null,
+    login_method: options.loginMethod,
   };
 }
 
@@ -314,12 +321,12 @@ async function statusByEmail(supabase: SupabaseClient, email: string): Promise<P
 }
 
 export async function GET(req: NextRequest) {
-  const auth = await requireBrowserSession(req);
+  const auth = await requireHolderRequestContext(req);
   if (!auth.ok) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
+    return NextResponse.json({ error: auth.error, code: auth.code }, { status: auth.status });
   }
 
-  const sui = auth.session.suiAddress;
+  const sui = holderClaimsSubjectKey(auth.ctx);
   const requested = req.nextUrl.searchParams.get("sui_address")
     ?? req.nextUrl.searchParams.get("sui");
   if (requested) {
@@ -333,7 +340,7 @@ export async function GET(req: NextRequest) {
   }
 
   const email = req.nextUrl.searchParams.get("email");
-  if (email) {
+  if (email && auth.ctx.mode === "legacy_sui") {
     const supabase = sb();
     if (supabase) {
       const { data: identity } = await supabase
@@ -346,13 +353,30 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
     }
+  } else if (email && auth.ctx.mode === "solana_native") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+
+  const loginMethod: "solana_wallet" | "legacy_sui" =
+    auth.ctx.mode === "solana_native" ? "solana_wallet" : "legacy_sui";
+  const holderAccountId = auth.ctx.mode === "solana_native" ? auth.ctx.holderAccountId : null;
+  const walletDone = auth.ctx.mode === "solana_native"
+    ? Boolean(holderAccountId)
+    : true;
 
   const supabase = sb();
   if (!supabase) {
-    const walletTruth = await readCanonicalWalletBindingTruth(sui);
+    const walletTruth = auth.ctx.mode === "solana_native"
+      ? {
+          persisted: auth.ctx.walletBindingFresh,
+          status: auth.ctx.walletBindingActive ? "active" as const : "missing" as const,
+          binding_method: auth.ctx.walletBindingActive ? "signed_challenge" : null,
+          claim_active: auth.ctx.walletBindingFresh,
+          repairable: !auth.ctx.walletBindingFresh,
+        }
+      : await readCanonicalWalletBindingTruth(sui);
     const setup = computePassportSetupState({
-      walletDone: true,
+      walletDone,
       identityStatus: "not_started",
       credentialStatus: "not_issued",
       walletBindingL3: walletTruth.persisted,
@@ -366,22 +390,36 @@ export async function GET(req: NextRequest) {
       wallet_binding_status: walletTruth.status,
       ...(walletTruth.read_error ? { wallet_binding_read_error: walletTruth.read_error } : {}),
       setup,
+      presentation_state: "NOT_STARTED",
+      holder_account_id: holderAccountId,
+      login_method: loginMethod,
     });
   }
 
+  const walletTruth = auth.ctx.mode === "solana_native"
+    ? await readSolanaWalletBindingTruth(sui, auth.ctx.solanaAddress, supabase)
+    : await readCanonicalWalletBindingTruth(sui, supabase);
+
+  const finalizeOpts = {
+    walletDone,
+    walletTruth,
+    loginMethod,
+    holderAccountId,
+  };
+
   const bySui = await statusBySui(supabase, sui);
   if (bySui) {
-    return NextResponse.json(await finalizeStatusPayload(supabase, sui, bySui));
+    return NextResponse.json(await finalizeStatusPayload(supabase, sui, bySui, finalizeOpts));
   }
 
-  if (email) {
+  if (email && auth.ctx.mode === "legacy_sui") {
     const byEmail = await statusByEmail(supabase, email);
-    return NextResponse.json(await finalizeStatusPayload(supabase, sui, byEmail));
+    return NextResponse.json(await finalizeStatusPayload(supabase, sui, byEmail, finalizeOpts));
   }
 
   return NextResponse.json(await finalizeStatusPayload(supabase, sui, {
     status: "not_started",
     veriff_configured: isVeriffLive(),
     idv_provider: getIdvProvider(),
-  }));
+  }, finalizeOpts));
 }
