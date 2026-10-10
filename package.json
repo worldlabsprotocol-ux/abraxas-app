@@ -36,6 +36,7 @@
     "partner:live-sandbox": "tsx scripts/example-merchant-live-sandbox.ts",
     "partner:live-e2e": "tsx scripts/example-merchant-live-e2e.ts",
     "partner:staging-activate": "tsx scripts/example-merchant-staging-activate.ts",
+    "cielo:staging-activate": "tsx scripts/cielo-staging-activate.ts",
     "test:staging:live-e2e": "playwright test tests/staging/example-merchant-live-e2e.spec.ts",
     "test:sandbox-conformance": "vitest run lib/partner/sandboxPartnerContract/sandboxPartnerContract.test.ts",
     "solana:gate:test": "cargo test --manifest-path solana/abraxas-eligibility-gate/Cargo.toml --workspace -- --nocapture",

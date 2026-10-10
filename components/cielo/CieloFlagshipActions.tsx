@@ -9,6 +9,8 @@ import { Btn } from "@/components/redesign/ui";
 import { CieloAvailabilityPanel } from "./CieloAvailabilityPanel";
 import { CieloBookingPanel } from "./CieloBookingPanel";
 import { CIELO_FONT, cieloPanelStyle } from "./cieloBookingStyles";
+import { CIELO_AIRBNB_URL } from "@/lib/data/flagshipProperty";
+import { CIELO_VERIFIED_GUEST_POLICY_ID } from "@/lib/cielo/cieloIds";
 
 function Inner() {
   const { suiAddress } = useSuiAuth();
@@ -45,13 +47,29 @@ function Inner() {
             Passport verified-rate pilot
           </div>
           <p style={{ fontFamily: CIELO_FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.55, margin: 0 }}>
-            Account + wallet bind unlock a rate request. not a confirmed booking.
+            Abraxas verifies guest eligibility ({CIELO_VERIFIED_GUEST_POLICY_ID}) and issues a signed decision receipt.
+            A verified-rate request is not a confirmed stay and does not replace Airbnb booking.
           </p>
         </div>
         <Btn href="/cielo/verified-rate" variant="secondary" size="sm">
-          Check verified rate →
+          Start verified-guest flow →
         </Btn>
       </div>
+
+      <p style={{
+        fontFamily: CIELO_FONT,
+        fontSize: "0.72rem",
+        color: "var(--text-muted)",
+        lineHeight: 1.55,
+        margin: 0,
+        textAlign: "center",
+      }}>
+        Book on Airbnb (external channel):{" "}
+        <a href={CIELO_AIRBNB_URL} target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", fontWeight: 600 }}>
+          View listing on Airbnb
+        </a>
+        {" "}— Abraxas does not access your Airbnb account or confirm reservations.
+      </p>
 
       <div style={{
         display: "grid",

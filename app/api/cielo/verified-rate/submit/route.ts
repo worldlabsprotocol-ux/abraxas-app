@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { submitVerifiedRateRequest } from "@/lib/cielo/verifiedRateService";
+import { recordCieloFunnelEvent } from "@/lib/cielo/cieloFunnelEvents";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
 
 export const dynamic = "force-dynamic";
@@ -45,6 +46,12 @@ export async function POST(req: NextRequest) {
       guestName: body.guest_name.trim(),
       contactEmail: body.contact_email.trim(),
       notes: body.notes?.trim(),
+    });
+    void recordCieloFunnelEvent({
+      eventType: "holder_flow_completed",
+      outcome: result.status,
+      correlationId: result.public_reference,
+      metadata: { step: "verified_rate_submit" },
     });
     return NextResponse.json({ ok: true, ...result });
   } catch (e) {

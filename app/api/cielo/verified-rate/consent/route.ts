@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { grantCieloVerifiedGuestConsent } from "@/lib/cielo/verifiedRateService";
+import { recordCieloFunnelEvent } from "@/lib/cielo/cieloFunnelEvents";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,21 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await grantCieloVerifiedGuestConsent(auth.session.suiAddress);
+    void recordCieloFunnelEvent({
+      eventType: "policy_evaluated",
+      outcome: result.decision,
+      correlationId: result.verification_decision_id,
+      receiptId: result.receipt_id,
+      metadata: { step: "consent" },
+    });
+    if (result.receipt_id) {
+      void recordCieloFunnelEvent({
+        eventType: "receipt_issued",
+        outcome: result.decision,
+        correlationId: result.verification_decision_id,
+        receiptId: result.receipt_id,
+      });
+    }
     return NextResponse.json({ ok: true, ...result });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Consent failed";
