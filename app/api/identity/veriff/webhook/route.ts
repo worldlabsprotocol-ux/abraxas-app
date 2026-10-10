@@ -4,15 +4,11 @@
 // This is what actually turns the Passport's identity stamp from a
 // hardcoded UI state into a real, earned credential.
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseForRoute } from "@/lib/supabase/routeAdmin";
 import { verifyVeriffWebhookSignature, parseVeriffDecision } from "@/lib/veriff";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export async function POST(req: NextRequest) {
+  const supabase = supabaseForRoute();
   const rawBody = await req.text();
   const signature = req.headers.get("x-hmac-signature");
 

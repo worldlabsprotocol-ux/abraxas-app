@@ -1,7 +1,7 @@
 // Solana receipt commitment provenance — devnet memo commitments (Build #509).
 
 export const SOLANA_RECEIPT_COMMITMENT_PROTOCOL = "abx-rcpt" as const;
-export const SOLANA_RECEIPT_COMMITMENT_MEMO_VERSION = 1 as const;
+export const SOLANA_RECEIPT_COMMITMENT_MEMO_VERSION = 2 as const;
 export const SOLANA_RECEIPT_COMMITMENT_NETWORK_ID = "solana_devnet" as const;
 export const SOLANA_RECEIPT_COMMITMENT_CLUSTER = "devnet" as const;
 

@@ -8,12 +8,7 @@
 // risk engine, sized for what's actually buildable without a paid
 // compliance vendor.
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseForRoute } from "@/lib/supabase/routeAdmin";
 
 const LARGE_AMOUNT_THRESHOLD = 10000; // dollars, adjust to taste
 
@@ -24,6 +19,7 @@ function parsePrice(price?: string): number {
 }
 
 export async function POST(req: NextRequest) {
+  const supabase = supabaseForRoute();
   try {
     const body = await req.json() as {
       item_id?: string; item_name?: string; price?: string;

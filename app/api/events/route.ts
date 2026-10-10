@@ -3,16 +3,12 @@
 // ?limit=20&asset_id=xxx&wallet=xxx&type=ASSET_LISTED
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseForRoute } from "@/lib/supabase/routeAdmin";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  const supabase = supabaseForRoute();
   const { searchParams } = new URL(req.url);
   const limit    = parseInt(searchParams.get("limit") ?? "20");
   const assetId  = searchParams.get("asset_id");

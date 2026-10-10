@@ -5,13 +5,12 @@
 Newly issued Solana-native eligibility receipts can anchor provenance with a **Solana Memo program** transaction signed by a dedicated server committer key. The on-chain payload is a compact JSON memo:
 
 - `p`: `abx-rcpt`
-- `v`: `1`
+- `v`: `2` (current; v1 with optional `rid` still verifiable for legacy devnet txs)
 - `d`: domain-separated SHA-256 digest (see below)
-- `rid`: Abraxas receipt id (`dr_…`)
 
 **Why Memo (not a custom program yet):** smallest operational surface for demo/devnet, no program deploy cycle, independent verifiers can read memo + match digest to signed receipt `payload_hash`. A dedicated program can replace memos later without changing the digest scheme.
 
-**Privacy:** No holder identifiers, wallet addresses tied to identity, DOB, document/biometric hashes, or evidence payloads are written on-chain. Correlation risk is limited to receipt id + digest (high entropy) and committer pubkey.
+**Privacy:** No holder identifiers, wallet addresses tied to identity, DOB, document/biometric hashes, evidence payloads, or receipt ids (v2) are written on-chain. Correlation risk is digest (high entropy) + committer pubkey + tx metadata.
 
 ### Domain-separated digest
 

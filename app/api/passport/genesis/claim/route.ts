@@ -4,14 +4,10 @@
 // update-and-return) so two people completing verification at the
 // same instant can't both get assigned the same seat number.
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseForRoute } from "@/lib/supabase/routeAdmin";
 
 export async function POST(req: NextRequest) {
+  const supabase = supabaseForRoute();
   try {
     const { walletOrContext, hasWallet, hasIdentity, hasSocial } = await req.json() as {
       walletOrContext?: string; hasWallet?: boolean; hasIdentity?: boolean; hasSocial?: boolean;

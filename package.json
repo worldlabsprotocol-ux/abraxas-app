@@ -46,6 +46,7 @@
     "gate:verify-receipt-fixture": "tsx scripts/verify-trust-decision-fixture.ts",
     "release:readiness": "tsx scripts/release-readiness.ts",
     "check:homepage": "vitest run lib/home/homepageBaseline.test.ts lib/home/protocolProofLogos.test.ts",
+    "preflight:solana-demo": "tsx scripts/solana-native-demo-preflight.ts",
     "check:homepage-guard": "tsx scripts/homepage-guard/check.ts",
     "check:trust-contract-drift": "tsx scripts/trust-contract-drift/check.ts",
     "homepage:baseline:refresh": "tsx scripts/homepage-guard/refresh-baseline.ts --approved",

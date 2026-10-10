@@ -105,7 +105,9 @@ export async function verifyOnChainReceiptCommitment(
   const memo = parseReceiptCommitmentMemo(memoRaw);
   if (!memo) return { ok: false, reason: "memo_parse_failed" };
   if (memo.d !== input.expectedDigest) return { ok: false, reason: "digest_mismatch" };
-  if (memo.rid !== input.expectedReceiptId) return { ok: false, reason: "receipt_id_mismatch" };
+  if (memo.v === 1 && memo.rid !== input.expectedReceiptId) {
+    return { ok: false, reason: "receipt_id_mismatch" };
+  }
 
   // payload_hash is bound via domain-separated digest — re-check digest input binding externally
   if (!/^[a-f0-9]{64}$/.test(input.expectedPayloadHash)) {
@@ -119,7 +121,7 @@ export async function verifyOnChainReceiptCommitment(
     confirmation_status: sigStatus.value?.confirmationStatus ?? threshold,
     slot: tx.slot,
     memo_digest: memo.d,
-    memo_receipt_id: memo.rid,
+    memo_receipt_id: memo.rid ?? input.expectedReceiptId,
   };
 }
 

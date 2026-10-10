@@ -27,10 +27,11 @@ describe("receipt commitment digest", () => {
   it("does not embed domain constants in memo beyond digest", () => {
     const digest = buildReceiptCommitmentDigest(PAYLOAD_HASH);
     const memo = serializeReceiptCommitmentMemo(
-      buildReceiptCommitmentMemo({ commitmentDigest: digest, receiptId: "dr_testreceipt01" }),
+      buildReceiptCommitmentMemo({ commitmentDigest: digest }),
     );
     expect(memo).not.toContain(RECEIPT_COMMITMENT_DOMAIN);
     expect(memo).not.toContain(PAYLOAD_HASH);
+    expect(memo).not.toContain("dr_");
   });
 });
 
@@ -38,11 +39,24 @@ describe("receipt commitment memo privacy", () => {
   it("round-trips compact memo", () => {
     const digest = buildReceiptCommitmentDigest(PAYLOAD_HASH);
     const raw = serializeReceiptCommitmentMemo(
-      buildReceiptCommitmentMemo({ commitmentDigest: digest, receiptId: "dr_testreceipt01" }),
+      buildReceiptCommitmentMemo({ commitmentDigest: digest }),
     );
     const parsed = parseReceiptCommitmentMemo(raw);
     expect(parsed?.d).toBe(digest);
-    expect(parsed?.rid).toBe("dr_testreceipt01");
+    expect(parsed?.v).toBe(2);
+    expect(parsed?.rid).toBeUndefined();
+  });
+
+  it("still parses legacy v1 memos with receipt id", () => {
+    const digest = buildReceiptCommitmentDigest(PAYLOAD_HASH);
+    const legacy = JSON.stringify({
+      p: "abx-rcpt",
+      v: 1,
+      d: digest,
+      rid: "dr_legacy01",
+    });
+    const parsed = parseReceiptCommitmentMemo(legacy);
+    expect(parsed?.rid).toBe("dr_legacy01");
   });
 
   it("rejects memos containing forbidden identity tokens", () => {

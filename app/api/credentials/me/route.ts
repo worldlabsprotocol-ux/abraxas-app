@@ -6,6 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createHash } from "crypto";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { requireHolderRequestContext, holderClaimsSubjectKey } from "@/lib/holder/holderRequestContext";
+import { normalizeSolanaAddress } from "@/lib/auth/walletLogin/solanaSignIn";
 import {
   extractIssuerFromCredentialJwt,
   resolveAbraxasCredentialIssuer,
@@ -20,11 +21,20 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: auth.error, code: auth.code }, { status: auth.status });
   }
 
-  const sui = holderClaimsSubjectKey(auth.ctx);
-  const requested = req.nextUrl.searchParams.get("sui") ?? req.nextUrl.searchParams.get("sui_address");
-  if (requested) {
+  const subjectKey = holderClaimsSubjectKey(auth.ctx);
+  const requestedSolana = req.nextUrl.searchParams.get("solana") ?? req.nextUrl.searchParams.get("wallet");
+  const requestedSui = req.nextUrl.searchParams.get("sui") ?? req.nextUrl.searchParams.get("sui_address");
+  if (auth.ctx.mode === "solana_native" && requestedSolana) {
     try {
-      if (normalizeSuiAddress(requested) !== sui) {
+      if (normalizeSolanaAddress(requestedSolana) !== subjectKey) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    } catch {
+      return NextResponse.json({ error: "Invalid wallet query param" }, { status: 400 });
+    }
+  } else if (auth.ctx.mode === "legacy_sui" && requestedSui) {
+    try {
+      if (normalizeSuiAddress(requestedSui) !== subjectKey) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
     } catch {
@@ -41,7 +51,7 @@ export async function GET(req: NextRequest) {
   const { data: verification } = await supabase
     .from("identity_verifications")
     .select("status, credential_jti, document_type, document_country, liveness_provider, liveness_passed")
-    .or(`wallet_address.eq.${sui},sui_address.eq.${sui}`)
+    .or(`wallet_address.eq.${subjectKey},sui_address.eq.${subjectKey}`)
     .maybeSingle();
 
   if (!verification || verification.status !== "approved") {
@@ -78,7 +88,9 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     verified: true,
     status: "active",
-    sui_address: sui,
+    ...(auth.ctx.mode === "solana_native"
+      ? { wallet_address: subjectKey, login_method: "solana_wallet" as const }
+      : { sui_address: subjectKey, login_method: "legacy_sui" as const }),
     credential_jti: cred.jti,
     credential_jwt: cred.credential_jwt,
     credential_hash,

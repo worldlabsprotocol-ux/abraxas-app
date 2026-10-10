@@ -3,15 +3,11 @@
 // "Start Verification" on the identity page. Stores a pending record so
 // the webhook has something to update when Veriff reports a decision.
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseForRoute } from "@/lib/supabase/routeAdmin";
 import { createVeriffSession } from "@/lib/veriff";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export async function POST(req: NextRequest) {
+  const supabase = supabaseForRoute();
   try {
     const { email } = (await req.json()) as { email?: string };
     if (!email) {
