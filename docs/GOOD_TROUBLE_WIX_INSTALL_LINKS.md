@@ -12,6 +12,7 @@ Base repo: [worldlabsprotocol-ux/abraxas-app](https://github.com/worldlabsprotoc
 | `ageVerificationPopupLogic.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/public/ageVerificationPopupLogic.js |
 | `browseCallbackLogic.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/public/browseCallbackLogic.js |
 | `browseCallbackCompletion.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/public/browseCallbackCompletion.js |
+| `browseFlowOwnership.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/public/browseFlowOwnership.js |
 | `purchaseCallbackLogic.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/public/purchaseCallbackLogic.js |
 | `purchaseReturnDestination.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/public/purchaseReturnDestination.js |
 | `purchaseVerificationLogic.js` | https://github.com/worldlabsprotocol-ux/abraxas-app/blob/cursor/good-trouble-browse-seeker-demo-5ffe/examples/good-trouble-wix/public/purchaseVerificationLogic.js |
@@ -67,11 +68,11 @@ Deploy all modules listed in `examples/good-trouble-wix/WIX_DEPLOYMENT_MANIFEST.
 
 Operator docs: `docs/GOOD_TROUBLE_WIX_SEEKER_HANDOFF.md`, `examples/good-trouble-wix/WIX_DEPLOYMENT_MANIFEST.md`.
 
-## Wix Secrets Manager (required for purchase escrow)
+## Wix Secrets Manager (required for browse + purchase PKCE escrow)
 
 | Secret name | Notes |
 |-------------|--------|
-| `GOOD_TROUBLE_PKCE_ESCROW_PEPPER` | Generate ≥32 bytes (e.g. `openssl rand -hex 32`). Backend-only via `wix-secrets-backend`; purchase flows fail closed without it. |
+| `GOOD_TROUBLE_PKCE_ESCROW_PEPPER` | Generate ≥32 bytes (e.g. `openssl rand -hex 32`). Backend-only via `wix-secrets-backend`. **Browse L0 and purchase** flows fail closed at start/completion without it. Same secret as purchase escrow; browse uses independent `gt_browse_pkce_flow_own` cookie and `gtb_` flow ids (never mixed with `gtv` / `gt_pkce_flow_own`). |
 
 ## Mobile acceptance (Solana Seeker)
 

@@ -22,7 +22,10 @@ Deploy in this order (Public → Backend → Pages/lightbox):
 | 2e | `examples/good-trouble-wix/public/ageGateAccessState.js` | Public file | `src/public/ageGateAccessState.js` | Replace | `./abraxasClientConstants.js`, `./ageVerificationPopupLogic.js` |
 | 2f | `examples/good-trouble-wix/public/siteAgeGatePolicy.js` | Public file | `src/public/siteAgeGatePolicy.js` | **New** | `./ageGateAccessState.js` |
 | 2g | `examples/good-trouble-wix/public/purchaseFlowOwnership.js` | Public file | `src/public/purchaseFlowOwnership.js` | **New** | — |
+| 2g2 | `examples/good-trouble-wix/public/browseFlowOwnership.js` | Public file | `src/public/browseFlowOwnership.js` | **New** | — |
 | 2h | `examples/good-trouble-wix/public/purchaseCallbackCompletion.js` | Public file | `src/public/purchaseCallbackCompletion.js` | **New** | `./purchaseFlowOwnership.js`, `./purchaseCallbackLogic.js` |
+| 2h2 | `examples/good-trouble-wix/public/browseCallbackLogic.js` | Public file | `src/public/browseCallbackLogic.js` | Replace | `./abraxasClientConstants.js` |
+| 2h3 | `examples/good-trouble-wix/public/browseCallbackCompletion.js` | Public file | `src/public/browseCallbackCompletion.js` | Replace | `./browseFlowOwnership.js`, `./browseCallbackLogic.js` |
 | 3 | `examples/good-trouble-wix/backend/constants.js` | Backend file | `src/backend/constants.js` | Replace | `../public/abraxasClientConstants.js` |
 | 4 | `examples/good-trouble-wix/backend/browseConstants.js` | Backend file | `src/backend/browseConstants.js` | **New** | — |
 | 5 | `examples/good-trouble-wix/backend/flowPurpose.js` | Backend file | `src/backend/flowPurpose.js` | **New** | `./constants.js` |
@@ -45,7 +48,7 @@ Deploy in this order (Public → Backend → Pages/lightbox):
 | 17 | `examples/good-trouble-wix/backend/abraxasVerificationService.js` | Backend file | `src/backend/abraxasVerificationService.js` | Replace | receipt validators, `nonceLifecycle`, `pkceEscrowPepper`, `pkceEscrowPepperWix`, `wixNonceStore` (dynamic), `captchaGate`, `constants` |
 | 18 | `examples/good-trouble-wix/backend/abraxasVerification.web.js` | Backend file | `src/backend/abraxasVerification.web.js` | Replace | `wix-web-module`, `./abraxasVerificationService.js` |
 | 19 | `examples/good-trouble-wix/pages/AgeVerificationPopup.js` | Lightbox code | Age Verification popup panel | Replace | `backend/abraxasVerification.web`, `public/*`, Wix frontend modules |
-| 20 | `examples/good-trouble-wix/pages/BrowseVerificationResult.js` | Page code | `/browse-verification-result` page | **New page** | `backend/abraxasVerification.web`, `public/abraxasClientConstants`, `wix-location`, `wix-storage-frontend` |
+| 20 | `examples/good-trouble-wix/pages/BrowseVerificationResult.js` | Page code | `/browse-verification-result` page | **New page** | `backend/abraxasVerification.web`, `public/browseCallbackLogic`, `public/browseCallbackCompletion`, `public/browseFlowOwnership`, `public/ageGateAccessState`, `wix-location`, `wix-storage-frontend` |
 | 21 | `examples/good-trouble-wix/pages/AgeVerificationResult.js` | Page code | `/age-verification-result` page | Replace | `backend/abraxasVerification.web`, `public/abraxasClientConstants`, `wix-location`, `wix-storage-frontend` |
 | 22 | `examples/good-trouble-wix/pages/PurchaseVerificationEntry.js` | Page code | Cart / pre-checkout page (operator slug) | **New page** | `backend/abraxasVerification.web`, `public/purchaseVerificationLogic`, `public/abraxasClientConstants`, `wix-location-frontend`, `wix-window`, `wix-storage-frontend` |
 | 23 | `examples/good-trouble-wix/pages/GoodTroubleMasterPage.js` | Master Page code | Site → Custom Code → Master Page | **New** | `public/siteAgeGatePolicy`, `wix-location-frontend`, `wix-window`, `wix-storage-frontend` |
@@ -88,8 +91,9 @@ Deploy in this order (Public → Backend → Pages/lightbox):
 | Wix page name | URL slug | Element ID | Type | Suggested label | Required |
 |---------------|----------|------------|------|-----------------|----------|
 | Browse Verification Result | `browse-verification-result` | `abraxasStatusText` | Text | Callback status | **Required** |
+| Browse Verification Result | `browse-verification-result` | `restartAbraxasButton` | Button | "Start again" | Optional (shown on failure) |
 
-Allowlisted query params: `browse_receipt`, `partner_id`, `policy_id`, `purpose`, `gtb`.
+Allowlisted query params: `browse_receipt`, `partner_id`, `policy_id`, `purpose`, `gtb`. Never pass PKCE verifier or flow ownership secret in the URL.
 
 ### 3. Purchase callback page
 
@@ -109,7 +113,7 @@ Allowlisted query params: `status`, `decision_id`, `receipt_id`, `receipt_expire
 
 ### 5. CMS collection `AbraxasVerificationNonces`
 
-Admin-only read/write. Required fields include: `flowId`, `verifierChallenge`, `state`, `createdAt`, `expiresAt`, `claimExpiresAt`, `claimToken`, `validationAttempts`, `consumedAt`, `correlationId`, `purpose`, `policyId`. Purchase flows also persist `ownershipProofHash` and `verifierSealed` (server-side PKCE escrow — optional on legacy rows until they expire).
+Admin-only read/write. Required fields include: `flowId`, `verifierChallenge`, `state`, `createdAt`, `expiresAt`, `claimExpiresAt`, `claimToken`, `validationAttempts`, `consumedAt`, `correlationId`, `purpose`, `policyId`. **Browse and purchase** flows persist `ownershipProofHash` and `verifierSealed` (server-side PKCE escrow — optional on legacy rows until they expire).
 
 ---
 
@@ -4394,13 +4398,251 @@ export function loadPkceEscrowPepperFromWixSecrets() {
 }
 ```
 
+### public/browseFlowOwnership.js
+
+```javascript
+// FILE: examples/good-trouble-wix/public/browseFlowOwnership.js
+// Cross-tab browse flow ownership cookie — separate from purchase (gt_pkce_flow_own).
+
+/** First-party cookie — value is gtb flowId|ownershipSecret (never the PKCE verifier). */
+export const BROWSE_FLOW_OWNERSHIP_COOKIE = "gt_browse_pkce_flow_own";
+
+export const BROWSE_FLOW_OWNERSHIP_COOKIE_MAX_AGE_SEC = 600;
+
+const COOKIE_SEPARATOR = "|";
+
+/**
+ * @param {string} flowId
+ * @param {string} ownershipSecret
+ */
+export function buildBrowseFlowOwnershipCookieValue(flowId, ownershipSecret) {
+  const id = typeof flowId === "string" ? flowId.trim() : "";
+  const secret = typeof ownershipSecret === "string" ? ownershipSecret.trim() : "";
+  if (!id || !secret) return "";
+  if (!id.startsWith("gtb_")) return "";
+  return `${id}${COOKIE_SEPARATOR}${secret}`;
+}
+
+/**
+ * @param {string | null | undefined} rawCookieHeader
+ * @param {string} expectedFlowId
+ */
+export function parseBrowseFlowOwnershipFromCookieHeader(rawCookieHeader, expectedFlowId) {
+  const flowId = typeof expectedFlowId === "string" ? expectedFlowId.trim() : "";
+  if (!flowId || !flowId.startsWith("gtb_") || !rawCookieHeader) return null;
+
+  const parts = rawCookieHeader.split(";").map((p) => p.trim());
+  for (const part of parts) {
+    if (!part.startsWith(`${BROWSE_FLOW_OWNERSHIP_COOKIE}=`)) continue;
+    const encoded = part.slice(BROWSE_FLOW_OWNERSHIP_COOKIE.length + 1);
+    let decoded = "";
+    try {
+      decoded = decodeURIComponent(encoded);
+    } catch {
+      return null;
+    }
+    const sep = decoded.indexOf(COOKIE_SEPARATOR);
+    if (sep <= 0) return null;
+    const cookieFlowId = decoded.slice(0, sep).trim();
+    const secret = decoded.slice(sep + 1).trim();
+    if (cookieFlowId !== flowId || !secret) return null;
+    return { flowId: cookieFlowId, ownershipSecret: secret };
+  }
+  return null;
+}
+
+/**
+ * @param {string} documentCookie
+ * @param {string} expectedFlowId
+ */
+export function parseBrowseFlowOwnershipFromDocumentCookie(documentCookie, expectedFlowId) {
+  return parseBrowseFlowOwnershipFromCookieHeader(documentCookie, expectedFlowId);
+}
+
+/**
+ * @param {(value: string) => void} setCookie
+ * @param {string} flowId
+ * @param {string} ownershipSecret
+ */
+export function persistBrowseFlowOwnershipCookie(setCookie, flowId, ownershipSecret) {
+  const payload = buildBrowseFlowOwnershipCookieValue(flowId, ownershipSecret);
+  if (!payload) return;
+  const encoded = encodeURIComponent(payload);
+  setCookie(
+    `${BROWSE_FLOW_OWNERSHIP_COOKIE}=${encoded}; Max-Age=${BROWSE_FLOW_OWNERSHIP_COOKIE_MAX_AGE_SEC}; Path=/; Secure; SameSite=Lax`,
+  );
+}
+
+/**
+ * @param {(name: string) => void} removeCookie
+ */
+export function clearBrowseFlowOwnershipCookie(removeCookie) {
+  removeCookie(
+    `${BROWSE_FLOW_OWNERSHIP_COOKIE}=; Max-Age=0; Path=/; Secure; SameSite=Lax`,
+  );
+}
+```
+
+### public/browseCallbackLogic.js
+
+```javascript
+// FILE: examples/good-trouble-wix/public/browseCallbackLogic.js
+// Wix deployment: src/public/browseCallbackLogic.js
+
+import {
+  GOOD_TROUBLE_THE_GOODS_SHOP_PATH,
+  PURCHASE_POST_VERIFICATION_FALLBACK,
+} from "./abraxasClientConstants.js";
+import {
+  isSafeReturnDestinationPath,
+  normalizeReturnDestinationPath,
+} from "./purchaseReturnDestination.js";
+
+export const CHECKING_BROWSE_MESSAGE = "Confirming browsing access…";
+export const BROWSE_SUCCESS_MESSAGE = "Verification confirmed";
+export const BROWSE_POST_VERIFICATION_FALLBACK = GOOD_TROUBLE_THE_GOODS_SHOP_PATH;
+export const POST_BROWSE_REDIRECT_DELAY_MS = 1200;
+/** Max time to remain on "Confirming…" before fail-closed restart (ms). */
+export const BROWSE_CALLBACK_COMPLETION_TIMEOUT_MS = 90_000;
+export const BROWSE_CALLBACK_TRANSIENT_RETRY_MS = 2000;
+export const BROWSE_CALLBACK_MAX_TRANSIENT_RETRIES = 15;
+
+/** @deprecated Use BROWSE_POST_VERIFICATION_FALLBACK */
+export const BROWSE_POST_VERIFICATION_FALLBACK_LEGACY = PURCHASE_POST_VERIFICATION_FALLBACK;
+
+/**
+ * @param {{
+ *   verified?: boolean,
+ *   purpose?: string,
+ * }} result
+ */
+export function shouldContinueAfterBrowseVerification(result) {
+  return result?.verified === true && result?.purpose === "browse";
+}
+
+/**
+ * @param {{
+ *   serverDestination?: string | null,
+ *   sessionDestination?: string | null,
+ * }} input
+ * @returns {string}
+ */
+export function resolveBrowsePostVerificationRedirectDestination(input) {
+  const fromServer = normalizeReturnDestinationPath(input.serverDestination);
+  if (fromServer) return fromServer;
+
+  const fromSession = normalizeReturnDestinationPath(input.sessionDestination);
+  if (fromSession) return fromSession;
+
+  return BROWSE_POST_VERIFICATION_FALLBACK;
+}
+
+/**
+ * @param {string} destination
+ * @returns {boolean}
+ */
+export function canRedirectAfterBrowseVerification(destination) {
+  return isSafeReturnDestinationPath(destination)
+    || destination === BROWSE_POST_VERIFICATION_FALLBACK;
+}
+
+export {
+  parseAllowlistedCallbackParams,
+} from "./purchaseCallbackLogic.js";
+
+export {
+  extractSameOriginPath,
+  normalizeReturnDestinationPath,
+} from "./purchaseReturnDestination.js";
+
+/**
+ * @param {{ currentUrl?: string | null }} input
+ * @returns {string}
+ */
+export function resolveBrowseReturnDestinationForStart(input) {
+  const fromCurrent = extractSameOriginPath(input.currentUrl);
+  if (fromCurrent) return fromCurrent;
+  return BROWSE_POST_VERIFICATION_FALLBACK;
+}
+```
+
+### public/browseCallbackCompletion.js
+
+```javascript
+// FILE: examples/good-trouble-wix/public/browseCallbackCompletion.js
+// Wix deployment: src/public/browseCallbackCompletion.js
+// Resolve PKCE material for browse callback — sessionStorage first, browse flow-ownership cookie second.
+
+import { parseBrowseFlowOwnershipFromDocumentCookie } from "./browseFlowOwnership.js";
+
+export const RESTART_BROWSE_VERIFICATION_LABEL = "Start again from the age gate";
+
+export const LOST_BROWSE_SESSION_CONTEXT_MESSAGE =
+  "This verification was opened in a different browser or tab. Please start again from the age gate.";
+
+const FAILURE_MESSAGES = {
+  missing_browse_receipt: "Browsing access could not be confirmed. Please try again.",
+  receipt_invalid: "Browsing access could not be confirmed. Please try again.",
+  browse_receipt_invalid: "Browsing access could not be confirmed. Please try again.",
+  flow_purpose_mismatch: "This link is for a different verification type. Start again from the age gate.",
+  flow_exhausted: "This verification session expired. Start again from the age gate.",
+  flow_expired: "This verification session expired. Start again from the age gate.",
+  flow_already_consumed: "This verification was already used. Please start again from the age gate.",
+  receipt_fetch_transient_failure: "Still confirming browsing access. Please wait a moment…",
+  missing_verifier: LOST_BROWSE_SESSION_CONTEXT_MESSAGE,
+  missing_verifier_escrow: LOST_BROWSE_SESSION_CONTEXT_MESSAGE,
+  missing_flow_ownership: LOST_BROWSE_SESSION_CONTEXT_MESSAGE,
+  invalid_flow_ownership: LOST_BROWSE_SESSION_CONTEXT_MESSAGE,
+  verifier_mismatch: LOST_BROWSE_SESSION_CONTEXT_MESSAGE,
+  pkce_escrow_secret_unavailable: "Browsing access could not be confirmed. Please try again.",
+};
+
+/**
+ * @param {{
+ *   flowId: string,
+ *   sessionGet: (key: string) => string | null,
+ *   verifierStorageKey: (flowId: string) => string,
+ *   documentCookie?: string,
+ * }} input
+ * @returns {{ verifier: string, flowOwnershipSecret: string }}
+ */
+export function resolveBrowseCallbackPkceMaterial(input) {
+  const flowId = input.flowId.trim();
+  const verifier = input.sessionGet(input.verifierStorageKey(flowId))?.trim() ?? "";
+  const cookie = typeof input.documentCookie === "string" ? input.documentCookie : "";
+  const ownership = parseBrowseFlowOwnershipFromDocumentCookie(cookie, flowId);
+  const flowOwnershipSecret = ownership?.ownershipSecret?.trim() ?? "";
+
+  return {
+    verifier,
+    flowOwnershipSecret,
+  };
+}
+
+/**
+ * @param {{ verifier: string, flowOwnershipSecret: string }} material
+ */
+export function hasBrowseCallbackPkceProof(material) {
+  return Boolean(material.verifier?.trim() || material.flowOwnershipSecret?.trim());
+}
+
+/**
+ * @param {string | undefined} code
+ * @param {string} fallback
+ */
+export function mapBrowseCallbackFailureMessage(code, fallback) {
+  if (!code) return fallback;
+  return FAILURE_MESSAGES[code] ?? fallback;
+}
+```
+
 ## D. Secrets and configuration
 
 ### Wix Secrets Manager (names only — never paste values into Public/page code)
 
 | Secret name | Intended location | Purpose |
 |-------------|-------------------|---------|
-| `GOOD_TROUBLE_PKCE_ESCROW_PEPPER` | **Backend only** (Wix Secrets Manager) | **Required for purchase PKCE escrow.** At least 32 bytes of entropy (e.g. 64 hex chars from `openssl rand -hex 32`). Never expose in Public/page code, URLs, logs, or API responses. Browse-only flows do not use this secret. |
+| `GOOD_TROUBLE_PKCE_ESCROW_PEPPER` | **Backend only** (Wix Secrets Manager) | **Required for browse + purchase PKCE escrow.** At least 32 bytes of entropy (e.g. 64 hex chars from `openssl rand -hex 32`). Never expose in Public/page code, URLs, logs, or API responses. Browse uses separate `gt_browse_pkce_flow_own` cookie and `gtb_` flow ids. |
 
 > If CAPTCHA is re-enabled later, add provider secrets to Backend only and remove `skipCaptcha: true` from `abraxasVerification.web.js`.
 
