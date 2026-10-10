@@ -99,6 +99,7 @@ export function PartnerVerifyClient({
 
   const evaluateOnceRef = useRef(false);
   const signInOnceRef = useRef(false);
+  const solanaAutoEvaluateOnceRef = useRef(false);
   const correlationRef = useRef<string | null>(null);
 
   const launchpadAppSlug = searchParams.get("app");
@@ -397,6 +398,16 @@ export function PartnerVerifyClient({
   ]);
 
   useEffect(() => {
+    if (!solanaNative || !holderReady || authLoadingCombined) return;
+    if (phase !== "sign_in") return;
+    if (invalidLinkMessage || !flowParamsReady) return;
+    if (solanaAutoEvaluateOnceRef.current) return;
+    solanaAutoEvaluateOnceRef.current = true;
+    evaluateOnceRef.current = false;
+    void runEvaluate();
+  }, [solanaNative, holderReady, authLoadingCombined, phase, invalidLinkMessage, flowParamsReady, runEvaluate]);
+
+  useEffect(() => {
     if (authLoadingCombined) {
       if (previewPhase) return;
       setPhase("loading");
@@ -518,6 +529,7 @@ export function PartnerVerifyClient({
   const handleWalletSignInSuccess = useCallback(() => {
     void refreshHolderSession().then(() => {
       evaluateOnceRef.current = false;
+      solanaAutoEvaluateOnceRef.current = false;
       void runEvaluate();
     });
   }, [refreshHolderSession, runEvaluate]);

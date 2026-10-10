@@ -37,6 +37,7 @@ import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import { PUBLIC_SURFACE } from "@/lib/design/publicSurface";
 import { TrustStatus } from "@/components/product/TrustStatus";
 import { PassportReuseStrip } from "@/components/passport/PassportReuseStrip";
+import { PassportHolderNextStep } from "@/components/passport/PassportHolderNextStep";
 import { PassportIdentityObject, type PassportLifecycleState } from "@/components/passport/PassportIdentityObject";
 import type { CapturePolicyContext } from "@/lib/idv/capturePolicyContext";
 
@@ -162,9 +163,30 @@ export function PassportCustomerView({
     );
   }
 
+  const primaryVerificationAction =
+    !hasCredential && walletDone && setup.walletBound && status.identityUi !== "under_review"
+      ? {
+          label: starting ? "Starting…" : "Start verification",
+          onClick: onStartIdCheck,
+          disabled: starting || (idvProvider === "veriff" && !veriffConfigured),
+        }
+      : undefined;
+
   return (
     <div>
       {walletDone && <PassportRequestInbox />}
+
+      <PassportHolderNextStep
+        walletDone={walletDone}
+        setup={setup}
+        identityStatus={identityStatus}
+        hasCredential={hasCredential}
+        idvProvider={idvProvider}
+        via={via}
+        partnerFlowActive={handoff.isPartnerFlowContext}
+        startingVerification={starting}
+        primaryAction={primaryVerificationAction}
+      />
 
       <PassportIdentityObject
         state={(
