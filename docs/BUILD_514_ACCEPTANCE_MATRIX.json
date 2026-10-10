@@ -3,7 +3,7 @@
   "generated_at": "2026-10-10T23:50:00.000Z",
   "source_branch": "cursor/controlled-demo-live-acceptance-514",
   "parent_stack": ["#618", "#619", "#620", "#621", "#622", "#623", "#624", "#625", "#626"],
-  "commit_sha_agent": "pending_push",
+  "commit_sha_agent": "0a91c9014c0f44f15e8df2d14f24ccbef4e888d4",
   "release_verdict": "BLOCKED",
   "release_verdict_detail": "Demo database missing Solana migrations 134–138; live browser/Phantom acceptance not executable in agent VM; Vercel deployment protection blocked automated fetch.",
   "scenarios": [

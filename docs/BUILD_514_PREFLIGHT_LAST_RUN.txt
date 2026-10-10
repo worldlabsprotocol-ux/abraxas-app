@@ -1,0 +1,16 @@
+commit=0a91c9014c0f44f15e8df2d14f24ccbef4e888d4
+timestamp=2026-10-10T23:51:10.000Z
+Supabase project ref could not be resolved from URL.
+
+[FAIL] supabase_config: NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY missing
+[FAIL] flag_solana_native: ABRAXAS_SOLANA_NATIVE not enabled
+[WARN] flag_wallet_first: Wallet-first flags not set
+[WARN] flag_receipt_commitments: Receipt commitments disabled
+[WARN] phantom_auth_origin: Verify Phantom allowlist for unset origin
+[PASS] solana_devnet_rpc: RPC host api.devnet.solana.com
+[FAIL] receipt_signing_key: ABRAXAS_SIGNING_KEY / ABRAXAS_PUBLIC_KEY missing
+[BLOCKED] committer_key: ABRAXAS_SOLANA_RECEIPT_COMMITMENT_PRIVATE_KEY not configured
+[FAIL] veriff_readiness: Veriff not configured
+[WARN] reviewer_availability: ABRAXAS_ADMIN_EMAILS unset
+[BLOCKED] migrations_134_138: Provide tableExists hook or apply migrations manually
+exit_code=1
