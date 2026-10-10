@@ -64,7 +64,10 @@ export function mapRegisterFailureToUserError(
   return body.error ?? "Could not register zkLogin identity";
 }
 
-export async function resolveVerifiedLoginMode(callbackHash?: string): Promise<ZkLoginLoginMode> {
+export async function resolveVerifiedLoginMode(callbackHash?: string): Promise<{
+  mode: ZkLoginLoginMode;
+  continue_path: string | null;
+}> {
   const oauthState = callbackHash ? parseOAuthStateFromCallbackHash(callbackHash) : null;
   if (!oauthState) {
     throw new Error(ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE);
@@ -81,9 +84,9 @@ export async function resolveVerifiedLoginMode(callbackHash?: string): Promise<Z
     throw new Error(ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE);
   }
 
-  const data = (await res.json()) as { login_mode?: string };
+  const data = (await res.json()) as { login_mode?: string; continue_path?: string | null };
   if (data.login_mode === "legacy_recovery" || data.login_mode === "canonical") {
-    return data.login_mode;
+    return { mode: data.login_mode, continue_path: data.continue_path ?? null };
   }
 
   throw new Error(ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE);
@@ -106,7 +109,7 @@ function clearUntrustedZkLoginMaterial(): void {
 
 export async function completeGoogleZkLogin(
   idToken: string,
-  options?: { callbackHash?: string },
+  options?: { callbackHash?: string; verifiedMode?: ZkLoginLoginMode },
 ): Promise<ZkLoginUserSession> {
   logAuthEvent("oauth_callback");
 
@@ -159,7 +162,8 @@ export async function completeGoogleZkLogin(
 
   let loginMode: ZkLoginLoginMode;
   try {
-    loginMode = await resolveVerifiedLoginMode(options?.callbackHash);
+    loginMode = options?.verifiedMode
+      ?? (await resolveVerifiedLoginMode(options?.callbackHash)).mode;
   } catch (e) {
     clearUntrustedZkLoginMaterial();
     const err = e instanceof Error ? e.message : ZKLOGIN_SIGN_IN_EXPIRED_MESSAGE;

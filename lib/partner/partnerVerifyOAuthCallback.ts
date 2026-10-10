@@ -2,7 +2,8 @@
 // OAuth callback completion — activate server continuation after browser session.
 
 import { ensureBrowserSessionReady } from "@/lib/auth/ensureBrowserSession";
-import { completeGoogleZkLogin } from "@/lib/sui/zklogin/completeLogin";
+import { normalizeHolderContinuePath } from "@/lib/auth/holderContinuePath";
+import { completeGoogleZkLogin, resolveVerifiedLoginMode } from "@/lib/sui/zklogin/completeLogin";
 import { clearLoginInFlight, clearStaleLoginInFlight } from "@/lib/sui/zklogin/loginInFlight";
 import { parseIdTokenFromCallbackHash, loadUserSession } from "@/lib/sui/zklogin/session";
 import { clearPartnerVerifyResume } from "@/lib/partner/partnerVerifyResume";
@@ -31,9 +32,15 @@ export async function completePartnerVerifyOAuthCallback(
 
   const idToken = parseIdTokenFromCallbackHash(callbackHash);
   let session;
+  let holderContinuePath: string | null = null;
 
   if (idToken) {
-    session = await completeGoogleZkLogin(idToken, { callbackHash });
+    const verified = await resolveVerifiedLoginMode(callbackHash);
+    holderContinuePath = normalizeHolderContinuePath(verified.continue_path);
+    session = await completeGoogleZkLogin(idToken, {
+      callbackHash,
+      verifiedMode: verified.mode,
+    });
     logPartnerVerifyAuthEvent("zklogin_complete", { correlationId });
   } else {
     session = loadUserSession();
@@ -63,6 +70,14 @@ export async function completePartnerVerifyOAuthCallback(
   if (activated) {
     logPartnerVerifyAuthEvent("partner_resume_restored", { correlationId });
     return { redirectPath: activated, correlationId };
+  }
+
+  if (holderContinuePath) {
+    logPartnerVerifyAuthEvent("browser_session_ready", {
+      correlationId,
+      detail: "holder_continue_restored",
+    });
+    return { redirectPath: holderContinuePath, correlationId };
   }
 
   return { redirectPath: "/passport?signed_in=1", correlationId };

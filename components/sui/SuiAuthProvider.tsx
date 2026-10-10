@@ -41,7 +41,7 @@ interface SuiAuthContextValue {
   error: string | null;
   signInRecovery: SignInRecoveryState | null;
   dismissSignInRecovery: () => void;
-  signInWithGoogle: () => Promise<boolean>;
+  signInWithGoogle: (options?: { continuePath?: string }) => Promise<boolean>;
   signInWithExistingAccount: () => Promise<boolean>;
   signOut: () => void;
   refreshSession: () => void;
@@ -176,10 +176,13 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
     })();
   }, [session?.suiAddress, session?.email]);
 
-  const signInWithGoogle = useCallback(async (): Promise<boolean> => {
+  const signInWithGoogle = useCallback(async (options?: { continuePath?: string }): Promise<boolean> => {
     setError(null);
     dismissSignInRecovery();
-    const result = await startGoogleZkLogin({ mode: "canonical" });
+    const result = await startGoogleZkLogin({
+      mode: "canonical",
+      continuePath: options?.continuePath,
+    });
     if (!result.ok) {
       setError(result.error);
       return false;

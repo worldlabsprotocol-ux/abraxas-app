@@ -10,8 +10,8 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const body = (await req.json().catch(() => ({}))) as { login_mode?: string };
-  const minted = await mintZkLoginOAuthState(body.login_mode);
+  const body = (await req.json().catch(() => ({}))) as { login_mode?: string; continue_path?: string };
+  const minted = await mintZkLoginOAuthState(body.login_mode, body.continue_path);
   if (!minted) {
     return NextResponse.json({ error: "Sign-in unavailable" }, { status: 503 });
   }

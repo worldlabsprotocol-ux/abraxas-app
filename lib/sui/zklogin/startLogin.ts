@@ -17,8 +17,14 @@ import { fetchLoginMaxEpoch } from "./fetchLoginEpoch";
 import { ZKLOGIN_SIGN_IN_COPY } from "./signInCopy";
 
 export async function startGoogleZkLogin(
-  options?: { mode?: ZkLoginLoginMode },
+  options?: { mode?: ZkLoginLoginMode; continuePath?: string | null },
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { normalizeHolderContinuePath, holderContinuePathFromWindowLocation } = await import(
+    "@/lib/auth/holderContinuePath"
+  );
+  const continuePath =
+    normalizeHolderContinuePath(options?.continuePath ?? undefined)
+    ?? holderContinuePathFromWindowLocation();
   const mode = options?.mode ?? "canonical";
 
   if (mode === "legacy_recovery") {
@@ -59,7 +65,10 @@ export async function startGoogleZkLogin(
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ login_mode: mode }),
+      body: JSON.stringify({
+        login_mode: mode,
+        ...(continuePath ? { continue_path: continuePath } : {}),
+      }),
     });
 
     if (!stateRes.ok) {
