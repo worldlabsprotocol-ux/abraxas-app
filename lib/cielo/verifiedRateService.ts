@@ -26,6 +26,8 @@ import {
   evaluateCieloVerifiedGuest,
   type CieloEligibilityDecision,
 } from "@/lib/cielo/verifiedGuestPolicy";
+import { CIELO_VERIFIED_GUEST_SOLANA_POLICY_ID } from "@/lib/cielo/cieloSolanaPolicyIds";
+import { evaluateCieloVerifiedGuestSolana } from "@/lib/cielo/verifiedGuestSolanaPolicy";
 import {
   buildEvaluatedClaimRefs,
   claimTypesFromEvaluation,
@@ -114,15 +116,53 @@ async function assertProductionEligibleDecision(input: {
   }
 }
 
+export async function grantCieloVerifiedGuestConsentSolana(input: {
+  claimsSubjectKey: string;
+  holderAccountId: string;
+  solanaAddress: string;
+}): Promise<VerifiedRateConsentResult> {
+  return grantCieloVerifiedGuestConsentInternal({
+    subject: input.claimsSubjectKey,
+    policyId: CIELO_VERIFIED_GUEST_SOLANA_POLICY_ID,
+    preCheck: () => evaluateCieloVerifiedGuestSolana({
+      holderAccountId: input.holderAccountId,
+      claimsSubjectKey: input.claimsSubjectKey,
+      solanaAddress: input.solanaAddress,
+      requireConsent: false,
+    }),
+    gate: () => evaluateCieloVerifiedGuestSolana({
+      holderAccountId: input.holderAccountId,
+      claimsSubjectKey: input.claimsSubjectKey,
+      solanaAddress: input.solanaAddress,
+      requireConsent: true,
+    }),
+  });
+}
+
 export async function grantCieloVerifiedGuestConsent(
   suiAddress: string,
 ): Promise<VerifiedRateConsentResult> {
-  const sb = requireSupabaseAdmin();
   const subject = normalizeSuiAddress(suiAddress);
-  const policy = await getPolicy(CIELO_VERIFIED_GUEST_POLICY_ID);
+  return grantCieloVerifiedGuestConsentInternal({
+    subject,
+    policyId: CIELO_VERIFIED_GUEST_POLICY_ID,
+    preCheck: () => evaluateCieloVerifiedGuest(subject, { requireConsent: false }),
+    gate: () => evaluateCieloVerifiedGuest(subject, { requireConsent: true }),
+  });
+}
+
+async function grantCieloVerifiedGuestConsentInternal(input: {
+  subject: string;
+  policyId: string;
+  preCheck: () => Promise<{ decision: CieloEligibilityDecision; reason_codes: string[]; display_decision: string }>;
+  gate: () => Promise<{ decision: CieloEligibilityDecision; reason_codes: string[]; display_decision: string }>;
+}): Promise<VerifiedRateConsentResult> {
+  const sb = requireSupabaseAdmin();
+  const subject = input.subject;
+  const policy = await getPolicy(input.policyId);
   if (!policy) throw new Error("Policy not found");
 
-  const preCheck = await evaluateCieloVerifiedGuest(subject, { requireConsent: false });
+  const preCheck = await input.preCheck();
   if (preCheck.decision === "not_eligible") {
     throw new Error(`Not eligible: ${preCheck.reason_codes.join(", ")}`);
   }
@@ -132,7 +172,7 @@ export async function grantCieloVerifiedGuestConsent(
 
   const { data: request, error: reqErr } = await sb.from("verification_requests").insert({
     partner_id: CIELO_PARTNER_ID,
-    policy_id: CIELO_VERIFIED_GUEST_POLICY_ID,
+    policy_id: input.policyId,
     subject_id: subject,
     sui_address: subject,
     requested_action: "cielo_verified_rate",
@@ -145,7 +185,7 @@ export async function grantCieloVerifiedGuestConsent(
 
   const claims = await getActiveClaims(subject);
   const evaluation = evaluatePolicyRules(policy.rules_json, claims);
-  const gate = await evaluateCieloVerifiedGuest(subject, { requireConsent: true });
+  const gate = await input.gate();
 
   const finalDecision: CieloEligibilityDecision =
     gate.decision === "not_eligible"

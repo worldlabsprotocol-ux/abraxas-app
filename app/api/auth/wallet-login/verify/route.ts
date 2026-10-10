@@ -17,6 +17,8 @@ import {
   issueWalletHolderSessionToken,
 } from "@/lib/auth/holderBrowserSession";
 import { normalizeHolderContinuePath } from "@/lib/auth/holderContinuePath";
+import { isSolanaNativeProductEnabled } from "@/lib/auth/solanaNative/featureFlag";
+import { ensureCanonicalHolderForSolanaWallet } from "@/lib/holder/canonicalHolderAccount";
 
 const NO_STORE = { "Cache-Control": "no-store", Pragma: "no-cache" };
 
@@ -91,10 +93,21 @@ export async function POST(req: NextRequest) {
   }
 
   const account = await upsertHolderWalletAccount(solanaAddress);
+
+  let holderAccountId: string | null = null;
+  let claimsSubjectKey: string | null = null;
+  if (isSolanaNativeProductEnabled()) {
+    const canonical = await ensureCanonicalHolderForSolanaWallet(solanaAddress, account.id);
+    holderAccountId = canonical.holderAccountId;
+    claimsSubjectKey = canonical.claimsSubjectKey;
+  }
+
   const token = await issueWalletHolderSessionToken({
     holderWalletId: account.id,
     solanaAddress: account.solana_address,
     linkedSuiAddress: account.linked_sui_address,
+    holderAccountId,
+    claimsSubjectKey,
   });
 
   if (!token) {
@@ -108,7 +121,8 @@ export async function POST(req: NextRequest) {
     login_method: "solana_wallet",
     solana_address: account.solana_address,
     sui_address: account.linked_sui_address,
-    passport_subject_ready: Boolean(account.linked_sui_address),
+    passport_subject_ready: Boolean(holderAccountId || account.linked_sui_address),
+    holder_account_id: holderAccountId,
     continue_path: continuePath,
   }, { headers: NO_STORE });
 
