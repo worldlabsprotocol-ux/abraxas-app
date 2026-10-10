@@ -50,7 +50,15 @@ Launchpad **Advanced** section: `PartnerUniversalReadinessPanel` loads `/api/lau
 
 ## Validation (executed on branch)
 
-See PR description for exact vitest counts and build result.
+```bash
+./node_modules/.bin/vitest run lib/partner/universalIntegration lib/partner/partnerConformanceHarness.test.ts lib/policy/changeControl/changeControlHealthRoute.test.ts
+# 8 files, 28 tests passed
+
+npm run build   # placeholder Supabase env as in CI
+npm run partner:live-sandbox   # requires tsx devDependency; exit 1 when PARTNER_FLOW_RP_* unset (expected in CI)
+```
+
+**Live E2E in cloud agent VM:** blocked without staging `PARTNER_FLOW_RP_*` and browser holder session; harness reports `overall: blocked` explicitly.
 
 ## Build #499 recommendations (ranked)
 
