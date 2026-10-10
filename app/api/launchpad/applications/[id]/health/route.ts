@@ -12,6 +12,8 @@ import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { probePolicyChangeControlSchema } from "@/lib/policy/changeControl/schemaReady";
 import { launchpadPolicyChangeControlHealthSlice } from "@/lib/policy/changeControl/health";
+import { deriveUniversalIntegrationReadiness } from "@/lib/partner/universalIntegration/readinessDiagnostic";
+import { REQUIRED_HARNESS_SCENARIOS } from "@/lib/partner/launchpad/partnerTestHarness";
 
 export const dynamic = "force-dynamic";
 type RouteContext = { params: { id: string } };
@@ -34,11 +36,25 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     .eq("application_id", app.id)
     .eq("partner_id", auth.session.partnerId)
     .limit(200);
-  const harness = harnessPassedFromActivity((activity ?? []) as Array<{
+  const activityRows = (activity ?? []) as Array<{
     event_type: string;
     public_code: string | null;
     metadata?: Record<string, unknown>;
-  }>);
+  }>;
+  const harness = harnessPassedFromActivity(activityRows);
+  const verifiedReceiptCount = activityRows.filter((row) => row.event_type === "receipt_verified").length;
+  const { data: productionRequests } = await sb
+    .from("partner_production_access_requests")
+    .select("status")
+    .eq("application_id", app.id)
+    .eq("partner_id", auth.session.partnerId)
+    .order("created_at", { ascending: false })
+    .limit(1);
+  const productionAccessRequestStatus = (productionRequests?.[0]?.status as
+    | "pending"
+    | "approved"
+    | "rejected"
+    | undefined) ?? null;
   const active = new Set((keys ?? []).filter((key) => !key.revoked_at).map((key) => key.id));
   const webhook = await getLaunchpadWebhookOverview({
     partnerId: auth.session.partnerId,
@@ -64,7 +80,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     overview: policyOverview,
     pinnedVersion: app.policy_version,
   });
-  return launchpadJson(buildLaunchpadIntegrationHealth({
+  const health = buildLaunchpadIntegrationHealth({
     application: app,
     activeSandboxKey: Boolean(app.api_key_id && active.has(app.api_key_id)),
     activeProductionKey: Boolean(app.production_api_key_id && active.has(app.production_api_key_id)),
@@ -80,5 +96,19 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     schemaSkipCode: webhook.schema_skip_code,
     productionCompatibility: webhook.production_compatibility,
     policyChangeControl,
-  }));
+  });
+  const harnessPassed = REQUIRED_HARNESS_SCENARIOS.every((id) => harness.completed.includes(id));
+  const readiness = deriveUniversalIntegrationReadiness({
+    application: app,
+    activeSandboxKey: Boolean(app.api_key_id && active.has(app.api_key_id)),
+    activeProductionKey: Boolean(app.production_api_key_id && active.has(app.production_api_key_id)),
+    verifiedReceiptCount,
+    harnessPassed,
+    productionAccessRequestStatus,
+    integrationHealthOverall: health.overall,
+  });
+  return launchpadJson({
+    ...health,
+    universal_readiness: readiness,
+  });
 }

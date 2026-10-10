@@ -32,6 +32,7 @@
     "good-trouble:production-readiness": "npx tsx scripts/good-trouble-production-readiness.ts",
     "good-trouble:sandbox-readiness": "npx tsx scripts/good-trouble-sandbox-readiness.ts",
     "partner:conformance": "npx tsx scripts/partner-conformance.ts",
+    "partner:universal-readiness": "npx tsx scripts/universal-partner-readiness.ts",
     "test:sandbox-conformance": "vitest run lib/partner/sandboxPartnerContract/sandboxPartnerContract.test.ts",
     "solana:gate:test": "cargo test --manifest-path solana/abraxas-eligibility-gate/Cargo.toml --workspace -- --nocapture",
     "iat:automated": "npx tsx scripts/iat-automated.ts",
