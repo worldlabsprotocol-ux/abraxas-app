@@ -34,6 +34,11 @@ import {
   mapFlowNextStepToJourneyState,
   resolvePartnerJourneyPresentation,
 } from "@/lib/partner/partnerJourneyStateMachine";
+import {
+  shouldAutoEvaluateSolanaPartnerFlow,
+  shouldBlockPartnerEvaluateRetry,
+} from "@/lib/partner/partnerAutoEvaluateGuard";
+import { partnerFlowErrorPresentation } from "@/lib/partner/holderFlowErrorPresentation";
 import { PartnerVerifyShell, type PartnerVerifyPhase } from "./PartnerVerifyShell";
 
 interface FlowResult {
@@ -45,6 +50,12 @@ interface FlowResult {
   code?: string;
   journey_state?: string;
   customer_message?: string;
+  flow_trace_id?: string;
+  evidence_reuse_hint?: {
+    outcome: string;
+    holder_message: string;
+    consent_still_required: boolean;
+  };
 }
 
 const BROWSER_SESSION_AUTH_ERROR = "Sign in required in this browser";
@@ -95,12 +106,15 @@ export function PartnerVerifyClient({
   const [phase, setPhase] = useState<PartnerVerifyPhase>(previewPhase ?? "loading");
   const [statusMessage, setStatusMessage] = useState("Preparing verification…");
   const [correlationId, setCorrelationId] = useState<string | null>(null);
+  const [flowTraceId, setFlowTraceId] = useState<string | null>(null);
+  const [flowNextStepHint, setFlowNextStepHint] = useState<string | null>(null);
   const [oauthReturnReady, setOauthReturnReady] = useState(false);
 
   const evaluateOnceRef = useRef(false);
   const signInOnceRef = useRef(false);
   const solanaAutoEvaluateOnceRef = useRef(false);
   const correlationRef = useRef<string | null>(null);
+  const holderSubjectRef = useRef<string | null>(null);
 
   const launchpadAppSlug = searchParams.get("app");
   const launchpadReturnUrl = searchParams.get("return_url");
@@ -237,8 +251,22 @@ export function PartnerVerifyClient({
     if (suiAddress) clearLoginInFlight();
   }, [suiAddress]);
 
+  useEffect(() => {
+    const subject = suiAddress?.trim() || null;
+    if (!subject) return;
+    if (holderSubjectRef.current && holderSubjectRef.current !== subject) {
+      evaluateOnceRef.current = false;
+      signInOnceRef.current = false;
+      solanaAutoEvaluateOnceRef.current = false;
+      setFlowTraceId(null);
+      setFlowNextStepHint(null);
+    }
+    holderSubjectRef.current = subject;
+  }, [suiAddress]);
+
   const runEvaluate = useCallback(async () => {
     if (invalidLinkMessage || !holderReady || !flowParamsReady) return;
+    if (shouldBlockPartnerEvaluateRetry(phase)) return;
     if (evaluateOnceRef.current) return;
     evaluateOnceRef.current = true;
 
@@ -288,9 +316,19 @@ export function PartnerVerifyClient({
       });
       const data = await res.json() as FlowResult;
 
+      if (typeof data.flow_trace_id === "string") {
+        setFlowTraceId(data.flow_trace_id);
+      }
+
       if (!res.ok) {
         const message = data.error ?? "Evaluation failed";
         const code = typeof data.code === "string" ? data.code : undefined;
+        const presentation = partnerFlowErrorPresentation({
+          code,
+          correlationId: cid,
+          flowTraceId: data.flow_trace_id,
+        });
+        setFlowNextStepHint(presentation.nextStep);
         if (res.status === 401 && isBrowserSessionAuthError(message)) {
           logPartnerVerifyAuthEvent("partner_evaluate_result", {
             correlationId: cid,
@@ -305,11 +343,7 @@ export function PartnerVerifyClient({
         }
         evaluateOnceRef.current = false;
         setPhase(code === "open_redirect" || code === "launchpad_return_url_rejected" ? "invalid_binding" : "error");
-        setStatusMessage(
-          code === "launchpad_return_url_rejected" || code === "tuple_conflict"
-            ? "This verification link does not match Good Trouble. Start again from ORDER NOW."
-            : "Verification could not be completed.",
-        );
+        setStatusMessage(presentation.message);
         return;
       }
 
@@ -333,12 +367,17 @@ export function PartnerVerifyClient({
         }
         return;
       }
+      if (data.evidence_reuse_hint?.holder_message) {
+        setFlowNextStepHint(data.evidence_reuse_hint.holder_message);
+      }
+
       if (data.next === "passport" && data.passport_url) {
         setPhase("returning");
+        const reuseMsg = data.evidence_reuse_hint?.holder_message;
         setStatusMessage(
           isDobFirstBrowse
             ? "Continuing to your birthday check…"
-            : (data.customer_message ?? "Continuing verification…"),
+            : (reuseMsg ?? data.customer_message ?? "Continuing verification…"),
         );
         window.location.assign(data.passport_url);
         return;
@@ -377,13 +416,19 @@ export function PartnerVerifyClient({
         outcome: "error",
         errorCode: "evaluate_failed",
       });
+      const presentation = partnerFlowErrorPresentation({
+        correlationId: cid,
+        flowTraceId: flowTraceId,
+      });
+      setFlowNextStepHint(presentation.nextStep);
       evaluateOnceRef.current = false;
       setPhase("error");
-      setStatusMessage("Verification could not be completed.");
+      setStatusMessage(presentation.message);
     }
   }, [
     invalidLinkMessage,
     holderReady,
+    phase,
     solanaNative,
     legacySui,
     relyingPartyId,
@@ -398,14 +443,32 @@ export function PartnerVerifyClient({
   ]);
 
   useEffect(() => {
-    if (!solanaNative || !holderReady || authLoadingCombined) return;
-    if (phase !== "sign_in") return;
-    if (invalidLinkMessage || !flowParamsReady) return;
     if (solanaAutoEvaluateOnceRef.current) return;
+    if (!shouldAutoEvaluateSolanaPartnerFlow({
+      solanaNative,
+      holderReady,
+      authLoading: authLoadingCombined,
+      phase,
+      invalidLink: Boolean(invalidLinkMessage),
+      flowParamsReady,
+      previewPhaseActive: Boolean(previewPhase),
+      launchpadPending,
+    })) {
+      return;
+    }
     solanaAutoEvaluateOnceRef.current = true;
-    evaluateOnceRef.current = false;
     void runEvaluate();
-  }, [solanaNative, holderReady, authLoadingCombined, phase, invalidLinkMessage, flowParamsReady, runEvaluate]);
+  }, [
+    solanaNative,
+    holderReady,
+    authLoadingCombined,
+    phase,
+    invalidLinkMessage,
+    flowParamsReady,
+    runEvaluate,
+    previewPhase,
+    launchpadPending,
+  ]);
 
   useEffect(() => {
     if (authLoadingCombined) {
@@ -448,6 +511,10 @@ export function PartnerVerifyClient({
       setStatusMessage("Sign in to continue with Abraxas.");
       return;
     }
+    if (shouldBlockPartnerEvaluateRetry(phase)) return;
+    if (solanaNative && phase === "sign_in" && holderReady && !solanaAutoEvaluateOnceRef.current) {
+      return;
+    }
     if (oauthReturnReady || !evaluateOnceRef.current) {
       void runEvaluate();
     }
@@ -462,6 +529,8 @@ export function PartnerVerifyClient({
     hostedBootstrapEligible,
     hostedBootstrap.bootstrapping,
     hostedBootstrap.state,
+    solanaNative,
+    phase,
   ]);
 
   const handleSignIn = useCallback(async () => {
@@ -517,8 +586,10 @@ export function PartnerVerifyClient({
   const handleTryAgain = useCallback(() => {
     evaluateOnceRef.current = false;
     signInOnceRef.current = false;
+    solanaAutoEvaluateOnceRef.current = false;
     clearLoginInFlight();
     clearStaleLoginInFlight();
+    setFlowNextStepHint(null);
     if (holderReady) {
       void runEvaluate();
       return;
@@ -557,6 +628,8 @@ export function PartnerVerifyClient({
       onOptionalSignIn={() => { void handleSignIn(); }}
       walletPrimarySignIn={solanaNative}
       onWalletSignInSuccess={handleWalletSignInSuccess}
+      flowSupportRef={correlationId ?? flowTraceId}
+      flowNextStepHint={flowNextStepHint}
     />
   );
 }

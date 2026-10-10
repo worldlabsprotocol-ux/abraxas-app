@@ -84,6 +84,8 @@ export interface PartnerVerifyShellProps {
   /** Phantom-first sign-in for Solana-native partner flows (#508). */
   walletPrimarySignIn?: boolean;
   onWalletSignInSuccess?: () => void;
+  flowSupportRef?: string | null;
+  flowNextStepHint?: string | null;
 }
 
 function recoveryForPhase(phase: PartnerVerifyPhase) {
@@ -162,6 +164,8 @@ export function PartnerVerifyShell({
   onOptionalSignIn,
   walletPrimarySignIn = false,
   onWalletSignInSuccess,
+  flowSupportRef = null,
+  flowNextStepHint = null,
 }: PartnerVerifyShellProps) {
   const continuationContext = { policyId, purpose };
   const onSignInScreen = showSignIn(phase);
@@ -287,6 +291,8 @@ export function PartnerVerifyShell({
               ? HOLDER_RETURN_FAILURE_TECHNICAL
               : null
           }
+          supportRef={flowSupportRef}
+          nextStepHint={flowNextStepHint}
         />
       ) : (
         <>

@@ -13,6 +13,9 @@ export interface VerificationFailureProps {
   onPrimary?: () => void;
   secondaryPassport?: boolean;
   technicalDetail?: string | null;
+  /** Safe support reference (correlation / flow trace). Never PII. */
+  supportRef?: string | null;
+  nextStepHint?: string | null;
 }
 
 export function VerificationFailure({
@@ -20,6 +23,8 @@ export function VerificationFailure({
   onPrimary,
   secondaryPassport = true,
   technicalDetail,
+  supportRef,
+  nextStepHint,
 }: VerificationFailureProps) {
   const showNothingShared = recovery.state === "denied"
     || recovery.state === "invalid_binding"
@@ -40,6 +45,14 @@ export function VerificationFailure({
     >
       <h2 style={{ ...holderTitle, fontSize: "0.98rem" }}>{recovery.title}</h2>
       <p style={{ ...holderBody, marginTop: "0.4rem" }}>{recovery.explanation}</p>
+      {nextStepHint ? (
+        <p style={{ ...holderBody, marginTop: "0.45rem" }}>{nextStepHint}</p>
+      ) : null}
+      {supportRef ? (
+        <p style={{ ...holderBody, marginTop: "0.45rem", fontSize: "0.72rem", color: "var(--text-muted)" }}>
+          Reference: {supportRef}
+        </p>
+      ) : null}
       {showNothingShared ? (
         <p style={{ ...holderBody, marginTop: "0.45rem", fontWeight: 600, color: "var(--text-primary)" }}>
           Nothing was shared.
