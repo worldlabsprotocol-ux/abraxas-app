@@ -12,6 +12,9 @@ import { ensureBrowserSessionReady } from "@/lib/auth/ensureBrowserSession";
 import { CIELO_HOLDER_COPY, humanizeCieloDisclosedResult, humanizeCieloReason } from "@/lib/cielo/cieloHolderCopy";
 import { CIELO_VERIFIED_GUEST_POLICY_ID } from "@/lib/cielo/cieloIds";
 import { HolderTrustSurface } from "@/components/holder/HolderTrustSurface";
+import { WalletFirstSignIn } from "@/components/auth/WalletFirstSignIn";
+import { isWalletFirstAuthEnabledClient } from "@/lib/auth/walletLogin/clientFeatureFlag";
+import { useHolderSession } from "@/lib/hooks/useHolderSession";
 
 const FONT = "'Inter',system-ui,sans-serif";
 const MONO = "'JetBrains Mono',monospace";
@@ -34,7 +37,9 @@ const RETURN_PATH = "/cielo/verified-rate";
 export function CieloVerifiedRateFlow() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const walletFirst = isWalletFirstAuthEnabledClient();
   const { suiAddress, isAuthenticated, signInWithGoogle, refreshSession } = useSuiAuth();
+  const { session: holderSession, refresh: refreshHolderSession } = useHolderSession(walletFirst);
 
   const [step, setStep] = useState<FlowStep>("passport");
   const [evaluation, setEvaluation] = useState<CieloVerifiedGuestEvaluation | null>(null);
@@ -215,9 +220,14 @@ export function CieloVerifiedRateFlow() {
         {step === "passport" && (
           <>
             <StepLabel n={1} title={CIELO_HOLDER_COPY.stepAccount} />
+            {walletFirst && holderSession?.loginMethod === "solana_wallet" && !holderSession.passportSubjectReady ? (
+              <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: AMBER, lineHeight: 1.65, margin: "0 0 0.75rem" }}>
+                {CIELO_HOLDER_COPY.walletSessionNoPassport}
+              </p>
+            ) : null}
             {!isAuthenticated || !suiAddress ? (
               <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.75rem" }}>
-                Sign in with Google to create your Abraxas Passport account.
+                {walletFirst ? CIELO_HOLDER_COPY.signInWalletLead : "Sign in with Google to create your Abraxas Passport account."}
               </p>
             ) : (
               <ul style={{ margin: "0 0 0.75rem", paddingLeft: "1.1rem", fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.7 }}>
@@ -246,13 +256,34 @@ export function CieloVerifiedRateFlow() {
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
               {!isAuthenticated ? (
-                <button
-                  type="button"
-                  onClick={() => void signInWithGoogle({ continuePath: RETURN_PATH })}
-                  style={primaryBtn(false)}
-                >
-                  {CIELO_HOLDER_COPY.signIn}
-                </button>
+                walletFirst ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem", width: "100%" }}>
+                    <WalletFirstSignIn
+                      continuePath={RETURN_PATH}
+                      primaryLabel={CIELO_HOLDER_COPY.signInWallet}
+                      onSuccess={() => {
+                        void refreshHolderSession();
+                        void refreshSession();
+                        void loadStatus();
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => void signInWithGoogle({ continuePath: RETURN_PATH })}
+                      style={ghostBtnStyle}
+                    >
+                      {CIELO_HOLDER_COPY.legacyGoogleSignIn}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => void signInWithGoogle({ continuePath: RETURN_PATH })}
+                    style={primaryBtn(false)}
+                  >
+                    {CIELO_HOLDER_COPY.signIn}
+                  </button>
+                )
               ) : (
                 <>
                   {!passportReady && (
