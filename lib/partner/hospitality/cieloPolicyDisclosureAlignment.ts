@@ -1,29 +1,30 @@
 // FILE: lib/partner/hospitality/cieloPolicyDisclosureAlignment.ts
-// Documents holder disclosure vs immutable cielo-verified-guest-v1 DB rules (no silent policy mutation).
+// Policy truth: cielo-verified-guest-v1 ≠ age_21_retail (Build #503 disclosure fix).
 
-import { CIELO_VERIFIED_GUEST_POLICY_ID } from "@/lib/cielo/cieloIds";
-import { POLICY_PACKS } from "@/lib/partner/launchpad/policyPacks";
-import { RENTAL_OPERATOR_DEFAULT_POLICY_PACK_ID } from "@/lib/partner/hospitality/rentalOperatorContract";
+import {
+  cieloPolicyEquivalentToAge21Retail,
+  cieloVerifiedGuestV1Predicates,
+  age21RetailPackPredicates,
+} from "@/lib/cielo/cieloVerifiedGuestPolicyContract";
 
-/**
- * Cielo holder UI and Launchpad onboarding use age_21_retail disclosure vocabulary.
- * The pinned production policy row remains cielo-verified-guest-v1 until an operator publishes
- * a new immutable version (e.g. cielo-verified-guest-v2) via policy change control — never in-place edits.
- */
 export function describeCieloPolicyDisclosureAlignment(): {
-  pinned_policy_id: typeof CIELO_VERIFIED_GUEST_POLICY_ID;
-  disclosure_policy_pack_id: typeof RENTAL_OPERATOR_DEFAULT_POLICY_PACK_ID;
-  disclosed_result: string;
+  pinned_policy_id: string;
+  policies_equivalent: boolean;
+  holder_disclosure_source: "cielo_verified_guest_v1_contract";
+  cielo_disclosed_result: string;
+  age_21_retail_disclosed_result: string;
   immutable_policy_note: string;
 } {
-  const pack = POLICY_PACKS[RENTAL_OPERATOR_DEFAULT_POLICY_PACK_ID];
+  const cielo = cieloVerifiedGuestV1Predicates();
+  const age21 = age21RetailPackPredicates();
   return {
-    pinned_policy_id: CIELO_VERIFIED_GUEST_POLICY_ID,
-    disclosure_policy_pack_id: RENTAL_OPERATOR_DEFAULT_POLICY_PACK_ID,
-    disclosed_result: pack.disclosed_result,
+    pinned_policy_id: cielo.policy_id,
+    policies_equivalent: cieloPolicyEquivalentToAge21Retail(),
+    holder_disclosure_source: "cielo_verified_guest_v1_contract",
+    cielo_disclosed_result: cielo.disclosed_result,
+    age_21_retail_disclosed_result: age21.disclosed_result,
     immutable_policy_note:
-      "DB rules for cielo-verified-guest-v1 (wallet L3, account, consent) are unchanged; "
-      + "age_21_retail describes operator-facing disclosure for new Launchpad tenants. "
-      + "Successor policies require versioning, not silent rules_json edits.",
+      "cielo-verified-guest-v1 is unchanged. Holders see wallet/account/consent pilot requirements — not age_21_retail. "
+      + "Operators adopting true 21+ eligibility must pin age_21_retail via Launchpad and a new policy version id.",
   };
 }

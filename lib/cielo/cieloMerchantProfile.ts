@@ -3,8 +3,10 @@
 
 import { CIELO_RECORD_ID } from "@/lib/cielo/cieloIds";
 import { CIELO_SUNRISE_RENTAL_TENANT } from "@/lib/partner/hospitality/rentalOperatorTenants";
-import { getRentalOperatorPolicyPack } from "@/lib/partner/hospitality/rentalOperatorContract";
-import type { PolicyPackId } from "@/lib/partner/launchpad/policyPacks";
+import {
+  CIELO_V1_DISCLOSED_RESULT,
+  cieloVerifiedGuestV1Predicates,
+} from "@/lib/cielo/cieloVerifiedGuestPolicyContract";
 
 /** Demo Supabase project for staging activation (never production). */
 export const CIELO_DEMO_SUPABASE_PROJECT_REF = "ocntwbxarpjeixdnzide";
@@ -23,7 +25,7 @@ export interface CieloMerchantCanonicalConfig {
   partner_id: string;
   policy_id: string;
   genesis_asset_id: typeof CIELO_RECORD_ID;
-  policy_pack_template: PolicyPackId;
+  policy_pack_template: null;
   disclosed_result: string;
   airbnb_listing_url: string;
   integration_mode: "first_party_adapter";
@@ -33,14 +35,14 @@ export interface CieloMerchantCanonicalConfig {
 
 export function getCieloMerchantCanonicalConfig(): CieloMerchantCanonicalConfig {
   const tenant = CIELO_SUNRISE_RENTAL_TENANT;
-  const pack = getRentalOperatorPolicyPack(tenant.policyPackId);
+  const predicates = cieloVerifiedGuestV1Predicates();
   return {
     merchant_name: "Cielo Sunrise",
     partner_id: tenant.partnerId,
     policy_id: tenant.policyId,
     genesis_asset_id: CIELO_RECORD_ID,
-    policy_pack_template: tenant.policyPackId,
-    disclosed_result: pack.disclosed_result,
+    policy_pack_template: null,
+    disclosed_result: predicates.disclosed_result ?? CIELO_V1_DISCLOSED_RESULT,
     airbnb_listing_url: tenant.externalBookingUrl ?? "",
     integration_mode: "first_party_adapter",
     generic_partner_flow_evaluate: false,

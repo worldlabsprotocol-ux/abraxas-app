@@ -1,0 +1,60 @@
+{
+  "generated_at": "2026-10-10T09:04:48.551Z",
+  "overall": "blocked",
+  "findings": [
+    {
+      "id": "partner_flow_rp_config",
+      "status": "missing",
+      "detail": "missing_PARTNER_FLOW_RP_PARTNER_ID",
+      "operator_action": "Set PARTNER_FLOW_RP_* from Launchpad integration docs"
+    },
+    {
+      "id": "partner_flow_rp_config",
+      "status": "missing",
+      "detail": "missing_PARTNER_FLOW_RP_POLICY_ID",
+      "operator_action": "Set PARTNER_FLOW_RP_* from Launchpad integration docs"
+    },
+    {
+      "id": "partner_flow_rp_config",
+      "status": "missing",
+      "detail": "missing_PARTNER_FLOW_RP_RETURN_URL",
+      "operator_action": "Set PARTNER_FLOW_RP_* from Launchpad integration docs"
+    },
+    {
+      "id": "supabase_ref_guard",
+      "status": "unverified",
+      "detail": "LAUNCHPAD_EXPECTED_SUPABASE_REF not set",
+      "operator_action": "Set demo/staging Supabase project ref before executing live proof"
+    },
+    {
+      "id": "test_holder_session",
+      "status": "missing",
+      "detail": "No PLAYWRIGHT_STORAGE_STATE — holder auth will require manual checkpoint",
+      "operator_action": "Complete holder sign-in once; save storage state locally"
+    },
+    {
+      "id": "live_execution_gate",
+      "status": "unverified",
+      "detail": "Dry-run readiness only (set EXAMPLE_MERCHANT_EXECUTE_LIVE=1 to run Playwright)"
+    },
+    {
+      "id": "staging_deployment_isolation",
+      "status": "missing",
+      "detail": "No staging base URL to probe",
+      "operator_action": "Set PARTNER_FLOW_RP_BASE_URL or LAUNCHPAD_STAGING_URL"
+    }
+  ],
+  "deployment_probe": null,
+  "policy_profile": {
+    "pack_id": "age_21_retail",
+    "disclosed_result": "age_eligible_21"
+  },
+  "minimum_operator_actions": [
+    "Set PARTNER_FLOW_RP_* from Launchpad integration docs",
+    "Set PARTNER_FLOW_RP_* from Launchpad integration docs",
+    "Set PARTNER_FLOW_RP_* from Launchpad integration docs",
+    "Set demo/staging Supabase project ref before executing live proof",
+    "Complete holder sign-in once; save storage state locally",
+    "Set PARTNER_FLOW_RP_BASE_URL or LAUNCHPAD_STAGING_URL"
+  ]
+}

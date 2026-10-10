@@ -30,7 +30,8 @@ import {
   buildEvaluatedClaimRefs,
   claimTypesFromEvaluation,
 } from "@/lib/decisionReceipts/claimRefs";
-import { issueReceiptForDecision } from "@/lib/decisionReceipts/service";
+import { getReceiptByDecisionId, issueReceiptForDecision } from "@/lib/decisionReceipts/service";
+import { assertCieloDecisionReceiptCurrentlyValid } from "@/lib/cielo/cieloReceiptTrust";
 
 export interface VerifiedRateConsentResult {
   consent_receipt_id: string;
@@ -278,6 +279,16 @@ export async function submitVerifiedRateRequest(
   if (mappedDecision !== "approved") {
     throw new Error("Only approved eligibility can submit a verified-rate request");
   }
+
+  const receiptRecord = await getReceiptByDecisionId(input.decisionId);
+  if (!receiptRecord?.id) {
+    throw new Error("Signed decision receipt required before verified-rate submit");
+  }
+  await assertCieloDecisionReceiptCurrentlyValid({
+    receiptId: receiptRecord.id,
+    decisionId: input.decisionId,
+    consentReceiptId: input.consentReceiptId,
+  });
 
   const gate = await evaluateCieloVerifiedGuest(subject, { requireConsent: true });
   if (gate.decision !== "approved") {

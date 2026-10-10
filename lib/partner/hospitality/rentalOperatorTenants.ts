@@ -16,7 +16,7 @@ export const CIELO_SUNRISE_RENTAL_TENANT: RentalOperatorTenantConfig = {
   partnerId: CIELO_PARTNER_ID,
   policyId: CIELO_VERIFIED_GUEST_POLICY_ID,
   displayName: "Cielo Sunrise",
-  policyPackId: RENTAL_OPERATOR_DEFAULT_POLICY_PACK_ID,
+  policyPackId: null,
   integrationSurface: "first_party_property_ui",
   externalBookingUrl: CIELO_AIRBNB_URL,
   launchpadApplicationIdEnvKey: "CIELO_LAUNCHPAD_APPLICATION_ID",
