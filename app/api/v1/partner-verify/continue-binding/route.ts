@@ -19,7 +19,7 @@ import {
   resolvePartnerReturnUrlHintForRequest,
   upgradeStoredContinuationWithPartnerHint,
 } from "@/lib/partner/partnerReturnUrlHint";
-import { maybeAttachGoodTroubleGtvBindingFromReturnUrl } from "@/lib/partner/goodTroubleGtvBindingCookie";
+import { maybeAttachGoodTroublePartnerFlowBindingsFromReturnUrl } from "@/lib/partner/goodTroublePartnerFlowBindingAttach";
 import { isOpaqueVerifyRequest } from "@/lib/partner/productionIntegration/requestCorrelation";
 
 export const dynamic = "force-dynamic";
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
       purpose: stored.purpose ?? null,
       return_url: stored.returnUrl,
     });
-    await maybeAttachGoodTroubleGtvBindingFromReturnUrl(
+    await maybeAttachGoodTroublePartnerFlowBindingsFromReturnUrl(
       res,
       verifyRequest,
       stored.returnUrl,

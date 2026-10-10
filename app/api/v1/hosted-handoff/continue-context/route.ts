@@ -9,7 +9,7 @@ import {
 } from "@/lib/partner/hostedHandoff/continueContextTrace";
 import { resolveHostedHandoffForContinue } from "@/lib/partner/hostedHandoff/resolveForContinue";
 import { resolvePartnerReturnUrlHintForRequest } from "@/lib/partner/partnerReturnUrlHint";
-import { maybeAttachGoodTroubleGtvBindingFromReturnUrl } from "@/lib/partner/goodTroubleGtvBindingCookie";
+import { maybeAttachGoodTroublePartnerFlowBindingsFromReturnUrl } from "@/lib/partner/goodTroublePartnerFlowBindingAttach";
 import {
   attachPartnerContinueBindingCookie,
   signPartnerContinueBindingCookie,
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
     attachPartnerContinueBindingCookie(res, bindingToken);
   }
 
-  await maybeAttachGoodTroubleGtvBindingFromReturnUrl(
+  await maybeAttachGoodTroublePartnerFlowBindingsFromReturnUrl(
     res,
     preview.verify_request,
     preview.return_url,

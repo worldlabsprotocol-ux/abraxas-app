@@ -19,6 +19,8 @@ import {
   RETURN_DESTINATION_STORAGE_KEY,
 } from "public/abraxasClientConstants";
 
+import { resolveBrowseReturnDestinationForStart } from "public/browseCallbackLogic";
+
 import wixLocationFrontend from "wix-location-frontend";
 import wixWindow from "wix-window";
 import wixWindowFrontend from "wix-window-frontend";
@@ -121,23 +123,12 @@ $w.onReady(() => {
 
           saveReturnDestination() {
             try {
-              const currentUrl =
-                String(
-                  wixLocationFrontend.url ||
-                    ""
-                );
-
-              const path =
-                currentUrl
-                  .split("?")[0]
-                  .replace(
-                    /^https?:\/\/[^/]+/,
-                    ""
-                  ) || "/";
-
+              const destination = resolveBrowseReturnDestinationForStart({
+                currentUrl: String(wixLocationFrontend.url || ""),
+              });
               session.setItem(
                 BROWSE_RETURN_DESTINATION_STORAGE_KEY,
-                path
+                destination,
               );
             } catch {
               // Saving the destination is helpful,
