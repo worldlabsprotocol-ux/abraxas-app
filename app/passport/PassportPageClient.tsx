@@ -18,7 +18,7 @@ import { ConsentCeremony } from "@/components/passport/ConsentCeremony";
 import { VerificationSuccessPanel } from "@/components/passport/VerificationSuccessPanel";
 import { VeriffDeviceHint } from "@/components/passport/VeriffDeviceHint";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
-import { ZkLoginSignIn } from "@/components/sui/ZkLoginSignIn";
+import { HolderSignInPanel } from "@/components/auth/HolderSignInPanel";
 import { usePassportVerification } from "@/lib/hooks/usePassportVerification";
 import { AbxPageHeader } from "@/components/design/AbxPrimitives";
 import { AbxPageShell } from "@/components/design/AbxPageShell";
@@ -241,7 +241,7 @@ function PassportPageInner() {
                 }}>
                   Requests are private and connected to your signed-in Passport account.
                 </p>
-                <ZkLoginSignIn />
+                <HolderSignInPanel />
               </section>
             ) : authLoading ? (
               <RedesignPageLoading label="Loading your requests…" compact />
@@ -271,7 +271,7 @@ function PassportPageInner() {
                 }}>
                   Your activity is private and connected to your signed-in Passport account.
                 </p>
-                <ZkLoginSignIn />
+                <HolderSignInPanel />
               </section>
             ) : authLoading ? (
               <RedesignPageLoading label="Loading your activity…" compact />
@@ -301,7 +301,7 @@ function PassportPageInner() {
                 }}>
                   Signing in connects your request to the right Passport account without asking you to copy account IDs.
                 </p>
-                <ZkLoginSignIn />
+                <HolderSignInPanel />
               </section>
             ) : authLoading ? (
               <RedesignPageLoading label="Loading help and safety…" compact />
@@ -331,7 +331,7 @@ function PassportPageInner() {
                 }}>
                   Privacy requests are tied to your Passport account. Sign in to view stored data categories and request an export or deletion.
                 </p>
-                <ZkLoginSignIn />
+                <HolderSignInPanel />
               </section>
             ) : authLoading ? (
               <RedesignPageLoading label="Loading privacy controls…" compact />
