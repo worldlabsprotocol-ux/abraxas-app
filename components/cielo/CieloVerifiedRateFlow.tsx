@@ -46,6 +46,13 @@ export function CieloVerifiedRateFlow() {
   const [guestName, setGuestName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [notes, setNotes] = useState("");
+  const [holderBrief, setHolderBrief] = useState<{
+    requestor?: string;
+    purpose?: string;
+    result?: string;
+    shared_result_category?: string;
+    booking_boundary?: string;
+  } | null>(null);
 
   const fixture = searchParams.get("fixture");
   const passportReturn = encodeURIComponent(RETURN_PATH);
@@ -74,6 +81,23 @@ export function CieloVerifiedRateFlow() {
   useEffect(() => {
     void loadStatus();
   }, [loadStatus]);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const res = await fetch("/api/cielo/verified-rate/holder-brief");
+        const data = await res.json() as {
+          brief?: { requestor?: string; purpose?: string; result?: string; shared_result_category?: string };
+          booking_boundary?: string;
+        };
+        if (res.ok && data.brief) {
+          setHolderBrief({ ...data.brief, booking_boundary: data.booking_boundary });
+        }
+      } catch {
+        /* non-blocking disclosure fetch */
+      }
+    })();
+  }, []);
 
   const passportReady = Boolean(
     evaluation?.account_active && evaluation.profile_complete && evaluation.wallet_binding_active && evaluation.wallet_binding_fresh,
@@ -164,6 +188,26 @@ export function CieloVerifiedRateFlow() {
           Passport unlocks a pilot verified-rate request at Cielo. not a confirmed reservation or payment.
           Tier 1 only: account, profile, wallet binding, and consent. No partner API key required.
         </p>
+        {holderBrief && (
+          <div style={{
+            marginTop: "0.75rem",
+            padding: "0.65rem 0.75rem",
+            borderRadius: 10,
+            border: "1px solid var(--border)",
+            background: "var(--surface)",
+          }}>
+            <div style={{ fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>
+              Requesting operator · {holderBrief.requestor}
+            </div>
+            <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.55, margin: "0 0 0.35rem" }}>
+              {holderBrief.purpose}
+            </p>
+            <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", lineHeight: 1.5, margin: 0 }}>
+              Disclosed to operator: <strong style={{ color: "var(--text-primary)" }}>{holderBrief.shared_result_category ?? holderBrief.result}</strong>
+              {holderBrief.booking_boundary ? ` · ${holderBrief.booking_boundary}` : null}
+            </p>
+          </div>
+        )}
       </div>
 
       <div style={{ padding: "0.85rem 1.15rem", display: "flex", gap: "0.35rem" }}>
