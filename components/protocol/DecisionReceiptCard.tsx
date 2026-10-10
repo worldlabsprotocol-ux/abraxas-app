@@ -62,6 +62,8 @@ function resolveProps(input: DecisionReceiptCardProps) {
       evaluatedAt: formatReceiptTimestamp(input.model.evaluatedAt) ?? undefined,
       signingKeyId: input.model.signingKeyId,
       lifecycleStatus: input.model.lifecycleStatus,
+      solanaProofLabel: input.model.solanaProofLabel,
+      solanaProvenance: input.model.solanaProvenance,
     };
   }
 
@@ -162,6 +164,12 @@ export function DecisionReceiptCard(props: DecisionReceiptCardProps) {
               <dd style={{ fontFamily: ABX_FONT_SANS }}>{resolved.validUntil}</dd>
             </div>
           ) : null}
+          {resolved.solanaProofLabel ? (
+            <div>
+              <dt style={{ fontFamily: ABX_FONT_MONO }}>Chain proof</dt>
+              <dd style={{ fontFamily: ABX_FONT_SANS }}>{resolved.solanaProofLabel}</dd>
+            </div>
+          ) : null}
         </dl>
       </div>
 
@@ -187,6 +195,20 @@ export function DecisionReceiptCard(props: DecisionReceiptCardProps) {
           {resolved.evaluatedAt ? <code>issued {resolved.evaluatedAt}</code> : null}
           {resolved.lifecycleStatus ? <code>{resolved.lifecycleStatus}</code> : null}
           {resolved.signingKeyId ? <code>{resolved.signingKeyId}</code> : null}
+          {resolved.solanaProvenance?.transaction_signature ? (
+            <code title="Solana transaction">{resolved.solanaProvenance.transaction_signature}</code>
+          ) : null}
+          {resolved.solanaProvenance?.committer_pubkey ? (
+            <code title="Committer">{resolved.solanaProvenance.committer_pubkey}</code>
+          ) : null}
+          {resolved.solanaProvenance?.confirmation_status ? (
+            <code>{resolved.solanaProvenance.confirmation_status}</code>
+          ) : null}
+          {resolved.solanaProvenance?.explorer_url ? (
+            <a href={resolved.solanaProvenance.explorer_url} target="_blank" rel="noreferrer">
+              View on Solana Explorer
+            </a>
+          ) : null}
         </div>
       ) : null}
     </motion.article>

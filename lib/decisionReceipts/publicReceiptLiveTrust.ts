@@ -13,6 +13,8 @@ import {
 import { evaluateReceiptCurrentValidity } from "@/lib/decisionReceipts/currentValidity";
 import type { ReceiptLifecycleStatus, PartnerSafeReceiptInvalidationReason } from "@/lib/decisionReceipts/currentValidity";
 
+import type { SolanaReceiptProvenanceView } from "@/lib/decisionReceipts/solanaCommitment/contract";
+
 export type PublicReceiptLiveTrustView = DecisionReceiptPublicView & {
   currently_valid: boolean;
   validity: string;
@@ -21,6 +23,7 @@ export type PublicReceiptLiveTrustView = DecisionReceiptPublicView & {
   lifecycle_status: ReceiptLifecycleStatus;
   partner_safe_reason: PartnerSafeReceiptInvalidationReason | null;
   validity_checked_at: string;
+  solana_provenance?: SolanaReceiptProvenanceView;
 };
 
 export async function resolveLiveClaimStatuses(
@@ -112,12 +115,37 @@ export async function buildPublicReceiptWithLiveTrust(
   } else {
     trust.validity = "active";
   }
-  return attachLiveTrustToPublicView(enrichedView, trust, {
+  const { getActiveCommitmentForReceipt } = await import("@/lib/decisionReceipts/solanaCommitment/store");
+  const { toSolanaProvenanceView } = await import("@/lib/decisionReceipts/solanaCommitment/service");
+  const { evaluateSolanaCommitmentTrust } = await import("@/lib/decisionReceipts/solanaCommitment/trust");
+  const commitment = await getActiveCommitmentForReceipt(record.id);
+  const solanaTrust = evaluateSolanaCommitmentTrust({
+    policyId: record.policy_id,
+    commitment,
+  });
+  if (solanaTrust.on_chain_required && !solanaTrust.on_chain_confirmed) {
+    trust.currently_valid = false;
+    trust.invalidation_reasons = [
+      ...trust.invalidation_reasons,
+      ...solanaTrust.invalidation_reasons,
+    ];
+  }
+
+  const attached = attachLiveTrustToPublicView(enrichedView, trust, {
     issued_valid: currentValidity.issued_valid,
     lifecycle_status: currentValidity.lifecycle_status,
     partner_safe_reason: currentValidity.partner_safe_reason,
     validity_checked_at: currentValidity.checked_at,
   });
+
+  return {
+    ...attached,
+    solana_provenance: toSolanaProvenanceView({
+      commitment,
+      policyId: record.policy_id,
+      requireOnChain: solanaTrust.on_chain_required,
+    }),
+  };
 }
 
 export function publicReceiptLiveTrustHasNoPii(view: PublicReceiptLiveTrustView): boolean {
