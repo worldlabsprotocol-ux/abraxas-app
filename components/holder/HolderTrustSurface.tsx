@@ -3,6 +3,7 @@
 // Shared holder-facing status presentation (plain language + optional technical details).
 
 import type { ReactNode } from "react";
+import "./holderSurfaceMotion.css";
 
 export function HolderTrustSurface(props: {
   eyebrow?: string;
