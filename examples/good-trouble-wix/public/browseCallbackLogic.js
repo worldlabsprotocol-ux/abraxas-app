@@ -6,6 +6,7 @@ import {
   PURCHASE_POST_VERIFICATION_FALLBACK,
 } from "./abraxasClientConstants.js";
 import {
+  extractSameOriginPath,
   isSafeReturnDestinationPath,
   normalizeReturnDestinationPath,
 } from "./purchaseReturnDestination.js";
