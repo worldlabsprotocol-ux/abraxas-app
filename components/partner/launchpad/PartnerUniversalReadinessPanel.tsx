@@ -75,8 +75,25 @@ export function PartnerUniversalReadinessPanel({ applicationId }: { applicationI
           <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0.5rem 0" }}>
             {readiness.summary}
           </p>
+          {readiness.phase === "sandbox_verified" && !readiness.signals.live_e2e_complete && (
+            <div
+              style={{
+                marginTop: "0.65rem",
+                padding: "0.55rem 0.65rem",
+                borderRadius: 8,
+                border: "1px solid #f59e0b",
+                background: "rgba(245, 158, 11, 0.08)",
+                fontFamily: FONT,
+                fontSize: "0.74rem",
+                color: "var(--text-primary)",
+              }}
+            >
+              Harness verified — live holder E2E not observed. Server signal{" "}
+              <code style={{ fontFamily: MONO }}>live_e2e_complete</code> is false.
+            </div>
+          )}
           <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", fontStyle: "italic" }}>
-            {readinessLiveExecutionHint(readiness.phase)}
+            {readinessLiveExecutionHint(readiness.phase, readiness.signals)}
           </p>
           {readiness.blockers.length > 0 && (
             <ul style={{ fontFamily: FONT, fontSize: "0.76rem", color: "#ef4444", margin: "0.5rem 0 0 1rem" }}>

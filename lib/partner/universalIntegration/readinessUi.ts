@@ -9,7 +9,7 @@ export const READINESS_PHASE_LABELS: Record<UniversalReadinessPhase, string> = {
   not_configured: "Not configured",
   configured: "Configured — sandbox credential needed",
   sandbox_testing: "Sandbox testing",
-  sandbox_verified: "Sandbox verified (offline + harness)",
+  sandbox_verified: "Sandbox verified (harness — check live E2E signal)",
   production_review_required: "Production review required",
   production_approved: "Production approved — activation pending",
   production_active: "Production active",
@@ -38,6 +38,9 @@ export function readinessNextActions(diag: UniversalReadinessDiagnostic): string
   if (diag.blockers.includes("no_verified_receipt")) {
     actions.push("Run a real sandbox verification and verify the receipt server-side.");
   }
+  if (diag.blockers.includes("live_e2e_not_observed")) {
+    actions.push("Run `npm run partner:live-e2e` (Playwright) against staging and re-check live_e2e_complete.");
+  }
   if (diag.blockers.includes("production_review_pending")) {
     actions.push("Wait for production access review — sandbox success does not auto-approve production.");
   }
@@ -60,9 +63,18 @@ export function readinessNextActions(diag: UniversalReadinessDiagnostic): string
 }
 
 /** Distinguish offline harness from live holder execution in UI copy. */
-export function readinessLiveExecutionHint(phase: UniversalReadinessPhase): string {
-  if (phase === "sandbox_verified" || phase === "sandbox_testing") {
-    return "Sandbox harness and receipt_verified events prove contract readiness. Live holder OAuth still required for full E2E — see partner:live-sandbox runbook.";
+export function readinessLiveExecutionHint(
+  phase: UniversalReadinessPhase,
+  signals?: { live_e2e_complete?: boolean; offline_harness_verified?: boolean },
+): string {
+  if (phase === "sandbox_verified" && signals?.live_e2e_complete) {
+    return "Live holder-flow completion observed (integration events). Production still requires explicit review and activation.";
+  }
+  if (phase === "sandbox_verified" && !signals?.live_e2e_complete) {
+    return "Phase sandbox_verified reflects harness + server receipt checks only — not live_e2e_complete. Run Playwright staging proof before treating this as live partner execution.";
+  }
+  if (phase === "sandbox_testing") {
+    return "Complete the integration harness, then run Playwright live E2E (`npm run partner:live-e2e`) for holder-flow proof.";
   }
   if (phase === "production_active") {
     return "Production traffic must use production credentials and pinned policy versions.";

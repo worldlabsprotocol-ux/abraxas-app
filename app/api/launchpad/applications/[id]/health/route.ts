@@ -13,6 +13,7 @@ import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { probePolicyChangeControlSchema } from "@/lib/policy/changeControl/schemaReady";
 import { launchpadPolicyChangeControlHealthSlice } from "@/lib/policy/changeControl/health";
 import { deriveUniversalIntegrationReadiness } from "@/lib/partner/universalIntegration/readinessDiagnostic";
+import { deriveLiveExecutionSignals } from "@/lib/partner/universalIntegration/liveExecutionSignals";
 import { REQUIRED_HARNESS_SCENARIOS } from "@/lib/partner/launchpad/partnerTestHarness";
 
 export const dynamic = "force-dynamic";
@@ -98,12 +99,31 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     policyChangeControl,
   });
   const harnessPassed = REQUIRED_HARNESS_SCENARIOS.every((id) => harness.completed.includes(id));
+  const { data: integrationEvents } = await sb
+    .from("partner_integration_events")
+    .select("event_type, receipt_id, correlation_id, metadata")
+    .eq("application_id", app.id)
+    .eq("partner_id", auth.session.partnerId)
+    .eq("environment", "sandbox")
+    .order("created_at", { ascending: false })
+    .limit(100);
+  const liveExecution = deriveLiveExecutionSignals({
+    harnessPassed,
+    verifiedReceiptCount,
+    integrationEvents: (integrationEvents ?? []) as Array<{
+      event_type: string;
+      receipt_id: string | null;
+      correlation_id: string | null;
+      metadata: Record<string, unknown> | null;
+    }>,
+  });
   const readiness = deriveUniversalIntegrationReadiness({
     application: app,
     activeSandboxKey: Boolean(app.api_key_id && active.has(app.api_key_id)),
     activeProductionKey: Boolean(app.production_api_key_id && active.has(app.production_api_key_id)),
     verifiedReceiptCount,
     harnessPassed,
+    liveExecution,
     productionAccessRequestStatus,
     integrationHealthOverall: health.overall,
   });
