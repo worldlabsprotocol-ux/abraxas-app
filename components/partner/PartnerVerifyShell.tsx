@@ -35,6 +35,9 @@ import {
   VerificationFailure,
   VerificationProgress,
 } from "@/components/partner/holder";
+import { PrivacyComparisonPanel, type PrivacyComparisonPartner } from "@/components/experience/PrivacyComparisonPanel";
+import { CIELO_VERIFIED_GUEST_SOLANA_POLICY_ID } from "@/lib/cielo/cieloSolanaPolicyIds";
+import { GOOD_TROUBLE_AGE_21_RETAIL_SOLANA_POLICY_ID } from "@/lib/goodTrouble/goodTroubleSolanaPolicyIds";
 
 export type PartnerVerifyPhase =
   | "loading"
@@ -228,6 +231,13 @@ export function PartnerVerifyShell({
   const hidePurchaseBrief = goodTroublePurchaseL0 && (recoveryPhases || hideOrientationChrome || onSignInScreen);
   const showBrief = !useDobFirstSignInCopy && !hideOrientationChrome && !hidePurchaseBrief;
 
+  const privacyPartner: PrivacyComparisonPartner | null =
+    policyId === CIELO_VERIFIED_GUEST_SOLANA_POLICY_ID || policyId.includes("cielo-verified-guest")
+      ? "cielo"
+      : policyId === GOOD_TROUBLE_AGE_21_RETAIL_SOLANA_POLICY_ID || policyId.includes("good-trouble-age")
+        ? "good_trouble"
+        : null;
+
   const sandboxApproved = phase === "approved" && presentation.isSandbox;
   const approvedRecovery = sandboxApproved
     ? resolveHolderRecovery("sandbox_approved", partnerName, partnerHomeUrl)
@@ -248,6 +258,11 @@ export function PartnerVerifyShell({
       policyId={policyId}
       purpose={purpose}
     >
+      {showBrief && privacyPartner ? (
+        <div style={{ marginBottom: "1rem" }} aria-label="Privacy comparison">
+          <PrivacyComparisonPanel partner={privacyPartner} compact />
+        </div>
+      ) : null}
       {phase === "approved" ? (
         <HolderSuccessState
           presentation={presentation}

@@ -68,6 +68,7 @@ export default function IntegrationsPage() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
           <Btn href={PARTNER_APPLICATION_PATH} size="sm">Apply for manual review</Btn>
           <Btn href="/docs/partner-flow" variant="secondary" size="sm">Partner Flow docs</Btn>
+          <Btn href="/experience/tour" variant="secondary" size="sm">Guided product tour</Btn>
           <Btn href={PARTNER_RECEIPT_DOCS_ANCHOR} variant="ghost" size="sm">Receipt verification</Btn>
         </div>
       </div>
