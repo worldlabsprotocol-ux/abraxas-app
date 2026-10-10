@@ -36,6 +36,12 @@ export interface UniversalReadinessInput {
   activeProductionKey: boolean;
   verifiedReceiptCount: number;
   harnessPassed: boolean;
+  liveExecution?: {
+    offline_harness_verified: boolean;
+    live_holder_flow_completed: boolean;
+    live_receipt_issued: boolean;
+    live_e2e_complete: boolean;
+  };
   productionAccessRequestStatus: ProductionAccessRequestStatus | null;
   integrationHealthOverall: LaunchpadHealthStatus;
 }
@@ -50,6 +56,10 @@ export interface UniversalReadinessDiagnostic {
     sandbox_credential_active: boolean;
     integration_harness_passed: boolean;
     verified_receipt_observed: boolean;
+    offline_harness_verified: boolean;
+    live_holder_flow_completed: boolean;
+    live_receipt_issued: boolean;
+    live_e2e_complete: boolean;
     production_review_status: ProductionAccessRequestStatus | null;
     production_credential_active: boolean;
     production_activated: boolean;
@@ -73,11 +83,21 @@ export function deriveUniversalIntegrationReadiness(
   const { application: app } = input;
   const blockers: string[] = [];
 
+  const live = input.liveExecution ?? {
+    offline_harness_verified: false,
+    live_holder_flow_completed: false,
+    live_receipt_issued: false,
+    live_e2e_complete: false,
+  };
   const signals = {
     policy_pinned: Boolean(app.policy_id && app.policy_version > 0),
     sandbox_credential_active: input.activeSandboxKey,
     integration_harness_passed: input.harnessPassed,
     verified_receipt_observed: input.verifiedReceiptCount > 0,
+    offline_harness_verified: live.offline_harness_verified,
+    live_holder_flow_completed: live.live_holder_flow_completed,
+    live_receipt_issued: live.live_receipt_issued,
+    live_e2e_complete: live.live_e2e_complete,
     production_review_status: input.productionAccessRequestStatus,
     production_credential_active: input.activeProductionKey,
     production_activated: Boolean(app.production_activated_at && app.environment === "production"),
@@ -141,10 +161,16 @@ export function deriveUniversalIntegrationReadiness(
   }
 
   if (signals.integration_harness_passed && signals.verified_receipt_observed) {
+    const blockers: string[] = [];
+    if (!signals.live_e2e_complete) {
+      blockers.push("live_e2e_not_observed");
+    }
     return {
       phase: "sandbox_verified",
-      summary: "Sandbox integration verified with at least one server-validated receipt.",
-      blockers: [],
+      summary: signals.live_e2e_complete
+        ? "Sandbox verified with live holder-flow completion and server-validated receipt."
+        : "Sandbox contract verified (harness). Live holder-flow E2E not yet observed on this application.",
+      blockers,
       signals,
     };
   }

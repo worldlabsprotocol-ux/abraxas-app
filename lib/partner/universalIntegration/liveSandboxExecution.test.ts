@@ -32,7 +32,7 @@ describe("runLiveSandboxExecution", () => {
     const report = await runLiveSandboxExecution({ fetch, env: BASE_ENV });
     expect(report.overall).toBe("partial");
     expect(report.live_e2e_complete).toBe(false);
-    expect(report.blockers).toContain("live_receipt_not_provided");
+    expect(report.blockers.some((b) => b.includes("correlation") || b.includes("receipt"))).toBe(true);
     const holder = report.stages.find((s) => s.id === "holder_flow");
     expect(holder?.status).toBe("blocked");
   });

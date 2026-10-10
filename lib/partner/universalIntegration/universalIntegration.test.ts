@@ -81,6 +81,8 @@ describe("deriveUniversalIntegrationReadiness", () => {
     });
     expect(diag.phase).toBe("sandbox_verified");
     expect(diag.phase).not.toBe("production_active");
+    expect(diag.blockers).toContain("live_e2e_not_observed");
+    expect(diag.signals.live_e2e_complete).toBe(false);
   });
 
   it("requires explicit review before production approved phase", () => {

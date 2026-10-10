@@ -2,9 +2,11 @@
 // Live Example Merchant sandbox execution — no mocked receipt success.
 
 import { PARTNER_FLOW_COMPATIBILITY_MANIFEST_PATH } from "@/lib/protocol/partnerFlowCompatibilityManifest";
-import { resolveReferenceRelyingPartyConfig, buildReferenceVerifyUrl } from "@/lib/partner/referenceRelyingPartyConfig";
+import { buildReferenceVerifyUrl } from "@/lib/partner/referenceRelyingPartyConfig";
 import { validatePartnerFlowPublicReceipt, type PartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlowReceipt";
 import { EXAMPLE_MERCHANT_INTEGRATION } from "./independentPartnerScenario";
+import { resolveLiveReceiptCorrelation } from "./liveReceiptCorrelation";
+import { runStagingLiveE2ePreflight } from "./stagingConfigContract";
 
 export const LIVE_SANDBOX_ENV_KEYS = {
   liveReceiptId: "EXAMPLE_MERCHANT_LIVE_RECEIPT_ID",
@@ -51,7 +53,7 @@ export async function runLiveSandboxExecution(
   deps: LiveSandboxExecutionDeps,
 ): Promise<LiveSandboxExecutionReport> {
   const env = deps.env ?? process.env;
-  const { config, missing } = resolveReferenceRelyingPartyConfig(env);
+  const preflight = runStagingLiveE2ePreflight(env);
   const stages: LiveSandboxStage[] = [];
   const blockers: string[] = [];
   const manual_steps = [
@@ -61,7 +63,7 @@ export async function runLiveSandboxExecution(
     "signed_receipt_issuance",
   ];
 
-  if (missing.length > 0) {
+  if (!preflight.ok || !preflight.config) {
     return {
       partner_id: EXAMPLE_MERCHANT_INTEGRATION.partnerId,
       policy_id: EXAMPLE_MERCHANT_INTEGRATION.policyId,
@@ -69,21 +71,40 @@ export async function runLiveSandboxExecution(
       overall: "blocked",
       live_e2e_complete: false,
       stages: [
-        stage("preflight_env", "Preflight environment", "blocked", `Missing: ${missing.join(", ")}`, false),
+        stage(
+          "preflight_env",
+          "Staging preflight",
+          "blocked",
+          preflight.errors.length
+            ? preflight.errors.join(", ")
+            : "PARTNER_FLOW_RP configuration incomplete",
+          false,
+        ),
       ],
-      blockers: missing,
+      blockers: preflight.errors.length ? preflight.errors : ["staging_preflight_failed"],
       manual_steps,
     };
   }
 
-  const baseUrl = config!.baseUrl.replace(/\/$/, "");
+  const config = preflight.config.rp;
+  if (preflight.warnings.length) {
+    stages.push(stage(
+      "preflight_warnings",
+      "Staging preflight warnings",
+      "skipped",
+      preflight.warnings.join(", "),
+      false,
+    ));
+  }
+
+  const baseUrl = config.baseUrl.replace(/\/$/, "");
   const verifyUrl = buildReferenceVerifyUrl(config!);
 
   stages.push(stage(
     "preflight_env",
     "Preflight PARTNER_FLOW_RP_* configuration",
     "pass",
-    `partner_id=${config!.partnerId} policy_id=${config!.policyId}`,
+    `partner_id=${config.partnerId} policy_id=${config.policyId}`,
     false,
   ));
 
@@ -133,25 +154,43 @@ export async function runLiveSandboxExecution(
     blockers.push("hosted_verify_unreachable");
   }
 
+  const correlationResult = resolveLiveReceiptCorrelation({ config, env });
+  const holderProofFromAutomation = correlationResult.ok
+    && (correlationResult.correlation.proof_source === "playwright_callback"
+      || correlationResult.correlation.proof_source === "manual_callback");
+
   stages.push(stage(
     "holder_flow",
     "Holder authentication + verification",
-    "blocked",
-    "Requires interactive browser session (evaluate API uses requireBrowserSession). Not automated in CI.",
-    false,
+    holderProofFromAutomation ? "pass" : "blocked",
+    holderProofFromAutomation
+      ? `Callback proof captured (${correlationResult.ok ? correlationResult.correlation.proof_source : "unknown"}) — browser holder steps completed for this correlation.`
+      : "Run Playwright live E2E or capture an authorized callback URL (artifact). Cannot bypass MFA, biometrics, or human review.",
+    holderProofFromAutomation,
   ));
 
-  const liveReceiptId = env[LIVE_SANDBOX_ENV_KEYS.liveReceiptId]?.trim() ?? "";
-  if (!liveReceiptId) {
+  if (!correlationResult.ok) {
     stages.push(stage(
       "live_receipt_verify",
       "Server-side verify live issued receipt",
       "skipped",
-      `Set ${LIVE_SANDBOX_ENV_KEYS.liveReceiptId} after a real sandbox run to fetch /api/receipts/{id}/public and validate trust.`,
+      correlationResult.errors.join(", "),
       false,
     ));
-    blockers.push("live_receipt_not_provided");
+    blockers.push(...correlationResult.errors);
   } else {
+    const liveReceiptId = correlationResult.correlation.receipt_id;
+    stages.push(stage(
+      "receipt_correlation",
+      "Receipt correlation",
+      "pass",
+      `source=${correlationResult.correlation.source} receipt_id=${liveReceiptId}${
+        correlationResult.correlation.correlation_id
+          ? ` correlation=${correlationResult.correlation.correlation_id}`
+          : ""
+      }`,
+      correlationResult.correlation.source !== "receipt_id_env",
+    ));
     const receiptUrl = `${baseUrl}/api/receipts/${encodeURIComponent(liveReceiptId)}/public`;
     try {
       const res = await deps.fetch(receiptUrl);
@@ -167,8 +206,8 @@ export async function runLiveSandboxExecution(
       } else {
         const body = await res.json() as PartnerFlowPublicReceipt;
         const trust = validatePartnerFlowPublicReceipt(body, {
-          partnerId: config!.partnerId,
-          policyId: config!.policyId,
+          partnerId: config.partnerId,
+          policyId: config.policyId,
           now: deps.now ?? new Date(),
           allowSandbox: true,
         });
@@ -194,20 +233,21 @@ export async function runLiveSandboxExecution(
   }
 
   const liveReceiptPassed = stages.some((s) => s.id === "live_receipt_verify" && s.status === "pass");
+  const holderPassed = stages.some((s) => s.id === "holder_flow" && s.status === "pass");
   const infraPassed = manifestOk && !blockers.includes("hosted_verify_unreachable");
   let overall: LiveSandboxExecutionReport["overall"] = "blocked";
-  if (liveReceiptPassed && infraPassed) {
+  if (liveReceiptPassed && infraPassed && holderPassed) {
     overall = "pass";
   } else if (infraPassed) {
     overall = "partial";
   }
 
   return {
-    partner_id: config!.partnerId,
-    policy_id: config!.policyId,
+    partner_id: config.partnerId,
+    policy_id: config.policyId,
     base_url: baseUrl,
     overall,
-    live_e2e_complete: liveReceiptPassed,
+    live_e2e_complete: liveReceiptPassed && holderPassed,
     stages,
     blockers,
     manual_steps,
