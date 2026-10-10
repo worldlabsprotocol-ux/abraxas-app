@@ -54,3 +54,21 @@ export {
   runExampleMerchantLiveE2e,
   type LiveE2eRunnerReport,
 } from "./exampleMerchantLiveE2eRunner";
+
+export {
+  EXAMPLE_MERCHANT_POLICY_PACK_ID,
+  EXAMPLE_MERCHANT_DISCLOSED_RESULT,
+  validateExampleMerchantPolicyBinding,
+  exampleMerchantOperatorChecklist,
+} from "./exampleMerchantStagingProfile";
+
+export {
+  buildStagingActivationReadinessReport,
+  probeStagingDeploymentIdentity,
+  type StagingActivationReadinessReport,
+  type ActivationDependencyFinding,
+} from "./stagingActivationReadiness";
+
+export { buildStagingLiveExecutionEvidence, type StagingLiveExecutionEvidence } from "./stagingExecutionEvidence";
+
+export { validateStagingMeteringExpectations } from "./stagingMeteringValidation";
