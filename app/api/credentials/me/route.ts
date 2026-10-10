@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createHash } from "crypto";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
-import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { requireHolderRequestContext, holderClaimsSubjectKey } from "@/lib/holder/holderRequestContext";
 import {
   extractIssuerFromCredentialJwt,
   resolveAbraxasCredentialIssuer,
@@ -15,12 +15,12 @@ const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
 
 export async function GET(req: NextRequest) {
-  const auth = await requireBrowserSession(req);
+  const auth = await requireHolderRequestContext(req);
   if (!auth.ok) {
-    return NextResponse.json({ error: auth.error }, { status: auth.status });
+    return NextResponse.json({ error: auth.error, code: auth.code }, { status: auth.status });
   }
 
-  const sui = auth.session.suiAddress;
+  const sui = holderClaimsSubjectKey(auth.ctx);
   const requested = req.nextUrl.searchParams.get("sui") ?? req.nextUrl.searchParams.get("sui_address");
   if (requested) {
     try {

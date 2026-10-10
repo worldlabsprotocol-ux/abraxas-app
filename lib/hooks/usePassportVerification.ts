@@ -103,26 +103,30 @@ async function runIdentityPipeline(
   let walletBindingReadError: string | undefined;
   let autoProvisionFailed = false;
 
-  if (!suiAddress && !email) {
-    return {
-      identityStatus,
-      via,
-      credential,
-      verifyState,
-      verifyResult,
-      onChain,
-      syncMessage,
-      setup,
-      veriffConfigured,
-      idvProvider,
-      walletBindingL3,
-      walletBindingStatus,
-      walletBindingReadError,
-      autoProvisionFailed,
-    };
+  let data: IdentityStatusResponse;
+  try {
+    data = await fetchIdentityStatus(suiAddress, email);
+  } catch {
+    if (!suiAddress && !email) {
+      return {
+        identityStatus,
+        via,
+        credential,
+        verifyState,
+        verifyResult,
+        onChain,
+        syncMessage,
+        setup,
+        veriffConfigured,
+        idvProvider,
+        walletBindingL3,
+        walletBindingStatus,
+        walletBindingReadError,
+        autoProvisionFailed,
+      };
+    }
+    throw new Error("Identity status failed");
   }
-
-  let data: IdentityStatusResponse = await fetchIdentityStatus(suiAddress, email);
   idvProvider = data.idv_provider ?? (veriffConfigured ? "veriff" : "manual");
   walletBindingL3 = data.wallet_binding_l3 ?? false;
   walletBindingStatus = data.wallet_binding_status
@@ -132,7 +136,6 @@ async function runIdentityPipeline(
 
   if (
     data.status === "pending" &&
-    suiAddress &&
     idvProvider === "veriff" &&
     data.via !== "manual_review"
   ) {
@@ -141,7 +144,7 @@ async function runIdentityPipeline(
     data = await fetchIdentityStatus(suiAddress, email);
   }
 
-  if (data.status === "approved" && suiAddress) {
+  if (data.status === "approved") {
     identityStatus = "earned";
     via = data.via ?? null;
     const me = await fetchCredentialMe(suiAddress);
@@ -159,17 +162,19 @@ async function runIdentityPipeline(
       }
     }
 
-    onChain = await fetchOnChainPassportStatus(suiAddress);
-    if (onChain?.needs_provision) {
-      try {
-        const provisioned = await provisionOnChainPassport(suiAddress);
-        if (provisioned.object_id) {
-          onChain = provisioned;
-        } else if (provisioned.error) {
+    if (suiAddress) {
+      onChain = await fetchOnChainPassportStatus(suiAddress);
+      if (onChain?.needs_provision) {
+        try {
+          const provisioned = await provisionOnChainPassport(suiAddress);
+          if (provisioned.object_id) {
+            onChain = provisioned;
+          } else if (provisioned.error) {
+            autoProvisionFailed = true;
+          }
+        } catch {
           autoProvisionFailed = true;
         }
-      } catch {
-        autoProvisionFailed = true;
       }
     }
   } else if (data.status === "pending") {
@@ -236,7 +241,7 @@ export function usePassportVerification(
       }
       return result;
     },
-    enabled: Boolean(suiAddress || email),
+    enabled: true,
     refetchInterval: query => {
       const d = query.state.data;
       if (!d) return false;
