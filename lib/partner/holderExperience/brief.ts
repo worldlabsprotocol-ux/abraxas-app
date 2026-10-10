@@ -58,7 +58,8 @@ export function buildHolderRequestBrief(input: {
       ? humanizeHolderResult(disclosed)
       : "Eligibility confirmed";
   const withheld = profileWithheld(pack);
-  const resultCategory = disclosed ?? "eligibility confirmed";
+  const resultCategory =
+    input.disclosedResult?.trim() ?? disclosed ?? "eligibility confirmed";
 
   const brief: HolderRequestBrief = {
     requestor,

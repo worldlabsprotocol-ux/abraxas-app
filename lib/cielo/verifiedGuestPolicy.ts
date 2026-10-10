@@ -7,10 +7,13 @@ import { getActiveClaims } from "@/lib/credentials/claimsService";
 import { evaluatePolicyRules } from "@/lib/policy/evaluatePolicy";
 import { getPolicy } from "@/lib/verification/requestsService";
 import { getVerifiedRateFixture, type VerifiedRateFixture } from "@/lib/cielo/verifiedRateFixtures";
+import {
+  CIELO_PARTNER_ID,
+  CIELO_RECORD_ID,
+  CIELO_VERIFIED_GUEST_POLICY_ID,
+} from "@/lib/cielo/cieloIds";
 
-export const CIELO_VERIFIED_GUEST_POLICY_ID = "cielo-verified-guest-v1";
-export const CIELO_RECORD_ID = "ABX-RE-HOSP-001";
-export const CIELO_PARTNER_ID = "cielo";
+export { CIELO_PARTNER_ID, CIELO_RECORD_ID, CIELO_VERIFIED_GUEST_POLICY_ID };
 
 export type CieloEligibilityDecision = "approved" | "manual_review" | "not_eligible";
 
