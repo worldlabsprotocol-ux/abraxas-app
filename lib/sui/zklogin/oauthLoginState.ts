@@ -4,6 +4,7 @@
 import { randomBytes } from "crypto";
 import { errors, SignJWT, jwtVerify } from "jose";
 import type { ZkLoginLoginMode } from "./audienceCohorts";
+import { normalizeHolderContinuePath } from "@/lib/auth/holderContinuePath";
 
 export const ZKLOGIN_OAUTH_STATE_COOKIE = "abraxas_zklogin_oauth_state";
 export const ZKLOGIN_OAUTH_STATE_TYP = "zklogin_oauth_state";
@@ -27,7 +28,7 @@ export type MintZkLoginOAuthStateResult = {
 };
 
 export type ConsumeZkLoginOAuthStateResult =
-  | { ok: true; mode: ZkLoginLoginMode; jti: string }
+  | { ok: true; mode: ZkLoginLoginMode; jti: string; continue_path?: string | null }
   | { ok: false; reason: ConsumeFailureReason };
 
 function stateSecret(): Uint8Array | null {
@@ -48,7 +49,11 @@ export function resetZkLoginOAuthStateForTests(): void {
 
 export async function mintZkLoginOAuthState(
   modeInput: unknown,
+  continuePathInput?: unknown,
 ): Promise<MintZkLoginOAuthStateResult | null> {
+  const continuePath = normalizeHolderContinuePath(
+    typeof continuePathInput === "string" ? continuePathInput : null,
+  );
   const secret = stateSecret();
   if (!secret) return null;
 
@@ -59,6 +64,7 @@ export async function mintZkLoginOAuthState(
     typ: ZKLOGIN_OAUTH_STATE_TYP,
     mode,
     jti,
+    ...(continuePath ? { continue_path: continuePath } : {}),
   })
     .setProtectedHeader({ alg: "HS256" })
     .setJti(jti)
@@ -117,7 +123,13 @@ export async function consumeZkLoginOAuthState(
     return { ok: false, reason: "store_unavailable" };
   }
 
-  return { ok: true, mode, jti };
+  const continuePathRaw = payload.continue_path;
+  const continue_path =
+    typeof continuePathRaw === "string"
+      ? normalizeHolderContinuePath(continuePathRaw)
+      : null;
+
+  return { ok: true, mode, jti, continue_path: continue_path ?? null };
 }
 
 export function parseOAuthStateFromCallbackHash(hash: string): string | null {

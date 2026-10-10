@@ -3,6 +3,7 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockComplete = vi.fn();
+const mockResolveVerified = vi.fn();
 const mockEnsureReady = vi.fn();
 const mockLoadSession = vi.fn();
 const mockParseToken = vi.fn();
@@ -12,6 +13,7 @@ const mockClearResume = vi.fn();
 
 vi.mock("@/lib/sui/zklogin/completeLogin", () => ({
   completeGoogleZkLogin: (...args: unknown[]) => mockComplete(...args),
+  resolveVerifiedLoginMode: (...args: unknown[]) => mockResolveVerified(...args),
 }));
 
 vi.mock("@/lib/auth/ensureBrowserSession", () => ({
@@ -43,6 +45,7 @@ describe("completePartnerVerifyOAuthCallback", () => {
     vi.clearAllMocks();
     mockLoadSession.mockReturnValue(null);
     mockParseToken.mockReturnValue("id-token");
+    mockResolveVerified.mockResolvedValue({ mode: "canonical", continue_path: null });
     mockComplete.mockResolvedValue({ suiAddress: "0xabc" });
     mockEnsureReady.mockResolvedValue({ ok: true });
   });
@@ -79,6 +82,24 @@ describe("completePartnerVerifyOAuthCallback", () => {
     await expect(completePartnerVerifyOAuthCallback("#id_token=test")).rejects.toThrow();
     expect(global.fetch).not.toHaveBeenCalled();
     expect(mockClearLogin).toHaveBeenCalled();
+  });
+
+  it("returns allowlisted holder continue path when partner resume is unavailable", async () => {
+    mockResolveVerified.mockResolvedValue({
+      mode: "canonical",
+      continue_path: "/cielo/verified-rate",
+    });
+    global.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      ok: false,
+      code: "missing",
+    }), { status: 404 })) as typeof fetch;
+
+    const result = await completePartnerVerifyOAuthCallback("#id_token=test");
+    expect(result.redirectPath).toBe("/cielo/verified-rate");
+    expect(mockComplete).toHaveBeenCalledWith("id-token", {
+      callbackHash: "#id_token=test",
+      verifiedMode: "canonical",
+    });
   });
 
   it("falls back to Passport without issuing a receipt when activate cannot run", async () => {

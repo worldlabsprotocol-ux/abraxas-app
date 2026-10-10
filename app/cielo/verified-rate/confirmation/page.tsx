@@ -1,7 +1,6 @@
 // FILE: app/cielo/verified-rate/confirmation/page.tsx
 // User-facing verified-rate request status. not a reservation confirmation.
 
-import { AbxPageShell } from "@/components/design/AbxPageShell";
 import { VerifiedRateConfirmationClient } from "@/components/cielo/VerifiedRateConfirmationClient";
 
 interface PageProps {
@@ -11,17 +10,19 @@ interface PageProps {
 export default function VerifiedRateConfirmationPage({ searchParams }: PageProps) {
   const ref = searchParams?.ref?.trim();
 
+  if (!ref) {
+    return (
+      <div style={{ maxWidth: 520, margin: "0 auto", padding: "3rem 1rem", textAlign: "center", fontFamily: "'Inter',sans-serif" }}>
+        <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem" }}>
+          Missing request reference. Complete a verified guest request to receive a reference code.
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <AbxPageShell accent="neutral">
-      {ref ? (
-        <VerifiedRateConfirmationClient refCode={ref} />
-      ) : (
-        <div style={{ maxWidth: 520, margin: "0 auto", padding: "4rem 1rem", textAlign: "center", fontFamily: "'Inter',sans-serif" }}>
-          <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem" }}>
-            Missing request reference. Complete a verified-rate request to receive a reference code.
-          </p>
-        </div>
-      )}
-    </AbxPageShell>
+    <div style={{ maxWidth: 640, margin: "0 auto", padding: "clamp(1.5rem, 5vw, 3rem) clamp(1rem, 3vw, 2rem)" }}>
+      <VerifiedRateConfirmationClient refCode={ref} />
+    </div>
   );
 }

@@ -8,7 +8,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { eachNight, estimateUsdc } from "@/lib/cielo/bookingValidation";
 import type { CieloVerifiedGuestEvaluation } from "@/lib/cielo/verifiedGuestPolicy";
-import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSession";
+import { ensureBrowserSessionReady } from "@/lib/auth/ensureBrowserSession";
+import { CIELO_HOLDER_COPY, humanizeCieloDisclosedResult, humanizeCieloReason } from "@/lib/cielo/cieloHolderCopy";
+import { CIELO_VERIFIED_GUEST_POLICY_ID } from "@/lib/cielo/cieloIds";
+import { HolderTrustSurface } from "@/components/holder/HolderTrustSurface";
 
 const FONT = "'Inter',system-ui,sans-serif";
 const MONO = "'JetBrains Mono',monospace";
@@ -31,7 +34,7 @@ const RETURN_PATH = "/cielo/verified-rate";
 export function CieloVerifiedRateFlow() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { suiAddress, isAuthenticated, signInWithGoogle } = useSuiAuth();
+  const { suiAddress, isAuthenticated, signInWithGoogle, refreshSession } = useSuiAuth();
 
   const [step, setStep] = useState<FlowStep>("passport");
   const [evaluation, setEvaluation] = useState<CieloVerifiedGuestEvaluation | null>(null);
@@ -65,7 +68,10 @@ export function CieloVerifiedRateFlow() {
     setLoading(true);
     setErr(null);
     try {
-      await ensureBrowserSession(suiAddress);
+      const sessionReady = await ensureBrowserSessionReady(suiAddress);
+      if (!sessionReady.ok) {
+        throw new Error(sessionReady.error ?? "Sign in again to continue");
+      }
       const qs = fixture ? `?fixture=${encodeURIComponent(fixture)}` : "";
       const res = await fetch(`/api/cielo/verified-rate/status${qs}`, { credentials: "include" });
       const data = await res.json() as { evaluation?: CieloVerifiedGuestEvaluation; error?: string };
@@ -81,6 +87,12 @@ export function CieloVerifiedRateFlow() {
   useEffect(() => {
     void loadStatus();
   }, [loadStatus]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    refreshSession();
+    void loadStatus();
+  }, [isAuthenticated, refreshSession, loadStatus]);
 
   useEffect(() => {
     void (async () => {
@@ -170,47 +182,27 @@ export function CieloVerifiedRateFlow() {
 
   const visibleStep = step === "passport" ? 1 : step === "consent" ? 2 : 3;
 
-  return (
-    <div style={{
-      borderRadius: 16,
-      border: `1px solid ${ACCENT}44`,
-      background: "var(--surface-raised)",
-      overflow: "hidden",
-    }}>
-      <div style={{ padding: "1rem 1.15rem", borderBottom: "1px solid var(--border)" }}>
-        <div style={{ fontFamily: MONO, fontSize: "0.58rem", fontWeight: 700, color: ACCENT, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 4 }}>
-          Pilot · Verified rate request
-        </div>
-        <h2 style={{ fontFamily: FONT, fontSize: "1.05rem", fontWeight: 800, color: "var(--text-primary)", margin: "0 0 0.35rem" }}>
-          Check verified rate
-        </h2>
-        <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-muted)", lineHeight: 1.6, margin: 0 }}>
-          Passport unlocks a pilot verified-rate request at Cielo. not a confirmed reservation or payment.
-          Tier 1 only: account, profile, wallet binding, and consent. No partner API key required.
-        </p>
-        {holderBrief && (
-          <div style={{
-            marginTop: "0.75rem",
-            padding: "0.65rem 0.75rem",
-            borderRadius: 10,
-            border: "1px solid var(--border)",
-            background: "var(--surface)",
-          }}>
-            <div style={{ fontFamily: MONO, fontSize: "0.55rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>
-              Requesting operator · {holderBrief.requestor}
-            </div>
-            <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.55, margin: "0 0 0.35rem" }}>
-              {holderBrief.purpose}
-            </p>
-            <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", lineHeight: 1.5, margin: 0 }}>
-              Disclosed to operator: <strong style={{ color: "var(--text-primary)" }}>{holderBrief.shared_result_category ?? holderBrief.result}</strong>
-              {holderBrief.booking_boundary ? ` · ${holderBrief.booking_boundary}` : null}
-            </p>
-          </div>
-        )}
-      </div>
+  const disclosedHuman = humanizeCieloDisclosedResult(holderBrief?.shared_result_category ?? holderBrief?.result);
 
-      <div style={{ padding: "0.85rem 1.15rem", display: "flex", gap: "0.35rem" }}>
+  return (
+    <HolderTrustSurface
+      eyebrow={holderBrief?.requestor ? `Requested by ${holderBrief.requestor}` : "Cielo Sunrise"}
+      title={CIELO_HOLDER_COPY.flowTitle}
+      lead={holderBrief?.purpose ?? CIELO_HOLDER_COPY.flowLead}
+      statusLabel={holderBrief ? `Shared with Cielo: ${disclosedHuman}` : undefined}
+      technicalDetails={(
+        <>
+          <div>Policy id: {CIELO_VERIFIED_GUEST_POLICY_ID}</div>
+          {holderBrief?.booking_boundary ? <div>{holderBrief.booking_boundary}</div> : null}
+          <div>{CIELO_HOLDER_COPY.notBooking}</div>
+        </>
+      )}
+    >
+      <div
+        className="abx-cielo-progress"
+        style={{ padding: "0 0 0.85rem", display: "flex", gap: "0.35rem" }}
+        aria-label={`Step ${visibleStep} of 3`}
+      >
         {[1, 2, 3].map(n => (
           <div key={n} style={{
             flex: 1, height: 4, borderRadius: 999,
@@ -219,10 +211,10 @@ export function CieloVerifiedRateFlow() {
         ))}
       </div>
 
-      <div style={{ padding: "1rem 1.15rem 1.25rem" }}>
+      <div style={{ padding: "0 0 0.25rem" }}>
         {step === "passport" && (
           <>
-            <StepLabel n={1} title="Passport ready" />
+            <StepLabel n={1} title={CIELO_HOLDER_COPY.stepAccount} />
             {!isAuthenticated || !suiAddress ? (
               <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.75rem" }}>
                 Sign in with Google to create your Abraxas Passport account.
@@ -236,10 +228,10 @@ export function CieloVerifiedRateFlow() {
                   Profile complete {evaluation?.profile_complete ? "✓" : "(username or display name required)"}
                 </li>
                 <li style={{ color: evaluation?.wallet_binding_fresh ? ACCENT : AMBER }}>
-                  Wallet bound (30d) {evaluation?.wallet_binding_fresh ? "✓" : ", "}
+                  Wallet verified (recent signature) {evaluation?.wallet_binding_fresh ? "✓" : "— needs refresh"}
                 </li>
                 <li style={{ color: "var(--text-muted)" }}>
-                  Identity credential optional {evaluation?.identity_credential_active ? "· active" : "· not required for pilot"}
+                  Photo ID check {evaluation?.identity_credential_active ? "· on file" : "· optional for this request"}
                 </li>
               </ul>
             )}
@@ -254,8 +246,12 @@ export function CieloVerifiedRateFlow() {
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
               {!isAuthenticated ? (
-                <button type="button" onClick={() => void signInWithGoogle()} style={primaryBtn(false)}>
-                  Sign in with Google →
+                <button
+                  type="button"
+                  onClick={() => void signInWithGoogle({ continuePath: RETURN_PATH })}
+                  style={primaryBtn(false)}
+                >
+                  {CIELO_HOLDER_COPY.signIn}
                 </button>
               ) : (
                 <>
@@ -278,7 +274,7 @@ export function CieloVerifiedRateFlow() {
                     disabled={!passportReady || loading}
                     style={primaryBtn(!passportReady || loading)}
                   >
-                    Continue to consent →
+                    {CIELO_HOLDER_COPY.continueConsent}
                   </button>
                 </>
               )}
@@ -288,18 +284,13 @@ export function CieloVerifiedRateFlow() {
 
         {step === "consent" && (
           <>
-            <StepLabel n={2} title="Consent & eligibility" />
+            <StepLabel n={2} title={CIELO_HOLDER_COPY.stepConsent} />
             <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.75rem" }}>
-              Policy <code style={{ fontFamily: MONO, fontSize: "0.65rem" }}>cielo-verified-guest-v1</code> shares only:
-              Passport account status, profile completeness, and wallet binding freshness. never raw ID documents.
+              You approve sharing only what Cielo needs for this guest check: account status, profile completeness,
+              and recent wallet verification. Abraxas does not send ID images or your full legal identity to Cielo.
             </p>
-            <ul style={{ margin: "0 0 0.85rem", paddingLeft: "1.1rem", fontFamily: MONO, fontSize: "0.62rem", color: "var(--text-muted)", lineHeight: 1.7 }}>
-              <li>passport_account</li>
-              <li>profile_complete</li>
-              <li>wallet_binding_confirmed</li>
-            </ul>
             <button type="button" onClick={() => void grantConsent()} disabled={loading} style={primaryBtn(loading)}>
-              {loading ? "Evaluating…" : "Approve consent & check eligibility →"}
+              {loading ? "Checking eligibility…" : "I agree — check eligibility"}
             </button>
             <button type="button" onClick={() => setStep("passport")} style={{ ...ghostBtnStyle, marginTop: "0.5rem" }}>
               ← Back
@@ -309,10 +300,10 @@ export function CieloVerifiedRateFlow() {
 
         {step === "submit" && consentResult && (
           <>
-            <StepLabel n={3} title="Verified rate eligible" />
-            <DecisionBadge label="APPROVED" sub="Verified Rate Eligible · pilot request" color={ACCENT} />
+            <StepLabel n={3} title={CIELO_HOLDER_COPY.stepSubmit} />
+            <DecisionBadge label="Eligible" sub="You can send a verified guest request for Cielo to review" color={ACCENT} />
             <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0.75rem 0" }}>
-              Submit a pilot verified-rate request. An operator will review. this is not a confirmed booking.
+              {CIELO_HOLDER_COPY.notBooking}
             </p>
             <Field label="Your name"><input value={guestName} onChange={e => setGuestName(e.target.value)} style={inputStyle} /></Field>
             <Field label="Email"><input type="email" value={contactEmail} onChange={e => setContactEmail(e.target.value)} style={inputStyle} /></Field>
@@ -332,7 +323,7 @@ export function CieloVerifiedRateFlow() {
               <textarea value={notes} rows={2} onChange={e => setNotes(e.target.value)} style={{ ...inputStyle, resize: "vertical" }} />
             </Field>
             <button type="button" onClick={() => void submitRequest()} disabled={loading} style={primaryBtn(loading)}>
-              {loading ? "Submitting…" : "Submit verified-rate request →"}
+              {loading ? "Sending…" : CIELO_HOLDER_COPY.submit}
             </button>
           </>
         )}
@@ -346,8 +337,8 @@ export function CieloVerifiedRateFlow() {
               color={consentResult.decision === "manual_review" ? AMBER : RED}
             />
             {consentResult.reason_codes.length > 0 && (
-              <ul style={{ margin: "0.75rem 0", paddingLeft: "1.1rem", fontFamily: MONO, fontSize: "0.62rem", color: "var(--text-muted)" }}>
-                {consentResult.reason_codes.map(c => <li key={c}>{c}</li>)}
+              <ul style={{ margin: "0.75rem 0", paddingLeft: "1.1rem", fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                {consentResult.reason_codes.map(c => <li key={c}>{humanizeCieloReason(c)}</li>)}
               </ul>
             )}
             <Link href={`/passport?return=${passportReturn}`} style={{ ...linkBtnStyle, display: "inline-block", marginTop: "0.5rem" }}>
@@ -368,7 +359,7 @@ export function CieloVerifiedRateFlow() {
           </p>
         )}
       </div>
-    </div>
+    </HolderTrustSurface>
   );
 }
 

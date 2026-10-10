@@ -1,0 +1,16 @@
+/* Holder-facing surfaces (not homepage-protected). Honors prefers-reduced-motion. */
+
+.abx-cielo-progress > div {
+  transition: background-color var(--abx-motion-surface) var(--abx-ease-out);
+}
+
+.abx-holder-trust-surface {
+  transition: border-color var(--abx-motion-surface) var(--abx-ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .abx-cielo-progress > div,
+  .abx-holder-trust-surface {
+    transition: none;
+  }
+}
