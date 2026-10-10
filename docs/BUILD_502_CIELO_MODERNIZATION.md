@@ -2,7 +2,9 @@
 
 ## Dependency
 
-**PR #614 (Build #501)** was **open** at implementation time. This branch stacks on `cursor/cielo-sunrise-genesis-501-5ffe`. Merge #614 to `main` before promoting #502.
+Reconciled into **draft PR #614** on `cursor/cielo-sunrise-genesis-501-5ffe`. **Do not merge** until operator review.
+
+Authoritative architecture: **`docs/CIELO_MODERNIZATION_ARCHITECTURE.md`**. PR #615 is superseded.
 
 ## Legacy → modern map
 

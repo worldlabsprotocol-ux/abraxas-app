@@ -160,10 +160,38 @@ export function runHospitalityPortabilityProof(): HospitalityPortabilityProofRes
     CIELO_SUNRISE_RENTAL_TENANT.policyId,
   );
 
+  const wrongPolicy = verifyForTenant(
+    cieloReceipt,
+    CIELO_SUNRISE_RENTAL_TENANT.partnerId,
+    SYNTHETIC_RENTAL_OPERATOR_B.policyId,
+  );
+  steps.push({
+    id: "cross_tenant_wrong_policy_on_cielo_partner",
+    tenant: "cross_tenant",
+    outcome: wrongPolicy.ok === false ? "pass" : "fail",
+    detail: wrongPolicy.errors.join(", ") || "unexpected_pass",
+  });
+
+  const revoked = verifyForTenant(
+    tenantReceipt(CIELO_SUNRISE_RENTAL_TENANT.partnerId, CIELO_SUNRISE_RENTAL_TENANT.policyId, {
+      status: "revoked",
+    }),
+    CIELO_SUNRISE_RENTAL_TENANT.partnerId,
+    CIELO_SUNRISE_RENTAL_TENANT.policyId,
+  );
+  steps.push({
+    id: "revoked_receipt_rejected",
+    tenant: "cross_tenant",
+    outcome: revoked.ok === false ? "pass" : "fail",
+    detail: revoked.errors.join(", ") || "unexpected_pass",
+  });
+
   const tenant_isolation = {
     cielo_receipt_rejected_for_synthetic_b: cieloOnSynthetic.ok === false,
     synthetic_b_receipt_rejected_for_cielo: syntheticOnCielo.ok === false,
     expired_rejected_for_both: expired.ok === false,
+    wrong_policy_rejected: wrongPolicy.ok === false,
+    revoked_rejected: revoked.ok === false,
   };
 
   const allPassed =

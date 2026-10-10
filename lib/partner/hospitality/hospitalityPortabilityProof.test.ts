@@ -19,5 +19,7 @@ describe("hospitality rental operator portability", () => {
     expect(result.tenant_isolation.cielo_receipt_rejected_for_synthetic_b).toBe(true);
     expect(result.tenant_isolation.synthetic_b_receipt_rejected_for_cielo).toBe(true);
     expect(result.tenant_isolation.expired_rejected_for_both).toBe(true);
+    expect(result.tenant_isolation.wrong_policy_rejected).toBe(true);
+    expect(result.tenant_isolation.revoked_rejected).toBe(true);
   });
 });

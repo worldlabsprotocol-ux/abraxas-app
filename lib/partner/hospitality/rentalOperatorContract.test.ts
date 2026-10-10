@@ -23,11 +23,11 @@ describe("rentalOperatorContract", () => {
 
   it("documents legacy modernization map without duplicate receipt engines", () => {
     const parallel = CIELO_LEGACY_MODERN_COMPONENT_MAP.find((r) =>
-      r.component.includes("Parallel Cielo-only receipt"),
+      r.component.includes("Parallel Cielo receipt"),
     );
     expect(parallel?.classification).toBe("REMOVE_ONLY_WITH_APPROVAL");
     const treasury = CIELO_LEGACY_MODERN_COMPONENT_MAP.find((r) =>
-      r.component.includes("USDC treasury"),
+      r.component.includes("USDC booking"),
     );
     expect(treasury?.classification).toBe("RETAIN_SEPARATELY");
   });
