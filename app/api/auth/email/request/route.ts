@@ -1,14 +1,10 @@
 // FILE: app/api/auth/email/request/route.ts
 // Step 1: user submits email -> Supabase sends a magic link.
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseForRoute } from "@/lib/supabase/routeAdmin";
 
 export async function POST(req: NextRequest) {
+  const supabase = supabaseForRoute();
   try {
     const { email } = (await req.json()) as { email?: string };
     if (!email || !email.includes("@")) {

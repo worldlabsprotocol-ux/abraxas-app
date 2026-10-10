@@ -1,13 +1,9 @@
 // FILE: app/api/passport/genesis/availability/route.ts
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseForRoute } from "@/lib/supabase/routeAdmin";
 
 export async function GET() {
+  const supabase = supabaseForRoute();
   const { data } = await supabase
     .from("genesis_passport_counter")
     .select("next_seat, max_seats")

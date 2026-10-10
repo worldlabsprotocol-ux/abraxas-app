@@ -7,6 +7,7 @@ import type { PartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlowRe
 import { buildPolicyPresentationFromPolicyId } from "@/lib/partner/launchpad/policyPresentation";
 import { resolveDisclosureProfile, GENERIC_MINIMAL_PROFILE } from "@/lib/privacy/selectiveDisclosure";
 import { resolvePartnerDisplayName } from "@/lib/partner/partnerVerifyDisplay";
+import type { SolanaReceiptProvenanceView } from "@/lib/decisionReceipts/solanaCommitment/contract";
 
 export type DecisionReceiptVisualStatus =
   | "verified"
@@ -43,6 +44,15 @@ export interface DecisionReceiptDisplayModel {
   signingKeyId?: string;
   lifecycleStatus?: string;
   partnerSafeReason?: PartnerSafeReceiptInvalidationReason | string | null;
+  solanaProofLabel?: string | null;
+  solanaProvenance?: {
+    status: string;
+    proof_confirmed: boolean;
+    explorer_url?: string;
+    transaction_signature?: string;
+    committer_pubkey?: string;
+    confirmation_status?: string | null;
+  };
 }
 
 export type ReceiptDisplaySource = DecisionReceiptPublicView | PartnerFlowPublicReceipt;
@@ -296,6 +306,17 @@ export function buildDecisionReceiptDisplayModel(
   const partnerId = normalized.partnerId;
   const partnerName = options?.partnerName ?? (partnerId ? resolvePartnerDisplayName(partnerId) : undefined);
 
+  const solanaProv: SolanaReceiptProvenanceView | undefined =
+    "solana_provenance" in receipt && receipt.solana_provenance
+      ? (receipt.solana_provenance as SolanaReceiptProvenanceView)
+      : undefined;
+  const solanaProofLabel =
+    solanaProv?.proof_confirmed === true
+      ? "Solana proof confirmed"
+      : solanaProv?.commitment_required
+        ? "Solana proof pending"
+        : null;
+
   return {
     receiptId: normalized.receiptId,
     visualStatus,
@@ -321,6 +342,17 @@ export function buildDecisionReceiptDisplayModel(
     signingKeyId: normalized.signingKeyId,
     lifecycleStatus: normalized.lifecycleStatus,
     partnerSafeReason: normalized.partnerSafeReason ?? null,
+    solanaProofLabel,
+    solanaProvenance: solanaProv
+      ? {
+          status: String(solanaProv.status ?? "none"),
+          proof_confirmed: solanaProv.proof_confirmed === true,
+          explorer_url: solanaProv.explorer_url,
+          transaction_signature: solanaProv.transaction_signature,
+          committer_pubkey: solanaProv.committer_pubkey,
+          confirmation_status: solanaProv.confirmation_status ?? null,
+        }
+      : undefined,
   };
 }
 

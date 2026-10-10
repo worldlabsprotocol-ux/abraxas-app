@@ -4,14 +4,10 @@
 // to email via Resend if configured, always records to Supabase so
 // nothing is lost even if email delivery has a hiccup.
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseForRoute } from "@/lib/supabase/routeAdmin";
 
 export async function POST(req: NextRequest) {
+  const supabase = supabaseForRoute();
   try {
     const body = await req.json() as {
       name?: string; email?: string; organization?: string;

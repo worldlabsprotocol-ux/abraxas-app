@@ -4,16 +4,12 @@
 // Protected by ADMIN_SECRET. Triggers real-time Markets update via DB change.
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseForRoute } from "@/lib/supabase/routeAdmin";
 import { processEvent } from "@/lib/assetStateMachine";
 import { recordVaultRouting } from "@/lib/abraVaultRouter";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export async function POST(req: NextRequest, { params }: { params: { assetId: string } }) {
+  const supabase = supabaseForRoute();
   if (req.headers.get("x-admin-secret") !== process.env.ADMIN_SECRET) {
     return NextResponse.json({ error:"Unauthorized" }, { status: 401 });
   }

@@ -3,16 +3,11 @@
 // Single transaction — if any step fails, returns error without partial state.
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseForRoute } from "@/lib/supabase/routeAdmin";
 import { calcVaultAllocation, recordVaultRouting } from "@/lib/abraVaultRouter";
 
-// Use service-role key server-side (bypasses RLS for writes)
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
-
 export async function POST(req: NextRequest) {
+  const supabase = supabaseForRoute();
   try {
     const body = await req.json();
     const { wallet, asset, mintCostAbra } = body;

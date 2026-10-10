@@ -111,6 +111,7 @@ export const PUBLIC_RECEIPT_ALLOWED_FIELDS = [
   "lifecycle_status",
   "partner_safe_reason",
   "validity_checked_at",
+  "solana_provenance",
 ] as const;
 
 export const PARTNER_KIT_ALLOWED_FIELDS = [

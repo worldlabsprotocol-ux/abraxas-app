@@ -211,6 +211,15 @@ export async function issueDecisionReceipt(
     },
   });
 
+  void import("@/lib/decisionReceipts/solanaCommitment/service").then(({ enqueueSolanaReceiptCommitment }) =>
+    enqueueSolanaReceiptCommitment(record).catch((error: unknown) => {
+      console.error(
+        "[solana_receipt_commitment]",
+        error instanceof Error ? error.message : error,
+      );
+    }),
+  );
+
   return record;
 }
 
@@ -264,13 +273,27 @@ export async function getPartnerReceipt(receiptId: string, partnerId: string) {
     partnerId,
     policyId: record.policy_id,
   });
+  const { getActiveCommitmentForReceipt } = await import("@/lib/decisionReceipts/solanaCommitment/store");
+  const { evaluateSolanaCommitmentTrust } = await import("@/lib/decisionReceipts/solanaCommitment/trust");
+  const commitment = await getActiveCommitmentForReceipt(receiptId);
+  const solanaTrust = evaluateSolanaCommitmentTrust({
+    policyId: record.policy_id,
+    commitment,
+  });
+  let currentlyValid = trust.currently_valid && consentOk;
+  const invalidationReasons = [...trust.invalidation_reasons];
+  if (solanaTrust.on_chain_required && !solanaTrust.on_chain_confirmed) {
+    currentlyValid = false;
+    invalidationReasons.push(...solanaTrust.invalidation_reasons);
+  }
   return {
     view,
-    valid: trust.currently_valid && consentOk,
+    valid: currentlyValid,
     status: record.status,
     validity: trust.validity,
-    invalidation_reasons: trust.invalidation_reasons,
-    currently_valid: trust.currently_valid,
+    invalidation_reasons: invalidationReasons,
+    currently_valid: currentlyValid,
+    solana_commitment: solanaTrust,
   };
 }
 

@@ -471,6 +471,16 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
       "Fixes PL/pgSQL 42702 ambiguity in ensure_partner_flow_continuation_by_opaque via #variable_conflict use_column (#566). Apply after 132.",
   },
   {
+    file: "138_decision_receipt_solana_commitments.sql",
+    tier: "recommended",
+    creates: ["decision_receipt_solana_commitments"],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Build #509 Solana devnet receipt commitment lifecycle. Apply after 137 for Demo Solana-native receipt provenance.",
+  },
+  {
     file: "092_wallet_standard_action_bindings.sql",
     tier: "required",
     creates: [
@@ -805,6 +815,7 @@ export const OBJECT_PROVENANCE: Record<string, string> = {
   partner_integration_events: "111_partner_integration_events.sql",
   decision_receipt_supersessions: "112_decision_receipt_supersessions.sql",
   decision_receipt_evidence_dependencies: "113_decision_receipt_evidence_dependencies.sql",
+  decision_receipt_solana_commitments: "138_decision_receipt_solana_commitments.sql",
   partner_value_commercial_state: "114_partner_value_operator_state.sql",
   partner_value_icp_profile: "114_partner_value_operator_state.sql",
   partner_value_feature_requests: "114_partner_value_operator_state.sql",

@@ -37,6 +37,11 @@ export interface PartnerFlowPublicReceipt {
   lifecycle_status?: string;
   partner_safe_reason?: string | null;
   validity_checked_at?: string;
+  solana_provenance?: {
+    proof_confirmed?: boolean;
+    commitment_required?: boolean;
+    status?: string;
+  };
 }
 
 export type PartnerFlowReceiptValidationMode = "sandbox" | "production";
@@ -55,6 +60,8 @@ export interface PartnerFlowReceiptExpectations {
    * Set true only for explicit sandbox / pilot policy testing (legacy path).
    */
   allowSandbox?: boolean;
+  /** When true, require confirmed Solana commitment for Solana-native policies. */
+  requireSolanaCommitment?: boolean;
 }
 
 export interface PartnerFlowReceiptValidationResult {
@@ -160,6 +167,19 @@ function validateCurrentValidityFields(receipt: PartnerFlowPublicReceipt): strin
   return errors;
 }
 
+function validateSolanaCommitmentFields(
+  receipt: PartnerFlowPublicReceipt,
+  expected: Pick<PartnerFlowReceiptExpectations, "policyId" | "requireSolanaCommitment">,
+): string[] {
+  if (!expected.requireSolanaCommitment) return [];
+  const provenance = receipt.solana_provenance;
+  if (!provenance?.commitment_required) return [];
+  if (provenance.proof_confirmed !== true) {
+    return [`solana_commitment_not_confirmed:${provenance.status ?? "none"}`];
+  }
+  return [];
+}
+
 function validateProductionEnvironmentFields(receipt: PartnerFlowPublicReceipt): string[] {
   const errors: string[] = [];
   errors.push(...validateCurrentValidityFields(receipt));
@@ -203,7 +223,8 @@ export function validatePartnerFlowPublicReceipt(
     const modeErrors = expected.mode === "sandbox"
       ? [...validateSandboxEnvironmentFields(receipt), ...validateCurrentValidityFields(receipt)]
       : validateProductionEnvironmentFields(receipt);
-    const errors = [...sharedErrors, ...modeErrors];
+    const solanaErrors = validateSolanaCommitmentFields(receipt, expected);
+    const errors = [...sharedErrors, ...modeErrors, ...solanaErrors];
     return { ok: errors.length === 0, errors };
   }
 
@@ -214,9 +235,12 @@ export function validatePartnerFlowPublicReceipt(
     now: expected.now,
   });
 
+  const solanaErrors = validateSolanaCommitmentFields(receipt, expected);
+  const errors = [...trust.invalidation_reasons, ...solanaErrors];
+
   return {
-    ok: trust.currently_valid,
-    errors: trust.invalidation_reasons,
+    ok: trust.currently_valid && solanaErrors.length === 0,
+    errors,
     trust,
   };
 }

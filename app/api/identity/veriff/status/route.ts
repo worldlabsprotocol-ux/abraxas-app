@@ -2,14 +2,10 @@
 // Frontend polls this to find out if a verification has completed,
 // since the actual decision arrives async via webhook, not the redirect.
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseForRoute } from "@/lib/supabase/routeAdmin";
 
 export async function GET(req: NextRequest) {
+  const supabase = supabaseForRoute();
   const email = req.nextUrl.searchParams.get("email");
   if (!email) {
     return NextResponse.json({ error: "email required" }, { status: 400 });

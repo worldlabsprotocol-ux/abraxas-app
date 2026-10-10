@@ -4,13 +4,8 @@
 // Protected by WEBHOOK_SECRET per source.
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseForRoute } from "@/lib/supabase/routeAdmin";
 import { processEvent } from "@/lib/assetStateMachine";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 const SECRETS: Record<string, string> = {
   baxus:       process.env.WEBHOOK_SECRET_BAXUS     ?? "",
@@ -20,6 +15,7 @@ const SECRETS: Record<string, string> = {
 };
 
 export async function POST(req: NextRequest, { params }: { params: { source: string } }) {
+  const supabase = supabaseForRoute();
   const { source } = params;
   const expectedSecret = SECRETS[source];
   const incomingSecret = req.headers.get("x-webhook-secret");

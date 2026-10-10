@@ -3,14 +3,10 @@
 // Validates LTV, updates position, records transaction, emits event.
 
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseForRoute } from "@/lib/supabase/routeAdmin";
 
 export async function POST(req: NextRequest) {
+  const supabase = supabaseForRoute();
   try {
     const { wallet, assetId, borrowAmountUsd } = await req.json();
     if (!wallet || !assetId || !borrowAmountUsd) {
