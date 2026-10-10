@@ -1,0 +1,143 @@
+{
+  "build": "514",
+  "generated_at": "2026-10-10T23:50:00.000Z",
+  "source_branch": "cursor/controlled-demo-live-acceptance-514",
+  "parent_stack": ["#618", "#619", "#620", "#621", "#622", "#623", "#624", "#625", "#626"],
+  "commit_sha_agent": "pending_push",
+  "release_verdict": "BLOCKED",
+  "release_verdict_detail": "Demo database missing Solana migrations 134–138; live browser/Phantom acceptance not executable in agent VM; Vercel deployment protection blocked automated fetch.",
+  "scenarios": [
+    {
+      "id": "phase0_demo_supabase_isolation",
+      "environment": "Demo Supabase ocntwbxarpjeixdnzide",
+      "method": "read_only_sql",
+      "status": "PASS",
+      "expected": "Non-production Demo project; production ref rejected by safety gate",
+      "observed": "Demo project active; production bztwutzprwsdrtqdpymf separate; assertDemoSupabaseNotProduction rejects production URL",
+      "evidence": "lib/release/demoEnvironmentSafety.test.ts",
+      "owner": "agent",
+      "next_action": "None"
+    },
+    {
+      "id": "phase2_migrations_134_138",
+      "environment": "Demo Supabase ocntwbxarpjeixdnzide",
+      "method": "read_only_sql",
+      "status": "FAIL",
+      "expected": "Tables holder_wallet_accounts, holder_accounts, decision_receipt_solana_commitments present",
+      "observed": "None of required Solana-native tables present; schema_migrations newest is 087_stocklana_pilot",
+      "evidence": "Supabase MCP execute_sql 2026-10-10",
+      "owner": "operator",
+      "next_action": "Apply ordered non-destructive migrations 134–138 on Demo only after explicit authorization; re-run table checks"
+    },
+    {
+      "id": "phase1_vercel_preview_513",
+      "environment": "Vercel abraxas-app preview",
+      "method": "vercel_list_deployments",
+      "status": "PASS",
+      "expected": "Preview exists for #513 commit",
+      "observed": "READY deployment dpl_CqopJ4YXyX3Viy2pEJi1U5WdXhFQ sha c457aec3 branch cursor/approved-homepage-demo-entry-513-5ffe",
+      "evidence": "Vercel MCP list_deployments",
+      "owner": "operator",
+      "next_action": "Promote preview or alias demo.abraxasworld.xyz after migration gate"
+    },
+    {
+      "id": "phase1_deployed_browser_fetch",
+      "environment": "demo.abraxasworld.xyz + Vercel preview",
+      "method": "web_fetch_vercel_url",
+      "status": "BLOCKED",
+      "expected": "Automated fetch of protected deployment",
+      "observed": "403 forbidden on deployment protection bypass",
+      "evidence": "Vercel MCP web_fetch_vercel_url",
+      "owner": "founder",
+      "next_action": "Authorize Vercel MCP team access or run founder checklist manually on preview URL"
+    },
+    {
+      "id": "phase4_homepage_tour_local",
+      "environment": "local dev (placeholder env)",
+      "method": "playwright",
+      "status": "PASS",
+      "expected": "Explore the demo → /experience/tour simulated labeling",
+      "observed": "tests/ux/home-demo-cta.spec.ts + judge-tour.spec.ts green",
+      "evidence": "/opt/cursor/artifacts/homepage-tour-after-click.png",
+      "owner": "agent",
+      "next_action": "Repeat against deployed preview URL when access available"
+    },
+    {
+      "id": "phase5_phantom_live",
+      "environment": "deployed Demo",
+      "method": "manual_phantom",
+      "status": "BLOCKED",
+      "expected": "Real wallet session without loops",
+      "observed": "Not executed in cloud agent VM",
+      "evidence": null,
+      "owner": "founder",
+      "next_action": "FOUNDER_DEMO_ACCEPTANCE_KIT.md § Phantom"
+    },
+    {
+      "id": "phase6_idv_live",
+      "environment": "deployed Demo",
+      "method": "veriff_sandbox",
+      "status": "BLOCKED",
+      "expected": "Genuine IDV lifecycle",
+      "observed": "Blocked by missing wallet schema + no authorized test identity run",
+      "evidence": null,
+      "owner": "founder",
+      "next_action": "Complete migrations; use authorized sandbox IDV"
+    },
+    {
+      "id": "phase7_cielo_live",
+      "environment": "deployed Demo",
+      "method": "partner_flow_e2e",
+      "status": "BLOCKED",
+      "observed": "Not executed",
+      "expected": "Consent → receipt → callback",
+      "evidence": null,
+      "owner": "founder",
+      "next_action": "After migrations + preview URL"
+    },
+    {
+      "id": "phase8_good_trouble_live",
+      "environment": "deployed Demo",
+      "method": "partner_flow_e2e",
+      "status": "BLOCKED",
+      "observed": "Not executed",
+      "expected": "L2 age-21 policy only",
+      "evidence": null,
+      "owner": "founder",
+      "next_action": "After migrations + preview URL"
+    },
+    {
+      "id": "phase9_evidence_reuse_live",
+      "environment": "deployed Demo",
+      "method": "two_partner_sequence",
+      "status": "NOT RUN",
+      "expected": "Second partner shorter with consent-only when qualified",
+      "observed": null,
+      "evidence": null,
+      "owner": "founder",
+      "next_action": "After Cielo + GT single-partner pass"
+    },
+    {
+      "id": "phase10_solana_devnet_tx",
+      "environment": "devnet",
+      "method": "live_commitment_broadcast",
+      "status": "BLOCKED",
+      "expected": "Real devnet signature explorer-verifiable",
+      "observed": "Committer key/funding not available in agent env",
+      "evidence": null,
+      "owner": "operator",
+      "next_action": "Fund committer; run scripts/solana-receipt-commitment-retry.ts on Demo"
+    },
+    {
+      "id": "phase3_preflight_local_env",
+      "environment": "agent VM env",
+      "method": "npm run preflight:build512-demo",
+      "status": "FAIL",
+      "expected": "Demo-configured env passes preflight",
+      "observed": "Missing Demo env vars in VM (expected)",
+      "evidence": "BUILD_512 preflight output",
+      "owner": "operator",
+      "next_action": "Run preflight:build514-release-gate on Vercel Demo env pull"
+    }
+  ]
+}

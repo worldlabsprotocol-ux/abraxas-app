@@ -9,6 +9,8 @@ import {
   resolveSolanaCommitmentRpcUrl,
 } from "@/lib/decisionReceipts/solanaCommitment/config";
 import { isSolanaNativeProductEnabled } from "@/lib/auth/solanaNative/featureFlag";
+import { assertDemoSupabaseNotProduction } from "@/lib/release/demoEnvironmentSafety";
+import { BUILD514_REQUIRED_TABLES } from "@/lib/release/demoMigrationReadiness";
 
 export type PreflightStatus = "pass" | "fail" | "warn" | "blocked";
 
@@ -57,17 +59,13 @@ export async function runSolanaNativeDemoPreflight(deps: {
   if (!url || !serviceKey) {
     checks.push({ id: "supabase_config", status: "fail", detail: "NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY missing" });
   } else {
-    const ref = supabaseProjectRef(url);
-    if (ref === DEMO_SUPABASE_PROJECT_REF) {
-      checks.push({ id: "demo_supabase_project", status: "pass", detail: `Demo project ref ${ref}` });
-    } else if (ref) {
-      checks.push({
-        id: "demo_supabase_project",
-        status: "warn",
-        detail: `Supabase ref ${ref} is not the canonical Demo ref ${DEMO_SUPABASE_PROJECT_REF}`,
-      });
+    const safety = assertDemoSupabaseNotProduction({ supabaseUrl: url });
+    if (safety.isProductionRef) {
+      checks.push({ id: "demo_supabase_project", status: "fail", detail: safety.message });
+    } else if (safety.verdict === "pass") {
+      checks.push({ id: "demo_supabase_project", status: "pass", detail: safety.message });
     } else {
-      checks.push({ id: "demo_supabase_project", status: "fail", detail: "Supabase URL is not a *.supabase.co host" });
+      checks.push({ id: "demo_supabase_project", status: "fail", detail: safety.message });
     }
   }
 
@@ -156,20 +154,12 @@ export async function runSolanaNativeDemoPreflight(deps: {
   }
 
   if (deps.tableExists) {
-    for (const file of REQUIRED_MIGRATIONS) {
-      const table = file.startsWith("138")
-        ? "decision_receipt_solana_commitments"
-        : file.startsWith("135")
-          ? "holder_accounts"
-          : file.startsWith("134")
-            ? "holder_wallet_login_sessions"
-            : null;
-      if (!table) continue;
-      const exists = await deps.tableExists(table);
+    for (const row of BUILD514_REQUIRED_TABLES) {
+      const exists = await deps.tableExists(row.table);
       checks.push({
-        id: `migration_${file}`,
+        id: row.id,
         status: exists ? "pass" : "fail",
-        detail: exists ? `${table} present` : `${table} missing — apply ${file}`,
+        detail: exists ? `${row.table} present` : `${row.table} missing — apply ${row.migration}`,
       });
     }
   } else {
