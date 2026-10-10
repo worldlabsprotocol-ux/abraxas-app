@@ -38,6 +38,8 @@ import {
 } from "@/lib/partner/launchpad/journeyState";
 import type { ApplicationPoliciesSummary } from "@/lib/partner/launchpad/applicationPolicyBindings";
 import { PartnerIntegrationHealthPanel } from "@/components/partner/launchpad/PartnerIntegrationHealthPanel";
+import { PartnerUniversalReadinessPanel } from "@/components/partner/launchpad/PartnerUniversalReadinessPanel";
+import type { UniversalReadinessDiagnostic } from "@/lib/partner/universalIntegration/readinessDiagnostic";
 import { PartnerIntegrationPerformancePanel } from "@/components/partner/launchpad/PartnerIntegrationPerformancePanel";
 import { PartnerPilotProgressPanel } from "@/components/partner/launchpad/PartnerPilotProgressPanel";
 import { PartnerApplicationOverview } from "@/components/partner/launchpad/PartnerApplicationOverview";
@@ -117,6 +119,7 @@ interface DomainVerification {
 interface IntegrationHealth {
   overall: "pass" | "action_required" | "blocked";
   checks: Array<{ id: string; label: string; status: "pass" | "action_required" | "blocked"; detail: string }>;
+  universal_readiness?: UniversalReadinessDiagnostic;
 }
 
 const STEPS: { id: WizardStep; label: string; description: string }[] = [
@@ -269,7 +272,10 @@ export function PartnerLaunchpadClient({
 
   const refreshIntegrationHealth = useCallback(async () => {
     if (!activeApp) return;
-    const res = await fetch(`/api/launchpad/applications/${activeApp.id}/health`, { credentials: "include" });
+    const res = await fetch(`/api/launchpad/applications/${activeApp.id}/health`, {
+      credentials: "include",
+      cache: "no-store",
+    });
     const data = await res.json();
     if (res.ok) setIntegrationHealth(data);
   }, [activeApp]);
@@ -1044,6 +1050,7 @@ export function PartnerLaunchpadClient({
                   void refreshIntegrationHealth();
                 }}
               />
+              <PartnerUniversalReadinessPanel applicationId={activeApp.id} />
               <PartnerIntegrationHealthPanel applicationId={activeApp.id} />
               <PartnerIntegrationPerformancePanel applicationId={activeApp.id} />
               <PartnerPilotProgressPanel applicationId={activeApp.id} />
