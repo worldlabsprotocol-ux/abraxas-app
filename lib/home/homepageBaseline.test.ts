@@ -27,6 +27,7 @@ describe("homepage baseline (approved design invariants)", () => {
     expect(hero).toContain("abx-home-hero");
     expect(hero).toContain("abx-home-hero-actions");
     expect(hero).toContain("CINEMATIC_THESIS_LINE_1");
+    expect(hero).toContain("CINEMATIC_CTA_DEMO_HREF");
 
     const shell = read("components/redesign/RedesignHome.tsx");
     expect(shell).toContain("CinematicHero");

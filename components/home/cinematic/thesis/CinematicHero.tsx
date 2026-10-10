@@ -10,6 +10,8 @@ import { ABX_FONT_SANS } from "@/lib/design/abraxasDesignSystem";
 import { abxMotionDuration } from "@/lib/design/abraxasMotion";
 import { abxMotionTransition, abxStaggerDelay } from "@/lib/motion/abxMotionFramer";
 import {
+  CINEMATIC_CTA_DEMO,
+  CINEMATIC_CTA_DEMO_HREF,
   CINEMATIC_CTA_PRIMARY,
   CINEMATIC_CTA_PRIMARY_HREF,
   CINEMATIC_CTA_SECONDARY,
@@ -62,6 +64,9 @@ export function CinematicHero() {
       >
         <Btn href={CINEMATIC_CTA_PRIMARY_HREF} size="lg">
           {CINEMATIC_CTA_PRIMARY}
+        </Btn>
+        <Btn href={CINEMATIC_CTA_DEMO_HREF} variant="secondary" size="lg">
+          {CINEMATIC_CTA_DEMO}
         </Btn>
         <Link
           href={CINEMATIC_CTA_SECONDARY_HREF}
