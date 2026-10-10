@@ -333,6 +333,14 @@ details > summary::-webkit-details-marker {
   transition: border-color var(--abx-motion-surface) var(--abx-ease-out);
 }
 
+.abx-cielo-progress > div {
+  transition: background-color var(--abx-motion-surface) var(--abx-ease-out);
+}
+
+.abx-holder-trust-surface {
+  transition: border-color var(--abx-motion-surface) var(--abx-ease-out);
+}
+
 .abx-provenance-flow__section-title {
   margin: 0 0 0.35rem;
   font-size: 0.95rem;
