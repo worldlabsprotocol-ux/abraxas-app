@@ -16,11 +16,12 @@ async function main() {
     integration_base_sha: "71ac9efa6efa92f652d54a99ea974aba23bfd2ed",
     phase_1_release_integrity: readJson("/opt/cursor/artifacts/trust-registry-release-integrity-v535.json"),
     phase_2_preflight: readJson("/opt/cursor/artifacts/trust-registry-devnet-preflight-v535.json"),
-    phase_3_live_proof: readJson("/opt/cursor/artifacts/trust-registry-devnet-live-proof-v535.json"),
+    phase_3_live_execution: readJson("/opt/cursor/artifacts/trust-registry-devnet-live-execution-v535.json"),
     phase_4_independent_verify: readJson("/opt/cursor/artifacts/trust-registry-independent-verify-v535.json"),
+    release_record: readJson("/workspace/solana/abraxas-eligibility-gate/release/trust-registry-v535-devnet-live.json"),
     classification: {
       local_tests: "anchor/cargo integration + vitest protocol-534/535",
-      live_devnet: "blocked unless operator executes txs and supplies session JSON",
+      live_devnet: readJson("/opt/cursor/artifacts/trust-registry-devnet-live-execution-v535.json") ? "executed" : "blocked",
       mainnet: "blocked — devnet-only build",
     },
     mainnet_blockers: [

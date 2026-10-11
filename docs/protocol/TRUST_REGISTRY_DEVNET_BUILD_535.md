@@ -78,3 +78,19 @@ Output: `/opt/cursor/artifacts/trust-registry-devnet-evidence-v535.json`
 ## Mainnet
 
 **Blocked** in this build — devnet proof only.
+
+## Live devnet execution (Build #535 — completed)
+
+| Item | Value |
+|------|--------|
+| Program ID | `EN29YNgHRuJ3h9cWrPS9hSDBt8DUNtoSSTT9EbUZewC8` |
+| Deploy tx | `3AdQ9gBkfLkSjsKWnR3ShzdHXzD3rPypvMXtCNXxnrFigXrvEKQPmwgSm4bg6t8f7c73xEZru6Pxv1LzENRtZYHW` |
+| Upgrade authority | `8CbD1sre8bDhtJzUJN5sdtCc21DQwRCMR33VGKfDK4fK` |
+| Registry init | `vxHHcpcSSmGr3fpLPL5AtKb2gd1UugRZ3fCjEZuJ5soicBJQcyPSsGJHSk5CktkHDLAmCf6nGpp9BsajqUysMES` |
+| Publish commitment | `4ataYbjNd1iWCQroEBmXsgt4NiUQbNpxpMsz2XyKmvMKJ7ktietaros8vRx57hgpUfXrDM8r4iShVW2qa7FhFrSA` |
+| Authorized revoke | `9hZnQcXkfFtXg1TgMbb9DncH7jxyubw67qstvht6i7vBotYT58rU6t1MzGbPu82Yng3yTpfmmP5HCoxKsiJkJyB` |
+| Commitment PDA | `12zsnhuLkf7V6cm42Qk95An72kgXBV9GvcaYZG11GZf4` |
+
+Sanitized record: `solana/abraxas-eligibility-gate/release/trust-registry-v535-devnet-live.json`
+
+Explorer (devnet): append `?cluster=devnet` to Solana Explorer transaction URLs.
