@@ -13,11 +13,11 @@ export function humanizeCieloDisclosedResult(machine: string | null | undefined)
   return machine?.replace(/_/g, " ") ?? "Eligibility result";
 }
 
-export const CIELO_HOLDER_COPY = {
+const CIELO_HOLDER_COPY_BASE = {
   flowTitle: "Request verified guest access",
   flowLead:
     "Cielo uses Abraxas to confirm verified guest eligibility. This is not a hotel booking, payment, or reservation.",
-  stepAccount: "Your Abraxas account",
+  stepAccount: "Your Abraxas Passport",
   stepConsent: "Review & consent",
   stepSubmit: "Send request to Cielo",
   signIn: "Continue with Google",
@@ -26,12 +26,31 @@ export const CIELO_HOLDER_COPY = {
     "Sign in with your Solana wallet. Cielo v1 still requires an Abraxas Passport profile and Sui wallet verification — wallet login alone does not complete eligibility.",
   walletSessionNoPassport:
     "You are signed in with your wallet. To continue this Cielo request, complete or link your Abraxas Passport (profile + Sui wallet verification).",
+  signInWalletLeadSolana:
+    "Connect with Phantom to open or resume your Abraxas Passport on Solana. This Cielo request stays here — no Google sign-in required.",
+  walletSessionNoPassportSolana:
+    "Your wallet is connected. Finish Passport setup (profile and a fresh wallet signature) so Abraxas can answer Cielo’s eligibility check.",
   legacyGoogleSignIn: "Sign in with Google (existing account)",
   continueConsent: "Continue to review",
   submit: "Send verified guest request",
   notBooking: "Operator review is separate from Airbnb booking or payment.",
   technicalDetails: "What is verified?",
 } as const;
+
+export const CIELO_HOLDER_COPY = CIELO_HOLDER_COPY_BASE;
+
+/** Session-specific overrides (e.g. Solana-native) may replace lead copy strings. */
+export type CieloHolderCopy = { [K in keyof typeof CIELO_HOLDER_COPY_BASE]: string };
+
+/** Solana-native sessions use Phantom-first copy without legacy Sui onboarding language. */
+export function cieloHolderCopyForSession(solanaNative: boolean): CieloHolderCopy {
+  if (!solanaNative) return CIELO_HOLDER_COPY_BASE;
+  return {
+    ...CIELO_HOLDER_COPY_BASE,
+    signInWalletLead: CIELO_HOLDER_COPY_BASE.signInWalletLeadSolana,
+    walletSessionNoPassport: CIELO_HOLDER_COPY_BASE.walletSessionNoPassportSolana,
+  };
+}
 
 export const CIELO_STEP_LABELS: Record<string, string> = {
   "missing:account": "Sign in to create your Abraxas account",

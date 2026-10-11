@@ -8,6 +8,7 @@ import type { HolderVerificationPresentation } from "@/lib/partner/holderExperie
 import { Btn } from "@/components/redesign/ui";
 import { HolderTechnicalDetails } from "./HolderTechnicalDetails";
 import { holderBody, holderTitle, holderSection, HOLDER_FONT } from "./styles";
+import { RECEIPT_PLAIN_HEADING, RECEIPT_PLAIN_LABELS } from "@/lib/product/productStoryCopy";
 
 export interface HolderSuccessStateProps {
   presentation: HolderVerificationPresentation;
@@ -46,12 +47,18 @@ export function HolderSuccessState({
           ✓
         </p>
         <h2 id="holder-success-heading" style={{ ...holderTitle, marginTop: "0.35rem" }}>
-          Confirmed
+          {RECEIPT_PLAIN_HEADING}
         </h2>
-        <p style={{ ...holderBody, marginTop: "0.35rem", fontWeight: 700, color: "var(--text-primary)" }}>
+        <p style={{ ...holderBody, marginTop: "0.35rem", fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: 700 }}>
+          {RECEIPT_PLAIN_LABELS.shared}
+        </p>
+        <p style={{ ...holderBody, marginTop: "0.15rem", fontWeight: 700, color: "var(--text-primary)" }}>
           {presentation.theyReceive}
         </p>
-        <p style={{ ...holderBody, marginTop: "0.35rem" }}>
+        <p style={{ ...holderBody, marginTop: "0.35rem", fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: 700 }}>
+          {RECEIPT_PLAIN_LABELS.recipient}
+        </p>
+        <p style={{ ...holderBody, marginTop: "0.15rem" }}>
           {presentation.requesterName} received only this result.
           {isSandbox ? " This sandbox result is not production-usable." : ""}
         </p>

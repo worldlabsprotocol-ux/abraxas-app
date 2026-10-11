@@ -153,10 +153,10 @@ export const VERIFY_HUB_HOLDER_NOTE =
 
 export const HOLDER_VERIFY_EYEBROW = "Passport tools · public beta";
 
-export const HOLDER_VERIFY_HEADLINE = "Look up your records and credentials";
+export const HOLDER_VERIFY_HEADLINE = "Proofs, registry, and credentials";
 
 export const HOLDER_VERIFY_SUBHEAD =
-  "Look up public registry records or test a credential JWT against documented claims. This is not Partner Flow receipt verification.";
+  "Look up public registry records or validate a credential JWT. For partner receipt testing, open the Partner verifier tab — this view is not identity verification.";
 
 export const HOLDER_PARTNER_RECEIPT_LINK_LABEL = "Open the partner receipt tester";
 
