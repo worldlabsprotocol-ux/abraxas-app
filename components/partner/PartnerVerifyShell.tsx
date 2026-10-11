@@ -206,7 +206,9 @@ export function PartnerVerifyShell({
     brief,
     purpose,
   });
-  const recovery = resolveHolderRecovery(recoveryForPhase(phase), partnerName, partnerHomeUrl);
+  const recovery = resolveHolderRecovery(recoveryForPhase(phase), partnerName, partnerHomeUrl, {
+    walletPrimarySignIn,
+  });
   const checkingPhase = mapVerifyPhaseToChecking(phase);
 
   if (phase === "invalid_link" && invalidLinkMessage) {

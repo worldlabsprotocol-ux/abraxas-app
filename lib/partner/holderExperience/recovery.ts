@@ -90,14 +90,28 @@ export function resolveHolderRecovery(
   state: HolderRecoveryState,
   partnerName?: string,
   storedPartnerHome?: string | null,
+  options?: { walletPrimarySignIn?: boolean },
 ): HolderRecoveryView {
   const base = VIEWS[state];
   const partner = partnerName?.trim() || "the requesting partner";
+  const walletPrimary = options?.walletPrimarySignIn === true;
+  const sessionOverride =
+    state === "session_required" && walletPrimary
+      ? {
+          title: "Connect your wallet to continue",
+          explanation:
+            "Your wallet session ended. Connect Phantom again — wallet control is not identity or age verification.",
+          next_label: "Connect wallet again",
+        }
+      : null;
   const view: HolderRecoveryView = {
     state,
     ...base,
-    explanation: base.explanation.replace(/the requesting partner/g, partner).replace(/the partner’s/g, `${partner}’s`),
-    next_label: base.next_label.replace(/the requesting partner/g, partner),
+    ...(sessionOverride ?? {}),
+    explanation: (sessionOverride?.explanation ?? base.explanation)
+      .replace(/the requesting partner/g, partner)
+      .replace(/the partner’s/g, `${partner}’s`),
+    next_label: (sessionOverride?.next_label ?? base.next_label).replace(/the requesting partner/g, partner),
   };
   if (
     !view.href

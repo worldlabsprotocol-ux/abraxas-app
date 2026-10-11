@@ -1,5 +1,8 @@
 import { defineConfig } from "@playwright/test";
 
+const PLAYWRIGHT_PORT = process.env.PLAYWRIGHT_PORT ?? "3100";
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${PLAYWRIGHT_PORT}`;
+
 export default defineConfig({
   testDir: "tests/ux",
   timeout: 90_000,
@@ -8,18 +11,18 @@ export default defineConfig({
   workers: 1,
   reporter: [["list"]],
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000",
+    baseURL,
     trace: "on-first-retry",
     screenshot: "only-on-failure",
   },
   webServer: process.env.PLAYWRIGHT_SKIP_WEBSERVER
     ? undefined
     : {
-        // Cloud agent injects ABRAXAS_RUNTIME_ENV=demo; local dev lacks demo Supabase binding.
+        // Isolated port avoids collision with long-lived dev servers on :3000.
         command:
-          "bash -lc 'unset ABRAXAS_RUNTIME_ENV; export PARTNER_VERIFY_PREVIEW_CONTROLS=1; export SUPABASE_URL=${SUPABASE_URL:-https://placeholder.supabase.co}; export SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY:-placeholder}; export NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL:-https://placeholder.supabase.co}; export NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY:-placeholder}; npm run dev -- --hostname 127.0.0.1 --port 3000'",
-        url: "http://127.0.0.1:3000/experience/tour",
-        reuseExistingServer: !process.env.PLAYWRIGHT_FORCE_WEBSERVER,
+          `unset ABRAXAS_RUNTIME_ENV npm_config_prefix; export PATH="$HOME/.nvm/versions/node/v22.22.2/bin:$PATH"; export PARTNER_VERIFY_PREVIEW_CONTROLS=1; export SUPABASE_URL="${process.env.SUPABASE_URL ?? "https://placeholder.supabase.co"}"; export SUPABASE_ANON_KEY="${process.env.SUPABASE_ANON_KEY ?? "placeholder"}"; export NEXT_PUBLIC_SUPABASE_URL="${process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://placeholder.supabase.co"}"; export NEXT_PUBLIC_SUPABASE_ANON_KEY="${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "placeholder"}"; npm run dev -- --hostname 127.0.0.1 --port ${PLAYWRIGHT_PORT}`,
+        url: `${baseURL}/experience/tour`,
+        reuseExistingServer: false,
         timeout: 180_000,
       },
 });

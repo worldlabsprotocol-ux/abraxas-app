@@ -169,6 +169,9 @@ export function JudgeProductTour() {
             <p style={{ margin: "0 0 0.35rem" }}><strong>Answer shared:</strong> Guest eligibility check passed</p>
             <p style={{ margin: "0 0 0.35rem" }}><strong>Who received it:</strong> Cielo (simulated)</p>
             <p style={{ margin: "0 0 0.35rem" }}><strong>Still valid:</strong> Until policy window ends (simulated)</p>
+            <p style={{ margin: "0 0 0.35rem", color: "var(--text-secondary)" }}>
+              <strong>Continuous trust (simulated):</strong> Partners re-check signature, policy binding, evidence freshness, expiry, and revocation — not signature alone.
+            </p>
             <p style={{ margin: 0, color: "var(--text-muted)" }}>Reference: sim_dr_cielo_demo — not a production credential. No on-chain proof in this demo.</p>
           </div>
         </section>
