@@ -12,7 +12,21 @@ const ACCENT = "#10B981";
 type Summary = {
   solana_mainnet_promotion?: { overall: string; checks: { id: string; verdict: string; label: string }[] };
   solana_governance?: { overall: string; evidence: { id: string; outcome: string; label: string }[] };
-  replay_protection?: { backend: string; nonce_required: boolean; fail_closed_on_store_outage: boolean };
+  solana_live_observation?: {
+    cluster: string;
+    genesis_agreement: boolean | null;
+    likely_same_operator: boolean | null;
+    program_elf_sha256: string | null;
+    upgrade_authority: string | null;
+    errors: string[];
+  } | null;
+  replay_protection?: {
+    reservation_policy: string;
+    nonce_required: boolean;
+    fail_closed_on_store_outage: boolean;
+    production_consume_available: boolean;
+    readiness: { probe_result: string; consume_available: boolean; detail: string };
+  };
   institutional_api?: Record<string, string>;
 };
 
