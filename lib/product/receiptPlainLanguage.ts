@@ -1,5 +1,5 @@
 import type { DecisionReceiptDisplayModel } from "@/lib/protocol/decisionReceiptDisplay";
-import { RECEIPT_PLAIN_LABELS } from "@/lib/product/productStoryCopy";
+import { RECEIPT_ADVANCED_TOGGLE, RECEIPT_PLAIN_LABELS } from "@/lib/product/productStoryCopy";
 
 export type ReceiptPlainSummary = {
   checked: string;
@@ -31,4 +31,4 @@ export function buildReceiptPlainSummary(model: DecisionReceiptDisplayModel): Re
   return { checked, shared, recipient, valid, next };
 }
 
-export { RECEIPT_PLAIN_LABELS };
+export { RECEIPT_ADVANCED_TOGGLE, RECEIPT_PLAIN_LABELS };
