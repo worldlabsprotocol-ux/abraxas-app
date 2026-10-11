@@ -137,7 +137,7 @@ export async function probeDemoActivationReadiness(
     legacy_cielo_policy_present,
     solana_cielo_policy_present,
     phantom_cielo_path_ready,
-    blocked_reasons: [...new Set(blocked_reasons)],
-    founder_actions: [...new Set(founder_actions)],
+    blocked_reasons: Array.from(new Set(blocked_reasons)),
+    founder_actions: Array.from(new Set(founder_actions)),
   };
 }
