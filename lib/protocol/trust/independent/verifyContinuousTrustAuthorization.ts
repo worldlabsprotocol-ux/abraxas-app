@@ -15,6 +15,7 @@ import {
   writeVerificationCacheEntry,
 } from "@/lib/protocol/trust/independent/verificationCache";
 import type { AuthorizationLifecycleState } from "@/lib/protocol/trust/lifecycle/blockchainAuthorizationLifecycle";
+import { verifyProgramEnforcedTrustState } from "@/lib/protocol/trust/independent/verifyProgramEnforcedTrust";
 
 function mapLifecycle(input: {
   issuedValid: boolean;
@@ -191,7 +192,32 @@ export async function verifyContinuousTrustAuthorization(
     outcome = "DENY";
   }
 
-  if (highAssurance && requireLive && commitmentSlot == null) {
+  if (input.program_enforced_assurance) {
+    const programCheck = await verifyProgramEnforcedTrustState({
+      receiptPayloadHash: local.receiptPayloadHash,
+      policyCommitmentHash: input.immutable_policy_commitment_hash,
+      registryDomainHex: input.registry_domain_hex ?? "00".repeat(32),
+      programId: input.trust_registry_program_id,
+      rpcUrl: input.trust_registry_rpc_url ?? resolveSolanaCommitmentRpcUrl(),
+      expectedProgramId: input.trust_registry_program_id,
+      rejectMemoOnlyRevocation: true,
+      memoRevocationSupplied: Boolean(input.revocation_observations?.length || input.revocation_evidence?.revoked),
+    });
+    evidence_sources.push(...programCheck.evidence_sources);
+    if (programCheck.outcome === "DENY") {
+      outcome = "DENY";
+      reasons.push(...programCheck.reasons);
+      if (input.abraxas_db_claims_permit) reasons.push("db_cannot_override_on_chain_deny");
+    } else if (programCheck.outcome === "UNAVAILABLE") {
+      outcome = "UNAVAILABLE";
+      auxiliary = "STATUS_UNAVAILABLE";
+      blockers.push(...programCheck.reasons);
+    } else if (programCheck.outcome === "PERMIT" && outcome === "PERMIT") {
+      verified_properties.push("program_enforced_commitment_active");
+    }
+  }
+
+  if (highAssurance && requireLive && commitmentSlot == null && !input.program_enforced_assurance) {
     outcome = "UNAVAILABLE";
     auxiliary = "STATUS_UNAVAILABLE";
     reasons.push("fresh_chain_observation_missing");

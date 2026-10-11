@@ -7,3 +7,4 @@ export * from "./continuousContract";
 export * from "./verificationCache";
 export * from "./observeRevocationOnChain";
 export * from "./verifyContinuousTrustAuthorization";
+export * from "./verifyProgramEnforcedTrust";
