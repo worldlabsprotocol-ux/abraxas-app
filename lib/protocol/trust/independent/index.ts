@@ -3,3 +3,7 @@ export * from "./issuerRegistry";
 export * from "./verifyLocal";
 export * from "./verifyChainObservation";
 export * from "./verifyIndependentTrustDecision";
+export * from "./continuousContract";
+export * from "./verificationCache";
+export * from "./observeRevocationOnChain";
+export * from "./verifyContinuousTrustAuthorization";
