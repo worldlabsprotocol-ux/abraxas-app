@@ -70,6 +70,13 @@ async function probeMigrationRows(databaseUrl: string): Promise<{ applied_139: b
   }
 }
 
+function buildPreflightFetchHeaders(): Record<string, string> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const bypass = process.env.VERCEL_PROTECTION_BYPASS?.trim();
+  if (bypass) headers["x-vercel-protection-bypass"] = bypass;
+  return headers;
+}
+
 async function probePublicConsumeReachability(
   baseUrl: string,
   fetchFn: typeof fetch = fetch,
@@ -78,16 +85,24 @@ async function probePublicConsumeReachability(
   try {
     const res = await fetchFn(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: buildPreflightFetchHeaders(),
       body: "{}",
       signal: AbortSignal.timeout(15_000),
     });
-    const reachable = res.status === 401 || res.status === 400 || res.status === 403;
-    return {
-      reachable,
-      status: res.status,
-      detail: reachable ? `http_${res.status}_integration_surface_live` : `unexpected_http_${res.status}`,
-    };
+    const bodyText = (await res.text()).slice(0, 256);
+    const contentType = res.headers.get("content-type") ?? "";
+    const jsonApi = contentType.includes("application/json") || bodyText.trimStart().startsWith("{");
+    const apiStatus = [400, 401, 403, 429, 503].includes(res.status);
+    const reachable = jsonApi && apiStatus;
+    let detail = `http_${res.status} content_type=${contentType.split(";")[0] || "unknown"}`;
+    if (!jsonApi && res.status === 401) {
+      detail = "deployment_protection_or_html_401_not_institutional_api";
+    } else if (!jsonApi) {
+      detail = `non_json_response http_${res.status}`;
+    } else if (reachable) {
+      detail = `http_${res.status}_institutional_api_json`;
+    }
+    return { reachable, status: res.status, detail };
   } catch (e) {
     return { reachable: false, status: 0, detail: `fetch_failed:${String(e)}` };
   }

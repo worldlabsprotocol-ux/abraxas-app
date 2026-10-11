@@ -61,6 +61,7 @@
     "preflight:institutional-sandbox": "tsx scripts/institutional-sandbox-activation-preflight.ts",
     "gate:institutional-replay-migration": "tsx scripts/institutional-replay-migration-rehearsal-gate.ts",
     "proof:institutional-sandbox": "tsx scripts/institutional-integration-proof-packet.ts",
+    "evidence:institutional-sandbox-closure-527": "tsx scripts/institutional-sandbox-live-proof-closure-527.ts",
     "evidence:institutional-solana-governance": "tsx scripts/institutional-solana-governance-evidence.ts",
     "example:institutional-reference-integration": "tsx examples/institutional-reference-integration/run-harness.ts",
     "test:institutional-replay-postgres": "vitest run lib/institutional/replayRpcPostgres.integration.test.ts",
