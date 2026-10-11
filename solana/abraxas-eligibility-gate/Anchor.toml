@@ -8,7 +8,7 @@ skip-lint = false
 abraxas_eligibility_gate = "4hf3cY57ciPakr4omyTSbksAfW672iGrdo6fiDVQAD4K"
 abraxas_eligibility_consumer = "J2xccRtuG43drESLYznHhLhQkLTdfepcKYbiQ9BsJVaf"
 abraxas_protocol_access = "3B9eE1WtrtZQwJrkhFSKxxaZrefRJ73P53xHBBP3Bv1j"
-abraxas_trust_registry = "878ysq3VvDKT5HNWWDFP5SvVJPqa5R4PktCbfiSksPJT"
+abraxas_trust_registry = "EN29YNgHRuJ3h9cWrPS9hSDBt8DUNtoSSTT9EbUZewC8"
 
 [registry]
 url = "https://api.apr.dev"
