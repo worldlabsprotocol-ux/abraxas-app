@@ -1,7 +1,9 @@
 // Optional Postgres privilege probe — not bundled for browser; used in readiness + integration tests.
 
 export async function probeMigration140InsertRevoked(): Promise<boolean | null> {
-  const url = process.env.INSTITUTIONAL_REPLAY_TEST_DATABASE_URL?.trim() ?? "";
+  const url = process.env.INSTITUTIONAL_SANDBOX_DATABASE_URL?.trim()
+    || process.env.INSTITUTIONAL_REPLAY_TEST_DATABASE_URL?.trim()
+    || "";
   if (!url) return null;
   const pg = await import("pg");
   const pool = new pg.Pool({ connectionString: url });
