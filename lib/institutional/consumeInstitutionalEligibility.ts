@@ -1,6 +1,6 @@
 // Fail-closed institutional receipt consumption — reuses decision receipt trust plane.
 
-import { getReceiptById } from "@/lib/decisionReceipts/service";
+import { getReceiptById, consentAllowsPartnerReceipt } from "@/lib/decisionReceipts/service";
 import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation";
 import { verifyRecordSignature } from "@/lib/decisionReceipts/views";
 import { buildNarrowPartnerResultForReceipt } from "@/lib/partner/narrowPartnerResult/build";
@@ -9,7 +9,9 @@ import {
   type InstitutionalEligibilityDecision,
   type InstitutionalEligibilityOutcome,
 } from "@/lib/institutional/eligibilityDecisionContract";
-import { consumeInstitutionalReplayNonce } from "@/lib/institutional/replayGuard";
+import { consumeInstitutionalDurableReplayNonce } from "@/lib/institutional/durableReplayNonceStore";
+import { InstitutionalReplayStoreUnavailableError } from "@/lib/institutional/errors";
+import { normalizeInstitutionalReplayNonce } from "@/lib/institutional/replayKeyDerivation";
 import { recordInstitutionalSecuritySignal } from "@/lib/institutional/securityTelemetry";
 
 export type InstitutionalConsumeInput = {
@@ -20,14 +22,15 @@ export type InstitutionalConsumeInput = {
   purpose?: string | null;
   actionScope?: string | null;
   applicationId?: string | null;
+  subjectPseudonymId?: string | null;
   correlationId?: string | null;
-  replayNonce?: string | null;
+  replayNonce: string;
   allowSandbox?: boolean;
 };
 
 export type InstitutionalConsumeResult =
   | { ok: true; decision: InstitutionalEligibilityDecision; narrow_result?: Awaited<ReturnType<typeof buildNarrowPartnerResultForReceipt>> }
-  | { ok: false; status: 403 | 404 | 409; error: string; decision?: InstitutionalEligibilityDecision };
+  | { ok: false; status: 400 | 403 | 404 | 409 | 503; error: string; decision?: InstitutionalEligibilityDecision };
 
 function correlationId(input: InstitutionalConsumeInput): string {
   return input.correlationId?.trim() || `corr_${input.receiptId.slice(0, 12)}`;
@@ -49,6 +52,19 @@ export async function consumeInstitutionalEligibility(
   input: InstitutionalConsumeInput,
 ): Promise<InstitutionalConsumeResult> {
   const corr = correlationId(input);
+
+  if (!normalizeInstitutionalReplayNonce(input.replayNonce)) {
+    void recordInstitutionalSecuritySignal({
+      kind: "invalid_nonce",
+      partnerId: input.partnerId,
+      correlationId: corr,
+      receiptId: input.receiptId,
+      policyId: input.policyId,
+      reasonCodes: ["malformed_or_oversized_nonce"],
+    });
+    return { ok: false, status: 400, error: "invalid_nonce" };
+  }
+
   const record = await getReceiptById(input.receiptId);
   if (!record) {
     return { ok: false, status: 404, error: "receipt_not_found" };
@@ -56,7 +72,7 @@ export async function consumeInstitutionalEligibility(
 
   if (record.partner_id !== input.partnerId) {
     void recordInstitutionalSecuritySignal({
-      kind: "partner_mismatch",
+      kind: "cross_tenant_attempt",
       partnerId: input.partnerId,
       correlationId: corr,
       receiptId: input.receiptId,
@@ -95,6 +111,19 @@ export async function consumeInstitutionalEligibility(
     return { ok: false, status: 403, error: "policy_version_mismatch" };
   }
 
+  const subjectHint = input.subjectPseudonymId?.trim();
+  if (subjectHint && subjectHint !== record.subject_pseudonym_id) {
+    void recordInstitutionalSecuritySignal({
+      kind: "subject_mismatch",
+      partnerId: input.partnerId,
+      correlationId: corr,
+      receiptId: input.receiptId,
+      policyId: input.policyId,
+      reasonCodes: ["subject_binding_failed"],
+    });
+    return { ok: false, status: 403, error: "subject_mismatch" };
+  }
+
   const signatureAuthentic = verifyRecordSignature(record);
   if (!signatureAuthentic) {
     void recordInstitutionalSecuritySignal({
@@ -106,23 +135,60 @@ export async function consumeInstitutionalEligibility(
     });
   }
 
-  if (input.replayNonce) {
-    const replay = consumeInstitutionalReplayNonce({
+  const consentOk = await consentAllowsPartnerReceipt(record.consent_receipt_id, input.partnerId);
+  if (!consentOk && record.decision_context === "production" && input.allowSandbox !== true) {
+    void recordInstitutionalSecuritySignal({
+      kind: "scope_violation",
       partnerId: input.partnerId,
+      correlationId: corr,
       receiptId: input.receiptId,
+      policyId: input.policyId,
+      applicationId: input.applicationId ?? null,
+      actionScope: input.actionScope ?? null,
+      reasonCodes: ["consent_not_established"],
+    });
+    return { ok: false, status: 403, error: "consent_required" };
+  }
+
+  try {
+    const replay = await consumeInstitutionalDurableReplayNonce({
+      partnerId: input.partnerId,
+      applicationId: input.applicationId ?? null,
+      receiptId: input.receiptId,
+      subjectPseudonymId: record.subject_pseudonym_id,
+      policyId: input.policyId,
+      policyVersion: record.policy_version,
+      actionScope: input.actionScope ?? null,
       nonce: input.replayNonce,
     });
     if (!replay.ok) {
+      const kind = replay.code === "replayed" ? "duplicate_nonce_rejected" as const : "invalid_nonce" as const;
       void recordInstitutionalSecuritySignal({
-        kind: "replay_attempt",
+        kind,
         partnerId: input.partnerId,
         correlationId: corr,
         receiptId: input.receiptId,
         policyId: input.policyId,
-        reasonCodes: [replay.reason],
+        reasonCodes: [replay.code],
       });
-      return { ok: false, status: 409, error: replay.reason === "replay" ? "replay_rejected" : "invalid_nonce" };
+      if (replay.code === "replayed") {
+        return { ok: false, status: 409, error: "replay_rejected" };
+      }
+      return { ok: false, status: 400, error: replay.code === "expired" ? "nonce_expired" : "invalid_nonce" };
     }
+  } catch (err) {
+    if (err instanceof InstitutionalReplayStoreUnavailableError) {
+      void recordInstitutionalSecuritySignal({
+        kind: "durable_store_failure",
+        partnerId: input.partnerId,
+        correlationId: corr,
+        receiptId: input.receiptId,
+        policyId: input.policyId,
+        reasonCodes: ["replay_store_unavailable"],
+      });
+      return { ok: false, status: 503, error: "replay_store_unavailable" };
+    }
+    throw err;
   }
 
   const trust = await evaluateDecisionReceiptTrust(record, {
@@ -133,7 +199,7 @@ export async function consumeInstitutionalEligibility(
 
   if (trust.validity === "access_revoked" || trust.invalidation_reasons.some(r => r.includes("revoked"))) {
     void recordInstitutionalSecuritySignal({
-      kind: "revocation_observed",
+      kind: "stale_or_revoked_evidence",
       partnerId: input.partnerId,
       correlationId: corr,
       receiptId: input.receiptId,

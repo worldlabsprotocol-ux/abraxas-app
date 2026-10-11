@@ -11,6 +11,8 @@ const ACCENT = "#10B981";
 
 type Summary = {
   solana_mainnet_promotion?: { overall: string; checks: { id: string; verdict: string; label: string }[] };
+  solana_governance?: { overall: string; evidence: { id: string; outcome: string; label: string }[] };
+  replay_protection?: { backend: string; nonce_required: boolean; fail_closed_on_store_outage: boolean };
   institutional_api?: Record<string, string>;
 };
 
@@ -56,6 +58,29 @@ export default function AdminInstitutionalPlanePage() {
             <ul style={{ fontFamily: MONO, fontSize: "0.72rem", lineHeight: 1.7, margin: 0, paddingLeft: "1.1rem" }}>
               {Object.entries(summary.institutional_api).map(([k, v]) => (
                 <li key={k}>{v}</li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {summary?.replay_protection ? (
+          <section style={{ marginBottom: "1.25rem", padding: "1rem", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12 }}>
+            <h2 style={{ fontFamily: FONT, fontSize: "0.95rem", margin: "0 0 0.5rem" }}>Replay protection</h2>
+            <p style={{ fontFamily: MONO, fontSize: "0.72rem", margin: 0, lineHeight: 1.6 }}>
+              backend={summary.replay_protection.backend} · nonce_required={String(summary.replay_protection.nonce_required)} · fail_closed=
+              {String(summary.replay_protection.fail_closed_on_store_outage)}
+            </p>
+          </section>
+        ) : null}
+
+        {summary?.solana_governance ? (
+          <section style={{ marginBottom: "1.25rem", padding: "1rem", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12 }}>
+            <h2 style={{ fontFamily: FONT, fontSize: "0.95rem", margin: "0 0 0.5rem" }}>
+              Solana governance evidence — {summary.solana_governance.overall}
+            </h2>
+            <ul style={{ fontFamily: MONO, fontSize: "0.68rem", lineHeight: 1.65, margin: 0, paddingLeft: "1.1rem" }}>
+              {summary.solana_governance.evidence.slice(0, 8).map(e => (
+                <li key={e.id}>{e.outcome} — {e.label}</li>
               ))}
             </ul>
           </section>

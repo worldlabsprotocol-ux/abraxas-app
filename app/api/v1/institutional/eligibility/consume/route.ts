@@ -7,6 +7,8 @@ import { INSTITUTIONAL_ELIGIBILITY_NOTICE } from "@/lib/institutional/eligibilit
 import { appendAuditEvent } from "@/lib/verification/audit";
 import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
 import { enforcePartnerFlowRateLimit } from "@/lib/partner/partnerFlowRouteGuard";
+import { resolveInstitutionalApplicationBinding } from "@/lib/institutional/partnerApplicationBinding";
+import { recordInstitutionalSecuritySignal } from "@/lib/institutional/securityTelemetry";
 
 export const dynamic = "force-dynamic";
 
@@ -45,8 +47,29 @@ export async function POST(req: NextRequest) {
 
   const receiptId = body.receipt_id?.trim();
   const policyId = body.policy_id?.trim();
+  const replayNonce = body.replay_nonce?.trim();
   if (!receiptId || !policyId) {
     return NextResponse.json({ error: "receipt_id and policy_id required" }, { status: 400 });
+  }
+  if (!replayNonce) {
+    return NextResponse.json({ error: "replay_nonce required" }, { status: 400 });
+  }
+
+  const appBinding = await resolveInstitutionalApplicationBinding({
+    auth: auth.ctx,
+    requestedApplicationId: body.application_id ?? null,
+  });
+  if (!appBinding.ok) {
+    void recordInstitutionalSecuritySignal({
+      kind: appBinding.error === "application_mismatch" ? "cross_tenant_attempt" : "unauthorized_scope",
+      partnerId: auth.partnerId,
+      correlationId: body.correlation_id ?? null,
+      receiptId,
+      policyId,
+      applicationId: body.application_id ?? null,
+      reasonCodes: [appBinding.error],
+    });
+    return NextResponse.json({ error: appBinding.error }, { status: 403 });
   }
 
   const result = await consumeInstitutionalEligibility({
@@ -56,9 +79,9 @@ export async function POST(req: NextRequest) {
     policyVersion: body.policy_version,
     purpose: body.purpose ?? null,
     actionScope: body.action_scope ?? null,
-    applicationId: body.application_id ?? null,
+    applicationId: appBinding.applicationId,
     correlationId: body.correlation_id ?? null,
-    replayNonce: body.replay_nonce ?? null,
+    replayNonce,
     allowSandbox: auth.ctx?.credentialEnvironment !== "production",
   });
 

@@ -1,13 +1,25 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { resetInstitutionalReplayGuardForTests } from "@/lib/institutional/replayGuard";
+
+if (!process.env.NEXTAUTH_SECRET?.trim()) {
+  process.env.NEXTAUTH_SECRET = "institutional-consume-unit-test-secret";
+}
+
+vi.mock("@/lib/supabase/admin", async () => {
+  const { requireWalletStandardTestAdmin } = await import("@/lib/partner/walletStandard/fakeDurableBackend");
+  return { requireSupabaseAdmin: requireWalletStandardTestAdmin };
+});
+
+import { resetFakeWalletStandardBackend } from "@/lib/partner/walletStandard/fakeDurableBackend";
 
 const getReceiptById = vi.fn();
 const evaluateDecisionReceiptTrust = vi.fn();
 const verifyRecordSignature = vi.fn();
 const buildNarrowPartnerResultForReceipt = vi.fn();
+const consentAllowsPartnerReceipt = vi.fn();
 
 vi.mock("@/lib/decisionReceipts/service", () => ({
   getReceiptById: (...args: unknown[]) => getReceiptById(...args),
+  consentAllowsPartnerReceipt: (...args: unknown[]) => consentAllowsPartnerReceipt(...args),
 }));
 
 vi.mock("@/lib/decisionReceipts/trustEvaluation", () => ({
@@ -31,7 +43,10 @@ const baseRecord = {
   partner_id: "institutional-platform",
   policy_id: "institutional-platform-age_21_retail-v1",
   policy_version: 1,
+  subject_pseudonym_id: "subj_1",
   decision_result: "approved",
+  decision_context: "sandbox_only",
+  consent_receipt_id: "consent_1",
   expires_at: "2099-01-01T00:00:00.000Z",
   verification_decision_id: "vd_1",
 };
@@ -39,9 +54,10 @@ const baseRecord = {
 describe("consumeInstitutionalEligibility", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    resetInstitutionalReplayGuardForTests();
+    resetFakeWalletStandardBackend();
     getReceiptById.mockResolvedValue(baseRecord);
     verifyRecordSignature.mockReturnValue(true);
+    consentAllowsPartnerReceipt.mockResolvedValue(true);
     evaluateDecisionReceiptTrust.mockResolvedValue({
       currently_valid: true,
       validity: "active",
@@ -71,6 +87,7 @@ describe("consumeInstitutionalEligibility", () => {
       policyId: baseRecord.policy_id,
       policyVersion: 1,
       correlationId: "corr_test",
+      replayNonce: "unit_test_nonce_permit_1",
     });
     expect(res.ok).toBe(true);
     if (res.ok) {
@@ -94,18 +111,19 @@ describe("consumeInstitutionalEligibility", () => {
       partnerId: "institutional-platform",
       receiptId: "rcpt_inst_001",
       policyId: baseRecord.policy_id,
+      replayNonce: "unit_test_nonce_deny_sig_1",
     });
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.error).toBe("not_currently_actionable");
   });
 
-  it("rejects replay nonce reuse", async () => {
+  it("rejects durable replay nonce reuse", async () => {
     const { consumeInstitutionalEligibility } = await import("./consumeInstitutionalEligibility");
     const input = {
       partnerId: "institutional-platform",
       receiptId: "rcpt_inst_001",
       policyId: baseRecord.policy_id,
-      replayNonce: "nonce_once",
+      replayNonce: "nonce_once_durable_12",
     };
     expect((await consumeInstitutionalEligibility(input)).ok).toBe(true);
     const replay = await consumeInstitutionalEligibility(input);
@@ -126,6 +144,7 @@ describe("consumeInstitutionalEligibility", () => {
       partnerId: "institutional-platform",
       receiptId: "rcpt_inst_001",
       policyId: baseRecord.policy_id,
+      replayNonce: "unit_test_nonce_refresh_1",
     });
     expect(res.ok).toBe(false);
     if (!res.ok && res.decision) {

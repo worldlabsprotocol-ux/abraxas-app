@@ -5,11 +5,19 @@ import { appendAuditEvent } from "@/lib/verification/audit";
 export type InstitutionalSecuritySignalKind =
   | "invalid_signature"
   | "replay_attempt"
+  | "duplicate_nonce_rejected"
+  | "durable_store_failure"
+  | "cross_tenant_attempt"
+  | "invalid_nonce"
   | "unauthorized_scope"
+  | "scope_violation"
   | "repeated_denial"
   | "revocation_observed"
+  | "stale_or_revoked_evidence"
+  | "governance_evidence_mismatch"
   | "policy_mismatch"
-  | "partner_mismatch";
+  | "partner_mismatch"
+  | "subject_mismatch";
 
 const SAFE_METADATA_KEYS = new Set([
   "kind",

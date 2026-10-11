@@ -9,7 +9,8 @@ import { ExternalInstitutionalConsumer } from "@/lib/operations/institutionalPro
 import type { PartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlowReceipt";
 import type { NarrowPartnerResult } from "@/lib/partner/narrowPartnerResult/contract";
 import { verifyWebhookSignature } from "@/lib/partner/webhooks/webhookSigning";
-import { consumeInstitutionalReplayNonce, resetInstitutionalReplayGuardForTests } from "@/lib/institutional/replayGuard";
+import { consumeInstitutionalDurableReplayNonce } from "@/lib/institutional/durableReplayNonceStore";
+import { resetFakeWalletStandardBackend } from "@/lib/partner/walletStandard/fakeDurableBackend";
 
 export const INSTITUTIONAL_RP_FIXTURE = {
   partner_id: REFERENCE_INSTITUTIONAL_PLATFORM,
@@ -90,20 +91,22 @@ export async function runExternalRpVerificationHarness(input: {
   }
 
   if (input.replayNonce) {
-    resetInstitutionalReplayGuardForTests();
-    const first = consumeInstitutionalReplayNonce({
+    resetFakeWalletStandardBackend();
+    const scope = {
       partnerId: INSTITUTIONAL_RP_FIXTURE.partner_id,
+      applicationId: INSTITUTIONAL_RP_FIXTURE.application_id,
       receiptId: input.receiptId,
+      subjectPseudonymId: "subject_fixture",
+      policyId: INSTITUTIONAL_RP_FIXTURE.policy_id,
+      policyVersion: INSTITUTIONAL_RP_FIXTURE.policy_version,
+      actionScope: "institutional:consume",
       nonce: input.replayNonce,
-    });
-    const second = consumeInstitutionalReplayNonce({
-      partnerId: INSTITUTIONAL_RP_FIXTURE.partner_id,
-      receiptId: input.receiptId,
-      nonce: input.replayNonce,
-    });
+    };
+    const first = await consumeInstitutionalDurableReplayNonce(scope);
+    const second = await consumeInstitutionalDurableReplayNonce(scope);
     stages.replay_rejection = {
-      ok: first.ok && !second.ok && second.reason === "replay",
-      detail: "replay_nonce_single_use",
+      ok: first.ok && !second.ok && second.code === "replayed",
+      detail: "durable_replay_nonce_single_use",
     };
   }
 
