@@ -7,7 +7,7 @@
   "demo_project_ref": "ocntwbxarpjeixdnzide",
   "production_untouched": true,
   "remote_migrations_applied": false,
-  "commit_sha": "pending_push",
+  "commit_sha": "a022b334",
   "demo_postgres_version": "17.6.1.155",
   "rehearsal_postgres_version": "16.15",
   "migration_checksums": "scripts/build516/migration-checksum-manifest.json",
