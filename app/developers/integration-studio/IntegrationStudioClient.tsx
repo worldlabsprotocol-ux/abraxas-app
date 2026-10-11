@@ -55,6 +55,7 @@ import {
   type IntegrationStudioOutcomeId,
 } from "@/lib/gtm/integrationStudioOutcomes";
 import { recordGtmClientEvent } from "@/lib/gtm/clientTelemetry";
+import { IntegrationStudioGuidedStrip } from "@/components/product/IntegrationStudioGuidedStrip";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -434,6 +435,10 @@ export function IntegrationStudioClient() {
           href={studioNextAction.href}
           buttonLabel={studioNextAction.buttonLabel}
         />
+      </Reveal>
+
+      <Reveal delay={0.02}>
+        <IntegrationStudioGuidedStrip />
       </Reveal>
 
       {resumeApp && !created && (

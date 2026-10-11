@@ -28,6 +28,7 @@ import {
   type GoodTroublePrivacyPhase,
 } from "@/components/partner/GoodTroublePrivacySequence";
 import type { usePartnerFlowHandoff } from "@/lib/passport/partnerFlowHandoff";
+import { GOOD_TROUBLE_LIMITS_PLAIN } from "@/lib/product/productStoryCopy";
 
 type Handoff = ReturnType<typeof usePartnerFlowHandoff>;
 
@@ -210,6 +211,21 @@ export function GoodTroublePurchaseContinueFlow({
 
   return (
     <>
+      <p
+        role="note"
+        style={{
+          margin: "0 0 0.85rem",
+          fontSize: "0.78rem",
+          lineHeight: 1.65,
+          color: "var(--text-secondary)",
+          padding: "0.65rem 0.75rem",
+          borderRadius: 10,
+          border: "1px solid var(--border)",
+          background: "var(--surface-inset)",
+        }}
+      >
+        {GOOD_TROUBLE_LIMITS_PLAIN}
+      </p>
       <GoodTroublePrivacySequence phase={privacyPhase} />
       <VerificationPath
         active={progress.active}
