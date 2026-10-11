@@ -68,6 +68,17 @@ const challenges = new Map<string, ChallengeRow>();
 const bindings = new Map<string, BindingRow>();
 const nonces = new Map<string, NonceRow>();
 const chainNonces = new Map<string, { partner_id: string; network_id: string; nonce_hash: string; expires_at: string }>();
+const institutionalConsumeNonces = new Map<string, {
+  partner_id: string;
+  application_id: string;
+  receipt_id: string;
+  subject_scope_hash: string;
+  policy_id: string;
+  policy_version: number;
+  action_scope_norm: string;
+  nonce_hash: string;
+  expires_at: string;
+}>();
 const evmChallenges = new Map<string, EvmChallengeRow>();
 const evmBindings = new Map<string, EvmBindingRow>();
 const onchainDeployments = new Map<string, Record<string, unknown>>();
@@ -86,6 +97,7 @@ export function resetFakeWalletStandardBackend(): void {
   bindings.clear();
   nonces.clear();
   chainNonces.clear();
+  institutionalConsumeNonces.clear();
   evmChallenges.clear();
   evmBindings.clear();
   onchainDeployments.clear();
@@ -508,6 +520,35 @@ export function createWalletStandardAdminClient() {
         chainNonces.set(key, {
           partner_id: args.p_partner_id,
           network_id: args.p_network_id,
+          nonce_hash: args.p_nonce_hash,
+          expires_at: args.p_expires_at,
+        });
+        return Promise.resolve({ data: { ok: true, code: "consumed" }, error: null });
+      }
+      if (name === "institutional_eligibility_consume_nonce") {
+        if (fakeWalletSchemaMissing) return Promise.resolve({ data: null, error: schemaError() });
+        if (isExpired(args.p_expires_at)) return Promise.resolve({ data: { ok: false, code: "expired" }, error: null });
+        const scopeKey = [
+          args.p_partner_id,
+          args.p_application_id ?? "",
+          args.p_receipt_id,
+          args.p_subject_scope_hash,
+          args.p_policy_id,
+          String(args.p_policy_version),
+          args.p_action_scope_norm ?? "",
+          args.p_nonce_hash,
+        ].join("::");
+        if (institutionalConsumeNonces.has(scopeKey)) {
+          return Promise.resolve({ data: { ok: false, code: "replayed" }, error: null });
+        }
+        institutionalConsumeNonces.set(scopeKey, {
+          partner_id: args.p_partner_id,
+          application_id: args.p_application_id ?? "",
+          receipt_id: args.p_receipt_id,
+          subject_scope_hash: args.p_subject_scope_hash,
+          policy_id: args.p_policy_id,
+          policy_version: Number(args.p_policy_version),
+          action_scope_norm: args.p_action_scope_norm ?? "",
           nonce_hash: args.p_nonce_hash,
           expires_at: args.p_expires_at,
         });

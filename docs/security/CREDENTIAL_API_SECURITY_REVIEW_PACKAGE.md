@@ -35,7 +35,7 @@
 - Partner API keys with scoped capabilities (`verify:requests`, etc.).
 - Rate limiting on partner flow routes (`enforcePartnerFlowRateLimit`).
 - Institutional security telemetry via `audit_events` (no PII fields).
-- Replay rejection for institutional consume nonces (in-process; portable action nonces for production paths).
+- Durable institutional consume nonces via Postgres RPC (`institutional_eligibility_consume_nonce`) — scoped HMAC key derivation, mandatory `replay_nonce`, fail-closed when store unavailable (migration `139`; operator apply on DEMO before production).
 - Webhook HMAC (`verifyWebhookSignature`).
 - Solana mainnet promotion gate — product disables mainnet issuance until review.
 

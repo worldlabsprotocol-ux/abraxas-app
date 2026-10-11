@@ -1,4 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+if (!process.env.NEXTAUTH_SECRET?.trim()) {
+  process.env.NEXTAUTH_SECRET = "external-rp-harness-test-secret";
+}
+
+vi.mock("@/lib/supabase/admin", async () => {
+  const { requireWalletStandardTestAdmin } = await import("@/lib/partner/walletStandard/fakeDurableBackend");
+  return { requireSupabaseAdmin: requireWalletStandardTestAdmin };
+});
 import { runExternalRpVerificationHarness, INSTITUTIONAL_RP_FIXTURE } from "./externalRpVerificationHarness";
 import { signWebhookBody } from "@/lib/partner/webhooks/webhookSigning";
 import type { PartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlowReceipt";
@@ -47,7 +56,7 @@ describe("runExternalRpVerificationHarness", () => {
       webhookSignature: signature,
       webhookSecret: secret,
       webhookTimestamp: timestamp,
-      replayNonce: "nonce_harness_1",
+      replayNonce: "nonce_harness_01",
     });
 
     expect(result.fixture.partner_id).toBe("institutional-platform");
