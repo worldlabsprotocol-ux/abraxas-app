@@ -39,7 +39,8 @@ const CIELO_HOLDER_COPY_BASE = {
 
 export const CIELO_HOLDER_COPY = CIELO_HOLDER_COPY_BASE;
 
-export type CieloHolderCopy = typeof CIELO_HOLDER_COPY_BASE;
+/** Session-specific overrides (e.g. Solana-native) may replace lead copy strings. */
+export type CieloHolderCopy = { [K in keyof typeof CIELO_HOLDER_COPY_BASE]: string };
 
 /** Solana-native sessions use Phantom-first copy without legacy Sui onboarding language. */
 export function cieloHolderCopyForSession(solanaNative: boolean): CieloHolderCopy {
