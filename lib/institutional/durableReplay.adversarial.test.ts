@@ -27,7 +27,7 @@ const base = {
   nonce: "nonce_concurrent_alpha_01",
 };
 
-describe("durable institutional replay (shared store)", () => {
+describe("durable institutional replay (simulated shared store — not Postgres proof)", () => {
   beforeEach(() => {
     resetFakeWalletStandardBackend();
     setFakeWalletSchemaMissing(false);

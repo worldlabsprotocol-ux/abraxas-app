@@ -12,7 +12,21 @@ const ACCENT = "#10B981";
 type Summary = {
   solana_mainnet_promotion?: { overall: string; checks: { id: string; verdict: string; label: string }[] };
   solana_governance?: { overall: string; evidence: { id: string; outcome: string; label: string }[] };
-  replay_protection?: { backend: string; nonce_required: boolean; fail_closed_on_store_outage: boolean };
+  solana_live_observation?: {
+    cluster: string;
+    genesis_agreement: boolean | null;
+    likely_same_operator: boolean | null;
+    program_elf_sha256: string | null;
+    upgrade_authority: string | null;
+    errors: string[];
+  } | null;
+  replay_protection?: {
+    reservation_policy: string;
+    nonce_required: boolean;
+    fail_closed_on_store_outage: boolean;
+    production_consume_available: boolean;
+    readiness: { probe_result: string; consume_available: boolean; detail: string };
+  };
   institutional_api?: Record<string, string>;
 };
 
@@ -67,8 +81,18 @@ export default function AdminInstitutionalPlanePage() {
           <section style={{ marginBottom: "1.25rem", padding: "1rem", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12 }}>
             <h2 style={{ fontFamily: FONT, fontSize: "0.95rem", margin: "0 0 0.5rem" }}>Replay protection</h2>
             <p style={{ fontFamily: MONO, fontSize: "0.72rem", margin: 0, lineHeight: 1.6 }}>
-              backend={summary.replay_protection.backend} · nonce_required={String(summary.replay_protection.nonce_required)} · fail_closed=
-              {String(summary.replay_protection.fail_closed_on_store_outage)}
+              policy={summary.replay_protection.reservation_policy} · rpc_probe={summary.replay_protection.readiness.probe_result} · consume_available=
+              {String(summary.replay_protection.production_consume_available)}
+            </p>
+          </section>
+        ) : null}
+
+        {summary?.solana_live_observation ? (
+          <section style={{ marginBottom: "1.25rem", padding: "1rem", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12 }}>
+            <h2 style={{ fontFamily: FONT, fontSize: "0.95rem", margin: "0 0 0.5rem" }}>Latest Solana RPC observation</h2>
+            <p style={{ fontFamily: MONO, fontSize: "0.68rem", margin: 0, lineHeight: 1.6 }}>
+              cluster={summary.solana_live_observation.cluster} · genesis_agreement={String(summary.solana_live_observation.genesis_agreement)} · same_host=
+              {String(summary.solana_live_observation.likely_same_operator)}
             </p>
           </section>
         ) : null}

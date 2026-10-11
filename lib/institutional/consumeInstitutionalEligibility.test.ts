@@ -131,6 +131,31 @@ describe("consumeInstitutionalEligibility", () => {
     if (!replay.ok) expect(replay.error).toBe("replay_rejected");
   });
 
+  it("does not consume replay nonce when trust denies (retry allowed)", async () => {
+    evaluateDecisionReceiptTrust.mockResolvedValueOnce({
+      currently_valid: false,
+      validity: "expired",
+      signature_valid: true,
+      production_usable: true,
+      invalidation_reasons: ["receipt_expired"],
+    }).mockResolvedValueOnce({
+      currently_valid: true,
+      validity: "active",
+      signature_valid: true,
+      production_usable: true,
+      invalidation_reasons: [],
+    });
+    const { consumeInstitutionalEligibility } = await import("./consumeInstitutionalEligibility");
+    const input = {
+      partnerId: "institutional-platform",
+      receiptId: "rcpt_inst_001",
+      policyId: baseRecord.policy_id,
+      replayNonce: "retry_same_nonce_xx",
+    };
+    expect((await consumeInstitutionalEligibility(input)).ok).toBe(false);
+    expect((await consumeInstitutionalEligibility(input)).ok).toBe(true);
+  });
+
   it("maps expired receipts to refresh_required", async () => {
     evaluateDecisionReceiptTrust.mockResolvedValue({
       currently_valid: false,

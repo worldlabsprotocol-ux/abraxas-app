@@ -2,8 +2,10 @@
 
 import { getNetworkCapability } from "@/lib/partner/networkCapability/registry";
 import { SOLANA_GATE_V2_RELEASE } from "@/lib/partner/onchainGateDeployments/solanaV2Release";
+import { SOLANA_UPGRADEABLE_LOADER } from "@/lib/partner/onchainGateDeployments/solanaArtifacts";
 import { inspectProgram, SOLANA_DEVNET_GENESIS_HASH } from "@/lib/partner/testnetGateDeploymentKit/solanaDevnetChainPrecheck";
 import type { PublicSolanaAccountSource, PublicSolanaGenesisSource } from "@/lib/partner/testnetGateDeploymentKit/solanaDevnetChainPrecheck";
+import { observeSolanaDualRpc, type DualRpcObservation } from "@/lib/institutional/solanaDualRpcObservation";
 
 export const SOLANA_MAINNET_GENESIS_HASH = "5eykt4UsFv8P8NJdTREpY1vzqKqZKQdp4v7D4bon8SegG59Q1Q3kEk8";
 
@@ -32,6 +34,7 @@ export type SolanaMainnetGovernanceReport = {
   mainnet_issuance_disabled: boolean;
   devnet_proof_sufficient_for_mainnet: false;
   rpc_cluster_agreement: boolean | null;
+  live_dual_rpc_observation: DualRpcObservation | null;
   evidence: SolanaGovernanceEvidence[];
   emergency_disable_ref: string;
 };
@@ -81,8 +84,136 @@ export async function runSolanaMainnetGovernanceVerification(
 
   const primaryRpc = process.env.ABRAXAS_SOLANA_GATE_VERIFY_RPC_URL?.trim() ?? "";
   const independentRpc = process.env.ABRAXAS_SOLANA_INDEPENDENT_RPC_URL?.trim() ?? "";
+  const programId = process.env.ABRAXAS_SOLANA_GATE_PROGRAM_ID?.trim() || SOLANA_GATE_V2_RELEASE.program_id;
 
-  let rpcClusterAgreement: boolean | null = null;
+  let liveObservation: DualRpcObservation | null = null;
+  if (primaryRpc && !deps.primaryGenesis) {
+    try {
+      liveObservation = await observeSolanaDualRpc({
+        primaryRpcUrl: primaryRpc,
+        independentRpcUrl: independentRpc || null,
+        programId,
+        now,
+      });
+    } catch {
+      liveObservation = null;
+    }
+  }
+
+  if (liveObservation) {
+    evidence.push(item({
+      now,
+      id: "primary_rpc",
+      label: "Primary observation RPC configured",
+      source: "local_assertion",
+      environment: "mainnet_governance_preflight",
+      outcome: "PASS",
+      detail: liveObservation.primary.url_redacted,
+      evidence_ref: "ABRAXAS_SOLANA_GATE_VERIFY_RPC_URL",
+    }));
+    evidence.push(item({
+      now,
+      id: "rpc_host_independence",
+      label: "RPC host independence (hostname-only heuristic)",
+      source: "local_assertion",
+      environment: "mainnet_governance_preflight",
+      outcome: liveObservation.likely_same_operator === true ? "BLOCKED" : liveObservation.independent ? "PASS" : "BLOCKED",
+      detail: liveObservation.likely_same_operator === true
+        ? "same_host_not_independent"
+        : liveObservation.independent
+          ? "distinct_hosts_observed"
+          : "missing_independent_rpc",
+      evidence_ref: "lib/institutional/solanaDualRpcObservation.ts",
+    }));
+    if (liveObservation.primary_genesis) {
+      const isMainnet = liveObservation.primary_genesis === SOLANA_MAINNET_GENESIS_HASH;
+      const isDevnet = liveObservation.primary_genesis === SOLANA_DEVNET_GENESIS_HASH;
+      evidence.push(item({
+        now,
+        id: "primary_rpc_cluster",
+        label: "Primary RPC cluster genesis verification",
+        source: "rpc_observation",
+        environment: isMainnet ? "mainnet_governance_preflight" : "devnet_cross_check",
+        outcome: liveObservation.cluster === "disagreement" ? "FAIL" : isMainnet || isDevnet ? "PASS" : "FAIL",
+        detail: liveObservation.cluster,
+        evidence_ref: "getGenesisHash",
+      }));
+    } else {
+      evidence.push(item({
+        now,
+        id: "primary_rpc_genesis",
+        label: "Primary RPC genesis observed",
+        source: "rpc_observation",
+        environment: "mainnet_governance_preflight",
+        outcome: "BLOCKED",
+        detail: "rpc_unavailable",
+        evidence_ref: liveObservation.primary.url_redacted,
+      }));
+    }
+    if (liveObservation.independent) {
+      evidence.push(item({
+        now,
+        id: "independent_rpc_agreement",
+        label: "Independent RPC genesis agreement",
+        source: "independent_rpc",
+        environment: "mainnet_governance_preflight",
+        outcome: liveObservation.genesis_agreement == null ? "BLOCKED" : liveObservation.genesis_agreement ? "PASS" : "FAIL",
+        detail: liveObservation.genesis_agreement == null ? "independent_genesis_missing" : liveObservation.genesis_agreement ? "genesis_match" : "rpc_disagreement",
+        evidence_ref: liveObservation.independent.url_redacted,
+      }));
+    }
+    if (liveObservation.program) {
+      const expectedSha = deps.expectedElfSha256 ?? SOLANA_GATE_V2_RELEASE.elf_sha256;
+      const shaMatch = liveObservation.program.elf_sha256?.toLowerCase() === expectedSha.toLowerCase();
+      evidence.push(item({
+        now,
+        id: "program_executable",
+        label: "Program account executable and loader-owned",
+        source: "rpc_observation",
+        environment: "devnet_cross_check",
+        outcome: liveObservation.program.executable && liveObservation.program.owner === SOLANA_UPGRADEABLE_LOADER ? "PASS" : "FAIL",
+        detail: `executable=${liveObservation.program.executable}`,
+        evidence_ref: liveObservation.program.program_id,
+      }));
+      evidence.push(item({
+        now,
+        id: "program_elf_digest",
+        label: "Deployed program ELF digest vs reviewed artifact",
+        source: "rpc_observation",
+        environment: "devnet_cross_check",
+        outcome: liveObservation.program.elf_sha256 ? (shaMatch ? "PASS" : "FAIL") : "BLOCKED",
+        detail: liveObservation.program_elf_agreement === false ? "elf_mismatch_across_rpcs" : liveObservation.program.elf_sha256 ?? "unavailable",
+        evidence_ref: SOLANA_GATE_V2_RELEASE.provenance_ref,
+      }));
+      const expectedUpgrade = process.env.ABRAXAS_SOLANA_EXPECTED_UPGRADE_AUTHORITY?.trim() || deps.expectedUpgradeAuthority;
+      if (expectedUpgrade && liveObservation.program.upgrade_authority) {
+        evidence.push(item({
+          now,
+          id: "upgrade_authority_custody",
+          label: "Upgrade authority identity vs governance record",
+          source: "rpc_observation",
+          environment: "mainnet_governance_preflight",
+          outcome: liveObservation.program.upgrade_authority === expectedUpgrade ? "PASS" : "FAIL",
+          detail: liveObservation.program.upgrade_authority === expectedUpgrade ? "match" : "authority_mismatch",
+          evidence_ref: "program_data_upgrade_authority",
+        }));
+      }
+    }
+  }
+
+  let rpcClusterAgreement: boolean | null = liveObservation?.genesis_agreement ?? null;
+  if (primaryRpc && !liveObservation && !deps.primaryGenesis) {
+    evidence.push(item({
+      now,
+      id: "primary_rpc_live_observation",
+      label: "Live primary RPC observation",
+      source: "rpc_observation",
+      environment: "mainnet_governance_preflight",
+      outcome: "BLOCKED",
+      detail: "live_observation_failed",
+      evidence_ref: "lib/institutional/solanaDualRpcObservation.ts",
+    }));
+  }
   if (!primaryRpc && !deps.primaryGenesis) {
     evidence.push(item({
       now,
@@ -94,7 +225,7 @@ export async function runSolanaMainnetGovernanceVerification(
       detail: "missing_primary_rpc",
       evidence_ref: "ABRAXAS_SOLANA_GATE_VERIFY_RPC_URL",
     }));
-  } else if (deps.primaryGenesis) {
+  } else if (!liveObservation && deps.primaryGenesis) {
     const genesis = await deps.primaryGenesis();
     if (!genesis) {
       evidence.push(item({
@@ -148,7 +279,7 @@ export async function runSolanaMainnetGovernanceVerification(
     }
   }
 
-  if (deps.readAccount && deps.reviewedProgramId) {
+  if (!liveObservation?.program && deps.readAccount && deps.reviewedProgramId) {
     const programState = await inspectProgram(
       {
         programId: deps.reviewedProgramId,
@@ -168,7 +299,7 @@ export async function runSolanaMainnetGovernanceVerification(
       detail: programState,
       evidence_ref: SOLANA_GATE_V2_RELEASE.provenance_ref,
     }));
-  } else {
+  } else if (!liveObservation?.program) {
     evidence.push(item({
       now,
       id: "program_elf_digest",
@@ -181,9 +312,12 @@ export async function runSolanaMainnetGovernanceVerification(
     }));
   }
 
-  const upgradeObserved = deps.upgradeAuthorityObserved ?? null;
-  const upgradeExpected = deps.expectedUpgradeAuthority ?? null;
-  if (upgradeObserved && upgradeExpected) {
+  const upgradeObserved = liveObservation?.program?.upgrade_authority ?? deps.upgradeAuthorityObserved ?? null;
+  const upgradeExpected =
+    process.env.ABRAXAS_SOLANA_EXPECTED_UPGRADE_AUTHORITY?.trim()
+    || deps.expectedUpgradeAuthority
+    || null;
+  if (!evidence.some(e => e.id === "upgrade_authority_custody") && upgradeObserved && upgradeExpected) {
     evidence.push(item({
       now,
       id: "upgrade_authority_custody",
@@ -283,6 +417,7 @@ export async function runSolanaMainnetGovernanceVerification(
     mainnet_issuance_disabled: !mainnetEnabled,
     devnet_proof_sufficient_for_mainnet: false,
     rpc_cluster_agreement: rpcClusterAgreement,
+    live_dual_rpc_observation: liveObservation,
     evidence,
     emergency_disable_ref: EMERGENCY_DISABLE_REF,
   };
