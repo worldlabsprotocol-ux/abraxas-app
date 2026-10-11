@@ -8,6 +8,7 @@ import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { isHostedHolderBootstrapEligible } from "@/lib/auth/hostedHolderEligibility";
 import { ensurePartnerHolderSessionReady } from "@/lib/auth/ensurePartnerHolderSession";
 import { isSolanaNativeProductEnabledClient } from "@/lib/auth/solanaNative/clientFeatureFlag";
+import { holderContinueSignInMessage } from "@/lib/auth/solanaNative/holderSignInCopy";
 import { useHolderSession } from "@/lib/hooks/useHolderSession";
 import { useHostedHolderBootstrap } from "@/lib/partner/useHostedHolderBootstrap";
 import { useGoogleSignIn } from "@/lib/hooks/useGoogleSignIn";
@@ -292,7 +293,7 @@ export function PartnerVerifyClient({
         evaluateOnceRef.current = false;
         signInOnceRef.current = false;
         setPhase("sign_in");
-        setStatusMessage("Sign in to continue with Abraxas.");
+        setStatusMessage(holderContinueSignInMessage(solanaNative));
         return;
       }
 
@@ -338,7 +339,7 @@ export function PartnerVerifyClient({
           evaluateOnceRef.current = false;
           signInOnceRef.current = false;
           setPhase("sign_in");
-          setStatusMessage("Sign in to continue with Abraxas.");
+          setStatusMessage(holderContinueSignInMessage(solanaNative));
           return;
         }
         evaluateOnceRef.current = false;
@@ -500,7 +501,7 @@ export function PartnerVerifyClient({
         }
         if (hostedBootstrap.state === "ineligible") {
           setPhase("sign_in");
-          setStatusMessage("Sign in to continue with Abraxas.");
+          setStatusMessage(holderContinueSignInMessage(solanaNative));
           return;
         }
         // pending ready — refreshSession should populate suiAddress on next tick
@@ -508,7 +509,7 @@ export function PartnerVerifyClient({
         return;
       }
       setPhase("sign_in");
-      setStatusMessage("Sign in to continue with Abraxas.");
+      setStatusMessage(holderContinueSignInMessage(solanaNative));
       return;
     }
     if (shouldBlockPartnerEvaluateRetry(phase)) return;
@@ -568,7 +569,7 @@ export function PartnerVerifyClient({
       signInOnceRef.current = false;
       clearLoginInFlight();
       setPhase("sign_in");
-      setStatusMessage("Sign in to continue with Abraxas.");
+      setStatusMessage(holderContinueSignInMessage(solanaNative));
     }
   }, [
     relyingPartyId,

@@ -26,7 +26,7 @@ function sampleReceipt(overrides: Partial<DecisionReceiptPublicView> = {}): Deci
     decision_context: "production",
     production_usable: true,
     evaluated_at: "2026-09-30T12:00:00.000Z",
-    expires_at: "2026-10-01T12:00:00.000Z",
+    expires_at: "2099-01-01T00:00:00.000Z",
     status: "active",
     payload_hash: "hash",
     signature: "sig",

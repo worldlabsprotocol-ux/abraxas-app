@@ -13,6 +13,7 @@ import {
   type DecisionReceiptVisualStatus,
 } from "@/lib/protocol/decisionReceiptDisplay";
 import { buildReceiptPlainSummary, RECEIPT_PLAIN_LABELS, RECEIPT_ADVANCED_TOGGLE } from "@/lib/product/receiptPlainLanguage";
+import { summarizeContinuousTrust } from "@/lib/product/continuousTrustPlainLanguage";
 import { RECEIPT_PLAIN_HEADING } from "@/lib/product/productStoryCopy";
 
 export interface DecisionReceiptCardProps {
@@ -100,6 +101,7 @@ export function DecisionReceiptCard(props: DecisionReceiptCardProps) {
   const [technicalOpen, setTechnicalOpen] = useState(false);
   const resolved = resolveProps(props);
   const plain = props.model ? buildReceiptPlainSummary(props.model) : null;
+  const trustSummary = props.model ? summarizeContinuousTrust(props.model) : null;
   const statusMeta = STATUS_MAP[resolved.status];
   const colors = ABX_STATUS_COLORS[statusMeta.tone];
   const pulse = statusMeta.pulse && !reduceMotion && motionPhase === "resolved";
@@ -159,6 +161,11 @@ export function DecisionReceiptCard(props: DecisionReceiptCardProps) {
               {plain.valid ? <div><dt style={{ fontFamily: ABX_FONT_MONO, fontSize: "0.62rem", color: "var(--text-muted)" }}>{RECEIPT_PLAIN_LABELS.valid}</dt><dd style={{ fontFamily: ABX_FONT_SANS, fontSize: "0.82rem", margin: 0 }}>{plain.valid}</dd></div> : null}
               <div><dt style={{ fontFamily: ABX_FONT_MONO, fontSize: "0.62rem", color: "var(--text-muted)" }}>{RECEIPT_PLAIN_LABELS.next}</dt><dd style={{ fontFamily: ABX_FONT_SANS, fontSize: "0.78rem", lineHeight: 1.5, margin: 0, color: "var(--text-secondary)" }}>{plain.next}</dd></div>
             </dl>
+            {trustSummary ? (
+              <p role="note" style={{ fontFamily: ABX_FONT_SANS, fontSize: "0.72rem", lineHeight: 1.55, margin: "0.65rem 0 0", color: "var(--text-muted)" }}>
+                {trustSummary}
+              </p>
+            ) : null}
           </div>
         ) : null}
         <p className="abx-decision-receipt__result" style={{ fontFamily: ABX_FONT_SANS }}>
