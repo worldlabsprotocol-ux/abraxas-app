@@ -4,7 +4,7 @@
 
 New Anchor program **`abraxas-trust-registry`** in the existing `solana/abraxas-eligibility-gate` workspace (does not duplicate eligibility gate partner configs or receipt Ed25519 semantics).
 
-- **Program ID (local/reference):** `878ysq3VvDKT5HNWWDFP5SvVJPqa5R4PktCbfiSksPJT`
+- **Program ID (build-bound, v534):** `EN29YNgHRuJ3h9cWrPS9hSDBt8DUNtoSSTT9EbUZewC8` (replaces pre-compile placeholder from #533)
 - **Reused:** receipt commitment digest domain (`abraxas:receipt_commitment:v1`), #530/#532 independent verifier pipeline
 
 ## On-chain accounts

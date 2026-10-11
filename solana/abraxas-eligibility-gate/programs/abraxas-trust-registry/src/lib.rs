@@ -3,12 +3,12 @@
 
 use anchor_lang::prelude::*;
 
-declare_id!("878ysq3VvDKT5HNWWDFP5SvVJPqa5R4PktCbfiSksPJT");
+declare_id!("EN29YNgHRuJ3h9cWrPS9hSDBt8DUNtoSSTT9EbUZewC8");
 
 pub const REGISTRY_SEED: &[u8] = b"trust_registry";
 pub const POLICY_SEED: &[u8] = b"trust_policy";
 pub const COMMITMENT_SEED: &[u8] = b"trust_commitment";
-pub const MAX_AUTHORITY_SLOTS: usize = 4;
+pub const MAX_AUTHORITY_SLOTS: usize = 2;
 
 pub const AUTHORITY_EMPTY: u8 = 0;
 pub const AUTHORITY_ACTIVE: u8 = 1;
@@ -88,6 +88,7 @@ pub mod abraxas_trust_registry {
             ctx.accounts.policy.policy_commitment != [0u8; 32],
             TrustRegistryError::PolicyMismatch
         );
+        require_keys_eq!(ctx.accounts.policy.registry, ctx.accounts.registry.key(), TrustRegistryError::PolicyMismatch);
         require_authority_active(
             &ctx.accounts.registry.commitment_publishers,
             ctx.accounts.publisher.key().to_bytes(),
@@ -95,6 +96,9 @@ pub mod abraxas_trust_registry {
 
         let state = &mut ctx.accounts.commitment_state;
         if state.sequence > 0 {
+            require_keys_eq!(state.registry, ctx.accounts.registry.key(), TrustRegistryError::PolicyMismatch);
+            require!(state.commitment_digest == commitment_digest, TrustRegistryError::PolicyMismatch);
+            require!(state.policy_commitment == ctx.accounts.policy.policy_commitment, TrustRegistryError::PolicyMismatch);
             require!(sequence > state.sequence, TrustRegistryError::StaleSequence);
             require!(state.status == COMMITMENT_ACTIVE, TrustRegistryError::Replayed);
         }
@@ -112,6 +116,11 @@ pub mod abraxas_trust_registry {
     }
 
     pub fn revoke_commitment(ctx: Context<RevokeCommitment>, sequence: u64) -> Result<()> {
+        require_keys_eq!(
+            ctx.accounts.commitment_state.registry,
+            ctx.accounts.registry.key(),
+            TrustRegistryError::PolicyMismatch
+        );
         require_authority_active(
             &ctx.accounts.registry.revokers,
             ctx.accounts.revoker.key().to_bytes(),
@@ -125,6 +134,11 @@ pub mod abraxas_trust_registry {
     }
 
     pub fn supersede_commitment(ctx: Context<RevokeCommitment>, sequence: u64) -> Result<()> {
+        require_keys_eq!(
+            ctx.accounts.commitment_state.registry,
+            ctx.accounts.registry.key(),
+            TrustRegistryError::PolicyMismatch
+        );
         require_authority_active(
             &ctx.accounts.registry.revokers,
             ctx.accounts.revoker.key().to_bytes(),
@@ -144,8 +158,8 @@ fn apply_invalidation(
     status: u8,
     actor: Pubkey,
 ) -> Result<()> {
-    require!(state.status == COMMITMENT_ACTIVE, TrustRegistryError::Replayed);
     require!(sequence > state.sequence, TrustRegistryError::StaleSequence);
+    require!(state.status == COMMITMENT_ACTIVE, TrustRegistryError::Replayed);
     state.sequence = sequence;
     state.status = status;
     state.updated_slot = Clock::get()?.slot;
@@ -263,6 +277,7 @@ pub struct RegistryGovernanceMut<'info> {
 #[derive(Accounts)]
 #[instruction(policy_commitment: [u8; 32])]
 pub struct RegisterPolicy<'info> {
+    #[account(mut)]
     pub governance_authority: Signer<'info>,
     #[account(
         mut,
@@ -298,6 +313,7 @@ pub struct SetPolicyActive<'info> {
 #[derive(Accounts)]
 #[instruction(commitment_digest: [u8; 32], sequence: u64)]
 pub struct PublishCommitment<'info> {
+    #[account(mut)]
     pub publisher: Signer<'info>,
     #[account(
         mut,
@@ -307,7 +323,8 @@ pub struct PublishCommitment<'info> {
     pub registry: Account<'info, TrustRegistry>,
     #[account(
         seeds = [POLICY_SEED, registry.key().as_ref(), policy.policy_commitment.as_ref()],
-        bump = policy.bump
+        bump = policy.bump,
+        has_one = registry
     )]
     pub policy: Account<'info, PolicyRecord>,
     #[account(
@@ -332,7 +349,8 @@ pub struct RevokeCommitment<'info> {
     #[account(
         mut,
         seeds = [COMMITMENT_SEED, registry.key().as_ref(), commitment_state.commitment_digest.as_ref()],
-        bump = commitment_state.bump
+        bump = commitment_state.bump,
+        has_one = registry
     )]
     pub commitment_state: Account<'info, CommitmentState>,
 }
