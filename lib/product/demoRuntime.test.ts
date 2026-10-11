@@ -112,6 +112,17 @@ describe("DEMO runtime binding", () => {
     expect(() => assertDemoRuntimeBoot(env)).not.toThrow();
   });
 
+  it("skips demo boot enforcement on Vercel branch previews that are not the public DEMO surface", async () => {
+    const env = {
+      ABRAXAS_RUNTIME_ENV: "demo",
+      VERCEL_ENV: "preview",
+      NEXT_PUBLIC_APP_URL: "https://abraxas-branch-preview.vercel.app",
+      NEXT_PUBLIC_SUPABASE_URL: `https://${DEMO_SUPABASE_PROJECT_REF}.supabase.co`,
+    };
+    expect(evaluateDemoRuntime({ env }).ok).toBe(false);
+    expect(() => assertDemoRuntimeBoot(env)).not.toThrow();
+  });
+
   it("fails closed when DEMO runtime is bound to production data", async () => {
     const env = {
       ABRAXAS_RUNTIME_ENV: "demo",

@@ -2,6 +2,16 @@
 
 Operator-run procedures for external institutional developers. **Not** production verification.
 
+## Preview runtime note (Build #528)
+
+Branch Vercel previews must **not** inherit `ABRAXAS_RUNTIME_ENV=demo` unless the preview URL is the public DEMO surface (`demo.abraxasworld.xyz`). Leaked DEMO flags cause boot failure (HTML 500) on institutional API routes. Use a dedicated Preview/Custom environment for institutional sandbox work.
+
+Generate manifest (names only, no secrets):
+
+```bash
+npm run manifest:institutional-sandbox
+```
+
 ## 1. Declare sandbox identity
 
 ```bash
