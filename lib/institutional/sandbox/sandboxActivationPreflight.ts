@@ -52,10 +52,10 @@ async function probeMigrationRows(databaseUrl: string): Promise<{ applied_139: b
         `SELECT 1 FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid
          WHERE n.nspname = 'public' AND p.proname = 'institutional_eligibility_consume_nonce' LIMIT 1`,
       );
+      await pool.query(`DO $$ BEGIN CREATE ROLE service_role NOLOGIN; EXCEPTION WHEN duplicate_object THEN NULL; END $$;`).catch(() => undefined);
       const revoked = await pool.query(
         "SELECT has_table_privilege('service_role', 'public.institutional_eligibility_consume_nonces', 'INSERT') AS allowed",
       );
-      await pool.query(`DO $$ BEGIN CREATE ROLE service_role NOLOGIN; EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
       const insertAllowed = revoked.rows[0]?.allowed === true;
       return {
         applied_139: (fn.rowCount ?? 0) > 0,
