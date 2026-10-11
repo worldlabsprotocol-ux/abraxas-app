@@ -6,6 +6,7 @@ import type { HolderVerificationPresentation } from "@/lib/partner/holderExperie
 import { HolderRequestHeader } from "./HolderRequestHeader";
 import { PrivacyBoundary } from "./PrivacyBoundary";
 import { HolderTechnicalDetails } from "./HolderTechnicalDetails";
+import { PARTNER_REQUEST_CONTINUE_EXPLAINER, PARTNER_REQUEST_FOUR_QUESTIONS } from "@/lib/product/productStoryCopy";
 import { holderBody, holderEyebrow, holderSection, HOLDER_FONT } from "./styles";
 
 export interface HolderVerificationRequestProps {
@@ -70,6 +71,21 @@ export function HolderVerificationRequest({
           </p>
         </div>
       ) : null}
+
+      <div
+        style={{
+          marginTop: "0.85rem",
+          padding: "0.7rem 0.8rem",
+          borderRadius: 12,
+          border: "1px solid var(--border)",
+          background: "rgba(255,255,255,0.03)",
+        }}
+      >
+        <p style={holderEyebrow}>{PARTNER_REQUEST_FOUR_QUESTIONS.continue}</p>
+        <p style={{ ...holderBody, margin: "0.35rem 0 0", fontSize: "0.78rem", lineHeight: 1.55 }}>
+          {PARTNER_REQUEST_CONTINUE_EXPLAINER}
+        </p>
+      </div>
 
       <HolderTechnicalDetails details={presentation.technical} />
     </section>

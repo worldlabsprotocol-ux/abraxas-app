@@ -13,8 +13,8 @@ describe("Good Trouble L0 holder brief", () => {
       purpose: "purchase",
       environment: "production",
     });
-    expect(brief.method_explanation).toContain("birthday");
-    expect(brief.method_explanation).not.toContain("approved verification method");
+    expect(brief.method_explanation).toContain("qualifying method");
+    expect(brief.method_explanation).toContain("Verified identity");
     expect(brief.identity_not_default).toBe("");
     expect(brief.environment_label).toBe("Partner verification");
   });

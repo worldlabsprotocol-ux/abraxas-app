@@ -50,7 +50,7 @@ export default function IntegrationsPage() {
     <RedesignPage accent="developer" maxWidth={900}>
       <PageHeader
         eyebrow="Integrations"
-        title="The reusable verification primitive"
+        title="Integration Studio"
         subtitle={INTEGRATIONS_HUB_SUBHEAD}
       />
 

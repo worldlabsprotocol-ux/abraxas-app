@@ -13,8 +13,8 @@ export default function ExperienceTourPage() {
       <AbxPageHeader
         accent="neutral"
         eyebrow="Guided demonstration"
-        title="See Abraxas in under a minute"
-        lead="Interactive simulation for judges and investors. No wallet, documents, or live credentials required."
+        title="See verify-once eligibility in under a minute"
+        lead="Self-guided simulation for judges and investors — clearly labeled, no real documents or live credentials."
       />
       <JudgeProductTour />
     </AbxPageShell>

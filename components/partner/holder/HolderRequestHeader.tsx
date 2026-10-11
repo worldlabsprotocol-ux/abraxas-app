@@ -2,6 +2,7 @@
 // FILE: components/partner/holder/HolderRequestHeader.tsx
 // Requester identity — visually obvious before the question.
 
+import { PARTNER_REQUEST_FOUR_QUESTIONS } from "@/lib/product/productStoryCopy";
 import { holderBody, holderEyebrow, holderTitle, HOLDER_FONT } from "./styles";
 
 export interface HolderRequestHeaderProps {
@@ -17,7 +18,7 @@ export function HolderRequestHeader({
 }: HolderRequestHeaderProps) {
   return (
     <header className="abx-holder-request-header">
-      <p style={holderEyebrow}>Requesting service</p>
+      <p style={holderEyebrow}>{PARTNER_REQUEST_FOUR_QUESTIONS.who}</p>
       <p className="abx-holder-request-header__name" style={holderTitle}>
         {requesterName}
       </p>
@@ -26,7 +27,7 @@ export function HolderRequestHeader({
           {applicationOrigin}
         </p>
       ) : null}
-      <p style={{ ...holderEyebrow, marginTop: "0.85rem" }}>Wants to confirm</p>
+      <p style={{ ...holderEyebrow, marginTop: "0.85rem" }}>{PARTNER_REQUEST_FOUR_QUESTIONS.what}</p>
       <p
         className="abx-holder-request-header__question"
         style={{

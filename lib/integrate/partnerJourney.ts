@@ -116,7 +116,7 @@ export const PARTNER_FLOW_DOCS_PATH = "/docs/partner-flow";
 export const PARTNER_RECEIPT_DOCS_ANCHOR = "/docs/partner-flow#receipt-verification";
 
 export const INTEGRATIONS_HUB_SUBHEAD =
-  "Public beta · design partner applications reviewed manually. Submit integration intent below, sandbox policies and callback allowlists are operator provisioned after approval, not self serve.";
+  "For developers and operators: integrate private eligibility checks, test in sandbox, and apply for design-partner review. Production credentials are issued after manual approval.";
 
 export const INTEGRATIONS_APPLY_NOTE =
   "Apply once at this form. Abraxas operators review applications manually. There is no self serve production portal or automatic API-key issuance.";

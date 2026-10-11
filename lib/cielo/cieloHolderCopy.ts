@@ -16,7 +16,7 @@ export function humanizeCieloDisclosedResult(machine: string | null | undefined)
 export const CIELO_HOLDER_COPY = {
   flowTitle: "Request verified guest access",
   flowLead:
-    "Cielo Sunrise can review a verified guest request through Abraxas. This is not a booking, payment, or reservation.",
+    "Cielo uses Abraxas to confirm verified guest eligibility. This is not a hotel booking, payment, or reservation.",
   stepAccount: "Your Abraxas account",
   stepConsent: "Review & consent",
   stepSubmit: "Send request to Cielo",

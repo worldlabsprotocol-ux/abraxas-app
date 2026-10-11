@@ -37,6 +37,7 @@ import {
   PASSPORT_PAGE_SUBHEAD,
 } from "@/lib/passport/passportCustomerCopy";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
+import { ProductStoryStrip } from "@/components/product/ProductStoryStrip";
 import {
   HOLDER_VERIFY_EYEBROW,
   HOLDER_VERIFY_HEADLINE,
@@ -225,6 +226,8 @@ function PassportPageInner() {
         <Suspense fallback={<RedesignPageLoading label="Loading navigation…" compact />}>
           <PassportPageTabs active={pageView} />
         </Suspense>
+
+        {pageView === "passport" ? <ProductStoryStrip compact /> : null}
 
         {pageView === "verify" ? (
           <>

@@ -559,7 +559,7 @@ export function PartnerLaunchpadClient({
       <PageHeader
         eyebrow="Partner Launchpad"
         title="Integrate private eligibility"
-        subtitle="One integration. Multiple eligibility policies. Add approved eligibility questions through the same Abraxas trust infrastructure without collecting underlying identity data."
+        subtitle="Choose a policy, test in sandbox, verify receipts on your server, and request production when ready — holders keep documents private."
       />
 
       {activeApp && journey && (

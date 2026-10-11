@@ -6,7 +6,7 @@ export const PASSPORT_PAGE_EYEBROW = "Your Abraxas Passport";
 export const PASSPORT_PAGE_HEADLINE = "Your Abraxas Passport";
 
 export const PASSPORT_PAGE_SUBHEAD =
-  "Keep and reuse private proof with participating services.";
+  "Your private verification wallet. Verify once, then share only the narrow answers partners are allowed to request.";
 
 export const PASSPORT_CRYPTO_DISCLOSURE =
   "Abraxas uses a cryptographic account confirmation underneath. No funds move.";
