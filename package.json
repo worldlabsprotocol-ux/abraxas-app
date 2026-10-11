@@ -58,6 +58,8 @@
     "test:institutional-524": "vitest run lib/institutional lib/decisionReceipts/trustEvaluation.test.ts lib/decisionReceipts/validityResolver.test.ts",
     "test:institutional-525": "vitest run lib/institutional lib/decisionReceipts/trustEvaluation.test.ts lib/decisionReceipts/validityResolver.test.ts",
     "test:institutional-526": "vitest run lib/institutional lib/decisionReceipts/trustEvaluation.test.ts lib/decisionReceipts/validityResolver.test.ts",
+    "test:protocol-529": "vitest run lib/protocol/trust lib/institutional lib/decisionReceipts/trustEvaluation.test.ts lib/decisionReceipts/validityResolver.test.ts lib/decisionReceipts/solanaCommitment/solanaCommitment.test.ts",
+    "evidence:protocol-sovereignty-529": "tsx scripts/protocol-sovereignty-evidence-529.ts",
     "preflight:institutional-sandbox": "tsx scripts/institutional-sandbox-activation-preflight.ts",
     "gate:institutional-replay-migration": "tsx scripts/institutional-replay-migration-rehearsal-gate.ts",
     "proof:institutional-sandbox": "tsx scripts/institutional-integration-proof-packet.ts",
