@@ -56,7 +56,6 @@ export async function probeInstitutionalReplayReadiness(): Promise<Institutional
 
   const payload = data as { ok?: boolean; code?: string };
   const responded = payload?.code === "invalid" || payload?.code === "expired";
-
   return {
     configured: true,
     migration_139_function_present: true,

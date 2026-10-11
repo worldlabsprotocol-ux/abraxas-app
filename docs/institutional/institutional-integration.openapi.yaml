@@ -1,0 +1,55 @@
+openapi: 3.1.0
+info:
+  title: Abraxas Institutional Eligibility Integration
+  version: institutional_integration_v1
+  description: Provider-neutral institutional receipt consumption. Reuses existing Abraxas Partner APIs.
+servers:
+  - url: https://{host}
+    variables:
+      host:
+        default: api.example.com
+security:
+  - partnerApiKey: []
+components:
+  securitySchemes:
+    partnerApiKey:
+      type: http
+      scheme: bearer
+      description: Bearer abx_live_* or abx_test_* with verify:requests scope
+paths:
+  /api/v1/institutional/eligibility/consume:
+    post:
+      summary: Fail-closed institutional receipt consumption
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [receipt_id, policy_id, replay_nonce]
+              properties:
+                receipt_id: { type: string }
+                policy_id: { type: string }
+                policy_version: { type: integer }
+                application_id: { type: string }
+                purpose: { type: string }
+                action_scope: { type: string }
+                correlation_id: { type: string }
+                replay_nonce: { type: string, minLength: 16, maxLength: 128 }
+      responses:
+        "200":
+          description: Permit — currently actionable decision
+        "403":
+          description: Deny / refresh-required / binding failure
+        "409":
+          description: Replay rejected
+        "503":
+          description: Durable replay store unavailable
+  /api/v1/decision-receipts/{receiptId}/status:
+    get:
+      summary: Current validity and trust recheck (does not consume replay nonce)
+      parameters:
+        - in: path
+          name: receiptId
+          required: true
+          schema: { type: string }
