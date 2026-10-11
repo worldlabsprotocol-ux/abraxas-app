@@ -41,10 +41,20 @@ npx tsx examples/institutional-reference-integration/run-harness.ts
 | Institutional consume | Requires migrations 139+140 on connected DB | Same + operator approval |
 | Mainnet Solana issuance | Disabled | Disabled until governance PASS + approval |
 
+## Sandbox activation (Build #526)
+
+Operator runbook: `docs/institutional/SANDBOX_ACTIVATION.md`
+
+```bash
+npx tsx scripts/institutional-sandbox-activation-preflight.ts
+npx tsx scripts/institutional-replay-migration-rehearsal-gate.ts
+npx tsx scripts/institutional-integration-proof-packet.ts
+```
+
 ## Integration acceptance tests
 
 ```bash
-npm run test:institutional-525
+npm run test:institutional-526
 npm run test:institutional-replay-postgres   # when INSTITUTIONAL_REPLAY_TEST_DATABASE_URL set
 ```
 
