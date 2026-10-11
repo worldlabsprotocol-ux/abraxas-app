@@ -10,6 +10,11 @@ import type { RevocationObservationRequest } from "@/lib/protocol/trust/independ
 export const CONTINUOUS_TRUST_VERIFIER_SCHEMA = "abraxas_continuous_trust_verifier_v532" as const;
 
 export type ContinuousTrustVerificationInput = IndependentTrustVerificationInput & {
+  /** When true, require abraxas-trust-registry account state; memo-only revocation is insufficient. */
+  program_enforced_assurance?: boolean;
+  trust_registry_program_id?: string;
+  registry_domain_hex?: string;
+  trust_registry_rpc_url?: string;
   /** Governance-controlled memo publishers allowed to post abx-rvkt invalidation memos. */
   authorized_revoker_pubkeys?: string[];
   /** Optional live revocation/supersession transactions to observe (read-only RPC). */

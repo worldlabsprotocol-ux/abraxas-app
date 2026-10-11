@@ -61,6 +61,8 @@
     "test:protocol-529": "vitest run lib/protocol/trust lib/institutional lib/decisionReceipts/trustEvaluation.test.ts lib/decisionReceipts/validityResolver.test.ts lib/decisionReceipts/solanaCommitment/solanaCommitment.test.ts",
     "test:protocol-530": "vitest run lib/protocol/trust lib/institutional lib/decisionReceipts/trustEvaluation.test.ts lib/decisionReceipts/validityResolver.test.ts lib/decisionReceipts/solanaCommitment/solanaCommitment.test.ts",
     "test:protocol-532": "vitest run lib/protocol/trust lib/decisionReceipts/solanaCommitment/revocationMemo.test.ts lib/institutional lib/decisionReceipts/trustEvaluation.test.ts lib/decisionReceipts/validityResolver.test.ts lib/decisionReceipts/solanaCommitment/solanaCommitment.test.ts",
+    "test:protocol-533": "vitest run lib/protocol/trust lib/solana/trustRegistry lib/decisionReceipts/solanaCommitment/revocationMemo.test.ts lib/institutional lib/decisionReceipts/trustEvaluation.test.ts lib/decisionReceipts/validityResolver.test.ts lib/decisionReceipts/solanaCommitment/solanaCommitment.test.ts",
+    "evidence:governed-trust-registry-533": "tsx scripts/governed-trust-registry-evidence-533.ts",
     "evidence:continuous-authorization-532": "tsx scripts/continuous-authorization-evidence-532.ts",
     "example:continuous-relying-party-532": "tsx scripts/examples/continuous-relying-party-verify-532.ts",
     "evidence:protocol-sovereignty-529": "tsx scripts/protocol-sovereignty-evidence-529.ts",
