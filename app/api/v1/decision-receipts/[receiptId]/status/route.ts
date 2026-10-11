@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateV1Partner } from "@/lib/verification/v1PartnerAuth";
 import { getReceiptById } from "@/lib/decisionReceipts/service";
+import { evaluateDecisionReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation";
 import { resolveReceiptValidity } from "@/lib/decisionReceipts/validityResolver";
 import { toPublicView } from "@/lib/decisionReceipts/views";
 import { getReceiptDependencies } from "@/lib/decisionReceipts/dependencies";
@@ -40,6 +41,10 @@ export async function GET(
     return NextResponse.json({ error: "Receipt not accessible for this partner" }, { status: 403 });
   }
 
+  const trust = await evaluateDecisionReceiptTrust(record, {
+    partnerId: auth.partnerId,
+    policyId: record.policy_id,
+  });
   const validity = await resolveReceiptValidity(record, {
     partnerId: auth.partnerId,
     policyId: record.policy_id,
@@ -53,7 +58,13 @@ export async function GET(
     action: "decision_receipt.status_lookup",
     object_type: "decision_receipt",
     object_id: receiptId,
-    metadata: { validity: validity.validity, currently_valid: validity.currently_valid },
+    metadata: {
+      validity: validity.validity,
+      currently_valid: validity.currently_valid,
+      trust_validity: trust.validity,
+      signature_authentic: trust.signature_valid,
+      currently_actionable: trust.currently_valid,
+    },
   });
 
   void logPartnerUsage({
@@ -81,7 +92,16 @@ export async function GET(
     },
     validity: validity.validity,
     currently_valid: validity.currently_valid,
-    invalidation_reasons: validity.invalidation_reasons,
+    trust: {
+      validity: trust.validity,
+      signature_authentic: trust.signature_valid,
+      currently_actionable: trust.currently_valid,
+      production_usable: trust.production_usable,
+      invalidation_reasons: trust.invalidation_reasons,
+    },
+    invalidation_reasons: trust.invalidation_reasons.length
+      ? trust.invalidation_reasons
+      : validity.invalidation_reasons,
     dependencies: dependencies.map(d => ({
       claim_id: d.claim_id,
       claim_type: d.claim_type,
