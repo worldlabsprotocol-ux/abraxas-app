@@ -6,7 +6,7 @@
 
 1. Solana CLI + Anchor 0.30.1 (match `Anchor.toml`)
 2. Devnet SOL on governance, publisher, and revoker keypairs
-3. Program keypair JSON for `878ysq3VvDKT5HNWWDFP5SvVJPqa5R4PktCbfiSksPJT` (or update `declare_id!` + TS constant together)
+3. Program keypair JSON for `EN29YNgHRuJ3h9cWrPS9hSDBt8DUNtoSSTT9EbUZewC8` (Build #534 artifact; never commit keypair)
 4. Upgrade authority custody documented
 
 ## Build (local)

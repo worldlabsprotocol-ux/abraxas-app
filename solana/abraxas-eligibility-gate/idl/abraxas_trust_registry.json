@@ -1,0 +1,280 @@
+{
+  "address": "EN29YNgHRuJ3h9cWrPS9hSDBt8DUNtoSSTT9EbUZewC8",
+  "metadata": {
+    "name": "abraxas_trust_registry",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Governed trust registry (Build #533/#534). Generated for release integrity #535."
+  },
+  "instructions": [
+    {
+      "name": "initialize_registry",
+      "discriminator": [
+        189,
+        181,
+        20,
+        17,
+        174,
+        57,
+        249,
+        59
+      ],
+      "accounts": [],
+      "args": []
+    },
+    {
+      "name": "register_policy",
+      "discriminator": [
+        62,
+        66,
+        167,
+        36,
+        252,
+        227,
+        38,
+        132
+      ],
+      "accounts": [],
+      "args": []
+    },
+    {
+      "name": "set_policy_active",
+      "discriminator": [
+        134,
+        29,
+        151,
+        139,
+        98,
+        189,
+        232,
+        80
+      ],
+      "accounts": [],
+      "args": []
+    },
+    {
+      "name": "add_issuer",
+      "discriminator": [
+        252,
+        97,
+        3,
+        221,
+        65,
+        162,
+        177,
+        32
+      ],
+      "accounts": [],
+      "args": []
+    },
+    {
+      "name": "suspend_issuer",
+      "discriminator": [
+        121,
+        249,
+        30,
+        244,
+        208,
+        80,
+        95,
+        150
+      ],
+      "accounts": [],
+      "args": []
+    },
+    {
+      "name": "revoke_issuer",
+      "discriminator": [
+        17,
+        145,
+        62,
+        240,
+        50,
+        135,
+        145,
+        181
+      ],
+      "accounts": [],
+      "args": []
+    },
+    {
+      "name": "add_revoker",
+      "discriminator": [
+        201,
+        142,
+        156,
+        179,
+        170,
+        186,
+        171,
+        72
+      ],
+      "accounts": [],
+      "args": []
+    },
+    {
+      "name": "revoke_revoker",
+      "discriminator": [
+        189,
+        196,
+        200,
+        38,
+        61,
+        73,
+        201,
+        64
+      ],
+      "accounts": [],
+      "args": []
+    },
+    {
+      "name": "add_commitment_publisher",
+      "discriminator": [
+        35,
+        69,
+        130,
+        163,
+        183,
+        194,
+        210,
+        211
+      ],
+      "accounts": [],
+      "args": []
+    },
+    {
+      "name": "publish_commitment",
+      "discriminator": [
+        139,
+        190,
+        167,
+        133,
+        41,
+        101,
+        225,
+        212
+      ],
+      "accounts": [],
+      "args": []
+    },
+    {
+      "name": "revoke_commitment",
+      "discriminator": [
+        136,
+        63,
+        150,
+        38,
+        176,
+        128,
+        1,
+        76
+      ],
+      "accounts": [],
+      "args": []
+    },
+    {
+      "name": "supersede_commitment",
+      "discriminator": [
+        196,
+        198,
+        46,
+        63,
+        59,
+        177,
+        217,
+        62
+      ],
+      "accounts": [],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "TrustRegistry",
+      "discriminator": [
+        193,
+        48,
+        114,
+        132,
+        171,
+        110,
+        140,
+        119
+      ]
+    },
+    {
+      "name": "PolicyRecord",
+      "discriminator": [
+        90,
+        58,
+        195,
+        250,
+        74,
+        243,
+        148,
+        16
+      ]
+    },
+    {
+      "name": "CommitmentState",
+      "discriminator": [
+        45,
+        184,
+        26,
+        246,
+        17,
+        52,
+        67,
+        54
+      ]
+    }
+  ],
+  "types": [],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidConfig",
+      "msg": "invalid_config"
+    },
+    {
+      "code": 6001,
+      "name": "PolicyInactive",
+      "msg": "policy_inactive"
+    },
+    {
+      "code": 6002,
+      "name": "PolicyMismatch",
+      "msg": "policy_mismatch"
+    },
+    {
+      "code": 6003,
+      "name": "UnauthorizedAuthority",
+      "msg": "unauthorized_authority"
+    },
+    {
+      "code": 6004,
+      "name": "UnknownAuthority",
+      "msg": "unknown_authority"
+    },
+    {
+      "code": 6005,
+      "name": "DuplicateAuthority",
+      "msg": "duplicate_authority"
+    },
+    {
+      "code": 6006,
+      "name": "AuthorityTableFull",
+      "msg": "authority_table_full"
+    },
+    {
+      "code": 6007,
+      "name": "StaleSequence",
+      "msg": "stale_sequence"
+    },
+    {
+      "code": 6008,
+      "name": "Replayed",
+      "msg": "replayed"
+    }
+  ]
+}
