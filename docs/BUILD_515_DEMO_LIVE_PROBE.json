@@ -1,0 +1,28 @@
+{
+  "build": "515",
+  "project_ref": "ocntwbxarpjeixdnzide",
+  "production_ref_denied": "bztwutzprwsdrtqdpymf",
+  "probed_at": "2026-10-10T23:55:00.000Z",
+  "method": "supabase_mcp_execute_sql_read_only",
+  "schema_migrations": [
+    { "version": "20260916155737", "name": "086_partner_launchpad_provision_schema_fix" },
+    { "version": "20260916160050", "name": "086_partner_launchpad_provision_schema_fix" },
+    { "version": "20260916163442", "name": "087_stocklana_pilot" }
+  ],
+  "public_table_count": 65,
+  "extensions": ["uuid-ossp", "pgcrypto"],
+  "catalog_probe": {
+    "holder_wallet_accounts": false,
+    "holder_accounts": false,
+    "decision_receipt_solana_commitments": false,
+    "partner_policies": true,
+    "identity_verifications": true,
+    "decision_receipts": true,
+    "reusable_eligibility_facts": true,
+    "partner_flow_continuations": true,
+    "identity_verifications.holder_account_id": false,
+    "partner_policies.cielo-verified-guest-solana-v1": false,
+    "partner_policies.good-trouble-age_21_retail-solana-v1": false
+  },
+  "interpretation": "Migration history stops at 087 but legacy Partner Sandbox schema is present. Solana-native objects from 134–138 are entirely absent. Minimal safe catch-up is incremental 134→138 only after founder authorization."
+}

@@ -154,12 +154,22 @@ export async function runSolanaNativeDemoPreflight(deps: {
   }
 
   if (deps.tableExists) {
+    const tableResults: boolean[] = [];
     for (const row of BUILD514_REQUIRED_TABLES) {
       const exists = await deps.tableExists(row.table);
+      tableResults.push(exists);
       checks.push({
         id: row.id,
         status: exists ? "pass" : "fail",
         detail: exists ? `${row.table} present` : `${row.table} missing — apply ${row.migration}`,
+      });
+    }
+    const present = tableResults.filter(Boolean).length;
+    if (present > 0 && present < BUILD514_REQUIRED_TABLES.length) {
+      checks.push({
+        id: "partial_solana_schema",
+        status: "fail",
+        detail: "Partial Solana-native tables detected — fail closed; reconcile before incremental apply",
       });
     }
   } else {

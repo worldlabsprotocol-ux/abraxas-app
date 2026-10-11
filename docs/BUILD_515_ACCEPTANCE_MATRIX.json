@@ -1,0 +1,51 @@
+{
+  "build": "515",
+  "parent_pr": "#627",
+  "source_branch": "cursor/demo-database-recovery-515-5ffe",
+  "release_verdict": "BLOCKED",
+  "release_verdict_detail": "Demo catalog missing Solana migrations 134–138; incremental plan validated offline; remote apply awaiting founder authorization.",
+  "scenarios": [
+    {
+      "id": "phase1_history_reconciliation",
+      "status": "PASS",
+      "method": "repo_audit + supabase_mcp",
+      "observed": "History ends 087; prerequisites present; 134–138 absent from catalog"
+    },
+    {
+      "id": "phase2_dependency_graph",
+      "status": "PASS",
+      "method": "lib/release/solanaIncrementalMigrations.ts",
+      "observed": "Minimal sequence 134→138 with documented prerequisites"
+    },
+    {
+      "id": "phase3_live_demo_probe",
+      "status": "PASS",
+      "method": "supabase_mcp_execute_sql",
+      "evidence": "docs/BUILD_515_DEMO_LIVE_PROBE.json"
+    },
+    {
+      "id": "phase4_disposable_db_dry_run",
+      "status": "BLOCKED",
+      "method": "local_postgres",
+      "observed": "No disposable DB in agent VM; offline SQL audit PASS"
+    },
+    {
+      "id": "phase5_remote_apply",
+      "status": "NOT_RUN",
+      "method": "demo:solana-incremental-migrate --apply",
+      "next_action": "Founder authorization required"
+    },
+    {
+      "id": "phase6_release_gate",
+      "status": "PASS",
+      "method": "vitest + audit:migrations:build515",
+      "observed": "Schema-object vs history distinction in release-gate:build515"
+    },
+    {
+      "id": "phase7_vercel_demo_audit",
+      "status": "BLOCKED",
+      "method": "vercel_mcp",
+      "observed": "Deployment protection prevents unauthenticated fetch; project binding documented in #514"
+    }
+  ]
+}
