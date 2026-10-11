@@ -9,6 +9,7 @@ import { logPartnerUsage } from "@/lib/partner/logPartnerUsage";
 import { enforcePartnerFlowRateLimit } from "@/lib/partner/partnerFlowRouteGuard";
 import { resolveInstitutionalApplicationBinding } from "@/lib/institutional/partnerApplicationBinding";
 import { recordInstitutionalSecuritySignal } from "@/lib/institutional/securityTelemetry";
+import { withInstitutionalApiFailClosed } from "@/lib/institutional/institutionalApiFailClosed";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,10 @@ type Body = {
 };
 
 export async function POST(req: NextRequest) {
+  return withInstitutionalApiFailClosed(async () => handleInstitutionalConsumePost(req));
+}
+
+async function handleInstitutionalConsumePost(req: NextRequest) {
   const started = Date.now();
   const limited = await enforcePartnerFlowRateLimit({
     request: req,

@@ -156,10 +156,30 @@ export function demoIdentityHasForbiddenMaterial(payload: unknown): boolean {
   return FORBIDDEN_IDENTITY_NEEDLES.some((needle) => blob.includes(needle.toLowerCase()));
 }
 
+/** True when this deployment is meant to enforce public DEMO binding at boot. */
+export function shouldEnforceDemoRuntimeBoot(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  if (!isPublicDemoRuntime(env)) return false;
+  // Feature/institutional Vercel previews must not inherit DEMO boot hard-stop.
+  if (env.VERCEL_ENV === "preview" && !isPublicDemoClientSurface(env)) {
+    return false;
+  }
+  return true;
+}
+
 export function assertDemoRuntimeBoot(
   env: Record<string, string | undefined> = process.env,
 ): void {
-  if (!isPublicDemoRuntime(env)) return;
+  if (!shouldEnforceDemoRuntimeBoot(env)) {
+    if (isPublicDemoRuntime(env)) {
+      console.warn(JSON.stringify({
+        type: "demo_runtime.boot_skipped_non_demo_surface",
+        vercel_env: env.VERCEL_ENV ?? null,
+      }));
+    }
+    return;
+  }
   const evaluation = evaluateDemoRuntime({ env });
   if (evaluation.ok) return;
   throw new DemoRuntimeUnavailableError(evaluation.fail_codes);
