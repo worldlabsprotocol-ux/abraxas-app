@@ -5,6 +5,10 @@ export const HOLDER_CONTINUE_SOLANA =
 export const HOLDER_CONTINUE_LEGACY =
   "Sign in to continue with Abraxas.";
 
+/** Server-safe disclosure for holder briefs (not Google zkLogin). */
+export const HOLDER_WALLET_SIGNIN_ONLY =
+  "Wallet sign-in opens your Passport session only. It is not identity verification or age proof.";
+
 export function holderContinueSignInMessage(solanaNative?: boolean): string {
   const native = solanaNative ?? isSolanaNativeProductEnabledClient();
   return native ? HOLDER_CONTINUE_SOLANA : HOLDER_CONTINUE_LEGACY;

@@ -33,6 +33,14 @@ export default function LivePartnerJourneyPage() {
         ]} />
       </ContentCard>
 
+      <ContentCard title="Demo activation status">
+        <p style={{ fontFamily: FONT, fontSize: "0.82rem", lineHeight: 1.65, color: "var(--text-secondary)", margin: "0 0 0.75rem" }}>
+          After deploy, open the read-only activation report on Demo (no secrets). It confirms Solana schema 134–138, Cielo Solana policy, and whether Phantom Cielo is unblocked.
+        </p>
+        <Btn href={`${PUBLIC_DEMO_ORIGIN}/api/demo/activation-readiness`} variant="secondary" size="sm">Demo activation JSON</Btn>
+        <Btn href="/api/demo/activation-readiness" variant="ghost" size="sm">Local/preview report</Btn>
+      </ContentCard>
+
       <ContentCard title="Approved nonproduction entry">
         <p style={{ fontFamily: FONT, fontSize: "0.84rem", lineHeight: 1.65, color: "var(--text-secondary)", margin: "0 0 0.75rem" }}>
           Public Demo host (no Vercel SSO on preview): <strong>{PUBLIC_DEMO_ORIGIN}</strong>
