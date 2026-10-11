@@ -18,6 +18,7 @@ const ALLOWED_RESUME_KEYS = new Set([
   "purpose",
   "appSlug",
   "policyVersion",
+  "verifyRequestId",
   "savedAt",
 ]);
 
@@ -30,6 +31,8 @@ export type PartnerVerifyResumeParams = {
   purpose?: string;
   appSlug?: string;
   policyVersion?: number;
+  /** Opaque hosted verify reference — safe to persist (no PII). */
+  verifyRequestId?: string;
 };
 
 export type PartnerVerifyResumeState = PartnerVerifyResumeParams & {
@@ -114,6 +117,7 @@ function sanitizeResumeParams(
   const purpose = params.purpose?.trim();
   const appSlug = params.appSlug?.trim();
   const policyVersion = params.policyVersion;
+  const verifyRequestId = params.verifyRequestId?.trim();
 
   if (!returnUrl || (!partnerId && !appSlug) || (!policyId && !permission && !appSlug)) return null;
   if (!isSafeReturnUrlForResume(returnUrl)) return null;
@@ -127,6 +131,7 @@ function sanitizeResumeParams(
     permissionVersion,
     purpose,
     appSlug,
+    verifyRequestId: verifyRequestId || undefined,
   });
   if (!isRestorablePartnerVerifyPath(built)) return null;
 
@@ -139,6 +144,7 @@ function sanitizeResumeParams(
     purpose: purpose || undefined,
     appSlug: appSlug || undefined,
     policyVersion: policyVersion ?? undefined,
+    verifyRequestId: verifyRequestId || undefined,
   };
 }
 
@@ -157,6 +163,7 @@ export function buildPartnerVerifyPath(params: PartnerVerifyResumeParams): strin
     search.set("permission_version", params.permissionVersion.trim());
   }
   if (params.purpose?.trim()) search.set("purpose", params.purpose.trim());
+  if (params.verifyRequestId?.trim()) search.set("verify_request", params.verifyRequestId.trim());
   return `${PARTNER_VERIFY_PATH_PREFIX}${search.toString()}`;
 }
 
@@ -235,6 +242,7 @@ export function loadPartnerVerifyResume(): PartnerVerifyResumeState | null {
       purpose: typeof parsed.purpose === "string" ? parsed.purpose.trim() : undefined,
       appSlug: typeof parsed.appSlug === "string" ? parsed.appSlug.trim() : undefined,
       policyVersion: typeof parsed.policyVersion === "number" ? parsed.policyVersion : undefined,
+      verifyRequestId: typeof parsed.verifyRequestId === "string" ? parsed.verifyRequestId.trim() : undefined,
       savedAt: typeof parsed.savedAt === "string" ? parsed.savedAt.trim() : "",
     };
 

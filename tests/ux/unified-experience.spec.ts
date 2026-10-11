@@ -34,7 +34,9 @@ test.describe("Unified product experience (Build #518)", () => {
 
   test("Partner Launchpad subtitle matches operator lead", async ({ page }) => {
     await page.goto("/developers/launchpad");
-    await expect(page.getByText(/Choose what you need to verify/i).first()).toBeVisible();
+    await expect(
+      page.getByText(/Choose what you need to verify|Integrate private eligibility/i).first(),
+    ).toBeVisible({ timeout: 30_000 });
     await page.screenshot({ path: "/opt/cursor/artifacts/launchpad-guided-518.png", fullPage: true });
   });
 

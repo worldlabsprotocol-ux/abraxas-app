@@ -44,6 +44,14 @@ describe("partnerVerifyResume", () => {
     expect(isRestorablePartnerVerifyPath(path)).toBe(true);
   });
 
+  it("persists opaque verify_request in resume path", () => {
+    const path = buildPartnerVerifyPath({ ...SAMPLE, verifyRequestId: "vr_demo_opaque_001" });
+    expect(path).toContain("verify_request=vr_demo_opaque_001");
+    expect(isRestorablePartnerVerifyPath(path)).toBe(true);
+    savePartnerVerifyResume({ ...SAMPLE, verifyRequestId: "vr_demo_opaque_001" });
+    expect(loadPartnerVerifyResume()?.verifyRequestId).toBe("vr_demo_opaque_001");
+  });
+
   it("parses resume params from search params", () => {
     const params = new URLSearchParams({
       partner_id: SAMPLE.partnerId,
