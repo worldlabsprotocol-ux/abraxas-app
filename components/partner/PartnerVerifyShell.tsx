@@ -35,6 +35,11 @@ import {
   VerificationFailure,
   VerificationProgress,
 } from "@/components/partner/holder";
+import { HolderJourneyStatePanel } from "@/components/holder/HolderJourneyStatePanel";
+import {
+  holderJourneyCopyFor,
+  type HolderJourneyResolveInput,
+} from "@/lib/product/resolveHolderJourneyState";
 import { PrivacyComparisonPanel, type PrivacyComparisonPartner } from "@/components/experience/PrivacyComparisonPanel";
 import { CIELO_VERIFIED_GUEST_SOLANA_POLICY_ID } from "@/lib/cielo/cieloSolanaPolicyIds";
 import { GOOD_TROUBLE_AGE_21_RETAIL_SOLANA_POLICY_ID } from "@/lib/goodTrouble/goodTroubleSolanaPolicyIds";
@@ -86,6 +91,7 @@ export interface PartnerVerifyShellProps {
   onWalletSignInSuccess?: () => void;
   flowSupportRef?: string | null;
   flowNextStepHint?: string | null;
+  holderJourneyInput?: HolderJourneyResolveInput | null;
 }
 
 function recoveryForPhase(phase: PartnerVerifyPhase) {
@@ -166,6 +172,7 @@ export function PartnerVerifyShell({
   onWalletSignInSuccess,
   flowSupportRef = null,
   flowNextStepHint = null,
+  holderJourneyInput = null,
 }: PartnerVerifyShellProps) {
   const continuationContext = { policyId, purpose };
   const onSignInScreen = showSignIn(phase);
@@ -244,6 +251,21 @@ export function PartnerVerifyShell({
         ? "good_trouble"
         : null;
 
+  const journeyCopy = holderJourneyCopyFor(
+    holderJourneyInput ?? {
+      signedIn: !onSignInScreen && phase !== "loading" && phase !== "invalid_link",
+      walletBound: walletPrimarySignIn ? !onSignInScreen : !onSignInScreen,
+      identityComplete: phase === "approved",
+      partnerPhase: phase,
+      consentDenied: phase === "denied",
+      consentPending: phase === "preparing",
+      receiptIssued: phase === "approved",
+      handoffReady: phase === "returning" || phase === "approved",
+      insufficientEvidence: phase === "method_not_qualified",
+      credentialExpired: phase === "expired",
+    },
+  );
+
   const sandboxApproved = phase === "approved" && presentation.isSandbox;
   const approvedRecovery = sandboxApproved
     ? resolveHolderRecovery("sandbox_approved", partnerName, partnerHomeUrl)
@@ -264,6 +286,9 @@ export function PartnerVerifyShell({
       policyId={policyId}
       purpose={purpose}
     >
+      {journeyCopy && !hideOrientationChrome ? (
+        <HolderJourneyStatePanel copy={journeyCopy} compact />
+      ) : null}
       {showBrief && privacyPartner ? (
         <div style={{ marginBottom: "1rem" }} aria-label="Privacy comparison">
           <PrivacyComparisonPanel partner={privacyPartner} compact />

@@ -34,6 +34,7 @@ interface ConsentResult {
 }
 
 const RETURN_PATH = "/cielo/verified-rate";
+const DRAFT_STORAGE_KEY = "abraxas_cielo_verified_rate_draft_v1";
 
 export function CieloVerifiedRateFlow() {
   const router = useRouter();
@@ -103,6 +104,38 @@ export function CieloVerifiedRateFlow() {
   useEffect(() => {
     void loadStatus();
   }, [loadStatus]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = sessionStorage.getItem(DRAFT_STORAGE_KEY);
+      if (!raw) return;
+      const draft = JSON.parse(raw) as {
+        checkIn?: string;
+        checkOut?: string;
+        guests?: string;
+        guestName?: string;
+        contactEmail?: string;
+        notes?: string;
+        step?: FlowStep;
+      };
+      if (draft.checkIn) setCheckIn(draft.checkIn);
+      if (draft.checkOut) setCheckOut(draft.checkOut);
+      if (draft.guests) setGuests(draft.guests);
+      if (draft.guestName) setGuestName(draft.guestName);
+      if (draft.contactEmail) setContactEmail(draft.contactEmail);
+      if (draft.notes) setNotes(draft.notes);
+      if (draft.step && draft.step !== "done") setStep(draft.step);
+    } catch {
+      sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const draft = { checkIn, checkOut, guests, guestName, contactEmail, notes, step };
+    sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+  }, [checkIn, checkOut, guests, guestName, contactEmail, notes, step]);
 
   useEffect(() => {
     if (solanaNative || !isAuthenticated) return;

@@ -9,6 +9,7 @@ import { isHostedHolderBootstrapEligible } from "@/lib/auth/hostedHolderEligibil
 import { ensurePartnerHolderSessionReady } from "@/lib/auth/ensurePartnerHolderSession";
 import { isSolanaNativeProductEnabledClient } from "@/lib/auth/solanaNative/clientFeatureFlag";
 import { holderContinueSignInMessage } from "@/lib/auth/solanaNative/holderSignInCopy";
+import type { HolderJourneyResolveInput } from "@/lib/product/resolveHolderJourneyState";
 import { useHolderSession } from "@/lib/hooks/useHolderSession";
 import { useHostedHolderBootstrap } from "@/lib/partner/useHostedHolderBootstrap";
 import { useGoogleSignIn } from "@/lib/hooks/useGoogleSignIn";
@@ -160,6 +161,7 @@ export function PartnerVerifyClient({
     ? explicitVerifyParams!.returnUrl
     : (launchpadResolution.resolved?.returnUrl
       ?? (verifyInput.ok ? verifyInput.params.returnUrl : (searchParams.get("return_url") ?? "")));
+  const verifyRequestId = searchParams.get("verify_request")?.trim() ?? "";
   const isDobFirstBrowse = isGoodTroubleBrowseFlow({
     partnerId: relyingPartyId,
     policyId,
@@ -234,6 +236,7 @@ export function PartnerVerifyClient({
       permissionVersion: permissionVersion || undefined,
       purpose: purpose || undefined,
       appSlug: launchpadAppSlug || undefined,
+      verifyRequestId: verifyRequestId || undefined,
     });
   }, [
     invalidLinkMessage,
@@ -246,6 +249,7 @@ export function PartnerVerifyClient({
     permissionVersion,
     purpose,
     launchpadAppSlug,
+    verifyRequestId,
   ]);
 
   useEffect(() => {
@@ -547,6 +551,7 @@ export function PartnerVerifyClient({
         permissionVersion: permissionVersion || undefined,
         purpose: purpose || undefined,
         appSlug: launchpadAppSlug || undefined,
+        verifyRequestId: verifyRequestId || undefined,
       });
     }
 
@@ -598,6 +603,20 @@ export function PartnerVerifyClient({
     setPhase("sign_in");
   }, [runEvaluate, holderReady]);
 
+  const holderJourneyInput = useMemo((): HolderJourneyResolveInput => ({
+    signedIn: holderReady,
+    walletBound: holderReady,
+    identityComplete: phase === "approved",
+    partnerPhase: phase,
+    consentDenied: phase === "denied",
+    consentPending: phase === "preparing" || phase === "verifying",
+    receiptIssued: phase === "approved",
+    handoffReady: phase === "returning" || phase === "approved",
+    insufficientEvidence: phase === "method_not_qualified",
+    credentialExpired: phase === "expired",
+    returningSession: oauthReturnReady,
+  }), [holderReady, phase, oauthReturnReady]);
+
   const handleWalletSignInSuccess = useCallback(() => {
     void refreshHolderSession().then(() => {
       evaluateOnceRef.current = false;
@@ -631,6 +650,7 @@ export function PartnerVerifyClient({
       onWalletSignInSuccess={handleWalletSignInSuccess}
       flowSupportRef={correlationId ?? flowTraceId}
       flowNextStepHint={flowNextStepHint}
+      holderJourneyInput={holderJourneyInput}
     />
   );
 }

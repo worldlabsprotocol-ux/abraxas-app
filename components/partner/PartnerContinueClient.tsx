@@ -43,6 +43,8 @@ import {
 } from "@/lib/partner/partnerHolderCopy";
 import { GOOD_TROUBLE_RETAIL_POLICY_ID, GOOD_TROUBLE_BROWSE_POLICY_ID } from "@/lib/goodTrouble/constants";
 import { Btn } from "@/components/redesign/ui";
+import { HolderJourneyStatePanel } from "@/components/holder/HolderJourneyStatePanel";
+import { holderJourneyCopyFor } from "@/lib/product/resolveHolderJourneyState";
 import { StatusBanner } from "@/components/ui/StatusBanner";
 import {
   PASSPORT_SECURE_ACCOUNT_EXPLAINER,
@@ -392,6 +394,28 @@ function PartnerContinueInner() {
     underReview: holderState === "under_review",
     handoffReady: handoff.ready,
   });
+  const holderJourneyCopy = useMemo(
+    () => holderJourneyCopyFor({
+      signedIn,
+      walletBound: setup.walletBound,
+      identityComplete: setup.identityComplete,
+      identityStatus,
+      handoffReady: handoff.ready,
+      consentPending: showPartnerConsent,
+      consentDenied: holderState === "verification_could_not_confirm",
+      credentialExpired: holderState === "verification_expired",
+      insufficientEvidence: holderState === "verify_age" || holderState === "id_upload_fallback",
+    }),
+    [
+      signedIn,
+      setup.walletBound,
+      setup.identityComplete,
+      identityStatus,
+      handoff.ready,
+      showPartnerConsent,
+      holderState,
+    ],
+  );
   const setupVisibility = resolvePartnerSetupVisibility({
     partnerId,
     policyId,
@@ -656,6 +680,9 @@ function PartnerContinueInner() {
       {!directHandoff && !simplifiedPurchase && holderOpening && (
         <HolderOpeningBrief opening={holderOpening} />
       )}
+      {holderJourneyCopy && !directHandoff ? (
+        <HolderJourneyStatePanel copy={holderJourneyCopy} compact />
+      ) : null}
       {authLoadingCombined || contextLoading || (hostedBootstrapEligible && hostedBootstrap.bootstrapping) ? (
         <ProtocolLoadingState
           kind="preparing_request"
@@ -697,7 +724,7 @@ function PartnerContinueInner() {
             )}
           </div>
         ) : (
-          <HolderRecoveryCard recovery={resolveHolderRecovery("session_required", partnerName, partnerHomeUrl)} />
+          <HolderRecoveryCard recovery={resolveHolderRecovery("session_required", partnerName, partnerHomeUrl, { walletPrimarySignIn: solanaNative })} />
         )
       ) : simplifiedPurchase && verifyRequestId ? (
         <GoodTroublePurchaseContinueFlow
