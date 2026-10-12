@@ -13,9 +13,10 @@ export function HomeVerifiableTrustChapter() {
       <header className="abx-cinematic-trust-chapter__intro abx-premium-trust__intro">
         <p className="abx-v2-eyebrow">{CINEMATIC_TRUST_CHAPTER_EYEBROW}</p>
         <h2 className="abx-v2-section-title abx-premium-trust__title">Progressively disclosed proof</h2>
-        <p className="abx-v2-section-lead">
-          Explore signed receipts, expiration, revocation, and independent verification. Interactive examples are labeled;
-          devnet observations are shown separately from marketing animation.
+        <p className="abx-v2-section-lead abx-premium-trust__plain-lead">
+          First, see how a signed answer can be checked without exposing personal files. Deeper sections below use protocol
+          terms — registry APIs, devnet labels, and simulated receipts — so you can inspect real engineering details when
+          you are ready.
         </p>
       </header>
 

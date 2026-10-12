@@ -37,7 +37,7 @@ export const HOME_GOOD_TROUBLE_INTEGRATION = {
   primaryCta: "Try the sandbox example",
   secondaryCta: "Watch the production demo",
   secondaryHref: GOOD_TROUBLE_INTEGRATION_PATH,
-  videoTitle: "Abraxas and Good Trouble private eligibility production demo",
+  videoTitle: "Abraxas and Good Trouble early partner eligibility demonstration",
   proofSteps: [
     { step: 1, label: "Customer intent in Good Trouble" },
     { step: 2, label: "Proof only when necessary" },
@@ -47,6 +47,6 @@ export const HOME_GOOD_TROUBLE_INTEGRATION = {
   mediaFootnote:
     "L0 age eligibility demonstration. Not government ID verification or a substitute for legally required ID checks.",
   videoCaption:
-    "Screen recording of the Good Trouble partner flow showing private 21+ eligibility with Abraxas (demonstration).",
+    "Screen recording of an early Good Trouble integration demo: private 21+ eligibility with Abraxas. Not a certified production checkout.",
   homepageSectionHeadline: "See Abraxas in action.",
 } as const;
