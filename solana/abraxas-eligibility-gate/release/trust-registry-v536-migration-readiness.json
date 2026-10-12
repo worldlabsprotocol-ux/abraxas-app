@@ -1,0 +1,28 @@
+{
+  "schema": "abraxas_trust_registry_migration_readiness_v536",
+  "network_id": "solana_devnet",
+  "program_id": "EN29YNgHRuJ3h9cWrPS9hSDBt8DUNtoSSTT9EbUZewC8",
+  "registry_pda": "ApYQzo8UQo7fPTMJQA2YFs5mCa3iFWqGSabsoH9gBueL",
+  "baseline_build": 535,
+  "baseline_evidence": "solana/abraxas-eligibility-gate/release/trust-registry-v535-devnet-live.json",
+  "sbf_artifact_path": "solana/abraxas-eligibility-gate/target/deploy/abraxas_trust_registry.so",
+  "elf_sha256": "1d1abd46d7c8aad53ae13131be354cb486e0a23a985672d3ae967c20ed785019",
+  "migration_phases": [
+    "program_upgrade_deploy_founder_authorized",
+    "extend_registry_governance_layout",
+    "nominate_verified_multisig_vault",
+    "squads_execute_accept_governance_authority",
+    "optional_bpf_set_upgrade_authority_to_vault"
+  ],
+  "interruption_safety": {
+    "legacy_layout_ops_without_extend": "program_test_proven_build_536",
+    "atomic_upgrade_claim": false,
+    "notes": "Upgrade + extend are separate transactions; legacy ops remain valid on 463-byte layout until extend is explicitly executed."
+  },
+  "squads_rehearsal": {
+    "status": "not_executed",
+    "vault_pda": null,
+    "accept_tx": null
+  },
+  "mainnet": false
+}

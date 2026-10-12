@@ -23,6 +23,7 @@ import {
 } from "@/lib/integrate/partnerJourney";
 import { DesignPartnerApplicationForm } from "@/components/integrations/DesignPartnerApplicationForm";
 import { PartnerOnboardingPositioningPanel } from "@/components/integrate/PartnerOnboardingPositioningPanel";
+import { TrustRegistryGovernanceMigrationPanel } from "@/components/protocol/TrustRegistryGovernanceMigrationPanel";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -110,6 +111,9 @@ export default function IntegrationsPage() {
           "Issuer suspension and schema versioning",
         ]} />
         <Btn href="/api/trust/registry" size="sm" variant="secondary">View registry JSON →</Btn>
+        <div style={{ marginTop: "1rem" }}>
+          <TrustRegistryGovernanceMigrationPanel />
+        </div>
       </ContentCard>
       </div>
 

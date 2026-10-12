@@ -105,6 +105,7 @@ async fn unauthorized_revoker_fails_at_program_level() {
                 .to_account_metas(None),
                 data: abraxas_trust_registry::instruction::RegisterPolicy {
                     policy_commitment,
+                    registry_domain: domain,
                     policy_version: 1,
                 }
                 .data(),
@@ -120,6 +121,7 @@ async fn unauthorized_revoker_fails_at_program_level() {
                 }
                 .to_account_metas(None),
                 data: abraxas_trust_registry::instruction::AddCommitmentPublisher {
+                    registry_domain: domain,
                     key_id: h32(1),
                     pubkey: publisher.pubkey().to_bytes(),
                 }
@@ -140,6 +142,7 @@ async fn unauthorized_revoker_fails_at_program_level() {
                 .to_account_metas(None),
                 data: abraxas_trust_registry::instruction::PublishCommitment {
                     commitment_digest: digest,
+                    registry_domain: domain,
                     sequence: 1,
                 }
                 .data(),
@@ -167,7 +170,11 @@ async fn unauthorized_revoker_fails_at_program_level() {
             commitment_state,
         }
         .to_account_metas(None),
-        data: abraxas_trust_registry::instruction::RevokeCommitment { sequence: 2 }.data(),
+        data: abraxas_trust_registry::instruction::RevokeCommitment {
+            registry_domain: domain,
+            sequence: 2,
+        }
+        .data(),
     };
     let err = ctx
         .banks_client
@@ -227,6 +234,7 @@ async fn authorized_revoker_transitions_active_to_revoked() {
                 .to_account_metas(None),
                 data: abraxas_trust_registry::instruction::RegisterPolicy {
                     policy_commitment,
+                    registry_domain: domain,
                     policy_version: 1,
                 }
                 .data(),
@@ -242,6 +250,7 @@ async fn authorized_revoker_transitions_active_to_revoked() {
                 }
                 .to_account_metas(None),
                 data: abraxas_trust_registry::instruction::AddCommitmentPublisher {
+                    registry_domain: domain,
                     key_id: h32(1),
                     pubkey: publisher.pubkey().to_bytes(),
                 }
@@ -258,6 +267,7 @@ async fn authorized_revoker_transitions_active_to_revoked() {
                 }
                 .to_account_metas(None),
                 data: abraxas_trust_registry::instruction::AddRevoker {
+                    registry_domain: domain,
                     key_id: h32(2),
                     pubkey: revoker.pubkey().to_bytes(),
                 }
@@ -278,6 +288,7 @@ async fn authorized_revoker_transitions_active_to_revoked() {
                 .to_account_metas(None),
                 data: abraxas_trust_registry::instruction::PublishCommitment {
                     commitment_digest: digest,
+                    registry_domain: domain,
                     sequence: 1,
                 }
                 .data(),
@@ -293,7 +304,11 @@ async fn authorized_revoker_transitions_active_to_revoked() {
                     commitment_state,
                 }
                 .to_account_metas(None),
-                data: abraxas_trust_registry::instruction::RevokeCommitment { sequence: 2 }.data(),
+                data: abraxas_trust_registry::instruction::RevokeCommitment {
+            registry_domain: domain,
+            sequence: 2,
+        }
+        .data(),
             },
             vec![&revoker],
         ),
@@ -375,6 +390,7 @@ async fn stale_revocation_sequence_rejected() {
                 .to_account_metas(None),
                 data: abraxas_trust_registry::instruction::RegisterPolicy {
                     policy_commitment,
+                    registry_domain: domain,
                     policy_version: 1,
                 }
                 .data(),
@@ -390,6 +406,7 @@ async fn stale_revocation_sequence_rejected() {
                 }
                 .to_account_metas(None),
                 data: abraxas_trust_registry::instruction::AddCommitmentPublisher {
+                    registry_domain: domain,
                     key_id: h32(1),
                     pubkey: publisher.pubkey().to_bytes(),
                 }
@@ -406,6 +423,7 @@ async fn stale_revocation_sequence_rejected() {
                 }
                 .to_account_metas(None),
                 data: abraxas_trust_registry::instruction::AddRevoker {
+                    registry_domain: domain,
                     key_id: h32(2),
                     pubkey: revoker.pubkey().to_bytes(),
                 }
@@ -426,6 +444,7 @@ async fn stale_revocation_sequence_rejected() {
                 .to_account_metas(None),
                 data: abraxas_trust_registry::instruction::PublishCommitment {
                     commitment_digest: digest,
+                    registry_domain: domain,
                     sequence: 1,
                 }
                 .data(),
@@ -441,7 +460,11 @@ async fn stale_revocation_sequence_rejected() {
                     commitment_state,
                 }
                 .to_account_metas(None),
-                data: abraxas_trust_registry::instruction::RevokeCommitment { sequence: 2 }.data(),
+                data: abraxas_trust_registry::instruction::RevokeCommitment {
+            registry_domain: domain,
+            sequence: 2,
+        }
+        .data(),
             },
             vec![&revoker],
         ),
@@ -466,7 +489,11 @@ async fn stale_revocation_sequence_rejected() {
             commitment_state,
         }
         .to_account_metas(None),
-        data: abraxas_trust_registry::instruction::RevokeCommitment { sequence: 1 }.data(),
+        data: abraxas_trust_registry::instruction::RevokeCommitment {
+            registry_domain: domain,
+            sequence: 1,
+        }
+        .data(),
     };
     let err = ctx
         .banks_client
