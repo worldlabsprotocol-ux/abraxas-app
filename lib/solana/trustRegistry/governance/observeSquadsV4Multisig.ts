@@ -1,6 +1,6 @@
-import { Connection, PublicKey, SystemProgram } from "@solana/web3.js";
-import { accounts, getVaultPda, types as sqdsTypes } from "@sqds/multisig";
+import { PublicKey, SystemProgram } from "@solana/web3.js";
 import { deriveSquadsV4VaultPda, SQUADS_MULTISIG_V4_PROGRAM_ID } from "@/lib/solana/trustRegistry/governance/squadsV4Pda";
+import { fetchSolanaAccountInfo } from "@/lib/solana/trustRegistry/governance/solanaGovernanceJsonRpc";
 
 export type SquadsV4MemberObservation = {
   pubkey: string;
@@ -33,7 +33,7 @@ export type SquadsV4MultisigObservation = {
 };
 
 export async function observeSquadsV4Multisig(params: {
-  connection: Connection;
+  rpcUrl: string;
   multisigPda: string;
   vaultIndex: number;
   expectedVaultPda?: string | null;
@@ -48,10 +48,18 @@ export async function observeSquadsV4Multisig(params: {
   }
 
   const derived = deriveSquadsV4VaultPda(multisigPk, params.vaultIndex);
-  const [sdkVault] = getVaultPda({ multisigPda: multisigPk, index: params.vaultIndex });
-  const derivationMatches = derived.vaultPda.equals(sdkVault);
+  let sdkVault: PublicKey;
+  let derivationMatches = false;
+  try {
+    const sqds = await import("@sqds/multisig");
+    [sdkVault] = sqds.getVaultPda({ multisigPda: multisigPk, index: params.vaultIndex });
+    derivationMatches = derived.vaultPda.equals(sdkVault);
+  } catch {
+    errors.push("sqds_sdk_unavailable");
+    sdkVault = derived.vaultPda;
+  }
 
-  if (!derivationMatches) {
+  if (!derivationMatches && !errors.includes("sqds_sdk_unavailable")) {
     errors.push("local_vault_pda_differs_from_sqds_sdk");
   }
 
@@ -63,52 +71,59 @@ export async function observeSquadsV4Multisig(params: {
   let createKey: string | null = null;
   let configAuthority: string | null = null;
 
-  try {
-    const info = await params.connection.getAccountInfo(multisigPk, "confirmed");
-    if (!info) {
-      errors.push("multisig_account_missing");
-    } else {
-      accountPresent = true;
-      accountOwner = info.owner.toBase58();
-      if (accountOwner !== squadsProgramId) {
-        errors.push("multisig_owner_not_squads_v4");
-      }
-      try {
-        const decoded = accounts.Multisig.fromAccountInfo(info)[0];
-        threshold = decoded.threshold;
-        memberCount = decoded.members.length;
-        createKey = decoded.createKey.toBase58();
-        configAuthority = decoded.configAuthority.toBase58();
-        members = decoded.members.map((m) => ({
-          pubkey: m.key.toBase58(),
-          permissionsMask: m.permissions.mask,
-          hasInitiate: sqdsTypes.Permissions.has(m.permissions, sqdsTypes.Permission.Initiate),
-          hasVote: sqdsTypes.Permissions.has(m.permissions, sqdsTypes.Permission.Vote),
-          hasExecute: sqdsTypes.Permissions.has(m.permissions, sqdsTypes.Permission.Execute),
-        }));
-      } catch {
-        errors.push("multisig_deserialize_failed");
-      }
+  const multisigInfo = await fetchSolanaAccountInfo(params.rpcUrl, multisigPk.toBase58(), "confirmed");
+  if (!multisigInfo.ok) {
+    errors.push(`multisig_rpc_fetch_failed:${multisigInfo.code}`);
+  } else if (!multisigInfo.value) {
+    errors.push("multisig_account_missing");
+  } else {
+    accountPresent = true;
+    accountOwner = multisigInfo.value.owner;
+    if (accountOwner !== squadsProgramId) {
+      errors.push("multisig_owner_not_squads_v4");
     }
-  } catch {
-    errors.push("multisig_rpc_fetch_failed");
+    try {
+      const sqds = await import("@sqds/multisig");
+      const info = {
+        owner: new PublicKey(multisigInfo.value.owner),
+        lamports: multisigInfo.value.lamports,
+        data: multisigInfo.value.data,
+        executable: multisigInfo.value.executable,
+      };
+      const decoded = sqds.accounts.Multisig.fromAccountInfo(info as never)[0];
+      threshold = decoded.threshold;
+      memberCount = decoded.members.length;
+      createKey = decoded.createKey.toBase58();
+      configAuthority = decoded.configAuthority.toBase58();
+      members = decoded.members.map((m) => ({
+        pubkey: m.key.toBase58(),
+        permissionsMask: m.permissions.mask,
+        hasInitiate: sqds.types.Permissions.has(m.permissions, sqds.types.Permission.Initiate),
+        hasVote: sqds.types.Permissions.has(m.permissions, sqds.types.Permission.Vote),
+        hasExecute: sqds.types.Permissions.has(m.permissions, sqds.types.Permission.Execute),
+      }));
+    } catch {
+      errors.push("multisig_deserialize_failed");
+    }
   }
 
   let vaultLamports: number | null = null;
   let vaultOwner: string | null = null;
-  try {
-    const vaultInfo = await params.connection.getAccountInfo(derived.vaultPda, "confirmed");
-    if (!vaultInfo) {
-      errors.push("vault_account_missing");
-    } else {
-      vaultLamports = vaultInfo.lamports;
-      vaultOwner = vaultInfo.owner.toBase58();
-      if (!vaultInfo.owner.equals(SystemProgram.programId)) {
-        errors.push("vault_owner_not_system_program");
-      }
+  const vaultInfo = await fetchSolanaAccountInfo(
+    params.rpcUrl,
+    derived.vaultPda.toBase58(),
+    "confirmed",
+  );
+  if (!vaultInfo.ok) {
+    errors.push(`vault_rpc_fetch_failed:${vaultInfo.code}`);
+  } else if (!vaultInfo.value) {
+    errors.push("vault_account_missing");
+  } else {
+    vaultLamports = vaultInfo.value.lamports;
+    vaultOwner = vaultInfo.value.owner;
+    if (vaultOwner !== SystemProgram.programId.toBase58()) {
+      errors.push("vault_owner_not_system_program");
     }
-  } catch {
-    errors.push("vault_rpc_fetch_failed");
   }
 
   const expected = params.expectedVaultPda?.trim() || null;

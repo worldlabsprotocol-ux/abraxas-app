@@ -1,4 +1,4 @@
-import { Connection, PublicKey } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import { ABRAXAS_TRUST_REGISTRY_PROGRAM_ID } from "@/lib/solana/trustRegistry/constants";
 import { decodeCommitmentStateAccount } from "@/lib/solana/trustRegistry/decodeCommitmentState";
 import {
@@ -9,6 +9,11 @@ import { TRUST_REGISTRY_DEVNET_LIVE_V535 } from "@/lib/solana/trustRegistry/gove
 import { SQUADS_MULTISIG_V4_PROGRAM_ID } from "@/lib/solana/trustRegistry/governance/squadsV4Pda";
 import { SOLANA_UPGRADEABLE_LOADER } from "@/lib/partner/onchainGateDeployments/solanaArtifacts";
 import { SOLANA_DEVNET_GENESIS_HASH } from "@/lib/partner/testnetGateDeploymentKit/solanaDevnetChainPrecheck";
+import {
+  fetchSolanaAccountInfo,
+  fetchSolanaGenesisHash,
+  fetchSolanaSlot,
+} from "@/lib/solana/trustRegistry/governance/solanaGovernanceJsonRpc";
 
 export type DevnetTrustRegistryObservation = {
   rpc_url: string;
@@ -45,72 +50,82 @@ export async function observeDevnetTrustRegistryActivation(
   rpcUrl: string,
 ): Promise<DevnetTrustRegistryObservation> {
   const errors: string[] = [];
-  const connection = new Connection(rpcUrl, "finalized");
   let genesis_hash: string | null = null;
   let slot: number | null = null;
-  try {
-    genesis_hash = await connection.getGenesisHash();
-    slot = await connection.getSlot("finalized");
-  } catch (e) {
-    errors.push(`rpc_meta_failed:${String(e)}`);
+
+  const genesisResult = await fetchSolanaGenesisHash(rpcUrl);
+  if (genesisResult.ok) {
+    genesis_hash = genesisResult.value;
+  } else {
+    errors.push(`rpc_meta_failed:${genesisResult.code}:${genesisResult.detail}`);
   }
 
-  const programId = new PublicKey(ABRAXAS_TRUST_REGISTRY_PROGRAM_ID);
-  const registryPda = new PublicKey(TRUST_REGISTRY_DEVNET_LIVE_V535.registry_pda);
-  const commitmentPda = new PublicKey(TRUST_REGISTRY_DEVNET_LIVE_V535.commitment_state_pda);
+  const slotResult = await fetchSolanaSlot(rpcUrl, "finalized");
+  if (slotResult.ok) {
+    slot = slotResult.value;
+  } else {
+    errors.push(`rpc_meta_failed:${slotResult.code}:${slotResult.detail}`);
+  }
+
+  const programId = ABRAXAS_TRUST_REGISTRY_PROGRAM_ID;
+  const registryPda = TRUST_REGISTRY_DEVNET_LIVE_V535.registry_pda;
+  const commitmentPda = TRUST_REGISTRY_DEVNET_LIVE_V535.commitment_state_pda;
 
   let program_executable = false;
   let program_data_address: string | null = null;
   let upgrade_authority: string | null = null;
-  try {
-    const prog = await connection.getAccountInfo(programId, "finalized");
-    program_executable = prog?.executable === true;
-    if (prog) {
-      program_data_address = programDataAddress(prog.owner.toBase58(), Buffer.from(prog.data));
-      if (program_data_address) {
-        const pd = await connection.getAccountInfo(new PublicKey(program_data_address), "finalized");
-        if (pd) upgrade_authority = readUpgradeAuthority(Buffer.from(pd.data));
+  const progResult = await fetchSolanaAccountInfo(rpcUrl, programId, "finalized");
+  if (!progResult.ok) {
+    errors.push(`program_observation_failed:${progResult.code}:${progResult.detail}`);
+  } else if (progResult.value) {
+    const prog = progResult.value;
+    program_executable = prog.executable;
+    program_data_address = programDataAddress(prog.owner, prog.data);
+    if (program_data_address) {
+      const pdResult = await fetchSolanaAccountInfo(rpcUrl, program_data_address, "finalized");
+      if (!pdResult.ok) {
+        errors.push(`program_data_observation_failed:${pdResult.code}:${pdResult.detail}`);
+      } else if (pdResult.value) {
+        upgrade_authority = readUpgradeAuthority(pdResult.value.data);
       }
     }
-  } catch (e) {
-    errors.push(`program_observation_failed:${String(e)}`);
   }
 
   let registry_pda_present = false;
   let registry_data_len: number | null = null;
   let governance_authority: string | null = null;
   let governance_ui_state: string | null = null;
-  try {
-    const reg = await connection.getAccountInfo(registryPda, "finalized");
-    registry_pda_present = reg != null;
-    if (reg) {
-      registry_data_len = reg.data.length;
-      const decoded = decodeTrustRegistryGovernance(Buffer.from(reg.data));
+  const regResult = await fetchSolanaAccountInfo(rpcUrl, registryPda, "finalized");
+  if (!regResult.ok) {
+    errors.push(`registry_observation_failed:${regResult.code}:${regResult.detail}`);
+  } else if (regResult.value) {
+    registry_pda_present = true;
+    registry_data_len = regResult.value.data.length;
+    try {
+      const decoded = decodeTrustRegistryGovernance(regResult.value.data);
       governance_authority = decoded.governanceAuthority;
       governance_ui_state = deriveGovernanceMigrationUiState(decoded, BigInt(slot ?? 0));
+    } catch (e) {
+      errors.push(`registry_decode_failed:${String(e)}`);
     }
-  } catch (e) {
-    errors.push(`registry_observation_failed:${String(e)}`);
   }
 
   let commitment_present = false;
   let commitment_status: string | null = null;
-  try {
-    const cs = await connection.getAccountInfo(commitmentPda, "finalized");
-    commitment_present = cs != null;
-    if (cs) {
-      commitment_status = decodeCommitmentStateAccount(Buffer.from(cs.data))?.status ?? null;
-    }
-  } catch (e) {
-    errors.push(`commitment_observation_failed:${String(e)}`);
+  const csResult = await fetchSolanaAccountInfo(rpcUrl, commitmentPda, "finalized");
+  if (!csResult.ok) {
+    errors.push(`commitment_observation_failed:${csResult.code}:${csResult.detail}`);
+  } else if (csResult.value) {
+    commitment_present = true;
+    commitment_status = decodeCommitmentStateAccount(csResult.value.data)?.status ?? null;
   }
 
   let squads_v4_program_executable: boolean | null = null;
-  try {
-    const sq = await connection.getAccountInfo(new PublicKey(SQUADS_MULTISIG_V4_PROGRAM_ID), "finalized");
-    squads_v4_program_executable = sq?.executable === true;
-  } catch (e) {
-    errors.push(`squads_observation_failed:${String(e)}`);
+  const sqResult = await fetchSolanaAccountInfo(rpcUrl, SQUADS_MULTISIG_V4_PROGRAM_ID, "finalized");
+  if (!sqResult.ok) {
+    errors.push(`squads_observation_failed:${sqResult.code}:${sqResult.detail}`);
+  } else if (sqResult.value) {
+    squads_v4_program_executable = sqResult.value.executable;
   }
 
   return {
