@@ -49,7 +49,7 @@
     {
       "id": "home-shell-institutional",
       "file": "components/redesign/RedesignHome.tsx",
-      "mustContain": ["abx-institutional-home", "InstitutionalHomeHero", "HomeVerifyProtectReuse", "abx-v2-shell"]
+      "mustContain": ["abx-institutional-home", "InstitutionalHomeHero", "HomeVerificationLifecycle", "abx-v2-shell"]
     },
     {
       "id": "protocol-in-action-media",

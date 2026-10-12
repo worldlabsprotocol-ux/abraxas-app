@@ -1,6 +1,7 @@
 /* Abraxas monochrome design system — editorial black canvas, precision engineering surfaces */
 
 @import url("./globals.institutional-v2.css");
+@import url("./globals.premium-home.css");
 
 [data-theme="dark"] {
   --bg: #050505;
