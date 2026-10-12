@@ -106,6 +106,36 @@
 }
 
 /* Protocol demo */
+.abx-protocol-demo__scenarios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.abx-protocol-demo__scenario {
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.abx-protocol-demo__scenario--active {
+  border-color: var(--abx-verify-green, #4cbb92);
+  color: var(--text-primary);
+}
+
+.abx-protocol-demo__scenario:focus-visible {
+  outline: 2px solid var(--abx-verify-green, #4cbb92);
+  outline-offset: 2px;
+}
+
 .abx-protocol-demo__rail {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

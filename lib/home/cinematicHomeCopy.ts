@@ -106,7 +106,8 @@ export const CINEMATIC_GT_SECTION_HEADLINE = "See Abraxas in action.";
 
 export const CINEMATIC_GT_SECTION_LEAD = "Age check without sharing ID or date of birth.";
 
-export const CINEMATIC_GT_PARTNER_DISCLAIMER = "Good Trouble · early integration demo · not production checkout.";
+export const CINEMATIC_GT_PARTNER_DISCLAIMER =
+  "Good Trouble early partner integration demo — not production checkout. Holder consent and privacy boundaries still apply.";
 
 export const CINEMATIC_TRUST_CHAPTER_EYEBROW = "Built on verifiable trust";
 

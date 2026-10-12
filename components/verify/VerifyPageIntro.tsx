@@ -45,9 +45,10 @@ export function VerifyPageIntro() {
           Passport
         </Link>
       </p>
-      <div className="abx-surface-protocol-visual">
+      <details className="abx-surface-protocol-visual abx-verify-diagram-ref">
+        <summary>Reference: receipt inspection map (not live status)</summary>
         <DecisionReceiptInspectionVisual />
-      </div>
+      </details>
     </div>
   );
 }

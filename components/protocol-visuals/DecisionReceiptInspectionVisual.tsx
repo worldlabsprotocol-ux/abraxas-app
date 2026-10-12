@@ -7,10 +7,10 @@ export function DecisionReceiptInspectionVisual() {
       kicker="Verification"
       title="Decision receipt"
       titleAccent="inspection."
-      caption="Each check maps to a verifier step — signature, policy, issuer, freshness, revocation, replay."
+      caption="Reference diagram — use the workbench below for interactive valid, expired, revoked, and unavailable scenarios (simulated)."
     >
       <ProtocolDiagramFigure
-        src="/protocol-visuals/decision-receipt-inspection.png"
+        src="/protocol-visuals/decision-receipt-inspection.webp"
         alt="Receipt inspection diagram showing valid versus revoked paths across signature, policy, issuer, and revocation checks."
         width={1920}
         height={1080}

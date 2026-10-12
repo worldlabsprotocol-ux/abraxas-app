@@ -6,6 +6,8 @@ export type ProtocolDiagramFigureProps = {
   width: number;
   height: number;
   priority?: boolean;
+  /** Reference-only art — omit alt text when titled elsewhere. */
+  decorative?: boolean;
 };
 
 /** Productized diagram surface — reference art inside system chrome, not a floating slide. */
@@ -15,26 +17,27 @@ export function ProtocolDiagramFigure({
   width,
   height,
   priority = false,
+  decorative = false,
 }: ProtocolDiagramFigureProps) {
-  const webpSrc = src.endsWith(".png") ? src.replace(/\.png$/, ".webp") : src;
+  const webpSrc = src.endsWith(".webp") ? src : src.replace(/\.png$/, ".webp");
   return (
     <figure className="abx-pv-diagram">
-      <div className="abx-pv-diagram__frame" style={{ aspectRatio: `${width} / ${height}` }}>
-        <picture>
-          <source srcSet={webpSrc} type="image/webp" />
+      <div className="abx-pv-diagram__scroll">
+        <div className="abx-pv-diagram__frame" style={{ aspectRatio: `${width} / ${height}` }}>
           <Image
-            src={src}
-            alt={alt}
+            src={webpSrc}
+            alt={decorative ? "" : alt}
             width={width}
             height={height}
             className="abx-pv-diagram__img"
-            sizes="(max-width: 768px) 100vw, min(1200px, 92vw)"
+            sizes="(max-width: 768px) 100vw, min(960px, 92vw)"
             priority={priority}
             loading={priority ? undefined : "lazy"}
           />
-        </picture>
-        <div className="abx-pv-diagram__grid-overlay" aria-hidden="true" />
+          <div className="abx-pv-diagram__grid-overlay" aria-hidden="true" />
+        </div>
       </div>
+      {!decorative && alt ? <figcaption className="abx-pv-diagram__sr-only">{alt}</figcaption> : null}
     </figure>
   );
 }

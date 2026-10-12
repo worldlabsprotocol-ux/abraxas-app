@@ -10,7 +10,7 @@ export function PolicyAuthorizationFlowVisual() {
       caption="Consent → policy check → evaluation → signed receipt → app decision. Private data stays inside your boundary."
     >
       <ProtocolDiagramFigure
-        src="/protocol-visuals/policy-authorization-flow.png"
+        src="/protocol-visuals/policy-authorization-flow.webp"
         alt="Five-step flow: user consent in private space, policy request, Abraxas evaluation, signed receipt, and app decision."
         width={1920}
         height={1080}

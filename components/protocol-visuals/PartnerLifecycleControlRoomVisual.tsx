@@ -26,10 +26,10 @@ const EVIDENCE_META: Record<string, { detail: string; status?: "ok" | "neutral" 
   "Session continuity": { detail: "PKCE / return URL", status: "neutral" },
   "Receipt sample": { detail: "View sample", status: "ok" },
   "Signature check": { detail: "Ed25519 fixture", status: "ok" },
-  "Verifier result": { detail: "PERMIT path", status: "ok" },
-  "Health status": { detail: "All systems operational", status: "ok" },
-  "Go-live request": { detail: "Operator queue", status: "neutral" },
-  "Review note": { detail: "Human approval required", status: "neutral" },
+  "Verifier result": { detail: "Sandbox fixture only", status: "neutral" },
+  "Health status": { detail: "See Launchpad health panels", status: "neutral" },
+  "Go-live request": { detail: "Operator queue — not auto-approved", status: "neutral" },
+  "Review note": { detail: "Human review required", status: "neutral" },
   "Operator decision": { detail: "Not self-serve mainnet", status: "neutral" },
   "Production credentials gate": { detail: "Issuance control plane", status: "neutral" },
 };
@@ -43,7 +43,7 @@ export function PartnerLifecycleControlRoomVisual() {
       kicker="Integration"
       title="Partner"
       titleAccent="lifecycle."
-      caption="Mission-control view of sandbox setup — select a stage to inspect evidence modules."
+      caption="Illustrative sandbox stages — not your application's live status. Use Launchpad telemetry for operational evidence."
       className="abx-pv-lifecycle"
     >
       <div className="abx-pv-lifecycle__room">

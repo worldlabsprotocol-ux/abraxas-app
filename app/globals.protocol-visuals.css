@@ -46,10 +46,31 @@
   margin: 0;
 }
 
+.abx-pv-diagram__scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
 .abx-pv-diagram__frame {
   position: relative;
   width: 100%;
+  min-width: min(100%, 320px);
+  max-height: min(72vh, 720px);
   background: #050505;
+}
+
+.abx-pv-diagram__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .abx-pv-diagram__img {
@@ -284,6 +305,93 @@
 
 .abx-surface-protocol-visual {
   margin-bottom: clamp(1.25rem, 3vw, 2rem);
+}
+
+.abx-protocol-visual-disclosure {
+  margin: 0 0 1.25rem;
+  padding: 0.65rem 0.85rem;
+  border-left: 2px solid var(--abx-premium-green, #4cbb92);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  max-width: 62ch;
+}
+
+.abx-pv-governance__banner {
+  margin: 0 0 1rem;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid rgba(229, 115, 115, 0.35);
+  color: #e57373;
+  background: rgba(229, 115, 115, 0.06);
+}
+
+.abx-pv-governance__banner--live {
+  border-color: rgba(76, 187, 146, 0.35);
+  color: var(--abx-premium-green, #4cbb92);
+  background: rgba(76, 187, 146, 0.06);
+}
+
+.abx-pv-governance__planes {
+  list-style: none;
+  margin: 0;
+  padding: clamp(0.75rem, 2vw, 1rem);
+  display: grid;
+  gap: 0.65rem;
+}
+
+.abx-pv-governance__plane {
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.abx-pv-governance__plane-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.abx-pv-governance__plane-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.abx-pv-governance__plane--observed .abx-pv-governance__plane-badge {
+  color: var(--abx-premium-green, #4cbb92);
+}
+
+.abx-pv-governance__plane-scope {
+  margin: 0 0 0.25rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.abx-pv-governance__plane-detail {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.abx-pv-governance__reference {
+  margin-top: 1rem;
+  padding: 0 0.75rem 0.75rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.abx-pv-governance__reference summary {
+  cursor: pointer;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

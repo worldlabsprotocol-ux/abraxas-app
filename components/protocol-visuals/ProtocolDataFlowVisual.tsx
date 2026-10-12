@@ -11,7 +11,7 @@ export function ProtocolDataFlowVisual() {
       caption="Your credentials stay in your private space. Apps receive signed results — not copies of your documents."
     >
       <ProtocolDiagramFigure
-        src="/protocol-visuals/abraxas-protocol-data-flow.png"
+        src="/protocol-visuals/abraxas-protocol-data-flow.webp"
         alt="Diagram: your private credentials flow through Abraxas Protocol to apps that receive only signed verification results such as over 21 or KYC verified."
         width={1920}
         height={1080}
