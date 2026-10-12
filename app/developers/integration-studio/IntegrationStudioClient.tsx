@@ -55,6 +55,8 @@ import {
   type IntegrationStudioOutcomeId,
 } from "@/lib/gtm/integrationStudioOutcomes";
 import { recordGtmClientEvent } from "@/lib/gtm/clientTelemetry";
+import { IntegrationStudioOperationalBridge } from "@/app/developers/integration-studio/IntegrationStudioOperationalBridge";
+import { IntegrationStudioRequestWorkbench } from "@/components/developers/IntegrationStudioRequestWorkbench";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -415,6 +417,11 @@ export function IntegrationStudioClient() {
 
   return (
     <>
+      <IntegrationStudioOperationalBridge
+        applicationId={configuredAppId}
+        signedIn={signedIn}
+        returnUrl={returnUrl}
+      />
       <Reveal style={{ marginBottom: "1rem" }}>
         <ModeCCommandRail
           items={[
@@ -859,7 +866,7 @@ export function IntegrationStudioClient() {
         )}
       </ContentCard>
 
-      <ContentCard title={`Create · ${PARTNER_ACTIVATION_CREATE_CTA}`}>
+      <ContentCard title={`Create · ${PARTNER_ACTIVATION_CREATE_CTA}`} id="sandbox">
         <p style={{ ...body, marginBottom: "0.75rem" }}>
           Create an isolated sandbox directly in the browser. No wallet, zkLogin, or existing API key is required. A secure cookie keeps the new sandbox attached to this browser.
         </p>
@@ -963,6 +970,8 @@ export function IntegrationStudioClient() {
       {walletApp && (
         <SolanaUsdcPlansPanel applicationId={walletApp.applicationId} />
       )}
+
+      <IntegrationStudioRequestWorkbench />
 
       <ContentCard title="Test your sandbox">
         <p style={{ ...body }}>Run the hosted flow first. Open the full checklist only when you are ready to verify every integration edge.</p>

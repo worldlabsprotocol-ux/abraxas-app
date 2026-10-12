@@ -58,6 +58,8 @@ import { OnchainVerifierConformanceCard } from "@/components/partner/launchpad/O
 import { GO_LIVE_REVIEW_ENTRY } from "@/lib/partner/launchpad/goLiveReadiness/contract";
 import { PolicyProposalForm } from "@/components/partner/policyProposal/PolicyProposalForm";
 import { POLICY_PROPOSAL_NOTICE } from "@/lib/partner/policyProposal/contract";
+import { LaunchpadApplicationNav } from "@/components/partner/launchpad/LaunchpadApplicationNav";
+import { LaunchpadOperationalInspector } from "@/components/partner/launchpad/LaunchpadOperationalInspector";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -555,12 +557,28 @@ export function PartnerLaunchpadClient({
   }
 
   return (
-    <RedesignPage accent="developer" maxWidth={960}>
+    <RedesignPage accent="developer" maxWidth={1320}>
       <PageHeader
         eyebrow="Partner Launchpad"
         title="Integrate private eligibility"
         subtitle="One integration. Multiple eligibility policies. Add approved eligibility questions through the same Abraxas trust infrastructure without collecting underlying identity data."
       />
+
+      <div className="abx-launchpad-operational">
+        {workspace?.applications.length ? (
+          <LaunchpadApplicationNav
+            applications={workspace.applications}
+            activeAppId={activeApp?.id ?? activeAppId}
+            onSelect={(id) => {
+              setActiveAppId(id);
+              setError("");
+            }}
+          />
+        ) : (
+          <div className="abx-launchpad-nav abx-launchpad-nav--empty" aria-hidden />
+        )}
+
+        <div className="abx-launchpad-operational__center">
 
       {activeApp && journey && (
         <ModeCCommandRail
@@ -1076,6 +1094,14 @@ export function PartnerLaunchpadClient({
           )}
         </ContentCard>
       )}
+
+        </div>
+
+        <LaunchpadOperationalInspector
+          applicationId={activeApp?.id ?? null}
+          activity={activity}
+        />
+      </div>
     </RedesignPage>
   );
 }

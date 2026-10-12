@@ -29,6 +29,7 @@ import { computePassportSetupState } from "@/lib/idv/identityVerificationStates"
 import { VerifyClient } from "@/app/verify/VerifyClient";
 import { PartnerFlowReturnHandler } from "@/components/partner/PartnerFlowReturnHandler";
 import { PartnerVerificationResumeCta } from "@/components/passport/PartnerVerificationResumeCta";
+import { PassportAssuranceBoundaryNotice } from "@/components/passport/PassportAssuranceBoundaryNotice";
 import {
   PASSPORT_PAGE_EYEBROW,
   PASSPORT_PAGE_HEADLINE,
@@ -193,7 +194,7 @@ function PassportPageInner() {
   }
 
   return (
-    <AbxPageShell accent="passport" maxWidth={960} className="abx-holder-console" contentStyle={{ paddingTop: "clamp(2rem,5vw,3rem)" }}>
+    <AbxPageShell accent="passport" maxWidth={1080} className="abx-holder-console" contentStyle={{ paddingTop: "clamp(2rem,5vw,3rem)" }}>
       <div id="veriff-root" />
       <VeriffDeviceHint visible={showVeriffHint} />
 
@@ -385,6 +386,8 @@ function PassportPageInner() {
                 onBindWallet={() => setShowSuccessPanel(false)}
               />
             )}
+
+            <PassportAssuranceBoundaryNotice />
 
             <PassportCustomerView
               walletDone={walletDone}
