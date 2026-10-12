@@ -789,6 +789,80 @@
   color: var(--text-primary);
 }
 
+.abx-passport-workspace {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 900px) {
+  .abx-passport-workspace {
+    grid-template-columns: 200px minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.abx-passport-workspace__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+@media (min-width: 900px) {
+  .abx-passport-workspace__nav {
+    flex-direction: column;
+    position: sticky;
+    top: 1rem;
+  }
+}
+
+.abx-passport-workspace__nav-item {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.4rem 0.55rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.abx-passport-workspace__section {
+  margin-bottom: 1.25rem;
+  scroll-margin-top: 5rem;
+}
+
+.abx-launchpad-table-wrap {
+  overflow-x: auto;
+}
+
+.abx-launchpad-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.72rem;
+}
+
+.abx-launchpad-table th,
+.abx-launchpad-table td {
+  border-bottom: 1px solid var(--border);
+  padding: 0.45rem 0.35rem;
+  text-align: left;
+}
+
+.abx-launchpad-table__row--selected td {
+  background: rgba(213, 175, 70, 0.08);
+}
+
+.abx-launchpad-table tbody tr {
+  cursor: pointer;
+}
+
+.abx-launchpad-table tbody tr:focus-visible {
+  outline: 2px solid rgba(213, 175, 70, 0.5);
+  outline-offset: -2px;
+}
+
 /* Verify workbench hierarchy */
 .abx-verify-workbench {
   max-width: var(--abx-v2-max, 1180px);

@@ -38,6 +38,8 @@ import { PUBLIC_SURFACE } from "@/lib/design/publicSurface";
 import { TrustStatus } from "@/components/product/TrustStatus";
 import { PassportReuseStrip } from "@/components/passport/PassportReuseStrip";
 import { PassportIdentityObject, type PassportLifecycleState } from "@/components/passport/PassportIdentityObject";
+import { PassportHolderWorkspace } from "@/components/passport/PassportHolderWorkspace";
+import { PASSPORT_PRIVACY_HREF } from "@/lib/passport/passportPrivacyNavigation";
 import type { CapturePolicyContext } from "@/lib/idv/capturePolicyContext";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -162,11 +164,23 @@ export function PassportCustomerView({
     );
   }
 
-  return (
-    <div>
-      {walletDone && <PassportRequestInbox />}
+  const signInBlock = !walletDone ? (
+    <section style={CARD} aria-labelledby="passport-signin-heading">
+      <h2 id="passport-signin-heading" style={{
+        fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.75rem",
+      }}>
+        Sign in to continue
+      </h2>
+      <ZkLoginSignIn />
+    </section>
+  ) : null;
 
-      <PassportIdentityObject
+  return (
+    <PassportHolderWorkspace
+      assurance={(
+        <>
+          {signInBlock}
+          <PassportIdentityObject
         state={(
           status.identityUi === "verified" && hasCredential
             ? "reusable"
@@ -188,7 +202,6 @@ export function PassportCustomerView({
           audience="holder"
           items={buildPassportTrustItems(status.identityUi, hasCredential)}
         />
-        {hasCredential && status.identityUi === "verified" ? <PassportReuseStrip /> : null}
         {proofItems.length > 0 && (
           <ul className="abx-passport-object__proof-list">
             {proofItems.map((item) => (
@@ -197,29 +210,6 @@ export function PassportCustomerView({
           </ul>
         )}
       </section>
-
-      {walletDone && (
-        <PassportRecentActivity
-          suiAddress={suiAddress}
-          walletBound={setup.walletBound}
-          identityUi={status.identityUi}
-          identityRequired={handoff.isPartnerFlowContext}
-        />
-      )}
-
-      <PartnerVerificationResumeCta />
-      <PassportInstallCard />
-
-      {!walletDone && (
-        <section style={CARD} aria-labelledby="passport-signin-heading">
-          <h2 id="passport-signin-heading" style={{
-            fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.75rem",
-          }}>
-            Sign in to continue
-          </h2>
-          <ZkLoginSignIn />
-        </section>
-      )}
 
       {walletDone && browserSessionState === "reauthentication_required" && (
         <PassportReauthenticationPanel />
@@ -297,62 +287,95 @@ export function PassportCustomerView({
           ) : null}
         </section>
       )}
-
-      {handoff.isPartnerFlowContext && setup.walletBound && (
-        <div style={{ marginBottom: "1rem" }}>
-          <PartnerReturnCta handoff={handoff} label="Return to service →" />
-        </div>
-      )}
-
-      {walletDone && browserSessionReady && (
-        <PassportWalletsSection onChanged={onRefresh} />
-      )}
-
-      {walletDone && (
-        <>
-          <section style={CARD} aria-labelledby="passport-proof-heading">
-            <h2 id="passport-proof-heading" style={{
-              fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.35rem",
-            }}>
-              What your Passport can confirm
-            </h2>
-            <p style={{
-              fontFamily: FONT,
-              fontSize: "0.8rem",
-              lineHeight: 1.55,
-              color: "var(--text-secondary)",
-              margin: "0 0 0.75rem",
-            }}>
-              A service receives the result it needs, such as eligible or verified. Your private documents stay private.
-            </p>
-            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: "0.45rem" }}>
-              {proofItems.map((item) => (
-                <li key={item} style={{
-                  display: "grid",
-                  gridTemplateColumns: "1.2rem minmax(0, 1fr)",
-                  gap: "0.5rem",
-                  alignItems: "start",
-                  fontFamily: FONT,
-                  fontSize: "0.84rem",
-                  lineHeight: 1.55,
-                  color: "var(--text-secondary)",
-                }}>
-                  <span aria-hidden="true" style={{ color: "#5EEAD4", fontWeight: 800 }}>✓</span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </section>
-          <PassportConnectionsCard walletBindingStatus={walletBindingStatus} />
-
         </>
       )}
-
-      <p style={{ fontFamily: FONT, fontSize: "0.8rem", margin: "0 0 2rem" }}>
-        <Link href={PASSPORT_ADVANCED_ROUTE} style={{ color: "var(--text-muted)", fontWeight: 600, textDecoration: "none" }}>
-          Advanced details →
-        </Link>
-      </p>
-    </div>
+      credentials={(
+        <>
+          {hasCredential && status.identityUi === "verified" ? <PassportReuseStrip /> : null}
+          {walletDone && browserSessionReady && (
+            <PassportWalletsSection onChanged={onRefresh} />
+          )}
+          {walletDone && (
+            <section style={CARD} aria-labelledby="passport-proof-heading">
+              <h2 id="passport-proof-heading" style={{
+                fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.35rem",
+              }}>
+                What your Passport can confirm
+              </h2>
+              <p style={{
+                fontFamily: FONT,
+                fontSize: "0.8rem",
+                lineHeight: 1.55,
+                color: "var(--text-secondary)",
+                margin: "0 0 0.75rem",
+              }}>
+                Partner-specific PERMIT does not mean global approval across all policies.
+              </p>
+              <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: "0.45rem" }}>
+                {proofItems.map((item) => (
+                  <li key={item} style={{
+                    display: "grid",
+                    gridTemplateColumns: "1.2rem minmax(0, 1fr)",
+                    gap: "0.5rem",
+                    alignItems: "start",
+                    fontFamily: FONT,
+                    fontSize: "0.84rem",
+                    lineHeight: 1.55,
+                    color: "var(--text-secondary)",
+                  }}>
+                    <span aria-hidden="true" style={{ color: "#5EEAD4", fontWeight: 800 }}>✓</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </>
+      )}
+      requests={walletDone ? <PassportRequestInbox showEmpty /> : <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)" }}>Sign in to review authorization requests.</p>}
+      consent={(
+        <>
+          <PartnerVerificationResumeCta />
+          {handoff.isPartnerFlowContext && setup.walletBound && (
+            <div style={{ marginBottom: "1rem" }}>
+              <PartnerReturnCta handoff={handoff} label="Return to service →" />
+            </div>
+          )}
+        </>
+      )}
+      receipts={(
+        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.55, margin: 0 }}>
+          Receipt validity and independent verification live under{" "}
+          <Link href="/passport?view=verify" style={{ color: "var(--accent)", fontWeight: 700 }}>My records</Link>
+          {" "}and the public verify workbench. Abraxas does not mark receipts valid without a verified check.
+        </p>
+      )}
+      partners={walletDone ? (
+        <PassportRecentActivity
+          suiAddress={suiAddress}
+          walletBound={setup.walletBound}
+          identityUi={status.identityUi}
+          identityRequired={handoff.isPartnerFlowContext}
+        />
+      ) : (
+        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)" }}>Partner access history appears after sign-in.</p>
+      )}
+      controls={(
+        <>
+          <PassportInstallCard />
+          {walletDone && <PassportConnectionsCard walletBindingStatus={walletBindingStatus} />}
+          <p style={{ fontFamily: FONT, fontSize: "0.78rem", margin: "0.75rem 0 0" }}>
+            <Link href={PASSPORT_PRIVACY_HREF} style={{ color: "var(--accent)", fontWeight: 700 }}>
+              Privacy, export, and deletion controls →
+            </Link>
+          </p>
+          <p style={{ fontFamily: FONT, fontSize: "0.8rem", margin: "0.75rem 0 0" }}>
+            <Link href={PASSPORT_ADVANCED_ROUTE} style={{ color: "var(--text-muted)", fontWeight: 600, textDecoration: "none" }}>
+              Advanced details →
+            </Link>
+          </p>
+        </>
+      )}
+    />
   );
 }

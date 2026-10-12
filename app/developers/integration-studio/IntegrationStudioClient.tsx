@@ -2,7 +2,7 @@
 // FILE: app/developers/integration-studio/IntegrationStudioClient.tsx
 // Guided studio plus session-bound sandbox create on Partner Launchpad.
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ContentCard } from "@/components/redesign/RedesignContent";
@@ -57,6 +57,8 @@ import {
 import { recordGtmClientEvent } from "@/lib/gtm/clientTelemetry";
 import { IntegrationStudioOperationalBridge } from "@/app/developers/integration-studio/IntegrationStudioOperationalBridge";
 import { IntegrationStudioRequestWorkbench } from "@/components/developers/IntegrationStudioRequestWorkbench";
+import { IntegrationStudioSessionHandoff } from "@/components/developers/IntegrationStudioSessionHandoff";
+import { IntegrationStudioConfigurationPanel } from "@/components/developers/IntegrationStudioConfigurationPanel";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -143,6 +145,7 @@ export function IntegrationStudioClient() {
   const [hostedDocs, setHostedDocs] = useState<{ hosted_link?: string; sandbox_testing?: string[] } | null>(null);
   const [resumeApp, setResumeApp] = useState<ResumableApp | null>(null);
   const [resumePartnerId, setResumePartnerId] = useState("");
+  const [urlAppId, setUrlAppId] = useState<string | null>(null);
   const [handoffNotice, setHandoffNotice] = useState("");
   const [bindingId, setBindingId] = useState<string | null>(null);
   const [selectedOutcomeId, setSelectedOutcomeId] = useState<IntegrationStudioOutcomeId | null>(() => {
@@ -175,7 +178,7 @@ export function IntegrationStudioClient() {
     setOptionalCaps((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   }
 
-  const configuredAppId = created?.application_id ?? resumeApp?.id ?? null;
+  const configuredAppId = created?.application_id ?? resumeApp?.id ?? urlAppId;
 
   async function generateStarter() {
     setKitError("");
@@ -277,6 +280,8 @@ export function IntegrationStudioClient() {
       setPathId(mapped.defaultPathId);
       setPackId(mapped.defaultPackId);
     }
+    const appParam = params.get("app")?.trim();
+    if (appParam) setUrlAppId(appParam);
     if (params.get("source") === "browser-builder") {
       setHandoffNotice("Your browser-built plan is loaded. Review it, then generate the starter kit or continue to the hosted sandbox. No terminal is required.");
     } else if (pack && catalogVersion) {
@@ -284,35 +289,38 @@ export function IntegrationStudioClient() {
     }
   }, []);
 
-  useEffect(() => {
-    void (async () => {
-      try {
-        const res = await fetch("/api/launchpad/auth/session", { credentials: "include" });
-        const data = await res.json() as { authenticated?: boolean };
-        const authenticated = Boolean(data.authenticated);
-        setSignedIn(authenticated);
-        if (!authenticated) {
-          setResumeApp(null);
-          setResumePartnerId("");
-          return;
-        }
-        const workspaceRes = await fetch("/api/launchpad/applications", { credentials: "include" });
-        const workspace = await workspaceRes.json() as {
-          workspace?: {
-            partner_id?: string;
-            applications?: ResumableApp[];
-          };
-        };
-        const first = workspace.workspace?.applications?.[0];
-        setResumeApp(first ?? null);
-        setResumePartnerId(workspace.workspace?.partner_id ?? "");
-      } catch {
-        setSignedIn(false);
+  const refreshLaunchpadSession = useCallback(async () => {
+    try {
+      const res = await fetch("/api/launchpad/auth/session", { credentials: "include" });
+      const data = await res.json() as { authenticated?: boolean };
+      const authenticated = Boolean(data.authenticated);
+      setSignedIn(authenticated);
+      if (!authenticated) {
         setResumeApp(null);
         setResumePartnerId("");
+        return;
       }
-    })();
-  }, []);
+      const workspaceRes = await fetch("/api/launchpad/applications", { credentials: "include" });
+      const workspace = await workspaceRes.json() as {
+        workspace?: {
+          partner_id?: string;
+          applications?: ResumableApp[];
+        };
+      };
+      const apps = workspace.workspace?.applications ?? [];
+      const fromUrl = urlAppId ? apps.find((item) => item.id === urlAppId) : undefined;
+      setResumeApp(fromUrl ?? apps[0] ?? null);
+      setResumePartnerId(workspace.workspace?.partner_id ?? "");
+    } catch {
+      setSignedIn(false);
+      setResumeApp(null);
+      setResumePartnerId("");
+    }
+  }, [urlAppId]);
+
+  useEffect(() => {
+    void refreshLaunchpadSession();
+  }, [refreshLaunchpadSession]);
 
   async function createSandbox() {
     setError("");
@@ -356,6 +364,7 @@ export function IntegrationStudioClient() {
       if (data.application) {
         setCreated(data.application);
         setSignedIn(true);
+        void refreshLaunchpadSession();
         void recordGtmClientEvent("sandbox_created", {
           recommended_path: pathId,
           environment: "sandbox",
@@ -970,6 +979,17 @@ export function IntegrationStudioClient() {
       {walletApp && (
         <SolanaUsdcPlansPanel applicationId={walletApp.applicationId} />
       )}
+
+      <IntegrationStudioSessionHandoff
+        signedIn={signedIn}
+        applicationId={configuredAppId}
+        onSessionChange={(authenticated) => {
+          setSignedIn(authenticated);
+          if (authenticated) void refreshLaunchpadSession();
+        }}
+      />
+
+      <IntegrationStudioConfigurationPanel applicationId={configuredAppId} signedIn={signedIn} />
 
       <IntegrationStudioRequestWorkbench />
 

@@ -9,12 +9,14 @@ test.describe("V2 operational surfaces", () => {
     await expect(page.getByRole("navigation", { name: "Integration lifecycle" })).toBeVisible();
     await expect(page.getByRole("tablist", { name: "Inspector sections" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Authenticated request builder" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Launchpad session" })).toBeVisible();
   });
 
   test("passport shows assurance boundary notice", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`${base}/passport`);
     await expect(page.getByRole("region", { name: "Identity versus partner authorization" })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Holder workspace sections" })).toBeVisible();
   });
 
   test("launchpad operational layout at desktop width", async ({ page }) => {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ABRAXAS_FONT_MONO, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
+import { useLaunchpadOperational } from "@/components/partner/launchpad/launchpadOperationalContext";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -11,6 +12,7 @@ type ActivityEvent = {
   event_type?: string;
   created_at?: string;
   public_code?: string | null;
+  metadata?: Record<string, unknown>;
 };
 
 export function LaunchpadOperationalInspector({
@@ -20,8 +22,11 @@ export function LaunchpadOperationalInspector({
   applicationId: string | null;
   activity: ActivityEvent[];
 }) {
+  const { selectedActivity } = useLaunchpadOperational();
   const [webhook, setWebhook] = useState<{ available?: boolean; error?: string; deliveries?: Array<{ id: string; status: string }> } | null>(null);
   const [productionStatus, setProductionStatus] = useState<string | null>(null);
+  const [timeline, setTimeline] = useState<unknown>(null);
+  const [timelineError, setTimelineError] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -67,6 +72,49 @@ export function LaunchpadOperationalInspector({
     };
   }, [applicationId]);
 
+  useEffect(() => {
+    if (!applicationId || !selectedActivity) {
+      setTimeline(null);
+      setTimelineError("");
+      return;
+    }
+    const requestId = typeof selectedActivity.metadata?.request_id === "string"
+      ? selectedActivity.metadata.request_id
+      : undefined;
+    const receiptId = typeof selectedActivity.metadata?.receipt_id === "string"
+      ? selectedActivity.metadata.receipt_id
+      : undefined;
+    let cancelled = false;
+    void (async () => {
+      setTimelineError("");
+      try {
+        const params = new URLSearchParams();
+        if (requestId) params.set("request_id", requestId);
+        if (receiptId) params.set("receipt_id", receiptId);
+        const res = await fetch(
+          `/api/launchpad/applications/${applicationId}/integration-timeline?${params.toString()}`,
+          { credentials: "include", cache: "no-store" },
+        );
+        const data = await res.json();
+        if (cancelled) return;
+        if (!res.ok) {
+          setTimeline(null);
+          setTimelineError(typeof data.error === "string" ? data.error : "Timeline unavailable for this event");
+          return;
+        }
+        setTimeline(data);
+      } catch {
+        if (!cancelled) {
+          setTimeline(null);
+          setTimelineError("Timeline fetch failed");
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [applicationId, selectedActivity]);
+
   if (!applicationId) {
     return (
       <aside className="abx-launchpad-inspector" aria-label="Launchpad diagnostics">
@@ -81,6 +129,63 @@ export function LaunchpadOperationalInspector({
     <aside className="abx-launchpad-inspector" aria-label="Launchpad diagnostics">
       <h2 style={{ fontFamily: FONT, fontSize: "0.78rem", margin: "0 0 0.65rem" }}>Evidence & diagnostics</h2>
       {loading && <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>Refreshing…</p>}
+
+      <section style={{ marginBottom: "0.85rem" }}>
+        <h3 style={{ fontFamily: FONT, fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 0.35rem" }}>
+          Selected activity
+        </h3>
+        {selectedActivity ? (
+          <>
+            <p style={{ fontFamily: FONT, fontSize: "0.68rem", margin: "0 0 0.35rem" }}>
+              {selectedActivity.event_type.replace(/_/g, " ")}
+              {selectedActivity.public_code ? ` · ${selectedActivity.public_code}` : ""}
+            </p>
+            {timelineError && (
+              <p style={{ fontFamily: FONT, fontSize: "0.65rem", color: "var(--text-muted)" }}>{timelineError}</p>
+            )}
+            {timeline ? (
+              <pre
+                className="abx-code-scroll"
+                style={{
+                  fontFamily: MONO,
+                  fontSize: "0.58rem",
+                  maxHeight: 200,
+                  overflow: "auto",
+                  margin: 0,
+                  padding: "0.45rem",
+                  borderRadius: 8,
+                  border: "1px solid var(--border)",
+                  background: "var(--surface-inset)",
+                }}
+              >
+                {JSON.stringify(timeline, null, 2)}
+              </pre>
+            ) : !timelineError ? (
+              <p style={{ fontFamily: FONT, fontSize: "0.65rem", color: "var(--text-muted)" }}>
+                Select a row with linked request/receipt metadata for a full timeline.
+              </p>
+            ) : null}
+            {selectedActivity.metadata && Object.keys(selectedActivity.metadata).length > 0 && (
+              <pre
+                style={{
+                  fontFamily: MONO,
+                  fontSize: "0.58rem",
+                  maxHeight: 120,
+                  overflow: "auto",
+                  margin: "0.35rem 0 0",
+                }}
+              >
+                {JSON.stringify(selectedActivity.metadata, null, 2)}
+              </pre>
+            )}
+          </>
+        ) : (
+          <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>
+            Select an activity row to inspect evidence.
+          </p>
+        )}
+      </section>
+
       <section style={{ marginBottom: "0.85rem" }}>
         <h3 style={{ fontFamily: FONT, fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 0.35rem" }}>
           Production review
@@ -108,20 +213,9 @@ export function LaunchpadOperationalInspector({
       </section>
       <section>
         <h3 style={{ fontFamily: FONT, fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 0.35rem" }}>
-          Recent activity
+          Activity count
         </h3>
-        {activity.length ? (
-          <ul style={{ fontFamily: FONT, fontSize: "0.65rem", paddingLeft: "1rem", margin: 0, display: "grid", gap: "0.2rem" }}>
-            {activity.slice(0, 8).map((event, index) => (
-              <li key={event.id ?? `${event.event_type}-${index}`}>
-                {(event.event_type ?? "event").replace(/_/g, " ")}
-                {event.public_code ? ` · ${event.public_code}` : ""}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>No activity recorded yet.</p>
-        )}
+        <p style={{ fontFamily: MONO, fontSize: "0.62rem", margin: 0 }}>{activity.length} events loaded</p>
       </section>
     </aside>
   );
