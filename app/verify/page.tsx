@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { AbxPageShell } from "@/components/design/AbxPageShell";
 import { RedesignPageLoading } from "@/components/redesign/RedesignPageLoading";
 import { VerifyPageIntro } from "@/components/verify/VerifyPageIntro";
+import { VerifyWorkbenchChrome } from "@/components/verify/VerifyWorkbenchChrome";
 import { DeveloperContextBanner } from "@/components/redesign/DeveloperContextBanner";
 import { VerifyPageIntroDemo } from "@/components/verify/VerifyPageIntroDemo";
 import { VerifyStaticSample } from "@/components/verify/VerifyStaticSample";
@@ -33,6 +34,7 @@ export default function VerifyPage({ searchParams }: PageProps) {
         <DeveloperContextBanner title="Developer Receipt Tester" />
       </div>
       <VerifyPageIntro />
+      <VerifyWorkbenchChrome />
       <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 clamp(1rem, 3vw, 2rem) clamp(1rem, 3vw, 2rem)" }}>
         <Suspense fallback={<RedesignPageLoading label="Loading navigation…" compact />}>
           <PassportPageTabs active="verify" />

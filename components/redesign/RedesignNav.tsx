@@ -10,7 +10,14 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { NavProfileMenu, NavSignInButton } from "@/components/sui/NavProfileMenu";
 import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
-import { PUBLIC_FONT_SANS, PUBLIC_NAV_LINKS, PUBLIC_NAV_MAP_LINKS, PUBLIC_NAV_EXPLORE_LINKS } from "@/lib/design/publicSurface";
+import {
+  PUBLIC_FONT_SANS,
+  PUBLIC_NAV_LINKS,
+  PUBLIC_NAV_MAP_LINKS,
+  PUBLIC_NAV_EXPLORE_LINKS,
+  PUBLIC_NAV_PRIMARY_CTA,
+  PUBLIC_NAV_DOCS_CTA,
+} from "@/lib/design/publicSurface";
 
 const FONT = PUBLIC_FONT_SANS;
 const ACCENT = "var(--accent)";
@@ -140,6 +147,35 @@ export function RedesignNav() {
       <div className="rd-nav-spacer" style={{ flex: 1 }} />
 
       <div className="rd-nav-right" style={{ display: "none", alignItems: "center", gap: "0.5rem", flexShrink: 0 }}>
+        <Link
+          href={PUBLIC_NAV_DOCS_CTA.href}
+          style={{
+            fontFamily: FONT,
+            fontSize: "0.78rem",
+            fontWeight: 600,
+            color: "var(--text-muted)",
+            textDecoration: "none",
+            padding: "0.35rem 0.5rem",
+          }}
+        >
+          {PUBLIC_NAV_DOCS_CTA.label}
+        </Link>
+        <Link
+          href={PUBLIC_NAV_PRIMARY_CTA.href}
+          style={{
+            fontFamily: FONT,
+            fontSize: "0.78rem",
+            fontWeight: 700,
+            color: "var(--btn-primary-text, #080B0D)",
+            background: "var(--btn-primary-bg)",
+            padding: "0.45rem 0.85rem",
+            borderRadius: 999,
+            textDecoration: "none",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {PUBLIC_NAV_PRIMARY_CTA.label}
+        </Link>
         <LanguageSelector />
         {signedIn ? <NavProfileMenu prominent /> : <NavSignInButton prominent />}
       </div>
@@ -221,6 +257,16 @@ export function RedesignNav() {
             <p style={{ margin: "0.45rem 0 0.15rem", fontFamily: FONT, fontSize: "0.68rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)" }}>
               Explore
             </p>
+            <Link href={PUBLIC_NAV_DOCS_CTA.href} onClick={() => setOpen(false)} style={mobileSubLink}>
+              {PUBLIC_NAV_DOCS_CTA.label}
+            </Link>
+            <Link
+              href={PUBLIC_NAV_PRIMARY_CTA.href}
+              onClick={() => setOpen(false)}
+              style={{ ...mobileSubLink, color: "var(--abx-gold, var(--accent))", fontWeight: 700 }}
+            >
+              {PUBLIC_NAV_PRIMARY_CTA.label}
+            </Link>
             {PUBLIC_NAV_EXPLORE_LINKS.map((l) => (
               <Link key={`explore-${l.href}`} href={l.href} onClick={() => setOpen(false)} style={mobileSubLink}>
                 {l.label}
@@ -229,7 +275,7 @@ export function RedesignNav() {
             <p style={{ margin: "0.45rem 0 0.15rem", fontFamily: FONT, fontSize: "0.68rem", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)" }}>
               More
             </p>
-            {PUBLIC_NAV_MAP_LINKS.filter((l) => !PUBLIC_NAV_EXPLORE_LINKS.some((e) => e.href === l.href)).map((l) => (
+            {PUBLIC_NAV_MAP_LINKS.filter((l) => !PUBLIC_NAV_EXPLORE_LINKS.some((e) => e.href === (l.href as string))).map((l) => (
               <Link key={l.href} href={l.href} onClick={() => setOpen(false)} style={mobileSubLink}>
                 {l.label}
               </Link>

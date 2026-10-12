@@ -193,7 +193,7 @@ function PassportPageInner() {
   }
 
   return (
-    <AbxPageShell accent="passport" maxWidth={720} contentStyle={{ paddingTop: "clamp(2rem,5vw,3rem)" }}>
+    <AbxPageShell accent="passport" maxWidth={960} className="abx-holder-console" contentStyle={{ paddingTop: "clamp(2rem,5vw,3rem)" }}>
       <div id="veriff-root" />
       <VeriffDeviceHint visible={showVeriffHint} />
 

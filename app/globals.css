@@ -1,9 +1,10 @@
 /* FILE: app/globals.css
    Premium RWA/DeFi design tokens. Light default, dark optional. */
+@import "./globals.institutional-v2.css";
 
 :root {
   --font-sans: "Plus Jakarta Sans";
-  --font-display: "Plus Jakarta Sans";
+  --font-display: "DM Sans";
   --font-mono: "JetBrains Mono";
   /* Abraxas motion tokens — semantic roles (see lib/design/abraxasMotion.ts) */
   --abx-motion-micro: 140ms;
@@ -53,20 +54,20 @@
 }
 
 [data-theme="dark"] {
-  /* Deep obsidian with teal and indigo. Serious protocol, not a DeFi clone. */
-  --bg:             #05080F;
-  --bg-secondary:   #071018;
-  --surface:        rgba(22, 32, 52, 0.58);
-  --surface-raised: rgba(28, 40, 62, 0.78);
-  --surface-inset:  rgba(17, 26, 46, 0.88);
-  --surface-glass:  rgba(24, 36, 58, 0.68);
-  --border:         rgba(148, 163, 184, 0.14);
-  --border-strong:  rgba(148, 163, 184, 0.24);
-  --text-primary:   #F8FAFC;
-  --text-secondary: #CBD5E1;
-  --text-muted:     #94A3B8;
+  /* Institutional V2 — graphite foundation, mineral gold accent */
+  --bg:             #080B0D;
+  --bg-secondary:   #11161A;
+  --surface:        rgba(23, 29, 34, 0.72);
+  --surface-raised: #171D22;
+  --surface-inset:  #11161A;
+  --surface-glass:  rgba(23, 29, 34, 0.85);
+  --border:         #293138;
+  --border-strong:  rgba(213, 175, 70, 0.28);
+  --text-primary:   #F1F2EF;
+  --text-secondary: #939DA4;
+  --text-muted:     #6B757C;
   --text-caption:   #64748B;
-  --accent:         #2DD4BF;
+  --accent:         #D5AF46;
   --accent-pale:    #99F6E4;
   --accent-deep:    #0F766E;
   --accent-bright:  #5EEAD4;
@@ -99,8 +100,8 @@
   --abx-card-bg-end: rgba(17, 26, 46, 0.92);
   --abx-card-border: rgba(148, 163, 184, 0.16);
   --abx-card-shadow: 0 8px 32px rgba(4, 10, 24, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  --btn-primary-bg: linear-gradient(135deg, #E8C547 0%, #C9A227 100%);
-  --btn-primary-text: #09111F;
+  --btn-primary-bg: linear-gradient(135deg, #D5AF46 0%, #B8922E 100%);
+  --btn-primary-text: #080B0D;
   --gradient-text: linear-gradient(90deg, #E8C547 0%, #F5E6A8 50%, #A78BFA 100%);
 }
 

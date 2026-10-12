@@ -1,10 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync, existsSync } from "fs";
 import { resolve } from "path";
-import {
-  INSTITUTIONAL_HOME_TITLE,
-  INSTITUTIONAL_TRUST_BOUNDARIES,
-} from "@/lib/home/institutionalHomeCopy";
+import { V2_HOME_HEADLINE } from "@/lib/home/v2HomeCopy";
+import { TRUST_MODEL_STAGES } from "@/lib/home/trustModelStages";
 import { protocolStateTone } from "@/lib/design/protocolStatePresentation";
 
 const ROOT = resolve(__dirname, "../..");
@@ -15,20 +13,24 @@ function read(rel: string): string {
   return readFileSync(path, "utf8");
 }
 
-describe("institutional homepage surface", () => {
-  it("RedesignHome uses institutional layout and live readiness panels", () => {
+describe("institutional homepage surface (V2)", () => {
+  it("RedesignHome uses editorial hero, trust exhibit, and capability matrix", () => {
     const home = read("components/redesign/RedesignHome.tsx");
     expect(home).toContain("InstitutionalHomeHero");
-    expect(home).toContain("HomeOperationalReadiness");
-    expect(home).toContain("TrustBoundaryPanel");
+    expect(home).toContain("TrustModelExhibit");
+    expect(home).toContain("LiveProtocolEvidence");
+    expect(home).toContain("CapabilityMatrix");
     expect(home).not.toContain("KineticMarquee");
     expect(home).not.toContain("CinematicHero");
-    expect(home).toContain("abx-institutional-home");
+    expect(home).not.toContain("HomeOperationalReadiness");
+    expect(home).toContain("abx-v2-shell");
   });
 
-  it("copy defines trust boundaries without forbidden hype", () => {
-    expect(INSTITUTIONAL_HOME_TITLE.length).toBeGreaterThan(20);
-    expect(INSTITUTIONAL_TRUST_BOUNDARIES.length).toBeGreaterThanOrEqual(4);
+  it("hero includes interactive receipt demo", () => {
+    const hero = read("components/institutional/InstitutionalHomeHero.tsx");
+    expect(hero).toContain("ProtocolReceiptDemo");
+    expect(V2_HOME_HEADLINE).toContain("Trust");
+    expect(TRUST_MODEL_STAGES.length).toBe(4);
   });
 
   it("devnet states map to warning tone", () => {

@@ -103,17 +103,14 @@ afterEach(() => {
 });
 
 describe("phase 6 activation static guards", () => {
-  it("uses simplified five-section homepage shell", () => {
+  it("uses institutional V2 homepage shell (no boot screen or legacy stats stack)", () => {
     const home = read("components/redesign/RedesignHome.tsx");
     expect(home).not.toContain("AbraxasBootScreen");
     expect(home).not.toContain("bootReady");
-    expect(home).toContain("HomeArchitectureFlow");
-    expect(home).toContain("HomeProblemComparison");
-    expect(home).toContain("HomeProtocolMap");
-    expect(home).toContain("HomeAudiencePanels");
-    expect(home).toContain("HomeTrustClose");
-    expect(home).not.toContain("HomeAssuranceNetwork");
+    expect(home).toContain("TrustModelExhibit");
+    expect(home).toContain("CapabilityMatrix");
     expect(home).not.toContain("HomeLiveStats");
+    expect(home).not.toContain("KineticMarquee");
   });
 
   it("uses simplified human copy in hero", () => {
