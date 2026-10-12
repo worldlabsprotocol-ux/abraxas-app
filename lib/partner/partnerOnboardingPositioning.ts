@@ -10,10 +10,10 @@ export interface PartnerCapabilityItem {
   availability: PartnerCapabilityAvailability;
 }
 
-export const PARTNER_ONBOARDING_HEADLINE = "One verification. Faster onboarding. Fewer forms.";
+export const PARTNER_ONBOARDING_HEADLINE = "Private eligibility your users understand";
 
 export const PARTNER_ONBOARDING_SUPPORTING_COPY =
-  "Abraxas helps users prove eligibility and securely continue into partner experiences without repeatedly exposing sensitive identity information.";
+  "Holders verify once with Abraxas. Your app receives a signed yes/no (or category) result — not identity documents. You verify the receipt on your server before granting access.";
 
 export const PARTNER_ONBOARDING_FUTURE_EXPLAINER =
   "With explicit user consent, partners will be able to create or recover a local account from an Abraxas verification, request selected contact information, and unlock partner specific benefits without requiring another password.";

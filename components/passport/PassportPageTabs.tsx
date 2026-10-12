@@ -16,6 +16,7 @@ import {
   HOLDER_VERIFY_DEFAULT_PATH,
   PARTNER_RECEIPT_VERIFIER_PATH,
 } from "@/lib/integrate/partnerJourney";
+import { HOLDER_NAV } from "@/lib/product/holderNavigationCopy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
@@ -48,15 +49,16 @@ export function PassportPageTabs({ active }: { active: PassportPageView }) {
     ? buildPartnerVerifierTabHref()
     : buildHolderVerifyTabHref(searchParams);
 
-  const verifyLabel = onVerifyRoute ? "Partner verifier" : "My records";
+  const verifyLabel = onVerifyRoute ? HOLDER_NAV.partnerVerifier.label : HOLDER_NAV.proofsAndRegistry.label;
+  const verifyShort = onVerifyRoute ? HOLDER_NAV.partnerVerifier.short : HOLDER_NAV.proofsAndRegistry.short;
 
   const tabs: Array<{ id: PassportPageView; label: string; shortLabel: string; href: string }> = [
-    { id: "passport", label: "My Passport", shortLabel: "Passport", href: passportHref },
-    { id: "requests", label: "Requests", shortLabel: "Requests", href: PASSPORT_REQUESTS_HREF },
-    { id: "activity", label: "Activity", shortLabel: "Activity", href: PASSPORT_ACTIVITY_HREF },
-    { id: "verify", label: verifyLabel, shortLabel: onVerifyRoute ? "Verifier" : "Records", href: verifyHref },
-    { id: "privacy", label: "Privacy & controls", shortLabel: "Privacy", href: PASSPORT_PRIVACY_HREF },
-    { id: "support", label: "Help & safety", shortLabel: "Help", href: PASSPORT_SUPPORT_HREF },
+    { id: "passport", label: HOLDER_NAV.passportHome.label, shortLabel: HOLDER_NAV.passportHome.short, href: passportHref },
+    { id: "requests", label: HOLDER_NAV.partnerRequests.label, shortLabel: HOLDER_NAV.partnerRequests.short, href: PASSPORT_REQUESTS_HREF },
+    { id: "activity", label: HOLDER_NAV.confirmations.label, shortLabel: HOLDER_NAV.confirmations.short, href: PASSPORT_ACTIVITY_HREF },
+    { id: "verify", label: verifyLabel, shortLabel: verifyShort, href: verifyHref },
+    { id: "privacy", label: HOLDER_NAV.privacy.label, shortLabel: HOLDER_NAV.privacy.short, href: PASSPORT_PRIVACY_HREF },
+    { id: "support", label: HOLDER_NAV.support.label, shortLabel: HOLDER_NAV.support.short, href: PASSPORT_SUPPORT_HREF },
   ];
 
   return (

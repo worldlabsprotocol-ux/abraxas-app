@@ -1,0 +1,12 @@
+{
+  "build": "516",
+  "generated_at": "2026-10-11T00:15:00.000Z",
+  "note": "Immutable checksums after 136/137 ON CONFLICT (id, version) fix for Demo partner_policies composite PK (055).",
+  "files": {
+    "134_holder_wallet_login.sql": "1d531b47633003d26d47b5538537645af53850e52c5b68b61c404179fa03e9f5",
+    "135_canonical_holder_accounts.sql": "bc20dbc3ba0411a2ae7f1dab5d0d36d1dd418b4a0257eb7680df497b42688149",
+    "136_cielo_verified_guest_solana_policy.sql": "217c29a28d0e754a779759f0fd67b19e2ba2c874867a2c7b2d4849632c5bdca1",
+    "137_good_trouble_age_21_solana_idv.sql": "ebcc5ddbfa062e4641ab96b29e092db5a3c23fd15bf27a119d7b01dc151f3d30",
+    "138_decision_receipt_solana_commitments.sql": "da2e56893597905211f0c470725c50d2a1dec9b0c3090a8fb284482f6437b73a"
+  }
+}

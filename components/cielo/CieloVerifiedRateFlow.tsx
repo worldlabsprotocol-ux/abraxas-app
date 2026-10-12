@@ -9,7 +9,7 @@ import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { eachNight, estimateUsdc } from "@/lib/cielo/bookingValidation";
 import type { CieloVerifiedGuestEvaluation } from "@/lib/cielo/verifiedGuestPolicy";
 import { ensureBrowserSessionReady } from "@/lib/auth/ensureBrowserSession";
-import { CIELO_HOLDER_COPY, humanizeCieloDisclosedResult, humanizeCieloReason } from "@/lib/cielo/cieloHolderCopy";
+import { cieloHolderCopyForSession, humanizeCieloDisclosedResult, humanizeCieloReason } from "@/lib/cielo/cieloHolderCopy";
 import { CIELO_VERIFIED_GUEST_POLICY_ID } from "@/lib/cielo/cieloIds";
 import { HolderTrustSurface } from "@/components/holder/HolderTrustSurface";
 import { WalletFirstSignIn } from "@/components/auth/WalletFirstSignIn";
@@ -39,6 +39,7 @@ export function CieloVerifiedRateFlow() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const solanaNative = isSolanaNativeProductEnabledClient();
+  const holderCopy = cieloHolderCopyForSession(solanaNative);
   const walletFirst = solanaNative || isWalletFirstAuthEnabledClient();
   const { suiAddress, isAuthenticated, signInWithGoogle, refreshSession } = useSuiAuth();
   const { session: holderSession, refresh: refreshHolderSession } = useHolderSession(walletFirst);
@@ -104,10 +105,10 @@ export function CieloVerifiedRateFlow() {
   }, [loadStatus]);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (solanaNative || !isAuthenticated) return;
     refreshSession();
     void loadStatus();
-  }, [isAuthenticated, refreshSession, loadStatus]);
+  }, [isAuthenticated, refreshSession, loadStatus, solanaNative]);
 
   useEffect(() => {
     void (async () => {
@@ -202,14 +203,14 @@ export function CieloVerifiedRateFlow() {
   return (
     <HolderTrustSurface
       eyebrow={holderBrief?.requestor ? `Requested by ${holderBrief.requestor}` : "Cielo Sunrise"}
-      title={CIELO_HOLDER_COPY.flowTitle}
-      lead={holderBrief?.purpose ?? CIELO_HOLDER_COPY.flowLead}
+      title={holderCopy.flowTitle}
+      lead={holderBrief?.purpose ?? holderCopy.flowLead}
       statusLabel={holderBrief ? `Shared with Cielo: ${disclosedHuman}` : undefined}
       technicalDetails={(
         <>
           <div>Policy id: {CIELO_VERIFIED_GUEST_POLICY_ID}</div>
           {holderBrief?.booking_boundary ? <div>{holderBrief.booking_boundary}</div> : null}
-          <div>{CIELO_HOLDER_COPY.notBooking}</div>
+          <div>{holderCopy.notBooking}</div>
         </>
       )}
     >
@@ -229,15 +230,15 @@ export function CieloVerifiedRateFlow() {
       <div style={{ padding: "0 0 0.25rem" }}>
         {step === "passport" && (
           <>
-            <StepLabel n={1} title={CIELO_HOLDER_COPY.stepAccount} />
+            <StepLabel n={1} title={holderCopy.stepAccount} />
             {walletFirst && holderSession?.loginMethod === "solana_wallet" && !holderSession.passportSubjectReady ? (
               <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: AMBER, lineHeight: 1.65, margin: "0 0 0.75rem" }}>
-                {CIELO_HOLDER_COPY.walletSessionNoPassport}
+                {holderCopy.walletSessionNoPassport}
               </p>
             ) : null}
             {!holderReady ? (
               <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.75rem" }}>
-                {walletFirst ? CIELO_HOLDER_COPY.signInWalletLead : "Sign in with Google to create your Abraxas Passport account."}
+                {walletFirst ? holderCopy.signInWalletLead : "Sign in with Google to create your Abraxas Passport account."}
               </p>
             ) : (
               <ul style={{ margin: "0 0 0.75rem", paddingLeft: "1.1rem", fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.7 }}>
@@ -270,10 +271,10 @@ export function CieloVerifiedRateFlow() {
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem", width: "100%" }}>
                     <WalletFirstSignIn
                       continuePath={RETURN_PATH}
-                      primaryLabel={CIELO_HOLDER_COPY.signInWallet}
+                      primaryLabel={holderCopy.signInWallet}
                       onSuccess={() => {
                         void refreshHolderSession();
-                        void refreshSession();
+                        if (!solanaNative) void refreshSession();
                         void loadStatus();
                       }}
                     />
@@ -283,7 +284,7 @@ export function CieloVerifiedRateFlow() {
                         onClick={() => void signInWithGoogle({ continuePath: RETURN_PATH })}
                         style={ghostBtnStyle}
                       >
-                        {CIELO_HOLDER_COPY.legacyGoogleSignIn}
+                        {holderCopy.legacyGoogleSignIn}
                       </button>
                     ) : null}
                   </div>
@@ -293,7 +294,7 @@ export function CieloVerifiedRateFlow() {
                     onClick={() => void signInWithGoogle({ continuePath: RETURN_PATH })}
                     style={primaryBtn(false)}
                   >
-                    {CIELO_HOLDER_COPY.signIn}
+                    {holderCopy.signIn}
                   </button>
                 )
               ) : (
@@ -317,7 +318,7 @@ export function CieloVerifiedRateFlow() {
                     disabled={!passportReady || loading}
                     style={primaryBtn(!passportReady || loading)}
                   >
-                    {CIELO_HOLDER_COPY.continueConsent}
+                    {holderCopy.continueConsent}
                   </button>
                 </>
               )}
@@ -327,7 +328,7 @@ export function CieloVerifiedRateFlow() {
 
         {step === "consent" && (
           <>
-            <StepLabel n={2} title={CIELO_HOLDER_COPY.stepConsent} />
+            <StepLabel n={2} title={holderCopy.stepConsent} />
             <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.75rem" }}>
               You approve sharing only what Cielo needs for this guest check: account status, profile completeness,
               and recent wallet verification. Abraxas does not send ID images or your full legal identity to Cielo.
@@ -343,10 +344,10 @@ export function CieloVerifiedRateFlow() {
 
         {step === "submit" && consentResult && (
           <>
-            <StepLabel n={3} title={CIELO_HOLDER_COPY.stepSubmit} />
+            <StepLabel n={3} title={holderCopy.stepSubmit} />
             <DecisionBadge label="Eligible" sub="You can send a verified guest request for Cielo to review" color={ACCENT} />
             <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0.75rem 0" }}>
-              {CIELO_HOLDER_COPY.notBooking}
+              {holderCopy.notBooking}
             </p>
             <Field label="Your name"><input value={guestName} onChange={e => setGuestName(e.target.value)} style={inputStyle} /></Field>
             <Field label="Email"><input type="email" value={contactEmail} onChange={e => setContactEmail(e.target.value)} style={inputStyle} /></Field>
@@ -366,7 +367,7 @@ export function CieloVerifiedRateFlow() {
               <textarea value={notes} rows={2} onChange={e => setNotes(e.target.value)} style={{ ...inputStyle, resize: "vertical" }} />
             </Field>
             <button type="button" onClick={() => void submitRequest()} disabled={loading} style={primaryBtn(loading)}>
-              {loading ? "Sending…" : CIELO_HOLDER_COPY.submit}
+              {loading ? "Sending…" : holderCopy.submit}
             </button>
           </>
         )}

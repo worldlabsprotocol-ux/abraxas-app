@@ -1,0 +1,72 @@
+{
+  "build": "516",
+  "release_verdict": "BLOCKED_BEFORE_APPLY",
+  "release_verdict_detail": "Disposable PostgreSQL rehearsal PASS after 136/137 composite-PK fix; Demo recovery point could not be verified via available tooling; DEMO_SUPABASE_DATABASE_URL not present in agent environment. No remote migrations applied.",
+  "source_branch": "cursor/authorized-demo-sql-activation-516",
+  "parent_pr": "#628",
+  "demo_project_ref": "ocntwbxarpjeixdnzide",
+  "production_untouched": true,
+  "remote_migrations_applied": false,
+  "commit_sha": "a022b334",
+  "demo_postgres_version": "17.6.1.155",
+  "rehearsal_postgres_version": "16.15",
+  "migration_checksums": "scripts/build516/migration-checksum-manifest.json",
+  "disposable_rehearsal": {
+    "status": "PASS",
+    "method": "local_postgresql",
+    "artifact": "/opt/cursor/artifacts/build516/rehearsal.log",
+    "verdict_file": "/opt/cursor/artifacts/build516/rehearsal_verdict.txt"
+  },
+  "recovery_verification": {
+    "status": "BLOCKED",
+    "method": "supabase_mcp_get_project",
+    "observed": "Project ACTIVE_HEALTHY; no backup timestamp or restore rehearsal API available to agent",
+    "required_operator_action": "Confirm latest Supabase backup/PITR in dashboard; record timestamp; set BUILD516_DEMO_RECOVERY_VERIFIED=ocntwbxarpjeixdnzide before apply"
+  },
+  "pre_apply_baseline_readonly": {
+    "status": "PASS",
+    "method": "supabase_mcp_execute_sql",
+    "observed": {
+      "holder_wallet_accounts": false,
+      "holder_accounts": false,
+      "decision_receipt_solana_commitments": false,
+      "partial_solana": false,
+      "decision_receipts_count": 6
+    }
+  },
+  "pre_apply_safety_gate": {
+    "status": "FAIL",
+    "reason": "BUILD516_DEMO_RECOVERY_VERIFIED and DEMO_SUPABASE_DATABASE_URL not set"
+  },
+  "migrations_134_138": {
+    "134": "NOT_RUN",
+    "135": "NOT_RUN",
+    "136": "NOT_RUN",
+    "137": "NOT_RUN",
+    "138": "NOT_RUN"
+  },
+  "schema_fix_in_branch": {
+    "136_cielo_verified_guest_solana_policy.sql": "ON CONFLICT (id, version) for Demo PK",
+    "137_good_trouble_age_21_solana_idv.sql": "ON CONFLICT (id, version) for Demo PK"
+  },
+  "security_tests": {
+    "status": "PASS",
+    "scope": "disposable_db_rls_smoke",
+    "artifact": "/opt/cursor/artifacts/build516/security_smoke.txt"
+  },
+  "application_compatibility": {
+    "status": "NOT_RUN",
+    "reason": "Schema not applied on Demo"
+  },
+  "vercel_demo_config": {
+    "status": "NOT_RUN",
+    "reason": "No post-migration deploy gate in this run"
+  },
+  "remaining_blockers": [
+    "Operator recovery verification",
+    "DEMO_SUPABASE_DATABASE_URL for apply tooling",
+    "Controlled apply via build516-controlled-demo-apply.ts",
+    "Post-apply release-gate:build515",
+    "Phantom/Veriff live E2E"
+  ]
+}

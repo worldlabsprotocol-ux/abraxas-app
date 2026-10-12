@@ -4,6 +4,7 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import { abxMotionTransition } from "@/lib/motion/abxMotionFramer";
+import { PARTNER_REQUEST_FOUR_QUESTIONS } from "@/lib/product/productStoryCopy";
 import { holderBody, holderEyebrow, HOLDER_FONT } from "./styles";
 
 export interface PrivacyBoundaryProps {
@@ -31,7 +32,7 @@ export function PrivacyBoundary({ theyReceive, staysPrivate }: PrivacyBoundaryPr
         transition={transition}
         style={boundaryPanel("#10B981", "rgba(16,185,129,0.08)")}
       >
-        <p style={{ ...holderEyebrow, color: "#10B981" }}>They&apos;ll receive</p>
+        <p style={{ ...holderEyebrow, color: "#10B981" }}>{PARTNER_REQUEST_FOUR_QUESTIONS.receive}</p>
         <p style={{ ...receiveLine, margin: "0.35rem 0 0" }}>
           <span aria-hidden style={{ color: "#10B981", fontWeight: 800 }}>✓ </span>
           {theyReceive}

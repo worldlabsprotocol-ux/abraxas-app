@@ -3,7 +3,9 @@
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { PrivacyComparisonPanel } from "@/components/experience/PrivacyComparisonPanel";
+import { ProductStoryStrip } from "@/components/product/ProductStoryStrip";
 import { decideEvidenceReuse } from "@/lib/holder/evidenceReuseDecision";
+import { CIELO_LIMITS_PLAIN, GOOD_TROUBLE_LIMITS_PLAIN, PARTNER_REQUEST_FOUR_QUESTIONS } from "@/lib/product/productStoryCopy";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import { Btn } from "@/components/redesign/ui";
 
@@ -32,6 +34,18 @@ const STEPS: TourStepId[] = [
   "reuse",
   "finish",
 ];
+
+const STEP_LABELS: Record<TourStepId, string> = {
+  welcome: "Start",
+  passport: "Passport",
+  verify: "Verify once",
+  cielo: "Cielo",
+  consent: "Consent",
+  receipt: "Receipt",
+  good_trouble: "Good Trouble",
+  reuse: "Reuse",
+  finish: "Done",
+};
 
 export function JudgeProductTour() {
   const [index, setIndex] = useState(0);
@@ -75,34 +89,31 @@ export function JudgeProductTour() {
         {SIMULATION_BADGE}
       </p>
 
-      <div aria-label="Tour progress" style={{ display: "flex", gap: 6, marginBottom: "1.25rem", flexWrap: "wrap" }}>
+      <div aria-label="Tour progress" style={{ display: "flex", gap: 8, marginBottom: "0.35rem", flexWrap: "wrap", alignItems: "center" }}>
         {STEPS.map((id, i) => (
           <span
             key={id}
+            title={STEP_LABELS[id]}
             style={{
-              width: 8,
-              height: 8,
+              width: i === index ? 10 : 8,
+              height: i === index ? 10 : 8,
               borderRadius: "50%",
               background: i <= index ? "var(--accent)" : "var(--border)",
             }}
             aria-hidden
           />
         ))}
+        <span style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", marginLeft: 4 }}>
+          Step {index + 1} · {STEP_LABELS[step]}
+        </span>
       </div>
 
       {step === "welcome" && (
         <section>
           <h1 style={{ fontFamily: FONT, fontSize: "clamp(1.5rem,4vw,2rem)", margin: "0 0 0.75rem" }}>
-            Verify once. Prove only what&apos;s needed.
+            Traditional apps ask for everything. Abraxas shares only the answer.
           </h1>
-          <p style={{ fontFamily: FONT, fontSize: "0.95rem", lineHeight: 1.6, color: "var(--text-secondary)" }}>
-            Abraxas lets people verify eligibility privately. Applications receive trusted, narrow decisions — not identity documents.
-          </p>
-          <ul style={{ fontFamily: FONT, fontSize: "0.85rem", lineHeight: 1.6, color: "var(--text-secondary)" }}>
-            <li><strong>For people:</strong> keep documents out of every app</li>
-            <li><strong>For applications:</strong> receive signed policy results</li>
-            <li><strong>For the ecosystem:</strong> reusable eligibility with auditability</li>
-          </ul>
+          <ProductStoryStrip compact />
         </section>
       )}
 
@@ -110,7 +121,7 @@ export function JudgeProductTour() {
         <section>
           <h2 style={{ fontFamily: FONT, fontSize: "1.25rem", margin: "0 0 0.5rem" }}>1 · Abraxas Passport (simulated)</h2>
           <p style={{ fontFamily: FONT, fontSize: "0.88rem", color: "var(--text-secondary)" }}>
-            A holder connects a wallet once. The Passport stores verification status — not partner copies of ID scans.
+            Your Passport holds verification status — not copies of your ID on every partner&apos;s servers.
           </p>
           <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)" }}>Simulated wallet: DemoJudgeWallet…8x4f</p>
         </section>
@@ -118,75 +129,78 @@ export function JudgeProductTour() {
 
       {step === "verify" && (
         <section>
-          <h2 style={{ fontFamily: FONT, fontSize: "1.25rem", margin: "0 0 0.5rem" }}>2 · Identity verification (conceptual)</h2>
+          <h2 style={{ fontFamily: FONT, fontSize: "1.25rem", margin: "0 0 0.5rem" }}>2 · First verification (simulated)</h2>
           <p style={{ fontFamily: FONT, fontSize: "0.88rem", color: "var(--text-secondary)", marginBottom: "0.75rem" }}>
-            In production, the holder completes real IDV and human review when required. This tour skips document upload.
+            When a policy requires it, you verify once with Abraxas. This tour skips real document upload.
           </p>
           <Btn size="sm" onClick={() => { setSimVerified(true); advance(); }} disabled={simVerified}>
-            {simVerified ? "Simulated verification complete" : "Simulate verification approved"}
+            {simVerified ? "Simulated verification complete" : "Simulate first verification approved"}
           </Btn>
         </section>
       )}
 
       {step === "cielo" && (
         <section>
-          <h2 style={{ fontFamily: FONT, fontSize: "1.25rem", margin: "0 0 0.5rem" }}>3 · Cielo verified-rate request</h2>
+          <h2 style={{ fontFamily: FONT, fontSize: "1.25rem", margin: "0 0 0.5rem" }}>3 · Cielo guest eligibility</h2>
+          <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", marginBottom: "0.65rem" }}>{CIELO_LIMITS_PLAIN}</p>
           <PrivacyComparisonPanel partner="cielo" compact />
         </section>
       )}
 
       {step === "consent" && (
         <section>
-          <h2 style={{ fontFamily: FONT, fontSize: "1.25rem", margin: "0 0 0.5rem" }}>4 · Holder consent</h2>
-          <p style={{ fontFamily: FONT, fontSize: "0.88rem", color: "var(--text-secondary)" }}>
-            The holder sees who is asking, why, and exactly what will be disclosed before approving.
-          </p>
+          <h2 style={{ fontFamily: FONT, fontSize: "1.25rem", margin: "0 0 0.5rem" }}>4 · You approve each share</h2>
+          <ul style={{ fontFamily: FONT, fontSize: "0.82rem", lineHeight: 1.55, color: "var(--text-secondary)", paddingLeft: "1.1rem", margin: "0 0 0.75rem" }}>
+            <li><strong>{PARTNER_REQUEST_FOUR_QUESTIONS.who}</strong> Cielo (simulated)</li>
+            <li><strong>{PARTNER_REQUEST_FOUR_QUESTIONS.what}</strong> Verified guest eligibility</li>
+            <li><strong>{PARTNER_REQUEST_FOUR_QUESTIONS.receive}</strong> Eligibility category only — not your ID</li>
+            <li><strong>{PARTNER_REQUEST_FOUR_QUESTIONS.continue}</strong> Abraxas sends nothing until you tap approve</li>
+          </ul>
           <Btn size="sm" onClick={() => { setSimCieloConsent(true); advance(); }} disabled={simCieloConsent}>
-            {simCieloConsent ? "Simulated consent recorded" : "Simulate consent to share narrow result"}
+            {simCieloConsent ? "Simulated consent recorded" : "Simulate explicit consent"}
           </Btn>
         </section>
       )}
 
       {step === "receipt" && (
         <section>
-          <h2 style={{ fontFamily: FONT, fontSize: "1.25rem", margin: "0 0 0.5rem" }}>5 · Signed receipt (simulated)</h2>
+          <h2 style={{ fontFamily: FONT, fontSize: "1.25rem", margin: "0 0 0.5rem" }}>5 · Confirmation for Cielo (simulated)</h2>
           <div style={{ border: "1px solid var(--border-strong)", borderRadius: 12, padding: "1rem", fontFamily: FONT, fontSize: "0.82rem" }}>
-            <p style={{ margin: "0 0 0.35rem" }}><strong>Result:</strong> Verified guest eligible</p>
-            <p style={{ margin: "0 0 0.35rem" }}><strong>Requested by:</strong> Cielo (simulated)</p>
-            <p style={{ margin: 0, color: "var(--text-muted)" }}>Receipt ID: sim_dr_cielo_demo — not a production credential</p>
+            <p style={{ margin: "0 0 0.35rem" }}><strong>Answer shared:</strong> Guest eligibility check passed</p>
+            <p style={{ margin: "0 0 0.35rem" }}><strong>Who received it:</strong> Cielo (simulated)</p>
+            <p style={{ margin: "0 0 0.35rem" }}><strong>Still valid:</strong> Until policy window ends (simulated)</p>
+            <p style={{ margin: 0, color: "var(--text-muted)" }}>Reference: sim_dr_cielo_demo — not a production credential. No on-chain proof in this demo.</p>
           </div>
         </section>
       )}
 
       {step === "good_trouble" && (
         <section>
-          <h2 style={{ fontFamily: FONT, fontSize: "1.25rem", margin: "0 0 0.5rem" }}>6 · Good Trouble 21+ request</h2>
+          <h2 style={{ fontFamily: FONT, fontSize: "1.25rem", margin: "0 0 0.5rem" }}>6 · Good Trouble 21+ (simulated)</h2>
+          <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", marginBottom: "0.65rem" }}>{GOOD_TROUBLE_LIMITS_PLAIN}</p>
           <PrivacyComparisonPanel partner="good_trouble" compact />
-          <p style={{ fontFamily: FONT, fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "0.75rem" }}>
-            A different partner and policy — the holder journey is shorter when evidence already qualifies.
-          </p>
         </section>
       )}
 
       {step === "reuse" && (
         <section>
-          <h2 style={{ fontFamily: FONT, fontSize: "1.25rem", margin: "0 0 0.5rem" }}>7 · Evidence reuse</h2>
+          <h2 style={{ fontFamily: FONT, fontSize: "1.25rem", margin: "0 0 0.5rem" }}>7 · Second partner, same proof</h2>
           <p style={{ fontFamily: FONT, fontSize: "0.88rem", color: "var(--text-secondary)" }}>{reuseDecision.holderMessage}</p>
           <Btn size="sm" style={{ marginTop: "0.75rem" }} onClick={() => { setSimGtConsent(true); advance(); }} disabled={simGtConsent}>
-            {simGtConsent ? "Simulated Good Trouble consent" : "Simulate consent (no new documents)"}
+            {simGtConsent ? "Simulated Good Trouble consent" : "Simulate consent (reuse, no new documents)"}
           </Btn>
         </section>
       )}
 
       {step === "finish" && (
         <section>
-          <h2 style={{ fontFamily: FONT, fontSize: "1.25rem", margin: "0 0 0.5rem" }}>Tour complete</h2>
+          <h2 style={{ fontFamily: FONT, fontSize: "1.25rem", margin: "0 0 0.5rem" }}>You saw the Abraxas difference</h2>
           <p style={{ fontFamily: FONT, fontSize: "0.88rem", color: "var(--text-secondary)" }}>
-            You saw verification reuse across two partners with explicit consent and narrow disclosure — all simulated.
+            One verification, two partners, explicit consent, narrow answers — all simulated and clearly labeled.
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem", marginTop: "1rem" }}>
-            <Btn href="/passport">Open real Passport</Btn>
-            <Btn href="/docs/partner-flow" variant="secondary">Partner integration docs</Btn>
+            <Btn href="/passport">Open Passport</Btn>
+            <Btn href="/integrations" variant="secondary">Integration Studio</Btn>
           </div>
         </section>
       )}
@@ -203,7 +217,7 @@ export function JudgeProductTour() {
       </footer>
 
       <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", marginTop: "2rem" }}>
-        Prefer the operational product? <Link href="/passport">Start with Passport</Link> or <Link href="/integrations">Integration Studio</Link>.
+        Ready for the real product? <Link href="/passport">Start with Passport</Link> or <Link href="/experience/tour">Replay tour</Link>.
       </p>
     </div>
   );

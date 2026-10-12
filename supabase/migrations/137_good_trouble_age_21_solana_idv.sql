@@ -32,7 +32,7 @@ values (
   }'::jsonb,
   'active'
 )
-on conflict (id) do update set
+on conflict (id, version) do update set
   name = excluded.name,
   rules_json = excluded.rules_json,
   status = excluded.status;

@@ -58,6 +58,8 @@ import { OnchainVerifierConformanceCard } from "@/components/partner/launchpad/O
 import { GO_LIVE_REVIEW_ENTRY } from "@/lib/partner/launchpad/goLiveReadiness/contract";
 import { PolicyProposalForm } from "@/components/partner/policyProposal/PolicyProposalForm";
 import { POLICY_PROPOSAL_NOTICE } from "@/lib/partner/policyProposal/contract";
+import { LAUNCHPAD_FIVE_STEP, LAUNCHPAD_ADVANCED_DISCLOSURE_LABEL } from "@/lib/product/partnerLaunchpadGuidedCopy";
+import { LAUNCHPAD_OPERATOR_LEAD } from "@/lib/product/productStoryCopy";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -123,11 +125,8 @@ interface IntegrationHealth {
 }
 
 const STEPS: { id: WizardStep; label: string; description: string }[] = [
-  { id: "verify", label: "Verify", description: "What do you need to verify?" },
-  { id: "test_app", label: "Test app", description: "Your private verification test environment" },
-  { id: "connect", label: "Connect", description: "Connect Abraxas to your website or app" },
-  { id: "test", label: "Test", description: "Run a customer verification" },
-  { id: "go_live", label: "Go live", description: "Activate production" },
+  ...LAUNCHPAD_FIVE_STEP,
+  { id: "advanced", label: "Advanced", description: LAUNCHPAD_ADVANCED_DISCLOSURE_LABEL },
 ];
 
 export function PartnerLaunchpadClient({
@@ -559,7 +558,7 @@ export function PartnerLaunchpadClient({
       <PageHeader
         eyebrow="Partner Launchpad"
         title="Integrate private eligibility"
-        subtitle="One integration. Multiple eligibility policies. Add approved eligibility questions through the same Abraxas trust infrastructure without collecting underlying identity data."
+        subtitle={LAUNCHPAD_OPERATOR_LEAD}
       />
 
       {activeApp && journey && (
@@ -971,7 +970,7 @@ export function PartnerLaunchpadClient({
             Advanced configuration, bindings, webhooks, harness scenarios, and integration observability live here. The guided journey above stays merchant-focused.
           </p>
           <Btn size="sm" variant="secondary" onClick={() => setShowAdvancedOptions((current) => !current)}>
-            {showAdvancedOptions ? "Hide developer details" : "Show developer details"}
+            {showAdvancedOptions ? "Hide developer details" : LAUNCHPAD_ADVANCED_DISCLOSURE_LABEL}
           </Btn>
           {showAdvancedOptions && (
             <div style={{ marginTop: "0.85rem", display: "grid", gap: "0.85rem" }}>

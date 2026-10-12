@@ -191,7 +191,7 @@ export function PartnerVerifyClient({
     returnUrl,
     purpose,
     onBootstrapped: () => {
-      refreshSession();
+      if (!solanaNative) refreshSession();
       evaluateOnceRef.current = false;
     },
   });

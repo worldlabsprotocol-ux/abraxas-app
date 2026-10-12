@@ -93,11 +93,11 @@ const STAGE_ORDER: MerchantJourneyStageId[] = [
 ];
 
 const STAGE_LABELS: Record<MerchantJourneyStageId, string> = {
-  verify: "Verify",
-  test_app: "Test app",
-  connect: "Connect",
-  test: "Test",
-  go_live: "Go live",
+  verify: "Choose policy",
+  test_app: "Test experience",
+  connect: "Integrate",
+  test: "Review holder view",
+  go_live: "Request production",
 };
 
 export function callbackConfigured(urls: string[]): boolean {

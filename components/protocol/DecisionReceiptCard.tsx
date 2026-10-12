@@ -12,6 +12,8 @@ import {
   type DecisionReceiptDisplayModel,
   type DecisionReceiptVisualStatus,
 } from "@/lib/protocol/decisionReceiptDisplay";
+import { buildReceiptPlainSummary, RECEIPT_PLAIN_LABELS, RECEIPT_ADVANCED_TOGGLE } from "@/lib/product/receiptPlainLanguage";
+import { RECEIPT_PLAIN_HEADING } from "@/lib/product/productStoryCopy";
 
 export interface DecisionReceiptCardProps {
   /** Live display model — preferred for real receipt state */
@@ -97,6 +99,7 @@ export function DecisionReceiptCard(props: DecisionReceiptCardProps) {
   const reduceMotion = useReducedMotion();
   const [technicalOpen, setTechnicalOpen] = useState(false);
   const resolved = resolveProps(props);
+  const plain = props.model ? buildReceiptPlainSummary(props.model) : null;
   const statusMeta = STATUS_MAP[resolved.status];
   const colors = ABX_STATUS_COLORS[statusMeta.tone];
   const pulse = statusMeta.pulse && !reduceMotion && motionPhase === "resolved";
@@ -144,6 +147,20 @@ export function DecisionReceiptCard(props: DecisionReceiptCardProps) {
       </header>
 
       <div className="abx-decision-receipt__body">
+        {plain ? (
+          <div style={{ marginBottom: "0.85rem" }}>
+            <p style={{ fontFamily: ABX_FONT_SANS, fontSize: "0.68rem", fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", margin: "0 0 0.35rem" }}>
+              {RECEIPT_PLAIN_HEADING}
+            </p>
+            <dl style={{ margin: 0, display: "grid", gap: "0.35rem" }}>
+              <div><dt style={{ fontFamily: ABX_FONT_MONO, fontSize: "0.62rem", color: "var(--text-muted)" }}>{RECEIPT_PLAIN_LABELS.checked}</dt><dd style={{ fontFamily: ABX_FONT_SANS, fontSize: "0.82rem", margin: 0 }}>{plain.checked}</dd></div>
+              <div><dt style={{ fontFamily: ABX_FONT_MONO, fontSize: "0.62rem", color: "var(--text-muted)" }}>{RECEIPT_PLAIN_LABELS.shared}</dt><dd style={{ fontFamily: ABX_FONT_SANS, fontSize: "0.95rem", fontWeight: 700, margin: 0 }}>{plain.shared}</dd></div>
+              <div><dt style={{ fontFamily: ABX_FONT_MONO, fontSize: "0.62rem", color: "var(--text-muted)" }}>{RECEIPT_PLAIN_LABELS.recipient}</dt><dd style={{ fontFamily: ABX_FONT_SANS, fontSize: "0.82rem", margin: 0 }}>{plain.recipient}</dd></div>
+              {plain.valid ? <div><dt style={{ fontFamily: ABX_FONT_MONO, fontSize: "0.62rem", color: "var(--text-muted)" }}>{RECEIPT_PLAIN_LABELS.valid}</dt><dd style={{ fontFamily: ABX_FONT_SANS, fontSize: "0.82rem", margin: 0 }}>{plain.valid}</dd></div> : null}
+              <div><dt style={{ fontFamily: ABX_FONT_MONO, fontSize: "0.62rem", color: "var(--text-muted)" }}>{RECEIPT_PLAIN_LABELS.next}</dt><dd style={{ fontFamily: ABX_FONT_SANS, fontSize: "0.78rem", lineHeight: 1.5, margin: 0, color: "var(--text-secondary)" }}>{plain.next}</dd></div>
+            </dl>
+          </div>
+        ) : null}
         <p className="abx-decision-receipt__result" style={{ fontFamily: ABX_FONT_SANS }}>
           {resolved.disclosedLabel}
         </p>
@@ -164,7 +181,7 @@ export function DecisionReceiptCard(props: DecisionReceiptCardProps) {
               <dd style={{ fontFamily: ABX_FONT_SANS }}>{resolved.validUntil}</dd>
             </div>
           ) : null}
-          {resolved.solanaProofLabel ? (
+          {resolved.solanaProofLabel && resolved.solanaProvenance?.proof_confirmed ? (
             <div>
               <dt style={{ fontFamily: ABX_FONT_MONO }}>Chain proof</dt>
               <dd style={{ fontFamily: ABX_FONT_SANS }}>{resolved.solanaProofLabel}</dd>
@@ -182,7 +199,7 @@ export function DecisionReceiptCard(props: DecisionReceiptCardProps) {
             aria-expanded={technicalOpen}
             onClick={() => setTechnicalOpen((open) => !open)}
           >
-            {technicalOpen ? "Hide details" : "Technical details"}
+            {technicalOpen ? "Hide details" : RECEIPT_ADVANCED_TOGGLE}
           </button>
         ) : null}
       </footer>
