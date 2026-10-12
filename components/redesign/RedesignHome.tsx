@@ -4,7 +4,7 @@
 
 import dynamic from "next/dynamic";
 import { InstitutionalHomeClose } from "@/components/institutional/InstitutionalHomeClose";
-import { InstitutionalHomeHero } from "@/components/institutional/InstitutionalHomeHero";
+import type { ReactNode } from "react";
 import { HomeProblemChapter } from "@/components/home/HomeProblemChapter";
 import { LazyHomeSection } from "@/components/home/LazyHomeSection";
 import { PremiumHomeChapter } from "@/components/home/premium/PremiumHomeChapter";
@@ -47,10 +47,10 @@ const SHELL: React.CSSProperties = {
   width: "100%",
 };
 
-function HomeContent() {
+function HomeContent({ hero }: { hero: ReactNode }) {
   return (
     <main className="abx-institutional-home abx-v2-home abx-premium-home" style={{ position: "relative", zIndex: 1, paddingBottom: "3.5rem" }}>
-      <InstitutionalHomeHero />
+      {hero}
 
       <div className="abx-premium-home__spine" style={SHELL}>
         <PremiumHomeChapter index="01" label="Problem" id="chapter-problem">
@@ -64,7 +64,9 @@ function HomeContent() {
         </PremiumHomeChapter>
 
         <PremiumHomeChapter index="03" label="Demonstration" id="chapter-demo">
-          <HomeGoodTroubleActionSection />
+          <LazyHomeSection minHeight="12rem">
+            <HomeGoodTroubleActionSection />
+          </LazyHomeSection>
         </PremiumHomeChapter>
 
         <PremiumHomeChapter index="04" label="Network" id="chapter-network">
@@ -100,7 +102,7 @@ function HomeContent() {
   );
 }
 
-export function RedesignHome() {
+export function RedesignHome({ hero }: { hero: ReactNode }) {
   return (
     <div
       data-theme="dark"
@@ -109,7 +111,7 @@ export function RedesignHome() {
       style={{ ...abxMotionCssVars(), ...abxAccentCssVars("neutral") }}
     >
       <RedesignNav />
-      <HomeContent />
+      <HomeContent hero={hero} />
       <RedesignFooter />
     </div>
   );

@@ -83,6 +83,32 @@
   gap: 0.55rem;
 }
 
+.abx-premium-hero__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.7rem 1.3rem;
+  border-radius: 2px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.abx-premium-hero__cta--primary {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text, #050505);
+  border: 1px solid var(--btn-primary-bg);
+}
+
+.abx-premium-hero__cta--secondary {
+  background: transparent;
+  color: var(--text-primary, #f5f5f5);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.18));
+}
+
 .abx-premium-hero__visual-wrap {
   justify-self: end;
   width: min(100%, 440px);

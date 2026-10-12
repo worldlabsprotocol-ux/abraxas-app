@@ -1,7 +1,5 @@
-"use client";
-
 import dynamic from "next/dynamic";
-import { Btn } from "@/components/redesign/ui";
+import Link from "next/link";
 import {
   CINEMATIC_HOME_CTA_PRIMARY,
   CINEMATIC_HOME_CTA_PRIMARY_HREF,
@@ -18,7 +16,7 @@ const CinematicHomeHeroVisual = dynamic(
   { ssr: false, loading: () => <div className="abx-premium-hero__visual-skeleton" aria-hidden="true" /> },
 );
 
-/** Hero copy is static for LCP; motion is CSS-only so text is visible before hydration. */
+/** Server-rendered hero copy for LCP; emblem hydrates client-side after first paint. */
 export function PremiumHomeHero() {
   return (
     <header className="abx-premium-hero" aria-label="Abraxas — prove what matters">
@@ -41,12 +39,15 @@ export function PremiumHomeHero() {
           </h1>
           <p className="abx-premium-hero__lead abx-premium-hero__reveal abx-premium-hero__reveal--4">{CINEMATIC_HOME_LEAD}</p>
           <div className="abx-premium-hero__actions abx-premium-hero__reveal abx-premium-hero__reveal--5">
-            <Btn href={CINEMATIC_HOME_CTA_PRIMARY_HREF} size="md">
+            <Link className="abx-premium-hero__cta abx-premium-hero__cta--primary" href={CINEMATIC_HOME_CTA_PRIMARY_HREF}>
               {CINEMATIC_HOME_CTA_PRIMARY}
-            </Btn>
-            <Btn href={CINEMATIC_HOME_CTA_SECONDARY_HREF} variant="secondary" size="md">
+            </Link>
+            <Link
+              className="abx-premium-hero__cta abx-premium-hero__cta--secondary"
+              href={CINEMATIC_HOME_CTA_SECONDARY_HREF}
+            >
               {CINEMATIC_HOME_CTA_SECONDARY}
-            </Btn>
+            </Link>
           </div>
           <p className="abx-premium-hero__sr-only">{CINEMATIC_HOME_HEADLINE}</p>
         </div>

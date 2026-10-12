@@ -5,7 +5,7 @@
 import type { CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { OFFICIAL_BRAND_ASSETS } from "@/lib/brand/officialBrandAssets";
+import { OFFICIAL_BRAND_ASSETS, OFFICIAL_EMBLEM_HERO_WEBP } from "@/lib/brand/officialBrandAssets";
 import { PUBLIC_FONT_SANS } from "@/lib/design/publicSurface";
 
 const FONT = PUBLIC_FONT_SANS;
@@ -29,16 +29,21 @@ export function AbraxasLogo({
   className,
 }: AbraxasLogoProps) {
   const emblem = OFFICIAL_BRAND_ASSETS.emblem;
+  const compactEmblem = emblemSize <= 48;
+  const emblemSrc = compactEmblem ? OFFICIAL_EMBLEM_HERO_WEBP.src : emblem.src;
+  const emblemWidth = compactEmblem ? OFFICIAL_EMBLEM_HERO_WEBP.width : emblem.width;
+  const emblemHeight = compactEmblem ? OFFICIAL_EMBLEM_HERO_WEBP.height : emblem.height;
   const showWordmark = variant === "lockup" && !emblemOnly;
 
   const inner = (
     <>
       <Image
-        src={emblem.src}
+        src={emblemSrc}
         alt={emblemOnly ? emblem.alt : ""}
-        width={emblem.width}
-        height={emblem.height}
-        priority
+        width={emblemWidth}
+        height={emblemHeight}
+        priority={!compactEmblem}
+        fetchPriority={compactEmblem ? "low" : "high"}
         sizes={`${emblemSize}px`}
         style={{
           display: "block",
