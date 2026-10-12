@@ -363,20 +363,31 @@ export async function runLaunchpadStagingWalkthrough(config: StagingTargetConfig
             .locator(".abx-launchpad-operational")
             .getByLabel("Sandbox API key");
           await sandboxKeyInput.fill(state.sandboxApiKey);
-          await page
+          const signInButton = page
             .locator(".abx-launchpad-operational")
-            .getByRole("button", { name: "Sign in", exact: true })
-            .click();
-          await page.getByText("Build your integration").waitFor({ state: "visible", timeout: 30_000 }).catch(() => undefined);
-          const sandboxBadgeVisible = await page.getByText("sandbox", { exact: false }).first().isVisible().catch(() => false);
+            .getByRole("button", { name: "Sign in", exact: true });
+          const sessionWait = page.waitForResponse(
+            (res) =>
+              res.url().includes("/api/launchpad/auth/session")
+              && res.request().method() === "POST",
+            { timeout: 30_000 },
+          );
+          await signInButton.click();
+          const sessionRes = await sessionWait.catch(() => null);
+          await page.getByText("Sandbox", { exact: true }).first().waitFor({ state: "visible", timeout: 30_000 }).catch(() => undefined);
+          const sessionOk = sessionRes?.ok() === true;
+          const sandboxBadgeVisible = await page.getByText("Sandbox", { exact: true }).first().isVisible().catch(() => false);
           steps.push(
             step(
               "03-authenticate",
               "Authenticate with sandbox API key",
-              sandboxBadgeVisible ? "pass" : "fail",
+              sessionOk && sandboxBadgeVisible ? "pass" : "fail",
             ),
           );
-          const workspaceVisible = await page.getByText("Build your integration").isVisible().catch(() => false);
+          const workspaceVisible = await page
+            .getByRole("heading", { name: /What do you need to verify/i })
+            .isVisible()
+            .catch(() => false);
           steps.push(
             step(
               "04-workspace-loads",
