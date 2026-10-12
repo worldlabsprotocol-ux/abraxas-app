@@ -21,7 +21,8 @@ describe("HomeGoodTroubleProductionDemoVideo", () => {
     expect(document.querySelector("iframe")).toBeNull();
     const video = document.querySelector("video");
     expect(video).toHaveAttribute("src", GOOD_TROUBLE_PRODUCTION_DEMO_VIDEO_SRC);
-    expect(video).toHaveAttribute("preload", "metadata");
+    expect(video).toHaveAttribute("preload", "none");
+    expect(video.getAttribute("src")).toBeNull();
   });
 
   it("plays after explicit user activation", async () => {
@@ -32,6 +33,7 @@ describe("HomeGoodTroubleProductionDemoVideo", () => {
     video.play = vi.fn().mockResolvedValue(undefined);
 
     await user.click(screen.getByRole("button", { name: /Play Abraxas and Good Trouble early partner/i }));
+    expect(video).toHaveAttribute("src", GOOD_TROUBLE_PRODUCTION_DEMO_VIDEO_SRC);
     expect(video.play).toHaveBeenCalled();
     expect(video.controls).toBe(true);
   });

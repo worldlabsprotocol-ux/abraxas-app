@@ -1,29 +1,25 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useState } from "react";
 import {
   CINEMATIC_GT_PARTNER_DISCLAIMER,
   CINEMATIC_GT_SECTION_HEADLINE,
   CINEMATIC_GT_SECTION_LEAD,
 } from "@/lib/home/cinematicHomeCopy";
+import { LazyHomeSection } from "@/components/home/LazyHomeSection";
+
 const HomeGoodTroubleProductionDemoVideo = dynamic(
   () =>
     import("@/components/home/HomeGoodTroubleProductionDemoVideo").then(
       (m) => m.HomeGoodTroubleProductionDemoVideo,
     ),
-  {
-    ssr: false,
-    loading: () => (
-      <div
-        className="abx-gt-action__video-placeholder"
-        role="status"
-        aria-label="Partner demonstration video loading"
-      />
-    ),
-  },
+  { ssr: false },
 );
 
 export function HomeGoodTroubleActionSection() {
+  const [armed, setArmed] = useState(false);
+
   return (
     <section
       id="see-abraxas-in-action"
@@ -37,9 +33,21 @@ export function HomeGoodTroubleActionSection() {
       <p className="abx-v2-section-lead">{CINEMATIC_GT_SECTION_LEAD}</p>
       <p className="abx-gt-action__disclaimer">{CINEMATIC_GT_PARTNER_DISCLAIMER}</p>
 
-      <div className="abx-gt-action__player">
-        <HomeGoodTroubleProductionDemoVideo />
-      </div>
+      <LazyHomeSection minHeight="420px">
+        <div className="abx-gt-action__player">
+          {!armed ? (
+            <button
+              type="button"
+              className="abx-gt-action__arm"
+              onClick={() => setArmed(true)}
+            >
+              Load partner demonstration video
+            </button>
+          ) : (
+            <HomeGoodTroubleProductionDemoVideo />
+          )}
+        </div>
+      </LazyHomeSection>
     </section>
   );
 }

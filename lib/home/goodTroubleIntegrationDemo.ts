@@ -19,7 +19,7 @@ export const GOOD_TROUBLE_PRODUCTION_DEMO_METADATA = {
   codecAudio: "aac",
   fileSizeBytes: 39_361_452,
   fileSizeLabel: "38 MB",
-  preload: "metadata" as const,
+  preload: "none" as const,
 } as const;
 
 /** Legacy homepage guard markers — retained for baseline compatibility. */

@@ -28,6 +28,7 @@ export function HomeGoodTroubleProductionDemoVideo({
 }: HomeGoodTroubleProductionDemoVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [started, setStarted] = useState(active);
+  const [src, setSrc] = useState<string | undefined>(active ? GOOD_TROUBLE_PRODUCTION_DEMO_VIDEO_SRC : undefined);
   const [showControlsHint, setShowControlsHint] = useState(false);
   const captionId = useId();
   const reduceMotion = useReducedMotion();
@@ -39,10 +40,14 @@ export function HomeGoodTroubleProductionDemoVideo({
   }, [active]);
 
   async function startPlayback() {
-    const video = videoRef.current;
-    if (!video) return;
     setStarted(true);
     onActivate?.();
+    if (!src) {
+      setSrc(GOOD_TROUBLE_PRODUCTION_DEMO_VIDEO_SRC);
+      return;
+    }
+    const video = videoRef.current;
+    if (!video) return;
     try {
       await video.play();
       setShowControlsHint(false);
@@ -50,6 +55,17 @@ export function HomeGoodTroubleProductionDemoVideo({
       setShowControlsHint(true);
     }
   }
+
+  useEffect(() => {
+    if (!started || !src) return;
+    const video = videoRef.current;
+    if (!video) return;
+    const onReady = () => {
+      void video.play().catch(() => setShowControlsHint(true));
+    };
+    video.addEventListener("loadeddata", onReady, { once: true });
+    return () => video.removeEventListener("loadeddata", onReady);
+  }, [started, src]);
 
   return (
     <figure
@@ -74,12 +90,12 @@ export function HomeGoodTroubleProductionDemoVideo({
         <video
           ref={videoRef}
           className="abx-gt-production-demo-video__media"
-          src={GOOD_TROUBLE_PRODUCTION_DEMO_VIDEO_SRC}
+          src={src}
           title={title}
           aria-describedby={captionId}
           controls={started}
           playsInline
-          preload={GOOD_TROUBLE_PRODUCTION_DEMO_METADATA.preload}
+          preload="none"
           onPlay={() => {
             setStarted(true);
             setShowControlsHint(false);

@@ -1,25 +1,23 @@
 "use client";
 
 import Image from "next/image";
-import { useReducedMotion } from "framer-motion";
-import { OFFICIAL_BRAND_ASSETS, ABRAXAS_BRAND_GREEN } from "@/lib/brand/officialBrandAssets";
+import { ABRAXAS_BRAND_GREEN, OFFICIAL_EMBLEM_HERO_WEBP } from "@/lib/brand/officialBrandAssets";
 
 /** Emblem focal with restrained green light — no particle storms. */
 export function CinematicHomeHeroVisual() {
-  const reduceMotion = useReducedMotion();
-  const { emblem } = OFFICIAL_BRAND_ASSETS;
 
   return (
     <div className="abx-cinematic-hero__visual" aria-hidden="true">
       <div className="abx-cinematic-hero__glow" />
-      <div className={`abx-cinematic-hero__emblem-wrap${reduceMotion ? " abx-cinematic-hero__emblem-wrap--static" : ""}`}>
+      <div className="abx-cinematic-hero__emblem-wrap abx-cinematic-hero__emblem-wrap--css-motion">
         <Image
-          src={emblem.src}
+          src={OFFICIAL_EMBLEM_HERO_WEBP.src}
           alt=""
-          width={480}
-          height={480}
-          priority
-          sizes="(max-width: 960px) min(72vw, 320px), min(42vw, 420px)"
+          width={OFFICIAL_EMBLEM_HERO_WEBP.width}
+          height={OFFICIAL_EMBLEM_HERO_WEBP.height}
+          sizes="(max-width: 960px) 72vw, 420px"
+          loading="lazy"
+          fetchPriority="low"
           className="abx-cinematic-hero__emblem"
         />
       </div>

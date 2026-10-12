@@ -105,6 +105,77 @@
   background: linear-gradient(90deg, transparent, var(--abx-premium-green-line), transparent);
 }
 
+/* LCP-safe hero reveal — opacity 1 from first paint; transform only */
+@keyframes abx-premium-hero-reveal {
+  from {
+    opacity: 1;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.abx-premium-hero__reveal {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .abx-premium-hero__reveal {
+    animation: abx-premium-hero-reveal 0.72s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .abx-premium-hero__reveal--1 {
+    animation-delay: 0.05s;
+  }
+  .abx-premium-hero__reveal--2 {
+    animation-delay: 0.12s;
+  }
+  .abx-premium-hero__reveal--3 {
+    animation-delay: 0.18s;
+  }
+  .abx-premium-hero__reveal--4 {
+    animation-delay: 0.28s;
+  }
+  .abx-premium-hero__reveal--5 {
+    animation-delay: 0.42s;
+  }
+}
+
+.abx-premium-hero__visual-skeleton {
+  width: min(100%, 440px);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 50%;
+}
+
+.abx-cinematic-hero__emblem-wrap--css-motion {
+  animation: abx-cinematic-emblem-float 10s ease-in-out infinite;
+}
+
+.abx-gt-action__arm {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 1rem 1.25rem;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: rgba(76, 187, 146, 0.08);
+  border: 1px solid var(--abx-premium-green-line);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.abx-gt-action__arm:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 3px;
+}
+
 .abx-premium-hero__sr-only {
   position: absolute;
   width: 1px;

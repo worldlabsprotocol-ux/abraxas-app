@@ -2,15 +2,11 @@
 // FILE: components/redesign/RedesignHome.tsx
 // Premium public homepage — editorial spine, signature interactions, verifiable trust depth.
 
-import { WalletContextProvider } from "@/components/WalletContextProvider";
-import { CapabilityMatrix } from "@/components/institutional/CapabilityMatrix";
+import dynamic from "next/dynamic";
 import { InstitutionalHomeClose } from "@/components/institutional/InstitutionalHomeClose";
 import { InstitutionalHomeHero } from "@/components/institutional/InstitutionalHomeHero";
-import { HomeGoodTroubleActionSection } from "@/components/home/HomeGoodTroubleActionSection";
 import { HomeProblemChapter } from "@/components/home/HomeProblemChapter";
-import { HomeVerifiableTrustChapter } from "@/components/home/HomeVerifiableTrustChapter";
-import { HomeVerificationLifecycle } from "@/components/home/premium/HomeVerificationLifecycle";
-import { HomeTrustNetwork } from "@/components/home/premium/HomeTrustNetwork";
+import { LazyHomeSection } from "@/components/home/LazyHomeSection";
 import { PremiumHomeChapter } from "@/components/home/premium/PremiumHomeChapter";
 import { ABX_SPACING, abxAccentCssVars } from "@/lib/design/abraxasDesignSystem";
 import { ABX_V2_SHELL_CLASS } from "@/lib/design/institutionalV2Tokens";
@@ -18,6 +14,31 @@ import { abxMotionCssVars } from "@/lib/design/abraxasMotion";
 import { CINEMATIC_BUILD_CHAPTER_EYEBROW } from "@/lib/home/cinematicHomeCopy";
 import { RedesignNav } from "./RedesignNav";
 import { RedesignFooter } from "./RedesignFooter";
+
+const HomeVerificationLifecycle = dynamic(
+  () => import("@/components/home/premium/HomeVerificationLifecycle").then((m) => m.HomeVerificationLifecycle),
+  { ssr: false, loading: () => <div className="abx-lazy-home-section" style={{ minHeight: "16rem" }} aria-hidden /> },
+);
+
+const HomeGoodTroubleActionSection = dynamic(
+  () => import("@/components/home/HomeGoodTroubleActionSection").then((m) => m.HomeGoodTroubleActionSection),
+  { ssr: false, loading: () => <div className="abx-lazy-home-section" style={{ minHeight: "8rem" }} aria-hidden /> },
+);
+
+const HomeTrustNetwork = dynamic(
+  () => import("@/components/home/premium/HomeTrustNetwork").then((m) => m.HomeTrustNetwork),
+  { ssr: false, loading: () => <div className="abx-lazy-home-section" style={{ minHeight: "14rem" }} aria-hidden /> },
+);
+
+const HomeVerifiableTrustChapter = dynamic(
+  () => import("@/components/home/HomeVerifiableTrustChapter").then((m) => m.HomeVerifiableTrustChapter),
+  { ssr: false, loading: () => <div className="abx-lazy-home-section" style={{ minHeight: "20rem" }} aria-hidden /> },
+);
+
+const CapabilityMatrix = dynamic(
+  () => import("@/components/institutional/CapabilityMatrix").then((m) => m.CapabilityMatrix),
+  { ssr: false, loading: () => <div className="abx-lazy-home-section" style={{ minHeight: "10rem" }} aria-hidden /> },
+);
 
 const SHELL: React.CSSProperties = {
   maxWidth: 1320,
@@ -37,7 +58,9 @@ function HomeContent() {
         </PremiumHomeChapter>
 
         <PremiumHomeChapter index="02" label="Lifecycle" id="chapter-lifecycle">
-          <HomeVerificationLifecycle />
+          <LazyHomeSection minHeight="18rem">
+            <HomeVerificationLifecycle />
+          </LazyHomeSection>
         </PremiumHomeChapter>
 
         <PremiumHomeChapter index="03" label="Demonstration" id="chapter-demo">
@@ -45,11 +68,15 @@ function HomeContent() {
         </PremiumHomeChapter>
 
         <PremiumHomeChapter index="04" label="Network" id="chapter-network">
-          <HomeTrustNetwork />
+          <LazyHomeSection minHeight="16rem">
+            <HomeTrustNetwork />
+          </LazyHomeSection>
         </PremiumHomeChapter>
 
         <PremiumHomeChapter index="05" label="Evidence" id="chapter-evidence">
-          <HomeVerifiableTrustChapter />
+          <LazyHomeSection minHeight="22rem">
+            <HomeVerifiableTrustChapter />
+          </LazyHomeSection>
         </PremiumHomeChapter>
 
         <PremiumHomeChapter index="06" label="Build" id="chapter-build">
@@ -62,7 +89,9 @@ function HomeContent() {
               Explore the integration studio and sandbox flows. Production activation requires operator review — not
               unrestricted self-serve mainnet access.
             </p>
-            <CapabilityMatrix />
+            <LazyHomeSection minHeight="12rem">
+              <CapabilityMatrix />
+            </LazyHomeSection>
           </section>
           <InstitutionalHomeClose />
         </PremiumHomeChapter>
@@ -73,17 +102,15 @@ function HomeContent() {
 
 export function RedesignHome() {
   return (
-    <WalletContextProvider>
-      <div
-        data-theme="dark"
-        data-motion-tier="cinematic"
-        className={`abx-institutional-shell abx-command-center abx-v2-shell ${ABX_V2_SHELL_CLASS}`}
-        style={{ ...abxMotionCssVars(), ...abxAccentCssVars("neutral") }}
-      >
-        <RedesignNav />
-        <HomeContent />
-        <RedesignFooter />
-      </div>
-    </WalletContextProvider>
+    <div
+      data-theme="dark"
+      data-motion-tier="cinematic"
+      className={`abx-institutional-shell abx-command-center abx-v2-shell ${ABX_V2_SHELL_CLASS}`}
+      style={{ ...abxMotionCssVars(), ...abxAccentCssVars("neutral") }}
+    >
+      <RedesignNav />
+      <HomeContent />
+      <RedesignFooter />
+    </div>
   );
 }

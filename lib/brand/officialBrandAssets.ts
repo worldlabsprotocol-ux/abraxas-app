@@ -22,5 +22,12 @@ export const OFFICIAL_BRAND_ASSETS = {
   },
 } as const;
 
+/** Derived from official emblem PNG — homepage hero only (640 WebP). */
+export const OFFICIAL_EMBLEM_HERO_WEBP = {
+  src: "/brand/official/abraxas-emblem-protocol-640.webp",
+  width: 640,
+  height: 640,
+} as const;
+
 /** Canonical UI accent — matches verification green (#4CBB92). PNG assets may contain other hues. */
 export const ABRAXAS_BRAND_GREEN = "#4CBB92";

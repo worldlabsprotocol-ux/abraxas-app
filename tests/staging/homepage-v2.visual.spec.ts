@@ -22,6 +22,8 @@ test.describe("Homepage V2 layout smoke", () => {
   test("simulated receipt revocation toggles DENY", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/", { waitUntil: "networkidle" });
+    await page.locator("#chapter-evidence").scrollIntoViewIfNeeded();
+    await page.getByRole("button", { name: /Simulate revocation/i }).waitFor({ state: "visible" });
     const outcome = page.locator(".abx-receipt-inspector__outcome");
     await expect(outcome).toContainText("PERMIT");
     await page.getByRole("button", { name: /Simulate revocation/i }).click();
