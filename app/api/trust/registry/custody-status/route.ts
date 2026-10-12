@@ -5,6 +5,7 @@ import { fetchInstitutionalSquadsCustody } from "@/lib/solana/trustRegistry/gove
 import { squadsV4InstitutionalProvisioningRunbook } from "@/lib/solana/trustRegistry/governance/squadsV4ProvisioningRunbook";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET() {
   const rpc = process.env.SOLANA_DEVNET_RPC_URL ?? "https://api.devnet.solana.com";
