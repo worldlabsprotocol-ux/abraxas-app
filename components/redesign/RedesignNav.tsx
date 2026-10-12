@@ -3,7 +3,8 @@
 // Canonical public nav — Home · Passport · Build · Explore
 
 import Link from "next/link";
-import Image from "next/image";
+import { AbraxasLogo } from "@/components/brand/AbraxasLogo";
+import { ABRAXAS_BRAND_GREEN } from "@/lib/brand/officialBrandAssets";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
@@ -63,30 +64,7 @@ export function RedesignNav() {
         gap: "0.85rem",
       }}
     >
-      <Link
-        href="/"
-        aria-label="Abraxas home"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "0.55rem",
-          textDecoration: "none",
-          flexShrink: 0,
-        }}
-      >
-        <Image src="/icon-48.png" alt="" width={30} height={30} priority style={{ display: "block", borderRadius: 8 }} />
-        <span
-          style={{
-            fontFamily: FONT,
-            fontSize: "clamp(1.05rem,1.6vw,1.25rem)",
-            fontWeight: 800,
-            color: "var(--text-primary)",
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Abraxas
-        </span>
-      </Link>
+      <AbraxasLogo variant="lockup" emblemSize={32} href="/" />
 
       <div
         className="rd-nav-links"
@@ -124,8 +102,8 @@ export function RedesignNav() {
                     position: "absolute",
                     inset: 0,
                     borderRadius: 999,
-                    background: "rgba(232,197,71,0.12)",
-                    border: "1px solid rgba(232,197,71,0.28)",
+                    background: "rgba(94,234,212,0.1)",
+                    border: "1px solid rgba(94,234,212,0.28)",
                     zIndex: -1,
                   }}
                 />
@@ -263,7 +241,7 @@ export function RedesignNav() {
             <Link
               href={PUBLIC_NAV_PRIMARY_CTA.href}
               onClick={() => setOpen(false)}
-              style={{ ...mobileSubLink, color: "var(--abx-gold, var(--accent))", fontWeight: 700 }}
+              style={{ ...mobileSubLink, color: ABRAXAS_BRAND_GREEN, fontWeight: 700 }}
             >
               {PUBLIC_NAV_PRIMARY_CTA.label}
             </Link>

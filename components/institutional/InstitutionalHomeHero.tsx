@@ -1,5 +1,6 @@
 "use client";
 
+import { AbraxasLogo } from "@/components/brand/AbraxasLogo";
 import { Btn } from "@/components/redesign/ui";
 import { ProtocolReceiptDemo } from "@/components/institutional/ProtocolReceiptDemo";
 import {
@@ -16,6 +17,9 @@ export function InstitutionalHomeHero() {
   return (
     <section className="abx-v2-hero" aria-label="Abraxas trust infrastructure">
       <div className="abx-v2-hero__copy">
+        <div className="abx-v2-hero__brand-emblem">
+          <AbraxasLogo variant="emblem" emblemSize={56} href={undefined} emblemOnly />
+        </div>
         <p className="abx-v2-eyebrow">{V2_HOME_EYEBROW}</p>
         <h1 className="abx-v2-hero__title">{V2_HOME_HEADLINE}</h1>
         <p className="abx-v2-hero__lead">{V2_HOME_LEAD}</p>

@@ -47,6 +47,10 @@
   color: var(--text-secondary);
 }
 
+.abx-v2-hero__brand-emblem {
+  margin-bottom: 0.85rem;
+}
+
 /* Hero — 45 / 55 editorial split */
 .abx-v2-hero {
   display: grid;

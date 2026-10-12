@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AbraxasLogo } from "@/components/brand/AbraxasLogo";
 import { TRUST_MODEL_STAGES, type TrustModelStageId } from "@/lib/home/trustModelStages";
 
 export function TrustModelExhibit() {
@@ -19,6 +20,9 @@ export function TrustModelExhibit() {
       <div className="abx-trust-exhibit__layout">
         <aside className="abx-trust-exhibit__rail" aria-label="Trust model index">
           <span className="abx-trust-exhibit__rail-label">01 / TRUST MODEL</span>
+          <div className="abx-trust-exhibit__brand-mark">
+            <AbraxasLogo variant="emblem" emblemSize={88} href={undefined} emblemOnly />
+          </div>
         </aside>
 
         <div className="abx-trust-exhibit__flow" role="tablist" aria-label="Protocol stages">

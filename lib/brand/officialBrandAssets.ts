@@ -1,0 +1,26 @@
+// FILE: lib/brand/officialBrandAssets.ts
+// Founder-provided brand asset paths (see public/brand/official/SOURCE.md).
+
+export const OFFICIAL_BRAND_ASSETS = {
+  emblem: {
+    src: "/brand/official/abraxas-emblem-protocol.png",
+    alt: "Abraxas protocol emblem — crystalline verification mark over Earth horizon",
+    width: 1024,
+    height: 1024,
+  },
+  protocolBanner: {
+    src: "/brand/official/abraxas-protocol-banner.png",
+    alt: "Abraxas — Verify what matters. Reveal nothing else. Global independent verification protocol.",
+    width: 1920,
+    height: 640,
+  },
+  architectureExhibit: {
+    src: "/brand/official/abraxas-protocol-architecture-exhibit.png",
+    alt: "Abraxas independent verification architecture — global sectors connected to a central trust crystal",
+    width: 1920,
+    height: 1080,
+  },
+} as const;
+
+/** Restrained primary accent from official protocol imagery (cyan/teal glow). */
+export const ABRAXAS_BRAND_GREEN = "#5EEAD4";

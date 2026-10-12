@@ -11,6 +11,8 @@ export const MONO = {
   divider: "#202020",
   /** Limited identity accent — not for default buttons */
   mineralGold: "#C4A962",
+  /** Founder protocol imagery accent (nav, active states) */
+  brandGreen: "#5EEAD4",
   actionPrimaryBg: "#F5F5F3",
   actionPrimaryText: "#050505",
 } as const;
