@@ -12,6 +12,13 @@ export function siteMetadata(overrides?: Partial<Metadata>): Metadata {
 
   return {
     metadataBase: new URL(SITE_URL),
+    icons: {
+      icon: [
+        { url: "/brand/official/abraxas-emblem-protocol.png", sizes: "512x512", type: "image/png" },
+        { url: "/icon-48.png", sizes: "48x48", type: "image/png" },
+      ],
+      apple: "/brand/official/abraxas-emblem-protocol.png",
+    },
     title: {
       default: typeof title === "string" ? title : SEO_DEFAULT_TITLE,
       template: "%s · abraxasworld.xyz",
