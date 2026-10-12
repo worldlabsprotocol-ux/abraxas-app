@@ -4,6 +4,11 @@ import type { GovernanceMigrationUiState } from "@/lib/solana/trustRegistry/gove
 import { squadsVaultAcceptCompatibilityReview } from "@/lib/solana/trustRegistry/governance/squadsVault";
 import type { SquadsProposalLifecycleState } from "@/lib/solana/trustRegistry/governance/squadsProposalHarness";
 import { squadsProposalStateIsSimulated } from "@/lib/solana/trustRegistry/governance/squadsProposalHarness";
+import {
+  TRUST_REGISTRY_DEVNET_GOVERNANCE_AUTHORITY,
+  TRUST_REGISTRY_DEVNET_LIVE_V535,
+  TRUST_REGISTRY_DEVNET_UPGRADE_AUTHORITY,
+} from "@/lib/solana/trustRegistry/governance/trustRegistryDevnetLiveEvidence535";
 
 const LABELS: Record<GovernanceMigrationUiState, { title: string; detail: string; tone: "neutral" | "warn" | "ok" | "blocked" }> = {
   deployed_authority_active: {
@@ -105,8 +110,34 @@ export function TrustRegistryGovernanceMigrationPanel({
         Trust Registry — governance migration (#536)
       </h2>
       <p style={{ margin: 0, opacity: 0.85, fontSize: "0.92rem" }}>
-        Read-only status. No wallet actions are triggered from this panel.
+        Read-only status. No wallet actions are triggered from this panel. Institutional Squads custody is not activated until founder-authorized multisig provisioning.
       </p>
+      <div
+        style={{
+          marginTop: "0.75rem",
+          padding: "0.65rem 0.75rem",
+          borderRadius: 8,
+          border: "1px solid #333",
+          fontSize: "0.82rem",
+          lineHeight: 1.55,
+          fontFamily: "var(--font-mono, ui-monospace, monospace)",
+        }}
+      >
+        <div>
+          <strong>Live devnet (#535 evidence)</strong> — program{" "}
+          <code>{TRUST_REGISTRY_DEVNET_LIVE_V535.program_id}</code>
+        </div>
+        <div>Upgrade authority (today): <code>{TRUST_REGISTRY_DEVNET_UPGRADE_AUTHORITY}</code></div>
+        <div>Registry governance authority (today): <code>{TRUST_REGISTRY_DEVNET_GOVERNANCE_AUTHORITY}</code></div>
+        <div>Registry PDA: <code>{TRUST_REGISTRY_DEVNET_LIVE_V535.registry_pda}</code></div>
+        <div>
+          Historical commitment: <code>{TRUST_REGISTRY_DEVNET_LIVE_V535.commitment_state_pda}</code> —{" "}
+          {TRUST_REGISTRY_DEVNET_LIVE_V535.enforcement.revoked_on_chain ? "REVOKED (preserved)" : "unknown"}
+        </div>
+        <div style={{ marginTop: "0.35rem", opacity: 0.85 }}>
+          Target steady state: separate Squads v4 vaults for protocol upgrades vs registry administration. Operational publish/revoke remains outside both multisigs until migrated.
+        </div>
+      </div>
       <div style={{ marginTop: "0.85rem", padding: "0.65rem 0.75rem", borderRadius: 8, border: "1px solid #333" }}>
         <strong>{copy.title}</strong>
         <p style={{ margin: "0.35rem 0 0", fontSize: "0.9rem", lineHeight: 1.45 }}>{copy.detail}</p>
