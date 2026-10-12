@@ -376,6 +376,92 @@ async fn nominate_and_accept(
 }
 
 #[tokio::test]
+async fn expire_nomination_blocks_accept() {
+    let mut test = ProgramTest::default();
+    test.add_program(
+        "abraxas_trust_registry",
+        TRUST_REGISTRY_ID,
+        processor!(trust_registry_process),
+    );
+    let mut ctx = test.start_with_context().await;
+    let gov = Keypair::new();
+    let successor = Keypair::new();
+    fund(&mut ctx, &gov.pubkey(), 5_000_000_000).await;
+    fund(&mut ctx, &successor.pubkey(), 1_000_000_000).await;
+    let domain = h32(15);
+    let registry = setup_registry(&mut ctx, &gov, domain).await;
+
+    let nominate = Instruction {
+        program_id: TRUST_REGISTRY_ID,
+        accounts: abraxas_trust_registry::accounts::NominateGovernanceAuthority {
+            governance_authority: gov.pubkey(),
+            registry,
+        }
+        .to_account_metas(None),
+        data: abraxas_trust_registry::instruction::NominateGovernanceAuthority {
+            new_authority: successor.pubkey(),
+            transfer_seq: 1,
+        }
+        .data(),
+    };
+    ctx.banks_client
+        .process_transaction(Transaction::new_signed_with_payer(
+            &[nominate],
+            Some(&gov.pubkey()),
+            &[&gov],
+            ctx.last_blockhash,
+        ))
+        .await
+        .unwrap();
+
+    let slot = ctx.banks_client.get_root_slot().await.unwrap();
+    ctx.warp_to_slot(slot + GOVERNANCE_NOMINATION_TTL_SLOTS + 10)
+        .unwrap();
+    ctx.last_blockhash = ctx
+        .banks_client
+        .get_new_latest_blockhash(&ctx.last_blockhash)
+        .await
+        .unwrap();
+
+    let expire = Instruction {
+        program_id: TRUST_REGISTRY_ID,
+        accounts: abraxas_trust_registry::accounts::ExpireGovernanceNomination { registry }
+            .to_account_metas(None),
+        data: abraxas_trust_registry::instruction::ExpireGovernanceNomination {}.data(),
+    };
+    ctx.banks_client
+        .process_transaction(Transaction::new_signed_with_payer(
+            &[expire],
+            Some(&ctx.payer.pubkey()),
+            &[&ctx.payer],
+            ctx.last_blockhash,
+        ))
+        .await
+        .unwrap();
+
+    let accept = Instruction {
+        program_id: TRUST_REGISTRY_ID,
+        accounts: abraxas_trust_registry::accounts::AcceptGovernanceAuthority {
+            pending_authority: successor.pubkey(),
+            registry,
+        }
+        .to_account_metas(None),
+        data: abraxas_trust_registry::instruction::AcceptGovernanceAuthority { transfer_seq: 1 }.data(),
+    };
+    let err = ctx
+        .banks_client
+        .process_transaction(Transaction::new_signed_with_payer(
+            &[accept],
+            Some(&successor.pubkey()),
+            &[&successor],
+            ctx.last_blockhash,
+        ))
+        .await
+        .unwrap_err();
+    assert!(matches!(err, BanksClientError::TransactionError(_)));
+}
+
+#[tokio::test]
 async fn replay_accept_after_transfer_rejected() {
     let mut test = ProgramTest::default();
     test.add_program(
