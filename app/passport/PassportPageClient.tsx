@@ -37,11 +37,13 @@ import {
   PASSPORT_PAGE_SUBHEAD,
 } from "@/lib/passport/passportCustomerCopy";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
+import { ProductStoryStrip } from "@/components/product/ProductStoryStrip";
 import {
   HOLDER_VERIFY_EYEBROW,
   HOLDER_VERIFY_HEADLINE,
   HOLDER_VERIFY_SUBHEAD,
 } from "@/lib/integrate/partnerJourney";
+import { PASSPORT_VIEW_HEADINGS } from "@/lib/product/holderNavigationCopy";
 
 const S = ABRAXAS_FONT_SANS;
 
@@ -217,14 +219,52 @@ function PassportPageInner() {
 
       <AbxPageHeader
         accent="passport"
-        eyebrow={pageView === "verify" ? HOLDER_VERIFY_EYEBROW : pageView === "requests" ? "Passport · Requests" : pageView === "activity" ? "Passport · Activity" : pageView === "privacy" ? "Passport · Privacy" : pageView === "support" ? "Passport · Help" : PASSPORT_PAGE_EYEBROW}
-        title={pageView === "verify" ? HOLDER_VERIFY_HEADLINE : pageView === "requests" ? "Requests waiting for you" : pageView === "activity" ? "Your Passport activity" : pageView === "privacy" ? "Your data, your controls" : pageView === "support" ? "Help and account safety" : PASSPORT_PAGE_HEADLINE}
-        lead={pageView === "verify" ? HOLDER_VERIFY_SUBHEAD : pageView === "requests" ? "Review who is asking, why they need a result, and what would be shared before you decide." : pageView === "activity" ? "See verification use, privacy requests, and help progress in plain language." : pageView === "privacy" ? "See what Abraxas holds, request an export, or ask us to delete your account data." : pageView === "support" ? "Get help in plain language and manage the session on this device." : PASSPORT_PAGE_SUBHEAD}
+        eyebrow={
+          pageView === "verify"
+            ? HOLDER_VERIFY_EYEBROW
+            : pageView === "requests"
+              ? PASSPORT_VIEW_HEADINGS.requests.eyebrow
+              : pageView === "activity"
+                ? PASSPORT_VIEW_HEADINGS.activity.eyebrow
+                : pageView === "privacy"
+                  ? "Passport · Privacy"
+                  : pageView === "support"
+                    ? "Passport · Help"
+                    : PASSPORT_PAGE_EYEBROW
+        }
+        title={
+          pageView === "verify"
+            ? HOLDER_VERIFY_HEADLINE
+            : pageView === "requests"
+              ? PASSPORT_VIEW_HEADINGS.requests.headline
+              : pageView === "activity"
+                ? PASSPORT_VIEW_HEADINGS.activity.headline
+                : pageView === "privacy"
+                  ? "Your data, your controls"
+                  : pageView === "support"
+                    ? "Help and account safety"
+                    : PASSPORT_PAGE_HEADLINE
+        }
+        lead={
+          pageView === "verify"
+            ? HOLDER_VERIFY_SUBHEAD
+            : pageView === "requests"
+              ? PASSPORT_VIEW_HEADINGS.requests.subhead
+              : pageView === "activity"
+                ? PASSPORT_VIEW_HEADINGS.activity.subhead
+                : pageView === "privacy"
+                  ? "See what Abraxas holds, request an export, or ask us to delete your account data."
+                  : pageView === "support"
+                    ? "Get help in plain language and manage the session on this device."
+                    : PASSPORT_PAGE_SUBHEAD
+        }
       />
 
         <Suspense fallback={<RedesignPageLoading label="Loading navigation…" compact />}>
           <PassportPageTabs active={pageView} />
         </Suspense>
+
+        {pageView === "passport" ? <ProductStoryStrip compact /> : null}
 
         {pageView === "verify" ? (
           <>

@@ -44,7 +44,8 @@ export function buildGoodTroubleAgeEligibilityPurchaseBrief(input: {
     environment_detail: production
       ? "This is a production Good Trouble order eligibility check. The partner receives only the 21+ result."
       : "This is a sandbox or test request. A passing result here is not Production-usable.",
-    method_explanation: "Confirm your birthday to establish 21+ eligibility. No ID or camera is required for this step.",
+    method_explanation:
+      "This step uses the qualifying method this policy allows. Verified identity proof is required when the policy demands it — self-attested age alone cannot replace required verification.",
     google_account_only: "Sign-in opens an Abraxas account only. It is not age verification.",
     identity_not_default: "",
   };
