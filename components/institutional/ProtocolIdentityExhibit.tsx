@@ -22,7 +22,7 @@ export function ProtocolIdentityExhibit() {
       />
       <ProtocolBrandFigure
         asset="architectureExhibit"
-        caption="Global trust boundary: one verification crystal, sector-specific gates, no shared identity database."
+        caption="Conceptual architecture — sector-specific gates and a single verification boundary; not a live deployment map."
       />
     </section>
   );

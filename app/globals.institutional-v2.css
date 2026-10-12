@@ -4,7 +4,10 @@
   --abx-graphite: #080b0d;
   --abx-charcoal: #11161a;
   --abx-surface-elevated: #171d22;
-  --abx-gold: #d5af46;
+  --abx-gold: #A3A3A3;
+  --abx-brand-green: #4cbb92;
+  --abx-brand-green-border: rgba(76, 187, 146, 0.35);
+  --abx-brand-green-faint: rgba(76, 187, 146, 0.08);
   --abx-verify-green: #4cbb92;
   --abx-evidence-blue: #688dba;
   --abx-v2-max: 1320px;
@@ -139,7 +142,7 @@
 }
 
 .abx-protocol-demo__step:focus-visible {
-  outline: 2px solid var(--abx-gold);
+  outline: 2px solid var(--text-primary);
   outline-offset: 2px;
 }
 
@@ -184,7 +187,7 @@
 }
 
 .abx-protocol-demo__replay:focus-visible {
-  outline: 2px solid var(--abx-gold);
+  outline: 2px solid var(--text-primary);
   outline-offset: 2px;
 }
 
@@ -234,7 +237,7 @@
   margin: 0 0 0.65rem;
   font-size: 0.72rem;
   line-height: 1.45;
-  color: var(--abx-gold);
+  color: var(--abx-brand-green, var(--abx-verify-green));
 }
 
 .abx-receipt-inspector__grid {
@@ -285,16 +288,16 @@
   width: 100%;
   padding: 0.5rem;
   border-radius: 8px;
-  border: 1px solid rgba(213, 175, 70, 0.35);
-  background: rgba(213, 175, 70, 0.08);
-  color: var(--abx-gold);
+  border: 1px solid rgba(76, 187, 146, 0.35);
+  background: rgba(76, 187, 146, 0.08);
+  color: var(--abx-brand-green, var(--abx-verify-green));
   font-size: 0.72rem;
   font-weight: 700;
   cursor: pointer;
 }
 
 .abx-receipt-inspector__revoke:focus-visible {
-  outline: 2px solid var(--abx-gold);
+  outline: 2px solid var(--text-primary);
   outline-offset: 2px;
 }
 
@@ -372,14 +375,14 @@
 }
 
 .abx-trust-exhibit__node--active {
-  border-color: rgba(213, 175, 70, 0.45);
-  background: rgba(213, 175, 70, 0.06);
+  border-color: rgba(76, 187, 146, 0.45);
+  background: rgba(76, 187, 146, 0.06);
 }
 
 .abx-trust-exhibit__node-index {
   font-family: var(--font-mono), monospace;
   font-size: 0.62rem;
-  color: var(--abx-gold);
+  color: var(--abx-brand-green, var(--abx-verify-green));
 }
 
 .abx-trust-exhibit__node-title {
@@ -593,8 +596,8 @@
 }
 
 .abx-cap-matrix__state--pilot {
-  color: var(--abx-gold);
-  background: rgba(213, 175, 70, 0.12);
+  color: #d4a574;
+  background: rgba(212, 165, 116, 0.12);
 }
 
 .abx-cap-matrix__state--dev {
@@ -690,14 +693,14 @@
 
 .abx-studio-workspace__nav-item:hover,
 .abx-studio-workspace__nav-item:focus-visible {
-  border-color: rgba(213, 175, 70, 0.4);
+  border-color: rgba(76, 187, 146, 0.4);
   color: var(--text-primary);
 }
 
 .abx-studio-workspace__nav-item--active {
-  border-color: rgba(213, 175, 70, 0.45);
-  color: var(--abx-gold, var(--text-primary));
-  background: rgba(213, 175, 70, 0.08);
+  border-color: var(--abx-brand-green-border);
+  color: var(--text-primary);
+  background: var(--abx-brand-green-faint);
 }
 
 .abx-studio-workspace__main {
@@ -743,7 +746,7 @@
 }
 
 .abx-studio-inspector__tab--active {
-  border-color: rgba(213, 175, 70, 0.45);
+  border-color: rgba(76, 187, 146, 0.45);
   color: var(--text-primary);
 }
 
@@ -784,8 +787,8 @@
 }
 
 .abx-launchpad-nav__item--active {
-  border-color: rgba(213, 175, 70, 0.35);
-  background: rgba(213, 175, 70, 0.06);
+  border-color: rgba(76, 187, 146, 0.35);
+  background: rgba(76, 187, 146, 0.06);
   color: var(--text-primary);
 }
 
@@ -855,7 +858,7 @@
 }
 
 .abx-launchpad-table__row--selected td {
-  background: rgba(213, 175, 70, 0.08);
+  background: rgba(76, 187, 146, 0.08);
 }
 
 .abx-launchpad-table tbody tr {
@@ -863,7 +866,7 @@
 }
 
 .abx-launchpad-table tbody tr:focus-visible {
-  outline: 2px solid rgba(213, 175, 70, 0.5);
+  outline: 2px solid rgba(76, 187, 146, 0.5);
   outline-offset: -2px;
 }
 
@@ -894,6 +897,6 @@
 }
 
 .abx-verify-workbench__step--active {
-  color: var(--abx-gold);
-  border-color: rgba(213, 175, 70, 0.35);
+  color: var(--abx-brand-green, var(--abx-verify-green));
+  border-color: rgba(76, 187, 146, 0.35);
 }

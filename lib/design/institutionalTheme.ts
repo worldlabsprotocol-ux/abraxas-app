@@ -1,5 +1,5 @@
 // FILE: lib/design/institutionalTheme.ts
-// Monochrome institutional palette — mineral gold as identity accent only.
+// Monochrome institutional palette — brand green accent on neutral surfaces.
 
 import type { CSSProperties } from "react";
 import { MONO, MONO_SEMANTIC } from "@/lib/design/monochromeSystem";
@@ -13,7 +13,7 @@ export const INSTITUTIONAL_VIOLET_DEEP = MONO.textSecondary;
 
 export const INSTITUTIONAL_VERIFY = MONO_SEMANTIC.verified;
 
-export const INSTITUTIONAL_ACCENT = MONO.mineralGold;
+export const INSTITUTIONAL_ACCENT = MONO.brandGreen;
 
 export const INSTITUTIONAL_SHELL_BG = MONO.bgPrimary;
 

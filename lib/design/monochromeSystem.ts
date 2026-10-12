@@ -9,10 +9,10 @@ export const MONO = {
   textSecondary: "#A3A3A3",
   borderSubtle: "#292929",
   divider: "#202020",
-  /** Limited identity accent — not for default buttons */
+  /** Deprecated decorative gold — do not use for UI chrome (legacy references only). */
   mineralGold: "#C4A962",
-  /** Founder protocol imagery accent (nav, active states) */
-  brandGreen: "#5EEAD4",
+  /** Brand accent — nav, active states, successful verification */
+  brandGreen: "#4CBB92",
   actionPrimaryBg: "#F5F5F3",
   actionPrimaryText: "#050505",
 } as const;

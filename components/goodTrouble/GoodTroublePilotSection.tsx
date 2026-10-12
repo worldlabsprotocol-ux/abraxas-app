@@ -104,7 +104,7 @@ export function GoodTroublePilotSection({ hideHeader = false }: { hideHeader?: b
                 alignItems: "center",
                 justifyContent: "center",
                 background: "rgba(94,234,212,0.14)",
-                color: "#5EEAD4",
+                color: "#4CBB92",
                 fontSize: "0.7rem",
                 fontWeight: 800,
               }}>

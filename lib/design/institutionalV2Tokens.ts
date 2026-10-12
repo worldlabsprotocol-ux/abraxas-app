@@ -1,4 +1,4 @@
-// Institutional V2 design tokens — monochrome foundation, limited mineral gold accent.
+// Institutional V2 design tokens — monochrome foundation, restrained brand green accent.
 
 import { MONO, MONO_SEMANTIC } from "@/lib/design/monochromeSystem";
 
@@ -9,7 +9,7 @@ export const ABX_V2 = {
   textPrimary: MONO.textPrimary,
   textSecondary: MONO.textSecondary,
   border: MONO.borderSubtle,
-  gold: MONO.mineralGold,
+  brandAccent: MONO.brandGreen,
   verifyGreen: MONO_SEMANTIC.verified,
   evidenceBlue: MONO.textSecondary,
   contentMaxPx: 1320,
