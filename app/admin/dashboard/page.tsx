@@ -59,7 +59,10 @@ export default function AdminDashboardPage() {
         subtitle="Pending operator work across authoritative queues. Unavailable sources are shown separately — never as zero."
       />
 
-      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem" }}>
+      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", flexWrap: "wrap", alignItems: "center" }}>
+        <Link href="/admin/governance" style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, color: "var(--accent)" }}>
+          Trust registry governance →
+        </Link>
         <button type="button" onClick={() => void load()} disabled={loading} style={refreshStyle}>
           Refresh
         </button>

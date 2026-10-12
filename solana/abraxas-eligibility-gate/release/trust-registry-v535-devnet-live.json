@@ -1,0 +1,33 @@
+{
+  "schema": "abraxas_trust_registry_devnet_live_v535",
+  "network_id": "solana_devnet",
+  "program_id": "EN29YNgHRuJ3h9cWrPS9hSDBt8DUNtoSSTT9EbUZewC8",
+  "elf_sha256": "fc7780abd4f413505cb04fd0323fb958649311aa8d8ac8899e302fd3ded5b986",
+  "deployment_transaction": "3AdQ9gBkfLkSjsKWnR3ShzdHXzD3rPypvMXtCNXxnrFigXrvEKQPmwgSm4bg6t8f7c73xEZru6Pxv1LzENRtZYHW",
+  "deployment_slot": 510074318,
+  "program_data_address": "8CufFfWdCdPCmPGd2j59BYxYsX75AFnkYJhtJgMvJdBF",
+  "upgrade_authority": "8CbD1sre8bDhtJzUJN5sdtCc21DQwRCMR33VGKfDK4fK",
+  "governance_authority": "8CbD1sre8bDhtJzUJN5sdtCc21DQwRCMR33VGKfDK4fK",
+  "registry_domain_hex": "648da82a3d18981d61cd6a56b8a686c0b9b12a86c98eb90f79cfed9feaf377c0",
+  "registry_pda": "ApYQzo8UQo7fPTMJQA2YFs5mCa3iFWqGSabsoH9gBueL",
+  "policy_commitment_hex": "1c3aab2b9430ed95a837dbe93ef9c5c4f1d4f2d2b27deeef075ccb9b743d1a8b",
+  "commitment_state_pda": "12zsnhuLkf7V6cm42Qk95An72kgXBV9GvcaYZG11GZf4",
+  "transactions": {
+    "initialize_registry": "vxHHcpcSSmGr3fpLPL5AtKb2gd1UugRZ3fCjEZuJ5soicBJQcyPSsGJHSk5CktkHDLAmCf6nGpp9BsajqUysMES",
+    "register_policy": "4kN8rK3NNsPeowiyBxc3dPEtEwwEAYKazhYa72y2g8hZtLFe6rES256KGEJj8Bc6NYSQFCz2cZvmDwgM9PDJK3q7",
+    "publish_commitment": "4ataYbjNd1iWCQroEBmXsgt4NiUQbNpxpMsz2XyKmvMKJ7ktietaros8vRx57hgpUfXrDM8r4iShVW2qa7FhFrSA",
+    "authorized_revoke": "9hZnQcXkfFtXg1TgMbb9DncH7jxyubw67qstvht6i7vBotYT58rU6t1MzGbPu82Yng3yTpfmmP5HCoxKsiJkJyB"
+  },
+  "enforcement": {
+    "active_verifier_outcome": "PERMIT",
+    "active_slot": 510074432,
+    "unauthorized_revoke_rejected": true,
+    "revoked_on_chain": true,
+    "revoked_slot": 510074436,
+    "stale_sequence_rejected": true,
+    "post_revoke_verifier_outcome": "DENY",
+    "post_revoke_reasons": ["on_chain_revoked"]
+  },
+  "mainnet": false,
+  "notes": "Devnet-only synthetic test commitment. No private keys or seed phrases in this record."
+}

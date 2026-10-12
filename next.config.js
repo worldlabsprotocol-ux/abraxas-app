@@ -37,7 +37,7 @@ const nextConfig = {
   // Next.js 14: keep native Node packages out of the server webpack graph.
     experimental: {
     instrumentationHook: true,
-    serverComponentsExternalPackages: ["onnxruntime-node"],
+    serverComponentsExternalPackages: ["onnxruntime-node", "@sqds/multisig"],
     outputFileTracingExcludes: {
       "**/*": ML_TRACE_EXCLUDES,
       "/api/identity/documents/capture": ML_TRACE_EXCLUDES,
