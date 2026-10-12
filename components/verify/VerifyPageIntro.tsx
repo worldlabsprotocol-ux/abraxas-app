@@ -26,7 +26,7 @@ export function VerifyPageIntro() {
         letterSpacing: "-0.03em", color: "var(--text-primary)",
         margin: "0 0 0.75rem", lineHeight: 1.15,
       }}>
-        {VERIFY_HUB_HEADLINE}
+        Receipt verification workbench
       </h1>
       <p style={{
         fontFamily: FONT,

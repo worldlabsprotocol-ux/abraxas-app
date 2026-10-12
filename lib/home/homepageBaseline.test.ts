@@ -1,5 +1,5 @@
 // FILE: lib/home/homepageBaseline.test.ts
-// Static guards — approved homepage baseline must not regress without explicit redesign PR.
+// Static guards — institutional homepage must not regress without explicit redesign PR.
 
 import { readFileSync, existsSync } from "fs";
 import { resolve } from "path";
@@ -13,7 +13,7 @@ function read(rel: string): string {
   return readFileSync(path, "utf8");
 }
 
-describe("homepage baseline (approved design invariants)", () => {
+describe("homepage baseline (institutional invariants)", () => {
   it("Protocol in Action renders partner media marks", () => {
     const src = read("components/home/HomeProtocolInAction.tsx");
     expect(src).toContain("PROTOCOL_PROOF_LOGOS");
@@ -22,30 +22,19 @@ describe("homepage baseline (approved design invariants)", () => {
     expect(src).toContain("abx-home-section-center");
   });
 
-  it("cinematic hero uses thesis headline and abx-home-hero shell", () => {
-    const hero = read("components/home/cinematic/thesis/CinematicHero.tsx");
-    expect(hero).toContain("abx-home-hero");
-    expect(hero).toContain("abx-home-hero-actions");
-    expect(hero).toContain("CINEMATIC_THESIS_LINE_1");
-
+  it("public homepage leads with V2 editorial composition", () => {
     const shell = read("components/redesign/RedesignHome.tsx");
-    expect(shell).toContain("CinematicHero");
-    expect(shell).toContain('textAlign: "center"');
-    expect(shell).toContain('alignItems: "center"');
-    expect(shell).toContain("ScrollDisclosureStory");
-    expect(shell).toContain("VerifyOnceThesisDiagram");
-    expect(shell).toContain("HomeGoodTroubleIntegration");
-    expect(shell).toContain("HomeAudiencePanels");
-    expect(shell).toContain("HomeTrustClose");
+    expect(shell).toContain("InstitutionalHomeHero");
+    expect(shell).toContain("TrustModelExhibit");
+    expect(shell).toContain("CapabilityMatrix");
+    expect(shell).not.toContain("KineticMarquee");
   });
 
   it("homepage typography CSS tokens exist", () => {
     const css = read("app/globals.css");
     expect(css).toContain(".abx-home-section-center");
-    expect(css).toContain(".abx-home-proof-card");
-    expect(css).toContain(".abx-home-proof-media");
+    expect(css).toContain(".abx-institutional-home");
     expect(css).toContain(".abx-command-center");
-    expect(css).toContain(".abx-cinematic-hero");
     expect(css).toContain("@keyframes abx-marquee-scroll");
   });
 

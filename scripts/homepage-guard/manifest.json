@@ -47,9 +47,9 @@
       "mustContain": ["abx-home-hero", "abx-home-hero-actions", "CINEMATIC_THESIS_LINE_1"]
     },
     {
-      "id": "home-shell-centered",
+      "id": "home-shell-institutional",
       "file": "components/redesign/RedesignHome.tsx",
-      "mustContain": ["textAlign: \"center\"", "alignItems: \"center\""]
+      "mustContain": ["abx-institutional-home", "InstitutionalHomeHero", "TrustModelExhibit", "abx-v2-shell"]
     },
     {
       "id": "protocol-in-action-media",
@@ -64,12 +64,12 @@
     {
       "id": "homepage-css-tokens",
       "file": "app/globals.css",
-      "mustContain": [".abx-home-section-center", ".abx-home-proof-card", ".abx-home-proof-media", ".abx-home-hero", ".abx-command-center"]
+      "mustContain": [".abx-home-section-center", ".abx-institutional-home", ".abx-home-proof-card", ".abx-command-center"]
     },
     {
       "id": "command-center-map",
       "file": "components/redesign/RedesignHome.tsx",
-      "mustContain": ["CinematicHero", "HomeBuyerContextSection", "HomeTwoAppReferenceProof", "ScrollDisclosureStory", "VerifyOnceThesisDiagram", "HomeGoodTroubleIntegration", "HomeAudiencePanels", "HomeTrustClose"]
+      "mustContain": ["InstitutionalHomeHero", "TrustModelExhibit", "LiveProtocolEvidence", "CapabilityMatrix", "InstitutionalHomeClose"]
     },
     {
       "id": "good-trouble-production-demo",

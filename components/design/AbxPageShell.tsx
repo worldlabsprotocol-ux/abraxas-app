@@ -18,6 +18,7 @@ export interface AbxPageShellProps {
   maxWidth?: number;
   withFooter?: boolean;
   contentStyle?: CSSProperties;
+  className?: string;
 }
 
 export function AbxPageShell({
@@ -26,13 +27,14 @@ export function AbxPageShell({
   maxWidth = 900,
   withFooter = true,
   contentStyle,
+  className,
 }: AbxPageShellProps) {
   const motionTier = abxMotionTierForSurface(accent === "passport" ? "passport" : accent === "developer" ? "launchpad" : accent);
 
   return (
     <RedesignShell>
       <div
-        className="abx-page-content abx-product-shell"
+        className={`abx-page-content abx-product-shell${className ? ` ${className}` : ""}`}
         data-abx-accent={accent}
         data-motion-tier={motionTier}
         style={{

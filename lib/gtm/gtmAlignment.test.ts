@@ -239,11 +239,11 @@ describe("gtm alignment", () => {
 
   it("keeps homepage guard critical shell markers", () => {
     const shell = read("components/redesign/RedesignHome.tsx");
-    expect(shell).toContain("CinematicHero");
-    expect(shell).toContain("HomeGoodTroubleIntegration");
-    expect(shell).toContain("HomeAudiencePanels");
-    expect(shell).toContain("HomeTrustClose");
-    expect(shell).toContain("HomeTwoAppReferenceProof");
+    expect(shell).toContain("InstitutionalHomeHero");
+    expect(shell).toContain("TrustModelExhibit");
+    expect(shell).toContain("CapabilityMatrix");
+    expect(shell).toContain("ProtocolReceiptDemo");
+    expect(shell).toContain("InstitutionalHomeClose");
   });
 
   it("preserves reduced-motion usage on new buyer sections", () => {

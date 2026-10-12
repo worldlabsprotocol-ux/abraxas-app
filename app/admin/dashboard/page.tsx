@@ -51,7 +51,8 @@ export default function AdminDashboardPage() {
   const unavailable = snapshot ? attentionSourcesUnavailable(snapshot) : [];
 
   return (
-    <RedesignPage accent="admin" maxWidth={920}>
+    <RedesignPage accent="admin" maxWidth={1320}>
+      <div className="abx-control-plane">
       <PageHeader
         eyebrow="Admin · Operations"
         title="Needs attention"
@@ -123,6 +124,7 @@ export default function AdminDashboardPage() {
           <p style={{ ...mutedStyle, marginTop: "1rem" }}>{snapshot.disclaimer}</p>
         </>
       )}
+      </div>
     </RedesignPage>
   );
 }
