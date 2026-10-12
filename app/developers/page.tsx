@@ -34,7 +34,7 @@ export default function DevelopersPage() {
         <NextActionCard
           title="What you get"
           action="Server-verifiable answers your application can trust"
-          detail="Choose an outcome, review the privacy contract, generate integration code, and create a sandbox application — often in one session."
+          detail="Choose an outcome, review the privacy contract, generate integration code, and create a sandbox application, often in one session."
           href="/developers/integration-studio?outcome=reuse_across_app&source=gtm-developers"
           buttonLabel="Open Integration Studio"
         />

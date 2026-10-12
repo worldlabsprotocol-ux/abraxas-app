@@ -44,7 +44,7 @@ export function LiveProtocolEvidence() {
       </h2>
       <p className="abx-v2-section-lead">
         Release metadata and public registry APIs are shown separately. Devnet chain proofs require a finalized transaction
-        signature — this panel does not imply continuous on-chain monitoring unless an observer is running.
+        signature. this panel does not imply continuous on-chain monitoring unless an observer is running.
       </p>
 
       <div className="abx-live-evidence__grid">
@@ -56,7 +56,7 @@ export function LiveProtocolEvidence() {
           <Row label="Observation mode" value="Release metadata + optional RPC proof URL" />
           <Row label="Artifact" mono value={SOLANA_GATE_V2_RELEASE.artifact_id} />
           <Row label="Provenance" mono value={SOLANA_GATE_V2_RELEASE.provenance_ref} />
-          <Row label="Live deployment claim" value="Not claimed — release metadata only (live: false)" />
+          <Row label="Live deployment claim" value="Not claimed. release metadata only (live: false)" />
           <details className="abx-live-evidence__details">
             <summary>Raw release digests</summary>
             <pre className="abx-live-evidence__pre">
@@ -80,9 +80,9 @@ export function LiveProtocolEvidence() {
             </p>
           ) : (
             <>
-              <Row label="Issuers indexed" value={String(issuerCount ?? "—")} />
-              <Row label="Schemas indexed" value={String(schemaCount ?? "—")} />
-              <Row label="Observation" value="HTTP snapshot at page load — not a chain finality proof" />
+              <Row label="Issuers indexed" value={String(issuerCount ?? "N/A")} />
+              <Row label="Schemas indexed" value={String(schemaCount ?? "N/A")} />
+              <Row label="Observation" value="HTTP snapshot at page load. not a chain finality proof" />
               <Link href="/api/trust/registry" className="abx-live-evidence__link">
                 Open registry JSON →
               </Link>
@@ -90,7 +90,7 @@ export function LiveProtocolEvidence() {
           )}
         </EvidenceBlock>
 
-        <EvidenceBlock title="Control reference — revoked artifact (not live chain)">
+        <EvidenceBlock title="Control reference. revoked artifact (not live chain)">
           <p className="abx-live-evidence__note">
             Illustrates how independent verification reports DENY when commitment status is REVOKED. This row is a
             source-controlled control digest, not an RPC observation.
@@ -98,7 +98,7 @@ export function LiveProtocolEvidence() {
           <Row label="Commitment status" value="REVOKED" />
           <Row label="Independent verdict" value="DENY" />
           <Row label="Control digest" mono value={SOLANA_GATE_V2_REVOKED_DIGEST} />
-          <Row label="Explorer transaction" value="N/A — control fixture only" />
+          <Row label="Explorer transaction" value="N/A. control fixture only" />
         </EvidenceBlock>
       </div>
     </section>

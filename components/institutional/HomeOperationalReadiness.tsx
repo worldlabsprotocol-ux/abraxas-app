@@ -98,7 +98,7 @@ export function HomeOperationalReadiness() {
   rows.push({
     label: "Decision verification",
     value: "Public verifier",
-    detail: "Independently check signed receipts — UI does not substitute for verification.",
+    detail: "Independently check signed receipts. UI does not substitute for verification.",
     kind: "verified_independent",
     href: "/verify",
   });
@@ -124,7 +124,7 @@ export function HomeOperationalReadiness() {
     rows.push({
       label: "Public metrics",
       value: "Unavailable",
-      detail: "Metrics API did not respond — no placeholder counters shown.",
+      detail: "Metrics API did not respond. no placeholder counters shown.",
       kind: "unavailable",
     });
   } else {
@@ -143,7 +143,7 @@ export function HomeOperationalReadiness() {
         Operational surface (live APIs)
       </h2>
       <p className="abx-institutional-section__lead">
-        States below are loaded from Abraxas APIs — not decorative dashboard metrics.
+        States below are loaded from Abraxas APIs. not decorative dashboard metrics.
       </p>
       <div className="abx-institutional-readiness-table" role="table">
         {rows.map((row) => (

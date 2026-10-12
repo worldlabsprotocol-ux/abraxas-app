@@ -29,7 +29,7 @@ export function HomeIntegrationCatalog() {
         Supported integrations (honest status)
       </h2>
       <p className="abx-institutional-section__lead">
-        Status labels reflect operational reality — not marketing tiers.
+        Status labels reflect operational reality. not marketing tiers.
       </p>
       <div
         style={{

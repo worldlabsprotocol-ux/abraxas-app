@@ -22,7 +22,7 @@ test.describe("V2 operational surfaces", () => {
   test("launchpad operational layout at desktop width", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(`${base}/developers/launchpad`);
-    await expect(page.getByRole("heading", { name: "Integrate private eligibility" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Launchpad console" })).toBeVisible();
     await expect(page.locator(".abx-launchpad-operational")).toBeVisible();
   });
 

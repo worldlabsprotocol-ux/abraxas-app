@@ -5,7 +5,7 @@ import { SOLANA_GATE_V2_RELEASE } from "@/lib/partner/onchainGateDeployments/sol
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata = pageMetadata({
-  title: "Network — Abraxas evidence",
+  title: "Network: Abraxas evidence",
   description: "Public trust registry APIs and labeled Solana devnet proof surfaces.",
   path: "/network",
 });
@@ -20,7 +20,7 @@ export default function NetworkPage() {
       />
       <ContentCard title="Trust registry">
         <p>
-          <Link href="/api/trust/registry">Public registry JSON</Link> — trusted issuers and credential schemas indexed by
+          <Link href="/api/trust/registry">Public registry JSON</Link>: trusted issuers and credential schemas indexed by
           Abraxas.
         </p>
       </ContentCard>

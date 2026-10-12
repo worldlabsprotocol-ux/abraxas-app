@@ -52,7 +52,7 @@ export function IntegrationStudioRequestWorkbench() {
   return (
     <ContentCard title="Authenticated request builder" id="request">
       <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.6, marginTop: 0 }}>
-        Runs the partner test harness against your sandbox application. Responses and any signed receipt material appear in the inspector — nothing is fabricated.
+        Runs the partner test harness against your sandbox application. Responses and any signed receipt material appear in the inspector. Nothing is fabricated.
       </p>
       {!applicationId && (
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)" }}>

@@ -170,7 +170,7 @@ export function IntegrationStudioInspectorRail() {
           {(health.checks ?? []).slice(0, 6).map((check) => (
             <li key={check.id}>
               <strong>{check.label}</strong>: {check.status.replace(/_/g, " ")}
-              {check.detail ? ` — ${check.detail}` : ""}
+              {check.detail ? `. ${check.detail}` : ""}
             </li>
           ))}
         </ul>
@@ -183,7 +183,7 @@ export function IntegrationStudioInspectorRail() {
       {inspectorFocus === "sandbox" && applicationId && (
         <div style={{ marginTop: "0.75rem" }}>
           <p style={{ fontFamily: FONT, fontSize: "0.72rem", margin: "0 0 0.35rem" }}>
-            Sandbox credential status comes from Launchpad key records — not simulated in the studio.
+            Sandbox credential status comes from Launchpad key records. It is not simulated in the studio.
           </p>
           {health?.webhook?.configured != null && (
             <p style={{ fontFamily: FONT, fontSize: "0.72rem", margin: 0 }}>
@@ -212,7 +212,7 @@ export function IntegrationStudioInspectorRail() {
       {inspectorFocus === "receipt" && (
         <div style={{ marginTop: "0.75rem" }}>
           <p style={{ fontFamily: FONT, fontSize: "0.72rem", margin: "0 0 0.35rem" }}>
-            Signed receipt material from the last harness response only — verify independently on the workbench.
+            Signed receipt material from the last harness response only. Verify independently on the workbench.
           </p>
           <JsonBlock value={receiptFromTrace} />
         </div>
@@ -246,7 +246,7 @@ export function IntegrationStudioInspectorRail() {
       {inspectorFocus === "production" && (
         <div style={{ marginTop: "0.75rem" }}>
           <p style={{ fontFamily: FONT, fontSize: "0.72rem", lineHeight: 1.55 }}>
-            Production activation requires operator review. Status is authoritative from Launchpad — never self-promoted from sandbox.
+            Production activation requires operator review. Status is authoritative from Launchpad and is never self-promoted from sandbox.
           </p>
           <p style={{ fontFamily: MONO, fontSize: "0.68rem", margin: "0.5rem 0 0" }}>
             Review: {health?.production_access_request_status ?? "none submitted"}

@@ -4,7 +4,7 @@ import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata = pageMetadata({
-  title: "Solutions — Abraxas",
+  title: "Solutions: Abraxas",
   description: "Reuse verified evidence across applications with policy-specific authorization and signed receipts.",
   path: "/solutions",
 });
@@ -20,16 +20,16 @@ export default function SolutionsPage() {
       <ContentCard title="Common integration patterns">
         <ul>
           <li>
-            <Link href="/integrate">For businesses</Link> — commercial positioning and integration pillars
+            <Link href="/integrate">For businesses</Link>: commercial positioning and integration pillars
           </li>
           <li>
-            <Link href="/docs/trading-venue">Trading venue access</Link> — venue-specific policy profiles
+            <Link href="/docs/trading-venue">Trading venue access</Link>: venue-specific policy profiles
           </li>
           <li>
-            <Link href="/solutions/supply-network">Supply network</Link> — provenance-oriented eligibility
+            <Link href="/solutions/supply-network">Supply network</Link>: provenance-oriented eligibility
           </li>
           <li>
-            <Link href="/good-trouble">Sandbox example</Link> — Good Trouble age-gated browse demo
+            <Link href="/good-trouble">Sandbox example</Link>: Good Trouble age-gated browse demo
           </li>
         </ul>
       </ContentCard>

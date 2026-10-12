@@ -22,13 +22,13 @@ export function PassportAssuranceBoundaryNotice() {
       </h2>
       <ul style={{ fontFamily: FONT, fontSize: "0.74rem", lineHeight: 1.55, color: "var(--text-secondary)", margin: 0, paddingLeft: "1.1rem", display: "grid", gap: "0.25rem" }}>
         <li>
-          <strong>Identity verification</strong> — whether Abraxas has completed ID review for your account (not global approval for every partner).
+          <strong>Identity verification:</strong> whether Abraxas has completed ID review for your account (not global approval for every partner).
         </li>
         <li>
-          <strong>Credential validity</strong> — whether stored credentials are active, expired, revoked, or need refresh before reuse.
+          <strong>Credential validity:</strong> whether stored credentials are active, expired, revoked, or need refresh before reuse.
         </li>
         <li>
-          <strong>Partner authorization</strong> — whether a specific policy returned PERMIT for a single request; never treat one permit as universal clearance.
+          <strong>Partner authorization:</strong> whether a specific policy returned PERMIT for a single request; never treat one permit as universal clearance.
         </li>
       </ul>
     </section>
