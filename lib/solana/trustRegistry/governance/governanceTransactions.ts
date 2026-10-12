@@ -34,7 +34,7 @@ export function preflightNominateGovernance(params: {
     envAllowlist: params.verifiedMultisigEnv,
   });
   if (!verified.ok) return { ok: false, reason: verified.reason };
-  if (params.transferSeq <= 0n) return { ok: false, reason: "transfer_seq_must_be_positive" };
+  if (params.transferSeq <= BigInt(0)) return { ok: false, reason: "transfer_seq_must_be_positive" };
   return { ok: true };
 }
 

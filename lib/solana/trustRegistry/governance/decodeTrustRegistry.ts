@@ -90,7 +90,7 @@ export function deriveGovernanceMigrationUiState(
     }
     return "nomination_pending";
   }
-  if (decoded.governanceTransferSeq != null && decoded.governanceTransferSeq > 0n) {
+  if (decoded.governanceTransferSeq != null && decoded.governanceTransferSeq > BigInt(0)) {
     return "migration_finalized";
   }
   return "layout_extended_ready";

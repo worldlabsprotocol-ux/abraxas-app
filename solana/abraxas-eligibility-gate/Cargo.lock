@@ -36,6 +36,7 @@ dependencies = [
  "abraxas-protocol-access",
  "abraxas-trust-registry",
  "anchor-lang",
+ "governance-vault-rehearsal",
  "solana-program-test",
  "solana-sdk",
  "tokio",
@@ -1876,6 +1877,14 @@ dependencies = [
  "log",
  "plain",
  "scroll",
+]
+
+[[package]]
+name = "governance-vault-rehearsal"
+version = "0.1.0"
+dependencies = [
+ "abraxas-trust-registry",
+ "anchor-lang",
 ]
 
 [[package]]

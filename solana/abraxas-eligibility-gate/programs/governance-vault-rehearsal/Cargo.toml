@@ -1,0 +1,17 @@
+[package]
+name = "governance-vault-rehearsal"
+version = "0.1.0"
+description = "Local Squads-isomorphic vault PDA CPI rehearsal (Build #537). Not deployed."
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "governance_vault_rehearsal"
+
+[features]
+no-entrypoint = []
+default = []
+
+[dependencies]
+anchor-lang = "0.30.1"
+abraxas-trust-registry = { path = "../abraxas-trust-registry", features = ["no-entrypoint"] }

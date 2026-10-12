@@ -2,6 +2,8 @@
 
 import type { GovernanceMigrationUiState } from "@/lib/solana/trustRegistry/governance/decodeTrustRegistry";
 import { squadsVaultAcceptCompatibilityReview } from "@/lib/solana/trustRegistry/governance/squadsVault";
+import type { SquadsProposalLifecycleState } from "@/lib/solana/trustRegistry/governance/squadsProposalHarness";
+import { squadsProposalStateIsSimulated } from "@/lib/solana/trustRegistry/governance/squadsProposalHarness";
 
 const LABELS: Record<GovernanceMigrationUiState, { title: string; detail: string; tone: "neutral" | "warn" | "ok" | "blocked" }> = {
   deployed_authority_active: {
@@ -41,14 +43,52 @@ const LABELS: Record<GovernanceMigrationUiState, { title: string; detail: string
   },
 };
 
+const PROPOSAL_LABELS: Record<
+  SquadsProposalLifecycleState,
+  { title: string; detail: string }
+> = {
+  PROPOSED: {
+    title: "Multisig proposal — proposed",
+    detail: "Off-chain or Squads proposal created. Not executable until threshold approvals.",
+  },
+  APPROVED: {
+    title: "Multisig proposal — partially approved",
+    detail: "Some members approved; threshold not met. No on-chain accept yet.",
+  },
+  EXECUTABLE: {
+    title: "Multisig proposal — executable",
+    detail: "Threshold met. Awaits Squads vaultTransactionExecute (real signature required).",
+  },
+  EXECUTED: {
+    title: "Multisig proposal — executed",
+    detail: "On-chain transaction recorded. Verify independently before treating as finalized.",
+  },
+  FINALIZED: {
+    title: "Multisig proposal — finalized",
+    detail: "Independent verification complete. Governance migration may be operationally complete.",
+  },
+  REJECTED: {
+    title: "Multisig proposal — rejected",
+    detail: "Proposal rejected or aborted. Do not treat as live governance execution.",
+  },
+};
+
 type Props = {
   /** Optional live decode; when absent, panel shows deployed #535 posture only (no simulated controls). */
   uiState?: GovernanceMigrationUiState;
+  /** Optional Squads lifecycle — never inferred as live execution unless EXECUTED/FINALIZED with evidence. */
+  squadsProposalState?: SquadsProposalLifecycleState;
 };
 
-export function TrustRegistryGovernanceMigrationPanel({ uiState = "deployed_authority_active" }: Props) {
+export function TrustRegistryGovernanceMigrationPanel({
+  uiState = "deployed_authority_active",
+  squadsProposalState,
+}: Props) {
   const copy = LABELS[uiState];
   const squads = squadsVaultAcceptCompatibilityReview();
+  const proposalCopy = squadsProposalState ? PROPOSAL_LABELS[squadsProposalState] : null;
+  const proposalSimulated =
+    squadsProposalState != null && squadsProposalStateIsSimulated(squadsProposalState);
 
   return (
     <section
@@ -71,6 +111,24 @@ export function TrustRegistryGovernanceMigrationPanel({ uiState = "deployed_auth
         <strong>{copy.title}</strong>
         <p style={{ margin: "0.35rem 0 0", fontSize: "0.9rem", lineHeight: 1.45 }}>{copy.detail}</p>
       </div>
+      {proposalCopy ? (
+        <div
+          style={{
+            marginTop: "0.65rem",
+            padding: "0.65rem 0.75rem",
+            borderRadius: 8,
+            border: proposalSimulated ? "1px dashed #665" : "1px solid #3a5",
+          }}
+        >
+          <strong>{proposalCopy.title}</strong>
+          {proposalSimulated ? (
+            <p style={{ margin: "0.25rem 0 0", fontSize: "0.78rem", opacity: 0.75 }}>
+              Simulation / planning only — not live Squads execution.
+            </p>
+          ) : null}
+          <p style={{ margin: "0.35rem 0 0", fontSize: "0.9rem", lineHeight: 1.45 }}>{proposalCopy.detail}</p>
+        </div>
+      ) : null}
       <ul style={{ marginTop: "0.75rem", paddingLeft: "1.1rem", fontSize: "0.85rem", lineHeight: 1.5 }}>
         {squads.notes.map((note) => (
           <li key={note}>{note}</li>
