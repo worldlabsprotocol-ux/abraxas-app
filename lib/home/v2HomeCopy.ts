@@ -15,8 +15,7 @@ export const V2_HOME_CTA_BUILD_HREF = "/developers/integration-studio";
 
 export const V2_CLOSE_HEADLINE = "Build on independently verifiable trust.";
 
-export const V2_CLOSE_BODY =
-  "Start in developer documentation or apply for a reviewed production activation when your integration is ready for operator review.";
+export const V2_CLOSE_BODY = "Docs, Integration Studio, or reviewed production activation.";
 
 export const V2_SIMULATION_LABEL =
   "Simulated demonstration. Not a production verification. Synthetic policy and receipt data for illustration only.";

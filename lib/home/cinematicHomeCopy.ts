@@ -64,8 +64,7 @@ export const FOOTER_THESIS_LINE_2 = CINEMATIC_THESIS_LINE_2;
 /** Build #545 — public homepage hero and scroll chapters */
 export const CINEMATIC_HOME_HEADLINE = "Prove what matters. Keep what's yours.";
 
-export const CINEMATIC_HOME_LEAD =
-  "Abraxas lets you verify your information once, then prove what other apps need to know without sharing your private details again.";
+export const CINEMATIC_HOME_LEAD = "Verify once. Share narrow, signed answers — not your documents.";
 
 export const CINEMATIC_HOME_CTA_PRIMARY = "See how it works";
 export const CINEMATIC_HOME_CTA_PRIMARY_HREF = "#how-abraxas-works";
@@ -105,11 +104,9 @@ export const CINEMATIC_VPR_SIM_LABEL =
 
 export const CINEMATIC_GT_SECTION_HEADLINE = "See Abraxas in action.";
 
-export const CINEMATIC_GT_SECTION_LEAD =
-  "See how an application can confirm someone is over 21 without receiving their ID or date of birth.";
+export const CINEMATIC_GT_SECTION_LEAD = "Age check without sharing ID or date of birth.";
 
-export const CINEMATIC_GT_PARTNER_DISCLAIMER =
-  "Early partner integration demonstration (Good Trouble). Not a fully certified production deployment.";
+export const CINEMATIC_GT_PARTNER_DISCLAIMER = "Good Trouble · early integration demo · not production checkout.";
 
 export const CINEMATIC_TRUST_CHAPTER_EYEBROW = "Built on verifiable trust";
 

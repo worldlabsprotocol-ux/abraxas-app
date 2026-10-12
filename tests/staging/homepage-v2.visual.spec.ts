@@ -22,7 +22,10 @@ test.describe("Homepage V2 layout smoke", () => {
   test("simulated receipt revocation toggles DENY", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/", { waitUntil: "domcontentloaded" });
-    await page.locator("#chapter-evidence").scrollIntoViewIfNeeded();
+    await page.evaluate(() => {
+      document.getElementById("chapter-evidence")?.scrollIntoView({ block: "center" });
+    });
+    await page.waitForTimeout(400);
     await page.getByRole("button", { name: /Simulate revocation/i }).waitFor({ state: "visible", timeout: 60_000 });
     const outcome = page.locator(".abx-receipt-inspector__outcome");
     await expect(outcome).toContainText("PERMIT");

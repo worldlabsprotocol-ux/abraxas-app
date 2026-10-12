@@ -8,7 +8,7 @@ export interface LazyHomeSectionProps {
   minHeight?: string;
   rootMargin?: string;
   id?: string;
-  /** Mount immediately (e.g. evidence demo targeted by E2E). */
+  /** Mount immediately (e.g. evidence demo targeted by E2E or critical interactive evidence). */
   eager?: boolean;
 }
 
