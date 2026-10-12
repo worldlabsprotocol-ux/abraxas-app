@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Keypair, PublicKey } from "@solana/web3.js";
+import { getMultisigPda, getVaultPda } from "@sqds/multisig";
 import {
   deriveSquadsMultisigPda,
   deriveSquadsV4VaultPda,
@@ -11,7 +12,11 @@ describe("Squads v4 PDA derivation (Build #537)", () => {
   it("derives stable multisig and vault PDAs", () => {
     const createKey = Keypair.generate().publicKey;
     const { multisigPda } = deriveSquadsMultisigPda(createKey);
+    const [sdkMultisig] = getMultisigPda({ createKey });
+    expect(multisigPda.equals(sdkMultisig)).toBe(true);
     const vault = deriveSquadsV4VaultPda(multisigPda, 0);
+    const [sdkVault] = getVaultPda({ multisigPda, index: 0 });
+    expect(vault.vaultPda.equals(sdkVault)).toBe(true);
     const alias = deriveSquadsVaultPda(multisigPda, 0);
     expect(vault.vaultPda.equals(alias.vaultPda)).toBe(true);
     expect(vault.programId.equals(new PublicKey(SQUADS_MULTISIG_V4_PROGRAM_ID))).toBe(true);

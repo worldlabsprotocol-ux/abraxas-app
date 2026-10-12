@@ -29,9 +29,11 @@ describe("governance activation gate (Build #538)", () => {
 
   it("fail-closes without devnet observation and vault configuration", () => {
     const gate = runGovernanceActivationGate({ devnetObservation: null });
+    expect(gate.schema).toBe("trust_registry_governance_activation_gate_v539");
     expect(gate.ok).toBe(false);
     expect(gate.blockers).toContain("devnet_observation_missing");
     expect(gate.blockers).toContain("institutional_multisig_vaults_not_configured");
+    expect(gate.blockers).toContain("squads_custody_rpc_preflight_not_run");
     expect(gate.stage).toBe("BLOCKED");
   });
 
