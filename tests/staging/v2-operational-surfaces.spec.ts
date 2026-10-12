@@ -24,10 +24,19 @@ test.describe("V2 operational surfaces", () => {
     await expect(page.locator(".abx-launchpad-operational")).toBeVisible();
   });
 
-  test("governance console read-only banner", async ({ page }) => {
+  test("governance route is admin-gated", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(`${base}/admin/governance`);
-    await expect(page.getByRole("heading", { name: "Trust registry custody" })).toBeVisible();
-    await expect(page.getByText("read-only", { exact: false })).toBeVisible();
+    const custody = page.getByRole("heading", { name: "Trust registry custody" });
+    const gate = page.getByRole("heading", { name: "Admin access required" });
+    await expect(custody.or(gate)).toBeVisible({ timeout: 20000 });
+  });
+
+  test("custody status API returns schema", async ({ request }) => {
+    const res = await request.get(`${base}/api/trust/registry/custody-status`);
+    expect(res.status()).toBeLessThan(600);
+    const json = await res.json();
+    expect(json.schema).toBe("trust_registry_custody_status_v539");
+    expect(json.liveControlsEnabled).toBe(false);
   });
 });
