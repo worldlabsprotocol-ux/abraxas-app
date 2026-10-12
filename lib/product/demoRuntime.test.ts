@@ -9,6 +9,7 @@ import {
   assertDemoRuntimeBoot,
   evaluateDemoRuntime,
   isPublicDemoRuntime,
+  shouldAssertDemoRuntimeAtBoot,
 } from "@/lib/product/demoRuntime";
 
 const KEYS = [
@@ -112,19 +113,33 @@ describe("DEMO runtime binding", () => {
     expect(() => assertDemoRuntimeBoot(env)).not.toThrow();
   });
 
+  it("does not boot-assert DEMO on preview URLs (institutional staging)", async () => {
+    const jwt = await demoJwt();
+    const env = {
+      ABRAXAS_RUNTIME_ENV: "demo",
+      VERCEL_ENV: "preview",
+      NEXT_PUBLIC_APP_URL: "https://abraxas-preview.vercel.app",
+      NEXT_PUBLIC_SUPABASE_URL: `https://${DEMO_SUPABASE_PROJECT_REF}.supabase.co`,
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: jwt,
+      SUPABASE_SERVICE_ROLE_KEY: jwt,
+    };
+    expect(shouldAssertDemoRuntimeAtBoot(env)).toBe(false);
+    expect(() => assertDemoRuntimeBoot(env)).not.toThrow();
+    expect(evaluateDemoRuntime({ env }).fail_codes).toContain("demo_origin_mismatch");
+  });
+
   it("fails closed when DEMO runtime is bound to production data", async () => {
     const env = {
       ABRAXAS_RUNTIME_ENV: "demo",
       VERCEL_ENV: "production",
-      NEXT_PUBLIC_APP_URL: "https://abraxasworld.xyz",
+      NEXT_PUBLIC_APP_URL: PUBLIC_DEMO_ORIGIN,
+      ABRAXAS_ISSUER_URL: PUBLIC_DEMO_ORIGIN,
       NEXT_PUBLIC_SUPABASE_URL: "https://bztwutzprwsdrtqdpymf.supabase.co",
       CIRCLE_API_KEY: "LIVE_API_KEY:blocked",
     };
     const evaluation = evaluateDemoRuntime({ env });
     expect(evaluation.ok).toBe(false);
     expect(evaluation.fail_codes).toEqual(expect.arrayContaining([
-      "demo_origin_mismatch",
-      "demo_production_vercel",
       "demo_production_supabase",
       "demo_live_circle_credentials",
     ]));
