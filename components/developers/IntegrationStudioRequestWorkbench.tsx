@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
-import { LAUNCHPAD_TEST_SCENARIOS } from "@/lib/partner/launchpad/testScenarios";
+import {
+  LAUNCHPAD_TEST_SCENARIOS,
+  type LaunchpadTestScenarioId,
+} from "@/lib/partner/launchpad/testScenarios";
 import { ABRAXAS_FONT_MONO, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import { useIntegrationStudioOperational } from "@/components/developers/integrationStudioOperationalContext";
 
@@ -12,7 +15,9 @@ const MONO = ABRAXAS_FONT_MONO;
 
 export function IntegrationStudioRequestWorkbench() {
   const { applicationId, signedIn, returnUrl, recordHttpTrace } = useIntegrationStudioOperational();
-  const [scenarioId, setScenarioId] = useState(LAUNCHPAD_TEST_SCENARIOS[0]?.id ?? "");
+  const [scenarioId, setScenarioId] = useState<LaunchpadTestScenarioId>(
+    LAUNCHPAD_TEST_SCENARIOS[0]?.id ?? "approved",
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -65,7 +70,7 @@ export function IntegrationStudioRequestWorkbench() {
             Scenario
             <select
               value={scenarioId}
-              onChange={(event) => setScenarioId(event.target.value)}
+              onChange={(event) => setScenarioId(event.target.value as LaunchpadTestScenarioId)}
               style={{
                 fontFamily: MONO,
                 fontSize: "0.72rem",
