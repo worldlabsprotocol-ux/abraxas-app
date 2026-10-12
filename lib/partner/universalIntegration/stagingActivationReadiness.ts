@@ -1,6 +1,7 @@
 // FILE: lib/partner/universalIntegration/stagingActivationReadiness.ts
 // Phase 1 activation readiness — no secret values in output.
 
+import { vercelBypassHeaders } from "@/lib/preview/vercelBypass";
 import { KNOWN_PRODUCTION_SUPABASE_PROJECT_REFS } from "@/scripts/demo/lib/knownProductionSupabaseProjectRefs";
 import {
   EXAMPLE_MERCHANT_DISCLOSED_RESULT,
@@ -91,11 +92,9 @@ export async function probeStagingDeploymentIdentity(input: {
 }): Promise<StagingDeploymentProbe> {
   const fetchFn = input.fetch ?? fetch;
   const base = input.baseUrl.replace(/\/$/, "");
-  const headers: Record<string, string> = {};
-  if (input.vercelBypass?.trim()) {
-    headers["x-vercel-protection-bypass"] = input.vercelBypass.trim();
-    headers["x-vercel-set-bypass-cookie"] = "true";
-  }
+  const headers: Record<string, string> = input.vercelBypass?.trim()
+    ? vercelBypassHeaders(input.vercelBypass.trim(), { setCookie: false })
+    : {};
 
   try {
     const res = await fetchFn(`${base}/api/launchpad/staging/environment`, {
