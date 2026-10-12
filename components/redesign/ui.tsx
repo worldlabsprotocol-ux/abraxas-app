@@ -43,7 +43,7 @@ export function Btn({
     display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
     width: fullWidth ? "100%" : undefined,
     minHeight: minH,
-    padding: pad, borderRadius: 999, fontFamily: FONT, fontSize: fs, fontWeight: 700,
+    padding: pad, borderRadius: variant === "primary" ? 2 : 999, fontFamily: FONT, fontSize: fs, fontWeight: 700,
     letterSpacing: "-0.01em", cursor: isDisabled ? "not-allowed" : "pointer",
     textDecoration: "none", whiteSpace: "nowrap", willChange: "transform",
     opacity: isDisabled ? 0.55 : 1,
@@ -55,25 +55,24 @@ export function Btn({
       ? {
           background: "var(--btn-primary-bg)",
           color: INSTITUTIONAL_PRIMARY_BTN_TEXT,
-          border: "none",
-          boxShadow: isDisabled ? "none" : "var(--shadow-glow)",
+          border: "1px solid var(--btn-primary-bg)",
+          boxShadow: "none",
         }
       : variant === "secondary"
       ? {
-          background: "rgba(255,255,255,0.03)",
+          background: "transparent",
           color: "var(--text-primary)",
           border: "1px solid var(--border-strong)",
-          backdropFilter: "blur(8px)",
         }
       : variant === "tertiary"
       ? { background: "var(--surface)", color: "var(--text-muted)", border: "1px solid var(--border)" }
       : { background: "transparent", color: "var(--text-secondary)", border: "none" };
 
   const hover = reduce || isDisabled ? undefined : variant === "primary"
-    ? { scale: 1.035, boxShadow: "0 0 0 1px rgba(232,197,71,0.5), 0 12px 36px rgba(232,197,71,0.28)" }
+    ? { scale: 1.01, opacity: 0.92 }
     : variant === "secondary"
-    ? { scale: 1.02, borderColor: "var(--accent-border)" }
-    : { scale: 1.02 };
+    ? { scale: 1.01, borderColor: "var(--text-primary)" }
+    : { scale: 1.01 };
   const tap = reduce || isDisabled ? undefined : { scale: 0.97 };
 
   const content = (

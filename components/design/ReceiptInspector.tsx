@@ -31,7 +31,7 @@ export interface ReceiptInspectorProps {
 const OUTCOME_COLOR: Record<ReceiptAuthorizationOutcome, string> = {
   PERMIT: "var(--abx-verify-green, #4CBB92)",
   DENY: "#E57373",
-  REVIEW: "var(--abx-gold, #D5AF46)",
+  REVIEW: "#D4A574",
 };
 
 export function ReceiptInspector({
