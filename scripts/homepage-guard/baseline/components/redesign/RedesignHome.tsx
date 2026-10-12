@@ -7,6 +7,7 @@ import { CapabilityMatrix } from "@/components/institutional/CapabilityMatrix";
 import { InstitutionalHomeClose } from "@/components/institutional/InstitutionalHomeClose";
 import { InstitutionalHomeHero } from "@/components/institutional/InstitutionalHomeHero";
 import { LiveProtocolEvidence } from "@/components/institutional/LiveProtocolEvidence";
+import { ProtocolIdentityExhibit } from "@/components/institutional/ProtocolIdentityExhibit";
 import { TrustModelExhibit } from "@/components/institutional/TrustModelExhibit";
 import { ABX_SPACING, abxAccentCssVars } from "@/lib/design/abraxasDesignSystem";
 import { ABX_V2_SHELL_CLASS } from "@/lib/design/institutionalV2Tokens";
@@ -34,6 +35,7 @@ function HomeContent() {
         }}
       >
         <InstitutionalHomeHero />
+        <ProtocolIdentityExhibit />
         <TrustModelExhibit />
         <LiveProtocolEvidence />
         <CapabilityMatrix />

@@ -2,6 +2,7 @@
 // FILE: components/redesign/RedesignPageLoading.tsx
 // Lightweight branded loading state for public Suspense fallbacks.
 
+import { AbraxasLogo } from "@/components/brand/AbraxasLogo";
 import { Spinner } from "@/components/ui/Spinner";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
@@ -32,6 +33,7 @@ export function RedesignPageLoading({
         fontSize: "0.82rem",
       }}
     >
+      <AbraxasLogo variant="emblem" emblemSize={40} href={undefined} emblemOnly />
       <Spinner size={22} label={label} />
       <span>{label}</span>
     </div>

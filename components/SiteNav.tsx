@@ -2,8 +2,9 @@
 // FILE: components/SiteNav.tsx
 // Persistent top navigation for legacy routes still on PageShell.
 
-import Image from "next/image";
 import Link from "next/link";
+import { AbraxasLogo } from "@/components/brand/AbraxasLogo";
+import { ABRAXAS_BRAND_GREEN } from "@/lib/brand/officialBrandAssets";
 import { usePathname } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import { springSnappy } from "@/lib/motion/variants";
@@ -14,7 +15,7 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 const MotionLink = motion.create(Link);
 
 const S = "'Inter',system-ui,-apple-system,sans-serif";
-const G = "#10B981";
+const G = ABRAXAS_BRAND_GREEN;
 
 const PRIMARY_LINKS = [
   { href: "/terminal",  label: "Marketplace" },
@@ -66,8 +67,8 @@ function NavLink({ href, label, active, small }: {
             position: "absolute",
             inset: 0,
             borderRadius: 999,
-            background: "rgba(16,185,129,0.12)",
-            border: "1px solid rgba(16,185,129,0.25)",
+            background: "rgba(94,234,212,0.1)",
+            border: "1px solid rgba(94,234,212,0.28)",
             zIndex: -1,
           }}
         />
@@ -93,26 +94,7 @@ export function SiteNav({ onWaitlistClick }: SiteNavProps) {
       height: "clamp(58px, 8vw, 68px)",
       gap: "0.5rem",
     }}>
-      <Link href="/terminal" style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "0.55rem",
-        textDecoration: "none",
-        flexShrink: 0,
-      }}>
-        <Image src="/icon-48.png" alt="Abraxas"
-          width={30} height={30} priority
-          style={{ display: "block", borderRadius: 8 }} />
-        <span style={{
-          fontFamily: S,
-          fontSize: "clamp(1rem, 1.6vw, 1.2rem)",
-          fontWeight: 800,
-          color: "var(--text-primary)",
-          letterSpacing: "-0.02em",
-        }}>
-          Abraxas
-        </span>
-      </Link>
+      <AbraxasLogo variant="lockup" emblemSize={30} href="/terminal" />
 
       <div className="abr-site-nav-links" style={{
         display: "none",
