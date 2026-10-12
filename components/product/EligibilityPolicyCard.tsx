@@ -85,26 +85,28 @@ export function EligibilityPolicyCard({
   const [expanded, setExpanded] = useState(showTechnicalDetails);
   const interactive = Boolean(onSelect);
 
-  return (
-    <article
-      style={{
-        borderRadius: 14,
-        border: selected ? "1px solid rgba(16,185,129,0.5)" : "1px solid var(--border)",
-        background: selected ? "rgba(16,185,129,0.06)" : "var(--surface)",
-        padding: compact ? "0.75rem 0.85rem" : "0.9rem 1rem",
-        cursor: interactive ? "pointer" : undefined,
-      }}
-      onClick={interactive ? onSelect : undefined}
-      role={interactive ? "button" : undefined}
-      tabIndex={interactive ? 0 : undefined}
-      aria-pressed={interactive ? selected : undefined}
-      onKeyDown={interactive ? (e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onSelect?.();
-        }
-      } : undefined}
-    >
+  const shellStyle = {
+    borderRadius: 14,
+    border: selected ? "1px solid rgba(16,185,129,0.5)" : "1px solid var(--border)",
+    background: selected ? "rgba(16,185,129,0.06)" : "var(--surface)",
+    padding: compact ? "0.75rem 0.85rem" : "0.9rem 1rem",
+  } as const;
+
+  const selectButtonStyle = {
+    display: "block" as const,
+    width: "100%",
+    margin: 0,
+    padding: 0,
+    border: "none",
+    background: "transparent",
+    textAlign: "left" as const,
+    cursor: interactive ? "pointer" : undefined,
+    font: "inherit",
+    color: "inherit",
+  };
+
+  const mainBody = (
+    <>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: "0.75rem", marginBottom: "0.65rem" }}>
         <div>
           <h3 style={{ fontFamily: FONT, fontSize: "0.92rem", fontWeight: 800, margin: "0 0 0.25rem", color: "var(--text-primary)" }}>
@@ -176,15 +178,29 @@ export function EligibilityPolicyCard({
           )}
         </dl>
       )}
+    </>
+  );
+
+  return (
+    <article style={shellStyle}>
+      {interactive ? (
+        <button
+          type="button"
+          onClick={onSelect}
+          aria-pressed={selected}
+          style={selectButtonStyle}
+        >
+          {mainBody}
+        </button>
+      ) : (
+        mainBody
+      )}
 
       {(packId || minimumAssurance || reuseNotice) && (
         <div style={{ marginTop: "0.55rem" }}>
           <button
             type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setExpanded((v) => !v);
-            }}
+            onClick={() => setExpanded((v) => !v)}
             aria-expanded={expanded}
             style={{
               fontFamily: FONT,
