@@ -5,6 +5,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
+import { ABRAXAS_BRAND_GREEN } from "@/lib/brand/officialBrandAssets";
 import {
   GOOD_TROUBLE_PRODUCTION_DEMO_ASPECT_RATIO,
   GOOD_TROUBLE_PRODUCTION_DEMO_METADATA,
@@ -66,7 +67,7 @@ export function HomeGoodTroubleProductionDemoVideo({
           borderRadius: 18,
           overflow: "hidden",
           background: "rgba(6, 10, 18, 0.92)",
-          border: "1px solid rgba(45, 212, 191, 0.22)",
+          border: "1px solid rgba(76, 187, 146, 0.28)",
           boxShadow: "0 18px 48px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255,255,255,0.04)",
         }}
       >
@@ -120,7 +121,7 @@ export function HomeGoodTroubleProductionDemoVideo({
                 display: "grid",
                 placeItems: "center",
                 background: "rgba(12, 18, 28, 0.78)",
-                border: "1px solid rgba(45, 212, 191, 0.45)",
+                border: `1px solid ${ABRAXAS_BRAND_GREEN}99`,
                 boxShadow: "0 12px 32px rgba(0,0,0,0.45)",
                 color: "#F8FAFC",
               }}
@@ -169,11 +170,11 @@ export function HomeGoodTroubleProductionDemoVideo({
 
       <style jsx>{`
         .abx-gt-production-demo-video__play:focus-visible {
-          outline: 2px solid #2dd4bf;
+          outline: 2px solid ${ABRAXAS_BRAND_GREEN};
           outline-offset: 3px;
         }
         .abx-gt-production-demo-video__play:focus-visible .abx-gt-production-demo-video__play-icon {
-          box-shadow: 0 0 0 4px rgba(45, 212, 191, 0.25), 0 12px 32px rgba(0, 0, 0, 0.45);
+          box-shadow: 0 0 0 4px rgba(76, 187, 146, 0.25), 0 12px 32px rgba(0, 0, 0, 0.45);
         }
         @media (prefers-reduced-motion: reduce) {
           .abx-gt-production-demo-video__play-icon {

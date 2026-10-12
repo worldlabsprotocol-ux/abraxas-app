@@ -18,7 +18,7 @@ export function ProtocolIdentityExhibit() {
       <ProtocolBrandFigure
         asset="protocolBanner"
         priority
-        caption="Founder-provided protocol banner — verify what matters; reveal nothing else."
+        caption="Official protocol banner — verify what matters; reveal nothing else."
       />
       <ProtocolBrandFigure
         asset="architectureExhibit"

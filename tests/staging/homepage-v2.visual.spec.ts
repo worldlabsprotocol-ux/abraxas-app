@@ -13,7 +13,7 @@ test.describe("Homepage V2 layout smoke", () => {
     test(`homepage renders without horizontal overflow (${vp.name})`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto("/", { waitUntil: "networkidle" });
-      await expect(page.getByRole("heading", { level: 1 })).toContainText("Trust, without the underlying data");
+      await expect(page.getByRole("heading", { level: 1 })).toContainText("Prove what matters");
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2);
       expect(overflow).toBe(false);
     });

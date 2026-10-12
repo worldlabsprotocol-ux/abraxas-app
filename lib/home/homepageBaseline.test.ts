@@ -22,10 +22,12 @@ describe("homepage baseline (institutional invariants)", () => {
     expect(src).toContain("abx-home-section-center");
   });
 
-  it("public homepage leads with V2 editorial composition", () => {
+  it("public homepage leads with cinematic editorial composition", () => {
     const shell = read("components/redesign/RedesignHome.tsx");
     expect(shell).toContain("InstitutionalHomeHero");
-    expect(shell).toContain("TrustModelExhibit");
+    expect(shell).toContain("HomeVerifyProtectReuse");
+    expect(shell).toContain("HomeGoodTroubleActionSection");
+    expect(shell).toContain("HomeVerifiableTrustChapter");
     expect(shell).toContain("CapabilityMatrix");
     expect(shell).not.toContain("KineticMarquee");
   });

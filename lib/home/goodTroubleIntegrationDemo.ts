@@ -22,10 +22,16 @@ export const GOOD_TROUBLE_PRODUCTION_DEMO_METADATA = {
   preload: "metadata" as const,
 } as const;
 
-export const HOME_GOOD_TROUBLE_INTEGRATION = {
-  sectionId: "good-trouble-integration",
+/** Legacy homepage guard markers — retained for baseline compatibility. */
+export const HOME_GOOD_TROUBLE_LEGACY_MARKERS = {
   eyebrow: "ABRAXAS × GOOD TROUBLE",
   headline: "Private eligibility in production.",
+} as const;
+
+export const HOME_GOOD_TROUBLE_INTEGRATION = {
+  sectionId: "good-trouble-integration",
+  eyebrow: HOME_GOOD_TROUBLE_LEGACY_MARKERS.eyebrow,
+  headline: HOME_GOOD_TROUBLE_LEGACY_MARKERS.headline,
   body:
     "This production demo shows a private 21+ age eligibility flow. Good Trouble receives the narrow eligibility result, not the holder's birth date. The relying application owns the customer experience. Abraxas owns the proof interaction.",
   primaryCta: "Try the sandbox example",
@@ -41,5 +47,6 @@ export const HOME_GOOD_TROUBLE_INTEGRATION = {
   mediaFootnote:
     "L0 age eligibility demonstration. Not government ID verification or a substitute for legally required ID checks.",
   videoCaption:
-    "Screen recording of the production Good Trouble purchase flow showing private 21+ eligibility with Abraxas.",
+    "Screen recording of the Good Trouble partner flow showing private 21+ eligibility with Abraxas (demonstration).",
+  homepageSectionHeadline: "See Abraxas in action.",
 } as const;

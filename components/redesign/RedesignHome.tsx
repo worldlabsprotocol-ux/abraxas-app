@@ -1,17 +1,20 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Institutional V2 homepage — editorial hero, trust exhibit, evidence, capability matrix.
+// Build #545 — cinematic public homepage with scroll chapters and verifiable trust depth.
 
 import { WalletContextProvider } from "@/components/WalletContextProvider";
 import { CapabilityMatrix } from "@/components/institutional/CapabilityMatrix";
 import { InstitutionalHomeClose } from "@/components/institutional/InstitutionalHomeClose";
 import { InstitutionalHomeHero } from "@/components/institutional/InstitutionalHomeHero";
-import { LiveProtocolEvidence } from "@/components/institutional/LiveProtocolEvidence";
-import { ProtocolIdentityExhibit } from "@/components/institutional/ProtocolIdentityExhibit";
-import { TrustModelExhibit } from "@/components/institutional/TrustModelExhibit";
+import { HomeGoodTroubleActionSection } from "@/components/home/HomeGoodTroubleActionSection";
+import { HomeHowItWorksStrip } from "@/components/home/HomeHowItWorksStrip";
+import { HomeProblemChapter } from "@/components/home/HomeProblemChapter";
+import { HomeVerifiableTrustChapter } from "@/components/home/HomeVerifiableTrustChapter";
+import { HomeVerifyProtectReuse } from "@/components/home/HomeVerifyProtectReuse";
 import { ABX_SPACING, abxAccentCssVars } from "@/lib/design/abraxasDesignSystem";
 import { ABX_V2_SHELL_CLASS } from "@/lib/design/institutionalV2Tokens";
 import { abxMotionCssVars } from "@/lib/design/abraxasMotion";
+import { CINEMATIC_BUILD_CHAPTER_EYEBROW } from "@/lib/home/cinematicHomeCopy";
 import { RedesignNav } from "./RedesignNav";
 import { RedesignFooter } from "./RedesignFooter";
 
@@ -24,21 +27,33 @@ const SHELL: React.CSSProperties = {
 
 function HomeContent() {
   return (
-    <main className="abx-institutional-home abx-v2-home" style={{ position: "relative", zIndex: 1, paddingBottom: "3.5rem" }}>
+    <main className="abx-institutional-home abx-v2-home abx-cinematic-home" style={{ position: "relative", zIndex: 1, paddingBottom: "3.5rem" }}>
       <div
         className="abx-institutional-home__shell"
         style={{
           ...SHELL,
           display: "flex",
           flexDirection: "column",
-          gap: "clamp(2.75rem, 7vw, 4.5rem)",
+          gap: "clamp(2.75rem, 7vw, 4.75rem)",
         }}
       >
         <InstitutionalHomeHero />
-        <TrustModelExhibit />
-        <ProtocolIdentityExhibit />
-        <LiveProtocolEvidence />
-        <CapabilityMatrix />
+        <HomeProblemChapter />
+        <HomeVerifyProtectReuse />
+        <HomeHowItWorksStrip />
+        <HomeGoodTroubleActionSection />
+        <HomeVerifiableTrustChapter />
+        <section className="abx-cinematic-build-chapter" aria-labelledby="home-build-heading">
+          <p className="abx-v2-eyebrow">{CINEMATIC_BUILD_CHAPTER_EYEBROW}</p>
+          <h2 id="home-build-heading" className="abx-v2-section-title">
+            Integration paths
+          </h2>
+          <p className="abx-v2-section-lead">
+            Explore the integration studio and sandbox flows. Production activation requires operator review — not
+            unrestricted self-serve mainnet access.
+          </p>
+          <CapabilityMatrix />
+        </section>
         <InstitutionalHomeClose />
       </div>
     </main>

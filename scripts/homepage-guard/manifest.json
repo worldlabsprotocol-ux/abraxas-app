@@ -49,7 +49,7 @@
     {
       "id": "home-shell-institutional",
       "file": "components/redesign/RedesignHome.tsx",
-      "mustContain": ["abx-institutional-home", "InstitutionalHomeHero", "TrustModelExhibit", "abx-v2-shell"]
+      "mustContain": ["abx-institutional-home", "InstitutionalHomeHero", "HomeVerifyProtectReuse", "abx-v2-shell"]
     },
     {
       "id": "protocol-in-action-media",
@@ -69,7 +69,7 @@
     {
       "id": "command-center-map",
       "file": "components/redesign/RedesignHome.tsx",
-      "mustContain": ["InstitutionalHomeHero", "TrustModelExhibit", "LiveProtocolEvidence", "CapabilityMatrix", "InstitutionalHomeClose"]
+      "mustContain": ["InstitutionalHomeHero", "HomeVerifiableTrustChapter", "HomeGoodTroubleActionSection", "CapabilityMatrix", "InstitutionalHomeClose"]
     },
     {
       "id": "good-trouble-production-demo",

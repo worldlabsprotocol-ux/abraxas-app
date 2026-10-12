@@ -1,40 +1,33 @@
 "use client";
 
-import { AbraxasLogo } from "@/components/brand/AbraxasLogo";
 import { Btn } from "@/components/redesign/ui";
-import { ProtocolReceiptDemo } from "@/components/institutional/ProtocolReceiptDemo";
+import { CinematicHomeHeroVisual } from "@/components/home/CinematicHomeHeroVisual";
 import {
-  V2_HOME_CTA_BUILD,
-  V2_HOME_CTA_BUILD_HREF,
-  V2_HOME_CTA_PROTOCOL,
-  V2_HOME_CTA_PROTOCOL_HREF,
-  V2_HOME_EYEBROW,
-  V2_HOME_HEADLINE,
-  V2_HOME_LEAD,
-} from "@/lib/home/v2HomeCopy";
+  CINEMATIC_HOME_CTA_PRIMARY,
+  CINEMATIC_HOME_CTA_PRIMARY_HREF,
+  CINEMATIC_HOME_CTA_SECONDARY,
+  CINEMATIC_HOME_CTA_SECONDARY_HREF,
+  CINEMATIC_HOME_HEADLINE,
+  CINEMATIC_HOME_LEAD,
+} from "@/lib/home/cinematicHomeCopy";
 
 export function InstitutionalHomeHero() {
   return (
-    <section className="abx-v2-hero" aria-label="Abraxas trust infrastructure">
-      <div className="abx-v2-hero__copy">
-        <div className="abx-v2-hero__brand-emblem">
-          <AbraxasLogo variant="emblem" emblemSize={56} href={undefined} emblemOnly />
-        </div>
-        <p className="abx-v2-eyebrow">{V2_HOME_EYEBROW}</p>
-        <h1 className="abx-v2-hero__title">{V2_HOME_HEADLINE}</h1>
-        <p className="abx-v2-hero__lead">{V2_HOME_LEAD}</p>
+    <section className="abx-cinematic-hero abx-v2-hero" aria-label="Abraxas — prove what matters">
+      <div className="abx-cinematic-hero__copy abx-v2-hero__copy">
+        <p className="abx-v2-eyebrow">Abraxas verification</p>
+        <h1 className="abx-v2-hero__title abx-cinematic-hero__title">{CINEMATIC_HOME_HEADLINE}</h1>
+        <p className="abx-v2-hero__lead">{CINEMATIC_HOME_LEAD}</p>
         <div className="abx-v2-hero__actions">
-          <Btn href={V2_HOME_CTA_PROTOCOL_HREF} size="md">
-            {V2_HOME_CTA_PROTOCOL}
+          <Btn href={CINEMATIC_HOME_CTA_PRIMARY_HREF} size="md">
+            {CINEMATIC_HOME_CTA_PRIMARY}
           </Btn>
-          <Btn href={V2_HOME_CTA_BUILD_HREF} variant="secondary" size="md">
-            {V2_HOME_CTA_BUILD}
+          <Btn href={CINEMATIC_HOME_CTA_SECONDARY_HREF} variant="secondary" size="md">
+            {CINEMATIC_HOME_CTA_SECONDARY}
           </Btn>
         </div>
       </div>
-      <div className="abx-v2-hero__demo">
-        <ProtocolReceiptDemo />
-      </div>
+      <CinematicHomeHeroVisual />
     </section>
   );
 }
