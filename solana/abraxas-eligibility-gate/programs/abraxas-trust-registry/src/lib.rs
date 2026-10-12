@@ -358,6 +358,32 @@ pub struct RevokeCommitment<'info> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use anchor_lang::Discriminator;
+    use anchor_lang::solana_program::hash::hash;
+
+    fn global_ix_disc(name: &str) -> [u8; 8] {
+        let preimage = format!("global:{}", name);
+        let h = hash(preimage.as_bytes());
+        let mut out = [0u8; 8];
+        out.copy_from_slice(&h.to_bytes()[..8]);
+        out
+    }
+
+    fn account_disc(name: &str) -> [u8; 8] {
+        let preimage = format!("account:{}", name);
+        let h = hash(preimage.as_bytes());
+        let mut out = [0u8; 8];
+        out.copy_from_slice(&h.to_bytes()[..8]);
+        out
+    }
+
+    /// Release integrity snapshot (Build #535) — must match TS `buildTrustRegistryIdl535`.
+    #[test]
+    fn idl_discriminator_snapshot_v535() {
+        assert_eq!(TrustRegistry::DISCRIMINATOR, account_disc("TrustRegistry"));
+        assert_eq!(PolicyRecord::DISCRIMINATOR, account_disc("PolicyRecord"));
+        assert_eq!(CommitmentState::DISCRIMINATOR, account_disc("CommitmentState"));
+    }
 
     #[test]
     fn stale_sequence_rejected() {
