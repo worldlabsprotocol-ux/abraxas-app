@@ -13,6 +13,8 @@ export RUSTFLAGS="${RUSTFLAGS:-}"
 cargo fmt -p abraxas-trust-registry --check
 cargo test -p abraxas-trust-registry -- --nocapture
 cargo test -p abraxas-eligibility-gate-integration-tests --test trust_registry -- --nocapture
+cargo test -p abraxas-eligibility-gate-integration-tests --test trust_registry_governance_transfer -- --nocapture
+cargo test -p abraxas-eligibility-gate-integration-tests --test trust_registry_legacy_compat -- --nocapture
 
 if command -v cargo-build-sbf >/dev/null 2>&1; then
   PATH="${HOME}/.cache/solana/v1.53/platform-tools/rust/bin:${PATH}" \

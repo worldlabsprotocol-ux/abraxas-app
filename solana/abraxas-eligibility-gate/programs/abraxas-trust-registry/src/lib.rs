@@ -2,6 +2,7 @@
 // Privacy: commitments and policy hashes only. No PII on-chain.
 
 use anchor_lang::prelude::*;
+use anchor_lang::Discriminator;
 
 declare_id!("EN29YNgHRuJ3h9cWrPS9hSDBt8DUNtoSSTT9EbUZewC8");
 
@@ -65,8 +66,14 @@ pub mod abraxas_trust_registry {
     use super::*;
     use anchor_lang::Discriminator;
 
-    pub fn initialize_registry(ctx: Context<InitializeRegistry>, registry_domain: [u8; 32]) -> Result<()> {
-        require!(registry_domain != [0u8; 32], TrustRegistryError::InvalidConfig);
+    pub fn initialize_registry(
+        ctx: Context<InitializeRegistry>,
+        registry_domain: [u8; 32],
+    ) -> Result<()> {
+        require!(
+            registry_domain != [0u8; 32],
+            TrustRegistryError::InvalidConfig
+        );
         let reg = &mut ctx.accounts.registry;
         reg.governance_authority = ctx.accounts.governance_authority.key();
         reg.registry_domain = registry_domain;
@@ -78,9 +85,16 @@ pub mod abraxas_trust_registry {
     pub fn register_policy(
         ctx: Context<RegisterPolicy>,
         policy_commitment: [u8; 32],
+        registry_domain: [u8; 32],
         policy_version: u32,
     ) -> Result<()> {
-        require!(policy_commitment != [0u8; 32], TrustRegistryError::InvalidConfig);
+        require!(
+            policy_commitment != [0u8; 32],
+            TrustRegistryError::InvalidConfig
+        );
+        let reg =
+            load_compatible_registry(&ctx.accounts.registry.to_account_info(), registry_domain)?;
+        require_registry_governance(&reg, ctx.accounts.governance_authority.key())?;
         let policy = &mut ctx.accounts.policy;
         policy.registry = ctx.accounts.registry.key();
         policy.policy_commitment = policy_commitment;
@@ -90,59 +104,143 @@ pub mod abraxas_trust_registry {
         Ok(())
     }
 
-    pub fn set_policy_active(ctx: Context<SetPolicyActive>, active: bool) -> Result<()> {
+    pub fn set_policy_active(
+        ctx: Context<SetPolicyActive>,
+        registry_domain: [u8; 32],
+        active: bool,
+    ) -> Result<()> {
+        let reg =
+            load_compatible_registry(&ctx.accounts.registry.to_account_info(), registry_domain)?;
+        require_registry_governance(&reg, ctx.accounts.governance_authority.key())?;
         ctx.accounts.policy.active = active;
         Ok(())
     }
 
-    pub fn add_issuer(ctx: Context<RegistryGovernanceMut>, key_id: [u8; 32], pubkey: [u8; 32]) -> Result<()> {
-        add_authority_slot(&mut ctx.accounts.registry.issuers, key_id, pubkey)
+    pub fn add_issuer(
+        ctx: Context<RegistryGovernanceMut>,
+        registry_domain: [u8; 32],
+        key_id: [u8; 32],
+        pubkey: [u8; 32],
+    ) -> Result<()> {
+        let mut reg =
+            load_compatible_registry(&ctx.accounts.registry.to_account_info(), registry_domain)?;
+        require_registry_governance(&reg, ctx.accounts.governance_authority.key())?;
+        add_authority_slot(&mut reg.issuers, key_id, pubkey)?;
+        save_compatible_registry(&ctx.accounts.registry.to_account_info(), &reg)
     }
 
-    pub fn suspend_issuer(ctx: Context<RegistryGovernanceMut>, key_id: [u8; 32]) -> Result<()> {
-        set_authority_status(&mut ctx.accounts.registry.issuers, key_id, AUTHORITY_SUSPENDED)
+    pub fn suspend_issuer(
+        ctx: Context<RegistryGovernanceMut>,
+        registry_domain: [u8; 32],
+        key_id: [u8; 32],
+    ) -> Result<()> {
+        let mut reg =
+            load_compatible_registry(&ctx.accounts.registry.to_account_info(), registry_domain)?;
+        require_registry_governance(&reg, ctx.accounts.governance_authority.key())?;
+        set_authority_status(&mut reg.issuers, key_id, AUTHORITY_SUSPENDED)?;
+        save_compatible_registry(&ctx.accounts.registry.to_account_info(), &reg)
     }
 
-    pub fn revoke_issuer(ctx: Context<RegistryGovernanceMut>, key_id: [u8; 32]) -> Result<()> {
-        set_authority_status(&mut ctx.accounts.registry.issuers, key_id, AUTHORITY_REVOKED)
+    pub fn revoke_issuer(
+        ctx: Context<RegistryGovernanceMut>,
+        registry_domain: [u8; 32],
+        key_id: [u8; 32],
+    ) -> Result<()> {
+        let mut reg =
+            load_compatible_registry(&ctx.accounts.registry.to_account_info(), registry_domain)?;
+        require_registry_governance(&reg, ctx.accounts.governance_authority.key())?;
+        set_authority_status(&mut reg.issuers, key_id, AUTHORITY_REVOKED)?;
+        save_compatible_registry(&ctx.accounts.registry.to_account_info(), &reg)
     }
 
-    pub fn add_revoker(ctx: Context<RegistryGovernanceMut>, key_id: [u8; 32], pubkey: [u8; 32]) -> Result<()> {
-        add_authority_slot(&mut ctx.accounts.registry.revokers, key_id, pubkey)
+    pub fn add_revoker(
+        ctx: Context<RegistryGovernanceMut>,
+        registry_domain: [u8; 32],
+        key_id: [u8; 32],
+        pubkey: [u8; 32],
+    ) -> Result<()> {
+        let mut reg =
+            load_compatible_registry(&ctx.accounts.registry.to_account_info(), registry_domain)?;
+        require_registry_governance(&reg, ctx.accounts.governance_authority.key())?;
+        add_authority_slot(&mut reg.revokers, key_id, pubkey)?;
+        save_compatible_registry(&ctx.accounts.registry.to_account_info(), &reg)
     }
 
-    pub fn revoke_revoker(ctx: Context<RegistryGovernanceMut>, key_id: [u8; 32]) -> Result<()> {
-        set_authority_status(&mut ctx.accounts.registry.revokers, key_id, AUTHORITY_REVOKED)
+    pub fn revoke_revoker(
+        ctx: Context<RegistryGovernanceMut>,
+        registry_domain: [u8; 32],
+        key_id: [u8; 32],
+    ) -> Result<()> {
+        let mut reg =
+            load_compatible_registry(&ctx.accounts.registry.to_account_info(), registry_domain)?;
+        require_registry_governance(&reg, ctx.accounts.governance_authority.key())?;
+        set_authority_status(&mut reg.revokers, key_id, AUTHORITY_REVOKED)?;
+        save_compatible_registry(&ctx.accounts.registry.to_account_info(), &reg)
     }
 
-    pub fn add_commitment_publisher(ctx: Context<RegistryGovernanceMut>, key_id: [u8; 32], pubkey: [u8; 32]) -> Result<()> {
-        add_authority_slot(&mut ctx.accounts.registry.commitment_publishers, key_id, pubkey)
+    pub fn add_commitment_publisher(
+        ctx: Context<RegistryGovernanceMut>,
+        registry_domain: [u8; 32],
+        key_id: [u8; 32],
+        pubkey: [u8; 32],
+    ) -> Result<()> {
+        let mut reg =
+            load_compatible_registry(&ctx.accounts.registry.to_account_info(), registry_domain)?;
+        require_registry_governance(&reg, ctx.accounts.governance_authority.key())?;
+        add_authority_slot(&mut reg.commitment_publishers, key_id, pubkey)?;
+        save_compatible_registry(&ctx.accounts.registry.to_account_info(), &reg)
     }
 
     pub fn publish_commitment(
         ctx: Context<PublishCommitment>,
         commitment_digest: [u8; 32],
+        registry_domain: [u8; 32],
         sequence: u64,
     ) -> Result<()> {
-        require!(commitment_digest != [0u8; 32], TrustRegistryError::InvalidConfig);
-        require!(ctx.accounts.policy.active, TrustRegistryError::PolicyInactive);
+        require!(
+            commitment_digest != [0u8; 32],
+            TrustRegistryError::InvalidConfig
+        );
+        require!(
+            ctx.accounts.policy.active,
+            TrustRegistryError::PolicyInactive
+        );
         require!(
             ctx.accounts.policy.policy_commitment != [0u8; 32],
             TrustRegistryError::PolicyMismatch
         );
-        require_keys_eq!(ctx.accounts.policy.registry, ctx.accounts.registry.key(), TrustRegistryError::PolicyMismatch);
+        require_keys_eq!(
+            ctx.accounts.policy.registry,
+            ctx.accounts.registry.key(),
+            TrustRegistryError::PolicyMismatch
+        );
+        let mut reg =
+            load_compatible_registry(&ctx.accounts.registry.to_account_info(), registry_domain)?;
         require_authority_active(
-            &ctx.accounts.registry.commitment_publishers,
+            &reg.commitment_publishers,
             ctx.accounts.publisher.key().to_bytes(),
         )?;
 
         let state = &mut ctx.accounts.commitment_state;
         if state.sequence > 0 {
-            require_keys_eq!(state.registry, ctx.accounts.registry.key(), TrustRegistryError::PolicyMismatch);
-            require!(state.commitment_digest == commitment_digest, TrustRegistryError::PolicyMismatch);
-            require!(state.policy_commitment == ctx.accounts.policy.policy_commitment, TrustRegistryError::PolicyMismatch);
+            require_keys_eq!(
+                state.registry,
+                ctx.accounts.registry.key(),
+                TrustRegistryError::PolicyMismatch
+            );
+            require!(
+                state.commitment_digest == commitment_digest,
+                TrustRegistryError::PolicyMismatch
+            );
+            require!(
+                state.policy_commitment == ctx.accounts.policy.policy_commitment,
+                TrustRegistryError::PolicyMismatch
+            );
             require!(sequence > state.sequence, TrustRegistryError::StaleSequence);
-            require!(state.status == COMMITMENT_ACTIVE, TrustRegistryError::Replayed);
+            require!(
+                state.status == COMMITMENT_ACTIVE,
+                TrustRegistryError::Replayed
+            );
         }
         state.registry = ctx.accounts.registry.key();
         state.policy = ctx.accounts.policy.key();
@@ -153,20 +251,23 @@ pub mod abraxas_trust_registry {
         state.publisher = ctx.accounts.publisher.key();
         state.updated_slot = Clock::get()?.slot;
         state.bump = ctx.bumps.commitment_state;
-        ctx.accounts.registry.sequence_epoch = ctx.accounts.registry.sequence_epoch.saturating_add(1);
-        Ok(())
+        reg.sequence_epoch = reg.sequence_epoch.saturating_add(1);
+        save_compatible_registry(&ctx.accounts.registry.to_account_info(), &reg)
     }
 
-    pub fn revoke_commitment(ctx: Context<RevokeCommitment>, sequence: u64) -> Result<()> {
+    pub fn revoke_commitment(
+        ctx: Context<RevokeCommitment>,
+        registry_domain: [u8; 32],
+        sequence: u64,
+    ) -> Result<()> {
         require_keys_eq!(
             ctx.accounts.commitment_state.registry,
             ctx.accounts.registry.key(),
             TrustRegistryError::PolicyMismatch
         );
-        require_authority_active(
-            &ctx.accounts.registry.revokers,
-            ctx.accounts.revoker.key().to_bytes(),
-        )?;
+        let reg =
+            load_compatible_registry(&ctx.accounts.registry.to_account_info(), registry_domain)?;
+        require_authority_active(&reg.revokers, ctx.accounts.revoker.key().to_bytes())?;
         apply_invalidation(
             &mut ctx.accounts.commitment_state,
             sequence,
@@ -231,7 +332,10 @@ pub mod abraxas_trust_registry {
         new_authority: Pubkey,
         transfer_seq: u64,
     ) -> Result<()> {
-        require!(new_authority != Pubkey::default(), TrustRegistryError::InvalidConfig);
+        require!(
+            new_authority != Pubkey::default(),
+            TrustRegistryError::InvalidConfig
+        );
         let reg = &mut ctx.accounts.registry;
         require_governance_layout_extended(&reg.to_account_info())?;
         let now = Clock::get()?.slot;
@@ -241,8 +345,14 @@ pub mod abraxas_trust_registry {
             TrustRegistryError::PendingGovernanceTransferActive
         );
         let expected_seq = reg.governance_transfer_seq.saturating_add(1);
-        require!(transfer_seq == expected_seq, TrustRegistryError::GovernanceTransferStale);
-        require!(new_authority != reg.governance_authority, TrustRegistryError::InvalidConfig);
+        require!(
+            transfer_seq == expected_seq,
+            TrustRegistryError::GovernanceTransferStale
+        );
+        require!(
+            new_authority != reg.governance_authority,
+            TrustRegistryError::InvalidConfig
+        );
         reg.pending_governance = new_authority;
         reg.pending_transfer_seq = transfer_seq;
         reg.pending_expires_at_slot = now.saturating_add(GOVERNANCE_NOMINATION_TTL_SLOTS);
@@ -256,17 +366,29 @@ pub mod abraxas_trust_registry {
         Ok(())
     }
 
-    pub fn accept_governance_authority(ctx: Context<AcceptGovernanceAuthority>, transfer_seq: u64) -> Result<()> {
+    pub fn accept_governance_authority(
+        ctx: Context<AcceptGovernanceAuthority>,
+        transfer_seq: u64,
+    ) -> Result<()> {
         let reg = &mut ctx.accounts.registry;
         require_governance_layout_extended(&reg.to_account_info())?;
         let now = Clock::get()?.slot;
-        require!(reg.pending_governance != Pubkey::default(), TrustRegistryError::NominationExpired);
-        require!(is_pending_active(reg, now), TrustRegistryError::NominationExpired);
+        require!(
+            reg.pending_governance != Pubkey::default(),
+            TrustRegistryError::NominationExpired
+        );
+        require!(
+            is_pending_active(reg, now),
+            TrustRegistryError::NominationExpired
+        );
         require!(
             reg.pending_governance == ctx.accounts.pending_authority.key(),
             TrustRegistryError::UnauthorizedGovernanceTransfer
         );
-        require!(transfer_seq == reg.pending_transfer_seq, TrustRegistryError::GovernanceTransferStale);
+        require!(
+            transfer_seq == reg.pending_transfer_seq,
+            TrustRegistryError::GovernanceTransferStale
+        );
         require!(
             transfer_seq > reg.governance_transfer_seq,
             TrustRegistryError::GovernanceTransferStale
@@ -325,16 +447,19 @@ pub mod abraxas_trust_registry {
         Ok(())
     }
 
-    pub fn supersede_commitment(ctx: Context<RevokeCommitment>, sequence: u64) -> Result<()> {
+    pub fn supersede_commitment(
+        ctx: Context<RevokeCommitment>,
+        registry_domain: [u8; 32],
+        sequence: u64,
+    ) -> Result<()> {
         require_keys_eq!(
             ctx.accounts.commitment_state.registry,
             ctx.accounts.registry.key(),
             TrustRegistryError::PolicyMismatch
         );
-        require_authority_active(
-            &ctx.accounts.registry.revokers,
-            ctx.accounts.revoker.key().to_bytes(),
-        )?;
+        let reg =
+            load_compatible_registry(&ctx.accounts.registry.to_account_info(), registry_domain)?;
+        require_authority_active(&reg.revokers, ctx.accounts.revoker.key().to_bytes())?;
         apply_invalidation(
             &mut ctx.accounts.commitment_state,
             sequence,
@@ -351,7 +476,10 @@ fn apply_invalidation(
     actor: Pubkey,
 ) -> Result<()> {
     require!(sequence > state.sequence, TrustRegistryError::StaleSequence);
-    require!(state.status == COMMITMENT_ACTIVE, TrustRegistryError::Replayed);
+    require!(
+        state.status == COMMITMENT_ACTIVE,
+        TrustRegistryError::Replayed
+    );
     state.sequence = sequence;
     state.status = status;
     state.updated_slot = Clock::get()?.slot;
@@ -359,12 +487,22 @@ fn apply_invalidation(
     Ok(())
 }
 
-fn add_authority_slot(slots: &mut [AuthoritySlot; MAX_AUTHORITY_SLOTS], key_id: [u8; 32], pubkey: [u8; 32]) -> Result<()> {
-    require!(key_id != [0u8; 32] && pubkey != [0u8; 32], TrustRegistryError::InvalidConfig);
+fn add_authority_slot(
+    slots: &mut [AuthoritySlot; MAX_AUTHORITY_SLOTS],
+    key_id: [u8; 32],
+    pubkey: [u8; 32],
+) -> Result<()> {
+    require!(
+        key_id != [0u8; 32] && pubkey != [0u8; 32],
+        TrustRegistryError::InvalidConfig
+    );
     let mut empty: Option<usize> = None;
     for (i, slot) in slots.iter().enumerate() {
         if slot.status != AUTHORITY_EMPTY {
-            require!(slot.key_id != key_id && slot.pubkey != pubkey, TrustRegistryError::DuplicateAuthority);
+            require!(
+                slot.key_id != key_id && slot.pubkey != pubkey,
+                TrustRegistryError::DuplicateAuthority
+            );
         } else if empty.is_none() {
             empty = Some(i);
         }
@@ -378,7 +516,11 @@ fn add_authority_slot(slots: &mut [AuthoritySlot; MAX_AUTHORITY_SLOTS], key_id: 
     Ok(())
 }
 
-fn set_authority_status(slots: &mut [AuthoritySlot; MAX_AUTHORITY_SLOTS], key_id: [u8; 32], status: u8) -> Result<()> {
+fn set_authority_status(
+    slots: &mut [AuthoritySlot; MAX_AUTHORITY_SLOTS],
+    key_id: [u8; 32],
+    status: u8,
+) -> Result<()> {
     for slot in slots.iter_mut() {
         if slot.status != AUTHORITY_EMPTY && slot.key_id == key_id {
             slot.status = status;
@@ -388,8 +530,13 @@ fn set_authority_status(slots: &mut [AuthoritySlot; MAX_AUTHORITY_SLOTS], key_id
     err!(TrustRegistryError::UnknownAuthority)
 }
 
-fn require_authority_active(slots: &[AuthoritySlot; MAX_AUTHORITY_SLOTS], pubkey: [u8; 32]) -> Result<()> {
-    let ok = slots.iter().any(|s| s.status == AUTHORITY_ACTIVE && s.pubkey == pubkey);
+fn require_authority_active(
+    slots: &[AuthoritySlot; MAX_AUTHORITY_SLOTS],
+    pubkey: [u8; 32],
+) -> Result<()> {
+    let ok = slots
+        .iter()
+        .any(|s| s.status == AUTHORITY_ACTIVE && s.pubkey == pubkey);
     require!(ok, TrustRegistryError::UnauthorizedAuthority);
     Ok(())
 }
@@ -417,16 +564,95 @@ fn clear_expired_pending(reg: &mut TrustRegistry, now: u64) -> Result<()> {
 
 fn read_legacy_governance_authority(info: &AccountInfo) -> Result<Pubkey> {
     let data = info.try_borrow_data()?;
-    require!(data.len() >= 8 + 32, TrustRegistryError::RegistryLayoutInvalid);
-    Ok(Pubkey::try_from(&data[8..40]).map_err(|_| error!(TrustRegistryError::RegistryLayoutInvalid))?)
+    require!(
+        data.len() >= 8 + 32,
+        TrustRegistryError::RegistryLayoutInvalid
+    );
+    Ok(Pubkey::try_from(&data[8..40])
+        .map_err(|_| error!(TrustRegistryError::RegistryLayoutInvalid))?)
 }
 
 fn read_legacy_registry_domain(info: &AccountInfo) -> Result<[u8; 32]> {
     let data = info.try_borrow_data()?;
-    require!(data.len() >= 8 + 64, TrustRegistryError::RegistryLayoutInvalid);
+    require!(
+        data.len() >= 8 + 64,
+        TrustRegistryError::RegistryLayoutInvalid
+    );
     let mut domain = [0u8; 32];
     domain.copy_from_slice(&data[40..72]);
     Ok(domain)
+}
+
+fn trust_registry_from_v535(legacy: TrustRegistryV535) -> TrustRegistry {
+    TrustRegistry {
+        governance_authority: legacy.governance_authority,
+        registry_domain: legacy.registry_domain,
+        sequence_epoch: legacy.sequence_epoch,
+        bump: legacy.bump,
+        issuers: legacy.issuers,
+        revokers: legacy.revokers,
+        commitment_publishers: legacy.commitment_publishers,
+        pending_governance: Pubkey::default(),
+        pending_transfer_seq: 0,
+        pending_expires_at_slot: 0,
+        governance_transfer_seq: 0,
+    }
+}
+
+fn load_compatible_registry(
+    info: &AccountInfo,
+    expected_domain: [u8; 32],
+) -> Result<TrustRegistry> {
+    require!(info.owner == &crate::ID, TrustRegistryError::PolicyMismatch);
+    let data = info.try_borrow_data()?;
+    require!(data.len() >= 8, TrustRegistryError::RegistryLayoutInvalid);
+    require!(
+        data[..8] == TrustRegistry::DISCRIMINATOR,
+        TrustRegistryError::RegistryLayoutInvalid
+    );
+    let reg = if data.len() >= 8 + TrustRegistry::INIT_SPACE {
+        TrustRegistry::try_deserialize(&mut &data[..])?
+    } else if data.len() >= 8 + TRUST_REGISTRY_LEGACY_INIT_SPACE {
+        // Legacy on-chain accounts keep the TrustRegistry discriminator (not TrustRegistryV535).
+        let mut padded = vec![0u8; 8 + TrustRegistry::INIT_SPACE];
+        padded[..data.len()].copy_from_slice(&data);
+        TrustRegistry::try_deserialize(&mut padded.as_slice())?
+    } else {
+        return err!(TrustRegistryError::RegistryLayoutInvalid);
+    };
+    require!(
+        reg.registry_domain == expected_domain,
+        TrustRegistryError::PolicyMismatch
+    );
+    Ok(reg)
+}
+
+fn save_compatible_registry(info: &AccountInfo, reg: &TrustRegistry) -> Result<()> {
+    let mut data = info.try_borrow_mut_data()?;
+    require!(
+        data[..8] == TrustRegistry::DISCRIMINATOR,
+        TrustRegistryError::RegistryLayoutInvalid
+    );
+    if data.len() >= 8 + TrustRegistry::INIT_SPACE {
+        reg.try_serialize(&mut &mut data[..])?;
+    } else if data.len() >= 8 + TRUST_REGISTRY_LEGACY_INIT_SPACE {
+        let mut tmp = vec![0u8; 8 + TrustRegistry::INIT_SPACE];
+        reg.try_serialize(&mut tmp.as_mut_slice())?;
+        let end = 8 + TRUST_REGISTRY_LEGACY_INIT_SPACE;
+        data[8..end].copy_from_slice(&tmp[8..end]);
+    } else {
+        return err!(TrustRegistryError::RegistryLayoutInvalid);
+    }
+    Ok(())
+}
+
+fn require_registry_governance(reg: &TrustRegistry, authority: Pubkey) -> Result<()> {
+    require_keys_eq!(
+        reg.governance_authority,
+        authority,
+        TrustRegistryError::UnauthorizedGovernanceTransfer
+    );
+    Ok(())
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, InitSpace, Default)]
@@ -507,29 +733,30 @@ pub struct InitializeRegistry<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(registry_domain: [u8; 32])]
 pub struct RegistryGovernanceMut<'info> {
     pub governance_authority: Signer<'info>,
     #[account(
         mut,
-        has_one = governance_authority,
-        seeds = [REGISTRY_SEED, registry.registry_domain.as_ref()],
-        bump = registry.bump
+        seeds = [REGISTRY_SEED, registry_domain.as_ref()],
+        bump,
     )]
-    pub registry: Account<'info, TrustRegistry>,
+    /// CHECK: legacy (463 B) or extended layout; loaded in handler.
+    pub registry: UncheckedAccount<'info>,
 }
 
 #[derive(Accounts)]
-#[instruction(policy_commitment: [u8; 32])]
+#[instruction(policy_commitment: [u8; 32], registry_domain: [u8; 32])]
 pub struct RegisterPolicy<'info> {
     #[account(mut)]
     pub governance_authority: Signer<'info>,
     #[account(
         mut,
-        has_one = governance_authority,
-        seeds = [REGISTRY_SEED, registry.registry_domain.as_ref()],
-        bump = registry.bump
+        seeds = [REGISTRY_SEED, registry_domain.as_ref()],
+        bump,
     )]
-    pub registry: Account<'info, TrustRegistry>,
+    /// CHECK: legacy or extended layout; governance verified in handler.
+    pub registry: UncheckedAccount<'info>,
     #[account(
         init,
         payer = governance_authority,
@@ -542,29 +769,31 @@ pub struct RegisterPolicy<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(registry_domain: [u8; 32])]
 pub struct SetPolicyActive<'info> {
     pub governance_authority: Signer<'info>,
     #[account(
-        has_one = governance_authority,
-        seeds = [REGISTRY_SEED, registry.registry_domain.as_ref()],
-        bump = registry.bump
+        seeds = [REGISTRY_SEED, registry_domain.as_ref()],
+        bump,
     )]
-    pub registry: Account<'info, TrustRegistry>,
+    /// CHECK: legacy or extended layout; governance verified in handler.
+    pub registry: UncheckedAccount<'info>,
     #[account(mut, has_one = registry)]
     pub policy: Account<'info, PolicyRecord>,
 }
 
 #[derive(Accounts)]
-#[instruction(commitment_digest: [u8; 32], sequence: u64)]
+#[instruction(commitment_digest: [u8; 32], registry_domain: [u8; 32], sequence: u64)]
 pub struct PublishCommitment<'info> {
     #[account(mut)]
     pub publisher: Signer<'info>,
     #[account(
         mut,
-        seeds = [REGISTRY_SEED, registry.registry_domain.as_ref()],
-        bump = registry.bump
+        seeds = [REGISTRY_SEED, registry_domain.as_ref()],
+        bump,
     )]
-    pub registry: Account<'info, TrustRegistry>,
+    /// CHECK: legacy or extended layout; loaded in handler.
+    pub registry: UncheckedAccount<'info>,
     #[account(
         seeds = [POLICY_SEED, registry.key().as_ref(), policy.policy_commitment.as_ref()],
         bump = policy.bump,
@@ -645,13 +874,15 @@ pub struct ExpireGovernanceNomination<'info> {
 }
 
 #[derive(Accounts)]
+#[instruction(registry_domain: [u8; 32])]
 pub struct RevokeCommitment<'info> {
     pub revoker: Signer<'info>,
     #[account(
-        seeds = [REGISTRY_SEED, registry.registry_domain.as_ref()],
-        bump = registry.bump
+        seeds = [REGISTRY_SEED, registry_domain.as_ref()],
+        bump,
     )]
-    pub registry: Account<'info, TrustRegistry>,
+    /// CHECK: legacy or extended layout; loaded in handler.
+    pub registry: UncheckedAccount<'info>,
     #[account(
         mut,
         seeds = [COMMITMENT_SEED, registry.key().as_ref(), commitment_state.commitment_digest.as_ref()],
@@ -664,8 +895,8 @@ pub struct RevokeCommitment<'info> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use anchor_lang::Discriminator;
     use anchor_lang::solana_program::hash::hash;
+    use anchor_lang::Discriminator;
 
     fn global_ix_disc(name: &str) -> [u8; 8] {
         let preimage = format!("global:{}", name);
@@ -688,7 +919,10 @@ mod tests {
     fn idl_discriminator_snapshot_v535() {
         assert_eq!(TrustRegistry::DISCRIMINATOR, account_disc("TrustRegistry"));
         assert_eq!(PolicyRecord::DISCRIMINATOR, account_disc("PolicyRecord"));
-        assert_eq!(CommitmentState::DISCRIMINATOR, account_disc("CommitmentState"));
+        assert_eq!(
+            CommitmentState::DISCRIMINATOR,
+            account_disc("CommitmentState")
+        );
     }
 
     #[test]
@@ -713,8 +947,54 @@ mod tests {
     #[test]
     fn registry_layout_space_constants() {
         assert_eq!(TRUST_REGISTRY_LEGACY_INIT_SPACE, 463);
-        assert_eq!(TrustRegistryV535::INIT_SPACE, TRUST_REGISTRY_LEGACY_INIT_SPACE);
-        assert_eq!(TrustRegistry::INIT_SPACE, TRUST_REGISTRY_LEGACY_INIT_SPACE + 56);
+        assert_eq!(
+            TrustRegistryV535::INIT_SPACE,
+            TRUST_REGISTRY_LEGACY_INIT_SPACE
+        );
+        assert_eq!(
+            TrustRegistry::INIT_SPACE,
+            TRUST_REGISTRY_LEGACY_INIT_SPACE + 56
+        );
+    }
+
+    #[test]
+    fn trust_registry_serialize_roundtrip() {
+        let reg = TrustRegistry {
+            governance_authority: Pubkey::new_unique(),
+            registry_domain: [3u8; 32],
+            sequence_epoch: 1,
+            bump: 1,
+            issuers: [AuthoritySlot::default(); MAX_AUTHORITY_SLOTS],
+            revokers: [AuthoritySlot::default(); MAX_AUTHORITY_SLOTS],
+            commitment_publishers: [AuthoritySlot::default(); MAX_AUTHORITY_SLOTS],
+            pending_governance: Pubkey::default(),
+            pending_transfer_seq: 0,
+            pending_expires_at_slot: 0,
+            governance_transfer_seq: 0,
+        };
+        let mut body = Vec::new();
+        reg.serialize(&mut body).unwrap();
+        assert!(body.len() <= TrustRegistry::INIT_SPACE);
+        let mut full = TrustRegistry::DISCRIMINATOR.to_vec();
+        full.extend_from_slice(&body);
+        let back = TrustRegistry::try_deserialize(&mut full.as_slice()).unwrap();
+        assert_eq!(back.registry_domain, reg.registry_domain);
+    }
+
+    fn compatible_registry_roundtrip_legacy_prefix() {
+        let legacy = TrustRegistryV535 {
+            governance_authority: Pubkey::new_unique(),
+            registry_domain: [9u8; 32],
+            sequence_epoch: 3,
+            bump: 255,
+            issuers: [AuthoritySlot::default(); MAX_AUTHORITY_SLOTS],
+            revokers: [AuthoritySlot::default(); MAX_AUTHORITY_SLOTS],
+            commitment_publishers: [AuthoritySlot::default(); MAX_AUTHORITY_SLOTS],
+        };
+        let full = trust_registry_from_v535(legacy);
+        assert_eq!(full.governance_transfer_seq, 0);
+        assert_eq!(full.pending_governance, Pubkey::default());
+        assert_eq!(full.registry_domain, [9u8; 32]);
     }
 
     #[test]
