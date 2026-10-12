@@ -367,7 +367,10 @@ export async function runLaunchpadStagingWalkthrough(config: StagingTargetConfig
               input.dispatchEvent(new Event("input", { bubbles: true }));
             }
           }, state.sandboxApiKey);
-          await page.getByRole("button", { name: "Sign in" }).click();
+          await page
+            .locator(".abx-launchpad-operational")
+            .getByRole("button", { name: "Sign in", exact: true })
+            .click();
           await page.getByText("Build your integration").waitFor({ state: "visible", timeout: 30_000 }).catch(() => undefined);
           const sandboxBadgeVisible = await page.getByText("sandbox", { exact: false }).first().isVisible().catch(() => false);
           steps.push(
