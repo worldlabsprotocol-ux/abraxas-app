@@ -77,6 +77,8 @@
     "test:protocol-537": "vitest run lib/solana/trustRegistry/governance",
     "preflight:trust-registry-migration-536": "tsx scripts/trust-registry-migration-preflight-536.ts",
     "evidence:trust-registry-governance-execution-537": "tsx scripts/trust-registry-governance-execution-evidence-537.ts",
+    "gate:trust-registry-governance-activation-538": "tsx scripts/trust-registry-governance-activation-gate-538.ts",
+    "test:protocol-538": "vitest run lib/solana/trustRegistry/governance/governanceActivationGate.test.ts lib/solana/trustRegistry/governance/observeDevnetTrustRegistryActivation.test.ts",
     "build:trust-registry-sbf": "bash solana/abraxas-eligibility-gate/scripts/build-trust-registry.sh",
     "evidence:continuous-authorization-532": "tsx scripts/continuous-authorization-evidence-532.ts",
     "example:continuous-relying-party-532": "tsx scripts/examples/continuous-relying-party-verify-532.ts",
