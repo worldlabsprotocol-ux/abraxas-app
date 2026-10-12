@@ -7,16 +7,33 @@ import { ABRAXAS_FONT_MONO, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
 
+type AuthorityDomain = {
+  id?: string;
+  label?: string;
+  intendedCustody?: string;
+  configuredVaultPda?: string | null;
+  threshold?: number | null;
+  memberCount?: number | null;
+  notes?: string[];
+};
+
 type CustodyStatusResponse = {
   schema?: string;
   liveControlsEnabled?: boolean;
   error?: string;
   detail?: string;
   gate?: {
+    schema?: string;
+    stage?: string;
+    ok?: boolean;
+    blockers?: string[];
+    checks?: string[];
+    authority_domains?: Record<string, AuthorityDomain>;
     activationReady?: boolean;
     blockedReasons?: string[];
     domains?: Record<string, { status?: string; detail?: string }>;
   };
+  observation?: { aligned?: boolean; registry_pda?: string };
   custody?: {
     envConfigured?: boolean;
     preflight?: { ok?: boolean; findings?: string[] };
@@ -76,27 +93,34 @@ export function InstitutionalGovernanceConsole() {
 
       {data?.gate && (
         <ContentCard title="Activation gate">
-          <p style={{ fontFamily: FONT, fontSize: "0.72rem", margin: "0 0 0.5rem" }}>
-            Migration readiness: {data.gate.activationReady ? "ready (preflight)" : "blocked or incomplete"}
+          <p style={{ fontFamily: MONO, fontSize: "0.62rem", margin: "0 0 0.5rem" }}>
+            stage: {data.gate.stage ?? "unknown"} · ok: {String(data.gate.ok ?? false)}
           </p>
-          {data.gate.blockedReasons?.length ? (
+          {(data.gate.blockers?.length ?? data.gate.blockedReasons?.length) ? (
             <ul style={{ fontFamily: FONT, fontSize: "0.72rem", paddingLeft: "1.1rem", margin: 0 }}>
-              {data.gate.blockedReasons.map((reason) => (
+              {(data.gate.blockers ?? data.gate.blockedReasons ?? []).map((reason) => (
                 <li key={reason}>{reason}</li>
               ))}
             </ul>
           ) : (
-            <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)" }}>No blocked reasons returned.</p>
+            <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)" }}>No blockers returned.</p>
           )}
-          {data.gate.domains && (
+          {data.gate.authority_domains && (
             <div style={{ display: "grid", gap: "0.45rem", marginTop: "0.75rem" }}>
-              {Object.entries(data.gate.domains).map(([key, domain]) => (
+              {Object.entries(data.gate.authority_domains).map(([key, domain]) => (
                 <div key={key} style={{ border: "1px solid var(--border)", borderRadius: 8, padding: "0.55rem 0.65rem" }}>
-                  <strong style={{ fontFamily: FONT, fontSize: "0.72rem" }}>{key.replace(/_/g, " ")}</strong>
+                  <strong style={{ fontFamily: FONT, fontSize: "0.72rem" }}>{domain.label ?? key.replace(/_/g, " ")}</strong>
                   <p style={{ fontFamily: FONT, fontSize: "0.68rem", margin: "0.25rem 0 0", color: "var(--text-secondary)" }}>
-                    {domain.status ?? "unknown"}
-                    {domain.detail ? ` — ${domain.detail}` : ""}
+                    Custody: {domain.intendedCustody?.replace(/_/g, " ") ?? "unknown"}
                   </p>
+                  <p style={{ fontFamily: MONO, fontSize: "0.58rem", margin: "0.2rem 0 0", wordBreak: "break-all" }}>
+                    Vault: {domain.configuredVaultPda ?? "unconfigured (not active)"}
+                  </p>
+                  {(domain.threshold != null || domain.memberCount != null) && (
+                    <p style={{ fontFamily: MONO, fontSize: "0.58rem", margin: "0.15rem 0 0" }}>
+                      Quorum: {domain.threshold ?? "—"}/{domain.memberCount ?? "—"}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>

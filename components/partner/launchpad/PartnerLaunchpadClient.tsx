@@ -60,6 +60,7 @@ import { PolicyProposalForm } from "@/components/partner/policyProposal/PolicyPr
 import { POLICY_PROPOSAL_NOTICE } from "@/lib/partner/policyProposal/contract";
 import { LaunchpadApplicationNav } from "@/components/partner/launchpad/LaunchpadApplicationNav";
 import { LaunchpadOperationalInspector } from "@/components/partner/launchpad/LaunchpadOperationalInspector";
+import { LaunchpadActivityEvidenceTable } from "@/components/partner/launchpad/LaunchpadActivityEvidenceTable";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -626,6 +627,13 @@ export function PartnerLaunchpadClient({
           productionActivated={productionActivated}
           onNavigate={(s) => navigateToStage(mapLegacyLaunchpadStep(s) as WizardStep)}
         />
+      )}
+
+      {activeApp && authenticated && activity.length > 0 && (
+        <ContentCard title="Integration activity">
+          <p style={{ ...bodyText, marginTop: 0 }}>Select a row to load timeline and metadata in the diagnostics rail.</p>
+          <LaunchpadActivityEvidenceTable events={activity} />
+        </ContentCard>
       )}
 
       {activeApp && journey && !journeyEvidence && (

@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 const STEPS = [
   { id: "policy", label: "Policy", href: "/developers/integration-studio" },
   { id: "sandbox", label: "Sandbox", href: "/developers/integration-studio#sandbox" },
+  { id: "configuration", label: "Configuration", href: "/developers/integration-studio#configuration" },
   { id: "request", label: "Request", href: "/developers/integration-studio#request" },
   { id: "receipt", label: "Receipt", href: "/verify?mode=receipt" },
   { id: "verify", label: "Verification", href: "/verify" },
@@ -16,6 +17,7 @@ const STEPS = [
 
 function activeStepFromHash(hash: string): string {
   if (hash === "#sandbox") return "sandbox";
+  if (hash === "#configuration") return "configuration";
   if (hash === "#request") return "request";
   return "policy";
 }
