@@ -359,14 +359,10 @@ export async function runLaunchpadStagingWalkthrough(config: StagingTargetConfig
         );
 
         if (state.sandboxApiKey) {
-          await page.evaluate((key) => {
-            const input = document.querySelector<HTMLInputElement>('input[aria-label="Sandbox API key"]');
-            if (input) {
-              const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
-              nativeInputValueSetter?.call(input, key);
-              input.dispatchEvent(new Event("input", { bubbles: true }));
-            }
-          }, state.sandboxApiKey);
+          const sandboxKeyInput = page
+            .locator(".abx-launchpad-operational")
+            .getByLabel("Sandbox API key");
+          await sandboxKeyInput.fill(state.sandboxApiKey);
           await page
             .locator(".abx-launchpad-operational")
             .getByRole("button", { name: "Sign in", exact: true })
