@@ -156,10 +156,21 @@ export function demoIdentityHasForbiddenMaterial(payload: unknown): boolean {
   return FORBIDDEN_IDENTITY_NEEDLES.some((needle) => blob.includes(needle.toLowerCase()));
 }
 
+/** Boot-time DEMO gate applies only on deployments configured for the public DEMO origin. */
+export function shouldAssertDemoRuntimeAtBoot(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  if (!isPublicDemoRuntime(env)) return false;
+  const configuredOrigin = (env.NEXT_PUBLIC_APP_URL?.trim() || env.ABRAXAS_ISSUER_URL?.trim() || "")
+    .replace(/\/$/, "");
+  if (!configuredOrigin) return false;
+  return isConfiguredDemoOrigin(configuredOrigin);
+}
+
 export function assertDemoRuntimeBoot(
   env: Record<string, string | undefined> = process.env,
 ): void {
-  if (!isPublicDemoRuntime(env)) return;
+  if (!shouldAssertDemoRuntimeAtBoot(env)) return;
   const evaluation = evaluateDemoRuntime({ env });
   if (evaluation.ok) return;
   throw new DemoRuntimeUnavailableError(evaluation.fail_codes);
