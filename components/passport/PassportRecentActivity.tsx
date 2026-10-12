@@ -172,7 +172,7 @@ export function PassportRecentActivity({
                   fontSize: "0.75rem",
                   fontWeight: 800,
                   color: step.complete ? "#07110f" : "var(--text-secondary)",
-                  background: step.complete ? "#5EEAD4" : "rgba(255,255,255,0.08)",
+                  background: step.complete ? "#4CBB92" : "rgba(255,255,255,0.08)",
                 }}
               >
                 {step.complete ? "✓" : index + 1}
@@ -189,7 +189,7 @@ export function PassportRecentActivity({
                 fontFamily: FONT,
                 fontSize: "0.72rem",
                 fontWeight: 700,
-                color: step.complete ? "#5EEAD4" : step.current ? "#FBBF24" : "var(--text-muted)",
+                color: step.complete ? "#4CBB92" : step.current ? "#FBBF24" : "var(--text-muted)",
                 whiteSpace: "nowrap",
               }}>
                 {step.status}

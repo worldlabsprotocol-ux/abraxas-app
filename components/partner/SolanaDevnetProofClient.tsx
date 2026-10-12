@@ -69,7 +69,7 @@ export function SolanaDevnetProofClient({ signature }: { signature: string }) {
           marginTop: "1.25rem", padding: "1rem", borderRadius: 12,
           border: "1px solid rgba(94, 234, 212, 0.5)", background: "rgba(20, 184, 166, 0.08)",
         }}>
-          <p style={{ ...row, color: "#5EEAD4", fontSize: "1.05rem" }}><strong>✓ Verified institutional devnet transaction</strong></p>
+          <p style={{ ...row, color: "#4CBB92", fontSize: "1.05rem" }}><strong>✓ Verified institutional devnet transaction</strong></p>
           <p style={row}>Authorization consumed: yes · Current access: <strong>{proof.currently_valid ? "valid" : "expired"}</strong></p>
           {proof.current_deployment === "matched" && <p style={row}>Current program binaries and configuration: reviewed match</p>}
           <p style={row}>Finalized in slot {proof.slot} · Valid until {new Date(proof.valid_until * 1000).toLocaleString()}</p>

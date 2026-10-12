@@ -35,8 +35,8 @@ function HomeContent() {
         }}
       >
         <InstitutionalHomeHero />
-        <ProtocolIdentityExhibit />
         <TrustModelExhibit />
+        <ProtocolIdentityExhibit />
         <LiveProtocolEvidence />
         <CapabilityMatrix />
         <InstitutionalHomeClose />

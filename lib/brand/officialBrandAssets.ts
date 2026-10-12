@@ -22,5 +22,5 @@ export const OFFICIAL_BRAND_ASSETS = {
   },
 } as const;
 
-/** Restrained primary accent from official protocol imagery (cyan/teal glow). */
-export const ABRAXAS_BRAND_GREEN = "#5EEAD4";
+/** Canonical UI accent — matches verification green (#4CBB92). PNG assets may contain other hues. */
+export const ABRAXAS_BRAND_GREEN = "#4CBB92";

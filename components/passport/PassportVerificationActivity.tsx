@@ -30,7 +30,7 @@ import {
 const FONT = ABRAXAS_FONT_SANS;
 
 const STATE_INK: Record<string, string> = {
-  approved: "#5EEAD4",
+  approved: "#4CBB92",
   sandbox_only: "#818CF8",
   expired: "#FBBF24",
   revoked: "#F59E0B",
@@ -240,7 +240,7 @@ function ActivityCard({
         Shared result: {item.shared_result_category}
       </p>
       <details style={{ marginTop: "0.5rem" }}>
-        <summary style={{ fontFamily: FONT, fontSize: "0.76rem", fontWeight: 700, cursor: "pointer", color: "#5EEAD4" }}>
+        <summary style={{ fontFamily: FONT, fontSize: "0.76rem", fontWeight: 700, cursor: "pointer", color: "#4CBB92" }}>
           What was shared and kept private
         </summary>
         <div style={{ paddingTop: "0.25rem" }}>
@@ -277,7 +277,7 @@ function ActivityCard({
         <p style={{ margin: "0.45rem 0 0" }}>
           <a
             href={item.partner_entry_href}
-            style={{ fontFamily: FONT, fontSize: "0.76rem", color: "#5EEAD4", fontWeight: 650 }}
+            style={{ fontFamily: FONT, fontSize: "0.76rem", color: "#4CBB92", fontWeight: 650 }}
           >
             Partner entry point
           </a>
@@ -414,7 +414,7 @@ export function PassportVerificationActivity() {
                   borderRadius: 999,
                   border: connectionFilter === filter ? "1px solid rgba(94,234,212,0.55)" : "1px solid var(--border)",
                   background: connectionFilter === filter ? "rgba(94,234,212,0.1)" : "transparent",
-                  color: connectionFilter === filter ? "#5EEAD4" : "var(--text-secondary)",
+                  color: connectionFilter === filter ? "#4CBB92" : "var(--text-secondary)",
                   fontFamily: FONT,
                   fontSize: "0.72rem",
                   fontWeight: 700,
@@ -544,11 +544,11 @@ export function PassportVerificationActivity() {
       </p>
 
       <p style={{ fontFamily: FONT, fontSize: "0.78rem", margin: "0.75rem 0 0" }}>
-        <Link href={data?.passport_href ?? "/passport"} style={{ color: "#5EEAD4", fontWeight: 650, textDecoration: "none" }}>
+        <Link href={data?.passport_href ?? "/passport"} style={{ color: "#4CBB92", fontWeight: 650, textDecoration: "none" }}>
           Passport
         </Link>
         {" · "}
-        <Link href={data?.explanation_href ?? "/docs/why-verification"} style={{ color: "#5EEAD4", fontWeight: 650, textDecoration: "none" }}>
+        <Link href={data?.explanation_href ?? "/docs/why-verification"} style={{ color: "#4CBB92", fontWeight: 650, textDecoration: "none" }}>
           Why verification
         </Link>
       </p>
