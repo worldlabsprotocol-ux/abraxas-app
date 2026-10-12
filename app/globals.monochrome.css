@@ -1,0 +1,149 @@
+/* Abraxas monochrome design system — editorial black canvas, precision engineering surfaces */
+
+@import url("./globals.institutional-v2.css");
+
+[data-theme="dark"] {
+  --bg: #050505;
+  --bg-secondary: #101010;
+  --surface: #101010;
+  --surface-raised: #171717;
+  --surface-inset: #101010;
+  --surface-glass: rgba(23, 23, 23, 0.92);
+  --border: #292929;
+  --border-strong: rgba(245, 245, 243, 0.22);
+  --text-primary: #F5F5F3;
+  --text-secondary: #A3A3A3;
+  --text-muted: #737373;
+  --text-caption: #737373;
+  --accent: #C4A962;
+  --accent-bright: #F5F5F3;
+  --accent-faint: rgba(196, 169, 98, 0.08);
+  --accent-border: rgba(245, 245, 243, 0.18);
+  --accent-verify: #4CBB92;
+  --accent-verify-faint: rgba(76, 187, 146, 0.12);
+  --nav-bg: rgba(5, 5, 5, 0.94);
+  --nav-bg-solid: #050505;
+  --shadow-soft: none;
+  --shadow-card: none;
+  --shadow-glow: none;
+  --hero-accent: transparent;
+  --hero-glow: transparent;
+  --overlay: rgba(5, 5, 5, 0.88);
+  --shell-gradient: #050505;
+  --abx-card-bg: #171717;
+  --abx-card-bg-end: #171717;
+  --abx-card-border: #292929;
+  --abx-card-shadow: none;
+  --btn-primary-bg: #F5F5F3;
+  --btn-primary-text: #050505;
+  --gradient-text: none;
+
+  --abx-graphite: #050505;
+  --abx-charcoal: #101010;
+  --abx-surface-elevated: #171717;
+  --abx-gold: #C4A962;
+  --abx-verify-green: #4CBB92;
+  --abx-evidence-blue: #A3A3A3;
+  --abx-divider: #202020;
+}
+
+.abx-institutional-shell,
+.abx-v2-shell,
+.abx-command-center {
+  background: var(--bg) !important;
+  background-image: none !important;
+}
+
+.abx-atmospheric-bg {
+  display: none !important;
+}
+
+.abx-v2-hero__demo {
+  box-shadow: none;
+  border-radius: 2px;
+  background: var(--abx-charcoal);
+  border-color: var(--border);
+  position: relative;
+}
+
+.abx-v2-hero__demo::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--abx-divider) 1px, transparent 1px),
+    linear-gradient(90deg, var(--abx-divider) 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.35;
+  border-radius: inherit;
+}
+
+.abx-v2-hero__title {
+  font-size: clamp(2.5rem, 5.8vw, 4rem);
+  max-width: 12ch;
+  font-weight: 650;
+}
+
+.abx-protocol-demo__mono {
+  color: var(--text-secondary);
+  border-radius: 2px;
+}
+
+.abx-protocol-demo__step:focus-visible,
+.abx-protocol-demo__replay:focus-visible,
+.abx-receipt-inspector__revoke:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 2px;
+}
+
+.abx-receipt-inspector__sim {
+  color: var(--text-secondary);
+}
+
+.abx-receipt-inspector__revoke {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-primary);
+  border-radius: 2px;
+}
+
+.abx-trust-exhibit__node--active {
+  border-color: var(--text-primary);
+  background: rgba(245, 245, 243, 0.04);
+}
+
+.abx-trust-exhibit__node-index {
+  color: var(--text-secondary);
+}
+
+.abx-trust-exhibit__node--active .abx-trust-exhibit__node-index {
+  color: var(--abx-gold);
+}
+
+.abx-capability-matrix__card,
+.abx-live-evidence__item {
+  box-shadow: none !important;
+  background: var(--abx-charcoal) !important;
+  border-color: var(--border) !important;
+}
+
+.abx-studio-workspace,
+.abx-launchpad-operational,
+.abx-passport-workspace {
+  border-color: var(--border);
+}
+
+.abx-launchpad-operational {
+  background: var(--bg);
+}
+
+.abx-studio-workspace__nav,
+.abx-launchpad-operational__nav {
+  border-color: var(--abx-divider);
+}
+
+.rd-nav-links a[data-active="true"] {
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--text-primary);
+}

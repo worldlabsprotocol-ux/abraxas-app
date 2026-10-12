@@ -1,55 +1,42 @@
 // FILE: lib/design/institutionalTheme.ts
-// Gold/violet institutional palette — matches boot screen, flows through shell + CTAs.
+// Monochrome institutional palette — mineral gold as identity accent only.
 
 import type { CSSProperties } from "react";
+import { MONO, MONO_SEMANTIC } from "@/lib/design/monochromeSystem";
 
-/** Primary brand accent — institutional gold */
-export const INSTITUTIONAL_GOLD = "#E8C547";
-export const INSTITUTIONAL_GOLD_DEEP = "#C9A227";
-export const INSTITUTIONAL_GOLD_PALE = "#F5E6A8";
+export const INSTITUTIONAL_GOLD = MONO.mineralGold;
+export const INSTITUTIONAL_GOLD_DEEP = "#A8893F";
+export const INSTITUTIONAL_GOLD_PALE = "#E8E0C8";
 
-/** Secondary accent — protocol violet */
-export const INSTITUTIONAL_VIOLET = "#A78BFA";
-export const INSTITUTIONAL_VIOLET_DEEP = "#8B5CF6";
+export const INSTITUTIONAL_VIOLET = MONO.textSecondary;
+export const INSTITUTIONAL_VIOLET_DEEP = MONO.textSecondary;
 
-/** Verification / attestation — keep green for trust-state semantics */
-export const INSTITUTIONAL_VERIFY = "#10B981";
+export const INSTITUTIONAL_VERIFY = MONO_SEMANTIC.verified;
 
-/** Default marketing accent (prefer CSS var(--accent) in new code) */
-export const INSTITUTIONAL_ACCENT = INSTITUTIONAL_GOLD;
+export const INSTITUTIONAL_ACCENT = MONO.mineralGold;
 
-export const INSTITUTIONAL_SHELL_BG =
-  "linear-gradient(165deg, #04050A 0%, #0A0814 45%, #050508 100%)";
+export const INSTITUTIONAL_SHELL_BG = MONO.bgPrimary;
 
-export const INSTITUTIONAL_GRADIENT_TEXT =
-  `linear-gradient(90deg, ${INSTITUTIONAL_GOLD} 0%, ${INSTITUTIONAL_GOLD_PALE} 50%, ${INSTITUTIONAL_VIOLET} 100%)`;
+export const INSTITUTIONAL_GRADIENT_TEXT = "none";
 
-export const INSTITUTIONAL_PRIMARY_BTN_BG =
-  `linear-gradient(135deg, ${INSTITUTIONAL_GOLD} 0%, ${INSTITUTIONAL_GOLD_DEEP} 100%)`;
-
-export const INSTITUTIONAL_PRIMARY_BTN_TEXT = "#0A0814";
+export const INSTITUTIONAL_PRIMARY_BTN_BG = MONO.actionPrimaryBg;
+export const INSTITUTIONAL_PRIMARY_BTN_TEXT = MONO.actionPrimaryText;
 
 export const INSTITUTIONAL_GLASS = {
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(255,255,255,0.03)",
-  backdropFilter: "blur(8px)",
+  border: "1px solid #292929",
+  background: MONO.bgSecondary,
+  backdropFilter: "none",
 } as const;
 
-/** High-contrast text on institutional dark backgrounds (WCAG AA+) */
 export const TEXT_ON_DARK = {
-  primary: "#FAFAFA",
-  secondary: "#D4D4D8",
-  caption: "#A1A1AA",
-  eyebrow: "#C4B5FD",
-  gold: "#F5E6A8",
-  violet: "#C4B5FD",
+  primary: MONO.textPrimary,
+  secondary: MONO.textSecondary,
+  caption: MONO.textSecondary,
+  eyebrow: MONO.textSecondary,
+  gold: MONO.mineralGold,
+  violet: MONO.textSecondary,
 } as const;
 
-/** Inline style helper for gradient headline spans — includes solid fallback color */
 export const gradientTextStyle: CSSProperties = {
-  color: INSTITUTIONAL_GOLD_PALE,
-  background: INSTITUTIONAL_GRADIENT_TEXT,
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
+  color: MONO.textPrimary,
 };
-

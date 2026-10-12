@@ -59,7 +59,7 @@ export function RedesignNav() {
         display: "flex",
         alignItems: "center",
         padding: "0 clamp(0.9rem, 2.5vw, 1.9rem)",
-        height: "clamp(60px, 8vw, 72px)",
+        height: "clamp(52px, 7vw, 60px)",
         gap: "0.85rem",
       }}
     >
