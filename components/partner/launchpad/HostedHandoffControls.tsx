@@ -221,7 +221,7 @@ unset ABRAXAS_SANDBOX_PARTNER_API_KEY` : "";
       )}
       {handoffRef && (
         <div style={{ margin: "0.7rem 0" }}>
-          <p role="status" style={{ fontFamily: FONT, fontSize: "0.78rem", lineHeight: 1.55, color: status === "completed" || status === "consumed" ? "#5EEAD4" : "var(--text-secondary)", margin: "0 0 0.45rem" }}>
+          <p role="status" style={{ fontFamily: FONT, fontSize: "0.78rem", lineHeight: 1.55, color: status === "completed" || status === "consumed" ? "#4CBB92" : "var(--text-secondary)", margin: "0 0 0.45rem" }}>
             {status === "completed" || status === "consumed"
               ? "Verification complete. This handoff is ready for the Ubuntu devnet proof command."
               : status === "expired"
