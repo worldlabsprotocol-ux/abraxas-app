@@ -1,116 +1,56 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Cinematic public homepage — continuous thesis scroll narrative.
+// Institutional public homepage — product architecture first, evidence-backed surfaces.
 
 import { WalletContextProvider } from "@/components/WalletContextProvider";
-import {
-  AbraxasTransactionSection,
-  CinematicHero,
-  DeveloperStorySection,
-  NarrativeSectionBridge,
-  PassportHeroObject,
-  ProductProofSection,
-  ReuseOrbitSection,
-  ScrollDisclosureStory,
-} from "@/components/home/cinematic/thesis";
 import { HomeAudiencePanels } from "@/components/home/HomeAudiencePanels";
-import { HomeBuyerContextSection } from "@/components/home/HomeBuyerContextSection";
 import { HomeGoodTroubleIntegration } from "@/components/home/HomeGoodTroubleIntegration";
+import { HomeLiveStats } from "@/components/home/HomeLiveStats";
+import { HomeProductEvidence } from "@/components/home/HomeProductEvidence";
 import { HomeTrustClose } from "@/components/home/HomeTrustClose";
 import { HomeTwoAppReferenceProof } from "@/components/home/HomeTwoAppReferenceProof";
+import { HomeIntegrationCatalog } from "@/components/institutional/HomeIntegrationCatalog";
+import { HomeJourneyPaths } from "@/components/institutional/HomeJourneyPaths";
+import { HomeOperationalReadiness } from "@/components/institutional/HomeOperationalReadiness";
+import { InstitutionalHomeHero } from "@/components/institutional/InstitutionalHomeHero";
+import { TrustBoundaryPanel } from "@/components/institutional/TrustBoundaryPanel";
 import { VerifyOnceThesisDiagram } from "@/components/product";
-import { KineticMarquee } from "@/lib/motion/cinematic";
-import {
-  CINEMATIC_THESIS_LINE_1,
-  CINEMATIC_THESIS_LINE_2,
-} from "@/lib/home/cinematicHomeCopy";
+import { ABX_SPACING, abxAccentCssVars } from "@/lib/design/abraxasDesignSystem";
 import { abxMotionCssVars } from "@/lib/design/abraxasMotion";
-import { AmbientGlow } from "./AmbientGlow";
 import { RedesignNav } from "./RedesignNav";
 import { RedesignFooter } from "./RedesignFooter";
 
-const MAXW: React.CSSProperties = {
-  maxWidth: 1080,
+const SHELL: React.CSSProperties = {
+  maxWidth: 1120,
   margin: "0 auto",
-  padding: "0 clamp(1.25rem, 4vw, 2rem)",
+  padding: `0 ${ABX_SPACING.pagePadding}`,
+  width: "100%",
 };
 
 function HomeContent() {
   return (
-    <main
-      className="abx-cinematic-home"
-      style={{ position: "relative", zIndex: 1, paddingBottom: "3.5rem", textAlign: "center" }}
-    >
-      <KineticMarquee text={`${CINEMATIC_THESIS_LINE_1} ${CINEMATIC_THESIS_LINE_2}`} />
-
+    <main className="abx-institutional-home" style={{ position: "relative", zIndex: 1, paddingBottom: "3.5rem" }}>
       <div
-        className="abx-command-shell abx-cinematic-home__shell"
+        className="abx-institutional-home__shell"
         style={{
-          ...MAXW,
+          ...SHELL,
           display: "flex",
           flexDirection: "column",
-          gap: "var(--abx-cinematic-gap, clamp(3rem, 8vw, 5rem))",
-          alignItems: "center",
-          width: "100%",
+          gap: ABX_SPACING.sectionGap,
         }}
       >
-        <section>
-          <CinematicHero />
-        </section>
-
-        <section>
-          <HomeBuyerContextSection />
-        </section>
-
-        <section>
-          <HomeTwoAppReferenceProof />
-        </section>
-
-        <section>
-          <ScrollDisclosureStory />
-        </section>
-
-        <section>
-          <AbraxasTransactionSection />
-        </section>
-
-        <section>
-          <ProductProofSection />
-        </section>
-
-        <NarrativeSectionBridge label="Narrow disclosure proof" />
-
-        <section>
-          <HomeGoodTroubleIntegration />
-        </section>
-
-        <NarrativeSectionBridge label="How it works" />
-
-        <section>
-          <VerifyOnceThesisDiagram />
-        </section>
-
-        <section>
-          <ReuseOrbitSection />
-        </section>
-
-        <section>
-          <DeveloperStorySection />
-        </section>
-
-        <NarrativeSectionBridge label="Holder experience" />
-
-        <section>
-          <PassportHeroObject />
-        </section>
-
-        <section>
-          <HomeAudiencePanels />
-        </section>
-
-        <section>
-          <HomeTrustClose />
-        </section>
+        <InstitutionalHomeHero />
+        <TrustBoundaryPanel />
+        <HomeOperationalReadiness />
+        <HomeJourneyPaths />
+        <HomeIntegrationCatalog />
+        <HomeProductEvidence />
+        <VerifyOnceThesisDiagram />
+        <HomeTwoAppReferenceProof />
+        <HomeGoodTroubleIntegration />
+        <HomeLiveStats />
+        <HomeAudiencePanels />
+        <HomeTrustClose />
       </div>
     </main>
   );
@@ -121,11 +61,10 @@ export function RedesignHome() {
     <WalletContextProvider>
       <div
         data-theme="dark"
-        data-motion-tier="cinematic"
-        className="abx-institutional-shell abx-command-center abx-cinematic-shell"
-        style={abxMotionCssVars()}
+        data-motion-tier="institutional"
+        className="abx-institutional-shell abx-command-center"
+        style={{ ...abxMotionCssVars(), ...abxAccentCssVars("neutral") }}
       >
-        <AmbientGlow />
         <RedesignNav />
         <HomeContent />
         <RedesignFooter />

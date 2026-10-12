@@ -4,9 +4,9 @@ import { RedesignPageLoading } from "@/components/redesign/RedesignPageLoading";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata = pageMetadata({
-  title: "Abraxas | Reusable verification for multi-app platforms",
+  title: "Abraxas | Independent trust & eligibility infrastructure",
   description:
-    "Stop re-verifying the same customer across every app. Keep your KYC provider — Abraxas turns trusted verification into reusable, application-specific answers.",
+    "Policy-specific authorization without shared identity databases. Signed decision receipts, independent verification, and reusable holder evidence.",
   path: "/",
 });
 
