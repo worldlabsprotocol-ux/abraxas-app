@@ -45,9 +45,9 @@ export function ProtocolReceiptDemo() {
   const fields = useMemo(
     () => [
       { label: "Policy identifier", value: POLICY_ID, mono: true },
-      { label: "Assurance level", value: "L2 — document-backed age" },
+      { label: "Assurance level", value: "L2, document-backed age" },
       { label: "Result", value: outcome },
-      { label: "Expiration", value: revoked ? "—" : "2026-11-01T00:00:00Z" },
+      { label: "Expiration", value: revoked ? "N/A" : "2026-11-01T00:00:00Z" },
       { label: "Issuer", value: ISSUER, mono: true },
       { label: "Signature validity", value: "Valid (Ed25519)" },
       {

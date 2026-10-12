@@ -23,7 +23,7 @@ export function CapabilityMatrix() {
         Capability matrix
       </h2>
       <p className="abx-v2-section-lead">
-        States reflect implemented surfaces in this deployment — not roadmap fiction or customer counts.
+        States reflect implemented surfaces in this deployment. not roadmap fiction or customer counts.
       </p>
 
       <div className="abx-cap-matrix__wrap" role="region" aria-label="Capability matrix table">
@@ -54,7 +54,7 @@ export function CapabilityMatrix() {
                   Documentation
                 </Link>
               ) : (
-                "—"
+                "N/A"
               )}
             </span>
           </div>

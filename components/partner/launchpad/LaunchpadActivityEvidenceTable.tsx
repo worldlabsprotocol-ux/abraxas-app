@@ -16,7 +16,7 @@ export function LaunchpadActivityEvidenceTable({
   if (!events.length) {
     return (
       <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: 0 }}>
-        No integration activity recorded yet — not the same as telemetry unavailable.
+        No integration activity recorded yet. This is not the same as telemetry unavailable.
       </p>
     );
   }
@@ -51,8 +51,8 @@ export function LaunchpadActivityEvidenceTable({
                 }}
               >
                 <td>{event.event_type.replace(/_/g, " ")}</td>
-                <td style={{ fontFamily: MONO, fontSize: "0.62rem" }}>{event.public_code ?? "—"}</td>
-                <td style={{ fontFamily: MONO, fontSize: "0.62rem" }}>{event.created_at ?? "—"}</td>
+                <td style={{ fontFamily: MONO, fontSize: "0.62rem" }}>{event.public_code ?? "N/A"}</td>
+                <td style={{ fontFamily: MONO, fontSize: "0.62rem" }}>{event.created_at ?? "N/A"}</td>
               </tr>
             );
           })}

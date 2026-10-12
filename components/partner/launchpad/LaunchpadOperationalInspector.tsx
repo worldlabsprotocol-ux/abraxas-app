@@ -190,7 +190,7 @@ export function LaunchpadOperationalInspector({
         <h3 style={{ fontFamily: FONT, fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 0.35rem" }}>
           Production review
         </h3>
-        <p style={{ fontFamily: MONO, fontSize: "0.62rem", margin: 0 }}>{productionStatus ?? "—"}</p>
+        <p style={{ fontFamily: MONO, fontSize: "0.62rem", margin: 0 }}>{productionStatus ?? "N/A"}</p>
       </section>
       <section style={{ marginBottom: "0.85rem" }}>
         <h3 style={{ fontFamily: FONT, fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 0.35rem" }}>

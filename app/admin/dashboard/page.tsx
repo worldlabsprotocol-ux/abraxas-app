@@ -1,6 +1,6 @@
 "use client";
 // FILE: app/admin/dashboard/page.tsx
-// Operator attention — restrained queue discovery, not an executive dashboard.
+// Operator attention. restrained queue discovery, not an executive dashboard.
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +56,7 @@ export default function AdminDashboardPage() {
       <PageHeader
         eyebrow="Admin · Operations"
         title="Needs attention"
-        subtitle="Pending operator work across authoritative queues. Unavailable sources are shown separately — never as zero."
+        subtitle="Pending operator work across authoritative queues. Unavailable sources are shown separately, never as zero."
       />
 
       <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", flexWrap: "wrap", alignItems: "center" }}>
@@ -98,7 +98,7 @@ export default function AdminDashboardPage() {
           ) : (
             <OperationalEmptyState
               title="No pending operator work detected"
-              body="All monitored queues report zero items needing action. This reflects backend counts only — unavailable sources are listed below if any."
+              body="All monitored queues report zero items needing action. This reflects backend counts only. Unavailable sources are listed below if any."
             />
           )}
 
@@ -106,7 +106,7 @@ export default function AdminDashboardPage() {
             <div style={{ marginTop: "1rem" }}>
               <ContentCard title="Unavailable sources">
                 <p style={{ ...mutedStyle, margin: "0 0 0.75rem" }}>
-                  These queues could not be loaded. Counts are unknown — not zero.
+                  These queues could not be loaded. Counts are unknown, not zero.
                 </p>
                 <div style={{ display: "grid", gap: "0.5rem" }}>
                   {unavailable.map(source => (

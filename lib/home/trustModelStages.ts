@@ -23,7 +23,7 @@ export const TRUST_MODEL_STAGES: TrustModelStage[] = [
     id: "evaluate",
     index: "02",
     title: "Policy evaluation",
-    summary: "Abraxas evaluates the live request against partner policy — not a static credential dump.",
+    summary: "Abraxas evaluates the live request against partner policy, not a static credential dump.",
     boundary: "Evaluation boundary",
     detail:
       "The engine checks claim freshness, issuer trust, assurance level, and binding rules configured for the application environment.",

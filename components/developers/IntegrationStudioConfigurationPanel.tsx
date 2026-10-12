@@ -126,7 +126,7 @@ export function IntegrationStudioConfigurationPanel({
               {readiness.checks.map((check) => (
                 <li key={check.id}>
                   {check.label}: {check.status.replace(/_/g, " ")}
-                  {check.detail ? ` — ${check.detail}` : ""}
+                  {check.detail ? `. ${check.detail}` : ""}
                 </li>
               ))}
             </ul>

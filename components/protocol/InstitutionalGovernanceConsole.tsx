@@ -76,7 +76,7 @@ export function InstitutionalGovernanceConsole() {
     <div className="abx-governance-console">
       <ContentCard title="Institutional governance · read-only">
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.6, marginTop: 0 }}>
-          Sources Solana devnet observation and documented Squads custody preflight. Live on-chain controls are disabled in this console — no simulated approvals.
+          Sources Solana devnet observation and documented Squads custody preflight. Live on-chain controls are disabled in this console. No simulated approvals.
         </p>
         {loading && <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)" }}>Loading custody and governance state…</p>}
         {error && !loading && (
@@ -118,7 +118,7 @@ export function InstitutionalGovernanceConsole() {
                   </p>
                   {(domain.threshold != null || domain.memberCount != null) && (
                     <p style={{ fontFamily: MONO, fontSize: "0.58rem", margin: "0.15rem 0 0" }}>
-                      Quorum: {domain.threshold ?? "—"}/{domain.memberCount ?? "—"}
+                      Quorum: {domain.threshold ?? "N/A"}/{domain.memberCount ?? "N/A"}
                     </p>
                   )}
                 </div>
@@ -140,7 +140,7 @@ export function InstitutionalGovernanceConsole() {
                 {data.custody.protocolUpgradeMultisig?.address ?? "unconfigured"}
               </p>
               <p style={{ fontFamily: MONO, fontSize: "0.6rem", color: "var(--text-muted)", margin: "0.15rem 0 0" }}>
-                Vault PDA: {data.custody.protocolUpgradeMultisig?.derivedVaultPda ?? "—"}
+                Vault PDA: {data.custody.protocolUpgradeMultisig?.derivedVaultPda ?? "N/A"}
               </p>
             </div>
             <div>
@@ -149,7 +149,7 @@ export function InstitutionalGovernanceConsole() {
                 {data.custody.registryAdministrationMultisig?.address ?? "unconfigured"}
               </p>
               <p style={{ fontFamily: MONO, fontSize: "0.6rem", color: "var(--text-muted)", margin: "0.15rem 0 0" }}>
-                Vault PDA: {data.custody.registryAdministrationMultisig?.derivedVaultPda ?? "—"}
+                Vault PDA: {data.custody.registryAdministrationMultisig?.derivedVaultPda ?? "N/A"}
               </p>
             </div>
           </div>

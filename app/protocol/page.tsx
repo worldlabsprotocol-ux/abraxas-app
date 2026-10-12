@@ -4,8 +4,8 @@ import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata = pageMetadata({
-  title: "Protocol — Abraxas trust infrastructure",
-  description: "Policy evaluation, signed receipts, independent verification, and revocation — without shared identity databases.",
+  title: "Protocol: Abraxas trust infrastructure",
+  description: "Policy evaluation, signed receipts, independent verification, and revocation without shared identity databases.",
   path: "/protocol",
 });
 
@@ -20,16 +20,16 @@ export default function ProtocolPage() {
       <ContentCard title="Core protocol surfaces">
         <ul>
           <li>
-            <Link href="/docs/partner-flow">Partner Flow</Link> — hosted eligibility requests and holder consent
+            <Link href="/docs/partner-flow">Partner Flow</Link>: hosted eligibility requests and holder consent
           </li>
           <li>
-            <Link href="/verify">Receipt verification</Link> — independent signature and authorization checks
+            <Link href="/verify">Receipt verification</Link>: independent signature and authorization checks
           </li>
           <li>
-            <Link href="/api/trust/registry">Trust registry API</Link> — issuers and credential schemas
+            <Link href="/api/trust/registry">Trust registry API</Link>: issuers and credential schemas
           </li>
           <li>
-            <Link href="/proofs/solana-devnet">Solana devnet evidence</Link> — labeled devnet transaction proofs
+            <Link href="/proofs/solana-devnet">Solana devnet evidence</Link>: labeled devnet transaction proofs
           </li>
         </ul>
       </ContentCard>

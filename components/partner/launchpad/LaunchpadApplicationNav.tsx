@@ -1,6 +1,7 @@
 "use client";
 
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
+import Link from "next/link";
 import { EnvironmentBadge } from "@/components/product/EnvironmentBadge";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -51,6 +52,13 @@ export function LaunchpadApplicationNav({
           );
         })}
       </ul>
+      {activeAppId && (
+        <p style={{ fontFamily: FONT, fontSize: "0.65rem", marginTop: "0.65rem" }}>
+          <Link href={`/developers/integration-studio?app=${activeAppId}`} style={{ color: "var(--accent)", fontWeight: 700 }}>
+            Open in Integration Studio
+          </Link>
+        </p>
+      )}
     </nav>
   );
 }

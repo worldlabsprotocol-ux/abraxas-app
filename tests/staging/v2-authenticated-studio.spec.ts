@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * Authenticated Integration Studio harness — requires isolated sandbox credentials.
+ * Authenticated Integration Studio harness. Requires isolated sandbox credentials.
  * BLOCKED unless LAUNCHPAD_STUDIO_API_KEY and LAUNCHPAD_STUDIO_APPLICATION_ID are set.
  */
 test.describe("Authenticated Integration Studio", () => {

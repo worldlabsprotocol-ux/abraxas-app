@@ -6,7 +6,7 @@ export const INSTITUTIONAL_HOME_TITLE =
   "Policy-specific authorization without shared identity databases";
 
 export const INSTITUTIONAL_HOME_LEAD =
-  "Applications request narrow eligibility decisions. Holders approve what to share. Abraxas returns signed receipts partners can verify independently — not underlying identity files.";
+  "Applications request narrow eligibility decisions. Holders approve what to share. Abraxas returns signed receipts partners can verify independently, not underlying identity files.";
 
 export const INSTITUTIONAL_HOME_DEFINITION = {
   what:
@@ -26,7 +26,7 @@ export const INSTITUTIONAL_TRUST_BOUNDARIES = [
   {
     id: "evaluation",
     title: "Policy evaluation",
-    body: "Server-side policy engine evaluates live claim status against partner rules — not a static profile export.",
+    body: "Server-side policy engine evaluates live claim status against partner rules, not a static profile export.",
   },
   {
     id: "receipt",
@@ -36,7 +36,7 @@ export const INSTITUTIONAL_TRUST_BOUNDARIES = [
   {
     id: "revocation",
     title: "Revocation & freshness",
-    body: "Receipt validity respects expiration, issuer suspension, and revocation signals — including on-chain commitments where configured.",
+    body: "Receipt validity respects expiration, issuer suspension, and revocation signals, including on-chain commitments where configured.",
   },
 ] as const;
 
@@ -60,7 +60,7 @@ export const INSTITUTIONAL_JOURNEY_PATHS = [
   {
     id: "verify",
     title: "Independent verification",
-    description: "Validate a decision receipt without trusting Abraxas UI — cryptographic and API-backed checks.",
+    description: "Validate a decision receipt without trusting Abraxas UI. Uses cryptographic and API-backed checks.",
     href: "/verify",
     cta: "Verify a receipt",
     accent: "verify" as const,
@@ -68,4 +68,4 @@ export const INSTITUTIONAL_JOURNEY_PATHS = [
 ] as const;
 
 export const INSTITUTIONAL_DEVNET_DISCLAIMER =
-  "Solana devnet proofs and sandbox demos are labeled separately — they are not production deployments.";
+  "Solana devnet proofs and sandbox demos are labeled separately. They are not production deployments.";

@@ -421,7 +421,7 @@ export function IntegrationStudioClient() {
         };
 
   const railEnvironment = created || resumeApp ? "Sandbox" : "Not provisioned";
-  const railApplication = resumeApp?.application_name ?? created?.application_id ?? "—";
+  const railApplication = resumeApp?.application_name ?? created?.application_id ?? "N/A";
   const railReadiness = studioNextAction.action;
 
   return (
@@ -695,7 +695,7 @@ export function IntegrationStudioClient() {
         )}
         {pathId === "solana_onchain_eligibility_gate" && (
           <p style={{ ...body, marginBottom: "0.65rem" }}>
-            Private holder verification, then your server verifies the current receipt. Abraxas signs a narrow Solana authorization. Your transaction includes Ed25519 verification immediately before the gate. Your program consumes it once. Local/reference program only — not deployed to devnet or Mainnet. No SOL or token transfer.
+            Private holder verification, then your server verifies the current receipt. Abraxas signs a narrow Solana authorization. Your transaction includes Ed25519 verification immediately before the gate. Your program consumes it once. Local/reference program only. Not deployed to devnet or Mainnet. No SOL or token transfer.
           </p>
         )}
         {pathId === "evm_onchain_eligibility_gate" && (
@@ -829,7 +829,7 @@ export function IntegrationStudioClient() {
                 Use a category calculated from your own records alongside an Abraxas receipt. Raw activity data is not sent to Abraxas.
               </p>
               <ul style={{ ...body, paddingLeft: "1.1rem", display: "grid", gap: "0.25rem", marginBottom: "0.45rem" }}>
-                <li>Allowed categories for this policy pack: {activityPackCategories.length ? activityPackCategories.join(", ") : "none — choose a pack with an activity allowlist"}</li>
+                <li>Allowed categories for this policy pack: {activityPackCategories.length ? activityPackCategories.join(", ") : "none. Choose a pack with an activity allowlist."}</li>
                 <li>Categories come from partner-owned records, not Abraxas verification</li>
                 <li>Holder consent is required before preflight</li>
                 <li>Wallet connection is not required</li>

@@ -552,7 +552,7 @@ export function PartnerLaunchpadClient({
   if (loading) {
     return (
       <RedesignPage accent="developer" maxWidth={960}>
-        <PageHeader eyebrow="Partner Launchpad" title="Loading workspace…" subtitle="" />
+        <PageHeader eyebrow="Partner operations" title="Launchpad console" subtitle="" />
       </RedesignPage>
     );
   }
@@ -560,9 +560,9 @@ export function PartnerLaunchpadClient({
   return (
     <RedesignPage accent="developer" maxWidth={1320}>
       <PageHeader
-        eyebrow="Partner Launchpad"
-        title="Integrate private eligibility"
-        subtitle="One integration. Multiple eligibility policies. Add approved eligibility questions through the same Abraxas trust infrastructure without collecting underlying identity data."
+        eyebrow="Partner operations"
+        title="Launchpad console"
+        subtitle="Authenticated application context and live integration telemetry for Integration Studio. Configure policies, run sandbox verification, inspect receipts and webhooks, and request reviewed production access."
       />
 
       <div className="abx-launchpad-operational">
@@ -696,7 +696,7 @@ export function PartnerLaunchpadClient({
       {step === "verify" && (
         <ContentCard title="What do you need to verify?">
           <p style={bodyText}>
-            What can Abraxas verify for your application? Each pack answers one business question with minimum disclosure. The partner receives a signed eligibility result — not a profile, ID image, or contact list.
+            What can Abraxas verify for your application? Each pack answers one business question with minimum disclosure. The partner receives a signed eligibility result, not a profile, ID image, or contact list.
           </p>
           <p style={{ ...bodyText, color: "#f59e0b" }}>{googleDisclaimer}</p>
           <div style={{ display: "grid", gap: "0.65rem" }}>
@@ -740,7 +740,7 @@ export function PartnerLaunchpadClient({
             <div style={{ marginTop: "0.85rem", padding: "0.85rem", border: "1px solid var(--border)", borderRadius: 12, background: "var(--surface-inset)" }}>
               <p style={{ ...bodyText, fontWeight: 700, color: "var(--text-primary)" }}>What the holder must prove</p>
               <p style={bodyText}>{selectedPack.user_explanation}</p>
-              <p style={bodyText}>Claims: {(selectedPack.required_claims ?? []).join(", ") || "catalog claims"} · Assurance {selectedPack.minimum_assurance ?? "—"} · Receipt {selectedPack.receipt_lifetime_hours ?? "—"}h</p>
+              <p style={bodyText}>Claims: {(selectedPack.required_claims ?? []).join(", ") || "catalog claims"} · Assurance {selectedPack.minimum_assurance ?? "N/A"} · Receipt {selectedPack.receipt_lifetime_hours ?? "N/A"}h</p>
               <p style={{ ...bodyText, fontWeight: 700, color: "var(--text-primary)" }}>What the partner receives</p>
               <p style={bodyText}>{selectedPack.partner_receives ?? selectedPack.disclosed_result}</p>
               <p style={{ ...bodyText, fontWeight: 700, color: "var(--text-primary)" }}>What Abraxas does not share</p>
@@ -868,7 +868,7 @@ export function PartnerLaunchpadClient({
           <>
             <ContentCard title="Run a customer verification">
               <p style={bodyText}>
-                Confirm the customer experience works end to end. You should receive the eligibility result on your server — not date of birth, documents, or identity images.
+                Confirm the customer experience works end to end. You should receive the eligibility result on your server, not date of birth, documents, or identity images.
               </p>
               <PartnerSandboxTestConsolePanel
                 applicationId={activeApp.id}
@@ -1062,7 +1062,7 @@ export function PartnerLaunchpadClient({
                   <ul style={{ margin: 0, paddingLeft: "1.1rem", fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)" }}>
                     {activity.slice(0, 12).map((event) => (
                       <li key={event.id} style={{ marginBottom: 4 }}>
-                        {humanIntegrationEventLabel(event.event_type)} · {event.public_code ?? "—"} · {new Date(event.created_at).toLocaleString()}
+                        {humanIntegrationEventLabel(event.event_type)} · {event.public_code ?? "N/A"} · {new Date(event.created_at).toLocaleString()}
                       </li>
                     ))}
                   </ul>

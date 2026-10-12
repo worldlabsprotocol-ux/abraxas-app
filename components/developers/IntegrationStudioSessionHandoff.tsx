@@ -62,7 +62,7 @@ export function IntegrationStudioSessionHandoff({
   return (
     <ContentCard title="Launchpad session" id="configuration">
       <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.6, marginTop: 0 }}>
-        Integration Studio uses the same Launchpad session cookie as Partner Launchpad — no second identity system.
+        Integration Studio uses the same Launchpad session cookie as Partner Launchpad. There is no second identity system.
         Creating a sandbox here issues a one-time API key and attaches your browser session automatically.
       </p>
       {signedIn ? (
