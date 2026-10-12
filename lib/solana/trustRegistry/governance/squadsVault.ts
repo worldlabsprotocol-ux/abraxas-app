@@ -1,7 +1,12 @@
 import { PublicKey } from "@solana/web3.js";
+import {
+  deriveSquadsV4VaultPda,
+  SQUADS_LEGACY_PROGRAM_ID,
+  SQUADS_MULTISIG_V4_PROGRAM_ID,
+} from "@/lib/solana/trustRegistry/governance/squadsV4Pda";
 
-/** Squads v3/v4 program (devnet/mainnet — verify cluster before use). */
-export const SQUADS_PROGRAM_ID_DEVNET = "SQDS4ep65F9uD9gU7t7AbzonPTcfd9d5Q5D8K4Xjpp1" as const;
+/** @deprecated Use SQUADS_MULTISIG_V4_PROGRAM_ID — kept for cluster diff notes. */
+export const SQUADS_PROGRAM_ID_DEVNET = SQUADS_LEGACY_PROGRAM_ID;
 
 export type SquadsVaultDerivation = {
   programId: PublicKey;
@@ -12,22 +17,22 @@ export type SquadsVaultDerivation = {
 };
 
 /**
- * Squads vault PDA (typical pattern). Confirm against your Squads version docs before rehearsal.
- * Execution model: `accept_governance_authority` requires the vault to appear as a transaction signer.
- * Squads proposals must use the vault transaction / CPI path so the runtime sets `is_signer` on the vault PDA.
+ * Squads v4 vault PDA. `multisig` must be the Squads **multisig account** PDA (not create_key).
+ * Build #537 corrects v536 seed layout to match @sqds/multisig v4.
  */
 export function deriveSquadsVaultPda(
-  multisig: PublicKey,
+  multisigPda: PublicKey,
   vaultIndex: number,
-  programId = new PublicKey(SQUADS_PROGRAM_ID_DEVNET),
+  programId = new PublicKey(SQUADS_MULTISIG_V4_PROGRAM_ID),
 ): SquadsVaultDerivation {
-  const indexSeed = Buffer.alloc(1);
-  indexSeed.writeUInt8(vaultIndex);
-  const [vaultPda, bump] = PublicKey.findProgramAddressSync(
-    [Buffer.from("vault"), multisig.toBuffer(), indexSeed],
-    programId,
-  );
-  return { programId, multisig, vaultIndex, vaultPda, bump };
+  const v4 = deriveSquadsV4VaultPda(multisigPda, vaultIndex, programId);
+  return {
+    programId: v4.programId,
+    multisig: v4.multisigPda,
+    vaultIndex: v4.vaultIndex,
+    vaultPda: v4.vaultPda,
+    bump: v4.bump,
+  };
 }
 
 export type SquadsAcceptCompatibilityVerdict = {
@@ -35,16 +40,17 @@ export type SquadsAcceptCompatibilityVerdict = {
   notes: string[];
 };
 
-/** Static compatibility review — not a substitute for devnet rehearsal. */
+/** Static compatibility review — devnet Squads execute still requires member onboarding. */
 export function squadsVaultAcceptCompatibilityReview(): SquadsAcceptCompatibilityVerdict {
   return {
     compatible: "conditional",
     notes: [
+      "Use Squads v4 program id SQDS4ep65T869zMMBKyuUq6aD6EgTu8psMjkvj52pCf and vault seeds [multisig, multisigPda, vault, index].",
       "Nomination may target a Squads vault PDA (pubkey-only).",
       "Accept requires pending_authority Signer; bare wallet txs cannot sign for a PDA.",
-      "Squads must execute accept via vault authority (proposal → execute) with vault marked signer.",
-      "Loader upgrade authority transfer uses System Program + BPF Loader; separate Squads proposal from in-program accept.",
-      "Devnet rehearsal must capture tx signature, slot, vault pubkey, and post-state governance_authority.",
+      "Squads vaultTransactionCreate → proposalApprove (threshold) → vaultTransactionExecute must CPI accept with vault marked signer.",
+      "Loader upgrade authority transfer uses BPF Upgradeable Loader; separate Squads proposal from in-program accept.",
+      "Local #537 rehearsal uses governance-vault-rehearsal program (isomorphic seeds) — not a substitute for devnet Squads evidence.",
     ],
   };
 }

@@ -1,18 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { Keypair, PublicKey } from "@solana/web3.js";
+import { deriveSquadsMultisigPda } from "@/lib/solana/trustRegistry/governance/squadsV4Pda";
 import {
   deriveSquadsVaultPda,
   squadsVaultAcceptCompatibilityReview,
-  SQUADS_PROGRAM_ID_DEVNET,
 } from "@/lib/solana/trustRegistry/governance/squadsVault";
+import { SQUADS_MULTISIG_V4_PROGRAM_ID } from "@/lib/solana/trustRegistry/governance/squadsV4Pda";
 
-describe("Squads vault derivation (Build #536)", () => {
+describe("Squads vault derivation (Build #536/#537)", () => {
   it("derives stable vault PDAs for a multisig", () => {
-    const multisig = Keypair.generate().publicKey;
+    const { multisigPda: multisig } = deriveSquadsMultisigPda(Keypair.generate().publicKey);
     const a = deriveSquadsVaultPda(multisig, 0);
     const b = deriveSquadsVaultPda(multisig, 0);
     expect(a.vaultPda.equals(b.vaultPda)).toBe(true);
-    expect(a.programId.equals(new PublicKey(SQUADS_PROGRAM_ID_DEVNET))).toBe(true);
+    expect(a.programId.equals(new PublicKey(SQUADS_MULTISIG_V4_PROGRAM_ID))).toBe(true);
   });
 
   it("documents conditional accept compatibility (rehearsal required)", () => {

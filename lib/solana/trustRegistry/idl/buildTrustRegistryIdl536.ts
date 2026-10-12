@@ -45,10 +45,10 @@ export function trustRegistryIdlDiscriminatorManifest536() {
   const base535 = buildTrustRegistryIdl535();
   const manifest535 = {
     instructions: Object.fromEntries(
-      base535.instructions.map((ix) => [ix.name, discriminatorHex(new Uint8Array(ix.discriminator))]),
+      base535.instructions.map((ix) => [ix.name, discriminatorHex(Buffer.from(ix.discriminator))]),
     ),
     accounts: Object.fromEntries(
-      base535.accounts.map((a) => [a.name, discriminatorHex(new Uint8Array(a.discriminator))]),
+      base535.accounts.map((a) => [a.name, discriminatorHex(Buffer.from(a.discriminator))]),
     ),
   };
   for (const name of GOVERNANCE_INSTRUCTIONS) {

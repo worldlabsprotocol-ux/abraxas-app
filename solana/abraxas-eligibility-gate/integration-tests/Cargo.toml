@@ -10,6 +10,7 @@ abraxas-eligibility-gate = { path = "../programs/abraxas-eligibility-gate", feat
 abraxas-eligibility-consumer = { path = "../programs/abraxas-eligibility-consumer", features = ["no-entrypoint"] }
 abraxas-protocol-access = { path = "../programs/abraxas-protocol-access", features = ["no-entrypoint"] }
 abraxas-trust-registry = { path = "../programs/abraxas-trust-registry", features = ["no-entrypoint"] }
+governance-vault-rehearsal = { path = "../programs/governance-vault-rehearsal", features = ["no-entrypoint"] }
 solana-program-test = "=1.18.26"
 solana-sdk = "=1.18.26"
 tokio = { version = "1.37", features = ["macros", "rt-multi-thread"] }

@@ -4,6 +4,7 @@ members = [
   "programs/abraxas-eligibility-consumer",
   "programs/abraxas-protocol-access",
   "programs/abraxas-trust-registry",
+  "programs/governance-vault-rehearsal",
   "integration-tests",
 ]
 resolver = "2"
