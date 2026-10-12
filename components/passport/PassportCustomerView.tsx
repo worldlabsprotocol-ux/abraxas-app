@@ -323,7 +323,7 @@ export function PassportCustomerView({
                     lineHeight: 1.55,
                     color: "var(--text-secondary)",
                   }}>
-                    <span aria-hidden="true" style={{ color: "#5EEAD4", fontWeight: 800 }}>✓</span>
+                    <span aria-hidden="true" style={{ color: "#4CBB92", fontWeight: 800 }}>✓</span>
                     <span>{item}</span>
                   </li>
                 ))}

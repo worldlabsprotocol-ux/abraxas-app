@@ -33,7 +33,7 @@ const FIXTURES = [
 ] as const;
 
 const TONE_COLOR: Record<VenueResultTone, string> = {
-  success: "#5EEAD4",
+  success: "#4CBB92",
   attention: "#FBBF24",
   blocked: "#F87171",
 };

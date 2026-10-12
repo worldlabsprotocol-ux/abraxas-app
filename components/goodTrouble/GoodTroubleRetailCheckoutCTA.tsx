@@ -97,7 +97,7 @@ export function GoodTroubleRetailCheckoutCTA() {
                 alignItems: "center",
                 justifyContent: "center",
                 background: "rgba(94,234,212,0.12)",
-                color: "#5EEAD4",
+                color: "#4CBB92",
                 fontWeight: 800,
                 fontSize: "0.72rem",
               }}
