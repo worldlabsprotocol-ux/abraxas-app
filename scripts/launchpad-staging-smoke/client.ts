@@ -1,6 +1,7 @@
 // FILE: scripts/launchpad-staging-smoke/client.ts
 // HTTP client for Launchpad staging smoke tests with secret redaction.
 
+import { vercelBypassHeaders } from "@/lib/preview/vercelBypass";
 import type { StagingTargetConfig } from "./guards";
 import { redactSensitiveText } from "./redact";
 
@@ -47,7 +48,7 @@ export class LaunchpadStagingClient {
     };
 
     if (this.bypass) {
-      headers["x-vercel-protection-bypass"] = this.bypass;
+      Object.assign(headers, vercelBypassHeaders(this.bypass, { setCookie: false }));
     }
     if (this.cookieJar.size > 0) {
       headers.cookie = this.cookies;
