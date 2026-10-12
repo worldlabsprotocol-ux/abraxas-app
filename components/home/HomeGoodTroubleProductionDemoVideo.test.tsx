@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { HomeGoodTroubleProductionDemoVideo } from "./HomeGoodTroubleProductionDemoVideo";
@@ -16,13 +16,12 @@ describe("HomeGoodTroubleProductionDemoVideo", () => {
     vi.restoreAllMocks();
   });
 
-  it("does not render an iframe and uses native video metadata preload", () => {
+  it("does not render an iframe and deferrs video src until playback", () => {
     render(<HomeGoodTroubleProductionDemoVideo />);
     expect(document.querySelector("iframe")).toBeNull();
     const video = document.querySelector("video");
-    expect(video).toHaveAttribute("src", GOOD_TROUBLE_PRODUCTION_DEMO_VIDEO_SRC);
     expect(video).toHaveAttribute("preload", "none");
-    expect(video.getAttribute("src")).toBeNull();
+    expect(video?.getAttribute("src")).toBeNull();
   });
 
   it("plays after explicit user activation", async () => {
@@ -34,7 +33,8 @@ describe("HomeGoodTroubleProductionDemoVideo", () => {
 
     await user.click(screen.getByRole("button", { name: /Play Abraxas and Good Trouble early partner/i }));
     expect(video).toHaveAttribute("src", GOOD_TROUBLE_PRODUCTION_DEMO_VIDEO_SRC);
-    expect(video.play).toHaveBeenCalled();
+    video.dispatchEvent(new Event("loadeddata"));
+    await waitFor(() => expect(video.play).toHaveBeenCalled());
     expect(video.controls).toBe(true);
   });
 });
