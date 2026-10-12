@@ -10,7 +10,7 @@ describe("upgrade authority preflight (Build #537)", () => {
     const authority = Keypair.generate().publicKey;
     const buf = Buffer.alloc(64);
     buf.writeUInt32LE(3, 0);
-    buf.writeBigUInt64LE(100n, 4);
+    buf.writeBigUInt64LE(BigInt(100), 4);
     buf.writeUInt32LE(1, 12);
     authority.toBuffer().copy(buf, 16);
     expect(decodeUpgradeableProgramDataAuthority(buf)?.equals(authority)).toBe(true);

@@ -25,7 +25,7 @@ describe("Squads proposal harness (Build #537)", () => {
       multisigPda,
       vaultPda,
       vaultIndex: 0,
-      transferSeq: 1n,
+      transferSeq: BigInt(1),
       threshold: 2,
       members,
       proposer: members[0],
