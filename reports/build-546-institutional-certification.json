@@ -2,8 +2,8 @@
   "certification_version": "1.0.0",
   "build": "546",
   "title": "Independent verification and institutional partner certification",
-  "generated_at": "2026-10-13T06:35:20.342Z",
-  "commit_sha": "061114f300862c4e206cdf297c45341021a0b95e",
+  "generated_at": "2026-10-13T06:39:40.262Z",
+  "commit_sha": "a7ef7b69a8fd7462ac63139d406e3aee24a691b6",
   "environment": {
     "node": "v22.14.0",
     "observation_default": "local_simulated"
