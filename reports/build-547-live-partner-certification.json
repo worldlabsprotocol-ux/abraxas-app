@@ -2,8 +2,8 @@
   "certification_version": "1.0.0",
   "build": "547",
   "title": "Live partner verification certification",
-  "generated_at": "2026-10-13T07:37:59.086Z",
-  "commit_sha": "23b357c80ae98b34127f1bc3a8b6badbab226810",
+  "generated_at": "2026-10-13T07:40:08.706Z",
+  "commit_sha": "fe2b6dd0cd04627e8bd51005c874340fb5f7c57e",
   "extends_build": "546",
   "environment": {
     "node": "v22.14.0",
@@ -24,14 +24,14 @@
   "latency": {
     "samples": 30,
     "verify_ms": {
-      "p50": 21.85,
-      "p95": 59.67,
-      "max": 60.72
+      "p50": 21.09,
+      "p95": 56.07,
+      "max": 56.71
     },
     "rp_decide_ms": {
-      "p50": 25.37,
-      "p95": 58.98,
-      "max": 63.27
+      "p50": 25.67,
+      "p95": 55.83,
+      "max": 59.51
     }
   },
   "cases": [
