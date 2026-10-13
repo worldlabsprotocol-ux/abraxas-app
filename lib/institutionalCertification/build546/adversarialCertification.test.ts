@@ -196,7 +196,7 @@ describe("Build #546 adversarial institutional certification", () => {
     expect(result.failure_codes).toContain("audience_mismatch");
   });
 
-  it("replay of consumed single-use receipt — external RP denies", () => {
+  it("replay of consumed single-use receipt — external RP denies", async () => {
     const rp = new ExternalRelyingPartyHarness({
       partnerId: BUILD_546_PARTNER_ID,
       policyId: BUILD_546_POLICY_ID,
@@ -204,7 +204,7 @@ describe("Build #546 adversarial institutional certification", () => {
     });
     const record = build546SampleRecord();
     const pub = build546PublicPartnerView(record);
-    const first = rp.decide({
+    const first = await rp.decide({
       requestId: "req-1",
       signedRecord: record,
       publicReceipt: pub,
@@ -212,7 +212,7 @@ describe("Build #546 adversarial institutional certification", () => {
       revocationSource: { available: true, status: "active" },
     });
     expect(first.outcome).toBe("granted");
-    const second = rp.decide({
+    const second = await rp.decide({
       requestId: "req-2",
       signedRecord: record,
       publicReceipt: pub,
@@ -223,7 +223,7 @@ describe("Build #546 adversarial institutional certification", () => {
     expect(second.outcome).toBe("denied");
   });
 
-  it("duplicate request id still enforces single-use consumption", () => {
+  it("duplicate request id still enforces single-use consumption", async () => {
     const rp = new ExternalRelyingPartyHarness({
       partnerId: BUILD_546_PARTNER_ID,
       policyId: BUILD_546_POLICY_ID,
@@ -231,14 +231,14 @@ describe("Build #546 adversarial institutional certification", () => {
     });
     const record = build546SampleRecord();
     const pub = build546PublicPartnerView(record);
-    rp.decide({
+    await rp.decide({
       requestId: "dup",
       signedRecord: record,
       publicReceipt: pub,
       now: BUILD_546_FIXTURE_NOW,
       revocationSource: { available: true, status: "active" },
     });
-    const dup = rp.decide({
+    const dup = await rp.decide({
       requestId: "dup",
       signedRecord: record,
       publicReceipt: pub,

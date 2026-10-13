@@ -39,6 +39,8 @@
     "staging:institutional-certify": "tsx scripts/institutional-staging-certification/run.ts",
     "test:build-546-adversarial": "vitest run lib/institutionalCertification/build546/adversarialCertification.test.ts",
     "certify:build-546": "tsx scripts/build-546-institutional-certification/run.ts",
+    "test:build-547-live-partner": "vitest run lib/institutionalCertification/build547/",
+    "certify:build-547": "tsx scripts/build-547-live-partner-certification/run.ts",
     "example:institutional-rp": "tsx examples/institutional-relying-party/cli.ts",
     "cielo:staging-activate": "tsx scripts/cielo-staging-activate.ts",
     "hospitality:portability-proof": "tsx scripts/hospitality-portability-proof.ts",

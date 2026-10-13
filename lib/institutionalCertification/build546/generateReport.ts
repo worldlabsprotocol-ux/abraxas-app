@@ -36,7 +36,7 @@ function caseResult(input: Omit<CertificationCaseResult, "observation_class"> & 
   };
 }
 
-export function runBuild546LocalCertification(): Build546CertificationReport {
+export async function runBuild546LocalCertification(): Promise<Build546CertificationReport> {
   const env = build546TrustRegistryEnv();
   Object.assign(process.env, env);
   const cases: CertificationCaseResult[] = [];
@@ -88,14 +88,14 @@ export function runBuild546LocalCertification(): Build546CertificationReport {
     policyId: BUILD_546_POLICY_ID,
     env,
   });
-  const grant = rp.decide({
+  const grant = await rp.decide({
     requestId: "rp-grant-1",
     signedRecord: record,
     publicReceipt: pub,
     now: BUILD_546_FIXTURE_NOW,
     revocationSource: { available: true, status: "active" },
   });
-  const replay = rp.decide({
+  const replay = await rp.decide({
     requestId: "rp-grant-2",
     signedRecord: record,
     publicReceipt: pub,

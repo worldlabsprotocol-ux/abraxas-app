@@ -14,7 +14,7 @@ const REPORT_PATH =
 async function main() {
   execSync("npm run test:build-546-adversarial", { stdio: "inherit" });
 
-  const report = runBuild546LocalCertification();
+  const report = await runBuild546LocalCertification();
 
   const staging = resolveInstitutionalStagingTarget();
   if (!staging.ok) {
