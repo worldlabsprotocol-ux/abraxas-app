@@ -728,6 +728,16 @@
   animation: abx-cinematic-emblem-float 10s ease-in-out infinite;
 }
 
+@media (max-width: 959px) {
+  .abx-cinematic-hero__visual {
+    min-height: 160px;
+  }
+
+  .abx-cinematic-hero__emblem-wrap {
+    width: min(42vw, 200px);
+  }
+}
+
 .abx-cinematic-hero__emblem-wrap--static {
   animation: none;
 }

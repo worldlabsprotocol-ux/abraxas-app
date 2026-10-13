@@ -1,4 +1,3 @@
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
   CINEMATIC_HOME_CTA_PRIMARY,
@@ -8,13 +7,9 @@ import {
   CINEMATIC_HOME_HEADLINE,
   CINEMATIC_HOME_LEAD,
 } from "@/lib/home/cinematicHomeCopy";
+import { PremiumHomeHeroVisual } from "@/components/home/premium/PremiumHomeHeroVisual";
 
 const HEADLINE_LINES = ["Prove what matters.", "Keep what's yours."];
-
-const CinematicHomeHeroVisual = dynamic(
-  () => import("@/components/home/CinematicHomeHeroVisual").then((m) => m.CinematicHomeHeroVisual),
-  { ssr: false, loading: () => <div className="abx-premium-hero__visual-skeleton" aria-hidden="true" /> },
-);
 
 /** Server-rendered hero copy for LCP; emblem hydrates client-side after first paint. */
 export function PremiumHomeHero() {
@@ -52,7 +47,7 @@ export function PremiumHomeHero() {
           <p className="abx-premium-hero__sr-only">{CINEMATIC_HOME_HEADLINE}</p>
         </div>
         <div className="abx-premium-hero__visual-wrap abx-premium-hero__reveal abx-premium-hero__reveal--3">
-          <CinematicHomeHeroVisual />
+          <PremiumHomeHeroVisual />
         </div>
       </div>
       <div className="abx-premium-hero__baseline" aria-hidden="true" />

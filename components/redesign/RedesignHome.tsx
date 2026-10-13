@@ -45,6 +45,7 @@ const SHELL: React.CSSProperties = {
   margin: "0 auto",
   padding: `0 ${ABX_SPACING.pagePadding}`,
   width: "100%",
+  boxSizing: "border-box",
 };
 
 function HomeContent({ hero }: { hero: ReactNode }) {
@@ -52,7 +53,7 @@ function HomeContent({ hero }: { hero: ReactNode }) {
     <main className="abx-institutional-home abx-v2-home abx-premium-home" style={{ position: "relative", zIndex: 1, paddingBottom: "3.5rem" }}>
       {hero}
 
-      <div className="abx-premium-home__spine" style={SHELL}>
+      <div className="abx-premium-home__spine abx-premium-home__spine--shell" style={SHELL}>
         <PremiumHomeChapter index="01" label="Problem" id="chapter-problem">
           <HomeProblemChapter />
         </PremiumHomeChapter>
@@ -76,7 +77,7 @@ function HomeContent({ hero }: { hero: ReactNode }) {
         </PremiumHomeChapter>
 
         <PremiumHomeChapter index="05" label="Evidence" id="chapter-evidence">
-          <LazyHomeSection minHeight="22rem">
+          <LazyHomeSection minHeight="22rem" eager>
             <HomeVerifiableTrustChapter />
           </LazyHomeSection>
         </PremiumHomeChapter>

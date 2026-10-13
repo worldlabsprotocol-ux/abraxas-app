@@ -15,7 +15,7 @@ import { HomeTrustClose } from "@/components/home/HomeTrustClose";
 import { VerifyPageIntro } from "@/components/verify/VerifyPageIntro";
 import { DeveloperContextBanner } from "@/components/redesign/DeveloperContextBanner";
 import { RedesignNav } from "@/components/redesign/RedesignNav";
-import { HOME_PARTNER_PROOF_FALLBACK } from "@/lib/home/partnerProof";
+import { HOME_PARTNER_PROOF_FALLBACK, HOME_PARTNER_PROOF_SUBHEAD } from "@/lib/home/partnerProof";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/",
@@ -98,9 +98,13 @@ describe("sitewide axe accessibility", () => {
       HOME_PARTNER_PROOF_FALLBACK.title,
       HOME_PARTNER_PROOF_FALLBACK.badge,
       HOME_PARTNER_PROOF_FALLBACK.summary,
+      HOME_PARTNER_PROOF_SUBHEAD,
     ].join(" ").toLowerCase();
-    expect(copy).not.toMatch(/good trouble/);
+    expect(copy).toMatch(/good trouble/);
+    expect(copy).toMatch(/sandbox example|labeled sandbox/);
     expect(copy).not.toMatch(/live partner|paying customer|production partner/);
     expect(copy).not.toMatch(/regulator approved|legally certified/);
+    expect(copy).toMatch(/not a live checkout/);
+    expect(copy).not.toMatch(/production approval granted|approved for production/);
   });
 });
