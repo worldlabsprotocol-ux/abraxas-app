@@ -5,7 +5,11 @@ import {
   attachBrowserSessionCookie,
   issueBrowserSessionToken,
 } from "@/lib/auth/browserSession";
-import { resolvePassportWalletRequestOrigin } from "@/lib/auth/passportWalletAuth/origin";
+import {
+  assertPassportWalletSameOriginRequest,
+  resolvePassportWalletRequestOrigin,
+} from "@/lib/auth/passportWalletAuth/origin";
+import { PASSPORT_WALLET_ACTIONS } from "@/lib/auth/passportWalletAuth/contract";
 import {
   clearPassportWalletAuthContextCookie,
   readPassportWalletAuthContextCookie,
@@ -17,7 +21,17 @@ export const dynamic = "force-dynamic";
 
 const NO_STORE = { "Cache-Control": "no-store", Pragma: "no-cache" };
 
+const VERIFY_ALLOWED_ACTIONS = new Set<string>([
+  PASSPORT_WALLET_ACTIONS.passportSignIn,
+  PASSPORT_WALLET_ACTIONS.partnerVerify,
+]);
+
 export async function POST(req: NextRequest) {
+  const requestOrigin = resolvePassportWalletRequestOrigin(req);
+  if (!assertPassportWalletSameOriginRequest(req, requestOrigin)) {
+    return NextResponse.json({ ok: false, code: "wrong_origin" }, { status: 403, headers: NO_STORE });
+  }
+
   const sessionContext = readPassportWalletAuthContextCookie(req);
   if (!sessionContext) {
     return NextResponse.json({ ok: false, code: "session_context_mismatch" }, { status: 401, headers: NO_STORE });
@@ -28,11 +42,17 @@ export async function POST(req: NextRequest) {
     wallet_address?: string;
     sui_network?: string;
     signature?: string;
+    intended_action?: string;
   };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ ok: false, code: "invalid_input" }, { status: 400, headers: NO_STORE });
+  }
+
+  const intendedAction = body.intended_action?.trim() ?? PASSPORT_WALLET_ACTIONS.passportSignIn;
+  if (!VERIFY_ALLOWED_ACTIONS.has(intendedAction)) {
+    return NextResponse.json({ ok: false, code: "wrong_action" }, { status: 400, headers: NO_STORE });
   }
 
   const verified = await verifyPassportWalletAuth({
@@ -41,7 +61,8 @@ export async function POST(req: NextRequest) {
     suiNetwork: String(body.sui_network ?? ""),
     signature: String(body.signature ?? ""),
     sessionContext,
-    requestOrigin: resolvePassportWalletRequestOrigin(req),
+    requestOrigin,
+    expectedIntendedAction: intendedAction as typeof PASSPORT_WALLET_ACTIONS.passportSignIn,
   });
 
   if (!verified.ok) {

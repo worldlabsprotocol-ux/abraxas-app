@@ -6,7 +6,10 @@ import {
   issueBrowserSessionToken,
   requireBrowserSession,
 } from "@/lib/auth/browserSession";
-import { resolvePassportWalletRequestOrigin } from "@/lib/auth/passportWalletAuth/origin";
+import {
+  assertPassportWalletSameOriginRequest,
+  resolvePassportWalletRequestOrigin,
+} from "@/lib/auth/passportWalletAuth/origin";
 import { linkLegacyPassportWallet } from "@/lib/auth/passportWalletAuth/legacyLink";
 import {
   clearPassportWalletAuthContextCookie,
@@ -19,6 +22,11 @@ export const dynamic = "force-dynamic";
 const NO_STORE = { "Cache-Control": "no-store", Pragma: "no-cache" };
 
 export async function POST(req: NextRequest) {
+  const requestOrigin = resolvePassportWalletRequestOrigin(req);
+  if (!assertPassportWalletSameOriginRequest(req, requestOrigin)) {
+    return NextResponse.json({ ok: false, code: "wrong_origin" }, { status: 403, headers: NO_STORE });
+  }
+
   const sessionGate = await requireBrowserSession(req);
   if (!sessionGate.ok) {
     return NextResponse.json({ ok: false, code: "unauthorized" }, { status: 401, headers: NO_STORE });
@@ -51,7 +59,7 @@ export async function POST(req: NextRequest) {
     suiNetwork: String(body.sui_network ?? ""),
     signature: String(body.signature ?? ""),
     sessionContext,
-    requestOrigin: resolvePassportWalletRequestOrigin(req),
+    requestOrigin,
     sessionSuiAddress: sessionGate.session.suiAddress,
   });
 

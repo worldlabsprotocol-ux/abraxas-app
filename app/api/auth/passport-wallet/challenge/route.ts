@@ -4,7 +4,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
 import { PASSPORT_WALLET_ACTIONS } from "@/lib/auth/passportWalletAuth/contract";
-import { resolvePassportWalletRequestOrigin } from "@/lib/auth/passportWalletAuth/origin";
+import {
+  assertPassportWalletSameOriginRequest,
+  resolvePassportWalletRequestOrigin,
+} from "@/lib/auth/passportWalletAuth/origin";
 import {
   attachPassportWalletAuthContextCookie,
   issuePassportWalletAuthChallenge,
@@ -16,6 +19,11 @@ export const dynamic = "force-dynamic";
 const NO_STORE = { "Cache-Control": "no-store", Pragma: "no-cache" };
 
 export async function POST(req: NextRequest) {
+  const requestOrigin = resolvePassportWalletRequestOrigin(req);
+  if (!assertPassportWalletSameOriginRequest(req, requestOrigin)) {
+    return NextResponse.json({ ok: false, code: "wrong_origin" }, { status: 403, headers: NO_STORE });
+  }
+
   let body: {
     wallet_address?: string;
     sui_network?: string;
@@ -53,7 +61,7 @@ export async function POST(req: NextRequest) {
 
   const sessionContext = createPassportWalletNonce();
   const issued = await issuePassportWalletAuthChallenge({
-    origin: resolvePassportWalletRequestOrigin(req),
+    origin: requestOrigin,
     walletAddress: String(body.wallet_address ?? ""),
     suiNetwork: String(body.sui_network ?? ""),
     intendedAction: intended as typeof PASSPORT_WALLET_ACTIONS.passportSignIn,

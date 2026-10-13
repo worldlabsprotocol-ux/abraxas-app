@@ -23,6 +23,8 @@ describe("passport wallet auth", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     process.env.NEXT_PUBLIC_SUI_NETWORK = "devnet";
+    process.env.NEXT_PUBLIC_APP_URL = ORIGIN;
+    process.env.ABRAXAS_PASSPORT_WALLET_TRUSTED_ORIGINS = ORIGIN;
   });
 
   it("verifies valid personal message signatures", async () => {
@@ -90,6 +92,7 @@ describe("passport wallet auth", () => {
       signature,
       sessionContext: "ctx-2",
       requestOrigin: "https://evil.example",
+      expectedIntendedAction: PASSPORT_WALLET_ACTIONS.passportSignIn,
     });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.code).toBe("wrong_domain");
@@ -104,6 +107,7 @@ describe("passport wallet auth", () => {
       signature: "abc",
       sessionContext: "ctx",
       requestOrigin: ORIGIN,
+      expectedIntendedAction: PASSPORT_WALLET_ACTIONS.passportSignIn,
     });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.code).toBe("replay");
@@ -138,6 +142,7 @@ describe("passport wallet auth", () => {
       signature: "abc",
       sessionContext: "ctx-exp",
       requestOrigin: ORIGIN,
+      expectedIntendedAction: PASSPORT_WALLET_ACTIONS.passportSignIn,
     });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.code).toBe("expired");

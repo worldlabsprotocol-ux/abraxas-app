@@ -3,7 +3,7 @@
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import type { PassportWalletIntendedAction } from "./contract";
 import { originsMatch } from "./origin";
-import { resolveExpectedSuiNetworkFromEnv } from "./network";
+import { validatePassportWalletNetworkTriple } from "./network";
 import {
   consumePassportWalletChallenge,
   hashSessionContext,
@@ -11,10 +11,6 @@ import {
   type PassportWalletChallengeRow,
 } from "./store";
 import { verifyPassportWalletPersonalMessage } from "./verifySignature";
-
-function normalizeNetworkKey(network: string): string {
-  return network.trim().toLowerCase();
-}
 
 export type ConsumedPassportWalletChallenge =
   | { ok: true; row: PassportWalletChallengeRow }
@@ -27,7 +23,7 @@ export async function consumeAndValidatePassportWalletChallenge(input: {
   signature: string;
   sessionContext: string;
   requestOrigin: string;
-  expectedIntendedAction?: PassportWalletIntendedAction;
+  expectedIntendedAction: PassportWalletIntendedAction;
 }): Promise<ConsumedPassportWalletChallenge> {
   let wallet: string;
   try {
@@ -66,20 +62,20 @@ export async function consumeAndValidatePassportWalletChallenge(input: {
     return { ok: false, code: "wrong_wallet" };
   }
 
-  if (input.expectedIntendedAction && row.intended_action !== input.expectedIntendedAction) {
-    return { ok: false, code: "invalid_input" };
+  if (row.intended_action !== input.expectedIntendedAction) {
+    return { ok: false, code: "wrong_action" };
   }
 
   if (!originsMatch(row.origin, input.requestOrigin)) {
     return { ok: false, code: "wrong_domain" };
   }
 
-  const expectedNetwork = resolveExpectedSuiNetworkFromEnv();
-  if (
-    normalizeNetworkKey(row.sui_network) !== normalizeNetworkKey(input.suiNetwork)
-    && normalizeNetworkKey(row.sui_network) !== normalizeNetworkKey(expectedNetwork)
-  ) {
-    return { ok: false, code: "wrong_network" };
+  const networkCheck = validatePassportWalletNetworkTriple({
+    challengedNetwork: row.sui_network,
+    submittedNetwork: input.suiNetwork,
+  });
+  if (!networkCheck.ok) {
+    return networkCheck;
   }
 
   const valid = await verifyPassportWalletPersonalMessage({

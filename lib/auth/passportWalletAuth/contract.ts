@@ -41,6 +41,7 @@ export type PassportWalletAuthFailureCode =
   | "expired"
   | "replay"
   | "invalid_signature"
+  | "wrong_action"
   | "store_unavailable"
   | "legacy_link_required"
   | "wallet_bound_to_other_subject"

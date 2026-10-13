@@ -33,6 +33,13 @@ Google zkLogin remains under legacy recovery / optional buttons — not required
 - Existing Google/hosted identity at same address requires explicit legacy link (409 `legacy_link_required`), not automatic merge.
 - Legacy link: signed-in OAuth/hosted browser session + `link_legacy_wallet` challenge + `POST /api/auth/passport-wallet/link-legacy` (writes `passport_wallet_login_grants`, does not delete legacy rows).
 
+## Security bindings
+
+- **Network:** exact triple match among stored challenge network, client submission, and `NEXT_PUBLIC_SUI_NETWORK` (strict `sui:<tier>` allowlist).
+- **Origin:** trusted configured origins only (`getPublicAppOriginFromRequest`); spoofed `x-forwarded-host` cannot mint cross-origin challenges.
+- **CSRF:** challenge/verify/link POSTs require matching `Origin` or `Referer`.
+- **Actions:** `passport_sign_in`, `partner_verify`, and `link_legacy_wallet` are enforced on consume (`wrong_action` on substitution).
+
 ## Partner Flow
 
 `PartnerVerifyShell` renders wallet sign-in first; hosted partner flow continues to use `requireBrowserSession` after wallet authentication.

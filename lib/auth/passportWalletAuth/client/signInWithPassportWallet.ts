@@ -71,6 +71,7 @@ async function signPassportWalletChallenge(input: {
       wallet_address: walletAddress,
       sui_network: suiNetwork,
       signature,
+      intended_action: input.intendedAction,
     }),
   });
   const verifyBody = await verifyRes.json().catch(() => ({})) as {

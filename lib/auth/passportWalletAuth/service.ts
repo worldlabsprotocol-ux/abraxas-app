@@ -11,7 +11,10 @@ import {
 } from "./contract";
 import { buildPassportWalletAuthMessage } from "./message";
 import { isAllowedPassportWalletOrigin } from "./origin";
-import { isSupportedSuiNetwork } from "./network";
+import {
+  canonicalizeSupportedSuiNetwork,
+  networkMatchesDeploymentPolicy,
+} from "./network";
 import {
   createPassportWalletChallengeId,
   createPassportWalletNonce,
@@ -44,7 +47,8 @@ export async function issuePassportWalletAuthChallenge(input: {
     return { ok: false, code: "wrong_origin" };
   }
 
-  if (!isSupportedSuiNetwork(input.suiNetwork)) {
+  const canonicalNetwork = canonicalizeSupportedSuiNetwork(input.suiNetwork);
+  if (!canonicalNetwork || !networkMatchesDeploymentPolicy(canonicalNetwork)) {
     return { ok: false, code: "wrong_network" };
   }
 
@@ -56,7 +60,7 @@ export async function issuePassportWalletAuthChallenge(input: {
   const message = buildPassportWalletAuthMessage({
     origin: new URL(input.origin).origin,
     walletAddress: wallet,
-    suiNetwork: input.suiNetwork.trim(),
+    suiNetwork: canonicalNetwork,
     intendedAction: input.intendedAction,
     nonce,
     expiresAt,
@@ -67,7 +71,7 @@ export async function issuePassportWalletAuthChallenge(input: {
     await insertPassportWalletChallenge({
       id: challengeId,
       wallet_address: wallet,
-      sui_network: input.suiNetwork.trim(),
+      sui_network: canonicalNetwork,
       origin: new URL(input.origin).origin,
       intended_action: input.intendedAction,
       session_context_hash: hashSessionContext(sessionContext),
@@ -90,7 +94,7 @@ export async function issuePassportWalletAuthChallenge(input: {
       message,
       expires_at: expiresAt,
       wallet_address: wallet,
-      sui_network: input.suiNetwork.trim(),
+      sui_network: canonicalNetwork,
       intended_action: input.intendedAction,
     },
   };
@@ -103,6 +107,7 @@ export async function verifyPassportWalletAuth(input: {
   signature: string;
   sessionContext: string;
   requestOrigin: string;
+  expectedIntendedAction: PassportWalletIntendedAction;
 }): Promise<
   | { ok: true; result: PassportWalletAuthSuccess; message: string }
   | { ok: false; code: string }
@@ -114,7 +119,10 @@ export async function verifyPassportWalletAuth(input: {
     return { ok: false, code: "invalid_input" };
   }
 
-  const consumed = await consumeAndValidatePassportWalletChallenge(input);
+  const consumed = await consumeAndValidatePassportWalletChallenge({
+    ...input,
+    expectedIntendedAction: input.expectedIntendedAction,
+  });
   if (!consumed.ok) {
     return consumed;
   }
