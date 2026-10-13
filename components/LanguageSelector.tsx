@@ -36,6 +36,48 @@ declare global {
   }
 }
 
+function mountGoogleTranslateWidget() {
+  if (!window.google?.translate?.TranslateElement) return;
+  new window.google.translate.TranslateElement(
+    {
+      pageLanguage: "en",
+      includedLanguages: LANGS.map((l) => l.code).join(","),
+      autoDisplay: false,
+      layout: 0,
+    },
+    "abraxas-gt-root",
+  );
+}
+
+/** Defer third-party translate script until needed — keeps homepage LCP off the critical path. */
+function ensureGoogleTranslateScript(onReady: () => void) {
+  if (document.getElementById("abraxas-gt-script")) {
+    if (window.google?.translate?.TranslateElement) {
+      mountGoogleTranslateWidget();
+      onReady();
+      return;
+    }
+    const prior = window.googleTranslateElementInit;
+    window.googleTranslateElementInit = () => {
+      prior?.();
+      mountGoogleTranslateWidget();
+      onReady();
+    };
+    return;
+  }
+
+  window.googleTranslateElementInit = () => {
+    mountGoogleTranslateWidget();
+    onReady();
+  };
+
+  const s = document.createElement("script");
+  s.id = "abraxas-gt-script";
+  s.src = "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+  s.async = true;
+  document.body.appendChild(s);
+}
+
 function langFromPreference(code: string): Lang {
   return LANGS.find(l => l.code === code) ?? LANGS[0];
 }
@@ -60,29 +102,10 @@ export function LanguageSelector() {
       clearGoogleTranslateCookies();
       pinEnglishCookies();
       setDocumentLanguage("en");
-    }
-
-    if (document.getElementById("abraxas-gt-script")) {
-      setReady(true);
       return;
     }
 
-    window.googleTranslateElementInit = () => {
-      if (!window.google?.translate?.TranslateElement) return;
-      new window.google.translate.TranslateElement({
-        pageLanguage: "en",
-        includedLanguages: LANGS.map(l => l.code).join(","),
-        autoDisplay: false,
-        layout: 0,
-      }, "abraxas-gt-root");
-      setReady(true);
-    };
-
-    const s = document.createElement("script");
-    s.id = "abraxas-gt-script";
-    s.src = "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
-    s.async = true;
-    document.body.appendChild(s);
+    ensureGoogleTranslateScript(() => setReady(true));
   }, []);
 
   useEffect(() => {
@@ -121,6 +144,9 @@ export function LanguageSelector() {
         top: r.bottom + window.scrollY + 6,
         right: window.innerWidth - r.right,
       });
+    }
+    if (!ready) {
+      ensureGoogleTranslateScript(() => setReady(true));
     }
     setOpen(o => !o);
   }

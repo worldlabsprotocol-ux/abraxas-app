@@ -22,11 +22,34 @@ export const OFFICIAL_BRAND_ASSETS = {
   },
 } as const;
 
-/** Derived from official emblem PNG — homepage hero only (640 WebP). */
+/** Derived from official emblem PNG — responsive WebP set for hero LCP. */
 export const OFFICIAL_EMBLEM_HERO_WEBP = {
   src: "/brand/official/abraxas-emblem-protocol-640.webp",
   width: 640,
   height: 640,
+} as const;
+
+export const OFFICIAL_EMBLEM_HERO_RESPONSIVE = {
+  mobile: {
+    src: "/brand/official/abraxas-emblem-protocol-200.webp",
+    width: 200,
+    height: 200,
+  },
+  tablet: {
+    src: "/brand/official/abraxas-emblem-protocol-320.webp",
+    width: 320,
+    height: 320,
+  },
+  desktop: {
+    src: "/brand/official/abraxas-emblem-protocol-420.webp",
+    width: 420,
+    height: 420,
+  },
+  retina: {
+    src: "/brand/official/abraxas-emblem-protocol-640.webp",
+    width: 640,
+    height: 640,
+  },
 } as const;
 
 /** Canonical UI accent — matches verification green (#4CBB92). PNG assets may contain other hues. */

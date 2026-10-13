@@ -124,10 +124,21 @@
   transform: translateX(8%);
 }
 
+/* Hero emblem is LCP — no staggered reveal on the visual column */
+.abx-premium-hero__visual-wrap--lcp {
+  animation: none !important;
+  opacity: 1;
+  transform: translateX(8%);
+}
+
 @media (max-width: 959px) {
   .abx-premium-hero__visual-wrap {
     transform: none;
     justify-self: center;
+  }
+
+  .abx-premium-hero__visual-wrap--lcp {
+    transform: none;
   }
 }
 

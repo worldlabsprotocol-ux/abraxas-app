@@ -11,7 +11,7 @@ import { PremiumHomeHeroVisual } from "@/components/home/premium/PremiumHomeHero
 
 const HEADLINE_LINES = ["Prove what matters.", "Keep what's yours."];
 
-/** Server-rendered hero copy for LCP; emblem hydrates client-side after first paint. */
+/** Server-rendered hero copy and emblem for LCP. */
 export function PremiumHomeHero() {
   return (
     <header className="abx-premium-hero" aria-label="Abraxas — prove what matters">
@@ -46,7 +46,7 @@ export function PremiumHomeHero() {
           </div>
           <p className="abx-premium-hero__sr-only">{CINEMATIC_HOME_HEADLINE}</p>
         </div>
-        <div className="abx-premium-hero__visual-wrap abx-premium-hero__reveal abx-premium-hero__reveal--3">
+        <div className="abx-premium-hero__visual-wrap abx-premium-hero__visual-wrap--lcp">
           <PremiumHomeHeroVisual />
         </div>
       </div>
