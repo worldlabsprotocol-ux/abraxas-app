@@ -2,8 +2,8 @@
   "certification_version": "1.0.0",
   "build": "548",
   "title": "Distributed replay protection certification",
-  "generated_at": "2026-10-13T08:05:32.486Z",
-  "commit_sha": "964ef97154e1a19e8c6cb6fc21c93210d72d65b5",
+  "generated_at": "2026-10-13T08:06:01.901Z",
+  "commit_sha": "a923b6f65f8e205c0788be8ddfc93d7874796c73",
   "extends_builds": [
     "546",
     "547"
@@ -46,9 +46,9 @@
   "latency": {
     "samples": 25,
     "rp_decide_postgres_ms": {
-      "p50": 28.33,
-      "p95": 41.91,
-      "max": 54.63
+      "p50": 18.65,
+      "p95": 28.89,
+      "max": 31.29
     }
   },
   "cases": [
@@ -59,7 +59,7 @@
       "expected_behavior": "exactly one grant; audit row matches consumption",
       "observed_behavior": "grants=1; replays=23; audit=1",
       "verification_evidence": [
-        "pg-concurrent-0:denied",
+        "pg-concurrent-0:granted",
         "pg-concurrent-1:denied",
         "pg-concurrent-2:denied",
         "pg-concurrent-3:denied",
@@ -70,7 +70,7 @@
         "pg-concurrent-8:denied",
         "pg-concurrent-9:denied",
         "pg-concurrent-10:denied",
-        "pg-concurrent-11:granted",
+        "pg-concurrent-11:denied",
         "pg-concurrent-12:denied",
         "pg-concurrent-13:denied",
         "pg-concurrent-14:denied",
