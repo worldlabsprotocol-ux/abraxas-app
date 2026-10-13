@@ -4,6 +4,8 @@
 import { randomUUID } from "crypto";
 import { SignJWT, importJWK } from "jose";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
+import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
+import { identityVerificationOrFilter, normalizeHolderSubjectKey } from "./holderIdentityRef";
 import {
   abraxasCaptureApprovedClaims,
   manualApprovedClaims,
@@ -54,14 +56,16 @@ export async function issueIdentityCredential(
   const provider = options?.provider ?? "veriff";
   const reviewRef = options?.reviewId ?? decision.id;
   const sb = idvSupabase();
-  const normalized = normalizeSuiAddress(holder);
+  const subjectKey = normalizeHolderSubjectKey(holder);
+  const isChainNeutral = isChainNeutralHolderSubjectId(subjectKey);
+  const legacySui = isChainNeutral ? null : normalizeSuiAddress(subjectKey);
   const now = new Date();
 
   if (sb) {
     const { data: existing } = await sb
       .from("identity_verifications")
       .select("credential_jti, status, identity_verification_status, credential_status")
-      .or(`wallet_address.eq.${normalized},sui_address.eq.${normalized}`)
+      .or(identityVerificationOrFilter(subjectKey))
       .maybeSingle();
 
     if (
@@ -110,14 +114,14 @@ export async function issueIdentityCredential(
     expirationDate: expiresAt.toISOString(),
     id: jti,
     credentialSubject: {
-      id: `did:sui:${normalized}`,
-      sui_address: normalized,
+      id: isChainNeutral ? `did:abraxas:${subjectKey}` : `did:sui:${legacySui}`,
+      ...(legacySui ? { sui_address: legacySui } : { holder_subject_id: subjectKey }),
       jurisdiction: juris,
       document_type: docType,
       verification_level: "standard" as const,
       world_id_verified: false,
       verified_at: now.toISOString(),
-      chain: "sui" as const,
+      chain: isChainNeutral ? ("abraxas" as const) : ("sui" as const),
       veriff_session_id: provider === "veriff" ? decision.id : undefined,
       assurance_level: options?.assuranceLevel
         ?? (provider === "veriff" ? ("L3" as const) : provider === "abraxas_capture" && options?.reviewMethod === "automated_biometric" ? ("L3" as const) : ("L2" as const)),
@@ -136,22 +140,24 @@ export async function issueIdentityCredential(
     .setProtectedHeader({ alg: "EdDSA", typ: "JWT" })
     .setJti(jti)
     .setIssuer(issuer)
-    .setSubject(`did:sui:${normalized}`)
+    .setSubject(isChainNeutral ? `did:abraxas:${subjectKey}` : `did:sui:${legacySui}`)
     .setIssuedAt(now)
     .setExpirationTime(expiresAt)
     .sign(signingKey);
 
   if (sb) {
     let userEmail: string | null = null;
-    const { data: zkRow } = await sb
-      .from("sui_zklogin_identities")
-      .select("email")
-      .eq("sui_address", normalized)
-      .maybeSingle();
-    if (zkRow?.email) userEmail = zkRow.email;
+    if (legacySui) {
+      const { data: zkRow } = await sb
+        .from("sui_zklogin_identities")
+        .select("email")
+        .eq("sui_address", legacySui)
+        .maybeSingle();
+      if (zkRow?.email) userEmail = zkRow.email;
+    }
 
     await transitionIdentityVerification(
-      normalized,
+      subjectKey,
       {
         user_email: userEmail,
         document_type: docType,
@@ -179,8 +185,8 @@ export async function issueIdentityCredential(
 
     await sb.from("abraxas_credentials").upsert({
       jti,
-      holder_wallet: normalized,
-      sui_address: normalized,
+      holder_wallet: subjectKey,
+      sui_address: legacySui,
       issuer,
       jurisdiction: juris,
       document_type: docType,
@@ -191,7 +197,9 @@ export async function issueIdentityCredential(
       credential_jwt: jwt,
     }, { onConflict: "jti" });
 
-    await ensureZkLoginWalletBinding(normalized);
+    if (legacySui) {
+      await ensureZkLoginWalletBinding(legacySui);
+    }
 
     const documentDateOfBirth =
       options?.documentDateOfBirth?.trim()
@@ -207,7 +215,7 @@ export async function issueIdentityCredential(
 
     const identityClaims = provider === "veriff"
       ? veriffApprovedClaims({
-          subjectId: normalized,
+          subjectId: subjectKey,
           jti,
           jurisdiction: juris,
           documentType: docType,
@@ -216,7 +224,7 @@ export async function issueIdentityCredential(
         })
       : provider === "abraxas_capture" && options?.captureSessionId
         ? abraxasCaptureApprovedClaims({
-            subjectId: normalized,
+            subjectId: subjectKey,
             jti,
             jurisdiction: juris,
             documentType: docType,
@@ -227,7 +235,7 @@ export async function issueIdentityCredential(
             biometricScores: options.biometricScores,
           })
         : manualApprovedClaims({
-            subjectId: normalized,
+            subjectId: subjectKey,
             jti,
             jurisdiction: juris,
             documentType: docType,
@@ -238,7 +246,7 @@ export async function issueIdentityCredential(
     await upsertClaims([
       ...identityClaims,
       ...buildProductEligibilityClaimsForIssuance({
-        subjectId: normalized,
+        subjectId: subjectKey,
         jti,
         documentDateOfBirth,
         authoritativeAgeBand: options?.authoritativeAgeBand,
@@ -246,11 +254,13 @@ export async function issueIdentityCredential(
         expiresAt,
         evidenceReference: eligibilityEvidenceRef,
       }),
-      walletBindingClaim({
-        subjectId: normalized,
-        walletAddress: normalized,
-        bindingMethod: "zklogin",
-      }),
+      ...(legacySui
+        ? [walletBindingClaim({
+          subjectId: subjectKey,
+          walletAddress: legacySui,
+          bindingMethod: "zklogin",
+        })]
+        : []),
     ]);
   }
 
@@ -258,11 +268,11 @@ export async function issueIdentityCredential(
 
   try {
     const { isPassportIssuerConfigured, provisionOnChainPassport } = await import("@/lib/sui/passportIssuer");
-    if (isPassportIssuerConfigured() && sb) {
-      const onChain = await provisionOnChainPassport(normalized);
+    if (isPassportIssuerConfigured() && sb && legacySui) {
+      const onChain = await provisionOnChainPassport(legacySui);
       onChainResult = { ok: true, object_id: onChain.objectId };
       await sb.from("sui_passport_objects").upsert({
-        sui_address: normalized,
+        sui_address: legacySui,
         object_id: onChain.objectId,
         network: getSuiNetwork(),
         stamp_bitmask: onChain.stampBitmask,

@@ -24,7 +24,7 @@ export function PassportWalletSignInButton({
   compact?: boolean;
   onSuccess?: () => void;
 }) {
-  const { establishWalletPassportSession } = useSuiAuth();
+  const { establishWalletPassportSession, refreshSession } = useSuiAuth();
   const [connection, setConnection] = useState<HolderWalletConnection | null>(null);
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [busy, setBusy] = useState(false);
@@ -56,12 +56,17 @@ export function PassportWalletSignInButton({
         setError(result.detail ?? result.code);
         return;
       }
-      establishWalletPassportSession(result.suiAddress);
+      if (result.suiAddress) {
+        establishWalletPassportSession(result.suiAddress);
+      } else {
+        window.dispatchEvent(new Event("abraxas:holder-session"));
+        void refreshSession();
+      }
       onSuccess?.();
     } finally {
       setBusy(false);
     }
-  }, [connection, wallet, intendedAction, establishWalletPassportSession, onSuccess]);
+  }, [connection, wallet, intendedAction, establishWalletPassportSession, refreshSession, onSuccess]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem" }}>

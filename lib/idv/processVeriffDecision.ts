@@ -1,7 +1,7 @@
 // FILE: lib/idv/processVeriffDecision.ts
 // Shared Veriff decision handling (webhook + polling fallback).
 
-import { normalizeSuiAddress } from "@mysten/sui/utils";
+import { normalizeHolderSubjectKey, parseVeriffVendorDataHolder } from "./holderIdentityRef";
 import { revokeSubjectClaims } from "@/lib/credentials/claimsService";
 import { issueIdentityCredential } from "./issueIdentityCredential";
 import { idvSupabase, transitionIdentityVerification } from "./identityVerificationDb";
@@ -19,9 +19,7 @@ export interface ProcessDecisionResult {
 }
 
 function parseHolder(vendorData?: string): string | null {
-  const suiMatch = vendorData?.match(/^sui:(.+)$/);
-  const legacyMatch = vendorData?.match(/^wallet:(.+)$/);
-  return suiMatch?.[1] ?? legacyMatch?.[1] ?? null;
+  return parseVeriffVendorDataHolder(vendorData);
 }
 
 export async function processVeriffDecision(
@@ -33,7 +31,7 @@ export async function processVeriffDecision(
     return { ok: true, status: "ignored", message: "No holder in vendorData" };
   }
 
-  const normalized = normalizeSuiAddress(holder);
+  const normalized = normalizeHolderSubjectKey(holder);
   const sb = idvSupabase();
 
   if (v.status === "declined" || v.status === "resubmission_requested") {

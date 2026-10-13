@@ -9,7 +9,7 @@ import { PASSPORT_WALLET_ACTIONS } from "@/lib/auth/passportWalletAuth/contract"
 import type { HolderWalletConnection } from "@/components/sui/SuiWalletStandardConnect";
 
 export type PassportWalletSignInResult =
-  | { ok: true; suiAddress: string; createdIdentity: boolean }
+  | { ok: true; suiAddress?: string; holderSubjectId: string; createdIdentity: boolean }
   | { ok: false; code: string; detail?: string };
 
 type PassportWalletClientAction =
@@ -77,16 +77,18 @@ async function signPassportWalletChallenge(input: {
   const verifyBody = await verifyRes.json().catch(() => ({})) as {
     ok?: boolean;
     sui_address?: string;
+    holder_subject_id?: string;
     created_identity?: boolean;
     code?: string;
   };
-  if (!verifyRes.ok || !verifyBody.ok || !verifyBody.sui_address) {
+  if (!verifyRes.ok || !verifyBody.ok || !verifyBody.holder_subject_id) {
     return { ok: false, code: verifyBody.code ?? "verify_failed" };
   }
 
   return {
     ok: true,
     suiAddress: verifyBody.sui_address,
+    holderSubjectId: verifyBody.holder_subject_id,
     createdIdentity: Boolean(verifyBody.created_identity),
   };
 }

@@ -16,8 +16,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient }             from "@supabase/supabase-js";
+import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { resolveSessionHolderSubjectId } from "@/lib/auth/sessionSubject";
 import { transitionIdentityVerification } from "@/lib/idv/identityVerificationDb";
+import { veriffVendorDataForHolder } from "@/lib/idv/holderIdentityRef";
 import { getIdvProvider, isVeriffLive } from "@/lib/idv/idvProvider";
+import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
+import { normalizeSuiAddress } from "@mysten/sui/utils";
 
 const VERIFF_KEY    = process.env.VERIFF_API_KEY    ?? "";
 const VERIFF_BASE   = "https://stationapi.veriff.com/v1";
@@ -34,11 +39,30 @@ interface SessionBody {
 }
 
 export async function POST(req: NextRequest) {
-  const body: SessionBody = await req.json().catch(() => ({}));
-  const holder = body.sui_address ?? body.wallet_address;
-  if (!holder) {
-    return NextResponse.json({ error: "sui_address required" }, { status: 400 });
+  const auth = await requireBrowserSession(req);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: 401 });
   }
+  const sessionSubject = resolveSessionHolderSubjectId(auth.session);
+  if (!sessionSubject) {
+    return NextResponse.json({ error: "Sign in required" }, { status: 401 });
+  }
+
+  const body: SessionBody = await req.json().catch(() => ({}));
+  const requested = body.sui_address ?? body.wallet_address;
+  if (requested) {
+    try {
+      const normalized = isChainNeutralHolderSubjectId(requested.trim())
+        ? requested.trim()
+        : normalizeSuiAddress(requested);
+      if (normalized !== sessionSubject) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    } catch {
+      return NextResponse.json({ error: "Invalid holder reference" }, { status: 400 });
+    }
+  }
+  const holder = sessionSubject;
 
   const idvProvider = getIdvProvider();
   if (!isVeriffLive() || !VERIFF_KEY) {
@@ -65,7 +89,7 @@ export async function POST(req: NextRequest) {
       document:   {
         type: (body.document_type ?? "PASSPORT").toUpperCase(),
       },
-      vendorData: `sui:${holder}`,
+      vendorData: veriffVendorDataForHolder(holder),
     },
   };
 
@@ -94,12 +118,14 @@ export async function POST(req: NextRequest) {
   if (SB_URL && SB_SERVICE) {
     const sb = createClient(SB_URL, SB_SERVICE, { auth: { persistSession: false } });
     let userEmail: string | null = null;
-    const { data: zkRow } = await sb
-      .from("sui_zklogin_identities")
-      .select("email")
-      .eq("sui_address", holder)
-      .maybeSingle();
-    if (zkRow?.email) userEmail = zkRow.email;
+    if (!isChainNeutralHolderSubjectId(holder)) {
+      const { data: zkRow } = await sb
+        .from("sui_zklogin_identities")
+        .select("email")
+        .eq("sui_address", holder)
+        .maybeSingle();
+      if (zkRow?.email) userEmail = zkRow.email;
+    }
 
     await transitionIdentityVerification(
       holder,
