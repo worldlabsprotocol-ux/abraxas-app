@@ -26,7 +26,9 @@ export interface PassportWalletChallengeView {
 
 export interface PassportWalletAuthSuccess {
   ok: true;
-  sui_address: string;
+  holder_subject_id: string;
+  sui_address?: string;
+  wallet_caip10: string;
   provider: typeof PASSPORT_WALLET_PROVIDER;
   session_kind: "wallet";
   created_identity: boolean;

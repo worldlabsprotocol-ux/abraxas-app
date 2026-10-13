@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: session.error }, { status: session.status });
   }
 
-  const sui = session.session.suiAddress;
+  const sui = session.session.subjectId;
   const trust = await getTrustStatus(sui);
   if (!trust) {
     return NextResponse.json({ error: "Trust status unavailable" }, { status: 503 });

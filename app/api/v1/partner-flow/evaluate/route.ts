@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { resolveSessionHolderSubjectId } from "@/lib/auth/sessionSubject";
 import { evaluatePartnerFlow, PartnerFlowIdempotencyConflictError } from "@/lib/partner/relyingPartyFlow";
 import { isAllowedPartnerReturnUrl } from "@/lib/partner/returnUrlAllowlist";
 import {
@@ -65,12 +66,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: session.error }, { status: session.status });
   }
 
+  const sessionSubjectId = resolveSessionHolderSubjectId(session.session);
+  if (!sessionSubjectId) {
+    return NextResponse.json({ error: "Sign in required in this browser" }, { status: 401 });
+  }
+
   const rateLimited = await enforcePartnerFlowRateLimit({
     request,
     endpoint: ENDPOINT,
     method: "POST",
     started,
-    sessionSubject: session.session.suiAddress,
+    sessionSubject: sessionSubjectId,
   });
   if (rateLimited) return rateLimited;
 
@@ -194,7 +200,7 @@ export async function POST(request: NextRequest) {
       policyId,
       purpose: resolvedPurpose,
       returnUrl,
-      suiAddress: session.session.suiAddress,
+      suiAddress: sessionSubjectId,
       appOrigin: getPublicAppOriginFromRequest(request),
       expectedPolicyVersion,
       launchpadApplicationId,
@@ -214,7 +220,7 @@ export async function POST(request: NextRequest) {
         partnerId,
         policyId,
         policyVersion: result.policy_version,
-        subjectId: session.session.suiAddress,
+        subjectId: sessionSubjectId,
         outcome: result.next,
         verificationRequestId: result.verification_request_id,
         decisionId: result.decision_id,
@@ -231,7 +237,7 @@ export async function POST(request: NextRequest) {
           partnerId,
           policyId,
           policyVersion: result.policy_version,
-          subjectId: session.session.suiAddress,
+          subjectId: sessionSubjectId,
           outcome: result.replay_status === "issued" ? "issued" : "idempotent_replay",
           verificationRequestId: result.verification_request_id,
           decisionId: result.decision_id,
@@ -251,7 +257,7 @@ export async function POST(request: NextRequest) {
           endpoint: ENDPOINT,
           method: "POST",
           started,
-          sessionSubject: session.session.suiAddress,
+          sessionSubject: sessionSubjectId,
           partnerId,
           policyId,
           httpStatus: 503,
@@ -317,7 +323,7 @@ export async function POST(request: NextRequest) {
       endpoint: ENDPOINT,
       method: "POST",
       started,
-      sessionSubject: session.session.suiAddress,
+      sessionSubject: sessionSubjectId,
       partnerId,
       policyId,
       httpStatus: 200,
@@ -377,7 +383,7 @@ export async function POST(request: NextRequest) {
       action: "partner_flow.evaluate",
       partnerId,
       policyId,
-      subjectId: session.session.suiAddress,
+      subjectId: sessionSubjectId,
       outcome: "error",
       error: msg,
     });
@@ -401,7 +407,7 @@ export async function POST(request: NextRequest) {
       endpoint: ENDPOINT,
       method: "POST",
       started,
-      sessionSubject: session.session.suiAddress,
+      sessionSubject: sessionSubjectId,
       partnerId,
       policyId,
       httpStatus: 400,

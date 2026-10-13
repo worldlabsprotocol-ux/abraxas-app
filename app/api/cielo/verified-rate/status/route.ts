@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   }
 
   const fixture = parseVerifiedRateFixture(req.nextUrl.searchParams.get("fixture"));
-  const evaluation = await evaluateCieloVerifiedGuest(auth.session.suiAddress, {
+  const evaluation = await evaluateCieloVerifiedGuest(auth.session.subjectId, {
     requireConsent: false,
     fixture,
   });

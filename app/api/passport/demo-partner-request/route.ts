@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
       partnerId,
       policyId,
       requestedAction: isSandboxPolicyId(policyId) ? "sandbox_eligibility_demo" : "pilot_eligibility_check",
-      suiAddress: session.session.suiAddress,
+      suiAddress: session.session.subjectId,
     });
 
     return NextResponse.json({

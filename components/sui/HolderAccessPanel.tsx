@@ -5,12 +5,11 @@
 import { useState } from "react";
 import { useGoogleSignIn } from "@/lib/hooks/useGoogleSignIn";
 import { useSuiAuth } from "./SuiAuthProvider";
-import { PassportWalletSignInButton } from "./PassportWalletSignInButton";
+import { HolderWalletAuthPanel } from "@/components/passport/HolderWalletAuthPanel";
 import {
   HOLDER_LEGACY_GOOGLE_DETAIL,
   HOLDER_LEGACY_GOOGLE_LABEL,
   HOLDER_PASSPORT_ACCOUNT_HEADING,
-  HOLDER_WALLET_BOUNDARY,
   HOLDER_WALLET_SESSION_MISMATCH,
 } from "@/lib/sui/holderAccessCopy";
 import { ZKLOGIN_SIGN_IN_COPY } from "@/lib/sui/zklogin/signInCopy";
@@ -58,20 +57,9 @@ export function HolderAccessPanel({ compact = false }: { compact?: boolean }) {
         margin: "0 0 0.35rem",
       }}
       >
-        Blockchain access
+        Wallet authentication
       </p>
-      <PassportWalletSignInButton compact={compact} />
-      <p style={{
-        fontFamily: FONT,
-        fontSize: "0.72rem",
-        color: "var(--text-muted)",
-        lineHeight: 1.55,
-        margin: "0.65rem 0 0",
-        maxWidth: 520,
-      }}
-      >
-        {HOLDER_WALLET_BOUNDARY}
-      </p>
+      <HolderWalletAuthPanel compact={compact} />
 
       <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--border)" }}>
         <button

@@ -21,7 +21,7 @@ export async function DELETE(
 
   const body = await req.json().catch(() => ({})) as { reason?: string };
   const ok = await revokeWalletBinding({
-    subjectId: session.session.suiAddress,
+    subjectId: session.session.subjectId,
     bindingId,
     reason: body.reason ?? "holder_unlinked",
   });

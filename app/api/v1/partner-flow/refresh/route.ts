@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     endpoint: ENDPOINT,
     method: "POST",
     started,
-    sessionSubject: session.session.suiAddress,
+    sessionSubject: session.session.subjectId,
   });
   if (rateLimited) return rateLimited;
 
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
           action: "partner_flow.rejected",
           partnerId,
           policyId,
-          subjectId: session.session.suiAddress,
+          subjectId: session.session.subjectId,
           outcome: "rejected",
           verificationRequestId,
           error: e.message,
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
       partnerId,
       policyId,
       returnUrl,
-      suiAddress: session.session.suiAddress,
+      suiAddress: session.session.subjectId,
     });
 
     const flowTraceId = resolvePartnerFlowTraceId({
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
             action: "partner_flow.rejected",
             partnerId,
             policyId,
-            subjectId: session.session.suiAddress,
+            subjectId: session.session.subjectId,
             outcome: "rejected",
             error: e.message,
             errorCode: "flow_trace_id_mismatch",
@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
           partnerId,
           policyId,
           policyVersion: result.policy_version,
-          subjectId: session.session.suiAddress,
+          subjectId: session.session.subjectId,
           outcome: result.replay_status === "issued" ? "issued" : "idempotent_replay",
           verificationRequestId: body.verification_request_id,
           decisionId: result.decision_id,
@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
             ? buildPartnerFlowVerificationRequestIdempotencyKey(verificationRequestId)
             : buildPartnerFlowSessionIdempotencyKey({
               partnerId,
-              subjectId: session.session.suiAddress,
+              subjectId: session.session.subjectId,
               policyId,
             }),
         }, result.replay_status, "refresh");
@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
         partnerId,
         policyId,
         policyVersion: result.policy_version,
-        subjectId: session.session.suiAddress,
+        subjectId: session.session.subjectId,
         outcome: result.next,
         verificationRequestId: body.verification_request_id,
         decisionId: result.decision_id,
@@ -195,7 +195,7 @@ export async function POST(request: NextRequest) {
           endpoint: ENDPOINT,
           method: "POST",
           started,
-          sessionSubject: session.session.suiAddress,
+          sessionSubject: session.session.subjectId,
           partnerId,
           policyId,
           httpStatus: 503,
@@ -241,7 +241,7 @@ export async function POST(request: NextRequest) {
       endpoint: ENDPOINT,
       method: "POST",
       started,
-      sessionSubject: session.session.suiAddress,
+      sessionSubject: session.session.subjectId,
       partnerId,
       policyId,
       httpStatus: 200,
@@ -270,7 +270,7 @@ export async function POST(request: NextRequest) {
       action: "partner_flow.refresh",
       partnerId,
       policyId,
-      subjectId: session.session.suiAddress,
+      subjectId: session.session.subjectId,
       outcome: "error",
       verificationRequestId: body.verification_request_id,
       error: msg,
@@ -288,7 +288,7 @@ export async function POST(request: NextRequest) {
       endpoint: ENDPOINT,
       method: "POST",
       started,
-      sessionSubject: session.session.suiAddress,
+      sessionSubject: session.session.subjectId,
       partnerId,
       policyId,
       httpStatus: 400,

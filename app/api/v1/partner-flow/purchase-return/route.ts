@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     endpoint: ENDPOINT,
     method: "POST",
     started,
-    sessionSubject: session.session.suiAddress,
+    sessionSubject: session.session.subjectId,
   });
   if (rateLimited) return rateLimited;
 
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
   }
 
   const result = await completeAgeEligibilityPurchaseReturn({
-    suiAddress: session.session.suiAddress,
+    suiAddress: session.session.subjectId,
     verificationRequestId,
     receiptId: body.receipt_id?.trim(),
     clientReturnUrl: body.return_url?.trim(),
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       endpoint: ENDPOINT,
       method: "POST",
       started,
-      sessionSubject: session.session.suiAddress,
+      sessionSubject: session.session.subjectId,
       httpStatus: status,
     });
     return NextResponse.json(
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     endpoint: ENDPOINT,
     method: "POST",
     started,
-    sessionSubject: session.session.suiAddress,
+    sessionSubject: session.session.subjectId,
     httpStatus: 200,
   });
 

@@ -145,7 +145,9 @@ export async function GET(req: NextRequest) {
   const raw = req.nextUrl.searchParams.get("sui") ?? req.nextUrl.searchParams.get("sui_address");
   if (raw) {
     try {
-      if (normalizeSuiAddress(raw) !== auth.session.suiAddress) {
+      const expected = auth.session.suiAddress ?? auth.session.subjectId;
+      const provided = auth.session.suiAddress ? normalizeSuiAddress(raw) : raw.trim();
+      if (provided !== expected) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
     } catch {
@@ -153,7 +155,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return syncDecisionForSui(auth.session.suiAddress);
+  return syncDecisionForSui(auth.session.subjectId);
 }
 
 export async function POST(req: NextRequest) {
@@ -170,7 +172,9 @@ export async function POST(req: NextRequest) {
   const raw = body.sui_address ?? body.sui;
   if (raw) {
     try {
-      if (normalizeSuiAddress(raw) !== auth.session.suiAddress) {
+      const expected = auth.session.suiAddress ?? auth.session.subjectId;
+      const provided = auth.session.suiAddress ? normalizeSuiAddress(raw) : raw.trim();
+      if (provided !== expected) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
     } catch {
@@ -178,5 +182,5 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  return syncDecisionForSui(auth.session.suiAddress, body.session_id?.trim());
+  return syncDecisionForSui(auth.session.subjectId, body.session_id?.trim());
 }

@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const view = await loadPassportVerificationActivity(session.session.suiAddress);
+    const view = await loadPassportVerificationActivity(session.session.subjectId);
     const serialized = JSON.stringify(view);
     if (passportActivityCopyLeaks(serialized).length > 0) {
       return NextResponse.json({ ok: false, error: PASSPORT_ACTIVITY_UNAVAILABLE }, { status: 503 });

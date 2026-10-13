@@ -481,6 +481,22 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
       "Single-use Passport wallet authentication challenges and atomic consume RPC. Required before wallet-native holder login on DEMO/staging.",
   },
   {
+    file: "136_passport_holder_subjects.sql",
+    tier: "required",
+    creates: [
+      "passport_holder_subjects",
+      "passport_holder_wallet_accounts",
+      "passport_holder_legacy_links",
+      "passport_evm_auth_challenges",
+      "passport_solana_auth_challenges",
+    ],
+    alters: ["identity_verifications.holder_subject_id"],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Build #550 chain-neutral holder subjects, EVM/Solana wallet auth challenges, and legacy identity links. Apply before enabling primary Solana/EVM Passport sign-in.",
+  },
+  {
     file: "135_passport_wallet_login_grants.sql",
     tier: "required",
     creates: ["passport_wallet_login_grants"],

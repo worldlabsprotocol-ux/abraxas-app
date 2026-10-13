@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
   }
 
   const result = await submitProvenanceDisclosure({
-    subjectId: session.session.suiAddress,
+    subjectId: session.session.subjectId,
     partnerId,
     policyId,
     contentHash,

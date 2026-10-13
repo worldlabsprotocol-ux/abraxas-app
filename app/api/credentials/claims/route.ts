@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const subject = auth.session.suiAddress;
+    const subject = auth.session.subjectId;
     const claims = await getActiveClaims(subject);
 
     return NextResponse.json({

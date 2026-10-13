@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await grantCieloVerifiedGuestConsent(auth.session.suiAddress);
+    const result = await grantCieloVerifiedGuestConsent(auth.session.subjectId);
     void recordCieloFunnelEvent({
       eventType: "policy_evaluated",
       outcome: result.decision,

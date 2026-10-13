@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "file and stampId required" }, { status: 400 });
     }
 
-    const suiAddress = normalizeSuiAddress(auth.session.suiAddress);
+    const suiAddress = normalizeSuiAddress(auth.session.subjectId);
 
     const { data: zkRow } = await supabase
       .from("sui_zklogin_identities")

@@ -2,6 +2,7 @@
 // Generic relying-party flow: credential-first verify, Passport only when required.
 
 import { normalizeSuiAddress } from "@mysten/sui/utils";
+import { normalizePartnerFlowSubject } from "@/lib/auth/sessionSubject";
 import { buildPartnerContinuePath } from "@/lib/partner/partnerFlowContinuation";
 import { getActiveClaims } from "@/lib/credentials/claimsService";
 import { evaluatePolicyForSubject } from "@/lib/policy/evaluateSubjectPolicy";
@@ -159,12 +160,16 @@ export function buildPartnerVerifyUrl(input: {
 
 export async function getHolderCredentialStatus(suiAddress: string): Promise<HolderCredentialStatus> {
   const sb = requireSupabaseAdmin();
-  const subject = normalizeSuiAddress(suiAddress);
+  const subject = normalizePartnerFlowSubject(suiAddress);
 
+  const filters = [`wallet_address.eq.${subject}`, `sui_address.eq.${subject}`];
+  if (subject.startsWith("abx_hs_")) {
+    filters.push(`holder_subject_id.eq.${subject}`);
+  }
   const { data: verification } = await sb
     .from("identity_verifications")
     .select("status, credential_jti")
-    .or(`wallet_address.eq.${subject},sui_address.eq.${subject}`)
+    .or(filters.join(","))
     .maybeSingle();
 
   if (!verification) return { status: "none" };
@@ -277,7 +282,7 @@ export async function issuePartnerSessionReceipt(input: {
   invalidation_reasons: string[];
   replaced_receipt_id?: string | null;
 }> {
-  const subject = normalizeSuiAddress(input.suiAddress);
+  const subject = normalizePartnerFlowSubject(input.suiAddress);
   const {
     correlationId,
     verificationRequestUuid,
@@ -604,7 +609,7 @@ export async function evaluateGoodTroublePurchaseFlow(input: {
   appOrigin?: string;
   expectedPolicyVersion?: number;
 }): Promise<PartnerFlowEvaluateResult> {
-  const subject = normalizeSuiAddress(input.suiAddress);
+  const subject = normalizePartnerFlowSubject(input.suiAddress);
 
   const revoked = await denyIfPartnerFlowRevoked({
     suiAddress: subject,
@@ -690,7 +695,7 @@ export async function evaluateGoodTroubleBrowseFlow(input: {
   purpose?: "browse";
   appOrigin?: string;
 }): Promise<PartnerFlowEvaluateResult> {
-  const subject = normalizeSuiAddress(input.suiAddress);
+  const subject = normalizePartnerFlowSubject(input.suiAddress);
 
   const revoked = await denyIfPartnerFlowRevoked({
     suiAddress: subject,
@@ -826,7 +831,7 @@ export async function evaluatePartnerFlow(input: {
     }
   }
 
-  const subject = normalizeSuiAddress(input.suiAddress);
+  const subject = normalizePartnerFlowSubject(input.suiAddress);
   const credential = await getHolderCredentialStatus(subject);
 
   if (credential.status === "pending_review") {

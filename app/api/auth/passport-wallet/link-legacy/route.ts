@@ -53,6 +53,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, code: "invalid_input" }, { status: 400, headers: NO_STORE });
   }
 
+  const sessionSuiAddress = sessionGate.session.suiAddress;
+  if (!sessionSuiAddress) {
+    return NextResponse.json({ ok: false, code: "unauthorized" }, { status: 403, headers: NO_STORE });
+  }
+
   const linked = await linkLegacyPassportWallet({
     challengeId: String(body.challenge_id ?? ""),
     walletAddress: String(body.wallet_address ?? ""),
@@ -60,7 +65,7 @@ export async function POST(req: NextRequest) {
     signature: String(body.signature ?? ""),
     sessionContext,
     requestOrigin,
-    sessionSuiAddress: sessionGate.session.suiAddress,
+    sessionSuiAddress,
   });
 
   if (!linked.ok) {

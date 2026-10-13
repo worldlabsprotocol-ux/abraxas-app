@@ -18,8 +18,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await ensureZkLoginWalletBinding(session.session.suiAddress);
-    const snapshot = await getCanonicalWalletBindingSnapshot(session.session.suiAddress);
+    const result = await ensureZkLoginWalletBinding(session.session.subjectId);
+    const snapshot = await getCanonicalWalletBindingSnapshot(session.session.subjectId);
 
     if (result.status === "failed" || !snapshot.persisted) {
       return NextResponse.json({

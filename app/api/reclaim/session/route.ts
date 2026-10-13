@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
   } catch {
     return fail("schema_unavailable", 503);
   }
-  if (!record || record.holder_hmac !== holderBindingHmac(session.session.suiAddress)) {
+  if (!record || record.holder_hmac !== holderBindingHmac(session.session.subjectId)) {
     return fail("reclaim_session_missing", 404);
   }
   const view = publicReclaimSessionView({
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
   const bound = await resolveBoundPartnerContinuation({
     request,
     verifyRequestId: verifyRequest,
-    sessionSubject: session.session.suiAddress,
+    sessionSubject: session.session.subjectId,
   });
   if (!bound.ok) {
     return fail(bound.code, bound.code === CONTINUATION_STORE_UNAVAILABLE ? 503 : 400);
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
   if (!route?.available) return fail("reclaim_unavailable", 400);
 
   const created = await createReclaimSession({
-    holderSubject: session.session.suiAddress,
+    holderSubject: session.session.subjectId,
     verifyRequest,
     policyId: bound.stored.policyId,
     policyVersion: bound.stored.policyVersion ?? 1,
@@ -106,7 +106,7 @@ export async function DELETE(request: NextRequest) {
   if (!session.ok) return fail(session.error, session.status);
   const sessionRef = request.nextUrl.searchParams.get("session_ref")?.trim() ?? "";
   if (!sessionRef) return fail("missing", 400);
-  const cancelled = await cancelReclaimSession(sessionRef, session.session.suiAddress);
+  const cancelled = await cancelReclaimSession(sessionRef, session.session.subjectId);
   if (!cancelled) return fail("reclaim_session_missing", 404);
   return NextResponse.json({
     ok: true,

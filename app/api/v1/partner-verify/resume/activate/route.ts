@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
   const result = await activatePartnerFlowContinuation({
     store: createSupabaseContinuationStore(),
     jti: payload?.jti ?? null,
-    suiAddress: session.session.suiAddress,
+    suiAddress: session.session.subjectId,
     claimedPartnerId: claimed.partnerId,
     claimedPolicyId: claimed.policyId,
     claimedPolicyVersion: claimed.policyVersion,

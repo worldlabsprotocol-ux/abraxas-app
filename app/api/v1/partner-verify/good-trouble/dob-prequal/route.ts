@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
   const bound = await resolveBoundPartnerContinuation({
     request,
     verifyRequestId: verifyRequest,
-    sessionSubject: session.session.suiAddress,
+    sessionSubject: session.session.subjectId,
   });
   if (!bound.ok) {
     return NextResponse.json({ ok: false, code: bound.code }, { status: 400 });

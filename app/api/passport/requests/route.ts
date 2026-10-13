@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const requests = await listPassportRequestInbox(session.session.suiAddress);
+    const requests = await listPassportRequestInbox(session.session.subjectId);
     return NextResponse.json({ ok: true, requests });
   } catch {
     return NextResponse.json({

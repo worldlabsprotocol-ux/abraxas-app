@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const binding = await confirmEvmBinding({
-      subjectId: session.session.suiAddress,
+      subjectId: session.session.subjectId,
       challengeId: body.challenge_id,
       signature: body.signature,
     });

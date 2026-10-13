@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const requests = await listPrivacyRequestsForSubject(sessionResult.session.suiAddress);
+    const requests = await listPrivacyRequestsForSubject(sessionResult.session.subjectId);
     return NextResponse.json({
       disclaimer: PRIVACY_CENTER_DISCLAIMER,
       data_categories: PRIVACY_DATA_CATEGORIES.map(c => ({
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await createPrivacyRequest({
-      subjectSui: sessionResult.session.suiAddress,
+      subjectSui: sessionResult.session.subjectId,
       requestType: body.request_type,
       idempotencyKey: body.idempotency_key,
     });

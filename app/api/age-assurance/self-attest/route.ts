@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     endpoint: "/api/age-assurance/self-attest",
     method: "POST",
     started,
-    sessionSubject: session.session.suiAddress,
+    sessionSubject: session.session.subjectId,
   });
   if (rateLimited) return rateLimited;
 
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
     partnerId,
     policyId,
     purpose,
-    holderRef: session.session.suiAddress,
+    holderRef: session.session.subjectId,
   });
 
   if (!result.ok) {

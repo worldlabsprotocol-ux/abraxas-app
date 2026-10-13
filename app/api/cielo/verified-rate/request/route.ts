@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const result = await getVerifiedRateRequestForSubject(ref, auth.session.suiAddress);
+    const result = await getVerifiedRateRequestForSubject(ref, auth.session.subjectId);
     if (!result) {
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }
