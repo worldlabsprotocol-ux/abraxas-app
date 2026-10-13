@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     const status =
       verified.code === "invalid_signature" || verified.code === "replay" ? 401
         : verified.code === "legacy_link_required" ? 409
-          : verified.code === "store_unavailable" ? 503
+          : verified.code === "store_unavailable" || verified.code === "network_config_invalid" ? 503
             : 400;
     return NextResponse.json({ ok: false, code: verified.code }, { status, headers: NO_STORE });
   }
