@@ -75,7 +75,7 @@ export function normalizePublicOrigin(origin: string): string {
 }
 
 /** Configured browser-facing origins we may reflect from an incoming request host. */
-function getTrustedPublicAppOrigins(): string[] {
+export function getTrustedPublicAppOrigins(): string[] {
   const origins: string[] = [SITE_URL];
 
   const fromPublic = process.env.NEXT_PUBLIC_APP_URL?.trim();
@@ -95,7 +95,39 @@ function getTrustedPublicAppOrigins(): string[] {
 
   origins.push("http://localhost:3000");
 
-  return Array.from(new Set(origins));
+  const extra = process.env.ABRAXAS_PASSPORT_WALLET_TRUSTED_ORIGINS?.split(",")
+    .map((v) => v.trim())
+    .filter(Boolean) ?? [];
+  for (const origin of extra) {
+    try {
+      origins.push(normalizePublicOrigin(origin));
+    } catch {
+      // ignore invalid configured origins
+    }
+  }
+
+  return Array.from(new Set(origins.map((o) => {
+    try {
+      return normalizePublicOrigin(o);
+    } catch {
+      return o.replace(/\/$/, "");
+    }
+  })));
+}
+
+export function isTrustedPublicAppOrigin(origin: string): boolean {
+  try {
+    const normalized = normalizePublicOrigin(origin);
+    return getTrustedPublicAppOrigins().some((trusted) => {
+      try {
+        return normalizePublicOrigin(trusted) === normalized;
+      } catch {
+        return false;
+      }
+    });
+  } catch {
+    return false;
+  }
 }
 
 export type VercelDeploymentEnv = "production" | "preview" | "development";

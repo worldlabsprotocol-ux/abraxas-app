@@ -25,13 +25,25 @@ export interface ZkLoginPendingSession {
 
 export interface ZkLoginUserSession {
   suiAddress: string;
-  provider: "google" | "apple" | "abraxas_hosted";
+  provider: "google" | "apple" | "abraxas_hosted" | "passport_wallet";
   oauthSub?: string;
   email?: string;
   maxEpoch: number;
   loggedInAt: string;
   /** Abraxas-native hosted session (no Google OAuth). */
-  sessionKind?: "hosted" | "oauth";
+  sessionKind?: "hosted" | "oauth" | "wallet";
+}
+
+export function saveWalletPassportSession(suiAddress: string): ZkLoginUserSession {
+  const session: ZkLoginUserSession = {
+    suiAddress,
+    provider: "passport_wallet",
+    maxEpoch: 0,
+    loggedInAt: new Date().toISOString(),
+    sessionKind: "wallet",
+  };
+  saveUserSession(session);
+  return session;
 }
 
 export function savePendingSession(session: ZkLoginPendingSession): void {

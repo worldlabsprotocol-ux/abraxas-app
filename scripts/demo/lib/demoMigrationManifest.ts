@@ -471,6 +471,26 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
       "Fixes PL/pgSQL 42702 ambiguity in ensure_partner_flow_continuation_by_opaque via #variable_conflict use_column (#566). Apply after 132.",
   },
   {
+    file: "134_passport_wallet_auth_challenges.sql",
+    tier: "required",
+    creates: ["passport_wallet_auth_challenges", "consume_passport_wallet_auth_challenge"],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Single-use Passport wallet authentication challenges and atomic consume RPC. Required before wallet-native holder login on DEMO/staging.",
+  },
+  {
+    file: "135_passport_wallet_login_grants.sql",
+    tier: "required",
+    creates: ["passport_wallet_login_grants"],
+    alters: [],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Dual-control grants for legacy OAuth/hosted Passport rows to enable wallet login without identity merge. Apply with 134.",
+  },
+  {
     file: "092_wallet_standard_action_bindings.sql",
     tier: "required",
     creates: [

@@ -33,6 +33,8 @@ import {
   resolvePartnerJourneyPresentation,
 } from "@/lib/partner/partnerJourneyStateMachine";
 import { PartnerVerifyShell, type PartnerVerifyPhase } from "./PartnerVerifyShell";
+import { PassportWalletSignInButton } from "@/components/sui/PassportWalletSignInButton";
+import { PASSPORT_WALLET_ACTIONS } from "@/lib/auth/passportWalletAuth/contract";
 
 interface FlowResult {
   next: string;
@@ -519,6 +521,13 @@ export function PartnerVerifyClient({
       disclosedResult={launchpadResolution.resolved?.disclosedResult ?? null}
       hostedBootstrapEligible={hostedBootstrapEligible}
       onOptionalSignIn={() => { void handleSignIn(); }}
+      onWalletSignIn={(
+        <PassportWalletSignInButton
+          compact
+          intendedAction={PASSPORT_WALLET_ACTIONS.partnerVerify}
+          onSuccess={() => refreshSession()}
+        />
+      )}
     />
   );
 }
