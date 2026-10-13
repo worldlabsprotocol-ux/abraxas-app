@@ -2,8 +2,8 @@
   "certification_version": "1.0.0",
   "build": "547",
   "title": "Live partner verification certification",
-  "generated_at": "2026-10-13T07:40:08.706Z",
-  "commit_sha": "fe2b6dd0cd04627e8bd51005c874340fb5f7c57e",
+  "generated_at": "2026-10-13T07:46:13.246Z",
+  "commit_sha": "1f6910bc16f9fbbf6e863c40c0e3d5319839a924",
   "extends_build": "546",
   "environment": {
     "node": "v22.14.0",
@@ -24,14 +24,14 @@
   "latency": {
     "samples": 30,
     "verify_ms": {
-      "p50": 21.09,
-      "p95": 56.07,
-      "max": 56.71
+      "p50": 19.89,
+      "p95": 31.63,
+      "max": 40.89
     },
     "rp_decide_ms": {
-      "p50": 25.67,
-      "p95": 55.83,
-      "max": 59.51
+      "p50": 23.1,
+      "p95": 63.99,
+      "max": 74.42
     }
   },
   "cases": [
@@ -42,9 +42,9 @@
       "expected_behavior": "exactly one grant, others replay denied",
       "observed_behavior": "grants=1; replays=15",
       "verification_evidence": [
-        "report-concurrent-0:granted",
+        "report-concurrent-0:denied",
         "report-concurrent-1:denied",
-        "report-concurrent-2:denied",
+        "report-concurrent-2:granted",
         "report-concurrent-3:denied",
         "report-concurrent-4:denied",
         "report-concurrent-5:denied",
@@ -126,7 +126,7 @@
         "report-concurrent-15"
       ],
       "consumption_ids": [
-        "f684bbd0ce36a020dc93b77d"
+        "46cc24d7661798510cf683ef"
       ],
       "observed_at": [
         "2026-06-15T12:00:00.000Z",
@@ -147,9 +147,9 @@
         "2026-06-15T12:00:00.000Z"
       ],
       "outcomes": [
+        "denied",
+        "denied",
         "granted",
-        "denied",
-        "denied",
         "denied",
         "denied",
         "denied",
@@ -201,9 +201,9 @@
         true
       ],
       "durable_audit_logged": [
+        false,
+        false,
         true,
-        false,
-        false,
         false,
         false,
         false,
