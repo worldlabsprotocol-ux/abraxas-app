@@ -1,10 +1,16 @@
 // FILE: lib/institutionalCertification/build547/receiptConsumptionStore.ts
-// Durable single-use receipt consumption — filesystem atomic create (no Supabase).
+// Receipt consumption adapters — memory/filesystem (Build #547) + postgres (Build #548).
 
 import { mkdir, appendFile, writeFile, readFile, access, readdir } from "node:fs/promises";
 import { constants } from "node:fs";
 import { join } from "node:path";
-import { createHash } from "node:crypto";
+import {
+  buildCanonicalReplayKey,
+  consumptionIdForAttempt,
+  type ReplayConsumptionScope,
+} from "@/lib/institutionalCertification/build548/replayKey";
+
+export type ReceiptConsumptionStoreKind = "memory" | "filesystem" | "postgres";
 
 export type ConsumptionAttemptResult =
   | { status: "recorded"; consumption_id: string }
@@ -13,37 +19,36 @@ export type ConsumptionAttemptResult =
       consumption_id: string;
       audit_error: string;
     }
-  | { status: "replay"; consumption_id: string | null };
+  | { status: "replay"; consumption_id: string | null }
+  | { status: "persistence_unavailable"; error: string };
 
 export interface ConsumptionAuditEntry {
   consumption_id: string;
   receipt_id: string;
   request_id: string;
   partner_id: string;
+  policy_id?: string;
   recorded_at: string;
   instance_id: string;
 }
 
 export interface ReceiptConsumptionStore {
-  readonly kind: "memory" | "filesystem";
+  readonly kind: ReceiptConsumptionStoreKind;
   tryRecordConsumption(input: {
     receiptId: string;
     requestId: string;
     partnerId: string;
+    policyId: string;
     at: string;
   }): Promise<ConsumptionAttemptResult>;
-  hasConsumed(receiptId: string): Promise<boolean>;
+  hasConsumed(scope: ReplayConsumptionScope): Promise<boolean>;
   listAudit(limit?: number): Promise<ConsumptionAuditEntry[]>;
   /** Filesystem certification store only — backfill audit.jsonl from wx markers. */
   reconcileAuditFromMarkers?(): Promise<{ backfilled: number; skipped: number }>;
 }
 
-function consumptionId(receiptId: string, requestId: string): string {
-  return createHash("sha256").update(`${receiptId}:${requestId}`).digest("hex").slice(0, 24);
-}
-
-function safeReceiptKey(receiptId: string): string {
-  return createHash("sha256").update(receiptId).digest("hex");
+function markerFileName(scope: ReplayConsumptionScope): string {
+  return `${buildCanonicalReplayKey(scope)}.json`;
 }
 
 /** Build #546-compatible in-memory store (not institutional persistence). */
@@ -56,26 +61,34 @@ export class InMemoryReceiptConsumptionStore implements ReceiptConsumptionStore 
     receiptId: string;
     requestId: string;
     partnerId: string;
+    policyId: string;
     at: string;
   }): Promise<ConsumptionAttemptResult> {
-    if (this.consumed.has(input.receiptId)) {
+    const scope: ReplayConsumptionScope = {
+      partnerId: input.partnerId,
+      policyId: input.policyId,
+      receiptId: input.receiptId,
+    };
+    const replayKey = buildCanonicalReplayKey(scope);
+    if (this.consumed.has(replayKey)) {
       return { status: "replay", consumption_id: null };
     }
-    this.consumed.add(input.receiptId);
-    const id = consumptionId(input.receiptId, input.requestId);
+    this.consumed.add(replayKey);
+    const id = consumptionIdForAttempt(scope, input.requestId);
     this.audit.push({
       consumption_id: id,
       receipt_id: input.receiptId,
       request_id: input.requestId,
       partner_id: input.partnerId,
+      policy_id: input.policyId,
       recorded_at: input.at,
       instance_id: "memory",
     });
     return { status: "recorded", consumption_id: id };
   }
 
-  async hasConsumed(receiptId: string): Promise<boolean> {
-    return this.consumed.has(receiptId);
+  async hasConsumed(scope: ReplayConsumptionScope): Promise<boolean> {
+    return this.consumed.has(buildCanonicalReplayKey(scope));
   }
 
   async listAudit(limit = 100): Promise<ConsumptionAuditEntry[]> {
@@ -117,16 +130,23 @@ export class FileReceiptConsumptionStore implements ReceiptConsumptionStore {
     receiptId: string;
     requestId: string;
     partnerId: string;
+    policyId: string;
     at: string;
   }): Promise<ConsumptionAttemptResult> {
     await this.init();
-    const marker = join(this.consumedDir, `${safeReceiptKey(input.receiptId)}.json`);
-    const id = consumptionId(input.receiptId, input.requestId);
+    const scope: ReplayConsumptionScope = {
+      partnerId: input.partnerId,
+      policyId: input.policyId,
+      receiptId: input.receiptId,
+    };
+    const marker = join(this.consumedDir, markerFileName(scope));
+    const id = consumptionIdForAttempt(scope, input.requestId);
     const payload = JSON.stringify({
       consumption_id: id,
       receipt_id: input.receiptId,
       request_id: input.requestId,
       partner_id: input.partnerId,
+      policy_id: input.policyId,
       recorded_at: input.at,
       instance_id: this.instanceId,
     });
@@ -156,7 +176,15 @@ export class FileReceiptConsumptionStore implements ReceiptConsumptionStore {
     let backfilled = 0;
     let skipped = 0;
     const existing = await this.listAudit(10_000);
-    const loggedReceipts = new Set(existing.map((e) => e.receipt_id));
+    const loggedKeys = new Set(
+      existing.map((e) =>
+        buildCanonicalReplayKey({
+          partnerId: e.partner_id,
+          policyId: e.policy_id ?? "",
+          receiptId: e.receipt_id,
+        }),
+      ),
+    );
     let names: string[] = [];
     try {
       names = await readdir(this.consumedDir);
@@ -167,19 +195,24 @@ export class FileReceiptConsumptionStore implements ReceiptConsumptionStore {
       if (!name.endsWith(".json")) continue;
       const raw = await readFile(join(this.consumedDir, name), "utf8");
       const entry = JSON.parse(raw) as ConsumptionAuditEntry;
-      if (loggedReceipts.has(entry.receipt_id)) {
+      const key = buildCanonicalReplayKey({
+        partnerId: entry.partner_id,
+        policyId: entry.policy_id ?? "",
+        receiptId: entry.receipt_id,
+      });
+      if (loggedKeys.has(key)) {
         skipped += 1;
         continue;
       }
       await this.appendAudit(this.auditPath, `${raw.trim()}\n`);
-      loggedReceipts.add(entry.receipt_id);
+      loggedKeys.add(key);
       backfilled += 1;
     }
     return { backfilled, skipped };
   }
 
-  async hasConsumed(receiptId: string): Promise<boolean> {
-    const marker = join(this.consumedDir, `${safeReceiptKey(receiptId)}.json`);
+  async hasConsumed(scope: ReplayConsumptionScope): Promise<boolean> {
+    const marker = join(this.consumedDir, markerFileName(scope));
     try {
       await access(marker, constants.F_OK);
       return true;
