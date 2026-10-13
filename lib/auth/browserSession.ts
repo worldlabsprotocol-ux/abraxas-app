@@ -54,8 +54,27 @@ export async function resolveBrowserSession(req: NextRequest): Promise<BrowserSe
 
   try {
     const { payload } = await jwtVerify(token, secret);
+
+    if (payload.ver === 2 && payload.login === "solana_wallet") {
+      const suiOnly = typeof payload.sui === "string" ? payload.sui : null;
+      if (!suiOnly) return null;
+      const normalized = normalizeSuiAddress(suiOnly);
+      const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+      const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+      if (sbUrl && sbKey) {
+        const sb = createClient(sbUrl, sbKey, { auth: { persistSession: false } });
+        const { data: identity } = await sb
+          .from("sui_zklogin_identities")
+          .select("sui_address")
+          .eq("sui_address", normalized)
+          .maybeSingle();
+        if (!identity) return null;
+      }
+      return { suiAddress: normalized };
+    }
+
     const sui = typeof payload.sui === "string" ? payload.sui : payload.sub;
-    if (!sui) return null;
+    if (!sui || typeof sui !== "string") return null;
     const normalized = normalizeSuiAddress(sui);
 
     const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";

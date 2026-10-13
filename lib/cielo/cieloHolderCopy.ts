@@ -21,6 +21,12 @@ export const CIELO_HOLDER_COPY = {
   stepConsent: "Review & consent",
   stepSubmit: "Send request to Cielo",
   signIn: "Continue with Google",
+  signInWallet: "Continue with Phantom",
+  signInWalletLead:
+    "Sign in with your Solana wallet. Cielo v1 still requires an Abraxas Passport profile and Sui wallet verification — wallet login alone does not complete eligibility.",
+  walletSessionNoPassport:
+    "You are signed in with your wallet. To continue this Cielo request, complete or link your Abraxas Passport (profile + Sui wallet verification).",
+  legacyGoogleSignIn: "Sign in with Google (existing account)",
   continueConsent: "Continue to review",
   submit: "Send verified guest request",
   notBooking: "Operator review is separate from Airbnb booking or payment.",
