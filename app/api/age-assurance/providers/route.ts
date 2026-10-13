@@ -40,11 +40,11 @@ export async function GET(request: NextRequest) {
     ctx.threshold,
   );
 
-  const credential = await getHolderCredentialStatus(session.session.suiAddress);
+  const credential = await getHolderCredentialStatus(session.session.subjectId);
   let existingProofEligible = false;
   if (credential.status === "active" && credential.credential_jti) {
     const evaluation = await evaluatePolicyForSubject({
-      suiAddress: session.session.suiAddress,
+      suiAddress: session.session.subjectId,
       policyId,
       partnerId,
     });

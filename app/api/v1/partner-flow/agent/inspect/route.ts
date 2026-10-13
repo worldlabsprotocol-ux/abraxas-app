@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     const result = await inspectPartnerPolicyForAgent({
       partner_id: partnerId,
       policy_id: policyId,
-      sui_address: session.session.suiAddress,
+      sui_address: session.session.subjectId,
     });
     const partnerName = resolvePartnerDisplayName(partnerId);
     return NextResponse.json({

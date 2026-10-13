@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Support is unavailable right now." }, { status: 503 });
   }
 
-  const email = await resolveHolderEmail(supabase, auth.session.suiAddress);
+  const email = await resolveHolderEmail(supabase, auth.session.subjectId);
   if (!email) {
     return NextResponse.json(
       { ok: false, error: "We could not connect support history to your signed-in account." },
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Support is unavailable right now." }, { status: 503 });
   }
 
-  const email = await resolveHolderEmail(supabase, auth.session.suiAddress);
+  const email = await resolveHolderEmail(supabase, auth.session.subjectId);
   if (!email) {
     return NextResponse.json(
       { ok: false, error: "We could not connect this request to your signed-in account." },

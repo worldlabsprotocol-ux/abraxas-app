@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     endpoint: "/api/v1/partner-flow/evaluate",
     method: "POST",
     started,
-    sessionSubject: session.session.suiAddress,
+    sessionSubject: session.session.subjectId,
   });
   if (rateLimited) return rateLimited;
 
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
   }
 
   const sessionNonce = generateAgeAssuranceSessionNonce();
-  const subjectRef = session.session.suiAddress;
+  const subjectRef = session.session.subjectId;
 
   try {
     const providerSession = await provider.createSession({

@@ -13,6 +13,7 @@ import {
   reuseBrowseSelfAttestation,
 } from "@/lib/assurance/selfAttestation/reuseBrowseSelfAttestation";
 import { enforcePartnerFlowRateLimit } from "@/lib/partner/partnerFlowRouteGuard";
+import { resolveSessionHolderSubjectId } from "@/lib/auth/sessionSubject";
 
 export const dynamic = "force-dynamic";
 
@@ -28,12 +29,17 @@ export async function POST(request: NextRequest) {
     return ageAssuranceErrorResponse("auth_required", session.error, session.status);
   }
 
+  const sessionSubjectId = resolveSessionHolderSubjectId(session.session);
+  if (!sessionSubjectId) {
+    return ageAssuranceErrorResponse("auth_required", "Sign in required in this browser", 401);
+  }
+
   const rateLimited = await enforcePartnerFlowRateLimit({
     request,
     endpoint: "/api/age-assurance/browse-reuse",
     method: "POST",
     started,
-    sessionSubject: session.session.suiAddress,
+    sessionSubject: sessionSubjectId,
   });
   if (rateLimited) return rateLimited;
 
@@ -65,7 +71,7 @@ export async function POST(request: NextRequest) {
   }
 
   const result = await reuseBrowseSelfAttestation({
-    holderRef: session.session.suiAddress,
+    holderRef: sessionSubjectId,
     partnerId,
     policyId,
     returnUrl,

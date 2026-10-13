@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: session.error }, { status: session.status });
   }
 
-  const wallets = await listHolderWalletViews(session.session.suiAddress);
+  const wallets = await listHolderWalletViews(session.session.subjectId);
   return NextResponse.json({
     wallets: wallets.map(w => ({
       id: w.id,

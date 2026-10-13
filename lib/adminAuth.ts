@@ -117,7 +117,7 @@ export async function resolveAdminAccess(req: NextRequest): Promise<{
     };
   }
 
-  const email = await emailForSuiAddress(session.suiAddress);
+  const email = session.suiAddress ? await emailForSuiAddress(session.suiAddress) : null;
   if (!allowlistConfigured) {
     return { authorized: false, method: null, email, reason: "allowlist_empty", allowlist_configured: false };
   }
@@ -175,7 +175,7 @@ export async function resolveStrictProductionAdminAccess(req: NextRequest): Prom
     };
   }
 
-  const email = await emailForSuiAddress(session.suiAddress);
+  const email = session.suiAddress ? await emailForSuiAddress(session.suiAddress) : null;
   if (!isAdminEmail(email)) {
     return {
       authorized: false,

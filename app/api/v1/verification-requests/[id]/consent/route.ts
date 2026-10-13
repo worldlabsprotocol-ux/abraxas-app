@@ -36,7 +36,7 @@ export async function POST(
     endpoint: ENDPOINT,
     method: "POST",
     started,
-    sessionSubject: session.session.suiAddress,
+    sessionSubject: session.session.subjectId,
   });
   if (rateLimited) return rateLimited;
 
@@ -57,7 +57,7 @@ export async function POST(
       verifyRequestId: id,
       partnerId: String(requestRow.partner_id ?? ""),
       policyId: String(requestRow.policy_id ?? ""),
-      sessionSubject: session.session.suiAddress,
+      sessionSubject: session.session.subjectId,
     });
     if (!qualified.ok) {
       recordPartnerFlowRequestOutcome({
@@ -65,7 +65,7 @@ export async function POST(
         endpoint: ENDPOINT,
         method: "POST",
         started,
-        sessionSubject: session.session.suiAddress,
+        sessionSubject: session.session.subjectId,
         httpStatus: 403,
       });
       return NextResponse.json({
@@ -77,7 +77,7 @@ export async function POST(
 
     const result = await consentAndDecide({
       requestId: id,
-      suiAddress: session.session.suiAddress,
+      suiAddress: session.session.subjectId,
       request: req,
     });
 
@@ -88,7 +88,7 @@ export async function POST(
       endpoint: ENDPOINT,
       method: "POST",
       started,
-      sessionSubject: session.session.suiAddress,
+      sessionSubject: session.session.subjectId,
       httpStatus: 200,
     });
 
@@ -110,7 +110,7 @@ export async function POST(
       endpoint: ENDPOINT,
       method: "POST",
       started,
-      sessionSubject: session.session.suiAddress,
+      sessionSubject: session.session.subjectId,
       httpStatus: 400,
     });
     return NextResponse.json({ error: msg }, { status: 400 });

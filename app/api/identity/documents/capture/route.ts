@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
     validateImageFile(idFront, "ID");
     validateImageFile(selfie, "selfie");
 
-    const suiAddress = normalizeSuiAddress(auth.session.suiAddress);
+    const suiAddress = normalizeSuiAddress(auth.session.subjectId);
 
     const rateLimit = await checkCaptureRateLimit(supabase, suiAddress);
     if (!rateLimit.allowed) {

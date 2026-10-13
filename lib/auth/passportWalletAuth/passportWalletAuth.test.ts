@@ -12,6 +12,7 @@ import * as store from "./store";
 import * as identity from "./identity";
 import * as legacyLink from "./legacyLink";
 import * as admin from "@/lib/supabase/admin";
+import * as holderSubjectService from "@/lib/auth/holderSubject/service";
 
 const ORIGIN = "https://demo.abraxasworld.xyz";
 const NETWORK = "sui:devnet";
@@ -80,7 +81,9 @@ describe("passport wallet auth", () => {
     });
     vi.spyOn(identity, "resolvePassportWalletIdentity").mockResolvedValue({
       ok: true,
+      holderSubjectId: "abx_hs_0123456789012345678901234567890ab",
       suiAddress: walletAddress,
+      walletCaip10: `sui:devnet:${walletAddress}`,
       created: true,
     });
 
@@ -164,7 +167,14 @@ describe("passport wallet auth", () => {
   });
 
   it("allows wallet login when legacy grant exists", async () => {
+    vi.spyOn(holderSubjectService, "resolveLegacySubjectId").mockResolvedValue(null);
     vi.spyOn(legacyLink, "hasPassportWalletLoginGrant").mockResolvedValue(true);
+    vi.spyOn(holderSubjectService, "resolveSubjectForVerifiedWallet").mockResolvedValue({
+      ok: true,
+      subjectId: "abx_hs_0123456789012345678901234567890ab",
+      created: false,
+    });
+    vi.spyOn(holderSubjectService, "linkLegacyKeyToSubject").mockResolvedValue(undefined);
     vi.spyOn(admin, "requireSupabaseAdmin").mockReturnValue({
       from: () => ({
         select: () => ({

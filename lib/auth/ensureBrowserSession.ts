@@ -5,18 +5,41 @@ import { loadUserSession } from "@/lib/sui/zklogin/session";
 import { loadSigningSession } from "@/lib/sui/zklogin/signingSession";
 import { logAuthEvent, toAuthErrorCode } from "@/lib/sui/zklogin/authDebug";
 
+export type BrowserSessionProbe = {
+  ok: boolean;
+  holderSubjectId?: string | null;
+  suiAddress?: string | null;
+  authMethod?: string | null;
+};
+
 export async function probeBrowserSession(): Promise<boolean> {
-  if (typeof window === "undefined") return false;
+  const probe = await probeBrowserSessionDetails();
+  return probe.ok;
+}
+
+export async function probeBrowserSessionDetails(): Promise<BrowserSessionProbe> {
+  if (typeof window === "undefined") return { ok: false };
   try {
     const res = await fetch("/api/auth/browser-session", {
       method: "GET",
       credentials: "include",
     });
-    if (!res.ok) return false;
-    const data = await res.json() as { ok?: boolean };
-    return data.ok === true;
+    if (!res.ok) return { ok: false };
+    const data = await res.json() as {
+      ok?: boolean;
+      holder_subject_id?: string | null;
+      sui_address?: string | null;
+      auth_method?: string | null;
+    };
+    if (data.ok !== true) return { ok: false };
+    return {
+      ok: true,
+      holderSubjectId: data.holder_subject_id ?? null,
+      suiAddress: data.sui_address ?? null,
+      authMethod: data.auth_method ?? null,
+    };
   } catch {
-    return false;
+    return { ok: false };
   }
 }
 
@@ -90,5 +113,20 @@ export async function ensureBrowserSessionReady(suiAddress: string): Promise<{
     await new Promise((resolve) => setTimeout(resolve, READY_PROBE_DELAY_MS));
   }
 
+  return { ok: false, error: "Browser session could not be confirmed" };
+}
+
+/** Confirm an httpOnly session minted by wallet auth (no OAuth mint path). */
+export async function ensureBrowserSessionReadyForWalletAuth(): Promise<{
+  ok: boolean;
+  error?: string;
+}> {
+  for (let attempt = 0; attempt < READY_PROBE_ATTEMPTS; attempt += 1) {
+    const probe = await probeBrowserSessionDetails();
+    if (probe.ok) {
+      return { ok: true };
+    }
+    await new Promise((resolve) => setTimeout(resolve, READY_PROBE_DELAY_MS));
+  }
   return { ok: false, error: "Browser session could not be confirmed" };
 }

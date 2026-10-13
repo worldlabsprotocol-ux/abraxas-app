@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   attachBrowserSessionCookie,
-  issueBrowserSessionToken,
+  issueBrowserSessionFromInput,
 } from "@/lib/auth/browserSession";
 import {
   assertPassportWalletSameOriginRequest,
@@ -74,7 +74,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, code: verified.code }, { status, headers: NO_STORE });
   }
 
-  const token = await issueBrowserSessionToken(verified.result.sui_address, { authMethod: "wallet" });
+  const token = await issueBrowserSessionFromInput({
+    holderSubjectId: verified.result.holder_subject_id,
+    legacySuiAddress: verified.result.sui_address,
+    authMethod: "wallet",
+    walletCaip10: verified.result.wallet_caip10,
+  });
   if (!token) {
     return NextResponse.json({ ok: false, code: "session_unavailable" }, { status: 503, headers: NO_STORE });
   }
@@ -82,10 +87,10 @@ export async function POST(req: NextRequest) {
   try {
     await appendAuditEvent({
       actor_type: "holder",
-      actor_id: verified.result.sui_address,
+      actor_id: verified.result.holder_subject_id,
       action: "passport_wallet_auth_success",
       object_type: "passport_identity",
-      object_id: verified.result.sui_address,
+      object_id: verified.result.holder_subject_id,
       metadata: {
         created_identity: verified.result.created_identity,
         provider: verified.result.provider,
@@ -98,7 +103,9 @@ export async function POST(req: NextRequest) {
   const res = NextResponse.json(
     {
       ok: true,
+      holder_subject_id: verified.result.holder_subject_id,
       sui_address: verified.result.sui_address,
+      wallet_caip10: verified.result.wallet_caip10,
       provider: verified.result.provider,
       session_kind: verified.result.session_kind,
       created_identity: verified.result.created_identity,

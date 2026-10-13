@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
 
   let subject: string | null = null;
   if (session) {
-    subject = session.suiAddress;
+    subject = session.subjectId;
   } else if (querySui) {
     subject = normalizeSuiAddress(querySui);
   }
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Sign in required" }, { status: 401 });
   }
 
-  if (session && querySui && normalizeSuiAddress(querySui) !== session.suiAddress) {
+  if (session && querySui && normalizeSuiAddress(querySui) !== session.subjectId) {
     return NextResponse.json({ error: "Session mismatch" }, { status: 403 });
   }
 

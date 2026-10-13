@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
   const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
   if (!sbUrl || !sbKey) {
     return NextResponse.json({
-      sui_address: auth.session.suiAddress,
+      sui_address: auth.session.subjectId,
       email: null,
     });
   }
@@ -26,11 +26,11 @@ export async function GET(req: NextRequest) {
   const { data } = await sb
     .from("sui_zklogin_identities")
     .select("email, sui_address, provider")
-    .eq("sui_address", auth.session.suiAddress)
+    .eq("sui_address", auth.session.subjectId)
     .maybeSingle();
 
   return NextResponse.json({
-    sui_address: auth.session.suiAddress,
+    sui_address: auth.session.subjectId,
     email: data?.email ?? null,
     provider: data?.provider ?? "google",
   });

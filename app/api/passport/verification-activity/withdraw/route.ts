@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await withdrawHolderSharedResult({
-      subjectId: session.session.suiAddress,
+      subjectId: session.session.subjectId,
       activityRef: body.activity_ref,
       clientBody: body,
     });

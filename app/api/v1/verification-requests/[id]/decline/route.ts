@@ -19,7 +19,7 @@ export async function POST(
   try {
     const result = await declineVerificationRequest({
       requestId: id,
-      suiAddress: session.session.suiAddress,
+      suiAddress: session.session.subjectId,
     });
     return NextResponse.json(result);
   } catch (e: unknown) {

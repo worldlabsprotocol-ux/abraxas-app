@@ -6,7 +6,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { isHostedHolderBootstrapEligible } from "@/lib/auth/hostedHolderEligibility";
-import { ensureBrowserSessionReady } from "@/lib/auth/ensureBrowserSession";
+import {
+  ensureBrowserSessionReady,
+  ensureBrowserSessionReadyForWalletAuth,
+  probeBrowserSessionDetails,
+} from "@/lib/auth/ensureBrowserSession";
 import { useHostedHolderBootstrap } from "@/lib/partner/useHostedHolderBootstrap";
 import { useGoogleSignIn } from "@/lib/hooks/useGoogleSignIn";
 import {
@@ -33,7 +37,7 @@ import {
   resolvePartnerJourneyPresentation,
 } from "@/lib/partner/partnerJourneyStateMachine";
 import { PartnerVerifyShell, type PartnerVerifyPhase } from "./PartnerVerifyShell";
-import { PassportWalletSignInButton } from "@/components/sui/PassportWalletSignInButton";
+import { HolderWalletAuthPanel } from "@/components/passport/HolderWalletAuthPanel";
 import { PASSPORT_WALLET_ACTIONS } from "@/lib/auth/passportWalletAuth/contract";
 
 interface FlowResult {
@@ -86,6 +90,7 @@ export function PartnerVerifyClient({
   const [statusMessage, setStatusMessage] = useState("Preparing verification…");
   const [correlationId, setCorrelationId] = useState<string | null>(null);
   const [oauthReturnReady, setOauthReturnReady] = useState(false);
+  const [walletBrowserSession, setWalletBrowserSession] = useState(false);
 
   const evaluateOnceRef = useRef(false);
   const signInOnceRef = useRef(false);
@@ -179,6 +184,22 @@ export function PartnerVerifyClient({
   const policyRequirement = launchpadResolution.resolved?.userExplanation
     ?? resolvePolicyRequirement(policyId, permission || null);
 
+  const holderBrowserAuthenticated = Boolean(suiAddress || walletBrowserSession);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const syncWalletSession = () => {
+      void probeBrowserSessionDetails().then((probe) => {
+        if (probe.ok && (probe.holderSubjectId || probe.authMethod === "evm_wallet" || probe.authMethod === "solana_wallet" || probe.authMethod === "wallet")) {
+          setWalletBrowserSession(true);
+        }
+      });
+    };
+    syncWalletSession();
+    window.addEventListener("abraxas:holder-session", syncWalletSession);
+    return () => window.removeEventListener("abraxas:holder-session", syncWalletSession);
+  }, []);
+
   useEffect(() => {
     clearStaleLoginInFlight();
     if (stripPartnerAuthReadyFromUrl()) {
@@ -227,7 +248,7 @@ export function PartnerVerifyClient({
   }, [suiAddress]);
 
   const runEvaluate = useCallback(async () => {
-    if (invalidLinkMessage || !suiAddress || !flowParamsReady) return;
+    if (invalidLinkMessage || !holderBrowserAuthenticated || !flowParamsReady) return;
     if (evaluateOnceRef.current) return;
     evaluateOnceRef.current = true;
 
@@ -240,7 +261,9 @@ export function PartnerVerifyClient({
     logPartnerVerifyAuthEvent("partner_evaluate_started", { correlationId: cid });
 
     try {
-      const browserSession = await ensureBrowserSessionReady(suiAddress);
+      const browserSession = suiAddress
+        ? await ensureBrowserSessionReady(suiAddress)
+        : await ensureBrowserSessionReadyForWalletAuth();
       if (!browserSession.ok) {
         logPartnerVerifyAuthEvent("partner_evaluate_result", {
           correlationId: cid,
@@ -369,6 +392,7 @@ export function PartnerVerifyClient({
     }
   }, [
     invalidLinkMessage,
+    holderBrowserAuthenticated,
     suiAddress,
     relyingPartyId,
     permission,
@@ -397,7 +421,7 @@ export function PartnerVerifyClient({
       setPhase("invalid_link");
       return;
     }
-    if (!suiAddress) {
+    if (!holderBrowserAuthenticated) {
       if (hostedBootstrapEligible) {
         if (hostedBootstrap.bootstrapping || hostedBootstrap.state === "idle") {
           setPhase("bootstrapping");
@@ -428,6 +452,7 @@ export function PartnerVerifyClient({
   }, [
     authLoading,
     invalidLinkMessage,
+    holderBrowserAuthenticated,
     suiAddress,
     oauthReturnReady,
     runEvaluate,
@@ -493,12 +518,12 @@ export function PartnerVerifyClient({
     signInOnceRef.current = false;
     clearLoginInFlight();
     clearStaleLoginInFlight();
-    if (suiAddress) {
+    if (holderBrowserAuthenticated) {
       void runEvaluate();
       return;
     }
     setPhase("sign_in");
-  }, [runEvaluate, suiAddress]);
+  }, [runEvaluate, holderBrowserAuthenticated]);
 
   return (
     <PartnerVerifyShell
@@ -522,10 +547,19 @@ export function PartnerVerifyClient({
       hostedBootstrapEligible={hostedBootstrapEligible}
       onOptionalSignIn={() => { void handleSignIn(); }}
       onWalletSignIn={(
-        <PassportWalletSignInButton
+        <HolderWalletAuthPanel
           compact
           intendedAction={PASSPORT_WALLET_ACTIONS.partnerVerify}
-          onSuccess={() => refreshSession()}
+          onSuccess={() => {
+            void probeBrowserSessionDetails().then((probe) => {
+              if (probe.ok) {
+                setWalletBrowserSession(true);
+                evaluateOnceRef.current = false;
+                void runEvaluate();
+              }
+            });
+            refreshSession();
+          }}
         />
       )}
     />

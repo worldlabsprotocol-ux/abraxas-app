@@ -112,7 +112,7 @@ export async function resolveExistingBootstrapBrowserSession(
   req: NextRequest,
 ): Promise<ExistingBootstrapBrowserSession | null> {
   const session = await resolveBrowserSession(req);
-  if (!session) return null;
+  if (!session?.suiAddress) return null;
 
   const identity = await findHostedHolderBySuiAddress(session.suiAddress);
   if (!identity) return null;

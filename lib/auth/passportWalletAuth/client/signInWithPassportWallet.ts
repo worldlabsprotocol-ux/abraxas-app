@@ -94,7 +94,7 @@ async function signPassportWalletChallenge(input: {
 export async function signInWithPassportWallet(input: {
   wallet: Wallet;
   connection: HolderWalletConnection;
-  intendedAction?: typeof PASSPORT_WALLET_ACTIONS.passportSignIn | typeof PASSPORT_WALLET_ACTIONS.partnerVerify;
+  intendedAction?: PassportWalletClientAction;
 }): Promise<PassportWalletSignInResult> {
   return signPassportWalletChallenge({
     wallet: input.wallet,

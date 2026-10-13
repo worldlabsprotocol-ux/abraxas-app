@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Not configured" }, { status: 503 });
   }
 
-  const sui = normalizeSuiAddress(auth.session.suiAddress);
+  const sui = normalizeSuiAddress(auth.session.subjectId);
   const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
 
   const { data: docs } = await sb

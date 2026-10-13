@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const challenge = await createEvmBindingChallenge({
-      subjectId: session.session.suiAddress,
+      subjectId: session.session.subjectId,
       walletAddress: body.wallet_address,
       chainId: body.chain_id ?? 1,
     });

@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     endpoint: "/api/v1/partner-flow/complete",
     method: "POST",
     started,
-    sessionSubject: session.session.suiAddress,
+    sessionSubject: session.session.subjectId,
   });
   if (rateLimited) return rateLimited;
 
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
   }
 
   const result = await reuseExistingAgeCredential({
-    suiAddress: session.session.suiAddress,
+    suiAddress: session.session.subjectId,
     partnerId,
     policyId,
     returnUrl,

@@ -26,7 +26,15 @@ export async function GET(req: NextRequest) {
   if (!session) {
     return probeResponse(false, 401);
   }
-  return probeResponse(true, 200);
+  return NextResponse.json(
+    {
+      ok: true,
+      holder_subject_id: session.holderSubjectId ?? null,
+      sui_address: session.suiAddress ?? null,
+      auth_method: session.authMethod ?? null,
+    },
+    { status: 200, headers: NO_STORE_HEADERS },
+  );
 }
 
 export async function POST(req: NextRequest) {

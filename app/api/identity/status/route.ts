@@ -319,7 +319,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
-  const sui = auth.session.suiAddress;
+  const sui = auth.session.subjectId;
   const requested = req.nextUrl.searchParams.get("sui_address")
     ?? req.nextUrl.searchParams.get("sui");
   if (requested) {

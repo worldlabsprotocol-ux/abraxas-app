@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
   const bound = await resolveBoundPartnerContinuation({
     request,
     verifyRequestId: verifyRequest,
-    sessionSubject: session.session.suiAddress,
+    sessionSubject: session.session.subjectId,
   });
   if (!bound.ok) {
     const res = NextResponse.json({
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
     policyVersion: bound.stored.policyVersion,
   });
   const resolvedReuse = await resolveCompatibleReusableFact({
-    subjectId: session.session.suiAddress,
+    subjectId: session.session.subjectId,
     targetPolicyId: bound.stored.policyId,
     targetPolicyVersion: bound.stored.policyVersion ?? 1,
     relyingPartner: bound.stored.partnerId,
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
   const bound = await resolveBoundPartnerContinuation({
     request,
     verifyRequestId: verifyRequest,
-    sessionSubject: session.session.suiAddress,
+    sessionSubject: session.session.subjectId,
   });
   if (!bound.ok) {
     const res = NextResponse.json({
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
   let existingProofCompatible = false;
   if (methodId === "reuse_existing_proof") {
     const resolved = await resolveCompatibleReusableFact({
-      subjectId: session.session.suiAddress,
+      subjectId: session.session.subjectId,
       targetPolicyId: bound.stored.policyId,
       targetPolicyVersion: bound.stored.policyVersion ?? 1,
       relyingPartner: bound.stored.partnerId,
@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
   let reclaimSessionAccepted = false;
   if (reclaimRequired) {
     reclaimSessionAccepted = await holderHasAcceptedReclaim({
-      holderSubject: session.session.suiAddress,
+      holderSubject: session.session.subjectId,
       verifyRequest,
       policyId: bound.stored.policyId,
       policyVersion: bound.stored.policyVersion ?? 1,
@@ -215,7 +215,7 @@ export async function POST(request: NextRequest) {
   let selfAttestationActive = false;
   if (methodId === "self_attestation" && policyRules && isAgeEligibilityOnlyPolicy(policyRules)) {
     const rows = await getActiveSelfAttestations({
-      holderRef: session.session.suiAddress,
+      holderRef: session.session.subjectId,
       partnerId: policyRow!.partner_id,
       policyId: bound.stored.policyId,
       purpose: expectedSelfAttestationPurpose(policyRules),
@@ -224,7 +224,7 @@ export async function POST(request: NextRequest) {
   }
 
   const identityEvidenceComplete = methodId === "identity_liveness"
-    ? await resolveHolderIdentityEvidenceComplete(session.session.suiAddress)
+    ? await resolveHolderIdentityEvidenceComplete(session.session.subjectId)
     : undefined;
 
   const evaluated = evaluateMethodQualification({

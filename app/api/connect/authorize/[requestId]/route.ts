@@ -48,7 +48,7 @@ export async function POST(
   try {
     const result = await completeAuthorizationConsent({
       requestId,
-      subjectId: session.session.suiAddress,
+      subjectId: session.session.subjectId,
     });
 
     return NextResponse.json({

@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: session.error }, { status: session.status });
   }
 
-  const trust = await getTrustStatus(session.session.suiAddress);
+  const trust = await getTrustStatus(session.session.subjectId);
   if (!trust?.enhanced_trust) {
     return NextResponse.json({
       error: "Identity verification required before sandbox demo screening",
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await applySandboxScreeningClear({
-      subjectId: session.session.suiAddress,
+      subjectId: session.session.subjectId,
       ttlHours: 24,
     });
     return NextResponse.json({

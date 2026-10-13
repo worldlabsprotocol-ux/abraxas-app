@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: session.error }, { status: session.status });
   }
 
-  const subject = normalizeSuiAddress(session.session.suiAddress);
+  const subject = normalizeSuiAddress(session.session.subjectId);
   const truth = await readCanonicalWalletBindingTruth(subject);
 
   if (truth.status === "unavailable") {

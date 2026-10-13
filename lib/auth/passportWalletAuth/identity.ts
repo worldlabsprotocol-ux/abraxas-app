@@ -6,6 +6,9 @@ import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { PASSPORT_WALLET_PROVIDER } from "./contract";
 import { isHostedHolderProvider } from "@/lib/auth/hostedHolderSession";
 import { hasPassportWalletLoginGrant } from "./legacyLink";
+import { caip10Sui } from "@/lib/auth/holderSubject/caip";
+import { linkLegacyKeyToSubject, resolveLegacySubjectId, resolveSubjectForVerifiedWallet } from "@/lib/auth/holderSubject/service";
+import { resolveAuthorizedSuiNetworkFromEnv } from "./network";
 
 export function passportWalletOAuthSub(walletAddress: string): string {
   return `passport_wallet:${normalizeSuiAddress(walletAddress)}`;
@@ -16,8 +19,8 @@ function generateUserSalt(): string {
 }
 
 export type ResolvePassportWalletIdentityResult =
-  | { ok: true; suiAddress: string; created: boolean }
-  | { ok: false; code: "legacy_link_required" | "identity_conflict" | "persist_failed" };
+  | { ok: true; holderSubjectId: string; suiAddress?: string; walletCaip10: string; created: boolean }
+  | { ok: false; code: "legacy_link_required" | "identity_conflict" | "persist_failed" | "network_config_invalid" };
 
 /**
  * Wallet login identity — never auto-merge OAuth/hosted accounts or inherit IDV claims.
@@ -26,6 +29,17 @@ export async function resolvePassportWalletIdentity(
   walletAddress: string,
 ): Promise<ResolvePassportWalletIdentityResult> {
   const suiAddress = normalizeSuiAddress(walletAddress);
+  const network = resolveAuthorizedSuiNetworkFromEnv();
+  if (!network) {
+    return { ok: false, code: "network_config_invalid" };
+  }
+  const caip = caip10Sui(network, suiAddress);
+
+  const linkedSubject = await resolveLegacySubjectId("sui_zklogin_address", suiAddress);
+  if (linkedSubject) {
+    return { ok: true, holderSubjectId: linkedSubject, suiAddress, walletCaip10: caip.caip10, created: false };
+  }
+
   const sb = requireSupabaseAdmin();
   const { data: existing } = await sb
     .from("sui_zklogin_identities")
@@ -35,39 +49,66 @@ export async function resolvePassportWalletIdentity(
 
   if (existing) {
     const provider = String(existing.provider ?? "");
-    if (provider === PASSPORT_WALLET_PROVIDER) {
-      return { ok: true, suiAddress, created: false };
-    }
     if (provider === "google" || provider === "apple" || isHostedHolderProvider(provider)) {
       if (await hasPassportWalletLoginGrant(suiAddress)) {
-        return { ok: true, suiAddress, created: false };
+        const subject = await resolveSubjectForVerifiedWallet({ caip, authMethod: "sui_wallet" });
+        if (!subject.ok) return { ok: false, code: "persist_failed" };
+        await linkLegacyKeyToSubject({
+          subjectId: subject.subjectId,
+          legacyKind: "sui_zklogin_address",
+          legacyKey: suiAddress,
+        });
+        return {
+          ok: true,
+          holderSubjectId: subject.subjectId,
+          suiAddress,
+          walletCaip10: caip.caip10,
+          created: subject.created,
+        };
       }
       return { ok: false, code: "legacy_link_required" };
     }
+    if (provider === PASSPORT_WALLET_PROVIDER) {
+      const subject = await resolveSubjectForVerifiedWallet({ caip, authMethod: "sui_wallet" });
+      if (!subject.ok) return { ok: false, code: subject.code === "wallet_bound_to_other_subject" ? "identity_conflict" : "persist_failed" };
+      await linkLegacyKeyToSubject({
+        subjectId: subject.subjectId,
+        legacyKind: "sui_zklogin_address",
+        legacyKey: suiAddress,
+      });
+      return {
+        ok: true,
+        holderSubjectId: subject.subjectId,
+        suiAddress,
+        walletCaip10: caip.caip10,
+        created: subject.created,
+      };
+    }
     if (await hasPassportWalletLoginGrant(suiAddress)) {
-      return { ok: true, suiAddress, created: false };
+      const subject = await resolveSubjectForVerifiedWallet({ caip, authMethod: "sui_wallet" });
+      if (!subject.ok) return { ok: false, code: "persist_failed" };
+      return {
+        ok: true,
+        holderSubjectId: subject.subjectId,
+        suiAddress,
+        walletCaip10: caip.caip10,
+        created: subject.created,
+      };
     }
     return { ok: false, code: "legacy_link_required" };
   }
 
-  const oauthSub = passportWalletOAuthSub(suiAddress);
-  const { error } = await sb.from("sui_zklogin_identities").insert({
-    oauth_sub: oauthSub,
-    provider: PASSPORT_WALLET_PROVIDER,
-    sui_address: suiAddress,
-    user_salt: generateUserSalt(),
-    email: null,
-    max_epoch: null,
-  });
-
-  if (error) {
-    if (error.code === "23505") {
-      return { ok: false, code: "identity_conflict" };
-    }
-    return { ok: false, code: "persist_failed" };
+  const subject = await resolveSubjectForVerifiedWallet({ caip, authMethod: "sui_wallet" });
+  if (!subject.ok) {
+    return { ok: false, code: subject.code === "wallet_bound_to_other_subject" ? "identity_conflict" : "persist_failed" };
   }
 
-  return { ok: true, suiAddress, created: true };
+  return {
+    ok: true,
+    holderSubjectId: subject.subjectId,
+    walletCaip10: caip.caip10,
+    created: subject.created,
+  };
 }
 
 export async function assertWalletNotBoundToOtherSubject(input: {

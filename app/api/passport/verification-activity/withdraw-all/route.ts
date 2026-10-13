@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const activity = await loadPassportVerificationActivity(session.session.suiAddress);
+    const activity = await loadPassportVerificationActivity(session.session.subjectId);
     const current = activity.items.filter(item => item.current);
 
     let withdrawn = 0;
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
     for (const item of current) {
       const result = await withdrawHolderSharedResult({
-        subjectId: session.session.suiAddress,
+        subjectId: session.session.subjectId,
         activityRef: item.activity_ref,
         clientBody: { activity_ref: item.activity_ref },
       });

@@ -144,7 +144,9 @@ export async function verifyPassportWalletAuth(input: {
     message: row.message,
     result: {
       ok: true,
+      holder_subject_id: identity.holderSubjectId,
       sui_address: identity.suiAddress,
+      wallet_caip10: identity.walletCaip10,
       provider: "passport_wallet",
       session_kind: "wallet",
       created_identity: identity.created,

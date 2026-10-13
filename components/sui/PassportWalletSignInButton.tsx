@@ -20,7 +20,7 @@ export function PassportWalletSignInButton({
   compact = false,
   onSuccess,
 }: {
-  intendedAction?: typeof PASSPORT_WALLET_ACTIONS.passportSignIn | typeof PASSPORT_WALLET_ACTIONS.partnerVerify;
+  intendedAction?: typeof PASSPORT_WALLET_ACTIONS[keyof typeof PASSPORT_WALLET_ACTIONS];
   compact?: boolean;
   onSuccess?: () => void;
 }) {
