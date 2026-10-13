@@ -4,16 +4,16 @@ import { ProtocolVisualShell } from "./ProtocolVisualShell";
 export function PolicyAuthorizationFlowVisual() {
   return (
     <ProtocolVisualShell
-      kicker="Authorization"
-      title="Policy-specific"
-      titleAccent="decisions."
-      caption="Consent → policy check → evaluation → signed receipt → app decision. Private data stays inside your boundary."
+      id="what-applications-receive"
+      title="What Applications Receive"
+      className="abx-pv-shell--exhibit abx-pv-shell--open"
     >
       <ProtocolDiagramFigure
         src="/protocol-visuals/policy-authorization-flow.webp"
-        alt="Five-step flow: user consent in private space, policy request, Abraxas evaluation, signed receipt, and app decision."
+        alt="Consent, policy evaluation, signed receipt, and application decision without sharing raw identity documents."
         width={1920}
         height={1080}
+        decorative
       />
     </ProtocolVisualShell>
   );

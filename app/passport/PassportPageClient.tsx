@@ -147,7 +147,7 @@ function PassportPageInner() {
 
   async function startIdentityVerification() {
     if (!suiAddress) {
-      setError("Sign in with Google first to create your account.");
+      setError("Open your Passport account first, then start identity verification.");
       return;
     }
     if (idvProvider === "manual") {

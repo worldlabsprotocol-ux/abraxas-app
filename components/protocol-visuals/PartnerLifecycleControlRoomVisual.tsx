@@ -40,11 +40,9 @@ export function PartnerLifecycleControlRoomVisual() {
 
   return (
     <ProtocolVisualShell
-      kicker="Integration"
-      title="Partner"
-      titleAccent="lifecycle."
-      caption="Illustrative sandbox stages — not your application's live status. Use Launchpad telemetry for operational evidence."
-      className="abx-pv-lifecycle"
+      id="partner-operations"
+      title="Partner Operations"
+      className="abx-pv-lifecycle abx-pv-shell--exhibit"
     >
       <div className="abx-pv-lifecycle__room">
         <div className="abx-pv-lifecycle__map" role="tablist" aria-label="Partner lifecycle stages">

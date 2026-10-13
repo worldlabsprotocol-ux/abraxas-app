@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
+import { HolderAccessPanel } from "@/components/sui/HolderAccessPanel";
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader, ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
@@ -36,7 +37,7 @@ function formatIdentityStatus(status: string | undefined): string {
 }
 
 function AccountInner() {
-  const { suiAddress, session, isAuthenticated, signInWithGoogle } = useSuiAuth();
+  const { suiAddress, session, isAuthenticated } = useSuiAuth();
   const email = session?.email;
 
   const {
@@ -60,10 +61,7 @@ function AccountInner() {
           subtitle={HOLDER_ACCOUNT_SIGNED_OUT_SUBHEAD}
         />
         <ContentCard>
-          <p style={{ fontFamily: FONT, fontSize: "0.86rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 1rem" }}>
-            No wallet to manage. zkLogin creates your Sui address from Google OAuth.
-          </p>
-          <Btn onClick={() => signInWithGoogle()} size="lg">Sign in with Google →</Btn>
+          <HolderAccessPanel />
         </ContentCard>
       </RedesignPage>
     );

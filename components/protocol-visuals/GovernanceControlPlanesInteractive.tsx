@@ -116,11 +116,9 @@ export function GovernanceControlPlanesInteractive() {
 
   return (
     <ProtocolVisualShell
-      kicker="Governance"
-      title="Separated"
-      titleAccent="control planes."
-      caption="Live rows reflect devnet custody observation. Decorative reference diagram below is not operational status."
-      className="abx-pv-governance"
+      id="governance"
+      title="Governance"
+      className="abx-pv-governance abx-pv-shell--exhibit"
     >
       {custodyInactive ? (
         <p className="abx-pv-governance__banner" role="status">

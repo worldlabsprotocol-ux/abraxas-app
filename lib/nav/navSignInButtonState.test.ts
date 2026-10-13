@@ -31,8 +31,9 @@ describe("resolveNavSignInUiState", () => {
     expect(NAV_SIGN_IN_COPY.unavailableHint).toMatch(/not configured/i);
   });
 
-  it("uses shared zkLogin button and aria labels", () => {
-    expect(NAV_SIGN_IN_COPY.open).toBe("Sign in");
+  it("uses wallet-first nav and legacy Google labels", () => {
+    expect(NAV_SIGN_IN_COPY.open).toBe("Connect");
+    expect(NAV_SIGN_IN_COPY.openAriaLabel).toMatch(/wallet/i);
     expect(NAV_SIGN_IN_COPY.canonical).toBe("Continue with Google");
     expect(NAV_SIGN_IN_COPY.legacy).toBe("Recover a Passport created with an older sign in setup");
     expect(NAV_SIGN_IN_COPY.canonicalAriaLabel).toMatch(/Passport/i);

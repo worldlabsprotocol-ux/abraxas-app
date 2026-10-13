@@ -42,6 +42,22 @@
   overflow: hidden;
 }
 
+.abx-pv-shell--exhibit .abx-pv-shell__title {
+  font-size: clamp(1.1rem, 2.6vw, 1.45rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: clamp(1.25rem, 3vw, 2rem);
+}
+
+.abx-pv-shell--exhibit.abx-pv-shell--open .abx-pv-shell__canvas {
+  border: none;
+  background: transparent;
+}
+
+.abx-pv-shell--exhibit .abx-pv-shell__canvas {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
 .abx-pv-diagram {
   margin: 0;
 }

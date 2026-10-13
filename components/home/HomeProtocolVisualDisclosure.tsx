@@ -2,8 +2,7 @@
 export function HomeProtocolVisualDisclosure() {
   return (
     <p className="abx-protocol-visual-disclosure" role="note">
-      Diagrams show how verification is meant to work. They are not live network status, custody activation, or production
-      approval. Partner demo video requires explicit load — early integration only.
+      Diagrams illustrate the protocol. They are not live network status or production approval.
     </p>
   );
 }

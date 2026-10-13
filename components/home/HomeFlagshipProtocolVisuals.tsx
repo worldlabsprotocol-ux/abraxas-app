@@ -1,13 +1,12 @@
-import { PolicyAuthorizationFlowVisual, ProtocolDataFlowVisual } from "@/components/protocol-visuals";
+import { ProtocolDataFlowVisual } from "@/components/protocol-visuals";
 import { HomeProtocolVisualDisclosure } from "@/components/home/HomeProtocolVisualDisclosure";
 
-/** Homepage flagship protocol diagrams — visuals carry the story; minimal copy. */
+/** Homepage — single flagship protocol diagram (How Abraxas Works). */
 export function HomeFlagshipProtocolVisuals() {
   return (
-    <div className="abx-home-flagship-visuals">
+    <div className="abx-home-flagship-visuals abx-home-flagship-visuals--single">
       <HomeProtocolVisualDisclosure />
       <ProtocolDataFlowVisual />
-      <PolicyAuthorizationFlowVisual />
     </div>
   );
 }

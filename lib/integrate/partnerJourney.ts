@@ -32,7 +32,7 @@ export const HOLDER_ACCOUNT_SUBHEAD =
 export const HOLDER_ACCOUNT_SIGNED_OUT_TITLE = "Your Abraxas account";
 
 export const HOLDER_ACCOUNT_SIGNED_OUT_SUBHEAD =
-  "Sign in with Google to see your wallet address and open Passport for setup and verification tools.";
+  "Connect a Sui wallet for blockchain access, or open your Passport account for identity and verification tools.";
 
 export const HOLDER_ACCOUNT_ERROR_TITLE = "Status unavailable";
 
