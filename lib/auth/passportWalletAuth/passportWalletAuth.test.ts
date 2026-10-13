@@ -181,6 +181,35 @@ describe("passport wallet auth", () => {
     expect(resolved.ok).toBe(true);
   });
 
+  it("rejects verify when deployment network configuration is invalid", async () => {
+    process.env.VERCEL_ENV = "preview";
+    process.env.NEXT_PUBLIC_SUI_NETWORK = "broken-network";
+    vi.spyOn(store, "consumePassportWalletChallenge").mockResolvedValue({
+      id: "pwac_cfg",
+      wallet_address: walletAddress,
+      sui_network: NETWORK,
+      origin: ORIGIN,
+      intended_action: PASSPORT_WALLET_ACTIONS.passportSignIn,
+      session_context_hash: store.hashSessionContext("ctx-cfg"),
+      nonce: "cfg",
+      message: "m",
+      expires_at: new Date(Date.now() + 60_000).toISOString(),
+      consumed_at: null,
+    });
+
+    const result = await verifyPassportWalletAuth({
+      challengeId: "pwac_cfg",
+      walletAddress,
+      suiNetwork: NETWORK,
+      signature: "sig",
+      sessionContext: "ctx-cfg",
+      requestOrigin: ORIGIN,
+      expectedIntendedAction: PASSPORT_WALLET_ACTIONS.passportSignIn,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe("network_config_invalid");
+  });
+
   it("issues challenges for supported networks", async () => {
     vi.spyOn(store, "insertPassportWalletChallenge").mockResolvedValue(undefined);
     const issued = await issuePassportWalletAuthChallenge({

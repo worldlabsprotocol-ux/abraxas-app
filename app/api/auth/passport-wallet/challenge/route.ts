@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
   });
 
   if (!issued.ok) {
-    const status = issued.code === "store_unavailable" ? 503 : 400;
+    const status = issued.code === "store_unavailable" || issued.code === "network_config_invalid" ? 503 : 400;
     return NextResponse.json({ ok: false, code: issued.code }, { status, headers: NO_STORE });
   }
 

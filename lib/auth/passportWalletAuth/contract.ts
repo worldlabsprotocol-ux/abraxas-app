@@ -36,6 +36,7 @@ export type PassportWalletAuthFailureCode =
   | "invalid_input"
   | "wrong_origin"
   | "wrong_network"
+  | "network_config_invalid"
   | "wrong_wallet"
   | "wrong_domain"
   | "expired"

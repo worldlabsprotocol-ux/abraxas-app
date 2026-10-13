@@ -1,5 +1,7 @@
 // FILE: lib/auth/passportWalletAuth/network.ts
 
+import { getVercelDeploymentEnv } from "@/lib/app/publicAppOrigin";
+
 export const SUPPORTED_SUI_NETWORK_IDS = [
   "sui:mainnet",
   "sui:testnet",
@@ -38,17 +40,41 @@ export function canonicalizeSupportedSuiNetwork(input: string): SupportedSuiNetw
   return BARE_NETWORK_ALIASES[lower] ?? null;
 }
 
-export function resolveAuthorizedSuiNetworkFromEnv(): SupportedSuiNetworkId {
-  const raw = process.env.NEXT_PUBLIC_SUI_NETWORK?.trim() ?? "devnet";
+export type DeploymentSuiNetworkPolicy =
+  | { ok: true; network: SupportedSuiNetworkId }
+  | { ok: false; code: "network_config_invalid" };
+
+/**
+ * Resolve deployment-authorized Sui network from env.
+ * Local development may omit NEXT_PUBLIC_SUI_NETWORK (defaults to sui:devnet).
+ * Preview and Production require an explicit valid network — no silent fallback.
+ */
+export function resolveDeploymentSuiNetworkPolicy(): DeploymentSuiNetworkPolicy {
+  const raw = process.env.NEXT_PUBLIC_SUI_NETWORK?.trim();
+  const deploymentEnv = getVercelDeploymentEnv();
+
+  if (!raw) {
+    if (deploymentEnv === "development") {
+      return { ok: true, network: "sui:devnet" };
+    }
+    return { ok: false, code: "network_config_invalid" };
+  }
+
   const canonical = canonicalizeSupportedSuiNetwork(raw);
   if (!canonical) {
-    return "sui:devnet";
+    return { ok: false, code: "network_config_invalid" };
   }
-  return canonical;
+
+  return { ok: true, network: canonical };
 }
 
-/** @deprecated use resolveAuthorizedSuiNetworkFromEnv */
-export function resolveExpectedSuiNetworkFromEnv(): SupportedSuiNetworkId {
+export function resolveAuthorizedSuiNetworkFromEnv(): SupportedSuiNetworkId | null {
+  const policy = resolveDeploymentSuiNetworkPolicy();
+  return policy.ok ? policy.network : null;
+}
+
+/** @deprecated use resolveDeploymentSuiNetworkPolicy */
+export function resolveExpectedSuiNetworkFromEnv(): SupportedSuiNetworkId | null {
   return resolveAuthorizedSuiNetworkFromEnv();
 }
 
@@ -58,21 +84,27 @@ export function isSupportedSuiNetwork(chain: string): boolean {
 
 /** Network must be on the allowlist and match this deployment's configured Sui network. */
 export function networkMatchesDeploymentPolicy(chain: string): boolean {
+  const policy = resolveDeploymentSuiNetworkPolicy();
+  if (!policy.ok) return false;
   const canonical = canonicalizeSupportedSuiNetwork(chain);
   if (!canonical) return false;
-  return canonical === resolveAuthorizedSuiNetworkFromEnv();
+  return canonical === policy.network;
 }
 
 export type NetworkTripleValidation =
   | { ok: true; network: SupportedSuiNetworkId }
-  | { ok: false; code: "wrong_network" };
+  | { ok: false; code: "wrong_network" | "network_config_invalid" };
 
 /** Require exact agreement: challenged (stored), submitted (client), authorized (env). */
 export function validatePassportWalletNetworkTriple(input: {
   challengedNetwork: string;
   submittedNetwork: string;
 }): NetworkTripleValidation {
-  const authorized = resolveAuthorizedSuiNetworkFromEnv();
+  const policy = resolveDeploymentSuiNetworkPolicy();
+  if (!policy.ok) {
+    return policy;
+  }
+  const authorized = policy.network;
   const challenged = canonicalizeSupportedSuiNetwork(input.challengedNetwork);
   const submitted = canonicalizeSupportedSuiNetwork(input.submittedNetwork);
 

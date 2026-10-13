@@ -14,6 +14,7 @@ import { isAllowedPassportWalletOrigin } from "./origin";
 import {
   canonicalizeSupportedSuiNetwork,
   networkMatchesDeploymentPolicy,
+  resolveDeploymentSuiNetworkPolicy,
 } from "./network";
 import {
   createPassportWalletChallengeId,
@@ -34,7 +35,7 @@ export async function issuePassportWalletAuthChallenge(input: {
   now?: Date;
 }): Promise<
   | { ok: true; challenge: PassportWalletChallengeView; sessionContext: string }
-  | { ok: false; code: "invalid_input" | "wrong_origin" | "wrong_network" | "store_unavailable" }
+  | { ok: false; code: "invalid_input" | "wrong_origin" | "wrong_network" | "network_config_invalid" | "store_unavailable" }
 > {
   let wallet: string;
   try {
@@ -45,6 +46,11 @@ export async function issuePassportWalletAuthChallenge(input: {
 
   if (!isAllowedPassportWalletOrigin(input.origin)) {
     return { ok: false, code: "wrong_origin" };
+  }
+
+  const deploymentNetwork = resolveDeploymentSuiNetworkPolicy();
+  if (!deploymentNetwork.ok) {
+    return { ok: false, code: deploymentNetwork.code };
   }
 
   const canonicalNetwork = canonicalizeSupportedSuiNetwork(input.suiNetwork);
