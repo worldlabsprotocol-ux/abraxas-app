@@ -45,7 +45,16 @@ export interface Build547CertificationReport {
     consumption_ids?: string[];
     observed_at: string[];
     outcomes: string[];
+    authorization_verified?: boolean[];
+    durable_consumption_marker?: boolean[];
+    durable_audit_logged?: boolean[];
   }>;
+  durability: {
+    verdict: "certification_filesystem_atomic_wx";
+    audit_recovery: "reconcile_from_markers_supported";
+    production_grade_persistence: false;
+    detail: string;
+  };
   summary: {
     pass: number;
     fail: number;
@@ -57,5 +66,7 @@ export interface Build547CertificationReport {
 
 export const BUILD_547_DISCLAIMER =
   "Build #547 extends Build #546 with durable consumption and live-boundary probes. " +
-  "Local filesystem durability is not multi-region production persistence. " +
+  "Local filesystem wx markers are certification-scoped only — not production-grade distributed persistence. " +
+  "Authorization, durable consumption markers, and durable audit lines are reported separately. " +
+  "Audit append failure after marker creation denies permit without granting twice (fail-closed replay). " +
   "Blocked live holder journeys are not failures of cryptographic verification.";

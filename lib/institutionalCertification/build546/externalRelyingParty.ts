@@ -26,8 +26,15 @@ export interface ExternalRpDecisionAudit {
   at: string;
   outcome: "granted" | "denied" | "blocked";
   verifier: IndependentVerifierResult;
+  /** Verifier authorize + currently_authorizable at decision time (before consumption). */
+  authorization_verified: boolean;
+  /** Durable wx marker (or in-memory slot) committed for this receipt. */
+  durable_consumption_marker: boolean;
+  /** Append-only audit line persisted (false if marker exists but audit append failed). */
+  durable_audit_logged: boolean;
   consumption_recorded: boolean;
   replay_detected: boolean;
+  audit_append_failed?: boolean;
   consumption_id?: string | null;
   partner_visible: Record<string, string>;
 }
@@ -84,6 +91,10 @@ export class ExternalRelyingPartyHarness {
         at: now.toISOString(),
         outcome: "denied",
         verifier: blocked,
+        authorization_verified:
+          blocked.verdict === "authorize" && blocked.currently_authorizable,
+        durable_consumption_marker: true,
+        durable_audit_logged: false,
         consumption_recorded: false,
         replay_detected: true,
         consumption_id: null,
@@ -113,9 +124,15 @@ export class ExternalRelyingPartyHarness {
     if (verifier.verdict === "blocked") outcome = "blocked";
     else if (verifier.verdict === "authorize" && verifier.currently_authorizable) outcome = "granted";
 
+    const authorizationVerified =
+      verifier.verdict === "authorize" && verifier.currently_authorizable;
+
     let consumptionRecorded = false;
     let replayDetected = false;
     let consumptionId: string | null = null;
+    let durableConsumptionMarker = false;
+    let durableAuditLogged = false;
+    let auditAppendFailed = false;
 
     if (outcome === "granted" && singleUse) {
       const attempt = await this.store.tryRecordConsumption({
@@ -128,9 +145,19 @@ export class ExternalRelyingPartyHarness {
         outcome = "denied";
         replayDetected = true;
         consumptionRecorded = false;
+        durableConsumptionMarker = true;
+      } else if (attempt.status === "audit_append_failed") {
+        outcome = "denied";
+        auditAppendFailed = true;
+        consumptionId = attempt.consumption_id;
+        durableConsumptionMarker = true;
+        durableAuditLogged = false;
+        consumptionRecorded = false;
       } else {
         consumptionRecorded = true;
         consumptionId = attempt.consumption_id;
+        durableConsumptionMarker = true;
+        durableAuditLogged = true;
       }
     }
 
@@ -140,11 +167,24 @@ export class ExternalRelyingPartyHarness {
       at: now.toISOString(),
       outcome,
       verifier,
+      authorization_verified: authorizationVerified,
+      durable_consumption_marker: durableConsumptionMarker,
+      durable_audit_logged: durableAuditLogged,
       consumption_recorded: consumptionRecorded,
       replay_detected: replayDetected,
+      audit_append_failed: auditAppendFailed || undefined,
       consumption_id: consumptionId,
       partner_visible: {
-        result: outcome === "granted" ? "permit" : replayDetected ? "deny_replay" : outcome === "blocked" ? "blocked" : "deny",
+        result:
+          outcome === "granted"
+            ? "permit"
+            : auditAppendFailed
+              ? "deny_audit_incomplete"
+              : replayDetected
+                ? "deny_replay"
+                : outcome === "blocked"
+                  ? "blocked"
+                  : "deny",
         receipt_id: receiptId,
         policy_id: this.config.policyId,
       },

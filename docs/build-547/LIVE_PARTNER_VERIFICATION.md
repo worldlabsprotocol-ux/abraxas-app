@@ -4,7 +4,10 @@ Extends [Build #546](../build-546/TRUST_ARCHITECTURE_AUDIT.md) without modifying
 
 ## Certified locally
 
-- Durable single-use consumption (`FileReceiptConsumptionStore`, atomic `wx` markers + audit JSONL)
+- Durable single-use consumption (`FileReceiptConsumptionStore`, certification-scoped atomic `wx` markers + audit JSONL — not production HA persistence)
+- Fail-closed when audit append fails after marker: permit denied, receipt consumed, retry is replay (never double-grant)
+- `reconcileAuditFromMarkers()` for certification recovery when audit lags markers
+- Report separates `authorization_verified`, `durable_consumption_marker`, and `durable_audit_logged`
 - Concurrent replay (16–24 parallel decides → one grant)
 - Process restart replay denial (new RP instance, same store directory)
 - Revocation outage fail-closed with `cryptographically_authentic === true` and `currently_authorizable === false`

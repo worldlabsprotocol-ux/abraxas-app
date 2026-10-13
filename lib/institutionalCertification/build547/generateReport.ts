@@ -145,6 +145,9 @@ export async function runBuild547Certification(): Promise<Build547CertificationR
     consumption_ids: concurrent.map((c) => c.consumption_id).filter(Boolean) as string[],
     observed_at: concurrent.map((c) => c.at),
     outcomes: concurrent.map((c) => c.outcome),
+    authorization_verified: concurrent.map((c) => c.authorization_verified),
+    durable_consumption_marker: concurrent.map((c) => c.durable_consumption_marker),
+    durable_audit_logged: concurrent.map((c) => c.durable_audit_logged),
   });
 
   const restartRp = new ExternalRelyingPartyHarness({
@@ -242,6 +245,13 @@ export async function runBuild547Certification(): Promise<Build547CertificationR
     },
     cases,
     evidence_records: evidenceRecords,
+    durability: {
+      verdict: "certification_filesystem_atomic_wx",
+      audit_recovery: "reconcile_from_markers_supported",
+      production_grade_persistence: false,
+      detail:
+        "Single-use enforced via wx marker; audit.jsonl is append-only. Marker-without-audit denies permit and replays on retry; reconcileAuditFromMarkers backfills audit for certification recovery drills.",
+    },
     summary: {
       pass,
       fail,

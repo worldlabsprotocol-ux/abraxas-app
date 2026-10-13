@@ -1,13 +1,18 @@
 // FILE: lib/institutionalCertification/build547/receiptConsumptionStore.ts
 // Durable single-use receipt consumption — filesystem atomic create (no Supabase).
 
-import { mkdir, appendFile, writeFile, readFile, access } from "node:fs/promises";
+import { mkdir, appendFile, writeFile, readFile, access, readdir } from "node:fs/promises";
 import { constants } from "node:fs";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 
 export type ConsumptionAttemptResult =
   | { status: "recorded"; consumption_id: string }
+  | {
+      status: "audit_append_failed";
+      consumption_id: string;
+      audit_error: string;
+    }
   | { status: "replay"; consumption_id: string | null };
 
 export interface ConsumptionAuditEntry {
@@ -29,6 +34,8 @@ export interface ReceiptConsumptionStore {
   }): Promise<ConsumptionAttemptResult>;
   hasConsumed(receiptId: string): Promise<boolean>;
   listAudit(limit?: number): Promise<ConsumptionAuditEntry[]>;
+  /** Filesystem certification store only — backfill audit.jsonl from wx markers. */
+  reconcileAuditFromMarkers?(): Promise<{ backfilled: number; skipped: number }>;
 }
 
 function consumptionId(receiptId: string, requestId: string): string {
@@ -76,17 +83,30 @@ export class InMemoryReceiptConsumptionStore implements ReceiptConsumptionStore 
   }
 }
 
-/** Atomic `wx` marker files + append-only audit log — survives process restart. */
+export type FileReceiptConsumptionStoreOptions = {
+  /** Certification test hook — simulates crash after marker create. */
+  appendAudit?: (auditPath: string, line: string) => Promise<void>;
+};
+
+/** Atomic `wx` marker files + append-only audit log — certification-scoped durability only. */
 export class FileReceiptConsumptionStore implements ReceiptConsumptionStore {
   readonly kind = "filesystem" as const;
   private readonly consumedDir: string;
   private readonly auditPath: string;
   private readonly instanceId: string;
+  private readonly appendAudit: (auditPath: string, line: string) => Promise<void>;
 
-  constructor(baseDir: string, instanceId = `inst-${process.pid}`) {
+  constructor(
+    baseDir: string,
+    instanceId = `inst-${process.pid}`,
+    options?: FileReceiptConsumptionStoreOptions,
+  ) {
     this.consumedDir = join(baseDir, "consumed");
     this.auditPath = join(baseDir, "consumption-audit.jsonl");
     this.instanceId = instanceId;
+    this.appendAudit =
+      options?.appendAudit
+      ?? ((path, line) => appendFile(path, line, "utf8"));
   }
 
   async init(): Promise<void> {
@@ -122,8 +142,40 @@ export class FileReceiptConsumptionStore implements ReceiptConsumptionStore {
     }
 
     const auditLine = `${payload}\n`;
-    await appendFile(this.auditPath, auditLine, "utf8");
+    try {
+      await this.appendAudit(this.auditPath, auditLine);
+    } catch (error) {
+      const audit_error = error instanceof Error ? error.message : "audit_append_failed";
+      return { status: "audit_append_failed", consumption_id: id, audit_error };
+    }
     return { status: "recorded", consumption_id: id };
+  }
+
+  async reconcileAuditFromMarkers(): Promise<{ backfilled: number; skipped: number }> {
+    await this.init();
+    let backfilled = 0;
+    let skipped = 0;
+    const existing = await this.listAudit(10_000);
+    const loggedReceipts = new Set(existing.map((e) => e.receipt_id));
+    let names: string[] = [];
+    try {
+      names = await readdir(this.consumedDir);
+    } catch {
+      return { backfilled: 0, skipped: 0 };
+    }
+    for (const name of names) {
+      if (!name.endsWith(".json")) continue;
+      const raw = await readFile(join(this.consumedDir, name), "utf8");
+      const entry = JSON.parse(raw) as ConsumptionAuditEntry;
+      if (loggedReceipts.has(entry.receipt_id)) {
+        skipped += 1;
+        continue;
+      }
+      await this.appendAudit(this.auditPath, `${raw.trim()}\n`);
+      loggedReceipts.add(entry.receipt_id);
+      backfilled += 1;
+    }
+    return { backfilled, skipped };
   }
 
   async hasConsumed(receiptId: string): Promise<boolean> {
