@@ -3,9 +3,9 @@
 @import "./globals.monochrome.css";
 
 :root {
-  --font-sans: "Plus Jakarta Sans";
-  --font-display: "DM Sans";
-  --font-mono: "JetBrains Mono";
+  --font-sans: var(--font-plus-jakarta), "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-display: var(--font-dm-sans), "DM Sans", system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace, monospace;
   /* Abraxas motion tokens — semantic roles (see lib/design/abraxasMotion.ts) */
   --abx-motion-micro: 140ms;
   --abx-motion-surface: 220ms;

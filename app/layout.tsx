@@ -4,6 +4,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "./globals.receipt-live.css";
+import { abraxasFontVariables } from "@/app/abraxasFonts";
 import { AppProviders } from "@/components/providers/AppProviders";
 import { DemoEnvironmentBanner } from "@/components/judgeDemo/JudgeDemoSandboxBanner";
 import { siteMetadata } from "@/lib/seo/metadata";
@@ -45,15 +46,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="en"
       translate="no"
       suppressHydrationWarning
+      className={abraxasFontVariables}
     >
       <head>
         <meta name="google" content="notranslate" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40;600;9..40;700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-        />
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <script dangerouslySetInnerHTML={{ __html: langInitScript }} />
       </head>

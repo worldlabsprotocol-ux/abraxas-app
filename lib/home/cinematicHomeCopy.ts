@@ -1,5 +1,5 @@
 // FILE: lib/home/cinematicHomeCopy.ts
-// Cinematic homepage copy — thesis-first, product-truthful.
+// Cinematic homepage copy — thesis-first, product-truthful (Build #545 + legacy thesis modules).
 
 export const CINEMATIC_THESIS_LINE_1 = "VERIFY WHAT MATTERS.";
 export const CINEMATIC_THESIS_LINE_2 = "REVEAL NOTHING ELSE.";
@@ -60,3 +60,57 @@ export const DEVELOPER_STORY_BODY =
 
 export const FOOTER_THESIS_LINE_1 = CINEMATIC_THESIS_LINE_1;
 export const FOOTER_THESIS_LINE_2 = CINEMATIC_THESIS_LINE_2;
+
+/** Build #545 — public homepage hero and scroll chapters */
+export const CINEMATIC_HOME_HEADLINE = "Prove what matters. Keep what's yours.";
+
+export const CINEMATIC_HOME_LEAD =
+  "Abraxas lets you verify your information once, then prove what other apps need to know without sharing your private details again.";
+
+export const CINEMATIC_HOME_CTA_PRIMARY = "See how it works";
+export const CINEMATIC_HOME_CTA_PRIMARY_HREF = "#how-abraxas-works";
+
+export const CINEMATIC_HOME_CTA_SECONDARY = "Explore Abraxas";
+export const CINEMATIC_HOME_CTA_SECONDARY_HREF = "/protocol";
+
+export const CINEMATIC_PROBLEM_HEADLINE = "Why share everything to prove one thing?";
+
+export const CINEMATIC_PROBLEM_LEAD =
+  "Most apps ask for full identity packets even when they only need a yes-or-no eligibility answer. That repeats risk for you and compliance burden for them.";
+
+export const CINEMATIC_HOW_HEADLINE = "How Abraxas works";
+
+export const CINEMATIC_HOW_STAGES = [
+  {
+    id: "verify",
+    title: "Verify privately",
+    body: "Complete verification once, with evidence kept under your control.",
+  },
+  {
+    id: "share",
+    title: "Share only the answer",
+    body: "Each request receives a narrowly scoped decision — not your underlying documents.",
+  },
+  {
+    id: "reuse",
+    title: "Reuse when eligible",
+    body: "When policy still permits, prove again without re-uploading the same files.",
+  },
+] as const;
+
+export const CINEMATIC_VPR_HEADLINE = "Verify → Protect → Reuse";
+
+export const CINEMATIC_VPR_SIM_LABEL =
+  "Interactive simulation — labeled examples only. Each app policy is evaluated independently; one PERMIT does not authorize another policy.";
+
+export const CINEMATIC_GT_SECTION_HEADLINE = "See Abraxas in action.";
+
+export const CINEMATIC_GT_SECTION_LEAD =
+  "See how an application can confirm someone is over 21 without receiving their ID or date of birth.";
+
+export const CINEMATIC_GT_PARTNER_DISCLAIMER =
+  "Early partner integration demonstration (Good Trouble). Not a fully certified production deployment.";
+
+export const CINEMATIC_TRUST_CHAPTER_EYEBROW = "Built on verifiable trust";
+
+export const CINEMATIC_BUILD_CHAPTER_EYEBROW = "Build with Abraxas";
