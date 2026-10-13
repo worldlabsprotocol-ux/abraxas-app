@@ -10,9 +10,10 @@ export function DecisionReceiptInspectionVisual() {
     >
       <ProtocolDiagramFigure
         src="/protocol-visuals/decision-receipt-inspection.webp"
-        alt="Receipt inspection diagram showing valid versus revoked paths across signature, policy, issuer, and revocation checks."
+        alt="Receipt inspection across signature, policy, issuer, freshness, and revocation."
         width={1920}
         height={1080}
+        decorative
       />
     </ProtocolVisualShell>
   );

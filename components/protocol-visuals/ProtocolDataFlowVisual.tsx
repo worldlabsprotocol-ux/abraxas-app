@@ -10,9 +10,10 @@ export function ProtocolDataFlowVisual() {
     >
       <ProtocolDiagramFigure
         src="/protocol-visuals/abraxas-protocol-data-flow.webp"
-        alt="Diagram: your private credentials flow through Abraxas Protocol to apps that receive only signed verification results such as over 21 or KYC verified."
+        alt="Private credentials stay with you while Abraxas returns signed verification results to applications."
         width={1920}
         height={1080}
+        decorative
       />
     </ProtocolVisualShell>
   );

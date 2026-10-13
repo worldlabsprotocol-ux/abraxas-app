@@ -10,9 +10,10 @@ export function PolicyAuthorizationFlowVisual() {
     >
       <ProtocolDiagramFigure
         src="/protocol-visuals/policy-authorization-flow.webp"
-        alt="Five-step flow: user consent in private space, policy request, Abraxas evaluation, signed receipt, and app decision."
+        alt="Consent, policy evaluation, signed receipt, and application decision without sharing raw identity documents."
         width={1920}
         height={1080}
+        decorative
       />
     </ProtocolVisualShell>
   );
