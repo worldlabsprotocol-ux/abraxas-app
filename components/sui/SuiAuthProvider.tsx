@@ -212,7 +212,7 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
     const next = saveWalletPassportSession(suiAddress);
     setSession(next);
     setCanSignTransactions(false);
-    logAuthEvent("auth_provider_authenticated", { authenticated: true, provider: "passport_wallet" });
+    logAuthEvent("auth_provider_authenticated", { authenticated: true, detail: "passport_wallet" });
     window.dispatchEvent(new Event("abraxas:zklogin-session"));
   }, []);
 
