@@ -2,6 +2,7 @@
 
 import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader } from "@/components/redesign/RedesignContent";
+import { ControlPlanesAuthorityVisual } from "@/components/protocol-visuals";
 import { InstitutionalGovernanceConsole } from "@/components/protocol/InstitutionalGovernanceConsole";
 
 export const dynamic = "force-dynamic";
@@ -13,8 +14,11 @@ export default function AdminGovernancePage() {
         <PageHeader
           eyebrow="Admin · Governance"
           title="Trust registry custody"
-          subtitle="Devnet observation, Squads preflight, and migration gates. On-chain execution controls stay disabled until explicitly authorized."
+          subtitle="Separated authorities · devnet observation · execution disabled until authorized."
         />
+        <div className="abx-surface-protocol-visual">
+          <ControlPlanesAuthorityVisual />
+        </div>
         <InstitutionalGovernanceConsole />
       </div>
     </RedesignPage>

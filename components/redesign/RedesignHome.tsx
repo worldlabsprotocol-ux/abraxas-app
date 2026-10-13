@@ -5,7 +5,7 @@
 import dynamic from "next/dynamic";
 import { InstitutionalHomeClose } from "@/components/institutional/InstitutionalHomeClose";
 import type { ReactNode } from "react";
-import { HomeProblemChapter } from "@/components/home/HomeProblemChapter";
+import { HomeFlagshipProtocolVisuals } from "@/components/home/HomeFlagshipProtocolVisuals";
 import { LazyHomeSection } from "@/components/home/LazyHomeSection";
 import { PremiumHomeChapter } from "@/components/home/premium/PremiumHomeChapter";
 import { ABX_SPACING, abxAccentCssVars } from "@/lib/design/abraxasDesignSystem";
@@ -54,8 +54,8 @@ function HomeContent({ hero }: { hero: ReactNode }) {
       {hero}
 
       <div className="abx-premium-home__spine abx-premium-home__spine--shell" style={SHELL}>
-        <PremiumHomeChapter index="01" label="Problem" id="chapter-problem">
-          <HomeProblemChapter />
+        <PremiumHomeChapter index="01" label="System" id="chapter-problem">
+          <HomeFlagshipProtocolVisuals />
         </PremiumHomeChapter>
 
         <PremiumHomeChapter index="02" label="Lifecycle" id="chapter-lifecycle">
@@ -86,11 +86,10 @@ function HomeContent({ hero }: { hero: ReactNode }) {
           <section className="abx-cinematic-build-chapter" aria-labelledby="home-build-heading">
             <p className="abx-v2-eyebrow">{CINEMATIC_BUILD_CHAPTER_EYEBROW}</p>
             <h2 id="home-build-heading" className="abx-v2-section-title">
-              Integration paths
+              Build
             </h2>
-            <p className="abx-v2-section-lead">
-              Explore the integration studio and sandbox flows. Production activation requires operator review — not
-              unrestricted self-serve mainnet access.
+            <p className="abx-v2-section-lead abx-v2-section-lead--tight">
+              Integration Studio and Launchpad — sandbox first; production via operator review.
             </p>
             <LazyHomeSection minHeight="12rem">
               <CapabilityMatrix />

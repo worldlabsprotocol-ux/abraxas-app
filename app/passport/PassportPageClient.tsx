@@ -41,6 +41,7 @@ import {
   HOLDER_VERIFY_HEADLINE,
   HOLDER_VERIFY_SUBHEAD,
 } from "@/lib/integrate/partnerJourney";
+import { PassportHolderFlowVisual } from "@/components/protocol-visuals";
 
 const S = ABRAXAS_FONT_SANS;
 
@@ -208,6 +209,12 @@ function PassportPageInner() {
         <Suspense fallback={<RedesignPageLoading label="Loading navigation…" compact />}>
           <PassportPageTabs active={pageView} />
         </Suspense>
+
+        {pageView === "passport" ? (
+          <div className="abx-surface-protocol-visual">
+            <PassportHolderFlowVisual />
+          </div>
+        ) : null}
 
         {pageView === "verify" ? (
           <>

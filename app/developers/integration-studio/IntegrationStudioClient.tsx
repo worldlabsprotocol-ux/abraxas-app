@@ -59,6 +59,7 @@ import { IntegrationStudioOperationalBridge } from "@/app/developers/integration
 import { IntegrationStudioRequestWorkbench } from "@/components/developers/IntegrationStudioRequestWorkbench";
 import { IntegrationStudioSessionHandoff } from "@/components/developers/IntegrationStudioSessionHandoff";
 import { IntegrationStudioConfigurationPanel } from "@/components/developers/IntegrationStudioConfigurationPanel";
+import { PartnerLifecycleControlRoomVisual } from "@/components/protocol-visuals";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -431,6 +432,12 @@ export function IntegrationStudioClient() {
         signedIn={signedIn}
         returnUrl={returnUrl}
       />
+      <Reveal style={{ marginBottom: "1.25rem" }}>
+        <div className="abx-surface-protocol-visual">
+          <PartnerLifecycleControlRoomVisual />
+        </div>
+      </Reveal>
+
       <Reveal style={{ marginBottom: "1rem" }}>
         <ModeCCommandRail
           items={[

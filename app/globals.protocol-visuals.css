@@ -1,0 +1,401 @@
+/* Protocol visual system — institutional diagrams, minimal chrome */
+
+.abx-pv-shell {
+  margin: 0;
+  padding: clamp(1.25rem, 3vw, 2rem) 0;
+}
+
+.abx-pv-shell__kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted, rgba(245, 245, 243, 0.45));
+}
+
+.abx-pv-shell__title {
+  margin: 0 0 clamp(1rem, 2.5vw, 1.35rem);
+  font-size: clamp(1.35rem, 3.2vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+  color: var(--text-primary, #f5f5f3);
+}
+
+.abx-pv-shell__title-accent {
+  color: var(--abx-premium-green, #4cbb92);
+}
+
+.abx-pv-shell__caption {
+  margin: 0.85rem 0 0;
+  max-width: 52ch;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--text-secondary, rgba(245, 245, 243, 0.62));
+}
+
+.abx-pv-shell__canvas {
+  position: relative;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  background: #050505;
+  overflow: hidden;
+}
+
+.abx-pv-diagram {
+  margin: 0;
+}
+
+.abx-pv-diagram__scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+.abx-pv-diagram__frame {
+  position: relative;
+  width: 100%;
+  min-width: min(100%, 320px);
+  max-height: min(72vh, 720px);
+  background: #050505;
+}
+
+.abx-pv-diagram__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.abx-pv-diagram__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.abx-pv-diagram__grid-overlay {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(180deg, transparent 0%, black 8%, black 92%, transparent 100%);
+  opacity: 0.35;
+}
+
+.abx-home-flagship-visuals {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2.5rem, 6vw, 4rem);
+}
+
+/* Partner lifecycle control room */
+.abx-pv-lifecycle__room {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+@media (min-width: 960px) {
+  .abx-pv-lifecycle__room {
+    grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.9fr);
+    align-items: start;
+  }
+}
+
+.abx-pv-lifecycle__map {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .abx-pv-lifecycle__map {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.abx-pv-lifecycle__node {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  padding: 0.65rem 0.7rem;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.14));
+  background: transparent;
+  color: var(--text-secondary);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.abx-pv-lifecycle__node:hover,
+.abx-pv-lifecycle__node:focus-visible {
+  border-color: rgba(76, 187, 146, 0.45);
+  outline: none;
+}
+
+.abx-pv-lifecycle__node--active {
+  border-color: var(--abx-premium-green, #4cbb92);
+  color: var(--text-primary);
+  box-shadow: inset 0 0 0 1px rgba(76, 187, 146, 0.25);
+}
+
+.abx-pv-lifecycle__node-index {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+}
+
+.abx-pv-lifecycle__node--active .abx-pv-lifecycle__node-index {
+  color: var(--abx-premium-green, #4cbb92);
+}
+
+.abx-pv-lifecycle__node-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.abx-pv-lifecycle__evidence {
+  border-left: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  padding-left: 1rem;
+}
+
+@media (max-width: 959px) {
+  .abx-pv-lifecycle__evidence {
+    border-left: none;
+    padding-left: 0;
+    border-top: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+    padding-top: 1rem;
+  }
+}
+
+.abx-pv-lifecycle__stage-meta {
+  margin: 0 0 0.35rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.abx-pv-lifecycle__stage-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.abx-pv-lifecycle__evidence-heading {
+  margin: 0 0 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.abx-pv-lifecycle__evidence-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.abx-pv-lifecycle__evidence-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.abx-pv-lifecycle__evidence-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.abx-pv-lifecycle__evidence-status {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.abx-pv-lifecycle__evidence-status--ok {
+  color: var(--abx-premium-green, #4cbb92);
+}
+
+/* Passport holder flow */
+.abx-pv-passport-flow__steps {
+  list-style: none;
+  margin: 0;
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .abx-pv-passport-flow__steps {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+}
+
+.abx-pv-passport-flow__step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.85rem 0.75rem;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  min-height: 6.5rem;
+}
+
+.abx-pv-passport-flow__step strong {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+}
+
+.abx-pv-passport-flow__step span {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.abx-pv-passport-flow__index {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--abx-premium-green, #4cbb92);
+}
+
+.abx-pv-passport-flow__connector {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .abx-pv-passport-flow__connector {
+    display: block;
+    position: absolute;
+    top: 50%;
+    right: -0.35rem;
+    width: 0.5rem;
+    height: 1px;
+    background: rgba(76, 187, 146, 0.5);
+    transform: translateY(-50%);
+  }
+}
+
+.abx-surface-protocol-visual {
+  margin-bottom: clamp(1.25rem, 3vw, 2rem);
+}
+
+.abx-protocol-visual-disclosure {
+  margin: 0 0 1.25rem;
+  padding: 0.65rem 0.85rem;
+  border-left: 2px solid var(--abx-premium-green, #4cbb92);
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  max-width: 62ch;
+}
+
+.abx-pv-governance__banner {
+  margin: 0 0 1rem;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid rgba(229, 115, 115, 0.35);
+  color: #e57373;
+  background: rgba(229, 115, 115, 0.06);
+}
+
+.abx-pv-governance__banner--live {
+  border-color: rgba(76, 187, 146, 0.35);
+  color: var(--abx-premium-green, #4cbb92);
+  background: rgba(76, 187, 146, 0.06);
+}
+
+.abx-pv-governance__planes {
+  list-style: none;
+  margin: 0;
+  padding: clamp(0.75rem, 2vw, 1rem);
+  display: grid;
+  gap: 0.65rem;
+}
+
+.abx-pv-governance__plane {
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.abx-pv-governance__plane-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.abx-pv-governance__plane-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.abx-pv-governance__plane--observed .abx-pv-governance__plane-badge {
+  color: var(--abx-premium-green, #4cbb92);
+}
+
+.abx-pv-governance__plane-scope {
+  margin: 0 0 0.25rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.abx-pv-governance__plane-detail {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.abx-pv-governance__reference {
+  margin-top: 1rem;
+  padding: 0 0.75rem 0.75rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.abx-pv-governance__reference summary {
+  cursor: pointer;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .abx-pv-lifecycle__node {
+    transition: none;
+  }
+}

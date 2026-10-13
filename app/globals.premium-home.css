@@ -745,6 +745,14 @@
   flex-shrink: 0;
 }
 
+.abx-premium-receipt-exhibit__checks--compact li {
+  align-items: center;
+}
+
+.abx-v2-section-lead--tight {
+  max-width: 42ch;
+}
+
 .abx-premium-receipt-exhibit__demo {
   border: none;
   border-top: 1px solid var(--border);

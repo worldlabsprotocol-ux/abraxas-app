@@ -58,6 +58,7 @@ import { OnchainVerifierConformanceCard } from "@/components/partner/launchpad/O
 import { GO_LIVE_REVIEW_ENTRY } from "@/lib/partner/launchpad/goLiveReadiness/contract";
 import { PolicyProposalForm } from "@/components/partner/policyProposal/PolicyProposalForm";
 import { POLICY_PROPOSAL_NOTICE } from "@/lib/partner/policyProposal/contract";
+import { PartnerLifecycleControlRoomVisual } from "@/components/protocol-visuals";
 import { LaunchpadApplicationNav } from "@/components/partner/launchpad/LaunchpadApplicationNav";
 import { LaunchpadOperationalInspector } from "@/components/partner/launchpad/LaunchpadOperationalInspector";
 import { LaunchpadActivityEvidenceTable } from "@/components/partner/launchpad/LaunchpadActivityEvidenceTable";
@@ -562,8 +563,12 @@ export function PartnerLaunchpadClient({
       <PageHeader
         eyebrow="Partner operations"
         title="Launchpad console"
-        subtitle="Authenticated application context and live integration telemetry for Integration Studio. Configure policies, run sandbox verification, inspect receipts and webhooks, and request reviewed production access."
+        subtitle="Sandbox telemetry · receipts · webhooks · reviewed production access."
       />
+
+      <div className="abx-surface-protocol-visual">
+        <PartnerLifecycleControlRoomVisual />
+      </div>
 
       <div className="abx-launchpad-operational">
         {workspace?.applications.length ? (

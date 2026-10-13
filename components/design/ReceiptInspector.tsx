@@ -21,6 +21,12 @@ export interface ReceiptInspectorProps {
   signatureValid: boolean;
   /** Current policy authorization after freshness / revocation */
   currentlyAuthorized: boolean;
+  /** Validity window (not expired) — separate from signature */
+  validityWindowOk?: boolean;
+  /** Revocation registry clear */
+  revocationClear?: boolean;
+  /** Independent verifier reachable */
+  verifierReachable?: boolean;
   fields: ReceiptInspectorField[];
   footer?: ReactNode;
   simulationBadge?: string;
@@ -39,6 +45,9 @@ export function ReceiptInspector({
   outcome,
   signatureValid,
   currentlyAuthorized,
+  validityWindowOk = currentlyAuthorized,
+  revocationClear = currentlyAuthorized,
+  verifierReachable = true,
   fields,
   footer,
   simulationBadge,
@@ -82,11 +91,14 @@ export function ReceiptInspector({
       </dl>
 
       <div className="abx-receipt-inspector__checks" aria-label="Verification checks">
-        <CheckRow label="Signature valid" ok={signatureValid} detail="Cryptographic verification of issuer signature" />
+        <CheckRow label="Signed" ok={signatureValid} detail="Issuer signature verifies — does not imply authorization alone" />
+        <CheckRow label="Validity window" ok={validityWindowOk} detail="Not expired; time-bound eligibility" />
+        <CheckRow label="Revocation clear" ok={revocationClear} detail="Registry / policy revocation signal" />
+        <CheckRow label="Verifier available" ok={verifierReachable} detail="Independent verify path reachable" />
         <CheckRow
-          label="Currently authorized"
+          label="Authorized now"
           ok={currentlyAuthorized}
-          detail="Freshness, issuer state, and revocation — distinct from signature validity"
+          detail="Combined policy decision after all checks — may DENY while signature remains valid"
         />
       </div>
 
