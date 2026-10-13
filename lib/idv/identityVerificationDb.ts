@@ -2,15 +2,14 @@
 // Persist identity verification state transitions (best-effort if columns exist).
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { resolvePersistenceConfig } from "@/lib/persistence/env";
 import type { CredentialStatus, IdentityVerificationStatus } from "./identityVerificationStates";
 import { identityVerificationUpsertKeys } from "./holderIdentityRef";
 
-const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const SB_SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
-
 export function idvSupabase(): SupabaseClient | null {
-  if (!SB_URL || !SB_SERVICE) return null;
-  return createClient(SB_URL, SB_SERVICE, { auth: { persistSession: false } });
+  const cfg = resolvePersistenceConfig();
+  if (!cfg.ok) return null;
+  return createClient(cfg.postgrestUrl, cfg.serviceRoleKey, { auth: { persistSession: false } });
 }
 
 export interface IdentityVerificationRow {

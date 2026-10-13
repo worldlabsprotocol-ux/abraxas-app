@@ -3,7 +3,10 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const PG_URL = process.env.MIGRATION_136_PG_URL?.trim() || undefined;
+const PG_URL = process.env.MIGRATION_136_PG_URL?.trim()
+  || process.env.ABRAXAS_DATABASE_URL?.trim()
+  || process.env.DATABASE_URL?.trim()
+  || undefined;
 
 function psql(sql: string): string {
   if (!PG_URL) throw new Error("MIGRATION_136_PG_URL is required");
