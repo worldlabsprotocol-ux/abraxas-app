@@ -1,0 +1,96 @@
+{
+  "certification_version": "1.0.0",
+  "build": "546",
+  "title": "Independent verification and institutional partner certification",
+  "generated_at": "2026-10-13T06:35:20.342Z",
+  "commit_sha": "061114f300862c4e206cdf297c45341021a0b95e",
+  "environment": {
+    "node": "v22.14.0",
+    "observation_default": "local_simulated"
+  },
+  "architecture_summary_ref": "docs/build-546/TRUST_ARCHITECTURE_AUDIT.md",
+  "dependency_limitations": [
+    "Local cases use synthetic Ed25519 keys and in-memory fixtures only.",
+    "Live claim refresh, supersession, and revocation lists require Abraxas authority endpoints.",
+    "Staging holder authentication is not executed without authorized partner credentials."
+  ],
+  "supabase_independence": {
+    "offline_verifier_runs_without_supabase": true,
+    "external_relying_party_runs_without_supabase": true,
+    "live_staging_holder_flow": "blocked",
+    "detail": "Staging target resolves in this environment; holder OAuth journey not auto-run (no fabricated partner activity)."
+  },
+  "cases": [
+    {
+      "observation_class": "local_simulated",
+      "test_id": "valid_receipt_with_revocation_feed",
+      "threat_or_property": "Authorized decision under active issuer and policy",
+      "expected_behavior": "authorize + currently_authorizable true",
+      "observed_behavior": "authorize; crypto=true; current=true",
+      "verification_evidence": [
+        "payload_integrity:pass",
+        "issuer_key:pass",
+        "signature_authenticity:pass",
+        "temporal_validity:pass",
+        "policy_scope:pass",
+        "audience_binding:pass",
+        "issuance_trust_fields:pass",
+        "revocation_freshness:pass",
+        "chain_evidence:pass"
+      ],
+      "verdict": "pass"
+    },
+    {
+      "observation_class": "local_simulated",
+      "test_id": "stale_without_revocation_source",
+      "threat_or_property": "Fail closed without live revocation evidence",
+      "expected_behavior": "blocked",
+      "observed_behavior": "blocked",
+      "verification_evidence": [
+        "revocation_not_checked"
+      ],
+      "verdict": "pass"
+    },
+    {
+      "observation_class": "local_simulated",
+      "test_id": "external_rp_replay_protection",
+      "threat_or_property": "Single-use consumption ledger",
+      "expected_behavior": "first grant, second deny replay",
+      "observed_behavior": "first=granted; second=denied; replay=true",
+      "verification_evidence": [
+        "rp-grant-1:granted",
+        "rp-grant-2:denied"
+      ],
+      "verdict": "pass"
+    },
+    {
+      "observation_class": "local_simulated",
+      "test_id": "offline_chain_vector_conformance",
+      "threat_or_property": "Cross-chain evidence vector integrity",
+      "expected_behavior": "chain_evidence pass without RPC",
+      "observed_behavior": "pass",
+      "verification_evidence": [
+        "evaluateVectorConformance"
+      ],
+      "verdict": "pass"
+    },
+    {
+      "test_id": "live_staging_target_resolved",
+      "threat_or_property": "Staging URL and demo Supabase ref configured",
+      "expected_behavior": "Target resolved without production ref",
+      "observed_behavior": "https://abraxas-jj620kdxk-worldlabsprotocol-uxs-projects.vercel.app",
+      "verification_evidence": [
+        "expected_supabase_ref=ocntwbxarpjeixdnzide"
+      ],
+      "verdict": "pass",
+      "observation_class": "live_staging"
+    }
+  ],
+  "summary": {
+    "pass": 5,
+    "fail": 0,
+    "blocked": 0,
+    "ready_for_institutional_merge_review": true
+  },
+  "disclaimer": "Passing local simulated adversarial tests demonstrates cryptographic and contract behavior against fixtures. They are not institutional production certification, legal sufficiency, or live third-party audit attestation."
+}
