@@ -174,10 +174,14 @@ export async function getHolderCredentialStatus(suiAddress: string): Promise<Hol
 
   if (!verification) return { status: "none" };
 
+  const docFilters = [`wallet_address.eq.${subject}`, `sui_address.eq.${subject}`];
+  if (subject.startsWith("abx_hs_")) {
+    docFilters.push(`wallet_address.eq.${subject}`);
+  }
   const { count: pendingDocs } = await sb
     .from("passport_documents")
     .select("id", { count: "exact", head: true })
-    .or(`wallet_address.eq.${subject},sui_address.eq.${subject}`)
+    .or(docFilters.join(","))
     .eq("stamp_id", "identity")
     .in("status", ["submitted", "under_review"]);
 

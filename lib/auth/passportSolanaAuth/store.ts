@@ -1,7 +1,8 @@
 // FILE: lib/auth/passportSolanaAuth/store.ts
 
 import { createHash, randomBytes } from "crypto";
-import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { requirePersistenceAdmin } from "@/lib/persistence/admin";
+import { consumePassportSolanaAuthChallenge } from "@/lib/persistence/identityPersistence";
 
 export function hashSessionContext(value: string): string {
   return createHash("sha256").update(`holder-sol-ctx:${value}`).digest("hex");
@@ -28,7 +29,7 @@ export async function insertSolanaChallenge(row: {
   message: string;
   expires_at: string;
 }): Promise<void> {
-  const sb = requireSupabaseAdmin();
+  const sb = requirePersistenceAdmin();
   const { error } = await sb.from("passport_solana_auth_challenges").insert(row);
   if (error) {
     if (error.code === "42P01") throw new PassportSolanaAuthStoreUnavailableError();
@@ -36,21 +37,35 @@ export async function insertSolanaChallenge(row: {
   }
 }
 
+export type SolanaAuthChallengeRow = {
+  id: string;
+  wallet_address: string;
+  solana_network: string;
+  origin: string;
+  intended_action: string;
+  session_context_hash: string;
+  nonce: string;
+  message: string;
+  expires_at: string;
+  consumed_at: string | null;
+};
+
 export async function consumeSolanaChallenge(input: {
   challengeId: string;
   walletAddress: string;
   sessionContextHash: string;
-}) {
-  const sb = requireSupabaseAdmin();
-  const { data, error } = await sb.rpc("consume_passport_solana_auth_challenge", {
-    p_challenge_id: input.challengeId,
-    p_wallet_address: input.walletAddress,
-    p_session_context_hash: input.sessionContextHash,
-  });
-  if (error) {
-    if (error.code === "42P01") throw new PassportSolanaAuthStoreUnavailableError();
-    throw error;
+}): Promise<SolanaAuthChallengeRow | null> {
+  try {
+    const row = await consumePassportSolanaAuthChallenge({
+      challengeId: input.challengeId,
+      walletAddress: input.walletAddress,
+      sessionContextHash: input.sessionContextHash,
+    });
+    return row as SolanaAuthChallengeRow | null;
+  } catch (e) {
+    if (e instanceof Error && e.message === "holder_auth_store_unavailable") {
+      throw new PassportSolanaAuthStoreUnavailableError();
+    }
+    throw e;
   }
-  const row = Array.isArray(data) ? data[0] : data;
-  return row ?? null;
 }

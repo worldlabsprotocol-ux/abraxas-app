@@ -13,6 +13,8 @@ import {
 } from "@/lib/idv/identityVerificationStates";
 import { getIdvProvider, isVeriffLive } from "@/lib/idv/idvProvider";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
+import { identityVerificationOrFilter } from "@/lib/idv/holderIdentityRef";
 import { readCanonicalWalletBindingTruth } from "@/lib/trust/readCanonicalWalletBinding";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -70,11 +72,13 @@ async function finalizeStatusPayload(
   const walletTruth = await readCanonicalWalletBindingTruth(sui, supabase);
   const walletBindingL3 = walletTruth.persisted;
 
-  const { data: walletRow } = await supabase
-    .from("sui_zklogin_identities")
-    .select("sui_address")
-    .eq("sui_address", normalizeSuiAddress(sui))
-    .maybeSingle();
+  const walletRow = isChainNeutralHolderSubjectId(sui)
+    ? { sui_address: sui }
+    : (await supabase
+      .from("sui_zklogin_identities")
+      .select("sui_address")
+      .eq("sui_address", normalizeSuiAddress(sui))
+      .maybeSingle()).data;
 
   const identityStatus = partial.identity_verification_status
     ?? mapLegacyStatusToIdentity(partial.status);
@@ -82,7 +86,7 @@ async function finalizeStatusPayload(
     ?? (partial.status === "approved" && partial.credential_jti ? "active" : "not_issued");
 
   const setup = computePassportSetupState({
-    walletDone: Boolean(walletRow),
+    walletDone: Boolean(walletRow?.sui_address),
     identityStatus,
     credentialStatus,
     walletBindingL3,
@@ -171,7 +175,7 @@ async function statusBySui(supabase: SupabaseClient, sui: string): Promise<Parti
       identity_verification_status, credential_status, veriff_session_id,
       last_verified_at, credential_issued_at, error_message
     `)
-    .or(`wallet_address.eq.${sui},sui_address.eq.${sui}`)
+    .or(identityVerificationOrFilter(sui))
     .maybeSingle();
 
   if (!data) {
@@ -324,7 +328,10 @@ export async function GET(req: NextRequest) {
     ?? req.nextUrl.searchParams.get("sui");
   if (requested) {
     try {
-      if (normalizeSuiAddress(requested) !== sui) {
+      const normalized = isChainNeutralHolderSubjectId(requested.trim())
+        ? requested.trim()
+        : normalizeSuiAddress(requested);
+      if (normalized !== sui) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
     } catch {

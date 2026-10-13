@@ -1,7 +1,7 @@
 // FILE: lib/auth/holderSubject/service.ts
 
 import { randomBytes } from "crypto";
-import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { requirePersistenceAdmin } from "@/lib/persistence/admin";
 import { createHolderSubjectId } from "./subjectId";
 import type { Caip10Parts } from "./caip";
 
@@ -12,7 +12,7 @@ export class HolderSubjectStoreUnavailableError extends Error {
 }
 
 export async function insertHolderSubject(subjectId: string): Promise<void> {
-  const sb = requireSupabaseAdmin();
+  const sb = requirePersistenceAdmin();
   const { error } = await sb.from("passport_holder_subjects").insert({ subject_id: subjectId });
   if (error) {
     if (error.code === "42P01") throw new HolderSubjectStoreUnavailableError();
@@ -26,7 +26,7 @@ export async function bindVerifiedWalletAccount(input: {
   caip: Caip10Parts;
   authMethod: string;
 }): Promise<{ ok: true } | { ok: false; code: "wallet_bound_to_other_subject" | "persist_failed" }> {
-  const sb = requireSupabaseAdmin();
+  const sb = requirePersistenceAdmin();
   const { data: existing } = await sb
     .from("passport_holder_wallet_accounts")
     .select("subject_id")
@@ -63,7 +63,7 @@ export async function resolveSubjectForVerifiedWallet(input: {
   | { ok: true; subjectId: string; created: boolean }
   | { ok: false; code: "wallet_bound_to_other_subject" | "persist_failed" }
 > {
-  const sb = requireSupabaseAdmin();
+  const sb = requirePersistenceAdmin();
   const { data: bound } = await sb
     .from("passport_holder_wallet_accounts")
     .select("subject_id")
@@ -97,7 +97,7 @@ export async function linkLegacyKeyToSubject(input: {
   legacyKind: string;
   legacyKey: string;
 }): Promise<void> {
-  const sb = requireSupabaseAdmin();
+  const sb = requirePersistenceAdmin();
   const { error } = await sb.from("passport_holder_legacy_links").insert({
     subject_id: input.subjectId,
     legacy_kind: input.legacyKind,
@@ -109,7 +109,7 @@ export async function linkLegacyKeyToSubject(input: {
 }
 
 export async function resolveLegacySubjectId(legacyKind: string, legacyKey: string): Promise<string | null> {
-  const sb = requireSupabaseAdmin();
+  const sb = requirePersistenceAdmin();
   const { data, error } = await sb
     .from("passport_holder_legacy_links")
     .select("subject_id")
@@ -124,7 +124,7 @@ export async function resolveLegacySubjectId(legacyKind: string, legacyKey: stri
 }
 
 export async function assertHolderSubjectExists(subjectId: string): Promise<boolean> {
-  const sb = requireSupabaseAdmin();
+  const sb = requirePersistenceAdmin();
   const { data, error } = await sb
     .from("passport_holder_subjects")
     .select("subject_id")

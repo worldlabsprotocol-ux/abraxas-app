@@ -197,32 +197,19 @@ export async function verifyEvmBindingSignature(input: {
   expectedNonce: string;
   nowMs?: number;
 }): Promise<boolean> {
-  try {
-    const validation = validateSiweMessage(
-      input.message,
-      {
-        domain: input.expectedDomain,
-        chainId: input.expectedChainId,
-        nonce: input.expectedNonce,
-        address: input.expectedAddress,
-      },
-      input.nowMs,
-    );
-    if (!validation.ok) return false;
-
-    const address = normalizeEvmAddress(input.expectedAddress);
-    const signature = input.signature.startsWith("0x")
+  const { verifySiweWalletSignature } = await import("./evmSignatureVerify");
+  const result = await verifySiweWalletSignature({
+    message: input.message,
+    signature: input.signature.startsWith("0x")
       ? input.signature as `0x${string}`
-      : `0x${input.signature}` as `0x${string}`;
-
-    return verifyMessage({
-      address: address as `0x${string}`,
-      message: input.message,
-      signature,
-    });
-  } catch {
-    return false;
-  }
+      : `0x${input.signature}` as `0x${string}`,
+    expectedAddress: input.expectedAddress,
+    expectedDomain: input.expectedDomain,
+    expectedChainId: input.expectedChainId,
+    expectedNonce: input.expectedNonce,
+    nowMs: input.nowMs,
+  });
+  return result.ok;
 }
 
 export function messageHash(message: string): string {

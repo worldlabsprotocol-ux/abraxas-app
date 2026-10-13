@@ -2,14 +2,14 @@
 // Persist identity verification state transitions (best-effort if columns exist).
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { resolvePersistenceConfig } from "@/lib/persistence/env";
 import type { CredentialStatus, IdentityVerificationStatus } from "./identityVerificationStates";
-
-const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const SB_SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+import { identityVerificationUpsertKeys } from "./holderIdentityRef";
 
 export function idvSupabase(): SupabaseClient | null {
-  if (!SB_URL || !SB_SERVICE) return null;
-  return createClient(SB_URL, SB_SERVICE, { auth: { persistSession: false } });
+  const cfg = resolvePersistenceConfig();
+  if (!cfg.ok) return null;
+  return createClient(cfg.postgrestUrl, cfg.serviceRoleKey, { auth: { persistSession: false } });
 }
 
 export interface IdentityVerificationRow {
@@ -61,10 +61,10 @@ export async function transitionIdentityVerification(
   };
   if (legacyStatus) update.status = legacyStatus;
 
+  const keys = identityVerificationUpsertKeys(holder);
   await sb.from("identity_verifications").upsert(
     {
-      wallet_address: holder,
-      sui_address: holder,
+      ...keys,
       ...update,
     },
     { onConflict: "wallet_address" },
@@ -72,7 +72,7 @@ export async function transitionIdentityVerification(
 
   if (patch.identity_verification_status) {
     await sb.from("identity_verification_events").insert({
-      sui_address: holder,
+      sui_address: keys.sui_address ?? keys.holder_subject_id ?? holder,
       to_status: patch.identity_verification_status,
       source,
       veriff_session_id: patch.veriff_session_id ?? null,
