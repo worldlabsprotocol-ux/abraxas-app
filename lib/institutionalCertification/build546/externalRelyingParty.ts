@@ -1,5 +1,5 @@
 // FILE: lib/institutionalCertification/build546/externalRelyingParty.ts
-// Minimal external relying party — verify, consume once, audit outcome (in-memory).
+// Minimal external relying party — verify, consume once, audit outcome.
 
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import type { PartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlowReceipt";
@@ -8,12 +8,16 @@ import {
   type IndependentVerifierResult,
   type RevocationSourceState,
 } from "./independentVerifier";
+import type { ReceiptConsumptionStore } from "@/lib/institutionalCertification/build547/receiptConsumptionStore";
+import { InMemoryReceiptConsumptionStore } from "@/lib/institutionalCertification/build547/receiptConsumptionStore";
 
 export interface ExternalRpConfig {
   partnerId: string;
   policyId: string;
   allowSandbox?: boolean;
   env?: Record<string, string | undefined>;
+  /** Defaults to in-memory (Build #546). Build #547 supplies filesystem store for durability tests. */
+  consumptionStore?: ReceiptConsumptionStore;
 }
 
 export interface ExternalRpDecisionAudit {
@@ -24,35 +28,44 @@ export interface ExternalRpDecisionAudit {
   verifier: IndependentVerifierResult;
   consumption_recorded: boolean;
   replay_detected: boolean;
+  consumption_id?: string | null;
   partner_visible: Record<string, string>;
 }
 
 export class ExternalRelyingPartyHarness {
-  private readonly consumed = new Set<string>();
+  private readonly store: ReceiptConsumptionStore;
   private readonly auditLog: ExternalRpDecisionAudit[] = [];
 
-  constructor(private readonly config: ExternalRpConfig) {}
+  constructor(private readonly config: ExternalRpConfig) {
+    this.store = config.consumptionStore ?? new InMemoryReceiptConsumptionStore();
+  }
+
+  getConsumptionStore(): ReceiptConsumptionStore {
+    return this.store;
+  }
 
   getAuditLog(): readonly ExternalRpDecisionAudit[] {
     return this.auditLog;
   }
 
-  decide(input: {
+  async decide(input: {
     requestId: string;
     signedRecord?: DecisionReceiptRecord;
     publicReceipt?: PartnerFlowPublicReceipt;
     now?: Date;
     revocationSource?: RevocationSourceState;
     singleUse?: boolean;
-  }): ExternalRpDecisionAudit {
+  }): Promise<ExternalRpDecisionAudit> {
     const receiptId =
       input.signedRecord?.id
       ?? input.publicReceipt?.receipt_id
       ?? "unknown";
     const now = input.now ?? new Date();
-    const replayDetected = this.consumed.has(receiptId);
+    const singleUse = input.singleUse !== false;
 
-    if (input.singleUse !== false && replayDetected) {
+    const alreadyConsumed = singleUse && (await this.store.hasConsumed(receiptId));
+
+    if (alreadyConsumed) {
       const blocked = verifyReceiptIndependently({
         signedRecord: input.signedRecord,
         publicReceipt: input.publicReceipt,
@@ -73,6 +86,7 @@ export class ExternalRelyingPartyHarness {
         verifier: blocked,
         consumption_recorded: false,
         replay_detected: true,
+        consumption_id: null,
         partner_visible: {
           result: "deny_replay",
           receipt_id: receiptId,
@@ -100,9 +114,24 @@ export class ExternalRelyingPartyHarness {
     else if (verifier.verdict === "authorize" && verifier.currently_authorizable) outcome = "granted";
 
     let consumptionRecorded = false;
-    if (outcome === "granted") {
-      this.consumed.add(receiptId);
-      consumptionRecorded = true;
+    let replayDetected = false;
+    let consumptionId: string | null = null;
+
+    if (outcome === "granted" && singleUse) {
+      const attempt = await this.store.tryRecordConsumption({
+        receiptId,
+        requestId: input.requestId,
+        partnerId: this.config.partnerId,
+        at: now.toISOString(),
+      });
+      if (attempt.status === "replay") {
+        outcome = "denied";
+        replayDetected = true;
+        consumptionRecorded = false;
+      } else {
+        consumptionRecorded = true;
+        consumptionId = attempt.consumption_id;
+      }
     }
 
     const audit: ExternalRpDecisionAudit = {
@@ -112,9 +141,10 @@ export class ExternalRelyingPartyHarness {
       outcome,
       verifier,
       consumption_recorded: consumptionRecorded,
-      replay_detected: false,
+      replay_detected: replayDetected,
+      consumption_id: consumptionId,
       partner_visible: {
-        result: outcome === "granted" ? "permit" : outcome === "blocked" ? "blocked" : "deny",
+        result: outcome === "granted" ? "permit" : replayDetected ? "deny_replay" : outcome === "blocked" ? "blocked" : "deny",
         receipt_id: receiptId,
         policy_id: this.config.policyId,
       },

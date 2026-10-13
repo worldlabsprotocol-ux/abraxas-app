@@ -13,7 +13,7 @@ import {
 } from "@/lib/institutionalCertification/build546/fixtures";
 import { ExternalRelyingPartyHarness } from "@/lib/institutionalCertification/build546/externalRelyingParty";
 
-function main() {
+async function main() {
   Object.assign(process.env, build546TrustRegistryEnv());
   const args = process.argv.slice(2);
   const fixturePath = args[0];
@@ -29,7 +29,7 @@ function main() {
     env: build546TrustRegistryEnv(),
   });
 
-  const decision = rp.decide({
+  const decision = await rp.decide({
     requestId: `cli-${Date.now()}`,
     signedRecord: record,
     publicReceipt: pub,
@@ -40,4 +40,7 @@ function main() {
   console.log(JSON.stringify({ audit: decision, log: rp.getAuditLog() }, null, 2));
 }
 
-main();
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
