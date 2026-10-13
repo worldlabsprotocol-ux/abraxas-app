@@ -4,17 +4,13 @@
 
 import { useState } from "react";
 import { useSuiAuth, truncateSuiAddress } from "./SuiAuthProvider";
-import Link from "next/link";
-import { consumerCopy } from "@/lib/consumerCopy";
-import { useGoogleSignIn } from "@/lib/hooks/useGoogleSignIn";
-import { ZKLOGIN_SIGN_IN_COPY } from "@/lib/sui/zklogin/signInCopy";
+import { HolderAccessPanel } from "@/components/sui/HolderAccessPanel";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
 
 export function ZkLoginSignIn({ compact = false }: { compact?: boolean }) {
-  const { isAuthenticated, suiAddress, signOut, error } = useSuiAuth();
-  const { signIn, signInExistingAccount, busy, legacyBusy, configured, legacyRecoveryConfigured, disabled, legacyDisabled } = useGoogleSignIn();
+  const { isAuthenticated, suiAddress, signOut } = useSuiAuth();
   const [showAddress, setShowAddress] = useState(false);
 
   if (isAuthenticated && suiAddress) {
@@ -50,83 +46,5 @@ export function ZkLoginSignIn({ compact = false }: { compact?: boolean }) {
     );
   }
 
-  return (
-    <div style={{
-      background: `${ACCENT}0A`,
-      border: `1px solid ${ACCENT}33`,
-      borderRadius: compact ? 10 : 12,
-      padding: compact ? "0.75rem 1rem" : "1.25rem",
-    }}>
-      <div style={{ fontFamily: FONT, fontSize: "0.58rem", fontWeight: 700, color: ACCENT, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "0.35rem" }}>
-        {consumerCopy.passport.walletStep}
-      </div>
-      {!compact && (
-        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 0.875rem", maxWidth: 480 }}>
-          {consumerCopy.passport.walletHint}
-        </p>
-      )}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
-        <button
-          type="button"
-          onClick={() => void signIn()}
-          disabled={disabled}
-          aria-label={ZKLOGIN_SIGN_IN_COPY.canonicalAriaLabel}
-          style={{
-            display: "inline-flex", alignItems: "center", gap: "0.5rem",
-            padding: "0.6rem 1.1rem", borderRadius: 999, border: "none",
-            background: configured ? ACCENT : "var(--border)",
-            color: configured ? "#000" : "var(--text-muted)",
-            fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700,
-            cursor: configured && !busy ? "pointer" : "not-allowed",
-            opacity: busy ? 0.7 : 1,
-          }}>
-          <span aria-hidden="true" style={{ fontWeight: 800 }}>G</span>
-          {busy ? ZKLOGIN_SIGN_IN_COPY.redirecting : ZKLOGIN_SIGN_IN_COPY.canonicalButton}
-        </button>
-        {legacyRecoveryConfigured && (
-          <button
-            type="button"
-            onClick={() => void signInExistingAccount()}
-            disabled={legacyDisabled}
-            aria-label={ZKLOGIN_SIGN_IN_COPY.legacyAriaLabel}
-            style={{
-              padding: "0.6rem 1.1rem", borderRadius: 999,
-              border: `1px solid ${ACCENT}55`, background: "transparent",
-              color: "var(--text-secondary)",
-              fontFamily: FONT, fontSize: "0.78rem", fontWeight: 600,
-              cursor: !legacyDisabled ? "pointer" : "not-allowed",
-              opacity: legacyBusy ? 0.7 : 1,
-            }}>
-            {legacyBusy ? ZKLOGIN_SIGN_IN_COPY.redirecting : ZKLOGIN_SIGN_IN_COPY.legacyButton}
-          </button>
-        )}
-        {!configured && (
-          <Link href="/docs/zklogin-setup" style={{ fontFamily: FONT, fontSize: "0.72rem", color: ACCENT }}>
-            Setup guide →
-          </Link>
-        )}
-      </div>
-      {!compact && (
-        <p style={{
-          fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
-          lineHeight: 1.55, margin: "0.75rem 0 0", maxWidth: 520,
-        }}>
-          {ZKLOGIN_SIGN_IN_COPY.canonicalHelper}
-        </p>
-      )}
-      {legacyRecoveryConfigured && !compact && (
-        <p style={{
-          fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)",
-          lineHeight: 1.55, margin: "0.35rem 0 0", maxWidth: 520,
-        }}>
-          {ZKLOGIN_SIGN_IN_COPY.legacyHelper}
-        </p>
-      )}
-      {(error || !configured) && (
-        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: !configured ? "var(--text-muted)" : "#E0524F", margin: "0.75rem 0 0", lineHeight: 1.55 }}>
-          {error ?? "Sign in is being configured. Check back soon or contact support."}
-        </p>
-      )}
-    </div>
-  );
+  return <HolderAccessPanel compact={compact} />;
 }

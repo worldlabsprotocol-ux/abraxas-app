@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { InstitutionalHomeClose } from "@/components/institutional/InstitutionalHomeClose";
 import type { ReactNode } from "react";
 import { HomeFlagshipProtocolVisuals } from "@/components/home/HomeFlagshipProtocolVisuals";
+import { HomeApplicationsReceiveSection } from "@/components/home/HomeApplicationsReceiveSection";
 import { LazyHomeSection } from "@/components/home/LazyHomeSection";
 import { PremiumHomeChapter } from "@/components/home/premium/PremiumHomeChapter";
 import { ABX_SPACING, abxAccentCssVars } from "@/lib/design/abraxasDesignSystem";
@@ -23,11 +24,6 @@ const HomeVerificationLifecycle = dynamic(
 const HomeGoodTroubleActionSection = dynamic(
   () => import("@/components/home/HomeGoodTroubleActionSection").then((m) => m.HomeGoodTroubleActionSection),
   { ssr: false, loading: () => <div className="abx-lazy-home-section" style={{ minHeight: "8rem" }} aria-hidden /> },
-);
-
-const HomeTrustNetwork = dynamic(
-  () => import("@/components/home/premium/HomeTrustNetwork").then((m) => m.HomeTrustNetwork),
-  { ssr: false, loading: () => <div className="abx-lazy-home-section" style={{ minHeight: "14rem" }} aria-hidden /> },
 );
 
 const HomeVerifiableTrustChapter = dynamic(
@@ -58,25 +54,25 @@ function HomeContent({ hero }: { hero: ReactNode }) {
           <HomeFlagshipProtocolVisuals />
         </PremiumHomeChapter>
 
-        <PremiumHomeChapter index="02" label="Lifecycle" id="chapter-lifecycle">
+        <PremiumHomeChapter index="02" label="Authorization" id="chapter-authorization" bleed>
+          <LazyHomeSection minHeight="12rem">
+            <HomeApplicationsReceiveSection />
+          </LazyHomeSection>
+        </PremiumHomeChapter>
+
+        <PremiumHomeChapter index="03" label="Lifecycle" id="chapter-lifecycle">
           <LazyHomeSection minHeight="18rem">
             <HomeVerificationLifecycle />
           </LazyHomeSection>
         </PremiumHomeChapter>
 
-        <PremiumHomeChapter index="03" label="Demonstration" id="chapter-demo">
+        <PremiumHomeChapter index="04" label="Demonstration" id="chapter-demo">
           <LazyHomeSection minHeight="12rem">
             <HomeGoodTroubleActionSection />
           </LazyHomeSection>
         </PremiumHomeChapter>
 
-        <PremiumHomeChapter index="04" label="Network" id="chapter-network">
-          <LazyHomeSection minHeight="16rem">
-            <HomeTrustNetwork />
-          </LazyHomeSection>
-        </PremiumHomeChapter>
-
-        <PremiumHomeChapter index="05" label="Evidence" id="chapter-evidence">
+        <PremiumHomeChapter index="05" label="Evidence" id="chapter-evidence" bleed>
           <LazyHomeSection minHeight="22rem" eager>
             <HomeVerifiableTrustChapter />
           </LazyHomeSection>

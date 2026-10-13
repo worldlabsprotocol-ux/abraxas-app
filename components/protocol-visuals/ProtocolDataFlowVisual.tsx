@@ -5,10 +5,8 @@ export function ProtocolDataFlowVisual() {
   return (
     <ProtocolVisualShell
       id="how-abraxas-works"
-      kicker="System"
-      title="Verify once."
-      titleAccent="Share narrow answers."
-      caption="Your credentials stay in your private space. Apps receive signed results — not copies of your documents."
+      title="How Abraxas Works"
+      className="abx-pv-shell--exhibit"
     >
       <ProtocolDiagramFigure
         src="/protocol-visuals/abraxas-protocol-data-flow.webp"

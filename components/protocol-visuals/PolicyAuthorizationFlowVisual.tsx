@@ -4,10 +4,9 @@ import { ProtocolVisualShell } from "./ProtocolVisualShell";
 export function PolicyAuthorizationFlowVisual() {
   return (
     <ProtocolVisualShell
-      kicker="Authorization"
-      title="Policy-specific"
-      titleAccent="decisions."
-      caption="Consent → policy check → evaluation → signed receipt → app decision. Private data stays inside your boundary."
+      id="what-applications-receive"
+      title="What Applications Receive"
+      className="abx-pv-shell--exhibit abx-pv-shell--open"
     >
       <ProtocolDiagramFigure
         src="/protocol-visuals/policy-authorization-flow.webp"

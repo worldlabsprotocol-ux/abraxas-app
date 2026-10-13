@@ -4,10 +4,9 @@ import { ProtocolVisualShell } from "./ProtocolVisualShell";
 export function DecisionReceiptInspectionVisual() {
   return (
     <ProtocolVisualShell
-      kicker="Verification"
-      title="Decision receipt"
-      titleAccent="inspection."
-      caption="Reference diagram — use the workbench below for interactive valid, expired, revoked, and unavailable scenarios (simulated)."
+      id="verify-the-decision"
+      title="Verify the Decision"
+      className="abx-pv-shell--exhibit abx-pv-shell--open"
     >
       <ProtocolDiagramFigure
         src="/protocol-visuals/decision-receipt-inspection.webp"

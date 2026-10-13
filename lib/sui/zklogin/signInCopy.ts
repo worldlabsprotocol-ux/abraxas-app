@@ -4,7 +4,7 @@
 export const ZKLOGIN_SIGN_IN_COPY = {
   openButton: "Sign in",
   openButtonAriaLabel: "Sign in to your Abraxas Passport",
-  chooserTitle: "Access your Passport",
+  chooserTitle: "Connect to Abraxas",
   legacySectionHeading: "Older sign in setup",
   closeButton: "Close",
 

@@ -169,7 +169,7 @@ export function PassportCustomerView({
       <h2 id="passport-signin-heading" style={{
         fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.75rem",
       }}>
-        Sign in to continue
+        Connect or open Passport
       </h2>
       <ZkLoginSignIn />
     </section>
