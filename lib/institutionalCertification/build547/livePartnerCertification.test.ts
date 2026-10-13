@@ -60,7 +60,13 @@ describe("Build #547 live partner verification certification", () => {
     const replays = results.filter((r) => r.replay_detected);
     expect(granted).toHaveLength(1);
     expect(replays.length).toBe(attempts - 1);
-    expect(await rp.getConsumptionStore().hasConsumed(record.id)).toBe(true);
+    expect(
+      await rp.getConsumptionStore().hasConsumed({
+        partnerId: BUILD_546_PARTNER_ID,
+        policyId: BUILD_546_POLICY_ID,
+        receiptId: record.id,
+      }),
+    ).toBe(true);
   });
 
   it("process restart — second instance denies replay", async () => {

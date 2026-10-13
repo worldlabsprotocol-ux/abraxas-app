@@ -35,7 +35,9 @@ export interface ExternalRpDecisionAudit {
   consumption_recorded: boolean;
   replay_detected: boolean;
   audit_append_failed?: boolean;
+  persistence_unavailable?: boolean;
   consumption_id?: string | null;
+  replay_key_scope?: string;
   partner_visible: Record<string, string>;
 }
 
@@ -70,7 +72,12 @@ export class ExternalRelyingPartyHarness {
     const now = input.now ?? new Date();
     const singleUse = input.singleUse !== false;
 
-    const alreadyConsumed = singleUse && (await this.store.hasConsumed(receiptId));
+    const consumptionScope = {
+      partnerId: this.config.partnerId,
+      policyId: this.config.policyId,
+      receiptId,
+    };
+    const alreadyConsumed = singleUse && (await this.store.hasConsumed(consumptionScope));
 
     if (alreadyConsumed) {
       const blocked = verifyReceiptIndependently({
@@ -133,12 +140,14 @@ export class ExternalRelyingPartyHarness {
     let durableConsumptionMarker = false;
     let durableAuditLogged = false;
     let auditAppendFailed = false;
+    let persistenceUnavailable = false;
 
     if (outcome === "granted" && singleUse) {
       const attempt = await this.store.tryRecordConsumption({
         receiptId,
         requestId: input.requestId,
         partnerId: this.config.partnerId,
+        policyId: this.config.policyId,
         at: now.toISOString(),
       });
       if (attempt.status === "replay") {
@@ -146,6 +155,12 @@ export class ExternalRelyingPartyHarness {
         replayDetected = true;
         consumptionRecorded = false;
         durableConsumptionMarker = true;
+      } else if (attempt.status === "persistence_unavailable") {
+        outcome = "blocked";
+        persistenceUnavailable = true;
+        consumptionRecorded = false;
+        durableConsumptionMarker = false;
+        durableAuditLogged = false;
       } else if (attempt.status === "audit_append_failed") {
         outcome = "denied";
         auditAppendFailed = true;
@@ -173,18 +188,22 @@ export class ExternalRelyingPartyHarness {
       consumption_recorded: consumptionRecorded,
       replay_detected: replayDetected,
       audit_append_failed: auditAppendFailed || undefined,
+      persistence_unavailable: persistenceUnavailable || undefined,
       consumption_id: consumptionId,
+      replay_key_scope: "single_use_partner_policy_receipt_v1",
       partner_visible: {
         result:
           outcome === "granted"
             ? "permit"
-            : auditAppendFailed
-              ? "deny_audit_incomplete"
-              : replayDetected
-                ? "deny_replay"
-                : outcome === "blocked"
-                  ? "blocked"
-                  : "deny",
+            : persistenceUnavailable
+              ? "blocked_persistence_unavailable"
+              : auditAppendFailed
+                ? "deny_audit_incomplete"
+                : replayDetected
+                  ? "deny_replay"
+                  : outcome === "blocked"
+                    ? "blocked"
+                    : "deny",
         receipt_id: receiptId,
         policy_id: this.config.policyId,
       },

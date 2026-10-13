@@ -21,6 +21,7 @@ describe("FileReceiptConsumptionStore", () => {
       receiptId: "dr_test_1",
       requestId: "req-a",
       partnerId: "partner-a",
+      policyId: "policy-a",
       at: new Date().toISOString(),
     });
     expect(first.status).toBe("recorded");
@@ -28,6 +29,7 @@ describe("FileReceiptConsumptionStore", () => {
       receiptId: "dr_test_1",
       requestId: "req-b",
       partnerId: "partner-a",
+      policyId: "policy-a",
       at: new Date().toISOString(),
     });
     expect(second.status).toBe("replay");
@@ -41,14 +43,16 @@ describe("FileReceiptConsumptionStore", () => {
       receiptId: "dr_restart",
       requestId: "req-1",
       partnerId: "p",
+      policyId: "pol",
       at: new Date().toISOString(),
     });
     const b = new FileReceiptConsumptionStore(dir, "instance-b");
-    expect(await b.hasConsumed("dr_restart")).toBe(true);
+    expect(await b.hasConsumed({ partnerId: "p", policyId: "pol", receiptId: "dr_restart" })).toBe(true);
     const replay = await b.tryRecordConsumption({
       receiptId: "dr_restart",
       requestId: "req-2",
       partnerId: "p",
+      policyId: "pol",
       at: new Date().toISOString(),
     });
     expect(replay.status).toBe("replay");
@@ -72,14 +76,16 @@ describe("FileReceiptConsumptionStore", () => {
       receiptId: "dr_audit_fail",
       requestId: "req-1",
       partnerId: "p",
+      policyId: "pol",
       at: new Date().toISOString(),
     });
     expect(first.status).toBe("audit_append_failed");
-    expect(await store.hasConsumed("dr_audit_fail")).toBe(true);
+    expect(await store.hasConsumed({ partnerId: "p", policyId: "pol", receiptId: "dr_audit_fail" })).toBe(true);
     const replay = await store.tryRecordConsumption({
       receiptId: "dr_audit_fail",
       requestId: "req-2",
       partnerId: "p",
+      policyId: "pol",
       at: new Date().toISOString(),
     });
     expect(replay.status).toBe("replay");
@@ -104,6 +110,7 @@ describe("FileReceiptConsumptionStore", () => {
       receiptId: "dr_crash_only",
       requestId: "req-crash",
       partnerId: "p",
+      policyId: "pol",
       at: new Date().toISOString(),
     });
     expect(attempt.status).toBe("audit_append_failed");

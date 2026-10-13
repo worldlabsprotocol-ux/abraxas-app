@@ -1,0 +1,111 @@
+{
+  "certification_version": "1.0.0",
+  "build": "548",
+  "title": "Distributed replay protection certification",
+  "generated_at": "2026-10-13T08:06:01.901Z",
+  "commit_sha": "a923b6f65f8e205c0788be8ddfc93d7874796c73",
+  "extends_builds": [
+    "546",
+    "547"
+  ],
+  "replay_model": {
+    "scope": "single_use_partner_policy_receipt_v1",
+    "canonical_key": "sha256(scope\\0partner\\0policy\\0receipt)",
+    "request_id_role": "audit_correlation_only"
+  },
+  "transaction_model": {
+    "postgres": "single_transaction_consumption_plus_audit",
+    "filesystem": "wx_marker_then_append_audit_certification_only",
+    "memory": "process_local_dev"
+  },
+  "supabase_independence": {
+    "external_rp_requires_abraxas_supabase": false,
+    "external_rp_requires_abraxas_sessions": false,
+    "consumption_database": "independently_provisioned_postgresql",
+    "verdict": "pass"
+  },
+  "audit_atomicity": {
+    "postgres_verdict": "pass",
+    "detail": "Consumption and audit committed in one PostgreSQL transaction; grant requires durable_audit_logged."
+  },
+  "adapters": [
+    {
+      "adapter": "postgres_distributed",
+      "concurrent_workers": 24,
+      "grants": 1,
+      "replays": 23,
+      "audit_rows": 1
+    },
+    {
+      "adapter": "memory_dev"
+    },
+    {
+      "adapter": "filesystem_certification"
+    }
+  ],
+  "latency": {
+    "samples": 25,
+    "rp_decide_postgres_ms": {
+      "p50": 18.65,
+      "p95": 28.89,
+      "max": 31.29
+    }
+  },
+  "cases": [
+    {
+      "observation_class": "local_simulated",
+      "test_id": "postgres_concurrent_single_consumption",
+      "threat_or_property": "Distributed replay — cross-instance concurrency",
+      "expected_behavior": "exactly one grant; audit row matches consumption",
+      "observed_behavior": "grants=1; replays=23; audit=1",
+      "verification_evidence": [
+        "pg-concurrent-0:granted",
+        "pg-concurrent-1:denied",
+        "pg-concurrent-2:denied",
+        "pg-concurrent-3:denied",
+        "pg-concurrent-4:denied",
+        "pg-concurrent-5:denied",
+        "pg-concurrent-6:denied",
+        "pg-concurrent-7:denied",
+        "pg-concurrent-8:denied",
+        "pg-concurrent-9:denied",
+        "pg-concurrent-10:denied",
+        "pg-concurrent-11:denied",
+        "pg-concurrent-12:denied",
+        "pg-concurrent-13:denied",
+        "pg-concurrent-14:denied",
+        "pg-concurrent-15:denied",
+        "pg-concurrent-16:denied",
+        "pg-concurrent-17:denied",
+        "pg-concurrent-18:denied",
+        "pg-concurrent-19:denied",
+        "pg-concurrent-20:denied",
+        "pg-concurrent-21:denied",
+        "pg-concurrent-22:denied",
+        "pg-concurrent-23:denied"
+      ],
+      "verdict": "pass"
+    },
+    {
+      "test_id": "live_authenticated_holder_journey",
+      "threat_or_property": "Live holder → receipt → distributed RP",
+      "expected_behavior": "Blocked without authorized synthetic credentials",
+      "observed_behavior": "Not executed — live holder certification remains blocked; local adapters are not live evidence.",
+      "verification_evidence": [],
+      "verdict": "blocked",
+      "observation_class": "live_staging"
+    }
+  ],
+  "summary": {
+    "pass": 1,
+    "fail": 0,
+    "blocked": 1,
+    "ready_for_institutional_merge_review": true
+  },
+  "live_certification_prerequisites": [
+    "Authorized BUILD_548_PG_URL on nonproduction institutional PostgreSQL (operator provisioned)",
+    "BUILD_547 live holder journey credentials (unchanged — not fabricated)",
+    "Optional BUILD_547_SYNTHETIC_RECEIPT_ID for public receipt HTTP boundary"
+  ],
+  "disclaimer": "Build #548 adds distributed PostgreSQL replay protection for external relying parties. Memory and filesystem adapters remain for dev/certification assurance tiers only. Do not point BUILD_548_PG_URL at Abraxas production or historical demo Supabase."
+}
