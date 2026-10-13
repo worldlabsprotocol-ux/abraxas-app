@@ -11,7 +11,13 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { loadUserSession, clearUserSession, saveUserSession, type ZkLoginUserSession } from "@/lib/sui/zklogin/session";
+import {
+  loadUserSession,
+  clearUserSession,
+  saveUserSession,
+  saveWalletPassportSession,
+  type ZkLoginUserSession,
+} from "@/lib/sui/zklogin/session";
 import { canSignZkLoginTransactions } from "@/lib/sui/zklogin/signingSession";
 import { startGoogleZkLogin, clearStaleLoginInFlight } from "@/lib/sui/zklogin/startLogin";
 import { isZkLoginConfigured, isLegacyZkLoginRecoveryConfigured } from "@/lib/sui/zklogin/config";
@@ -43,6 +49,7 @@ interface SuiAuthContextValue {
   dismissSignInRecovery: () => void;
   signInWithGoogle: (options?: { continuePath?: string }) => Promise<boolean>;
   signInWithExistingAccount: () => Promise<boolean>;
+  establishWalletPassportSession: (suiAddress: string) => void;
   signOut: () => void;
   refreshSession: () => void;
 }
@@ -201,6 +208,14 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
     return true;
   }, [dismissSignInRecovery]);
 
+  const establishWalletPassportSession = useCallback((suiAddress: string) => {
+    const next = saveWalletPassportSession(suiAddress);
+    setSession(next);
+    setCanSignTransactions(false);
+    logAuthEvent("auth_provider_authenticated", { authenticated: true, provider: "passport_wallet" });
+    window.dispatchEvent(new Event("abraxas:zklogin-session"));
+  }, []);
+
   const signOut = useCallback(() => {
     clearUserSession();
     setSession(null);
@@ -223,9 +238,10 @@ export function SuiAuthProvider({ children }: { children: ReactNode }) {
     dismissSignInRecovery,
     signInWithGoogle,
     signInWithExistingAccount,
+    establishWalletPassportSession,
     signOut,
     refreshSession: reloadSession,
-  }), [session, canSignTransactions, isLoading, error, signInRecovery, dismissSignInRecovery, signInWithGoogle, signInWithExistingAccount, signOut, reloadSession]);
+  }), [session, canSignTransactions, isLoading, error, signInRecovery, dismissSignInRecovery, signInWithGoogle, signInWithExistingAccount, establishWalletPassportSession, signOut, reloadSession]);
 
   return (
     <SuiAuthContext.Provider value={value}>

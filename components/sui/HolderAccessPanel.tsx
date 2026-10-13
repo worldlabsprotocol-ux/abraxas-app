@@ -5,7 +5,7 @@
 import { useState } from "react";
 import { useGoogleSignIn } from "@/lib/hooks/useGoogleSignIn";
 import { useSuiAuth } from "./SuiAuthProvider";
-import { SuiWalletStandardConnect } from "./SuiWalletStandardConnect";
+import { PassportWalletSignInButton } from "./PassportWalletSignInButton";
 import {
   HOLDER_LEGACY_GOOGLE_DETAIL,
   HOLDER_LEGACY_GOOGLE_LABEL,
@@ -60,7 +60,7 @@ export function HolderAccessPanel({ compact = false }: { compact?: boolean }) {
       >
         Blockchain access
       </p>
-      <SuiWalletStandardConnect expectedAddress={suiAddress} compact={compact} />
+      <PassportWalletSignInButton compact={compact} />
       <p style={{
         fontFamily: FONT,
         fontSize: "0.72rem",

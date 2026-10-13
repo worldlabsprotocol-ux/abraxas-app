@@ -16,20 +16,29 @@ function sessionSecret(): Uint8Array | null {
   return new TextEncoder().encode(raw);
 }
 
+export type BrowserSessionAuthMethod = "wallet" | "oauth" | "hosted";
+
 export interface BrowserSession {
   suiAddress: string;
+  authMethod?: BrowserSessionAuthMethod;
 }
 
-export async function issueBrowserSessionToken(suiAddress: string): Promise<string | null> {
+export async function issueBrowserSessionToken(
+  suiAddress: string,
+  options?: { authMethod?: BrowserSessionAuthMethod },
+): Promise<string | null> {
   const secret = sessionSecret();
   if (!secret) return null;
   const subject = normalizeSuiAddress(suiAddress);
-  return new SignJWT({ sui: subject })
+  const jwt = new SignJWT({
+    sui: subject,
+    ...(options?.authMethod ? { am: options.authMethod } : {}),
+  })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(subject)
     .setIssuedAt()
-    .setExpirationTime(`${SESSION_TTL_SEC}s`)
-    .sign(secret);
+    .setExpirationTime(`${SESSION_TTL_SEC}s`);
+  return jwt.sign(secret);
 }
 
 export function attachBrowserSessionCookie(res: NextResponse, token: string): void {
@@ -70,7 +79,10 @@ export async function resolveBrowserSession(req: NextRequest): Promise<BrowserSe
       if (!data) return null;
     }
 
-    return { suiAddress: normalized };
+    const authMethod = payload.am === "wallet" || payload.am === "oauth" || payload.am === "hosted"
+      ? payload.am
+      : undefined;
+    return { suiAddress: normalized, authMethod };
   } catch {
     return null;
   }

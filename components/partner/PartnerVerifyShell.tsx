@@ -2,6 +2,7 @@
 // FILE: components/partner/PartnerVerifyShell.tsx
 // Customer partner verification surface — derives from authoritative journey state.
 
+import type { ReactNode } from "react";
 import { Btn } from "@/components/redesign/ui";
 import { PartnerJourneyLayout } from "@/components/partner/PartnerJourneyLayout";
 import {
@@ -77,6 +78,7 @@ export interface PartnerVerifyShellProps {
   disclosedResult?: string | null;
   hostedBootstrapEligible?: boolean;
   onOptionalSignIn?: () => void;
+  onWalletSignIn?: ReactNode;
 }
 
 function recoveryForPhase(phase: PartnerVerifyPhase) {
@@ -153,6 +155,7 @@ export function PartnerVerifyShell({
   disclosedResult = null,
   hostedBootstrapEligible = false,
   onOptionalSignIn,
+  onWalletSignIn,
 }: PartnerVerifyShellProps) {
   const continuationContext = { policyId, purpose };
   const onSignInScreen = showSignIn(phase);
@@ -277,6 +280,11 @@ export function PartnerVerifyShell({
 
           {showSignIn(phase) && signInConfigured && !hostedBootstrapEligible && (
             <>
+            {onWalletSignIn ? (
+              <div style={{ marginBottom: "0.85rem" }}>
+                {onWalletSignIn}
+              </div>
+            ) : null}
             <Btn
               onClick={onSignIn}
               disabled={primaryDisabled || busy}
@@ -284,10 +292,10 @@ export function PartnerVerifyShell({
             >
               {phase === "signing_in"
                 ? "Signing you in…"
-                : (useDobFirstSignInCopy ? GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON : "Continue")}
+                : (useDobFirstSignInCopy ? GOOD_TROUBLE_BROWSE_SIGN_IN_BUTTON : "Continue with Google (legacy)")}
             </Btn>
             <p style={{ margin: "0.65rem 0 0", fontSize: "0.82rem", lineHeight: 1.55, color: "var(--text-muted)" }}>
-              Google sign-in opens an Abraxas account only. It is not eligibility proof. After sign-in you choose how to satisfy this request.
+              Wallet sign-in proves control of your Sui address only — not eligibility. Google remains available for legacy account recovery.
             </p>
             </>
           )}
