@@ -176,7 +176,7 @@ describe("Build #564 portable revocation security (synthetic)", () => {
       sequence: 2,
       previousSnapshot: seq1,
     });
-    await store.setCheckpoint({
+    store.seedForIsolatedTests({
       revocation_issuer_id: PORTABLE_REVOCATION_TEST_ISSUER_ID,
       highest_sequence: 2,
       last_payload_hash: seq2.payload_hash,
@@ -352,10 +352,10 @@ describe("Build #564 portable revocation security (synthetic)", () => {
     const presentation = presentationForReceiptId("dr_jump");
     const jump = buildSyntheticPortableRevocationSnapshot({ receiptId: "dr_jump", sequence: 5 });
     const store = new InMemoryPortableRevocationCheckpointStore();
-    await store.setCheckpoint({
+    store.seedForIsolatedTests({
       revocation_issuer_id: PORTABLE_REVOCATION_TEST_ISSUER_ID,
       highest_sequence: 2,
-      last_payload_hash: "abc",
+      last_payload_hash: "a".repeat(64),
       updated_at: BUILD_546_FIXTURE_NOW.toISOString(),
     });
     const result = await verifySnapshotAtRp({

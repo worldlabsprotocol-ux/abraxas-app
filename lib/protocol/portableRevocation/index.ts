@@ -16,8 +16,14 @@ export {
 } from "./issuerAuthority";
 export {
   type PortableRevocationCheckpointStore,
+  type PortableRevocationCheckpointCandidate,
   InMemoryPortableRevocationCheckpointStore,
+  FilesystemPortableRevocationCheckpointStore,
 } from "./checkpointStore";
+export {
+  compareAndAdvanceCheckpointState,
+  type CompareAndAdvanceCheckpointResult,
+} from "./checkpointAdvance";
 export {
   PORTABLE_REVOCATION_DEFAULT_CLOCK_SKEW_SECONDS,
   validatePortableRevocationFreshness,

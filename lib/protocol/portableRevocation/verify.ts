@@ -39,7 +39,10 @@ export type PortableRevocationVerifyCode =
   | "snapshot_signing_key_unauthorized"
   | "checkpoint_unavailable"
   | "rollback_against_checkpoint"
-  | "chain_continuity_break";
+  | "chain_continuity_break"
+  | "hash_conflict_at_sequence"
+  | "checkpoint_storage_unavailable"
+  | "bootstrap_bypass_rejected";
 
 export type PortableRevocationVerification = {
   ok: boolean;
@@ -94,11 +97,6 @@ export function verifyPortableRevocationArtifact(input: {
     if (artifact.payload.previous_snapshot_hash !== prevHash) {
       codes.push("previous_hash_mismatch");
     }
-  } else if (
-    artifact.payload.snapshot_sequence > 1
-    && artifact.payload.previous_snapshot_hash
-  ) {
-    codes.push("previous_hash_mismatch");
   }
 
   return {

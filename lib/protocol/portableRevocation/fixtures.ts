@@ -8,6 +8,7 @@ import {
 } from "@/lib/institutionalCertification/build546/fixtures";
 import type { PortableRevocationIssuerTrustPolicy } from "./issuerAuthority";
 import type { ReceiptSigningKeyPair } from "@/lib/decisionReceipts/signing";
+import { hashPortableRevocationPayload } from "./canonical";
 import { buildPortableRevocationPayload, signPortableRevocationSnapshot } from "./sign";
 import type { PortableRevocationSignedArtifact } from "./contract";
 
@@ -44,7 +45,7 @@ export function buildSyntheticPortableRevocationSnapshot(input: {
   const issuedAt = input.issuedAt ?? BUILD_546_FIXTURE_NOW.toISOString();
   const expiresAt = input.expiresAt ?? "2027-06-01T12:00:00.000Z";
   const previousSnapshotHash = input.previousSnapshot
-    ? input.previousSnapshot.payload_hash
+    ? hashPortableRevocationPayload(input.previousSnapshot.payload)
     : null;
 
   const payload = buildPortableRevocationPayload({

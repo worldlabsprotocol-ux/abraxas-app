@@ -28,11 +28,13 @@ The verifier **does not** trust `issuer_id` from the holder or an unbound snapsh
 
 | Mechanism | Behavior |
 |-----------|----------|
-| **`PortableRevocationCheckpointStore`** | RP-local high-water `{ highest_sequence, last_payload_hash }` per issuer |
-| **Monotonic progression** | `sequence < checkpoint` → `rollback_against_checkpoint`; `sequence === checkpoint` → idempotent re-verify same hash |
-| **Chain step** | `sequence === checkpoint + 1` requires `previous_snapshot_hash === checkpoint.last_payload_hash` |
-| **Gap import** | Requires **`PortableRevocationBootstrapTrust`** pinning exact `{ sequence, payload_hash, signing_key_id }` — never implicit genesis |
+| **`PortableRevocationCheckpointStore.compareAndAdvanceCheckpoint`** | Atomic compare-and-advance (no separate read/write authorization path) |
+| **`FilesystemPortableRevocationCheckpointStore`** | Durable RP-local storage with exclusive lock files + atomic rename writes; fail-closed if storage/lock unavailable |
+| **`InMemoryPortableRevocationCheckpointStore`** | Isolated tests only |
+| **Monotonic progression** | Lower sequence or same-sequence hash conflict rejected under CAS |
+| **Bootstrap / gap** | Cannot bypass an existing higher checkpoint (`bootstrap_bypass_rejected`) |
 | **Missing checkpoint + no bootstrap** | `checkpoint_unavailable` → **BLOCKED** |
+| **Corrupt / inaccessible storage** | `checkpoint_storage_unavailable` → **BLOCKED** |
 
 ## Freshness hardening
 
