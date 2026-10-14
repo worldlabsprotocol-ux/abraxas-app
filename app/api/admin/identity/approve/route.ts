@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminRouteAccess } from "@/lib/admin/requireAdminRouteAccess";
+import { resolveAdminReviewerId } from "@/lib/admin/resolveAdminReviewerId";
 import { executeAdminReviewAction, type AdminReviewAction } from "@/lib/idv/adminReviewService";
 import { parseAuthoritativeDateOfBirth } from "@/lib/idv/ageEligibility";
 
@@ -11,6 +12,11 @@ const VALID_ACTIONS = new Set<AdminReviewAction>(["approve", "reject", "request_
 export async function POST(req: NextRequest) {
   const denied = await requireAdminRouteAccess(req);
   if (denied) return denied;
+
+  const reviewerId = await resolveAdminReviewerId(req);
+  if (!reviewerId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const body = await req.json().catch(() => ({})) as {
     document_id?: string;
@@ -57,7 +63,7 @@ export async function POST(req: NextRequest) {
   const result = await executeAdminReviewAction({
     documentId: body.document_id,
     action: body.action,
-    reviewerId: body.reviewer ?? "admin",
+    reviewerId,
     note: body.note,
     rejectionReasons: body.rejection_reasons,
     jurisdiction: body.jurisdiction,

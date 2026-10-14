@@ -96,6 +96,77 @@ export async function upsertClaimsDirect(
   }
 }
 
+function normalizeTimestamp(value: unknown): string | null {
+  if (value == null) return null;
+  if (value instanceof Date) return value.toISOString();
+  return String(value);
+}
+
+function mapClaimRow(row: Record<string, unknown>): CredentialClaimRecord {
+  const rawValue = row.claim_value;
+  const claimValue = typeof rawValue === "string"
+    ? (JSON.parse(rawValue) as Record<string, unknown>)
+    : ((rawValue as Record<string, unknown>) ?? {});
+  return {
+    id: row.id as string,
+    subject_id: row.subject_id as string,
+    credential_jti: (row.credential_jti as string | null) ?? null,
+    claim_type: row.claim_type as CredentialClaimRecord["claim_type"],
+    claim_value: claimValue,
+    issuer_id: row.issuer_id as string,
+    assurance_level: (row.assurance_level as CredentialClaimRecord["assurance_level"]) ?? null,
+    issued_at: normalizeTimestamp(row.issued_at) ?? new Date().toISOString(),
+    expires_at: normalizeTimestamp(row.expires_at),
+    status: row.status as CredentialClaimRecord["status"],
+    revocation_reference: (row.revocation_reference as string | null) ?? null,
+    evidence_reference: (row.evidence_reference as string | null) ?? null,
+    jurisdiction: (row.jurisdiction as string | null) ?? null,
+    policy_scope: (row.policy_scope as string | null) ?? null,
+  };
+}
+
+export async function getActiveClaimsDirect(subjectId: string): Promise<CredentialClaimRecord[]> {
+  const subject = normalizeClaimSubjectId(subjectId);
+  const now = new Date().toISOString();
+  try {
+    const result = await queryAbraxasPg<Record<string, unknown>>(
+      `select * from public.credential_claims
+       where subject_id = $1 and status = 'active'
+       order by issued_at desc`,
+      [subject],
+    );
+    return result.rows
+      .map(mapClaimRow)
+      .filter((c) => !c.expires_at || c.expires_at > now);
+  } catch (error) {
+    if (typeof error === "object" && error !== null && "code" in error && (error as { code: string }).code === "42P01") {
+      throw new ClaimsDirectStoreUnavailableError();
+    }
+    throw error;
+  }
+}
+
+export async function revokeSubjectClaimsDirect(
+  subjectId: string,
+  reason: string,
+  jti?: string,
+): Promise<void> {
+  const subject = normalizeClaimSubjectId(subjectId);
+  const revokedAt = new Date().toISOString();
+  await queryAbraxasPg(
+    `update public.credential_claims
+     set status = 'revoked', revocation_reference = $2, updated_at = $3
+     where subject_id = $1 and status = 'active'`,
+    [subject, reason, revokedAt],
+  );
+  if (jti) {
+    await queryAbraxasPg(
+      `update public.abraxas_credentials set revoked_at = $2 where jti = $1`,
+      [jti, revokedAt],
+    );
+  }
+}
+
 export async function countActiveClaimsForJtiDirect(
   subjectId: string,
   jti: string,

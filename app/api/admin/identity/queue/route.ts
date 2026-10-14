@@ -4,6 +4,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { checkAdminAccess } from "@/lib/adminAuth";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { listIdentityReviewQueueSovereign } from "@/lib/admin/identityReviewQueueSovereign";
 import {
   sanitizeBiometricForList,
   subjectLabelFromAddress,
@@ -61,13 +63,19 @@ export async function GET(req: NextRequest) {
   if (!await checkAdminAccess(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (!SB_URL || !SB_KEY) {
-    return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
-  }
 
   const status = req.nextUrl.searchParams.get("status") ?? "pending";
   const partnerId = req.nextUrl.searchParams.get("partner_id")?.trim() || null;
   const includePii = req.nextUrl.searchParams.get("detail") === "true";
+
+  if (persistenceUsesDirectPostgres()) {
+    const result = await listIdentityReviewQueueSovereign({ status, partnerId, includePii });
+    return NextResponse.json(result);
+  }
+
+  if (!SB_URL || !SB_KEY) {
+    return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
+  }
   const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
 
   let query = sb

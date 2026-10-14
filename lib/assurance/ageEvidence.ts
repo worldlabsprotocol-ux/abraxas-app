@@ -12,6 +12,7 @@ import {
   isMissingRelationError,
   type EvidenceStorageAvailability,
 } from "./evidenceStorage";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
 
 export type AgeEvidenceProvider =
   | "abraxas_biometric"
@@ -99,6 +100,19 @@ export function deriveProviderDecisionFromDob(
 }
 
 export async function checkAgeEvidenceStorageAvailability(): Promise<EvidenceStorageAvailability> {
+  if (persistenceUsesDirectPostgres()) {
+    const { queryAbraxasPg } = await import("@/lib/persistence/pgPool");
+    try {
+      await queryAbraxasPg(`select id from public.age_evidence_records limit 0`);
+      return { available: true };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (isMissingRelationError(message)) {
+        return { available: false, reason: "table_missing" };
+      }
+      return { available: false, reason: "not_configured" };
+    }
+  }
   const sb = getSupabase();
   if (!sb) return { available: false, reason: "not_configured" };
 
@@ -117,6 +131,61 @@ export type AgeEvidenceRecordResult =
 export async function createAgeEvidenceRecord(
   input: CreateAgeEvidenceInput,
 ): Promise<AgeEvidenceRecordResult> {
+  if (persistenceUsesDirectPostgres()) {
+    const availability = await checkAgeEvidenceStorageAvailability();
+    if (!availability.available) {
+      return {
+        ok: false,
+        error: availability.reason === "table_missing"
+          ? "age_evidence_storage_unavailable"
+          : "age_evidence_storage_unavailable",
+        storage_unavailable: true,
+      };
+    }
+    const { queryAbraxasPg } = await import("@/lib/persistence/pgPool");
+    const subject = normalizeAgeEvidenceSubject(input.subjectSuiAddress);
+    const now = new Date().toISOString();
+    const providerReferenceHash = input.providerReference
+      ? hashProviderReference(input.providerReference)
+      : null;
+    try {
+      const inserted = await queryAbraxasPg<{ id: string }>(
+        `insert into public.age_evidence_records (
+          subject_sui_address, passport_document_id, capture_session_id, evidence_provider, evidence_type,
+          assurance_level, age_threshold, provider_decision, review_status, provider_reference_hash,
+          reviewer_id, reviewer_reason, reviewed_at, expires_at, credential_jti, created_at, updated_at
+        ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$16)
+        returning id`,
+        [
+          subject,
+          input.passportDocumentId ?? null,
+          input.captureSessionId ?? null,
+          input.evidenceProvider,
+          input.evidenceType,
+          input.assuranceLevel,
+          input.ageThreshold,
+          input.providerDecision,
+          input.reviewStatus,
+          providerReferenceHash,
+          input.reviewerId ?? null,
+          input.reviewerReason ?? null,
+          input.reviewedAt ?? null,
+          input.expiresAt ?? null,
+          input.credentialJti ?? null,
+          now,
+        ],
+      );
+      const id = inserted.rows[0]?.id;
+      if (!id) return { ok: false, error: "insert failed" };
+      return { ok: true, id };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (isMissingRelationError(message)) {
+        return { ok: false, error: "age_evidence_storage_unavailable", storage_unavailable: true };
+      }
+      return { ok: false, error: message || "insert failed" };
+    }
+  }
   const sb = getSupabase();
   if (!sb) return { ok: false, error: "Supabase not configured", storage_unavailable: true };
 

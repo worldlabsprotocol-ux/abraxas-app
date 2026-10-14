@@ -2,6 +2,7 @@
 // Production fail-closed vs sandbox-degraded age evidence audit linkage.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
 import {
   checkAgeEvidenceStorageAvailability,
   type AgeEvidenceRecordResult,
@@ -35,9 +36,27 @@ export type AgeEvidencePrecheckResult =
  * Defaults to false (production fail-closed) when unknown.
  */
 export async function resolveReviewPolicySandboxFlag(
-  sb: SupabaseClient,
+  sb: SupabaseClient | null,
   input: { captureSessionId?: string | null; suiAddress: string },
 ): Promise<boolean> {
+  if (persistenceUsesDirectPostgres() && input.captureSessionId) {
+    const { getIdentityReviewSessionByCaptureDirect } = await import("@/lib/persistence/idvDirectStore");
+    const session = await getIdentityReviewSessionByCaptureDirect(input.captureSessionId);
+    if (session?.policy_id) {
+      const policy = await getPolicy(session.policy_id);
+      if (policy?.rules_json?.sandbox_only === true) return true;
+      if (policy?.rules_json?.sandbox_only === false) return false;
+    }
+    if (session?.partner_id === GOOD_TROUBLE_PARTNER_ID) return true;
+  }
+  if (!sb) {
+    if (input.captureSessionId) {
+      const assessment = await getBiometricAssessment(input.captureSessionId);
+      const partnerId = (assessment?.signals as { partner_id?: string } | undefined)?.partner_id;
+      if (partnerId === GOOD_TROUBLE_PARTNER_ID) return true;
+    }
+    return false;
+  }
   const { data: vr } = await sb
     .from("verification_requests")
     .select("policy_id, partner_id")

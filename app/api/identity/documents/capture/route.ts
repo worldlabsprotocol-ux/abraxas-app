@@ -3,6 +3,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { handleSovereignIdentityCapture } from "@/lib/idv/sovereignIdentityCapture";
 import { randomUUID } from "crypto";
 import { transitionIdentityVerification } from "@/lib/idv/identityVerificationDb";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
@@ -118,6 +120,9 @@ async function hasPendingIdentityReview(
 }
 
 export async function POST(req: NextRequest) {
+  if (persistenceUsesDirectPostgres()) {
+    return handleSovereignIdentityCapture(req);
+  }
   try {
     if (getIdvProvider() === "veriff") {
       return NextResponse.json({

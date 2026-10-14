@@ -4,7 +4,7 @@
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { normalizePartnerFlowSubject } from "@/lib/auth/sessionSubject";
 import { buildPartnerContinuePath } from "@/lib/partner/partnerFlowContinuation";
-import { getActiveClaims } from "@/lib/credentials/claimsService";
+import { resolveActiveClaimsForRuntime } from "@/lib/credentials/activeClaims.server";
 import { evaluatePolicyForSubject } from "@/lib/policy/evaluateSubjectPolicy";
 import {
   findActiveSessionDecision,
@@ -443,7 +443,7 @@ export async function issuePartnerSessionReceipt(input: {
     } else {
       decisionId = decisionRow.id as string;
       const claimRefs = buildEvaluatedClaimRefs(
-        await getActiveClaims(subject),
+        await resolveActiveClaimsForRuntime(subject),
         claimTypesFromEvaluation(evaluation.claims),
         evaluation.matched_claim_ids,
       );
