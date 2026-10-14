@@ -663,6 +663,14 @@ export async function countBiometricAssessmentsInWindowDirect(
   return Number.parseInt(result.rows[0]?.count ?? "0", 10);
 }
 
+export async function countPendingIdentityReviewQueueDirect(): Promise<number> {
+  const result = await queryAbraxasPg<{ count: string }>(
+    `select count(*)::text as count from public.passport_documents
+     where stamp_id = 'identity' and status in ('submitted','under_review')`,
+  );
+  return Number.parseInt(result.rows[0]?.count ?? "0", 10);
+}
+
 export async function countPendingIdentityDocumentsDirect(holderSubjectKey: string): Promise<number> {
   const cols = idvDocumentSubjectColumns(normalizeHolderSubjectKey(holderSubjectKey));
   const params: unknown[] = [];

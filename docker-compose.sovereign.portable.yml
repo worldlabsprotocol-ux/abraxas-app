@@ -1,0 +1,64 @@
+# Build #561 — portable Abraxas sovereign runtime (commodity Linux / VPS / on-prem).
+# Protocol trust: PostgreSQL + Abraxas keys + encrypted evidence volumes — not Vercel/Supabase.
+#
+# Usage:
+#   export SOVEREIGN_PORTABLE_POSTGRES_PASSWORD='…'
+#   export SOVEREIGN_PORTABLE_RESTORE_POSTGRES_PASSWORD='…'
+#   docker compose -f docker-compose.sovereign.portable.yml up -d
+#
+# Mount host paths for evidence/backups (independently recoverable):
+#   export SOVEREIGN_EVIDENCE_HOST_PATH=./data/evidence
+#   export SOVEREIGN_BACKUP_HOST_PATH=./data/backups
+
+services:
+  abraxas-portable-postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: abraxas
+      POSTGRES_PASSWORD: ${SOVEREIGN_PORTABLE_POSTGRES_PASSWORD:?Set SOVEREIGN_PORTABLE_POSTGRES_PASSWORD}
+      POSTGRES_DB: abraxas_sovereign
+    ports:
+      - "127.0.0.1:${SOVEREIGN_PORTABLE_POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - abraxas_portable_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U abraxas -d abraxas_sovereign"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  abraxas-portable-postgres-restore:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: abraxas
+      POSTGRES_PASSWORD: ${SOVEREIGN_PORTABLE_RESTORE_POSTGRES_PASSWORD:?Set SOVEREIGN_PORTABLE_RESTORE_POSTGRES_PASSWORD}
+      POSTGRES_DB: abraxas_sovereign_restore
+    ports:
+      - "127.0.0.1:${SOVEREIGN_PORTABLE_RESTORE_POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - abraxas_portable_restore_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U abraxas -d abraxas_sovereign_restore"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  abraxas-portable-evidence:
+    image: alpine:3.20
+    command: ["sh", "-c", "chmod 700 /data && sleep infinity"]
+    volumes:
+      - ${SOVEREIGN_EVIDENCE_HOST_PATH:-./data/evidence}:/data
+    restart: unless-stopped
+
+  abraxas-portable-backups:
+    image: alpine:3.20
+    command: ["sh", "-c", "chmod 700 /data && sleep infinity"]
+    volumes:
+      - ${SOVEREIGN_BACKUP_HOST_PATH:-./data/backups}:/data
+    restart: unless-stopped
+
+volumes:
+  abraxas_portable_pg_data:
+  abraxas_portable_restore_pg_data:
