@@ -15,6 +15,7 @@ import {
   SOVEREIGN_RUNTIME_SCHEMA_VERSION,
   sovereignRuntimeSchemaFingerprint,
 } from "./sovereignStagingConstants";
+import { buildSovereignDependencyAuditObserved } from "./sovereignDependencyAudit";
 
 export type SovereignHealthTier = "STAGING_READY" | "DEGRADED" | "UNCONFIGURED";
 
@@ -33,6 +34,13 @@ export type SovereignHealthReport = {
     chain_neutral_schema_ready: boolean;
     evidence_root: "ok" | "missing" | "unreadable";
     signing_key_configured: boolean;
+  };
+  provider_independence: {
+    build: 561;
+    provider_independent_core_configured: boolean;
+    provider_independent_core_operational: boolean;
+    category_d_in_core: string[];
+    signing_public_fingerprint_sha256: string | null;
   };
 };
 
@@ -102,6 +110,8 @@ export async function buildSovereignHealthReport(
     tier = criticalOk ? "STAGING_READY" : "DEGRADED";
   }
 
+  const providerAudit = await buildSovereignDependencyAuditObserved(env);
+
   return {
     build: 558,
     tier,
@@ -112,5 +122,13 @@ export async function buildSovereignHealthReport(
     persistence_backend: env.ABRAXAS_PERSISTENCE_BACKEND?.trim() ?? "supabase_postgrest",
     authorization_default: "deny_unavailable",
     checks,
+    provider_independence: {
+      build: 561,
+      provider_independent_core_configured: providerAudit.provider_independent_core_configured,
+      provider_independent_core_operational: providerAudit.provider_independent_core_operational,
+      category_d_in_core: providerAudit.category_d_in_core,
+      signing_public_fingerprint_sha256:
+        providerAudit.operational_readiness.signing_public_fingerprint_sha256,
+    },
   };
 }

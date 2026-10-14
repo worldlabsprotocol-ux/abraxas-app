@@ -1,0 +1,23 @@
+# Build #561 — native Linux service (Postgres reachable via ABRAXAS_DATABASE_URL).
+# Copy to /etc/systemd/system/ after adjusting paths and User=.
+#
+# Requires: npm run build (standalone), .env.sovereign.portable, init-portable-data-dirs.sh
+
+[Unit]
+Description=Abraxas sovereign portable API
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=abraxas
+Group=abraxas
+WorkingDirectory=/opt/abraxas/app
+EnvironmentFile=/opt/abraxas/.env.sovereign.portable
+ExecStart=/usr/bin/node /opt/abraxas/app/.next/standalone/server.js
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

@@ -30,6 +30,7 @@ const PUBLIC_SURFACE_REDIRECTS = [
 ];
 
 const nextConfig = {
+  output: process.env.ABRAXAS_STANDALONE_BUILD === "1" ? "standalone" : undefined,
   reactStrictMode: true,
   async redirects() {
     return PUBLIC_SURFACE_REDIRECTS;

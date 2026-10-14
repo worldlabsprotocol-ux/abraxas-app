@@ -38,5 +38,6 @@ describe("buildSovereignHealthReport", () => {
     });
     expect(report.tier).toBe("STAGING_READY");
     expect(report.checks.postgres).toBe("ok");
+    expect(report.provider_independence.build).toBe(561);
   });
 });

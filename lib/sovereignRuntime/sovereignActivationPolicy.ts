@@ -237,6 +237,20 @@ export function validateDisposableCertificationEnv(
     errors.push({ code: "missing_database_url", message: "ABRAXAS_DATABASE_URL is required" });
   }
 
+  if (env.NEXT_PUBLIC_SUPABASE_URL?.trim() || env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
+    errors.push({
+      code: "supabase_env_forbidden",
+      message: "Supabase env must be unset for sovereign disposable certification",
+    });
+  }
+
+  if (env.IDV_PROVIDER?.trim().toLowerCase() === "veriff") {
+    errors.push({
+      code: "veriff_forbidden_on_sovereign_core",
+      message: "IDV_PROVIDER=veriff is a proprietary trust dependency; use manual (Abraxas Verify) for sovereign core",
+    });
+  }
+
   return {
     ok: errors.length === 0,
     tier: errors.length === 0 ? "DISPOSABLE_CERTIFIED" : "BLOCKED",
