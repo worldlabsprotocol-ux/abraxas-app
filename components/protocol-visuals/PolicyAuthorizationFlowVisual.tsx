@@ -6,10 +6,10 @@ export function PolicyAuthorizationFlowVisual() {
   return (
     <ProtocolVisualShell
       id="private-data-consent-flow"
-      kicker="02 Authorization"
-      title="Private data &"
-      titleAccent="consent flow"
-      caption="Consent, policy evaluation, and signed receipt — only scoped output crosses your private boundary."
+      kicker="Authorization"
+      title="Consent &"
+      titleAccent="scoped receipt"
+      caption="Named partner request → holder approval → signed decision receipt. Partners receive the policy answer required—not underlying documents or biometrics."
       className="abx-pv-shell--exhibit abx-pv-shell--open"
     >
       <ProtocolDiagramFigure

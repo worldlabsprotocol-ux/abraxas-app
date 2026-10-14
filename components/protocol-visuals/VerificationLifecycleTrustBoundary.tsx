@@ -45,8 +45,8 @@ const STAGES: {
     index: "04",
     tab: "Independent verification",
     kicker: "Relying party verification",
-    title: "Verify without a trusted middleman",
-    body: "Applications, services, and partners verify signature, policy binding, freshness, and revocation independently.",
+    title: "Verify without Abraxas identity databases",
+    body: "Relying parties verify signature, policy binding, freshness, and authenticated portable revocation using locally trusted issuer keys—fail-closed when state is stale or untrusted.",
   },
 ];
 

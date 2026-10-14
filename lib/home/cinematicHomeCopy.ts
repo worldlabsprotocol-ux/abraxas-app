@@ -64,13 +64,18 @@ export const FOOTER_THESIS_LINE_2 = CINEMATIC_THESIS_LINE_2;
 /** Build #545 — public homepage hero and scroll chapters */
 export const CINEMATIC_HOME_HEADLINE = "Prove what matters. Keep what's yours.";
 
-export const CINEMATIC_HOME_LEAD = "Verify once. Share narrow, signed answers — not your documents.";
+export const CINEMATIC_HOME_LEAD =
+  "Verify once with an authorized issuer. Carry portable credentials in Passport. Partners verify signed decisions independently—without Abraxas identity databases at authorization time.";
 
-export const CINEMATIC_HOME_CTA_PRIMARY = "See how it works";
-export const CINEMATIC_HOME_CTA_PRIMARY_HREF = "#how-abraxas-works";
+export const CINEMATIC_HOME_CTA_PRIMARY = "Open Passport";
+export const CINEMATIC_HOME_CTA_PRIMARY_HREF = "/passport";
 
-export const CINEMATIC_HOME_CTA_SECONDARY = "Explore Abraxas";
-export const CINEMATIC_HOME_CTA_SECONDARY_HREF = "/protocol";
+export const CINEMATIC_HOME_CTA_SECONDARY = "Partner integration";
+export const CINEMATIC_HOME_CTA_SECONDARY_HREF =
+  "/developers/integration-studio?outcome=reuse_across_app&source=homepage";
+
+export const CINEMATIC_HOME_CTA_TERTIARY = "How it works";
+export const CINEMATIC_HOME_CTA_TERTIARY_HREF = "#how-abraxas-works";
 
 export const CINEMATIC_PROBLEM_HEADLINE = "Why share everything to prove one thing?";
 

@@ -14,23 +14,22 @@ function read(rel: string): string {
 }
 
 describe("institutional homepage surface (V2)", () => {
-  it("RedesignHome uses editorial hero, trust exhibit, and capability matrix", () => {
+  it("RedesignHome uses premium hero, pillars, lifecycle, and capability matrix", () => {
     const home = read("components/redesign/RedesignHome.tsx");
-    expect(home).toContain("InstitutionalHomeHero");
-    expect(home).toContain("TrustModelExhibit");
-    expect(home).toContain("LiveProtocolEvidence");
+    const page = read("app/page.tsx");
+    expect(page).toContain("PremiumHomeHero");
+    expect(home).toContain("HomeProtocolPillarsSection");
+    expect(home).toContain("HomeVerificationLifecycle");
     expect(home).toContain("CapabilityMatrix");
     expect(home).not.toContain("KineticMarquee");
     expect(home).not.toContain("CinematicHero");
-    expect(home).not.toContain("HomeOperationalReadiness");
     expect(home).toContain("abx-v2-shell");
   });
 
-  it("hero includes interactive receipt demo", () => {
-    const hero = read("components/institutional/InstitutionalHomeHero.tsx");
-    expect(hero).toContain("ProtocolReceiptDemo");
-    expect(V2_HOME_HEADLINE).toContain("Trust");
+  it("trust model documents four boundaries including portable trust", () => {
+    expect(V2_HOME_HEADLINE).toMatch(/holder-controlled|Trust/i);
     expect(TRUST_MODEL_STAGES.length).toBe(4);
+    expect(TRUST_MODEL_STAGES[3]?.title).toBe("Independent verification");
   });
 
   it("devnet states map to warning tone", () => {

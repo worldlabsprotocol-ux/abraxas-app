@@ -17,7 +17,7 @@ export const TRUST_MODEL_STAGES: TrustModelStage[] = [
     summary: "Personal evidence stays in holder custody until a policy-specific request is approved.",
     boundary: "Consent boundary",
     detail:
-      "Passport surfaces assurance state, approved disclosures, and partner access history. Underlying documents are not exported as a default profile.",
+      "Passport surfaces assurance state, partner requests, and exportable policy-scoped presentations (Build #565). Underlying documents are not the default reuse payload.",
   },
   {
     id: "evaluate",
@@ -44,6 +44,6 @@ export const TRUST_MODEL_STAGES: TrustModelStage[] = [
     summary: "Verifiers re-check signatures, policy authorization, and current revocation without trusting Abraxas UI.",
     boundary: "Trust boundary",
     detail:
-      "Signature validity and current authorization are distinct checks. A valid signature can still yield DENY when evidence is revoked or expired.",
+      "Relying parties re-check signatures, audience binding, freshness, and authenticated revocation (#564). No Abraxas identity API is required on the strict proof-first path demonstrated in tests.",
   },
 ];

@@ -2,10 +2,10 @@
 
 export const V2_HOME_EYEBROW = "ABRAXAS / TRUST INFRASTRUCTURE";
 
-export const V2_HOME_HEADLINE = "Trust, without the underlying data.";
+export const V2_HOME_HEADLINE = "Universal trust, holder-controlled.";
 
 export const V2_HOME_LEAD =
-  "Applications request verified eligibility and authorization decisions. Abraxas returns narrowly scoped, independently verifiable receipts without distributing the identity data behind them.";
+  "Passport holders verify with authorized issuers, approve partner-specific presentations, and export portable signed authorizations. Institutions verify outcomes locally—policy answers, not identity files.";
 
 export const V2_HOME_CTA_PROTOCOL = "Explore the protocol";
 export const V2_HOME_CTA_PROTOCOL_HREF = "/protocol";

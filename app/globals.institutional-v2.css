@@ -1401,3 +1401,88 @@
   color: var(--abx-brand-green, var(--abx-verify-green));
   border-color: rgba(76, 187, 146, 0.35);
 }
+
+/* Build #565+ homepage — four capability pillars */
+.abx-home-pillars {
+  margin-bottom: clamp(2rem, 4vw, 3rem);
+}
+
+.abx-home-pillars__grid {
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 720px) {
+  .abx-home-pillars__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1100px) {
+  .abx-home-pillars__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.abx-home-pillars__card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.1rem 1.15rem;
+  background: var(--abx-surface-elevated, var(--surface-inset));
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  min-height: 100%;
+}
+
+.abx-home-pillars__title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.abx-home-pillars__summary {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.abx-home-pillars__detail {
+  margin: 0;
+  flex: 1;
+  font-size: 0.74rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.abx-home-pillars__cta {
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--abx-brand-green, var(--abx-verify-green));
+  text-decoration: none;
+}
+
+.abx-home-pillars__cta:hover {
+  text-decoration: underline;
+}
+
+.abx-home-pillars__disclaimer {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+  max-width: 52rem;
+}
+
+.abx-premium-hero__actions--triple {
+  flex-wrap: wrap;
+}
