@@ -1,7 +1,12 @@
 // FILE: lib/sovereignRuntime/stagingHttpProbeSpec.ts
 // Observed HTTP smoke probes — strict invariants (not full protocol lifecycle).
 
-export type StagingHttpProbeId = "sovereign_health" | "passport_evm_challenge";
+export type StagingHttpProbeId =
+  | "sovereign_health"
+  | "passport_evm_challenge"
+  | "solana_wallet_challenge"
+  | "capture_fail_closed"
+  | "admin_queue_auth";
 
 export type StagingHttpProbeSpec = {
   id: StagingHttpProbeId;
