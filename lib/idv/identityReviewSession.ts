@@ -6,6 +6,8 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import type { BiometricDecision } from "@/lib/idv/biometric/types";
 import { resolveRawEvidenceRetentionDays } from "@/lib/idv/rawEvidenceRetention";
+import { normalizeHolderSubjectKey } from "@/lib/idv/holderIdentityRef";
+import { idvReviewSessionAnchor } from "@/lib/idv/holderSubjectIdv";
 
 export type IdentityReviewSessionStatus = "pending" | "approved" | "rejected" | "expired";
 
@@ -14,7 +16,8 @@ export interface IdentityReviewSessionRow {
   created_at: string;
   updated_at: string;
   capture_session_id: string;
-  sui_address: string;
+  sui_address: string | null;
+  holder_subject_id?: string | null;
   partner_id: string | null;
   policy_id: string | null;
   verification_request_id: string | null;
@@ -34,6 +37,7 @@ export interface IdentityReviewSessionRow {
 
 export interface CreateIdentityReviewSessionInput {
   captureSessionId: string;
+  /** Canonical holder subject (abx_hs_* or legacy Sui address). */
   suiAddress: string;
   partnerId?: string | null;
   policyId?: string | null;
@@ -72,12 +76,20 @@ export async function findActivePendingReviewSession(
     verificationRequestId?: string | null;
   },
 ): Promise<IdentityReviewSessionRow | null> {
-  const normalized = normalizeSuiAddress(input.suiAddress);
+  const subjectKey = normalizeHolderSubjectKey(input.suiAddress);
+  const anchor = idvReviewSessionAnchor(subjectKey);
   let query = sb
     .from("identity_review_sessions")
     .select("*")
-    .eq("sui_address", normalized)
     .eq("review_status", "pending");
+
+  if (anchor.holder_subject_id) {
+    query = query.eq("holder_subject_id", anchor.holder_subject_id);
+  } else if (anchor.sui_address) {
+    query = query.eq("sui_address", anchor.sui_address);
+  } else {
+    return null;
+  }
 
   if (input.verificationRequestId) {
     query = query.eq("verification_request_id", input.verificationRequestId);
@@ -106,9 +118,12 @@ export async function createIdentityReviewSession(
   }
 
   const now = new Date().toISOString();
+  const subjectKey = normalizeHolderSubjectKey(input.suiAddress);
+  const anchor = idvReviewSessionAnchor(subjectKey);
   const row = {
     capture_session_id: input.captureSessionId,
-    sui_address: normalizeSuiAddress(input.suiAddress),
+    sui_address: anchor.sui_address,
+    holder_subject_id: anchor.holder_subject_id,
     partner_id: input.partnerId ?? null,
     policy_id: input.policyId ?? null,
     verification_request_id: input.verificationRequestId ?? null,

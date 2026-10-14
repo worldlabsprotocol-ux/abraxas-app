@@ -2,6 +2,8 @@
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { BiometricAssessment, BiometricSignals } from "./types";
+import { normalizeHolderSubjectKey } from "@/lib/idv/holderIdentityRef";
+import { idvReviewSessionAnchor } from "@/lib/idv/holderSubjectIdv";
 
 function parseStoredSignals(raw: unknown): BiometricSignals {
   if (!raw || typeof raw !== "object") return {};
@@ -31,9 +33,11 @@ export async function persistBiometricAssessment(
   const sb = getSupabase();
   if (!sb) return { ok: false, error: "Supabase not configured" };
 
+  const anchor = idvReviewSessionAnchor(normalizeHolderSubjectKey(assessment.sui_address));
   const { error } = await sb.from("identity_biometric_assessments").upsert({
     capture_session_id: assessment.capture_session_id,
-    sui_address: assessment.sui_address,
+    sui_address: anchor.sui_address,
+    holder_subject_id: anchor.holder_subject_id,
     face_match_score: assessment.scores.face_match,
     liveness_score: assessment.scores.liveness,
     document_quality_score: assessment.scores.document_quality,

@@ -60,3 +60,38 @@ export async function requireChainNeutralIdentitySchema(): Promise<ChainNeutralS
   if (await chainNeutralIdentitySchemaReady()) return { ok: true };
   return { ok: false, code: "chain_neutral_schema_unavailable", httpStatus: 503 };
 }
+
+let cachedDocReady: boolean | null = null;
+let cachedDocAtMs = 0;
+
+/** True when passport_documents.holder_subject_id exists (migration 137). */
+export async function chainNeutralIdvDocumentSchemaReady(forceRefresh = false): Promise<boolean> {
+  const now = Date.now();
+  if (!forceRefresh && cachedDocReady !== null && now - cachedDocAtMs < CACHE_TTL_MS) {
+    return cachedDocReady;
+  }
+  if (!await chainNeutralIdentitySchemaReady(forceRefresh)) {
+    cachedDocReady = false;
+    cachedDocAtMs = now;
+    return false;
+  }
+  try {
+    const sb = requirePersistenceAdmin();
+    const { error } = await sb
+      .from("passport_documents")
+      .select("holder_subject_id", { head: true, count: "exact" })
+      .limit(0);
+    cachedDocReady = !error;
+    cachedDocAtMs = now;
+    return cachedDocReady;
+  } catch {
+    cachedDocReady = false;
+    cachedDocAtMs = now;
+    return false;
+  }
+}
+
+export async function requireChainNeutralIdvDocumentSchema(): Promise<ChainNeutralSchemaGate> {
+  if (await chainNeutralIdvDocumentSchemaReady()) return { ok: true };
+  return { ok: false, code: "chain_neutral_schema_unavailable", httpStatus: 503 };
+}

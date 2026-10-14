@@ -497,6 +497,20 @@ export const DEMO_MIGRATION_MANIFEST: DemoMigrationEntry[] = [
       "Build #550 chain-neutral holder subjects, EVM/Solana wallet auth challenges, and legacy identity links. Apply before enabling primary Solana/EVM Passport sign-in.",
   },
   {
+    file: "137_idv_holder_subject_columns.sql",
+    tier: "required",
+    creates: [],
+    alters: [
+      "passport_documents.holder_subject_id",
+      "identity_review_sessions.holder_subject_id",
+      "identity_biometric_assessments.holder_subject_id",
+    ],
+    seeds: [],
+    extensions: [],
+    notes:
+      "Wallet-native Abraxas Verify: holder_subject_id on document, review, and biometric tables. Requires founder authorization on shared demo DB after PR merge.",
+  },
+  {
     file: "135_passport_wallet_login_grants.sql",
     tier: "required",
     creates: ["passport_wallet_login_grants"],

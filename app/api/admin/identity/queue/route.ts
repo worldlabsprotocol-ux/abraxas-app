@@ -19,6 +19,7 @@ interface DocRow {
   updated_at: string | null;
   user_email: string;
   sui_address: string | null;
+  holder_subject_id: string | null;
   file_name: string;
   storage_path: string;
   status: string;
@@ -71,7 +72,7 @@ export async function GET(req: NextRequest) {
 
   let query = sb
     .from("passport_documents")
-    .select("id, created_at, updated_at, user_email, sui_address, file_name, storage_path, status, reviewer_note, document_type, capture_session_id, legal_name")
+    .select("id, created_at, updated_at, user_email, sui_address, holder_subject_id, file_name, storage_path, status, reviewer_note, document_type, capture_session_id, legal_name")
     .eq("stamp_id", "identity")
     .order("created_at", { ascending: false })
     .limit(200);
@@ -170,7 +171,7 @@ export async function GET(req: NextRequest) {
       engine_decision: session?.engine_decision ?? (biometric?.decision as string | undefined) ?? null,
       eligibility_result: session?.eligibility_result ?? null,
       raw_evidence_purged_at: session?.raw_evidence_purged_at ?? null,
-      subject_label: subjectLabelFromAddress(item.sui_address),
+      subject_label: subjectLabelFromAddress(item.sui_address, item.holder_subject_id),
       biometric: sanitizeBiometricForList(biometric),
     };
 

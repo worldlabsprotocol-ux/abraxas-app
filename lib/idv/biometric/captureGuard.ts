@@ -3,6 +3,8 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { BiometricDecision } from "./types";
+import { normalizeHolderSubjectKey } from "@/lib/idv/holderIdentityRef";
+import { idvReviewSessionAnchor } from "@/lib/idv/holderSubjectIdv";
 
 /** Max capture submissions per wallet per rolling hour (production default). */
 export function getCaptureRateLimitPerHour(): number {
@@ -35,22 +37,27 @@ export interface CaptureRateLimitResult {
 
 export async function checkCaptureRateLimit(
   supabase: SupabaseClient,
-  suiAddress: string,
+  holderSubjectKey: string,
 ): Promise<CaptureRateLimitResult> {
   const limit = getCaptureRateLimitPerHour();
   const since = new Date(Date.now() - RATE_WINDOW_MS).toISOString();
+  const anchor = idvReviewSessionAnchor(normalizeHolderSubjectKey(holderSubjectKey));
 
-  const { count, error } = await supabase
+  let countQuery = supabase
     .from("identity_biometric_assessments")
-    .select("id", { count: "exact", head: true })
-    .eq("sui_address", suiAddress)
-    .gte("analyzed_at", since);
+    .select("id", { count: "exact", head: true });
+
+  countQuery = anchor.holder_subject_id
+    ? countQuery.eq("holder_subject_id", anchor.holder_subject_id)
+    : countQuery.eq("sui_address", anchor.sui_address ?? holderSubjectKey);
+
+  const { count, error } = await countQuery.gte("analyzed_at", since);
 
   if (error) {
     // Table missing pre-migration — allow but log; ops should run 037
     logCaptureAudit({
       event: "rate_limit_check_skipped",
-      sui_address: suiAddress,
+      holder_subject: holderSubjectAuditRef(holderSubjectKey),
       reason: error.message,
     });
     return { allowed: true, attemptsInWindow: 0, limit };
@@ -78,9 +85,16 @@ export type CaptureAuditEvent =
   | "capture_error"
   | "rate_limit_check_skipped";
 
+function holderSubjectAuditRef(subjectKey: string): string {
+  const key = normalizeHolderSubjectKey(subjectKey);
+  if (key.startsWith("abx_hs_")) return `${key.slice(0, 12)}…`;
+  return `${key.slice(0, 8)}…`;
+}
+
 export function logCaptureAudit(payload: {
   event: CaptureAuditEvent;
   sui_address?: string;
+  holder_subject?: string;
   capture_session_id?: string;
   decision?: BiometricDecision;
   engine_version?: string;

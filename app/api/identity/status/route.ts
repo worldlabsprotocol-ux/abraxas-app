@@ -15,6 +15,8 @@ import { getIdvProvider, isVeriffLive } from "@/lib/idv/idvProvider";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
 import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
 import { identityVerificationOrFilterForRuntime } from "@/lib/idv/holderIdentityRef";
+import { passportDocumentsSubjectOrFilter } from "@/lib/idv/holderSubjectIdv";
+import { resolveSessionHolderSubjectId } from "@/lib/auth/sessionSubject";
 import { readCanonicalWalletBindingTruth } from "@/lib/trust/readCanonicalWalletBinding";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -105,13 +107,16 @@ async function finalizeStatusPayload(
   };
 }
 
-async function manualDocStatusBySui(supabase: SupabaseClient, sui: string): Promise<PartialStatusPayload | null> {
-  const normalized = normalizeSuiAddress(sui);
+async function manualDocStatusBySubject(
+  supabase: SupabaseClient,
+  subjectKey: string,
+): Promise<PartialStatusPayload | null> {
+  const subjectFilter = await passportDocumentsSubjectOrFilter(subjectKey);
 
   const { data: accepted } = await supabase
     .from("passport_documents")
     .select("status")
-    .eq("sui_address", normalized)
+    .or(subjectFilter)
     .eq("stamp_id", "identity")
     .eq("status", "accepted")
     .limit(1)
@@ -129,7 +134,7 @@ async function manualDocStatusBySui(supabase: SupabaseClient, sui: string): Prom
   const { data: pending } = await supabase
     .from("passport_documents")
     .select("status")
-    .eq("sui_address", normalized)
+    .or(subjectFilter)
     .eq("stamp_id", "identity")
     .in("status", ["submitted", "under_review"])
     .limit(1)
@@ -147,7 +152,7 @@ async function manualDocStatusBySui(supabase: SupabaseClient, sui: string): Prom
   const { data: resubmit } = await supabase
     .from("passport_documents")
     .select("status, reviewer_note, reviewed_at")
-    .eq("sui_address", normalized)
+    .or(subjectFilter)
     .eq("stamp_id", "identity")
     .eq("status", "resubmission_requested")
     .order("reviewed_at", { ascending: false })
@@ -179,7 +184,7 @@ async function statusBySui(supabase: SupabaseClient, sui: string): Promise<Parti
     .maybeSingle();
 
   if (!data) {
-    return manualDocStatusBySui(supabase, sui);
+    return manualDocStatusBySubject(supabase, sui);
   }
 
   const idvStatus = resolveIdentityVerificationStatus(data);
@@ -323,19 +328,27 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
-  const sui = auth.session.subjectId;
-  const requested = req.nextUrl.searchParams.get("sui_address")
+  const sessionSubject = resolveSessionHolderSubjectId(auth.session);
+  if (!sessionSubject) {
+    return NextResponse.json({ error: "Sign in required" }, { status: 401 });
+  }
+  const sui = sessionSubject;
+  const requested = req.nextUrl.searchParams.get("holder_subject_id")
+    ?? req.nextUrl.searchParams.get("sui_address")
     ?? req.nextUrl.searchParams.get("sui");
   if (requested) {
     try {
       const normalized = isChainNeutralHolderSubjectId(requested.trim())
         ? requested.trim()
         : normalizeSuiAddress(requested);
-      if (normalized !== sui) {
+      const sessionNormalized = isChainNeutralHolderSubjectId(sessionSubject)
+        ? sessionSubject
+        : normalizeSuiAddress(sessionSubject);
+      if (normalized !== sessionNormalized) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
     } catch {
-      return NextResponse.json({ error: "Invalid sui query param" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid holder query param" }, { status: 400 });
     }
   }
 

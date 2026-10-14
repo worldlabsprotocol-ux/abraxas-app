@@ -4,6 +4,8 @@
 import { createHash } from "crypto";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
+import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
+import { normalizeHolderSubjectKey } from "@/lib/idv/holderIdentityRef";
 import { evaluateAgeEligibilityFromDocumentDate } from "@/lib/idv/ageEligibility";
 import {
   AGE_EVIDENCE_TABLE,
@@ -67,6 +69,13 @@ export interface CreateAgeEvidenceInput {
   credentialJti?: string | null;
 }
 
+/** Persists canonical holder key in subject_sui_address (legacy column name). */
+function normalizeAgeEvidenceSubject(raw: string): string {
+  const key = normalizeHolderSubjectKey(raw);
+  if (isChainNeutralHolderSubjectId(key)) return key;
+  return normalizeSuiAddress(key);
+}
+
 function getSupabase(): SupabaseClient | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -122,7 +131,7 @@ export async function createAgeEvidenceRecord(
     };
   }
 
-  const subject = normalizeSuiAddress(input.subjectSuiAddress);
+  const subject = normalizeAgeEvidenceSubject(input.subjectSuiAddress);
   const now = new Date().toISOString();
   const providerReferenceHash = input.providerReference
     ? hashProviderReference(input.providerReference)
@@ -169,7 +178,7 @@ export async function getActiveAgeEvidenceForSubject(
   const sb = getSupabase();
   if (!sb) return null;
 
-  const subject = normalizeSuiAddress(subjectSuiAddress);
+  const subject = normalizeAgeEvidenceSubject(subjectSuiAddress);
   const now = new Date().toISOString();
 
   const { data } = await sb
@@ -194,7 +203,7 @@ export async function supersedePendingAgeEvidence(
   const sb = getSupabase();
   if (!sb) return;
 
-  const subject = normalizeSuiAddress(subjectSuiAddress);
+  const subject = normalizeAgeEvidenceSubject(subjectSuiAddress);
   const now = new Date().toISOString();
 
   let query = sb
