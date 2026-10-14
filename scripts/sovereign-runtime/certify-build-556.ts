@@ -5,6 +5,7 @@
 import { execFileSync } from "node:child_process";
 import { performance } from "node:perf_hooks";
 import { generateTestSigningKeyPair } from "../../lib/decisionReceipts/signing";
+import { validateDisposableCertificationEnv } from "../../lib/sovereignRuntime/sovereignActivationPolicy";
 
 const PG = process.env.ABRAXAS_SOVEREIGN_PG_URL?.trim()
   || process.env.ABRAXAS_DATABASE_URL?.trim();
@@ -52,6 +53,12 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
+  const gate = validateDisposableCertificationEnv(process.env);
+  if (!gate.ok) {
+    console.error(JSON.stringify({ certification: "FAIL", disposable: gate }, null, 2));
+    process.exit(1);
+  }
+
   execFileSync("npm", ["run", "sovereign-idv:apply-schema"], {
     stdio: "inherit",
     env: { ...process.env, ABRAXAS_DATABASE_URL: PG, ABRAXAS_SOVEREIGN_PG_URL: PG },
@@ -73,6 +80,7 @@ async function main(): Promise<void> {
   const allOk = Object.values(results).every((r) => r.ok);
   console.log(JSON.stringify({
     build: 556,
+    tier: allOk ? "DISPOSABLE_CERTIFIED" : "BLOCKED",
     certification: allOk ? "PASS" : "FAIL",
     postgres_direct: true,
     supabase_env_cleared: true,

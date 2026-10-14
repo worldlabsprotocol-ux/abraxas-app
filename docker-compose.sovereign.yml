@@ -1,0 +1,22 @@
+# Minimal reproducible Abraxas sovereign PostgreSQL (local/disposable only).
+# Requires: export SOVEREIGN_POSTGRES_PASSWORD='…' (no default).
+services:
+  abraxas-sovereign-postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: abraxas
+      POSTGRES_PASSWORD: ${SOVEREIGN_POSTGRES_PASSWORD:?Set SOVEREIGN_POSTGRES_PASSWORD before docker compose up}
+      POSTGRES_DB: abraxas_sovereign
+    ports:
+      - "127.0.0.1:${SOVEREIGN_POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - abraxas_sovereign_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U abraxas -d abraxas_sovereign"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  abraxas_sovereign_pg_data:
