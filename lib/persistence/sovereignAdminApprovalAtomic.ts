@@ -179,6 +179,10 @@ export async function commitSovereignAdminApprovalAtomicDirect(
     if (error instanceof SovereignIssuanceError) {
       return { ok: false, code: error.code, status: 409 };
     }
+    if (process.env.ABRAXAS_DEBUG_ATOMIC_APPROVAL === "1") {
+      // eslint-disable-next-line no-console
+      console.error("atomic_approval_failed", error);
+    }
     return { ok: false, code: "atomic_approval_failed", status: 500 };
   }
 }

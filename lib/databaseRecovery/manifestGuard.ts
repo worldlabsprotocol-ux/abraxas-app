@@ -10,6 +10,9 @@ import {
   validateReadOnlyDemoConfig,
 } from "@/scripts/demo/lib/demoProjectGuard";
 
+/** Non-Supabase disposable Postgres identity for Build #552 sovereign scope. */
+export const SOVEREIGN_DISPOSABLE_REF = "abraxas_sovereign_disposable";
+
 export function assertManifestArtifactBinding(manifestPath: string, manifest: AbraxasBackupManifest): void {
   const encPath = manifestPath.replace(/\.manifest\.json$/i, "");
   const ciphertextBase = basename(encPath);
@@ -29,6 +32,17 @@ export function assertManifestBackupIdentity(
   manifest: AbraxasBackupManifest,
   env: Record<string, string | undefined> = process.env,
 ): void {
+  if (env.ABRAXAS_BACKUP_SCOPE?.trim() === "sovereign") {
+    if (manifest.manifest_version !== BACKUP_MANIFEST_VERSION) {
+      throw new Error("unsupported backup manifest version");
+    }
+    const manifestRef = manifest.database_identity.supabase_project_ref.trim();
+    if (manifestRef !== SOVEREIGN_DISPOSABLE_REF) {
+      throw new Error("sovereign backup manifest database identity mismatch");
+    }
+    return;
+  }
+
   validateReadOnlyDemoConfig(env);
   if (manifest.manifest_version !== BACKUP_MANIFEST_VERSION) {
     throw new Error("unsupported backup manifest version");

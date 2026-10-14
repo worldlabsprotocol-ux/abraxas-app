@@ -18,7 +18,7 @@ import {
 import { storeEncryptedEvidence } from "@/lib/persistence/evidenceBlobStore";
 import { issueManualIdentityCredential } from "@/lib/idv/issueIdentityCredential";
 import { verifyReceiptIndependently } from "@/lib/institutionalCertification/build546/independentVerifier";
-import { DEMO_IDV_ACTIVATION_MANIFEST } from "@/lib/databaseRecovery/idvActivationManifest";
+import { SOVEREIGN_RUNTIME_SCHEMA_MANIFEST } from "@/lib/databaseRecovery/sovereignSchemaManifest";
 import { resetAbraxasPgPoolForTests } from "@/lib/persistence/pgPool";
 import { resetPersistenceClientForTests } from "@/lib/persistence/admin";
 
@@ -27,16 +27,7 @@ const PG_URL = process.env.ABRAXAS_SOVEREIGN_PG_URL?.trim()
   || process.env.ABRAXAS_DATABASE_URL?.trim()
   || undefined;
 
-const SCHEMA = [
-  "006_abraxas_id.sql",
-  "018_policy_verification.sql",
-  "020_identity_verification_state_machine.sql",
-  "136_passport_holder_subjects.sql",
-  ...DEMO_IDV_ACTIVATION_MANIFEST,
-  "078_age_evidence_records.sql",
-  "138_sovereign_idv_evidence_custody.sql",
-  "139_sovereign_idv_claims_evidence.sql",
-];
+const SCHEMA = [...SOVEREIGN_RUNTIME_SCHEMA_MANIFEST];
 
 describe("Build #555 sovereign passport completion", () => {
   if (!PG_URL) {
