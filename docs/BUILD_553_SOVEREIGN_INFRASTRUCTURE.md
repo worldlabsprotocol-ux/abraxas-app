@@ -47,7 +47,18 @@ Demo data (`ocntwbxarpjeixdnzide`) is **non-customer staging**; inventory and re
 | `ABRAXAS_POSTGREST_URL` + `ABRAXAS_DB_SERVICE_ROLE_KEY` | Legacy / demo PostgREST (optional aliases to Supabase env) |
 | `ABRAXAS_EVIDENCE_STORAGE_ROOT` | Encrypted identity evidence directory |
 | `ABRAXAS_EVIDENCE_ENCRYPTION_KEY` | 32-byte base64 (or reuse backup key) |
+| `ABRAXAS_PG_POOL_MAX` | Bounded pool size (default `8`) |
+| `ABRAXAS_PG_IDLE_TIMEOUT_MS` / `ABRAXAS_PG_CONNECT_TIMEOUT_MS` | Connection lifecycle bounds |
+| `ABRAXAS_PG_SSL` / `ABRAXAS_PG_SSL_REJECT_UNAUTHORIZED` | TLS for non-localhost URLs (`require` by default) |
 | Build #552 vars | `ABRAXAS_BACKUP_ENCRYPTION_KEY`, backup output dir, restore disposable URL |
+
+### PostgreSQL connection security (`pgPool.ts`)
+
+- **TLS:** Non-localhost `ABRAXAS_DATABASE_URL` hosts use SSL with certificate verification unless `ABRAXAS_PG_SSL_REJECT_UNAUTHORIZED=0`.
+- **Pool bounds:** `max`, idle timeout, and connect timeout prevent unbounded connections.
+- **Transactions:** `withAbraxasPgTransaction` always `ROLLBACK`s on failure before releasing the client.
+- **Credentials:** Connection strings come from environment only; never logged by the adapter.
+- **Schema grants:** Migration **136** revokes `public`/`anon`/`authenticated` on holder tables; app role should match `service_role`-scoped grants (insert/select only where required).
 
 ### Portable migrations
 

@@ -135,7 +135,7 @@ describe("Build #553 sovereign runtime — disposable PostgreSQL proof", () => {
     if (!a.ok) return;
 
     const { bindVerifiedWalletAccount } = await import("@/lib/auth/holderSubject/service");
-    const other = "abx_hs_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+    const other = `abx_hs_${"b".repeat(32)}`;
     const { insertHolderSubject } = await import("@/lib/auth/holderSubject/service");
     await insertHolderSubject(other);
     const conflict = await bindVerifiedWalletAccount({

@@ -12,6 +12,8 @@ export class HolderSubjectStoreUnavailableError extends Error {
   }
 }
 
+export { LegacyLinkConflictError } from "@/lib/persistence/holderSubjectDirect";
+
 async function directModule() {
   return import("@/lib/persistence/holderSubjectDirect");
 }

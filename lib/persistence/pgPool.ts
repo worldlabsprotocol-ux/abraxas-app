@@ -4,10 +4,48 @@
 import "server-only";
 
 import pg from "pg";
-import type { Pool, PoolClient, QueryResultRow } from "pg";
+import type { Pool, PoolClient, PoolConfig, QueryResultRow } from "pg";
 import { resolveIndependentPostgresUrl, resolvePersistenceBackend } from "./env";
 
 let cachedPool: Pool | null = null;
+
+function isLocalHost(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  return host === "localhost" || host === "127.0.0.1" || host.endsWith(".local");
+}
+
+function buildPgPoolConfig(
+  databaseUrl: string,
+  env: Record<string, string | undefined>,
+): PoolConfig {
+  const max = Number.parseInt(env.ABRAXAS_PG_POOL_MAX ?? "8", 10) || 8;
+  const idleTimeoutMillis = Number.parseInt(env.ABRAXAS_PG_IDLE_TIMEOUT_MS ?? "30000", 10) || 30_000;
+  let hostname = "localhost";
+  try {
+    hostname = new URL(databaseUrl).hostname;
+  } catch {
+    // pg parses connection string internally
+  }
+
+  const sslMode = env.ABRAXAS_PG_SSL?.trim().toLowerCase();
+  const sslDisabled = sslMode === "disable" || sslMode === "off";
+  const sslRequired = sslMode === "require" || (!sslDisabled && !isLocalHost(hostname));
+
+  const config: PoolConfig = {
+    connectionString: databaseUrl,
+    max,
+    idleTimeoutMillis,
+    connectionTimeoutMillis: Number.parseInt(env.ABRAXAS_PG_CONNECT_TIMEOUT_MS ?? "10000", 10) || 10_000,
+  };
+
+  if (sslRequired) {
+    config.ssl = {
+      rejectUnauthorized: env.ABRAXAS_PG_SSL_REJECT_UNAUTHORIZED?.trim() !== "0",
+    };
+  }
+
+  return config;
+}
 
 export function resetAbraxasPgPoolForTests(): void {
   if (cachedPool) {
@@ -23,10 +61,7 @@ export function getAbraxasPgPool(
   const url = resolveIndependentPostgresUrl(env);
   if (!url) return null;
   if (!cachedPool) {
-    cachedPool = new pg.Pool({
-      connectionString: url,
-      max: Number.parseInt(env.ABRAXAS_PG_POOL_MAX ?? "8", 10) || 8,
-    });
+    cachedPool = new pg.Pool(buildPgPoolConfig(url, env));
   }
   return cachedPool;
 }
@@ -63,7 +98,11 @@ export async function withAbraxasPgTransaction<T>(
     await client.query("COMMIT");
     return value;
   } catch (error) {
-    await client.query("ROLLBACK");
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      // ignore rollback failure
+    }
     throw error;
   } finally {
     client.release();
