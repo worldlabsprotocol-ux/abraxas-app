@@ -1,16 +1,23 @@
 #!/usr/bin/env npx tsx
 /**
- * Apply portable sovereign schema on disposable PostgreSQL (no Supabase APIs).
- * Order: holder subjects (136) → IDV activation manifest → evidence custody (138).
+ * Apply portable sovereign schema — requires explicit migration authorization.
  */
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { SOVEREIGN_RUNTIME_SCHEMA_MANIFEST } from "../../lib/databaseRecovery/sovereignSchemaManifest";
+import { assertSovereignMigrationAuthorized } from "../../lib/sovereignRuntime/sovereignActivationPolicy";
 
-const pgUrl = process.env.ABRAXAS_SOVEREIGN_PG_URL?.trim()
-  ?? process.env.MIGRATION_136_PG_URL?.trim()
-  ?? process.env.ABRAXAS_DATABASE_URL?.trim();
+const env = process.env;
+const migrationErrors = assertSovereignMigrationAuthorized(env);
+if (migrationErrors.length > 0) {
+  console.error(JSON.stringify({ error: "migration_refused", issues: migrationErrors }, null, 2));
+  process.exit(1);
+}
+
+const pgUrl = env.ABRAXAS_SOVEREIGN_PG_URL?.trim()
+  ?? env.MIGRATION_136_PG_URL?.trim()
+  ?? env.ABRAXAS_DATABASE_URL?.trim();
 
 if (!pgUrl) {
   console.error("Set ABRAXAS_DATABASE_URL or MIGRATION_136_PG_URL");

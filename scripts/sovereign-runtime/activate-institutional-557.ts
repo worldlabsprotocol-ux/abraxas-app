@@ -1,76 +1,74 @@
 #!/usr/bin/env npx tsx
 /**
- * Build #557 — sovereign institutional activation gate (schema + env + certification).
- * Synthetic IDV in certification suites only — not Production human verification.
+ * Build #557 — institutional readiness gate (configuration + read-only probes).
+ * Does NOT apply schema or run disposable synthetic IDV certification.
  */
-import { execFileSync } from "node:child_process";
 import { performance } from "node:perf_hooks";
-import { validateInstitutionalSovereignEnv } from "../../lib/sovereignRuntime/institutionalActivationEnv";
+import { createRecoveryPgClient } from "../../lib/databaseRecovery/pgClient";
+import { probeRecoveryInventoryReady } from "../../lib/databaseRecovery/pgInventory";
+import { validateInstitutionalReadinessEnv } from "../../lib/sovereignRuntime/sovereignActivationPolicy";
 
-const env = { ...process.env };
-const t0 = performance.now();
+async function main(): Promise<void> {
+  const env = { ...process.env };
+  const t0 = performance.now();
 
-const envReport = validateInstitutionalSovereignEnv(env);
-if (!envReport.ok) {
-  console.error(JSON.stringify({ build: 557, activation: "BLOCKED", env: envReport }, null, 2));
+  const readiness = validateInstitutionalReadinessEnv(env);
+  if (!readiness.ok) {
+    console.error(
+      JSON.stringify(
+        {
+          build: 557,
+          tier: "BLOCKED",
+          institutional: readiness,
+        },
+        null,
+        2,
+      ),
+    );
+    process.exit(1);
+  }
+
+  const databaseUrl = env.ABRAXAS_DATABASE_URL!.trim();
+  let inventoryReady = false;
+  let inventoryError: string | null = null;
+  const client = await createRecoveryPgClient({ databaseUrl, env });
+  try {
+    inventoryReady = await probeRecoveryInventoryReady(client);
+    if (!inventoryReady) {
+      inventoryError = "recovery_inventory_incomplete";
+    }
+  } catch (error) {
+    inventoryError = error instanceof Error ? error.message : String(error);
+  } finally {
+    await client.end();
+  }
+
+  const activationOk = readiness.ok && inventoryReady && !inventoryError;
+
+  console.log(
+    JSON.stringify(
+      {
+        build: 557,
+        tier: activationOk ? "INSTITUTIONAL_READY" : "BLOCKED",
+        elapsed_ms: Math.round(performance.now() - t0),
+        institutional: readiness,
+        read_only_probe: {
+          recovery_inventory_ready: inventoryReady,
+          error: inventoryError,
+        },
+        schema_mutations: false,
+        disposable_certification_run: false,
+        note: readiness.notes.join(" "),
+      },
+      null,
+      2,
+    ),
+  );
+
+  process.exit(activationOk ? 0 : 1);
+}
+
+main().catch((error) => {
+  console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);
-}
-
-execFileSync("npm", ["run", "sovereign-idv:apply-schema"], {
-  stdio: "inherit",
-  env,
 });
-
-let certification: { ok: boolean; detail?: unknown } = { ok: false };
-try {
-  execFileSync("npm", ["run", "sovereign-runtime:certify-556"], { stdio: "inherit", env });
-  certification = { ok: true };
-} catch (error) {
-  certification = {
-    ok: false,
-    detail: error instanceof Error ? error.message : String(error),
-  };
-}
-
-let disposableProof: { ok: boolean } = { ok: false };
-try {
-  execFileSync("npm", ["run", "sovereign-runtime:disposable-proof"], {
-    stdio: "inherit",
-    env: {
-      ...env,
-      NEXT_PUBLIC_SUPABASE_URL: "",
-      SUPABASE_URL: "",
-      SUPABASE_SERVICE_ROLE_KEY: "",
-    },
-  });
-  disposableProof = { ok: true };
-} catch (error) {
-  disposableProof = {
-    ok: false,
-    error: error instanceof Error ? error.message : String(error),
-  } as { ok: boolean; error?: string };
-}
-
-const activationOk =
-  envReport.ok
-  && (disposableProof as { ok?: boolean }).ok === true
-  && certification.ok;
-
-console.log(
-  JSON.stringify(
-    {
-      build: 557,
-      activation: activationOk ? "READY" : "BLOCKED",
-      elapsed_ms: Math.round(performance.now() - t0),
-      env: envReport,
-      schema_applied: true,
-      certification,
-      disposable_proof: disposableProof,
-      note: "Synthetic IDV in certification — not genuine human verification.",
-    },
-    null,
-    2,
-  ),
-);
-
-process.exit(activationOk ? 0 : 1);

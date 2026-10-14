@@ -26,13 +26,34 @@ Turns the Build #556 **certified** sovereign runtime into the smallest **reprodu
 └────────────────────────────┘
 ```
 
-**Reproduce locally (disposable):**
+**Tiers**
+
+| Tier | Command | Meaning |
+|------|---------|---------|
+| **DISPOSABLE_CERTIFIED** | `npm run sovereign-runtime:certify-disposable-557` | Synthetic IDV + backup/restore on disposable PG — **not Production** |
+| **INSTITUTIONAL_READY** | `npm run sovereign-runtime:activate-557` | Config + read-only probes only — **no schema apply**, no synthetic certification |
+
+**Reproduce locally (disposable certification):**
 
 ```bash
+export SOVEREIGN_POSTGRES_PASSWORD='…'  # required — no compose default
 docker compose -f docker-compose.sovereign.yml up -d
-cp .env.sovereign.institutional.example .env.local
-# fill keys (openssl rand -base64 32)
+export ABRAXAS_SOVEREIGN_ENV_CLASS=disposable
+export ABRAXAS_SOVEREIGN_DATABASE_ID=abraxas_sovereign_disposable
+export ABRAXAS_SOVEREIGN_MIGRATION_AUTHORIZED=true
 export ABRAXAS_DATABASE_URL=postgresql://abraxas:…@127.0.0.1:5432/abraxas_sovereign
+npm run sovereign-runtime:certify-disposable-557
+```
+
+**Institutional readiness (after controlled migration):**
+
+```bash
+# Migrations: explicit operator ack — never via activate-557
+export ABRAXAS_SOVEREIGN_MIGRATION_AUTHORIZED=true
+export ABRAXAS_SOVEREIGN_ENV_CLASS=institutional
+export ABRAXAS_SOVEREIGN_OPERATOR_AUTHORIZATION=…
+export ABRAXAS_SOVEREIGN_OPERATOR_AUTHORIZATION_EXPECTED=…
+npm run sovereign-idv:apply-schema
 npm run sovereign-runtime:activate-557
 ```
 
