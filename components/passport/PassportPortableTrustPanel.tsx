@@ -10,18 +10,18 @@ import { SELECTIVE_DISCLOSURE_HONESTY } from "@/lib/passport/portableTrust/priva
 
 const FONT = ABRAXAS_FONT_SANS;
 
-export function PassportPortableTrustPanel({ suiAddress }: { suiAddress: string | null }) {
+export function PassportPortableTrustPanel({ sessionReady }: { sessionReady: boolean }) {
   const [credentials, setCredentials] = useState<HolderPortableCredentialSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exportBusy, setExportBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    if (!suiAddress) return;
+    if (!sessionReady) return;
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/passport/portable-trust/credentials?sui=${encodeURIComponent(suiAddress)}`, {
+      const res = await fetch("/api/passport/portable-trust/credentials", {
         credentials: "include",
       });
       const data = (await res.json()) as { credentials?: HolderPortableCredentialSummary[]; error?: string };
@@ -33,7 +33,7 @@ export function PassportPortableTrustPanel({ suiAddress }: { suiAddress: string 
     } finally {
       setLoading(false);
     }
-  }, [suiAddress]);
+  }, [sessionReady]);
 
   useEffect(() => {
     void load();
@@ -66,7 +66,7 @@ export function PassportPortableTrustPanel({ suiAddress }: { suiAddress: string 
     }
   }
 
-  if (!suiAddress) {
+  if (!sessionReady) {
     return (
       <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", margin: 0 }}>
         Sign in to manage portable authorization receipts.

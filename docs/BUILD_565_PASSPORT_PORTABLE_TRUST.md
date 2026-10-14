@@ -16,10 +16,18 @@ Connect proof-first protocol (#563) and portable revocation (#564) to the Abraxa
 
 | Route | Purpose |
 |-------|---------|
-| `GET /api/passport/portable-trust/credentials` | List approved decision receipts for signed-in holder |
-| `POST /api/passport/portable-trust/export` | Build holder portable presentation JSON (no private keys) |
-| `POST /api/passport/portable-trust/import` | Validate imported bundle structure |
-| `POST /api/passport/portable-trust/independent-verify` | Demo RP path using local registry + portable revocation |
+| `GET /api/passport/portable-trust/credentials` | List approved decision receipts for **authenticated** holder session only (no `?sui=` identity) |
+| `POST /api/passport/portable-trust/export` | Build holder portable presentation JSON (no private keys); same-origin + session; server-side receipt ownership |
+| `POST /api/passport/portable-trust/import` | **Structural** validation only (`structural_validation`, `trust_verification: not_performed`) |
+| `POST /api/passport/portable-trust/independent-verify` | **Sandbox/demo only** — synthetic registry fixtures; **403 in production** |
+
+## Security (Build #565 correction)
+
+- Holder APIs require `requireBrowserSession`; query params `sui`, `subject`, `wallet`, etc. are rejected (403).
+- Chain-neutral `abx_hs_*` and legacy Sui sessions supported; session subject binding must be internally consistent.
+- Export POST requires same-origin (CSRF) and verifies receipt ownership before returning the documented portable bundle fields only.
+- Import never returns `valid: true` implying issuer authenticity or revocation freshness.
+- Independent-verify is gated by `syntheticVerifyGate` (non-production / explicit env flag); responses include `synthetic_demo: true`.
 
 ## Cryptographic artifacts
 

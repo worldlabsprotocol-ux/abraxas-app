@@ -2,13 +2,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { listHolderPortableCredentials } from "@/lib/passport/portableTrust";
-import { resolveHolderSessionSubject } from "@/lib/passport/portableTrust/resolveHolderSession";
+import { resolveAuthenticatedHolderSession } from "@/lib/passport/portableTrust/resolveHolderSession";
 
 export async function GET(req: NextRequest) {
-  const session = await resolveHolderSessionSubject(req);
-  if ("error" in session) {
+  const session = await resolveAuthenticatedHolderSession(req);
+  if (!session.ok) {
     return NextResponse.json(
-      { error: session.error === "forbidden" ? "Session mismatch" : "Sign in required" },
+      { error: session.message },
       { status: session.error === "forbidden" ? 403 : 401 },
     );
   }
