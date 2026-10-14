@@ -3,6 +3,12 @@
 
 import { createHash } from "crypto";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import {
+  findPendingReviewSessionDirect,
+  insertIdentityReviewSessionDirect,
+  updateIdentityReviewSessionDirect,
+} from "@/lib/persistence/idvDirectStore";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import type { BiometricDecision } from "@/lib/idv/biometric/types";
 import { resolveRawEvidenceRetentionDays } from "@/lib/idv/rawEvidenceRetention";
@@ -70,13 +76,17 @@ function computeRetainedUntil(): string | null {
 }
 
 export async function findActivePendingReviewSession(
-  sb: SupabaseClient,
+  sb: SupabaseClient | null,
   input: {
     suiAddress: string;
     partnerId?: string | null;
     verificationRequestId?: string | null;
   },
 ): Promise<IdentityReviewSessionRow | null> {
+  if (persistenceUsesDirectPostgres()) {
+    return findPendingReviewSessionDirect(input);
+  }
+  if (!sb) return null;
   const subjectKey = normalizeHolderSubjectKey(input.suiAddress);
   const anchor = idvReviewSessionAnchor(subjectKey);
   let query = sb
@@ -106,8 +116,9 @@ export async function createIdentityReviewSession(
   input: CreateIdentityReviewSessionInput,
   sb?: SupabaseClient,
 ): Promise<{ ok: true; session: IdentityReviewSessionRow } | { ok: false; error: string; duplicate?: boolean }> {
-  const client = sb ?? getSupabase();
-  if (!client) return { ok: false, error: "supabase_not_configured" };
+  const useDirect = persistenceUsesDirectPostgres();
+  const client = useDirect ? null : (sb ?? getSupabase());
+  if (!useDirect && !client) return { ok: false, error: "supabase_not_configured" };
 
   const existing = await findActivePendingReviewSession(client, {
     suiAddress: input.suiAddress,
@@ -135,12 +146,28 @@ export async function createIdentityReviewSession(
     verification_request_id: input.verificationRequestId ?? null,
     review_status: "pending" as const,
     engine_decision: input.engineDecision ?? null,
+    eligibility_result: null,
+    raw_evidence_purged_at: null,
     evidence_content_hash: input.evidenceContentHash ?? null,
     raw_evidence_retained_until: computeRetainedUntil(),
-    updated_at: now,
+    purge_attempt_count: 0,
+    last_purge_error_code: null,
+    reviewed_at: null,
+    reviewer_id: null,
+    reviewer_category: null,
+    reason_code: null,
   };
 
-  const { data, error } = await client
+  if (useDirect) {
+    try {
+      const session = await insertIdentityReviewSessionDirect(row);
+      return { ok: true, session };
+    } catch {
+      return { ok: false, error: "document_metadata_persistence_failed" };
+    }
+  }
+
+  const { data, error } = await client!
     .from("identity_review_sessions")
     .insert(row)
     .select("*")
@@ -157,7 +184,7 @@ export async function createIdentityReviewSession(
 }
 
 export async function updateIdentityReviewSessionStatus(
-  sb: SupabaseClient,
+  sb: SupabaseClient | null,
   captureSessionId: string,
   input: {
     reviewStatus: IdentityReviewSessionStatus;
@@ -167,6 +194,18 @@ export async function updateIdentityReviewSessionStatus(
     reasonCode?: string | null;
   },
 ): Promise<void> {
+  if (persistenceUsesDirectPostgres()) {
+    await updateIdentityReviewSessionDirect(captureSessionId, {
+      review_status: input.reviewStatus,
+      eligibility_result: input.eligibilityResult ?? null,
+      reviewed_at: new Date().toISOString(),
+      reviewer_id: input.reviewerId ?? null,
+      reviewer_category: input.reviewerCategory ?? null,
+      reason_code: input.reasonCode ?? null,
+    });
+    return;
+  }
+  if (!sb) return;
   const now = new Date().toISOString();
   await sb
     .from("identity_review_sessions")

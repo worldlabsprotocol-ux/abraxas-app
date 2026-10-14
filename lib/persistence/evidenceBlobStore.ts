@@ -11,8 +11,15 @@ const IV_BYTES = 12;
 const TAG_BYTES = 16;
 const KEY_BYTES = 32;
 
+export type EvidenceArtifactKind = "id_front" | "selfie" | "bundle";
+
 function evidenceRoot(env: Record<string, string | undefined> = process.env): string {
-  return env.ABRAXAS_EVIDENCE_STORAGE_ROOT?.trim() || join(process.cwd(), ".abraxas-evidence");
+  const explicit = env.ABRAXAS_EVIDENCE_STORAGE_ROOT?.trim();
+  const backend = env.ABRAXAS_PERSISTENCE_BACKEND?.trim().toLowerCase();
+  if ((backend === "postgres_direct" || backend === "pg") && !explicit) {
+    throw new Error("ABRAXAS_EVIDENCE_STORAGE_ROOT is required for sovereign evidence storage");
+  }
+  return explicit || join(process.cwd(), ".abraxas-evidence");
 }
 
 function parseEvidenceKey(env: Record<string, string | undefined>): Buffer {
@@ -48,19 +55,21 @@ export function decryptEvidenceBlob(payload: Buffer, key: Buffer): Buffer {
 export function storeEncryptedEvidence(input: {
   holderSubjectId: string;
   captureSessionId: string;
+  artifactKind?: EvidenceArtifactKind;
   plaintext: Buffer;
   env?: Record<string, string | undefined>;
-}): { storagePath: string; contentSha256: string } {
+}): { storagePath: string; contentSha256: string; artifactKind: EvidenceArtifactKind } {
   const env = input.env ?? process.env;
-  const key = parseEvidenceKey(env);
   const root = evidenceRoot(env);
+  const key = parseEvidenceKey(env);
   const dir = join(root, input.holderSubjectId);
   mkdirSync(dir, { recursive: true });
   const contentSha256 = createHash("sha256").update(input.plaintext).digest("hex");
-  const fileName = `${input.captureSessionId}.enc`;
+  const artifactKind = input.artifactKind ?? "bundle";
+  const fileName = `${input.captureSessionId}_${artifactKind}.enc`;
   const storagePath = join(dir, fileName);
   writeFileSync(storagePath, encryptEvidenceBlob(input.plaintext, key));
-  return { storagePath, contentSha256 };
+  return { storagePath, contentSha256, artifactKind };
 }
 
 export function readEncryptedEvidence(input: {

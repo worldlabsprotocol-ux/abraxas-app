@@ -1,6 +1,11 @@
 // FILE: lib/idv/biometric/persistAssessment.ts
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import {
+  getBiometricAssessmentDirect,
+  upsertBiometricAssessmentDirect,
+} from "@/lib/persistence/idvDirectStore";
 import type { BiometricAssessment, BiometricSignals } from "./types";
 import { normalizeHolderSubjectKey } from "@/lib/idv/holderIdentityRef";
 import { idvReviewSessionAnchor } from "@/lib/idv/holderSubjectIdv";
@@ -31,6 +36,15 @@ function getSupabase(): SupabaseClient | null {
 export async function persistBiometricAssessment(
   assessment: BiometricAssessment,
 ): Promise<{ ok: boolean; error?: string }> {
+  if (persistenceUsesDirectPostgres()) {
+    try {
+      await upsertBiometricAssessmentDirect(assessment);
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : "persist_failed" };
+    }
+  }
+
   const sb = getSupabase();
   if (!sb) return { ok: false, error: "Supabase not configured" };
 
@@ -66,6 +80,10 @@ export async function persistBiometricAssessment(
 export async function getBiometricAssessment(
   captureSessionId: string,
 ): Promise<BiometricAssessment | null> {
+  if (persistenceUsesDirectPostgres()) {
+    return getBiometricAssessmentDirect(captureSessionId);
+  }
+
   const sb = getSupabase();
   if (!sb) return null;
 
