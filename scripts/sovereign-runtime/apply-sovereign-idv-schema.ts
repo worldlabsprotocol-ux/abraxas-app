@@ -24,6 +24,7 @@ const files = [
   "020_identity_verification_state_machine.sql",
   "136_passport_holder_subjects.sql",
   ...DEMO_IDV_ACTIVATION_MANIFEST,
+  "078_age_evidence_records.sql",
   "138_sovereign_idv_evidence_custody.sql",
   "139_sovereign_idv_claims_evidence.sql",
 ];

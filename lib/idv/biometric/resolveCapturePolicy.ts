@@ -4,6 +4,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PartnerPolicyRules } from "@/lib/policy/types";
 import { getPolicy } from "@/lib/verification/requestsService";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
 
 export interface CaptureBiometricPolicyContext {
   partnerId?: string;
@@ -12,7 +13,7 @@ export interface CaptureBiometricPolicyContext {
 }
 
 export async function resolveCaptureBiometricPolicy(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient | null,
   input: {
     policyId?: string | null;
     partnerId?: string | null;
@@ -20,7 +21,20 @@ export async function resolveCaptureBiometricPolicy(
   },
 ): Promise<CaptureBiometricPolicyContext> {
   const verificationRequestId = input.verificationRequestId?.trim();
-  if (verificationRequestId) {
+  if (verificationRequestId && persistenceUsesDirectPostgres()) {
+    const { getVerificationRequestDirect } = await import("@/lib/persistence/policyDirectStore");
+    const data = await getVerificationRequestDirect(verificationRequestId);
+    if (data?.policy_id) {
+      const { getPartnerPolicyDirect } = await import("@/lib/persistence/policyDirectStore");
+      const policy = await getPartnerPolicyDirect(data.policy_id);
+      return {
+        partnerId: data.partner_id ?? undefined,
+        policyId: data.policy_id,
+        policyRules: policy?.rules_json ?? null,
+      };
+    }
+  }
+  if (verificationRequestId && supabase) {
     const { data } = await supabase
       .from("verification_requests")
       .select("partner_id, policy_id")
@@ -39,7 +53,9 @@ export async function resolveCaptureBiometricPolicy(
 
   const policyId = input.policyId?.trim();
   if (policyId) {
-    const policy = await getPolicy(policyId);
+    const policy = persistenceUsesDirectPostgres()
+      ? await (await import("@/lib/persistence/policyDirectStore")).getPartnerPolicyDirect(policyId)
+      : await getPolicy(policyId);
     return {
       partnerId: input.partnerId?.trim() || policy?.partner_id,
       policyId,

@@ -2,7 +2,7 @@
 // Unified policy evaluation with issuer trust context for a subject.
 
 import { normalizeSuiAddress } from "@mysten/sui/utils";
-import { getActiveClaims } from "@/lib/credentials/claimsService";
+import { resolveActiveClaimsForRuntime } from "@/lib/credentials/activeClaims.server";
 import { evaluatePolicyRules } from "@/lib/policy/evaluatePolicy";
 import { assertPolicyBelongsToPartner } from "@/lib/policy/assertPolicyOwnership";
 import { getPartnerPolicy, getPartnerPolicyAtVersion } from "@/lib/policy/getPolicy";
@@ -49,7 +49,7 @@ export async function evaluatePolicyForSubject(input: {
   assertPolicyBelongsToPartner(policy, input.partnerId);
 
   const subject = normalizeSuiAddress(input.suiAddress);
-  const claims = await getActiveClaims(subject);
+  const claims = await resolveActiveClaimsForRuntime(subject);
 
   const effectiveRules = resolveEffectivePolicyRules(policy);
   let mergedClaims = [...claims, ...(input.additionalClaims ?? [])];

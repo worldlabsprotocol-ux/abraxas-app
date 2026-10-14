@@ -2,7 +2,7 @@
 // GET active credential claims for authenticated holder (Passport UI).
 
 import { NextRequest, NextResponse } from "next/server";
-import { getActiveClaims } from "@/lib/credentials/claimsService";
+import { resolveActiveClaimsForRuntime } from "@/lib/credentials/activeClaims.server";
 import { claimTypeLabel } from "@/lib/credentials/claimSchema";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
 
@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const subject = auth.session.subjectId;
-    const claims = await getActiveClaims(subject);
+    const claims = await resolveActiveClaimsForRuntime(subject);
 
     return NextResponse.json({
       subject_id: subject,

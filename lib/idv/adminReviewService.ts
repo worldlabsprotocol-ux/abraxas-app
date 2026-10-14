@@ -23,6 +23,8 @@ import {
   updateIdentityReviewSessionStatus,
 } from "@/lib/idv/identityReviewSession";
 import { evaluateAgeEligibilityFromDocumentDate } from "@/lib/idv/ageEligibility";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { executeAdminReviewActionSovereign } from "@/lib/idv/adminReviewSovereign";
 
 export type AdminReviewAction = "approve" | "reject" | "request_resubmission";
 
@@ -43,6 +45,8 @@ export interface AdminReviewRequest {
   /** Authoritative document DOB (YYYY-MM-DD), internal reviewer input, never exposed. */
   documentDateOfBirth?: string;
   minimumAgeGate?: number;
+  /** Test-only: inject failure inside atomic sovereign approval transaction. */
+  testFailAfterStep?: "custody" | "age_evidence" | "issuance" | "review";
 }
 
 export interface AdminReviewResult {
@@ -177,6 +181,9 @@ async function updateBiometricReviewerDecision(
 export async function executeAdminReviewAction(
   request: AdminReviewRequest,
 ): Promise<AdminReviewResult> {
+  if (persistenceUsesDirectPostgres()) {
+    return executeAdminReviewActionSovereign(request);
+  }
   const sb = getSupabase();
   if (!sb) {
     return { ok: false, error: "Supabase not configured", status: 503 };

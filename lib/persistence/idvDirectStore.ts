@@ -638,3 +638,126 @@ export async function applyAdminReviewDecisionDirect(input: {
 export function idvDocumentColumnsForSubject(subjectKey: string): ReturnType<typeof idvDocumentSubjectColumns> {
   return idvDocumentSubjectColumns(subjectKey);
 }
+
+export async function countBiometricAssessmentsInWindowDirect(
+  holderSubjectKey: string,
+  sinceIso: string,
+): Promise<number> {
+  const anchor = idvReviewSessionAnchor(normalizeHolderSubjectKey(holderSubjectKey));
+  const params: unknown[] = [sinceIso];
+  let subjectClause = "";
+  if (anchor.holder_subject_id) {
+    params.push(anchor.holder_subject_id);
+    subjectClause = `holder_subject_id = $${params.length}`;
+  } else if (anchor.sui_address) {
+    params.push(anchor.sui_address);
+    subjectClause = `sui_address = $${params.length}`;
+  } else {
+    return 0;
+  }
+  const result = await queryAbraxasPg<{ count: string }>(
+    `select count(*)::text as count from public.identity_biometric_assessments
+     where ${subjectClause} and analyzed_at >= $1`,
+    params,
+  );
+  return Number.parseInt(result.rows[0]?.count ?? "0", 10);
+}
+
+export async function countPendingIdentityDocumentsDirect(holderSubjectKey: string): Promise<number> {
+  const cols = idvDocumentSubjectColumns(normalizeHolderSubjectKey(holderSubjectKey));
+  const params: unknown[] = [];
+  let clause = "";
+  if (cols.holder_subject_id) {
+    params.push(cols.holder_subject_id);
+    clause = "holder_subject_id = $1";
+  } else if (cols.sui_address) {
+    params.push(cols.sui_address);
+    clause = "sui_address = $1";
+  } else {
+    return 0;
+  }
+  const result = await queryAbraxasPg<{ count: string }>(
+    `select count(*)::text as count from public.passport_documents
+     where ${clause} and stamp_id = 'identity' and status in ('submitted','under_review')`,
+    params,
+  );
+  return Number.parseInt(result.rows[0]?.count ?? "0", 10);
+}
+
+export async function getPassportDocumentByIdDirect(documentId: string): Promise<Record<string, unknown> | null> {
+  const result = await queryAbraxasPg<Record<string, unknown>>(
+    `select * from public.passport_documents where id = $1 and stamp_id = 'identity' limit 1`,
+    [documentId],
+  );
+  return result.rows[0] ?? null;
+}
+
+export async function updateBiometricReviewerDecisionDirect(input: {
+  captureSessionId: string;
+  reviewerDecision: string;
+  reviewerId: string;
+  reviewedAt: string;
+}): Promise<void> {
+  const result = await queryAbraxasPg(
+    `update public.identity_biometric_assessments
+     set reviewer_decision = $2, reviewer_id = $3, reviewed_at = $4
+     where capture_session_id = $1`,
+    [input.captureSessionId, input.reviewerDecision, input.reviewerId, input.reviewedAt],
+  );
+}
+
+export async function listPassportDocumentsForQueueDirect(input: {
+  status: string;
+  partnerId?: string | null;
+  limit?: number;
+}): Promise<Record<string, unknown>[]> {
+  const limit = input.limit ?? 200;
+  let sql = `select * from public.passport_documents where stamp_id = 'identity'`;
+  const params: unknown[] = [];
+  if (input.status === "pending") {
+    sql += ` and status in ('submitted','under_review')`;
+  } else if (input.status !== "all") {
+    params.push(input.status);
+    sql += ` and status = $${params.length}`;
+  }
+  params.push(limit);
+  sql += ` order by created_at desc limit $${params.length}`;
+  const result = await queryAbraxasPg<Record<string, unknown>>(sql, params);
+  return result.rows;
+}
+
+export async function listReviewSessionsByCaptureIdsDirect(
+  captureSessionIds: string[],
+  partnerId?: string | null,
+): Promise<IdentityReviewSessionRow[]> {
+  if (captureSessionIds.length === 0) return [];
+  const params: unknown[] = [captureSessionIds];
+  let sql = `select * from public.identity_review_sessions where capture_session_id = any($1::text[])`;
+  if (partnerId) {
+    params.push(partnerId);
+    sql += ` and partner_id = $${params.length}`;
+  }
+  const result = await queryAbraxasPg<IdentityReviewSessionRow>(sql, params);
+  return result.rows;
+}
+
+export async function getIdentityReviewSessionByCaptureDirect(
+  captureSessionId: string,
+): Promise<IdentityReviewSessionRow | null> {
+  const result = await queryAbraxasPg<IdentityReviewSessionRow>(
+    `select * from public.identity_review_sessions where capture_session_id = $1 limit 1`,
+    [captureSessionId],
+  );
+  return result.rows[0] ?? null;
+}
+
+export async function listBiometricAssessmentsByCaptureIdsDirect(
+  captureSessionIds: string[],
+): Promise<Record<string, unknown>[]> {
+  if (captureSessionIds.length === 0) return [];
+  const result = await queryAbraxasPg<Record<string, unknown>>(
+    `select * from public.identity_biometric_assessments where capture_session_id = any($1::text[])`,
+    [captureSessionIds],
+  );
+  return result.rows;
+}

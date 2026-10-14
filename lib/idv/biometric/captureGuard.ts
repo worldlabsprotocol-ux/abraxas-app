@@ -5,6 +5,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { BiometricDecision } from "./types";
 import { normalizeHolderSubjectKey } from "@/lib/idv/holderIdentityRef";
 import { idvReviewSessionAnchor } from "@/lib/idv/holderSubjectIdv";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { countBiometricAssessmentsInWindowDirect } from "@/lib/persistence/idvDirectStore";
 
 /** Max capture submissions per wallet per rolling hour (production default). */
 export function getCaptureRateLimitPerHour(): number {
@@ -41,11 +43,44 @@ export interface CaptureRateLimitResult {
 }
 
 export async function checkCaptureRateLimit(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient | null,
   holderSubjectKey: string,
 ): Promise<CaptureRateLimitResult> {
   const limit = getCaptureRateLimitPerHour();
   const since = new Date(Date.now() - RATE_WINDOW_MS).toISOString();
+  if (persistenceUsesDirectPostgres()) {
+    try {
+      const attemptsInWindow = await countBiometricAssessmentsInWindowDirect(holderSubjectKey, since);
+      if (attemptsInWindow >= limit) {
+        return { allowed: false, attemptsInWindow, limit, retryAfterSec: 3600 };
+      }
+      return { allowed: true, attemptsInWindow, limit };
+    } catch {
+      logCaptureAudit({
+        event: "rate_limit_enforcement_unavailable",
+        holder_subject: holderSubjectAuditRef(holderSubjectKey),
+        reason: "storage_unavailable",
+      });
+      return {
+        allowed: false,
+        unavailable: true,
+        unavailableReason: "storage_unavailable",
+        attemptsInWindow: 0,
+        limit,
+        retryAfterSec: 120,
+      };
+    }
+  }
+  if (!supabase) {
+    return {
+      allowed: false,
+      unavailable: true,
+      unavailableReason: "storage_unavailable",
+      attemptsInWindow: 0,
+      limit,
+      retryAfterSec: 120,
+    };
+  }
   const anchor = idvReviewSessionAnchor(normalizeHolderSubjectKey(holderSubjectKey));
 
   let countQuery = supabase

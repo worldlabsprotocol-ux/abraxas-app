@@ -21,7 +21,10 @@ import { ensureZkLoginWalletBinding } from "@/lib/credentials/ensureZkLoginWalle
 import { buildProductEligibilityClaimsForIssuance } from "@/lib/idv/buildProductEligibilityClaims";
 import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
 import { getIdentityVerificationBySubjectDirect } from "@/lib/persistence/idvDirectStore";
-import { commitSovereignCredentialIssuanceDirect } from "@/lib/persistence/sovereignCredentialIssuance";
+import {
+  commitSovereignCredentialIssuanceDirect,
+  type SovereignCredentialCommitInput,
+} from "@/lib/persistence/sovereignCredentialIssuance";
 import { idvSupabase, transitionIdentityVerification } from "./identityVerificationDb";
 import { getSuiNetwork } from "@/lib/sui/network";
 import type { VeriffDecisionInput } from "./types";
@@ -348,6 +351,176 @@ export interface ManualReviewApproval {
   /** Authoritative age-band from approved age-assurance provider. */
   authoritativeAgeBand?: "over_18" | "over_21";
   eligibilityEvidenceReference?: string;
+}
+
+export type PreparedSovereignManualIssuance = {
+  subjectKey: string;
+  legacySui: string | null;
+  jti: string;
+  jwt: string;
+  commitInput: SovereignCredentialCommitInput;
+};
+
+/** Build signed credential artifacts for atomic sovereign admin approval (no persistence). */
+export async function prepareSovereignManualCredentialIssuance(
+  holder: string,
+  approval: ManualReviewApproval,
+): Promise<{ ok: true; prepared: PreparedSovereignManualIssuance } | { ok: false; message: string }> {
+  const subjectKey = normalizeHolderSubjectKey(holder);
+  const isChainNeutral = isChainNeutralHolderSubjectId(subjectKey);
+  const legacySui = isChainNeutral ? null : normalizeSuiAddress(subjectKey);
+  const now = new Date();
+
+  if (isChainNeutral && !await chainNeutralIdentitySchemaReadyServer()) {
+    return { ok: false, message: "chain_neutral_schema_unavailable" };
+  }
+
+  const signingKeyJson = process.env.ABRAXAS_SIGNING_KEY;
+  if (!signingKeyJson) {
+    return { ok: false, message: "ABRAXAS_SIGNING_KEY not configured" };
+  }
+
+  const provider: IdentityIssuanceProvider = approval.captureSessionId
+    ? "abraxas_capture"
+    : "manual";
+  const reviewRef = approval.reviewId;
+  const signingKey = await importJWK(JSON.parse(signingKeyJson), "EdDSA");
+  const issuer = resolveAbraxasCredentialIssuer();
+  const expiresAt = new Date(now.getTime() + TTL_MS);
+  const jti = `urn:uuid:${randomUUID()}`;
+
+  const country = (approval.jurisdiction ?? "US").split("-")[0];
+  const state = approval.jurisdiction?.includes("-")
+    ? approval.jurisdiction.split("-")[1]
+    : "";
+  const juris = state ? `${country.toUpperCase()}-${state.toUpperCase()}` : country.toUpperCase();
+  const docType = (approval.documentType ?? "passport").toLowerCase()
+    .replace(" ", "_") as "passport" | "drivers_license" | "mobile_dl" | "national_id";
+
+  const claims = {
+    "@context": ["https://www.w3.org/2018/credentials/v1"],
+    type: ["VerifiableCredential", "AbraxasIdentityCredential"],
+    issuer,
+    issuanceDate: now.toISOString(),
+    expirationDate: expiresAt.toISOString(),
+    id: jti,
+    credentialSubject: {
+      id: isChainNeutral ? `did:abraxas:${subjectKey}` : `did:sui:${legacySui}`,
+      ...(legacySui ? { sui_address: legacySui } : { holder_subject_id: subjectKey }),
+      jurisdiction: juris,
+      document_type: docType,
+      verification_level: "standard" as const,
+      world_id_verified: false,
+      verified_at: now.toISOString(),
+      chain: isChainNeutral ? ("abraxas" as const) : ("sui" as const),
+      assurance_level: approval.assuranceLevel
+        ?? (provider === "abraxas_capture" && approval.reviewMethod === "automated_biometric"
+          ? ("L3" as const)
+          : ("L2" as const)),
+      idv_provider: provider === "abraxas_capture" ? "abraxas_independent" : provider,
+      review_id: provider === "manual" ? reviewRef : undefined,
+      permissions: {
+        fiat_offramp: true,
+        defi_access: true,
+        rwa_tokenize: true,
+        cross_border: true,
+      },
+    },
+  };
+
+  const jwt = await new SignJWT({ vc: claims })
+    .setProtectedHeader({ alg: "EdDSA", typ: "JWT" })
+    .setJti(jti)
+    .setIssuer(issuer)
+    .setSubject(isChainNeutral ? `did:abraxas:${subjectKey}` : `did:sui:${legacySui}`)
+    .setIssuedAt(now)
+    .setExpirationTime(expiresAt)
+    .sign(signingKey);
+
+  const documentDateOfBirth = approval.documentDateOfBirth?.trim() || undefined;
+  const minimumAgeGate = approval.minimumAgeGate;
+  const eligibilityEvidenceRef = approval.eligibilityEvidenceReference
+    ?? (provider === "abraxas_capture" && approval.captureSessionId
+      ? `abraxas_capture:${approval.captureSessionId}`
+      : `manual_review:${reviewRef}`);
+
+  const identityClaims = provider === "abraxas_capture" && approval.captureSessionId
+    ? abraxasCaptureApprovedClaims({
+        subjectId: subjectKey,
+        jti,
+        jurisdiction: juris,
+        documentType: docType,
+        captureSessionId: approval.captureSessionId,
+        expiresAt,
+        assuranceLevel: approval.assuranceLevel,
+        reviewMethod: approval.reviewMethod,
+        biometricScores: approval.biometricScores,
+      })
+    : manualApprovedClaims({
+        subjectId: subjectKey,
+        jti,
+        jurisdiction: juris,
+        documentType: docType,
+        reviewId: reviewRef,
+        expiresAt,
+      });
+
+  const allClaims = [
+    ...identityClaims,
+    ...buildProductEligibilityClaimsForIssuance({
+      subjectId: subjectKey,
+      jti,
+      documentDateOfBirth,
+      authoritativeAgeBand: approval.authoritativeAgeBand,
+      minimumAgeGate,
+      expiresAt,
+      evidenceReference: eligibilityEvidenceRef,
+    }),
+    ...(legacySui
+      ? [walletBindingClaim({
+          subjectId: subjectKey,
+          walletAddress: legacySui,
+          bindingMethod: "zklogin",
+        })]
+      : []),
+  ];
+
+  const verificationPatch = {
+    document_type: docType,
+    document_country: country.toUpperCase(),
+    document_state: state.toUpperCase() || null,
+    document_verified: true,
+    liveness_passed: true,
+    liveness_provider: provider === "abraxas_capture" ? "abraxas_capture" : "manual_review",
+    status: "approved" as const,
+    identity_verification_status: "approved" as const,
+    credential_status: "active" as const,
+    credential_jti: jti,
+    veriff_session_id: null,
+    veriff_decision_id: reviewRef,
+    last_verified_at: now.toISOString(),
+    credential_issued_at: now.toISOString(),
+    error_message: null,
+  };
+
+  const commitInput: SovereignCredentialCommitInput = {
+    subjectKey,
+    jti,
+    credentialJwt: jwt,
+    issuer,
+    jurisdiction: juris,
+    documentType: docType,
+    verificationPatch,
+    eventSource: "sovereign_admin_approval_atomic",
+    captureSessionId: approval.captureSessionId ?? null,
+    expirationDateIso: expiresAt.toISOString(),
+    claims: allClaims,
+  };
+
+  return {
+    ok: true,
+    prepared: { subjectKey, legacySui, jti, jwt, commitInput },
+  };
 }
 
 /** Issue credential after admin manual review (Veriff unavailable). Assurance L2. */

@@ -43,19 +43,21 @@ export type SovereignCredentialCommitInput = {
   claims: Omit<CredentialClaimRecord, "id" | "status">[];
 };
 
-export async function commitSovereignCredentialIssuanceDirect(
+export async function commitSovereignCredentialIssuanceOnClient(
+  client: PoolClient,
   input: SovereignCredentialCommitInput,
-): Promise<{ ok: true; claimCount: number } | { ok: false; code: SovereignIssuanceError["code"] }> {
+  options?: { skipAdvisoryLock?: boolean },
+): Promise<{ claimCount: number } | { duplicate: true }> {
   if (!input.claims.length) {
-    return { ok: false, code: "claims_required" };
+    throw new SovereignIssuanceError("claims_required");
   }
 
-  try {
-    return await withAbraxasPgTransaction(async (client: PoolClient) => {
-      const { classId, objectId } = issuanceLockKey(input.subjectKey);
-      await client.query(`select pg_advisory_xact_lock($1::int, $2::int)`, [classId, objectId]);
+  if (!options?.skipAdvisoryLock) {
+    const { classId, objectId } = issuanceLockKey(input.subjectKey);
+    await client.query(`select pg_advisory_xact_lock($1::int, $2::int)`, [classId, objectId]);
+  }
 
-      const keys = identityVerificationUpsertKeys(input.subjectKey, { includeHolderSubjectColumn: true });
+  const keys = identityVerificationUpsertKeys(input.subjectKey, { includeHolderSubjectColumn: true });
       const existing = await client.query<{ credential_jti: string | null; credential_status: string | null; status: string | null; identity_verification_status: string | null }>(
         `select credential_jti, credential_status, status, identity_verification_status
          from public.identity_verifications
@@ -85,7 +87,7 @@ export async function commitSovereignCredentialIssuanceDirect(
             JSON.stringify({ existing_jti: row.credential_jti }),
           ],
         );
-        return { ok: false as const, code: "credential_already_active" as const };
+        return { duplicate: true };
       }
 
       const now = new Date().toISOString();
@@ -180,8 +182,24 @@ export async function commitSovereignCredentialIssuanceDirect(
         ],
       );
 
-      return { ok: true as const, claimCount: input.claims.length };
-    });
+      return { claimCount: input.claims.length };
+}
+
+export async function commitSovereignCredentialIssuanceDirect(
+  input: SovereignCredentialCommitInput,
+): Promise<{ ok: true; claimCount: number } | { ok: false; code: SovereignIssuanceError["code"] }> {
+  if (!input.claims.length) {
+    return { ok: false, code: "claims_required" };
+  }
+
+  try {
+    const result = await withAbraxasPgTransaction(async (client: PoolClient) =>
+      commitSovereignCredentialIssuanceOnClient(client, input),
+    );
+    if ("duplicate" in result) {
+      return { ok: false, code: "credential_already_active" };
+    }
+    return { ok: true, claimCount: result.claimCount };
   } catch (error) {
     if (error instanceof ClaimsDirectPersistError) {
       return { ok: false, code: "claims_persist_failed" };
