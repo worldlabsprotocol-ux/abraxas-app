@@ -7,6 +7,8 @@ import { execFileSync } from "node:child_process";
 import { performance } from "node:perf_hooks";
 import { buildStagingInfraInventory } from "../../lib/sovereignRuntime/stagingInfraInventory";
 import {
+  deriveConfigurationReadiness,
+  deriveFullProtocolLifecycleTier,
   deriveOperationalStagingTier,
   type Build559CertificationSummary,
 } from "../../lib/sovereignRuntime/stagingCertificationTiers";
@@ -16,12 +18,21 @@ import {
   runStagingLifecycleHttpProbes,
 } from "../../lib/sovereignRuntime/stagingLifecycleHttpProbes";
 import { summarizeStagingHttpTier } from "../../lib/sovereignRuntime/stagingHttpProbeSpec";
+import { observeStagingOperationalSignals } from "../../lib/sovereignRuntime/stagingOperationalObserved";
+import {
+  assertSyntheticCertificationMayRunMutations,
+  SYNTHETIC_CERTIFICATION_AUTHORIZED_ENV,
+  validateSyntheticCertificationIsolation,
+} from "../../lib/sovereignRuntime/syntheticCertificationIsolation";
 
-function runVitest(pattern: string): boolean {
+function runVitest(
+  pattern: string,
+  env: Record<string, string | undefined>,
+): boolean {
   try {
     execFileSync("./node_modules/.bin/vitest", ["run", ...pattern.split(/\s+/).filter(Boolean)], {
       stdio: "inherit",
-      env: process.env,
+      env: env as NodeJS.ProcessEnv,
     });
     return true;
   } catch {
@@ -45,14 +56,31 @@ async function main(): Promise<void> {
     && inventory.backup_output_dir_set
     && inventory.backup_scope === "sovereign";
 
-  const operational = deriveOperationalStagingTier({
+  const configurationReadiness = deriveConfigurationReadiness({
     staging_persistent_ready: stagingEnv.ok,
     inventory_complete: inventoryComplete,
   });
 
+  const httpBase = env.ABRAXAS_STAGING_HTTP_BASE_URL?.trim();
+  const primaryUrl =
+    env.ABRAXAS_DATABASE_URL?.trim() ?? env.ABRAXAS_SOVEREIGN_PG_URL?.trim() ?? null;
+
+  const observed = await observeStagingOperationalSignals({
+    databaseUrl: stagingEnv.ok ? primaryUrl : null,
+    evidenceRoot: env.ABRAXAS_EVIDENCE_STORAGE_ROOT,
+    httpBase: stagingEnv.ok ? httpBase : undefined,
+    env,
+  });
+
+  const operational = deriveOperationalStagingTier({
+    configuration_ready: configurationReadiness === "STAGING_CONFIGURATION_READY",
+    observed_database_connectivity: observed.database_connectivity,
+    observed_http_staging_health: observed.http_staging_health,
+    observed_persistent_storage: observed.persistent_storage,
+  });
+
   let observedHttp: Build559CertificationSummary["observed_staging_http"] = "BLOCKED";
   let lifecycleHttp: { tier: string; probes?: unknown[] } = { tier: "BLOCKED" };
-  const httpBase = env.ABRAXAS_STAGING_HTTP_BASE_URL?.trim();
 
   if (httpBase && stagingEnv.ok) {
     const smokeProbes = await runStagingLifecycleHttpProbes(httpBase);
@@ -67,19 +95,22 @@ async function main(): Promise<void> {
     };
   }
 
-  let syntheticLifecycle: Build559CertificationSummary["full_protocol_lifecycle"] = "BLOCKED";
+  const syntheticIsolation = validateSyntheticCertificationIsolation(env);
+  let syntheticLifecycle: Build559CertificationSummary["synthetic_lifecycle"] = "BLOCKED";
   let adversarial: Build559CertificationSummary["adversarial_trust"] = "BLOCKED";
-  const pg = env.ABRAXAS_DATABASE_URL?.trim() || env.ABRAXAS_SOVEREIGN_PG_URL?.trim();
-  const envClass = inventory.sovereign_env_class;
 
-  if (pg && envClass === "disposable") {
-    const synthOk = runVitest("lib/persistence/build556.sovereignCertification.test.ts");
-    const advOk = runVitest("lib/persistence/build555Security.adversarial.test.ts");
-    syntheticLifecycle = synthOk ? "SYNTHETIC_LIFECYCLE_CERTIFIED" : "BLOCKED";
-    adversarial = advOk ? "PASS" : synthOk ? "FAIL" : "BLOCKED";
-  } else if (pg && envClass === "staging" && stagingEnv.ok) {
-    const synthOk = runVitest("lib/persistence/build556.sovereignCertification.test.ts");
-    const advOk = runVitest("lib/persistence/build555Security.adversarial.test.ts");
+  const mutationGate = assertSyntheticCertificationMayRunMutations({
+    ...env,
+    [SYNTHETIC_CERTIFICATION_AUTHORIZED_ENV]: "true",
+  });
+
+  if (mutationGate.ok) {
+    const childEnv = {
+      ...env,
+      [SYNTHETIC_CERTIFICATION_AUTHORIZED_ENV]: "true",
+    };
+    const synthOk = runVitest("lib/persistence/build556.sovereignCertification.test.ts", childEnv);
+    const advOk = runVitest("lib/persistence/build555Security.adversarial.test.ts", childEnv);
     syntheticLifecycle = synthOk ? "SYNTHETIC_LIFECYCLE_CERTIFIED" : "BLOCKED";
     adversarial = advOk ? "PASS" : synthOk ? "FAIL" : "BLOCKED";
   }
@@ -101,14 +132,17 @@ async function main(): Promise<void> {
     }
   }
 
-  // Full deployed lifecycle (consent → partner receipt consumption) is not automated in #559.
-  const fullProtocol: Build559CertificationSummary["full_protocol_lifecycle"] =
-    syntheticLifecycle === "SYNTHETIC_LIFECYCLE_CERTIFIED" ? "SYNTHETIC_LIFECYCLE_CERTIFIED" : "BLOCKED";
+  const fullProtocol = deriveFullProtocolLifecycleTier({
+    operational_staging: operational,
+    observed_lifecycle_http_boundaries: lifecycleHttp.tier === "OBSERVED_LIFECYCLE_HTTP_BOUNDARIES",
+  });
 
   const summary: Build559CertificationSummary = {
     build: 559,
+    configuration_readiness: configurationReadiness,
     operational_staging: operational,
     observed_staging_http: observedHttp,
+    synthetic_lifecycle: syntheticLifecycle,
     full_protocol_lifecycle: fullProtocol,
     adversarial_trust: adversarial,
     recovery_proof: recovery,
@@ -124,11 +158,13 @@ async function main(): Promise<void> {
         elapsed_ms: Math.round(performance.now() - t0),
         inventory,
         staging_env: stagingEnv,
+        observed_operational: observed,
+        synthetic_isolation: syntheticIsolation,
         lifecycle_http: lifecycleHttp,
         limitations: [
-          "FULL_PROTOCOL_LIFECYCLE_CERTIFIED requires operational staging + observed HTTP + synthetic PG certification + recovery drill.",
-          "Synthetic fixtures are not human IDV.",
-          "Authenticated receipt/partner consumption on deployed staging requires founder-provisioned ABRAXAS_STAGING_HTTP_BASE_URL and staging env class.",
+          "FULL_PROTOCOL_LIFECYCLE_CERTIFIED requires observed authenticated staging E2E (not implemented in #559).",
+          "Synthetic fixtures are not human IDV and never run against staging or production PostgreSQL.",
+          "OPERATIONAL_STAGING requires observed DB connectivity, evidence storage, and deployed HTTP health.",
         ],
       },
       null,

@@ -91,7 +91,7 @@
     "sovereign-runtime:inventory-staging-559": "tsx scripts/sovereign-runtime/inventory-staging-infra-559.ts",
     "sovereign-runtime:observe-staging-lifecycle-http-559": "tsx scripts/sovereign-runtime/observe-staging-lifecycle-http-559.ts",
     "sovereign-runtime:certify-559": "tsx scripts/sovereign-runtime/certify-build-559.ts",
-    "test:sovereign-activation-env": "vitest run lib/sovereignRuntime/institutionalActivationEnv.test.ts lib/sovereignRuntime/sovereignActivationHardening.test.ts lib/sovereignRuntime/sovereignHealth.test.ts lib/sovereignRuntime/sovereignStagingSafety.adversarial.test.ts lib/sovereignRuntime/stagingCertification559.test.ts"
+    "test:sovereign-activation-env": "vitest run lib/sovereignRuntime/institutionalActivationEnv.test.ts lib/sovereignRuntime/sovereignActivationHardening.test.ts lib/sovereignRuntime/sovereignHealth.test.ts lib/sovereignRuntime/sovereignStagingSafety.adversarial.test.ts lib/sovereignRuntime/syntheticCertificationIsolation.adversarial.test.ts lib/sovereignRuntime/stagingCertification559.test.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",
