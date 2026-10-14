@@ -14,7 +14,7 @@ import {
 import { getIdvProvider, isVeriffLive } from "@/lib/idv/idvProvider";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
 import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
-import { identityVerificationOrFilter } from "@/lib/idv/holderIdentityRef";
+import { identityVerificationOrFilterForRuntime } from "@/lib/idv/holderIdentityRef";
 import { readCanonicalWalletBindingTruth } from "@/lib/trust/readCanonicalWalletBinding";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -175,7 +175,7 @@ async function statusBySui(supabase: SupabaseClient, sui: string): Promise<Parti
       identity_verification_status, credential_status, veriff_session_id,
       last_verified_at, credential_issued_at, error_message
     `)
-    .or(identityVerificationOrFilter(sui))
+    .or(await identityVerificationOrFilterForRuntime(sui))
     .maybeSingle();
 
   if (!data) {

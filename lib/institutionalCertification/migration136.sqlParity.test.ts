@@ -52,4 +52,56 @@ describe("migration 136 SQL parity (requires MIGRATION_136_PG_URL)", () => {
       );
     `)).toThrow();
   });
+
+  it("enforces legacy link primary key and challenge consume replay protection", () => {
+    const subject = "abx_hs_0123456789012345678901234567890ab";
+    psql(`
+      INSERT INTO public.passport_holder_legacy_links (subject_id, legacy_kind, legacy_key)
+      VALUES ('${subject}', 'sui', '0xlegacy')
+      ON CONFLICT DO NOTHING;
+    `);
+    expect(() => psql(`
+      INSERT INTO public.passport_holder_legacy_links (subject_id, legacy_kind, legacy_key)
+      VALUES ('abx_hs_ffffffffffffffffffffffffffffffff', 'sui', '0xlegacy');
+    `)).toThrow();
+
+    const challengeId = "peac_test_replay";
+    const wallet = "0x00000000000000000000000000000000000000bb";
+    const ctxHash = "ctx_hash_replay";
+    psql(`
+      INSERT INTO public.passport_evm_auth_challenges (
+        id, wallet_address, chain_id, origin, intended_action, session_context_hash,
+        nonce, message, expires_at
+      ) VALUES (
+        '${challengeId}',
+        '${wallet}',
+        1,
+        'https://example.com',
+        'passport_sign_in',
+        '${ctxHash}',
+        'nonce_replay_test_001',
+        'sign me',
+        now() + interval '10 minutes'
+      );
+    `);
+
+    const consumed = psql(`
+      select id from public.consume_passport_evm_auth_challenge('${challengeId}', '${wallet}', '${ctxHash}');
+    `);
+    expect(consumed).toBe(challengeId);
+
+    const replay = psql(`
+      select id from public.consume_passport_evm_auth_challenge('${challengeId}', '${wallet}', '${ctxHash}');
+    `);
+    expect(replay).toBe("");
+  });
+
+  it("adds holder_subject_id column probe on identity_verifications", () => {
+    const cols = psql(`
+      select column_name from information_schema.columns
+      where table_schema = 'public' and table_name = 'identity_verifications'
+        and column_name = 'holder_subject_id';
+    `);
+    expect(cols).toBe("holder_subject_id");
+  });
 });

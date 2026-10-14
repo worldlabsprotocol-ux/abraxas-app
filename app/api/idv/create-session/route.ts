@@ -23,6 +23,7 @@ import { veriffVendorDataForHolder } from "@/lib/idv/holderIdentityRef";
 import { getIdvProvider, isVeriffLive } from "@/lib/idv/idvProvider";
 import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
+import { requireChainNeutralIdentitySchema } from "@/lib/persistence/chainNeutralSchemaReady";
 
 const VERIFF_KEY    = process.env.VERIFF_API_KEY    ?? "";
 const VERIFF_BASE   = "https://stationapi.veriff.com/v1";
@@ -63,6 +64,16 @@ export async function POST(req: NextRequest) {
     }
   }
   const holder = sessionSubject;
+
+  if (isChainNeutralHolderSubjectId(holder)) {
+    const schema = await requireChainNeutralIdentitySchema();
+    if (!schema.ok) {
+      return NextResponse.json(
+        { error: "Chain-neutral identity storage is not available in this environment", error_code: schema.code },
+        { status: schema.httpStatus },
+      );
+    }
+  }
 
   const idvProvider = getIdvProvider();
   if (!isVeriffLive() || !VERIFF_KEY) {

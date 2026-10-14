@@ -5,7 +5,11 @@ import { randomUUID } from "crypto";
 import { SignJWT, importJWK } from "jose";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
-import { identityVerificationOrFilter, normalizeHolderSubjectKey } from "./holderIdentityRef";
+import {
+  identityVerificationOrFilterForRuntime,
+  normalizeHolderSubjectKey,
+} from "./holderIdentityRef";
+import { chainNeutralIdentitySchemaReady } from "@/lib/persistence/chainNeutralSchemaReady";
 import {
   abraxasCaptureApprovedClaims,
   manualApprovedClaims,
@@ -61,11 +65,15 @@ export async function issueIdentityCredential(
   const legacySui = isChainNeutral ? null : normalizeSuiAddress(subjectKey);
   const now = new Date();
 
+  if (isChainNeutral && !await chainNeutralIdentitySchemaReady()) {
+    return { ok: false, message: "chain_neutral_schema_unavailable" };
+  }
+
   if (sb) {
     const { data: existing } = await sb
       .from("identity_verifications")
       .select("credential_jti, status, identity_verification_status, credential_status")
-      .or(identityVerificationOrFilter(subjectKey))
+      .or(await identityVerificationOrFilterForRuntime(subjectKey))
       .maybeSingle();
 
     if (
