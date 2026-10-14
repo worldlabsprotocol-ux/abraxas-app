@@ -113,23 +113,27 @@ export async function verifyPortableRevocationAtRelyingParty(
   let structuralOk = codes.length === 0;
   let checkpoint_advanced = false;
 
-  if (structuralOk && input.advanceCheckpointOnSuccess !== false) {
+  if (structuralOk) {
     const bootstrapped = bootstrapTrusts.some((row) =>
       bootstrapMatches(input.artifact, row, authority.revocation_issuer_id),
     );
-    const advance = await input.checkpointStore.compareAndAdvanceCheckpoint({
-      revocation_issuer_id: authority.revocation_issuer_id,
-      highest_sequence: input.artifact.payload.snapshot_sequence,
-      last_payload_hash: input.artifact.payload_hash,
-      updated_at: now.toISOString(),
-      previous_snapshot_hash: input.artifact.payload.previous_snapshot_hash,
-      bootstrapped,
-    });
+    const persistCheckpoint = input.advanceCheckpointOnSuccess !== false;
+    const advance = await input.checkpointStore.compareAndAdvanceCheckpoint(
+      {
+        revocation_issuer_id: authority.revocation_issuer_id,
+        highest_sequence: input.artifact.payload.snapshot_sequence,
+        last_payload_hash: input.artifact.payload_hash,
+        updated_at: now.toISOString(),
+        previous_snapshot_hash: input.artifact.payload.previous_snapshot_hash,
+        bootstrapped,
+      },
+      { persist: persistCheckpoint },
+    );
     if (!advance.ok) {
       codes.push(mapAdvanceFailure(advance.code));
       structuralOk = false;
     } else {
-      checkpoint_advanced = advance.advanced;
+      checkpoint_advanced = persistCheckpoint && advance.advanced;
     }
   }
 

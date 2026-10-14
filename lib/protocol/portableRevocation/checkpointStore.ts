@@ -15,10 +15,16 @@ import { acquireOwnerAwareCheckpointLock } from "./checkpointLock";
 export type PortableRevocationCheckpointCandidate = PortableRevocationCheckpoint &
   PortableRevocationCheckpointContinuity;
 
+export type CompareAndAdvanceCheckpointOptions = {
+  /** When false, run continuity validation under lock but do not persist advances. Default true. */
+  persist?: boolean;
+};
+
 export interface PortableRevocationCheckpointStore {
   getCheckpoint(revocationIssuerId: string): Promise<PortableRevocationCheckpoint | null>;
   compareAndAdvanceCheckpoint(
     candidate: PortableRevocationCheckpointCandidate,
+    options?: CompareAndAdvanceCheckpointOptions,
   ): Promise<CompareAndAdvanceCheckpointResult>;
 }
 
@@ -108,12 +114,19 @@ export class InMemoryPortableRevocationCheckpointStore implements PortableRevoca
 
   async compareAndAdvanceCheckpoint(
     candidate: PortableRevocationCheckpointCandidate,
+    options: CompareAndAdvanceCheckpointOptions = {},
   ): Promise<CompareAndAdvanceCheckpointResult> {
+    const persist = options.persist !== false;
     return this.withIssuerLock(candidate.revocation_issuer_id, async () => {
       const current = await this.getCheckpoint(candidate.revocation_issuer_id);
       const result = runCompareAndAdvance({ current, candidate });
-      if (result.ok && result.advanced) {
+      if (!result.ok) return result;
+      if (result.advanced && persist) {
         this.byIssuer.set(candidate.revocation_issuer_id, result.checkpoint);
+        return result;
+      }
+      if (result.advanced && !persist) {
+        return { ok: true, advanced: false, checkpoint: current ?? result.checkpoint };
       }
       return result;
     });
@@ -188,7 +201,9 @@ export class FilesystemPortableRevocationCheckpointStore implements PortableRevo
 
   async compareAndAdvanceCheckpoint(
     candidate: PortableRevocationCheckpointCandidate,
+    options: CompareAndAdvanceCheckpointOptions = {},
   ): Promise<CompareAndAdvanceCheckpointResult> {
+    const persist = options.persist !== false;
     let release: (() => Promise<void>) | null = null;
     try {
       const lock = await acquireOwnerAwareCheckpointLock(this.lockPath(candidate.revocation_issuer_id), {
@@ -215,8 +230,10 @@ export class FilesystemPortableRevocationCheckpointStore implements PortableRevo
       }
 
       const result = runCompareAndAdvance({ current, candidate });
-      if (!result.ok || !result.advanced) {
-        return result;
+      if (!result.ok) return result;
+      if (!result.advanced) return result;
+      if (!persist) {
+        return { ok: true, advanced: false, checkpoint: current ?? result.checkpoint };
       }
 
       try {

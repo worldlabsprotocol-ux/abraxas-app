@@ -348,6 +348,128 @@ describe("Build #564 portable revocation security (synthetic)", () => {
     expect(checkpoint?.highest_sequence).toBe(1);
   });
 
+  it("advanceCheckpointOnSuccess=false — cannot authorize without checkpoint continuity validation", async () => {
+    const store = new InMemoryPortableRevocationCheckpointStore();
+    const presentation = presentationForReceiptId("dr_non_mutating");
+    const seq1 = buildSyntheticPortableRevocationSnapshot({
+      receiptId: "dr_non_mutating",
+      sequence: 1,
+    });
+    const seq2 = buildSyntheticPortableRevocationSnapshot({
+      receiptId: "dr_non_mutating",
+      sequence: 2,
+      previousSnapshot: seq1,
+    });
+    const seq1Alt = buildSyntheticPortableRevocationSnapshot({
+      receiptId: "dr_non_mutating_alt",
+      sequence: 1,
+    });
+    const bootstrap = [bootstrapTrustFromArtifact({ artifact: seq1 })];
+    const base = {
+      receipt: presentation.signed_decision_receipt,
+      now: BUILD_546_FIXTURE_NOW,
+      env,
+      issuerTrust: build546PortableRevocationIssuerTrust(),
+      checkpointStore: store,
+      advanceCheckpointOnSuccess: false as const,
+    };
+
+    const readOnlyBootstrap = await verifyPortableRevocationAtRelyingParty({
+      artifact: seq1,
+      bootstrapTrusts: bootstrap,
+      ...base,
+    });
+    expect(readOnlyBootstrap.verification.ok).toBe(true);
+    expect(readOnlyBootstrap.revocationSource).toEqual({ available: true, status: "active" });
+    expect(readOnlyBootstrap.checkpoint_advanced).toBe(false);
+    expect(await store.getCheckpoint(PORTABLE_REVOCATION_TEST_ISSUER_ID)).toBeNull();
+
+    await verifyPortableRevocationAtRelyingParty({
+      artifact: seq1,
+      bootstrapTrusts: bootstrap,
+      ...base,
+      advanceCheckpointOnSuccess: true,
+    });
+    await verifyPortableRevocationAtRelyingParty({
+      artifact: seq2,
+      bootstrapTrusts: [],
+      ...base,
+      advanceCheckpointOnSuccess: true,
+    });
+    const rollback = await verifyPortableRevocationAtRelyingParty({
+      artifact: seq1,
+      bootstrapTrusts: [],
+      ...base,
+    });
+    expect(rollback.verification.ok).toBe(false);
+    expect(rollback.verification.codes).toContain("rollback_against_checkpoint");
+    expect(rollback.revocationSource.available).toBe(false);
+
+    const emptyStore = new InMemoryPortableRevocationCheckpointStore();
+    const unbootstrapped = await verifyPortableRevocationAtRelyingParty({
+      artifact: buildSyntheticPortableRevocationSnapshot({
+        receiptId: "dr_fresh_no_boot",
+        sequence: 1,
+      }),
+      receipt: presentationForReceiptId("dr_fresh_no_boot").signed_decision_receipt,
+      bootstrapTrusts: [],
+      ...base,
+      checkpointStore: emptyStore,
+    });
+    expect(unbootstrapped.verification.ok).toBe(false);
+    expect(unbootstrapped.verification.codes).toContain("checkpoint_unavailable");
+
+    const conflictStore = new InMemoryPortableRevocationCheckpointStore();
+    conflictStore.seedForIsolatedTests({
+      revocation_issuer_id: PORTABLE_REVOCATION_TEST_ISSUER_ID,
+      highest_sequence: 1,
+      last_payload_hash: seq1.payload_hash,
+      updated_at: BUILD_546_FIXTURE_NOW.toISOString(),
+    });
+    const conflict = await verifyPortableRevocationAtRelyingParty({
+      artifact: seq1Alt,
+      receipt: presentationForReceiptId("dr_non_mutating_alt").signed_decision_receipt,
+      bootstrapTrusts: [],
+      ...base,
+      checkpointStore: conflictStore,
+    });
+    expect(conflict.verification.ok).toBe(false);
+    expect(conflict.verification.codes).toContain("hash_conflict_at_sequence");
+
+    const gapStore = new InMemoryPortableRevocationCheckpointStore();
+    gapStore.seedForIsolatedTests({
+      revocation_issuer_id: PORTABLE_REVOCATION_TEST_ISSUER_ID,
+      highest_sequence: 1,
+      last_payload_hash: seq1.payload_hash,
+      updated_at: BUILD_546_FIXTURE_NOW.toISOString(),
+    });
+    const gap = await verifyPortableRevocationAtRelyingParty({
+      artifact: seq2,
+      bootstrapTrusts: [],
+      ...base,
+      checkpointStore: gapStore,
+    });
+    expect(gap.verification.ok).toBe(true);
+    expect(gap.checkpoint_advanced).toBe(false);
+    expect((await gapStore.getCheckpoint(PORTABLE_REVOCATION_TEST_ISSUER_ID))?.highest_sequence).toBe(1);
+
+    const staleStore = new InMemoryPortableRevocationCheckpointStore();
+    staleStore.seedForIsolatedTests({
+      revocation_issuer_id: PORTABLE_REVOCATION_TEST_ISSUER_ID,
+      highest_sequence: 2,
+      last_payload_hash: seq2.payload_hash,
+      updated_at: BUILD_546_FIXTURE_NOW.toISOString(),
+    });
+    const older = await verifyPortableRevocationAtRelyingParty({
+      artifact: seq1,
+      bootstrapTrusts: [],
+      ...base,
+      checkpointStore: staleStore,
+    });
+    expect(older.verification.ok).toBe(false);
+    expect(older.verification.codes).toContain("rollback_against_checkpoint");
+  });
+
   it("import current snapshot without predecessor via bootstrap anchor", async () => {
     const presentation = presentationForReceiptId("dr_jump");
     const jump = buildSyntheticPortableRevocationSnapshot({ receiptId: "dr_jump", sequence: 5 });
