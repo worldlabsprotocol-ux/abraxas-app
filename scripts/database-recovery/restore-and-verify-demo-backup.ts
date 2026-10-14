@@ -32,7 +32,7 @@ async function main(): Promise<void> {
 
   let tmpDump: string | undefined;
   try {
-    const restored = restoreFromManifestFile(manifestPath, restoreUrl, keyRaw);
+    const restored = restoreFromManifestFile(manifestPath, restoreUrl, keyRaw, env);
     tmpDump = restored.tmpDump;
     const manifest = restored.manifest;
 

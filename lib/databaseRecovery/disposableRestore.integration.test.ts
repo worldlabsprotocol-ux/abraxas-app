@@ -14,6 +14,7 @@ import {
 } from "./pipeline";
 import { createRecoveryPgClient } from "./pgClient";
 import { probeRecoveryInventoryReady } from "./pgInventory";
+import { AUTHORIZED_DEMO_REF } from "./guard";
 
 const SOURCE_URL =
   process.env.ABRAXAS_RECOVERY_INTEGRATION_PG_URL?.trim()
@@ -68,14 +69,25 @@ describe("databaseRecovery disposable backup restore cycle", () => {
 
         const written = writeEncryptedBackupArtifact({
           outputDir,
-          projectRef: "disposable-integration",
+          projectRef: AUTHORIZED_DEMO_REF,
           stamp,
           snapshot,
           plaintext: plain,
           key,
         });
 
-        const restored = restoreFromManifestFile(written.manifestPath, SOURCE_URL, keyB64);
+        const integrationEnv = {
+          ...process.env,
+          DEMO_SUPABASE_PROJECT_REF: AUTHORIZED_DEMO_REF,
+          PRODUCTION_SUPABASE_PROJECT_REF: "bztwutzprwsdrtqdpymf",
+          NEXT_PUBLIC_SUPABASE_URL: `https://${AUTHORIZED_DEMO_REF}.supabase.co`,
+        };
+        const restored = restoreFromManifestFile(
+          written.manifestPath,
+          SOURCE_URL,
+          keyB64,
+          integrationEnv,
+        );
         tmpDump = restored.tmpDump;
 
         const verifyClient = await createRecoveryPgClient({

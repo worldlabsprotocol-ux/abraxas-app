@@ -12,8 +12,14 @@ import {
   sha256FileHex,
   type AbraxasBackupManifest,
 } from "./manifest";
-import { fetchRecoveryIntegrity, fetchRecoveryInventory, fetchSupabaseMigrationVersions } from "./pgInventory";
+import {
+  fetchRecoveryIntegrity,
+  fetchRecoveryInventory,
+  fetchSupabaseMigrationVersions,
+  probeRecoveryInventoryReady,
+} from "./pgInventory";
 import type { PgQueryable } from "./pgInventory";
+import { assertManifestArtifactBinding, assertManifestBackupIdentity } from "./manifestGuard";
 
 export async function collectBackupSnapshot(client: PgQueryable): Promise<{
   inventoryRows: Awaited<ReturnType<typeof fetchRecoveryInventory>>;
@@ -40,12 +46,33 @@ export async function collectBackupSnapshot(client: PgQueryable): Promise<{
   };
 }
 
-export function runPgDump(sourceUrl: string, dumpPath: string): void {
-  execFileSync(
-    "pg_dump",
-    ["--dbname", sourceUrl, "--format=custom", "--no-owner", "--no-acl", "--file", dumpPath],
-    { stdio: ["ignore", "pipe", "pipe"], encoding: "utf8" },
-  );
+export function runPgDump(
+  sourceUrl: string,
+  dumpPath: string,
+  options?: { serializableDeferrable?: boolean },
+): void {
+  const args = [
+    "--dbname",
+    sourceUrl,
+    "--format=custom",
+    "--no-owner",
+    "--no-acl",
+    "--file",
+    dumpPath,
+  ];
+  if (options?.serializableDeferrable) {
+    args.push("--serializable-deferrable");
+  }
+  execFileSync("pg_dump", args, { stdio: ["ignore", "pipe", "pipe"], encoding: "utf8" });
+}
+
+export async function assertBackupSourceReady(client: PgQueryable): Promise<void> {
+  const ready = await probeRecoveryInventoryReady(client);
+  if (!ready) {
+    throw new Error(
+      "backup source is missing required recovery inventory tables — pg_dump would not be verifiable",
+    );
+  }
 }
 
 export function runPgRestore(restoreUrl: string, dumpPath: string): void {
@@ -104,19 +131,31 @@ export function writeEncryptedBackupArtifact(params: {
   return { manifestPath, encPath, manifest };
 }
 
-export function loadAndDecryptBackup(manifestPath: string, keyRaw: string): {
+export function loadAndDecryptBackup(
+  manifestPath: string,
+  keyRaw: string,
+  env: Record<string, string | undefined> = process.env,
+): {
   manifest: AbraxasBackupManifest;
   plaintext: Buffer;
   encPath: string;
 } {
   const key = parseBackupEncryptionKey(keyRaw);
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as AbraxasBackupManifest;
-  const encPath = manifestPath.replace(/\.manifest\.json$/, "");
+  assertManifestArtifactBinding(manifestPath, manifest);
+  assertManifestBackupIdentity(manifest, env);
+
+  const encPath = manifestPath.replace(/\.manifest\.json$/i, "");
   const ciphertext = readFileSync(encPath);
   if (sha256FileHex(ciphertext) !== manifest.artifact.ciphertext_sha256) {
     throw new Error("ciphertext SHA256 does not match manifest (integrity failure)");
   }
-  const plaintext = decryptBackupCiphertext(ciphertext, key);
+  let plaintext: Buffer;
+  try {
+    plaintext = decryptBackupCiphertext(ciphertext, key);
+  } catch {
+    throw new Error("backup decryption failed (wrong key or tampered ciphertext)");
+  }
   if (sha256FileHex(plaintext) !== manifest.artifact.plaintext_sha256) {
     throw new Error("decrypted plaintext SHA256 does not match manifest");
   }
@@ -144,8 +183,9 @@ export function restoreFromManifestFile(
   manifestPath: string,
   restoreUrl: string,
   keyRaw: string,
+  env: Record<string, string | undefined> = process.env,
 ): { tmpDump: string; manifest: AbraxasBackupManifest } {
-  const { manifest, plaintext } = loadAndDecryptBackup(manifestPath, keyRaw);
+  const { manifest, plaintext } = loadAndDecryptBackup(manifestPath, keyRaw, env);
   const tmpDump = `/tmp/abraxas-restore-${Date.now()}.dump`;
   writeFileSync(tmpDump, plaintext);
   runPgRestore(restoreUrl, tmpDump);

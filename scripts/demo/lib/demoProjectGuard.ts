@@ -235,14 +235,14 @@ export function validateReadOnlyDemoConfig(
 /** Redact secret-like env values from strings before logging. */
 export function redactSecrets(text: string, env: Record<string, string | undefined> = process.env): string {
   let redacted = text;
-  for (const key of SECRET_ENV_KEYS) {
+  for (const key of Array.from(SECRET_ENV_KEYS)) {
     const value = env[key];
     if (value && value.length > 0) {
       redacted = redacted.split(value).join(`<redacted:${key}>`);
     }
   }
 
-  for (const ref of collectProductionDeniedRefs(env)) {
+  for (const ref of Array.from(collectProductionDeniedRefs(env))) {
     if (ref.length > 8) {
       redacted = redacted.split(ref).join(maskProjectRef(ref));
     }

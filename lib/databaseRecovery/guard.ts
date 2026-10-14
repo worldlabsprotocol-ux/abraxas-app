@@ -66,7 +66,7 @@ export function assertDisposableRestoreTarget(
 
   const username = decodeURIComponent(parsed.username);
   const password = decodeURIComponent(parsed.password);
-  for (const ref of denied) {
+  for (const ref of Array.from(denied)) {
     if (
       username.includes(ref)
       || password.includes(ref)

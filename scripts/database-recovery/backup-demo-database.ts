@@ -8,6 +8,7 @@ import { appendBackupAuditLog } from "@/lib/databaseRecovery/auditLog";
 import { parseBackupEncryptionKey } from "@/lib/databaseRecovery/encryption";
 import { assertDemoBackupScope } from "@/lib/databaseRecovery/guard";
 import {
+  assertBackupSourceReady,
   collectBackupSnapshot,
   runPgDump,
   writeEncryptedBackupArtifact,
@@ -43,6 +44,7 @@ async function main(): Promise<void> {
 
   const client = await createDemoPgClient({ databaseUrl, env });
   try {
+    await assertBackupSourceReady(client);
     const snapshot = await collectBackupSnapshot(client);
 
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -53,7 +55,8 @@ async function main(): Promise<void> {
         ? buildSessionPoolerConnectionString(databaseUrl)
         : databaseUrl;
 
-    runPgDump(conn, dumpPath);
+    const serializableDeferrable = env.ABRAXAS_BACKUP_SERIALIZABLE_DEFERRABLE?.trim() === "1";
+    runPgDump(conn, dumpPath, { serializableDeferrable });
     const plain = readFileSync(dumpPath);
     rmSync(dumpPath, { force: true });
 

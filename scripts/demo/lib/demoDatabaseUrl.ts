@@ -76,7 +76,7 @@ function assertPortAndDatabase(parsed: URL): void {
 }
 
 function assertNoPoolerTlsQueryParams(parsed: URL): void {
-  for (const key of parsed.searchParams.keys()) {
+  for (const key of Array.from(parsed.searchParams.keys())) {
     if (FORBIDDEN_POOLER_TLS_QUERY_PARAMS.has(key.toLowerCase())) {
       throw new DemoDatabaseUrlError(
         "DEMO_SUPABASE_DATABASE_URL session pooler connections must not include TLS query parameters — verified TLS is configured by the runner",
@@ -86,7 +86,7 @@ function assertNoPoolerTlsQueryParams(parsed: URL): void {
 }
 
 function assertDirectTlsQueryParams(parsed: URL): void {
-  for (const [key, value] of parsed.searchParams.entries()) {
+  for (const [key, value] of Array.from(parsed.searchParams.entries())) {
     const normalizedKey = key.toLowerCase();
     const normalizedValue = value.toLowerCase();
 
@@ -227,7 +227,7 @@ function parseSessionPoolerDatabaseUrl(parsed: URL): ParsedDemoDatabaseUrl {
 /** Strip TLS query parameters so pg connection-string parsing cannot override explicit ssl options. */
 export function buildSessionPoolerConnectionString(databaseUrl: string): string {
   const parsed = parsePostgresUrl(databaseUrl);
-  for (const key of [...parsed.searchParams.keys()]) {
+  for (const key of Array.from(parsed.searchParams.keys())) {
     if (FORBIDDEN_POOLER_TLS_QUERY_PARAMS.has(key.toLowerCase())) {
       parsed.searchParams.delete(key);
     }
