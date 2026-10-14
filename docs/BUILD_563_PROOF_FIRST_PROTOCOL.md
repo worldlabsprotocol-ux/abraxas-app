@@ -42,6 +42,12 @@ See `lib/protocol/proofFirst/evidenceCustodyBoundary.ts`. **No automated deletio
 
 Entry point: `verifyHolderPresentationAtRelyingParty` in `lib/protocol/proofFirst/proofFirstRelyingParty.ts`.
 
+### Presentation wrapper security (Build #563 final)
+
+- **`validatePresentationReceiptStrictBinding`** — unsigned wrapper fields (`policy_id`, `policy_version`, `audience_partner_id`, `disclosed_claim_refs`, media type) must match the **signed** receipt and RP expectations; any mismatch → **DENY** (`deny_presentation_binding`), never GRANTED from wrapper metadata alone.
+- Authorization-relevant partner/policy/claims are taken from the **issuer-signed receipt** after binding passes.
+- **`auditSignedReceiptCorrelationSurface`** — documents remaining correlators on signed artifacts (`subject_pseudonym_id`, `receipt_id`, optional `wallet_binding_ref`, `consent_receipt_id`). This is **not** a zero-knowledge or unlinkability guarantee; partners should minimize what they log and share.
+
 **Offline-capable checks:** payload hash, Ed25519 signature, verification key registry, policy/partner binding, audience, artifact schema, expiry window, chain conformance vectors.
 
 **Live authority required:** current revocation status (explicit `revocationSource` — otherwise **BLOCKED**), optional chain observation RPC.

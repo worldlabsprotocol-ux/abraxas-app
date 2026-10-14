@@ -18,3 +18,9 @@ export {
   type ProofFirstRelyingPartyConfig,
   type ProofFirstVerificationOutcome,
 } from "./proofFirstRelyingParty";
+export {
+  validatePresentationReceiptStrictBinding,
+  auditSignedReceiptCorrelationSurface,
+  type PresentationBindingDenyCode,
+  type SignedReceiptCorrelationAudit,
+} from "./presentationReceiptBinding";
