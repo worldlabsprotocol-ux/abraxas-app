@@ -76,6 +76,47 @@ describe("Build #565 portable trust security", () => {
     expect(listHolderPortableCredentials).toHaveBeenCalledWith({ subjectId: VICTIM_HOLDER });
   });
 
+  it("rejects export when attacker supplies victim ?sui= (public wallet does not grant export)", async () => {
+    const victimRecord = build546SampleRecord(undefined, { id: "dr_victim_known" });
+    vi.mocked(getHolderReceiptIfOwned).mockImplementation(async ({ subjectId, receiptId }) => {
+      if (subjectId === VICTIM_HOLDER && receiptId === "dr_victim_known") return victimRecord;
+      return null;
+    });
+    requireBrowserSessionMock.mockResolvedValue(sessionFor(ATTACKER_HOLDER));
+    const res = await exportPOST(
+      new NextRequest(`http://localhost/api/passport/portable-trust/export?sui=${VICTIM_SUI}`, {
+        method: "POST",
+        headers: { origin: "http://localhost", "content-type": "application/json" },
+        body: JSON.stringify({ receipt_id: "dr_victim_known" }),
+      }),
+    );
+    expect(res.status).toBe(403);
+    expect(getHolderReceiptIfOwned).not.toHaveBeenCalled();
+  });
+
+  it("export returns 404 for victim receipt_id when session is attacker (ownership server-side)", async () => {
+    const victimRecord = build546SampleRecord(undefined, { id: "dr_victim_known" });
+    vi.mocked(getHolderReceiptIfOwned).mockImplementation(async ({ subjectId, receiptId }) => {
+      if (subjectId === VICTIM_HOLDER && receiptId === "dr_victim_known") return victimRecord;
+      return null;
+    });
+    requireBrowserSessionMock.mockResolvedValue(sessionFor(ATTACKER_HOLDER));
+    const res = await exportPOST(
+      new NextRequest("http://localhost/api/passport/portable-trust/export", {
+        method: "POST",
+        headers: { origin: "http://localhost", "content-type": "application/json" },
+        body: JSON.stringify({ receipt_id: "dr_victim_known" }),
+      }),
+    );
+    expect(res.status).toBe(404);
+    expect(getHolderReceiptIfOwned).toHaveBeenCalledWith({
+      subjectId: ATTACKER_HOLDER,
+      receiptId: "dr_victim_known",
+    });
+    const body = (await res.json()) as Record<string, unknown>;
+    expect(body).not.toHaveProperty("bundle");
+  });
+
   it("export requires same-origin and verified ownership", async () => {
     requireBrowserSessionMock.mockResolvedValue(sessionFor(ATTACKER_HOLDER));
     const noOrigin = await exportPOST(
