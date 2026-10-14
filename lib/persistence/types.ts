@@ -11,9 +11,16 @@ export type PersistenceBackend = "supabase_postgrest" | "postgres_direct";
 export type PersistenceConfig =
   | {
       ok: true;
-      backend: PersistenceBackend;
+      backend: "supabase_postgrest";
       /** HTTP PostgREST base (Supabase or self-hosted). */
       postgrestUrl: string;
       serviceRoleKey: string;
+    }
+  | {
+      ok: true;
+      backend: "postgres_direct";
+      postgrestUrl: "";
+      serviceRoleKey: "";
+      databaseUrl: string;
     }
   | { ok: false; code: "persistence_not_configured" };

@@ -1,6 +1,6 @@
 // FILE: lib/persistence/env.ts
 
-import type { PersistenceConfig } from "./types";
+import type { PersistenceBackend, PersistenceConfig } from "./types";
 
 /**
  * Resolve Abraxas persistence connectivity.
@@ -8,9 +8,46 @@ import type { PersistenceConfig } from "./types";
  * Independent Postgres may set ABRAXAS_DATABASE_URL for migration/tests;
  * runtime PostgREST remains the default adapter until direct pg pool is wired.
  */
+export function resolvePersistenceBackend(
+  env: Record<string, string | undefined> = process.env,
+): PersistenceBackend {
+  const explicit = env.ABRAXAS_PERSISTENCE_BACKEND?.trim().toLowerCase();
+  if (explicit === "postgres_direct" || explicit === "pg") return "postgres_direct";
+  if (
+    explicit === "postgrest"
+    || explicit === "supabase_postgrest"
+    || explicit === "supabase"
+  ) {
+    return "supabase_postgrest";
+  }
+  return "supabase_postgrest";
+}
+
+export function persistenceUsesDirectPostgres(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  return resolvePersistenceBackend(env) === "postgres_direct";
+}
+
 export function resolvePersistenceConfig(
   env: Record<string, string | undefined> = process.env,
 ): PersistenceConfig {
+  const backend = resolvePersistenceBackend(env);
+
+  if (backend === "postgres_direct") {
+    const databaseUrl = resolveIndependentPostgresUrl(env);
+    if (!databaseUrl) {
+      return { ok: false, code: "persistence_not_configured" };
+    }
+    return {
+      ok: true,
+      backend: "postgres_direct",
+      postgrestUrl: "",
+      serviceRoleKey: "",
+      databaseUrl,
+    };
+  }
+
   const postgrestUrl = env.ABRAXAS_POSTGREST_URL?.trim()
     ?? env.NEXT_PUBLIC_SUPABASE_URL?.trim()
     ?? "";

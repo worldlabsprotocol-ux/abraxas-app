@@ -2,6 +2,7 @@
 
 import { createHash, randomBytes } from "crypto";
 import { requirePersistenceAdmin } from "@/lib/persistence/admin";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
 import { consumePassportEvmAuthChallenge } from "@/lib/persistence/identityPersistence";
 
 export function hashSessionContext(value: string): string {
@@ -29,6 +30,18 @@ export async function insertEvmChallenge(row: {
   message: string;
   expires_at: string;
 }): Promise<void> {
+  if (persistenceUsesDirectPostgres()) {
+    try {
+      const { insertEvmChallengeDirect } = await import("@/lib/persistence/authChallengeDirect");
+      await insertEvmChallengeDirect(row);
+    } catch (error) {
+      if (error instanceof Error && /does not exist|42P01/.test(error.message)) {
+        throw new PassportEvmAuthStoreUnavailableError();
+      }
+      throw error;
+    }
+    return;
+  }
   const sb = requirePersistenceAdmin();
   const { error } = await sb.from("passport_evm_auth_challenges").insert({
     ...row,

@@ -25,6 +25,18 @@ describe("Abraxas persistence portability contract", () => {
     expect(cfg.ok).toBe(true);
   });
 
+  it("accepts postgres_direct backend with ABRAXAS_DATABASE_URL", () => {
+    const cfg = resolvePersistenceConfig({
+      ABRAXAS_PERSISTENCE_BACKEND: "postgres_direct",
+      ABRAXAS_DATABASE_URL: "postgresql://localhost:5432/abraxas_test",
+    });
+    expect(cfg.ok).toBe(true);
+    if (cfg.ok) {
+      expect(cfg.backend).toBe("postgres_direct");
+      expect(cfg.databaseUrl).toContain("postgresql://");
+    }
+  });
+
   it("resolves independent Postgres URL for migration parity tests", () => {
     const url = resolveIndependentPostgresUrl({
       ABRAXAS_DATABASE_URL: "postgresql://localhost:5432/abraxas_test",
