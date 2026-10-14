@@ -30,11 +30,15 @@ npm run sovereign-runtime:audit-dependencies-561
 ```bash
 export SOVEREIGN_PORTABLE_POSTGRES_PASSWORD='…'
 export SOVEREIGN_PORTABLE_RESTORE_POSTGRES_PASSWORD='…'
-docker compose -f docker-compose.sovereign.portable.yml up -d
-cp .env.sovereign.portable.example .env.local
-# founder: authorize migrations, set keys, then:
-npm run build && npm start
+bash scripts/sovereign-runtime/init-portable-data-dirs.sh
+cp .env.sovereign.portable.example .env.sovereign.portable   # set keys; never commit
+docker compose -f docker-compose.sovereign.portable.yml up -d --build
+npm run sovereign-runtime:verify-portable-561
 ```
+
+Includes **Next.js API** service (`abraxas-portable-api`) with evidence/backup bind mounts. Native Linux: `deploy/systemd/abraxas-sovereign-portable.service.example` after `ABRAXAS_STANDALONE_BUILD=1 npm run build`.
+
+**Configured vs operational:** `provider_independent_core_configured` (env) vs `provider_independent_core_operational` (live Postgres + evidence R/W + signing probes).
 
 Trust semantics are unchanged across founder hardware, Linux VPS, or institution-operated Postgres — only env URLs and volumes differ.
 
@@ -56,6 +60,6 @@ The `sovereignBackupRestore.test.ts` case exports encrypted backup from environm
 
 ## Security invariants
 
-- Category **D** must not be active on sovereign core (`provider_independent_core` false otherwise).
+- Category **D** must not be active on sovereign core (`provider_independent_core_configured` false otherwise; env alone is not operational).
 - Synthetic DB tests remain disposable-only (#559 isolation).
 - No proprietary cryptography — standard Ed25519 + AES-GCM via audited libraries.

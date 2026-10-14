@@ -1,14 +1,11 @@
-# Build #561 — portable Abraxas sovereign runtime (commodity Linux / VPS / on-prem).
-# Protocol trust: PostgreSQL + Abraxas keys + encrypted evidence volumes — not Vercel/Supabase.
+# Build #561 — portable Abraxas sovereign runtime (Postgres + Next.js API + persistent volumes).
 #
-# Usage:
 #   export SOVEREIGN_PORTABLE_POSTGRES_PASSWORD='…'
 #   export SOVEREIGN_PORTABLE_RESTORE_POSTGRES_PASSWORD='…'
-#   docker compose -f docker-compose.sovereign.portable.yml up -d
+#   bash scripts/sovereign-runtime/init-portable-data-dirs.sh
+#   docker compose -f docker-compose.sovereign.portable.yml up -d --build
 #
-# Mount host paths for evidence/backups (independently recoverable):
-#   export SOVEREIGN_EVIDENCE_HOST_PATH=./data/evidence
-#   export SOVEREIGN_BACKUP_HOST_PATH=./data/backups
+# Provide secrets via `.env.sovereign.portable` (gitignored); see `.env.sovereign.portable.example`.
 
 services:
   abraxas-portable-postgres:
@@ -45,19 +42,27 @@ services:
       timeout: 5s
       retries: 10
 
-  abraxas-portable-evidence:
-    image: alpine:3.20
-    command: ["sh", "-c", "chmod 700 /data && sleep infinity"]
-    volumes:
-      - ${SOVEREIGN_EVIDENCE_HOST_PATH:-./data/evidence}:/data
+  abraxas-portable-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.sovereign.portable
     restart: unless-stopped
-
-  abraxas-portable-backups:
-    image: alpine:3.20
-    command: ["sh", "-c", "chmod 700 /data && sleep infinity"]
+    depends_on:
+      abraxas-portable-postgres:
+        condition: service_healthy
+    env_file:
+      - .env.sovereign.portable
+    environment:
+      ABRAXAS_PERSISTENCE_BACKEND: postgres_direct
+      ABRAXAS_DATABASE_URL: postgresql://abraxas:${SOVEREIGN_PORTABLE_POSTGRES_PASSWORD}@abraxas-portable-postgres:5432/abraxas_sovereign
+      ABRAXAS_EVIDENCE_STORAGE_ROOT: /var/abraxas/evidence
+      ABRAXAS_BACKUP_OUTPUT_DIR: /var/abraxas/backups
+      ABRAXAS_SOVEREIGN_MIGRATION_AUTHORIZED: ${ABRAXAS_SOVEREIGN_MIGRATION_AUTHORIZED:-false}
+    ports:
+      - "127.0.0.1:${SOVEREIGN_PORTABLE_HTTP_PORT:-3000}:3000"
     volumes:
-      - ${SOVEREIGN_BACKUP_HOST_PATH:-./data/backups}:/data
-    restart: unless-stopped
+      - ${SOVEREIGN_EVIDENCE_HOST_PATH:-./data/evidence}:/var/abraxas/evidence
+      - ${SOVEREIGN_BACKUP_HOST_PATH:-./data/backups}:/var/abraxas/backups
 
 volumes:
   abraxas_portable_pg_data:

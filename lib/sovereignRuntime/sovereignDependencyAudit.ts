@@ -12,6 +12,7 @@ import {
   resolveIndependentPostgresUrl,
   resolvePersistenceBackend,
 } from "@/lib/persistence/env";
+import type { SovereignOperationalReadiness } from "./sovereignOperationalReadiness";
 
 export type DependencyClass = "A" | "B" | "C" | "D";
 
@@ -28,9 +29,17 @@ export type SovereignDependencyAudit = {
   build: 561;
   persistence_backend: string;
   sovereign_env_class: string | null;
+  /** Env + static validation only — not observed connectivity. */
+  provider_independent_core_configured: boolean;
+  /** @deprecated use provider_independent_core_configured */
   provider_independent_core: boolean;
   category_d_in_core: string[];
   items: SovereignDependencyItem[];
+};
+
+export type SovereignDependencyAuditObserved = SovereignDependencyAudit & {
+  provider_independent_core_operational: boolean;
+  operational_readiness: SovereignOperationalReadiness;
 };
 
 function hasSupabaseEnv(env: Record<string, string | undefined>): boolean {
@@ -201,7 +210,7 @@ export function buildSovereignDependencyAudit(
     category_d_in_core.push("veriff_on_sovereign_core");
   }
 
-  const provider_independent_core =
+  const provider_independent_core_configured =
     direct
     && category_d_in_core.length === 0
     && !identityErr
@@ -214,9 +223,26 @@ export function buildSovereignDependencyAudit(
     build: 561,
     persistence_backend: backend,
     sovereign_env_class: envClass,
-    provider_independent_core,
+    provider_independent_core_configured,
+    provider_independent_core: provider_independent_core_configured,
     category_d_in_core,
     items,
+  };
+}
+
+export async function buildSovereignDependencyAuditObserved(
+  env: Record<string, string | undefined> = process.env,
+): Promise<SovereignDependencyAuditObserved> {
+  const configured = buildSovereignDependencyAudit(env);
+  const { observeSovereignOperationalReadiness } = await import("./sovereignOperationalReadiness");
+  const operational_readiness = await observeSovereignOperationalReadiness(env);
+  const provider_independent_core_operational =
+    configured.provider_independent_core_configured && operational_readiness.operational;
+
+  return {
+    ...configured,
+    provider_independent_core_operational,
+    operational_readiness,
   };
 }
 
@@ -233,5 +259,8 @@ export function assertSovereignCoreProviderFree(
       blockers.push(`${item.id}_not_ready`);
     }
   }
-  return { ok: audit.provider_independent_core, blockers: Array.from(new Set(blockers)) };
+  return {
+    ok: audit.provider_independent_core_configured,
+    blockers: Array.from(new Set(blockers)),
+  };
 }
