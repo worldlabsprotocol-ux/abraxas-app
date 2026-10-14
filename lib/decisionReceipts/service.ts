@@ -274,6 +274,46 @@ export async function getPartnerReceipt(receiptId: string, partnerId: string) {
   };
 }
 
+export async function listApprovedReceiptsForSubject(
+  subjectId: string,
+  limit = 25,
+): Promise<DecisionReceiptRecord[]> {
+  const sb = requireSupabaseAdmin();
+  const { data: decisions } = await sb
+    .from("verification_decisions")
+    .select("id")
+    .eq("subject_id", subjectId)
+    .order("decided_at", { ascending: false })
+    .limit(limit * 2);
+  const decisionIds = (decisions ?? []).map((row) => row.id as string);
+  if (decisionIds.length === 0) return [];
+
+  const { data: receipts } = await sb
+    .from("decision_receipts")
+    .select("*")
+    .in("verification_decision_id", decisionIds)
+    .eq("decision_result", "approved")
+    .order("evaluated_at", { ascending: false })
+    .limit(limit);
+  return (receipts ?? []).map((row) => mapRow(row as Record<string, unknown>));
+}
+
+export async function getReceiptOwnedBySubject(input: {
+  subjectId: string;
+  receiptId: string;
+}): Promise<DecisionReceiptRecord | null> {
+  const record = await getReceiptById(input.receiptId);
+  if (!record) return null;
+  const sb = requireSupabaseAdmin();
+  const { data: decision } = await sb
+    .from("verification_decisions")
+    .select("subject_id")
+    .eq("id", record.verification_decision_id)
+    .maybeSingle();
+  if (!decision || (decision.subject_id as string) !== input.subjectId) return null;
+  return record;
+}
+
 export async function listReceiptsForAdmin(limit = 50): Promise<DecisionReceiptRecord[]> {
   const sb = requireSupabaseAdmin();
   const { data } = await sb
