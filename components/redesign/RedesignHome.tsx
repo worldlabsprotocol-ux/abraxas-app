@@ -7,6 +7,8 @@ import { InstitutionalHomeClose } from "@/components/institutional/Institutional
 import type { ReactNode } from "react";
 import { HomeFlagshipProtocolVisuals } from "@/components/home/HomeFlagshipProtocolVisuals";
 import { HomeApplicationsReceiveSection } from "@/components/home/HomeApplicationsReceiveSection";
+import { HomeVerificationLifecycle } from "@/components/home/premium/HomeVerificationLifecycle";
+import { HomeVerifiableTrustChapter } from "@/components/home/HomeVerifiableTrustChapter";
 import { LazyHomeSection } from "@/components/home/LazyHomeSection";
 import { PremiumHomeChapter } from "@/components/home/premium/PremiumHomeChapter";
 import { ABX_SPACING, abxAccentCssVars } from "@/lib/design/abraxasDesignSystem";
@@ -16,19 +18,9 @@ import { CINEMATIC_BUILD_CHAPTER_EYEBROW } from "@/lib/home/cinematicHomeCopy";
 import { RedesignNav } from "./RedesignNav";
 import { RedesignFooter } from "./RedesignFooter";
 
-const HomeVerificationLifecycle = dynamic(
-  () => import("@/components/home/premium/HomeVerificationLifecycle").then((m) => m.HomeVerificationLifecycle),
-  { ssr: false, loading: () => <div className="abx-lazy-home-section" style={{ minHeight: "16rem" }} aria-hidden /> },
-);
-
 const HomeGoodTroubleActionSection = dynamic(
   () => import("@/components/home/HomeGoodTroubleActionSection").then((m) => m.HomeGoodTroubleActionSection),
   { ssr: false, loading: () => <div className="abx-lazy-home-section" style={{ minHeight: "8rem" }} aria-hidden /> },
-);
-
-const HomeVerifiableTrustChapter = dynamic(
-  () => import("@/components/home/HomeVerifiableTrustChapter").then((m) => m.HomeVerifiableTrustChapter),
-  { ssr: false, loading: () => <div className="abx-lazy-home-section" style={{ minHeight: "20rem" }} aria-hidden /> },
 );
 
 const CapabilityMatrix = dynamic(
@@ -55,13 +47,13 @@ function HomeContent({ hero }: { hero: ReactNode }) {
         </PremiumHomeChapter>
 
         <PremiumHomeChapter index="02" label="Authorization" id="chapter-authorization" bleed>
-          <LazyHomeSection minHeight="12rem">
+          <LazyHomeSection minHeight="12rem" eager>
             <HomeApplicationsReceiveSection />
           </LazyHomeSection>
         </PremiumHomeChapter>
 
         <PremiumHomeChapter index="03" label="Lifecycle" id="chapter-lifecycle">
-          <LazyHomeSection minHeight="18rem">
+          <LazyHomeSection minHeight="18rem" eager>
             <HomeVerificationLifecycle />
           </LazyHomeSection>
         </PremiumHomeChapter>
