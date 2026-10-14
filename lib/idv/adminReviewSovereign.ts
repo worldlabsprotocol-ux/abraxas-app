@@ -4,14 +4,10 @@ import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
 import { normalizeHolderSubjectKey } from "@/lib/idv/holderIdentityRef";
 import { getBiometricAssessment } from "./biometric/persistAssessment";
-import { issueManualIdentityCredential } from "./issueIdentityCredential";
+import { prepareSovereignManualCredentialIssuance } from "./issueIdentityCredential";
 import { transitionIdentityVerification } from "./identityVerificationDb";
+import { deriveProviderDecisionFromDob } from "@/lib/assurance/ageEvidence";
 import {
-  createAgeEvidenceRecord,
-  deriveProviderDecisionFromDob,
-} from "@/lib/assurance/ageEvidence";
-import {
-  finalizeAgeEvidenceLinkage,
   precheckAgeEvidenceLinkage,
   resolveReviewPolicySandboxFlag,
 } from "@/lib/assurance/ageEvidenceLinkage";
@@ -20,12 +16,13 @@ import { evaluateAgeEligibilityFromDocumentDate } from "@/lib/idv/ageEligibility
 import type { AdminReviewAction, AdminReviewRequest, AdminReviewResult } from "./adminReviewService";
 import { resolveReviewerDecision } from "./adminReviewService";
 import { getPassportDocumentByIdDirect, getEvidenceCustodyRecordDirect } from "@/lib/persistence/idvDirectStore";
-import { revokeSubjectClaimsDirect } from "@/lib/persistence/claimsDirectStore";
 import {
   commitSovereignReviewOutcomeDirect,
   SovereignReviewConflictError,
   SovereignReviewStateError,
 } from "@/lib/persistence/sovereignAdminReviewCommit";
+import { commitSovereignAdminApprovalAtomicDirect } from "@/lib/persistence/sovereignAdminApprovalAtomic";
+import type { CreateAgeEvidenceInput } from "@/lib/assurance/ageEvidence";
 
 function documentStatusForAction(action: AdminReviewAction): string {
   if (action === "approve") return "accepted";
@@ -60,14 +57,6 @@ async function assertRequiredEvidenceForApproval(
     }
   }
   return { ok: true };
-}
-
-async function rollbackIssuedCredential(subjectKey: string, jti: string, reason: string): Promise<void> {
-  try {
-    await revokeSubjectClaimsDirect(subjectKey, reason, jti);
-  } catch {
-    // fail-closed: issuance audit remains; operator must reconcile
-  }
 }
 
 export async function executeAdminReviewActionSovereign(
@@ -163,9 +152,9 @@ export async function executeAdminReviewActionSovereign(
       return { ok: false, error: linkagePrecheck.error, status: linkagePrecheck.status };
     }
 
-    let ageEvidenceId: string | undefined;
+    let ageEvidenceInput: CreateAgeEvidenceInput | null = null;
     if (minimumAge != null && minimumAge >= 21 && request.documentDateOfBirth) {
-      const evidence = await createAgeEvidenceRecord({
+      ageEvidenceInput = {
         subjectSuiAddress: subjectKey,
         passportDocumentId: String(doc.id),
         captureSessionId: sessionId,
@@ -180,19 +169,22 @@ export async function executeAdminReviewActionSovereign(
         reviewerReason: request.note ?? null,
         reviewedAt: now,
         credentialJti: null,
-      });
-      const finalized = finalizeAgeEvidenceLinkage({
-        sandboxOnly,
-        minimumAgeGate: minimumAge,
-        evidence,
-      });
-      if (!finalized.ok) {
-        return { ok: false, error: finalized.error, status: finalized.status };
+      };
+      const { checkAgeEvidenceStorageAvailability } = await import("@/lib/assurance/ageEvidence");
+      const ageStorage = await checkAgeEvidenceStorageAvailability();
+      if (!ageStorage.available && !sandboxOnly) {
+        return {
+          ok: false,
+          error: "Age evidence audit storage is required for production approval but is unavailable",
+          status: 503,
+        };
       }
-      ageEvidenceId = finalized.evidenceId;
+      if (!ageStorage.available) {
+        ageEvidenceInput = null;
+      }
     }
 
-    const issued = await issueManualIdentityCredential(subjectKey, {
+    const prepared = await prepareSovereignManualCredentialIssuance(subjectKey, {
       reviewId: String(doc.id),
       jurisdiction: request.jurisdiction ?? "US",
       documentType: request.documentType ?? "passport",
@@ -206,13 +198,14 @@ export async function executeAdminReviewActionSovereign(
       documentDateOfBirth: request.documentDateOfBirth,
       minimumAgeGate: request.minimumAgeGate,
     });
-
-    if (!issued.ok || !issued.jti) {
-      return { ok: false, error: issued.message ?? "Issuance failed", status: 500 };
+    if (!prepared.ok) {
+      return { ok: false, error: prepared.message, status: 500 };
     }
 
-    try {
-      await commitSovereignReviewOutcomeDirect({
+    const atomic = await commitSovereignAdminApprovalAtomicDirect({
+      issuance: prepared.prepared.commitInput,
+      ageEvidence: ageEvidenceInput,
+      review: {
         captureSessionId: sessionId,
         passportDocumentId: String(doc.id),
         holderSubjectId: subjectKey,
@@ -231,28 +224,12 @@ export async function executeAdminReviewActionSovereign(
           reasonCode: request.note?.trim() ? "reviewer_approved" : "approved",
         },
         suiAddress: legacySui,
-      });
-    } catch (error) {
-      await rollbackIssuedCredential(subjectKey, issued.jti, "admin_review_commit_failed");
-      if (error instanceof SovereignReviewStateError && error.message === "review_already_approved") {
-        return {
-          ok: true,
-          action: request.action,
-          documentId: String(doc.id),
-          captureSessionId: sessionId,
-          jti: issued.jti,
-          alreadyIssued: true,
-          reviewerDecision,
-          engineDecision,
-          suiAddress: legacySui ?? subjectKey,
-          ageEvidenceId,
-        };
-      }
-      if (error instanceof SovereignReviewConflictError || error instanceof SovereignReviewStateError) {
-        await rollbackIssuedCredential(subjectKey, issued.jti, "admin_review_conflict");
-        return { ok: false, error: error.message, status: 409 };
-      }
-      return { ok: false, error: "Review persistence failed", status: 500 };
+      },
+      testFailAfterStep: request.testFailAfterStep,
+    });
+
+    if (!atomic.ok) {
+      return { ok: false, error: atomic.code, status: atomic.status };
     }
 
     return {
@@ -263,9 +240,9 @@ export async function executeAdminReviewActionSovereign(
       reviewerDecision,
       engineDecision,
       suiAddress: legacySui ?? subjectKey,
-      jti: issued.jti,
-      alreadyIssued: issued.alreadyIssued ?? false,
-      ageEvidenceId,
+      jti: atomic.jti,
+      alreadyIssued: atomic.alreadyIssued ?? false,
+      ageEvidenceId: atomic.ageEvidenceId,
     };
   }
 

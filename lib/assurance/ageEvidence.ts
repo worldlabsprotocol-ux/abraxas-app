@@ -2,6 +2,7 @@
 // Provider-neutral age-evidence records — minimum data, no raw ID documents.
 
 import { createHash } from "crypto";
+import type { PoolClient } from "pg";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
@@ -128,6 +129,46 @@ export type AgeEvidenceRecordResult =
   | { ok: true; id: string }
   | { ok: false; error: string; storage_unavailable?: boolean };
 
+export async function insertAgeEvidenceRecordOnClient(
+  client: PoolClient,
+  input: CreateAgeEvidenceInput,
+): Promise<string> {
+  const subject = normalizeAgeEvidenceSubject(input.subjectSuiAddress);
+  const now = new Date().toISOString();
+  const providerReferenceHash = input.providerReference
+    ? hashProviderReference(input.providerReference)
+    : null;
+  const inserted = await client.query<{ id: string }>(
+    `insert into public.age_evidence_records (
+      subject_sui_address, passport_document_id, capture_session_id, evidence_provider, evidence_type,
+      assurance_level, age_threshold, provider_decision, review_status, provider_reference_hash,
+      reviewer_id, reviewer_reason, reviewed_at, expires_at, credential_jti, created_at, updated_at
+    ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$16)
+    returning id`,
+    [
+      subject,
+      input.passportDocumentId ?? null,
+      input.captureSessionId ?? null,
+      input.evidenceProvider,
+      input.evidenceType,
+      input.assuranceLevel,
+      input.ageThreshold,
+      input.providerDecision,
+      input.reviewStatus,
+      providerReferenceHash,
+      input.reviewerId ?? null,
+      input.reviewerReason ?? null,
+      input.reviewedAt ?? null,
+      input.expiresAt ?? null,
+      input.credentialJti ?? null,
+      now,
+    ],
+  );
+  const id = inserted.rows[0]?.id;
+  if (!id) throw new Error("age_evidence_insert_failed");
+  return id;
+}
+
 export async function createAgeEvidenceRecord(
   input: CreateAgeEvidenceInput,
 ): Promise<AgeEvidenceRecordResult> {
@@ -142,41 +183,11 @@ export async function createAgeEvidenceRecord(
         storage_unavailable: true,
       };
     }
-    const { queryAbraxasPg } = await import("@/lib/persistence/pgPool");
-    const subject = normalizeAgeEvidenceSubject(input.subjectSuiAddress);
-    const now = new Date().toISOString();
-    const providerReferenceHash = input.providerReference
-      ? hashProviderReference(input.providerReference)
-      : null;
     try {
-      const inserted = await queryAbraxasPg<{ id: string }>(
-        `insert into public.age_evidence_records (
-          subject_sui_address, passport_document_id, capture_session_id, evidence_provider, evidence_type,
-          assurance_level, age_threshold, provider_decision, review_status, provider_reference_hash,
-          reviewer_id, reviewer_reason, reviewed_at, expires_at, credential_jti, created_at, updated_at
-        ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$16)
-        returning id`,
-        [
-          subject,
-          input.passportDocumentId ?? null,
-          input.captureSessionId ?? null,
-          input.evidenceProvider,
-          input.evidenceType,
-          input.assuranceLevel,
-          input.ageThreshold,
-          input.providerDecision,
-          input.reviewStatus,
-          providerReferenceHash,
-          input.reviewerId ?? null,
-          input.reviewerReason ?? null,
-          input.reviewedAt ?? null,
-          input.expiresAt ?? null,
-          input.credentialJti ?? null,
-          now,
-        ],
+      const { withAbraxasPgTransaction } = await import("@/lib/persistence/pgPool");
+      const id = await withAbraxasPgTransaction(async (client) =>
+        insertAgeEvidenceRecordOnClient(client, input),
       );
-      const id = inserted.rows[0]?.id;
-      if (!id) return { ok: false, error: "insert failed" };
       return { ok: true, id };
     } catch (error) {
       const message = error instanceof Error ? error.message : "";

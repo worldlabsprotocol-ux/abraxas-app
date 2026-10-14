@@ -15,13 +15,14 @@ import {
   revokeSubjectClaimsDirect,
 } from "@/lib/persistence/claimsDirectStore";
 import { executeAdminReviewActionSovereign } from "@/lib/idv/adminReviewSovereign";
+import { countPersistedApprovalArtifactsDirect } from "@/lib/persistence/sovereignAdminApprovalAtomic";
 import {
   insertIdentityReviewSessionDirect,
   insertPassportDocumentDirect,
+  recordIdvConsentDirect,
   registerEvidenceCustodyDirect,
 } from "@/lib/persistence/idvDirectStore";
 import { storeEncryptedEvidence } from "@/lib/persistence/evidenceBlobStore";
-import { issueManualIdentityCredential } from "@/lib/idv/issueIdentityCredential";
 import { GET as documentUrlGet } from "@/app/api/admin/identity/document-url/route";
 import { DEMO_IDV_ACTIVATION_MANIFEST } from "@/lib/databaseRecovery/idvActivationManifest";
 import { resetAbraxasPgPoolForTests } from "@/lib/persistence/pgPool";
@@ -118,6 +119,11 @@ describe("Build #555 security correction — adversarial", () => {
       status: "under_review",
       document_type: "id_front",
       capture_session_id: captureSessionId,
+    });
+    await recordIdvConsentDirect({
+      holderSubjectId: holder,
+      consentVersion: "1.0",
+      consentScope: "identity_processing",
     });
     await insertIdentityReviewSessionDirect({
       capture_session_id: captureSessionId,
@@ -223,6 +229,71 @@ describe("Build #555 security correction — adversarial", () => {
     );
     const res = await documentUrlGet(req);
     expect(res.status).toBeGreaterThanOrEqual(401);
+  });
+
+  it("atomic approval rolls back all trust artifacts on injected issuance failure", async () => {
+    const holder = await holderSubject();
+    const { docId, captureSessionId } = await seedReviewDoc(holder);
+    const failed = await executeAdminReviewActionSovereign({
+      documentId: docId,
+      action: "approve",
+      reviewerId: "reviewer@test.local",
+      testFailAfterStep: "issuance",
+    });
+    expect(failed.ok).toBe(false);
+    const pendingClaims = await getActiveClaimsDirect(holder);
+    expect(pendingClaims.length).toBe(0);
+    const artifacts = await countPersistedApprovalArtifactsDirect(
+      holder,
+      "urn:uuid:00000000-0000-0000-0000-000000000000",
+      captureSessionId,
+    );
+    expect(artifacts.documentAccepted).toBe(false);
+    expect(artifacts.sessionApproved).toBe(false);
+    expect(artifacts.verificationApproved).toBe(false);
+  });
+
+  it("atomic approval rolls back on injected review failure after issuance writes", async () => {
+    const holder = await holderSubject();
+    const { docId, captureSessionId } = await seedReviewDoc(holder);
+    const failed = await executeAdminReviewActionSovereign({
+      documentId: docId,
+      action: "approve",
+      reviewerId: "reviewer@test.local",
+      testFailAfterStep: "review",
+    });
+    expect(failed.ok).toBe(false);
+    expect(await getActiveClaimsDirect(holder)).toHaveLength(0);
+    const artifacts = await countPersistedApprovalArtifactsDirect(
+      holder,
+      "urn:uuid:00000000-0000-0000-0000-000000000000",
+      captureSessionId,
+    );
+    expect(artifacts.credentialRow).toBe(0);
+    expect(artifacts.documentAccepted).toBe(false);
+    expect(artifacts.sessionApproved).toBe(false);
+  });
+
+  it("successful atomic approval persists aligned credential and review state", async () => {
+    const holder = await holderSubject();
+    const { docId, captureSessionId } = await seedReviewDoc(holder);
+    const approved = await executeAdminReviewActionSovereign({
+      documentId: docId,
+      action: "approve",
+      reviewerId: "reviewer@test.local",
+    });
+    expect(approved.ok).toBe(true);
+    if (!approved.ok || !approved.jti) return;
+    const artifacts = await countPersistedApprovalArtifactsDirect(
+      holder,
+      approved.jti,
+      captureSessionId,
+    );
+    expect(artifacts.activeClaims).toBeGreaterThan(0);
+    expect(artifacts.credentialRow).toBe(1);
+    expect(artifacts.documentAccepted).toBe(true);
+    expect(artifacts.sessionApproved).toBe(true);
+    expect(artifacts.verificationApproved).toBe(true);
   });
 
   it("document-url HTTP rejects path-only sovereign access", async () => {

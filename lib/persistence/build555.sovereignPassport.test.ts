@@ -10,7 +10,9 @@ import { resolveSubjectForVerifiedWalletDirect } from "@/lib/persistence/holderS
 import { getActiveClaimsDirect, revokeSubjectClaimsDirect } from "@/lib/persistence/claimsDirectStore";
 import { executeAdminReviewActionSovereign } from "@/lib/idv/adminReviewSovereign";
 import {
+  insertIdentityReviewSessionDirect,
   insertPassportDocumentDirect,
+  recordIdvConsentDirect,
   registerEvidenceCustodyDirect,
 } from "@/lib/persistence/idvDirectStore";
 import { storeEncryptedEvidence } from "@/lib/persistence/evidenceBlobStore";
@@ -103,6 +105,31 @@ describe("Build #555 sovereign passport completion", () => {
         contentSha256: stored.contentSha256,
       });
     }
+    await recordIdvConsentDirect({
+      holderSubjectId: holder,
+      consentVersion: "1.0",
+      consentScope: "identity_processing",
+    });
+    await insertIdentityReviewSessionDirect({
+      capture_session_id: captureSessionId,
+      sui_address: null,
+      holder_subject_id: holder,
+      partner_id: null,
+      policy_id: null,
+      verification_request_id: null,
+      review_status: "pending",
+      engine_decision: "review",
+      eligibility_result: null,
+      raw_evidence_purged_at: null,
+      raw_evidence_retained_until: null,
+      evidence_content_hash: null,
+      purge_attempt_count: 0,
+      last_purge_error_code: null,
+      reviewed_at: null,
+      reviewer_id: null,
+      reviewer_category: null,
+      reason_code: null,
+    });
     const doc = await insertPassportDocumentDirect({
       user_email: "h@test.local",
       holder_subject_id: holder,

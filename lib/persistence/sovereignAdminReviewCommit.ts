@@ -82,7 +82,7 @@ export async function assertReviewSessionPendingDirect(
   return { previousDocStatus: statuses[0] ?? "under_review", sessionReviewStatus: sessionStatus };
 }
 
-export async function commitSovereignReviewOutcomeDirect(input: {
+export type SovereignReviewOutcomeInput = {
   captureSessionId: string;
   passportDocumentId: string;
   holderSubjectId: string;
@@ -101,9 +101,12 @@ export async function commitSovereignReviewOutcomeDirect(input: {
     reasonCode: string;
   };
   suiAddress: string | null;
-}): Promise<void> {
-  await withSovereignReviewSessionLock(input.captureSessionId, async (client) => {
-    await assertReviewSessionPendingDirect(client, input.captureSessionId, input.action);
+};
+
+export async function applySovereignReviewOutcomeOnClient(
+  client: PoolClient,
+  input: SovereignReviewOutcomeInput,
+): Promise<void> {
     const now = new Date().toISOString();
 
     const docUpdate = await client.query(
@@ -165,5 +168,55 @@ export async function commitSovereignReviewOutcomeDirect(input: {
         input.engineVersion,
       ],
     );
+}
+
+export async function commitSovereignReviewOutcomeDirect(
+  input: SovereignReviewOutcomeInput,
+): Promise<void> {
+  await withSovereignReviewSessionLock(input.captureSessionId, async (client) => {
+    await assertReviewSessionPendingDirect(client, input.captureSessionId, input.action);
+    await applySovereignReviewOutcomeOnClient(client, input);
   });
+}
+
+export async function resolveIdempotentApprovedReviewDirect(
+  client: PoolClient,
+  holderSubjectId: string,
+  captureSessionId: string,
+): Promise<{ jti: string; consistent: true } | { consistent: false; reason: string }> {
+  const session = await client.query<{ review_status: string }>(
+    `select review_status from public.identity_review_sessions
+     where capture_session_id = $1 limit 1`,
+    [captureSessionId],
+  );
+  const reviewStatus = session.rows[0]?.review_status;
+  if (reviewStatus !== "approved") {
+    return { consistent: false, reason: "session_not_approved" };
+  }
+  const docs = await client.query<{ status: string }>(
+    `select status from public.passport_documents
+     where capture_session_id = $1 and stamp_id = 'identity'`,
+    [captureSessionId],
+  );
+  if (!docs.rows.every((r) => r.status === "accepted")) {
+    return { consistent: false, reason: "documents_not_accepted" };
+  }
+  const ver = await client.query<{ credential_jti: string | null; credential_status: string | null }>(
+    `select credential_jti, credential_status from public.identity_verifications
+     where holder_subject_id = $1 or wallet_address = $1 limit 1`,
+    [holderSubjectId],
+  );
+  const jti = ver.rows[0]?.credential_jti;
+  if (!jti || ver.rows[0]?.credential_status !== "active") {
+    return { consistent: false, reason: "credential_not_active" };
+  }
+  const claims = await client.query<{ count: string }>(
+    `select count(*)::text as count from public.credential_claims
+     where subject_id = $1 and credential_jti = $2 and status = 'active'`,
+    [holderSubjectId, jti],
+  );
+  if (Number.parseInt(claims.rows[0]?.count ?? "0", 10) < 1) {
+    return { consistent: false, reason: "claims_missing" };
+  }
+  return { jti, consistent: true };
 }

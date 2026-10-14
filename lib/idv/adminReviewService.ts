@@ -45,6 +45,8 @@ export interface AdminReviewRequest {
   /** Authoritative document DOB (YYYY-MM-DD), internal reviewer input, never exposed. */
   documentDateOfBirth?: string;
   minimumAgeGate?: number;
+  /** Test-only: inject failure inside atomic sovereign approval transaction. */
+  testFailAfterStep?: "custody" | "age_evidence" | "issuance" | "review";
 }
 
 export interface AdminReviewResult {
