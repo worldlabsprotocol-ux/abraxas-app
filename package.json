@@ -71,7 +71,12 @@
     "smoke:launchpad:staging": "tsx scripts/launchpad-staging-smoke/run.ts",
     "walkthrough:progressive-proof:preview": "tsx scripts/progressive-proof/preview-validation.ts",
     "walkthrough:progressive-proof:browse-e2e": "tsx scripts/progressive-proof/preview-browse-e2e.ts",
-    "audit:progressive-proof:preview": "tsx scripts/progressive-proof/preview-audit.ts"
+    "audit:progressive-proof:preview": "tsx scripts/progressive-proof/preview-audit.ts",
+    "database-recovery:audit-demo": "tsx scripts/database-recovery/audit-demo-database-access.ts",
+    "database-recovery:backup-demo": "tsx scripts/database-recovery/backup-demo-database.ts",
+    "database-recovery:restore-verify": "tsx scripts/database-recovery/restore-and-verify-demo-backup.ts",
+    "database-recovery:rehearse-idv": "tsx scripts/database-recovery/rehearse-idv-manifest-on-restore.ts",
+    "test:database-recovery": "vitest run lib/databaseRecovery/"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",

@@ -66,3 +66,6 @@ fix_*.py
 /solana/**/*-keypair.json
 
 reports/*-staging-readiness.json
+
+# Abraxas database recovery artifacts (never commit dumps, keys, or manifests with live data)
+.abraxas-backups/
