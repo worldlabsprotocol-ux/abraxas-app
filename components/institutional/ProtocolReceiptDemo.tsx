@@ -3,10 +3,14 @@
 import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { ReceiptInspector } from "@/components/design/ReceiptInspector";
 import { V2_SIMULATION_LABEL } from "@/lib/home/v2HomeCopy";
+import {
+  deriveReceiptDemoState,
+  RECEIPT_DEMO_ISSUER,
+  RECEIPT_DEMO_POLICY_ID,
+  type ReceiptScenario,
+} from "@/lib/home/receiptVerificationDemoModel";
 
 type DemoStep = "request" | "evaluate" | "receipt" | "verify";
-
-type ReceiptScenario = "valid" | "expired" | "revoked" | "unavailable";
 
 const SCENARIOS: { id: ReceiptScenario; label: string }[] = [
   { id: "valid", label: "Valid" },
@@ -21,9 +25,6 @@ const STEPS: { id: DemoStep; label: string }[] = [
   { id: "receipt", label: "Signed receipt" },
   { id: "verify", label: "Independent verification" },
 ];
-
-const POLICY_ID = "policy_age21_retail_v3";
-const ISSUER = "abraxas-trust-registry";
 
 export function ProtocolReceiptDemo() {
   const [step, setStep] = useState<DemoStep>("receipt");
@@ -48,16 +49,19 @@ export function ProtocolReceiptDemo() {
     window.setTimeout(tick, 520);
   }, []);
 
-  const signatureValid = scenario !== "unavailable";
-  const validityWindowOk = scenario === "valid";
-  const revocationClear = scenario === "valid" || scenario === "expired";
-  const verifierReachable = scenario !== "unavailable";
-  const currentlyAuthorized = scenario === "valid";
-  const outcome = scenario === "valid" ? "PERMIT" : "DENY";
+  const demoState = useMemo(() => deriveReceiptDemoState(scenario), [scenario]);
+  const {
+    signatureValid,
+    validityWindowOk,
+    revocationClear,
+    verifierReachable,
+    currentlyAuthorized,
+    outcome,
+  } = demoState;
 
   const fields = useMemo(
     () => [
-      { label: "Policy identifier", value: POLICY_ID, mono: true },
+      { label: "Policy identifier", value: RECEIPT_DEMO_POLICY_ID, mono: true },
       { label: "Assurance level", value: "L2, document-backed age" },
       { label: "Result", value: outcome },
       {
@@ -69,7 +73,7 @@ export function ProtocolReceiptDemo() {
               ? "2026-11-01T00:00:00Z"
               : "N/A",
       },
-      { label: "Issuer", value: ISSUER, mono: true },
+      { label: "Issuer", value: RECEIPT_DEMO_ISSUER, mono: true },
       { label: "Signature validity", value: signatureValid ? "Valid (Ed25519)" : "Unavailable (simulated outage)" },
       {
         label: "Verification source",
@@ -127,7 +131,7 @@ export function ProtocolReceiptDemo() {
         {step === "request" && (
           <Panel title="Policy-specific request">
             <MonoBlock>{`POST /partner/v1/eligibility/evaluate
-policy_id: ${POLICY_ID}
+policy_id: ${RECEIPT_DEMO_POLICY_ID}
 claims: [age_at_least_21]
 holder_consent: approved`}</MonoBlock>
           </Panel>
