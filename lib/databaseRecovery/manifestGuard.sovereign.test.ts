@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { BACKUP_MANIFEST_VERSION } from "./manifest";
+import { SOVEREIGN_STAGING_DATABASE_ID } from "@/lib/sovereignRuntime/sovereignStagingConstants";
 import { assertManifestBackupIdentity, SOVEREIGN_DISPOSABLE_REF } from "./manifestGuard";
 import type { AbraxasBackupManifest } from "./manifest";
 
@@ -29,6 +30,14 @@ describe("manifestGuard sovereign scope", () => {
   it("accepts sovereign disposable ref when ABRAXAS_BACKUP_SCOPE=sovereign", () => {
     expect(() =>
       assertManifestBackupIdentity(minimalManifest(SOVEREIGN_DISPOSABLE_REF), {
+        ABRAXAS_BACKUP_SCOPE: "sovereign",
+      }),
+    ).not.toThrow();
+  });
+
+  it("accepts sovereign staging ref when ABRAXAS_BACKUP_SCOPE=sovereign", () => {
+    expect(() =>
+      assertManifestBackupIdentity(minimalManifest(SOVEREIGN_STAGING_DATABASE_ID), {
         ABRAXAS_BACKUP_SCOPE: "sovereign",
       }),
     ).not.toThrow();

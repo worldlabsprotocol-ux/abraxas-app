@@ -84,7 +84,11 @@
     "sovereign-runtime:certify-556": "tsx scripts/sovereign-runtime/certify-build-556.ts",
     "sovereign-runtime:activate-557": "tsx scripts/sovereign-runtime/activate-institutional-557.ts",
     "sovereign-runtime:certify-disposable-557": "tsx scripts/sovereign-runtime/certify-disposable-557.ts",
-    "test:sovereign-activation-env": "vitest run lib/sovereignRuntime/institutionalActivationEnv.test.ts lib/sovereignRuntime/sovereignActivationHardening.test.ts"
+    "sovereign-runtime:activate-staging-558": "tsx scripts/sovereign-runtime/activate-staging-558.ts",
+    "sovereign-runtime:backup-staging-558": "tsx scripts/sovereign-runtime/backup-sovereign-staging-558.ts",
+    "sovereign-runtime:restore-drill-staging-558": "tsx scripts/sovereign-runtime/restore-drill-staging-558.ts",
+    "sovereign-runtime:observe-staging-http-558": "tsx scripts/sovereign-runtime/observe-staging-http-558.ts",
+    "test:sovereign-activation-env": "vitest run lib/sovereignRuntime/institutionalActivationEnv.test.ts lib/sovereignRuntime/sovereignActivationHardening.test.ts lib/sovereignRuntime/sovereignHealth.test.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",

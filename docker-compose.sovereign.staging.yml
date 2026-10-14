@@ -1,0 +1,40 @@
+# Build #558 — persistent sovereign staging (local operator stack).
+# Requires explicit secrets; binds Postgres to loopback; separate restore Postgres.
+services:
+  abraxas-staging-postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: abraxas
+      POSTGRES_PASSWORD: ${SOVEREIGN_STAGING_POSTGRES_PASSWORD:?Set SOVEREIGN_STAGING_POSTGRES_PASSWORD}
+      POSTGRES_DB: abraxas_sovereign_staging
+    ports:
+      - "127.0.0.1:${SOVEREIGN_STAGING_POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - abraxas_staging_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U abraxas -d abraxas_sovereign_staging"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  abraxas-staging-postgres-restore:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: abraxas
+      POSTGRES_PASSWORD: ${SOVEREIGN_STAGING_RESTORE_POSTGRES_PASSWORD:?Set SOVEREIGN_STAGING_RESTORE_POSTGRES_PASSWORD}
+      POSTGRES_DB: abraxas_sovereign_staging_restore
+    ports:
+      - "127.0.0.1:${SOVEREIGN_STAGING_RESTORE_POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - abraxas_staging_restore_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U abraxas -d abraxas_sovereign_staging_restore"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  abraxas_staging_pg_data:
+  abraxas_staging_restore_pg_data:
