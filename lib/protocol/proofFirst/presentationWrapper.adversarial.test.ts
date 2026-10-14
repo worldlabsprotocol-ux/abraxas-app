@@ -14,6 +14,7 @@ import {
   type HolderPolicyScopedPresentation,
 } from "./holderPolicyPresentation";
 import { verifyHolderPresentationAtRelyingParty } from "./proofFirstRelyingParty";
+import { activePortableRevocationSnapshotForReceipt } from "./proofFirstTestRevocation";
 
 describe("Build #563 presentation wrapper adversarial (unsigned metadata)", () => {
   let env: Record<string, string>;
@@ -43,7 +44,9 @@ describe("Build #563 presentation wrapper adversarial (unsigned metadata)", () =
       requestId: "req_wrapper_tamper",
       rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
       now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "active" },
+      portableRevocationSnapshot: activePortableRevocationSnapshotForReceipt(
+        presentation.signed_decision_receipt.id,
+      ),
     });
   }
 

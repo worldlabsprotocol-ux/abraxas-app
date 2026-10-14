@@ -134,7 +134,8 @@ export const TRUST_LIFECYCLE_AUDIT: readonly LifecycleStageAudit[] = [
     requires_retained_sensitive_evidence: false,
     partner_can_verify_offline: false,
     actors: ["relying_party", "abraxas_database", "chain_rpc"],
-    notes: "Independent verifier fails closed without authenticated revocationSource; on-chain commitments optional.",
+    notes:
+      "Build #564: signed portable revocation snapshot (Ed25519 + key registry); unsigned hints fail-closed; optional chain distribution.",
   },
   {
     stage: "replay_protection",

@@ -19,6 +19,8 @@ import {
   assertPresentationExcludesSensitiveCustody,
 } from "./holderPolicyPresentation";
 import { verifyHolderPresentationAtRelyingParty } from "./proofFirstRelyingParty";
+import { buildSyntheticPortableRevocationSnapshot } from "@/lib/protocol/portableRevocation";
+import { activePortableRevocationSnapshotForReceipt } from "./proofFirstTestRevocation";
 
 describe("Build #563 proof-first vertical slice (synthetic, isolated)", () => {
   let env: Record<string, string>;
@@ -59,7 +61,9 @@ describe("Build #563 proof-first vertical slice (synthetic, isolated)", () => {
       requestId: "req_563_happy",
       rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
       now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "active" },
+      portableRevocationSnapshot: activePortableRevocationSnapshotForReceipt(
+        presentation.signed_decision_receipt.id,
+      ),
       harness,
     });
     expect(decision.abraxas_infrastructure_required).toBe(false);
@@ -82,7 +86,9 @@ describe("Build #563 proof-first vertical slice (synthetic, isolated)", () => {
       requestId: "req_forged_sig",
       rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
       now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "active" },
+      portableRevocationSnapshot: activePortableRevocationSnapshotForReceipt(
+        presentation.signed_decision_receipt.id,
+      ),
     });
     expect(decision.outcome).not.toBe("granted");
     expect(decision.verifier.failure_codes).toContain("signature_invalid");
@@ -99,7 +105,9 @@ describe("Build #563 proof-first vertical slice (synthetic, isolated)", () => {
       requestId: "req_unknown_key",
       rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
       now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "active" },
+      portableRevocationSnapshot: activePortableRevocationSnapshotForReceipt(
+        presentation.signed_decision_receipt.id,
+      ),
     });
     expect(decision.outcome).toBe("denied");
     expect(decision.verifier.failure_codes.some((c) => c.includes("unknown_key"))).toBe(true);
@@ -126,7 +134,9 @@ describe("Build #563 proof-first vertical slice (synthetic, isolated)", () => {
       requestId: "req_wrong_audience",
       rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
       now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "active" },
+      portableRevocationSnapshot: activePortableRevocationSnapshotForReceipt(
+        presentation.signed_decision_receipt.id,
+      ),
     });
     expect(decision.outcome).not.toBe("granted");
     expect(decision.verifier.failure_codes).toContain("audience_mismatch");
@@ -143,7 +153,9 @@ describe("Build #563 proof-first vertical slice (synthetic, isolated)", () => {
       requestId: "req_wrong_policy",
       rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
       now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "active" },
+      portableRevocationSnapshot: activePortableRevocationSnapshotForReceipt(
+        presentation.signed_decision_receipt.id,
+      ),
     });
     expect(decision.outcome).toBe("denied");
   });
@@ -161,35 +173,54 @@ describe("Build #563 proof-first vertical slice (synthetic, isolated)", () => {
       requestId: "req_expired",
       rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
       now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "active" },
+      portableRevocationSnapshot: activePortableRevocationSnapshotForReceipt(
+        presentation.signed_decision_receipt.id,
+      ),
     });
     expect(decision.outcome).toBe("denied");
   });
 
-  it("revoked credential — reject when revocation feed reports revoked", async () => {
+  it("revoked credential — reject when authenticated snapshot reports revoked", async () => {
     const presentation = issuerToHolderPresentation();
     const decision = await verifyHolderPresentationAtRelyingParty({
       presentation,
       requestId: "req_revoked",
       rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
       now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "revoked" },
+      portableRevocationSnapshot: buildSyntheticPortableRevocationSnapshot({
+        receiptId: presentation.signed_decision_receipt.id,
+        state: "revoked",
+      }),
     });
     expect(decision.outcome).toBe("denied");
     expect(decision.verifier.failure_codes).toContain("receipt_revoked");
   });
 
-  it("stale revocation unavailable — blocked fail-closed", async () => {
+  it("missing authenticated revocation snapshot — blocked fail-closed", async () => {
     const presentation = issuerToHolderPresentation();
     const decision = await verifyHolderPresentationAtRelyingParty({
       presentation,
       requestId: "req_no_revocation",
       rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
       now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: false, reason: "unavailable" },
     });
     expect(decision.outcome).toBe("blocked");
     expect(decision.verifier.verdict).toBe("blocked");
+    expect(decision.portable_revocation_authenticated).toBe(false);
+  });
+
+  it("fabricated revocationSource without snapshot — blocked (unsigned hint rejected)", async () => {
+    const presentation = issuerToHolderPresentation();
+    const decision = await verifyHolderPresentationAtRelyingParty({
+      presentation,
+      requestId: "req_fake_revocation_hint",
+      rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
+      now: BUILD_546_FIXTURE_NOW,
+      revocationSource: { available: true, status: "active" },
+    });
+    expect(decision.outcome).toBe("blocked");
+    expect(decision.unsigned_revocation_hint_rejected).toBe(true);
+    expect(decision.verifier.failure_codes).toContain("revocation_source_unavailable");
   });
 
   it("replayed presentation — RP replay store denies second use", async () => {
@@ -204,7 +235,9 @@ describe("Build #563 proof-first vertical slice (synthetic, isolated)", () => {
       requestId: "req_replay_1",
       rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
       now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "active" },
+      portableRevocationSnapshot: activePortableRevocationSnapshotForReceipt(
+        presentation.signed_decision_receipt.id,
+      ),
       harness,
     });
     expect(first.outcome).toBe("granted");
@@ -213,7 +246,9 @@ describe("Build #563 proof-first vertical slice (synthetic, isolated)", () => {
       requestId: "req_replay_2",
       rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
       now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "active" },
+      portableRevocationSnapshot: activePortableRevocationSnapshotForReceipt(
+        presentation.signed_decision_receipt.id,
+      ),
       harness,
     });
     expect(second.replay_detected).toBe(true);
@@ -239,7 +274,9 @@ describe("Build #563 proof-first vertical slice (synthetic, isolated)", () => {
       requestId: "req_retired_key",
       rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
       now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "active" },
+      portableRevocationSnapshot: activePortableRevocationSnapshotForReceipt(
+        presentation.signed_decision_receipt.id,
+      ),
     });
     expect(decision.outcome).toBe("denied");
   });
@@ -251,7 +288,9 @@ describe("Build #563 proof-first vertical slice (synthetic, isolated)", () => {
       requestId: "req_privacy",
       rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
       now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "active" },
+      portableRevocationSnapshot: activePortableRevocationSnapshotForReceipt(
+        presentation.signed_decision_receipt.id,
+      ),
     });
     const visible = JSON.stringify(decision.partner_visible);
     expect(visible).not.toContain("subject_pseudonym");

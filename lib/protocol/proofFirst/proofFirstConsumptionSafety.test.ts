@@ -12,6 +12,7 @@ import {
 import { ExternalRelyingPartyHarness } from "@/lib/institutionalCertification/build546/externalRelyingParty";
 import { composeHolderPolicyScopedPresentation } from "./holderPolicyPresentation";
 import { verifyHolderPresentationAtRelyingParty } from "./proofFirstRelyingParty";
+import { activePortableRevocationSnapshotForReceipt } from "./proofFirstTestRevocation";
 
 describe("Build #563 proof-first consumption safety", () => {
   let env: Record<string, string>;
@@ -55,7 +56,7 @@ describe("Build #563 proof-first consumption safety", () => {
       requestId: "req_tamper_first",
       rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
       now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "active" },
+      portableRevocationSnapshot: activePortableRevocationSnapshotForReceipt(signed.id),
       harness,
     });
 
@@ -72,7 +73,7 @@ describe("Build #563 proof-first consumption safety", () => {
       requestId: "req_valid_after_tamper",
       rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
       now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "active" },
+      portableRevocationSnapshot: activePortableRevocationSnapshotForReceipt(signed.id),
       harness,
     });
 
@@ -101,7 +102,7 @@ describe("Build #563 proof-first consumption safety", () => {
           requestId: `concurrent_pf_${i}`,
           rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
           now: BUILD_546_FIXTURE_NOW,
-          revocationSource: { available: true, status: "active" },
+          portableRevocationSnapshot: activePortableRevocationSnapshotForReceipt(signed.id),
           harness,
         }),
       ),
