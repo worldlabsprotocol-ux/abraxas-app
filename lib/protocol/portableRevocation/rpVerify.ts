@@ -33,58 +33,12 @@ function bootstrapMatches(
   );
 }
 
-function evaluateCheckpointContinuity(input: {
-  artifact: PortableRevocationSignedArtifact;
-  authorizedIssuerId: string;
-  checkpoint: Awaited<ReturnType<PortableRevocationCheckpointStore["getCheckpoint"]>>;
-  bootstrapTrusts: PortableRevocationBootstrapTrust[];
-}): PortableRevocationVerifyCode[] {
-  const codes: PortableRevocationVerifyCode[] = [];
-  const { artifact, checkpoint, bootstrapTrusts, authorizedIssuerId } = input;
-  const bootstrapped = bootstrapTrusts.some((row) =>
-    bootstrapMatches(artifact, row, authorizedIssuerId),
-  );
-  const seq = artifact.payload.snapshot_sequence;
-
-  if (!checkpoint) {
-    if (!bootstrapped) {
-      codes.push("checkpoint_unavailable");
-    }
-    return codes;
-  }
-
-  if (seq < checkpoint.highest_sequence) {
-    if (bootstrapped) {
-      codes.push("bootstrap_bypass_rejected");
-    } else {
-      codes.push("rollback_against_checkpoint");
-    }
-    return codes;
-  }
-
-  if (seq === checkpoint.highest_sequence) {
-    if (artifact.payload_hash !== checkpoint.last_payload_hash) {
-      codes.push("hash_conflict_at_sequence");
-    }
-    return codes;
-  }
-
-  if (seq === checkpoint.highest_sequence + 1) {
-    if (artifact.payload.previous_snapshot_hash !== checkpoint.last_payload_hash) {
-      codes.push("chain_continuity_break");
-    }
-    return codes;
-  }
-
-  if (!bootstrapped) {
-    codes.push("chain_continuity_break");
-  }
-  return codes;
-}
-
 function mapAdvanceFailure(code: string): PortableRevocationVerifyCode {
   if (code === "rollback_rejected") return "rollback_against_checkpoint";
   if (code === "hash_conflict_at_sequence") return "hash_conflict_at_sequence";
+  if (code === "chain_continuity_break") return "chain_continuity_break";
+  if (code === "bootstrap_bypass_rejected") return "bootstrap_bypass_rejected";
+  if (code === "checkpoint_unavailable") return "checkpoint_unavailable";
   if (code === "corrupt_checkpoint") return "checkpoint_storage_unavailable";
   return "checkpoint_storage_unavailable";
 }
@@ -156,33 +110,20 @@ export async function verifyPortableRevocationAtRelyingParty(
     codes.push("snapshot_signing_key_unauthorized");
   }
 
-  let checkpoint: Awaited<ReturnType<PortableRevocationCheckpointStore["getCheckpoint"]>> = null;
-  try {
-    checkpoint = await input.checkpointStore.getCheckpoint(authority.revocation_issuer_id);
-  } catch {
-    codes.push("checkpoint_storage_unavailable");
-  }
-
-  if (!codes.includes("checkpoint_storage_unavailable")) {
-    codes.push(
-      ...evaluateCheckpointContinuity({
-        artifact: input.artifact,
-        authorizedIssuerId: authority.revocation_issuer_id,
-        checkpoint,
-        bootstrapTrusts,
-      }),
-    );
-  }
-
   let structuralOk = codes.length === 0;
   let checkpoint_advanced = false;
 
   if (structuralOk && input.advanceCheckpointOnSuccess !== false) {
+    const bootstrapped = bootstrapTrusts.some((row) =>
+      bootstrapMatches(input.artifact, row, authority.revocation_issuer_id),
+    );
     const advance = await input.checkpointStore.compareAndAdvanceCheckpoint({
       revocation_issuer_id: authority.revocation_issuer_id,
       highest_sequence: input.artifact.payload.snapshot_sequence,
       last_payload_hash: input.artifact.payload_hash,
       updated_at: now.toISOString(),
+      previous_snapshot_hash: input.artifact.payload.previous_snapshot_hash,
+      bootstrapped,
     });
     if (!advance.ok) {
       codes.push(mapAdvanceFailure(advance.code));

@@ -3,19 +3,17 @@
 
 import { createHash } from "node:crypto";
 import { mkdir, open, readFile, rename, unlink, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import type { PortableRevocationCheckpoint } from "./contract";
 import {
   compareAndAdvanceCheckpointState,
   type CompareAndAdvanceCheckpointResult,
+  type PortableRevocationCheckpointContinuity,
 } from "./checkpointAdvance";
+import { acquireOwnerAwareCheckpointLock } from "./checkpointLock";
 
-export type PortableRevocationCheckpointCandidate = {
-  revocation_issuer_id: string;
-  highest_sequence: number;
-  last_payload_hash: string;
-  updated_at: string;
-};
+export type PortableRevocationCheckpointCandidate = PortableRevocationCheckpoint &
+  PortableRevocationCheckpointContinuity;
 
 export interface PortableRevocationCheckpointStore {
   getCheckpoint(revocationIssuerId: string): Promise<PortableRevocationCheckpoint | null>;
@@ -37,6 +35,44 @@ function parseCheckpoint(raw: string, issuerId: string): PortableRevocationCheck
   } catch {
     return null;
   }
+}
+
+async function durableWriteJson(path: string, payload: unknown): Promise<void> {
+  const dir = dirname(path);
+  const tempPath = `${path}.${process.pid}.${Date.now()}.tmp`;
+  const handle = await open(tempPath, "w");
+  try {
+    await handle.writeFile(`${JSON.stringify(payload)}\n`, "utf8");
+    await handle.sync();
+    await handle.close();
+    await rename(tempPath, path);
+    try {
+      const dirHandle = await open(dir, "r");
+      await dirHandle.sync();
+      await dirHandle.close();
+    } catch {
+      /* directory fsync best-effort */
+    }
+  } catch (error) {
+    try {
+      await unlink(tempPath);
+    } catch {
+      /* ignore */
+    }
+    throw error;
+  }
+}
+
+function runCompareAndAdvance(input: {
+  current: PortableRevocationCheckpoint | null;
+  candidate: PortableRevocationCheckpointCandidate;
+}): CompareAndAdvanceCheckpointResult {
+  const { previous_snapshot_hash, bootstrapped, ...checkpointFields } = input.candidate;
+  return compareAndAdvanceCheckpointState({
+    current: input.current,
+    candidate: checkpointFields,
+    continuity: { previous_snapshot_hash, bootstrapped },
+  });
 }
 
 export class InMemoryPortableRevocationCheckpointStore implements PortableRevocationCheckpointStore {
@@ -75,10 +111,7 @@ export class InMemoryPortableRevocationCheckpointStore implements PortableRevoca
   ): Promise<CompareAndAdvanceCheckpointResult> {
     return this.withIssuerLock(candidate.revocation_issuer_id, async () => {
       const current = await this.getCheckpoint(candidate.revocation_issuer_id);
-      const result = compareAndAdvanceCheckpointState({
-        current,
-        candidate: { ...candidate },
-      });
+      const result = runCompareAndAdvance({ current, candidate });
       if (result.ok && result.advanced) {
         this.byIssuer.set(candidate.revocation_issuer_id, result.checkpoint);
       }
@@ -87,18 +120,24 @@ export class InMemoryPortableRevocationCheckpointStore implements PortableRevoca
   }
 }
 
-const LOCK_STALE_MS = 30_000;
-const LOCK_RETRY_MS = 25;
-const LOCK_MAX_ATTEMPTS = 200;
-
 function issuerFileKey(revocationIssuerId: string): string {
   return createHash("sha256").update(revocationIssuerId.trim(), "utf8").digest("hex");
 }
 
-export class FilesystemPortableRevocationCheckpointStore implements PortableRevocationCheckpointStore {
-  constructor(private readonly rootDir: string) {}
+export type FilesystemCheckpointStoreOptions = {
+  lockMaxAttempts?: number;
+};
 
-  static async open(rootDir: string): Promise<FilesystemPortableRevocationCheckpointStore> {
+export class FilesystemPortableRevocationCheckpointStore implements PortableRevocationCheckpointStore {
+  constructor(
+    private readonly rootDir: string,
+    private readonly options: FilesystemCheckpointStoreOptions = {},
+  ) {}
+
+  static async open(
+    rootDir: string,
+    options: FilesystemCheckpointStoreOptions = {},
+  ): Promise<FilesystemPortableRevocationCheckpointStore> {
     await mkdir(rootDir, { recursive: true });
     const probe = join(rootDir, ".write_probe");
     try {
@@ -107,7 +146,7 @@ export class FilesystemPortableRevocationCheckpointStore implements PortableRevo
     } catch {
       throw new Error("checkpoint_storage_not_durable");
     }
-    return new FilesystemPortableRevocationCheckpointStore(rootDir);
+    return new FilesystemPortableRevocationCheckpointStore(rootDir, options);
   }
 
   private checkpointPath(revocationIssuerId: string): string {
@@ -118,44 +157,13 @@ export class FilesystemPortableRevocationCheckpointStore implements PortableRevo
     return join(this.rootDir, `${issuerFileKey(revocationIssuerId)}.lock`);
   }
 
-  private async acquireLock(revocationIssuerId: string): Promise<() => Promise<void>> {
-    const lockPath = this.lockPath(revocationIssuerId);
-    for (let attempt = 0; attempt < LOCK_MAX_ATTEMPTS; attempt += 1) {
-      try {
-        const handle = await open(lockPath, "wx");
-        await handle.writeFile(
-          JSON.stringify({ pid: process.pid, at: new Date().toISOString() }),
-        );
-        await handle.close();
-        return async () => {
-          try {
-            await unlink(lockPath);
-          } catch {
-            /* lock already released */
-          }
-        };
-      } catch {
-        try {
-          const stat = await readFile(lockPath, "utf8");
-          const parsed = JSON.parse(stat) as { at?: string };
-          const atMs = parsed.at ? Date.parse(parsed.at) : NaN;
-          if (Number.isFinite(atMs) && Date.now() - atMs > LOCK_STALE_MS) {
-            await unlink(lockPath);
-            continue;
-          }
-        } catch {
-          /* ignore stale probe errors */
-        }
-        await new Promise((resolve) => setTimeout(resolve, LOCK_RETRY_MS));
-      }
-    }
-    throw new Error("checkpoint_lock_unavailable");
-  }
-
   async getCheckpoint(revocationIssuerId: string): Promise<PortableRevocationCheckpoint | null> {
     let release: (() => Promise<void>) | null = null;
     try {
-      release = await this.acquireLock(revocationIssuerId);
+      const lock = await acquireOwnerAwareCheckpointLock(this.lockPath(revocationIssuerId), {
+        maxAttempts: this.options.lockMaxAttempts,
+      });
+      release = lock.release;
     } catch {
       throw new Error("checkpoint_storage_unavailable");
     }
@@ -183,7 +191,10 @@ export class FilesystemPortableRevocationCheckpointStore implements PortableRevo
   ): Promise<CompareAndAdvanceCheckpointResult> {
     let release: (() => Promise<void>) | null = null;
     try {
-      release = await this.acquireLock(candidate.revocation_issuer_id);
+      const lock = await acquireOwnerAwareCheckpointLock(this.lockPath(candidate.revocation_issuer_id), {
+        maxAttempts: this.options.lockMaxAttempts,
+      });
+      release = lock.release;
     } catch {
       return { ok: false, code: "storage_unavailable", checkpoint: null };
     }
@@ -203,24 +214,14 @@ export class FilesystemPortableRevocationCheckpointStore implements PortableRevo
         }
       }
 
-      const result = compareAndAdvanceCheckpointState({
-        current,
-        candidate: { ...candidate },
-      });
+      const result = runCompareAndAdvance({ current, candidate });
       if (!result.ok || !result.advanced) {
         return result;
       }
 
-      const tempPath = `${path}.${process.pid}.${Date.now()}.tmp`;
       try {
-        await writeFile(tempPath, `${JSON.stringify(result.checkpoint)}\n`, "utf8");
-        await rename(tempPath, path);
+        await durableWriteJson(path, result.checkpoint);
       } catch {
-        try {
-          await unlink(tempPath);
-        } catch {
-          /* ignore */
-        }
         return { ok: false, code: "storage_unavailable", checkpoint: current };
       }
       return result;

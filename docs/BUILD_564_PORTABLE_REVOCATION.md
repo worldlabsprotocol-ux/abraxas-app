@@ -28,8 +28,8 @@ The verifier **does not** trust `issuer_id` from the holder or an unbound snapsh
 
 | Mechanism | Behavior |
 |-----------|----------|
-| **`PortableRevocationCheckpointStore.compareAndAdvanceCheckpoint`** | Atomic compare-and-advance (no separate read/write authorization path) |
-| **`FilesystemPortableRevocationCheckpointStore`** | Durable RP-local storage with exclusive lock files + atomic rename writes; fail-closed if storage/lock unavailable |
+| **`PortableRevocationCheckpointStore.compareAndAdvanceCheckpoint`** | Single transaction: monotonic rules + previous-hash chain + bootstrap requirements |
+| **`FilesystemPortableRevocationCheckpointStore`** | Durable RP-local storage with owner-aware lock files (pid + token), unreadable ownership → retry/fail-closed (never delete unknown locks), dead-owner recovery only when pid is provably gone; temp write + fsync + rename + directory fsync |
 | **`InMemoryPortableRevocationCheckpointStore`** | Isolated tests only |
 | **Monotonic progression** | Lower sequence or same-sequence hash conflict rejected under CAS |
 | **Bootstrap / gap** | Cannot bypass an existing higher checkpoint (`bootstrap_bypass_rejected`) |

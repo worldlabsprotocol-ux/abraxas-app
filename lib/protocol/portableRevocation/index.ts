@@ -23,7 +23,9 @@ export {
 export {
   compareAndAdvanceCheckpointState,
   type CompareAndAdvanceCheckpointResult,
+  type PortableRevocationCheckpointContinuity,
 } from "./checkpointAdvance";
+export { acquireOwnerAwareCheckpointLock } from "./checkpointLock";
 export {
   PORTABLE_REVOCATION_DEFAULT_CLOCK_SKEW_SECONDS,
   validatePortableRevocationFreshness,
