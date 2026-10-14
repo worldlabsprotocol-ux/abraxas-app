@@ -17,11 +17,23 @@ import { verifyReceiptIndependently } from "@/lib/institutionalCertification/bui
 import {
   composeHolderPolicyScopedPresentation,
   assertPresentationExcludesSensitiveCustody,
+  type HolderPolicyScopedPresentation,
 } from "./holderPolicyPresentation";
 import { verifyHolderPresentationAtRelyingParty } from "./proofFirstRelyingParty";
+import {
+  buildSyntheticPortableRevocationSnapshot,
+  type PortableRevocationSignedArtifact,
+} from "@/lib/protocol/portableRevocation";
+import {
+  activePortableRevocationSnapshotForReceipt,
+  createProofFirstPortableRevocationTestContext,
+  rpWithSnapshotBootstrap,
+  type ProofFirstPortableRevocationTestContext,
+} from "./proofFirstTestRevocation";
 
 describe("Build #563 proof-first vertical slice (synthetic, isolated)", () => {
   let env: Record<string, string>;
+  let portableCtx: ProofFirstPortableRevocationTestContext;
 
   beforeEach(() => {
     for (const key of Object.keys(process.env)) {
@@ -29,6 +41,7 @@ describe("Build #563 proof-first vertical slice (synthetic, isolated)", () => {
     }
     env = build546TrustRegistryEnv();
     Object.assign(process.env, env);
+    portableCtx = createProofFirstPortableRevocationTestContext();
   });
 
   afterEach(() => {
@@ -36,6 +49,29 @@ describe("Build #563 proof-first vertical slice (synthetic, isolated)", () => {
       if (key.startsWith("ABRAXAS_") || key.includes("RECEIPT")) delete process.env[key];
     }
   });
+
+  function baseRp() {
+    return { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env };
+  }
+
+  async function verifyWithPortableSnapshot(input: {
+    presentation: HolderPolicyScopedPresentation;
+    requestId: string;
+    snapshot?: PortableRevocationSignedArtifact;
+    harness?: ExternalRelyingPartyHarness;
+  }) {
+    const snapshot =
+      input.snapshot
+      ?? activePortableRevocationSnapshotForReceipt(input.presentation.signed_decision_receipt.id);
+    return verifyHolderPresentationAtRelyingParty({
+      presentation: input.presentation,
+      requestId: input.requestId,
+      now: BUILD_546_FIXTURE_NOW,
+      portableRevocationSnapshot: snapshot,
+      rp: rpWithSnapshotBootstrap(baseRp(), portableCtx, snapshot),
+      harness: input.harness,
+    });
+  }
 
   function issuerToHolderPresentation() {
     const signed = build546SampleRecord();
@@ -54,12 +90,9 @@ describe("Build #563 proof-first vertical slice (synthetic, isolated)", () => {
       policyId: BUILD_546_POLICY_ID,
       env,
     });
-    const decision = await verifyHolderPresentationAtRelyingParty({
+    const decision = await verifyWithPortableSnapshot({
       presentation,
       requestId: "req_563_happy",
-      rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
-      now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "active" },
       harness,
     });
     expect(decision.abraxas_infrastructure_required).toBe(false);
@@ -77,12 +110,9 @@ describe("Build #563 proof-first vertical slice (synthetic, isolated)", () => {
       signedRecord: bad,
       audiencePartnerId: BUILD_546_PARTNER_ID,
     });
-    const decision = await verifyHolderPresentationAtRelyingParty({
+    const decision = await verifyWithPortableSnapshot({
       presentation,
       requestId: "req_forged_sig",
-      rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
-      now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "active" },
     });
     expect(decision.outcome).not.toBe("granted");
     expect(decision.verifier.failure_codes).toContain("signature_invalid");
@@ -94,15 +124,12 @@ describe("Build #563 proof-first vertical slice (synthetic, isolated)", () => {
       signedRecord: record,
       audiencePartnerId: BUILD_546_PARTNER_ID,
     });
-    const decision = await verifyHolderPresentationAtRelyingParty({
+    const decision = await verifyWithPortableSnapshot({
       presentation,
       requestId: "req_unknown_key",
-      rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
-      now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "active" },
     });
-    expect(decision.outcome).toBe("denied");
-    expect(decision.verifier.failure_codes.some((c) => c.includes("unknown_key"))).toBe(true);
+    expect(decision.outcome).toBe("blocked");
+    expect(decision.portable_revocation_codes).toContain("issuer_authority_mismatch");
   });
 
   it("credential substitution — extra claim ref rejected at compose guard", () => {
@@ -121,12 +148,9 @@ describe("Build #563 proof-first vertical slice (synthetic, isolated)", () => {
       signedRecord: record,
       audiencePartnerId: "other-partner",
     });
-    const decision = await verifyHolderPresentationAtRelyingParty({
+    const decision = await verifyWithPortableSnapshot({
       presentation,
       requestId: "req_wrong_audience",
-      rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
-      now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "active" },
     });
     expect(decision.outcome).not.toBe("granted");
     expect(decision.verifier.failure_codes).toContain("audience_mismatch");
@@ -138,12 +162,9 @@ describe("Build #563 proof-first vertical slice (synthetic, isolated)", () => {
       signedRecord: record,
       audiencePartnerId: BUILD_546_PARTNER_ID,
     });
-    const decision = await verifyHolderPresentationAtRelyingParty({
+    const decision = await verifyWithPortableSnapshot({
       presentation,
       requestId: "req_wrong_policy",
-      rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
-      now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "active" },
     });
     expect(decision.outcome).toBe("denied");
   });
@@ -156,40 +177,54 @@ describe("Build #563 proof-first vertical slice (synthetic, isolated)", () => {
       signedRecord: record,
       audiencePartnerId: BUILD_546_PARTNER_ID,
     });
-    const decision = await verifyHolderPresentationAtRelyingParty({
+    const decision = await verifyWithPortableSnapshot({
       presentation,
       requestId: "req_expired",
-      rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
-      now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "active" },
     });
     expect(decision.outcome).toBe("denied");
   });
 
-  it("revoked credential — reject when revocation feed reports revoked", async () => {
+  it("revoked credential — reject when authenticated snapshot reports revoked", async () => {
     const presentation = issuerToHolderPresentation();
-    const decision = await verifyHolderPresentationAtRelyingParty({
+    const snapshot = buildSyntheticPortableRevocationSnapshot({
+      receiptId: presentation.signed_decision_receipt.id,
+      state: "revoked",
+    });
+    const decision = await verifyWithPortableSnapshot({
       presentation,
       requestId: "req_revoked",
-      rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
-      now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "revoked" },
+      snapshot,
     });
     expect(decision.outcome).toBe("denied");
+    expect(decision.portable_revocation_authenticated).toBe(true);
     expect(decision.verifier.failure_codes).toContain("receipt_revoked");
   });
 
-  it("stale revocation unavailable — blocked fail-closed", async () => {
+  it("missing authenticated revocation snapshot — blocked fail-closed", async () => {
     const presentation = issuerToHolderPresentation();
     const decision = await verifyHolderPresentationAtRelyingParty({
       presentation,
       requestId: "req_no_revocation",
-      rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
+      rp: baseRp(),
       now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: false, reason: "unavailable" },
     });
     expect(decision.outcome).toBe("blocked");
     expect(decision.verifier.verdict).toBe("blocked");
+    expect(decision.portable_revocation_authenticated).toBe(false);
+  });
+
+  it("fabricated revocationSource without snapshot — blocked (unsigned hint rejected)", async () => {
+    const presentation = issuerToHolderPresentation();
+    const decision = await verifyHolderPresentationAtRelyingParty({
+      presentation,
+      requestId: "req_fake_revocation_hint",
+      rp: baseRp(),
+      now: BUILD_546_FIXTURE_NOW,
+      revocationSource: { available: true, status: "active" },
+    });
+    expect(decision.outcome).toBe("blocked");
+    expect(decision.unsigned_revocation_hint_rejected).toBe(true);
+    expect(decision.verifier.failure_codes).toContain("revocation_source_unavailable");
   });
 
   it("replayed presentation — RP replay store denies second use", async () => {
@@ -199,21 +234,25 @@ describe("Build #563 proof-first vertical slice (synthetic, isolated)", () => {
       policyId: BUILD_546_POLICY_ID,
       env,
     });
+    const snapshot = activePortableRevocationSnapshotForReceipt(
+      presentation.signed_decision_receipt.id,
+    );
+    const rp = rpWithSnapshotBootstrap(baseRp(), portableCtx, snapshot);
     const first = await verifyHolderPresentationAtRelyingParty({
       presentation,
       requestId: "req_replay_1",
-      rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
+      rp,
       now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "active" },
+      portableRevocationSnapshot: snapshot,
       harness,
     });
     expect(first.outcome).toBe("granted");
     const second = await verifyHolderPresentationAtRelyingParty({
       presentation,
       requestId: "req_replay_2",
-      rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
+      rp,
       now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "active" },
+      portableRevocationSnapshot: snapshot,
       harness,
     });
     expect(second.replay_detected).toBe(true);
@@ -234,24 +273,18 @@ describe("Build #563 proof-first vertical slice (synthetic, isolated)", () => {
       revocationSource: { available: true, status: "active" },
     });
     expect(offline.verdict).toBe("reject");
-    const decision = await verifyHolderPresentationAtRelyingParty({
+    const decision = await verifyWithPortableSnapshot({
       presentation,
       requestId: "req_retired_key",
-      rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
-      now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "active" },
     });
     expect(decision.outcome).toBe("denied");
   });
 
   it("partner-visible surface excludes subject pseudonym correlation by default", async () => {
     const presentation = issuerToHolderPresentation();
-    const decision = await verifyHolderPresentationAtRelyingParty({
+    const decision = await verifyWithPortableSnapshot({
       presentation,
       requestId: "req_privacy",
-      rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
-      now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "active" },
     });
     const visible = JSON.stringify(decision.partner_visible);
     expect(visible).not.toContain("subject_pseudonym");

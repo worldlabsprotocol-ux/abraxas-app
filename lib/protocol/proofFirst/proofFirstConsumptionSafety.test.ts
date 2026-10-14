@@ -12,9 +12,15 @@ import {
 import { ExternalRelyingPartyHarness } from "@/lib/institutionalCertification/build546/externalRelyingParty";
 import { composeHolderPolicyScopedPresentation } from "./holderPolicyPresentation";
 import { verifyHolderPresentationAtRelyingParty } from "./proofFirstRelyingParty";
+import {
+  activePortableRevocationSnapshotForReceipt,
+  createProofFirstPortableRevocationTestContext,
+  rpWithSnapshotBootstrap,
+} from "./proofFirstTestRevocation";
 
 describe("Build #563 proof-first consumption safety", () => {
   let env: Record<string, string>;
+  let portableCtx: ReturnType<typeof createProofFirstPortableRevocationTestContext>;
 
   beforeEach(() => {
     for (const key of Object.keys(process.env)) {
@@ -22,6 +28,7 @@ describe("Build #563 proof-first consumption safety", () => {
     }
     env = build546TrustRegistryEnv();
     Object.assign(process.env, env);
+    portableCtx = createProofFirstPortableRevocationTestContext();
   });
 
   afterEach(() => {
@@ -29,6 +36,10 @@ describe("Build #563 proof-first consumption safety", () => {
       if (key.startsWith("ABRAXAS_") || key.includes("RECEIPT")) delete process.env[key];
     }
   });
+
+  function baseRp() {
+    return { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env };
+  }
 
   it("tampered wrapper DENY leaves zero consumption; valid wrapper GRANTED after", async () => {
     const signed = build546SampleRecord();
@@ -50,12 +61,13 @@ describe("Build #563 proof-first consumption safety", () => {
       receiptId: signed.id,
     };
 
+    const tamperSnapshot = activePortableRevocationSnapshotForReceipt(signed.id);
     const denied = await verifyHolderPresentationAtRelyingParty({
       presentation: tampered,
       requestId: "req_tamper_first",
-      rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
+      rp: rpWithSnapshotBootstrap(baseRp(), portableCtx, tamperSnapshot),
       now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "active" },
+      portableRevocationSnapshot: tamperSnapshot,
       harness,
     });
 
@@ -67,12 +79,13 @@ describe("Build #563 proof-first consumption safety", () => {
     expect(await harness.getConsumptionStore().hasConsumed(scope)).toBe(false);
     expect(denied.verifier.phases.some((p) => p.id === "signature_authenticity")).toBe(true);
 
+    const validSnapshot = activePortableRevocationSnapshotForReceipt(signed.id);
     const granted = await verifyHolderPresentationAtRelyingParty({
       presentation: valid,
       requestId: "req_valid_after_tamper",
-      rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
+      rp: rpWithSnapshotBootstrap(baseRp(), portableCtx, validSnapshot),
       now: BUILD_546_FIXTURE_NOW,
-      revocationSource: { available: true, status: "active" },
+      portableRevocationSnapshot: validSnapshot,
       harness,
     });
 
@@ -93,15 +106,17 @@ describe("Build #563 proof-first consumption safety", () => {
       policyId: BUILD_546_POLICY_ID,
       env,
     });
+    const snapshot = activePortableRevocationSnapshotForReceipt(signed.id);
+    const rp = rpWithSnapshotBootstrap(baseRp(), portableCtx, snapshot);
     const attempts = 16;
     const results = await Promise.all(
       Array.from({ length: attempts }, (_, i) =>
         verifyHolderPresentationAtRelyingParty({
           presentation,
           requestId: `concurrent_pf_${i}`,
-          rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
+          rp,
           now: BUILD_546_FIXTURE_NOW,
-          revocationSource: { available: true, status: "active" },
+          portableRevocationSnapshot: snapshot,
           harness,
         }),
       ),

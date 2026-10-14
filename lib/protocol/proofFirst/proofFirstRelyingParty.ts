@@ -17,6 +17,13 @@ import {
   type HolderPolicyScopedPresentation,
 } from "./holderPolicyPresentation";
 import { validatePresentationReceiptStrictBinding } from "./presentationReceiptBinding";
+import type {
+  PortableRevocationBootstrapTrust,
+  PortableRevocationCheckpointStore,
+  PortableRevocationIssuerTrustPolicy,
+  PortableRevocationSignedArtifact,
+} from "@/lib/protocol/portableRevocation";
+import { resolveStrictPortableRevocation } from "./portableRevocationStrict";
 
 function partnerFlowViewFromSignedRecord(
   record: DecisionReceiptRecord,
@@ -49,6 +56,14 @@ export type ProofFirstRelyingPartyConfig = {
   policyId: string;
   allowSandbox?: boolean;
   env?: Record<string, string | undefined>;
+  /** Build #564 final — local issuer bind, checkpoint, and bootstrap trust. */
+  portableRevocation?: {
+    issuerTrust: PortableRevocationIssuerTrustPolicy;
+    checkpointStore: PortableRevocationCheckpointStore;
+    bootstrapTrusts?: PortableRevocationBootstrapTrust[];
+    clockSkewSeconds?: number;
+    advanceCheckpointOnSuccess?: boolean;
+  };
 };
 
 export type ProofFirstVerificationOutcome = ExternalRpDecisionAudit & {
@@ -61,6 +76,11 @@ export type ProofFirstVerificationOutcome = ExternalRpDecisionAudit & {
   presentation_binding_deny_codes?: string[];
   /** True when outcome was decided without mutating RP consumption state. */
   consumption_skipped_preflight_reject?: boolean;
+  /** Build #564 — true when portable snapshot signature + freshness checks passed. */
+  portable_revocation_authenticated?: boolean;
+  portable_revocation_codes?: string[];
+  /** True when caller tried to pass unsigned revocationSource without snapshot. */
+  unsigned_revocation_hint_rejected?: boolean;
 };
 
 function preflightRejectOutcome(input: {
@@ -72,6 +92,11 @@ function preflightRejectOutcome(input: {
   denyCodes: string[];
   partnerResult: string;
   bindingOk: boolean;
+  portableMeta?: {
+    portable_revocation_authenticated: boolean;
+    portable_revocation_codes?: string[];
+    unsigned_revocation_hint_rejected: boolean;
+  };
 }): ProofFirstVerificationOutcome {
   const publicReceipt = partnerFlowViewFromSignedRecord(
     input.signed,
@@ -118,10 +143,21 @@ function preflightRejectOutcome(input: {
     retained_documents_required: false,
     offline_crypto_checks: verifier.checks_possible_offline,
     live_authority_checks: verifier.checks_requiring_live_authority,
+    portable_revocation_authenticated: input.portableMeta?.portable_revocation_authenticated ?? false,
+    portable_revocation_codes: input.portableMeta?.portable_revocation_codes,
+    unsigned_revocation_hint_rejected: input.portableMeta?.unsigned_revocation_hint_rejected ?? false,
   };
 }
 
-function finalizeOutcome(audit: ExternalRpDecisionAudit, bindingOk: boolean): ProofFirstVerificationOutcome {
+function finalizeOutcome(
+  audit: ExternalRpDecisionAudit,
+  bindingOk: boolean,
+  portableMeta: {
+    portable_revocation_authenticated: boolean;
+    portable_revocation_codes?: string[];
+    unsigned_revocation_hint_rejected: boolean;
+  },
+): ProofFirstVerificationOutcome {
   return {
     ...audit,
     presentation_binding_ok: bindingOk,
@@ -131,6 +167,9 @@ function finalizeOutcome(audit: ExternalRpDecisionAudit, bindingOk: boolean): Pr
     retained_documents_required: false,
     offline_crypto_checks: audit.verifier.checks_possible_offline,
     live_authority_checks: audit.verifier.checks_requiring_live_authority,
+    portable_revocation_authenticated: portableMeta.portable_revocation_authenticated,
+    portable_revocation_codes: portableMeta.portable_revocation_codes,
+    unsigned_revocation_hint_rejected: portableMeta.unsigned_revocation_hint_rejected,
   };
 }
 
@@ -143,11 +182,31 @@ export async function verifyHolderPresentationAtRelyingParty(input: {
   requestId: string;
   rp: ProofFirstRelyingPartyConfig;
   now?: Date;
+  /**
+   * Authenticated portable revocation snapshot (Build #564).
+   * Required for authorization on the strict proof-first path.
+   */
+  portableRevocationSnapshot?: PortableRevocationSignedArtifact;
+  /** Ignored for authorization unless paired with portableRevocationSnapshot verification. */
   revocationSource?: RevocationSourceState;
   harness?: ExternalRelyingPartyHarness;
 }): Promise<ProofFirstVerificationOutcome> {
   const signed = input.presentation.signed_decision_receipt;
   const now = input.now ?? new Date();
+
+  const portableRevocation = await resolveStrictPortableRevocation({
+    signed,
+    now,
+    rp: input.rp,
+    portableRevocationSnapshot: input.portableRevocationSnapshot,
+    revocationSource: input.revocationSource,
+  });
+  const revocationSource = portableRevocation.revocationSource;
+  const portableMeta = {
+    portable_revocation_authenticated: portableRevocation.portable_revocation_authenticated,
+    portable_revocation_codes: portableRevocation.portable_revocation_verification?.codes,
+    unsigned_revocation_hint_rejected: portableRevocation.unsigned_revocation_hint_rejected,
+  };
 
   const binding = validatePresentationReceiptStrictBinding({
     presentation: input.presentation,
@@ -159,10 +218,11 @@ export async function verifyHolderPresentationAtRelyingParty(input: {
       signed,
       now,
       rp: input.rp,
-      revocationSource: input.revocationSource ?? { available: false, reason: "unavailable" },
+      revocationSource,
       denyCodes: binding.deny_codes,
       partnerResult: "deny_presentation_binding",
       bindingOk: false,
+      portableMeta,
     });
   }
 
@@ -173,10 +233,11 @@ export async function verifyHolderPresentationAtRelyingParty(input: {
       signed,
       now,
       rp: input.rp,
-      revocationSource: input.revocationSource ?? { available: false, reason: "unavailable" },
+      revocationSource,
       denyCodes: [custody.reason],
       partnerResult: custody.reason,
       bindingOk: true,
+      portableMeta,
     });
   }
 
@@ -197,8 +258,8 @@ export async function verifyHolderPresentationAtRelyingParty(input: {
       input.rp.env,
     ),
     now,
-    revocationSource: input.revocationSource,
+    revocationSource,
   });
 
-  return finalizeOutcome(audit, true);
+  return finalizeOutcome(audit, true, portableMeta);
 }
