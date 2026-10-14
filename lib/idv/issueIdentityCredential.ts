@@ -9,7 +9,7 @@ import {
   identityVerificationOrFilterForRuntime,
   normalizeHolderSubjectKey,
 } from "./holderIdentityRef";
-import { chainNeutralIdentitySchemaReady } from "@/lib/persistence/chainNeutralSchemaReady";
+import { chainNeutralIdentitySchemaReadyServer } from "@/lib/persistence/chainNeutralSchemaReady.server";
 import {
   abraxasCaptureApprovedClaims,
   manualApprovedClaims,
@@ -19,6 +19,11 @@ import {
 import { upsertClaims } from "@/lib/credentials/claimsService";
 import { ensureZkLoginWalletBinding } from "@/lib/credentials/ensureZkLoginWalletBinding";
 import { buildProductEligibilityClaimsForIssuance } from "@/lib/idv/buildProductEligibilityClaims";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import {
+  getIdentityVerificationBySubjectDirect,
+  upsertAbraxasCredentialDirect,
+} from "@/lib/persistence/idvDirectStore";
 import { idvSupabase, transitionIdentityVerification } from "./identityVerificationDb";
 import { getSuiNetwork } from "@/lib/sui/network";
 import type { VeriffDecisionInput } from "./types";
@@ -60,42 +65,48 @@ export async function issueIdentityCredential(
   const provider = options?.provider ?? "veriff";
   const reviewRef = options?.reviewId ?? decision.id;
   const sb = idvSupabase();
+  const useDirectIdv = persistenceUsesDirectPostgres();
   const subjectKey = normalizeHolderSubjectKey(holder);
   const isChainNeutral = isChainNeutralHolderSubjectId(subjectKey);
   const legacySui = isChainNeutral ? null : normalizeSuiAddress(subjectKey);
   const now = new Date();
 
-  if (isChainNeutral && !await chainNeutralIdentitySchemaReady()) {
+  if (isChainNeutral && !await chainNeutralIdentitySchemaReadyServer()) {
     return { ok: false, message: "chain_neutral_schema_unavailable" };
   }
 
-  if (sb) {
-    const { data: existing } = await sb
+  const existingRow = sb
+    ? (await sb
       .from("identity_verifications")
       .select("credential_jti, status, identity_verification_status, credential_status")
       .or(await identityVerificationOrFilterForRuntime(subjectKey))
-      .maybeSingle();
+      .maybeSingle()).data
+    : useDirectIdv
+      ? await getIdentityVerificationBySubjectDirect(subjectKey)
+      : null;
 
-    if (
-      existing?.credential_jti &&
-      (existing.status === "approved" ||
-        existing.identity_verification_status === "approved" ||
-        existing.credential_status === "active")
-    ) {
+  if (
+    existingRow?.credential_jti &&
+    (existingRow.status === "approved" ||
+      existingRow.identity_verification_status === "approved" ||
+      existingRow.credential_status === "active")
+  ) {
+    let credentialJwt: string | undefined;
+    if (sb) {
       const { data: cred } = await sb
         .from("abraxas_credentials")
         .select("credential_jwt, jti")
-        .eq("jti", existing.credential_jti)
+        .eq("jti", existingRow.credential_jti as string)
         .maybeSingle();
-
-      return {
-        ok: true,
-        jti: existing.credential_jti,
-        jwt: cred?.credential_jwt,
-        alreadyIssued: true,
-        message: "Credential already active",
-      };
+      credentialJwt = cred?.credential_jwt;
     }
+    return {
+      ok: true,
+      jti: existingRow.credential_jti as string,
+      jwt: credentialJwt,
+      alreadyIssued: true,
+      message: "Credential already active",
+    };
   }
 
   const signingKeyJson = process.env.ABRAXAS_SIGNING_KEY;
@@ -153,9 +164,9 @@ export async function issueIdentityCredential(
     .setExpirationTime(expiresAt)
     .sign(signingKey);
 
-  if (sb) {
+  if (sb || useDirectIdv) {
     let userEmail: string | null = null;
-    if (legacySui) {
+    if (legacySui && sb) {
       const { data: zkRow } = await sb
         .from("sui_zklogin_identities")
         .select("email")
@@ -191,19 +202,35 @@ export async function issueIdentityCredential(
       "issueIdentityCredential",
     );
 
-    await sb.from("abraxas_credentials").upsert({
-      jti,
-      holder_wallet: subjectKey,
-      sui_address: legacySui,
-      issuer,
-      jurisdiction: juris,
-      document_type: docType,
-      verification_level: "standard",
-      world_id_verified: false,
-      issuance_date: now.toISOString(),
-      expiration_date: expiresAt.toISOString(),
-      credential_jwt: jwt,
-    }, { onConflict: "jti" });
+    if (useDirectIdv) {
+      await upsertAbraxasCredentialDirect({
+        jti,
+        holder_wallet: subjectKey,
+        sui_address: legacySui,
+        issuer,
+        jurisdiction: juris,
+        document_type: docType,
+        verification_level: "standard",
+        world_id_verified: false,
+        issuance_date: now.toISOString(),
+        expiration_date: expiresAt.toISOString(),
+        credential_jwt: jwt,
+      });
+    } else if (sb) {
+      await sb.from("abraxas_credentials").upsert({
+        jti,
+        holder_wallet: subjectKey,
+        sui_address: legacySui,
+        issuer,
+        jurisdiction: juris,
+        document_type: docType,
+        verification_level: "standard",
+        world_id_verified: false,
+        issuance_date: now.toISOString(),
+        expiration_date: expiresAt.toISOString(),
+        credential_jwt: jwt,
+      }, { onConflict: "jti" });
+    }
 
     if (legacySui) {
       await ensureZkLoginWalletBinding(legacySui);
@@ -251,25 +278,27 @@ export async function issueIdentityCredential(
             expiresAt,
           });
 
-    await upsertClaims([
-      ...identityClaims,
-      ...buildProductEligibilityClaimsForIssuance({
-        subjectId: subjectKey,
-        jti,
-        documentDateOfBirth,
-        authoritativeAgeBand: options?.authoritativeAgeBand,
-        minimumAgeGate,
-        expiresAt,
-        evidenceReference: eligibilityEvidenceRef,
-      }),
-      ...(legacySui
-        ? [walletBindingClaim({
+    if (!useDirectIdv) {
+      await upsertClaims([
+        ...identityClaims,
+        ...buildProductEligibilityClaimsForIssuance({
           subjectId: subjectKey,
-          walletAddress: legacySui,
-          bindingMethod: "zklogin",
-        })]
-        : []),
-    ]);
+          jti,
+          documentDateOfBirth,
+          authoritativeAgeBand: options?.authoritativeAgeBand,
+          minimumAgeGate,
+          expiresAt,
+          evidenceReference: eligibilityEvidenceRef,
+        }),
+        ...(legacySui
+          ? [walletBindingClaim({
+            subjectId: subjectKey,
+            walletAddress: legacySui,
+            bindingMethod: "zklogin",
+          })]
+          : []),
+      ]);
+    }
   }
 
   let onChainResult: IssueIdentityCredentialResult["on_chain"];

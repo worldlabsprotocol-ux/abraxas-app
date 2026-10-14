@@ -74,6 +74,7 @@ export async function chainNeutralIdvDocumentSchemaReady(forceRefresh = false): 
     cachedDocAtMs = now;
     return false;
   }
+
   try {
     const sb = requirePersistenceAdmin();
     const { error } = await sb

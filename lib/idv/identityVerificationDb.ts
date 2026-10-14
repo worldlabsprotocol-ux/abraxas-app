@@ -2,18 +2,23 @@
 // Persist identity verification state transitions (best-effort if columns exist).
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { resolvePersistenceConfig } from "@/lib/persistence/env";
+import { persistenceUsesDirectPostgres, resolvePersistenceConfig } from "@/lib/persistence/env";
+import {
+  insertIdentityVerificationEventDirect,
+  upsertIdentityVerificationDirect,
+} from "@/lib/persistence/idvDirectStore";
 import type { CredentialStatus, IdentityVerificationStatus } from "./identityVerificationStates";
 import {
   identityVerificationUpsertKeysForRuntime,
   normalizeHolderSubjectKey,
 } from "./holderIdentityRef";
 import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
-import { chainNeutralIdentitySchemaReady } from "@/lib/persistence/chainNeutralSchemaReady";
+import { chainNeutralIdentitySchemaReadyServer } from "@/lib/persistence/chainNeutralSchemaReady.server";
 
 export function idvSupabase(): SupabaseClient | null {
+  if (persistenceUsesDirectPostgres()) return null;
   const cfg = resolvePersistenceConfig();
-  if (!cfg.ok) return null;
+  if (!cfg.ok || cfg.backend !== "supabase_postgrest") return null;
   return createClient(cfg.postgrestUrl, cfg.serviceRoleKey, { auth: { persistSession: false } });
 }
 
@@ -46,9 +51,6 @@ export async function transitionIdentityVerification(
   },
   source: string,
 ): Promise<void> {
-  const sb = idvSupabase();
-  if (!sb) return;
-
   const now = new Date().toISOString();
   const legacyStatus =
     patch.identity_verification_status === "approved" ? "approved"
@@ -67,12 +69,32 @@ export async function transitionIdentityVerification(
   if (legacyStatus) update.status = legacyStatus;
 
   const subjectKey = normalizeHolderSubjectKey(holder);
-  if (isChainNeutralHolderSubjectId(subjectKey) && !await chainNeutralIdentitySchemaReady()) {
+  if (isChainNeutralHolderSubjectId(subjectKey) && !await chainNeutralIdentitySchemaReadyServer()) {
     console.warn("[idv] chain-neutral schema unavailable — skipping identity_verifications upsert");
     return;
   }
 
   const keys = await identityVerificationUpsertKeysForRuntime(holder);
+
+  if (persistenceUsesDirectPostgres()) {
+    await upsertIdentityVerificationDirect(holder, {
+      ...keys,
+      ...update,
+    });
+    if (patch.identity_verification_status) {
+      await insertIdentityVerificationEventDirect({
+        holderSubjectId: keys.holder_subject_id ?? keys.wallet_address,
+        toStatus: patch.identity_verification_status,
+        source,
+        veriffSessionId: patch.veriff_session_id ?? null,
+      });
+    }
+    return;
+  }
+
+  const sb = idvSupabase();
+  if (!sb) return;
+
   await sb.from("identity_verifications").upsert(
     {
       ...keys,
@@ -90,7 +112,6 @@ export async function transitionIdentityVerification(
       created_at: now,
     }).then(({ error }) => {
       if (error) {
-        // Table may not exist yet — non-fatal
         console.warn("[idv] event log skipped:", error.message);
       }
     });
