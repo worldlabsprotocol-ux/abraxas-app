@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { InstitutionalHomeClose } from "@/components/institutional/InstitutionalHomeClose";
 import type { ReactNode } from "react";
 import { HomeFlagshipProtocolVisuals } from "@/components/home/HomeFlagshipProtocolVisuals";
+import { HomeProtocolPillarsSection } from "@/components/home/HomeProtocolPillarsSection";
 import { HomeApplicationsReceiveSection } from "@/components/home/HomeApplicationsReceiveSection";
 import { HomeVerificationLifecycle } from "@/components/home/premium/HomeVerificationLifecycle";
 import { HomeVerifiableTrustChapter } from "@/components/home/HomeVerifiableTrustChapter";
@@ -42,35 +43,39 @@ function HomeContent({ hero }: { hero: ReactNode }) {
       {hero}
 
       <div className="abx-premium-home__spine abx-premium-home__spine--shell" style={SHELL}>
-        <PremiumHomeChapter index="01" label="System" id="chapter-problem">
+        <PremiumHomeChapter index="01" label="Capabilities" id="chapter-capabilities">
+          <HomeProtocolPillarsSection />
+        </PremiumHomeChapter>
+
+        <PremiumHomeChapter index="02" label="System" id="chapter-problem">
           <HomeFlagshipProtocolVisuals />
         </PremiumHomeChapter>
 
-        <PremiumHomeChapter index="02" label="Authorization" id="chapter-authorization" bleed>
+        <PremiumHomeChapter index="03" label="Authorization" id="chapter-authorization" bleed>
           <LazyHomeSection minHeight="12rem" eager>
             <HomeApplicationsReceiveSection />
           </LazyHomeSection>
         </PremiumHomeChapter>
 
-        <PremiumHomeChapter index="03" label="Lifecycle" id="chapter-lifecycle">
+        <PremiumHomeChapter index="04" label="Lifecycle" id="chapter-lifecycle">
           <LazyHomeSection minHeight="18rem" eager>
             <HomeVerificationLifecycle />
           </LazyHomeSection>
         </PremiumHomeChapter>
 
-        <PremiumHomeChapter index="04" label="Demonstration" id="chapter-demo">
+        <PremiumHomeChapter index="05" label="Demonstration" id="chapter-demo">
           <LazyHomeSection minHeight="12rem">
             <HomeGoodTroubleActionSection />
           </LazyHomeSection>
         </PremiumHomeChapter>
 
-        <PremiumHomeChapter index="05" label="Evidence" id="chapter-evidence" bleed>
+        <PremiumHomeChapter index="06" label="Evidence" id="chapter-evidence" bleed>
           <LazyHomeSection minHeight="22rem" eager>
             <HomeVerifiableTrustChapter />
           </LazyHomeSection>
         </PremiumHomeChapter>
 
-        <PremiumHomeChapter index="06" label="Build" id="chapter-build">
+        <PremiumHomeChapter index="07" label="Build" id="chapter-build">
           <section className="abx-cinematic-build-chapter" aria-labelledby="home-build-heading">
             <p className="abx-v2-eyebrow">{CINEMATIC_BUILD_CHAPTER_EYEBROW}</p>
             <h2 id="home-build-heading" className="abx-v2-section-title">
