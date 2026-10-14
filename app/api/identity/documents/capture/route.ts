@@ -17,6 +17,7 @@ import {
   resolveCaptureContactEmail,
   resolveHolderSubjectFromBrowserSession,
 } from "@/lib/idv/holderSubjectIdv";
+import { validatePassportDocumentSubjectAnchor } from "@/lib/idv/holderSubjectAnchorSql";
 import { getIdvProvider } from "@/lib/idv/idvProvider";
 import { analyzeBiometricCapture } from "@/lib/idv/biometric/analyzeCapture";
 import { checkCaptureRateLimit, logCaptureAudit } from "@/lib/idv/biometric/captureGuard";
@@ -194,8 +195,23 @@ export async function POST(req: NextRequest) {
     }
 
     const subjectColumns = idvDocumentSubjectColumns(holderSubjectKey);
+    const docAnchorValidation = validatePassportDocumentSubjectAnchor(subjectColumns);
+    if (!docAnchorValidation.ok) {
+      return NextResponse.json(
+        { error: "Invalid holder identity reference", error_code: docAnchorValidation.code },
+        { status: 400 },
+      );
+    }
 
     const rateLimit = await checkCaptureRateLimit(supabase, holderSubjectKey);
+    if (rateLimit.unavailable) {
+      return NextResponse.json({
+        error: "Identity capture is temporarily unavailable. Please try again shortly.",
+        error_code: "capture_rate_limit_unavailable",
+        retryable: true,
+        retry_after_sec: rateLimit.retryAfterSec ?? 120,
+      }, { status: 503 });
+    }
     if (!rateLimit.allowed) {
       logCaptureAudit({
         event: "capture_rate_limited",

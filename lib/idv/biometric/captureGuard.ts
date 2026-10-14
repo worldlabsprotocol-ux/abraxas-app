@@ -28,8 +28,13 @@ export const BIOMETRIC_ASSESSMENT_RETENTION_DAYS = Number.parseInt(
   10,
 ) || 365;
 
+export type CaptureRateLimitUnavailableReason = "storage_unavailable";
+
 export interface CaptureRateLimitResult {
   allowed: boolean;
+  /** True when enforcement could not be evaluated — callers must fail closed (503). */
+  unavailable?: boolean;
+  unavailableReason?: CaptureRateLimitUnavailableReason;
   attemptsInWindow: number;
   limit: number;
   retryAfterSec?: number;
@@ -54,13 +59,19 @@ export async function checkCaptureRateLimit(
   const { count, error } = await countQuery.gte("analyzed_at", since);
 
   if (error) {
-    // Table missing pre-migration — allow but log; ops should run 037
     logCaptureAudit({
-      event: "rate_limit_check_skipped",
+      event: "rate_limit_enforcement_unavailable",
       holder_subject: holderSubjectAuditRef(holderSubjectKey),
-      reason: error.message,
+      reason: "storage_unavailable",
     });
-    return { allowed: true, attemptsInWindow: 0, limit };
+    return {
+      allowed: false,
+      unavailable: true,
+      unavailableReason: "storage_unavailable",
+      attemptsInWindow: 0,
+      limit,
+      retryAfterSec: 120,
+    };
   }
 
   const attemptsInWindow = count ?? 0;
@@ -83,7 +94,7 @@ export type CaptureAuditEvent =
   | "capture_auto_approved"
   | "capture_rate_limited"
   | "capture_error"
-  | "rate_limit_check_skipped";
+  | "rate_limit_enforcement_unavailable";
 
 function holderSubjectAuditRef(subjectKey: string): string {
   const key = normalizeHolderSubjectKey(subjectKey);

@@ -19,10 +19,20 @@ alter table public.identity_review_sessions
   drop constraint if exists identity_review_sessions_subject_anchor_chk;
 
 alter table public.identity_review_sessions
+  drop constraint if exists identity_review_sessions_holder_subject_format_chk;
+
+alter table public.identity_review_sessions
   add constraint identity_review_sessions_subject_anchor_chk
   check (
-    sui_address is not null
-    or holder_subject_id is not null
+    (holder_subject_id is not null and sui_address is null)
+    or (holder_subject_id is null and sui_address is not null)
+  );
+
+alter table public.identity_review_sessions
+  add constraint identity_review_sessions_holder_subject_format_chk
+  check (
+    holder_subject_id is null
+    or holder_subject_id ~ '^abx_hs_[0-9a-f]{32}$'
   );
 
 create index if not exists idx_identity_review_sessions_holder_subject
@@ -53,10 +63,42 @@ alter table public.identity_biometric_assessments
   drop constraint if exists identity_biometric_assessments_subject_anchor_chk;
 
 alter table public.identity_biometric_assessments
+  drop constraint if exists identity_biometric_assessments_holder_subject_format_chk;
+
+alter table public.identity_biometric_assessments
   add constraint identity_biometric_assessments_subject_anchor_chk
   check (
-    sui_address is not null
-    or holder_subject_id is not null
+    (holder_subject_id is not null and sui_address is null)
+    or (holder_subject_id is null and sui_address is not null)
+  );
+
+alter table public.identity_biometric_assessments
+  add constraint identity_biometric_assessments_holder_subject_format_chk
+  check (
+    holder_subject_id is null
+    or holder_subject_id ~ '^abx_hs_[0-9a-f]{32}$'
+  );
+
+alter table public.passport_documents
+  drop constraint if exists passport_documents_subject_anchor_chk;
+
+alter table public.passport_documents
+  drop constraint if exists passport_documents_holder_subject_format_chk;
+
+alter table public.passport_documents
+  add constraint passport_documents_subject_anchor_chk
+  check (
+    not (holder_subject_id is not null and sui_address is not null)
+  );
+
+alter table public.passport_documents
+  add constraint passport_documents_holder_subject_format_chk
+  check (
+    holder_subject_id is null
+    or (
+      holder_subject_id ~ '^abx_hs_[0-9a-f]{32}$'
+      and sui_address is null
+    )
   );
 
 create index if not exists idx_biometric_assessments_holder_subject

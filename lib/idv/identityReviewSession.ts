@@ -8,6 +8,7 @@ import type { BiometricDecision } from "@/lib/idv/biometric/types";
 import { resolveRawEvidenceRetentionDays } from "@/lib/idv/rawEvidenceRetention";
 import { normalizeHolderSubjectKey } from "@/lib/idv/holderIdentityRef";
 import { idvReviewSessionAnchor } from "@/lib/idv/holderSubjectIdv";
+import { validateExclusiveSubjectAnchor } from "@/lib/idv/holderSubjectAnchorSql";
 
 export type IdentityReviewSessionStatus = "pending" | "approved" | "rejected" | "expired";
 
@@ -120,6 +121,11 @@ export async function createIdentityReviewSession(
   const now = new Date().toISOString();
   const subjectKey = normalizeHolderSubjectKey(input.suiAddress);
   const anchor = idvReviewSessionAnchor(subjectKey);
+  const anchorValidation = validateExclusiveSubjectAnchor(anchor);
+  if (!anchorValidation.ok) {
+    return { ok: false, error: anchorValidation.code };
+  }
+
   const row = {
     capture_session_id: input.captureSessionId,
     sui_address: anchor.sui_address,
