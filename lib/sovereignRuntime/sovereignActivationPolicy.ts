@@ -2,6 +2,7 @@
 // Sovereign deployment gates — disposable certification vs institutional readiness.
 
 import { SOVEREIGN_DISPOSABLE_REF } from "@/lib/databaseRecovery/manifestGuard";
+import { assertDistinctPostgresEndpoints } from "./pgConnectionIdentity";
 import { SOVEREIGN_STAGING_DATABASE_ID } from "./sovereignStagingConstants";
 
 export type SovereignEnvClass = "disposable" | "institutional" | "staging";
@@ -426,11 +427,9 @@ export function validateStagingPersistentEnv(
   }
 
   const source = databaseUrl(env);
-  if (source && restore && source === restore) {
-    errors.push({
-      code: "restore_target_must_differ",
-      message: "Restore drill URL must not equal primary ABRAXAS_DATABASE_URL",
-    });
+  const endpointErr = assertDistinctPostgresEndpoints(source, restore);
+  if (endpointErr) {
+    errors.push({ code: endpointErr.code, message: endpointErr.message });
   }
 
   const tlsErr = assertTlsReadyForInstitutional(env);
@@ -456,6 +455,10 @@ export function validateStagingPersistentEnv(
       message: "Supabase env must be unset on sovereign staging identity services",
     });
   }
+
+  notes.push(
+    "OBSERVED_STAGING_HTTP smoke probes do not establish FULL_PROTOCOL_LIFECYCLE_CERTIFIED (consent → receipt → partner).",
+  );
 
   return {
     ok: errors.length === 0,

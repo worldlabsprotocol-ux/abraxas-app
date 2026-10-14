@@ -131,6 +131,15 @@ describe("sovereign activation hardening", () => {
     expect(report.errors.some((e) => e.code === "restore_target_must_differ")).toBe(true);
   });
 
+  it("blocks staging when restore URL is a host alias of the primary endpoint", () => {
+    const report = validateStagingPersistentEnv({
+      ...stagingBase(),
+      ABRAXAS_SOVEREIGN_RESTORE_PG_URL:
+        "postgresql://other:pass@localhost:5432/abraxas_sovereign_staging",
+    });
+    expect(report.errors.some((e) => e.code === "restore_target_must_differ")).toBe(true);
+  });
+
   it("docker compose binds loopback and requires explicit postgres password", () => {
     const compose = readFileSync(resolve(process.cwd(), "docker-compose.sovereign.yml"), "utf8");
     const issues = validateSovereignComposeHardening(compose);

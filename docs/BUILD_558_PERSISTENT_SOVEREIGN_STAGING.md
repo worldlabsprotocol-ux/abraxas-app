@@ -29,7 +29,8 @@ First **persistent**, Abraxas-operated staging tier on top of Build #552–#557.
 | Tier | Command | Meaning |
 |------|---------|---------|
 | **STAGING_PERSISTENT_READY** | `npm run sovereign-runtime:activate-staging-558` | Config + read-only inventory probe — **no schema apply** |
-| **OBSERVED_STAGING_HTTP** | `npm run sovereign-runtime:observe-staging-http-558` | Live HTTP probes — **not** synthetic fixture tests |
+| **OBSERVED_STAGING_HTTP** | `npm run sovereign-runtime:observe-staging-http-558` | Strict HTTP smoke probes — **not** full lifecycle |
+| **FULL_PROTOCOL_LIFECYCLE_CERTIFIED** | — | **Not** claimed by smoke probes; requires authenticated end-to-end staging observation |
 | **DISPOSABLE_CERTIFIED** | `npm run sovereign-runtime:certify-disposable-557` | Local disposable only — does **not** certify staging |
 
 Schema bundle label: `sovereign-runtime-v558` (fingerprint from `SOVEREIGN_RUNTIME_SCHEMA_MANIFEST`).
@@ -95,10 +96,13 @@ npm run sovereign-runtime:observe-staging-http-558
 ```bash
 npm run sovereign-runtime:backup-staging-558
 export ABRAXAS_BACKUP_MANIFEST_PATH=/var/abraxas/staging/backups/<latest>.manifest.json
+export ABRAXAS_SOVEREIGN_STAGING_RESTORE_DRILL_AUTHORIZED=true
+export ABRAXAS_SOVEREIGN_STAGING_RESTORE_OPERATOR_AUTHORIZATION=<operator-token>
+export ABRAXAS_SOVEREIGN_STAGING_RESTORE_OPERATOR_AUTHORIZATION_EXPECTED=<same>
 npm run sovereign-runtime:restore-drill-staging-558
 ```
 
-Restore always targets **`ABRAXAS_SOVEREIGN_RESTORE_PG_URL`**, never the primary staging database in shared operator drills.
+Restore drills **default to refusal** without operator authorization. The script canonicalizes primary vs restore URLs (host aliases, credentials, query params ignored), verifies **`current_database()`** on both connections before `pg_restore`, and never targets the primary staging database.
 
 ## 3. Rollback
 

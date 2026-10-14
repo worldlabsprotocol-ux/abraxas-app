@@ -3,43 +3,11 @@
  * Build #558 — observed HTTP boundary probes against deployed staging (not synthetic fixtures).
  */
 import { validateStagingPersistentEnv } from "../../lib/sovereignRuntime/sovereignActivationPolicy";
-
-type HttpObservation = {
-  route: string;
-  method: string;
-  status: number;
-  ok: boolean;
-  classification: "OBSERVED_HTTP" | "UNAVAILABLE";
-  detail?: string;
-};
-
-async function probe(
-  baseUrl: string,
-  route: string,
-  init: RequestInit,
-): Promise<HttpObservation> {
-  const url = `${baseUrl.replace(/\/$/, "")}${route}`;
-  try {
-    const res = await fetch(url, { ...init, redirect: "manual" });
-    const ok = res.status >= 200 && res.status < 500;
-    return {
-      route,
-      method: init.method ?? "GET",
-      status: res.status,
-      ok,
-      classification: "OBSERVED_HTTP",
-    };
-  } catch (error) {
-    return {
-      route,
-      method: init.method ?? "GET",
-      status: 0,
-      ok: false,
-      classification: "UNAVAILABLE",
-      detail: error instanceof Error ? error.message : String(error),
-    };
-  }
-}
+import {
+  evaluateStagingHttpProbe,
+  STAGING_HTTP_SMOKE_PROBES,
+  summarizeStagingHttpTier,
+} from "../../lib/sovereignRuntime/stagingHttpProbeSpec";
 
 async function main(): Promise<void> {
   const env = process.env;
@@ -52,6 +20,7 @@ async function main(): Promise<void> {
         {
           build: 558,
           tier: "BLOCKED",
+          full_protocol_lifecycle_certified: false,
           error: "ABRAXAS_STAGING_HTTP_BASE_URL is required for observed HTTP certification",
           config_ok: config.ok,
         },
@@ -68,6 +37,7 @@ async function main(): Promise<void> {
         {
           build: 558,
           tier: "BLOCKED",
+          full_protocol_lifecycle_certified: false,
           staging_config: config,
           note: "Fix staging env before HTTP observation.",
         },
@@ -79,43 +49,68 @@ async function main(): Promise<void> {
   }
 
   const wallet = "0x0000000000000000000000000000000000000001";
-  const observations: HttpObservation[] = [
-    await probe(base, "/api/sovereign/health", { method: "GET" }),
-    await probe(base, "/api/auth/passport-evm/challenge", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Origin: base },
-      body: JSON.stringify({
-        wallet_address: wallet,
-        chain_id: 11155111,
-        intended_action: "passport_sign_in",
-      }),
-    }),
-    await probe(base, "/api/identity/status", { method: "GET" }),
-  ];
+  const results = [];
 
-  const lifecycleNote =
-    "Full lifecycle (consent → capture → admin → receipt → partner) requires authenticated sessions and is not automated here.";
-  const allReachable = observations.every((o) => o.classification === "OBSERVED_HTTP" && o.status > 0);
-  const healthOk = observations.some(
-    (o) => o.route === "/api/sovereign/health" && o.status === 200,
-  );
+  for (const spec of STAGING_HTTP_SMOKE_PROBES) {
+    const url = `${base.replace(/\/$/, "")}${spec.route}`;
+    try {
+      const init: RequestInit =
+        spec.method === "POST"
+          ? {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Origin: base.replace(/\/$/, "") },
+              body: JSON.stringify({
+                wallet_address: wallet,
+                chain_id: 11155111,
+                intended_action: "passport_sign_in",
+              }),
+              redirect: "manual",
+            }
+          : { method: "GET", redirect: "manual" };
+
+      const res = await fetch(url, init);
+      const bodyText = await res.text();
+      results.push(
+        evaluateStagingHttpProbe({
+          spec,
+          status: res.status,
+          headers: res.headers,
+          bodyText,
+        }),
+      );
+    } catch (error) {
+      results.push(
+        evaluateStagingHttpProbe({
+          spec,
+          status: 0,
+          headers: new Headers(),
+          bodyText: "",
+          fetchError: error instanceof Error ? error.message : String(error),
+        }),
+      );
+    }
+  }
+
+  const summary = summarizeStagingHttpTier(results);
 
   console.log(
     JSON.stringify(
       {
         build: 558,
-        tier: allReachable && healthOk ? "OBSERVED_STAGING_HTTP" : "BLOCKED",
+        tier: summary.tier,
+        full_protocol_lifecycle_certified: summary.full_protocol_lifecycle_certified,
         base_url: base,
-        observations,
+        probes: results,
         synthetic_fixtures_run: false,
-        note: lifecycleNote,
+        note:
+          "Smoke probes only. Full lifecycle (wallet verify → consent → capture → admin → receipt → partner) is not certified here.",
       },
       null,
       2,
     ),
   );
 
-  process.exit(allReachable && healthOk ? 0 : 1);
+  process.exit(summary.tier === "OBSERVED_STAGING_HTTP" ? 0 : 1);
 }
 
 main().catch((error) => {
