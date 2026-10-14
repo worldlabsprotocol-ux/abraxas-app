@@ -11,27 +11,43 @@ export function normalizeHolderSubjectKey(raw: string): string {
   return normalizeSuiAddress(trimmed);
 }
 
-export function identityVerificationOrFilter(subjectKey: string): string {
+export function identityVerificationOrFilter(
+  subjectKey: string,
+  options?: { includeHolderSubjectColumn?: boolean },
+): string {
   const key = normalizeHolderSubjectKey(subjectKey);
   const filters = [`wallet_address.eq.${key}`, `sui_address.eq.${key}`];
-  if (isChainNeutralHolderSubjectId(key)) {
+  const includeHolderColumn = options?.includeHolderSubjectColumn ?? true;
+  if (includeHolderColumn && isChainNeutralHolderSubjectId(key)) {
     filters.push(`holder_subject_id.eq.${key}`);
   }
   return filters.join(",");
 }
 
+export async function identityVerificationOrFilterForRuntime(
+  subjectKey: string,
+): Promise<string> {
+  const { chainNeutralIdentitySchemaReady } = await import("@/lib/persistence/chainNeutralSchemaReady");
+  const includeHolderSubjectColumn = await chainNeutralIdentitySchemaReady();
+  return identityVerificationOrFilter(subjectKey, { includeHolderSubjectColumn });
+}
+
 /** Row keys for identity_verifications upsert (wallet_address remains unique anchor). */
-export function identityVerificationUpsertKeys(subjectKey: string): {
+export function identityVerificationUpsertKeys(
+  subjectKey: string,
+  options?: { includeHolderSubjectColumn?: boolean },
+): {
   wallet_address: string;
   sui_address: string | null;
   holder_subject_id: string | null;
 } {
   const key = normalizeHolderSubjectKey(subjectKey);
+  const includeHolderColumn = options?.includeHolderSubjectColumn ?? true;
   if (isChainNeutralHolderSubjectId(key)) {
     return {
       wallet_address: key,
       sui_address: null,
-      holder_subject_id: key,
+      holder_subject_id: includeHolderColumn ? key : null,
     };
   }
   return {
@@ -39,6 +55,16 @@ export function identityVerificationUpsertKeys(subjectKey: string): {
     sui_address: key,
     holder_subject_id: null,
   };
+}
+
+export async function identityVerificationUpsertKeysForRuntime(subjectKey: string): Promise<{
+  wallet_address: string;
+  sui_address: string | null;
+  holder_subject_id: string | null;
+}> {
+  const { chainNeutralIdentitySchemaReady } = await import("@/lib/persistence/chainNeutralSchemaReady");
+  const includeHolderSubjectColumn = await chainNeutralIdentitySchemaReady();
+  return identityVerificationUpsertKeys(subjectKey, { includeHolderSubjectColumn });
 }
 
 export function veriffVendorDataForHolder(subjectKey: string): string {

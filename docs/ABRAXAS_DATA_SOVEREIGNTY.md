@@ -61,9 +61,11 @@ RLS enabled on sensitive tables; runtime uses **service_role** (bypasses RLS for
 
 See `lib/persistence/`:
 
-- `AbraxasPersistenceClient` — subset used by identity/wallet paths
-- `requirePersistenceAdmin()` — sole server DB entry for new identity code
-- `resolvePersistenceConfig()` — documents Supabase-hosted vs independent Postgres
+- `requirePersistenceAdmin()` — server DB entry for new identity code (today: `@supabase/supabase-js` → PostgREST)
+- `resolvePersistenceConfig()` — documents Supabase-hosted vs independent Postgres **HTTP endpoint**
+- `chainNeutralIdentitySchemaReady()` — probes migration 136 without applying it
+
+**Runtime truth (Build #551):** Abraxas owns SQL migrations, RPC semantics, and identity rules, but **production runtime persistence still uses the Supabase JS client against a PostgREST-compatible URL** (`NEXT_PUBLIC_SUPABASE_URL` or `ABRAXAS_POSTGREST_URL`) plus service role key. Direct `pg` / pool driver access is **not** implemented or certified in this PR. The persistence module preserves a swap-in boundary so a future direct PostgreSQL adapter can replace transport only.
 
 ## Migration 136 disposition
 

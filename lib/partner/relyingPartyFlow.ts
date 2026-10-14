@@ -162,8 +162,11 @@ export async function getHolderCredentialStatus(suiAddress: string): Promise<Hol
   const sb = requireSupabaseAdmin();
   const subject = normalizePartnerFlowSubject(suiAddress);
 
+  const { chainNeutralIdentitySchemaReady } = await import("@/lib/persistence/chainNeutralSchemaReady");
+  const holderColumnReady = await chainNeutralIdentitySchemaReady();
+
   const filters = [`wallet_address.eq.${subject}`, `sui_address.eq.${subject}`];
-  if (subject.startsWith("abx_hs_")) {
+  if (holderColumnReady && subject.startsWith("abx_hs_")) {
     filters.push(`holder_subject_id.eq.${subject}`);
   }
   const { data: verification } = await sb

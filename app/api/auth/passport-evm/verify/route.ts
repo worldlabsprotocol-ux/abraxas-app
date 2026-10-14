@@ -10,6 +10,7 @@ import {
   resolvePassportWalletRequestOrigin,
   verifyPassportEvmAuth,
 } from "@/lib/auth/passportEvmAuth/service";
+import { requireChainNeutralIdentitySchema } from "@/lib/persistence/chainNeutralSchemaReady";
 
 export const dynamic = "force-dynamic";
 const NO_STORE = { "Cache-Control": "no-store", Pragma: "no-cache" };
@@ -17,6 +18,11 @@ const NO_STORE = { "Cache-Control": "no-store", Pragma: "no-cache" };
 const ALLOWED = new Set<string>([HOLDER_AUTH_ACTIONS.passportSignIn, HOLDER_AUTH_ACTIONS.partnerVerify]);
 
 export async function POST(req: NextRequest) {
+  const schema = await requireChainNeutralIdentitySchema();
+  if (!schema.ok) {
+    return NextResponse.json({ ok: false, code: schema.code }, { status: schema.httpStatus, headers: NO_STORE });
+  }
+
   const requestOrigin = resolvePassportWalletRequestOrigin(req);
   if (!assertPassportWalletSameOriginRequest(req, requestOrigin)) {
     return NextResponse.json({ ok: false, code: "wrong_origin" }, { status: 403, headers: NO_STORE });

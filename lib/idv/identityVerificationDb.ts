@@ -4,7 +4,12 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { resolvePersistenceConfig } from "@/lib/persistence/env";
 import type { CredentialStatus, IdentityVerificationStatus } from "./identityVerificationStates";
-import { identityVerificationUpsertKeys } from "./holderIdentityRef";
+import {
+  identityVerificationUpsertKeysForRuntime,
+  normalizeHolderSubjectKey,
+} from "./holderIdentityRef";
+import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
+import { chainNeutralIdentitySchemaReady } from "@/lib/persistence/chainNeutralSchemaReady";
 
 export function idvSupabase(): SupabaseClient | null {
   const cfg = resolvePersistenceConfig();
@@ -61,7 +66,13 @@ export async function transitionIdentityVerification(
   };
   if (legacyStatus) update.status = legacyStatus;
 
-  const keys = identityVerificationUpsertKeys(holder);
+  const subjectKey = normalizeHolderSubjectKey(holder);
+  if (isChainNeutralHolderSubjectId(subjectKey) && !await chainNeutralIdentitySchemaReady()) {
+    console.warn("[idv] chain-neutral schema unavailable — skipping identity_verifications upsert");
+    return;
+  }
+
+  const keys = await identityVerificationUpsertKeysForRuntime(holder);
   await sb.from("identity_verifications").upsert(
     {
       ...keys,
