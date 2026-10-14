@@ -22,6 +22,9 @@ describe("Build #546 adversarial institutional certification", () => {
   let env: Record<string, string>;
 
   beforeEach(() => {
+    for (const key of Object.keys(process.env)) {
+      if (key.startsWith("ABRAXAS_") || key.includes("RECEIPT")) delete process.env[key];
+    }
     env = build546TrustRegistryEnv();
     Object.assign(process.env, env);
   });
