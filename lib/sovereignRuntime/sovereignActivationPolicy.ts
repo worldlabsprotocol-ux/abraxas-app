@@ -2,8 +2,10 @@
 // Sovereign deployment gates — disposable certification vs institutional readiness.
 
 import { SOVEREIGN_DISPOSABLE_REF } from "@/lib/databaseRecovery/manifestGuard";
+import { assertDistinctPostgresEndpoints } from "./pgConnectionIdentity";
+import { SOVEREIGN_STAGING_DATABASE_ID } from "./sovereignStagingConstants";
 
-export type SovereignEnvClass = "disposable" | "institutional";
+export type SovereignEnvClass = "disposable" | "institutional" | "staging";
 
 export type SovereignActivationIssue = {
   code: string;
@@ -18,7 +20,7 @@ export function parseSovereignEnvClass(
   env: Record<string, string | undefined>,
 ): SovereignEnvClass | null {
   const raw = env.ABRAXAS_SOVEREIGN_ENV_CLASS?.trim().toLowerCase();
-  if (raw === "disposable" || raw === "institutional") return raw;
+  if (raw === "disposable" || raw === "institutional" || raw === "staging") return raw;
   return null;
 }
 
@@ -129,6 +131,20 @@ export function validateSovereignDatabaseIdentity(
     };
   }
 
+  if (envClass === "staging" && id !== SOVEREIGN_STAGING_DATABASE_ID) {
+    return {
+      code: "staging_identity_mismatch",
+      message: `Persistent staging requires ABRAXAS_SOVEREIGN_DATABASE_ID=${SOVEREIGN_STAGING_DATABASE_ID}`,
+    };
+  }
+
+  if (envClass === "staging" && id === SOVEREIGN_DISPOSABLE_REF) {
+    return {
+      code: "staging_disposable_identity_denied",
+      message: "Persistent staging cannot use disposable certification database identity",
+    };
+  }
+
   return null;
 }
 
@@ -149,12 +165,31 @@ export function assertSovereignMigrationAuthorized(
   if (!envClass) {
     errors.push({
       code: "missing_env_class",
-      message: "ABRAXAS_SOVEREIGN_ENV_CLASS must be disposable or institutional",
+      message: "ABRAXAS_SOVEREIGN_ENV_CLASS must be disposable, staging, or institutional",
     });
   }
 
   const identityErr = validateSovereignDatabaseIdentity(env);
   if (identityErr) errors.push(identityErr);
+
+  if (envClass === "staging") {
+    if (env.ABRAXAS_SOVEREIGN_STAGING_SCHEMA_CHANGE_AUTHORIZED?.trim() !== "true") {
+      errors.push({
+        code: "staging_schema_change_not_authorized",
+        message:
+          "Persistent staging schema changes require ABRAXAS_SOVEREIGN_STAGING_SCHEMA_CHANGE_AUTHORIZED=true (founder)",
+      });
+    }
+    const founder = env.ABRAXAS_SOVEREIGN_FOUNDER_STAGING_AUTHORIZATION?.trim();
+    const founderExpected = env.ABRAXAS_SOVEREIGN_FOUNDER_STAGING_AUTHORIZATION_EXPECTED?.trim();
+    if (!founder || !founderExpected || founder !== founderExpected) {
+      errors.push({
+        code: "founder_staging_authorization_required",
+        message:
+          "Staging migrations require matching ABRAXAS_SOVEREIGN_FOUNDER_STAGING_AUTHORIZATION and _EXPECTED",
+      });
+    }
+  }
 
   if (envClass === "institutional") {
     const operator = env.ABRAXAS_SOVEREIGN_OPERATOR_AUTHORIZATION?.trim();
@@ -315,17 +350,136 @@ export function validateInstitutionalReadinessEnv(
   };
 }
 
+export type StagingPersistentReport = {
+  ok: boolean;
+  tier: "STAGING_PERSISTENT_READY" | "BLOCKED";
+  errors: SovereignActivationIssue[];
+  notes: string[];
+};
+
+/** Persistent sovereign staging (#558) — same custody bar as institutional, fixed database identity. */
+export function validateStagingPersistentEnv(
+  env: Record<string, string | undefined>,
+): StagingPersistentReport {
+  const notes = [
+    "Observed HTTP certification requires ABRAXAS_STAGING_HTTP_BASE_URL pointing at the deployed staging API.",
+    "Synthetic fixture tests (Build #556) do not substitute for observed staging protocol certification.",
+  ];
+  const errors: SovereignActivationIssue[] = [];
+
+  if (parseSovereignEnvClass(env) !== "staging") {
+    errors.push({
+      code: "not_staging_env",
+      message: "ABRAXAS_SOVEREIGN_ENV_CLASS must be staging for persistent staging activation",
+    });
+  }
+
+  const identityErr = validateSovereignDatabaseIdentity(env);
+  if (identityErr) errors.push(identityErr);
+
+  if (env.ABRAXAS_PERSISTENCE_BACKEND?.trim().toLowerCase() !== "postgres_direct") {
+    errors.push({
+      code: "invalid_persistence_backend",
+      message: "ABRAXAS_PERSISTENCE_BACKEND must be postgres_direct",
+    });
+  }
+
+  if (!databaseUrl(env)) {
+    errors.push({ code: "missing_database_url", message: "ABRAXAS_DATABASE_URL is required" });
+  }
+
+  if (!env.ABRAXAS_EVIDENCE_STORAGE_ROOT?.trim()) {
+    errors.push({
+      code: "missing_evidence_root",
+      message: "ABRAXAS_EVIDENCE_STORAGE_ROOT is required",
+    });
+  }
+
+  if (!isValid32ByteBase64Key(env.ABRAXAS_EVIDENCE_ENCRYPTION_KEY)) {
+    errors.push({
+      code: "invalid_evidence_encryption_key",
+      message: "ABRAXAS_EVIDENCE_ENCRYPTION_KEY must be base64-encoded 32 bytes",
+    });
+  }
+
+  if (!isValid32ByteBase64Key(env.ABRAXAS_BACKUP_ENCRYPTION_KEY)) {
+    errors.push({
+      code: "missing_backup_encryption_key",
+      message: "ABRAXAS_BACKUP_ENCRYPTION_KEY is required for staging backup custody",
+    });
+  }
+
+  if (!validateEd25519PrivateJwk(env.ABRAXAS_SIGNING_KEY)) {
+    errors.push({
+      code: "invalid_signing_key",
+      message: "ABRAXAS_SIGNING_KEY must be a valid Ed25519 private JWK (OKP, crv, d, x)",
+    });
+  }
+
+  const restore =
+    env.ABRAXAS_SOVEREIGN_RESTORE_PG_URL?.trim()
+    || env.ABRAXAS_RESTORE_DATABASE_URL?.trim();
+  if (!restore) {
+    errors.push({
+      code: "missing_restore_database_url",
+      message: "Independent recovery target (ABRAXAS_SOVEREIGN_RESTORE_PG_URL) is required",
+    });
+  }
+
+  const source = databaseUrl(env);
+  const endpointErr = assertDistinctPostgresEndpoints(source, restore);
+  if (endpointErr) {
+    errors.push({ code: endpointErr.code, message: endpointErr.message });
+  }
+
+  const tlsErr = assertTlsReadyForInstitutional(env);
+  if (tlsErr) errors.push(tlsErr);
+
+  if (env.ABRAXAS_BACKUP_SCOPE?.trim() !== "sovereign") {
+    errors.push({
+      code: "backup_scope_required",
+      message: "ABRAXAS_BACKUP_SCOPE=sovereign is required for staging backups",
+    });
+  }
+
+  if (!env.ABRAXAS_BACKUP_OUTPUT_DIR?.trim()) {
+    errors.push({
+      code: "missing_backup_output_dir",
+      message: "ABRAXAS_BACKUP_OUTPUT_DIR is required",
+    });
+  }
+
+  if (env.NEXT_PUBLIC_SUPABASE_URL?.trim() || env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
+    errors.push({
+      code: "supabase_env_forbidden",
+      message: "Supabase env must be unset on sovereign staging identity services",
+    });
+  }
+
+  notes.push(
+    "OBSERVED_STAGING_HTTP smoke probes do not establish FULL_PROTOCOL_LIFECYCLE_CERTIFIED (consent → receipt → partner).",
+  );
+
+  return {
+    ok: errors.length === 0,
+    tier: errors.length === 0 ? "STAGING_PERSISTENT_READY" : "BLOCKED",
+    errors,
+    notes,
+  };
+}
+
 /** Compose file hardening checks (static). */
 export function validateSovereignComposeHardening(composeText: string): SovereignActivationIssue[] {
   const errors: SovereignActivationIssue[] = [];
-  if (/POSTGRES_PASSWORD:\s*\$\{SOVEREIGN_POSTGRES_PASSWORD:-/.test(composeText)) {
+  if (/POSTGRES_PASSWORD:\s*\$\{SOVEREIGN_[A-Z_]+:-/.test(composeText)) {
     errors.push({
       code: "compose_default_password",
       message: "Docker Compose must not ship a default PostgreSQL password",
     });
   }
-  if (!/127\.0\.0\.1:\$\{SOVEREIGN_POSTGRES_PORT/.test(composeText)
-    && !/127\.0\.0\.1:5432:5432/.test(composeText)) {
+  const loopbackBind =
+    /127\.0\.0\.1:\$\{SOVEREIGN/.test(composeText) || /127\.0\.0\.1:5432:5432/.test(composeText);
+  if (!loopbackBind) {
     errors.push({
       code: "compose_public_bind",
       message: "PostgreSQL must bind to loopback (127.0.0.1) by default",
