@@ -20,10 +20,8 @@ import { upsertClaims } from "@/lib/credentials/claimsService";
 import { ensureZkLoginWalletBinding } from "@/lib/credentials/ensureZkLoginWalletBinding";
 import { buildProductEligibilityClaimsForIssuance } from "@/lib/idv/buildProductEligibilityClaims";
 import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
-import {
-  getIdentityVerificationBySubjectDirect,
-  upsertAbraxasCredentialDirect,
-} from "@/lib/persistence/idvDirectStore";
+import { getIdentityVerificationBySubjectDirect } from "@/lib/persistence/idvDirectStore";
+import { commitSovereignCredentialIssuanceDirect } from "@/lib/persistence/sovereignCredentialIssuance";
 import { idvSupabase, transitionIdentityVerification } from "./identityVerificationDb";
 import { getSuiNetwork } from "@/lib/sui/network";
 import type { VeriffDecisionInput } from "./types";
@@ -175,67 +173,6 @@ export async function issueIdentityCredential(
       if (zkRow?.email) userEmail = zkRow.email;
     }
 
-    await transitionIdentityVerification(
-      subjectKey,
-      {
-        user_email: userEmail,
-        document_type: docType,
-        document_country: country.toUpperCase(),
-        document_state: state.toUpperCase() || null,
-        document_verified: true,
-        liveness_passed: true,
-        liveness_provider: provider === "veriff"
-          ? "veriff"
-          : provider === "abraxas_capture"
-            ? "abraxas_capture"
-            : "manual_review",
-        status: "approved",
-        identity_verification_status: "approved",
-        credential_status: "active",
-        credential_jti: jti,
-        veriff_session_id: provider === "veriff" ? decision.id : null,
-        veriff_decision_id: provider === "veriff" ? decision.id : reviewRef,
-        last_verified_at: now.toISOString(),
-        credential_issued_at: now.toISOString(),
-        error_message: null,
-      },
-      "issueIdentityCredential",
-    );
-
-    if (useDirectIdv) {
-      await upsertAbraxasCredentialDirect({
-        jti,
-        holder_wallet: subjectKey,
-        sui_address: legacySui,
-        issuer,
-        jurisdiction: juris,
-        document_type: docType,
-        verification_level: "standard",
-        world_id_verified: false,
-        issuance_date: now.toISOString(),
-        expiration_date: expiresAt.toISOString(),
-        credential_jwt: jwt,
-      });
-    } else if (sb) {
-      await sb.from("abraxas_credentials").upsert({
-        jti,
-        holder_wallet: subjectKey,
-        sui_address: legacySui,
-        issuer,
-        jurisdiction: juris,
-        document_type: docType,
-        verification_level: "standard",
-        world_id_verified: false,
-        issuance_date: now.toISOString(),
-        expiration_date: expiresAt.toISOString(),
-        credential_jwt: jwt,
-      }, { onConflict: "jti" });
-    }
-
-    if (legacySui) {
-      await ensureZkLoginWalletBinding(legacySui);
-    }
-
     const documentDateOfBirth =
       options?.documentDateOfBirth?.trim()
       || decision.person?.dateOfBirth?.trim()
@@ -265,9 +202,9 @@ export async function issueIdentityCredential(
             documentType: docType,
             captureSessionId: options.captureSessionId,
             expiresAt,
-            assuranceLevel: options.assuranceLevel,
-            reviewMethod: options.reviewMethod,
-            biometricScores: options.biometricScores,
+            assuranceLevel: options?.assuranceLevel,
+            reviewMethod: options?.reviewMethod,
+            biometricScores: options?.biometricScores,
           })
         : manualApprovedClaims({
             subjectId: subjectKey,
@@ -278,26 +215,94 @@ export async function issueIdentityCredential(
             expiresAt,
           });
 
-    if (!useDirectIdv) {
-      await upsertClaims([
-        ...identityClaims,
-        ...buildProductEligibilityClaimsForIssuance({
+    const allClaims = [
+      ...identityClaims,
+      ...buildProductEligibilityClaimsForIssuance({
+        subjectId: subjectKey,
+        jti,
+        documentDateOfBirth,
+        authoritativeAgeBand: options?.authoritativeAgeBand,
+        minimumAgeGate,
+        expiresAt,
+        evidenceReference: eligibilityEvidenceRef,
+      }),
+      ...(legacySui
+        ? [walletBindingClaim({
           subjectId: subjectKey,
+          walletAddress: legacySui,
+          bindingMethod: "zklogin",
+        })]
+        : []),
+    ];
+
+    const verificationPatch = {
+      user_email: userEmail,
+      document_type: docType,
+      document_country: country.toUpperCase(),
+      document_state: state.toUpperCase() || null,
+      document_verified: true,
+      liveness_passed: true,
+      liveness_provider: provider === "veriff"
+        ? "veriff"
+        : provider === "abraxas_capture"
+          ? "abraxas_capture"
+          : "manual_review",
+      status: "approved" as const,
+      identity_verification_status: "approved" as const,
+      credential_status: "active" as const,
+      credential_jti: jti,
+      veriff_session_id: provider === "veriff" ? decision.id : null,
+      veriff_decision_id: provider === "veriff" ? decision.id : reviewRef,
+      last_verified_at: now.toISOString(),
+      credential_issued_at: now.toISOString(),
+      error_message: null,
+    };
+
+    if (useDirectIdv) {
+      const commit = await commitSovereignCredentialIssuanceDirect({
+        subjectKey,
+        jti,
+        credentialJwt: jwt,
+        issuer,
+        jurisdiction: juris,
+        documentType: docType,
+        verificationPatch,
+        eventSource: "issueIdentityCredential",
+        captureSessionId: options?.captureSessionId ?? null,
+        expirationDateIso: expiresAt.toISOString(),
+        claims: allClaims,
+      });
+      if (!commit.ok) {
+        return { ok: false, message: commit.code };
+      }
+    } else {
+      await transitionIdentityVerification(
+        subjectKey,
+        verificationPatch,
+        "issueIdentityCredential",
+      );
+
+      if (sb) {
+        await sb.from("abraxas_credentials").upsert({
           jti,
-          documentDateOfBirth,
-          authoritativeAgeBand: options?.authoritativeAgeBand,
-          minimumAgeGate,
-          expiresAt,
-          evidenceReference: eligibilityEvidenceRef,
-        }),
-        ...(legacySui
-          ? [walletBindingClaim({
-            subjectId: subjectKey,
-            walletAddress: legacySui,
-            bindingMethod: "zklogin",
-          })]
-          : []),
-      ]);
+          holder_wallet: subjectKey,
+          sui_address: legacySui,
+          issuer,
+          jurisdiction: juris,
+          document_type: docType,
+          verification_level: "standard",
+          world_id_verified: false,
+          issuance_date: now.toISOString(),
+          expiration_date: expiresAt.toISOString(),
+          credential_jwt: jwt,
+        }, { onConflict: "jti" });
+      }
+
+      await upsertClaims(allClaims);
+    }
+
+    if (legacySui) {
+      await ensureZkLoginWalletBinding(legacySui);
     }
   }
 

@@ -20,10 +20,12 @@ if (!pgUrl) {
 const migrationsDir = join(process.cwd(), "supabase/migrations");
 const files = [
   "006_abraxas_id.sql",
+  "018_policy_verification.sql",
   "020_identity_verification_state_machine.sql",
   "136_passport_holder_subjects.sql",
   ...DEMO_IDV_ACTIVATION_MANIFEST,
   "138_sovereign_idv_evidence_custody.sql",
+  "139_sovereign_idv_claims_evidence.sql",
 ];
 
 for (const file of files) {

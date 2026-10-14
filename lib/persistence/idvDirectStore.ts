@@ -115,7 +115,7 @@ export async function insertIdentityVerificationEventDirect(input: {
       ],
     );
   } catch (error) {
-    if (isMissingRelation(error)) return;
+    if (isMissingRelation(error)) throw new IdvDirectStoreUnavailableError();
     throw error;
   }
 }
@@ -463,29 +463,56 @@ export async function recordIdvConsentDirect(input: {
   );
 }
 
+export class EvidenceCustodyConflictError extends Error {
+  readonly code = "evidence_custody_conflict" as const;
+
+  constructor() {
+    super("evidence_custody_conflict");
+  }
+}
+
 export async function registerEvidenceCustodyDirect(input: {
   holderSubjectId: string;
   captureSessionId: string;
+  artifactKind: string;
   storagePath: string;
   contentSha256: string;
   retainedUntil?: string | null;
 }): Promise<void> {
-  await queryAbraxasPg(
+  const inserted = await queryAbraxasPg<{ holder_subject_id: string }>(
     `insert into public.abraxas_evidence_custody (
-      holder_subject_id, capture_session_id, storage_path, content_sha256, retained_until
-    ) values ($1,$2,$3,$4,$5)
-    on conflict (capture_session_id) do update set
-      storage_path = excluded.storage_path,
-      content_sha256 = excluded.content_sha256,
-      retained_until = excluded.retained_until`,
+      holder_subject_id, capture_session_id, artifact_kind, storage_path, content_sha256, retained_until
+    ) values ($1,$2,$3,$4,$5,$6)
+    on conflict (capture_session_id, artifact_kind) do nothing
+    returning holder_subject_id`,
     [
       input.holderSubjectId,
       input.captureSessionId,
+      input.artifactKind,
       input.storagePath,
       input.contentSha256,
       input.retainedUntil ?? null,
     ],
   );
+  if (inserted.rows[0]?.holder_subject_id) {
+    if (inserted.rows[0].holder_subject_id !== input.holderSubjectId) {
+      throw new EvidenceCustodyConflictError();
+    }
+    return;
+  }
+  const existing = await queryAbraxasPg<{ holder_subject_id: string; storage_path: string; content_sha256: string }>(
+    `select holder_subject_id, storage_path, content_sha256 from public.abraxas_evidence_custody
+     where capture_session_id = $1 and artifact_kind = $2 limit 1`,
+    [input.captureSessionId, input.artifactKind],
+  );
+  const row = existing.rows[0];
+  if (!row) throw new IdvDirectStoreUnavailableError();
+  if (row.holder_subject_id !== input.holderSubjectId) {
+    throw new EvidenceCustodyConflictError();
+  }
+  if (row.storage_path !== input.storagePath || row.content_sha256 !== input.contentSha256) {
+    throw new EvidenceCustodyConflictError();
+  }
 }
 
 export async function appendEvidenceAccessAuditDirect(input: {
@@ -514,14 +541,27 @@ export async function appendEvidenceAccessAuditDirect(input: {
 export async function assertEvidenceCustodyOwnerDirect(
   holderSubjectId: string,
   captureSessionId: string,
+  artifactKind: string,
 ): Promise<boolean> {
-  const result = await queryAbraxasPg<{ holder_subject_id: string }>(
-    `select holder_subject_id from public.abraxas_evidence_custody
-     where capture_session_id = $1 limit 1`,
-    [captureSessionId],
+  const result = await queryAbraxasPg<{ holder_subject_id: string; storage_path: string }>(
+    `select holder_subject_id, storage_path from public.abraxas_evidence_custody
+     where capture_session_id = $1 and artifact_kind = $2 limit 1`,
+    [captureSessionId, artifactKind],
   );
-  const owner = result.rows[0]?.holder_subject_id;
-  return owner === holderSubjectId;
+  const row = result.rows[0];
+  return row?.holder_subject_id === holderSubjectId;
+}
+
+export async function getEvidenceCustodyRecordDirect(
+  captureSessionId: string,
+  artifactKind: string,
+): Promise<{ holder_subject_id: string; storage_path: string; content_sha256: string } | null> {
+  const result = await queryAbraxasPg<{ holder_subject_id: string; storage_path: string; content_sha256: string }>(
+    `select holder_subject_id, storage_path, content_sha256 from public.abraxas_evidence_custody
+     where capture_session_id = $1 and artifact_kind = $2 limit 1`,
+    [captureSessionId, artifactKind],
+  );
+  return result.rows[0] ?? null;
 }
 
 /** Transactional admin approve: audit + document + review session + verification state. */
@@ -539,16 +579,23 @@ export async function applyAdminReviewDecisionDirect(input: {
   auditRow: Record<string, unknown>;
 }): Promise<void> {
   await withAbraxasPgTransaction(async (client: PoolClient) => {
-    await client.query(
+    const docUpdate = await client.query(
       `update public.passport_documents set status = $2, reviewed_at = now(), reviewed_by = $3, updated_at = now()
-       where capture_session_id = $1`,
-      [input.captureSessionId, input.documentStatus, input.reviewerId],
+       where capture_session_id = $1 and (holder_subject_id = $4 or holder_subject_id is null)`,
+      [input.captureSessionId, input.documentStatus, input.reviewerId, input.holderSubjectId],
     );
-    await client.query(
+    if ((docUpdate.rowCount ?? 0) < 1) {
+      throw new IdvDirectStoreUnavailableError();
+    }
+    const sessionUpdate = await client.query(
       `update public.identity_review_sessions set review_status = $2, reviewed_at = now(),
-       reviewer_id = $3, updated_at = now() where capture_session_id = $1`,
-      [input.captureSessionId, input.reviewStatus, input.reviewerId],
+       reviewer_id = $3, updated_at = now() where capture_session_id = $1
+       and (holder_subject_id = $4 or holder_subject_id is null)`,
+      [input.captureSessionId, input.reviewStatus, input.reviewerId, input.holderSubjectId],
     );
+    if ((sessionUpdate.rowCount ?? 0) < 1) {
+      throw new IdvDirectStoreUnavailableError();
+    }
     const keys = identityVerificationUpsertKeys(input.holderSubjectId, { includeHolderSubjectColumn: true });
     await client.query(
       `insert into public.identity_verifications (wallet_address, sui_address, holder_subject_id, updated_at, status)
@@ -559,11 +606,14 @@ export async function applyAdminReviewDecisionDirect(input: {
     const patchEntries = Object.entries(input.verificationPatch);
     if (patchEntries.length > 0) {
       const setClause = patchEntries.map(([k], i) => `${k} = $${i + 2}`).join(", ");
-      await client.query(
+      const ivUpdate = await client.query(
         `update public.identity_verifications set ${setClause}, updated_at = now()
          where wallet_address = $1 or holder_subject_id = $1`,
         [keys.wallet_address, ...patchEntries.map(([, v]) => v)],
       );
+      if ((ivUpdate.rowCount ?? 0) < 1) {
+        throw new IdvDirectStoreUnavailableError();
+      }
     }
     await client.query(
       `insert into public.identity_review_audit_log (

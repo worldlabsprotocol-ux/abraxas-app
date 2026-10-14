@@ -9,6 +9,7 @@ import { caip10Evm } from "@/lib/auth/holderSubject/caip";
 import { resolveSubjectForVerifiedWalletDirect } from "@/lib/persistence/holderSubjectDirect";
 import { resetAbraxasPgPoolForTests } from "@/lib/persistence/pgPool";
 import { resetPersistenceClientForTests } from "@/lib/persistence/admin";
+import { countActiveClaimsForJtiDirect } from "@/lib/persistence/claimsDirectStore";
 import {
   getBiometricAssessmentDirect,
   getIdentityVerificationBySubjectDirect,
@@ -16,6 +17,7 @@ import {
   insertPassportDocumentDirect,
   recordIdvConsentDirect,
 } from "@/lib/persistence/idvDirectStore";
+import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 import { createIdentityReviewSession } from "@/lib/idv/identityReviewSession";
 import { persistBiometricAssessment } from "@/lib/idv/biometric/persistAssessment";
 import { issueManualIdentityCredential } from "@/lib/idv/issueIdentityCredential";
@@ -46,10 +48,12 @@ describe("Build #554 sovereign IDV lifecycle (isolated PostgreSQL)", () => {
     const migrationsDir = join(process.cwd(), "supabase/migrations");
     const files = [
       "006_abraxas_id.sql",
+      "018_policy_verification.sql",
       "020_identity_verification_state_machine.sql",
       "136_passport_holder_subjects.sql",
       ...DEMO_IDV_ACTIVATION_MANIFEST,
       "138_sovereign_idv_evidence_custody.sql",
+      "139_sovereign_idv_claims_evidence.sql",
     ];
     for (const file of files) {
       const sql = readFileSync(join(migrationsDir, file), "utf8");
@@ -59,6 +63,14 @@ describe("Build #554 sovereign IDV lifecycle (isolated PostgreSQL)", () => {
 
   beforeEach(() => {
     evidenceDir = mkdtempSync(join(tmpdir(), "abx-idv-evidence-"));
+    for (const key of [
+      "NEXT_PUBLIC_SUPABASE_URL",
+      "SUPABASE_URL",
+      "SUPABASE_SERVICE_ROLE_KEY",
+      "SUPABASE_ANON_KEY",
+    ]) {
+      delete process.env[key];
+    }
     process.env.ABRAXAS_PERSISTENCE_BACKEND = "postgres_direct";
     process.env.ABRAXAS_DATABASE_URL = PG_URL;
     process.env.ABRAXAS_EVIDENCE_STORAGE_ROOT = evidenceDir;
@@ -95,25 +107,36 @@ describe("Build #554 sovereign IDV lifecycle (isolated PostgreSQL)", () => {
     });
 
     const captureSessionId = `cap_${randomBytes(8).toString("hex")}`;
-    const syntheticDoc = Buffer.from("SYNTHETIC_TEST_EVIDENCE_NOT_PRODUCTION");
-    const stored = await storeHolderEvidenceWithCustody({
+    const idFront = Buffer.from("SYNTHETIC_ID_FRONT_NOT_PRODUCTION");
+    const selfie = Buffer.from("SYNTHETIC_SELFIE_NOT_PRODUCTION");
+    const storedFront = await storeHolderEvidenceWithCustody({
       holderSubjectId: subjectId,
       captureSessionId,
-      plaintext: syntheticDoc,
+      artifactKind: "id_front",
+      plaintext: idFront,
     });
+    const storedSelfie = await storeHolderEvidenceWithCustody({
+      holderSubjectId: subjectId,
+      captureSessionId,
+      artifactKind: "selfie",
+      plaintext: selfie,
+    });
+    expect(storedFront.storagePath).not.toBe(storedSelfie.storagePath);
     const roundTrip = await readHolderEvidenceAuthorized({
       holderSubjectId: subjectId,
       captureSessionId,
-      storagePath: stored.storagePath,
+      storagePath: storedFront.storagePath,
+      artifactKind: "id_front",
       actor: "lifecycle_test",
     });
-    expect(roundTrip.equals(syntheticDoc)).toBe(true);
+    expect(roundTrip.equals(idFront)).toBe(true);
 
     await expect(
       readHolderEvidenceAuthorized({
         holderSubjectId: `abx_hs_${"e".repeat(32)}`,
         captureSessionId,
-        storagePath: stored.storagePath,
+        storagePath: storedFront.storagePath,
+        artifactKind: "id_front",
         actor: "attacker",
       }),
     ).rejects.toBeInstanceOf(EvidenceAccessDeniedError);
@@ -122,7 +145,7 @@ describe("Build #554 sovereign IDV lifecycle (isolated PostgreSQL)", () => {
       user_email: "holder@test.local",
       stamp_id: "identity",
       file_name: "id_front.jpg",
-      storage_path: stored.storagePath,
+      storage_path: storedFront.storagePath,
       status: "under_review",
       holder_subject_id: subjectId,
       sui_address: null,
@@ -136,7 +159,7 @@ describe("Build #554 sovereign IDV lifecycle (isolated PostgreSQL)", () => {
       partnerId: "partner_sandbox_test",
       policyId: "age_21_retail",
       engineDecision: "review",
-      evidenceContentHash: stored.contentSha256,
+      evidenceContentHash: storedFront.contentSha256,
     });
     expect(review.ok).toBe(true);
 
@@ -167,6 +190,17 @@ describe("Build #554 sovereign IDV lifecycle (isolated PostgreSQL)", () => {
     });
     expect(issued.ok).toBe(true);
     expect(issued.jwt).toBeTruthy();
+    if (!issued.jti) return;
+
+    const claimCount = await countActiveClaimsForJtiDirect(subjectId, issued.jti);
+    expect(claimCount).toBeGreaterThan(0);
+
+    const audit = await queryAbraxasPg<{ outcome: string }>(
+      `select outcome from public.sovereign_credential_issuance_audit
+       where holder_subject_id = $1 and credential_jti = $2`,
+      [subjectId, issued.jti],
+    );
+    expect(audit.rows.some((r) => r.outcome === "committed")).toBe(true);
 
     const iv = await getIdentityVerificationBySubjectDirect(subjectId);
     expect(iv?.credential_jti).toBeTruthy();
