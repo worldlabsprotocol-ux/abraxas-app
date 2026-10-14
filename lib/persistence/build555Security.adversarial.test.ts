@@ -27,17 +27,20 @@ import { GET as documentUrlGet } from "@/app/api/admin/identity/document-url/rou
 import { SOVEREIGN_RUNTIME_SCHEMA_MANIFEST } from "@/lib/databaseRecovery/sovereignSchemaManifest";
 import { resetAbraxasPgPoolForTests } from "@/lib/persistence/pgPool";
 import { resetPersistenceClientForTests } from "@/lib/persistence/admin";
+import {
+  assertSyntheticCertificationMayRunMutations,
+  resolveSyntheticCertificationDatabaseUrl,
+  validateSyntheticCertificationIsolation,
+} from "@/lib/sovereignRuntime/syntheticCertificationIsolation";
 
-const PG_URL = process.env.ABRAXAS_SOVEREIGN_PG_URL?.trim()
-  || process.env.MIGRATION_136_PG_URL?.trim()
-  || process.env.ABRAXAS_DATABASE_URL?.trim()
-  || undefined;
+const PG_URL = resolveSyntheticCertificationDatabaseUrl(process.env) ?? undefined;
+const SYNTHETIC_ISOLATION = validateSyntheticCertificationIsolation(process.env);
 
 const SCHEMA = [...SOVEREIGN_RUNTIME_SCHEMA_MANIFEST];
 
 describe("Build #555 security correction — adversarial", () => {
-  if (!PG_URL) {
-    it.skip("requires disposable PostgreSQL", () => {});
+  if (!PG_URL || !SYNTHETIC_ISOLATION.ok) {
+    it.skip("requires isolated disposable PostgreSQL (synthetic certification gate)", () => {});
     return;
   }
 
@@ -45,6 +48,11 @@ describe("Build #555 security correction — adversarial", () => {
   const KEY = generateTestSigningKeyPair();
 
   beforeAll(() => {
+    process.env.ABRAXAS_SYNTHETIC_CERTIFICATION_AUTHORIZED = "true";
+    const gate = assertSyntheticCertificationMayRunMutations(process.env);
+    if (!gate.ok) {
+      throw new Error(gate.errors.map((e) => e.message).join("; "));
+    }
     const dir = join(process.cwd(), "supabase/migrations");
     for (const file of SCHEMA) {
       execFileSync("psql", [PG_URL!, "-v", "ON_ERROR_STOP=0"], {

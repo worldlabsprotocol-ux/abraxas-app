@@ -7,9 +7,10 @@
 | **Operational sovereign staging** | **BLOCKED** — `ABRAXAS_SOVEREIGN_ENV_CLASS=disposable` in agent environment, not `staging` |
 | **OBSERVED_STAGING_HTTP** | **BLOCKED** — `ABRAXAS_STAGING_HTTP_BASE_URL` unset |
 | **OBSERVED_LIFECYCLE_HTTP_BOUNDARIES** | **BLOCKED** — requires staging HTTP base |
-| **SYNTHETIC_LIFECYCLE_CERTIFIED** | **PASS** (agent VM disposable PG — Build #556 vitest, not human IDV) |
-| **Adversarial trust (synthetic PG)** | **PASS** — Build #555 vitest |
-| **FULL_PROTOCOL_LIFECYCLE_CERTIFIED** | **NOT CLAIMED** — authenticated staging E2E (consent → partner receipt) not automated |
+| **STAGING_CONFIGURATION_READY** | **BLOCKED** in agent VM (not staging env class) |
+| **SYNTHETIC_LIFECYCLE_CERTIFIED** | **PASS** only on isolated disposable PG with `ABRAXAS_SYNTHETIC_CERTIFICATION_AUTHORIZED=true` (never staging DB) |
+| **FULL_PROTOCOL_LIFECYCLE_CERTIFIED** | **BLOCKED** — authenticated deployed staging E2E not automated |
+| **Adversarial trust (synthetic PG)** | **PASS** — Build #555 vitest when isolation gate passes |
 | **Recovery drill** | **BLOCKED** — restore Postgres (5433) not listening; operator restore authorization not set |
 
 Run inventory (redacted):
