@@ -2,6 +2,7 @@
 // Narrow persistence ports for chain-neutral identity (no Supabase types in callers).
 
 import { requirePersistenceAdmin } from "./admin";
+import { persistenceUsesDirectPostgres } from "./env";
 
 export type AuthChallengeConsumeResult = {
   id: string;
@@ -22,6 +23,17 @@ export async function consumePassportEvmAuthChallenge(input: {
   walletAddress: string;
   sessionContextHash: string;
 }): Promise<AuthChallengeConsumeResult> {
+  if (persistenceUsesDirectPostgres()) {
+    try {
+      const { consumePassportEvmAuthChallengeDirect } = await import("./authChallengeDirect");
+      return await consumePassportEvmAuthChallengeDirect(input);
+    } catch (error) {
+      if (error instanceof Error && /does not exist|42P01/.test(error.message)) {
+        throw new Error("holder_auth_store_unavailable");
+      }
+      throw error;
+    }
+  }
   const db = requirePersistenceAdmin();
   const { data, error } = await db.rpc("consume_passport_evm_auth_challenge", {
     p_challenge_id: input.challengeId,
@@ -41,6 +53,17 @@ export async function consumePassportSolanaAuthChallenge(input: {
   walletAddress: string;
   sessionContextHash: string;
 }): Promise<AuthChallengeConsumeResult> {
+  if (persistenceUsesDirectPostgres()) {
+    try {
+      const { consumePassportSolanaAuthChallengeDirect } = await import("./authChallengeDirect");
+      return await consumePassportSolanaAuthChallengeDirect(input);
+    } catch (error) {
+      if (error instanceof Error && /does not exist|42P01/.test(error.message)) {
+        throw new Error("holder_auth_store_unavailable");
+      }
+      throw error;
+    }
+  }
   const db = requirePersistenceAdmin();
   const { data, error } = await db.rpc("consume_passport_solana_auth_challenge", {
     p_challenge_id: input.challengeId,

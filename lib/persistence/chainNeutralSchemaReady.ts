@@ -2,7 +2,6 @@
 // Runtime probe for migration 136 objects — allows #676 merge before Production apply.
 
 import { requirePersistenceAdmin } from "@/lib/persistence/admin";
-
 const HOLDER_SUBJECTS_TABLE = "passport_holder_subjects";
 
 let cachedReady: boolean | null = null;

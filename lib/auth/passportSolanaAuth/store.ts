@@ -2,6 +2,7 @@
 
 import { createHash, randomBytes } from "crypto";
 import { requirePersistenceAdmin } from "@/lib/persistence/admin";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
 import { consumePassportSolanaAuthChallenge } from "@/lib/persistence/identityPersistence";
 
 export function hashSessionContext(value: string): string {
@@ -29,6 +30,18 @@ export async function insertSolanaChallenge(row: {
   message: string;
   expires_at: string;
 }): Promise<void> {
+  if (persistenceUsesDirectPostgres()) {
+    try {
+      const { insertSolanaChallengeDirect } = await import("@/lib/persistence/authChallengeDirect");
+      await insertSolanaChallengeDirect(row);
+    } catch (error) {
+      if (error instanceof Error && /does not exist|42P01/.test(error.message)) {
+        throw new PassportSolanaAuthStoreUnavailableError();
+      }
+      throw error;
+    }
+    return;
+  }
   const sb = requirePersistenceAdmin();
   const { error } = await sb.from("passport_solana_auth_challenges").insert(row);
   if (error) {

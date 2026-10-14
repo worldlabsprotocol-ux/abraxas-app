@@ -2,6 +2,7 @@
 
 import { randomBytes } from "crypto";
 import { requirePersistenceAdmin } from "@/lib/persistence/admin";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
 import { createHolderSubjectId } from "./subjectId";
 import type { Caip10Parts } from "./caip";
 
@@ -11,7 +12,28 @@ export class HolderSubjectStoreUnavailableError extends Error {
   }
 }
 
+async function directModule() {
+  return import("@/lib/persistence/holderSubjectDirect");
+}
+
 export async function insertHolderSubject(subjectId: string): Promise<void> {
+  if (persistenceUsesDirectPostgres()) {
+    try {
+      const direct = await directModule();
+      await direct.insertHolderSubjectDirect(subjectId);
+    } catch (error) {
+      if (error instanceof Error && error.message === "holder_subject_store_unavailable") {
+        throw new HolderSubjectStoreUnavailableError();
+      }
+      const direct = await directModule();
+      if (error instanceof direct.HolderSubjectDirectUnavailableError) {
+        throw new HolderSubjectStoreUnavailableError();
+      }
+      throw error;
+    }
+    return;
+  }
+
   const sb = requirePersistenceAdmin();
   const { error } = await sb.from("passport_holder_subjects").insert({ subject_id: subjectId });
   if (error) {
@@ -26,6 +48,19 @@ export async function bindVerifiedWalletAccount(input: {
   caip: Caip10Parts;
   authMethod: string;
 }): Promise<{ ok: true } | { ok: false; code: "wallet_bound_to_other_subject" | "persist_failed" }> {
+  if (persistenceUsesDirectPostgres()) {
+    try {
+      const direct = await directModule();
+      return await direct.bindVerifiedWalletAccountDirect(input);
+    } catch (error) {
+      const direct = await directModule();
+      if (error instanceof direct.HolderSubjectDirectUnavailableError) {
+        throw new HolderSubjectStoreUnavailableError();
+      }
+      throw error;
+    }
+  }
+
   const sb = requirePersistenceAdmin();
   const { data: existing } = await sb
     .from("passport_holder_wallet_accounts")
@@ -63,6 +98,19 @@ export async function resolveSubjectForVerifiedWallet(input: {
   | { ok: true; subjectId: string; created: boolean }
   | { ok: false; code: "wallet_bound_to_other_subject" | "persist_failed" }
 > {
+  if (persistenceUsesDirectPostgres()) {
+    try {
+      const direct = await directModule();
+      return await direct.resolveSubjectForVerifiedWalletDirect(input);
+    } catch (error) {
+      const direct = await directModule();
+      if (error instanceof direct.HolderSubjectDirectUnavailableError) {
+        throw new HolderSubjectStoreUnavailableError();
+      }
+      throw error;
+    }
+  }
+
   const sb = requirePersistenceAdmin();
   const { data: bound } = await sb
     .from("passport_holder_wallet_accounts")
@@ -97,6 +145,11 @@ export async function linkLegacyKeyToSubject(input: {
   legacyKind: string;
   legacyKey: string;
 }): Promise<void> {
+  if (persistenceUsesDirectPostgres()) {
+    const direct = await directModule();
+    return direct.linkLegacyKeyToSubjectDirect(input);
+  }
+
   const sb = requirePersistenceAdmin();
   const { error } = await sb.from("passport_holder_legacy_links").insert({
     subject_id: input.subjectId,
@@ -109,6 +162,11 @@ export async function linkLegacyKeyToSubject(input: {
 }
 
 export async function resolveLegacySubjectId(legacyKind: string, legacyKey: string): Promise<string | null> {
+  if (persistenceUsesDirectPostgres()) {
+    const direct = await directModule();
+    return direct.resolveLegacySubjectIdDirect(legacyKind, legacyKey);
+  }
+
   const sb = requirePersistenceAdmin();
   const { data, error } = await sb
     .from("passport_holder_legacy_links")
@@ -124,6 +182,11 @@ export async function resolveLegacySubjectId(legacyKind: string, legacyKey: stri
 }
 
 export async function assertHolderSubjectExists(subjectId: string): Promise<boolean> {
+  if (persistenceUsesDirectPostgres()) {
+    const direct = await directModule();
+    return direct.assertHolderSubjectExistsDirect(subjectId);
+  }
+
   const sb = requirePersistenceAdmin();
   const { data, error } = await sb
     .from("passport_holder_subjects")

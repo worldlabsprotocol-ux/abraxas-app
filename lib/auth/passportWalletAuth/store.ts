@@ -2,6 +2,7 @@
 
 import { createHash, randomBytes } from "crypto";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
 
 export interface PassportWalletChallengeRow {
   id: string;
@@ -29,6 +30,18 @@ export function createPassportWalletChallengeId(): string {
 }
 
 export async function insertPassportWalletChallenge(row: Omit<PassportWalletChallengeRow, "consumed_at">): Promise<void> {
+  if (persistenceUsesDirectPostgres()) {
+    try {
+      const { insertWalletChallengeDirect } = await import("@/lib/persistence/authChallengeDirect");
+      await insertWalletChallengeDirect(row);
+    } catch (error) {
+      if (error instanceof Error && /does not exist|42P01/.test(error.message)) {
+        throw new PassportWalletAuthStoreUnavailableError();
+      }
+      throw error;
+    }
+    return;
+  }
   const sb = requireSupabaseAdmin();
   const { error } = await sb.from("passport_wallet_auth_challenges").insert({
     id: row.id,
@@ -60,6 +73,22 @@ export async function consumePassportWalletChallenge(input: {
   walletAddress: string;
   sessionContextHash: string;
 }): Promise<PassportWalletChallengeRow | null> {
+  if (persistenceUsesDirectPostgres()) {
+    try {
+      const { consumePassportWalletAuthChallengeDirect } = await import("@/lib/persistence/authChallengeDirect");
+      const row = await consumePassportWalletAuthChallengeDirect({
+        challengeId: input.challengeId,
+        walletAddress: input.walletAddress,
+        sessionContextHash: input.sessionContextHash,
+      });
+      return (row as PassportWalletChallengeRow | null) ?? null;
+    } catch (error) {
+      if (error instanceof Error && /does not exist|42P01/.test(error.message)) {
+        throw new PassportWalletAuthStoreUnavailableError();
+      }
+      throw error;
+    }
+  }
   const sb = requireSupabaseAdmin();
   const { data, error } = await sb.rpc("consume_passport_wallet_auth_challenge", {
     p_challenge_id: input.challengeId,
