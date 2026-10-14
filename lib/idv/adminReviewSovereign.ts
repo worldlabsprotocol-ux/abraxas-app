@@ -4,7 +4,6 @@ import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
 import { normalizeHolderSubjectKey } from "@/lib/idv/holderIdentityRef";
 import { getBiometricAssessment } from "./biometric/persistAssessment";
-import type { BiometricDecision } from "./biometric/types";
 import { issueManualIdentityCredential } from "./issueIdentityCredential";
 import { transitionIdentityVerification } from "./identityVerificationDb";
 import {
@@ -16,20 +15,17 @@ import {
   precheckAgeEvidenceLinkage,
   resolveReviewPolicySandboxFlag,
 } from "@/lib/assurance/ageEvidenceLinkage";
-import {
-  eligibilityResultFromMinimumAge,
-  updateIdentityReviewSessionStatus,
-} from "@/lib/idv/identityReviewSession";
+import { eligibilityResultFromMinimumAge } from "@/lib/idv/identityReviewSession";
 import { evaluateAgeEligibilityFromDocumentDate } from "@/lib/idv/ageEligibility";
-import type { AdminReviewAction, AdminReviewRequest, AdminReviewResult, ReviewerDecision } from "./adminReviewService";
+import type { AdminReviewAction, AdminReviewRequest, AdminReviewResult } from "./adminReviewService";
 import { resolveReviewerDecision } from "./adminReviewService";
+import { getPassportDocumentByIdDirect, getEvidenceCustodyRecordDirect } from "@/lib/persistence/idvDirectStore";
+import { revokeSubjectClaimsDirect } from "@/lib/persistence/claimsDirectStore";
 import {
-  getPassportDocumentByIdDirect,
-  insertReviewAuditLogDirect,
-  updateBiometricReviewerDecisionDirect,
-  updatePassportDocumentsBySessionDirect,
-} from "@/lib/persistence/idvDirectStore";
-import { getEvidenceCustodyRecordDirect } from "@/lib/persistence/idvDirectStore";
+  commitSovereignReviewOutcomeDirect,
+  SovereignReviewConflictError,
+  SovereignReviewStateError,
+} from "@/lib/persistence/sovereignAdminReviewCommit";
 
 function documentStatusForAction(action: AdminReviewAction): string {
   if (action === "approve") return "accepted";
@@ -66,6 +62,14 @@ async function assertRequiredEvidenceForApproval(
   return { ok: true };
 }
 
+async function rollbackIssuedCredential(subjectKey: string, jti: string, reason: string): Promise<void> {
+  try {
+    await revokeSubjectClaimsDirect(subjectKey, reason, jti);
+  } catch {
+    // fail-closed: issuance audit remains; operator must reconcile
+  }
+}
+
 export async function executeAdminReviewActionSovereign(
   request: AdminReviewRequest,
 ): Promise<AdminReviewResult> {
@@ -74,10 +78,37 @@ export async function executeAdminReviewActionSovereign(
     return { ok: false, error: "Document not found", status: 404 };
   }
 
-  const now = new Date().toISOString();
   const previousStatus = String(doc.status);
   const sessionId = doc.capture_session_id as string | null;
-  const assessment = sessionId ? await getBiometricAssessment(sessionId) : null;
+  if (!sessionId) {
+    return { ok: false, error: "Capture session required for sovereign review", status: 400 };
+  }
+
+  if (previousStatus === "accepted" && request.action === "approve") {
+    return {
+      ok: true,
+      action: request.action,
+      documentId: String(doc.id),
+      captureSessionId: sessionId,
+      alreadyIssued: true,
+      reviewerDecision: "approved",
+    };
+  }
+  if (previousStatus === "rejected" && request.action === "reject") {
+    return {
+      ok: true,
+      action: request.action,
+      documentId: String(doc.id),
+      captureSessionId: sessionId,
+      reviewerDecision: "rejected",
+    };
+  }
+  if (!["submitted", "under_review"].includes(previousStatus)) {
+    return { ok: false, error: "Review not in pending state", status: 409 };
+  }
+
+  const now = new Date().toISOString();
+  const assessment = await getBiometricAssessment(sessionId);
   const engineDecision = assessment?.decision ?? null;
   const engineVersion = assessment?.engine_version ?? null;
   const reviewerDecision = resolveReviewerDecision(request.action, engineDecision);
@@ -93,6 +124,7 @@ export async function executeAdminReviewActionSovereign(
     return { ok: false, error: "No holder subject linked to this document", status: 400 };
   }
   const subjectKey = normalizeHolderSubjectKey(subjectRaw);
+  const legacySui = isChainNeutralHolderSubjectId(subjectKey) ? null : normalizeSuiAddress(subjectKey);
 
   if (request.action === "approve") {
     const minimumAge = request.minimumAgeGate ?? null;
@@ -131,25 +163,6 @@ export async function executeAdminReviewActionSovereign(
       return { ok: false, error: linkagePrecheck.error, status: linkagePrecheck.status };
     }
 
-    const issued = await issueManualIdentityCredential(subjectKey, {
-      reviewId: String(doc.id),
-      jurisdiction: request.jurisdiction ?? "US",
-      documentType: request.documentType ?? "passport",
-      reviewer: request.reviewerId,
-      captureSessionId: sessionId ?? undefined,
-      assuranceLevel: assessment?.assurance_level ?? "L2",
-      reviewMethod: assessment?.review_method ?? "human_biometric_match",
-      biometricScores: assessment
-        ? { face_match: assessment.scores.face_match, liveness: assessment.scores.liveness }
-        : undefined,
-      documentDateOfBirth: request.documentDateOfBirth,
-      minimumAgeGate: request.minimumAgeGate,
-    });
-
-    if (!issued.ok) {
-      return { ok: false, error: issued.message ?? "Issuance failed", status: 500 };
-    }
-
     let ageEvidenceId: string | undefined;
     if (minimumAge != null && minimumAge >= 21 && request.documentDateOfBirth) {
       const evidence = await createAgeEvidenceRecord({
@@ -162,11 +175,11 @@ export async function executeAdminReviewActionSovereign(
         ageThreshold: minimumAge,
         providerDecision: deriveProviderDecisionFromDob(request.documentDateOfBirth, minimumAge),
         reviewStatus: "approved",
-        providerReference: `${doc.id}:${sessionId ?? "none"}`,
+        providerReference: `${doc.id}:${sessionId}`,
         reviewerId: request.reviewerId,
         reviewerReason: request.note ?? null,
         reviewedAt: now,
-        credentialJti: issued.jti ?? null,
+        credentialJti: null,
       });
       const finalized = finalizeAgeEvidenceLinkage({
         sandboxOnly,
@@ -179,50 +192,69 @@ export async function executeAdminReviewActionSovereign(
       ageEvidenceId = finalized.evidenceId;
     }
 
-    if (sessionId) {
-      await updatePassportDocumentsBySessionDirect(sessionId, {
-        status: newStatus,
-        reviewer_note: request.note ?? null,
-        reviewed_at: now,
-        reviewed_by: request.reviewerId,
-      });
-    }
-
-    if (sessionId) {
-      await updateBiometricReviewerDecisionDirect({
-        captureSessionId: sessionId,
-        reviewerDecision,
-        reviewerId: request.reviewerId,
-        reviewedAt: now,
-      });
-    }
-
-    await insertReviewAuditLogDirect({
-      capture_session_id: sessionId,
-      passport_document_id: doc.id,
-      sui_address: isChainNeutralHolderSubjectId(subjectKey) ? null : normalizeSuiAddress(subjectKey),
-      reviewer_id: request.reviewerId,
-      action: request.action,
-      previous_status: previousStatus,
-      new_status: newStatus,
-      engine_decision: engineDecision,
-      reviewer_decision: reviewerDecision,
-      rejection_reasons: null,
-      notes: request.note ?? null,
-      biometric_engine_version: engineVersion,
+    const issued = await issueManualIdentityCredential(subjectKey, {
+      reviewId: String(doc.id),
+      jurisdiction: request.jurisdiction ?? "US",
+      documentType: request.documentType ?? "passport",
+      reviewer: request.reviewerId,
+      captureSessionId: sessionId,
+      assuranceLevel: assessment?.assurance_level ?? "L2",
+      reviewMethod: assessment?.review_method ?? "human_biometric_match",
+      biometricScores: assessment
+        ? { face_match: assessment.scores.face_match, liveness: assessment.scores.liveness }
+        : undefined,
+      documentDateOfBirth: request.documentDateOfBirth,
+      minimumAgeGate: request.minimumAgeGate,
     });
 
-    if (sessionId) {
-      await updateIdentityReviewSessionStatus(null, sessionId, {
-        reviewStatus: "approved",
-        eligibilityResult: eligibilityResultFromMinimumAge(minimumAge),
-        reviewerId: request.reviewerId,
-        reviewerCategory: "admin_allowlisted",
-        reasonCode: request.note?.trim() ? "reviewer_approved" : "approved",
-      });
+    if (!issued.ok || !issued.jti) {
+      return { ok: false, error: issued.message ?? "Issuance failed", status: 500 };
     }
 
-    const legacySui = isChainNeutralHolderSubjectId(subjectKey) ? null : normalizeSuiAddress(subjectKey);
+    try {
+      await commitSovereignReviewOutcomeDirect({
+        captureSessionId: sessionId,
+        passportDocumentId: String(doc.id),
+        holderSubjectId: subjectKey,
+        action: request.action,
+        reviewerId: request.reviewerId,
+        reviewerDecision,
+        engineDecision,
+        engineVersion,
+        previousStatus,
+        newStatus,
+        note: request.note ?? null,
+        rejectionReasons: null,
+        sessionPatch: {
+          reviewStatus: "approved",
+          eligibilityResult: eligibilityResultFromMinimumAge(minimumAge),
+          reasonCode: request.note?.trim() ? "reviewer_approved" : "approved",
+        },
+        suiAddress: legacySui,
+      });
+    } catch (error) {
+      await rollbackIssuedCredential(subjectKey, issued.jti, "admin_review_commit_failed");
+      if (error instanceof SovereignReviewStateError && error.message === "review_already_approved") {
+        return {
+          ok: true,
+          action: request.action,
+          documentId: String(doc.id),
+          captureSessionId: sessionId,
+          jti: issued.jti,
+          alreadyIssued: true,
+          reviewerDecision,
+          engineDecision,
+          suiAddress: legacySui ?? subjectKey,
+          ageEvidenceId,
+        };
+      }
+      if (error instanceof SovereignReviewConflictError || error instanceof SovereignReviewStateError) {
+        await rollbackIssuedCredential(subjectKey, issued.jti, "admin_review_conflict");
+        return { ok: false, error: error.message, status: 409 };
+      }
+      return { ok: false, error: "Review persistence failed", status: 500 };
+    }
+
     return {
       ok: true,
       action: request.action,
@@ -237,22 +269,43 @@ export async function executeAdminReviewActionSovereign(
     };
   }
 
-  if (sessionId) {
-    await updatePassportDocumentsBySessionDirect(sessionId, {
-      status: newStatus,
-      reviewer_note: request.note ?? null,
-      reviewed_at: now,
-      reviewed_by: request.reviewerId,
-    });
-  }
-
-  if (sessionId) {
-    await updateBiometricReviewerDecisionDirect({
+  try {
+    await commitSovereignReviewOutcomeDirect({
       captureSessionId: sessionId,
-      reviewerDecision,
+      passportDocumentId: String(doc.id),
+      holderSubjectId: subjectKey,
+      action: request.action,
       reviewerId: request.reviewerId,
-      reviewedAt: now,
+      reviewerDecision,
+      engineDecision,
+      engineVersion,
+      previousStatus,
+      newStatus,
+      note: request.note ?? null,
+      rejectionReasons,
+      sessionPatch: {
+        reviewStatus: request.action === "reject" ? "rejected" : "expired",
+        eligibilityResult: null,
+        reasonCode: request.action === "reject" ? "reviewer_rejected" : "resubmission_requested",
+      },
+      suiAddress: legacySui,
     });
+  } catch (error) {
+    if (error instanceof SovereignReviewStateError) {
+      return {
+        ok: true,
+        action: request.action,
+        documentId: String(doc.id),
+        captureSessionId: sessionId,
+        reviewerDecision,
+        engineDecision,
+        suiAddress: subjectKey,
+      };
+    }
+    if (error instanceof SovereignReviewConflictError) {
+      return { ok: false, error: error.message, status: 409 };
+    }
+    return { ok: false, error: "Review persistence failed", status: 500 };
   }
 
   if (request.action === "reject") {
@@ -279,31 +332,6 @@ export async function executeAdminReviewActionSovereign(
       },
       "admin_identity_resubmission",
     );
-  }
-
-  await insertReviewAuditLogDirect({
-    capture_session_id: sessionId,
-    passport_document_id: doc.id,
-    sui_address: isChainNeutralHolderSubjectId(subjectKey) ? null : normalizeSuiAddress(subjectKey),
-    reviewer_id: request.reviewerId,
-    action: request.action,
-    previous_status: previousStatus,
-    new_status: newStatus,
-    engine_decision: engineDecision,
-    reviewer_decision: reviewerDecision,
-    rejection_reasons: rejectionReasons.length ? rejectionReasons : null,
-    notes: request.note ?? null,
-    biometric_engine_version: engineVersion,
-  });
-
-  if (sessionId) {
-    await updateIdentityReviewSessionStatus(null, sessionId, {
-      reviewStatus: request.action === "reject" ? "rejected" : "expired",
-      eligibilityResult: null,
-      reviewerId: request.reviewerId,
-      reviewerCategory: "admin_allowlisted",
-      reasonCode: request.action === "reject" ? "reviewer_rejected" : "resubmission_requested",
-    });
   }
 
   return {

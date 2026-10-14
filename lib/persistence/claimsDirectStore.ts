@@ -153,18 +153,32 @@ export async function revokeSubjectClaimsDirect(
 ): Promise<void> {
   const subject = normalizeClaimSubjectId(subjectId);
   const revokedAt = new Date().toISOString();
-  await queryAbraxasPg(
-    `update public.credential_claims
-     set status = 'revoked', revocation_reference = $2, updated_at = $3
-     where subject_id = $1 and status = 'active'`,
-    [subject, reason, revokedAt],
-  );
-  if (jti) {
-    await queryAbraxasPg(
-      `update public.abraxas_credentials set revoked_at = $2 where jti = $1`,
-      [jti, revokedAt],
+  await withAbraxasPgTransaction(async (client) => {
+    if (jti) {
+      const claims = await client.query(
+        `update public.credential_claims
+         set status = 'revoked', revocation_reference = $3, updated_at = $4
+         where subject_id = $1 and credential_jti = $2 and status = 'active'`,
+        [subject, jti, reason, revokedAt],
+      );
+      const cred = await client.query(
+        `update public.abraxas_credentials
+         set revoked_at = $3
+         where jti = $2 and holder_wallet = $1`,
+        [subject, jti, revokedAt],
+      );
+      if ((claims.rowCount ?? 0) < 1 && (cred.rowCount ?? 0) < 1) {
+        throw new ClaimsDirectPersistError("credential_scoped_revoke_noop");
+      }
+      return;
+    }
+    await client.query(
+      `update public.credential_claims
+       set status = 'revoked', revocation_reference = $2, updated_at = $3
+       where subject_id = $1 and status = 'active'`,
+      [subject, reason, revokedAt],
     );
-  }
+  });
 }
 
 export async function countActiveClaimsForJtiDirect(

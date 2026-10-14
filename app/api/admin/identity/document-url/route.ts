@@ -5,8 +5,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { requireAdminRouteAccess } from "@/lib/admin/requireAdminRouteAccess";
 import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
-import { readEncryptedEvidence } from "@/lib/persistence/evidenceBlobStore";
-import { queryAbraxasPg } from "@/lib/persistence/pgPool";
+import { resolveAdminReviewerId } from "@/lib/admin/resolveAdminReviewerId";
+import {
+  readAdminEvidenceByCustody,
+  SovereignEvidenceAccessDeniedError,
+} from "@/lib/idv/sovereignAdminEvidenceAccess";
+import type { EvidenceArtifactKind } from "@/lib/persistence/evidenceBlobStore";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -17,34 +21,43 @@ export async function GET(req: NextRequest) {
   if (denied) return denied;
 
   const storagePath = req.nextUrl.searchParams.get("path")?.trim();
-  if (!storagePath) {
-    return NextResponse.json({ error: "Valid identity storage path required" }, { status: 400 });
-  }
 
   if (persistenceUsesDirectPostgres()) {
-    const custody = await queryAbraxasPg<{ holder_subject_id: string; capture_session_id: string; artifact_kind: string }>(
-      `select holder_subject_id, capture_session_id, artifact_kind from public.abraxas_evidence_custody
-       where storage_path = $1 limit 1`,
-      [storagePath],
-    );
-    const row = custody.rows[0];
-    if (!row) {
-      return NextResponse.json({ error: "Evidence custody record not found" }, { status: 404 });
+    const reviewerId = await resolveAdminReviewerId(req);
+    if (!reviewerId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const captureSessionId = req.nextUrl.searchParams.get("capture_session_id")?.trim();
+    const artifactKind = req.nextUrl.searchParams.get("artifact_kind")?.trim() as EvidenceArtifactKind | undefined;
+    if (!captureSessionId || !artifactKind) {
+      return NextResponse.json({
+        error: "capture_session_id and artifact_kind are required for sovereign evidence access",
+      }, { status: 400 });
     }
     try {
-      const plain = readEncryptedEvidence({ storagePath });
-      const contentType = row.artifact_kind === "selfie" ? "image/jpeg" : "image/jpeg";
-      return new NextResponse(new Uint8Array(plain), {
+      const { plaintext, artifactKind: kind } = await readAdminEvidenceByCustody({
+        captureSessionId,
+        artifactKind,
+        reviewerId,
+      });
+      return new NextResponse(new Uint8Array(plaintext), {
         status: 200,
         headers: {
-          "Content-Type": contentType,
+          "Content-Type": "image/jpeg",
           "Cache-Control": "private, no-store",
-          "X-Abraxas-Evidence-Artifact": row.artifact_kind,
+          "X-Abraxas-Evidence-Artifact": kind,
         },
       });
-    } catch {
-      return NextResponse.json({ error: "Could not decrypt evidence" }, { status: 404 });
+    } catch (error) {
+      if (error instanceof SovereignEvidenceAccessDeniedError) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      throw error;
     }
+  }
+
+  if (!storagePath) {
+    return NextResponse.json({ error: "Valid identity storage path required" }, { status: 400 });
   }
 
   if (!SB_URL || !SB_KEY) {
