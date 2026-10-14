@@ -81,7 +81,9 @@
     "test:sovereign-certification": "vitest run lib/persistence/build556.sovereignCertification.test.ts lib/databaseRecovery/manifestGuard.sovereign.test.ts lib/databaseRecovery/sovereignBackupRestore.test.ts",
     "sovereign-idv:apply-schema": "tsx scripts/sovereign-runtime/apply-sovereign-idv-schema.ts",
     "sovereign-runtime:disposable-proof": "tsx scripts/sovereign-runtime/disposable-proof.ts",
-    "sovereign-runtime:certify-556": "tsx scripts/sovereign-runtime/certify-build-556.ts"
+    "sovereign-runtime:certify-556": "tsx scripts/sovereign-runtime/certify-build-556.ts",
+    "sovereign-runtime:activate-557": "tsx scripts/sovereign-runtime/activate-institutional-557.ts",
+    "test:sovereign-activation-env": "vitest run lib/sovereignRuntime/institutionalActivationEnv.test.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",
