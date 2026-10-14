@@ -3,10 +3,21 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { randomUUID } from "crypto";
 import { transitionIdentityVerification } from "@/lib/idv/identityVerificationDb";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
+import { requireChainNeutralIdvDocumentSchema } from "@/lib/persistence/chainNeutralSchemaReady";
+import {
+  assertSessionOwnsRequestedSubject,
+  HolderSubjectResolutionError,
+  idvDocumentSubjectColumns,
+  passportDocumentsSubjectOrFilter,
+  requireIdentityProcessingConsent,
+  resolveCaptureContactEmail,
+  resolveHolderSubjectFromBrowserSession,
+} from "@/lib/idv/holderSubjectIdv";
+import { validatePassportDocumentSubjectAnchor } from "@/lib/idv/holderSubjectAnchorSql";
 import { getIdvProvider } from "@/lib/idv/idvProvider";
 import { analyzeBiometricCapture } from "@/lib/idv/biometric/analyzeCapture";
 import { checkCaptureRateLimit, logCaptureAudit } from "@/lib/idv/biometric/captureGuard";
@@ -84,23 +95,22 @@ function validateImageFile(file: File, label: string) {
 
 async function hasPendingIdentityReview(
   supabase: SupabaseClient,
-  suiAddress: string,
+  holderSubjectKey: string,
   partnerId?: string | null,
   verificationRequestId?: string | null,
 ): Promise<boolean> {
-  const normalized = normalizeSuiAddress(suiAddress);
-
   const pendingSession = await findActivePendingReviewSession(supabase, {
-    suiAddress: normalized,
+    suiAddress: holderSubjectKey,
     partnerId,
     verificationRequestId,
   });
   if (pendingSession) return true;
 
+  const subjectFilter = await passportDocumentsSubjectOrFilter(holderSubjectKey);
   const { count: docCount } = await supabase
     .from("passport_documents")
     .select("id", { count: "exact", head: true })
-    .eq("sui_address", normalized)
+    .or(subjectFilter)
     .eq("stamp_id", "identity")
     .in("status", ["submitted", "under_review"]);
 
@@ -126,6 +136,26 @@ export async function POST(req: NextRequest) {
     }
 
     const formData = await req.formData();
+    try {
+      assertSessionOwnsRequestedSubject(
+        auth.session,
+        (formData.get("holder_subject_id") as string | null)
+          ?? (formData.get("sui_address") as string | null),
+      );
+    } catch (e) {
+      if (e instanceof HolderSubjectResolutionError && e.code === "subject_substitution") {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      throw e;
+    }
+
+    if (!requireIdentityProcessingConsent(formData)) {
+      return NextResponse.json({
+        error: "Explicit identity processing consent is required",
+        error_code: "consent_required",
+      }, { status: 400 });
+    }
+
     const legalName = (formData.get("legal_name") as string | null)?.trim();
     const documentDateOfBirth = (formData.get("document_date_of_birth") as string | null)?.trim() || undefined;
     const idFront = formData.get("id_front") as File | null;
@@ -144,13 +174,51 @@ export async function POST(req: NextRequest) {
     validateImageFile(idFront, "ID");
     validateImageFile(selfie, "selfie");
 
-    const suiAddress = normalizeSuiAddress(auth.session.subjectId);
+    let holderSubjectKey: string;
+    try {
+      holderSubjectKey = resolveHolderSubjectFromBrowserSession(auth.session);
+    } catch (e) {
+      if (e instanceof HolderSubjectResolutionError) {
+        return NextResponse.json({ error: e.message }, { status: 401 });
+      }
+      throw e;
+    }
 
-    const rateLimit = await checkCaptureRateLimit(supabase, suiAddress);
+    if (isChainNeutralHolderSubjectId(holderSubjectKey)) {
+      const schema = await requireChainNeutralIdvDocumentSchema();
+      if (!schema.ok) {
+        return NextResponse.json(
+          { error: "Chain-neutral identity document storage is not available", error_code: schema.code },
+          { status: schema.httpStatus },
+        );
+      }
+    }
+
+    const subjectColumns = idvDocumentSubjectColumns(holderSubjectKey);
+    const docAnchorValidation = validatePassportDocumentSubjectAnchor(subjectColumns);
+    if (!docAnchorValidation.ok) {
+      return NextResponse.json(
+        { error: "Invalid holder identity reference", error_code: docAnchorValidation.code },
+        { status: 400 },
+      );
+    }
+
+    const rateLimit = await checkCaptureRateLimit(supabase, holderSubjectKey);
+    if (rateLimit.unavailable) {
+      return NextResponse.json({
+        error: "Identity capture is temporarily unavailable. Please try again shortly.",
+        error_code: "capture_rate_limit_unavailable",
+        retryable: true,
+        retry_after_sec: rateLimit.retryAfterSec ?? 120,
+      }, { status: 503 });
+    }
     if (!rateLimit.allowed) {
       logCaptureAudit({
         event: "capture_rate_limited",
-        sui_address: suiAddress,
+        holder_subject: holderSubjectKey.startsWith("abx_hs_")
+          ? `${holderSubjectKey.slice(0, 12)}…`
+          : undefined,
+        sui_address: subjectColumns.sui_address ?? undefined,
         reason: `${rateLimit.attemptsInWindow}/${rateLimit.limit} per hour`,
       });
       return NextResponse.json({
@@ -159,16 +227,28 @@ export async function POST(req: NextRequest) {
       }, { status: 429 });
     }
 
-    const { data: zkRow } = await supabase
-      .from("sui_zklogin_identities")
-      .select("email")
-      .eq("sui_address", suiAddress)
-      .maybeSingle();
+    let zkEmail: string | null = null;
+    if (subjectColumns.sui_address) {
+      const { data: zkRow } = await supabase
+        .from("sui_zklogin_identities")
+        .select("email")
+        .eq("sui_address", subjectColumns.sui_address)
+        .maybeSingle();
+      zkEmail = zkRow?.email?.trim() ?? null;
+    }
 
-    const email = zkRow?.email?.trim();
+    const email = resolveCaptureContactEmail({
+      session: auth.session,
+      zkLoginEmail: zkEmail,
+      contactEmailField: formData.get("contact_email") as string | null,
+    });
+
     if (!email?.includes("@")) {
       return NextResponse.json({
-        error: "Google account email required — sign in again from the top right",
+        error: isChainNeutralHolderSubjectId(holderSubjectKey)
+          ? "contact_email is required for wallet sign-in holders"
+          : "Google account email required — sign in again from the top right",
+        error_code: "contact_email_required",
       }, { status: 403 });
     }
 
@@ -178,7 +258,10 @@ export async function POST(req: NextRequest) {
 
     logCaptureAudit({
       event: "capture_started",
-      sui_address: suiAddress,
+      sui_address: subjectColumns.sui_address ?? undefined,
+      holder_subject: isChainNeutralHolderSubjectId(holderSubjectKey)
+        ? `${holderSubjectKey.slice(0, 12)}…`
+        : undefined,
       capture_session_id: captureSessionId,
     });
 
@@ -190,7 +273,7 @@ export async function POST(req: NextRequest) {
 
     const verificationRequestId = (formData.get("verification_request_id") as string | null)?.trim() || null;
 
-    if (await hasPendingIdentityReview(supabase, suiAddress, policyContext.partnerId, verificationRequestId)) {
+    if (await hasPendingIdentityReview(supabase, holderSubjectKey, policyContext.partnerId, verificationRequestId)) {
       return NextResponse.json({
         error: "Identity verification is already pending review. We'll notify you when it's complete.",
         already_pending: true,
@@ -199,7 +282,7 @@ export async function POST(req: NextRequest) {
 
     const rawAssessment = await analyzeBiometricCapture({
       captureSessionId,
-      suiAddress,
+      suiAddress: holderSubjectKey,
       idFrontBuffer: idBuffer,
       selfieBuffer,
       partnerId: policyContext.partnerId,
@@ -212,7 +295,10 @@ export async function POST(req: NextRequest) {
     if (assessment.decision === "reject") {
       logCaptureAudit({
         event: "capture_rejected_engine",
-        sui_address: suiAddress,
+        sui_address: subjectColumns.sui_address ?? undefined,
+        holder_subject: isChainNeutralHolderSubjectId(holderSubjectKey)
+          ? `${holderSubjectKey.slice(0, 12)}…`
+          : undefined,
         capture_session_id: captureSessionId,
         decision: assessment.decision,
         engine_version: assessment.engine_version,
@@ -244,7 +330,8 @@ export async function POST(req: NextRequest) {
     const rows = [
       {
         user_email: email,
-        sui_address: suiAddress,
+        sui_address: subjectColumns.sui_address,
+        holder_subject_id: subjectColumns.holder_subject_id,
         stamp_id: "identity",
         file_name: idUpload.fileName,
         storage_path: idUpload.path,
@@ -255,7 +342,8 @@ export async function POST(req: NextRequest) {
       },
       {
         user_email: email,
-        sui_address: suiAddress,
+        sui_address: subjectColumns.sui_address,
+        holder_subject_id: subjectColumns.holder_subject_id,
         stamp_id: "identity",
         file_name: selfieUpload.fileName,
         storage_path: selfieUpload.path,
@@ -268,7 +356,7 @@ export async function POST(req: NextRequest) {
 
     const sessionResult = await createIdentityReviewSession({
       captureSessionId,
-      suiAddress,
+      suiAddress: holderSubjectKey,
       partnerId: policyContext.partnerId,
       policyId: policyContext.policyId,
       verificationRequestId,
@@ -320,7 +408,7 @@ export async function POST(req: NextRequest) {
         }, { status: linkagePrecheck.status });
       }
 
-      const issued = await issueManualIdentityCredential(suiAddress, {
+      const issued = await issueManualIdentityCredential(holderSubjectKey, {
         reviewId: reviewDocId,
         captureSessionId,
         reviewer: "abraxas_biometric_engine",
@@ -337,7 +425,7 @@ export async function POST(req: NextRequest) {
       if (issued.ok) {
         if (minimumAge != null && minimumAge >= 21 && documentDateOfBirth) {
           const evidence = await createAgeEvidenceRecord({
-            subjectSuiAddress: suiAddress,
+            subjectSuiAddress: holderSubjectKey,
             passportDocumentId: reviewDocId,
             captureSessionId,
             evidenceProvider: "abraxas_biometric",
@@ -363,7 +451,7 @@ export async function POST(req: NextRequest) {
         }
         logCaptureAudit({
           event: "capture_auto_approved",
-          sui_address: suiAddress,
+          sui_address: subjectColumns.sui_address ?? undefined,
           capture_session_id: captureSessionId,
           decision: "auto_approve",
           engine_version: assessment.engine_version,
@@ -392,7 +480,10 @@ export async function POST(req: NextRequest) {
 
     logCaptureAudit({
       event: "capture_queued_review",
-      sui_address: suiAddress,
+      sui_address: subjectColumns.sui_address ?? undefined,
+      holder_subject: isChainNeutralHolderSubjectId(holderSubjectKey)
+        ? `${holderSubjectKey.slice(0, 12)}…`
+        : undefined,
       capture_session_id: captureSessionId,
       decision: assessment.decision,
       engine_version: assessment.engine_version,
@@ -405,7 +496,7 @@ export async function POST(req: NextRequest) {
     const queuedMinimumAge = policyContext.policyRules?.minimum_age;
     if (queuedMinimumAge != null && queuedMinimumAge >= 21) {
       await createAgeEvidenceRecord({
-        subjectSuiAddress: suiAddress,
+        subjectSuiAddress: holderSubjectKey,
         captureSessionId,
         evidenceProvider: "abraxas_biometric",
         evidenceType: "government_id_dob",
@@ -418,7 +509,7 @@ export async function POST(req: NextRequest) {
     }
 
     await transitionIdentityVerification(
-      suiAddress,
+      holderSubjectKey,
       {
         user_email: email,
         status: "pending",

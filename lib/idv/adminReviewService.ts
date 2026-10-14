@@ -3,6 +3,8 @@
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { normalizeSuiAddress } from "@mysten/sui/utils";
+import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
+import { normalizeHolderSubjectKey } from "@/lib/idv/holderIdentityRef";
 import { getBiometricAssessment } from "./biometric/persistAssessment";
 import type { BiometricDecision } from "./biometric/types";
 import { issueManualIdentityCredential } from "./issueIdentityCredential";
@@ -82,11 +84,25 @@ function documentStatusForAction(action: AdminReviewAction): string {
   return "resubmission_requested";
 }
 
-async function resolveSuiAddress(
+async function resolveCredentialSubjectFromDocument(
   sb: SupabaseClient,
-  doc: { sui_address?: string | null; user_email?: string | null },
+  doc: {
+    sui_address?: string | null;
+    holder_subject_id?: string | null;
+    user_email?: string | null;
+  },
 ): Promise<string | null> {
-  if (doc.sui_address) return doc.sui_address;
+  const holderSubject = doc.holder_subject_id?.trim();
+  if (holderSubject && isChainNeutralHolderSubjectId(holderSubject)) {
+    return holderSubject;
+  }
+  if (doc.sui_address) {
+    try {
+      return normalizeSuiAddress(doc.sui_address);
+    } catch {
+      return null;
+    }
+  }
   if (!doc.user_email) return null;
 
   const { data: zk } = await sb
@@ -191,13 +207,13 @@ export async function executeAdminReviewAction(
     ? (request.rejectionReasons?.length ? request.rejectionReasons : engineReasons)
     : [];
 
-  const suiRaw = await resolveSuiAddress(sb, doc);
+  const subjectRaw = await resolveCredentialSubjectFromDocument(sb, doc);
 
   if (request.action === "approve") {
-    if (!suiRaw) {
+    if (!subjectRaw) {
       return {
         ok: false,
-        error: "No Sui address linked, user must sign in before approval",
+        error: "No holder subject linked to this document",
         status: 400,
       };
     }
@@ -226,7 +242,7 @@ export async function executeAdminReviewAction(
 
     const sandboxOnly = await resolveReviewPolicySandboxFlag(sb, {
       captureSessionId: sessionId,
-      suiAddress: suiRaw!,
+      suiAddress: subjectRaw,
     });
 
     const linkagePrecheck = await precheckAgeEvidenceLinkage({
@@ -241,8 +257,8 @@ export async function executeAdminReviewAction(
       };
     }
 
-    const normalized = normalizeSuiAddress(suiRaw);
-    const issued = await issueManualIdentityCredential(normalized, {
+    const subjectKey = normalizeHolderSubjectKey(subjectRaw);
+    const issued = await issueManualIdentityCredential(subjectKey, {
       reviewId: doc.id as string,
       jurisdiction: request.jurisdiction ?? "US",
       documentType: request.documentType ?? "passport",
@@ -265,7 +281,7 @@ export async function executeAdminReviewAction(
     let ageEvidenceStorageUnavailable = false;
     if (minimumAge != null && minimumAge >= 21 && request.documentDateOfBirth) {
       const evidence = await createAgeEvidenceRecord({
-        subjectSuiAddress: normalized,
+        subjectSuiAddress: subjectKey,
         passportDocumentId: doc.id as string,
         captureSessionId: sessionId,
         evidenceProvider: "abraxas_manual_review",
@@ -297,9 +313,12 @@ export async function executeAdminReviewAction(
       ageEvidenceStorageUnavailable = finalized.storage_unavailable === true;
     }
 
+    const legacySui = isChainNeutralHolderSubjectId(subjectKey)
+      ? null
+      : normalizeSuiAddress(subjectKey);
     const docUpdate = {
       status: newStatus,
-      sui_address: normalized,
+      ...(legacySui ? { sui_address: legacySui } : {}),
       reviewer_note: request.note ?? null,
       reviewed_at: now,
       reviewed_by: request.reviewerId,
@@ -317,7 +336,7 @@ export async function executeAdminReviewAction(
     await writeAuditLog(sb, {
       captureSessionId: sessionId,
       passportDocumentId: doc.id as string,
-      suiAddress: normalized,
+      suiAddress: legacySui,
       reviewerId: request.reviewerId,
       action: request.action,
       previousStatus,
@@ -346,7 +365,7 @@ export async function executeAdminReviewAction(
       captureSessionId: sessionId,
       reviewerDecision,
       engineDecision,
-      suiAddress: normalized,
+      suiAddress: legacySui ?? subjectKey,
       jti: issued.jti,
       alreadyIssued: issued.alreadyIssued ?? false,
       ageEvidenceId,
@@ -370,12 +389,12 @@ export async function executeAdminReviewAction(
 
   await updateBiometricReviewerDecision(sb, sessionId, reviewerDecision, request.reviewerId, now);
 
-  if (suiRaw) {
+  if (subjectRaw) {
     try {
-      const normalized = normalizeSuiAddress(suiRaw);
+      const subjectKey = normalizeHolderSubjectKey(subjectRaw);
       if (request.action === "reject") {
         await transitionIdentityVerification(
-          normalized,
+          subjectKey,
           {
             user_email: doc.user_email as string,
             status: "revoked",
@@ -387,7 +406,7 @@ export async function executeAdminReviewAction(
         );
       } else {
         await transitionIdentityVerification(
-          normalized,
+          subjectKey,
           {
             user_email: doc.user_email as string,
             status: "pending",
@@ -406,7 +425,9 @@ export async function executeAdminReviewAction(
   await writeAuditLog(sb, {
     captureSessionId: sessionId,
     passportDocumentId: doc.id as string,
-    suiAddress: suiRaw ? normalizeSuiAddress(suiRaw) : null,
+    suiAddress: subjectRaw && !isChainNeutralHolderSubjectId(subjectRaw)
+      ? normalizeSuiAddress(subjectRaw)
+      : null,
     reviewerId: request.reviewerId,
     action: request.action,
     previousStatus,
@@ -435,6 +456,6 @@ export async function executeAdminReviewAction(
     captureSessionId: sessionId,
     reviewerDecision,
     engineDecision,
-    suiAddress: suiRaw ? normalizeSuiAddress(suiRaw) : undefined,
+    suiAddress: subjectRaw ?? undefined,
   };
 }

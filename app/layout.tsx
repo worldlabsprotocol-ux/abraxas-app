@@ -1,6 +1,6 @@
 // FILE: app/layout.tsx
 // Root layout. Light default, dark via ThemeContext toggle.
-// Fonts load in the browser so offline CI builds retain deterministic system fallbacks.
+// Typography: self-hosted woff2 via next/font/local (see app/abraxasFonts.ts).
 import type { Metadata } from "next";
 import "./globals.css";
 import "./globals.receipt-live.css";

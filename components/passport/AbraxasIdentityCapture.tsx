@@ -7,7 +7,8 @@ import { CameraCapture } from "@/components/passport/CameraCapture";
 import { Btn } from "@/components/redesign/ui";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { loadUserSession } from "@/lib/sui/zklogin/session";
-import { ensureBrowserSession } from "@/lib/auth/ensureBrowserSession";
+import { ensureBrowserSession, probeBrowserSessionDetails } from "@/lib/auth/ensureBrowserSession";
+import { IDENTITY_PROCESSING_CONSENT_FIELD } from "@/lib/idv/holderSubjectIdv";
 import {
   identityCaptureStepLabel,
   identityCaptureSteps,
@@ -63,6 +64,8 @@ export function AbraxasIdentityCapture({
   useEffect(() => {
     if (pendingReview) setSubmitted(true);
   }, [pendingReview]);
+  const [contactEmail, setContactEmail] = useState("");
+  const [identityConsent, setIdentityConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preflightWarning, setPreflightWarning] = useState<string | null>(null);
   const [checkingPreflight, setCheckingPreflight] = useState(false);
@@ -127,18 +130,35 @@ export function AbraxasIdentityCapture({
     }
 
     const stored = loadUserSession();
-    const resolvedAddress = suiAddress ?? stored?.suiAddress ?? null;
-    const resolvedEmail = email || stored?.email || "";
+    const sessionProbe = await probeBrowserSessionDetails();
+    const resolvedAddress =
+      sessionProbe.holderSubjectId
+      ?? suiAddress
+      ?? stored?.suiAddress
+      ?? null;
+    const resolvedEmail = email || stored?.email || contactEmail.trim();
+    const walletNative = Boolean(sessionProbe.holderSubjectId?.startsWith("abx_hs_"));
 
     if (!resolvedAddress) {
       setError(
-        "You are not signed in. Tap Sign in at the top right, complete Google once, then return here.",
+        walletNative
+          ? "Sign in with your wallet first, then return to verify your identity."
+          : "You are not signed in. Tap Sign in at the top right, complete Google once, then return here.",
       );
       return;
     }
 
     if (!resolvedEmail.includes("@")) {
-      setError("We need your Google email on file. Sign out, sign in once more, then submit again.");
+      setError(
+        walletNative
+          ? "Enter a contact email we can use for review updates about this verification."
+          : "We need your Google email on file. Sign out, sign in once more, then submit again.",
+      );
+      return;
+    }
+
+    if (!identityConsent) {
+      setError("Confirm consent to process your identity documents for Abraxas Verify review.");
       return;
     }
     if (!idCapture || !selfieCapture) {
@@ -153,16 +173,22 @@ export function AbraxasIdentityCapture({
     setSubmitting(true);
     setError(null);
     try {
-      const browserSession = await ensureBrowserSession(resolvedAddress);
-      if (!browserSession.ok) {
-        throw new Error(
-          browserSession.error
-          ?? "Could not establish a secure browser session. Sign out, sign in once, then try again.",
-        );
+      if (!sessionProbe.ok) {
+        const browserSession = await ensureBrowserSession(resolvedAddress);
+        if (!browserSession.ok) {
+          throw new Error(
+            browserSession.error
+            ?? "Could not establish a secure browser session. Sign in once, then try again.",
+          );
+        }
       }
 
       const formData = new FormData();
       formData.append("legal_name", legalName.trim());
+      formData.append(IDENTITY_PROCESSING_CONSENT_FIELD, "true");
+      if (walletNative || !email.includes("@")) {
+        formData.append("contact_email", resolvedEmail);
+      }
       if (requireDateOfBirth && dateOfBirth.trim()) {
         formData.append("document_date_of_birth", dateOfBirth.trim());
       }
@@ -394,6 +420,40 @@ export function AbraxasIdentityCapture({
               <br />
               Submitted images are stored privately for Abraxas review only. Partners see verification outcome and credential, not your photos.
             </div>
+            {!email.includes("@") && (
+              <div style={{ marginTop: "0.85rem" }}>
+                <label style={{ display: "block", fontFamily: FONT, fontSize: "0.78rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: 6 }}>
+                  Contact email (review updates only)
+                </label>
+                <input
+                  type="email"
+                  value={contactEmail}
+                  onChange={e => setContactEmail(e.target.value)}
+                  autoComplete="email"
+                  style={{
+                    width: "100%",
+                    padding: "0.65rem 0.75rem",
+                    borderRadius: 8,
+                    border: "1px solid var(--border-strong)",
+                    background: "var(--surface-raised)",
+                    color: "var(--text-primary)",
+                    fontFamily: FONT,
+                    fontSize: "0.85rem",
+                  }}
+                />
+              </div>
+            )}
+            <label style={{ display: "flex", gap: 8, alignItems: "flex-start", marginTop: "0.85rem", fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: 1.5 }}>
+              <input
+                type="checkbox"
+                checked={identityConsent}
+                onChange={e => setIdentityConsent(e.target.checked)}
+                style={{ marginTop: 3 }}
+              />
+              <span>
+                I consent to Abraxas processing my ID and selfie solely to verify my identity and age eligibility.
+              </span>
+            </label>
           </div>
         )}
 

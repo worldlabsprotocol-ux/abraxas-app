@@ -22,9 +22,16 @@ export interface IdentityReviewQueueListItem {
   biometric?: Record<string, unknown> | null;
 }
 
-export function subjectLabelFromAddress(suiAddress: string | null | undefined): string {
-  if (!suiAddress || suiAddress.length < 12) return "Subject (wallet pending)";
-  return `Subject ${suiAddress.slice(0, 6)}…${suiAddress.slice(-4)}`;
+export function subjectLabelFromAddress(
+  suiAddress: string | null | undefined,
+  holderSubjectId?: string | null,
+): string {
+  const key = holderSubjectId?.trim() || suiAddress?.trim();
+  if (!key || key.length < 12) return "Subject (wallet pending)";
+  if (key.startsWith("abx_hs_")) {
+    return `Holder ${key.slice(0, 12)}…${key.slice(-4)}`;
+  }
+  return `Subject ${key.slice(0, 6)}…${key.slice(-4)}`;
 }
 
 export function sanitizeBiometricForList(
