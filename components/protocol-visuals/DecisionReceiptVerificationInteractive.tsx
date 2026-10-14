@@ -5,6 +5,8 @@ import { V2_SIMULATION_LABEL } from "@/lib/home/v2HomeCopy";
 import {
   buildReceiptDemoFields,
   deriveReceiptDemoState,
+  type ReceiptDemoCheck,
+  type ReceiptDemoCheckStatus,
   type ReceiptScenario,
 } from "@/lib/home/receiptVerificationDemoModel";
 import { ProtocolVisualShell } from "./ProtocolVisualShell";
@@ -16,7 +18,11 @@ const SCENARIOS: { id: ReceiptScenario; label: string; hint: string }[] = [
   { id: "unavailable", label: "Unavailable", hint: "Cannot be verified" },
 ];
 
-type CheckItem = { id: string; label: string; detail: string; ok: boolean };
+function badgeClass(status: ReceiptDemoCheckStatus): string {
+  if (status === "PASS") return " abx-pv-verify__badge--ok";
+  if (status === "FAIL") return " abx-pv-verify__badge--fail";
+  return " abx-pv-verify__badge--unknown";
+}
 
 function CheckList({
   title,
@@ -25,7 +31,7 @@ function CheckList({
 }: {
   title: string;
   subtitle: string;
-  items: CheckItem[];
+  items: ReceiptDemoCheck[];
 }) {
   return (
     <div className="abx-pv-verify__check-col">
@@ -35,10 +41,10 @@ function CheckList({
         {items.map((item) => (
           <li key={item.id} className="abx-pv-verify__check-row">
             <span
-              className={`abx-pv-verify__badge${item.ok ? " abx-pv-verify__badge--ok" : " abx-pv-verify__badge--fail"}`}
-              aria-label={item.ok ? "Valid" : "Failed"}
+              className={`abx-pv-verify__badge${badgeClass(item.status)}`}
+              aria-label={item.status === "PASS" ? "Pass" : item.status === "FAIL" ? "Fail" : "Unknown"}
             >
-              {item.ok ? "Valid" : "Fail"}
+              {item.status === "PASS" ? "Pass" : item.status === "FAIL" ? "Fail" : "Unknown"}
             </span>
             <div>
               <strong>{item.label}</strong>
@@ -56,59 +62,7 @@ export function DecisionReceiptVerificationInteractive() {
   const state = useMemo(() => deriveReceiptDemoState(scenario), [scenario]);
   const fields = useMemo(() => buildReceiptDemoFields(scenario, state), [scenario, state]);
 
-  const authenticityChecks: CheckItem[] = [
-    {
-      id: "issuer",
-      label: "Issuer authority",
-      detail: "Issuer is recognized and trusted.",
-      ok: state.issuerTrusted,
-    },
-    {
-      id: "signature",
-      label: "Signature integrity",
-      detail: "Cryptographic signature verifies.",
-      ok: state.signatureValid,
-    },
-    {
-      id: "policy",
-      label: "Policy binding",
-      detail: "Receipt is bound to an active policy.",
-      ok: state.policyBound,
-    },
-    {
-      id: "audience",
-      label: "Audience binding",
-      detail: "Intended audience matches the request.",
-      ok: state.audienceBound,
-    },
-  ];
-
-  const authorizationChecks: CheckItem[] = [
-    {
-      id: "expiration",
-      label: "Expiration",
-      detail: "Decision has not expired.",
-      ok: state.validityWindowOk,
-    },
-    {
-      id: "freshness",
-      label: "Freshness",
-      detail: "Within acceptable time window.",
-      ok: state.freshnessOk,
-    },
-    {
-      id: "revocation",
-      label: "Revocation",
-      detail: "Not revoked by issuer.",
-      ok: state.revocationClear,
-    },
-    {
-      id: "replay",
-      label: "Replay protection",
-      detail: "Not a replayed receipt.",
-      ok: state.replayProtected,
-    },
-  ];
+  const { authenticityChecks, authorizationChecks } = state;
 
   const outcomeColor =
     state.currentlyAuthorized && state.outcome === "PERMIT"
@@ -211,6 +165,11 @@ export function DecisionReceiptVerificationInteractive() {
               <span className="abx-pv-verify__aggregate-note">
                 {" "}
                 — valid signature does not imply PERMIT.
+              </span>
+            ) : state.aggregateStatus === "UNAVAILABLE" ? (
+              <span className="abx-pv-verify__aggregate-note">
+                {" "}
+                — unknown checks do not imply an invalid signature.
               </span>
             ) : null}
           </p>
