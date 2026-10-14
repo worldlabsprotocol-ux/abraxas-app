@@ -6,7 +6,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { DEMO_IDV_ACTIVATION_MANIFEST } from "../../lib/databaseRecovery/idvActivationManifest";
+import { SOVEREIGN_RUNTIME_SCHEMA_MANIFEST } from "../../lib/databaseRecovery/sovereignSchemaManifest";
 
 const pgUrl = process.env.ABRAXAS_SOVEREIGN_PG_URL?.trim()
   ?? process.env.MIGRATION_136_PG_URL?.trim()
@@ -18,16 +18,7 @@ if (!pgUrl) {
 }
 
 const migrationsDir = join(process.cwd(), "supabase/migrations");
-const files = [
-  "006_abraxas_id.sql",
-  "018_policy_verification.sql",
-  "020_identity_verification_state_machine.sql",
-  "136_passport_holder_subjects.sql",
-  ...DEMO_IDV_ACTIVATION_MANIFEST,
-  "078_age_evidence_records.sql",
-  "138_sovereign_idv_evidence_custody.sql",
-  "139_sovereign_idv_claims_evidence.sql",
-];
+const files = [...SOVEREIGN_RUNTIME_SCHEMA_MANIFEST];
 
 for (const file of files) {
   const sql = readFileSync(join(migrationsDir, file), "utf8");

@@ -77,9 +77,11 @@
     "database-recovery:restore-verify": "tsx scripts/database-recovery/restore-and-verify-demo-backup.ts",
     "database-recovery:rehearse-idv": "tsx scripts/database-recovery/rehearse-idv-manifest-on-restore.ts",
     "test:database-recovery": "vitest run lib/databaseRecovery/",
-    "test:sovereign-runtime": "vitest run lib/persistence/sovereignRuntime.adversarial.test.ts lib/persistence/holderSubjectDirect.concurrency.test.ts lib/persistence/idvLifecycle.sovereign.test.ts lib/persistence/idvIssuance.adversarial.test.ts lib/persistence/build555.sovereignPassport.test.ts lib/persistence/build555Security.adversarial.test.ts lib/persistence/portability.contract.test.ts",
+    "test:sovereign-runtime": "vitest run lib/persistence/sovereignRuntime.adversarial.test.ts lib/persistence/holderSubjectDirect.concurrency.test.ts lib/persistence/idvLifecycle.sovereign.test.ts lib/persistence/idvIssuance.adversarial.test.ts lib/persistence/build555.sovereignPassport.test.ts lib/persistence/build555Security.adversarial.test.ts lib/persistence/build556.sovereignCertification.test.ts lib/persistence/portability.contract.test.ts",
+    "test:sovereign-certification": "vitest run lib/persistence/build556.sovereignCertification.test.ts lib/databaseRecovery/manifestGuard.sovereign.test.ts lib/databaseRecovery/sovereignBackupRestore.test.ts",
     "sovereign-idv:apply-schema": "tsx scripts/sovereign-runtime/apply-sovereign-idv-schema.ts",
-    "sovereign-runtime:disposable-proof": "tsx scripts/sovereign-runtime/disposable-proof.ts"
+    "sovereign-runtime:disposable-proof": "tsx scripts/sovereign-runtime/disposable-proof.ts",
+    "sovereign-runtime:certify-556": "tsx scripts/sovereign-runtime/certify-build-556.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",
