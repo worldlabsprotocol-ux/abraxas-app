@@ -877,6 +877,11 @@
   color: #e57373;
 }
 
+.abx-pv-verify__badge--unknown {
+  border-color: rgba(212, 165, 116, 0.45);
+  color: #d4a574;
+}
+
 .abx-pv-verify__receipt {
   border: 1px solid rgba(76, 187, 146, 0.4);
   padding: 0.75rem 0.85rem;

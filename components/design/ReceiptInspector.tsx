@@ -91,13 +91,37 @@ export function ReceiptInspector({
       </dl>
 
       <div className="abx-receipt-inspector__checks" aria-label="Verification checks">
-        <CheckRow label="Signed" ok={signatureValid} detail="Issuer signature verifies — does not imply authorization alone" />
-        <CheckRow label="Validity window" ok={validityWindowOk} detail="Not expired; time-bound eligibility" />
-        <CheckRow label="Revocation clear" ok={revocationClear} detail="Registry / policy revocation signal" />
-        <CheckRow label="Verifier available" ok={verifierReachable} detail="Independent verify path reachable" />
+        <CheckRow
+          label="Signed"
+          status={signatureValid ? "pass" : verifierReachable ? "fail" : "unknown"}
+          detail="Issuer signature verifies — does not imply authorization alone"
+        />
+        <CheckRow
+          label="Validity window"
+          status={
+            verifierReachable ? (validityWindowOk ? "pass" : "fail") : "unknown"
+          }
+          detail="Not expired; time-bound eligibility"
+        />
+        <CheckRow
+          label="Revocation clear"
+          status={verifierReachable ? (revocationClear ? "pass" : "fail") : "unknown"}
+          detail="Registry / policy revocation signal"
+        />
+        <CheckRow
+          label="Verifier available"
+          status={verifierReachable ? "pass" : "unknown"}
+          detail="Independent verify path reachable"
+        />
         <CheckRow
           label="Authorized now"
-          ok={currentlyAuthorized}
+          status={
+            !verifierReachable
+              ? "unknown"
+              : currentlyAuthorized
+                ? "pass"
+                : "fail"
+          }
           detail="Combined policy decision after all checks — may DENY while signature remains valid"
         />
       </div>
@@ -113,14 +137,23 @@ export function ReceiptInspector({
   );
 }
 
-function CheckRow({ label, ok, detail }: { label: string; ok: boolean; detail: string }) {
+type CheckRowStatus = "pass" | "fail" | "unknown";
+
+function CheckRow({ label, status, detail }: { label: string; status: CheckRowStatus; detail: string }) {
+  const icon = status === "pass" ? "✓" : status === "fail" ? "✕" : "?";
+  const color =
+    status === "pass"
+      ? "var(--abx-verify-green, #4CBB92)"
+      : status === "fail"
+        ? "#E57373"
+        : "#D4A574";
   return (
     <div className="abx-receipt-inspector__check" style={{ fontFamily: FONT }}>
       <span className="abx-receipt-inspector__check-icon" aria-hidden="true">
-        {ok ? "✓" : "✕"}
+        {icon}
       </span>
       <div>
-        <strong style={{ color: ok ? "var(--abx-verify-green, #4CBB92)" : "#E57373" }}>{label}</strong>
+        <strong style={{ color }}>{label}</strong>
         <p style={{ margin: "0.15rem 0 0", fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.45 }}>
           {detail}
         </p>

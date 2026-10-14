@@ -74,7 +74,15 @@ export function ProtocolReceiptDemo() {
               : "N/A",
       },
       { label: "Issuer", value: RECEIPT_DEMO_ISSUER, mono: true },
-      { label: "Signature validity", value: signatureValid ? "Valid (Ed25519)" : "Unavailable (simulated outage)" },
+      {
+        label: "Signature validity",
+        value:
+          scenario === "unavailable"
+            ? "Unknown — not evaluated (simulated outage)"
+            : signatureValid
+              ? "Valid (Ed25519)"
+              : "Failed (simulated)",
+      },
       {
         label: "Verification source",
         value:
