@@ -4,12 +4,31 @@
 import {
   BUILD_546_FIXTURE_NOW,
   BUILD_546_PRIMARY_KEY,
+  BUILD_546_RETIRED_KEY,
 } from "@/lib/institutionalCertification/build546/fixtures";
+import type { PortableRevocationIssuerTrustPolicy } from "./issuerAuthority";
 import type { ReceiptSigningKeyPair } from "@/lib/decisionReceipts/signing";
 import { buildPortableRevocationPayload, signPortableRevocationSnapshot } from "./sign";
 import type { PortableRevocationSignedArtifact } from "./contract";
 
 export const PORTABLE_REVOCATION_TEST_ISSUER_ID = "issuer:abraxas-portable-revocation-test";
+
+export function build546PortableRevocationIssuerTrust(): PortableRevocationIssuerTrustPolicy {
+  return {
+    bindings: [
+      {
+        receipt_signing_key_id: BUILD_546_PRIMARY_KEY.signingKeyId,
+        revocation_issuer_id: PORTABLE_REVOCATION_TEST_ISSUER_ID,
+        snapshot_signing_key_ids: [BUILD_546_PRIMARY_KEY.signingKeyId],
+      },
+      {
+        receipt_signing_key_id: BUILD_546_RETIRED_KEY.signingKeyId,
+        revocation_issuer_id: PORTABLE_REVOCATION_TEST_ISSUER_ID,
+        snapshot_signing_key_ids: [BUILD_546_PRIMARY_KEY.signingKeyId],
+      },
+    ],
+  };
+}
 
 export function buildSyntheticPortableRevocationSnapshot(input: {
   receiptId: string;

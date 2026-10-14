@@ -1,16 +1,14 @@
-# Build #564 — Investor milestone (portable revocation)
+# Build #564 — Investor milestone (portable revocation, final)
 
-**Milestone:** Partners can determine whether a Passport presentation is **currently authorized** using holder-presented credentials, packaged issuer keys, and a **cryptographically signed revocation snapshot** — without calling Abraxas APIs or accessing underlying identity records.
+**Milestone:** Independent institutions can establish **authenticated, fresh, rollback-resistant** revocation status for Passport presentations without calling Abraxas during authorization.
 
-**What shipped (cryptographic / protocol):**
+**Cryptographic / protocol (proven in tests):**
 
-- Versioned, signed revocation status artifact with freshness, expiry, and rollback detection.
-- Privacy-preserving status identifiers (no PII in the feed).
-- Strict integration with independent relying-party verification — fabricated “active” hints no longer authorize.
+- Signed portable revocation snapshots with bounded freshness and chained sequences.
+- Local issuer-trust binding (receipt signing key ↔ revocation issuer ↔ snapshot keys).
+- Relying-party checkpoint store and explicit bootstrap anchors (no silent trust of arbitrary snapshots).
+- Strict proof-first partner path; unsigned “active” hints rejected.
 
-**What is not claimed:**
+**Not claimed:** Production feed operations, global unlinkability against colluding partners, or on-chain deployment.
 
-- Production revocation feed operations, CDN distribution, or 24/7 monitoring.
-- On-chain deployment or mainnet commitments (design allows optional anchors only).
-
-**Trust dependencies remaining:** Partners must obtain fresh signed snapshots from an authorized distribution path they trust (mirrors, email bundles, chain anchors, etc.) and maintain their own replay controls.
+**Remaining trust:** Partners must configure issuer-trust policy, distribute bootstrap anchors out-of-band, and operate checkpoint storage locally.

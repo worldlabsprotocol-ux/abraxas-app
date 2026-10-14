@@ -37,6 +37,7 @@ export function buildPortableRevocationPayload(input: {
   issuedAt: string;
   expiresAt: string;
   maxFreshnessSeconds: number;
+  maxStatusEntryAgeSeconds?: number;
   previousSnapshotHash: string | null;
   receiptStates: Array<{ receiptId: string; state: "active" | "revoked"; updatedAt: string }>;
 }): PortableRevocationPayload {
@@ -56,6 +57,7 @@ export function buildPortableRevocationPayload(input: {
     issued_at: input.issuedAt,
     expires_at: input.expiresAt,
     max_freshness_seconds: input.maxFreshnessSeconds,
+    max_status_entry_age_seconds: input.maxStatusEntryAgeSeconds ?? input.maxFreshnessSeconds,
     previous_snapshot_hash: input.previousSnapshotHash,
     status_entries,
   };

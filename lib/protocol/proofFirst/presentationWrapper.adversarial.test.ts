@@ -14,11 +14,16 @@ import {
   type HolderPolicyScopedPresentation,
 } from "./holderPolicyPresentation";
 import { verifyHolderPresentationAtRelyingParty } from "./proofFirstRelyingParty";
-import { activePortableRevocationSnapshotForReceipt } from "./proofFirstTestRevocation";
+import {
+  activePortableRevocationSnapshotForReceipt,
+  createProofFirstPortableRevocationTestContext,
+  rpWithSnapshotBootstrap,
+} from "./proofFirstTestRevocation";
 
 describe("Build #563 presentation wrapper adversarial (unsigned metadata)", () => {
   let env: Record<string, string>;
   let base: HolderPolicyScopedPresentation;
+  let portableCtx: ReturnType<typeof createProofFirstPortableRevocationTestContext>;
 
   beforeEach(() => {
     for (const key of Object.keys(process.env)) {
@@ -26,6 +31,7 @@ describe("Build #563 presentation wrapper adversarial (unsigned metadata)", () =
     }
     env = build546TrustRegistryEnv();
     Object.assign(process.env, env);
+    portableCtx = createProofFirstPortableRevocationTestContext();
     base = composeHolderPolicyScopedPresentation({
       signedRecord: build546SampleRecord(),
       audiencePartnerId: BUILD_546_PARTNER_ID,
@@ -39,14 +45,19 @@ describe("Build #563 presentation wrapper adversarial (unsigned metadata)", () =
   });
 
   async function decide(presentation: HolderPolicyScopedPresentation) {
+    const snapshot = activePortableRevocationSnapshotForReceipt(
+      presentation.signed_decision_receipt.id,
+    );
     return verifyHolderPresentationAtRelyingParty({
       presentation,
       requestId: "req_wrapper_tamper",
-      rp: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
-      now: BUILD_546_FIXTURE_NOW,
-      portableRevocationSnapshot: activePortableRevocationSnapshotForReceipt(
-        presentation.signed_decision_receipt.id,
+      rp: rpWithSnapshotBootstrap(
+        { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID, env },
+        portableCtx,
+        snapshot,
       ),
+      now: BUILD_546_FIXTURE_NOW,
+      portableRevocationSnapshot: snapshot,
     });
   }
 

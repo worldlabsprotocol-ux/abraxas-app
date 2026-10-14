@@ -17,7 +17,12 @@ import {
   type HolderPolicyScopedPresentation,
 } from "./holderPolicyPresentation";
 import { validatePresentationReceiptStrictBinding } from "./presentationReceiptBinding";
-import type { PortableRevocationSignedArtifact } from "@/lib/protocol/portableRevocation";
+import type {
+  PortableRevocationBootstrapTrust,
+  PortableRevocationCheckpointStore,
+  PortableRevocationIssuerTrustPolicy,
+  PortableRevocationSignedArtifact,
+} from "@/lib/protocol/portableRevocation";
 import { resolveStrictPortableRevocation } from "./portableRevocationStrict";
 
 function partnerFlowViewFromSignedRecord(
@@ -51,6 +56,14 @@ export type ProofFirstRelyingPartyConfig = {
   policyId: string;
   allowSandbox?: boolean;
   env?: Record<string, string | undefined>;
+  /** Build #564 final — local issuer bind, checkpoint, and bootstrap trust. */
+  portableRevocation?: {
+    issuerTrust: PortableRevocationIssuerTrustPolicy;
+    checkpointStore: PortableRevocationCheckpointStore;
+    bootstrapTrusts?: PortableRevocationBootstrapTrust[];
+    clockSkewSeconds?: number;
+    advanceCheckpointOnSuccess?: boolean;
+  };
 };
 
 export type ProofFirstVerificationOutcome = ExternalRpDecisionAudit & {
@@ -174,7 +187,6 @@ export async function verifyHolderPresentationAtRelyingParty(input: {
    * Required for authorization on the strict proof-first path.
    */
   portableRevocationSnapshot?: PortableRevocationSignedArtifact;
-  previousPortableRevocationSnapshot?: PortableRevocationSignedArtifact;
   /** Ignored for authorization unless paired with portableRevocationSnapshot verification. */
   revocationSource?: RevocationSourceState;
   harness?: ExternalRelyingPartyHarness;
@@ -182,12 +194,11 @@ export async function verifyHolderPresentationAtRelyingParty(input: {
   const signed = input.presentation.signed_decision_receipt;
   const now = input.now ?? new Date();
 
-  const portableRevocation = resolveStrictPortableRevocation({
+  const portableRevocation = await resolveStrictPortableRevocation({
     signed,
     now,
-    env: input.rp.env,
+    rp: input.rp,
     portableRevocationSnapshot: input.portableRevocationSnapshot,
-    previousPortableRevocationSnapshot: input.previousPortableRevocationSnapshot,
     revocationSource: input.revocationSource,
   });
   const revocationSource = portableRevocation.revocationSource;

@@ -6,7 +6,26 @@ export {
   PORTABLE_REVOCATION_SCHEMA_VERSION,
   type PortableRevocationSignedArtifact,
   type PortableRevocationPayload,
+  type PortableRevocationBootstrapTrust,
+  type PortableRevocationCheckpoint,
 } from "./contract";
+export {
+  type PortableRevocationIssuerTrustPolicy,
+  resolveAuthorizedRevocationIssuerForReceipt,
+  bootstrapTrustFromArtifact,
+} from "./issuerAuthority";
+export {
+  type PortableRevocationCheckpointStore,
+  InMemoryPortableRevocationCheckpointStore,
+} from "./checkpointStore";
+export {
+  PORTABLE_REVOCATION_DEFAULT_CLOCK_SKEW_SECONDS,
+  validatePortableRevocationFreshness,
+} from "./freshness";
+export {
+  verifyPortableRevocationAtRelyingParty,
+  type VerifyPortableRevocationAtRelyingPartyResult,
+} from "./rpVerify";
 export { portableRevocationStatusId } from "./statusId";
 export { hashPortableRevocationPayload } from "./canonical";
 export {
@@ -19,4 +38,8 @@ export {
   revocationSourceFromPortableSnapshot,
   type PortableRevocationVerification,
 } from "./verify";
-export { buildSyntheticPortableRevocationSnapshot, PORTABLE_REVOCATION_TEST_ISSUER_ID } from "./fixtures";
+export {
+  buildSyntheticPortableRevocationSnapshot,
+  build546PortableRevocationIssuerTrust,
+  PORTABLE_REVOCATION_TEST_ISSUER_ID,
+} from "./fixtures";

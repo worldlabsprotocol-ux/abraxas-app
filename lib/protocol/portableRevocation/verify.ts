@@ -24,7 +24,22 @@ export type PortableRevocationVerifyCode =
   | "sequence_rollback"
   | "previous_hash_mismatch"
   | "receipt_not_in_snapshot"
-  | "receipt_revoked";
+  | "receipt_revoked"
+  | "invalid_timestamp"
+  | "snapshot_future_dated"
+  | "invalid_freshness_bounds"
+  | "invalid_expiry_window"
+  | "invalid_sequence"
+  | "duplicate_status_entry"
+  | "stale_status_entry"
+  | "status_entry_future_dated"
+  | "invalid_status_entry"
+  | "issuer_authority_mismatch"
+  | "issuer_trust_unconfigured"
+  | "snapshot_signing_key_unauthorized"
+  | "checkpoint_unavailable"
+  | "rollback_against_checkpoint"
+  | "chain_continuity_break";
 
 export type PortableRevocationVerification = {
   ok: boolean;
@@ -67,18 +82,6 @@ export function verifyPortableRevocationArtifact(input: {
     const pub = toPublicReceiptJwk(keyResolved.key.public_jwk);
     if (!pub || !verifyPortableRevocationSignature({ artifact, publicKeyJwk: pub })) {
       codes.push("signature_invalid");
-    }
-  }
-
-  const issuedMs = Date.parse(artifact.payload.issued_at);
-  const expiresMs = Date.parse(artifact.payload.expires_at);
-  if (!Number.isNaN(expiresMs) && now.getTime() >= expiresMs) {
-    codes.push("snapshot_expired");
-  }
-  if (!Number.isNaN(issuedMs)) {
-    const ageSec = (now.getTime() - issuedMs) / 1000;
-    if (ageSec > artifact.payload.max_freshness_seconds) {
-      codes.push("snapshot_stale");
     }
   }
 
