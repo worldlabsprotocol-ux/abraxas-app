@@ -504,6 +504,59 @@
   overflow: hidden;
 }
 
+.abx-vltb__canvas--reference {
+  padding: 0;
+}
+
+.abx-vltb__canvas--reference .abx-pv-diagram {
+  margin: 0;
+}
+
+.abx-vltb__canvas--reference .abx-vltb__flow-track {
+  position: absolute;
+  top: 0.65rem;
+  left: clamp(0.85rem, 2vw, 1.15rem);
+  right: clamp(0.85rem, 2vw, 1.15rem);
+  z-index: 2;
+  margin: 0;
+}
+
+.abx-vltb__stage-glow {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.35;
+  transition: opacity 0.35s ease;
+  background: radial-gradient(
+    circle at var(--vltb-glow-x, 50%) 42%,
+    rgba(76, 187, 146, 0.22),
+    transparent 58%
+  );
+}
+
+.abx-vltb__stage-glow--provide {
+  --vltb-glow-x: 18%;
+}
+
+.abx-vltb__stage-glow--evaluate {
+  --vltb-glow-x: 42%;
+}
+
+.abx-vltb__stage-glow--decision {
+  --vltb-glow-x: 62%;
+}
+
+.abx-vltb__stage-glow--verify {
+  --vltb-glow-x: 82%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .abx-vltb__stage-glow {
+    transition: none;
+  }
+}
+
 .abx-vltb__grid {
   pointer-events: none;
   position: absolute;
