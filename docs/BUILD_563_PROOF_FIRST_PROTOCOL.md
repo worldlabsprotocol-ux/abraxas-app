@@ -45,6 +45,7 @@ Entry point: `verifyHolderPresentationAtRelyingParty` in `lib/protocol/proofFirs
 ### Presentation wrapper security (Build #563 final)
 
 - **`validatePresentationReceiptStrictBinding`** — unsigned wrapper fields (`policy_id`, `policy_version`, `audience_partner_id`, `disclosed_claim_refs`, media type) must match the **signed** receipt and RP expectations; any mismatch → **DENY** (`deny_presentation_binding`), never GRANTED from wrapper metadata alone.
+- **Consumption safety** — binding/custody failures call `verifyReceiptIndependently` for diagnostics only; **`ExternalRelyingPartyHarness.decide` is not invoked**, so replay/consumption state cannot change on invalid wrappers.
 - Authorization-relevant partner/policy/claims are taken from the **issuer-signed receipt** after binding passes.
 - **`auditSignedReceiptCorrelationSurface`** — documents remaining correlators on signed artifacts (`subject_pseudonym_id`, `receipt_id`, optional `wallet_binding_ref`, `consent_receipt_id`). This is **not** a zero-knowledge or unlinkability guarantee; partners should minimize what they log and share.
 

@@ -5,7 +5,10 @@ import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import { evaluatePublicReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation";
 import { verifyRecordSignatureWithRegistry } from "@/lib/decisionReceipts/verificationKeyLifecycle";
 import { toPublicView } from "@/lib/decisionReceipts/views";
-import type { RevocationSourceState } from "@/lib/institutionalCertification/build546/independentVerifier";
+import {
+  verifyReceiptIndependently,
+  type RevocationSourceState,
+} from "@/lib/institutionalCertification/build546/independentVerifier";
 import { ExternalRelyingPartyHarness } from "@/lib/institutionalCertification/build546/externalRelyingParty";
 import type { ExternalRpDecisionAudit } from "@/lib/institutionalCertification/build546/externalRelyingParty";
 import type { PartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlowReceipt";
@@ -56,28 +59,65 @@ export type ProofFirstVerificationOutcome = ExternalRpDecisionAudit & {
   live_authority_checks: string[];
   presentation_binding_ok: boolean;
   presentation_binding_deny_codes?: string[];
+  /** True when outcome was decided without mutating RP consumption state. */
+  consumption_skipped_preflight_reject?: boolean;
 };
 
-function bindingDenyOutcome(
-  audit: ExternalRpDecisionAudit,
-  denyCodes: string[],
-): ProofFirstVerificationOutcome {
+function preflightRejectOutcome(input: {
+  requestId: string;
+  signed: DecisionReceiptRecord;
+  now: Date;
+  rp: ProofFirstRelyingPartyConfig;
+  revocationSource?: RevocationSourceState;
+  denyCodes: string[];
+  partnerResult: string;
+  bindingOk: boolean;
+}): ProofFirstVerificationOutcome {
+  const publicReceipt = partnerFlowViewFromSignedRecord(
+    input.signed,
+    input.now,
+    { partnerId: input.signed.partner_id, policyId: input.signed.policy_id },
+    input.rp.env,
+  );
+  const verifier = verifyReceiptIndependently({
+    signedRecord: input.signed,
+    publicReceipt,
+    expectations: {
+      partnerId: input.rp.partnerId,
+      policyId: input.rp.policyId,
+      allowSandbox: input.rp.allowSandbox,
+    },
+    now: input.now,
+    env: input.rp.env,
+    revocationSource: input.revocationSource,
+  });
+
   return {
-    ...audit,
+    request_id: input.requestId,
+    receipt_id: input.signed.id,
+    at: input.now.toISOString(),
     outcome: "denied",
+    verifier,
     authorization_verified: false,
-    presentation_binding_ok: false,
-    presentation_binding_deny_codes: denyCodes,
+    durable_consumption_marker: false,
+    durable_audit_logged: false,
+    consumption_recorded: false,
+    replay_detected: false,
+    consumption_id: null,
+    partner_visible: {
+      result: input.partnerResult,
+      receipt_id: input.signed.id,
+      policy_id: input.rp.policyId,
+      binding_deny_codes: input.denyCodes.join(","),
+    },
+    presentation_binding_ok: input.bindingOk,
+    presentation_binding_deny_codes: input.denyCodes,
+    consumption_skipped_preflight_reject: true,
     abraxas_infrastructure_required: false,
     identity_database_required: false,
     retained_documents_required: false,
-    offline_crypto_checks: audit.verifier.checks_possible_offline,
-    live_authority_checks: audit.verifier.checks_requiring_live_authority,
-    partner_visible: {
-      ...audit.partner_visible,
-      result: "deny_presentation_binding",
-      binding_deny_codes: denyCodes.join(","),
-    },
+    offline_crypto_checks: verifier.checks_possible_offline,
+    live_authority_checks: verifier.checks_requiring_live_authority,
   };
 }
 
@@ -85,6 +125,7 @@ function finalizeOutcome(audit: ExternalRpDecisionAudit, bindingOk: boolean): Pr
   return {
     ...audit,
     presentation_binding_ok: bindingOk,
+    consumption_skipped_preflight_reject: false,
     abraxas_infrastructure_required: false,
     identity_database_required: false,
     retained_documents_required: false,
@@ -95,7 +136,7 @@ function finalizeOutcome(audit: ExternalRpDecisionAudit, bindingOk: boolean): Pr
 
 /**
  * Verify holder presentation entirely at the relying party.
- * Authorization-relevant partner/policy/claims come only from the signed receipt after binding checks.
+ * Invalid wrappers are rejected before any consumption / replay state mutation.
  */
 export async function verifyHolderPresentationAtRelyingParty(input: {
   presentation: HolderPolicyScopedPresentation;
@@ -107,52 +148,44 @@ export async function verifyHolderPresentationAtRelyingParty(input: {
 }): Promise<ProofFirstVerificationOutcome> {
   const signed = input.presentation.signed_decision_receipt;
   const now = input.now ?? new Date();
-  const harness = input.harness ?? new ExternalRelyingPartyHarness({
-    partnerId: input.rp.partnerId,
-    policyId: input.rp.policyId,
-    allowSandbox: input.rp.allowSandbox,
-    env: input.rp.env,
-  });
 
   const binding = validatePresentationReceiptStrictBinding({
     presentation: input.presentation,
     relyingParty: { partnerId: input.rp.partnerId, policyId: input.rp.policyId },
   });
   if (!binding.ok) {
-    const audit = await harness.decide({
+    return preflightRejectOutcome({
       requestId: input.requestId,
-      signedRecord: signed,
-      publicReceipt: partnerFlowViewFromSignedRecord(
-        signed,
-        now,
-        { partnerId: signed.partner_id, policyId: signed.policy_id },
-        input.rp.env,
-      ),
+      signed,
       now,
+      rp: input.rp,
       revocationSource: input.revocationSource ?? { available: false, reason: "unavailable" },
+      denyCodes: binding.deny_codes,
+      partnerResult: "deny_presentation_binding",
+      bindingOk: false,
     });
-    return bindingDenyOutcome(audit, binding.deny_codes);
   }
 
   const custody = assertPresentationExcludesSensitiveCustody(input.presentation);
   if (!custody.ok) {
-    const audit = await harness.decide({
+    return preflightRejectOutcome({
       requestId: input.requestId,
-      signedRecord: signed,
-      publicReceipt: partnerFlowViewFromSignedRecord(
-        signed,
-        now,
-        { partnerId: signed.partner_id, policyId: signed.policy_id },
-        input.rp.env,
-      ),
+      signed,
       now,
+      rp: input.rp,
       revocationSource: input.revocationSource ?? { available: false, reason: "unavailable" },
+      denyCodes: [custody.reason],
+      partnerResult: custody.reason,
+      bindingOk: true,
     });
-    return {
-      ...bindingDenyOutcome(audit, [custody.reason]),
-      partner_visible: { ...audit.partner_visible, result: custody.reason },
-    };
   }
+
+  const harness = input.harness ?? new ExternalRelyingPartyHarness({
+    partnerId: input.rp.partnerId,
+    policyId: input.rp.policyId,
+    allowSandbox: input.rp.allowSandbox,
+    env: input.rp.env,
+  });
 
   const audit = await harness.decide({
     requestId: input.requestId,
