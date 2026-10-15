@@ -42,11 +42,16 @@ import {
   HOLDER_VERIFY_SUBHEAD,
 } from "@/lib/integrate/partnerJourney";
 import { PassportHolderFlowVisual } from "@/components/protocol-visuals";
+import { AccountAccessFirstPaint } from "@/components/product/AccountAccessFirstPaint";
 
 const S = ABRAXAS_FONT_SANS;
 
 export function PassportPageClient() {
-  return <PassportPageInner />;
+  return (
+    <Suspense fallback={<AccountAccessFirstPaint />}>
+      <PassportPageInner />
+    </Suspense>
+  );
 }
 
 function PassportPageInner() {

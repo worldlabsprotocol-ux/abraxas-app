@@ -22,9 +22,18 @@ Gaps addressed in Build #570:
 - Partner handoff documentation and template institution config.
 - Extended independent verifier security tests (`build570.independentVerifierSecurity.test.ts`).
 
-Not verified in this cloud run:
+## Blank page root cause (Build #570 correction)
 
-- `/passport` in the cloud browser showed a blank page while the document title loaded. Screenshots: `/opt/cursor/artifacts/build570-passport-initial-load.png`. Likely dev hydration or session dependency in this environment, not treated as live holder success.
+Observed blank `/passport` on port **3000** correlated with a **stale or hung `next dev` process** (many stuck `curl` connections, requests never completing). Production mode on port **3010** (`next start`) renders correctly: sign in unavailable banner when Google zkLogin is not configured, Passport header, tabs, and Connect or open Passport block.
+
+Fixes applied:
+
+- Inner `Suspense` boundary in `PassportPageClient` with `AccountAccessFirstPaint` fallback.
+- No authentication bypass added.
+
+Browser evidence after correction: `/opt/cursor/artifacts/build570-passport-prod-3010.png`.
+
+Not verified in this cloud run:
 - Full wallet sign in through production identity provider.
 - Human review approval in admin UI with real operator login.
 

@@ -4,10 +4,26 @@ import { NextRequest, NextResponse } from "next/server";
 import { portableTrustCsrfRejected } from "@/lib/passport/portableTrust/csrf";
 import { resolveAuthenticatedHolderSession } from "@/lib/passport/portableTrust/resolveHolderSession";
 import {
+  getPassportHolderPossessionPublicKeyDirect,
   registerPassportHolderPossessionKeyDirect,
   tryBackfillPassportReusableCredentialForSubjectDirect,
 } from "@/lib/persistence/passportReusableCredentialDirectStore";
 import { isPassportReusableCredentialStorageEnabled } from "@/lib/passport/reusableCredential/storageGate";
+
+export async function GET(req: NextRequest) {
+  const session = await resolveAuthenticatedHolderSession(req);
+  if (!session.ok) {
+    return NextResponse.json(
+      { error: session.message },
+      { status: session.error === "forbidden" ? 403 : 401 },
+    );
+  }
+  if (!isPassportReusableCredentialStorageEnabled()) {
+    return NextResponse.json({ error: "reusable_credential_storage_disabled" }, { status: 403 });
+  }
+  const public_key_b64url = await getPassportHolderPossessionPublicKeyDirect(session.subjectId);
+  return NextResponse.json({ public_key_b64url });
+}
 
 export async function POST(req: NextRequest) {
   const csrf = portableTrustCsrfRejected(req);
