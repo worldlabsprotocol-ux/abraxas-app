@@ -11,6 +11,7 @@ import { computeReconciliationBatchDigest } from "./holderIdentityReconciliation
 import { planLegacyIdentityBackfill, LEGACY_KIND_SUI_ADDRESS } from "./holderIdentityReconciliation";
 import { executeLegacyIdentityReconciliationBatch } from "./holderIdentityReconciliationExecution";
 import { SOVEREIGN_PASSPORT_MIGRATION_FILES } from "./productionMigrationRelease";
+import { SOVEREIGN_DISPOSABLE_DATABASE_ID } from "@/lib/persistence/disposablePgTestEnv";
 
 const PG_URL = process.env.ABRAXAS_SOVEREIGN_PG_URL?.trim()
   || process.env.MIGRATION_136_PG_URL?.trim()
@@ -36,8 +37,13 @@ function adminUrl(dbName: string): string {
   return PG_URL!.replace(/\/[^/]+$/, `/${dbName}`);
 }
 
-function executionEnv(batchDigest: string): Record<string, string> {
+function hybridDisposableEnv(dbUrl: string, batchDigest: string): Record<string, string> {
   return {
+    ABRAXAS_SOVEREIGN_ENV_CLASS: "disposable",
+    ABRAXAS_DISPOSABLE_PG_TEST_DATABASE_ID: SOVEREIGN_DISPOSABLE_DATABASE_ID,
+    ABRAXAS_DISPOSABLE_PG_MIGRATION_AUTHORIZED: "true",
+    ABRAXAS_DISPOSABLE_PG_HYBRID_LOCAL_AUTHORIZED: "true",
+    ABRAXAS_DISPOSABLE_PG_TEST_URL: dbUrl,
     ABRAXAS_RECONCILIATION_EXECUTION_ENABLED: "true",
     ABRAXAS_OPERATOR_RECONCILIATION_AUTH_ID: "op-test-auth-580",
     ABRAXAS_RECONCILIATION_BATCH_DIGEST: batchDigest,
@@ -66,6 +72,11 @@ describe.skipIf(!canRunDisposable)("Build #580 disposable migration integration"
     process.env.ABRAXAS_PASSPORT_DATABASE_URL = dbUrl;
     process.env.ABRAXAS_PERSISTENCE_BACKEND = "postgres_direct";
     process.env.ABRAXAS_PASSPORT_TRANSACTION_PG = "1";
+    process.env.ABRAXAS_SOVEREIGN_ENV_CLASS = "disposable";
+    process.env.ABRAXAS_DISPOSABLE_PG_TEST_DATABASE_ID = SOVEREIGN_DISPOSABLE_DATABASE_ID;
+    process.env.ABRAXAS_DISPOSABLE_PG_MIGRATION_AUTHORIZED = "true";
+    process.env.ABRAXAS_DISPOSABLE_PG_HYBRID_LOCAL_AUTHORIZED = "true";
+    process.env.ABRAXAS_DISPOSABLE_PG_TEST_URL = dbUrl;
     process.env.ABRAXAS_VERIFIED_SUPABASE_PROJECT_REF = SOVEREIGN_DISPOSABLE_REF;
     resetAbraxasPgPoolForTests();
 
@@ -137,7 +148,7 @@ describe.skipIf(!canRunDisposable)("Build #580 disposable migration integration"
         operatorAuthorizationId: "op-test-auth-580",
         expiresAtMs: Date.now() + 120_000,
       },
-      env: { ...process.env, ...executionEnv(digest) },
+      env: { ...process.env, ...hybridDisposableEnv(dbUrl, digest) },
     });
     expect(exec.ok).toBe(true);
     if (!exec.ok) return;
@@ -162,7 +173,7 @@ describe.skipIf(!canRunDisposable)("Build #580 disposable migration integration"
         operatorAuthorizationId: "op-test-auth-580",
         expiresAtMs: Date.now() + 120_000,
       },
-      env: { ...process.env, ...executionEnv(repeatDigest) },
+      env: { ...process.env, ...hybridDisposableEnv(dbUrl, repeatDigest) },
     });
     expect(repeat.ok).toBe(true);
     if (!repeat.ok) return;
@@ -183,7 +194,7 @@ describe.skipIf(!canRunDisposable)("Build #580 disposable migration integration"
     expect(plan.ok).toBe(true);
     if (!plan.ok) return;
     const digest = computeReconciliationBatchDigest(plan.rows);
-    const env = { ...process.env, ...executionEnv(digest) };
+    const env = { ...process.env, ...hybridDisposableEnv(dbUrl, digest) };
     const creds = {
       batchDigest: digest,
       operatorAuthorizationId: "op-test-auth-580",
@@ -233,7 +244,7 @@ describe.skipIf(!canRunDisposable)("Build #580 disposable migration integration"
         operatorAuthorizationId: "op-test-auth-580",
         expiresAtMs: Date.now() + 120_000,
       },
-      env: { ...process.env, ...executionEnv(digest) },
+      env: { ...process.env, ...hybridDisposableEnv(dbUrl, digest) },
     });
     expect(first.ok).toBe(true);
 
@@ -254,7 +265,7 @@ describe.skipIf(!canRunDisposable)("Build #580 disposable migration integration"
         operatorAuthorizationId: "op-test-auth-580",
         expiresAtMs: Date.now() + 120_000,
       },
-      env: { ...process.env, ...executionEnv(staleDigest) },
+      env: { ...process.env, ...hybridDisposableEnv(dbUrl, staleDigest) },
     });
     expect(stale.ok).toBe(true);
     if (!stale.ok) return;
@@ -263,5 +274,77 @@ describe.skipIf(!canRunDisposable)("Build #580 disposable migration integration"
         a.outcome === "blocked_stale_link_conflict" || a.outcome === "blocked_link_claim_conflict",
       ),
     ).toBe(true);
+  });
+
+  it("rejects execution when configured project ref disagrees with derived disposable identity", async () => {
+    const SUI_OVERRIDE = "0x" + "e".repeat(64);
+    psql(
+      dbUrl,
+      `insert into public.identity_verifications (wallet_address, sui_address, status, identity_verification_status)
+       values ('${SUI_OVERRIDE}','${SUI_OVERRIDE}','approved','approved');`,
+    );
+    const plan = planLegacyIdentityBackfill({
+      anchors: [{ kind: LEGACY_KIND_SUI_ADDRESS, key: SUI_OVERRIDE, evidence: "forged.evidence.string" }],
+      existingLinks: new Map(),
+      existingCanonicalSubjects: new Set(),
+    });
+    expect(plan.ok).toBe(true);
+    if (!plan.ok) return;
+    const digest = computeReconciliationBatchDigest(plan.rows);
+    const exec = await executeLegacyIdentityReconciliationBatch({
+      mode: "execute",
+      rows: plan.rows,
+      credentials: {
+        batchDigest: digest,
+        operatorAuthorizationId: "op-test-auth-580",
+        expiresAtMs: Date.now() + 120_000,
+      },
+      env: {
+        ...process.env,
+        ...hybridDisposableEnv(dbUrl, digest),
+        ABRAXAS_VERIFIED_SUPABASE_PROJECT_REF: "wrong_project_ref_override",
+      },
+    });
+    expect(exec.ok).toBe(false);
+    if (exec.ok) return;
+    expect(exec.code).toBe("configured_ref_overrides_derived_identity");
+  });
+
+  it("rolls back link and subject when IDV binding fails after link insertion", async () => {
+    const SUI_D = "0x" + "d".repeat(64);
+    const foreignSubject = "abx_hs_" + "1".repeat(32);
+    psql(
+      dbUrl,
+      `insert into public.passport_holder_subjects (subject_id) values ('${foreignSubject}');
+       insert into public.identity_verifications (wallet_address, sui_address, status, identity_verification_status, holder_subject_id)
+       values ('${SUI_D}','${SUI_D}','approved','approved','${foreignSubject}');`,
+    );
+    const plan = planLegacyIdentityBackfill({
+      anchors: [{ kind: LEGACY_KIND_SUI_ADDRESS, key: SUI_D, evidence: "identity_verifications.sui_address" }],
+      existingLinks: new Map(),
+      existingCanonicalSubjects: new Set(),
+    });
+    expect(plan.ok).toBe(true);
+    if (!plan.ok) return;
+    const digest = computeReconciliationBatchDigest(plan.rows);
+    const exec = await executeLegacyIdentityReconciliationBatch({
+      mode: "execute",
+      rows: plan.rows,
+      credentials: {
+        batchDigest: digest,
+        operatorAuthorizationId: "op-test-auth-580",
+        expiresAtMs: Date.now() + 120_000,
+      },
+      env: { ...process.env, ...hybridDisposableEnv(dbUrl, digest) },
+    });
+    expect(exec.ok).toBe(true);
+    if (!exec.ok) return;
+    expect(exec.audits.some((a) => a.outcome === "blocked_row_rolled_back")).toBe(true);
+    const linkCount = execFileSync(
+      "psql",
+      [dbUrl, "-t", "-A", "-c", `select count(*) from public.passport_holder_legacy_links where legacy_key='${SUI_D.toLowerCase()}';`],
+      { encoding: "utf8" },
+    ).trim();
+    expect(Number(linkCount)).toBe(0);
   });
 });

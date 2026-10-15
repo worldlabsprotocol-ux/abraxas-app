@@ -3,10 +3,12 @@
 import { describe, expect, it } from "vitest";
 import {
   computeReconciliationBatchDigest,
+  validateReconciliationExecutionBatch,
   verifyReconciliationExecutionAuthorization,
 } from "./holderIdentityReconciliationAuth";
 import { LEGACY_KIND_SUI_ADDRESS, type ReconciliationPlanRow } from "./holderIdentityReconciliation";
 import { PRODUCTION_SUPABASE_PROJECT_REF } from "./productionMigrationRelease";
+import type { ReconciliationDatabaseBinding } from "./reconciliationDatabaseBinding";
 
 const SUI = "0x" + "5".repeat(64);
 
@@ -18,12 +20,47 @@ const rows: ReconciliationPlanRow[] = [
   },
 ];
 
+function disposableBinding(ref = "abraxas_sovereign_disposable"): ReconciliationDatabaseBinding {
+  return {
+    ok: true,
+    bindingMode: "disposable_local_test",
+    derivedProjectRef: ref,
+    postgrestProjectRef: null,
+    configuredCrossCheckRef: null,
+  };
+}
+
+function productionBinding(): ReconciliationDatabaseBinding {
+  return {
+    ok: true,
+    bindingMode: "supabase_dual_identity",
+    derivedProjectRef: PRODUCTION_SUPABASE_PROJECT_REF,
+    postgrestProjectRef: PRODUCTION_SUPABASE_PROJECT_REF,
+    configuredCrossCheckRef: PRODUCTION_SUPABASE_PROJECT_REF,
+  };
+}
+
 describe("Build #580 reconciliation execution authorization", () => {
-  it("allows dry run with verified database binding only", () => {
+  it("rejects batches containing blocked plan actions", () => {
+    const mixed: ReconciliationPlanRow[] = [
+      ...rows,
+      {
+        anchor: { kind: LEGACY_KIND_SUI_ADDRESS, key: SUI, evidence: "forged" },
+        action: "block_ambiguous",
+        reason: "blocked",
+      },
+    ];
+    const integrity = validateReconciliationExecutionBatch(mixed);
+    expect(integrity.ok).toBe(false);
+    if (integrity.ok) return;
+    expect(integrity.code).toBe("unsupported_batch_row");
+  });
+
+  it("allows dry run with connection-derived database binding only", () => {
     const auth = verifyReconciliationExecutionAuthorization({
       mode: "dry_run",
       rows,
-      boundDatabaseProjectRef: "abraxas_sovereign_disposable",
+      databaseBinding: disposableBinding(),
     });
     expect(auth.ok).toBe(true);
   });
@@ -33,7 +70,7 @@ describe("Build #580 reconciliation execution authorization", () => {
     const auth = verifyReconciliationExecutionAuthorization({
       mode: "execute",
       rows,
-      boundDatabaseProjectRef: "abraxas_sovereign_disposable",
+      databaseBinding: disposableBinding(),
       credentials: {
         batchDigest: digest,
         operatorAuthorizationId: "op-12345678",
@@ -50,7 +87,7 @@ describe("Build #580 reconciliation execution authorization", () => {
     const auth = verifyReconciliationExecutionAuthorization({
       mode: "execute",
       rows,
-      boundDatabaseProjectRef: "abraxas_sovereign_disposable",
+      databaseBinding: disposableBinding(),
       credentials: {
         batchDigest: "deadbeef",
         operatorAuthorizationId: "op-12345678",
@@ -72,7 +109,7 @@ describe("Build #580 reconciliation execution authorization", () => {
     const auth = verifyReconciliationExecutionAuthorization({
       mode: "execute",
       rows,
-      boundDatabaseProjectRef: PRODUCTION_SUPABASE_PROJECT_REF,
+      databaseBinding: productionBinding(),
       credentials: {
         batchDigest: digest,
         operatorAuthorizationId: "op-12345678",
@@ -87,5 +124,20 @@ describe("Build #580 reconciliation execution authorization", () => {
     expect(auth.ok).toBe(false);
     if (auth.ok) return;
     expect(auth.code).toBe("founder_production_execution_not_authorized");
+  });
+
+  it("rejects configured project ref that disagrees with derived connection identity", () => {
+    const auth = verifyReconciliationExecutionAuthorization({
+      mode: "dry_run",
+      rows,
+      databaseBinding: {
+        ok: false,
+        code: "configured_ref_overrides_derived_identity",
+        detail: "Configured project ref cross-check disagrees with connection-derived identity.",
+      },
+    });
+    expect(auth.ok).toBe(false);
+    if (auth.ok) return;
+    expect(auth.code).toBe("configured_ref_overrides_derived_identity");
   });
 });

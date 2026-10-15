@@ -110,7 +110,10 @@ export async function bindApprovedIdvToLegacyLinkOwner(input: {
   client: PoolClient;
   anchor: LegacyIdentityAnchor;
   authoritativeSubjectId: string;
-}): Promise<{ ok: true; updatedRows: number } | { ok: false; code: "idv_owner_mismatch" | "not_applicable" }> {
+}): Promise<
+  | { ok: true; updatedRows: number; alreadyBound: boolean }
+  | { ok: false; code: "idv_owner_mismatch" | "not_applicable" }
+> {
   if (input.anchor.kind !== LEGACY_KIND_SUI_ADDRESS) {
     return { ok: false, code: "not_applicable" };
   }
@@ -133,7 +136,22 @@ export async function bindApprovedIdvToLegacyLinkOwner(input: {
        and coalesce(identity_verification_status, status, '') in ('approved','verified','complete')`,
     [persisted, legacyKey],
   );
-  return { ok: true, updatedRows: update.rowCount ?? 0 };
+  const updatedRows = update.rowCount ?? 0;
+  if (updatedRows > 0) {
+    return { ok: true, updatedRows, alreadyBound: false };
+  }
+  const bound = await input.client.query<{ c: number }>(
+    `select count(*)::int as c from public.identity_verifications
+     where lower(sui_address) = lower($1)
+       and holder_subject_id = $2
+       and coalesce(identity_verification_status, status, '') in ('approved','verified','complete')`,
+    [legacyKey, persisted],
+  );
+  const alreadyBound = (bound.rows[0]?.c ?? 0) > 0;
+  if (!alreadyBound) {
+    return { ok: false, code: "idv_owner_mismatch" };
+  }
+  return { ok: true, updatedRows: 0, alreadyBound: true };
 }
 
 export async function countApprovedIdvForSuiAnchor(client: PoolClient, sui: string): Promise<number> {
