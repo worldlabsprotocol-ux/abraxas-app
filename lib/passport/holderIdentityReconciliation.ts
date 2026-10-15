@@ -164,11 +164,9 @@ export type HolderIdentitySurfaceSnapshot = {
 };
 
 export const IDENTITY_LOOKUP_UNAVAILABLE_COPY = {
-  headline: "Identity status temporarily unavailable",
+  headline: "Your identity status is temporarily unavailable",
   detail:
-    "We could not confirm prior identity records because of a temporary database or schema compatibility issue. "
-    + "If you already completed verification, it remains on your account. Do not start verification again for this issue. "
-    + "Refresh later or contact support if this persists.",
+    "Please try again later. If you already completed verification, do not start again unless support directs you.",
 } as const;
 
 export function resolveHolderIdentitySurface(input: {
@@ -226,8 +224,8 @@ export function resolveHolderIdentitySurface(input: {
   if (!input.canonicalSchemaPresent) {
     return {
       state: "legacy_holder_authenticated",
-      headline: "Legacy Passport account",
-      detail: "Production is completing holder subject migration. Your existing verification remains on this account until canonical subjects are enabled.",
+      headline: "Your verification is being connected to Passport",
+      detail: "Your existing verification is still recognized while Abraxas completes holder subject migration on this account.",
       operator_review_required: false,
     };
   }
@@ -235,8 +233,8 @@ export function resolveHolderIdentitySurface(input: {
   if (input.idvRowsForLegacyWallet > 0 && !canonicalFromSession) {
     return {
       state: "reconciliation_operator_required",
-      headline: "Identity reconciliation required",
-      detail: "Verified identity records exist for this account but no canonical holder subject is linked yet. Operator review will complete reconciliation before issuer-backed credentials activate.",
+      headline: "Your verification is being connected to Passport",
+      detail: "Your existing verification is still recognized. Operator review will link your account to a canonical holder subject before issuer-backed credentials activate.",
       operator_review_required: true,
     };
   }

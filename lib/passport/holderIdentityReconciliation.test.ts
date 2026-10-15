@@ -93,6 +93,6 @@ describe("Build #579 holder identity reconciliation", () => {
       identityLookupUnavailable: true,
     });
     expect(surface.state).toBe("identity_lookup_unavailable");
-    expect(surface.detail).toMatch(/do not start verification again/i);
+    expect(surface.detail).toMatch(/do not start again/i);
   });
 });

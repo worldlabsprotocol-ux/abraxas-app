@@ -21,7 +21,7 @@ describe("Build #579 adversarial identity lookup surfaces", () => {
       identityLookupUnavailable: false,
     });
     expect(surface.state).toBe("legacy_holder_authenticated");
-    expect(surface.detail).toMatch(/existing verification remains/i);
+    expect(surface.detail).toMatch(/still recognized/i);
     expect(shouldSuppressRepeatVerificationNudge(surface)).toBe(false);
   });
 
@@ -48,7 +48,7 @@ describe("Build #579 adversarial identity lookup surfaces", () => {
     });
     expect(surface.state).toBe("identity_lookup_unavailable");
     expect(surface.headline).toBe(IDENTITY_LOOKUP_UNAVAILABLE_COPY.headline);
-    expect(surface.detail).toMatch(/do not start verification again/i);
+    expect(surface.detail).toMatch(/do not start again/i);
     expect(surface.detail).not.toMatch(/connection terminated/i);
     expect(shouldSuppressRepeatVerificationNudge(surface)).toBe(true);
     expect(shouldDeferReusableCredentialActions(surface)).toBe(true);
