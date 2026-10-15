@@ -4,10 +4,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { parseHolderPortableImport } from "@/lib/passport/portableTrust";
 import { verifyHolderPresentationIndependently } from "@/lib/passport/portableTrust/independentVerification";
+import { isSyntheticIndependentVerifyAllowed } from "@/lib/passport/portableTrust/syntheticVerifyGate";
 import type { PortableRevocationSignedArtifact } from "@/lib/protocol/portableRevocation";
 import { build546TrustRegistryEnv } from "@/lib/institutionalCertification/build546/fixtures";
 
 export async function POST(req: NextRequest) {
+  if (!isSyntheticIndependentVerifyAllowed()) {
+    return NextResponse.json(
+      {
+        outcome: "blocked",
+        code: "synthetic_verification_disabled_in_production",
+        environment: "production",
+        note: "Synthetic trust registry and revocation fixtures are not live institutional authorization.",
+      },
+      { status: 403 },
+    );
+  }
+
   let body: {
     bundle?: unknown;
     portable_revocation_snapshot?: PortableRevocationSignedArtifact;
@@ -38,6 +51,8 @@ export async function POST(req: NextRequest) {
     requestId: body.request_id ?? `req_565_demo_${Date.now()}`,
   });
   return NextResponse.json({
+    synthetic_demo: true,
+    not_live_institutional_authorization: true,
     outcome: decision.outcome,
     abraxas_infrastructure_required: decision.abraxas_infrastructure_required,
     identity_database_required: decision.identity_database_required,

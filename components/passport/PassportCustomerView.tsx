@@ -299,7 +299,7 @@ export function PassportCustomerView({
               }}>
                 Portable trust credentials
               </h2>
-              <PassportPortableTrustPanel suiAddress={suiAddress} />
+              <PassportPortableTrustPanel sessionReady={browserSessionReady} />
             </section>
           )}
           {hasCredential && status.identityUi === "verified" ? <PassportReuseStrip /> : null}
