@@ -22,18 +22,28 @@ describe("Passport hybrid transaction PostgreSQL", () => {
     expect(isPassportDirectPostgresEnabled({})).toBe(false);
   });
 
-  it("enables passport pg pool without global backend switch", () => {
+  it("enables passport pg pool without global backend switch when refs align", () => {
     const env = {
       ABRAXAS_PERSISTENCE_BACKEND: "supabase_postgrest",
       NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
       SUPABASE_SERVICE_ROLE_KEY: "service-role",
       ABRAXAS_PASSPORT_TRANSACTION_PG: "1",
-      ABRAXAS_DATABASE_URL: "postgresql://user:pass@db.example.supabase.co:5432/postgres",
+      ABRAXAS_PASSPORT_DATABASE_URL: "postgresql://user:pass@db.example.supabase.co:5432/postgres",
     };
     expect(persistenceUsesDirectPostgres(env)).toBe(false);
     expect(passportTransactionPgExplicitlyEnabled(env)).toBe(true);
     expect(isPassportDirectPostgresEnabled(env)).toBe(true);
     expect(resolvePassportDirectPostgresUrl(env)).toContain("supabase.co");
+  });
+
+  it("does not infer hybrid database url from generic DATABASE_URL", () => {
+    const env = {
+      ABRAXAS_PASSPORT_TRANSACTION_PG: "1",
+      NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+      DATABASE_URL: "postgresql://user:pass@db.example.supabase.co:5432/postgres",
+    };
+    expect(resolvePassportDirectPostgresUrl(env)).toBeNull();
+    expect(isPassportDirectPostgresEnabled(env)).toBe(false);
   });
 
   it("prefers ABRAXAS_PASSPORT_DATABASE_URL over shared database url", () => {

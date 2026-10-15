@@ -4,35 +4,30 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { SOVEREIGN_RUNTIME_SCHEMA_MANIFEST } from "@/lib/databaseRecovery/sovereignSchemaManifest";
+import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
+import { SOVEREIGN_DISPOSABLE_REF } from "@/lib/databaseRecovery/manifestGuard";
+import { evaluateDisposablePgMigrationTestGuard } from "@/lib/persistence/disposablePgMigrationTestGuard";
 import { queryAbraxasPg, resetAbraxasPgPoolForTests } from "@/lib/persistence/pgPool";
 import { finalizeInstitutionalAuthorizationResourcesDirect } from "@/lib/persistence/passportInstitutionalAuthorizationAtomic";
 import { insertInstitutionalPresentationConsentDirect } from "@/lib/persistence/passportInstitutionalConsentDirect";
 import { insertPassportPossessionChallengeDirect } from "@/lib/persistence/postgresPassportPossessionChallengeStore";
 import { isPassportDirectPostgresEnabled } from "@/lib/persistence/env";
+import { supabaseProjectRefFromPostgresUrl } from "@/lib/supabase/projectRefs";
 import { issuePassportPossessionChallenge } from "./holderPossessionChallenge";
 
-const PG_URL = process.env.ABRAXAS_SOVEREIGN_PG_URL?.trim()
-  || process.env.MIGRATION_136_PG_URL?.trim()
-  || process.env.ABRAXAS_DATABASE_URL?.trim()
-  || undefined;
+const guard = evaluateDisposablePgMigrationTestGuard(process.env);
+const PG_URL = guard.ok ? guard.databaseUrl : undefined;
 
 describe("Build #577 passport hybrid persistence (disposable PG)", () => {
   if (!PG_URL) {
-    it.skip("requires disposable PostgreSQL", () => {});
+    it.skip(
+      guard.ok
+        ? "disposable guard misconfigured"
+        : `requires authorized disposable PG: ${guard.ok ? "" : guard.reason}`,
+      () => {},
+    );
     return;
   }
-
-  beforeAll(() => {
-    const dir = join(process.cwd(), "supabase/migrations");
-    for (const file of SOVEREIGN_RUNTIME_SCHEMA_MANIFEST) {
-      execFileSync("psql", [PG_URL!, "-v", "ON_ERROR_STOP=0"], {
-        input: readFileSync(join(dir, file), "utf8"),
-        encoding: "utf8",
-      });
-    }
-  });
 
   const PASSPORT_MIGRATIONS = [
     "140_passport_reusable_credential_state.sql",
@@ -41,12 +36,21 @@ describe("Build #577 passport hybrid persistence (disposable PG)", () => {
     "143_passport_authorization_signing_claim.sql",
   ] as const;
 
+  const envSnapshot: NodeJS.ProcessEnv = { ...process.env };
+
   beforeEach(() => {
+    const pgRef = supabaseProjectRefFromPostgresUrl(PG_URL);
     delete process.env.ABRAXAS_PERSISTENCE_BACKEND;
-    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://placeholder.supabase.co";
+    process.env.NEXT_PUBLIC_SUPABASE_URL = pgRef
+      ? `https://${pgRef}.supabase.co`
+      : "http://127.0.0.1";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "placeholder-service-role";
     process.env.ABRAXAS_PASSPORT_TRANSACTION_PG = "1";
-    process.env.ABRAXAS_DATABASE_URL = PG_URL;
+    process.env.ABRAXAS_PASSPORT_DATABASE_URL = PG_URL;
+    delete process.env.ABRAXAS_DATABASE_URL;
+    delete process.env.DATABASE_URL;
+    process.env.ABRAXAS_PASSPORT_SUPABASE_PROJECT_REF =
+      pgRef ?? SOVEREIGN_DISPOSABLE_REF;
     resetAbraxasPgPoolForTests();
     const dir = join(process.cwd(), "supabase/migrations");
     for (const file of PASSPORT_MIGRATIONS) {
@@ -56,6 +60,15 @@ describe("Build #577 passport hybrid persistence (disposable PG)", () => {
       });
     }
     expect(isPassportDirectPostgresEnabled(process.env)).toBe(true);
+  });
+
+  afterEach(() => {
+    resetAbraxasPgPoolForTests();
+  });
+
+  afterAll(() => {
+    process.env = envSnapshot;
+    resetAbraxasPgPoolForTests();
   });
 
   it("consumes consent once under hybrid pg while PostgREST remains default transport", async () => {

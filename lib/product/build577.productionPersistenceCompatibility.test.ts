@@ -20,6 +20,7 @@ describe("Build #577 production persistence compatibility", () => {
     const envTs = readFileSync(join(process.cwd(), "lib/persistence/env.ts"), "utf8");
     expect(envTs).toContain("ABRAXAS_PASSPORT_TRANSACTION_PG");
     expect(envTs).toContain("isPassportDirectPostgresEnabled");
+    expect(envTs).toContain("resolveHybridPassportExplicitDatabaseUrl");
     const pgPool = readFileSync(join(process.cwd(), "lib/persistence/pgPool.ts"), "utf8");
     expect(pgPool).toContain("isPassportDirectPostgresEnabled");
   });
@@ -37,7 +38,7 @@ describe("Build #577 production persistence compatibility", () => {
       NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
       SUPABASE_SERVICE_ROLE_KEY: "role",
       ABRAXAS_PASSPORT_TRANSACTION_PG: "1",
-      ABRAXAS_DATABASE_URL: "postgresql://localhost/abx",
+      ABRAXAS_PASSPORT_DATABASE_URL: "postgresql://postgres:pw@db.example.supabase.co:5432/postgres",
       ABRAXAS_PASSPORT_REUSABLE_CREDENTIAL_STORAGE: "1",
       VERCEL_ENV: "production",
       NODE_ENV: "production",

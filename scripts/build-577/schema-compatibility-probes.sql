@@ -1,5 +1,6 @@
 -- Build #577: read-only Production schema compatibility probes (founder execution).
 -- Run against Supabase PostgreSQL with a read-only role. Do not apply migrations from this file.
+-- Confirm direct Postgres project ref matches NEXT_PUBLIC_SUPABASE_URL before enabling ABRAXAS_PASSPORT_TRANSACTION_PG.
 
 -- Migration 140_passport_reusable_credential_state.sql
 select exists (

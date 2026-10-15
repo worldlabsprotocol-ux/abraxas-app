@@ -1,6 +1,10 @@
 // FILE: lib/persistence/env.ts
 
 import type { PersistenceBackend, PersistenceConfig } from "./types";
+import {
+  resolveHybridPassportExplicitDatabaseUrl,
+  validatePassportHybridPostgresBinding,
+} from "./passportHybridPostgres";
 
 /**
  * Resolve Abraxas persistence connectivity.
@@ -39,14 +43,17 @@ export function passportTransactionPgExplicitlyEnabled(
   return raw === "1" || raw === "true" || raw === "enabled";
 }
 
-/** Direct PostgreSQL URL for Passport transaction stores (may target existing Supabase Postgres). */
+/** Direct PostgreSQL URL for Passport transaction stores. */
 export function resolvePassportDirectPostgresUrl(
   env: Record<string, string | undefined> = process.env,
 ): string | null {
-  return (
-    env.ABRAXAS_PASSPORT_DATABASE_URL?.trim()
-    ?? resolveIndependentPostgresUrl(env)
-  );
+  if (persistenceUsesDirectPostgres(env)) {
+    return resolveIndependentPostgresUrl(env);
+  }
+  if (passportTransactionPgExplicitlyEnabled(env)) {
+    return resolveHybridPassportExplicitDatabaseUrl(env);
+  }
+  return null;
 }
 
 /**
@@ -56,10 +63,12 @@ export function resolvePassportDirectPostgresUrl(
 export function isPassportDirectPostgresEnabled(
   env: Record<string, string | undefined> = process.env,
 ): boolean {
-  const url = resolvePassportDirectPostgresUrl(env);
-  if (!url) return false;
-  if (persistenceUsesDirectPostgres(env)) return true;
-  return passportTransactionPgExplicitlyEnabled(env);
+  if (persistenceUsesDirectPostgres(env)) {
+    return Boolean(resolveIndependentPostgresUrl(env));
+  }
+  if (!passportTransactionPgExplicitlyEnabled(env)) return false;
+  if (!resolveHybridPassportExplicitDatabaseUrl(env)) return false;
+  return validatePassportHybridPostgresBinding(env).ok;
 }
 
 export function resolvePersistenceConfig(

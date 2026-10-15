@@ -7,8 +7,11 @@ import pg from "pg";
 import type { Pool, PoolClient, PoolConfig, QueryResultRow } from "pg";
 import {
   isPassportDirectPostgresEnabled,
+  passportTransactionPgExplicitlyEnabled,
+  persistenceUsesDirectPostgres,
   resolvePassportDirectPostgresUrl,
 } from "./env";
+import { validatePassportHybridPostgresBinding } from "./passportHybridPostgres";
 
 let cachedPool: Pool | null = null;
 
@@ -57,10 +60,23 @@ export function resetAbraxasPgPoolForTests(): void {
   cachedPool = null;
 }
 
+function assertPassportPgConfig(env: Record<string, string | undefined>): void {
+  if (
+    passportTransactionPgExplicitlyEnabled(env)
+    && !persistenceUsesDirectPostgres(env)
+  ) {
+    const validation = validatePassportHybridPostgresBinding(env);
+    if (!validation.ok) {
+      throw new Error(`passport_hybrid_postgres_${validation.code}`);
+    }
+  }
+}
+
 export function getAbraxasPgPool(
   env: Record<string, string | undefined> = process.env,
 ): Pool | null {
   if (!isPassportDirectPostgresEnabled(env)) return null;
+  assertPassportPgConfig(env);
   const url = resolvePassportDirectPostgresUrl(env);
   if (!url) return null;
   if (!cachedPool) {
