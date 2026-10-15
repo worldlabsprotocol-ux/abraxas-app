@@ -16,6 +16,7 @@ import { registerHolderPossessionKeyWithServer } from "@/lib/passport/registerHo
 import type { HolderIdentitySurfaceSnapshot } from "@/lib/passport/holderIdentityReconciliation";
 import {
   shouldDeferReusableCredentialActions,
+  shouldShowCompleteVerificationPrompt,
   shouldSuppressRepeatVerificationNudge,
 } from "@/lib/passport/holderIdentityUiCopy";
 
@@ -365,8 +366,14 @@ export function PassportReusableCredentialsPanel({ sessionReady }: { sessionRead
       {!loading && !showIssuedCredentials && !error && lifecycleState !== "credential_issued" ? (
         shouldSuppressRepeatVerificationNudge(holderIdentity) ? (
           <p style={{ fontFamily: FONT, fontSize: "0.75rem", color: "var(--text-muted)", margin: 0 }}>
-            Credential status could not be refreshed. If you already verified, that status is unchanged. Wait and refresh
-            this page rather than starting verification again.
+            {holderIdentity?.state === "identity_lookup_unavailable"
+              ? "Credential status could not be refreshed. Wait and try this page again later rather than starting verification again."
+              : "Follow the identity status above. Reusable credentials appear here after approved verification and lifecycle steps complete."}
+          </p>
+        ) : shouldShowCompleteVerificationPrompt(holderIdentity) ? (
+          <p style={{ fontFamily: FONT, fontSize: "0.75rem", color: "var(--text-muted)", margin: 0 }}>
+            A signed reusable credential has not been persisted yet. Complete identity verification when you are ready,
+            then finish the lifecycle step above.
           </p>
         ) : (
           <p style={{ fontFamily: FONT, fontSize: "0.75rem", color: "var(--text-muted)", margin: 0 }}>

@@ -14,8 +14,11 @@ export type IdentityVerificationsColumnSchema = {
 };
 
 export type IdentityIdvLookupResult =
-  | { ok: true; count: number; schema: IdentityVerificationsColumnSchema }
+  | { ok: true; count: number; approvedCount: number; schema: IdentityVerificationsColumnSchema }
   | { ok: false; code: "identity_lookup_unavailable"; detail: string };
+
+const APPROVED_IDV_FILTER =
+  "coalesce(identity_verification_status, status, '') in ('approved','verified','complete')";
 
 const IDV_COLUMN_PROBE_SQL = `select column_name from information_schema.columns
  where table_schema = 'public'
@@ -152,7 +155,17 @@ export async function countIdentityVerificationsForSessionKeys(input: {
 
   try {
     const { rows } = await queryAbraxasPg<{ c: number }>(plan.sql, plan.params);
-    return { ok: true, count: rows[0]?.c ?? 0, schema };
+    const approvedSql = plan.sql.replace(
+      "where ",
+      `where (${APPROVED_IDV_FILTER}) and `,
+    );
+    const approvedRes = await queryAbraxasPg<{ c: number }>(approvedSql, plan.params);
+    return {
+      ok: true,
+      count: rows[0]?.c ?? 0,
+      approvedCount: approvedRes.rows[0]?.c ?? 0,
+      schema,
+    };
   } catch (error) {
     return {
       ok: false,

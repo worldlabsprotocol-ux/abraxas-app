@@ -17,12 +17,13 @@ describe("Build #579 adversarial identity lookup surfaces", () => {
       canonicalSchemaPresent: false,
       legacyLinkSubjectId: null,
       idvRowsForLegacyWallet: 3,
+      idvApprovedRowsForLegacyWallet: 3,
       ambiguousLegacyConflict: false,
       identityLookupUnavailable: false,
     });
-    expect(surface.state).toBe("legacy_holder_authenticated");
-    expect(surface.detail).toMatch(/existing verification remains/i);
-    expect(shouldSuppressRepeatVerificationNudge(surface)).toBe(false);
+    expect(surface.state).toBe("approved_verification_confirmed");
+    expect(surface.detail).toMatch(/approved verification/i);
+    expect(shouldSuppressRepeatVerificationNudge(surface)).toBe(true);
   });
 
   it("migrated schema: IDV rows without canonical subject require operator reconciliation", () => {
@@ -31,6 +32,7 @@ describe("Build #579 adversarial identity lookup surfaces", () => {
       canonicalSchemaPresent: true,
       legacyLinkSubjectId: null,
       idvRowsForLegacyWallet: 1,
+      idvApprovedRowsForLegacyWallet: 1,
       ambiguousLegacyConflict: false,
     });
     expect(surface.state).toBe("reconciliation_operator_required");
@@ -48,7 +50,7 @@ describe("Build #579 adversarial identity lookup surfaces", () => {
     });
     expect(surface.state).toBe("identity_lookup_unavailable");
     expect(surface.headline).toBe(IDENTITY_LOOKUP_UNAVAILABLE_COPY.headline);
-    expect(surface.detail).toMatch(/do not start verification again/i);
+    expect(surface.detail).toMatch(/do not start again/i);
     expect(surface.detail).not.toMatch(/connection terminated/i);
     expect(shouldSuppressRepeatVerificationNudge(surface)).toBe(true);
     expect(shouldDeferReusableCredentialActions(surface)).toBe(true);
