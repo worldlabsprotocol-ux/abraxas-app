@@ -18,7 +18,9 @@ export async function GET(req: NextRequest) {
 
   const evaluation = evaluateProductionMigrationRelease({
     preflight: {
+      build: 580,
       project_ref_expected: PRODUCTION_SUPABASE_PROJECT_REF,
+      public_table_count: 122,
       prerequisites: {
         passport_holder_subjects: false,
         passport_holder_legacy_links: false,
@@ -41,6 +43,7 @@ export async function GET(req: NextRequest) {
         identity_verifications_wallet_address: true,
       },
     },
+    verifiedDatabaseProjectRef: process.env.ABRAXAS_VERIFIED_SUPABASE_PROJECT_REF ?? null,
     env: process.env,
   });
 

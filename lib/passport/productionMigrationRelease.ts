@@ -17,6 +17,7 @@ export const SOVEREIGN_PASSPORT_MIGRATION_FILES = [
 
 export type ProductionMigrationPreflightReport = {
   build?: number;
+  /** Self-declared in SQL output — not sufficient alone for identity verification. */
   project_ref_expected?: string;
   prerequisites?: Record<string, boolean>;
   migrations_140_143?: Record<string, boolean>;
@@ -67,23 +68,56 @@ function partialMigrationState(prereq: Record<string, boolean> | undefined, m140
   return (pAny || mAny) && !(pAll && mAll);
 }
 
+export function isProductionPreflightReportComplete(preflight: ProductionMigrationPreflightReport): boolean {
+  if (!preflight.build || preflight.build < 579) return false;
+  if (!preflight.prerequisites || Object.keys(preflight.prerequisites).length === 0) return false;
+  if (!preflight.migrations_140_143 || Object.keys(preflight.migrations_140_143).length === 0) return false;
+  if (!preflight.legacy_identity_columns || Object.keys(preflight.legacy_identity_columns).length === 0) return false;
+  return typeof preflight.public_table_count === "number" && preflight.public_table_count > 0;
+}
+
 export function evaluateProductionMigrationRelease(input: {
   preflight: ProductionMigrationPreflightReport;
   env?: Record<string, string | undefined>;
+  /** From hybrid binding / runtime probe — not from preflight JSON alone. */
+  verifiedDatabaseProjectRef?: string | null;
 }): ProductionMigrationReleaseEvaluation {
   const gates: ReleaseGateRow[] = [];
   const env = input.env ?? {};
+  const verifiedRef = input.verifiedDatabaseProjectRef?.trim()
+    || env.ABRAXAS_VERIFIED_SUPABASE_PROJECT_REF?.trim()
+    || null;
 
-  const projectOk =
-    !input.preflight.project_ref_expected
-    || input.preflight.project_ref_expected === PRODUCTION_SUPABASE_PROJECT_REF;
+  const preflightComplete = isProductionPreflightReportComplete(input.preflight);
+  gates.push({
+    gate: "preflight_report_complete",
+    status: preflightComplete ? "pass" : "fail",
+    detail: preflightComplete
+      ? "Preflight JSON includes required schema sections."
+      : "Preflight report missing required sections; cannot evaluate migration state.",
+  });
+
+  const databaseIdentityOk =
+    verifiedRef === PRODUCTION_SUPABASE_PROJECT_REF && preflightComplete;
   gates.push({
     gate: "database_identity",
-    status: projectOk ? "pass" : "fail",
-    detail: projectOk
-      ? `Production Supabase ref ${PRODUCTION_SUPABASE_PROJECT_REF} confirmed.`
-      : "Preflight project ref does not match authorized Production database.",
+    status: databaseIdentityOk ? "pass" : "fail",
+    detail: databaseIdentityOk
+      ? `Verified database binding matches Production ref ${PRODUCTION_SUPABASE_PROJECT_REF}.`
+      : "Database identity requires independently verified project ref plus complete preflight.",
   });
+
+  if (
+    input.preflight.project_ref_expected
+    && input.preflight.project_ref_expected !== PRODUCTION_SUPABASE_PROJECT_REF
+    && input.preflight.project_ref_expected !== verifiedRef
+  ) {
+    gates.push({
+      gate: "forged_project_reference",
+      status: "fail",
+      detail: "Preflight self-declared project ref contradicts verified binding.",
+    });
+  }
 
   const legacySui = input.preflight.legacy_identity_columns?.identity_verifications_sui_address === true;
   gates.push({
@@ -94,7 +128,9 @@ export function evaluateProductionMigrationRelease(input: {
       : "Missing legacy sui_address column; cannot safely reconcile existing holders.",
   });
 
-  const drift = partialMigrationState(input.preflight.prerequisites, input.preflight.migrations_140_143);
+  const drift = preflightComplete
+    ? partialMigrationState(input.preflight.prerequisites, input.preflight.migrations_140_143)
+    : true;
   gates.push({
     gate: "schema_drift",
     status: drift ? "fail" : "pass",
@@ -104,14 +140,17 @@ export function evaluateProductionMigrationRelease(input: {
   });
 
   const applyPending =
-    allFalse(input.preflight.prerequisites)
+    preflightComplete
+    && allFalse(input.preflight.prerequisites)
     && allFalse(input.preflight.migrations_140_143);
   gates.push({
     gate: "migration_baseline",
-    status: applyPending ? "warn" : anyTrue(input.preflight.migrations_140_143) ? "pass" : "fail",
-    detail: applyPending
-      ? "Production baseline matches pre-migration state; migrations 136–143 not yet applied."
-      : "Post-migration verification required (objects present).",
+    status: !preflightComplete ? "fail" : applyPending ? "warn" : anyTrue(input.preflight.migrations_140_143) ? "pass" : "fail",
+    detail: !preflightComplete
+      ? "Migration baseline unknown until preflight is complete."
+      : applyPending
+        ? "Production baseline matches pre-migration state; migrations 136–143 not yet applied."
+        : "Post-migration verification required (objects present).",
   });
 
   const backupId = env.ABRAXAS_FOUNDER_BACKUP_CHECKPOINT_ID?.trim()
@@ -133,27 +172,36 @@ export function evaluateProductionMigrationRelease(input: {
     env.ABRAXAS_FOUNDER_PRODUCTION_MIGRATION_AUTHORIZED?.trim().toLowerCase() === "true";
   const founderAck = env.ABRAXAS_FOUNDER_PRODUCTION_MIGRATION_ACK_ID?.trim() ?? "";
   const releaseToken = env.ABRAXAS_PRODUCTION_MIGRATION_RELEASE_TOKEN?.trim() ?? "";
-  const executionArmed =
-    founderAuth
-    && founderAck.length >= 8
-    && releaseToken === "build580-passport-136-143"
-    && backupOk
-    && !drift;
+  const founderSignalsOk = founderAuth && founderAck.length >= 8 && releaseToken === "build580-passport-136-143";
 
   gates.push({
     gate: "founder_execution_authorization",
-    status: executionArmed ? "pass" : "blocked",
-    detail: executionArmed
-      ? "All founder authorization gates satisfied (this build still does not auto-execute DDL)."
-      : "Production DDL requires founder authorization, matching release token, backup attestation, and zero schema drift.",
+    status: founderSignalsOk ? "pass" : "blocked",
+    detail: founderSignalsOk
+      ? "Founder authorization signals present (independent from database identity)."
+      : "Founder authorization incomplete or release token mismatch.",
   });
 
-  const dryRunOk = projectOk && legacySui && !drift;
-  const production_execution_blocked = !executionArmed;
+  const executionArmed =
+    databaseIdentityOk
+    && legacySui
+    && !drift
+    && backupOk
+    && founderSignalsOk;
+
+  gates.push({
+    gate: "production_execution_armed",
+    status: executionArmed ? "pass" : "blocked",
+    detail: executionArmed
+      ? "All release gates satisfied (runtime still does not auto-execute DDL)."
+      : "Production execution remains blocked until database identity, drift, backup, and founder gates align.",
+  });
+
+  const dryRunOk = databaseIdentityOk && legacySui && !drift && preflightComplete;
 
   return {
     build: 580,
-    production_execution_blocked,
+    production_execution_blocked: !executionArmed,
     dry_run_preflight_ok: dryRunOk,
     gates,
     migration_apply_pending: applyPending,

@@ -13,6 +13,33 @@ import { planLegacyIdentityBackfill, LEGACY_KIND_SUI_ADDRESS } from "./holderIde
 
 const SUI = "0x" + "1".repeat(64);
 
+const completePreflight = {
+  build: 580,
+  project_ref_expected: PRODUCTION_SUPABASE_PROJECT_REF,
+  public_table_count: 122,
+  prerequisites: {
+    passport_holder_subjects: false,
+    passport_holder_legacy_links: false,
+    passport_holder_wallet_accounts: false,
+    identity_verifications_holder_subject_id: false,
+    passport_idv_consent_records: false,
+    sovereign_credential_issuance_audit: false,
+  },
+  migrations_140_143: {
+    passport_holder_possession_keys: false,
+    passport_reusable_credentials: false,
+    linked_credential_jti: false,
+    passport_institutional_presentation_consents: false,
+    passport_institutional_authorization_commits: false,
+    signing_claim_token: false,
+    consume_passport_possession_challenge: false,
+  },
+  legacy_identity_columns: {
+    identity_verifications_sui_address: true,
+    identity_verifications_wallet_address: true,
+  },
+};
+
 describe("Build #580 migration release gates", () => {
   it("includes ordered migration filenames 136 through 143", () => {
     expect(SOVEREIGN_PASSPORT_MIGRATION_FILES).toHaveLength(8);
@@ -22,27 +49,8 @@ describe("Build #580 migration release gates", () => {
 
   it("blocks Production execution without backup and founder tokens", () => {
     const evaluation = evaluateProductionMigrationRelease({
-      preflight: {
-        project_ref_expected: PRODUCTION_SUPABASE_PROJECT_REF,
-        legacy_identity_columns: { identity_verifications_sui_address: true },
-        prerequisites: {
-          passport_holder_subjects: false,
-          passport_holder_legacy_links: false,
-          passport_holder_wallet_accounts: false,
-          identity_verifications_holder_subject_id: false,
-          passport_idv_consent_records: false,
-          sovereign_credential_issuance_audit: false,
-        },
-        migrations_140_143: {
-          passport_holder_possession_keys: false,
-          passport_reusable_credentials: false,
-          linked_credential_jti: false,
-          passport_institutional_presentation_consents: false,
-          passport_institutional_authorization_commits: false,
-          signing_claim_token: false,
-          consume_passport_possession_challenge: false,
-        },
-      },
+      preflight: completePreflight,
+      verifiedDatabaseProjectRef: PRODUCTION_SUPABASE_PROJECT_REF,
       env: {},
     });
     expect(evaluation.production_execution_blocked).toBe(true);
@@ -53,26 +61,10 @@ describe("Build #580 migration release gates", () => {
   it("fails closed on partial migration drift", () => {
     const evaluation = evaluateProductionMigrationRelease({
       preflight: {
-        project_ref_expected: PRODUCTION_SUPABASE_PROJECT_REF,
-        legacy_identity_columns: { identity_verifications_sui_address: true },
-        prerequisites: {
-          passport_holder_subjects: true,
-          passport_holder_legacy_links: false,
-          passport_holder_wallet_accounts: false,
-          identity_verifications_holder_subject_id: false,
-          passport_idv_consent_records: false,
-          sovereign_credential_issuance_audit: false,
-        },
-        migrations_140_143: {
-          passport_holder_possession_keys: false,
-          passport_reusable_credentials: false,
-          linked_credential_jti: false,
-          passport_institutional_presentation_consents: false,
-          passport_institutional_authorization_commits: false,
-          signing_claim_token: false,
-          consume_passport_possession_challenge: false,
-        },
+        ...completePreflight,
+        prerequisites: { ...completePreflight.prerequisites, passport_holder_subjects: true },
       },
+      verifiedDatabaseProjectRef: PRODUCTION_SUPABASE_PROJECT_REF,
     });
     expect(evaluation.schema_drift_detected).toBe(true);
     expect(evaluation.production_execution_blocked).toBe(true);
@@ -80,27 +72,8 @@ describe("Build #580 migration release gates", () => {
 
   it("does not arm execution from a single authorization flag alone", () => {
     const evaluation = evaluateProductionMigrationRelease({
-      preflight: {
-        project_ref_expected: PRODUCTION_SUPABASE_PROJECT_REF,
-        legacy_identity_columns: { identity_verifications_sui_address: true },
-        prerequisites: {
-          passport_holder_subjects: false,
-          passport_holder_legacy_links: false,
-          passport_holder_wallet_accounts: false,
-          identity_verifications_holder_subject_id: false,
-          passport_idv_consent_records: false,
-          sovereign_credential_issuance_audit: false,
-        },
-        migrations_140_143: {
-          passport_holder_possession_keys: false,
-          passport_reusable_credentials: false,
-          linked_credential_jti: false,
-          passport_institutional_presentation_consents: false,
-          passport_institutional_authorization_commits: false,
-          signing_claim_token: false,
-          consume_passport_possession_challenge: false,
-        },
-      },
+      preflight: completePreflight,
+      verifiedDatabaseProjectRef: PRODUCTION_SUPABASE_PROJECT_REF,
       env: {
         ABRAXAS_FOUNDER_PRODUCTION_MIGRATION_AUTHORIZED: "true",
       },

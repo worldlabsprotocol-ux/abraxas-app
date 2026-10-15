@@ -152,6 +152,10 @@ export function planLegacyIdentityBackfill(input: {
 export type HolderIdentitySurfaceState =
   | "legacy_holder_authenticated"
   | "canonical_subject_ready"
+  | "approved_verification_confirmed"
+  | "verification_present_unconfirmed"
+  | "migration_pending"
+  | "no_verification_on_record"
   | "reconciliation_operator_required"
   | "ambiguous_identity_blocked"
   | "identity_lookup_unavailable";
@@ -174,10 +178,17 @@ export function resolveHolderIdentitySurface(input: {
   sessionHolderSubjectId?: string | null;
   canonicalSchemaPresent: boolean;
   legacyLinkSubjectId: string | null;
+  /** Total identity_verifications rows matched for session keys (0 when lookup unavailable). */
   idvRowsForLegacyWallet: number;
+  /** Approved IDV rows matched for session keys (0 when lookup unavailable). */
+  idvApprovedRowsForLegacyWallet?: number;
   ambiguousLegacyConflict: boolean;
   identityLookupUnavailable?: boolean;
 }): HolderIdentitySurfaceSnapshot {
+  const approvedRows = input.identityLookupUnavailable
+    ? 0
+    : (input.idvApprovedRowsForLegacyWallet ?? 0);
+  const anyRows = input.identityLookupUnavailable ? 0 : input.idvRowsForLegacyWallet;
   if (input.ambiguousLegacyConflict) {
     return {
       state: "ambiguous_identity_blocked",
@@ -222,27 +233,52 @@ export function resolveHolderIdentitySurface(input: {
   }
 
   if (!input.canonicalSchemaPresent) {
+    if (approvedRows > 0) {
+      return {
+        state: "approved_verification_confirmed",
+        headline: "Your verification is being connected to Passport",
+        detail: "Your approved verification is recognized while Abraxas completes holder subject migration on this account.",
+        operator_review_required: false,
+      };
+    }
+    if (anyRows > 0) {
+      return {
+        state: "verification_present_unconfirmed",
+        headline: "Verification review in progress",
+        detail: "Identity records exist for this account but approval is not confirmed yet. Complete or await review before expecting reusable credentials.",
+        operator_review_required: false,
+      };
+    }
     return {
-      state: "legacy_holder_authenticated",
-      headline: "Your verification is being connected to Passport",
-      detail: "Your existing verification is still recognized while Abraxas completes holder subject migration on this account.",
+      state: "migration_pending",
+      headline: "Passport migration in progress",
+      detail: "Sign in is active. Complete identity verification when you are ready to use Passport features.",
       operator_review_required: false,
     };
   }
 
-  if (input.idvRowsForLegacyWallet > 0 && !canonicalFromSession) {
+  if (approvedRows > 0 && !canonicalFromSession) {
     return {
       state: "reconciliation_operator_required",
       headline: "Your verification is being connected to Passport",
-      detail: "Your existing verification is still recognized. Operator review will link your account to a canonical holder subject before issuer-backed credentials activate.",
+      detail: "Your approved verification is recognized. Operator review will link your account to a canonical holder subject before issuer-backed credentials activate.",
       operator_review_required: true,
     };
   }
 
+  if (anyRows > 0 && approvedRows === 0) {
+    return {
+      state: "verification_present_unconfirmed",
+      headline: "Verification review in progress",
+      detail: "Identity records exist but approval is not confirmed. Reusable credentials stay unavailable until verification is approved.",
+      operator_review_required: false,
+    };
+  }
+
   return {
-    state: "legacy_holder_authenticated",
-    headline: "Legacy Passport account",
-    detail: "Sign in is active. Complete verification to prepare for canonical holder subject linking when Production migration finishes.",
+    state: "no_verification_on_record",
+    headline: "Identity verification not on record",
+    detail: "Sign in is active. Complete verification when you are ready to prepare for reusable Passport credentials.",
     operator_review_required: false,
   };
 }

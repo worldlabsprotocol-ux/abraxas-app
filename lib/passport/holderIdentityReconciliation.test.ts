@@ -66,6 +66,7 @@ describe("Build #579 holder identity reconciliation", () => {
       canonicalSchemaPresent: true,
       legacyLinkSubjectId: null,
       idvRowsForLegacyWallet: 2,
+      idvApprovedRowsForLegacyWallet: 2,
       ambiguousLegacyConflict: false,
     });
     expect(surface.state).toBe("reconciliation_operator_required");
@@ -78,9 +79,10 @@ describe("Build #579 holder identity reconciliation", () => {
       canonicalSchemaPresent: false,
       legacyLinkSubjectId: null,
       idvRowsForLegacyWallet: 1,
+      idvApprovedRowsForLegacyWallet: 1,
       ambiguousLegacyConflict: false,
     });
-    expect(surface.state).toBe("legacy_holder_authenticated");
+    expect(surface.state).toBe("approved_verification_confirmed");
   });
 
   it("surfaces identity_lookup_unavailable instead of implying zero prior IDV", () => {

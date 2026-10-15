@@ -24,6 +24,7 @@ describe("Build #579 Passport product state alignment", () => {
       canonicalSchemaPresent: true,
       legacyLinkSubjectId: null,
       idvRowsForLegacyWallet: 1,
+      idvApprovedRowsForLegacyWallet: 1,
       ambiguousLegacyConflict: false,
     });
     expect(shouldDeferReusableCredentialActions(holder)).toBe(true);

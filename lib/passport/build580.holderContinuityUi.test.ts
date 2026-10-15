@@ -14,11 +14,12 @@ describe("Build #580 Passport holder continuity UI", () => {
       canonicalSchemaPresent: false,
       legacyLinkSubjectId: null,
       idvRowsForLegacyWallet: 2,
+      idvApprovedRowsForLegacyWallet: 2,
       ambiguousLegacyConflict: false,
     });
-    expect(surface.headline).toMatch(/connected to Passport/i);
-    expect(surface.detail).toMatch(/still recognized/i);
-    expect(shouldSuppressRepeatVerificationNudge(surface)).toBe(false);
+    expect(surface.state).toBe("approved_verification_confirmed");
+    expect(surface.detail).toMatch(/approved verification/i);
+    expect(shouldSuppressRepeatVerificationNudge(surface)).toBe(true);
   });
 
   it("lookup unavailable suppresses repeat verification and defers issuance", () => {
@@ -42,6 +43,7 @@ describe("Build #580 Passport holder continuity UI", () => {
       canonicalSchemaPresent: true,
       legacyLinkSubjectId: null,
       idvRowsForLegacyWallet: 1,
+      idvApprovedRowsForLegacyWallet: 1,
       ambiguousLegacyConflict: false,
     });
     expect(surface.state).toBe("canonical_subject_ready");

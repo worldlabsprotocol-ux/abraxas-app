@@ -1,18 +1,27 @@
 // FILE: lib/passport/holderIdentityReconciliationExecution.ts
-// Build #580: idempotent, transactional legacy holder reconciliation (operator-approved rows only).
 
 import "server-only";
 
-import { randomBytes } from "crypto";
-import { isChainNeutralHolderSubjectId } from "@/lib/auth/holderSubject/subjectId";
+import {
+  type ReconciliationExecutionCredentials,
+  computeReconciliationBatchDigest,
+  filterRowsWithAuthoritativeEvidence,
+  verifyReconciliationExecutionAuthorization,
+} from "./holderIdentityReconciliationAuth";
+import {
+  bindApprovedIdvToLegacyLinkOwner,
+  claimLegacyIdentityLink,
+  countApprovedIdvForSuiAnchor,
+} from "./holderIdentityLinkPersistence";
 import {
   LEGACY_KIND_SUI_ADDRESS,
-  type LegacyIdentityAnchor,
   type ReconciliationPlanAction,
   type ReconciliationPlanRow,
 } from "./holderIdentityReconciliation";
 import type { PoolClient } from "pg";
 import { withAbraxasPgTransaction } from "@/lib/persistence/pgPool";
+import { supabaseProjectRefFromPostgresUrl } from "@/lib/supabase/projectRefs";
+import { resolvePassportDirectPostgresUrl } from "@/lib/persistence/env";
 
 export type ReconciliationExecutionOutcome =
   | "dry_run_would_apply"
@@ -21,6 +30,8 @@ export type ReconciliationExecutionOutcome =
   | "blocked_action"
   | "blocked_idv_not_approved"
   | "blocked_stale_link_conflict"
+  | "blocked_link_claim_conflict"
+  | "blocked_idv_bind_mismatch"
   | "no_op";
 
 export type ReconciliationExecutionRowAudit = {
@@ -29,48 +40,53 @@ export type ReconciliationExecutionRowAudit = {
   action: ReconciliationPlanAction;
   outcome: ReconciliationExecutionOutcome;
   targetSubjectId?: string;
+  persistedSubjectId?: string;
 };
 
 export type ReconciliationExecutionResult =
-  | { ok: true; mode: "dry_run" | "execute"; audits: ReconciliationExecutionRowAudit[] }
-  | { ok: false; code: "execution_not_authorized" | "invalid_target_subject"; detail: string };
-
-function mintCanonicalHolderSubjectId(): string {
-  return `abx_hs_${randomBytes(16).toString("hex")}`;
-}
-
-async function countApprovedIdvForSui(client: PoolClient, sui: string): Promise<number> {
-  const res = await client.query<{ c: number }>(
-    `select count(*)::int as c from public.identity_verifications
-     where lower(sui_address) = lower($1)
-       and coalesce(identity_verification_status, status, '') in ('approved','verified','complete')`,
-    [sui],
-  );
-  return res.rows[0]?.c ?? 0;
-}
+  | { ok: true; mode: "dry_run" | "execute"; audits: ReconciliationExecutionRowAudit[]; batchDigest: string }
+  | { ok: false; code: string; detail: string };
 
 export function filterOperatorApprovedPlanRows(rows: ReconciliationPlanRow[]): ReconciliationPlanRow[] {
-  return rows.filter((row) =>
+  return filterRowsWithAuthoritativeEvidence(rows).filter((row) =>
     row.action === "skip_already_linked"
     || row.action === "link_existing_canonical_subject"
     || row.action === "create_canonical_subject_and_link",
   );
 }
 
+function resolveBoundDatabaseProjectRef(env: Record<string, string | undefined>): string | null {
+  const explicit = env.ABRAXAS_VERIFIED_SUPABASE_PROJECT_REF?.trim();
+  if (explicit) return explicit;
+  const url = resolvePassportDirectPostgresUrl(env);
+  if (!url) return null;
+  return supabaseProjectRefFromPostgresUrl(url);
+}
+
 export async function executeLegacyIdentityReconciliationBatch(input: {
   mode: "dry_run" | "execute";
   rows: ReconciliationPlanRow[];
-  /** Required for execute; must include founder + operator attestation env values. */
-  executionAuthorized?: boolean;
+  credentials?: ReconciliationExecutionCredentials;
+  env?: Record<string, string | undefined>;
 }): Promise<ReconciliationExecutionResult> {
-  if (input.mode === "execute" && !input.executionAuthorized) {
-    return { ok: false, code: "execution_not_authorized", detail: "Operator execution requires explicit authorization." };
+  const env = input.env ?? process.env;
+  const approved = filterOperatorApprovedPlanRows(input.rows);
+  const auth = verifyReconciliationExecutionAuthorization({
+    mode: input.mode,
+    rows: approved,
+    credentials: input.credentials,
+    env,
+    boundDatabaseProjectRef: resolveBoundDatabaseProjectRef(env),
+  });
+  if (!auth.ok) {
+    return { ok: false, code: auth.code, detail: auth.detail };
   }
 
+  const batchDigest = computeReconciliationBatchDigest(approved);
   const audits: ReconciliationExecutionRowAudit[] = [];
-  const approved = filterOperatorApprovedPlanRows(input.rows);
+  const dryRun = auth.mode === "dry_run";
 
-  const runRow = async (row: ReconciliationPlanRow, txClient: PoolClient, dryRun: boolean) => {
+  const runRow = async (row: ReconciliationPlanRow, client: PoolClient) => {
     if (row.action === "skip_already_linked") {
       audits.push({
         legacyKind: row.anchor.kind,
@@ -92,52 +108,27 @@ export async function executeLegacyIdentityReconciliationBatch(input: {
       return;
     }
 
-    let target = row.targetSubjectId?.trim();
-    if (row.action === "create_canonical_subject_and_link") {
-      target = mintCanonicalHolderSubjectId();
-    }
-    if (!target || !isChainNeutralHolderSubjectId(target)) {
-      audits.push({
-        legacyKind: row.anchor.kind,
-        legacyKey: row.anchor.key,
-        action: row.action,
-        outcome: "blocked_action",
-      });
-      return;
-    }
-
     if (row.anchor.kind === LEGACY_KIND_SUI_ADDRESS) {
-      const approvedCount = await countApprovedIdvForSui(txClient, row.anchor.key);
+      const approvedCount = await countApprovedIdvForSuiAnchor(client, row.anchor.key);
       if (approvedCount === 0) {
         audits.push({
           legacyKind: row.anchor.kind,
           legacyKey: row.anchor.key,
           action: row.action,
           outcome: "blocked_idv_not_approved",
-          targetSubjectId: target,
+          targetSubjectId: row.targetSubjectId,
         });
         return;
       }
     }
 
-    const linkSql = dryRun
-      ? `select subject_id from public.passport_holder_legacy_links where legacy_kind = $1 and legacy_key = $2`
-      : `select subject_id from public.passport_holder_legacy_links where legacy_kind = $1 and legacy_key = $2 for update`;
-    const existing = await txClient.query<{ subject_id: string }>(
-      linkSql,
-      [row.anchor.kind, row.anchor.kind === LEGACY_KIND_SUI_ADDRESS ? row.anchor.key.toLowerCase() : row.anchor.key],
-    );
-    const owner = existing.rows[0]?.subject_id;
-    if (owner && owner !== target) {
-      audits.push({
-        legacyKind: row.anchor.kind,
-        legacyKey: row.anchor.key,
-        action: row.action,
-        outcome: "blocked_stale_link_conflict",
-        targetSubjectId: target,
-      });
-      return;
-    }
+    const requestedSubject = row.targetSubjectId?.trim() ?? null;
+    const requested =
+      row.action === "create_canonical_subject_and_link" && !requestedSubject
+        ? null
+        : requestedSubject;
+    const allowMint =
+      row.action === "create_canonical_subject_and_link" && !requestedSubject;
 
     if (dryRun) {
       audits.push({
@@ -145,54 +136,65 @@ export async function executeLegacyIdentityReconciliationBatch(input: {
         legacyKey: row.anchor.key,
         action: row.action,
         outcome: "dry_run_would_apply",
-        targetSubjectId: target,
+        targetSubjectId: requested ?? undefined,
       });
       return;
     }
 
-    await txClient.query(
-      `insert into public.passport_holder_subjects (subject_id) values ($1) on conflict do nothing`,
-      [target],
-    );
-    await txClient.query(
-      `insert into public.passport_holder_legacy_links (subject_id, legacy_kind, legacy_key)
-       values ($1, $2, $3) on conflict do nothing`,
-      [target, row.anchor.kind, row.anchor.kind === LEGACY_KIND_SUI_ADDRESS ? row.anchor.key.toLowerCase() : row.anchor.key],
-    );
-    if (row.anchor.kind === LEGACY_KIND_SUI_ADDRESS) {
-      await txClient.query(
-        `update public.identity_verifications
-         set holder_subject_id = $1, updated_at = now()
-         where lower(sui_address) = lower($2)
-           and (holder_subject_id is null or holder_subject_id = $1)
-           and coalesce(identity_verification_status, status, '') in ('approved','verified','complete')`,
-        [target, row.anchor.key],
-      );
+    const claim = await claimLegacyIdentityLink({
+      client,
+      anchor: row.anchor,
+      requestedSubjectId: requested,
+      allowMintWhenAbsent: allowMint,
+    });
+
+    if (!claim.ok) {
+      audits.push({
+        legacyKind: row.anchor.kind,
+        legacyKey: row.anchor.key,
+        action: row.action,
+        outcome:
+          claim.code === "conflict_different_subject"
+            ? "blocked_stale_link_conflict"
+            : "blocked_link_claim_conflict",
+        targetSubjectId: requested ?? undefined,
+        persistedSubjectId: claim.persistedSubjectId,
+      });
+      return;
+    }
+
+    const bind = await bindApprovedIdvToLegacyLinkOwner({
+      client,
+      anchor: row.anchor,
+      authoritativeSubjectId: claim.subjectId,
+    });
+    if (!bind.ok) {
+      audits.push({
+        legacyKind: row.anchor.kind,
+        legacyKey: row.anchor.key,
+        action: row.action,
+        outcome: "blocked_idv_bind_mismatch",
+        targetSubjectId: claim.subjectId,
+        persistedSubjectId: claim.subjectId,
+      });
+      return;
     }
 
     audits.push({
       legacyKind: row.anchor.kind,
       legacyKey: row.anchor.key,
       action: row.action,
-      outcome: owner ? "skipped_already_linked" : "applied",
-      targetSubjectId: target,
+      outcome: claim.createdLink ? "applied" : "skipped_already_linked",
+      targetSubjectId: claim.subjectId,
+      persistedSubjectId: claim.subjectId,
     });
   };
 
-  if (input.mode === "dry_run") {
-    await withAbraxasPgTransaction(async (client) => {
-      for (const row of approved) {
-        await runRow(row, client, true);
-      }
-    });
-    return { ok: true, mode: "dry_run", audits };
-  }
-
   await withAbraxasPgTransaction(async (client) => {
     for (const row of approved) {
-      await runRow(row, client, false);
+      await runRow(row, client);
     }
-  });
+  }, env);
 
-  return { ok: true, mode: "execute", audits };
+  return { ok: true, mode: auth.mode, audits, batchDigest };
 }

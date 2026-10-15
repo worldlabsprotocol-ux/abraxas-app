@@ -41,6 +41,7 @@ export async function loadHolderIdentitySurfaceForSession(
       canonicalSchemaPresent: false,
       legacyLinkSubjectId: null,
       idvRowsForLegacyWallet: 0,
+      idvApprovedRowsForLegacyWallet: 0,
       ambiguousLegacyConflict: false,
     });
   }
@@ -48,6 +49,7 @@ export async function loadHolderIdentitySurfaceForSession(
   const schema = await canonicalSchemaPresent();
   let legacyLink: string | null = null;
   let idvCount = 0;
+  let idvApprovedCount = 0;
   let ambiguous = false;
   let identityLookupUnavailable = false;
 
@@ -74,6 +76,7 @@ export async function loadHolderIdentitySurfaceForSession(
       identityLookupUnavailable = true;
     } else {
       idvCount = idvLookup.count;
+      idvApprovedCount = idvLookup.approvedCount;
     }
   }
 
@@ -92,6 +95,7 @@ export async function loadHolderIdentitySurfaceForSession(
     canonicalSchemaPresent: schema,
     legacyLinkSubjectId: legacyLink,
     idvRowsForLegacyWallet: identityLookupUnavailable ? 0 : idvCount,
+    idvApprovedRowsForLegacyWallet: identityLookupUnavailable ? 0 : idvApprovedCount,
     ambiguousLegacyConflict: ambiguous,
     identityLookupUnavailable,
   });
