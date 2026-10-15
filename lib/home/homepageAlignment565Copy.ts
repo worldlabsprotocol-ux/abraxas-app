@@ -6,6 +6,9 @@ export const HOMEPAGE_ALIGNMENT_EYEBROW = "Universal holder-controlled trust";
 export const HOMEPAGE_HERO_LEAD =
   "Abraxas Passport lets holders verify once with an authorized issuer, carry portable signed authorizations, and present policy-scoped answers to each institution. Partners verify cryptographically—without Abraxas identity databases at decision time.";
 
+export const HOMEPAGE_RECEIPT_SCOPE_NOTE =
+  "Today, partner authorization uses signed decision receipts bound to each partner and policy. Passport export and portable presentations extend holder control—universal reuse across every institution without consent is a roadmap goal, not a blanket guarantee on every live integration.";
+
 export const HOMEPAGE_HERO_DISCLAIMER =
   "Policy-scoped presentation is not zero-knowledge selective disclosure. Sandbox and devnet proofs are labeled separately—not production certification or universal institutional acceptance.";
 
@@ -16,7 +19,7 @@ export const HOMEPAGE_FOUR_PILLARS = [
     summary:
       "Verify identity or eligibility through an authorized issuer, receive a portable credential, and approve what each partner may receive.",
     detail:
-      "Passport shows assurance, partner requests, and exportable policy-scoped presentations. Underlying documents and biometrics are not the default payload for reuse.",
+      "Passport shows assurance, partner requests, and exportable policy-scoped presentations. Live partner flows issue partner-bound authorization receipts today; cross-partner portable credentials are demonstrated in sandbox and build toward broader reuse.",
     href: "/passport",
     cta: "Open Passport",
   },

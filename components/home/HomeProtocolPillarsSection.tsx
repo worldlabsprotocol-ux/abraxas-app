@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   HOMEPAGE_FOUR_PILLARS,
   HOMEPAGE_HERO_DISCLAIMER,
+  HOMEPAGE_RECEIPT_SCOPE_NOTE,
 } from "@/lib/home/homepageAlignment565Copy";
 
 /** Four capability pillars — Builds #550–#565 product truth. */
@@ -28,6 +29,9 @@ export function HomeProtocolPillarsSection() {
           </li>
         ))}
       </ul>
+      <p className="abx-home-pillars__scope" role="note">
+        {HOMEPAGE_RECEIPT_SCOPE_NOTE}
+      </p>
       <p className="abx-home-pillars__disclaimer" role="note">
         {HOMEPAGE_HERO_DISCLAIMER}
       </p>

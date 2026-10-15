@@ -42,4 +42,26 @@ describe("homepage alignment (#550–#565)", () => {
     expect(pillars).toMatch(/not zero-knowledge selective disclosure/i);
     expect(pillars).toMatch(/not production certification/i);
   });
+
+  it("distinguishes partner-bound receipts from future universal Passport reuse", () => {
+    const copy = read("lib/home/homepageAlignment565Copy.ts");
+    expect(copy).toMatch(/partner-bound authorization receipts/i);
+    expect(copy).toMatch(/roadmap goal/i);
+    const section = read("components/home/HomeProtocolPillarsSection.tsx");
+    expect(section).toContain("HOMEPAGE_RECEIPT_SCOPE_NOTE");
+  });
+
+  it("pillar and hero CTAs reference existing app routes", () => {
+    for (const pillar of HOMEPAGE_FOUR_PILLARS) {
+      expect(pillar.href.startsWith("/") || pillar.href.startsWith("#")).toBe(true);
+      if (pillar.href.startsWith("/")) {
+        const routePath = pillar.href.split("?")[0];
+        const appFile = resolve(ROOT, `app${routePath}/page.tsx`);
+        const altFile = resolve(ROOT, `app${routePath}/page.ts`);
+        expect(existsSync(appFile) || existsSync(altFile), `route ${routePath}`).toBe(true);
+      }
+    }
+    expect(existsSync(resolve(ROOT, "app/passport/page.tsx"))).toBe(true);
+    expect(existsSync(resolve(ROOT, "app/developers/passport-portable-trust/page.tsx"))).toBe(true);
+  });
 });

@@ -1475,6 +1475,7 @@
   text-decoration: underline;
 }
 
+.abx-home-pillars__scope,
 .abx-home-pillars__disclaimer {
   margin: 0;
   font-size: 0.72rem;
