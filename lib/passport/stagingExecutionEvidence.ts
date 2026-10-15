@@ -85,13 +85,14 @@ export function parseStagingExecutionEvidence(raw: unknown): ParseStagingExecuti
       return { ok: false, code: "staging_evidence_browser_session_invalid" };
     }
     const s = session as Record<string, unknown>;
-    if (!isBrowserMethod(s.method) || !isIsoTimestamp(s.exercised_at)) {
+    const sessionRef = typeof s.session_ref === "string" ? s.session_ref.trim() : "";
+    if (!isBrowserMethod(s.method) || !isIsoTimestamp(s.exercised_at) || !sessionRef) {
       return { ok: false, code: "staging_evidence_browser_session_invalid" };
     }
     evidence.browser_authenticated_session = {
       method: s.method,
       exercised_at: s.exercised_at as string,
-      session_ref: typeof s.session_ref === "string" ? s.session_ref.trim() : undefined,
+      session_ref: sessionRef,
     };
   }
 

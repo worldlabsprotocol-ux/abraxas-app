@@ -20,6 +20,7 @@ function baseEvidence() {
     browser_authenticated_session: {
       method: "evm_wallet" as const,
       exercised_at: "2026-10-15T10:30:00.000Z",
+      session_ref: "wallet-auth-challenge-1",
     },
     idv_human_review: {
       exercised_at: "2026-10-15T10:45:00.000Z",
@@ -34,13 +35,21 @@ function baseEvidence() {
 
 describe("staging execution evidence integrity", () => {
   it("rejects fabricated evidence without authoritative corroboration", () => {
+    const evidence = baseEvidence();
+    const env = {
+      [STAGING_ENVIRONMENT_ID_ENV]: "staging-west-1",
+      [STAGING_EVIDENCE_APPROVAL_SECRET_ENV]: "founder-only-secret",
+    };
+    const signed = {
+      ...evidence,
+      founder_approval_hmac: computeFounderApprovalHmac(evidence, env[STAGING_EVIDENCE_APPROVAL_SECRET_ENV]!),
+    };
     const result = assessStagingExecutionEvidenceIntegrity({
-      evidence: baseEvidence(),
-      env: { [STAGING_ENVIRONMENT_ID_ENV]: "staging-west-1" },
+      evidence: signed,
+      env,
       corroboration: {
-        holder_subject_exists: false,
-        holder_wallet_binding: false,
-        holder_zklogin_binding: false,
+        browser_authentication_event_corroborated: false,
+        browser_authentication_event_at: null,
         idv_row: null,
         possession_updated_at: null,
       },
@@ -49,7 +58,23 @@ describe("staging execution evidence integrity", () => {
     expect(result.browser.status).not.toBe("verified");
     expect(result.idv_review.status).not.toBe("verified");
     expect(result.possession.status).not.toBe("verified");
-    expect(result.failure_codes).toContain("staging_evidence_holder_subject_not_found");
+    expect(result.failure_codes).toContain("staging_browser_session_evidence_missing");
+  });
+
+  it("does not verify browser execution without founder approval secret", () => {
+    const result = assessStagingExecutionEvidenceIntegrity({
+      evidence: baseEvidence(),
+      env: { [STAGING_ENVIRONMENT_ID_ENV]: "staging-west-1" },
+      corroboration: {
+        browser_authentication_event_corroborated: true,
+        browser_authentication_event_at: "2026-10-15T10:29:00.000Z",
+        idv_row: null,
+        possession_updated_at: null,
+      },
+      nowMs: NOW,
+    });
+    expect(result.browser.status).toBe("blocked_founder");
+    expect(result.failure_codes).toContain("staging_browser_founder_approval_required");
   });
 
   it("rejects environment mismatch for plausible evidence", () => {
@@ -63,31 +88,22 @@ describe("staging execution evidence integrity", () => {
     expect(result.failure_codes).toContain("staging_evidence_environment_mismatch");
   });
 
-  it("requires founder approval hmac when approval secret is configured", () => {
+  it("verifies browser only with founder approval and session event corroboration", () => {
     const evidence = baseEvidence();
     const env = {
       [STAGING_ENVIRONMENT_ID_ENV]: "staging-west-1",
       [STAGING_EVIDENCE_APPROVAL_SECRET_ENV]: "founder-only-secret",
     };
-    const withoutHmac = assessStagingExecutionEvidenceIntegrity({
-      evidence,
-      env,
-      corroboration: null,
-      nowMs: NOW,
-    });
-    expect(withoutHmac.founder_approval_valid).toBe(false);
-
     const signed = {
       ...evidence,
       founder_approval_hmac: computeFounderApprovalHmac(evidence, env[STAGING_EVIDENCE_APPROVAL_SECRET_ENV]!),
     };
-    const withHmac = assessStagingExecutionEvidenceIntegrity({
+    const withCorroboration = assessStagingExecutionEvidenceIntegrity({
       evidence: signed,
       env,
       corroboration: {
-        holder_subject_exists: true,
-        holder_wallet_binding: true,
-        holder_zklogin_binding: false,
+        browser_authentication_event_corroborated: true,
+        browser_authentication_event_at: "2026-10-15T10:29:00.000Z",
         idv_row: {
           holder_subject_id: "abx_hs_test_subject",
           status: "approved",
@@ -102,9 +118,8 @@ describe("staging execution evidence integrity", () => {
       },
       nowMs: NOW,
     });
-    expect(withHmac.founder_approval_valid).toBe(true);
-    expect(withHmac.browser.status).toBe("verified");
-    expect(withHmac.idv_review.status).toBe("verified");
-    expect(withHmac.possession.status).toBe("verified");
+    expect(withCorroboration.browser.status).toBe("verified");
+    expect(withCorroboration.idv_review.status).toBe("verified");
+    expect(withCorroboration.possession.status).toBe("verified");
   });
 });

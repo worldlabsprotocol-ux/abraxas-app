@@ -18,7 +18,9 @@ Founder execution evidence (optional JSON env or file path):
 - `ABRAXAS_STAGING_EXECUTION_EVIDENCE_JSON`
 - `ABRAXAS_STAGING_EXECUTION_EVIDENCE_PATH`
 
-Schema: `abraxas.staging_execution_evidence/v1` requires `staging_environment_id` (must match `ABRAXAS_STAGING_ENVIRONMENT_ID`), `holder_subject_id`, and optional `founder_approval_hmac` when `ABRAXAS_STAGING_EXECUTION_EVIDENCE_APPROVAL_SECRET` is set. Claims are corroborated against PostgreSQL authoritative records; JSON alone never produces `execution_verified`.
+Schema: `abraxas.staging_execution_evidence/v1` requires `staging_environment_id` (must match `ABRAXAS_STAGING_ENVIRONMENT_ID`), `holder_subject_id`, and `session_ref` on browser claims. Browser `execution_verified` requires `ABRAXAS_STAGING_EXECUTION_EVIDENCE_APPROVAL_SECRET` plus valid `founder_approval_hmac` and a corroborated authentication event (`passport_wallet_auth_challenges.consumed_at` or `sui_zklogin_identities.updated_at`). Holder wallet bindings alone are insufficient.
+
+Publisher `execution_verified` uses strict `verifyPortableRevocationAtRelyingParty` with institution-configured trust and bootstrap (never keys derived from the fetched artifact). Configure `ABRAXAS_STAGING_REVOCATION_PROBE_STATUS_ID` and `ABRAXAS_STAGING_REVOCATION_PROBE_RECEIPT_ID` for read-only publisher audits.
 
 | Dependency | Typical cloud agent run | Notes |
 | --- | --- | --- |

@@ -24,7 +24,9 @@ import {
 import { redactDatabaseConnectionLabel } from "./stagingReadiness571Redact";
 import {
   assessStagingExecutionEvidenceIntegrity,
+  computeFounderApprovalHmac,
   STAGING_ENVIRONMENT_ID_ENV,
+  STAGING_EVIDENCE_APPROVAL_SECRET_ENV,
 } from "./stagingExecutionEvidenceIntegrity";
 import { STAGING_EXECUTION_EVIDENCE_SCHEMA } from "./stagingExecutionEvidence";
 
@@ -87,31 +89,43 @@ function validRevocationEnv(): Record<string, string> {
   };
 }
 
+function verifiedEvidencePayload() {
+  const evidence = {
+    schema_version: STAGING_EXECUTION_EVIDENCE_SCHEMA,
+    recorded_at: "2026-10-15T11:00:00.000Z",
+    staging_environment_id: "staging-test",
+    holder_subject_id: "abx_hs_test",
+    browser_authenticated_session: {
+      method: "evm_wallet" as const,
+      exercised_at: "2026-10-15T10:30:00.000Z",
+      session_ref: "challenge-1",
+    },
+    idv_human_review: {
+      exercised_at: "2026-10-15T10:45:00.000Z",
+      approval_authority: "founder_operator" as const,
+      verification_record_ref: "idv-1",
+    },
+    holder_possession_registered: {
+      exercised_at: "2026-10-15T10:50:00.000Z",
+    },
+  };
+  const secret = "test-founder-secret";
+  return {
+    ...evidence,
+    founder_approval_hmac: computeFounderApprovalHmac(evidence, secret),
+  };
+}
+
 function verifiedIntegrity() {
   return assessStagingExecutionEvidenceIntegrity({
-    evidence: {
-      schema_version: STAGING_EXECUTION_EVIDENCE_SCHEMA,
-      recorded_at: "2026-10-15T11:00:00.000Z",
-      staging_environment_id: "staging-test",
-      holder_subject_id: "abx_hs_test",
-      browser_authenticated_session: {
-        method: "evm_wallet",
-        exercised_at: "2026-10-15T10:30:00.000Z",
-      },
-      idv_human_review: {
-        exercised_at: "2026-10-15T10:45:00.000Z",
-        approval_authority: "founder_operator",
-        verification_record_ref: "idv-1",
-      },
-      holder_possession_registered: {
-        exercised_at: "2026-10-15T10:50:00.000Z",
-      },
+    evidence: verifiedEvidencePayload(),
+    env: {
+      [STAGING_ENVIRONMENT_ID_ENV]: "staging-test",
+      [STAGING_EVIDENCE_APPROVAL_SECRET_ENV]: "test-founder-secret",
     },
-    env: { [STAGING_ENVIRONMENT_ID_ENV]: "staging-test" },
     corroboration: {
-      holder_subject_exists: true,
-      holder_wallet_binding: true,
-      holder_zklogin_binding: false,
+      browser_authentication_event_corroborated: true,
+      browser_authentication_event_at: "2026-10-15T10:29:00.000Z",
       idv_row: {
         holder_subject_id: "abx_hs_test",
         status: "approved",
@@ -134,6 +148,7 @@ function baseInput(overrides: Partial<StagingReadinessInput> = {}): StagingReadi
       ABRAXAS_PERSISTENCE_BACKEND: "postgres_direct",
       ABRAXAS_SOVEREIGN_PG_URL: "postgresql://postgres:secret@127.0.0.1:5432/staging",
       [STAGING_ENVIRONMENT_ID_ENV]: "staging-test",
+      [STAGING_EVIDENCE_APPROVAL_SECRET_ENV]: "test-founder-secret",
       NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID: "google-client-id",
       [STAGING_RECEIPT_CONSUMPTION_DIR_ENV]: "/tmp/consumption",
       ABRAXAS_PORTABLE_REVOCATION_CHECKPOINT_DIR: "/tmp/checkpoint",
@@ -146,22 +161,7 @@ function baseInput(overrides: Partial<StagingReadinessInput> = {}): StagingReadi
     pgConnectivityVerified: true,
     credentialSigningMaterialAvailable: true,
     receiptSigningMaterialAvailable: true,
-    executionEvidence: {
-      ok: true,
-      evidence: {
-        schema_version: STAGING_EXECUTION_EVIDENCE_SCHEMA,
-        recorded_at: "2026-10-15T11:00:00.000Z",
-        staging_environment_id: "staging-test",
-        holder_subject_id: "abx_hs_test",
-        browser_authenticated_session: { method: "evm_wallet", exercised_at: "2026-10-15T10:30:00.000Z" },
-        idv_human_review: {
-          exercised_at: "2026-10-15T10:45:00.000Z",
-          approval_authority: "founder_operator",
-          verification_record_ref: "idv-1",
-        },
-        holder_possession_registered: { exercised_at: "2026-10-15T10:50:00.000Z" },
-      },
-    },
+    executionEvidence: { ok: true, evidence: verifiedEvidencePayload() },
     evidenceIntegrity: verifiedIntegrity(),
     policyProbe: {
       active_policy_count: 2,
@@ -172,7 +172,8 @@ function baseInput(overrides: Partial<StagingReadinessInput> = {}): StagingReadi
     operational: {
       credentialSigningMatchesRegistry: true,
       receiptSigningMatchesRegistry: true,
-      publisherSnapshotMatchesBootstrap: true,
+      publisherSnapshotStrictVerified: true,
+      publisherSnapshotAuditLimited: false,
       checkpointDirAccessible: true,
       receiptConsumptionDirAccessible: true,
     },
@@ -201,7 +202,8 @@ describe("Build #571 staging readiness audit", () => {
         operational: {
           credentialSigningMatchesRegistry: false,
           receiptSigningMatchesRegistry: false,
-          publisherSnapshotMatchesBootstrap: false,
+          publisherSnapshotStrictVerified: false,
+          publisherSnapshotAuditLimited: false,
           checkpointDirAccessible: false,
           receiptConsumptionDirAccessible: false,
         },
@@ -223,6 +225,7 @@ describe("Build #571 staging readiness audit", () => {
             browser_authenticated_session: {
               method: "google_zklogin",
               exercised_at: "2026-10-15T10:30:00.000Z",
+              session_ref: "oauth-sub-fake",
             },
             idv_human_review: {
               exercised_at: "2026-10-15T10:45:00.000Z",
@@ -232,9 +235,8 @@ describe("Build #571 staging readiness audit", () => {
           },
           env: { [STAGING_ENVIRONMENT_ID_ENV]: "staging-test" },
           corroboration: {
-            holder_subject_exists: false,
-            holder_wallet_binding: false,
-            holder_zklogin_binding: false,
+            browser_authentication_event_corroborated: false,
+            browser_authentication_event_at: null,
             idv_row: null,
             possession_updated_at: null,
           },

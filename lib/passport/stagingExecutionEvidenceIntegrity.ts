@@ -14,11 +14,11 @@ const MAX_EVIDENCE_AGE_MS = 1000 * 60 * 60 * 24 * 90;
 const CLOCK_SKEW_MS = 1000 * 60 * 5;
 
 export type EvidenceCorroborationSnapshot = {
-  holder_subject_exists: boolean;
-  holder_wallet_binding: boolean;
-  holder_zklogin_binding: boolean;
   idv_row: VerificationRowForIssuance | null;
   possession_updated_at: string | null;
+  /** Authoritative authentication event time (consumed wallet challenge or zkLogin identity update). */
+  browser_authentication_event_at: string | null;
+  browser_authentication_event_corroborated: boolean;
 };
 
 export type EvidenceClaimVerdict =
@@ -113,44 +113,55 @@ export function assessStagingExecutionEvidenceIntegrity(input: {
   if (!environment_match) push("staging_evidence_environment_mismatch");
 
   const secret = input.env[STAGING_EVIDENCE_APPROVAL_SECRET_ENV]?.trim();
-  const founder_approval_valid = secret ? verifyFounderApprovalHmac(input.evidence, secret) : true;
+  const founder_approval_valid = secret ? verifyFounderApprovalHmac(input.evidence, secret) : false;
   if (secret && !founder_approval_valid) push("staging_evidence_founder_approval_invalid");
 
   const holderSubject = input.evidence.holder_subject_id?.trim();
   if (!holderSubject) push("staging_evidence_holder_subject_missing");
 
-  const baseBlocked = !timestamps_valid || !environment_match || !founder_approval_valid || !holderSubject;
+  const idvBaseBlocked = !timestamps_valid || !environment_match || !holderSubject;
+  const idvFounderBlocked =
+    Boolean(secret) && !verifyFounderApprovalHmac(input.evidence, secret!);
+  if (idvFounderBlocked) push("staging_evidence_founder_approval_invalid");
 
   const browserSection = input.evidence.browser_authenticated_session;
   let browser: EvidenceClaimVerdict = { status: "absent" };
   if (browserSection) {
-    if (baseBlocked || !input.corroboration) {
+    if (!secret) {
+      browser = { status: "blocked_founder", code: "staging_browser_founder_approval_required" };
+      push("staging_browser_founder_approval_required");
+    } else if (!founder_approval_valid) {
+      browser = { status: "blocked_founder", code: "staging_evidence_founder_approval_invalid" };
+    } else if (!timestamps_valid || !environment_match || !holderSubject) {
       browser = { status: "blocked_founder", code: "staging_evidence_browser_uncorroborated" };
       push("staging_evidence_browser_uncorroborated");
-    } else if (!input.corroboration.holder_subject_exists) {
-      browser = { status: "uncorroborated", code: "staging_evidence_holder_subject_not_found" };
-      push("staging_evidence_holder_subject_not_found");
-    } else if (
-      browserSection.method === "google_zklogin"
-      && !input.corroboration.holder_zklogin_binding
-    ) {
-      browser = { status: "uncorroborated", code: "staging_evidence_zklogin_binding_missing" };
-      push("staging_evidence_zklogin_binding_missing");
-    } else if (
-      (browserSection.method === "evm_wallet" || browserSection.method === "solana_wallet")
-      && !input.corroboration.holder_wallet_binding
-    ) {
-      browser = { status: "uncorroborated", code: "staging_evidence_wallet_binding_missing" };
-      push("staging_evidence_wallet_binding_missing");
+    } else if (!input.corroboration?.browser_authentication_event_corroborated) {
+      browser = {
+        status: "blocked_founder",
+        code: "staging_browser_session_evidence_missing",
+      };
+      push("staging_browser_session_evidence_missing");
     } else {
-      browser = { status: "verified" };
+      const eventMs = input.corroboration.browser_authentication_event_at
+        ? parseMs(input.corroboration.browser_authentication_event_at)
+        : null;
+      const exercisedMs = parseMs(browserSection.exercised_at);
+      if (eventMs === null || exercisedMs === null || eventMs > exercisedMs + CLOCK_SKEW_MS) {
+        browser = {
+          status: "uncorroborated",
+          code: "staging_browser_session_timestamp_mismatch",
+        };
+        push("staging_browser_session_timestamp_mismatch");
+      } else {
+        browser = { status: "verified" };
+      }
     }
   }
 
   let idv_review: EvidenceClaimVerdict = { status: "absent" };
   if (input.evidence.idv_human_review) {
     const row = input.corroboration?.idv_row ?? null;
-    if (baseBlocked || !input.corroboration) {
+    if (idvBaseBlocked || idvFounderBlocked || !input.corroboration) {
       idv_review = { status: "blocked_founder", code: "staging_evidence_idv_uncorroborated" };
       push("staging_evidence_idv_uncorroborated");
     } else if (!row) {
@@ -172,7 +183,9 @@ export function assessStagingExecutionEvidenceIntegrity(input: {
     const updatedAt = input.corroboration?.possession_updated_at ?? null;
     const exercisedMs = parseMs(input.evidence.holder_possession_registered.exercised_at);
     const possessionMs = updatedAt ? parseMs(updatedAt) : null;
-    if (baseBlocked || !input.corroboration) {
+    const possessionBlocked =
+      idvBaseBlocked || (Boolean(secret) && idvFounderBlocked) || !input.corroboration;
+    if (possessionBlocked) {
       possession = { status: "blocked_founder", code: "staging_evidence_possession_uncorroborated" };
       push("staging_evidence_possession_uncorroborated");
     } else if (!updatedAt || possessionMs === null) {

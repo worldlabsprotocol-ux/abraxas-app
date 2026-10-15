@@ -24,15 +24,17 @@ import {
 import { loadPassportCredentialSigningKey } from "@/lib/passport/reusableCredential/passportCredentialSigning";
 import { loadInstitutionPortableRevocationBootstrapTrusts } from "@/lib/passport/reusableCredential/independentInstitutionConfig";
 import {
+  auditPortableRevocationPublisherSnapshot,
   credentialPublicKeyMatchesRegistry,
   directoryReadWriteAccessible,
-  portableSnapshotMatchesBootstrapTrust,
   probePortableRevocationPublisher,
   receiptPublicKeyMatchesRegistry,
 } from "@/lib/passport/stagingReadiness571Operational";
+import { loadPortableRevocationIssuerTrustPolicy } from "@/lib/passport/reusableCredential/independentInstitutionConfig";
 import type { VerificationRowForIssuance } from "@/lib/idv/authoritativeVerificationForIssuance";
 
 export const STAGING_REVOCATION_PROBE_STATUS_ID_ENV = "ABRAXAS_STAGING_REVOCATION_PROBE_STATUS_ID";
+export const STAGING_REVOCATION_PROBE_RECEIPT_ID_ENV = "ABRAXAS_STAGING_REVOCATION_PROBE_RECEIPT_ID";
 
 function pgUrl(): string | null {
   return (
@@ -101,25 +103,41 @@ function probePolicies(): StagingPolicyProbe | null {
   };
 }
 
-function loadCorroborationSnapshot(holderSubjectId: string, verificationRecordRef?: string): EvidenceCorroborationSnapshot | null {
+function loadBrowserAuthenticationEvent(
+  sessionRef: string,
+  method: string,
+): Pick<EvidenceCorroborationSnapshot, "browser_authentication_event_at" | "browser_authentication_event_corroborated"> {
+  const escaped = sessionRef.replace(/'/g, "''");
+  if (method === "google_zklogin") {
+    const eventAt = psqlQuery(
+      `select updated_at::text from public.sui_zklogin_identities where oauth_sub = '${escaped}' limit 1`,
+    );
+    return {
+      browser_authentication_event_corroborated: Boolean(eventAt),
+      browser_authentication_event_at: eventAt || null,
+    };
+  }
+  const eventAt = psqlQuery(
+    `select consumed_at::text from public.passport_wallet_auth_challenges where id = '${escaped}' and consumed_at is not null limit 1`,
+  );
+  return {
+    browser_authentication_event_corroborated: Boolean(eventAt),
+    browser_authentication_event_at: eventAt || null,
+  };
+}
+
+function loadCorroborationSnapshot(input: {
+  holderSubjectId: string;
+  verificationRecordRef?: string;
+  browserSessionRef?: string;
+  browserMethod?: string;
+}): EvidenceCorroborationSnapshot | null {
   if (!pgUrl()) return null;
-  const escapedSubject = holderSubjectId.replace(/'/g, "''");
-  const holderExists = psqlQuery(
-    `select exists (select 1 from public.passport_holder_subjects where subject_id = '${escapedSubject}')`,
-  ) === "t";
-  const walletBinding = psqlQuery(
-    `select exists (select 1 from public.passport_holder_wallet_accounts where subject_id = '${escapedSubject}')`,
-  ) === "t";
-  const zkBinding = psqlQuery(
-    `select exists (
-       select 1 from public.passport_holder_legacy_links
-       where subject_id = '${escapedSubject}' and legacy_kind = 'sui_zklogin_address'
-     )`,
-  ) === "t";
+  const escapedSubject = input.holderSubjectId.replace(/'/g, "''");
 
   let idv_row: VerificationRowForIssuance | null = null;
-  if (verificationRecordRef) {
-    const escapedRef = verificationRecordRef.replace(/'/g, "''");
+  if (input.verificationRecordRef) {
+    const escapedRef = input.verificationRecordRef.replace(/'/g, "''");
     const raw = psqlQuery(
       `select row_to_json(t) from (
          select wallet_address, holder_subject_id, status, identity_verification_status,
@@ -143,12 +161,18 @@ function loadCorroborationSnapshot(holderSubjectId: string, verificationRecordRe
     `select coalesce(updated_at::text, '') from public.passport_holder_possession_keys where holder_subject_id = '${escapedSubject}' limit 1`,
   );
 
+  const browserEvent =
+    input.browserSessionRef && input.browserMethod
+      ? loadBrowserAuthenticationEvent(input.browserSessionRef, input.browserMethod)
+      : {
+          browser_authentication_event_corroborated: false,
+          browser_authentication_event_at: null,
+        };
+
   return {
-    holder_subject_exists: holderExists,
-    holder_wallet_binding: walletBinding,
-    holder_zklogin_binding: zkBinding,
     idv_row,
     possession_updated_at: possessionUpdated && possessionUpdated.length > 0 ? possessionUpdated : null,
+    ...browserEvent,
   };
 }
 
@@ -160,10 +184,12 @@ async function main() {
     ? assessStagingExecutionEvidenceIntegrity({
         evidence: executionEvidence.evidence,
         env,
-        corroboration: loadCorroborationSnapshot(
-          executionEvidence.evidence.holder_subject_id,
-          executionEvidence.evidence.idv_human_review?.verification_record_ref,
-        ),
+        corroboration: loadCorroborationSnapshot({
+          holderSubjectId: executionEvidence.evidence.holder_subject_id,
+          verificationRecordRef: executionEvidence.evidence.idv_human_review?.verification_record_ref,
+          browserSessionRef: executionEvidence.evidence.browser_authenticated_session?.session_ref,
+          browserMethod: executionEvidence.evidence.browser_authenticated_session?.method,
+        }),
       })
     : null;
 
@@ -175,14 +201,31 @@ async function main() {
   const publisherUrl = env[PORTABLE_REVOCATION_PUBLISHER_URL_ENV]?.trim();
   const probeStatusId = env[STAGING_REVOCATION_PROBE_STATUS_ID_ENV]?.trim();
 
-  let publisherSnapshotMatchesBootstrap = false;
-  if (publisherUrl && probeStatusId && bootstrapTrusts.length > 0) {
+  let publisherSnapshotStrictVerified = false;
+  let publisherSnapshotAuditLimited = false;
+  let publisherSnapshotAuditDetail: string | undefined;
+  const issuerTrust = loadPortableRevocationIssuerTrustPolicy(env);
+  const probeReceiptId = env[STAGING_REVOCATION_PROBE_RECEIPT_ID_ENV]?.trim();
+  if (publisherUrl && probeStatusId) {
     const probe = await probePortableRevocationPublisher({
       publisherUrl,
       statusId: probeStatusId,
     });
-    publisherSnapshotMatchesBootstrap =
-      probe.ok && portableSnapshotMatchesBootstrapTrust({ snapshot: probe.snapshot, bootstrapTrusts });
+    if (probe.ok) {
+      const strict = await auditPortableRevocationPublisherSnapshot({
+        artifact: probe.snapshot,
+        env,
+        issuerTrust,
+        bootstrapTrusts,
+        probeReceiptId,
+      });
+      if (strict.ok) {
+        publisherSnapshotStrictVerified = true;
+      } else if ("limited" in strict && strict.limited) {
+        publisherSnapshotAuditLimited = true;
+        publisherSnapshotAuditDetail = strict.detail;
+      }
+    }
   }
 
   const reportCore = buildStagingReadiness571({
@@ -211,7 +254,9 @@ async function main() {
             env,
           })
         : false,
-      publisherSnapshotMatchesBootstrap,
+      publisherSnapshotStrictVerified,
+      publisherSnapshotAuditLimited,
+      publisherSnapshotAuditDetail,
       checkpointDirAccessible: checkpointDir ? directoryReadWriteAccessible(checkpointDir) : false,
       receiptConsumptionDirAccessible: consumptionDir ? directoryReadWriteAccessible(consumptionDir) : false,
     },

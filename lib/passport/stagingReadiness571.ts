@@ -44,7 +44,9 @@ export type StagingPolicyProbe = {
 export type StagingOperationalProbes = {
   credentialSigningMatchesRegistry: boolean;
   receiptSigningMatchesRegistry: boolean;
-  publisherSnapshotMatchesBootstrap: boolean;
+  publisherSnapshotStrictVerified: boolean;
+  publisherSnapshotAuditLimited: boolean;
+  publisherSnapshotAuditDetail?: string;
   checkpointDirAccessible: boolean;
   receiptConsumptionDirAccessible: boolean;
 };
@@ -246,7 +248,7 @@ export function buildStagingReadiness571(input: StagingReadinessInput): StagingR
         "wallet_auth",
         "Wallet and Google zkLogin authentication",
         "execution_verified",
-        "Authenticated browser session corroborated against holder subject bindings",
+        "Founder-approved browser evidence corroborated by an authoritative authentication event",
       ),
     );
   } else if (browserVerdict && browserVerdict.status !== "absent") {
@@ -560,24 +562,36 @@ export function buildStagingReadiness571(input: StagingReadinessInput): StagingR
       ),
     );
     pushFailure("revocation_checkpoint_dir_inaccessible");
-  } else if (!operational.publisherSnapshotMatchesBootstrap) {
+  } else if (operational.publisherSnapshotAuditLimited) {
     items.push(
       item(
         "revocation_publisher",
         "Revocation publisher and bootstrap trust",
         "configuration_validated",
-        "Publisher/bootstrap configuration validated; live snapshot does not match trusted bootstrap material",
-        "publisher_snapshot_bootstrap_mismatch",
+        operational.publisherSnapshotAuditDetail
+          ?? "Strict portable revocation publisher verification could not run as a read-only audit",
+        "publisher_strict_audit_limited",
       ),
     );
-    pushFailure("publisher_snapshot_bootstrap_mismatch");
+    pushFailure("publisher_strict_audit_limited");
+  } else if (!operational.publisherSnapshotStrictVerified) {
+    items.push(
+      item(
+        "revocation_publisher",
+        "Revocation publisher and bootstrap trust",
+        "configuration_validated",
+        "Publisher fetched but strict portable revocation verification failed",
+        "publisher_strict_verify_failed",
+      ),
+    );
+    pushFailure("publisher_strict_verify_failed");
   } else {
     items.push(
       item(
         "revocation_publisher",
         "Revocation publisher and bootstrap trust",
         "execution_verified",
-        "Publisher snapshot matches bootstrap trust and checkpoint store is accessible",
+        "Publisher snapshot passed strict portable revocation verification with institution trust",
       ),
     );
   }
