@@ -10,7 +10,7 @@ export const HOMEPAGE_RECEIPT_SCOPE_NOTE =
   "Today, partner authorization uses signed decision receipts bound to each partner and policy. Passport export and portable presentations extend holder control. Universal reuse across every institution without consent is a roadmap goal, not a blanket guarantee on every live integration.";
 
 export const HOMEPAGE_HERO_DISCLAIMER =
-  "Policy-scoped presentation is not zero-knowledge selective disclosure. Sandbox and devnet proofs are labeled separately, not as production certification or universal institutional acceptance.";
+  "Policy-scoped presentation is not zero-knowledge selective disclosure. Sandbox and devnet proofs are labeled separately. They are not production certification or universal institutional acceptance.";
 
 export const HOMEPAGE_FOUR_PILLARS = [
   {
