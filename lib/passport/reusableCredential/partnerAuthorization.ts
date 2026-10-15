@@ -19,7 +19,6 @@ import type {
   PortableRevocationCheckpointStore,
   PortableRevocationSignedArtifact,
 } from "@/lib/protocol/portableRevocation";
-import { bootstrapTrustFromArtifact } from "@/lib/protocol/portableRevocation";
 import type { ReceiptConsumptionStore } from "@/lib/institutionalCertification/build547/receiptConsumptionStore";
 import { InMemoryReceiptConsumptionStore } from "@/lib/institutionalCertification/build547/receiptConsumptionStore";
 import { materializeAuthenticatedClaimsForPolicy } from "./authenticatedClaims";
@@ -52,6 +51,10 @@ export type PartnerAuthorizationFromCredentialInput = {
     challengeId: string,
     at: string,
   ) => Promise<{ ok: true } | { ok: false; code: "unknown" | "expired" | "replay" }>;
+  consentReceiptId?: string | null;
+  /** Possession challenge and signature were verified and consumed in a prior atomic commit. */
+  possessionAlreadyCommitted?: boolean;
+  deterministicReceiptIds?: { receiptId: string; decisionId: string };
   now?: Date;
   env?: Record<string, string | undefined>;
 };
@@ -90,34 +93,34 @@ export async function authorizePartnerFromReusableCredential(
   input: PartnerAuthorizationFromCredentialInput,
 ): Promise<PartnerAuthorizationFromCredentialResult> {
   const now = input.now ?? new Date();
-  const bootstrap =
-    input.bootstrapTrusts
-    ?? [bootstrapTrustFromArtifact({ artifact: input.portableRevocationSnapshot })];
+  const bootstrap = input.bootstrapTrusts ?? [];
 
-  const possession = input.durablePossessionConsume
-    ? await verifyPassportPossessionProofAsync({
-        credentialId: input.credential.payload.credential_id,
-        partnerId: input.partnerId,
-        policyId: input.policyId,
-        credentialHolderPublicKey: input.credential.payload.holder_possession_public_key,
-        challenge: input.possessionChallenge,
-        proof: input.holderPossessionProof,
-        now,
-        store: input.challengeStore,
-        durableConsume: input.durablePossessionConsume,
-      })
-    : verifyPassportPossessionProof({
-        credentialId: input.credential.payload.credential_id,
-        partnerId: input.partnerId,
-        policyId: input.policyId,
-        credentialHolderPublicKey: input.credential.payload.holder_possession_public_key,
-        challenge: input.possessionChallenge,
-        proof: input.holderPossessionProof,
-        now,
-        store: input.challengeStore,
-      });
-  if (!possession.ok) {
-    return { ok: false, code: possession.code };
+  if (!input.possessionAlreadyCommitted) {
+    const possession = input.durablePossessionConsume
+      ? await verifyPassportPossessionProofAsync({
+          credentialId: input.credential.payload.credential_id,
+          partnerId: input.partnerId,
+          policyId: input.policyId,
+          credentialHolderPublicKey: input.credential.payload.holder_possession_public_key,
+          challenge: input.possessionChallenge,
+          proof: input.holderPossessionProof,
+          now,
+          store: input.challengeStore,
+          durableConsume: input.durablePossessionConsume,
+        })
+      : verifyPassportPossessionProof({
+          credentialId: input.credential.payload.credential_id,
+          partnerId: input.partnerId,
+          policyId: input.policyId,
+          credentialHolderPublicKey: input.credential.payload.holder_possession_public_key,
+          challenge: input.possessionChallenge,
+          proof: input.holderPossessionProof,
+          now,
+          store: input.challengeStore,
+        });
+    if (!possession.ok) {
+      return { ok: false, code: possession.code };
+    }
   }
 
   const verified = await verifyPassportReusableCredentialStrict({
@@ -161,7 +164,7 @@ export async function authorizePartnerFromReusableCredential(
   }
 
   const store = input.consumptionStore ?? new InMemoryReceiptConsumptionStore();
-  const receiptId = `dr_${randomBytes(10).toString("base64url")}`;
+  const receiptId = input.deterministicReceiptIds?.receiptId ?? `dr_${randomBytes(10).toString("base64url")}`;
   const consumptionAttempt = await store.tryRecordConsumption({
     receiptId,
     requestId: input.requestId,
@@ -176,7 +179,7 @@ export async function authorizePartnerFromReusableCredential(
     return { ok: false, code: "rp_consumption_unavailable" };
   }
 
-  const decisionId = randomBytes(16).toString("hex");
+  const decisionId = input.deterministicReceiptIds?.decisionId ?? randomBytes(16).toString("hex");
   const evaluatedRefs = toEvaluatedClaimRefs(materialized.claims);
   const payload = buildCanonicalPayload({
     receipt_id: receiptId,
@@ -188,7 +191,7 @@ export async function authorizePartnerFromReusableCredential(
       `${input.credential.payload.holder_subject_id}:${input.partnerId}`,
     ),
     wallet_binding_ref: input.credential.payload.holder_possession_ref,
-    consent_receipt_id: null,
+    consent_receipt_id: input.consentReceiptId ?? null,
     decision_result: "approved",
     reason_codes: evaluation.reason_codes,
     evaluated_claim_refs: evaluatedRefs,

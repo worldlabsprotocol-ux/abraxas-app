@@ -176,7 +176,7 @@ export function PassportSetupPanel({
             fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
             lineHeight: 1.6, margin: "0 0 0.75rem", maxWidth: 520,
           }}>
-            Your reusable eligibility profile. Bind your wallet to finish setup , 
+            Your reusable eligibility profile. Bind your wallet to finish setup.
             ID verification is optional until a partner policy requires it.
           </p>
           <div style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-muted)", marginBottom: "0.85rem" }}>
