@@ -8,9 +8,16 @@ import {
 } from "@/scripts/demo/lib/demoProjectGuard";
 import { supabaseProjectRefFromPostgresUrl } from "@/lib/supabase/projectRefs";
 
-export const DISPOSABLE_PG_TEST_DATABASE_ID_ENV = "ABRAXAS_DISPOSABLE_PG_TEST_DATABASE_ID";
-export const DISPOSABLE_PG_MIGRATION_AUTHORIZED_ENV = "ABRAXAS_DISPOSABLE_PG_MIGRATION_AUTHORIZED";
-export const DISPOSABLE_PG_TEST_URL_ENV = "ABRAXAS_DISPOSABLE_PG_TEST_URL";
+export {
+  DISPOSABLE_PG_MIGRATION_AUTHORIZED_ENV,
+  DISPOSABLE_PG_TEST_DATABASE_ID_ENV,
+  DISPOSABLE_PG_TEST_URL_ENV,
+} from "./disposablePgTestEnv";
+import {
+  DISPOSABLE_PG_MIGRATION_AUTHORIZED_ENV,
+  DISPOSABLE_PG_TEST_DATABASE_ID_ENV,
+  DISPOSABLE_PG_TEST_URL_ENV,
+} from "./disposablePgTestEnv";
 
 export type DisposablePgMigrationGuardResult =
   | { ok: true; databaseUrl: string }

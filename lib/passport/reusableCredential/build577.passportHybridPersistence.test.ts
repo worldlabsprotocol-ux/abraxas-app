@@ -5,8 +5,8 @@ import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
-import { SOVEREIGN_DISPOSABLE_REF } from "@/lib/databaseRecovery/manifestGuard";
 import { evaluateDisposablePgMigrationTestGuard } from "@/lib/persistence/disposablePgMigrationTestGuard";
+import { DISPOSABLE_PG_HYBRID_LOCAL_AUTHORIZED_ENV } from "@/lib/persistence/passportHybridPostgres";
 import { queryAbraxasPg, resetAbraxasPgPoolForTests } from "@/lib/persistence/pgPool";
 import { finalizeInstitutionalAuthorizationResourcesDirect } from "@/lib/persistence/passportInstitutionalAuthorizationAtomic";
 import { insertInstitutionalPresentationConsentDirect } from "@/lib/persistence/passportInstitutionalConsentDirect";
@@ -41,16 +41,19 @@ describe("Build #577 passport hybrid persistence (disposable PG)", () => {
   beforeEach(() => {
     const pgRef = supabaseProjectRefFromPostgresUrl(PG_URL);
     delete process.env.ABRAXAS_PERSISTENCE_BACKEND;
-    process.env.NEXT_PUBLIC_SUPABASE_URL = pgRef
-      ? `https://${pgRef}.supabase.co`
-      : "http://127.0.0.1";
+    if (pgRef) {
+      process.env.NEXT_PUBLIC_SUPABASE_URL = `https://${pgRef}.supabase.co`;
+    } else {
+      process.env[DISPOSABLE_PG_HYBRID_LOCAL_AUTHORIZED_ENV] = "true";
+    }
     process.env.SUPABASE_SERVICE_ROLE_KEY = "placeholder-service-role";
     process.env.ABRAXAS_PASSPORT_TRANSACTION_PG = "1";
     process.env.ABRAXAS_PASSPORT_DATABASE_URL = PG_URL;
     delete process.env.ABRAXAS_DATABASE_URL;
     delete process.env.DATABASE_URL;
-    process.env.ABRAXAS_PASSPORT_SUPABASE_PROJECT_REF =
-      pgRef ?? SOVEREIGN_DISPOSABLE_REF;
+    if (pgRef) {
+      process.env.ABRAXAS_PASSPORT_SUPABASE_PROJECT_REF = pgRef;
+    }
     resetAbraxasPgPoolForTests();
     const dir = join(process.cwd(), "supabase/migrations");
     for (const file of PASSPORT_MIGRATIONS) {
