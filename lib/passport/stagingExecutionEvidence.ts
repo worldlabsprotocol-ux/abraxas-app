@@ -11,6 +11,12 @@ export type StagingBrowserAuthMethod = "google_zklogin" | "evm_wallet" | "solana
 export type StagingExecutionEvidenceV1 = {
   schema_version: typeof STAGING_EXECUTION_EVIDENCE_SCHEMA;
   recorded_at: string;
+  /** Must match ABRAXAS_STAGING_ENVIRONMENT_ID on the staging host running the audit. */
+  staging_environment_id: string;
+  /** Holder subject bound to every corroborated execution claim. */
+  holder_subject_id: string;
+  /** Optional HMAC-SHA256 (base64url) over evidence payload when approval secret is configured. */
+  founder_approval_hmac?: string;
   browser_authenticated_session?: {
     method: StagingBrowserAuthMethod;
     exercised_at: string;
@@ -54,10 +60,23 @@ export function parseStagingExecutionEvidence(raw: unknown): ParseStagingExecuti
   if (!isIsoTimestamp(row.recorded_at)) {
     return { ok: false, code: "staging_evidence_recorded_at_invalid" };
   }
+  const staging_environment_id =
+    typeof row.staging_environment_id === "string" ? row.staging_environment_id.trim() : "";
+  const holder_subject_id = typeof row.holder_subject_id === "string" ? row.holder_subject_id.trim() : "";
+  if (!staging_environment_id) {
+    return { ok: false, code: "staging_evidence_environment_missing" };
+  }
+  if (!holder_subject_id) {
+    return { ok: false, code: "staging_evidence_holder_subject_missing" };
+  }
 
   const evidence: StagingExecutionEvidenceV1 = {
     schema_version: STAGING_EXECUTION_EVIDENCE_SCHEMA,
     recorded_at: row.recorded_at as string,
+    staging_environment_id,
+    holder_subject_id,
+    founder_approval_hmac:
+      typeof row.founder_approval_hmac === "string" ? row.founder_approval_hmac.trim() : undefined,
   };
 
   if (row.browser_authenticated_session !== undefined) {

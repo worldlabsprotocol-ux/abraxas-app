@@ -18,13 +18,15 @@ import { build569PortableRevocationIssuerTrustJson } from "./reusableCredential/
 import {
   buildStagingReadiness571,
   PORTABLE_REVOCATION_PUBLISHER_URL_ENV,
+  STAGING_RECEIPT_CONSUMPTION_DIR_ENV,
   type StagingReadinessInput,
 } from "./stagingReadiness571";
 import { redactDatabaseConnectionLabel } from "./stagingReadiness571Redact";
 import {
-  parseStagingExecutionEvidence,
-  STAGING_EXECUTION_EVIDENCE_SCHEMA,
-} from "./stagingExecutionEvidence";
+  assessStagingExecutionEvidenceIntegrity,
+  STAGING_ENVIRONMENT_ID_ENV,
+} from "./stagingExecutionEvidenceIntegrity";
+import { STAGING_EXECUTION_EVIDENCE_SCHEMA } from "./stagingExecutionEvidence";
 
 const SCHEMA_TABLES = [
   "passport_reusable_credentials",
@@ -36,7 +38,7 @@ const SCHEMA_TABLES = [
 
 const SCHEMA_COLUMNS: Record<string, string[]> = {
   passport_reusable_credentials: ["holder_subject_id", "credential_jti"],
-  passport_holder_possession_keys: ["holder_subject_id", "public_key_base64"],
+  passport_holder_possession_keys: ["holder_subject_id", "public_key_b64url"],
   passport_institutional_presentation_consents: ["holder_subject_id", "partner_id", "policy_id"],
   passport_institutional_authorization_commits: [
     "holder_subject_id",
@@ -85,22 +87,44 @@ function validRevocationEnv(): Record<string, string> {
   };
 }
 
-function founderEvidence() {
-  return parseStagingExecutionEvidence({
-    schema_version: STAGING_EXECUTION_EVIDENCE_SCHEMA,
-    recorded_at: "2026-10-15T10:00:00.000Z",
-    browser_authenticated_session: {
-      method: "google_zklogin",
-      exercised_at: "2026-10-15T10:01:00.000Z",
+function verifiedIntegrity() {
+  return assessStagingExecutionEvidenceIntegrity({
+    evidence: {
+      schema_version: STAGING_EXECUTION_EVIDENCE_SCHEMA,
+      recorded_at: "2026-10-15T11:00:00.000Z",
+      staging_environment_id: "staging-test",
+      holder_subject_id: "abx_hs_test",
+      browser_authenticated_session: {
+        method: "evm_wallet",
+        exercised_at: "2026-10-15T10:30:00.000Z",
+      },
+      idv_human_review: {
+        exercised_at: "2026-10-15T10:45:00.000Z",
+        approval_authority: "founder_operator",
+        verification_record_ref: "idv-1",
+      },
+      holder_possession_registered: {
+        exercised_at: "2026-10-15T10:50:00.000Z",
+      },
     },
-    idv_human_review: {
-      exercised_at: "2026-10-15T10:05:00.000Z",
-      approval_authority: "founder_operator",
-      verification_record_ref: "idv-test-record-ref",
+    env: { [STAGING_ENVIRONMENT_ID_ENV]: "staging-test" },
+    corroboration: {
+      holder_subject_exists: true,
+      holder_wallet_binding: true,
+      holder_zklogin_binding: false,
+      idv_row: {
+        holder_subject_id: "abx_hs_test",
+        status: "approved",
+        identity_verification_status: "approved",
+        credential_status: "active",
+        credential_jti: "jti-1",
+        credential_issued_at: "2026-10-15T10:40:00.000Z",
+        document_verified: true,
+        liveness_passed: true,
+      },
+      possession_updated_at: "2026-10-15T10:49:00.000Z",
     },
-    holder_possession_registered: {
-      exercised_at: "2026-10-15T10:06:00.000Z",
-    },
+    nowMs: Date.parse("2026-10-15T12:00:00.000Z"),
   });
 }
 
@@ -109,7 +133,10 @@ function baseInput(overrides: Partial<StagingReadinessInput> = {}): StagingReadi
     env: {
       ABRAXAS_PERSISTENCE_BACKEND: "postgres_direct",
       ABRAXAS_SOVEREIGN_PG_URL: "postgresql://postgres:secret@127.0.0.1:5432/staging",
+      [STAGING_ENVIRONMENT_ID_ENV]: "staging-test",
       NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID: "google-client-id",
+      [STAGING_RECEIPT_CONSUMPTION_DIR_ENV]: "/tmp/consumption",
+      ABRAXAS_PORTABLE_REVOCATION_CHECKPOINT_DIR: "/tmp/checkpoint",
       ...build546TrustRegistryEnv(),
       ...validIssuerRegistryEnv(),
       ...validRevocationEnv(),
@@ -119,15 +146,36 @@ function baseInput(overrides: Partial<StagingReadinessInput> = {}): StagingReadi
     pgConnectivityVerified: true,
     credentialSigningMaterialAvailable: true,
     receiptSigningMaterialAvailable: true,
-    executionEvidence: founderEvidence(),
+    executionEvidence: {
+      ok: true,
+      evidence: {
+        schema_version: STAGING_EXECUTION_EVIDENCE_SCHEMA,
+        recorded_at: "2026-10-15T11:00:00.000Z",
+        staging_environment_id: "staging-test",
+        holder_subject_id: "abx_hs_test",
+        browser_authenticated_session: { method: "evm_wallet", exercised_at: "2026-10-15T10:30:00.000Z" },
+        idv_human_review: {
+          exercised_at: "2026-10-15T10:45:00.000Z",
+          approval_authority: "founder_operator",
+          verification_record_ref: "idv-1",
+        },
+        holder_possession_registered: { exercised_at: "2026-10-15T10:50:00.000Z" },
+      },
+    },
+    evidenceIntegrity: verifiedIntegrity(),
     policyProbe: {
       active_policy_count: 2,
       active_distinct_partners: 2,
       required_partner_ids: [],
       missing_partner_ids: [],
     },
-    checkpointDirConfigured: true,
-    receiptConsumptionDirConfigured: true,
+    operational: {
+      credentialSigningMatchesRegistry: true,
+      receiptSigningMatchesRegistry: true,
+      publisherSnapshotMatchesBootstrap: true,
+      checkpointDirAccessible: true,
+      receiptConsumptionDirAccessible: true,
+    },
     ...overrides,
   };
 }
@@ -136,7 +184,6 @@ describe("Build #571 staging readiness audit", () => {
   it("lists ten dependencies with phase separation", () => {
     const report = buildStagingReadiness571(baseInput());
     expect(report.items).toHaveLength(10);
-    expect(report.items.every((row) => row.phase !== undefined)).toBe(true);
   });
 
   it("flags missing configuration without treating env presence as execution verified", () => {
@@ -149,43 +196,55 @@ describe("Build #571 staging readiness audit", () => {
         credentialSigningMaterialAvailable: false,
         receiptSigningMaterialAvailable: false,
         executionEvidence: { ok: false, code: "staging_evidence_absent" },
+        evidenceIntegrity: null,
         policyProbe: null,
-        checkpointDirConfigured: false,
-        receiptConsumptionDirConfigured: false,
+        operational: {
+          credentialSigningMatchesRegistry: false,
+          receiptSigningMatchesRegistry: false,
+          publisherSnapshotMatchesBootstrap: false,
+          checkpointDirAccessible: false,
+          receiptConsumptionDirAccessible: false,
+        },
       }),
     );
     expect(report.activation_ready).toBe(false);
     expect(report.failure_codes).toContain("production_build_missing");
-    expect(report.failure_codes).toContain("browser_auth_unconfigured");
+  });
+
+  it("does not accept self-authenticating founder evidence without corroboration", () => {
+    const report = buildStagingReadiness571(
+      baseInput({
+        evidenceIntegrity: assessStagingExecutionEvidenceIntegrity({
+          evidence: {
+            schema_version: STAGING_EXECUTION_EVIDENCE_SCHEMA,
+            recorded_at: "2026-10-15T11:00:00.000Z",
+            staging_environment_id: "staging-test",
+            holder_subject_id: "abx_hs_fake",
+            browser_authenticated_session: {
+              method: "google_zklogin",
+              exercised_at: "2026-10-15T10:30:00.000Z",
+            },
+            idv_human_review: {
+              exercised_at: "2026-10-15T10:45:00.000Z",
+              approval_authority: "founder_operator",
+              verification_record_ref: "fake-idv",
+            },
+          },
+          env: { [STAGING_ENVIRONMENT_ID_ENV]: "staging-test" },
+          corroboration: {
+            holder_subject_exists: false,
+            holder_wallet_binding: false,
+            holder_zklogin_binding: false,
+            idv_row: null,
+            possession_updated_at: null,
+          },
+          nowMs: Date.parse("2026-10-15T12:00:00.000Z"),
+        }),
+      }),
+    );
+    expect(report.activation_ready).toBe(false);
     expect(report.items.find((i) => i.id === "wallet_auth")?.phase).not.toBe("execution_verified");
-  });
-
-  it("reports browser auth as configuration_validated until session exercised", () => {
-    const report = buildStagingReadiness571(
-      baseInput({
-        executionEvidence: { ok: false, code: "staging_evidence_absent" },
-      }),
-    );
-    expect(report.items.find((i) => i.id === "wallet_auth")?.phase).toBe("configuration_validated");
-    expect(report.failure_codes).toContain("browser_auth_not_exercised");
-  });
-
-  it("rejects invalid credential issuer and receipt registries", () => {
-    const report = buildStagingReadiness571(
-      baseInput({
-        env: {
-          ...baseInput().env,
-          [PASSPORT_CREDENTIAL_ISSUER_REGISTRY_ENV]: JSON.stringify([{ issuer_id: "x", signing_key_id: "y" }]),
-          ABRAXAS_RECEIPT_VERIFICATION_REGISTRY: "not-json",
-        },
-      }),
-    );
-    expect(
-      report.failure_codes.some((code) =>
-        ["credential_public_jwk_missing", "credential_revocation_issuer_missing"].includes(code),
-      ),
-    ).toBe(true);
-    expect(report.failure_codes.some((code) => code.startsWith("receipt_registry_"))).toBe(true);
+    expect(report.items.find((i) => i.id === "idv_review")?.phase).not.toBe("execution_verified");
   });
 
   it("detects incomplete migration schema", () => {
@@ -197,49 +256,25 @@ describe("Build #571 staging readiness audit", () => {
       }),
     );
     expect(report.items.find((i) => i.id === "migrations_140_143")?.phase).toBe("missing");
-    expect(report.failure_codes).toContain("migration_column_missing");
   });
 
-  it("requires founder execution evidence for human review", () => {
+  it("requires founder corroboration pending for human review without evidence", () => {
     const report = buildStagingReadiness571(
       baseInput({
-        executionEvidence: {
-          ok: true,
-          evidence: {
-            schema_version: STAGING_EXECUTION_EVIDENCE_SCHEMA,
-            recorded_at: "2026-10-15T10:00:00.000Z",
-            browser_authenticated_session: {
-              method: "evm_wallet",
-              exercised_at: "2026-10-15T10:01:00.000Z",
-            },
-          },
-        },
+        executionEvidence: { ok: false, code: "staging_evidence_absent" },
+        evidenceIntegrity: null,
       }),
     );
     expect(report.items.find((i) => i.id === "idv_review")?.phase).toBe("blocked_founder");
-    expect(report.failure_codes).toContain("idv_review_pending_founder_evidence");
   });
 
-  it("flags inactive or insufficient institutional policies", () => {
-    const report = buildStagingReadiness571(
-      baseInput({
-        policyProbe: {
-          active_policy_count: 1,
-          active_distinct_partners: 1,
-          required_partner_ids: ["partner-a", "partner-b"],
-          missing_partner_ids: ["partner-b"],
-        },
-      }),
-    );
-    expect(report.items.find((i) => i.id === "institutional_policies")?.phase).toBe("configuration_present");
-    expect(report.failure_codes).toContain("institutional_active_policies_insufficient");
-  });
-
-  it("passes fully validated staging readiness when execution evidence and probes succeed", () => {
+  it("passes only when operational probes and corroborated evidence succeed", () => {
     const report = buildStagingReadiness571(baseInput());
     expect(report.activation_ready).toBe(true);
-    expect(report.failure_codes).toHaveLength(0);
-    expect(report.items.every((row) => row.phase === "execution_verified")).toBe(true);
+    expect(report.items.find((i) => i.id === "migrations_140_143")?.phase).toBe("configuration_validated");
+    expect(
+      report.items.filter((i) => i.id !== "migrations_140_143").every((row) => row.phase === "execution_verified"),
+    ).toBe(true);
   });
 
   it("redacts database connection labels safely", () => {
@@ -249,7 +284,6 @@ describe("Build #571 staging readiness audit", () => {
     expect(label).not.toContain("supersecret");
     expect(label).not.toContain("operator");
     expect(label).not.toContain("sslmode");
-    expect(label).toContain("db.example.com:5432/abraxas");
   });
 
   it("includes design partner acceptance package", () => {

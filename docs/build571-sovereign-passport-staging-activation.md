@@ -18,7 +18,7 @@ Founder execution evidence (optional JSON env or file path):
 - `ABRAXAS_STAGING_EXECUTION_EVIDENCE_JSON`
 - `ABRAXAS_STAGING_EXECUTION_EVIDENCE_PATH`
 
-Schema: `abraxas.staging_execution_evidence/v1` with `browser_authenticated_session`, `idv_human_review`, and optional possession or consent sections. Integration tests do not substitute for this record.
+Schema: `abraxas.staging_execution_evidence/v1` requires `staging_environment_id` (must match `ABRAXAS_STAGING_ENVIRONMENT_ID`), `holder_subject_id`, and optional `founder_approval_hmac` when `ABRAXAS_STAGING_EXECUTION_EVIDENCE_APPROVAL_SECRET` is set. Claims are corroborated against PostgreSQL authoritative records; JSON alone never produces `execution_verified`.
 
 | Dependency | Typical cloud agent run | Notes |
 | --- | --- | --- |

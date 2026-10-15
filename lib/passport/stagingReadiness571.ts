@@ -6,7 +6,6 @@ import { loadReceiptVerificationRegistry } from "@/lib/decisionReceipts/verifica
 import { RECEIPT_VERIFICATION_REGISTRY_ENV } from "@/lib/decisionReceipts/verificationKeyLifecycle";
 import {
   loadPassportCredentialIssuerRegistry,
-  resolvePassportCredentialIssuerTrust,
   type PassportCredentialIssuerRegistryEntry,
 } from "./reusableCredential/credentialIssuerRegistry";
 import { PASSPORT_CREDENTIAL_SIGNING_KEY_ID_ENV } from "./reusableCredential/passportCredentialSigning";
@@ -17,7 +16,8 @@ import {
   PORTABLE_REVOCATION_ISSUER_TRUST_ENV,
 } from "./reusableCredential/independentInstitutionConfig";
 import type { PortableRevocationBootstrapTrust } from "@/lib/protocol/portableRevocation";
-import type { ParseStagingExecutionEvidenceResult, StagingExecutionEvidenceV1 } from "./stagingExecutionEvidence";
+import type { ParseStagingExecutionEvidenceResult } from "./stagingExecutionEvidence";
+import type { StagingEvidenceIntegrityResult } from "./stagingExecutionEvidenceIntegrity";
 
 export type ReadinessPhase =
   | "missing"
@@ -41,6 +41,14 @@ export type StagingPolicyProbe = {
   missing_partner_ids: string[];
 };
 
+export type StagingOperationalProbes = {
+  credentialSigningMatchesRegistry: boolean;
+  receiptSigningMatchesRegistry: boolean;
+  publisherSnapshotMatchesBootstrap: boolean;
+  checkpointDirAccessible: boolean;
+  receiptConsumptionDirAccessible: boolean;
+};
+
 export type StagingReadinessInput = {
   env: Record<string, string | undefined>;
   productionBuildPresent: boolean;
@@ -50,9 +58,9 @@ export type StagingReadinessInput = {
   credentialSigningMaterialAvailable: boolean;
   receiptSigningMaterialAvailable: boolean;
   executionEvidence: ParseStagingExecutionEvidenceResult;
+  evidenceIntegrity: StagingEvidenceIntegrityResult | null;
   policyProbe: StagingPolicyProbe | null;
-  checkpointDirConfigured: boolean;
-  receiptConsumptionDirConfigured: boolean;
+  operational: StagingOperationalProbes;
 };
 
 export type StagingReadinessReport = {
@@ -75,7 +83,7 @@ const MIGRATION_FILES = [
 
 const MIGRATION_SCHEMA_REQUIREMENTS: { table: string; columns: string[] }[] = [
   { table: "passport_reusable_credentials", columns: ["holder_subject_id", "credential_jti"] },
-  { table: "passport_holder_possession_keys", columns: ["holder_subject_id", "public_key_base64"] },
+  { table: "passport_holder_possession_keys", columns: ["holder_subject_id", "public_key_b64url"] },
   { table: "passport_institutional_presentation_consents", columns: ["holder_subject_id", "partner_id", "policy_id"] },
   {
     table: "passport_institutional_authorization_commits",
@@ -157,15 +165,11 @@ function assessMigrationSchema(
       }
     }
   }
-  if (pgConnectivityVerified) {
-    return {
-      phase: "execution_verified",
-      detail: "Migrations 140 to 143 schema requirements verified on connected database",
-    };
-  }
   return {
     phase: "configuration_validated",
-    detail: "Migrations 140 to 143 schema requirements satisfied (connectivity not verified)",
+    detail: pgConnectivityVerified
+      ? "Migrations 140 to 143 schema installed on connected database (not an exercised authorization flow)"
+      : "Migrations 140 to 143 schema requirements satisfied (connectivity not verified)",
   };
 }
 
@@ -177,12 +181,6 @@ function browserAuthConfigured(env: Record<string, string | undefined>): boolean
     envTrimmed(env, "ABRAXAS_WALLET_AUTH_ENABLED") === "1"
     || envTrimmed(env, "NEXT_PUBLIC_PASSPORT_WALLET_AUTH_ENABLED") === "1";
   return Boolean(zk || walletStaging);
-}
-
-function evidenceOk(
-  executionEvidence: ParseStagingExecutionEvidenceResult,
-): StagingExecutionEvidenceV1 | null {
-  return executionEvidence.ok ? executionEvidence.evidence : null;
 }
 
 function item(
@@ -205,9 +203,9 @@ export function buildStagingReadiness571(input: StagingReadinessInput): StagingR
     credentialSigningMaterialAvailable,
     receiptSigningMaterialAvailable,
     executionEvidence,
+    evidenceIntegrity,
     policyProbe,
-    checkpointDirConfigured,
-    receiptConsumptionDirConfigured,
+    operational,
   } = input;
 
   const items: StagingReadinessItem[] = [];
@@ -241,16 +239,27 @@ export function buildStagingReadiness571(input: StagingReadinessInput): StagingR
 
   // 2. Browser authentication
   const configured = browserAuthConfigured(env);
-  const browserEvidence = evidenceOk(executionEvidence)?.browser_authenticated_session;
-  if (browserEvidence) {
+  const browserVerdict = evidenceIntegrity?.browser;
+  if (browserVerdict?.status === "verified") {
     items.push(
       item(
         "wallet_auth",
         "Wallet and Google zkLogin authentication",
         "execution_verified",
-        `Authenticated browser session exercised via ${browserEvidence.method}`,
+        "Authenticated browser session corroborated against holder subject bindings",
       ),
     );
+  } else if (browserVerdict && browserVerdict.status !== "absent") {
+    items.push(
+      item(
+        "wallet_auth",
+        "Wallet and Google zkLogin authentication",
+        browserVerdict.status === "blocked_founder" ? "blocked_founder" : "configuration_validated",
+        "Founder execution evidence present but browser authentication is not corroborated",
+        browserVerdict.code,
+      ),
+    );
+    pushFailure(browserVerdict.code);
   } else if (configured) {
     items.push(
       item(
@@ -336,18 +345,29 @@ export function buildStagingReadiness571(input: StagingReadinessInput): StagingR
   pushFailure(migration.failure_code);
 
   // 5. IDV and human review
-  const idvEvidence = evidenceOk(executionEvidence)?.idv_human_review;
+  const idvVerdict = evidenceIntegrity?.idv_review;
   const idvTablesReady =
     tableExists("identity_verifications") && tableExists("passport_reusable_credentials");
-  if (idvEvidence) {
+  if (idvVerdict?.status === "verified") {
     items.push(
       item(
         "idv_review",
         "Authorized identity verification and human review",
         "execution_verified",
-        `Founder operator review exercised (record ref ${idvEvidence.verification_record_ref})`,
+        "Authoritative final approval corroborated in identity_verifications",
       ),
     );
+  } else if (idvVerdict && idvVerdict.status !== "absent") {
+    items.push(
+      item(
+        "idv_review",
+        "Authorized identity verification and human review",
+        idvVerdict.status === "blocked_founder" ? "blocked_founder" : "configuration_validated",
+        "IDV execution evidence is not corroborated by authoritative review records",
+        idvVerdict.code,
+      ),
+    );
+    pushFailure(idvVerdict.code);
   } else if (!idvTablesReady) {
     items.push(
       item(
@@ -404,55 +424,58 @@ export function buildStagingReadiness571(input: StagingReadinessInput): StagingR
         "credential_issuer",
         "Credential issuer signing authority",
         "configuration_validated",
-        "Public issuer registry validated; signing material not verified on this host",
+        "Public issuer registry validated; signing material not loaded on this host",
         "credential_signing_material_unverified",
       ),
     );
     pushFailure("credential_signing_material_unverified");
+  } else if (!operational.credentialSigningMatchesRegistry) {
+    items.push(
+      item(
+        "credential_issuer",
+        "Credential issuer signing authority",
+        "configuration_validated",
+        "Signing material loaded but public key does not match trusted registry entry",
+        "credential_signing_registry_mismatch",
+      ),
+    );
+    pushFailure("credential_signing_registry_mismatch");
   } else {
-    const matchedEntry = registry.find((entry) => entry.signing_key_id === signingKeyId) ?? registry[0]!;
-    const trust = resolvePassportCredentialIssuerTrust({
-      issuerId: matchedEntry.issuer_id,
-      signingKeyId,
-      env,
-    });
-    if (!trust.ok) {
-      items.push(
-        item(
-          "credential_issuer",
-          "Credential issuer signing authority",
-          "configuration_validated",
-          "Signing material present but does not match trusted registry entry",
-          trust.code,
-        ),
-      );
-      pushFailure(trust.code);
-    } else {
-      items.push(
-        item(
-          "credential_issuer",
-          "Credential issuer signing authority",
-          "execution_verified",
-          "Issuer registry validated and signing authority matches configured key id",
-        ),
-      );
-    }
+    items.push(
+      item(
+        "credential_issuer",
+        "Credential issuer signing authority",
+        "execution_verified",
+        "Credential signing public key matches trusted issuer registry entry",
+      ),
+    );
   }
 
   // 7. Holder possession registration
   const possessionSchemaOk =
     tableExists("passport_holder_possession_keys")
-    && columnExists("passport_holder_possession_keys", "public_key_base64");
-  const possessionEvidence = evidenceOk(executionEvidence)?.holder_possession_registered;
-  if (possessionEvidence) {
+    && columnExists("passport_holder_possession_keys", "public_key_b64url");
+  const possessionVerdict = evidenceIntegrity?.possession;
+  if (possessionVerdict?.status === "verified") {
     items.push(
       item(
         "possession_registration",
         "Holder possession registration",
         "execution_verified",
-        "Browser possession registration exercised per founder execution evidence",
+        "Possession registration corroborated in passport_holder_possession_keys",
       ),
     );
+  } else if (possessionVerdict && possessionVerdict.status !== "absent") {
+    items.push(
+      item(
+        "possession_registration",
+        "Holder possession registration",
+        possessionVerdict.status === "blocked_founder" ? "blocked_founder" : "configuration_validated",
+        "Possession execution evidence is not corroborated by authoritative storage records",
+        possessionVerdict.code,
+      ),
+    );
+    pushFailure(possessionVerdict.code);
   } else if (!possessionSchemaOk) {
     items.push(
       item(
@@ -526,24 +549,35 @@ export function buildStagingReadiness571(input: StagingReadinessInput): StagingR
       ),
     );
     pushFailure("portable_revocation_issuer_trust_missing");
-  } else if (!checkpointDirConfigured) {
+  } else if (!operational.checkpointDirAccessible) {
     items.push(
       item(
         "revocation_publisher",
         "Revocation publisher and bootstrap trust",
         "configuration_validated",
-        `Configure durable ${PORTABLE_REVOCATION_CHECKPOINT_DIR_ENV} for staging checkpoints`,
-        "revocation_checkpoint_dir_missing",
+        `Checkpoint path exists but is not read/write accessible (${PORTABLE_REVOCATION_CHECKPOINT_DIR_ENV})`,
+        "revocation_checkpoint_dir_inaccessible",
       ),
     );
-    pushFailure("revocation_checkpoint_dir_missing");
+    pushFailure("revocation_checkpoint_dir_inaccessible");
+  } else if (!operational.publisherSnapshotMatchesBootstrap) {
+    items.push(
+      item(
+        "revocation_publisher",
+        "Revocation publisher and bootstrap trust",
+        "configuration_validated",
+        "Publisher/bootstrap configuration validated; live snapshot does not match trusted bootstrap material",
+        "publisher_snapshot_bootstrap_mismatch",
+      ),
+    );
+    pushFailure("publisher_snapshot_bootstrap_mismatch");
   } else {
     items.push(
       item(
         "revocation_publisher",
         "Revocation publisher and bootstrap trust",
         "execution_verified",
-        "Publisher URL, bootstrap trust structure, issuer trust bindings, and checkpoint directory validated",
+        "Publisher snapshot matches bootstrap trust and checkpoint store is accessible",
       ),
     );
   }
@@ -588,7 +622,7 @@ export function buildStagingReadiness571(input: StagingReadinessInput): StagingR
         "institutional_policies",
         "Institutional partner and immutable policies",
         "execution_verified",
-        `${policyProbe.active_policy_count} active policies across ${policyProbe.active_distinct_partners} partners`,
+        `${policyProbe.active_policy_count} active policies across ${policyProbe.active_distinct_partners} partners (read-only catalog probe)`,
       ),
     );
   }
@@ -653,31 +687,62 @@ export function buildStagingReadiness571(input: StagingReadinessInput): StagingR
         ),
       );
       pushFailure("receipt_signing_material_unverified");
-    } else if (!receiptConsumptionDirConfigured) {
+    } else if (!operational.receiptSigningMatchesRegistry) {
       items.push(
         item(
           "receipt_signing_replay",
           "Receipt signing and durable replay persistence",
           "configuration_validated",
-          `Configure ${STAGING_RECEIPT_CONSUMPTION_DIR_ENV} for durable receipt consumption`,
-          "receipt_consumption_dir_missing",
+          "Receipt signing material loaded but public key does not match verification registry",
+          "receipt_signing_registry_mismatch",
         ),
       );
-      pushFailure("receipt_consumption_dir_missing");
+      pushFailure("receipt_signing_registry_mismatch");
+    } else if (!operational.receiptConsumptionDirAccessible) {
+      items.push(
+        item(
+          "receipt_signing_replay",
+          "Receipt signing and durable replay persistence",
+          "configuration_validated",
+          `Receipt consumption path missing or not read/write accessible (${STAGING_RECEIPT_CONSUMPTION_DIR_ENV})`,
+          "receipt_consumption_dir_inaccessible",
+        ),
+      );
+      pushFailure("receipt_consumption_dir_inaccessible");
     } else {
       items.push(
         item(
           "receipt_signing_replay",
           "Receipt signing and durable replay persistence",
           "execution_verified",
-          "Receipt verification registry, signing authority, and consumption directory validated",
+          "Receipt signing key matches registry and consumption store is accessible",
         ),
       );
     }
   }
 
-  const activation_ready = items.every((row) => row.phase === "execution_verified");
+  if (evidenceIntegrity && !evidenceIntegrity.timestamps_valid) {
+    pushFailure("staging_evidence_timestamps_invalid");
+  }
+  if (evidenceIntegrity && !evidenceIntegrity.environment_match) {
+    pushFailure("staging_evidence_environment_mismatch");
+  }
+  for (const code of evidenceIntegrity?.failure_codes ?? []) {
+    pushFailure(code);
+  }
+
+  const activation_ready = items.every((row) => itemSatisfiedForActivation(row));
   return { items, failure_codes, activation_ready };
+}
+
+const ACTIVATION_SCHEMA_ONLY_IDS = new Set(["migrations_140_143"]);
+
+/** Staging activation: exercised flows must be execution_verified; schema installs stop at configuration_validated. */
+export function itemSatisfiedForActivation(row: StagingReadinessItem): boolean {
+  if (ACTIVATION_SCHEMA_ONLY_IDS.has(row.id)) {
+    return row.phase === "configuration_validated" || row.phase === "execution_verified";
+  }
+  return row.phase === "execution_verified";
 }
 
 export function summarizeReadinessPhases(items: StagingReadinessItem[]): Record<ReadinessPhase, number> {
