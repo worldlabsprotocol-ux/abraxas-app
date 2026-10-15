@@ -9,22 +9,31 @@ npm run build
 npm run build-571:staging-readiness-audit
 ```
 
-Statuses: **ready**, **missing**, **blocked**.
+Phases: **missing**, **configuration_present**, **configuration_validated**, **execution_verified**, **blocked_founder**.
+
+Exit code **0** only when every dependency is **execution_verified**. Environment variables or table presence alone never produce exit code 0.
+
+Founder execution evidence (optional JSON env or file path):
+
+- `ABRAXAS_STAGING_EXECUTION_EVIDENCE_JSON`
+- `ABRAXAS_STAGING_EXECUTION_EVIDENCE_PATH`
+
+Schema: `abraxas.staging_execution_evidence/v1` with `browser_authenticated_session`, `idv_human_review`, and optional possession or consent sections. Integration tests do not substitute for this record.
 
 | Dependency | Typical cloud agent run | Notes |
 | --- | --- | --- |
-| Passport routes and build | ready after `npm run build` | |
-| Wallet and zkLogin | **missing** | `NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID` not set in agent VM |
-| Sovereign PostgreSQL | ready with disposable DB | `ABRAXAS_SOVEREIGN_PG_URL`, not shared staging |
-| Migrations 140 to 143 | ready on disposable DB | No shared staging migrations applied |
-| IDV and human review | **blocked** | Requires founder operator and legitimate test records |
-| Credential issuer | ready in PG integration tests | Env set in vitest harness only |
-| Possession registration | ready on disposable DB | |
-| Revocation publisher and bootstrap | ready in integration tests | Institution configured trusts |
-| Institutional policies | ready after test seed | |
-| Receipt signing and replay | ready in verifier CLI tests | Durable dirs required |
+| Passport routes and build | execution_verified after `npm run build` | |
+| Wallet and zkLogin | missing or configuration_validated | Authenticated session requires founder evidence |
+| Sovereign PostgreSQL | configuration_validated or execution_verified | Connectivity probe required for execution |
+| Migrations 140 to 143 | validated schema columns on connected DB | Includes consent, commits, signing claims |
+| IDV and human review | blocked_founder without evidence | Legitimate operator review only |
+| Credential issuer | validated public registry; execution needs signing material match | Never prints private keys |
+| Possession registration | validated schema; execution needs founder evidence | |
+| Revocation publisher and bootstrap | validated structure and checkpoint dir | Issuer trust bindings required |
+| Institutional policies | active `partner_policies` count and optional partner id list | `ABRAXAS_STAGING_INSTITUTION_PARTNER_IDS` |
+| Receipt signing and replay | validated registry; execution needs signing material and consumption dir | `ABRAXAS_STAGING_RECEIPT_CONSUMPTION_DIR` |
 
-Secrets are never printed by the audit script.
+Database URLs are redacted in audit output (no usernames, passwords, or query strings).
 
 ## Browser execution results
 

@@ -3,9 +3,19 @@
 // Founder controlled staging readiness baseline (no secrets in output).
 
 import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { buildStagingReadiness571 } from "@/lib/passport/stagingReadiness571";
+import { loadReceiptSigningKey } from "@/lib/decisionReceipts/signing";
+import {
+  buildStagingReadiness571,
+  STAGING_INSTITUTION_PARTNER_IDS_ENV,
+  STAGING_RECEIPT_CONSUMPTION_DIR_ENV,
+  summarizeReadinessPhases,
+  type StagingPolicyProbe,
+} from "@/lib/passport/stagingReadiness571";
+import { redactDatabaseConnectionLabel } from "@/lib/passport/stagingReadiness571Redact";
+import { loadStagingExecutionEvidenceFromEnv } from "@/lib/passport/stagingExecutionEvidence";
+import { loadPassportCredentialSigningKey } from "@/lib/passport/reusableCredential/passportCredentialSigning";
 
 function pgUrl(): string | null {
   return (
@@ -15,43 +25,99 @@ function pgUrl(): string | null {
   );
 }
 
-function tableExists(table: string): boolean {
+function psqlQuery(sql: string): string | null {
   const url = pgUrl();
-  if (!url) return false;
+  if (!url) return null;
   try {
-    const out = execFileSync(
-      "psql",
-      [url, "-tAc", `select to_regclass('public.${table}') is not null`],
-      { encoding: "utf8" },
-    ).trim();
-    return out === "t";
+    return execFileSync("psql", [url, "-tAc", sql], { encoding: "utf8" }).trim();
   } catch {
-    return false;
+    return null;
   }
 }
 
+function tableExists(table: string): boolean {
+  const out = psqlQuery(`select to_regclass('public.${table}') is not null`);
+  return out === "t";
+}
+
+function columnExists(table: string, column: string): boolean {
+  const out = psqlQuery(
+    `select exists (
+       select 1 from information_schema.columns
+       where table_schema = 'public' and table_name = '${table}' and column_name = '${column}'
+     )`,
+  );
+  return out === "t";
+}
+
+function pgConnectivityVerified(): boolean {
+  const out = psqlQuery("select 1");
+  return out === "1";
+}
+
+function probePolicies(): StagingPolicyProbe | null {
+  const activeCountRaw = psqlQuery(`select count(*)::text from public.partner_policies where status = 'active'`);
+  const distinctRaw = psqlQuery(
+    `select count(distinct partner_id)::text from public.partner_policies where status = 'active'`,
+  );
+  if (activeCountRaw === null || distinctRaw === null) return null;
+  const active_policy_count = Number.parseInt(activeCountRaw, 10);
+  const active_distinct_partners = Number.parseInt(distinctRaw, 10);
+  const requiredRaw = process.env[STAGING_INSTITUTION_PARTNER_IDS_ENV]?.trim();
+  const required_partner_ids = requiredRaw
+    ? requiredRaw.split(",").map((id) => id.trim()).filter(Boolean)
+    : [];
+  const missing_partner_ids: string[] = [];
+  for (const partnerId of required_partner_ids) {
+    const exists = psqlQuery(
+      `select exists (
+         select 1 from public.partner_policies where status = 'active' and partner_id = '${partnerId.replace(/'/g, "''")}'
+       )`,
+    );
+    if (exists !== "t") missing_partner_ids.push(partnerId);
+  }
+  return {
+    active_policy_count: Number.isFinite(active_policy_count) ? active_policy_count : 0,
+    active_distinct_partners: Number.isFinite(active_distinct_partners) ? active_distinct_partners : 0,
+    required_partner_ids,
+    missing_partner_ids,
+  };
+}
+
 function main() {
-  const items = buildStagingReadiness571({
-    env: process.env as Record<string, string | undefined>,
+  const env = process.env as Record<string, string | undefined>;
+  const executionEvidence = loadStagingExecutionEvidenceFromEnv(env, (path) => readFileSync(path, "utf8"));
+  const checkpointDir = env.ABRAXAS_PORTABLE_REVOCATION_CHECKPOINT_DIR?.trim();
+  const consumptionDir = env[STAGING_RECEIPT_CONSUMPTION_DIR_ENV]?.trim();
+
+  const reportCore = buildStagingReadiness571({
+    env,
     productionBuildPresent: existsSync(join(process.cwd(), ".next/BUILD_ID")),
     tableExists,
+    columnExists,
+    pgConnectivityVerified: pgConnectivityVerified(),
+    credentialSigningMaterialAvailable: loadPassportCredentialSigningKey() !== null,
+    receiptSigningMaterialAvailable: loadReceiptSigningKey() !== null,
+    executionEvidence,
+    policyProbe: probePolicies(),
+    checkpointDirConfigured: Boolean(checkpointDir && existsSync(checkpointDir)),
+    receiptConsumptionDirConfigured: Boolean(consumptionDir && existsSync(consumptionDir)),
   });
+
   const report = {
     build: 571,
     generated_at: new Date().toISOString(),
-    database: pgUrl() ? pgUrl()!.replace(/:[^:@/]+@/, ":***@") : null,
-    items,
-    summary: {
-      ready: items.filter((i) => i.status === "ready").length,
-      missing: items.filter((i) => i.status === "missing").length,
-      blocked: items.filter((i) => i.status === "blocked").length,
-    },
+    database: pgUrl() ? redactDatabaseConnectionLabel(pgUrl()!) : null,
+    execution_evidence: executionEvidence.ok ? "present" : executionEvidence.code,
+    items: reportCore.items,
+    failure_codes: reportCore.failure_codes,
+    phase_summary: summarizeReadinessPhases(reportCore.items),
+    activation_ready: reportCore.activation_ready,
     browser_auth_note:
-      "Authenticated holder browser evidence requires founder configured zkLogin or supported wallet path in the target staging origin.",
+      "Browser authentication remains configuration_validated until founder execution evidence records an authenticated session.",
   };
   console.log(JSON.stringify(report, null, 2));
-  const activationReady = items.every((i) => i.status === "ready");
-  process.exit(activationReady ? 0 : 2);
+  process.exit(reportCore.activation_ready ? 0 : 2);
 }
 
 main();
