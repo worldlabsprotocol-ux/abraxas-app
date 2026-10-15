@@ -244,6 +244,13 @@ export function PartnerLaunchpadClient({
       const sessionData = await sessionRes.json();
       const policiesData = await policiesRes.json();
       if (policiesData.policies) setPolicies(policiesData.policies);
+      if (typeof window !== "undefined" && policiesData.policies?.length) {
+        const requestedTemplate = new URLSearchParams(window.location.search).get("template")
+          ?? new URLSearchParams(window.location.search).get("pack");
+        if (requestedTemplate && policiesData.policies.some((policy: PolicyTemplate) => policy.id === requestedTemplate)) {
+          setPolicyTemplateId(requestedTemplate);
+        }
+      }
       if (typeof policiesData.google_account_not_eligibility === "string") {
         setGoogleDisclaimer(policiesData.google_account_not_eligibility);
       }

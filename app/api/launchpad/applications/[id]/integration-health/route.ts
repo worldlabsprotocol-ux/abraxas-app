@@ -18,6 +18,10 @@ import {
   loadIntegrationEventsForApplication,
   INTEGRATION_OBSERVABILITY_NOTICE,
 } from "@/lib/partner/integrationObservability";
+import { loadMerchantJourneyForApplication } from "@/lib/partner/launchpad/merchantJourney/load";
+import { callbackConfigured } from "@/lib/partner/launchpad/journeyState";
+import { buildInstitutionalActivationEvidence } from "@/lib/partner/launchpad/institutionalActivationMilestones";
+import { INSTITUTIONAL_SANDBOX_POLICY_TEMPLATE_ID } from "@/lib/partner/launchpad/institutionalActivationEntry";
 
 export const dynamic = "force-dynamic";
 type RouteContext = { params: { id: string } };
@@ -62,7 +66,24 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     webhookDegraded: webhook.delivery_failure_blocker,
   });
 
-  const payload = { ok: true, notice: INTEGRATION_OBSERVABILITY_NOTICE, ...health };
+  const payload: Record<string, unknown> = { ok: true, notice: INTEGRATION_OBSERVABILITY_NOTICE, ...health };
+
+  if (app.policy_template_id === INSTITUTIONAL_SANDBOX_POLICY_TEMPLATE_ID) {
+    const journeyLoad = await loadMerchantJourneyForApplication({
+      application: app,
+      partnerId: auth.session.partnerId,
+      activeSandboxKey: Boolean(app.api_key_id),
+    });
+    payload.institutional_activation = buildInstitutionalActivationEvidence({
+      applicationCreatedAt: app.created_at,
+      journey: journeyLoad.journey,
+      health,
+      activeSandboxKey: journeyLoad.input.activeSandboxKey,
+      starterKitEvidenced: journeyLoad.input.starterKitEvidenced,
+      callbackConfigured: callbackConfigured(app.allowed_return_urls),
+    });
+  }
+
   if (integrationObservabilityLeaks(payload).length > 0) {
     return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 503, "redacted");
   }

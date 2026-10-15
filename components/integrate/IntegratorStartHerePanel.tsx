@@ -16,6 +16,10 @@ import {
   type IntegratorAvailability,
 } from "@/lib/integrate/partnerJourney";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
+import {
+  INSTITUTIONAL_SANDBOX_HANDOFF_HREF,
+  INSTITUTIONAL_SANDBOX_STUDIO_HREF,
+} from "@/lib/partner/launchpad/institutionalActivationEntry";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -80,6 +84,29 @@ export function IntegratorStartHerePanel({ id = "start-here" }: { id?: string })
         For age-gated digital commerce teams embedding Abraxas Partner Flow. Holders verify in the browser;
         your backend verifies the signed receipt before granting access.
       </p>
+
+      <div
+        style={{
+          marginBottom: "1rem",
+          padding: "0.85rem 1rem",
+          borderRadius: 14,
+          border: "1px solid rgba(45,212,191,0.35)",
+          background: "rgba(45,212,191,0.06)",
+        }}
+      >
+        <p style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 800, margin: "0 0 0.35rem", color: "var(--text-primary)" }}>
+          Institutional protocol eligibility (sandbox)
+        </p>
+        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0 0 0.65rem", lineHeight: 1.55 }}>
+          Self-service Launchpad provisioning for organization protocol access. You receive scoped decision receipts, not identity evidence.
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+          <Btn href={INSTITUTIONAL_SANDBOX_STUDIO_HREF} size="sm">Start institutional sandbox</Btn>
+          <Link href={INSTITUTIONAL_SANDBOX_HANDOFF_HREF} style={{ alignSelf: "center", fontFamily: FONT, fontSize: "0.72rem", color: ACCENT }}>
+            Engineering handoff
+          </Link>
+        </div>
+      </div>
 
       <ol style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: "0.65rem" }}>
         {INTEGRATOR_START_HERE_STEPS.map((item) => (

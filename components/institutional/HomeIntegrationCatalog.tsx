@@ -74,7 +74,7 @@ export function HomeIntegrationCatalog() {
         ))}
       </div>
       <Link
-        href="/integrations"
+        href="/developers/integration-studio?pack=sandbox_institutional_protocol_access&path=institutional_eligibility_gate"
         style={{
           display: "inline-block",
           marginTop: "0.85rem",

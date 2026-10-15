@@ -11,6 +11,13 @@ import {
   SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
 } from "@/lib/partner/sandboxInstitutionalProtocolAccess/contract";
 import type { LaunchpadJourneyResolution, MerchantJourneyStageId } from "@/lib/partner/launchpad/journeyState";
+import type { InstitutionalActivationEvidence } from "@/lib/partner/launchpad/institutionalActivationMilestones";
+import {
+  INSTITUTIONAL_INDEPENDENT_VERIFIER_HREF,
+  INSTITUTIONAL_RECEIPT_VERIFY_HREF,
+  INSTITUTIONAL_SANDBOX_HANDOFF_HREF,
+  INSTITUTIONAL_SANDBOX_STUDIO_HREF,
+} from "@/lib/partner/launchpad/institutionalActivationEntry";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -20,7 +27,16 @@ type OperationalHealth = {
   verification_successes: number;
   last_receipt_verified_at: string | null;
   technical_proof?: Array<{ stage: string; status: string }>;
+  institutional_activation?: InstitutionalActivationEvidence;
 };
+
+function milestoneColor(status: string): string {
+  if (status === "complete") return "#10B981";
+  if (status === "failed") return "#F87171";
+  if (status === "current") return "var(--accent)";
+  if (status === "unavailable") return "var(--text-muted)";
+  return "var(--text-secondary)";
+}
 
 export function InstitutionalSandboxFirstVerificationCard(input: {
   applicationId: string;
@@ -29,28 +45,39 @@ export function InstitutionalSandboxFirstVerificationCard(input: {
 }) {
   const { applicationId, journey, onNavigate } = input;
   const [health, setHealth] = useState<OperationalHealth | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const loadHealth = useCallback(async () => {
-    const res = await fetch(`/api/launchpad/applications/${applicationId}/integration-health`, {
-      credentials: "include",
-      cache: "no-store",
-    });
-    if (!res.ok) return;
-    setHealth((await res.json()) as OperationalHealth);
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/launchpad/applications/${applicationId}/integration-health`, {
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      setHealth((await res.json()) as OperationalHealth);
+    } finally {
+      setLoading(false);
+    }
   }, [applicationId]);
 
   useEffect(() => {
     void loadHealth();
   }, [loadHealth]);
 
+  const activation = health?.institutional_activation;
   const verified = (health?.verification_successes ?? 0) > 0;
   const policyPinned = SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID;
 
-  let nextLabel = "Choose verification policy";
-  let nextDetail = "Create a sandbox app pinned to organization protocol eligibility.";
+  let nextLabel = "Create sandbox application";
+  let nextDetail = "Provision a Launchpad application pinned to organization protocol eligibility.";
   let nextStage: MerchantJourneyStageId = "verify";
 
-  if (journey?.connectComplete && journey.testAvailable) {
+  if (activation?.needs_attention_reason) {
+    nextLabel = "Review integration status";
+    nextDetail = activation.needs_attention_reason;
+    nextStage = journey?.primaryAction.stage ?? "test";
+  } else if (journey?.connectComplete && journey.testAvailable) {
     nextLabel = "Run hosted verification test";
     nextDetail = "Send a synthetic holder through hosted authorization, then verify the signed decision receipt on your server.";
     nextStage = "test";
@@ -64,12 +91,13 @@ export function InstitutionalSandboxFirstVerificationCard(input: {
     nextStage = journey.primaryAction.stage;
   }
 
-  const consentObserved = health?.technical_proof?.some(
-    (row) => row.stage === "Holder consented" && row.status === "observed",
-  );
+  const ttfv = activation?.time_to_first_independent_verify_quality === "measured"
+    && activation.time_to_first_independent_verify_ms != null
+    ? `${Math.round(activation.time_to_first_independent_verify_ms / 1000)}s from application create to first verified receipt`
+    : "Unavailable until independent verification is recorded for this application.";
 
   return (
-    <ContentCard title="Institutional first verification (sandbox)">
+    <ContentCard title="Institutional sandbox activation">
       <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
         Self-service path for engineering teams verifying narrow eligibility without receiving identity evidence.
         Production issuer signing stays unavailable until founder authorization.
@@ -83,7 +111,10 @@ export function InstitutionalSandboxFirstVerificationCard(input: {
           Supported policy <code style={{ fontFamily: MONO }}>{policyPinned}</code>
         </div>
         <div>
-          Integration status <strong>{journey?.statusLine ?? "Select a policy to begin"}</strong>
+          Integration status <strong>{journey?.statusLine ?? "Not started"}</strong>
+        </div>
+        <div>
+          Time to first independent verify <strong>{ttfv}</strong>
         </div>
         <div>
           First independent verify{" "}
@@ -97,11 +128,27 @@ export function InstitutionalSandboxFirstVerificationCard(input: {
             </span>
           )}
         </div>
-        <div>
-          Holder consent event{" "}
-          <strong>{consentObserved ? "Observed" : "Unavailable until first hosted flow completes"}</strong>
-        </div>
       </div>
+
+      {activation?.milestones?.length ? (
+        <ol style={{ margin: "0.85rem 0 0", paddingLeft: "1.15rem", fontFamily: FONT, fontSize: "0.72rem" }}>
+          {activation.milestones.map((milestone) => (
+            <li key={milestone.id} style={{ marginBottom: "0.35rem", color: milestoneColor(milestone.status) }}>
+              <strong>{milestone.label}</strong>
+              <span style={{ color: "var(--text-muted)" }}> · {milestone.status}</span>
+              <div style={{ color: "var(--text-secondary)", marginTop: 2 }}>{milestone.detail}</div>
+            </li>
+          ))}
+        </ol>
+      ) : loading ? (
+        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.75rem" }}>
+          Loading activation evidence…
+        </p>
+      ) : (
+        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.75rem" }}>
+          Activation milestones unavailable. Refresh after completing a hosted verification attempt.
+        </p>
+      )}
 
       <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.75rem" }}>
         {SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_NOTICE}
@@ -113,13 +160,24 @@ export function InstitutionalSandboxFirstVerificationCard(input: {
           {nextDetail}
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-          <Btn size="sm" onClick={() => onNavigate(nextStage)} disabled={!journey && nextStage !== "verify"}>
+          <Btn size="sm" onClick={() => onNavigate(nextStage)}>
             {nextLabel}
           </Btn>
-          <Link href="/developers/integration-studio?action=org_protocol_access&category=institutional_eligibility&environment=sandbox" style={{ alignSelf: "center", fontFamily: FONT, fontSize: "0.72rem" }}>
-            Open policy fit planner
+          <Link href={INSTITUTIONAL_SANDBOX_STUDIO_HREF} style={{ alignSelf: "center", fontFamily: FONT, fontSize: "0.72rem" }}>
+            Policy fit planner
           </Link>
-          <Btn size="sm" variant="ghost" onClick={() => void loadHealth()}>Refresh evidence</Btn>
+          <Link href={INSTITUTIONAL_INDEPENDENT_VERIFIER_HREF} style={{ alignSelf: "center", fontFamily: FONT, fontSize: "0.72rem" }}>
+            Independent verifier guide
+          </Link>
+          <Link href={INSTITUTIONAL_RECEIPT_VERIFY_HREF} style={{ alignSelf: "center", fontFamily: FONT, fontSize: "0.72rem" }}>
+            Verify a receipt
+          </Link>
+          <Link href={INSTITUTIONAL_SANDBOX_HANDOFF_HREF} style={{ alignSelf: "center", fontFamily: FONT, fontSize: "0.72rem" }}>
+            Customer handoff
+          </Link>
+          <Btn size="sm" variant="ghost" onClick={() => void loadHealth()} disabled={loading}>
+            {loading ? "Refreshing…" : "Refresh evidence"}
+          </Btn>
         </div>
       </div>
     </ContentCard>
