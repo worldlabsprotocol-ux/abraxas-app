@@ -184,6 +184,8 @@ export function resolveHolderIdentitySurface(input: {
   idvApprovedRowsForLegacyWallet?: number;
   ambiguousLegacyConflict: boolean;
   identityLookupUnavailable?: boolean;
+  /** Canonical session carries legacy Sui context without authoritative binding to count sui_address rows. */
+  missingCanonicalLegacySuiBinding?: boolean;
 }): HolderIdentitySurfaceSnapshot {
   const approvedRows = input.identityLookupUnavailable
     ? 0
@@ -204,6 +206,23 @@ export function resolveHolderIdentitySurface(input: {
       : isChainNeutralHolderSubjectId(input.sessionSubjectId)
         ? input.sessionSubjectId
         : null;
+
+  if (
+    canonicalFromSession
+    && input.canonicalSchemaPresent
+    && input.missingCanonicalLegacySuiBinding
+    && anyRows === 0
+    && approvedRows === 0
+  ) {
+    return {
+      state: "reconciliation_operator_required",
+      headline: "Legacy identity link required",
+      detail:
+        "Your Passport session uses a canonical holder subject, but legacy Sui verification is not linked yet. "
+        + "Operator review will bind your verified Sui identity to this subject before issuer-backed credentials activate.",
+      operator_review_required: true,
+    };
+  }
 
   if (canonicalFromSession && input.canonicalSchemaPresent) {
     return {
