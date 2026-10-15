@@ -91,6 +91,7 @@ export async function buildIntegrationOperationalHealth(input: {
   const proofStages = [
     { stage: "Request created", types: ["verification_request_created", "hosted_handoff_created"] },
     { stage: "Holder authorized", types: ["holder_flow_started"] },
+    { stage: "Holder consented", types: ["holder_flow_completed"] },
     { stage: "Policy evaluated", types: ["policy_evaluated"] },
     { stage: "Receipt issued", types: ["receipt_issued"] },
     { stage: "Receipt verified server-side", types: ["receipt_verification_succeeded", "receipt_verification_failed"] },

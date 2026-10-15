@@ -27,7 +27,6 @@ import { isPassportReusableCredentialStorageEnabled } from "@/lib/passport/reusa
 import { authorizeIssuerBackedPresentation } from "@/lib/passport/reusableCredential/issuerBackedPresentationOrchestration";
 import { resolvePresentationPartnerPolicy } from "@/lib/passport/reusableCredential/institutionalPresentationPolicy";
 import { requireIssuerBackedReceiptSigningKey } from "@/lib/passport/reusableCredential/issuerBackedReceiptSigning";
-
 export async function POST(req: NextRequest) {
   const csrf = portableTrustCsrfRejected(req);
   if (csrf) {

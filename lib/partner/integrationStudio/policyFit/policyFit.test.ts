@@ -38,6 +38,7 @@ describe("Integration Studio policy fit", () => {
       intent({ action: "higher_assurance_identity", category: "identity_liveness" }),
       intent({ action: "sandbox_demo", category: "sandbox_demo" }),
       intent({ action: "content_provenance_publish", category: "content_provenance" }),
+      intent({ action: "org_protocol_access", category: "institutional_eligibility", environment: "sandbox" }),
     ];
     const packs = new Set<string>();
     for (const item of cases) {
@@ -49,8 +50,7 @@ describe("Integration Studio policy fit", () => {
       packs.add(view.recommended!.pack_id);
     }
     const excludedFromPlanner = POLICY_PACK_LIST.filter(
-      (pack) => pack.id === "sandbox_institutional_protocol_access"
-        || pack.id === "content_ai_disclosure"
+      (pack) => pack.id === "content_ai_disclosure"
         || pack.id === "content_source_integrity",
     ).length;
     expect(packs.size).toBe(POLICY_PACK_LIST.length - excludedFromPlanner);
@@ -149,7 +149,7 @@ describe("Integration Studio policy fit", () => {
   });
 
   it("covers every action-to-category mapping used by the planner", () => {
-    expect(Object.keys(POLICY_FIT_ACTION_CATEGORIES).length).toBe(8);
-    expect(Object.keys(POLICY_FIT_CATEGORY_TO_PACK).length).toBe(9);
+    expect(Object.keys(POLICY_FIT_ACTION_CATEGORIES).length).toBe(9);
+    expect(Object.keys(POLICY_FIT_CATEGORY_TO_PACK).length).toBe(10);
   });
 });
