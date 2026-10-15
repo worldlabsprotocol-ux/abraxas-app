@@ -96,8 +96,26 @@ export function issuePassportPossessionChallenge(input: {
   });
 }
 
+function challengeSigningPayload(
+  record: PassportPossessionChallengePayload | PassportPossessionChallengeRecord,
+): PassportPossessionChallengePayload {
+  return {
+    v: record.v,
+    purpose: record.purpose,
+    challenge_id: record.challenge_id,
+    credential_id: record.credential_id,
+    partner_id: record.partner_id,
+    policy_id: record.policy_id,
+    nonce: record.nonce,
+    issued_at: record.issued_at,
+    expires_at: record.expires_at,
+  };
+}
+
 function hashPossessionMessage(payload: PassportPossessionChallengePayload): Uint8Array {
-  const digest = createHash("sha256").update(canonicalizeJson(payload), "utf8").digest();
+  const digest = createHash("sha256")
+    .update(canonicalizeJson(challengeSigningPayload(payload)), "utf8")
+    .digest();
   return Uint8Array.from(digest);
 }
 
@@ -107,6 +125,25 @@ export function signPassportPossessionChallenge(
 ): string {
   const message = hashPossessionMessage(payload);
   return Buffer.from(nacl.sign.detached(message, holderSecretKey)).toString("base64url");
+}
+
+const CHALLENGE_PAYLOAD_FIELDS: (keyof PassportPossessionChallengePayload)[] = [
+  "v",
+  "purpose",
+  "challenge_id",
+  "credential_id",
+  "partner_id",
+  "policy_id",
+  "nonce",
+  "issued_at",
+  "expires_at",
+];
+
+function challengePayloadsEqual(
+  a: PassportPossessionChallengePayload,
+  b: PassportPossessionChallengePayload,
+): boolean {
+  return CHALLENGE_PAYLOAD_FIELDS.every((field) => a[field] === b[field]);
 }
 
 export function verifyPassportPossessionProof(input: {
@@ -121,34 +158,49 @@ export function verifyPassportPossessionProof(input: {
 }): { ok: true } | { ok: false; code: string } {
   const now = input.now ?? new Date();
   const store = input.store ?? getPassportPossessionChallengeStore();
+
   if (input.proof.challenge_id !== input.challenge.challenge_id) {
     return { ok: false, code: "challenge_id_mismatch" };
   }
-  if (input.challenge.credential_id !== input.credentialId) {
+
+  const authoritative = store.get(input.proof.challenge_id);
+  if (!authoritative) {
+    return { ok: false, code: "challenge_unknown" };
+  }
+  if (authoritative.consumed_at) {
+    return { ok: false, code: "challenge_replay" };
+  }
+  if (!challengePayloadsEqual(input.challenge, authoritative)) {
+    return { ok: false, code: "challenge_substituted" };
+  }
+  if (authoritative.credential_id !== input.credentialId) {
     return { ok: false, code: "credential_mismatch" };
   }
-  if (input.challenge.partner_id !== input.partnerId) {
+  if (authoritative.partner_id !== input.partnerId) {
     return { ok: false, code: "partner_mismatch" };
   }
-  if (input.challenge.policy_id !== input.policyId) {
+  if (authoritative.policy_id !== input.policyId) {
     return { ok: false, code: "policy_mismatch" };
   }
-  const consumed = store.consume(input.challenge.challenge_id, now.toISOString());
-  if (!consumed.ok) {
-    return { ok: false, code: `challenge_${consumed.code}` };
-  }
-  if (Date.parse(input.challenge.expires_at) < now.getTime()) {
+  if (Date.parse(authoritative.expires_at) < now.getTime()) {
     return { ok: false, code: "challenge_expired" };
   }
+
   try {
     const pub = Uint8Array.from(Buffer.from(input.credentialHolderPublicKey, "base64url"));
     const sig = Uint8Array.from(Buffer.from(input.proof.signature, "base64url"));
-    const message = hashPossessionMessage(input.challenge);
+    const message = hashPossessionMessage(challengeSigningPayload(authoritative));
     if (!nacl.sign.detached.verify(message, sig, pub)) {
       return { ok: false, code: "possession_signature_invalid" };
     }
   } catch {
     return { ok: false, code: "possession_signature_invalid" };
   }
+
+  const consumed = store.consume(authoritative.challenge_id, now.toISOString());
+  if (!consumed.ok) {
+    return { ok: false, code: `challenge_${consumed.code}` };
+  }
+
   return { ok: true };
 }

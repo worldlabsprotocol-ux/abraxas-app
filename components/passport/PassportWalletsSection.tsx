@@ -187,7 +187,7 @@ export function PassportWalletsSection({
       <p style={{
         fontFamily: FONT, fontSize: "0.82rem", lineHeight: 1.55, color: "var(--text-secondary)", margin: "0 0 0.75rem",
       }}>
-        Connect a wallet to prove control to Abraxas. This is a control proof only — not identity, ownership, or a transaction approval.
+        Connect a wallet to prove control to Abraxas. This is a control proof only, not identity, ownership, or a transaction approval.
       </p>
       <p style={{
         fontFamily: FONT, fontSize: "0.78rem", lineHeight: 1.55, color: "var(--text-muted)", margin: "0 0 1rem",
@@ -209,7 +209,7 @@ export function PassportWalletsSection({
           marginBottom: "0.85rem",
         }}>
           <p style={{ fontFamily: FONT, fontSize: "0.84rem", color: "var(--text-secondary)", margin: "0 0 0.75rem", lineHeight: 1.55 }}>
-            No wallets connected yet. Abraxas does not discover wallets automatically — you choose what to link.
+            No wallets connected yet. Abraxas does not discover wallets automatically. You choose what to link.
           </p>
           <Btn size="lg" fullWidth loading={addWalletDisabled} onClick={() => void connectWallet()}>
             {evmBind.loading ? "Waiting for signature…" : "Connect wallet"}

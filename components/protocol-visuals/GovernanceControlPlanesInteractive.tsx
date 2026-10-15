@@ -33,8 +33,8 @@ function buildRows(data: CustodyPayload | null, loading: boolean, error: string)
   }
   if (error || !data) {
     return [
-      { id: "upgrade", title: "Program upgrade authority", scope: "BPF loader upgrades", status: "inactive", detail: "Custody status unavailable — controls treated as inactive." },
-      { id: "registry", title: "Registry governance", scope: "In-program admin transfers", status: "inactive", detail: "Custody status unavailable — controls treated as inactive." },
+      { id: "upgrade", title: "Program upgrade authority", scope: "BPF loader upgrades", status: "inactive", detail: "Custody status unavailable. Controls treated as inactive." },
+      { id: "registry", title: "Registry governance", scope: "In-program admin transfers", status: "inactive", detail: "Custody status unavailable. Controls treated as inactive." },
       { id: "ops", title: "Operational publisher / revoker", scope: "Publish · revoke (sandbox ops)", status: "inactive", detail: "Live operational keys not asserted from this console." },
     ];
   }
@@ -54,10 +54,10 @@ function buildRows(data: CustodyPayload | null, loading: boolean, error: string)
       scope: "Isolated multisig vault (intended)",
       status: upgradeStatus,
       detail: live
-        ? "Live controls enabled — on-chain execution may be available to authorized operators."
+        ? "Live controls enabled. On-chain execution may be available to authorized operators."
         : upgradeVault
           ? `Vault PDA observed (${upgradeVault.slice(0, 8)}…). Execution remains disabled in this console.`
-          : "Institutional custody inactive — no verified upgrade vault on record.",
+          : "Institutional custody inactive. No verified upgrade vault on record.",
     },
     {
       id: "registry",
@@ -76,7 +76,7 @@ function buildRows(data: CustodyPayload | null, loading: boolean, error: string)
       scope: "Shared operational plane",
       status: "inactive",
       detail: live
-        ? "Operational roles may sign publish/revoke — distinct from upgrade & registry vaults."
+        ? "Operational roles may sign publish/revoke, distinct from upgrade and registry vaults."
         : "Operational keys are not live-executed from this read-only console.",
     },
   ];
@@ -122,11 +122,11 @@ export function GovernanceControlPlanesInteractive() {
     >
       {custodyInactive ? (
         <p className="abx-pv-governance__banner" role="status">
-          Institutional custody inactive — read-only observation. No on-chain execution from this UI.
+          Institutional custody inactive: read-only observation. No on-chain execution from this UI.
         </p>
       ) : (
         <p className="abx-pv-governance__banner abx-pv-governance__banner--live" role="status">
-          Live controls flag set — operator paths may be enabled. Verify gate blockers before any execution.
+          Live controls flag set. Operator paths may be enabled. Verify gate blockers before any execution.
         </p>
       )}
 

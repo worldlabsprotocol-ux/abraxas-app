@@ -322,7 +322,7 @@ export function PassportSetupPanel({
         <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: "0 0 0.65rem" }}>
                   Your profile is active. Add an ID check when you need enhanced trust for payments, submissions, or partner policies.
                   {manualMode ? (
-                    <> Use your device camera below — name, government ID, and selfie. Verified by Abraxas Verify.</>
+                    <> Use your device camera below: name, government ID, and selfie. Verified by Abraxas Verify.</>
                   ) : (
                     <> Legacy third party IDV path. Abraxas Verify is the default on this deployment.</>
                   )}
@@ -401,7 +401,7 @@ export function PassportSetupPanel({
                       </div>
                     </details>
                     <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0.65rem 0 0", lineHeight: 1.5 }}>
-                      Abraxas Verify · engine + human review · Assurance L2–L3. Not required to use your profile.
+                      Abraxas Verify · engine + human review · Assurance L2 to L3. Not required to use your profile.
                     </p>
                   </>
                 ) : !veriffConfigured ? (

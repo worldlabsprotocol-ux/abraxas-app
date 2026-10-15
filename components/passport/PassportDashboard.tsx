@@ -268,7 +268,7 @@ export function PassportDashboard({
             fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
             lineHeight: 1.65, margin: "0 0 1rem", maxWidth: 520,
           }}>
-            Google sign-in creates your Abraxas account and Sui wallet — no seed phrase.
+            Google sign-in creates your Abraxas account and Sui wallet. No seed phrase required.
           </p>
           <ZkLoginSignIn />
         </section>
@@ -357,7 +357,7 @@ export function PassportDashboard({
                 Add verified information when required
               </h2>
               <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.65, margin: "0 0 1rem" }}>
-                Optional until a partner policy requires it. Partners only see yes/no — not your documents.
+                Optional until a partner policy requires it. Partners only see yes/no, not your documents.
               </p>
               {manualMode ? (
                 <AbraxasIdentityCapture
@@ -812,7 +812,7 @@ function CredentialsSection({
           </summary>
           <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", lineHeight: 1.6, margin: "0.5rem 0 0" }}>
             A JWT is a signed string that says &quot;this person passed check X until date Y.&quot;
-            Abraxas issues it after review. Apps verify the signature — they don&apos;t store your documents.
+            Abraxas issues it after review. Apps verify the signature. They do not store your documents.
           </p>
         </details>
       )}
@@ -828,8 +828,8 @@ function CredentialsSection({
       />
       <CredentialRow
         title="Verified information"
-        issuer={identityUi === "verified" ? (manualMode ? "Abraxas review" : "Approved identity provider") : "—"}
-        assurance={identityUi === "verified" ? "On file" : "—"}
+        issuer={identityUi === "verified" ? (manualMode ? "Abraxas review" : "Approved identity provider") : "None"}
+        assurance={identityUi === "verified" ? "On file" : "None"}
         status={IDENTITY_UI_LABELS[identityUi]}
         refresh={identityUi === "verified" && credential?.expires_at
           ? `Valid through ${new Date(credential.expires_at).toLocaleDateString()}`
@@ -1005,7 +1005,7 @@ function PassportCustomerAdvancedDetails({
             fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)",
             lineHeight: 1.6, margin: "0 0 0.75rem",
           }}>
-            Optional session security check — not an identity check.
+            Optional session security check, not an identity check.
           </p>
           <PassportIntentCard suiAddress={suiAddress} />
         </section>
@@ -1068,7 +1068,7 @@ function PassportVerifiedDetails({
             Technical credential notes
           </summary>
           <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", lineHeight: 1.6, margin: "0.5rem 0 0" }}>
-            Credentials are signed JWTs (W3C Verifiable Credentials). Partners verify the signature — they do not receive document images or biometric scores.
+            Credentials are signed JWTs (W3C Verifiable Credentials). Partners verify the signature. They do not receive document images or biometric scores.
           </p>
         </details>
 
@@ -1083,7 +1083,7 @@ function PassportVerifiedDetails({
             fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)",
             lineHeight: 1.6, margin: "0 0 0.75rem",
           }}>
-            Optional session security check — not an identity check.
+            Optional session security check, not an identity check.
           </p>
           <PassportIntentCard suiAddress={suiAddress} />
         </section>

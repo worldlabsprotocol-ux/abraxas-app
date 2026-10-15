@@ -14,16 +14,11 @@ import {
   buildPresentationRequestDisclosure,
   isPassportReusableCredentialDemoAllowed,
 } from "@/lib/passport/reusableCredential";
-import {
-  issuePassportPossessionChallenge,
-  signPassportPossessionChallenge,
-  type HolderPossessionProof,
-  type PassportPossessionChallengePayload,
+import type {
+  HolderPossessionProof,
+  PassportPossessionChallengePayload,
 } from "@/lib/passport/reusableCredential/holderPossessionChallenge";
-import {
-  BUILD_566_HOLDER_POSSESSION_KEYPAIR,
-  BUILD_566_RECEIPT_SIGNING_KEY,
-} from "@/lib/passport/reusableCredential/fixtures";
+import { BUILD_566_RECEIPT_SIGNING_KEY } from "@/lib/passport/reusableCredential/fixtures";
 import { BUILD_546_FIXTURE_NOW } from "@/lib/institutionalCertification/build546/fixtures";
 
 export async function POST(req: NextRequest) {
@@ -58,6 +53,16 @@ export async function POST(req: NextRequest) {
   if (!body.partner_id || !body.policy_id) {
     return NextResponse.json({ error: "partner_id and policy_id required" }, { status: 400 });
   }
+  if (!body.challenge || !body.holder_possession_proof) {
+    return NextResponse.json(
+      {
+        error: "holder_possession_proof_required",
+        sandbox_only: true,
+        note: "Obtain an RP challenge, sign it with the credential holder possession key, then submit challenge and proof together.",
+      },
+      { status: 400 },
+    );
+  }
 
   const credential = build566SyntheticReusableCredential({
     holderSubjectId: session.subjectId,
@@ -66,24 +71,6 @@ export async function POST(req: NextRequest) {
   const revocation = build566RevocationSnapshotForCredential(credential.payload.credential_id);
   const requestId = body.request_id ?? `req_present_${Date.now()}`;
   const env = { ...process.env, ...build566TrustEnv() } as Record<string, string | undefined>;
-
-  let challenge = body.challenge;
-  let proof = body.holder_possession_proof;
-  let serverSignedPossession = false;
-  if (!challenge || !proof) {
-    const issued = issuePassportPossessionChallenge({
-      credentialId: credential.payload.credential_id,
-      partnerId: body.partner_id,
-      policyId: body.policy_id,
-      now: BUILD_546_FIXTURE_NOW,
-    });
-    challenge = issued;
-    proof = {
-      challenge_id: issued.challenge_id,
-      signature: signPassportPossessionChallenge(issued, BUILD_566_HOLDER_POSSESSION_KEYPAIR.secretKey),
-    };
-    serverSignedPossession = true;
-  }
 
   const authorized = await authorizePartnerFromReusableCredential({
     credential,
@@ -94,8 +81,8 @@ export async function POST(req: NextRequest) {
     requestId,
     receiptSigningKey: BUILD_566_RECEIPT_SIGNING_KEY,
     portableRevocationSnapshot: revocation,
-    possessionChallenge: challenge,
-    holderPossessionProof: proof,
+    possessionChallenge: body.challenge,
+    holderPossessionProof: body.holder_possession_proof,
     checkpointStore: new InMemoryPortableRevocationCheckpointStore(),
     bootstrapTrusts: [bootstrapTrustFromArtifact({ artifact: revocation })],
     now: BUILD_546_FIXTURE_NOW,
@@ -117,7 +104,6 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     synthetic_demo: true,
     sandbox_only: true,
-    server_signed_possession_demo: serverSignedPossession,
     idv_repeated: false,
     disclosure,
     partner_authorization: {

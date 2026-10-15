@@ -65,7 +65,7 @@ function authenticityChecksFor(scenario: ReceiptScenario): ReceiptDemoCheck[] {
       check(
         "signature_integrity",
         "Signature integrity",
-        "Signature not evaluated — verifier unreachable (simulated).",
+        "Signature not evaluated. Verifier unreachable (simulated).",
         "UNKNOWN",
       ),
       check(
@@ -119,7 +119,7 @@ function authorizationChecksFor(scenario: ReceiptScenario): ReceiptDemoCheck[] {
 
   if (scenario === "expired") {
     return [
-      check("expiration", "Expiration", "Decision expired — deny despite valid signature.", "FAIL"),
+      check("expiration", "Expiration", "Decision expired. Deny despite valid signature.", "FAIL"),
       check("freshness", "Freshness", "Outside acceptable time window.", "FAIL"),
       check("revocation", "Revocation", "No revocation signal (simulated).", "PASS"),
       check("replay_protection", "Replay protection", "Not a replayed receipt.", "PASS"),
@@ -178,10 +178,10 @@ export function deriveReceiptDemoState(scenario: ReceiptScenario): ReceiptDemoSt
     scenario === "valid"
       ? "All cryptographic and authorization checks pass (simulated)."
       : scenario === "expired"
-        ? "Cryptographic authenticity passes — authorization denied because the decision expired (simulated)."
+        ? "Cryptographic authenticity passes. Authorization denied because the decision expired (simulated)."
         : scenario === "revoked"
-          ? "Cryptographic authenticity and freshness pass — authorization denied because of issuer revocation (simulated)."
-          : "Verifier unreachable — checks cannot be evaluated; no invalid signature is implied (simulated).";
+          ? "Cryptographic authenticity and freshness pass. Authorization denied because of issuer revocation (simulated)."
+          : "Verifier unreachable. Checks cannot be evaluated; no invalid signature is implied (simulated).";
 
   const aggregateStatus =
     scenario === "valid"
@@ -240,7 +240,7 @@ export function buildReceiptDemoFields(
             ? "2026-11-01T00:00:00Z"
             : scenario === "revoked"
               ? "2026-11-01T00:00:00Z"
-              : "—",
+              : "None",
       mono: true,
     },
     { label: "policy_id", value: RECEIPT_DEMO_POLICY_ID, mono: true },

@@ -139,7 +139,8 @@ export function PassportVerifiedHero({ assuranceLevel, expiresAt, handoff }: Pro
         >
           Good Trouble checkout
         </a>
-        {" "}— {GOOD_TROUBLE_PILOT_LABEL.toLowerCase()}
+        {": "}
+        {GOOD_TROUBLE_PILOT_LABEL.toLowerCase()}
       </p>
     </section>
   );

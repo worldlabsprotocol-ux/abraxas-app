@@ -1,4 +1,6 @@
 // FILE: lib/passport/reusableCredential/testHelpers.ts
+// Automated tests only: signs possession with BUILD_566_HOLDER_POSSESSION_KEYPAIR fixture.
+// Production and sandbox present routes must receive holder proofs from the client.
 
 import type { PartnerPolicyRules } from "@/lib/policy/types";
 import type { PortableRevocationSignedArtifact } from "@/lib/protocol/portableRevocation";
