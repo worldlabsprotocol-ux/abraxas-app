@@ -40,6 +40,7 @@ import { PassportReuseStrip } from "@/components/passport/PassportReuseStrip";
 import { PassportIdentityObject, type PassportLifecycleState } from "@/components/passport/PassportIdentityObject";
 import { PassportHolderWorkspace } from "@/components/passport/PassportHolderWorkspace";
 import { PassportPortableTrustPanel } from "@/components/passport/PassportPortableTrustPanel";
+import { PassportReusableCredentialsPanel } from "@/components/passport/PassportReusableCredentialsPanel";
 import { PASSPORT_PRIVACY_HREF } from "@/lib/passport/passportPrivacyNavigation";
 import type { CapturePolicyContext } from "@/lib/idv/capturePolicyContext";
 
@@ -293,11 +294,17 @@ export function PassportCustomerView({
       credentials={(
         <>
           {walletDone && browserSessionReady && (
-            <section style={{ ...CARD, marginBottom: "1rem" }} aria-labelledby="passport-portable-trust-heading">
-              <h2 id="passport-portable-trust-heading" style={{
+            <section style={{ ...CARD, marginBottom: "1rem" }} aria-labelledby="passport-reusable-credentials-heading">
+              <h2 id="passport-reusable-credentials-heading" style={{
                 fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.5rem",
               }}>
-                Portable trust credentials
+                Reusable Passport credentials
+              </h2>
+              <PassportReusableCredentialsPanel sessionReady={browserSessionReady} />
+              <h2 id="passport-portable-trust-heading" style={{
+                fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "1rem 0 0.5rem",
+              }}>
+                Partner authorization receipts
               </h2>
               <PassportPortableTrustPanel sessionReady={browserSessionReady} />
             </section>
