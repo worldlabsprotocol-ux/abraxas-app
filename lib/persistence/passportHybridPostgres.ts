@@ -28,6 +28,13 @@ function passportTransactionPgExplicitlyEnabledEnv(
   return raw === "1" || raw === "true" || raw === "enabled";
 }
 
+/** Production runtime from deployment signals (not NODE_ENV alone). */
+function isAuthoritativeProductionRuntime(env: Record<string, string | undefined>): boolean {
+  if (env.VERCEL_ENV?.trim() === "production") return true;
+  if (env.ABRAXAS_RUNTIME_ENV?.trim() === "production") return true;
+  return false;
+}
+
 function isLocalPostgresHost(databaseUrl: string): boolean {
   try {
     const host = new URL(databaseUrl.trim()).hostname.toLowerCase();
@@ -139,6 +146,7 @@ function tryValidateDisposableLocalHybridBinding(
   env: Record<string, string | undefined>,
   databaseUrl: string,
 ): PassportHybridPostgresValidation | null {
+  if (isAuthoritativeProductionRuntime(env)) return null;
   if (env.ABRAXAS_SOVEREIGN_ENV_CLASS?.trim().toLowerCase() !== "disposable") return null;
   if (!isLocalPostgresHost(databaseUrl)) return null;
   if (env[DISPOSABLE_PG_TEST_DATABASE_ID_ENV]?.trim() !== SOVEREIGN_DISPOSABLE_DATABASE_ID) {

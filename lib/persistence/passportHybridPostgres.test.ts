@@ -118,6 +118,38 @@ describe("Passport hybrid PostgreSQL binding", () => {
     expect(ok.binding_mode).toBe("disposable_local_test");
   });
 
+  it("rejects disposable local binding on VERCEL_ENV production even when sovereign class is disposable", () => {
+    const localUrl = "postgresql://postgres:pw@127.0.0.1:5432/abraxas_sovereign_disposable";
+    const result = validatePassportHybridPostgresBinding({
+      ABRAXAS_SOVEREIGN_ENV_CLASS: "disposable",
+      VERCEL_ENV: "production",
+      ABRAXAS_PASSPORT_TRANSACTION_PG: "1",
+      ABRAXAS_PASSPORT_DATABASE_URL: localUrl,
+      [DISPOSABLE_PG_TEST_DATABASE_ID_ENV]: SOVEREIGN_DISPOSABLE_REF,
+      [DISPOSABLE_PG_MIGRATION_AUTHORIZED_ENV]: "true",
+      [DISPOSABLE_PG_TEST_URL_ENV]: localUrl,
+      [DISPOSABLE_PG_HYBRID_LOCAL_AUTHORIZED_ENV]: "true",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.code).toBe("hybrid_postgrest_project_ref_unresolved");
+    }
+  });
+
+  it("rejects disposable local binding when ABRAXAS_RUNTIME_ENV is production", () => {
+    const localUrl = "postgresql://postgres:pw@127.0.0.1:5432/abraxas_sovereign_disposable";
+    const result = validatePassportHybridPostgresBinding({
+      ABRAXAS_SOVEREIGN_ENV_CLASS: "disposable",
+      ABRAXAS_RUNTIME_ENV: "production",
+      ABRAXAS_PASSPORT_DATABASE_URL: localUrl,
+      [DISPOSABLE_PG_TEST_DATABASE_ID_ENV]: SOVEREIGN_DISPOSABLE_REF,
+      [DISPOSABLE_PG_MIGRATION_AUTHORIZED_ENV]: "true",
+      [DISPOSABLE_PG_TEST_URL_ENV]: localUrl,
+      [DISPOSABLE_PG_HYBRID_LOCAL_AUTHORIZED_ENV]: "true",
+    });
+    expect(result.ok).toBe(false);
+  });
+
   it("does not allow disposable local exception under production class", () => {
     const localUrl = "postgresql://postgres:pw@127.0.0.1:5432/abraxas_sovereign_disposable";
     const result = validatePassportHybridPostgresBinding({
