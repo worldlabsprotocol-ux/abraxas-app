@@ -60,6 +60,92 @@ describe("institutional presentation observability", () => {
     expect(blob).not.toMatch(/date_of_birth|legal_name|passport|wallet_address/);
   });
 
+  it("scopes velocity to application attribution and keeps verification unavailable without verify events", () => {
+    const created = "2026-01-01T00:00:00.000Z";
+    const metricsWithApp = computeIntegrationVelocity({
+      application: {
+        id: "app_a",
+        partner_id: "institutional-rp-example",
+        created_at: created,
+        production_activated_at: null,
+      } as import("@/lib/partner/launchpad/types").LaunchpadApplicationRow,
+      events: [
+        {
+          event_id: "ie_attributed",
+          partner_id: "institutional-rp-example",
+          application_id: "app_a",
+          environment: "sandbox",
+          event_type: "holder_flow_completed",
+          lifecycle_stage: "holder",
+          outcome: "completed",
+          partner_safe_reason: null,
+          request_id: "req_attributed",
+          receipt_id: null,
+          policy_id: "institutional-age-21-v1",
+          policy_version: 1,
+          correlation_id: "cred:attributed",
+          handoff_ref: null,
+          latency_ms: null,
+          metadata: {},
+          created_at: "2026-01-02T00:00:00.000Z",
+        },
+        {
+          event_id: "ie_other_app",
+          partner_id: "institutional-rp-example",
+          application_id: "app_other",
+          environment: "sandbox",
+          event_type: "holder_flow_completed",
+          lifecycle_stage: "holder",
+          outcome: "completed",
+          partner_safe_reason: null,
+          request_id: "req_other_app",
+          receipt_id: null,
+          policy_id: "institutional-age-21-v1",
+          policy_version: 1,
+          correlation_id: "cred:other",
+          handoff_ref: null,
+          latency_ms: null,
+          metadata: {},
+          created_at: "2026-01-02T01:00:00.000Z",
+        },
+      ],
+      activity: [],
+    });
+    expect(metricsWithApp.application_created_to_first_holder_consent.quality).toBe("measured");
+
+    const metricsMissingApp = computeIntegrationVelocity({
+      application: {
+        id: "app_a",
+        partner_id: "institutional-rp-example",
+        created_at: created,
+        production_activated_at: null,
+      } as import("@/lib/partner/launchpad/types").LaunchpadApplicationRow,
+      events: [
+        {
+          event_id: "ie_unattributed",
+          partner_id: "institutional-rp-example",
+          application_id: null,
+          environment: "sandbox",
+          event_type: "holder_flow_completed",
+          lifecycle_stage: "holder",
+          outcome: "completed",
+          partner_safe_reason: null,
+          request_id: "req_unattributed",
+          receipt_id: null,
+          policy_id: "institutional-age-21-v1",
+          policy_version: 1,
+          correlation_id: "cred:unattributed",
+          handoff_ref: null,
+          latency_ms: null,
+          metadata: {},
+          created_at: "2026-01-02T00:00:00.000Z",
+        },
+      ],
+      activity: [],
+    });
+    expect(metricsMissingApp.application_created_to_first_holder_consent.quality).toBe("unavailable");
+  });
+
   it("isolates tenant bindings for velocity metrics", () => {
     const created = "2026-01-01T00:00:00.000Z";
     const metrics = computeIntegrationVelocity({

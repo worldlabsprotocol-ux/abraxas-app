@@ -9,9 +9,11 @@ import type {
   PartnerSafeFailureCode,
 } from "./contract";
 import { sanitizeIntegrationEventMetadata } from "./sanitize";
+import { buildDeterministicIntegrationEventId } from "./deterministicEventId";
 
 const TABLE = "partner_integration_events";
 const memory: IntegrationEventRow[] = [];
+const memoryOnceEventIds = new Set<string>();
 
 export interface IntegrationEventInput {
   partnerId: string;
@@ -57,6 +59,7 @@ function skipDurable(): boolean {
 
 export function resetIntegrationEventsForTests(): void {
   memory.length = 0;
+  memoryOnceEventIds.clear();
 }
 
 export function listIntegrationEventsForTests(): IntegrationEventRow[] {
@@ -67,11 +70,16 @@ function opaqueEventId(seed: string): string {
   return `ie_${createHash("sha256").update(seed).digest("hex").slice(0, 16)}`;
 }
 
-export function buildIntegrationEventRow(input: IntegrationEventInput): IntegrationEventRow {
+export function buildIntegrationEventRow(
+  input: IntegrationEventInput,
+  options?: { idempotencyKey?: boolean },
+): IntegrationEventRow {
   const now = new Date().toISOString();
-  const seed = `${input.partnerId}:${input.eventType}:${now}:${randomBytes(8).toString("hex")}`;
+  const eventId = options?.idempotencyKey
+    ? buildDeterministicIntegrationEventId(input)
+    : opaqueEventId(`${input.partnerId}:${input.eventType}:${now}:${randomBytes(8).toString("hex")}`);
   return {
-    event_id: opaqueEventId(seed),
+    event_id: eventId,
     created_at: now,
     partner_id: input.partnerId,
     application_id: input.applicationId ?? null,
@@ -135,36 +143,65 @@ export async function recordIntegrationEventBestEffort(input: IntegrationEventIn
   }
 }
 
-function integrationEventDedupeKey(input: IntegrationEventInput): string {
-  return [
-    input.partnerId,
-    input.eventType,
-    input.requestId ?? "",
-    input.receiptId ?? "",
-    input.correlationId ?? "",
-    input.applicationId ?? "",
-  ].join("|");
+function isUniqueViolation(error: { code?: string | null; message?: string }): boolean {
+  if (error.code === "23505") return true;
+  const msg = `${error.message ?? ""}`.toLowerCase();
+  return msg.includes("duplicate") || msg.includes("unique");
 }
 
-function hasRecordedIntegrationEvent(input: IntegrationEventInput): boolean {
-  const key = integrationEventDedupeKey(input);
-  return memory.some((row) => integrationEventDedupeKey({
-    partnerId: row.partner_id,
-    eventType: row.event_type,
-    requestId: row.request_id,
-    receiptId: row.receipt_id,
-    correlationId: row.correlation_id,
-    applicationId: row.application_id,
-    environment: row.environment,
-    lifecycleStage: row.lifecycle_stage,
-  }) === key);
+function rememberIntegrationEventRow(row: IntegrationEventRow): void {
+  memory.unshift(row);
+  if (memory.length > 500) memory.length = 500;
 }
 
-/** Records at most one lifecycle event per partner, type, request, receipt, and correlation binding. */
+async function persistIntegrationEventRow(row: IntegrationEventRow): Promise<"inserted" | "duplicate" | "skipped"> {
+  if (skipDurable()) return "inserted";
+  try {
+    const sb = requireSupabaseAdmin();
+    const { error } = await sb.from(TABLE).insert({
+      event_id: row.event_id,
+      partner_id: row.partner_id,
+      application_id: row.application_id,
+      environment: row.environment,
+      event_type: row.event_type,
+      lifecycle_stage: row.lifecycle_stage,
+      outcome: row.outcome,
+      partner_safe_reason: row.partner_safe_reason,
+      request_id: row.request_id,
+      receipt_id: row.receipt_id,
+      policy_id: row.policy_id,
+      policy_version: row.policy_version,
+      correlation_id: row.correlation_id,
+      handoff_ref: row.handoff_ref,
+      latency_ms: row.latency_ms,
+      metadata: row.metadata,
+    });
+    if (error) {
+      if (isUniqueViolation(error)) return "duplicate";
+      const msg = `${error.message} ${error.code ?? ""}`.toLowerCase();
+      if (msg.includes("does not exist") || msg.includes("schema")) return "skipped";
+      return "skipped";
+    }
+    return "inserted";
+  } catch {
+    return "skipped";
+  }
+}
+
+/** Records at most one lifecycle event per tenant/environment/type/request/receipt/authorization binding. */
 export async function recordIntegrationEventOnce(input: IntegrationEventInput): Promise<boolean> {
-  if (hasRecordedIntegrationEvent(input)) {
+  const row = buildIntegrationEventRow(input, { idempotencyKey: true });
+  if (memoryOnceEventIds.has(row.event_id) || memory.some((existing) => existing.event_id === row.event_id)) {
     return false;
   }
-  await recordIntegrationEventBestEffort(input);
+  memoryOnceEventIds.add(row.event_id);
+
+  const outcome = await persistIntegrationEventRow(row);
+  if (outcome === "duplicate") {
+    memoryOnceEventIds.delete(row.event_id);
+    return false;
+  }
+
+  rememberIntegrationEventRow(row);
   return true;
 }

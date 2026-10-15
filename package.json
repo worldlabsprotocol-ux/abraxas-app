@@ -119,7 +119,7 @@
     "build-581:migration-rehearsal": "tsx scripts/build-581/run-migration-rehearsal.ts",
     "build-581:reconciliation-inventory": "tsx scripts/build-581/run-reconciliation-inventory.ts",
     "build-581:controlled-migration": "tsx scripts/build-581/run-controlled-migration.ts",
-    "test:production-activation-582": "vitest run --no-file-parallelism lib/passport/build582.disposableTrustProofGuard.test.ts lib/passport/build582.productionActivationBoundary.test.ts lib/passport/build582.institutionalTrustProof.test.ts lib/partner/build582.institutionalPartnerSandboxJourney.test.ts lib/passport/reusableCredential/institutionalPresentationObservability.test.ts lib/partner/integrationStudio/policyFit/policyFit.test.ts && npm run -s test:production-migration-581",
+    "test:production-activation-582": "vitest run --no-file-parallelism lib/passport/build582.disposableTrustProofGuard.test.ts lib/passport/build582.productionActivationBoundary.test.ts lib/passport/build582.institutionalTrustProof.test.ts lib/partner/build582.institutionalPartnerSandboxJourney.test.ts lib/passport/reusableCredential/institutionalPresentationObservability.test.ts lib/passport/reusableCredential/resolveInstitutionalIntegrationApplication.test.ts lib/partner/integrationObservability/recordOnce.test.ts lib/partner/integrationStudio/policyFit/policyFit.test.ts && npm run -s test:production-migration-581",
     "build-582:institutional-trust-proof": "tsx scripts/build-582/run-institutional-trust-proof.ts",
     "build-582:production-activation-boundary": "tsx scripts/build-582/production-activation-boundary-report.ts"
   },

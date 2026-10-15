@@ -37,7 +37,7 @@ export function computeIntegrationVelocity(input: {
 }): Record<string, DurationMetric> {
   const tenantEvents = input.events.filter((event) => {
     if (event.partner_id !== input.application.partner_id) return false;
-    if (event.application_id && event.application_id !== input.application.id) return false;
+    if (!event.application_id || event.application_id !== input.application.id) return false;
     return true;
   });
   const created = new Date(input.application.created_at).getTime();

@@ -36,6 +36,7 @@ import {
   recordInstitutionalConsentConsumedTelemetry,
   recordInstitutionalReceiptIssuedTelemetry,
 } from "./institutionalPresentationObservability";
+import { resolveInstitutionalIntegrationApplicationId } from "./resolveInstitutionalIntegrationApplication";
 
 export const PASSPORT_AUTH_INJECT_FAIL_AFTER_RESOURCE_COMMIT_ENV =
   "ABRAXAS_PASSPORT_AUTH_INJECT_FAIL_AFTER_RESOURCE_COMMIT";
@@ -138,7 +139,7 @@ async function emitInstitutionalReceiptIssuedTelemetry(input: {
   idempotencyKey: string;
   receiptId: string;
   idempotentRecovery: boolean;
-  applicationId?: string | null;
+  applicationId: string | null;
 }) {
   await recordInstitutionalReceiptIssuedTelemetry({
     partnerId: input.binding.partnerId,
@@ -150,7 +151,7 @@ async function emitInstitutionalReceiptIssuedTelemetry(input: {
     consentId: input.binding.consentId,
     authorizationIdempotencyKey: input.idempotencyKey,
     idempotentRecovery: input.idempotentRecovery,
-    applicationId: input.applicationId ?? null,
+    applicationId: input.applicationId,
   });
 }
 
@@ -297,6 +298,7 @@ async function completeCanonicalSigning(input: {
   challenge: PassportPossessionChallengePayload;
   holderPossessionProof: HolderPossessionProof;
   consentId: string;
+  applicationId: string | null;
   env: Record<string, string | undefined>;
 }) {
   if (input.env[PASSPORT_AUTH_INJECT_FAIL_AFTER_RESOURCE_COMMIT_ENV] === "1") {
@@ -387,6 +389,7 @@ async function completeCanonicalSigning(input: {
     idempotencyKey: input.idempotencyKey,
     receiptId: authorized.receipt.id,
     idempotentRecovery: false,
+    applicationId: input.applicationId,
   });
 
   const stored = await loadInstitutionalAuthorizationCommitDirect(input.idempotencyKey);
@@ -412,7 +415,6 @@ export async function authorizeIssuerBackedPresentation(input: {
   challenge: PassportPossessionChallengePayload;
   holderPossessionProof: HolderPossessionProof;
   receiptSigningKey: ReceiptSigningKeyPair;
-  applicationId?: string | null;
   env?: Record<string, string | undefined>;
 }) {
   const env = input.env ?? (process.env as Record<string, string | undefined>);
@@ -471,6 +473,14 @@ export async function authorizeIssuerBackedPresentation(input: {
     return validated;
   }
 
+  const presentationEnvironment = institutionalPresentationEnvironment(validated.context.policyEntry);
+  const integrationApplicationId = await resolveInstitutionalIntegrationApplicationId({
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    environment: presentationEnvironment,
+    requestId: input.requestId,
+  });
+
   if (pendingCommit) {
     if (!authorizationCommitBindingMatches(pendingCommit, binding)) {
       return { ok: false as const, code: "authorization_context_mismatch", httpStatus: 403 };
@@ -484,6 +494,7 @@ export async function authorizeIssuerBackedPresentation(input: {
       challenge: input.challenge,
       holderPossessionProof: input.holderPossessionProof,
       consentId: input.consentId,
+      applicationId: integrationApplicationId,
       env,
     });
   }
@@ -510,11 +521,11 @@ export async function authorizeIssuerBackedPresentation(input: {
       partnerId: input.partnerId,
       policyId: input.policyId,
       policyVersion: validated.context.policyEntry.policy_version,
-      environment: institutionalPresentationEnvironment(validated.context.policyEntry),
+      environment: presentationEnvironment,
       requestId: input.requestId,
       consentId: input.consentId,
       authorizationIdempotencyKey: idempotencyKey,
-      applicationId: input.applicationId ?? null,
+      applicationId: integrationApplicationId,
     });
   }
 
@@ -540,6 +551,7 @@ export async function authorizeIssuerBackedPresentation(input: {
     challenge: input.challenge,
     holderPossessionProof: input.holderPossessionProof,
     consentId: input.consentId,
+    applicationId: integrationApplicationId,
     env,
   });
 }
