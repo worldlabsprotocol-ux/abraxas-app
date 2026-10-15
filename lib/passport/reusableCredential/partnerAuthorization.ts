@@ -27,7 +27,9 @@ import type { SignedPassportReusableCredential } from "./contract";
 import {
   type HolderPossessionProof,
   type PassportPossessionChallengePayload,
+  type PassportPossessionChallengeStore,
   verifyPassportPossessionProof,
+  verifyPassportPossessionProofAsync,
 } from "./holderPossessionChallenge";
 import { verifyPassportReusableCredentialStrict } from "./verify";
 
@@ -45,6 +47,11 @@ export type PartnerAuthorizationFromCredentialInput = {
   checkpointStore: PortableRevocationCheckpointStore;
   bootstrapTrusts?: PortableRevocationBootstrapTrust[];
   consumptionStore?: ReceiptConsumptionStore;
+  challengeStore?: PassportPossessionChallengeStore;
+  durablePossessionConsume?: (
+    challengeId: string,
+    at: string,
+  ) => Promise<{ ok: true } | { ok: false; code: "unknown" | "expired" | "replay" }>;
   now?: Date;
   env?: Record<string, string | undefined>;
 };
@@ -87,15 +94,28 @@ export async function authorizePartnerFromReusableCredential(
     input.bootstrapTrusts
     ?? [bootstrapTrustFromArtifact({ artifact: input.portableRevocationSnapshot })];
 
-  const possession = verifyPassportPossessionProof({
-    credentialId: input.credential.payload.credential_id,
-    partnerId: input.partnerId,
-    policyId: input.policyId,
-    credentialHolderPublicKey: input.credential.payload.holder_possession_public_key,
-    challenge: input.possessionChallenge,
-    proof: input.holderPossessionProof,
-    now,
-  });
+  const possession = input.durablePossessionConsume
+    ? await verifyPassportPossessionProofAsync({
+        credentialId: input.credential.payload.credential_id,
+        partnerId: input.partnerId,
+        policyId: input.policyId,
+        credentialHolderPublicKey: input.credential.payload.holder_possession_public_key,
+        challenge: input.possessionChallenge,
+        proof: input.holderPossessionProof,
+        now,
+        store: input.challengeStore,
+        durableConsume: input.durablePossessionConsume,
+      })
+    : verifyPassportPossessionProof({
+        credentialId: input.credential.payload.credential_id,
+        partnerId: input.partnerId,
+        policyId: input.policyId,
+        credentialHolderPublicKey: input.credential.payload.holder_possession_public_key,
+        challenge: input.possessionChallenge,
+        proof: input.holderPossessionProof,
+        now,
+        store: input.challengeStore,
+      });
   if (!possession.ok) {
     return { ok: false, code: possession.code };
   }

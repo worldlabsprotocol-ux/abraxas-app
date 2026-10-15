@@ -13,3 +13,6 @@ export * from "./authenticatedClaims";
 export * from "./credentialIssuerRegistry";
 export * from "./holderPossessionChallenge";
 export * from "./credentialRevocationStrict";
+export * from "./passportCredentialSigning";
+export * from "./storageGate";
+export * from "./sovereignIssuance";

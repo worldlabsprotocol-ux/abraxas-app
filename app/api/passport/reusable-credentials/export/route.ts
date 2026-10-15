@@ -7,6 +7,8 @@ import {
   build566SyntheticReusableCredential,
   isPassportReusableCredentialDemoAllowed,
 } from "@/lib/passport/reusableCredential";
+import { resolveHolderReusableCredential } from "@/lib/passport/reusableCredential/resolveStoredCredential";
+import { isPassportReusableCredentialStorageEnabled } from "@/lib/passport/reusableCredential/storageGate";
 
 export async function POST(req: NextRequest) {
   const csrf = portableTrustCsrfRejected(req);
@@ -20,17 +22,35 @@ export async function POST(req: NextRequest) {
       { status: session.error === "forbidden" ? 403 : 401 },
     );
   }
-  if (!isPassportReusableCredentialDemoAllowed()) {
-    return NextResponse.json(
-      { error: "reusable_credential_export_disabled_in_production" },
-      { status: 403 },
-    );
-  }
+
   let body: { credential_id?: string };
   try {
     body = (await req.json()) as { credential_id?: string };
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  if (isPassportReusableCredentialStorageEnabled()) {
+    const stored = await resolveHolderReusableCredential({
+      holderSubjectId: session.subjectId,
+      credentialId: body.credential_id,
+    });
+    if (stored) {
+      return NextResponse.json({
+        issuer_backed: true,
+        synthetic_demo: false,
+        not_account_recovery: true,
+        credential: stored,
+        custody_note: "Credential export is not Passport account recovery and does not include identity documents.",
+      });
+    }
+  }
+
+  if (!isPassportReusableCredentialDemoAllowed()) {
+    return NextResponse.json(
+      { error: "reusable_credential_export_disabled_in_production" },
+      { status: 403 },
+    );
   }
   const credential = build566SyntheticReusableCredential({
     holderSubjectId: session.subjectId,

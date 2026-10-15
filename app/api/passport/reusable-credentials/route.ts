@@ -7,6 +7,8 @@ import {
   isPassportReusableCredentialDemoAllowed,
   summarizeReusableCredential,
 } from "@/lib/passport/reusableCredential";
+import { listIssuerBackedReusableCredentials } from "@/lib/passport/reusableCredential/resolveStoredCredential";
+import { isPassportReusableCredentialStorageEnabled } from "@/lib/passport/reusableCredential/storageGate";
 
 export async function GET(req: NextRequest) {
   const session = await resolveAuthenticatedHolderSession(req);
@@ -16,10 +18,26 @@ export async function GET(req: NextRequest) {
       { status: session.error === "forbidden" ? 403 : 401 },
     );
   }
+
+  const storageEnabled = isPassportReusableCredentialStorageEnabled();
+  if (storageEnabled) {
+    const stored = await listIssuerBackedReusableCredentials(session.subjectId);
+    if (stored.length) {
+      return NextResponse.json({
+        build: 567,
+        sandbox_only: process.env.NODE_ENV !== "production",
+        issuer_backed: true,
+        credentials: stored.map((cred) =>
+          summarizeReusableCredential(cred, { sandboxLabeled: cred.payload.provenance.idv_method === "sandbox_fixture" }),
+        ),
+      });
+    }
+  }
+
   if (!isPassportReusableCredentialDemoAllowed()) {
     return NextResponse.json({
       credentials: [],
-      build: 566,
+      build: 567,
       sandbox_only: true,
       note: "Reusable Passport credentials are not listed in production until issuer-backed storage is enabled for this environment.",
     });

@@ -199,6 +199,19 @@ export async function commitSovereignCredentialIssuanceDirect(
     if ("duplicate" in result) {
       return { ok: false, code: "credential_already_active" };
     }
+    try {
+      const { tryIssuePassportReusableCredentialOnClient } = await import(
+        "./passportReusableCredentialIssuanceHook"
+      );
+      await withAbraxasPgTransaction(async (client) =>
+        tryIssuePassportReusableCredentialOnClient(client, {
+          subjectKey: input.subjectKey,
+          eventSource: input.eventSource,
+        }),
+      );
+    } catch {
+      // Reusable credential issuance is best-effort and must not roll back sovereign IDV.
+    }
     return { ok: true, claimCount: result.claimCount };
   } catch (error) {
     if (error instanceof ClaimsDirectPersistError) {
