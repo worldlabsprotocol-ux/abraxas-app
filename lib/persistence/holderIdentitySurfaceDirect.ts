@@ -54,12 +54,27 @@ export async function loadHolderIdentitySurfaceForSession(
   let identityLookupUnavailable = false;
 
   try {
+    let suiLegacyLink: string | null = null;
+    let subjectLegacyLink: string | null = null;
+
     if (session.suiAddress) {
-      legacyLink = await resolveLegacySubjectIdDirect(LEGACY_KIND_SUI_ADDRESS, session.suiAddress.toLowerCase());
+      suiLegacyLink = await resolveLegacySubjectIdDirect(
+        LEGACY_KIND_SUI_ADDRESS,
+        session.suiAddress.toLowerCase(),
+      );
     }
 
-    if (!legacyLink && !isChainNeutralHolderSubjectId(sessionSubjectId)) {
-      legacyLink = await resolveLegacySubjectIdDirect(LEGACY_KIND_SUI_ADDRESS, sessionSubjectId.toLowerCase());
+    if (!isChainNeutralHolderSubjectId(sessionSubjectId)) {
+      subjectLegacyLink = await resolveLegacySubjectIdDirect(
+        LEGACY_KIND_SUI_ADDRESS,
+        sessionSubjectId.toLowerCase(),
+      );
+    }
+
+    legacyLink = suiLegacyLink ?? subjectLegacyLink;
+
+    if (suiLegacyLink && subjectLegacyLink && suiLegacyLink !== subjectLegacyLink) {
+      ambiguous = true;
     }
   } catch {
     identityLookupUnavailable = true;
@@ -77,15 +92,6 @@ export async function loadHolderIdentitySurfaceForSession(
     } else {
       idvCount = idvLookup.count;
       idvApprovedCount = idvLookup.approvedCount;
-    }
-  }
-
-  if (!identityLookupUnavailable && session.suiAddress) {
-    try {
-      const alt = await resolveLegacySubjectIdDirect(LEGACY_KIND_SUI_ADDRESS, session.suiAddress.toLowerCase());
-      if (alt && legacyLink && alt !== legacyLink) ambiguous = true;
-    } catch {
-      identityLookupUnavailable = true;
     }
   }
 
