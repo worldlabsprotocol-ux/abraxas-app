@@ -14,6 +14,9 @@ export function InstitutionalHomeClose() {
       </h2>
       <p className="abx-home-close__body">{V2_CLOSE_BODY}</p>
       <div className="abx-home-close__actions">
+        <Btn href="/passport" variant="primary" size="md">
+          Open Passport
+        </Btn>
         <Btn href="/docs" variant="secondary" size="md">
           Developer documentation
         </Btn>

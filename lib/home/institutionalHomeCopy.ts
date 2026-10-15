@@ -3,10 +3,10 @@
 export const INSTITUTIONAL_HOME_EYEBROW = "Independent trust & eligibility infrastructure";
 
 export const INSTITUTIONAL_HOME_TITLE =
-  "Policy-specific authorization without shared identity databases";
+  "Holder-controlled trust and verification protocol";
 
 export const INSTITUTIONAL_HOME_LEAD =
-  "Applications request narrow eligibility decisions. Holders approve what to share. Abraxas returns signed receipts partners can verify independently, not underlying identity files.";
+  "Passport connects proof-first presentations and portable revocation to real holder workflows. Partners receive evidence-backed policy answers—not biometrics, documents, or Abraxas identity database access at authorization time.";
 
 export const INSTITUTIONAL_HOME_DEFINITION = {
   what:
@@ -36,7 +36,7 @@ export const INSTITUTIONAL_TRUST_BOUNDARIES = [
   {
     id: "revocation",
     title: "Revocation & freshness",
-    body: "Receipt validity respects expiration, issuer suspension, and revocation signals, including on-chain commitments where configured.",
+    body: "Receipt validity respects expiration, issuer suspension, and authenticated portable revocation snapshots where configured—fail-closed when feeds are stale or untrusted.",
   },
 ] as const;
 

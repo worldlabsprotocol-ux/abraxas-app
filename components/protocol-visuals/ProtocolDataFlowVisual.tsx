@@ -6,10 +6,10 @@ export function ProtocolDataFlowVisual() {
   return (
     <ProtocolVisualShell
       id="how-abraxas-works"
-      kicker="01 System"
-      title="Secure verification"
-      titleAccent="flow"
-      caption="Private evidence stays in your boundary. Abraxas returns scoped signed results — not raw identity fields."
+      kicker="Protocol flow"
+      title="Passport to"
+      titleAccent="partner verify"
+      caption="Holder evidence stays in the protected domain. Passport composes policy-scoped presentations; partners verify signed receipts and authenticated revocation locally."
       className="abx-pv-shell--exhibit abx-pv-shell--open"
     >
       <ProtocolDiagramFigure
