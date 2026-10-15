@@ -25,6 +25,7 @@ export const SOVEREIGN_RUNTIME_SCHEMA_MANIFEST = [
   "140_passport_reusable_credential_state.sql",
   "141_passport_institutional_presentation_consent.sql",
   "142_passport_institutional_authorization_commits.sql",
+  "143_passport_authorization_signing_claim.sql",
 ] as const;
 
 export type SovereignRuntimeMigration = (typeof SOVEREIGN_RUNTIME_SCHEMA_MANIFEST)[number];

@@ -54,6 +54,7 @@ export type PartnerAuthorizationFromCredentialInput = {
   consentReceiptId?: string | null;
   /** Possession challenge and signature were verified and consumed in a prior atomic commit. */
   possessionAlreadyCommitted?: boolean;
+  deterministicReceiptIds?: { receiptId: string; decisionId: string };
   now?: Date;
   env?: Record<string, string | undefined>;
 };
@@ -163,7 +164,7 @@ export async function authorizePartnerFromReusableCredential(
   }
 
   const store = input.consumptionStore ?? new InMemoryReceiptConsumptionStore();
-  const receiptId = `dr_${randomBytes(10).toString("base64url")}`;
+  const receiptId = input.deterministicReceiptIds?.receiptId ?? `dr_${randomBytes(10).toString("base64url")}`;
   const consumptionAttempt = await store.tryRecordConsumption({
     receiptId,
     requestId: input.requestId,
@@ -178,7 +179,7 @@ export async function authorizePartnerFromReusableCredential(
     return { ok: false, code: "rp_consumption_unavailable" };
   }
 
-  const decisionId = randomBytes(16).toString("hex");
+  const decisionId = input.deterministicReceiptIds?.decisionId ?? randomBytes(16).toString("hex");
   const evaluatedRefs = toEvaluatedClaimRefs(materialized.claims);
   const payload = buildCanonicalPayload({
     receipt_id: receiptId,

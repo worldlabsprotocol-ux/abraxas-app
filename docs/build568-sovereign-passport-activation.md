@@ -32,7 +32,9 @@
 - Revocation trust uses issuer registry bindings, env-configured bootstrap trust, and durable checkpoints. Request-supplied snapshots are not trusted for bootstrap.
 - `POST /api/passport/reusable-credentials/status` retry backfill requires CSRF same-origin headers.
 - Institutional authorization consumes consent and possession challenges atomically in Postgres, then signs receipts. Repeat the same `request_id` to recover if signing was deferred.
+- Canonical authorization finalization (migration 143): one signed receipt per committed request via signing claim plus compare-and-set on `receipt_json`. Recovery verifies holder, credential, partner, policy, consent, challenge, and request identifiers before returning a stored receipt.
 - Issuer-backed presentation requires configured `ABRAXAS_SIGNING_KEY` (no synthetic receipt key fallback).
+- Sovereign Postgres concurrency tests: `build568.authorizationConcurrency.test.ts` and `build568.issuerBackedPresentation.test.ts` (require `ABRAXAS_SOVEREIGN_PG_URL` or `ABRAXAS_DATABASE_URL`).
 
 ## Migration 140 activation readiness
 

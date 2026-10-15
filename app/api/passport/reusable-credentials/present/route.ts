@@ -124,8 +124,16 @@ export async function POST(req: NextRequest) {
       });
 
       if (!result.ok) {
+        const pending =
+          result.code === "authorization_outcome_pending"
+          || result.code === "authorization_signing_deferred";
         return NextResponse.json(
-          { error: result.code, issuer_backed: true, note: "note" in result ? result.note : undefined },
+          {
+            error: result.code,
+            issuer_backed: true,
+            authorization_pending: pending,
+            note: "note" in result ? result.note : undefined,
+          },
           { status: result.httpStatus },
         );
       }
@@ -134,6 +142,7 @@ export async function POST(req: NextRequest) {
         issuer_backed: true,
         synthetic_demo: credential.payload.provenance.idv_method === "sandbox_fixture",
         idv_repeated: false,
+        idempotent_recovery: "idempotent_recovery" in result ? result.idempotent_recovery : false,
         disclosure: result.disclosure,
         partner_authorization: {
           receipt_id: result.authorized.receipt.id,
