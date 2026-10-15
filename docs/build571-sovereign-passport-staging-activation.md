@@ -73,7 +73,9 @@ Produced inside vitest and CLI subprocess tests. Institution A and B use separat
 
 ## Product defects corrected in Build #571 scope
 
-None beyond Build #570 corrections already on main. This build adds readiness audit tooling and design partner acceptance documentation.
+- **Migration 140–143 readiness probe:** schema check now expects `linked_credential_jti` on `passport_reusable_credentials` (matches migration 140 and direct stores). Previously `credential_jti` caused false `migration_column_missing` on correctly migrated disposable databases.
+
+See `docs/build571-design-partner-acceptance.md` for the institutional handoff.
 
 ## Remaining operational dependencies for founder staging
 
