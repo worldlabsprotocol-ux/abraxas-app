@@ -44,12 +44,12 @@ export async function resolvePresentationPartnerPolicy(input: {
   const entry = await resolveInstitutionalPartnerCatalogEntry({
     partnerId: input.partnerId,
     policyId: input.policyId,
-    includeSandboxFixtures: isSandboxCredential || isPassportInstitutionalSandboxFixturesEnabled(env),
+    includeSandboxFixtures: isSandboxCredential,
   });
   if (!entry) {
     return { ok: false, code: "unknown_partner_or_policy" };
   }
-  if (entry.sandbox_labeled && !isSandboxCredential && !isPassportInstitutionalSandboxFixturesEnabled(env)) {
+  if (entry.sandbox_labeled && !isSandboxCredential) {
     return { ok: false, code: "policy_inactive" };
   }
   if (!isSandboxCredential && entry.policy_rules.sandbox_only) {

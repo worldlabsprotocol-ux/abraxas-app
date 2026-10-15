@@ -5,9 +5,6 @@ import { InMemoryPortableRevocationCheckpointStore, bootstrapTrustFromArtifact }
 import { portableTrustCsrfRejected } from "@/lib/passport/portableTrust/csrf";
 import { resolveAuthenticatedHolderSession } from "@/lib/passport/portableTrust/resolveHolderSession";
 import {
-  consumePassportPossessionChallengeDirect,
-} from "@/lib/persistence/postgresPassportPossessionChallengeStore";
-import {
   BUILD_566_POLICY_RULES,
   authorizePartnerFromReusableCredential,
   build566RevocationSnapshotForCredential,
@@ -27,9 +24,9 @@ import { BUILD_566_RECEIPT_SIGNING_KEY } from "@/lib/passport/reusableCredential
 import { BUILD_546_FIXTURE_NOW } from "@/lib/institutionalCertification/build546/fixtures";
 import { resolveHolderReusableCredential } from "@/lib/passport/reusableCredential/resolveStoredCredential";
 import { isPassportReusableCredentialStorageEnabled } from "@/lib/passport/reusableCredential/storageGate";
-import { loadReceiptSigningKey } from "@/lib/decisionReceipts/signing";
 import { authorizeIssuerBackedPresentation } from "@/lib/passport/reusableCredential/issuerBackedPresentationOrchestration";
 import { resolvePresentationPartnerPolicy } from "@/lib/passport/reusableCredential/institutionalPresentationPolicy";
+import { requireIssuerBackedReceiptSigningKey } from "@/lib/passport/reusableCredential/issuerBackedReceiptSigning";
 
 export async function POST(req: NextRequest) {
   const csrf = portableTrustCsrfRejected(req);
@@ -105,8 +102,14 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const receiptKey = loadReceiptSigningKey() ?? BUILD_566_RECEIPT_SIGNING_KEY;
-      const requestId = body.request_id ?? `req_present_${Date.now()}`;
+      const receiptKey = requireIssuerBackedReceiptSigningKey();
+      if (!receiptKey.ok) {
+        return NextResponse.json(
+          { error: receiptKey.code, issuer_backed: true },
+          { status: 503 },
+        );
+      }
+      const requestId = body.request_id?.trim() || `req_present_${Date.now()}`;
 
       const result = await authorizeIssuerBackedPresentation({
         credential,
@@ -117,15 +120,7 @@ export async function POST(req: NextRequest) {
         requestId,
         challenge: body.challenge,
         holderPossessionProof: body.holder_possession_proof,
-        receiptSigningKey: receiptKey,
-        durablePossessionConsume: async (challengeId, at) =>
-          consumePassportPossessionChallengeDirect({
-            challengeId,
-            credentialId: credential.payload.credential_id,
-            partnerId: body.partner_id!,
-            policyId: body.policy_id!,
-            at,
-          }),
+        receiptSigningKey: receiptKey.key,
       });
 
       if (!result.ok) {

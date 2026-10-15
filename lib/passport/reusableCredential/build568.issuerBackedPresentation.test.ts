@@ -50,7 +50,8 @@ import { authorizeIssuerBackedPresentation } from "./issuerBackedPresentationOrc
 import { seedBuild568InstitutionalPartnerPoliciesForTests, BUILD_568_PARTNER_B_POLICY_ID } from "./testInstitutionalPolicySeed";
 import { resolveInstitutionalPartnerCatalogEntry } from "./institutionalPartnerCatalog";
 import { insertPassportPossessionChallengeDirect } from "@/lib/persistence/postgresPassportPossessionChallengeStore";
-import { consumePassportPossessionChallengeDirect } from "@/lib/persistence/postgresPassportPossessionChallengeStore";
+import { validateInstitutionalPresentationConsentDirect } from "@/lib/persistence/passportInstitutionalConsentDirect";
+import { PASSPORT_AUTH_INJECT_FAIL_AFTER_RESOURCE_COMMIT_ENV } from "./issuerBackedPresentationOrchestration";
 
 const PG_URL = process.env.ABRAXAS_SOVEREIGN_PG_URL?.trim()
   || process.env.MIGRATION_136_PG_URL?.trim()
@@ -92,6 +93,7 @@ describe("Build #568 issuer-backed presentation (disposable PG)", () => {
     process.env[PASSPORT_CREDENTIAL_SIGNING_KEY_ENV] = JSON.stringify(CREDENTIAL_KEY.privateKeyJwk);
     process.env[PASSPORT_CREDENTIAL_SIGNING_KEY_ID_ENV] = CREDENTIAL_KEY.signingKeyId;
     process.env[PORTABLE_REVOCATION_CHECKPOINT_MEMORY_TEST_ENV] = "1";
+    process.env.ABRAXAS_SIGNING_KEY = JSON.stringify(BUILD_546_PRIMARY_KEY.privateKeyJwk);
     Object.assign(process.env, build546TrustRegistryEnv());
     const registryEntry = credentialIssuerRegistryFromKeyPair({
       issuerId: CLAIM_ISSUERS.abraxas,
@@ -102,6 +104,7 @@ describe("Build #568 issuer-backed presentation (disposable PG)", () => {
     process.env[PASSPORT_CREDENTIAL_ISSUER_REGISTRY_ENV] = JSON.stringify([registryEntry]);
     resetAbraxasPgPoolForTests();
     resetPersistenceClientForTests();
+    await queryAbraxasPg("delete from public.passport_institutional_authorization_commits");
     await queryAbraxasPg("delete from public.passport_institutional_presentation_consents");
     await queryAbraxasPg("delete from public.passport_reusable_credentials");
     await queryAbraxasPg("delete from public.passport_possession_challenges");
@@ -225,14 +228,6 @@ describe("Build #568 issuer-backed presentation (disposable PG)", () => {
         challenge,
         holderPossessionProof: proof,
         receiptSigningKey: BUILD_546_PRIMARY_KEY,
-        durablePossessionConsume: (challengeId, at) =>
-          consumePassportPossessionChallengeDirect({
-            challengeId,
-            credentialId: credential.payload.credential_id,
-            partnerId,
-            policyId,
-            at,
-          }),
       });
     }
 
@@ -299,16 +294,131 @@ describe("Build #568 issuer-backed presentation (disposable PG)", () => {
       challenge,
       holderPossessionProof: proof,
       receiptSigningKey: BUILD_546_PRIMARY_KEY,
-      durablePossessionConsume: (challengeId, at) =>
-        consumePassportPossessionChallengeDirect({
-          challengeId,
-          credentialId: credential.payload.credential_id,
-          partnerId: BUILD_566_PARTNER_A,
-          policyId: BUILD_566_POLICY_ID,
-          at,
-        }),
     });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.code).toBe("consent_binding_mismatch");
+  });
+
+  it("does not consume consent when possession signature is invalid", async () => {
+    const { holder, credential } = await holderWithCredential();
+    const entry = await resolveInstitutionalPartnerCatalogEntry({
+      partnerId: BUILD_566_PARTNER_A,
+      policyId: BUILD_566_POLICY_ID,
+    });
+    if (!entry) throw new Error("entry");
+    const consentId = await consentFor({
+      holder,
+      credentialId: credential.payload.credential_id,
+      partnerId: BUILD_566_PARTNER_A,
+      policyId: BUILD_566_POLICY_ID,
+      policyVersion: entry.policy_version,
+      requestedAttribute: entry.requested_attribute,
+    });
+    const challenge = issuePassportPossessionChallenge({
+      credentialId: credential.payload.credential_id,
+      partnerId: BUILD_566_PARTNER_A,
+      policyId: BUILD_566_POLICY_ID,
+    });
+    await insertPassportPossessionChallengeDirect(challenge);
+    const wrongKeys = nacl.sign.keyPair.fromSeed(Uint8Array.from(Buffer.alloc(32, 44)));
+    const proof = {
+      challenge_id: challenge.challenge_id,
+      signature: signPassportPossessionChallenge(challenge, wrongKeys.secretKey),
+    };
+    const result = await authorizeIssuerBackedPresentation({
+      credential,
+      holderSubjectId: holder,
+      partnerId: BUILD_566_PARTNER_A,
+      policyId: BUILD_566_POLICY_ID,
+      consentId,
+      requestId: "req_invalid_possession",
+      challenge,
+      holderPossessionProof: proof,
+      receiptSigningKey: BUILD_546_PRIMARY_KEY,
+    });
+    expect(result.ok).toBe(false);
+    const hash = hashInstitutionalConsentBinding({
+      holder_subject_id: holder,
+      credential_id: credential.payload.credential_id,
+      partner_id: BUILD_566_PARTNER_A,
+      policy_id: BUILD_566_POLICY_ID,
+      policy_version: entry.policy_version,
+      requested_attribute: entry.requested_attribute,
+    });
+    const stillValid = await validateInstitutionalPresentationConsentDirect({
+      consentId,
+      holderSubjectId: holder,
+      credentialId: credential.payload.credential_id,
+      partnerId: BUILD_566_PARTNER_A,
+      policyId: BUILD_566_POLICY_ID,
+      policyVersion: entry.policy_version,
+      disclosureHash: hash,
+    });
+    expect(stillValid.ok).toBe(true);
+  });
+
+  it("recovers idempotently after resource commit when signing is deferred", async () => {
+    const { holder, credential } = await holderWithCredential();
+    const snapshot = buildSyntheticPortableRevocationSnapshot({
+      receiptId: credential.payload.credential_id,
+      state: "active",
+    });
+    process.env[PORTABLE_REVOCATION_BOOTSTRAP_TRUSTS_ENV] = JSON.stringify([
+      bootstrapTrustFromArtifact({ artifact: snapshot }),
+    ]);
+    process.env.ABRAXAS_PORTABLE_REVOCATION_PUBLISHER_URL = "https://publisher.test";
+    vi.spyOn(global, "fetch").mockResolvedValue(
+      new Response(JSON.stringify(snapshot), { status: 200 }),
+    );
+    const entry = await resolveInstitutionalPartnerCatalogEntry({
+      partnerId: BUILD_566_PARTNER_A,
+      policyId: BUILD_566_POLICY_ID,
+    });
+    if (!entry) throw new Error("entry");
+    const consentId = await consentFor({
+      holder,
+      credentialId: credential.payload.credential_id,
+      partnerId: BUILD_566_PARTNER_A,
+      policyId: BUILD_566_POLICY_ID,
+      policyVersion: entry.policy_version,
+      requestedAttribute: entry.requested_attribute,
+    });
+    const challenge = issuePassportPossessionChallenge({
+      credentialId: credential.payload.credential_id,
+      partnerId: BUILD_566_PARTNER_A,
+      policyId: BUILD_566_POLICY_ID,
+    });
+    await insertPassportPossessionChallengeDirect(challenge);
+    const proof = {
+      challenge_id: challenge.challenge_id,
+      signature: signPassportPossessionChallenge(challenge, holderKeys.secretKey),
+    };
+    const requestId = "req_idempotent_recovery_568";
+    process.env[PASSPORT_AUTH_INJECT_FAIL_AFTER_RESOURCE_COMMIT_ENV] = "1";
+    const deferred = await authorizeIssuerBackedPresentation({
+      credential,
+      holderSubjectId: holder,
+      partnerId: BUILD_566_PARTNER_A,
+      policyId: BUILD_566_POLICY_ID,
+      consentId,
+      requestId,
+      challenge,
+      holderPossessionProof: proof,
+      receiptSigningKey: BUILD_546_PRIMARY_KEY,
+    });
+    expect(deferred.ok).toBe(false);
+    delete process.env[PASSPORT_AUTH_INJECT_FAIL_AFTER_RESOURCE_COMMIT_ENV];
+    const recovered = await authorizeIssuerBackedPresentation({
+      credential,
+      holderSubjectId: holder,
+      partnerId: BUILD_566_PARTNER_A,
+      policyId: BUILD_566_POLICY_ID,
+      consentId,
+      requestId,
+      challenge,
+      holderPossessionProof: proof,
+      receiptSigningKey: BUILD_546_PRIMARY_KEY,
+    });
+    expect(recovered.ok).toBe(true);
   });
 });

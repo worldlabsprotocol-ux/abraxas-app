@@ -44,6 +44,67 @@ export async function insertInstitutionalPresentationConsentDirect(input: {
   }
 }
 
+export type ValidateInstitutionalConsentResult =
+  | { ok: true }
+  | {
+      ok: false;
+      code:
+        | "consent_not_found"
+        | "consent_expired"
+        | "consent_already_used"
+        | "consent_binding_mismatch"
+        | "persistence_unavailable";
+    };
+
+export async function validateInstitutionalPresentationConsentDirect(input: {
+  consentId: string;
+  holderSubjectId: string;
+  credentialId: string;
+  partnerId: string;
+  policyId: string;
+  policyVersion: number;
+  disclosureHash: string;
+  at?: Date;
+}): Promise<ValidateInstitutionalConsentResult> {
+  const at = input.at ?? new Date();
+  try {
+    const { rows } = await queryAbraxasPg<{
+      holder_subject_id: string;
+      credential_id: string;
+      partner_id: string;
+      policy_id: string;
+      policy_version: number;
+      disclosure_hash: string;
+      expires_at: string;
+      consumed_at: string | null;
+    }>(
+      `select holder_subject_id, credential_id, partner_id, policy_id, policy_version,
+              disclosure_hash, expires_at, consumed_at
+       from public.passport_institutional_presentation_consents
+       where consent_id = $1
+       limit 1`,
+      [input.consentId],
+    );
+    const row = rows[0];
+    if (!row) return { ok: false, code: "consent_not_found" };
+    if (row.consumed_at) return { ok: false, code: "consent_already_used" };
+    if (Date.parse(row.expires_at) < at.getTime()) return { ok: false, code: "consent_expired" };
+    if (
+      row.holder_subject_id !== input.holderSubjectId
+      || row.credential_id !== input.credentialId
+      || row.partner_id !== input.partnerId
+      || row.policy_id !== input.policyId
+      || row.policy_version !== input.policyVersion
+      || row.disclosure_hash !== input.disclosureHash
+    ) {
+      return { ok: false, code: "consent_binding_mismatch" };
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false, code: "persistence_unavailable" };
+  }
+}
+
 export type ConsumeInstitutionalConsentResult =
   | { ok: true }
   | {

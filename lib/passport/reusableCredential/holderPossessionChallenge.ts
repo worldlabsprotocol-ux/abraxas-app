@@ -243,6 +243,8 @@ export async function verifyPassportPossessionProofAsync(input: {
   now?: Date;
   store?: PassportPossessionChallengeStore;
   durableConsume?: (challengeId: string, at: string) => Promise<{ ok: true } | { ok: false; code: "unknown" | "expired" | "replay" }>;
+  /** When true, verify signature and binding but do not consume the challenge. */
+  validateOnly?: boolean;
 }): Promise<{ ok: true } | { ok: false; code: string }> {
   const now = input.now ?? new Date();
   const store = input.store ?? getPassportPossessionChallengeStore();
@@ -280,6 +282,10 @@ export async function verifyPassportPossessionProofAsync(input: {
     proof: input.proof,
   });
   if (!sigOk.ok) return sigOk;
+
+  if (input.validateOnly) {
+    return { ok: true };
+  }
 
   if (input.durableConsume) {
     const consumed = await input.durableConsume(authoritative.challenge_id, now.toISOString());

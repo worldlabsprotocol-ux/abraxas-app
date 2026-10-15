@@ -30,7 +30,13 @@ export function loadConfiguredPortableRevocationBootstrapTrusts(
 
 export type OpenPortableRevocationCheckpointStoreResult =
   | { ok: true; store: PortableRevocationCheckpointStore; durable: boolean }
-  | { ok: false; code: "checkpoint_unconfigured" };
+  | { ok: false; code: "checkpoint_unconfigured" | "checkpoint_memory_forbidden_in_production" };
+
+function isProductionRuntime(env: Record<string, string | undefined>): boolean {
+  if (env.NODE_ENV?.trim() === "production") return true;
+  if (env.VERCEL_ENV?.trim() === "production") return true;
+  return false;
+}
 
 export async function openPortableRevocationCheckpointStore(
   env: Record<string, string | undefined> = process.env as Record<string, string | undefined>,
@@ -41,6 +47,9 @@ export async function openPortableRevocationCheckpointStore(
     return { ok: true, store, durable: true };
   }
   if (env[PORTABLE_REVOCATION_CHECKPOINT_MEMORY_TEST_ENV] === "1") {
+    if (isProductionRuntime(env)) {
+      return { ok: false, code: "checkpoint_memory_forbidden_in_production" };
+    }
     return { ok: true, store: new InMemoryPortableRevocationCheckpointStore(), durable: false };
   }
   return { ok: false, code: "checkpoint_unconfigured" };

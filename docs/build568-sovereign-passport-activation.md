@@ -31,6 +31,8 @@
 - Holder consent is persisted in `passport_institutional_presentation_consents` (migration 141) and consumed once per presentation.
 - Revocation trust uses issuer registry bindings, env-configured bootstrap trust, and durable checkpoints. Request-supplied snapshots are not trusted for bootstrap.
 - `POST /api/passport/reusable-credentials/status` retry backfill requires CSRF same-origin headers.
+- Institutional authorization consumes consent and possession challenges atomically in Postgres, then signs receipts. Repeat the same `request_id` to recover if signing was deferred.
+- Issuer-backed presentation requires configured `ABRAXAS_SIGNING_KEY` (no synthetic receipt key fallback).
 
 ## Migration 140 activation readiness
 

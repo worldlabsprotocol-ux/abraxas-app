@@ -52,6 +52,8 @@ export type PartnerAuthorizationFromCredentialInput = {
     at: string,
   ) => Promise<{ ok: true } | { ok: false; code: "unknown" | "expired" | "replay" }>;
   consentReceiptId?: string | null;
+  /** Possession challenge and signature were verified and consumed in a prior atomic commit. */
+  possessionAlreadyCommitted?: boolean;
   now?: Date;
   env?: Record<string, string | undefined>;
 };
@@ -92,30 +94,32 @@ export async function authorizePartnerFromReusableCredential(
   const now = input.now ?? new Date();
   const bootstrap = input.bootstrapTrusts ?? [];
 
-  const possession = input.durablePossessionConsume
-    ? await verifyPassportPossessionProofAsync({
-        credentialId: input.credential.payload.credential_id,
-        partnerId: input.partnerId,
-        policyId: input.policyId,
-        credentialHolderPublicKey: input.credential.payload.holder_possession_public_key,
-        challenge: input.possessionChallenge,
-        proof: input.holderPossessionProof,
-        now,
-        store: input.challengeStore,
-        durableConsume: input.durablePossessionConsume,
-      })
-    : verifyPassportPossessionProof({
-        credentialId: input.credential.payload.credential_id,
-        partnerId: input.partnerId,
-        policyId: input.policyId,
-        credentialHolderPublicKey: input.credential.payload.holder_possession_public_key,
-        challenge: input.possessionChallenge,
-        proof: input.holderPossessionProof,
-        now,
-        store: input.challengeStore,
-      });
-  if (!possession.ok) {
-    return { ok: false, code: possession.code };
+  if (!input.possessionAlreadyCommitted) {
+    const possession = input.durablePossessionConsume
+      ? await verifyPassportPossessionProofAsync({
+          credentialId: input.credential.payload.credential_id,
+          partnerId: input.partnerId,
+          policyId: input.policyId,
+          credentialHolderPublicKey: input.credential.payload.holder_possession_public_key,
+          challenge: input.possessionChallenge,
+          proof: input.holderPossessionProof,
+          now,
+          store: input.challengeStore,
+          durableConsume: input.durablePossessionConsume,
+        })
+      : verifyPassportPossessionProof({
+          credentialId: input.credential.payload.credential_id,
+          partnerId: input.partnerId,
+          policyId: input.policyId,
+          credentialHolderPublicKey: input.credential.payload.holder_possession_public_key,
+          challenge: input.possessionChallenge,
+          proof: input.holderPossessionProof,
+          now,
+          store: input.challengeStore,
+        });
+    if (!possession.ok) {
+      return { ok: false, code: possession.code };
+    }
   }
 
   const verified = await verifyPassportReusableCredentialStrict({
