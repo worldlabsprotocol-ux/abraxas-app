@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 import { resolveReusableCredentialLifecycle } from "./reusableCredential/credentialLifecycle";
 import { resolveHolderIdentitySurface } from "./holderIdentityReconciliation";
-import { shouldDeferReusableCredentialActions } from "./holderIdentityUiCopy";
+import { shouldDeferReusableCredentialActions, shouldSuppressRepeatVerificationNudge } from "./holderIdentityUiCopy";
 
 describe("Build #579 Passport product state alignment", () => {
   it("does not imply issuance is operational when storage is disabled", () => {
@@ -26,6 +26,20 @@ describe("Build #579 Passport product state alignment", () => {
       idvRowsForLegacyWallet: 1,
       ambiguousLegacyConflict: false,
     });
+    expect(shouldDeferReusableCredentialActions(holder)).toBe(true);
+  });
+
+  it("suppresses repeat-verification nudge when identity lookup is unavailable", () => {
+    const holder = resolveHolderIdentitySurface({
+      sessionSubjectId: "0x" + "c".repeat(64),
+      canonicalSchemaPresent: true,
+      legacyLinkSubjectId: null,
+      idvRowsForLegacyWallet: 0,
+      ambiguousLegacyConflict: false,
+      identityLookupUnavailable: true,
+    });
+    expect(holder.state).toBe("identity_lookup_unavailable");
+    expect(shouldSuppressRepeatVerificationNudge(holder)).toBe(true);
     expect(shouldDeferReusableCredentialActions(holder)).toBe(true);
   });
 

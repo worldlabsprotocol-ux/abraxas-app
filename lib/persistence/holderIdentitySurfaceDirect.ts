@@ -12,6 +12,7 @@ import {
 import { isPassportDirectPostgresEnabled } from "./env";
 import { queryAbraxasPg } from "./pgPool";
 import { resolveLegacySubjectIdDirect } from "./holderSubjectDirect";
+import { countIdentityVerificationsForSessionKeys } from "./holderIdentityIdvLookup";
 
 async function canonicalSchemaPresent(): Promise<boolean> {
   try {
@@ -48,32 +49,39 @@ export async function loadHolderIdentitySurfaceForSession(
   let legacyLink: string | null = null;
   let idvCount = 0;
   let ambiguous = false;
-
-  if (session.suiAddress) {
-    legacyLink = await resolveLegacySubjectIdDirect(LEGACY_KIND_SUI_ADDRESS, session.suiAddress.toLowerCase());
-  }
-
-  if (!legacyLink && !isChainNeutralHolderSubjectId(sessionSubjectId)) {
-    legacyLink = await resolveLegacySubjectIdDirect(LEGACY_KIND_SUI_ADDRESS, sessionSubjectId.toLowerCase());
-  }
+  let identityLookupUnavailable = false;
 
   try {
-    const lookupKey = isChainNeutralHolderSubjectId(sessionSubjectId)
-      ? session.suiAddress ?? sessionSubjectId
-      : sessionSubjectId;
-    const { rows } = await queryAbraxasPg<{ c: number }>(
-      `select count(*)::int as c from public.identity_verifications
-       where lower(wallet_address) = lower($1) or holder_subject_id = $1`,
-      [lookupKey],
-    );
-    idvCount = rows[0]?.c ?? 0;
-
     if (session.suiAddress) {
-      const alt = await resolveLegacySubjectIdDirect(LEGACY_KIND_SUI_ADDRESS, session.suiAddress.toLowerCase());
-      if (alt && legacyLink && alt !== legacyLink) ambiguous = true;
+      legacyLink = await resolveLegacySubjectIdDirect(LEGACY_KIND_SUI_ADDRESS, session.suiAddress.toLowerCase());
+    }
+
+    if (!legacyLink && !isChainNeutralHolderSubjectId(sessionSubjectId)) {
+      legacyLink = await resolveLegacySubjectIdDirect(LEGACY_KIND_SUI_ADDRESS, sessionSubjectId.toLowerCase());
     }
   } catch {
-    idvCount = 0;
+    identityLookupUnavailable = true;
+  }
+
+  if (!identityLookupUnavailable) {
+    const idvLookup = await countIdentityVerificationsForSessionKeys({
+      sessionSubjectId,
+      suiAddress: session.suiAddress,
+    });
+    if (!idvLookup.ok) {
+      identityLookupUnavailable = true;
+    } else {
+      idvCount = idvLookup.count;
+    }
+  }
+
+  if (!identityLookupUnavailable && session.suiAddress) {
+    try {
+      const alt = await resolveLegacySubjectIdDirect(LEGACY_KIND_SUI_ADDRESS, session.suiAddress.toLowerCase());
+      if (alt && legacyLink && alt !== legacyLink) ambiguous = true;
+    } catch {
+      identityLookupUnavailable = true;
+    }
   }
 
   return resolveHolderIdentitySurface({
@@ -81,7 +89,8 @@ export async function loadHolderIdentitySurfaceForSession(
     sessionHolderSubjectId,
     canonicalSchemaPresent: schema,
     legacyLinkSubjectId: legacyLink,
-    idvRowsForLegacyWallet: idvCount,
+    idvRowsForLegacyWallet: identityLookupUnavailable ? 0 : idvCount,
     ambiguousLegacyConflict: ambiguous,
+    identityLookupUnavailable,
   });
 }

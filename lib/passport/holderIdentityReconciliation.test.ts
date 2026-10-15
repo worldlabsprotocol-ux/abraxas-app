@@ -82,4 +82,17 @@ describe("Build #579 holder identity reconciliation", () => {
     });
     expect(surface.state).toBe("legacy_holder_authenticated");
   });
+
+  it("surfaces identity_lookup_unavailable instead of implying zero prior IDV", () => {
+    const surface = resolveHolderIdentitySurface({
+      sessionSubjectId: SUI_A,
+      canonicalSchemaPresent: true,
+      legacyLinkSubjectId: null,
+      idvRowsForLegacyWallet: 0,
+      ambiguousLegacyConflict: false,
+      identityLookupUnavailable: true,
+    });
+    expect(surface.state).toBe("identity_lookup_unavailable");
+    expect(surface.detail).toMatch(/do not start verification again/i);
+  });
 });

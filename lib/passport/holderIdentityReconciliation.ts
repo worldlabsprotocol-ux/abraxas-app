@@ -153,7 +153,8 @@ export type HolderIdentitySurfaceState =
   | "legacy_holder_authenticated"
   | "canonical_subject_ready"
   | "reconciliation_operator_required"
-  | "ambiguous_identity_blocked";
+  | "ambiguous_identity_blocked"
+  | "identity_lookup_unavailable";
 
 export type HolderIdentitySurfaceSnapshot = {
   state: HolderIdentitySurfaceState;
@@ -162,6 +163,14 @@ export type HolderIdentitySurfaceSnapshot = {
   operator_review_required: boolean;
 };
 
+export const IDENTITY_LOOKUP_UNAVAILABLE_COPY = {
+  headline: "Identity status temporarily unavailable",
+  detail:
+    "We could not confirm prior identity records because of a temporary database or schema compatibility issue. "
+    + "If you already completed verification, it remains on your account. Do not start verification again for this issue. "
+    + "Refresh later or contact support if this persists.",
+} as const;
+
 export function resolveHolderIdentitySurface(input: {
   sessionSubjectId: string;
   sessionHolderSubjectId?: string | null;
@@ -169,6 +178,7 @@ export function resolveHolderIdentitySurface(input: {
   legacyLinkSubjectId: string | null;
   idvRowsForLegacyWallet: number;
   ambiguousLegacyConflict: boolean;
+  identityLookupUnavailable?: boolean;
 }): HolderIdentitySurfaceSnapshot {
   if (input.ambiguousLegacyConflict) {
     return {
@@ -200,6 +210,15 @@ export function resolveHolderIdentitySurface(input: {
       state: "canonical_subject_ready",
       headline: "Canonical holder subject linked",
       detail: "Your legacy sign-in is linked to a canonical holder subject.",
+      operator_review_required: false,
+    };
+  }
+
+  if (input.identityLookupUnavailable) {
+    return {
+      state: "identity_lookup_unavailable",
+      headline: IDENTITY_LOOKUP_UNAVAILABLE_COPY.headline,
+      detail: IDENTITY_LOOKUP_UNAVAILABLE_COPY.detail,
       operator_review_required: false,
     };
   }

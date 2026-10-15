@@ -14,7 +14,10 @@ import {
 } from "@/lib/passport/holderPossessionKeyBrowserStorage";
 import { registerHolderPossessionKeyWithServer } from "@/lib/passport/registerHolderPossessionKeyClient";
 import type { HolderIdentitySurfaceSnapshot } from "@/lib/passport/holderIdentityReconciliation";
-import { shouldDeferReusableCredentialActions } from "@/lib/passport/holderIdentityUiCopy";
+import {
+  shouldDeferReusableCredentialActions,
+  shouldSuppressRepeatVerificationNudge,
+} from "@/lib/passport/holderIdentityUiCopy";
 
 const FONT = ABRAXAS_FONT_SANS;
 
@@ -238,9 +241,12 @@ export function PassportReusableCredentialsPanel({ sessionReady }: { sessionRead
             padding: "0.65rem 0.75rem",
             display: "grid",
             gap: "0.35rem",
-            background: holderIdentity.operator_review_required
-              ? "var(--surface-muted, rgba(255, 193, 7, 0.08))"
-              : undefined,
+            background:
+              holderIdentity.state === "identity_lookup_unavailable"
+                ? "var(--surface-muted, rgba(96, 165, 250, 0.08))"
+                : holderIdentity.operator_review_required
+                  ? "var(--surface-muted, rgba(255, 193, 7, 0.08))"
+                  : undefined,
           }}
         >
           <strong style={{ fontFamily: FONT, fontSize: "0.8rem" }}>{holderIdentity.headline}</strong>
@@ -357,9 +363,17 @@ export function PassportReusableCredentialsPanel({ sessionReady }: { sessionRead
           ))
         : null}
       {!loading && !showIssuedCredentials && !error && lifecycleState !== "credential_issued" ? (
-        <p style={{ fontFamily: FONT, fontSize: "0.75rem", color: "var(--text-muted)", margin: 0 }}>
-          A signed reusable credential has not been persisted yet. Complete the lifecycle step above before expecting issuance.
-        </p>
+        shouldSuppressRepeatVerificationNudge(holderIdentity) ? (
+          <p style={{ fontFamily: FONT, fontSize: "0.75rem", color: "var(--text-muted)", margin: 0 }}>
+            Credential status could not be refreshed. If you already verified, that status is unchanged. Wait and refresh
+            this page rather than starting verification again.
+          </p>
+        ) : (
+          <p style={{ fontFamily: FONT, fontSize: "0.75rem", color: "var(--text-muted)", margin: 0 }}>
+            A signed reusable credential has not been persisted yet. Complete the lifecycle step above before expecting
+            issuance.
+          </p>
+        )
       ) : null}
       {showIssuedCredentials && !deferInstitutional ? (
         <PassportInstitutionalPresentationPanel sessionReady={sessionReady} credentials={credentials} />
