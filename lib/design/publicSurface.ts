@@ -12,13 +12,19 @@ export const PUBLIC_NARROW_MAX_WIDTH = 720;
 export const PUBLIC_PAGE_PADDING = "clamp(1.25rem, 4vw, 2rem)";
 export const PUBLIC_SECTION_GAP = "clamp(2rem, 6vw, 3.25rem)";
 
-/** Primary product IA — each href resolves to a real route. */
+/** Primary product IA — homepage intro, Passport product, partner Studio. */
 export const PUBLIC_NAV_LINKS = [
-  { href: "/protocol", label: "Protocol", matchPrefixes: ["/protocol", "/integrate", "/proof"] as const },
-  { href: "/solutions", label: "Solutions", matchPrefixes: ["/solutions"] as const },
-  { href: "/developers", label: "Developers", matchPrefixes: ["/developers", "/docs"] as const },
-  { href: "/network", label: "Network", matchPrefixes: ["/network", "/proofs"] as const },
-  { href: "/company", label: "Company", matchPrefixes: ["/company", "/why", "/design-partner"] as const },
+  { href: "/", label: "Home", exact: true },
+  {
+    href: "/passport",
+    label: "Passport",
+    matchPrefixes: ["/passport", "/account", "/partner/verify", "/partner/continue"] as const,
+  },
+  {
+    href: "/developers/integration-studio",
+    label: "Studio",
+    matchPrefixes: ["/developers/integration-studio", "/developers/launchpad"] as const,
+  },
 ] as const;
 
 export const PUBLIC_NAV_PRIMARY_CTA = { href: "/passport", label: "Launch App" } as const;
@@ -26,11 +32,12 @@ export const PUBLIC_NAV_DOCS_CTA = { href: "/docs", label: "Developer Docs" } as
 
 /** Compact Explore menu — secondary destinations. */
 export const PUBLIC_NAV_EXPLORE_LINKS = [
+  { href: "/verification", label: "Verification" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/verify", label: "Verify a receipt" },
-  { href: "/developers/integration-studio", label: "Integration Studio" },
   { href: "/developers/launchpad", label: "Launchpad" },
-  { href: "/good-trouble", label: "Sandbox example" },
+  { href: "/docs/partner-flow", label: "Partner Flow" },
+  { href: "/docs", label: "Docs" },
+  { href: "/#capability-map", label: "Capability map" },
 ] as const;
 
 export const PUBLIC_NAV_MAP_LINKS = [

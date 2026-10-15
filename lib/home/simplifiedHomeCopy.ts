@@ -14,11 +14,10 @@ export const SIMPLIFIED_HOME_MOBILE_PROMPT =
 export const SIMPLIFIED_HOME_TRUST_LINE =
   "Use verified evidence again with fresh consent. Abraxas evaluates trust privately. Applications receive signed eligibility receipts, not identity files.";
 
-export const SIMPLIFIED_HOME_CTA_PRIMARY = "See reuse across two apps";
+export const SIMPLIFIED_HOME_CTA_PRIMARY = "Open Passport";
 export const SIMPLIFIED_HOME_CTA_SECONDARY = "Build in sandbox";
-export const SIMPLIFIED_HOME_CTA_PRIMARY_HREF = "/proof";
-export const SIMPLIFIED_HOME_CTA_SECONDARY_HREF =
-  "/developers/integration-studio?outcome=reuse_across_app&source=gtm-home";
+export const SIMPLIFIED_HOME_CTA_PRIMARY_HREF = "/passport";
+export const SIMPLIFIED_HOME_CTA_SECONDARY_HREF = "/developers/integration-studio";
 export const SIMPLIFIED_HOME_CTA_SANDBOX = "Try sandbox example";
 export const SIMPLIFIED_HOME_CTA_SANDBOX_HREF = "/good-trouble";
 export const SIMPLIFIED_HOME_CTA_BUILD = "Build with Abraxas";

@@ -62,7 +62,7 @@ describe("simplified homepage sections", () => {
       </>,
     );
     expect(screen.getByText("For holders")).toBeTruthy();
-    expect(screen.getByText("For partners")).toBeTruthy();
+    expect(screen.getByText("For platforms")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Explore Passport" })).toHaveAttribute("href", "/passport");
     expect(screen.getByRole("link", { name: "Open Integration Studio" })).toHaveAttribute(
       "href",

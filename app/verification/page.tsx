@@ -6,6 +6,7 @@ import { RedesignPage } from "@/components/redesign/RedesignPage";
 import { PageHeader } from "@/components/redesign/RedesignContent";
 import { RedesignPageLoading } from "@/components/redesign/RedesignPageLoading";
 import { VerificationGateway } from "@/components/verification/VerificationGateway";
+import { PublicJourneyNextSteps } from "@/components/product/PublicJourneyNextSteps";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,7 @@ export default function VerificationPage() {
       <Suspense fallback={<RedesignPageLoading label="Loading verification gateway…" />}>
         <VerificationGateway />
       </Suspense>
+      <PublicJourneyNextSteps title="Continue in Passport or open Partner Flow docs" />
     </RedesignPage>
   );
 }
