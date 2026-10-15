@@ -84,6 +84,8 @@ export function evaluateProductionMigration581(input: {
   env?: Record<string, string | undefined>;
   verifiedDatabaseProjectRef?: string | null;
   reconciliationInventory?: HolderReconciliationInventory | null;
+  /** When absent, inventory freshness is treated as unknown (Phase B blocked). */
+  reconciliationInventoryEvidence?: { stale: boolean } | null;
 }): ProductionMigration581Evaluation {
   const env = input.env ?? process.env;
   const base = evaluateProductionMigrationRelease({
@@ -123,12 +125,24 @@ export function evaluateProductionMigration581(input: {
   });
 
   const inventoryPresent = Boolean(input.reconciliationInventory);
+  const inventoryStale = input.reconciliationInventoryEvidence?.stale ?? true;
   gates.push({
     gate: "reconciliation_inventory",
     status: inventoryPresent ? "pass" : "manual_required",
     detail: inventoryPresent
       ? "Aggregate holder reconciliation inventory captured (no PII)."
       : "Run read-only reconciliation inventory SQL before holder backfill planning.",
+  });
+  gates.push({
+    gate: "inventory_freshness",
+    status: inventoryPresent && input.reconciliationInventoryEvidence && !inventoryStale ? "pass" : "fail",
+    detail: !inventoryPresent
+      ? "Reconciliation inventory missing."
+      : !input.reconciliationInventoryEvidence
+        ? "Load inventory JSON through the validated evidence loader before Phase B."
+        : inventoryStale
+          ? "Reconciliation inventory evidence is stale; refresh before Phase B."
+          : "Inventory evidence is within max age policy.",
   });
 
   const schemaReady =
@@ -141,6 +155,8 @@ export function evaluateProductionMigration581(input: {
     && rehearsalAttested
     && ddlAuth.ok
     && inventoryPresent
+    && Boolean(input.reconciliationInventoryEvidence)
+    && !inventoryStale
     && input.verifiedDatabaseProjectRef === PRODUCTION_SUPABASE_PROJECT_REF;
 
   gates.push({

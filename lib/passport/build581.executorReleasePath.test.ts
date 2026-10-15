@@ -172,6 +172,27 @@ describe.skipIf(!canRunDisposable)("Build #581 controlled executor release path"
     expect(result.records.length).toBeGreaterThan(0);
   });
 
+  it("fails closed when inventory evidence is stale", async () => {
+    const staleInventory = sampleInventoryEnvelope();
+    staleInventory.inventory.captured_at = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+    const env = fullPhaseBEnv("nonce-stale-inv");
+    env.ABRAXAS_PRODUCTION_RECONCILIATION_INVENTORY_JSON = JSON.stringify(staleInventory);
+    env.ABRAXAS_PRODUCTION_RECONCILIATION_INVENTORY_MAX_AGE_HOURS = "6";
+    env.ABRAXAS_DATABASE_URL = dbUrl;
+    env.ABRAXAS_PASSPORT_DATABASE_URL = dbUrl;
+
+    await expect(
+      withAbraxasPgTransaction(async (client) =>
+        executeControlledProductionMigrations({
+          client,
+          env,
+          executionNonce: "nonce-stale-inv",
+          dryRun: true,
+        }),
+      ),
+    ).rejects.toMatchObject({ code: "inventory_stale" });
+  });
+
   it("fails closed when inventory evidence is missing", async () => {
     const env = fullPhaseBEnv("nonce-missing-inv", false);
     env.ABRAXAS_DATABASE_URL = dbUrl;

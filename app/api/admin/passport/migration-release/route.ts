@@ -65,6 +65,9 @@ export async function GET(req: NextRequest) {
     verifiedDatabaseProjectRef: verifiedDatabaseProjectRef,
     env: process.env,
     reconciliationInventory: inventoryLoaded.ok ? inventoryLoaded.evidence.inventory : null,
+    reconciliationInventoryEvidence: inventoryLoaded.ok
+      ? { stale: inventoryLoaded.evidence.stale }
+      : null,
   });
 
   return NextResponse.json(

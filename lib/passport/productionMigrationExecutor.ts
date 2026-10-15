@@ -62,12 +62,35 @@ function migrationChecksum(contents: string): string {
   return createHash("sha256").update(contents, "utf8").digest("hex");
 }
 
-export function buildMigrationExecutionPlan(): { file: string; sha256: string; sql: string }[] {
+export type SovereignMigrationPlanStep = { file: string; sha256: string; sql: string };
+
+export function buildMigrationExecutionPlan(): SovereignMigrationPlanStep[] {
   return SOVEREIGN_PASSPORT_MIGRATION_FILES.map((file) => {
     const path = join(process.cwd(), "supabase/migrations", file);
     const sql = readFileSync(path, "utf8");
     return { file, sha256: migrationChecksum(sql), sql };
   });
+}
+
+/** Fail closed unless every step matches the repo-approved 136–143 migration files and checksums. */
+export function assertApprovedSovereignMigrationPlan(plan: SovereignMigrationPlanStep[]): void {
+  const approved = buildMigrationExecutionPlan();
+  if (plan.length !== approved.length) {
+    throw new ProductionMigrationGateError(
+      "migration_plan_not_approved",
+      "Only migrations 136–143 from the repository may execute.",
+    );
+  }
+  for (let i = 0; i < approved.length; i += 1) {
+    const step = plan[i];
+    const expected = approved[i];
+    if (step.file !== expected.file || step.sha256 !== expected.sha256) {
+      throw new ProductionMigrationGateError(
+        "migration_plan_not_approved",
+        `Unapproved migration step: ${step.file}`,
+      );
+    }
+  }
 }
 
 /** Runs inside an open transaction; throws on gate or SQL failure to force ROLLBACK. */
@@ -76,7 +99,6 @@ export async function executeControlledProductionMigrations(input: {
   env?: Record<string, string | undefined>;
   executionNonce: string;
   dryRun?: boolean;
-  plan?: { file: string; sha256: string; sql: string }[];
 }): Promise<MigrationExecutionResult> {
   const env = input.env ?? process.env;
   const releaseContext = await resolveProductionMigrationReleaseContext({ env, client: input.client });
@@ -99,7 +121,8 @@ export async function executeControlledProductionMigrations(input: {
     throw new ProductionMigrationGateError(nonceCheck.code, nonceCheck.detail);
   }
 
-  const plan = input.plan ?? buildMigrationExecutionPlan();
+  const plan = buildMigrationExecutionPlan();
+  assertApprovedSovereignMigrationPlan(plan);
   const records: MigrationExecutionRecord[] = [];
   const evidenceTrailId = createHash("sha256")
     .update(`${releaseContext.verifiedDatabaseProjectRef}:${Date.now()}:${plan.map((p) => p.sha256).join(",")}`)

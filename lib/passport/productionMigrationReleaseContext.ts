@@ -66,6 +66,7 @@ export async function resolveProductionMigrationReleaseContext(input: {
     env,
     verifiedDatabaseProjectRef: binding.derivedProjectRef,
     reconciliationInventory: inventoryLoaded.evidence.inventory,
+    reconciliationInventoryEvidence: { stale: inventoryLoaded.evidence.stale },
   });
 
   return {

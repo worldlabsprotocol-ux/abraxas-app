@@ -65,19 +65,20 @@ describe("Build #579 planIdentityVerificationCountQuery", () => {
     expect(plan.params).toHaveLength(1);
   });
 
-  it("migrated canonical holder uses holder_subject_id without unrelated sui", () => {
+  it("canonical holder without authoritative sui binding does not OR-match sui_address", () => {
     const plan = planIdentityVerificationCountQuery({
       schema: { walletAddress: true, suiAddress: true, holderSubjectId: true },
       sessionSubjectId: HS,
       sessionHolderSubjectId: HS,
       suiAddress: SUI,
+      authoritativeCanonicalSuiAddress: null,
       legacyLinkSubjectId: null,
     });
     expect(plan.ok).toBe(true);
     if (!plan.ok) return;
     expect(plan.sql).toMatch(/holder_subject_id/i);
-    expect(plan.params).toEqual([HS]);
     expect(plan.sql).not.toMatch(/sui_address/i);
+    expect(plan.params).toEqual([HS]);
   });
 
   it("canonical holder with verified legacy link may include linked sui only", () => {
@@ -85,7 +86,7 @@ describe("Build #579 planIdentityVerificationCountQuery", () => {
       schema: { walletAddress: false, suiAddress: true, holderSubjectId: true },
       sessionSubjectId: HS,
       sessionHolderSubjectId: HS,
-      suiAddress: SUI,
+      authoritativeCanonicalSuiAddress: SUI,
       legacyLinkSubjectId: HS,
     });
     expect(plan.ok).toBe(true);

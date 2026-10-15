@@ -122,6 +122,7 @@ describe("Build #581 preflight envelope contract", () => {
       verifiedDatabaseProjectRef: PRODUCTION_SUPABASE_PROJECT_REF,
       env,
       reconciliationInventory: inventoryLoaded.evidence.inventory,
+      reconciliationInventoryEvidence: { stale: inventoryLoaded.evidence.stale },
     });
     expect(evaluation.phase).toBe("B_execution_ready");
   });
@@ -180,6 +181,7 @@ describe("Build #581 authorization contracts", () => {
         zklogin_continuity_records: null,
         ambiguous_mapping_blocked: 0,
       },
+      reconciliationInventoryEvidence: { stale: false },
     });
     expect(evaluation.phase).toBe("B_execution_ready");
     expect(evaluation.production_execution_blocked).toBe(false);
