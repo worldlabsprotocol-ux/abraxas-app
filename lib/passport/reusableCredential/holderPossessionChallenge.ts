@@ -119,13 +119,7 @@ function hashPossessionMessage(payload: PassportPossessionChallengePayload): Uin
   return Uint8Array.from(digest);
 }
 
-export function signPassportPossessionChallenge(
-  payload: PassportPossessionChallengePayload,
-  holderSecretKey: Uint8Array,
-): string {
-  const message = hashPossessionMessage(payload);
-  return Buffer.from(nacl.sign.detached(message, holderSecretKey)).toString("base64url");
-}
+export { signPassportPossessionChallenge } from "./holderPossessionChallengeSigning";
 
 const CHALLENGE_PAYLOAD_FIELDS: (keyof PassportPossessionChallengePayload)[] = [
   "v",

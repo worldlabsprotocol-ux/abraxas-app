@@ -4,38 +4,76 @@ import { useCallback, useEffect, useState } from "react";
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import type { PassportReusableCredentialSummary } from "@/lib/passport/reusableCredential/contract";
+import type { ReusableCredentialLifecycleState } from "@/lib/passport/reusableCredential/credentialLifecycle";
+import { PassportInstitutionalPresentationPanel } from "@/components/passport/PassportInstitutionalPresentationPanel";
 
 const FONT = ABRAXAS_FONT_SANS;
+
+const STATE_LABEL: Record<ReusableCredentialLifecycleState, string> = {
+  pending_verification: "Pending verification",
+  awaiting_human_review: "Awaiting human review",
+  approved_preparing_credential: "Approved and preparing credential",
+  possession_key_required: "Possession key registration required",
+  credential_issued: "Credential issued",
+  credential_expired: "Credential expired",
+  credential_revoked: "Credential revoked",
+  issuance_unavailable: "Issuance unavailable",
+};
 
 export function PassportReusableCredentialsPanel({ sessionReady }: { sessionReady: boolean }) {
   const [credentials, setCredentials] = useState<PassportReusableCredentialSummary[]>([]);
   const [sandboxOnly, setSandboxOnly] = useState(true);
+  const [issuerBacked, setIssuerBacked] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [possessionNote, setPossessionNote] = useState<string | null>(null);
+  const [lifecycleHeadline, setLifecycleHeadline] = useState<string | null>(null);
+  const [lifecycleDetail, setLifecycleDetail] = useState<string | null>(null);
+  const [lifecycleState, setLifecycleState] = useState<ReusableCredentialLifecycleState | null>(null);
+  const [recoveryKind, setRecoveryKind] = useState<string | null>(null);
+
+  const loadLifecycle = useCallback(async () => {
+    const res = await fetch("/api/passport/reusable-credentials/status", { credentials: "include" });
+    const data = (await res.json()) as {
+      lifecycle?: {
+        state: ReusableCredentialLifecycleState;
+        headline: string;
+        detail: string;
+        recovery?: { kind: string };
+      };
+    };
+    if (!res.ok || !data.lifecycle) return;
+    setLifecycleState(data.lifecycle.state);
+    setLifecycleHeadline(data.lifecycle.headline);
+    setLifecycleDetail(data.lifecycle.detail);
+    setRecoveryKind(data.lifecycle.recovery?.kind ?? null);
+  }, []);
 
   const load = useCallback(async () => {
     if (!sessionReady) return;
     setLoading(true);
     setError(null);
     try {
+      await loadLifecycle();
       const res = await fetch("/api/passport/reusable-credentials", { credentials: "include" });
       const data = (await res.json()) as {
         credentials?: PassportReusableCredentialSummary[];
         sandbox_only?: boolean;
+        issuer_backed?: boolean;
         error?: string;
       };
       if (!res.ok) throw new Error(data.error ?? "load_failed");
       setCredentials(data.credentials ?? []);
       setSandboxOnly(data.sandbox_only !== false);
+      setIssuerBacked(Boolean(data.issuer_backed));
     } catch {
       setError("Reusable credentials are unavailable right now.");
       setCredentials([]);
     } finally {
       setLoading(false);
     }
-  }, [sessionReady]);
+  }, [sessionReady, loadLifecycle]);
 
   useEffect(() => {
     void load();
@@ -61,16 +99,48 @@ export function PassportReusableCredentialsPanel({ sessionReady }: { sessionRead
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ public_key_b64url: publicKeyB64Url }),
       });
-      const data = (await res.json()) as { error?: string; issuance?: { credential_id?: string; code?: string } };
+      const data = (await res.json()) as {
+        error?: string;
+        issuance?: { credential_id?: string; deferred?: boolean; code?: string };
+      };
       if (!res.ok) throw new Error(data.error ?? "register_failed");
-      setPossessionNote(
-        data.issuance?.credential_id
-          ? `Possession key registered. Reusable credential ${data.issuance.credential_id} is ready.`
-          : "Possession key registered. Complete identity verification to receive a reusable credential.",
-      );
+      if (data.issuance?.credential_id) {
+        setPossessionNote(`Credential issued: ${data.issuance.credential_id}`);
+      } else if (data.issuance?.deferred) {
+        setPossessionNote("Possession key registered. Issuance will complete when eligibility is ready.");
+      } else {
+        setPossessionNote("Possession key registered on this device.");
+      }
       await load();
     } catch {
       setError("Could not register a possession key for this device.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function retryIssuanceBackfill() {
+    setBusy("backfill");
+    setError(null);
+    try {
+      const res = await fetch("/api/passport/reusable-credentials/status", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "retry_issuance_backfill" }),
+      });
+      const data = (await res.json()) as { backfill?: { ok?: boolean; code?: string; credential_id?: string } };
+      if (!res.ok) {
+        throw new Error(data.backfill?.code ?? "backfill_failed");
+      }
+      setPossessionNote(
+        data.backfill?.credential_id
+          ? `Credential issued: ${data.backfill.credential_id}`
+          : "Issuance retry completed.",
+      );
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Issuance retry failed.");
     } finally {
       setBusy(null);
     }
@@ -109,57 +179,94 @@ export function PassportReusableCredentialsPanel({ sessionReady }: { sessionRead
     );
   }
 
+  const showIssuedCredentials = credentials.length > 0 && lifecycleState === "credential_issued";
+
   return (
     <div style={{ display: "grid", gap: "0.75rem" }}>
       <p style={{ fontFamily: FONT, fontSize: "0.78rem", lineHeight: 1.55, color: "var(--text-secondary)", margin: 0 }}>
         Reusable credentials are issuer-signed eligibility assurances you hold once. Each institution still receives its
         own partner-bound authorization receipt after you approve a scoped presentation. Credentials are not receipts.
-        {sandboxOnly ? " Sandbox-labeled demo in this environment." : ""}
+        {sandboxOnly && !issuerBacked ? " Sandbox-labeled demo in this environment." : ""}
       </p>
-      <Btn variant="secondary" disabled={busy === "possession"} onClick={() => void registerPossessionKey()}>
-        {busy === "possession" ? "Registering…" : "Register this device possession key"}
-      </Btn>
+      {lifecycleHeadline ? (
+        <div
+          style={{
+            border: "1px solid var(--border-subtle)",
+            borderRadius: 8,
+            padding: "0.65rem 0.75rem",
+            display: "grid",
+            gap: "0.35rem",
+          }}
+        >
+          <strong style={{ fontFamily: FONT, fontSize: "0.8rem" }}>
+            {lifecycleState ? STATE_LABEL[lifecycleState] : lifecycleHeadline}
+          </strong>
+          <span style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
+            {lifecycleDetail}
+          </span>
+          {recoveryKind === "register_possession_key" ? (
+            <Btn variant="secondary" disabled={busy === "possession"} onClick={() => void registerPossessionKey()}>
+              {busy === "possession" ? "Registering…" : "Register this device possession key"}
+            </Btn>
+          ) : null}
+          {recoveryKind === "retry_issuance_backfill" ? (
+            <Btn variant="secondary" disabled={busy === "backfill"} onClick={() => void retryIssuanceBackfill()}>
+              {busy === "backfill" ? "Retrying…" : "Retry credential issuance"}
+            </Btn>
+          ) : null}
+        </div>
+      ) : null}
+      {recoveryKind !== "register_possession_key" ? (
+        <Btn variant="secondary" disabled={busy === "possession"} onClick={() => void registerPossessionKey()}>
+          {busy === "possession" ? "Registering…" : "Register or rotate this device possession key"}
+        </Btn>
+      ) : null}
       {possessionNote ? (
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: 0 }}>{possessionNote}</p>
       ) : null}
       {loading ? <p style={{ fontFamily: FONT, fontSize: "0.75rem", color: "var(--text-muted)" }}>Loading…</p> : null}
       {error ? <p style={{ fontFamily: FONT, fontSize: "0.75rem", color: "var(--danger)" }}>{error}</p> : null}
-      {credentials.map((cred) => (
-        <div
-          key={cred.credential_id}
-          style={{
-            border: "1px solid var(--border-subtle)",
-            borderRadius: 8,
-            padding: "0.75rem",
-            display: "grid",
-            gap: "0.35rem",
-          }}
-        >
-          <strong style={{ fontFamily: FONT, fontSize: "0.82rem" }}>{cred.credential_id}</strong>
-          <span style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)" }}>
-            Issuer: {cred.issuer_id} · Assurance: {cred.assurance_level} · Claims: {cred.claim_labels.join(", ")}
-          </span>
-          <span style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)" }}>
-            Valid until {new Date(cred.expires_at).toLocaleDateString()} · {cred.status}
-          </span>
-          <ul style={{ margin: 0, paddingLeft: "1.1rem", fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>
-            {cred.limitations.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
-          <Btn
-            variant="secondary"
-            disabled={busy === cred.credential_id}
-            onClick={() => void exportCredential(cred.credential_id)}
-          >
-            {busy === cred.credential_id ? "Exporting…" : "Export credential (not account recovery)"}
-          </Btn>
-        </div>
-      ))}
-      {!loading && credentials.length === 0 && !error ? (
+      {showIssuedCredentials
+        ? credentials.map((cred) => (
+            <div
+              key={cred.credential_id}
+              style={{
+                border: "1px solid var(--border-subtle)",
+                borderRadius: 8,
+                padding: "0.75rem",
+                display: "grid",
+                gap: "0.35rem",
+              }}
+            >
+              <strong style={{ fontFamily: FONT, fontSize: "0.82rem" }}>{cred.credential_id}</strong>
+              <span style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                Issuer: {cred.issuer_id} · Assurance: {cred.assurance_level} · Claims: {cred.claim_labels.join(", ")}
+              </span>
+              <span style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                Valid until {new Date(cred.expires_at).toLocaleDateString()} · {cred.status}
+              </span>
+              <ul style={{ margin: 0, paddingLeft: "1.1rem", fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>
+                {cred.limitations.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+              <Btn
+                variant="secondary"
+                disabled={busy === cred.credential_id}
+                onClick={() => void exportCredential(cred.credential_id)}
+              >
+                {busy === cred.credential_id ? "Exporting…" : "Export credential (not account recovery)"}
+              </Btn>
+            </div>
+          ))
+        : null}
+      {!loading && !showIssuedCredentials && !error && lifecycleState !== "credential_issued" ? (
         <p style={{ fontFamily: FONT, fontSize: "0.75rem", color: "var(--text-muted)", margin: 0 }}>
-          No reusable credentials are available for this environment yet.
+          A signed reusable credential has not been persisted yet. Complete the lifecycle step above before expecting issuance.
         </p>
+      ) : null}
+      {showIssuedCredentials ? (
+        <PassportInstitutionalPresentationPanel sessionReady={sessionReady} credentials={credentials} />
       ) : null}
     </div>
   );
