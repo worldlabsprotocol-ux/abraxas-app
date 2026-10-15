@@ -13,6 +13,7 @@ import { PRODUCT_ELIGIBILITY_OVER_21 } from "@/lib/idv/ageEligibility";
 import { portableRevocationStatusId } from "@/lib/protocol/portableRevocation/statusId";
 import { PORTABLE_REVOCATION_TEST_ISSUER_ID } from "@/lib/protocol/portableRevocation/fixtures";
 import { buildSyntheticPortableRevocationSnapshot } from "@/lib/protocol/portableRevocation";
+import { buildPortableRevocationPayload, signPortableRevocationSnapshot } from "@/lib/protocol/portableRevocation/sign";
 import type { PartnerPolicyRules } from "@/lib/policy/types";
 import {
   PASSPORT_REUSABLE_CREDENTIAL_SCHEMA_VERSION,
@@ -126,12 +127,33 @@ export function build566RevocationSnapshotForCredential(credentialId: string) {
 
 /** Portable revocation snapshot with wall-clock freshness for sovereign Postgres tests. */
 export function buildFreshPortableRevocationSnapshotForCredential(credentialId: string) {
+  return buildFreshPortableRevocationSnapshotForReceiptIds([credentialId]);
+}
+
+export function buildFreshPortableRevocationSnapshotForReceiptIds(receiptIds: string[]) {
   const issuedAt = new Date().toISOString();
   const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
-  return buildSyntheticPortableRevocationSnapshot({
-    receiptId: credentialId,
+  const primary = receiptIds[0] ?? "receipt_missing";
+  const base = buildSyntheticPortableRevocationSnapshot({
+    receiptId: primary,
     state: "active",
     issuedAt,
     expiresAt,
   });
+  if (receiptIds.length <= 1) return base;
+  const payload = buildPortableRevocationPayload({
+    issuerId: PORTABLE_REVOCATION_TEST_ISSUER_ID,
+    signingKeyId: BUILD_546_PRIMARY_KEY.signingKeyId,
+    snapshotSequence: 1,
+    issuedAt,
+    expiresAt,
+    maxFreshnessSeconds: 86_400,
+    previousSnapshotHash: null,
+    receiptStates: receiptIds.map((receiptId) => ({
+      receiptId,
+      state: "active" as const,
+      updatedAt: issuedAt,
+    })),
+  });
+  return signPortableRevocationSnapshot({ payload, signingKey: BUILD_546_PRIMARY_KEY });
 }
