@@ -1,6 +1,10 @@
 // FILE: lib/persistence/env.ts
 
 import type { PersistenceBackend, PersistenceConfig } from "./types";
+import {
+  resolveHybridPassportExplicitDatabaseUrl,
+  validatePassportHybridPostgresBinding,
+} from "./passportHybridPostgres";
 
 /**
  * Resolve Abraxas persistence connectivity.
@@ -27,6 +31,44 @@ export function persistenceUsesDirectPostgres(
   env: Record<string, string | undefined> = process.env,
 ): boolean {
   return resolvePersistenceBackend(env) === "postgres_direct";
+}
+
+/** Enables transaction sensitive Passport paths via direct pg while default transport stays PostgREST. */
+export const PASSPORT_TRANSACTION_PG_ENV = "ABRAXAS_PASSPORT_TRANSACTION_PG";
+
+export function passportTransactionPgExplicitlyEnabled(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  const raw = env[PASSPORT_TRANSACTION_PG_ENV]?.trim().toLowerCase();
+  return raw === "1" || raw === "true" || raw === "enabled";
+}
+
+/** Direct PostgreSQL URL for Passport transaction stores. */
+export function resolvePassportDirectPostgresUrl(
+  env: Record<string, string | undefined> = process.env,
+): string | null {
+  if (persistenceUsesDirectPostgres(env)) {
+    return resolveIndependentPostgresUrl(env);
+  }
+  if (passportTransactionPgExplicitlyEnabled(env)) {
+    return resolveHybridPassportExplicitDatabaseUrl(env);
+  }
+  return null;
+}
+
+/**
+ * Passport reusable credential, consent, and authorization commit paths use `queryAbraxasPg`.
+ * True when globally postgres_direct, or hybrid: PostgREST default + explicit passport transaction pg.
+ */
+export function isPassportDirectPostgresEnabled(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  if (persistenceUsesDirectPostgres(env)) {
+    return Boolean(resolveIndependentPostgresUrl(env));
+  }
+  if (!passportTransactionPgExplicitlyEnabled(env)) return false;
+  if (!resolveHybridPassportExplicitDatabaseUrl(env)) return false;
+  return validatePassportHybridPostgresBinding(env).ok;
 }
 
 export function resolvePersistenceConfig(

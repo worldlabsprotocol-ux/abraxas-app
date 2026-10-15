@@ -109,7 +109,8 @@
     "build-571:staging-readiness-audit": "tsx scripts/build-571/staging-readiness-audit.ts",
     "build-572:staging-execution-report": "tsx scripts/build-572/staging-execution-report.ts",
     "test:passport-unified-product-574": "vitest run lib/product/build574.unifiedProductExperience.test.ts lib/product/publicJourney.test.ts lib/product/publicFlowManifest.test.ts lib/design/publicSurface.test.ts lib/home/commandCenter.test.ts lib/home/homeSimplified.test.tsx components/home/HomeSimplified.test.tsx lib/wayfinding/holderLinkIntegrityBatch1.test.ts lib/auth/passportWalletAuth/origin.test.ts && npm run -s test:passport-reusable-credential-572",
-    "test:production-reconciliation-576": "vitest run lib/product/build576.productionReconciliation.test.ts lib/sui/zklogin/publicConfigStatus.test.ts lib/sui/zklogin/audienceCohorts.test.ts lib/sui/zklogin/clientEnv.test.ts && npm run -s test:passport-unified-product-574"
+    "test:production-reconciliation-576": "vitest run lib/product/build576.productionReconciliation.test.ts lib/sui/zklogin/publicConfigStatus.test.ts lib/sui/zklogin/audienceCohorts.test.ts lib/sui/zklogin/clientEnv.test.ts && npm run -s test:passport-unified-product-574",
+    "test:production-persistence-577": "vitest run lib/persistence/env.passportTransaction.test.ts lib/persistence/passportHybridPostgres.test.ts lib/persistence/disposablePgMigrationTestGuard.test.ts lib/product/build577.productionPersistenceCompatibility.test.ts lib/passport/reusableCredential/build577.passportHybridPersistence.test.ts lib/passport/reusableCredential/build569.independentVerifierTrust.test.ts lib/sovereignRuntime/sovereignHealth.test.ts && npm run -s test:production-reconciliation-576"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",
