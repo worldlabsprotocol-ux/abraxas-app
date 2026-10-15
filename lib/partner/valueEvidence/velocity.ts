@@ -39,6 +39,7 @@ export function computeIntegrationVelocity(input: {
   const configured = firstActivityMs(input.activity, ["partner_flow_request_configured", "application_provisioned"]);
   const sandboxRequest = firstEventMs(input.events, ["verification_request_created", "hosted_handoff_created"], "sandbox");
   const sandboxReceipt = firstEventMs(input.events, ["receipt_issued"], "sandbox");
+  const sandboxHolderConsent = firstEventMs(input.events, ["holder_flow_completed"], "sandbox");
   const sandboxVerify = firstEventMs(input.events, ["receipt_verification_succeeded"], "sandbox");
   const prodRequest = firstActivityMs(input.activity, ["production_access_requested"]);
   const prodApproved = firstActivityMs(input.activity, ["production_access_approved", "production_review_approved"]);
@@ -51,7 +52,9 @@ export function computeIntegrationVelocity(input: {
     application_created_to_sandbox_configured: duration(created, configured, "application.created_at", "partner_flow_request_configured"),
     application_created_to_first_sandbox_request: duration(created, sandboxRequest, "application.created_at", "verification_request_created"),
     application_created_to_first_sandbox_receipt: duration(created, sandboxReceipt, "application.created_at", "receipt_issued"),
+    application_created_to_first_holder_consent: duration(created, sandboxHolderConsent, "application.created_at", "holder_flow_completed"),
     application_created_to_first_successful_verification: duration(created, sandboxVerify, "application.created_at", "receipt_verification_succeeded"),
+    sandbox_configured_to_first_successful_verification: duration(configured, sandboxVerify, "partner_flow_request_configured", "receipt_verification_succeeded"),
     production_requested_to_production_approved: duration(prodRequest, prodApproved, "production_access_requested", "production_access_approved"),
     production_activated_to_first_production_verification: duration(prodActivated, prodVerify, "production_activated_at", "receipt_verification_succeeded"),
   };

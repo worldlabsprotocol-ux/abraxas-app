@@ -38,6 +38,7 @@ import {
 } from "@/lib/partner/launchpad/journeyState";
 import type { ApplicationPoliciesSummary } from "@/lib/partner/launchpad/applicationPolicyBindings";
 import { PartnerIntegrationHealthPanel } from "@/components/partner/launchpad/PartnerIntegrationHealthPanel";
+import { InstitutionalSandboxFirstVerificationCard } from "@/components/partner/launchpad/InstitutionalSandboxFirstVerificationCard";
 import { PartnerUniversalReadinessPanel } from "@/components/partner/launchpad/PartnerUniversalReadinessPanel";
 import type { UniversalReadinessDiagnostic } from "@/lib/partner/universalIntegration/readinessDiagnostic";
 import { PartnerIntegrationPerformancePanel } from "@/components/partner/launchpad/PartnerIntegrationPerformancePanel";
@@ -983,17 +984,24 @@ export function PartnerLaunchpadClient({
       )}
 
       {activeApp && activeApp.policy_template_id === "sandbox_institutional_protocol_access" && (
-        <ContentCard title="Next path">
-          <ol style={{ ...bodyText, paddingLeft: "1.2rem" }}>
-            {SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SEQUENCE.map((stepLabel) => (
-              <li key={stepLabel}>{stepLabel}</li>
-            ))}
-          </ol>
-          <p style={bodyText}>
-            Policy ID is pinned by the server. Browser input cannot choose partner, policy version, issuer, assurance, signer, network, or production.
-            Sandbox test result for technical integration only. It is not a live KYB or Production approval.
-          </p>
-        </ContentCard>
+        <>
+          <InstitutionalSandboxFirstVerificationCard
+            applicationId={activeApp.id}
+            journey={journey}
+            onNavigate={(stage) => navigateToStage(stage)}
+          />
+          <ContentCard title="Extended institutional sandbox sequence">
+            <ol style={{ ...bodyText, paddingLeft: "1.2rem" }}>
+              {SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SEQUENCE.map((stepLabel) => (
+                <li key={stepLabel}>{stepLabel}</li>
+              ))}
+            </ol>
+            <p style={bodyText}>
+              Policy ID is pinned by the server. Browser input cannot choose partner, policy version, issuer, assurance, signer, network, or production.
+              Sandbox test result for technical integration only. It is not a live KYB or Production approval.
+            </p>
+          </ContentCard>
+        </>
       )}
 
       {activeApp && (

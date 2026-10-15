@@ -17,6 +17,7 @@ export const POLICY_FIT_ACTIONS = [
   "higher_assurance_identity",
   "sandbox_demo",
   "content_provenance_publish",
+  "org_protocol_access",
 ] as const;
 export type PolicyFitAction = (typeof POLICY_FIT_ACTIONS)[number];
 
@@ -29,6 +30,7 @@ export const POLICY_FIT_ACTION_LABELS: Record<PolicyFitAction, string> = {
   higher_assurance_identity: "Gate a higher-assurance identity check",
   sandbox_demo: "Exercise a sandbox or testnet demo",
   content_provenance_publish: "Request provenance disclosure before publishing",
+  org_protocol_access: "Gate institutional protocol access (sandbox)",
 };
 
 export const POLICY_FIT_CATEGORIES = [
@@ -41,6 +43,7 @@ export const POLICY_FIT_CATEGORIES = [
   "collector_redemption",
   "sandbox_demo",
   "content_provenance",
+  "institutional_eligibility",
 ] as const;
 export type PolicyFitCategory = (typeof POLICY_FIT_CATEGORIES)[number];
 
@@ -54,6 +57,7 @@ export const POLICY_FIT_CATEGORY_LABELS: Record<PolicyFitCategory, string> = {
   collector_redemption: "Collector or redemption",
   sandbox_demo: "Sandbox economic demo",
   content_provenance: "Content provenance disclosure",
+  institutional_eligibility: "Organization protocol eligibility (sandbox)",
 };
 
 export const POLICY_FIT_ENVIRONMENTS = ["sandbox", "future_production"] as const;
@@ -110,6 +114,7 @@ export const POLICY_FIT_CATEGORY_TO_PACK: Record<PolicyFitCategory, PolicyPackId
   collector_redemption: "collector_redemption",
   sandbox_demo: "sandbox_economic_demo",
   content_provenance: "content_origin_disclosure",
+  institutional_eligibility: "sandbox_institutional_protocol_access",
 };
 
 export const POLICY_FIT_ACTION_CATEGORIES: Record<PolicyFitAction, readonly PolicyFitCategory[]> = {
@@ -121,6 +126,7 @@ export const POLICY_FIT_ACTION_CATEGORIES: Record<PolicyFitAction, readonly Poli
   higher_assurance_identity: ["identity_liveness"],
   sandbox_demo: ["sandbox_demo"],
   content_provenance_publish: ["content_provenance"],
+  org_protocol_access: ["institutional_eligibility"],
 };
 
 export const POLICY_FIT_CAPABILITY_TO_PATH: Record<PolicyFitCapability, IntegrationStudioPathId> = {
