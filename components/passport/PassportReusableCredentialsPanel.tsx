@@ -15,6 +15,7 @@ import {
 import { registerHolderPossessionKeyWithServer } from "@/lib/passport/registerHolderPossessionKeyClient";
 import type { HolderIdentitySurfaceSnapshot } from "@/lib/passport/holderIdentityReconciliation";
 import {
+  isCanonicalMigrationVisibleSuccess,
   shouldDeferReusableCredentialActions,
   shouldShowCompleteVerificationPrompt,
   shouldSuppressRepeatVerificationNudge,
@@ -243,11 +244,13 @@ export function PassportReusableCredentialsPanel({ sessionReady }: { sessionRead
             display: "grid",
             gap: "0.35rem",
             background:
-              holderIdentity.state === "identity_lookup_unavailable"
-                ? "var(--surface-muted, rgba(96, 165, 250, 0.08))"
-                : holderIdentity.operator_review_required
-                  ? "var(--surface-muted, rgba(255, 193, 7, 0.08))"
-                  : undefined,
+              isCanonicalMigrationVisibleSuccess(holderIdentity)
+                ? "var(--surface-muted, rgba(34, 197, 94, 0.08))"
+                : holderIdentity.state === "identity_lookup_unavailable"
+                  ? "var(--surface-muted, rgba(96, 165, 250, 0.08))"
+                  : holderIdentity.operator_review_required
+                    ? "var(--surface-muted, rgba(255, 193, 7, 0.08))"
+                    : undefined,
           }}
         >
           <strong style={{ fontFamily: FONT, fontSize: "0.8rem" }}>{holderIdentity.headline}</strong>

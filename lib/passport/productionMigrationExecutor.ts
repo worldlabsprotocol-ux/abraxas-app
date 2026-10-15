@@ -1,0 +1,191 @@
+// FILE: lib/passport/productionMigrationExecutor.ts
+
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import type { PoolClient } from "pg";
+import {
+  verifyProductionDdlExecutionAuthorization,
+  verifyProductionMigrationExecutionNonce,
+} from "./productionMigration581";
+import { resolveProductionMigrationReleaseContext } from "./productionMigrationReleaseContext";
+import { SOVEREIGN_PASSPORT_MIGRATION_FILES } from "./productionMigrationRelease";
+
+export type MigrationExecutionRecord = {
+  file: string;
+  sha256: string;
+  outcome: "applied" | "skipped_already_applied";
+  detail?: string;
+};
+
+export type MigrationExecutionResult =
+  | { ok: true; records: MigrationExecutionRecord[]; evidence_trail_id: string }
+  | { ok: false; code: string; detail: string; failed_file?: string; failed_sha256?: string };
+
+export class ProductionMigrationGateError extends Error {
+  readonly code: string;
+
+  constructor(code: string, detail: string) {
+    super(detail);
+    this.code = code;
+  }
+}
+
+export class ProductionMigrationStepError extends Error {
+  readonly code = "migration_step_failed" as const;
+  readonly failedFile: string;
+  readonly failedSha256: string;
+  readonly sanitizedDetail: string;
+  readonly attemptedRecords: MigrationExecutionRecord[];
+
+  constructor(input: {
+    failedFile: string;
+    failedSha256: string;
+    sanitizedDetail: string;
+    attemptedRecords: MigrationExecutionRecord[];
+  }) {
+    super(`Migration failed on ${input.failedFile}`);
+    this.failedFile = input.failedFile;
+    this.failedSha256 = input.failedSha256;
+    this.sanitizedDetail = sanitizeMigrationErrorDetail(input.sanitizedDetail);
+    this.attemptedRecords = input.attemptedRecords;
+  }
+}
+
+function sanitizeMigrationErrorDetail(detail: string): string {
+  return detail
+    .replace(/postgresql:\/\/[^\s]+/gi, "[redacted-connection-string]")
+    .slice(0, 500);
+}
+
+function migrationChecksum(contents: string): string {
+  return createHash("sha256").update(contents, "utf8").digest("hex");
+}
+
+export type SovereignMigrationPlanStep = { file: string; sha256: string; sql: string };
+
+export function buildMigrationExecutionPlan(): SovereignMigrationPlanStep[] {
+  return SOVEREIGN_PASSPORT_MIGRATION_FILES.map((file) => {
+    const path = join(process.cwd(), "supabase/migrations", file);
+    const sql = readFileSync(path, "utf8");
+    return { file, sha256: migrationChecksum(sql), sql };
+  });
+}
+
+/** Fail closed unless every step matches the repo-approved 136–143 migration files and checksums. */
+export function assertApprovedSovereignMigrationPlan(plan: SovereignMigrationPlanStep[]): void {
+  const approved = buildMigrationExecutionPlan();
+  if (plan.length !== approved.length) {
+    throw new ProductionMigrationGateError(
+      "migration_plan_not_approved",
+      "Only migrations 136–143 from the repository may execute.",
+    );
+  }
+  for (let i = 0; i < approved.length; i += 1) {
+    const step = plan[i];
+    const expected = approved[i];
+    if (step.file !== expected.file || step.sha256 !== expected.sha256) {
+      throw new ProductionMigrationGateError(
+        "migration_plan_not_approved",
+        `Unapproved migration step: ${step.file}`,
+      );
+    }
+  }
+}
+
+/** Runs inside an open transaction; throws on gate or SQL failure to force ROLLBACK. */
+export async function executeControlledProductionMigrations(input: {
+  client: PoolClient;
+  env?: Record<string, string | undefined>;
+  executionNonce: string;
+  dryRun?: boolean;
+}): Promise<MigrationExecutionResult> {
+  const env = input.env ?? process.env;
+  const releaseContext = await resolveProductionMigrationReleaseContext({ env, client: input.client });
+  if (!releaseContext.ok) {
+    throw new ProductionMigrationGateError(releaseContext.code, releaseContext.detail);
+  }
+  if (releaseContext.evaluation.production_execution_blocked) {
+    throw new ProductionMigrationGateError("phase_b_blocked", "Release gates block Production DDL execution.");
+  }
+
+  const binding = releaseContext.binding;
+
+  const ddlAuth = verifyProductionDdlExecutionAuthorization(env);
+  if (!ddlAuth.ok) {
+    throw new ProductionMigrationGateError(ddlAuth.code, ddlAuth.detail);
+  }
+
+  const nonceCheck = verifyProductionMigrationExecutionNonce(env, input.executionNonce);
+  if (!nonceCheck.ok) {
+    throw new ProductionMigrationGateError(nonceCheck.code, nonceCheck.detail);
+  }
+
+  const plan = buildMigrationExecutionPlan();
+  assertApprovedSovereignMigrationPlan(plan);
+  const records: MigrationExecutionRecord[] = [];
+  const evidenceTrailId = createHash("sha256")
+    .update(`${releaseContext.verifiedDatabaseProjectRef}:${Date.now()}:${plan.map((p) => p.sha256).join(",")}`)
+    .digest("hex")
+    .slice(0, 16);
+
+  const appliedRecords = await executeMigrationPlanWithAdvisoryLock({
+    client: input.client,
+    plan,
+    dryRun: input.dryRun,
+  });
+  records.push(...appliedRecords);
+
+  return { ok: true, records, evidence_trail_id: evidenceTrailId };
+}
+
+/** Transaction-local migration steps; throws ProductionMigrationStepError to force ROLLBACK. */
+export async function executeMigrationPlanWithAdvisoryLock(input: {
+  client: PoolClient;
+  plan: { file: string; sha256: string; sql: string }[];
+  dryRun?: boolean;
+}): Promise<MigrationExecutionRecord[]> {
+  const records: MigrationExecutionRecord[] = [];
+  await input.client.query(`select pg_advisory_xact_lock(581001, 581143)`);
+
+  for (const step of input.plan) {
+    if (input.dryRun) {
+      records.push({ file: step.file, sha256: step.sha256, outcome: "skipped_already_applied", detail: "dry_run" });
+      continue;
+    }
+    try {
+      await input.client.query(step.sql);
+    } catch (error) {
+      const sanitizedDetail = error instanceof Error ? error.message : "migration_failed";
+      throw new ProductionMigrationStepError({
+        failedFile: step.file,
+        failedSha256: step.sha256,
+        sanitizedDetail,
+        attemptedRecords: records,
+      });
+    }
+    records.push({ file: step.file, sha256: step.sha256, outcome: "applied" });
+  }
+
+  return records;
+}
+
+export function migrationExecutorErrorToResult(error: unknown): MigrationExecutionResult {
+  if (error instanceof ProductionMigrationStepError) {
+    return {
+      ok: false,
+      code: error.code,
+      detail: error.sanitizedDetail,
+      failed_file: error.failedFile,
+      failed_sha256: error.failedSha256,
+    };
+  }
+  if (error instanceof ProductionMigrationGateError) {
+    return { ok: false, code: error.code, detail: error.message };
+  }
+  return {
+    ok: false,
+    code: "execution_failed",
+    detail: error instanceof Error ? error.message : "Reconciliation execution failed.",
+  };
+}
