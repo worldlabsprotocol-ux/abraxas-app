@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { SOVEREIGN_RUNTIME_SCHEMA_MANIFEST } from "@/lib/databaseRecovery/sovereignSchemaManifest";
-import { resetAbraxasPgPoolForTests } from "@/lib/persistence/pgPool";
+import { queryAbraxasPg, resetAbraxasPgPoolForTests } from "@/lib/persistence/pgPool";
 import { finalizeInstitutionalAuthorizationResourcesDirect } from "@/lib/persistence/passportInstitutionalAuthorizationAtomic";
 import { insertInstitutionalPresentationConsentDirect } from "@/lib/persistence/passportInstitutionalConsentDirect";
 import { insertPassportPossessionChallengeDirect } from "@/lib/persistence/postgresPassportPossessionChallengeStore";
@@ -34,6 +34,13 @@ describe("Build #577 passport hybrid persistence (disposable PG)", () => {
     }
   });
 
+  const PASSPORT_MIGRATIONS = [
+    "140_passport_reusable_credential_state.sql",
+    "141_passport_institutional_presentation_consent.sql",
+    "142_passport_institutional_authorization_commits.sql",
+    "143_passport_authorization_signing_claim.sql",
+  ] as const;
+
   beforeEach(() => {
     delete process.env.ABRAXAS_PERSISTENCE_BACKEND;
     process.env.NEXT_PUBLIC_SUPABASE_URL = "https://placeholder.supabase.co";
@@ -41,14 +48,23 @@ describe("Build #577 passport hybrid persistence (disposable PG)", () => {
     process.env.ABRAXAS_PASSPORT_TRANSACTION_PG = "1";
     process.env.ABRAXAS_DATABASE_URL = PG_URL;
     resetAbraxasPgPoolForTests();
+    const dir = join(process.cwd(), "supabase/migrations");
+    for (const file of PASSPORT_MIGRATIONS) {
+      execFileSync("psql", [PG_URL!, "-v", "ON_ERROR_STOP=1"], {
+        input: readFileSync(join(dir, file), "utf8"),
+        encoding: "utf8",
+      });
+    }
     expect(isPassportDirectPostgresEnabled(process.env)).toBe(true);
   });
 
   it("consumes consent once under hybrid pg while PostgREST remains default transport", async () => {
+    const probe = await queryAbraxasPg("select 1 as ok");
+    expect(probe.rows[0]?.ok).toBe(1);
     const holder = `subj_hybrid_${Date.now()}`;
     const credentialId = `cred_${Date.now()}`;
     const idempotencyKey = `idem_${Date.now()}`;
-    const disclosureHash = "hash_a";
+    const disclosureHash = "a".repeat(64);
 
     const consentRow = await insertInstitutionalPresentationConsentDirect({
       holderSubjectId: holder,
@@ -58,8 +74,9 @@ describe("Build #577 passport hybrid persistence (disposable PG)", () => {
       policyVersion: 1,
       disclosureHash,
     });
-    expect(consentRow.ok).toBe(true);
-    if (!consentRow.ok) return;
+    if (!consentRow.ok) {
+      throw new Error(`consent insert failed: ${consentRow.code}`);
+    }
 
     const challenge = issuePassportPossessionChallenge({
       credentialId,
