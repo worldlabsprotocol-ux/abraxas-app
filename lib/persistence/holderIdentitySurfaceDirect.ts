@@ -12,6 +12,10 @@ import {
 import { isPassportDirectPostgresEnabled } from "./env";
 import { queryAbraxasPg } from "./pgPool";
 import { resolveLegacySubjectIdDirect } from "./holderSubjectDirect";
+import {
+  evaluateCanonicalSuiIdvBinding,
+  resolveVerifiedWalletAccountSubjectId,
+} from "./holderIdentityCanonicalSuiBinding";
 import { countIdentityVerificationsForSessionKeys } from "./holderIdentityIdvLookup";
 
 async function canonicalSchemaPresent(): Promise<boolean> {
@@ -52,6 +56,15 @@ export async function loadHolderIdentitySurfaceForSession(
   let idvApprovedCount = 0;
   let ambiguous = false;
   let identityLookupUnavailable = false;
+  let missingCanonicalLegacySuiBinding = false;
+  let authoritativeCanonicalSui: string | null = null;
+
+  const canonicalFromSession =
+    sessionHolderSubjectId && isChainNeutralHolderSubjectId(sessionHolderSubjectId)
+      ? sessionHolderSubjectId
+      : isChainNeutralHolderSubjectId(sessionSubjectId)
+        ? sessionSubjectId
+        : null;
 
   try {
     let suiLegacyLink: string | null = null;
@@ -76,6 +89,18 @@ export async function loadHolderIdentitySurfaceForSession(
     if (suiLegacyLink && subjectLegacyLink && suiLegacyLink !== subjectLegacyLink) {
       ambiguous = true;
     }
+
+    const verifiedWalletSubjectId = await resolveVerifiedWalletAccountSubjectId(session.walletCaip10);
+    const binding = evaluateCanonicalSuiIdvBinding({
+      canonicalSubjectId: canonicalFromSession,
+      sessionSuiAddress: session.suiAddress,
+      sessionWalletCaip10: session.walletCaip10,
+      suiLegacyLinkSubjectId: suiLegacyLink,
+      verifiedWalletAccountSubjectId: verifiedWalletSubjectId,
+    });
+    ambiguous = ambiguous || binding.ambiguousLegacyConflict;
+    authoritativeCanonicalSui = binding.authoritativeSuiAddress;
+    missingCanonicalLegacySuiBinding = binding.missingCanonicalLegacySuiBinding;
   } catch {
     identityLookupUnavailable = true;
   }
@@ -84,7 +109,8 @@ export async function loadHolderIdentitySurfaceForSession(
     const idvLookup = await countIdentityVerificationsForSessionKeys({
       sessionSubjectId,
       sessionHolderSubjectId,
-      suiAddress: session.suiAddress,
+      suiAddress: canonicalFromSession ? undefined : session.suiAddress,
+      authoritativeCanonicalSuiAddress: authoritativeCanonicalSui,
       legacyLinkSubjectId: legacyLink,
     });
     if (!idvLookup.ok) {
@@ -104,5 +130,6 @@ export async function loadHolderIdentitySurfaceForSession(
     idvApprovedRowsForLegacyWallet: identityLookupUnavailable ? 0 : idvApprovedCount,
     ambiguousLegacyConflict: ambiguous,
     identityLookupUnavailable,
+    missingCanonicalLegacySuiBinding,
   });
 }

@@ -50,7 +50,10 @@ export function planIdentityVerificationCountQuery(input: {
   schema: IdentityVerificationsColumnSchema;
   sessionSubjectId: string;
   sessionHolderSubjectId?: string | null;
+  /** Legacy Sui-authenticated sessions only (non-canonical subject). */
   suiAddress?: string | null;
+  /** When set, legacy sui_address may be OR-matched for this canonical subject (proven binding). */
+  authoritativeCanonicalSuiAddress?: string | null;
   legacyLinkSubjectId?: string | null;
 }):
   | { ok: true; sql: string; params: string[] }
@@ -81,8 +84,7 @@ export function planIdentityVerificationCountQuery(input: {
       return { ok: false, code: "no_identity_columns" };
     }
 
-    const suiRaw = input.suiAddress?.trim();
-    // Production legacy rows may still be keyed only by sui_address after holder_subject_id exists on schema.
+    const suiRaw = input.authoritativeCanonicalSuiAddress?.trim();
     if (suiRaw && input.schema.suiAddress) {
       paramIndex += 1;
       const suiKey = normalizeHolderSubjectKey(suiRaw);
@@ -116,6 +118,7 @@ export async function countIdentityVerificationsForSessionKeys(input: {
   sessionSubjectId: string;
   sessionHolderSubjectId?: string | null;
   suiAddress?: string | null;
+  authoritativeCanonicalSuiAddress?: string | null;
   legacyLinkSubjectId?: string | null;
   columnSchema?: IdentityVerificationsColumnSchema;
 }): Promise<IdentityIdvLookupResult> {
@@ -137,6 +140,7 @@ export async function countIdentityVerificationsForSessionKeys(input: {
     sessionSubjectId: input.sessionSubjectId,
     sessionHolderSubjectId: input.sessionHolderSubjectId,
     suiAddress: input.suiAddress,
+    authoritativeCanonicalSuiAddress: input.authoritativeCanonicalSuiAddress,
     legacyLinkSubjectId: input.legacyLinkSubjectId,
   });
 
