@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { resolveAuthenticatedHolderSession } from "@/lib/passport/portableTrust/resolveHolderSession";
 import { resolveHolderReusableCredential } from "@/lib/passport/reusableCredential/resolveStoredCredential";
 import { isPassportReusableCredentialStorageEnabled } from "@/lib/passport/reusableCredential/storageGate";
-import { build566RevocationSnapshotForCredential } from "@/lib/passport/reusableCredential/fixtures";
+import { fetchPortableRevocationSnapshotForCredential } from "@/lib/passport/reusableCredential/serverPortableRevocationSnapshot";
 
 export async function GET(req: NextRequest) {
   const session = await resolveAuthenticatedHolderSession(req);
@@ -32,34 +32,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "credential_not_found" }, { status: 404 });
   }
 
-  if (credential.payload.provenance.idv_method === "sandbox_fixture") {
-    return NextResponse.json({
-      snapshot: build566RevocationSnapshotForCredential(credential.payload.credential_id),
-      sandbox_fixture: true,
-    });
-  }
-
-  const publisherUrl = process.env.ABRAXAS_PORTABLE_REVOCATION_PUBLISHER_URL?.trim();
-  if (!publisherUrl) {
+  const fetched = await fetchPortableRevocationSnapshotForCredential({ credential });
+  if (!fetched.ok) {
     return NextResponse.json(
-      {
-        error: "portable_revocation_publisher_unconfigured",
-        note: "Issuer-backed presentation requires an authenticated portable revocation snapshot from your configured publisher.",
-      },
-      { status: 503 },
+      { error: fetched.code, note: fetched.note },
+      { status: fetched.httpStatus },
     );
   }
-
-  const statusId = credential.payload.revocation_status_id;
-  const url = `${publisherUrl.replace(/\/$/, "")}/status/${encodeURIComponent(statusId)}`;
-  try {
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) {
-      return NextResponse.json({ error: "publisher_fetch_failed", status: res.status }, { status: 502 });
-    }
-    const snapshot = await res.json();
-    return NextResponse.json({ snapshot, publisher_url: publisherUrl, server_fetched: true });
-  } catch {
-    return NextResponse.json({ error: "publisher_unreachable" }, { status: 502 });
-  }
+  return NextResponse.json({
+    snapshot: fetched.snapshot,
+    sandbox_fixture: fetched.sandbox_fixture,
+    server_fetched: fetched.server_fetched,
+  });
 }

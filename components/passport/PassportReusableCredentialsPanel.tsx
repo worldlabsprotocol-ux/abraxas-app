@@ -79,11 +79,19 @@ export function PassportReusableCredentialsPanel({ sessionReady }: { sessionRead
     void load();
   }, [load]);
 
-  async function registerPossessionKey() {
+  async function registerPossessionKey(forceRotation = false) {
     setBusy("possession");
     setPossessionNote(null);
     try {
       const nacl = await import("tweetnacl");
+      const existingSecret = sessionStorage.getItem("abraxas_passport_possession_secret");
+      const existingPublic = sessionStorage.getItem("abraxas_passport_possession_public");
+      if (existingSecret && existingPublic && !forceRotation) {
+        setPossessionNote(
+          "This device already has a possession key in session storage. Use rotate only when you intend to replace the bound key.",
+        );
+        return;
+      }
       const seed = crypto.getRandomValues(new Uint8Array(32));
       const pair = nacl.sign.keyPair.fromSeed(seed);
       const toB64Url = (bytes: Uint8Array) => {
@@ -93,16 +101,30 @@ export function PassportReusableCredentialsPanel({ sessionReady }: { sessionRead
       };
       const publicKeyB64Url = toB64Url(pair.publicKey);
       sessionStorage.setItem("abraxas_passport_possession_secret", toB64Url(pair.secretKey));
+      sessionStorage.setItem("abraxas_passport_possession_public", publicKeyB64Url);
+      const rotationPayload =
+        forceRotation && existingPublic
+          ? { authorized: true, previous_public_key_b64url: existingPublic }
+          : undefined;
       const res = await fetch("/api/passport/reusable-credentials/possession-key", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ public_key_b64url: publicKeyB64Url }),
+        body: JSON.stringify({
+          public_key_b64url: publicKeyB64Url,
+          rotation: rotationPayload,
+        }),
       });
       const data = (await res.json()) as {
         error?: string;
         issuance?: { credential_id?: string; deferred?: boolean; code?: string };
       };
+      if (res.status === 409 && data.error === "possession_key_rotation_required") {
+        setPossessionNote(
+          "An active credential is bound to your registered possession key. Use rotate with explicit authorization to replace the key. Abraxas will not silently replace it.",
+        );
+        return;
+      }
       if (!res.ok) throw new Error(data.error ?? "register_failed");
       if (data.issuance?.credential_id) {
         setPossessionNote(`Credential issued: ${data.issuance.credential_id}`);
@@ -217,9 +239,14 @@ export function PassportReusableCredentialsPanel({ sessionReady }: { sessionRead
         </div>
       ) : null}
       {recoveryKind !== "register_possession_key" ? (
-        <Btn variant="secondary" disabled={busy === "possession"} onClick={() => void registerPossessionKey()}>
-          {busy === "possession" ? "Registering…" : "Register or rotate this device possession key"}
-        </Btn>
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          <Btn variant="secondary" disabled={busy === "possession"} onClick={() => void registerPossessionKey(false)}>
+            {busy === "possession" ? "Registering…" : "Register this device possession key"}
+          </Btn>
+          <Btn variant="secondary" disabled={busy === "possession"} onClick={() => void registerPossessionKey(true)}>
+            Rotate possession key (explicit)
+          </Btn>
+        </div>
       ) : null}
       {possessionNote ? (
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: 0 }}>{possessionNote}</p>

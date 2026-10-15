@@ -12,6 +12,7 @@ import { resolveHolderReusableCredential } from "@/lib/passport/reusableCredenti
 import { isPassportReusableCredentialStorageEnabled } from "@/lib/passport/reusableCredential/storageGate";
 import { issuePassportPossessionChallenge } from "@/lib/passport/reusableCredential/holderPossessionChallenge";
 import { BUILD_546_FIXTURE_NOW } from "@/lib/institutionalCertification/build546/fixtures";
+import { resolvePresentationPartnerPolicy } from "@/lib/passport/reusableCredential/institutionalPresentationPolicy";
 
 export async function POST(req: NextRequest) {
   const csrf = portableTrustCsrfRejected(req);
@@ -43,6 +44,15 @@ export async function POST(req: NextRequest) {
       credentialId: body.credential_id,
     });
     if (stored) {
+      const policy = await resolvePresentationPartnerPolicy({
+        partnerId: body.partner_id,
+        policyId: body.policy_id,
+        credential: stored,
+      });
+      if (!policy.ok) {
+        return NextResponse.json({ error: policy.code, issuer_backed: true }, { status: 403 });
+      }
+
       const challenge = issuePassportPossessionChallenge({
         credentialId: stored.payload.credential_id,
         partnerId: body.partner_id,
@@ -53,6 +63,7 @@ export async function POST(req: NextRequest) {
         issuer_backed: true,
         sandbox_only: stored.payload.provenance.idv_method === "sandbox_fixture",
         credential_id: stored.payload.credential_id,
+        policy_version: policy.entry.policy_version,
         challenge,
         note: "Sign this challenge with the credential holder possession key before calling present.",
       });

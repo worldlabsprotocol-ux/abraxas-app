@@ -19,7 +19,6 @@ import type {
   PortableRevocationCheckpointStore,
   PortableRevocationSignedArtifact,
 } from "@/lib/protocol/portableRevocation";
-import { bootstrapTrustFromArtifact } from "@/lib/protocol/portableRevocation";
 import type { ReceiptConsumptionStore } from "@/lib/institutionalCertification/build547/receiptConsumptionStore";
 import { InMemoryReceiptConsumptionStore } from "@/lib/institutionalCertification/build547/receiptConsumptionStore";
 import { materializeAuthenticatedClaimsForPolicy } from "./authenticatedClaims";
@@ -52,6 +51,7 @@ export type PartnerAuthorizationFromCredentialInput = {
     challengeId: string,
     at: string,
   ) => Promise<{ ok: true } | { ok: false; code: "unknown" | "expired" | "replay" }>;
+  consentReceiptId?: string | null;
   now?: Date;
   env?: Record<string, string | undefined>;
 };
@@ -90,9 +90,7 @@ export async function authorizePartnerFromReusableCredential(
   input: PartnerAuthorizationFromCredentialInput,
 ): Promise<PartnerAuthorizationFromCredentialResult> {
   const now = input.now ?? new Date();
-  const bootstrap =
-    input.bootstrapTrusts
-    ?? [bootstrapTrustFromArtifact({ artifact: input.portableRevocationSnapshot })];
+  const bootstrap = input.bootstrapTrusts ?? [];
 
   const possession = input.durablePossessionConsume
     ? await verifyPassportPossessionProofAsync({
@@ -188,7 +186,7 @@ export async function authorizePartnerFromReusableCredential(
       `${input.credential.payload.holder_subject_id}:${input.partnerId}`,
     ),
     wallet_binding_ref: input.credential.payload.holder_possession_ref,
-    consent_receipt_id: null,
+    consent_receipt_id: input.consentReceiptId ?? null,
     decision_result: "approved",
     reason_codes: evaluation.reason_codes,
     evaluated_claim_refs: evaluatedRefs,

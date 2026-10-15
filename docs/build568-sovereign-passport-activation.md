@@ -21,9 +21,16 @@
 ### Broken or incomplete transitions (honest)
 
 - **Issuance visibility**: Before Build #568, Passport could imply readiness without persisted reusable credentials. Build #568 adds `/status` lifecycle states and hides credential cards until `credential_issued`.
-- **Issuer-backed revocation in UI**: Presentation fails closed without `ABRAXAS_PORTABLE_REVOCATION_PUBLISHER_URL` or client-supplied snapshot.
-- **Founder staging**: Migration 140 is not applied automatically to shared staging or Production.
-- **Partner inbox to reusable flow**: Legacy partner requests still use the original consent URL path; reusable institutional panel uses the pinned catalog for demonstration partners A and B.
+- **Issuer-backed revocation in UI**: Presentation fetches portable revocation snapshots on the server. It fails closed without `ABRAXAS_PORTABLE_REVOCATION_PUBLISHER_URL`, configured bootstrap trust, and a durable checkpoint directory (or explicit test memory checkpoint in CI only).
+- **Founder staging**: Migrations 140 and 141 are not applied automatically to shared staging or Production.
+- **Partner inbox to reusable flow**: Legacy partner requests still use the original consent URL path. Issuer-backed institutional presentation resolves partners and policies from `partner_policies` (plus explicit sandbox fixtures when `ABRAXAS_PASSPORT_INSTITUTIONAL_SANDBOX_FIXTURES=1` or demo mode).
+
+### Build #568 final correction (issuer-backed path)
+
+- Server resolves partner policy from the registry. Clients cannot supply policy rules.
+- Holder consent is persisted in `passport_institutional_presentation_consents` (migration 141) and consumed once per presentation.
+- Revocation trust uses issuer registry bindings, env-configured bootstrap trust, and durable checkpoints. Request-supplied snapshots are not trusted for bootstrap.
+- `POST /api/passport/reusable-credentials/status` retry backfill requires CSRF same-origin headers.
 
 ## Migration 140 activation readiness
 
@@ -39,7 +46,10 @@
 - `ABRAXAS_PERSISTENCE_BACKEND=postgres_direct`
 - `ABRAXAS_PASSPORT_REUSABLE_CREDENTIAL_STORAGE=1`
 - Passport credential signing key aligned with `ABRAXAS_PASSPORT_CREDENTIAL_ISSUER_REGISTRY`
-- Portable revocation publisher URL for issuer-backed holder UI: `ABRAXAS_PORTABLE_REVOCATION_PUBLISHER_URL` (optional for sandbox credentials)
+- Portable revocation publisher URL for issuer-backed holder UI: `ABRAXAS_PORTABLE_REVOCATION_PUBLISHER_URL`
+- Portable revocation bootstrap trust JSON: `ABRAXAS_PORTABLE_REVOCATION_BOOTSTRAP_TRUSTS`
+- Durable checkpoint directory: `ABRAXAS_PORTABLE_REVOCATION_CHECKPOINT_DIR`
+- Migration 141 for institutional presentation consent rows (isolated sovereign Postgres only until approved)
 
 ### Issuance verification
 

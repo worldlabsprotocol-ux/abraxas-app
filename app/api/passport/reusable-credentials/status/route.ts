@@ -1,6 +1,7 @@
 // FILE: app/api/passport/reusable-credentials/status/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
+import { portableTrustCsrfRejected } from "@/lib/passport/portableTrust/csrf";
 import { resolveAuthenticatedHolderSession } from "@/lib/passport/portableTrust/resolveHolderSession";
 import { loadReusableCredentialLifecycleForHolderDirect } from "@/lib/persistence/passportReusableCredentialLifecycleDirect";
 import { tryBackfillPassportReusableCredentialForSubjectDirect } from "@/lib/persistence/passportReusableCredentialDirectStore";
@@ -19,6 +20,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const csrf = portableTrustCsrfRejected(req);
+  if (csrf) {
+    return NextResponse.json({ error: csrf }, { status: 403 });
+  }
   const session = await resolveAuthenticatedHolderSession(req);
   if (!session.ok) {
     return NextResponse.json(

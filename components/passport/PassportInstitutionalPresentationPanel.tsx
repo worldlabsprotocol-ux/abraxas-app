@@ -71,10 +71,28 @@ export function PassportInstitutionalPresentationPanel({
     try {
       const secretB64 = sessionStorage.getItem("abraxas_passport_possession_secret");
       if (!secretB64) {
-        throw new Error("Register this device possession key before approving institutional requests.");
+        throw new Error(
+          "This browser session does not have your device possession key. Register the key again on this device, or use wallet key recovery if configured.",
+        );
       }
       const nacl = await import("tweetnacl");
       const secretKey = b64UrlToBytes(secretB64);
+
+      const consentRes = await fetch("/api/passport/reusable-credentials/institutional-consent", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          partner_id: entry.partner_id,
+          policy_id: entry.policy_id,
+          credential_id: credentialId,
+        }),
+      });
+      const consentBody = (await consentRes.json()) as { consent_id?: string; error?: string };
+      if (!consentRes.ok || !consentBody.consent_id) {
+        throw new Error(consentBody.error ?? "consent_failed");
+      }
+
       const challengeRes = await fetch("/api/passport/reusable-credentials/challenge", {
         method: "POST",
         credentials: "include",
@@ -99,22 +117,6 @@ export function PassportInstitutionalPresentationPanel({
         signature: signPassportPossessionChallenge(challenge, secretKey),
       };
 
-      let portableRevocationSnapshot: unknown | undefined;
-      if (challengeBody.issuer_backed) {
-        const snapRes = await fetch(
-          `/api/passport/reusable-credentials/revocation-snapshot?credential_id=${encodeURIComponent(credentialId)}`,
-          { credentials: "include" },
-        );
-        const snapBody = (await snapRes.json()) as { snapshot?: unknown; error?: string };
-        if (!snapRes.ok || !snapBody.snapshot) {
-          throw new Error(
-            snapBody.error
-              ?? "Portable revocation snapshot is required for issuer-backed presentation. Configure publisher distribution.",
-          );
-        }
-        portableRevocationSnapshot = snapBody.snapshot;
-      }
-
       const presentRes = await fetch("/api/passport/reusable-credentials/present", {
         method: "POST",
         credentials: "include",
@@ -123,9 +125,9 @@ export function PassportInstitutionalPresentationPanel({
           partner_id: entry.partner_id,
           policy_id: entry.policy_id,
           credential_id: credentialId,
+          consent_id: consentBody.consent_id,
           challenge,
           holder_possession_proof: proof,
-          portable_revocation_snapshot: portableRevocationSnapshot,
           request_id: `passport_ui_${Date.now()}`,
         }),
       });
