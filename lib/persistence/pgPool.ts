@@ -5,7 +5,10 @@ import "server-only";
 
 import pg from "pg";
 import type { Pool, PoolClient, PoolConfig, QueryResultRow } from "pg";
-import { resolveIndependentPostgresUrl, resolvePersistenceBackend } from "./env";
+import {
+  isPassportDirectPostgresEnabled,
+  resolvePassportDirectPostgresUrl,
+} from "./env";
 
 let cachedPool: Pool | null = null;
 
@@ -57,8 +60,8 @@ export function resetAbraxasPgPoolForTests(): void {
 export function getAbraxasPgPool(
   env: Record<string, string | undefined> = process.env,
 ): Pool | null {
-  if (resolvePersistenceBackend(env) !== "postgres_direct") return null;
-  const url = resolveIndependentPostgresUrl(env);
+  if (!isPassportDirectPostgresEnabled(env)) return null;
+  const url = resolvePassportDirectPostgresUrl(env);
   if (!url) return null;
   if (!cachedPool) {
     cachedPool = new pg.Pool(buildPgPoolConfig(url, env));
@@ -71,7 +74,10 @@ export function requireAbraxasPgPool(
 ): Pool {
   const pool = getAbraxasPgPool(env);
   if (!pool) {
-    throw new Error("postgres_direct persistence requires ABRAXAS_DATABASE_URL");
+    throw new Error(
+      "Passport transaction PostgreSQL requires ABRAXAS_DATABASE_URL or ABRAXAS_PASSPORT_DATABASE_URL "
+      + "(set ABRAXAS_PASSPORT_TRANSACTION_PG=1 when ABRAXAS_PERSISTENCE_BACKEND remains supabase_postgrest)",
+    );
   }
   return pool;
 }

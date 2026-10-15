@@ -25,8 +25,8 @@ describe("Build #576 production reconciliation", () => {
       join(process.cwd(), "app/api/passport/reusable-credentials/status/route.ts"),
       "utf8",
     );
-    expect(env).toContain('explicit === "postgres_direct"');
-    expect(pgPool).toContain('resolvePersistenceBackend(env) !== "postgres_direct"');
+    expect(env).toContain("isPassportDirectPostgresEnabled");
+    expect(pgPool).toContain("isPassportDirectPostgresEnabled");
     expect(directStore).toContain("queryAbraxasPg");
     expect(statusRoute).toContain("loadReusableCredentialLifecycleForHolderDirect");
     expect(env).toContain("supabase_postgrest");

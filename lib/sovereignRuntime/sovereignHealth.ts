@@ -4,7 +4,11 @@
 import { accessSync, constants } from "node:fs";
 import { createRecoveryPgClient } from "@/lib/databaseRecovery/pgClient";
 import { probeRecoveryInventoryReady } from "@/lib/databaseRecovery/pgInventory";
-import { persistenceUsesDirectPostgres, resolveIndependentPostgresUrl } from "@/lib/persistence/env";
+import {
+  isPassportDirectPostgresEnabled,
+  persistenceUsesDirectPostgres,
+  resolvePassportDirectPostgresUrl,
+} from "@/lib/persistence/env";
 import { chainNeutralIdentitySchemaReadyServer } from "@/lib/persistence/chainNeutralSchemaReady.server";
 import {
   parseSovereignEnvClass,
@@ -59,14 +63,15 @@ export async function buildSovereignHealthReport(
 ): Promise<SovereignHealthReport> {
   const envClass = parseSovereignEnvClass(env);
   const identityErr = validateSovereignDatabaseIdentity(env);
-  const databaseUrl = resolveIndependentPostgresUrl(env);
+  const databaseUrl = resolvePassportDirectPostgresUrl(env);
   const direct = persistenceUsesDirectPostgres(env);
+  const passportPg = isPassportDirectPostgresEnabled(env);
 
   let postgres: SovereignHealthReport["checks"]["postgres"] = "skipped";
   let recoveryInventoryReady = false;
   let chainNeutralReady = false;
 
-  if (direct && databaseUrl) {
+  if (passportPg && databaseUrl) {
     try {
       const client = await createRecoveryPgClient({ databaseUrl, env });
       try {
@@ -79,10 +84,12 @@ export async function buildSovereignHealthReport(
     } catch {
       postgres = "unavailable";
     }
-    try {
-      chainNeutralReady = await chainNeutralIdentitySchemaReadyServer(true);
-    } catch {
-      chainNeutralReady = false;
+    if (direct) {
+      try {
+        chainNeutralReady = await chainNeutralIdentitySchemaReadyServer(true);
+      } catch {
+        chainNeutralReady = false;
+      }
     }
   }
 

@@ -18,6 +18,7 @@ import {
 import type { PortableRevocationBootstrapTrust } from "@/lib/protocol/portableRevocation";
 import type { ParseStagingExecutionEvidenceResult } from "./stagingExecutionEvidence";
 import type { StagingEvidenceIntegrityResult } from "./stagingExecutionEvidenceIntegrity";
+import { isPassportDirectPostgresEnabled } from "@/lib/persistence/env";
 
 export type ReadinessPhase =
   | "missing"
@@ -289,6 +290,10 @@ export function buildStagingReadiness571(input: StagingReadinessInput): StagingR
   // 3. Sovereign PostgreSQL
   const dbUrl = envTrimmed(env, "ABRAXAS_SOVEREIGN_PG_URL") || envTrimmed(env, "ABRAXAS_DATABASE_URL");
   const postgresDirect = envTrimmed(env, "ABRAXAS_PERSISTENCE_BACKEND") === "postgres_direct";
+  const passportHybridPg =
+    Boolean(dbUrl)
+    && isPassportDirectPostgresEnabled(env)
+    && !postgresDirect;
   if (!dbUrl) {
     items.push(
       item(
@@ -300,13 +305,13 @@ export function buildStagingReadiness571(input: StagingReadinessInput): StagingR
       ),
     );
     pushFailure("database_url_missing");
-  } else if (!postgresDirect) {
+  } else if (!postgresDirect && !passportHybridPg) {
     items.push(
       item(
         "sovereign_pg",
         "Sovereign PostgreSQL connectivity",
         "configuration_present",
-        "Database URL present but ABRAXAS_PERSISTENCE_BACKEND is not postgres_direct",
+        "Database URL present but neither postgres_direct nor ABRAXAS_PASSPORT_TRANSACTION_PG hybrid mode",
         "persistence_backend_not_postgres_direct",
       ),
     );
