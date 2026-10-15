@@ -15,9 +15,19 @@ Production product: [https://abraxasworld.xyz](https://abraxasworld.xyz)
 
 ## Authentication requirements
 
-1. Sign in to Partner Launchpad with a Google account eligible for sandbox provisioning (same session as Integration Studio create flow).
-2. After provisioning, use the **sandbox API key** only on your server. Never embed it in browser code or client telemetry.
-3. Holder flows use Abraxas Passport holder authentication. Integrators do not receive raw identity documents at authorization time.
+Partner Launchpad and Integration Studio authenticate with a **sandbox API key** (`abx_test_…`), not Google OAuth.
+
+1. **Local / preview operator setup**
+   - Set `ABRAXAS_BROWSER_SESSION_SECRET` to a random string of at least 16 characters in `.env.local` (required to mint the httpOnly Launchpad browser session cookie after key validation).
+   - Restart the dev server after changing secrets.
+   - Open `/developers/launchpad?template=sandbox_institutional_protocol_access`, paste a provisioned sandbox API key, and submit **Continue with sandbox key**.
+2. **Deployed acceptance (no credential changes in this build)**
+   - Use an existing sandbox application key from your Launchpad tenant on `https://abraxasworld.xyz` (or your preview URL).
+   - For automated HTTP acceptance, export `BUILD583_SANDBOX_BASE_URL`, `BUILD583_PARTNER_API_KEY`, and optionally `BUILD583_APPLICATION_ID`, then run `npm run build-583:external-institutional-acceptance`.
+3. **Google sign-in copy on Passport**
+   - Holder Passport may show “Google sign-in unavailable” when zkLogin/OAuth is not configured locally. That is a **holder** surface configuration gap, not Launchpad partner authentication. Do not treat it as proof that institutional sandbox activation failed.
+4. After provisioning, use the **sandbox API key** only on your server. Never embed it in browser code or client telemetry.
+5. Holder flows use Abraxas Passport holder authentication. Integrators do not receive raw identity documents at authorization time.
 
 ## Supported sandbox policy
 
@@ -99,4 +109,15 @@ Time to first independent verify is **measured** only when integration events ar
 npm run build-583:external-institutional-acceptance
 ```
 
-Reports execution tiers separately. It does not substitute mocked success for missing partner credentials or holder sessions.
+Reports execution tiers separately:
+
+| Tier | Meaning |
+|------|---------|
+| `local_automated` | Vitest unit/component tests only |
+| `simulated_sandbox_provisioning` | In-memory admin provisioning (not customer-facing) |
+| `disposable_postgresql` | Build #582 institutional trust proof when disposable DB env is authorized |
+| `real_authenticated_http_sandbox` | Live `POST /api/launchpad/auth/session` (+ optional integration-health GET) |
+| `authenticated_browser` | Requires artifact file `artifacts/build583-authenticated-browser-acceptance.json` with `ok: true` and `routes_tested[]` from a real browser walkthrough |
+| `external_customer_executed` | Blocked until a third party runs the handoff outside Abraxas CI |
+
+Environment variables alone do not complete browser or external-customer tiers. Missing partner credentials and sessions remain explicit **blocked** states.
