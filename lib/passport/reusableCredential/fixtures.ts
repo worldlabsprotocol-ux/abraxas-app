@@ -123,3 +123,15 @@ export function build566RevocationSnapshotForCredential(credentialId: string) {
     state: "active",
   });
 }
+
+/** Portable revocation snapshot with wall-clock freshness for sovereign Postgres tests. */
+export function buildFreshPortableRevocationSnapshotForCredential(credentialId: string) {
+  const issuedAt = new Date().toISOString();
+  const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+  return buildSyntheticPortableRevocationSnapshot({
+    receiptId: credentialId,
+    state: "active",
+    issuedAt,
+    expiresAt,
+  });
+}

@@ -19,7 +19,11 @@ import {
   upsertPassportHolderPossessionKeyDirect,
   listPassportReusableCredentialsForHolderDirect,
 } from "@/lib/persistence/passportReusableCredentialDirectStore";
-import { BUILD_566_PARTNER_A, BUILD_566_POLICY_ID } from "./fixtures";
+import {
+  BUILD_566_PARTNER_A,
+  BUILD_566_POLICY_ID,
+  buildFreshPortableRevocationSnapshotForCredential,
+} from "./fixtures";
 import { build546TrustRegistryEnv, BUILD_546_PRIMARY_KEY } from "@/lib/institutionalCertification/build546/fixtures";
 import {
   credentialIssuerRegistryFromKeyPair,
@@ -33,7 +37,6 @@ import { CLAIM_ISSUERS } from "@/lib/credentials/claimSchema";
 import { PORTABLE_REVOCATION_TEST_ISSUER_ID } from "@/lib/protocol/portableRevocation/fixtures";
 import {
   bootstrapTrustFromArtifact,
-  buildSyntheticPortableRevocationSnapshot,
 } from "@/lib/protocol/portableRevocation";
 import {
   PORTABLE_REVOCATION_BOOTSTRAP_TRUSTS_ENV,
@@ -60,6 +63,15 @@ const PG_URL = process.env.ABRAXAS_SOVEREIGN_PG_URL?.trim()
   || process.env.MIGRATION_136_PG_URL?.trim()
   || process.env.ABRAXAS_DATABASE_URL?.trim()
   || undefined;
+
+function mockPortableRevocationPublisher(snapshot: import("@/lib/protocol/portableRevocation").PortableRevocationSignedArtifact) {
+  vi.spyOn(global, "fetch").mockImplementation(async () =>
+    new Response(JSON.stringify(snapshot), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    }),
+  );
+}
 
 const PG_SKIP_REASON =
   "sovereign Postgres concurrency tests unexecuted: set ABRAXAS_SOVEREIGN_PG_URL or ABRAXAS_DATABASE_URL";
@@ -98,6 +110,7 @@ describe("Build #568 canonical authorization concurrency (disposable PG)", () =>
     process.env.ABRAXAS_EVIDENCE_ENCRYPTION_KEY = Buffer.alloc(32, 3).toString("base64");
     process.env[PORTABLE_REVOCATION_CHECKPOINT_MEMORY_TEST_ENV] = "1";
     process.env.ABRAXAS_SIGNING_KEY = JSON.stringify(BUILD_546_PRIMARY_KEY.privateKeyJwk);
+    process.env.ABRAXAS_SIGNING_KEY_ID = BUILD_546_PRIMARY_KEY.signingKeyId;
     Object.assign(process.env, build546TrustRegistryEnv());
     const registryEntry = credentialIssuerRegistryFromKeyPair({
       issuerId: CLAIM_ISSUERS.abraxas,
@@ -118,6 +131,7 @@ describe("Build #568 canonical authorization concurrency (disposable PG)", () =>
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     rmSync(evidenceDir, { recursive: true, force: true });
     resetAbraxasPgPoolForTests();
     resetPersistenceClientForTests();
@@ -151,17 +165,14 @@ describe("Build #568 canonical authorization concurrency (disposable PG)", () =>
     const creds = await listPassportReusableCredentialsForHolderDirect(wallet.subjectId);
     const credential = creds[0]!;
 
-    const snapshot = buildSyntheticPortableRevocationSnapshot({
-      receiptId: credential.payload.credential_id,
-      state: "active",
-    });
+    const snapshot = buildFreshPortableRevocationSnapshotForCredential(
+      credential.payload.credential_id,
+    );
     process.env[PORTABLE_REVOCATION_BOOTSTRAP_TRUSTS_ENV] = JSON.stringify([
       bootstrapTrustFromArtifact({ artifact: snapshot }),
     ]);
     process.env.ABRAXAS_PORTABLE_REVOCATION_PUBLISHER_URL = "https://publisher.test";
-    vi.spyOn(global, "fetch").mockResolvedValue(
-      new Response(JSON.stringify(snapshot), { status: 200 }),
-    );
+    mockPortableRevocationPublisher(snapshot);
 
     const entry = await resolveInstitutionalPartnerCatalogEntry({
       partnerId: BUILD_566_PARTNER_A,
