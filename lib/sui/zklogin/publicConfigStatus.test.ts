@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildZkLoginPublicConfigStatus,
-  zkLoginProductionReady,
+  zkLoginConfigurationReady,
 } from "@/lib/sui/zklogin/publicConfigStatus";
 
 describe("zkLogin public config status", () => {
@@ -15,10 +15,24 @@ describe("zkLogin public config status", () => {
     });
     expect(status.client.oauth_launch_ready).toBe(true);
     expect(status.server.jwt_verify_ready).toBe(false);
-    expect(zkLoginProductionReady(status)).toBe(false);
+    expect(status.readiness.configuration_ready).toBe(false);
+    expect(status.readiness.authentication_operational).toBe(false);
+    expect(zkLoginConfigurationReady(status)).toBe(false);
   });
 
-  it("reports ready when public, server, and session secret align", () => {
+  it("reports not configuration ready when public and server canonical ids differ", () => {
+    const status = buildZkLoginPublicConfigStatus({
+      NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID: "client-a.apps.googleusercontent.com",
+      GOOGLE_ZKLOGIN_CLIENT_ID: "client-b.apps.googleusercontent.com",
+      NEXT_PUBLIC_APP_URL: "https://abraxasworld.xyz",
+      ABRAXAS_BROWSER_SESSION_SECRET: "session-secret",
+    });
+    expect(status.alignment.canonical_ids_aligned).toBe(false);
+    expect(status.readiness.configuration_ready).toBe(false);
+    expect(status.readiness.authentication_operational).toBe(false);
+  });
+
+  it("reports configuration ready when public, server, and session secret align", () => {
     const status = buildZkLoginPublicConfigStatus({
       NEXT_PUBLIC_GOOGLE_ZKLOGIN_CLIENT_ID: "canonical.apps.googleusercontent.com",
       GOOGLE_ZKLOGIN_CLIENT_ID: "canonical.apps.googleusercontent.com",
@@ -26,7 +40,10 @@ describe("zkLogin public config status", () => {
       ABRAXAS_RUNTIME_ENV: "production",
       ABRAXAS_BROWSER_SESSION_SECRET: "session-secret",
     });
-    expect(zkLoginProductionReady(status)).toBe(true);
+    expect(status.alignment.canonical_ids_aligned).toBe(true);
+    expect(status.readiness.configuration_ready).toBe(true);
+    expect(status.readiness.authentication_operational).toBe(false);
+    expect(zkLoginConfigurationReady(status)).toBe(true);
     expect(status.oauth.redirect_uri).toBe(
       "https://abraxasworld.xyz/auth/zklogin/callback",
     );
