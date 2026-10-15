@@ -32,6 +32,25 @@ export type ProductionMigration581Evaluation = Omit<ProductionMigrationReleaseEv
   reconciliation_inventory_present: boolean;
 };
 
+/** Registered execution nonce must match at invoke time (not durable single-use consumption). */
+export function verifyProductionMigrationExecutionNonce(
+  env: Record<string, string | undefined>,
+  submittedNonce: string,
+): { ok: true } | { ok: false; code: string; detail: string } {
+  const expected = env[PRODUCTION_MIGRATION_EXECUTION_NONCE_ENV]?.trim();
+  if (!expected) {
+    return {
+      ok: false,
+      code: "execution_nonce_not_registered",
+      detail: "Register ABRAXAS_PRODUCTION_MIGRATION_EXECUTION_NONCE before invoking the executor.",
+    };
+  }
+  if (expected !== submittedNonce.trim()) {
+    return { ok: false, code: "execution_nonce_mismatch", detail: "Registered execution nonce mismatch." };
+  }
+  return { ok: true };
+}
+
 export function verifyProductionDdlExecutionAuthorization(env: Record<string, string | undefined> = process.env): {
   ok: boolean;
   code: string;
@@ -71,13 +90,14 @@ export function evaluateProductionMigration581(input: {
     preflight: input.preflight,
     env,
     verifiedDatabaseProjectRef: input.verifiedDatabaseProjectRef,
+    founderReleaseTokenPolicy: "omit",
   });
 
   const gates: ReleaseGateRow[] = [...base.gates];
   const stale = input.preflightEvidence?.stale ?? true;
   gates.push({
     gate: "preflight_freshness",
-    status: input.preflightEvidence && !stale ? "pass" : input.preflightEvidence ? "warn" : "fail",
+    status: input.preflightEvidence && !stale ? "pass" : "fail",
     detail: !input.preflightEvidence
       ? "Load preflight JSON from read-only Production probes before trusting gate status."
       : stale
@@ -127,7 +147,7 @@ export function evaluateProductionMigration581(input: {
     gate: "phase_b_execution_ready",
     status: phaseBReady ? "pass" : "blocked",
     detail: phaseBReady
-      ? "All Phase B gates satisfied; controlled executor may run with single-use nonce."
+      ? "All Phase B gates satisfied; controlled executor may run with registered execution nonce."
       : "Phase B remains blocked until freshness, rehearsal, backup, inventory, and dual authorization align.",
   });
 
@@ -167,7 +187,7 @@ export const FOUNDER_PHASE_B_APPROVALS = [
   "Authorize migration set 136–143 only (no ad-hoc DDL)",
   `Set ABRAXAS_PRODUCTION_MIGRATION_RELEASE_TOKEN=${PRODUCTION_MIGRATION_EXECUTE_TOKEN}`,
   `Set ${PRODUCTION_MIGRATION_DDL_AUTHORIZED_ENV}=true after review`,
-  "Provide single-use ABRAXAS_PRODUCTION_MIGRATION_EXECUTION_NONCE for executor",
+  "Register ABRAXAS_PRODUCTION_MIGRATION_EXECUTION_NONCE matching the executor invocation",
   "Approve holder reconciliation execute batch separately after schema verification",
 ] as const;
 

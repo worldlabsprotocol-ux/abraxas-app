@@ -1,8 +1,8 @@
 // FILE: lib/passport/productionPreflightEvidence.ts
-// Load and validate read-only Production preflight JSON (Build #581).
 
 import { readFileSync } from "node:fs";
 import type { ProductionMigrationPreflightReport } from "./productionMigrationRelease";
+import { validateProductionPreflightEnvelope } from "./productionPreflightEnvelope";
 
 export const PRODUCTION_PREFLIGHT_JSON_PATH_ENV = "ABRAXAS_PRODUCTION_PREFLIGHT_JSON_PATH";
 export const PRODUCTION_PREFLIGHT_JSON_INLINE_ENV = "ABRAXAS_PRODUCTION_PREFLIGHT_JSON";
@@ -16,6 +16,7 @@ export type LoadedProductionPreflight = {
   source: "inline_env" | "file_path";
   ageHours: number;
   stale: boolean;
+  derivedDatabaseRef: string;
 };
 
 export function productionPreflightMaxAgeMs(env: Record<string, string | undefined> = process.env): number {
@@ -25,18 +26,11 @@ export function productionPreflightMaxAgeMs(env: Record<string, string | undefin
   return hours * 60 * 60 * 1000;
 }
 
-function parseCapturedAt(report: ProductionMigrationPreflightReport & { captured_at?: string }): number {
-  const raw = report.captured_at?.trim();
-  if (!raw) return 0;
-  const ms = Date.parse(raw);
-  return Number.isFinite(ms) ? ms : 0;
-}
-
 export function loadProductionPreflightEvidence(
   env: Record<string, string | undefined> = process.env,
 ):
   | { ok: true; evidence: LoadedProductionPreflight }
-  | { ok: false; code: "preflight_missing" | "preflight_invalid_json"; detail: string } {
+  | { ok: false; code: string; detail: string } {
   const inline = env[PRODUCTION_PREFLIGHT_JSON_INLINE_ENV]?.trim();
   const path = env[PRODUCTION_PREFLIGHT_JSON_PATH_ENV]?.trim();
   let raw: string | null = inline || null;
@@ -59,27 +53,32 @@ export function loadProductionPreflightEvidence(
     };
   }
 
-  let parsed: ProductionMigrationPreflightReport & { captured_at?: string };
+  let parsed: unknown;
   try {
-    parsed = JSON.parse(raw) as ProductionMigrationPreflightReport & { captured_at?: string };
+    parsed = JSON.parse(raw);
   } catch {
     return { ok: false, code: "preflight_invalid_json", detail: "Preflight payload is not valid JSON." };
   }
 
-  const capturedAtMs = parseCapturedAt(parsed);
-  const ageMs = capturedAtMs > 0 ? Date.now() - capturedAtMs : Number.POSITIVE_INFINITY;
+  const validated = validateProductionPreflightEnvelope(parsed);
+  if (!validated.ok) {
+    return validated;
+  }
+
   const maxAgeMs = productionPreflightMaxAgeMs(env);
-  const ageHours = capturedAtMs > 0 ? ageMs / (60 * 60 * 1000) : Number.POSITIVE_INFINITY;
-  const stale = capturedAtMs === 0 || ageMs > maxAgeMs;
+  const ageMs = Date.now() - validated.evidence.capturedAtMs;
+  const ageHours = ageMs / (60 * 60 * 1000);
+  const stale = ageMs > maxAgeMs;
 
   return {
     ok: true,
     evidence: {
-      report: parsed,
-      capturedAtMs,
+      report: validated.evidence.report,
+      capturedAtMs: validated.evidence.capturedAtMs,
       source,
       ageHours,
       stale,
+      derivedDatabaseRef: validated.evidence.derivedDatabaseRef,
     },
   };
 }

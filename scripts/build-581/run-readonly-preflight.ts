@@ -1,9 +1,14 @@
 #!/usr/bin/env npx tsx
 // FILE: scripts/build-581/run-readonly-preflight.ts
-// Run Build #578–#580 read-only probes against authorized Production Postgres (no secrets in output).
 
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
+import {
+  PRODUCTION_PREFLIGHT_ENVELOPE_BUILD,
+  PRODUCTION_PREFLIGHT_ENVELOPE_VERSION,
+  PRODUCTION_PREFLIGHT_PROBE_580_KEY,
+  validateProductionPreflightEnvelope,
+} from "@/lib/passport/productionPreflightEnvelope";
 import { validatePassportHybridPostgresBinding } from "@/lib/persistence/passportHybridPostgres";
 import { supabaseProjectRefFromPostgresUrl } from "@/lib/supabase/projectRefs";
 import { PRODUCTION_SUPABASE_PROJECT_REF } from "@/lib/passport/productionMigrationRelease";
@@ -11,7 +16,7 @@ import { PRODUCTION_SUPABASE_PROJECT_REF } from "@/lib/passport/productionMigrat
 const PROBE_FILES = [
   "scripts/build-578/production-schema-probes.sql",
   "scripts/build-579/production-migration-preflight.sql",
-  "scripts/build-580/production-migration-release-gates.sql",
+  PRODUCTION_PREFLIGHT_PROBE_580_KEY,
 ] as const;
 
 function resolveDatabaseUrl(): string {
@@ -51,26 +56,58 @@ function main() {
 
   const binding = validatePassportHybridPostgresBinding(env);
   const derivedRef = supabaseProjectRefFromPostgresUrl(databaseUrl);
-  const report = {
-    build: 581,
-    generated_at: new Date().toISOString(),
-    canonical_product_url: "https://abraxasworld.xyz",
-    expected_production_ref: PRODUCTION_SUPABASE_PROJECT_REF,
-    derived_database_ref: derivedRef,
-    hybrid_binding: binding,
-    probes: {} as Record<string, unknown>,
-  };
+  const probes: Record<string, unknown> = {};
 
   if (!binding.ok || derivedRef !== PRODUCTION_SUPABASE_PROJECT_REF) {
-    console.log(JSON.stringify({ ...report, status: "blocked_database_identity" }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          build: PRODUCTION_PREFLIGHT_ENVELOPE_BUILD,
+          envelope_version: PRODUCTION_PREFLIGHT_ENVELOPE_VERSION,
+          status: "blocked_database_identity",
+          generated_at: new Date().toISOString(),
+          expected_production_ref: PRODUCTION_SUPABASE_PROJECT_REF,
+          derived_database_ref: derivedRef,
+          hybrid_binding: binding,
+          probes,
+        },
+        null,
+        2,
+      ),
+    );
     process.exit(2);
   }
 
   for (const file of PROBE_FILES) {
-    report.probes[file] = runProbe(databaseUrl, file);
+    probes[file] = runProbe(databaseUrl, file);
   }
 
-  console.log(JSON.stringify({ ...report, status: "ok" }, null, 2));
+  const releaseGatesReport = probes[PRODUCTION_PREFLIGHT_PROBE_580_KEY];
+  const envelope = {
+    build: PRODUCTION_PREFLIGHT_ENVELOPE_BUILD,
+    envelope_version: PRODUCTION_PREFLIGHT_ENVELOPE_VERSION,
+    status: "ok" as const,
+    generated_at: new Date().toISOString(),
+    canonical_product_url: "https://abraxasworld.xyz",
+    expected_production_ref: PRODUCTION_SUPABASE_PROJECT_REF,
+    derived_database_ref: derivedRef,
+    hybrid_binding: {
+      ok: true as const,
+      binding_mode: binding.binding_mode,
+      direct_project_ref: binding.direct_project_ref,
+      postgrest_project_ref: binding.postgrest_project_ref,
+    },
+    probes,
+    release_gates_report: releaseGatesReport,
+  };
+
+  const validated = validateProductionPreflightEnvelope(envelope);
+  if (!validated.ok) {
+    console.log(JSON.stringify({ ...envelope, status: "invalid_envelope", validation: validated }, null, 2));
+    process.exit(2);
+  }
+
+  console.log(JSON.stringify(envelope, null, 2));
 }
 
 try {
@@ -79,7 +116,7 @@ try {
   console.log(
     JSON.stringify(
       {
-        build: 581,
+        build: PRODUCTION_PREFLIGHT_ENVELOPE_BUILD,
         status: "blocked",
         code: error instanceof Error ? error.message : "preflight_failed",
         operator_requirement:

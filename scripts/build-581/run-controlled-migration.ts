@@ -1,8 +1,10 @@
 #!/usr/bin/env npx tsx
 // FILE: scripts/build-581/run-controlled-migration.ts
-// Phase B Production DDL executor (manual founder invocation only).
 
-import { executeControlledProductionMigrations } from "@/lib/passport/productionMigrationExecutor";
+import {
+  executeControlledProductionMigrations,
+  migrationExecutorErrorToResult,
+} from "@/lib/passport/productionMigrationExecutor";
 import { withAbraxasPgTransaction } from "@/lib/persistence/pgPool";
 
 async function main() {
@@ -23,12 +25,17 @@ async function main() {
     process.exit(2);
   }
 
-  const result = await withAbraxasPgTransaction(async (client) =>
-    executeControlledProductionMigrations({ client, executionNonce: nonce, dryRun }),
-  );
-
-  console.log(JSON.stringify({ build: 581, ...result }, null, 2));
-  process.exit(result.ok ? 0 : 2);
+  try {
+    const result = await withAbraxasPgTransaction(async (client) =>
+      executeControlledProductionMigrations({ client, executionNonce: nonce, dryRun }),
+    );
+    console.log(JSON.stringify({ build: 581, ...result }, null, 2));
+    process.exit(result.ok ? 0 : 2);
+  } catch (error) {
+    const result = migrationExecutorErrorToResult(error);
+    console.log(JSON.stringify({ build: 581, ...result }, null, 2));
+    process.exit(2);
+  }
 }
 
 main().catch((error) => {

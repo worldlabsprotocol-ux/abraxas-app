@@ -3,6 +3,11 @@
 
 export const PRODUCTION_SUPABASE_PROJECT_REF = "bztwutzprwsdrtqdpymf" as const;
 
+/** Build #580 holder reconciliation / planning release token (not Production DDL). */
+export const PRODUCTION_MIGRATION_RECONCILE_TOKEN = "build580-passport-136-143" as const;
+
+export type ProductionFounderReleaseTokenPolicy = "build580_reconciliation" | "omit";
+
 /** Ordered sovereign Passport migrations (136–143). */
 export const SOVEREIGN_PASSPORT_MIGRATION_FILES = [
   "136_passport_holder_subjects.sql",
@@ -81,6 +86,8 @@ export function evaluateProductionMigrationRelease(input: {
   env?: Record<string, string | undefined>;
   /** From hybrid binding / runtime probe — not from preflight JSON alone. */
   verifiedDatabaseProjectRef?: string | null;
+  /** Build #581 schema evaluation omits Build #580 reconciliation execute token gates. */
+  founderReleaseTokenPolicy?: ProductionFounderReleaseTokenPolicy;
 }): ProductionMigrationReleaseEvaluation {
   const gates: ReleaseGateRow[] = [];
   const env = input.env ?? {};
@@ -168,40 +175,49 @@ export function evaluateProductionMigrationRelease(input: {
       : "Record PITR/on-demand backup checkpoint and complete restore test before Production DDL.",
   });
 
+  const founderPolicy = input.founderReleaseTokenPolicy ?? "build580_reconciliation";
   const founderAuth =
     env.ABRAXAS_FOUNDER_PRODUCTION_MIGRATION_AUTHORIZED?.trim().toLowerCase() === "true";
   const founderAck = env.ABRAXAS_FOUNDER_PRODUCTION_MIGRATION_ACK_ID?.trim() ?? "";
   const releaseToken = env.ABRAXAS_PRODUCTION_MIGRATION_RELEASE_TOKEN?.trim() ?? "";
-  const founderSignalsOk = founderAuth && founderAck.length >= 8 && releaseToken === "build580-passport-136-143";
+  const founderSignalsOk =
+    founderAuth && founderAck.length >= 8 && releaseToken === PRODUCTION_MIGRATION_RECONCILE_TOKEN;
 
-  gates.push({
-    gate: "founder_execution_authorization",
-    status: founderSignalsOk ? "pass" : "blocked",
-    detail: founderSignalsOk
-      ? "Founder authorization signals present (independent from database identity)."
-      : "Founder authorization incomplete or release token mismatch.",
-  });
+  if (founderPolicy === "build580_reconciliation") {
+    gates.push({
+      gate: "founder_execution_authorization",
+      status: founderSignalsOk ? "pass" : "blocked",
+      detail: founderSignalsOk
+        ? "Founder authorization signals present for Build #580 reconciliation scope."
+        : "Founder authorization incomplete or reconciliation release token mismatch.",
+    });
 
-  const executionArmed =
-    databaseIdentityOk
-    && legacySui
-    && !drift
-    && backupOk
-    && founderSignalsOk;
+    const executionArmed =
+      databaseIdentityOk
+      && legacySui
+      && !drift
+      && backupOk
+      && founderSignalsOk;
 
-  gates.push({
-    gate: "production_execution_armed",
-    status: executionArmed ? "pass" : "blocked",
-    detail: executionArmed
-      ? "All release gates satisfied (runtime still does not auto-execute DDL)."
-      : "Production execution remains blocked until database identity, drift, backup, and founder gates align.",
-  });
+    gates.push({
+      gate: "production_execution_armed",
+      status: executionArmed ? "pass" : "blocked",
+      detail: executionArmed
+        ? "Build #580 reconciliation gates satisfied (does not authorize Production DDL)."
+        : "Reconciliation execution remains blocked until database identity, drift, backup, and founder gates align.",
+    });
+  }
 
   const dryRunOk = databaseIdentityOk && legacySui && !drift && preflightComplete;
+  const schemaSafetyBlocked = !(databaseIdentityOk && legacySui && !drift && backupOk && preflightComplete);
+  const productionBlocked =
+    founderPolicy === "build580_reconciliation"
+      ? !(databaseIdentityOk && legacySui && !drift && backupOk && founderSignalsOk)
+      : schemaSafetyBlocked;
 
   return {
     build: 580,
-    production_execution_blocked: !executionArmed,
+    production_execution_blocked: productionBlocked,
     dry_run_preflight_ok: dryRunOk,
     gates,
     migration_apply_pending: applyPending,

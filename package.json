@@ -114,7 +114,7 @@
     "test:production-schema-578": "vitest run lib/persistence/build578.productionSchemaProbe.test.ts && npm run -s test:production-persistence-577",
     "test:production-migration-579": "vitest run lib/persistence/build579ProductionMigrationPreflight.test.ts lib/persistence/holderIdentityIdvLookup.test.ts lib/passport/holderIdentityReconciliation.test.ts lib/passport/build579.passportProductState.test.ts lib/passport/build579.identityLookup.adversarial.test.ts && npm run -s test:production-schema-578",
     "test:production-migration-580": "vitest run lib/passport/build580.migrationRelease.test.ts lib/passport/build580.migrationRelease.adversarial.test.ts lib/passport/build580.reconciliationAuthorization.test.ts lib/passport/build580.reconciliationEvidence.adversarial.test.ts lib/passport/build580.reconciliationConcurrency.test.ts lib/passport/build580.holderContinuityUi.test.ts lib/passport/build580.disposableMigrationIntegration.test.ts && npm run -s test:production-migration-579",
-    "test:production-migration-581": "vitest run lib/passport/build581.migrationExecution.test.ts lib/passport/build581.holderContinuityUi.test.ts && npm run -s test:production-migration-580",
+    "test:production-migration-581": "vitest run lib/passport/build581.migrationExecution.test.ts lib/passport/build581.integration.test.ts lib/passport/build581.holderContinuityUi.test.ts && npm run -s test:production-migration-580",
     "build-581:production-readonly-preflight": "tsx scripts/build-581/run-readonly-preflight.ts",
     "build-581:migration-rehearsal": "tsx scripts/build-581/run-migration-rehearsal.ts",
     "build-581:reconciliation-inventory": "tsx scripts/build-581/run-reconciliation-inventory.ts",

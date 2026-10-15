@@ -1,6 +1,7 @@
 // FILE: lib/passport/build581.migrationExecution.test.ts
 
 import { describe, expect, it } from "vitest";
+import { buildTestPreflightEnvelope } from "./productionPreflightEnvelope";
 import { loadProductionPreflightEvidence } from "./productionPreflightEvidence";
 import {
   evaluateProductionMigration581,
@@ -10,7 +11,7 @@ import {
 import { buildMigrationExecutionPlan } from "./productionMigrationExecutor";
 import { PRODUCTION_SUPABASE_PROJECT_REF } from "./productionMigrationRelease";
 
-const completePreflight = {
+const probe580Report = {
   build: 580,
   captured_at: new Date().toISOString(),
   project_ref_expected: PRODUCTION_SUPABASE_PROJECT_REF,
@@ -38,10 +39,12 @@ const completePreflight = {
   },
 };
 
+const validEnvelope = buildTestPreflightEnvelope(probe580Report);
+
 describe("Build #581 Production migration execution boundary", () => {
-  it("loads preflight JSON from inline env", () => {
+  it("loads validated preflight envelope from inline env", () => {
     const loaded = loadProductionPreflightEvidence({
-      ABRAXAS_PRODUCTION_PREFLIGHT_JSON: JSON.stringify(completePreflight),
+      ABRAXAS_PRODUCTION_PREFLIGHT_JSON: JSON.stringify(validEnvelope),
       ABRAXAS_PRODUCTION_PREFLIGHT_MAX_AGE_HOURS: "24",
     });
     expect(loaded.ok).toBe(true);
@@ -60,15 +63,16 @@ describe("Build #581 Production migration execution boundary", () => {
   });
 
   it("requires Build #581 execute token for Phase B", () => {
+    const loaded = loadProductionPreflightEvidence({
+      ABRAXAS_PRODUCTION_PREFLIGHT_JSON: JSON.stringify(validEnvelope),
+      ABRAXAS_PRODUCTION_PREFLIGHT_MAX_AGE_HOURS: "24",
+    });
+    expect(loaded.ok).toBe(true);
+    if (!loaded.ok) return;
+
     const evaluation = evaluateProductionMigration581({
-      preflight: completePreflight,
-      preflightEvidence: {
-        report: completePreflight,
-        capturedAtMs: Date.now(),
-        source: "inline_env",
-        ageHours: 0.1,
-        stale: false,
-      },
+      preflight: loaded.evidence.report,
+      preflightEvidence: loaded.evidence,
       verifiedDatabaseProjectRef: PRODUCTION_SUPABASE_PROJECT_REF,
       env: {
         ABRAXAS_FOUNDER_PRODUCTION_MIGRATION_AUTHORIZED: "true",
@@ -80,6 +84,7 @@ describe("Build #581 Production migration execution boundary", () => {
         ABRAXAS_FOUNDER_BACKUP_CHECKPOINT_ID: "chk-123",
         ABRAXAS_FOUNDER_BACKUP_RESTORE_TESTED: "true",
         ABRAXAS_PRODUCTION_MIGRATION_REHEARSAL_ATTESTED: "true",
+        ABRAXAS_PRODUCTION_MIGRATION_EXECUTION_NONCE: "nonce-test",
       },
       reconciliationInventory: {
         captured_at: new Date().toISOString(),
