@@ -6,6 +6,7 @@ export function shouldDeferReusableCredentialActions(
   holderIdentity: HolderIdentitySurfaceSnapshot | null | undefined,
 ): boolean {
   if (!holderIdentity) return false;
+  if (holderIdentity.state === "canonical_subject_ready") return false;
   return (
     holderIdentity.state === "ambiguous_identity_blocked"
     || holderIdentity.state === "reconciliation_operator_required"
@@ -14,6 +15,12 @@ export function shouldDeferReusableCredentialActions(
     || holderIdentity.state === "approved_verification_confirmed"
     || holderIdentity.state === "migration_pending"
   );
+}
+
+export function isCanonicalMigrationVisibleSuccess(
+  holderIdentity: HolderIdentitySurfaceSnapshot | null | undefined,
+): boolean {
+  return holderIdentity?.state === "canonical_subject_ready";
 }
 
 /** Avoid nudging repeat verification when status is unknown or verification already confirmed/in progress. */
