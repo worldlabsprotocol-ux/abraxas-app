@@ -5,10 +5,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { SOVEREIGN_RUNTIME_SCHEMA_MANIFEST } from "@/lib/databaseRecovery/sovereignSchemaManifest";
-import { SOVEREIGN_DISPOSABLE_REF } from "@/lib/databaseRecovery/manifestGuard";
 import {
-  DISPOSABLE_PG_MIGRATION_AUTHORIZED_ENV,
-  DISPOSABLE_PG_TEST_DATABASE_ID_ENV,
   DISPOSABLE_PG_TEST_URL_ENV,
   evaluateDisposablePgMigrationTestGuard,
 } from "@/lib/persistence/disposablePgMigrationTestGuard";
@@ -27,23 +24,6 @@ export type Build582DisposableTrustProofBootstrap =
     }
   | { ok: false; reason: string };
 
-export function build582TrustProofGuardEnv(
-  env: Record<string, string | undefined> = process.env,
-): Record<string, string | undefined> {
-  const testUrl = env[DISPOSABLE_PG_TEST_URL_ENV]?.trim()
-    || env.ABRAXAS_SOVEREIGN_PG_URL?.trim()
-    || env.MIGRATION_136_PG_URL?.trim();
-  return {
-    ...env,
-    ABRAXAS_SOVEREIGN_ENV_CLASS: env.ABRAXAS_SOVEREIGN_ENV_CLASS?.trim() || "disposable",
-    [DISPOSABLE_PG_TEST_DATABASE_ID_ENV]:
-      env[DISPOSABLE_PG_TEST_DATABASE_ID_ENV]?.trim() || SOVEREIGN_DISPOSABLE_REF,
-    [DISPOSABLE_PG_MIGRATION_AUTHORIZED_ENV]:
-      env[DISPOSABLE_PG_MIGRATION_AUTHORIZED_ENV]?.trim() || "true",
-    [DISPOSABLE_PG_TEST_URL_ENV]: testUrl,
-  };
-}
-
 export function evaluateBuild582DisposableTrustProofBootstrap(
   env: Record<string, string | undefined> = process.env,
 ): Build582DisposableTrustProofBootstrap {
@@ -54,8 +34,7 @@ export function evaluateBuild582DisposableTrustProofBootstrap(
     };
   }
 
-  const guardEnv = build582TrustProofGuardEnv(env);
-  const guard = evaluateDisposablePgMigrationTestGuard(guardEnv);
+  const guard = evaluateDisposablePgMigrationTestGuard(env);
   if (!guard.ok) {
     return { ok: false, reason: guard.reason };
   }
@@ -155,10 +134,8 @@ export function dropBuild582IsolatedTrustProofDatabase(input: {
   );
 }
 
+/** Points runtime persistence at an isolated trust-proof database. Authorization env must already be set explicitly. */
 export function applyBuild582TrustProofRuntimeEnv(databaseUrl: string): void {
-  process.env.ABRAXAS_SOVEREIGN_ENV_CLASS = "disposable";
-  process.env[DISPOSABLE_PG_TEST_DATABASE_ID_ENV] = SOVEREIGN_DISPOSABLE_REF;
-  process.env[DISPOSABLE_PG_MIGRATION_AUTHORIZED_ENV] = "true";
   process.env[DISPOSABLE_PG_TEST_URL_ENV] = databaseUrl;
   process.env.ABRAXAS_DATABASE_URL = databaseUrl;
   process.env.ABRAXAS_PERSISTENCE_BACKEND = "postgres_direct";

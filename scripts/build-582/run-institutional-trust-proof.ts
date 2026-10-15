@@ -4,13 +4,9 @@
 
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
-import {
-  build582TrustProofGuardEnv,
-  evaluateBuild582DisposableTrustProofBootstrap,
-} from "@/lib/passport/build582/disposableTrustProofDatabase";
+import { evaluateBuild582DisposableTrustProofBootstrap } from "@/lib/passport/build582/disposableTrustProofDatabase";
 
-const guardEnv = build582TrustProofGuardEnv(process.env);
-const bootstrap = evaluateBuild582DisposableTrustProofBootstrap(guardEnv);
+const bootstrap = evaluateBuild582DisposableTrustProofBootstrap(process.env);
 
 if (!bootstrap.ok) {
   console.error(
@@ -41,10 +37,7 @@ try {
       cwd: process.cwd(),
       encoding: "utf8",
       stdio: "inherit",
-      env: {
-        ...process.env,
-        ...guardEnv,
-      } as NodeJS.ProcessEnv,
+      env: process.env,
     },
   );
   console.log(

@@ -17,6 +17,27 @@ describe("Build #582 disposable trust proof guard", () => {
     expect(evaluateBuild582DisposableTrustProofBootstrap({}).ok).toBe(false);
   });
 
+  it("rejects missing explicit migration authorization", () => {
+    const result = evaluateBuild582DisposableTrustProofBootstrap({
+      ABRAXAS_SOVEREIGN_ENV_CLASS: "disposable",
+      [DISPOSABLE_PG_TEST_DATABASE_ID_ENV]: SOVEREIGN_DISPOSABLE_REF,
+      [DISPOSABLE_PG_TEST_URL_ENV]: "postgresql://postgres:pw@127.0.0.1:5432/abraxas_sovereign_disposable",
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.reason).toMatch(/ABRAXAS_DISPOSABLE_PG_MIGRATION_AUTHORIZED/);
+  });
+
+  it("rejects inferred disposable URL from sovereign pg env without explicit test URL", () => {
+    const result = evaluateBuild582DisposableTrustProofBootstrap({
+      ABRAXAS_SOVEREIGN_ENV_CLASS: "disposable",
+      [DISPOSABLE_PG_TEST_DATABASE_ID_ENV]: SOVEREIGN_DISPOSABLE_REF,
+      [DISPOSABLE_PG_MIGRATION_AUTHORIZED_ENV]: "true",
+      ABRAXAS_SOVEREIGN_PG_URL: "postgresql://postgres:pw@127.0.0.1:5432/abraxas_sovereign_disposable",
+    });
+    expect(result.ok).toBe(false);
+  });
+
   it("rejects accidental ABRAXAS_DATABASE_URL fallback without explicit disposable test URL", () => {
     const result = evaluateBuild582DisposableTrustProofBootstrap({
       ABRAXAS_SOVEREIGN_ENV_CLASS: "disposable",
