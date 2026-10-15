@@ -10,6 +10,7 @@ import {
 import { subjectPseudonymId } from "@/lib/decisionReceipts/pseudonym";
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import { DECISION_RECEIPT_SCHEMA_VERSION } from "@/lib/decisionReceipts/types";
+import { PORTABLE_REVOCATION_KEY_SCHEMA } from "@/lib/protocol/portableRevocation/contract";
 import { toPublicView } from "@/lib/decisionReceipts/views";
 import type { PartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlowReceipt";
 import { RECEIPT_VERIFICATION_REGISTRY_ENV } from "@/lib/decisionReceipts/verificationKeyLifecycle";
@@ -32,7 +33,7 @@ function registryEntry(key: ReceiptSigningKeyPair, status: "active" | "retiring"
     issued_at: "2024-01-01T00:00:00.000Z",
     not_before: "2024-01-01T00:00:00.000Z",
     expires_at: status === "retired" ? "2025-01-01T00:00:00.000Z" : "2099-01-01T00:00:00.000Z",
-    schema_versions: [DECISION_RECEIPT_SCHEMA_VERSION],
+    schema_versions: [DECISION_RECEIPT_SCHEMA_VERSION, PORTABLE_REVOCATION_KEY_SCHEMA],
     allow_historical_verification: status === "retired",
     historical_verify_until: status === "retired" ? "2026-01-01T00:00:00.000Z" : null,
     issuer_label: "Abraxas Test Issuer",
@@ -43,6 +44,7 @@ function registryEntry(key: ReceiptSigningKeyPair, status: "active" | "retiring"
 export function build546TrustRegistryEnv(): Record<string, string> {
   return {
     ABRAXAS_RECEIPT_KEY_ENVIRONMENT: "demo",
+    ABRAXAS_SIGNING_KEY_ID: BUILD_546_PRIMARY_KEY.signingKeyId,
     [RECEIPT_VERIFICATION_REGISTRY_ENV]: JSON.stringify([
       registryEntry(BUILD_546_PRIMARY_KEY, "active"),
       registryEntry(BUILD_546_RETIRED_KEY, "retired"),

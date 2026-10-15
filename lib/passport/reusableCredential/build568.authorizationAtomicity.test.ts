@@ -19,7 +19,10 @@ import {
   PASSPORT_CREDENTIAL_SIGNING_KEY_ENV,
   PASSPORT_CREDENTIAL_SIGNING_KEY_ID_ENV,
 } from "./passportCredentialSigning";
-import { BUILD_546_PRIMARY_KEY } from "@/lib/institutionalCertification/build546/fixtures";
+import { BUILD_546_PRIMARY_KEY, build546TrustRegistryEnv } from "@/lib/institutionalCertification/build546/fixtures";
+import { resolveVerificationKey } from "@/lib/decisionReceipts/verificationKeyLifecycle/resolve";
+import { PORTABLE_REVOCATION_KEY_SCHEMA } from "@/lib/protocol/portableRevocation/contract";
+import { buildFreshPortableRevocationSnapshotForCredential } from "./fixtures";
 import { PORTABLE_REVOCATION_TEST_ISSUER_ID } from "@/lib/protocol/portableRevocation/fixtures";
 
 describe("Build #568 authorization atomicity and trust boundaries", () => {
@@ -35,6 +38,21 @@ describe("Build #568 authorization atomicity and trust boundaries", () => {
     const opened = await openPortableRevocationCheckpointStore(process.env as Record<string, string>);
     expect(opened.ok).toBe(false);
     if (!opened.ok) expect(opened.code).toBe("checkpoint_memory_forbidden_in_production");
+  });
+
+  it("resolves portable revocation snapshot keys from receipt verification registry", () => {
+    Object.assign(process.env, build546TrustRegistryEnv(), {
+      ABRAXAS_SIGNING_KEY: JSON.stringify(BUILD_546_PRIMARY_KEY.privateKeyJwk),
+      ABRAXAS_SIGNING_KEY_ID: BUILD_546_PRIMARY_KEY.signingKeyId,
+    });
+    const snapshot = buildFreshPortableRevocationSnapshotForCredential("pc_registry_probe");
+    const resolved = resolveVerificationKey({
+      keyId: snapshot.payload.signing_key_id,
+      schemaVersion: PORTABLE_REVOCATION_KEY_SCHEMA,
+      env: process.env as Record<string, string>,
+    });
+    if (!resolved.ok) throw new Error(resolved.reason);
+    expect(resolved.ok).toBe(true);
   });
 
   it("requires configured receipt signing key for issuer-backed authorization", () => {

@@ -20,7 +20,12 @@ import {
   listPassportReusableCredentialsForHolderDirect,
 } from "@/lib/persistence/passportReusableCredentialDirectStore";
 import { queryAbraxasPg } from "@/lib/persistence/pgPool";
-import { BUILD_566_PARTNER_A, BUILD_566_PARTNER_B, BUILD_566_POLICY_ID } from "./fixtures";
+import {
+  BUILD_566_PARTNER_A,
+  BUILD_566_PARTNER_B,
+  BUILD_566_POLICY_ID,
+  buildFreshPortableRevocationSnapshotForCredential,
+} from "./fixtures";
 import { build546TrustRegistryEnv, BUILD_546_PRIMARY_KEY } from "@/lib/institutionalCertification/build546/fixtures";
 import {
   credentialIssuerRegistryFromKeyPair,
@@ -34,7 +39,6 @@ import { CLAIM_ISSUERS } from "@/lib/credentials/claimSchema";
 import { PORTABLE_REVOCATION_TEST_ISSUER_ID } from "@/lib/protocol/portableRevocation/fixtures";
 import {
   bootstrapTrustFromArtifact,
-  buildSyntheticPortableRevocationSnapshot,
 } from "@/lib/protocol/portableRevocation";
 import {
   PORTABLE_REVOCATION_BOOTSTRAP_TRUSTS_ENV,
@@ -52,6 +56,15 @@ import { resolveInstitutionalPartnerCatalogEntry } from "./institutionalPartnerC
 import { insertPassportPossessionChallengeDirect } from "@/lib/persistence/postgresPassportPossessionChallengeStore";
 import { validateInstitutionalPresentationConsentDirect } from "@/lib/persistence/passportInstitutionalConsentDirect";
 import { PASSPORT_AUTH_INJECT_FAIL_AFTER_RESOURCE_COMMIT_ENV } from "./issuerBackedPresentationOrchestration";
+
+function mockPortableRevocationPublisher(snapshot: import("@/lib/protocol/portableRevocation").PortableRevocationSignedArtifact) {
+  vi.spyOn(global, "fetch").mockImplementation(async () =>
+    new Response(JSON.stringify(snapshot), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    }),
+  );
+}
 
 const PG_URL = process.env.ABRAXAS_SOVEREIGN_PG_URL?.trim()
   || process.env.MIGRATION_136_PG_URL?.trim()
@@ -94,6 +107,7 @@ describe("Build #568 issuer-backed presentation (disposable PG)", () => {
     process.env[PASSPORT_CREDENTIAL_SIGNING_KEY_ID_ENV] = CREDENTIAL_KEY.signingKeyId;
     process.env[PORTABLE_REVOCATION_CHECKPOINT_MEMORY_TEST_ENV] = "1";
     process.env.ABRAXAS_SIGNING_KEY = JSON.stringify(BUILD_546_PRIMARY_KEY.privateKeyJwk);
+    process.env.ABRAXAS_SIGNING_KEY_ID = BUILD_546_PRIMARY_KEY.signingKeyId;
     Object.assign(process.env, build546TrustRegistryEnv());
     const registryEntry = credentialIssuerRegistryFromKeyPair({
       issuerId: CLAIM_ISSUERS.abraxas,
@@ -112,6 +126,7 @@ describe("Build #568 issuer-backed presentation (disposable PG)", () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     rmSync(evidenceDir, { recursive: true, force: true });
     resetAbraxasPgPoolForTests();
     resetPersistenceClientForTests();
@@ -175,17 +190,14 @@ describe("Build #568 issuer-backed presentation (disposable PG)", () => {
 
   it("authorizes two configured institutions under server policies with consent", async () => {
     const { holder, credential } = await holderWithCredential();
-    const snapshot = buildSyntheticPortableRevocationSnapshot({
-      receiptId: credential.payload.credential_id,
-      state: "active",
-    });
+    const snapshot = buildFreshPortableRevocationSnapshotForCredential(
+      credential.payload.credential_id,
+    );
     process.env[PORTABLE_REVOCATION_BOOTSTRAP_TRUSTS_ENV] = JSON.stringify([
       bootstrapTrustFromArtifact({ artifact: snapshot }),
     ]);
     process.env.ABRAXAS_PORTABLE_REVOCATION_PUBLISHER_URL = "https://publisher.test";
-    vi.spyOn(global, "fetch").mockResolvedValue(
-      new Response(JSON.stringify(snapshot), { status: 200 }),
-    );
+    mockPortableRevocationPublisher(snapshot);
 
     const entryA = await resolveInstitutionalPartnerCatalogEntry({
       partnerId: BUILD_566_PARTNER_A,
@@ -239,17 +251,14 @@ describe("Build #568 issuer-backed presentation (disposable PG)", () => {
 
   it("rejects forged consent binding", async () => {
     const { holder, credential } = await holderWithCredential();
-    const snapshot = buildSyntheticPortableRevocationSnapshot({
-      receiptId: credential.payload.credential_id,
-      state: "active",
-    });
+    const snapshot = buildFreshPortableRevocationSnapshotForCredential(
+      credential.payload.credential_id,
+    );
     process.env[PORTABLE_REVOCATION_BOOTSTRAP_TRUSTS_ENV] = JSON.stringify([
       bootstrapTrustFromArtifact({ artifact: snapshot }),
     ]);
     process.env.ABRAXAS_PORTABLE_REVOCATION_PUBLISHER_URL = "https://publisher.test";
-    vi.spyOn(global, "fetch").mockResolvedValue(
-      new Response(JSON.stringify(snapshot), { status: 200 }),
-    );
+    mockPortableRevocationPublisher(snapshot);
 
     const entry = await resolveInstitutionalPartnerCatalogEntry({
       partnerId: BUILD_566_PARTNER_A,
@@ -359,17 +368,14 @@ describe("Build #568 issuer-backed presentation (disposable PG)", () => {
 
   it("recovers idempotently after resource commit when signing is deferred", async () => {
     const { holder, credential } = await holderWithCredential();
-    const snapshot = buildSyntheticPortableRevocationSnapshot({
-      receiptId: credential.payload.credential_id,
-      state: "active",
-    });
+    const snapshot = buildFreshPortableRevocationSnapshotForCredential(
+      credential.payload.credential_id,
+    );
     process.env[PORTABLE_REVOCATION_BOOTSTRAP_TRUSTS_ENV] = JSON.stringify([
       bootstrapTrustFromArtifact({ artifact: snapshot }),
     ]);
     process.env.ABRAXAS_PORTABLE_REVOCATION_PUBLISHER_URL = "https://publisher.test";
-    vi.spyOn(global, "fetch").mockResolvedValue(
-      new Response(JSON.stringify(snapshot), { status: 200 }),
-    );
+    mockPortableRevocationPublisher(snapshot);
     const entry = await resolveInstitutionalPartnerCatalogEntry({
       partnerId: BUILD_566_PARTNER_A,
       policyId: BUILD_566_POLICY_ID,
