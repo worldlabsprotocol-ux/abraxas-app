@@ -39,7 +39,7 @@ const SCHEMA_TABLES = [
 ] as const;
 
 const SCHEMA_COLUMNS: Record<string, string[]> = {
-  passport_reusable_credentials: ["holder_subject_id", "credential_jti"],
+  passport_reusable_credentials: ["holder_subject_id", "linked_credential_jti"],
   passport_holder_possession_keys: ["holder_subject_id", "public_key_b64url"],
   passport_institutional_presentation_consents: ["holder_subject_id", "partner_id", "policy_id"],
   passport_institutional_authorization_commits: [

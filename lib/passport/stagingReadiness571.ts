@@ -85,7 +85,7 @@ const MIGRATION_FILES = [
 ] as const;
 
 const MIGRATION_SCHEMA_REQUIREMENTS: { table: string; columns: string[] }[] = [
-  { table: "passport_reusable_credentials", columns: ["holder_subject_id", "credential_jti"] },
+  { table: "passport_reusable_credentials", columns: ["holder_subject_id", "linked_credential_jti"] },
   { table: "passport_holder_possession_keys", columns: ["holder_subject_id", "public_key_b64url"] },
   { table: "passport_institutional_presentation_consents", columns: ["holder_subject_id", "partner_id", "policy_id"] },
   {

@@ -35,18 +35,26 @@ import {
 import { InMemoryPortableRevocationCheckpointStore } from "@/lib/protocol/portableRevocation";
 import { bootstrapTrustFromArtifact } from "@/lib/protocol/portableRevocation";
 
-describe("Build #567 sovereign reusable credential issuance (adversarial)", () => {
+describe.sequential("Build #567 sovereign reusable credential issuance (adversarial)", () => {
   let env: Record<string, string>;
   const issuerKey = generateTestSigningKeyPair("build567-credential-issuer");
   const holderKeys = nacl.sign.keyPair.fromSeed(Uint8Array.from(Buffer.alloc(32, 7)));
 
   beforeEach(() => {
     resetPassportPossessionChallengeStoreForTests();
+    const disposablePgUrl =
+      process.env.ABRAXAS_SOVEREIGN_PG_URL?.trim()
+      ?? process.env.ABRAXAS_DATABASE_URL?.trim()
+      ?? process.env.DATABASE_URL?.trim()
+      ?? "";
     for (const key of Object.keys(process.env)) {
       if (key.startsWith("ABRAXAS_")) delete process.env[key];
     }
     process.env.ABRAXAS_PASSPORT_REUSABLE_CREDENTIAL_STORAGE = "1";
     process.env.ABRAXAS_PERSISTENCE_BACKEND = "postgres_direct";
+    if (disposablePgUrl) {
+      process.env.ABRAXAS_DATABASE_URL = disposablePgUrl;
+    }
     process.env[PASSPORT_CREDENTIAL_SIGNING_KEY_ENV] = JSON.stringify(issuerKey.privateKeyJwk);
     process.env[PASSPORT_CREDENTIAL_SIGNING_KEY_ID_ENV] = issuerKey.signingKeyId;
     const registryEntry = credentialIssuerRegistryFromKeyPair({
@@ -57,15 +65,12 @@ describe("Build #567 sovereign reusable credential issuance (adversarial)", () =
     });
     env = {
       ...build566TrustEnv(),
+      ABRAXAS_PASSPORT_REUSABLE_CREDENTIAL_STORAGE: "1",
+      ABRAXAS_PERSISTENCE_BACKEND: "postgres_direct",
+      ...(disposablePgUrl ? { ABRAXAS_DATABASE_URL: disposablePgUrl } : {}),
       [PASSPORT_CREDENTIAL_ISSUER_REGISTRY_ENV]: JSON.stringify([registryEntry]),
     };
     Object.assign(process.env, env);
-  });
-
-  afterEach(() => {
-    for (const key of Object.keys(process.env)) {
-      if (key.startsWith("ABRAXAS_")) delete process.env[key];
-    }
   });
 
   const baseCtx = {
@@ -119,7 +124,7 @@ describe("Build #567 sovereign reusable credential issuance (adversarial)", () =
         claimIdsByType: new Map([["product_eligibility", "claim-567-pe"]]),
       },
     );
-    expect(prepared.ok).toBe(true);
+    expect(prepared.ok, !prepared.ok ? prepared.code : "").toBe(true);
     if (!prepared.ok) return;
     const roundtrip = JSON.parse(JSON.stringify(prepared.credential)) as typeof prepared.credential;
     expect(hashPassportCredentialPayload(roundtrip.payload)).toBe(prepared.credential.payload_hash);

@@ -73,7 +73,7 @@ Produced inside vitest and CLI subprocess tests. Institution A and B use separat
 
 ## Product defects corrected in Build #571 scope
 
-None beyond Build #570 corrections already on main. This build adds readiness audit tooling and design partner acceptance documentation.
+None beyond Build #570 corrections already on main. Migration 140–143 probe column alignment (`linked_credential_jti`) lives on main via Build #579.
 
 ## Remaining operational dependencies for founder staging
 
