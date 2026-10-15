@@ -1,40 +1,48 @@
 // FILE: lib/passport/reusableCredential/verify.ts
 
-import type { PortableRevocationSignedArtifact } from "@/lib/protocol/portableRevocation";
-import type { ReceiptSigningKeyPair } from "@/lib/decisionReceipts/signing";
-import { verifyPortableRevocationArtifact } from "@/lib/protocol/portableRevocation/verify";
+import type {
+  PortableRevocationBootstrapTrust,
+  PortableRevocationCheckpointStore,
+  PortableRevocationSignedArtifact,
+} from "@/lib/protocol/portableRevocation";
+import { resolvePassportCredentialIssuerTrust } from "./credentialIssuerRegistry";
+import { verifyCredentialPortableRevocationStrict } from "./credentialRevocationStrict";
 import type { SignedPassportReusableCredential } from "./contract";
 import { verifyPassportReusableCredentialSignature } from "./sign";
 
 export type PassportCredentialVerifyFailure =
   | "invalid_signature"
   | "expired"
-  | "revoked"
-  | "holder_mismatch"
-  | "unsupported_issuer"
+  | "issuer_registry_missing"
+  | "issuer_untrusted"
+  | "signing_key_mismatch"
+  | "revocation_verification_failed"
+  | "credential_revoked_or_unknown"
   | "missing_revocation_snapshot";
 
 export type PassportCredentialVerifyResult =
-  | { ok: true }
-  | { ok: false; code: PassportCredentialVerifyFailure };
+  | { ok: true; registryEntry: import("./credentialIssuerRegistry").PassportCredentialIssuerRegistryEntry }
+  | { ok: false; code: PassportCredentialVerifyFailure; detail?: string[] };
 
-export function verifyPassportReusableCredential(input: {
+export async function verifyPassportReusableCredentialStrict(input: {
   credential: SignedPassportReusableCredential;
-  issuerPublicKeyJwk: ReceiptSigningKeyPair["publicKeyJwk"];
-  trustedIssuerIds: string[];
-  holderSubjectId: string;
   now?: Date;
-  portableRevocationSnapshot?: PortableRevocationSignedArtifact | null;
-}): PassportCredentialVerifyResult {
+  env?: Record<string, string | undefined>;
+  portableRevocationSnapshot: PortableRevocationSignedArtifact;
+  checkpointStore: PortableRevocationCheckpointStore;
+  bootstrapTrusts?: PortableRevocationBootstrapTrust[];
+}): Promise<PassportCredentialVerifyResult> {
   const { credential } = input;
-  if (!verifyPassportReusableCredentialSignature(credential, input.issuerPublicKeyJwk)) {
+  const trust = resolvePassportCredentialIssuerTrust({
+    issuerId: credential.payload.issuer_id,
+    signingKeyId: credential.payload.signing_key_id,
+    env: input.env,
+  });
+  if (!trust.ok) {
+    return { ok: false, code: trust.code };
+  }
+  if (!verifyPassportReusableCredentialSignature(credential, trust.entry.public_jwk)) {
     return { ok: false, code: "invalid_signature" };
-  }
-  if (!input.trustedIssuerIds.includes(credential.payload.issuer_id)) {
-    return { ok: false, code: "unsupported_issuer" };
-  }
-  if (credential.payload.holder_subject_id !== input.holderSubjectId) {
-    return { ok: false, code: "holder_mismatch" };
   }
   const now = input.now ?? new Date();
   if (Date.parse(credential.payload.expires_at) < now.getTime()) {
@@ -43,18 +51,24 @@ export function verifyPassportReusableCredential(input: {
   if (!input.portableRevocationSnapshot) {
     return { ok: false, code: "missing_revocation_snapshot" };
   }
-  const crypto = verifyPortableRevocationArtifact({
+  const rev = await verifyCredentialPortableRevocationStrict({
+    credential,
     artifact: input.portableRevocationSnapshot,
+    registryEntry: trust.entry,
+    checkpointStore: input.checkpointStore,
+    bootstrapTrusts: input.bootstrapTrusts,
     now,
+    env: input.env,
   });
-  if (!crypto.ok) {
-    return { ok: false, code: "revoked" };
+  if (!rev.ok) {
+    return {
+      ok: false,
+      code:
+        rev.code === "credential_revoked_or_unknown"
+          ? "credential_revoked_or_unknown"
+          : "revocation_verification_failed",
+      detail: rev.codes,
+    };
   }
-  const activeEntry = input.portableRevocationSnapshot.payload.status_entries.find(
-    (row) => row.status_id === credential.payload.revocation_status_id,
-  );
-  if (!activeEntry || activeEntry.state !== "active") {
-    return { ok: false, code: "revoked" };
-  }
-  return { ok: true };
+  return { ok: true, registryEntry: trust.entry };
 }

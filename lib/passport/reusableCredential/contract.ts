@@ -12,7 +12,11 @@ export const PASSPORT_REUSABLE_CREDENTIAL_SCHEMA_VERSION = "1.0.0" as const;
 export type PassportCredentialClaimAssertion = {
   claim_id: string;
   claim_type: string;
-  claim_value_ref: string;
+  /** Issuer authenticated semantic outcome (e.g. over_21). Required for policy evaluation. */
+  authenticated_outcome: string;
+  authentication_method: "issuer_signed_assertion";
+  /** Evidence hash pointer only. Never used as the eligibility outcome. */
+  claim_evidence_ref: string;
   issuer_id: string;
   assurance_level: "L0" | "L1" | "L2" | "L3" | "L4";
   issued_at: string;
@@ -33,7 +37,9 @@ export type PassportReusableCredentialPayload = {
   issuer_id: string;
   signing_key_id: string;
   holder_subject_id: string;
-  /** Binds possession to verified wallet/session — not account recovery. */
+  /** Ed25519 public key (base64url) for challenge response verification. */
+  holder_possession_public_key: string;
+  /** Issuer recorded binding reference — not sufficient alone for presentation. */
   holder_possession_ref: string;
   assurance_level: "L2" | "L3" | "L4";
   provenance: PassportCredentialAssuranceProvenance;

@@ -9,7 +9,7 @@ export function PolicyAuthorizationFlowVisual() {
       kicker="Authorization"
       title="Consent &"
       titleAccent="scoped receipt"
-      caption="Named partner request → holder approval → signed decision receipt. Partners receive the policy answer required—not underlying documents or biometrics."
+      caption="Named partner request → holder approval → signed decision receipt. Partners receive the policy answer required, not underlying documents or biometrics."
       className="abx-pv-shell--exhibit abx-pv-shell--open"
     >
       <ProtocolDiagramFigure

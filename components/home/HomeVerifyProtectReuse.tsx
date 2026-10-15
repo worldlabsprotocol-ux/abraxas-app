@@ -14,7 +14,7 @@ const SCENES: { id: VprScene; label: string; title: string; body: string }[] = [
     id: "verify",
     label: "Verify",
     title: "Complete verification once",
-    body: "You confirm eligibility with Abraxas. Evidence stays with you — not copied into every partner database.",
+    body: "You confirm eligibility with Abraxas. Evidence stays with you, not copied into every partner database.",
   },
   {
     id: "protect",
@@ -41,7 +41,7 @@ const REUSE_APPS = [
     name: "Simulated venue app",
     policy: "policy_residency_pilot_v1",
     outcome: "DENY",
-    detail: "Residency not satisfied — separate policy",
+    detail: "Residency not satisfied under separate policy",
   },
 ] as const;
 

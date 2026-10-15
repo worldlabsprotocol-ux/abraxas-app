@@ -1,20 +1,13 @@
 // FILE: lib/passport/reusableCredential/build566VerticalSlice.test.ts
 
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
-import {
-  BUILD_546_FIXTURE_NOW,
-  BUILD_546_PRIMARY_KEY,
-  build546TrustRegistryEnv,
-} from "@/lib/institutionalCertification/build546/fixtures";
+import nacl from "tweetnacl";
+import { BUILD_546_FIXTURE_NOW } from "@/lib/institutionalCertification/build546/fixtures";
 import { verifyHolderPresentationAtRelyingParty } from "@/lib/protocol/proofFirst/proofFirstRelyingParty";
 import {
   createProofFirstPortableRevocationTestContext,
   rpWithSnapshotBootstrap,
 } from "@/lib/protocol/proofFirst/proofFirstTestRevocation";
-import {
-  authorizePartnerFromReusableCredential,
-  resetPartnerAuthorizationReplayLedgerForTests,
-} from "./partnerAuthorization";
 import {
   BUILD_566_HOLDER_SUBJECT,
   BUILD_566_PARTNER_A,
@@ -23,17 +16,25 @@ import {
   BUILD_566_POLICY_RULES,
   build566RevocationSnapshotForCredential,
   build566SyntheticReusableCredential,
+  build566TrustEnv,
 } from "./fixtures";
+import { authorize566PartnerForTest } from "./testHelpers";
+import {
+  issuePassportPossessionChallenge,
+  resetPassportPossessionChallengeStoreForTests,
+  signPassportPossessionChallenge,
+} from "./holderPossessionChallenge";
+import { BUILD_566_HOLDER_POSSESSION_KEYPAIR } from "./fixtures";
 
 describe("Build #566 universal credential portability", () => {
   let env: Record<string, string>;
 
   beforeEach(() => {
-    resetPartnerAuthorizationReplayLedgerForTests();
+    resetPassportPossessionChallengeStoreForTests();
     for (const key of Object.keys(process.env)) {
       if (key.startsWith("ABRAXAS_") || key.includes("RECEIPT")) delete process.env[key];
     }
-    env = build546TrustRegistryEnv();
+    env = build566TrustEnv();
     Object.assign(process.env, env);
   });
 
@@ -43,39 +44,31 @@ describe("Build #566 universal credential portability", () => {
     }
   });
 
-  it("one issued credential → two independent partners authorize without repeat IDV", async () => {
+  it("one synthetic credential, two partners, distinct possession challenges, no repeat IDV", async () => {
     const credential = build566SyntheticReusableCredential();
     const revocation = build566RevocationSnapshotForCredential(credential.payload.credential_id);
     const portableCtx = createProofFirstPortableRevocationTestContext();
 
-    const partnerA = await authorizePartnerFromReusableCredential({
+    const partnerA = await authorize566PartnerForTest({
       credential,
-      holderSubjectId: BUILD_566_HOLDER_SUBJECT,
       partnerId: BUILD_566_PARTNER_A,
       policyId: BUILD_566_POLICY_ID,
-      policyVersion: 1,
       policyRules: BUILD_566_POLICY_RULES,
       requestId: "req_566_partner_a",
-      signingKey: BUILD_546_PRIMARY_KEY,
-      trustedCredentialIssuerIds: [credential.payload.issuer_id],
       portableRevocationSnapshot: revocation,
       now: BUILD_546_FIXTURE_NOW,
       env,
     });
     expect(partnerA.ok).toBe(true);
     if (!partnerA.ok) return;
-    expect(partnerA.idv_repeated).toBe(false);
+    expect(partnerA.decision_context).toBe("sandbox_only");
 
-    const partnerB = await authorizePartnerFromReusableCredential({
+    const partnerB = await authorize566PartnerForTest({
       credential,
-      holderSubjectId: BUILD_566_HOLDER_SUBJECT,
       partnerId: BUILD_566_PARTNER_B,
       policyId: BUILD_566_POLICY_ID,
-      policyVersion: 1,
       policyRules: BUILD_566_POLICY_RULES,
       requestId: "req_566_partner_b",
-      signingKey: BUILD_546_PRIMARY_KEY,
-      trustedCredentialIssuerIds: [credential.payload.issuer_id],
       portableRevocationSnapshot: revocation,
       now: BUILD_546_FIXTURE_NOW,
       env,
@@ -85,7 +78,7 @@ describe("Build #566 universal credential portability", () => {
 
     expect(partnerA.receipt.partner_id).toBe(BUILD_566_PARTNER_A);
     expect(partnerB.receipt.partner_id).toBe(BUILD_566_PARTNER_B);
-    expect(partnerA.receipt.id).not.toBe(partnerB.receipt.id);
+    expect(partnerA.receipt.signing_key_id).not.toBe(credential.payload.signing_key_id);
 
     const snapshotA = build566RevocationSnapshotForCredential(partnerA.receipt.id);
     const decisionA = await verifyHolderPresentationAtRelyingParty({
@@ -117,21 +110,17 @@ describe("Build #566 universal credential portability", () => {
     expect(decisionB.outcome).toBe("granted");
   });
 
-  it("partner A receipt cannot authorize partner B (no cross-partner receipt reuse)", async () => {
+  it("partner A receipt cannot authorize partner B", async () => {
     const credential = build566SyntheticReusableCredential();
     const revocation = build566RevocationSnapshotForCredential(credential.payload.credential_id);
     const portableCtx = createProofFirstPortableRevocationTestContext();
 
-    const partnerA = await authorizePartnerFromReusableCredential({
+    const partnerA = await authorize566PartnerForTest({
       credential,
-      holderSubjectId: BUILD_566_HOLDER_SUBJECT,
       partnerId: BUILD_566_PARTNER_A,
       policyId: BUILD_566_POLICY_ID,
-      policyVersion: 1,
       policyRules: BUILD_566_POLICY_RULES,
       requestId: "req_566_cross_a",
-      signingKey: BUILD_546_PRIMARY_KEY,
-      trustedCredentialIssuerIds: [credential.payload.issuer_id],
       portableRevocationSnapshot: revocation,
       now: BUILD_546_FIXTURE_NOW,
       env,
@@ -146,11 +135,51 @@ describe("Build #566 universal credential portability", () => {
       now: BUILD_546_FIXTURE_NOW,
       portableRevocationSnapshot: snapshot,
       rp: rpWithSnapshotBootstrap(
-        { partnerId: BUILD_566_PARTNER_B, policyId: BUILD_566_POLICY_ID, env },
+        { partnerId: BUILD_566_PARTNER_B, policyId: BUILD_566_POLICY_ID, env, allowSandbox: true },
         portableCtx,
         snapshot,
       ),
     });
     expect(wrongAudience.outcome).not.toBe("granted");
+  });
+
+  it("rejects client supplied subject without possession signature", async () => {
+    const credential = build566SyntheticReusableCredential({
+      holderSubjectId: BUILD_566_HOLDER_SUBJECT,
+    });
+    const challenge = issuePassportPossessionChallenge({
+      credentialId: credential.payload.credential_id,
+      partnerId: BUILD_566_PARTNER_A,
+      policyId: BUILD_566_POLICY_ID,
+      now: BUILD_546_FIXTURE_NOW,
+    });
+    const wrongKey = nacl.sign.keyPair();
+    const proof = {
+      challenge_id: challenge.challenge_id,
+      signature: signPassportPossessionChallenge(challenge, wrongKey.secretKey),
+    };
+    const { authorizePartnerFromReusableCredential } = await import("./partnerAuthorization");
+    const { InMemoryPortableRevocationCheckpointStore } = await import("@/lib/protocol/portableRevocation");
+    const { bootstrapTrustFromArtifact } = await import("@/lib/protocol/portableRevocation");
+    const revocation = build566RevocationSnapshotForCredential(credential.payload.credential_id);
+    const result = await authorizePartnerFromReusableCredential({
+      credential,
+      partnerId: BUILD_566_PARTNER_A,
+      policyId: BUILD_566_POLICY_ID,
+      policyVersion: 1,
+      policyRules: BUILD_566_POLICY_RULES,
+      requestId: "req_wrong_possession",
+      receiptSigningKey: (await import("./fixtures")).BUILD_566_RECEIPT_SIGNING_KEY,
+      portableRevocationSnapshot: revocation,
+      possessionChallenge: challenge,
+      holderPossessionProof: proof,
+      checkpointStore: new InMemoryPortableRevocationCheckpointStore(),
+      bootstrapTrusts: [bootstrapTrustFromArtifact({ artifact: revocation })],
+      now: BUILD_546_FIXTURE_NOW,
+      env,
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toMatch(/possession/);
   });
 });

@@ -16,6 +16,6 @@ export function buildPresentationRequestDisclosure(input: {
     policy_id: input.policyId,
     requested_attribute: input.requestedAttribute,
     purpose: "Confirm eligibility for this partner's policy without resubmitting identity documents.",
-    partner_receives: `A signed partner-bound authorization receipt scoped to ${input.partnerId} — not your reusable credential file and not underlying IDV evidence.`,
+    partner_receives: `A signed partner-bound authorization receipt scoped to ${input.partnerId}, not your reusable credential file and not underlying IDV evidence.`,
   };
 }

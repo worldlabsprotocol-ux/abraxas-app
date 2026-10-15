@@ -59,7 +59,7 @@ export function ScrollDisclosureStory() {
           <div className="abx-cinematic-story__statements">
             {effectiveProgress < 0.42 ? (
               <p className="abx-cinematic-story__statement" style={{ fontFamily: FONT }}>
-                Synthetic identity fields — demonstration only.
+                Synthetic identity fields, demonstration only.
               </p>
             ) : null}
             {effectiveProgress >= 0.42 && effectiveProgress < 0.72 ? (

@@ -38,7 +38,7 @@ const STAGES: {
     tab: "Scoped decision",
     kicker: "Scoped signed decision",
     title: "Only the minimum necessary leaves",
-    body: "Partners receive a signed decision receipt — for example PERMIT for age_over_18 — not underlying identity fields.",
+    body: "Partners receive a signed decision receipt, for example PERMIT for age_over_18, not underlying identity fields.",
   },
   {
     id: "verify",
@@ -46,7 +46,7 @@ const STAGES: {
     tab: "Independent verification",
     kicker: "Relying party verification",
     title: "Verify without Abraxas identity databases",
-    body: "Relying parties verify signature, policy binding, freshness, and authenticated portable revocation using locally trusted issuer keys—fail-closed when state is stale or untrusted.",
+    body: "Relying parties verify signature, policy binding, freshness, and authenticated portable revocation using locally trusted issuer keys. Verification fails closed when state is stale or untrusted.",
   },
 ];
 

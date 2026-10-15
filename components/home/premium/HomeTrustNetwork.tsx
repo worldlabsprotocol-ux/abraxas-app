@@ -21,10 +21,10 @@ const EDGES: { from: NodeId; to: NodeId; id: string; label: string }[] = [
 ];
 
 const NODE_COPY: Record<NodeId, string> = {
-  holder: "You approve sharing a narrow answer — not your full identity file.",
+  holder: "You approve sharing a narrow answer, not your full identity file.",
   abraxas: "Abraxas evaluates policy and signs a decision receipt. Evidence stays protected.",
   "app-a": "Simulated retail app receives only the eligibility answer its policy allows.",
-  "app-b": "Simulated venue app uses a different policy — outcomes are not interchangeable.",
+  "app-b": "Simulated venue app uses a different policy. Outcomes are not interchangeable.",
   verifier: "Anyone can verify the receipt signature and freshness without receiving private evidence.",
 };
 
@@ -32,7 +32,7 @@ function edgePath(from: (typeof NODES)[number], to: (typeof NODES)[number]): str
   return `M ${from.x} ${from.y} L ${to.x} ${to.y}`;
 }
 
-/** Signature B — trust consumption network (labeled simulation). */
+/** Signature B trust consumption network (labeled simulation). */
 export function HomeTrustNetwork() {
   const [active, setActive] = useState<NodeId>("abraxas");
   const reduceMotion = useReducedMotion();
@@ -61,7 +61,7 @@ export function HomeTrustNetwork() {
       </h2>
       <p className="abx-v2-section-lead">
         Receipts can reach apps and independent checkers. Your raw documents do not travel on the same paths. This diagram
-        uses simulated apps — not a live partner map.
+        uses simulated apps, not a live partner map.
       </p>
 
       <div className="abx-premium-network__stage abx-premium-surface-open">

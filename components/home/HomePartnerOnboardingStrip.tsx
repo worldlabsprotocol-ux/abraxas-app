@@ -54,7 +54,7 @@ export function HomePartnerOnboardingStrip() {
         <strong style={{ color: "var(--text-secondary)" }}>Available now:</strong>{" "}
         {PARTNER_ONBOARDING_AVAILABLE_NOW.map((c) => c.label).join(" · ")}.
         {" "}
-        <strong style={{ color: "var(--text-secondary)" }}>{PARTNER_ONBOARDING_FUTURE_LABEL}:</strong> consented passwordless partner accounts, optional email sharing, and separate newsletter consent — not deployed yet.
+        <strong style={{ color: "var(--text-secondary)" }}>{PARTNER_ONBOARDING_FUTURE_LABEL}:</strong> consented passwordless partner accounts, optional email sharing, and separate newsletter consent, not deployed yet.
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", justifyContent: "center" }}>
         <Btn href={PARTNER_ONBOARDING_DOC_LINKS.integrationStudio} size="sm">Integration Studio</Btn>

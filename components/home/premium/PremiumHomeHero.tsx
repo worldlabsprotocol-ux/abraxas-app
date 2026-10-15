@@ -17,7 +17,7 @@ const HEADLINE_LINES = ["Prove what matters.", "Keep what's yours."];
 /** Server-rendered hero copy for LCP; emblem hydrates client-side after first paint. */
 export function PremiumHomeHero() {
   return (
-    <header className="abx-premium-hero" aria-label="Abraxas — prove what matters">
+    <header className="abx-premium-hero" aria-label="Abraxas: prove what matters">
       <div className="abx-premium-hero__grid" aria-hidden="true" />
       <div className="abx-premium-hero__layout">
         <div className="abx-premium-hero__copy">

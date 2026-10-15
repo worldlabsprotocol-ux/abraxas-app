@@ -77,7 +77,7 @@ export function PassportReusableCredentialsPanel({ sessionReady }: { sessionRead
     <div style={{ display: "grid", gap: "0.75rem" }}>
       <p style={{ fontFamily: FONT, fontSize: "0.78rem", lineHeight: 1.55, color: "var(--text-secondary)", margin: 0 }}>
         Reusable credentials are issuer-signed eligibility assurances you hold once. Each institution still receives its
-        own partner-bound authorization receipt after you approve a scoped presentation — credentials are not receipts.
+        own partner-bound authorization receipt after you approve a scoped presentation. Credentials are not receipts.
         {sandboxOnly ? " Sandbox-labeled demo in this environment." : ""}
       </p>
       {loading ? <p style={{ fontFamily: FONT, fontSize: "0.75rem", color: "var(--text-muted)" }}>Loading…</p> : null}

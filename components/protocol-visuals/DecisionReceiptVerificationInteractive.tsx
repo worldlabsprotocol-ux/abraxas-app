@@ -75,7 +75,7 @@ export function DecisionReceiptVerificationInteractive() {
       kicker="05 Evidence"
       title="Verify the"
       titleAccent="Decision"
-      caption="Simulated receipt and verifier checks — not live partner status."
+      caption="Simulated receipt and verifier checks, not live partner status."
       className="abx-pv-shell--exhibit abx-pv-shell--open"
     >
       <div className="abx-pv-verify">
@@ -164,12 +164,12 @@ export function DecisionReceiptVerificationInteractive() {
             {state.signatureValid && !state.currentlyAuthorized ? (
               <span className="abx-pv-verify__aggregate-note">
                 {" "}
-                — valid signature does not imply PERMIT.
+                Valid signature does not imply PERMIT.
               </span>
             ) : state.aggregateStatus === "UNAVAILABLE" ? (
               <span className="abx-pv-verify__aggregate-note">
                 {" "}
-                — unknown checks do not imply an invalid signature.
+                Unknown checks do not imply an invalid signature.
               </span>
             ) : null}
           </p>

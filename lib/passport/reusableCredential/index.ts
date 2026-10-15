@@ -9,3 +9,7 @@ export * from "./presentationDisclosure";
 export * from "./summarize";
 export * from "./sandboxGate";
 export * from "./parseImport";
+export * from "./authenticatedClaims";
+export * from "./credentialIssuerRegistry";
+export * from "./holderPossessionChallenge";
+export * from "./credentialRevocationStrict";

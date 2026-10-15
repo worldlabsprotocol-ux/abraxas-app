@@ -1,5 +1,4 @@
 // FILE: lib/passport/reusableCredential/partnerAuthorization.ts
-// Derive partner-bound authorization receipts from a verified reusable credential (no repeat IDV).
 
 import { randomBytes } from "crypto";
 import { buildCanonicalPayload } from "@/lib/decisionReceipts/canonical";
@@ -11,25 +10,41 @@ import { CLAIM_ISSUERS } from "@/lib/credentials/claimSchema";
 import type { CredentialClaimRecord } from "@/lib/credentials/claimSchema";
 import { evaluatePolicyRules } from "@/lib/policy/evaluatePolicy";
 import type { PartnerPolicyRules } from "@/lib/policy/types";
-import { PRODUCT_ELIGIBILITY_OVER_21 } from "@/lib/idv/ageEligibility";
 import {
   composeHolderPolicyScopedPresentation,
   type HolderPolicyScopedPresentation,
 } from "@/lib/protocol/proofFirst/holderPolicyPresentation";
+import type {
+  PortableRevocationBootstrapTrust,
+  PortableRevocationCheckpointStore,
+  PortableRevocationSignedArtifact,
+} from "@/lib/protocol/portableRevocation";
+import { bootstrapTrustFromArtifact } from "@/lib/protocol/portableRevocation";
+import type { ReceiptConsumptionStore } from "@/lib/institutionalCertification/build547/receiptConsumptionStore";
+import { InMemoryReceiptConsumptionStore } from "@/lib/institutionalCertification/build547/receiptConsumptionStore";
+import { materializeAuthenticatedClaimsForPolicy } from "./authenticatedClaims";
 import type { SignedPassportReusableCredential } from "./contract";
-import { verifyPassportReusableCredential } from "./verify";
+import {
+  type HolderPossessionProof,
+  type PassportPossessionChallengePayload,
+  verifyPassportPossessionProof,
+} from "./holderPossessionChallenge";
+import { verifyPassportReusableCredentialStrict } from "./verify";
 
 export type PartnerAuthorizationFromCredentialInput = {
   credential: SignedPassportReusableCredential;
-  holderSubjectId: string;
   partnerId: string;
   policyId: string;
   policyVersion: number;
   policyRules: PartnerPolicyRules;
   requestId: string;
-  signingKey: ReceiptSigningKeyPair;
-  trustedCredentialIssuerIds: string[];
-  portableRevocationSnapshot: import("@/lib/protocol/portableRevocation").PortableRevocationSignedArtifact;
+  receiptSigningKey: ReceiptSigningKeyPair;
+  portableRevocationSnapshot: PortableRevocationSignedArtifact;
+  possessionChallenge: PassportPossessionChallengePayload;
+  holderPossessionProof: HolderPossessionProof;
+  checkpointStore: PortableRevocationCheckpointStore;
+  bootstrapTrusts?: PortableRevocationBootstrapTrust[];
+  consumptionStore?: ReceiptConsumptionStore;
   now?: Date;
   env?: Record<string, string | undefined>;
 };
@@ -41,36 +56,13 @@ export type PartnerAuthorizationFromCredentialResult =
       presentation: HolderPolicyScopedPresentation;
       policy_evaluation: { approved: true; reason_codes: string[] };
       idv_repeated: false;
+      decision_context: "sandbox_only" | "production";
     }
   | {
       ok: false;
       code: string;
       policy_evaluation?: { approved: false; missing_claims: string[] };
     };
-
-const consumedRequestIds = new Set<string>();
-
-function claimsFromCredential(credential: SignedPassportReusableCredential): CredentialClaimRecord[] {
-  return credential.payload.asserted_claims.map((row) => ({
-    id: row.claim_id,
-    subject_id: credential.payload.holder_subject_id,
-    credential_jti: credential.payload.credential_id,
-    claim_type: row.claim_type as CredentialClaimRecord["claim_type"],
-    claim_value:
-      row.claim_type === "product_eligibility"
-        ? { outcome: PRODUCT_ELIGIBILITY_OVER_21 }
-        : { ref: row.claim_value_ref },
-    issuer_id: row.issuer_id,
-    assurance_level: row.assurance_level,
-    issued_at: row.issued_at,
-    expires_at: row.expires_at,
-    status: row.status === "active" ? "active" : "revoked",
-    revocation_reference: null,
-    evidence_reference: row.claim_value_ref,
-    jurisdiction: null,
-    policy_scope: "compliance",
-  }));
-}
 
 function toEvaluatedClaimRefs(claims: CredentialClaimRecord[]): EvaluatedClaimRef[] {
   return claims.map((c) => ({
@@ -83,27 +75,53 @@ function toEvaluatedClaimRefs(claims: CredentialClaimRecord[]): EvaluatedClaimRe
   }));
 }
 
+function isSyntheticCredential(credential: SignedPassportReusableCredential): boolean {
+  return credential.payload.provenance.idv_method === "sandbox_fixture";
+}
+
 export async function authorizePartnerFromReusableCredential(
   input: PartnerAuthorizationFromCredentialInput,
 ): Promise<PartnerAuthorizationFromCredentialResult> {
-  if (consumedRequestIds.has(input.requestId)) {
-    return { ok: false, code: "replay_request_id" };
+  const now = input.now ?? new Date();
+  const bootstrap =
+    input.bootstrapTrusts
+    ?? [bootstrapTrustFromArtifact({ artifact: input.portableRevocationSnapshot })];
+
+  const possession = verifyPassportPossessionProof({
+    credentialId: input.credential.payload.credential_id,
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    credentialHolderPublicKey: input.credential.payload.holder_possession_public_key,
+    challenge: input.possessionChallenge,
+    proof: input.holderPossessionProof,
+    now,
+  });
+  if (!possession.ok) {
+    return { ok: false, code: possession.code };
   }
 
-  const verified = verifyPassportReusableCredential({
+  const verified = await verifyPassportReusableCredentialStrict({
     credential: input.credential,
-    issuerPublicKeyJwk: input.signingKey.publicKeyJwk,
-    trustedIssuerIds: input.trustedCredentialIssuerIds,
-    holderSubjectId: input.holderSubjectId,
-    now: input.now,
+    now,
+    env: input.env,
     portableRevocationSnapshot: input.portableRevocationSnapshot,
+    checkpointStore: input.checkpointStore,
+    bootstrapTrusts: bootstrap,
   });
   if (!verified.ok) {
     return { ok: false, code: verified.code };
   }
 
-  const claims = claimsFromCredential(input.credential);
-  const evaluation = evaluatePolicyRules(input.policyRules, claims, {
+  const materialized = materializeAuthenticatedClaimsForPolicy({
+    credential: input.credential,
+    policyRules: input.policyRules,
+    now,
+  });
+  if (!materialized.ok) {
+    return { ok: false, code: materialized.code };
+  }
+
+  const evaluation = evaluatePolicyRules(input.policyRules, materialized.claims, {
     partnerId: input.partnerId,
     policyId: input.policyId,
     policyRules: input.policyRules,
@@ -116,29 +134,51 @@ export async function authorizePartnerFromReusableCredential(
     };
   }
 
-  const now = input.now ?? new Date();
+  const synthetic = isSyntheticCredential(input.credential);
+  const decisionContext: "sandbox_only" | "production" = synthetic ? "sandbox_only" : "production";
+  if (synthetic && !input.policyRules.sandbox_only) {
+    return { ok: false, code: "synthetic_credential_requires_sandbox_policy" };
+  }
+
+  const store = input.consumptionStore ?? new InMemoryReceiptConsumptionStore();
   const receiptId = `dr_${randomBytes(10).toString("base64url")}`;
+  const consumptionAttempt = await store.tryRecordConsumption({
+    receiptId,
+    requestId: input.requestId,
+    partnerId: input.partnerId,
+    policyId: input.policyId,
+    at: now.toISOString(),
+  });
+  if (consumptionAttempt.status === "replay") {
+    return { ok: false, code: "rp_consumption_replay" };
+  }
+  if (consumptionAttempt.status === "persistence_unavailable") {
+    return { ok: false, code: "rp_consumption_unavailable" };
+  }
+
   const decisionId = randomBytes(16).toString("hex");
-  const evaluatedRefs = toEvaluatedClaimRefs(claims);
+  const evaluatedRefs = toEvaluatedClaimRefs(materialized.claims);
   const payload = buildCanonicalPayload({
     receipt_id: receiptId,
     decision_id: decisionId,
     policy_id: input.policyId,
     policy_version: input.policyVersion,
     partner_id: input.partnerId,
-    subject_pseudonym_id: subjectPseudonymId(`${input.holderSubjectId}:${input.partnerId}`),
+    subject_pseudonym_id: subjectPseudonymId(
+      `${input.credential.payload.holder_subject_id}:${input.partnerId}`,
+    ),
     wallet_binding_ref: input.credential.payload.holder_possession_ref,
     consent_receipt_id: null,
     decision_result: "approved",
     reason_codes: evaluation.reason_codes,
     evaluated_claim_refs: evaluatedRefs,
     issuer_refs: [input.credential.payload.issuer_id, CLAIM_ISSUERS.abraxas],
-    decision_context: input.policyRules.sandbox_only ? "sandbox_only" : "production",
+    decision_context: decisionContext,
     evaluated_at: now.toISOString(),
     expires_at: input.credential.payload.expires_at,
     schema_version: DECISION_RECEIPT_SCHEMA_VERSION,
   });
-  const { payloadHash, signature } = signReceiptPayload(payload, input.signingKey.privateKeyJwk);
+  const { payloadHash, signature } = signReceiptPayload(payload, input.receiptSigningKey.privateKeyJwk);
   const receipt: DecisionReceiptRecord = {
     id: payload.receipt_id,
     verification_decision_id: payload.decision_id,
@@ -160,7 +200,7 @@ export async function authorizePartnerFromReusableCredential(
     schema_version: DECISION_RECEIPT_SCHEMA_VERSION,
     payload_hash: payloadHash,
     signature,
-    signing_key_id: input.signingKey.signingKeyId,
+    signing_key_id: input.receiptSigningKey.signingKeyId,
     anchor_reference: null,
     idempotency_key: `cred:${input.credential.payload.credential_id}:${input.partnerId}:${input.requestId}`,
     created_at: now.toISOString(),
@@ -171,18 +211,12 @@ export async function authorizePartnerFromReusableCredential(
     audiencePartnerId: input.partnerId,
   });
 
-  consumedRequestIds.add(input.requestId);
-
   return {
     ok: true,
     receipt,
     presentation,
     policy_evaluation: { approved: true, reason_codes: evaluation.reason_codes },
     idv_repeated: false,
+    decision_context: decisionContext,
   };
-}
-
-/** Test helper — reset replay ledger between cases. */
-export function resetPartnerAuthorizationReplayLedgerForTests(): void {
-  consumedRequestIds.clear();
 }

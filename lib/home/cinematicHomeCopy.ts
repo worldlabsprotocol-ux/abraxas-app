@@ -37,7 +37,7 @@ export const PASSPORT_HERO_SHARED = "Shared with partner: 21+ only";
 export const PRODUCT_PROOF_STEPS = [
   { id: "ask", title: "Partner asks", body: "Is this holder 21+?" },
   { id: "approve", title: "Holder approves", body: "Share my 21+ result" },
-  { id: "return", title: "Abraxas returns", body: "YES — signed, current, policy-specific" },
+  { id: "return", title: "Abraxas returns", body: "YES: signed, current, policy-specific" },
 ] as const;
 
 export const PRODUCT_PROOF_FOOTNOTE =
@@ -52,7 +52,7 @@ export const REUSE_ORBIT_ASKS = [
   "License current?",
   "Authorized?",
 ] as const;
-export const REUSE_ORBIT_DISCLAIMER = "Conceptual policy examples — not all are live products.";
+export const REUSE_ORBIT_DISCLAIMER = "Conceptual policy examples, not all live products.";
 
 export const DEVELOPER_STORY_HEADLINE = "ASK → VERIFY → RECEIVE SIGNED RESULT";
 export const DEVELOPER_STORY_BODY =
@@ -61,11 +61,11 @@ export const DEVELOPER_STORY_BODY =
 export const FOOTER_THESIS_LINE_1 = CINEMATIC_THESIS_LINE_1;
 export const FOOTER_THESIS_LINE_2 = CINEMATIC_THESIS_LINE_2;
 
-/** Build #545 — public homepage hero and scroll chapters */
+/** Build #545 public homepage hero and scroll chapters */
 export const CINEMATIC_HOME_HEADLINE = "Prove what matters. Keep what's yours.";
 
 export const CINEMATIC_HOME_LEAD =
-  "Verify once with an authorized issuer. Carry portable credentials in Passport. Partners verify signed decisions independently—without Abraxas identity databases at authorization time.";
+  "Verify once with an authorized issuer. Carry portable credentials in Passport. Partners verify signed decisions independently, without Abraxas identity databases at authorization time.";
 
 export const CINEMATIC_HOME_CTA_PRIMARY = "Open Passport";
 export const CINEMATIC_HOME_CTA_PRIMARY_HREF = "/passport";
@@ -93,7 +93,7 @@ export const CINEMATIC_HOW_STAGES = [
   {
     id: "share",
     title: "Share only the answer",
-    body: "Each request receives a narrowly scoped decision — not your underlying documents.",
+    body: "Each request receives a narrowly scoped decision, not your underlying documents.",
   },
   {
     id: "reuse",
@@ -105,14 +105,14 @@ export const CINEMATIC_HOW_STAGES = [
 export const CINEMATIC_VPR_HEADLINE = "Verify → Protect → Reuse";
 
 export const CINEMATIC_VPR_SIM_LABEL =
-  "Interactive simulation — labeled examples only. Each app policy is evaluated independently; one PERMIT does not authorize another policy.";
+  "Interactive simulation with labeled examples only. Each app policy is evaluated independently; one PERMIT does not authorize another policy.";
 
 export const CINEMATIC_GT_SECTION_HEADLINE = "See Abraxas in action.";
 
 export const CINEMATIC_GT_SECTION_LEAD = "Age check without sharing ID or date of birth.";
 
 export const CINEMATIC_GT_PARTNER_DISCLAIMER =
-  "Good Trouble early partner integration demo — not production checkout. Holder consent and privacy boundaries still apply.";
+  "Good Trouble early partner integration demo, not production checkout. Holder consent and privacy boundaries still apply.";
 
 export const CINEMATIC_TRUST_CHAPTER_EYEBROW = "Built on verifiable trust";
 

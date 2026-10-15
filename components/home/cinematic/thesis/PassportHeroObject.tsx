@@ -90,7 +90,7 @@ export function PassportHeroObject() {
           maxWidth: 420,
         }}
       >
-        Demo presentation — assurance level and evidence come from authoritative policy evaluation, not decorative UI.
+        Demo presentation: assurance level and evidence come from authoritative policy evaluation, not decorative UI.
       </p>
     </section>
   );

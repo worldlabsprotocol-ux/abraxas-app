@@ -21,9 +21,9 @@ export function summarizeReusableCredential(
     status: expired ? "expired" : "active",
     sandbox_labeled: options?.sandboxLabeled ?? credential.payload.provenance.idv_method === "sandbox_fixture",
     limitations: [
-      "Reusable issuer credential — not a partner authorization receipt.",
+      "Reusable issuer credential, not a partner authorization receipt.",
       "Each institution requires a separate partner-bound presentation and holder approval.",
-      "Export supports credential custody only — not Passport account recovery.",
+      "Export supports credential custody only, not Passport account recovery.",
     ],
     not_a_partner_receipt: true,
   };
