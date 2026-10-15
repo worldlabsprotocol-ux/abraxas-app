@@ -3,6 +3,7 @@
 // Holder success surface — partner outcome, privacy boundary, optional return action.
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion, useReducedMotion } from "framer-motion";
 import { ABX_FONT_SANS } from "@/lib/design/abraxasDesignSystem";
 import { abxMotionDuration } from "@/lib/design/abraxasMotion";
@@ -82,7 +83,11 @@ export function HolderDecisionComplete({
 
       {showPassportNotice ? (
         <p className="abx-holder-decision-complete__reuse" style={{ fontFamily: ABX_FONT_SANS }}>
-          Your Passport supported this request. Existing verified evidence may satisfy eligible future requests when consent, freshness, and policy rules allow.
+          Your Passport supported this request. Export a portable presentation from{" "}
+          <Link href="/passport#passport-credentials" style={{ color: "var(--accent)", fontWeight: 700 }}>
+            Portable trust credentials
+          </Link>
+          {" "}for partner-bound reuse (not a universal identity export).
         </p>
       ) : null}
 

@@ -39,6 +39,7 @@ import { TrustStatus } from "@/components/product/TrustStatus";
 import { PassportReuseStrip } from "@/components/passport/PassportReuseStrip";
 import { PassportIdentityObject, type PassportLifecycleState } from "@/components/passport/PassportIdentityObject";
 import { PassportHolderWorkspace } from "@/components/passport/PassportHolderWorkspace";
+import { PassportPortableTrustPanel } from "@/components/passport/PassportPortableTrustPanel";
 import { PASSPORT_PRIVACY_HREF } from "@/lib/passport/passportPrivacyNavigation";
 import type { CapturePolicyContext } from "@/lib/idv/capturePolicyContext";
 
@@ -291,6 +292,16 @@ export function PassportCustomerView({
       )}
       credentials={(
         <>
+          {walletDone && browserSessionReady && (
+            <section style={{ ...CARD, marginBottom: "1rem" }} aria-labelledby="passport-portable-trust-heading">
+              <h2 id="passport-portable-trust-heading" style={{
+                fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.5rem",
+              }}>
+                Portable trust credentials
+              </h2>
+              <PassportPortableTrustPanel sessionReady={browserSessionReady} />
+            </section>
+          )}
           {hasCredential && status.identityUi === "verified" ? <PassportReuseStrip /> : null}
           {walletDone && browserSessionReady && (
             <PassportWalletsSection onChanged={onRefresh} />

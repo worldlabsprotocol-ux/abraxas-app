@@ -80,6 +80,7 @@ export default function DevelopersPage() {
         <div style={{ display: "grid", gap: "0.45rem", fontFamily: FONT, fontSize: "0.78rem" }}>
           {[
             { label: "Integration Studio", href: "/developers/integration-studio" },
+            { label: "Passport portable trust (Build #565 demo)", href: "/developers/passport-portable-trust" },
             { label: "External RP verify + proof", href: "/docs/relying-party-verify" },
             { label: "JSON integration guide (API)", href: "/docs/relying-party-verify" },
             { label: "Consent verification requests", href: "/docs/partner-verification-requests" },
