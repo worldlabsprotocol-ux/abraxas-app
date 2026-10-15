@@ -13,6 +13,7 @@ export function PassportReusableCredentialsPanel({ sessionReady }: { sessionRead
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [possessionNote, setPossessionNote] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!sessionReady) return;
@@ -39,6 +40,41 @@ export function PassportReusableCredentialsPanel({ sessionReady }: { sessionRead
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function registerPossessionKey() {
+    setBusy("possession");
+    setPossessionNote(null);
+    try {
+      const nacl = await import("tweetnacl");
+      const seed = crypto.getRandomValues(new Uint8Array(32));
+      const pair = nacl.sign.keyPair.fromSeed(seed);
+      const toB64Url = (bytes: Uint8Array) => {
+        let binary = "";
+        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]!);
+        return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      };
+      const publicKeyB64Url = toB64Url(pair.publicKey);
+      sessionStorage.setItem("abraxas_passport_possession_secret", toB64Url(pair.secretKey));
+      const res = await fetch("/api/passport/reusable-credentials/possession-key", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ public_key_b64url: publicKeyB64Url }),
+      });
+      const data = (await res.json()) as { error?: string; issuance?: { credential_id?: string; code?: string } };
+      if (!res.ok) throw new Error(data.error ?? "register_failed");
+      setPossessionNote(
+        data.issuance?.credential_id
+          ? `Possession key registered. Reusable credential ${data.issuance.credential_id} is ready.`
+          : "Possession key registered. Complete identity verification to receive a reusable credential.",
+      );
+      await load();
+    } catch {
+      setError("Could not register a possession key for this device.");
+    } finally {
+      setBusy(null);
+    }
+  }
 
   async function exportCredential(credentialId: string) {
     setBusy(credentialId);
@@ -80,6 +116,12 @@ export function PassportReusableCredentialsPanel({ sessionReady }: { sessionRead
         own partner-bound authorization receipt after you approve a scoped presentation. Credentials are not receipts.
         {sandboxOnly ? " Sandbox-labeled demo in this environment." : ""}
       </p>
+      <Btn variant="secondary" disabled={busy === "possession"} onClick={() => void registerPossessionKey()}>
+        {busy === "possession" ? "Registering…" : "Register this device possession key"}
+      </Btn>
+      {possessionNote ? (
+        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-secondary)", margin: 0 }}>{possessionNote}</p>
+      ) : null}
       {loading ? <p style={{ fontFamily: FONT, fontSize: "0.75rem", color: "var(--text-muted)" }}>Loading…</p> : null}
       {error ? <p style={{ fontFamily: FONT, fontSize: "0.75rem", color: "var(--danger)" }}>{error}</p> : null}
       {credentials.map((cred) => (

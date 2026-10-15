@@ -22,6 +22,7 @@ export const SOVEREIGN_RUNTIME_SCHEMA_MANIFEST = [
   "078_age_evidence_records.sql",
   "138_sovereign_idv_evidence_custody.sql",
   "139_sovereign_idv_claims_evidence.sql",
+  "140_passport_reusable_credential_state.sql",
 ] as const;
 
 export type SovereignRuntimeMigration = (typeof SOVEREIGN_RUNTIME_SCHEMA_MANIFEST)[number];

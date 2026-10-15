@@ -3,8 +3,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { InMemoryPortableRevocationCheckpointStore } from "@/lib/protocol/portableRevocation";
 import { bootstrapTrustFromArtifact } from "@/lib/protocol/portableRevocation";
+import { buildSyntheticPortableRevocationSnapshot } from "@/lib/protocol/portableRevocation";
 import { portableTrustCsrfRejected } from "@/lib/passport/portableTrust/csrf";
 import { resolveAuthenticatedHolderSession } from "@/lib/passport/portableTrust/resolveHolderSession";
+import {
+  consumePassportPossessionChallengeDirect,
+} from "@/lib/persistence/postgresPassportPossessionChallengeStore";
 import {
   BUILD_566_POLICY_RULES,
   authorizePartnerFromReusableCredential,
@@ -18,8 +22,21 @@ import type {
   HolderPossessionProof,
   PassportPossessionChallengePayload,
 } from "@/lib/passport/reusableCredential/holderPossessionChallenge";
+import {
+  InMemoryPassportPossessionChallengeStore,
+} from "@/lib/passport/reusableCredential/holderPossessionChallenge";
 import { BUILD_566_RECEIPT_SIGNING_KEY } from "@/lib/passport/reusableCredential/fixtures";
 import { BUILD_546_FIXTURE_NOW } from "@/lib/institutionalCertification/build546/fixtures";
+import { resolveHolderReusableCredential } from "@/lib/passport/reusableCredential/resolveStoredCredential";
+import { isPassportReusableCredentialStorageEnabled } from "@/lib/passport/reusableCredential/storageGate";
+import { loadReceiptSigningKey } from "@/lib/decisionReceipts/signing";
+
+function revocationSnapshotForCredential(credentialId: string) {
+  return buildSyntheticPortableRevocationSnapshot({
+    receiptId: credentialId,
+    state: "active",
+  });
+}
 
 export async function POST(req: NextRequest) {
   const csrf = portableTrustCsrfRejected(req);
@@ -32,9 +49,6 @@ export async function POST(req: NextRequest) {
       { error: session.message },
       { status: session.error === "forbidden" ? 403 : 401 },
     );
-  }
-  if (!isPassportReusableCredentialDemoAllowed()) {
-    return NextResponse.json({ error: "reusable_credential_present_disabled_in_production" }, { status: 403 });
   }
 
   let body: {
@@ -57,11 +71,85 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error: "holder_possession_proof_required",
-        sandbox_only: true,
         note: "Obtain an RP challenge, sign it with the credential holder possession key, then submit challenge and proof together.",
       },
       { status: 400 },
     );
+  }
+
+  const storageEnabled = isPassportReusableCredentialStorageEnabled();
+  if (storageEnabled) {
+    const credential = await resolveHolderReusableCredential({
+      holderSubjectId: session.subjectId,
+      credentialId: body.credential_id,
+    });
+    if (credential) {
+      const challengeStore = new InMemoryPassportPossessionChallengeStore();
+      const receiptKey = loadReceiptSigningKey() ?? BUILD_566_RECEIPT_SIGNING_KEY;
+      const env = { ...process.env, ...build566TrustEnv() } as Record<string, string | undefined>;
+      const revocation = revocationSnapshotForCredential(credential.payload.credential_id);
+      const requestId = body.request_id ?? `req_present_${Date.now()}`;
+      const policyRules =
+        credential.payload.provenance.idv_method === "sandbox_fixture"
+          ? BUILD_566_POLICY_RULES
+          : { ...BUILD_566_POLICY_RULES, sandbox_only: false };
+
+      const authorized = await authorizePartnerFromReusableCredential({
+        credential,
+        partnerId: body.partner_id,
+        policyId: body.policy_id,
+        policyVersion: 1,
+        policyRules,
+        requestId,
+        receiptSigningKey: receiptKey,
+        portableRevocationSnapshot: revocation,
+        possessionChallenge: body.challenge,
+        holderPossessionProof: body.holder_possession_proof,
+        checkpointStore: new InMemoryPortableRevocationCheckpointStore(),
+        bootstrapTrusts: [bootstrapTrustFromArtifact({ artifact: revocation })],
+        env,
+        challengeStore,
+        durablePossessionConsume: async (challengeId, at) =>
+          consumePassportPossessionChallengeDirect({
+            challengeId,
+            credentialId: credential.payload.credential_id,
+            partnerId: body.partner_id!,
+            policyId: body.policy_id!,
+            at,
+          }),
+      });
+
+      if (!authorized.ok) {
+        return NextResponse.json({ error: authorized.code, issuer_backed: true }, { status: 400 });
+      }
+
+      const disclosure = buildPresentationRequestDisclosure({
+        credentialId: credential.payload.credential_id,
+        partnerId: body.partner_id,
+        partnerLabel: body.partner_id,
+        policyId: body.policy_id,
+        requestedAttribute: "product_eligibility (authenticated issuer outcome)",
+      });
+
+      return NextResponse.json({
+        issuer_backed: true,
+        synthetic_demo: credential.payload.provenance.idv_method === "sandbox_fixture",
+        idv_repeated: false,
+        disclosure,
+        partner_authorization: {
+          receipt_id: authorized.receipt.id,
+          partner_id: authorized.receipt.partner_id,
+          policy_id: authorized.receipt.policy_id,
+          decision_context: authorized.decision_context,
+          not_a_reusable_credential: true,
+        },
+        presentation: authorized.presentation,
+      });
+    }
+  }
+
+  if (!isPassportReusableCredentialDemoAllowed()) {
+    return NextResponse.json({ error: "reusable_credential_present_disabled_in_production" }, { status: 403 });
   }
 
   const credential = build566SyntheticReusableCredential({
@@ -111,7 +199,7 @@ export async function POST(req: NextRequest) {
       partner_id: authorized.receipt.partner_id,
       policy_id: authorized.receipt.policy_id,
       decision_context: authorized.decision_context,
-      not_a_reusable_credential: true,
+      not_a_partner_receipt: true,
     },
     presentation: authorized.presentation,
   });

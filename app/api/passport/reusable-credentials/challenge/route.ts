@@ -3,10 +3,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { portableTrustCsrfRejected } from "@/lib/passport/portableTrust/csrf";
 import { resolveAuthenticatedHolderSession } from "@/lib/passport/portableTrust/resolveHolderSession";
+import { insertPassportPossessionChallengeDirect } from "@/lib/persistence/postgresPassportPossessionChallengeStore";
 import {
   build566SyntheticReusableCredential,
   isPassportReusableCredentialDemoAllowed,
 } from "@/lib/passport/reusableCredential";
+import { resolveHolderReusableCredential } from "@/lib/passport/reusableCredential/resolveStoredCredential";
+import { isPassportReusableCredentialStorageEnabled } from "@/lib/passport/reusableCredential/storageGate";
 import { issuePassportPossessionChallenge } from "@/lib/passport/reusableCredential/holderPossessionChallenge";
 import { BUILD_546_FIXTURE_NOW } from "@/lib/institutionalCertification/build546/fixtures";
 
@@ -22,9 +25,6 @@ export async function POST(req: NextRequest) {
       { status: session.error === "forbidden" ? 403 : 401 },
     );
   }
-  if (!isPassportReusableCredentialDemoAllowed()) {
-    return NextResponse.json({ error: "reusable_credential_challenge_disabled_in_production" }, { status: 403 });
-  }
 
   let body: { partner_id?: string; policy_id?: string; credential_id?: string };
   try {
@@ -34,6 +34,33 @@ export async function POST(req: NextRequest) {
   }
   if (!body.partner_id || !body.policy_id) {
     return NextResponse.json({ error: "partner_id and policy_id required" }, { status: 400 });
+  }
+
+  const storageEnabled = isPassportReusableCredentialStorageEnabled();
+  if (storageEnabled) {
+    const stored = await resolveHolderReusableCredential({
+      holderSubjectId: session.subjectId,
+      credentialId: body.credential_id,
+    });
+    if (stored) {
+      const challenge = issuePassportPossessionChallenge({
+        credentialId: stored.payload.credential_id,
+        partnerId: body.partner_id,
+        policyId: body.policy_id,
+      });
+      await insertPassportPossessionChallengeDirect(challenge);
+      return NextResponse.json({
+        issuer_backed: true,
+        sandbox_only: stored.payload.provenance.idv_method === "sandbox_fixture",
+        credential_id: stored.payload.credential_id,
+        challenge,
+        note: "Sign this challenge with the credential holder possession key before calling present.",
+      });
+    }
+  }
+
+  if (!isPassportReusableCredentialDemoAllowed()) {
+    return NextResponse.json({ error: "reusable_credential_challenge_disabled_in_production" }, { status: 403 });
   }
 
   const credential = build566SyntheticReusableCredential({
