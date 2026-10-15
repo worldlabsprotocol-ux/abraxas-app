@@ -66,7 +66,9 @@ export async function loadHolderIdentitySurfaceForSession(
   if (!identityLookupUnavailable) {
     const idvLookup = await countIdentityVerificationsForSessionKeys({
       sessionSubjectId,
+      sessionHolderSubjectId,
       suiAddress: session.suiAddress,
+      legacyLinkSubjectId: legacyLink,
     });
     if (!idvLookup.ok) {
       identityLookupUnavailable = true;

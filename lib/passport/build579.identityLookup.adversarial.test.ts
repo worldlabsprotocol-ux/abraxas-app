@@ -49,6 +49,7 @@ describe("Build #579 adversarial identity lookup surfaces", () => {
     expect(surface.state).toBe("identity_lookup_unavailable");
     expect(surface.headline).toBe(IDENTITY_LOOKUP_UNAVAILABLE_COPY.headline);
     expect(surface.detail).toMatch(/do not start verification again/i);
+    expect(surface.detail).not.toMatch(/connection terminated/i);
     expect(shouldSuppressRepeatVerificationNudge(surface)).toBe(true);
     expect(shouldDeferReusableCredentialActions(surface)).toBe(true);
   });
@@ -63,6 +64,7 @@ describe("Build #579 adversarial identity lookup surfaces", () => {
       identityLookupUnavailable: true,
     });
     expect(surface.state).toBe("ambiguous_identity_blocked");
+    expect(shouldDeferReusableCredentialActions(surface)).toBe(true);
   });
 
   it("existing verified holder continuity when canonical subject already in session", () => {
@@ -76,11 +78,50 @@ describe("Build #579 adversarial identity lookup surfaces", () => {
       identityLookupUnavailable: true,
     });
     expect(surface.state).toBe("canonical_subject_ready");
+    expect(shouldDeferReusableCredentialActions(surface)).toBe(false);
+  });
+});
+
+describe("Build #579 countIdentityVerificationsForSessionKeys (mocked pg)", () => {
+  it("returns unavailable when no identity columns exist", async () => {
+    vi.doMock("@/lib/persistence/pgPool", () => ({
+      queryAbraxasPg: vi.fn(async () => ({ rows: [] })),
+    }));
+    vi.resetModules();
+    const { countIdentityVerificationsForSessionKeys: count } = await import(
+      "@/lib/persistence/holderIdentityIdvLookup"
+    );
+    const result = await count({
+      sessionSubjectId: SUI,
+      columnSchema: { walletAddress: false, suiAddress: false, holderSubjectId: false },
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("identity_lookup_unavailable");
+    vi.doUnmock("@/lib/persistence/pgPool");
+  });
+
+  it("returns unavailable on database query failure", async () => {
+    vi.doMock("@/lib/persistence/pgPool", () => ({
+      queryAbraxasPg: vi.fn(async (sql: string) => {
+        if (typeof sql === "string" && sql.includes("count(*)")) {
+          throw new Error("connection terminated unexpectedly");
+        }
+        return { rows: [{ column_name: "sui_address" }] };
+      }),
+    }));
+    vi.resetModules();
+    const { countIdentityVerificationsForSessionKeys: count } = await import(
+      "@/lib/persistence/holderIdentityIdvLookup"
+    );
+    const result = await count({ sessionSubjectId: SUI, suiAddress: SUI });
+    expect(result.ok).toBe(false);
+    vi.doUnmock("@/lib/persistence/pgPool");
   });
 });
 
 describe("Build #579 holderIdentitySurfaceDirect integration (mocked pg)", () => {
-  it("maps pg column errors to identity_lookup_unavailable", async () => {
+  it("maps pg failures to identity_lookup_unavailable without leaking errors to UI copy", async () => {
     vi.resetModules();
     vi.doMock("@/lib/persistence/env", () => ({
       isPassportDirectPostgresEnabled: () => true,
@@ -91,7 +132,7 @@ describe("Build #579 holderIdentitySurfaceDirect integration (mocked pg)", () =>
           return { rows: [{ exists: true }] };
         }
         if (typeof sql === "string" && sql.includes("information_schema.columns")) {
-          return { rows: [{ exists: true }] };
+          return { rows: [{ column_name: "sui_address" }, { column_name: "holder_subject_id" }] };
         }
         if (typeof sql === "string" && sql.includes("identity_verifications")) {
           throw new Error("connection terminated unexpectedly");
@@ -111,6 +152,7 @@ describe("Build #579 holderIdentitySurfaceDirect integration (mocked pg)", () =>
     } as import("@/lib/auth/browserSession").BrowserSession);
 
     expect(surface.state).toBe("identity_lookup_unavailable");
+    expect(surface.detail).toBe(IDENTITY_LOOKUP_UNAVAILABLE_COPY.detail);
     vi.doUnmock("@/lib/persistence/env");
     vi.doUnmock("@/lib/persistence/pgPool");
   });
