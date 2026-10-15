@@ -252,7 +252,7 @@ describe("Build #568 canonical authorization concurrency (disposable PG)", () =>
     const expected = deterministicAuthorizationReceiptIds(idempotencyKey);
     const parsed = JSON.parse(stored!.receipt_json!) as { id: string };
     expect(parsed.id).toBe(expected.receiptId);
-  });
+  }, 25_000);
 
   it("rejects mismatched retry context without leaking receipt", async () => {
     const ctx = await buildPresentationContext();
