@@ -300,25 +300,27 @@ export function NavSignInButton({ prominent = false }: { prominent?: boolean }) 
           display: "flex",
           flexDirection: "column",
           alignItems: "flex-end",
-          gap: 4,
-          maxWidth: prominent ? 160 : 148,
+          gap: 6,
+          maxWidth: prominent ? 180 : 168,
         }}
       >
-        <span
+        <Link
+          href="/passport"
           style={{
             padding: prominent ? "0.55rem 1rem" : "0.5rem 0.95rem",
             borderRadius: 999,
-            border: "1px solid var(--border)",
-            background: "var(--surface-inset)",
+            border: "none",
+            background: ACCENT,
+            color: "#000",
             fontFamily: FONT,
             fontSize: prominent ? "0.82rem" : "0.78rem",
-            fontWeight: 600,
-            color: "var(--text-muted)",
+            fontWeight: 700,
+            textDecoration: "none",
             whiteSpace: "nowrap",
           }}
         >
-          {NAV_SIGN_IN_COPY.unavailable}
-        </span>
+          Open Passport
+        </Link>
         <span style={{
           fontFamily: FONT,
           fontSize: "0.62rem",

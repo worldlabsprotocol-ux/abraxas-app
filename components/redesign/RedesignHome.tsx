@@ -18,6 +18,7 @@ import { abxMotionCssVars } from "@/lib/design/abraxasMotion";
 import { CINEMATIC_BUILD_CHAPTER_EYEBROW } from "@/lib/home/cinematicHomeCopy";
 import { RedesignNav } from "./RedesignNav";
 import { RedesignFooter } from "./RedesignFooter";
+import { HomeSignedInModule } from "@/components/home/HomeSignedInModule";
 
 const HomeGoodTroubleActionSection = dynamic(
   () => import("@/components/home/HomeGoodTroubleActionSection").then((m) => m.HomeGoodTroubleActionSection),
@@ -43,6 +44,7 @@ function HomeContent({ hero }: { hero: ReactNode }) {
       {hero}
 
       <div className="abx-premium-home__spine abx-premium-home__spine--shell" style={SHELL}>
+        <HomeSignedInModule />
         <PremiumHomeChapter index="01" label="Capabilities" id="chapter-capabilities">
           <HomeProtocolPillarsSection />
         </PremiumHomeChapter>

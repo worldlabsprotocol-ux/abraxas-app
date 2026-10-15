@@ -6,6 +6,7 @@ import { Btn } from "@/components/redesign/ui";
 import { PartnerBindingSelector } from "@/components/partner/launchpad/PartnerBindingSelector";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import { HOSTED_HANDOFF_CHECKLIST, HOSTED_HANDOFF_DOCS, HOSTED_HANDOFF_NOTICE } from "@/lib/partner/hostedHandoff/contract";
+import { resolveChainAttestationSolanaKeysUrl } from "@/lib/product/canonicalProductOrigin";
 
 const FONT = ABRAXAS_FONT_SANS;
 const HANDOFF_REF = /^hpf_[0-9a-f]{16}$/;
@@ -158,7 +159,7 @@ export function HostedHandoffControls({ applicationId, partnerId }: { applicatio
     && SIGNER_KEY_ID.test(signerKeyId);
   const ubuntuCommand = commandReady ? `cd ~/abraxas-devnet
 git pull --ff-only
-curl -fsS https://demo.abraxasworld.xyz/api/chain-attestations/verification-keys/solana -o /tmp/abraxas-solana-signer-public.json
+curl -fsS ${resolveChainAttestationSolanaKeysUrl()} -o /tmp/abraxas-solana-signer-public.json
 export ABRAXAS_GATE_PARTNER_ID='${partnerId}'
 export ABRAXAS_GATE_APPLICATION_ID='${applicationId}'
 export ABRAXAS_GATE_ADMIN_KEYPAIR_PATH="$HOME/.config/solana/id.json"

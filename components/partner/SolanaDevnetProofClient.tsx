@@ -75,7 +75,7 @@ export function SolanaDevnetProofClient({ signature }: { signature: string }) {
           <p style={row}>Finalized in slot {proof.slot} · Valid until {new Date(proof.valid_until * 1000).toLocaleString()}</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.6rem", margin: "0.9rem 0" }}>
             <button type="button" onClick={() => {
-              const publicUrl = new URL("/proofs/solana-devnet", "https://demo.abraxasworld.xyz");
+              const publicUrl = new URL("/proofs/solana-devnet", window.location.origin);
               publicUrl.searchParams.set("signature", proof.signature);
               void navigator.clipboard.writeText(publicUrl.toString()).then(() => {
                 setCopied(true);

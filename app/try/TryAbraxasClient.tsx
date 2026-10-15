@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { normalizePublicPolicyItems } from "@/lib/partner/publicPolicyPreview";
+import { resolveHolderFacingApiOrigin } from "@/lib/product/canonicalProductOrigin";
 
 type PublicPolicy = {
   id: string;
@@ -147,8 +148,9 @@ export function TryAbraxasClient() {
 
   const integration = useMemo(() => {
     const safeCallback = callbackUrl.trim() || "https://your-app.example/abraxas/callback";
+    const apiOrigin = resolveHolderFacingApiOrigin();
     return `// Run this on your server after creating a sandbox partner key.
-const response = await fetch("https://demo.abraxasworld.xyz/api/v1/verify/authorize", {
+const response = await fetch("${apiOrigin}/api/v1/verify/authorize", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",

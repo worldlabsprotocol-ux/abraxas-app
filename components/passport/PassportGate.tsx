@@ -47,7 +47,7 @@ export function PassportGate({
           {description}
         </p>
         <HolderAccessPanel compact />
-        <Link href="/try" style={{
+        <Link href="/proof" style={{
           display: "inline-block",
           marginTop: "0.75rem",
           padding: "0.62rem .9rem", borderRadius: 999,
@@ -55,7 +55,7 @@ export function PassportGate({
           fontFamily: FONT, fontSize: ".72rem", fontWeight: 800,
           textDecoration: "none",
         }}>
-          Explore without signing in
+          See how verification works
         </Link>
       </div>
     );
