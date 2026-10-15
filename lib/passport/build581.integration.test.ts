@@ -9,6 +9,10 @@ import {
   buildTestPreflightEnvelope,
   validateProductionPreflightEnvelope,
 } from "./productionPreflightEnvelope";
+import {
+  buildTestReconciliationInventoryEnvelope,
+  loadProductionReconciliationInventoryEvidence,
+} from "./productionReconciliationInventoryEvidence";
 import { loadProductionPreflightEvidence } from "./productionPreflightEvidence";
 import {
   evaluateProductionMigration581,
@@ -63,10 +67,32 @@ const probe580Report = {
 
 const validEnvelope = buildTestPreflightEnvelope(probe580Report);
 
+function sampleInventoryEnv() {
+  return buildTestReconciliationInventoryEnvelope({
+    linkedPreflightCapturedAt: probe580Report.captured_at,
+    inventory: {
+      captured_at: new Date().toISOString(),
+      approved_sui_idv_eligible: 1,
+      pending_review_idv: 0,
+      rejected_or_expired_idv: 0,
+      idv_with_canonical_subject: 0,
+      verified_wallet_bindings: null,
+      legacy_links_present: null,
+      canonical_subjects_present: null,
+      sui_unlinked_not_approved: 0,
+      approved_unlinked_needs_reconciliation: 1,
+      zklogin_continuity_records: null,
+      ambiguous_mapping_blocked: 0,
+    },
+  });
+}
+
 function phaseBEnv(nonce: string): Record<string, string> {
   return {
     ABRAXAS_PRODUCTION_PREFLIGHT_JSON: JSON.stringify(validEnvelope),
+    ABRAXAS_PRODUCTION_RECONCILIATION_INVENTORY_JSON: JSON.stringify(sampleInventoryEnv()),
     ABRAXAS_PRODUCTION_PREFLIGHT_MAX_AGE_HOURS: "24",
+    ABRAXAS_PRODUCTION_RECONCILIATION_INVENTORY_MAX_AGE_HOURS: "24",
     ABRAXAS_FOUNDER_PRODUCTION_MIGRATION_AUTHORIZED: "true",
     ABRAXAS_FOUNDER_PRODUCTION_MIGRATION_ACK_ID: "founder-ack-12345678",
     ABRAXAS_PRODUCTION_MIGRATION_RELEASE_TOKEN: PRODUCTION_MIGRATION_EXECUTE_TOKEN,
@@ -82,32 +108,20 @@ function phaseBEnv(nonce: string): Record<string, string> {
 
 describe("Build #581 preflight envelope contract", () => {
   it("loads real probe envelope through loader and evaluator", () => {
-    const loaded = loadProductionPreflightEvidence({
-      ABRAXAS_PRODUCTION_PREFLIGHT_JSON: JSON.stringify(validEnvelope),
-      ABRAXAS_PRODUCTION_PREFLIGHT_MAX_AGE_HOURS: "24",
-    });
+    const env = phaseBEnv("nonce-eval-1");
+    const loaded = loadProductionPreflightEvidence(env);
     expect(loaded.ok).toBe(true);
     if (!loaded.ok) return;
+    const inventoryLoaded = loadProductionReconciliationInventoryEvidence(env);
+    expect(inventoryLoaded.ok).toBe(true);
+    if (!inventoryLoaded.ok) return;
 
     const evaluation = evaluateProductionMigration581({
       preflight: loaded.evidence.report,
       preflightEvidence: loaded.evidence,
       verifiedDatabaseProjectRef: PRODUCTION_SUPABASE_PROJECT_REF,
-      env: phaseBEnv("nonce-eval-1"),
-      reconciliationInventory: {
-        captured_at: new Date().toISOString(),
-        approved_sui_idv_eligible: 1,
-        pending_review_idv: 0,
-        rejected_or_expired_idv: 0,
-        idv_with_canonical_subject: 0,
-        verified_wallet_bindings: null,
-        legacy_links_present: null,
-        canonical_subjects_present: null,
-        sui_unlinked_not_approved: 0,
-        approved_unlinked_needs_reconciliation: 1,
-        zklogin_continuity_records: null,
-        ambiguous_mapping_blocked: 0,
-      },
+      env,
+      reconciliationInventory: inventoryLoaded.evidence.inventory,
     });
     expect(evaluation.phase).toBe("B_execution_ready");
   });

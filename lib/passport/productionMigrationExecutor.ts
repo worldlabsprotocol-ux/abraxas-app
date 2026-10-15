@@ -5,17 +5,11 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { PoolClient } from "pg";
 import {
-  evaluateProductionMigration581,
-  PRODUCTION_MIGRATION_EXECUTION_NONCE_ENV,
   verifyProductionDdlExecutionAuthorization,
   verifyProductionMigrationExecutionNonce,
 } from "./productionMigration581";
-import { loadProductionPreflightEvidence } from "./productionPreflightEvidence";
-import {
-  PRODUCTION_SUPABASE_PROJECT_REF,
-  SOVEREIGN_PASSPORT_MIGRATION_FILES,
-} from "./productionMigrationRelease";
-import { assertReconciliationDatabaseBinding } from "./reconciliationDatabaseBinding";
+import { resolveProductionMigrationReleaseContext } from "./productionMigrationReleaseContext";
+import { SOVEREIGN_PASSPORT_MIGRATION_FILES } from "./productionMigrationRelease";
 
 export type MigrationExecutionRecord = {
   file: string;
@@ -85,34 +79,15 @@ export async function executeControlledProductionMigrations(input: {
   plan?: { file: string; sha256: string; sql: string }[];
 }): Promise<MigrationExecutionResult> {
   const env = input.env ?? process.env;
-  const preflightLoaded = loadProductionPreflightEvidence(env);
-  if (!preflightLoaded.ok) {
-    throw new ProductionMigrationGateError(preflightLoaded.code, preflightLoaded.detail);
+  const releaseContext = await resolveProductionMigrationReleaseContext({ env, client: input.client });
+  if (!releaseContext.ok) {
+    throw new ProductionMigrationGateError(releaseContext.code, releaseContext.detail);
   }
-  if (preflightLoaded.evidence.stale) {
-    throw new ProductionMigrationGateError("preflight_stale", "Preflight evidence is stale; refresh read-only probes.");
-  }
-
-  const binding = await assertReconciliationDatabaseBinding({ client: input.client, env });
-  if (!binding.ok) {
-    throw new ProductionMigrationGateError(binding.code, binding.detail);
-  }
-  if (binding.derivedProjectRef !== PRODUCTION_SUPABASE_PROJECT_REF) {
-    throw new ProductionMigrationGateError(
-      "migration_target_mismatch",
-      "Active database identity is not Production project ref.",
-    );
-  }
-
-  const evaluation = evaluateProductionMigration581({
-    preflight: preflightLoaded.evidence.report,
-    preflightEvidence: preflightLoaded.evidence,
-    env,
-    verifiedDatabaseProjectRef: binding.derivedProjectRef,
-  });
-  if (evaluation.production_execution_blocked) {
+  if (releaseContext.evaluation.production_execution_blocked) {
     throw new ProductionMigrationGateError("phase_b_blocked", "Release gates block Production DDL execution.");
   }
+
+  const binding = releaseContext.binding;
 
   const ddlAuth = verifyProductionDdlExecutionAuthorization(env);
   if (!ddlAuth.ok) {
@@ -127,7 +102,7 @@ export async function executeControlledProductionMigrations(input: {
   const plan = input.plan ?? buildMigrationExecutionPlan();
   const records: MigrationExecutionRecord[] = [];
   const evidenceTrailId = createHash("sha256")
-    .update(`${binding.derivedProjectRef}:${Date.now()}:${plan.map((p) => p.sha256).join(",")}`)
+    .update(`${releaseContext.verifiedDatabaseProjectRef}:${Date.now()}:${plan.map((p) => p.sha256).join(",")}`)
     .digest("hex")
     .slice(0, 16);
 

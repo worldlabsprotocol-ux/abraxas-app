@@ -10,6 +10,7 @@ import {
   PRODUCTION_MIGRATION_EXECUTE_TOKEN,
 } from "@/lib/passport/productionMigration581";
 import { loadProductionPreflightEvidence } from "@/lib/passport/productionPreflightEvidence";
+import { loadProductionReconciliationInventoryEvidence } from "@/lib/passport/productionReconciliationInventoryEvidence";
 import {
   PRODUCTION_RELEASE_SEQUENCE,
   PRODUCTION_SUPABASE_PROJECT_REF,
@@ -26,6 +27,9 @@ export async function GET(req: NextRequest) {
   if (denied) return denied;
 
   const preflightLoaded = loadProductionPreflightEvidence(process.env);
+  const inventoryLoaded = preflightLoaded.ok
+    ? loadProductionReconciliationInventoryEvidence(process.env)
+    : { ok: false as const, code: "inventory_preflight_required", detail: "Preflight required." };
   const hybridBinding = validatePassportHybridPostgresBinding({
     ...process.env,
     NEXT_PUBLIC_SUPABASE_URL:
@@ -60,7 +64,7 @@ export async function GET(req: NextRequest) {
     preflightEvidence: preflightLoaded.ok ? preflightLoaded.evidence : null,
     verifiedDatabaseProjectRef: verifiedDatabaseProjectRef,
     env: process.env,
-    reconciliationInventory: null,
+    reconciliationInventory: inventoryLoaded.ok ? inventoryLoaded.evidence.inventory : null,
   });
 
   return NextResponse.json(
@@ -81,6 +85,18 @@ export async function GET(req: NextRequest) {
             derived_database_ref: preflightLoaded.evidence.derivedDatabaseRef,
           }
         : { status: "missing_or_invalid", detail: preflightLoaded.ok ? null : preflightLoaded.detail },
+      reconciliation_inventory: inventoryLoaded.ok
+        ? {
+            source: inventoryLoaded.evidence.source,
+            captured_at_ms: inventoryLoaded.evidence.capturedAtMs,
+            age_hours: inventoryLoaded.evidence.ageHours,
+            stale: inventoryLoaded.evidence.stale,
+            derived_database_ref: inventoryLoaded.evidence.derivedDatabaseRef,
+            linked_preflight_captured_at: inventoryLoaded.evidence.envelope.linked_preflight_captured_at,
+            approved_unlinked_needs_reconciliation:
+              inventoryLoaded.evidence.inventory.approved_unlinked_needs_reconciliation,
+          }
+        : { status: "missing_or_invalid", detail: inventoryLoaded.ok ? null : inventoryLoaded.detail },
       database_identity: {
         verified: databaseIdentityVerified,
         verified_project_ref: verifiedDatabaseProjectRef,
@@ -102,7 +118,8 @@ export async function GET(req: NextRequest) {
         "npm run build-581:production-readonly-preflight > preflight.json",
         "export ABRAXAS_PRODUCTION_PREFLIGHT_JSON_PATH=./preflight.json",
         "npm run build-581:migration-rehearsal",
-        "npm run build-581:reconciliation-inventory (after read-only URL configured)",
+        "npm run build-581:reconciliation-inventory > inventory.json",
+        "export ABRAXAS_PRODUCTION_RECONCILIATION_INVENTORY_JSON_PATH=./inventory.json",
         "Phase B only: npm run build-581:controlled-migration -- <registered_execution_nonce>",
       ],
       sql_probes: [
