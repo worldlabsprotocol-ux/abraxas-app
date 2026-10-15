@@ -35,18 +35,23 @@ export function computeIntegrationVelocity(input: {
   events: IntegrationEventRow[];
   activity: LaunchpadActivityRow[];
 }): Record<string, DurationMetric> {
+  const tenantEvents = input.events.filter((event) => {
+    if (event.partner_id !== input.application.partner_id) return false;
+    if (event.application_id && event.application_id !== input.application.id) return false;
+    return true;
+  });
   const created = new Date(input.application.created_at).getTime();
   const configured = firstActivityMs(input.activity, ["partner_flow_request_configured", "application_provisioned"]);
-  const sandboxRequest = firstEventMs(input.events, ["verification_request_created", "hosted_handoff_created"], "sandbox");
-  const sandboxReceipt = firstEventMs(input.events, ["receipt_issued"], "sandbox");
-  const sandboxHolderConsent = firstEventMs(input.events, ["holder_flow_completed"], "sandbox");
-  const sandboxVerify = firstEventMs(input.events, ["receipt_verification_succeeded"], "sandbox");
+  const sandboxRequest = firstEventMs(tenantEvents, ["verification_request_created", "hosted_handoff_created"], "sandbox");
+  const sandboxReceipt = firstEventMs(tenantEvents, ["receipt_issued"], "sandbox");
+  const sandboxHolderConsent = firstEventMs(tenantEvents, ["holder_flow_completed"], "sandbox");
+  const sandboxVerify = firstEventMs(tenantEvents, ["receipt_verification_succeeded"], "sandbox");
   const prodRequest = firstActivityMs(input.activity, ["production_access_requested"]);
   const prodApproved = firstActivityMs(input.activity, ["production_access_approved", "production_review_approved"]);
   const prodActivated = input.application.production_activated_at
     ? new Date(input.application.production_activated_at).getTime()
-    : firstEventMs(input.events, ["production_activation_completed"]);
-  const prodVerify = firstEventMs(input.events, ["receipt_verification_succeeded"], "production");
+    : firstEventMs(tenantEvents, ["production_activation_completed"]);
+  const prodVerify = firstEventMs(tenantEvents, ["receipt_verification_succeeded"], "production");
 
   return {
     application_created_to_sandbox_configured: duration(created, configured, "application.created_at", "partner_flow_request_configured"),

@@ -27,8 +27,6 @@ import { isPassportReusableCredentialStorageEnabled } from "@/lib/passport/reusa
 import { authorizeIssuerBackedPresentation } from "@/lib/passport/reusableCredential/issuerBackedPresentationOrchestration";
 import { resolvePresentationPartnerPolicy } from "@/lib/passport/reusableCredential/institutionalPresentationPolicy";
 import { requireIssuerBackedReceiptSigningKey } from "@/lib/passport/reusableCredential/issuerBackedReceiptSigning";
-import { recordInstitutionalPresentationIssuanceTelemetry } from "@/lib/passport/reusableCredential/institutionalPresentationObservability";
-
 export async function POST(req: NextRequest) {
   const csrf = portableTrustCsrfRejected(req);
   if (csrf) {
@@ -138,16 +136,6 @@ export async function POST(req: NextRequest) {
           { status: result.httpStatus },
         );
       }
-
-      const presentationEnvironment = policyEarly.entry.policy_rules.sandbox_only ? "sandbox" : "production";
-      await recordInstitutionalPresentationIssuanceTelemetry({
-        partnerId: body.partner_id,
-        policyId: body.policy_id,
-        policyVersion: policyEarly.entry.policy_version,
-        environment: presentationEnvironment,
-        requestId,
-        receiptId: result.authorized.receipt.id,
-      });
 
       return NextResponse.json({
         issuer_backed: true,

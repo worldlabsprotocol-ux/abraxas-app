@@ -134,3 +134,37 @@ export async function recordIntegrationEventBestEffort(input: IntegrationEventIn
     // Observability must never affect authorization.
   }
 }
+
+function integrationEventDedupeKey(input: IntegrationEventInput): string {
+  return [
+    input.partnerId,
+    input.eventType,
+    input.requestId ?? "",
+    input.receiptId ?? "",
+    input.correlationId ?? "",
+    input.applicationId ?? "",
+  ].join("|");
+}
+
+function hasRecordedIntegrationEvent(input: IntegrationEventInput): boolean {
+  const key = integrationEventDedupeKey(input);
+  return memory.some((row) => integrationEventDedupeKey({
+    partnerId: row.partner_id,
+    eventType: row.event_type,
+    requestId: row.request_id,
+    receiptId: row.receipt_id,
+    correlationId: row.correlation_id,
+    applicationId: row.application_id,
+    environment: row.environment,
+    lifecycleStage: row.lifecycle_stage,
+  }) === key);
+}
+
+/** Records at most one lifecycle event per partner, type, request, receipt, and correlation binding. */
+export async function recordIntegrationEventOnce(input: IntegrationEventInput): Promise<boolean> {
+  if (hasRecordedIntegrationEvent(input)) {
+    return false;
+  }
+  await recordIntegrationEventBestEffort(input);
+  return true;
+}

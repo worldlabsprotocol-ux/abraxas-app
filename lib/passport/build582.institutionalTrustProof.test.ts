@@ -1,11 +1,9 @@
 // FILE: lib/passport/build582.institutionalTrustProof.test.ts
 
-import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { SOVEREIGN_RUNTIME_SCHEMA_MANIFEST } from "@/lib/databaseRecovery/sovereignSchemaManifest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { resetAbraxasPgPoolForTests, queryAbraxasPg } from "@/lib/persistence/pgPool";
 import { resetPersistenceClientForTests } from "@/lib/persistence/admin";
 import { seedBuild568InstitutionalPartnerPoliciesForTests } from "@/lib/passport/reusableCredential/testInstitutionalPolicySeed";
@@ -30,38 +28,72 @@ import {
   resolveBuild582PublisherSnapshot,
 } from "@/lib/passport/build582/institutionalTrustProofHelpers";
 import {
+  applyBuild582TrustProofRuntimeEnv,
+  applyBuild582TrustProofSchemaMigrations,
+  clearBuild582TrustProofRuntimeEnv,
+  dropBuild582IsolatedTrustProofDatabase,
+  evaluateBuild582DisposableTrustProofBootstrap,
+  provisionBuild582IsolatedTrustProofDatabase,
+} from "@/lib/passport/build582/disposableTrustProofDatabase";
+import {
   PASSPORT_CREDENTIAL_SIGNING_KEY_ENV,
   PASSPORT_CREDENTIAL_SIGNING_KEY_ID_ENV,
 } from "@/lib/passport/reusableCredential/passportCredentialSigning";
 import { PORTABLE_REVOCATION_CHECKPOINT_MEMORY_TEST_ENV } from "@/lib/passport/reusableCredential/portableRevocationRuntime";
 
-const PG_URL = process.env.ABRAXAS_SOVEREIGN_PG_URL?.trim()
-  || process.env.MIGRATION_136_PG_URL?.trim()
-  || process.env.ABRAXAS_DATABASE_URL?.trim();
+const bootstrap = evaluateBuild582DisposableTrustProofBootstrap(process.env);
+const canRun = bootstrap.ok;
+const blockedReason = bootstrap.ok ? "" : bootstrap.reason;
 
-describe("Build #582 institutional trust proof (disposable PostgreSQL)", () => {
-  if (!PG_URL) {
-    it.skip("requires disposable PostgreSQL", () => {});
-    return;
-  }
-
-  beforeAll(() => {
-    const dir = join(process.cwd(), "supabase/migrations");
-    for (const file of SOVEREIGN_RUNTIME_SCHEMA_MANIFEST) {
-      execFileSync("psql", [PG_URL!, "-v", "ON_ERROR_STOP=0"], {
-        input: readFileSync(join(dir, file), "utf8"),
-        encoding: "utf8",
-      });
+describe("Build #582 institutional trust proof infrastructure", () => {
+  it("reports disposable guard state explicitly", () => {
+    if (canRun) {
+      expect(bootstrap.ok).toBe(true);
+      expect(bootstrap.databaseIdentity).toBe("abraxas_sovereign_disposable");
+    } else {
+      expect(blockedReason.length).toBeGreaterThan(0);
     }
   });
+});
+
+describe.skipIf(!canRun)("Build #582 institutional trust proof (isolated disposable PostgreSQL)", () => {
+  let bootstrapDatabaseUrl: string;
+  let isolatedDbName: string;
+  let isolatedDatabaseUrl: string;
+
+  beforeAll(() => {
+    if (!bootstrap.ok) return;
+    bootstrapDatabaseUrl = bootstrap.bootstrapDatabaseUrl;
+    const provisioned = provisionBuild582IsolatedTrustProofDatabase({ bootstrapDatabaseUrl });
+    isolatedDbName = provisioned.dbName;
+    isolatedDatabaseUrl = provisioned.databaseUrl;
+    applyBuild582TrustProofSchemaMigrations(isolatedDatabaseUrl);
+    applyBuild582TrustProofRuntimeEnv(isolatedDatabaseUrl);
+    resetAbraxasPgPoolForTests();
+  });
+
+  afterAll(() => {
+    if (!bootstrap.ok) return;
+    clearBuild582TrustProofRuntimeEnv();
+    resetAbraxasPgPoolForTests();
+    dropBuild582IsolatedTrustProofDatabase({
+      bootstrapDatabaseUrl: bootstrapDatabaseUrl!,
+      dbName: isolatedDbName!,
+    });
+  });
+
+  async function cleanupFixtures() {
+    await queryAbraxasPg("delete from public.passport_institutional_authorization_commits");
+    await queryAbraxasPg("delete from public.passport_institutional_presentation_consents");
+    await queryAbraxasPg("delete from public.passport_reusable_credentials");
+    await queryAbraxasPg("delete from public.passport_possession_challenges");
+  }
 
   beforeEach(async () => {
     for (const k of ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]) {
       delete process.env[k];
     }
-    process.env.ABRAXAS_PERSISTENCE_BACKEND = "postgres_direct";
-    process.env.ABRAXAS_DATABASE_URL = PG_URL;
-    process.env.ABRAXAS_PASSPORT_REUSABLE_CREDENTIAL_STORAGE = "1";
+    applyBuild582TrustProofRuntimeEnv(isolatedDatabaseUrl);
     process.env[PORTABLE_REVOCATION_CHECKPOINT_MEMORY_TEST_ENV] = "1";
     process.env.ABRAXAS_SIGNING_KEY = JSON.stringify(BUILD_546_PRIMARY_KEY.privateKeyJwk);
     process.env.ABRAXAS_SIGNING_KEY_ID = BUILD_546_PRIMARY_KEY.signingKeyId;
@@ -70,10 +102,7 @@ describe("Build #582 institutional trust proof (disposable PostgreSQL)", () => {
     process.env[PASSPORT_CREDENTIAL_SIGNING_KEY_ID_ENV] = BUILD_582_CREDENTIAL_KEY.signingKeyId;
     resetAbraxasPgPoolForTests();
     resetPersistenceClientForTests();
-    await queryAbraxasPg("delete from public.passport_institutional_authorization_commits");
-    await queryAbraxasPg("delete from public.passport_institutional_presentation_consents");
-    await queryAbraxasPg("delete from public.passport_reusable_credentials");
-    await queryAbraxasPg("delete from public.passport_possession_challenges");
+    await cleanupFixtures();
     await seedBuild568InstitutionalPartnerPoliciesForTests();
     resetBuild582PublisherSnapshotsForTests();
     vi.spyOn(global, "fetch").mockImplementation(async (input) => {
@@ -90,10 +119,14 @@ describe("Build #582 institutional trust proof (disposable PostgreSQL)", () => {
     });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     vi.restoreAllMocks();
-    resetAbraxasPgPoolForTests();
-    resetPersistenceClientForTests();
+    try {
+      await cleanupFixtures();
+    } finally {
+      resetAbraxasPgPoolForTests();
+      resetPersistenceClientForTests();
+    }
   });
 
   it("two tenants, one credential, two consents, two independently verified receipts", async () => {

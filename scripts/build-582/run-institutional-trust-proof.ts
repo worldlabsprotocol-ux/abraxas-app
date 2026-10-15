@@ -4,13 +4,27 @@
 
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
+import {
+  build582TrustProofGuardEnv,
+  evaluateBuild582DisposableTrustProofBootstrap,
+} from "@/lib/passport/build582/disposableTrustProofDatabase";
 
-const pgUrl = process.env.ABRAXAS_SOVEREIGN_PG_URL?.trim()
-  || process.env.MIGRATION_136_PG_URL?.trim()
-  || process.env.ABRAXAS_DATABASE_URL?.trim();
+const guardEnv = build582TrustProofGuardEnv(process.env);
+const bootstrap = evaluateBuild582DisposableTrustProofBootstrap(guardEnv);
 
-if (!pgUrl) {
-  console.error(JSON.stringify({ ok: false, code: "disposable_pg_required" }, null, 2));
+if (!bootstrap.ok) {
+  console.error(
+    JSON.stringify(
+      {
+        ok: false,
+        code: "disposable_guard_failed",
+        reason: bootstrap.reason,
+        note: "Set ABRAXAS_SOVEREIGN_ENV_CLASS=disposable, ABRAXAS_DISPOSABLE_PG_TEST_DATABASE_ID=abraxas_sovereign_disposable, ABRAXAS_DISPOSABLE_PG_MIGRATION_AUTHORIZED=true, and ABRAXAS_DISPOSABLE_PG_TEST_URL to an authorized disposable cluster URL. Never use Production project bztwutzprwsdrtqdpymf.",
+      },
+      null,
+      2,
+    ),
+  );
   process.exit(2);
 }
 
@@ -20,13 +34,17 @@ try {
     [
       "run",
       "--no-file-parallelism",
+      "lib/passport/build582.disposableTrustProofGuard.test.ts",
       "lib/passport/build582.institutionalTrustProof.test.ts",
     ],
     {
       cwd: process.cwd(),
       encoding: "utf8",
       stdio: "inherit",
-      env: process.env as NodeJS.ProcessEnv,
+      env: {
+        ...process.env,
+        ...guardEnv,
+      } as NodeJS.ProcessEnv,
     },
   );
   console.log(
@@ -35,6 +53,8 @@ try {
         ok: true,
         build: 582,
         proof: "two_tenant_independent_verification",
+        database_identity: bootstrap.databaseIdentity,
+        guard: bootstrap.guardReason,
         synthetic_sandbox_only: true,
         production_personal_data: false,
       },
