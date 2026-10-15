@@ -6,6 +6,12 @@ import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import type { PassportReusableCredentialSummary } from "@/lib/passport/reusableCredential/contract";
 import type { ReusableCredentialLifecycleState } from "@/lib/passport/reusableCredential/credentialLifecycle";
 import { PassportInstitutionalPresentationPanel } from "@/components/passport/PassportInstitutionalPresentationPanel";
+import {
+  isPossessionRememberDeviceEnabled,
+  loadHolderPossessionKeyMaterial,
+  setPossessionRememberDevice,
+  storeHolderPossessionKeyMaterial,
+} from "@/lib/passport/holderPossessionKeyBrowserStorage";
 
 const FONT = ABRAXAS_FONT_SANS;
 
@@ -32,6 +38,16 @@ export function PassportReusableCredentialsPanel({ sessionReady }: { sessionRead
   const [lifecycleDetail, setLifecycleDetail] = useState<string | null>(null);
   const [lifecycleState, setLifecycleState] = useState<ReusableCredentialLifecycleState | null>(null);
   const [recoveryKind, setRecoveryKind] = useState<string | null>(null);
+  const [rememberPossessionOnDevice, setRememberPossessionOnDevice] = useState(false);
+
+  useEffect(() => {
+    setRememberPossessionOnDevice(isPossessionRememberDeviceEnabled());
+    void loadHolderPossessionKeyMaterial().then((material) => {
+      if (material?.source === "indexed_db") {
+        setPossessionNote("Possession key restored from this device storage. Private key material did not leave your browser.");
+      }
+    });
+  }, []);
 
   const loadLifecycle = useCallback(async () => {
     const res = await fetch("/api/passport/reusable-credentials/status", { credentials: "include" });
@@ -84,11 +100,12 @@ export function PassportReusableCredentialsPanel({ sessionReady }: { sessionRead
     setPossessionNote(null);
     try {
       const nacl = await import("tweetnacl");
-      const existingSecret = sessionStorage.getItem("abraxas_passport_possession_secret");
-      const existingPublic = sessionStorage.getItem("abraxas_passport_possession_public");
+      const existing = await loadHolderPossessionKeyMaterial();
+      const existingSecret = existing?.secretKeyB64Url ?? null;
+      const existingPublic = existing?.publicKeyB64Url ?? null;
       if (existingSecret && existingPublic && !forceRotation) {
         setPossessionNote(
-          "This device already has a possession key in session storage. Use rotate only when you intend to replace the bound key.",
+          "This device already has a possession key. Use rotate only when you intend to replace the bound key.",
         );
         return;
       }
@@ -100,8 +117,11 @@ export function PassportReusableCredentialsPanel({ sessionReady }: { sessionRead
         return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
       };
       const publicKeyB64Url = toB64Url(pair.publicKey);
-      sessionStorage.setItem("abraxas_passport_possession_secret", toB64Url(pair.secretKey));
-      sessionStorage.setItem("abraxas_passport_possession_public", publicKeyB64Url);
+      await storeHolderPossessionKeyMaterial({
+        secretKeyB64Url: toB64Url(pair.secretKey),
+        publicKeyB64Url,
+        rememberOnDevice: rememberPossessionOnDevice,
+      });
       const rotationPayload =
         forceRotation && existingPublic
           ? { authorized: true, previous_public_key_b64url: existingPublic }
@@ -239,13 +259,38 @@ export function PassportReusableCredentialsPanel({ sessionReady }: { sessionRead
         </div>
       ) : null}
       {recoveryKind !== "register_possession_key" ? (
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-          <Btn variant="secondary" disabled={busy === "possession"} onClick={() => void registerPossessionKey(false)}>
-            {busy === "possession" ? "Registering…" : "Register this device possession key"}
-          </Btn>
-          <Btn variant="secondary" disabled={busy === "possession"} onClick={() => void registerPossessionKey(true)}>
-            Rotate possession key (explicit)
-          </Btn>
+        <div style={{ display: "grid", gap: "0.45rem" }}>
+          <label
+            style={{
+              fontFamily: FONT,
+              fontSize: "0.72rem",
+              color: "var(--text-secondary)",
+              display: "flex",
+              gap: "0.45rem",
+              alignItems: "flex-start",
+              lineHeight: 1.45,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={rememberPossessionOnDevice}
+              onChange={(e) => {
+                setRememberPossessionOnDevice(e.target.checked);
+                setPossessionRememberDevice(e.target.checked);
+              }}
+              style={{ marginTop: "0.15rem", minWidth: 16, minHeight: 16 }}
+            />
+            Remember possession key on this device (IndexedDB). Survives refresh, not account recovery. Abraxas never
+            stores your private key.
+          </label>
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            <Btn variant="secondary" disabled={busy === "possession"} onClick={() => void registerPossessionKey(false)}>
+              {busy === "possession" ? "Registering…" : "Register this device possession key"}
+            </Btn>
+            <Btn variant="secondary" disabled={busy === "possession"} onClick={() => void registerPossessionKey(true)}>
+              Rotate possession key (explicit)
+            </Btn>
+          </div>
         </div>
       ) : null}
       {possessionNote ? (

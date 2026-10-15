@@ -8,6 +8,7 @@ import {
   signPassportPossessionChallenge,
   type PassportPossessionChallengePayload,
 } from "@/lib/passport/reusableCredential/holderPossessionChallengeSigning";
+import { loadHolderPossessionKeyMaterial } from "@/lib/passport/holderPossessionKeyBrowserStorage";
 
 const FONT = ABRAXAS_FONT_SANS;
 
@@ -62,6 +63,7 @@ export function PassportInstitutionalPresentationPanel({
   }, [credentials]);
 
   const entry = catalog.find((c) => c.partner_id === selectedPartner) ?? null;
+  const activeCredential = credentials.find((c) => c.credential_id === credentialId) ?? credentials[0] ?? null;
 
   async function approvePresentation() {
     if (!entry || !credentialId) return;
@@ -69,10 +71,11 @@ export function PassportInstitutionalPresentationPanel({
     setError(null);
     setResult(null);
     try {
-      const secretB64 = sessionStorage.getItem("abraxas_passport_possession_secret");
+      const material = await loadHolderPossessionKeyMaterial();
+      const secretB64 = material?.secretKeyB64Url;
       if (!secretB64) {
         throw new Error(
-          "This browser session does not have your device possession key. Register the key again on this device, or use wallet key recovery if configured.",
+          "This browser does not have your device possession key. Register the key again on this device. Exported credentials are not account recovery.",
         );
       }
       const nacl = await import("tweetnacl");
@@ -164,7 +167,14 @@ export function PassportInstitutionalPresentationPanel({
         <select
           value={selectedPartner}
           onChange={(e) => setSelectedPartner(e.target.value)}
-          style={{ fontFamily: FONT, fontSize: "0.78rem", padding: "0.35rem" }}
+          style={{
+            fontFamily: FONT,
+            fontSize: "0.78rem",
+            padding: "0.5rem 0.35rem",
+            minHeight: 44,
+            width: "100%",
+            maxWidth: "100%",
+          }}
         >
           {catalog.map((c) => (
             <option key={c.partner_id} value={c.partner_id}>
@@ -178,6 +188,12 @@ export function PassportInstitutionalPresentationPanel({
           <div>Requested attribute: {entry.requested_attribute}</div>
           <div>Purpose: {entry.purpose}</div>
           <div>Issuer: {entry.issuer_id}</div>
+          {activeCredential ? (
+            <div>
+              Credential status: {activeCredential.status} · valid until{" "}
+              {new Date(activeCredential.expires_at).toLocaleDateString()}
+            </div>
+          ) : null}
           <ul style={{ margin: "0.35rem 0 0", paddingLeft: "1.1rem" }}>
             {entry.disclosure_summary.map((line) => (
               <li key={line}>{line}</li>

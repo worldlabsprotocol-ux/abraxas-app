@@ -21,10 +21,13 @@ import {
 } from "@/lib/persistence/passportReusableCredentialDirectStore";
 import {
   BUILD_566_PARTNER_A,
+  BUILD_566_PARTNER_B,
   BUILD_566_POLICY_ID,
   buildFreshPortableRevocationSnapshotForCredential,
   buildFreshPortableRevocationSnapshotForReceiptIds,
 } from "./fixtures";
+import { BUILD_568_PARTNER_B_POLICY_ID } from "./testInstitutionalPolicySeed";
+import { parseIndependentInstitutionConfig } from "./independentInstitutionConfig";
 import {
   BUILD_546_PRIMARY_KEY,
   BUILD_546_UNKNOWN_KEY,
@@ -382,5 +385,61 @@ describe("Build #569 independent verifier institution trust", () => {
       replayFailed = true;
     }
     expect(replayFailed).toBe(true);
+  });
+
+  it("Build #570: rejects cross institution evaluation of the same authorization bundle", async () => {
+    const { bundle, institution, verifySnapshot } = await authorizedBundle();
+    const institutionB = build569IndependentInstitutionConfig({
+      partnerId: BUILD_566_PARTNER_B,
+      policyId: BUILD_568_PARTNER_B_POLICY_ID,
+      trustEnv: trustEnvBase(),
+      trustedBootstrapSnapshot: verifySnapshot,
+    });
+    const consumptionRoot = mkdtempSync(join(tmpdir(), "abx-b570-cross-"));
+    const checkpointRoot = mkdtempSync(join(tmpdir(), "abx-b570-cross-cp-"));
+    const okA = await verifyPassportInstitutionalBundleOperational(bundle, {
+      institution,
+      consumptionDir: join(consumptionRoot, "a"),
+      checkpointDir: join(checkpointRoot, "a"),
+    });
+    expect(okA.ok).toBe(true);
+    const cross = await verifyPassportInstitutionalBundleOperational(
+      { ...bundle, request_id: "req_cross_institution_reuse" },
+      {
+        institution: institutionB,
+        consumptionDir: join(consumptionRoot, "b"),
+        checkpointDir: join(checkpointRoot, "b"),
+      },
+    );
+    expect(cross.ok).toBe(false);
+  });
+
+  it("Build #570: rejects missing institution portable revocation issuer trust", async () => {
+    const parsed = parseIndependentInstitutionConfig({
+      partner_id: BUILD_566_PARTNER_A,
+      policy_id: BUILD_566_POLICY_ID,
+      trust_env: { ABRAXAS_RECEIPT_VERIFICATION_REGISTRY: "[]" },
+    });
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const { bundle } = await authorizedBundle();
+    const result = await verifyPassportInstitutionalBundleOperational(bundle, {
+      institution: parsed.config,
+      consumptionDir: mkdtempSync(join(tmpdir(), "abx-b570-no-trust-")),
+      checkpointDir: mkdtempSync(join(tmpdir(), "abx-b570-no-trust-cp-")),
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.stage).toBe("institution_config");
+  });
+
+  it("Build #570: requires durable verifier store paths", async () => {
+    const { bundle, institution } = await authorizedBundle();
+    const result = await verifyPassportInstitutionalBundleOperational(bundle, {
+      institution,
+      consumptionDir: "  ",
+      checkpointDir: "",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe("durable_store_path_required");
   });
 });
