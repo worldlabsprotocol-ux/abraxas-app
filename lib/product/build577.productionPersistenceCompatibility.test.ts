@@ -39,6 +39,7 @@ describe("Build #577 production persistence compatibility", () => {
       SUPABASE_SERVICE_ROLE_KEY: "role",
       ABRAXAS_PASSPORT_TRANSACTION_PG: "1",
       ABRAXAS_PASSPORT_DATABASE_URL: "postgresql://postgres:pw@db.example.supabase.co:5432/postgres",
+      ABRAXAS_PASSPORT_HYBRID_PRODUCTION_AUTHORIZED: "true",
       ABRAXAS_PASSPORT_REUSABLE_CREDENTIAL_STORAGE: "1",
       VERCEL_ENV: "production",
       NODE_ENV: "production",
