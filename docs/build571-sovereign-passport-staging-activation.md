@@ -73,9 +73,7 @@ Produced inside vitest and CLI subprocess tests. Institution A and B use separat
 
 ## Product defects corrected in Build #571 scope
 
-- **Migration 140–143 readiness probe:** schema check now expects `linked_credential_jti` on `passport_reusable_credentials` (matches migration 140 and direct stores). Previously `credential_jti` caused false `migration_column_missing` on correctly migrated disposable databases.
-
-See `docs/build571-design-partner-acceptance.md` for the institutional handoff.
+None beyond Build #570 corrections already on main. Migration 140–143 probe column alignment (`linked_credential_jti`) lives on main via Build #579.
 
 ## Remaining operational dependencies for founder staging
 

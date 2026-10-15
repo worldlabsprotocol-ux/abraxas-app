@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { portableTrustCsrfRejected } from "@/lib/passport/portableTrust/csrf";
 import { resolveAuthenticatedHolderSession } from "@/lib/passport/portableTrust/resolveHolderSession";
+import { loadHolderIdentitySurfaceForSession } from "@/lib/persistence/holderIdentitySurfaceDirect";
 import { loadReusableCredentialLifecycleForHolderDirect } from "@/lib/persistence/passportReusableCredentialLifecycleDirect";
 import { tryBackfillPassportReusableCredentialForSubjectDirect } from "@/lib/persistence/passportReusableCredentialDirectStore";
 
@@ -15,8 +16,11 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const lifecycle = await loadReusableCredentialLifecycleForHolderDirect(session.subjectId);
-  return NextResponse.json({ build: 568, lifecycle });
+  const [lifecycle, holder_identity] = await Promise.all([
+    loadReusableCredentialLifecycleForHolderDirect(session.subjectId),
+    loadHolderIdentitySurfaceForSession(session.session),
+  ]);
+  return NextResponse.json({ build: 579, lifecycle, holder_identity });
 }
 
 export async function POST(req: NextRequest) {
@@ -47,16 +51,20 @@ export async function POST(req: NextRequest) {
     eventSource: "passport_lifecycle_recovery",
   });
 
-  const lifecycle = await loadReusableCredentialLifecycleForHolderDirect(session.subjectId);
+  const [lifecycle, holder_identity] = await Promise.all([
+    loadReusableCredentialLifecycleForHolderDirect(session.subjectId),
+    loadHolderIdentitySurfaceForSession(session.session),
+  ]);
   if (!backfill.ok) {
     return NextResponse.json(
-      { build: 568, lifecycle, backfill: { ok: false, code: backfill.code } },
+      { build: 579, lifecycle, holder_identity, backfill: { ok: false, code: backfill.code } },
       { status: 409 },
     );
   }
   return NextResponse.json({
-    build: 568,
+    build: 579,
     lifecycle,
+    holder_identity,
     backfill: { ok: true, credential_id: backfill.credentialId },
   });
 }

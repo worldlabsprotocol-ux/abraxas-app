@@ -13,6 +13,8 @@ import {
   storeHolderPossessionKeyMaterial,
 } from "@/lib/passport/holderPossessionKeyBrowserStorage";
 import { registerHolderPossessionKeyWithServer } from "@/lib/passport/registerHolderPossessionKeyClient";
+import type { HolderIdentitySurfaceSnapshot } from "@/lib/passport/holderIdentityReconciliation";
+import { shouldDeferReusableCredentialActions } from "@/lib/passport/holderIdentityUiCopy";
 
 const FONT = ABRAXAS_FONT_SANS;
 
@@ -40,6 +42,7 @@ export function PassportReusableCredentialsPanel({ sessionReady }: { sessionRead
   const [lifecycleState, setLifecycleState] = useState<ReusableCredentialLifecycleState | null>(null);
   const [recoveryKind, setRecoveryKind] = useState<string | null>(null);
   const [rememberPossessionOnDevice, setRememberPossessionOnDevice] = useState(false);
+  const [holderIdentity, setHolderIdentity] = useState<HolderIdentitySurfaceSnapshot | null>(null);
 
   useEffect(() => {
     setRememberPossessionOnDevice(isPossessionRememberDeviceEnabled());
@@ -59,12 +62,14 @@ export function PassportReusableCredentialsPanel({ sessionReady }: { sessionRead
         detail: string;
         recovery?: { kind: string };
       };
+      holder_identity?: HolderIdentitySurfaceSnapshot;
     };
     if (!res.ok || !data.lifecycle) return;
     setLifecycleState(data.lifecycle.state);
     setLifecycleHeadline(data.lifecycle.headline);
     setLifecycleDetail(data.lifecycle.detail);
     setRecoveryKind(data.lifecycle.recovery?.kind ?? null);
+    setHolderIdentity(data.holder_identity ?? null);
   }, []);
 
   const load = useCallback(async () => {
@@ -220,9 +225,30 @@ export function PassportReusableCredentialsPanel({ sessionReady }: { sessionRead
   }
 
   const showIssuedCredentials = credentials.length > 0 && lifecycleState === "credential_issued";
+  const deferInstitutional = shouldDeferReusableCredentialActions(holderIdentity);
 
   return (
     <div style={{ display: "grid", gap: "0.75rem" }}>
+      {holderIdentity ? (
+        <div
+          role="status"
+          style={{
+            border: "1px solid var(--border-subtle)",
+            borderRadius: 8,
+            padding: "0.65rem 0.75rem",
+            display: "grid",
+            gap: "0.35rem",
+            background: holderIdentity.operator_review_required
+              ? "var(--surface-muted, rgba(255, 193, 7, 0.08))"
+              : undefined,
+          }}
+        >
+          <strong style={{ fontFamily: FONT, fontSize: "0.8rem" }}>{holderIdentity.headline}</strong>
+          <span style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
+            {holderIdentity.detail}
+          </span>
+        </div>
+      ) : null}
       <p style={{ fontFamily: FONT, fontSize: "0.78rem", lineHeight: 1.55, color: "var(--text-secondary)", margin: 0 }}>
         Reusable credentials are issuer-signed eligibility assurances you hold once. Each institution still receives its
         own partner-bound authorization receipt after you approve a scoped presentation. Credentials are not receipts.
@@ -244,12 +270,12 @@ export function PassportReusableCredentialsPanel({ sessionReady }: { sessionRead
           <span style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
             {lifecycleDetail}
           </span>
-          {recoveryKind === "register_possession_key" ? (
+          {recoveryKind === "register_possession_key" && !deferInstitutional ? (
             <Btn variant="secondary" disabled={busy === "possession"} onClick={() => void registerPossessionKey()}>
               {busy === "possession" ? "Registering…" : "Register this device possession key"}
             </Btn>
           ) : null}
-          {recoveryKind === "retry_issuance_backfill" ? (
+          {recoveryKind === "retry_issuance_backfill" && !deferInstitutional ? (
             <Btn variant="secondary" disabled={busy === "backfill"} onClick={() => void retryIssuanceBackfill()}>
               {busy === "backfill" ? "Retrying…" : "Retry credential issuance"}
             </Btn>
@@ -335,7 +361,7 @@ export function PassportReusableCredentialsPanel({ sessionReady }: { sessionRead
           A signed reusable credential has not been persisted yet. Complete the lifecycle step above before expecting issuance.
         </p>
       ) : null}
-      {showIssuedCredentials ? (
+      {showIssuedCredentials && !deferInstitutional ? (
         <PassportInstitutionalPresentationPanel sessionReady={sessionReady} credentials={credentials} />
       ) : null}
     </div>
