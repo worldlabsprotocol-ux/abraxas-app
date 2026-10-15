@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { InMemoryPortableRevocationCheckpointStore } from "@/lib/protocol/portableRevocation";
 import { bootstrapTrustFromArtifact } from "@/lib/protocol/portableRevocation";
-import { buildSyntheticPortableRevocationSnapshot } from "@/lib/protocol/portableRevocation";
+import type { PortableRevocationSignedArtifact } from "@/lib/protocol/portableRevocation";
 import { portableTrustCsrfRejected } from "@/lib/passport/portableTrust/csrf";
 import { resolveAuthenticatedHolderSession } from "@/lib/passport/portableTrust/resolveHolderSession";
 import {
@@ -31,13 +31,6 @@ import { resolveHolderReusableCredential } from "@/lib/passport/reusableCredenti
 import { isPassportReusableCredentialStorageEnabled } from "@/lib/passport/reusableCredential/storageGate";
 import { loadReceiptSigningKey } from "@/lib/decisionReceipts/signing";
 
-function revocationSnapshotForCredential(credentialId: string) {
-  return buildSyntheticPortableRevocationSnapshot({
-    receiptId: credentialId,
-    state: "active",
-  });
-}
-
 export async function POST(req: NextRequest) {
   const csrf = portableTrustCsrfRejected(req);
   if (csrf) {
@@ -58,6 +51,7 @@ export async function POST(req: NextRequest) {
     credential_id?: string;
     challenge?: PassportPossessionChallengePayload;
     holder_possession_proof?: HolderPossessionProof;
+    portable_revocation_snapshot?: PortableRevocationSignedArtifact;
   };
   try {
     body = (await req.json()) as typeof body;
@@ -87,10 +81,23 @@ export async function POST(req: NextRequest) {
       const challengeStore = new InMemoryPassportPossessionChallengeStore();
       const receiptKey = loadReceiptSigningKey() ?? BUILD_566_RECEIPT_SIGNING_KEY;
       const env = { ...process.env, ...build566TrustEnv() } as Record<string, string | undefined>;
-      const revocation = revocationSnapshotForCredential(credential.payload.credential_id);
+      const isSandboxCredential = credential.payload.provenance.idv_method === "sandbox_fixture";
+      const revocation = isSandboxCredential
+        ? build566RevocationSnapshotForCredential(credential.payload.credential_id)
+        : body.portable_revocation_snapshot;
+      if (!revocation) {
+        return NextResponse.json(
+          {
+            error: "portable_revocation_snapshot_required",
+            issuer_backed: true,
+            note: "Issuer-backed presentation requires a partner-supplied portable revocation artifact.",
+          },
+          { status: 400 },
+        );
+      }
       const requestId = body.request_id ?? `req_present_${Date.now()}`;
       const policyRules =
-        credential.payload.provenance.idv_method === "sandbox_fixture"
+        isSandboxCredential
           ? BUILD_566_POLICY_RULES
           : { ...BUILD_566_POLICY_RULES, sandbox_only: false };
 

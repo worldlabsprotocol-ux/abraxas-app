@@ -86,24 +86,24 @@ export async function consumePassportPossessionChallengeDirect(input: {
   policyId: string;
   at: string;
 }): Promise<{ ok: true } | { ok: false; code: "unknown" | "expired" | "replay" }> {
-  const existing = await getPassportPossessionChallengeRecordDirect(input.challengeId);
-  if (!existing) return { ok: false, code: "unknown" };
-  if (existing.consumed_at) return { ok: false, code: "replay" };
-  if (Date.parse(existing.expires_at) < Date.parse(input.at)) return { ok: false, code: "expired" };
-  if (
-    existing.credential_id !== input.credentialId
-    || existing.partner_id !== input.partnerId
-    || existing.policy_id !== input.policyId
-  ) {
+  if (Date.parse(input.at) >= Number.MAX_SAFE_INTEGER) {
     return { ok: false, code: "unknown" };
   }
 
-  const { rows } = await queryAbraxasPg<{ challenge_id: string }>(
-    `select challenge_id from public.consume_passport_possession_challenge($1,$2,$3,$4)`,
+  const { rows } = await queryAbraxasPg<{ challenge_id: string; expires_at: string }>(
+    `select challenge_id, expires_at from public.consume_passport_possession_challenge($1,$2,$3,$4)`,
     [input.challengeId, input.credentialId, input.partnerId, input.policyId],
   );
-  if (!rows[0]?.challenge_id) {
-    return { ok: false, code: "replay" };
+  const row = rows[0];
+  if (!row?.challenge_id) {
+    const existing = await getPassportPossessionChallengeRecordDirect(input.challengeId);
+    if (!existing) return { ok: false, code: "unknown" };
+    if (existing.consumed_at) return { ok: false, code: "replay" };
+    if (Date.parse(existing.expires_at) < Date.parse(input.at)) return { ok: false, code: "expired" };
+    return { ok: false, code: "unknown" };
+  }
+  if (Date.parse(row.expires_at) < Date.parse(input.at)) {
+    return { ok: false, code: "expired" };
   }
   return { ok: true };
 }

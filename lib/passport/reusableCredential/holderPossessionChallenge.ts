@@ -257,12 +257,14 @@ export async function verifyPassportPossessionProofAsync(input: {
     return { ok: false, code: "challenge_id_mismatch" };
   }
 
-  let authoritative = store.get(input.proof.challenge_id);
-  if (!authoritative && input.durableConsume) {
+  let authoritative: PassportPossessionChallengeRecord | null = null;
+  if (input.durableConsume) {
     const { getPassportPossessionChallengeRecordDirect } = await import(
       "@/lib/persistence/postgresPassportPossessionChallengeStore"
     );
     authoritative = await getPassportPossessionChallengeRecordDirect(input.proof.challenge_id);
+  } else {
+    authoritative = store.get(input.proof.challenge_id);
   }
   if (!authoritative) {
     return { ok: false, code: "challenge_unknown" };

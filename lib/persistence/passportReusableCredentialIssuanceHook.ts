@@ -3,6 +3,7 @@ import "server-only";
 
 import { createHash } from "crypto";
 import type { PoolClient } from "pg";
+import { selectAuthoritativeVerificationForIssuance } from "@/lib/idv/authoritativeVerificationForIssuance";
 import {
   assuranceFromIssuance,
   idvMethodFromLivenessProvider,
@@ -24,12 +25,17 @@ function coerceIsoTimestamp(value: unknown, fallback: string): string {
 }
 
 type VerificationRow = {
+  wallet_address: string | null;
+  holder_subject_id: string | null;
   credential_jti: string | null;
   status: string | null;
   identity_verification_status: string | null;
   credential_status: string | null;
   liveness_provider: string | null;
   credential_issued_at: string | null;
+  document_verified: boolean | null;
+  liveness_passed: boolean | null;
+  updated_at: string | null;
 };
 
 export async function tryIssuePassportReusableCredentialOnClient(
@@ -41,37 +47,32 @@ export async function tryIssuePassportReusableCredentialOnClient(
   }
 
   const vRes = await client.query<VerificationRow>(
-    `select credential_jti, status, identity_verification_status, credential_status, liveness_provider, credential_issued_at
+    `select wallet_address, holder_subject_id, credential_jti, status, identity_verification_status,
+            credential_status, liveness_provider, credential_issued_at, document_verified, liveness_passed, updated_at
      from public.identity_verifications
      where wallet_address = $1 or holder_subject_id = $1
-     limit 1`,
+     order by credential_issued_at desc nulls last, updated_at desc nulls last`,
     [input.subjectKey],
   );
-  const v = vRes.rows[0];
-  if (!v?.credential_jti) {
+
+  const approval = selectAuthoritativeVerificationForIssuance(vRes.rows);
+  if (!approval.ok) {
     await recordPassportReusableIssuanceAuditOnClient(client, {
       holderSubjectId: input.subjectKey,
-      linkedCredentialJti: "unknown",
+      linkedCredentialJti: vRes.rows[0]?.credential_jti ?? "unknown",
       source: input.eventSource,
-      outcome: "rejected_no_credential_jti",
+      outcome: `rejected_${approval.code}`,
     });
-    return { ok: false, code: "approval_not_final" };
-  }
-  const approved =
-    v.status === "approved"
-    || v.identity_verification_status === "approved"
-    || v.credential_status === "active";
-  if (!approved) {
-    await recordPassportReusableIssuanceAuditOnClient(client, {
-      holderSubjectId: input.subjectKey,
-      linkedCredentialJti: v.credential_jti,
-      source: input.eventSource,
-      outcome: "rejected_not_approved",
-    });
-    return { ok: false, code: "approval_not_final" };
+    return { ok: false, code: approval.code };
   }
 
-  const existing = await getPassportReusableCredentialByJtiOnClient(client, v.credential_jti);
+  const credentialJti = approval.credentialJti;
+  const v = vRes.rows.find((row) => row.credential_jti?.trim() === credentialJti);
+  if (!v) {
+    return { ok: false, code: "verification_contradictory" };
+  }
+
+  const existing = await getPassportReusableCredentialByJtiOnClient(client, credentialJti);
   if (existing) {
     return { ok: true, credentialId: existing.payload.credential_id, alreadyIssued: true };
   }
@@ -80,7 +81,7 @@ export async function tryIssuePassportReusableCredentialOnClient(
   if (!possessionKey) {
     await recordPassportReusableIssuanceAuditOnClient(client, {
       holderSubjectId: input.subjectKey,
-      linkedCredentialJti: v.credential_jti,
+      linkedCredentialJti: credentialJti,
       source: input.eventSource,
       outcome: "deferred_possession_key",
     });
@@ -104,24 +105,24 @@ export async function tryIssuePassportReusableCredentialOnClient(
             issued_at, expires_at, evidence_reference, jurisdiction, policy_scope
      from public.credential_claims
      where subject_id = $1 and credential_jti = $2 and status = 'active'`,
-    [input.subjectKey, v.credential_jti],
+    [input.subjectKey, credentialJti],
   );
   if (!claimsRes.rows.length) {
     await recordPassportReusableIssuanceAuditOnClient(client, {
       holderSubjectId: input.subjectKey,
-      linkedCredentialJti: v.credential_jti,
+      linkedCredentialJti: credentialJti,
       source: input.eventSource,
       outcome: "rejected_no_claims",
     });
     return { ok: false, code: "no_eligibility_claims" };
   }
 
-  const claimIds = await loadClaimIdsForJtiOnClient(client, input.subjectKey, v.credential_jti);
+  const claimIds = await loadClaimIdsForJtiOnClient(client, input.subjectKey, credentialJti);
   const productClaim = claimsRes.rows.find((c) => c.claim_type === "product_eligibility");
   if (!productClaim) {
     await recordPassportReusableIssuanceAuditOnClient(client, {
       holderSubjectId: input.subjectKey,
-      linkedCredentialJti: v.credential_jti,
+      linkedCredentialJti: credentialJti,
       source: input.eventSource,
       outcome: "rejected_no_product_eligibility",
     });
@@ -130,24 +131,28 @@ export async function tryIssuePassportReusableCredentialOnClient(
 
   const credRes = await client.query<{ expiration_date: string }>(
     `select expiration_date from public.abraxas_credentials where jti = $1`,
-    [v.credential_jti],
+    [credentialJti],
   );
+  if (!credRes.rows[0]?.expiration_date) {
+    await recordPassportReusableIssuanceAuditOnClient(client, {
+      holderSubjectId: input.subjectKey,
+      linkedCredentialJti: credentialJti,
+      source: input.eventSource,
+      outcome: "rejected_missing_abraxas_credential",
+    });
+    return { ok: false, code: "credential_not_issued" };
+  }
+
   const defaultExpires = new Date(Date.now() + 365 * 86400000).toISOString();
-  const expiresAtIso = coerceIsoTimestamp(
-    credRes.rows[0]?.expiration_date ?? productClaim.expires_at,
-    defaultExpires,
-  );
-  const issuedAtIso = coerceIsoTimestamp(
-    v.credential_issued_at ?? productClaim.issued_at,
-    new Date().toISOString(),
-  );
-  const evidenceRef = productClaim.evidence_reference ?? `sovereign:${v.credential_jti}`;
+  const expiresAtIso = coerceIsoTimestamp(credRes.rows[0].expiration_date, defaultExpires);
+  const issuedAtIso = coerceIsoTimestamp(v.credential_issued_at, new Date().toISOString());
+  const evidenceRef = productClaim.evidence_reference ?? `sovereign:${credentialJti}`;
   const evidenceReferenceHash = createHash("sha256").update(evidenceRef, "utf8").digest("hex");
 
   const prepared = prepareSovereignReusableCredentialIssuance(
     {
       subjectKey: input.subjectKey,
-      credentialJti: v.credential_jti,
+      credentialJti,
       claims: claimsRes.rows.map((row) => ({
         subject_id: row.subject_id,
         credential_jti: row.credential_jti,
@@ -175,7 +180,7 @@ export async function tryIssuePassportReusableCredentialOnClient(
   if (!prepared.ok) {
     await recordPassportReusableIssuanceAuditOnClient(client, {
       holderSubjectId: input.subjectKey,
-      linkedCredentialJti: v.credential_jti,
+      linkedCredentialJti: credentialJti,
       source: input.eventSource,
       outcome: `rejected_${prepared.code}`,
     });
@@ -185,11 +190,11 @@ export async function tryIssuePassportReusableCredentialOnClient(
   const sandboxLabeled = process.env.NODE_ENV !== "production";
   const persist = await persistPassportReusableCredentialOnClient(client, {
     credential: prepared.credential,
-    linkedCredentialJti: v.credential_jti,
+    linkedCredentialJti: credentialJti,
     sandboxLabeled,
   });
   if ("duplicate" in persist && persist.duplicate) {
-    const again = await getPassportReusableCredentialByJtiOnClient(client, v.credential_jti);
+    const again = await getPassportReusableCredentialByJtiOnClient(client, credentialJti);
     if (again) {
       return { ok: true, credentialId: again.payload.credential_id, alreadyIssued: true };
     }
@@ -197,7 +202,7 @@ export async function tryIssuePassportReusableCredentialOnClient(
 
   await recordPassportReusableIssuanceAuditOnClient(client, {
     holderSubjectId: input.subjectKey,
-    linkedCredentialJti: v.credential_jti,
+    linkedCredentialJti: credentialJti,
     credentialId: prepared.credentialId,
     source: input.eventSource,
     outcome: "committed",

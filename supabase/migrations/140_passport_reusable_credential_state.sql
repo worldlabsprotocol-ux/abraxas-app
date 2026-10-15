@@ -10,7 +10,7 @@ create table if not exists public.passport_holder_possession_keys (
   registered_at         timestamptz not null default now(),
   updated_at            timestamptz not null default now(),
   constraint passport_holder_possession_keys_pubkey_len
-    check (char_length(public_key_b64url) between 32 and 128)
+    check (char_length(public_key_b64url) between 43 and 64)
 );
 
 comment on table public.passport_holder_possession_keys is
@@ -62,7 +62,7 @@ create table if not exists public.passport_possession_challenges (
   policy_id             text        not null,
   nonce                 text        not null,
   issued_at             timestamptz not null,
-  expires_at            timestamptz not null,
+  expires_at              timestamptz not null,
   consumed_at           timestamptz,
   payload_json          jsonb       not null,
   created_at            timestamptz not null default now()
@@ -123,18 +123,46 @@ $$;
 revoke all on function public.consume_passport_possession_challenge(text, text, text, text) from public;
 grant execute on function public.consume_passport_possession_challenge(text, text, text, text) to service_role;
 
-alter table public.passport_reusable_credentials
-  add column if not exists signed_credential_text text;
+-- Upgrade-only legacy column migration (no-op on clean installs).
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'passport_reusable_credentials'
+      and column_name = 'signed_credential_json'
+  ) then
+    if not exists (
+      select 1
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'passport_reusable_credentials'
+        and column_name = 'signed_credential_text'
+    ) then
+      alter table public.passport_reusable_credentials
+        add column signed_credential_text text;
+    end if;
 
-update public.passport_reusable_credentials
-set signed_credential_text = signed_credential_json::text
-where signed_credential_text is null
-  and signed_credential_json is not null;
+    update public.passport_reusable_credentials
+    set signed_credential_text = signed_credential_json::text
+    where signed_credential_text is null
+      and signed_credential_json is not null;
 
-alter table public.passport_reusable_credentials
-  drop column if exists signed_credential_json;
+    alter table public.passport_reusable_credentials
+      drop column signed_credential_json;
+  end if;
 
-alter table public.passport_reusable_credentials
-  alter column signed_credential_text set not null;
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'passport_reusable_credentials'
+      and column_name = 'signed_credential_text'
+  ) then
+    alter table public.passport_reusable_credentials
+      alter column signed_credential_text set not null;
+  end if;
+end $$;
 
 commit;

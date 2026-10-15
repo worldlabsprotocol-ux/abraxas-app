@@ -25,16 +25,89 @@ export async function getPassportHolderPossessionPublicKeyDirect(
   return rows[0]?.public_key_b64url ?? null;
 }
 
+export async function countActiveReusableCredentialsForHolderDirect(
+  holderSubjectId: string,
+  client?: PoolClient,
+): Promise<number> {
+  const sql = `select count(*)::int as c from public.passport_reusable_credentials
+               where holder_subject_id = $1 and expires_at > now()`;
+  if (client) {
+    const res = await client.query<{ c: number }>(sql, [holderSubjectId]);
+    return res.rows[0]?.c ?? 0;
+  }
+  const { rows } = await queryAbraxasPg<{ c: number }>(sql, [holderSubjectId]);
+  return rows[0]?.c ?? 0;
+}
+
+export async function deleteReusableCredentialsForHolderOnClient(
+  client: PoolClient,
+  holderSubjectId: string,
+): Promise<number> {
+  const res = await client.query(
+    `delete from public.passport_reusable_credentials where holder_subject_id = $1`,
+    [holderSubjectId],
+  );
+  return res.rowCount ?? 0;
+}
+
+export type RegisterPossessionKeyResult =
+  | { ok: true; rotated: boolean }
+  | { ok: false; code: "invalid_public_key" | "possession_key_rotation_required" | "rotation_previous_key_mismatch" };
+
+export async function registerPassportHolderPossessionKeyDirect(input: {
+  holderSubjectId: string;
+  publicKeyB64Url: string;
+  rotation?: { authorized: true; previous_public_key_b64url: string };
+}): Promise<RegisterPossessionKeyResult> {
+  const { validateHolderPossessionPublicKeyB64Url, possessionKeysEqual } = await import(
+    "@/lib/passport/reusableCredential/holderPossessionKeyValidation"
+  );
+  const validated = validateHolderPossessionPublicKeyB64Url(input.publicKeyB64Url);
+  if (!validated.ok) {
+    return { ok: false, code: "invalid_public_key" };
+  }
+
+  return withAbraxasPgTransaction(async (client) => {
+    const existing = await client.query<{ public_key_b64url: string }>(
+      `select public_key_b64url from public.passport_holder_possession_keys where holder_subject_id = $1 for update`,
+      [input.holderSubjectId],
+    );
+    const previous = existing.rows[0]?.public_key_b64url ?? null;
+    if (previous && possessionKeysEqual(previous, validated.publicKeyB64Url)) {
+      return { ok: true, rotated: false };
+    }
+
+    const activeCredentials = await countActiveReusableCredentialsForHolderDirect(input.holderSubjectId, client);
+    if (previous && activeCredentials > 0) {
+      if (!input.rotation?.authorized) {
+        return { ok: false, code: "possession_key_rotation_required" };
+      }
+      const prevCheck = validateHolderPossessionPublicKeyB64Url(input.rotation.previous_public_key_b64url);
+      if (!prevCheck.ok || !possessionKeysEqual(previous, prevCheck.publicKeyB64Url)) {
+        return { ok: false, code: "rotation_previous_key_mismatch" };
+      }
+      await deleteReusableCredentialsForHolderOnClient(client, input.holderSubjectId);
+    }
+
+    await client.query(
+      `insert into public.passport_holder_possession_keys (holder_subject_id, public_key_b64url, updated_at)
+       values ($1, $2, now())
+       on conflict (holder_subject_id) do update set public_key_b64url = excluded.public_key_b64url, updated_at = now()`,
+      [input.holderSubjectId, validated.publicKeyB64Url],
+    );
+    return { ok: true, rotated: Boolean(previous) };
+  });
+}
+
+/** @deprecated Use registerPassportHolderPossessionKeyDirect */
 export async function upsertPassportHolderPossessionKeyDirect(input: {
   holderSubjectId: string;
   publicKeyB64Url: string;
 }): Promise<void> {
-  await queryAbraxasPg(
-    `insert into public.passport_holder_possession_keys (holder_subject_id, public_key_b64url, updated_at)
-     values ($1, $2, now())
-     on conflict (holder_subject_id) do update set public_key_b64url = excluded.public_key_b64url, updated_at = now()`,
-    [input.holderSubjectId, input.publicKeyB64Url],
-  );
+  const result = await registerPassportHolderPossessionKeyDirect(input);
+  if (!result.ok) {
+    throw new Error(result.code);
+  }
 }
 
 export async function getPassportReusableCredentialByIdDirect(
