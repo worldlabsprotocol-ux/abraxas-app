@@ -53,10 +53,15 @@ import { seedBuild568InstitutionalPartnerPoliciesForTests, BUILD_568_PARTNER_B_P
 import { resolveInstitutionalPartnerCatalogEntry } from "./institutionalPartnerCatalog";
 import { insertPassportPossessionChallengeDirect } from "@/lib/persistence/postgresPassportPossessionChallengeStore";
 import {
-  verifyPassportInstitutionalBundleIndependently,
+  verifyPassportInstitutionalBundleInMemoryForTests,
+  verifyPassportInstitutionalBundleOperational,
   type PassportInstitutionalVerificationBundle,
 } from "./independentPassportVerifier";
-import { FileReceiptConsumptionStore } from "@/lib/institutionalCertification/build547/receiptConsumptionStore";
+import { PORTABLE_REVOCATION_ISSUER_TRUST_ENV } from "./independentInstitutionConfig";
+import {
+  build569IndependentInstitutionConfig,
+  build569PortableRevocationIssuerTrustJson,
+} from "./build569IndependentInstitutionTestHelpers";
 import { signPassportReusableCredential } from "./sign";
 
 const PG_URL = process.env.ABRAXAS_SOVEREIGN_PG_URL?.trim()
@@ -73,10 +78,11 @@ function mockPortableRevocationPublisher(snapshot: import("@/lib/protocol/portab
   );
 }
 
-function publicTrustEnv(): Record<string, string> {
+function publicTrustEnv(credentialKey: ReturnType<typeof generateTestSigningKeyPair>): Record<string, string> {
   return {
     ...build546TrustRegistryEnv(),
     [PASSPORT_CREDENTIAL_ISSUER_REGISTRY_ENV]: process.env[PASSPORT_CREDENTIAL_ISSUER_REGISTRY_ENV] ?? "[]",
+    [PORTABLE_REVOCATION_ISSUER_TRUST_ENV]: build569PortableRevocationIssuerTrustJson(credentialKey),
   };
 }
 
@@ -231,7 +237,7 @@ describe("Build #569 sovereign Passport execution and independent verifier proof
   it("executes holder journey and independently verifies two institutions without identity DB", async () => {
     const { holder, credential } = await holderJourneyCredential();
     const snapshot = buildFreshPortableRevocationSnapshotForCredential(credential.payload.credential_id);
-    const trustEnv = publicTrustEnv();
+    const trustEnv = publicTrustEnv(CREDENTIAL_KEY);
 
     const instA = await presentInstitution({
       holder,
@@ -281,15 +287,24 @@ describe("Build #569 sovereign Passport execution and independent verifier proof
       };
       const bundlePath = join(evidenceDir, `${label}-bundle.json`);
       writeFileSync(bundlePath, JSON.stringify(bundle, null, 2));
-      const trustPath = join(evidenceDir, `${label}-trust-public.json`);
-      writeFileSync(trustPath, JSON.stringify(trustEnv, null, 2));
+      const institution = build569IndependentInstitutionConfig({
+        partnerId,
+        policyId,
+        trustEnv,
+        trustedBootstrapSnapshot: verifySnapshot,
+      });
+      const institutionPath = join(evidenceDir, `${label}-institution.json`);
+      writeFileSync(institutionPath, JSON.stringify(institution, null, 2));
 
       const inProcessConsumption = join(consumptionDir, "in-process");
       const cliConsumption = join(consumptionDir, "cli");
-      const inProcess = await verifyPassportInstitutionalBundleIndependently(bundle, {
-        env: trustEnv,
-        consumptionStore: new FileReceiptConsumptionStore(inProcessConsumption),
-        checkpointDir: join(checkpointDir, label),
+      const inProcessCheckpoint = join(checkpointDir, label);
+      const cliCheckpoint = join(checkpointDir, `${label}-cli`);
+
+      const inProcess = await verifyPassportInstitutionalBundleOperational(bundle, {
+        institution,
+        consumptionDir: inProcessConsumption,
+        checkpointDir: inProcessCheckpoint,
       });
       expect(inProcess.ok).toBe(true);
 
@@ -298,12 +313,12 @@ describe("Build #569 sovereign Passport execution and independent verifier proof
         [
           "scripts/build-569/independent-passport-verifier-cli.ts",
           bundlePath,
-          "--trust-env",
-          trustPath,
+          "--institution-config",
+          institutionPath,
           "--consumption-dir",
           cliConsumption,
           "--checkpoint-dir",
-          join(checkpointDir, `${label}-cli`),
+          cliCheckpoint,
         ],
         {
           encoding: "utf8",
@@ -344,7 +359,7 @@ describe("Build #569 sovereign Passport execution and independent verifier proof
   it("independent verifier rejects audience mismatch, forged issuer signature, and replay", async () => {
     const { holder, credential } = await holderJourneyCredential();
     const snapshot = buildFreshPortableRevocationSnapshotForCredential(credential.payload.credential_id);
-    const trustEnv = publicTrustEnv();
+    const trustEnv = publicTrustEnv(CREDENTIAL_KEY);
     const auth = await presentInstitution({
       holder,
       credential,
@@ -368,7 +383,20 @@ describe("Build #569 sovereign Passport execution and independent verifier proof
       policy_id: BUILD_568_PARTNER_B_POLICY_ID,
       request_id: "req_569_wrong_audience",
     };
-    const wrongAudience = await verifyPassportInstitutionalBundleIndependently(bundle, { env: trustEnv });
+    const wrongInstitution = build569IndependentInstitutionConfig({
+      partnerId: BUILD_566_PARTNER_B,
+      policyId: BUILD_568_PARTNER_B_POLICY_ID,
+      trustEnv,
+      trustedBootstrapSnapshot: verifySnapshot,
+    });
+    const wrongAudience = await verifyPassportInstitutionalBundleInMemoryForTests(
+      {
+        ...bundle,
+        partner_id: BUILD_566_PARTNER_A,
+        policy_id: BUILD_566_POLICY_ID,
+      },
+      { institution: wrongInstitution, testMemoryStores: true },
+    );
     expect(wrongAudience.ok).toBe(false);
 
     const forgedKey = generateTestSigningKeyPair("forged-569");
@@ -379,10 +407,20 @@ describe("Build #569 sovereign Passport execution and independent verifier proof
       partner_id: BUILD_566_PARTNER_A,
       policy_id: BUILD_566_POLICY_ID,
     };
-    const forged = await verifyPassportInstitutionalBundleIndependently(forgedBundle, { env: trustEnv });
+    const goodInstitution = build569IndependentInstitutionConfig({
+      partnerId: BUILD_566_PARTNER_A,
+      policyId: BUILD_566_POLICY_ID,
+      trustEnv,
+      trustedBootstrapSnapshot: verifySnapshot,
+    });
+    const forged = await verifyPassportInstitutionalBundleInMemoryForTests(forgedBundle, {
+      institution: goodInstitution,
+      testMemoryStores: true,
+    });
     expect(forged.ok).toBe(false);
 
     const consumptionDir = mkdtempSync(join(tmpdir(), "abx-b569-replay-"));
+    const checkpointDirReplay = mkdtempSync(join(tmpdir(), "abx-b569-checkpoint-replay-"));
     const goodBundle: PassportInstitutionalVerificationBundle = {
       credential,
       presentation: auth.authorized.presentation,
@@ -391,18 +429,18 @@ describe("Build #569 sovereign Passport execution and independent verifier proof
       policy_id: BUILD_566_POLICY_ID,
       request_id: "req_569_replay_first",
     };
-    const store = new FileReceiptConsumptionStore(consumptionDir);
-    const first = await verifyPassportInstitutionalBundleIndependently(goodBundle, {
-      env: trustEnv,
-      consumptionStore: store,
+    const first = await verifyPassportInstitutionalBundleOperational(goodBundle, {
+      institution: goodInstitution,
+      consumptionDir,
+      checkpointDir: checkpointDirReplay,
     });
     expect(first.ok).toBe(true);
-    const replay = await verifyPassportInstitutionalBundleIndependently(
+    const replay = await verifyPassportInstitutionalBundleOperational(
       { ...goodBundle, request_id: "req_569_replay_second" },
-      { env: trustEnv, consumptionStore: store },
+      { institution: goodInstitution, consumptionDir, checkpointDir: checkpointDirReplay },
     );
     expect(replay.ok).toBe(false);
-    if (!replay.ok && replay.stage === "relying_party") {
+    if (!replay.ok && replay.stage === "relying_party" && replay.decision) {
       expect(replay.decision.replay_detected).toBe(true);
     }
   });

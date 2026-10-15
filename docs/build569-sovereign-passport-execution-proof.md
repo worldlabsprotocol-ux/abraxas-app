@@ -74,7 +74,16 @@ Browser UI journey (wallet auth, live IDV capture, admin review queue) was not f
 Implementation:
 
 - Library: `lib/passport/reusableCredential/independentPassportVerifier.ts`
+- Institution config: `lib/passport/reusableCredential/independentInstitutionConfig.ts`
 - CLI: `scripts/build-569/independent-passport-verifier-cli.ts`
+
+Trust is institution controlled only:
+
+- `ABRAXAS_PORTABLE_REVOCATION_BOOTSTRAP_TRUSTS` in institution config (never derived from the submitted bundle at verify time).
+- `ABRAXAS_PORTABLE_REVOCATION_ISSUER_TRUST` binds receipt signing keys to revocation issuers and authorized snapshot keys.
+- Partner and policy authority come from institution config, not from bundle metadata alone.
+
+The operational CLI requires `--institution-config`, `--consumption-dir`, and `--checkpoint-dir`. There is no in memory fallback on the CLI path.
 
 The verifier does not call Abraxas identity lookup APIs. It validates:
 
@@ -86,10 +95,12 @@ Usage:
 
 ```bash
 npm run build-569:verify-bundle -- /path/to/bundle.json \
-  --trust-env /path/to/public-trust.json \
+  --institution-config /path/to/institution.json \
   --consumption-dir /path/to/consumption \
   --checkpoint-dir /path/to/checkpoints
 ```
+
+Institution JSON shape: `{ "partner_id", "policy_id", "trust_env": { registry and bootstrap fields } }`.
 
 Trust env JSON contains public registry material only (no private signing keys in the trust file; CLI merges process env for operational keys when needed).
 
