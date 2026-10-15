@@ -121,6 +121,82 @@ describe("Build #579 countIdentityVerificationsForSessionKeys (mocked pg)", () =
 });
 
 describe("Build #579 holderIdentitySurfaceDirect integration (mocked pg)", () => {
+  it("legacy sui-only schema: verified rows trigger operator reconciliation when canonical tables exist", async () => {
+    vi.resetModules();
+    vi.doMock("@/lib/persistence/env", () => ({
+      isPassportDirectPostgresEnabled: () => true,
+    }));
+    vi.doMock("@/lib/persistence/pgPool", () => ({
+      queryAbraxasPg: vi.fn(async (sql: string) => {
+        if (typeof sql === "string" && sql.includes("information_schema.tables")) {
+          return { rows: [{ exists: true }] };
+        }
+        if (typeof sql === "string" && sql.includes("information_schema.columns")) {
+          return { rows: [{ column_name: "sui_address" }] };
+        }
+        if (typeof sql === "string" && sql.includes("count(*)")) {
+          return { rows: [{ c: 2 }] };
+        }
+        if (typeof sql === "string" && sql.includes("passport_holder_legacy_links")) {
+          return { rows: [] };
+        }
+        return { rows: [] };
+      }),
+    }));
+
+    const { loadHolderIdentitySurfaceForSession } = await import("@/lib/persistence/holderIdentitySurfaceDirect");
+    const surface = await loadHolderIdentitySurfaceForSession({
+      subjectId: SUI,
+      suiAddress: SUI,
+      holderSubjectId: null,
+    } as import("@/lib/auth/browserSession").BrowserSession);
+
+    expect(surface.state).toBe("reconciliation_operator_required");
+    expect(shouldDeferReusableCredentialActions(surface)).toBe(true);
+    vi.doUnmock("@/lib/persistence/env");
+    vi.doUnmock("@/lib/persistence/pgPool");
+  });
+
+  it("conflicting legacy links map to ambiguous_identity_blocked", async () => {
+    vi.resetModules();
+    vi.doMock("@/lib/persistence/env", () => ({
+      isPassportDirectPostgresEnabled: () => true,
+    }));
+    const HS_A = "abx_hs_" + "a".repeat(32);
+    const HS_B = "abx_hs_" + "b".repeat(32);
+    const SUI_B = "0x" + "b".repeat(64);
+    vi.doMock("@/lib/persistence/pgPool", () => ({
+      queryAbraxasPg: vi.fn(async (sql: string, params?: string[]) => {
+        if (typeof sql === "string" && sql.includes("information_schema.tables")) {
+          return { rows: [{ exists: true }] };
+        }
+        if (typeof sql === "string" && sql.includes("information_schema.columns")) {
+          return { rows: [{ column_name: "sui_address" }] };
+        }
+        if (typeof sql === "string" && sql.includes("passport_holder_legacy_links")) {
+          const key = params?.[1];
+          if (key === SUI.toLowerCase()) return { rows: [{ subject_id: HS_A }] };
+          if (key === SUI_B.toLowerCase()) return { rows: [{ subject_id: HS_B }] };
+        }
+        if (typeof sql === "string" && sql.includes("count(*)")) {
+          return { rows: [{ c: 0 }] };
+        }
+        return { rows: [] };
+      }),
+    }));
+
+    const { loadHolderIdentitySurfaceForSession } = await import("@/lib/persistence/holderIdentitySurfaceDirect");
+    const surface = await loadHolderIdentitySurfaceForSession({
+      subjectId: SUI_B,
+      suiAddress: SUI,
+      holderSubjectId: null,
+    } as import("@/lib/auth/browserSession").BrowserSession);
+
+    expect(surface.state).toBe("ambiguous_identity_blocked");
+    vi.doUnmock("@/lib/persistence/env");
+    vi.doUnmock("@/lib/persistence/pgPool");
+  });
+
   it("maps pg failures to identity_lookup_unavailable without leaking errors to UI copy", async () => {
     vi.resetModules();
     vi.doMock("@/lib/persistence/env", () => ({

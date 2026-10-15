@@ -65,7 +65,7 @@ describe("Build #579 planIdentityVerificationCountQuery", () => {
     expect(plan.params).toHaveLength(1);
   });
 
-  it("migrated canonical holder uses holder_subject_id without unrelated sui", () => {
+  it("migrated canonical holder matches holder_subject_id and session sui for pre-backfill IDV rows", () => {
     const plan = planIdentityVerificationCountQuery({
       schema: { walletAddress: true, suiAddress: true, holderSubjectId: true },
       sessionSubjectId: HS,
@@ -76,8 +76,8 @@ describe("Build #579 planIdentityVerificationCountQuery", () => {
     expect(plan.ok).toBe(true);
     if (!plan.ok) return;
     expect(plan.sql).toMatch(/holder_subject_id/i);
-    expect(plan.params).toEqual([HS]);
-    expect(plan.sql).not.toMatch(/sui_address/i);
+    expect(plan.sql).toMatch(/sui_address/i);
+    expect(plan.params).toEqual([HS, SUI]);
   });
 
   it("canonical holder with verified legacy link may include linked sui only", () => {

@@ -79,13 +79,8 @@ export function planIdentityVerificationCountQuery(input: {
     }
 
     const suiRaw = input.suiAddress?.trim();
-    const legacyLink = input.legacyLinkSubjectId?.trim() ?? null;
-    const suiLinkedToCanonical =
-      Boolean(suiRaw)
-      && legacyLink === canonicalFromSession
-      && input.schema.suiAddress;
-
-    if (suiLinkedToCanonical && suiRaw) {
+    // Production legacy rows may still be keyed only by sui_address after holder_subject_id exists on schema.
+    if (suiRaw && input.schema.suiAddress) {
       paramIndex += 1;
       const suiKey = normalizeHolderSubjectKey(suiRaw);
       params.push(suiKey);
