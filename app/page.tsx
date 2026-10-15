@@ -7,7 +7,7 @@ import { pageMetadata } from "@/lib/seo/metadata";
 export const metadata = pageMetadata({
   title: "Abraxas | Holder-controlled trust & verification protocol",
   description:
-    "Abraxas Passport, portable credentials, and cryptographically verifiable partner decisions—without sharing underlying identity documents or Abraxas identity databases at authorization time.",
+    "Abraxas Passport, portable credentials, and cryptographically verifiable partner decisions, without sharing underlying identity documents or Abraxas identity databases at authorization time.",
   path: "/",
 });
 

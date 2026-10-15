@@ -106,7 +106,7 @@ export function HomeProtocolInAction() {
           Protocol in action
         </h2>
         <p className="abx-home-section-lead">
-          See how Abraxas differs from traditional verification — then explore working flows wired to real policy definitions.
+          See how Abraxas differs from traditional verification, then explore working flows wired to real policy definitions.
         </p>
       </div>
 

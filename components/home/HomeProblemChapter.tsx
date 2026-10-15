@@ -33,7 +33,7 @@ export function HomeProblemChapter() {
             <div className="abx-premium-problem__answer">
               <span className="abx-premium-problem__answer-label">Simulated policy A</span>
               <strong>PERMIT</strong>
-              <span className="abx-premium-problem__answer-detail">Age 21+ eligible — no DOB transmitted</span>
+              <span className="abx-premium-problem__answer-detail">Age 21+ eligible, no DOB transmitted</span>
             </div>
             <p className="abx-premium-problem__note">Partner sees the decision, not the documents.</p>
           </article>

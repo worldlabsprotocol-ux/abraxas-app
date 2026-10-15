@@ -28,7 +28,7 @@ const EVIDENCE_META: Record<string, { detail: string; status?: "ok" | "neutral" 
   "Signature check": { detail: "Ed25519 fixture", status: "ok" },
   "Verifier result": { detail: "Sandbox fixture only", status: "neutral" },
   "Health status": { detail: "See Launchpad health panels", status: "neutral" },
-  "Go-live request": { detail: "Operator queue — not auto-approved", status: "neutral" },
+  "Go-live request": { detail: "Operator queue, not auto-approved", status: "neutral" },
   "Review note": { detail: "Human review required", status: "neutral" },
   "Operator decision": { detail: "Not self-serve mainnet", status: "neutral" },
   "Production credentials gate": { detail: "Issuance control plane", status: "neutral" },

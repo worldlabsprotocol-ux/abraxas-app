@@ -102,7 +102,7 @@ export function HomeTwoAppReferenceProof() {
       </div>
 
       <p style={{ margin: "0 0 0.85rem", fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.55 }}>
-        Reference harness only — not a live production institutional deployment. Post-revocation reuse blocked.
+        Reference harness only, not a live production institutional deployment. Post-revocation reuse blocked.
       </p>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.55rem", justifyContent: "center" }}>

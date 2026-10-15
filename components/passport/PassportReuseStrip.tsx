@@ -13,7 +13,7 @@ export function PassportReuseStrip() {
         Verify once · reuse many times
       </p>
       <p className="abx-passport-reuse-strip__body" style={{ fontFamily: FONT }}>
-        Your verified evidence stays in your Passport. When a partner asks a supported question, Abraxas can answer from existing evidence — you do not repeat the full verification each time.
+        Your verified evidence stays in your Passport. When a partner asks a supported question, Abraxas can answer from existing evidence. You do not repeat the full verification each time.
       </p>
     </div>
   );

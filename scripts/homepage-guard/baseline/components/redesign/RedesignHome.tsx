@@ -82,7 +82,7 @@ function HomeContent({ hero }: { hero: ReactNode }) {
               Build
             </h2>
             <p className="abx-v2-section-lead abx-v2-section-lead--tight">
-              Integration Studio and Launchpad — sandbox first; production via operator review.
+              Integration Studio and Launchpad: sandbox first, production via operator review.
             </p>
             <LazyHomeSection minHeight="12rem">
               <CapabilityMatrix />

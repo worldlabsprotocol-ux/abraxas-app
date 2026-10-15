@@ -12,7 +12,7 @@ export const SIMPLIFIED_HOME_MOBILE_PROMPT =
   "One Abraxas Passport. Reusable verified evidence. Each application asks a narrow policy question and receives only its approved answer.";
 
 export const SIMPLIFIED_HOME_TRUST_LINE =
-  "Use verified evidence again with fresh consent. Abraxas evaluates trust privately — applications receive signed eligibility receipts, not identity files.";
+  "Use verified evidence again with fresh consent. Abraxas evaluates trust privately. Applications receive signed eligibility receipts, not identity files.";
 
 export const SIMPLIFIED_HOME_CTA_PRIMARY = "See reuse across two apps";
 export const SIMPLIFIED_HOME_CTA_SECONDARY = "Build in sandbox";
@@ -40,7 +40,7 @@ export const SIMPLIFIED_HOW_IT_WORKS = [
   {
     id: "reuse",
     title: "Reuse evidence",
-    body: "Eligible requests can be satisfied from existing verified evidence — no repeated ID upload.",
+    body: "Eligible requests can be satisfied from existing verified evidence without repeated ID upload.",
   },
   {
     id: "share",
@@ -51,7 +51,7 @@ export const SIMPLIFIED_HOW_IT_WORKS = [
 
 export const SIMPLIFIED_AUDIENCE_PEOPLE = {
   title: "For holders",
-  body: "Passport is the holder-facing layer for consent and reusable evidence — one part of Abraxas infrastructure.",
+  body: "Passport is the holder-facing layer for consent and reusable evidence, one part of Abraxas infrastructure.",
 } as const;
 
 export const SIMPLIFIED_AUDIENCE_BUSINESS = {

@@ -6,7 +6,7 @@ export const INSTITUTIONAL_HOME_TITLE =
   "Holder-controlled trust and verification protocol";
 
 export const INSTITUTIONAL_HOME_LEAD =
-  "Passport connects proof-first presentations and portable revocation to real holder workflows. Partners receive evidence-backed policy answers—not biometrics, documents, or Abraxas identity database access at authorization time.";
+  "Passport connects proof-first presentations and portable revocation to real holder workflows. Partners receive evidence-backed policy answers, not biometrics, documents, or Abraxas identity database access at authorization time.";
 
 export const INSTITUTIONAL_HOME_DEFINITION = {
   what:
@@ -36,7 +36,7 @@ export const INSTITUTIONAL_TRUST_BOUNDARIES = [
   {
     id: "revocation",
     title: "Revocation & freshness",
-    body: "Receipt validity respects expiration, issuer suspension, and authenticated portable revocation snapshots where configured—fail-closed when feeds are stale or untrusted.",
+    body: "Receipt validity respects expiration, issuer suspension, and authenticated portable revocation snapshots where configured. Verification fails closed when feeds are stale or untrusted.",
   },
 ] as const;
 

@@ -125,7 +125,7 @@ export function HomeAssuranceNetwork() {
           Eligibility evidence ladder
         </h3>
         <p style={{ margin: "0 0 0.75rem", fontFamily: FONT, fontSize: "0.78rem", lineHeight: 1.55, color: "var(--text-muted)", textAlign: "left" }}>
-          How strong the underlying eligibility evidence is — not what must happen at checkout or entry.
+          How strong the underlying eligibility evidence is, not what must happen at checkout or entry.
         </p>
         <div
           role="list"
@@ -257,7 +257,7 @@ export function HomeAssuranceNetwork() {
           ))}
         </div>
         <p style={{ margin: "0.65rem 0 0", fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-muted)", lineHeight: 1.55 }}>
-          Merchants receive pass/fail outcomes, assurance metadata, and any transaction obligation — not raw identity evidence.
+          Merchants receive pass/fail outcomes, assurance metadata, and any transaction obligation, not raw identity evidence.
         </p>
       </div>
 
@@ -314,7 +314,7 @@ export function HomeAssuranceNetwork() {
           {ELIGIBILITY_POLICY_EXAMPLES.slice(0, 4).map((policy) => (
             <li key={policy.policy_id}>
               <code style={{ color: VIOLET }}>{policy.policy_id}</code>
-              {" — "}
+              {": "}
               {policy.summary}
             </li>
           ))}
