@@ -22,6 +22,8 @@ import { loadMerchantJourneyForApplication } from "@/lib/partner/launchpad/merch
 import { callbackConfigured } from "@/lib/partner/launchpad/journeyState";
 import { buildInstitutionalActivationEvidence } from "@/lib/partner/launchpad/institutionalActivationMilestones";
 import { INSTITUTIONAL_SANDBOX_POLICY_TEMPLATE_ID } from "@/lib/partner/launchpad/institutionalActivationEntry";
+import { buildInstitutionalFirstVerifiedOutcomeView } from "@/lib/partner/launchpad/institutionalFirstVerifiedOutcome";
+import { buildInstitutionalVerificationContractDocument } from "@/lib/institutionalVerification/verificationContractDocument";
 
 export const dynamic = "force-dynamic";
 type RouteContext = { params: { id: string } };
@@ -74,13 +76,24 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
       partnerId: auth.session.partnerId,
       activeSandboxKey: Boolean(app.api_key_id),
     });
-    payload.institutional_activation = buildInstitutionalActivationEvidence({
+    const institutional_activation = buildInstitutionalActivationEvidence({
       applicationCreatedAt: app.created_at,
       journey: journeyLoad.journey,
       health,
       activeSandboxKey: journeyLoad.input.activeSandboxKey,
       starterKitEvidenced: journeyLoad.input.starterKitEvidenced,
       callbackConfigured: callbackConfigured(app.allowed_return_urls),
+    });
+    payload.institutional_activation = institutional_activation;
+    const contractDoc = buildInstitutionalVerificationContractDocument();
+    const digest =
+      "ok" in contractDoc ? null : contractDoc.trust_material.receipt_key_document_digest;
+    payload.institutional_first_verified_outcome = buildInstitutionalFirstVerifiedOutcomeView({
+      app,
+      health,
+      events,
+      activation: institutional_activation,
+      receiptKeyDocumentDigest: digest,
     });
   }
 

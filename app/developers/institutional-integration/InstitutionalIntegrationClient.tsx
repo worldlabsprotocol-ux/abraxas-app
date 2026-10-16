@@ -12,6 +12,8 @@ import {
   INSTITUTIONAL_INTEGRATION_WORKSPACE_HREF,
 } from "@/lib/partner/launchpad/institutionalActivationEntry";
 import type { InstitutionalIntegrationWorkspacePayload } from "@/lib/partner/launchpad/institutionalIntegrationWorkspace";
+import { InstitutionalDeveloperJourneyNav } from "@/components/developers/InstitutionalDeveloperJourneyNav";
+import { InstitutionalFirstVerifiedOutcomePanel } from "@/components/partner/launchpad/InstitutionalFirstVerifiedOutcomePanel";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -163,7 +165,7 @@ export function InstitutionalIntegrationClient() {
   if (loading) {
     return (
       <PageHeader
-        eyebrow="Build #588 · Institutional integration"
+        eyebrow="Build #591 · Institutional integration"
         title="Institutional integration workspace"
         subtitle="Loading session…"
       />
@@ -174,7 +176,7 @@ export function InstitutionalIntegrationClient() {
     return (
       <>
         <PageHeader
-          eyebrow="Build #588 · Institutional integration"
+          eyebrow="Build #591 · Institutional integration"
           title="Sign in to configure institutional integration"
           subtitle="Use Partner Launchpad authentication. This workspace reuses your authorized partner tenant — no parallel customer account."
         />
@@ -198,7 +200,7 @@ export function InstitutionalIntegrationClient() {
   return (
     <>
       <PageHeader
-        eyebrow={`Build #588 · ${partnerLabel ?? "Partner workspace"}`}
+        eyebrow={`Build #591 · ${partnerLabel ?? "Partner workspace"}`}
         title="Institutional integration workspace"
         subtitle="One path from sandbox application configuration to controlled SDK adoption, issuer trust pinning, and independently verified signed decision receipts."
       />
@@ -257,8 +259,14 @@ export function InstitutionalIntegrationClient() {
         )}
       </ContentCard>
 
+      <InstitutionalDeveloperJourneyNav currentStepId="policy_and_relying_app" compact />
+
       {workspace && (
         <>
+          {workspace.first_verified_outcome ? (
+            <InstitutionalFirstVerifiedOutcomePanel outcome={workspace.first_verified_outcome} />
+          ) : null}
+
           <ContentCard title="Application ↔ SDK binding">
             <BulletList
               items={[

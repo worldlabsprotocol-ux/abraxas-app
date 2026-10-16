@@ -2,6 +2,7 @@
 
 import type { LaunchpadJourneyResolution, MerchantJourneyStageId } from "@/lib/partner/launchpad/journeyState";
 import type { InstitutionalActivationEvidence } from "@/lib/partner/launchpad/institutionalActivationMilestones";
+import type { InstitutionalFirstVerifiedOutcomeView } from "@/lib/partner/launchpad/institutionalFirstVerifiedOutcome";
 
 export type IntegrationHealthLoadState =
   | { kind: "idle" }
@@ -16,6 +17,7 @@ export type OperationalHealthPayload = {
   last_receipt_verified_at: string | null;
   technical_proof?: Array<{ stage: string; status: string }>;
   institutional_activation?: InstitutionalActivationEvidence;
+  institutional_first_verified_outcome?: InstitutionalFirstVerifiedOutcomeView;
 };
 
 export type InstitutionalCardEvidenceState =
@@ -40,6 +42,9 @@ export function parseOperationalHealthPayload(body: unknown): OperationalHealthP
       ? record.technical_proof as OperationalHealthPayload["technical_proof"]
       : undefined,
     institutional_activation: record.institutional_activation as InstitutionalActivationEvidence | undefined,
+    institutional_first_verified_outcome: record.institutional_first_verified_outcome as
+      | InstitutionalFirstVerifiedOutcomeView
+      | undefined,
   };
 }
 

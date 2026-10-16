@@ -26,6 +26,8 @@ import {
 } from "@/lib/relyingPartyProgram";
 import { recordGtmClientEvent } from "@/lib/gtm/clientTelemetry";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
+import { InstitutionalDeveloperJourneyNav } from "@/components/developers/InstitutionalDeveloperJourneyNav";
+import { INSTITUTIONAL_INTEGRATION_WORKSPACE_HREF } from "@/lib/partner/launchpad/institutionalActivationEntry";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -46,6 +48,19 @@ export default function DesignPartnerPage() {
       <IntegratorStartHerePanel id="partner-start-here" />
 
       <PartnerOnboardingPositioningPanel compact showConsentMockup />
+
+      <InstitutionalDeveloperJourneyNav
+        title="Institutional protocol access (sandbox)"
+        currentStepId="understand_product"
+      />
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1rem" }}>
+        <Btn href={INSTITUTIONAL_INTEGRATION_WORKSPACE_HREF} size="sm" variant="secondary">
+          Open integration workspace
+        </Btn>
+        <Btn href="/developers/institutional-verification" size="sm" variant="ghost">
+          Verification SDK docs
+        </Btn>
+      </div>
 
       <ContentCard title={PARTNER_POST_APPLY_HEADLINE}>
         <p style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.7, margin: "0 0 0.75rem" }}>

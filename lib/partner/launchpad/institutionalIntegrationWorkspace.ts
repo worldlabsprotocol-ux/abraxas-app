@@ -9,6 +9,7 @@ import {
   sandboxInstitutionalProtocolAccessProductionDenied,
 } from "@/lib/partner/sandboxInstitutionalProtocolAccess/contract";
 import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
+import type { InstitutionalFirstVerifiedOutcomeView } from "@/lib/partner/launchpad/institutionalFirstVerifiedOutcome";
 
 export type InstitutionalIntegrationStepStatus =
   | "complete"
@@ -73,12 +74,13 @@ export interface InstitutionalTrustConfigurationView {
 }
 
 export interface InstitutionalIntegrationWorkspacePayload {
-  contract_version: "588.v1";
+  contract_version: "591.v1";
   binding: InstitutionalApplicationBinding;
   trust: InstitutionalTrustConfigurationView;
   sdk_release: InstitutionalSdkReleaseView;
   journey_steps: InstitutionalIntegrationStep[];
   activation: InstitutionalActivationEvidence | null;
+  first_verified_outcome: InstitutionalFirstVerifiedOutcomeView | null;
   links: {
     launchpad: string;
     hosted_verification: string;
@@ -273,6 +275,7 @@ export function buildInstitutionalIntegrationWorkspace(input: {
   app: LaunchpadApplicationRow;
   sdkRelease: InstitutionalSdkReleaseView;
   activation: InstitutionalActivationEvidence | null;
+  firstVerifiedOutcome: InstitutionalFirstVerifiedOutcomeView | null;
   trust: {
     receipt_key_document_digest: string | null;
     receipt_key_environment: string | null;
@@ -322,7 +325,7 @@ export function buildInstitutionalIntegrationWorkspace(input: {
   });
 
   return {
-    contract_version: "588.v1",
+    contract_version: "591.v1",
     binding,
     trust: {
       contract_version: INSTITUTIONAL_VERIFICATION_CONTRACT_VERSION,
@@ -346,6 +349,7 @@ export function buildInstitutionalIntegrationWorkspace(input: {
     sdk_release: input.sdkRelease,
     journey_steps: journey,
     activation: input.activation,
+    first_verified_outcome: input.firstVerifiedOutcome,
     links: {
       launchpad: input.launchpadHref,
       hosted_verification: hostedVerification,

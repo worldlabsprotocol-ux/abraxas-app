@@ -16,6 +16,7 @@ import {
   INSTITUTIONAL_RECEIPT_VERIFY_HREF,
   INSTITUTIONAL_SANDBOX_HANDOFF_HREF,
 } from "@/lib/partner/launchpad/institutionalActivationEntry";
+import { InstitutionalFirstVerifiedOutcomePanel } from "@/components/partner/launchpad/InstitutionalFirstVerifiedOutcomePanel";
 import {
   currentActivationStageLabel,
   deriveInstitutionalCardEvidenceState,
@@ -285,6 +286,15 @@ export function InstitutionalSandboxFirstVerificationCard(input: {
       <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.75rem", lineHeight: 1.5 }}>
         {SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_NOTICE}
       </p>
+
+      {health?.institutional_first_verified_outcome ? (
+        <div style={{ marginTop: "0.85rem" }}>
+          <InstitutionalFirstVerifiedOutcomePanel
+            outcome={health.institutional_first_verified_outcome}
+            embedded
+          />
+        </div>
+      ) : null}
 
       <div
         style={{

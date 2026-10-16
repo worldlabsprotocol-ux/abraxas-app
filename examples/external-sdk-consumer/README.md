@@ -13,3 +13,15 @@ npm run test:institutional-sdk
 ## Synthetic fixtures
 
 Loaded from `@abraxas/institutional-verification/fixtures/synthetic` — labeled non-production in package metadata.
+
+## Failure paths exercised (Build #591)
+
+`smoke.mjs` runs only against synthetic fixtures inside a clean npm project:
+
+| Scenario | Expected result |
+|----------|-----------------|
+| Inspect-only with correct policy | Cryptographically authentic; `authorize === false` |
+| Wrong relying-party policy | Verdict not `valid` (tenant/policy binding) |
+| Authorize then replay same receipt | Second call denied (replay guard) |
+
+These checks do not weaken cryptography — they assert fail-closed behavior for policy mismatch and replay.

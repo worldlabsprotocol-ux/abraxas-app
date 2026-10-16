@@ -89,6 +89,7 @@ describe("Build #588 institutional integration workspace", () => {
       app,
       sdkRelease: buildInstitutionalSdkReleaseView(),
       activation: null,
+      firstVerifiedOutcome: null,
       trust: {
         receipt_key_document_digest: "abc123digest",
         receipt_key_environment: "sandbox",
@@ -97,7 +98,8 @@ describe("Build #588 institutional integration workspace", () => {
       siteUrl: "https://abraxasworld.xyz",
       launchpadHref: "/developers/launchpad",
     });
-    expect(workspace.contract_version).toBe("588.v1");
+    expect(workspace.contract_version).toBe("591.v1");
+    expect(workspace.first_verified_outcome).toBeNull();
     expect(workspace.binding.partner_id).toBe("partner-a");
     expect(workspace.sdk_release.integrity.approved_tarball_sha256).toBeNull();
     expect(workspace.sdk_release.download.available).toBe(false);

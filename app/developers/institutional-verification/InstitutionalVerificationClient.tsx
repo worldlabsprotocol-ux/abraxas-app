@@ -10,6 +10,7 @@ import {
   INSTITUTIONAL_VERIFICATION_CONTRACT_VERSION,
   type InstitutionalVerificationContractClientView,
 } from "@/lib/institutionalVerification/clientSurface";
+import { InstitutionalDeveloperJourneyNav } from "@/components/developers/InstitutionalDeveloperJourneyNav";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -267,6 +268,8 @@ npm install ./abraxas-institutional-verification-${PACKAGE_VERSION}.tgz`}</pre>
           Billing and metering can wrap successful authorize events without making signature verification depend on Abraxas online services.
         </p>
       </ContentCard>
+
+      <InstitutionalDeveloperJourneyNav currentStepId="independent_verify" />
     </>
   );
 }
