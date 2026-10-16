@@ -29,16 +29,17 @@ const PUBLIC_SURFACE_REDIRECTS = [
   { source: "/onboarding", destination: "/design-partner", permanent: false },
 ];
 
+/** When set, Next.js skips in-build ESLint/TS (see Build #590). CI runs blocking validation separately. */
+const skipInBuildValidation = process.env.ABRAXAS_SKIP_IN_BUILD_VALIDATION === "1";
+
 const nextConfig = {
   output: process.env.ABRAXAS_STANDALONE_BUILD === "1" ? "standalone" : undefined,
   reactStrictMode: true,
   typescript: {
-    // Preview-only: Vercel 8GB builders OOM during parallel lint+typecheck (~7.9GB Node RSS measured).
-    // CI on every PR still runs `next build` without this skip (no VERCEL_ENV=preview on GHA).
-    ignoreBuildErrors: process.env.VERCEL_ENV === "preview",
+    ignoreBuildErrors: skipInBuildValidation,
   },
   eslint: {
-    ignoreDuringBuilds: process.env.VERCEL_ENV === "preview",
+    ignoreDuringBuilds: skipInBuildValidation,
   },
   async redirects() {
     return PUBLIC_SURFACE_REDIRECTS;
@@ -46,6 +47,8 @@ const nextConfig = {
   // Next.js 14: keep native Node packages out of the server webpack graph.
     experimental: {
     instrumentationHook: true,
+    cpus: 2,
+    workerThreads: false,
     serverComponentsExternalPackages: ["onnxruntime-node", "@sqds/multisig"],
     outputFileTracingExcludes: {
       "**/*": ML_TRACE_EXCLUDES,
