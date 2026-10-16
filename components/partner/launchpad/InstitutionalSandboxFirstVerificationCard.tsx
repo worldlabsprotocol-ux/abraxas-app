@@ -2,7 +2,7 @@
 // FILE: components/partner/launchpad/InstitutionalSandboxFirstVerificationCard.tsx
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
@@ -59,11 +59,13 @@ function milestoneColor(status: string): string {
 
 export async function fetchInstitutionalIntegrationHealth(
   applicationId: string,
+  signal?: AbortSignal,
 ): Promise<IntegrationHealthLoadState> {
   try {
     const res = await fetch(`/api/launchpad/applications/${applicationId}/integration-health`, {
       credentials: "include",
       cache: "no-store",
+      signal,
     });
     const body: unknown = await res.json().catch(() => null);
     const parsed = parseOperationalHealthPayload(body);
@@ -84,7 +86,10 @@ export async function fetchInstitutionalIntegrationHealth(
       };
     }
     return { kind: "ready", health: parsed };
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw error;
+    }
     const err = integrationHealthErrorMessage({ httpStatus: null, body: null, networkError: true });
     return {
       kind: "error",
@@ -95,6 +100,15 @@ export async function fetchInstitutionalIntegrationHealth(
   }
 }
 
+function shouldApplyHealthResponse(
+  requestId: number,
+  requestedApplicationId: string,
+  latestRequestId: number,
+  activeApplicationId: string,
+): boolean {
+  return requestId === latestRequestId && requestedApplicationId === activeApplicationId;
+}
+
 export function InstitutionalSandboxFirstVerificationCard(input: {
   applicationId: string;
   journey: LaunchpadJourneyResolution | null;
@@ -102,16 +116,68 @@ export function InstitutionalSandboxFirstVerificationCard(input: {
 }) {
   const { applicationId, journey, onNavigate } = input;
   const [loadState, setLoadState] = useState<IntegrationHealthLoadState>({ kind: "idle" });
+  const applicationIdRef = useRef(applicationId);
+  const latestRequestIdRef = useRef(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const loadHealth = useCallback(async () => {
+  const beginHealthLoad = useCallback(() => {
+    const requestId = ++latestRequestIdRef.current;
+    const requestedApplicationId = applicationIdRef.current;
+
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setLoadState({ kind: "loading" });
-    setLoadState(await fetchInstitutionalIntegrationHealth(applicationId));
-  }, [applicationId]);
+
+    void (async () => {
+      try {
+        const next = await fetchInstitutionalIntegrationHealth(requestedApplicationId, controller.signal);
+        if (
+          !shouldApplyHealthResponse(
+            requestId,
+            requestedApplicationId,
+            latestRequestIdRef.current,
+            applicationIdRef.current,
+          )
+        ) {
+          return;
+        }
+        setLoadState(next);
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          return;
+        }
+        if (
+          !shouldApplyHealthResponse(
+            requestId,
+            requestedApplicationId,
+            latestRequestIdRef.current,
+            applicationIdRef.current,
+          )
+        ) {
+          return;
+        }
+        const err = integrationHealthErrorMessage({ httpStatus: null, body: null, networkError: true });
+        setLoadState({
+          kind: "error",
+          message: err.message,
+          httpStatus: null,
+          retryable: err.retryable,
+        });
+      }
+    })();
+  }, []);
 
   useEffect(() => {
-    setLoadState({ kind: "idle" });
-    void loadHealth();
-  }, [applicationId, loadHealth]);
+    applicationIdRef.current = applicationId;
+    setLoadState({ kind: "loading" });
+    beginHealthLoad();
+    return () => {
+      latestRequestIdRef.current += 1;
+      abortControllerRef.current?.abort();
+    };
+  }, [applicationId, beginHealthLoad]);
 
   const health: OperationalHealthPayload | null = loadState.kind === "ready" ? loadState.health : null;
   const activation = health?.institutional_activation;
@@ -144,7 +210,7 @@ export function InstitutionalSandboxFirstVerificationCard(input: {
           <p style={{ fontFamily: FONT, fontSize: "0.8rem", color: "#FCA5A5", margin: "0 0 0.5rem", lineHeight: 1.5 }}>
             {loadState.message}
           </p>
-          <Btn size="sm" variant="secondary" onClick={() => void loadHealth()}>
+          <Btn size="sm" variant="secondary" onClick={() => beginHealthLoad()}>
             Retry loading evidence
           </Btn>
         </div>
@@ -239,7 +305,7 @@ export function InstitutionalSandboxFirstVerificationCard(input: {
           <Btn size="sm" onClick={() => onNavigate(nextAction.stage)}>
             {nextAction.label}
           </Btn>
-          <Btn size="sm" variant="ghost" onClick={() => void loadHealth()} disabled={loading}>
+          <Btn size="sm" variant="ghost" onClick={() => beginHealthLoad()} disabled={loading}>
             {loading ? "Refreshing…" : "Refresh evidence"}
           </Btn>
         </div>

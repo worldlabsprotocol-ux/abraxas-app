@@ -9,6 +9,55 @@ import {
   fetchInstitutionalIntegrationHealth,
 } from "./InstitutionalSandboxFirstVerificationCard";
 
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((res) => {
+    resolve = res;
+  });
+  return { promise, resolve };
+}
+
+function integrationHealthJson(label: string, verificationSuccesses: number) {
+  return {
+    ok: true,
+    verification_successes: verificationSuccesses,
+    status: "healthy",
+    institutional_activation: {
+      contract_version: "1.0.0",
+      current_milestone_id: "independent_verification_succeeded",
+      needs_attention_reason: null,
+      time_to_first_independent_verify_ms: verificationSuccesses > 0 ? 1000 : null,
+      time_to_first_independent_verify_quality: verificationSuccesses > 0 ? "measured" : "unavailable",
+      milestones: [
+        {
+          id: "independent_verification_succeeded",
+          label,
+          status: "complete",
+          detail: "done",
+          observed_at: "2026-01-01T00:00:00.000Z",
+        },
+      ],
+    },
+  };
+}
+
+function deferredFetchGate(applicationIds: string[]) {
+  const gates = Object.fromEntries(
+    applicationIds.map((id) => [id, createDeferred<Response>()]),
+  ) as Record<string, ReturnType<typeof createDeferred<Response>>>;
+
+  vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL) => {
+    const url = String(input);
+    const applicationId = applicationIds.find((id) => url.includes(id));
+    if (!applicationId) {
+      throw new Error(`Unexpected integration-health URL: ${url}`);
+    }
+    return gates[applicationId].promise;
+  });
+
+  return gates;
+}
+
 describe("InstitutionalSandboxFirstVerificationCard", () => {
   afterEach(() => {
     cleanup();
@@ -143,6 +192,93 @@ describe("InstitutionalSandboxFirstVerificationCard", () => {
       expect(screen.getByRole("alert")).toBeInTheDocument();
     });
     expect(screen.queryByText(/Independent receipt verification succeeded/i)).not.toBeInTheDocument();
+  });
+
+  it("ignores a late Application A response after Application B succeeds (B resolves first)", async () => {
+    const gates = deferredFetchGate(["app-a", "app-b"]);
+
+    const { rerender } = render(
+      <InstitutionalSandboxFirstVerificationCard
+        applicationId="app-a"
+        journey={null}
+        onNavigate={() => {}}
+      />,
+    );
+
+    expect(screen.getByText(/Loading activation evidence/i)).toBeInTheDocument();
+
+    rerender(
+      <InstitutionalSandboxFirstVerificationCard
+        applicationId="app-b"
+        journey={null}
+        onNavigate={() => {}}
+      />,
+    );
+
+    gates["app-b"].resolve({
+      ok: true,
+      status: 200,
+      json: async () => integrationHealthJson("Application B exclusive evidence", 2),
+    } as Response);
+
+    await waitFor(() => {
+      expect(screen.getByRole("list")).toHaveTextContent(/Application B exclusive evidence/i);
+    });
+    expect(screen.getByText(/Observed/i)).toBeInTheDocument();
+
+    gates["app-a"].resolve({
+      ok: true,
+      status: 200,
+      json: async () => integrationHealthJson("Application A stale evidence", 9),
+    } as Response);
+
+    await waitFor(() => {
+      expect(screen.getByRole("list")).toHaveTextContent(/Application B exclusive evidence/i);
+    });
+    expect(screen.queryByText(/Application A stale evidence/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Observed/i)).toBeInTheDocument();
+  });
+
+  it("ignores a late Application A response after Application B succeeds (A resolves first)", async () => {
+    const gates = deferredFetchGate(["app-a", "app-b"]);
+
+    const { rerender } = render(
+      <InstitutionalSandboxFirstVerificationCard
+        applicationId="app-a"
+        journey={null}
+        onNavigate={() => {}}
+      />,
+    );
+
+    rerender(
+      <InstitutionalSandboxFirstVerificationCard
+        applicationId="app-b"
+        journey={null}
+        onNavigate={() => {}}
+      />,
+    );
+
+    gates["app-a"].resolve({
+      ok: true,
+      status: 200,
+      json: async () => integrationHealthJson("Application A stale evidence", 9),
+    } as Response);
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Application A stale evidence/i)).not.toBeInTheDocument();
+    });
+
+    gates["app-b"].resolve({
+      ok: true,
+      status: 200,
+      json: async () => integrationHealthJson("Application B exclusive evidence", 2),
+    } as Response);
+
+    await waitFor(() => {
+      expect(screen.getByRole("list")).toHaveTextContent(/Application B exclusive evidence/i);
+    });
+    expect(screen.queryByText(/Application A stale evidence/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Observed/i)).toBeInTheDocument();
   });
 });
 
