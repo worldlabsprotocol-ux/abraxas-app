@@ -19,7 +19,9 @@ export {
 } from "./contract";
 
 export {
+  RECEIPT_TRUST_DIGEST_VERSION,
   digestReceiptVerificationKeyDocument,
+  digestReceiptVerificationTrustKeys,
   fetchVerifiedReceiptKeyDocument,
   resolveInstitutionalTrustEnv,
   validateFetchedReceiptKeyDocument,

@@ -17,16 +17,48 @@ import { FileReceiptConsumptionStore } from "../../lib/institutionalCertificatio
 import type { DecisionReceiptRecord } from "../../lib/decisionReceipts/types";
 import type { RevocationSourceState } from "../../lib/institutionalCertification/build546/independentVerifier";
 
-function loadRevocationFeed(): RevocationSourceState | null {
+type InstitutionRevocationFeedEnvelope = RevocationSourceState & {
+  observed_at?: string;
+};
+
+/**
+ * Caller-supplied JSON is not authenticated issuer evidence. Authorization requires an
+ * institution-operated adapter that records when the feed was observed and enforces freshness.
+ */
+function loadInstitutionRevocationFeed():
+  | { ok: true; state: RevocationSourceState }
+  | { ok: false; code: "adapter_required" | "feed_missing" | "freshness_config_missing" | "stale_feed" | "invalid_feed" } {
+  if (process.env.RP_REVOCATION_ADAPTER?.trim() !== "institution_operated") {
+    return { ok: false, code: "adapter_required" };
+  }
   const inline = process.env.RP_REVOCATION_FEED_JSON?.trim();
   const path = process.env.RP_REVOCATION_FEED_PATH?.trim();
   const raw = inline ?? (path ? readFileSync(path, "utf8") : "");
-  if (!raw) return null;
+  if (!raw) return { ok: false, code: "feed_missing" };
+  let parsed: InstitutionRevocationFeedEnvelope;
   try {
-    return JSON.parse(raw) as RevocationSourceState;
+    parsed = JSON.parse(raw) as InstitutionRevocationFeedEnvelope;
   } catch {
-    return null;
+    return { ok: false, code: "invalid_feed" };
   }
+  const maxAgeRaw = process.env.RP_REVOCATION_FEED_MAX_AGE_SECONDS?.trim();
+  const maxAge = maxAgeRaw ? Number(maxAgeRaw) : NaN;
+  if (!Number.isFinite(maxAge) || maxAge <= 0) {
+    return { ok: false, code: "freshness_config_missing" };
+  }
+  const observedAtRaw =
+    (typeof parsed.observed_at === "string" && parsed.observed_at.trim())
+    || process.env.RP_REVOCATION_FEED_OBSERVED_AT?.trim()
+    || "";
+  const observedAt = observedAtRaw ? Date.parse(observedAtRaw) : NaN;
+  if (!Number.isFinite(observedAt)) {
+    return { ok: false, code: "freshness_config_missing" };
+  }
+  if (Date.now() - observedAt > maxAge * 1000) {
+    return { ok: false, code: "stale_feed" };
+  }
+  const { observed_at: _ignored, ...state } = parsed;
+  return { ok: true, state: state as RevocationSourceState };
 }
 
 async function main() {
@@ -71,7 +103,8 @@ async function main() {
           contract_version: inspected.contract_version,
           verdict: inspected.verdict,
           rejection_reasons: inspected.rejection_reasons,
-          note: "Inspection never grants access. Configure RP_CONSUMPTION_DIR and RP_REVOCATION_FEED_JSON for authorize.",
+          note:
+            "Inspection never grants access. Authorize requires RP_REVOCATION_ADAPTER=institution_operated plus a fresh institution-operated revocation feed.",
         },
         null,
         2,
@@ -97,16 +130,18 @@ async function main() {
     process.exit(1);
   }
 
-  const revocationSource = loadRevocationFeed();
-  if (!revocationSource) {
+  const revocationFeed = loadInstitutionRevocationFeed();
+  if (!revocationFeed.ok) {
     console.error(
       JSON.stringify(
         {
           ok: false,
           stage: "revocation_material",
-          code: "revocation_unavailable",
+          code: revocationFeed.code,
           detail:
-            "Set RP_REVOCATION_FEED_JSON or RP_REVOCATION_FEED_PATH with your institution-operated revocation feed.",
+            "Authorization requires RP_REVOCATION_ADAPTER=institution_operated, "
+            + "RP_REVOCATION_FEED_MAX_AGE_SECONDS, RP_REVOCATION_FEED_OBSERVED_AT (or feed observed_at), "
+            + "and JSON from your institution-operated adapter — not unauthenticated caller JSON.",
         },
         null,
         2,
@@ -114,6 +149,7 @@ async function main() {
     );
     process.exit(1);
   }
+  const revocationSource = revocationFeed.state;
 
   const consumptionStore = new FileReceiptConsumptionStore(consumptionDir);
 

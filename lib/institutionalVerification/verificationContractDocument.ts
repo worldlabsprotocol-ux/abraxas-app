@@ -83,7 +83,8 @@ export function buildInstitutionalVerificationContractDocument(
       receipt_key_document_digest: digest,
       receipt_key_environment: receiptDoc.environment,
       bootstrap_notice:
-        "Integrators must pin receipt_key_document_digest or ship ABRAXAS_RECEIPT_VERIFICATION_REGISTRY offline. "
+        "Integrators must pin receipt_key_document_digest (digest v2 binds key lifecycle metadata) "
+        + "or ship ABRAXAS_RECEIPT_VERIFICATION_REGISTRY offline. "
         + "Network fetch is rejected without a mandatory digest pin. "
         + "An HTTPS response alone is never a new issuer grant.",
       institution_env_keys: {

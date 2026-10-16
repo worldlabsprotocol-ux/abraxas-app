@@ -37,6 +37,8 @@ export const RECEIPT_KEY_PUBLIC_FIELDS = [
   "issuer_label",
   "schema_versions",
   "reason_class",
+  "allow_historical_verification",
+  "historical_verify_until",
 ] as const;
 
 export const RECEIPT_KEY_DOCUMENT_FIELDS = [
@@ -101,6 +103,8 @@ export interface ReceiptVerificationPublicKeyView {
   issuer_label: string;
   schema_versions: string[];
   reason_class: ReceiptKeyReasonClass;
+  allow_historical_verification: boolean;
+  historical_verify_until: string | null;
 }
 
 export interface ReceiptVerificationKeyDocument {

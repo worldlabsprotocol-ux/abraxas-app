@@ -6,6 +6,7 @@ import { DECISION_RECEIPT_SCHEMA_VERSION } from "@/lib/decisionReceipts/types";
 import {
   RECEIPT_VERIFICATION_REGISTRY_ENV,
   RECEIPT_VERIFICATION_KEY_ALGORITHM,
+  RECEIPT_VERIFICATION_KEY_DOCUMENT,
   RECEIPT_KEY_PARTNER_NOTICE,
   RECEIPT_KEY_ENVIRONMENTS,
   RECEIPT_KEY_STATUSES,
@@ -17,6 +18,9 @@ import {
   type ReceiptKeyStatus,
   type ReceiptKeyReasonClass,
 } from "@/lib/decisionReceipts/verificationKeyLifecycle";
+
+/** Digest algorithm version — bumps invalidate prior institution pins (metadata now bound). */
+export const RECEIPT_TRUST_DIGEST_VERSION = 2 as const;
 import { publicReceiptJwkFingerprint, toPublicReceiptJwk } from "@/lib/decisionReceipts/verificationKeyLifecycle/fingerprint";
 import {
   PORTABLE_REVOCATION_BOOTSTRAP_TRUSTS_ENV,
@@ -128,11 +132,56 @@ function parseRegistryEntry(
   };
 }
 
-/** Validate institution-pinned offline registry JSON (no signing-key env fallback). */
-export function validateInstitutionReceiptVerificationRegistryJson(
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
+  const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b));
+  return `{${entries.map(([key, nested]) => `${JSON.stringify(key)}:${stableStringify(nested)}`).join(",")}}`;
+}
+
+function canonicalDigestKey(key: ReceiptVerificationKeyRecord): Record<string, unknown> {
+  return {
+    allow_historical_verification: key.allow_historical_verification,
+    algorithm: key.algorithm,
+    environment: key.environment,
+    expires_at: key.expires_at,
+    fingerprint: key.fingerprint,
+    historical_verify_until: key.historical_verify_until,
+    issued_at: key.issued_at,
+    issuer_label: key.issuer_label,
+    key_id: key.key_id,
+    not_before: key.not_before,
+    reason_class: key.reason_class,
+    schema_versions: [...key.schema_versions].sort(),
+    status: key.status,
+  };
+}
+
+export function digestReceiptVerificationTrustKeys(
+  document: Pick<
+    ReceiptVerificationKeyDocument,
+    "document" | "algorithm" | "environment" | "schema_versions"
+  >,
+  keys: ReceiptVerificationKeyRecord[],
+): string {
+  const sortedKeys = keys.map(canonicalDigestKey).sort((a, b) => String(a.key_id).localeCompare(String(b.key_id)));
+  const payload = {
+    digest_version: RECEIPT_TRUST_DIGEST_VERSION,
+    document: document.document,
+    algorithm: document.algorithm,
+    environment: document.environment,
+    schema_versions: [...document.schema_versions].sort(),
+    keys: sortedKeys,
+  };
+  return createHash("sha256").update(stableStringify(payload)).digest("hex");
+}
+
+function parseInstitutionReceiptVerificationRegistryRows(
   rawJson: string,
-  environment: ReceiptKeyEnvironment = "demo",
-): InstitutionRegistryValidationResult {
+  environment: ReceiptKeyEnvironment,
+):
+  | { ok: true; keys: ReceiptVerificationKeyRecord[] }
+  | { ok: false; code: "invalid_document" | "registry_inconsistent" | "registry_unavailable" } {
   let parsed: unknown;
   try {
     parsed = JSON.parse(rawJson);
@@ -141,20 +190,82 @@ export function validateInstitutionReceiptVerificationRegistryJson(
   }
   const rows = Array.isArray(parsed) ? parsed : [parsed];
   const keys: ReceiptVerificationKeyRecord[] = [];
-  const seen = new Set<string>();
+  const seenKeyIds = new Set<string>();
+  const seenFingerprints = new Set<string>();
   for (const row of rows) {
     const entry = parseRegistryEntry(row, environment);
     if (entry === "inconsistent") return { ok: false, code: "registry_inconsistent" };
     if (!entry) continue;
-    if (seen.has(entry.key_id)) return { ok: false, code: "registry_inconsistent" };
-    seen.add(entry.key_id);
+    if (seenKeyIds.has(entry.key_id)) return { ok: false, code: "registry_inconsistent" };
+    if (seenFingerprints.has(entry.fingerprint)) return { ok: false, code: "registry_inconsistent" };
+    seenKeyIds.add(entry.key_id);
+    seenFingerprints.add(entry.fingerprint);
     keys.push(entry);
   }
   if (keys.length === 0) return { ok: false, code: "registry_unavailable" };
   const active = keys.filter((key) => key.status === "active" && key.environment === environment);
   if (active.length > 1) return { ok: false, code: "registry_inconsistent" };
+  return { ok: true, keys };
+}
+
+function registryEnvValueFromKeys(keys: ReceiptVerificationKeyRecord[]): string {
+  return JSON.stringify(
+    keys.map(
+      ({
+        key_id,
+        algorithm,
+        environment: env,
+        status,
+        public_jwk,
+        fingerprint,
+        issued_at,
+        not_before,
+        expires_at,
+        schema_versions,
+        issuer_label,
+        reason_class,
+        allow_historical_verification,
+        historical_verify_until,
+      }) => ({
+        key_id,
+        algorithm,
+        environment: env,
+        status,
+        public_jwk,
+        fingerprint,
+        issued_at,
+        not_before,
+        expires_at,
+        schema_versions,
+        issuer_label,
+        reason_class,
+        allow_historical_verification,
+        historical_verify_until,
+      }),
+    ),
+  );
+}
+
+/** Validate institution-pinned offline registry JSON (no signing-key env fallback). */
+export function validateInstitutionReceiptVerificationRegistryJson(
+  rawJson: string,
+  environment: ReceiptKeyEnvironment = "demo",
+): InstitutionRegistryValidationResult {
+  const parsed = parseInstitutionReceiptVerificationRegistryRows(rawJson, environment);
+  if (!parsed.ok) {
+    return {
+      ok: false,
+      code:
+        parsed.code === "registry_unavailable"
+          ? "registry_unavailable"
+          : parsed.code === "registry_inconsistent"
+            ? "registry_inconsistent"
+            : "invalid_document",
+    };
+  }
+  const { keys } = parsed;
   const document: ReceiptVerificationKeyDocument = {
-    document: "abraxas_receipt_verification_keys",
+    document: RECEIPT_VERIFICATION_KEY_DOCUMENT,
     algorithm: RECEIPT_VERIFICATION_KEY_ALGORITHM,
     environment,
     schema_versions: [DECISION_RECEIPT_SCHEMA_VERSION],
@@ -172,42 +283,31 @@ export function validateInstitutionReceiptVerificationRegistryJson(
       issuer_label: key.issuer_label,
       schema_versions: key.schema_versions,
       reason_class: key.reason_class,
+      allow_historical_verification: key.allow_historical_verification,
+      historical_verify_until: key.historical_verify_until,
     })),
   };
   if (assertNoPrivateReceiptKeyMaterial(document).length > 0) {
     return { ok: false, code: "private_material_leak" };
   }
-  const digest = digestReceiptVerificationKeyDocument(document);
+  const digest = digestReceiptVerificationTrustKeys(document, keys);
   return {
     ok: true,
-    registry_env_value: JSON.stringify(
-      keys.map(({ key_id, algorithm, environment: env, status, public_jwk, issued_at, not_before, expires_at, schema_versions, issuer_label, reason_class }) => ({
-        key_id,
-        algorithm,
-        environment: env,
-        status,
-        public_jwk,
-        issued_at,
-        not_before,
-        expires_at,
-        schema_versions,
-        issuer_label,
-        reason_class,
-      })),
-    ),
+    registry_env_value: registryEnvValueFromKeys(keys),
     digest,
     keys,
   };
 }
 
 export function digestReceiptVerificationKeyDocument(document: ReceiptVerificationKeyDocument): string {
-  const keyMaterial = [...document.keys]
-    .map((key) => `${key.key_id}:${key.fingerprint}`)
-    .sort()
-    .join("|");
-  return createHash("sha256")
-    .update(`${document.document}:${document.environment}:${document.algorithm}:${keyMaterial}`)
-    .digest("hex");
+  const parsed = parseInstitutionReceiptVerificationRegistryRows(
+    JSON.stringify(document.keys),
+    document.environment,
+  );
+  if (!parsed.ok) {
+    return createHash("sha256").update(`invalid:${stableStringify(document)}`).digest("hex");
+  }
+  return digestReceiptVerificationTrustKeys(document, parsed.keys);
 }
 
 export function validateFetchedReceiptKeyDocument(raw: unknown): ReceiptVerificationKeyDocument | null {
