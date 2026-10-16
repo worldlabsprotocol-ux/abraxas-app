@@ -128,6 +128,7 @@ export function IntegrationStudioInspectorRail() {
 
   return (
     <div className="abx-studio-inspector" aria-label="Integration inspector">
+      <p className="abx-studio-inspector__header">Live integration instrument</p>
       <div className="abx-studio-inspector__tabs" role="tablist" aria-label="Inspector sections">
         {FOCUS_TABS.map((tab) => (
           <button
@@ -147,6 +148,7 @@ export function IntegrationStudioInspectorRail() {
         ))}
       </div>
 
+      <div key={inspectorFocus} className="abx-studio-inspector__panel">
       {loading && (
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0.5rem 0 0" }}>
           Loading live status…
@@ -253,6 +255,7 @@ export function IntegrationStudioInspectorRail() {
           </p>
         </div>
       )}
+      </div>
     </div>
   );
 }

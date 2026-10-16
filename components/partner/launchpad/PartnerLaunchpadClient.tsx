@@ -63,6 +63,7 @@ import { PartnerLifecycleControlRoomVisual } from "@/components/protocol-visuals
 import { LaunchpadApplicationNav } from "@/components/partner/launchpad/LaunchpadApplicationNav";
 import { LaunchpadOperationalInspector } from "@/components/partner/launchpad/LaunchpadOperationalInspector";
 import { LaunchpadActivityEvidenceTable } from "@/components/partner/launchpad/LaunchpadActivityEvidenceTable";
+import { AbxInstitutionalWorkspaceShell } from "@/components/design/AbxInstitutionalWorkspaceShell";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -574,10 +575,11 @@ export function PartnerLaunchpadClient({
         subtitle="Sandbox telemetry · receipts · webhooks · reviewed production access."
       />
 
-      <div className="abx-surface-protocol-visual">
+      <div className="abx-surface-protocol-visual abx-surface-protocol-visual--compact">
         <PartnerLifecycleControlRoomVisual />
       </div>
 
+      <AbxInstitutionalWorkspaceShell className="abx-launchpad-operational-shell" aria-label="Launchpad workspace">
       <div className="abx-launchpad-operational">
         {workspace?.applications.length ? (
           <LaunchpadApplicationNav
@@ -592,7 +594,7 @@ export function PartnerLaunchpadClient({
           <div className="abx-launchpad-nav abx-launchpad-nav--empty" aria-hidden />
         )}
 
-        <div className="abx-launchpad-operational__center">
+        <div className="abx-launchpad-operational__center abx-launchpad-console-stage">
 
       {activeApp && journey && (
         <ModeCCommandRail
@@ -1143,6 +1145,7 @@ export function PartnerLaunchpadClient({
           activity={activity}
         />
       </div>
+      </AbxInstitutionalWorkspaceShell>
     </RedesignPage>
   );
 }

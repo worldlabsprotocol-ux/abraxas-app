@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { AbxInstitutionalWorkspaceShell } from "@/components/design/AbxInstitutionalWorkspaceShell";
+import { Reveal } from "@/lib/motion/Reveal";
 
 const STEPS = [
   { id: "policy", label: "Policy", href: "/developers/integration-studio" },
@@ -40,9 +42,9 @@ export function IntegrationStudioWorkspace({
   }, []);
 
   return (
-    <div className="abx-studio-workspace">
+    <AbxInstitutionalWorkspaceShell className="abx-studio-workspace" aria-label="Integration Studio workspace">
       <nav className="abx-studio-workspace__nav" aria-label="Integration lifecycle">
-        {STEPS.map((step) => {
+        {STEPS.map((step, index) => {
           const active =
             step.id === hashStep
             || (step.id === "policy" && pathname === "/developers/integration-studio" && hashStep === "policy");
@@ -57,15 +59,18 @@ export function IntegrationStudioWorkspace({
               }
               aria-current={active ? "step" : undefined}
             >
+              <span className="sr-only">Step {index + 1}: </span>
               {step.label}
             </Link>
           );
         })}
       </nav>
       <div className="abx-studio-workspace__main">
-        <div className="abx-studio-workspace__canvas">{children}</div>
+        <Reveal motionRole="surface" tier="calm" className="abx-studio-workspace__canvas">
+          {children}
+        </Reveal>
         {inspector ? <aside className="abx-studio-workspace__inspector">{inspector}</aside> : null}
       </div>
-    </div>
+    </AbxInstitutionalWorkspaceShell>
   );
 }
