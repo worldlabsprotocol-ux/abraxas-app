@@ -23,23 +23,53 @@ import {
 
 console.log(SYNTHETIC_FIXTURE_NOTICE);
 
-function assertBlocked(label, result) {
-  if (result.authorize === true || result.verdict === "valid") {
-    throw new Error(`${label}: expected blocked, got ${JSON.stringify({ authorize: result.authorize, verdict: result.verdict, reasons: result.rejection_reasons })}`);
+const REJECTED_VERDICTS = new Set(["invalid", "blocked"]);
+
+/**
+ * @param {string} label
+ * @param {import("@abraxas/institutional-verification").InstitutionalReceiptVerificationResult} result
+ * @param {{ rejection_reasons?: string[] }} [expect]
+ */
+function assertSdkRejected(label, result, expect = {}) {
+  if (result.authorize === true) {
+    throw new Error(`${label}: expected rejection, authorize=true`);
+  }
+  if (!REJECTED_VERDICTS.has(result.verdict)) {
+    throw new Error(
+      `${label}: expected verdict invalid|blocked, got ${JSON.stringify({
+        verdict: result.verdict,
+        authorize: result.authorize,
+        reasons: result.rejection_reasons,
+      })}`,
+    );
+  }
+  for (const reason of expect.rejection_reasons ?? []) {
+    if (!result.rejection_reasons?.includes(reason)) {
+      throw new Error(
+        `${label}: expected rejection_reason ${reason}, got ${JSON.stringify(result.rejection_reasons)}`,
+      );
+    }
   }
 }
 
-/** Re-throw assertion failures; treat only unexpected SDK throws as fail-closed. */
-async function assertBlockedOrSdkFailClosed(label, run) {
+/**
+ * @param {string} label
+ * @param {() => Promise<import("@abraxas/institutional-verification").InstitutionalReceiptVerificationResult>} run
+ * @param {{ rejection_reasons?: string[] }} [expect]
+ */
+async function expectSdkRejection(label, run, expect = {}) {
   try {
     const result = await run();
-    assertBlocked(label, result);
+    assertSdkRejected(label, result, expect);
   } catch (err) {
     if (err instanceof Error && err.message.startsWith(`${label}:`)) {
       throw err;
     }
-    if (!(err instanceof Error)) throw err;
-    console.log(`${label}: fail-closed exception (${err.name}: ${err.message.slice(0, 160)})`);
+    const detail = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+    throw new Error(
+      `${label}: unexpected runtime error (expected structured SDK rejection, not throw): ${detail}`,
+      { cause: err },
+    );
   }
 }
 
@@ -60,7 +90,7 @@ function freshStoreDir() {
 }
 
 // Wrong policy
-assertBlocked(
+assertSdkRejected(
   "wrong_policy",
   await inspectSignedDecisionReceipt({
     signed_record: receipt,
@@ -72,7 +102,7 @@ assertBlocked(
 );
 
 // Wrong partner (cross-tenant binding)
-assertBlocked(
+assertSdkRejected(
   "wrong_partner",
   await inspectSignedDecisionReceipt({
     signed_record: receipt,
@@ -86,7 +116,7 @@ assertBlocked(
 // Untrusted issuer (signing key not in registry)
 const untrustedReceipt = structuredClone(receipt);
 untrustedReceipt.signing_key_id = "unknown-signing-key";
-assertBlocked(
+assertSdkRejected(
   "untrusted_issuer",
   await inspectSignedDecisionReceipt({
     signed_record: untrustedReceipt,
@@ -113,7 +143,7 @@ if (!trustBadPin.ok) {
   }
   console.log("invalid_trust_digest: blocked at trust resolve (" + code + ")");
 } else {
-  assertBlocked(
+  assertSdkRejected(
     "invalid_trust_digest",
     await inspectSignedDecisionReceipt({
       signed_record: receipt,
@@ -125,19 +155,22 @@ if (!trustBadPin.ok) {
   );
 }
 
-// Malformed receipt (incomplete signed record)
-await assertBlockedOrSdkFailClosed("malformed_receipt", () =>
-  inspectSignedDecisionReceipt({
-    signed_record: { id: "incomplete" },
-    relying_party: scope,
-    request_id: "rej_malformed",
-    trust_env: trustOk.env,
-    now: nowValid,
-  }),
+// Malformed receipt — documented malformed_input contract (missing receipt id)
+await expectSdkRejection(
+  "malformed_receipt",
+  () =>
+    inspectSignedDecisionReceipt({
+      signed_record: {},
+      relying_party: scope,
+      request_id: "rej_malformed",
+      trust_env: trustOk.env,
+      now: nowValid,
+    }),
+  { rejection_reasons: ["malformed_input"] },
 );
 
 // Expired (fixture validity window)
-assertBlocked(
+assertSdkRejected(
   "expired_receipt",
   await inspectSignedDecisionReceipt({
     signed_record: receipt,
@@ -146,22 +179,26 @@ assertBlocked(
     trust_env: trustOk.env,
     now: nowExpired,
   }),
+  { rejection_reasons: ["expired"] },
 );
 
 // Revoked — documented SDK path: authenticated revocation feed status (not receipt tampering)
 const tmpRevoked = freshStoreDir();
 try {
   const revokedStore = new FileReceiptConsumptionStore(tmpRevoked);
-  await assertBlockedOrSdkFailClosed("revoked_receipt", () =>
-    verifySignedDecisionReceipt({
-      signed_record: receipt,
-      relying_party: scope,
-      request_id: "rej_revoked",
-      trust_env: trustOk.env,
-      consumption_store: revokedStore,
-      revocation_source: { available: true, status: "revoked" },
-      now: nowValid,
-    }),
+  await expectSdkRejection(
+    "revoked_receipt",
+    () =>
+      verifySignedDecisionReceipt({
+        signed_record: receipt,
+        relying_party: scope,
+        request_id: "rej_revoked",
+        trust_env: trustOk.env,
+        consumption_store: revokedStore,
+        revocation_source: { available: true, status: "revoked" },
+        now: nowValid,
+      }),
+    { rejection_reasons: ["revoked"] },
   );
 } finally {
   rmSync(tmpRevoked, { recursive: true, force: true });
@@ -180,13 +217,14 @@ try {
     revocation_source: { available: false },
     now: nowValid,
   });
-  assertBlocked("revocation_unavailable", noRevocation);
+  assertSdkRejected("revocation_unavailable", noRevocation, {
+    rejection_reasons: ["revocation_unavailable"],
+  });
 } finally {
   rmSync(tmpNoRev, { recursive: true, force: true });
 }
 
 // Lightweight { status: "stale" } is NOT part of RevocationSourceState (active | revoked | unknown).
-// It must never be treated as authenticated portable revocation freshness.
 const tmpInvalidRevHint = freshStoreDir();
 try {
   const invalidHintStore = new FileReceiptConsumptionStore(tmpInvalidRevHint);
@@ -199,12 +237,9 @@ try {
     revocation_source: { available: true, status: "stale" },
     now: nowValid,
   });
-  if (invalidRevocationHint.authorize === true) {
-    throw new Error(
-      "invalid_revocation_hint: SDK authorized with non-contract revocation status 'stale' — integrators must use portable_revocation_snapshot for authenticated freshness (see in-repo build586 adversarial tests).",
-    );
-  }
-  assertBlocked("invalid_revocation_hint", invalidRevocationHint);
+  assertSdkRejected("invalid_revocation_hint", invalidRevocationHint, {
+    rejection_reasons: ["revocation_unavailable"],
+  });
 } finally {
   rmSync(tmpInvalidRevHint, { recursive: true, force: true });
 }
@@ -238,7 +273,7 @@ try {
     revocation_source: { available: true, status: "active" },
     now: nowValid,
   });
-  assertBlocked("duplicate_consumption", replay);
+  assertSdkRejected("duplicate_consumption", replay, { rejection_reasons: ["replay_detected"] });
 } finally {
   rmSync(tmpReplay, { recursive: true, force: true });
 }

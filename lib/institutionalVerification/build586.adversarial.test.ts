@@ -90,6 +90,19 @@ describe("Build #586 institutional verification SDK", () => {
     expect(result.verification_intent).toBe("authorize");
   });
 
+  it("malformed signed record — malformed_input without throwing", async () => {
+    const result = await inspectSignedDecisionReceipt({
+      signed_record: {} as ReturnType<typeof build546SampleRecord>,
+      relying_party: { partner_id: BUILD_546_PARTNER_ID, policy_id: BUILD_546_POLICY_ID },
+      request_id: "req_586_malformed",
+      now: BUILD_546_FIXTURE_NOW,
+      trust_env: env,
+    });
+    expect(result.authorize).toBe(false);
+    expect(result.verdict).toBe("invalid");
+    expect(result.rejection_reasons).toContain("malformed_input");
+  });
+
   it("non-contract revocation feed status stale — blocked on authorize", async () => {
     const result = await verifySignedDecisionReceipt({
       ...authorizeInput(),

@@ -49,15 +49,6 @@ export async function verifySignedDecisionReceipt(
   const intent = input.verification_intent ?? "authorize";
 
   if (!input.signed_record?.id || !input.relying_party.partner_id || !input.relying_party.policy_id) {
-    const underlying = verifyReceiptIndependently({
-      signedRecord: input.signed_record,
-      expectations: {
-        partnerId: input.relying_party.partner_id ?? "",
-        policyId: input.relying_party.policy_id ?? "",
-      },
-      now: input.now,
-      env: input.trust_env,
-    });
     return {
       contract_version: INSTITUTIONAL_VERIFICATION_CONTRACT_VERSION,
       verification_intent: intent,
@@ -65,11 +56,27 @@ export async function verifySignedDecisionReceipt(
       authorize: false,
       rejection_reasons: ["malformed_input"],
       detail_codes: ["malformed_input"],
-      offline_checks_completed: underlying.checks_possible_offline,
-      live_checks_required: underlying.checks_requiring_live_authority,
+      offline_checks_completed: [],
+      live_checks_required: [],
       identity_database_required: false,
       abraxas_database_trust_root_required: false,
-      underlying,
+      underlying: {
+        verdict: "reject",
+        cryptographically_authentic: false,
+        currently_authorizable: false,
+        phases: [
+          {
+            id: "malformed_input",
+            status: "fail",
+            detail: "Signed decision receipt or relying-party scope missing required fields.",
+          },
+        ],
+        failure_codes: ["malformed_input"],
+        checks_possible_offline: [],
+        checks_requiring_live_authority: [],
+        disclaimer:
+          "Malformed input — verification did not run. Fix the signed record and relying-party scope before authorize.",
+      },
     };
   }
 

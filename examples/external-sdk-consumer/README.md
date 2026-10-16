@@ -28,7 +28,7 @@ These checks do not weaken cryptography — they assert fail-closed behavior for
 
 ## Security rejection matrix (Build #591)
 
-`security-rejections.mjs` runs in the same clean-room install as `smoke.mjs`:
+`security-rejections.mjs` runs in the same clean-room install as `smoke.mjs`. Each scenario requires a structured SDK result with verdict `invalid` or `blocked` (and expected `rejection_reasons` where documented). Unexpected throws fail the script — only explicit SDK rejection contracts count as pass.
 
 ```bash
 node scripts/build587/verify-external-install.mjs
