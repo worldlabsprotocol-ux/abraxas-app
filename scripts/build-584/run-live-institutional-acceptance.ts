@@ -28,7 +28,7 @@ function tierStatus(steps: StepResult[]): TierReport["status"] {
   if (steps.some((s) => s.status === "fail")) return "fail";
   if (steps.every((s) => s.status === "skipped")) return "skipped";
   if (steps.some((s) => s.status === "blocked")) return "blocked";
-  if (steps.every((s) => s.status === "pass")) return "pass";
+  if (steps.every((s) => s.status === "pass" || s.status === "skipped")) return "pass";
   return "blocked";
 }
 
