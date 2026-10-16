@@ -6,6 +6,7 @@ export {
   INSTITUTIONAL_VERIFICATION_CONTRACT_ID,
   type InstitutionalVerificationCapability,
   type InstitutionalTrustEnvironment,
+  type InstitutionalVerificationIntent,
   type RelyingPartyScope,
   type InstitutionalVerifierRejectionReason,
   type InstitutionalVerificationVerdict,
@@ -22,9 +23,11 @@ export {
   fetchVerifiedReceiptKeyDocument,
   resolveInstitutionalTrustEnv,
   validateFetchedReceiptKeyDocument,
+  validateInstitutionReceiptVerificationRegistryJson,
   type InstitutionalTrustEnvInput,
   type InstitutionalTrustEnvResult,
   type TrustMaterialFetchResult,
+  type InstitutionRegistryValidationResult,
 } from "./trustMaterial";
 
 export {
@@ -32,8 +35,14 @@ export {
   type InstitutionalVerificationContractDocument,
 } from "./verificationContractDocument";
 
-export { verifySignedDecisionReceipt } from "./verifyDecisionReceipt";
-export { verifyHolderTrustPresentation } from "./verifyPresentation";
+export {
+  verifySignedDecisionReceipt,
+  inspectSignedDecisionReceipt,
+} from "./verifyDecisionReceipt";
+export {
+  verifyHolderTrustPresentation,
+  inspectHolderTrustPresentation,
+} from "./verifyPresentation";
 export { verifyCrossApplicationPresentation } from "./crossApplication";
 
 export {
@@ -42,3 +51,14 @@ export {
   presentationVerdictFromOutcome,
   receiptVerdictFromUnderlying,
 } from "./reasonMapping";
+
+export {
+  INSTITUTIONAL_REPLAY_SEMANTICS,
+  requireConsumptionStoreForAuthorization,
+  isDurableConsumptionStore,
+} from "./replayPolicy";
+
+export {
+  inspectSignedDecisionReceiptCryptography,
+  inspectHolderPresentationCryptography,
+} from "./inspectOnly";

@@ -55,9 +55,13 @@ export type InstitutionalVerifierRejectionReason =
 
 export type InstitutionalVerificationVerdict = "valid" | "invalid" | "blocked";
 
+export type InstitutionalVerificationIntent = "authorize" | "inspect_only";
+
 export type InstitutionalReceiptVerificationResult = {
   contract_version: typeof INSTITUTIONAL_VERIFICATION_CONTRACT_VERSION;
+  verification_intent: InstitutionalVerificationIntent;
   verdict: InstitutionalVerificationVerdict;
+  /** False for inspect_only — signature validity alone never grants access. */
   authorize: boolean;
   /** Explicit, partner-safe codes mapped from underlying verifier phases. */
   rejection_reasons: InstitutionalVerifierRejectionReason[];
@@ -71,6 +75,7 @@ export type InstitutionalReceiptVerificationResult = {
 
 export type InstitutionalPresentationVerificationResult = {
   contract_version: typeof INSTITUTIONAL_VERIFICATION_CONTRACT_VERSION;
+  verification_intent: InstitutionalVerificationIntent;
   verdict: InstitutionalVerificationVerdict;
   authorize: boolean;
   rejection_reasons: InstitutionalVerifierRejectionReason[];
@@ -90,11 +95,15 @@ export type VerifySignedDecisionReceiptInput = {
   request_id: string;
   now?: Date;
   trust_env: Record<string, string | undefined>;
+  /** Default authorize — requires durable consumption_store (or explicit test memory flag). */
+  verification_intent?: InstitutionalVerificationIntent;
   revocation_source?: Parameters<
     typeof import("@/lib/institutionalCertification/build546/independentVerifier").verifyReceiptIndependently
   >[0]["revocationSource"];
   enforce_single_use?: boolean;
   consumption_store?: import("@/lib/institutionalCertification/build547/receiptConsumptionStore").ReceiptConsumptionStore;
+  /** CI/fixtures only — production integrations must use filesystem/postgres stores. */
+  allow_in_memory_consumption_for_tests?: boolean;
 };
 
 export type VerifyHolderPresentationInput = {
@@ -107,7 +116,9 @@ export type VerifyHolderPresentationInput = {
   portable_revocation_issuer_trust: import("@/lib/protocol/portableRevocation").PortableRevocationIssuerTrustPolicy;
   portable_revocation_bootstrap_trusts?: import("@/lib/protocol/portableRevocation").PortableRevocationBootstrapTrust[];
   checkpoint_store: import("@/lib/protocol/portableRevocation").PortableRevocationCheckpointStore;
+  verification_intent?: InstitutionalVerificationIntent;
   consumption_store?: import("@/lib/institutionalCertification/build547/receiptConsumptionStore").ReceiptConsumptionStore;
+  allow_in_memory_consumption_for_tests?: boolean;
   advance_revocation_checkpoint?: boolean;
 };
 
@@ -123,6 +134,7 @@ export type CrossApplicationVerificationInput = {
   portable_revocation_bootstrap_trusts?: import("@/lib/protocol/portableRevocation").PortableRevocationBootstrapTrust[];
   checkpoint_store: import("@/lib/protocol/portableRevocation").PortableRevocationCheckpointStore;
   consumption_store?: import("@/lib/institutionalCertification/build547/receiptConsumptionStore").ReceiptConsumptionStore;
+  allow_in_memory_consumption_for_tests?: boolean;
 };
 
 export type CrossApplicationVerificationResult = {

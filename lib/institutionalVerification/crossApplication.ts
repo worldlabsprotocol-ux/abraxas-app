@@ -20,6 +20,7 @@ export async function verifyCrossApplicationPresentation(
     portable_revocation_bootstrap_trusts: input.portable_revocation_bootstrap_trusts,
     checkpoint_store: input.checkpoint_store,
     consumption_store: input.consumption_store,
+    allow_in_memory_consumption_for_tests: input.allow_in_memory_consumption_for_tests,
   };
 
   const authorized_application = await verifyHolderTrustPresentation({

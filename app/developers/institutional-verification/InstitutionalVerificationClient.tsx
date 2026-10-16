@@ -25,23 +25,35 @@ const REJECTION_CODES = [
 
 const EXAMPLE_SNIPPET = `import {
   resolveInstitutionalTrustEnv,
+  inspectSignedDecisionReceipt,
   verifySignedDecisionReceipt,
-  verifyHolderTrustPresentation,
 } from "@/lib/institutionalVerification";
+import { FileReceiptConsumptionStore } from "@/lib/institutionalCertification/build547/receiptConsumptionStore";
 
 const trust = await resolveInstitutionalTrustEnv({
   receipt_verification_registry_json: process.env.ABRAXAS_RECEIPT_VERIFICATION_REGISTRY,
-  portable_revocation_issuer_trust_json: process.env.ABRAXAS_PORTABLE_REVOCATION_ISSUER_TRUST,
+  pinned_receipt_key_document_digest: process.env.ABRAXAS_RECEIPT_KEY_DOCUMENT_DIGEST,
 });
 
 if (!trust.ok) throw new Error(trust.code);
 
+// Inspection — no consumption, never grants access
+const inspected = await inspectSignedDecisionReceipt({
+  signed_record: holderReceipt,
+  relying_party: { partner_id: "your-partner", policy_id: "your-policy" },
+  request_id: "checkout_inspect",
+  trust_env: trust.env,
+});
+
+// Authorization — durable replay store + institution revocation feed required
+const store = new FileReceiptConsumptionStore(process.env.RP_CONSUMPTION_DIR!);
 const decision = await verifySignedDecisionReceipt({
   signed_record: holderReceipt,
   relying_party: { partner_id: "your-partner", policy_id: "your-policy" },
   request_id: "checkout_123",
   trust_env: trust.env,
-  revocation_source: { available: true, status: "active" },
+  consumption_store: store,
+  revocation_source: yourInstitutionRevocationFeed,
 });
 
 if (!decision.authorize) {

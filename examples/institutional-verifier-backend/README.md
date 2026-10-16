@@ -1,30 +1,39 @@
 # Institutional verifier backend example (Build #586)
 
-This example shows how a **third-party TypeScript backend** validates an Abraxas signed decision receipt using `@/lib/institutionalVerification` without calling Abraxas Supabase or trusting the Abraxas UI.
+Safe defaults for third-party TypeScript backends using `@/lib/institutionalVerification`.
 
 ## Separation
 
 | Layer | Your responsibility |
 |-------|---------------------|
-| Receipt verification | `verifySignedDecisionReceipt` with pinned `ABRAXAS_RECEIPT_VERIFICATION_REGISTRY` |
-| Policy enforcement | Product logic after `authorize === true` |
-| Issuer trust | Pin registry JSON or pin digest + fetch from your configured origin |
-| Revocation freshness | Portable revocation trust env + checkpoint store (presentation path) |
-| Replay protection | Durable consumption store in production (`enforce_single_use: true`) |
+| Trust bootstrap | Pin `ABRAXAS_RECEIPT_VERIFICATION_REGISTRY` **or** fetch with mandatory `ABRAXAS_RECEIPT_KEY_DOCUMENT_DIGEST` |
+| Cryptographic inspection | `inspectSignedDecisionReceipt` — never authorizes |
+| Authorization | `verifySignedDecisionReceipt` + durable `FileReceiptConsumptionStore` + institution revocation feed |
+| Policy enforcement | Your product logic after `authorize === true` |
 
-## Run (synthetic receipt from CI fixtures)
-
-From repository root, after exporting a pinned registry from `build546TrustRegistryEnv()` in tests:
+## Modes
 
 ```bash
-export RP_PARTNER_ID=institutional-rp-example
-export RP_POLICY_ID=institutional-age-21-v1
-export ABRAXAS_RECEIPT_VERIFICATION_REGISTRY='[…]'
-npx tsx examples/institutional-verifier-backend/verify.ts path/to/signed-receipt.json
+# Inspect only (no RP_CONSUMPTION_DIR required)
+RP_VERIFY_MODE=inspect RP_PARTNER_ID=… RP_POLICY_ID=… \\
+  ABRAXAS_RECEIPT_VERIFICATION_REGISTRY='[…]' \\
+  npx tsx examples/institutional-verifier-backend/verify.ts signed-receipt.json
+
+# Authorize (fail-closed without durable store + revocation feed)
+RP_PARTNER_ID=… RP_POLICY_ID=… \\
+  RP_CONSUMPTION_DIR=/var/lib/your-app/abraxas-replay \\
+  RP_REVOCATION_FEED_JSON='{"available":true,"status":"active"}' \\
+  ABRAXAS_RECEIPT_VERIFICATION_REGISTRY='[…]' \\
+  npx tsx examples/institutional-verifier-backend/verify.ts signed-receipt.json
 ```
 
-## Product UI
+Network key bootstrap requires a pin:
 
-See [/developers/institutional-verification](https://abraxasworld.xyz/developers/institutional-verification) for contract version, trust digest, and rejection codes.
+```bash
+ABRAXAS_TRUST_ORIGIN=https://abraxasworld.xyz \\
+ABRAXAS_RECEIPT_KEY_DOCUMENT_DIGEST=<operator-pinned-sha256> \\
+```
 
 Not published to npm — founder authorization required before any public package release.
+
+Product UI: [/developers/institutional-verification](https://abraxasworld.xyz/developers/institutional-verification)

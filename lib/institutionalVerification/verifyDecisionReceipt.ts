@@ -2,7 +2,6 @@
 
 import { verifyReceiptIndependently } from "@/lib/institutionalCertification/build546/independentVerifier";
 import { ExternalRelyingPartyHarness } from "@/lib/institutionalCertification/build546/externalRelyingParty";
-import { InMemoryReceiptConsumptionStore } from "@/lib/institutionalCertification/build547/receiptConsumptionStore";
 import type {
   InstitutionalReceiptVerificationResult,
   VerifySignedDecisionReceiptInput,
@@ -12,10 +11,43 @@ import {
   mapReceiptFailureCodes,
   receiptVerdictFromUnderlying,
 } from "./reasonMapping";
+import { inspectSignedDecisionReceiptCryptography } from "./inspectOnly";
+import { requireConsumptionStoreForAuthorization } from "./replayPolicy";
+
+function blockedResult(input: {
+  underlying: ReturnType<typeof verifyReceiptIndependently>;
+  rejection_reasons: VerifySignedDecisionReceiptInput extends never ? never : ("durable_store_required" | "malformed_input")[];
+  intent: "authorize" | "inspect_only";
+}): InstitutionalReceiptVerificationResult {
+  return {
+    contract_version: INSTITUTIONAL_VERIFICATION_CONTRACT_VERSION,
+    verification_intent: input.intent,
+    verdict: "blocked",
+    authorize: false,
+    rejection_reasons: input.rejection_reasons,
+    detail_codes: input.rejection_reasons,
+    offline_checks_completed: input.underlying.checks_possible_offline,
+    live_checks_required: input.underlying.checks_requiring_live_authority,
+    identity_database_required: false,
+    abraxas_database_trust_root_required: false,
+    underlying: input.underlying,
+  };
+}
+
+export async function inspectSignedDecisionReceipt(
+  input: Omit<VerifySignedDecisionReceiptInput, "verification_intent" | "consumption_store" | "enforce_single_use">,
+): Promise<InstitutionalReceiptVerificationResult> {
+  return verifySignedDecisionReceipt({
+    ...input,
+    verification_intent: "inspect_only",
+  });
+}
 
 export async function verifySignedDecisionReceipt(
   input: VerifySignedDecisionReceiptInput,
 ): Promise<InstitutionalReceiptVerificationResult> {
+  const intent = input.verification_intent ?? "authorize";
+
   if (!input.signed_record?.id || !input.relying_party.partner_id || !input.relying_party.policy_id) {
     const underlying = verifyReceiptIndependently({
       signedRecord: input.signed_record,
@@ -28,6 +60,7 @@ export async function verifySignedDecisionReceipt(
     });
     return {
       contract_version: INSTITUTIONAL_VERIFICATION_CONTRACT_VERSION,
+      verification_intent: intent,
       verdict: "invalid",
       authorize: false,
       rejection_reasons: ["malformed_input"],
@@ -40,12 +73,59 @@ export async function verifySignedDecisionReceipt(
     };
   }
 
+  if (intent === "inspect_only") {
+    const underlying = await inspectSignedDecisionReceiptCryptography({
+      signed_record: input.signed_record,
+      relying_party: input.relying_party,
+      trust_env: input.trust_env,
+      now: input.now,
+      revocation_source: input.revocation_source,
+    });
+    const verdict = receiptVerdictFromUnderlying(underlying);
+    return {
+      contract_version: INSTITUTIONAL_VERIFICATION_CONTRACT_VERSION,
+      verification_intent: "inspect_only",
+      verdict,
+      authorize: false,
+      rejection_reasons: mapReceiptFailureCodes(underlying),
+      detail_codes: Array.from(underlying.failure_codes),
+      offline_checks_completed: underlying.checks_possible_offline,
+      live_checks_required: underlying.checks_requiring_live_authority,
+      identity_database_required: false,
+      abraxas_database_trust_root_required: false,
+      underlying,
+    };
+  }
+
+  const storeRequirement = requireConsumptionStoreForAuthorization({
+    consumption_store: input.consumption_store,
+    allow_in_memory_consumption_for_tests: input.allow_in_memory_consumption_for_tests,
+  });
+  if (!storeRequirement.ok) {
+    const underlying = verifyReceiptIndependently({
+      signedRecord: input.signed_record,
+      expectations: {
+        partnerId: input.relying_party.partner_id,
+        policyId: input.relying_party.policy_id,
+        allowSandbox: input.relying_party.allow_sandbox,
+      },
+      now: input.now,
+      env: input.trust_env,
+      revocationSource: input.revocation_source,
+    });
+    return blockedResult({
+      underlying,
+      rejection_reasons: ["durable_store_required"],
+      intent: "authorize",
+    });
+  }
+
   const harness = new ExternalRelyingPartyHarness({
     partnerId: input.relying_party.partner_id,
     policyId: input.relying_party.policy_id,
     allowSandbox: input.relying_party.allow_sandbox,
     env: input.trust_env,
-    consumptionStore: input.consumption_store ?? new InMemoryReceiptConsumptionStore(),
+    consumptionStore: storeRequirement.store,
   });
 
   const audit = await harness.decide({
@@ -66,10 +146,11 @@ export async function verifySignedDecisionReceipt(
 
   return {
     contract_version: INSTITUTIONAL_VERIFICATION_CONTRACT_VERSION,
+    verification_intent: "authorize",
     verdict,
     authorize: audit.outcome === "granted" && audit.authorization_verified,
-      rejection_reasons: Array.from(rejection_reasons),
-      detail_codes: Array.from(underlying.failure_codes),
+    rejection_reasons: Array.from(rejection_reasons),
+    detail_codes: Array.from(underlying.failure_codes),
     offline_checks_completed: underlying.checks_possible_offline,
     live_checks_required: underlying.checks_requiring_live_authority,
     identity_database_required: false,
