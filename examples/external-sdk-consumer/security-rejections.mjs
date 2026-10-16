@@ -29,6 +29,20 @@ function assertBlocked(label, result) {
   }
 }
 
+/** Re-throw assertion failures; treat only unexpected SDK throws as fail-closed. */
+async function assertBlockedOrSdkFailClosed(label, run) {
+  try {
+    const result = await run();
+    assertBlocked(label, result);
+  } catch (err) {
+    if (err instanceof Error && err.message.startsWith(`${label}:`)) {
+      throw err;
+    }
+    if (!(err instanceof Error)) throw err;
+    console.log(`${label}: fail-closed exception (${err.name}: ${err.message.slice(0, 160)})`);
+  }
+}
+
 const receipt = loadSyntheticSignedReceipt();
 const registryJson = loadSyntheticTrustRegistryJson();
 const nowValid = new Date(SYNTHETIC_FIXTURE_NOW_ISO);
@@ -40,6 +54,10 @@ const trustOk = await resolveInstitutionalTrustEnv({
 if (!trustOk.ok) throw new Error(`baseline trust failed: ${trustOk.ok === false ? trustOk.code : "unknown"}`);
 
 const scope = { partner_id: SYNTHETIC_PARTNER_ID, policy_id: SYNTHETIC_POLICY_ID };
+
+function freshStoreDir() {
+  return mkdtempSync(join(tmpdir(), "abraxas-rp-security-"));
+}
 
 // Wrong policy
 assertBlocked(
@@ -107,21 +125,16 @@ if (!trustBadPin.ok) {
   );
 }
 
-// Malformed receipt
-try {
-  assertBlocked(
-    "malformed_receipt",
-    await inspectSignedDecisionReceipt({
-      signed_record: { id: "incomplete" },
-      relying_party: scope,
-      request_id: "rej_malformed",
-      trust_env: trustOk.env,
-      now: nowValid,
-    }),
-  );
-} catch {
-  console.log("malformed_receipt: fail-closed exception on malformed input");
-}
+// Malformed receipt (incomplete signed record)
+await assertBlockedOrSdkFailClosed("malformed_receipt", () =>
+  inspectSignedDecisionReceipt({
+    signed_record: { id: "incomplete" },
+    relying_party: scope,
+    request_id: "rej_malformed",
+    trust_env: trustOk.env,
+    now: nowValid,
+  }),
+);
 
 // Expired (fixture validity window)
 assertBlocked(
@@ -135,31 +148,26 @@ assertBlocked(
   }),
 );
 
-// Revoked status on otherwise authentic record
-const revokedCopy = JSON.parse(JSON.stringify(receipt));
-revokedCopy.status = "revoked";
-revokedCopy.revoked_at = SYNTHETIC_FIXTURE_NOW_ISO;
-if (!Array.isArray(revokedCopy.reason_codes)) revokedCopy.reason_codes = [];
+// Revoked — documented SDK path: authenticated revocation feed status (not receipt tampering)
+const tmpRevoked = freshStoreDir();
 try {
-  assertBlocked(
-    "revoked_receipt",
-    await inspectSignedDecisionReceipt({
-      signed_record: revokedCopy,
+  const revokedStore = new FileReceiptConsumptionStore(tmpRevoked);
+  await assertBlockedOrSdkFailClosed("revoked_receipt", () =>
+    verifySignedDecisionReceipt({
+      signed_record: receipt,
       relying_party: scope,
       request_id: "rej_revoked",
       trust_env: trustOk.env,
+      consumption_store: revokedStore,
+      revocation_source: { available: true, status: "revoked" },
       now: nowValid,
     }),
   );
-} catch {
-  console.log("revoked_receipt: fail-closed exception when status=revoked on signed record");
+} finally {
+  rmSync(tmpRevoked, { recursive: true, force: true });
 }
 
-// Stale / missing revocation evidence for authorize path
-function freshStoreDir() {
-  return mkdtempSync(join(tmpdir(), "abraxas-rp-security-"));
-}
-
+// Authorize path requires revocation evidence when unavailable
 const tmpNoRev = freshStoreDir();
 try {
   const store = new FileReceiptConsumptionStore(tmpNoRev);
@@ -177,28 +185,33 @@ try {
   rmSync(tmpNoRev, { recursive: true, force: true });
 }
 
-const tmpStale = freshStoreDir();
+// Lightweight { status: "stale" } is NOT part of RevocationSourceState (active | revoked | unknown).
+// It must never be treated as authenticated portable revocation freshness.
+const tmpInvalidRevHint = freshStoreDir();
 try {
-  const staleStore = new FileReceiptConsumptionStore(tmpStale);
-  const staleRevocation = await verifySignedDecisionReceipt({
+  const invalidHintStore = new FileReceiptConsumptionStore(tmpInvalidRevHint);
+  const invalidRevocationHint = await verifySignedDecisionReceipt({
     signed_record: receipt,
     relying_party: scope,
-    request_id: "rej_stale_revocation",
+    request_id: "rej_invalid_revocation_hint",
     trust_env: trustOk.env,
-    consumption_store: staleStore,
+    consumption_store: invalidHintStore,
     revocation_source: { available: true, status: "stale" },
     now: nowValid,
   });
-  if (staleRevocation.authorize === true) {
-    console.log(
-      "revocation_stale: synthetic { status: 'stale' } hint did not block authorize — production integrators must supply authenticated portable revocation snapshots.",
+  if (invalidRevocationHint.authorize === true) {
+    throw new Error(
+      "invalid_revocation_hint: SDK authorized with non-contract revocation status 'stale' — integrators must use portable_revocation_snapshot for authenticated freshness (see in-repo build586 adversarial tests).",
     );
-  } else {
-    assertBlocked("revocation_stale", staleRevocation);
   }
+  assertBlocked("invalid_revocation_hint", invalidRevocationHint);
 } finally {
-  rmSync(tmpStale, { recursive: true, force: true });
+  rmSync(tmpInvalidRevHint, { recursive: true, force: true });
 }
+
+console.log(
+  "portable_revocation_stale: COVERAGE_GAP — authenticated stale portable revocation snapshots are exercised in lib/institutionalVerification/build586.adversarial.test.ts (not shipped in synthetic clean-room fixtures).",
+);
 
 const tmpReplay = freshStoreDir();
 try {

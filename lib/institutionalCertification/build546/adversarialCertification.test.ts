@@ -150,6 +150,21 @@ describe("Build #546 adversarial institutional certification", () => {
     expect(result.failure_codes).toContain("receipt_revoked");
   });
 
+  it("non-contract revocation status stale — blocked (not authenticated portable freshness)", () => {
+    const record = build546SampleRecord();
+    const result = verifyReceiptIndependently({
+      signedRecord: record,
+      publicReceipt: build546PublicPartnerView(record),
+      expectations: { partnerId: BUILD_546_PARTNER_ID, policyId: BUILD_546_POLICY_ID },
+      now: BUILD_546_FIXTURE_NOW,
+      env,
+      revocationSource: { available: true, status: "stale" } as { available: true; status: "active" },
+    });
+    expect(result.verdict).toBe("blocked");
+    expect(result.currently_authorizable).toBe(false);
+    expect(result.failure_codes).toContain("revocation_unavailable");
+  });
+
   it("stale validity — blocked without revocation feed", () => {
     const record = build546SampleRecord();
     const pub = build546PublicPartnerView(record);

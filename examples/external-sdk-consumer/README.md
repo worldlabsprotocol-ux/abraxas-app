@@ -34,4 +34,6 @@ These checks do not weaken cryptography — they assert fail-closed behavior for
 node scripts/build587/verify-external-install.mjs
 ```
 
-Covers (synthetic fixtures only): wrong policy, wrong partner, untrusted issuer, invalid digest pin, malformed receipt, expired receipt, revoked status, missing/stale revocation for authorize, duplicate consumption replay.
+Covers (synthetic fixtures only): wrong policy, wrong partner, untrusted issuer, invalid digest pin, malformed receipt, expired receipt, revoked feed status, revocation unavailable for authorize, non-contract revocation hints (must not authorize), duplicate consumption replay.
+
+**Coverage gap:** authenticated stale **portable revocation snapshots** (`portable_revocation_snapshot` + checkpoint freshness) are not included in the synthetic tarball. Those rejections are exercised in-repo by `lib/institutionalVerification/build586.adversarial.test.ts`. A lightweight `{ status: "stale" }` object is **not** part of the SDK `RevocationSourceState` contract and does not prove authenticated revocation freshness.

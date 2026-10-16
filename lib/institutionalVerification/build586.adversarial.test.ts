@@ -90,6 +90,16 @@ describe("Build #586 institutional verification SDK", () => {
     expect(result.verification_intent).toBe("authorize");
   });
 
+  it("non-contract revocation feed status stale — blocked on authorize", async () => {
+    const result = await verifySignedDecisionReceipt({
+      ...authorizeInput(),
+      request_id: "req_586_stale_hint",
+      revocation_source: { available: true, status: "stale" } as { available: true; status: "active" },
+    });
+    expect(result.authorize).toBe(false);
+    expect(result.rejection_reasons).toContain("revocation_unavailable");
+  });
+
   it("authorize without consumption store — durable_store_required", async () => {
     const result = await verifySignedDecisionReceipt({
       signed_record: build546SampleRecord(),
