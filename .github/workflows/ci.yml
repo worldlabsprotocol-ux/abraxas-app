@@ -10,7 +10,47 @@ on:
     branches: [main]
 
 jobs:
+  typescript-validation:
+    name: typescript-validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: TypeScript validation (blocking)
+        run: npm run validate:typescript
+
+  eslint-validation:
+    name: eslint-validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Next.js build with in-process ESLint and type validation (blocking)
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ci-placeholder' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ci-placeholder' }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-build-placeholder-secret' }}
+          NEXT_PUBLIC_SOLANA_RPC: https://api.mainnet-beta.solana.com
+          NEXT_PUBLIC_VERIFICATION_PROGRAM_ID: ABRAXASverify1111111111111111111111111111111
+      - name: Smoke test bundled Solana signer endpoint
+        run: node scripts/ci/smoke-solana-signer-route.mjs
+
   build:
+    needs:
+      - typescript-validation
+      - eslint-validation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -60,23 +100,15 @@ jobs:
       - name: DEMO Solana signer provisioning contract
         run: npx vitest run lib/partner/chainAttestationSignerLifecycle/demoSolanaProvision.test.ts lib/partner/chainAttestation/utf8.test.ts
 
-      - name: Type check
-        run: npx tsc --noEmit
-        continue-on-error: true
-
-      - name: Build
-        run: npm run build
+      - name: Vercel-parity compile (lint/type validated in eslint-validation job)
+        run: npm run build:compile
         env:
-          # Placeholders allow `next build` when repo secrets are unset; production uses Vercel env.
-          NEXT_PUBLIC_SUPABASE_URL:      ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ci-placeholder' }}
-          SUPABASE_SERVICE_ROLE_KEY:     ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ci-placeholder' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ci-placeholder' }}
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'ci-build-placeholder-secret' }}
           NEXT_PUBLIC_SOLANA_RPC: https://api.mainnet-beta.solana.com
           NEXT_PUBLIC_VERIFICATION_PROGRAM_ID: ABRAXASverify1111111111111111111111111111111
-
-      - name: Smoke test bundled Solana signer endpoint
-        run: node scripts/ci/smoke-solana-signer-route.mjs
 
   audit-hash-parity:
     runs-on: ubuntu-latest

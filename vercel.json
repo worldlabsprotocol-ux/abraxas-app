@@ -1,6 +1,6 @@
 {
   "framework": "nextjs",
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run build:vercel",
   "devCommand": "npm run dev",
   "installCommand": "ONNXRUNTIME_NODE_INSTALL_CUDA=skip npm install && node scripts/prune-ml-binaries.js",
   "alias": ["abraxas-app.vercel.app"],

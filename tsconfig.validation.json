@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+  "exclude": [
+    "node_modules",
+    "solana",
+    "abraxas-program",
+    "programs",
+    "tests",
+    "target",
+    "migrations",
+    "scripts",
+    "packages",
+    "examples/external-sdk-consumer",
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ]
+}
