@@ -154,6 +154,8 @@
   border-radius: 50%;
   overflow: visible;
   filter: drop-shadow(0 28px 56px rgba(0, 0, 0, 0.55));
+  -webkit-mask-image: radial-gradient(circle at 50% 46%, #000 0 46%, transparent 70%);
+  mask-image: radial-gradient(circle at 50% 46%, #000 0 46%, transparent 70%);
 }
 
 .abx-hero-emblem-env__emblem {
@@ -161,6 +163,7 @@
   height: auto;
   display: block;
   mix-blend-mode: screen;
+  opacity: 0.98;
 }
 
 .abx-hero-emblem-env__sheen {
