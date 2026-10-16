@@ -24,8 +24,7 @@ describe("homepage baseline (institutional invariants)", () => {
 
   it("public homepage leads with cinematic editorial composition", () => {
     const page = read("app/page.tsx");
-    expect(page).toContain("DeFiCinematicHomeHero");
-    expect(read("components/home/defi/DeFiCinematicHomeHero.tsx")).toContain("abx-defi-hero");
+    expect(page).toContain("PremiumHomeHero");
     const shell = read("components/redesign/RedesignHome.tsx");
     expect(shell).toContain("hero");
     expect(shell).toContain("HomeVerificationLifecycle");
@@ -33,6 +32,9 @@ describe("homepage baseline (institutional invariants)", () => {
     expect(shell).toContain("HomeVerifiableTrustChapter");
     expect(shell).toContain("CapabilityMatrix");
     expect(shell).not.toContain("KineticMarquee");
+    const hero = read("components/home/premium/PremiumHomeHero.tsx");
+    expect(hero).toContain("Prove what matters");
+    expect(hero).toContain("abx-premium-hero--enhanced");
   });
 
   it("homepage typography CSS tokens exist", () => {

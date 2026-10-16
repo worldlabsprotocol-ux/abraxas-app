@@ -1,5 +1,111 @@
-/* DeFi cinematic homepage — Reference A / F (Build visual transformation) */
+/* DeFi cinematic homepage — enhancements layered on established premium hero (Reference A / F) */
 
+.abx-premium-hero--enhanced {
+  background:
+    radial-gradient(ellipse 72% 52% at 88% 72%, rgba(124, 92, 255, 0.24), transparent 68%),
+    radial-gradient(circle at 14% 22%, rgba(76, 187, 146, 0.11), transparent 48%),
+    #050505;
+}
+
+.abx-premium-hero__atmosphere {
+  position: absolute;
+  inset: 0;
+  opacity: 0.32;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+.abx-premium-hero__visual-enhanced {
+  position: relative;
+  width: 100%;
+  min-height: min(380px, 72vw);
+}
+
+.abx-premium-hero__visual-stage {
+  position: relative;
+  width: min(100%, 420px);
+  margin: 0 auto;
+  aspect-ratio: 1;
+}
+
+.abx-premium-hero__visual-stage .abx-defi-centerpiece {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  height: 100%;
+  min-height: min(380px, 72vw);
+}
+
+.abx-premium-hero__visual-glow {
+  opacity: 1;
+  filter: blur(36px);
+}
+
+.abx-premium-hero__pipeline {
+  position: relative;
+  z-index: 2;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 clamp(1rem, 4vw, 2.5rem);
+  box-sizing: border-box;
+}
+
+.abx-premium-hero__pipeline .abx-defi-pipeline {
+  margin-top: clamp(1.25rem, 4vw, 2rem);
+}
+
+.abx-premium-hero--enhanced .abx-premium-hero__cta {
+  transition: transform var(--abx-motion-surface) var(--abx-ease-out),
+    box-shadow var(--abx-motion-surface) var(--abx-ease-out);
+}
+
+.abx-premium-hero--enhanced .abx-premium-hero__cta--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 36px rgba(124, 92, 255, 0.22);
+}
+
+.abx-premium-hero--enhanced .abx-premium-hero__cta--secondary:hover {
+  transform: translateY(-1px);
+  border-color: rgba(124, 92, 255, 0.35);
+}
+
+.abx-premium-home.abx-v2-home .abx-premium-chapter {
+  transition: transform var(--abx-motion-surface) var(--abx-ease-out);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .abx-premium-home.abx-v2-home .abx-premium-chapter:hover {
+    transform: translateY(-2px);
+  }
+}
+
+@media (max-width: 959px) {
+  .abx-premium-hero__visual-wrap {
+    width: min(100%, 360px);
+  }
+
+  .abx-premium-hero__title-line {
+    font-size: clamp(2.15rem, 9vw, 3.35rem);
+  }
+
+  .abx-premium-hero__lead {
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .abx-premium-hero__actions--triple {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .abx-premium-hero__cta {
+    width: 100%;
+    white-space: normal;
+    text-align: center;
+  }
+}
+
+/* Legacy centered hero module — retained for reference, not used on public homepage */
 .abx-defi-hero {
   --abx-defi-violet: rgba(124, 92, 255, 0.42);
   --abx-defi-glass: rgba(14, 14, 22, 0.62);
