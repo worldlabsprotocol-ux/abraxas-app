@@ -17,7 +17,7 @@ describe("institutional homepage surface (V2)", () => {
   it("RedesignHome uses premium hero, pillars, lifecycle, and capability matrix", () => {
     const home = read("components/redesign/RedesignHome.tsx");
     const page = read("app/page.tsx");
-    expect(page).toContain("PremiumHomeHero");
+    expect(page).toContain("DeFiCinematicHomeHero");
     expect(home).toContain("HomeProtocolPillarsSection");
     expect(home).toContain("HomeVerificationLifecycle");
     expect(home).toContain("CapabilityMatrix");
