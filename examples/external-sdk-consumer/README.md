@@ -25,3 +25,13 @@ Loaded from `@abraxas/institutional-verification/fixtures/synthetic` — labeled
 | Authorize then replay same receipt | Second call denied (replay guard) |
 
 These checks do not weaken cryptography — they assert fail-closed behavior for policy mismatch and replay.
+
+## Security rejection matrix (Build #591)
+
+`security-rejections.mjs` runs in the same clean-room install as `smoke.mjs`:
+
+```bash
+node scripts/build587/verify-external-install.mjs
+```
+
+Covers (synthetic fixtures only): wrong policy, wrong partner, untrusted issuer, invalid digest pin, malformed receipt, expired receipt, revoked status, missing/stale revocation for authorize, duplicate consumption replay.

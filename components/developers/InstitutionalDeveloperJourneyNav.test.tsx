@@ -12,8 +12,9 @@ describe("InstitutionalDeveloperJourneyNav", () => {
   it("renders eight journey steps with navigation links", () => {
     render(<InstitutionalDeveloperJourneyNav currentStepId="sdk_distribution" />);
     expect(screen.getByText(/Institutional developer journey/i)).toBeInTheDocument();
-    expect(screen.getAllByRole("link").length).toBeGreaterThanOrEqual(8);
-    expect(screen.getByText(/Step 4/i)).toBeInTheDocument();
-    expect(screen.getByText(/Obtain the controlled verification SDK/i)).toBeInTheDocument();
+    expect(screen.getAllByRole("link").length).toBeGreaterThanOrEqual(9);
+    expect(screen.getByText(/Step 6/i)).toBeInTheDocument();
+    expect(screen.getByText(/Configure pinned issuer trust/i)).toBeInTheDocument();
+    expect(screen.getByText(/Partner Flow remains a separate/i)).toBeInTheDocument();
   });
 });

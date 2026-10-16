@@ -36,10 +36,18 @@ export interface InstitutionalFirstVerifiedOutcomeView {
   };
   verification: {
     result: "authorized" | "rejected" | "pending" | "unknown";
+    independent_verification_recorded: boolean;
     partner_safe_rejection: string | null;
     verification_successes: number;
     verification_failures: number;
     status_accuracy_notice: string;
+  };
+  consumption: {
+    replay_signal: string | null;
+  };
+  evidence: {
+    integration_export_href: string | null;
+    export_notice: string;
   };
   freshness: {
     last_receipt_issued_at: string | null;
@@ -57,10 +65,12 @@ export interface InstitutionalFirstVerifiedOutcomeView {
   };
   reproduce_independently: {
     sdk_docs_href: string;
-    external_consumer_example_href: string;
+    external_consumer_command: string;
     record_verifier_href: string;
   };
 }
+
+const EXTERNAL_CONSUMER_COMMAND = "node scripts/build587/verify-external-install.mjs";
 
 const STATUS_NOTICE =
   "Integration telemetry reflects server-recorded verification outcomes. Cryptographic authorization requires your pinned SDK verifier — this panel does not replace independent verification.";
@@ -99,6 +109,10 @@ export function buildInstitutionalFirstVerifiedOutcomeView(input: {
   else if (input.health.verification_attempts > 0) result = "unknown";
 
   const displayName = input.app.display_name || input.app.application_name;
+  const replaySignal =
+    typeof verificationEvent?.metadata?.replay_status === "string"
+      ? verificationEvent.metadata.replay_status
+      : null;
 
   return {
     contract_version: INSTITUTIONAL_FIRST_VERIFIED_OUTCOME_VERSION,
@@ -129,10 +143,19 @@ export function buildInstitutionalFirstVerifiedOutcomeView(input: {
     },
     verification: {
       result,
+      independent_verification_recorded: succeeded && input.health.verification_successes > 0,
       partner_safe_rejection: verificationEvent?.partner_safe_reason ?? null,
       verification_successes: input.health.verification_successes,
       verification_failures: input.health.verification_failures,
       status_accuracy_notice: STATUS_NOTICE,
+    },
+    consumption: {
+      replay_signal: replaySignal,
+    },
+    evidence: {
+      integration_export_href: `/api/launchpad/applications/${input.app.id}/integration-export`,
+      export_notice:
+        "JSON export includes partner-safe integration events only when persisted for this application. Empty export means no authoritative telemetry yet.",
     },
     freshness: {
       last_receipt_issued_at: input.health.last_receipt_issued_at,
@@ -152,7 +175,7 @@ export function buildInstitutionalFirstVerifiedOutcomeView(input: {
     },
     reproduce_independently: {
       sdk_docs_href: "/developers/institutional-verification",
-      external_consumer_example_href: "/examples/external-sdk-consumer/README.md",
+      external_consumer_command: EXTERNAL_CONSUMER_COMMAND,
       record_verifier_href: "/verify?mode=receipt",
     },
   };

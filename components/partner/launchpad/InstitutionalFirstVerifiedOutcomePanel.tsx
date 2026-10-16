@@ -62,7 +62,14 @@ export function InstitutionalFirstVerifiedOutcomePanel(input: {
           value={outcome.verification.result}
           color={resultColor(outcome.verification.result)}
         />
+        <Field
+          label="Independent verify recorded"
+          value={outcome.verification.independent_verification_recorded ? "Yes (telemetry)" : "Not yet"}
+        />
         <Field label="Time to first verify" value={ttfv} />
+        {outcome.consumption.replay_signal ? (
+          <Field label="Replay signal" value={outcome.consumption.replay_signal} mono />
+        ) : null}
       </div>
 
       {(outcome.receipt_provenance.receipt_id || outcome.receipt_provenance.request_id) && (
@@ -109,10 +116,35 @@ export function InstitutionalFirstVerifiedOutcomePanel(input: {
         <p style={{ margin: "0.5rem 0 0" }}>{outcome.freshness.requirement_notice}</p>
       </div>
 
+      <pre
+        className="abx-code-scroll"
+        style={{
+          fontFamily: MONO,
+          fontSize: "0.62rem",
+          lineHeight: 1.55,
+          padding: "0.75rem",
+          borderRadius: 10,
+          overflowX: "auto",
+          background: "var(--surface-inset)",
+          border: "1px solid var(--border)",
+          color: "var(--text-secondary)",
+          marginTop: "0.75rem",
+        }}
+      >
+        {outcome.reproduce_independently.external_consumer_command}
+      </pre>
+      <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "0.45rem" }}>
+        {outcome.evidence.export_notice}
+      </p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
         <Btn href={outcome.reproduce_independently.sdk_docs_href} size="sm" variant="secondary">
           SDK verifier docs
         </Btn>
+        {outcome.evidence.integration_export_href ? (
+          <Btn href={outcome.evidence.integration_export_href} size="sm" variant="ghost">
+            Download integration export
+          </Btn>
+        ) : null}
         <Btn href={outcome.issuer_trust.trust_contract_href} size="sm" variant="ghost">
           Trust contract JSON
         </Btn>

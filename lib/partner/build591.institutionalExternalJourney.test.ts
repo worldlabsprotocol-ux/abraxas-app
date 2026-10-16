@@ -51,8 +51,8 @@ function healthFromEvents(app: LaunchpadApplicationRow, events: IntegrationEvent
 
 describe("Build #591 external institutional journey", () => {
   it("defines eight canonical steps with real routes", () => {
-    expect(INSTITUTIONAL_DEVELOPER_JOURNEY_VERSION).toBe("591.v1");
-    expect(INSTITUTIONAL_DEVELOPER_JOURNEY_STEPS).toHaveLength(8);
+    expect(INSTITUTIONAL_DEVELOPER_JOURNEY_VERSION).toBe("591.v2");
+    expect(INSTITUTIONAL_DEVELOPER_JOURNEY_STEPS).toHaveLength(9);
     for (const step of INSTITUTIONAL_DEVELOPER_JOURNEY_STEPS) {
       expect(step.href.startsWith("/")).toBe(true);
       expect(step.href).not.toContain("undefined");
@@ -125,6 +125,8 @@ describe("Build #591 external institutional journey", () => {
     expect(outcome.verification.result).toBe("authorized");
     expect(outcome.receipt_provenance.receipt_id).toBe("dr_591");
     expect(outcome.adoption.time_to_first_independent_verify_quality).toBe("measured");
+    expect(outcome.verification.independent_verification_recorded).toBe(true);
+    expect(outcome.evidence.integration_export_href).toContain("integration-export");
     expect(outcome.issuer_trust.offline_verifier_notice).toMatch(/Supabase/);
     expect(JSON.stringify(outcome)).not.toMatch(/email|ssn|passport_number/i);
   });

@@ -122,7 +122,7 @@ export function InstitutionalVerificationClient() {
         </div>
       </ContentCard>
 
-      <ContentCard title="Trust material (versioned)">
+      <ContentCard title="Trust material (versioned)" id="trust-material">
         {contract ? (
           <div style={{ fontFamily: FONT, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.65 }}>
             <p style={{ margin: "0 0 0.5rem" }}>

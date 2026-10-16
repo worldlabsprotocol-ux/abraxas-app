@@ -45,7 +45,7 @@ const CARDS: Array<{
     title: "Institutional integration workspace",
     detail: "Sandbox app binding, SDK delivery, and first verified outcome.",
     href: "/developers/institutional-integration",
-    tag: "Build #591",
+    tag: "Institutional",
   },
   {
     id: "sdk",

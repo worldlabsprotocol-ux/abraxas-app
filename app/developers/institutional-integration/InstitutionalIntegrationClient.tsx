@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { PageHeader, ContentCard, BulletList } from "@/components/redesign/RedesignContent";
+import { AbxInstitutionalWorkspaceShell } from "@/components/design/AbxInstitutionalWorkspaceShell";
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 import {
@@ -164,19 +165,21 @@ export function InstitutionalIntegrationClient() {
 
   if (loading) {
     return (
-      <PageHeader
-        eyebrow="Build #591 · Institutional integration"
-        title="Institutional integration workspace"
-        subtitle="Loading session…"
-      />
+      <AbxInstitutionalWorkspaceShell aria-label="Institutional integration workspace">
+        <PageHeader
+          eyebrow="Institutional integration"
+          title="Institutional integration workspace"
+          subtitle="Loading session…"
+        />
+      </AbxInstitutionalWorkspaceShell>
     );
   }
 
   if (authenticated === false) {
     return (
-      <>
+      <AbxInstitutionalWorkspaceShell aria-label="Institutional integration workspace">
         <PageHeader
-          eyebrow="Build #591 · Institutional integration"
+          eyebrow="Institutional integration"
           title="Sign in to configure institutional integration"
           subtitle="Use Partner Launchpad authentication. This workspace reuses your authorized partner tenant — no parallel customer account."
         />
@@ -193,14 +196,14 @@ export function InstitutionalIntegrationClient() {
             </Btn>
           </div>
         </ContentCard>
-      </>
+      </AbxInstitutionalWorkspaceShell>
     );
   }
 
   return (
-    <>
+    <AbxInstitutionalWorkspaceShell aria-label="Institutional integration workspace">
       <PageHeader
-        eyebrow={`Build #591 · ${partnerLabel ?? "Partner workspace"}`}
+        eyebrow={partnerLabel ? `Partner · ${partnerLabel}` : "Institutional integration workspace"}
         title="Institutional integration workspace"
         subtitle="One path from sandbox application configuration to controlled SDK adoption, issuer trust pinning, and independently verified signed decision receipts."
       />
@@ -424,6 +427,6 @@ ${workspace.trust.env_keys.consumption_store_dir}=/var/lib/your-rp/receipt-consu
           </ContentCard>
         </>
       )}
-    </>
+    </AbxInstitutionalWorkspaceShell>
   );
 }

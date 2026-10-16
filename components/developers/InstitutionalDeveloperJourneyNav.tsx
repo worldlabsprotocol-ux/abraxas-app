@@ -7,6 +7,7 @@ import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import {
   INSTITUTIONAL_DEVELOPER_JOURNEY_STEPS,
   INSTITUTIONAL_DEVELOPER_JOURNEY_VERSION,
+  INSTITUTIONAL_JOURNEY_SCOPE_NOTICE,
 } from "@/lib/partner/launchpad/institutionalDeveloperJourney";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -29,7 +30,7 @@ export function InstitutionalDeveloperJourneyNav(input: {
           lineHeight: 1.55,
         }}
       >
-        Contract {INSTITUTIONAL_DEVELOPER_JOURNEY_VERSION} · eight steps from product understanding to production authorization request.
+        {INSTITUTIONAL_JOURNEY_SCOPE_NOTICE}
       </p>
       <ol
         style={{
