@@ -16,3 +16,6 @@ export const INSTITUTIONAL_SANDBOX_HANDOFF_HREF =
   "/docs/partner-handoff/institutional-sandbox-activation-583" as const;
 
 export const INSTITUTIONAL_RECEIPT_VERIFY_HREF = "/verify?mode=receipt" as const;
+
+export const INSTITUTIONAL_INTEGRATION_WORKSPACE_HREF =
+  "/developers/institutional-integration" as const;

@@ -37,7 +37,7 @@ export type InstitutionalVerificationContractDocument = {
   integration: {
     module: "@/lib/institutionalVerification";
     example: "examples/institutional-verifier-backend/verify.ts";
-    developer_ui: "/developers/institutional-verification";
+    developer_ui: "/developers/institutional-verification" | "/developers/institutional-integration";
   };
   migration: {
     previous_contract_versions: ["584.v0", "569.v0"];
@@ -96,7 +96,7 @@ export function buildInstitutionalVerificationContractDocument(
     integration: {
       module: "@/lib/institutionalVerification",
       example: "examples/institutional-verifier-backend/verify.ts",
-      developer_ui: "/developers/institutional-verification",
+      developer_ui: "/developers/institutional-integration",
     },
     migration: {
       previous_contract_versions: ["584.v0", "569.v0"],
