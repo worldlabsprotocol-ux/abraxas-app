@@ -37,7 +37,7 @@ describe("institutional activation milestones", () => {
     expect(evidence.current_milestone_id).not.toBe("independent_verification_succeeded");
   });
 
-  it("measures time to first independent verify when verification event exists", () => {
+  it("measures time to first server-side verify when verification event exists", () => {
     const evidence = buildInstitutionalActivationEvidence({
       applicationCreatedAt: "2026-01-01T00:00:00.000Z",
       journey: null,
@@ -70,7 +70,9 @@ describe("institutional activation milestones", () => {
       callbackConfigured: true,
     });
 
-    expect(evidence.time_to_first_independent_verify_quality).toBe("measured");
-    expect(evidence.time_to_first_independent_verify_ms).toBe(10 * 60 * 1000);
+    expect(evidence.time_to_first_server_side_verify_quality).toBe("measured");
+    expect(evidence.time_to_first_server_side_verify_ms).toBe(10 * 60 * 1000);
+    expect(evidence.time_to_first_independent_verify_quality).toBe("unavailable");
+    expect(evidence.time_to_first_independent_verify_ms).toBeNull();
   });
 });

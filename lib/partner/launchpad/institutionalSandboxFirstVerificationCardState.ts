@@ -2,6 +2,7 @@
 
 import type { LaunchpadJourneyResolution, MerchantJourneyStageId } from "@/lib/partner/launchpad/journeyState";
 import type { InstitutionalActivationEvidence } from "@/lib/partner/launchpad/institutionalActivationMilestones";
+import type { InstitutionalFirstVerifiedOutcomeView } from "@/lib/partner/launchpad/institutionalFirstVerifiedOutcome";
 
 export type IntegrationHealthLoadState =
   | { kind: "idle" }
@@ -16,6 +17,7 @@ export type OperationalHealthPayload = {
   last_receipt_verified_at: string | null;
   technical_proof?: Array<{ stage: string; status: string }>;
   institutional_activation?: InstitutionalActivationEvidence;
+  institutional_first_verified_outcome?: InstitutionalFirstVerifiedOutcomeView;
 };
 
 export type InstitutionalCardEvidenceState =
@@ -40,6 +42,9 @@ export function parseOperationalHealthPayload(body: unknown): OperationalHealthP
       ? record.technical_proof as OperationalHealthPayload["technical_proof"]
       : undefined,
     institutional_activation: record.institutional_activation as InstitutionalActivationEvidence | undefined,
+    institutional_first_verified_outcome: record.institutional_first_verified_outcome as
+      | InstitutionalFirstVerifiedOutcomeView
+      | undefined,
   };
 }
 
@@ -95,9 +100,14 @@ export function deriveInstitutionalCardEvidenceState(
   return "ready";
 }
 
-export function independentVerificationObserved(health: OperationalHealthPayload | null): boolean {
+export function serverSideVerificationObserved(health: OperationalHealthPayload | null): boolean {
   if (!health) return false;
   return health.verification_successes > 0;
+}
+
+/** @deprecated Prefer serverSideVerificationObserved — counts server-side integration telemetry only. */
+export function independentVerificationObserved(health: OperationalHealthPayload | null): boolean {
+  return serverSideVerificationObserved(health);
 }
 
 export function resolveInstitutionalCardNextAction(input: {
@@ -140,16 +150,23 @@ export function resolveInstitutionalCardNextAction(input: {
   };
 }
 
-export function formatTimeToFirstIndependentVerify(
+export function formatTimeToFirstServerSideVerify(
   activation: InstitutionalActivationEvidence | undefined,
 ): string {
   if (
-    activation?.time_to_first_independent_verify_quality === "measured"
-    && activation.time_to_first_independent_verify_ms != null
+    activation?.time_to_first_server_side_verify_quality === "measured"
+    && activation.time_to_first_server_side_verify_ms != null
   ) {
-    return `${Math.round(activation.time_to_first_independent_verify_ms / 1000)}s from application create to first verified receipt`;
+    return `${Math.round(activation.time_to_first_server_side_verify_ms / 1000)}s from application create to first server-side verification event`;
   }
-  return "Unavailable until independent verification is recorded for this application.";
+  return "Unavailable until a server-side verification event is recorded for this application.";
+}
+
+/** @deprecated Prefer formatTimeToFirstServerSideVerify. Independent timing is not inferred from integration events. */
+export function formatTimeToFirstIndependentVerify(
+  activation: InstitutionalActivationEvidence | undefined,
+): string {
+  return formatTimeToFirstServerSideVerify(activation);
 }
 
 export function currentActivationStageLabel(

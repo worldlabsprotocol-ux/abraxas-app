@@ -210,8 +210,22 @@ export function verifyReceiptIndependently(input: IndependentVerifierInput): Ind
       );
     } else if (input.revocationSource?.available === true && input.revocationSource.status === "revoked") {
       push("revocation_freshness", "fail", "Authority reports receipt revoked.", "receipt_revoked");
-    } else if (input.revocationSource?.available === true) {
+    } else if (input.revocationSource?.available === true && input.revocationSource.status === "active") {
       push("revocation_freshness", "pass", "Authority reports receipt not revoked at check time.");
+    } else if (input.revocationSource?.available === true && input.revocationSource.status === "unknown") {
+      push(
+        "revocation_freshness",
+        "blocked",
+        "Revocation authority reported unknown status — cannot establish current validity.",
+        "revocation_unavailable",
+      );
+    } else if (input.revocationSource?.available === true) {
+      push(
+        "revocation_freshness",
+        "blocked",
+        `Revocation feed returned non-contract status "${String(input.revocationSource.status)}" — supply RevocationSourceState active | revoked | unknown, or authenticated portable_revocation_snapshot for freshness.`,
+        "revocation_unavailable",
+      );
     } else {
       push(
         "revocation_freshness",

@@ -23,6 +23,7 @@ import {
 import { SITE_URL } from "@/lib/siteUrl";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { getLaunchpadWebhookOverview } from "@/lib/partner/eventDelivery/launchpadWebhook";
+import { buildInstitutionalFirstVerifiedOutcomeView } from "@/lib/partner/launchpad/institutionalFirstVerifiedOutcome";
 
 export function isInstitutionalSandboxApplication(app: LaunchpadApplicationRow): boolean {
   return app.policy_template_id === INSTITUTIONAL_SANDBOX_POLICY_TEMPLATE_ID;
@@ -110,10 +111,19 @@ export async function loadInstitutionalIntegrationWorkspaceForApplication(input:
     applicationId: input.app.id,
   });
 
+  const firstVerifiedOutcome = buildInstitutionalFirstVerifiedOutcomeView({
+    app: input.app,
+    health,
+    events,
+    activation,
+    receiptKeyDocumentDigest: trust.receipt_key_document_digest,
+  });
+
   const workspace = buildInstitutionalIntegrationWorkspace({
     app: input.app,
     sdkRelease,
     activation,
+    firstVerifiedOutcome,
     trust,
     siteUrl: SITE_URL,
     launchpadHref: `${INSTITUTIONAL_SANDBOX_LAUNCHPAD_HREF}&application=${encodeURIComponent(input.app.id)}`,

@@ -41,7 +41,7 @@ try {
     ),
   );
 
-  for (const name of ["smoke.mjs", "smoke.cjs", "verify-integration.ts", "tsconfig.json"]) {
+  for (const name of ["smoke.mjs", "smoke.cjs", "security-rejections.mjs", "verify-integration.ts", "tsconfig.json"]) {
     copyFileSync(join(consumerExamples, name), join(work, name));
   }
 
@@ -49,6 +49,7 @@ try {
   execSync("npm exec -- tsc -p tsconfig.json", { cwd: work, stdio: "inherit" });
   console.log("External TypeScript strict compile: OK");
   execSync("node smoke.mjs", { cwd: work, stdio: "inherit", env: { ...process.env, NODE_OPTIONS: "" } });
+  execSync("node security-rejections.mjs", { cwd: work, stdio: "inherit", env: { ...process.env, NODE_OPTIONS: "" } });
   execSync("node smoke.cjs", { cwd: work, stdio: "inherit", env: { ...process.env, NODE_OPTIONS: "" } });
   console.log("External install smoke passed:", work);
 } finally {
