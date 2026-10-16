@@ -34,24 +34,21 @@ async function shot(page, file) {
 async function validatePage(page) {
   const title = await page.title();
   const text = await page.locator("body").innerText().catch(() => "");
+  const building = /deployment is building/i.test(title + text);
   const blocked = /vercel.*login|login.*vercel|authenticate to access/i.test(title + text);
   const hasWorkspace =
     /integration studio|launchpad|integration inspector|partner launchpad/i.test(text);
-  return { title, blocked, hasWorkspace, snippet: text.slice(0, 200) };
+  return { title, building, blocked, hasWorkspace, snippet: text.slice(0, 200) };
 }
 
 async function runRoute(routeKey, routePath, viewportName, viewport, isMobile) {
   const ctx = await browser.newContext({ viewport, isMobile, colorScheme: "dark", extraHTTPHeaders: extraHeaders });
   const page = await ctx.newPage();
   await page.route("**/*", (route) => {
-    const type = route.request().resourceType();
-    if (type === "media" || type === "font") {
-      void route.abort();
-    } else {
-      void route.continue();
-    }
+    if (route.request().resourceType() === "media") void route.abort();
+    else void route.continue();
   });
-  const resp = await page.goto(`${BASE}${routePath}`, { waitUntil: "domcontentloaded", timeout: 120000 });
+  const resp = await page.goto(`${BASE}${routePath}`, { waitUntil: "networkidle", timeout: 180000 });
   await page.waitForTimeout(2500);
   const validation = await validatePage(page);
   await shot(page, `${routeKey}-${viewportName}-first.png`);
@@ -78,6 +75,6 @@ const summary = { base: BASE, bypass: Boolean(BYPASS), results };
 await writeFile(path.join(OUT, "capture-summary.json"), JSON.stringify(summary, null, 2));
 console.log(JSON.stringify(summary, null, 2));
 
-if (results.some((r) => r.blocked || !r.hasWorkspace)) {
+if (results.some((r) => r.building || r.blocked || !r.hasWorkspace)) {
   process.exitCode = 2;
 }
