@@ -1,5 +1,5 @@
 // FILE: lib/partner/build584/independentVerifierSteps.ts
-// Cryptographic trust checks without Supabase (institutional sandbox template).
+// Local cryptographic regression (synthetic harness scenarios). Not live receipt verification.
 
 import { runPartnerHarnessCase } from "@/lib/partner/launchpad/partnerTestHarness";
 import { INSTITUTIONAL_SANDBOX_POLICY_TEMPLATE_ID } from "@/lib/partner/launchpad/institutionalActivationEntry";

@@ -29,6 +29,10 @@ Build #584 executes the **real deployed** institutional sandbox path. It does no
 
 Harness-only Launchpad test scenarios record trust-path activity but **do not** satisfy holder authorization or full customer operation tiers.
 
+Browser acceptance requires **GET /api/launchpad/auth/session → authenticated: true** after sign-in (not merely absence of a UI error). The artifact records `api_observations[]` and separate `stages` for partner auth, application access, institutional configuration, holder authorization, and live independent verification. **`walkthrough_complete: true`** only when all stages pass.
+
+The vitest **local cryptographic regression** matrix (`independentVerifierSteps.test.ts`) is synthetic and must not be counted as live receipt verification. Live verification stays blocked until a holder-authorized receipt is retrieved and verified through supported interfaces.
+
 ## Blockers seen without credentials
 
 Cloud CI and agent environments without `BUILD584_PARTNER_API_KEY` report **blocked** for:

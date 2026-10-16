@@ -9,6 +9,10 @@ import {
   probeCanonicalDeployment,
 } from "@/lib/partner/build584/canonicalDeploymentProbe";
 import { runLiveInstitutionalHttpJourney } from "@/lib/partner/build584/liveInstitutionalHttpJourney";
+import {
+  validateBuild584BrowserArtifact,
+  type Build584BrowserAcceptanceArtifact,
+} from "@/lib/partner/build584/browserAcceptanceArtifact";
 
 type TierId =
   | "local_automated"
@@ -30,6 +34,20 @@ function tierStatus(steps: StepResult[]): TierReport["status"] {
   if (steps.some((s) => s.status === "blocked")) return "blocked";
   if (steps.every((s) => s.status === "pass" || s.status === "skipped")) return "pass";
   return "blocked";
+}
+
+function runVitestFile(file: string): StepResult {
+  try {
+    execFileSync(
+      join(process.cwd(), "node_modules/.bin/vitest"),
+      ["run", "--no-file-parallelism", file],
+      { stdio: "pipe", encoding: "utf8" },
+    );
+    return { step: "vitest", status: "pass", detail: file };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { step: "vitest", status: "fail", detail: message.slice(0, 400) };
+  }
 }
 
 function loadBuild583Tiers(): TierReport[] {
@@ -70,6 +88,13 @@ async function main() {
     if (tier.tier === "real_authenticated_http_sandbox" || tier.tier === "canonical_deployed_application") {
       continue;
     }
+    if (tier.tier === "local_automated") {
+      tier.steps.push({
+        step: "local_cryptographic_regression",
+        status: runVitestFile("lib/partner/build584/independentVerifierSteps.test.ts").status,
+        detail: "Local synthetic harness verifier matrix (not live receipt verification).",
+      });
+    }
     tiers.push(tier);
   }
 
@@ -107,37 +132,10 @@ async function main() {
   ];
   const browserPath = browserArtifacts.find((p) => existsSync(p));
   const browserSteps: StepResult[] = [];
-  if (!browserPath) {
-    browserSteps.push({
-      step: "browser_acceptance_artifact",
-      status: "blocked",
-      detail: "Run npm run build-584:authenticated-browser-acceptance with BUILD584_PARTNER_API_KEY to produce Playwright evidence.",
-    });
-  } else {
+  let browserArtifact: Build584BrowserAcceptanceArtifact | null = null;
+  if (browserPath) {
     try {
-      const artifact = JSON.parse(readFileSync(browserPath, "utf8")) as {
-        ok?: boolean;
-        routes_tested?: string[];
-        evidence_sources?: string[];
-        recorded_at?: string;
-        environment?: string;
-        build_identity?: string;
-      };
-      const valid =
-        artifact.ok === true
-        && Array.isArray(artifact.routes_tested)
-        && artifact.routes_tested.length > 0
-        && Array.isArray(artifact.evidence_sources)
-        && artifact.evidence_sources.length > 0;
-      browserSteps.push({
-        step: "browser_acceptance_artifact",
-        status: valid ? "pass" : "blocked",
-        detail: valid
-          ? `${artifact.recorded_at ?? "unknown"} · routes=${artifact.routes_tested?.join(", ")} · sources=${artifact.evidence_sources?.length}`
-          : artifact.ok === false
-            ? "Browser artifact present but incomplete (missing successful partner session or Playwright evidence)."
-            : "Artifact must include ok:true, routes_tested[], and evidence_sources[] from Playwright execution.",
-      });
+      browserArtifact = JSON.parse(readFileSync(browserPath, "utf8")) as Build584BrowserAcceptanceArtifact;
     } catch (error) {
       browserSteps.push({
         step: "browser_acceptance_artifact",
@@ -146,6 +144,37 @@ async function main() {
       });
     }
   }
+  const browserValidation = validateBuild584BrowserArtifact(browserArtifact);
+  browserSteps.push({
+    step: "browser_partner_authentication",
+    status: browserValidation.partner_authentication_complete ? "pass" : browserValidation.tier_status === "fail" ? "fail" : "blocked",
+    detail: browserArtifact?.stages?.partner_authentication?.detail ?? browserValidation.detail,
+  });
+  browserSteps.push({
+    step: "browser_application_access",
+    status: browserValidation.application_access_complete ? "pass" : "blocked",
+    detail: browserArtifact?.stages?.application_access?.detail ?? "Not observed.",
+  });
+  browserSteps.push({
+    step: "browser_institutional_configuration",
+    status: browserValidation.institutional_configuration_complete ? "pass" : "blocked",
+    detail: browserArtifact?.stages?.institutional_configuration?.detail ?? "Not observed.",
+  });
+  browserSteps.push({
+    step: "browser_hosted_holder_authorization",
+    status: browserValidation.hosted_holder_authorization_complete ? "pass" : "blocked",
+    detail: browserArtifact?.stages?.hosted_holder_authorization?.detail ?? "Not observed.",
+  });
+  browserSteps.push({
+    step: "browser_independent_receipt_verification",
+    status: browserValidation.independent_receipt_verification_complete ? "pass" : "blocked",
+    detail: browserArtifact?.stages?.independent_receipt_verification?.detail ?? "Not observed.",
+  });
+  browserSteps.push({
+    step: "browser_walkthrough_complete",
+    status: browserValidation.walkthrough_complete ? "pass" : browserValidation.tier_status === "fail" ? "fail" : "blocked",
+    detail: browserValidation.detail,
+  });
   tiers.push({ tier: "authenticated_browser", status: tierStatus(browserSteps), steps: browserSteps });
 
   if (!tiers.some((t) => t.tier === "external_customer_executed")) {

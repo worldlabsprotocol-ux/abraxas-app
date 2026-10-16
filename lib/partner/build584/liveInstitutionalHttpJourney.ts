@@ -2,7 +2,10 @@
 
 import { INSTITUTIONAL_SANDBOX_POLICY_TEMPLATE_ID } from "@/lib/partner/launchpad/institutionalActivationEntry";
 import { LiveLaunchpadHttpClient } from "@/lib/partner/build584/httpClient";
-import { runInstitutionalIndependentVerifierMatrix } from "@/lib/partner/build584/independentVerifierSteps";
+import {
+  buildLiveIndependentReceiptVerificationStep,
+  liveReceiptVerificationBlockedReason,
+} from "@/lib/partner/build584/liveIndependentReceiptVerification";
 
 export type LiveStepResult = {
   step: string;
@@ -192,26 +195,30 @@ export async function runLiveInstitutionalHttpJourney(env: NodeJS.ProcessEnv = p
     detail: timeline.ok ? "Durable integration events exportable." : `HTTP ${timeline.status}`,
   });
 
-  if (partnerId && policyId) {
-    const verifierSteps = runInstitutionalIndependentVerifierMatrix({
-      partnerId,
-      policyId,
-      policyVersion: Number(app.policy_version ?? 1),
-    });
-    const allPass = verifierSteps.every((s) => s.passed);
-    steps.push({
-      step: "independent_receipt_verifier_matrix",
-      status: allPass ? "pass" : "fail",
-      detail: verifierSteps.map((s) => `${s.scenario}:${s.passed ? "ok" : "fail"}`).join(", "),
-    });
-  }
+  steps.push({
+    step: "local_cryptographic_regression",
+    status: "skipped",
+    detail:
+      "Local synthetic verifier matrix runs in vitest (lib/partner/build584/independentVerifierSteps.test.ts). It does not verify a live institutional receipt.",
+  });
+
+  const receiptRef = jsonField(testPost.body, "result.callback_params.receipt_id");
+  steps.push(
+    buildLiveIndependentReceiptVerificationStep({
+      receiptReference: typeof receiptRef === "string" ? receiptRef : null,
+      partnerId: partnerId || null,
+      policyId: policyId || null,
+      verifierOutcome: "blocked",
+      verifiedAt: null,
+      detail: liveReceiptVerificationBlockedReason(),
+    }),
+  );
 
   steps.push({
     step: "institutional_sandbox_operation_completed",
-    status: steps.some((s) => s.step === "hosted_holder_authorization" && s.status === "blocked")
-      ? "blocked"
-      : "blocked",
-    detail: "Full customer operation requires holder authorization plus independently verified live receipt, not harness-only activity.",
+    status: "blocked",
+    detail:
+      "Requires hosted holder authorization on /partner/verify and live independent receipt verification. Harness-only test scenarios do not complete customer operation.",
   });
 
   return steps;
