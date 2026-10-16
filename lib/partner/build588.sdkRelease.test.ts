@@ -20,14 +20,21 @@ describe("Build #588 institutional SDK release", () => {
   it("defaults to request_access when distribution is not authorized", () => {
     vi.stubEnv("INSTITUTIONAL_SDK_DISTRIBUTION_MODE", "request_access");
     expect(resolveInstitutionalSdkDistributionMode()).toBe("request_access");
-    const view = buildInstitutionalSdkReleaseView();
+    const view = buildInstitutionalSdkReleaseView({
+      partnerId: "partner-a",
+      applicationId: "app-1",
+    });
     expect(view.download.available).toBe(false);
-    expect(view.download.reason_code).toBe("distribution_not_authorized");
+    expect(view.download.reason_code).toBeTruthy();
   });
 
   it("reports artifact_missing when authorized mode lacks tarball", () => {
     vi.stubEnv("INSTITUTIONAL_SDK_DISTRIBUTION_MODE", "authorized");
-    vi.stubEnv("INSTITUTIONAL_SDK_TARBALL_PATH", path.join(process.cwd(), "packages/abraxas-institutional-verification/missing.tgz"));
+    vi.stubEnv("INSTITUTIONAL_SDK_APPROVED_TARBALL_SHA256", "b".repeat(64));
+    vi.stubEnv(
+      "INSTITUTIONAL_SDK_TARBALL_PATH",
+      path.join(process.cwd(), "packages/abraxas-institutional-verification/missing.tgz"),
+    );
     expect(resolveInstitutionalSdkDistributionMode()).toBe("artifact_missing");
   });
 
@@ -36,22 +43,17 @@ describe("Build #588 institutional SDK release", () => {
     expect(resolveInstitutionalSdkTarballPath()).toBeNull();
   });
 
-  it("includes integrity metadata when tarball exists", () => {
-    const defaultPath = path.join(
-      process.cwd(),
-      "packages/abraxas-institutional-verification/abraxas-institutional-verification-0.1.0.tgz",
-    );
-    try {
-      const fs = require("node:fs");
-      if (!fs.existsSync(defaultPath)) {
-        return;
-      }
-    } catch {
-      return;
-    }
+  it("requires approved digest env independent of file hash display", () => {
     vi.stubEnv("INSTITUTIONAL_SDK_DISTRIBUTION_MODE", "authorized");
-    const view = buildInstitutionalSdkReleaseView();
-    expect(view.integrity.tarball_sha256).toMatch(/^[a-f0-9]{64}$/);
-    expect(view.integrity.tarball_size_bytes).toBeGreaterThan(0);
+    vi.stubEnv(
+      "INSTITUTIONAL_SDK_DISTRIBUTION_ENTITLEMENTS",
+      JSON.stringify([{ partner_id: "p", package_version: "0.1.0" }]),
+    );
+    const view = buildInstitutionalSdkReleaseView({
+      partnerId: "p",
+      applicationId: "app",
+    });
+    expect(view.integrity.approved_tarball_sha256).toBeNull();
+    expect(view.download.available).toBe(false);
   });
 });

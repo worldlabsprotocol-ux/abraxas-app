@@ -1,7 +1,6 @@
 // FILE: app/api/launchpad/applications/[id]/institutional-verification-sdk/download/route.ts
 // Authenticated, institution-scoped SDK tarball delivery (Build #588).
 
-import { readFileSync, statSync } from "node:fs";
 import { NextRequest } from "next/server";
 import {
   enforceLaunchpadTenantRateLimit,
@@ -10,14 +9,10 @@ import {
 } from "@/lib/partner/launchpad/apiHelpers";
 import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
-import {
-  buildInstitutionalSdkReleaseView,
-  resolveInstitutionalSdkDistributionMode,
-  resolveInstitutionalSdkTarballPath,
-} from "@/lib/institutionalVerification/sdkRelease";
+import { INSTITUTIONAL_VERIFICATION_CONTRACT_VERSION } from "@/lib/institutionalVerification/contract";
 import { isInstitutionalSandboxApplication } from "@/lib/partner/launchpad/loadInstitutionalIntegrationWorkspace";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
-import { recordLaunchpadActivity } from "@/lib/partner/launchpad/recordActivity";
+import { prepareInstitutionalSdkDownload } from "@/lib/institutionalVerification/sdkDownload";
 
 export const dynamic = "force-dynamic";
 type RouteContext = { params: { id: string } };
@@ -39,56 +34,27 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
     return launchpadError("not_institutional_application", 403);
   }
 
-  const mode = resolveInstitutionalSdkDistributionMode();
-  const release = buildInstitutionalSdkReleaseView({
-    downloadHref: `/api/launchpad/applications/${app.id}/institutional-verification-sdk/download`,
-  });
-
-  if (!release.download.available) {
-    return launchpadError(
-      release.download.reason_code ?? "distribution_not_authorized",
-      403,
-      release.notice,
-    );
-  }
-
-  const tarballPath = resolveInstitutionalSdkTarballPath();
-  if (!tarballPath) {
-    return launchpadError("artifact_path_invalid", 503);
-  }
-
-  let sizeBytes: number;
-  try {
-    sizeBytes = statSync(tarballPath).size;
-  } catch {
-    return launchpadError("artifact_missing", 503);
-  }
-
   const sb = requireSupabaseAdmin();
-  await recordLaunchpadActivity(sb, {
-    applicationId: app.id,
+  const prepared = await prepareInstitutionalSdkDownload({
     partnerId: auth.session.partnerId,
-    eventType: "disclosure_viewed",
-    publicCode: "institutional_sdk_tarball_download",
-    metadata: {
-      package_version: release.package_version,
-      distribution_mode: mode,
-      tarball_sha256_prefix: release.integrity.tarball_sha256?.slice(0, 12) ?? null,
-    },
+    applicationId: app.id,
+    sb,
   });
 
-  const body = readFileSync(tarballPath);
-  const filename = release.integrity.tarball_filename ?? "abraxas-institutional-verification.tgz";
+  if (!prepared.ok) {
+    return launchpadError(prepared.code, prepared.http_status, prepared.message);
+  }
 
-  return new Response(body, {
+  return new Response(new Uint8Array(prepared.buffer), {
     status: 200,
     headers: {
       "Content-Type": "application/gzip",
-      "Content-Disposition": `attachment; filename="${filename}"`,
-      "Content-Length": String(sizeBytes),
+      "Content-Disposition": `attachment; filename="${prepared.filename}"`,
+      "Content-Length": String(prepared.size_bytes),
       "Cache-Control": "private, no-store",
-      "X-Abraxas-Sdk-Package-Version": release.package_version,
-      "X-Abraxas-Sdk-Contract-Version": release.contract_version,
+      "X-Abraxas-Sdk-Package-Version": prepared.package_version,
+      "X-Abraxas-Sdk-Contract-Version": INSTITUTIONAL_VERIFICATION_CONTRACT_VERSION,
+      "X-Abraxas-Sdk-Approved-Sha256": prepared.approved_sha256,
     },
   });
 }

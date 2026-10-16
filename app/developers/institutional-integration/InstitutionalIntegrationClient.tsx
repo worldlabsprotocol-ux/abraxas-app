@@ -301,10 +301,22 @@ export function InstitutionalIntegrationClient() {
               {" — "}
               {workspace.sdk_release.notice}
             </p>
-            {workspace.sdk_release.integrity.tarball_sha256 && (
+            {workspace.sdk_release.integrity.approved_tarball_sha256 && (
               <p style={{ ...body, marginTop: "0.5rem" }}>
-                SHA-256{" "}
-                <code style={inlineCode}>{workspace.sdk_release.integrity.tarball_sha256}</code>
+                Founder-approved SHA-256{" "}
+                <code style={inlineCode}>{workspace.sdk_release.integrity.approved_tarball_sha256}</code>
+                {workspace.sdk_release.integrity.artifact_matches_approved_digest
+                  ? " · deployment artifact matches"
+                  : " · deployment artifact not verified"}
+              </p>
+            )}
+            {workspace.sdk_release.entitlement.status !== "granted" && (
+              <p style={{ ...body, marginTop: "0.5rem" }}>
+                Entitlement:{" "}
+                <strong style={{ color: "var(--text-primary)" }}>{workspace.sdk_release.entitlement.status}</strong>
+                {workspace.sdk_release.entitlement.reason_code
+                  ? ` (${workspace.sdk_release.entitlement.reason_code})`
+                  : ""}
               </p>
             )}
             <pre className="abx-code-scroll" style={{ ...codeBlock, marginTop: "0.75rem" }}>

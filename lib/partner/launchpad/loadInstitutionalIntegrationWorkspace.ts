@@ -104,7 +104,11 @@ export async function loadInstitutionalIntegrationWorkspaceForApplication(input:
     : trustUnavailable;
 
   const downloadHref = `/api/launchpad/applications/${input.app.id}/institutional-verification-sdk/download`;
-  const sdkRelease = buildInstitutionalSdkReleaseView({ downloadHref });
+  const sdkRelease = buildInstitutionalSdkReleaseView({
+    downloadHref,
+    partnerId: input.partnerId,
+    applicationId: input.app.id,
+  });
 
   const workspace = buildInstitutionalIntegrationWorkspace({
     app: input.app,

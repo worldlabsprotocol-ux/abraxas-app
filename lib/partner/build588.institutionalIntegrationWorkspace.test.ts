@@ -99,6 +99,8 @@ describe("Build #588 institutional integration workspace", () => {
     });
     expect(workspace.contract_version).toBe("588.v1");
     expect(workspace.binding.partner_id).toBe("partner-a");
+    expect(workspace.sdk_release.integrity.approved_tarball_sha256).toBeNull();
+    expect(workspace.sdk_release.download.available).toBe(false);
     expect(institutionalIntegrationPayloadLeaks({ workspace, sdk_snippet: "ok" })).toEqual([]);
   });
 });
