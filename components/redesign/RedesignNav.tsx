@@ -155,11 +155,19 @@ export function RedesignNav() {
           {PUBLIC_NAV_PRIMARY_CTA.label}
         </Link>
         <LanguageSelector />
-        {signedIn ? <NavProfileMenu prominent /> : <NavSignInButton prominent />}
+        {signedIn ? (
+          <NavProfileMenu prominent />
+        ) : (
+          <NavSignInButton prominent compactUnavailableHint={pathname === "/" || pathname === "/terminal"} />
+        )}
       </div>
 
       <div className="rd-nav-mobile" style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginLeft: "auto" }}>
-        {signedIn ? <NavProfileMenu /> : <NavSignInButton />}
+        {signedIn ? (
+          <NavProfileMenu />
+        ) : (
+          <NavSignInButton compactUnavailableHint={pathname === "/" || pathname === "/terminal"} />
+        )}
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
