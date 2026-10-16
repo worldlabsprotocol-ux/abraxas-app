@@ -100,9 +100,14 @@ export function deriveInstitutionalCardEvidenceState(
   return "ready";
 }
 
-export function independentVerificationObserved(health: OperationalHealthPayload | null): boolean {
+export function serverSideVerificationObserved(health: OperationalHealthPayload | null): boolean {
   if (!health) return false;
   return health.verification_successes > 0;
+}
+
+/** @deprecated Prefer serverSideVerificationObserved — counts server-side integration telemetry only. */
+export function independentVerificationObserved(health: OperationalHealthPayload | null): boolean {
+  return serverSideVerificationObserved(health);
 }
 
 export function resolveInstitutionalCardNextAction(input: {
@@ -145,16 +150,23 @@ export function resolveInstitutionalCardNextAction(input: {
   };
 }
 
-export function formatTimeToFirstIndependentVerify(
+export function formatTimeToFirstServerSideVerify(
   activation: InstitutionalActivationEvidence | undefined,
 ): string {
   if (
-    activation?.time_to_first_independent_verify_quality === "measured"
-    && activation.time_to_first_independent_verify_ms != null
+    activation?.time_to_first_server_side_verify_quality === "measured"
+    && activation.time_to_first_server_side_verify_ms != null
   ) {
-    return `${Math.round(activation.time_to_first_independent_verify_ms / 1000)}s from application create to first verified receipt`;
+    return `${Math.round(activation.time_to_first_server_side_verify_ms / 1000)}s from application create to first server-side verification event`;
   }
-  return "Unavailable until independent verification is recorded for this application.";
+  return "Unavailable until a server-side verification event is recorded for this application.";
+}
+
+/** @deprecated Prefer formatTimeToFirstServerSideVerify. Independent timing is not inferred from integration events. */
+export function formatTimeToFirstIndependentVerify(
+  activation: InstitutionalActivationEvidence | undefined,
+): string {
+  return formatTimeToFirstServerSideVerify(activation);
 }
 
 export function currentActivationStageLabel(

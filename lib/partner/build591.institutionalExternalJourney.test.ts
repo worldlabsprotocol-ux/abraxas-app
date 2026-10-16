@@ -124,11 +124,79 @@ describe("Build #591 external institutional journey", () => {
     expect(outcome.status).toBe("success");
     expect(outcome.verification.result).toBe("authorized");
     expect(outcome.receipt_provenance.receipt_id).toBe("dr_591");
-    expect(outcome.adoption.time_to_first_independent_verify_quality).toBe("measured");
-    expect(outcome.verification.independent_verification_recorded).toBe(true);
+    expect(outcome.adoption.time_to_first_server_side_verify_quality).toBe("measured");
+    expect(outcome.adoption.time_to_first_independent_verify_quality).toBe("unavailable");
+    expect(outcome.verification.server_side_verification_recorded).toBe(true);
+    expect(outcome.verification.external_independent_verification_confirmed).toBe(false);
+    expect(outcome.verification.independent_verification_recorded).toBe(false);
     expect(outcome.evidence.integration_export_href).toContain("integration-export");
     expect(outcome.issuer_trust.offline_verifier_notice).toMatch(/Supabase/);
     expect(JSON.stringify(outcome)).not.toMatch(/email|ssn|passport_number/i);
+  });
+
+  it("does not treat receipt_verification_succeeded as external independent verification", () => {
+    const app = {
+      id: "app-telemetry",
+      public_slug: "telemetry-only",
+      partner_id: "partner-ext",
+      application_name: "Telemetry",
+      display_name: "Telemetry",
+      environment: "sandbox",
+      policy_id: "sandbox_institutional_protocol_access",
+      policy_version: 1,
+      policy_template_id: "sandbox_institutional_protocol_access",
+      allowed_return_urls: [],
+      api_key_id: "key",
+      production_api_key_id: null,
+      production_key_revealed_at: null,
+      status: "active",
+      idempotency_key: null,
+      created_at: "2026-01-01T00:00:00.000Z",
+      updated_at: "2026-01-01T00:00:00.000Z",
+    } satisfies LaunchpadApplicationRow;
+
+    const events: IntegrationEventRow[] = [
+      {
+        event_id: "ie_telemetry",
+        created_at: "2026-01-02T00:00:00.000Z",
+        partner_id: "partner-ext",
+        application_id: "app-telemetry",
+        environment: "sandbox",
+        event_type: "receipt_verification_succeeded",
+        lifecycle_stage: "verification",
+        outcome: "permitted",
+        partner_safe_reason: null,
+        request_id: "req_telemetry",
+        receipt_id: "dr_telemetry",
+        policy_id: "sandbox_institutional_protocol_access",
+        policy_version: 1,
+        correlation_id: null,
+        handoff_ref: null,
+        latency_ms: 3,
+        metadata: {},
+      },
+    ];
+
+    const health = healthFromEvents(app, events);
+    const outcome = buildInstitutionalFirstVerifiedOutcomeView({
+      app,
+      health,
+      events,
+      activation: buildInstitutionalActivationEvidence({
+        applicationCreatedAt: app.created_at,
+        journey: null,
+        health,
+        activeSandboxKey: true,
+        starterKitEvidenced: true,
+        callbackConfigured: true,
+      }),
+      receiptKeyDocumentDigest: null,
+    });
+
+    expect(outcome.verification.server_side_verification_recorded).toBe(true);
+    expect(outcome.verification.external_independent_verification_confirmed).toBe(false);
+    expect(outcome.verification.independent_verification_recorded).toBe(false);
+    expect(outcome.adoption.time_to_first_independent_verify_quality).toBe("unavailable");
   });
 
   it("surfaces partner-safe rejection on failed verification", () => {

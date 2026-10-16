@@ -35,6 +35,9 @@ export interface InstitutionalActivationEvidence {
   contract_version: "1.0.0";
   current_milestone_id: InstitutionalActivationMilestoneId;
   needs_attention_reason: string | null;
+  time_to_first_server_side_verify_ms: number | null;
+  time_to_first_server_side_verify_quality: "measured" | "unavailable";
+  /** External RP/SDK verification timing — not inferred from integration events. */
   time_to_first_independent_verify_ms: number | null;
   time_to_first_independent_verify_quality: "measured" | "unavailable";
   milestones: InstitutionalActivationMilestone[];
@@ -154,7 +157,7 @@ export function buildInstitutionalActivationEvidence(input: {
     },
     {
       id: "independent_verification_succeeded",
-      label: "Independent receipt verification succeeded",
+      label: "Server-side receipt verification succeeded",
       status: verifyProof.failed
         ? "failed"
         : verified
@@ -163,8 +166,8 @@ export function buildInstitutionalActivationEvidence(input: {
             ? "current"
             : "pending",
       detail: verified
-        ? "Server-side receipt verification succeeded for this tenant."
-        : "Verify the receipt with the supported independent verifier path.",
+        ? "Integration telemetry recorded receipt_verification_succeeded for this tenant (server-side, not external SDK proof)."
+        : "Verify the receipt on your server with the SDK; external independent verification is confirmed only on your infrastructure.",
       observed_at: verifyProof.at ?? input.health?.last_receipt_verified_at ?? null,
     },
   ];
@@ -202,8 +205,10 @@ export function buildInstitutionalActivationEvidence(input: {
     contract_version: "1.0.0",
     current_milestone_id: current,
     needs_attention_reason: needsAttentionReason,
-    time_to_first_independent_verify_ms: ttfv,
-    time_to_first_independent_verify_quality: ttfv != null ? "measured" : "unavailable",
+    time_to_first_server_side_verify_ms: ttfv,
+    time_to_first_server_side_verify_quality: ttfv != null ? "measured" : "unavailable",
+    time_to_first_independent_verify_ms: null,
+    time_to_first_independent_verify_quality: "unavailable",
     milestones,
   };
 }

@@ -26,8 +26,10 @@ function integrationHealthJson(label: string, verificationSuccesses: number) {
       contract_version: "1.0.0",
       current_milestone_id: "independent_verification_succeeded",
       needs_attention_reason: null,
-      time_to_first_independent_verify_ms: verificationSuccesses > 0 ? 1000 : null,
-      time_to_first_independent_verify_quality: verificationSuccesses > 0 ? "measured" : "unavailable",
+      time_to_first_server_side_verify_ms: verificationSuccesses > 0 ? 1000 : null,
+      time_to_first_server_side_verify_quality: verificationSuccesses > 0 ? "measured" : "unavailable",
+      time_to_first_independent_verify_ms: null,
+      time_to_first_independent_verify_quality: "unavailable",
       milestones: [
         {
           id: "independent_verification_succeeded",
@@ -80,6 +82,8 @@ describe("InstitutionalSandboxFirstVerificationCard", () => {
           contract_version: "1.0.0",
           current_milestone_id: "sandbox_application_provisioned",
           needs_attention_reason: null,
+          time_to_first_server_side_verify_ms: null,
+          time_to_first_server_side_verify_quality: "unavailable",
           time_to_first_independent_verify_ms: null,
           time_to_first_independent_verify_quality: "unavailable",
           milestones: [
@@ -152,12 +156,14 @@ describe("InstitutionalSandboxFirstVerificationCard", () => {
             contract_version: "1.0.0",
             current_milestone_id: "independent_verification_succeeded",
             needs_attention_reason: null,
-            time_to_first_independent_verify_ms: 1000,
-            time_to_first_independent_verify_quality: "measured",
+            time_to_first_server_side_verify_ms: 1000,
+            time_to_first_server_side_verify_quality: "measured",
+            time_to_first_independent_verify_ms: null,
+            time_to_first_independent_verify_quality: "unavailable",
             milestones: [
               {
                 id: "independent_verification_succeeded",
-                label: "Independent receipt verification succeeded",
+                label: "Server-side receipt verification succeeded",
                 status: "complete",
                 detail: "done",
                 observed_at: "2026-01-01T00:00:00.000Z",

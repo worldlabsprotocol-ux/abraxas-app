@@ -6,7 +6,7 @@ import type { IntegrationEventRow } from "@/lib/partner/integrationObservability
 import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
 import type { InstitutionalActivationEvidence } from "@/lib/partner/launchpad/institutionalActivationMilestones";
 
-export const INSTITUTIONAL_FIRST_VERIFIED_OUTCOME_VERSION = "591.v1" as const;
+export const INSTITUTIONAL_FIRST_VERIFIED_OUTCOME_VERSION = "591.v2" as const;
 
 export interface InstitutionalFirstVerifiedOutcomeView {
   contract_version: typeof INSTITUTIONAL_FIRST_VERIFIED_OUTCOME_VERSION;
@@ -36,6 +36,14 @@ export interface InstitutionalFirstVerifiedOutcomeView {
   };
   verification: {
     result: "authorized" | "rejected" | "pending" | "unknown";
+    /** Server-recorded Partner Kit / integration telemetry — not external SDK proof. */
+    server_side_verification_recorded: boolean;
+    /**
+     * External independent verification requires evidence outside integration events
+     * (e.g. RP audit logs from @abraxas/institutional-verification on partner infra).
+     */
+    external_independent_verification_confirmed: boolean;
+    /** @deprecated Use server_side_verification_recorded; always false when only telemetry exists. */
     independent_verification_recorded: boolean;
     partner_safe_rejection: string | null;
     verification_successes: number;
@@ -55,6 +63,8 @@ export interface InstitutionalFirstVerifiedOutcomeView {
     requirement_notice: string;
   };
   adoption: {
+    time_to_first_server_side_verify_ms: number | null;
+    time_to_first_server_side_verify_quality: "measured" | "unavailable";
     time_to_first_independent_verify_ms: number | null;
     time_to_first_independent_verify_quality: "measured" | "unavailable";
   };
@@ -73,7 +83,7 @@ export interface InstitutionalFirstVerifiedOutcomeView {
 const EXTERNAL_CONSUMER_COMMAND = "node scripts/build587/verify-external-install.mjs";
 
 const STATUS_NOTICE =
-  "Integration telemetry reflects server-recorded verification outcomes. Cryptographic authorization requires your pinned SDK verifier — this panel does not replace independent verification.";
+  "Integration telemetry reflects server-recorded verification outcomes on your Abraxas-linked integration. Cryptographic authorization on your infrastructure requires the pinned SDK verifier — receipt_verification_succeeded does not prove an external independent verifier ran.";
 
 const FRESHNESS_NOTICE =
   "Honor receipt expiration, portable revocation checkpoints, and currently_valid semantics in your verifier. Integration events do not expose holder identity.";
@@ -114,6 +124,11 @@ export function buildInstitutionalFirstVerifiedOutcomeView(input: {
       ? verificationEvent.metadata.replay_status
       : null;
 
+  const serverSideRecorded = succeeded && input.health.verification_successes > 0;
+  const serverSideTtfvMs = input.activation?.time_to_first_server_side_verify_ms ?? null;
+  const serverSideTtfvQuality =
+    input.activation?.time_to_first_server_side_verify_quality ?? "unavailable";
+
   return {
     contract_version: INSTITUTIONAL_FIRST_VERIFIED_OUTCOME_VERSION,
     status,
@@ -143,7 +158,9 @@ export function buildInstitutionalFirstVerifiedOutcomeView(input: {
     },
     verification: {
       result,
-      independent_verification_recorded: succeeded && input.health.verification_successes > 0,
+      server_side_verification_recorded: serverSideRecorded,
+      external_independent_verification_confirmed: false,
+      independent_verification_recorded: false,
       partner_safe_rejection: verificationEvent?.partner_safe_reason ?? null,
       verification_successes: input.health.verification_successes,
       verification_failures: input.health.verification_failures,
@@ -163,9 +180,10 @@ export function buildInstitutionalFirstVerifiedOutcomeView(input: {
       requirement_notice: FRESHNESS_NOTICE,
     },
     adoption: {
-      time_to_first_independent_verify_ms: input.activation?.time_to_first_independent_verify_ms ?? null,
-      time_to_first_independent_verify_quality:
-        input.activation?.time_to_first_independent_verify_quality ?? "unavailable",
+      time_to_first_server_side_verify_ms: serverSideTtfvMs,
+      time_to_first_server_side_verify_quality: serverSideTtfvQuality,
+      time_to_first_independent_verify_ms: null,
+      time_to_first_independent_verify_quality: "unavailable",
     },
     production_authorization: {
       sandbox_only: input.app.environment !== "production",

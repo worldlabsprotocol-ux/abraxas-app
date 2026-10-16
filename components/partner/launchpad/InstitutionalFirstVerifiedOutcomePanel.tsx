@@ -31,10 +31,10 @@ export function InstitutionalFirstVerifiedOutcomePanel(input: {
 }) {
   const { outcome, embedded = false } = input;
   const ttfv =
-    outcome.adoption.time_to_first_independent_verify_quality === "measured"
-    && outcome.adoption.time_to_first_independent_verify_ms != null
-      ? `${Math.round(outcome.adoption.time_to_first_independent_verify_ms / 1000)}s from application create to first verified receipt`
-      : "Unavailable until independent verification is recorded with authoritative timestamps.";
+    outcome.adoption.time_to_first_server_side_verify_quality === "measured"
+    && outcome.adoption.time_to_first_server_side_verify_ms != null
+      ? `${Math.round(outcome.adoption.time_to_first_server_side_verify_ms / 1000)}s from application create to first server-side verification event`
+      : "Unavailable until a server-side verification event is recorded with authoritative timestamps.";
 
   const body = (
     <>
@@ -63,10 +63,18 @@ export function InstitutionalFirstVerifiedOutcomePanel(input: {
           color={resultColor(outcome.verification.result)}
         />
         <Field
-          label="Independent verify recorded"
-          value={outcome.verification.independent_verification_recorded ? "Yes (telemetry)" : "Not yet"}
+          label="Server-side verify recorded"
+          value={outcome.verification.server_side_verification_recorded ? "Yes (integration telemetry)" : "Not yet"}
         />
-        <Field label="Time to first verify" value={ttfv} />
+        <Field
+          label="External independent verify"
+          value={
+            outcome.verification.external_independent_verification_confirmed
+              ? "Confirmed on your infrastructure"
+              : "Unconfirmed (not proven by integration events alone)"
+          }
+        />
+        <Field label="Time to first server-side verify" value={ttfv} />
         {outcome.consumption.replay_signal ? (
           <Field label="Replay signal" value={outcome.consumption.replay_signal} mono />
         ) : null}

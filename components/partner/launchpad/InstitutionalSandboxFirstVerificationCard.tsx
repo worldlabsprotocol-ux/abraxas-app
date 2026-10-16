@@ -234,7 +234,7 @@ export function InstitutionalSandboxFirstVerificationCard(input: {
           <p style={summaryValue}>{stageLabel}</p>
         </div>
         <div>
-          <p style={summaryLabel}>Independent verify</p>
+          <p style={summaryLabel}>Server-side verify</p>
           <p style={{ ...summaryValue, color: verified ? "#10B981" : "var(--text-primary)" }}>
             {verified ? "Observed" : "Not yet recorded"}
           </p>
