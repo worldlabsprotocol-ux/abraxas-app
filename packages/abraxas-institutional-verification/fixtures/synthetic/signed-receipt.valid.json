@@ -31,7 +31,7 @@
   "status": "active",
   "schema_version": "1.0.0",
   "payload_hash": "70a0ab4987392cd172ec6eafaba0de07dda3883e2e8db9c0fdc46527c79513cc",
-  "signature": "aOdUQ93IAFCkWCfmA5U2zdmlF9cs_svfX193VTsgyWEiZGpKRrLrGPDS5sOH7Ub1eNPK11HdHRG3S7cc3xWBBA",
+  "signature": "AWWjhGPWrWX55uqNWHauJNrAJvx_Gp3MtpuT3a7hwX4Fptmbj_Aq8O-j5qdh9TM2qiWnJazbPs2X5qnGr1BjDw",
   "signing_key_id": "build546-primary",
   "anchor_reference": null,
   "idempotency_key": "00000000-0000-4000-8000-000000000546",

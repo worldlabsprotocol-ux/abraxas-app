@@ -26,6 +26,8 @@ Each release tarball must include:
 
 Build: `npm run build:institutional-sdk` from repository root.
 
+Shipped artifacts **exclude source maps** (no embedded `sourcesContent` or repository paths). Maintainers may set `SDK_SOURCEMAP=1` locally for debug builds; those outputs must not be packed.
+
 ## Trust-contract compatibility
 
 Integrators must pin **digest v2** (`digestReceiptVerificationKeyDocument`). v1 pins are invalid.

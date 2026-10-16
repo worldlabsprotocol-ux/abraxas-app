@@ -42,6 +42,7 @@
     "target",
     "migrations",
     "scripts",
-    "packages"
+    "packages",
+    "examples/external-sdk-consumer"
   ]
 }

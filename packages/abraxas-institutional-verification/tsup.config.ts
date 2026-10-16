@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const packageRoot = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   entry: {
@@ -13,14 +14,32 @@ export default defineConfig({
   format: ["esm", "cjs"],
   dts: { resolve: true },
   tsconfig: "tsconfig.json",
-  sourcemap: true,
+  /** Shipped tarballs must not embed repo sources — enable locally with SDK_SOURCEMAP=1. */
+  sourcemap: process.env.SDK_SOURCEMAP === "1",
   clean: true,
   splitting: false,
   treeshake: true,
+  minify: process.env.SDK_SOURCEMAP !== "1",
   target: "node20",
   outDir: "dist",
+  onSuccess: async () => {
+    if (process.env.SDK_SOURCEMAP !== "1") {
+      const { unlinkSync, readdirSync, statSync } = await import("node:fs");
+      const dist = path.join(packageRoot, "dist");
+      const dropMaps = (dir: string) => {
+        for (const name of readdirSync(dir)) {
+          const p = path.join(dir, name);
+          if (statSync(p).isDirectory()) dropMaps(p);
+          else if (name.endsWith(".map")) unlinkSync(p);
+        }
+      };
+      dropMaps(dist);
+    }
+  },
   esbuildOptions(options) {
-    const shims = path.join(path.dirname(fileURLToPath(import.meta.url)), "shims");
+    options.sourcesContent = false;
+    options.legalComments = "none";
+    const shims = path.join(packageRoot, "shims");
     options.alias = {
       ...(options.alias as Record<string, string> | undefined),
       "@": repoRoot,

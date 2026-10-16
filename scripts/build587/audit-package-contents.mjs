@@ -1,15 +1,29 @@
 #!/usr/bin/env node
-import { readFileSync, readdirSync, statSync } from "node:fs";
-import { join } from "node:path";
+/**
+ * Audit the packed SDK tarball (not just the working tree).
+ */
+import { readFileSync, readdirSync, statSync, mkdtempSync, rmSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { tmpdir } from "node:os";
+import { execSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
-const pkgRoot = join(process.cwd(), "packages/abraxas-institutional-verification");
-const forbidden = [
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "../..");
+const pkgDir = join(repoRoot, "packages/abraxas-institutional-verification");
+
+const forbiddenPath = [
   /\.env/i,
   /private.*key/i,
-  /ABRAXAS_SIGNING_KEY/,
-  /supabase\/migrations/,
   /\.pem$/,
   /service_role/i,
+  /supabase\/migrations/i,
+  /node_modules\//,
+];
+
+const forbiddenContent = [
+  /requireSupabaseAdmin\(\)/,
+  /sourcesContent/,
+  /-----BEGIN (?:RSA |EC )?PRIVATE KEY-----/,
 ];
 
 function walk(dir, files = []) {
@@ -22,35 +36,57 @@ function walk(dir, files = []) {
   return files;
 }
 
-const targets = [
-  join(pkgRoot, "dist"),
-  join(pkgRoot, "fixtures"),
-].filter((p) => {
-  try {
-    statSync(p);
-    return true;
-  } catch {
-    return false;
-  }
-});
+execSync("npm run build", { cwd: pkgDir, stdio: "inherit" });
+const packDir = mkdtempSync(join(tmpdir(), "abraxas-sdk-audit-pack-"));
+const extractDir = mkdtempSync(join(tmpdir(), "abraxas-sdk-audit-extract-"));
 
-const violations = [];
-for (const root of targets) {
-  for (const file of walk(root)) {
-    const rel = file.slice(pkgRoot.length + 1);
-    if (forbidden.some((re) => re.test(rel))) violations.push(rel);
-    if (file.endsWith(".js") || file.endsWith(".cjs")) {
-      const text = readFileSync(file, "utf8");
-      if (text.includes("requireSupabaseAdmin") && !text.includes("not available in @abraxas")) {
-        if (text.includes("../../lib/supabase/admin")) violations.push(`${rel}: live supabase import`);
+try {
+  execSync(`npm pack --pack-destination "${packDir}" --ignore-scripts`, { cwd: pkgDir, stdio: "pipe" });
+  const tgz = readdirSync(packDir).find((name) => name.endsWith(".tgz"));
+  if (!tgz) throw new Error("npm pack produced no tarball");
+  execSync(`tar -xzf "${join(packDir, tgz)}" -C "${extractDir}"`, { stdio: "pipe" });
+  const packageRoot = join(extractDir, "package");
+  const violations = [];
+
+  for (const file of walk(packageRoot)) {
+    const rel = file.slice(packageRoot.length + 1);
+    if (forbiddenPath.some((re) => re.test(rel))) {
+      violations.push(`forbidden path: ${rel}`);
+    }
+    if (rel.endsWith(".map")) {
+      violations.push(`source map shipped in tarball: ${rel}`);
+    }
+    const text = readFileSync(file, "utf8");
+    if (rel.endsWith(".js") || rel.endsWith(".cjs") || rel.endsWith(".json") || rel.endsWith(".md")) {
+      for (const re of forbiddenContent) {
+        if (re.test(text)) {
+          violations.push(`${rel}: matched ${re}`);
+        }
       }
-      if (text.includes("viem/")) violations.push(`${rel}: viem bundled`);
+    }
+    if ((rel.endsWith(".js") || rel.endsWith(".cjs")) && text.includes("viem/")) {
+      violations.push(`${rel}: viem bundled`);
+    }
+    if ((rel.endsWith(".js") || rel.endsWith(".cjs")) && /from\s+["']\.\.\/\.\.\/lib\//.test(text)) {
+      violations.push(`${rel}: runtime import from repository lib path`);
     }
   }
-}
 
-if (violations.length) {
-  console.error("Package contents audit failed:\n", violations.join("\n"));
-  process.exit(1);
+  // Synthetic fixtures must not ship private JWK material
+  const registryPath = join(packageRoot, "fixtures/synthetic/trust-registry.json");
+  if (statSync(registryPath, { throwIfNoEntry: false })) {
+    const registry = readFileSync(registryPath, "utf8");
+    if (registry.includes('"d"')) {
+      violations.push("fixtures/synthetic/trust-registry.json: private JWK field d");
+    }
+  }
+
+  if (violations.length) {
+    console.error("Package tarball audit failed:\n", violations.join("\n"));
+    process.exit(1);
+  }
+  console.log(`Package tarball audit passed (${tgz}).`);
+} finally {
+  rmSync(packDir, { recursive: true, force: true });
+  rmSync(extractDir, { recursive: true, force: true });
 }
-console.log("Package contents audit passed.");
