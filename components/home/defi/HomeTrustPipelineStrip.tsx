@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/home/defi/HomeTrustPipelineStrip.tsx
-// Protocol storytelling strip — illustrative flow, not a live receipt claim.
+// Protocol storytelling strip — informational overview (not interactive controls).
 
 import { useEffect, useState } from "react";
 import { DEFI_TRUST_PIPELINE } from "@/lib/home/defiVisualHomeCopy";
@@ -19,7 +19,7 @@ export function HomeTrustPipelineStrip() {
   return (
     <section
       className={`abx-trust-pipeline${reduceMotion ? " abx-trust-pipeline--static" : ""}`}
-      aria-label="Trust verification flow (illustrative)"
+      aria-label="Independent verification flow overview"
     >
       <p className="abx-trust-pipeline__caption">How independent verification composes</p>
       <div className="abx-trust-pipeline__diagram">
@@ -43,11 +43,7 @@ export function HomeTrustPipelineStrip() {
         <ol className="abx-trust-pipeline__nodes">
           {DEFI_TRUST_PIPELINE.map((step, index) => (
             <li key={step.id} className="abx-trust-pipeline__node">
-              <button
-                type="button"
-                className="abx-trust-pipeline__node-button"
-                aria-label={`${step.label}: ${step.short}`}
-              >
+              <div className="abx-trust-pipeline__node-card">
                 <span className="abx-trust-pipeline__node-ring" aria-hidden="true">
                   <span className="abx-trust-pipeline__node-core">{index + 1}</span>
                 </span>
@@ -55,7 +51,7 @@ export function HomeTrustPipelineStrip() {
                   <span className="abx-trust-pipeline__node-label">{step.label}</span>
                   <span className="abx-trust-pipeline__node-short">{step.short}</span>
                 </span>
-              </button>
+              </div>
             </li>
           ))}
         </ol>
