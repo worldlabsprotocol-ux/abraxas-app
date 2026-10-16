@@ -4,10 +4,26 @@
 import { Reveal } from "@/lib/motion/Reveal";
 
 const STEPS = [
-  { n: "01", title: "Your vault", body: "Credentials stay with you." },
-  { n: "02", title: "Consent", body: "You approve each share." },
-  { n: "03", title: "Signed proof", body: "Narrow answer only." },
-  { n: "04", title: "Reuse", body: "Same proof, new app." },
+  {
+    n: "01",
+    title: "Holder control",
+    body: "Your Passport governs custody and export—credentials are not open to every partner by default.",
+  },
+  {
+    n: "02",
+    title: "Consent",
+    body: "You explicitly approve each partner request before anything is shared.",
+  },
+  {
+    n: "03",
+    title: "Scoped decision",
+    body: "The relying party receives a signed, policy-bound answer—not raw identity files.",
+  },
+  {
+    n: "04",
+    title: "Authorized reuse",
+    body: "Another app may reuse only with your consent, its policy, fresh checks, and no revocation.",
+  },
 ] as const;
 
 export function PassportHolderFlowStepsMotion() {

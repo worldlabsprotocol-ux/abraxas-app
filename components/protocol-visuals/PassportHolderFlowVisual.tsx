@@ -8,7 +8,7 @@ export function PassportHolderFlowVisual() {
       kicker="Passport"
       title="You control"
       titleAccent="what leaves."
-      caption="Verify once. Reuse signed eligibility answers across participating apps."
+      caption="Participating apps receive scoped eligibility answers when you consent and policy authorizes—never automatic access across unrelated apps."
       className="abx-pv-passport-flow"
     >
       <PassportHolderFlowStepsMotion />
