@@ -32,6 +32,14 @@ const PUBLIC_SURFACE_REDIRECTS = [
 const nextConfig = {
   output: process.env.ABRAXAS_STANDALONE_BUILD === "1" ? "standalone" : undefined,
   reactStrictMode: true,
+  typescript: {
+    // Preview-only: Vercel 8GB builders OOM during parallel lint+typecheck (~7.9GB Node RSS measured).
+    // CI on every PR still runs `next build` without this skip (no VERCEL_ENV=preview on GHA).
+    ignoreBuildErrors: process.env.VERCEL_ENV === "preview",
+  },
+  eslint: {
+    ignoreDuringBuilds: process.env.VERCEL_ENV === "preview",
+  },
   async redirects() {
     return PUBLIC_SURFACE_REDIRECTS;
   },
