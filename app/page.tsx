@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { PremiumHomeHero } from "@/components/home/premium/PremiumHomeHero";
+import { DeFiCinematicHomeHero } from "@/components/home/defi/DeFiCinematicHomeHero";
 import { RedesignHome } from "@/components/redesign/RedesignHome";
 import { RedesignPageLoading } from "@/components/redesign/RedesignPageLoading";
 import { pageMetadata } from "@/lib/seo/metadata";
@@ -14,7 +14,7 @@ export const metadata = pageMetadata({
 export default function HomePage() {
   return (
     <Suspense fallback={<RedesignPageLoading label="Loading home…" />}>
-      <RedesignHome hero={<PremiumHomeHero />} />
+      <RedesignHome hero={<DeFiCinematicHomeHero />} />
     </Suspense>
   );
 }

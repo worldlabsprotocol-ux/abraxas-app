@@ -13,6 +13,7 @@ import { PARTNER_ONBOARDING_HEADLINE, PARTNER_ONBOARDING_DOC_LINKS } from "@/lib
 import { PRODUCTION_INTEGRATION_PATH } from "@/lib/relyingPartyProgram";
 import { ConceptDemoVideo } from "@/components/home/ConceptDemoVideo";
 import { BuildIntegrateCinematicDemo } from "@/components/home/cinematic/BuildIntegrateCinematicDemo";
+import { DevelopersDiscoveryPills } from "@/components/developers/DevelopersDiscoveryPills";
 
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 
@@ -27,6 +28,8 @@ export default function DevelopersPage() {
         title="Prove it works in sandbox"
         subtitle="Get a server-verifiable eligibility answer, a starter kit, and a private test application. Partner Flow and receipt verification are available in beta. Advanced paths stay behind outcome-based routing in Integration Studio."
       />
+
+      <DevelopersDiscoveryPills />
 
       <ConceptDemoVideo demo={BuildIntegrateCinematicDemo} id="developers-demo" />
 

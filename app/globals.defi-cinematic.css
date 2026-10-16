@@ -1,0 +1,429 @@
+/* DeFi cinematic homepage — Reference A / F (Build visual transformation) */
+
+.abx-defi-hero {
+  --abx-defi-violet: rgba(124, 92, 255, 0.42);
+  --abx-defi-glass: rgba(14, 14, 22, 0.62);
+  position: relative;
+  min-height: min(92vh, 980px);
+  padding: clamp(1.5rem, 4vw, 2.75rem) clamp(1rem, 4vw, 2rem) clamp(2.5rem, 7vw, 4rem);
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 88%, var(--abx-defi-violet), transparent 70%),
+    radial-gradient(circle at 20% 20%, rgba(76, 187, 146, 0.08), transparent 45%),
+    #050508;
+}
+
+.abx-defi-hero__noise {
+  position: absolute;
+  inset: 0;
+  opacity: 0.35;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+.abx-defi-hero__inner {
+  position: relative;
+  z-index: 2;
+  max-width: 1120px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: clamp(1rem, 3vw, 1.35rem);
+}
+
+.abx-defi-hero__eyebrow {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.abx-defi-hero__title {
+  margin: 0;
+  max-width: 14ch;
+  font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+  font-size: clamp(2.35rem, 6.5vw, 4.1rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.02;
+  color: var(--text-primary);
+}
+
+.abx-defi-hero__support {
+  margin: 0;
+  max-width: 38ch;
+  font-size: clamp(0.95rem, 1.8vw, 1.05rem);
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.abx-defi-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  justify-content: center;
+  margin-top: 0.25rem;
+}
+
+.abx-defi-hero__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0.75rem 1.45rem;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform var(--abx-motion-surface) var(--abx-ease-out),
+    box-shadow var(--abx-motion-surface) var(--abx-ease-out);
+}
+
+.abx-defi-hero__cta--primary {
+  background: #f5f5f3;
+  color: #050508;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 12px 40px rgba(124, 92, 255, 0.25);
+}
+
+.abx-defi-hero__cta--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12), 0 16px 48px rgba(124, 92, 255, 0.32);
+}
+
+.abx-defi-hero__cta--ghost {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.abx-defi-hero__stage-wrap {
+  position: relative;
+  width: min(100%, 520px);
+  aspect-ratio: 1;
+  margin: clamp(0.5rem, 3vw, 1.5rem) auto 0;
+}
+
+/* Centerpiece */
+.abx-defi-centerpiece {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  perspective: 900px;
+}
+
+.abx-defi-centerpiece__atmosphere {
+  position: absolute;
+  inset: 10%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(124, 92, 255, 0.35), transparent 68%);
+  filter: blur(28px);
+  animation: abx-defi-atmosphere-pulse 12s ease-in-out infinite;
+}
+
+.abx-defi-centerpiece__stage {
+  position: relative;
+  width: 72%;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.abx-defi-centerpiece__emblem {
+  width: 100%;
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 24px 48px rgba(0, 0, 0, 0.55));
+}
+
+.abx-defi-centerpiece__sheen {
+  position: absolute;
+  inset: -8%;
+  border-radius: 50%;
+  pointer-events: none;
+  mix-blend-mode: soft-light;
+  background: linear-gradient(
+    115deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.14) 48%,
+    transparent 58%
+  );
+  opacity: 0.7;
+}
+
+.abx-defi-centerpiece--static .abx-defi-centerpiece__stage {
+  transform: perspective(900px) rotateX(4deg);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .abx-defi-centerpiece__stage {
+    animation: abx-defi-emblem-drift 22s ease-in-out infinite;
+  }
+  .abx-defi-centerpiece__sheen {
+    animation: abx-defi-sheen-travel 9s linear infinite;
+  }
+}
+
+@keyframes abx-defi-emblem-drift {
+  0%,
+  100% {
+    transform: perspective(900px) rotateY(-10deg) rotateX(5deg) translateY(0);
+  }
+  50% {
+    transform: perspective(900px) rotateY(10deg) rotateX(-3deg) translateY(-6px);
+  }
+}
+
+@keyframes abx-defi-sheen-travel {
+  0% {
+    transform: translateX(-30%) rotate(0deg);
+  }
+  100% {
+    transform: translateX(30%) rotate(8deg);
+  }
+}
+
+@keyframes abx-defi-atmosphere-pulse {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+/* Floating glass modules */
+.abx-defi-glass-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.abx-defi-glass-card {
+  position: absolute;
+  width: min(42vw, 190px);
+  padding: 0.85rem 0.95rem;
+  border-radius: 16px;
+  background: var(--abx-defi-glass);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+  text-align: left;
+  text-decoration: none;
+  color: inherit;
+  transition: transform var(--abx-motion-surface) var(--abx-ease-out),
+    border-color var(--abx-motion-surface) var(--abx-ease-out);
+}
+
+.abx-defi-glass-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(124, 92, 255, 0.35);
+}
+
+.abx-defi-glass-card__label {
+  margin: 0;
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.abx-defi-glass-card__value {
+  margin: 0.25rem 0 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.abx-defi-glass-card__detail {
+  margin: 0.35rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.abx-defi-glass-card--tl {
+  top: 6%;
+  left: -4%;
+}
+.abx-defi-glass-card--tr {
+  top: 14%;
+  right: -6%;
+}
+.abx-defi-glass-card--bl {
+  bottom: 8%;
+  left: -2%;
+}
+.abx-defi-glass-card--br {
+  bottom: 4%;
+  right: -4%;
+}
+
+@media (max-width: 720px) {
+  .abx-defi-glass-grid {
+    position: relative;
+    inset: auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem;
+    width: 100%;
+    margin-top: 1rem;
+    pointer-events: auto;
+  }
+  .abx-defi-glass-card {
+    position: relative;
+    width: auto;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+  }
+  .abx-defi-hero__stage-wrap {
+    width: min(100%, 360px);
+  }
+}
+
+/* Trust pipeline strip */
+.abx-defi-pipeline {
+  width: min(100%, 920px);
+  margin: clamp(2rem, 5vw, 3rem) auto 0;
+  padding: 1.1rem 1.25rem;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(124, 92, 255, 0.06));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.abx-defi-pipeline__track {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.abx-defi-pipeline__step {
+  text-align: center;
+}
+
+.abx-defi-pipeline__step-label {
+  margin: 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.abx-defi-pipeline__step-short {
+  margin: 0.35rem 0 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.abx-defi-pipeline__arrow {
+  display: none;
+}
+
+@media (min-width: 720px) {
+  .abx-defi-pipeline__track {
+    grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+  }
+  .abx-defi-pipeline__arrow {
+    display: block;
+    color: rgba(124, 92, 255, 0.65);
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 719px) {
+  .abx-defi-pipeline__track {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Developer discovery — Reference C */
+.abx-dev-discovery {
+  margin: 0 0 1.75rem;
+  padding: 1.25rem;
+  border-radius: 20px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.03), rgba(124, 92, 255, 0.08));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.abx-dev-discovery__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-bottom: 1rem;
+}
+
+.abx-dev-discovery__pill {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color var(--abx-motion-surface) var(--abx-ease-out),
+    color var(--abx-motion-surface) var(--abx-ease-out);
+}
+
+.abx-dev-discovery__pill--active {
+  border-color: rgba(124, 92, 255, 0.55);
+  color: var(--text-primary);
+  box-shadow: 0 0 24px rgba(124, 92, 255, 0.15);
+}
+
+.abx-dev-discovery__grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.abx-dev-discovery__card {
+  display: block;
+  padding: 1rem 1.05rem;
+  border-radius: 16px;
+  background: rgba(12, 12, 18, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  text-decoration: none;
+  color: inherit;
+  transition: transform var(--abx-motion-surface) var(--abx-ease-out),
+    border-color var(--abx-motion-surface) var(--abx-ease-out);
+}
+
+.abx-dev-discovery__card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(124, 92, 255, 0.35);
+}
+
+.abx-dev-discovery__tag {
+  display: inline-block;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(124, 92, 255, 0.85);
+  margin-bottom: 0.35rem;
+}
+
+.abx-dev-discovery__card-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.abx-dev-discovery__card-detail {
+  margin: 0.4rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
