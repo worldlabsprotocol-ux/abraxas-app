@@ -49,6 +49,6 @@ export const DEFI_TRUST_GLASS_MODULES = [
 export const DEFI_TRUST_PIPELINE = [
   { id: "issuer", label: "Issuer trust", short: "Pinned keys" },
   { id: "policy", label: "Policy request", short: "Scoped ask" },
-  { id: "decision", label: "Signed decision", short: "Receipt issued" },
-  { id: "verifier", label: "RP verification", short: "Authorize / reject" },
+  { id: "decision", label: "Signed decision", short: "Cryptographic payload" },
+  { id: "verifier", label: "Independent verification", short: "Authorize / reject" },
 ] as const;

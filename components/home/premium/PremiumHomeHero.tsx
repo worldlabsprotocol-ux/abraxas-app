@@ -20,8 +20,9 @@ export function PremiumHomeHero() {
   return (
     <header className="abx-premium-hero abx-premium-hero--enhanced" aria-label="Abraxas: prove what matters">
       <div className="abx-premium-hero__atmosphere" aria-hidden="true" />
+      <div className="abx-premium-hero__depth-plane" aria-hidden="true" />
       <div className="abx-premium-hero__grid" aria-hidden="true" />
-      <div className="abx-premium-hero__layout">
+      <div className="abx-premium-hero__layout abx-premium-hero__layout--composed">
         <div className="abx-premium-hero__copy">
           <p className="abx-v2-eyebrow abx-premium-hero__eyebrow abx-premium-hero__reveal abx-premium-hero__reveal--1">
             {HOMEPAGE_ALIGNMENT_EYEBROW}

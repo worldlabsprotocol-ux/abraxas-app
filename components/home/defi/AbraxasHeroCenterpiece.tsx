@@ -1,12 +1,12 @@
 "use client";
 // FILE: components/home/defi/AbraxasHeroCenterpiece.tsx
-// Official Abraxas emblem — subtle 3D drift, sheen, optional pointer parallax.
+// Official emblem in a dimensional hero environment (square RGB art — blend isolation, no crop).
 
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { OFFICIAL_EMBLEM_HERO_WEBP } from "@/lib/brand/officialBrandAssets";
 
-const PARALLAX_MAX_DEG = 6;
+const PARALLAX_MAX_DEG = 5;
 
 export function AbraxasHeroCenterpiece() {
   const stageRef = useRef<HTMLDivElement>(null);
@@ -45,36 +45,43 @@ export function AbraxasHeroCenterpiece() {
 
   return (
     <div
-      className={`abx-defi-centerpiece${staticMode ? " abx-defi-centerpiece--static" : ""}`}
+      className={`abx-hero-emblem-env${staticMode ? " abx-hero-emblem-env--static" : ""}`}
       onPointerMove={onPointerMove}
       onPointerLeave={onPointerLeave}
       aria-hidden="true"
     >
-      <div className="abx-defi-centerpiece__atmosphere" />
+      <div className="abx-hero-emblem-env__floor" />
+      <div className="abx-hero-emblem-env__light-cone" />
+      <div className="abx-hero-emblem-env__orbit abx-hero-emblem-env__orbit--outer" />
+      <div className="abx-hero-emblem-env__orbit abx-hero-emblem-env__orbit--inner" />
+      <div className="abx-hero-emblem-env__halo" />
       <div
         ref={stageRef}
-        className="abx-defi-centerpiece__stage"
+        className="abx-hero-emblem-env__stage"
         style={
           staticMode
             ? undefined
             : {
                 transform:
-                  "perspective(900px) rotateY(calc(-10deg + var(--abx-parallax-y, 0deg))) rotateX(calc(5deg + var(--abx-parallax-x, 0deg)))",
+                  "perspective(1100px) rotateY(calc(-8deg + var(--abx-parallax-y, 0deg))) rotateX(calc(4deg + var(--abx-parallax-x, 0deg)))",
               }
         }
       >
-        <Image
-          src={OFFICIAL_EMBLEM_HERO_WEBP.src}
-          alt=""
-          width={OFFICIAL_EMBLEM_HERO_WEBP.width}
-          height={OFFICIAL_EMBLEM_HERO_WEBP.height}
-          priority
-          fetchPriority="high"
-          sizes="(max-width: 720px) 72vw, 420px"
-          className="abx-defi-centerpiece__emblem"
-        />
-        {!staticMode ? <div className="abx-defi-centerpiece__sheen" /> : null}
+        <div className="abx-hero-emblem-env__mark">
+          <Image
+            src={OFFICIAL_EMBLEM_HERO_WEBP.src}
+            alt=""
+            width={OFFICIAL_EMBLEM_HERO_WEBP.width}
+            height={OFFICIAL_EMBLEM_HERO_WEBP.height}
+            priority
+            fetchPriority="high"
+            sizes="(max-width: 959px) min(88vw, 400px), min(42vw, 520px)"
+            className="abx-hero-emblem-env__emblem"
+          />
+        </div>
+        {!staticMode ? <div className="abx-hero-emblem-env__sheen" /> : null}
       </div>
+      <div className="abx-hero-emblem-env__reflection" aria-hidden="true" />
     </div>
   );
 }

@@ -22,7 +22,12 @@ export const OFFICIAL_BRAND_ASSETS = {
   },
 } as const;
 
-/** Derived from official emblem PNG — homepage hero only (640 WebP). */
+/**
+ * Derived from official emblem PNG — homepage hero only (640 WebP).
+ * Source raster is RGB with an embedded square field (no alpha). Hero presentation uses
+ * `mix-blend-mode: screen` in CSS to integrate the mark into the dark environment
+ * without cropping official geometry.
+ */
 export const OFFICIAL_EMBLEM_HERO_WEBP = {
   src: "/brand/official/abraxas-emblem-protocol-640.webp",
   width: 640,

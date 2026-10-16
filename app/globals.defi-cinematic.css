@@ -1,10 +1,46 @@
 /* DeFi cinematic homepage — enhancements layered on established premium hero (Reference A / F) */
 
 .abx-premium-hero--enhanced {
+  --abx-hero-accent: rgba(76, 187, 146, 0.55);
+  --abx-hero-accent-soft: rgba(76, 187, 146, 0.12);
   background:
-    radial-gradient(ellipse 72% 52% at 88% 72%, rgba(124, 92, 255, 0.24), transparent 68%),
-    radial-gradient(circle at 14% 22%, rgba(76, 187, 146, 0.11), transparent 48%),
+    radial-gradient(ellipse 90% 70% at 72% 58%, var(--abx-hero-accent-soft), transparent 62%),
+    radial-gradient(circle at 18% 28%, rgba(255, 255, 255, 0.03), transparent 42%),
     #050505;
+}
+
+.abx-premium-hero__depth-plane {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 55% 45% at 78% 52%, rgba(76, 187, 146, 0.08), transparent 70%);
+  mask-image: linear-gradient(180deg, black 0%, transparent 88%);
+}
+
+.abx-premium-hero__layout--composed {
+  align-items: center;
+  min-height: min(76vh, 820px);
+}
+
+@media (min-width: 960px) {
+  .abx-premium-hero__layout--composed {
+    grid-template-columns: 1fr 1.05fr;
+    gap: clamp(1rem, 3vw, 2rem);
+  }
+
+  .abx-premium-hero--enhanced .abx-premium-hero__copy {
+    position: relative;
+    z-index: 3;
+    padding-right: clamp(0.5rem, 2vw, 1.5rem);
+  }
+
+  .abx-premium-hero--enhanced .abx-premium-hero__visual-wrap {
+    width: min(100%, 560px);
+    max-width: 52vw;
+    transform: translateX(-4%) translateY(2%);
+    margin-left: -2rem;
+    z-index: 2;
+  }
 }
 
 .abx-premium-hero__atmosphere {
@@ -18,27 +54,180 @@
 .abx-premium-hero__visual-enhanced {
   position: relative;
   width: 100%;
-  min-height: min(380px, 72vw);
+  min-height: min(440px, 78vw);
 }
 
 .abx-premium-hero__visual-stage {
   position: relative;
-  width: min(100%, 420px);
+  width: min(100%, 520px);
   margin: 0 auto;
-  aspect-ratio: 1;
+  min-height: min(440px, 78vw);
 }
 
-.abx-premium-hero__visual-stage .abx-defi-centerpiece {
+.abx-premium-hero__visual-horizon {
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  bottom: 8%;
+  height: 1px;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* Dimensional emblem environment — official RGB square art isolated via screen blend */
+.abx-hero-emblem-env {
   position: relative;
-  inset: auto;
   width: 100%;
-  height: 100%;
-  min-height: min(380px, 72vw);
+  min-height: inherit;
+  display: grid;
+  place-items: center;
+  perspective: 1100px;
+  isolation: isolate;
 }
 
-.abx-premium-hero__visual-glow {
-  opacity: 1;
-  filter: blur(36px);
+.abx-hero-emblem-env__floor {
+  position: absolute;
+  width: 120%;
+  height: 42%;
+  bottom: 4%;
+  left: -10%;
+  background: radial-gradient(ellipse 70% 80% at 50% 0%, rgba(76, 187, 146, 0.14), transparent 72%);
+  transform: rotateX(68deg);
+  transform-origin: center bottom;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.abx-hero-emblem-env__light-cone {
+  position: absolute;
+  width: 85%;
+  height: 70%;
+  top: 8%;
+  left: 7.5%;
+  background: conic-gradient(from 210deg at 50% 85%, transparent 0deg, rgba(76, 187, 146, 0.12) 38deg, transparent 72deg);
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+.abx-hero-emblem-env__orbit {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(76, 187, 146, 0.18);
+  pointer-events: none;
+}
+
+.abx-hero-emblem-env__orbit--outer {
+  width: 92%;
+  aspect-ratio: 1;
+  opacity: 0.55;
+  transform: rotateX(72deg) scaleY(0.42);
+}
+
+.abx-hero-emblem-env__orbit--inner {
+  width: 68%;
+  aspect-ratio: 1;
+  opacity: 0.75;
+  border-color: rgba(245, 245, 243, 0.12);
+  transform: rotateX(72deg) scaleY(0.38);
+}
+
+.abx-hero-emblem-env__halo {
+  position: absolute;
+  width: 58%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(76, 187, 146, 0.35), transparent 68%);
+  filter: blur(22px);
+  opacity: 0.85;
+}
+
+.abx-hero-emblem-env__stage {
+  position: relative;
+  z-index: 2;
+  width: 88%;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.abx-hero-emblem-env__mark {
+  position: relative;
+  border-radius: 50%;
+  overflow: visible;
+  filter: drop-shadow(0 28px 56px rgba(0, 0, 0, 0.55));
+}
+
+.abx-hero-emblem-env__emblem {
+  width: 100%;
+  height: auto;
+  display: block;
+  mix-blend-mode: screen;
+}
+
+.abx-hero-emblem-env__sheen {
+  position: absolute;
+  inset: -6%;
+  border-radius: 50%;
+  pointer-events: none;
+  mix-blend-mode: soft-light;
+  background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.16) 50%, transparent 60%);
+  opacity: 0.65;
+}
+
+.abx-hero-emblem-env__reflection {
+  position: absolute;
+  width: 46%;
+  height: 12%;
+  bottom: 6%;
+  left: 27%;
+  background: radial-gradient(ellipse at center, rgba(76, 187, 146, 0.22), transparent 70%);
+  filter: blur(8px);
+  opacity: 0.7;
+  transform: scaleY(-1);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .abx-hero-emblem-env:not(.abx-hero-emblem-env--static) .abx-hero-emblem-env__orbit--outer {
+    animation: abx-hero-orbit-spin 48s linear infinite;
+  }
+  .abx-hero-emblem-env:not(.abx-hero-emblem-env--static) .abx-hero-emblem-env__stage {
+    animation: abx-hero-emblem-drift 24s ease-in-out infinite;
+  }
+  .abx-hero-emblem-env:not(.abx-hero-emblem-env--static) .abx-hero-emblem-env__sheen {
+    animation: abx-hero-sheen-travel 10s linear infinite;
+  }
+}
+
+.abx-hero-emblem-env--static .abx-hero-emblem-env__stage {
+  transform: perspective(1100px) rotateY(-6deg) rotateX(3deg);
+}
+
+@keyframes abx-hero-emblem-drift {
+  0%,
+  100% {
+    transform: perspective(1100px) rotateY(-8deg) rotateX(4deg) translateY(0);
+  }
+  50% {
+    transform: perspective(1100px) rotateY(6deg) rotateX(-2deg) translateY(-8px);
+  }
+}
+
+@keyframes abx-hero-orbit-spin {
+  from {
+    transform: rotateX(72deg) scaleY(0.42) rotateZ(0deg);
+  }
+  to {
+    transform: rotateX(72deg) scaleY(0.42) rotateZ(360deg);
+  }
+}
+
+@keyframes abx-hero-sheen-travel {
+  0% {
+    transform: translateX(-28%) rotate(0deg);
+  }
+  100% {
+    transform: translateX(28%) rotate(6deg);
+  }
 }
 
 .abx-premium-hero__pipeline {
@@ -59,29 +248,165 @@
     box-shadow var(--abx-motion-surface) var(--abx-ease-out);
 }
 
+.abx-premium-hero--enhanced .abx-premium-hero__cta--primary {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 10px 32px rgba(0, 0, 0, 0.35);
+}
+
 .abx-premium-hero--enhanced .abx-premium-hero__cta--primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 12px 36px rgba(124, 92, 255, 0.22);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 14px 40px rgba(76, 187, 146, 0.22);
 }
 
 .abx-premium-hero--enhanced .abx-premium-hero__cta--secondary:hover {
   transform: translateY(-1px);
-  border-color: rgba(124, 92, 255, 0.35);
+  border-color: rgba(76, 187, 146, 0.45);
 }
 
-.abx-premium-home.abx-v2-home .abx-premium-chapter {
-  transition: transform var(--abx-motion-surface) var(--abx-ease-out);
+.abx-premium-hero--enhanced .abx-premium-hero__title {
+  text-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .abx-premium-home.abx-v2-home .abx-premium-chapter:hover {
-    transform: translateY(-2px);
+.abx-premium-hero--enhanced .abx-premium-hero__lead {
+  max-width: 34rem;
+}
+
+/* Trust pipeline storytelling */
+.abx-trust-pipeline {
+  position: relative;
+  padding: clamp(1rem, 2.5vw, 1.35rem) clamp(1rem, 2.5vw, 1.5rem);
+  border-radius: 18px;
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.035), rgba(76, 187, 146, 0.04));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.abx-trust-pipeline__caption {
+  margin: 0 0 0.85rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.abx-trust-pipeline__diagram {
+  position: relative;
+}
+
+.abx-trust-pipeline__lines {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 1.65rem;
+  width: 100%;
+  height: 48px;
+  display: none;
+  pointer-events: none;
+}
+
+.abx-trust-pipeline__nodes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem 0.65rem;
+}
+
+.abx-trust-pipeline__node-button {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.55rem 0.45rem;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: default;
+  transition: border-color var(--abx-motion-surface) var(--abx-ease-out),
+    background var(--abx-motion-surface) var(--abx-ease-out),
+    transform var(--abx-motion-surface) var(--abx-ease-out);
+}
+
+.abx-trust-pipeline__node-button:hover,
+.abx-trust-pipeline__node-button:focus-visible {
+  border-color: rgba(76, 187, 146, 0.35);
+  background: rgba(76, 187, 146, 0.06);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.abx-trust-pipeline__node-ring {
+  flex-shrink: 0;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(76, 187, 146, 0.35);
+  background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.35));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.abx-trust-pipeline__node-core {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.abx-trust-pipeline__node-label {
+  display: block;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.abx-trust-pipeline__node-short {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+@media (min-width: 900px) {
+  .abx-trust-pipeline__lines {
+    display: block;
+  }
+
+  .abx-trust-pipeline__nodes {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+
+  .abx-trust-pipeline__node-button {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 0.65rem 0.35rem 0.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .abx-trust-pipeline__node-button:hover,
+  .abx-trust-pipeline__node-button:focus-visible {
+    transform: none;
   }
 }
 
 @media (max-width: 959px) {
   .abx-premium-hero__visual-wrap {
-    width: min(100%, 360px);
+    width: min(100%, 400px);
+    transform: none;
+    margin-left: 0;
+  }
+
+  .abx-premium-hero__visual-stage {
+    min-height: min(360px, 88vw);
   }
 
   .abx-premium-hero__title-line {
