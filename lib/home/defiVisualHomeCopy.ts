@@ -1,5 +1,5 @@
 // FILE: lib/home/defiVisualHomeCopy.ts
-// Concise homepage copy for DeFi cinematic hero (founder visual direction).
+// Homepage hero pipeline copy — institutional verification thesis (PR #716 surfaces).
 
 export const DEFI_HOME_EYEBROW = "Institutional trust infrastructure";
 
@@ -52,3 +52,32 @@ export const DEFI_TRUST_PIPELINE = [
   { id: "decision", label: "Signed decision", short: "Cryptographic payload" },
   { id: "verifier", label: "Independent verification", short: "Authorize / reject" },
 ] as const;
+
+export type TrustPipelineStageId = (typeof DEFI_TRUST_PIPELINE)[number]["id"];
+
+/** Illustrative stage detail — protocol mechanics, not a live verification outcome. */
+export const TRUST_PIPELINE_STAGE_DETAIL: Record<
+  TrustPipelineStageId,
+  { headline: string; body: string; vizLabel: string }
+> = {
+  issuer: {
+    headline: "Issuer authority and pinned trust",
+    body: "Relying parties pin issuer keys and policy versions. Trust roots stay under institutional control—not Abraxas identity databases at authorization time.",
+    vizLabel: "Pinned issuer keys",
+  },
+  policy: {
+    headline: "Application-scoped policy request",
+    body: "Applications request a narrow decision against a specific policy_id. Abraxas evaluates only permitted evidence for that ask.",
+    vizLabel: "Scoped policy_id",
+  },
+  decision: {
+    headline: "Signed decision and cryptographic provenance",
+    body: "When authorization succeeds, the holder receives a scoped, signed, expiring decision artifact. Privacy boundaries stay with the holder.",
+    vizLabel: "Ed25519 decision payload",
+  },
+  verifier: {
+    headline: "Independent relying-party verification",
+    body: "Verifiers validate signatures, policy binding, and expiry offline. Authorization does not require querying Abraxas for underlying identity.",
+    vizLabel: "Offline signature verify",
+  },
+};
