@@ -12,9 +12,9 @@ import {
   isReceiptCurrentlyValid,
   resolveReceiptStatus,
   toPublicView,
-  toPartnerView,
   verifyRecordSignature,
 } from "@/lib/decisionReceipts/views";
+import { toPartnerView } from "@/lib/decisionReceipts/viewsPartner";
 import type { DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import { SANDBOX_POLICY_ID } from "@/lib/partner/sandboxPartner";
 

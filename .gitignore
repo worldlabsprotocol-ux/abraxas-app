@@ -1,5 +1,7 @@
 # dependencies
 /node_modules
+packages/abraxas-institutional-verification/*.tgz
+packages/abraxas-institutional-verification/node_modules
 /.pnp
 .pnp.js
 .yarn/install-state.gz

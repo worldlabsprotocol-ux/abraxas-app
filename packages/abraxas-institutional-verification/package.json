@@ -1,0 +1,56 @@
+{
+  "name": "@abraxas/institutional-verification",
+  "version": "0.1.0",
+  "description": "Institutional offline verification SDK for Abraxas signed decision receipts, presentations, and portable revocation.",
+  "license": "UNLICENSED",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./consumption": {
+      "types": "./dist/consumption.d.ts",
+      "import": "./dist/consumption.js",
+      "require": "./dist/consumption.cjs"
+    },
+    "./fixtures/synthetic": {
+      "types": "./dist/fixtures/synthetic.d.ts",
+      "import": "./dist/fixtures/synthetic.js",
+      "require": "./dist/fixtures/synthetic.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "fixtures",
+    "README.md",
+    "LICENSE",
+    "SECURITY.md",
+    "DISTRIBUTION.md"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "pack:check": "node ../../scripts/build587/audit-package-contents.mjs",
+    "prepack": "npm run build"
+  },
+  "dependencies": {
+    "tweetnacl": "^1.0.3"
+  },
+  "peerDependenciesMeta": {
+    "pg": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3"
+  }
+}

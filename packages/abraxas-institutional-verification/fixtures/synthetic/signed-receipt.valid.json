@@ -1,0 +1,39 @@
+{
+  "id": "dr_build546_valid",
+  "verification_decision_id": "00000000-0000-4000-8000-000000000546",
+  "consent_receipt_id": null,
+  "partner_id": "institutional-rp-example",
+  "policy_id": "institutional-age-21-v1",
+  "policy_version": 1,
+  "subject_pseudonym_id": "c61125bd488f350d4644c9fab7c73d54",
+  "wallet_binding_ref": null,
+  "decision_result": "approved",
+  "reason_codes": [
+    "all_claims_met"
+  ],
+  "evaluated_claim_refs": [
+    {
+      "claim_id": "claim-synthetic-1",
+      "claim_type": "age_over_21",
+      "issuer_id": "issuer:synthetic-kyc",
+      "status": "active",
+      "issued_at": "2026-01-01T00:00:00.000Z",
+      "expires_at": "2027-01-01T00:00:00.000Z"
+    }
+  ],
+  "issuer_refs": [
+    "issuer:synthetic-kyc"
+  ],
+  "decision_context": "production",
+  "evaluated_at": "2026-06-01T12:00:00.000Z",
+  "expires_at": "2027-06-01T12:00:00.000Z",
+  "revoked_at": null,
+  "status": "active",
+  "schema_version": "1.0.0",
+  "payload_hash": "70a0ab4987392cd172ec6eafaba0de07dda3883e2e8db9c0fdc46527c79513cc",
+  "signature": "aOdUQ93IAFCkWCfmA5U2zdmlF9cs_svfX193VTsgyWEiZGpKRrLrGPDS5sOH7Ub1eNPK11HdHRG3S7cc3xWBBA",
+  "signing_key_id": "build546-primary",
+  "anchor_reference": null,
+  "idempotency_key": "00000000-0000-4000-8000-000000000546",
+  "created_at": "2026-06-01T12:00:00.000Z"
+}
