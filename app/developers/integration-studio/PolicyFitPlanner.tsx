@@ -2,7 +2,7 @@
 // FILE: app/developers/integration-studio/PolicyFitPlanner.tsx
 // Structured pack finder. Applies to existing Studio pack and path state.
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
@@ -27,6 +27,7 @@ import {
 } from "@/lib/partner/integrationStudio/policyFit/contract";
 import { studioCapsFromFit, type PolicyFitView } from "@/lib/partner/integrationStudio/policyFit/match";
 import { EligibilityPolicyCard } from "@/components/product/EligibilityPolicyCard";
+import { INSTITUTIONAL_SANDBOX_LAUNCHPAD_HREF, INSTITUTIONAL_SANDBOX_POLICY_TEMPLATE_ID } from "@/lib/partner/launchpad/institutionalActivationEntry";
 
 const FONT = ABRAXAS_FONT_SANS;
 const body: React.CSSProperties = {
@@ -49,14 +50,33 @@ const chip = (active: boolean, accent: string): React.CSSProperties => ({
   cursor: "pointer",
 });
 
+function isPolicyFitAction(value: string): value is PolicyFitAction {
+  return (POLICY_FIT_ACTIONS as readonly string[]).includes(value);
+}
+
+function isPolicyFitCategory(value: string): value is PolicyFitCategory {
+  return (POLICY_FIT_CATEGORIES as readonly string[]).includes(value);
+}
+
+function isPolicyFitEnvironment(value: string): value is PolicyFitEnvironment {
+  return (POLICY_FIT_ENVIRONMENTS as readonly string[]).includes(value);
+}
+
 export function PolicyFitPlanner({
   onApply,
+  initial,
 }: {
   onApply: (selection: { packId: string; pathId: IntegrationStudioPathId; capabilities: string[] }) => void;
+  initial?: {
+    action?: PolicyFitAction;
+    category?: PolicyFitCategory;
+    environment?: PolicyFitEnvironment;
+    autoFind?: boolean;
+  };
 }) {
-  const [action, setAction] = useState<PolicyFitAction>("retail_access");
-  const [category, setCategory] = useState<PolicyFitCategory>("age_21");
-  const [environment, setEnvironment] = useState<PolicyFitEnvironment>("sandbox");
+  const [action, setAction] = useState<PolicyFitAction>(initial?.action ?? "retail_access");
+  const [category, setCategory] = useState<PolicyFitCategory>(initial?.category ?? "age_21");
+  const [environment, setEnvironment] = useState<PolicyFitEnvironment>(initial?.environment ?? "sandbox");
   const [capabilities, setCapabilities] = useState<PolicyFitCapability[]>(["reusable_result"]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -93,6 +113,13 @@ export function PolicyFitPlanner({
       setBusy(false);
     }
   }
+
+  const autoFindStarted = useRef(false);
+  useEffect(() => {
+    if (!initial?.autoFind || autoFindStarted.current) return;
+    autoFindStarted.current = true;
+    void findFit();
+  }, [initial?.autoFind]);
 
   return (
     <ContentCard title="What does your application need to verify?">
@@ -229,6 +256,11 @@ export function PolicyFitPlanner({
                 >
                   Use this pack in Studio
                 </Btn>
+                {result.recommended.pack_id === INSTITUTIONAL_SANDBOX_POLICY_TEMPLATE_ID ? (
+                  <Btn href={INSTITUTIONAL_SANDBOX_LAUNCHPAD_HREF} size="sm" variant="secondary">
+                    Create institutional sandbox app
+                  </Btn>
+                ) : null}
                 <Btn href="/developers/launchpad#policy-proposal" size="sm" variant="secondary">Propose a policy</Btn>
               </div>
             </article>

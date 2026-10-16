@@ -60,6 +60,14 @@ import { IntegrationStudioRequestWorkbench } from "@/components/developers/Integ
 import { IntegrationStudioSessionHandoff } from "@/components/developers/IntegrationStudioSessionHandoff";
 import { IntegrationStudioConfigurationPanel } from "@/components/developers/IntegrationStudioConfigurationPanel";
 import { PartnerLifecycleControlRoomVisual } from "@/components/protocol-visuals";
+import {
+  POLICY_FIT_ACTIONS,
+  POLICY_FIT_CATEGORIES,
+  POLICY_FIT_ENVIRONMENTS,
+  type PolicyFitAction,
+  type PolicyFitCategory,
+  type PolicyFitEnvironment,
+} from "@/lib/partner/integrationStudio/policyFit/contract";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -153,6 +161,24 @@ export function IntegrationStudioClient() {
     const requested = searchParams.get("outcome");
     return requested && isIntegrationStudioOutcomeId(requested) ? requested : null;
   });
+
+  const policyFitInitial = useMemo(() => {
+    const actionParam = searchParams.get("action");
+    const categoryParam = searchParams.get("category");
+    const environmentParam = searchParams.get("environment");
+    if (!actionParam && !categoryParam && !environmentParam) return undefined;
+    const action = actionParam && (POLICY_FIT_ACTIONS as readonly string[]).includes(actionParam)
+      ? (actionParam as PolicyFitAction)
+      : undefined;
+    const category = categoryParam && (POLICY_FIT_CATEGORIES as readonly string[]).includes(categoryParam)
+      ? (categoryParam as PolicyFitCategory)
+      : undefined;
+    const environment = environmentParam && (POLICY_FIT_ENVIRONMENTS as readonly string[]).includes(environmentParam)
+      ? (environmentParam as PolicyFitEnvironment)
+      : undefined;
+    if (!action && !category && !environment) return undefined;
+    return { action, category, environment, autoFind: Boolean(action && category) };
+  }, [searchParams]);
 
   const contract = useMemo(() => studioPackContract(packId), [packId]);
   const snippet = useMemo(() => studioSnippetForPath(pathId), [pathId]);
@@ -492,6 +518,7 @@ export function IntegrationStudioClient() {
 
       <Reveal delay={0.08}>
         <PolicyFitPlanner
+          initial={policyFitInitial}
           onApply={(selection) => {
             if (!isPolicyPackId(selection.packId)) return;
             setPackId(selection.packId);

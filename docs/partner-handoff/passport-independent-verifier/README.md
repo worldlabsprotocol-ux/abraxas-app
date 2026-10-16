@@ -2,6 +2,8 @@
 
 Design partners operate verification outside Abraxas identity databases.
 
+For the institutional sandbox customer journey (Launchpad provisioning, hosted verification, milestone evidence), see [institutional-sandbox-activation-583.md](../institutional-sandbox-activation-583.md).
+
 ## What you receive
 
 1. A **presentation bundle** JSON from the holder after they approve your scoped request.

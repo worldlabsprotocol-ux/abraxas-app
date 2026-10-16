@@ -52,9 +52,9 @@ export const INSTITUTIONAL_JOURNEY_PATHS = [
   {
     id: "partner",
     title: "Partner integration",
-    description: "Configure policies, run sandbox flows, and verify signed receipts in Integration Studio.",
-    href: "/integrations",
-    cta: "Integration Studio",
+    description: "Configure institutional sandbox policies, provision a Launchpad application, and verify signed receipts without receiving identity evidence.",
+    href: "/developers/integration-studio?pack=sandbox_institutional_protocol_access&path=institutional_eligibility_gate&action=org_protocol_access&category=institutional_eligibility&environment=sandbox",
+    cta: "Start institutional sandbox",
     accent: "developer" as const,
   },
   {
