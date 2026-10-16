@@ -5,7 +5,10 @@ import { createHash } from "node:crypto";
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { evaluateInstitutionalSdkEntitlement } from "@/lib/institutionalVerification/sdkDistributionEntitlement";
+import {
+  evaluateInstitutionalSdkEntitlement,
+  parseInstitutionalSdkEntitlements,
+} from "@/lib/institutionalVerification/sdkDistributionEntitlement";
 import { validateInstitutionalSdkArtifact } from "@/lib/institutionalVerification/sdkArtifact";
 import { buildInstitutionalSdkReleaseView } from "@/lib/institutionalVerification/sdkRelease";
 import { prepareInstitutionalSdkDownload } from "@/lib/institutionalVerification/sdkDownload";
@@ -249,6 +252,71 @@ describe("Build #588 SDK distribution access control", () => {
     }
 
     cleanup();
+  });
+
+  it("treats omitted application_ids as partner-wide but explicit empty array as fail-closed", () => {
+    vi.stubEnv(
+      "INSTITUTIONAL_SDK_DISTRIBUTION_ENTITLEMENTS",
+      JSON.stringify([
+        { partner_id: "partner-wide", package_version: "0.1.0" },
+        { partner_id: "partner-empty-scope", package_version: "0.1.0", application_ids: [] },
+      ]),
+    );
+
+    const wide = evaluateInstitutionalSdkEntitlement({
+      partnerId: "partner-wide",
+      packageVersion: "0.1.0",
+      applicationId: "any-app-id",
+      env: process.env,
+    });
+    expect(wide.ok).toBe(true);
+
+    const emptyScope = evaluateInstitutionalSdkEntitlement({
+      partnerId: "partner-empty-scope",
+      packageVersion: "0.1.0",
+      applicationId: "any-app-id",
+      env: process.env,
+    });
+    expect(emptyScope.ok).toBe(false);
+    if (!emptyScope.ok) {
+      expect(emptyScope.code).toBe("institutional_sdk_entitlement_application_scope_empty");
+    }
+  });
+
+  it("rejects malformed entitlement application_ids and duplicate partner records at parse time", () => {
+    const malformed = parseInstitutionalSdkEntitlements({
+      INSTITUTIONAL_SDK_DISTRIBUTION_ENTITLEMENTS: JSON.stringify([
+        { partner_id: "p1", package_version: "0.1.0", application_ids: ["valid-id", ""] },
+      ]),
+    });
+    expect(Array.isArray(malformed)).toBe(false);
+
+    const dupPartners = parseInstitutionalSdkEntitlements({
+      INSTITUTIONAL_SDK_DISTRIBUTION_ENTITLEMENTS: JSON.stringify([
+        { partner_id: "p1", package_version: "0.1.0" },
+        { partner_id: "p1", package_version: "0.1.0", application_ids: ["app-a"] },
+      ]),
+    });
+    expect(Array.isArray(dupPartners)).toBe(false);
+
+    const dupAppIds = parseInstitutionalSdkEntitlements({
+      INSTITUTIONAL_SDK_DISTRIBUTION_ENTITLEMENTS: JSON.stringify([
+        { partner_id: "p1", package_version: "0.1.0", application_ids: ["app-a", "app-a"] },
+      ]),
+    });
+    expect(Array.isArray(dupAppIds)).toBe(false);
+  });
+
+  it("denies evaluation when the request application id is malformed", () => {
+    vi.stubEnv("INSTITUTIONAL_SDK_DISTRIBUTION_ENTITLEMENTS", ENTITLEMENTS);
+    const decision = evaluateInstitutionalSdkEntitlement({
+      partnerId: "partner-a",
+      packageVersion: "0.1.0",
+      applicationId: "  ",
+      env: process.env,
+    });
+    expect(decision.ok).toBe(false);
+    if (!decision.ok) expect(decision.code).toBe("institutional_sdk_application_id_invalid");
   });
 
   it("denies unauthorized institution even when artifact validates", async () => {

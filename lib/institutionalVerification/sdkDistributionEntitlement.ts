@@ -33,8 +33,51 @@ export type InstitutionalSdkEntitlementRecord = {
 const ENTITLEMENTS_ENV = "INSTITUTIONAL_SDK_DISTRIBUTION_ENTITLEMENTS";
 const REVOKED_PARTNERS_ENV = "INSTITUTIONAL_SDK_DISTRIBUTION_REVOKED_PARTNERS";
 
+/** Launchpad application IDs used in entitlement config and download evaluation. */
+const APPLICATION_ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
+
 function normalizePartnerId(value: string): string {
   return value.trim();
+}
+
+function normalizeApplicationId(value: string): string {
+  return value.trim();
+}
+
+function isWellFormedApplicationId(value: string): boolean {
+  const normalized = normalizeApplicationId(value);
+  if (!normalized || normalized !== value.trim()) return false;
+  return APPLICATION_ID_PATTERN.test(normalized);
+}
+
+type ParsedApplicationIds =
+  | { ok: true; applicationIds: string[] | null }
+  | { ok: false; code: "entitlements_parse_failed" };
+
+function parseEntitlementApplicationIds(value: unknown): ParsedApplicationIds {
+  if (value === undefined || value === null) {
+    return { ok: true, applicationIds: null };
+  }
+  if (!Array.isArray(value)) {
+    return { ok: false, code: "entitlements_parse_failed" };
+  }
+  if (value.length === 0) {
+    return { ok: true, applicationIds: [] };
+  }
+  const ids: string[] = [];
+  const seen = new Set<string>();
+  for (const entry of value) {
+    if (typeof entry !== "string" || !isWellFormedApplicationId(entry)) {
+      return { ok: false, code: "entitlements_parse_failed" };
+    }
+    const normalized = normalizeApplicationId(entry);
+    if (seen.has(normalized)) {
+      return { ok: false, code: "entitlements_parse_failed" };
+    }
+    seen.add(normalized);
+    ids.push(normalized);
+  }
+  return { ok: true, applicationIds: ids };
 }
 
 function parseRevokedPartnerSet(env: Record<string, string | undefined>): Set<string> {
@@ -57,6 +100,7 @@ export function parseInstitutionalSdkEntitlements(
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return { ok: false, code: "entitlements_parse_failed" };
     const records: InstitutionalSdkEntitlementRecord[] = [];
+    const partnerIdsSeen = new Set<string>();
     for (const row of parsed) {
       if (!row || typeof row !== "object" || Array.isArray(row)) {
         return { ok: false, code: "entitlements_parse_failed" };
@@ -68,20 +112,21 @@ export function parseInstitutionalSdkEntitlements(
       if (typeof record.package_version !== "string" || !record.package_version.trim()) {
         return { ok: false, code: "entitlements_parse_failed" };
       }
-      let applicationIds: string[] | null | undefined;
-      if (record.application_ids === null || record.application_ids === undefined) {
-        applicationIds = record.application_ids ?? null;
-      } else if (Array.isArray(record.application_ids)) {
-        applicationIds = record.application_ids.filter((id): id is string => typeof id === "string" && id.trim().length > 0);
-      } else {
+      const applicationIdsParsed = parseEntitlementApplicationIds(record.application_ids);
+      if (!applicationIdsParsed.ok) {
+        return { ok: false, code: applicationIdsParsed.code };
+      }
+      const partner_id = normalizePartnerId(record.partner_id);
+      if (partnerIdsSeen.has(partner_id)) {
         return { ok: false, code: "entitlements_parse_failed" };
       }
+      partnerIdsSeen.add(partner_id);
       records.push({
-        partner_id: normalizePartnerId(record.partner_id),
+        partner_id,
         package_version: record.package_version.trim(),
         expires_at: typeof record.expires_at === "string" ? record.expires_at : null,
         revoked: record.revoked === true,
-        application_ids: applicationIds ?? null,
+        application_ids: applicationIdsParsed.applicationIds,
       });
     }
     return records;
@@ -101,6 +146,14 @@ export function evaluateInstitutionalSdkEntitlement(input: {
   const partnerId = normalizePartnerId(input.partnerId);
   const packageVersion = input.packageVersion.trim();
   const revokedPartners = parseRevokedPartnerSet(env);
+
+  if (!isWellFormedApplicationId(input.applicationId)) {
+    return {
+      ok: false,
+      status: "application_not_entitled",
+      code: "institutional_sdk_application_id_invalid",
+    };
+  }
 
   if (revokedPartners.has(partnerId)) {
     return { ok: false, status: "revoked", code: "institutional_sdk_entitlement_revoked" };
@@ -132,8 +185,16 @@ export function evaluateInstitutionalSdkEntitlement(input: {
     }
   }
 
-  if (match.application_ids && match.application_ids.length > 0) {
-    if (!match.application_ids.includes(input.applicationId)) {
+  if (Array.isArray(match.application_ids)) {
+    if (match.application_ids.length === 0) {
+      return {
+        ok: false,
+        status: "application_not_entitled",
+        code: "institutional_sdk_entitlement_application_scope_empty",
+      };
+    }
+    const applicationId = normalizeApplicationId(input.applicationId);
+    if (!match.application_ids.includes(applicationId)) {
       return {
         ok: false,
         status: "application_not_entitled",
