@@ -123,7 +123,10 @@
     "build-582:institutional-trust-proof": "tsx scripts/build-582/run-institutional-trust-proof.ts",
     "build-582:production-activation-boundary": "tsx scripts/build-582/production-activation-boundary-report.ts",
     "test:production-activation-583": "vitest run --no-file-parallelism lib/partner/build583.institutionalActivationMilestones.test.ts lib/partner/build583.localAutomated.test.ts lib/partner/build583.simulatedSandboxProvisioning.test.ts lib/partner/build583.institutionalSandboxFirstVerificationCard.test.ts components/partner/launchpad/InstitutionalSandboxFirstVerificationCard.test.tsx && npm run -s test:production-activation-582",
-    "build-583:external-institutional-acceptance": "tsx scripts/build-583/run-external-institutional-acceptance.ts"
+    "build-583:external-institutional-acceptance": "tsx scripts/build-583/run-external-institutional-acceptance.ts",
+    "build-584:live-institutional-acceptance": "tsx scripts/build-584/run-live-institutional-acceptance.ts",
+    "build-584:authenticated-browser-acceptance": "tsx scripts/build-584/run-authenticated-browser-acceptance.ts",
+    "test:production-activation-584": "vitest run --no-file-parallelism lib/partner/build584/ && npm run -s test:production-activation-583"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.30.1",
