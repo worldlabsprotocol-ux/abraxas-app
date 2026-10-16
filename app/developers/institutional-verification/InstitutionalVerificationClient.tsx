@@ -112,6 +112,9 @@ export function InstitutionalVerificationClient() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.85rem" }}>
           <Btn href="/docs/receipt-key-lifecycle" size="sm" variant="secondary">Receipt key lifecycle</Btn>
           <Btn href="/docs/credential-portability" size="sm" variant="ghost">Credential portability</Btn>
+          <Btn href="/developers/institutional-integration" size="sm" variant="secondary">
+            Integration workspace
+          </Btn>
           <Btn href="/developers/integration-studio?pack=sandbox_institutional_protocol_access" size="sm" variant="ghost">
             Institutional sandbox app
           </Btn>

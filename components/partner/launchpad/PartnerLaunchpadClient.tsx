@@ -997,6 +997,19 @@ export function PartnerLaunchpadClient({
             journey={journey}
             onNavigate={(stage) => navigateToStage(stage)}
           />
+          <ContentCard title="Institutional integration workspace (Build #588)">
+            <p style={bodyText}>
+              Configure SDK delivery, digest v2 trust pins, application binding, and the ten-step verification journey in one customer-facing workspace.
+            </p>
+            <Btn
+              href={`/developers/institutional-integration?application=${encodeURIComponent(activeApp.id)}`}
+              size="sm"
+              variant="secondary"
+              style={{ marginTop: "0.65rem" }}
+            >
+              Open integration workspace
+            </Btn>
+          </ContentCard>
           <ContentCard title="Extended institutional sandbox sequence">
             <ol style={{ ...bodyText, paddingLeft: "1.2rem" }}>
               {SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SEQUENCE.map((stepLabel) => (

@@ -15,6 +15,15 @@
 - **Minor:** additive exports/types; backward compatible pins.
 - **Major:** breaking rejection codes, trust bootstrap requirements, or digest version bumps.
 
+## Controlled delivery (Build #588)
+
+Partner download requires **both**:
+
+1. Deployment artifact channel: `INSTITUTIONAL_SDK_DISTRIBUTION_MODE=authorized`, versioned tarball on server, and **`INSTITUTIONAL_SDK_APPROVED_TARBALL_SHA256`** (founder-approved digest, independent of the on-disk file).
+2. Partner entitlement: **`INSTITUTIONAL_SDK_DISTRIBUTION_ENTITLEMENTS`** JSON allowlist (partner_id, package_version, optional expires_at / application_ids). Optional revocations: **`INSTITUTIONAL_SDK_DISTRIBUTION_REVOKED_PARTNERS`**.
+
+Download audit to `partner_launchpad_activity` is **mandatory** before bytes are served; audit failure returns 503 without serving the tarball.
+
 ## Release artifact requirements
 
 Each release tarball must include:

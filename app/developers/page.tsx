@@ -79,6 +79,7 @@ export default function DevelopersPage() {
         <div style={{ display: "grid", gap: "0.45rem", fontFamily: FONT, fontSize: "0.78rem" }}>
           {[
             { label: "Integration Studio", href: "/developers/integration-studio" },
+            { label: "Institutional integration workspace (Build #588)", href: "/developers/institutional-integration" },
             { label: "Institutional verification SDK (Build #587 tarball)", href: "/developers/institutional-verification" },
             { label: "Passport portable trust (Build #565 demo)", href: "/developers/passport-portable-trust" },
             { label: "External RP verify + proof", href: "/docs/relying-party-verify" },
