@@ -1,14 +1,9 @@
 // FILE: lib/decisionReceipts/views.ts
 // Public and partner-safe receipt views.
 
-import type {
-  DecisionReceiptPartnerView,
-  DecisionReceiptPublicView,
-  DecisionReceiptRecord,
-} from "@/lib/decisionReceipts/types";
+import type { DecisionReceiptPublicView, DecisionReceiptRecord } from "@/lib/decisionReceipts/types";
 import { verifyRecordSignatureWithRegistry } from "@/lib/decisionReceipts/verificationKeyLifecycle";
 import { isSandboxPolicyId } from "@/lib/partner/sandboxPartner";
-import { inferPolicyPackFromPolicyId } from "@/lib/partner/launchpad/policyPacks";
 import { assertCustodySafePayload } from "@/lib/custody/guardrails";
 import { pickAllowedKeys } from "@/lib/privacy/selectiveDisclosure";
 import { SHARED_SURFACE_FIELDS } from "@/lib/privacy/selectiveDisclosure/contract";
@@ -58,23 +53,6 @@ export function toPublicView(record: DecisionReceiptRecord): DecisionReceiptPubl
     artifact_type: "eligibility_decision_receipt" as const,
   };
   return (pickAllowedKeys(view, SHARED_SURFACE_FIELDS.public_receipt) ?? view) as unknown as DecisionReceiptPublicView;
-}
-
-export function toPartnerView(
-  record: DecisionReceiptRecord,
-  consentScopeAllowed: boolean,
-): DecisionReceiptPartnerView {
-  const pack = inferPolicyPackFromPolicyId(record.policy_id);
-  const withholdWalletBindingRef = pack?.id === "wallet_control";
-  return {
-    ...toPublicView(record),
-    decision_id: record.verification_decision_id,
-    consent_receipt_id: record.consent_receipt_id,
-    wallet_binding_ref: consentScopeAllowed && !withholdWalletBindingRef
-      ? record.wallet_binding_ref
-      : null,
-    consent_scope_allowed: consentScopeAllowed,
-  };
 }
 
 /** Ensure public output contains no raw PII field names */
