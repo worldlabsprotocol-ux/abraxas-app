@@ -56,7 +56,10 @@ export function assessSandboxExecutionResources(
   const partnerId = env.RP_PARTNER_ID?.trim();
   const policyId = env.RP_POLICY_ID?.trim();
   const consumptionDir = env.RP_CONSUMPTION_DIR?.trim();
-  const revocationAdapter = env.RP_REVOCATION_ADAPTER?.trim() === "institution_operated";
+  const portableSnapshotPath = env.BUILD592_PORTABLE_REVOCATION_SNAPSHOT_PATH?.trim()
+    ?? env.BUILD592_PORTABLE_REVOCATION_SNAPSHOT_JSON?.trim();
+  const portableIssuerTrust = env.BUILD592_PORTABLE_REVOCATION_ISSUER_TRUST_JSON?.trim()
+    ?? env.ABRAXAS_PORTABLE_REVOCATION_ISSUER_TRUST?.trim();
 
   const resources: SandboxExecutionResourceRow[] = [
     {
@@ -141,12 +144,14 @@ export function assessSandboxExecutionResources(
     },
     {
       id: "revocation_evidence",
-      label: "Authenticated revocation evidence",
-      status: revocationAdapter ? "configured" : "requires_operator_credentials",
-      detail: revocationAdapter
-        ? "RP_REVOCATION_ADAPTER=institution_operated with freshness bounds configured."
-        : "Authorize path requires institution-operated revocation feed with observed_at and max age.",
-      next_action: "Configure RP_REVOCATION_ADAPTER and RP_REVOCATION_FEED_* on relying party host.",
+      label: "Authenticated portable revocation snapshot",
+      status: portableSnapshotPath && portableIssuerTrust ? "configured" : "requires_operator_credentials",
+      detail: portableSnapshotPath && portableIssuerTrust
+        ? "Signed portable revocation snapshot path/JSON and issuer trust policy configured."
+        : "Production external verification requires signed portable_revocation_snapshot plus pinned issuer trust — not a self-declared active status JSON.",
+      next_action: portableSnapshotPath && portableIssuerTrust
+        ? null
+        : "Export portable snapshot for receipt; set BUILD592_PORTABLE_REVOCATION_SNAPSHOT_PATH and issuer trust JSON.",
     },
     {
       id: "external_rp_runtime",
@@ -161,10 +166,12 @@ export function assessSandboxExecutionResources(
   const externalVerify = Boolean(
     receiptPath
     && trustRegistry
+    && digestPin
     && partnerId
     && policyId
     && consumptionDir
-    && revocationAdapter,
+    && portableSnapshotPath
+    && portableIssuerTrust,
   );
 
   return {

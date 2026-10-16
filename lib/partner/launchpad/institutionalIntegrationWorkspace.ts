@@ -74,7 +74,7 @@ export interface InstitutionalTrustConfigurationView {
 }
 
 export interface InstitutionalExternalVerificationHandoff {
-  contract_version: "592.v1";
+  contract_version: "592.v2";
   status: "operator_required";
   notice: string;
   evidence_command: string;
@@ -361,10 +361,10 @@ export function buildInstitutionalIntegrationWorkspace(input: {
     activation: input.activation,
     first_verified_outcome: input.firstVerifiedOutcome,
     external_verification: {
-      contract_version: "592.v1",
+      contract_version: "592.v2",
       status: "operator_required",
       notice:
-        "External authorization proof is generated on your relying party host with the institutional verification SDK. Launchpad telemetry does not substitute for that execution.",
+        "External authorization proof is a local execution record on your relying party host (portable revocation snapshot + pinned trust). Launchpad telemetry does not substitute for that execution.",
       evidence_command: "npm run build-592:sandbox-external-evidence",
       runbook_relative_path: "scripts/diagnostics/build592-authorized-sandbox-external-verification.md",
       telemetry_disclaimer:
