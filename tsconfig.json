@@ -41,6 +41,7 @@
     "tests",
     "target",
     "migrations",
-    "scripts"
+    "scripts",
+    "packages"
   ]
 }
