@@ -27,6 +27,8 @@ function toPublicView(key: {
   issuer_label: string;
   schema_versions: string[];
   reason_class: ReceiptVerificationPublicKeyView["reason_class"];
+  allow_historical_verification: boolean;
+  historical_verify_until: string | null;
 }): ReceiptVerificationPublicKeyView {
   const view: ReceiptVerificationPublicKeyView = {
     key_id: key.key_id,
@@ -41,6 +43,8 @@ function toPublicView(key: {
     issuer_label: key.issuer_label,
     schema_versions: key.schema_versions,
     reason_class: key.reason_class,
+    allow_historical_verification: key.allow_historical_verification,
+    historical_verify_until: key.historical_verify_until,
   };
   return (pickAllowedKeys(view, RECEIPT_KEY_PUBLIC_FIELDS) ?? view) as ReceiptVerificationPublicKeyView;
 }
