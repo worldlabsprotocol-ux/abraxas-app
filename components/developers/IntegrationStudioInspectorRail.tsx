@@ -6,6 +6,10 @@ import {
   useIntegrationStudioOperational,
   type IntegrationStudioInspectorFocus,
 } from "@/components/developers/integrationStudioOperationalContext";
+import {
+  integrationInspectorStatusMessage,
+  resolveIntegrationInspectorLoadState,
+} from "@/components/developers/integrationStudioInspectorStatus";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -126,8 +130,20 @@ export function IntegrationStudioInspectorRail() {
         ?? null
       : null;
 
+  const loadState = resolveIntegrationInspectorLoadState({
+    applicationId,
+    signedIn,
+    loading,
+    healthError,
+    health,
+  });
+  const statusMessage = integrationInspectorStatusMessage(loadState);
+  const showLiveStatus =
+    loadState === "loaded" || loadState === "loading" || loadState === "health_error";
+
   return (
     <div className="abx-studio-inspector" aria-label="Integration inspector">
+      <h2 className="abx-studio-inspector__header">Integration inspector</h2>
       <div className="abx-studio-inspector__tabs" role="tablist" aria-label="Inspector sections">
         {FOCUS_TABS.map((tab) => (
           <button
@@ -147,21 +163,28 @@ export function IntegrationStudioInspectorRail() {
         ))}
       </div>
 
-      {loading && (
-        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0.5rem 0 0" }}>
-          Loading live status…
+      {showLiveStatus ? (
+        <p
+          role="status"
+          aria-live="polite"
+          className={`abx-studio-inspector__status abx-studio-inspector__status--${loadState}`}
+          style={{ fontFamily: FONT, fontSize: "0.72rem", margin: "0 0 0.65rem", lineHeight: 1.5 }}
+        >
+          {loadState === "health_error" ? healthError : statusMessage}
         </p>
-      )}
-
-      {!applicationId && (
-        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.55, marginTop: "0.75rem" }}>
-          Create or resume a sandbox application to load policy, credential, request, and webhook diagnostics from the backend.
+      ) : statusMessage ? (
+        <p
+          className={`abx-studio-inspector__status abx-studio-inspector__status--${loadState}`}
+          style={{ fontFamily: FONT, fontSize: "0.72rem", margin: "0 0 0.65rem", lineHeight: 1.5, color: "var(--text-secondary)" }}
+        >
+          {statusMessage}
         </p>
-      )}
+      ) : null}
 
+      <div key={inspectorFocus} className="abx-studio-inspector__panel">
       {applicationId && !signedIn && (
-        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--warning, #f59e0b)", lineHeight: 1.55, marginTop: "0.75rem" }}>
-          Application <code style={{ fontFamily: MONO }}>{applicationId.slice(0, 8)}…</code> is known locally. Sign in with your sandbox API key to fetch live health and run authenticated harness requests.
+        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--warning, #f59e0b)", lineHeight: 1.55, marginTop: "0.25rem" }}>
+          Application <code style={{ fontFamily: MONO }}>{applicationId.slice(0, 8)}…</code> is stored locally. Sign in with your sandbox API key to fetch live health and run authenticated harness requests.
         </p>
       )}
 
@@ -176,7 +199,7 @@ export function IntegrationStudioInspectorRail() {
         </ul>
       )}
 
-      {inspectorFocus === "overview" && healthError && (
+      {inspectorFocus === "overview" && healthError && loadState !== "health_error" && (
         <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--danger, #f87171)", marginTop: "0.75rem" }}>{healthError}</p>
       )}
 
@@ -253,6 +276,7 @@ export function IntegrationStudioInspectorRail() {
           </p>
         </div>
       )}
+      </div>
     </div>
   );
 }

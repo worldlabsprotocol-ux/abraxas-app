@@ -127,7 +127,9 @@ export function LaunchpadOperationalInspector({
 
   return (
     <aside className="abx-launchpad-inspector" aria-label="Launchpad diagnostics">
-      <h2 style={{ fontFamily: FONT, fontSize: "0.78rem", margin: "0 0 0.65rem" }}>Evidence & diagnostics</h2>
+      <h2 className="abx-studio-inspector__header" style={{ fontFamily: FONT, fontSize: "0.78rem", margin: "0 0 0.65rem" }}>
+        Evidence & diagnostics
+      </h2>
       {loading && <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>Refreshing…</p>}
 
       <section style={{ marginBottom: "0.85rem" }}>
