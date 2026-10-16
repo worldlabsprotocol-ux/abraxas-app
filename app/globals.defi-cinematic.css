@@ -1,5 +1,47 @@
 /* DeFi cinematic homepage — enhancements layered on established premium hero (Reference A / F) */
 
+/* Calm product atmosphere — shared depth for Passport / partner shells (not full hero) */
+.abx-product-shell--atmospheric {
+  position: relative;
+  isolation: isolate;
+}
+
+.abx-product-atmosphere {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.abx-product-atmosphere__glow {
+  position: absolute;
+  inset: -10% 0 40%;
+  background: radial-gradient(ellipse 70% 55% at 82% 18%, rgba(76, 187, 146, 0.07), transparent 68%);
+  opacity: 0.9;
+}
+
+.abx-product-atmosphere--expressive .abx-product-atmosphere__glow {
+  opacity: 1;
+  background: radial-gradient(ellipse 75% 60% at 78% 22%, rgba(76, 187, 146, 0.1), transparent 65%);
+}
+
+.abx-product-atmosphere__grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(180deg, black 0%, transparent 92%);
+  opacity: 0.85;
+}
+
+.abx-product-shell--atmospheric > *:not(.abx-product-atmosphere) {
+  position: relative;
+  z-index: 1;
+}
+
 .abx-premium-hero--enhanced {
   --abx-hero-accent: rgba(76, 187, 146, 0.55);
   --abx-hero-accent-soft: rgba(76, 187, 146, 0.12);

@@ -11,6 +11,7 @@ import {
   type AbxTabAccent,
 } from "@/lib/design/abraxasDesignSystem";
 import { abxMotionCssVars, abxMotionTierForSurface } from "@/lib/design/abraxasMotion";
+import { AbxProductAtmosphere, type AbxProductAtmosphereTier } from "@/components/design/AbxProductAtmosphere";
 
 export interface AbxPageShellProps {
   children: ReactNode;
@@ -19,6 +20,8 @@ export interface AbxPageShellProps {
   withFooter?: boolean;
   contentStyle?: CSSProperties;
   className?: string;
+  /** Subtle grid/glow continuity with homepage (calm tier on holder journeys). */
+  visualAtmosphere?: boolean | AbxProductAtmosphereTier;
 }
 
 export function AbxPageShell({
@@ -28,13 +31,16 @@ export function AbxPageShell({
   withFooter = true,
   contentStyle,
   className,
+  visualAtmosphere = false,
 }: AbxPageShellProps) {
   const motionTier = abxMotionTierForSurface(accent === "passport" ? "passport" : accent === "developer" ? "launchpad" : accent);
+  const atmosphereTier: AbxProductAtmosphereTier | false =
+    visualAtmosphere === true ? "calm" : visualAtmosphere || false;
 
   return (
     <RedesignShell>
       <div
-        className={`abx-page-content abx-product-shell${className ? ` ${className}` : ""}`}
+        className={`abx-page-content abx-product-shell${atmosphereTier ? " abx-product-shell--atmospheric" : ""}${className ? ` ${className}` : ""}`}
         data-abx-accent={accent}
         data-motion-tier={motionTier}
         style={{
@@ -48,6 +54,7 @@ export function AbxPageShell({
           ...contentStyle,
         }}
       >
+        {atmosphereTier ? <AbxProductAtmosphere tier={atmosphereTier} /> : null}
         {children}
       </div>
       {withFooter && <RedesignFooter />}
