@@ -281,7 +281,13 @@ export function NavProfileMenu({ prominent = false }: { prominent?: boolean }) {
   return null;
 }
 
-export function NavSignInButton({ prominent = false }: { prominent?: boolean }) {
+export function NavSignInButton({
+  prominent = false,
+  compactUnavailableHint = false,
+}: {
+  prominent?: boolean;
+  compactUnavailableHint?: boolean;
+}) {
   const { openChooser, isOpen } = useZkLoginSignInChooser();
   const {
     configured,
@@ -306,6 +312,7 @@ export function NavSignInButton({ prominent = false }: { prominent?: boolean }) 
       >
         <Link
           href="/passport"
+          title={compactUnavailableHint ? NAV_SIGN_IN_COPY.unavailableHintSrOnly : undefined}
           style={{
             padding: prominent ? "0.55rem 1rem" : "0.5rem 0.95rem",
             borderRadius: 999,
@@ -321,15 +328,21 @@ export function NavSignInButton({ prominent = false }: { prominent?: boolean }) 
         >
           Open Passport
         </Link>
-        <span style={{
-          fontFamily: FONT,
-          fontSize: "0.62rem",
-          color: "var(--text-muted)",
-          textAlign: "right",
-          lineHeight: 1.4,
-        }}>
-          {NAV_SIGN_IN_COPY.unavailableHint}
-        </span>
+        {compactUnavailableHint ? (
+          <span className="sr-only">{NAV_SIGN_IN_COPY.unavailableHintSrOnly}</span>
+        ) : (
+          <span
+            style={{
+              fontFamily: FONT,
+              fontSize: "0.62rem",
+              color: "var(--text-muted)",
+              textAlign: "right",
+              lineHeight: 1.4,
+            }}
+          >
+            {NAV_SIGN_IN_COPY.unavailableHint}
+          </span>
+        )}
       </div>
     );
   }

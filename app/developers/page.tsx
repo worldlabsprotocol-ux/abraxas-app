@@ -13,7 +13,6 @@ import { PARTNER_ONBOARDING_HEADLINE, PARTNER_ONBOARDING_DOC_LINKS } from "@/lib
 import { PRODUCTION_INTEGRATION_PATH } from "@/lib/relyingPartyProgram";
 import { ConceptDemoVideo } from "@/components/home/ConceptDemoVideo";
 import { BuildIntegrateCinematicDemo } from "@/components/home/cinematic/BuildIntegrateCinematicDemo";
-
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;

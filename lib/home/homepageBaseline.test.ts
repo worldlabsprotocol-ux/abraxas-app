@@ -32,6 +32,9 @@ describe("homepage baseline (institutional invariants)", () => {
     expect(shell).toContain("HomeVerifiableTrustChapter");
     expect(shell).toContain("CapabilityMatrix");
     expect(shell).not.toContain("KineticMarquee");
+    const hero = read("components/home/premium/PremiumHomeHero.tsx");
+    expect(hero).toContain("Prove what matters");
+    expect(hero).toContain("abx-premium-hero--enhanced");
   });
 
   it("homepage typography CSS tokens exist", () => {
