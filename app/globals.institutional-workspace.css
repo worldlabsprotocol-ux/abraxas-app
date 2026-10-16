@@ -110,6 +110,28 @@
   text-transform: uppercase;
   color: rgba(76, 187, 146, 0.85);
   margin: 0 0 0.65rem;
+  font-weight: 700;
+}
+
+.abx-studio-inspector__status--loading {
+  color: var(--text-muted);
+}
+
+.abx-studio-inspector__status--loaded {
+  color: rgba(76, 187, 146, 0.9);
+}
+
+.abx-studio-inspector__status--health_error {
+  color: var(--danger, #f87171);
+}
+
+.abx-studio-inspector__status--auth_required {
+  color: var(--warning, #f59e0b);
+}
+
+.abx-inst-workspace-shell .abx-product-atmosphere {
+  pointer-events: none;
+  z-index: 0;
 }
 
 .abx-studio-inspector__tabs {

@@ -23,4 +23,14 @@ describe("Build #589 institutional workspace presentation", () => {
     expect(css).toContain(".abx-inst-workspace-shell");
     expect(css).toContain("prefers-reduced-motion");
   });
+
+  it("uses Integration inspector heading without fabricated live claims", () => {
+    const inspector = readFileSync(
+      resolve(process.cwd(), "components/developers/IntegrationStudioInspectorRail.tsx"),
+      "utf8",
+    );
+    expect(inspector).toContain("Integration inspector");
+    expect(inspector).not.toContain("Live integration instrument");
+    expect(inspector).toContain("resolveIntegrationInspectorLoadState");
+  });
 });
