@@ -54,7 +54,7 @@ export default function AccountApplicationsPage() {
         </p>
         <NativeAccountPasskeyPanel mode="authenticate" onSuccess={() => void refetch()} />
         <div style={{ marginTop: "0.5rem" }}>
-          <Btn href="/welcome" variant="ghost" size="sm">
+          <Btn href="/#start-sandbox" variant="ghost" size="sm">
             New here? Welcome entry
           </Btn>
         </div>

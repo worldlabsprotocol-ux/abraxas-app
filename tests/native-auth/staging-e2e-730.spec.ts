@@ -23,7 +23,7 @@ async function registerPasskeyAccount(page: import("@playwright/test").Page, con
       isUserVerified: true,
     },
   });
-  await page.goto("/welcome");
+  await page.goto("/#start-sandbox");
   await page.getByRole("button", { name: "Create passkey account" }).click();
   await expect(page.getByText("Step 2 — Provision your tenant-scoped sandbox")).toBeVisible({ timeout: 90_000 });
   const session = await page.request.get("/api/auth/native/session");
@@ -51,7 +51,7 @@ test.describe("Build #730 staging HTTPS acceptance", () => {
     });
     expect(enrollBlocked.status()).toBeGreaterThanOrEqual(401);
 
-    await page.goto("/welcome");
+    await page.goto("/#start-sandbox");
     await page.getByRole("button", { name: "Sign in with existing passkey" }).click();
     await expect(page.getByText("Step 2 — Provision your tenant-scoped sandbox")).toBeVisible({ timeout: 90_000 });
     expect((await (await page.request.get("/api/auth/native/session")).json()).account_id).toBe(accountId);
@@ -89,7 +89,7 @@ test.describe("Build #730 staging HTTPS acceptance", () => {
     expect(secondJson.application?.idempotency_replay).toBe(true);
 
     await page.request.delete("/api/auth/native/session");
-    await page.goto("/welcome");
+    await page.goto("/#start-sandbox");
     await page.getByRole("button", { name: "Sign in with existing passkey" }).click();
     await expect(page.getByText("Step 2")).toBeVisible({ timeout: 90_000 });
     expect((await (await page.request.get("/api/auth/native/session")).json()).account_id).toBe(accountId);

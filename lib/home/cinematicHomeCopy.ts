@@ -77,6 +77,9 @@ export const CINEMATIC_HOME_CTA_SECONDARY_HREF =
 export const CINEMATIC_HOME_CTA_TERTIARY = "How it works";
 export const CINEMATIC_HOME_CTA_TERTIARY_HREF = "#how-abraxas-works";
 
+export const CINEMATIC_HOME_CTA_SANDBOX = "Start sandbox";
+export const CINEMATIC_HOME_CTA_SANDBOX_HREF = "#start-sandbox";
+
 export const CINEMATIC_PROBLEM_HEADLINE = "Why share everything to prove one thing?";
 
 export const CINEMATIC_PROBLEM_LEAD =

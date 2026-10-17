@@ -19,6 +19,7 @@ import { CINEMATIC_BUILD_CHAPTER_EYEBROW } from "@/lib/home/cinematicHomeCopy";
 import { RedesignNav } from "./RedesignNav";
 import { RedesignFooter } from "./RedesignFooter";
 import { HomeSignedInModule } from "@/components/home/HomeSignedInModule";
+import { HomeNativeSandboxChapter } from "@/components/home/HomeNativeSandboxChapter";
 
 const HomeGoodTroubleActionSection = dynamic(
   () => import("@/components/home/HomeGoodTroubleActionSection").then((m) => m.HomeGoodTroubleActionSection),
@@ -78,6 +79,9 @@ function HomeContent({ hero }: { hero: ReactNode }) {
         </PremiumHomeChapter>
 
         <PremiumHomeChapter index="07" label="Build" id="chapter-build">
+          <LazyHomeSection minHeight="16rem" eager>
+            <HomeNativeSandboxChapter />
+          </LazyHomeSection>
           <section className="abx-cinematic-build-chapter" aria-labelledby="home-build-heading">
             <p className="abx-v2-eyebrow">{CINEMATIC_BUILD_CHAPTER_EYEBROW}</p>
             <h2 id="home-build-heading" className="abx-v2-section-title">
