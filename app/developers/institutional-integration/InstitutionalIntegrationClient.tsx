@@ -18,6 +18,7 @@ import { InstitutionalTaskOnboardingPanel } from "@/components/developers/Instit
 import { InstitutionalVerificationRequirementsPanel } from "@/components/developers/InstitutionalVerificationRequirementsPanel";
 import { InstitutionalFirstVerifiedOutcomePanel } from "@/components/partner/launchpad/InstitutionalFirstVerifiedOutcomePanel";
 import { deriveInstitutionalTaskOnboarding } from "@/lib/partner/launchpad/institutionalTaskOnboarding";
+import { resolveInstitutionalWorkspaceApplications } from "@/lib/partner/launchpad/institutionalApplicationResolution";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -87,10 +88,15 @@ export function InstitutionalIntegrationClient() {
   const [loading, setLoading] = useState(true);
   const [copyNotice, setCopyNotice] = useState<string | null>(null);
 
-  const institutionalApps = useMemo(
-    () => applications.filter((a) => a.policy_template_id === "sandbox_institutional_protocol_access"),
-    [applications],
+  const applicationResolution = useMemo(
+    () =>
+      resolveInstitutionalWorkspaceApplications({
+        applications,
+        queryApplicationId: searchParams.get("application"),
+      }),
+    [applications, searchParams],
   );
+  const institutionalApps = applicationResolution.institutionalApps;
 
   const loadSession = useCallback(async () => {
     const res = await fetch("/api/launchpad/auth/session", { credentials: "include" });
@@ -122,15 +128,16 @@ export function InstitutionalIntegrationClient() {
         policy_template_id: row.policy_template_id,
       })),
     );
-    const queryApp = searchParams.get("application")?.trim();
-    const institutional = list.filter(
-      (a: ApplicationOption) => a.policy_template_id === "sandbox_institutional_protocol_access",
-    );
-    const initial =
-      (queryApp && institutional.some((a: ApplicationOption) => a.id === queryApp) ? queryApp : null)
-      ?? institutional[0]?.id
-      ?? null;
-    setActiveAppId(initial);
+    const resolution = resolveInstitutionalWorkspaceApplications({
+      applications: list.map((row: ApplicationOption) => ({
+        id: row.id,
+        display_name: row.display_name,
+        environment: row.environment,
+        policy_template_id: row.policy_template_id,
+      })),
+      queryApplicationId: searchParams.get("application"),
+    });
+    setActiveAppId(resolution.selectedInstitutionalAppId);
     setLoading(false);
   }, [searchParams]);
 
@@ -234,13 +241,33 @@ export function InstitutionalIntegrationClient() {
       <ContentCard title="Your application">
         {institutionalApps.length === 0 ? (
           <>
-            <p style={body}>
-              No sandbox institutional protocol access application exists for this partner yet. Create one in Launchpad — policy template{" "}
-              <code style={inlineCode}>sandbox_institutional_protocol_access</code> is server-pinned.
-            </p>
-            <Btn href={INSTITUTIONAL_SANDBOX_LAUNCHPAD_HREF} size="sm" style={{ marginTop: "0.75rem" }}>
-              Open institutional Launchpad
-            </Btn>
+            {applicationResolution.mismatch ? (
+              <p style={body} role="status">
+                {applicationResolution.mismatch.message}
+              </p>
+            ) : (
+              <p style={body}>
+                No sandbox institutional protocol access application exists for this partner yet. Create one in Launchpad — policy template{" "}
+                <code style={inlineCode}>sandbox_institutional_protocol_access</code> is server-pinned.
+              </p>
+            )}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
+              <Btn
+                href={applicationResolution.mismatch?.recovery_href ?? INSTITUTIONAL_SANDBOX_LAUNCHPAD_HREF}
+                size="sm"
+              >
+                {applicationResolution.mismatch?.recovery_label ?? "Open institutional Launchpad"}
+              </Btn>
+              {applicationResolution.otherSandboxApps[0] && (
+                <Btn
+                  href={`/developers/launchpad?application=${encodeURIComponent(applicationResolution.otherSandboxApps[0].id)}`}
+                  size="sm"
+                  variant="ghost"
+                >
+                  Open existing sandbox app in Launchpad
+                </Btn>
+              )}
+            </div>
           </>
         ) : (
           <div style={{ display: "grid", gap: "0.65rem" }}>

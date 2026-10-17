@@ -4,9 +4,9 @@
 import {
   INSTITUTIONAL_INTEGRATION_WORKSPACE_HREF,
   INSTITUTIONAL_SANDBOX_HANDOFF_HREF,
-  INSTITUTIONAL_SANDBOX_LAUNCHPAD_HREF,
   INSTITUTIONAL_SANDBOX_POLICY_TEMPLATE_ID,
 } from "@/lib/partner/launchpad/institutionalActivationEntry";
+import { buildInstitutionalLaunchpadHref } from "@/lib/partner/launchpad/launchpadDeepLink";
 import type { InstitutionalActivationEvidence } from "@/lib/partner/launchpad/institutionalActivationMilestones";
 import type { InstitutionalApplicationBinding } from "@/lib/partner/launchpad/institutionalIntegrationWorkspace";
 
@@ -59,9 +59,10 @@ export function deriveInstitutionalTaskOnboarding(input: {
   activation: InstitutionalActivationEvidence | null;
   hostedVerificationHref: string | null;
 }): InstitutionalTaskOnboardingView {
-  const launchpadHref = input.applicationId
-    ? `${INSTITUTIONAL_SANDBOX_LAUNCHPAD_HREF}&application=${encodeURIComponent(input.applicationId)}`
-    : INSTITUTIONAL_SANDBOX_LAUNCHPAD_HREF;
+  const launchpadHref = buildInstitutionalLaunchpadHref({
+    applicationId: input.applicationId,
+    stage: null,
+  });
 
   const workspaceHref = input.applicationId
     ? `${INSTITUTIONAL_INTEGRATION_WORKSPACE_HREF}?application=${encodeURIComponent(input.applicationId)}`
@@ -100,7 +101,10 @@ export function deriveInstitutionalTaskOnboarding(input: {
       order: 2,
       title: "Choose verification",
       detail: "Select organization protocol access for signed decision receipts.",
-      action_href: `${launchpadHref}&step=verify`,
+      action_href: buildInstitutionalLaunchpadHref({
+        applicationId: input.applicationId,
+        stage: "verify",
+      }),
       action_label: chooseComplete ? "Review" : "Choose",
       recovery_hint: chooseComplete
         ? null
@@ -111,8 +115,10 @@ export function deriveInstitutionalTaskOnboarding(input: {
       order: 3,
       title: "Connect application",
       detail: "Add a callback URL and copy your sandbox API key.",
-      action_href: `${launchpadHref}&step=connect`,
-      action_label: configureComplete ? "Review" : "Connect",
+      action_href: configureComplete
+        ? buildInstitutionalLaunchpadHref({ applicationId: input.applicationId, stage: "connect" })
+        : workspaceHref,
+      action_label: configureComplete ? "Review" : "Set up integration",
       recovery_hint: configureComplete
         ? null
         : "Allowlist a return URL and save your API key before testing.",
@@ -122,7 +128,10 @@ export function deriveInstitutionalTaskOnboarding(input: {
       order: 4,
       title: "Test sandbox",
       detail: "Run a sandbox test or complete hosted holder verification.",
-      action_href: `${launchpadHref}&step=test`,
+      action_href: buildInstitutionalLaunchpadHref({
+        applicationId: input.applicationId,
+        stage: "test",
+      }),
       action_label: testComplete ? "Test again" : "Test",
       recovery_hint: testComplete
         ? null

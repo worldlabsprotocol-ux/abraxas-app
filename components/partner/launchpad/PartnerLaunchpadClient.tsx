@@ -68,6 +68,13 @@ import { InstitutionalTaskOnboardingPanel } from "@/components/developers/Instit
 import { InstitutionalVerificationRequirementsPanel } from "@/components/developers/InstitutionalVerificationRequirementsPanel";
 import { deriveInstitutionalTaskOnboarding } from "@/lib/partner/launchpad/institutionalTaskOnboarding";
 import { INSTITUTIONAL_INTEGRATION_WORKSPACE_HREF } from "@/lib/partner/launchpad/institutionalActivationEntry";
+import {
+  buildInstitutionalLaunchpadHref,
+  launchpadStagePanelDomId,
+  parseLaunchpadApplicationIdFromSearch,
+  parseLaunchpadStageFromSearch,
+} from "@/lib/partner/launchpad/launchpadDeepLink";
+import { resolveLaunchpadConnectPrimaryHref } from "@/lib/partner/launchpad/launchpadConnectNavigation";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -155,6 +162,8 @@ export function PartnerLaunchpadClient({
   const [step, setStep] = useState<WizardStep>("verify");
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const initialStepResolved = useRef(false);
+  const merchantJourneyStepSynced = useRef(false);
+  const stagePanelRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState("");
   const [apiKeyInput, setApiKeyInput] = useState("");
   const [revealedKey, setRevealedKey] = useState<string | null>(null);
@@ -250,9 +259,8 @@ export function PartnerLaunchpadClient({
     const data = await res.json();
     if (res.ok && data.workspace) {
       setWorkspace(data.workspace);
-      const requested = typeof window !== "undefined"
-        ? new URLSearchParams(window.location.search).get("app")
-        : null;
+      const search = typeof window !== "undefined" ? window.location.search : "";
+      const requested = parseLaunchpadApplicationIdFromSearch(search);
       const resumeId = selectLaunchpadResumeAppId(data.workspace.applications, requested);
       if (resumeId && (!activeAppId || requested === resumeId)) {
         setActiveAppId(resumeId);
@@ -262,12 +270,11 @@ export function PartnerLaunchpadClient({
       setAuthenticated(true);
       if (!initialStepResolved.current) {
         initialStepResolved.current = true;
-        const view = typeof window !== "undefined"
-          ? new URLSearchParams(window.location.search).get("view")
-          : null;
-        const requestedStep = STEPS.find((item) => item.id === view)?.id
-          ?? (view ? mapLegacyLaunchpadStep(view) : undefined);
+        const requestedStep = parseLaunchpadStageFromSearch(search);
         setStep(requestedStep ?? "verify");
+        if (requestedStep) {
+          merchantJourneyStepSynced.current = true;
+        }
       }
     }
   }, [activeAppId]);
@@ -365,10 +372,10 @@ export function PartnerLaunchpadClient({
 
   useEffect(() => {
     if (!merchantJourney) return;
-    const view = typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search).get("view")
-      : null;
-    if (view) return;
+    const search = typeof window !== "undefined" ? window.location.search : "";
+    if (parseLaunchpadStageFromSearch(search)) return;
+    if (merchantJourneyStepSynced.current) return;
+    merchantJourneyStepSynced.current = true;
     setStep(merchantJourney.currentStage as WizardStep);
   }, [merchantJourney]);
 
@@ -408,6 +415,7 @@ export function PartnerLaunchpadClient({
     setActiveAppId(null);
     setStep("verify");
     initialStepResolved.current = false;
+    merchantJourneyStepSynced.current = false;
     setRevealedKey(null);
   }
 
@@ -573,9 +581,37 @@ export function PartnerLaunchpadClient({
   const currentStepMeta = STEPS.find((item) => item.id === step);
   const journey = merchantJourney;
 
+  function syncLaunchpadStageInUrl(resolved: WizardStep) {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    params.set("view", resolved);
+    params.set("step", resolved);
+    if (activeApp?.id) params.set("application", activeApp.id);
+    const next = `${window.location.pathname}?${params.toString()}`;
+    window.history.replaceState(null, "", next);
+  }
+
+  function focusLaunchpadStagePanel(resolved: WizardStep) {
+    const id = launchpadStagePanelDomId(resolved);
+    const node = document.getElementById(id) ?? stagePanelRef.current;
+    node?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   function navigateToStage(target: WizardStep) {
     if (!journey || !activeApp) {
       setStep(target);
+      syncLaunchpadStageInUrl(target);
+      focusLaunchpadStagePanel(target);
+      return;
+    }
+    const institutionalConnectHref = resolveLaunchpadConnectPrimaryHref({
+      policyTemplateId: activeApp.policy_template_id,
+      applicationId: activeApp.id,
+      primaryCta: journey.primaryAction.cta,
+      stage: target === "connect" ? "connect" : journey.currentStage,
+    });
+    if (institutionalConnectHref && target === "connect") {
+      window.location.assign(institutionalConnectHref);
       return;
     }
     const merchantStage = target === "advanced" ? journey.currentStage : target;
@@ -585,16 +621,33 @@ export function PartnerLaunchpadClient({
       verifiedReceiptCount: journeyEvidence?.verified_receipt_count ?? 0,
       activeSandboxKey: journeyEvidence?.active_sandbox_key ?? activeSandboxKey,
       starterKitEvidenced: journeyEvidence?.starter_kit_evidenced ?? journey.integrationFilesReady,
-    });
+    }) as WizardStep;
     const stageMeta = journey.stages.find((item) => item.id === merchantStage);
     if (stageMeta && !stageMeta.navigable) {
       setError(stageMeta.detail ?? "Complete the previous step first.");
-      setStep(resolved as WizardStep);
+      setStep(resolved);
+      syncLaunchpadStageInUrl(resolved);
+      focusLaunchpadStagePanel(resolved);
       return;
     }
     setError("");
-    setStep(resolved as WizardStep);
+    const unchanged = step === resolved;
+    setStep(resolved);
+    syncLaunchpadStageInUrl(resolved);
+    focusLaunchpadStagePanel(resolved);
+    if (unchanged) {
+      const label = STEPS.find((item) => item.id === resolved)?.label ?? "this step";
+      setCopyFeedback(`Showing ${label} — continue below.`);
+      setTimeout(() => setCopyFeedback(""), 3500);
+    }
   }
+
+  useEffect(() => {
+    if (typeof window === "undefined" || loading) return;
+    const requestedStep = parseLaunchpadStageFromSearch(window.location.search);
+    if (!requestedStep) return;
+    focusLaunchpadStagePanel(requestedStep);
+  }, [loading, step]);
 
   if (loading) {
     return (
@@ -744,18 +797,26 @@ export function PartnerLaunchpadClient({
       )}
 
       {error && <p role="alert" style={{ color: "#ef4444", fontFamily: FONT, fontSize: "0.72rem" }}>{error}</p>}
+      {copyFeedback && !error && (
+        <p role="status" style={{ color: "var(--accent)", fontFamily: FONT, fontSize: "0.72rem", marginBottom: "0.65rem" }}>
+          {copyFeedback}
+        </p>
+      )}
 
       {institutionalFocus && authenticated && (
         <InstitutionalTaskOnboardingPanel onboarding={institutionalTaskOnboarding} compact />
       )}
 
       {step === "verify" && (
-        <ContentCard title={institutionalFocus ? "Choose verification" : "What do you need to verify?"}>
+        <ContentCard id={launchpadStagePanelDomId("verify")} title={institutionalFocus ? "Choose verification" : "What do you need to verify?"}>
           {institutionalFocus ? (
             <InstitutionalVerificationRequirementsPanel
               embedded
               selectedPolicyTemplateId={policyTemplateId}
-              launchpadHref={`/developers/launchpad?template=sandbox_institutional_protocol_access&step=verify${activeApp ? `&application=${encodeURIComponent(activeApp.id)}` : ""}`}
+              launchpadHref={buildInstitutionalLaunchpadHref({
+                applicationId: activeApp?.id,
+                stage: "verify",
+              })}
               showAdvancedLink={false}
             />
           ) : null}
@@ -881,7 +942,7 @@ export function PartnerLaunchpadClient({
       )}
 
       {step === "test_app" && (
-        <ContentCard title="Your private verification test environment">
+        <ContentCard id={launchpadStagePanelDomId("test_app")} title="Your private verification test environment">
           {activeApp ? (
             <>
               <p style={bodyText}>
@@ -914,7 +975,7 @@ export function PartnerLaunchpadClient({
               </label>
               <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                 <Btn size="sm" onClick={() => void addReturnUrl()}>Add return URL</Btn>
-                <Btn size="sm" onClick={() => setStep("connect")}>Connect website</Btn>
+                <Btn size="sm" onClick={() => navigateToStage("connect")}>Connect website</Btn>
               </div>
             </>
           ) : (
@@ -927,11 +988,13 @@ export function PartnerLaunchpadClient({
       )}
 
       {step === "connect" && activeApp && (
-        <PartnerLaunchpadConnectPanel
-          applicationId={activeApp.id}
-          appName={activeApp.display_name || activeApp.application_name}
-          onIntegrationFilesGenerated={() => void refreshMerchantJourney()}
-        />
+        <div id={launchpadStagePanelDomId("connect")} ref={stagePanelRef}>
+          <PartnerLaunchpadConnectPanel
+            applicationId={activeApp.id}
+            appName={activeApp.display_name || activeApp.application_name}
+            onIntegrationFilesGenerated={() => void refreshMerchantJourney()}
+          />
+        </div>
       )}
 
       {step === "test" && activeApp && (

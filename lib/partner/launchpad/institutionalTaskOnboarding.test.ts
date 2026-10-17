@@ -53,5 +53,9 @@ describe("institutionalTaskOnboarding", () => {
     expect(view.steps.find((s) => s.id === "choose_verification")?.status).toBe("complete");
     expect(view.current_step_id).toBe("configure_policy");
     expect(view.connect_your_application_heading).toBe("Connect application");
+    const configure = view.steps.find((s) => s.id === "configure_policy");
+    expect(configure?.action_label).toBe("Set up integration");
+    expect(configure?.action_href).toContain("/developers/institutional-integration");
+    expect(configure?.action_href).toContain("application=app-1");
   });
 });

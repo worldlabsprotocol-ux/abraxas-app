@@ -12,6 +12,7 @@ import {
   deriveLaunchpadFirstSuccess,
   type LaunchpadIntegrationEvidence,
 } from "@/lib/partner/launchpad/firstSuccessUx";
+import { resolveLaunchpadConnectPrimaryHref } from "@/lib/partner/launchpad/launchpadConnectNavigation";
 import {
   merchantPolicySubtitle,
   type LaunchpadJourneyResolution,
@@ -91,6 +92,13 @@ export function PartnerApplicationOverview({
     productionActivated: Boolean(productionActivated),
   });
 
+  const connectPrimaryHref = resolveLaunchpadConnectPrimaryHref({
+    policyTemplateId: application.policy_template_id,
+    applicationId: application.id,
+    primaryCta: firstSuccess.primaryCta,
+    stage: firstSuccess.stage,
+  });
+
   const quickstartHref = "/docs/VERIFY_WITH_ABRAXAS_QUICKSTART";
   const reuseHref = "/evaluation/two-app";
 
@@ -119,9 +127,10 @@ export function PartnerApplicationOverview({
           title="Next step"
           action={firstSuccess.primaryLabel}
           detail={[firstSuccess.primaryDetail, firstSuccess.whyItMatters].filter(Boolean).join(" ")}
-          buttonLabel={firstSuccess.primaryCta}
+          buttonLabel={connectPrimaryHref ? "Set up integration" : firstSuccess.primaryCta}
+          href={connectPrimaryHref ?? undefined}
           onAction={
-            onNavigate
+            !connectPrimaryHref && onNavigate
               ? () => {
                   if (firstSuccess.primaryCta.toLowerCase().includes("quickstart")) {
                     window.location.href = quickstartHref;
