@@ -14,7 +14,10 @@ import {
 } from "@/lib/partner/launchpad/institutionalActivationEntry";
 import type { InstitutionalIntegrationWorkspacePayload } from "@/lib/partner/launchpad/institutionalIntegrationWorkspace";
 import { InstitutionalDeveloperJourneyNav } from "@/components/developers/InstitutionalDeveloperJourneyNav";
+import { InstitutionalTaskOnboardingPanel } from "@/components/developers/InstitutionalTaskOnboardingPanel";
+import { InstitutionalVerificationRequirementsPanel } from "@/components/developers/InstitutionalVerificationRequirementsPanel";
 import { InstitutionalFirstVerifiedOutcomePanel } from "@/components/partner/launchpad/InstitutionalFirstVerifiedOutcomePanel";
+import { deriveInstitutionalTaskOnboarding } from "@/lib/partner/launchpad/institutionalTaskOnboarding";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -163,6 +166,18 @@ export function InstitutionalIntegrationClient() {
     setTimeout(() => setCopyNotice(null), 2500);
   };
 
+  const taskOnboarding = useMemo(
+    () =>
+      deriveInstitutionalTaskOnboarding({
+        hasInstitutionalApplication: institutionalApps.length > 0,
+        applicationId: activeAppId,
+        binding: workspace?.binding ?? null,
+        activation: workspace?.activation ?? null,
+        hostedVerificationHref: workspace?.links.hosted_verification ?? null,
+      }),
+    [institutionalApps.length, activeAppId, workspace],
+  );
+
   if (loading) {
     return (
       <AbxInstitutionalWorkspaceShell aria-label="Institutional integration workspace">
@@ -204,8 +219,8 @@ export function InstitutionalIntegrationClient() {
     <AbxInstitutionalWorkspaceShell aria-label="Institutional integration workspace">
       <PageHeader
         eyebrow={partnerLabel ? `Partner · ${partnerLabel}` : "Institutional integration workspace"}
-        title="Institutional integration workspace"
-        subtitle="One path from sandbox application configuration to controlled SDK adoption, issuer trust pinning, and independently verified signed decision receipts."
+        title="Connect your application"
+        subtitle="Guided institutional verification: choose what to verify, test in sandbox, inspect signed decision receipts, and prepare for Production authorization."
       />
 
       {copyNotice && (
@@ -214,7 +229,9 @@ export function InstitutionalIntegrationClient() {
         </p>
       )}
 
-      <ContentCard title="Application selection">
+      <InstitutionalTaskOnboardingPanel onboarding={taskOnboarding} />
+
+      <ContentCard title="Step 1 · Create or select your application">
         {institutionalApps.length === 0 ? (
           <>
             <p style={body}>
@@ -262,13 +279,36 @@ export function InstitutionalIntegrationClient() {
         )}
       </ContentCard>
 
-      <InstitutionalDeveloperJourneyNav currentStepId="policy_and_relying_app" compact />
+      <InstitutionalDeveloperJourneyNav
+        title="Integration journey links"
+        currentStepId={taskOnboarding.current_step_id}
+        compact
+      />
 
       {workspace && (
         <>
+          <InstitutionalVerificationRequirementsPanel
+            selectedPolicyTemplateId={workspace.binding.policy_template_id}
+            launchpadHref={workspace.links.launchpad}
+          />
+
           {workspace.first_verified_outcome ? (
             <InstitutionalFirstVerifiedOutcomePanel outcome={workspace.first_verified_outcome} />
           ) : null}
+
+          <ContentCard title="Step 5 · Review integration activity and decision receipt">
+            <p style={body}>
+              Integration health and first verified outcome reflect server-side holder consent and signed receipts for this tenant. External SDK verification on your infrastructure remains a separate execution step.
+            </p>
+            <Btn href={workspace.links.launchpad} size="sm" variant="secondary">
+              Review integration activity
+            </Btn>
+          </ContentCard>
+
+          <details>
+            <summary style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, cursor: "pointer", marginBottom: "0.75rem" }}>
+              Advanced configuration (SDK, issuer trust, external verification)
+            </summary>
 
           <ContentCard title="Application ↔ SDK binding">
             <BulletList
@@ -447,15 +487,12 @@ ${workspace.trust.env_keys.consumption_store_dir}=/var/lib/your-rp/receipt-consu
             </div>
           </ContentCard>
 
-          <ContentCard title="Integration activity">
-            <p style={body}>
-              Backend integration health reflects server-side holder consent, signed receipts, and verification telemetry — not external SDK proof on your host.
-            </p>
-            <Btn href={workspace.links.launchpad} size="sm" variant="secondary">
-              View Launchpad activity
-            </Btn>
-          </ContentCard>
+          </details>
         </>
+      )}
+
+      {!workspace && institutionalApps.length > 0 && activeAppId && !loadError && (
+        <p style={body}>Loading integration details for the selected application…</p>
       )}
     </AbxInstitutionalWorkspaceShell>
   );

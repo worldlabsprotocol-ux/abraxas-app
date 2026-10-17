@@ -1,26 +1,17 @@
 // FILE: lib/partner/launchpad/institutionalDeveloperJourney.ts
-// Canonical external institutional developer progression (Build #591).
+// Canonical external institutional developer progression (task-based onboarding).
 
 import {
   INSTITUTIONAL_INTEGRATION_WORKSPACE_HREF,
   INSTITUTIONAL_SANDBOX_LAUNCHPAD_HREF,
-  INSTITUTIONAL_SANDBOX_STUDIO_HREF,
   INSTITUTIONAL_INDEPENDENT_VERIFIER_HREF,
   INSTITUTIONAL_SANDBOX_HANDOFF_HREF,
 } from "@/lib/partner/launchpad/institutionalActivationEntry";
+import type { InstitutionalTaskStepId } from "@/lib/partner/launchpad/institutionalTaskOnboarding";
 
-export const INSTITUTIONAL_DEVELOPER_JOURNEY_VERSION = "591.v2" as const;
+export const INSTITUTIONAL_DEVELOPER_JOURNEY_VERSION = "593.v1" as const;
 
-export type InstitutionalDeveloperJourneyStepId =
-  | "understand_product"
-  | "enter_sandbox"
-  | "sandbox_application"
-  | "policy_and_relying_app"
-  | "sdk_distribution"
-  | "configure_trust"
-  | "signed_receipt"
-  | "independent_verify"
-  | "review_evidence_and_production";
+export type InstitutionalDeveloperJourneyStepId = InstitutionalTaskStepId;
 
 export interface InstitutionalDeveloperJourneyStep {
   id: InstitutionalDeveloperJourneyStepId;
@@ -37,85 +28,54 @@ export const INSTITUTIONAL_JOURNEY_SCOPE_NOTICE =
 
 export const INSTITUTIONAL_DEVELOPER_JOURNEY_STEPS: InstitutionalDeveloperJourneyStep[] = [
   {
-    id: "understand_product",
+    id: "create_application",
     order: 1,
-    title: "Understand Abraxas institutional verification",
-    detail:
-      "Review inspect-vs-authorize semantics, offline issuer trust pins, portable revocation, and replay requirements before integrating.",
-    href: "/developers/institutional-verification",
-    action_label: "Verification SDK docs",
-  },
-  {
-    id: "enter_sandbox",
-    order: 2,
-    title: "Enter the institutional sandbox",
-    detail:
-      "Open Integration Studio with the institutional protocol access pack to review policy fit and sandbox boundaries.",
-    href: INSTITUTIONAL_SANDBOX_STUDIO_HREF,
-    action_label: "Institutional sandbox studio",
-  },
-  {
-    id: "sandbox_application",
-    order: 3,
-    title: "Create or resume an authorized application",
-    detail:
-      "Provision or select a Launchpad application pinned to sandbox_institutional_protocol_access for your partner tenant.",
+    title: "Create your application",
+    detail: "Provision or select a Launchpad sandbox application for your authorized partner tenant.",
     href: INSTITUTIONAL_SANDBOX_LAUNCHPAD_HREF,
     action_label: "Partner Launchpad",
   },
   {
-    id: "policy_and_relying_app",
-    order: 4,
-    title: "Bind the institutional policy and relying application",
+    id: "choose_verification",
+    order: 2,
+    title: "Choose what to verify",
     detail:
-      "Confirm partner_id and policy_id, allowlist HTTPS callbacks, and deploy starter kit integration files.",
+      "Select organization protocol access for institutional receipts, or use advanced eligibility policies only when authorized for your tenant.",
+    href: `${INSTITUTIONAL_SANDBOX_LAUNCHPAD_HREF}&step=verify`,
+    action_label: "Verification requirements",
+  },
+  {
+    id: "configure_policy",
+    order: 3,
+    title: "Connect your application",
+    detail: "Allowlist callbacks, issue sandbox credentials, and confirm policy binding for this application.",
+    href: `${INSTITUTIONAL_SANDBOX_LAUNCHPAD_HREF}&step=connect`,
+    action_label: "Connection settings",
+  },
+  {
+    id: "test_verification",
+    order: 4,
+    title: "Test verification",
+    detail: "Run sandbox tests and complete hosted holder verification to obtain an authorized signed receipt.",
+    href: `${INSTITUTIONAL_SANDBOX_LAUNCHPAD_HREF}&step=test`,
+    action_label: "Sandbox testing",
+  },
+  {
+    id: "view_receipt",
+    order: 5,
+    title: "View decision receipt",
+    detail: "Inspect signed receipt evidence, integration export events, and SDK inspection guidance.",
     href: INSTITUTIONAL_INTEGRATION_WORKSPACE_HREF,
     action_label: "Integration workspace",
   },
   {
-    id: "sdk_distribution",
-    order: 5,
-    title: "Obtain the controlled verification SDK",
-    detail:
-      "Install the founder-approved tarball when your tenant entitlement allows. Request access if download is not yet granted.",
-    href: INSTITUTIONAL_INTEGRATION_WORKSPACE_HREF,
-    action_label: "SDK delivery",
-  },
-  {
-    id: "configure_trust",
+    id: "production_activation",
     order: 6,
-    title: "Configure pinned issuer trust",
+    title: "Request Production activation",
     detail:
-      "Ship ABRAXAS_RECEIPT_VERIFICATION_REGISTRY offline and pin digest v2 receipt key material on your infrastructure.",
-    href: "/developers/institutional-verification#trust-material",
-    action_label: "Trust configuration",
-  },
-  {
-    id: "signed_receipt",
-    order: 7,
-    title: "Receive an authorized sandbox decision receipt",
-    detail:
-      "Complete hosted holder verification and obtain the signed receipt through your callback or authorized Partner API.",
-    href: INSTITUTIONAL_INTEGRATION_WORKSPACE_HREF,
-    action_label: "Receipt evidence",
-  },
-  {
-    id: "independent_verify",
-    order: 8,
-    title: "Verify independently in your backend",
-    detail:
-      "Run verifySignedDecisionReceipt with durable replay storage and authenticated portable revocation — not Abraxas Supabase as trust root.",
-    href: INSTITUTIONAL_INDEPENDENT_VERIFIER_HREF,
-    action_label: "Independent verifier guide",
-  },
-  {
-    id: "review_evidence_and_production",
-    order: 9,
-    title: "Review verification evidence and request Production",
-    detail:
-      "Use integration telemetry and export when events exist. Production signing and credentials require explicit operator authorization.",
+      "Review verification evidence and request Production authorization — explicit operator approval required.",
     href: INSTITUTIONAL_SANDBOX_HANDOFF_HREF,
-    action_label: "Production authorization handoff",
+    action_label: "Production handoff",
   },
 ];
 
@@ -124,3 +84,6 @@ export function institutionalDeveloperJourneyStep(id: InstitutionalDeveloperJour
   if (!step) throw new Error(`unknown_journey_step:${id}`);
   return step;
 }
+
+/** Deep-link institutional verifier reference (advanced, not a guided step). */
+export const INSTITUTIONAL_INDEPENDENT_VERIFIER_STEP_HREF = INSTITUTIONAL_INDEPENDENT_VERIFIER_HREF;

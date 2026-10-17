@@ -64,6 +64,10 @@ import { LaunchpadApplicationNav } from "@/components/partner/launchpad/Launchpa
 import { LaunchpadOperationalInspector } from "@/components/partner/launchpad/LaunchpadOperationalInspector";
 import { LaunchpadActivityEvidenceTable } from "@/components/partner/launchpad/LaunchpadActivityEvidenceTable";
 import { AbxInstitutionalWorkspaceShell } from "@/components/design/AbxInstitutionalWorkspaceShell";
+import { InstitutionalTaskOnboardingPanel } from "@/components/developers/InstitutionalTaskOnboardingPanel";
+import { InstitutionalVerificationRequirementsPanel } from "@/components/developers/InstitutionalVerificationRequirementsPanel";
+import { deriveInstitutionalTaskOnboarding } from "@/lib/partner/launchpad/institutionalTaskOnboarding";
+import { INSTITUTIONAL_INTEGRATION_WORKSPACE_HREF } from "@/lib/partner/launchpad/institutionalActivationEntry";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -199,6 +203,39 @@ export function PartnerLaunchpadClient({
   const selectedPack = useMemo(
     () => policies.find((policy) => policy.id === policyTemplateId) ?? null,
     [policies, policyTemplateId],
+  );
+  const institutionalFocus = useMemo(() => {
+    if (activeApp?.policy_template_id === "sandbox_institutional_protocol_access") return true;
+    if (policyTemplateId === "sandbox_institutional_protocol_access") return true;
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const template = params.get("template") ?? params.get("pack");
+      if (template === "sandbox_institutional_protocol_access") return true;
+      const returnHref = params.get("return") ?? "";
+      if (returnHref.includes(INSTITUTIONAL_INTEGRATION_WORKSPACE_HREF)) return true;
+    }
+    return false;
+  }, [activeApp?.policy_template_id, policyTemplateId]);
+  const policiesForVerifyStep = useMemo(() => {
+    if (!institutionalFocus) return policies;
+    const institutional = policies.filter((p) => p.id === "sandbox_institutional_protocol_access");
+    const remainder = policies.filter((p) => p.id !== "sandbox_institutional_protocol_access");
+    return [...institutional, ...remainder];
+  }, [policies, institutionalFocus]);
+  const institutionalTaskOnboarding = useMemo(
+    () =>
+      deriveInstitutionalTaskOnboarding({
+        hasInstitutionalApplication: activeApp?.policy_template_id === "sandbox_institutional_protocol_access",
+        applicationId: activeApp?.id ?? null,
+        binding: activeApp
+          ? { policy_id: activeApp.policy_id, policy_template_id: activeApp.policy_template_id }
+          : null,
+        activation: null,
+        hostedVerificationHref: activeApp
+          ? `/partner/verify?app=${encodeURIComponent(activeApp.public_slug)}`
+          : null,
+      }),
+    [activeApp],
   );
   const pccUiAvailable = shouldRenderPolicyChangeControlUi(policyChangeControlAvailable)
     && (workspace?.policy_change_control_available === undefined
@@ -708,14 +745,32 @@ export function PartnerLaunchpadClient({
 
       {error && <p role="alert" style={{ color: "#ef4444", fontFamily: FONT, fontSize: "0.72rem" }}>{error}</p>}
 
+      {institutionalFocus && authenticated && (
+        <InstitutionalTaskOnboardingPanel onboarding={institutionalTaskOnboarding} compact />
+      )}
+
       {step === "verify" && (
-        <ContentCard title="What do you need to verify?">
-          <p style={bodyText}>
-            What can Abraxas verify for your application? Each pack answers one business question with minimum disclosure. The partner receives a signed eligibility result, not a profile, ID image, or contact list.
+        <ContentCard title={institutionalFocus ? "Step 2 · Choose what to verify" : "What do you need to verify?"}>
+          {institutionalFocus ? (
+            <InstitutionalVerificationRequirementsPanel
+              selectedPolicyTemplateId={policyTemplateId}
+              launchpadHref={`/developers/launchpad?template=sandbox_institutional_protocol_access&step=verify${activeApp ? `&application=${encodeURIComponent(activeApp.id)}` : ""}`}
+              showAdvancedLink={false}
+            />
+          ) : null}
+          <p style={{ ...bodyText, marginTop: institutionalFocus ? "0.85rem" : 0 }}>
+            {institutionalFocus
+              ? "Confirm the institutional protocol access pack below to provision or update your sandbox application. Commerce and age-gated packs remain in the catalog for separate Partner Flow integrations."
+              : "What can Abraxas verify for your application? Each pack answers one business question with minimum disclosure. The partner receives a signed eligibility result, not a profile, ID image, or contact list."}
           </p>
           <p style={{ ...bodyText, color: "#f59e0b" }}>{googleDisclaimer}</p>
+          {institutionalFocus && (
+            <p style={{ ...bodyText, fontWeight: 700, color: "var(--text-primary)" }}>
+              Recommended for institutional signed decision receipts
+            </p>
+          )}
           <div style={{ display: "grid", gap: "0.65rem" }}>
-            {policies.map((policy) => (
+            {policiesForVerifyStep.map((policy) => (
               <EligibilityPolicyCard
                 key={policy.id}
                 title={policy.label}
@@ -999,9 +1054,9 @@ export function PartnerLaunchpadClient({
             journey={journey}
             onNavigate={(stage) => navigateToStage(stage)}
           />
-          <ContentCard title="Institutional integration workspace (Build #588)">
+          <ContentCard title="Connect your application">
             <p style={bodyText}>
-              Configure SDK delivery, digest v2 trust pins, application binding, and the ten-step verification journey in one customer-facing workspace.
+              Continue in the integration workspace for receipt inspection, SDK delivery, and pinned issuer trust configuration.
             </p>
             <Btn
               href={`/developers/institutional-integration?application=${encodeURIComponent(activeApp.id)}`}
@@ -1011,17 +1066,6 @@ export function PartnerLaunchpadClient({
             >
               Open integration workspace
             </Btn>
-          </ContentCard>
-          <ContentCard title="Extended institutional sandbox sequence">
-            <ol style={{ ...bodyText, paddingLeft: "1.2rem" }}>
-              {SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SEQUENCE.map((stepLabel) => (
-                <li key={stepLabel}>{stepLabel}</li>
-              ))}
-            </ol>
-            <p style={bodyText}>
-              Policy ID is pinned by the server. Browser input cannot choose partner, policy version, issuer, assurance, signer, network, or production.
-              Sandbox test result for technical integration only. It is not a live KYB or Production approval.
-            </p>
           </ContentCard>
         </>
       )}
