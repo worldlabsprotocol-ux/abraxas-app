@@ -42,7 +42,7 @@ function HomeContent({ hero }: { hero: ReactNode }) {
 
         <HomeSignedInModule />
 
-        <PremiumHomeChapter index="01" label="Protocol" id="chapter-how">
+        <PremiumHomeChapter index="01" label="How it works" id="chapter-how">
           <HomeHowAbraxasWorksSection />
         </PremiumHomeChapter>
 
@@ -52,13 +52,13 @@ function HomeContent({ hero }: { hero: ReactNode }) {
           </LazyHomeSection>
         </PremiumHomeChapter>
 
-        <PremiumHomeChapter index="03" label="Evidence" id="chapter-evidence" bleed>
+        <PremiumHomeChapter index="03" label="Result" id="chapter-evidence" bleed>
           <LazyHomeSection minHeight="22rem" eager>
             <HomeVerifiableTrustChapter />
           </LazyHomeSection>
         </PremiumHomeChapter>
 
-        <PremiumHomeChapter index="04" label="Build" id="chapter-build-wrap">
+        <PremiumHomeChapter index="04" label="Ready" id="chapter-build-wrap">
           <HomeBuildEntrySection />
         </PremiumHomeChapter>
       </div>

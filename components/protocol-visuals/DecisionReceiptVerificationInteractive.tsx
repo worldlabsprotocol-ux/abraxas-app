@@ -57,7 +57,14 @@ function CheckList({
   );
 }
 
-export function DecisionReceiptVerificationInteractive() {
+export type DecisionReceiptShellCopy = {
+  kicker?: string;
+  title?: string;
+  titleAccent?: string;
+  caption?: string;
+};
+
+export function DecisionReceiptVerificationInteractive(props?: { shell?: DecisionReceiptShellCopy }) {
   const [scenario, setScenario] = useState<ReceiptScenario>("valid");
   const state = useMemo(() => deriveReceiptDemoState(scenario), [scenario]);
   const fields = useMemo(() => buildReceiptDemoFields(scenario, state), [scenario, state]);
@@ -72,10 +79,10 @@ export function DecisionReceiptVerificationInteractive() {
   return (
     <ProtocolVisualShell
       id="verify-the-decision"
-      kicker="05 Evidence"
-      title="Verify the"
-      titleAccent="Decision"
-      caption="Simulated receipt and verifier checks, not live partner status."
+      kicker={props?.shell?.kicker ?? "05 Evidence"}
+      title={props?.shell?.title ?? "Verify the"}
+      titleAccent={props?.shell?.titleAccent ?? "Decision"}
+      caption={props?.shell?.caption ?? "Simulated receipt and verifier checks, not live partner status."}
       className="abx-pv-shell--exhibit abx-pv-shell--open"
     >
       <div className="abx-pv-verify">

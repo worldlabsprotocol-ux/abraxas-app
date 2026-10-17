@@ -79,7 +79,7 @@
     {
       "id": "build-capability-matrix",
       "file": "components/home/HomeBuildEntrySection.tsx",
-      "mustContain": ["CapabilityMatrix", "InstitutionalHomeClose"]
+      "mustContain": ["CapabilityMatrix", "HOMEPAGE_CLOSE_HEADING"]
     },
     {
       "id": "good-trouble-production-demo",
