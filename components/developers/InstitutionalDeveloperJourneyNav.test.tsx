@@ -11,9 +11,9 @@ describe("InstitutionalDeveloperJourneyNav", () => {
 
   it("renders six task-based journey steps with navigation links", () => {
     render(<InstitutionalDeveloperJourneyNav currentStepId="test_verification" />);
-    expect(screen.getByText(/Institutional developer journey/i)).toBeInTheDocument();
+    expect(screen.getByText(/Quick links/i)).toBeInTheDocument();
     expect(screen.getAllByRole("link").length).toBe(6);
-    expect(screen.getByText(/Choose what to verify/i)).toBeInTheDocument();
-    expect(screen.getByText(/Partner Flow remains a separate/i)).toBeInTheDocument();
+    expect(screen.getByText(/Choose verification/i)).toBeInTheDocument();
+    expect(screen.getByText(/Commerce Partner Flow is a separate path/i)).toBeInTheDocument();
   });
 });

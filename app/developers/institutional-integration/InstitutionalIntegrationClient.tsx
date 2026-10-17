@@ -219,8 +219,8 @@ export function InstitutionalIntegrationClient() {
     <AbxInstitutionalWorkspaceShell aria-label="Institutional integration workspace">
       <PageHeader
         eyebrow={partnerLabel ? `Partner · ${partnerLabel}` : "Institutional integration workspace"}
-        title="Connect your application"
-        subtitle="Guided institutional verification: choose what to verify, test in sandbox, inspect signed decision receipts, and prepare for Production authorization."
+        title="Connect application"
+        subtitle="Verify in sandbox, inspect receipts, then request Production."
       />
 
       {copyNotice && (
@@ -231,7 +231,7 @@ export function InstitutionalIntegrationClient() {
 
       <InstitutionalTaskOnboardingPanel onboarding={taskOnboarding} />
 
-      <ContentCard title="Step 1 · Create or select your application">
+      <ContentCard title="Your application">
         {institutionalApps.length === 0 ? (
           <>
             <p style={body}>
@@ -280,7 +280,7 @@ export function InstitutionalIntegrationClient() {
       </ContentCard>
 
       <InstitutionalDeveloperJourneyNav
-        title="Integration journey links"
+        title="Quick links"
         currentStepId={taskOnboarding.current_step_id}
         compact
       />
@@ -296,18 +296,18 @@ export function InstitutionalIntegrationClient() {
             <InstitutionalFirstVerifiedOutcomePanel outcome={workspace.first_verified_outcome} />
           ) : null}
 
-          <ContentCard title="Step 5 · Review integration activity and decision receipt">
+          <ContentCard title="Receipt and activity">
             <p style={body}>
-              Integration health and first verified outcome reflect server-side holder consent and signed receipts for this tenant. External SDK verification on your infrastructure remains a separate execution step.
+              Server-side holder consent and signed receipts for this tenant. External SDK verification runs on your infrastructure.
             </p>
             <Btn href={workspace.links.launchpad} size="sm" variant="secondary">
-              Review integration activity
+              View activity
             </Btn>
           </ContentCard>
 
           <details>
             <summary style={{ fontFamily: FONT, fontSize: "0.82rem", fontWeight: 700, cursor: "pointer", marginBottom: "0.75rem" }}>
-              Advanced configuration (SDK, issuer trust, external verification)
+              Advanced setup
             </summary>
 
           <ContentCard title="Application ↔ SDK binding">

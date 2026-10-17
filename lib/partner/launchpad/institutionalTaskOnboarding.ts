@@ -87,76 +87,71 @@ export function deriveInstitutionalTaskOnboarding(input: {
     {
       id: "create_application",
       order: 1,
-      title: "Create your application",
-      detail: "Identify the sandbox application that will request verification under your partner tenant.",
+      title: "Create application",
+      detail: "Name the sandbox app that will request verification.",
       action_href: launchpadHref,
-      action_label: createComplete ? "Open Launchpad application" : "Create sandbox application",
+      action_label: createComplete ? "Open Launchpad" : "Create app",
       recovery_hint: createComplete
         ? null
-        : "Sign in to Partner Launchpad, then create an application with the institutional protocol access template.",
+        : "Sign in to Launchpad and create an app with the institutional protocol access template.",
     },
     {
       id: "choose_verification",
       order: 2,
-      title: "Choose what to verify",
-      detail:
-        "Select organization protocol access for institutional signed decision receipts, or use advanced eligibility policies only when your tenant is authorized.",
+      title: "Choose verification",
+      detail: "Select organization protocol access for signed decision receipts.",
       action_href: `${launchpadHref}&step=verify`,
-      action_label: chooseComplete ? "Review verification requirement" : "Choose verification requirement",
+      action_label: chooseComplete ? "Review" : "Choose",
       recovery_hint: chooseComplete
         ? null
-        : "In Launchpad, select the institutional protocol access pack — not age-gated commerce packs unless that is your intended product surface.",
+        : "In Launchpad, select the institutional protocol access pack.",
     },
     {
       id: "configure_policy",
       order: 3,
-      title: "Configure authorized policy and callbacks",
-      detail:
-        "Allowlist HTTPS return URLs, issue sandbox API credentials, and deploy integration files. Policy binding remains tenant-scoped and version-pinned.",
+      title: "Connect application",
+      detail: "Add a callback URL and copy your sandbox API key.",
       action_href: `${launchpadHref}&step=connect`,
-      action_label: configureComplete ? "Review connection settings" : "Connect your application",
+      action_label: configureComplete ? "Review" : "Connect",
       recovery_hint: configureComplete
         ? null
-        : "Add at least one callback URL and copy the sandbox API key before testing holder verification.",
+        : "Allowlist a return URL and save your API key before testing.",
     },
     {
       id: "test_verification",
       order: 4,
-      title: "Test verification in sandbox",
-      detail:
-        "Run the sandbox test harness and complete hosted holder verification on /partner/verify. Harness-only passes do not substitute for holder-authorized receipts.",
+      title: "Test sandbox",
+      detail: "Run a sandbox test or complete hosted holder verification.",
       action_href: `${launchpadHref}&step=test`,
-      action_label: testComplete ? "Run another sandbox test" : "Test verification flow",
+      action_label: testComplete ? "Test again" : "Test",
       recovery_hint: testComplete
         ? null
         : input.hostedVerificationHref
-          ? "Open hosted verification and complete permitted holder consent, or use Launchpad test with an allowlisted return URL."
-          : "Finish callback configuration, then use Launchpad Test or hosted verification.",
+          ? "Finish holder consent on hosted verification, or run Launchpad test with your callback URL."
+          : "Finish connection settings, then test.",
     },
     {
       id: "view_receipt",
       order: 5,
-      title: "View decision receipt and integration result",
-      detail:
-        "Inspect the signed decision receipt, decision status, expiration, and integration export events bound to the same verification request_id.",
+      title: "View receipt",
+      detail: "Inspect the signed receipt and integration events for this request.",
       action_href: workspaceHref,
-      action_label: receiptComplete ? "Review receipt evidence" : "Open integration workspace",
+      action_label: receiptComplete ? "View receipt" : "Open workspace",
       recovery_hint: receiptComplete
         ? null
-        : "After holder verification, capture signed_record JSON from your callback or integration export.",
+        : "Save signed_record JSON from your callback or integration export after holder verification.",
     },
     {
       id: "production_activation",
       order: 6,
-      title: "Request Production activation",
-      detail:
-        "Production signing, credentials, and institutional authorization require explicit operator review — sandbox success does not auto-promote.",
+      title: "Request Production",
+      detail: "Production credentials require operator approval after sandbox proof.",
       action_href: INSTITUTIONAL_SANDBOX_HANDOFF_HREF,
-      action_label: "Production authorization handoff",
+      action_label: "Production",
       recovery_hint:
         receiptComplete
           ? null
-          : "Complete sandbox receipt issuance and external verification readiness before requesting Production.",
+          : "Issue a sandbox receipt before requesting Production.",
     },
   ];
 
@@ -200,7 +195,7 @@ export function deriveInstitutionalTaskOnboarding(input: {
 
   return {
     contract_version: INSTITUTIONAL_TASK_ONBOARDING_VERSION,
-    connect_your_application_heading: "Connect your application",
+    connect_your_application_heading: "Connect application",
     current_step_id: current.id,
     steps: withStatus,
   };

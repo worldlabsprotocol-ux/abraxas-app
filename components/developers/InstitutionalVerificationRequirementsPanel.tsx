@@ -13,6 +13,7 @@ export function InstitutionalVerificationRequirementsPanel(input: {
   selectedPolicyTemplateId: string | null;
   launchpadHref?: string;
   showAdvancedLink?: boolean;
+  embedded?: boolean;
 }) {
   const requirements = listInstitutionalVerificationRequirements({
     selectedPolicyTemplateId: input.selectedPolicyTemplateId,
@@ -22,12 +23,8 @@ export function InstitutionalVerificationRequirementsPanel(input: {
   const primary = requirements.filter((r) => r.availability === "selected" || r.availability === "selectable");
   const advanced = requirements.filter((r) => r.availability === "advanced_only" || r.availability === "unavailable");
 
-  return (
-    <ContentCard title="Step 2 · Choose what to verify">
-      <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0 0 0.75rem", lineHeight: 1.55 }}>
-        Select the verification requirement your application needs. Only options supported for your tenant and environment are shown as actionable.
-      </p>
-
+  const body = (
+    <>
       <div style={{ display: "grid", gap: "0.65rem" }}>
         {primary.map((req) => (
           <div
@@ -42,20 +39,30 @@ export function InstitutionalVerificationRequirementsPanel(input: {
             <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: "0.35rem" }}>
               <strong style={{ fontFamily: FONT, fontSize: "0.84rem", color: "var(--text-primary)" }}>{req.title}</strong>
               <span style={{ fontFamily: FONT, fontSize: "0.68rem", fontWeight: 800, color: req.availability === "selected" ? "#10B981" : "var(--accent)" }}>
-                {req.availability === "selected" ? "Selected for this application" : "Available"}
+                {req.availability === "selected" ? "Selected" : "Available"}
               </span>
             </div>
             <p style={{ fontFamily: FONT, fontSize: "0.76rem", color: "var(--text-secondary)", margin: "0.45rem 0 0", lineHeight: 1.55 }}>
               {req.purpose}
             </p>
-            {req.sandbox_notice && (
-              <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0.45rem 0 0", lineHeight: 1.5 }}>
-                {req.sandbox_notice}
+            {req.policy_template_id && (
+              <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: "0.35rem 0 0" }}>
+                Policy template: <code>{req.policy_template_id}</code>
               </p>
+            )}
+            {req.sandbox_notice && (
+              <details style={{ marginTop: "0.45rem" }}>
+                <summary style={{ fontFamily: FONT, fontSize: "0.7rem", fontWeight: 700, cursor: "pointer", color: "var(--text-muted)" }}>
+                  Sandbox scope
+                </summary>
+                <p style={{ fontFamily: FONT, fontSize: "0.7rem", color: "var(--text-muted)", margin: "0.35rem 0 0", lineHeight: 1.5 }}>
+                  {req.sandbox_notice}
+                </p>
+              </details>
             )}
             {req.availability === "selectable" && (
               <Btn href={launchpadHref} size="sm" style={{ marginTop: "0.65rem" }}>
-                Select in Launchpad
+                Select
               </Btn>
             )}
           </div>
@@ -65,7 +72,7 @@ export function InstitutionalVerificationRequirementsPanel(input: {
       {input.showAdvancedLink !== false && advanced.length > 0 && (
         <details style={{ marginTop: "0.85rem" }}>
           <summary style={{ fontFamily: FONT, fontSize: "0.74rem", fontWeight: 700, cursor: "pointer", color: "var(--text-primary)" }}>
-            Additional verification requirements and advanced policy configuration
+            Other requirements
           </summary>
           <div style={{ display: "grid", gap: "0.55rem", marginTop: "0.65rem" }}>
             {advanced.map((req) => (
@@ -84,6 +91,19 @@ export function InstitutionalVerificationRequirementsPanel(input: {
           </div>
         </details>
       )}
+    </>
+  );
+
+  if (input.embedded) {
+    return body;
+  }
+
+  return (
+    <ContentCard title="Choose verification">
+      <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", margin: "0 0 0.75rem", lineHeight: 1.55 }}>
+        Pick what this application must verify. Unsupported options stay disabled.
+      </p>
+      {body}
     </ContentCard>
   );
 }
