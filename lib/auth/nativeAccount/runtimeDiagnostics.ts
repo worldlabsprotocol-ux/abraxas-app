@@ -5,10 +5,23 @@ import { extractSupabaseProjectRefFromConfiguredUrl } from "@/lib/partner/launch
 import { validateNativeAuthRuntimeConfig } from "./configValidation";
 import { isNativeAccountAuthEnabled, nativeAccountMemoryStoreEnabled } from "./featureFlag";
 
+export type NativeAuthFlagState = "unset" | "enabled" | "disabled";
+
+export function interpretNativeAuthFlagState(
+  env: Record<string, string | undefined> = process.env,
+): NativeAuthFlagState {
+  const raw = env.ABRAXAS_NATIVE_ACCOUNT_AUTH_ENABLED?.trim().toLowerCase();
+  if (!raw) return "unset";
+  if (raw === "1" || raw === "true" || raw === "enabled") return "enabled";
+  if (raw === "0" || raw === "false" || raw === "disabled") return "disabled";
+  return "disabled";
+}
+
 export type NativeAuthRuntimeDiagnostics = {
   enabled: boolean;
   config_ok: boolean;
   config_code: string | null;
+  native_auth_flag_state: NativeAuthFlagState;
   memory_store: boolean;
   session_secret_configured: boolean;
   webauthn_rp_id_configured: boolean;
@@ -31,6 +44,7 @@ export function getNativeAuthRuntimeDiagnostics(
     enabled,
     config_ok: config.ok,
     config_code: config.ok ? null : config.code,
+    native_auth_flag_state: interpretNativeAuthFlagState(env),
     memory_store: nativeAccountMemoryStoreEnabled(env),
     session_secret_configured: Boolean(secret && secret.length >= 32),
     webauthn_rp_id_configured: Boolean(env.ABRAXAS_WEBAUTHN_RP_ID?.trim()),
