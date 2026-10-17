@@ -7,6 +7,7 @@ import {
   launchpadError,
   launchpadJson,
   requireLaunchpadSession,
+  requireLaunchpadSessionKeyId,
 } from "@/lib/partner/launchpad/apiHelpers";
 import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
@@ -21,6 +22,8 @@ type RouteContext = { params: { id: string } };
 export async function GET(req: NextRequest, { params }: RouteContext) {
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
+  const operator = requireLaunchpadSessionKeyId(auth.session);
+  if (!operator.ok) return operator.response;
   const limited = await enforceLaunchpadTenantRateLimit(
     req,
     "/api/launchpad/settlement/eligible-receipts",
@@ -35,7 +38,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   const receipts = await listEligibleSettlementReceipts({
     application: app,
     partnerId: auth.session.partnerId,
-    sessionKeyId: auth.session.apiKeyId,
+    sessionKeyId: operator.sessionKeyId,
   });
   const payload = {
     ok: true,

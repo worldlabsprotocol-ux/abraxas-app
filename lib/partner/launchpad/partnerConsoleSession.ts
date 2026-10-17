@@ -21,6 +21,26 @@ export interface PartnerConsoleSession {
   membershipRole?: "owner" | "admin" | "operator";
 }
 
+const NATIVE_ACCOUNT_SESSION_KEY_PREFIX = "native_account:" as const;
+
+/**
+ * Stable operator binding for session-scoped Launchpad actions (e.g. settlement selection tokens).
+ * API-key sessions use the key id; native account sessions use a namespaced account principal.
+ */
+export function resolvePartnerConsoleSessionKeyId(
+  session: PartnerConsoleSession,
+): string | null {
+  const kind: PartnerConsoleAuthKind =
+    session.authKind ?? (session.accountId ? "account" : "api_key");
+  if (kind === "account") {
+    const accountId = session.accountId?.trim();
+    if (!accountId) return null;
+    return `${NATIVE_ACCOUNT_SESSION_KEY_PREFIX}${accountId}`;
+  }
+  const apiKeyId = session.apiKeyId?.trim();
+  return apiKeyId || null;
+}
+
 function sessionSecret(): Uint8Array | null {
   return resolvePartnerConsoleSessionSecret();
 }

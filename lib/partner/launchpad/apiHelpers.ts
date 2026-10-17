@@ -2,7 +2,11 @@
 // Shared JSON helpers for Partner Launchpad API routes.
 
 import { NextRequest, NextResponse } from "next/server";
-import { requirePartnerConsoleSession } from "@/lib/partner/launchpad/partnerConsoleSession";
+import {
+  requirePartnerConsoleSession,
+  resolvePartnerConsoleSessionKeyId,
+  type PartnerConsoleSession,
+} from "@/lib/partner/launchpad/partnerConsoleSession";
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
 import { launchpadPublicErrorBody } from "@/lib/partner/launchpad/publicErrorMessages";
 import { checkLaunchpadRateLimit, checkLaunchpadTenantRateLimit } from "@/lib/partner/launchpad/rateLimit";
@@ -43,6 +47,22 @@ export async function requireLaunchpadSession(req: NextRequest) {
     };
   }
   return { ok: true as const, session: session.session };
+}
+
+/** Session-scoped operator id for settlement selection binding (API key or native account). */
+export function requireLaunchpadSessionKeyId(session: PartnerConsoleSession) {
+  const sessionKeyId = resolvePartnerConsoleSessionKeyId(session);
+  if (!sessionKeyId) {
+    return {
+      ok: false as const,
+      response: launchpadError(
+        LAUNCHPAD_PUBLIC_ERRORS.unauthorized,
+        401,
+        "Partner console operator identity unavailable",
+      ),
+    };
+  }
+  return { ok: true as const, sessionKeyId };
 }
 
 export async function enforceLaunchpadRateLimit(
