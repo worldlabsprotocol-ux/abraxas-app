@@ -8,10 +8,17 @@ import { resolvePartnerConsoleSessionSecret } from "@/lib/partner/launchpad/part
 export const PARTNER_CONSOLE_SESSION_COOKIE = "abraxas_partner_console_session";
 const SESSION_TTL_SEC = 60 * 60 * 8;
 
+export type PartnerConsoleAuthKind = "api_key" | "account";
+
 export interface PartnerConsoleSession {
   partnerId: string;
-  apiKeyId: string;
   environment: "sandbox" | "production";
+  authKind?: PartnerConsoleAuthKind;
+  /** Present when established via API key sign-in. */
+  apiKeyId?: string;
+  /** Present when established via native account membership. */
+  accountId?: string;
+  membershipRole?: "owner" | "admin" | "operator";
 }
 
 function sessionSecret(): Uint8Array | null {
@@ -24,9 +31,15 @@ export async function issuePartnerConsoleSessionToken(
   const secret = sessionSecret();
   if (!secret) return null;
 
+  const authKind: PartnerConsoleAuthKind = session.accountId ? "account" : "api_key";
+  if (authKind === "api_key" && !session.apiKeyId) return null;
+  if (authKind === "account" && !session.accountId) return null;
+
   return new SignJWT({
     partner_id: session.partnerId,
-    api_key_id: session.apiKeyId,
+    ...(session.apiKeyId ? { api_key_id: session.apiKeyId } : {}),
+    ...(session.accountId ? { account_id: session.accountId, membership_role: session.membershipRole } : {}),
+    auth_kind: authKind,
     environment: session.environment,
     typ: "partner_console_session",
   })
@@ -70,10 +83,34 @@ export async function resolvePartnerConsoleSession(
     const { payload } = await jwtVerify(token, secret);
     if (payload.typ !== "partner_console_session") return null;
     const partnerId = typeof payload.partner_id === "string" ? payload.partner_id : payload.sub;
-    const apiKeyId = typeof payload.api_key_id === "string" ? payload.api_key_id : null;
+    const apiKeyId = typeof payload.api_key_id === "string" ? payload.api_key_id : undefined;
+    const accountId = typeof payload.account_id === "string" ? payload.account_id : undefined;
+    const authKind: PartnerConsoleAuthKind =
+      payload.auth_kind === "account" || accountId ? "account" : "api_key";
     const environment = payload.environment === "production" ? "production" : "sandbox";
-    if (!partnerId || !apiKeyId) return null;
-    return { partnerId, apiKeyId, environment };
+    if (!partnerId) return null;
+    if (authKind === "api_key" && !apiKeyId) return null;
+    if (authKind === "account" && !accountId) return null;
+
+    if (authKind === "account" && accountId) {
+      const { assertPartnerMembership } = await import("@/lib/auth/nativeAccount/store");
+      const membership = await assertPartnerMembership(accountId, partnerId);
+      if (!membership.ok) return null;
+    }
+
+    return {
+      partnerId,
+      environment,
+      authKind,
+      apiKeyId,
+      accountId,
+      membershipRole:
+        payload.membership_role === "admin" || payload.membership_role === "operator"
+          ? payload.membership_role
+          : accountId
+            ? "owner"
+            : undefined,
+    };
   } catch {
     return null;
   }
