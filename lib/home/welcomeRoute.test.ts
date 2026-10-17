@@ -27,6 +27,7 @@ describe("welcome route continuity", () => {
     expect(chapter).toContain("AbraxasHeroCenterpiece");
     expect(chapter).toContain("WelcomeStartSandboxFlow");
     expect(chapter).toContain("HomeTrustPipelineStrip");
+    expect(chapter).not.toContain("CINEMATIC_HOW_STAGES");
   });
 
   it("hero keeps product-first CTAs and adds sandbox deep link", () => {
