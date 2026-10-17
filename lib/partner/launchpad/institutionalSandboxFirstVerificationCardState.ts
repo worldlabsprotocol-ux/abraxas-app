@@ -14,6 +14,8 @@ export type IntegrationHealthLoadState =
 export type OperationalHealthPayload = {
   status: string;
   verification_successes: number;
+  verification_failures?: number;
+  verification_attempts?: number;
   last_receipt_verified_at: string | null;
   technical_proof?: Array<{ stage: string; status: string }>;
   institutional_activation?: InstitutionalActivationEvidence;
@@ -36,6 +38,10 @@ export function parseOperationalHealthPayload(body: unknown): OperationalHealthP
   return {
     status: typeof record.status === "string" ? record.status : "unknown",
     verification_successes: record.verification_successes,
+    verification_failures:
+      typeof record.verification_failures === "number" ? record.verification_failures : 0,
+    verification_attempts:
+      typeof record.verification_attempts === "number" ? record.verification_attempts : 0,
     last_receipt_verified_at:
       typeof record.last_receipt_verified_at === "string" ? record.last_receipt_verified_at : null,
     technical_proof: Array.isArray(record.technical_proof)

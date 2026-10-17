@@ -82,9 +82,12 @@ export async function buildIntegrationOperationalHealth(input: {
     .slice(0, 5);
 
   let status: IntegrationHealthStatus = "healthy";
+  const sandbox = app.environment !== "production";
   if (readiness.blockers.includes("production_credential_revoked") || app.status !== "active") {
     status = "blocked";
-  } else if (failures > 0 || readiness.blockers.length > 0 || input.webhookDegraded) {
+  } else if (failures > 0 || input.webhookDegraded) {
+    status = "degraded";
+  } else if (!sandbox && readiness.blockers.length > 0) {
     status = "degraded";
   }
 

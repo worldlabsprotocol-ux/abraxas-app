@@ -204,7 +204,7 @@ export function deriveInstitutionalTaskOnboarding(input: {
 
   return {
     contract_version: INSTITUTIONAL_TASK_ONBOARDING_VERSION,
-    connect_your_application_heading: "Connect application",
+    connect_your_application_heading: "Institutional integration",
     current_step_id: current.id,
     steps: withStatus,
   };
