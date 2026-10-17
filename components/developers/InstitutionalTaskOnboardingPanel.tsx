@@ -8,6 +8,7 @@ import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import type {
   InstitutionalTaskOnboardingView,
   InstitutionalTaskStep,
+  InstitutionalTaskStepId,
 } from "@/lib/partner/launchpad/institutionalTaskOnboarding";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -29,13 +30,17 @@ function statusColor(status: InstitutionalTaskStep["status"]): string {
 export function InstitutionalTaskOnboardingPanel(input: {
   onboarding: InstitutionalTaskOnboardingView;
   compact?: boolean;
+  launchpad?: boolean;
+  onStepSelect?: (stepId: InstitutionalTaskStepId) => void;
+  onPrimaryAction?: () => void;
+  primaryActionLabel?: string | null;
 }) {
-  const { onboarding, compact = false } = input;
+  const { onboarding, compact = false, launchpad = false } = input;
   const current = onboarding.steps.find((s) => s.id === onboarding.current_step_id);
 
   return (
     <ContentCard title={onboarding.connect_your_application_heading}>
-      {current && !compact && (
+      {current && (launchpad || !compact) && (
         <div
           style={{
             marginBottom: "0.85rem",
@@ -59,7 +64,12 @@ export function InstitutionalTaskOnboardingPanel(input: {
               {current.recovery_hint}
             </p>
           )}
-          {current.action_href && current.action_label && (
+          {launchpad && input.onPrimaryAction && (
+            <Btn size="sm" onClick={input.onPrimaryAction}>
+              {input.primaryActionLabel ?? current.action_label ?? "Continue"}
+            </Btn>
+          )}
+          {!launchpad && current.action_href && current.action_label && (
             <Btn href={current.action_href} size="sm">
               {current.action_label}
             </Btn>
@@ -73,21 +83,22 @@ export function InstitutionalTaskOnboardingPanel(input: {
           padding: 0,
           listStyle: "none",
           display: "grid",
-          gap: compact ? "0.45rem" : "0.55rem",
+          gap: launchpad ? "0.35rem" : compact ? "0.45rem" : "0.55rem",
         }}
         aria-label="Integration steps"
       >
         {onboarding.steps.map((step) => {
           const active = step.id === onboarding.current_step_id;
+          const showRowAction = !launchpad || step.status === "complete";
           return (
             <li
               key={step.id}
               style={{
                 display: "grid",
-                gridTemplateColumns: compact ? "1fr" : "auto 1fr auto",
+                gridTemplateColumns: launchpad ? "auto 1fr auto" : compact ? "1fr" : "auto 1fr auto",
                 gap: "0.5rem",
-                alignItems: compact ? "stretch" : "center",
-                padding: "0.65rem 0.75rem",
+                alignItems: "center",
+                padding: "0.55rem 0.65rem",
                 borderRadius: 10,
                 border: active ? "1px solid rgba(45,212,191,0.45)" : "1px solid var(--border)",
                 background: active ? "rgba(45,212,191,0.04)" : "var(--surface)",
@@ -97,17 +108,46 @@ export function InstitutionalTaskOnboardingPanel(input: {
               <span style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 800, color: statusColor(step.status), minWidth: 56 }}>
                 {statusLabel(step.status)}
               </span>
-              <div>
+              <button
+                type="button"
+                onClick={() => input.onStepSelect?.(step.id)}
+                style={{
+                  textAlign: "left",
+                  background: "transparent",
+                  border: "none",
+                  padding: 0,
+                  cursor: input.onStepSelect ? "pointer" : "default",
+                  font: "inherit",
+                  color: "inherit",
+                }}
+              >
                 <div style={{ fontFamily: FONT, fontSize: "0.84rem", fontWeight: 700, color: "var(--text-primary)" }}>
                   {step.order}. {step.title}
                 </div>
-                {!compact && (
+                {!compact && !launchpad && (
                   <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: "0.25rem 0 0", lineHeight: 1.5 }}>
                     {step.detail}
                   </p>
                 )}
-              </div>
-              {step.action_href && step.action_label && (
+              </button>
+              {showRowAction && step.status === "complete" && input.onStepSelect && (
+                <button
+                  type="button"
+                  onClick={() => input.onStepSelect?.(step.id)}
+                  style={{
+                    fontFamily: FONT,
+                    fontSize: "0.72rem",
+                    fontWeight: 700,
+                    color: "var(--accent)",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  Review
+                </button>
+              )}
+              {showRowAction && !launchpad && step.action_href && step.action_label && step.status !== "complete" && (
                 <Link
                   href={step.action_href}
                   style={{
@@ -116,7 +156,6 @@ export function InstitutionalTaskOnboardingPanel(input: {
                     fontWeight: 700,
                     color: "var(--accent)",
                     textDecoration: "none",
-                    alignSelf: compact ? "flex-start" : "center",
                   }}
                 >
                   {step.action_label}

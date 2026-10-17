@@ -175,10 +175,13 @@ export function buildInstitutionalActivationEvidence(input: {
   let needsAttentionReason: string | null = null;
   if (input.health?.status === "blocked") {
     needsAttentionReason = "Integration health is blocked. Review credential and callback status.";
-  } else if (verifyProof.failed) {
+  } else if (verifyProof.failed || (input.health?.verification_failures ?? 0) > 0) {
     needsAttentionReason = "Recent receipt verification failed. Inspect partner-safe failure codes.";
-  } else if (input.health?.status === "degraded") {
-    needsAttentionReason = "Integration health is degraded. Review recent timeline events.";
+  } else if (
+    input.health?.status === "degraded"
+    && (input.health.verification_attempts ?? 0) > 0
+  ) {
+    needsAttentionReason = "Integration telemetry is degraded after verification activity. Review recent timeline events.";
   }
 
   let current: InstitutionalActivationMilestoneId = "sandbox_application_provisioned";

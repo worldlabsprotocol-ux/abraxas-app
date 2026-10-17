@@ -66,8 +66,15 @@ import { LaunchpadActivityEvidenceTable } from "@/components/partner/launchpad/L
 import { AbxInstitutionalWorkspaceShell } from "@/components/design/AbxInstitutionalWorkspaceShell";
 import { InstitutionalTaskOnboardingPanel } from "@/components/developers/InstitutionalTaskOnboardingPanel";
 import { InstitutionalVerificationRequirementsPanel } from "@/components/developers/InstitutionalVerificationRequirementsPanel";
-import { deriveInstitutionalTaskOnboarding } from "@/lib/partner/launchpad/institutionalTaskOnboarding";
+import { deriveInstitutionalTaskOnboarding, type InstitutionalTaskStepId } from "@/lib/partner/launchpad/institutionalTaskOnboarding";
 import { INSTITUTIONAL_INTEGRATION_WORKSPACE_HREF } from "@/lib/partner/launchpad/institutionalActivationEntry";
+import {
+  deriveInstitutionalLaunchpadBlocker,
+  institutionalTaskStepToWizardStage,
+} from "@/lib/partner/launchpad/institutionalLaunchpadStepMapping";
+import { parseOperationalHealthPayload } from "@/lib/partner/launchpad/institutionalSandboxFirstVerificationCardState";
+import { InstitutionalLaunchpadOperationsPanel } from "@/components/partner/launchpad/InstitutionalLaunchpadOperationsPanel";
+import type { OperationalHealthPayload } from "@/lib/partner/launchpad/institutionalSandboxFirstVerificationCardState";
 import {
   buildInstitutionalLaunchpadHref,
   launchpadStagePanelDomId,
@@ -182,6 +189,8 @@ export function PartnerLaunchpadClient({
     hosted_handoff_completed_count?: number;
     receipt_verification_succeeded_count?: number;
   } | null>(null);
+  const [institutionalHealthView, setInstitutionalHealthView] =
+    useState<OperationalHealthPayload | null>(null);
 
   const [applicationName, setApplicationName] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -228,6 +237,28 @@ export function PartnerLaunchpadClient({
     const remainder = policies.filter((p) => p.id !== "sandbox_institutional_protocol_access");
     return [...institutional, ...remainder];
   }, [policies, institutionalFocus]);
+  const refreshInstitutionalOperationalHealth = useCallback(async () => {
+    if (!activeApp || activeApp.policy_template_id !== "sandbox_institutional_protocol_access") {
+      setInstitutionalHealthView(null);
+      return;
+    }
+    const res = await fetch(`/api/launchpad/applications/${activeApp.id}/integration-health`, {
+      credentials: "include",
+      cache: "no-store",
+    });
+    const body = await res.json().catch(() => null);
+    const parsed = parseOperationalHealthPayload(body);
+    if (res.ok && parsed) {
+      setInstitutionalHealthView(parsed);
+    }
+  }, [activeApp]);
+
+  useEffect(() => {
+    void refreshInstitutionalOperationalHealth();
+  }, [refreshInstitutionalOperationalHealth]);
+
+  const institutionalActivation = institutionalHealthView?.institutional_activation ?? null;
+
   const institutionalTaskOnboarding = useMemo(
     () =>
       deriveInstitutionalTaskOnboarding({
@@ -236,13 +267,74 @@ export function PartnerLaunchpadClient({
         binding: activeApp
           ? { policy_id: activeApp.policy_id, policy_template_id: activeApp.policy_template_id }
           : null,
-        activation: null,
+        activation: institutionalActivation,
         hostedVerificationHref: activeApp
           ? `/partner/verify?app=${encodeURIComponent(activeApp.public_slug)}`
           : null,
       }),
-    [activeApp],
+    [activeApp, institutionalActivation],
   );
+
+  const institutionalOnboardingTestComplete = useMemo(
+    () => institutionalTaskOnboarding.steps.find((s) => s.id === "test_verification")?.status === "complete",
+    [institutionalTaskOnboarding],
+  );
+
+  const institutionalBlocker = useMemo(
+    () => deriveInstitutionalLaunchpadBlocker({
+      health: institutionalHealthView
+        ? {
+          status: institutionalHealthView.status,
+          verification_failures: institutionalHealthView.verification_failures ?? 0,
+          verification_attempts: institutionalHealthView.verification_attempts ?? 0,
+        } as never
+        : null,
+      activation: institutionalActivation,
+      onboardingCompleteThroughTest: institutionalOnboardingTestComplete,
+    }),
+    [institutionalHealthView, institutionalActivation, institutionalOnboardingTestComplete],
+  );
+
+  function selectInstitutionalTaskStep(taskStepId: InstitutionalTaskStepId) {
+    const wizardStage = institutionalTaskStepToWizardStage(taskStepId);
+    if (taskStepId === "configure_policy") {
+      navigateToStage("connect");
+      return;
+    }
+    if (taskStepId === "view_receipt" && activeApp) {
+      window.location.assign(
+        `${INSTITUTIONAL_INTEGRATION_WORKSPACE_HREF}?application=${encodeURIComponent(activeApp.id)}`,
+      );
+      return;
+    }
+    navigateToStage(wizardStage);
+  }
+
+  function runInstitutionalPrimaryAction() {
+    const current = institutionalTaskOnboarding.steps.find(
+      (s) => s.id === institutionalTaskOnboarding.current_step_id,
+    );
+    if (!current) return;
+    if (current.id === "create_application" && !activeApp) {
+      void provisionApplication();
+      return;
+    }
+    if (current.id === "choose_verification") {
+      navigateToStage("verify");
+      return;
+    }
+    if (current.id === "configure_policy" && activeApp) {
+      window.location.assign(
+        `${INSTITUTIONAL_INTEGRATION_WORKSPACE_HREF}?application=${encodeURIComponent(activeApp.id)}`,
+      );
+      return;
+    }
+    if (current.id === "production_activation") {
+      navigateToStage("go_live");
+      return;
+    }
+    selectInstitutionalTaskStep(current.id);
+  }
   const pccUiAvailable = shouldRenderPolicyChangeControlUi(policyChangeControlAvailable)
     && (workspace?.policy_change_control_available === undefined
       || workspace.policy_change_control_available === true);
@@ -643,6 +735,13 @@ export function PartnerLaunchpadClient({
     focusLaunchpadStagePanel(requestedStep);
   }, [loading, step]);
 
+  useEffect(() => {
+    if (!institutionalFocus || loading) return;
+    if (parseLaunchpadStageFromSearch(typeof window !== "undefined" ? window.location.search : "")) return;
+    const wizardStage = institutionalTaskStepToWizardStage(institutionalTaskOnboarding.current_step_id);
+    setStep(wizardStage);
+  }, [institutionalFocus, institutionalTaskOnboarding.current_step_id, loading]);
+
   if (loading) {
     return (
       <RedesignPage accent="developer" maxWidth={960}>
@@ -652,16 +751,22 @@ export function PartnerLaunchpadClient({
   }
 
   return (
-    <RedesignPage accent="developer" maxWidth={1320}>
+    <RedesignPage accent="developer" maxWidth={institutionalFocus ? 1040 : 1320}>
       <PageHeader
-        eyebrow="Partner operations"
-        title="Launchpad console"
-        subtitle="Sandbox telemetry · receipts · webhooks · reviewed production access."
+        eyebrow={institutionalFocus ? "Institutional integration" : "Partner operations"}
+        title={institutionalFocus ? "Launchpad" : "Launchpad console"}
+        subtitle={
+          institutionalFocus
+            ? "Your application · sandbox setup · signed verification results"
+            : "Sandbox telemetry · receipts · webhooks · reviewed production access."
+        }
       />
 
-      <div className="abx-surface-protocol-visual abx-surface-protocol-visual--compact">
-        <PartnerLifecycleControlRoomVisual />
-      </div>
+      {!institutionalFocus && (
+        <div className="abx-surface-protocol-visual abx-surface-protocol-visual--compact">
+          <PartnerLifecycleControlRoomVisual />
+        </div>
+      )}
 
       <AbxInstitutionalWorkspaceShell className="abx-launchpad-operational-shell" aria-label="Launchpad workspace">
       <div className="abx-launchpad-operational">
@@ -680,7 +785,34 @@ export function PartnerLaunchpadClient({
 
         <div className="abx-launchpad-operational__center abx-launchpad-console-stage">
 
-      {activeApp && journey && (
+      {institutionalFocus && activeApp && (
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "0.65rem",
+            marginBottom: "0.85rem",
+            padding: "0.65rem 0.85rem",
+            borderRadius: 12,
+            border: "1px solid var(--border)",
+            background: "var(--surface-inset)",
+          }}
+        >
+          <div>
+            <p style={{ ...bodyText, margin: 0, fontSize: "0.68rem", fontWeight: 800, color: "var(--text-muted)" }}>
+              Application
+            </p>
+            <p style={{ ...bodyText, margin: "0.15rem 0 0", fontWeight: 700, color: "var(--text-primary)" }}>
+              {activeApp.display_name || activeApp.application_name}
+            </p>
+          </div>
+          <EnvironmentBadge environment={productionActivated ? "production" : "sandbox"} />
+        </div>
+      )}
+
+      {!institutionalFocus && activeApp && journey && (
         <ModeCCommandRail
           items={[
             {
@@ -717,7 +849,7 @@ export function PartnerLaunchpadClient({
         </ContentCard>
       )}
 
-      {activeApp && journey && journeyEvidence && (
+      {!institutionalFocus && activeApp && journey && journeyEvidence && (
         <PartnerApplicationOverview
           application={activeApp}
           journey={journey}
@@ -728,7 +860,7 @@ export function PartnerLaunchpadClient({
         />
       )}
 
-      {activeApp && authenticated && activity.length > 0 && (
+      {!institutionalFocus && activeApp && authenticated && activity.length > 0 && (
         <ContentCard title="Integration activity">
           <p style={{ ...bodyText, marginTop: 0 }}>Select a row to load timeline and metadata in the diagnostics rail.</p>
           <LaunchpadActivityEvidenceTable events={activity} />
@@ -741,6 +873,7 @@ export function PartnerLaunchpadClient({
         </ContentCard>
       )}
 
+      {!institutionalFocus && (
       <div style={{ marginBottom: "0.85rem" }}>
         <p style={{ ...bodyText, fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
           {currentStepMeta?.description ?? "Guided merchant integration"}
@@ -762,6 +895,7 @@ export function PartnerLaunchpadClient({
           </div>
         )}
       </div>
+      )}
 
       {!authenticated && !workspace?.applications.length ? (
         <ContentCard title="Sign in or create your first application">
@@ -798,7 +932,23 @@ export function PartnerLaunchpadClient({
       )}
 
       {institutionalFocus && authenticated && (
-        <InstitutionalTaskOnboardingPanel onboarding={institutionalTaskOnboarding} compact />
+        <>
+          <InstitutionalTaskOnboardingPanel
+            onboarding={institutionalTaskOnboarding}
+            launchpad
+            onStepSelect={selectInstitutionalTaskStep}
+            onPrimaryAction={runInstitutionalPrimaryAction}
+            primaryActionLabel={
+              institutionalTaskOnboarding.steps.find((s) => s.id === institutionalTaskOnboarding.current_step_id)
+                ?.action_label ?? "Continue"
+            }
+          />
+          {institutionalBlocker && (
+            <p role="status" style={{ ...bodyText, color: "#f59e0b", marginBottom: "0.75rem" }}>
+              {institutionalBlocker.message}
+            </p>
+          )}
+        </>
       )}
 
       {step === "verify" && (
@@ -1131,7 +1281,14 @@ export function PartnerLaunchpadClient({
         </>
       )}
 
-      {activeApp && activeApp.policy_template_id === "sandbox_institutional_protocol_access" && (
+      {institutionalFocus && activeApp && (
+        <InstitutionalLaunchpadOperationsPanel
+          activation={institutionalActivation}
+          activity={activity}
+        />
+      )}
+
+      {activeApp && activeApp.policy_template_id === "sandbox_institutional_protocol_access" && !institutionalFocus && (
         <>
           <InstitutionalSandboxFirstVerificationCard
             applicationId={activeApp.id}
@@ -1152,13 +1309,30 @@ export function PartnerLaunchpadClient({
         </>
       )}
 
+      {activeApp && institutionalFocus && (
+        <details style={{ marginTop: "0.85rem" }}>
+          <summary style={{ fontFamily: FONT, fontSize: "0.78rem", fontWeight: 700, cursor: "pointer" }}>
+            Advanced details
+          </summary>
+          <div style={{ marginTop: "0.75rem", display: "grid", gap: "0.85rem" }}>
+            <InstitutionalSandboxFirstVerificationCard
+              applicationId={activeApp.id}
+              journey={journey}
+              onNavigate={(stage) => navigateToStage(stage)}
+            />
+          </div>
+        </details>
+      )}
+
       {activeApp && (
-        <ContentCard title="Developer details">
+        <ContentCard title={institutionalFocus ? "Advanced configuration" : "Developer details"}>
           <p style={bodyText}>
             Advanced configuration, bindings, webhooks, harness scenarios, and integration observability live here. The guided journey above stays merchant-focused.
           </p>
           <Btn size="sm" variant="secondary" onClick={() => setShowAdvancedOptions((current) => !current)}>
-            {showAdvancedOptions ? "Hide developer details" : "Show developer details"}
+            {showAdvancedOptions
+              ? (institutionalFocus ? "Hide advanced configuration" : "Hide developer details")
+              : (institutionalFocus ? "Show advanced configuration" : "Show developer details")}
           </Btn>
           {showAdvancedOptions && (
             <div style={{ marginTop: "0.85rem", display: "grid", gap: "0.85rem" }}>
