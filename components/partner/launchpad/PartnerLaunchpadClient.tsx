@@ -156,9 +156,6 @@ export function PartnerLaunchpadClient({
   const [loading, setLoading] = useState(true);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [policies, setPolicies] = useState<PolicyTemplate[]>([]);
-  const [googleDisclaimer, setGoogleDisclaimer] = useState(
-    "Google sign-in creates an Abraxas account. It does not prove age, identity, residency, wallet control, membership, or any other eligibility claim.",
-  );
   const [step, setStep] = useState<WizardStep>("verify");
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const initialStepResolved = useRef(false);
@@ -295,9 +292,6 @@ export function PartnerLaunchpadClient({
         if (requestedTemplate && policiesData.policies.some((policy: PolicyTemplate) => policy.id === requestedTemplate)) {
           setPolicyTemplateId(requestedTemplate);
         }
-      }
-      if (typeof policiesData.google_account_not_eligibility === "string") {
-        setGoogleDisclaimer(policiesData.google_account_not_eligibility);
       }
       if (sessionData.authenticated) {
         await refreshWorkspace();
@@ -810,27 +804,47 @@ export function PartnerLaunchpadClient({
       {step === "verify" && (
         <ContentCard id={launchpadStagePanelDomId("verify")} title={institutionalFocus ? "Choose verification" : "What do you need to verify?"}>
           {institutionalFocus ? (
-            <InstitutionalVerificationRequirementsPanel
-              embedded
-              selectedPolicyTemplateId={policyTemplateId}
-              launchpadHref={buildInstitutionalLaunchpadHref({
-                applicationId: activeApp?.id,
-                stage: "verify",
-              })}
-              showAdvancedLink={false}
-            />
-          ) : null}
-          {!institutionalFocus && (
-            <p style={bodyText}>
-              Each pack answers one eligibility question with minimum disclosure. You receive a signed result, not holder profile data.
-            </p>
-          )}
-          {institutionalFocus && (
-            <p style={{ ...bodyText, marginTop: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>
-              Confirm the protocol access pack below.
-            </p>
-          )}
-          <p style={{ ...bodyText, color: "#f59e0b" }}>{googleDisclaimer}</p>
+            <>
+              <InstitutionalVerificationRequirementsPanel
+                embedded
+                selectedPolicyTemplateId={policyTemplateId}
+                launchpadHref={buildInstitutionalLaunchpadHref({
+                  applicationId: activeApp?.id,
+                  stage: "verify",
+                })}
+                showAdvancedLink
+                onContinue={() => {
+                  if (activeApp) {
+                    navigateToStage("test_app");
+                    return;
+                  }
+                  void provisionApplication();
+                }}
+                continueLabel={activeApp ? "Continue" : "Create test app"}
+                continueDisabled={!activeApp && !applicationName.trim()}
+              />
+              {!activeApp && (
+                <div style={{ marginTop: "0.85rem", display: "grid", gap: "0.65rem" }}>
+                  <label style={labelStyle}>
+                    Application name
+                    <input value={applicationName} onChange={(e) => setApplicationName(e.target.value)} style={inputStyle} />
+                  </label>
+                  <label style={labelStyle}>
+                    Display name
+                    <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder={applicationName || "Your business name"} style={inputStyle} />
+                  </label>
+                  <label style={labelStyle}>
+                    Return URL after verification
+                    <input value={returnUrl} onChange={(e) => setReturnUrl(e.target.value)} placeholder="https://your-site.example.com/verification-result" style={inputStyle} />
+                  </label>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+          <p style={bodyText}>
+            Each pack answers one eligibility question with minimum disclosure. You receive a signed result, not holder profile data.
+          </p>
           <div style={{ display: "grid", gap: "0.65rem" }}>
             {policiesForVerifyStep.map((policy) => (
               <EligibilityPolicyCard
@@ -903,11 +917,15 @@ export function PartnerLaunchpadClient({
               </div>
             </div>
           )}
-          {policyTemplateId === "sandbox_institutional_protocol_access" && (
-            <p style={{ ...bodyText, marginTop: "0.75rem" }}>
-              Next: {SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SEQUENCE.join(" → ")}.
-              Sandbox test result for technical integration only. It is not a live KYB or Production approval.
-            </p>
+          {policyTemplateId === "sandbox_institutional_protocol_access" && !institutionalFocus && (
+            <details style={{ marginTop: "0.75rem" }}>
+              <summary style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, cursor: "pointer" }}>
+                Technical details
+              </summary>
+              <p style={{ ...bodyText, marginTop: "0.55rem" }}>
+                {SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SEQUENCE.join(" → ")}. Sandbox-only; not live KYB or production authorization.
+              </p>
+            </details>
           )}
           {!activeApp && (
             <>
@@ -935,8 +953,10 @@ export function PartnerLaunchpadClient({
           )}
           {activeApp && (
             <div style={{ marginTop: "0.75rem" }}>
-              <Btn size="sm" onClick={() => setStep("test_app")}>Continue to test app</Btn>
+              <Btn size="sm" onClick={() => navigateToStage("test_app")}>Continue</Btn>
             </div>
+          )}
+            </>
           )}
         </ContentCard>
       )}

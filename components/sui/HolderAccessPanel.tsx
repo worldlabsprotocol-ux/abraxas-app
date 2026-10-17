@@ -156,7 +156,7 @@ export function HolderAccessPanel({ compact = false }: { compact?: boolean }) {
                 lineHeight: 1.55,
               }}
               >
-                {error ?? "Google sign in is not configured in this environment."}
+                {error ?? "Sign-in is not configured in this environment."}
               </p>
             )}
           </div>

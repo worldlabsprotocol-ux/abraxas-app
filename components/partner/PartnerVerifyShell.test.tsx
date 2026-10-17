@@ -174,7 +174,7 @@ describe("PartnerVerifyShell customer UI", () => {
         statusMessage="Sign in to continue with Abraxas."
       />,
     );
-    expect(screen.getByText(/Google sign-in opens an Abraxas account/i)).toBeTruthy();
+    expect(screen.getByText(/Signing in opens your Abraxas account/i)).toBeTruthy();
   });
 
   it("shows partner return link on denied state", async () => {
