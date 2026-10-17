@@ -1,5 +1,7 @@
 // FILE: lib/partner/build592/externalVerificationExecutionStatus.ts
 
+import type { HolderJourneyProvenanceKind } from "@/lib/partner/build592/holderJourneyProvenance";
+
 export type ExecutionStepStatus = "passed" | "blocked" | "failed" | "not_attempted";
 
 export interface ExternalVerificationExecutionReport {
@@ -35,9 +37,9 @@ export function liveHttpJourneyStatus(
 export function buildExternalVerificationExecutionReport(input: {
   syntheticSecurityPassed: boolean;
   liveHttpSteps: Array<{ status: string }>;
-  holderAuthorizationConfirmed: boolean;
-  holderAuthorizationEvidenceRef: string | null;
-  receiptProvenance: "not_supplied" | "operator_supplied_file" | "live_sandbox_holder_flow";
+  holderJourneyProvenance: HolderJourneyProvenanceKind;
+  operatorHolderEvidenceRef: string | null;
+  receiptSuppliedViaFile: boolean;
   externalVerifierRan: boolean;
   externalAuthorizationGranted: boolean;
   externalProofGenerated: boolean;
@@ -47,17 +49,21 @@ export function buildExternalVerificationExecutionReport(input: {
 
   const live_sandbox_http = liveHttpJourneyStatus(input.liveHttpSteps);
 
-  const holder_authorization_completed = input.holderAuthorizationConfirmed
-    ? "passed"
-    : input.receiptProvenance === "live_sandbox_holder_flow"
-      ? "blocked"
-      : "not_attempted";
+  const holder_authorization_completed =
+    input.holderJourneyProvenance === "tenant_correlated"
+      ? "passed"
+      : input.holderJourneyProvenance === "operator_asserted"
+        ? "blocked"
+        : "not_attempted";
 
   let authentic_signed_sandbox_receipt_obtained: ExecutionStepStatus = "not_attempted";
-  if (input.receiptProvenance === "live_sandbox_holder_flow" && input.holderAuthorizationConfirmed) {
+  if (
+    input.holderJourneyProvenance === "tenant_correlated"
+    && input.receiptSuppliedViaFile
+  ) {
     authentic_signed_sandbox_receipt_obtained = "passed";
-  } else if (input.receiptProvenance === "operator_supplied_file") {
-    authentic_signed_sandbox_receipt_obtained = "not_attempted";
+  } else if (input.receiptSuppliedViaFile) {
+    authentic_signed_sandbox_receipt_obtained = "blocked";
   }
 
   const external_verifier_executed = input.externalVerifierRan ? "passed" : "not_attempted";
@@ -96,8 +102,8 @@ export function buildExternalVerificationExecutionReport(input: {
     evidence_references: {
       security_matrix_detail: input.securityDetail,
       live_http_journey_steps: input.liveHttpSteps.length > 0 ? "live_institutional_http_journey" : null,
-      holder_authorization_evidence: input.holderAuthorizationEvidenceRef,
-      receipt_provenance: input.receiptProvenance,
+      holder_authorization_evidence: input.operatorHolderEvidenceRef,
+      receipt_provenance: input.holderJourneyProvenance,
       external_proof_contract: input.externalProofGenerated ? "592.v2" : null,
     },
     diagnostic_command_ok,

@@ -8,6 +8,7 @@ import {
   type AuthorizationCheckState,
   type DerivedAuthorizationChecks,
 } from "@/lib/partner/build592/authorizationCheckDerivation";
+import type { HolderJourneyProvenanceKind } from "@/lib/partner/build592/holderJourneyProvenance";
 
 export const EXTERNAL_VERIFICATION_PROOF_CONTRACT_VERSION = "592.v2" as const;
 
@@ -17,8 +18,7 @@ export type ExternalVerificationEvidenceMode =
 
 export type ReceiptProvenance =
   | "not_supplied"
-  | "operator_supplied_file"
-  | "live_sandbox_holder_flow";
+  | "operator_supplied_file";
 
 export type ExternalVerificationExecutionEnvironment =
   | "operator_workstation"
@@ -55,9 +55,17 @@ export interface ExternalVerificationProofRecord {
     sdk_contract_version: string;
     verification_contract_version: typeof INSTITUTIONAL_VERIFICATION_CONTRACT_VERSION;
   };
+  holder_journey: {
+    provenance: HolderJourneyProvenanceKind;
+    operator_evidence_ref: string | null;
+    correlation_source: string | null;
+    notice: string;
+  };
   revocation: {
     mechanism: "portable_revocation_snapshot" | "lightweight_status_fixture_only";
     portable_revocation_authenticated: boolean;
+    checkpoint_storage: "durable_filesystem" | "ephemeral_in_memory" | "unconfigured";
+    durable_checkpoint_monotonicity: boolean;
   };
   verification: {
     verified_at: string;
@@ -102,6 +110,9 @@ export function buildExternalVerificationProofRecord(input: {
   replayDetected: boolean;
   portableRevocationAuthenticated: boolean;
   revocationMechanism: ExternalVerificationProofRecord["revocation"]["mechanism"];
+  holderJourney: ExternalVerificationProofRecord["holder_journey"];
+  checkpointStorage: ExternalVerificationProofRecord["revocation"]["checkpoint_storage"];
+  durableCheckpointMonotonicity: boolean;
 }): ExternalVerificationProofRecord {
   const underlying = input.presentationResult.underlying.verifier;
   const trustPinRequired = input.evidenceMode === "production_portable_revocation";
@@ -138,9 +149,15 @@ export function buildExternalVerificationProofRecord(input: {
       sdk_contract_version: input.presentationResult.contract_version,
       verification_contract_version: INSTITUTIONAL_VERIFICATION_CONTRACT_VERSION,
     },
+    holder_journey: {
+      ...input.holderJourney,
+      notice: HOLDER_JOURNEY_NOTICE,
+    },
     revocation: {
       mechanism: input.revocationMechanism,
       portable_revocation_authenticated: input.portableRevocationAuthenticated,
+      checkpoint_storage: input.checkpointStorage,
+      durable_checkpoint_monotonicity: input.durableCheckpointMonotonicity,
     },
     verification: {
       verified_at: input.verifiedAt,
@@ -163,13 +180,19 @@ export function buildExternalVerificationProofRecord(input: {
   };
 }
 
+const HOLDER_JOURNEY_NOTICE =
+  "Cryptographic receipt authorization is separate from verified live holder journey provenance. Operator env assertions are not authenticated holder completion.";
+
 export function externalVerificationFullyAuthorized(
   proof: ExternalVerificationProofRecord,
 ): boolean {
   if (proof.evidence_mode === "isolated_sdk_fixture") {
     return false;
   }
-  if (proof.receipt_provenance !== "live_sandbox_holder_flow") {
+  if (proof.holder_journey.provenance !== "tenant_correlated") {
+    return false;
+  }
+  if (!proof.revocation.durable_checkpoint_monotonicity) {
     return false;
   }
   if (!proof.trust.trust_pin_required || !proof.trust.trust_pin_satisfied) {
@@ -199,4 +222,4 @@ export function isolatedFixtureCryptographicSuccess(
   );
 }
 
-export type { AuthorizationCheckState, DerivedAuthorizationChecks };
+export type { AuthorizationCheckState, DerivedAuthorizationChecks, HolderJourneyProvenanceKind };

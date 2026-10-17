@@ -18,6 +18,8 @@ import {
   loadPortableRevocationIssuerTrustFromEnv,
   loadPortableRevocationSnapshotFromEnv,
 } from "@/lib/partner/build592/portableRevocationLoader";
+import { resolveHolderJourneyProvenance } from "@/lib/partner/build592/holderJourneyProvenance";
+import { resolvePortableRevocationCheckpointDir } from "@/lib/partner/build592/portableRevocationCheckpoint";
 import {
   loadSignedReceiptFromPath,
   resolveProductionTrustEnvFromProcess,
@@ -39,17 +41,6 @@ function runSecurityRejectionsMatrix(): SecurityMatrixResult {
   }
 }
 
-function receiptProvenanceFromEnv(env: NodeJS.ProcessEnv) {
-  const attested = env.BUILD592_HOLDER_AUTHORIZATION_CONFIRMED?.trim() === "1";
-  if (attested && env.BUILD592_HOLDER_AUTHORIZATION_EVIDENCE?.trim()) {
-    return "live_sandbox_holder_flow" as const;
-  }
-  if (env.BUILD592_SIGNED_RECEIPT_PATH?.trim()) {
-    return "operator_supplied_file" as const;
-  }
-  return "not_supplied" as const;
-}
-
 async function main() {
   const agentGitSha = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
   const assessment = assessSandboxExecutionResources(process.env);
@@ -60,10 +51,15 @@ async function main() {
   const partnerId = process.env.RP_PARTNER_ID?.trim();
   const policyId = process.env.RP_POLICY_ID?.trim();
   const consumptionDir = process.env.RP_CONSUMPTION_DIR?.trim();
-  const receiptProvenance = receiptProvenanceFromEnv(process.env);
-  const holderConfirmed =
-    process.env.BUILD592_HOLDER_AUTHORIZATION_CONFIRMED?.trim() === "1"
-    && Boolean(process.env.BUILD592_HOLDER_AUTHORIZATION_EVIDENCE?.trim());
+  const receiptPathPresent = Boolean(receiptPath);
+  const checkpointDir = resolvePortableRevocationCheckpointDir(process.env);
+  let holderJourney = resolveHolderJourneyProvenance({
+    env: process.env,
+    partnerId: partnerId ?? "",
+    policyId: policyId ?? "",
+    receiptId: "",
+    receiptLoadedFromFile: receiptPathPresent,
+  });
 
   let externalProof: ExternalVerificationProofRecord | null = null;
   let externalProofError: string | null = null;
@@ -83,6 +79,13 @@ async function main() {
       } else {
         try {
           const signedRecord = loadSignedReceiptFromPath(receiptPath);
+          holderJourney = resolveHolderJourneyProvenance({
+            env: process.env,
+            partnerId,
+            policyId,
+            receiptId: signedRecord.id,
+            receiptLoadedFromFile: true,
+          });
           const bootstrapTrusts = loadPortableRevocationBootstrapTrustsFromEnv(
             process.env,
             portable.bootstrapTrusts,
@@ -96,11 +99,13 @@ async function main() {
             trustEnv: trust.env,
             trustDigestPin: process.env.ABRAXAS_RECEIPT_KEY_DOCUMENT_DIGEST?.trim() ?? trust.receipt_key_document_digest,
             consumptionStoreDir: consumptionDir,
+            checkpointStoreDir: checkpointDir,
             portableRevocationSnapshot: portable.snapshot,
             portableRevocationIssuerTrust: issuerTrust.policy,
             portableRevocationBootstrapTrusts: bootstrapTrusts,
             executionEnvironment: "cloud_agent",
-            receiptProvenance,
+            receiptProvenance: holderJourney.receipt_provenance,
+            holderJourney,
             expectedApplicationId: process.env.BUILD592_APPLICATION_ID?.trim()
               ?? process.env.BUILD584_APPLICATION_ID?.trim()
               ?? null,
@@ -136,9 +141,9 @@ async function main() {
   const execution = buildExternalVerificationExecutionReport({
     syntheticSecurityPassed: securityMatrix.ok,
     liveHttpSteps: liveSteps,
-    holderAuthorizationConfirmed: holderConfirmed,
-    holderAuthorizationEvidenceRef: process.env.BUILD592_HOLDER_AUTHORIZATION_EVIDENCE?.trim() ?? null,
-    receiptProvenance,
+    holderJourneyProvenance: holderJourney.kind,
+    operatorHolderEvidenceRef: process.env.BUILD592_HOLDER_AUTHORIZATION_EVIDENCE?.trim() ?? null,
+    receiptSuppliedViaFile: receiptPathPresent,
     externalVerifierRan,
     externalAuthorizationGranted: externalAuthorized,
     externalProofGenerated: Boolean(externalProof),
@@ -160,8 +165,9 @@ async function main() {
       .map((r) => ({ id: r.id, next_action: r.next_action })),
     operator_next_steps: [
       "Set BUILD592_PARTNER_API_KEY and BUILD592_APPLICATION_ID for live Launchpad HTTP checks.",
-      "Complete hosted holder verification; set BUILD592_HOLDER_AUTHORIZATION_CONFIRMED=1 and BUILD592_HOLDER_AUTHORIZATION_EVIDENCE to a partner-safe reference (artifact id, request id, or audit note — no secrets).",
-      "Supply BUILD592_SIGNED_RECEIPT_PATH only after holder flow; file path alone does not prove holder completion.",
+      "Optional operator note: BUILD592_HOLDER_AUTHORIZATION_CONFIRMED=1 + BUILD592_HOLDER_AUTHORIZATION_EVIDENCE (not authenticated provenance).",
+      "For verified holder journey provenance, supply BUILD592_LIVE_RECEIPT_ARTIFACT_PATH or BUILD592_CALLBACK_CAPTURE_URL correlating receipt_id to tenant scope.",
+      "Set BUILD592_PORTABLE_REVOCATION_CHECKPOINT_DIR (or ABRAXAS_PORTABLE_REVOCATION_CHECKPOINT_DIR) for durable revocation checkpoint monotonicity.",
       "Pin ABRAXAS_RECEIPT_VERIFICATION_REGISTRY and ABRAXAS_RECEIPT_KEY_DOCUMENT_DIGEST; supply BUILD592_PORTABLE_REVOCATION_SNAPSHOT_PATH and issuer trust JSON.",
       "Run on external RP host with RP_CONSUMPTION_DIR, RP_PARTNER_ID, RP_POLICY_ID.",
     ],

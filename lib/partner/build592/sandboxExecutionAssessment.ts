@@ -21,6 +21,7 @@ export type SandboxExecutionResourceId =
   | "issuer_trust_registry"
   | "digest_pin"
   | "revocation_evidence"
+  | "revocation_checkpoint_store"
   | "external_rp_runtime";
 
 export interface SandboxExecutionResourceRow {
@@ -60,6 +61,9 @@ export function assessSandboxExecutionResources(
     ?? env.BUILD592_PORTABLE_REVOCATION_SNAPSHOT_JSON?.trim();
   const portableIssuerTrust = env.BUILD592_PORTABLE_REVOCATION_ISSUER_TRUST_JSON?.trim()
     ?? env.ABRAXAS_PORTABLE_REVOCATION_ISSUER_TRUST?.trim();
+  const checkpointDir = env.BUILD592_PORTABLE_REVOCATION_CHECKPOINT_DIR?.trim()
+    ?? env.ABRAXAS_PORTABLE_REVOCATION_CHECKPOINT_DIR?.trim()
+    ?? env.RP_PORTABLE_REVOCATION_CHECKPOINT_DIR?.trim();
 
   const resources: SandboxExecutionResourceRow[] = [
     {
@@ -154,6 +158,17 @@ export function assessSandboxExecutionResources(
         : "Export portable snapshot for receipt; set BUILD592_PORTABLE_REVOCATION_SNAPSHOT_PATH and issuer trust JSON.",
     },
     {
+      id: "revocation_checkpoint_store",
+      label: "Durable portable revocation checkpoint directory",
+      status: checkpointDir ? "configured" : "requires_operator_credentials",
+      detail: checkpointDir
+        ? "Filesystem checkpoint store configured for cross-run monotonicity."
+        : "Production acceptance requires ABRAXAS_PORTABLE_REVOCATION_CHECKPOINT_DIR (or BUILD592_/RP_ alias) on the relying party host.",
+      next_action: checkpointDir
+        ? null
+        : "Create a dedicated directory on RP infrastructure; set BUILD592_PORTABLE_REVOCATION_CHECKPOINT_DIR.",
+    },
+    {
       id: "external_rp_runtime",
       label: "External relying party runtime",
       status: consumptionDir && partnerId && policyId ? "configured" : "requires_operator_credentials",
@@ -171,7 +186,8 @@ export function assessSandboxExecutionResources(
     && policyId
     && consumptionDir
     && portableSnapshotPath
-    && portableIssuerTrust,
+    && portableIssuerTrust
+    && checkpointDir,
   );
 
   return {

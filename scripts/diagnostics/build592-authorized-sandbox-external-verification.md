@@ -10,17 +10,17 @@ The JSON report is a **local execution record** (`592.v2`). It does not authenti
 
 1. **Launchpad** — sandbox application with `sandbox_institutional_protocol_access`, callback URL, `abx_test_…` API key.
 2. **Hosted holder** — open hosted verification URL, complete permitted holder consent on `/partner/verify`.
-3. **Holder attestation** — set `BUILD592_HOLDER_AUTHORIZATION_CONFIRMED=1` and a partner-safe `BUILD592_HOLDER_AUTHORIZATION_EVIDENCE` reference (request id, artifact id, or audit note — no secrets).
-4. **Receipt** — persist `signed_record` JSON from the live holder flow (a file path alone does not prove holder completion).
-5. **External RP host** — pin trust registry + digest v2, durable consumption directory, **signed portable revocation snapshot** and issuer trust (not a self-declared `{ "status": "active" }` feed).
+3. **Holder journey provenance** — self-declared `BUILD592_HOLDER_AUTHORIZATION_*` env vars are operator notes only. For verified provenance, supply `BUILD592_LIVE_RECEIPT_ARTIFACT_PATH` or `BUILD592_CALLBACK_CAPTURE_URL` that tenant-correlates `receipt_id` (see `liveReceiptCorrelation.ts`).
+4. **Receipt** — persist `signed_record` JSON (`BUILD592_SIGNED_RECEIPT_PATH`). Cryptographic authorization is separate from verified holder journey provenance.
+5. **External RP host** — pin trust registry + digest v2, durable consumption directory, **durable portable revocation checkpoint directory**, **signed portable revocation snapshot**, and issuer trust.
 6. **Run evidence script** on the RP host (not Abraxas Supabase as trust root):
 
 ```bash
 export BUILD592_PARTNER_API_KEY=abx_test_…        # optional: live HTTP journey
 export BUILD592_APPLICATION_ID=<uuid>             # optional
-export BUILD592_HOLDER_AUTHORIZATION_CONFIRMED=1
-export BUILD592_HOLDER_AUTHORIZATION_EVIDENCE=<partner-safe-ref>
 export BUILD592_SIGNED_RECEIPT_PATH=./receipt.json
+export BUILD592_LIVE_RECEIPT_ARTIFACT_PATH=./live-e2e-artifact.json
+export BUILD592_PORTABLE_REVOCATION_CHECKPOINT_DIR=/var/lib/your-rp/revocation-checkpoints
 export BUILD592_PORTABLE_REVOCATION_SNAPSHOT_PATH=./portable-revocation.json
 export BUILD592_PORTABLE_REVOCATION_ISSUER_TRUST_JSON='{…}'
 export RP_PARTNER_ID=<receipt partner_id>

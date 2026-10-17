@@ -10,12 +10,13 @@ import {
   verifySignedDecisionReceipt,
 } from "@/lib/institutionalVerification";
 import { composeHolderPolicyScopedPresentation } from "@/lib/protocol/proofFirst/holderPolicyPresentation";
-import {
-  InMemoryPortableRevocationCheckpointStore,
-  type PortableRevocationBootstrapTrust,
-  type PortableRevocationIssuerTrustPolicy,
-  type PortableRevocationSignedArtifact,
+import type {
+  PortableRevocationBootstrapTrust,
+  PortableRevocationIssuerTrustPolicy,
+  PortableRevocationSignedArtifact,
 } from "@/lib/protocol/portableRevocation";
+import type { ResolvedHolderJourneyProvenance } from "@/lib/partner/build592/holderJourneyProvenance";
+import { openBuild592PortableRevocationCheckpointStore } from "@/lib/partner/build592/portableRevocationCheckpoint";
 import {
   buildExternalVerificationProofRecord,
   type ExternalVerificationEvidenceMode,
@@ -65,8 +66,12 @@ export async function runProductionExternalVerification(input: {
   portableRevocationBootstrapTrusts: PortableRevocationBootstrapTrust[];
   executionEnvironment: ExternalVerificationExecutionEnvironment;
   receiptProvenance: ReceiptProvenance;
+  holderJourney: ResolvedHolderJourneyProvenance;
   sandbox: ExternalVerificationProofRecord["sandbox"];
   expectedApplicationId?: string | null;
+  checkpointStoreDir?: string | null;
+  allowEphemeralCheckpointForTests?: boolean;
+  trustEnvForCheckpoint?: Record<string, string | undefined>;
   now?: Date;
 }): Promise<
   | { ok: true; proof: ExternalVerificationProofRecord }
@@ -91,7 +96,15 @@ export async function runProductionExternalVerification(input: {
     audiencePartnerId: input.partnerId,
   });
   const store = new FileReceiptConsumptionStore(input.consumptionStoreDir);
-  const checkpointStore = new InMemoryPortableRevocationCheckpointStore();
+  const checkpointEnv = (input.trustEnvForCheckpoint ?? input.trustEnv) as NodeJS.ProcessEnv;
+  const checkpoint = await openBuild592PortableRevocationCheckpointStore({
+    env: checkpointEnv,
+    checkpointDir: input.checkpointStoreDir ?? null,
+    allowEphemeralForTests: input.allowEphemeralCheckpointForTests ?? false,
+  });
+  if (!checkpoint.ok) {
+    return { ok: false, code: checkpoint.code };
+  }
 
   const result = await verifyHolderTrustPresentation({
     presentation,
@@ -101,7 +114,7 @@ export async function runProductionExternalVerification(input: {
     portable_revocation_snapshot: input.portableRevocationSnapshot,
     portable_revocation_issuer_trust: input.portableRevocationIssuerTrust,
     portable_revocation_bootstrap_trusts: input.portableRevocationBootstrapTrusts,
-    checkpoint_store: checkpointStore,
+    checkpoint_store: checkpoint.store,
     consumption_store: store,
     now: input.now,
   });
@@ -114,7 +127,7 @@ export async function runProductionExternalVerification(input: {
     verifiedAt: new Date().toISOString(),
     executionEnvironment: input.executionEnvironment,
     evidenceMode: "production_portable_revocation",
-    receiptProvenance: input.receiptProvenance,
+    receiptProvenance: input.holderJourney.receipt_provenance ?? input.receiptProvenance,
     sandbox: input.sandbox,
     receiptId: input.signedRecord.id,
     requestId: input.requestId,
@@ -126,6 +139,14 @@ export async function runProductionExternalVerification(input: {
     replayDetected,
     portableRevocationAuthenticated: result.portable_revocation_authenticated === true,
     revocationMechanism: "portable_revocation_snapshot",
+    holderJourney: {
+      provenance: input.holderJourney.kind,
+      operator_evidence_ref: input.holderJourney.operator_evidence_ref,
+      correlation_source: input.holderJourney.correlation_source,
+      notice: "",
+    },
+    checkpointStorage: checkpoint.storage,
+    durableCheckpointMonotonicity: checkpoint.durable_cross_run_monotonicity,
   });
 
   return { ok: true, proof };
@@ -152,7 +173,13 @@ export async function runIsolatedFixtureExternalVerification(input: {
     audiencePartnerId: input.partnerId,
   });
   const store = new FileReceiptConsumptionStore(input.consumptionStoreDir);
-  const checkpointStore = new InMemoryPortableRevocationCheckpointStore();
+  const checkpoint = await openBuild592PortableRevocationCheckpointStore({
+    env: input.trustEnv as NodeJS.ProcessEnv,
+    allowEphemeralForTests: true,
+  });
+  if (!checkpoint.ok) {
+    throw new Error(checkpoint.code);
+  }
 
   const result = await verifyHolderTrustPresentation({
     presentation,
@@ -162,7 +189,7 @@ export async function runIsolatedFixtureExternalVerification(input: {
     portable_revocation_snapshot: input.portableRevocationSnapshot,
     portable_revocation_issuer_trust: input.portableRevocationIssuerTrust,
     portable_revocation_bootstrap_trusts: input.portableRevocationBootstrapTrusts,
-    checkpoint_store: checkpointStore,
+    checkpoint_store: checkpoint.store,
     consumption_store: store,
     now: input.now,
     ...TEST_MEMORY,
@@ -195,6 +222,14 @@ export async function runIsolatedFixtureExternalVerification(input: {
     replayDetected,
     portableRevocationAuthenticated: result.portable_revocation_authenticated === true,
     revocationMechanism: "portable_revocation_snapshot",
+    holderJourney: {
+      provenance: "unconfirmed",
+      operator_evidence_ref: null,
+      correlation_source: null,
+      notice: "",
+    },
+    checkpointStorage: checkpoint.storage,
+    durableCheckpointMonotonicity: checkpoint.durable_cross_run_monotonicity,
   });
 }
 
