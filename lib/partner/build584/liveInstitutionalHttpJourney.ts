@@ -22,18 +22,31 @@ function jsonField(body: unknown, path: string): unknown {
 }
 
 export async function runLiveInstitutionalHttpJourney(env: NodeJS.ProcessEnv = process.env): Promise<LiveStepResult[]> {
-  const base = (env.BUILD584_SANDBOX_BASE_URL ?? env.BUILD583_SANDBOX_BASE_URL ?? "https://abraxasworld.xyz")
+  const base = (
+    env.BUILD592_SANDBOX_BASE_URL
+    ?? env.BUILD584_SANDBOX_BASE_URL
+    ?? env.BUILD583_SANDBOX_BASE_URL
+    ?? "https://abraxasworld.xyz"
+  )
     .trim()
     .replace(/\/$/, "");
-  const apiKey = (env.BUILD584_PARTNER_API_KEY ?? env.BUILD583_PARTNER_API_KEY)?.trim();
-  const applicationId = (env.BUILD584_APPLICATION_ID ?? env.BUILD583_APPLICATION_ID)?.trim();
+  const apiKey = (
+    env.BUILD592_PARTNER_API_KEY
+    ?? env.BUILD584_PARTNER_API_KEY
+    ?? env.BUILD583_PARTNER_API_KEY
+  )?.trim();
+  const applicationId = (
+    env.BUILD592_APPLICATION_ID
+    ?? env.BUILD584_APPLICATION_ID
+    ?? env.BUILD583_APPLICATION_ID
+  )?.trim();
 
   if (!apiKey) {
     return [{
       step: "partner_credentials",
       status: "blocked",
       detail:
-        "Set BUILD584_PARTNER_API_KEY (sandbox abx_test_… from Launchpad) on the operator machine. Never commit or log the key.",
+        "Set BUILD592_PARTNER_API_KEY or BUILD584_PARTNER_API_KEY (sandbox abx_test_… from Launchpad) on the operator machine. Never commit or log the key.",
     }];
   }
 
@@ -74,7 +87,7 @@ export async function runLiveInstitutionalHttpJourney(env: NodeJS.ProcessEnv = p
     steps.push({
       step: "sandbox_application_resolve",
       status: "blocked",
-      detail: "Set BUILD584_APPLICATION_ID to the institutional sandbox application UUID from Launchpad.",
+      detail: "Set BUILD592_APPLICATION_ID or BUILD584_APPLICATION_ID to the institutional sandbox application UUID from Launchpad.",
     });
     steps.push({
       step: "hosted_holder_authorization",
