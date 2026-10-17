@@ -22,7 +22,7 @@ import {
 } from "@/lib/nav/navSignInButtonState";
 import { useZkLoginSignInChooser } from "@/components/sui/ZkLoginSignInChooserProvider";
 import { canOpenSignInChooser } from "@/lib/sui/zklogin/signInChooserState";
-import { HOLDER_VERIFY_DEFAULT_PATH } from "@/lib/integrate/partnerJourney";
+import { ACCOUNT_NAV_PRIMARY, filterAccountNavItems } from "@/lib/account/accountNavItems";
 
 const FONT = ABRAXAS_FONT_SANS;
 const ACCENT = "#10B981";
@@ -33,13 +33,6 @@ const OTHER_ADMIN_MENU_ITEMS = [
   { label: "Partners & keys", href: "/admin/partners", description: "Relying party registry" },
 ] as const;
 
-const MENU_ITEMS = [
-  { label: "Passport", href: "/passport", description: "Your proofs & verification" },
-  { label: "Account", href: "/account", description: "Status summary and wallet" },
-  { label: "My records & credentials", href: HOLDER_VERIFY_DEFAULT_PATH, description: "Registry lookup and credential JWT" },
-  { label: "Tokenize an asset", href: "/build", description: "Start owner intake" },
-  { label: "Design partners", href: "/design-partner", description: "For apps integrating Abraxas" },
-] as const;
 
 export function NavProfileMenu({ prominent = false }: { prominent?: boolean }) {
   const auth = useSuiAuthOptional();
@@ -71,6 +64,7 @@ export function NavProfileMenu({ prominent = false }: { prominent?: boolean }) {
     const label = profileNavLabel(profile, email);
     const avatarColor = profile?.avatar_color ?? DEFAULT_AVATAR;
     const initial = profileInitial(profile, email);
+    const menuItems = filterAccountNavItems(ACCOUNT_NAV_PRIMARY, { holderSignedIn: true });
 
     return (
       <div ref={rootRef} style={{ position: "relative", display: "flex", alignItems: "center", gap: "0.45rem" }}>
@@ -155,7 +149,7 @@ export function NavProfileMenu({ prominent = false }: { prominent?: boolean }) {
               zIndex: 400,
             }}
           >
-            {MENU_ITEMS.map((item) => (
+            {menuItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}

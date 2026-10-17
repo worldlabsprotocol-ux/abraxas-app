@@ -16,16 +16,19 @@ import { computePassportCompletion } from "@/lib/passportCompletion";
 import type { IdentityStampStatus, CredentialVerifyState } from "@/lib/hooks/usePassportVerification";
 import { AddToAppleWallet } from "@/components/passport/AddToAppleWallet";
 import {
-  HOLDER_ACCOUNT_EYEBROW,
   HOLDER_ACCOUNT_ERROR_BODY,
   HOLDER_ACCOUNT_ERROR_TITLE,
-  HOLDER_ACCOUNT_SIGNED_OUT_SUBHEAD,
-  HOLDER_ACCOUNT_SIGNED_OUT_TITLE,
-  HOLDER_ACCOUNT_SUBHEAD,
-  HOLDER_ACCOUNT_TITLE,
   HOLDER_VERIFY_CREDENTIAL_PATH,
   HOLDER_VERIFY_DEFAULT_PATH,
 } from "@/lib/integrate/partnerJourney";
+import {
+  ACCOUNT_HUB_EYEBROW,
+  ACCOUNT_HUB_SUBHEAD,
+  ACCOUNT_HUB_TITLE,
+  ACCOUNT_HOLDER_SIGN_IN_REQUIRED,
+} from "@/lib/account/accountHubCopy";
+import { AccountUseCaseHub } from "@/components/account/AccountUseCaseHub";
+import { AccountSessionsNotice } from "@/components/account/AccountSessionsNotice";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const MONO = "'JetBrains Mono','SF Mono',ui-monospace,monospace";
@@ -56,13 +59,14 @@ function AccountInner() {
     return (
       <RedesignPage accent="neutral" maxWidth={720}>
         <PageHeader
-          eyebrow={HOLDER_ACCOUNT_EYEBROW}
-          title={HOLDER_ACCOUNT_SIGNED_OUT_TITLE}
-          subtitle={HOLDER_ACCOUNT_SIGNED_OUT_SUBHEAD}
+          eyebrow={ACCOUNT_HUB_EYEBROW}
+          title={ACCOUNT_HUB_TITLE}
+          subtitle={ACCOUNT_HOLDER_SIGN_IN_REQUIRED}
         />
         <ContentCard>
           <HolderAccessPanel />
         </ContentCard>
+        <AccountUseCaseHub emphasizeIfUnset={false} />
       </RedesignPage>
     );
   }
@@ -106,10 +110,16 @@ function AccountInner() {
   return (
     <RedesignPage accent="neutral" maxWidth={720}>
       <PageHeader
-        eyebrow={HOLDER_ACCOUNT_EYEBROW}
-        title={HOLDER_ACCOUNT_TITLE}
-        subtitle={HOLDER_ACCOUNT_SUBHEAD}
+        eyebrow={ACCOUNT_HUB_EYEBROW}
+        title={ACCOUNT_HUB_TITLE}
+        subtitle={ACCOUNT_HUB_SUBHEAD}
       />
+
+      <div style={{ marginBottom: "1rem" }}>
+        <AccountSessionsNotice />
+      </div>
+
+      <AccountUseCaseHub />
 
       <ContentCard title="Wallet">
         <code style={{ fontFamily: MONO, fontSize: "0.72rem", color: "var(--text-secondary)", wordBreak: "break-all" }}>
@@ -163,16 +173,21 @@ function AccountInner() {
             />
           </div>
 
-          <ContentCard title="Available actions">
+          <ContentCard title="Passport shortcuts">
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
               <Btn href="/passport" size="sm">Open Passport →</Btn>
-              <Btn href={HOLDER_VERIFY_DEFAULT_PATH} variant="secondary" size="sm">
-                My records &amp; credentials
+              <Btn href="/account/credentials" variant="secondary" size="sm">
+                Credentials hub
               </Btn>
-              <Btn href={HOLDER_VERIFY_CREDENTIAL_PATH} variant="secondary" size="sm">
+              <Btn href={HOLDER_VERIFY_DEFAULT_PATH} variant="secondary" size="sm">
+                Registry lookup
+              </Btn>
+              <Btn href={HOLDER_VERIFY_CREDENTIAL_PATH} variant="ghost" size="sm">
                 Test credential JWT
               </Btn>
-              <Btn href="/flagship" variant="ghost" size="sm">Book Cielo</Btn>
+              <Btn href="/account/applications" variant="ghost" size="sm">
+                Applications
+              </Btn>
             </div>
           </ContentCard>
 
