@@ -9,6 +9,7 @@ import {
   PASSPORT_REAUTH_HEADLINE,
   PASSPORT_REAUTH_LABEL,
 } from "@/lib/passport/passportCustomerCopy";
+import { ABRAXAS_OAUTH_PROVIDER_FOOTNOTE } from "@/lib/product/abraxasIdentityExperienceCopy";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import { PUBLIC_SURFACE } from "@/lib/design/publicSurface";
 
@@ -71,9 +72,17 @@ export function PassportReauthenticationPanel() {
           opacity: busy ? 0.75 : 1,
         }}
       >
-        <span aria-hidden="true" style={{ fontWeight: 800 }}>G</span>
         {busy ? ZKLOGIN_SIGN_IN_COPY.redirecting : PASSPORT_REAUTH_LABEL}
       </button>
+      <p style={{
+        fontFamily: FONT,
+        fontSize: "0.68rem",
+        lineHeight: 1.5,
+        color: "var(--text-muted)",
+        margin: "0.65rem 0 0",
+      }}>
+        {ABRAXAS_OAUTH_PROVIDER_FOOTNOTE}
+      </p>
     </section>
   );
 }

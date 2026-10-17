@@ -8,13 +8,13 @@ export const ZKLOGIN_SIGN_IN_COPY = {
   legacySectionHeading: "Older sign in setup",
   closeButton: "Close",
 
-  canonicalButton: "Continue with Google",
-  canonicalHelper: "Creates your account only. No documents or ID checks at sign-in.",
-  canonicalAriaLabel: "Continue with Google to create or open your Abraxas Passport",
+  canonicalButton: "Continue securely",
+  canonicalHelper: "Opens your Abraxas account. No identity verification at sign-in.",
+  canonicalAriaLabel: "Continue securely to open your Abraxas Passport",
 
   legacyButton: "Recover a Passport created with an older sign in setup",
   legacyHelper:
-    "Use this only when Continue with Google does not open your Passport and you are directed here.",
+    "Use this only when Continue securely does not open your Passport and you are directed here.",
   legacyAriaLabel: "Recover a Passport created with an older sign in setup",
 
   recoveryDismissButton: "Dismiss",

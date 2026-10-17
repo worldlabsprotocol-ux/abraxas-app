@@ -28,13 +28,13 @@ describe("resolveNavSignInUiState", () => {
 
   it("uses honest unavailable copy", () => {
     expect(NAV_SIGN_IN_COPY.unavailable).toBe("Sign-in unavailable");
-    expect(NAV_SIGN_IN_COPY.unavailableHint).toMatch(/not configured/i);
+    expect(NAV_SIGN_IN_COPY.unavailableHint).toMatch(/not enabled/i);
   });
 
-  it("uses wallet-first nav and legacy Google labels", () => {
+  it("uses wallet-first nav and Abraxas-first sign-in labels", () => {
     expect(NAV_SIGN_IN_COPY.open).toBe("Connect");
     expect(NAV_SIGN_IN_COPY.openAriaLabel).toMatch(/wallet/i);
-    expect(NAV_SIGN_IN_COPY.canonical).toBe("Continue with Google");
+    expect(NAV_SIGN_IN_COPY.canonical).toBe("Continue securely");
     expect(NAV_SIGN_IN_COPY.legacy).toBe("Recover a Passport created with an older sign in setup");
     expect(NAV_SIGN_IN_COPY.canonicalAriaLabel).toMatch(/Passport/i);
     expect(NAV_SIGN_IN_COPY.legacyAriaLabel).toMatch(/older sign in setup/i);
