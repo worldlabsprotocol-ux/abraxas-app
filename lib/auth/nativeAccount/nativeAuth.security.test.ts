@@ -130,7 +130,7 @@ describe("native auth API gate", () => {
     process.env.ABRAXAS_NATIVE_ACCOUNT_AUTH_ENABLED = "false";
     vi.resetModules();
     const { GET } = await import("@/app/api/auth/native/enabled/route");
-    const res = await GET();
+    const res = await GET(new NextRequest("http://localhost/"));
     const body = await res.json();
     expect(body.enabled).toBe(false);
   });
