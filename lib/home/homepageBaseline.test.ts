@@ -31,6 +31,7 @@ describe("homepage baseline (institutional invariants)", () => {
     expect(shell).toContain("HomeGoodTroubleActionSection");
     expect(shell).toContain("HomeVerifiableTrustChapter");
     expect(shell).toContain("CapabilityMatrix");
+    expect(shell).toContain("HomeNativeSandboxChapter");
     expect(shell).not.toContain("KineticMarquee");
     const hero = read("components/home/premium/PremiumHomeHero.tsx");
     expect(hero).toContain("Prove what matters");

@@ -4,6 +4,8 @@ import {
   CINEMATIC_HOME_CTA_PRIMARY_HREF,
   CINEMATIC_HOME_CTA_SECONDARY,
   CINEMATIC_HOME_CTA_SECONDARY_HREF,
+  CINEMATIC_HOME_CTA_SANDBOX,
+  CINEMATIC_HOME_CTA_SANDBOX_HREF,
   CINEMATIC_HOME_CTA_TERTIARY,
   CINEMATIC_HOME_CTA_TERTIARY_HREF,
   CINEMATIC_HOME_HEADLINE,
@@ -54,6 +56,12 @@ export function PremiumHomeHero() {
               href={CINEMATIC_HOME_CTA_TERTIARY_HREF}
             >
               {CINEMATIC_HOME_CTA_TERTIARY}
+            </Link>
+            <Link
+              className="abx-premium-hero__cta abx-premium-hero__cta--secondary abx-premium-hero__cta--sandbox"
+              href={CINEMATIC_HOME_CTA_SANDBOX_HREF}
+            >
+              {CINEMATIC_HOME_CTA_SANDBOX}
             </Link>
           </div>
           <p className="abx-premium-hero__sr-only">{CINEMATIC_HOME_HEADLINE}</p>
