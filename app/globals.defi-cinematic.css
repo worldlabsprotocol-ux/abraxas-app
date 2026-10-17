@@ -1158,3 +1158,62 @@
   gap: 0.65rem;
   margin: 1rem 0 0.5rem;
 }
+
+.abx-workspace-progress {
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .abx-workspace-progress {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.65rem;
+  }
+}
+
+.abx-workspace-progress__step {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.18);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.abx-workspace-progress__step--current {
+  border-color: rgba(76, 187, 146, 0.45);
+  color: var(--text-primary);
+  box-shadow: inset 0 0 0 1px rgba(76, 187, 146, 0.12);
+}
+
+.abx-workspace-progress__step--complete {
+  border-color: rgba(76, 187, 146, 0.28);
+  color: var(--text-primary);
+}
+
+.abx-workspace-progress__index {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.abx-workspace-progress__step--current .abx-workspace-progress__index {
+  background: rgba(76, 187, 146, 0.22);
+}
+
+.abx-home-close-section {
+  margin-top: 0.5rem;
+}

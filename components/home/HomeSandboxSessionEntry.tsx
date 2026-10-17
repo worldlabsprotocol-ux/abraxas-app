@@ -1,62 +1,27 @@
 "use client";
 // FILE: components/home/HomeSandboxSessionEntry.tsx
-// Session-aware sandbox entry — one primary action, passkey-native, no competing auth buttons.
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Btn } from "@/components/redesign/ui";
 import { NativeAccountPasskeyPanel } from "@/components/account/NativeAccountPasskeyPanel";
-
-type Overview = {
-  native_account: { authenticated: boolean; account_id: string | null; partner_membership_count: number };
-  partner_console: { authenticated: boolean; partner_id: string | null; environment: string | null };
-};
-
-type EntryMode =
-  | "loading"
-  | "native_disabled"
-  | "create_account"
-  | "sign_in"
-  | "create_sandbox"
-  | "open_sandbox";
+import { HomeWorkspaceProgressSteps } from "@/components/home/HomeWorkspaceProgressSteps";
+import {
+  HOMEPAGE_CTA_OPEN_WORKSPACE,
+  HOMEPAGE_CTA_SET_UP_WORKSPACE,
+  HOMEPAGE_CTA_START_BUILDING,
+  HOMEPAGE_WORKSPACE_DEMO_LINK,
+  HOMEPAGE_WORKSPACE_DISABLED_LEAD,
+} from "@/lib/home/homepagePlainCopy";
+import { useHomeWorkspaceSession } from "@/lib/home/useHomeWorkspaceSession";
 
 export function HomeSandboxSessionEntry() {
   const router = useRouter();
-  const [nativeEnabled, setNativeEnabled] = useState<boolean | null>(null);
-  const [overview, setOverview] = useState<Overview | null>(null);
+  const { mode, refresh } = useHomeWorkspaceSession();
   const [authMode, setAuthMode] = useState<"register" | "authenticate">("register");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const refresh = useCallback(async () => {
-    const [enabledRes, overviewRes] = await Promise.all([
-      fetch("/api/auth/native/enabled", { credentials: "include" }),
-      fetch("/api/account/overview", { credentials: "include" }),
-    ]);
-    const enabledJson = (await enabledRes.json()) as { enabled?: boolean };
-    setNativeEnabled(Boolean(enabledJson.enabled));
-    if (overviewRes.ok) {
-      setOverview((await overviewRes.json()) as Overview);
-    }
-  }, []);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  const mode: EntryMode = (() => {
-    if (nativeEnabled === null || !overview) return "loading";
-    if (!nativeEnabled) return "native_disabled";
-    if (!overview.native_account.authenticated) {
-      return authMode === "register" ? "create_account" : "sign_in";
-    }
-    const hasSandbox =
-      overview.partner_console.authenticated ||
-      (overview.partner_console.partner_id && overview.partner_console.environment === "sandbox") ||
-      overview.native_account.partner_membership_count > 0;
-    return hasSandbox ? "open_sandbox" : "create_sandbox";
-  })();
 
   const enrollSandbox = useCallback(async () => {
     setError(null);
@@ -70,85 +35,110 @@ export function HomeSandboxSessionEntry() {
       });
       const json = await res.json();
       if (!res.ok) {
-        setError(json.code ?? "Sandbox enrollment failed.");
+        setError(json.code ?? "Could not set up workspace.");
         return;
       }
       await refresh();
       router.push("/developers/launchpad");
     } catch {
-      setError("Sandbox enrollment failed.");
+      setError("Could not set up workspace.");
     } finally {
       setBusy(false);
     }
   }, [refresh, router]);
 
-  if (mode === "loading") {
-    return <p className="abx-sandbox-entry__status">Checking sandbox availability…</p>;
-  }
+  return (
+    <div className="abx-sandbox-entry">
+      <HomeWorkspaceProgressSteps mode={mode} />
 
-  if (mode === "native_disabled") {
-    return (
-      <div className="abx-sandbox-entry__disabled">
-        <p className="abx-sandbox-entry__status">
-          Native passkey sandbox enrollment is not enabled in this deployment. Use Integration Studio or contact your
-          operator for staging access.
-        </p>
-        <Link className="abx-premium-hero__cta abx-premium-hero__cta--secondary" href="/developers/integration-studio">
-          Open Integration Studio
-        </Link>
-      </div>
-    );
-  }
+      {mode === "loading" ? (
+        <p className="abx-sandbox-entry__status">Checking workspace availability…</p>
+      ) : null}
 
-  if (mode === "create_account" || mode === "sign_in") {
-    const primaryLabel = mode === "create_account" ? "Create account" : "Sign in";
-    return (
-      <div className="abx-sandbox-entry__auth">
-        <NativeAccountPasskeyPanel
-          mode={authMode}
-          label={primaryLabel}
-          onSuccess={() => void refresh()}
-        />
-        <p className="abx-sandbox-entry__alt">
-          {authMode === "register" ? (
-            <>
-              Already have a passkey account?{" "}
-              <button type="button" className="abx-sandbox-entry__link" onClick={() => setAuthMode("authenticate")}>
-                Sign in
-              </button>
-            </>
-          ) : (
-            <>
-              New here?{" "}
-              <button type="button" className="abx-sandbox-entry__link" onClick={() => setAuthMode("register")}>
-                Create account
-              </button>
-            </>
-          )}
-        </p>
+      {mode === "native_disabled" ? (
+        <div className="abx-sandbox-entry__disabled">
+          <p className="abx-sandbox-entry__status">{HOMEPAGE_WORKSPACE_DISABLED_LEAD}</p>
+          <Link className="abx-premium-hero__cta abx-premium-hero__cta--secondary" href="/developers/integration-studio">
+            Open Integration Studio
+          </Link>
+        </div>
+      ) : null}
+
+      {mode === "needs_account" ? (
+        <div className="abx-sandbox-entry__auth">
+          <NativeAccountPasskeyPanel
+            mode={authMode}
+            label={authMode === "register" ? "Create account" : "Sign in"}
+            onSuccess={() => void refresh()}
+          />
+          <p className="abx-sandbox-entry__alt">
+            {authMode === "register" ? (
+              <>
+                Already have an account?{" "}
+                <button type="button" className="abx-sandbox-entry__link" onClick={() => setAuthMode("authenticate")}>
+                  Sign in
+                </button>
+              </>
+            ) : (
+              <>
+                New here?{" "}
+                <button type="button" className="abx-sandbox-entry__link" onClick={() => setAuthMode("register")}>
+                  Create account
+                </button>
+              </>
+            )}
+          </p>
+        </div>
+      ) : null}
+
+      {mode === "needs_workspace" ? (
+        <div className="abx-sandbox-entry__sandbox">
+          <Btn size="sm" disabled={busy} onClick={() => void enrollSandbox()}>
+            {busy ? "Setting up…" : HOMEPAGE_CTA_SET_UP_WORKSPACE}
+          </Btn>
+          {error ? <p className="abx-sandbox-entry__error">{error}</p> : null}
+        </div>
+      ) : null}
+
+      {mode === "has_workspace" ? (
+        <div className="abx-sandbox-entry__sandbox">
+          <Link className="abx-premium-hero__cta abx-premium-hero__cta--primary" href="/developers/launchpad">
+            {HOMEPAGE_CTA_OPEN_WORKSPACE}
+          </Link>
+        </div>
+      ) : null}
+
+      {mode !== "loading" && mode !== "native_disabled" ? (
         <Link className="abx-sandbox-entry__demo-link" href="/try">
-          Explore verification demo without an account
+          {HOMEPAGE_WORKSPACE_DEMO_LINK}
         </Link>
-      </div>
-    );
-  }
+      ) : null}
 
-  if (mode === "create_sandbox") {
+      {mode === "native_disabled" ? (
+        <Link className="abx-sandbox-entry__demo-link" href="/try">
+          {HOMEPAGE_WORKSPACE_DEMO_LINK}
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
+/** Primary CTA for hero footer / closing — mirrors workspace session. */
+export function HomeWorkspacePrimaryCta({ className }: { className?: string }) {
+  const { mode } = useHomeWorkspaceSession();
+  const primaryClass = `abx-premium-hero__cta abx-premium-hero__cta--primary ${className ?? ""}`.trim();
+
+  if (mode === "has_workspace") {
     return (
-      <div className="abx-sandbox-entry__sandbox">
-        <Btn size="sm" disabled={busy} onClick={() => void enrollSandbox()}>
-          {busy ? "Creating sandbox…" : "Create sandbox"}
-        </Btn>
-        {error ? <p className="abx-sandbox-entry__error">{error}</p> : null}
-      </div>
+      <Link className={primaryClass} href="/developers/launchpad">
+        {HOMEPAGE_CTA_OPEN_WORKSPACE}
+      </Link>
     );
   }
 
   return (
-    <div className="abx-sandbox-entry__sandbox">
-      <Link className="abx-premium-hero__cta abx-premium-hero__cta--primary" href="/developers/launchpad">
-        Open sandbox
-      </Link>
-    </div>
+    <Link className={primaryClass} href="#start-sandbox">
+      {HOMEPAGE_CTA_START_BUILDING}
+    </Link>
   );
 }

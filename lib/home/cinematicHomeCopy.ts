@@ -64,9 +64,10 @@ export const FOOTER_THESIS_LINE_2 = CINEMATIC_THESIS_LINE_2;
 /** Build #545 public homepage hero and scroll chapters */
 export const CINEMATIC_HOME_HEADLINE = "Prove what matters. Keep what's yours.";
 
-export const CINEMATIC_HOME_LEAD = "Verify privately. Build with independently verifiable trust.";
+export const CINEMATIC_HOME_LEAD =
+  "Your application can check a signed yes-or-no answer without receiving someone's personal documents.";
 
-export const CINEMATIC_HOME_CTA_PRIMARY = "Start sandbox";
+export const CINEMATIC_HOME_CTA_PRIMARY = "Start building";
 export const CINEMATIC_HOME_CTA_PRIMARY_HREF = "#start-sandbox";
 
 export const CINEMATIC_HOME_CTA_SECONDARY = "See how it works";
@@ -76,7 +77,7 @@ export const CINEMATIC_HOME_CTA_SECONDARY_HREF = "#how-abraxas-works";
 export const CINEMATIC_HOME_CTA_TERTIARY = "See how it works";
 export const CINEMATIC_HOME_CTA_TERTIARY_HREF = "#how-abraxas-works";
 
-export const CINEMATIC_HOME_CTA_SANDBOX = "Start sandbox";
+export const CINEMATIC_HOME_CTA_SANDBOX = "Start building";
 export const CINEMATIC_HOME_CTA_SANDBOX_HREF = "#start-sandbox";
 
 export const CINEMATIC_PROBLEM_HEADLINE = "Why share everything to prove one thing?";

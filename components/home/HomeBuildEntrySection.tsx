@@ -4,7 +4,13 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { LazyHomeSection } from "@/components/home/LazyHomeSection";
-import { InstitutionalHomeClose } from "@/components/institutional/InstitutionalHomeClose";
+import { HomeWorkspacePrimaryCta } from "@/components/home/HomeSandboxSessionEntry";
+import {
+  HOMEPAGE_CLOSE_HEADING,
+  HOMEPAGE_CLOSE_LEAD,
+  HOMEPAGE_CTA_DEVELOPER_GUIDES,
+  HOMEPAGE_FEATURES_EXPANDER,
+} from "@/lib/home/homepagePlainCopy";
 
 const CapabilityMatrix = dynamic(
   () => import("@/components/institutional/CapabilityMatrix").then((m) => m.CapabilityMatrix),
@@ -13,28 +19,24 @@ const CapabilityMatrix = dynamic(
 
 export function HomeBuildEntrySection() {
   return (
-    <section id="chapter-build" className="abx-cinematic-build-chapter" aria-labelledby="home-build-heading">
-      <p className="abx-v2-eyebrow">Build with Abraxas</p>
-      <h2 id="home-build-heading" className="abx-v2-section-title">
-        Build with Abraxas
+    <section id="chapter-build" className="abx-cinematic-build-chapter abx-home-close-section" aria-labelledby="home-close-heading">
+      <h2 id="home-close-heading" className="abx-v2-section-title">
+        {HOMEPAGE_CLOSE_HEADING}
       </h2>
+      <p className="abx-v2-section-lead abx-v2-section-lead--tight">{HOMEPAGE_CLOSE_LEAD}</p>
       <div className="abx-build-entry__actions">
-        <Link className="abx-premium-hero__cta abx-premium-hero__cta--primary" href="#start-sandbox">
-          Open sandbox
-        </Link>
+        <HomeWorkspacePrimaryCta />
         <Link className="abx-premium-hero__cta abx-premium-hero__cta--secondary" href="/docs">
-          Developer documentation
+          {HOMEPAGE_CTA_DEVELOPER_GUIDES}
         </Link>
       </div>
 
       <details className="abx-build-entry__advanced">
-        <summary>Capability matrix — product access states for this deployment</summary>
+        <summary>{HOMEPAGE_FEATURES_EXPANDER}</summary>
         <LazyHomeSection minHeight="12rem">
           <CapabilityMatrix />
         </LazyHomeSection>
       </details>
-
-      <InstitutionalHomeClose />
     </section>
   );
 }

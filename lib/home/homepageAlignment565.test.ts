@@ -30,7 +30,7 @@ describe("homepage alignment (#550–#565)", () => {
     const hero = read("components/home/premium/PremiumHomeHero.tsx");
     expect(hero).toContain("CINEMATIC_HOME_CTA_PRIMARY_HREF");
     const copy = read("lib/home/cinematicHomeCopy.ts");
-    expect(copy).toContain('CINEMATIC_HOME_CTA_PRIMARY = "Start sandbox"');
+    expect(copy).toContain('CINEMATIC_HOME_CTA_PRIMARY = "Start building"');
     expect(copy).toContain('CINEMATIC_HOME_CTA_PRIMARY_HREF = "#start-sandbox"');
     expect(copy).toContain("#how-abraxas-works");
     expect(copy).not.toMatch(/full decentral/i);

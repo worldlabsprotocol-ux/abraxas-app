@@ -20,7 +20,6 @@ const HomeFlagshipProtocolVisuals = dynamic(
 export function HomeHowAbraxasWorksSection() {
   return (
     <section id="how-abraxas-works" className="abx-home-how-works" aria-labelledby="home-how-heading">
-      <p className="abx-v2-eyebrow">Protocol</p>
       <h2 id="home-how-heading" className="abx-v2-section-title">
         {HOMEPAGE_HOW_HEADING}
       </h2>
@@ -29,14 +28,14 @@ export function HomeHowAbraxasWorksSection() {
       <HomeTrustPipelineStrip variant="homepage-how" />
 
       <details className="abx-home-how-works__advanced">
-        <summary>Lifecycle diagram — evidence narrows at each boundary</summary>
+        <summary>Advanced: how private information stays on the holder side</summary>
         <LazyHomeSection minHeight="18rem">
           <HomeVerificationLifecycle />
         </LazyHomeSection>
       </details>
 
       <details className="abx-home-how-works__advanced">
-        <summary>Passport-to-partner authorization flow</summary>
+        <summary>Advanced: from Passport to partner check</summary>
         <LazyHomeSection minHeight="12rem">
           <HomeFlagshipProtocolVisuals />
         </LazyHomeSection>

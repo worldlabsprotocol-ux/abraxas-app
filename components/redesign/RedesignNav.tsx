@@ -100,7 +100,7 @@ export function RedesignNav() {
               </Link>
             ))}
             <Link href="/#start-sandbox" onClick={() => setOpen(false)} style={mobileSubLink}>
-              Start sandbox
+              Start building
             </Link>
             <Link href="/try" onClick={() => setOpen(false)} style={mobileSubLink}>
               Verification demo
