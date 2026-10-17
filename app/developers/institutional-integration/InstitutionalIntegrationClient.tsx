@@ -417,9 +417,39 @@ ${workspace.trust.env_keys.consumption_store_dir}=/var/lib/your-rp/receipt-consu
             </ol>
           </ContentCard>
 
+          <ContentCard title="External verification on your infrastructure">
+            <p style={body}>{workspace.external_verification.notice}</p>
+            <p style={{ ...body, marginTop: "0.5rem" }}>{workspace.external_verification.telemetry_disclaimer}</p>
+            <pre className="abx-code-scroll" style={{ ...codeBlock, marginTop: "0.75rem" }}>
+              {workspace.external_verification.evidence_command}
+            </pre>
+            <p style={{ ...body, marginTop: "0.5rem" }}>
+              Operator runbook:{" "}
+              <code style={inlineCode}>{workspace.external_verification.runbook_relative_path}</code>
+              {" · "}
+              Status:{" "}
+              <strong style={{ color: "var(--text-primary)" }}>{workspace.external_verification.status}</strong>
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
+              <Btn
+                size="sm"
+                variant="secondary"
+                onClick={() => void onCopy("Evidence command", workspace.external_verification.evidence_command)}
+              >
+                Copy evidence command
+              </Btn>
+              <Btn href={workspace.links.institutional_verification_docs} size="sm" variant="ghost">
+                SDK verifier docs
+              </Btn>
+              <Btn href={workspace.links.independent_verifier_handoff} size="sm" variant="ghost">
+                Independent verifier handoff
+              </Btn>
+            </div>
+          </ContentCard>
+
           <ContentCard title="Integration activity">
             <p style={body}>
-              Backend integration health reflects real holder consent, signed receipts, and verification events — not synthetic fixture success.
+              Backend integration health reflects server-side holder consent, signed receipts, and verification telemetry — not external SDK proof on your host.
             </p>
             <Btn href={workspace.links.launchpad} size="sm" variant="secondary">
               View Launchpad activity

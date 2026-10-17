@@ -73,6 +73,15 @@ export interface InstitutionalTrustConfigurationView {
   trust_errors: string[];
 }
 
+export interface InstitutionalExternalVerificationHandoff {
+  contract_version: "592.v2";
+  status: "operator_required";
+  notice: string;
+  evidence_command: string;
+  runbook_relative_path: string;
+  telemetry_disclaimer: string;
+}
+
 export interface InstitutionalIntegrationWorkspacePayload {
   contract_version: "591.v1";
   binding: InstitutionalApplicationBinding;
@@ -81,6 +90,7 @@ export interface InstitutionalIntegrationWorkspacePayload {
   journey_steps: InstitutionalIntegrationStep[];
   activation: InstitutionalActivationEvidence | null;
   first_verified_outcome: InstitutionalFirstVerifiedOutcomeView | null;
+  external_verification: InstitutionalExternalVerificationHandoff;
   links: {
     launchpad: string;
     hosted_verification: string;
@@ -262,8 +272,8 @@ export function buildInstitutionalIntegrationJourney(input: {
       order: 10,
       title: "Observe integration result and next action",
       detail: independentOk
-        ? "Independent verification succeeded for this tenant. Review Launchpad activity and prepare sandbox-to-production review when eligible."
-        : "Integration health and activity surfaces show actionable errors until live holder consent and signed receipts are observed.",
+        ? "Server-side receipt verification telemetry recorded for this tenant. Confirm authorization on your external relying party host before production review."
+        : "Integration health shows server-side progress until holder consent, signed receipts, and external SDK verification on your infrastructure.",
       status: independentOk ? "complete" : receiptIssued ? "current" : "pending",
       action_href: input.launchpadHref,
       action_label: "Integration activity",
@@ -350,6 +360,16 @@ export function buildInstitutionalIntegrationWorkspace(input: {
     journey_steps: journey,
     activation: input.activation,
     first_verified_outcome: input.firstVerifiedOutcome,
+    external_verification: {
+      contract_version: "592.v2",
+      status: "operator_required",
+      notice:
+        "External authorization proof is a local execution record on your relying party host (portable revocation snapshot + pinned trust). Launchpad telemetry does not substitute for that execution.",
+      evidence_command: "npm run build-592:sandbox-external-evidence",
+      runbook_relative_path: "scripts/diagnostics/build592-authorized-sandbox-external-verification.md",
+      telemetry_disclaimer:
+        "receipt_verification_succeeded records server-side integration outcomes only — not external independent verification.",
+    },
     links: {
       launchpad: input.launchpadHref,
       hosted_verification: hostedVerification,
