@@ -25,6 +25,9 @@ import {
 import type { PassportSetupState } from "@/lib/idv/identityVerificationStates";
 import { computePassportSetupState, resolveCredentialStatus, resolveIdentityVerificationStatus } from "@/lib/idv/identityVerificationStates";
 import type { CanonicalWalletBindingStatus } from "@/lib/trust/readCanonicalWalletBinding";
+import { IdentityStatusFetchError, type IdentityStatusFailureKind } from "@/lib/passport/identityStatusFetch";
+import { shouldFetchProtectedPassportData } from "@/lib/passport/passportEntryState";
+import type { PassportBrowserSessionState } from "@/lib/passport/passportBrowserSessionAuth";
 
 export type IdentityStampStatus = "not_started" | "pending" | "earned" | "declined" | "resubmission_requested";
 export type CredentialVerifyState = "idle" | "checking" | "valid" | "invalid";
@@ -217,7 +220,15 @@ async function runIdentityPipeline(
 export function usePassportVerification(
   suiAddress: string | null,
   email: string | null,
+  options?: {
+    browserSessionState?: PassportBrowserSessionState;
+  },
 ) {
+  const browserSessionState = options?.browserSessionState ?? "idle";
+  const fetchEnabled = shouldFetchProtectedPassportData({
+    walletDone: Boolean(suiAddress),
+    browserSessionState,
+  });
   const queryClient = useQueryClient();
   const verifiedJtiRef = useRef<string | null>(null);
   const [isProvisioning, setIsProvisioning] = useState(false);
@@ -236,7 +247,7 @@ export function usePassportVerification(
       }
       return result;
     },
-    enabled: Boolean(suiAddress || email),
+    enabled: fetchEnabled && Boolean(suiAddress || email),
     refetchInterval: query => {
       const d = query.state.data;
       if (!d) return false;
@@ -305,7 +316,15 @@ export function usePassportVerification(
 
   const data = pipelineQuery.data;
   const hasStatusSnapshot = Boolean(pipelineQuery.data);
-  const isStatusFetchError = pipelineQuery.isError;
+  const pipelineError = pipelineQuery.error;
+  const pipelineErrorKind: IdentityStatusFailureKind | null = pipelineError instanceof IdentityStatusFetchError
+    ? pipelineError.kind
+    : pipelineError
+      ? "network"
+      : null;
+  const isStatusFetchError = pipelineQuery.isError
+    && pipelineErrorKind !== "session_required"
+    && fetchEnabled;
   const statusFetchError: PassportStatusFetchError | null = isStatusFetchError
     ? (hasStatusSnapshot ? "refresh_failed" : "load_failed")
     : null;
@@ -338,6 +357,8 @@ export function usePassportVerification(
     syncMessage: data?.syncMessage ?? null,
     isStatusFetchError,
     statusFetchError,
+    pipelineErrorKind,
+    fetchEnabled,
     hasStatusSnapshot,
     lastChecked: pipelineQuery.dataUpdatedAt ? new Date(pipelineQuery.dataUpdatedAt) : null,
     refresh,

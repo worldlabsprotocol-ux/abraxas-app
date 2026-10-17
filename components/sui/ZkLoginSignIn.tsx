@@ -4,7 +4,7 @@
 
 import { useState } from "react";
 import { useSuiAuth, truncateSuiAddress } from "./SuiAuthProvider";
-import { HolderAccessPanel } from "@/components/sui/HolderAccessPanel";
+import { PassportEntryPanel } from "@/components/passport/PassportEntryPanel";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
@@ -46,5 +46,5 @@ export function ZkLoginSignIn({ compact = false }: { compact?: boolean }) {
     );
   }
 
-  return <HolderAccessPanel compact={compact} />;
+  return <PassportEntryPanel compact={compact} />;
 }

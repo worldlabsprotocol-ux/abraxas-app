@@ -47,6 +47,10 @@ const baseProps = {
 
 const signInMock = vi.fn();
 
+vi.mock("@/components/passport/HolderWalletAuthPanel", () => ({
+  HolderWalletAuthPanel: () => null,
+}));
+
 vi.mock("@/lib/hooks/useGoogleSignIn", () => ({
   useGoogleSignIn: () => ({
     signIn: signInMock,

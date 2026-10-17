@@ -9,7 +9,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { ZKLOGIN_SIGN_IN_COPY } from "@/lib/sui/zklogin/signInCopy";
-import { HolderAccessPanel } from "@/components/sui/HolderAccessPanel";
+import { PassportEntryPanel } from "@/components/passport/PassportEntryPanel";
 import { ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -151,7 +151,7 @@ export function ZkLoginSignInChooserDialog({
           </button>
         </div>
 
-        <HolderAccessPanel compact />
+        <PassportEntryPanel compact />
       </div>
     </div>,
     document.body,

@@ -24,6 +24,8 @@ export default defineConfig({
       "@": path.resolve(__dirname, "."),
       "server-only": path.resolve(__dirname, "test/mocks/server-only.ts"),
       "wix-data": path.resolve(__dirname, "test/mocks/wix-data.js"),
+      "@ledgerhq/errors": path.resolve(__dirname, "test/mocks/ledgerhq-errors.ts"),
+      "@ledgerhq/errors/lib-es/helpers": path.resolve(__dirname, "test/mocks/ledgerhq-errors.ts"),
     },
   },
 });
