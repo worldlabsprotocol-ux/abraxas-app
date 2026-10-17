@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { resolvePublicNavConnectPhase } from "./publicNavConnectBehavior";
+import {
+  PUBLIC_CONNECT_NATIVE_UNAVAILABLE_HREF,
+  resolvePublicNavConnectPhase,
+} from "./publicNavConnectBehavior";
 
 describe("resolvePublicNavConnectPhase", () => {
-  it("prefers holder profile when Passport session exists", () => {
+  it("prefers holder profile when browser session is active", () => {
     expect(
       resolvePublicNavConnectPhase({
-        holderSignedIn: true,
+        holderBrowserSessionActive: true,
         nativeAuthenticated: true,
         nativeEnabled: true,
         nativeStateLoaded: true,
@@ -13,10 +16,10 @@ describe("resolvePublicNavConnectPhase", () => {
     ).toBe("holder_profile_menu");
   });
 
-  it("links to account when native session exists without holder session", () => {
+  it("does not use holder menu without browser session even if native is signed in", () => {
     expect(
       resolvePublicNavConnectPhase({
-        holderSignedIn: false,
+        holderBrowserSessionActive: false,
         nativeAuthenticated: true,
         nativeEnabled: true,
         nativeStateLoaded: true,
@@ -27,7 +30,7 @@ describe("resolvePublicNavConnectPhase", () => {
   it("starts passkey connect when native auth is enabled", () => {
     expect(
       resolvePublicNavConnectPhase({
-        holderSignedIn: false,
+        holderBrowserSessionActive: false,
         nativeAuthenticated: false,
         nativeEnabled: true,
         nativeStateLoaded: true,
@@ -35,14 +38,15 @@ describe("resolvePublicNavConnectPhase", () => {
     ).toBe("native_passkey_connect");
   });
 
-  it("uses recovery path when native auth is disabled", () => {
+  it("uses Passport recovery when native auth is disabled", () => {
     expect(
       resolvePublicNavConnectPhase({
-        holderSignedIn: false,
+        holderBrowserSessionActive: false,
         nativeAuthenticated: false,
         nativeEnabled: false,
         nativeStateLoaded: true,
       }),
     ).toBe("native_unavailable_recovery");
+    expect(PUBLIC_CONNECT_NATIVE_UNAVAILABLE_HREF).toBe("/passport");
   });
 });

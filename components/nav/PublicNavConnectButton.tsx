@@ -1,13 +1,17 @@
 "use client";
 // FILE: components/nav/PublicNavConnectButton.tsx
-// Connect — one-click native passkey account access when enabled; no default Google OAuth.
+// Connect — one-click native passkey sign-in when enabled; explicit registration only on user choice.
 
 import Link from "next/link";
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { NavProfileMenu } from "@/components/sui/NavProfileMenu";
-import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
-import { connectNativePasskeyAccount } from "@/lib/auth/nativeAccount/clientPasskeyCeremony";
+import { probeBrowserSessionDetails } from "@/lib/auth/ensureBrowserSession";
+import {
+  connectNativePasskeyAccount,
+  isConfirmedNoPasskeyResult,
+  runNativePasskeyRegistration,
+} from "@/lib/auth/nativeAccount/clientPasskeyCeremony";
 import { PUBLIC_FONT_SANS } from "@/lib/design/publicSurface";
 import {
   PUBLIC_CONNECT_ACCOUNT_HREF,
@@ -36,55 +40,82 @@ async function loadNativeNavState(): Promise<{ enabled: boolean; session: Native
 export function PublicNavConnectButton({ prominent = false }: { prominent?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
-  const auth = useSuiAuthOptional();
-  const holderSignedIn = Boolean(auth?.suiAddress);
+  const [holderBrowserSessionActive, setHolderBrowserSessionActive] = useState(false);
   const [nativeEnabled, setNativeEnabled] = useState<boolean | null>(null);
   const [nativeSession, setNativeSession] = useState<NativeSession | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [offerCreateAccount, setOfferCreateAccount] = useState(false);
 
-  const refreshNativeState = useCallback(async () => {
+  const refreshNavState = useCallback(async () => {
     try {
-      const state = await loadNativeNavState();
-      setNativeEnabled(state.enabled);
-      setNativeSession(state.session);
+      const [holderProbe, nativeState] = await Promise.all([
+        probeBrowserSessionDetails(),
+        loadNativeNavState(),
+      ]);
+      setHolderBrowserSessionActive(holderProbe.ok);
+      setNativeEnabled(nativeState.enabled);
+      setNativeSession(nativeState.session);
     } catch {
+      setHolderBrowserSessionActive(false);
       setNativeEnabled(false);
       setNativeSession({ authenticated: false });
     }
   }, []);
 
   useEffect(() => {
-    void refreshNativeState();
-  }, [pathname, refreshNativeState]);
+    void refreshNavState();
+  }, [pathname, refreshNavState]);
 
   const phase = resolvePublicNavConnectPhase({
-    holderSignedIn,
+    holderBrowserSessionActive,
     nativeAuthenticated: Boolean(nativeSession?.authenticated),
     nativeEnabled: Boolean(nativeEnabled),
     nativeStateLoaded: nativeEnabled !== null && nativeSession !== null,
   });
 
+  const finishSuccess = useCallback(async () => {
+    await refreshNavState();
+    router.push(PUBLIC_CONNECT_ACCOUNT_HREF);
+  }, [refreshNavState, router]);
+
   const runConnect = useCallback(async () => {
     setError(null);
+    setOfferCreateAccount(false);
     setBusy(true);
     try {
       const result = await connectNativePasskeyAccount();
       if (!result.ok) {
         if (result.reason === "cancelled") return;
-        if (result.reason === "disabled") {
-          router.push(PUBLIC_CONNECT_NATIVE_UNAVAILABLE_HREF);
+        if (isConfirmedNoPasskeyResult(result)) {
+          setOfferCreateAccount(true);
           return;
         }
         setError(result.message ?? "Could not connect.");
         return;
       }
-      await refreshNativeState();
-      router.push(PUBLIC_CONNECT_ACCOUNT_HREF);
+      await finishSuccess();
     } finally {
       setBusy(false);
     }
-  }, [refreshNativeState, router]);
+  }, [finishSuccess]);
+
+  const runCreateAccount = useCallback(async () => {
+    setError(null);
+    setBusy(true);
+    try {
+      const result = await runNativePasskeyRegistration();
+      if (!result.ok) {
+        if (result.reason === "cancelled") return;
+        setError(result.message ?? "Could not create account.");
+        return;
+      }
+      setOfferCreateAccount(false);
+      await finishSuccess();
+    } finally {
+      setBusy(false);
+    }
+  }, [finishSuccess]);
 
   if (phase === "loading") {
     return (
@@ -115,8 +146,8 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
       <Link
         href={PUBLIC_CONNECT_NATIVE_UNAVAILABLE_HREF}
         style={buttonStyle(prominent)}
-        aria-label="Connect through Integration Studio — passkey sign-in is not enabled in this environment"
-        title="Passkey account sign-in is not enabled here. Open Integration Studio to configure and test."
+        aria-label="Open Passport for holder access — native passkey sign-in is not enabled here"
+        title="Passkey account sign-in is not enabled in this environment. Open Passport for holder credentials."
       >
         Connect
       </Link>
@@ -134,6 +165,24 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
       >
         {busy ? "Connecting…" : "Connect"}
       </button>
+      {offerCreateAccount ? (
+        <button
+          type="button"
+          onClick={() => void runCreateAccount()}
+          disabled={busy}
+          style={{
+            ...buttonStyle(prominent),
+            cursor: busy ? "wait" : "pointer",
+            border: "none",
+            background: "transparent",
+            color: "var(--text-secondary)",
+            fontSize: prominent ? "0.72rem" : "0.68rem",
+            padding: "0.25rem 0.65rem",
+          }}
+        >
+          Create passkey account
+        </button>
+      ) : null}
       {error ? (
         <span style={{ fontFamily: FONT, fontSize: "0.62rem", color: "#EF4444", maxWidth: 220, textAlign: "right" }}>
           {error}

@@ -17,10 +17,11 @@ test.describe("native passkey lifecycle", () => {
         isUserVerified: true,
       },
     });
+    await client.send("WebAuthn.setAutomaticPresenceSimulation", { authenticatorId, enabled: true });
 
-    await page.goto("/#start-sandbox");
-    await page.getByRole("button", { name: /Create account/i }).click();
-    await expect(page.getByText("Step 2 — Provision your tenant-scoped sandbox")).toBeVisible({ timeout: 60_000 });
+    await page.goto("/#start-sandbox", { waitUntil: "domcontentloaded" });
+    await page.getByRole("button", { name: /^Create account$/i }).click();
+    await expect(page.getByRole("button", { name: /Set up workspace/i })).toBeVisible({ timeout: 60_000 });
 
     const sessionAfterReg = await page.request.get("/api/auth/native/session");
     const sessionRegJson = await sessionAfterReg.json();
@@ -28,15 +29,24 @@ test.describe("native passkey lifecycle", () => {
     const accountId = sessionRegJson.account_id as string;
     expect(accountId).toMatch(/^abx_ac_/);
 
-    await page.request.delete("/api/auth/native/session");
-    expect((await (await page.request.get("/api/auth/native/session")).json()).authenticated).toBe(false);
+    await page.evaluate(async () => {
+      await fetch("/api/auth/native/session", { method: "DELETE", credentials: "include" });
+    });
+    expect(
+      await page.evaluate(async () => {
+        const res = await fetch("/api/auth/native/session", { credentials: "include" });
+        return (await res.json()).authenticated;
+      }),
+    ).toBe(false);
 
-    await page.goto("/#start-sandbox");
-    await page.getByRole("button", { name: "Sign in with existing passkey" }).click();
-    await expect(page.getByText("Step 2 — Provision your tenant-scoped sandbox")).toBeVisible({ timeout: 60_000 });
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.getByRole("button", { name: /Connect with Abraxas passkey/i }).click();
+    await expect(page).toHaveURL(/\/account\/applications/, { timeout: 60_000 });
 
-    const sessionAfterIn = await page.request.get("/api/auth/native/session");
-    const sessionInJson = await sessionAfterIn.json();
+    const sessionInJson = await page.evaluate(async () => {
+      const res = await fetch("/api/auth/native/session", { credentials: "include" });
+      return res.json();
+    });
     expect(sessionInJson.authenticated).toBe(true);
     expect(sessionInJson.account_id).toBe(accountId);
 
@@ -58,10 +68,11 @@ test.describe("native passkey lifecycle", () => {
         isUserVerified: true,
       },
     });
+    await client.send("WebAuthn.setAutomaticPresenceSimulation", { authenticatorId, enabled: true });
 
-    await page.goto("/#start-sandbox");
-    await page.getByRole("button", { name: /Create account/i }).click();
-    await expect(page.getByText("Step 2")).toBeVisible({ timeout: 60_000 });
+    await page.goto("/#start-sandbox", { waitUntil: "domcontentloaded" });
+    await page.getByRole("button", { name: /^Create account$/i }).click();
+    await expect(page.getByRole("button", { name: /Set up workspace/i })).toBeVisible({ timeout: 60_000 });
 
     const first = await page.request.post("/api/sandbox/enroll", {
       headers: { "content-type": "application/json" },
