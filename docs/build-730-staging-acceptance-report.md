@@ -1,126 +1,100 @@
 # Build #730 — Staging acceptance report
 
-**Date:** 2026-10-17  
+**Date:** 2026-10-17 (updated)  
 **PR:** #730 (`cursor/build-730-native-auth-trust-5ffe`)  
-**Agent run:** Cloud Agent `bc-d491b464-9cb3-4a36-b137-98aa4b8f5ffe`
+**Latest preview (branch):** `https://abraxas-k6x7dukmv-worldlabsprotocol-uxs-projects.vercel.app` @ `bd81a3ce`
 
-## 1. Staging environment inspected (no secrets exposed)
+## 1. Vercel preview access
 
-| Resource | Finding |
+| Mechanism | Result |
 | --- | --- |
-| **Authorized staging Postgres** | Supabase project **`abraxas-partner-demo`** (`ref`: `ocntwbxarpjeixdnzide`, `us-east-1`) — matches repo guard `LAUNCHPAD_EXPECTED_SUPABASE_REF=ocntwbxarpjeixdnzide` in `scripts/launchpad-staging-smoke/run.ts` |
-| **PR preview deployment** | Vercel preview **`abraxas-gw0fvxz8y-worldlabsprotocol-uxs-projects.vercel.app`** — commit `126322fb`, branch `cursor/build-730-native-auth-trust-5ffe`, state **READY** |
-| **Production deployment** | Latest production is **`main` @ `b08383b9`** — **does not include #730**; native auth must remain off production until merge + explicit enable |
-| **Local agent `.env.local`** | `NEXT_PUBLIC_SUPABASE_URL` is **`http://placeholder`** — not wired to staging; **cannot** run Next.js against real Postgres from this VM without operator env pull |
-| **Vercel access from agent** | `web_fetch_vercel_url` and protection bypass → **403 / Vercel Authentication** — preview is behind **Vercel Authentication**, not reachable for browser/WebAuthn acceptance in this run |
-| **Memory store** | **Not used** for staging DB validation |
+| Unauthenticated browser/curl | **302** → Vercel SSO (`vercel.com/sso-api`) |
+| `x-vercel-protection-bypass` (deployment protection secret in agent env) | **200** on `/welcome` and JSON API routes |
+| Vercel MCP `web_fetch_vercel_url` / `get_access_to_vercel_url` | **403** — cannot read deployment bypass metadata for team `worldlabsprotocol-uxs-projects` |
+| Vercel MCP `create_project_env` (Preview native flag) | **403** — write not authorized in this MCP scope |
 
-### Required preview environment (operator — not verified applied on preview)
+**Operator (shortest path):** Use **`vercel login`** + **`vercel curl`** or Playwright with **`VERCEL_PROTECTION_BYPASS`** / **`x-vercel-trusted-oidc-idp-token`** (see [Deployment Protection](https://vercel.com/docs/deployment-protection)). Do not disable org-wide Vercel Authentication.
 
-Set on **Preview** environment for `abraxas-app` (not Production):
+## 2. Preview environment verification (no secrets printed)
 
-- `ABRAXAS_NATIVE_ACCOUNT_AUTH_ENABLED=true`
-- `ABRAXAS_ACCOUNT_SESSION_SECRET` — ≥32 chars, dedicated secret
-- `ABRAXAS_WEBAUTHN_RP_ID` — hostname of preview (e.g. `abraxas-gw0fvxz8y-worldlabsprotocol-uxs-projects.vercel.app`) or custom staging domain
-- `NEXT_PUBLIC_SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` — must target **`ocntwbxarpjeixdnzide`**
-- **Do not set** `ABRAXAS_NATIVE_ACCOUNT_MEMORY`
+Probed via `scripts/build-730/preview-readiness-curl.sh` with deployment protection bypass:
 
-WebAuthn **origin** must match the HTTPS preview URL exactly.
-
-## 2. Database migrations — **PASSED (staging Postgres)**
-
-Applied via Supabase MCP to **`ocntwbxarpjeixdnzide`**:
-
-| Migration | Status |
+| Check | Result |
 | --- | --- |
-| `144_native_account_webauthn` | **Applied** (`20261017182600`) |
-| `145_abraxas_webauthn_hardening` | **Applied** (`20261017182605`) |
+| `GET /api/launchpad/staging/environment` | **200** — `supabase_project_ref`: **`ocntwbxarpjeixdnzide`**, `deployment_environment`: **preview** |
+| `GET /api/auth/native/enabled` | **`enabled`: false** (feature flag not set on Preview) |
+| Preview env var names in Vercel (read via MCP) | **`ABRAXAS_NATIVE_ACCOUNT_AUTH_ENABLED`** — **not present**; **`ABRAXAS_BROWSER_SESSION_SECRET`** — present; **`ABRAXAS_WEBAUTHN_RP_ID`** — not present (RP ID can fall back to request `Host` on preview) |
+| Production | Latest production remains **`main`** pre-#730; native auth must stay off |
 
-**Evidence (SQL acceptance on live staging DB):**
+**Required operator action before HTTPS WebAuthn acceptance:**
 
-- All `abraxas_*` native-account tables present; **RLS enabled** on each.
-- **Atomic challenge consume:** first `abraxas_consume_webauthn_challenge_atomic` → `ok: true`; second → `challenge_unavailable`.
-- **Enrollment idempotency:** duplicate `(account_id, partner_id)` insert → `unique_violation` (expected).
-- **Revoked membership row** can be persisted with `status = 'revoked'`.
+1. Vercel → **abraxas-app** → **Settings → Environment Variables → Preview** (branch `cursor/build-730-native-auth-trust-5ffe` recommended):
+   - `ABRAXAS_NATIVE_ACCOUNT_AUTH_ENABLED=true`
+   - `ABRAXAS_ACCOUNT_SESSION_SECRET` (≥32 chars) **or** rely on existing `ABRAXAS_BROWSER_SESSION_SECRET` on Preview
+   - Optional: `ABRAXAS_WEBAUTHN_RP_ID=<preview-hostname>` when using a stable alias
+   - Confirm `NEXT_PUBLIC_SUPABASE_URL` + service role → **`ocntwbxarpjeixdnzide`**
+   - **Never** set `ABRAXAS_NATIVE_ACCOUNT_MEMORY` on Preview/Production
+2. **Redeploy** the PR preview after env changes.
 
-Verdict SQL returned: **`postgres_acceptance_ok`**.
+After deploy, `GET /api/auth/native/enabled` should return `enabled: true` and a non-secret `runtime` block (added in this PR).
 
-This validates **persistence and DB-level security primitives**; it is **not** a substitute for HTTP/WebAuthn or Launchpad RPC E2E.
+## 3. Database migrations — **PASSED (staging Postgres)**
 
-## 3. Real WebAuthn lifecycle on staging browser — **NOT RUN (blocked)**
+Unchanged from prior report: migrations **144** + **145** applied on **`ocntwbxarpjeixdnzide`**; SQL acceptance **`postgres_acceptance_ok`**.
 
-| Step | Status |
-| --- | --- |
-| Open `/welcome` on preview | **Blocked** — Vercel Authentication |
-| Passkey register / authenticate | **Not run** on staging |
-| Session cookie / sign-out / return | **Not run** on staging |
+## 4. HTTPS WebAuthn E2E on preview — **NOT RUN**
 
-**Previously verified (local only, memory store):** Playwright + CDP virtual authenticator — register, sign-out, sign-in, same `abx_ac_*` (`playwright.native-auth.config.ts`). **Not claimed as staging acceptance.**
-
-## 4. Real sandbox provisioning on staging — **NOT RUN (blocked)**
-
-Launchpad sandbox provision requires:
-
-1. Reachable preview with native auth env + Supabase service role bound to `ocntwbxarpjeixdnzide`
-2. `partner_launchpad_provision_sandbox_atomic` RPC (present on this project from prior migrations)
-
-Agent could **not** invoke `/api/sandbox/enroll` against a protected preview or against real PostgREST without service credentials.
-
-## 5. Negative authorization — partial
-
-| Test | Staging Postgres | Staging HTTP |
-| --- | --- | --- |
-| Challenge replay | **Pass** (atomic RPC) | Not run |
-| Duplicate sandbox enrollment | **Pass** (unique index) | Not run |
-| RLS enabled | **Pass** | Not run |
-| Rate limits / origin / RP mismatch | Not run | Not run |
-| Cross-tenant / claim abuse | Covered in Vitest only | Not run |
-
-## 6. Legacy continuity — **unchanged by evidence**
-
-- No migration modifies `sui_zklogin_identities`, holder subjects, or partner API key tables.
-- Production deployment remains pre-#730; **native auth not enabled** on production.
-- No automatic native ↔ holder linking shipped.
-
-## 7. Operator procedure to complete staging acceptance
-
-Run from a machine with **Vercel SSO** and **Preview env vars** configured:
+Playwright against latest preview with bypass header:
 
 ```bash
-# 1) Confirm DB (already applied on abraxas-partner-demo)
-#    Migrations 144 + 145 listed in Supabase dashboard for ocntwbxarpjeixdnzide
-
-# 2) Pull preview env (example)
-vercel env pull .env.staging.preview --environment=preview --yes
-# Set on preview in Vercel dashboard if missing:
-#   ABRAXAS_NATIVE_ACCOUNT_AUTH_ENABLED=true
-#   ABRAXAS_ACCOUNT_SESSION_SECRET=...
-#   ABRAXAS_WEBAUTHN_RP_ID=<preview-hostname>
-
-# 3) Staging URL (PR preview or dedicated staging alias — NOT production)
-export LAUNCHPAD_STAGING_URL="https://abraxas-gw0fvxz8y-worldlabsprotocol-uxs-projects.vercel.app"
-export LAUNCHPAD_EXPECTED_SUPABASE_REF="ocntwbxarpjeixdnzide"
-
-# 4) Browser WebAuthn (virtual authenticator)
+export NATIVE_AUTH_BASE_URL="https://abraxas-k6x7dukmv-worldlabsprotocol-uxs-projects.vercel.app"
+export VERCEL_PROTECTION_BYPASS="<deployment-protection-bypass>"
 export NATIVE_AUTH_SKIP_WEBSERVER=1
-export NATIVE_AUTH_BASE_URL="$LAUNCHPAD_STAGING_URL"
-npx playwright test -c playwright.native-auth.config.ts
-
-# 5) Optional: Launchpad smoke (existing)
-npm run smoke:launchpad:staging
+./node_modules/.bin/playwright test -c playwright.native-auth.config.ts
 ```
 
-Use **`vercel curl "$LAUNCHPAD_STAGING_URL/api/auth/native/enabled"`** when Deployment Protection blocks raw curl.
+**Result (2026-10-17):** **5 skipped** — `enabled: false` on deployment. No passkey journey executed on HTTPS preview.
 
-## 8. Final merge recommendation
+## 5. Local staging-Postgres WebAuthn (supplementary, not HTTPS preview)
 
-| Criterion | Status |
+Attempted dev server bound to **`ocntwbxarpjeixdnzide`** with **`memory_store: false`** (after memory-selection fix):
+
+- HTTP negative tests: **3/3 pass**
+- Passkey register: **`POST .../register/options` → 500** — Supabase **`Invalid API key`** (agent VM `SUPABASE_SERVICE_ROLE_KEY` does not match staging project)
+
+This confirms code paths hit real PostgREST when configured, but **does not substitute** for preview HTTPS + Vercel-configured credentials.
+
+## 6. Sandbox / Launchpad on preview — **NOT RUN**
+
+Blocked by native auth disabled and incomplete WebAuthn session on preview.
+
+## 7. Negative authorization
+
+| Layer | Result |
 | --- | --- |
-| Staging Postgres migrations 144–145 | **Done** |
-| DB persistence / atomicity / idempotency | **Verified on `ocntwbxarpjeixdnzide`** |
-| Staging HTTPS WebAuthn + sandbox E2E | **Blocked** — Vercel Authentication + missing preview env wiring in agent |
-| Production safety | **#730 not on production**; keep flag off until staging E2E passes |
+| Postgres RPC / unique indexes | **Pass** (prior SQL acceptance) |
+| Preview HTTP negatives (Playwright) | **Skipped** (native auth off on preview) |
+| Local HTTP negatives (Postgres mode, invalid key) | **3 pass** on unauthenticated routes |
 
-**Recommendation: keep PR #730 in draft.** Merge is **not** safe until an operator completes **§7** on the authorized preview with real WebAuthn and at least one successful **`/api/sandbox/enroll`** against Launchpad RPC.
+## 8. Code fixes in this acceptance pass (PR #730)
 
-**Do not** enable `ABRAXAS_NATIVE_ACCOUNT_AUTH_ENABLED` on Production until staging sign-off is recorded.
+- **`nativeAccountMemoryStoreEnabled`**: honor explicit `false`; prefer Postgres when `NEXT_PUBLIC_SUPABASE_URL` resolves to a project ref (avoids accidental memory when `VITEST=true` in dev/agent env).
+- **`GET /api/auth/native/enabled`**: non-secret `runtime` diagnostics for operators.
+- **`playwright.native-auth.config.ts`**: optional `VERCEL_PROTECTION_BYPASS` → `x-vercel-protection-bypass` on all requests.
+- **`tests/native-auth/staging-http-negative.spec.ts`**, **`scripts/build-730/preview-readiness-curl.sh`**.
+
+## 9. Operator handoff (complete staging journey)
+
+| Item | Value |
+| --- | --- |
+| **Deployment** | `https://abraxas-k6x7dukmv-worldlabsprotocol-uxs-projects.vercel.app` (or current PR preview URL from Vercel) |
+| **Vercel action** | Set Preview env vars in §2; redeploy |
+| **Access** | `vercel curl` or `VERCEL_PROTECTION_BYPASS` / Trusted Sources OIDC header for Playwright |
+| **Test command** | See §4 |
+| **Success** | Playwright lifecycle **2/2 pass**; `runtime.memory_store: false` on preview; sandbox enroll returns stable `partner_id` on repeat |
+
+## 10. Merge recommendation
+
+**Keep PR #730 in draft. Do not merge** until preview shows `enabled: true` and Playwright passkey + sandbox/Launchpad journey passes against **`ocntwbxarpjeixdnzide`** on HTTPS.
+
+Production: leave **`ABRAXAS_NATIVE_ACCOUNT_AUTH_ENABLED`** unset/false.

@@ -2,6 +2,10 @@ import { defineConfig } from "@playwright/test";
 
 const port = process.env.NATIVE_AUTH_DEV_PORT ?? "3025";
 const baseURL = process.env.NATIVE_AUTH_BASE_URL ?? `http://localhost:${port}`;
+const vercelBypass = process.env.VERCEL_PROTECTION_BYPASS?.trim();
+const extraHTTPHeaders = vercelBypass
+  ? { "x-vercel-protection-bypass": vercelBypass }
+  : undefined;
 
 export default defineConfig({
   testDir: "tests/native-auth",
@@ -13,6 +17,7 @@ export default defineConfig({
   reporter: [["list"]],
   use: {
     baseURL,
+    extraHTTPHeaders,
     trace: "retain-on-failure",
     video: "retain-on-failure",
     screenshot: "only-on-failure",
