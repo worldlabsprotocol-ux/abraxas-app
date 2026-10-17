@@ -268,7 +268,7 @@ export function PassportDashboard({
             fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)",
             lineHeight: 1.65, margin: "0 0 1rem", maxWidth: 520,
           }}>
-            Google sign-in creates your Abraxas account and Sui wallet. No seed phrase required.
+            Sign in to open your Abraxas account and Sui wallet. No seed phrase required.
           </p>
           <ZkLoginSignIn />
         </section>

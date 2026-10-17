@@ -2,7 +2,7 @@
 // Predefined policy templates for Partner Launchpad.
 
 import { LAUNCHPAD_POLICY_TEMPLATE_LIST } from "@/lib/partner/launchpad/policyCatalog";
-import { POLICY_PACKS } from "@/lib/partner/launchpad/policyPacks";
+import { GOOGLE_ACCOUNT_NOT_ELIGIBILITY, POLICY_PACKS } from "@/lib/partner/launchpad/policyPacks";
 import { buildPolicyPresentation } from "@/lib/partner/launchpad/policyPresentation";
 import { CANONICAL_POLICY_PACK_REGISTRY } from "@/lib/partner/launchpad/policyTruth";
 import { launchpadJson } from "@/lib/partner/launchpad/apiHelpers";
@@ -14,8 +14,7 @@ export async function GET() {
     ok: true,
     catalog_version: 1,
     canonical_registry: CANONICAL_POLICY_PACK_REGISTRY,
-    google_account_not_eligibility:
-      "Google sign-in creates an Abraxas account. It does not prove age, identity, residency, wallet control, membership, or any other eligibility claim.",
+    google_account_not_eligibility: GOOGLE_ACCOUNT_NOT_ELIGIBILITY,
     policies: LAUNCHPAD_POLICY_TEMPLATE_LIST.map((template) => {
       const pack = POLICY_PACKS[template.id];
       const presentation = buildPolicyPresentation(pack);

@@ -12,11 +12,12 @@ import {
   SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_POLICY_ID,
   SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_SCOPE,
 } from "@/lib/partner/sandboxInstitutionalProtocolAccess";
+import { ABRAXAS_ACCOUNT_NOT_VERIFICATION } from "@/lib/product/abraxasIdentityExperienceCopy";
 
 export const POLICY_PACK_CATALOG_VERSION = 1;
 
-export const GOOGLE_ACCOUNT_NOT_ELIGIBILITY =
-  "Google sign-in creates an Abraxas account. It does not prove age, identity, residency, wallet control, membership, or any other eligibility claim.";
+/** @deprecated Prefer ABRAXAS_ACCOUNT_NOT_VERIFICATION in new UI; kept for API field compatibility. */
+export const GOOGLE_ACCOUNT_NOT_ELIGIBILITY = ABRAXAS_ACCOUNT_NOT_VERIFICATION;
 
 export const POLICY_PACK_FORBIDDEN_GUARANTEES = [
   "legal compliance",
@@ -161,7 +162,7 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
   wallet_control: pack({
     id: "wallet_control",
     display_name: "Wallet control eligibility",
-    holder_explanation: "Prove control of the wallet bound to your Abraxas account. Google sign-in alone is not wallet control.",
+    holder_explanation: "Prove control of the wallet bound to your Abraxas account. Signing in alone is not wallet control.",
     required_claims: ["wallet_binding_confirmed"],
     minimum_assurance: "L1",
     receipt_lifetime_hours: 12,
@@ -238,7 +239,7 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
   identity_liveness: pack({
     id: "identity_liveness",
     display_name: "Identity plus liveness eligibility",
-    holder_explanation: "Confirm an identity credential and a liveness check. Google sign-in is not liveness and is not identity evidence.",
+    holder_explanation: "Confirm an identity credential and a liveness check. Account sign-in is not liveness and is not identity evidence.",
     required_claims: ["identity_verified", "liveness_passed"],
     minimum_assurance: "L2",
     receipt_lifetime_hours: 24,

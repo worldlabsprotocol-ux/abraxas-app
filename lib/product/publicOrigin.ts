@@ -15,7 +15,7 @@ export const PUBLIC_SURFACE_REDIRECTS = [
 ] as const;
 
 export const ACCOUNT_ACCESS_FIRST_PAINT =
-  "Google sign-in opens an account only. Eligibility is a result defined by each partner policy. Identity or liveness appears only when a policy truly requires it.";
+  "Signing in opens your Abraxas account only. Eligibility is a signed result defined by each partner policy. Identity or liveness appears only when a policy requires it.";
 
 export function isPublicDemoRuntime(
   env: Record<string, string | undefined> = process.env,

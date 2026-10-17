@@ -59,7 +59,7 @@ export const SIMPLIFIED_AUDIENCE_BUSINESS = {
 } as const;
 
 export const SIMPLIFIED_TRUST_STATEMENT =
-  "Google sign-in opens an account. Eligibility is a policy-specific signed answer. Identity documents appear only when a policy truly requires them.";
+  "Signing in opens your Abraxas account. Eligibility is a policy-specific signed answer. Identity documents appear only when a policy requires them.";
 
 export const SIMPLIFIED_FINAL_LINE = "Ready to verify once?";
 

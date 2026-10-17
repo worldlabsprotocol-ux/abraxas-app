@@ -251,7 +251,7 @@ export function ConsentCeremony({
               </button>
             </div>
             <p style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-muted)", margin: "0.55rem 0 0", lineHeight: 1.5 }}>
-              Google sign-in is account access only. Abraxas returns the policy answer, not underlying identity files.
+              Sign-in is account access only. Abraxas returns the policy answer, not underlying identity files.
             </p>
           </>
         )}

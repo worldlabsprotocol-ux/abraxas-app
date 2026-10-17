@@ -1,6 +1,10 @@
 // FILE: lib/partner/launchpad/institutionalVerificationRequirements.ts
 // User-facing verification requirements for institutional developer onboarding.
 
+import {
+  ABRAXAS_INSTITUTIONAL_PROTOCOL_ACCESS_SUMMARY,
+  ABRAXAS_INSTITUTIONAL_PROTOCOL_ACCESS_TITLE,
+} from "@/lib/product/abraxasIdentityExperienceCopy";
 import { INSTITUTIONAL_SANDBOX_POLICY_TEMPLATE_ID } from "@/lib/partner/launchpad/institutionalActivationEntry";
 import { SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_NOTICE } from "@/lib/partner/sandboxInstitutionalProtocolAccess/contract";
 
@@ -23,8 +27,10 @@ export interface InstitutionalVerificationRequirement {
   policy_template_id: string | null;
   availability: InstitutionalVerificationRequirementAvailability;
   unavailable_reason: string | null;
-  /** Full sandbox boundary text — show under developer details only. */
+  /** Full sandbox boundary text — show under Technical details only. */
   sandbox_notice: string | null;
+  /** Engineering identifiers and scope — not primary onboarding copy. */
+  technical_summary: string | null;
 }
 
 export function listInstitutionalVerificationRequirements(input: {
@@ -36,12 +42,13 @@ export function listInstitutionalVerificationRequirements(input: {
   return [
     {
       id: "organization_protocol_access_sandbox",
-      title: "Protocol access (sandbox)",
-      purpose: "Confirm protocol access and receive a signed decision receipt.",
+      title: ABRAXAS_INSTITUTIONAL_PROTOCOL_ACCESS_TITLE,
+      purpose: ABRAXAS_INSTITUTIONAL_PROTOCOL_ACCESS_SUMMARY,
       policy_template_id: INSTITUTIONAL_SANDBOX_POLICY_TEMPLATE_ID,
       availability: institutionalSelected ? "selected" : "selectable",
       unavailable_reason: null,
       sandbox_notice: SANDBOX_INSTITUTIONAL_PROTOCOL_ACCESS_NOTICE,
+      technical_summary: `Policy template ${INSTITUTIONAL_SANDBOX_POLICY_TEMPLATE_ID}. Sandbox-only institutional protocol access; not live KYB or production authorization.`,
     },
     {
       id: "identity_verification",
@@ -51,6 +58,7 @@ export function listInstitutionalVerificationRequirements(input: {
       availability: "advanced_only",
       unavailable_reason: "Add in Launchpad eligibility policies after this app exists.",
       sandbox_notice: null,
+      technical_summary: "Requires tenant authorization beyond the institutional sandbox path.",
     },
     {
       id: "age_eligibility",
@@ -60,6 +68,7 @@ export function listInstitutionalVerificationRequirements(input: {
       availability: "unavailable",
       unavailable_reason: "Use Partner Flow catalog packs for age-gated commerce.",
       sandbox_notice: null,
+      technical_summary: null,
     },
     {
       id: "custom_policy_configuration",
@@ -69,6 +78,7 @@ export function listInstitutionalVerificationRequirements(input: {
       availability: "advanced_only",
       unavailable_reason: "Configure in Launchpad advanced options.",
       sandbox_notice: null,
+      technical_summary: "Sandbox-only custom eligibility when catalog packs do not fit.",
     },
   ];
 }
