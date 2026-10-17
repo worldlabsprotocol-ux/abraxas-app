@@ -4,6 +4,7 @@ import { randomBytes } from "crypto";
 import { isValidPartnerId, normalizePartnerId } from "@/lib/partner/partnerIdFormat";
 import { provisionLaunchpadSandbox } from "@/lib/partner/launchpad/provisionSandbox";
 import {
+  getPrimarySandboxEnrollment,
   recordMembershipGrant,
   recordSandboxEnrollment,
   upsertPartnerMembership,
@@ -33,13 +34,28 @@ export async function enrollSandboxForAccount(input: {
   policyTemplateId?: string;
   idempotencyKey?: string;
 }): Promise<SandboxEnrollResult> {
+  const existing = await getPrimarySandboxEnrollment(input.accountId);
+  if (existing) {
+    const operatorSessionToken = await issueOperatorSessionForAccountMembership({
+      accountId: input.accountId,
+      partnerId: existing.partner_id,
+      environment: "sandbox",
+    });
+    return {
+      ok: true,
+      partnerId: existing.partner_id,
+      application: { application_id: existing.application_id, idempotency_replay: true },
+      operatorSessionToken,
+    };
+  }
+
   const partnerId = defaultPartnerIdForAccount(input.accountId);
   if (!isValidPartnerId(partnerId)) {
     return { ok: false, code: "invalid_partner_id" };
   }
 
   const applicationName = (input.applicationName ?? "My sandbox app").trim();
-  const policyTemplateId = input.policyTemplateId ?? "age_21_us";
+  const policyTemplateId = input.policyTemplateId ?? "age_21_retail";
 
   let provision;
   try {

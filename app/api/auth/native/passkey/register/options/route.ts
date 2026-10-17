@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { beginPasskeyRegistration } from "@/lib/auth/webauthn/passkeyService";
 import { resolveWebAuthnOrigin, resolveWebAuthnRpId } from "@/lib/auth/webauthn/rpConfig";
 import { assertNativeAuthEnabled, mapNativeStoreError } from "@/lib/auth/nativeAccount/apiGate";
+import { enforceNativeAuthRateLimit } from "@/lib/auth/nativeAccount/rateLimit";
 import { resolveAccountSession } from "@/lib/auth/accountSession";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +12,11 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   const disabled = assertNativeAuthEnabled();
   if (disabled) return disabled;
+
+  const limited = await enforceNativeAuthRateLimit(req, "passkey_register_options", 30);
+  if (!limited.allowed) {
+    return NextResponse.json({ ok: false, code: "rate_limited" }, { status: 429 });
+  }
 
   const origin = resolveWebAuthnOrigin(req.headers.get("origin"), req.headers.get("host"));
   if (!origin) {

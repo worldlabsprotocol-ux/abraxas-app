@@ -212,16 +212,62 @@ export async function loadWebAuthnChallenge(challengeId: string): Promise<{
 }
 
 export async function consumeWebAuthnChallenge(challengeId: string): Promise<boolean> {
+  const row = await consumeWebAuthnChallengeAtomic(challengeId);
+  return Boolean(row);
+}
+
+export async function consumeWebAuthnChallengeAtomic(challengeId: string): Promise<{
+  purpose: "register" | "authenticate";
+  account_id: string | null;
+  challenge: string;
+  origin: string;
+  rp_id: string;
+} | null> {
   if (useMemory()) {
-    return nativeAccountMemory.consumeChallenge(challengeId);
+    const ch = nativeAccountMemory.consumeChallengeAtomic(challengeId);
+    if (!ch) return null;
+    return {
+      purpose: ch.purpose,
+      account_id: ch.account_id,
+      challenge: ch.challenge,
+      origin: ch.origin,
+      rp_id: ch.rp_id,
+    };
   }
   const sb = requirePersistenceAdmin();
-  const { data } = await sb
-    .from("abraxas_webauthn_challenges")
-    .select("consumed_at")
-    .eq("id", challengeId)
-    .maybeSingle();
-  if (!data || data.consumed_at) return false;
+  const { data, error } = await sb.rpc("abraxas_consume_webauthn_challenge_atomic", {
+    p_challenge_id: challengeId,
+  });
+  if (error) {
+    if (error.code === "42883" || error.code === "42P01") {
+      // RPC or schema missing — fall back to non-atomic consume + load (fail closed in production path)
+      const loaded = await loadWebAuthnChallenge(challengeId);
+      if (!loaded || loaded.consumed_at || new Date(loaded.expires_at).getTime() < Date.now()) return null;
+      const consumed = await consumeWebAuthnChallengeLegacy(challengeId);
+      if (!consumed || !loaded) return null;
+      return {
+        purpose: loaded.purpose,
+        account_id: loaded.account_id,
+        challenge: loaded.challenge,
+        origin: loaded.origin,
+        rp_id: loaded.rp_id,
+      };
+    }
+    throw error;
+  }
+  const payload = data as { ok?: boolean; code?: string; purpose?: string; account_id?: string | null; challenge?: string; origin?: string; rp_id?: string };
+  if (!payload?.ok) return null;
+  return {
+    purpose: payload.purpose as "register" | "authenticate",
+    account_id: payload.account_id ?? null,
+    challenge: String(payload.challenge),
+    origin: String(payload.origin),
+    rp_id: String(payload.rp_id),
+  };
+}
+
+async function consumeWebAuthnChallengeLegacy(challengeId: string): Promise<boolean> {
+  const sb = requirePersistenceAdmin();
   const { error } = await sb
     .from("abraxas_webauthn_challenges")
     .update({ consumed_at: new Date().toISOString() })
@@ -261,13 +307,13 @@ export async function assertPartnerMembership(
 ): Promise<{ ok: true; role: PartnerMembershipRole } | { ok: false }> {
   if (useMemory()) {
     const m = nativeAccountMemory.getMembership(accountId, partnerId);
-    if (!m) return { ok: false };
+    if (!m || m.status !== "active") return { ok: false };
     return { ok: true, role: m.role };
   }
   const sb = requirePersistenceAdmin();
   const { data, error } = await sb
     .from("abraxas_account_partner_memberships")
-    .select("role")
+    .select("role, status")
     .eq("account_id", accountId)
     .eq("partner_id", partnerId)
     .maybeSingle();
@@ -276,7 +322,36 @@ export async function assertPartnerMembership(
     throw error;
   }
   if (!data) return { ok: false };
+  const status = (data as { status?: string }).status ?? "active";
+  if (status !== "active") return { ok: false };
   return { ok: true, role: data.role as PartnerMembershipRole };
+}
+
+export async function getPrimarySandboxEnrollment(
+  accountId: string,
+): Promise<{ partner_id: string; application_id: string | null } | null> {
+  if (useMemory()) {
+    const rows = nativeAccountMemory.listMemberships(accountId);
+    if (rows.length === 0) return null;
+    return { partner_id: rows[0]!.partner_id, application_id: null };
+  }
+  const sb = requirePersistenceAdmin();
+  const { data, error } = await sb
+    .from("abraxas_sandbox_enrollments")
+    .select("partner_id, application_id")
+    .eq("account_id", accountId)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) {
+    if (error.code === "42P01") throw new NativeAccountStoreUnavailableError();
+    throw error;
+  }
+  if (!data) return null;
+  return {
+    partner_id: String(data.partner_id),
+    application_id: data.application_id ? String(data.application_id) : null,
+  };
 }
 
 export async function recordMembershipGrant(input: {

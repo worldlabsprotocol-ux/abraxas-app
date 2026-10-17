@@ -6,6 +6,7 @@ import {
   verifyAuthenticationResponse,
   verifyRegistrationResponse,
 } from "@simplewebauthn/server";
+import { isoBase64URL } from "@simplewebauthn/server/helpers";
 import type {
   AuthenticationResponseJSON,
   AuthenticatorTransportFuture,
@@ -13,7 +14,7 @@ import type {
 } from "@simplewebauthn/server";
 import { createNativeAccountId, isNativeAccountId } from "@/lib/auth/nativeAccount/subjectId";
 import {
-  consumeWebAuthnChallenge,
+  consumeWebAuthnChallengeAtomic,
   findPasskeyByCredentialId,
   insertNativeAccount,
   insertPasskeyRecord,
@@ -95,10 +96,8 @@ export async function finishPasskeyRegistration(input: {
   rpId: string;
   response: RegistrationResponseJSON;
 }): Promise<PasskeyRegisterFinishResult> {
-  const stored = await loadWebAuthnChallenge(input.challengeId);
+  const stored = await consumeWebAuthnChallengeAtomic(input.challengeId);
   if (!stored || stored.purpose !== "register") return { ok: false, code: "challenge_not_found" };
-  if (stored.consumed_at) return { ok: false, code: "challenge_replayed" };
-  if (new Date(stored.expires_at).getTime() < Date.now()) return { ok: false, code: "challenge_expired" };
   if (stored.origin !== input.origin || stored.rp_id !== input.rpId) {
     return { ok: false, code: "origin_or_rp_mismatch" };
   }
@@ -117,14 +116,11 @@ export async function finishPasskeyRegistration(input: {
     return { ok: false, code: "verification_failed" };
   }
 
-  const consumed = await consumeWebAuthnChallenge(input.challengeId);
-  if (!consumed) return { ok: false, code: "challenge_replayed" };
-
   const { credential, aaguid } = verification.registrationInfo;
   await insertPasskeyRecord({
     accountId: stored.account_id,
     credentialId: credential.id,
-    publicKeyCose: Buffer.from(credential.publicKey).toString("base64url"),
+    publicKeyCose: isoBase64URL.fromBuffer(credential.publicKey),
     signCount: credential.counter,
     transports: (credential.transports ?? []) as string[],
     aaguid: aaguid ?? null,
@@ -172,16 +168,14 @@ export async function finishPasskeyAuthentication(input: {
   | { ok: true; accountId: string; verified: true }
   | { ok: false; code: string }
 > {
-  const stored = await loadWebAuthnChallenge(input.challengeId);
+  const passkey = await findPasskeyByCredentialId(input.response.id);
+  if (!passkey || passkey.revoked_at) return { ok: false, code: "credential_unknown" };
+
+  const stored = await consumeWebAuthnChallengeAtomic(input.challengeId);
   if (!stored || stored.purpose !== "authenticate") return { ok: false, code: "challenge_not_found" };
-  if (stored.consumed_at) return { ok: false, code: "challenge_replayed" };
-  if (new Date(stored.expires_at).getTime() < Date.now()) return { ok: false, code: "challenge_expired" };
   if (stored.origin !== input.origin || stored.rp_id !== input.rpId) {
     return { ok: false, code: "origin_or_rp_mismatch" };
   }
-
-  const passkey = await findPasskeyByCredentialId(input.response.id);
-  if (!passkey || passkey.revoked_at) return { ok: false, code: "credential_unknown" };
 
   const verification = await verifyAuthenticationResponse({
     response: input.response,
@@ -190,16 +184,13 @@ export async function finishPasskeyAuthentication(input: {
     expectedRPID: input.rpId,
     credential: {
       id: input.response.id,
-      publicKey: Buffer.from(passkey.public_key_cose, "base64url"),
+      publicKey: isoBase64URL.toBuffer(passkey.public_key_cose),
       counter: passkey.sign_count,
       transports: [] as AuthenticatorTransportFuture[],
     },
   });
 
   if (!verification.verified) return { ok: false, code: "verification_failed" };
-
-  const consumed = await consumeWebAuthnChallenge(input.challengeId);
-  if (!consumed) return { ok: false, code: "challenge_replayed" };
 
   await updatePasskeySignCount(input.response.id, verification.authenticationInfo.newCounter);
 

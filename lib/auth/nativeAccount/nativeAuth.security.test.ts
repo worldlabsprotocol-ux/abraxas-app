@@ -81,6 +81,26 @@ describe("native account security (memory store)", () => {
     expect(session).toBeNull();
   });
 
+  it("rejects revoked partner memberships for operator sessions", async () => {
+    const accountId = createNativeAccountId();
+    nativeAccountMemory.insertAccount(accountId);
+    await upsertPartnerMembership({ accountId, partnerId: "tenant-revoked", role: "owner" });
+    nativeAccountMemory.revokeMembership(accountId, "tenant-revoked");
+
+    const token = await issuePartnerConsoleSessionToken({
+      partnerId: "tenant-revoked",
+      environment: "sandbox",
+      authKind: "account",
+      accountId,
+      membershipRole: "owner",
+    });
+    const req = new NextRequest("http://localhost/", {
+      headers: { cookie: `${PARTNER_CONSOLE_SESSION_COOKIE}=${token}` },
+    });
+    const session = await resolvePartnerConsoleSession(req);
+    expect(session).toBeNull();
+  });
+
   it("enforces partner membership for account-based operator sessions", async () => {
     const accountId = createNativeAccountId();
     nativeAccountMemory.insertAccount(accountId);

@@ -53,7 +53,8 @@ See `lib/trust/progressiveTrust.ts`. Levels 0–4 describe **access requirements
 
 ## Compatibility and rollback
 
-- Migration 144 is additive; rollback = drop new tables, disable flag, retain OAuth/wallet/API keys.
+- Migrations 144–145 are additive. **Safe rollback:** disable `ABRAXAS_NATIVE_ACCOUNT_AUTH_ENABLED`, stop new enrollment, **preserve** all native account rows and audit grants. Legacy OAuth/wallet/API keys unchanged.
+- **Destructive** table drops only in disposable environments with no real native accounts.
 - No silent linking: `abraxas_account_holder_bindings` requires explicit proof workflow (table present; UI binding flows remain future work).
 - Production credentials and wallet custody are not modified by this PR.
 

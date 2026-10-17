@@ -14,6 +14,7 @@ export function isNativeAccountAuthEnabled(
 export function nativeAccountMemoryStoreEnabled(
   env: Record<string, string | undefined> = process.env,
 ): boolean {
+  if (env.NODE_ENV === "production") return false;
   const raw = env.ABRAXAS_NATIVE_ACCOUNT_MEMORY?.trim().toLowerCase();
   if (raw === "1" || raw === "true") return true;
   return env.VITEST === "true" || env.NODE_ENV === "test";
