@@ -84,19 +84,19 @@ export function requirePartnerApiKey(): boolean {
   return process.env.REQUIRE_PARTNER_API_KEY === "true";
 }
 
-export async function authenticatePartner(
-  req: NextRequest,
+export async function authenticatePartnerRawKey(
+  rawKey: string,
   requiredScope?: PartnerScope,
 ): Promise<PartnerAuthResult | null> {
-  const rawKey = extractPartnerKey(req);
-  if (!rawKey) return null;
+  const trimmed = rawKey.trim();
+  if (!trimmed.startsWith("abx_")) return null;
 
   const client = sb();
   if (!client) {
     return { ok: false, error: "Partner auth unavailable", status: 401 };
   }
 
-  const hash = hashPartnerKey(rawKey);
+  const hash = hashPartnerKey(trimmed);
   const { data, error } = await client
     .from("partner_api_keys")
     .select("id, partner_id, display_name, key_prefix, scopes, revoked_at, launchpad_application_id")
@@ -136,6 +136,15 @@ export async function authenticatePartner(
       credentialStatus: "active",
     },
   };
+}
+
+export async function authenticatePartner(
+  req: NextRequest,
+  requiredScope?: PartnerScope,
+): Promise<PartnerAuthResult | null> {
+  const rawKey = extractPartnerKey(req);
+  if (!rawKey) return null;
+  return authenticatePartnerRawKey(rawKey, requiredScope);
 }
 
 async function loadLaunchpadApplicationContext(

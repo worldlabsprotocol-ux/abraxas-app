@@ -10,14 +10,18 @@ const runMock = vi.fn();
 const submitMock = vi.fn();
 const listEligibleMock = vi.fn();
 
-vi.mock("@/lib/partner/launchpad/partnerConsoleSession", () => ({
-  resolvePartnerConsoleSession: (...args: unknown[]) => resolvePartnerConsoleSessionMock(...args),
-  requirePartnerConsoleSession: async (req: NextRequest) => {
-    const session = await resolvePartnerConsoleSessionMock(req);
-    if (!session) return { ok: false, error: "Partner console sign in required", status: 401 };
-    return { ok: true, session };
-  },
-}));
+vi.mock("@/lib/partner/launchpad/partnerConsoleSession", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/partner/launchpad/partnerConsoleSession")>();
+  return {
+    ...actual,
+    resolvePartnerConsoleSession: (...args: unknown[]) => resolvePartnerConsoleSessionMock(...args),
+    requirePartnerConsoleSession: async (req: NextRequest) => {
+      const session = await resolvePartnerConsoleSessionMock(req);
+      if (!session) return { ok: false, error: "Partner console sign in required", status: 401 };
+      return { ok: true, session };
+    },
+  };
+});
 
 vi.mock("@/lib/partner/launchpad/resolveLaunchpadApplication", () => ({
   getLaunchpadApplicationForPartner: (...args: unknown[]) => getAppMock(...args),
@@ -74,6 +78,28 @@ describe("Circle settlement routes", () => {
     expect(body.code).toBe("circle_unavailable");
   });
 
+  it("GET eligible-receipts binds native account operator session key", async () => {
+    resolvePartnerConsoleSessionMock.mockResolvedValue({
+      partnerId: "acme",
+      environment: "sandbox",
+      authKind: "account",
+      accountId: "abx_ac_playwright",
+      membershipRole: "owner",
+    });
+    listEligibleMock.mockResolvedValue([]);
+    const { GET } = await import("@/app/api/launchpad/applications/[id]/settlement/eligible-receipts/route");
+    const res = await GET(
+      new NextRequest("http://localhost/api/launchpad/applications/app-1/settlement/eligible-receipts"),
+      { params: { id: "app-1" } },
+    );
+    expect(res.status).toBe(200);
+    expect(listEligibleMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionKeyId: "native_account:abx_ac_playwright",
+      }),
+    );
+  });
+
   it("GET eligible-receipts returns labels without receipt ids", async () => {
     listEligibleMock.mockResolvedValue([{
       selection_token: "opaque-token",
@@ -119,6 +145,36 @@ describe("Circle settlement routes", () => {
     const body = await res.json();
     expect(res.status).toBe(400);
     expect(body.code).toBe("settlement_client_hash_rejected");
+  });
+
+  it("POST settlement uses native account session key binding", async () => {
+    resolvePartnerConsoleSessionMock.mockResolvedValue({
+      partnerId: "acme",
+      environment: "sandbox",
+      authKind: "account",
+      accountId: "abx_ac_playwright",
+      membershipRole: "owner",
+    });
+    runMock.mockResolvedValue({
+      ok: false,
+      available: false,
+      code: CIRCLE_PUBLIC_CODES.selection_invalid,
+      activates_production: false,
+      evidence: null,
+    });
+    const { POST } = await import("@/app/api/launchpad/applications/[id]/settlement/route");
+    await POST(
+      new NextRequest("http://localhost/api/launchpad/applications/app-1/settlement", {
+        method: "POST",
+        body: JSON.stringify({ selection_token: "opaque-token" }),
+      }),
+      { params: { id: "app-1" } },
+    );
+    expect(runMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionKeyId: "native_account:abx_ac_playwright",
+      }),
+    );
   });
 
   it("POST returns 409 for a duplicate settled intent", async () => {

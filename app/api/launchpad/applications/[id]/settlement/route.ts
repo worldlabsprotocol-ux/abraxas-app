@@ -7,6 +7,7 @@ import {
   launchpadError,
   launchpadJson,
   requireLaunchpadSession,
+  requireLaunchpadSessionKeyId,
 } from "@/lib/partner/launchpad/apiHelpers";
 import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
@@ -60,6 +61,8 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 export async function POST(req: NextRequest, { params }: RouteContext) {
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
+  const operator = requireLaunchpadSessionKeyId(auth.session);
+  if (!operator.ok) return operator.response;
   const limited = await enforceLaunchpadTenantRateLimit(
     req,
     "/api/launchpad/settlement/run",
@@ -81,7 +84,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   const result = await runCircleSettlement({
     application: app,
     partnerId: auth.session.partnerId,
-    sessionKeyId: auth.session.apiKeyId,
+    sessionKeyId: operator.sessionKeyId,
     selectionToken: body.selection_token,
     body,
   });

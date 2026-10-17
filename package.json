@@ -148,6 +148,8 @@
     "@mysten/sui": "^1.45.2",
     "@noble/hashes": "1.8.0",
     "@reclaimprotocol/js-sdk": "^5.5.0",
+    "@simplewebauthn/browser": "^13.1.0",
+    "@simplewebauthn/server": "^13.1.1",
     "@solana/kit": "^8.3.0",
     "@solana/spl-token": "^0.4.8",
     "@solana/wallet-adapter-base": "^0.9.27",
