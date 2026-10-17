@@ -17,5 +17,5 @@ fi
 echo "== launchpad staging identity =="
 curl -sS "${HDR[@]}" "$BASE_URL/api/launchpad/staging/environment" | jq -c .
 
-echo "== native auth enabled + runtime diagnostics =="
-curl -sS "${HDR[@]}" "$BASE_URL/api/auth/native/enabled" | jq -c .
+echo "== native auth enabled + runtime diagnostics + webauthn =="
+curl -sS "${HDR[@]}" "$BASE_URL/api/auth/native/enabled" | jq -c '{enabled, flag: .runtime.native_auth_flag_state, memory: .runtime.memory_store, supabase: .runtime.supabase_project_ref, rp_id: .webauthn.rp_id, origin: .webauthn.origin, commit_env: .runtime}'
