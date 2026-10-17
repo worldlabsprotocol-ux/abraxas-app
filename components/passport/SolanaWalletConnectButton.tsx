@@ -12,6 +12,14 @@ export function SolanaWalletConnectButton() {
 
   if (connected) return null;
 
+  if (!wallet) {
+    return (
+      <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: "0 0 0.35rem" }}>
+        Install a Solana wallet extension (Phantom or Solflare), then return here to connect.
+      </p>
+    );
+  }
+
   return (
     <div style={{ marginBottom: "0.35rem" }}>
       <button
@@ -19,7 +27,7 @@ export function SolanaWalletConnectButton() {
         disabled={connecting}
         onClick={() => {
           setError(null);
-          void connect().catch(() => setError("Could not connect Solana wallet."));
+          void connect().catch(() => setError("Could not connect Solana wallet. Confirm the extension is unlocked."));
         }}
         style={{
           padding: "0.55rem 0.85rem",

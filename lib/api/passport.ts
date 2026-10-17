@@ -7,6 +7,10 @@ import type { StoredCredential } from "@/lib/credentials/storage";
 
 import type { PassportSetupState } from "@/lib/idv/identityVerificationStates";
 import type { CanonicalWalletBindingStatus } from "@/lib/trust/readCanonicalWalletBinding";
+import {
+  classifyIdentityStatusHttpStatus,
+  IdentityStatusFetchError,
+} from "@/lib/passport/identityStatusFetch";
 
 export interface IdentityStatusResponse {
   status?: string;
@@ -82,9 +86,13 @@ export async function fetchIdentityStatus(
   if (suiAddress) params.set("sui_address", suiAddress);
   if (email) params.set("email", email);
   const res = await fetch(`/api/identity/status?${params}`, { credentials: "include" });
-  const data = await res.json() as IdentityStatusResponse & { error?: string };
+  const data = await res.json() as IdentityStatusResponse & { error?: string; code?: string };
   if (!res.ok) {
-    throw new Error(data.error ?? `Identity status failed (${res.status})`);
+    throw new IdentityStatusFetchError(
+      classifyIdentityStatusHttpStatus(res.status),
+      res.status,
+      data.error ?? data.code ?? `Identity status failed (${res.status})`,
+    );
   }
   return data;
 }

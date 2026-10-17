@@ -9,6 +9,7 @@ import { PassportReauthenticationPanel } from "@/components/passport/PassportRea
 import { PassportSessionProbeFailedPanel } from "@/components/passport/PassportSessionProbeFailedPanel";
 import { Btn } from "@/components/redesign/ui";
 import { usePassportBrowserSession } from "@/lib/passport/usePassportBrowserSession";
+import type { PassportBrowserSessionState } from "@/lib/passport/passportBrowserSessionAuth";
 import { runPassportWalletBind } from "@/lib/passport/runPassportWalletBind";
 import type { PassportSetupState } from "@/lib/idv/identityVerificationStates";
 import type { IdentityStampStatus, WalletBindingRefreshState } from "@/lib/hooks/usePassportVerification";
@@ -72,6 +73,9 @@ interface Props {
   onWalletBound?: () => Promise<WalletBindingRefreshState | void>;
   handoff: PartnerFlowHandoffController;
   capturePolicy?: CapturePolicyContext;
+  browserSessionState?: PassportBrowserSessionState;
+  onRequireReauthentication?: () => void;
+  onRefreshBrowserSession?: () => Promise<void>;
 }
 
 function buildPassportTrustItems(identityUi: string, hasCredential: boolean) {
@@ -107,14 +111,19 @@ export function PassportCustomerView({
   onWalletBound,
   handoff,
   capturePolicy,
+  browserSessionState: browserSessionStateProp,
+  onRequireReauthentication,
+  onRefreshBrowserSession,
 }: Props) {
   const [bindLoading, setBindLoading] = useState(false);
   const [bindError, setBindError] = useState<string | null>(null);
-  const {
-    browserSessionState,
-    requireReauthentication,
-    refreshBrowserSession,
-  } = usePassportBrowserSession(suiAddress, authLoading);
+  const internalSession = usePassportBrowserSession(
+    browserSessionStateProp !== undefined ? null : suiAddress,
+    authLoading || browserSessionStateProp !== undefined,
+  );
+  const browserSessionState = browserSessionStateProp ?? internalSession.browserSessionState;
+  const requireReauthentication = onRequireReauthentication ?? internalSession.requireReauthentication;
+  const refreshBrowserSession = onRefreshBrowserSession ?? internalSession.refreshBrowserSession;
 
   const hasCredential = Boolean(credential) && identityStatus === "earned";
   const browserSessionReady = browserSessionState === "authenticated";

@@ -9,6 +9,7 @@ import { SolanaWalletConnectButton } from "./SolanaWalletConnectButton";
 import { PASSPORT_WALLET_ACTIONS, type PassportWalletIntendedAction } from "@/lib/auth/passportWalletAuth/contract";
 import { HOLDER_AUTH_ACTIONS } from "@/lib/auth/holderSubject/contract";
 import { HOLDER_WALLET_BOUNDARY } from "@/lib/sui/holderAccessCopy";
+import { describeHolderAuthErrorCode } from "@/lib/auth/holderAuthErrorCopy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
@@ -61,10 +62,13 @@ export function HolderWalletAuthPanel({
   intendedAction = PASSPORT_WALLET_ACTIONS.passportSignIn,
   compact = false,
   onSuccess,
+  secondaryMode = false,
 }: {
   intendedAction?: PassportWalletIntendedAction;
   compact?: boolean;
   onSuccess?: () => void;
+  /** When true, de-emphasize wallet paths (Passport entry secondary). */
+  secondaryMode?: boolean;
 }) {
   const [evmBusy, setEvmBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +89,7 @@ export function HolderWalletAuthPanel({
           setError(null);
           void signInEvmWallet(evmIntendedAction)
             .then((r) => {
-              if (!r.ok) setError(r.code ?? "evm_sign_in_failed");
+              if (!r.ok) setError(describeHolderAuthErrorCode(r.code ?? "evm_sign_in_failed"));
               else onSuccess?.();
             })
             .finally(() => setEvmBusy(false));
@@ -101,8 +105,14 @@ export function HolderWalletAuthPanel({
           cursor: evmBusy ? "wait" : "pointer",
         }}
       >
-        {evmBusy ? "Authenticating…" : "Sign in with EVM wallet"}
+        {evmBusy ? "Authenticating…" : secondaryMode ? "EVM wallet" : "Sign in with EVM wallet"}
       </button>
+
+      {secondaryMode ? (
+        <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)", margin: 0 }}>
+          Solana and Sui wallet sign-in available below when needed for your workflow.
+        </p>
+      ) : null}
 
       <WalletContextProvider>
         <SolanaWalletConnectButton />

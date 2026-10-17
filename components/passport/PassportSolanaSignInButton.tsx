@@ -4,6 +4,7 @@
 import { useCallback, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { HOLDER_AUTH_ACTIONS } from "@/lib/auth/holderSubject/contract";
+import { describeHolderAuthErrorCode } from "@/lib/auth/holderAuthErrorCopy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
@@ -44,7 +45,7 @@ export function PassportSolanaSignInButton({
         code?: string;
       };
       if (!challengeRes.ok || !challengeBody.challenge) {
-        setError(challengeBody.code ?? "challenge_failed");
+        setError(describeHolderAuthErrorCode(challengeBody.code ?? "challenge_failed"));
         return;
       }
       const messageBytes = new TextEncoder().encode(challengeBody.challenge.message);
@@ -65,7 +66,7 @@ export function PassportSolanaSignInButton({
       });
       const verifyBody = await verifyRes.json() as { ok?: boolean; code?: string };
       if (!verifyRes.ok || !verifyBody.ok) {
-        setError(verifyBody.code ?? "verify_failed");
+        setError(describeHolderAuthErrorCode(verifyBody.code ?? "verify_failed"));
         return;
       }
       window.dispatchEvent(new Event("abraxas:holder-session"));

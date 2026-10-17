@@ -43,6 +43,11 @@ import {
 } from "@/lib/integrate/partnerJourney";
 import { PassportHolderFlowVisual } from "@/components/protocol-visuals";
 import { AccountAccessFirstPaint } from "@/components/product/AccountAccessFirstPaint";
+import { usePassportBrowserSession } from "@/lib/passport/usePassportBrowserSession";
+import {
+  resolvePassportEntryPhase,
+  shouldShowPassportStatusOutageBanner,
+} from "@/lib/passport/passportEntryState";
 
 const S = ABRAXAS_FONT_SANS;
 
@@ -62,6 +67,12 @@ function PassportPageInner() {
   const [error, setError] = useState<string | null>(null);
   const [partnerConsentDismissed, setPartnerConsentDismissed] = useState(false);
   const [showSuccessPanel, setShowSuccessPanel] = useState(false);
+
+  const {
+    browserSessionState,
+    requireReauthentication,
+    refreshBrowserSession,
+  } = usePassportBrowserSession(suiAddress, authLoading);
 
   const {
     identityStatus,
@@ -85,7 +96,24 @@ function PassportPageInner() {
     retryProvision,
     isStatusFetchError,
     statusFetchError,
-  } = usePassportVerification(suiAddress, email || null);
+    pipelineErrorKind,
+    isLoading: passportPipelineLoading,
+    hasStatusSnapshot,
+  } = usePassportVerification(suiAddress, email || null, { browserSessionState });
+
+  const entryPhase = resolvePassportEntryPhase({
+    authLoading,
+    walletDone: Boolean(suiAddress),
+    browserSessionState,
+    pipelineLoading: passportPipelineLoading,
+    pipelineErrorKind: pipelineErrorKind ?? null,
+    hasPipelineData: hasStatusSnapshot,
+  });
+
+  const showStatusOutage = shouldShowPassportStatusOutageBanner({
+    phase: entryPhase,
+    pipelineErrorKind: pipelineErrorKind ?? null,
+  });
 
   const verifyRequestId = searchParams.get("verify_request");
   const policyIdParam = searchParams.get("policy_id");
@@ -371,21 +399,31 @@ function PassportPageInner() {
             <PartnerFlowReturnHandler handoff={handoff} />
             <PartnerVerificationResumeCta />
 
-            {isStatusFetchError && statusFetchError && (
+            {showStatusOutage && isStatusFetchError && statusFetchError && (
               <div style={{ marginBottom: "1.25rem" }}>
                 <StatusBanner
                   tone="error"
-                  title={statusFetchError === "load_failed"
-                    ? "Couldn't load your Passport status."
-                    : "Couldn't refresh your Passport status."}
+                  title={entryPhase === "service_unavailable"
+                    ? "Passport services temporarily unavailable"
+                    : statusFetchError === "load_failed"
+                      ? "Couldn't load your Passport status."
+                      : "Couldn't refresh your Passport status."}
                   action={(
                     <Btn size="sm" variant="secondary" onClick={() => void refresh()}>
-                      Refresh
+                      Try again
                     </Btn>
                   )}
                 >
-                  Check your connection and tap Refresh.
+                  {entryPhase === "service_unavailable"
+                    ? "Required account storage is not ready in this environment. Try again later or contact your operator."
+                    : "Check your connection and try again."}
                 </StatusBanner>
+              </div>
+            )}
+
+            {entryPhase === "loading_passport" && (
+              <div style={{ marginBottom: "1.25rem" }}>
+                <RedesignPageLoading label="Loading your Passport…" compact />
               </div>
             )}
 
@@ -410,6 +448,9 @@ function PassportPageInner() {
             <PassportCustomerView
               walletDone={walletDone}
               authLoading={authLoading}
+              browserSessionState={browserSessionState}
+              onRequireReauthentication={requireReauthentication}
+              onRefreshBrowserSession={refreshBrowserSession}
               suiAddress={suiAddress}
               email={email}
               setup={setup}
