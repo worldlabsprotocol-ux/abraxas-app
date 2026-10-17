@@ -7,6 +7,7 @@ import { Btn } from "@/components/redesign/ui";
 import { HolderAccessPanel } from "@/components/sui/HolderAccessPanel";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { PartnerLaunchpadSessionPanel } from "@/components/account/PartnerLaunchpadSessionPanel";
+import { NativeAccountPasskeyPanel } from "@/components/account/NativeAccountPasskeyPanel";
 import { AccountSessionsNotice } from "@/components/account/AccountSessionsNotice";
 import {
   ACCOUNT_APPLICATIONS_SUBHEAD,
@@ -47,8 +48,20 @@ export default function AccountApplicationsPage() {
         <AccountSessionsNotice />
       </div>
 
+      <ContentCard title="Native Abraxas account (operator)">
+        <p style={{ margin: "0 0 0.75rem", fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
+          Passkey sign-in for Launchpad and sandbox applications. Separate from Passport holder sign-in and from server API keys.
+        </p>
+        <NativeAccountPasskeyPanel mode="authenticate" onSuccess={() => void refetch()} />
+        <div style={{ marginTop: "0.5rem" }}>
+          <Btn href="/welcome" variant="ghost" size="sm">
+            New here? Welcome entry
+          </Btn>
+        </div>
+      </ContentCard>
+
       {!isAuthenticated ? (
-        <ContentCard title="Abraxas account">
+        <ContentCard title="Passport holder access">
           <p style={{ margin: "0 0 0.75rem", fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
             {ACCOUNT_HOLDER_SIGN_IN_REQUIRED}
           </p>

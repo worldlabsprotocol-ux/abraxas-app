@@ -3,12 +3,20 @@ import { NextRequest } from "next/server";
 
 const browserMock = vi.fn();
 const partnerMock = vi.fn();
+const accountMock = vi.fn();
+const membershipsMock = vi.fn();
 
 vi.mock("@/lib/auth/browserSession", () => ({
   resolveBrowserSession: (...args: unknown[]) => browserMock(...args),
 }));
+vi.mock("@/lib/auth/accountSession", () => ({
+  resolveAccountSession: (...args: unknown[]) => accountMock(...args),
+}));
 vi.mock("@/lib/partner/launchpad/partnerConsoleSession", () => ({
   resolvePartnerConsoleSession: (...args: unknown[]) => partnerMock(...args),
+}));
+vi.mock("@/lib/auth/nativeAccount/store", () => ({
+  listPartnerMemberships: (...args: unknown[]) => membershipsMock(...args),
 }));
 
 import { GET } from "./route";
@@ -18,6 +26,8 @@ describe("GET /api/account/overview", () => {
     vi.clearAllMocks();
     browserMock.mockResolvedValue(null);
     partnerMock.mockResolvedValue(null);
+    accountMock.mockResolvedValue(null);
+    membershipsMock.mockResolvedValue([]);
   });
 
   it("returns independent session flags without requiring holder auth", async () => {
@@ -28,6 +38,7 @@ describe("GET /api/account/overview", () => {
     expect(body.sessions_are_independent).toBe(true);
     expect(body.holder.authenticated).toBe(false);
     expect(body.partner_console.authenticated).toBe(false);
+    expect(body.native_account.authenticated).toBe(false);
   });
 
   it("does not merge partner id into holder subject", async () => {
