@@ -12,7 +12,7 @@ import {
   HOMEPAGE_CTA_SET_UP_WORKSPACE,
   HOMEPAGE_CTA_START_BUILDING,
   HOMEPAGE_WORKSPACE_DEMO_LINK,
-  HOMEPAGE_WORKSPACE_DISABLED_LEAD,
+  HOMEPAGE_WORKSPACE_STUDIO_CTA,
 } from "@/lib/home/homepagePlainCopy";
 import { useHomeWorkspaceSession } from "@/lib/home/useHomeWorkspaceSession";
 
@@ -49,7 +49,7 @@ export function HomeSandboxSessionEntry() {
 
   return (
     <div className="abx-sandbox-entry">
-      <HomeWorkspaceProgressSteps mode={mode} />
+      {mode !== "native_disabled" ? <HomeWorkspaceProgressSteps mode={mode} /> : null}
 
       {mode === "loading" ? (
         <p className="abx-sandbox-entry__status">Checking workspace availability…</p>
@@ -57,9 +57,11 @@ export function HomeSandboxSessionEntry() {
 
       {mode === "native_disabled" ? (
         <div className="abx-sandbox-entry__disabled">
-          <p className="abx-sandbox-entry__status">{HOMEPAGE_WORKSPACE_DISABLED_LEAD}</p>
-          <Link className="abx-premium-hero__cta abx-premium-hero__cta--secondary" href="/developers/integration-studio">
-            Open Integration Studio
+          <Link
+            className="abx-premium-hero__cta abx-premium-hero__cta--primary"
+            href="/developers/integration-studio"
+          >
+            {HOMEPAGE_WORKSPACE_STUDIO_CTA}
           </Link>
         </div>
       ) : null}

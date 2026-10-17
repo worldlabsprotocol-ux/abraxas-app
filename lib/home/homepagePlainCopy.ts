@@ -19,8 +19,11 @@ export const HOMEPAGE_WORKSPACE_STEPS = [
 
 export const HOMEPAGE_WORKSPACE_DEMO_LINK = "Try the public demo — no account required";
 
-export const HOMEPAGE_WORKSPACE_DISABLED_LEAD =
-  "Passkey workspaces are not enabled here yet. You can still explore Integration Studio or the public demo.";
+/** When self-serve workspace enrollment is unavailable — one working path, no internal rollout detail. */
+export const HOMEPAGE_WORKSPACE_STUDIO_CTA = "Open Integration Studio";
+
+export const HOMEPAGE_WORKSPACE_ALT_LEAD =
+  "Configure policies and run sandbox tests in Integration Studio, or try the public demo.";
 
 export const HOMEPAGE_CLOSE_HEADING = "Ready to build?";
 export const HOMEPAGE_CLOSE_LEAD =

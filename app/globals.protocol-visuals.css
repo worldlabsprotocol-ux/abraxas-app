@@ -978,6 +978,33 @@
   color: var(--text-muted);
 }
 
+.abx-pv-verify__sample-note {
+  margin: 0 0 0.75rem;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  max-width: 42rem;
+}
+
+.abx-pv-verify__summary-status {
+  margin: 0.15rem 0 0.35rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.abx-pv-verify__details {
+  margin-top: 0.75rem;
+  font-size: 0.72rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+  max-width: 42rem;
+}
+
+.abx-pv-verify__details summary {
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
 .abx-pv-verify__meta {
   margin: 0;
   display: flex;

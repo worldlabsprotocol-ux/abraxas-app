@@ -1,7 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { V2_SIMULATION_LABEL } from "@/lib/home/v2HomeCopy";
+import {
+  RECEIPT_DEMO_CLASSIFICATION,
+  RECEIPT_DEMO_SAMPLE_NOTE,
+  RECEIPT_DEMO_SCENARIO_HINTS,
+  RECEIPT_DEMO_SHELL_CAPTION,
+  RECEIPT_DEMO_TECHNICAL_DETAILS,
+  receiptExampleStatusLabel,
+} from "@/lib/home/receiptDemoPublicCopy";
 import {
   buildReceiptDemoFields,
   deriveReceiptDemoState,
@@ -11,11 +18,11 @@ import {
 } from "@/lib/home/receiptVerificationDemoModel";
 import { ProtocolVisualShell } from "./ProtocolVisualShell";
 
-const SCENARIOS: { id: ReceiptScenario; label: string; hint: string }[] = [
-  { id: "valid", label: "Valid", hint: "All checks pass" },
-  { id: "expired", label: "Expired", hint: "Decision is expired" },
-  { id: "revoked", label: "Revoked", hint: "Authorization revoked" },
-  { id: "unavailable", label: "Unavailable", hint: "Cannot be verified" },
+const SCENARIOS: { id: ReceiptScenario; label: string }[] = [
+  { id: "valid", label: "Valid" },
+  { id: "expired", label: "Expired" },
+  { id: "revoked", label: "Revoked" },
+  { id: "unavailable", label: "Unavailable" },
 ];
 
 function badgeClass(status: ReceiptDemoCheckStatus): string {
@@ -68,6 +75,7 @@ export function DecisionReceiptVerificationInteractive(props?: { shell?: Decisio
   const [scenario, setScenario] = useState<ReceiptScenario>("valid");
   const state = useMemo(() => deriveReceiptDemoState(scenario), [scenario]);
   const fields = useMemo(() => buildReceiptDemoFields(scenario, state), [scenario, state]);
+  const statusLabel = receiptExampleStatusLabel(scenario);
 
   const { authenticityChecks, authorizationChecks } = state;
 
@@ -82,13 +90,17 @@ export function DecisionReceiptVerificationInteractive(props?: { shell?: Decisio
       kicker={props?.shell?.kicker ?? "05 Evidence"}
       title={props?.shell?.title ?? "Verify the"}
       titleAccent={props?.shell?.titleAccent ?? "Decision"}
-      caption={props?.shell?.caption ?? "Simulated receipt and verifier checks, not live partner status."}
+      caption={props?.shell?.caption ?? RECEIPT_DEMO_SHELL_CAPTION}
       className="abx-pv-shell--exhibit abx-pv-shell--open"
     >
       <div className="abx-pv-verify">
         <p className="abx-pv-verify__intro">
-          Independently verify every decision receipt. Cryptographic authenticity and current authorization status are
-          evaluated separately.
+          Inspect a sample decision receipt. Authenticity and current authorization are shown separately—the same
+          separation a production verifier applies to live evidence.
+        </p>
+
+        <p className="abx-pv-verify__sample-note" role="note">
+          {RECEIPT_DEMO_SAMPLE_NOTE}
         </p>
 
         <div className="abx-pv-verify__scenarios" role="tablist" aria-label="Receipt verification scenarios">
@@ -102,7 +114,7 @@ export function DecisionReceiptVerificationInteractive(props?: { shell?: Decisio
               onClick={() => setScenario(s.id)}
             >
               <span className="abx-pv-verify__scenario-label">{s.label}</span>
-              <span className="abx-pv-verify__scenario-hint">{s.hint}</span>
+              <span className="abx-pv-verify__scenario-hint">{RECEIPT_DEMO_SCENARIO_HINTS[s.id]}</span>
             </button>
           ))}
         </div>
@@ -118,7 +130,7 @@ export function DecisionReceiptVerificationInteractive(props?: { shell?: Decisio
             <header className="abx-pv-verify__receipt-head">
               <div>
                 <p className="abx-pv-verify__receipt-kicker">Decision receipt</p>
-                <p className="abx-pv-verify__receipt-version">v1 · simulated</p>
+                <p className="abx-pv-verify__receipt-version">v1 · sample</p>
               </div>
               <div
                 className="abx-pv-verify__outcome"
@@ -128,9 +140,6 @@ export function DecisionReceiptVerificationInteractive(props?: { shell?: Decisio
                 {state.outcome}
               </div>
             </header>
-            <p className="abx-pv-verify__sim" role="note">
-              {V2_SIMULATION_LABEL}
-            </p>
             <dl className="abx-pv-verify__meta">
               {fields.map((row) => (
                 <div key={row.label} className="abx-pv-verify__meta-row">
@@ -162,25 +171,28 @@ export function DecisionReceiptVerificationInteractive(props?: { shell?: Decisio
           <div className="abx-pv-verify__summary-state">
             <span className={`abx-pv-verify__state-dot abx-pv-verify__state-dot--${scenario}`} aria-hidden="true" />
             <div>
-              <p className="abx-pv-verify__summary-title">Verification complete (simulated)</p>
+              <p className="abx-pv-verify__summary-title">{RECEIPT_DEMO_CLASSIFICATION}</p>
+              <p className="abx-pv-verify__summary-status">
+                Status: <strong>{statusLabel}</strong>
+              </p>
               <p className="abx-pv-verify__summary-body">{state.verificationSummary}</p>
             </div>
           </div>
-          <p className="abx-pv-verify__aggregate">
-            Aggregate state: <strong>{state.aggregateStatus}</strong>
-            {state.signatureValid && !state.currentlyAuthorized ? (
-              <span className="abx-pv-verify__aggregate-note">
-                {" "}
-                Valid signature does not imply PERMIT.
-              </span>
-            ) : state.aggregateStatus === "UNAVAILABLE" ? (
-              <span className="abx-pv-verify__aggregate-note">
-                {" "}
-                Unknown checks do not imply an invalid signature.
-              </span>
-            ) : null}
-          </p>
+          {state.signatureValid && !state.currentlyAuthorized ? (
+            <p className="abx-pv-verify__aggregate-note">
+              A valid signature in a sample does not imply PERMIT when authorization checks fail.
+            </p>
+          ) : state.aggregateStatus === "UNAVAILABLE" ? (
+            <p className="abx-pv-verify__aggregate-note">
+              Unknown checks in this example do not imply an invalid signature.
+            </p>
+          ) : null}
         </div>
+
+        <details className="abx-pv-verify__details">
+          <summary>Technical details</summary>
+          <p>{RECEIPT_DEMO_TECHNICAL_DETAILS}</p>
+        </details>
       </div>
     </ProtocolVisualShell>
   );

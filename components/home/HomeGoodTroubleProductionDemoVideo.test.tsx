@@ -31,7 +31,7 @@ describe("HomeGoodTroubleProductionDemoVideo", () => {
     const video = document.querySelector("video") as HTMLVideoElement;
     video.play = vi.fn().mockResolvedValue(undefined);
 
-    await user.click(screen.getByRole("button", { name: /Play Abraxas and Good Trouble early partner/i }));
+    await user.click(screen.getByRole("button", { name: /Play Abraxas verification demonstration/i }));
     expect(video).toHaveAttribute("src", GOOD_TROUBLE_PRODUCTION_DEMO_VIDEO_SRC);
     video.dispatchEvent(new Event("loadeddata"));
     await waitFor(() => expect(video.play).toHaveBeenCalled());

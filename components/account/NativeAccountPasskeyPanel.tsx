@@ -111,8 +111,8 @@ export function NativeAccountPasskeyPanel(props: {
   if (enabledState === "disabled") {
     return (
       <p style={{ fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.6, margin: 0 }}>
-        Native passkey accounts are disabled until migration 144 is applied and{" "}
-        <code>ABRAXAS_NATIVE_ACCOUNT_AUTH_ENABLED</code> is enabled for staging validation.
+        Passkey sign-in is not available here. Continue with Integration Studio or your existing API key and
+        operator session.
       </p>
     );
   }

@@ -1142,6 +1142,19 @@
   max-width: 40rem;
 }
 
+.abx-gt-action__details {
+  margin: 0 0 1rem;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+  max-width: 40rem;
+}
+
+.abx-gt-action__details summary {
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
 .abx-gt-action__player {
   border: 1px solid var(--border);
   border-radius: 16px;

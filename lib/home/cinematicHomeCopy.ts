@@ -110,12 +110,14 @@ export const CINEMATIC_VPR_HEADLINE = "Verify → Protect → Reuse";
 export const CINEMATIC_VPR_SIM_LABEL =
   "Interactive simulation with labeled examples only. Each app policy is evaluated independently; one PERMIT does not authorize another policy.";
 
-export const CINEMATIC_GT_SECTION_HEADLINE = "See Abraxas in action.";
+export const CINEMATIC_GT_SECTION_HEADLINE = "See Abraxas in action";
 
-export const CINEMATIC_GT_SECTION_LEAD = "Age check without sharing ID or date of birth.";
+export const CINEMATIC_GT_SECTION_LEAD =
+  "See how an application requests verification and receives a decision without collecting identity documents.";
 
-export const CINEMATIC_GT_PARTNER_DISCLAIMER =
-  "Good Trouble early partner integration demo, not production checkout. Holder consent and privacy boundaries still apply.";
+/** Expandable demonstration context — not primary marketing copy. */
+export const CINEMATIC_GT_DEMO_DETAILS =
+  "Recorded walkthrough using a staged Good Trouble eligibility flow. It shows request, holder consent, and a narrow yes-or-no decision—not live checkout, payment capture, or a certified production deployment. Privacy and consent boundaries still apply.";
 
 export const CINEMATIC_TRUST_CHAPTER_EYEBROW = "Built on verifiable trust";
 
