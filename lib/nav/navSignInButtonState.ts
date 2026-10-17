@@ -19,7 +19,7 @@ export function resolveNavSignInUiState(input: {
 
 export const NAV_SIGN_IN_COPY = {
   open: "Connect",
-  openAriaLabel: "Connect a Sui wallet or open Passport account options",
+  openAriaLabel: "Connect with Abraxas passkey account",
   canonical: ZKLOGIN_SIGN_IN_COPY.canonicalButton,
   legacy: ZKLOGIN_SIGN_IN_COPY.legacyButton,
   canonicalAriaLabel: ZKLOGIN_SIGN_IN_COPY.canonicalAriaLabel,
