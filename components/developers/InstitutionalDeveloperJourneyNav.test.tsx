@@ -9,12 +9,11 @@ import { InstitutionalDeveloperJourneyNav } from "./InstitutionalDeveloperJourne
 describe("InstitutionalDeveloperJourneyNav", () => {
   afterEach(() => cleanup());
 
-  it("renders eight journey steps with navigation links", () => {
-    render(<InstitutionalDeveloperJourneyNav currentStepId="sdk_distribution" />);
+  it("renders six task-based journey steps with navigation links", () => {
+    render(<InstitutionalDeveloperJourneyNav currentStepId="test_verification" />);
     expect(screen.getByText(/Institutional developer journey/i)).toBeInTheDocument();
-    expect(screen.getAllByRole("link").length).toBeGreaterThanOrEqual(9);
-    expect(screen.getByText(/Step 6/i)).toBeInTheDocument();
-    expect(screen.getByText(/Configure pinned issuer trust/i)).toBeInTheDocument();
+    expect(screen.getAllByRole("link").length).toBe(6);
+    expect(screen.getByText(/Choose what to verify/i)).toBeInTheDocument();
     expect(screen.getByText(/Partner Flow remains a separate/i)).toBeInTheDocument();
   });
 });
