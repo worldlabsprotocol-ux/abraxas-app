@@ -19,7 +19,7 @@ test.describe("native passkey lifecycle", () => {
     });
 
     await page.goto("/#start-sandbox");
-    await page.getByRole("button", { name: "Create passkey account" }).click();
+    await page.getByRole("button", { name: /Create account/i }).click();
     await expect(page.getByText("Step 2 — Provision your tenant-scoped sandbox")).toBeVisible({ timeout: 60_000 });
 
     const sessionAfterReg = await page.request.get("/api/auth/native/session");
@@ -60,7 +60,7 @@ test.describe("native passkey lifecycle", () => {
     });
 
     await page.goto("/#start-sandbox");
-    await page.getByRole("button", { name: "Create passkey account" }).click();
+    await page.getByRole("button", { name: /Create account/i }).click();
     await expect(page.getByText("Step 2")).toBeVisible({ timeout: 60_000 });
 
     const first = await page.request.post("/api/sandbox/enroll", {

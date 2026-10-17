@@ -24,7 +24,7 @@ async function registerPasskeyAccount(page: import("@playwright/test").Page, con
     },
   });
   await page.goto("/#start-sandbox");
-  await page.getByRole("button", { name: "Create passkey account" }).click();
+  await page.getByRole("button", { name: /Create account/i }).click();
   await expect(page.getByText("Step 2 — Provision your tenant-scoped sandbox")).toBeVisible({ timeout: 90_000 });
   const session = await page.request.get("/api/auth/native/session");
   const sessionJson = await session.json();

@@ -8,10 +8,15 @@ import {
   TRUST_PIPELINE_STAGE_DETAIL,
   type TrustPipelineStageId,
 } from "@/lib/home/defiVisualHomeCopy";
+import { HOMEPAGE_HOW_STAGES } from "@/lib/home/homepageHowCopy";
 
 const STAGE_ORDER = DEFI_TRUST_PIPELINE.map((s) => s.id);
 
-export function HomeTrustPipelineStrip() {
+export function HomeTrustPipelineStrip({ variant = "default" }: { variant?: "default" | "homepage-how" }) {
+  const stageLabels =
+    variant === "homepage-how"
+      ? HOMEPAGE_HOW_STAGES
+      : DEFI_TRUST_PIPELINE;
   const [activeId, setActiveId] = useState<TrustPipelineStageId>("issuer");
   const [reduceMotion, setReduceMotion] = useState(true);
   const panelId = useId();
@@ -26,7 +31,7 @@ export function HomeTrustPipelineStrip() {
   }, []);
 
   const activeIndex = STAGE_ORDER.indexOf(activeId);
-  const activeStep = DEFI_TRUST_PIPELINE[activeIndex] ?? DEFI_TRUST_PIPELINE[0];
+  const activeStep = stageLabels[activeIndex] ?? stageLabels[0];
   const activeDetail = TRUST_PIPELINE_STAGE_DETAIL[activeStep.id];
 
   const focusStage = useCallback((index: number, moveFocus = false) => {
@@ -62,7 +67,9 @@ export function HomeTrustPipelineStrip() {
       className={`abx-trust-pipeline${reduceMotion ? " abx-trust-pipeline--static" : ""}`}
       aria-label="Independent verification flow overview"
     >
-      <p className="abx-trust-pipeline__caption">Verification composition</p>
+      {variant === "default" ? (
+        <p className="abx-trust-pipeline__caption">Verification composition</p>
+      ) : null}
       <div className="abx-trust-pipeline__diagram">
         <svg className="abx-trust-pipeline__lines" viewBox="0 0 920 48" preserveAspectRatio="none" aria-hidden="true">
           <defs>
@@ -82,7 +89,7 @@ export function HomeTrustPipelineStrip() {
           />
         </svg>
         <ol className="abx-trust-pipeline__nodes" role="tablist" aria-label="Verification stages">
-          {DEFI_TRUST_PIPELINE.map((step, index) => {
+          {stageLabels.map((step, index) => {
             const selected = step.id === activeId;
             return (
               <li key={step.id} className="abx-trust-pipeline__node" role="presentation">

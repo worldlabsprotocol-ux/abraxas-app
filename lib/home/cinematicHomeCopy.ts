@@ -64,17 +64,16 @@ export const FOOTER_THESIS_LINE_2 = CINEMATIC_THESIS_LINE_2;
 /** Build #545 public homepage hero and scroll chapters */
 export const CINEMATIC_HOME_HEADLINE = "Prove what matters. Keep what's yours.";
 
-export const CINEMATIC_HOME_LEAD =
-  "Verify once with an authorized issuer. Carry portable credentials in Passport. Partners verify signed decisions independently, without Abraxas identity databases at authorization time.";
+export const CINEMATIC_HOME_LEAD = "Verify privately. Build with independently verifiable trust.";
 
-export const CINEMATIC_HOME_CTA_PRIMARY = "Open Passport";
-export const CINEMATIC_HOME_CTA_PRIMARY_HREF = "/passport";
+export const CINEMATIC_HOME_CTA_PRIMARY = "Start sandbox";
+export const CINEMATIC_HOME_CTA_PRIMARY_HREF = "#start-sandbox";
 
-export const CINEMATIC_HOME_CTA_SECONDARY = "Partner integration";
-export const CINEMATIC_HOME_CTA_SECONDARY_HREF =
-  "/developers/integration-studio?outcome=reuse_across_app&source=homepage";
+export const CINEMATIC_HOME_CTA_SECONDARY = "See how it works";
+export const CINEMATIC_HOME_CTA_SECONDARY_HREF = "#how-abraxas-works";
 
-export const CINEMATIC_HOME_CTA_TERTIARY = "How it works";
+/** @deprecated Hero uses primary/secondary only — kept for deep links and copy tests */
+export const CINEMATIC_HOME_CTA_TERTIARY = "See how it works";
 export const CINEMATIC_HOME_CTA_TERTIARY_HREF = "#how-abraxas-works";
 
 export const CINEMATIC_HOME_CTA_SANDBOX = "Start sandbox";
