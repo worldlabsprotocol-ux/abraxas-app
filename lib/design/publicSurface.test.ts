@@ -8,7 +8,7 @@ import { PUBLIC_NAV_LINKS } from "./publicSurface";
 const ROOT = resolve(__dirname, "../..");
 
 describe("public surface tokens", () => {
-  it("exposes every public product surface in primary navigation", () => {
+  it("exposes every public product surface for secondary navigation", () => {
     expect(PUBLIC_NAV_LINKS.map((link) => link.label)).toEqual([
       "Home",
       "Passport",
@@ -19,9 +19,12 @@ describe("public surface tokens", () => {
     expect(hrefs).not.toContain("/judge-demo");
   });
 
-  it("uses shared nav links in RedesignNav", () => {
+  it("uses consolidated primary header controls in RedesignNav", () => {
     const nav = readFileSync(resolve(ROOT, "components/redesign/RedesignNav.tsx"), "utf8");
-    expect(nav).toContain("PUBLIC_NAV_LINKS");
-    expect(nav).not.toContain("NAV_PARTNER_VERIFY_LABEL");
+    expect(nav).toContain("PublicNavConnectButton");
+    expect(nav).toContain("PublicNavLaunchAppLink");
+    expect(nav).toContain("LanguageSelector");
+    expect(nav).not.toContain("NavSignInButton");
+    expect(nav).not.toContain("rd-nav-links");
   });
 });

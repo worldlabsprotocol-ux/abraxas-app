@@ -1,10 +1,10 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Premium public homepage — editorial spine, signature interactions, verifiable trust depth.
+// One continuous homepage — hero · sandbox entry · trust diagrams · demo · build.
 
 import dynamic from "next/dynamic";
 import { InstitutionalHomeClose } from "@/components/institutional/InstitutionalHomeClose";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { HomeFlagshipProtocolVisuals } from "@/components/home/HomeFlagshipProtocolVisuals";
 import { HomeProtocolPillarsSection } from "@/components/home/HomeProtocolPillarsSection";
 import { HomeApplicationsReceiveSection } from "@/components/home/HomeApplicationsReceiveSection";
@@ -31,7 +31,7 @@ const CapabilityMatrix = dynamic(
   { ssr: false, loading: () => <div className="abx-lazy-home-section" style={{ minHeight: "10rem" }} aria-hidden /> },
 );
 
-const SHELL: React.CSSProperties = {
+const SHELL: CSSProperties = {
   maxWidth: 1320,
   margin: "0 auto",
   padding: `0 ${ABX_SPACING.pagePadding}`,
@@ -45,12 +45,17 @@ function HomeContent({ hero }: { hero: ReactNode }) {
       {hero}
 
       <div className="abx-premium-home__spine abx-premium-home__spine--shell" style={SHELL}>
+        <LazyHomeSection minHeight="16rem" eager>
+          <HomeNativeSandboxChapter />
+        </LazyHomeSection>
+
         <HomeSignedInModule />
-        <PremiumHomeChapter index="01" label="Capabilities" id="chapter-capabilities">
+
+        <PremiumHomeChapter index="01" label="Trust" id="chapter-trust-diagrams">
           <HomeProtocolPillarsSection />
         </PremiumHomeChapter>
 
-        <PremiumHomeChapter index="02" label="System" id="chapter-problem">
+        <PremiumHomeChapter index="02" label="Flow" id="chapter-problem">
           <HomeFlagshipProtocolVisuals />
         </PremiumHomeChapter>
 
@@ -79,18 +84,15 @@ function HomeContent({ hero }: { hero: ReactNode }) {
         </PremiumHomeChapter>
 
         <PremiumHomeChapter index="07" label="Build" id="chapter-build">
-          <LazyHomeSection minHeight="16rem" eager>
-            <HomeNativeSandboxChapter />
-          </LazyHomeSection>
           <section className="abx-cinematic-build-chapter" aria-labelledby="home-build-heading">
             <p className="abx-v2-eyebrow">{CINEMATIC_BUILD_CHAPTER_EYEBROW}</p>
             <h2 id="home-build-heading" className="abx-v2-section-title">
               Build
             </h2>
             <p className="abx-v2-section-lead abx-v2-section-lead--tight">
-              Integration Studio and Launchpad: sandbox first, production via operator review.
+              Integration Studio and Launchpad — connect applications, issue policies, and graduate to production through operator review.
             </p>
-            <LazyHomeSection minHeight="12rem">
+            <LazyHomeSection minHeight="12rem" eager>
               <CapabilityMatrix />
             </LazyHomeSection>
           </section>

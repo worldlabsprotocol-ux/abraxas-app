@@ -6,7 +6,6 @@ import Link from "next/link";
 import { WelcomeStartSandboxFlow } from "@/components/account/WelcomeStartSandboxFlow";
 import { AbraxasHeroCenterpiece } from "@/components/home/defi/AbraxasHeroCenterpiece";
 import { HomeTrustPipelineStrip } from "@/components/home/defi/HomeTrustPipelineStrip";
-import { CINEMATIC_HOW_STAGES } from "@/lib/home/cinematicHomeCopy";
 
 export function HomeNativeSandboxChapter() {
   return (
@@ -21,8 +20,7 @@ export function HomeNativeSandboxChapter() {
           Start your sandbox when you are ready
         </h2>
         <p className="abx-v2-section-lead abx-v2-section-lead--tight">
-          Explore Abraxas first — then create a passkey account and provision an authorized tenant sandbox.
-          No Google sign-in or identity verification required to begin.
+          Create a passkey account when you need an authorized tenant sandbox — explore first, sign in only when required.
         </p>
       </div>
 
@@ -32,20 +30,9 @@ export function HomeNativeSandboxChapter() {
             <AbraxasHeroCenterpiece />
           </div>
           <HomeTrustPipelineStrip />
-          <ul className="abx-native-sandbox-chapter__stages">
-            {CINEMATIC_HOW_STAGES.map((stage) => (
-              <li key={stage.id}>
-                <strong>{stage.title}</strong>
-                <span>{stage.body}</span>
-              </li>
-            ))}
-          </ul>
         </div>
 
         <div className="abx-native-sandbox-chapter__panel">
-          <p className="abx-native-sandbox-chapter__panel-lead">
-            Public product exploration stays available without an account.
-          </p>
           <Link className="abx-premium-hero__cta abx-premium-hero__cta--secondary abx-native-sandbox-chapter__explore" href="/try">
             Explore verification demo
           </Link>
