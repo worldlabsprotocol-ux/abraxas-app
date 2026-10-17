@@ -27,10 +27,10 @@ describe("homepage baseline (institutional invariants)", () => {
     expect(page).toContain("PremiumHomeHero");
     const shell = read("components/redesign/RedesignHome.tsx");
     expect(shell).toContain("hero");
-    expect(shell).toContain("HomeVerificationLifecycle");
+    expect(shell).toContain("HomeHowAbraxasWorksSection");
     expect(shell).toContain("HomeGoodTroubleActionSection");
     expect(shell).toContain("HomeVerifiableTrustChapter");
-    expect(shell).toContain("CapabilityMatrix");
+    expect(shell).toContain("HomeBuildEntrySection");
     expect(shell).toContain("HomeNativeSandboxChapter");
     expect(shell).not.toContain("KineticMarquee");
     const hero = read("components/home/premium/PremiumHomeHero.tsx");

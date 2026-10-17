@@ -16,16 +16,17 @@ describe("homepage journey sequence", () => {
     const body = shell.slice(shell.indexOf("function HomeContent"));
     const heroIdx = body.indexOf("{hero}");
     const sandboxIdx = body.indexOf("<HomeNativeSandboxChapter");
-    const pillarsIdx = body.indexOf("HomeProtocolPillarsSection");
+    const howIdx = body.indexOf("HomeHowAbraxasWorksSection");
     expect(heroIdx).toBeGreaterThan(-1);
     expect(sandboxIdx).toBeGreaterThan(heroIdx);
-    expect(pillarsIdx).toBeGreaterThan(sandboxIdx);
+    expect(howIdx).toBeGreaterThan(sandboxIdx);
     expect(body.indexOf("<HomeNativeSandboxChapter", sandboxIdx + 1)).toBe(-1);
   });
 
   it("keeps trust diagrams before build capabilities", () => {
     const shell = read("components/redesign/RedesignHome.tsx");
-    expect(shell.indexOf("HomeVerificationLifecycle")).toBeLessThan(shell.indexOf("CapabilityMatrix"));
-    expect(shell.indexOf("HomeFlagshipProtocolVisuals")).toBeLessThan(shell.indexOf("CapabilityMatrix"));
+    const body = shell.slice(shell.indexOf("function HomeContent"));
+    expect(body.indexOf("HomeHowAbraxasWorksSection")).toBeLessThan(body.indexOf("HomeGoodTroubleActionSection"));
+    expect(body.indexOf("HomeGoodTroubleActionSection")).toBeLessThan(body.indexOf("HomeBuildEntrySection"));
   });
 });

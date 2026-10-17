@@ -19,20 +19,20 @@ describe("welcome route continuity", () => {
     expect(continuity).toContain("/#start-sandbox");
   });
 
-  it("embeds native sandbox in premium homepage build chapter", () => {
+  it("embeds focused sandbox entry directly after hero", () => {
     const home = read("components/redesign/RedesignHome.tsx");
     expect(home).toContain("HomeNativeSandboxChapter");
     const chapter = read("components/home/HomeNativeSandboxChapter.tsx");
     expect(chapter).toContain('id="start-sandbox"');
-    expect(chapter).toContain("AbraxasHeroCenterpiece");
-    expect(chapter).toContain("WelcomeStartSandboxFlow");
-    expect(chapter).toContain("HomeTrustPipelineStrip");
-    expect(chapter).not.toContain("CINEMATIC_HOW_STAGES");
+    expect(chapter).toContain("HomeSandboxSessionEntry");
+    expect(chapter).not.toContain("AbraxasHeroCenterpiece");
+    expect(chapter).not.toContain("HomeTrustPipelineStrip");
   });
 
   it("hero keeps product-first CTAs and adds sandbox deep link", () => {
     const hero = read("components/home/premium/PremiumHomeHero.tsx");
-    expect(hero).toContain("CINEMATIC_HOME_CTA_SANDBOX_HREF");
+    expect(hero).toContain("CINEMATIC_HOME_CTA_PRIMARY_HREF");
+    expect(hero).toContain("CINEMATIC_HOME_CTA_PRIMARY");
     expect(hero).toContain("PremiumHomeHeroVisualEnhanced");
   });
 });

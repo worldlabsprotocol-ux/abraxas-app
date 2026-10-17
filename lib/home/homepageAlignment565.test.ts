@@ -14,9 +14,9 @@ function read(rel: string): string {
 }
 
 describe("homepage alignment (#550–#565)", () => {
-  it("surfaces four capability pillars on RedesignHome", () => {
+  it("surfaces consolidated trust narrative on RedesignHome", () => {
     const home = read("components/redesign/RedesignHome.tsx");
-    expect(home).toContain("HomeProtocolPillarsSection");
+    expect(home).toContain("HomeHowAbraxasWorksSection");
     expect(HOMEPAGE_FOUR_PILLARS).toHaveLength(4);
     expect(HOMEPAGE_FOUR_PILLARS.map((p) => p.id)).toEqual([
       "passport",
@@ -26,13 +26,13 @@ describe("homepage alignment (#550–#565)", () => {
     ]);
   });
 
-  it("hero routes to Passport and partner integration", () => {
+  it("hero prioritizes sandbox entry and how-it-works anchor", () => {
     const hero = read("components/home/premium/PremiumHomeHero.tsx");
     expect(hero).toContain("CINEMATIC_HOME_CTA_PRIMARY_HREF");
     const copy = read("lib/home/cinematicHomeCopy.ts");
-    expect(copy).toContain('CINEMATIC_HOME_CTA_PRIMARY = "Open Passport"');
-    expect(copy).toContain('CINEMATIC_HOME_CTA_PRIMARY_HREF = "/passport"');
-    expect(copy).toContain("integration-studio");
+    expect(copy).toContain('CINEMATIC_HOME_CTA_PRIMARY = "Start sandbox"');
+    expect(copy).toContain('CINEMATIC_HOME_CTA_PRIMARY_HREF = "#start-sandbox"');
+    expect(copy).toContain("#how-abraxas-works");
     expect(copy).not.toMatch(/full decentral/i);
     expect(copy).not.toMatch(/universal institutional acceptance/i);
   });

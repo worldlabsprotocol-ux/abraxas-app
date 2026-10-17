@@ -4,16 +4,10 @@ import {
   CINEMATIC_HOME_CTA_PRIMARY_HREF,
   CINEMATIC_HOME_CTA_SECONDARY,
   CINEMATIC_HOME_CTA_SECONDARY_HREF,
-  CINEMATIC_HOME_CTA_SANDBOX,
-  CINEMATIC_HOME_CTA_SANDBOX_HREF,
-  CINEMATIC_HOME_CTA_TERTIARY,
-  CINEMATIC_HOME_CTA_TERTIARY_HREF,
   CINEMATIC_HOME_HEADLINE,
   CINEMATIC_HOME_LEAD,
 } from "@/lib/home/cinematicHomeCopy";
-import { HOMEPAGE_ALIGNMENT_EYEBROW } from "@/lib/home/homepageAlignment565Copy";
 import { PremiumHomeHeroVisualEnhanced } from "@/components/home/premium/PremiumHomeHeroVisualEnhanced";
-import { HomeTrustPipelineStrip } from "@/components/home/defi/HomeTrustPipelineStrip";
 
 const HEADLINE_LINES = ["Prove what matters.", "Keep what's yours."];
 
@@ -26,22 +20,19 @@ export function PremiumHomeHero() {
       <div className="abx-premium-hero__grid" aria-hidden="true" />
       <div className="abx-premium-hero__layout abx-premium-hero__layout--composed">
         <div className="abx-premium-hero__copy">
-          <p className="abx-v2-eyebrow abx-premium-hero__eyebrow abx-premium-hero__reveal abx-premium-hero__reveal--1">
-            {HOMEPAGE_ALIGNMENT_EYEBROW}
-          </p>
           <h1 className="abx-premium-hero__title">
             {HEADLINE_LINES.map((text, i) => (
               <span key={text} className="abx-premium-hero__title-line">
                 <span
-                  className={`abx-premium-hero__title-inner abx-premium-hero__reveal abx-premium-hero__reveal--${i + 2}`}
+                  className={`abx-premium-hero__title-inner abx-premium-hero__reveal abx-premium-hero__reveal--${i + 1}`}
                 >
                   {text}
                 </span>
               </span>
             ))}
           </h1>
-          <p className="abx-premium-hero__lead abx-premium-hero__reveal abx-premium-hero__reveal--4">{CINEMATIC_HOME_LEAD}</p>
-          <div className="abx-premium-hero__actions abx-premium-hero__actions--triple abx-premium-hero__reveal abx-premium-hero__reveal--5">
+          <p className="abx-premium-hero__lead abx-premium-hero__reveal abx-premium-hero__reveal--3">{CINEMATIC_HOME_LEAD}</p>
+          <div className="abx-premium-hero__actions abx-premium-hero__reveal abx-premium-hero__reveal--4">
             <Link className="abx-premium-hero__cta abx-premium-hero__cta--primary" href={CINEMATIC_HOME_CTA_PRIMARY_HREF}>
               {CINEMATIC_HOME_CTA_PRIMARY}
             </Link>
@@ -51,27 +42,12 @@ export function PremiumHomeHero() {
             >
               {CINEMATIC_HOME_CTA_SECONDARY}
             </Link>
-            <Link
-              className="abx-premium-hero__cta abx-premium-hero__cta--secondary"
-              href={CINEMATIC_HOME_CTA_TERTIARY_HREF}
-            >
-              {CINEMATIC_HOME_CTA_TERTIARY}
-            </Link>
-            <Link
-              className="abx-premium-hero__cta abx-premium-hero__cta--secondary abx-premium-hero__cta--sandbox"
-              href={CINEMATIC_HOME_CTA_SANDBOX_HREF}
-            >
-              {CINEMATIC_HOME_CTA_SANDBOX}
-            </Link>
           </div>
           <p className="abx-premium-hero__sr-only">{CINEMATIC_HOME_HEADLINE}</p>
         </div>
-        <div className="abx-premium-hero__visual-wrap abx-premium-hero__reveal abx-premium-hero__reveal--3">
+        <div className="abx-premium-hero__visual-wrap abx-premium-hero__reveal abx-premium-hero__reveal--2">
           <PremiumHomeHeroVisualEnhanced />
         </div>
-      </div>
-      <div className="abx-premium-hero__pipeline">
-        <HomeTrustPipelineStrip />
       </div>
       <div className="abx-premium-hero__baseline" aria-hidden="true" />
     </header>

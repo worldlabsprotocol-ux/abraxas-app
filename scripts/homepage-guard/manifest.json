@@ -49,7 +49,7 @@
     {
       "id": "home-shell-institutional",
       "file": "components/redesign/RedesignHome.tsx",
-      "mustContain": ["abx-institutional-home", "hero", "HomeVerificationLifecycle", "abx-v2-shell"]
+      "mustContain": ["abx-institutional-home", "hero", "HomeHowAbraxasWorksSection", "abx-v2-shell"]
     },
     {
       "id": "protocol-in-action-media",
@@ -69,7 +69,17 @@
     {
       "id": "command-center-map",
       "file": "components/redesign/RedesignHome.tsx",
-      "mustContain": ["hero", "HomeVerifiableTrustChapter", "HomeGoodTroubleActionSection", "CapabilityMatrix", "InstitutionalHomeClose"]
+      "mustContain": ["hero", "HomeVerifiableTrustChapter", "HomeGoodTroubleActionSection", "HomeBuildEntrySection"]
+    },
+    {
+      "id": "how-abraxas-works-depth",
+      "file": "components/home/HomeHowAbraxasWorksSection.tsx",
+      "mustContain": ["HomeVerificationLifecycle", "HomeTrustPipelineStrip", "how-abraxas-works"]
+    },
+    {
+      "id": "build-capability-matrix",
+      "file": "components/home/HomeBuildEntrySection.tsx",
+      "mustContain": ["CapabilityMatrix", "InstitutionalHomeClose"]
     },
     {
       "id": "good-trouble-production-demo",

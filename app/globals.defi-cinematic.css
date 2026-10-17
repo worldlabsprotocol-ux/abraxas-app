@@ -1091,3 +1091,70 @@
 .abx-premium-hero__cta--sandbox {
   border-style: dashed;
 }
+
+.abx-native-sandbox-chapter--focused .abx-native-sandbox-chapter__intro {
+  margin-bottom: 1rem;
+}
+
+.abx-native-sandbox-chapter__panel--solo {
+  max-width: 36rem;
+}
+
+.abx-sandbox-entry__status {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.abx-sandbox-entry__alt {
+  margin: 0.75rem 0 0;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.abx-sandbox-entry__link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.abx-sandbox-entry__demo-link {
+  display: inline-block;
+  margin-top: 0.85rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-decoration: underline;
+}
+
+.abx-sandbox-entry__error {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  color: var(--status-danger, #c44);
+}
+
+.abx-home-how-works__advanced,
+.abx-build-entry__advanced {
+  margin-top: 1.25rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.abx-home-how-works__advanced summary,
+.abx-build-entry__advanced summary {
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.abx-build-entry__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin: 1rem 0 0.5rem;
+}
