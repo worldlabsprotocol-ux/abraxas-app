@@ -141,6 +141,10 @@ export async function runProductionExternalVerification(input: {
     revocationMechanism: "portable_revocation_snapshot",
     holderJourney: {
       provenance: input.holderJourney.kind,
+      authenticated_holder_completion: input.holderJourney.authenticated_holder_completion,
+      authenticated_completion_authority: input.holderJourney.authenticated_completion_authority,
+      authenticated_completion_detail: input.holderJourney.authenticated_completion_detail,
+      verification_request_id: input.holderJourney.verification_request_id,
       operator_evidence_ref: input.holderJourney.operator_evidence_ref,
       correlation_source: input.holderJourney.correlation_source,
       notice: "",
@@ -224,6 +228,10 @@ export async function runIsolatedFixtureExternalVerification(input: {
     revocationMechanism: "portable_revocation_snapshot",
     holderJourney: {
       provenance: "unconfirmed",
+      authenticated_holder_completion: "unconfirmed",
+      authenticated_completion_authority: null,
+      authenticated_completion_detail: null,
+      verification_request_id: null,
       operator_evidence_ref: null,
       correlation_source: null,
       notice: "",

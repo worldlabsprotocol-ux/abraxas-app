@@ -10,8 +10,14 @@ export type HolderJourneyProvenanceKind =
   | "operator_asserted"
   | "tenant_correlated";
 
+export type AuthenticatedHolderCompletionStatus = "confirmed" | "unconfirmed";
+
 export interface ResolvedHolderJourneyProvenance {
   kind: HolderJourneyProvenanceKind;
+  authenticated_holder_completion: AuthenticatedHolderCompletionStatus;
+  authenticated_completion_authority: "launchpad_integration_export" | null;
+  authenticated_completion_detail: string | null;
+  verification_request_id: string | null;
   operator_evidence_ref: string | null;
   correlation_source: string | null;
   receipt_provenance: ReceiptProvenance;
@@ -76,6 +82,10 @@ export function resolveHolderJourneyProvenance(input: {
     if (strongSource) {
       return {
         kind: "tenant_correlated",
+        authenticated_holder_completion: "unconfirmed",
+        authenticated_completion_authority: null,
+        authenticated_completion_detail: "identifier_correlation_only",
+        verification_request_id: correlation.correlation.verification_request_id,
         operator_evidence_ref: operatorRef,
         correlation_source: correlation.correlation.source,
         receipt_provenance,
@@ -86,6 +96,10 @@ export function resolveHolderJourneyProvenance(input: {
   if (operatorAsserted) {
     return {
       kind: "operator_asserted",
+      authenticated_holder_completion: "unconfirmed",
+      authenticated_completion_authority: null,
+      authenticated_completion_detail: "operator_assertion_only",
+      verification_request_id: null,
       operator_evidence_ref: operatorRef,
       correlation_source: null,
       receipt_provenance,
@@ -94,12 +108,12 @@ export function resolveHolderJourneyProvenance(input: {
 
   return {
     kind: "unconfirmed",
+    authenticated_holder_completion: "unconfirmed",
+    authenticated_completion_authority: null,
+    authenticated_completion_detail: null,
+    verification_request_id: null,
     operator_evidence_ref: operatorRef,
     correlation_source: null,
     receipt_provenance,
   };
-}
-
-export function holderJourneyProvenanceVerified(kind: HolderJourneyProvenanceKind): boolean {
-  return kind === "tenant_correlated";
 }

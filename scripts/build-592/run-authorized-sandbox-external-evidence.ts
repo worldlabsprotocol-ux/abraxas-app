@@ -18,6 +18,11 @@ import {
   loadPortableRevocationIssuerTrustFromEnv,
   loadPortableRevocationSnapshotFromEnv,
 } from "@/lib/partner/build592/portableRevocationLoader";
+import {
+  evaluateAuthenticatedHolderCompletionFromIntegrationExport,
+  fetchLaunchpadIntegrationExport,
+  mergeAuthenticatedHolderCompletion,
+} from "@/lib/partner/build592/authenticatedHolderCompletion";
 import { resolveHolderJourneyProvenance } from "@/lib/partner/build592/holderJourneyProvenance";
 import { resolvePortableRevocationCheckpointDir } from "@/lib/partner/build592/portableRevocationCheckpoint";
 import {
@@ -86,6 +91,28 @@ async function main() {
             receiptId: signedRecord.id,
             receiptLoadedFromFile: true,
           });
+          const applicationId =
+            process.env.BUILD592_APPLICATION_ID?.trim()
+            ?? process.env.BUILD584_APPLICATION_ID?.trim()
+            ?? null;
+          if (applicationId) {
+            const exported = await fetchLaunchpadIntegrationExport({
+              env: process.env,
+              applicationId,
+              verificationRequestId: holderJourney.verification_request_id,
+            });
+            if (exported.ok) {
+              const authenticated = evaluateAuthenticatedHolderCompletionFromIntegrationExport({
+                export: exported.export,
+                expectedPartnerId: partnerId,
+                expectedApplicationId: applicationId,
+                expectedPolicyId: policyId,
+                expectedReceiptId: signedRecord.id,
+                expectedVerificationRequestId: holderJourney.verification_request_id,
+              });
+              holderJourney = mergeAuthenticatedHolderCompletion(holderJourney, authenticated);
+            }
+          }
           const bootstrapTrusts = loadPortableRevocationBootstrapTrustsFromEnv(
             process.env,
             portable.bootstrapTrusts,
@@ -142,6 +169,7 @@ async function main() {
     syntheticSecurityPassed: securityMatrix.ok,
     liveHttpSteps: liveSteps,
     holderJourneyProvenance: holderJourney.kind,
+    authenticatedHolderCompletion: holderJourney.authenticated_holder_completion,
     operatorHolderEvidenceRef: process.env.BUILD592_HOLDER_AUTHORIZATION_EVIDENCE?.trim() ?? null,
     receiptSuppliedViaFile: receiptPathPresent,
     externalVerifierRan,

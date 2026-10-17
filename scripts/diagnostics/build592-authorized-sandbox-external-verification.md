@@ -10,7 +10,7 @@ The JSON report is a **local execution record** (`592.v2`). It does not authenti
 
 1. **Launchpad** — sandbox application with `sandbox_institutional_protocol_access`, callback URL, `abx_test_…` API key.
 2. **Hosted holder** — open hosted verification URL, complete permitted holder consent on `/partner/verify`.
-3. **Holder journey provenance** — self-declared `BUILD592_HOLDER_AUTHORIZATION_*` env vars are operator notes only. For verified provenance, supply `BUILD592_LIVE_RECEIPT_ARTIFACT_PATH` or `BUILD592_CALLBACK_CAPTURE_URL` that tenant-correlates `receipt_id` (see `liveReceiptCorrelation.ts`).
+3. **Holder journey provenance** — `BUILD592_LIVE_RECEIPT_ARTIFACT_PATH` / callback URL tenant-correlates identifiers only. **Authenticated holder completion** requires Launchpad integration export events (`holder_flow_completed`, `receipt_issued`, verification request) bound to the receipt when queried with sandbox API credentials + `BUILD592_APPLICATION_ID`.
 4. **Receipt** — persist `signed_record` JSON (`BUILD592_SIGNED_RECEIPT_PATH`). Cryptographic authorization is separate from verified holder journey provenance.
 5. **External RP host** — pin trust registry + digest v2, durable consumption directory, **durable portable revocation checkpoint directory**, **signed portable revocation snapshot**, and issuer trust.
 6. **Run evidence script** on the RP host (not Abraxas Supabase as trust root):

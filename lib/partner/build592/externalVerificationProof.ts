@@ -57,6 +57,10 @@ export interface ExternalVerificationProofRecord {
   };
   holder_journey: {
     provenance: HolderJourneyProvenanceKind;
+    authenticated_holder_completion: "confirmed" | "unconfirmed";
+    authenticated_completion_authority: "launchpad_integration_export" | null;
+    authenticated_completion_detail: string | null;
+    verification_request_id: string | null;
     operator_evidence_ref: string | null;
     correlation_source: string | null;
     notice: string;
@@ -181,15 +185,10 @@ export function buildExternalVerificationProofRecord(input: {
 }
 
 const HOLDER_JOURNEY_NOTICE =
-  "Cryptographic receipt authorization is separate from verified live holder journey provenance. Operator env assertions are not authenticated holder completion.";
+  "tenant_correlated means operator-supplied identifiers match tenant scope — not authenticated holder completion. Cryptographic receipt authorization is reported separately in verification.*.";
 
-export function externalVerificationFullyAuthorized(
-  proof: ExternalVerificationProofRecord,
-): boolean {
-  if (proof.evidence_mode === "isolated_sdk_fixture") {
-    return false;
-  }
-  if (proof.holder_journey.provenance !== "tenant_correlated") {
+function productionCryptographicAuthorizationCore(proof: ExternalVerificationProofRecord): boolean {
+  if (proof.evidence_mode !== "production_portable_revocation") {
     return false;
   }
   if (!proof.revocation.durable_checkpoint_monotonicity) {
@@ -209,6 +208,22 @@ export function externalVerificationFullyAuthorized(
     && proof.verification.durable_consumption_recorded === true
     && allAuthorizationChecksConfirmed(proof.authorization_checks)
   );
+}
+
+/** SDK cryptographic authorization on the relying party host (no live holder journey attestation). */
+export function externalVerificationCryptographicallyAuthorized(
+  proof: ExternalVerificationProofRecord,
+): boolean {
+  return productionCryptographicAuthorizationCore(proof);
+}
+
+export function externalVerificationFullyAuthorized(
+  proof: ExternalVerificationProofRecord,
+): boolean {
+  if (proof.holder_journey.authenticated_holder_completion !== "confirmed") {
+    return false;
+  }
+  return productionCryptographicAuthorizationCore(proof);
 }
 
 export function isolatedFixtureCryptographicSuccess(

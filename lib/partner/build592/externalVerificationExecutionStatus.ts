@@ -1,6 +1,9 @@
 // FILE: lib/partner/build592/externalVerificationExecutionStatus.ts
 
-import type { HolderJourneyProvenanceKind } from "@/lib/partner/build592/holderJourneyProvenance";
+import type {
+  AuthenticatedHolderCompletionStatus,
+  HolderJourneyProvenanceKind,
+} from "@/lib/partner/build592/holderJourneyProvenance";
 
 export type ExecutionStepStatus = "passed" | "blocked" | "failed" | "not_attempted";
 
@@ -38,6 +41,7 @@ export function buildExternalVerificationExecutionReport(input: {
   syntheticSecurityPassed: boolean;
   liveHttpSteps: Array<{ status: string }>;
   holderJourneyProvenance: HolderJourneyProvenanceKind;
+  authenticatedHolderCompletion: AuthenticatedHolderCompletionStatus;
   operatorHolderEvidenceRef: string | null;
   receiptSuppliedViaFile: boolean;
   externalVerifierRan: boolean;
@@ -50,17 +54,15 @@ export function buildExternalVerificationExecutionReport(input: {
   const live_sandbox_http = liveHttpJourneyStatus(input.liveHttpSteps);
 
   const holder_authorization_completed =
-    input.holderJourneyProvenance === "tenant_correlated"
+    input.authenticatedHolderCompletion === "confirmed"
       ? "passed"
       : input.holderJourneyProvenance === "operator_asserted"
+        || input.holderJourneyProvenance === "tenant_correlated"
         ? "blocked"
         : "not_attempted";
 
   let authentic_signed_sandbox_receipt_obtained: ExecutionStepStatus = "not_attempted";
-  if (
-    input.holderJourneyProvenance === "tenant_correlated"
-    && input.receiptSuppliedViaFile
-  ) {
+  if (input.authenticatedHolderCompletion === "confirmed" && input.receiptSuppliedViaFile) {
     authentic_signed_sandbox_receipt_obtained = "passed";
   } else if (input.receiptSuppliedViaFile) {
     authentic_signed_sandbox_receipt_obtained = "blocked";
@@ -103,7 +105,7 @@ export function buildExternalVerificationExecutionReport(input: {
       security_matrix_detail: input.securityDetail,
       live_http_journey_steps: input.liveHttpSteps.length > 0 ? "live_institutional_http_journey" : null,
       holder_authorization_evidence: input.operatorHolderEvidenceRef,
-      receipt_provenance: input.holderJourneyProvenance,
+      receipt_provenance: `${input.holderJourneyProvenance}:${input.authenticatedHolderCompletion}`,
       external_proof_contract: input.externalProofGenerated ? "592.v2" : null,
     },
     diagnostic_command_ok,

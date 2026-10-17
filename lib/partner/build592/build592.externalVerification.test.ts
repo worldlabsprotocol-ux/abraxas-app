@@ -20,6 +20,11 @@ import {
   buildSyntheticPortableRevocationSnapshot,
 } from "@/lib/protocol/portableRevocation";
 import {
+  evaluateAuthenticatedHolderCompletionFromIntegrationExport,
+  mergeAuthenticatedHolderCompletion,
+} from "@/lib/partner/build592/authenticatedHolderCompletion";
+import {
+  externalVerificationCryptographicallyAuthorized,
   externalVerificationFullyAuthorized,
   isolatedFixtureCryptographicSuccess,
 } from "@/lib/partner/build592/externalVerificationProof";
@@ -98,6 +103,10 @@ describe("Build #592 external verification integrity", () => {
   ): ResolvedHolderJourneyProvenance {
     return {
       kind: "unconfirmed",
+      authenticated_holder_completion: "unconfirmed",
+      authenticated_completion_authority: null,
+      authenticated_completion_detail: null,
+      verification_request_id: null,
       operator_evidence_ref: null,
       correlation_source: null,
       receipt_provenance: "operator_supplied_file",
@@ -112,6 +121,7 @@ describe("Build #592 external verification integrity", () => {
       syntheticSecurityPassed: true,
       liveHttpSteps: [{ status: "blocked" }],
       holderJourneyProvenance: "unconfirmed",
+      authenticatedHolderCompletion: "unconfirmed",
       operatorHolderEvidenceRef: null,
       receiptSuppliedViaFile: false,
       externalVerifierRan: false,
@@ -128,6 +138,7 @@ describe("Build #592 external verification integrity", () => {
       syntheticSecurityPassed: true,
       liveHttpSteps: [{ status: "blocked" }],
       holderJourneyProvenance: "unconfirmed",
+      authenticatedHolderCompletion: "unconfirmed",
       operatorHolderEvidenceRef: null,
       receiptSuppliedViaFile: true,
       externalVerifierRan: false,
@@ -144,6 +155,7 @@ describe("Build #592 external verification integrity", () => {
       syntheticSecurityPassed: true,
       liveHttpSteps: [{ status: "pass" }],
       holderJourneyProvenance: "unconfirmed",
+      authenticatedHolderCompletion: "unconfirmed",
       operatorHolderEvidenceRef: null,
       receiptSuppliedViaFile: true,
       externalVerifierRan: true,
@@ -161,6 +173,7 @@ describe("Build #592 external verification integrity", () => {
       syntheticSecurityPassed: true,
       liveHttpSteps: [{ status: "pass" }],
       holderJourneyProvenance: "operator_asserted",
+      authenticatedHolderCompletion: "unconfirmed",
       operatorHolderEvidenceRef: "operator-note-592",
       receiptSuppliedViaFile: true,
       externalVerifierRan: true,
@@ -372,7 +385,7 @@ describe("Build #592 external verification integrity", () => {
     if (!resolved.ok) expect(resolved.code).toBe("pin_required");
   });
 
-  it("tenant-correlated receipt artifact with durable checkpoint satisfies full external authorization", async () => {
+  it("synthetic receipt plus manual correlation artifact cannot pass full live acceptance", async () => {
     const record = build546SampleRecord(undefined, { decision_context: "sandbox" });
     const portable = portableBundleFor(record);
     const artifactPath = join(checkpointDir, "live-artifact.json");
@@ -399,12 +412,13 @@ describe("Build #592 external verification integrity", () => {
       receiptLoadedFromFile: true,
     });
     expect(resolved.kind).toBe("tenant_correlated");
+    expect(resolved.authenticated_holder_completion).toBe("unconfirmed");
 
     const outcome = await runProductionExternalVerification({
       signedRecord: record,
       partnerId: BUILD_546_PARTNER_ID,
       policyId: BUILD_546_POLICY_ID,
-      requestId: "req_592_live_ok",
+      requestId: "req_592_manual_artifact",
       trustEnv: env,
       trustDigestPin: trustDigestPin(),
       consumptionStoreDir: consumptionDir,
@@ -420,8 +434,119 @@ describe("Build #592 external verification integrity", () => {
     });
     expect(outcome.ok).toBe(true);
     if (outcome.ok) {
-      expect(outcome.proof.evidence_mode).toBe("production_portable_revocation");
-      expect(outcome.proof.revocation.durable_checkpoint_monotonicity).toBe(true);
+      expect(externalVerificationCryptographicallyAuthorized(outcome.proof)).toBe(true);
+      expect(externalVerificationFullyAuthorized(outcome.proof)).toBe(false);
+      const execution = buildExternalVerificationExecutionReport({
+        syntheticSecurityPassed: true,
+        liveHttpSteps: [{ status: "pass" }],
+        holderJourneyProvenance: resolved.kind,
+        authenticatedHolderCompletion: resolved.authenticated_holder_completion,
+        operatorHolderEvidenceRef: null,
+        receiptSuppliedViaFile: true,
+        externalVerifierRan: true,
+        externalAuthorizationGranted: false,
+        externalProofGenerated: true,
+        securityDetail: null,
+      });
+      expect(execution.overall_acceptance_completed).not.toBe("passed");
+    }
+  });
+
+  it("launchpad integration export can confirm authenticated holder completion for full acceptance", async () => {
+    const record = build546SampleRecord(undefined, { decision_context: "sandbox" });
+    const portable = portableBundleFor(record);
+    const applicationId = "00000000-0000-4000-8000-000000000592";
+    const requestId = "00000000-0000-4000-8000-000000000593";
+
+    const correlated = resolveHolderJourneyProvenance({
+      env: {},
+      partnerId: BUILD_546_PARTNER_ID,
+      policyId: BUILD_546_POLICY_ID,
+      receiptId: record.id,
+      receiptLoadedFromFile: true,
+    });
+    const authenticated = evaluateAuthenticatedHolderCompletionFromIntegrationExport({
+      export: {
+        partner_id: BUILD_546_PARTNER_ID,
+        application_id: applicationId,
+        events: [
+          {
+            event_id: "ie_req",
+            at: BUILD_546_FIXTURE_NOW.toISOString(),
+            event_type: "verification_request_created",
+            lifecycle_stage: "request",
+            outcome: null,
+            partner_safe_reason: null,
+            request_id: requestId,
+            receipt_id: null,
+            policy_id: BUILD_546_POLICY_ID,
+            policy_version: 1,
+            latency_ms: null,
+            metadata: {},
+          },
+          {
+            event_id: "ie_holder",
+            at: BUILD_546_FIXTURE_NOW.toISOString(),
+            event_type: "holder_flow_completed",
+            lifecycle_stage: "holder",
+            outcome: null,
+            partner_safe_reason: null,
+            request_id: requestId,
+            receipt_id: null,
+            policy_id: BUILD_546_POLICY_ID,
+            policy_version: 1,
+            latency_ms: null,
+            metadata: {},
+          },
+          {
+            event_id: "ie_receipt",
+            at: BUILD_546_FIXTURE_NOW.toISOString(),
+            event_type: "receipt_issued",
+            lifecycle_stage: "receipt",
+            outcome: null,
+            partner_safe_reason: null,
+            request_id: requestId,
+            receipt_id: record.id,
+            policy_id: BUILD_546_POLICY_ID,
+            policy_version: 1,
+            latency_ms: null,
+            metadata: {},
+          },
+        ],
+      },
+      expectedPartnerId: BUILD_546_PARTNER_ID,
+      expectedApplicationId: applicationId,
+      expectedPolicyId: BUILD_546_POLICY_ID,
+      expectedReceiptId: record.id,
+      expectedVerificationRequestId: requestId,
+    });
+    expect(authenticated.status).toBe("confirmed");
+    const holder = mergeAuthenticatedHolderCompletion(
+      { ...correlated, verification_request_id: requestId },
+      authenticated,
+    );
+
+    const outcome = await runProductionExternalVerification({
+      signedRecord: record,
+      partnerId: BUILD_546_PARTNER_ID,
+      policyId: BUILD_546_POLICY_ID,
+      requestId: "req_592_server_bound",
+      trustEnv: env,
+      trustDigestPin: trustDigestPin(),
+      consumptionStoreDir: consumptionDir,
+      checkpointStoreDir: checkpointDir,
+      portableRevocationSnapshot: portable.snapshot,
+      portableRevocationIssuerTrust: portable.issuerTrust,
+      portableRevocationBootstrapTrusts: portable.bootstrapTrusts,
+      executionEnvironment: "ci",
+      receiptProvenance: "operator_supplied_file",
+      holderJourney: holder,
+      sandbox: { ...sandboxMeta(), application_id: applicationId },
+      now: BUILD_546_FIXTURE_NOW,
+    });
+    expect(outcome.ok).toBe(true);
+    if (outcome.ok) {
+      expect(externalVerificationCryptographicallyAuthorized(outcome.proof)).toBe(true);
       expect(externalVerificationFullyAuthorized(outcome.proof)).toBe(true);
     }
   });
