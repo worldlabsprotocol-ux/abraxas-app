@@ -12,6 +12,13 @@ import type {
 
 const FONT = ABRAXAS_FONT_SANS;
 
+function statusLabel(status: InstitutionalTaskStep["status"]): string {
+  if (status === "complete") return "Done";
+  if (status === "current") return "Now";
+  if (status === "blocked") return "Blocked";
+  return "Next";
+}
+
 function statusColor(status: InstitutionalTaskStep["status"]): string {
   if (status === "complete") return "#10B981";
   if (status === "blocked") return "#F87171";
@@ -28,18 +35,6 @@ export function InstitutionalTaskOnboardingPanel(input: {
 
   return (
     <ContentCard title={onboarding.connect_your_application_heading}>
-      <p
-        style={{
-          fontFamily: FONT,
-          fontSize: "0.78rem",
-          color: "var(--text-secondary)",
-          margin: "0 0 0.85rem",
-          lineHeight: 1.55,
-        }}
-      >
-        Guided path for institutional protocol verification and signed decision receipts. Advanced controls remain available without leaving this sequence.
-      </p>
-
       {current && !compact && (
         <div
           style={{
@@ -51,7 +46,7 @@ export function InstitutionalTaskOnboardingPanel(input: {
           }}
         >
           <p style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 800, color: "var(--text-muted)", margin: 0 }}>
-            Next action · Step {current.order}
+            Now · Step {current.order}
           </p>
           <p style={{ fontFamily: FONT, fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)", margin: "0.35rem 0" }}>
             {current.title}
@@ -80,7 +75,7 @@ export function InstitutionalTaskOnboardingPanel(input: {
           display: "grid",
           gap: compact ? "0.45rem" : "0.55rem",
         }}
-        aria-label="Institutional integration steps"
+        aria-label="Integration steps"
       >
         {onboarding.steps.map((step) => {
           const active = step.id === onboarding.current_step_id;
@@ -99,15 +94,12 @@ export function InstitutionalTaskOnboardingPanel(input: {
               }}
               aria-current={active ? "step" : undefined}
             >
-              <span style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 800, color: statusColor(step.status), minWidth: 88 }}>
-                {step.status.replace("_", " ")}
+              <span style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 800, color: statusColor(step.status), minWidth: 56 }}>
+                {statusLabel(step.status)}
               </span>
               <div>
-                <div style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: 700 }}>
-                  Step {step.order}
-                </div>
                 <div style={{ fontFamily: FONT, fontSize: "0.84rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                  {step.title}
+                  {step.order}. {step.title}
                 </div>
                 {!compact && (
                   <p style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)", margin: "0.25rem 0 0", lineHeight: 1.5 }}>
@@ -127,7 +119,7 @@ export function InstitutionalTaskOnboardingPanel(input: {
                     alignSelf: compact ? "flex-start" : "center",
                   }}
                 >
-                  {step.action_label} →
+                  {step.action_label}
                 </Link>
               )}
             </li>

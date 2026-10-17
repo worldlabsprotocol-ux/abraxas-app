@@ -12,6 +12,6 @@ describe("institutionalDeveloperJourney", () => {
     expect(INSTITUTIONAL_DEVELOPER_JOURNEY_STEPS).toHaveLength(6);
     expect(INSTITUTIONAL_DEVELOPER_JOURNEY_STEPS.map((s) => s.order)).toEqual([1, 2, 3, 4, 5, 6]);
     expect(INSTITUTIONAL_DEVELOPER_JOURNEY_STEPS[1]?.id).toBe("choose_verification");
-    expect(INSTITUTIONAL_DEVELOPER_JOURNEY_STEPS[1]?.title).toMatch(/Choose what to verify/i);
+    expect(INSTITUTIONAL_DEVELOPER_JOURNEY_STEPS[1]?.title).toMatch(/Choose verification/i);
   });
 });

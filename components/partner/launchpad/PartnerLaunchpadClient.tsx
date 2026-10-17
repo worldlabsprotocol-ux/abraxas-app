@@ -750,25 +750,26 @@ export function PartnerLaunchpadClient({
       )}
 
       {step === "verify" && (
-        <ContentCard title={institutionalFocus ? "Step 2 · Choose what to verify" : "What do you need to verify?"}>
+        <ContentCard title={institutionalFocus ? "Choose verification" : "What do you need to verify?"}>
           {institutionalFocus ? (
             <InstitutionalVerificationRequirementsPanel
+              embedded
               selectedPolicyTemplateId={policyTemplateId}
               launchpadHref={`/developers/launchpad?template=sandbox_institutional_protocol_access&step=verify${activeApp ? `&application=${encodeURIComponent(activeApp.id)}` : ""}`}
               showAdvancedLink={false}
             />
           ) : null}
-          <p style={{ ...bodyText, marginTop: institutionalFocus ? "0.85rem" : 0 }}>
-            {institutionalFocus
-              ? "Confirm the institutional protocol access pack below to provision or update your sandbox application. Commerce and age-gated packs remain in the catalog for separate Partner Flow integrations."
-              : "What can Abraxas verify for your application? Each pack answers one business question with minimum disclosure. The partner receives a signed eligibility result, not a profile, ID image, or contact list."}
-          </p>
-          <p style={{ ...bodyText, color: "#f59e0b" }}>{googleDisclaimer}</p>
-          {institutionalFocus && (
-            <p style={{ ...bodyText, fontWeight: 700, color: "var(--text-primary)" }}>
-              Recommended for institutional signed decision receipts
+          {!institutionalFocus && (
+            <p style={bodyText}>
+              Each pack answers one eligibility question with minimum disclosure. You receive a signed result, not holder profile data.
             </p>
           )}
+          {institutionalFocus && (
+            <p style={{ ...bodyText, marginTop: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>
+              Confirm the protocol access pack below.
+            </p>
+          )}
+          <p style={{ ...bodyText, color: "#f59e0b" }}>{googleDisclaimer}</p>
           <div style={{ display: "grid", gap: "0.65rem" }}>
             {policiesForVerifyStep.map((policy) => (
               <EligibilityPolicyCard
@@ -1054,17 +1055,15 @@ export function PartnerLaunchpadClient({
             journey={journey}
             onNavigate={(stage) => navigateToStage(stage)}
           />
-          <ContentCard title="Connect your application">
-            <p style={bodyText}>
-              Continue in the integration workspace for receipt inspection, SDK delivery, and pinned issuer trust configuration.
-            </p>
+          <ContentCard title="Integration workspace">
+            <p style={bodyText}>View receipts, SDK delivery, and trust pins.</p>
             <Btn
               href={`/developers/institutional-integration?application=${encodeURIComponent(activeApp.id)}`}
               size="sm"
               variant="secondary"
               style={{ marginTop: "0.65rem" }}
             >
-              Open integration workspace
+              Open workspace
             </Btn>
           </ContentCard>
         </>

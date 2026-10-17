@@ -52,5 +52,6 @@ describe("institutionalTaskOnboarding", () => {
     });
     expect(view.steps.find((s) => s.id === "choose_verification")?.status).toBe("complete");
     expect(view.current_step_id).toBe("configure_policy");
+    expect(view.connect_your_application_heading).toBe("Connect application");
   });
 });

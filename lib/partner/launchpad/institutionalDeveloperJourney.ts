@@ -22,60 +22,57 @@ export interface InstitutionalDeveloperJourneyStep {
   action_label: string;
 }
 
-/** Institutional protocol verification — not age-gated Partner Flow commerce. */
 export const INSTITUTIONAL_JOURNEY_SCOPE_NOTICE =
-  "This sequence is for institutional protocol access and signed decision receipts. Age-gated commerce Partner Flow remains a separate integration path." as const;
+  "Institutional protocol access and signed receipts. Commerce Partner Flow is a separate path." as const;
 
 export const INSTITUTIONAL_DEVELOPER_JOURNEY_STEPS: InstitutionalDeveloperJourneyStep[] = [
   {
     id: "create_application",
     order: 1,
-    title: "Create your application",
-    detail: "Provision or select a Launchpad sandbox application for your authorized partner tenant.",
+    title: "Create application",
+    detail: "Create or select your sandbox application in Launchpad.",
     href: INSTITUTIONAL_SANDBOX_LAUNCHPAD_HREF,
-    action_label: "Partner Launchpad",
+    action_label: "Launchpad",
   },
   {
     id: "choose_verification",
     order: 2,
-    title: "Choose what to verify",
-    detail:
-      "Select organization protocol access for institutional receipts, or use advanced eligibility policies only when authorized for your tenant.",
+    title: "Choose verification",
+    detail: "Select organization protocol access for this integration.",
     href: `${INSTITUTIONAL_SANDBOX_LAUNCHPAD_HREF}&step=verify`,
-    action_label: "Verification requirements",
+    action_label: "Verify",
   },
   {
     id: "configure_policy",
     order: 3,
-    title: "Connect your application",
-    detail: "Allowlist callbacks, issue sandbox credentials, and confirm policy binding for this application.",
+    title: "Connect application",
+    detail: "Add callbacks and sandbox credentials.",
     href: `${INSTITUTIONAL_SANDBOX_LAUNCHPAD_HREF}&step=connect`,
-    action_label: "Connection settings",
+    action_label: "Connect",
   },
   {
     id: "test_verification",
     order: 4,
-    title: "Test verification",
-    detail: "Run sandbox tests and complete hosted holder verification to obtain an authorized signed receipt.",
+    title: "Test sandbox",
+    detail: "Run tests and complete holder verification.",
     href: `${INSTITUTIONAL_SANDBOX_LAUNCHPAD_HREF}&step=test`,
-    action_label: "Sandbox testing",
+    action_label: "Test",
   },
   {
     id: "view_receipt",
     order: 5,
-    title: "View decision receipt",
-    detail: "Inspect signed receipt evidence, integration export events, and SDK inspection guidance.",
+    title: "View receipt",
+    detail: "Review the signed receipt and integration activity.",
     href: INSTITUTIONAL_INTEGRATION_WORKSPACE_HREF,
-    action_label: "Integration workspace",
+    action_label: "Workspace",
   },
   {
     id: "production_activation",
     order: 6,
-    title: "Request Production activation",
-    detail:
-      "Review verification evidence and request Production authorization — explicit operator approval required.",
+    title: "Request Production",
+    detail: "Submit sandbox evidence for Production authorization.",
     href: INSTITUTIONAL_SANDBOX_HANDOFF_HREF,
-    action_label: "Production handoff",
+    action_label: "Production",
   },
 ];
 

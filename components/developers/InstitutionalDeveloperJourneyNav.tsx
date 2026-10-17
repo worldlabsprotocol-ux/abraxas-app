@@ -17,7 +17,7 @@ export function InstitutionalDeveloperJourneyNav(input: {
   currentStepId?: string;
   compact?: boolean;
 }) {
-  const { title = "Institutional developer journey", currentStepId, compact = false } = input;
+  const { title = "Quick links", currentStepId, compact = false } = input;
 
   return (
     <ContentCard title={title}>

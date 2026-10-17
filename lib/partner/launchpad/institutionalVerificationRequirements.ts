@@ -23,6 +23,7 @@ export interface InstitutionalVerificationRequirement {
   policy_template_id: string | null;
   availability: InstitutionalVerificationRequirementAvailability;
   unavailable_reason: string | null;
+  /** Full sandbox boundary text — show under developer details only. */
   sandbox_notice: string | null;
 }
 
@@ -35,9 +36,8 @@ export function listInstitutionalVerificationRequirements(input: {
   return [
     {
       id: "organization_protocol_access_sandbox",
-      title: "Organization protocol access (sandbox)",
-      purpose:
-        "Verify that a holder meets your institutional protocol access policy and receive a signed decision receipt for offline verification.",
+      title: "Protocol access (sandbox)",
+      purpose: "Confirm protocol access and receive a signed decision receipt.",
       policy_template_id: INSTITUTIONAL_SANDBOX_POLICY_TEMPLATE_ID,
       availability: institutionalSelected ? "selected" : "selectable",
       unavailable_reason: null,
@@ -46,34 +46,28 @@ export function listInstitutionalVerificationRequirements(input: {
     {
       id: "identity_verification",
       title: "Identity verification",
-      purpose:
-        "Holder identity assurance for regulated flows — configured as an additional eligibility policy on the same application when your tenant is authorized.",
+      purpose: "Add as a separate eligibility policy when your tenant is authorized.",
       policy_template_id: null,
       availability: "advanced_only",
-      unavailable_reason:
-        "Not part of the default institutional protocol access pack. Add through Launchpad eligibility policies after your sandbox application exists.",
+      unavailable_reason: "Add in Launchpad eligibility policies after this app exists.",
       sandbox_notice: null,
     },
     {
       id: "age_eligibility",
       title: "Age eligibility",
-      purpose:
-        "Age-gated commerce and retail eligibility — uses Partner Flow packs separate from institutional protocol verification.",
+      purpose: "Commerce age gates use Partner Flow, not this institutional path.",
       policy_template_id: null,
       availability: "unavailable",
-      unavailable_reason:
-        "Age-gated Partner Flow is a separate integration path. Use Partner Launchpad catalog packs or Integration Studio for commerce eligibility.",
+      unavailable_reason: "Use Partner Flow catalog packs for age-gated commerce.",
       sandbox_notice: null,
     },
     {
       id: "custom_policy_configuration",
-      title: "Custom policy configuration",
-      purpose:
-        "Constrained custom eligibility policies for sandbox experimentation when approved catalog packs do not fit.",
+      title: "Custom policy",
+      purpose: "Sandbox-only custom eligibility when catalog packs do not fit.",
       policy_template_id: "custom_launchpad_policy",
       availability: "advanced_only",
-      unavailable_reason:
-        "Custom policies remain sandbox-only and require explicit configuration in Launchpad advanced options.",
+      unavailable_reason: "Configure in Launchpad advanced options.",
       sandbox_notice: null,
     },
   ];
