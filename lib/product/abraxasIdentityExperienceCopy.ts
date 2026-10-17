@@ -22,3 +22,18 @@ export const ABRAXAS_PASSPORT_WALLET_INTRO =
 
 export const ABRAXAS_SIGN_IN_NOT_CONFIGURED =
   "Sign-in is not configured in this environment. Contact your operator or try again later." as const;
+
+/** Primary session recovery — Abraxas product voice. */
+export const ABRAXAS_CONTINUE_HEADLINE = "Continue to Abraxas" as const;
+
+export const ABRAXAS_SESSION_EXPIRED_BODY =
+  "Your session has expired. Sign in to continue." as const;
+
+export const ABRAXAS_CONTINUE_SECURELY_LABEL = "Continue securely" as const;
+
+/** Shown at the actual OAuth redirect step — accurate provider disclosure. */
+export const ABRAXAS_OAUTH_PROVIDER_FOOTNOTE =
+  "Secure sign-in uses Google account selection to open your Abraxas wallet. Google does not receive your verification credentials." as const;
+
+export const PASSPORT_PRODUCT_TAGLINE =
+  "Your identity and private verification credentials." as const;

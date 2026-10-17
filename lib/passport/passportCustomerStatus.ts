@@ -4,9 +4,11 @@
 import type { PassportSetupState } from "@/lib/idv/identityVerificationStates";
 import type { IdentityStampStatus } from "@/lib/hooks/usePassportVerification";
 import { resolveIdentityUiState, type IdentityUiState } from "@/lib/passport/identityUiState";
+import type { PassportBrowserSessionState } from "@/lib/passport/passportBrowserSessionAuth";
 
 export type PassportCustomerStatusLabel =
-  | "Needs attention"
+  | "Sign in to continue"
+  | "Secure your account"
   | "Ready to reuse"
   | "Verification required";
 
@@ -23,6 +25,7 @@ export function resolvePassportCustomerStatus(input: {
   hasCredential: boolean;
   idvProvider: "veriff" | "manual";
   via: string | null;
+  browserSessionState?: PassportBrowserSessionState;
 }): PassportCustomerStatus {
   const identityUi = resolveIdentityUiState({
     identityStatus: input.identityStatus,
@@ -31,10 +34,30 @@ export function resolvePassportCustomerStatus(input: {
     via: input.via,
   });
 
-  if (!input.walletDone || !input.setup.walletBound) {
+  if (
+    input.walletDone
+    && (input.browserSessionState === "reauthentication_required"
+      || input.browserSessionState === "session_probe_failed")
+  ) {
     return {
-      label: "Needs attention",
-      summary: "Sign in and secure your Passport before sharing private proof with partners.",
+      label: "Sign in to continue",
+      summary: "Your Abraxas account is remembered here. Renew your secure session to manage Passport.",
+      identityUi,
+    };
+  }
+
+  if (!input.walletDone) {
+    return {
+      label: "Secure your account",
+      summary: "Sign in to open Passport and connect your account.",
+      identityUi,
+    };
+  }
+
+  if (!input.setup.walletBound) {
+    return {
+      label: "Secure your account",
+      summary: "Confirm account security before sharing private proof with partners.",
       identityUi,
     };
   }
@@ -61,12 +84,19 @@ export function resolvePassportCustomerStatus(input: {
 export function buildPassportProofSummary(input: {
   walletBound: boolean;
   identityUi: IdentityUiState;
+  browserSessionReady?: boolean;
 }): string[] {
-  const items = [
-    input.walletBound
-      ? "Your account is securely connected"
-      : "Secure account connection needed",
-  ];
+  const items: string[] = [];
+
+  if (input.browserSessionReady === false) {
+    items.push("Secure session renewal required");
+  } else {
+    items.push(
+      input.walletBound
+        ? "Your account is securely connected"
+        : "Secure account connection needed",
+    );
+  }
 
   if (input.identityUi === "verified") {
     items.push("Ready for eligible partner requests");

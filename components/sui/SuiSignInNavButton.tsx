@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useSuiAuthOptional } from "./SuiAuthProvider";
 import { profileInitial, profileNavLabel, useUserProfile } from "@/lib/hooks/useUserProfile";
 import { useGoogleSignIn } from "@/lib/hooks/useGoogleSignIn";
+import { ZKLOGIN_SIGN_IN_COPY } from "@/lib/sui/zklogin/signInCopy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const ACCENT = "#10B981";
@@ -99,8 +100,7 @@ export function SuiSignInNavButton({ prominent = false }: { prominent?: boolean 
             whiteSpace: "nowrap",
           }}
         >
-          <span style={{ fontWeight: 800, fontSize: "0.9rem" }}>G</span>
-          {busy ? "Redirecting…" : prominent ? "Continue with Google" : "Sign in with Google"}
+          {busy ? ZKLOGIN_SIGN_IN_COPY.redirecting : ZKLOGIN_SIGN_IN_COPY.canonicalButton}
         </button>
         {error && (
           <span style={{ fontFamily: FONT, fontSize: "0.62rem", color: "#EF4444", maxWidth: 220, textAlign: "right", lineHeight: 1.4 }}>

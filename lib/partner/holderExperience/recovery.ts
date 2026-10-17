@@ -51,7 +51,7 @@ const VIEWS: Record<HolderRecoveryState, Omit<HolderRecoveryView, "state">> = {
   },
   session_required: {
     title: "Sign in to continue",
-    explanation: "Your session ended. Sign in again. Google only opens an Abraxas account. It does not prove eligibility.",
+    explanation: "Your session ended. Sign in again to open your Abraxas account. Sign-in does not prove eligibility.",
     next_action: "sign_in_again",
     next_label: "Sign in again",
     href: HOLDER_PASSPORT_HREF,

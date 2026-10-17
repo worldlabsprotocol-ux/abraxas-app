@@ -123,6 +123,9 @@ export function PassportCustomerView({
   const canOfferWalletRepair = browserSessionReady
     && !setup.walletBound
     && !walletBindingUnavailable;
+  const sessionRenewalRequired = browserSessionState === "reauthentication_required"
+    || browserSessionState === "session_probe_failed";
+
   const status = resolvePassportCustomerStatus({
     walletDone,
     setup,
@@ -130,10 +133,12 @@ export function PassportCustomerView({
     hasCredential,
     idvProvider,
     via,
+    browserSessionState,
   });
   const proofItems = buildPassportProofSummary({
     walletBound: setup.walletBound,
     identityUi: status.identityUi,
+    browserSessionReady: browserSessionReady ? true : sessionRenewalRequired ? false : undefined,
   });
 
   async function bindWallet() {
@@ -168,190 +173,155 @@ export function PassportCustomerView({
 
   const signInBlock = !walletDone ? (
     <section style={CARD} aria-labelledby="passport-signin-heading">
-      <h2 id="passport-signin-heading" style={{
+      <h3 id="passport-signin-heading" style={{
         fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.75rem",
       }}>
-        Connect or open Passport
-      </h2>
+        Open your Abraxas account
+      </h3>
       <ZkLoginSignIn />
+    </section>
+  ) : null;
+
+  const showIdentityAction = walletDone && setup.walletBound && !sessionRenewalRequired && (
+    status.identityUi === "needs_action"
+    || (status.identityUi === "not_started" && handoff.isPartnerFlowContext && !setup.identityComplete)
+  );
+  const identityActionBlock = showIdentityAction ? (
+    <section id="passport-identity-action" style={CARD}>
+      {idvProvider === "manual" ? (
+        <AbraxasIdentityCapture email={email} suiAddress={suiAddress} onSubmitted={onRefresh} capturePolicy={capturePolicy} />
+      ) : veriffConfigured ? (
+        <Btn size="lg" fullWidth loading={starting} onClick={onStartIdCheck}>
+          Verify identity →
+        </Btn>
+      ) : null}
+      {error && <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "#EF4444", margin: "0.65rem 0 0" }}>{error}</p>}
     </section>
   ) : null;
 
   return (
     <PassportHolderWorkspace
-      assurance={(
+      security={(
         <>
           {signInBlock}
+          {walletDone && browserSessionState === "reauthentication_required" && (
+            <PassportReauthenticationPanel />
+          )}
+          {walletDone && browserSessionState === "session_probe_failed" && (
+            <PassportSessionProbeFailedPanel onRetry={() => void refreshBrowserSession()} />
+          )}
+          {walletDone && walletBindingUnavailable && (
+            <section style={CARD} aria-labelledby="passport-wallet-unavailable-heading">
+              <h3 id="passport-wallet-unavailable-heading" style={{
+                fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.5rem",
+              }}>
+                Wallet status temporarily unavailable
+              </h3>
+              <p style={{
+                fontFamily: FONT, fontSize: "0.84rem", lineHeight: 1.6, color: "var(--text-secondary)", margin: "0 0 1rem",
+              }}>
+                We could not verify your wallet binding right now. Try again in a moment.
+              </p>
+              <Btn size="lg" fullWidth variant="secondary" onClick={() => void onRefresh()}>
+                Try again
+              </Btn>
+            </section>
+          )}
+          {walletDone && canOfferWalletRepair && (
+            <section style={CARD} aria-labelledby="passport-secure-heading">
+              <h3 id="passport-secure-heading" style={{
+                fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.5rem",
+              }}>
+                {PASSPORT_SECURE_ACCOUNT_LABEL}
+              </h3>
+              <p style={{
+                fontFamily: FONT, fontSize: "0.84rem", lineHeight: 1.6, color: "var(--text-secondary)", margin: "0 0 0.35rem",
+              }}>
+                {PASSPORT_SECURE_ACCOUNT_EXPLAINER}
+              </p>
+              <p style={{
+                fontFamily: FONT, fontSize: "0.78rem", lineHeight: 1.55, color: "var(--text-muted)", margin: "0 0 1rem",
+              }}>
+                {PASSPORT_CRYPTO_DISCLOSURE}
+              </p>
+              <Btn size="lg" fullWidth loading={bindLoading} onClick={() => void bindWallet()}>
+                {bindLoading ? "Waiting for confirmation…" : "Confirm securely →"}
+              </Btn>
+              {bindError && (
+                <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "#EF4444", margin: "0.65rem 0 0" }}>{bindError}</p>
+              )}
+            </section>
+          )}
+        </>
+      )}
+      verification={(
+        <>
           <PassportIdentityObject
-        state={(
-          status.identityUi === "verified" && hasCredential
-            ? "reusable"
-            : status.identityUi === "verified"
-              ? "verified"
-              : status.identityUi === "needs_action"
+            state={(
+              sessionRenewalRequired
                 ? "attention"
-                : walletDone
-                  ? "basic"
-                  : "unsigned"
-        ) satisfies PassportLifecycleState}
-        holderLabel={status.label}
-        detail={status.summary}
-        completionPercent={(setup.step / 3) * 100}
-      />
-      <section className="abx-passport-object__meta" style={{ ...CARD, marginTop: "0.85rem" }} aria-labelledby="passport-status-heading">
-        <h2 id="passport-status-heading" className="sr-only">{status.label}</h2>
-        <TrustStatus
-          audience="holder"
-          items={buildPassportTrustItems(status.identityUi, hasCredential)}
-        />
-        {proofItems.length > 0 && (
-          <ul className="abx-passport-object__proof-list">
-            {proofItems.map((item) => (
-              <li key={item} style={{ fontFamily: FONT, fontSize: "0.74rem", color: "var(--text-secondary)" }}>{item}</li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {walletDone && browserSessionState === "reauthentication_required" && (
-        <PassportReauthenticationPanel />
-      )}
-
-      {walletDone && browserSessionState === "session_probe_failed" && (
-        <PassportSessionProbeFailedPanel onRetry={() => void refreshBrowserSession()} />
-      )}
-
-      {walletDone && walletBindingUnavailable && (
-        <section style={CARD} aria-labelledby="passport-wallet-unavailable-heading">
-          <h2 id="passport-wallet-unavailable-heading" style={{
-            fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.5rem",
-          }}>
-            Wallet status temporarily unavailable
-          </h2>
-          <p style={{
-            fontFamily: FONT, fontSize: "0.84rem", lineHeight: 1.6, color: "var(--text-secondary)", margin: "0 0 1rem",
-          }}>
-            We could not verify your wallet binding right now. Try again in a moment.
-          </p>
-          <Btn size="lg" fullWidth variant="secondary" onClick={() => void onRefresh()}>
-            Try again
-          </Btn>
-        </section>
-      )}
-
-      {walletDone && canOfferWalletRepair && (
-        <section style={CARD} aria-labelledby="passport-secure-heading">
-          <h2 id="passport-secure-heading" style={{
-            fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.5rem",
-          }}>
-            {PASSPORT_SECURE_ACCOUNT_LABEL}
-          </h2>
-          <p style={{
-            fontFamily: FONT, fontSize: "0.84rem", lineHeight: 1.6, color: "var(--text-secondary)", margin: "0 0 0.35rem",
-          }}>
-            {PASSPORT_SECURE_ACCOUNT_EXPLAINER}
-          </p>
-          <p style={{
-            fontFamily: FONT, fontSize: "0.78rem", lineHeight: 1.55, color: "var(--text-muted)", margin: "0 0 1rem",
-          }}>
-            {PASSPORT_CRYPTO_DISCLOSURE}
-          </p>
-          <Btn size="lg" fullWidth loading={bindLoading} onClick={() => void bindWallet()}>
-            {bindLoading ? "Waiting for confirmation…" : "Confirm securely →"}
-          </Btn>
-          {bindError && (
-            <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "#EF4444", margin: "0.65rem 0 0" }}>{bindError}</p>
+                : status.identityUi === "verified" && hasCredential
+                  ? "reusable"
+                  : status.identityUi === "verified"
+                    ? "verified"
+                    : status.identityUi === "needs_action"
+                      ? "attention"
+                      : walletDone
+                        ? "basic"
+                        : "unsigned"
+            ) satisfies PassportLifecycleState}
+            holderLabel={status.label}
+            detail={status.summary}
+            completionPercent={(setup.step / 3) * 100}
+          />
+          {!sessionRenewalRequired && (
+            <section className="abx-passport-object__meta" style={{ ...CARD, marginTop: "0.85rem" }} aria-labelledby="passport-status-heading">
+              <h3 id="passport-status-heading" className="sr-only">{status.label}</h3>
+              <TrustStatus
+                audience="holder"
+                items={buildPassportTrustItems(status.identityUi, hasCredential)}
+              />
+            </section>
           )}
-        </section>
-      )}
-
-      {walletDone && setup.walletBound && status.identityUi === "needs_action" && (
-        <section id="passport-identity-action" style={CARD}>
-          {idvProvider === "manual" ? (
-            <AbraxasIdentityCapture email={email} suiAddress={suiAddress} onSubmitted={onRefresh} capturePolicy={capturePolicy} />
-          ) : (
-            <Btn size="lg" fullWidth loading={starting} onClick={onStartIdCheck}>
-              Add verified information →
-            </Btn>
-          )}
-          {error && <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "#EF4444", margin: "0.65rem 0 0" }}>{error}</p>}
-        </section>
-      )}
-
-      {walletDone && setup.walletBound && status.identityUi === "not_started" && handoff.isPartnerFlowContext && !setup.identityComplete && (
-        <section id="passport-identity-action" style={CARD}>
-          {idvProvider === "manual" ? (
-            <AbraxasIdentityCapture email={email} suiAddress={suiAddress} onSubmitted={onRefresh} capturePolicy={capturePolicy} />
-          ) : veriffConfigured ? (
-            <Btn size="lg" fullWidth loading={starting} onClick={onStartIdCheck}>
-              Add verified information →
-            </Btn>
-          ) : null}
-        </section>
-      )}
+          {identityActionBlock}
         </>
       )}
       credentials={(
         <>
           {walletDone && browserSessionReady && (
-            <section style={{ ...CARD, marginBottom: "1rem" }} aria-labelledby="passport-reusable-credentials-heading">
-              <h2 id="passport-reusable-credentials-heading" style={{
-                fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.5rem",
-              }}>
-                Reusable Passport credentials
-              </h2>
+            <>
               <PassportReusableCredentialsPanel sessionReady={browserSessionReady} />
-              <h2 id="passport-portable-trust-heading" style={{
-                fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "1rem 0 0.5rem",
-              }}>
-                Partner authorization receipts
-              </h2>
-              <PassportPortableTrustPanel sessionReady={browserSessionReady} />
-            </section>
+              <div style={{ marginTop: "1rem" }}>
+                <PassportPortableTrustPanel sessionReady={browserSessionReady} />
+              </div>
+            </>
           )}
-          {hasCredential && status.identityUi === "verified" ? <PassportReuseStrip /> : null}
+          {sessionRenewalRequired && walletDone && (
+            <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", margin: 0 }}>
+              Renew your session in Account security to manage credentials.
+            </p>
+          )}
+          {!walletDone && (
+            <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", margin: 0 }}>
+              Sign in to view credentials.
+            </p>
+          )}
+          {hasCredential && status.identityUi === "verified" && browserSessionReady ? <PassportReuseStrip /> : null}
           {walletDone && browserSessionReady && (
-            <PassportWalletsSection onChanged={onRefresh} />
-          )}
-          {walletDone && (
-            <section style={CARD} aria-labelledby="passport-proof-heading">
-              <h2 id="passport-proof-heading" style={{
-                fontFamily: FONT, fontSize: "0.95rem", fontWeight: 800, margin: "0 0 0.35rem",
-              }}>
-                What your Passport can confirm
-              </h2>
-              <p style={{
-                fontFamily: FONT,
-                fontSize: "0.8rem",
-                lineHeight: 1.55,
-                color: "var(--text-secondary)",
-                margin: "0 0 0.75rem",
-              }}>
-                Partner-specific PERMIT does not mean global approval across all policies.
-              </p>
-              <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: "0.45rem" }}>
-                {proofItems.map((item) => (
-                  <li key={item} style={{
-                    display: "grid",
-                    gridTemplateColumns: "1.2rem minmax(0, 1fr)",
-                    gap: "0.5rem",
-                    alignItems: "start",
-                    fontFamily: FONT,
-                    fontSize: "0.84rem",
-                    lineHeight: 1.55,
-                    color: "var(--text-secondary)",
-                  }}>
-                    <span aria-hidden="true" style={{ color: "#4CBB92", fontWeight: 800 }}>✓</span>
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
+            <div style={{ marginTop: "1rem" }}>
+              <PassportWalletsSection onChanged={onRefresh} />
+            </div>
           )}
         </>
       )}
-      requests={walletDone ? <PassportRequestInbox showEmpty /> : <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)" }}>Sign in to review authorization requests.</p>}
-      consent={(
+      requests={walletDone && browserSessionReady
+        ? <PassportRequestInbox showEmpty />
+        : (
+          <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)" }}>
+            {sessionRenewalRequired ? "Renew your session to review partner requests." : "Sign in to review partner requests."}
+          </p>
+        )}
+      advanced={(
         <>
           <PartnerVerificationResumeCta />
           {handoff.isPartnerFlowContext && setup.walletBound && (
@@ -359,27 +329,19 @@ export function PassportCustomerView({
               <PartnerReturnCta handoff={handoff} label="Return to service →" />
             </div>
           )}
-        </>
-      )}
-      receipts={(
-        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.55, margin: 0 }}>
-          Receipt validity and independent verification live under{" "}
-          <Link href="/passport?view=verify" style={{ color: "var(--accent)", fontWeight: 700 }}>My records</Link>
-          {" "}and the public verify workbench. Abraxas does not mark receipts valid without a verified check.
-        </p>
-      )}
-      partners={walletDone ? (
-        <PassportRecentActivity
-          suiAddress={suiAddress}
-          walletBound={setup.walletBound}
-          identityUi={status.identityUi}
-          identityRequired={handoff.isPartnerFlowContext}
-        />
-      ) : (
-        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)" }}>Partner access history appears after sign-in.</p>
-      )}
-      controls={(
-        <>
+          <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-secondary)", lineHeight: 1.55, margin: "0 0 1rem" }}>
+            Receipt validity and independent verification live under{" "}
+            <Link href="/passport?view=verify" style={{ color: "var(--accent)", fontWeight: 700 }}>My records</Link>
+            {" "}and the public verify workbench.
+          </p>
+          {walletDone ? (
+            <PassportRecentActivity
+              suiAddress={suiAddress}
+              walletBound={setup.walletBound}
+              identityUi={status.identityUi}
+              identityRequired={handoff.isPartnerFlowContext}
+            />
+          ) : null}
           <PassportInstallCard />
           {walletDone && <PassportConnectionsCard walletBindingStatus={walletBindingStatus} />}
           <p style={{ fontFamily: FONT, fontSize: "0.78rem", margin: "0.75rem 0 0" }}>

@@ -28,5 +28,5 @@ export const NAV_SIGN_IN_COPY = {
   /** Shown in nav only when detail is requested (Passport holds full account sign-in). */
   unavailableHint: "Account sign-in is not enabled in this deployment.",
   unavailableHintSrOnly:
-    "Google OAuth is not configured for this deployment. Open Passport for holder flows or configure sign-in for operators.",
+    "Account sign-in is not configured for this deployment. Open Passport for holder flows or configure sign-in for operators.",
 } as const;

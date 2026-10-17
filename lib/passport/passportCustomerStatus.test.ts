@@ -5,7 +5,7 @@ import { buildPassportProofSummary, resolvePassportCustomerStatus } from "./pass
 import { computePassportSetupState } from "@/lib/idv/identityVerificationStates";
 
 describe("passportCustomerStatus", () => {
-  it("reports needs attention when wallet is not secured", () => {
+  it("reports secure your account when wallet is not secured", () => {
     const setup = computePassportSetupState({
       walletDone: true,
       identityStatus: "not_started",
@@ -20,7 +20,27 @@ describe("passportCustomerStatus", () => {
       idvProvider: "manual",
       via: null,
     });
-    expect(status.label).toBe("Needs attention");
+    expect(status.label).toBe("Secure your account");
+  });
+
+  it("separates expired session from verification status", () => {
+    const setup = computePassportSetupState({
+      walletDone: true,
+      identityStatus: "not_started",
+      credentialStatus: "not_issued",
+      walletBindingL3: true,
+    });
+    const status = resolvePassportCustomerStatus({
+      walletDone: true,
+      setup,
+      identityStatus: "not_started",
+      hasCredential: false,
+      idvProvider: "manual",
+      via: null,
+      browserSessionState: "reauthentication_required",
+    });
+    expect(status.label).toBe("Sign in to continue");
+    expect(status.summary).toMatch(/session/i);
   });
 
   it("does not claim verified without credential evidence", () => {

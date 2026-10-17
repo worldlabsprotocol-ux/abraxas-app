@@ -5,8 +5,7 @@ export const PASSPORT_PAGE_EYEBROW = "Your Abraxas Passport";
 
 export const PASSPORT_PAGE_HEADLINE = "Your Abraxas Passport";
 
-export const PASSPORT_PAGE_SUBHEAD =
-  "Keep and reuse private proof with participating services.";
+export { PASSPORT_PRODUCT_TAGLINE as PASSPORT_PAGE_SUBHEAD } from "@/lib/product/abraxasIdentityExperienceCopy";
 
 export const PASSPORT_CRYPTO_DISCLOSURE =
   "Abraxas uses a cryptographic account confirmation underneath. No funds move.";
@@ -27,10 +26,11 @@ export const PASSPORT_USE_PASSPORT_SUB = "Share only what is needed";
 export const PASSPORT_SIGN_IN_LABEL = "Sign in";
 export const PASSPORT_SIGN_IN_SUB = "Start with your account";
 
-export const PASSPORT_REAUTH_HEADLINE = "Sign in again to continue";
-export const PASSPORT_REAUTH_EXPLAINER =
-  "Your Passport account is remembered on this device, but your secure browser session expired. Sign in again with Google to continue.";
-export const PASSPORT_REAUTH_LABEL = "Sign in again with Google";
+export {
+  ABRAXAS_CONTINUE_HEADLINE as PASSPORT_REAUTH_HEADLINE,
+  ABRAXAS_SESSION_EXPIRED_BODY as PASSPORT_REAUTH_EXPLAINER,
+  ABRAXAS_CONTINUE_SECURELY_LABEL as PASSPORT_REAUTH_LABEL,
+} from "@/lib/product/abraxasIdentityExperienceCopy";
 
 export const PASSPORT_ADVANCED_DETAILS_TITLE = "Advanced details";
 

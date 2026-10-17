@@ -143,7 +143,7 @@ export function AbraxasIdentityCapture({
       setError(
         walletNative
           ? "Sign in with your wallet first, then return to verify your identity."
-          : "You are not signed in. Tap Sign in at the top right, complete Google once, then return here.",
+          : "You are not signed in. Sign in to your Abraxas account, then return here.",
       );
       return;
     }
@@ -152,7 +152,7 @@ export function AbraxasIdentityCapture({
       setError(
         walletNative
           ? "Enter a contact email we can use for review updates about this verification."
-          : "We need your Google email on file. Sign out, sign in once more, then submit again.",
+          : "We need your account email on file. Sign out, sign in once more, then submit again.",
       );
       return;
     }
