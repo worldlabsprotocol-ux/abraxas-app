@@ -1,11 +1,11 @@
-// Simulated receipt verification states for homepage / protocol visuals (not live verify API).
+// Preset receipt example states for homepage / protocol visuals (not live verify API).
 
 export type ReceiptScenario = "valid" | "expired" | "revoked" | "unavailable";
 
 export const RECEIPT_DEMO_POLICY_ID = "policy_age21_retail_v3";
 export const RECEIPT_DEMO_ISSUER = "abraxas-trust-registry";
 
-/** Institutional check outcome for simulated verifier UI — not production verify API. */
+/** Check outcome for example verifier UI — not production verify API. */
 export type ReceiptDemoCheckStatus = "PASS" | "FAIL" | "UNKNOWN";
 
 export type ReceiptDemoCheckId =
@@ -65,7 +65,7 @@ function authenticityChecksFor(scenario: ReceiptScenario): ReceiptDemoCheck[] {
       check(
         "signature_integrity",
         "Signature integrity",
-        "Signature not evaluated. Verifier unreachable (simulated).",
+        "Example: signature not evaluated when verifier is unreachable.",
         "UNKNOWN",
       ),
       check(
@@ -84,10 +84,10 @@ function authenticityChecksFor(scenario: ReceiptScenario): ReceiptDemoCheck[] {
   }
 
   const passDetail = {
-    issuer: "Issuer is recognized and trusted.",
-    signature: "Cryptographic signature verifies.",
-    policy: "Receipt is bound to an active policy.",
-    audience: "Intended audience matches the request.",
+    issuer: "Example: issuer recognized for this sample.",
+    signature: "Example: valid signature (preset — not computed live here).",
+    policy: "Example: bound to an active policy.",
+    audience: "Example: audience matches the request.",
   };
 
   return [
@@ -121,7 +121,7 @@ function authorizationChecksFor(scenario: ReceiptScenario): ReceiptDemoCheck[] {
     return [
       check("expiration", "Expiration", "Decision expired. Deny despite valid signature.", "FAIL"),
       check("freshness", "Freshness", "Outside acceptable time window.", "FAIL"),
-      check("revocation", "Revocation", "No revocation signal (simulated).", "PASS"),
+      check("revocation", "Revocation", "Example: no revocation signal.", "PASS"),
       check("replay_protection", "Replay protection", "Not a replayed receipt.", "PASS"),
     ];
   }
@@ -176,12 +176,12 @@ export function deriveReceiptDemoState(scenario: ReceiptScenario): ReceiptDemoSt
 
   const verificationSummary =
     scenario === "valid"
-      ? "All cryptographic and authorization checks pass (simulated)."
+      ? "This sample shows passing authenticity and authorization checks with a PERMIT outcome."
       : scenario === "expired"
-        ? "Cryptographic authenticity passes. Authorization denied because the decision expired (simulated)."
+        ? "Authenticity checks pass in the example; authorization is denied because the decision expired."
         : scenario === "revoked"
-          ? "Cryptographic authenticity and freshness pass. Authorization denied because of issuer revocation (simulated)."
-          : "Verifier unreachable. Checks cannot be evaluated; no invalid signature is implied (simulated).";
+          ? "Authenticity and freshness pass in the example; authorization is denied because the issuer revoked it."
+          : "Verifier unreachable in this example. Checks are unknown; that does not imply an invalid signature.";
 
   const aggregateStatus =
     scenario === "valid"
@@ -220,10 +220,10 @@ export function buildReceiptDemoFields(
   const sigCheck = state.authenticityChecks.find((c) => c.id === "signature_integrity");
   const signatureValue =
     sigCheck?.status === "PASS"
-      ? "Ed25519 · valid (simulated)"
+      ? "Ed25519 · valid in sample"
       : sigCheck?.status === "UNKNOWN"
-        ? "Not evaluated · verifier unreachable (simulated)"
-        : "Ed25519 · failed (simulated)";
+        ? "Not evaluated · unreachable in sample"
+        : "Ed25519 · failed in sample";
 
   return [
     { label: "type", value: "access_decision", mono: true },

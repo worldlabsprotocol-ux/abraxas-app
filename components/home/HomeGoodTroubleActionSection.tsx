@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useState } from "react";
 import {
-  CINEMATIC_GT_PARTNER_DISCLAIMER,
+  CINEMATIC_GT_DEMO_DETAILS,
   CINEMATIC_GT_SECTION_HEADLINE,
   CINEMATIC_GT_SECTION_LEAD,
 } from "@/lib/home/cinematicHomeCopy";
@@ -26,12 +26,15 @@ export function HomeGoodTroubleActionSection() {
       className="abx-cinematic-chapter abx-gt-action"
       aria-labelledby="home-gt-action-heading"
     >
-      <p className="abx-v2-eyebrow">Partner demonstration</p>
+      <p className="abx-v2-eyebrow">Demonstration</p>
       <h2 id="home-gt-action-heading" className="abx-v2-section-title">
         {CINEMATIC_GT_SECTION_HEADLINE}
       </h2>
       <p className="abx-v2-section-lead">{CINEMATIC_GT_SECTION_LEAD}</p>
-      <p className="abx-gt-action__disclaimer">{CINEMATIC_GT_PARTNER_DISCLAIMER}</p>
+      <details className="abx-gt-action__details">
+        <summary>About this demonstration</summary>
+        <p>{CINEMATIC_GT_DEMO_DETAILS}</p>
+      </details>
 
       <LazyHomeSection minHeight="420px">
         <div className="abx-gt-action__player">
