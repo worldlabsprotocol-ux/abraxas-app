@@ -15,6 +15,29 @@ export interface AuthenticatedHolderCompletion {
   detail: string | null;
 }
 
+type ExportEvent = IntegrationAuditExport["events"][number];
+
+function unconfirmed(
+  detail: string,
+  verificationRequestId: string | null = null,
+): AuthenticatedHolderCompletion {
+  return {
+    status: "unconfirmed",
+    authority: null,
+    verification_request_id: verificationRequestId,
+    detail,
+  };
+}
+
+function requestInitiationObserved(events: ExportEvent[], requestId: string): boolean {
+  return events.some(
+    (event) =>
+      (event.event_type === "verification_request_created"
+        || event.event_type === "hosted_handoff_created")
+      && event.request_id === requestId,
+  );
+}
+
 export function evaluateAuthenticatedHolderCompletionFromIntegrationExport(input: {
   export: Pick<IntegrationAuditExport, "partner_id" | "application_id" | "events">;
   expectedPartnerId: string;
@@ -24,82 +47,57 @@ export function evaluateAuthenticatedHolderCompletionFromIntegrationExport(input
   expectedVerificationRequestId?: string | null;
 }): AuthenticatedHolderCompletion {
   if (input.export.partner_id !== input.expectedPartnerId) {
-    return {
-      status: "unconfirmed",
-      authority: null,
-      verification_request_id: null,
-      detail: "export_partner_mismatch",
-    };
+    return unconfirmed("export_partner_mismatch");
   }
   if (input.export.application_id !== input.expectedApplicationId) {
-    return {
-      status: "unconfirmed",
-      authority: null,
-      verification_request_id: null,
-      detail: "export_application_mismatch",
-    };
+    return unconfirmed("export_application_mismatch");
   }
 
   const events = input.export.events;
-  const holderCompleted = events.some((event) => event.event_type === "holder_flow_completed");
   const receiptIssued = events.find(
     (event) =>
       event.event_type === "receipt_issued"
       && event.receipt_id === input.expectedReceiptId,
   );
-  if (!holderCompleted) {
-    return {
-      status: "unconfirmed",
-      authority: null,
-      verification_request_id: null,
-      detail: "holder_flow_completed_not_observed",
-    };
-  }
   if (!receiptIssued) {
-    return {
-      status: "unconfirmed",
-      authority: null,
-      verification_request_id: null,
-      detail: "receipt_issued_not_bound_to_receipt_id",
-    };
-  }
-  if (receiptIssued.policy_id && receiptIssued.policy_id !== input.expectedPolicyId) {
-    return {
-      status: "unconfirmed",
-      authority: null,
-      verification_request_id: null,
-      detail: "receipt_issued_policy_mismatch",
-    };
+    return unconfirmed("receipt_issued_not_bound_to_receipt_id");
   }
 
-  const requestId =
-    input.expectedVerificationRequestId?.trim()
-    ?? receiptIssued.request_id?.trim()
-    ?? null;
+  const receiptPolicyId = receiptIssued.policy_id?.trim() ?? "";
+  if (!receiptPolicyId) {
+    return unconfirmed("receipt_issued_policy_unspecified");
+  }
+  if (receiptPolicyId !== input.expectedPolicyId) {
+    return unconfirmed("receipt_issued_policy_mismatch");
+  }
 
-  if (requestId) {
-    const requestObserved = events.some(
-      (event) =>
-        (event.event_type === "verification_request_created"
-          || event.event_type === "hosted_handoff_created")
-        && event.request_id === requestId,
-    );
-    if (!requestObserved) {
-      return {
-        status: "unconfirmed",
-        authority: null,
-        verification_request_id: requestId,
-        detail: "verification_request_not_observed",
-      };
-    }
-    if (receiptIssued.request_id && receiptIssued.request_id !== requestId) {
-      return {
-        status: "unconfirmed",
-        authority: null,
-        verification_request_id: requestId,
-        detail: "receipt_request_id_mismatch",
-      };
-    }
+  const receiptRequestId = receiptIssued.request_id?.trim() ?? null;
+  const expectedRequestId = input.expectedVerificationRequestId?.trim() ?? null;
+
+  if (expectedRequestId && receiptRequestId && expectedRequestId !== receiptRequestId) {
+    return unconfirmed("expected_request_id_receipt_mismatch", expectedRequestId);
+  }
+
+  const requestId = expectedRequestId ?? receiptRequestId;
+  if (!requestId) {
+    return unconfirmed("request_id_required_for_event_correlation");
+  }
+
+  if (receiptRequestId && receiptRequestId !== requestId) {
+    return unconfirmed("receipt_request_id_mismatch", requestId);
+  }
+
+  if (!requestInitiationObserved(events, requestId)) {
+    return unconfirmed("verification_request_not_observed", requestId);
+  }
+
+  const holderCompletedForRequest = events.some(
+    (event) =>
+      event.event_type === "holder_flow_completed"
+      && event.request_id === requestId,
+  );
+  if (!holderCompletedForRequest) {
+    return unconfirmed("holder_flow_completed_not_bound_to_request", requestId);
   }
 
   return {
