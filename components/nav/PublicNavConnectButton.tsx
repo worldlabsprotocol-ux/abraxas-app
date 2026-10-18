@@ -1,12 +1,9 @@
 "use client";
 // FILE: components/nav/PublicNavConnectButton.tsx
-// One primary header account action; recovery paths live in a compact menu.
+// Sign in — native passkey Abraxas account (not wallet connection).
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { NavProfileMenu } from "@/components/sui/NavProfileMenu";
-import { probeBrowserSessionDetails } from "@/lib/auth/ensureBrowserSession";
 import {
   connectNativePasskeyAccount,
   isConfirmedNoPasskeyResult,
@@ -15,30 +12,25 @@ import {
 import { PublicNavAccountMenu, PublicNavConnectPrimary } from "@/components/nav/PublicNavAccountMenu";
 import {
   PUBLIC_CONNECT_ACCOUNT_HREF,
-  PUBLIC_CONNECT_EXPLORE_HREF,
-  PUBLIC_CONNECT_PASSPORT_LEGACY_HREF,
-  PUBLIC_CONNECT_UNAVAILABLE_MENU_DESC,
-  PUBLIC_CONNECT_UNAVAILABLE_MENU_TITLE,
-  resolvePublicNavConnectPhase,
+  PUBLIC_NAV_EXPLORE_HREF,
+  PUBLIC_NAV_WORKSPACE_HREF,
+  PUBLIC_SIGN_IN_UNAVAILABLE_DESC,
+  PUBLIC_SIGN_IN_UNAVAILABLE_TITLE,
+  resolvePublicNavSignInPhase,
 } from "@/lib/nav/publicNavConnectBehavior";
 
 type NativeSession = { authenticated: boolean };
 
-type NativeNavState = {
+async function loadNativeNavState(): Promise<{
   flagEnabled: boolean;
   operational: boolean;
   session: NativeSession;
-};
-
-async function loadNativeNavState(): Promise<NativeNavState> {
+}> {
   const [enabledRes, sessionRes] = await Promise.all([
     fetch("/api/auth/native/enabled", { credentials: "same-origin" }),
     fetch("/api/auth/native/session", { credentials: "same-origin" }),
   ]);
-  const enabledJson = (await enabledRes.json()) as {
-    enabled?: boolean;
-    operational?: boolean;
-  };
+  const enabledJson = (await enabledRes.json()) as { enabled?: boolean; operational?: boolean };
   const sessionJson = (await sessionRes.json()) as { authenticated?: boolean };
   const flagEnabled = Boolean(enabledJson.enabled);
   const operational =
@@ -53,27 +45,20 @@ async function loadNativeNavState(): Promise<NativeNavState> {
 export function PublicNavConnectButton({ prominent = false }: { prominent?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [holderBrowserSessionActive, setHolderBrowserSessionActive] = useState(false);
   const [nativeFlagEnabled, setNativeFlagEnabled] = useState<boolean | null>(null);
   const [nativeOperational, setNativeOperational] = useState<boolean | null>(null);
   const [nativeSession, setNativeSession] = useState<NativeSession | null>(null);
   const [busy, setBusy] = useState(false);
-  const [retryBusy, setRetryBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [offerCreateAccount, setOfferCreateAccount] = useState(false);
 
   const refreshNavState = useCallback(async () => {
     try {
-      const [holderProbe, nativeState] = await Promise.all([
-        probeBrowserSessionDetails(),
-        loadNativeNavState(),
-      ]);
-      setHolderBrowserSessionActive(holderProbe.ok);
+      const nativeState = await loadNativeNavState();
       setNativeFlagEnabled(nativeState.flagEnabled);
       setNativeOperational(nativeState.operational);
       setNativeSession(nativeState.session);
     } catch {
-      setHolderBrowserSessionActive(false);
       setNativeFlagEnabled(false);
       setNativeOperational(false);
       setNativeSession({ authenticated: false });
@@ -86,8 +71,7 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
 
   const nativeStateLoaded = nativeFlagEnabled !== null && nativeOperational !== null && nativeSession !== null;
 
-  const phase = resolvePublicNavConnectPhase({
-    holderBrowserSessionActive,
+  const phase = resolvePublicNavSignInPhase({
     nativeAuthenticated: Boolean(nativeSession?.authenticated),
     nativeFlagEnabled: Boolean(nativeFlagEnabled),
     nativeOperational: Boolean(nativeOperational),
@@ -99,7 +83,7 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
     router.push(PUBLIC_CONNECT_ACCOUNT_HREF);
   }, [refreshNavState, router]);
 
-  const runConnect = useCallback(async () => {
+  const runSignIn = useCallback(async () => {
     setError(null);
     setOfferCreateAccount(false);
     setBusy(true);
@@ -111,7 +95,7 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
           setOfferCreateAccount(true);
           return;
         }
-        setError(result.message ?? "Could not connect.");
+        setError(result.message ?? "Could not sign in.");
         return;
       }
       await finishSuccess();
@@ -137,16 +121,6 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
     }
   }, [finishSuccess]);
 
-  const runRetryOperationalCheck = useCallback(async () => {
-    setRetryBusy(true);
-    setError(null);
-    try {
-      await refreshNavState();
-    } finally {
-      setRetryBusy(false);
-    }
-  }, [refreshNavState]);
-
   const errorFooter = error ? (
     <span className="public-nav-connect__error" role="alert">
       {error}
@@ -155,17 +129,8 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
 
   if (phase === "loading") {
     return (
-      <PublicNavConnectPrimary
-        prominent={prominent}
-        label="Connect"
-        ariaLabel="Loading account connection"
-        disabled
-      />
+      <PublicNavConnectPrimary prominent={prominent} label="Sign in" ariaLabel="Loading sign-in" disabled />
     );
-  }
-
-  if (phase === "holder_profile_menu") {
-    return <NavProfileMenu prominent={prominent} />;
   }
 
   if (phase === "native_account_link") {
@@ -179,13 +144,13 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
     );
   }
 
-  if (phase === "native_explore") {
+  if (phase === "native_explore_only") {
     return (
       <PublicNavConnectPrimary
         prominent={prominent}
-        label="Connect"
-        ariaLabel="Start building — explore Abraxas without mandatory sign-in"
-        href="/#start-sandbox"
+        label="Sign in"
+        ariaLabel="Create an Abraxas account in the workspace section"
+        href={PUBLIC_NAV_WORKSPACE_HREF}
       />
     );
   }
@@ -195,28 +160,16 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
       <PublicNavAccountMenu
         prominent={prominent}
         variant="muted"
-        triggerLabel="Connect"
-        triggerAriaLabel="Account sign-in unavailable — open recovery options"
-        menuTitle={PUBLIC_CONNECT_UNAVAILABLE_MENU_TITLE}
-        menuDescription={PUBLIC_CONNECT_UNAVAILABLE_MENU_DESC}
+        triggerLabel="Sign in"
+        triggerAriaLabel="Account sign-in unavailable"
+        menuTitle={PUBLIC_SIGN_IN_UNAVAILABLE_TITLE}
+        menuDescription={PUBLIC_SIGN_IN_UNAVAILABLE_DESC}
         items={[
           {
-            type: "button",
-            label: retryBusy ? "Checking…" : "Retry sign-in check",
-            disabled: retryBusy,
-            onClick: () => void runRetryOperationalCheck(),
-          },
-          {
             type: "link",
-            label: "Integration Studio",
-            href: PUBLIC_CONNECT_EXPLORE_HREF,
-            description: "Explore without an account",
-          },
-          {
-            type: "link",
-            label: "Passport (legacy)",
-            href: PUBLIC_CONNECT_PASSPORT_LEGACY_HREF,
-            description: "Holder credentials only",
+            label: "Explore Integration Studio",
+            href: PUBLIC_NAV_EXPLORE_HREF,
+            description: "No account required",
           },
         ]}
       />
@@ -228,14 +181,14 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
       <PublicNavAccountMenu
         prominent={prominent}
         variant="primary"
-        triggerLabel={busy ? "Connecting" : "Connect"}
-        triggerAriaLabel="Connect with Abraxas passkey — more options"
+        triggerLabel={busy ? "Signing in" : "Sign in"}
+        triggerAriaLabel="Sign in with passkey — more options"
         items={[
           {
             type: "button",
-            label: busy ? "Connecting…" : "Sign in with passkey",
+            label: busy ? "Signing in…" : "Sign in with passkey",
             disabled: busy,
-            onClick: () => void runConnect(),
+            onClick: () => void runSignIn(),
           },
           {
             type: "button",
@@ -252,11 +205,13 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
   return (
     <PublicNavConnectPrimary
       prominent={prominent}
-      label={busy ? "Connecting" : "Connect"}
-      ariaLabel="Connect with Abraxas passkey"
+      label={busy ? "Signing in" : "Sign in"}
+      ariaLabel="Sign in with Abraxas passkey"
       busy={busy}
-      onClick={() => void runConnect()}
+      onClick={() => void runSignIn()}
       footer={errorFooter}
     />
   );
 }
+
+export { PublicNavConnectButton as PublicNavSignInButton };
