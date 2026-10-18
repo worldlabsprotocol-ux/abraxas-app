@@ -1,5 +1,5 @@
 // FILE: lib/partner/launchpad/sovereign/provisionSandboxTransaction.ts
-// Sandbox provisioning via direct PostgreSQL transactions (no Supabase RPC).
+import "server-only";
 
 import type { PoolClient } from "pg";
 import type { ProvisionSandboxInput } from "@/lib/partner/launchpad/provisionSandbox";

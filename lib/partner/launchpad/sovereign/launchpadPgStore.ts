@@ -1,4 +1,5 @@
 // FILE: lib/partner/launchpad/sovereign/launchpadPgStore.ts
+import "server-only";
 
 import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";

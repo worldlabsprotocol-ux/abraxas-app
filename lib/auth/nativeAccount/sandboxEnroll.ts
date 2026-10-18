@@ -13,7 +13,6 @@ import {
 import { issueOperatorSessionForAccountMembership } from "@/lib/partner/launchpad/operatorSessionFromAccount";
 import { SITE_URL } from "@/lib/siteUrl";
 import { launchpadUsesSovereignPostgres } from "@/lib/partner/launchpad/launchpadPersistence";
-import { pgInsertSandboxAuditEvent } from "@/lib/partner/launchpad/sovereign/launchpadPgStore";
 
 export type SandboxEnrollResult =
   | {
@@ -96,6 +95,7 @@ export async function enrollSandboxForAccount(input: {
       idempotencyKey: input.idempotencyKey ?? null,
     });
     if (launchpadUsesSovereignPostgres()) {
+      const { pgInsertSandboxAuditEvent } = await import("@/lib/partner/launchpad/sovereign/launchpadPgStore");
       await pgInsertSandboxAuditEvent({
         accountId: input.accountId,
         partnerId,

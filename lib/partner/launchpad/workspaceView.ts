@@ -5,10 +5,6 @@ import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { listLaunchpadApplicationsForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
 import type { LaunchpadApplicationSummary, LaunchpadWorkspaceView } from "@/lib/partner/launchpad/types";
 import { launchpadUsesSovereignPostgres } from "@/lib/partner/launchpad/launchpadPersistence";
-import {
-  pgGetApiKeyPrefixes,
-  pgGetPartnerCompany,
-} from "@/lib/partner/launchpad/sovereign/launchpadPgStore";
 
 function integrationStatus(
   status: string,
@@ -29,6 +25,7 @@ export async function buildLaunchpadWorkspaceView(
   let keyPrefixMap = new Map<string, string>();
 
   if (launchpadUsesSovereignPostgres()) {
+    const { pgGetApiKeyPrefixes, pgGetPartnerCompany } = await import("@/lib/partner/launchpad/sovereign/launchpadPgStore");
     const partner = await pgGetPartnerCompany(partnerId);
     partnerCompany = partner?.company;
     allowedEnvs = partner?.allowed_environments ?? ["sandbox"];
