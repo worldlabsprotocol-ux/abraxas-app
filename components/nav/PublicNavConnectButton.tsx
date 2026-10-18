@@ -1,9 +1,9 @@
 "use client";
 // FILE: components/nav/PublicNavConnectButton.tsx
-// Connect — native passkey when operational; explore or honest unavailable otherwise.
+// One primary header account action; recovery paths live in a compact menu.
 
 import Link from "next/link";
-import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { NavProfileMenu } from "@/components/sui/NavProfileMenu";
 import { probeBrowserSessionDetails } from "@/lib/auth/ensureBrowserSession";
@@ -12,17 +12,15 @@ import {
   isConfirmedNoPasskeyResult,
   runNativePasskeyRegistration,
 } from "@/lib/auth/nativeAccount/clientPasskeyCeremony";
-import { PUBLIC_FONT_SANS } from "@/lib/design/publicSurface";
+import { PublicNavAccountMenu, PublicNavConnectPrimary } from "@/components/nav/PublicNavAccountMenu";
 import {
   PUBLIC_CONNECT_ACCOUNT_HREF,
   PUBLIC_CONNECT_EXPLORE_HREF,
   PUBLIC_CONNECT_PASSPORT_LEGACY_HREF,
-  PUBLIC_CONNECT_UNAVAILABLE_SUMMARY,
+  PUBLIC_CONNECT_UNAVAILABLE_MENU_DESC,
+  PUBLIC_CONNECT_UNAVAILABLE_MENU_TITLE,
   resolvePublicNavConnectPhase,
 } from "@/lib/nav/publicNavConnectBehavior";
-
-const FONT = PUBLIC_FONT_SANS;
-const ACCENT = "var(--accent)";
 
 type NativeSession = { authenticated: boolean };
 
@@ -149,11 +147,20 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
     }
   }, [refreshNavState]);
 
+  const errorFooter = error ? (
+    <span className="public-nav-connect__error" role="alert">
+      {error}
+    </span>
+  ) : null;
+
   if (phase === "loading") {
     return (
-      <span style={{ ...buttonStyle(prominent), opacity: 0.65 }} aria-busy="true">
-        Connect
-      </span>
+      <PublicNavConnectPrimary
+        prominent={prominent}
+        label="Connect"
+        ariaLabel="Loading account connection"
+        disabled
+      />
     );
   }
 
@@ -163,129 +170,93 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
 
   if (phase === "native_account_link") {
     return (
-      <Link
+      <PublicNavConnectPrimary
+        prominent={prominent}
+        label="Account"
+        ariaLabel="Open your Abraxas account"
         href={PUBLIC_CONNECT_ACCOUNT_HREF}
-        style={buttonStyle(prominent)}
-        aria-label="Open your Abraxas account"
-      >
-        Account
-      </Link>
+      />
     );
   }
 
   if (phase === "native_explore") {
     return (
-      <Link
-        href={PUBLIC_CONNECT_EXPLORE_HREF}
-        style={buttonStyle(prominent)}
-        aria-label="Explore Abraxas in Integration Studio without signing in"
-        title="Explore policies and sandbox tools without an account"
-      >
-        Explore
-      </Link>
+      <PublicNavConnectPrimary
+        prominent={prominent}
+        label="Connect"
+        ariaLabel="Start building — explore Abraxas without mandatory sign-in"
+        href="/#start-sandbox"
+      />
     );
   }
 
   if (phase === "native_service_unavailable") {
     return (
-      <div
-        style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, maxWidth: 280 }}
-        role="status"
-        aria-live="polite"
-      >
-        <span style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-secondary)", textAlign: "right" }}>
-          {PUBLIC_CONNECT_UNAVAILABLE_SUMMARY}
-        </span>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "flex-end" }}>
-          <button
-            type="button"
-            onClick={() => void runRetryOperationalCheck()}
-            disabled={retryBusy}
-            style={{ ...buttonStyle(prominent), cursor: retryBusy ? "wait" : "pointer", border: "none" }}
-          >
-            {retryBusy ? "Checking…" : "Retry sign-in"}
-          </button>
-          <Link href={PUBLIC_CONNECT_EXPLORE_HREF} style={secondaryLinkStyle(prominent)}>
-            Integration Studio
-          </Link>
-          <Link href={PUBLIC_CONNECT_PASSPORT_LEGACY_HREF} style={legacyLinkStyle()}>
-            Passport (legacy)
-          </Link>
-        </div>
-      </div>
+      <PublicNavAccountMenu
+        prominent={prominent}
+        variant="muted"
+        triggerLabel="Connect"
+        triggerAriaLabel="Account sign-in unavailable — open recovery options"
+        menuTitle={PUBLIC_CONNECT_UNAVAILABLE_MENU_TITLE}
+        menuDescription={PUBLIC_CONNECT_UNAVAILABLE_MENU_DESC}
+        items={[
+          {
+            type: "button",
+            label: retryBusy ? "Checking…" : "Retry sign-in check",
+            disabled: retryBusy,
+            onClick: () => void runRetryOperationalCheck(),
+          },
+          {
+            type: "link",
+            label: "Integration Studio",
+            href: PUBLIC_CONNECT_EXPLORE_HREF,
+            description: "Explore without an account",
+          },
+          {
+            type: "link",
+            label: "Passport (legacy)",
+            href: PUBLIC_CONNECT_PASSPORT_LEGACY_HREF,
+            description: "Holder credentials only",
+          },
+        ]}
+      />
+    );
+  }
+
+  if (offerCreateAccount) {
+    return (
+      <PublicNavAccountMenu
+        prominent={prominent}
+        variant="primary"
+        triggerLabel={busy ? "Connecting" : "Connect"}
+        triggerAriaLabel="Connect with Abraxas passkey — more options"
+        items={[
+          {
+            type: "button",
+            label: busy ? "Connecting…" : "Sign in with passkey",
+            disabled: busy,
+            onClick: () => void runConnect(),
+          },
+          {
+            type: "button",
+            label: busy ? "Working…" : "Create passkey account",
+            disabled: busy,
+            onClick: () => void runCreateAccount(),
+          },
+        ]}
+        footer={errorFooter}
+      />
     );
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-      <button
-        type="button"
-        onClick={() => void runConnect()}
-        disabled={busy}
-        style={{ ...buttonStyle(prominent), cursor: busy ? "wait" : "pointer", border: "none" }}
-        aria-label="Connect with Abraxas passkey"
-      >
-        {busy ? "Connecting…" : "Connect"}
-      </button>
-      {offerCreateAccount ? (
-        <button
-          type="button"
-          onClick={() => void runCreateAccount()}
-          disabled={busy}
-          style={{
-            ...buttonStyle(prominent),
-            cursor: busy ? "wait" : "pointer",
-            border: "none",
-            background: "transparent",
-            color: "var(--text-secondary)",
-            fontSize: prominent ? "0.72rem" : "0.68rem",
-            padding: "0.25rem 0.65rem",
-          }}
-        >
-          Create passkey account
-        </button>
-      ) : null}
-      {error ? (
-        <span style={{ fontFamily: FONT, fontSize: "0.62rem", color: "#EF4444", maxWidth: 220, textAlign: "right" }}>
-          {error}
-        </span>
-      ) : null}
-    </div>
+    <PublicNavConnectPrimary
+      prominent={prominent}
+      label={busy ? "Connecting" : "Connect"}
+      ariaLabel="Connect with Abraxas passkey"
+      busy={busy}
+      onClick={() => void runConnect()}
+      footer={errorFooter}
+    />
   );
-}
-
-function buttonStyle(prominent: boolean): CSSProperties {
-  return {
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: prominent ? "0.55rem 1rem" : "0.5rem 0.95rem",
-    borderRadius: 999,
-    background: ACCENT,
-    color: "#000",
-    fontFamily: FONT,
-    fontSize: prominent ? "0.84rem" : "0.8rem",
-    fontWeight: 700,
-    textDecoration: "none",
-    whiteSpace: "nowrap",
-  };
-}
-
-function secondaryLinkStyle(prominent: boolean): CSSProperties {
-  return {
-    ...buttonStyle(prominent),
-    background: "transparent",
-    color: "var(--text-primary)",
-    border: "1px solid var(--border-subtle, rgba(255,255,255,0.12))",
-  };
-}
-
-function legacyLinkStyle(): CSSProperties {
-  return {
-    fontFamily: FONT,
-    fontSize: "0.62rem",
-    color: "var(--text-secondary)",
-    textDecoration: "underline",
-    alignSelf: "center",
-  };
 }

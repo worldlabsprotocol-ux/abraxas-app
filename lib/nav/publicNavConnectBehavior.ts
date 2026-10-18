@@ -34,5 +34,6 @@ export const PUBLIC_CONNECT_PASSPORT_LEGACY_HREF = "/passport" as const;
 
 export const PUBLIC_CONNECT_ACCOUNT_HREF = "/account/applications" as const;
 
-export const PUBLIC_CONNECT_UNAVAILABLE_SUMMARY =
-  "Passkey account sign-in is temporarily unavailable. You can explore Abraxas without signing in, or use Passport if you already rely on holder credentials.";
+export const PUBLIC_CONNECT_UNAVAILABLE_MENU_TITLE = "Account sign-in unavailable";
+export const PUBLIC_CONNECT_UNAVAILABLE_MENU_DESC =
+  "Passkey sign-in is temporarily offline. Explore without signing in, retry when service is restored, or open Passport if you use holder credentials.";

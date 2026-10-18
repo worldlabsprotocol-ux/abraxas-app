@@ -36,13 +36,13 @@ export function RedesignNav() {
 
       <div className="rd-nav-spacer" style={{ flex: 1 }} />
 
-      <div className="rd-nav-right" style={{ display: "none", alignItems: "center", gap: "0.55rem", flexShrink: 0 }}>
+      <div className="rd-nav-right rd-nav-actions" style={{ display: "none" }}>
         <LanguageSelector />
         <PublicNavConnectButton prominent />
         <PublicNavLaunchAppLink />
       </div>
 
-      <div className="rd-nav-mobile" style={{ display: "flex", alignItems: "center", gap: "0.45rem", marginLeft: "auto" }}>
+      <div className="rd-nav-mobile rd-nav-actions" style={{ display: "flex", marginLeft: "auto" }}>
         <LanguageSelector />
         <PublicNavConnectButton />
         <PublicNavLaunchAppLink />
