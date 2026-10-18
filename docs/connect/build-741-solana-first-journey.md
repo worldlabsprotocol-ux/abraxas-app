@@ -44,6 +44,7 @@ Live checkout for SOL / USDC / USDT is **not activated** in this branch. Existin
 
 ## Tests
 
-- `vitest run lib/auth/nativeAccount/solanaAuth/solanaAuth.test.ts`
+- `vitest run lib/auth/nativeAccount/solanaAuth/` (unit, adversarial, API route contract)
 - `vitest run lib/nav/publicNavConnectBehavior.test.ts`
-- Manual: Phantom on devnet — Sign in → pre-signature modal → account workspace
+- Full acceptance checklist: `docs/connect/build-741-acceptance.md`
+- Manual: Phantom on devnet — Sign in → pre-signature modal → account workspace (**required before Production**)

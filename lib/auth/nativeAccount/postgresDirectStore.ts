@@ -414,6 +414,24 @@ export async function linkSolanaWalletToAccount(input: {
   }
 }
 
+export async function getPrimarySolanaWalletForAccount(
+  accountId: string,
+): Promise<{ wallet_address: string; solana_network: string } | null> {
+  try {
+    const { rows } = await queryAbraxasPg<{ wallet_address: string; solana_network: string }>(
+      `select wallet_address, solana_network
+       from public.abraxas_account_solana_wallets
+       where account_id = $1 and revoked_at is null
+       order by last_used_at desc nulls last, created_at asc
+       limit 1`,
+      [accountId],
+    );
+    return rows[0] ?? null;
+  } catch (error) {
+    mapPgError(error);
+  }
+}
+
 export async function touchSolanaWalletLastUsed(
   walletAddress: string,
   solanaNetwork: string,

@@ -153,14 +153,15 @@ export async function verifyAccountSolanaAuth(input: {
   let accountId = await findAccountIdBySolanaWallet(wallet, canonicalNetwork);
   let created = false;
   if (!accountId) {
-    accountId = createNativeAccountId();
-    await insertNativeAccount(accountId);
+    const candidateId = createNativeAccountId();
+    await insertNativeAccount(candidateId);
     await linkSolanaWalletToAccount({
-      accountId,
+      accountId: candidateId,
       walletAddress: wallet,
       solanaNetwork: canonicalNetwork,
     });
-    created = true;
+    accountId = (await findAccountIdBySolanaWallet(wallet, canonicalNetwork)) ?? candidateId;
+    created = accountId === candidateId;
   } else {
     await touchSolanaWalletLastUsed(wallet, canonicalNetwork);
   }

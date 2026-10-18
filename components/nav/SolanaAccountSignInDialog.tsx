@@ -1,7 +1,7 @@
 "use client";
 // FILE: components/nav/SolanaAccountSignInDialog.tsx
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { completeSolanaAccountSignIn } from "@/lib/auth/nativeAccount/clientSolanaAccountSignIn";
@@ -25,13 +25,24 @@ export function SolanaAccountSignInDialog({
 }) {
   const { publicKey, signMessage, connected, connecting } = useWallet();
   const { setVisible } = useWalletModal();
+  const primaryRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
     if (!connected && !connecting) {
       setVisible(true);
     }
+    primaryRef.current?.focus();
   }, [open, connected, connecting, setVisible]);
+
+  useEffect(() => {
+    if (!open || busy) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, busy, onClose]);
 
   const runSign = useCallback(async () => {
     if (!publicKey || !signMessage) {
@@ -122,6 +133,7 @@ export function SolanaAccountSignInDialog({
         )}
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
           <button
+            ref={primaryRef}
             type="button"
             disabled={busy}
             onClick={() => void runSign()}

@@ -172,6 +172,36 @@ export async function linkSolanaWalletToAccount(input: {
   }
 }
 
+export async function getPrimarySolanaWalletForAccount(
+  accountId: string,
+): Promise<{ wallet_address: string; solana_network: string } | null> {
+  if (useMemory()) {
+    return nativeAccountMemory.getPrimarySolanaWalletForAccount(accountId);
+  }
+  if (usePostgresDirect()) {
+    return pgStore.getPrimarySolanaWalletForAccount(accountId);
+  }
+  const sb = requirePersistenceAdmin();
+  const { data, error } = await sb
+    .from("abraxas_account_solana_wallets")
+    .select("wallet_address, solana_network")
+    .eq("account_id", accountId)
+    .is("revoked_at", null)
+    .order("last_used_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) {
+    if (error.code === "42P01") throw new NativeAccountStoreUnavailableError();
+    throw error;
+  }
+  if (!data) return null;
+  return {
+    wallet_address: String(data.wallet_address),
+    solana_network: String(data.solana_network),
+  };
+}
+
 export async function touchSolanaWalletLastUsed(
   walletAddress: string,
   solanaNetwork: string,

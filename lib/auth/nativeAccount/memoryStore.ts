@@ -270,7 +270,9 @@ export const nativeAccountMemory = {
     walletAddress: string;
     solanaNetwork: string;
   }): void {
-    solanaWallets().set(solanaWalletKey(input.walletAddress, input.solanaNetwork), {
+    const key = solanaWalletKey(input.walletAddress, input.solanaNetwork);
+    if (solanaWallets().has(key)) return;
+    solanaWallets().set(key, {
       id: input.id,
       account_id: input.accountId,
       wallet_address: input.walletAddress,
@@ -278,6 +280,27 @@ export const nativeAccountMemory = {
       revoked_at: null,
       last_used_at: new Date().toISOString(),
     });
+  },
+
+  setSolanaChallengeExpiresAt(challengeId: string, expiresAt: string): void {
+    const ch = solanaChallenges().get(challengeId);
+    if (ch) ch.expires_at = expiresAt;
+  },
+
+  getPrimarySolanaWalletForAccount(
+    accountId: string,
+  ): { wallet_address: string; solana_network: string } | null {
+    const rows = Array.from(solanaWallets().values()).filter(
+      (w) => w.account_id === accountId && !w.revoked_at,
+    );
+    if (rows.length === 0) return null;
+    rows.sort((a, b) => {
+      const aTs = a.last_used_at ? Date.parse(a.last_used_at) : 0;
+      const bTs = b.last_used_at ? Date.parse(b.last_used_at) : 0;
+      return bTs - aTs;
+    });
+    const top = rows[0]!;
+    return { wallet_address: top.wallet_address, solana_network: top.solana_network };
   },
 
   touchSolanaWallet(walletAddress: string, solanaNetwork: string): void {

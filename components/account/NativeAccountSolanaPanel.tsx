@@ -9,7 +9,14 @@ import { SolanaAccountSignInDialog } from "@/components/nav/SolanaAccountSignInD
 type SessionState =
   | { loading: true }
   | { loading: false; authenticated: false }
-  | { loading: false; authenticated: true; accountId: string; authMethod: string };
+  | {
+      loading: false;
+      authenticated: true;
+      accountId: string;
+      authMethod: string;
+      walletAddress: string | null;
+      solanaNetwork: string | null;
+    };
 
 export function NativeAccountSolanaPanel({ onSuccess }: { onSuccess?: () => void }) {
   const { publicKey } = useWallet();
@@ -25,6 +32,8 @@ export function NativeAccountSolanaPanel({ onSuccess }: { onSuccess?: () => void
         authenticated?: boolean;
         account_id?: string;
         auth_method?: string;
+        wallet_address?: string | null;
+        solana_network?: string | null;
       };
       if (!body.authenticated || !body.account_id) {
         setSession({ loading: false, authenticated: false });
@@ -35,6 +44,8 @@ export function NativeAccountSolanaPanel({ onSuccess }: { onSuccess?: () => void
         authenticated: true,
         accountId: body.account_id,
         authMethod: body.auth_method ?? "solana_wallet",
+        walletAddress: body.wallet_address ?? null,
+        solanaNetwork: body.solana_network ?? null,
       });
     } catch {
       setSession({ loading: false, authenticated: false });
@@ -83,22 +94,28 @@ export function NativeAccountSolanaPanel({ onSuccess }: { onSuccess?: () => void
     );
   }
 
-  const walletLabel = publicKey
-    ? `${publicKey.toBase58().slice(0, 4)}…${publicKey.toBase58().slice(-4)}`
-    : "Wallet disconnected locally";
+  const linkedWallet = session.walletAddress;
+  const walletLabel = linkedWallet
+    ? `${linkedWallet.slice(0, 4)}…${linkedWallet.slice(-4)}`
+    : publicKey
+      ? `${publicKey.toBase58().slice(0, 4)}…${publicKey.toBase58().slice(-4)}`
+      : "Wallet not connected in browser";
+  const networkLabel = session.solanaNetwork ?? process.env.NEXT_PUBLIC_SOLANA_NETWORK ?? "devnet";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem" }}>
       <p style={{ margin: 0, fontSize: "0.82rem", color: "var(--text-secondary)" }}>
-        <strong style={{ color: "var(--text-primary)" }}>Account active.</strong>{" "}
-        {session.accountId.slice(0, 12)}… · {walletLabel}
+        <strong style={{ color: "var(--text-primary)" }}>Signed in.</strong> Solana {networkLabel} · {walletLabel}
+      </p>
+      <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--text-muted)" }}>
+        Account {session.accountId.slice(0, 16)}…
       </p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
         <Btn href="/developers/launchpad" size="sm">
           Start building
         </Btn>
         <Btn href="/pricing" variant="secondary" size="sm">
-          Upgrade & integrate
+          Integrate with my business
         </Btn>
         <Btn variant="ghost" size="sm" onClick={() => void signOut()}>
           Sign out
