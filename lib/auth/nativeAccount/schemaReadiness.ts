@@ -12,6 +12,14 @@ export type NativeAuthSchemaProbe = {
 
 const NATIVE_TABLES = ["abraxas_accounts", "abraxas_account_passkeys", "abraxas_webauthn_challenges"] as const;
 
+function isMissingTablePostgrestError(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  if (error.code === "42P01") return true;
+  if (error.code === "PGRST205") return true;
+  const msg = error.message?.toLowerCase() ?? "";
+  return msg.includes("does not exist") || msg.includes("could not find the table");
+}
+
 export async function probeNativeAuthSchemaReady(
   env: Record<string, string | undefined> = process.env,
 ): Promise<NativeAuthSchemaProbe> {
@@ -37,7 +45,7 @@ export async function probeNativeAuthSchemaReady(
   let migration144 = true;
   for (const table of NATIVE_TABLES) {
     const { error } = await sb.from(table).select("*").limit(0);
-    if (error?.code === "42P01") {
+    if (isMissingTablePostgrestError(error)) {
       migration144 = false;
       break;
     }
@@ -45,7 +53,7 @@ export async function probeNativeAuthSchemaReady(
       return {
         ok: false,
         code: "schema_probe_failed",
-        migrations: { migration_144: migration144, migration_145_atomic_rpc: false },
+        migrations: { migration_144: false, migration_145_atomic_rpc: false },
       };
     }
   }
