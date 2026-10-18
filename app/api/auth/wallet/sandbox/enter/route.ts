@@ -8,6 +8,7 @@ import {
   putEphemeralSandboxWorkspace,
 } from "@/lib/auth/ephemeralWallet/sandboxWorkspace";
 import { mapEphemeralStoreError } from "@/lib/auth/ephemeralWallet/apiGate";
+import { EPHEMERAL_TTL } from "@/lib/auth/ephemeralWallet/retention";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export async function POST(req: NextRequest) {
     }
 
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(now.getTime() + EPHEMERAL_TTL.sandboxWorkspaceSec * 1000);
     const workspace = {
       workspace_id: createEphemeralSandboxWorkspaceId(),
       wallet_address: auth.session.walletAddress,

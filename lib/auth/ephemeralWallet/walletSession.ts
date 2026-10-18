@@ -11,9 +11,23 @@ import {
 } from "./sessionStore";
 import { defaultEphemeralWalletScopes, type EphemeralWalletScope } from "./scopes";
 import { EphemeralStateUnavailableError } from "./errors";
+import { EPHEMERAL_TTL } from "./retention";
+import {
+  EPHEMERAL_WALLET_JWT_AUDIENCE,
+  EPHEMERAL_WALLET_JWT_ISSUER,
+} from "./contract";
 
 export const WALLET_SESSION_COOKIE = "abraxas_wallet_session";
-export const WALLET_SESSION_TTL_SEC = 4 * 60 * 60; // 4 hours
+export const WALLET_SESSION_TTL_SEC = EPHEMERAL_TTL.walletSessionSec;
+
+function ephemeralWalletEnvBinding(): string {
+  return (
+    process.env.VERCEL_ENV?.trim()
+    || process.env.ABRAXAS_DEPLOYMENT_ENV?.trim()
+    || process.env.NODE_ENV
+    || "development"
+  );
+}
 
 function sessionSecret(): Uint8Array | null {
   const raw =
@@ -68,10 +82,13 @@ export async function issueEphemeralWalletSessionToken(input: {
     scp: scopes,
     net: input.solanaNetwork,
     am: "solana_wallet",
+    env: ephemeralWalletEnvBinding(),
   })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(input.walletAddress.trim())
     .setJti(sessionId)
+    .setIssuer(EPHEMERAL_WALLET_JWT_ISSUER)
+    .setAudience(EPHEMERAL_WALLET_JWT_AUDIENCE)
     .setIssuedAt()
     .setExpirationTime(`${WALLET_SESSION_TTL_SEC}s`)
     .sign(secret);
@@ -102,8 +119,14 @@ async function verifyWalletSessionJwt(token: string): Promise<EphemeralWalletSes
   if (!secret) return null;
 
   try {
-    const { payload } = await jwtVerify(token, secret);
+    const { payload } = await jwtVerify(token, secret, {
+      algorithms: ["HS256"],
+      issuer: EPHEMERAL_WALLET_JWT_ISSUER,
+      audience: EPHEMERAL_WALLET_JWT_AUDIENCE,
+    });
     if (payload.typ !== "abraxas_ephemeral_wallet_session") return null;
+    const envClaim = typeof payload.env === "string" ? payload.env : null;
+    if (!envClaim || envClaim !== ephemeralWalletEnvBinding()) return null;
     const walletAddress = typeof payload.sub === "string" ? payload.sub : null;
     const sessionId = typeof payload.jti === "string" ? payload.jti : null;
     const solanaNetwork = typeof payload.net === "string" ? payload.net : null;

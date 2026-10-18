@@ -9,7 +9,9 @@ import { resetEphemeralChallengeStoreForTests } from "./challengeStore";
 import { resetEphemeralRedisClientForTests } from "./redisClient";
 import { resetEphemeralSessionStoreForTests } from "./sessionStore";
 import { resetEphemeralSandboxStoreForTests } from "./sandboxWorkspace";
+import { resetEphemeralSandboxTestStoreForTests } from "./sandboxTestVerification";
 import { EPHEMERAL_WALLET_AUTH_PURPOSE } from "./message";
+import { peekEphemeralWalletChallenge } from "./challengeStore";
 
 const integrationEnabled = process.env.ABRAXAS_EPHEMERAL_INTEGRATION_TEST === "1";
 
@@ -35,12 +37,14 @@ describe.runIf(integrationEnabled)("ephemeral wallet authentication", () => {
     resetEphemeralChallengeStoreForTests();
     resetEphemeralSessionStoreForTests();
     resetEphemeralSandboxStoreForTests();
+    resetEphemeralSandboxTestStoreForTests();
   });
 
   afterAll(() => {
     resetEphemeralChallengeStoreForTests();
     resetEphemeralSessionStoreForTests();
     resetEphemeralSandboxStoreForTests();
+    resetEphemeralSandboxTestStoreForTests();
   });
 
   it("issues session without creating a persistent account record", async () => {
@@ -128,6 +132,81 @@ describe.runIf(integrationEnabled)("ephemeral wallet authentication", () => {
       }),
     );
     expect((await afterRevoke.json()).authenticated).toBe(false);
+
+    const capturedUse = await sessionGet(
+      new NextRequest(`${origin}/api/auth/wallet/session`, {
+        headers: { cookie: sessionCookie },
+      }),
+    );
+    expect((await capturedUse.json()).authenticated).toBe(false);
+  });
+
+  it("completes temporary sandbox test verification journey", async () => {
+    const { POST: challengePost } = await import("@/app/api/auth/wallet/solana/challenge/route");
+    const challengeRes = await challengePost(
+      new NextRequest(`${origin}/api/auth/wallet/solana/challenge`, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin, host: "localhost:3000" },
+        body: JSON.stringify({ wallet_address: wallet, solana_network: "devnet" }),
+      }),
+    );
+    const challengeBody = await challengeRes.json();
+    const messageBytes = new TextEncoder().encode(challengeBody.challenge.message);
+    const signature = Buffer.from(nacl.sign.detached(messageBytes, keypair.secretKey)).toString("base64");
+    const { POST: verifyPost } = await import("@/app/api/auth/wallet/solana/verify/route");
+    const verifyRes = await verifyPost(
+      new NextRequest(`${origin}/api/auth/wallet/solana/verify`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin,
+          host: "localhost:3000",
+          cookie: challengeRes.headers.get("set-cookie") ?? "",
+        },
+        body: JSON.stringify({
+          challenge_id: challengeBody.challenge.challenge_id,
+          wallet_address: wallet,
+          solana_network: "devnet",
+          signature,
+        }),
+      }),
+    );
+    const sessionCookie = verifyRes.headers.get("set-cookie") ?? "";
+    const { POST: enterPost } = await import("@/app/api/auth/wallet/sandbox/enter/route");
+    const enterRes = await enterPost(
+      new NextRequest(`${origin}/api/auth/wallet/sandbox/enter`, {
+        method: "POST",
+        headers: { cookie: sessionCookie, origin, host: "localhost:3000" },
+        body: "{}",
+      }),
+    );
+    expect(enterRes.status).toBe(200);
+    const { POST: testVerifyPost } = await import("@/app/api/auth/wallet/sandbox/test-verify/route");
+    const testRes = await testVerifyPost(
+      new NextRequest(`${origin}/api/auth/wallet/sandbox/test-verify`, {
+        method: "POST",
+        headers: {
+          cookie: sessionCookie,
+          origin,
+          host: "localhost:3000",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ policy_id: "age_21_retail" }),
+      }),
+    );
+    expect(testRes.status).toBe(200);
+    const testBody = await testRes.json();
+    expect(testBody.result.result_label).toBe("ephemeral_sandbox_test_only");
+    expect(testBody.production_usable).toBe(false);
+    const { GET: validateGet } = await import("@/app/api/auth/wallet/sandbox/validate/route");
+    const validateRes = await validateGet(
+      new NextRequest(
+        `${origin}/api/auth/wallet/sandbox/validate?receipt_id=${encodeURIComponent(String(testBody.result.receipt_id))}`,
+      ),
+    );
+    const validateBody = await validateRes.json();
+    expect(validateBody.signature_valid).toBe(true);
+    expect(validateBody.production_usable).toBe(false);
   });
 
   it("rejects wrong signer", async () => {
@@ -163,5 +242,40 @@ describe.runIf(integrationEnabled)("ephemeral wallet authentication", () => {
     );
     expect(verifyRes.status).toBe(401);
     expect((await verifyRes.json()).code).toBe("wrong_signer");
+    const stillThere = await peekEphemeralWalletChallenge(challengeBody.challenge.challenge_id);
+    expect(stillThere?.challenge_id).toBe(challengeBody.challenge.challenge_id);
+  });
+
+  it("rejects invalid signature without consuming challenge", async () => {
+    const { POST: challengePost } = await import("@/app/api/auth/wallet/solana/challenge/route");
+    const challengeRes = await challengePost(
+      new NextRequest(`${origin}/api/auth/wallet/solana/challenge`, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin, host: "localhost:3000" },
+        body: JSON.stringify({ wallet_address: wallet, solana_network: "devnet" }),
+      }),
+    );
+    const challengeBody = await challengeRes.json();
+    const { POST: verifyPost } = await import("@/app/api/auth/wallet/solana/verify/route");
+    const verifyRes = await verifyPost(
+      new NextRequest(`${origin}/api/auth/wallet/solana/verify`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin,
+          host: "localhost:3000",
+          cookie: challengeRes.headers.get("set-cookie") ?? "",
+        },
+        body: JSON.stringify({
+          challenge_id: challengeBody.challenge.challenge_id,
+          wallet_address: wallet,
+          solana_network: "devnet",
+          signature: Buffer.from("invalid").toString("base64"),
+        }),
+      }),
+    );
+    expect(verifyRes.status).toBe(401);
+    expect((await verifyRes.json()).code).toBe("invalid_signature");
+    expect(await peekEphemeralWalletChallenge(challengeBody.challenge.challenge_id)).not.toBeNull();
   });
 });
