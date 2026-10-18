@@ -123,10 +123,10 @@ describe.runIf(integrationEnabled && Boolean(databaseUrl))("sovereign native acc
       authMethod: "solana_wallet",
       expiresAt: sessionExpires,
     });
-    expect(await isAccountSessionActive(sessionId, accountId)).toBe(true);
+    expect(await isAccountSessionActive({ sessionId, accountId })).toBe(true);
 
-    expect(await revokeAccountSession(sessionId, accountId, "sign_out")).toBe(true);
-    expect(await isAccountSessionActive(sessionId, accountId)).toBe(false);
+    expect(await revokeAccountSession({ sessionId, accountId, reason: "sign_out" })).toBe(true);
+    expect(await isAccountSessionActive({ sessionId, accountId })).toBe(false);
 
     await linkSolanaWalletToAccount({
       accountId,
