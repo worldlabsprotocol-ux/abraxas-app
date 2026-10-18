@@ -26,11 +26,36 @@ export type MemoryChallenge = {
   consumed_at: string | null;
 };
 
+export type MemorySolanaChallenge = {
+  id: string;
+  wallet_address: string;
+  solana_network: string;
+  origin: string;
+  uri: string;
+  request_id: string;
+  session_context_hash: string;
+  nonce: string;
+  message: string;
+  expires_at: string;
+  consumed_at: string | null;
+};
+
+export type MemorySolanaWallet = {
+  id: string;
+  account_id: string;
+  wallet_address: string;
+  solana_network: string;
+  revoked_at: string | null;
+  last_used_at: string | null;
+};
+
 type MemoryState = {
   accounts: Map<string, { status: AbraxasAccountStatus; created_at: string }>;
   passkeys: Map<string, MemoryPasskey>;
   passkeysByCred: Map<string, MemoryPasskey>;
   challenges: Map<string, MemoryChallenge>;
+  solanaChallenges: Map<string, MemorySolanaChallenge>;
+  solanaWallets: Map<string, MemorySolanaWallet>;
   memberships: Map<string, { role: PartnerMembershipRole; status: "active" | "revoked"; created_at: string }>;
   grants: Array<Record<string, unknown>>;
   enrollments: Array<Record<string, unknown>>;
@@ -46,6 +71,8 @@ function memoryState(): MemoryState {
       passkeys: new Map(),
       passkeysByCred: new Map(),
       challenges: new Map(),
+      solanaChallenges: new Map(),
+      solanaWallets: new Map(),
       memberships: new Map(),
       grants: [],
       enrollments: [],
@@ -66,6 +93,15 @@ function passkeysByCred() {
 function challenges() {
   return memoryState().challenges;
 }
+function solanaChallenges() {
+  return memoryState().solanaChallenges;
+}
+function solanaWallets() {
+  return memoryState().solanaWallets;
+}
+function solanaWalletKey(wallet: string, network: string): string {
+  return `${network}:${wallet}`;
+}
 function memberships() {
   return memoryState().memberships;
 }
@@ -85,6 +121,8 @@ export function resetNativeAccountMemory(): void {
   passkeys().clear();
   passkeysByCred().clear();
   challenges().clear();
+  solanaChallenges().clear();
+  solanaWallets().clear();
   memberships().clear();
   grants().length = 0;
   enrollments().length = 0;
@@ -199,5 +237,51 @@ export const nativeAccountMemory = {
     idempotency_key?: string | null;
   }): void {
     enrollments().push({ ...input, created_at: new Date().toISOString() });
+  },
+
+  insertSolanaChallenge(row: Omit<MemorySolanaChallenge, "consumed_at"> & { consumed_at?: string | null }): void {
+    const full: MemorySolanaChallenge = { ...row, consumed_at: row.consumed_at ?? null };
+    solanaChallenges().set(full.id, full);
+  },
+
+  consumeSolanaChallengeAtomic(input: {
+    challengeId: string;
+    walletAddress: string;
+    sessionContextHash: string;
+  }): MemorySolanaChallenge | null {
+    const ch = solanaChallenges().get(input.challengeId);
+    if (!ch || ch.consumed_at) return null;
+    if (new Date(ch.expires_at).getTime() < Date.now()) return null;
+    if (ch.wallet_address !== input.walletAddress) return null;
+    if (ch.session_context_hash !== input.sessionContextHash) return null;
+    ch.consumed_at = new Date().toISOString();
+    return ch;
+  },
+
+  findAccountBySolanaWallet(walletAddress: string, solanaNetwork: string): string | null {
+    const row = solanaWallets().get(solanaWalletKey(walletAddress, solanaNetwork));
+    if (!row || row.revoked_at) return null;
+    return row.account_id;
+  },
+
+  linkSolanaWallet(input: {
+    id: string;
+    accountId: string;
+    walletAddress: string;
+    solanaNetwork: string;
+  }): void {
+    solanaWallets().set(solanaWalletKey(input.walletAddress, input.solanaNetwork), {
+      id: input.id,
+      account_id: input.accountId,
+      wallet_address: input.walletAddress,
+      solana_network: input.solanaNetwork,
+      revoked_at: null,
+      last_used_at: new Date().toISOString(),
+    });
+  },
+
+  touchSolanaWallet(walletAddress: string, solanaNetwork: string): void {
+    const row = solanaWallets().get(solanaWalletKey(walletAddress, solanaNetwork));
+    if (row) row.last_used_at = new Date().toISOString();
   },
 };

@@ -25,6 +25,7 @@ describe("public surface tokens", () => {
     expect(nav).toContain("PublicNavLaunchAppLink");
     expect(nav).toContain("LanguageSelector");
     expect(nav).not.toContain("NavSignInButton");
+    expect(nav).not.toContain("PublicNavWalletButton");
     expect(nav).not.toContain("rd-nav-links");
   });
 });

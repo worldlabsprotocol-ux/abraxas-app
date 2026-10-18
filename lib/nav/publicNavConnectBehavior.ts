@@ -1,9 +1,9 @@
 // FILE: lib/nav/publicNavConnectBehavior.ts
-// Public header routing — passkey sign-in, explore, and unavailable (no legacy holder flows).
+// Public header routing — Solana wallet sign-in (primary), explore, unavailable.
 
 export type PublicNavSignInPhase =
   | "native_account_link"
-  | "native_passkey_sign_in"
+  | "native_solana_sign_in"
   | "native_service_unavailable"
   | "native_explore_only";
 
@@ -15,7 +15,7 @@ export function resolvePublicNavSignInPhase(input: {
 }): PublicNavSignInPhase | "loading" {
   if (!input.nativeStateLoaded) return "loading";
   if (input.nativeAuthenticated) return "native_account_link";
-  if (input.nativeOperational) return "native_passkey_sign_in";
+  if (input.nativeOperational) return "native_solana_sign_in";
   if (input.nativeFlagEnabled) return "native_service_unavailable";
   return "native_explore_only";
 }
@@ -26,4 +26,4 @@ export const PUBLIC_CONNECT_ACCOUNT_HREF = "/account/applications" as const;
 
 export const PUBLIC_SIGN_IN_UNAVAILABLE_TITLE = "Sign-in temporarily unavailable";
 export const PUBLIC_SIGN_IN_UNAVAILABLE_DESC =
-  "Passkey account sign-in is offline. Explore Abraxas without signing in while service is restored.";
+  "Solana account sign-in is offline. Explore Abraxas without signing in while service is restored.";

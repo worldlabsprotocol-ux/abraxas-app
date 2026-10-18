@@ -8,7 +8,6 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 import { PublicNavConnectButton } from "@/components/nav/PublicNavConnectButton";
 import { PublicNavExploreLink } from "@/components/nav/PublicNavExploreLink";
 import { PublicNavLaunchAppLink } from "@/components/nav/PublicNavLaunchAppLink";
-import { PublicNavWalletButton } from "@/components/nav/PublicNavWalletButton";
 import { PUBLIC_FONT_SANS, PUBLIC_NAV_DOCS_CTA, PUBLIC_NAV_EXPLORE_LINKS, PUBLIC_NAV_LINKS } from "@/lib/design/publicSurface";
 import { useState, type CSSProperties } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
@@ -43,14 +42,12 @@ export function RedesignNav() {
         <span className="rd-nav-explore-desktop">
           <PublicNavExploreLink prominent />
         </span>
-        <PublicNavWalletButton prominent />
         <PublicNavConnectButton prominent />
         <PublicNavLaunchAppLink />
       </div>
 
       <div className="rd-nav-mobile rd-nav-actions" style={{ display: "flex", marginLeft: "auto" }}>
         <LanguageSelector />
-        <PublicNavWalletButton />
         <PublicNavConnectButton />
         <PublicNavLaunchAppLink />
         <button

@@ -301,3 +301,130 @@ export async function recordSandboxEnrollment(input: {
     mapPgError(error);
   }
 }
+
+export async function insertAccountSolanaChallenge(row: {
+  id: string;
+  wallet_address: string;
+  solana_network: string;
+  origin: string;
+  uri: string;
+  request_id: string;
+  session_context_hash: string;
+  nonce: string;
+  message: string;
+  expires_at: string;
+}): Promise<void> {
+  try {
+    await queryAbraxasPg(
+      `insert into public.abraxas_account_solana_auth_challenges
+        (id, wallet_address, solana_network, origin, uri, request_id, session_context_hash, nonce, message, expires_at)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::timestamptz)`,
+      [
+        row.id,
+        row.wallet_address,
+        row.solana_network,
+        row.origin,
+        row.uri,
+        row.request_id,
+        row.session_context_hash,
+        row.nonce,
+        row.message,
+        row.expires_at,
+      ],
+    );
+  } catch (error) {
+    mapPgError(error);
+  }
+}
+
+export async function consumeAccountSolanaChallengeAtomic(input: {
+  challengeId: string;
+  walletAddress: string;
+  sessionContextHash: string;
+}): Promise<{
+  id: string;
+  wallet_address: string;
+  solana_network: string;
+  origin: string;
+  uri: string;
+  request_id: string;
+  session_context_hash: string;
+  nonce: string;
+  message: string;
+  expires_at: string;
+  consumed_at: string | null;
+} | null> {
+  try {
+    const { rows } = await queryAbraxasPg<{ result: { ok?: boolean } & Record<string, unknown> }>(
+      `select public.abraxas_consume_account_solana_challenge_atomic($1, $2, $3) as result`,
+      [input.challengeId, input.walletAddress, input.sessionContextHash],
+    );
+    const payload = rows[0]?.result;
+    if (!payload?.ok) return null;
+    return {
+      id: input.challengeId,
+      wallet_address: String(payload.wallet_address),
+      solana_network: String(payload.solana_network),
+      origin: String(payload.origin),
+      uri: String(payload.uri),
+      request_id: String(payload.request_id),
+      session_context_hash: input.sessionContextHash,
+      nonce: String(payload.nonce),
+      message: String(payload.message),
+      expires_at: String(payload.expires_at),
+      consumed_at: new Date().toISOString(),
+    };
+  } catch (error) {
+    mapPgError(error);
+  }
+}
+
+export async function findAccountIdBySolanaWallet(
+  walletAddress: string,
+  solanaNetwork: string,
+): Promise<string | null> {
+  try {
+    const { rows } = await queryAbraxasPg<{ account_id: string }>(
+      `select account_id from public.abraxas_account_solana_wallets
+       where wallet_address = $1 and solana_network = $2 and revoked_at is null limit 1`,
+      [walletAddress, solanaNetwork],
+    );
+    return rows[0]?.account_id ?? null;
+  } catch (error) {
+    mapPgError(error);
+  }
+}
+
+export async function linkSolanaWalletToAccount(input: {
+  id: string;
+  accountId: string;
+  walletAddress: string;
+  solanaNetwork: string;
+}): Promise<void> {
+  try {
+    await queryAbraxasPg(
+      `insert into public.abraxas_account_solana_wallets
+        (id, account_id, wallet_address, solana_network, last_used_at)
+       values ($1, $2, $3, $4, now())
+       on conflict (wallet_address, solana_network) do nothing`,
+      [input.id, input.accountId, input.walletAddress, input.solanaNetwork],
+    );
+  } catch (error) {
+    mapPgError(error);
+  }
+}
+
+export async function touchSolanaWalletLastUsed(
+  walletAddress: string,
+  solanaNetwork: string,
+): Promise<void> {
+  try {
+    await queryAbraxasPg(
+      `update public.abraxas_account_solana_wallets set last_used_at = now()
+       where wallet_address = $1 and solana_network = $2 and revoked_at is null`,
+      [walletAddress, solanaNetwork],
+    );
+  } catch (error) {
+    mapPgError(error);
+  }
+}

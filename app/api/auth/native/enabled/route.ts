@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { assessNativeAuthProductionReadiness } from "@/lib/auth/nativeAccount/productionReadiness";
 import { resolveNativeAuthOperational } from "@/lib/auth/nativeAccount/operational";
 import { probeNativeAuthSchemaReady } from "@/lib/auth/nativeAccount/schemaReadiness";
+import { probeSolanaAccountAuthSchemaReady } from "@/lib/auth/nativeAccount/solanaSchemaReadiness";
+import { resolveSolanaAccountAuthOperational } from "@/lib/auth/nativeAccount/solanaOperational";
 import { isNativeAccountDirectPostgresEnabled } from "@/lib/persistence/nativeAccountPg";
 import { resolveWebAuthnOrigin, resolveWebAuthnRpId } from "@/lib/auth/webauthn/rpConfig";
 
@@ -12,18 +14,24 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const host = req.headers.get("host");
   const schema = await probeNativeAuthSchemaReady();
+  const solanaSchema = await probeSolanaAccountAuthSchemaReady();
   const readiness = assessNativeAuthProductionReadiness({ schema, hostHeader: host });
   const operational = resolveNativeAuthOperational({ schema });
+  const solanaOperational = resolveSolanaAccountAuthOperational({ schema: solanaSchema });
+  const publicOperational = solanaOperational.operational;
   return NextResponse.json({
     ok: true,
-    enabled: operational.flag_enabled,
-    operational: operational.operational,
-    connect_mode: operational.operational
-      ? "native_passkey"
-      : operational.flag_enabled
+    enabled: solanaOperational.flag_enabled,
+    operational: publicOperational,
+    passkey_operational: operational.operational,
+    solana_operational: solanaOperational.operational,
+    connect_mode: publicOperational
+      ? "solana_wallet"
+      : solanaOperational.flag_enabled
         ? "unavailable"
         : "explore",
-    degraded_reason: operational.degraded_reason,
+    degraded_reason: solanaOperational.degraded_reason ?? operational.degraded_reason,
+    solana_schema: solanaSchema,
     runtime: readiness.diagnostics,
     schema,
     persistence: {

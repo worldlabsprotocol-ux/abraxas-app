@@ -1,15 +1,11 @@
 "use client";
 // FILE: components/nav/PublicNavConnectButton.tsx
-// Sign in — native passkey Abraxas account (not wallet connection).
+// Sign in — Solana wallet Abraxas account (single primary action).
 
 import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  connectNativePasskeyAccount,
-  isConfirmedNoPasskeyResult,
-  runNativePasskeyRegistration,
-} from "@/lib/auth/nativeAccount/clientPasskeyCeremony";
 import { PublicNavAccountMenu, PublicNavConnectPrimary } from "@/components/nav/PublicNavAccountMenu";
+import { SolanaAccountSignInDialog } from "@/components/nav/SolanaAccountSignInDialog";
 import {
   PUBLIC_CONNECT_ACCOUNT_HREF,
   PUBLIC_NAV_EXPLORE_HREF,
@@ -50,7 +46,7 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
   const [nativeSession, setNativeSession] = useState<NativeSession | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [offerCreateAccount, setOfferCreateAccount] = useState(false);
+  const [signInOpen, setSignInOpen] = useState(false);
 
   const refreshNavState = useCallback(async () => {
     try {
@@ -69,6 +65,12 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
     void refreshNavState();
   }, [pathname, refreshNavState]);
 
+  useEffect(() => {
+    const onSession = () => void refreshNavState();
+    window.addEventListener("abraxas:native-account-session", onSession);
+    return () => window.removeEventListener("abraxas:native-account-session", onSession);
+  }, [refreshNavState]);
+
   const nativeStateLoaded = nativeFlagEnabled !== null && nativeOperational !== null && nativeSession !== null;
 
   const phase = resolvePublicNavSignInPhase({
@@ -83,43 +85,10 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
     router.push(PUBLIC_CONNECT_ACCOUNT_HREF);
   }, [refreshNavState, router]);
 
-  const runSignIn = useCallback(async () => {
+  const openSignIn = useCallback(() => {
     setError(null);
-    setOfferCreateAccount(false);
-    setBusy(true);
-    try {
-      const result = await connectNativePasskeyAccount();
-      if (!result.ok) {
-        if (result.reason === "cancelled") return;
-        if (isConfirmedNoPasskeyResult(result)) {
-          setOfferCreateAccount(true);
-          return;
-        }
-        setError(result.message ?? "Could not sign in.");
-        return;
-      }
-      await finishSuccess();
-    } finally {
-      setBusy(false);
-    }
-  }, [finishSuccess]);
-
-  const runCreateAccount = useCallback(async () => {
-    setError(null);
-    setBusy(true);
-    try {
-      const result = await runNativePasskeyRegistration();
-      if (!result.ok) {
-        if (result.reason === "cancelled") return;
-        setError(result.message ?? "Could not create account.");
-        return;
-      }
-      setOfferCreateAccount(false);
-      await finishSuccess();
-    } finally {
-      setBusy(false);
-    }
-  }, [finishSuccess]);
+    setSignInOpen(true);
+  }, []);
 
   const errorFooter = error ? (
     <span className="public-nav-connect__error" role="alert">
@@ -176,41 +145,25 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
     );
   }
 
-  if (offerCreateAccount) {
-    return (
-      <PublicNavAccountMenu
+  return (
+    <>
+      <PublicNavConnectPrimary
         prominent={prominent}
-        variant="primary"
-        triggerLabel={busy ? "Signing in" : "Sign in"}
-        triggerAriaLabel="Sign in with passkey — more options"
-        items={[
-          {
-            type: "button",
-            label: busy ? "Signing in…" : "Sign in with passkey",
-            disabled: busy,
-            onClick: () => void runSignIn(),
-          },
-          {
-            type: "button",
-            label: busy ? "Working…" : "Create passkey account",
-            disabled: busy,
-            onClick: () => void runCreateAccount(),
-          },
-        ]}
+        label={busy ? "Signing in" : "Sign in"}
+        ariaLabel="Sign in with Solana wallet"
+        busy={busy}
+        onClick={openSignIn}
         footer={errorFooter}
       />
-    );
-  }
-
-  return (
-    <PublicNavConnectPrimary
-      prominent={prominent}
-      label={busy ? "Signing in" : "Sign in"}
-      ariaLabel="Sign in with Abraxas passkey"
-      busy={busy}
-      onClick={() => void runSignIn()}
-      footer={errorFooter}
-    />
+      <SolanaAccountSignInDialog
+        open={signInOpen}
+        onClose={() => setSignInOpen(false)}
+        onSuccess={() => void finishSuccess()}
+        busy={busy}
+        setBusy={setBusy}
+        setError={setError}
+      />
+    </>
   );
 }
 
