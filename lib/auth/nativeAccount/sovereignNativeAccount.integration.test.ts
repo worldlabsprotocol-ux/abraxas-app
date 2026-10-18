@@ -27,7 +27,7 @@ import {
 } from "@/lib/auth/nativeAccount/solanaAuth/store";
 import { enrollSandboxForAccount } from "@/lib/auth/nativeAccount/sandboxEnroll";
 import { getPrimarySandboxEnrollment } from "@/lib/auth/nativeAccount/store";
-import { buildLaunchpadWorkspaceView } from "@/lib/partner/launchpad/workspaceView";
+import { buildLaunchpadWorkspaceView } from "@/lib/partner/launchpad/workspaceView.server";
 
 const integrationEnabled = process.env.ABRAXAS_SOVEREIGN_INTEGRATION_TEST === "1";
 const databaseUrl = process.env.ABRAXAS_DATABASE_URL?.trim()

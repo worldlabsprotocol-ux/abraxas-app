@@ -1,10 +1,9 @@
 // FILE: lib/partner/launchpad/workspaceView.ts
-// Partner Launchpad workspace aggregation.
+// Partner Launchpad workspace aggregation (PostgREST path — use workspaceView.server.ts in sovereign mode).
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { listLaunchpadApplicationsForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
 import type { LaunchpadApplicationSummary, LaunchpadWorkspaceView } from "@/lib/partner/launchpad/types";
-import { launchpadUsesSovereignPostgres } from "@/lib/partner/launchpad/launchpadPersistence";
 
 function integrationStatus(
   status: string,
@@ -17,47 +16,36 @@ function integrationStatus(
 export async function buildLaunchpadWorkspaceView(
   partnerId: string,
 ): Promise<LaunchpadWorkspaceView | null> {
+  const sb = requireSupabaseAdmin();
   const applications = await listLaunchpadApplicationsForPartner(partnerId);
 
-  let partnerCompany: string | undefined;
-  let allowedEnvs: string[] = ["sandbox"];
-  const keyIds = applications.map((app) => app.api_key_id).filter(Boolean) as string[];
-  let keyPrefixMap = new Map<string, string>();
+  const { data: partner } = await sb
+    .from("partners")
+    .select("company, allowed_environments")
+    .eq("partner_id", partnerId)
+    .maybeSingle();
 
-  if (launchpadUsesSovereignPostgres()) {
-    const { pgGetApiKeyPrefixes, pgGetPartnerCompany } = await import("@/lib/partner/launchpad/sovereign/launchpadPgStore");
-    const partner = await pgGetPartnerCompany(partnerId);
-    partnerCompany = partner?.company;
-    allowedEnvs = partner?.allowed_environments ?? ["sandbox"];
-    keyPrefixMap = await pgGetApiKeyPrefixes(keyIds);
-  } else {
-    const sb = requireSupabaseAdmin();
-    const { data: partner } = await sb
-      .from("partners")
-      .select("company, allowed_environments")
-      .eq("partner_id", partnerId)
-      .maybeSingle();
-    partnerCompany = partner?.company;
-    allowedEnvs = (partner?.allowed_environments ?? ["sandbox"]) as string[];
-    if (keyIds.length > 0) {
-      const { data: keys } = await sb
-        .from("partner_api_keys")
-        .select("id, key_prefix, revoked_at")
-        .in("id", keyIds);
-      for (const key of keys ?? []) {
-        if (!key.revoked_at) {
-          keyPrefixMap.set(key.id, key.key_prefix);
-        }
+  const keyIds = applications.map((app) => app.api_key_id).filter(Boolean) as string[];
+  const keyPrefixMap = new Map<string, string>();
+
+  if (keyIds.length > 0) {
+    const { data: keys } = await sb
+      .from("partner_api_keys")
+      .select("id, key_prefix, revoked_at")
+      .in("id", keyIds);
+    for (const key of keys ?? []) {
+      if (!key.revoked_at) {
+        keyPrefixMap.set(key.id, key.key_prefix);
       }
     }
   }
 
-  const allowedEnvsResolved = allowedEnvs;
-  const environment = allowedEnvsResolved.includes("production") ? "production" : "sandbox";
+  const allowedEnvs = (partner?.allowed_environments ?? ["sandbox"]) as string[];
+  const environment = allowedEnvs.includes("production") ? "production" : "sandbox";
 
   return {
     partner_id: partnerId,
-    display_name: partnerCompany ?? partnerId,
+    display_name: partner?.company ?? partnerId,
     environment,
     applications: applications.map((app) => ({
       id: app.id,

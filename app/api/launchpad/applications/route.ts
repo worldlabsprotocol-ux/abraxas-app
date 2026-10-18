@@ -10,7 +10,7 @@ import {
   requireLaunchpadSession,
 } from "@/lib/partner/launchpad/apiHelpers";
 import { provisionLaunchpadSandbox } from "@/lib/partner/launchpad/provisionSandbox";
-import { buildLaunchpadWorkspaceView } from "@/lib/partner/launchpad/workspaceView";
+import { buildLaunchpadWorkspaceView } from "@/lib/partner/launchpad/workspaceView.server";
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
 import {
   attachPartnerConsoleSessionCookie,

@@ -3,15 +3,9 @@
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
 import { isLaunchpadReturnUrlAllowlisted } from "@/lib/partner/launchpad/launchpadReturnUrlAllowlist";
-import { launchpadUsesSovereignPostgres } from "@/lib/partner/launchpad/launchpadPersistence";
-
 export async function getLaunchpadApplicationById(
   applicationId: string,
 ): Promise<LaunchpadApplicationRow | null> {
-  if (launchpadUsesSovereignPostgres()) {
-    const { pgGetLaunchpadApplicationById } = await import("@/lib/partner/launchpad/sovereign/launchpadPgStore");
-    return pgGetLaunchpadApplicationById(applicationId);
-  }
   const sb = requireSupabaseAdmin();
   const { data } = await sb
     .from("partner_launchpad_applications")
@@ -50,10 +44,6 @@ export async function getLaunchpadApplicationForPartner(
 export async function listLaunchpadApplicationsForPartner(
   partnerId: string,
 ): Promise<LaunchpadApplicationRow[]> {
-  if (launchpadUsesSovereignPostgres()) {
-    const { pgListLaunchpadApplicationsForPartner } = await import("@/lib/partner/launchpad/sovereign/launchpadPgStore");
-    return pgListLaunchpadApplicationsForPartner(partnerId);
-  }
   const sb = requireSupabaseAdmin();
   const { data } = await sb
     .from("partner_launchpad_applications")
