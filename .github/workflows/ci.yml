@@ -292,8 +292,11 @@ jobs:
         run: npx vitest run lib/auth/nativeAccount/sovereignNativeAccount.integration.test.ts
         env:
           ABRAXAS_SOVEREIGN_INTEGRATION_TEST: "1"
+          ABRAXAS_SOVEREIGN_SANDBOX_INTEGRATION: "1"
           ABRAXAS_SOVEREIGN_NATIVE_ACCOUNT: "1"
           ABRAXAS_PERSISTENCE_BACKEND: postgres_direct
           ABRAXAS_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/abraxas_sovereign
           ABRAXAS_NATIVE_ACCOUNT_MEMORY: "0"
+          ABRAXAS_NATIVE_ACCOUNT_AUTH_ENABLED: "1"
+          ABRAXAS_ACCOUNT_SESSION_SECRET: ci-sovereign-integration-session-secret-32
 
