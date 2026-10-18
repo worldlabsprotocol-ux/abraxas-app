@@ -19,11 +19,18 @@ import {
   parseHandoffCreateBody,
   projectPublic,
 } from "@/lib/partner/hostedHandoff";
+import { launchpadUsesSovereignPostgres } from "@/lib/partner/launchpad/launchpadPersistence";
 
 export const dynamic = "force-dynamic";
 type RouteContext = { params: { id: string } };
 
+const SOVEREIGN_HANDOFF_MESSAGE =
+  "Live hosted holder handoff is not yet available on sovereign PostgreSQL. Use the verification harness and follow-up live-verification PR.";
+
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  if (launchpadUsesSovereignPostgres()) {
+    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.not_configured, 501, SOVEREIGN_HANDOFF_MESSAGE);
+  }
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
   const limited = await enforceLaunchpadTenantRateLimit(req, "/api/launchpad/hosted-handoff", auth.session.partnerId, 20);
@@ -81,6 +88,9 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
 }
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
+  if (launchpadUsesSovereignPostgres()) {
+    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.not_configured, 501, SOVEREIGN_HANDOFF_MESSAGE);
+  }
   const auth = await requireLaunchpadSession(req);
   if (!auth.ok) return auth.response;
   const limited = await enforceLaunchpadTenantRateLimit(req, "/api/launchpad/hosted-handoff", auth.session.partnerId, 30);

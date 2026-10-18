@@ -289,7 +289,7 @@ jobs:
         env:
           ABRAXAS_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/abraxas_sovereign
       - name: Sovereign native account integration (no Supabase credentials)
-        run: npx vitest run lib/auth/nativeAccount/sovereignNativeAccount.integration.test.ts lib/partner/launchpad/sovereignLaunchpad.integration.test.ts
+        run: npx vitest run lib/auth/nativeAccount/sovereignNativeAccount.integration.test.ts lib/partner/launchpad/sovereignLaunchpad.integration.test.ts lib/partner/launchpad/sovereignLaunchpad.http.integration.test.ts
         env:
           ABRAXAS_SOVEREIGN_INTEGRATION_TEST: "1"
           ABRAXAS_SOVEREIGN_SANDBOX_INTEGRATION: "1"
@@ -299,4 +299,5 @@ jobs:
           ABRAXAS_NATIVE_ACCOUNT_MEMORY: "0"
           ABRAXAS_NATIVE_ACCOUNT_AUTH_ENABLED: "1"
           ABRAXAS_ACCOUNT_SESSION_SECRET: ci-sovereign-integration-session-secret-32
+          ABRAXAS_BROWSER_SESSION_SECRET: ci-sovereign-browser-session-secret-32
 

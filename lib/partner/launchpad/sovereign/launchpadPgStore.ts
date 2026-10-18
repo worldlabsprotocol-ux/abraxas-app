@@ -213,6 +213,36 @@ export async function pgGetSignedReceiptForApplication(input: {
   return rows[0] ?? null;
 }
 
+export async function pgLookupPartnerApiKeyByHash(keyHash: string): Promise<{
+  id: string;
+  partner_id: string;
+  display_name: string;
+  key_prefix: string;
+  scopes: string[];
+  revoked_at: string | null;
+} | null> {
+  const { rows } = await queryAbraxasPg<{
+    id: string;
+    partner_id: string;
+    display_name: string;
+    key_prefix: string;
+    scopes: string[];
+    revoked_at: string | null;
+  }>(
+    `select id, partner_id, display_name, key_prefix, scopes, revoked_at
+       from public.partner_api_keys where key_hash = $1 limit 1`,
+    [keyHash],
+  );
+  return rows[0] ?? null;
+}
+
+export async function pgTouchPartnerApiKeyLastUsed(keyId: string): Promise<void> {
+  await queryAbraxasPg(
+    `update public.partner_api_keys set last_used_at = now() where id = $1::uuid`,
+    [keyId],
+  );
+}
+
 export async function pgGetApiKeyRevoked(keyId: string): Promise<boolean> {
   const { rows } = await queryAbraxasPg<{ revoked_at: string | null }>(
     `select revoked_at from public.partner_api_keys where id = $1::uuid limit 1`,

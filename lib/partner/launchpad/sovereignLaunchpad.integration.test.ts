@@ -73,7 +73,10 @@ describe.runIf(integrationEnabled && sandboxEnabled && Boolean(databaseUrl))(
       if (!enrolled.ok) return;
 
       partnerId = enrolled.partnerId;
-      applicationId = String(enrolled.application.id);
+      applicationId = String(enrolled.application.application_id);
+      expect(applicationId).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+      );
 
       const crossTenant = await getLaunchpadApplicationForPartner(applicationId, "dev-other-tenant");
       expect(crossTenant).toBeNull();
@@ -111,6 +114,16 @@ describe.runIf(integrationEnabled && sandboxEnabled && Boolean(databaseUrl))(
 
       const revoked = await revokeLaunchpadCredential(applicationId, partnerId);
       expect(revoked.ok).toBe(true);
+
+      const replay = await runLaunchpadTestScenario({
+        applicationId,
+        partnerId,
+        scenarioId: "replay",
+      });
+      expect(replay.ok).toBe(true);
+      if (replay.ok) {
+        expect(replay.result.scenario_id).toBe("replay");
+      }
     });
   },
 );
