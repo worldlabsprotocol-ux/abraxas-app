@@ -1,74 +1,138 @@
 "use client";
 // FILE: components/nav/PublicNavConnectButton.tsx
-// Connect — native passkey account first; no default Google sign-in on public surfaces.
+// Connect — one-click native passkey sign-in when enabled; explicit registration only on user choice.
 
 import Link from "next/link";
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { NavProfileMenu } from "@/components/sui/NavProfileMenu";
-import { useSuiAuthOptional } from "@/components/sui/SuiAuthProvider";
+import { probeBrowserSessionDetails } from "@/lib/auth/ensureBrowserSession";
+import {
+  connectNativePasskeyAccount,
+  isConfirmedNoPasskeyResult,
+  runNativePasskeyRegistration,
+} from "@/lib/auth/nativeAccount/clientPasskeyCeremony";
 import { PUBLIC_FONT_SANS } from "@/lib/design/publicSurface";
-import { NAV_SIGN_IN_COPY } from "@/lib/nav/navSignInButtonState";
+import {
+  PUBLIC_CONNECT_ACCOUNT_HREF,
+  PUBLIC_CONNECT_NATIVE_UNAVAILABLE_HREF,
+  resolvePublicNavConnectPhase,
+} from "@/lib/nav/publicNavConnectBehavior";
 
 const FONT = PUBLIC_FONT_SANS;
 const ACCENT = "var(--accent)";
 
 type NativeSession = { authenticated: boolean };
 
+async function loadNativeNavState(): Promise<{ enabled: boolean; session: NativeSession }> {
+  const [enabledRes, sessionRes] = await Promise.all([
+    fetch("/api/auth/native/enabled", { credentials: "same-origin" }),
+    fetch("/api/auth/native/session", { credentials: "same-origin" }),
+  ]);
+  const enabledJson = (await enabledRes.json()) as { enabled?: boolean };
+  const sessionJson = (await sessionRes.json()) as { authenticated?: boolean };
+  return {
+    enabled: Boolean(enabledJson.enabled),
+    session: { authenticated: Boolean(sessionJson.authenticated) },
+  };
+}
+
 export function PublicNavConnectButton({ prominent = false }: { prominent?: boolean }) {
   const pathname = usePathname();
-  const auth = useSuiAuthOptional();
-  const holderSignedIn = Boolean(auth?.suiAddress);
+  const router = useRouter();
+  const [holderBrowserSessionActive, setHolderBrowserSessionActive] = useState(false);
   const [nativeEnabled, setNativeEnabled] = useState<boolean | null>(null);
   const [nativeSession, setNativeSession] = useState<NativeSession | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [offerCreateAccount, setOfferCreateAccount] = useState(false);
+
+  const refreshNavState = useCallback(async () => {
+    try {
+      const [holderProbe, nativeState] = await Promise.all([
+        probeBrowserSessionDetails(),
+        loadNativeNavState(),
+      ]);
+      setHolderBrowserSessionActive(holderProbe.ok);
+      setNativeEnabled(nativeState.enabled);
+      setNativeSession(nativeState.session);
+    } catch {
+      setHolderBrowserSessionActive(false);
+      setNativeEnabled(false);
+      setNativeSession({ authenticated: false });
+    }
+  }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const [enabledRes, sessionRes] = await Promise.all([
-          fetch("/api/auth/native/enabled", { credentials: "same-origin" }),
-          fetch("/api/auth/native/session", { credentials: "same-origin" }),
-        ]);
-        if (cancelled) return;
-        const enabledJson = (await enabledRes.json()) as { enabled?: boolean };
-        const sessionJson = (await sessionRes.json()) as { authenticated?: boolean };
-        setNativeEnabled(Boolean(enabledJson.enabled));
-        setNativeSession({ authenticated: Boolean(sessionJson.authenticated) });
-      } catch {
-        if (!cancelled) {
-          setNativeEnabled(false);
-          setNativeSession({ authenticated: false });
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [pathname]);
+    void refreshNavState();
+  }, [pathname, refreshNavState]);
 
-  const scrollToSandbox = useCallback(() => {
-    if (typeof window === "undefined") return;
-    const target = "/#start-sandbox";
-    if (pathname === "/" || pathname === "/terminal") {
-      const el = document.getElementById("start-sandbox");
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-        window.history.replaceState(null, "", target);
+  const phase = resolvePublicNavConnectPhase({
+    holderBrowserSessionActive,
+    nativeAuthenticated: Boolean(nativeSession?.authenticated),
+    nativeEnabled: Boolean(nativeEnabled),
+    nativeStateLoaded: nativeEnabled !== null && nativeSession !== null,
+  });
+
+  const finishSuccess = useCallback(async () => {
+    await refreshNavState();
+    router.push(PUBLIC_CONNECT_ACCOUNT_HREF);
+  }, [refreshNavState, router]);
+
+  const runConnect = useCallback(async () => {
+    setError(null);
+    setOfferCreateAccount(false);
+    setBusy(true);
+    try {
+      const result = await connectNativePasskeyAccount();
+      if (!result.ok) {
+        if (result.reason === "cancelled") return;
+        if (isConfirmedNoPasskeyResult(result)) {
+          setOfferCreateAccount(true);
+          return;
+        }
+        setError(result.message ?? "Could not connect.");
         return;
       }
+      await finishSuccess();
+    } finally {
+      setBusy(false);
     }
-    window.location.assign(target);
-  }, [pathname]);
+  }, [finishSuccess]);
 
-  if (holderSignedIn) {
+  const runCreateAccount = useCallback(async () => {
+    setError(null);
+    setBusy(true);
+    try {
+      const result = await runNativePasskeyRegistration();
+      if (!result.ok) {
+        if (result.reason === "cancelled") return;
+        setError(result.message ?? "Could not create account.");
+        return;
+      }
+      setOfferCreateAccount(false);
+      await finishSuccess();
+    } finally {
+      setBusy(false);
+    }
+  }, [finishSuccess]);
+
+  if (phase === "loading") {
+    return (
+      <span style={{ ...buttonStyle(prominent), opacity: 0.65 }} aria-busy="true">
+        Connect
+      </span>
+    );
+  }
+
+  if (phase === "holder_profile_menu") {
     return <NavProfileMenu prominent={prominent} />;
   }
 
-  if (nativeSession?.authenticated) {
+  if (phase === "native_account_link") {
     return (
       <Link
-        href="/account/applications"
+        href={PUBLIC_CONNECT_ACCOUNT_HREF}
         style={buttonStyle(prominent)}
         aria-label="Open your Abraxas account"
       >
@@ -77,23 +141,54 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
     );
   }
 
-  if (nativeEnabled) {
+  if (phase === "native_unavailable_recovery") {
     return (
-      <button
-        type="button"
-        onClick={scrollToSandbox}
-        style={{ ...buttonStyle(prominent), cursor: "pointer", border: "none" }}
-        aria-label="Connect with passkey account"
+      <Link
+        href={PUBLIC_CONNECT_NATIVE_UNAVAILABLE_HREF}
+        style={buttonStyle(prominent)}
+        aria-label="Open Passport for holder access — native passkey sign-in is not enabled here"
+        title="Passkey account sign-in is not enabled in this environment. Open Passport for holder credentials."
       >
         Connect
-      </button>
+      </Link>
     );
   }
 
   return (
-    <Link href="/passport" style={buttonStyle(prominent)} aria-label={NAV_SIGN_IN_COPY.openAriaLabel}>
-      Connect
-    </Link>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+      <button
+        type="button"
+        onClick={() => void runConnect()}
+        disabled={busy}
+        style={{ ...buttonStyle(prominent), cursor: busy ? "wait" : "pointer", border: "none" }}
+        aria-label="Connect with Abraxas passkey"
+      >
+        {busy ? "Connecting…" : "Connect"}
+      </button>
+      {offerCreateAccount ? (
+        <button
+          type="button"
+          onClick={() => void runCreateAccount()}
+          disabled={busy}
+          style={{
+            ...buttonStyle(prominent),
+            cursor: busy ? "wait" : "pointer",
+            border: "none",
+            background: "transparent",
+            color: "var(--text-secondary)",
+            fontSize: prominent ? "0.72rem" : "0.68rem",
+            padding: "0.25rem 0.65rem",
+          }}
+        >
+          Create passkey account
+        </button>
+      ) : null}
+      {error ? (
+        <span style={{ fontFamily: FONT, fontSize: "0.62rem", color: "#EF4444", maxWidth: 220, textAlign: "right" }}>
+          {error}
+        </span>
+      ) : null}
+    </div>
   );
 }
 

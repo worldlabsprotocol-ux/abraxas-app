@@ -33,7 +33,7 @@ describe("resolveNavSignInUiState", () => {
 
   it("uses wallet-first nav and Abraxas-first sign-in labels", () => {
     expect(NAV_SIGN_IN_COPY.open).toBe("Connect");
-    expect(NAV_SIGN_IN_COPY.openAriaLabel).toMatch(/wallet/i);
+    expect(NAV_SIGN_IN_COPY.openAriaLabel).toMatch(/passkey/i);
     expect(NAV_SIGN_IN_COPY.canonical).toBe("Continue securely");
     expect(NAV_SIGN_IN_COPY.legacy).toBe("Recover a Passport created with an older sign in setup");
     expect(NAV_SIGN_IN_COPY.canonicalAriaLabel).toMatch(/Passport/i);

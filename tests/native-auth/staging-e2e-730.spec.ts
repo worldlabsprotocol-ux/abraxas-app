@@ -52,7 +52,8 @@ test.describe("Build #730 staging HTTPS acceptance", () => {
     expect(enrollBlocked.status()).toBeGreaterThanOrEqual(401);
 
     await page.goto("/#start-sandbox");
-    await page.getByRole("button", { name: "Sign in with existing passkey" }).click();
+    await page.locator(".abx-sandbox-entry__link").filter({ hasText: "Sign in" }).click();
+    await page.getByRole("button", { name: /^Sign in$/i }).click();
     await expect(page.getByText("Step 2 — Provision your tenant-scoped sandbox")).toBeVisible({ timeout: 90_000 });
     expect((await (await page.request.get("/api/auth/native/session")).json()).account_id).toBe(accountId);
 
@@ -90,7 +91,8 @@ test.describe("Build #730 staging HTTPS acceptance", () => {
 
     await page.request.delete("/api/auth/native/session");
     await page.goto("/#start-sandbox");
-    await page.getByRole("button", { name: "Sign in with existing passkey" }).click();
+    await page.locator(".abx-sandbox-entry__link").filter({ hasText: "Sign in" }).click();
+    await page.getByRole("button", { name: /^Sign in$/i }).click();
     await expect(page.getByText("Step 2")).toBeVisible({ timeout: 90_000 });
     expect((await (await page.request.get("/api/auth/native/session")).json()).account_id).toBe(accountId);
 
