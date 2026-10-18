@@ -24,6 +24,10 @@ Native account auth provides L1 **account control** via passkeys (`abx_ac_*` sub
 
 Reference: `docs/build-730-authentication-architecture-audit.md`, `docs/build-730-staging-acceptance-report.md`.
 
+## Redeploy after Vercel env changes
+
+Updating Production environment variables **does not** change a running deployment until a **new Production build** reaches **READY**. Confirm runtime via `GET /api/auth/native/enabled` (`native_auth_flag_state`, `enabled`, `schema`, `production_readiness.blockers`).
+
 ## Controlled rollout procedure
 
 1. **Operator sign-off** on checklist above (record date, environment, approver).
