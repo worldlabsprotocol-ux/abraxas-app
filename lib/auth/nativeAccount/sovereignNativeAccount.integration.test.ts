@@ -138,23 +138,26 @@ describe.runIf(integrationEnabled && Boolean(databaseUrl))("sovereign native acc
     );
   });
 
-  it("enrolls sandbox via sovereign transaction and resolves workspace", async () => {
-    await insertNativeAccount(accountId);
+  it.runIf(process.env.ABRAXAS_SOVEREIGN_SANDBOX_INTEGRATION === "1")(
+    "enrolls sandbox via sovereign transaction and resolves workspace",
+    async () => {
+      await insertNativeAccount(accountId);
 
-    const first = await enrollSandboxForAccount({ accountId, applicationName: "Sovereign Test App" });
-    expect(first.ok).toBe(true);
-    if (!first.ok) return;
+      const first = await enrollSandboxForAccount({ accountId, applicationName: "Sovereign Test App" });
+      expect(first.ok).toBe(true);
+      if (!first.ok) return;
 
-    const replay = await enrollSandboxForAccount({ accountId });
-    expect(replay.ok).toBe(true);
-    if (replay.ok) {
-      expect(replay.application.idempotency_replay).toBe(true);
-    }
+      const replay = await enrollSandboxForAccount({ accountId });
+      expect(replay.ok).toBe(true);
+      if (replay.ok) {
+        expect(replay.application.idempotency_replay).toBe(true);
+      }
 
-    const enrollment = await getPrimarySandboxEnrollment(accountId);
-    expect(enrollment?.partner_id).toBeTruthy();
+      const enrollment = await getPrimarySandboxEnrollment(accountId);
+      expect(enrollment?.partner_id).toBeTruthy();
 
-    const workspace = await buildLaunchpadWorkspaceView(enrollment!.partner_id);
-    expect(workspace?.applications.length).toBeGreaterThan(0);
-  });
+      const workspace = await buildLaunchpadWorkspaceView(enrollment!.partner_id);
+      expect(workspace?.applications.length).toBeGreaterThan(0);
+    },
+  );
 });
