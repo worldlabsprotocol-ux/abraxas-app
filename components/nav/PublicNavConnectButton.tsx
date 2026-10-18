@@ -29,10 +29,17 @@ async function loadNativeNavState(): Promise<{ enabled: boolean; session: Native
     fetch("/api/auth/native/enabled", { credentials: "same-origin" }),
     fetch("/api/auth/native/session", { credentials: "same-origin" }),
   ]);
-  const enabledJson = (await enabledRes.json()) as { enabled?: boolean };
+  const enabledJson = (await enabledRes.json()) as {
+    enabled?: boolean;
+    operational?: boolean;
+  };
   const sessionJson = (await sessionRes.json()) as { authenticated?: boolean };
+  const nativeConnect =
+    typeof enabledJson.operational === "boolean"
+      ? enabledJson.operational
+      : Boolean(enabledJson.enabled);
   return {
-    enabled: Boolean(enabledJson.enabled),
+    enabled: nativeConnect,
     session: { authenticated: Boolean(sessionJson.authenticated) },
   };
 }

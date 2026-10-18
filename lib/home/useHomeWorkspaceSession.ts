@@ -38,8 +38,12 @@ export function useHomeWorkspaceSession() {
       fetch("/api/auth/native/enabled", { credentials: "same-origin" }),
       fetch("/api/account/overview", { credentials: "include" }),
     ]);
-    const enabledJson = (await enabledRes.json()) as { enabled?: boolean };
-    setNativeEnabled(Boolean(enabledJson.enabled));
+    const enabledJson = (await enabledRes.json()) as { enabled?: boolean; operational?: boolean };
+    const operational =
+      typeof enabledJson.operational === "boolean"
+        ? enabledJson.operational
+        : Boolean(enabledJson.enabled);
+    setNativeEnabled(operational);
     if (overviewRes.ok) {
       setOverview((await overviewRes.json()) as WorkspaceOverview);
     }

@@ -10,7 +10,8 @@ export type PasskeyCeremonyResult =
 export async function fetchNativeAuthEnabled(): Promise<boolean> {
   try {
     const res = await fetch("/api/auth/native/enabled", { credentials: "same-origin" });
-    const json = (await res.json()) as { enabled?: boolean };
+    const json = (await res.json()) as { enabled?: boolean; operational?: boolean };
+    if (typeof json.operational === "boolean") return json.operational;
     return Boolean(json.enabled);
   } catch {
     return false;
