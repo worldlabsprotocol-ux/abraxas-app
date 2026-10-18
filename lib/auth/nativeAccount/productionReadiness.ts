@@ -10,6 +10,9 @@ import {
   type NativeAuthRuntimeDiagnostics,
 } from "./runtimeDiagnostics";
 import type { NativeAuthSchemaProbe } from "./schemaReadiness";
+import type { SolanaAccountAuthSchemaProbe } from "./solanaSchemaReadiness";
+import { resolveAuthorizedSolanaNetworkFromEnv } from "@/lib/auth/passportSolanaAuth/network";
+import { isSovereignNativeAccountMode } from "@/lib/persistence/sovereignNativeAccount";
 
 export type NativeAuthProductionReadiness = {
   diagnostics: NativeAuthRuntimeDiagnostics;
@@ -25,6 +28,7 @@ export type NativeAuthProductionReadiness = {
 export function assessNativeAuthProductionReadiness(input: {
   env?: Record<string, string | undefined>;
   schema?: NativeAuthSchemaProbe | null;
+  solanaSchema?: SolanaAccountAuthSchemaProbe | null;
   hostHeader?: string | null;
 }): NativeAuthProductionReadiness {
   const env = input.env ?? process.env;
@@ -42,6 +46,15 @@ export function assessNativeAuthProductionReadiness(input: {
   }
   if (input.schema && !input.schema.ok && runtimeEnabled) {
     blockers.push(input.schema.code ?? "schema_not_ready");
+  }
+  if (input.solanaSchema && !input.solanaSchema.ok && runtimeEnabled) {
+    blockers.push(input.solanaSchema.code ?? "solana_schema_not_ready");
+  }
+  if (runtimeEnabled && env.NODE_ENV === "production" && !isSovereignNativeAccountMode(env)) {
+    blockers.push("sovereign_mode_required");
+  }
+  if (runtimeEnabled && !resolveAuthorizedSolanaNetworkFromEnv()) {
+    blockers.push("solana_network_not_configured");
   }
   if (!config.ok && runtimeEnabled) blockers.push(config.code);
   if (vercelConfigured && !runtimeEnabled && env.VERCEL_ENV === "production") {

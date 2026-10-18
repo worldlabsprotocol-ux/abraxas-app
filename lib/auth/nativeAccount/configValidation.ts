@@ -16,7 +16,8 @@ export type NativeAuthConfigState =
         | "session_secret_missing"
         | "memory_forbidden_in_production"
         | "sovereign_database_missing"
-        | "sovereign_supabase_host_rejected";
+        | "sovereign_supabase_host_rejected"
+        | "sovereign_mode_required";
     };
 
 export function validateNativeAuthRuntimeConfig(
@@ -40,6 +41,14 @@ export function validateNativeAuthRuntimeConfig(
 
   if (!secret || secret.length < 32) {
     return { ok: false, code: "session_secret_missing" };
+  }
+
+  if (
+    env.NODE_ENV === "production"
+    && isNativeAccountAuthEnabled(env)
+    && !isSovereignNativeAccountMode(env)
+  ) {
+    return { ok: false, code: "sovereign_mode_required" };
   }
 
   if (isSovereignNativeAccountMode(env)) {

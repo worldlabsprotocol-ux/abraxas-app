@@ -22,6 +22,17 @@ describe("validateNativeAuthRuntimeConfig", () => {
     if (!result.ok) expect(result.code).toBe("session_secret_missing");
   });
 
+  it("requires sovereign mode in production when native auth is enabled", () => {
+    const result = validateNativeAuthRuntimeConfig({
+      ABRAXAS_NATIVE_ACCOUNT_AUTH_ENABLED: "true",
+      NODE_ENV: "production",
+      ABRAXAS_ACCOUNT_SESSION_SECRET: "x".repeat(32),
+      NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe("sovereign_mode_required");
+  });
+
   it("requires independent database URL in sovereign production mode", () => {
     const result = validateNativeAuthRuntimeConfig({
       ABRAXAS_NATIVE_ACCOUNT_AUTH_ENABLED: "true",

@@ -27,8 +27,8 @@ export function resolveSolanaAccountAuthOperational(input: {
   let degraded_reason: string | null = null;
   if (flag_enabled && !operational) {
     if (!config_ok && config.code !== "disabled") degraded_reason = config.code;
-    else if (!network_ok) degraded_reason = "solana_network_not_configured";
     else if (!schema_ok) degraded_reason = input.schema.code ?? "schema_not_ready";
+    else if (!network_ok) degraded_reason = "solana_network_not_configured";
     else degraded_reason = "solana_account_auth_not_operational";
   }
 
