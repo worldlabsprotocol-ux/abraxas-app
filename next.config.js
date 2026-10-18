@@ -55,7 +55,6 @@ const nextConfig = {
       "onnxruntime-node",
       "@sqds/multisig",
       "pg",
-      "@supabase/supabase-js",
     ],
     outputFileTracingExcludes: {
       "**/*": ML_TRACE_EXCLUDES,
