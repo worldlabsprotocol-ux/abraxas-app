@@ -8,11 +8,43 @@ import { probeSolanaAccountAuthSchemaReady } from "@/lib/auth/nativeAccount/sola
 import { resolveSolanaAccountAuthOperational } from "@/lib/auth/nativeAccount/solanaOperational";
 import { isNativeAccountDirectPostgresEnabled } from "@/lib/persistence/nativeAccountPg";
 import { resolveWebAuthnOrigin, resolveWebAuthnRpId } from "@/lib/auth/webauthn/rpConfig";
+import { isEphemeralWalletAuthEnabled } from "@/lib/auth/ephemeralWallet/featureFlag";
+import { resolveEphemeralWalletAuthOperationalAsync } from "@/lib/auth/ephemeralWallet/operational";
+import { getEphemeralRedisConfigState } from "@/lib/auth/ephemeralWallet/redisClient";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const host = req.headers.get("host");
+
+  if (isEphemeralWalletAuthEnabled()) {
+    const ephemeral = await resolveEphemeralWalletAuthOperationalAsync();
+    return NextResponse.json({
+      ok: true,
+      auth_mode: "ephemeral_wallet",
+      enabled: ephemeral.flag_enabled,
+      operational: ephemeral.operational,
+      passkey_operational: false,
+      solana_operational: ephemeral.operational,
+      connect_mode: ephemeral.operational
+        ? "solana_wallet"
+        : ephemeral.flag_enabled
+          ? "unavailable"
+          : "explore",
+      degraded_reason: ephemeral.degraded_reason,
+      persistence: {
+        personal_account_database: false,
+        ephemeral_state: getEphemeralRedisConfigState(),
+        state_backend: ephemeral.state_backend,
+      },
+      webauthn: {
+        rp_id: resolveWebAuthnRpId(host),
+        rp_id_from_env: Boolean(process.env.ABRAXAS_WEBAUTHN_RP_ID?.trim()),
+        origin: resolveWebAuthnOrigin(req.headers.get("origin"), host),
+      },
+    });
+  }
+
   const schema = await probeNativeAuthSchemaReady();
   const solanaSchema = await probeSolanaAccountAuthSchemaReady();
   const readiness = assessNativeAuthProductionReadiness({ schema, hostHeader: host });

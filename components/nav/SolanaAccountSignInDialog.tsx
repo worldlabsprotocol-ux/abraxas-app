@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { completeSolanaAccountSignIn } from "@/lib/auth/nativeAccount/clientSolanaAccountSignIn";
+import { completeEphemeralWalletSignIn } from "@/lib/auth/ephemeralWallet/clientSignIn";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
@@ -53,10 +54,19 @@ export function SolanaAccountSignInDialog({
     setBusy(true);
     setError(null);
     try {
-      const result = await completeSolanaAccountSignIn({
-        walletAddress: publicKey.toBase58(),
-        signMessage,
-      });
+      const enabledRes = await fetch("/api/auth/native/enabled", { credentials: "same-origin" });
+      const enabledJson = (await enabledRes.json()) as { auth_mode?: string };
+      const useEphemeral = enabledJson.auth_mode === "ephemeral_wallet";
+
+      const result = useEphemeral
+        ? await completeEphemeralWalletSignIn({
+            walletAddress: publicKey.toBase58(),
+            signMessage,
+          })
+        : await completeSolanaAccountSignIn({
+            walletAddress: publicKey.toBase58(),
+            signMessage,
+          });
       if (!result.ok) {
         if (result.reason === "cancelled") {
           onClose();
