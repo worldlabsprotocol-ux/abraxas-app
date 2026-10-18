@@ -35,6 +35,7 @@ export function EphemeralSandboxWorkspaceClient() {
   const [selectedPolicy, setSelectedPolicy] = useState("");
   const [result, setResult] = useState<TestResult | null>(null);
   const [validation, setValidation] = useState<{ ok?: boolean; signature_valid?: boolean } | null>(null);
+  const [decision, setDecision] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -99,6 +100,7 @@ export function EphemeralSandboxWorkspaceClient() {
     setBusy(true);
     setError(null);
     setValidation(null);
+    setDecision(null);
     try {
       const resource = `abraxas:sandbox:${workspace.workspace_id}:policy:${selectedPolicy}`;
       const action = await completeWalletActionAuthorization({
@@ -121,12 +123,25 @@ export function EphemeralSandboxWorkspaceClient() {
           signature: action.signature,
         }),
       });
-      const json = (await res.json()) as { ok?: boolean; result?: TestResult; code?: string };
+      const json = (await res.json()) as {
+        ok?: boolean;
+        result?: TestResult;
+        code?: string;
+        decision?: string;
+        unsupported?: boolean;
+      };
       if (!res.ok || !json.result) {
-        setError(json.code ?? "Test verification failed.");
+        const hint =
+          json.code === "insufficient_evidence_for_policy"
+            ? "This policy requires authoritative identity evidence — a wallet signature alone is not sufficient."
+            : json.unsupported
+              ? "That evidence issuer is not supported for this policy."
+              : null;
+        setError(hint ?? json.code ?? "Test verification failed.");
         return;
       }
       setResult(json.result);
+      setDecision(json.decision ?? null);
       const validateRes = await fetch(
         `/api/auth/wallet/sandbox/validate?receipt_id=${encodeURIComponent(String(json.result.receipt_id))}`,
         { credentials: "same-origin" },
@@ -196,7 +211,9 @@ export function EphemeralSandboxWorkspaceClient() {
       {result ? (
         <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.55 }}>
           <p style={{ margin: "0 0 0.35rem" }}>
-            <strong style={{ color: "var(--text-primary)" }}>Result label:</strong>{" "}
+            <strong style={{ color: "var(--text-primary)" }}>Decision:</strong>{" "}
+            {decision ?? "unknown"} ·{" "}
+            <strong style={{ color: "var(--text-primary)" }}>Label:</strong>{" "}
             {result.result_label || EPHEMERAL_SANDBOX_RESULT_LABEL} (not Production)
           </p>
           <p style={{ margin: "0 0 0.35rem" }}>
