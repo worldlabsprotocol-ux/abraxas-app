@@ -4,6 +4,11 @@ import { validateEphemeralWalletRuntimeConfig } from "./configValidation";
 import { isEphemeralWalletAuthEnabled } from "./featureFlag";
 import { probeEphemeralChallengeStore } from "./challengeStore";
 import { probeEphemeralSessionStore } from "./sessionStore";
+import {
+  distributedReplayEnforced,
+  resolveEphemeralRevocationMode,
+  resolveTransientStateBackend,
+} from "./transientStatePolicy";
 
 export async function resolveEphemeralWalletAuthOperationalAsync(
   env: Record<string, string | undefined> = process.env,
@@ -14,6 +19,9 @@ export async function resolveEphemeralWalletAuthOperationalAsync(
   operational: boolean;
   degraded_reason: string | null;
   state_backend: string | null;
+  transient_backend: "process" | "redis";
+  distributed_replay_enforced: boolean;
+  revocation_mode: string;
 }> {
   const flag_enabled = isEphemeralWalletAuthEnabled(env);
   const config = validateEphemeralWalletRuntimeConfig(env);
@@ -45,5 +53,8 @@ export async function resolveEphemeralWalletAuthOperationalAsync(
     operational,
     degraded_reason,
     state_backend,
+    transient_backend: resolveTransientStateBackend(env),
+    distributed_replay_enforced: distributedReplayEnforced(env),
+    revocation_mode: resolveEphemeralRevocationMode(env),
   };
 }

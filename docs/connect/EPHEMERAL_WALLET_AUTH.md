@@ -1,5 +1,7 @@
 # Ephemeral wallet authentication
 
+See also: [Wallet-native trust protocol](./WALLET_NATIVE_TRUST_PROTOCOL.md).
+
 ## Model
 
 - **Wallet signature** proves control of a Solana address for a short time.

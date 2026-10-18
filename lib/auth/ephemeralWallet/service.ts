@@ -10,6 +10,7 @@ import {
 import { verifyPassportSolanaPersonalMessage } from "@/lib/auth/passportSolanaAuth/verifySignature";
 import { canonicalizeSolanaNetwork, resolveAuthorizedSolanaNetworkFromEnv } from "@/lib/auth/passportSolanaAuth/network";
 import { buildEphemeralWalletSignInMessage } from "./message";
+import { WALLET_AUTH_PURPOSE_SIGN_IN } from "./protocolEnvelope";
 import {
   commitEphemeralWalletChallenge,
   hashEphemeralSessionContext,
@@ -87,6 +88,9 @@ export async function issueEphemeralWalletAuthChallenge(input: {
         nonce,
         message,
         expires_at: expiresAt,
+        purpose: WALLET_AUTH_PURPOSE_SIGN_IN,
+        operation: "wallet:authenticate",
+        resource: "abraxas:capability:wallet_session",
       },
       Math.floor(WALLET_SOL_AUTH_CHALLENGE_TTL_MS / 1000),
     );

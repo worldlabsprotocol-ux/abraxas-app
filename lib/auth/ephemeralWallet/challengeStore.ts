@@ -2,15 +2,14 @@
 
 import { createHash } from "crypto";
 import type { EphemeralWalletChallengeRecord } from "./challengeRecord";
-import { isEphemeralRedisConfigured } from "./redisClient";
 import {
   ephemeralKvGet,
   ephemeralKvGetDel,
   ephemeralKvSet,
   probeEphemeralKv,
-  resolveEphemeralKvBackend,
 } from "./redisKv";
 import { EphemeralStateUnavailableError } from "./errors";
+import { processTransientStateAllowed, resolveTransientStateBackend } from "./transientStatePolicy";
 
 const KEY_PREFIX = "abraxas:ephemeral:wallet-challenge:v1:";
 
@@ -24,8 +23,7 @@ const memoryStore = new Map<string, MemoryEntry>();
 const memoryLocks = new Map<string, Promise<void>>();
 
 function memoryAllowed(env: Record<string, string | undefined>): boolean {
-  if (env.NODE_ENV === "production") return false;
-  return env.VITEST === "true" || env.ABRAXAS_EPHEMERAL_INTEGRATION_TEST === "1";
+  return processTransientStateAllowed(env);
 }
 
 function challengeKey(challengeId: string): string {
@@ -37,7 +35,7 @@ export async function putEphemeralWalletChallenge(
   ttlSec: number,
   env: Record<string, string | undefined> = process.env,
 ): Promise<void> {
-  if (resolveEphemeralKvBackend(env) !== "none") {
+  if (resolveTransientStateBackend(env) === "redis") {
     await ephemeralKvSet(challengeKey(record.challenge_id), record, ttlSec, env);
     return;
   }
@@ -55,7 +53,7 @@ export async function peekEphemeralWalletChallenge(
   challengeId: string,
   env: Record<string, string | undefined> = process.env,
 ): Promise<EphemeralWalletChallengeRecord | null> {
-  if (resolveEphemeralKvBackend(env) !== "none") {
+  if (resolveTransientStateBackend(env) === "redis") {
     return await ephemeralKvGet<EphemeralWalletChallengeRecord>(challengeKey(challengeId), env);
   }
   if (!memoryAllowed(env)) {
@@ -83,7 +81,7 @@ export async function consumeEphemeralWalletChallenge(
   challengeId: string,
   env: Record<string, string | undefined> = process.env,
 ): Promise<EphemeralWalletChallengeRecord | null> {
-  if (resolveEphemeralKvBackend(env) !== "none") {
+  if (resolveTransientStateBackend(env) === "redis") {
     return await ephemeralKvGetDel<EphemeralWalletChallengeRecord>(challengeKey(challengeId), env);
   }
   if (!memoryAllowed(env)) {
@@ -116,13 +114,12 @@ export async function consumeEphemeralWalletChallenge(
 export async function probeEphemeralChallengeStore(
   env: Record<string, string | undefined> = process.env,
 ): Promise<{ ok: boolean; code: string | null; backend: "redis" | "memory" | "none" }> {
-  if (isEphemeralRedisConfigured(env) || resolveEphemeralKvBackend(env) === "tcp") {
+  if (resolveTransientStateBackend(env) === "redis") {
     const probe = await probeEphemeralKv(env);
-    const backend = probe.backend === "none" ? "none" : "redis";
-    return { ok: probe.ok, code: probe.code, backend: probe.ok ? backend : backend };
+    return { ok: probe.ok, code: probe.code, backend: "redis" };
   }
   if (memoryAllowed(env)) {
-    return { ok: true, code: "memory_test_only", backend: "memory" };
+    return { ok: true, code: "process_transient", backend: "memory" };
   }
   return { ok: false, code: "ephemeral_state_not_configured", backend: "none" };
 }

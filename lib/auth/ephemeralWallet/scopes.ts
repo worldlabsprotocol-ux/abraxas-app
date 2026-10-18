@@ -10,8 +10,13 @@ export const EPHEMERAL_WALLET_SCOPES = [
 
 export type EphemeralWalletScope = (typeof EPHEMERAL_WALLET_SCOPES)[number];
 
+/** Minimal capability after sign-in — no sandbox or verification authority. */
+export function signInEphemeralWalletScopes(): EphemeralWalletScope[] {
+  return ["wallet:session", "account:read"];
+}
+
 export function defaultEphemeralWalletScopes(): EphemeralWalletScope[] {
-  return [...EPHEMERAL_WALLET_SCOPES];
+  return signInEphemeralWalletScopes();
 }
 
 export function hasEphemeralScope(scopes: string[], required: EphemeralWalletScope): boolean {

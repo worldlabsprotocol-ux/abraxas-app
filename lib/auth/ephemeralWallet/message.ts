@@ -1,6 +1,13 @@
 // FILE: lib/auth/ephemeralWallet/message.ts
 
-export const EPHEMERAL_WALLET_AUTH_PURPOSE = "abraxas_ephemeral_wallet_sign_in" as const;
+import {
+  buildWalletAuthorizationMessage,
+  WALLET_AUTH_PURPOSE_SIGN_IN,
+} from "./protocolEnvelope";
+import { EPHEMERAL_WALLET_JWT_AUDIENCE } from "./contract";
+
+/** @deprecated Use WALLET_AUTH_PURPOSE_SIGN_IN */
+export const EPHEMERAL_WALLET_AUTH_PURPOSE = WALLET_AUTH_PURPOSE_SIGN_IN;
 
 export function buildEphemeralWalletSignInMessage(input: {
   domain: string;
@@ -13,18 +20,20 @@ export function buildEphemeralWalletSignInMessage(input: {
   challengeId: string;
   origin: string;
 }): string {
-  return [
-    `${input.domain} wants you to sign in with your Solana account:`,
-    input.walletAddress,
-    "",
-    `URI: ${input.uri}`,
-    "Version: 1",
-    `Chain ID: ${input.solanaNetwork}`,
-    `Nonce: ${input.nonce}`,
-    `Issued At: ${input.issuedAt}`,
-    `Expiration Time: ${input.expiresAt}`,
-    `Challenge ID: ${input.challengeId}`,
-    `Origin: ${input.origin}`,
-    `Purpose: ${EPHEMERAL_WALLET_AUTH_PURPOSE}`,
-  ].join("\n");
+  return buildWalletAuthorizationMessage({
+    domain: input.domain,
+    audience: EPHEMERAL_WALLET_JWT_AUDIENCE,
+    walletAddress: input.walletAddress,
+    uri: input.uri,
+    solanaNetwork: input.solanaNetwork,
+    nonce: input.nonce,
+    issuedAt: input.issuedAt,
+    expiresAt: input.expiresAt,
+    requestId: input.challengeId,
+    origin: input.origin,
+    purpose: WALLET_AUTH_PURPOSE_SIGN_IN,
+    operation: "wallet:authenticate",
+    resource: "abraxas:capability:wallet_session",
+    policyId: null,
+  });
 }

@@ -10,6 +10,8 @@ import { mapEphemeralStoreError } from "@/lib/auth/ephemeralWallet/apiGate";
 import { requireEphemeralWalletScope } from "@/lib/auth/ephemeralWallet/walletSession";
 import { getEphemeralSandboxForSession } from "@/lib/auth/ephemeralWallet/sandboxWorkspace";
 import { runEphemeralSandboxTestVerification } from "@/lib/auth/ephemeralWallet/sandboxTestVerification";
+import { verifyWalletActionAuthorization } from "@/lib/auth/ephemeralWallet/actionAuth";
+import { readWalletSolAuthContextCookie } from "@/lib/auth/ephemeralWallet/service";
 
 export const dynamic = "force-dynamic";
 
@@ -24,12 +26,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, code: "rate_limited" }, { status: 429 });
   }
 
-  const auth = await requireEphemeralWalletScope(req, "sandbox:verification:test");
+  const auth = await requireEphemeralWalletScope(req, "wallet:session");
   if (!auth.ok) {
     return NextResponse.json({ ok: false, code: auth.error }, { status: auth.status });
   }
 
-  let body: { policy_id?: string };
+  let body: {
+    policy_id?: string;
+    action_challenge_id?: string;
+    signature?: string;
+    solana_network?: string;
+  };
   try {
     body = await req.json();
   } catch {
@@ -40,12 +47,37 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, code: "invalid_input" }, { status: 400 });
   }
 
-  try {
-    const workspace = await getEphemeralSandboxForSession(auth.session.sessionId);
-    if (!workspace) {
-      return NextResponse.json({ ok: false, code: "sandbox_workspace_required" }, { status: 400 });
-    }
+  const sessionContext = readWalletSolAuthContextCookie(req);
+  if (!sessionContext || !body.action_challenge_id || !body.signature) {
+    return NextResponse.json(
+      { ok: false, code: "action_authorization_required", operation: "sandbox:verification:test" },
+      { status: 403 },
+    );
+  }
 
+  const workspace = await getEphemeralSandboxForSession(auth.session.sessionId);
+  if (!workspace) {
+    return NextResponse.json({ ok: false, code: "sandbox_workspace_required" }, { status: 400 });
+  }
+
+  const resource = `abraxas:sandbox:${workspace.workspace_id}:policy:${policyId}`;
+  const action = await verifyWalletActionAuthorization({
+    challengeId: String(body.action_challenge_id),
+    walletAddress: auth.session.walletAddress,
+    solanaNetwork: String(body.solana_network ?? auth.session.solanaNetwork),
+    signature: String(body.signature),
+    sessionContext,
+    requestOrigin,
+    expectedOperation: "sandbox:verification:test",
+    expectedResource: resource,
+  });
+  if (!action.ok) {
+    const status =
+      action.code === "expired" ? 410 : action.code === "replay" ? 409 : action.code === "store_unavailable" ? 503 : 401;
+    return NextResponse.json({ ok: false, code: action.code }, { status });
+  }
+
+  try {
     const outcome = await runEphemeralSandboxTestVerification({
       workspaceId: workspace.workspace_id,
       walletAddress: auth.session.walletAddress,

@@ -2,12 +2,7 @@
 
 import { resolveAuthorizedSolanaNetworkFromEnv } from "@/lib/auth/passportSolanaAuth/network";
 import { isEphemeralWalletAuthEnabled } from "./featureFlag";
-import { isEphemeralRedisConfigured } from "./redisClient";
-import { resolveEphemeralKvBackend } from "./redisKv";
-
-function ephemeralStateConfigured(env: Record<string, string | undefined>): boolean {
-  return isEphemeralRedisConfigured(env) || resolveEphemeralKvBackend(env) === "tcp";
-}
+import { resolveTransientStateBackend } from "./transientStatePolicy";
 
 export type EphemeralWalletConfigState =
   | { ok: true }
@@ -33,9 +28,6 @@ export function validateEphemeralWalletRuntimeConfig(
     if (memory === "1" || memory === "true") {
       return { ok: false, code: "memory_forbidden_in_production" };
     }
-    if (!ephemeralStateConfigured(env)) {
-      return { ok: false, code: "ephemeral_state_not_configured" };
-    }
   }
 
   const secret =
@@ -50,15 +42,15 @@ export function validateEphemeralWalletRuntimeConfig(
     return { ok: false, code: "solana_network_not_configured" };
   }
 
-  if (env.NODE_ENV === "production" && !ephemeralStateConfigured(env)) {
+  const backend = resolveTransientStateBackend(env);
+  if (backend !== "process" && backend !== "redis") {
     return { ok: false, code: "ephemeral_state_not_configured" };
   }
 
   if (
-    env.NODE_ENV !== "production"
-    && !ephemeralStateConfigured(env)
-    && env.VITEST !== "true"
-    && env.ABRAXAS_EPHEMERAL_INTEGRATION_TEST !== "1"
+    backend === "redis"
+    && env.NODE_ENV === "production"
+    && !env.UPSTASH_REDIS_REST_URL?.trim()
   ) {
     return { ok: false, code: "ephemeral_state_not_configured" };
   }

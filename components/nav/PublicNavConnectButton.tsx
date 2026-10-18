@@ -88,6 +88,16 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
 
   const finishSuccess = useCallback(async () => {
     await refreshNavState();
+    try {
+      const enabledRes = await fetch("/api/auth/native/enabled", { credentials: "same-origin" });
+      const enabledJson = (await enabledRes.json()) as { auth_mode?: string };
+      if (enabledJson.auth_mode === "ephemeral_wallet") {
+        router.push("/developers/ephemeral-sandbox");
+        return;
+      }
+    } catch {
+      /* fall through */
+    }
     router.push(PUBLIC_CONNECT_ACCOUNT_HREF);
   }, [refreshNavState, router]);
 

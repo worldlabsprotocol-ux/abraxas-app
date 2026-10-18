@@ -4,8 +4,8 @@
 export const EPHEMERAL_TTL = {
   /** Wallet auth challenge (single-use). */
   authChallengeSec: 5 * 60,
-  /** Browser wallet session JWT + active-session allowlist. */
-  walletSessionSec: 4 * 60 * 60,
+  /** Short-lived capability JWT (optional allowlist when configured). */
+  walletSessionSec: 30 * 60,
   /** Ephemeral sandbox workspace metadata. */
   sandboxWorkspaceSec: 24 * 60 * 60,
   /** Test API credential metadata (sandbox-only). */

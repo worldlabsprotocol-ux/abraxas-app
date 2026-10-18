@@ -1,7 +1,7 @@
 // FILE: lib/auth/ephemeralWallet/sessionStore.ts
 
-import { isEphemeralRedisConfigured } from "./redisClient";
-import { ephemeralKvDel, ephemeralKvGet, ephemeralKvSet, resolveEphemeralKvBackend } from "./redisKv";
+import { ephemeralKvDel, ephemeralKvGet, ephemeralKvSet } from "./redisKv";
+import { processTransientStateAllowed, resolveTransientStateBackend } from "./transientStatePolicy";
 import { EphemeralStateUnavailableError } from "./errors";
 
 const ACTIVE_PREFIX = "abraxas:ephemeral:wallet-session:active:v1:";
@@ -9,8 +9,7 @@ const ACTIVE_PREFIX = "abraxas:ephemeral:wallet-session:active:v1:";
 const memoryActive = new Map<string, number>();
 
 function memoryAllowed(env: Record<string, string | undefined>): boolean {
-  if (env.NODE_ENV === "production") return false;
-  return env.VITEST === "true" || env.ABRAXAS_EPHEMERAL_INTEGRATION_TEST === "1";
+  return processTransientStateAllowed(env);
 }
 
 function activeKey(sessionId: string): string {
@@ -22,7 +21,7 @@ export async function registerEphemeralWalletSessionActive(
   ttlSec: number,
   env: Record<string, string | undefined> = process.env,
 ): Promise<void> {
-  if (resolveEphemeralKvBackend(env) !== "none") {
+  if (resolveTransientStateBackend(env) === "redis") {
     await ephemeralKvSet(activeKey(sessionId), "1", ttlSec, env);
     return;
   }
@@ -34,7 +33,7 @@ export async function isEphemeralWalletSessionActive(
   sessionId: string,
   env: Record<string, string | undefined> = process.env,
 ): Promise<boolean> {
-  if (resolveEphemeralKvBackend(env) !== "none") {
+  if (resolveTransientStateBackend(env) === "redis") {
     const v = await ephemeralKvGet<string | number>(activeKey(sessionId), env);
     return v === "1" || v === 1;
   }
@@ -52,7 +51,7 @@ export async function revokeEphemeralWalletSession(
   sessionId: string,
   env: Record<string, string | undefined> = process.env,
 ): Promise<boolean> {
-  if (resolveEphemeralKvBackend(env) !== "none") {
+  if (resolveTransientStateBackend(env) === "redis") {
     const n = await ephemeralKvDel(activeKey(sessionId), env);
     return n > 0;
   }
@@ -67,9 +66,9 @@ export function resetEphemeralSessionStoreForTests(): void {
 export async function probeEphemeralSessionStore(
   env: Record<string, string | undefined> = process.env,
 ): Promise<{ ok: boolean; code: string | null }> {
-  if (isEphemeralRedisConfigured(env) || resolveEphemeralKvBackend(env) === "tcp") {
+  if (resolveTransientStateBackend(env) === "redis") {
     return { ok: true, code: null };
   }
-  if (memoryAllowed(env)) return { ok: true, code: "memory_test_only" };
+  if (memoryAllowed(env)) return { ok: true, code: "process_transient" };
   return { ok: false, code: "ephemeral_state_not_configured" };
 }

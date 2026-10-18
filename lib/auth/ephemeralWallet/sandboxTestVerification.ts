@@ -18,6 +18,7 @@ import {
   type EphemeralSandboxTestPolicy,
 } from "./sandboxTestPolicies";
 import { ephemeralKvGet, ephemeralKvSet } from "./redisKv";
+import { processTransientStateAllowed, resolveTransientStateBackend } from "./transientStatePolicy";
 import { EphemeralStateUnavailableError } from "./errors";
 
 export const EPHEMERAL_SANDBOX_RESULT_LABEL = "ephemeral_sandbox_test_only" as const;
@@ -27,8 +28,7 @@ const RESULT_PREFIX = "abraxas:ephemeral:sandbox-result:v1:";
 const memoryResults = new Map<string, PartnerFlowPublicReceipt>();
 
 function memoryAllowed(env: Record<string, string | undefined>): boolean {
-  if (env.NODE_ENV === "production") return false;
-  return env.VITEST === "true" || env.ABRAXAS_EPHEMERAL_INTEGRATION_TEST === "1";
+  return processTransientStateAllowed(env);
 }
 
 function resultKey(receiptId: string): string {
@@ -119,9 +119,7 @@ export async function storeEphemeralSandboxTestResult(
 ): Promise<void> {
   const ttl = EPHEMERAL_TTL.sandboxTestReceiptSec;
   const key = resultKey(String(result.receipt_id));
-  const { resolveEphemeralKvBackend } = await import("./redisKv");
-  const backend = resolveEphemeralKvBackend(env);
-  if (backend === "none") {
+  if (resolveTransientStateBackend(env) !== "redis") {
     if (!memoryAllowed(env)) throw new EphemeralStateUnavailableError();
     memoryResults.set(String(result.receipt_id), result);
     return;
@@ -133,8 +131,7 @@ export async function loadEphemeralSandboxTestResult(
   receiptId: string,
   env: Record<string, string | undefined> = process.env,
 ): Promise<EphemeralSandboxTestResult | null> {
-  const { resolveEphemeralKvBackend } = await import("./redisKv");
-  if (resolveEphemeralKvBackend(env) !== "none") {
+  if (resolveTransientStateBackend(env) === "redis") {
     const fromKv = await ephemeralKvGet<EphemeralSandboxTestResult>(resultKey(receiptId), env);
     if (fromKv) return fromKv;
   }

@@ -19,9 +19,10 @@ export type EphemeralSandboxWorkspace = {
 
 const memory = new Map<string, EphemeralSandboxWorkspace>();
 
+import { processTransientStateAllowed, resolveTransientStateBackend } from "./transientStatePolicy";
+
 function memoryAllowed(env: Record<string, string | undefined>): boolean {
-  if (env.NODE_ENV === "production") return false;
-  return env.VITEST === "true" || env.ABRAXAS_EPHEMERAL_INTEGRATION_TEST === "1";
+  return processTransientStateAllowed(env);
 }
 
 export function createEphemeralSandboxWorkspaceId(): string {
@@ -33,7 +34,7 @@ export async function putEphemeralSandboxWorkspace(
   ttlSec: number = DEFAULT_TTL_SEC,
   env: Record<string, string | undefined> = process.env,
 ): Promise<void> {
-  if (resolveEphemeralKvBackend(env) !== "none") {
+  if (resolveTransientStateBackend(env) === "redis") {
     await ephemeralKvSet(`${PREFIX}${record.workspace_id}`, record, ttlSec, env);
     await ephemeralKvSet(`${PREFIX}by-session:${record.session_id}`, record.workspace_id, ttlSec, env);
     return;
@@ -46,7 +47,7 @@ export async function getEphemeralSandboxForSession(
   sessionId: string,
   env: Record<string, string | undefined> = process.env,
 ): Promise<EphemeralSandboxWorkspace | null> {
-  if (resolveEphemeralKvBackend(env) !== "none") {
+  if (resolveTransientStateBackend(env) === "redis") {
     const workspaceId = await ephemeralKvGet<string>(`${PREFIX}by-session:${sessionId}`, env);
     if (!workspaceId) return null;
     return await ephemeralKvGet<EphemeralSandboxWorkspace>(`${PREFIX}${workspaceId}`, env);

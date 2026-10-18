@@ -2,7 +2,10 @@
 // FILE: components/account/EphemeralSandboxWorkspaceClient.tsx
 
 import { useCallback, useEffect, useState } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { Btn } from "@/components/redesign/ui";
+import { completeWalletActionAuthorization } from "@/lib/auth/ephemeralWallet/clientActionAuth";
+
 const EPHEMERAL_SANDBOX_RESULT_LABEL = "ephemeral_sandbox_test_only";
 
 type Policy = {
@@ -24,7 +27,9 @@ type TestResult = {
 };
 
 export function EphemeralSandboxWorkspaceClient() {
+  const { signMessage, publicKey } = useWallet();
   const [sessionOk, setSessionOk] = useState<boolean | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [selectedPolicy, setSelectedPolicy] = useState("");
@@ -35,8 +40,9 @@ export function EphemeralSandboxWorkspaceClient() {
 
   const refreshSession = useCallback(async () => {
     const res = await fetch("/api/auth/wallet/session", { credentials: "same-origin" });
-    const body = (await res.json()) as { authenticated?: boolean };
+    const body = (await res.json()) as { authenticated?: boolean; session_id?: string };
     setSessionOk(Boolean(body.authenticated));
+    setSessionId(body.session_id ?? null);
   }, []);
 
   useEffect(() => {
@@ -52,14 +58,30 @@ export function EphemeralSandboxWorkspaceClient() {
   }, [refreshSession]);
 
   const enterSandbox = useCallback(async () => {
+    if (!signMessage || !sessionId) {
+      setError("Connect your Solana wallet and sign in before starting the sandbox.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
+      const action = await completeWalletActionAuthorization({
+        operation: "sandbox:enter",
+        resource: `abraxas:sandbox:session:${sessionId}`,
+        signMessage: (msg) => signMessage(msg),
+      });
+      if (!action.ok) {
+        setError(action.code ?? "Action authorization cancelled.");
+        return;
+      }
       const res = await fetch("/api/auth/wallet/sandbox/enter", {
         method: "POST",
-        credentials: "same-origin",
+        credentials: "include",
         headers: { "content-type": "application/json" },
-        body: "{}",
+        body: JSON.stringify({
+          action_challenge_id: action.action_challenge_id,
+          signature: action.signature,
+        }),
       });
       const json = (await res.json()) as { ok?: boolean; workspace?: Workspace; code?: string };
       if (!res.ok || !json.workspace) {
@@ -70,19 +92,34 @@ export function EphemeralSandboxWorkspaceClient() {
     } finally {
       setBusy(false);
     }
-  }, []);
+  }, [sessionId, signMessage]);
 
   const runTestVerification = useCallback(async () => {
-    if (!selectedPolicy) return;
+    if (!selectedPolicy || !workspace || !signMessage) return;
     setBusy(true);
     setError(null);
     setValidation(null);
     try {
+      const resource = `abraxas:sandbox:${workspace.workspace_id}:policy:${selectedPolicy}`;
+      const action = await completeWalletActionAuthorization({
+        operation: "sandbox:verification:test",
+        resource,
+        policyId: selectedPolicy,
+        signMessage: (msg) => signMessage(msg),
+      });
+      if (!action.ok) {
+        setError(action.code ?? "Action authorization cancelled.");
+        return;
+      }
       const res = await fetch("/api/auth/wallet/sandbox/test-verify", {
         method: "POST",
-        credentials: "same-origin",
+        credentials: "include",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ policy_id: selectedPolicy }),
+        body: JSON.stringify({
+          policy_id: selectedPolicy,
+          action_challenge_id: action.action_challenge_id,
+          signature: action.signature,
+        }),
       });
       const json = (await res.json()) as { ok?: boolean; result?: TestResult; code?: string };
       if (!res.ok || !json.result) {
@@ -99,7 +136,7 @@ export function EphemeralSandboxWorkspaceClient() {
     } finally {
       setBusy(false);
     }
-  }, [selectedPolicy]);
+  }, [selectedPolicy, workspace, signMessage]);
 
   if (sessionOk === null) {
     return <p style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>Loading…</p>;
@@ -108,10 +145,17 @@ export function EphemeralSandboxWorkspaceClient() {
   if (!sessionOk) {
     return (
       <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
-        Sign in with your Solana wallet to use the temporary sandbox. No personal account is created.
+        Sign in with your Solana wallet to use the temporary sandbox. Sign-in proves wallet control only — each
+        sandbox action requires its own signature.
       </p>
     );
   }
+
+  const walletHint = publicKey ? null : (
+    <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--text-muted)" }}>
+      Connect your wallet in the browser to authorize sandbox actions on demand.
+    </p>
+  );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
@@ -119,9 +163,10 @@ export function EphemeralSandboxWorkspaceClient() {
         Temporary developer sandbox — metadata and test results expire automatically. Test privileges cannot
         authorize Production access.
       </p>
+      {walletHint}
       {!workspace ? (
         <Btn size="sm" disabled={busy} onClick={() => void enterSandbox()}>
-          Start building
+          Start building (sign to authorize)
         </Btn>
       ) : (
         <>
@@ -143,7 +188,7 @@ export function EphemeralSandboxWorkspaceClient() {
             </select>
           </label>
           <Btn size="sm" disabled={busy || !selectedPolicy} onClick={() => void runTestVerification()}>
-            Submit authorized test verification
+            Submit authorized test verification (sign to authorize)
           </Btn>
         </>
       )}

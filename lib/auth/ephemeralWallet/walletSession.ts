@@ -9,7 +9,8 @@ import {
   registerEphemeralWalletSessionActive,
   revokeEphemeralWalletSession,
 } from "./sessionStore";
-import { defaultEphemeralWalletScopes, type EphemeralWalletScope } from "./scopes";
+import { signInEphemeralWalletScopes, type EphemeralWalletScope } from "./scopes";
+import { resolveEphemeralRevocationMode } from "./transientStatePolicy";
 import { EphemeralStateUnavailableError } from "./errors";
 import { EPHEMERAL_TTL } from "./retention";
 import {
@@ -68,13 +69,15 @@ export async function issueEphemeralWalletSessionToken(input: {
   if (!secret || !isValidSolanaWalletAddress(input.walletAddress)) return null;
 
   const sessionId = input.sessionId ?? createEphemeralWalletSessionId();
-  const scopes = input.scopes ?? defaultEphemeralWalletScopes();
+  const scopes = input.scopes ?? signInEphemeralWalletScopes();
 
-  try {
-    await registerEphemeralWalletSessionActive(sessionId, WALLET_SESSION_TTL_SEC);
-  } catch (error) {
-    if (error instanceof EphemeralStateUnavailableError) return null;
-    throw error;
+  if (resolveEphemeralRevocationMode() === "allowlist") {
+    try {
+      await registerEphemeralWalletSessionActive(sessionId, WALLET_SESSION_TTL_SEC);
+    } catch (error) {
+      if (error instanceof EphemeralStateUnavailableError) return null;
+      throw error;
+    }
   }
 
   return new SignJWT({
@@ -137,7 +140,7 @@ async function verifyWalletSessionJwt(token: string): Promise<EphemeralWalletSes
     const rawScopes = payload.scp;
     const scopes = Array.isArray(rawScopes)
       ? rawScopes.filter((s): s is EphemeralWalletScope => typeof s === "string")
-      : defaultEphemeralWalletScopes();
+      : signInEphemeralWalletScopes();
 
     return { walletAddress, solanaNetwork, sessionId, scopes };
   } catch {
@@ -154,12 +157,14 @@ export async function resolveEphemeralWalletSession(
   const parsed = await verifyWalletSessionJwt(token);
   if (!parsed) return null;
 
-  try {
-    const active = await isEphemeralWalletSessionActive(parsed.sessionId);
-    if (!active) return null;
-  } catch (error) {
-    if (error instanceof EphemeralStateUnavailableError) return null;
-    throw error;
+  if (resolveEphemeralRevocationMode() === "allowlist") {
+    try {
+      const active = await isEphemeralWalletSessionActive(parsed.sessionId);
+      if (!active) return null;
+    } catch (error) {
+      if (error instanceof EphemeralStateUnavailableError) return null;
+      throw error;
+    }
   }
 
   return parsed;
@@ -170,12 +175,15 @@ export async function revokeEphemeralWalletSessionFromRequest(req: NextRequest):
   if (!token) return false;
   const parsed = await verifyWalletSessionJwt(token);
   if (!parsed) return false;
-  try {
-    return await revokeEphemeralWalletSession(parsed.sessionId);
-  } catch (error) {
-    if (error instanceof EphemeralStateUnavailableError) return false;
-    throw error;
+  if (resolveEphemeralRevocationMode() === "allowlist") {
+    try {
+      return await revokeEphemeralWalletSession(parsed.sessionId);
+    } catch (error) {
+      if (error instanceof EphemeralStateUnavailableError) return false;
+      throw error;
+    }
   }
+  return true;
 }
 
 export async function requireEphemeralWalletScope(
