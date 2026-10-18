@@ -31,6 +31,8 @@ const PUBLIC_SURFACE_REDIRECTS = [
 
 /** When set, Next.js skips in-build ESLint/TS (see Build #590). CI runs blocking validation separately. */
 const skipInBuildValidation = process.env.ABRAXAS_SKIP_IN_BUILD_VALIDATION === "1";
+/** Vercel standard builders (8 GB): limit static-generation workers to reduce peak RSS. */
+const vercelBuild = process.env.VERCEL === "1";
 
 const nextConfig = {
   output: process.env.ABRAXAS_STANDALONE_BUILD === "1" ? "standalone" : undefined,
@@ -47,9 +49,14 @@ const nextConfig = {
   // Next.js 14: keep native Node packages out of the server webpack graph.
     experimental: {
     instrumentationHook: true,
-    cpus: 2,
+    cpus: vercelBuild ? 1 : 2,
     workerThreads: false,
-    serverComponentsExternalPackages: ["onnxruntime-node", "@sqds/multisig"],
+    serverComponentsExternalPackages: [
+      "onnxruntime-node",
+      "@sqds/multisig",
+      "pg",
+      "@supabase/supabase-js",
+    ],
     outputFileTracingExcludes: {
       "**/*": ML_TRACE_EXCLUDES,
       "/api/identity/documents/capture": ML_TRACE_EXCLUDES,
@@ -63,12 +70,18 @@ const nextConfig = {
     ],
   },
   webpack: (config, { isServer }) => {
+    if (vercelBuild) {
+      // Peak memory: one webpack compilation lane on 8 GB Vercel builders.
+      config.parallelism = 1;
+    }
     if (isServer) {
       // API routes / server bundles: require onnxruntime-node at runtime, never parse .node binaries.
       const externals = config.externals ?? [];
       config.externals = [
         ...(Array.isArray(externals) ? externals : [externals]),
         "onnxruntime-node",
+        "pg",
+        "pg-native",
       ];
     } else {
       config.resolve.fallback = {

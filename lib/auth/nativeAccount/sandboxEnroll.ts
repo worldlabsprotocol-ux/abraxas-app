@@ -1,4 +1,5 @@
 // FILE: lib/auth/nativeAccount/sandboxEnroll.ts
+import "server-only";
 
 import { randomBytes } from "crypto";
 import { isValidPartnerId, normalizePartnerId } from "@/lib/partner/partnerIdFormat";

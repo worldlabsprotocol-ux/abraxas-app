@@ -1,7 +1,7 @@
 // FILE: lib/partner/launchpad/provisionSandbox.ts
 // Atomic sandbox provisioning via migration 084 RPC.
+import "server-only";
 
-import { queryAbraxasPg } from "@/lib/persistence/pgPool";
 import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
 import { isSovereignNativeAccountMode } from "@/lib/persistence/sovereignNativeAccount";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
@@ -111,6 +111,7 @@ export async function provisionLaunchpadSandbox(
 
   if (launchpadUsesDirectPostgres()) {
     try {
+      const { queryAbraxasPg } = await import("@/lib/persistence/pgPool");
       const { rows } = await queryAbraxasPg<{ result: ProvisionRow }>(
         `select partner_launchpad_provision_sandbox_atomic(
           $1::text, $2::text, $3::text, $4::text, $5::text, $6::text, $7::jsonb,
