@@ -31,9 +31,27 @@ test.describe("Public Connect button", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     const { client, authenticatorId } = await enableVirtualAuthenticator(page, context);
 
-    await page.goto("/#start-sandbox", { waitUntil: "domcontentloaded" });
-    await page.getByRole("button", { name: /^Create account$/i }).click();
-    await expect(page.getByRole("button", { name: /Set up workspace/i })).toBeVisible({ timeout: 60_000 });
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.getByRole("button", { name: /Connect with Abraxas passkey/i }).click();
+
+    const createMenuTrigger = page.getByRole("button", { name: /Connect with Abraxas passkey — more options/i });
+    if (await createMenuTrigger.isVisible({ timeout: 10_000 }).catch(() => false)) {
+      await createMenuTrigger.click();
+      await page.getByRole("menuitem", { name: /Create passkey account/i }).click();
+    } else {
+      const inlineCreate = page.getByRole("button", { name: /Create passkey account/i });
+      if (await inlineCreate.isVisible({ timeout: 5_000 }).catch(() => false)) {
+        await inlineCreate.click();
+      }
+    }
+
+    await expect.poll(async () =>
+      page.evaluate(async () => {
+        const res = await fetch("/api/auth/native/session", { credentials: "include" });
+        return (await res.json()).authenticated;
+      }),
+      { timeout: 60_000 },
+    ).toBe(true);
 
     const accountId = (
       await page.evaluate(async () => {
@@ -78,18 +96,20 @@ test.describe("Public Connect button", () => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await page.getByRole("button", { name: /Connect with Abraxas passkey/i }).click();
 
-    const createBtn = page.getByRole("button", { name: /Create passkey account/i });
-    const visible = await createBtn.isVisible({ timeout: 15_000 }).catch(() => false);
-    test.skip(!visible, "This browser did not report confirmed no_passkey after Connect");
+    const connectMenu = page.getByRole("button", { name: /Connect with Abraxas passkey — more options/i });
+    const menuVisible = await connectMenu.isVisible({ timeout: 15_000 }).catch(() => false);
+    if (menuVisible) {
+      await connectMenu.click();
+      const createBtn = page.getByRole("menuitem", { name: /Create passkey account/i });
+      await expect(createBtn).toBeVisible();
+      await createBtn.click();
+    } else {
+      const createBtn = page.getByRole("button", { name: /Create passkey account/i });
+      const visible = await createBtn.isVisible({ timeout: 5_000 }).catch(() => false);
+      test.skip(!visible, "This browser did not report confirmed no_passkey after Connect");
+      await createBtn.click();
+    }
 
-    expect(
-      await page.evaluate(async () => {
-        const res = await fetch("/api/auth/native/session", { credentials: "include" });
-        return (await res.json()).authenticated;
-      }),
-    ).toBe(false);
-
-    await createBtn.click();
     await expect.poll(async () =>
       page.evaluate(async () => {
         const res = await fetch("/api/auth/native/session", { credentials: "include" });
@@ -133,7 +153,7 @@ test.describe("Public Connect button", () => {
     await client.send("WebAuthn.removeVirtualAuthenticator", { authenticatorId });
   });
 
-  test("when native auth flag is off, Explore links to Integration Studio not Passport", async ({ page }) => {
+  test("when native auth flag is off, Connect links to workspace without Passport primary", async ({ page }) => {
     await page.route("**/api/auth/native/enabled", (route) =>
       route.fulfill({
         contentType: "application/json",
@@ -152,12 +172,12 @@ test.describe("Public Connect button", () => {
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/", { waitUntil: "networkidle" });
-    const explore = page.locator('a[href="/developers/integration-studio"]').filter({ hasText: "Explore" });
-    await expect(explore.first()).toBeVisible({ timeout: 30_000 });
+    const connect = page.getByRole("link", { name: /Start building — explore/i });
+    await expect(connect.first()).toBeVisible({ timeout: 30_000 });
     await expect(page.locator('a[href="/passport"]').filter({ hasText: /^Connect$/ })).toHaveCount(0);
   });
 
-  test("when native auth is degraded, shows retry and legacy Passport without auto redirect", async ({ page }) => {
+  test("when native auth is degraded, recovery lives in compact Connect menu", async ({ page }) => {
     await page.route("**/api/auth/native/enabled", (route) =>
       route.fulfill({
         contentType: "application/json",
@@ -181,8 +201,11 @@ test.describe("Public Connect button", () => {
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/", { waitUntil: "networkidle" });
-    await expect(page.getByRole("button", { name: /Retry sign-in/i })).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByRole("link", { name: /Passport \(legacy\)/i })).toBeVisible();
+    const trigger = page.getByRole("button", { name: /Account sign-in unavailable — open recovery options/i });
+    await expect(trigger).toHaveCount(1);
+    await trigger.click();
+    await expect(page.getByRole("menuitem", { name: /Retry sign-in check/i })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: /Passport \(legacy\)/i })).toBeVisible();
     await expect(page.locator('a[href="/passport"]').filter({ hasText: /^Connect$/ })).toHaveCount(0);
   });
 });

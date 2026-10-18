@@ -2,7 +2,7 @@
 
 **Project:** `bztwutzprwsdrtqdpymf` only. **Not** staging `ocntwbxarpjeixdnzide`.
 
-Operator authorization required before SQL apply. After merge of operational gate (Phase A code), Connect falls back to `/passport` while schema is missing even if the Vercel flag remains `true`.
+Operator authorization required before SQL apply. While schema is missing, Connect shows an **unavailable** state (compact recovery menu + Integration Studio) — not Google OAuth and not a silent Passport redirect.
 
 ## Apply
 

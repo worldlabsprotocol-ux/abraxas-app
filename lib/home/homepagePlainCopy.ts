@@ -26,7 +26,7 @@ export const HOMEPAGE_WORKSPACE_ALT_LEAD =
   "Configure policies and run sandbox tests in Integration Studio, or try the public demo.";
 
 export const HOMEPAGE_WORKSPACE_UNAVAILABLE_LEAD =
-  "Passkey account sign-in is temporarily unavailable here. Explore Integration Studio or retry when service is restored.";
+  "Passkey sign-in is temporarily unavailable. Open Integration Studio to explore, or retry when service is restored.";
 
 export const HOMEPAGE_WORKSPACE_UNAVAILABLE_RETRY = "Retry sign-in check";
 export const HOMEPAGE_WORKSPACE_PASSPORT_LEGACY_LINK = "Passport (legacy holder)";

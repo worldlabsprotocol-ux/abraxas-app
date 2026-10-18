@@ -14,6 +14,7 @@ import {
   HOMEPAGE_WORKSPACE_DEMO_LINK,
   HOMEPAGE_WORKSPACE_PASSPORT_LEGACY_LINK,
   HOMEPAGE_WORKSPACE_STUDIO_CTA,
+  HOMEPAGE_WORKSPACE_UNAVAILABLE_LEAD,
   HOMEPAGE_WORKSPACE_UNAVAILABLE_RETRY,
 } from "@/lib/home/homepagePlainCopy";
 import { PUBLIC_CONNECT_PASSPORT_LEGACY_HREF } from "@/lib/nav/publicNavConnectBehavior";
@@ -51,6 +52,12 @@ export function HomeSandboxSessionEntry() {
     }
   }, [refresh, router]);
 
+  const demoLink = (
+    <Link className="abx-sandbox-entry__demo-link" href="/try">
+      {HOMEPAGE_WORKSPACE_DEMO_LINK}
+    </Link>
+  );
+
   return (
     <div className="abx-sandbox-entry">
       {mode !== "native_disabled" && mode !== "native_unavailable" ? (
@@ -63,36 +70,44 @@ export function HomeSandboxSessionEntry() {
 
       {mode === "native_disabled" ? (
         <div className="abx-sandbox-entry__disabled">
-          <Link
-            className="abx-premium-hero__cta abx-premium-hero__cta--primary"
-            href="/developers/integration-studio"
-          >
-            {HOMEPAGE_WORKSPACE_STUDIO_CTA}
-          </Link>
+          <div className="abx-sandbox-entry__actions">
+            <Link
+              className="abx-premium-hero__cta abx-premium-hero__cta--primary"
+              href="/developers/integration-studio"
+            >
+              {HOMEPAGE_WORKSPACE_STUDIO_CTA}
+            </Link>
+          </div>
+          {demoLink}
         </div>
       ) : null}
 
       {mode === "native_unavailable" ? (
         <div className="abx-sandbox-entry__disabled">
-          <Btn
-            size="sm"
-            disabled={retryBusy}
-            onClick={() => {
-              setRetryBusy(true);
-              void refresh().finally(() => setRetryBusy(false));
-            }}
-          >
-            {retryBusy ? "Checking…" : HOMEPAGE_WORKSPACE_UNAVAILABLE_RETRY}
-          </Btn>
-          <Link
-            className="abx-premium-hero__cta abx-premium-hero__cta--primary"
-            href="/developers/integration-studio"
-          >
-            {HOMEPAGE_WORKSPACE_STUDIO_CTA}
-          </Link>
-          <Link className="abx-sandbox-entry__demo-link" href={PUBLIC_CONNECT_PASSPORT_LEGACY_HREF}>
-            {HOMEPAGE_WORKSPACE_PASSPORT_LEGACY_LINK}
-          </Link>
+          <p className="abx-sandbox-entry__unavailable-msg">{HOMEPAGE_WORKSPACE_UNAVAILABLE_LEAD}</p>
+          <div className="abx-sandbox-entry__actions">
+            <Link
+              className="abx-premium-hero__cta abx-premium-hero__cta--primary"
+              href="/developers/integration-studio"
+            >
+              {HOMEPAGE_WORKSPACE_STUDIO_CTA}
+            </Link>
+            <button
+              type="button"
+              className="abx-sandbox-entry__retry"
+              disabled={retryBusy}
+              onClick={() => {
+                setRetryBusy(true);
+                void refresh().finally(() => setRetryBusy(false));
+              }}
+            >
+              {retryBusy ? "Checking…" : HOMEPAGE_WORKSPACE_UNAVAILABLE_RETRY}
+            </button>
+          </div>
+          <p className="abx-sandbox-entry__legacy">
+            <Link href={PUBLIC_CONNECT_PASSPORT_LEGACY_HREF}>{HOMEPAGE_WORKSPACE_PASSPORT_LEGACY_LINK}</Link>
+          </p>
+          {demoLink}
         </div>
       ) : null}
 
@@ -140,17 +155,7 @@ export function HomeSandboxSessionEntry() {
         </div>
       ) : null}
 
-      {mode !== "loading" && mode !== "native_disabled" && mode !== "native_unavailable" ? (
-        <Link className="abx-sandbox-entry__demo-link" href="/try">
-          {HOMEPAGE_WORKSPACE_DEMO_LINK}
-        </Link>
-      ) : null}
-
-      {mode === "native_disabled" || mode === "native_unavailable" ? (
-        <Link className="abx-sandbox-entry__demo-link" href="/try">
-          {HOMEPAGE_WORKSPACE_DEMO_LINK}
-        </Link>
-      ) : null}
+      {mode !== "loading" && mode !== "native_disabled" && mode !== "native_unavailable" ? demoLink : null}
     </div>
   );
 }
