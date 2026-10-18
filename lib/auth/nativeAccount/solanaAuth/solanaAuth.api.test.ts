@@ -87,10 +87,18 @@ describe("Solana account auth API routes", () => {
     });
     const signOutRes = await sessionDelete(signOutReq);
     expect(signOutRes.status).toBe(200);
+    const signOutJson = (await signOutRes.json()) as { revoked: boolean };
+    expect(signOutJson.revoked).toBe(true);
 
     const afterSignOut = await sessionGet(new NextRequest(`${ORIGIN}/api/auth/native/session`));
     const afterJson = (await afterSignOut.json()) as { authenticated: boolean };
     expect(afterJson.authenticated).toBe(false);
+
+    const replayWithOldJwt = await sessionGet(
+      new NextRequest(`${ORIGIN}/api/auth/native/session`, { headers: { cookie: first.setCookie } }),
+    );
+    const replayJson = (await replayWithOldJwt.json()) as { authenticated: boolean };
+    expect(replayJson.authenticated).toBe(false);
 
     const second = await fullSignIn(wallet);
     expect(second.accountId).toBe(first.accountId);

@@ -446,3 +446,66 @@ export async function touchSolanaWalletLastUsed(
     mapPgError(error);
   }
 }
+
+export async function insertAccountSessionRecord(input: {
+  sessionId: string;
+  accountId: string;
+  authMethod: "passkey" | "solana_wallet";
+  expiresAt: string;
+}): Promise<void> {
+  try {
+    await queryAbraxasPg(
+      `insert into public.abraxas_account_sessions (session_id, account_id, auth_method, expires_at)
+       values ($1, $2, $3, $4::timestamptz)`,
+      [input.sessionId, input.accountId, input.authMethod, input.expiresAt],
+    );
+  } catch (error) {
+    mapPgError(error);
+  }
+}
+
+export async function isAccountSessionActive(input: {
+  sessionId: string;
+  accountId: string;
+}): Promise<boolean> {
+  try {
+    const { rows } = await queryAbraxasPg<{ active: boolean }>(
+      `select public.abraxas_validate_account_session($1, $2) as active`,
+      [input.sessionId, input.accountId],
+    );
+    return Boolean(rows[0]?.active);
+  } catch (error) {
+    mapPgError(error);
+  }
+}
+
+export async function revokeAccountSession(input: {
+  sessionId: string;
+  accountId: string;
+  reason: string;
+}): Promise<boolean> {
+  try {
+    const { rows } = await queryAbraxasPg<{ revoked: boolean }>(
+      `select public.abraxas_revoke_account_session($1, $2, $3) as revoked`,
+      [input.sessionId, input.accountId, input.reason],
+    );
+    return Boolean(rows[0]?.revoked);
+  } catch (error) {
+    mapPgError(error);
+  }
+}
+
+export async function revokeAllAccountSessions(accountId: string, reason: string): Promise<number> {
+  try {
+    const { rows } = await queryAbraxasPg<{ session_id: string }>(
+      `update public.abraxas_account_sessions
+          set revoked_at = now(), revoke_reason = $2
+        where account_id = $1 and revoked_at is null
+        returning session_id`,
+      [accountId, reason],
+    );
+    return rows.length;
+  } catch (error) {
+    mapPgError(error);
+  }
+}

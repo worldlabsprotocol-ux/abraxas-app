@@ -13,7 +13,8 @@
 | Expiry | 5 minutes; atomic RPC rejects expired rows |
 | Replay | `abraxas_consume_account_solana_challenge_atomic` single-use `consumed_at` |
 | Rate limit | `enforceNativeAuthRateLimit` on challenge (30/min) and verify (20/min) |
-| Session | HttpOnly `abraxas_account_session` JWT, `am: solana_wallet` |
+| Session | HttpOnly JWT (`jti` = `acs_*`) + PostgreSQL `abraxas_account_sessions` validate/revoke (migration **147**) |
+| Sign-out scope | **Current session only** — `DELETE /api/auth/native/session` revokes server row + clears cookie; JWT replay rejected |
 | Context binding | HttpOnly `abraxas_account_sol_auth_ctx` required for verify |
 
 Automated contract tests (not wallet extension):
@@ -33,6 +34,7 @@ Current state (read-only SQL): **no** `abraxas_accounts` table — only legacy `
 | 1 | **144** `_native_account_webauthn` | **Yes** — `abraxas_accounts` base table | **Yes** — accounts, memberships, sandbox enrollments |
 | 2 | **145** `_webauthn_hardening` | **No** for Solana verify alone | **Yes** if using direct PG — adds `memberships.status`, sandbox unique index, WebAuthn atomic RPC |
 | 3 | **146** `_native_account_solana_auth` | **Yes** — wallet links + Solana challenges + atomic consume RPC | **Yes** — wallet credentials |
+| 4 | **147** `_native_account_sessions` | **Yes** — server session validate/revoke | **Yes** — sign-out + JWT replay rejection |
 
 **Why 145 is not optional for full journey:** `postgresDirectStore.upsertPartnerMembership` inserts `status`; sandbox enrollment uniqueness relies on 145 index. Solana sign-in operational probe intentionally skips 145, but **sandbox + Launchpad on direct PG needs 144 + 145 + 146**.
 
