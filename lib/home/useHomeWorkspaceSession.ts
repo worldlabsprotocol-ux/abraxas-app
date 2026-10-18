@@ -11,16 +11,20 @@ export type WorkspaceOverview = {
 export type WorkspaceSessionMode =
   | "loading"
   | "native_disabled"
+  | "native_unavailable"
   | "needs_account"
   | "needs_workspace"
   | "has_workspace";
 
-export function resolveWorkspaceSessionMode(
-  nativeEnabled: boolean | null,
-  overview: WorkspaceOverview | null,
-): WorkspaceSessionMode {
-  if (nativeEnabled === null || !overview) return "loading";
-  if (!nativeEnabled) return "native_disabled";
+export function resolveWorkspaceSessionMode(input: {
+  nativeFlagEnabled: boolean | null;
+  nativeOperational: boolean | null;
+  overview: WorkspaceOverview | null;
+}): WorkspaceSessionMode {
+  const { nativeFlagEnabled, nativeOperational, overview } = input;
+  if (nativeFlagEnabled === null || nativeOperational === null || !overview) return "loading";
+  if (!nativeFlagEnabled) return "native_disabled";
+  if (!nativeOperational) return "native_unavailable";
   if (!overview.native_account.authenticated) return "needs_account";
   const hasWorkspace =
     overview.partner_console.authenticated ||
@@ -30,7 +34,8 @@ export function resolveWorkspaceSessionMode(
 }
 
 export function useHomeWorkspaceSession() {
-  const [nativeEnabled, setNativeEnabled] = useState<boolean | null>(null);
+  const [nativeFlagEnabled, setNativeFlagEnabled] = useState<boolean | null>(null);
+  const [nativeOperational, setNativeOperational] = useState<boolean | null>(null);
   const [overview, setOverview] = useState<WorkspaceOverview | null>(null);
 
   const refresh = useCallback(async () => {
@@ -39,11 +44,11 @@ export function useHomeWorkspaceSession() {
       fetch("/api/account/overview", { credentials: "include" }),
     ]);
     const enabledJson = (await enabledRes.json()) as { enabled?: boolean; operational?: boolean };
+    const flagEnabled = Boolean(enabledJson.enabled);
     const operational =
-      typeof enabledJson.operational === "boolean"
-        ? enabledJson.operational
-        : Boolean(enabledJson.enabled);
-    setNativeEnabled(operational);
+      typeof enabledJson.operational === "boolean" ? enabledJson.operational : flagEnabled;
+    setNativeFlagEnabled(flagEnabled);
+    setNativeOperational(operational);
     if (overviewRes.ok) {
       setOverview((await overviewRes.json()) as WorkspaceOverview);
     }
@@ -53,7 +58,14 @@ export function useHomeWorkspaceSession() {
     void refresh();
   }, [refresh]);
 
-  const mode = resolveWorkspaceSessionMode(nativeEnabled, overview);
+  const mode = resolveWorkspaceSessionMode({
+    nativeFlagEnabled,
+    nativeOperational,
+    overview,
+  });
 
-  return { nativeEnabled, overview, mode, refresh };
+  /** True when passkey workspace enrollment may run (operational gate). */
+  const nativeEnabled = nativeOperational;
+
+  return { nativeEnabled, nativeFlagEnabled, nativeOperational, overview, mode, refresh };
 }

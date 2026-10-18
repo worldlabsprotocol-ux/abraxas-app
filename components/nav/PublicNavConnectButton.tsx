@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/nav/PublicNavConnectButton.tsx
-// Connect — one-click native passkey sign-in when enabled; explicit registration only on user choice.
+// Connect — native passkey when operational; explore or honest unavailable otherwise.
 
 import Link from "next/link";
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
@@ -15,7 +15,9 @@ import {
 import { PUBLIC_FONT_SANS } from "@/lib/design/publicSurface";
 import {
   PUBLIC_CONNECT_ACCOUNT_HREF,
-  PUBLIC_CONNECT_NATIVE_UNAVAILABLE_HREF,
+  PUBLIC_CONNECT_EXPLORE_HREF,
+  PUBLIC_CONNECT_PASSPORT_LEGACY_HREF,
+  PUBLIC_CONNECT_UNAVAILABLE_SUMMARY,
   resolvePublicNavConnectPhase,
 } from "@/lib/nav/publicNavConnectBehavior";
 
@@ -24,7 +26,13 @@ const ACCENT = "var(--accent)";
 
 type NativeSession = { authenticated: boolean };
 
-async function loadNativeNavState(): Promise<{ enabled: boolean; session: NativeSession }> {
+type NativeNavState = {
+  flagEnabled: boolean;
+  operational: boolean;
+  session: NativeSession;
+};
+
+async function loadNativeNavState(): Promise<NativeNavState> {
   const [enabledRes, sessionRes] = await Promise.all([
     fetch("/api/auth/native/enabled", { credentials: "same-origin" }),
     fetch("/api/auth/native/session", { credentials: "same-origin" }),
@@ -34,12 +42,12 @@ async function loadNativeNavState(): Promise<{ enabled: boolean; session: Native
     operational?: boolean;
   };
   const sessionJson = (await sessionRes.json()) as { authenticated?: boolean };
-  const nativeConnect =
-    typeof enabledJson.operational === "boolean"
-      ? enabledJson.operational
-      : Boolean(enabledJson.enabled);
+  const flagEnabled = Boolean(enabledJson.enabled);
+  const operational =
+    typeof enabledJson.operational === "boolean" ? enabledJson.operational : flagEnabled;
   return {
-    enabled: nativeConnect,
+    flagEnabled,
+    operational,
     session: { authenticated: Boolean(sessionJson.authenticated) },
   };
 }
@@ -48,9 +56,11 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
   const pathname = usePathname();
   const router = useRouter();
   const [holderBrowserSessionActive, setHolderBrowserSessionActive] = useState(false);
-  const [nativeEnabled, setNativeEnabled] = useState<boolean | null>(null);
+  const [nativeFlagEnabled, setNativeFlagEnabled] = useState<boolean | null>(null);
+  const [nativeOperational, setNativeOperational] = useState<boolean | null>(null);
   const [nativeSession, setNativeSession] = useState<NativeSession | null>(null);
   const [busy, setBusy] = useState(false);
+  const [retryBusy, setRetryBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [offerCreateAccount, setOfferCreateAccount] = useState(false);
 
@@ -61,11 +71,13 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
         loadNativeNavState(),
       ]);
       setHolderBrowserSessionActive(holderProbe.ok);
-      setNativeEnabled(nativeState.enabled);
+      setNativeFlagEnabled(nativeState.flagEnabled);
+      setNativeOperational(nativeState.operational);
       setNativeSession(nativeState.session);
     } catch {
       setHolderBrowserSessionActive(false);
-      setNativeEnabled(false);
+      setNativeFlagEnabled(false);
+      setNativeOperational(false);
       setNativeSession({ authenticated: false });
     }
   }, []);
@@ -74,11 +86,14 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
     void refreshNavState();
   }, [pathname, refreshNavState]);
 
+  const nativeStateLoaded = nativeFlagEnabled !== null && nativeOperational !== null && nativeSession !== null;
+
   const phase = resolvePublicNavConnectPhase({
     holderBrowserSessionActive,
     nativeAuthenticated: Boolean(nativeSession?.authenticated),
-    nativeEnabled: Boolean(nativeEnabled),
-    nativeStateLoaded: nativeEnabled !== null && nativeSession !== null,
+    nativeFlagEnabled: Boolean(nativeFlagEnabled),
+    nativeOperational: Boolean(nativeOperational),
+    nativeStateLoaded,
   });
 
   const finishSuccess = useCallback(async () => {
@@ -124,6 +139,16 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
     }
   }, [finishSuccess]);
 
+  const runRetryOperationalCheck = useCallback(async () => {
+    setRetryBusy(true);
+    setError(null);
+    try {
+      await refreshNavState();
+    } finally {
+      setRetryBusy(false);
+    }
+  }, [refreshNavState]);
+
   if (phase === "loading") {
     return (
       <span style={{ ...buttonStyle(prominent), opacity: 0.65 }} aria-busy="true">
@@ -148,16 +173,46 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
     );
   }
 
-  if (phase === "native_unavailable_recovery") {
+  if (phase === "native_explore") {
     return (
       <Link
-        href={PUBLIC_CONNECT_NATIVE_UNAVAILABLE_HREF}
+        href={PUBLIC_CONNECT_EXPLORE_HREF}
         style={buttonStyle(prominent)}
-        aria-label="Open Passport for holder access — native passkey sign-in is not enabled here"
-        title="Passkey account sign-in is not enabled in this environment. Open Passport for holder credentials."
+        aria-label="Explore Abraxas in Integration Studio without signing in"
+        title="Explore policies and sandbox tools without an account"
       >
-        Connect
+        Explore
       </Link>
+    );
+  }
+
+  if (phase === "native_service_unavailable") {
+    return (
+      <div
+        style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, maxWidth: 280 }}
+        role="status"
+        aria-live="polite"
+      >
+        <span style={{ fontFamily: FONT, fontSize: "0.62rem", color: "var(--text-secondary)", textAlign: "right" }}>
+          {PUBLIC_CONNECT_UNAVAILABLE_SUMMARY}
+        </span>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "flex-end" }}>
+          <button
+            type="button"
+            onClick={() => void runRetryOperationalCheck()}
+            disabled={retryBusy}
+            style={{ ...buttonStyle(prominent), cursor: retryBusy ? "wait" : "pointer", border: "none" }}
+          >
+            {retryBusy ? "Checking…" : "Retry sign-in"}
+          </button>
+          <Link href={PUBLIC_CONNECT_EXPLORE_HREF} style={secondaryLinkStyle(prominent)}>
+            Integration Studio
+          </Link>
+          <Link href={PUBLIC_CONNECT_PASSPORT_LEGACY_HREF} style={legacyLinkStyle()}>
+            Passport (legacy)
+          </Link>
+        </div>
+      </div>
     );
   }
 
@@ -213,5 +268,24 @@ function buttonStyle(prominent: boolean): CSSProperties {
     fontWeight: 700,
     textDecoration: "none",
     whiteSpace: "nowrap",
+  };
+}
+
+function secondaryLinkStyle(prominent: boolean): CSSProperties {
+  return {
+    ...buttonStyle(prominent),
+    background: "transparent",
+    color: "var(--text-primary)",
+    border: "1px solid var(--border-subtle, rgba(255,255,255,0.12))",
+  };
+}
+
+function legacyLinkStyle(): CSSProperties {
+  return {
+    fontFamily: FONT,
+    fontSize: "0.62rem",
+    color: "var(--text-secondary)",
+    textDecoration: "underline",
+    alignSelf: "center",
   };
 }

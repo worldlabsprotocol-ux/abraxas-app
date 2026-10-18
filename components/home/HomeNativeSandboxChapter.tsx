@@ -6,12 +6,18 @@ import {
   HOMEPAGE_WORKSPACE_ALT_LEAD,
   HOMEPAGE_WORKSPACE_HEADING,
   HOMEPAGE_WORKSPACE_LEAD,
+  HOMEPAGE_WORKSPACE_UNAVAILABLE_LEAD,
 } from "@/lib/home/homepagePlainCopy";
 import { useHomeWorkspaceSession } from "@/lib/home/useHomeWorkspaceSession";
 
 export function HomeNativeSandboxChapter() {
   const { mode } = useHomeWorkspaceSession();
-  const lead = mode === "native_disabled" ? HOMEPAGE_WORKSPACE_ALT_LEAD : HOMEPAGE_WORKSPACE_LEAD;
+  const lead =
+    mode === "native_disabled"
+      ? HOMEPAGE_WORKSPACE_ALT_LEAD
+      : mode === "native_unavailable"
+        ? HOMEPAGE_WORKSPACE_UNAVAILABLE_LEAD
+        : HOMEPAGE_WORKSPACE_LEAD;
 
   return (
     <section

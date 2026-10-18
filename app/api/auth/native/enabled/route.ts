@@ -18,7 +18,11 @@ export async function GET(req: NextRequest) {
     ok: true,
     enabled: operational.flag_enabled,
     operational: operational.operational,
-    connect_mode: operational.operational ? "native_passkey" : "passport_recovery",
+    connect_mode: operational.operational
+      ? "native_passkey"
+      : operational.flag_enabled
+        ? "unavailable"
+        : "explore",
     degraded_reason: operational.degraded_reason,
     runtime: readiness.diagnostics,
     schema,

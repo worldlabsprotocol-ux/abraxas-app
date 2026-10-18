@@ -8,7 +8,7 @@ function stepState(
   stepId: (typeof HOMEPAGE_WORKSPACE_STEPS)[number]["id"],
   mode: WorkspaceSessionMode,
 ): "complete" | "current" | "upcoming" {
-  if (mode === "loading" || mode === "native_disabled") return "upcoming";
+  if (mode === "loading" || mode === "native_disabled" || mode === "native_unavailable") return "upcoming";
   if (stepId === "account") {
     if (mode === "needs_account") return "current";
     return mode === "needs_workspace" || mode === "has_workspace" ? "complete" : "upcoming";
