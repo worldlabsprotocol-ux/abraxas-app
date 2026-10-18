@@ -2,7 +2,14 @@
 
 import { createHash } from "crypto";
 import type { EphemeralWalletChallengeRecord } from "./challengeRecord";
-import { getEphemeralRedis, isEphemeralRedisConfigured } from "./redisClient";
+import { isEphemeralRedisConfigured } from "./redisClient";
+import {
+  ephemeralKvGet,
+  ephemeralKvGetDel,
+  ephemeralKvSet,
+  probeEphemeralKv,
+  resolveEphemeralKvBackend,
+} from "./redisKv";
 import { EphemeralStateUnavailableError } from "./errors";
 
 const KEY_PREFIX = "abraxas:ephemeral:wallet-challenge:v1:";
@@ -30,9 +37,8 @@ export async function putEphemeralWalletChallenge(
   ttlSec: number,
   env: Record<string, string | undefined> = process.env,
 ): Promise<void> {
-  const redis = getEphemeralRedis(env);
-  if (redis) {
-    await redis.set(challengeKey(record.challenge_id), record, { ex: ttlSec });
+  if (resolveEphemeralKvBackend(env) !== "none") {
+    await ephemeralKvSet(challengeKey(record.challenge_id), record, ttlSec, env);
     return;
   }
   if (!memoryAllowed(env)) {
@@ -44,16 +50,41 @@ export async function putEphemeralWalletChallenge(
   });
 }
 
+/** Read challenge without consuming (verify signature before commit). */
+export async function peekEphemeralWalletChallenge(
+  challengeId: string,
+  env: Record<string, string | undefined> = process.env,
+): Promise<EphemeralWalletChallengeRecord | null> {
+  if (resolveEphemeralKvBackend(env) !== "none") {
+    return await ephemeralKvGet<EphemeralWalletChallengeRecord>(challengeKey(challengeId), env);
+  }
+  if (!memoryAllowed(env)) {
+    throw new EphemeralStateUnavailableError();
+  }
+  const entry = memoryStore.get(challengeId);
+  if (!entry) return null;
+  if (entry.expiresAtMs <= Date.now()) {
+    memoryStore.delete(challengeId);
+    return null;
+  }
+  return entry.record;
+}
+
+/** Atomic consume-once after successful verification. */
+export async function commitEphemeralWalletChallenge(
+  challengeId: string,
+  env: Record<string, string | undefined> = process.env,
+): Promise<EphemeralWalletChallengeRecord | null> {
+  return consumeEphemeralWalletChallenge(challengeId, env);
+}
+
 /** Atomic consume-once: returns record or null if missing/already consumed/expired. */
 export async function consumeEphemeralWalletChallenge(
   challengeId: string,
   env: Record<string, string | undefined> = process.env,
 ): Promise<EphemeralWalletChallengeRecord | null> {
-  const redis = getEphemeralRedis(env);
-  if (redis) {
-    const key = challengeKey(challengeId);
-    const record = (await redis.getdel(key)) as EphemeralWalletChallengeRecord | null;
-    return record ?? null;
+  if (resolveEphemeralKvBackend(env) !== "none") {
+    return await ephemeralKvGetDel<EphemeralWalletChallengeRecord>(challengeKey(challengeId), env);
   }
   if (!memoryAllowed(env)) {
     throw new EphemeralStateUnavailableError();
@@ -85,17 +116,10 @@ export async function consumeEphemeralWalletChallenge(
 export async function probeEphemeralChallengeStore(
   env: Record<string, string | undefined> = process.env,
 ): Promise<{ ok: boolean; code: string | null; backend: "redis" | "memory" | "none" }> {
-  if (isEphemeralRedisConfigured(env)) {
-    const redis = getEphemeralRedis(env);
-    if (!redis) return { ok: false, code: "redis_unavailable", backend: "none" };
-    try {
-      const probeKey = `${KEY_PREFIX}__probe__`;
-      await redis.set(probeKey, "1", { ex: 5 });
-      await redis.del(probeKey);
-      return { ok: true, code: null, backend: "redis" };
-    } catch {
-      return { ok: false, code: "redis_unreachable", backend: "redis" };
-    }
+  if (isEphemeralRedisConfigured(env) || resolveEphemeralKvBackend(env) === "tcp") {
+    const probe = await probeEphemeralKv(env);
+    const backend = probe.backend === "none" ? "none" : "redis";
+    return { ok: probe.ok, code: probe.code, backend: probe.ok ? backend : backend };
   }
   if (memoryAllowed(env)) {
     return { ok: true, code: "memory_test_only", backend: "memory" };

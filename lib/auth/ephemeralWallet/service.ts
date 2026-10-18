@@ -11,8 +11,9 @@ import { verifyPassportSolanaPersonalMessage } from "@/lib/auth/passportSolanaAu
 import { canonicalizeSolanaNetwork, resolveAuthorizedSolanaNetworkFromEnv } from "@/lib/auth/passportSolanaAuth/network";
 import { buildEphemeralWalletSignInMessage } from "./message";
 import {
-  consumeEphemeralWalletChallenge,
+  commitEphemeralWalletChallenge,
   hashEphemeralSessionContext,
+  peekEphemeralWalletChallenge,
   putEphemeralWalletChallenge,
 } from "./challengeStore";
 import { WALLET_SOL_AUTH_CHALLENGE_TTL_MS, WALLET_SOL_AUTH_CONTEXT_COOKIE } from "./contract";
@@ -131,7 +132,7 @@ export async function verifyEphemeralWalletAuth(input: {
 
   let row;
   try {
-    row = await consumeEphemeralWalletChallenge(input.challengeId);
+    row = await peekEphemeralWalletChallenge(input.challengeId);
   } catch (error) {
     if (error instanceof EphemeralStateUnavailableError) return { ok: false, code: "store_unavailable" };
     throw error;
@@ -150,6 +151,15 @@ export async function verifyEphemeralWalletAuth(input: {
     walletAddress: wallet,
   });
   if (!valid) return { ok: false, code: "invalid_signature" };
+
+  let committed;
+  try {
+    committed = await commitEphemeralWalletChallenge(input.challengeId);
+  } catch (error) {
+    if (error instanceof EphemeralStateUnavailableError) return { ok: false, code: "store_unavailable" };
+    throw error;
+  }
+  if (!committed) return { ok: false, code: "replay" };
 
   return { ok: true, walletAddress: wallet, solanaNetwork: canonicalNetwork };
 }
