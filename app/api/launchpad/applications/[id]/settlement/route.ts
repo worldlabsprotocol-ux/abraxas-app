@@ -9,7 +9,7 @@ import {
   requireLaunchpadSession,
   requireLaunchpadSessionKeyId,
 } from "@/lib/partner/launchpad/apiHelpers";
-import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
+import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication.server";
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
 import { CIRCLE_PUBLIC_CODES } from "@/lib/settlement/circle/codes";
 import {

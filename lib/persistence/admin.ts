@@ -24,6 +24,12 @@ export function resetPersistenceClientForTests(): void {
 function createPostgrestClient(): SupabaseClient | null {
   const cfg = resolvePersistenceConfig();
   if (!cfg.ok) return null;
+  if (cfg.backend === "postgres_direct") {
+    return null;
+  }
+  if (!cfg.postgrestUrl?.trim() || !cfg.serviceRoleKey?.trim()) {
+    return null;
+  }
   return createClient(cfg.postgrestUrl, cfg.serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });

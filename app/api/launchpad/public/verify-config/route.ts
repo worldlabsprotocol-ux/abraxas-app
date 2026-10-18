@@ -5,8 +5,7 @@ import { NextRequest } from "next/server";
 import { launchpadError, launchpadJson } from "@/lib/partner/launchpad/apiHelpers";
 import { resolveLaunchpadVerifyConfig } from "@/lib/partner/launchpad/resolveLaunchpadVerifyInput";
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
-import { requireSupabaseAdmin } from "@/lib/supabase/admin";
-import { recordLaunchpadActivity } from "@/lib/partner/launchpad/recordActivity";
+import { recordLaunchpadActivityEvent } from "@/lib/partner/launchpad/launchpadActivityRecording";
 
 export const dynamic = "force-dynamic";
 
@@ -21,14 +20,13 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const sb = requireSupabaseAdmin();
-    await recordLaunchpadActivity(sb, {
+    await recordLaunchpadActivityEvent({
       applicationId: resolved.config.applicationId,
       partnerId: resolved.config.partnerId,
       eventType: "verification_started",
       publicCode: "hosted_opened",
     });
-    await recordLaunchpadActivity(sb, {
+    await recordLaunchpadActivityEvent({
       applicationId: resolved.config.applicationId,
       partnerId: resolved.config.partnerId,
       eventType: "disclosure_viewed",

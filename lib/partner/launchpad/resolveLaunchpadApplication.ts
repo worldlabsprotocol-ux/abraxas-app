@@ -1,8 +1,10 @@
 // FILE: lib/partner/launchpad/resolveLaunchpadApplication.ts
+// PostgREST resolution for legacy paths. Sovereign runtime uses resolveLaunchpadApplication.server.ts.
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
 import { isLaunchpadReturnUrlAllowlisted } from "@/lib/partner/launchpad/launchpadReturnUrlAllowlist";
+
 export async function getLaunchpadApplicationById(
   applicationId: string,
 ): Promise<LaunchpadApplicationRow | null> {

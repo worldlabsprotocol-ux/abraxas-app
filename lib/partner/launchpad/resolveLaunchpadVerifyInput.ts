@@ -4,7 +4,7 @@
 import {
   getLaunchpadApplicationBySlug,
   validateLaunchpadHostedReturnUrl,
-} from "@/lib/partner/launchpad/resolveLaunchpadApplication";
+} from "@/lib/partner/launchpad/resolveLaunchpadApplication.server";
 import { resolveLaunchpadPolicyTemplate } from "@/lib/partner/launchpad/policyCatalog";
 import { normalizePartnerVerifyInput } from "@/lib/partner/normalizePartnerVerifyInput";
 import { resolveStoredPartnerFlowCallback } from "@/lib/partner/launchpad/partnerFlowRequest/store";

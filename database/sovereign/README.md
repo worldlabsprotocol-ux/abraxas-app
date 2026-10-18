@@ -22,8 +22,11 @@ Optional: `ABRAXAS_NATIVE_ACCOUNT_DATABASE_URL` when account data uses a dedicat
 2. `002_native_account_solana_auth.sql` — wallet credentials, challenges, atomic consume RPC (146)
 3. `003_native_account_sessions.sql` — revocable sessions + validate/revoke RPCs (147)
 
-Launchpad sandbox **provisioning** still requires partner/launchpad schema (legacy 039–086). PR B migrates
-`provisionLaunchpadSandbox` to sovereign PostgreSQL for the full enroll path.
+4. `004_native_account_webauthn_hardening.sql` — membership status, sandbox idempotency, WebAuthn consume RPC
+5. `005_sovereign_developer_sandbox.sql` — partners, policies, API keys, launchpad applications, activity, audit
+6. `006_sovereign_verification_receipts.sql` — verification requests, signed receipt references, usage events
+
+Launchpad **runtime** in sovereign mode uses `resolveLaunchpadApplication.server.ts` and `lib/partner/launchpad/sovereign/*` (no PostgREST). Legacy Supabase launchpad tables remain for non-sovereign deployments only.
 
 ## Apply locally or in CI
 

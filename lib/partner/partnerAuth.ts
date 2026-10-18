@@ -10,6 +10,7 @@ import {
   type PartnerCredentialEnvironment,
 } from "@/lib/partner/productionIntegration/credentialBoundary";
 import type { LaunchpadEnvironment } from "@/lib/partner/launchpad/types";
+import { launchpadUsesSovereignPostgres } from "@/lib/partner/launchpad/launchpadPersistence";
 
 const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
@@ -91,12 +92,45 @@ export async function authenticatePartnerRawKey(
   const trimmed = rawKey.trim();
   if (!trimmed.startsWith("abx_")) return null;
 
+  const hash = hashPartnerKey(trimmed);
+
+  if (launchpadUsesSovereignPostgres()) {
+    const { pgLookupPartnerApiKeyByHash, pgTouchPartnerApiKeyLastUsed } = await import(
+      "@/lib/partner/launchpad/sovereign/launchpadPgStore"
+    );
+    const data = await pgLookupPartnerApiKeyByHash(hash);
+    if (!data) {
+      return { ok: false, error: "Invalid API key", status: 401 };
+    }
+    if (data.revoked_at) {
+      return { ok: false, error: "API key revoked", status: 403 };
+    }
+    const scopes = (data.scopes ?? []) as PartnerScope[];
+    if (requiredScope && !scopes.includes(requiredScope)) {
+      return { ok: false, error: `Missing scope: ${requiredScope}`, status: 403 };
+    }
+    void pgTouchPartnerApiKeyLastUsed(data.id);
+    const credentialEnvironment = partnerKeyEnvironment(String(data.key_prefix ?? ""));
+    return {
+      ok: true,
+      ctx: {
+        partnerId: data.partner_id,
+        apiKeyId: data.id,
+        displayName: data.display_name,
+        keyPrefix: data.key_prefix,
+        scopes,
+        launchpadApplicationId: null,
+        credentialEnvironment,
+        credentialStatus: "active",
+      },
+    };
+  }
+
   const client = sb();
   if (!client) {
     return { ok: false, error: "Partner auth unavailable", status: 401 };
   }
 
-  const hash = hashPartnerKey(trimmed);
   const { data, error } = await client
     .from("partner_api_keys")
     .select("id, partner_id, display_name, key_prefix, scopes, revoked_at, launchpad_application_id")

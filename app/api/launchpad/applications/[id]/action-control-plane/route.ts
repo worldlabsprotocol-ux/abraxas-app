@@ -8,7 +8,7 @@ import {
   launchpadJson,
   requireLaunchpadSession,
 } from "@/lib/partner/launchpad/apiHelpers";
-import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
+import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication.server";
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
 import { ACTION_CONTROL_PLANE_PRODUCTION } from "@/lib/partner/actionControlPlane/contract";
 import { buildActionControlPlaneForApplication } from "@/lib/partner/actionControlPlane/load";

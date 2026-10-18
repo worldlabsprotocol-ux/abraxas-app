@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 import { promises as dns } from "dns";
 import { enforceLaunchpadRateLimit, launchpadError, launchpadJson, requireLaunchpadSession } from "@/lib/partner/launchpad/apiHelpers";
 import { createDomainVerificationToken, dnsTxtRecordsContainToken, domainVerificationRecordName, domainVerificationRecordValue, productionCallbackHostname } from "@/lib/partner/launchpad/domainVerification";
-import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
+import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication.server";
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 
