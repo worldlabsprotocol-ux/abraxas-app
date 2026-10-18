@@ -15,19 +15,24 @@ function sessionSecret(): Uint8Array | null {
   return new TextEncoder().encode(raw);
 }
 
+export type AccountAuthMethod = "passkey" | "solana_wallet";
+
 export interface AccountSession {
   accountId: string;
-  authMethod: "passkey";
+  authMethod: AccountAuthMethod;
 }
 
-export async function issueAccountSessionToken(accountId: string): Promise<string | null> {
+export async function issueAccountSessionToken(
+  accountId: string,
+  authMethod: AccountAuthMethod = "passkey",
+): Promise<string | null> {
   if (!isNativeAccountId(accountId)) return null;
   const secret = sessionSecret();
   if (!secret) return null;
 
   return new SignJWT({
     typ: "abraxas_account_session",
-    am: "passkey",
+    am: authMethod,
   })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(accountId)
@@ -77,7 +82,10 @@ export async function resolveAccountSession(req: NextRequest): Promise<AccountSe
       throw error;
     }
 
-    return { accountId, authMethod: "passkey" };
+    const am = payload.am;
+    const authMethod: AccountAuthMethod =
+      am === "solana_wallet" || am === "passkey" ? am : "passkey";
+    return { accountId, authMethod };
   } catch {
     return null;
   }

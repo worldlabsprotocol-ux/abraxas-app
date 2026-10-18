@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Btn } from "@/components/redesign/ui";
-import { NativeAccountPasskeyPanel } from "@/components/account/NativeAccountPasskeyPanel";
+import { NativeAccountSolanaPanel } from "@/components/account/NativeAccountSolanaPanel";
 import { HomeWorkspaceProgressSteps } from "@/components/home/HomeWorkspaceProgressSteps";
 import {
   HOMEPAGE_CTA_OPEN_WORKSPACE,
@@ -22,7 +22,6 @@ import { useHomeWorkspaceSession } from "@/lib/home/useHomeWorkspaceSession";
 export function HomeSandboxSessionEntry() {
   const router = useRouter();
   const { mode, refresh } = useHomeWorkspaceSession();
-  const [authMode, setAuthMode] = useState<"register" | "authenticate">("register");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -85,29 +84,8 @@ export function HomeSandboxSessionEntry() {
 
       {mode === "needs_account" ? (
         <div className="abx-sandbox-entry__auth">
-          <NativeAccountPasskeyPanel
-            mode={authMode}
-            label={authMode === "register" ? "Create account" : "Sign in"}
-            onSuccess={() => void refresh()}
-          />
+          <NativeAccountSolanaPanel onSuccess={() => void refresh()} />
           <p className="abx-sandbox-entry__alt">{HOMEPAGE_WORKSPACE_WALLET_OPTIONAL_NOTE}</p>
-          <p className="abx-sandbox-entry__alt">
-            {authMode === "register" ? (
-              <>
-                Already have an account?{" "}
-                <button type="button" className="abx-sandbox-entry__link" onClick={() => setAuthMode("authenticate")}>
-                  Sign in
-                </button>
-              </>
-            ) : (
-              <>
-                New here?{" "}
-                <button type="button" className="abx-sandbox-entry__link" onClick={() => setAuthMode("register")}>
-                  Create account
-                </button>
-              </>
-            )}
-          </p>
         </div>
       ) : null}
 

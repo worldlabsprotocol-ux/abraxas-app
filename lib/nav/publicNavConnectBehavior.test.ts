@@ -13,7 +13,7 @@ describe("resolvePublicNavSignInPhase", () => {
     ).toBe("native_account_link");
   });
 
-  it("shows passkey sign-in when operational", () => {
+  it("shows Solana sign-in when operational", () => {
     expect(
       resolvePublicNavSignInPhase({
         nativeAuthenticated: false,
@@ -21,7 +21,7 @@ describe("resolvePublicNavSignInPhase", () => {
         nativeOperational: true,
         nativeStateLoaded: true,
       }),
-    ).toBe("native_passkey_sign_in");
+    ).toBe("native_solana_sign_in");
   });
 
   it("shows unavailable when flag on but degraded", () => {
