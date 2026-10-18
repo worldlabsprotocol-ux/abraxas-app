@@ -28,8 +28,8 @@ export const HOMEPAGE_WORKSPACE_ALT_LEAD =
 export const HOMEPAGE_WORKSPACE_UNAVAILABLE_LEAD =
   "Passkey sign-in is temporarily unavailable. Open Integration Studio to explore, or retry when service is restored.";
 
-export const HOMEPAGE_WORKSPACE_UNAVAILABLE_RETRY = "Retry sign-in check";
-export const HOMEPAGE_WORKSPACE_PASSPORT_LEGACY_LINK = "Passport (legacy holder)";
+export const HOMEPAGE_WORKSPACE_WALLET_OPTIONAL_NOTE =
+  "Connecting a wallet in the header is optional and separate from your Abraxas passkey account.";
 
 export const HOMEPAGE_CLOSE_HEADING = "Ready to build?";
 export const HOMEPAGE_CLOSE_LEAD =

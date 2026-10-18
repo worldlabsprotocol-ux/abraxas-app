@@ -1,39 +1,29 @@
 // FILE: lib/nav/publicNavConnectBehavior.ts
-// Pure Connect control routing — native passkey when operational; honest unavailable otherwise.
+// Public header routing — passkey sign-in, explore, and unavailable (no legacy holder flows).
 
-export type PublicNavConnectPhase =
-  | "holder_profile_menu"
+export type PublicNavSignInPhase =
   | "native_account_link"
-  | "native_passkey_connect"
+  | "native_passkey_sign_in"
   | "native_service_unavailable"
-  | "native_explore";
+  | "native_explore_only";
 
-export function resolvePublicNavConnectPhase(input: {
-  /** Authoritative httpOnly browser session — not local storage alone. */
-  holderBrowserSessionActive: boolean;
+export function resolvePublicNavSignInPhase(input: {
   nativeAuthenticated: boolean;
-  /** Feature flag — native account auth intended for this deployment. */
   nativeFlagEnabled: boolean;
-  /** Flag, config, and schema healthy — passkey ceremonies may run. */
   nativeOperational: boolean;
   nativeStateLoaded: boolean;
-}): PublicNavConnectPhase | "loading" {
+}): PublicNavSignInPhase | "loading" {
   if (!input.nativeStateLoaded) return "loading";
-  if (input.holderBrowserSessionActive) return "holder_profile_menu";
   if (input.nativeAuthenticated) return "native_account_link";
-  if (input.nativeOperational) return "native_passkey_connect";
+  if (input.nativeOperational) return "native_passkey_sign_in";
   if (input.nativeFlagEnabled) return "native_service_unavailable";
-  return "native_explore";
+  return "native_explore_only";
 }
 
-/** Public product paths that do not require account authentication. */
-export const PUBLIC_CONNECT_EXPLORE_HREF = "/developers/integration-studio" as const;
-
-/** Explicit legacy holder Passport — never the default Connect destination. */
-export const PUBLIC_CONNECT_PASSPORT_LEGACY_HREF = "/passport" as const;
-
+export const PUBLIC_NAV_EXPLORE_HREF = "/developers/integration-studio" as const;
+export const PUBLIC_NAV_WORKSPACE_HREF = "/#start-sandbox" as const;
 export const PUBLIC_CONNECT_ACCOUNT_HREF = "/account/applications" as const;
 
-export const PUBLIC_CONNECT_UNAVAILABLE_MENU_TITLE = "Account sign-in unavailable";
-export const PUBLIC_CONNECT_UNAVAILABLE_MENU_DESC =
-  "Passkey sign-in is temporarily offline. Explore without signing in, retry when service is restored, or open Passport if you use holder credentials.";
+export const PUBLIC_SIGN_IN_UNAVAILABLE_TITLE = "Sign-in temporarily unavailable";
+export const PUBLIC_SIGN_IN_UNAVAILABLE_DESC =
+  "Passkey account sign-in is offline. Explore Abraxas without signing in while service is restored.";

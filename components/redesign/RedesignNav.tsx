@@ -6,7 +6,9 @@ import Link from "next/link";
 import { AbraxasLogo } from "@/components/brand/AbraxasLogo";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { PublicNavConnectButton } from "@/components/nav/PublicNavConnectButton";
+import { PublicNavExploreLink } from "@/components/nav/PublicNavExploreLink";
 import { PublicNavLaunchAppLink } from "@/components/nav/PublicNavLaunchAppLink";
+import { PublicNavWalletButton } from "@/components/nav/PublicNavWalletButton";
 import { PUBLIC_FONT_SANS, PUBLIC_NAV_DOCS_CTA, PUBLIC_NAV_EXPLORE_LINKS, PUBLIC_NAV_LINKS } from "@/lib/design/publicSurface";
 import { useState, type CSSProperties } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
@@ -38,12 +40,17 @@ export function RedesignNav() {
 
       <div className="rd-nav-right rd-nav-actions" style={{ display: "none" }}>
         <LanguageSelector />
+        <span className="rd-nav-explore-desktop">
+          <PublicNavExploreLink prominent />
+        </span>
+        <PublicNavWalletButton prominent />
         <PublicNavConnectButton prominent />
         <PublicNavLaunchAppLink />
       </div>
 
       <div className="rd-nav-mobile rd-nav-actions" style={{ display: "flex", marginLeft: "auto" }}>
         <LanguageSelector />
+        <PublicNavWalletButton />
         <PublicNavConnectButton />
         <PublicNavLaunchAppLink />
         <button
@@ -99,8 +106,11 @@ export function RedesignNav() {
                 {l.label}
               </Link>
             ))}
+            <Link href="/developers/integration-studio" onClick={() => setOpen(false)} style={mobileSubLink}>
+              Explore Integration Studio
+            </Link>
             <Link href="/#start-sandbox" onClick={() => setOpen(false)} style={mobileSubLink}>
-              Start building
+              Create Abraxas account
             </Link>
             <Link href="/try" onClick={() => setOpen(false)} style={mobileSubLink}>
               Verification demo

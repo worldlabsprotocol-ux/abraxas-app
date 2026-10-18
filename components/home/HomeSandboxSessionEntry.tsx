@@ -12,12 +12,11 @@ import {
   HOMEPAGE_CTA_SET_UP_WORKSPACE,
   HOMEPAGE_CTA_START_BUILDING,
   HOMEPAGE_WORKSPACE_DEMO_LINK,
-  HOMEPAGE_WORKSPACE_PASSPORT_LEGACY_LINK,
   HOMEPAGE_WORKSPACE_STUDIO_CTA,
   HOMEPAGE_WORKSPACE_UNAVAILABLE_LEAD,
-  HOMEPAGE_WORKSPACE_UNAVAILABLE_RETRY,
+  HOMEPAGE_WORKSPACE_WALLET_OPTIONAL_NOTE,
 } from "@/lib/home/homepagePlainCopy";
-import { PUBLIC_CONNECT_PASSPORT_LEGACY_HREF } from "@/lib/nav/publicNavConnectBehavior";
+import { PUBLIC_NAV_EXPLORE_HREF } from "@/lib/nav/publicNavConnectBehavior";
 import { useHomeWorkspaceSession } from "@/lib/home/useHomeWorkspaceSession";
 
 export function HomeSandboxSessionEntry() {
@@ -25,7 +24,6 @@ export function HomeSandboxSessionEntry() {
   const { mode, refresh } = useHomeWorkspaceSession();
   const [authMode, setAuthMode] = useState<"register" | "authenticate">("register");
   const [busy, setBusy] = useState(false);
-  const [retryBusy, setRetryBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const enrollSandbox = useCallback(async () => {
@@ -68,45 +66,19 @@ export function HomeSandboxSessionEntry() {
         <p className="abx-sandbox-entry__status">Checking workspace availability…</p>
       ) : null}
 
-      {mode === "native_disabled" ? (
+      {mode === "native_disabled" || mode === "native_unavailable" ? (
         <div className="abx-sandbox-entry__disabled">
+          {mode === "native_unavailable" ? (
+            <p className="abx-sandbox-entry__unavailable-msg">{HOMEPAGE_WORKSPACE_UNAVAILABLE_LEAD}</p>
+          ) : null}
           <div className="abx-sandbox-entry__actions">
             <Link
               className="abx-premium-hero__cta abx-premium-hero__cta--primary"
-              href="/developers/integration-studio"
+              href={PUBLIC_NAV_EXPLORE_HREF}
             >
               {HOMEPAGE_WORKSPACE_STUDIO_CTA}
             </Link>
           </div>
-          {demoLink}
-        </div>
-      ) : null}
-
-      {mode === "native_unavailable" ? (
-        <div className="abx-sandbox-entry__disabled">
-          <p className="abx-sandbox-entry__unavailable-msg">{HOMEPAGE_WORKSPACE_UNAVAILABLE_LEAD}</p>
-          <div className="abx-sandbox-entry__actions">
-            <Link
-              className="abx-premium-hero__cta abx-premium-hero__cta--primary"
-              href="/developers/integration-studio"
-            >
-              {HOMEPAGE_WORKSPACE_STUDIO_CTA}
-            </Link>
-            <button
-              type="button"
-              className="abx-sandbox-entry__retry"
-              disabled={retryBusy}
-              onClick={() => {
-                setRetryBusy(true);
-                void refresh().finally(() => setRetryBusy(false));
-              }}
-            >
-              {retryBusy ? "Checking…" : HOMEPAGE_WORKSPACE_UNAVAILABLE_RETRY}
-            </button>
-          </div>
-          <p className="abx-sandbox-entry__legacy">
-            <Link href={PUBLIC_CONNECT_PASSPORT_LEGACY_HREF}>{HOMEPAGE_WORKSPACE_PASSPORT_LEGACY_LINK}</Link>
-          </p>
           {demoLink}
         </div>
       ) : null}
@@ -118,6 +90,7 @@ export function HomeSandboxSessionEntry() {
             label={authMode === "register" ? "Create account" : "Sign in"}
             onSuccess={() => void refresh()}
           />
+          <p className="abx-sandbox-entry__alt">{HOMEPAGE_WORKSPACE_WALLET_OPTIONAL_NOTE}</p>
           <p className="abx-sandbox-entry__alt">
             {authMode === "register" ? (
               <>
