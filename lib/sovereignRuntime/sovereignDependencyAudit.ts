@@ -74,6 +74,14 @@ export function buildSovereignDependencyAudit(
 
   const items: SovereignDependencyItem[] = [
     {
+      id: "native_passkey_accounts",
+      surface: "Native Abraxas accounts (abx_ac_* passkeys, WebAuthn challenges)",
+      dependency_class: direct ? "A" : "B",
+      sovereign_core: true,
+      state: direct && pgUrl && !identityErr ? "active" : direct ? "blocked" : "inactive",
+      note: "lib/auth/nativeAccount/store.ts — PostgreSQL tables 144/145; not Google-derived subjects",
+    },
+    {
       id: "wallet_auth_challenges",
       surface: "Identity and session (EVM/Solana wallet challenges, holder subjects)",
       dependency_class: direct ? "A" : "B",
