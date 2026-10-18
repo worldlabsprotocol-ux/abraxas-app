@@ -352,13 +352,13 @@ export const nativeAccountMemory = {
 
   revokeAllAccountSessions(accountId: string, reason: string): number {
     let count = 0;
-    for (const row of accountSessions().values()) {
+    accountSessions().forEach((row) => {
       if (row.account_id === accountId && !row.revoked_at) {
         row.revoked_at = new Date().toISOString();
         row.revoke_reason = reason;
         count += 1;
       }
-    }
+    });
     return count;
   },
 };
