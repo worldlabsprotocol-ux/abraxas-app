@@ -16,6 +16,9 @@ export function resolveAuthorizedSolanaNetworkFromEnv(): string | null {
   const deploymentEnv = getVercelDeploymentEnv();
   if (!raw) {
     if (deploymentEnv === "development") return "devnet";
+    if (deploymentEnv === "production" || process.env.VERCEL_ENV === "production") {
+      return "mainnet-beta";
+    }
     return null;
   }
   return canonicalizeSolanaNetwork(raw);

@@ -8,6 +8,8 @@ import { probeSolanaAccountAuthSchemaReady } from "@/lib/auth/nativeAccount/sola
 import { resolveSolanaAccountAuthOperational } from "@/lib/auth/nativeAccount/solanaOperational";
 import { isNativeAccountDirectPostgresEnabled } from "@/lib/persistence/nativeAccountPg";
 import { resolveWebAuthnOrigin, resolveWebAuthnRpId } from "@/lib/auth/webauthn/rpConfig";
+import { buildNativeAuthOperatorActions } from "@/lib/auth/nativeAccount/operatorActions";
+import { resolveAuthorizedSolanaNetworkFromEnv } from "@/lib/auth/passportSolanaAuth/network";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +17,11 @@ export async function GET(req: NextRequest) {
   const host = req.headers.get("host");
   const schema = await probeNativeAuthSchemaReady();
   const solanaSchema = await probeSolanaAccountAuthSchemaReady();
-  const readiness = assessNativeAuthProductionReadiness({ schema, hostHeader: host });
+  const readiness = assessNativeAuthProductionReadiness({
+    schema,
+    solanaSchema: solanaSchema,
+    hostHeader: host,
+  });
   const operational = resolveNativeAuthOperational({ schema });
   const solanaOperational = resolveSolanaAccountAuthOperational({ schema: solanaSchema });
   const publicOperational = solanaOperational.operational;
@@ -42,7 +48,9 @@ export async function GET(req: NextRequest) {
       persistence_backend: readiness.persistence_backend,
       blockers: readiness.blockers,
       rollback: readiness.rollback,
+      operator_actions: buildNativeAuthOperatorActions(readiness.blockers),
     },
+    solana_network: resolveAuthorizedSolanaNetworkFromEnv(),
     webauthn: {
       rp_id: resolveWebAuthnRpId(host),
       rp_id_from_env: Boolean(process.env.ABRAXAS_WEBAUTHN_RP_ID?.trim()),
