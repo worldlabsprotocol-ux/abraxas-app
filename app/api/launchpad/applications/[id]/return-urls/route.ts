@@ -9,9 +9,9 @@ import {
 } from "@/lib/partner/launchpad/apiHelpers";
 import { validateLaunchpadReturnUrl } from "@/lib/partner/launchpad/returnUrl";
 import { addLaunchpadReturnUrl, removeLaunchpadReturnUrl } from "@/lib/partner/launchpad/manageReturnUrls";
-import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
+import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication.server";
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
-import { requireSupabaseAdmin } from "@/lib/supabase/admin";
+import { launchpadUsesSovereignPostgres } from "@/lib/partner/launchpad/launchpadPersistence";
 
 export const dynamic = "force-dynamic";
 
@@ -43,21 +43,27 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   }
 
   const merged = addLaunchpadReturnUrl(app.allowed_return_urls, returnUrl);
-  const sb = requireSupabaseAdmin();
-  const { error } = await sb
-    .from("partner_launchpad_applications")
-    .update({ allowed_return_urls: merged, updated_at: new Date().toISOString() })
-    .eq("id", params.id)
-    .eq("partner_id", auth.session.partnerId);
-
-  if (error) {
-    return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 500);
+  if (launchpadUsesSovereignPostgres()) {
+    const { pgUpdateApplicationReturnUrls } = await import(
+      "@/lib/partner/launchpad/sovereign/launchpadPgStore"
+    );
+    await pgUpdateApplicationReturnUrls(params.id, auth.session.partnerId, merged);
+  } else {
+    const { requireSupabaseAdmin } = await import("@/lib/supabase/admin");
+    const sb = requireSupabaseAdmin();
+    const { error } = await sb
+      .from("partner_launchpad_applications")
+      .update({ allowed_return_urls: merged, updated_at: new Date().toISOString() })
+      .eq("id", params.id)
+      .eq("partner_id", auth.session.partnerId);
+    if (error) {
+      return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 500);
+    }
+    await sb.from("partners").update({
+      allowed_return_urls: merged,
+      updated_at: new Date().toISOString(),
+    }).eq("partner_id", auth.session.partnerId);
   }
-
-  await sb.from("partners").update({
-    allowed_return_urls: merged,
-    updated_at: new Date().toISOString(),
-  }).eq("partner_id", auth.session.partnerId);
 
   return launchpadJson({ ok: true, allowed_return_urls: merged });
 }
@@ -83,19 +89,25 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
   const next = removeLaunchpadReturnUrl(app.allowed_return_urls, returnUrl);
   if (!next.ok) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.return_url_rejected, 400, next.code);
 
-  const sb = requireSupabaseAdmin();
-  const { error } = await sb
-    .from("partner_launchpad_applications")
-    .update({ allowed_return_urls: next.allowedUrls, updated_at: new Date().toISOString() })
-    .eq("id", params.id)
-    .eq("partner_id", auth.session.partnerId);
-
-  if (error) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 500);
-
-  await sb.from("partners").update({
-    allowed_return_urls: next.allowedUrls,
-    updated_at: new Date().toISOString(),
-  }).eq("partner_id", auth.session.partnerId);
+  if (launchpadUsesSovereignPostgres()) {
+    const { pgUpdateApplicationReturnUrls } = await import(
+      "@/lib/partner/launchpad/sovereign/launchpadPgStore"
+    );
+    await pgUpdateApplicationReturnUrls(params.id, auth.session.partnerId, next.allowedUrls);
+  } else {
+    const { requireSupabaseAdmin } = await import("@/lib/supabase/admin");
+    const sb = requireSupabaseAdmin();
+    const { error } = await sb
+      .from("partner_launchpad_applications")
+      .update({ allowed_return_urls: next.allowedUrls, updated_at: new Date().toISOString() })
+      .eq("id", params.id)
+      .eq("partner_id", auth.session.partnerId);
+    if (error) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 500);
+    await sb.from("partners").update({
+      allowed_return_urls: next.allowedUrls,
+      updated_at: new Date().toISOString(),
+    }).eq("partner_id", auth.session.partnerId);
+  }
 
   return launchpadJson({ ok: true, allowed_return_urls: next.allowedUrls });
 }

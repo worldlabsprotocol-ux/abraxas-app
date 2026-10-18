@@ -6,10 +6,10 @@ import {
   launchpadJson,
   requireLaunchpadSession,
 } from "@/lib/partner/launchpad/apiHelpers";
-import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
+import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication.server";
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
-import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { projectLaunchpadActivityEvent } from "@/lib/privacy/selectiveDisclosure";
+import { launchpadUsesSovereignPostgres } from "@/lib/partner/launchpad/launchpadPersistence";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +25,19 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   }
 
   const limit = Math.min(100, Number(req.nextUrl.searchParams.get("limit") ?? 50));
+  if (launchpadUsesSovereignPostgres()) {
+    const { pgListLaunchpadActivity } = await import(
+      "@/lib/partner/launchpad/sovereign/launchpadPgStore"
+    );
+    const rows = await pgListLaunchpadActivity(params.id, auth.session.partnerId, limit);
+    return launchpadJson({
+      ok: true,
+      events: rows.map((row) =>
+        projectLaunchpadActivityEvent(row as unknown as Record<string, unknown>),
+      ),
+    });
+  }
+  const { requireSupabaseAdmin } = await import("@/lib/supabase/admin");
   const sb = requireSupabaseAdmin();
   const { data } = await sb
     .from("partner_launchpad_activity")

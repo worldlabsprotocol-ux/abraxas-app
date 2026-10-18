@@ -9,7 +9,7 @@ import {
   launchpadJson,
   requireLaunchpadSession,
 } from "@/lib/partner/launchpad/apiHelpers";
-import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
+import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication.server";
 import {
   SolanaBillingConfigurationError,
   createSolanaBillingPayment,

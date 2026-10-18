@@ -14,7 +14,7 @@ export const ACCOUNT_SESSIONS_INDEPENDENT_NOTICE =
 export const ACCOUNT_USE_CASE_HEADING = "What do you need today?" as const;
 
 export const ACCOUNT_USE_CASE_SUBHEAD =
-  "Choose a path. You can switch anytime from Account or the profile menu." as const;
+  "After Solana sign-in, pick how you want to work with Abraxas today." as const;
 
 export type AccountUseCaseId = "verify_self" | "connect_application" | "manage_organization";
 
@@ -26,25 +26,25 @@ export const ACCOUNT_USE_CASES: ReadonlyArray<{
   primaryCta: string;
 }> = [
   {
-    id: "verify_self",
-    title: "Verify myself",
-    summary: "Passport, identity verification, and personal credentials.",
-    href: "/account/passport",
-    primaryCta: "Open Passport",
-  },
-  {
     id: "connect_application",
-    title: "Connect an application",
-    summary: "Create or resume a sandbox application and run the institutional developer journey.",
-    href: "/account/applications",
-    primaryCta: "Applications",
+    title: "Start building",
+    summary: "Open your sandbox workspace, configure policy, run verification, and validate signed receipts.",
+    href: "/developers/launchpad",
+    primaryCta: "Open Launchpad",
   },
   {
     id: "manage_organization",
-    title: "Manage an organization",
-    summary: "Organization eligibility, design partner enrollment, and institutional integration workspace.",
-    href: "/account/organizations",
-    primaryCta: "Organizations",
+    title: "Integrate with my business",
+    summary: "Institutional integration, pricing, and production readiness — separate from sandbox checkout.",
+    href: "/developers/institutional-integration",
+    primaryCta: "Business integration",
+  },
+  {
+    id: "verify_self",
+    title: "Verify myself",
+    summary: "Passport and personal credentials when a policy requires holder evidence.",
+    href: "/account/passport",
+    primaryCta: "Open Passport",
   },
 ];
 

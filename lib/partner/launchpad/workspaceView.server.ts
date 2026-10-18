@@ -9,7 +9,7 @@ import {
   pgGetPartnerCompany,
   pgListLaunchpadApplicationsForPartner,
 } from "@/lib/partner/launchpad/sovereign/launchpadPgStore";
-import { listLaunchpadApplicationsForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
+import { listLaunchpadApplicationsForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication.server";
 
 function integrationStatus(
   status: string,

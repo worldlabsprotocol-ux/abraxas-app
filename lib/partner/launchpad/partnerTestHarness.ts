@@ -148,6 +148,13 @@ export interface PartnerHarnessCaseResult {
   signing_source: "configured_issuer_key" | "ephemeral_harness_key";
   replay_second_pass?: boolean;
   verification_path: "evaluatePublicReceiptTrust+validatePartnerFlowPublicReceipt";
+  /** Cryptographic material for sovereign persistence (non-PII public view). */
+  persistence?: {
+    receipt_id: string;
+    public_payload: Record<string, unknown>;
+    signature: string;
+    expires_at: string;
+  };
 }
 
 const PII_JSON_NEEDLES = [
@@ -382,6 +389,12 @@ export function runPartnerHarnessCase(input: {
     callback_params: params,
     pii_scan_passed: piiOk,
     signing_source: source,
+    persistence: {
+      receipt_id: receipt.receipt_id,
+      public_payload: JSON.parse(JSON.stringify(receipt)) as Record<string, unknown>,
+      signature: receipt.signature ?? "",
+      expires_at: receipt.expires_at ?? future,
+    },
     replay_second_pass: replaySecondPass,
     verification_path: "evaluatePublicReceiptTrust+validatePartnerFlowPublicReceipt",
   };

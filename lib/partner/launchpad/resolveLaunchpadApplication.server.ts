@@ -1,0 +1,87 @@
+// FILE: lib/partner/launchpad/resolveLaunchpadApplication.server.ts
+import "server-only";
+
+import { launchpadUsesSovereignPostgres } from "@/lib/partner/launchpad/launchpadPersistence";
+import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
+import { isLaunchpadReturnUrlAllowlisted } from "@/lib/partner/launchpad/launchpadReturnUrlAllowlist";
+
+async function sovereignStore() {
+  return import("@/lib/partner/launchpad/sovereign/launchpadPgStore");
+}
+
+export async function getLaunchpadApplicationById(
+  applicationId: string,
+): Promise<LaunchpadApplicationRow | null> {
+  if (launchpadUsesSovereignPostgres()) {
+    const store = await sovereignStore();
+    return store.pgGetLaunchpadApplicationById(applicationId);
+  }
+  const { requireSupabaseAdmin } = await import("@/lib/supabase/admin");
+  const sb = requireSupabaseAdmin();
+  const { data } = await sb
+    .from("partner_launchpad_applications")
+    .select("*")
+    .eq("id", applicationId)
+    .maybeSingle();
+  return (data as LaunchpadApplicationRow | null) ?? null;
+}
+
+export async function getLaunchpadApplicationBySlug(
+  publicSlug: string,
+): Promise<LaunchpadApplicationRow | null> {
+  if (launchpadUsesSovereignPostgres()) {
+    const store = await sovereignStore();
+    return store.pgGetLaunchpadApplicationBySlug(publicSlug);
+  }
+  const { requireSupabaseAdmin } = await import("@/lib/supabase/admin");
+  const sb = requireSupabaseAdmin();
+  const { data } = await sb
+    .from("partner_launchpad_applications")
+    .select("*")
+    .eq("public_slug", publicSlug)
+    .maybeSingle();
+  return (data as LaunchpadApplicationRow | null) ?? null;
+}
+
+export async function getLaunchpadApplicationForPartner(
+  applicationId: string,
+  partnerId: string,
+): Promise<LaunchpadApplicationRow | null> {
+  if (launchpadUsesSovereignPostgres()) {
+    const store = await sovereignStore();
+    return store.pgGetLaunchpadApplicationForPartner(applicationId, partnerId);
+  }
+  const { requireSupabaseAdmin } = await import("@/lib/supabase/admin");
+  const sb = requireSupabaseAdmin();
+  const { data } = await sb
+    .from("partner_launchpad_applications")
+    .select("*")
+    .eq("id", applicationId)
+    .eq("partner_id", partnerId)
+    .maybeSingle();
+  return (data as LaunchpadApplicationRow | null) ?? null;
+}
+
+export async function listLaunchpadApplicationsForPartner(
+  partnerId: string,
+): Promise<LaunchpadApplicationRow[]> {
+  if (launchpadUsesSovereignPostgres()) {
+    const store = await sovereignStore();
+    return store.pgListLaunchpadApplicationsForPartner(partnerId);
+  }
+  const { requireSupabaseAdmin } = await import("@/lib/supabase/admin");
+  const sb = requireSupabaseAdmin();
+  const { data } = await sb
+    .from("partner_launchpad_applications")
+    .select("*")
+    .eq("partner_id", partnerId)
+    .order("created_at", { ascending: false });
+  return (data as LaunchpadApplicationRow[]) ?? [];
+}
+
+export function validateLaunchpadHostedReturnUrl(
+  app: LaunchpadApplicationRow,
+  returnUrl: string,
+): boolean {
+  return isLaunchpadReturnUrlAllowlisted(app.allowed_return_urls, returnUrl);
+}

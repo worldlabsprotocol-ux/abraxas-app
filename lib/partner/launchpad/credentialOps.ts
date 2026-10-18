@@ -4,7 +4,8 @@
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { generatePartnerKey } from "@/lib/partner/partnerAuth";
 import { recordLaunchpadActivity } from "@/lib/partner/launchpad/recordActivity";
-import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
+import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication.server";
+import { launchpadUsesSovereignPostgres } from "@/lib/partner/launchpad/launchpadPersistence";
 
 export type CredentialOpResult =
   | { ok: true; api_key: string; key_prefix: string; api_key_id: string }
@@ -14,6 +15,12 @@ export async function rotateLaunchpadCredential(
   applicationId: string,
   partnerId: string,
 ): Promise<CredentialOpResult> {
+  if (launchpadUsesSovereignPostgres()) {
+    const { pgRotateLaunchpadCredential } = await import(
+      "@/lib/partner/launchpad/sovereign/credentialOpsPg"
+    );
+    return pgRotateLaunchpadCredential(applicationId, partnerId);
+  }
   const sb = requireSupabaseAdmin();
   const app = await getLaunchpadApplicationForPartner(applicationId, partnerId);
   if (!app) return { ok: false, code: "not_found" };
@@ -71,6 +78,12 @@ export async function revokeLaunchpadCredential(
   applicationId: string,
   partnerId: string,
 ): Promise<{ ok: true } | { ok: false; code: "not_found" | "revoke_failed" }> {
+  if (launchpadUsesSovereignPostgres()) {
+    const { pgRevokeLaunchpadCredential } = await import(
+      "@/lib/partner/launchpad/sovereign/credentialOpsPg"
+    );
+    return pgRevokeLaunchpadCredential(applicationId, partnerId);
+  }
   const sb = requireSupabaseAdmin();
   const app = await getLaunchpadApplicationForPartner(applicationId, partnerId);
   if (!app || !app.api_key_id) return { ok: false, code: "not_found" };

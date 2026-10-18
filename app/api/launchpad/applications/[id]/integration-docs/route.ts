@@ -7,7 +7,7 @@ import {
   requireLaunchpadSession,
 } from "@/lib/partner/launchpad/apiHelpers";
 import { buildLaunchpadIntegrationDocs } from "@/lib/partner/launchpad/integrationDocs";
-import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
+import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication.server";
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 

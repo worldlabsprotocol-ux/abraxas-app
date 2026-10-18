@@ -8,7 +8,7 @@ import {
   launchpadJson,
   requireLaunchpadSession,
 } from "@/lib/partner/launchpad/apiHelpers";
-import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
+import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication.server";
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
 import { loadWebhookDeliveryHealth } from "@/lib/partner/launchpad/webhookDeliveryHealth/load";
 import { webhookHealthCopyLeaks } from "@/lib/partner/launchpad/webhookDeliveryHealth/classify";

@@ -2,7 +2,7 @@
 
 import { NextRequest } from "next/server";
 import { launchpadError, launchpadJson, requireLaunchpadSession } from "@/lib/partner/launchpad/apiHelpers";
-import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
+import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication.server";
 import { buildLaunchpadIntegrationHealth } from "@/lib/partner/launchpad/integrationHealth";
 import { buildPolicyChangeControlOverview } from "@/lib/policy/changeControl/overview";
 import { getLaunchpadWebhookOverview } from "@/lib/partner/eventDelivery/launchpadWebhook";
@@ -24,6 +24,17 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   if (!auth.ok) return auth.response;
   const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
+
+  const { launchpadUsesSovereignPostgres } = await import(
+    "@/lib/partner/launchpad/launchpadPersistence"
+  );
+  if (launchpadUsesSovereignPostgres()) {
+    const { buildSovereignLaunchpadHealthResponse } = await import(
+      "@/lib/partner/launchpad/sovereign/buildSovereignHealthResponse"
+    );
+    const payload = await buildSovereignLaunchpadHealthResponse(app, auth.session.partnerId);
+    return launchpadJson(payload);
+  }
 
   const sb = requireSupabaseAdmin();
   const keyIds = [app.api_key_id, app.production_api_key_id].filter(Boolean) as string[];

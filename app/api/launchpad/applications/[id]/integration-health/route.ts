@@ -8,7 +8,7 @@ import {
   launchpadJson,
   requireLaunchpadSession,
 } from "@/lib/partner/launchpad/apiHelpers";
-import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
+import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication.server";
 import { LAUNCHPAD_PUBLIC_ERRORS } from "@/lib/partner/launchpad/publicErrors";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { getLaunchpadWebhookOverview } from "@/lib/partner/eventDelivery/launchpadWebhook";
@@ -36,6 +36,17 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 
   const app = await getLaunchpadApplicationForPartner(params.id, auth.session.partnerId);
   if (!app) return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.application_not_found, 404);
+
+  const { launchpadUsesSovereignPostgres } = await import(
+    "@/lib/partner/launchpad/launchpadPersistence"
+  );
+  if (launchpadUsesSovereignPostgres()) {
+    const { buildSovereignLaunchpadHealthResponse } = await import(
+      "@/lib/partner/launchpad/sovereign/buildSovereignHealthResponse"
+    );
+    const health = await buildSovereignLaunchpadHealthResponse(app, auth.session.partnerId);
+    return launchpadJson({ ok: true, notice: INTEGRATION_OBSERVABILITY_NOTICE, ...health });
+  }
 
   const sb = requireSupabaseAdmin();
   let productionKeyRevoked = false;

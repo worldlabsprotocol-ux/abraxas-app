@@ -1,10 +1,11 @@
 // FILE: lib/partner/launchpad/runTestScenario.ts
 // Partner Launchpad test harness runner — real receipt trust evaluation.
 
-import { requireSupabaseAdmin } from "@/lib/supabase/admin";
-import { recordLaunchpadActivity } from "@/lib/partner/launchpad/recordActivity";
-import { getLaunchpadApplicationForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
-import { validateLaunchpadHostedReturnUrl } from "@/lib/partner/launchpad/resolveLaunchpadApplication";
+import { launchpadUsesSovereignPostgres } from "@/lib/partner/launchpad/launchpadPersistence";
+import {
+  getLaunchpadApplicationForPartner,
+  validateLaunchpadHostedReturnUrl,
+} from "@/lib/partner/launchpad/resolveLaunchpadApplication.server";
 import {
   runPartnerHarnessCase,
   resolvePartnerHarnessScenario,
@@ -55,19 +56,34 @@ export async function runLaunchpadTestScenario(input: {
   const result = caseResult as PartnerHarnessCaseResult;
   const hostedVerifyUrl = `${SITE_URL}/partner/verify?app=${encodeURIComponent(app.public_slug)}&return_url=${encodeURIComponent(returnUrl)}`;
 
-  const sb = requireSupabaseAdmin();
-  await recordLaunchpadActivity(sb, {
-    applicationId: app.id,
-    partnerId: input.partnerId,
-    eventType: result.passed ? "receipt_verified" : "verification_failed",
-    publicCode: result.passed ? harnessPassPublicCode(result.scenario_id) : `harness_${result.scenario_id}_fail`,
-    metadata: {
-      scenario: result.scenario_id,
-      simulated: false,
-      harness: true,
-      passed: result.passed,
-    },
-  });
+  if (launchpadUsesSovereignPostgres()) {
+    const { recordSovereignVerificationRun } = await import(
+      "@/lib/partner/launchpad/sovereign/verificationExecution"
+    );
+    await recordSovereignVerificationRun({
+      app,
+      partnerId: input.partnerId,
+      scenarioId: scenario.id,
+      harness: result,
+      idempotencyKey: `harness:${app.id}:${scenario.id}:${result.callback_params.receipt_id}`,
+    });
+  } else {
+    const { requireSupabaseAdmin } = await import("@/lib/supabase/admin");
+    const { recordLaunchpadActivity } = await import("@/lib/partner/launchpad/recordActivity");
+    const sb = requireSupabaseAdmin();
+    await recordLaunchpadActivity(sb, {
+      applicationId: app.id,
+      partnerId: input.partnerId,
+      eventType: result.passed ? "receipt_verified" : "verification_failed",
+      publicCode: result.passed ? harnessPassPublicCode(result.scenario_id) : `harness_${result.scenario_id}_fail`,
+      metadata: {
+        scenario: result.scenario_id,
+        simulated: false,
+        harness: true,
+        passed: result.passed,
+      },
+    });
+  }
 
   return {
     ok: true,

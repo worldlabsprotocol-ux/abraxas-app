@@ -17,7 +17,7 @@ vi.mock("@/lib/partner/launchpad/partnerConsoleSession", () => ({
   },
 }));
 
-vi.mock("@/lib/partner/launchpad/workspaceView", () => ({
+vi.mock("@/lib/partner/launchpad/workspaceView.server", () => ({
   buildLaunchpadWorkspaceView: (...args: unknown[]) => buildWorkspaceMock(...args),
 }));
 
