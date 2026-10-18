@@ -2,9 +2,12 @@
 
 import { randomBytes } from "crypto";
 import { requirePersistenceAdmin } from "@/lib/persistence/admin";
-import { isNativeAccountDirectPostgresEnabled } from "@/lib/persistence/nativeAccountPg";
-import { nativeAccountMemoryStoreEnabled } from "./featureFlag";
 import { nativeAccountMemory } from "./memoryStore";
+import {
+  assertNativeAccountPersistenceBackend,
+  nativeAccountUsesDirectPostgres,
+  nativeAccountUsesMemory,
+} from "./nativeAccountPersistence";
 import type { AbraxasAccountStatus, MembershipGrantMethod, PartnerMembershipRole } from "./contract";
 import * as pgStore from "./postgresDirectStore";
 import { NativeAccountStoreUnavailableError } from "./storeErrors";
@@ -12,11 +15,16 @@ import { NativeAccountStoreUnavailableError } from "./storeErrors";
 export { NativeAccountStoreUnavailableError } from "./storeErrors";
 
 function useMemory(): boolean {
-  return nativeAccountMemoryStoreEnabled();
+  return nativeAccountUsesMemory();
 }
 
 function usePostgresDirect(): boolean {
-  return !useMemory() && isNativeAccountDirectPostgresEnabled();
+  return nativeAccountUsesDirectPostgres();
+}
+
+function persistenceAdmin() {
+  assertNativeAccountPersistenceBackend();
+  return requirePersistenceAdmin();
 }
 
 export async function insertNativeAccount(accountId: string): Promise<void> {
@@ -27,7 +35,7 @@ export async function insertNativeAccount(accountId: string): Promise<void> {
   if (usePostgresDirect()) {
     return pgStore.insertNativeAccount(accountId);
   }
-  const sb = requirePersistenceAdmin();
+  const sb = persistenceAdmin();
   const { error } = await sb.from("abraxas_accounts").insert({ account_id: accountId });
   if (error) {
     if (error.code === "42P01") throw new NativeAccountStoreUnavailableError();
@@ -46,7 +54,7 @@ export async function getNativeAccountStatus(
   if (usePostgresDirect()) {
     return pgStore.getNativeAccountStatus(accountId);
   }
-  const sb = requirePersistenceAdmin();
+  const sb = persistenceAdmin();
   const { data, error } = await sb
     .from("abraxas_accounts")
     .select("status")
@@ -85,7 +93,7 @@ export async function insertPasskeyRecord(input: {
     await pgStore.insertPasskeyRecord({ ...input, id });
     return;
   }
-  const sb = requirePersistenceAdmin();
+  const sb = persistenceAdmin();
   const { error } = await sb.from("abraxas_account_passkeys").insert({
     id,
     account_id: input.accountId,
@@ -123,7 +131,7 @@ export async function findPasskeyByCredentialId(credentialId: string): Promise<{
   if (usePostgresDirect()) {
     return pgStore.findPasskeyByCredentialId(credentialId);
   }
-  const sb = requirePersistenceAdmin();
+  const sb = persistenceAdmin();
   const { data, error } = await sb
     .from("abraxas_account_passkeys")
     .select("id, account_id, public_key_cose, sign_count, revoked_at")
@@ -144,7 +152,7 @@ export async function updatePasskeySignCount(credentialId: string, signCount: nu
   if (usePostgresDirect()) {
     return pgStore.updatePasskeySignCount(credentialId, signCount);
   }
-  const sb = requirePersistenceAdmin();
+  const sb = persistenceAdmin();
   const { error } = await sb
     .from("abraxas_account_passkeys")
     .update({ sign_count: signCount, last_used_at: new Date().toISOString() })
@@ -190,7 +198,7 @@ export async function insertWebAuthnChallenge(input: {
     });
     return id;
   }
-  const sb = requirePersistenceAdmin();
+  const sb = persistenceAdmin();
   const { error } = await sb.from("abraxas_webauthn_challenges").insert({
     id,
     purpose: input.purpose,
@@ -232,7 +240,7 @@ export async function loadWebAuthnChallenge(challengeId: string): Promise<{
   if (usePostgresDirect()) {
     return pgStore.loadWebAuthnChallenge(challengeId);
   }
-  const sb = requirePersistenceAdmin();
+  const sb = persistenceAdmin();
   const { data, error } = await sb
     .from("abraxas_webauthn_challenges")
     .select("purpose, account_id, challenge, origin, rp_id, expires_at, consumed_at")
@@ -271,7 +279,7 @@ export async function consumeWebAuthnChallengeAtomic(challengeId: string): Promi
   if (usePostgresDirect()) {
     return pgStore.consumeWebAuthnChallengeAtomic(challengeId);
   }
-  const sb = requirePersistenceAdmin();
+  const sb = persistenceAdmin();
   const { data, error } = await sb.rpc("abraxas_consume_webauthn_challenge_atomic", {
     p_challenge_id: challengeId,
   });
@@ -304,7 +312,7 @@ export async function consumeWebAuthnChallengeAtomic(challengeId: string): Promi
 }
 
 async function consumeWebAuthnChallengeLegacy(challengeId: string): Promise<boolean> {
-  const sb = requirePersistenceAdmin();
+  const sb = persistenceAdmin();
   const { error } = await sb
     .from("abraxas_webauthn_challenges")
     .update({ consumed_at: new Date().toISOString() })
@@ -329,7 +337,7 @@ export async function upsertPartnerMembership(input: {
   if (usePostgresDirect()) {
     return pgStore.upsertPartnerMembership(input);
   }
-  const sb = requirePersistenceAdmin();
+  const sb = persistenceAdmin();
   const { error } = await sb.from("abraxas_account_partner_memberships").upsert({
     account_id: input.accountId,
     partner_id: input.partnerId,
@@ -353,7 +361,7 @@ export async function assertPartnerMembership(
   if (usePostgresDirect()) {
     return pgStore.assertPartnerMembership(accountId, partnerId);
   }
-  const sb = requirePersistenceAdmin();
+  const sb = persistenceAdmin();
   const { data, error } = await sb
     .from("abraxas_account_partner_memberships")
     .select("role, status")
@@ -381,7 +389,7 @@ export async function getPrimarySandboxEnrollment(
   if (usePostgresDirect()) {
     return pgStore.getPrimarySandboxEnrollment(accountId);
   }
-  const sb = requirePersistenceAdmin();
+  const sb = persistenceAdmin();
   const { data, error } = await sb
     .from("abraxas_sandbox_enrollments")
     .select("partner_id, application_id")
@@ -420,7 +428,7 @@ export async function recordMembershipGrant(input: {
   if (usePostgresDirect()) {
     return pgStore.recordMembershipGrant(input);
   }
-  const sb = requirePersistenceAdmin();
+  const sb = persistenceAdmin();
   const { error } = await sb.from("abraxas_account_partner_membership_grants").insert({
     account_id: input.accountId,
     partner_id: input.partnerId,
@@ -443,7 +451,7 @@ export async function listPartnerMemberships(
   if (usePostgresDirect()) {
     return pgStore.listPartnerMemberships(accountId);
   }
-  const sb = requirePersistenceAdmin();
+  const sb = persistenceAdmin();
   const { data, error } = await sb
     .from("abraxas_account_partner_memberships")
     .select("partner_id, role")
@@ -473,7 +481,7 @@ export async function recordSandboxEnrollment(input: {
   if (usePostgresDirect()) {
     return pgStore.recordSandboxEnrollment(input);
   }
-  const sb = requirePersistenceAdmin();
+  const sb = persistenceAdmin();
   const { error } = await sb.from("abraxas_sandbox_enrollments").insert({
     account_id: input.accountId,
     partner_id: input.partnerId,

@@ -1,6 +1,9 @@
 // FILE: lib/partner/launchpad/provisionSandbox.ts
 // Atomic sandbox provisioning via migration 084 RPC.
 
+import { queryAbraxasPg } from "@/lib/persistence/pgPool";
+import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { isSovereignNativeAccountMode } from "@/lib/persistence/sovereignNativeAccount";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { generatePartnerKey } from "@/lib/partner/partnerAuth";
 import { isValidPartnerId, normalizePartnerId } from "@/lib/partner/partnerIdFormat";
@@ -37,13 +40,16 @@ export type ProvisionSandboxErrorCode =
   | "conflict"
   | "not_configured";
 
+function launchpadUsesDirectPostgres(): boolean {
+  return persistenceUsesDirectPostgres() || isSovereignNativeAccountMode();
+}
+
 export async function provisionLaunchpadSandbox(
   input: ProvisionSandboxInput,
 ): Promise<
   | { ok: true; result: ProvisionSandboxResult; idempotencyReplay: boolean; apiKey?: string }
   | { ok: false; code: ProvisionSandboxErrorCode }
 > {
-  const sb = requireSupabaseAdmin();
 
   const applicationName = input.applicationName.trim();
   const displayName = input.displayName.trim();
@@ -74,26 +80,7 @@ export async function provisionLaunchpadSandbox(
   const policyRules = customPolicy && customPolicy.ok ? customPolicy.rules : template!.rules;
   const { raw, prefix, hash } = generatePartnerKey("test");
 
-  const { data, error } = await sb.rpc("partner_launchpad_provision_sandbox_atomic", {
-    p_application_name: applicationName,
-    p_display_name: displayName,
-    p_partner_id: partnerId,
-    p_public_slug: publicSlug,
-    p_policy_template_id: input.policyTemplateId,
-    p_policy_id: policyId,
-    p_policy_rules: policyRules,
-    p_return_url: input.returnUrl.trim(),
-    p_idempotency_key: input.idempotencyKey ?? null,
-    p_key_prefix: prefix,
-    p_key_hash: hash,
-  });
-
-  if (error) {
-    console.error("[launchpad/provision] rpc failed", { error_message: error.message });
-    return { ok: false, code: "provision_failed" };
-  }
-
-  const row = data as {
+  type ProvisionRow = {
     ok?: boolean;
     code?: string;
     application_id?: string;
@@ -105,28 +92,91 @@ export async function provisionLaunchpadSandbox(
     api_key_id?: string;
   };
 
-  if (!row?.ok || !row.application_id || !row.partner_id || !row.public_slug) {
-    if (row?.code === "conflict") return { ok: false, code: "conflict" };
+  let row: ProvisionRow | null = null;
+
+  if (launchpadUsesDirectPostgres()) {
+    try {
+      const { rows } = await queryAbraxasPg<{ result: ProvisionRow }>(
+        `select partner_launchpad_provision_sandbox_atomic(
+          $1::text, $2::text, $3::text, $4::text, $5::text, $6::text, $7::jsonb,
+          $8::text, $9::text, $10::text, $11::text
+        ) as result`,
+        [
+          applicationName,
+          displayName,
+          partnerId,
+          publicSlug,
+          input.policyTemplateId,
+          policyId,
+          JSON.stringify(policyRules),
+          input.returnUrl.trim(),
+          input.idempotencyKey ?? null,
+          prefix,
+          hash,
+        ],
+      );
+      row = rows[0]?.result ?? null;
+    } catch (error) {
+      console.error("[launchpad/provision] direct pg rpc failed", { error });
+      return { ok: false, code: "provision_failed" };
+    }
+  } else {
+    const sb = requireSupabaseAdmin();
+    const { data, error } = await sb.rpc("partner_launchpad_provision_sandbox_atomic", {
+      p_application_name: applicationName,
+      p_display_name: displayName,
+      p_partner_id: partnerId,
+      p_public_slug: publicSlug,
+      p_policy_template_id: input.policyTemplateId,
+      p_policy_id: policyId,
+      p_policy_rules: policyRules,
+      p_return_url: input.returnUrl.trim(),
+      p_idempotency_key: input.idempotencyKey ?? null,
+      p_key_prefix: prefix,
+      p_key_hash: hash,
+    });
+
+    if (error) {
+      console.error("[launchpad/provision] rpc failed", { error_message: error.message });
+      return { ok: false, code: "provision_failed" };
+    }
+    row = data as ProvisionRow;
+  }
+
+  const rowTyped = row as {
+    ok?: boolean;
+    code?: string;
+    application_id?: string;
+    partner_id?: string;
+    public_slug?: string;
+    policy_id?: string;
+    policy_version?: number;
+    key_prefix?: string;
+    api_key_id?: string;
+  };
+
+  if (!rowTyped?.ok || !rowTyped.application_id || !rowTyped.partner_id || !rowTyped.public_slug) {
+    if (rowTyped?.code === "conflict") return { ok: false, code: "conflict" };
     return { ok: false, code: "provision_failed" };
   }
 
-  const hostedVerifyUrl = `${SITE_URL}/partner/verify?app=${encodeURIComponent(row.public_slug)}&return_url=${encodeURIComponent(input.returnUrl.trim())}`;
+  const hostedVerifyUrl = `${SITE_URL}/partner/verify?app=${encodeURIComponent(rowTyped.public_slug)}&return_url=${encodeURIComponent(input.returnUrl.trim())}`;
 
-  const idempotencyReplay = row.code === "idempotency_replay";
+  const idempotencyReplay = rowTyped.code === "idempotency_replay";
 
   return {
     ok: true,
     idempotencyReplay,
     apiKey: idempotencyReplay ? undefined : raw,
     result: {
-      application_id: row.application_id,
-      partner_id: row.partner_id,
-      public_slug: row.public_slug,
-      policy_id: row.policy_id ?? policyId,
-      policy_version: row.policy_version ?? 1,
-      api_key_id: row.api_key_id ?? "",
+      application_id: rowTyped.application_id,
+      partner_id: rowTyped.partner_id,
+      public_slug: rowTyped.public_slug,
+      policy_id: rowTyped.policy_id ?? policyId,
+      policy_version: rowTyped.policy_version ?? 1,
+      api_key_id: rowTyped.api_key_id ?? "",
       api_key: idempotencyReplay ? "" : raw,
-      key_prefix: row.key_prefix ?? prefix,
+      key_prefix: rowTyped.key_prefix ?? prefix,
       hosted_verify_url: hostedVerifyUrl,
     },
   };

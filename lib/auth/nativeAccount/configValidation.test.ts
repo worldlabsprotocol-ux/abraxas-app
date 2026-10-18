@@ -21,4 +21,15 @@ describe("validateNativeAuthRuntimeConfig", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.code).toBe("session_secret_missing");
   });
+
+  it("requires independent database URL in sovereign production mode", () => {
+    const result = validateNativeAuthRuntimeConfig({
+      ABRAXAS_NATIVE_ACCOUNT_AUTH_ENABLED: "true",
+      ABRAXAS_SOVEREIGN_NATIVE_ACCOUNT: "1",
+      NODE_ENV: "production",
+      ABRAXAS_ACCOUNT_SESSION_SECRET: "x".repeat(32),
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe("sovereign_database_missing");
+  });
 });

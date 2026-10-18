@@ -2,9 +2,12 @@
 
 import { createHash, randomBytes } from "crypto";
 import { requirePersistenceAdmin } from "@/lib/persistence/admin";
-import { isNativeAccountDirectPostgresEnabled } from "@/lib/persistence/nativeAccountPg";
-import { nativeAccountMemoryStoreEnabled } from "../featureFlag";
 import { nativeAccountMemory } from "../memoryStore";
+import {
+  assertNativeAccountPersistenceBackend,
+  nativeAccountUsesDirectPostgres,
+  nativeAccountUsesMemory,
+} from "../nativeAccountPersistence";
 import { NativeAccountStoreUnavailableError } from "../storeErrors";
 import * as pgStore from "../postgresDirectStore";
 
@@ -35,11 +38,16 @@ export type AccountSolanaChallengeRow = {
 };
 
 function useMemory(): boolean {
-  return nativeAccountMemoryStoreEnabled();
+  return nativeAccountUsesMemory();
 }
 
 function usePostgresDirect(): boolean {
-  return !useMemory() && isNativeAccountDirectPostgresEnabled();
+  return nativeAccountUsesDirectPostgres();
+}
+
+function persistenceAdmin() {
+  assertNativeAccountPersistenceBackend();
+  return requirePersistenceAdmin();
 }
 
 export async function insertAccountSolanaChallenge(row: {
@@ -62,7 +70,7 @@ export async function insertAccountSolanaChallenge(row: {
     await pgStore.insertAccountSolanaChallenge(row);
     return;
   }
-  const sb = requirePersistenceAdmin();
+  const sb = persistenceAdmin();
   const { error } = await sb.from("abraxas_account_solana_auth_challenges").insert(row);
   if (error) {
     if (error.code === "42P01") throw new NativeAccountStoreUnavailableError();
@@ -81,7 +89,7 @@ export async function consumeAccountSolanaChallenge(input: {
   if (usePostgresDirect()) {
     return pgStore.consumeAccountSolanaChallengeAtomic(input);
   }
-  const sb = requirePersistenceAdmin();
+  const sb = persistenceAdmin();
   const { data, error } = await sb.rpc("abraxas_consume_account_solana_challenge_atomic", {
     p_challenge_id: input.challengeId,
     p_wallet_address: input.walletAddress,
@@ -128,7 +136,7 @@ export async function findAccountIdBySolanaWallet(
   if (usePostgresDirect()) {
     return pgStore.findAccountIdBySolanaWallet(walletAddress, solanaNetwork);
   }
-  const sb = requirePersistenceAdmin();
+  const sb = persistenceAdmin();
   const { data, error } = await sb
     .from("abraxas_account_solana_wallets")
     .select("account_id")
@@ -157,7 +165,7 @@ export async function linkSolanaWalletToAccount(input: {
     await pgStore.linkSolanaWalletToAccount({ ...input, id });
     return;
   }
-  const sb = requirePersistenceAdmin();
+  const sb = persistenceAdmin();
   const { error } = await sb.from("abraxas_account_solana_wallets").insert({
     id,
     account_id: input.accountId,
@@ -181,7 +189,7 @@ export async function getPrimarySolanaWalletForAccount(
   if (usePostgresDirect()) {
     return pgStore.getPrimarySolanaWalletForAccount(accountId);
   }
-  const sb = requirePersistenceAdmin();
+  const sb = persistenceAdmin();
   const { data, error } = await sb
     .from("abraxas_account_solana_wallets")
     .select("wallet_address, solana_network")
@@ -214,7 +222,7 @@ export async function touchSolanaWalletLastUsed(
     await pgStore.touchSolanaWalletLastUsed(walletAddress, solanaNetwork);
     return;
   }
-  const sb = requirePersistenceAdmin();
+  const sb = persistenceAdmin();
   const { error } = await sb
     .from("abraxas_account_solana_wallets")
     .update({ last_used_at: new Date().toISOString() })

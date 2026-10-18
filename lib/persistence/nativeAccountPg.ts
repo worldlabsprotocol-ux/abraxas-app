@@ -5,6 +5,7 @@ import {
   persistenceUsesDirectPostgres,
   resolveIndependentPostgresUrl,
 } from "./env";
+import { isSovereignNativeAccountMode } from "./sovereignNativeAccount";
 
 export const NATIVE_ACCOUNT_PG_ENV = "ABRAXAS_NATIVE_ACCOUNT_PG" as const;
 
@@ -33,11 +34,12 @@ export function resolveNativeAccountDirectPostgresUrl(
 export function isNativeAccountDirectPostgresEnabled(
   env: Record<string, string | undefined> = process.env,
 ): boolean {
-  if (env.NODE_ENV === "test" && env.VITEST === "true" && !nativeAccountPgExplicitlyEnabled(env)) {
+  const sovereign = isSovereignNativeAccountMode(env);
+  if (env.NODE_ENV === "test" && env.VITEST === "true" && !nativeAccountPgExplicitlyEnabled(env) && !sovereign) {
     return false;
   }
-  if (persistenceUsesDirectPostgres(env)) {
-    return Boolean(resolveIndependentPostgresUrl(env));
+  if (persistenceUsesDirectPostgres(env) || sovereign) {
+    return Boolean(resolveNativeAccountDirectPostgresUrl(env));
   }
   if (!nativeAccountPgExplicitlyEnabled(env)) return false;
   return Boolean(resolveNativeAccountDirectPostgresUrl(env));
