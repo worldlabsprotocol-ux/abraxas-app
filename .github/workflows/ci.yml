@@ -305,3 +305,39 @@ jobs:
           ABRAXAS_ACCOUNT_SESSION_SECRET: ci-sovereign-integration-session-secret-32
           ABRAXAS_BROWSER_SESSION_SECRET: ci-sovereign-browser-session-secret-32
 
+  ephemeral-wallet-auth:
+    name: ephemeral-wallet-auth
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Ephemeral wallet auth (no PostgreSQL account store)
+        run: npx vitest run lib/auth/ephemeralWallet/
+        env:
+          ABRAXAS_EPHEMERAL_WALLET_AUTH: "1"
+          ABRAXAS_EPHEMERAL_INTEGRATION_TEST: "1"
+          ABRAXAS_ACCOUNT_SESSION_SECRET: ci-ephemeral-wallet-session-secret-32
+          NEXT_PUBLIC_SOLANA_NETWORK: devnet
+      - name: Ephemeral wallet auth (TCP Redis replay)
+        run: npx vitest run lib/auth/ephemeralWallet/ephemeralWallet.redis.integration.test.ts
+        env:
+          ABRAXAS_EPHEMERAL_WALLET_AUTH: "1"
+          ABRAXAS_ACCOUNT_SESSION_SECRET: ci-ephemeral-wallet-session-secret-32
+          NEXT_PUBLIC_SOLANA_NETWORK: devnet
+          ABRAXAS_EPHEMERAL_REDIS_URL: redis://127.0.0.1:6379
+

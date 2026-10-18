@@ -22,11 +22,17 @@ async function loadNativeNavState(): Promise<{
   operational: boolean;
   session: NativeSession;
 }> {
-  const [enabledRes, sessionRes] = await Promise.all([
-    fetch("/api/auth/native/enabled", { credentials: "same-origin" }),
-    fetch("/api/auth/native/session", { credentials: "same-origin" }),
-  ]);
-  const enabledJson = (await enabledRes.json()) as { enabled?: boolean; operational?: boolean };
+  const enabledRes = await fetch("/api/auth/native/enabled", { credentials: "same-origin" });
+  const enabledJson = (await enabledRes.json()) as {
+    enabled?: boolean;
+    operational?: boolean;
+    auth_mode?: string;
+  };
+  const sessionUrl =
+    enabledJson.auth_mode === "ephemeral_wallet"
+      ? "/api/auth/wallet/session"
+      : "/api/auth/native/session";
+  const sessionRes = await fetch(sessionUrl, { credentials: "same-origin" });
   const sessionJson = (await sessionRes.json()) as { authenticated?: boolean };
   const flagEnabled = Boolean(enabledJson.enabled);
   const operational =
@@ -82,6 +88,16 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
 
   const finishSuccess = useCallback(async () => {
     await refreshNavState();
+    try {
+      const enabledRes = await fetch("/api/auth/native/enabled", { credentials: "same-origin" });
+      const enabledJson = (await enabledRes.json()) as { auth_mode?: string };
+      if (enabledJson.auth_mode === "ephemeral_wallet") {
+        router.push("/developers/ephemeral-sandbox");
+        return;
+      }
+    } catch {
+      /* fall through */
+    }
     router.push(PUBLIC_CONNECT_ACCOUNT_HREF);
   }, [refreshNavState, router]);
 

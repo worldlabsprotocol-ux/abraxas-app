@@ -3,6 +3,7 @@
 
 import type { BrowserSession } from "@/lib/auth/browserSession";
 import type { AccountSession } from "@/lib/auth/accountSession";
+import type { EphemeralWalletSession } from "@/lib/auth/ephemeralWallet/walletSession";
 import type { PartnerConsoleSession } from "@/lib/partner/launchpad/partnerConsoleSession";
 import { ACCOUNT_SESSIONS_INDEPENDENT_NOTICE } from "@/lib/account/accountHubCopy";
 
@@ -13,6 +14,12 @@ export type AccountOverviewPayload = {
     account_id: string | null;
     auth_method: AccountSession["authMethod"] | null;
     partner_membership_count: number;
+  };
+  wallet_auth: {
+    authenticated: boolean;
+    wallet_address: string | null;
+    auth_mode: "ephemeral_wallet" | null;
+    scopes: string[];
   };
   holder: {
     authenticated: boolean;
@@ -34,15 +41,23 @@ export function buildAccountOverview(input: {
   holderSession: BrowserSession | null;
   partnerSession: PartnerConsoleSession | null;
   nativeAccountSession?: AccountSession | null;
+  ephemeralWalletSession?: EphemeralWalletSession | null;
   partnerMembershipCount?: number;
 }): AccountOverviewPayload {
+  const walletAuthenticated = Boolean(input.ephemeralWalletSession);
   return {
     ok: true,
     native_account: {
-      authenticated: Boolean(input.nativeAccountSession),
+      authenticated: Boolean(input.nativeAccountSession) || walletAuthenticated,
       account_id: input.nativeAccountSession?.accountId ?? null,
-      auth_method: input.nativeAccountSession?.authMethod ?? null,
+      auth_method: input.nativeAccountSession?.authMethod ?? (walletAuthenticated ? "solana_wallet" : null),
       partner_membership_count: input.partnerMembershipCount ?? 0,
+    },
+    wallet_auth: {
+      authenticated: walletAuthenticated,
+      wallet_address: input.ephemeralWalletSession?.walletAddress ?? null,
+      auth_mode: walletAuthenticated ? "ephemeral_wallet" : null,
+      scopes: input.ephemeralWalletSession?.scopes ?? [],
     },
     holder: {
       authenticated: Boolean(input.holderSession),

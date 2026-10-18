@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveBrowserSession } from "@/lib/auth/browserSession";
 import { resolveAccountSession } from "@/lib/auth/accountSession";
+import { resolveEphemeralWalletSession } from "@/lib/auth/ephemeralWallet/walletSession";
 import { resolvePartnerConsoleSession } from "@/lib/partner/launchpad/partnerConsoleSession";
 import { buildAccountOverview } from "@/lib/account/buildAccountOverview";
 import { listPartnerMemberships } from "@/lib/auth/nativeAccount/store";
@@ -11,10 +12,11 @@ import { listPartnerMemberships } from "@/lib/auth/nativeAccount/store";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const [holderSession, partnerSession, nativeAccountSession] = await Promise.all([
+  const [holderSession, partnerSession, nativeAccountSession, ephemeralWalletSession] = await Promise.all([
     resolveBrowserSession(req),
     resolvePartnerConsoleSession(req),
     resolveAccountSession(req),
+    resolveEphemeralWalletSession(req),
   ]);
 
   let partnerMembershipCount = 0;
@@ -31,6 +33,7 @@ export async function GET(req: NextRequest) {
     holderSession,
     partnerSession,
     nativeAccountSession,
+    ephemeralWalletSession,
     partnerMembershipCount,
   });
   return NextResponse.json(payload, {

@@ -62,7 +62,7 @@
     "gate:verify-receipt-fixture": "tsx scripts/verify-trust-decision-fixture.ts",
     "release:readiness": "tsx scripts/release-readiness.ts",
     "check:infrastructure-independence": "vitest run lib/infrastructure/infrastructureIndependence.test.ts lib/infrastructure/providerOutageBehavior.test.ts lib/persistence/portability.contract.test.ts lib/sovereignRuntime/sovereignDependencyAudit.test.ts lib/auth/nativeAccount/runtimeDiagnostics.test.ts",
-"check:homepage": "vitest run lib/home/homepageBaseline.test.ts lib/home/homepageAlignment565.test.ts lib/home/institutionalHome.test.ts lib/home/protocolProofLogos.test.ts lib/home/welcomeRoute.test.ts lib/home/homepageSequence.test.ts lib/home/homepagePlainLanguage.test.ts lib/home/receiptDemoPublicCopy.test.ts lib/design/publicSurface.test.ts lib/nav/publicLaunchAppHref.test.ts lib/nav/publicNavConnectBehavior.test.ts lib/auth/nativeAccount/clientPasskeyCeremony.test.ts",
+    "check:homepage": "vitest run lib/home/homepageBaseline.test.ts lib/home/homepageAlignment565.test.ts lib/home/institutionalHome.test.ts lib/home/protocolProofLogos.test.ts lib/home/welcomeRoute.test.ts lib/home/homepageSequence.test.ts lib/home/homepagePlainLanguage.test.ts lib/home/receiptDemoPublicCopy.test.ts lib/design/publicSurface.test.ts lib/nav/publicLaunchAppHref.test.ts lib/nav/publicNavConnectBehavior.test.ts lib/auth/nativeAccount/clientPasskeyCeremony.test.ts",
     "check:homepage-guard": "tsx scripts/homepage-guard/check.ts",
     "sdk:fixtures": "tsx scripts/build587/generate-synthetic-fixtures.ts",
     "build:institutional-sdk": "npm run sdk:fixtures && npm run build --prefix packages/abraxas-institutional-verification",
@@ -206,6 +206,7 @@
     "jsdom": "^29.1.1",
     "pino-pretty": "^11.2.2",
     "postcss": "^8.4.39",
+    "redis": "^4.7.1",
     "tsx": "^4.23.15",
     "typescript": "^5.5.3",
     "vitest": "^3.2.7"

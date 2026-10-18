@@ -12,6 +12,9 @@ vi.mock("@/lib/auth/browserSession", () => ({
 vi.mock("@/lib/auth/accountSession", () => ({
   resolveAccountSession: (...args: unknown[]) => accountMock(...args),
 }));
+vi.mock("@/lib/auth/ephemeralWallet/walletSession", () => ({
+  resolveEphemeralWalletSession: vi.fn(async () => null),
+}));
 vi.mock("@/lib/partner/launchpad/partnerConsoleSession", () => ({
   resolvePartnerConsoleSession: (...args: unknown[]) => partnerMock(...args),
 }));
