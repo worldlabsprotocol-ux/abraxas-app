@@ -260,3 +260,43 @@ jobs:
       - name: Print secret-free protocol-access candidate digest
         run: npx tsx scripts/solana-protocol-access-candidate-digest.ts
 
+  sovereign-native-account-pg:
+    name: sovereign-native-account-pg
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: abraxas_sovereign
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d abraxas_sovereign"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Apply sovereign native account migrations
+        run: node scripts/sovereign/apply-native-account-migrations.mjs
+        env:
+          ABRAXAS_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/abraxas_sovereign
+      - name: Sovereign native account integration (no Supabase credentials)
+        run: npx vitest run lib/auth/nativeAccount/sovereignNativeAccount.integration.test.ts
+        env:
+          ABRAXAS_SOVEREIGN_INTEGRATION_TEST: "1"
+          ABRAXAS_SOVEREIGN_SANDBOX_INTEGRATION: "1"
+          ABRAXAS_SOVEREIGN_NATIVE_ACCOUNT: "1"
+          ABRAXAS_PERSISTENCE_BACKEND: postgres_direct
+          ABRAXAS_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/abraxas_sovereign
+          ABRAXAS_NATIVE_ACCOUNT_MEMORY: "0"
+          ABRAXAS_NATIVE_ACCOUNT_AUTH_ENABLED: "1"
+          ABRAXAS_ACCOUNT_SESSION_SECRET: ci-sovereign-integration-session-secret-32
+

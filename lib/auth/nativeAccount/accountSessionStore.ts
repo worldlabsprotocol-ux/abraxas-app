@@ -2,9 +2,12 @@
 
 import { randomBytes } from "crypto";
 import { requirePersistenceAdmin } from "@/lib/persistence/admin";
-import { isNativeAccountDirectPostgresEnabled } from "@/lib/persistence/nativeAccountPg";
-import { nativeAccountMemoryStoreEnabled } from "./featureFlag";
 import { nativeAccountMemory } from "./memoryStore";
+import {
+  assertNativeAccountPersistenceBackend,
+  nativeAccountUsesDirectPostgres,
+  nativeAccountUsesMemory,
+} from "./nativeAccountPersistence";
 import type { AccountAuthMethod } from "@/lib/auth/accountSession";
 import { NativeAccountStoreUnavailableError } from "./storeErrors";
 import * as pgStore from "./postgresDirectStore";
@@ -21,11 +24,16 @@ export function createAccountSessionId(): string {
 }
 
 function useMemory(): boolean {
-  return nativeAccountMemoryStoreEnabled();
+  return nativeAccountUsesMemory();
 }
 
 function usePostgresDirect(): boolean {
-  return !useMemory() && isNativeAccountDirectPostgresEnabled();
+  return nativeAccountUsesDirectPostgres();
+}
+
+function persistenceAdmin() {
+  assertNativeAccountPersistenceBackend();
+  return requirePersistenceAdmin();
 }
 
 export async function insertAccountSessionRecord(input: {
@@ -47,7 +55,7 @@ export async function insertAccountSessionRecord(input: {
     await pgStore.insertAccountSessionRecord(input);
     return;
   }
-  const sb = requirePersistenceAdmin();
+  const sb = persistenceAdmin();
   const { error } = await sb.from("abraxas_account_sessions").insert({
     session_id: input.sessionId,
     account_id: input.accountId,
@@ -70,7 +78,7 @@ export async function isAccountSessionActive(input: {
   if (usePostgresDirect()) {
     return pgStore.isAccountSessionActive(input);
   }
-  const sb = requirePersistenceAdmin();
+  const sb = persistenceAdmin();
   const { data, error } = await sb.rpc("abraxas_validate_account_session", {
     p_session_id: input.sessionId,
     p_account_id: input.accountId,
@@ -93,7 +101,7 @@ export async function revokeAccountSession(input: {
   if (usePostgresDirect()) {
     return pgStore.revokeAccountSession(input);
   }
-  const sb = requirePersistenceAdmin();
+  const sb = persistenceAdmin();
   const { data, error } = await sb.rpc("abraxas_revoke_account_session", {
     p_session_id: input.sessionId,
     p_account_id: input.accountId,
@@ -116,7 +124,7 @@ export async function revokeAllAccountSessions(
   if (usePostgresDirect()) {
     return pgStore.revokeAllAccountSessions(accountId, reason);
   }
-  const sb = requirePersistenceAdmin();
+  const sb = persistenceAdmin();
   const { data, error } = await sb
     .from("abraxas_account_sessions")
     .update({ revoked_at: new Date().toISOString(), revoke_reason: reason })

@@ -2,7 +2,9 @@
 // Non-destructive native auth schema probes (no secrets).
 
 import { requirePersistenceAdmin } from "@/lib/persistence/admin";
+import { isNativeAccountDirectPostgresEnabled } from "@/lib/persistence/nativeAccountPg";
 import { nativeAccountMemoryStoreEnabled } from "./featureFlag";
+import { pgFunctionExists, pgTableExists } from "./schemaProbePg";
 
 export type NativeAuthSchemaProbe = {
   ok: boolean;
@@ -27,6 +29,24 @@ export async function probeNativeAuthSchemaReady(
       ok: true,
       code: "memory_store",
       migrations: { migration_144: true, migration_145_atomic_rpc: true },
+    };
+  }
+
+  if (isNativeAccountDirectPostgresEnabled(env)) {
+    let migration144 = true;
+    for (const table of NATIVE_TABLES) {
+      if (!(await pgTableExists(table, env))) {
+        migration144 = false;
+        break;
+      }
+    }
+    const migration145 = migration144
+      && await pgFunctionExists("abraxas_consume_webauthn_challenge_atomic", env);
+    const ok = migration144 && migration145;
+    return {
+      ok,
+      code: ok ? null : migration144 ? "migration_145_missing" : "migration_144_missing",
+      migrations: { migration_144: migration144, migration_145_atomic_rpc: migration145 },
     };
   }
 

@@ -1,5 +1,5 @@
 // FILE: lib/partner/launchpad/workspaceView.ts
-// Partner Launchpad workspace aggregation.
+// Partner Launchpad workspace aggregation (PostgREST path — use workspaceView.server.ts in sovereign mode).
 
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { listLaunchpadApplicationsForPartner } from "@/lib/partner/launchpad/resolveLaunchpadApplication";

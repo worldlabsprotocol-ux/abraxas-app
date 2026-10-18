@@ -3,7 +3,6 @@
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import type { LaunchpadApplicationRow } from "@/lib/partner/launchpad/types";
 import { isLaunchpadReturnUrlAllowlisted } from "@/lib/partner/launchpad/launchpadReturnUrlAllowlist";
-
 export async function getLaunchpadApplicationById(
   applicationId: string,
 ): Promise<LaunchpadApplicationRow | null> {

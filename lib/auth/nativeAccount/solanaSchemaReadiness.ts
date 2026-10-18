@@ -1,7 +1,9 @@
 // FILE: lib/auth/nativeAccount/solanaSchemaReadiness.ts
 
 import { requirePersistenceAdmin } from "@/lib/persistence/admin";
+import { isNativeAccountDirectPostgresEnabled } from "@/lib/persistence/nativeAccountPg";
 import { nativeAccountMemoryStoreEnabled } from "./featureFlag";
+import { pgFunctionExists, pgTableExists } from "./schemaProbePg";
 
 export type SolanaAccountAuthSchemaProbe = {
   ok: boolean;
@@ -30,6 +32,20 @@ export async function probeSolanaAccountAuthSchemaReady(
       ok: true,
       code: "memory_store",
       migrations: { migration_144_accounts: true, migration_146_solana_auth: true },
+    };
+  }
+
+  if (isNativeAccountDirectPostgresEnabled(env)) {
+    const migration144 = await pgTableExists("abraxas_accounts", env);
+    const solanaWallets = await pgTableExists("abraxas_account_solana_wallets", env);
+    const solanaChallenges = await pgTableExists("abraxas_account_solana_auth_challenges", env);
+    const migration146 = solanaWallets && solanaChallenges
+      && await pgFunctionExists("abraxas_consume_account_solana_challenge_atomic", env);
+    const ok = migration144 && migration146;
+    return {
+      ok,
+      code: ok ? null : migration144 ? "migration_146_missing" : "migration_144_missing",
+      migrations: { migration_144_accounts: migration144, migration_146_solana_auth: migration146 },
     };
   }
 
