@@ -139,6 +139,54 @@ describe("Solana account auth adversarial", () => {
     expect(result.code).toBe("wrong_domain");
   });
 
+  it("rejects signature over modified message bytes", async () => {
+    const wallet = Keypair.generate();
+    const ctx = "ctx-modified";
+    const { issued } = await issueAndSign(wallet, ctx);
+    const tampered = `${issued.challenge.message}\nextra-line`;
+    const badSig = signMessage(tampered, wallet.secretKey);
+
+    const result = await verifyAccountSolanaAuth({
+      challengeId: issued.challenge.challenge_id,
+      walletAddress: wallet.publicKey.toBase58(),
+      solanaNetwork: "devnet",
+      signature: badSig,
+      sessionContext: ctx,
+      requestOrigin: ORIGIN,
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("invalid_signature");
+  });
+
+  it("rejects a second verify after successful consumption (replay)", async () => {
+    const wallet = Keypair.generate();
+    const ctx = "ctx-sequential-replay";
+    const { issued, signature } = await issueAndSign(wallet, ctx);
+
+    const first = await verifyAccountSolanaAuth({
+      challengeId: issued.challenge.challenge_id,
+      walletAddress: wallet.publicKey.toBase58(),
+      solanaNetwork: "devnet",
+      signature,
+      sessionContext: ctx,
+      requestOrigin: ORIGIN,
+    });
+    expect(first.ok).toBe(true);
+
+    const second = await verifyAccountSolanaAuth({
+      challengeId: issued.challenge.challenge_id,
+      walletAddress: wallet.publicKey.toBase58(),
+      solanaNetwork: "devnet",
+      signature,
+      sessionContext: ctx,
+      requestOrigin: ORIGIN,
+    });
+    expect(second.ok).toBe(false);
+    if (second.ok) return;
+    expect(second.code).toBe("replay");
+  });
+
   it("does not merge accounts when two wallets sign in separately", async () => {
     const a = Keypair.generate();
     const b = Keypair.generate();

@@ -40,6 +40,15 @@ export type MemorySolanaChallenge = {
   consumed_at: string | null;
 };
 
+export type MemoryAccountSession = {
+  session_id: string;
+  account_id: string;
+  auth_method: "passkey" | "solana_wallet";
+  expires_at: string;
+  revoked_at: string | null;
+  revoke_reason: string | null;
+};
+
 export type MemorySolanaWallet = {
   id: string;
   account_id: string;
@@ -56,6 +65,7 @@ type MemoryState = {
   challenges: Map<string, MemoryChallenge>;
   solanaChallenges: Map<string, MemorySolanaChallenge>;
   solanaWallets: Map<string, MemorySolanaWallet>;
+  accountSessions: Map<string, MemoryAccountSession>;
   memberships: Map<string, { role: PartnerMembershipRole; status: "active" | "revoked"; created_at: string }>;
   grants: Array<Record<string, unknown>>;
   enrollments: Array<Record<string, unknown>>;
@@ -73,6 +83,7 @@ function memoryState(): MemoryState {
       challenges: new Map(),
       solanaChallenges: new Map(),
       solanaWallets: new Map(),
+      accountSessions: new Map(),
       memberships: new Map(),
       grants: [],
       enrollments: [],
@@ -99,6 +110,9 @@ function solanaChallenges() {
 function solanaWallets() {
   return memoryState().solanaWallets;
 }
+function accountSessions() {
+  return memoryState().accountSessions;
+}
 function solanaWalletKey(wallet: string, network: string): string {
   return `${network}:${wallet}`;
 }
@@ -123,6 +137,7 @@ export function resetNativeAccountMemory(): void {
   challenges().clear();
   solanaChallenges().clear();
   solanaWallets().clear();
+  accountSessions().clear();
   memberships().clear();
   grants().length = 0;
   enrollments().length = 0;
@@ -306,5 +321,44 @@ export const nativeAccountMemory = {
   touchSolanaWallet(walletAddress: string, solanaNetwork: string): void {
     const row = solanaWallets().get(solanaWalletKey(walletAddress, solanaNetwork));
     if (row) row.last_used_at = new Date().toISOString();
+  },
+
+  insertAccountSession(row: {
+    session_id: string;
+    account_id: string;
+    auth_method: "passkey" | "solana_wallet";
+    expires_at: string;
+  }): void {
+    accountSessions().set(row.session_id, {
+      ...row,
+      revoked_at: null,
+      revoke_reason: null,
+    });
+  },
+
+  isAccountSessionActive(sessionId: string, accountId: string): boolean {
+    const row = accountSessions().get(sessionId);
+    if (!row || row.account_id !== accountId || row.revoked_at) return false;
+    return new Date(row.expires_at).getTime() > Date.now();
+  },
+
+  revokeAccountSession(sessionId: string, accountId: string, reason: string): boolean {
+    const row = accountSessions().get(sessionId);
+    if (!row || row.account_id !== accountId || row.revoked_at) return false;
+    row.revoked_at = new Date().toISOString();
+    row.revoke_reason = reason;
+    return true;
+  },
+
+  revokeAllAccountSessions(accountId: string, reason: string): number {
+    let count = 0;
+    for (const row of accountSessions().values()) {
+      if (row.account_id === accountId && !row.revoked_at) {
+        row.revoked_at = new Date().toISOString();
+        row.revoke_reason = reason;
+        count += 1;
+      }
+    }
+    return count;
   },
 };

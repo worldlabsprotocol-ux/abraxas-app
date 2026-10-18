@@ -13,7 +13,8 @@
 | Expiry | 5 minutes; atomic RPC rejects expired rows |
 | Replay | `abraxas_consume_account_solana_challenge_atomic` single-use `consumed_at` |
 | Rate limit | `enforceNativeAuthRateLimit` on challenge (30/min) and verify (20/min) |
-| Session | HttpOnly `abraxas_account_session` JWT, `am: solana_wallet` |
+| Session | HttpOnly JWT (`jti` = `acs_*`) + PostgreSQL `abraxas_account_sessions` validate/revoke (migration **147**) |
+| Sign-out scope | **Current session only** — `DELETE /api/auth/native/session` revokes server row + clears cookie; JWT replay rejected |
 | Context binding | HttpOnly `abraxas_account_sol_auth_ctx` required for verify |
 
 Automated contract tests (not wallet extension):
