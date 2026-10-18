@@ -24,9 +24,8 @@ create index if not exists abraxas_account_sessions_expires_idx
 comment on table public.abraxas_account_sessions is
   'Active and revoked Abraxas account browser sessions — JWT jti must match session_id.';
 
-alter table public.abraxas_account_sessions enable row level security;
-revoke all on table public.abraxas_account_sessions from public, anon, authenticated;
-grant select, insert, update on table public.abraxas_account_sessions to service_role;
+revoke all on table public.abraxas_account_sessions from public;
+grant select, insert, update on table public.abraxas_account_sessions to abraxas_runtime;
 
 create or replace function public.abraxas_validate_account_session(
   p_session_id text,
@@ -72,9 +71,9 @@ begin
 end;
 $$;
 
-revoke all on function public.abraxas_validate_account_session(text, text) from public, anon, authenticated;
-revoke all on function public.abraxas_revoke_account_session(text, text, text) from public, anon, authenticated;
-grant execute on function public.abraxas_validate_account_session(text, text) to service_role;
-grant execute on function public.abraxas_revoke_account_session(text, text, text) to service_role;
+revoke all on function public.abraxas_validate_account_session(text, text) from public;
+revoke all on function public.abraxas_revoke_account_session(text, text, text) from public;
+grant execute on function public.abraxas_validate_account_session(text, text) to abraxas_runtime;
+grant execute on function public.abraxas_revoke_account_session(text, text, text) to abraxas_runtime;
 
 commit;

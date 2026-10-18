@@ -42,12 +42,10 @@ create index if not exists abraxas_account_solana_auth_challenges_expires_idx
 comment on table public.abraxas_account_solana_auth_challenges is
   'Short-lived Solana sign-in challenges for Abraxas account sessions.';
 
-alter table public.abraxas_account_solana_wallets enable row level security;
-alter table public.abraxas_account_solana_auth_challenges enable row level security;
-revoke all on table public.abraxas_account_solana_wallets from public, anon, authenticated;
-revoke all on table public.abraxas_account_solana_auth_challenges from public, anon, authenticated;
-grant select, insert, update on table public.abraxas_account_solana_wallets to service_role;
-grant select, insert, update on table public.abraxas_account_solana_auth_challenges to service_role;
+revoke all on table public.abraxas_account_solana_wallets from public;
+revoke all on table public.abraxas_account_solana_auth_challenges from public;
+grant select, insert, update on table public.abraxas_account_solana_wallets to abraxas_runtime;
+grant select, insert, update on table public.abraxas_account_solana_auth_challenges to abraxas_runtime;
 
 create or replace function public.abraxas_consume_account_solana_challenge_atomic(
   p_challenge_id text,
@@ -89,7 +87,7 @@ begin
 end;
 $$;
 
-revoke all on function public.abraxas_consume_account_solana_challenge_atomic(text, text, text) from public, anon, authenticated;
-grant execute on function public.abraxas_consume_account_solana_challenge_atomic(text, text, text) to service_role;
+revoke all on function public.abraxas_consume_account_solana_challenge_atomic(text, text, text) from public;
+grant execute on function public.abraxas_consume_account_solana_challenge_atomic(text, text, text) to abraxas_runtime;
 
 commit;

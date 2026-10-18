@@ -20,7 +20,14 @@ import {
   insertAccountSolanaChallenge,
   consumeAccountSolanaChallenge,
 } from "@/lib/auth/nativeAccount/solanaAuth/store";
-import { hashAccountSolSessionContext } from "@/lib/auth/nativeAccount/solanaAuth/store";
+import {
+  hashAccountSolSessionContext,
+  linkSolanaWalletToAccount,
+  findAccountIdBySolanaWallet,
+} from "@/lib/auth/nativeAccount/solanaAuth/store";
+import { enrollSandboxForAccount } from "@/lib/auth/nativeAccount/sandboxEnroll";
+import { getPrimarySandboxEnrollment } from "@/lib/auth/nativeAccount/store";
+import { buildLaunchpadWorkspaceView } from "@/lib/partner/launchpad/workspaceView";
 
 const integrationEnabled = process.env.ABRAXAS_SOVEREIGN_INTEGRATION_TEST === "1";
 const databaseUrl = process.env.ABRAXAS_DATABASE_URL?.trim()
@@ -34,6 +41,8 @@ const testEnv: Record<string, string> = integrationEnabled && databaseUrl
       ABRAXAS_PERSISTENCE_BACKEND: "postgres_direct",
       ABRAXAS_DATABASE_URL: databaseUrl,
       ABRAXAS_NATIVE_ACCOUNT_MEMORY: "0",
+      ABRAXAS_NATIVE_ACCOUNT_AUTH_ENABLED: "1",
+      ABRAXAS_ACCOUNT_SESSION_SECRET: "integration-test-session-secret-32b",
       NODE_ENV: "test",
       VITEST: "true",
     }
@@ -52,6 +61,18 @@ describe.runIf(integrationEnabled && Boolean(databaseUrl))("sovereign native acc
     await admin.query("delete from public.abraxas_account_solana_auth_challenges where wallet_address = $1", [
       "So11111111111111111111111111111111111111112",
     ]);
+    await admin.query("delete from public.abraxas_sandbox_enrollments where account_id = $1", [accountId]);
+    await admin.query("delete from public.abraxas_account_partner_memberships where account_id = $1", [accountId]);
+    await admin.query(
+      `delete from public.partner_launchpad_activity where partner_id like 'dev-%'`,
+    );
+    await admin.query(
+      `delete from public.partner_launchpad_applications where partner_id like 'dev-%'`,
+    );
+    await admin.query(`delete from public.partner_api_keys where partner_id like 'dev-%'`);
+    await admin.query(`delete from public.partner_policies where partner_id like 'dev-%'`);
+    await admin.query(`delete from public.partners where partner_id like 'dev-%'`);
+    await admin.query("delete from public.abraxas_account_solana_wallets where account_id = $1", [accountId]);
     await admin.query("delete from public.abraxas_accounts where account_id = $1", [accountId]);
   });
 
@@ -106,5 +127,34 @@ describe.runIf(integrationEnabled && Boolean(databaseUrl))("sovereign native acc
 
     expect(await revokeAccountSession(sessionId, accountId, "sign_out")).toBe(true);
     expect(await isAccountSessionActive(sessionId, accountId)).toBe(false);
+
+    await linkSolanaWalletToAccount({
+      accountId,
+      walletAddress: "So11111111111111111111111111111111111111112",
+      solanaNetwork: "devnet",
+    });
+    expect(await findAccountIdBySolanaWallet("So11111111111111111111111111111111111111112", "devnet")).toBe(
+      accountId,
+    );
+  });
+
+  it("enrolls sandbox via sovereign transaction and resolves workspace", async () => {
+    await insertNativeAccount(accountId);
+
+    const first = await enrollSandboxForAccount({ accountId, applicationName: "Sovereign Test App" });
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+
+    const replay = await enrollSandboxForAccount({ accountId });
+    expect(replay.ok).toBe(true);
+    if (replay.ok) {
+      expect(replay.application.idempotency_replay).toBe(true);
+    }
+
+    const enrollment = await getPrimarySandboxEnrollment(accountId);
+    expect(enrollment?.partner_id).toBeTruthy();
+
+    const workspace = await buildLaunchpadWorkspaceView(enrollment!.partner_id);
+    expect(workspace?.applications.length).toBeGreaterThan(0);
   });
 });

@@ -114,28 +114,21 @@ create table if not exists public.abraxas_sandbox_enrollments (
 create index if not exists abraxas_sandbox_enrollments_account_idx
   on public.abraxas_sandbox_enrollments (account_id);
 
-alter table public.abraxas_accounts enable row level security;
-alter table public.abraxas_account_passkeys enable row level security;
-alter table public.abraxas_webauthn_challenges enable row level security;
-alter table public.abraxas_account_partner_memberships enable row level security;
-alter table public.abraxas_account_partner_membership_grants enable row level security;
-alter table public.abraxas_account_holder_bindings enable row level security;
-alter table public.abraxas_sandbox_enrollments enable row level security;
+-- Tenant isolation enforced in application layer; no Supabase RLS roles.
+revoke all on public.abraxas_accounts from public;
+revoke all on public.abraxas_account_passkeys from public;
+revoke all on public.abraxas_webauthn_challenges from public;
+revoke all on public.abraxas_account_partner_memberships from public;
+revoke all on public.abraxas_account_partner_membership_grants from public;
+revoke all on public.abraxas_account_holder_bindings from public;
+revoke all on public.abraxas_sandbox_enrollments from public;
 
-revoke all on public.abraxas_accounts from public, anon, authenticated;
-revoke all on public.abraxas_account_passkeys from public, anon, authenticated;
-revoke all on public.abraxas_webauthn_challenges from public, anon, authenticated;
-revoke all on public.abraxas_account_partner_memberships from public, anon, authenticated;
-revoke all on public.abraxas_account_partner_membership_grants from public, anon, authenticated;
-revoke all on public.abraxas_account_holder_bindings from public, anon, authenticated;
-revoke all on public.abraxas_sandbox_enrollments from public, anon, authenticated;
-
-grant select, insert, update, delete on public.abraxas_accounts to service_role;
-grant select, insert, update, delete on public.abraxas_account_passkeys to service_role;
-grant select, insert, update, delete on public.abraxas_webauthn_challenges to service_role;
-grant select, insert, update, delete on public.abraxas_account_partner_memberships to service_role;
-grant select, insert, update, delete on public.abraxas_account_partner_membership_grants to service_role;
-grant select, insert, update, delete on public.abraxas_account_holder_bindings to service_role;
-grant select, insert, update, delete on public.abraxas_sandbox_enrollments to service_role;
+grant select, insert, update, delete on public.abraxas_accounts to abraxas_runtime;
+grant select, insert, update, delete on public.abraxas_account_passkeys to abraxas_runtime;
+grant select, insert, update, delete on public.abraxas_webauthn_challenges to abraxas_runtime;
+grant select, insert, update, delete on public.abraxas_account_partner_memberships to abraxas_runtime;
+grant select, insert, update, delete on public.abraxas_account_partner_membership_grants to abraxas_runtime;
+grant select, insert, update, delete on public.abraxas_account_holder_bindings to abraxas_runtime;
+grant select, insert, update, delete on public.abraxas_sandbox_enrollments to abraxas_runtime;
 
 commit;
