@@ -8,6 +8,10 @@ import { resetAbraxasPgPoolForTests } from "@/lib/persistence/pgPool";
 import { insertNativeAccount } from "@/lib/auth/nativeAccount/store";
 import { enrollSandboxForAccount } from "@/lib/auth/nativeAccount/sandboxEnroll";
 import { authenticatePartner } from "@/lib/partner/partnerAuth";
+import {
+  purgeSovereignLaunchpadPartnerData,
+  sandboxPartnerIdForAccount,
+} from "@/lib/partner/launchpad/sovereignIntegrationTestHelpers";
 
 const integrationEnabled = process.env.ABRAXAS_SOVEREIGN_INTEGRATION_TEST === "1";
 const sandboxEnabled = process.env.ABRAXAS_SOVEREIGN_SANDBOX_INTEGRATION === "1";
@@ -38,6 +42,7 @@ describe.runIf(integrationEnabled && sandboxEnabled && Boolean(databaseUrl))(
   "sovereign launchpad HTTP routes",
   () => {
     const accountId = `abx_ac_${"c".repeat(32)}`;
+    const otherAccountId = `abx_ac_${"d".repeat(32)}`;
     let admin: pg.Client;
     let applicationId = "";
     let partnerId = "";
@@ -49,17 +54,16 @@ describe.runIf(integrationEnabled && sandboxEnabled && Boolean(databaseUrl))(
       resetAbraxasPgPoolForTests();
       admin = new pg.Client({ connectionString: databaseUrl });
       await admin.connect();
-      await admin.query("delete from public.partner_launchpad_signed_receipts where partner_id like 'dev-%'");
-      await admin.query("delete from public.partner_launchpad_verification_requests where partner_id like 'dev-%'");
-      await admin.query("delete from public.partner_launchpad_usage_events where partner_id like 'dev-%'");
-      await admin.query("delete from public.abraxas_sandbox_enrollments where account_id = $1", [accountId]);
-      await admin.query("delete from public.abraxas_account_partner_memberships where account_id = $1", [accountId]);
-      await admin.query("delete from public.partner_launchpad_activity where partner_id like 'dev-%'");
-      await admin.query("delete from public.partner_launchpad_applications where partner_id like 'dev-%'");
-      await admin.query("delete from public.partner_api_keys where partner_id like 'dev-%'");
-      await admin.query("delete from public.partner_policies where partner_id like 'dev-%'");
-      await admin.query("delete from public.partners where partner_id like 'dev-%'");
-      await admin.query("delete from public.abraxas_accounts where account_id = $1", [accountId]);
+      await purgeSovereignLaunchpadPartnerData(
+        admin,
+        sandboxPartnerIdForAccount(accountId),
+        accountId,
+      );
+      await purgeSovereignLaunchpadPartnerData(
+        admin,
+        sandboxPartnerIdForAccount(otherAccountId),
+        otherAccountId,
+      );
 
       await insertNativeAccount(accountId);
       const enrolled = await enrollSandboxForAccount({
@@ -179,13 +183,33 @@ describe.runIf(integrationEnabled && sandboxEnabled && Boolean(databaseUrl))(
       );
       expect(healthRes.status).toBe(200);
 
+      await insertNativeAccount(otherAccountId);
+      const otherEnrolled = await enrollSandboxForAccount({
+        accountId: otherAccountId,
+        applicationName: "Other tenant app",
+      });
+      expect(otherEnrolled.ok).toBe(true);
+      if (!otherEnrolled.ok) return;
+      const otherToken = otherEnrolled.operatorSessionToken ?? "";
       const crossTenantGet = await getApp(
         new NextRequest(`http://localhost/api/launchpad/applications/${applicationId}`, {
-          headers: { cookie: partnerCookie(consoleToken) },
+          headers: { cookie: partnerCookie(otherToken) },
         }),
         { params: { id: applicationId } },
       );
-      expect(crossTenantGet.status).toBe(200);
+      expect(crossTenantGet.status).toBe(404);
+
+      const replayRes = await runTest(
+        new NextRequest(`http://localhost/api/launchpad/applications/${applicationId}/test`, {
+          method: "POST",
+          headers: { cookie: partnerCookie(consoleToken), "content-type": "application/json" },
+          body: JSON.stringify({ scenario_id: "replay" }),
+        }),
+        { params: { id: applicationId } },
+      );
+      expect(replayRes.status).toBe(200);
+      const replayBody = await replayRes.json();
+      expect(replayBody.result.scenario_id).toBe("replay");
 
       const { POST: rotateCred } = await import(
         `@/app/api/launchpad/applications/[id]/credentials/rotate/route`
@@ -205,7 +229,10 @@ describe.runIf(integrationEnabled && sandboxEnabled && Boolean(databaseUrl))(
           headers: { authorization: `Bearer ${apiKeyRaw}` },
         }),
       );
-      expect(revokedKeyAuth).toBeNull();
+      expect(revokedKeyAuth?.ok).toBe(false);
+      if (revokedKeyAuth && !revokedKeyAuth.ok) {
+        expect(revokedKeyAuth.status).toBe(403);
+      }
 
       const activeKeyAuth = await authenticatePartner(
         new NextRequest("http://localhost/api/v1/partner", {
@@ -231,7 +258,7 @@ describe.runIf(integrationEnabled && sandboxEnabled && Boolean(databaseUrl))(
           headers: { authorization: `Bearer ${newKey}` },
         }),
       );
-      expect(postRevokeAuth).toBeNull();
+      expect(postRevokeAuth?.ok).toBe(false);
 
       const { GET: verifyConfig } = await import("@/app/api/launchpad/public/verify-config/route");
       const slug = appRow.public_slug as string;

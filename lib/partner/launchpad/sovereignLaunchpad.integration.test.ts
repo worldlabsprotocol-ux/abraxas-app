@@ -13,6 +13,10 @@ import { runLaunchpadTestScenario } from "@/lib/partner/launchpad/runTestScenari
 import { pgGetSignedReceiptForApplication } from "@/lib/partner/launchpad/sovereign/launchpadPgStore";
 import { evaluatePublicReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation";
 import type { PartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlowReceipt";
+import {
+  purgeSovereignLaunchpadPartnerData,
+  sandboxPartnerIdForAccount,
+} from "@/lib/partner/launchpad/sovereignIntegrationTestHelpers";
 
 const integrationEnabled = process.env.ABRAXAS_SOVEREIGN_INTEGRATION_TEST === "1";
 const sandboxEnabled = process.env.ABRAXAS_SOVEREIGN_SANDBOX_INTEGRATION === "1";
@@ -45,17 +49,11 @@ describe.runIf(integrationEnabled && sandboxEnabled && Boolean(databaseUrl))(
       resetAbraxasPgPoolForTests();
       admin = new pg.Client({ connectionString: databaseUrl });
       await admin.connect();
-      await admin.query("delete from public.partner_launchpad_signed_receipts where partner_id like 'dev-%'");
-      await admin.query("delete from public.partner_launchpad_verification_requests where partner_id like 'dev-%'");
-      await admin.query("delete from public.partner_launchpad_usage_events where partner_id like 'dev-%'");
-      await admin.query("delete from public.abraxas_sandbox_enrollments where account_id = $1", [accountId]);
-      await admin.query("delete from public.abraxas_account_partner_memberships where account_id = $1", [accountId]);
-      await admin.query("delete from public.partner_launchpad_activity where partner_id like 'dev-%'");
-      await admin.query("delete from public.partner_launchpad_applications where partner_id like 'dev-%'");
-      await admin.query("delete from public.partner_api_keys where partner_id like 'dev-%'");
-      await admin.query("delete from public.partner_policies where partner_id like 'dev-%'");
-      await admin.query("delete from public.partners where partner_id like 'dev-%'");
-      await admin.query("delete from public.abraxas_accounts where account_id = $1", [accountId]);
+      await purgeSovereignLaunchpadPartnerData(
+        admin,
+        sandboxPartnerIdForAccount(accountId),
+        accountId,
+      );
     });
 
     afterAll(async () => {
