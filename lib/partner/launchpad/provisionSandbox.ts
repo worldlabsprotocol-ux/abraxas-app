@@ -19,6 +19,8 @@ import {
 import { validateLaunchpadReturnUrl } from "@/lib/partner/launchpad/returnUrl";
 import { slugifyLaunchpadApplication, isValidLaunchpadPublicSlug } from "@/lib/partner/launchpad/slug";
 import type { ProvisionSandboxResult } from "@/lib/partner/launchpad/types";
+import { launchpadUsesSovereignPostgres } from "@/lib/partner/launchpad/launchpadPersistence";
+import { provisionSovereignLaunchpadSandbox } from "@/lib/partner/launchpad/sovereign/provisionSandboxTransaction";
 import { SITE_URL } from "@/lib/siteUrl";
 
 export type ProvisionSandboxInput = {
@@ -79,6 +81,19 @@ export async function provisionLaunchpadSandbox(
   const policyId = buildLaunchpadPolicyId(partnerId, input.policyTemplateId);
   const policyRules = customPolicy && customPolicy.ok ? customPolicy.rules : template!.rules;
   const { raw, prefix, hash } = generatePartnerKey("test");
+
+  if (launchpadUsesSovereignPostgres()) {
+    return provisionSovereignLaunchpadSandbox({
+      provisionInput: input,
+      partnerId,
+      publicSlug,
+      policyId,
+      policyRules: policyRules as Record<string, unknown>,
+      keyPrefix: prefix,
+      keyHash: hash,
+      rawApiKey: raw,
+    });
+  }
 
   type ProvisionRow = {
     ok?: boolean;

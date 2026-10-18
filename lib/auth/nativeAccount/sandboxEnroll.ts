@@ -12,6 +12,8 @@ import {
 } from "@/lib/auth/nativeAccount/store";
 import { issueOperatorSessionForAccountMembership } from "@/lib/partner/launchpad/operatorSessionFromAccount";
 import { SITE_URL } from "@/lib/siteUrl";
+import { launchpadUsesSovereignPostgres } from "@/lib/partner/launchpad/launchpadPersistence";
+import { pgInsertSandboxAuditEvent } from "@/lib/partner/launchpad/sovereign/launchpadPgStore";
 
 export type SandboxEnrollResult =
   | {
@@ -93,6 +95,14 @@ export async function enrollSandboxForAccount(input: {
       applicationId: provision.result.application_id,
       idempotencyKey: input.idempotencyKey ?? null,
     });
+    if (launchpadUsesSovereignPostgres()) {
+      await pgInsertSandboxAuditEvent({
+        accountId: input.accountId,
+        partnerId,
+        eventType: "sandbox_enrolled",
+        metadata: { application_id: provision.result.application_id },
+      });
+    }
   } catch (error) {
     if (error instanceof NativeAccountStoreUnavailableError) {
       return { ok: false, code: "native_account_store_unavailable" };
