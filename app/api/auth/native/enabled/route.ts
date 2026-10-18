@@ -37,6 +37,13 @@ export async function GET(req: NextRequest) {
         ephemeral_state: getEphemeralRedisConfigState(),
         state_backend: ephemeral.state_backend,
       },
+      ephemeral_security: {
+        challenge_replay_backend: ephemeral.challenge_replay_backend,
+        distributed_replay_enforced: ephemeral.distributed_replay_enforced,
+        production_activation_blocked: ephemeral.production_activation_blocked,
+        missing_capability: ephemeral.missing_capability,
+        revocation_mode: ephemeral.revocation_mode,
+      },
       webauthn: {
         rp_id: resolveWebAuthnRpId(host),
         rp_id_from_env: Boolean(process.env.ABRAXAS_WEBAUTHN_RP_ID?.trim()),

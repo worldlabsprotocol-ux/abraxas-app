@@ -33,11 +33,13 @@ Sign-in purpose **cannot** authorize transfers, production policy changes, or ve
 - Default revocation: **jwt_expiry_only** (logout clears cookie; captured JWT valid until exp — documented)  
 - Optional: `ABRAXAS_EPHEMERAL_REVOCATION=allowlist` + shared transient store for immediate logout invalidation  
 
-## Transient state (Redis optional)
+## Transient state and distributed Production
 
-Default: **process-local transient Maps** (Abraxas-operated, TTL, no external DB).
+**Local dev / isolated tests:** process-local Maps (consume-once within one Node process).
 
-Optional: `UPSTASH_REDIS_*` or `ABRAXAS_EPHEMERAL_TRANSIENT_BACKEND=redis` for **distributed single-use challenge consumption** across server instances.
+**Distributed Production (Vercel):** process Maps **cannot** enforce global single-use challenges. Protected wallet auth is **unavailable** until an authoritative replay store is configured (`UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`, or `ABRAXAS_EPHEMERAL_REDIS_URL` for self-hosted TCP Redis). There is **no silent downgrade** to weaker replay guarantees.
+
+Redis is an optional **minimal Abraxas-controlled transient store** for atomic GETDEL — not a personal account database.
 
 See `TRANSIENT_STATE_AUDIT` in `lib/auth/ephemeralWallet/transientStatePolicy.ts`.
 

@@ -5,7 +5,9 @@ import { isEphemeralWalletAuthEnabled } from "./featureFlag";
 import { probeEphemeralChallengeStore } from "./challengeStore";
 import { probeEphemeralSessionStore } from "./sessionStore";
 import {
+  authoritativeChallengeReplayBackend,
   distributedReplayEnforced,
+  missingDistributedReplayCapability,
   resolveEphemeralRevocationMode,
   resolveTransientStateBackend,
 } from "./transientStatePolicy";
@@ -22,6 +24,9 @@ export async function resolveEphemeralWalletAuthOperationalAsync(
   transient_backend: "process" | "redis";
   distributed_replay_enforced: boolean;
   revocation_mode: string;
+  challenge_replay_backend: "redis" | "process" | "none";
+  production_activation_blocked: boolean;
+  missing_capability: string | null;
 }> {
   const flag_enabled = isEphemeralWalletAuthEnabled(env);
   const config = validateEphemeralWalletRuntimeConfig(env);
@@ -38,13 +43,17 @@ export async function resolveEphemeralWalletAuthOperationalAsync(
     state_backend = challengeProbe.backend;
   }
 
-  const operational = flag_enabled && config_ok && state_store_ok;
+  const missingCapability = missingDistributedReplayCapability(env);
+  const operational = flag_enabled && config_ok && state_store_ok && !missingCapability;
   let degraded_reason: string | null = null;
   if (flag_enabled && !operational) {
-    if (!config_ok && config.code !== "disabled") degraded_reason = config.code;
+    if (missingCapability) degraded_reason = missingCapability;
+    else if (!config_ok && config.code !== "disabled") degraded_reason = config.code;
     else if (!state_store_ok) degraded_reason = "ephemeral_state_unavailable";
     else degraded_reason = "ephemeral_wallet_auth_not_operational";
   }
+
+  const challengeBackend = authoritativeChallengeReplayBackend(env);
 
   return {
     flag_enabled,
@@ -56,5 +65,8 @@ export async function resolveEphemeralWalletAuthOperationalAsync(
     transient_backend: resolveTransientStateBackend(env),
     distributed_replay_enforced: distributedReplayEnforced(env),
     revocation_mode: resolveEphemeralRevocationMode(env),
+    challenge_replay_backend: challengeBackend,
+    production_activation_blocked: Boolean(missingCapability),
+    missing_capability: missingCapability,
   };
 }

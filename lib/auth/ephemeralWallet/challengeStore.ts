@@ -9,7 +9,11 @@ import {
   probeEphemeralKv,
 } from "./redisKv";
 import { EphemeralStateUnavailableError } from "./errors";
-import { processTransientStateAllowed, resolveTransientStateBackend } from "./transientStatePolicy";
+import {
+  authoritativeChallengeReplayBackend,
+  processChallengeStoreAllowed,
+  requiresDistributedChallengeStore,
+} from "./transientStatePolicy";
 
 const KEY_PREFIX = "abraxas:ephemeral:wallet-challenge:v1:";
 
@@ -23,7 +27,11 @@ const memoryStore = new Map<string, MemoryEntry>();
 const memoryLocks = new Map<string, Promise<void>>();
 
 function memoryAllowed(env: Record<string, string | undefined>): boolean {
-  return processTransientStateAllowed(env);
+  return processChallengeStoreAllowed(env);
+}
+
+function useRedisChallengeStore(env: Record<string, string | undefined>): boolean {
+  return authoritativeChallengeReplayBackend(env) === "redis";
 }
 
 function challengeKey(challengeId: string): string {
@@ -35,11 +43,11 @@ export async function putEphemeralWalletChallenge(
   ttlSec: number,
   env: Record<string, string | undefined> = process.env,
 ): Promise<void> {
-  if (resolveTransientStateBackend(env) === "redis") {
+  if (useRedisChallengeStore(env)) {
     await ephemeralKvSet(challengeKey(record.challenge_id), record, ttlSec, env);
     return;
   }
-  if (!memoryAllowed(env)) {
+  if (requiresDistributedChallengeStore(env) || !memoryAllowed(env)) {
     throw new EphemeralStateUnavailableError();
   }
   memoryStore.set(record.challenge_id, {
@@ -53,10 +61,10 @@ export async function peekEphemeralWalletChallenge(
   challengeId: string,
   env: Record<string, string | undefined> = process.env,
 ): Promise<EphemeralWalletChallengeRecord | null> {
-  if (resolveTransientStateBackend(env) === "redis") {
+  if (useRedisChallengeStore(env)) {
     return await ephemeralKvGet<EphemeralWalletChallengeRecord>(challengeKey(challengeId), env);
   }
-  if (!memoryAllowed(env)) {
+  if (requiresDistributedChallengeStore(env) || !memoryAllowed(env)) {
     throw new EphemeralStateUnavailableError();
   }
   const entry = memoryStore.get(challengeId);
@@ -81,10 +89,10 @@ export async function consumeEphemeralWalletChallenge(
   challengeId: string,
   env: Record<string, string | undefined> = process.env,
 ): Promise<EphemeralWalletChallengeRecord | null> {
-  if (resolveTransientStateBackend(env) === "redis") {
+  if (useRedisChallengeStore(env)) {
     return await ephemeralKvGetDel<EphemeralWalletChallengeRecord>(challengeKey(challengeId), env);
   }
-  if (!memoryAllowed(env)) {
+  if (requiresDistributedChallengeStore(env) || !memoryAllowed(env)) {
     throw new EphemeralStateUnavailableError();
   }
 
@@ -114,12 +122,18 @@ export async function consumeEphemeralWalletChallenge(
 export async function probeEphemeralChallengeStore(
   env: Record<string, string | undefined> = process.env,
 ): Promise<{ ok: boolean; code: string | null; backend: "redis" | "memory" | "none" }> {
-  if (resolveTransientStateBackend(env) === "redis") {
+  if (useRedisChallengeStore(env)) {
     const probe = await probeEphemeralKv(env);
-    return { ok: probe.ok, code: probe.code, backend: "redis" };
+    if (!probe.ok) {
+      return { ok: false, code: probe.code ?? "redis_unreachable", backend: "redis" };
+    }
+    return { ok: true, code: null, backend: "redis" };
+  }
+  if (requiresDistributedChallengeStore(env)) {
+    return { ok: false, code: "distributed_replay_not_configured", backend: "none" };
   }
   if (memoryAllowed(env)) {
-    return { ok: true, code: "process_transient", backend: "memory" };
+    return { ok: true, code: "process_transient_dev_only", backend: "memory" };
   }
   return { ok: false, code: "ephemeral_state_not_configured", backend: "none" };
 }
