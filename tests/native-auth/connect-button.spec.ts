@@ -25,7 +25,8 @@ async function clearNativeSession(page: import("@playwright/test").Page) {
 test.describe("Public Connect button", () => {
   test("returning passkey user signs in with one Connect click", async ({ page, context }) => {
     const enabled = await page.request.get("/api/auth/native/enabled");
-    test.skip(!(await enabled.json()).enabled, "Native auth disabled");
+    const enabledJson = await enabled.json();
+    test.skip(!enabledJson.operational, "Native auth not operational");
 
     await page.setViewportSize({ width: 1440, height: 900 });
     const { client, authenticatorId } = await enableVirtualAuthenticator(page, context);
@@ -68,7 +69,8 @@ test.describe("Public Connect button", () => {
 
   test("Create passkey account control registers only after explicit click", async ({ page, context }) => {
     const enabled = await page.request.get("/api/auth/native/enabled");
-    test.skip(!(await enabled.json()).enabled, "Native auth disabled");
+    const enabledJson = await enabled.json();
+    test.skip(!enabledJson.operational, "Native auth not operational");
 
     await page.setViewportSize({ width: 1440, height: 900 });
     const { client, authenticatorId } = await enableVirtualAuthenticator(page, context);
@@ -100,7 +102,8 @@ test.describe("Public Connect button", () => {
 
   test("cancelled or timed-out WebAuthn does not create a session", async ({ page, context }) => {
     const enabled = await page.request.get("/api/auth/native/enabled");
-    test.skip(!(await enabled.json()).enabled, "Native auth disabled");
+    const enabledJson = await enabled.json();
+    test.skip(!enabledJson.operational, "Native auth not operational");
 
     await page.setViewportSize({ width: 1440, height: 900 });
     const client = await context.newCDPSession(page);
@@ -130,9 +133,12 @@ test.describe("Public Connect button", () => {
     await client.send("WebAuthn.removeVirtualAuthenticator", { authenticatorId });
   });
 
-  test("when native auth disabled, Connect links to Passport not Integration Studio", async ({ page }) => {
+  test("when native auth flag is off, Explore links to Integration Studio not Passport", async ({ page }) => {
     await page.route("**/api/auth/native/enabled", (route) =>
-      route.fulfill({ contentType: "application/json", body: JSON.stringify({ enabled: false }) }),
+      route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ enabled: false, operational: false, connect_mode: "explore" }),
+      }),
     );
     await page.route("**/api/auth/native/session", (route) =>
       route.fulfill({
@@ -146,10 +152,37 @@ test.describe("Public Connect button", () => {
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/", { waitUntil: "networkidle" });
-    const connect = page.locator('a[href="/passport"]').filter({ hasText: "Connect" });
-    await expect(connect.first()).toBeVisible({ timeout: 30_000 });
-    await expect(page.locator('a[href="/developers/integration-studio"]').filter({ hasText: "Connect" })).toHaveCount(
-      0,
+    const explore = page.locator('a[href="/developers/integration-studio"]').filter({ hasText: "Explore" });
+    await expect(explore.first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('a[href="/passport"]').filter({ hasText: /^Connect$/ })).toHaveCount(0);
+  });
+
+  test("when native auth is degraded, shows retry and legacy Passport without auto redirect", async ({ page }) => {
+    await page.route("**/api/auth/native/enabled", (route) =>
+      route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          enabled: true,
+          operational: false,
+          connect_mode: "unavailable",
+          degraded_reason: "migration_144_missing",
+        }),
+      }),
     );
+    await page.route("**/api/auth/native/session", (route) =>
+      route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({ authenticated: false }),
+      }),
+    );
+    await page.route("**/api/auth/browser-session", (route) =>
+      route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ ok: false }) }),
+    );
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/", { waitUntil: "networkidle" });
+    await expect(page.getByRole("button", { name: /Retry sign-in/i })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole("link", { name: /Passport \(legacy\)/i })).toBeVisible();
+    await expect(page.locator('a[href="/passport"]').filter({ hasText: /^Connect$/ })).toHaveCount(0);
   });
 });

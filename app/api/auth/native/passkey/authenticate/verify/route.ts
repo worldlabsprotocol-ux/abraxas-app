@@ -5,13 +5,13 @@ import type { AuthenticationResponseJSON } from "@simplewebauthn/server";
 import { finishPasskeyAuthentication } from "@/lib/auth/webauthn/passkeyService";
 import { resolveWebAuthnOrigin, resolveWebAuthnRpId } from "@/lib/auth/webauthn/rpConfig";
 import { attachAccountSessionCookie, issueAccountSessionToken } from "@/lib/auth/accountSession";
-import { assertNativeAuthEnabled, mapNativeStoreError } from "@/lib/auth/nativeAccount/apiGate";
+import { assertNativeAuthOperational, mapNativeStoreError } from "@/lib/auth/nativeAccount/apiGate";
 import { enforceNativeAuthRateLimit } from "@/lib/auth/nativeAccount/rateLimit";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const disabled = assertNativeAuthEnabled();
+  const disabled = await assertNativeAuthOperational();
   if (disabled) return disabled;
 
   const limited = await enforceNativeAuthRateLimit(req, "passkey_auth_verify", 20);

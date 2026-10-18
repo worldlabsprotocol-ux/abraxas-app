@@ -1,27 +1,38 @@
 // FILE: lib/nav/publicNavConnectBehavior.ts
-// Pure Connect control routing — native account first, holder Passport separate.
+// Pure Connect control routing — native passkey when operational; honest unavailable otherwise.
 
 export type PublicNavConnectPhase =
   | "holder_profile_menu"
   | "native_account_link"
   | "native_passkey_connect"
-  | "native_unavailable_recovery";
+  | "native_service_unavailable"
+  | "native_explore";
 
 export function resolvePublicNavConnectPhase(input: {
   /** Authoritative httpOnly browser session — not local storage alone. */
   holderBrowserSessionActive: boolean;
   nativeAuthenticated: boolean;
-  nativeEnabled: boolean;
+  /** Feature flag — native account auth intended for this deployment. */
+  nativeFlagEnabled: boolean;
+  /** Flag, config, and schema healthy — passkey ceremonies may run. */
+  nativeOperational: boolean;
   nativeStateLoaded: boolean;
 }): PublicNavConnectPhase | "loading" {
   if (!input.nativeStateLoaded) return "loading";
   if (input.holderBrowserSessionActive) return "holder_profile_menu";
   if (input.nativeAuthenticated) return "native_account_link";
-  if (input.nativeEnabled) return "native_passkey_connect";
-  return "native_unavailable_recovery";
+  if (input.nativeOperational) return "native_passkey_connect";
+  if (input.nativeFlagEnabled) return "native_service_unavailable";
+  return "native_explore";
 }
 
-/** Holder Passport entry when native passkeys are not enabled (no auto Google redirect). */
-export const PUBLIC_CONNECT_NATIVE_UNAVAILABLE_HREF = "/passport" as const;
+/** Public product paths that do not require account authentication. */
+export const PUBLIC_CONNECT_EXPLORE_HREF = "/developers/integration-studio" as const;
+
+/** Explicit legacy holder Passport — never the default Connect destination. */
+export const PUBLIC_CONNECT_PASSPORT_LEGACY_HREF = "/passport" as const;
 
 export const PUBLIC_CONNECT_ACCOUNT_HREF = "/account/applications" as const;
+
+export const PUBLIC_CONNECT_UNAVAILABLE_SUMMARY =
+  "Passkey account sign-in is temporarily unavailable. You can explore Abraxas without signing in, or use Passport if you already rely on holder credentials.";

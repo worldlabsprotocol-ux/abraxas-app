@@ -25,6 +25,12 @@ export const HOMEPAGE_WORKSPACE_STUDIO_CTA = "Open Integration Studio";
 export const HOMEPAGE_WORKSPACE_ALT_LEAD =
   "Configure policies and run sandbox tests in Integration Studio, or try the public demo.";
 
+export const HOMEPAGE_WORKSPACE_UNAVAILABLE_LEAD =
+  "Passkey account sign-in is temporarily unavailable here. Explore Integration Studio or retry when service is restored.";
+
+export const HOMEPAGE_WORKSPACE_UNAVAILABLE_RETRY = "Retry sign-in check";
+export const HOMEPAGE_WORKSPACE_PASSPORT_LEGACY_LINK = "Passport (legacy holder)";
+
 export const HOMEPAGE_CLOSE_HEADING = "Ready to build?";
 export const HOMEPAGE_CLOSE_LEAD =
   "Create a workspace to test verification in your application.";

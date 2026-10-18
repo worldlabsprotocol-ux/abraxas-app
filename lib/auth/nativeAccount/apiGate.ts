@@ -3,7 +3,8 @@
 import { NextResponse } from "next/server";
 import { isNativeAccountAuthEnabled } from "./featureFlag";
 import { validateNativeAuthRuntimeConfig } from "./configValidation";
-import { NativeAccountStoreUnavailableError } from "./store";
+import { probeNativeAuthSchemaReady } from "./schemaReadiness";
+import { NativeAccountStoreUnavailableError } from "./storeErrors";
 
 export function nativeAuthDisabledResponse(): NextResponse {
   return NextResponse.json(
@@ -33,6 +34,15 @@ export function assertNativeAuthEnabled(): NextResponse | null {
     if (config.code === "disabled") return nativeAuthDisabledResponse();
     return nativeAuthMisconfiguredResponse(config.code);
   }
+  return null;
+}
+
+/** Flag + config + schema — fail closed when persistence is not ready (avoids broken Connect / 500). */
+export async function assertNativeAuthOperational(): Promise<NextResponse | null> {
+  const base = assertNativeAuthEnabled();
+  if (base) return base;
+  const schema = await probeNativeAuthSchemaReady();
+  if (!schema.ok) return nativeAuthUnavailableResponse();
   return null;
 }
 

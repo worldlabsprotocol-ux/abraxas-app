@@ -12,8 +12,11 @@ import {
   HOMEPAGE_CTA_SET_UP_WORKSPACE,
   HOMEPAGE_CTA_START_BUILDING,
   HOMEPAGE_WORKSPACE_DEMO_LINK,
+  HOMEPAGE_WORKSPACE_PASSPORT_LEGACY_LINK,
   HOMEPAGE_WORKSPACE_STUDIO_CTA,
+  HOMEPAGE_WORKSPACE_UNAVAILABLE_RETRY,
 } from "@/lib/home/homepagePlainCopy";
+import { PUBLIC_CONNECT_PASSPORT_LEGACY_HREF } from "@/lib/nav/publicNavConnectBehavior";
 import { useHomeWorkspaceSession } from "@/lib/home/useHomeWorkspaceSession";
 
 export function HomeSandboxSessionEntry() {
@@ -21,6 +24,7 @@ export function HomeSandboxSessionEntry() {
   const { mode, refresh } = useHomeWorkspaceSession();
   const [authMode, setAuthMode] = useState<"register" | "authenticate">("register");
   const [busy, setBusy] = useState(false);
+  const [retryBusy, setRetryBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const enrollSandbox = useCallback(async () => {
@@ -49,7 +53,9 @@ export function HomeSandboxSessionEntry() {
 
   return (
     <div className="abx-sandbox-entry">
-      {mode !== "native_disabled" ? <HomeWorkspaceProgressSteps mode={mode} /> : null}
+      {mode !== "native_disabled" && mode !== "native_unavailable" ? (
+        <HomeWorkspaceProgressSteps mode={mode} />
+      ) : null}
 
       {mode === "loading" ? (
         <p className="abx-sandbox-entry__status">Checking workspace availability…</p>
@@ -62,6 +68,30 @@ export function HomeSandboxSessionEntry() {
             href="/developers/integration-studio"
           >
             {HOMEPAGE_WORKSPACE_STUDIO_CTA}
+          </Link>
+        </div>
+      ) : null}
+
+      {mode === "native_unavailable" ? (
+        <div className="abx-sandbox-entry__disabled">
+          <Btn
+            size="sm"
+            disabled={retryBusy}
+            onClick={() => {
+              setRetryBusy(true);
+              void refresh().finally(() => setRetryBusy(false));
+            }}
+          >
+            {retryBusy ? "Checking…" : HOMEPAGE_WORKSPACE_UNAVAILABLE_RETRY}
+          </Btn>
+          <Link
+            className="abx-premium-hero__cta abx-premium-hero__cta--primary"
+            href="/developers/integration-studio"
+          >
+            {HOMEPAGE_WORKSPACE_STUDIO_CTA}
+          </Link>
+          <Link className="abx-sandbox-entry__demo-link" href={PUBLIC_CONNECT_PASSPORT_LEGACY_HREF}>
+            {HOMEPAGE_WORKSPACE_PASSPORT_LEGACY_LINK}
           </Link>
         </div>
       ) : null}
@@ -110,13 +140,13 @@ export function HomeSandboxSessionEntry() {
         </div>
       ) : null}
 
-      {mode !== "loading" && mode !== "native_disabled" ? (
+      {mode !== "loading" && mode !== "native_disabled" && mode !== "native_unavailable" ? (
         <Link className="abx-sandbox-entry__demo-link" href="/try">
           {HOMEPAGE_WORKSPACE_DEMO_LINK}
         </Link>
       ) : null}
 
-      {mode === "native_disabled" ? (
+      {mode === "native_disabled" || mode === "native_unavailable" ? (
         <Link className="abx-sandbox-entry__demo-link" href="/try">
           {HOMEPAGE_WORKSPACE_DEMO_LINK}
         </Link>

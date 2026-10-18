@@ -11,6 +11,10 @@ import {
   persistenceUsesDirectPostgres,
   resolvePassportDirectPostgresUrl,
 } from "./env";
+import {
+  isNativeAccountDirectPostgresEnabled,
+  resolveNativeAccountDirectPostgresUrl,
+} from "./nativeAccountPg";
 import { validatePassportHybridPostgresBinding } from "./passportHybridPostgres";
 
 let cachedPool: Pool | null = null;
@@ -72,12 +76,27 @@ function assertPassportPgConfig(env: Record<string, string | undefined>): void {
   }
 }
 
+function resolveAbraxasDirectPostgresUrl(
+  env: Record<string, string | undefined> = process.env,
+): string | null {
+  return (
+    resolvePassportDirectPostgresUrl(env)
+    ?? (isNativeAccountDirectPostgresEnabled(env) ? resolveNativeAccountDirectPostgresUrl(env) : null)
+  );
+}
+
+export function isAbraxasDirectPostgresEnabled(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  return isPassportDirectPostgresEnabled(env) || isNativeAccountDirectPostgresEnabled(env);
+}
+
 export function getAbraxasPgPool(
   env: Record<string, string | undefined> = process.env,
 ): Pool | null {
-  if (!isPassportDirectPostgresEnabled(env)) return null;
+  if (!isAbraxasDirectPostgresEnabled(env)) return null;
   assertPassportPgConfig(env);
-  const url = resolvePassportDirectPostgresUrl(env);
+  const url = resolveAbraxasDirectPostgresUrl(env);
   if (!url) return null;
   if (!cachedPool) {
     cachedPool = new pg.Pool(buildPgPoolConfig(url, env));
@@ -91,8 +110,8 @@ export function requireAbraxasPgPool(
   const pool = getAbraxasPgPool(env);
   if (!pool) {
     throw new Error(
-      "Passport transaction PostgreSQL requires ABRAXAS_DATABASE_URL or ABRAXAS_PASSPORT_DATABASE_URL "
-      + "(set ABRAXAS_PASSPORT_TRANSACTION_PG=1 when ABRAXAS_PERSISTENCE_BACKEND remains supabase_postgrest)",
+      "Abraxas direct PostgreSQL requires ABRAXAS_DATABASE_URL, ABRAXAS_PASSPORT_DATABASE_URL, "
+      + "or ABRAXAS_NATIVE_ACCOUNT_DATABASE_URL (enable ABRAXAS_PASSPORT_TRANSACTION_PG or ABRAXAS_NATIVE_ACCOUNT_PG)",
     );
   }
   return pool;
