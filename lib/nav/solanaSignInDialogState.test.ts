@@ -33,6 +33,9 @@ describe("solanaSignInDialogState", () => {
   });
 
   it("maps connect and sign failures to explicit recovery copy", () => {
+    const notReady = new Error("Wallet not ready");
+    notReady.name = "WalletNotReadyError";
+    expect(mapWalletConnectFailure(notReady, "Phantom")).toMatch(/Unlock Phantom/i);
     expect(mapWalletConnectFailure(new Error("User rejected the request"))).toMatch(/dismissed/i);
     expect(mapSignInFailure({ reason: "cancelled" })).toMatch(/dismissed/i);
     expect(mapSignInFailure({ reason: "failed", code: "expired" })).toMatch(/timed out/i);
