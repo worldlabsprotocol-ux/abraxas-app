@@ -1,7 +1,7 @@
 {
   "schema_version": "build-762-v2",
-  "generated_at": "2026-10-19T22:48:13.962Z",
-  "commit_sha": "f85172ca946519afde08bf1287af6ef7f279dfae",
+  "generated_at": "2026-10-19T22:48:26.667Z",
+  "commit_sha": "fa059827e40879982503c951e31c65399fb59fbd",
   "execution_mode": "local_imported_http_route_handlers",
   "deployment_environment": "vitest_process",
   "journey_id": "ephemeral_developer_workspace_institutional_trust",
@@ -37,10 +37,10 @@
     "production_eligibility": false
   },
   "execution": {
-    "workspace_id": "esbx_bf2e2d27624f8526db891fee",
-    "presentation_commit_id": "esbx_pc_cedb8f8aff942334855d6b61",
-    "action_challenge_id": "ewac_0c64b88bb3dcd36f3f1d196b5d77b7ba",
-    "receipt_id": "dr_pv_51ce81042a868bad",
+    "workspace_id": "esbx_5c18b6327bc0101d7eddb577",
+    "presentation_commit_id": "esbx_pc_9effacd0bb05be47bfc2c24b",
+    "action_challenge_id": "ewac_b9696c15759d52b31427764ff43a1794",
+    "receipt_id": "dr_pv_23e2b239d0657472",
     "decision": "approved",
     "result_label": "ephemeral_sandbox_test_only"
   },
