@@ -40,4 +40,22 @@ describe("sandboxWorkspace memory backend", () => {
     const found = await getEphemeralSandboxForSession("sess_missing", TEST_ENV);
     expect(found).toBeNull();
   });
+
+  it("does not cross-resolve workspaces between sessions", async () => {
+    await putEphemeralSandboxWorkspace(
+      { ...sampleWorkspace("sess_holder_a"), workspace_id: "esbx_a" },
+      undefined,
+      TEST_ENV,
+    );
+    await putEphemeralSandboxWorkspace(
+      { ...sampleWorkspace("sess_holder_b"), workspace_id: "esbx_b" },
+      undefined,
+      TEST_ENV,
+    );
+    const a = await getEphemeralSandboxForSession("sess_holder_a", TEST_ENV);
+    const b = await getEphemeralSandboxForSession("sess_holder_b", TEST_ENV);
+    expect(a?.workspace_id).toBe("esbx_a");
+    expect(b?.workspace_id).toBe("esbx_b");
+    expect(await getEphemeralSandboxForSession("sess_other", TEST_ENV)).toBeNull();
+  });
 });
