@@ -40,6 +40,21 @@ export function isEphemeralSandboxAuthorizedTestIssuerEnabled(
   return env[EPHEMERAL_SANDBOX_AUTHORIZED_TEST_ISSUER_ENV] === "1";
 }
 
+/** Test issuer credentials must never activate in Production deployments, even if the flag is set. */
+export function isSandboxTestIssuerRuntimeAllowed(
+  env: Record<string, string | undefined> = process.env as Record<string, string | undefined>,
+): boolean {
+  if (env.VERCEL_ENV === "production") return false;
+  return isEphemeralSandboxAuthorizedTestIssuerEnabled(env);
+}
+
+export function mayInjectSandboxTestIssuerRegistry(
+  context: "sandbox_only" | "production",
+  env: Record<string, string | undefined> = process.env as Record<string, string | undefined>,
+): boolean {
+  return context === "sandbox_only" && isSandboxTestIssuerRuntimeAllowed(env);
+}
+
 export function resolveEphemeralSandboxAuthorizedTestIssuerKey(): ReceiptSigningKeyPair {
   if (!cachedTestIssuerKey) {
     cachedTestIssuerKey = generateTestSigningKeyPair(TEST_ISSUER_KEY_SEED);

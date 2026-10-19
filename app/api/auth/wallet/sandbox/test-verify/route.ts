@@ -14,6 +14,11 @@ import type { EvidencePresentation } from "@/lib/protocolVerification/types";
 import { resolveSandboxPolicyAvailability } from "@/lib/auth/ephemeralWallet/sandboxPolicyAvailability";
 import { verifyWalletActionAuthorization } from "@/lib/auth/ephemeralWallet/actionAuth";
 import { readWalletSolAuthContextCookie } from "@/lib/auth/ephemeralWallet/service";
+import { resolveEphemeralSandboxTestPolicy } from "@/lib/auth/ephemeralWallet/sandboxTestPolicies";
+import { consumeSandboxPresentationCommit } from "@/lib/auth/ephemeralWallet/sandboxPresentationCommitStore";
+import { verifySandboxPresentationCommitAgainstSubmission } from "@/lib/protocolVerification/verifySandboxPresentationCommit";
+import type { SignedPassportReusableCredential } from "@/lib/passport/reusableCredential/contract";
+import type { PortableRevocationSignedArtifact } from "@/lib/protocol/portableRevocation";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +44,8 @@ export async function POST(req: NextRequest) {
     signature?: string;
     solana_network?: string;
     evidence?: Array<Record<string, unknown>>;
+    presentation_commit_id?: string;
+    presentation_method_id?: string;
   };
   try {
     body = await req.json();
@@ -95,6 +102,42 @@ export async function POST(req: NextRequest) {
       { ok: false, code: "credential_evidence_required", unsupported: false },
       { status: 422 },
     );
+  }
+
+  if (policyId === "age_21_retail") {
+    const commitId = String(body.presentation_commit_id ?? "").trim();
+    if (!commitId) {
+      return NextResponse.json({ ok: false, code: "presentation_commit_required" }, { status: 422 });
+    }
+    const credentialEvidence = parsedEvidence.find((row) => row.kind === "passport_reusable_credential");
+    if (!credentialEvidence || credentialEvidence.kind !== "passport_reusable_credential") {
+      return NextResponse.json({ ok: false, code: "credential_evidence_required" }, { status: 422 });
+    }
+    const sandboxPolicy = resolveEphemeralSandboxTestPolicy(policyId);
+    if (!sandboxPolicy) {
+      return NextResponse.json({ ok: false, code: "invalid_policy" }, { status: 400 });
+    }
+    const commit = await consumeSandboxPresentationCommit(commitId);
+    const verifiedCommit = verifySandboxPresentationCommitAgainstSubmission({
+      commit,
+      session_id: auth.session.sessionId,
+      workspace_id: workspace.workspace_id,
+      wallet_address: auth.session.walletAddress,
+      policy_id: policyId,
+      policy_version: sandboxPolicy.policy_version,
+      presentation_method_id: String(body.presentation_method_id ?? "authorized_test_issuer_credential"),
+      credential: credentialEvidence.credential as SignedPassportReusableCredential,
+      portable_revocation_snapshot:
+        credentialEvidence.portable_revocation_snapshot as PortableRevocationSignedArtifact,
+    });
+    if (!verifiedCommit.ok) {
+      const status =
+        verifiedCommit.code === "presentation_commit_not_found"
+        || verifiedCommit.code === "presentation_commit_expired"
+          ? 410
+          : 422;
+      return NextResponse.json({ ok: false, code: verifiedCommit.code }, { status });
+    }
   }
 
   try {

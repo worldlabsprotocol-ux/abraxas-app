@@ -11,6 +11,7 @@ import {
 import {
   EPHEMERAL_WORKSPACE_SANDBOX_BADGE,
   EPHEMERAL_WORKSPACE_SANDBOX_EXPIRY_NOTE,
+  policyExperienceBanner,
   verificationReviewScopeNote,
   verificationReviewTitle,
 } from "@/lib/developers/ephemeralWorkspaceCopy";
@@ -69,6 +70,8 @@ type PreparedEvidence = {
 };
 
 type PresentationDisclosure = {
+  experience_kind?: string;
+  headline?: string;
   requested_attribute: string;
   disclosed_to_partner: string[];
   withheld: string[];
@@ -113,6 +116,7 @@ export function EphemeralSandboxWorkspaceClient() {
     currently_acceptable?: boolean;
   } | null>(null);
   const [preparedEvidence, setPreparedEvidence] = useState<PreparedEvidence | null>(null);
+  const [presentationCommitId, setPresentationCommitId] = useState<string | null>(null);
   const [presentationDisclosure, setPresentationDisclosure] = useState<PresentationDisclosure | null>(null);
   const [decision, setDecision] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -355,12 +359,14 @@ export function EphemeralSandboxWorkspaceClient() {
         code?: string;
         disclosure?: PresentationDisclosure;
         evidence?: PreparedEvidence;
+        presentation_commit_id?: string;
       };
-      if (!res.ok || !json.evidence || !json.disclosure) {
+      if (!res.ok || !json.evidence || !json.disclosure || !json.presentation_commit_id) {
         setUserError(mapWorkspaceUserFacingError({ code: json.code ?? "unsupported_evidence" }));
         return;
       }
       setPreparedEvidence(json.evidence);
+      setPresentationCommitId(json.presentation_commit_id);
       setPresentationDisclosure(json.disclosure);
       setPhase("disclosure");
     } catch {
@@ -424,6 +430,8 @@ export function EphemeralSandboxWorkspaceClient() {
             action_challenge_id: input.action_challenge_id,
             signature: input.signature,
             evidence: preparedEvidence ? [preparedEvidence] : undefined,
+            presentation_commit_id: presentationCommitId ?? undefined,
+            presentation_method_id: preparedEvidence ? "authorized_test_issuer_credential" : undefined,
           }),
         });
         if (input.generation !== requestGenerationRef.current) return;
@@ -469,7 +477,7 @@ export function EphemeralSandboxWorkspaceClient() {
         }
       }
     },
-    [selectedPolicy, preparedEvidence],
+    [selectedPolicy, preparedEvidence, presentationCommitId],
   );
 
   const openPhantomForReview = useCallback(async () => {
@@ -684,6 +692,7 @@ export function EphemeralSandboxWorkspaceClient() {
                     onClick={() => {
                       setSelectedPolicy(p.policy_id);
                       setPreparedEvidence(null);
+                      setPresentationCommitId(null);
                       setPresentationDisclosure(null);
                       setUserError(null);
                       setShowTechnicalDetails(false);
@@ -698,6 +707,11 @@ export function EphemeralSandboxWorkspaceClient() {
                 );
               })}
             </div>
+            {selectedPolicy && policyExperienceBanner(selectedPolicy, selectedAvailability?.age_experience) ? (
+              <p className={styles.note}>
+                {policyExperienceBanner(selectedPolicy, selectedAvailability?.age_experience)}
+              </p>
+            ) : null}
             {selectedAvailability && !selectedAvailability.can_request_verification ? (
               <p className={styles.availabilityNote}>{selectedAvailability.availability_detail}</p>
             ) : null}
@@ -732,7 +746,9 @@ export function EphemeralSandboxWorkspaceClient() {
 
         {phase === "disclosure" && presentationDisclosure ? (
           <div className={styles.disclosureCard}>
-            <h2 className={styles.sectionTitle}>Review disclosure</h2>
+            <h2 className={styles.sectionTitle}>
+              {presentationDisclosure.headline ?? "Review disclosure"}
+            </h2>
             <p className={styles.muted}>{presentationDisclosure.sandbox_notice}</p>
             <p className={styles.note}>
               <strong>{presentationDisclosure.requested_attribute}</strong>
@@ -761,6 +777,7 @@ export function EphemeralSandboxWorkspaceClient() {
                 onClick={() => {
                   setPhase("workspace");
                   setPreparedEvidence(null);
+                  setPresentationCommitId(null);
                   setPresentationDisclosure(null);
                 }}
               >
@@ -884,7 +901,14 @@ export function EphemeralSandboxWorkspaceClient() {
 
         {result ? (
           <div className={styles.resultBox}>
-            <h3 className={styles.resultTitle}>Verification complete</h3>
+            <h3 className={styles.resultTitle}>
+              {selectedPolicy === "age_21_retail" ? "Age 21 test complete" : "Verification complete"}
+            </h3>
+            {selectedPolicy === "age_21_retail" ? (
+              <p className={styles.note}>
+                Sandbox test result only. This does not prove real world age eligibility.
+              </p>
+            ) : null}
             <p className={styles.resultLine}>
               <strong>Policy:</strong> {selectedPolicyMeta?.label ?? selectedPolicy}
             </p>
@@ -932,6 +956,7 @@ export function EphemeralSandboxWorkspaceClient() {
                   setValidation(null);
                   setDecision(null);
                   setPreparedEvidence(null);
+                  setPresentationCommitId(null);
                   setPresentationDisclosure(null);
                   setUserError(null);
                   setPhase("workspace");

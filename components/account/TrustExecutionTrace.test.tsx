@@ -28,7 +28,7 @@ describe("deriveTrustExecutionStages", () => {
       validation: { signature_authentic: true, currently_acceptable: true },
       errorActive: false,
     });
-    const verification = stages.find((s) => s.id === "verification");
-    expect(verification?.state).toBe("complete");
+    const validation = stages.find((s) => s.id === "validation");
+    expect(validation?.state).toBe("complete");
   });
 });

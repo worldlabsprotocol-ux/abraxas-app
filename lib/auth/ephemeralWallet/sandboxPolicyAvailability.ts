@@ -2,9 +2,16 @@
 
 import { resolveEphemeralSandboxTestPolicy } from "./sandboxTestPolicies";
 import {
-  isEphemeralSandboxAuthorizedTestIssuerEnabled,
   isProductionAgeIssuerConfigured,
+  isSandboxTestIssuerRuntimeAllowed,
 } from "@/lib/protocolVerification/ephemeralAuthorizedTestIssuer";
+
+export type SandboxAgeExperienceKind =
+  | "age_21_test"
+  | "age_21_verification_pending"
+  | "age_21_unavailable";
+
+export type SandboxWalletControlExperienceKind = "wallet_control_genuine";
 
 export type SandboxPolicyExecutionStatus = "ready" | "evidence_unavailable";
 
@@ -29,6 +36,9 @@ export type SandboxPolicyAvailability = {
   availability_detail: string;
   can_request_verification: boolean;
   presentation_methods?: SandboxPolicyPresentationMethod[];
+  wallet_control_experience?: SandboxWalletControlExperienceKind;
+  age_experience?: SandboxAgeExperienceKind;
+  user_facing_headline?: string;
 };
 
 export function resolveSandboxPolicyAvailability(policyId: string): SandboxPolicyAvailability | null {
@@ -42,20 +52,24 @@ export function resolveSandboxPolicyAvailability(policyId: string): SandboxPolic
       availability_label: "Ready to test",
       availability_detail: "Wallet control can be verified in this sandbox with your connected wallet.",
       can_request_verification: true,
+      wallet_control_experience: "wallet_control_genuine",
+      user_facing_headline: "Wallet control verification",
     };
   }
 
   if (policy.claim_type === "age_21") {
-    const testIssuer = isEphemeralSandboxAuthorizedTestIssuerEnabled();
+    const testIssuer = isSandboxTestIssuerRuntimeAllowed();
     const productionIssuer = isProductionAgeIssuerConfigured();
     if (testIssuer) {
       return {
         policy_id: policy.policy_id,
         execution_status: "ready",
-        availability_label: "Test issuer credential available",
+        availability_label: "Age 21 test available",
         availability_detail:
-          "Age eligibility requires issuer signed evidence. The authorized test issuer demonstrates the verification path. Results stay sandbox labeled and are not Production trusted.",
+          "This runs the eligibility verification process with an authorized test issuer. It does not prove your real world age.",
         can_request_verification: true,
+        age_experience: "age_21_test",
+        user_facing_headline: "Age 21 test",
         presentation_methods: [
           {
             id: "authorized_test_issuer_credential",
@@ -74,6 +88,8 @@ export function resolveSandboxPolicyAvailability(policyId: string): SandboxPolic
         availability_detail:
           "A production age issuer trust root is configured. Holder presentation from Passport is required before this workspace can execute age verification.",
         can_request_verification: false,
+        age_experience: "age_21_verification_pending",
+        user_facing_headline: "Age 21 verification",
         presentation_methods: [
           {
             id: "production_issuer_credential",
@@ -87,10 +103,12 @@ export function resolveSandboxPolicyAvailability(policyId: string): SandboxPolic
     return {
       policy_id: policy.policy_id,
       execution_status: "evidence_unavailable",
-      availability_label: "Requires eligible issuer evidence",
+      availability_label: "Age 21 verification unavailable",
       availability_detail:
-        "Age verification needs a verifiable credential from a supported issuer. Enable the authorized test issuer for sandbox integration or configure a production issuer trust root.",
+        "Real age verification needs a supported issuer and holder presentation. Sandbox test mode is not enabled in this environment.",
       can_request_verification: false,
+      age_experience: "age_21_unavailable",
+      user_facing_headline: "Age 21 verification",
     };
   }
 

@@ -39,10 +39,32 @@ export function mapWorkspaceUserFacingError(input: {
       };
     case "insufficient_evidence_for_policy":
     case "unsupported_evidence":
+    case "credential_evidence_required":
       return {
-        title: "Additional evidence required",
-        message: "Age verification requires a credential from a supported issuer.",
-        recovery: "Choose Wallet Control to complete a supported test verification.",
+        title: "Evidence required",
+        message: "Prepare issuer evidence before authorizing this policy test.",
+        recovery: "Use Prepare presentation for Age 21 test, or choose Wallet Control.",
+        technicalCode: code,
+        correlationId: input.correlationId,
+      };
+    case "presentation_commit_required":
+    case "presentation_commit_not_found":
+    case "presentation_commit_expired":
+      return {
+        title: "Presentation expired",
+        message: "Prepare the credential presentation again before signing.",
+        recovery: "Return to the policy card and run Prepare presentation.",
+        technicalCode: code,
+        correlationId: input.correlationId,
+      };
+    case "presentation_evidence_mismatch":
+    case "presentation_policy_mismatch":
+    case "presentation_wallet_mismatch":
+    case "presentation_session_mismatch":
+      return {
+        title: "Presentation binding failed",
+        message: "The submitted credential does not match the presentation you approved.",
+        recovery: "Prepare presentation again and authorize without changing the evidence.",
         technicalCode: code,
         correlationId: input.correlationId,
       };

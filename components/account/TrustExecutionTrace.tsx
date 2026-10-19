@@ -9,7 +9,7 @@ export type TrustExecutionStageId =
   | "evidence"
   | "policy"
   | "decision"
-  | "verification";
+  | "validation";
 
 export type TrustExecutionStageState = "pending" | "active" | "complete" | "failed" | "requirements";
 
@@ -26,7 +26,7 @@ const STAGE_ORDER: TrustExecutionStageId[] = [
   "evidence",
   "policy",
   "decision",
-  "verification",
+  "validation",
 ];
 
 const STATE_CLASS: Record<TrustExecutionStageState, string> = {
@@ -85,7 +85,7 @@ export function deriveTrustExecutionStages(input: {
   let evidenceState: TrustExecutionStageState = "pending";
   let policyState: TrustExecutionStageState = "pending";
   let decisionState: TrustExecutionStageState = "pending";
-  let verificationState: TrustExecutionStageState = "pending";
+  let validationState: TrustExecutionStageState = "pending";
 
   if (input.phase === "disclosure") {
     authorizationState = "requirements";
@@ -106,7 +106,13 @@ export function deriveTrustExecutionStages(input: {
     evidenceState = "complete";
     policyState = "complete";
     decisionState = input.errorActive ? "failed" : input.decision === "approved" ? "complete" : "failed";
-    verificationState = input.validation ? (currentOk ? "complete" : signatureOk ? "requirements" : "failed") : "active";
+    validationState = input.validation
+      ? currentOk
+        ? "complete"
+        : signatureOk
+          ? "requirements"
+          : "failed"
+      : "active";
   } else if (input.phase === "workspace" && input.policySelected) {
     authorizationState = "pending";
     if (input.evidenceRequired && !input.presentationPrepared) {
@@ -130,13 +136,13 @@ export function deriveTrustExecutionStages(input: {
     { id: "policy", label: "Policy", state: policyState, detail: "Evaluation" },
     { id: "decision", label: "Decision", state: decisionState, detail: "Signed receipt" },
     {
-      id: "verification",
-      label: "Verification",
-      state: verificationState,
+      id: "validation",
+      label: "Validation",
+      state: validationState,
       detail: signatureOk
         ? currentOk
           ? "Currently acceptable"
-          : "Signature authentic"
+          : "Authentic signature only"
         : "Independent check",
     },
   ];

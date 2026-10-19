@@ -16,7 +16,8 @@ import type { ProtocolVerificationContext } from "./types";
 import {
   EPHEMERAL_SANDBOX_AUTHORIZED_TEST_ISSUER_ID,
   ephemeralSandboxTestIssuerTrustEnv,
-  isEphemeralSandboxAuthorizedTestIssuerEnabled,
+  isSandboxTestIssuerRuntimeAllowed,
+  mayInjectSandboxTestIssuerRegistry,
 } from "./ephemeralAuthorizedTestIssuer";
 
 export type PassportCredentialEvidenceInput = {
@@ -41,7 +42,10 @@ export type PassportCredentialEvidenceResult =
 export async function evaluatePassportCredentialEvidence(
   input: PassportCredentialEvidenceInput,
 ): Promise<PassportCredentialEvidenceResult> {
-  const env = { ...(input.env ?? process.env), ...mergeTestIssuerEnv(input.env) };
+  const env = {
+    ...(input.env ?? process.env),
+    ...mergeTestIssuerEnv(input.context, input.env),
+  };
   const now = input.now ?? new Date();
   const pack = inferPolicyPackFromPolicyId(input.policyId);
   if (!pack?.rules) {
@@ -55,7 +59,7 @@ export async function evaluatePassportCredentialEvidence(
     return { ok: false, code: "sandbox_issuer_not_production_trusted", unsupported: true };
   }
 
-  if (sandboxIssuer && !isEphemeralSandboxAuthorizedTestIssuerEnabled(env) && input.context === "sandbox_only") {
+  if (sandboxIssuer && input.context === "sandbox_only" && !isSandboxTestIssuerRuntimeAllowed(env)) {
     return { ok: false, code: "authorized_test_issuer_disabled", unsupported: true };
   }
 
@@ -107,9 +111,11 @@ export async function evaluatePassportCredentialEvidence(
 }
 
 function mergeTestIssuerEnv(
+  context: ProtocolVerificationContext,
   env: Record<string, string | undefined> | undefined,
 ): Record<string, string | undefined> {
-  if (!isEphemeralSandboxAuthorizedTestIssuerEnabled(env)) {
+  const runtimeEnv = env ?? process.env;
+  if (!mayInjectSandboxTestIssuerRegistry(context === "production" ? "production" : "sandbox_only", runtimeEnv)) {
     return {};
   }
   return ephemeralSandboxTestIssuerTrustEnv();

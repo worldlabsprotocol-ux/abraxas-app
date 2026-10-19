@@ -38,14 +38,33 @@ export function mapSandboxEnterFailure(code?: string | null): string {
 }
 
 export function verificationReviewTitle(policyId: string, policyLabel?: string): string {
-  if (policyId === "wallet_control") return "Verify wallet control";
-  if (policyId === "age_21_retail") return "Authorize age policy test";
+  if (policyId === "wallet_control") return "Authorize wallet control verification";
+  if (policyId === "age_21_retail") return "Authorize Age 21 test request";
   return policyLabel ? `Verify ${policyLabel}` : "Authorize test verification";
 }
 
 export function verificationReviewScopeNote(policyId: string): string | null {
+  if (policyId === "wallet_control") {
+    return "This checks control of your connected wallet using a valid wallet signature.";
+  }
   if (policyId === "age_21_retail") {
-    return "Your signature authorizes this sandbox test only. It does not prove your age or replace valid age evidence.";
+    return "Your signature authorizes this Age 21 test request only. It does not prove your real world age.";
+  }
+  return null;
+}
+
+export function policyExperienceBanner(policyId: string, ageExperience?: string | null): string | null {
+  if (policyId === "wallet_control") {
+    return "Wallet control: genuine wallet signature verification.";
+  }
+  if (policyId === "age_21_retail") {
+    if (ageExperience === "age_21_test") {
+      return "Age 21 test: simulated eligibility claim from an authorized test issuer. Not real age verification.";
+    }
+    if (ageExperience === "age_21_verification_pending") {
+      return "Age 21 verification: requires authentic issuer evidence and holder presentation. Not available in this workspace yet.";
+    }
+    return "Age 21 verification: requires supported issuer evidence. Test mode is not enabled here.";
   }
   return null;
 }
