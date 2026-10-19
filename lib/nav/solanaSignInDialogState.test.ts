@@ -36,6 +36,9 @@ describe("solanaSignInDialogState", () => {
     const notReady = new Error("Wallet not ready");
     notReady.name = "WalletNotReadyError";
     expect(mapWalletConnectFailure(notReady, "Phantom")).toMatch(/Unlock Phantom/i);
+    const notSelected = new Error("Wallet not selected");
+    notSelected.name = "WalletNotSelectedError";
+    expect(mapWalletConnectFailure(notSelected, "Phantom")).toMatch(/selection did not finish/i);
     expect(mapWalletConnectFailure(new Error("wallet_discovery_timeout"))).toMatch(/discovery timed out/i);
     expect(mapWalletConnectFailure(new Error("wallet_connect_timeout"))).toMatch(/Connection request timed out/i);
     expect(mapWalletConnectFailure(new Error("User rejected the request"))).toMatch(/dismissed/i);

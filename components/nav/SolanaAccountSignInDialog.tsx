@@ -2,6 +2,7 @@
 // FILE: components/nav/SolanaAccountSignInDialog.tsx
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { type WalletName } from "@solana/wallet-adapter-base";
 import { useSolanaWalletDiscovery, PREFERRED_SOLANA_WALLETS } from "@/lib/wallet/useSolanaWalletDiscovery";
@@ -11,7 +12,14 @@ import {
   waitForSolanaWalletAdapter,
   WalletDiscoveryTimeoutError,
 } from "@/lib/wallet/waitForSolanaWalletAdapter";
-import { WALLET_CONNECT_USER_TIMEOUT_MS } from "@/lib/nav/solanaSignInDialogState";
+import {
+  connectSelectedSolanaWallet,
+  WalletConnectSequenceError,
+} from "@/lib/wallet/connectSelectedSolanaWallet";
+import {
+  WALLET_CONNECT_USER_TIMEOUT_MS,
+  logWalletConnectFailure,
+} from "@/lib/nav/solanaSignInDialogState";
 import type { PreferredSolanaWalletId } from "@/lib/wallet/solanaWalletDiscovery";
 import { completeSolanaAccountSignIn } from "@/lib/auth/nativeAccount/clientSolanaAccountSignIn";
 import { completeEphemeralWalletSignIn } from "@/lib/auth/ephemeralWallet/clientSignIn";
@@ -53,6 +61,14 @@ export function SolanaAccountSignInDialog({
   const panelRef = useRef<HTMLDivElement>(null);
   const walletsRef = useRef(wallets);
   walletsRef.current = wallets;
+  const walletRef = useRef(wallet);
+  walletRef.current = wallet;
+  const connectRef = useRef(connect);
+  connectRef.current = connect;
+  const publicKeyRef = useRef(publicKey);
+  publicKeyRef.current = publicKey;
+  const connectedRef = useRef(connected);
+  connectedRef.current = connected;
 
   const [phase, setPhase] = useState<SolanaSignInPhase>("idle");
   const [localError, setLocalError] = useState<string | null>(null);
@@ -125,9 +141,21 @@ export function SolanaAccountSignInDialog({
             throw new Error("wallet_not_detected");
           }
         }
-        select(walletName as WalletName);
         await Promise.race([
-          connect(),
+          connectSelectedSolanaWallet({
+            walletId: walletName,
+            wallets: walletsRef.current,
+            select,
+            connect: () => connectRef.current(),
+            getSelectedWallet: () => walletRef.current,
+            getPublicKey: () => publicKeyRef.current,
+            isContextConnected: () => connectedRef.current,
+            commitSelection: (name) => {
+              flushSync(() => {
+                select(name);
+              });
+            },
+          }),
           new Promise<never>((_, reject) => {
             setTimeout(() => reject(new Error("wallet_connect_timeout")), WALLET_CONNECT_USER_TIMEOUT_MS);
           }),
@@ -142,7 +170,22 @@ export function SolanaAccountSignInDialog({
           return;
         }
         setPhase("failure");
-        const msg = mapWalletConnectFailure(error, walletName);
+        const diagnostic =
+          error instanceof WalletConnectSequenceError ? error.diagnostic : undefined;
+        logWalletConnectFailure(error, {
+          walletId: walletName,
+          stage: diagnostic?.stage,
+          adapterReadyState: diagnostic?.adapterReadyState ?? null,
+          selectionCommitted: diagnostic?.selectionCommitted,
+          connectInvoked: diagnostic?.connectInvoked,
+        });
+        const msg = mapWalletConnectFailure(error, walletName, {
+          walletId: walletName,
+          stage: diagnostic?.stage,
+          adapterReadyState: diagnostic?.adapterReadyState ?? null,
+          selectionCommitted: diagnostic?.selectionCommitted,
+          connectInvoked: diagnostic?.connectInvoked,
+        });
         setLocalError(msg);
         setError(msg);
       } finally {
