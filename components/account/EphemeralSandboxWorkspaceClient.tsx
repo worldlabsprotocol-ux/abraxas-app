@@ -1091,8 +1091,15 @@ export function EphemeralSandboxWorkspaceClient() {
               {receiptValidation.status === "validated" ? (
                 <>
                   <h4 className={styles.validationTitle}>Receipt validated</h4>
+                  {receiptValidation.verificationSummary ? (
+                    <p className={styles.note}>{receiptValidation.verificationSummary}</p>
+                  ) : null}
                   <p className={styles.resultLine}>
-                    <strong>Signature authentic:</strong>{" "}
+                    <strong>
+                      {receiptValidation.standaloneCryptographicVerification === false
+                        ? "Sandbox integrity verified:"
+                        : "Signature authentic:"}
+                    </strong>{" "}
                     {receiptValidation.signatureAuthentic ? "Yes" : "No"}
                   </p>
                   <p className={styles.resultLine}>
