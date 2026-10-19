@@ -1006,7 +1006,7 @@ export function EphemeralSandboxWorkspaceClient() {
                 <button
                   type="button"
                   className={styles.secondaryBtn}
-                  disabled={busy || receiptValidation.status === "checking"}
+                  disabled={busy}
                   onClick={() => void validateReceiptIndependent()}
                 >
                   Retry validation
