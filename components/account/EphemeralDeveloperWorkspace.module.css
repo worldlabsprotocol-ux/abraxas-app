@@ -474,6 +474,21 @@
   border-radius: var(--radius-lg, 4px);
 }
 
+.validationPanel {
+  margin: 0.85rem 0 0.5rem;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(62, 201, 176, 0.22);
+  background: rgba(8, 14, 18, 0.55);
+}
+
+.validationTitle {
+  margin: 0 0 0.45rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ws-emerald);
+}
+
 .resultBox {
   margin-top: 0.85rem;
   padding: 0.85rem 1rem;

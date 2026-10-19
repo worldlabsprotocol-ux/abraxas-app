@@ -20,6 +20,10 @@ import {
   type WorkspaceUserFacingError,
 } from "@/lib/developers/ephemeralWorkspaceUserErrors";
 import {
+  mapReceiptValidationApiResponse,
+  type ReceiptValidationUiState,
+} from "@/lib/developers/mapReceiptValidationOutcome";
+import {
   firstSandboxPolicyIdWithVerification,
   pickSandboxPolicyAvailability,
   type SandboxPolicyAvailability,
@@ -51,6 +55,7 @@ type TestResult = {
   result_label: string;
   signature: string;
   payload_hash: string;
+  [key: string]: unknown;
 };
 
 type WorkspacePhase =
@@ -111,13 +116,7 @@ export function EphemeralSandboxWorkspaceClient() {
   const [serverSessionAuthenticated, setServerSessionAuthenticated] = useState(false);
   const [pendingChallenge, setPendingChallenge] = useState<WalletActionChallengePayload | null>(null);
   const [result, setResult] = useState<TestResult | null>(null);
-  const [validation, setValidation] = useState<{
-    ok?: boolean;
-    signature_valid?: boolean;
-    signature_authentic?: boolean;
-    currently_valid?: boolean;
-    currently_acceptable?: boolean;
-  } | null>(null);
+  const [receiptValidation, setReceiptValidation] = useState<ReceiptValidationUiState>({ status: "idle" });
   const [preparedEvidence, setPreparedEvidence] = useState<PreparedEvidence | null>(null);
   const [presentationCommitId, setPresentationCommitId] = useState<string | null>(null);
   const [presentationDisclosure, setPresentationDisclosure] = useState<PresentationDisclosure | null>(null);
@@ -406,7 +405,7 @@ export function EphemeralSandboxWorkspaceClient() {
     }
     setBusy(true);
     setResult(null);
-    setValidation(null);
+    setReceiptValidation({ status: "idle" });
     setDecision(null);
     try {
       await loadVerificationChallenge();
@@ -453,22 +452,9 @@ export function EphemeralSandboxWorkspaceClient() {
         }
         setResult(json.result);
         setDecision(json.decision ?? null);
+        setReceiptValidation({ status: "idle" });
         setPendingChallenge(null);
         setPhase("result");
-        const validateRes = await fetch(
-          `/api/auth/wallet/sandbox/validate?receipt_id=${encodeURIComponent(String(json.result.receipt_id))}`,
-          { credentials: "same-origin" },
-        );
-        const validateJson = (await validateRes.json()) as {
-          ok?: boolean;
-          signature_valid?: boolean;
-          signature_authentic?: boolean;
-          currently_valid?: boolean;
-          currently_acceptable?: boolean;
-        };
-        if (input.generation === requestGenerationRef.current) {
-          setValidation(validateJson);
-        }
       } catch {
         if (input.generation === requestGenerationRef.current) {
           setPhase("workspace");
@@ -478,6 +464,40 @@ export function EphemeralSandboxWorkspaceClient() {
     },
     [selectedPolicy, preparedEvidence, presentationCommitId],
   );
+
+  const validateReceiptIndependent = useCallback(async () => {
+    if (!result?.receipt_id || receiptValidation.status === "checking") return;
+    setReceiptValidation({ status: "checking" });
+    try {
+      const res = await fetch("/api/auth/wallet/sandbox/validate", {
+        method: "POST",
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ receipt: result }),
+      });
+      const json = (await res.json()) as Parameters<typeof mapReceiptValidationApiResponse>[0];
+      if (!res.ok && !json.code) {
+        setReceiptValidation({
+          status: "failed",
+          title: "Validation unavailable",
+          message: "Could not reach the receipt validator. Try again in a moment.",
+          recovery: "Retry validation.",
+          technicalCode: "network_error",
+        });
+        return;
+      }
+      setReceiptValidation(mapReceiptValidationApiResponse(json));
+    } catch {
+      setReceiptValidation({
+        status: "failed",
+        title: "Validation unavailable",
+        message: "Could not reach the receipt validator. Try again in a moment.",
+        recovery: "Retry validation.",
+        technicalCode: "network_error",
+      });
+    }
+  }, [result, receiptValidation.status]);
 
   const openPhantomForReview = useCallback(async () => {
     if (!pendingChallenge || !signMessage) return;
@@ -575,13 +595,21 @@ export function EphemeralSandboxWorkspaceClient() {
   const selectedAvailability = pickSandboxPolicyAvailability(policyAvailability, selectedPolicy);
 
   const evidenceRequired = selectedPolicy === "age_21_retail";
+  const validationForTrace =
+    receiptValidation.status === "validated"
+      ? {
+          signature_authentic: receiptValidation.signatureAuthentic,
+          currently_acceptable: receiptValidation.currentlyAcceptable,
+        }
+      : null;
+
   const trustStages = deriveTrustExecutionStages({
     phase,
     policySelected: Boolean(selectedPolicy && workspace),
     presentationPrepared: Boolean(preparedEvidence),
     evidenceRequired,
     decision,
-    validation,
+    validation: validationForTrace,
     errorActive: Boolean(userError),
   });
 
@@ -915,14 +943,53 @@ export function EphemeralSandboxWorkspaceClient() {
             <p className={styles.resultLine}>
               <strong>Decision:</strong> {decision ?? "unknown"} (Sandbox test only)
             </p>
-            <p className={styles.resultLine}>
-              <strong>Signature authentic:</strong>{" "}
-              {validation?.signature_authentic ?? validation?.signature_valid ? "Yes" : validation ? "No" : "Pending"}
+            <p className={styles.note}>
+              Issuance complete. Use Validate receipt for an independent check of the signed receipt. No wallet
+              signature is required.
             </p>
-            <p className={styles.resultLine}>
-              <strong>Currently acceptable:</strong>{" "}
-              {validation?.currently_acceptable ?? validation?.currently_valid ? "Yes" : validation ? "No" : "Pending"}
-            </p>
+            <div className={styles.validationPanel} aria-live="polite">
+              {receiptValidation.status === "idle" ? (
+                <p className={styles.muted}>Independent validation not run yet.</p>
+              ) : null}
+              {receiptValidation.status === "checking" ? (
+                <div className={styles.statusRow} role="status">
+                  <span className={styles.spinner} aria-hidden />
+                  Checking receipt…
+                </div>
+              ) : null}
+              {receiptValidation.status === "validated" ? (
+                <>
+                  <h4 className={styles.validationTitle}>Receipt validated</h4>
+                  <p className={styles.resultLine}>
+                    <strong>Signature authentic:</strong>{" "}
+                    {receiptValidation.signatureAuthentic ? "Yes" : "No"}
+                  </p>
+                  <p className={styles.resultLine}>
+                    <strong>Currently acceptable:</strong>{" "}
+                    {receiptValidation.currentlyAcceptable ? "Yes" : "No"}
+                  </p>
+                  {!receiptValidation.currentlyAcceptable
+                  && receiptValidation.invalidationReasons.length > 0 ? (
+                    <p className={styles.note}>
+                      This receipt is not currently acceptable for reliance. Review the receipt details before
+                      sharing.
+                    </p>
+                  ) : null}
+                  <p className={styles.meta}>
+                    Checked {new Date(receiptValidation.checkedAt).toLocaleString()}
+                  </p>
+                </>
+              ) : null}
+              {receiptValidation.status === "failed" ? (
+                <div className={styles.errorPanel} role="alert">
+                  <p className={styles.errorTitle}>{receiptValidation.title}</p>
+                  <p className={styles.errorMessage}>{receiptValidation.message}</p>
+                  {receiptValidation.recovery ? (
+                    <p className={styles.errorRecovery}>{receiptValidation.recovery}</p>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
             <details className={styles.receiptDetails}>
               <summary>Receipt details</summary>
               <p className={styles.mono}>
@@ -935,25 +1002,28 @@ export function EphemeralSandboxWorkspaceClient() {
               <button
                 type="button"
                 className={styles.secondaryBtn}
-                disabled={busy || !result.receipt_id}
-                onClick={() => {
-                  void fetch(
-                    `/api/auth/wallet/sandbox/validate?receipt_id=${encodeURIComponent(String(result.receipt_id))}`,
-                    { credentials: "same-origin", cache: "no-store" },
-                  )
-                    .then((r) => r.json())
-                    .then((json: { signature_valid?: boolean }) => setValidation(json));
-                }}
+                disabled={busy || !result.receipt_id || receiptValidation.status === "checking"}
+                onClick={() => void validateReceiptIndependent()}
               >
                 Validate receipt
               </button>
+              {receiptValidation.status === "failed" ? (
+                <button
+                  type="button"
+                  className={styles.secondaryBtn}
+                  disabled={busy}
+                  onClick={() => void validateReceiptIndependent()}
+                >
+                  Retry validation
+                </button>
+              ) : null}
               <button
                 type="button"
                 className={styles.secondaryBtn}
                 disabled={busy}
                 onClick={() => {
                   setResult(null);
-                  setValidation(null);
+                  setReceiptValidation({ status: "idle" });
                   setDecision(null);
                   setPreparedEvidence(null);
                   setPresentationCommitId(null);
