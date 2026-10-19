@@ -5,8 +5,6 @@
 import { LiveBackground } from "@/components/LiveBackground";
 import { SiteNav } from "@/components/SiteNav";
 import { BottomNav } from "@/components/BottomNav";
-import { WalletContextProvider } from "@/components/WalletContextProvider";
-
 interface PageShellProps {
   children: React.ReactNode;
   onWaitlistClick?: () => void;
@@ -14,20 +12,18 @@ interface PageShellProps {
 
 export function PageShell({ children, onWaitlistClick }: PageShellProps) {
   return (
-    <WalletContextProvider>
-      <div style={{
-        minHeight: "100vh",
-        background: "var(--bg)",
-        color: "var(--text-primary)",
-        position: "relative",
-      }}>
-        <LiveBackground />
-        <SiteNav onWaitlistClick={onWaitlistClick} />
-        <div style={{ position: "relative", zIndex: 1 }}>
-          {children}
-        </div>
-        <BottomNav />
+    <div style={{
+      minHeight: "100vh",
+      background: "var(--bg)",
+      color: "var(--text-primary)",
+      position: "relative",
+    }}>
+      <LiveBackground />
+      <SiteNav onWaitlistClick={onWaitlistClick} />
+      <div style={{ position: "relative", zIndex: 1 }}>
+        {children}
       </div>
-    </WalletContextProvider>
+      <BottomNav />
+    </div>
   );
 }

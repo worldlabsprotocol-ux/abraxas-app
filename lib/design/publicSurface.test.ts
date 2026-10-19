@@ -19,6 +19,13 @@ describe("public surface tokens", () => {
     expect(hrefs).not.toContain("/judge-demo");
   });
 
+  it("mounts Solana WalletProvider once at the application root", () => {
+    const providers = readFileSync(resolve(ROOT, "components/providers/AppProviders.tsx"), "utf8");
+    expect(providers).toContain("WalletContextProvider");
+    const layout = readFileSync(resolve(ROOT, "app/layout.tsx"), "utf8");
+    expect(layout).toContain("AppProviders");
+  });
+
   it("uses consolidated primary header controls in RedesignNav", () => {
     const nav = readFileSync(resolve(ROOT, "components/redesign/RedesignNav.tsx"), "utf8");
     expect(nav).toContain("PublicNavConnectButton");
