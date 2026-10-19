@@ -46,6 +46,45 @@ describe("sandbox presentation security", () => {
     delete process.env.VERCEL_ENV;
   });
 
+  it("rejects test verify when possession was not authorized on commit", () => {
+    const bundle = buildEphemeralSandboxAgeTestCredential({ walletAddress: TEST_WALLET });
+    const hash = hashSandboxCredentialPresentationBundle({
+      policy_id: "age_21_retail",
+      policy_version: 1,
+      workspace_id: "ws_1",
+      wallet_address: TEST_WALLET,
+      credential: bundle.credential,
+      portable_revocation_snapshot: bundle.portable_revocation_snapshot,
+    });
+    const commit = {
+      commit_id: "esbx_pc_no_poss",
+      session_id: "sess_a",
+      workspace_id: "ws_1",
+      wallet_address: TEST_WALLET,
+      policy_id: "age_21_retail",
+      policy_version: 1,
+      presentation_method_id: "authorized_test_issuer_credential",
+      evidence_hash: hash,
+      expires_at: new Date(Date.now() + 60_000).toISOString(),
+      sandbox_labeled: true as const,
+      production_trusted: false as const,
+      possession_authorized_at: null,
+    };
+    const result = verifySandboxPresentationCommitAgainstSubmission({
+      commit,
+      session_id: "sess_a",
+      workspace_id: "ws_1",
+      wallet_address: TEST_WALLET,
+      policy_id: "age_21_retail",
+      policy_version: 1,
+      credential: bundle.credential,
+      portable_revocation_snapshot: bundle.portable_revocation_snapshot,
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("presentation_possession_not_authorized");
+  });
+
   it("rejects evidence substitution against stored presentation commit", async () => {
     const bundleA = buildEphemeralSandboxAgeTestCredential({ walletAddress: TEST_WALLET });
     const bundleB = buildEphemeralSandboxAgeTestCredential({ walletAddress: TEST_WALLET_B });
@@ -69,6 +108,7 @@ describe("sandbox presentation security", () => {
       expires_at: new Date(Date.now() + 60_000).toISOString(),
       sandbox_labeled: true,
       production_trusted: false,
+      possession_authorized_at: new Date().toISOString(),
     });
     const commit = await consumeSandboxPresentationCommit("esbx_pc_test");
     const result = verifySandboxPresentationCommitAgainstSubmission({

@@ -18,7 +18,8 @@ export type SandboxPresentationCommitVerificationResult =
         | "presentation_policy_mismatch"
         | "presentation_wallet_mismatch"
         | "presentation_evidence_mismatch"
-        | "presentation_method_mismatch";
+        | "presentation_method_mismatch"
+        | "presentation_possession_not_authorized";
     };
 
 export function verifySandboxPresentationCommitAgainstSubmission(input: {
@@ -32,6 +33,7 @@ export function verifySandboxPresentationCommitAgainstSubmission(input: {
   credential: SignedPassportReusableCredential;
   portable_revocation_snapshot: PortableRevocationSignedArtifact;
   now?: Date;
+  require_possession_authorized?: boolean;
 }): SandboxPresentationCommitVerificationResult {
   if (!input.commit) {
     return { ok: false, code: "presentation_commit_not_found" };
@@ -72,6 +74,9 @@ export function verifySandboxPresentationCommitAgainstSubmission(input: {
   });
   if (!matches) {
     return { ok: false, code: "presentation_evidence_mismatch" };
+  }
+  if (input.require_possession_authorized !== false && !input.commit.possession_authorized_at) {
+    return { ok: false, code: "presentation_possession_not_authorized" };
   }
   return { ok: true };
 }

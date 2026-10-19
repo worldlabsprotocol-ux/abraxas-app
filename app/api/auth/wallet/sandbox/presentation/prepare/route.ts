@@ -21,8 +21,14 @@ import {
   createSandboxPresentationCommitId,
   storeSandboxPresentationCommit,
 } from "@/lib/auth/ephemeralWallet/sandboxPresentationCommitStore";
+import { EPHEMERAL_SANDBOX_TEST_PARTNER_ID } from "@/lib/auth/ephemeralWallet/sandboxTestPolicies";
+import {
+  InMemoryPassportPossessionChallengeStore,
+  issuePassportPossessionChallenge,
+} from "@/lib/passport/reusableCredential/holderPossessionChallenge";
 import type { SignedPassportReusableCredential } from "@/lib/passport/reusableCredential/contract";
 import type { PortableRevocationSignedArtifact } from "@/lib/protocol/portableRevocation";
+import { isValidSandboxHolderPossessionPublicKeyB64Url } from "@/lib/auth/ephemeralWallet/sandboxHolderPossessionKey.shared";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +48,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, code: auth.error }, { status: auth.status });
   }
 
-  let body: { policy_id?: string; presentation_method_id?: string };
+  let body: { policy_id?: string; presentation_method_id?: string; holder_possession_public_key?: string };
   try {
     body = await req.json();
   } catch {
@@ -73,8 +79,13 @@ export async function POST(req: NextRequest) {
     if (!sandboxPolicy) {
       return NextResponse.json({ ok: false, code: "invalid_policy" }, { status: 400 });
     }
+    const holderPossessionPublicKey = String(body.holder_possession_public_key ?? "").trim();
+    if (!isValidSandboxHolderPossessionPublicKeyB64Url(holderPossessionPublicKey)) {
+      return NextResponse.json({ ok: false, code: "holder_possession_public_key_required" }, { status: 400 });
+    }
     const bundle = buildEphemeralSandboxAgeTestCredential({
       walletAddress: auth.session.walletAddress,
+      holderPossessionPublicKey,
     });
     const credential = bundle.credential as SignedPassportReusableCredential;
     const snapshot = bundle.portable_revocation_snapshot as PortableRevocationSignedArtifact;
@@ -85,6 +96,12 @@ export async function POST(req: NextRequest) {
       wallet_address: auth.session.walletAddress,
       credential,
       portable_revocation_snapshot: snapshot,
+    });
+    const possessionChallenge = issuePassportPossessionChallenge({
+      credentialId: credential.payload.credential_id,
+      partnerId: EPHEMERAL_SANDBOX_TEST_PARTNER_ID,
+      policyId,
+      store: new InMemoryPassportPossessionChallengeStore(),
     });
     const commitId = createSandboxPresentationCommitId();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
@@ -101,6 +118,8 @@ export async function POST(req: NextRequest) {
         expires_at: expiresAt,
         sandbox_labeled: true,
         production_trusted: false,
+        possession_challenge: possessionChallenge,
+        possession_authorized_at: null,
       });
     } catch (error) {
       const mapped = mapEphemeralStoreError(error);
@@ -115,6 +134,8 @@ export async function POST(req: NextRequest) {
       presentation_method_id: methodId,
       presentation_commit_id: commitId,
       presentation_commit_expires_at: expiresAt,
+      possession_challenge: possessionChallenge,
+      credential_id: credential.payload.credential_id,
       disclosure: SANDBOX_AGE_PRESENTATION_DISCLOSURE,
       evidence: {
         kind: "passport_reusable_credential",
