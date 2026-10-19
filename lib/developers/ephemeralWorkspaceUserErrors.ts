@@ -8,6 +8,51 @@ export type WorkspaceUserFacingError = {
   correlationId?: string | null;
 };
 
+export function mapEphemeralWalletOperationalError(input: {
+  degradedReason?: string | null;
+  configCode?: string | null;
+}): WorkspaceUserFacingError {
+  const reason = input.degradedReason?.trim() || input.configCode?.trim() || null;
+  switch (reason) {
+    case "distributed_replay_not_configured":
+      return {
+        title: "Wallet sandbox unavailable here",
+        message:
+          "This deployment requires shared security storage for single-use wallet authorization. Configure Upstash Redis for Preview, or use local development with the same Redis-backed setup.",
+        recovery: "See docs/connect/EPHEMERAL_WALLET_AUTH.md for required variables.",
+        technicalCode: reason,
+      };
+    case "session_secret_missing":
+      return {
+        title: "Wallet sandbox not configured",
+        message: "Session signing is not configured in this environment.",
+        recovery: "Set a 32+ character session secret for ephemeral wallet auth.",
+        technicalCode: reason,
+      };
+    case "ephemeral_state_unavailable":
+    case "ephemeral_state_not_configured":
+      return {
+        title: "Sandbox temporarily unavailable",
+        message: "Security storage for this workspace is not reachable.",
+        recovery: "Retry shortly or switch to an environment with Redis configured.",
+        technicalCode: reason,
+      };
+    case "disabled":
+      return {
+        title: "Wallet sandbox disabled",
+        message: "Ephemeral wallet authentication is not enabled in this environment.",
+        technicalCode: reason,
+      };
+    default:
+      return {
+        title: "Wallet sandbox unavailable",
+        message: "This environment cannot run the developer workspace flow right now.",
+        recovery: reason ? undefined : "Try again or contact your operator.",
+        technicalCode: reason ?? undefined,
+      };
+  }
+}
+
 export function mapWorkspaceUserFacingError(input: {
   code?: string | null;
   correlationId?: string | null;

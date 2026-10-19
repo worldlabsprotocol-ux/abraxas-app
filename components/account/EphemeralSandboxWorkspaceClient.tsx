@@ -16,6 +16,7 @@ import {
   verificationReviewTitle,
 } from "@/lib/developers/ephemeralWorkspaceCopy";
 import {
+  mapEphemeralWalletOperationalError,
   mapWorkspaceUserFacingError,
   type WorkspaceUserFacingError,
 } from "@/lib/developers/ephemeralWorkspaceUserErrors";
@@ -156,6 +157,23 @@ export function EphemeralSandboxWorkspaceClient() {
       setUserError(null);
     }
     try {
+      const enabledRes = await fetch("/api/auth/wallet/enabled", { cache: "no-store" });
+      const enabledBody = (await enabledRes.json()) as {
+        operational?: boolean;
+        degraded_reason?: string | null;
+        config_code?: string | null;
+      };
+      if (!enabledBody.operational) {
+        setPhase("failure");
+        setUserError(
+          mapEphemeralWalletOperationalError({
+            degradedReason: enabledBody.degraded_reason,
+            configCode: enabledBody.config_code,
+          }),
+        );
+        return;
+      }
+
       const session = await fetchEphemeralWalletClientSession();
       setServerSessionAuthenticated(session.authenticated);
       if (!session.authenticated) {
