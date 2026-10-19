@@ -10,6 +10,12 @@ import { resetEphemeralRedisClientForTests } from "./redisClient";
 import { resetEphemeralSessionStoreForTests } from "./sessionStore";
 import { resetEphemeralSandboxStoreForTests } from "./sandboxWorkspace";
 import { resetEphemeralSandboxTestStoreForTests } from "./sandboxTestVerification";
+import { resetSandboxPresentationCommitStoreForTests } from "./sandboxPresentationCommitStore";
+import {
+  EPHEMERAL_SANDBOX_AUTHORIZED_TEST_ISSUER_ENV,
+  ephemeralSandboxTestIssuerTrustEnv,
+} from "@/lib/protocolVerification/ephemeralAuthorizedTestIssuer";
+import { build546TrustRegistryEnv } from "@/lib/institutionalCertification/build546/fixtures";
 import { EPHEMERAL_WALLET_AUTH_PURPOSE } from "./message";
 import { peekEphemeralWalletChallenge } from "./challengeStore";
 
@@ -121,6 +127,7 @@ describe.runIf(integrationEnabled)("ephemeral wallet authentication", () => {
     resetEphemeralSessionStoreForTests();
     resetEphemeralSandboxStoreForTests();
     resetEphemeralSandboxTestStoreForTests();
+    resetSandboxPresentationCommitStoreForTests();
   });
 
   afterAll(() => {
@@ -128,6 +135,7 @@ describe.runIf(integrationEnabled)("ephemeral wallet authentication", () => {
     resetEphemeralSessionStoreForTests();
     resetEphemeralSandboxStoreForTests();
     resetEphemeralSandboxTestStoreForTests();
+    resetSandboxPresentationCommitStoreForTests();
   });
 
   it("issues session without creating a persistent account record", async () => {
@@ -261,7 +269,7 @@ describe.runIf(integrationEnabled)("ephemeral wallet authentication", () => {
     return { workspace, sessionCookie };
   }
 
-  it("rejects age_21 sandbox test without authoritative age evidence", async () => {
+  it("blocks age_21 when sandbox test issuer is unavailable", async () => {
     const { sessionCookie } = await signInWallet(keypair, wallet, origin);
     const { workspace, sessionCookie: sandboxCookie } = await openSandboxWorkspace(sessionCookie);
 
@@ -292,7 +300,79 @@ describe.runIf(integrationEnabled)("ephemeral wallet authentication", () => {
       }),
     );
     expect(testRes.status).toBe(422);
-    expect((await testRes.json()).code).toBe("insufficient_evidence_for_policy");
+    expect((await testRes.json()).code).toBe("evidence_unavailable");
+  });
+
+  it("completes age_21 test with bound presentation commit when test issuer is enabled", async () => {
+    const previousIssuer = process.env[EPHEMERAL_SANDBOX_AUTHORIZED_TEST_ISSUER_ENV];
+    Object.assign(process.env, {
+      ...build546TrustRegistryEnv(),
+      ...ephemeralSandboxTestIssuerTrustEnv(),
+      [EPHEMERAL_SANDBOX_AUTHORIZED_TEST_ISSUER_ENV]: "1",
+      ABRAXAS_PSEUDONYM_SALT: "ephemeral-integration-age-test",
+    });
+    try {
+      const { sessionCookie } = await signInWallet(keypair, wallet, origin);
+      const { workspace, sessionCookie: sandboxCookie } = await openSandboxWorkspace(sessionCookie);
+      const { POST: preparePost } = await import("@/app/api/auth/wallet/sandbox/presentation/prepare/route");
+      const prepareRes = await preparePost(
+        new NextRequest(`${origin}/api/auth/wallet/sandbox/presentation/prepare`, {
+          method: "POST",
+          headers: {
+            cookie: sandboxCookie,
+            origin,
+            host: "localhost:3000",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            policy_id: "age_21_retail",
+            presentation_method_id: "authorized_test_issuer_credential",
+          }),
+        }),
+      );
+      expect(prepareRes.status).toBe(200);
+      const prepareBody = await prepareRes.json();
+      expect(prepareBody.presentation_commit_id).toBeTruthy();
+      expect(prepareBody.test_only).toBe(true);
+
+      const testAction = await authorizeAction({
+        keypair,
+        wallet,
+        origin,
+        sessionCookie: sandboxCookie,
+        operation: "sandbox:verification:test",
+        resource: `abraxas:sandbox:${workspace.workspace_id}:policy:age_21_retail`,
+        policyId: "age_21_retail",
+      });
+      const { POST: testVerifyPost } = await import("@/app/api/auth/wallet/sandbox/test-verify/route");
+      const testRes = await testVerifyPost(
+        new NextRequest(`${origin}/api/auth/wallet/sandbox/test-verify`, {
+          method: "POST",
+          headers: {
+            cookie: testAction.cookie,
+            origin,
+            host: "localhost:3000",
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            policy_id: "age_21_retail",
+            action_challenge_id: testAction.action_challenge_id,
+            signature: testAction.signature,
+            presentation_commit_id: prepareBody.presentation_commit_id,
+            presentation_method_id: "authorized_test_issuer_credential",
+            evidence: [prepareBody.evidence],
+          }),
+        }),
+      );
+      expect(testRes.status).toBe(200);
+      const testBody = await testRes.json();
+      expect(testBody.decision).toBe("approved");
+      expect(testBody.test_only).toBe(true);
+      expect(testBody.production_usable).toBe(false);
+    } finally {
+      if (previousIssuer === undefined) delete process.env[EPHEMERAL_SANDBOX_AUTHORIZED_TEST_ISSUER_ENV];
+      else process.env[EPHEMERAL_SANDBOX_AUTHORIZED_TEST_ISSUER_ENV] = previousIssuer;
+    }
   });
 
   it("completes temporary sandbox test verification journey (wallet_control)", async () => {
