@@ -1,6 +1,6 @@
 // FILE: lib/institutionalCertification/build762/contract.ts
 
-export const BUILD_762_SCHEMA_VERSION = "build-762-v1" as const;
+export const BUILD_762_SCHEMA_VERSION = "build-762-v2" as const;
 
 export type Build762TrustContext = "sandbox_only";
 
@@ -18,12 +18,16 @@ export type Build762InstitutionalTrustReport = {
   schema_version: typeof BUILD_762_SCHEMA_VERSION;
   generated_at: string;
   commit_sha: string;
+  execution_mode: "local_imported_http_route_handlers";
+  deployment_environment: "vitest_process";
   journey_id: "ephemeral_developer_workspace_institutional_trust";
   journey_label: string;
   trust_context: Build762TrustContext;
   status: {
     implemented: true;
-    cryptographically_tested: boolean;
+    session_independent_verification_demonstrated: boolean;
+    fail_closed_integrity_verified: boolean;
+    standalone_cryptographic_verification: false;
     issuer_operational: false;
     production_authorized: false;
   };
@@ -36,6 +40,8 @@ export type Build762InstitutionalTrustReport = {
   holder_authorization: {
     wallet_sign_in: true;
     presentation_authorization: true;
+    wallet_proof_method: "test_wallet_ed25519_sign_message";
+    interactive_browser_wallet: false;
     scoped_wallet_action: {
       operation: string;
       resource_pattern: string;
@@ -56,12 +62,15 @@ export type Build762InstitutionalTrustReport = {
   };
   independent_verification: {
     source: "presented_receipt";
-    signature_authentic: boolean;
+    session_independent: true;
+    server_record_integrity_verified: boolean;
+    standalone_cryptographic_verification: false;
     currently_acceptable: boolean;
     without_wallet_session: true;
   };
   solana_contribution: {
     wallet_sign_message_scope_proof: true;
+    wallet_proof_method: "test_wallet_ed25519_sign_message";
     onchain_program_enforcement: false;
     note: string;
   };

@@ -319,7 +319,12 @@ export async function runEphemeralSandboxTrustHappyPath(
     source: "presented_receipt",
   });
   const validateRes = await validatePresentedReceipt(receipt);
-  if (validateRes.status !== 200 || !validateRes.body.signature_authentic) {
+  if (
+    validateRes.status !== 200
+    || !validateRes.body.server_record_integrity_verified
+    || !validateRes.body.currently_acceptable
+    || validateRes.body.standalone_cryptographic_verification !== false
+  ) {
     throw new Error("independent_validate_failed");
   }
   return {
@@ -416,21 +421,81 @@ export async function runBuild762NegativeCases(
 
     if (first.status === 200) {
       const verifyBody = await first.json();
-      const receipt = { ...verifyBody.result, signature: "invalid" } as PartnerFlowPublicReceipt;
-      const tampered = await buildSandboxReceiptValidationPayload({ receipt, source: "presented_receipt" });
-      const tamperOk = tampered.signature_authentic === false;
+      const signedReceipt = verifyBody.result as PartnerFlowPublicReceipt;
+      const receiptTampered = { ...signedReceipt, signature: "invalid" } as PartnerFlowPublicReceipt;
+      const tampered = await buildSandboxReceiptValidationPayload({
+        receipt: receiptTampered,
+        source: "presented_receipt",
+      });
+      const tamperOk =
+        tampered.server_record_integrity_verified === false
+        && tampered.signature_authentic === false;
       cases.push({
         case_id: "tampered_receipt_signature",
-        property: "Independent verification rejects altered signature",
-        expected: "signature_authentic false",
-        observed: `signature_authentic ${String(tampered.signature_authentic)}`,
+        property: "Presented receipt rejected when signature does not match server record",
+        expected: "server_record_integrity_verified false",
+        observed: `integrity ${String(tampered.server_record_integrity_verified)} signature_authentic ${String(tampered.signature_authentic)}`,
         verdict: tamperOk ? "pass" : "fail",
+      });
+
+      const unknownId = {
+        ...signedReceipt,
+        receipt_id: "dr_pv_build762_unknown_receipt",
+      } as PartnerFlowPublicReceipt;
+      const unknownPayload = await buildSandboxReceiptValidationPayload({
+        receipt: unknownId,
+        source: "presented_receipt",
+      });
+      const unknownOk =
+        unknownPayload.server_record_integrity_verified === false
+        && unknownPayload.signature_authentic === false;
+      cases.push({
+        case_id: "unknown_stored_receipt_id",
+        property: "Presented receipt rejected when server record is absent",
+        expected: "server_record_integrity_verified false",
+        observed: `integrity ${String(unknownPayload.server_record_integrity_verified)} reasons ${unknownPayload.invalidation_reasons.join(",")}`,
+        verdict: unknownOk ? "pass" : "fail",
+      });
+
+      if (typeof signedReceipt.expires_at === "string") {
+        const expiredAt = new Date(Date.parse(signedReceipt.expires_at) + 120_000);
+        const expiredPayload = await buildSandboxReceiptValidationPayload({
+          receipt: signedReceipt,
+          source: "presented_receipt",
+          checkedAt: expiredAt,
+        });
+        const expiredOk =
+          expiredPayload.server_record_integrity_verified === true
+          && expiredPayload.currently_acceptable === false;
+        cases.push({
+          case_id: "expired_server_record_receipt",
+          property: "Expired server record fails acceptability while integrity match holds",
+          expected: "integrity true, currently_acceptable false",
+          observed: `integrity ${String(expiredPayload.server_record_integrity_verified)} acceptable ${String(expiredPayload.currently_acceptable)}`,
+          verdict: expiredOk ? "pass" : "fail",
+        });
+      }
+
+      resetEphemeralSandboxTestStoreForTests();
+      const storageCleared = await buildSandboxReceiptValidationPayload({
+        receipt: signedReceipt,
+        source: "presented_receipt",
+      });
+      const storageOk =
+        storageCleared.server_record_integrity_verified === false
+        && storageCleared.signature_authentic === false;
+      cases.push({
+        case_id: "storage_unavailable_or_evicted",
+        property: "Presented receipt rejected when ephemeral storage no longer holds the record",
+        expected: "server_record_integrity_verified false",
+        observed: `integrity ${String(storageCleared.server_record_integrity_verified)} reasons ${storageCleared.invalidation_reasons.join(",")}`,
+        verdict: storageOk ? "pass" : "fail",
       });
     } else {
       cases.push({
         case_id: "tampered_receipt_signature",
-        property: "Independent verification rejects altered signature",
-        expected: "signature_authentic false",
+        property: "Presented receipt rejected when signature does not match server record",
+        expected: "server_record_integrity_verified false",
         observed: "skipped: could not obtain signed receipt from happy verify",
         verdict: "fail",
       });

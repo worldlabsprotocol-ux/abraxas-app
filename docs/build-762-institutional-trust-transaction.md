@@ -20,6 +20,18 @@ This document describes how to reproduce a **complete sandbox institutional trus
 
 ---
 
+## Verification guarantees (read carefully)
+
+| Guarantee | Automated runner | Production-grade meaning |
+| --- | --- | --- |
+| **Session-independent** | Yes — POST validate does not require holder browser or wallet session | Relying party submits a receipt JSON without Abraxas session cookies |
+| **Server-record integrity** | Yes — presented fields must match Abraxas ephemeral storage while the record exists | Detects tampered `signature` / `payload_hash` relative to the record Abraxas issued |
+| **Standalone cryptographic verification** | **No** for ephemeral sandbox receipts | Does **not** verify Ed25519 against the public verification-key registry; ephemeral test keys are not published for offline verification |
+
+Interactive browser wallet flows (for example Phantom) use the same route handlers but are exercised separately from this automated certification.
+
+---
+
 ## Reproduce locally (automated)
 
 Prerequisites: Node 24, repository dependencies installed.
@@ -29,7 +41,9 @@ npm run test:build-762-institutional-trust
 npm run certify:build-762
 ```
 
-The certification command writes `reports/build-762-institutional-trust-transaction.json` with execution identifiers, decision outcome, independent verification result, negative-case matrix, and explicit limitations.
+The certification command runs Vitest (local imported HTTP route handlers), then writes `reports/build-762-institutional-trust-transaction.json` with the current `commit_sha`, execution identifiers, verification metadata, negative-case matrix, and limitations.
+
+**Wallet proof in the runner:** programmatic Solana `Keypair` signing real challenge bytes (`test_wallet_ed25519_sign_message`). This is not an interactive browser wallet approval.
 
 Environment variables used inside the runner (set automatically for the test harness):
 
@@ -43,11 +57,11 @@ Environment variables used inside the runner (set automatically for the test har
 
 | Layer | Contribution |
 | --- | --- |
-| Wallet `signMessage` | Proves control of the connected key for **sign-in** and for the **scoped verification request** (operation, resource, policy, expiry). |
+| Wallet `signMessage` | Proves control of the signing key for **sign-in** and for the **scoped verification request** (operation, resource, policy, expiry). |
 | Presentation authorization | Protocol-format possession signature bound to session-generated credential key (sandbox simulation). |
 | Issuer evidence | Off-chain Passport reusable credential from sandbox test issuer. |
 | Policy and receipt | Server-side evaluation; signed decision receipt. |
-| Independent verification | Receipt validation without wallet session; presented receipts are checked against the server-held copy while the receipt remains in ephemeral storage. |
+| Session-independent validation | POST validate without wallet session; fail-closed match to server-held ephemeral record. |
 | On-chain program | **Not used** in this journey. Partner-deployed eligibility gates are optional for composable on-chain enforcement. |
 
 ---
@@ -55,10 +69,25 @@ Environment variables used inside the runner (set automatically for the test har
 ## Negative cases covered by the runner
 
 - Missing presentation authorization before policy execution  
-- Tampered receipt signature at independent verification  
+- Tampered receipt signature (server-record mismatch)  
+- Unknown or evicted server record  
+- Expired server record acceptability  
 - Replay of consumed presentation commit  
 - Cross-scope wallet action binding  
 - Presentation authorize without authenticated session  
+
+Unit tests additionally cover missing `payload_hash`, missing server record, and forged client `signature_valid` flags.
+
+---
+
+## Validate API fields (additive)
+
+`POST /api/auth/wallet/sandbox/validate` responses include:
+
+- `session_independent` — always `true` for this endpoint  
+- `server_record_integrity_verified` — presented receipt matches server-held copy  
+- `standalone_cryptographic_verification` — `false` for ephemeral sandbox receipts  
+- `signature_authentic` — legacy aggregate: integrity + policy gates (not registry-backed standalone crypto)
 
 ---
 
@@ -70,11 +99,13 @@ Environment variables used inside the runner (set automatically for the test har
 
 ---
 
-## Status labels
+## Status labels (report schema `build-762-v2`)
 
 | Label | This journey |
 | --- | --- |
 | Implemented | Yes |
-| Cryptographically tested | Yes (when `certify:build-762` exits 0) |
+| Session-independent verification demonstrated | Yes (when certify exits 0) |
+| Fail-closed integrity verified | Yes (negative matrix passes) |
+| Standalone cryptographic verification | No |
 | Issuer operational | No (sandbox test issuer) |
 | Production authorized | No |

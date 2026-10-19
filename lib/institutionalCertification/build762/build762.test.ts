@@ -14,8 +14,9 @@ describe("institutional trust transaction runner", () => {
   it("executes holder authorization, policy decision, and independent verification", async () => {
     const happy = await runEphemeralSandboxTrustHappyPath();
     expect(happy.decision).toBe("approved");
-    expect(happy.independent.signature_authentic).toBe(true);
+    expect(happy.independent.server_record_integrity_verified).toBe(true);
     expect(happy.independent.currently_acceptable).toBe(true);
+    expect(happy.independent.standalone_cryptographic_verification).toBe(false);
     expect(happy.receipt.test_only).toBe(true);
   });
 
@@ -27,8 +28,12 @@ describe("institutional trust transaction runner", () => {
     expect(report.independent_verification.without_wallet_session).toBe(true);
     const failedNegatives = report.negative_cases.filter((c) => c.verdict !== "pass");
     expect(failedNegatives, JSON.stringify(failedNegatives, null, 2)).toEqual([]);
-    expect(report.independent_verification.signature_authentic).toBe(true);
-    expect(report.status.cryptographically_tested).toBe(true);
+    expect(report.independent_verification.server_record_integrity_verified).toBe(true);
+    expect(report.independent_verification.standalone_cryptographic_verification).toBe(false);
+    expect(report.status.session_independent_verification_demonstrated).toBe(true);
+    expect(report.status.fail_closed_integrity_verified).toBe(true);
+    expect(report.holder_authorization.interactive_browser_wallet).toBe(false);
+    expect(report.holder_authorization.wallet_proof_method).toBe("test_wallet_ed25519_sign_message");
 
     if (process.env.BUILD_762_WRITE_REPORT === "1") {
       const outPath = resolve(process.cwd(), REPORT_PATH);
