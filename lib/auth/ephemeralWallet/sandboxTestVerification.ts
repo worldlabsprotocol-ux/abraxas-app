@@ -141,27 +141,136 @@ export async function loadEphemeralSandboxTestResult(
   return null;
 }
 
-export function validateEphemeralSandboxTestResult(
-  receipt: PartnerFlowPublicReceipt,
-  options?: { requireProduction?: boolean },
-): {
+type EphemeralSandboxReceiptFields = PartnerFlowPublicReceipt & {
+  signature?: string;
+  payload_hash?: string;
+  receipt_id?: string;
+};
+
+export type EphemeralSandboxValidationMode = "server_cache" | "presented_receipt";
+
+export type EphemeralSandboxValidationMetadata = {
+  server_record_integrity_verified: boolean;
+  /** Ed25519 verified against Abraxas verification-key registry (not ephemeral per-receipt test keys). */
+  standalone_cryptographic_verification: boolean;
+  session_independent: boolean;
+};
+
+export type EphemeralSandboxValidationResult = EphemeralSandboxValidationMetadata & {
   ok: boolean;
   trust: ReturnType<typeof evaluatePublicReceiptTrust>;
   result_label: string | null;
-} {
-  const trust = evaluatePublicReceiptTrust(receipt, {
+};
+
+function verifyPresentedAgainstStored(
+  receipt: EphemeralSandboxReceiptFields,
+  stored: EphemeralSandboxTestResult | null,
+): { ok: true; stored: EphemeralSandboxTestResult } | { ok: false; invalidation_reasons: string[] } {
+  const receiptId = typeof receipt.receipt_id === "string" ? receipt.receipt_id.trim() : "";
+  if (!receiptId) {
+    return { ok: false, invalidation_reasons: ["receipt_id_missing"] };
+  }
+  if (!stored) {
+    return { ok: false, invalidation_reasons: ["server_record_not_found"] };
+  }
+  if (String(stored.receipt_id) !== receiptId) {
+    return { ok: false, invalidation_reasons: ["receipt_id_mismatch"] };
+  }
+  const presentedSignature = receipt.signature;
+  if (typeof presentedSignature !== "string" || !presentedSignature.trim()) {
+    return { ok: false, invalidation_reasons: ["signature_missing"] };
+  }
+  const presentedPayloadHash = receipt.payload_hash;
+  if (typeof presentedPayloadHash !== "string" || !presentedPayloadHash.trim()) {
+    return { ok: false, invalidation_reasons: ["payload_hash_missing"] };
+  }
+  if (presentedSignature !== stored.signature) {
+    return { ok: false, invalidation_reasons: ["signature_mismatch"] };
+  }
+  if (presentedPayloadHash !== stored.payload_hash) {
+    return { ok: false, invalidation_reasons: ["payload_hash_mismatch"] };
+  }
+  return { ok: true, stored };
+}
+
+function trustEvaluationFailed(invalidationReasons: string[]): ReturnType<typeof evaluatePublicReceiptTrust> {
+  return {
+    currently_valid: false,
+    validity: "signature_invalid",
+    signature_valid: false,
+    production_usable: false,
+    invalidation_reasons: invalidationReasons,
+  };
+}
+
+export async function validateEphemeralSandboxTestResult(
+  receipt: PartnerFlowPublicReceipt,
+  options?: {
+    requireProduction?: boolean;
+    mode?: EphemeralSandboxValidationMode;
+    now?: Date;
+  },
+): Promise<EphemeralSandboxValidationResult> {
+  const mode = options?.mode ?? "presented_receipt";
+  const session_independent = true;
+  const standalone_cryptographic_verification = false;
+
+  const receiptId = typeof receipt.receipt_id === "string" ? receipt.receipt_id.trim() : "";
+  const stored = receiptId ? await loadEphemeralSandboxTestResult(receiptId) : null;
+
+  let receiptForTrust: PartnerFlowPublicReceipt = receipt;
+  let server_record_integrity_verified = false;
+
+  if (mode === "presented_receipt") {
+    const integrity = verifyPresentedAgainstStored(receipt, stored);
+    if (!integrity.ok) {
+      const trust = trustEvaluationFailed(integrity.invalidation_reasons);
+      return {
+        ok: false,
+        trust,
+        result_label: EPHEMERAL_SANDBOX_RESULT_LABEL,
+        server_record_integrity_verified: false,
+        standalone_cryptographic_verification,
+        session_independent,
+      };
+    }
+    server_record_integrity_verified = true;
+    receiptForTrust = integrity.stored;
+  } else {
+    if (!stored || String(stored.receipt_id) !== receiptId) {
+      const trust = trustEvaluationFailed(["server_record_not_found"]);
+      return {
+        ok: false,
+        trust,
+        result_label: EPHEMERAL_SANDBOX_RESULT_LABEL,
+        server_record_integrity_verified: false,
+        standalone_cryptographic_verification,
+        session_independent,
+      };
+    }
+    server_record_integrity_verified = true;
+    receiptForTrust = stored;
+  }
+
+  const trust = evaluatePublicReceiptTrust(receiptForTrust, {
     partnerId: EPHEMERAL_SANDBOX_TEST_PARTNER_ID,
-    policyId: receipt.policy_id ?? "",
+    policyId: receiptForTrust.policy_id ?? "",
     allowSandbox: true,
-    productionUsableRaw: receipt.production_usable,
+    productionUsableRaw: receiptForTrust.production_usable,
+    now: options?.now,
   });
+
   const requireProduction = options?.requireProduction ?? false;
-  const productionBlocked = requireProduction || receipt.decision_context === "production";
-  const ok = trust.currently_valid && !productionBlocked && receipt.production_usable !== true;
+  const productionBlocked = requireProduction || receiptForTrust.decision_context === "production";
+  const ok = trust.currently_valid && !productionBlocked && receiptForTrust.production_usable !== true;
+
   return {
     ok,
     trust,
     result_label: EPHEMERAL_SANDBOX_RESULT_LABEL,
+    server_record_integrity_verified,
+    standalone_cryptographic_verification,
+    session_independent,
   };
 }
 

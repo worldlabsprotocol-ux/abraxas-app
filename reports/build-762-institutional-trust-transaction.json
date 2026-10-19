@@ -1,0 +1,127 @@
+{
+  "schema_version": "build-762-v2",
+  "generated_at": "2026-10-19T22:48:26.667Z",
+  "commit_sha": "fa059827e40879982503c951e31c65399fb59fbd",
+  "execution_mode": "local_imported_http_route_handlers",
+  "deployment_environment": "vitest_process",
+  "journey_id": "ephemeral_developer_workspace_institutional_trust",
+  "journey_label": "Developer Workspace: request verification, present evidence, evaluate policy, verify decision",
+  "trust_context": "sandbox_only",
+  "status": {
+    "implemented": true,
+    "session_independent_verification_demonstrated": true,
+    "fail_closed_integrity_verified": true,
+    "standalone_cryptographic_verification": false,
+    "issuer_operational": false,
+    "production_authorized": false
+  },
+  "institution": {
+    "partner_id": "ephemeral_wallet_sandbox",
+    "policy_id": "age_21_retail",
+    "policy_version": 1,
+    "requested_attribute": "Age 21 demonstration (sandbox test issuer)"
+  },
+  "holder_authorization": {
+    "wallet_sign_in": true,
+    "presentation_authorization": true,
+    "wallet_proof_method": "test_wallet_ed25519_sign_message",
+    "interactive_browser_wallet": false,
+    "scoped_wallet_action": {
+      "operation": "sandbox:verification:test",
+      "resource_pattern": "abraxas:sandbox:{workspace_id}:policy:age_21_retail"
+    }
+  },
+  "evidence": {
+    "kind": "passport_reusable_credential",
+    "sandbox_test_issuer": true,
+    "production_eligibility": false
+  },
+  "execution": {
+    "workspace_id": "esbx_5c18b6327bc0101d7eddb577",
+    "presentation_commit_id": "esbx_pc_9effacd0bb05be47bfc2c24b",
+    "action_challenge_id": "ewac_b9696c15759d52b31427764ff43a1794",
+    "receipt_id": "dr_pv_23e2b239d0657472",
+    "decision": "approved",
+    "result_label": "ephemeral_sandbox_test_only"
+  },
+  "independent_verification": {
+    "source": "presented_receipt",
+    "session_independent": true,
+    "server_record_integrity_verified": true,
+    "standalone_cryptographic_verification": false,
+    "currently_acceptable": true,
+    "without_wallet_session": true
+  },
+  "solana_contribution": {
+    "wallet_sign_message_scope_proof": true,
+    "wallet_proof_method": "test_wallet_ed25519_sign_message",
+    "onchain_program_enforcement": false,
+    "note": "Automated certification uses a programmatic Solana keypair signing real challenge bytes through route handlers (not an interactive browser wallet). Issuer evidence and policy evaluation occur off-chain. Presented-receipt validation matches the submission to Abraxas ephemeral server storage; it does not verify Ed25519 signatures against the public verification-key registry."
+  },
+  "negative_cases": [
+    {
+      "case_id": "missing_presentation_authorization",
+      "property": "Policy execution requires recorded presentation authorization",
+      "expected": "HTTP 422 presentation_possession_not_authorized",
+      "observed": "HTTP 422 presentation_possession_not_authorized",
+      "verdict": "pass"
+    },
+    {
+      "case_id": "replay_presentation_commit",
+      "property": "Presentation commit consume-once",
+      "expected": "Second verify HTTP 410 presentation_commit_not_found",
+      "observed": "first 200 second 410 presentation_commit_not_found",
+      "verdict": "pass"
+    },
+    {
+      "case_id": "tampered_receipt_signature",
+      "property": "Presented receipt rejected when signature does not match server record",
+      "expected": "server_record_integrity_verified false",
+      "observed": "integrity false signature_authentic false",
+      "verdict": "pass"
+    },
+    {
+      "case_id": "unknown_stored_receipt_id",
+      "property": "Presented receipt rejected when server record is absent",
+      "expected": "server_record_integrity_verified false",
+      "observed": "integrity false reasons server_record_not_found",
+      "verdict": "pass"
+    },
+    {
+      "case_id": "expired_server_record_receipt",
+      "property": "Expired server record fails acceptability while integrity match holds",
+      "expected": "integrity true, currently_acceptable false",
+      "observed": "integrity true acceptable false",
+      "verdict": "pass"
+    },
+    {
+      "case_id": "storage_unavailable_or_evicted",
+      "property": "Presented receipt rejected when ephemeral storage no longer holds the record",
+      "expected": "server_record_integrity_verified false",
+      "observed": "integrity false reasons server_record_not_found",
+      "verdict": "pass"
+    },
+    {
+      "case_id": "cross_scope_wallet_action",
+      "property": "Wallet action binding to resource and policy",
+      "expected": "HTTP 401 wrong_resource",
+      "observed": "HTTP 401 wrong_resource",
+      "verdict": "pass"
+    },
+    {
+      "case_id": "presentation_authorize_requires_session",
+      "property": "Presentation authorization requires authenticated session",
+      "expected": "HTTP 401–403 without session cookie",
+      "observed": "HTTP 401",
+      "verdict": "pass"
+    }
+  ],
+  "limitations": [
+    "Sandbox test issuer credentials demonstrate protocol execution only; they are not production age eligibility evidence.",
+    "Session-independent POST /api/auth/wallet/sandbox/validate requires a matching server-held ephemeral record; it is not standalone cryptographic verification.",
+    "Ephemeral sandbox receipts use per-issuance test signing keys that are not published in the Abraxas verification-key registry.",
+    "This runner executes local imported HTTP route handlers in Vitest; it is not a deployed-network or Preview Redis certification.",
+    "Institutional Passport bundle verification (build-569 CLI) is a separate relying-party path for issuer-backed presentation bundles."
+  ],
+  "reproduction_command": "npm run certify:build-762"
+}
