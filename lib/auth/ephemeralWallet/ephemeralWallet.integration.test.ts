@@ -411,7 +411,9 @@ describe.runIf(integrationEnabled)("ephemeral wallet authentication", () => {
     expect(testBody.decision).toBe("approved");
     expect(testBody.result.result_label).toBe("ephemeral_sandbox_test_only");
     expect(testBody.production_usable).toBe(false);
-    const { GET: validateGet } = await import("@/app/api/auth/wallet/sandbox/validate/route");
+    const { GET: validateGet, POST: validatePost } = await import(
+      "@/app/api/auth/wallet/sandbox/validate/route"
+    );
     const validateRes = await validateGet(
       new NextRequest(
         `${origin}/api/auth/wallet/sandbox/validate?receipt_id=${encodeURIComponent(String(testBody.result.receipt_id))}`,
@@ -420,6 +422,19 @@ describe.runIf(integrationEnabled)("ephemeral wallet authentication", () => {
     const validateBody = await validateRes.json();
     expect(validateBody.signature_valid).toBe(true);
     expect(validateBody.production_usable).toBe(false);
+    expect(validateBody.checked_at).toBeTruthy();
+
+    const validatePostRes = await validatePost(
+      new NextRequest(`${origin}/api/auth/wallet/sandbox/validate`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ receipt: testBody.result }),
+      }),
+    );
+    const validatePostBody = await validatePostRes.json();
+    expect(validatePostRes.status).toBe(200);
+    expect(validatePostBody.source).toBe("presented_receipt");
+    expect(validatePostBody.signature_authentic).toBe(true);
   });
 
   it("rejects wrong signer", async () => {

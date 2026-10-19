@@ -1,14 +1,23 @@
 // FILE: app/api/auth/wallet/sandbox/validate/route.ts
-// Independent verification of ephemeral sandbox test results (no session required).
+// Independent verification of ephemeral sandbox test results (no wallet session required).
 
 import { NextRequest, NextResponse } from "next/server";
 import {
-  EPHEMERAL_SANDBOX_RESULT_LABEL,
   loadEphemeralSandboxTestResult,
-  validateEphemeralSandboxTestResult,
 } from "@/lib/auth/ephemeralWallet/sandboxTestVerification";
+import {
+  buildSandboxReceiptValidationPayload,
+  isPresentedSandboxTestReceipt,
+} from "@/lib/auth/ephemeralWallet/sandboxReceiptValidationResponse";
 
 export const dynamic = "force-dynamic";
+
+function jsonValidation(
+  payload: ReturnType<typeof buildSandboxReceiptValidationPayload>,
+  status = 200,
+) {
+  return NextResponse.json(payload, { status });
+}
 
 export async function GET(req: NextRequest) {
   const receiptId = req.nextUrl.searchParams.get("receipt_id")?.trim() ?? "";
@@ -17,22 +26,31 @@ export async function GET(req: NextRequest) {
   }
 
   const stored = await loadEphemeralSandboxTestResult(receiptId);
-  const receipt = stored ?? null;
-  if (!receipt) {
+  if (!stored) {
     return NextResponse.json({ ok: false, code: "result_not_found" }, { status: 404 });
   }
 
-  const validation = validateEphemeralSandboxTestResult(receipt);
-  return NextResponse.json({
-    ok: validation.ok,
-    result_label: EPHEMERAL_SANDBOX_RESULT_LABEL,
-    test_only: true,
-    production_usable: false,
-    signature_authentic: validation.trust.signature_valid,
-    currently_acceptable: validation.trust.currently_valid,
-    signature_valid: validation.trust.signature_valid,
-    currently_valid: validation.trust.currently_valid,
-    invalidation_reasons: validation.trust.invalidation_reasons,
-    receipt,
+  return jsonValidation(
+    buildSandboxReceiptValidationPayload({ receipt: stored, source: "server_cache" }),
+  );
+}
+
+/** Independent validation from a client-held sandbox receipt (no session). */
+export async function POST(req: NextRequest) {
+  let body: { receipt?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ ok: false, code: "invalid_input" }, { status: 400 });
+  }
+
+  if (!isPresentedSandboxTestReceipt(body.receipt)) {
+    return NextResponse.json({ ok: false, code: "invalid_receipt" }, { status: 400 });
+  }
+
+  const payload = buildSandboxReceiptValidationPayload({
+    receipt: body.receipt,
+    source: "presented_receipt",
   });
+  return jsonValidation(payload);
 }
