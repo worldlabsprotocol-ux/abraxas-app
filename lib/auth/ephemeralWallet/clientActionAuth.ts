@@ -1,6 +1,7 @@
 // FILE: lib/auth/ephemeralWallet/clientActionAuth.ts
 
 import type { WalletActionOperation } from "./actionAuth";
+import { bytesToBase64 } from "./bytesToBase64";
 
 export async function completeWalletActionAuthorization(input: {
   operation: WalletActionOperation;
@@ -42,6 +43,6 @@ export async function completeWalletActionAuthorization(input: {
   return {
     ok: true,
     action_challenge_id: challengeBody.challenge.challenge_id,
-    signature: Buffer.from(signatureBytes).toString("base64"),
+    signature: bytesToBase64(signatureBytes),
   };
 }
