@@ -11,24 +11,38 @@ describe("deriveTrustExecutionStages", () => {
       presentationPrepared: false,
       evidenceRequired: true,
       decision: null,
-      validation: null,
+      receiptValidationStatus: "not_applicable",
       errorActive: false,
     });
-    const evidence = stages.find((s) => s.id === "evidence");
-    expect(evidence?.state).toBe("requirements");
+    expect(stages.find((s) => s.id === "application")?.state).toBe("active");
+    expect(stages.find((s) => s.id === "evidence")?.state).toBe("requirements");
+    expect(stages.find((s) => s.id === "decision")?.state).toBe("pending");
   });
 
-  it("advances verification only after validate response", () => {
+  it("keeps validation active until independent receipt check completes", () => {
+    const stages = deriveTrustExecutionStages({
+      phase: "result",
+      policySelected: true,
+      presentationPrepared: true,
+      evidenceRequired: false,
+      decision: "approved",
+      receiptValidationStatus: "idle",
+      errorActive: false,
+    });
+    expect(stages.find((s) => s.id === "validation")?.state).toBe("active");
+    expect(stages.find((s) => s.id === "decision")?.state).toBe("complete");
+  });
+
+  it("marks validation complete only after validated status", () => {
     const stages = deriveTrustExecutionStages({
       phase: "result",
       policySelected: true,
       presentationPrepared: true,
       evidenceRequired: true,
       decision: "approved",
-      validation: { signature_authentic: true, currently_acceptable: true },
+      receiptValidationStatus: "validated",
       errorActive: false,
     });
-    const validation = stages.find((s) => s.id === "validation");
-    expect(validation?.state).toBe("complete");
+    expect(stages.find((s) => s.id === "validation")?.state).toBe("complete");
   });
 });

@@ -595,13 +595,16 @@ export function EphemeralSandboxWorkspaceClient() {
   const selectedAvailability = pickSandboxPolicyAvailability(policyAvailability, selectedPolicy);
 
   const evidenceRequired = selectedPolicy === "age_21_retail";
-  const validationForTrace =
-    receiptValidation.status === "validated"
-      ? {
-          signature_authentic: receiptValidation.signatureAuthentic,
-          currently_acceptable: receiptValidation.currentlyAcceptable,
-        }
-      : null;
+  const receiptValidationTraceStatus =
+    receiptValidation.status === "idle"
+      ? "idle"
+      : receiptValidation.status === "checking"
+        ? "checking"
+        : receiptValidation.status === "validated"
+          ? "validated"
+          : receiptValidation.status === "failed"
+            ? "failed"
+            : "not_applicable";
 
   const trustStages = deriveTrustExecutionStages({
     phase,
@@ -609,7 +612,7 @@ export function EphemeralSandboxWorkspaceClient() {
     presentationPrepared: Boolean(preparedEvidence),
     evidenceRequired,
     decision,
-    validation: validationForTrace,
+    receiptValidationStatus: phase === "result" ? receiptValidationTraceStatus : "not_applicable",
     errorActive: Boolean(userError),
   });
 
