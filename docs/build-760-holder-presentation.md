@@ -17,6 +17,10 @@ Developer Workspace age demonstration flow now runs the Passport presentation pr
 - Possession uses a wallet derived ephemeral Ed25519 key (`sandboxHolderPossessionKey.shared.ts`), embedded in the sandbox test credential at prepare time.
 - Presentations without a valid possession proof on the prepared commit are rejected (`presentation_possession_not_authorized`).
 
+This possession model applies to **sandbox test issuer credentials minted during prepare**. It demonstrates the presentation protocol; it does not prove possession of an independent third party issuer credential.
+
+Private possession material is derived in the browser (or test client) from the connected wallet address and is never sent to the server except as a signature over the server issued challenge.
+
 ## Server boundary preserved
 
 - `POST /api/auth/wallet/sandbox/recognized-issuer/evaluate` remains evaluate only (no possession, no policy receipt). Do not treat its response as authorization.
