@@ -23,7 +23,15 @@ import { WALLET_SOL_AUTH_CHALLENGE_TTL_MS } from "./contract";
 import { EphemeralStateUnavailableError } from "./errors";
 import type { EphemeralWalletChallengeRecord } from "./challengeRecord";
 
-export type WalletActionOperation = "sandbox:enter" | "sandbox:verification:test";
+import {
+  buildWalletActionChallengeDisplay,
+  resolveWalletActionHumanContext,
+  type WalletActionChallengeDisplay,
+  type WalletActionOperation,
+} from "./actionDisplayContext";
+import { resolveEphemeralSandboxTestPolicy } from "./sandboxTestPolicies";
+
+export type { WalletActionOperation };
 
 function purposeForOperation(operation: WalletActionOperation): WalletAuthorizationPurpose {
   if (operation === "sandbox:enter") return WALLET_AUTH_PURPOSE_SANDBOX_ENTER;
@@ -46,7 +54,13 @@ export async function issueWalletActionChallenge(input: {
 }): Promise<
   | {
       ok: true;
-      challenge: { challenge_id: string; message: string; expires_at: string; operation: WalletActionOperation };
+      challenge: {
+        challenge_id: string;
+        message: string;
+        expires_at: string;
+        operation: WalletActionOperation;
+        display: WalletActionChallengeDisplay;
+      };
     }
   | { ok: false; code: string }
 > {
@@ -55,6 +69,13 @@ export async function issueWalletActionChallenge(input: {
   const canonicalNetwork = canonicalizeSolanaNetwork(input.solanaNetwork);
   if (!canonicalNetwork || canonicalNetwork !== authorized) return { ok: false, code: "wrong_network" };
   if (!isAllowedPassportWalletOrigin(input.origin)) return { ok: false, code: "wrong_origin" };
+
+  if (input.operation === "sandbox:verification:test") {
+    const policyId = String(input.policyId ?? "").trim();
+    if (!policyId || !resolveEphemeralSandboxTestPolicy(policyId)) {
+      return { ok: false, code: "invalid_policy" };
+    }
+  }
 
   let wallet: string;
   try {
@@ -71,6 +92,11 @@ export async function issueWalletActionChallenge(input: {
   const originNormalized = new URL(input.origin).origin;
   const purpose = purposeForOperation(input.operation);
 
+  const human = resolveWalletActionHumanContext({
+    operation: input.operation,
+    policyId: input.policyId,
+  });
+
   const message = buildWalletAuthorizationMessage({
     domain,
     audience: EPHEMERAL_WALLET_JWT_AUDIENCE,
@@ -86,6 +112,7 @@ export async function issueWalletActionChallenge(input: {
     operation: input.operation,
     resource: input.resource,
     policyId: input.policyId ?? null,
+    human,
   });
 
   const record: EphemeralWalletChallengeRecord = {
@@ -111,6 +138,14 @@ export async function issueWalletActionChallenge(input: {
     throw error;
   }
 
+  const display = buildWalletActionChallengeDisplay({
+    operation: input.operation,
+    policyId: input.policyId,
+    walletAddress: wallet,
+    expiresAt,
+    challengeId,
+  });
+
   return {
     ok: true,
     challenge: {
@@ -118,6 +153,7 @@ export async function issueWalletActionChallenge(input: {
       message,
       expires_at: expiresAt,
       operation: input.operation,
+      display,
     },
   };
 }
@@ -131,6 +167,7 @@ export async function verifyWalletActionAuthorization(input: {
   requestOrigin: string;
   expectedOperation: WalletActionOperation;
   expectedResource?: string;
+  expectedPolicyId?: string | null;
 }): Promise<{ ok: true } | { ok: false; code: string }> {
   const authorized = resolveAuthorizedSolanaNetworkFromEnv();
   if (!authorized) return { ok: false, code: "network_config_invalid" };
@@ -155,6 +192,11 @@ export async function verifyWalletActionAuthorization(input: {
   if (row.operation !== input.expectedOperation) return { ok: false, code: "wrong_operation" };
   if (input.expectedResource && row.resource !== input.expectedResource) {
     return { ok: false, code: "wrong_resource" };
+  }
+  if (input.expectedPolicyId !== undefined) {
+    const expected = input.expectedPolicyId?.trim() || null;
+    const actual = row.policy_id?.trim() || null;
+    if (expected !== actual) return { ok: false, code: "policy_mismatch" };
   }
   if (row.wallet_address !== wallet) return { ok: false, code: "wrong_signer" };
   if (row.session_context_hash !== hashEphemeralSessionContext(input.sessionContext)) {

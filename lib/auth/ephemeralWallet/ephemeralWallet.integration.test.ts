@@ -89,6 +89,11 @@ async function authorizeAction(input: {
     }),
   );
   const actionBody = await actionChallengeRes.json();
+  if (input.operation === "sandbox:verification:test" && input.policyId) {
+    expect(actionBody.challenge.message).toContain("Authorize test verification");
+    expect(actionBody.challenge.message).toContain(input.policyId);
+    expect(actionBody.challenge.display?.policy_id).toBe(input.policyId);
+  }
   const msg = new TextEncoder().encode(actionBody.challenge.message);
   const sig = Buffer.from(nacl.sign.detached(msg, input.keypair.secretKey)).toString("base64");
   const cookies = [
