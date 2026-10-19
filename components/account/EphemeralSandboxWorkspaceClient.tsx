@@ -11,10 +11,15 @@ import {
 import {
   EPHEMERAL_WORKSPACE_SANDBOX_BADGE,
   EPHEMERAL_WORKSPACE_SANDBOX_EXPIRY_NOTE,
-  mapSandboxEnterFailure,
   verificationReviewScopeNote,
   verificationReviewTitle,
 } from "@/lib/developers/ephemeralWorkspaceCopy";
+import {
+  mapWorkspaceUserFacingError,
+  type WorkspaceUserFacingError,
+} from "@/lib/developers/ephemeralWorkspaceUserErrors";
+import type { SandboxPolicyAvailability } from "@/lib/auth/ephemeralWallet/sandboxPolicyAvailability";
+import { resolveSandboxPolicyAvailability } from "@/lib/auth/ephemeralWallet/sandboxPolicyAvailability";
 import {
   EPHEMERAL_WALLET_SESSION_EVENT,
   fetchEphemeralWalletClientSession,
@@ -61,11 +66,16 @@ function logSandboxStage(input: Record<string, unknown>): void {
   }
 }
 
-function mapSignFailure(code?: string | null): string {
+function mapSignFailure(code?: string | null): WorkspaceUserFacingError {
   if (code === "expired") {
-    return "Request expired. For your security, this request is no longer valid.";
+    return {
+      title: "Request expired",
+      message: "For your security, this request is no longer valid.",
+      recovery: "Create a new request.",
+      technicalCode: code,
+    };
   }
-  return mapSandboxEnterFailure(code);
+  return mapWorkspaceUserFacingError({ code });
 }
 
 export function EphemeralSandboxWorkspaceClient() {
@@ -75,13 +85,16 @@ export function EphemeralSandboxWorkspaceClient() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [policies, setPolicies] = useState<Policy[]>([]);
+  const [policyAvailability, setPolicyAvailability] = useState<SandboxPolicyAvailability[]>([]);
   const [selectedPolicy, setSelectedPolicy] = useState("");
+  const [serverSessionAuthenticated, setServerSessionAuthenticated] = useState(false);
   const [pendingChallenge, setPendingChallenge] = useState<WalletActionChallengePayload | null>(null);
   const [result, setResult] = useState<TestResult | null>(null);
   const [validation, setValidation] = useState<{ ok?: boolean; signature_valid?: boolean } | null>(null);
   const [decision, setDecision] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [userError, setUserError] = useState<WorkspaceUserFacingError | null>(null);
+  const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
   const [correlationId, setCorrelationId] = useState<string | null>(null);
   const [walletFocusHint, setWalletFocusHint] = useState(false);
   const [sessionExpiresAt, setSessionExpiresAt] = useState<string | null>(null);
@@ -102,10 +115,11 @@ export function EphemeralSandboxWorkspaceClient() {
     const silent = Boolean(options?.silent);
     if (!silent) {
       setPhase("loading");
-      setError(null);
+      setUserError(null);
     }
     try {
       const session = await fetchEphemeralWalletClientSession();
+      setServerSessionAuthenticated(session.authenticated);
       if (!session.authenticated) {
         setPhase("signed_out");
         setSessionId(null);
@@ -140,7 +154,11 @@ export function EphemeralSandboxWorkspaceClient() {
     } catch {
       if (!silent) {
         setPhase("failure");
-        setError("Could not load workspace state. Refresh and try again.");
+        setUserError(
+          mapWorkspaceUserFacingError({
+            code: "ephemeral_state_unavailable",
+          }),
+        );
       }
     }
   }, []);
@@ -149,10 +167,15 @@ export function EphemeralSandboxWorkspaceClient() {
     void hydrate();
     void fetch("/api/auth/wallet/sandbox/policies", { credentials: "same-origin" })
       .then((r) => r.json())
-      .then((json: { policies?: Policy[] }) => {
+      .then((json: { policies?: Policy[]; availability?: SandboxPolicyAvailability[] }) => {
         const list = json.policies ?? [];
         setPolicies(list);
-        if (list[0]) setSelectedPolicy(list[0].policy_id);
+        setPolicyAvailability(json.availability ?? []);
+        const defaultPolicy =
+          list.find((p) => resolveSandboxPolicyAvailability(p.policy_id)?.can_request_verification)?.policy_id
+          ?? list[0]?.policy_id
+          ?? "";
+        if (defaultPolicy) setSelectedPolicy(defaultPolicy);
       })
       .catch(() => setPolicies([]));
   }, [hydrate]);
@@ -179,25 +202,35 @@ export function EphemeralSandboxWorkspaceClient() {
       bumpRequestGeneration();
       setPendingChallenge(null);
       setPhase("workspace");
-      setError("Wallet account changed. Connect the same wallet as your session and try again.");
+      setUserError({
+        title: "Wallet changed",
+        message: "Connect the same wallet as your signed in session and try again.",
+      });
     }
   }, [phase, publicKey, walletAddress, bumpRequestGeneration]);
 
   const enterWorkspace = useCallback(async () => {
-    if (!sessionId) {
-      setError("Sign in with your Solana wallet first.");
-      setPhase("signed_out");
-      return;
-    }
     setBusy(true);
-    setError(null);
+    setUserError(null);
     setCorrelationId(null);
     setPhase("entering");
-    logSandboxStage({ stage: "enter_request", session_id_prefix: sessionId.slice(0, 8) });
     try {
+      const sessionProbe = await fetchEphemeralWalletClientSession();
+      setServerSessionAuthenticated(sessionProbe.authenticated);
+      if (!sessionProbe.authenticated || !sessionProbe.sessionId) {
+        setPhase("signed_out");
+        setUserError(mapWorkspaceUserFacingError({ code: "wallet_sign_in_required" }));
+        notifyEphemeralWalletSessionChanged();
+        return;
+      }
+      setSessionId(sessionProbe.sessionId);
+      setWalletAddress(sessionProbe.walletAddress);
+      setSessionExpiresAt(sessionProbe.expiresAt);
+      logSandboxStage({ stage: "enter_request", session_id_prefix: sessionProbe.sessionId.slice(0, 8) });
       const res = await fetch("/api/auth/wallet/sandbox/enter", {
         method: "POST",
-        credentials: "same-origin",
+        credentials: "include",
+        cache: "no-store",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({}),
       });
@@ -216,25 +249,40 @@ export function EphemeralSandboxWorkspaceClient() {
         correlation_id: json.correlation_id ?? null,
       });
       if (!res.ok || !json.workspace) {
-        setPhase("failure");
-        setError(mapSandboxEnterFailure(json.code));
+        if (json.code === "wallet_sign_in_required" || res.status === 401) {
+          const recheck = await fetchEphemeralWalletClientSession();
+          setServerSessionAuthenticated(recheck.authenticated);
+          if (!recheck.authenticated) {
+            setPhase("signed_out");
+            notifyEphemeralWalletSessionChanged();
+          } else {
+            setPhase("ready");
+          }
+        } else {
+          setPhase("failure");
+        }
+        setUserError(
+          mapWorkspaceUserFacingError({ code: json.code, correlationId: json.correlation_id ?? null }),
+        );
+        if (json.correlation_id) setCorrelationId(json.correlation_id);
         return;
       }
       setWorkspace(json.workspace);
       setPhase("workspace");
+      setUserError(null);
     } catch {
       setPhase("failure");
-      setError("Network error while opening workspace. Try again.");
+      setUserError(mapWorkspaceUserFacingError({ code: "network_error" }));
     } finally {
       setBusy(false);
     }
-  }, [sessionId]);
+  }, []);
 
   const cancelVerificationRequest = useCallback(() => {
     bumpRequestGeneration();
     setPendingChallenge(null);
     setWalletFocusHint(false);
-    setError(null);
+    setUserError(null);
     setPhase("workspace");
   }, [bumpRequestGeneration]);
 
@@ -254,20 +302,36 @@ export function EphemeralSandboxWorkspaceClient() {
     });
     if (generation !== requestGenerationRef.current) return false;
     if (!challengeResult.ok) {
-      setError(mapSandboxEnterFailure(challengeResult.code));
+      setUserError(mapWorkspaceUserFacingError({ code: challengeResult.code }));
       setPhase("workspace");
       return false;
     }
     setPendingChallenge(challengeResult.challenge);
-    setError(null);
+    setUserError(null);
     setWalletFocusHint(false);
     setPhase("review");
     return true;
   }, [selectedPolicy, workspace]);
 
   const beginVerificationReview = useCallback(async () => {
+    const availability =
+      policyAvailability.find((a) => a.policy_id === selectedPolicy)
+      ?? resolveSandboxPolicyAvailability(selectedPolicy);
+    if (!availability?.can_request_verification) {
+      setUserError({
+        title: "Action unavailable",
+        message:
+          availability?.availability_detail
+          ?? "This policy cannot be verified in the developer sandbox yet.",
+        recovery: "Choose Wallet Control to run a supported test verification.",
+      });
+      return;
+    }
     if (!signMessage) {
-      setError("Connect your wallet in the browser to authorize test verification.");
+      setUserError({
+        title: "Wallet disconnected",
+        message: "Connect your wallet in the browser to authorize test verification.",
+      });
       return;
     }
     setBusy(true);
@@ -279,7 +343,7 @@ export function EphemeralSandboxWorkspaceClient() {
     } finally {
       setBusy(false);
     }
-  }, [loadVerificationChallenge, signMessage]);
+  }, [loadVerificationChallenge, signMessage, selectedPolicy, policyAvailability]);
 
   const submitSignedVerification = useCallback(
     async (input: { action_challenge_id: string; signature: string; generation: number }) => {
@@ -307,13 +371,11 @@ export function EphemeralSandboxWorkspaceClient() {
         if (!res.ok || !json.result) {
           setPhase("workspace");
           setPendingChallenge(null);
-          const hint =
-            json.code === "insufficient_evidence_for_policy"
-              ? "This policy needs authoritative identity evidence. Use wallet control for sandbox testing."
-              : json.unsupported
-                ? "That evidence issuer is not supported for this policy."
-                : null;
-          setError(hint ?? mapSandboxEnterFailure(json.code));
+          setUserError(
+            mapWorkspaceUserFacingError({
+              code: json.unsupported ? "unsupported_evidence" : json.code,
+            }),
+          );
           return;
         }
         setResult(json.result);
@@ -331,7 +393,7 @@ export function EphemeralSandboxWorkspaceClient() {
       } catch {
         if (input.generation === requestGenerationRef.current) {
           setPhase("workspace");
-          setError("Network error during verification. Try again.");
+          setUserError(mapWorkspaceUserFacingError({ code: "network_error" }));
         }
       }
     },
@@ -342,7 +404,7 @@ export function EphemeralSandboxWorkspaceClient() {
     if (!pendingChallenge || !signMessage) return;
     const generation = requestGenerationRef.current;
     setBusy(true);
-    setError(null);
+    setUserError(null);
     setWalletFocusHint(false);
     setPhase("signing");
     try {
@@ -354,7 +416,7 @@ export function EphemeralSandboxWorkspaceClient() {
       if (generation !== requestGenerationRef.current) return;
       if (!signed.ok) {
         setPhase(pendingChallenge ? "review" : "workspace");
-        setError(mapSignFailure(signed.code));
+        setUserError(mapSignFailure(signed.code));
         if (signed.code === "expired") {
           setPendingChallenge(null);
           setPhase("workspace");
@@ -377,7 +439,7 @@ export function EphemeralSandboxWorkspaceClient() {
     bumpRequestGeneration();
     setPendingChallenge(null);
     setWalletFocusHint(false);
-    setError(null);
+    setUserError(null);
     setBusy(true);
     try {
       await loadVerificationChallenge();
@@ -417,19 +479,23 @@ export function EphemeralSandboxWorkspaceClient() {
   const steps = ["Application", "Policy", "Verification", "Receipt"];
 
   const sessionRailState =
-    phase === "signed_out"
+    phase === "signed_out" || (!serverSessionAuthenticated && phase !== "loading")
       ? "session_expired"
       : phase === "review" || phase === "signing"
         ? "authorization_required"
         : workspace
           ? "workspace_ready"
-          : phase === "ready" || phase === "entering" || phase === "failure"
+          : phase === "ready" || phase === "entering"
             ? "authenticated"
             : phase === "loading"
               ? "loading"
               : publicKey
                 ? "authenticated"
                 : "disconnected";
+
+  const selectedAvailability =
+    policyAvailability.find((a) => a.policy_id === selectedPolicy)
+    ?? resolveSandboxPolicyAvailability(selectedPolicy);
 
   if (phase === "loading") {
     return (
@@ -527,6 +593,10 @@ export function EphemeralSandboxWorkspaceClient() {
             <div className={styles.policyGrid} role="radiogroup" aria-label="Choose a policy">
               {policies.map((p) => {
                 const selected = p.policy_id === selectedPolicy;
+                const availability =
+                  policyAvailability.find((a) => a.policy_id === p.policy_id)
+                  ?? resolveSandboxPolicyAvailability(p.policy_id);
+                const ready = availability?.can_request_verification ?? false;
                 return (
                   <button
                     key={p.policy_id}
@@ -535,19 +605,31 @@ export function EphemeralSandboxWorkspaceClient() {
                     aria-checked={selected}
                     disabled={busy}
                     className={selected ? styles.policyCardActive : styles.policyCard}
-                    onClick={() => setSelectedPolicy(p.policy_id)}
+                    onClick={() => {
+                      setSelectedPolicy(p.policy_id);
+                      setUserError(null);
+                      setShowTechnicalDetails(false);
+                    }}
                   >
                     <span className={styles.policyCardTitle}>{p.label}</span>
+                    <span className={ready ? styles.policyBadgeReady : styles.policyBadgeUnavailable}>
+                      {availability?.availability_label ?? "Unavailable"}
+                    </span>
                     <span className={styles.policyCardDesc}>{p.description}</span>
                   </button>
                 );
               })}
             </div>
+            {selectedAvailability && !selectedAvailability.can_request_verification ? (
+              <p className={styles.availabilityNote}>{selectedAvailability.availability_detail}</p>
+            ) : null}
             <div className={styles.actions}>
               <button
                 type="button"
                 className={styles.verifyBtn}
-                disabled={busy || !selectedPolicy || !signMessage}
+                disabled={
+                  busy || !selectedPolicy || !signMessage || !selectedAvailability?.can_request_verification
+                }
                 onClick={() => void beginVerificationReview()}
               >
                 Review request
@@ -630,36 +712,84 @@ export function EphemeralSandboxWorkspaceClient() {
         {phase === "submitting" ? (
           <div className={styles.statusRow} role="status">
             <span className={styles.spinner} aria-hidden />
-            Verifying signature…
+            Evaluating evidence…
           </div>
         ) : null}
 
-        {error ? (
-          <p className={styles.error} role="alert">
-            {error}
-            {correlationId ? ` Reference: ${correlationId}.` : ""}
-            {error.includes("expired") ? (
-              <>
-                {" "}
-                <button type="button" className={styles.linkBtn} onClick={() => void retryVerificationRequest()}>
-                  Create a new request
+        {userError ? (
+          <div className={styles.errorPanel} role="alert">
+            <p className={styles.errorTitle}>{userError.title}</p>
+            <p className={styles.errorMessage}>{userError.message}</p>
+            {userError.recovery ? <p className={styles.errorRecovery}>{userError.recovery}</p> : null}
+            {userError.title === "Session expired" ? (
+              <div className={styles.actions}>
+                <button type="button" className={styles.walletBtn} onClick={openWalletSignIn}>
+                  Connect wallet
                 </button>
-              </>
+              </div>
             ) : null}
-          </p>
+            {userError.technicalCode || userError.correlationId || correlationId ? (
+              <button
+                type="button"
+                className={styles.linkBtn}
+                onClick={() => setShowTechnicalDetails((v) => !v)}
+              >
+                {showTechnicalDetails ? "Hide technical details" : "Technical details"}
+              </button>
+            ) : null}
+            {showTechnicalDetails ? (
+              <p className={styles.technicalDetails}>
+                {userError.technicalCode ? `Code: ${userError.technicalCode}. ` : ""}
+                {userError.correlationId ?? correlationId
+                  ? `Reference: ${userError.correlationId ?? correlationId}.`
+                  : ""}
+              </p>
+            ) : null}
+            {userError.title === "Request expired" ? (
+              <button type="button" className={styles.linkBtn} onClick={() => void retryVerificationRequest()}>
+                Create a new request
+              </button>
+            ) : null}
+          </div>
         ) : null}
 
         {result ? (
           <div className={styles.resultBox}>
-            <p style={{ margin: "0 0 0.35rem" }}>
-              <strong>Decision:</strong> {decision ?? "unknown"} · <strong>Label:</strong>{" "}
-              {result.result_label || EPHEMERAL_SANDBOX_RESULT_LABEL} (test only)
+            <h3 className={styles.resultTitle}>Verification complete</h3>
+            <p className={styles.resultLine}>
+              <strong>Policy:</strong> {selectedPolicyMeta?.label ?? selectedPolicy}
             </p>
-            <p style={{ margin: 0 }}>
-              Receipt {String(result.receipt_id).slice(0, 24)}… · independent signature check:{" "}
-              {validation?.signature_valid ? "valid" : validation ? "invalid" : "pending"}
+            <p className={styles.resultLine}>
+              <strong>Decision:</strong> {decision ?? "unknown"} (Sandbox test only)
             </p>
+            <p className={styles.resultLine}>
+              <strong>Receipt validation:</strong>{" "}
+              {validation?.signature_valid ? "Valid" : validation ? "Invalid" : "Pending"}
+            </p>
+            <details className={styles.receiptDetails}>
+              <summary>Receipt details</summary>
+              <p className={styles.mono}>
+                {String(result.receipt_id)}
+                <br />
+                {result.payload_hash}
+              </p>
+            </details>
             <div className={styles.actions}>
+              <button
+                type="button"
+                className={styles.secondaryBtn}
+                disabled={busy || !result.receipt_id}
+                onClick={() => {
+                  void fetch(
+                    `/api/auth/wallet/sandbox/validate?receipt_id=${encodeURIComponent(String(result.receipt_id))}`,
+                    { credentials: "same-origin", cache: "no-store" },
+                  )
+                    .then((r) => r.json())
+                    .then((json: { signature_valid?: boolean }) => setValidation(json));
+                }}
+              >
+                Validate receipt
+              </button>
               <button
                 type="button"
                 className={styles.secondaryBtn}
@@ -668,6 +798,7 @@ export function EphemeralSandboxWorkspaceClient() {
                   setResult(null);
                   setValidation(null);
                   setDecision(null);
+                  setUserError(null);
                   setPhase("workspace");
                 }}
               >

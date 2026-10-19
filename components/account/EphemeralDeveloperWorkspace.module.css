@@ -243,6 +243,84 @@
   color: var(--text-secondary);
 }
 
+.policyBadgeReady,
+.policyBadgeUnavailable {
+  display: inline-block;
+  margin: 0.25rem 0 0.35rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.policyBadgeReady {
+  color: var(--ws-emerald);
+  border: 1px solid rgba(76, 187, 146, 0.35);
+}
+
+.policyBadgeUnavailable {
+  color: var(--ws-warn);
+  border: 1px solid rgba(232, 166, 90, 0.35);
+}
+
+.availabilityNote {
+  margin: 0.75rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.errorPanel {
+  margin-top: 0.85rem;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(224, 82, 79, 0.35);
+  background: rgba(224, 82, 79, 0.08);
+}
+
+.errorTitle {
+  margin: 0 0 0.35rem;
+  font-size: 0.86rem;
+  font-weight: 650;
+  color: #f0b4b2;
+}
+
+.errorMessage,
+.errorRecovery {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.technicalDetails {
+  margin: 0.45rem 0 0;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono, ui-monospace, monospace);
+}
+
+.resultTitle {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 650;
+  color: var(--ws-emerald);
+}
+
+.resultLine {
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.receiptDetails {
+  margin-top: 0.5rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
 .walletBtn {
   appearance: none;
   border: 1px solid rgba(94, 184, 255, 0.45);
