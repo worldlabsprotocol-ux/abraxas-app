@@ -1,9 +1,8 @@
 "use client";
 // FILE: components/WalletContextProvider.tsx
-// Wraps the app in Solana wallet-adapter context. This needs to sit
-// near the ROOT of the app (in app/layout.tsx, around {children}),
-// not inside an individual page, or only that one page gets wallet
-// context and everything else won't see a connected wallet.
+// Single Solana wallet-adapter boundary — mounted once in AppProviders
+// (app/layout.tsx → AppProviders). Do not nest additional WalletProviders;
+// nested providers reset wallet state and break public nav sign-in.
 //
 // A likely reason the earlier attempt didn't work: wallet-adapter
 // depends on browser APIs (window, injected wallet extensions) that

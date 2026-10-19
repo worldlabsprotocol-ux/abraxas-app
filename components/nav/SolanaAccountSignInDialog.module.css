@@ -80,7 +80,7 @@
 }
 
 .stepActive .stepDot {
-  background: var(--accent-primary, #14f195);
+  background: var(--accent-verify, #4cbb92);
   box-shadow: 0 0 10px rgba(20, 241, 149, 0.55);
 }
 
@@ -115,7 +115,7 @@
   height: 14px;
   border-radius: 50%;
   border: 2px solid rgba(20, 241, 149, 0.25);
-  border-top-color: var(--accent-primary, #14f195);
+  border-top-color: var(--accent-verify, #4cbb92);
   animation: abxSignInSpin 0.8s linear infinite;
   flex-shrink: 0;
 }
@@ -196,7 +196,7 @@
   padding: 0.65rem 1rem;
   border-radius: 10px;
   border: none;
-  background: var(--accent-primary, #14f195);
+  background: var(--accent-verify, #4cbb92);
   color: #04110c;
   font-family: inherit;
   font-weight: 700;
@@ -226,7 +226,7 @@
 
 .linkBtn {
   font-size: 0.72rem;
-  color: var(--accent-primary, #14f195);
+  color: var(--accent-verify, #4cbb92);
   text-decoration: underline;
   background: none;
   border: none;

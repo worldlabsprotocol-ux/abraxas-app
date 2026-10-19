@@ -4,6 +4,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { ThemeProvider } from "@/components/ThemeContext";
+import { WalletContextProvider } from "@/components/WalletContextProvider";
 import { SuiAuthProvider } from "@/components/sui/SuiAuthProvider";
 import { ZkLoginSignInChooserProvider } from "@/components/sui/ZkLoginSignInChooserProvider";
 
@@ -24,9 +25,11 @@ export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <SuiAuthProvider>
-          <ZkLoginSignInChooserProvider>{children}</ZkLoginSignInChooserProvider>
-        </SuiAuthProvider>
+        <WalletContextProvider>
+          <SuiAuthProvider>
+            <ZkLoginSignInChooserProvider>{children}</ZkLoginSignInChooserProvider>
+          </SuiAuthProvider>
+        </WalletContextProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

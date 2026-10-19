@@ -1313,8 +1313,10 @@
 }
 
 .public-nav-connect__trigger--primary {
-  background: var(--accent);
-  color: #000;
+  background: var(--accent-verify, #4cbb92);
+  color: var(--accent-deep, #050505);
+  border: 1px solid rgba(76, 187, 146, 0.35);
+  box-shadow: 0 0 24px rgba(76, 187, 146, 0.12);
 }
 
 .public-nav-connect__trigger--muted {

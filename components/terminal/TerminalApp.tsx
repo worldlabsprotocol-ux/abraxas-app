@@ -6,7 +6,6 @@ import { useState, useEffect } from "react";
 import { TerminalMain }  from "./TerminalMain";
 import { LiveBackground } from "@/components/LiveBackground";
 import { SiteNav } from "@/components/SiteNav";
-import { WalletContextProvider } from "@/components/WalletContextProvider";
 import { BottomNav }     from "@/components/BottomNav";
 import { WaitlistForm }  from "@/components/WaitlistForm";
 import { DemoMode }      from "./DemoMode";
@@ -38,7 +37,6 @@ export default function TerminalApp() {
   }, []);
 
   return (
-    <WalletContextProvider>
     <div style={{
       background: "var(--bg)",
       minHeight: "100vh",
@@ -112,6 +110,5 @@ export default function TerminalApp() {
 
       <DemoMode />
     </div>
-    </WalletContextProvider>
   );
 }
