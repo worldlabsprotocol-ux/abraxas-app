@@ -1,7 +1,8 @@
 // FILE: lib/protocolVerification/sandboxPresentationPossession.server.ts
+// Verifies Passport-format possession signatures against the public key bound in the sandbox
+// test credential at prepare time. This is a presentation-protocol simulation, not wallet control.
 
 import type { SandboxPresentationCommitRecord } from "@/lib/auth/ephemeralWallet/sandboxPresentationCommitStore";
-import { deriveEphemeralSandboxPossessionPublicKeyB64Url } from "@/lib/auth/ephemeralWallet/sandboxHolderPossessionKey.shared";
 import {
   InMemoryPassportPossessionChallengeStore,
   verifyPassportPossessionProof,
@@ -36,11 +37,6 @@ export function verifySandboxPresentationPossessionAuthorization(input: {
   const storedChallenge = input.commit.possession_challenge;
   if (!storedChallenge) {
     return { ok: false, code: "presentation_possession_challenge_missing" };
-  }
-
-  const expectedPossessionKey = deriveEphemeralSandboxPossessionPublicKeyB64Url(input.commit.wallet_address);
-  if (input.credential.payload.holder_possession_public_key !== expectedPossessionKey) {
-    return { ok: false, code: "credential_possession_key_mismatch" };
   }
 
   const store = new InMemoryPassportPossessionChallengeStore();

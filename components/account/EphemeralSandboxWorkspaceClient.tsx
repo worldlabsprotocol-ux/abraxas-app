@@ -38,7 +38,7 @@ import {
   signPassportPossessionChallenge,
   type PassportPossessionChallengePayload,
 } from "@/lib/passport/reusableCredential/holderPossessionChallengeSigning";
-import { deriveEphemeralSandboxPossessionSecretKey } from "@/lib/auth/ephemeralWallet/sandboxHolderPossessionKey.shared";
+import { generateSandboxSessionPossessionKeyPair } from "@/lib/auth/ephemeralWallet/sandboxHolderPossessionKey.shared";
 import { TrustExecutionTrace, deriveTrustExecutionStages } from "./TrustExecutionTrace";
 import styles from "./EphemeralDeveloperWorkspace.module.css";
 
@@ -136,6 +136,7 @@ export function EphemeralSandboxWorkspaceClient() {
   const [walletFocusHint, setWalletFocusHint] = useState(false);
   const [sessionExpiresAt, setSessionExpiresAt] = useState<string | null>(null);
 
+  const sandboxPossessionSecretKeyRef = useRef<Uint8Array | null>(null);
   const requestGenerationRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
   const phaseRef = useRef<WorkspacePhase>("loading");
@@ -353,6 +354,8 @@ export function EphemeralSandboxWorkspaceClient() {
     setBusy(true);
     setUserError(null);
     try {
+      const possessionKeys = generateSandboxSessionPossessionKeyPair();
+      sandboxPossessionSecretKeyRef.current = possessionKeys.secretKey;
       const res = await fetch("/api/auth/wallet/sandbox/presentation/prepare", {
         method: "POST",
         credentials: "same-origin",
@@ -360,6 +363,7 @@ export function EphemeralSandboxWorkspaceClient() {
         body: JSON.stringify({
           policy_id: selectedPolicy,
           presentation_method_id: "authorized_test_issuer_credential",
+          holder_possession_public_key: possessionKeys.publicKeyB64Url,
         }),
       });
       const json = (await res.json()) as {
@@ -402,7 +406,16 @@ export function EphemeralSandboxWorkspaceClient() {
     setUserError(null);
     setPhase("authorizing");
     try {
-      const secretKey = deriveEphemeralSandboxPossessionSecretKey(walletAddress);
+      const secretKey = sandboxPossessionSecretKeyRef.current;
+      if (!secretKey) {
+        setPhase("disclosure");
+        setUserError({
+          title: "Presentation session expired",
+          message: "Prepare the presentation again before authorizing.",
+          recovery: "Return to the policy screen and choose Prepare presentation.",
+        });
+        return;
+      }
       const holder_possession_proof = {
         challenge_id: possessionChallenge.challenge_id,
         signature: signPassportPossessionChallenge(possessionChallenge, secretKey),
@@ -809,6 +822,7 @@ export function EphemeralSandboxWorkspaceClient() {
                       setPresentationDisclosure(null);
                       setPossessionChallenge(null);
                       setPresentationAuthorized(false);
+                      sandboxPossessionSecretKeyRef.current = null;
                       setUserError(null);
                       setShowTechnicalDetails(false);
                     }}
@@ -907,6 +921,7 @@ export function EphemeralSandboxWorkspaceClient() {
                   setPresentationDisclosure(null);
                   setPossessionChallenge(null);
                   setPresentationAuthorized(false);
+                  sandboxPossessionSecretKeyRef.current = null;
                 }}
               >
                 Back
@@ -918,10 +933,14 @@ export function EphemeralSandboxWorkspaceClient() {
                 Confirming holder possession…
               </div>
             ) : presentationAuthorized ? (
-              <p className={styles.note}>Holder possession confirmed. Continue when you are ready to sign the test verification request.</p>
+              <p className={styles.note}>
+                Demonstration credential presentation recorded. Continue when you are ready to sign the test verification request in Phantom.
+              </p>
             ) : (
               <p className={styles.note}>
-                Authorize presentation with your wallet bound possession key. No Phantom signature is required for this step.
+                Authorize presentation of this sandbox test credential using the session possession key generated on this device.
+                This simulates the Passport presentation step. It is not wallet control proof and does not apply to independent issuer credentials.
+                Phantom is required later for the scoped test verification signature.
               </p>
             )}
           </div>

@@ -18,7 +18,10 @@ import {
 import { build546TrustRegistryEnv } from "@/lib/institutionalCertification/build546/fixtures";
 import { EPHEMERAL_WALLET_AUTH_PURPOSE } from "./message";
 import { peekEphemeralWalletChallenge } from "./challengeStore";
-import { deriveEphemeralSandboxPossessionSecretKey } from "./sandboxHolderPossessionKey.shared";
+import {
+  deriveEphemeralSandboxPossessionSecretKeyFromPublicWalletAddress,
+  generateSandboxSessionPossessionKeyPair,
+} from "./sandboxHolderPossessionKey.shared";
 import { signPassportPossessionChallenge } from "@/lib/passport/reusableCredential/holderPossessionChallengeSigning";
 import type { PassportPossessionChallengePayload } from "@/lib/passport/reusableCredential/holderPossessionChallenge";
 import {
@@ -127,12 +130,15 @@ type PreparedAgePresentation = {
   evidence: Record<string, unknown>;
   disclosure: Record<string, unknown>;
   test_only: boolean;
+  possession_secret_key: Uint8Array;
 };
 
 async function prepareAgePresentation(input: {
   origin: string;
   sessionCookie: string;
+  possessionKeyPair?: ReturnType<typeof generateSandboxSessionPossessionKeyPair>;
 }): Promise<PreparedAgePresentation> {
+  const possessionKeyPair = input.possessionKeyPair ?? generateSandboxSessionPossessionKeyPair();
   const { POST: preparePost } = await import("@/app/api/auth/wallet/sandbox/presentation/prepare/route");
   const prepareRes = await preparePost(
     new NextRequest(`${input.origin}/api/auth/wallet/sandbox/presentation/prepare`, {
@@ -146,6 +152,7 @@ async function prepareAgePresentation(input: {
       body: JSON.stringify({
         policy_id: "age_21_retail",
         presentation_method_id: "authorized_test_issuer_credential",
+        holder_possession_public_key: possessionKeyPair.publicKeyB64Url,
       }),
     }),
   );
@@ -155,7 +162,7 @@ async function prepareAgePresentation(input: {
   expect(prepareBody.possession_challenge?.challenge_id).toBeTruthy();
   expect(prepareBody.evidence?.kind).toBe("passport_reusable_credential");
   expect(prepareBody.test_only).toBe(true);
-  return prepareBody as PreparedAgePresentation;
+  return { ...(prepareBody as Omit<PreparedAgePresentation, "possession_secret_key">), possession_secret_key: possessionKeyPair.secretKey };
 }
 
 async function authorizePresentationPossession(input: {
@@ -163,13 +170,13 @@ async function authorizePresentationPossession(input: {
   sessionCookie: string;
   wallet: string;
   prepared: PreparedAgePresentation;
-  possessionSecretWallet?: string;
+  possessionSecretKey?: Uint8Array;
   challengeOverride?: PassportPossessionChallengePayload;
   proofSignatureOverride?: string;
+  sessionCookieOverride?: string;
 }) {
-  const walletForKey = input.possessionSecretWallet ?? input.wallet;
   const challenge = input.challengeOverride ?? input.prepared.possession_challenge;
-  const secretKey = deriveEphemeralSandboxPossessionSecretKey(walletForKey);
+  const secretKey = input.possessionSecretKey ?? input.prepared.possession_secret_key;
   const holder_possession_proof = {
     challenge_id: challenge.challenge_id,
     signature:
@@ -181,7 +188,7 @@ async function authorizePresentationPossession(input: {
     new NextRequest(`${input.origin}/api/auth/wallet/sandbox/presentation/authorize`, {
       method: "POST",
       headers: {
-        cookie: input.sessionCookie,
+        cookie: input.sessionCookieOverride ?? input.sessionCookie,
         origin: input.origin,
         host: "localhost:3000",
         "content-type": "application/json",
@@ -532,9 +539,26 @@ describe.runIf(integrationEnabled)("ephemeral wallet authentication", () => {
       });
     });
 
-    it("rejects possession proof from a different wallet binding", async () => {
+    it("rejects wallet-address-derived possession proof for session-bound credential", async () => {
       await withTestIssuerEnabled(async () => {
-        const other = Keypair.generate();
+        const { sessionCookie } = await signInWallet(keypair, wallet, origin);
+        const { sessionCookie: sandboxCookie } = await openSandboxWorkspace(sessionCookie);
+        const prepared = await prepareAgePresentation({ origin, sessionCookie: sandboxCookie });
+        const addressDerivedSecret = deriveEphemeralSandboxPossessionSecretKeyFromPublicWalletAddress(wallet);
+        const possessionRes = await authorizePresentationPossession({
+          origin,
+          sessionCookie: sandboxCookie,
+          wallet,
+          prepared,
+          possessionSecretKey: addressDerivedSecret,
+        });
+        expect(possessionRes.status).toBe(401);
+        expect((await possessionRes.json()).code).toBe("possession_signature_invalid");
+      });
+    });
+
+    it("rejects presentation authorize without authenticated wallet session", async () => {
+      await withTestIssuerEnabled(async () => {
         const { sessionCookie } = await signInWallet(keypair, wallet, origin);
         const { sessionCookie: sandboxCookie } = await openSandboxWorkspace(sessionCookie);
         const prepared = await prepareAgePresentation({ origin, sessionCookie: sandboxCookie });
@@ -543,10 +567,10 @@ describe.runIf(integrationEnabled)("ephemeral wallet authentication", () => {
           sessionCookie: sandboxCookie,
           wallet,
           prepared,
-          possessionSecretWallet: other.publicKey.toBase58(),
+          sessionCookieOverride: "",
         });
-        expect(possessionRes.status).toBe(401);
-        expect((await possessionRes.json()).code).toBe("possession_signature_invalid");
+        expect(possessionRes.status).toBeGreaterThanOrEqual(401);
+        expect(possessionRes.status).toBeLessThanOrEqual(403);
       });
     });
 

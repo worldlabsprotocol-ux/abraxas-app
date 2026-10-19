@@ -1,8 +1,12 @@
 // FILE: lib/protocolVerification/sandboxPresentationPossession.test.ts
 
 import { describe, expect, it } from "vitest";
+import nacl from "tweetnacl";
 import { buildEphemeralSandboxAgeTestCredential } from "./ephemeralAuthorizedTestIssuer";
-import { deriveEphemeralSandboxPossessionSecretKey } from "@/lib/auth/ephemeralWallet/sandboxHolderPossessionKey.shared";
+import {
+  deriveEphemeralSandboxPossessionSecretKeyFromPublicWalletAddress,
+  generateSandboxSessionPossessionKeyPair,
+} from "@/lib/auth/ephemeralWallet/sandboxHolderPossessionKey.shared";
 import {
   InMemoryPassportPossessionChallengeStore,
   issuePassportPossessionChallenge,
@@ -18,8 +22,13 @@ function baseCommit(challengeStore: InMemoryPassportPossessionChallengeStore): {
   commit: SandboxPresentationCommitRecord;
   challenge: ReturnType<typeof issuePassportPossessionChallenge>;
   bundle: ReturnType<typeof buildEphemeralSandboxAgeTestCredential>;
+  secretKey: Uint8Array;
 } {
-  const bundle = buildEphemeralSandboxAgeTestCredential({ walletAddress: WALLET });
+  const possession = generateSandboxSessionPossessionKeyPair();
+  const bundle = buildEphemeralSandboxAgeTestCredential({
+    walletAddress: WALLET,
+    holderPossessionPublicKey: possession.publicKeyB64Url,
+  });
   const challenge = issuePassportPossessionChallenge({
     credentialId: bundle.credential.payload.credential_id,
     partnerId: EPHEMERAL_SANDBOX_TEST_PARTNER_ID,
@@ -41,17 +50,16 @@ function baseCommit(challengeStore: InMemoryPassportPossessionChallengeStore): {
     possession_challenge: challenge,
     possession_authorized_at: null,
   };
-  return { commit, challenge, bundle };
+  return { commit, challenge, bundle, secretKey: possession.secretKey };
 }
 
 describe("sandbox presentation possession", () => {
-  it("accepts wallet bound possession proof for prepared credential", () => {
+  it("accepts session-bound possession proof for prepared credential", () => {
     const store = new InMemoryPassportPossessionChallengeStore();
-    const { commit, challenge, bundle } = baseCommit(store);
-    const secret = deriveEphemeralSandboxPossessionSecretKey(WALLET);
+    const { commit, challenge, bundle, secretKey } = baseCommit(store);
     const proof = {
       challenge_id: challenge.challenge_id,
-      signature: signPassportPossessionChallenge(challenge, secret),
+      signature: signPassportPossessionChallenge(challenge, secretKey),
     };
     const result = verifySandboxPresentationPossessionAuthorization({
       commit,
@@ -62,14 +70,32 @@ describe("sandbox presentation possession", () => {
     expect(result.ok).toBe(true);
   });
 
-  it("rejects possession proof from a different wallet binding", () => {
+  it("rejects wallet-address-derived proof when credential uses session-generated key", () => {
     const store = new InMemoryPassportPossessionChallengeStore();
     const { commit, challenge, bundle } = baseCommit(store);
-    const otherWallet = "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM";
-    const secret = deriveEphemeralSandboxPossessionSecretKey(otherWallet);
+    const addressDerived = deriveEphemeralSandboxPossessionSecretKeyFromPublicWalletAddress(WALLET);
     const proof = {
       challenge_id: challenge.challenge_id,
-      signature: signPassportPossessionChallenge(challenge, secret),
+      signature: signPassportPossessionChallenge(challenge, addressDerived),
+    };
+    const result = verifySandboxPresentationPossessionAuthorization({
+      commit,
+      credential: bundle.credential,
+      challenge,
+      proof,
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("possession_signature_invalid");
+  });
+
+  it("rejects possession proof signed with unrelated session key", () => {
+    const store = new InMemoryPassportPossessionChallengeStore();
+    const { commit, challenge, bundle } = baseCommit(store);
+    const other = nacl.sign.keyPair();
+    const proof = {
+      challenge_id: challenge.challenge_id,
+      signature: signPassportPossessionChallenge(challenge, other.secretKey),
     };
     const result = verifySandboxPresentationPossessionAuthorization({
       commit,
@@ -84,15 +110,14 @@ describe("sandbox presentation possession", () => {
 
   it("rejects duplicate authorization on the same commit", () => {
     const store = new InMemoryPassportPossessionChallengeStore();
-    const { commit, challenge, bundle } = baseCommit(store);
+    const { commit, challenge, bundle, secretKey } = baseCommit(store);
     const authorizedCommit = {
       ...commit,
       possession_authorized_at: new Date().toISOString(),
     };
-    const secret = deriveEphemeralSandboxPossessionSecretKey(WALLET);
     const proof = {
       challenge_id: challenge.challenge_id,
-      signature: signPassportPossessionChallenge(challenge, secret),
+      signature: signPassportPossessionChallenge(challenge, secretKey),
     };
     const result = verifySandboxPresentationPossessionAuthorization({
       commit: authorizedCommit,

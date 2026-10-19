@@ -1,26 +1,43 @@
 // FILE: lib/auth/ephemeralWallet/sandboxHolderPossessionKey.shared.ts
-// Wallet-bound ephemeral possession key for sandbox Passport presentation (not account recovery).
+// Ephemeral Ed25519 possession keys for sandbox demonstration credentials only.
+// Not account recovery. Not used for genuine third-party issuer credentials.
 
 import { createHash } from "crypto";
 import nacl from "tweetnacl";
 
-const POSSESSION_DERIVATION_CONTEXT = "abraxas-ephemeral-sandbox-possession-v1";
+export type SandboxSessionPossessionKeyPair = {
+  publicKeyB64Url: string;
+  secretKey: Uint8Array;
+};
 
-export function deriveEphemeralSandboxPossessionSeed(walletAddress: string): Uint8Array {
-  const digest = createHash("sha256")
-    .update(`${POSSESSION_DERIVATION_CONTEXT}|${walletAddress.trim()}`, "utf8")
-    .digest();
-  return Uint8Array.from(digest);
+export function generateSandboxSessionPossessionKeyPair(): SandboxSessionPossessionKeyPair {
+  const pair = nacl.sign.keyPair();
+  return {
+    publicKeyB64Url: Buffer.from(pair.publicKey).toString("base64url"),
+    secretKey: pair.secretKey,
+  };
 }
 
-export function deriveEphemeralSandboxPossessionPublicKeyB64Url(walletAddress: string): string {
-  const seed = deriveEphemeralSandboxPossessionSeed(walletAddress);
-  const pair = nacl.sign.keyPair.fromSeed(seed);
-  return Buffer.from(pair.publicKey).toString("base64url");
+export function isValidSandboxHolderPossessionPublicKeyB64Url(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  try {
+    const bytes = Buffer.from(trimmed, "base64url");
+    return bytes.length === nacl.sign.publicKeyLength;
+  } catch {
+    return false;
+  }
 }
 
-/** 64-byte NaCl signing secret for possession challenge signatures. */
-export function deriveEphemeralSandboxPossessionSecretKey(walletAddress: string): Uint8Array {
-  const seed = deriveEphemeralSandboxPossessionSeed(walletAddress);
+/**
+ * @deprecated Public-wallet derivation is not secret; retained only for adversarial tests
+ * proving address knowledge alone must not authorize a session-bound sandbox presentation.
+ */
+export function deriveEphemeralSandboxPossessionSecretKeyFromPublicWalletAddress(walletAddress: string): Uint8Array {
+  const seed = Uint8Array.from(
+    createHash("sha256")
+      .update(`abraxas-ephemeral-sandbox-possession-v1|${walletAddress.trim()}`, "utf8")
+      .digest(),
+  );
   return nacl.sign.keyPair.fromSeed(seed).secretKey;
 }

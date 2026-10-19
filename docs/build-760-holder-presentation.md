@@ -2,34 +2,38 @@
 
 ## Implemented
 
-Developer Workspace age demonstration flow now runs the Passport presentation protocol end to end:
+Developer Workspace age demonstration flow runs the Passport presentation protocol end to end:
 
 1. Choose policy
-2. Prepare presentation (credential selection + disclosure + possession challenge)
-3. Authorize presentation (holder possession proof, wallet bound key, no Phantom)
-4. Review and sign test verification request (wallet action)
+2. Prepare presentation (client-generated session possession public key + credential + disclosure + challenge)
+3. Authorize presentation (sign challenge with session secret key held only on device; no Phantom)
+4. Review and sign test verification request (**Phantom wallet signature = authoritative wallet control**)
 5. Protocol verification, policy execution, signed receipt
 6. Independent receipt validation (no wallet)
 
-## Holder binding
+## Holder binding (sandbox demonstration)
 
-- Credential `holder_subject_id` remains the wallet pseudonym (`subjectPseudonymId(wallet)`).
-- Possession uses a wallet derived ephemeral Ed25519 key (`sandboxHolderPossessionKey.shared.ts`), embedded in the sandbox test credential at prepare time.
-- Presentations without a valid possession proof on the prepared commit are rejected (`presentation_possession_not_authorized`).
+- Credential `holder_subject_id` = wallet pseudonym (`subjectPseudonymId(wallet)`), matched at evidence evaluation.
+- **Session possession key:** random Ed25519 keypair generated in the browser at prepare; public key embedded in the sandbox test credential; private key never sent to the server.
+- **Not wallet ownership proof:** possession signatures simulate the Passport presentation step for this test credential only. They do not prove control of an independent issuer credential.
+- **Wallet control proof:** scoped Phantom signature on the test verification request (unchanged).
 
-This possession model applies to **sandbox test issuer credentials minted during prepare**. It demonstrates the presentation protocol; it does not prove possession of an independent third party issuer credential.
+Presentations without valid possession authorization on the prepared commit are rejected (`presentation_possession_not_authorized`).
 
-Private possession material is derived in the browser (or test client) from the connected wallet address and is never sent to the server except as a signature over the server issued challenge.
+## Explicit non-goals
+
+- Do not use public-wallet-derived private keys in production or genuine issuer presentation paths.
+- Do not treat sandbox test issuer credentials as Production age eligibility.
 
 ## Server boundary preserved
 
-- `POST /api/auth/wallet/sandbox/recognized-issuer/evaluate` remains evaluate only (no possession, no policy receipt). Do not treat its response as authorization.
+- `POST /api/auth/wallet/sandbox/recognized-issuer/evaluate` remains evaluate only (no possession, no policy receipt).
 
 ## Status labels
 
 | Status | Build #760 |
 | --- | --- |
-| Implemented | Yes (workspace journey + APIs) |
-| Cryptographically tested | Yes (Vitest possession + existing sandbox security suite) |
+| Implemented | Yes |
+| Cryptographically tested | Yes |
 | Issuer operational | No (sandbox test issuer only) |
 | Production authorized | No |

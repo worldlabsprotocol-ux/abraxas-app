@@ -24,7 +24,7 @@ import {
   BUILD_546_PRIMARY_KEY,
   build546TrustRegistryEnv,
 } from "@/lib/institutionalCertification/build546/fixtures";
-import { deriveEphemeralSandboxPossessionPublicKeyB64Url } from "@/lib/auth/ephemeralWallet/sandboxHolderPossessionKey.shared";
+import { generateSandboxSessionPossessionKeyPair } from "@/lib/auth/ephemeralWallet/sandboxHolderPossessionKey.shared";
 
 export const EPHEMERAL_SANDBOX_AUTHORIZED_TEST_ISSUER_ENV =
   "ABRAXAS_EPHEMERAL_SANDBOX_AUTHORIZED_TEST_ISSUER" as const;
@@ -90,6 +90,7 @@ export type EphemeralSandboxAgeTestCredentialVariant =
 
 export function buildEphemeralSandboxAgeTestCredential(input: {
   walletAddress: string;
+  holderPossessionPublicKey?: string;
   now?: Date;
   variant?: EphemeralSandboxAgeTestCredentialVariant;
 }): {
@@ -113,6 +114,8 @@ export function buildEphemeralSandboxAgeTestCredential(input: {
     .update(`possession-ref:${holderSubjectId}`, "utf8")
     .digest("hex")
     .slice(0, 32);
+  const holderPossessionPublicKey =
+    input.holderPossessionPublicKey ?? generateSandboxSessionPossessionKeyPair().publicKeyB64Url;
 
   const issuerId =
     variant === "invalid_issuer" ? "issuer:unknown-external" : EPHEMERAL_SANDBOX_AUTHORIZED_TEST_ISSUER_ID;
@@ -123,7 +126,7 @@ export function buildEphemeralSandboxAgeTestCredential(input: {
     issuer_id: issuerId,
     signing_key_id: key.signingKeyId,
     holder_subject_id: variant === "wrong_holder" ? "abx_hs_wrong_holder_subject_id00001" : holderSubjectId,
-    holder_possession_public_key: deriveEphemeralSandboxPossessionPublicKeyB64Url(input.walletAddress),
+    holder_possession_public_key: holderPossessionPublicKey,
     holder_possession_ref: possessionRef,
     assurance_level: "L2",
     provenance: {

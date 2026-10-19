@@ -28,6 +28,7 @@ import {
 } from "@/lib/passport/reusableCredential/holderPossessionChallenge";
 import type { SignedPassportReusableCredential } from "@/lib/passport/reusableCredential/contract";
 import type { PortableRevocationSignedArtifact } from "@/lib/protocol/portableRevocation";
+import { isValidSandboxHolderPossessionPublicKeyB64Url } from "@/lib/auth/ephemeralWallet/sandboxHolderPossessionKey.shared";
 
 export const dynamic = "force-dynamic";
 
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, code: auth.error }, { status: auth.status });
   }
 
-  let body: { policy_id?: string; presentation_method_id?: string };
+  let body: { policy_id?: string; presentation_method_id?: string; holder_possession_public_key?: string };
   try {
     body = await req.json();
   } catch {
@@ -78,8 +79,13 @@ export async function POST(req: NextRequest) {
     if (!sandboxPolicy) {
       return NextResponse.json({ ok: false, code: "invalid_policy" }, { status: 400 });
     }
+    const holderPossessionPublicKey = String(body.holder_possession_public_key ?? "").trim();
+    if (!isValidSandboxHolderPossessionPublicKeyB64Url(holderPossessionPublicKey)) {
+      return NextResponse.json({ ok: false, code: "holder_possession_public_key_required" }, { status: 400 });
+    }
     const bundle = buildEphemeralSandboxAgeTestCredential({
       walletAddress: auth.session.walletAddress,
+      holderPossessionPublicKey,
     });
     const credential = bundle.credential as SignedPassportReusableCredential;
     const snapshot = bundle.portable_revocation_snapshot as PortableRevocationSignedArtifact;
