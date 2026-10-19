@@ -69,7 +69,7 @@ export function resolveSandboxPolicyAvailability(policyId: string): SandboxPolic
         presentation_methods: [
           {
             id: "production_issuer_credential",
-            label: "Production issuer backed credential",
+            label: "Recognized issuer credential (Passport presentation)",
             sandbox_labeled: false,
             production_trusted: true,
           },

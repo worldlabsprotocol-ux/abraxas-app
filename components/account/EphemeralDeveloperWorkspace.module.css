@@ -508,22 +508,43 @@
 }
 
 .trustTraceList {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
-  gap: 0.45rem 0.65rem;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.4rem;
   margin: 0;
-  padding: 0;
+  padding: 0.1rem 0.05rem 0.25rem;
   list-style: none;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
 }
 
 .trustTraceItem {
   display: flex;
+  flex: 1 1 0;
+  min-width: 4.85rem;
+  max-width: 7.25rem;
   flex-direction: column;
   gap: 0.15rem;
-  padding: 0.45rem 0.55rem;
+  padding: 0.45rem 0.5rem;
   border-radius: 8px;
   border: 1px solid transparent;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
+}
+
+@media (min-width: 960px) {
+  .trustTraceList {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    overflow-x: visible;
+    padding: 0;
+  }
+
+  .trustTraceItem {
+    min-width: 0;
+    max-width: none;
+    font-size: 0.72rem;
+  }
 }
 
 .trustTraceLabel {

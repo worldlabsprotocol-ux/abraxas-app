@@ -20,6 +20,13 @@ export type TrustExecutionStage = {
   detail?: string;
 };
 
+export type ReceiptValidationTraceStatus =
+  | "idle"
+  | "checking"
+  | "validated"
+  | "failed"
+  | "not_applicable";
+
 const STAGE_ORDER: TrustExecutionStageId[] = [
   "application",
   "authorization",
@@ -67,83 +74,120 @@ export function deriveTrustExecutionStages(input: {
   presentationPrepared: boolean;
   evidenceRequired: boolean;
   decision: string | null;
-  validation: {
-    signature_authentic?: boolean;
-    signature_valid?: boolean;
-    currently_acceptable?: boolean;
-    currently_valid?: boolean;
-  } | null;
+  receiptValidationStatus: ReceiptValidationTraceStatus;
   errorActive: boolean;
 }): TrustExecutionStage[] {
-  const signatureOk =
-    input.validation?.signature_authentic ?? input.validation?.signature_valid ?? false;
-  const currentOk =
-    input.validation?.currently_acceptable ?? input.validation?.currently_valid ?? false;
+  const inFlow =
+    input.phase === "disclosure"
+    || input.phase === "review"
+    || input.phase === "signing"
+    || input.phase === "submitting"
+    || input.phase === "result";
 
-  const applicationState: TrustExecutionStageState = input.policySelected ? "complete" : "active";
+  let applicationState: TrustExecutionStageState = "pending";
   let authorizationState: TrustExecutionStageState = "pending";
   let evidenceState: TrustExecutionStageState = "pending";
   let policyState: TrustExecutionStageState = "pending";
   let decisionState: TrustExecutionStageState = "pending";
   let validationState: TrustExecutionStageState = "pending";
 
-  if (input.phase === "disclosure") {
+  if (input.phase === "workspace" && input.policySelected) {
+    applicationState = "active";
+    if (input.evidenceRequired && !input.presentationPrepared) {
+      evidenceState = "requirements";
+    }
+  } else if (input.phase === "disclosure") {
+    applicationState = "complete";
     authorizationState = "requirements";
     evidenceState = input.presentationPrepared ? "active" : "requirements";
   } else if (input.phase === "review" || input.phase === "signing") {
+    applicationState = "complete";
     authorizationState = "active";
-    evidenceState = input.evidenceRequired
-      ? input.presentationPrepared
-        ? "complete"
-        : "requirements"
-      : "pending";
+    if (input.evidenceRequired) {
+      evidenceState = input.presentationPrepared ? "complete" : "requirements";
+    } else {
+      evidenceState = "pending";
+    }
   } else if (input.phase === "submitting") {
+    applicationState = "complete";
     authorizationState = "complete";
     evidenceState = input.evidenceRequired ? "complete" : "active";
     policyState = "active";
   } else if (input.phase === "result") {
+    applicationState = "complete";
     authorizationState = "complete";
     evidenceState = "complete";
     policyState = "complete";
-    decisionState = input.errorActive ? "failed" : input.decision === "approved" ? "complete" : "failed";
-    validationState = input.validation
-      ? currentOk
+    decisionState = input.errorActive
+      ? "failed"
+      : input.decision === "approved"
         ? "complete"
-        : signatureOk
-          ? "requirements"
-          : "failed"
-      : "active";
-  } else if (input.phase === "workspace" && input.policySelected) {
-    authorizationState = "pending";
-    if (input.evidenceRequired && !input.presentationPrepared) {
-      evidenceState = "requirements";
+        : input.decision
+          ? "failed"
+          : "pending";
+
+    if (input.receiptValidationStatus === "validated") {
+      validationState = "complete";
+    } else if (input.receiptValidationStatus === "failed") {
+      validationState = "failed";
+    } else if (input.receiptValidationStatus === "checking") {
+      validationState = "active";
+    } else if (input.receiptValidationStatus === "idle") {
+      validationState = "active";
+    } else {
+      validationState = "pending";
     }
+  } else if (inFlow) {
+    applicationState = input.policySelected ? "active" : "pending";
   }
 
-  if (input.errorActive && input.phase !== "result") {
-    if (input.phase === "submitting") policyState = "failed";
+  if (input.errorActive && input.phase === "submitting") {
+    policyState = "failed";
   }
 
   return [
-    { id: "application", label: "Application", state: applicationState, detail: "Policy request" },
-    { id: "authorization", label: "Authorization", state: authorizationState, detail: "Holder consent" },
+    {
+      id: "application",
+      label: "Application",
+      state: applicationState,
+      detail: applicationState === "active" ? "Choose policy" : "Policy request",
+    },
+    {
+      id: "authorization",
+      label: "Authorization",
+      state: authorizationState,
+      detail: "Holder consent",
+    },
     {
       id: "evidence",
       label: "Evidence",
       state: evidenceState,
       detail: input.evidenceRequired ? "Issuer credential" : "Wallet binding",
     },
-    { id: "policy", label: "Policy", state: policyState, detail: "Evaluation" },
-    { id: "decision", label: "Decision", state: decisionState, detail: "Signed receipt" },
+    {
+      id: "policy",
+      label: "Policy",
+      state: policyState,
+      detail: "Evaluation",
+    },
+    {
+      id: "decision",
+      label: "Decision",
+      state: decisionState,
+      detail: "Signed receipt",
+    },
     {
       id: "validation",
       label: "Validation",
       state: validationState,
-      detail: signatureOk
-        ? currentOk
-          ? "Currently acceptable"
-          : "Authentic signature only"
-        : "Independent check",
+      detail:
+        input.receiptValidationStatus === "validated"
+          ? "Receipt checked"
+          : input.receiptValidationStatus === "checking"
+            ? "Checking receipt"
+            : input.receiptValidationStatus === "idle" && input.phase === "result"
+              ? "Run validate"
+              : "Independent check",
     },
   ];
 }
