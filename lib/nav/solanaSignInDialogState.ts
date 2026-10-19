@@ -63,9 +63,17 @@ export function signInStatusMessage(input: {
   }
 }
 
+export const WALLET_CONNECT_USER_TIMEOUT_MS = 120_000;
+
 export function mapWalletConnectFailure(error: unknown, walletId?: string): string {
   const message = error instanceof Error ? error.message : String(error ?? "");
   const name = error instanceof Error ? error.name : "";
+  if (message === "wallet_discovery_timeout" || name === "WalletDiscoveryTimeoutError") {
+    return "Wallet discovery timed out. Refresh the page or unlock your wallet extension, then try Connect again.";
+  }
+  if (message === "wallet_connect_timeout") {
+    return "Connection request timed out. Open your wallet extension and approve the connection, then try again.";
+  }
   if (name === "WalletNotReadyError") {
     return walletId === "Solflare"
       ? "Unlock Solflare in your browser toolbar, then click Connect again."

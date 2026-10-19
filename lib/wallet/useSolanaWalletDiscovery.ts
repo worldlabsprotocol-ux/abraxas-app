@@ -14,6 +14,9 @@ import {
 
 const PREFERRED: PreferredSolanaWalletId[] = ["Phantom", "Solflare"];
 
+/** After this, show install links only if still no injectable and no adapter. */
+export const WALLET_DISCOVERY_UI_SETTLE_MS = 4_000;
+
 function findAdapterWallet(wallets: ReturnType<typeof useWallet>["wallets"], name: PreferredSolanaWalletId) {
   return wallets.find((w) => w.adapter.name === name) ?? null;
 }
@@ -53,20 +56,36 @@ export function useSolanaWalletDiscovery(active: boolean): {
     const settle = () => {
       if (!cancelled) setDiscoverySettled(true);
     };
+    const maxSettleTimer = window.setTimeout(settle, WALLET_DISCOVERY_UI_SETTLE_MS);
     if (document.readyState === "complete") {
-      settle();
+      requestAnimationFrame(() => settle());
     } else {
-      window.addEventListener("load", settle, { once: true });
+      window.addEventListener("load", () => requestAnimationFrame(settle), { once: true });
     }
 
     return () => {
       cancelled = true;
+      clearTimeout(maxSettleTimer);
       offRegister();
       offUnregister();
       window.removeEventListener("load", onLoad);
-      window.removeEventListener("load", settle);
     };
   }, [active]);
+
+  useEffect(() => {
+    if (!active) return;
+    for (const walletId of PREFERRED) {
+      const listed = findAdapterWallet(wallets, walletId);
+      if (
+        listed?.readyState === WalletReadyState.Installed
+        || listed?.readyState === WalletReadyState.Loadable
+        || detectInjectableWallet(walletId)
+      ) {
+        setDiscoverySettled(true);
+        break;
+      }
+    }
+  }, [active, wallets, discoveryTick]);
 
   const offers = PREFERRED.reduce(
     (acc, walletId) => {

@@ -7,7 +7,11 @@ import { type WalletName } from "@solana/wallet-adapter-base";
 import { useSolanaWalletDiscovery, PREFERRED_SOLANA_WALLETS } from "@/lib/wallet/useSolanaWalletDiscovery";
 import { WALLET_INSTALL_URLS } from "@/lib/wallet/solanaWalletDiscovery";
 import { walletOfferMeta } from "@/lib/wallet/solanaWalletDiscovery";
-import { waitForSolanaWalletAdapter } from "@/lib/wallet/waitForSolanaWalletAdapter";
+import {
+  waitForSolanaWalletAdapter,
+  WalletDiscoveryTimeoutError,
+} from "@/lib/wallet/waitForSolanaWalletAdapter";
+import { WALLET_CONNECT_USER_TIMEOUT_MS } from "@/lib/nav/solanaSignInDialogState";
 import type { PreferredSolanaWalletId } from "@/lib/wallet/solanaWalletDiscovery";
 import { completeSolanaAccountSignIn } from "@/lib/auth/nativeAccount/clientSolanaAccountSignIn";
 import { completeEphemeralWalletSignIn } from "@/lib/auth/ephemeralWallet/clientSignIn";
@@ -112,14 +116,22 @@ export function SolanaAccountSignInDialog({
             getReadyState: () =>
               walletsRef.current.find((w) => w.adapter.name === walletName)?.readyState,
           });
-        } catch {
+        } catch (error) {
+          if (error instanceof WalletDiscoveryTimeoutError) {
+            throw error;
+          }
           const offer = offers[walletName];
           if (offer?.status !== "available") {
             throw new Error("wallet_not_detected");
           }
         }
         select(walletName as WalletName);
-        await connect();
+        await Promise.race([
+          connect(),
+          new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error("wallet_connect_timeout")), WALLET_CONNECT_USER_TIMEOUT_MS);
+          }),
+        ]);
         setPhase("connected");
       } catch (error) {
         if (error instanceof Error && error.message === "wallet_not_detected") {
