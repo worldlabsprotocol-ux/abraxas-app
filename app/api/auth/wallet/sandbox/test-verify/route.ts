@@ -10,8 +10,15 @@ import { mapEphemeralStoreError } from "@/lib/auth/ephemeralWallet/apiGate";
 import { requireEphemeralWalletScope } from "@/lib/auth/ephemeralWallet/walletSession";
 import { getEphemeralSandboxForSession } from "@/lib/auth/ephemeralWallet/sandboxWorkspace";
 import { runEphemeralProtocolSandboxVerification } from "@/lib/protocolVerification/runSandboxVerification";
+import type { EvidencePresentation } from "@/lib/protocolVerification/types";
+import { resolveSandboxPolicyAvailability } from "@/lib/auth/ephemeralWallet/sandboxPolicyAvailability";
 import { verifyWalletActionAuthorization } from "@/lib/auth/ephemeralWallet/actionAuth";
 import { readWalletSolAuthContextCookie } from "@/lib/auth/ephemeralWallet/service";
+import { resolveEphemeralSandboxTestPolicy } from "@/lib/auth/ephemeralWallet/sandboxTestPolicies";
+import { consumeSandboxPresentationCommit } from "@/lib/auth/ephemeralWallet/sandboxPresentationCommitStore";
+import { verifySandboxPresentationCommitAgainstSubmission } from "@/lib/protocolVerification/verifySandboxPresentationCommit";
+import type { SignedPassportReusableCredential } from "@/lib/passport/reusableCredential/contract";
+import type { PortableRevocationSignedArtifact } from "@/lib/protocol/portableRevocation";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +43,9 @@ export async function POST(req: NextRequest) {
     action_challenge_id?: string;
     signature?: string;
     solana_network?: string;
+    evidence?: Array<Record<string, unknown>>;
+    presentation_commit_id?: string;
+    presentation_method_id?: string;
   };
   try {
     body = await req.json();
@@ -78,11 +88,64 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, code: action.code }, { status });
   }
 
+  const availability = resolveSandboxPolicyAvailability(policyId);
+  if (!availability?.can_request_verification) {
+    return NextResponse.json(
+      { ok: false, code: "evidence_unavailable", unsupported: true },
+      { status: 422 },
+    );
+  }
+
+  const parsedEvidence = parseEvidencePresentations(body.evidence);
+  if (policyId === "age_21_retail" && parsedEvidence.length === 0) {
+    return NextResponse.json(
+      { ok: false, code: "credential_evidence_required", unsupported: false },
+      { status: 422 },
+    );
+  }
+
+  if (policyId === "age_21_retail") {
+    const commitId = String(body.presentation_commit_id ?? "").trim();
+    if (!commitId) {
+      return NextResponse.json({ ok: false, code: "presentation_commit_required" }, { status: 422 });
+    }
+    const credentialEvidence = parsedEvidence.find((row) => row.kind === "passport_reusable_credential");
+    if (!credentialEvidence || credentialEvidence.kind !== "passport_reusable_credential") {
+      return NextResponse.json({ ok: false, code: "credential_evidence_required" }, { status: 422 });
+    }
+    const sandboxPolicy = resolveEphemeralSandboxTestPolicy(policyId);
+    if (!sandboxPolicy) {
+      return NextResponse.json({ ok: false, code: "invalid_policy" }, { status: 400 });
+    }
+    const commit = await consumeSandboxPresentationCommit(commitId);
+    const verifiedCommit = verifySandboxPresentationCommitAgainstSubmission({
+      commit,
+      session_id: auth.session.sessionId,
+      workspace_id: workspace.workspace_id,
+      wallet_address: auth.session.walletAddress,
+      policy_id: policyId,
+      policy_version: sandboxPolicy.policy_version,
+      presentation_method_id: String(body.presentation_method_id ?? "authorized_test_issuer_credential"),
+      credential: credentialEvidence.credential as SignedPassportReusableCredential,
+      portable_revocation_snapshot:
+        credentialEvidence.portable_revocation_snapshot as PortableRevocationSignedArtifact,
+    });
+    if (!verifiedCommit.ok) {
+      const status =
+        verifiedCommit.code === "presentation_commit_not_found"
+        || verifiedCommit.code === "presentation_commit_expired"
+          ? 410
+          : 422;
+      return NextResponse.json({ ok: false, code: verifiedCommit.code }, { status });
+    }
+  }
+
   try {
     const outcome = await runEphemeralProtocolSandboxVerification({
       workspaceId: workspace.workspace_id,
       walletAddress: auth.session.walletAddress,
       policyId,
+      evidence: parsedEvidence.length > 0 ? parsedEvidence : undefined,
     });
     if (!outcome.ok) {
       const status =
@@ -110,4 +173,29 @@ export async function POST(req: NextRequest) {
     if (mapped) return mapped;
     throw error;
   }
+}
+
+function parseEvidencePresentations(raw: unknown): EvidencePresentation[] {
+  if (!Array.isArray(raw)) return [];
+  const out: EvidencePresentation[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== "object") continue;
+    const kind = String((row as { kind?: string }).kind ?? "");
+    if (kind === "passport_reusable_credential") {
+      const credential = (row as { credential?: Record<string, unknown> }).credential;
+      const snapshot = (row as { portable_revocation_snapshot?: Record<string, unknown> })
+        .portable_revocation_snapshot;
+      if (credential && snapshot) {
+        out.push({
+          kind: "passport_reusable_credential",
+          credential,
+          portable_revocation_snapshot: snapshot,
+        });
+      }
+    } else if (kind === "wallet_session_binding") {
+      const wallet = String((row as { wallet_address?: string }).wallet_address ?? "");
+      if (wallet) out.push({ kind: "wallet_session_binding", wallet_address: wallet });
+    }
+  }
+  return out;
 }

@@ -11,6 +11,7 @@ import {
 import {
   EPHEMERAL_WORKSPACE_SANDBOX_BADGE,
   EPHEMERAL_WORKSPACE_SANDBOX_EXPIRY_NOTE,
+  policyExperienceBanner,
   verificationReviewScopeNote,
   verificationReviewTitle,
 } from "@/lib/developers/ephemeralWorkspaceCopy";
@@ -18,14 +19,18 @@ import {
   mapWorkspaceUserFacingError,
   type WorkspaceUserFacingError,
 } from "@/lib/developers/ephemeralWorkspaceUserErrors";
-import type { SandboxPolicyAvailability } from "@/lib/auth/ephemeralWallet/sandboxPolicyAvailability";
-import { resolveSandboxPolicyAvailability } from "@/lib/auth/ephemeralWallet/sandboxPolicyAvailability";
+import {
+  firstSandboxPolicyIdWithVerification,
+  pickSandboxPolicyAvailability,
+  type SandboxPolicyAvailability,
+} from "@/lib/auth/ephemeralWallet/sandboxPolicyAvailability.shared";
 import {
   EPHEMERAL_WALLET_SESSION_EVENT,
   fetchEphemeralWalletClientSession,
   notifyEphemeralWalletSessionChanged,
 } from "@/lib/auth/ephemeralWallet/clientSession";
 import { EphemeralWorkspaceSessionRail } from "./EphemeralWorkspaceSessionRail";
+import { TrustExecutionTrace, deriveTrustExecutionStages } from "./TrustExecutionTrace";
 import styles from "./EphemeralDeveloperWorkspace.module.css";
 
 const EPHEMERAL_SANDBOX_RESULT_LABEL = "ephemeral_sandbox_test_only";
@@ -54,11 +59,27 @@ type WorkspacePhase =
   | "ready"
   | "entering"
   | "workspace"
+  | "disclosure"
   | "review"
   | "signing"
   | "submitting"
   | "result"
   | "failure";
+
+type PreparedEvidence = {
+  kind: "passport_reusable_credential";
+  credential: Record<string, unknown>;
+  portable_revocation_snapshot: Record<string, unknown>;
+};
+
+type PresentationDisclosure = {
+  experience_kind?: string;
+  headline?: string;
+  requested_attribute: string;
+  disclosed_to_partner: string[];
+  withheld: string[];
+  sandbox_notice: string;
+};
 
 function logSandboxStage(input: Record<string, unknown>): void {
   if (typeof console !== "undefined" && console.info) {
@@ -90,7 +111,16 @@ export function EphemeralSandboxWorkspaceClient() {
   const [serverSessionAuthenticated, setServerSessionAuthenticated] = useState(false);
   const [pendingChallenge, setPendingChallenge] = useState<WalletActionChallengePayload | null>(null);
   const [result, setResult] = useState<TestResult | null>(null);
-  const [validation, setValidation] = useState<{ ok?: boolean; signature_valid?: boolean } | null>(null);
+  const [validation, setValidation] = useState<{
+    ok?: boolean;
+    signature_valid?: boolean;
+    signature_authentic?: boolean;
+    currently_valid?: boolean;
+    currently_acceptable?: boolean;
+  } | null>(null);
+  const [preparedEvidence, setPreparedEvidence] = useState<PreparedEvidence | null>(null);
+  const [presentationCommitId, setPresentationCommitId] = useState<string | null>(null);
+  const [presentationDisclosure, setPresentationDisclosure] = useState<PresentationDisclosure | null>(null);
   const [decision, setDecision] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [userError, setUserError] = useState<WorkspaceUserFacingError | null>(null);
@@ -169,12 +199,10 @@ export function EphemeralSandboxWorkspaceClient() {
       .then((r) => r.json())
       .then((json: { policies?: Policy[]; availability?: SandboxPolicyAvailability[] }) => {
         const list = json.policies ?? [];
+        const availability = json.availability ?? [];
         setPolicies(list);
-        setPolicyAvailability(json.availability ?? []);
-        const defaultPolicy =
-          list.find((p) => resolveSandboxPolicyAvailability(p.policy_id)?.can_request_verification)?.policy_id
-          ?? list[0]?.policy_id
-          ?? "";
+        setPolicyAvailability(availability);
+        const defaultPolicy = firstSandboxPolicyIdWithVerification(list, availability) ?? "";
         if (defaultPolicy) setSelectedPolicy(defaultPolicy);
       })
       .catch(() => setPolicies([]));
@@ -313,10 +341,52 @@ export function EphemeralSandboxWorkspaceClient() {
     return true;
   }, [selectedPolicy, workspace]);
 
+  const prepareAgePresentation = useCallback(async () => {
+    if (!selectedPolicy || !workspace) return;
+    setBusy(true);
+    setUserError(null);
+    try {
+      const res = await fetch("/api/auth/wallet/sandbox/presentation/prepare", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          policy_id: selectedPolicy,
+          presentation_method_id: "authorized_test_issuer_credential",
+        }),
+      });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        code?: string;
+        disclosure?: PresentationDisclosure;
+        evidence?: PreparedEvidence;
+        presentation_commit_id?: string;
+      };
+      if (!res.ok || !json.evidence || !json.disclosure || !json.presentation_commit_id) {
+        setUserError(mapWorkspaceUserFacingError({ code: json.code ?? "unsupported_evidence" }));
+        return;
+      }
+      setPreparedEvidence(json.evidence);
+      setPresentationCommitId(json.presentation_commit_id);
+      setPresentationDisclosure(json.disclosure);
+      setPhase("disclosure");
+    } catch {
+      setUserError(mapWorkspaceUserFacingError({ code: "network_error" }));
+    } finally {
+      setBusy(false);
+    }
+  }, [selectedPolicy, workspace]);
+
   const beginVerificationReview = useCallback(async () => {
-    const availability =
-      policyAvailability.find((a) => a.policy_id === selectedPolicy)
-      ?? resolveSandboxPolicyAvailability(selectedPolicy);
+    const availability = pickSandboxPolicyAvailability(policyAvailability, selectedPolicy);
+    if (selectedPolicy === "age_21_retail" && !preparedEvidence) {
+      setUserError({
+        title: "Evidence required",
+        message: "Prepare an issuer credential presentation before authorizing this age policy test.",
+        recovery: "Use Prepare presentation on the policy card.",
+      });
+      return;
+    }
     if (!availability?.can_request_verification) {
       setUserError({
         title: "Action unavailable",
@@ -343,7 +413,7 @@ export function EphemeralSandboxWorkspaceClient() {
     } finally {
       setBusy(false);
     }
-  }, [loadVerificationChallenge, signMessage, selectedPolicy, policyAvailability]);
+  }, [loadVerificationChallenge, signMessage, selectedPolicy, policyAvailability, preparedEvidence]);
 
   const submitSignedVerification = useCallback(
     async (input: { action_challenge_id: string; signature: string; generation: number }) => {
@@ -358,6 +428,9 @@ export function EphemeralSandboxWorkspaceClient() {
             policy_id: selectedPolicy,
             action_challenge_id: input.action_challenge_id,
             signature: input.signature,
+            evidence: preparedEvidence ? [preparedEvidence] : undefined,
+            presentation_commit_id: presentationCommitId ?? undefined,
+            presentation_method_id: preparedEvidence ? "authorized_test_issuer_credential" : undefined,
           }),
         });
         if (input.generation !== requestGenerationRef.current) return;
@@ -386,7 +459,13 @@ export function EphemeralSandboxWorkspaceClient() {
           `/api/auth/wallet/sandbox/validate?receipt_id=${encodeURIComponent(String(json.result.receipt_id))}`,
           { credentials: "same-origin" },
         );
-        const validateJson = (await validateRes.json()) as { ok?: boolean; signature_valid?: boolean };
+        const validateJson = (await validateRes.json()) as {
+          ok?: boolean;
+          signature_valid?: boolean;
+          signature_authentic?: boolean;
+          currently_valid?: boolean;
+          currently_acceptable?: boolean;
+        };
         if (input.generation === requestGenerationRef.current) {
           setValidation(validateJson);
         }
@@ -397,7 +476,7 @@ export function EphemeralSandboxWorkspaceClient() {
         }
       }
     },
-    [selectedPolicy],
+    [selectedPolicy, preparedEvidence, presentationCommitId],
   );
 
   const openPhantomForReview = useCallback(async () => {
@@ -493,9 +572,18 @@ export function EphemeralSandboxWorkspaceClient() {
                 ? "authenticated"
                 : "disconnected";
 
-  const selectedAvailability =
-    policyAvailability.find((a) => a.policy_id === selectedPolicy)
-    ?? resolveSandboxPolicyAvailability(selectedPolicy);
+  const selectedAvailability = pickSandboxPolicyAvailability(policyAvailability, selectedPolicy);
+
+  const evidenceRequired = selectedPolicy === "age_21_retail";
+  const trustStages = deriveTrustExecutionStages({
+    phase,
+    policySelected: Boolean(selectedPolicy && workspace),
+    presentationPrepared: Boolean(preparedEvidence),
+    evidenceRequired,
+    decision,
+    validation,
+    errorActive: Boolean(userError),
+  });
 
   if (phase === "loading") {
     return (
@@ -543,18 +631,7 @@ export function EphemeralSandboxWorkspaceClient() {
         <p className={styles.muted}>{EPHEMERAL_WORKSPACE_SANDBOX_EXPIRY_NOTE}</p>
       </div>
 
-      <ol className={styles.steps} aria-label="Workspace progress">
-        {steps.map((label, index) => (
-          <li
-            key={label}
-            className={
-              index < stepIndex ? styles.stepDone : index === stepIndex ? styles.stepActive : styles.step
-            }
-          >
-            {label}
-          </li>
-        ))}
-      </ol>
+      {workspace ? <TrustExecutionTrace stages={trustStages} /> : null}
 
       <div className={styles.panel}>
         {(phase === "ready" || phase === "entering" || phase === "failure") && !workspace ? (
@@ -580,7 +657,11 @@ export function EphemeralSandboxWorkspaceClient() {
           </>
         ) : null}
 
-        {workspace && phase !== "review" && phase !== "signing" && phase !== "submitting" ? (
+        {workspace
+        && phase !== "review"
+        && phase !== "signing"
+        && phase !== "submitting"
+        && phase !== "disclosure" ? (
           <>
             <h2 className={styles.sectionTitle}>Choose a policy</h2>
             <p className={`${styles.meta} ${styles.muted}`}>
@@ -593,9 +674,7 @@ export function EphemeralSandboxWorkspaceClient() {
             <div className={styles.policyGrid} role="radiogroup" aria-label="Choose a policy">
               {policies.map((p) => {
                 const selected = p.policy_id === selectedPolicy;
-                const availability =
-                  policyAvailability.find((a) => a.policy_id === p.policy_id)
-                  ?? resolveSandboxPolicyAvailability(p.policy_id);
+                const availability = pickSandboxPolicyAvailability(policyAvailability, p.policy_id);
                 const ready = availability?.can_request_verification ?? false;
                 return (
                   <button
@@ -607,6 +686,9 @@ export function EphemeralSandboxWorkspaceClient() {
                     className={selected ? styles.policyCardActive : styles.policyCard}
                     onClick={() => {
                       setSelectedPolicy(p.policy_id);
+                      setPreparedEvidence(null);
+                      setPresentationCommitId(null);
+                      setPresentationDisclosure(null);
                       setUserError(null);
                       setShowTechnicalDetails(false);
                     }}
@@ -620,25 +702,84 @@ export function EphemeralSandboxWorkspaceClient() {
                 );
               })}
             </div>
+            {selectedPolicy && policyExperienceBanner(selectedPolicy, selectedAvailability?.age_experience) ? (
+              <p className={styles.note}>
+                {policyExperienceBanner(selectedPolicy, selectedAvailability?.age_experience)}
+              </p>
+            ) : null}
             {selectedAvailability && !selectedAvailability.can_request_verification ? (
               <p className={styles.availabilityNote}>{selectedAvailability.availability_detail}</p>
             ) : null}
             <div className={styles.actions}>
-              <button
-                type="button"
-                className={styles.verifyBtn}
-                disabled={
-                  busy || !selectedPolicy || !signMessage || !selectedAvailability?.can_request_verification
-                }
-                onClick={() => void beginVerificationReview()}
-              >
-                Review request
-              </button>
+              {selectedPolicy === "age_21_retail" && selectedAvailability?.can_request_verification ? (
+                <button
+                  type="button"
+                  className={styles.verifyBtn}
+                  disabled={busy || !selectedPolicy}
+                  onClick={() => void prepareAgePresentation()}
+                >
+                  Prepare presentation
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className={styles.verifyBtn}
+                  disabled={
+                    busy || !selectedPolicy || !signMessage || !selectedAvailability?.can_request_verification
+                  }
+                  onClick={() => void beginVerificationReview()}
+                >
+                  Review request
+                </button>
+              )}
               <button type="button" className={styles.secondaryBtn} disabled={busy} onClick={() => void signOut()}>
                 Sign out
               </button>
             </div>
           </>
+        ) : null}
+
+        {phase === "disclosure" && presentationDisclosure ? (
+          <div className={styles.disclosureCard}>
+            <h2 className={styles.sectionTitle}>
+              {presentationDisclosure.headline ?? "Review disclosure"}
+            </h2>
+            <p className={styles.muted}>{presentationDisclosure.sandbox_notice}</p>
+            <p className={styles.note}>
+              <strong>{presentationDisclosure.requested_attribute}</strong>
+            </p>
+            <ul className={styles.disclosureList}>
+              {presentationDisclosure.disclosed_to_partner.map((line) => (
+                <li key={line}>Discloses: {line}</li>
+              ))}
+              {presentationDisclosure.withheld.map((line) => (
+                <li key={line}>Withheld: {line}</li>
+              ))}
+            </ul>
+            <div className={styles.actions}>
+              <button
+                type="button"
+                className={styles.primaryBtn}
+                disabled={busy || !signMessage}
+                onClick={() => void beginVerificationReview()}
+              >
+                Approve and authorize
+              </button>
+              <button
+                type="button"
+                className={styles.secondaryBtn}
+                disabled={busy}
+                onClick={() => {
+                  setPhase("workspace");
+                  setPreparedEvidence(null);
+                  setPresentationCommitId(null);
+                  setPresentationDisclosure(null);
+                }}
+              >
+                Back
+              </button>
+            </div>
+          </div>
         ) : null}
 
         {phase === "review" && pendingChallenge ? (
@@ -755,7 +896,14 @@ export function EphemeralSandboxWorkspaceClient() {
 
         {result ? (
           <div className={styles.resultBox}>
-            <h3 className={styles.resultTitle}>Verification complete</h3>
+            <h3 className={styles.resultTitle}>
+              {selectedPolicy === "age_21_retail" ? "Age 21 test complete" : "Verification complete"}
+            </h3>
+            {selectedPolicy === "age_21_retail" ? (
+              <p className={styles.note}>
+                Sandbox test result only. This does not prove real world age eligibility.
+              </p>
+            ) : null}
             <p className={styles.resultLine}>
               <strong>Policy:</strong> {selectedPolicyMeta?.label ?? selectedPolicy}
             </p>
@@ -763,8 +911,12 @@ export function EphemeralSandboxWorkspaceClient() {
               <strong>Decision:</strong> {decision ?? "unknown"} (Sandbox test only)
             </p>
             <p className={styles.resultLine}>
-              <strong>Receipt validation:</strong>{" "}
-              {validation?.signature_valid ? "Valid" : validation ? "Invalid" : "Pending"}
+              <strong>Signature authentic:</strong>{" "}
+              {validation?.signature_authentic ?? validation?.signature_valid ? "Yes" : validation ? "No" : "Pending"}
+            </p>
+            <p className={styles.resultLine}>
+              <strong>Currently acceptable:</strong>{" "}
+              {validation?.currently_acceptable ?? validation?.currently_valid ? "Yes" : validation ? "No" : "Pending"}
             </p>
             <details className={styles.receiptDetails}>
               <summary>Receipt details</summary>
@@ -798,6 +950,9 @@ export function EphemeralSandboxWorkspaceClient() {
                   setResult(null);
                   setValidation(null);
                   setDecision(null);
+                  setPreparedEvidence(null);
+                  setPresentationCommitId(null);
+                  setPresentationDisclosure(null);
                   setUserError(null);
                   setPhase("workspace");
                 }}

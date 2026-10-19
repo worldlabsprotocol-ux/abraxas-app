@@ -33,7 +33,7 @@ export async function runEphemeralProtocolSandboxVerification(input: {
     input.evidence ??
     (input.policyId === "wallet_control"
       ? [{ kind: "wallet_session_binding", wallet_address: input.walletAddress }]
-      : [{ kind: "wallet_session_binding", wallet_address: input.walletAddress }]);
+      : []);
 
   const request = bindVerificationRequest({
     requestId: `req_esbx_${randomBytes(6).toString("hex")}`,

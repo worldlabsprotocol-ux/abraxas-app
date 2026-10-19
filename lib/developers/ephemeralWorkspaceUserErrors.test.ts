@@ -12,7 +12,7 @@ describe("mapWorkspaceUserFacingError", () => {
 
   it("maps insufficient evidence without raw code in message", () => {
     const row = mapWorkspaceUserFacingError({ code: "insufficient_evidence_for_policy" });
-    expect(row.title).toBe("Additional evidence required");
+    expect(row.title).toBe("Evidence required");
     expect(row.technicalCode).toBe("insufficient_evidence_for_policy");
   });
 });
