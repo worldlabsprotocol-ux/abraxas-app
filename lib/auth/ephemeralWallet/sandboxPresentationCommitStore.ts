@@ -1,7 +1,8 @@
 // FILE: lib/auth/ephemeralWallet/sandboxPresentationCommitStore.ts
 
 import { randomBytes } from "crypto";
-import { ephemeralKvGetDel, ephemeralKvSet } from "./redisKv";
+import type { PassportPossessionChallengePayload } from "@/lib/passport/reusableCredential/holderPossessionChallenge";
+import { ephemeralKvGet, ephemeralKvGetDel, ephemeralKvSet } from "./redisKv";
 import { EPHEMERAL_TTL } from "./retention";
 import { EphemeralStateUnavailableError } from "./errors";
 import {
@@ -24,6 +25,8 @@ export type SandboxPresentationCommitRecord = {
   expires_at: string;
   sandbox_labeled: true;
   production_trusted: false;
+  possession_challenge?: PassportPossessionChallengePayload;
+  possession_authorized_at?: string | null;
 };
 
 const memoryStore = new Map<string, SandboxPresentationCommitRecord>();
@@ -61,6 +64,54 @@ export async function storeSandboxPresentationCommit(
 }
 
 /** Atomic consume-once (Redis GETDEL in distributed Production; serialized Map in local dev). */
+export async function peekSandboxPresentationCommit(
+  commitId: string,
+  env: Record<string, string | undefined> = process.env,
+): Promise<SandboxPresentationCommitRecord | null> {
+  if (useRedisPresentationCommitStore(env)) {
+    const record = await ephemeralKvGet<SandboxPresentationCommitRecord>(commitKey(commitId), env);
+    if (!record) return null;
+    if (Date.parse(record.expires_at) < Date.now()) return null;
+    return record;
+  }
+  if (requiresDistributedChallengeStore(env) || !memoryAllowed(env)) {
+    throw new EphemeralStateUnavailableError();
+  }
+  const record = memoryStore.get(commitId) ?? null;
+  if (!record) return null;
+  if (Date.parse(record.expires_at) < Date.now()) return null;
+  return record;
+}
+
+export async function markSandboxPresentationCommitPossessionAuthorized(
+  commitId: string,
+  authorizedAt: string,
+  env: Record<string, string | undefined> = process.env,
+): Promise<SandboxPresentationCommitRecord | null> {
+  const ttl = EPHEMERAL_TTL.sandboxTestCredentialSec;
+  if (useRedisPresentationCommitStore(env)) {
+    const record = await peekSandboxPresentationCommit(commitId, env);
+    if (!record) return null;
+    const updated: SandboxPresentationCommitRecord = {
+      ...record,
+      possession_authorized_at: authorizedAt,
+    };
+    await ephemeralKvSet(commitKey(commitId), updated, ttl, env);
+    return updated;
+  }
+  if (requiresDistributedChallengeStore(env) || !memoryAllowed(env)) {
+    throw new EphemeralStateUnavailableError();
+  }
+  const record = memoryStore.get(commitId);
+  if (!record) return null;
+  const updated: SandboxPresentationCommitRecord = {
+    ...record,
+    possession_authorized_at: authorizedAt,
+  };
+  memoryStore.set(commitId, updated);
+  return updated;
+}
+
 export async function consumeSandboxPresentationCommit(
   commitId: string,
   env: Record<string, string | undefined> = process.env,

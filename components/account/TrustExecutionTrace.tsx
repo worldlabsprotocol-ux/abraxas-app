@@ -72,6 +72,7 @@ export function deriveTrustExecutionStages(input: {
   phase: string;
   policySelected: boolean;
   presentationPrepared: boolean;
+  presentationAuthorized: boolean;
   evidenceRequired: boolean;
   decision: string | null;
   receiptValidationStatus: ReceiptValidationTraceStatus;
@@ -96,13 +97,13 @@ export function deriveTrustExecutionStages(input: {
     if (input.evidenceRequired && !input.presentationPrepared) {
       evidenceState = "requirements";
     }
-  } else if (input.phase === "disclosure") {
+  } else if (input.phase === "disclosure" || input.phase === "authorizing") {
     applicationState = "complete";
-    authorizationState = "requirements";
+    authorizationState = input.presentationAuthorized ? "complete" : "active";
     evidenceState = input.presentationPrepared ? "active" : "requirements";
   } else if (input.phase === "review" || input.phase === "signing") {
     applicationState = "complete";
-    authorizationState = "active";
+    authorizationState = input.presentationAuthorized || !input.evidenceRequired ? "complete" : "active";
     if (input.evidenceRequired) {
       evidenceState = input.presentationPrepared ? "complete" : "requirements";
     } else {

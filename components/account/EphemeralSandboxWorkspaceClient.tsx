@@ -34,6 +34,11 @@ import {
   notifyEphemeralWalletSessionChanged,
 } from "@/lib/auth/ephemeralWallet/clientSession";
 import { EphemeralWorkspaceSessionRail } from "./EphemeralWorkspaceSessionRail";
+import {
+  signPassportPossessionChallenge,
+  type PassportPossessionChallengePayload,
+} from "@/lib/passport/reusableCredential/holderPossessionChallengeSigning";
+import { deriveEphemeralSandboxPossessionSecretKey } from "@/lib/auth/ephemeralWallet/sandboxHolderPossessionKey.shared";
 import { TrustExecutionTrace, deriveTrustExecutionStages } from "./TrustExecutionTrace";
 import styles from "./EphemeralDeveloperWorkspace.module.css";
 
@@ -65,6 +70,7 @@ type WorkspacePhase =
   | "entering"
   | "workspace"
   | "disclosure"
+  | "authorizing"
   | "review"
   | "signing"
   | "submitting"
@@ -120,6 +126,8 @@ export function EphemeralSandboxWorkspaceClient() {
   const [preparedEvidence, setPreparedEvidence] = useState<PreparedEvidence | null>(null);
   const [presentationCommitId, setPresentationCommitId] = useState<string | null>(null);
   const [presentationDisclosure, setPresentationDisclosure] = useState<PresentationDisclosure | null>(null);
+  const [possessionChallenge, setPossessionChallenge] = useState<PassportPossessionChallengePayload | null>(null);
+  const [presentationAuthorized, setPresentationAuthorized] = useState(false);
   const [decision, setDecision] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [userError, setUserError] = useState<WorkspaceUserFacingError | null>(null);
@@ -360,14 +368,17 @@ export function EphemeralSandboxWorkspaceClient() {
         disclosure?: PresentationDisclosure;
         evidence?: PreparedEvidence;
         presentation_commit_id?: string;
+        possession_challenge?: PassportPossessionChallengePayload;
       };
-      if (!res.ok || !json.evidence || !json.disclosure || !json.presentation_commit_id) {
+      if (!res.ok || !json.evidence || !json.disclosure || !json.presentation_commit_id || !json.possession_challenge) {
         setUserError(mapWorkspaceUserFacingError({ code: json.code ?? "unsupported_evidence" }));
         return;
       }
       setPreparedEvidence(json.evidence);
       setPresentationCommitId(json.presentation_commit_id);
       setPresentationDisclosure(json.disclosure);
+      setPossessionChallenge(json.possession_challenge);
+      setPresentationAuthorized(false);
       setPhase("disclosure");
     } catch {
       setUserError(mapWorkspaceUserFacingError({ code: "network_error" }));
@@ -376,6 +387,61 @@ export function EphemeralSandboxWorkspaceClient() {
     }
   }, [selectedPolicy, workspace]);
 
+  const authorizeCredentialPresentation = useCallback(async () => {
+    if (!selectedPolicy || !workspace || !preparedEvidence || !presentationCommitId || !possessionChallenge) {
+      return;
+    }
+    if (!walletAddress) {
+      setUserError({
+        title: "Wallet session required",
+        message: "Connect your wallet before authorizing credential presentation.",
+      });
+      return;
+    }
+    setBusy(true);
+    setUserError(null);
+    setPhase("authorizing");
+    try {
+      const secretKey = deriveEphemeralSandboxPossessionSecretKey(walletAddress);
+      const holder_possession_proof = {
+        challenge_id: possessionChallenge.challenge_id,
+        signature: signPassportPossessionChallenge(possessionChallenge, secretKey),
+      };
+      const res = await fetch("/api/auth/wallet/sandbox/presentation/authorize", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          policy_id: selectedPolicy,
+          presentation_commit_id: presentationCommitId,
+          challenge: possessionChallenge,
+          holder_possession_proof,
+          evidence: preparedEvidence,
+        }),
+      });
+      const json = (await res.json()) as { ok?: boolean; code?: string };
+      if (!res.ok || !json.ok) {
+        setPhase("disclosure");
+        setUserError(mapWorkspaceUserFacingError({ code: json.code ?? "presentation_authorization_failed" }));
+        return;
+      }
+      setPresentationAuthorized(true);
+      setPhase("disclosure");
+    } catch {
+      setPhase("disclosure");
+      setUserError(mapWorkspaceUserFacingError({ code: "network_error" }));
+    } finally {
+      setBusy(false);
+    }
+  }, [
+    selectedPolicy,
+    workspace,
+    preparedEvidence,
+    presentationCommitId,
+    possessionChallenge,
+    walletAddress,
+  ]);
+
   const beginVerificationReview = useCallback(async () => {
     const availability = pickSandboxPolicyAvailability(policyAvailability, selectedPolicy);
     if (selectedPolicy === "age_21_retail" && !preparedEvidence) {
@@ -383,6 +449,14 @@ export function EphemeralSandboxWorkspaceClient() {
         title: "Evidence required",
         message: "Prepare an issuer credential presentation before authorizing this age policy test.",
         recovery: "Use Prepare presentation on the policy card.",
+      });
+      return;
+    }
+    if (selectedPolicy === "age_21_retail" && !presentationAuthorized) {
+      setUserError({
+        title: "Presentation not authorized",
+        message: "Authorize holder possession of the selected credential before requesting verification.",
+        recovery: "Use Authorize presentation on the disclosure screen.",
       });
       return;
     }
@@ -412,7 +486,14 @@ export function EphemeralSandboxWorkspaceClient() {
     } finally {
       setBusy(false);
     }
-  }, [loadVerificationChallenge, signMessage, selectedPolicy, policyAvailability, preparedEvidence]);
+  }, [
+    loadVerificationChallenge,
+    signMessage,
+    selectedPolicy,
+    policyAvailability,
+    preparedEvidence,
+    presentationAuthorized,
+  ]);
 
   const submitSignedVerification = useCallback(
     async (input: { action_challenge_id: string; signature: string; generation: number }) => {
@@ -610,6 +691,7 @@ export function EphemeralSandboxWorkspaceClient() {
     phase,
     policySelected: Boolean(selectedPolicy && workspace),
     presentationPrepared: Boolean(preparedEvidence),
+    presentationAuthorized,
     evidenceRequired,
     decision,
     receiptValidationStatus: phase === "result" ? receiptValidationTraceStatus : "not_applicable",
@@ -725,6 +807,8 @@ export function EphemeralSandboxWorkspaceClient() {
                       setPreparedEvidence(null);
                       setPresentationCommitId(null);
                       setPresentationDisclosure(null);
+                      setPossessionChallenge(null);
+                      setPresentationAuthorized(false);
                       setUserError(null);
                       setShowTechnicalDetails(false);
                     }}
@@ -775,7 +859,7 @@ export function EphemeralSandboxWorkspaceClient() {
           </>
         ) : null}
 
-        {phase === "disclosure" && presentationDisclosure ? (
+        {(phase === "disclosure" || phase === "authorizing") && presentationDisclosure ? (
           <div className={styles.disclosureCard}>
             <h2 className={styles.sectionTitle}>
               {presentationDisclosure.headline ?? "Review disclosure"}
@@ -793,14 +877,25 @@ export function EphemeralSandboxWorkspaceClient() {
               ))}
             </ul>
             <div className={styles.actions}>
-              <button
-                type="button"
-                className={styles.primaryBtn}
-                disabled={busy || !signMessage}
-                onClick={() => void beginVerificationReview()}
-              >
-                Approve and authorize
-              </button>
+              {!presentationAuthorized ? (
+                <button
+                  type="button"
+                  className={styles.primaryBtn}
+                  disabled={busy}
+                  onClick={() => void authorizeCredentialPresentation()}
+                >
+                  Authorize presentation
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className={styles.primaryBtn}
+                  disabled={busy || !signMessage}
+                  onClick={() => void beginVerificationReview()}
+                >
+                  Continue to verification
+                </button>
+              )}
               <button
                 type="button"
                 className={styles.secondaryBtn}
@@ -810,11 +905,25 @@ export function EphemeralSandboxWorkspaceClient() {
                   setPreparedEvidence(null);
                   setPresentationCommitId(null);
                   setPresentationDisclosure(null);
+                  setPossessionChallenge(null);
+                  setPresentationAuthorized(false);
                 }}
               >
                 Back
               </button>
             </div>
+            {busy && !presentationAuthorized ? (
+              <div className={styles.statusRow} role="status">
+                <span className={styles.spinner} aria-hidden />
+                Confirming holder possession…
+              </div>
+            ) : presentationAuthorized ? (
+              <p className={styles.note}>Holder possession confirmed. Continue when you are ready to sign the test verification request.</p>
+            ) : (
+              <p className={styles.note}>
+                Authorize presentation with your wallet bound possession key. No Phantom signature is required for this step.
+              </p>
+            )}
           </div>
         ) : null}
 

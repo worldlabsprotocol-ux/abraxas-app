@@ -21,6 +21,11 @@ import {
   createSandboxPresentationCommitId,
   storeSandboxPresentationCommit,
 } from "@/lib/auth/ephemeralWallet/sandboxPresentationCommitStore";
+import { EPHEMERAL_SANDBOX_TEST_PARTNER_ID } from "@/lib/auth/ephemeralWallet/sandboxTestPolicies";
+import {
+  InMemoryPassportPossessionChallengeStore,
+  issuePassportPossessionChallenge,
+} from "@/lib/passport/reusableCredential/holderPossessionChallenge";
 import type { SignedPassportReusableCredential } from "@/lib/passport/reusableCredential/contract";
 import type { PortableRevocationSignedArtifact } from "@/lib/protocol/portableRevocation";
 
@@ -86,6 +91,12 @@ export async function POST(req: NextRequest) {
       credential,
       portable_revocation_snapshot: snapshot,
     });
+    const possessionChallenge = issuePassportPossessionChallenge({
+      credentialId: credential.payload.credential_id,
+      partnerId: EPHEMERAL_SANDBOX_TEST_PARTNER_ID,
+      policyId,
+      store: new InMemoryPassportPossessionChallengeStore(),
+    });
     const commitId = createSandboxPresentationCommitId();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
     try {
@@ -101,6 +112,8 @@ export async function POST(req: NextRequest) {
         expires_at: expiresAt,
         sandbox_labeled: true,
         production_trusted: false,
+        possession_challenge: possessionChallenge,
+        possession_authorized_at: null,
       });
     } catch (error) {
       const mapped = mapEphemeralStoreError(error);
@@ -115,6 +128,8 @@ export async function POST(req: NextRequest) {
       presentation_method_id: methodId,
       presentation_commit_id: commitId,
       presentation_commit_expires_at: expiresAt,
+      possession_challenge: possessionChallenge,
+      credential_id: credential.payload.credential_id,
       disclosure: SANDBOX_AGE_PRESENTATION_DISCLOSURE,
       evidence: {
         kind: "passport_reusable_credential",
