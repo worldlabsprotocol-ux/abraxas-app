@@ -221,7 +221,7 @@ describe.runIf(integrationEnabled)("ephemeral wallet authentication", () => {
     expect((await capturedUse.json()).authenticated).toBe(false);
   });
 
-  it("rejects sandbox enter without action authorization (scope escalation)", async () => {
+  it("opens sandbox workspace with wallet session binding (no redundant enter signature)", async () => {
     const { sessionCookie } = await signInWallet(keypair, wallet, origin);
     const { POST: enterPost } = await import("@/app/api/auth/wallet/sandbox/enter/route");
     const enterRes = await enterPost(
@@ -231,45 +231,29 @@ describe.runIf(integrationEnabled)("ephemeral wallet authentication", () => {
         body: "{}",
       }),
     );
-    expect(enterRes.status).toBe(403);
-    expect((await enterRes.json()).code).toBe("action_authorization_required");
+    expect(enterRes.status).toBe(200);
+    const body = await enterRes.json();
+    expect(body.workspace?.workspace_id).toMatch(/^esbx_/);
+    expect(body.authorization_mode).toBe("wallet_session");
   });
 
   async function openSandboxWorkspace(sessionCookie: string) {
-    const sessionBody = await (
-      await import("@/app/api/auth/wallet/session/route")
-    ).GET(
-      new NextRequest(`${origin}/api/auth/wallet/session`, { headers: { cookie: sessionCookie } }),
-    ).then((r) => r.json());
-    const sessionId = sessionBody.session_id as string;
-
-    const enterAction = await authorizeAction({
-      keypair,
-      wallet,
-      origin,
-      sessionCookie,
-      operation: "sandbox:enter",
-      resource: `abraxas:sandbox:session:${sessionId}`,
-    });
     const { POST: enterPost } = await import("@/app/api/auth/wallet/sandbox/enter/route");
     const enterRes = await enterPost(
       new NextRequest(`${origin}/api/auth/wallet/sandbox/enter`, {
         method: "POST",
         headers: {
-          cookie: enterAction.cookie,
+          cookie: sessionCookie,
           origin,
           host: "localhost:3000",
           "content-type": "application/json",
         },
-        body: JSON.stringify({
-          action_challenge_id: enterAction.action_challenge_id,
-          signature: enterAction.signature,
-        }),
+        body: "{}",
       }),
     );
     expect(enterRes.status).toBe(200);
     const workspace = (await enterRes.json()).workspace as { workspace_id: string };
-    return { workspace, sessionCookie: enterAction.cookie };
+    return { workspace, sessionCookie };
   }
 
   it("rejects age_21 sandbox test without authoritative age evidence", async () => {

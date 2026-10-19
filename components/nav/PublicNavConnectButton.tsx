@@ -21,6 +21,7 @@ async function loadNativeNavState(): Promise<{
   flagEnabled: boolean;
   operational: boolean;
   session: NativeSession;
+  authMode: "native" | "ephemeral_wallet" | null;
 }> {
   const enabledRes = await fetch("/api/auth/native/enabled", { credentials: "same-origin" });
   const enabledJson = (await enabledRes.json()) as {
@@ -37,10 +38,17 @@ async function loadNativeNavState(): Promise<{
   const flagEnabled = Boolean(enabledJson.enabled);
   const operational =
     typeof enabledJson.operational === "boolean" ? enabledJson.operational : flagEnabled;
+  const authMode =
+    enabledJson.auth_mode === "ephemeral_wallet"
+      ? "ephemeral_wallet"
+      : enabledJson.auth_mode === "native"
+        ? "native"
+        : null;
   return {
     flagEnabled,
     operational,
     session: { authenticated: Boolean(sessionJson.authenticated) },
+    authMode,
   };
 }
 
@@ -53,6 +61,7 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [signInOpen, setSignInOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<"native" | "ephemeral_wallet" | null>(null);
 
   const refreshNavState = useCallback(async () => {
     try {
@@ -60,6 +69,7 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
       setNativeFlagEnabled(nativeState.flagEnabled);
       setNativeOperational(nativeState.operational);
       setNativeSession(nativeState.session);
+      setAuthMode(nativeState.authMode);
     } catch {
       setNativeFlagEnabled(false);
       setNativeOperational(false);
@@ -119,12 +129,13 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
   }
 
   if (phase === "native_account_link") {
+    const ephemeral = authMode === "ephemeral_wallet";
     return (
       <PublicNavConnectPrimary
         prominent={prominent}
-        label="Account"
-        ariaLabel="Open your Abraxas account"
-        href={PUBLIC_CONNECT_ACCOUNT_HREF}
+        label={ephemeral ? "Workspace" : "Account"}
+        ariaLabel={ephemeral ? "Open developer workspace" : "Open your Abraxas account"}
+        href={ephemeral ? "/developers/ephemeral-sandbox" : PUBLIC_CONNECT_ACCOUNT_HREF}
       />
     );
   }

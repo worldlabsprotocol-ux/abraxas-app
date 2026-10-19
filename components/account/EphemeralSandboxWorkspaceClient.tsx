@@ -3,8 +3,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { Btn } from "@/components/redesign/ui";
 import { completeWalletActionAuthorization } from "@/lib/auth/ephemeralWallet/clientActionAuth";
+import {
+  EPHEMERAL_WORKSPACE_TEST_ONLY_NOTE,
+  mapSandboxEnterFailure,
+} from "@/lib/developers/ephemeralWorkspaceCopy";
+import styles from "./EphemeralDeveloperWorkspace.module.css";
 
 const EPHEMERAL_SANDBOX_RESULT_LABEL = "ephemeral_sandbox_test_only";
 
@@ -26,10 +30,27 @@ type TestResult = {
   payload_hash: string;
 };
 
+type WorkspacePhase =
+  | "loading"
+  | "signed_out"
+  | "ready"
+  | "entering"
+  | "workspace"
+  | "verifying"
+  | "result"
+  | "failure";
+
+function logSandboxStage(input: Record<string, unknown>): void {
+  if (typeof console !== "undefined" && console.info) {
+    console.info("[abraxas sandbox]", input);
+  }
+}
+
 export function EphemeralSandboxWorkspaceClient() {
   const { signMessage, publicKey } = useWallet();
-  const [sessionOk, setSessionOk] = useState<boolean | null>(null);
+  const [phase, setPhase] = useState<WorkspacePhase>("loading");
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [selectedPolicy, setSelectedPolicy] = useState("");
@@ -38,16 +59,44 @@ export function EphemeralSandboxWorkspaceClient() {
   const [decision, setDecision] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [correlationId, setCorrelationId] = useState<string | null>(null);
 
-  const refreshSession = useCallback(async () => {
-    const res = await fetch("/api/auth/wallet/session", { credentials: "same-origin" });
-    const body = (await res.json()) as { authenticated?: boolean; session_id?: string };
-    setSessionOk(Boolean(body.authenticated));
-    setSessionId(body.session_id ?? null);
+  const hydrate = useCallback(async () => {
+    setPhase("loading");
+    setError(null);
+    try {
+      const sessionRes = await fetch("/api/auth/wallet/session", { credentials: "same-origin" });
+      const sessionBody = (await sessionRes.json()) as {
+        authenticated?: boolean;
+        session_id?: string;
+        wallet_address?: string;
+      };
+      if (!sessionBody.authenticated) {
+        setPhase("signed_out");
+        setSessionId(null);
+        setWalletAddress(null);
+        setWorkspace(null);
+        return;
+      }
+      setSessionId(sessionBody.session_id ?? null);
+      setWalletAddress(sessionBody.wallet_address ?? null);
+
+      const workspaceRes = await fetch("/api/auth/wallet/sandbox/workspace", { credentials: "same-origin" });
+      const workspaceBody = (await workspaceRes.json()) as { workspace?: Workspace | null; code?: string };
+      if (workspaceBody.workspace) {
+        setWorkspace(workspaceBody.workspace);
+        setPhase("workspace");
+        return;
+      }
+      setPhase("ready");
+    } catch {
+      setPhase("failure");
+      setError("Could not load workspace state. Refresh and try again.");
+    }
   }, []);
 
   useEffect(() => {
-    void refreshSession();
+    void hydrate();
     void fetch("/api/auth/wallet/sandbox/policies", { credentials: "same-origin" })
       .then((r) => r.json())
       .then((json: { policies?: Policy[] }) => {
@@ -56,51 +105,66 @@ export function EphemeralSandboxWorkspaceClient() {
         if (list[0]) setSelectedPolicy(list[0].policy_id);
       })
       .catch(() => setPolicies([]));
-  }, [refreshSession]);
+  }, [hydrate]);
 
-  const enterSandbox = useCallback(async () => {
-    if (!signMessage || !sessionId) {
-      setError("Connect your Solana wallet and sign in before starting the sandbox.");
+  const enterWorkspace = useCallback(async () => {
+    if (!sessionId) {
+      setError("Sign in with your Solana wallet first.");
+      setPhase("signed_out");
       return;
     }
     setBusy(true);
     setError(null);
+    setCorrelationId(null);
+    setPhase("entering");
+    logSandboxStage({ stage: "enter_request", session_id_prefix: sessionId.slice(0, 8) });
     try {
-      const action = await completeWalletActionAuthorization({
-        operation: "sandbox:enter",
-        resource: `abraxas:sandbox:session:${sessionId}`,
-        signMessage: (msg) => signMessage(msg),
-      });
-      if (!action.ok) {
-        setError(action.code ?? "Action authorization cancelled.");
-        return;
-      }
       const res = await fetch("/api/auth/wallet/sandbox/enter", {
         method: "POST",
-        credentials: "include",
+        credentials: "same-origin",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          action_challenge_id: action.action_challenge_id,
-          signature: action.signature,
-        }),
+        body: JSON.stringify({}),
       });
-      const json = (await res.json()) as { ok?: boolean; workspace?: Workspace; code?: string };
+      const json = (await res.json()) as {
+        ok?: boolean;
+        workspace?: Workspace;
+        code?: string;
+        correlation_id?: string;
+        stage?: string;
+      };
+      if (json.correlation_id) setCorrelationId(json.correlation_id);
+      logSandboxStage({
+        stage: json.stage ?? "enter_response",
+        http_status: res.status,
+        code: json.code ?? null,
+        correlation_id: json.correlation_id ?? null,
+      });
       if (!res.ok || !json.workspace) {
-        setError(json.code ?? "Could not open sandbox workspace.");
+        setPhase("failure");
+        setError(mapSandboxEnterFailure(json.code));
         return;
       }
       setWorkspace(json.workspace);
+      setPhase("workspace");
+    } catch {
+      setPhase("failure");
+      setError("Network error while opening workspace. Try again.");
     } finally {
       setBusy(false);
     }
-  }, [sessionId, signMessage]);
+  }, [sessionId]);
 
   const runTestVerification = useCallback(async () => {
-    if (!selectedPolicy || !workspace || !signMessage) return;
+    if (!selectedPolicy || !workspace) return;
+    if (!signMessage) {
+      setError("Connect your wallet in the browser to authorize test verification.");
+      return;
+    }
     setBusy(true);
     setError(null);
     setValidation(null);
     setDecision(null);
+    setPhase("verifying");
     try {
       const resource = `abraxas:sandbox:${workspace.workspace_id}:policy:${selectedPolicy}`;
       const action = await completeWalletActionAuthorization({
@@ -110,12 +174,13 @@ export function EphemeralSandboxWorkspaceClient() {
         signMessage: (msg) => signMessage(msg),
       });
       if (!action.ok) {
-        setError(action.code ?? "Action authorization cancelled.");
+        setPhase("workspace");
+        setError(action.code === "cancelled" ? "Signature request dismissed." : action.code ?? "Authorization cancelled.");
         return;
       }
       const res = await fetch("/api/auth/wallet/sandbox/test-verify", {
         method: "POST",
-        credentials: "include",
+        credentials: "same-origin",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           policy_id: selectedPolicy,
@@ -131,17 +196,19 @@ export function EphemeralSandboxWorkspaceClient() {
         unsupported?: boolean;
       };
       if (!res.ok || !json.result) {
+        setPhase("workspace");
         const hint =
           json.code === "insufficient_evidence_for_policy"
-            ? "This policy requires authoritative identity evidence — a wallet signature alone is not sufficient."
+            ? "This policy needs authoritative identity evidence. Use wallet control for sandbox testing."
             : json.unsupported
               ? "That evidence issuer is not supported for this policy."
               : null;
-        setError(hint ?? json.code ?? "Test verification failed.");
+        setError(hint ?? mapSandboxEnterFailure(json.code));
         return;
       }
       setResult(json.result);
       setDecision(json.decision ?? null);
+      setPhase("result");
       const validateRes = await fetch(
         `/api/auth/wallet/sandbox/validate?receipt_id=${encodeURIComponent(String(json.result.receipt_id))}`,
         { credentials: "same-origin" },
@@ -153,75 +220,152 @@ export function EphemeralSandboxWorkspaceClient() {
     }
   }, [selectedPolicy, workspace, signMessage]);
 
-  if (sessionOk === null) {
-    return <p style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>Loading…</p>;
-  }
+  const signOut = useCallback(async () => {
+    await fetch("/api/auth/wallet/session", { method: "DELETE", credentials: "same-origin" });
+    setWorkspace(null);
+    setResult(null);
+    void hydrate();
+  }, [hydrate]);
 
-  if (!sessionOk) {
+  const stepIndex =
+    phase === "ready" || phase === "entering" || phase === "failure"
+      ? 0
+      : phase === "workspace" || phase === "verifying"
+        ? 1
+        : phase === "result"
+          ? 3
+          : 0;
+
+  const steps = ["Authorize workspace", "Configure policy", "Verify", "Validate"];
+
+  if (phase === "loading") {
     return (
-      <p style={{ fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
-        Sign in with your Solana wallet to use the temporary sandbox. Sign-in proves wallet control only — each
-        sandbox action requires its own signature.
-      </p>
+      <div className={styles.shell}>
+        <div className={styles.statusRow} role="status">
+          <span className={styles.spinner} aria-hidden />
+          Loading workspace…
+        </div>
+      </div>
     );
   }
 
-  const walletHint = publicKey ? null : (
-    <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--text-muted)" }}>
-      Connect your wallet in the browser to authorize sandbox actions on demand.
-    </p>
-  );
+  if (phase === "signed_out") {
+    return (
+      <div className={styles.shell}>
+        <p className={styles.lead}>Sign in from the header to open your developer workspace.</p>
+        <p className={styles.muted}>
+          Wallet sign-in proves control of your address. It does not create a permanent personal account.
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
-      <p style={{ margin: 0, fontSize: "0.82rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
-        Temporary developer sandbox — metadata and test results expire automatically. Test privileges cannot
-        authorize Production access.
-      </p>
-      {walletHint}
-      {!workspace ? (
-        <Btn size="sm" disabled={busy} onClick={() => void enterSandbox()}>
-          Start building (sign to authorize)
-        </Btn>
-      ) : (
-        <>
-          <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--text-muted)" }}>
-            Workspace {workspace.workspace_id.slice(0, 20)}… · expires {new Date(workspace.expires_at).toLocaleString()}
+    <div className={styles.shell}>
+      <ol className={styles.steps} aria-label="Workspace progress">
+        {steps.map((label, index) => (
+          <li
+            key={label}
+            className={
+              index < stepIndex ? styles.stepDone : index === stepIndex ? styles.stepActive : styles.step
+            }
+          >
+            {label}
+          </li>
+        ))}
+      </ol>
+
+      <div className={styles.panel}>
+        {(phase === "ready" || phase === "entering" || phase === "failure") && !workspace ? (
+          <>
+            <p className={styles.lead}>Start building</p>
+            <p className={styles.muted}>
+              Your wallet session is active
+              {walletAddress ? ` (${walletAddress.slice(0, 4)}…${walletAddress.slice(-4)})` : ""}. Open an
+              isolated sandbox to configure policies and run test verification.
+            </p>
+            {phase === "entering" ? (
+              <div className={styles.statusRow} role="status">
+                <span className={styles.spinner} aria-hidden />
+                Preparing workspace…
+              </div>
+            ) : (
+              <div className={styles.actions}>
+                <button type="button" className={styles.primaryBtn} disabled={busy} onClick={() => void enterWorkspace()}>
+                  Start building
+                </button>
+              </div>
+            )}
+          </>
+        ) : null}
+
+        {workspace ? (
+          <>
+            <p className={styles.lead}>Workspace ready</p>
+            <p className={`${styles.meta} ${styles.muted}`}>
+              {workspace.workspace_id.slice(0, 18)}… · expires {new Date(workspace.expires_at).toLocaleString()}
+            </p>
+            {publicKey ? null : (
+              <p className={styles.note}>Connect your wallet to authorize test verification when you are ready.</p>
+            )}
+            <label className={styles.muted}>
+              Test policy
+              <select
+                className={styles.select}
+                value={selectedPolicy}
+                onChange={(e) => setSelectedPolicy(e.target.value)}
+              >
+                {policies.map((p) => (
+                  <option key={p.policy_id} value={p.policy_id}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className={styles.actions}>
+              <button
+                type="button"
+                className={styles.primaryBtn}
+                disabled={busy || !selectedPolicy}
+                onClick={() => void runTestVerification()}
+              >
+                Run test verification
+              </button>
+              <button type="button" className={styles.secondaryBtn} disabled={busy} onClick={() => void signOut()}>
+                Sign out
+              </button>
+            </div>
+            {phase === "verifying" ? (
+              <div className={styles.statusRow} role="status">
+                <span className={styles.spinner} aria-hidden />
+                Waiting for wallet signature…
+              </div>
+            ) : null}
+          </>
+        ) : null}
+
+        {error ? (
+          <p className={styles.error} role="alert">
+            {error}
+            {correlationId ? ` Reference: ${correlationId}.` : ""}
           </p>
-          <label style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>
-            Test policy
-            <select
-              value={selectedPolicy}
-              onChange={(e) => setSelectedPolicy(e.target.value)}
-              style={{ display: "block", marginTop: "0.35rem", width: "100%", maxWidth: 420 }}
-            >
-              {policies.map((p) => (
-                <option key={p.policy_id} value={p.policy_id}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <Btn size="sm" disabled={busy || !selectedPolicy} onClick={() => void runTestVerification()}>
-            Submit authorized test verification (sign to authorize)
-          </Btn>
-        </>
-      )}
-      {error ? <p style={{ color: "#E0524F", fontSize: "0.72rem" }}>{error}</p> : null}
-      {result ? (
-        <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.55 }}>
-          <p style={{ margin: "0 0 0.35rem" }}>
-            <strong style={{ color: "var(--text-primary)" }}>Decision:</strong>{" "}
-            {decision ?? "unknown"} ·{" "}
-            <strong style={{ color: "var(--text-primary)" }}>Label:</strong>{" "}
-            {result.result_label || EPHEMERAL_SANDBOX_RESULT_LABEL} (not Production)
-          </p>
-          <p style={{ margin: "0 0 0.35rem" }}>
-            Receipt {String(result.receipt_id).slice(0, 24)}… · signature verified independently:{" "}
-            {validation?.signature_valid ? "yes" : validation ? "no" : "…"}
-          </p>
-        </div>
-      ) : null}
+        ) : null}
+
+        {result ? (
+          <div className={styles.resultBox}>
+            <p style={{ margin: "0 0 0.35rem" }}>
+              <strong>Decision:</strong> {decision ?? "unknown"} · <strong>Label:</strong>{" "}
+              {result.result_label || EPHEMERAL_SANDBOX_RESULT_LABEL} (test only)
+            </p>
+            <p style={{ margin: 0 }}>
+              Receipt {String(result.receipt_id).slice(0, 24)}… · independent signature check:{" "}
+              {validation?.signature_valid ? "valid" : validation ? "invalid" : "pending"}
+            </p>
+          </div>
+        ) : null}
+
+        <p className={styles.note}>{EPHEMERAL_WORKSPACE_TEST_ONLY_NOTE}</p>
+      </div>
     </div>
   );
 }
