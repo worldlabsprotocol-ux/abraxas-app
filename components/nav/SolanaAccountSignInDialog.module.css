@@ -250,3 +250,42 @@
     transform: rotate(360deg);
   }
 }
+
+@media (max-width: 480px) {
+  .panel {
+    padding: 1rem 1rem 1.15rem;
+  }
+
+  .steps {
+    grid-template-columns: repeat(2, 1fr);
+    row-gap: 0.5rem;
+  }
+
+  .walletGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .primaryBtn,
+  .secondaryBtn {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbit,
+  .orbit::after,
+  .statusRowPending,
+  .spinner {
+    animation: none !important;
+  }
+
+  .stepDot,
+  .walletCard,
+  .primaryBtn {
+    transition: none !important;
+  }
+}

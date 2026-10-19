@@ -43,6 +43,7 @@ export function SolanaAccountSignInDialog({
   const { publicKey, signMessage, connected, connecting, connect, select, wallet, wallets, disconnect } =
     useWallet();
   const primaryRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const [phase, setPhase] = useState<SolanaSignInPhase>("idle");
   const [localError, setLocalError] = useState<string | null>(null);
@@ -67,8 +68,11 @@ export function SolanaAccountSignInDialog({
       resetDialog();
       return;
     }
-    primaryRef.current?.focus();
-  }, [open, resetDialog]);
+    const focusTarget =
+      primaryRef.current
+      ?? panelRef.current?.querySelector<HTMLElement>('button[aria-label^="Connect"]');
+    focusTarget?.focus();
+  }, [open, resetDialog, walletConnected]);
 
   useEffect(() => {
     if (!open || busy) return;
@@ -236,11 +240,12 @@ export function SolanaAccountSignInDialog({
       role="dialog"
       aria-modal="true"
       aria-labelledby="sol-account-signin-title"
+      aria-describedby="sol-account-signin-desc"
       onClick={(e) => {
         if (e.target === e.currentTarget && !pending) onClose();
       }}
     >
-      <div className={styles.panel}>
+      <div className={styles.panel} ref={panelRef}>
         <div className={styles.hero}>
           <div className={styles.orbit} aria-hidden>
             <div className={styles.orbitCore} />
@@ -278,6 +283,7 @@ export function SolanaAccountSignInDialog({
         </h2>
 
         <p
+          id="sol-account-signin-desc"
           style={{
             margin: "0 0 0.65rem",
             fontFamily: FONT,
@@ -305,7 +311,11 @@ export function SolanaAccountSignInDialog({
         </p>
 
         {statusMessage ? (
-          <div className={`${styles.statusRow} ${pending ? styles.statusRowPending : ""}`} role="status">
+          <div
+            className={`${styles.statusRow} ${pending ? styles.statusRowPending : ""}`}
+            role="status"
+            aria-live="polite"
+          >
             {pending ? <span className={styles.spinner} aria-hidden /> : null}
             <span>{statusMessage}</span>
           </div>
@@ -343,7 +353,13 @@ export function SolanaAccountSignInDialog({
               const isSelected = selectedWalletName === option.name;
               if (!option.installed) {
                 return (
-                  <div key={option.name} className={styles.walletCard} style={{ cursor: "default" }}>
+                  <div
+                    key={option.name}
+                    className={styles.walletCard}
+                    style={{ cursor: "default" }}
+                    role="group"
+                    aria-label={`${option.label} not installed`}
+                  >
                     <strong style={{ fontSize: "0.88rem" }}>{option.label}</strong>
                     <span className={styles.walletMeta}>Extension not detected</span>
                     <a
@@ -363,6 +379,8 @@ export function SolanaAccountSignInDialog({
                   type="button"
                   className={`${styles.walletCard} ${isSelected ? styles.walletCardSelected : ""}`}
                   disabled={pending || connecting}
+                  aria-pressed={isSelected}
+                  aria-label={`Connect ${option.label}`}
                   onClick={() => void connectWallet(option.name)}
                 >
                   <strong style={{ fontSize: "0.88rem" }}>{option.label}</strong>
