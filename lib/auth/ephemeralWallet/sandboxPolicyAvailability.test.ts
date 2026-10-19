@@ -11,8 +11,22 @@ describe("resolveSandboxPolicyAvailability", () => {
   });
 
   it("blocks age 21 before authorization when issuer evidence is unavailable", () => {
+    const previous = process.env.ABRAXAS_EPHEMERAL_SANDBOX_AUTHORIZED_TEST_ISSUER;
+    delete process.env.ABRAXAS_EPHEMERAL_SANDBOX_AUTHORIZED_TEST_ISSUER;
     const row = resolveSandboxPolicyAvailability("age_21_retail");
     expect(row?.can_request_verification).toBe(false);
     expect(row?.execution_status).toBe("evidence_unavailable");
+    if (previous === undefined) delete process.env.ABRAXAS_EPHEMERAL_SANDBOX_AUTHORIZED_TEST_ISSUER;
+    else process.env.ABRAXAS_EPHEMERAL_SANDBOX_AUTHORIZED_TEST_ISSUER = previous;
+  });
+
+  it("enables age 21 when authorized test issuer is configured", () => {
+    const previous = process.env.ABRAXAS_EPHEMERAL_SANDBOX_AUTHORIZED_TEST_ISSUER;
+    process.env.ABRAXAS_EPHEMERAL_SANDBOX_AUTHORIZED_TEST_ISSUER = "1";
+    const row = resolveSandboxPolicyAvailability("age_21_retail");
+    expect(row?.can_request_verification).toBe(true);
+    expect(row?.execution_status).toBe("ready");
+    if (previous === undefined) delete process.env.ABRAXAS_EPHEMERAL_SANDBOX_AUTHORIZED_TEST_ISSUER;
+    else process.env.ABRAXAS_EPHEMERAL_SANDBOX_AUTHORIZED_TEST_ISSUER = previous;
   });
 });

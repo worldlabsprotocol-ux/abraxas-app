@@ -18,10 +18,20 @@ export type BoundVerificationRequest = {
 export type EvidencePresentation =
   | { kind: "wallet_session_binding"; wallet_address: string }
   | { kind: "public_receipt"; receipt: Record<string, unknown> }
+  | {
+      kind: "passport_reusable_credential";
+      credential: Record<string, unknown>;
+      portable_revocation_snapshot: Record<string, unknown>;
+    }
   | { kind: "unsupported_issuer"; issuer_id: string };
 
 export type EvidenceAdapterResult =
-  | { ok: true; claim_refs: Array<{ claim_id: string; claim_type: string; issuer_id: string; status: string }> }
+  | {
+      ok: true;
+      claim_refs: Array<{ claim_id: string; claim_type: string; issuer_id: string; status: string }>;
+      materialized_claims?: import("@/lib/credentials/claimSchema").CredentialClaimRecord[];
+      sandbox_labeled?: boolean;
+    }
   | { ok: false; code: string; unsupported?: boolean };
 
 export type ProtocolVerificationOutcome =

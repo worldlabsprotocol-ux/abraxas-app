@@ -28,6 +28,8 @@ export async function GET(req: NextRequest) {
     result_label: EPHEMERAL_SANDBOX_RESULT_LABEL,
     test_only: true,
     production_usable: false,
+    signature_authentic: validation.trust.signature_valid,
+    currently_acceptable: validation.trust.currently_valid,
     signature_valid: validation.trust.signature_valid,
     currently_valid: validation.trust.currently_valid,
     invalidation_reasons: validation.trust.invalidation_reasons,

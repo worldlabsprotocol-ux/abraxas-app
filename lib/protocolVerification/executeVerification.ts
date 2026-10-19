@@ -51,6 +51,7 @@ export async function executeProtocolVerification(input: {
         partnerId: input.request.partner_id,
         policyId: input.request.policy_id,
         walletSubject: input.request.wallet_subject,
+        context: input.context === "production" ? "production" : "sandbox_only",
       }),
     ),
   );
@@ -79,12 +80,19 @@ export async function executeProtocolVerification(input: {
     };
   }
 
-  const materializedClaims = materializeCredentialClaims({
-    walletSubject: input.request.wallet_subject,
-    claimRefs,
-    now,
-    sandboxOnly: input.context !== "production",
-  });
+  const adapterMaterialized = evidenceResults
+    .filter((r): r is Extract<typeof r, { ok: true }> => r.ok)
+    .flatMap((r) => r.materialized_claims ?? []);
+
+  const materializedClaims =
+    adapterMaterialized.length > 0
+      ? adapterMaterialized
+      : materializeCredentialClaims({
+          walletSubject: input.request.wallet_subject,
+          claimRefs,
+          now,
+          sandboxOnly: input.context !== "production",
+        });
 
   const evaluation = evaluatePolicyRules(rules, materializedClaims, {
     partnerId: input.request.partner_id,

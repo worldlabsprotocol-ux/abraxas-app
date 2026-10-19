@@ -10,6 +10,8 @@ import { mapEphemeralStoreError } from "@/lib/auth/ephemeralWallet/apiGate";
 import { requireEphemeralWalletScope } from "@/lib/auth/ephemeralWallet/walletSession";
 import { getEphemeralSandboxForSession } from "@/lib/auth/ephemeralWallet/sandboxWorkspace";
 import { runEphemeralProtocolSandboxVerification } from "@/lib/protocolVerification/runSandboxVerification";
+import type { EvidencePresentation } from "@/lib/protocolVerification/types";
+import { resolveSandboxPolicyAvailability } from "@/lib/auth/ephemeralWallet/sandboxPolicyAvailability";
 import { verifyWalletActionAuthorization } from "@/lib/auth/ephemeralWallet/actionAuth";
 import { readWalletSolAuthContextCookie } from "@/lib/auth/ephemeralWallet/service";
 
@@ -36,6 +38,7 @@ export async function POST(req: NextRequest) {
     action_challenge_id?: string;
     signature?: string;
     solana_network?: string;
+    evidence?: Array<Record<string, unknown>>;
   };
   try {
     body = await req.json();
@@ -78,11 +81,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, code: action.code }, { status });
   }
 
+  const availability = resolveSandboxPolicyAvailability(policyId);
+  if (!availability?.can_request_verification) {
+    return NextResponse.json(
+      { ok: false, code: "evidence_unavailable", unsupported: true },
+      { status: 422 },
+    );
+  }
+
+  const parsedEvidence = parseEvidencePresentations(body.evidence);
+  if (policyId === "age_21_retail" && parsedEvidence.length === 0) {
+    return NextResponse.json(
+      { ok: false, code: "credential_evidence_required", unsupported: false },
+      { status: 422 },
+    );
+  }
+
   try {
     const outcome = await runEphemeralProtocolSandboxVerification({
       workspaceId: workspace.workspace_id,
       walletAddress: auth.session.walletAddress,
       policyId,
+      evidence: parsedEvidence.length > 0 ? parsedEvidence : undefined,
     });
     if (!outcome.ok) {
       const status =
@@ -110,4 +130,29 @@ export async function POST(req: NextRequest) {
     if (mapped) return mapped;
     throw error;
   }
+}
+
+function parseEvidencePresentations(raw: unknown): EvidencePresentation[] {
+  if (!Array.isArray(raw)) return [];
+  const out: EvidencePresentation[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== "object") continue;
+    const kind = String((row as { kind?: string }).kind ?? "");
+    if (kind === "passport_reusable_credential") {
+      const credential = (row as { credential?: Record<string, unknown> }).credential;
+      const snapshot = (row as { portable_revocation_snapshot?: Record<string, unknown> })
+        .portable_revocation_snapshot;
+      if (credential && snapshot) {
+        out.push({
+          kind: "passport_reusable_credential",
+          credential,
+          portable_revocation_snapshot: snapshot,
+        });
+      }
+    } else if (kind === "wallet_session_binding") {
+      const wallet = String((row as { wallet_address?: string }).wallet_address ?? "");
+      if (wallet) out.push({ kind: "wallet_session_binding", wallet_address: wallet });
+    }
+  }
+  return out;
 }

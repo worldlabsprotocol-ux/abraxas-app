@@ -3,15 +3,47 @@
 import type { EvidenceAdapterResult, EvidencePresentation } from "./types";
 import { evaluatePublicReceiptTrust } from "@/lib/decisionReceipts/trustEvaluation";
 import type { PartnerFlowPublicReceipt } from "@/lib/partner/verifyPartnerFlowReceipt";
+import type { SignedPassportReusableCredential } from "@/lib/passport/reusableCredential/contract";
+import type { PortableRevocationSignedArtifact } from "@/lib/protocol/portableRevocation";
+import { evaluatePassportCredentialEvidence } from "./evaluatePassportCredentialEvidence";
 
 export async function evaluateEvidencePresentation(input: {
   presentation: EvidencePresentation;
   partnerId: string;
   policyId: string;
   walletSubject: string;
+  context?: "sandbox_only" | "production";
 }): Promise<EvidenceAdapterResult> {
   if (input.presentation.kind === "unsupported_issuer") {
     return { ok: false, code: "issuer_not_supported", unsupported: true };
+  }
+
+  if (input.presentation.kind === "passport_reusable_credential") {
+    const evaluated = await evaluatePassportCredentialEvidence({
+      credential: input.presentation.credential as SignedPassportReusableCredential,
+      portable_revocation_snapshot: input.presentation.portable_revocation_snapshot as PortableRevocationSignedArtifact,
+      walletSubject: input.walletSubject,
+      policyId: input.policyId,
+      context: input.context ?? "sandbox_only",
+    });
+    if (!evaluated.ok) {
+      return {
+        ok: false,
+        code: evaluated.code,
+        unsupported: evaluated.unsupported,
+      };
+    }
+    return {
+      ok: true,
+      claim_refs: evaluated.materialized_claims.map((claim) => ({
+        claim_id: claim.id,
+        claim_type: claim.claim_type,
+        issuer_id: claim.issuer_id,
+        status: claim.status,
+      })),
+      materialized_claims: evaluated.materialized_claims,
+      sandbox_labeled: evaluated.sandbox_labeled,
+    };
   }
 
   if (input.presentation.kind === "wallet_session_binding") {
