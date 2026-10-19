@@ -1,0 +1,291 @@
+/* FILE: components/nav/SolanaAccountSignInDialog.module.css */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.panel {
+  width: min(440px, 100%);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface-raised);
+  padding: 1.25rem 1.35rem 1.35rem;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.orbit {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  position: relative;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 30% 30%, rgba(20, 241, 149, 0.35), rgba(20, 241, 149, 0.05));
+  box-shadow: 0 0 24px rgba(20, 241, 149, 0.25);
+  animation: abxSignInPulse 2.4s ease-in-out infinite;
+}
+
+.orbit::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1px solid rgba(20, 241, 149, 0.35);
+  animation: abxSignInSpin 6s linear infinite;
+}
+
+.orbitCore {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #14f195, #0a8f5c);
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.35rem;
+  margin: 0 0 1rem;
+}
+
+.step {
+  text-align: center;
+  font-size: 0.62rem;
+  line-height: 1.25;
+  color: var(--text-muted);
+}
+
+.stepDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin: 0 auto 0.25rem;
+  background: var(--border);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stepActive .stepDot {
+  background: var(--accent-primary, #14f195);
+  box-shadow: 0 0 10px rgba(20, 241, 149, 0.55);
+}
+
+.stepDone .stepDot {
+  background: rgba(20, 241, 149, 0.65);
+}
+
+.stepActive {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.85rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.statusRowPending {
+  animation: abxSignInPulse 1.8s ease-in-out infinite;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(20, 241, 149, 0.25);
+  border-top-color: var(--accent-primary, #14f195);
+  animation: abxSignInSpin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+.walletGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+}
+
+.walletCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  color: var(--text-primary);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.walletCard:hover:not(:disabled) {
+  border-color: rgba(20, 241, 149, 0.45);
+  background: rgba(20, 241, 149, 0.06);
+}
+
+.walletCard:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.walletCardSelected {
+  border-color: rgba(20, 241, 149, 0.65);
+  box-shadow: 0 0 0 1px rgba(20, 241, 149, 0.25);
+}
+
+.walletMeta {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+.errorBox {
+  margin: 0 0 0.85rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid rgba(224, 82, 79, 0.45);
+  background: rgba(224, 82, 79, 0.08);
+  font-size: 0.78rem;
+  color: #f5b4b2;
+  line-height: 1.45;
+}
+
+.successBox {
+  margin: 0 0 0.85rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid rgba(20, 241, 149, 0.35);
+  background: rgba(20, 241, 149, 0.08);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.primaryBtn {
+  flex: 1;
+  min-width: 140px;
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  border: none;
+  background: var(--accent-primary, #14f195);
+  color: #04110c;
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primaryBtn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.secondaryBtn {
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.secondaryBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.linkBtn {
+  font-size: 0.72rem;
+  color: var(--accent-primary, #14f195);
+  text-decoration: underline;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+@keyframes abxSignInPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.72;
+  }
+}
+
+@keyframes abxSignInSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 480px) {
+  .panel {
+    padding: 1rem 1rem 1.15rem;
+  }
+
+  .steps {
+    grid-template-columns: repeat(2, 1fr);
+    row-gap: 0.5rem;
+  }
+
+  .walletGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .primaryBtn,
+  .secondaryBtn {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbit,
+  .orbit::after,
+  .statusRowPending,
+  .spinner {
+    animation: none !important;
+  }
+
+  .stepDot,
+  .walletCard,
+  .primaryBtn {
+    transition: none !important;
+  }
+}
