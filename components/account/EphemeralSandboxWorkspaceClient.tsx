@@ -19,8 +19,11 @@ import {
   mapWorkspaceUserFacingError,
   type WorkspaceUserFacingError,
 } from "@/lib/developers/ephemeralWorkspaceUserErrors";
-import type { SandboxPolicyAvailability } from "@/lib/auth/ephemeralWallet/sandboxPolicyAvailability";
-import { resolveSandboxPolicyAvailability } from "@/lib/auth/ephemeralWallet/sandboxPolicyAvailability";
+import {
+  firstSandboxPolicyIdWithVerification,
+  pickSandboxPolicyAvailability,
+  type SandboxPolicyAvailability,
+} from "@/lib/auth/ephemeralWallet/sandboxPolicyAvailability.shared";
 import {
   EPHEMERAL_WALLET_SESSION_EVENT,
   fetchEphemeralWalletClientSession,
@@ -196,12 +199,10 @@ export function EphemeralSandboxWorkspaceClient() {
       .then((r) => r.json())
       .then((json: { policies?: Policy[]; availability?: SandboxPolicyAvailability[] }) => {
         const list = json.policies ?? [];
+        const availability = json.availability ?? [];
         setPolicies(list);
-        setPolicyAvailability(json.availability ?? []);
-        const defaultPolicy =
-          list.find((p) => resolveSandboxPolicyAvailability(p.policy_id)?.can_request_verification)?.policy_id
-          ?? list[0]?.policy_id
-          ?? "";
+        setPolicyAvailability(availability);
+        const defaultPolicy = firstSandboxPolicyIdWithVerification(list, availability) ?? "";
         if (defaultPolicy) setSelectedPolicy(defaultPolicy);
       })
       .catch(() => setPolicies([]));
@@ -377,9 +378,7 @@ export function EphemeralSandboxWorkspaceClient() {
   }, [selectedPolicy, workspace]);
 
   const beginVerificationReview = useCallback(async () => {
-    const availability =
-      policyAvailability.find((a) => a.policy_id === selectedPolicy)
-      ?? resolveSandboxPolicyAvailability(selectedPolicy);
+    const availability = pickSandboxPolicyAvailability(policyAvailability, selectedPolicy);
     if (selectedPolicy === "age_21_retail" && !preparedEvidence) {
       setUserError({
         title: "Evidence required",
@@ -573,9 +572,7 @@ export function EphemeralSandboxWorkspaceClient() {
                 ? "authenticated"
                 : "disconnected";
 
-  const selectedAvailability =
-    policyAvailability.find((a) => a.policy_id === selectedPolicy)
-    ?? resolveSandboxPolicyAvailability(selectedPolicy);
+  const selectedAvailability = pickSandboxPolicyAvailability(policyAvailability, selectedPolicy);
 
   const evidenceRequired = selectedPolicy === "age_21_retail";
   const trustStages = deriveTrustExecutionStages({
@@ -677,9 +674,7 @@ export function EphemeralSandboxWorkspaceClient() {
             <div className={styles.policyGrid} role="radiogroup" aria-label="Choose a policy">
               {policies.map((p) => {
                 const selected = p.policy_id === selectedPolicy;
-                const availability =
-                  policyAvailability.find((a) => a.policy_id === p.policy_id)
-                  ?? resolveSandboxPolicyAvailability(p.policy_id);
+                const availability = pickSandboxPolicyAvailability(policyAvailability, p.policy_id);
                 const ready = availability?.can_request_verification ?? false;
                 return (
                   <button
