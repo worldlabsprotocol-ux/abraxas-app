@@ -3,7 +3,7 @@
 export const EPHEMERAL_WORKSPACE_PAGE_TITLE = "Developer Workspace";
 export const EPHEMERAL_WORKSPACE_PAGE_EYEBROW = "Developers";
 export const EPHEMERAL_WORKSPACE_PAGE_SUBTITLE =
-  "Build and verify with your wallet. Explore policies, run test verification, and validate signed results.";
+  "Build, verify, and validate with Abraxas.";
 
 export const EPHEMERAL_WORKSPACE_SANDBOX_BADGE = "Sandbox";
 export const EPHEMERAL_WORKSPACE_SANDBOX_EXPIRY_NOTE = "Test results expire after 24 hours.";

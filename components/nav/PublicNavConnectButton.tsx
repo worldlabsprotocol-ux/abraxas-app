@@ -4,6 +4,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { notifyEphemeralWalletSessionChanged } from "@/lib/auth/ephemeralWallet/clientSession";
 import { PublicNavAccountMenu, PublicNavConnectPrimary } from "@/components/nav/PublicNavAccountMenu";
 import { SolanaAccountSignInDialog } from "@/components/nav/SolanaAccountSignInDialog";
 import {
@@ -33,7 +34,7 @@ async function loadNativeNavState(): Promise<{
     enabledJson.auth_mode === "ephemeral_wallet"
       ? "/api/auth/wallet/session"
       : "/api/auth/native/session";
-  const sessionRes = await fetch(sessionUrl, { credentials: "same-origin" });
+  const sessionRes = await fetch(sessionUrl, { credentials: "same-origin", cache: "no-store" });
   const sessionJson = (await sessionRes.json()) as { authenticated?: boolean };
   const flagEnabled = Boolean(enabledJson.enabled);
   const operational =
@@ -96,25 +97,41 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
     nativeStateLoaded,
   });
 
+  const openDeveloperWorkspace = useCallback(() => {
+    notifyEphemeralWalletSessionChanged();
+    if (pathname === "/developers/ephemeral-sandbox") {
+      router.refresh();
+      return;
+    }
+    router.push("/developers/ephemeral-sandbox");
+  }, [pathname, router]);
+
   const finishSuccess = useCallback(async () => {
+    notifyEphemeralWalletSessionChanged();
     await refreshNavState();
     try {
       const enabledRes = await fetch("/api/auth/native/enabled", { credentials: "same-origin" });
       const enabledJson = (await enabledRes.json()) as { auth_mode?: string };
       if (enabledJson.auth_mode === "ephemeral_wallet") {
-        router.push("/developers/ephemeral-sandbox");
+        openDeveloperWorkspace();
         return;
       }
     } catch {
       /* fall through */
     }
     router.push(PUBLIC_CONNECT_ACCOUNT_HREF);
-  }, [refreshNavState, router]);
+  }, [refreshNavState, router, openDeveloperWorkspace]);
 
   const openSignIn = useCallback(() => {
     setError(null);
     setSignInOpen(true);
   }, []);
+
+  useEffect(() => {
+    const onOpenSignIn = () => openSignIn();
+    window.addEventListener("abraxas:open-wallet-sign-in", onOpenSignIn);
+    return () => window.removeEventListener("abraxas:open-wallet-sign-in", onOpenSignIn);
+  }, [openSignIn]);
 
   const errorFooter = error ? (
     <span className="public-nav-connect__error" role="alert">
@@ -130,12 +147,22 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
 
   if (phase === "native_account_link") {
     const ephemeral = authMode === "ephemeral_wallet";
+    if (ephemeral) {
+      return (
+        <PublicNavConnectPrimary
+          prominent={prominent}
+          label="Workspace"
+          ariaLabel="Open developer workspace"
+          onClick={openDeveloperWorkspace}
+        />
+      );
+    }
     return (
       <PublicNavConnectPrimary
         prominent={prominent}
-        label={ephemeral ? "Workspace" : "Account"}
-        ariaLabel={ephemeral ? "Open developer workspace" : "Open your Abraxas account"}
-        href={ephemeral ? "/developers/ephemeral-sandbox" : PUBLIC_CONNECT_ACCOUNT_HREF}
+        label="Account"
+        ariaLabel="Open your Abraxas account"
+        href={PUBLIC_CONNECT_ACCOUNT_HREF}
       />
     );
   }

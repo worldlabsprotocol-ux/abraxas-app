@@ -1,5 +1,7 @@
 // FILE: lib/auth/ephemeralWallet/clientSignIn.ts
 
+import { notifyEphemeralWalletSessionChanged } from "./clientSession";
+
 export type EphemeralWalletSignInResult =
   | { ok: true; walletAddress: string }
   | { ok: false; reason: "cancelled" | "failed"; code?: string; message?: string };
@@ -87,7 +89,6 @@ export async function completeEphemeralWalletSignIn(input: {
     };
   }
 
-  window.dispatchEvent(new Event("abraxas:native-account-session"));
-  window.dispatchEvent(new Event("abraxas:wallet-session"));
+  notifyEphemeralWalletSessionChanged();
   return { ok: true, walletAddress: verifyBody.wallet_address };
 }
