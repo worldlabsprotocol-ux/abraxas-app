@@ -62,7 +62,7 @@ describe("EphemeralSandboxWorkspaceClient policy availability", () => {
             JSON.stringify({
               policies: [
                 { policy_id: "wallet_control", label: "Wallet Control", description: "Ready" },
-                { policy_id: "age_21_retail", label: "Age 21", description: "Needs issuer" },
+                { policy_id: "age_21_retail", label: "Age 21 demonstration", description: "Needs issuer" },
               ],
               availability: [
                 {

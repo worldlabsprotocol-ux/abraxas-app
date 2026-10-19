@@ -39,7 +39,7 @@ export function mapSandboxEnterFailure(code?: string | null): string {
 
 export function verificationReviewTitle(policyId: string, policyLabel?: string): string {
   if (policyId === "wallet_control") return "Authorize wallet control verification";
-  if (policyId === "age_21_retail") return "Authorize Age 21 test request";
+  if (policyId === "age_21_retail") return "Authorize Age 21 demonstration request";
   return policyLabel ? `Verify ${policyLabel}` : "Authorize test verification";
 }
 
@@ -48,7 +48,7 @@ export function verificationReviewScopeNote(policyId: string): string | null {
     return "This checks control of your connected wallet using a valid wallet signature.";
   }
   if (policyId === "age_21_retail") {
-    return "Your signature authorizes this Age 21 test request only. It does not prove your real world age.";
+    return "Your signature authorizes this Age 21 demonstration only. It does not prove real world age eligibility.";
   }
   return null;
 }
@@ -59,12 +59,12 @@ export function policyExperienceBanner(policyId: string, ageExperience?: string 
   }
   if (policyId === "age_21_retail") {
     if (ageExperience === "age_21_test") {
-      return "Age 21 test: simulated eligibility claim from an authorized test issuer. Not real age verification.";
+      return "Age 21 demonstration: issuer signed sandbox evidence only. Not real world age eligibility.";
     }
     if (ageExperience === "age_21_verification_pending") {
-      return "Age 21 verification: requires authentic issuer evidence and holder presentation. Not available in this workspace yet.";
+      return "Real age eligibility: requires Passport presentation of a credential from recognized cryptographic issuer authority. Not wired in this workspace yet.";
     }
-    return "Age 21 verification: requires supported issuer evidence. Test mode is not enabled here.";
+    return "Real age eligibility requires recognized issuer authority and holder presentation. Sandbox demonstration is not enabled here.";
   }
   return null;
 }

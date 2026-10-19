@@ -40,9 +40,9 @@ export function resolveSandboxPolicyAvailability(policyId: string): SandboxPolic
       return {
         policy_id: policy.policy_id,
         execution_status: "ready",
-        availability_label: "Age 21 test available",
+        availability_label: "Demonstration only",
         availability_detail:
-          "This runs the eligibility verification process with an authorized test issuer. It does not prove your real world age.",
+          "This sandbox exercise uses an authorized test issuer to show issuer backed verification. It does not establish real world age eligibility or Production trusted outcomes.",
         can_request_verification: true,
         age_experience: "age_21_test",
         user_facing_headline: "Age 21 test",
@@ -62,7 +62,7 @@ export function resolveSandboxPolicyAvailability(policyId: string): SandboxPolic
         execution_status: "evidence_unavailable",
         availability_label: "Production issuer configured",
         availability_detail:
-          "A production age issuer trust root is configured. Holder presentation from Passport is required before this workspace can execute age verification.",
+          "Recognized cryptographic issuer authority is configured. Connect Passport holder presentation with a supported credential before real age eligibility can be evaluated here.",
         can_request_verification: false,
         age_experience: "age_21_verification_pending",
         user_facing_headline: "Age 21 verification",
@@ -80,8 +80,8 @@ export function resolveSandboxPolicyAvailability(policyId: string): SandboxPolic
       policy_id: policy.policy_id,
       execution_status: "evidence_unavailable",
       availability_label: "Age 21 verification unavailable",
-      availability_detail:
-        "Real age verification needs a supported issuer and holder presentation. Sandbox test mode is not enabled in this environment.",
+        availability_detail:
+          "Real age eligibility requires holder presentation of a credential from recognized cryptographic issuer authority. Sandbox demonstration mode is not enabled in this environment.",
       can_request_verification: false,
       age_experience: "age_21_unavailable",
       user_facing_headline: "Age 21 verification",
