@@ -3,10 +3,11 @@
 export const EPHEMERAL_WORKSPACE_PAGE_TITLE = "Developer Workspace";
 export const EPHEMERAL_WORKSPACE_PAGE_EYEBROW = "Developers";
 export const EPHEMERAL_WORKSPACE_PAGE_SUBTITLE =
-  "Build and verify with your wallet. Explore policies, test verification, and validate signed results in a secure sandbox.";
+  "Build and verify with your wallet. Explore policies, run test verification, and validate signed results.";
 
-export const EPHEMERAL_WORKSPACE_TEST_ONLY_NOTE =
-  "Sandbox only — test receipts and workspace metadata expire automatically. Not Production authority.";
+export const EPHEMERAL_WORKSPACE_SANDBOX_BADGE = "Sandbox";
+export const EPHEMERAL_WORKSPACE_SANDBOX_EXPIRY_NOTE = "Test results expire after 24 hours.";
+export const EPHEMERAL_WORKSPACE_TEST_ONLY_NOTE = EPHEMERAL_WORKSPACE_SANDBOX_EXPIRY_NOTE;
 
 export function mapSandboxEnterFailure(code?: string | null): string {
   switch (code) {
@@ -15,16 +16,36 @@ export function mapSandboxEnterFailure(code?: string | null): string {
     case "store_unavailable":
       return "Authorization storage is temporarily unavailable. Try again in a moment.";
     case "session_context_mismatch":
-      return "Your authorization context expired. Click Start building again.";
+      return "Your authorization context expired. Open the workspace again.";
     case "invalid_signature":
       return "Wallet signature could not be verified. Try again.";
     case "wrong_signer":
       return "This wallet does not match your signed-in session.";
     case "expired":
-      return "Authorization expired. Start building again.";
+      return "This request expired. Create a new request.";
+    case "policy_mismatch":
+      return "The signed authorization does not match the selected policy. Create a new request.";
     case "replay":
-      return "This authorization was already used. Refresh or start again.";
+      return "This authorization was already used. Create a new request.";
+    case "timeout":
+      return "Phantom did not respond in time. Review the request in your wallet or create a new request.";
+    case "cancelled":
+    case "aborted":
+      return "Signature request cancelled.";
     default:
-      return code ? `Could not open workspace (${code}). Try again.` : "Could not open workspace. Try again.";
+      return code ? `Could not complete this step (${code}). Try again.` : "Could not complete this step. Try again.";
   }
+}
+
+export function verificationReviewTitle(policyId: string, policyLabel?: string): string {
+  if (policyId === "wallet_control") return "Verify wallet control";
+  if (policyId === "age_21_retail") return "Authorize age policy test";
+  return policyLabel ? `Verify ${policyLabel}` : "Authorize test verification";
+}
+
+export function verificationReviewScopeNote(policyId: string): string | null {
+  if (policyId === "age_21_retail") {
+    return "Your signature authorizes this sandbox test only. It does not prove your age or replace valid age evidence.";
+  }
+  return null;
 }

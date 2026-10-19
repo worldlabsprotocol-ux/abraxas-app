@@ -91,7 +91,7 @@ describe("EphemeralSandboxWorkspaceClient", () => {
     fireEvent.click(screen.getByRole("button", { name: /Start building/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/Workspace ready/i)).toBeTruthy();
+      expect(screen.getByText(/Configure test verification/i)).toBeTruthy();
     });
   });
 });

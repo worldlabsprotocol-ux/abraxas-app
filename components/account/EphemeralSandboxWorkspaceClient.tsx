@@ -1,12 +1,19 @@
 "use client";
 // FILE: components/account/EphemeralSandboxWorkspaceClient.tsx
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { completeWalletActionAuthorization } from "@/lib/auth/ephemeralWallet/clientActionAuth";
 import {
-  EPHEMERAL_WORKSPACE_TEST_ONLY_NOTE,
+  fetchWalletActionChallenge,
+  signWalletActionChallenge,
+  type WalletActionChallengePayload,
+} from "@/lib/auth/ephemeralWallet/clientActionAuth";
+import {
+  EPHEMERAL_WORKSPACE_SANDBOX_BADGE,
+  EPHEMERAL_WORKSPACE_SANDBOX_EXPIRY_NOTE,
   mapSandboxEnterFailure,
+  verificationReviewScopeNote,
+  verificationReviewTitle,
 } from "@/lib/developers/ephemeralWorkspaceCopy";
 import styles from "./EphemeralDeveloperWorkspace.module.css";
 
@@ -36,7 +43,9 @@ type WorkspacePhase =
   | "ready"
   | "entering"
   | "workspace"
-  | "verifying"
+  | "review"
+  | "signing"
+  | "submitting"
   | "result"
   | "failure";
 
@@ -44,6 +53,13 @@ function logSandboxStage(input: Record<string, unknown>): void {
   if (typeof console !== "undefined" && console.info) {
     console.info("[abraxas sandbox]", input);
   }
+}
+
+function mapSignFailure(code?: string | null): string {
+  if (code === "expired") {
+    return "Request expired. For your security, this request is no longer valid.";
+  }
+  return mapSandboxEnterFailure(code);
 }
 
 export function EphemeralSandboxWorkspaceClient() {
@@ -54,12 +70,23 @@ export function EphemeralSandboxWorkspaceClient() {
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [selectedPolicy, setSelectedPolicy] = useState("");
+  const [pendingChallenge, setPendingChallenge] = useState<WalletActionChallengePayload | null>(null);
   const [result, setResult] = useState<TestResult | null>(null);
   const [validation, setValidation] = useState<{ ok?: boolean; signature_valid?: boolean } | null>(null);
   const [decision, setDecision] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [correlationId, setCorrelationId] = useState<string | null>(null);
+  const [walletFocusHint, setWalletFocusHint] = useState(false);
+
+  const requestGenerationRef = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const bumpRequestGeneration = useCallback(() => {
+    requestGenerationRef.current += 1;
+    abortRef.current?.abort();
+    abortRef.current = null;
+  }, []);
 
   const hydrate = useCallback(async () => {
     setPhase("loading");
@@ -106,6 +133,26 @@ export function EphemeralSandboxWorkspaceClient() {
       })
       .catch(() => setPolicies([]));
   }, [hydrate]);
+
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden" && phase === "signing") {
+        setWalletFocusHint(true);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== "signing" || !walletAddress || !publicKey) return;
+    if (publicKey.toBase58() !== walletAddress) {
+      bumpRequestGeneration();
+      setPendingChallenge(null);
+      setPhase("workspace");
+      setError("Wallet account changed. Connect the same wallet as your session and try again.");
+    }
+  }, [phase, publicKey, walletAddress, bumpRequestGeneration]);
 
   const enterWorkspace = useCallback(async () => {
     if (!sessionId) {
@@ -154,89 +201,186 @@ export function EphemeralSandboxWorkspaceClient() {
     }
   }, [sessionId]);
 
-  const runTestVerification = useCallback(async () => {
-    if (!selectedPolicy || !workspace) return;
+  const cancelVerificationRequest = useCallback(() => {
+    bumpRequestGeneration();
+    setPendingChallenge(null);
+    setWalletFocusHint(false);
+    setError(null);
+    setPhase("workspace");
+  }, [bumpRequestGeneration]);
+
+  const loadVerificationChallenge = useCallback(async (): Promise<boolean> => {
+    if (!selectedPolicy || !workspace) return false;
+    const generation = requestGenerationRef.current;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    const resource = `abraxas:sandbox:${workspace.workspace_id}:policy:${selectedPolicy}`;
+    const challengeResult = await fetchWalletActionChallenge({
+      operation: "sandbox:verification:test",
+      resource,
+      policyId: selectedPolicy,
+      signal: controller.signal,
+    });
+    if (generation !== requestGenerationRef.current) return false;
+    if (!challengeResult.ok) {
+      setError(mapSandboxEnterFailure(challengeResult.code));
+      setPhase("workspace");
+      return false;
+    }
+    setPendingChallenge(challengeResult.challenge);
+    setError(null);
+    setWalletFocusHint(false);
+    setPhase("review");
+    return true;
+  }, [selectedPolicy, workspace]);
+
+  const beginVerificationReview = useCallback(async () => {
     if (!signMessage) {
       setError("Connect your wallet in the browser to authorize test verification.");
       return;
     }
     setBusy(true);
-    setError(null);
+    setResult(null);
     setValidation(null);
     setDecision(null);
-    setPhase("verifying");
     try {
-      const resource = `abraxas:sandbox:${workspace.workspace_id}:policy:${selectedPolicy}`;
-      const action = await completeWalletActionAuthorization({
-        operation: "sandbox:verification:test",
-        resource,
-        policyId: selectedPolicy,
-        signMessage: (msg) => signMessage(msg),
-      });
-      if (!action.ok) {
-        setPhase("workspace");
-        setError(action.code === "cancelled" ? "Signature request dismissed." : action.code ?? "Authorization cancelled.");
-        return;
-      }
-      const res = await fetch("/api/auth/wallet/sandbox/test-verify", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          policy_id: selectedPolicy,
-          action_challenge_id: action.action_challenge_id,
-          signature: action.signature,
-        }),
-      });
-      const json = (await res.json()) as {
-        ok?: boolean;
-        result?: TestResult;
-        code?: string;
-        decision?: string;
-        unsupported?: boolean;
-      };
-      if (!res.ok || !json.result) {
-        setPhase("workspace");
-        const hint =
-          json.code === "insufficient_evidence_for_policy"
-            ? "This policy needs authoritative identity evidence. Use wallet control for sandbox testing."
-            : json.unsupported
-              ? "That evidence issuer is not supported for this policy."
-              : null;
-        setError(hint ?? mapSandboxEnterFailure(json.code));
-        return;
-      }
-      setResult(json.result);
-      setDecision(json.decision ?? null);
-      setPhase("result");
-      const validateRes = await fetch(
-        `/api/auth/wallet/sandbox/validate?receipt_id=${encodeURIComponent(String(json.result.receipt_id))}`,
-        { credentials: "same-origin" },
-      );
-      const validateJson = (await validateRes.json()) as { ok?: boolean; signature_valid?: boolean };
-      setValidation(validateJson);
+      await loadVerificationChallenge();
     } finally {
       setBusy(false);
     }
-  }, [selectedPolicy, workspace, signMessage]);
+  }, [loadVerificationChallenge, signMessage]);
+
+  const submitSignedVerification = useCallback(
+    async (input: { action_challenge_id: string; signature: string; generation: number }) => {
+      if (input.generation !== requestGenerationRef.current) return;
+      setPhase("submitting");
+      try {
+        const res = await fetch("/api/auth/wallet/sandbox/test-verify", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            policy_id: selectedPolicy,
+            action_challenge_id: input.action_challenge_id,
+            signature: input.signature,
+          }),
+        });
+        if (input.generation !== requestGenerationRef.current) return;
+        const json = (await res.json()) as {
+          ok?: boolean;
+          result?: TestResult;
+          code?: string;
+          decision?: string;
+          unsupported?: boolean;
+        };
+        if (!res.ok || !json.result) {
+          setPhase("workspace");
+          setPendingChallenge(null);
+          const hint =
+            json.code === "insufficient_evidence_for_policy"
+              ? "This policy needs authoritative identity evidence. Use wallet control for sandbox testing."
+              : json.unsupported
+                ? "That evidence issuer is not supported for this policy."
+                : null;
+          setError(hint ?? mapSandboxEnterFailure(json.code));
+          return;
+        }
+        setResult(json.result);
+        setDecision(json.decision ?? null);
+        setPendingChallenge(null);
+        setPhase("result");
+        const validateRes = await fetch(
+          `/api/auth/wallet/sandbox/validate?receipt_id=${encodeURIComponent(String(json.result.receipt_id))}`,
+          { credentials: "same-origin" },
+        );
+        const validateJson = (await validateRes.json()) as { ok?: boolean; signature_valid?: boolean };
+        if (input.generation === requestGenerationRef.current) {
+          setValidation(validateJson);
+        }
+      } catch {
+        if (input.generation === requestGenerationRef.current) {
+          setPhase("workspace");
+          setError("Network error during verification. Try again.");
+        }
+      }
+    },
+    [selectedPolicy],
+  );
+
+  const openPhantomForReview = useCallback(async () => {
+    if (!pendingChallenge || !signMessage) return;
+    const generation = requestGenerationRef.current;
+    setBusy(true);
+    setError(null);
+    setWalletFocusHint(false);
+    setPhase("signing");
+    try {
+      const signed = await signWalletActionChallenge({
+        challenge: pendingChallenge,
+        signMessage: (msg) => signMessage(msg),
+        isStale: () => generation !== requestGenerationRef.current,
+      });
+      if (generation !== requestGenerationRef.current) return;
+      if (!signed.ok) {
+        setPhase(pendingChallenge ? "review" : "workspace");
+        setError(mapSignFailure(signed.code));
+        if (signed.code === "expired") {
+          setPendingChallenge(null);
+          setPhase("workspace");
+        }
+        return;
+      }
+      await submitSignedVerification({
+        action_challenge_id: signed.action_challenge_id,
+        signature: signed.signature,
+        generation,
+      });
+    } finally {
+      if (generation === requestGenerationRef.current) {
+        setBusy(false);
+      }
+    }
+  }, [pendingChallenge, signMessage, submitSignedVerification]);
+
+  const retryVerificationRequest = useCallback(async () => {
+    bumpRequestGeneration();
+    setPendingChallenge(null);
+    setWalletFocusHint(false);
+    setError(null);
+    setBusy(true);
+    try {
+      await loadVerificationChallenge();
+    } finally {
+      setBusy(false);
+    }
+  }, [bumpRequestGeneration, loadVerificationChallenge]);
 
   const signOut = useCallback(async () => {
+    bumpRequestGeneration();
     await fetch("/api/auth/wallet/session", { method: "DELETE", credentials: "same-origin" });
     setWorkspace(null);
     setResult(null);
+    setPendingChallenge(null);
     void hydrate();
-  }, [hydrate]);
+  }, [hydrate, bumpRequestGeneration]);
+
+  const selectedPolicyMeta = policies.find((p) => p.policy_id === selectedPolicy);
+  const reviewTitle = verificationReviewTitle(selectedPolicy, selectedPolicyMeta?.label);
+  const scopeNote = verificationReviewScopeNote(selectedPolicy);
+  const display = pendingChallenge?.display;
 
   const stepIndex =
     phase === "ready" || phase === "entering" || phase === "failure"
       ? 0
-      : phase === "workspace" || phase === "verifying"
+      : phase === "workspace" || phase === "review" || phase === "signing" || phase === "submitting"
         ? 1
         : phase === "result"
           ? 3
           : 0;
 
-  const steps = ["Authorize workspace", "Configure policy", "Verify", "Validate"];
+  const steps = ["Open workspace", "Configure policy", "Verify", "Validate"];
 
   if (phase === "loading") {
     return (
@@ -262,6 +406,11 @@ export function EphemeralSandboxWorkspaceClient() {
 
   return (
     <div className={styles.shell}>
+      <div className={styles.workspaceHeader}>
+        <span className={styles.sandboxBadge}>{EPHEMERAL_WORKSPACE_SANDBOX_BADGE}</span>
+        <p className={styles.muted}>{EPHEMERAL_WORKSPACE_SANDBOX_EXPIRY_NOTE}</p>
+      </div>
+
       <ol className={styles.steps} aria-label="Workspace progress">
         {steps.map((label, index) => (
           <li
@@ -278,7 +427,7 @@ export function EphemeralSandboxWorkspaceClient() {
       <div className={styles.panel}>
         {(phase === "ready" || phase === "entering" || phase === "failure") && !workspace ? (
           <>
-            <p className={styles.lead}>Start building</p>
+            <h2 className={styles.sectionTitle}>Start building</h2>
             <p className={styles.muted}>
               Your wallet session is active
               {walletAddress ? ` (${walletAddress.slice(0, 4)}…${walletAddress.slice(-4)})` : ""}. Open an
@@ -299,20 +448,22 @@ export function EphemeralSandboxWorkspaceClient() {
           </>
         ) : null}
 
-        {workspace ? (
+        {workspace && phase !== "review" && phase !== "signing" && phase !== "submitting" ? (
           <>
-            <p className={styles.lead}>Workspace ready</p>
+            <h2 className={styles.sectionTitle}>Configure test verification</h2>
             <p className={`${styles.meta} ${styles.muted}`}>
-              {workspace.workspace_id.slice(0, 18)}… · expires {new Date(workspace.expires_at).toLocaleString()}
+              Workspace {workspace.workspace_id.slice(0, 18)}… · expires{" "}
+              {new Date(workspace.expires_at).toLocaleString()}
             </p>
             {publicKey ? null : (
               <p className={styles.note}>Connect your wallet to authorize test verification when you are ready.</p>
             )}
-            <label className={styles.muted}>
+            <label className={styles.fieldLabel}>
               Test policy
               <select
                 className={styles.select}
                 value={selectedPolicy}
+                disabled={busy}
                 onChange={(e) => setSelectedPolicy(e.target.value)}
               >
                 {policies.map((p) => (
@@ -322,12 +473,15 @@ export function EphemeralSandboxWorkspaceClient() {
                 ))}
               </select>
             </label>
+            {selectedPolicyMeta?.description ? (
+              <p className={styles.muted}>{selectedPolicyMeta.description}</p>
+            ) : null}
             <div className={styles.actions}>
               <button
                 type="button"
                 className={styles.primaryBtn}
-                disabled={busy || !selectedPolicy}
-                onClick={() => void runTestVerification()}
+                disabled={busy || !selectedPolicy || !signMessage}
+                onClick={() => void beginVerificationReview()}
               >
                 Run test verification
               </button>
@@ -335,19 +489,96 @@ export function EphemeralSandboxWorkspaceClient() {
                 Sign out
               </button>
             </div>
-            {phase === "verifying" ? (
-              <div className={styles.statusRow} role="status">
-                <span className={styles.spinner} aria-hidden />
-                Waiting for wallet signature…
-              </div>
-            ) : null}
           </>
+        ) : null}
+
+        {phase === "review" && pendingChallenge ? (
+          <div className={styles.reviewCard}>
+            <h2 className={styles.sectionTitle}>{reviewTitle}</h2>
+            <dl className={styles.reviewList}>
+              <div>
+                <dt>Policy</dt>
+                <dd>{display?.policy_label ?? selectedPolicyMeta?.label ?? selectedPolicy}</dd>
+              </div>
+              <div>
+                <dt>Environment</dt>
+                <dd>{display?.environment ?? "Sandbox"}</dd>
+              </div>
+              <div>
+                <dt>Requested by</dt>
+                <dd>{display?.requested_by ?? "Abraxas Developer Workspace"}</dd>
+              </div>
+              {display?.wallet_address ? (
+                <div>
+                  <dt>Wallet</dt>
+                  <dd className={styles.mono}>{display.wallet_address}</dd>
+                </div>
+              ) : null}
+            </dl>
+            <p className={styles.reviewLead}>You will sign a message confirming this test request.</p>
+            <p className={styles.securityNote}>
+              <strong>No funds move.</strong> No spending access is granted.
+            </p>
+            {scopeNote ? <p className={styles.note}>{scopeNote}</p> : null}
+            <div className={styles.actions}>
+              <button
+                type="button"
+                className={styles.primaryBtn}
+                disabled={busy}
+                onClick={() => void openPhantomForReview()}
+              >
+                Review in Phantom
+              </button>
+              <button type="button" className={styles.secondaryBtn} disabled={busy} onClick={cancelVerificationRequest}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {phase === "signing" ? (
+          <div className={styles.reviewCard}>
+            <h2 className={styles.sectionTitle}>Waiting for Phantom</h2>
+            <div className={styles.statusRow} role="status">
+              <span className={styles.spinner} aria-hidden />
+              Review the request in Phantom.
+            </div>
+            {walletFocusHint ? (
+              <p className={styles.note}>
+                If the Phantom window closed, use Try again to create a fresh request. Abraxas cannot reopen your
+                wallet popup.
+              </p>
+            ) : null}
+            <div className={styles.actions}>
+              <button type="button" className={styles.secondaryBtn} disabled={busy} onClick={cancelVerificationRequest}>
+                Cancel request
+              </button>
+              <button type="button" className={styles.secondaryBtn} disabled={busy} onClick={() => void retryVerificationRequest()}>
+                Try again
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {phase === "submitting" ? (
+          <div className={styles.statusRow} role="status">
+            <span className={styles.spinner} aria-hidden />
+            Verifying signature…
+          </div>
         ) : null}
 
         {error ? (
           <p className={styles.error} role="alert">
             {error}
             {correlationId ? ` Reference: ${correlationId}.` : ""}
+            {error.includes("expired") ? (
+              <>
+                {" "}
+                <button type="button" className={styles.linkBtn} onClick={() => void retryVerificationRequest()}>
+                  Create a new request
+                </button>
+              </>
+            ) : null}
           </p>
         ) : null}
 
@@ -361,10 +592,23 @@ export function EphemeralSandboxWorkspaceClient() {
               Receipt {String(result.receipt_id).slice(0, 24)}… · independent signature check:{" "}
               {validation?.signature_valid ? "valid" : validation ? "invalid" : "pending"}
             </p>
+            <div className={styles.actions}>
+              <button
+                type="button"
+                className={styles.secondaryBtn}
+                disabled={busy}
+                onClick={() => {
+                  setResult(null);
+                  setValidation(null);
+                  setDecision(null);
+                  setPhase("workspace");
+                }}
+              >
+                Run another test
+              </button>
+            </div>
           </div>
         ) : null}
-
-        <p className={styles.note}>{EPHEMERAL_WORKSPACE_TEST_ONLY_NOTE}</p>
       </div>
     </div>
   );

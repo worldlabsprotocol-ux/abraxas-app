@@ -70,6 +70,7 @@ export async function POST(req: NextRequest) {
     requestOrigin,
     expectedOperation: "sandbox:verification:test",
     expectedResource: resource,
+    expectedPolicyId: policyId,
   });
   if (!action.ok) {
     const status =
