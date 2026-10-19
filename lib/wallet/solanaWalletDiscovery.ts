@@ -38,6 +38,29 @@ export function detectInjectableWallet(walletId: PreferredSolanaWalletId): boole
   return walletId === "Phantom" ? detectPhantomInjectable() : detectSolflareInjectable();
 }
 
+/** Direct provider connect while adapter readyState catches up (same user gesture). */
+export async function connectInjectableSolanaProvider(walletId: PreferredSolanaWalletId): Promise<void> {
+  if (typeof window === "undefined") {
+    throw new Error("wallet_provider_unavailable");
+  }
+  const w = window as InjectableWindow;
+  if (walletId === "Phantom") {
+    const provider = w.phantom?.solana ?? w.solana;
+    if (provider && typeof provider.connect === "function") {
+      await provider.connect();
+      return;
+    }
+  }
+  if (walletId === "Solflare") {
+    const provider = (w as { solflare?: { connect?: () => Promise<unknown> } }).solflare ?? w.solana;
+    if (provider && typeof provider.connect === "function") {
+      await provider.connect();
+      return;
+    }
+  }
+  throw new Error("wallet_provider_unavailable");
+}
+
 export type WalletOfferStatus = "discovering" | "available" | "unavailable";
 
 export function resolveWalletOfferStatus(input: {

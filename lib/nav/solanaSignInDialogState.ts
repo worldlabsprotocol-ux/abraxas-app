@@ -65,7 +65,35 @@ export function signInStatusMessage(input: {
 
 export const WALLET_CONNECT_USER_TIMEOUT_MS = 120_000;
 
-export function mapWalletConnectFailure(error: unknown, walletId?: string): string {
+export type WalletConnectFailureContext = {
+  walletId?: string;
+  stage?: string;
+  adapterReadyState?: string | null;
+  selectionCommitted?: boolean;
+  connectInvoked?: boolean;
+};
+
+/** Browser-safe diagnostics for support (no secrets). */
+export function logWalletConnectFailure(error: unknown, context: WalletConnectFailureContext): void {
+  if (typeof console === "undefined" || !console.info) return;
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  const name = error instanceof Error ? error.name : "";
+  console.info("[abraxas wallet connect]", {
+    walletId: context.walletId ?? null,
+    errorName: name || null,
+    errorMessage: message.slice(0, 200),
+    stage: context.stage ?? null,
+    adapterReadyState: context.adapterReadyState ?? null,
+    selectionCommitted: context.selectionCommitted ?? null,
+    connectInvoked: context.connectInvoked ?? null,
+  });
+}
+
+export function mapWalletConnectFailure(
+  error: unknown,
+  walletId?: string,
+  context?: WalletConnectFailureContext,
+): string {
   const message = error instanceof Error ? error.message : String(error ?? "");
   const name = error instanceof Error ? error.name : "";
   if (message === "wallet_discovery_timeout" || name === "WalletDiscoveryTimeoutError") {
@@ -73,6 +101,21 @@ export function mapWalletConnectFailure(error: unknown, walletId?: string): stri
   }
   if (message === "wallet_connect_timeout") {
     return "Connection request timed out. Open your wallet extension and approve the connection, then try again.";
+  }
+  if (name === "WalletNotSelectedError" || message === "wallet_selection_not_committed") {
+    return "Wallet selection did not finish. Click Connect again — if this repeats, refresh the page.";
+  }
+  if (
+    message === "wallet_adapter_not_ready"
+    || message === "wallet_adapter_not_ready_injectable"
+    || message === "adapter_not_ready"
+  ) {
+    return walletId === "Solflare"
+      ? "Solflare is not ready to connect. Unlock the extension, refresh, then try again."
+      : "Phantom is not ready to connect. Unlock the extension, refresh, then try again.";
+  }
+  if (name === "WalletConnectionError" || message === "wallet_connection_rejected") {
+    return "Connection request rejected. Open your wallet and approve the connection, or choose another wallet.";
   }
   if (name === "WalletNotReadyError") {
     return walletId === "Solflare"
@@ -93,6 +136,9 @@ export function mapWalletConnectFailure(error: unknown, walletId?: string): stri
   }
   if (lower.includes("blocked") || lower.includes("popup")) {
     return "Wallet popup may be blocked. Allow popups for this site and try again.";
+  }
+  if (context?.stage === "invoke_connect" && !context.connectInvoked) {
+    return "Connection did not start. Click Connect again.";
   }
   return "Could not connect wallet. Try again or choose another wallet.";
 }
