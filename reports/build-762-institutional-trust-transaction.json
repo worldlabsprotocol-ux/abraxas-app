@@ -1,0 +1,96 @@
+{
+  "schema_version": "build-762-v1",
+  "generated_at": "2026-10-19T22:39:03.464Z",
+  "commit_sha": "ffbd9d1832f355777b4418f7f3f20a0c0a15e4b5",
+  "journey_id": "ephemeral_developer_workspace_institutional_trust",
+  "journey_label": "Developer Workspace: request verification, present evidence, evaluate policy, verify decision",
+  "trust_context": "sandbox_only",
+  "status": {
+    "implemented": true,
+    "cryptographically_tested": true,
+    "issuer_operational": false,
+    "production_authorized": false
+  },
+  "institution": {
+    "partner_id": "ephemeral_wallet_sandbox",
+    "policy_id": "age_21_retail",
+    "policy_version": 1,
+    "requested_attribute": "Age 21 demonstration (sandbox test issuer)"
+  },
+  "holder_authorization": {
+    "wallet_sign_in": true,
+    "presentation_authorization": true,
+    "scoped_wallet_action": {
+      "operation": "sandbox:verification:test",
+      "resource_pattern": "abraxas:sandbox:{workspace_id}:policy:age_21_retail"
+    }
+  },
+  "evidence": {
+    "kind": "passport_reusable_credential",
+    "sandbox_test_issuer": true,
+    "production_eligibility": false
+  },
+  "execution": {
+    "workspace_id": "esbx_db7632ac2112b58ac29f1044",
+    "presentation_commit_id": "esbx_pc_cb1b6650671a4d0bccb5c368",
+    "action_challenge_id": "ewac_58ba98a919dd6cae8abf487c82bc89ae",
+    "receipt_id": "dr_pv_f1c39a88d9740e70",
+    "decision": "approved",
+    "result_label": "ephemeral_sandbox_test_only"
+  },
+  "independent_verification": {
+    "source": "presented_receipt",
+    "signature_authentic": true,
+    "currently_acceptable": true,
+    "without_wallet_session": true
+  },
+  "solana_contribution": {
+    "wallet_sign_message_scope_proof": true,
+    "onchain_program_enforcement": false,
+    "note": "Solana wallet signMessage establishes scoped authorization for the verification request. Issuer evidence and policy evaluation occur off-chain. Partner-owned on-chain gates are optional for composable enforcement and are not required for independent receipt verification."
+  },
+  "negative_cases": [
+    {
+      "case_id": "missing_presentation_authorization",
+      "property": "Policy execution requires recorded presentation authorization",
+      "expected": "HTTP 422 presentation_possession_not_authorized",
+      "observed": "HTTP 422 presentation_possession_not_authorized",
+      "verdict": "pass"
+    },
+    {
+      "case_id": "replay_presentation_commit",
+      "property": "Presentation commit consume-once",
+      "expected": "Second verify HTTP 410 presentation_commit_not_found",
+      "observed": "first 200 second 410 presentation_commit_not_found",
+      "verdict": "pass"
+    },
+    {
+      "case_id": "tampered_receipt_signature",
+      "property": "Independent verification rejects altered signature",
+      "expected": "signature_authentic false",
+      "observed": "signature_authentic false",
+      "verdict": "pass"
+    },
+    {
+      "case_id": "cross_scope_wallet_action",
+      "property": "Wallet action binding to resource and policy",
+      "expected": "HTTP 401 wrong_resource",
+      "observed": "HTTP 401 wrong_resource",
+      "verdict": "pass"
+    },
+    {
+      "case_id": "presentation_authorize_requires_session",
+      "property": "Presentation authorization requires authenticated session",
+      "expected": "HTTP 401–403 without session cookie",
+      "observed": "HTTP 401",
+      "verdict": "pass"
+    }
+  ],
+  "limitations": [
+    "Sandbox test issuer credentials demonstrate protocol execution only; they are not production age eligibility evidence.",
+    "Independent POST /api/auth/wallet/sandbox/validate validates presented sandbox test receipts against the server-held copy while the receipt remains in ephemeral storage; it does not upgrade sandbox labels to production authorization.",
+    "This runner executes local HTTP route handlers; it is not a substitute for Preview environment configuration (Redis, test issuer env flag).",
+    "Institutional Passport bundle verification (build-569 CLI) is a separate relying-party path for issuer-backed presentation bundles."
+  ],
+  "reproduction_command": "npm run certify:build-762"
+}

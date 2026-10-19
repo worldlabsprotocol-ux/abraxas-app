@@ -21,12 +21,12 @@ export type SandboxReceiptValidationPayload = {
   code?: string;
 };
 
-export function buildSandboxReceiptValidationPayload(input: {
+export async function buildSandboxReceiptValidationPayload(input: {
   receipt: PartnerFlowPublicReceipt;
   source: SandboxReceiptValidationPayload["source"];
   checkedAt?: Date;
-}): SandboxReceiptValidationPayload {
-  const validation = validateEphemeralSandboxTestResult(input.receipt);
+}): Promise<SandboxReceiptValidationPayload> {
+  const validation = await validateEphemeralSandboxTestResult(input.receipt);
   const checkedAt = (input.checkedAt ?? new Date()).toISOString();
   return {
     ok: validation.ok,

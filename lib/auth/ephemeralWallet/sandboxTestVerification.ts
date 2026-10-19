@@ -141,15 +141,39 @@ export async function loadEphemeralSandboxTestResult(
   return null;
 }
 
-export function validateEphemeralSandboxTestResult(
+type EphemeralSandboxReceiptFields = PartnerFlowPublicReceipt & {
+  signature?: string;
+  payload_hash?: string;
+};
+
+function receiptWithStoredIntegrity(
+  receipt: EphemeralSandboxReceiptFields,
+  stored: EphemeralSandboxTestResult | null,
+): EphemeralSandboxReceiptFields {
+  if (!stored) return receipt;
+  const presentedSignature = typeof receipt.signature === "string" ? receipt.signature : null;
+  const presentedPayloadHash = typeof receipt.payload_hash === "string" ? receipt.payload_hash : null;
+  if (presentedSignature != null && presentedSignature !== stored.signature) {
+    return { ...receipt, signature_valid: false };
+  }
+  if (presentedPayloadHash != null && presentedPayloadHash !== stored.payload_hash) {
+    return { ...receipt, signature_valid: false };
+  }
+  return receipt;
+}
+
+export async function validateEphemeralSandboxTestResult(
   receipt: PartnerFlowPublicReceipt,
   options?: { requireProduction?: boolean },
-): {
+): Promise<{
   ok: boolean;
   trust: ReturnType<typeof evaluatePublicReceiptTrust>;
   result_label: string | null;
-} {
-  const trust = evaluatePublicReceiptTrust(receipt, {
+}> {
+  const receiptId = typeof receipt.receipt_id === "string" ? receipt.receipt_id.trim() : "";
+  const stored = receiptId ? await loadEphemeralSandboxTestResult(receiptId) : null;
+  const receiptForTrust = receiptWithStoredIntegrity(receipt, stored);
+  const trust = evaluatePublicReceiptTrust(receiptForTrust, {
     partnerId: EPHEMERAL_SANDBOX_TEST_PARTNER_ID,
     policyId: receipt.policy_id ?? "",
     allowSandbox: true,

@@ -13,7 +13,7 @@ import {
 export const dynamic = "force-dynamic";
 
 function jsonValidation(
-  payload: ReturnType<typeof buildSandboxReceiptValidationPayload>,
+  payload: Awaited<ReturnType<typeof buildSandboxReceiptValidationPayload>>,
   status = 200,
 ) {
   return NextResponse.json(payload, { status });
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   }
 
   return jsonValidation(
-    buildSandboxReceiptValidationPayload({ receipt: stored, source: "server_cache" }),
+    await buildSandboxReceiptValidationPayload({ receipt: stored, source: "server_cache" }),
   );
 }
 
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, code: "invalid_receipt" }, { status: 400 });
   }
 
-  const payload = buildSandboxReceiptValidationPayload({
+  const payload = await buildSandboxReceiptValidationPayload({
     receipt: body.receipt,
     source: "presented_receipt",
   });

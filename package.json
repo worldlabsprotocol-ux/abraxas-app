@@ -51,6 +51,8 @@
     "certify:build-548": "tsx scripts/build-548-distributed-replay/run.ts",
     "test:build-549-live-institutional": "vitest run lib/institutionalCertification/build549/",
     "certify:build-549": "tsx scripts/build-549-live-institutional-certification/run.ts",
+    "test:build-762-institutional-trust": "vitest run lib/institutionalCertification/build762/",
+    "certify:build-762": "tsx scripts/build-762-institutional-trust-transaction/run.ts",
     "example:institutional-rp": "tsx examples/institutional-relying-party/cli.ts",
     "cielo:staging-activate": "tsx scripts/cielo-staging-activate.ts",
     "hospitality:portability-proof": "tsx scripts/hospitality-portability-proof.ts",
