@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { assertEphemeralWalletAuthEnabled } from "@/lib/auth/ephemeralWallet/apiGate";
 import { EPHEMERAL_SANDBOX_TEST_POLICIES } from "@/lib/auth/ephemeralWallet/sandboxTestPolicies";
+import { listSandboxPolicyAvailability } from "@/lib/auth/ephemeralWallet/sandboxPolicyAvailability";
 
 export const dynamic = "force-dynamic";
 
@@ -15,5 +16,6 @@ export async function GET(_req: NextRequest) {
     test_only: true,
     production_usable: false,
     policies: EPHEMERAL_SANDBOX_TEST_POLICIES,
+    availability: listSandboxPolicyAvailability(),
   });
 }

@@ -7,7 +7,7 @@ import {
   resolvePassportWalletRequestOrigin,
 } from "@/lib/auth/passportWalletAuth/origin";
 import { requireEphemeralWalletScope } from "@/lib/auth/ephemeralWallet/walletSession";
-import { mapEphemeralStoreError } from "@/lib/auth/ephemeralWallet/apiGate";
+import { assertEphemeralWalletAuthOperational, mapEphemeralStoreError } from "@/lib/auth/ephemeralWallet/apiGate";
 import { verifyWalletActionAuthorization } from "@/lib/auth/ephemeralWallet/actionAuth";
 import { readWalletSolAuthContextCookie } from "@/lib/auth/ephemeralWallet/service";
 import { provisionEphemeralSandboxWorkspace } from "@/lib/auth/ephemeralWallet/provisionSandboxWorkspace";
@@ -20,6 +20,19 @@ function correlationId(): string {
 
 export async function POST(req: NextRequest) {
   const requestId = correlationId();
+  const operational = await assertEphemeralWalletAuthOperational();
+  if (operational) {
+    return NextResponse.json(
+      {
+        ok: false,
+        code: "ephemeral_state_unavailable",
+        correlation_id: requestId,
+        stage: "operational_gate",
+      },
+      { status: operational.status },
+    );
+  }
+
   const requestOrigin = resolvePassportWalletRequestOrigin(req);
   if (!assertPassportWalletSameOriginRequest(req, requestOrigin)) {
     return NextResponse.json(

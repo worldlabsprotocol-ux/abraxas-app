@@ -2,7 +2,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { decodeJwt } from "jose";
-import { assertEphemeralWalletAuthEnabled } from "@/lib/auth/ephemeralWallet/apiGate";
+import { assertEphemeralWalletAuthEnabled, mapEphemeralStoreError } from "@/lib/auth/ephemeralWallet/apiGate";
+import { EphemeralStateUnavailableError } from "@/lib/auth/ephemeralWallet/errors";
 import {
   clearWalletSessionCookie,
   resolveEphemeralWalletSession,
@@ -30,7 +31,16 @@ export async function GET(req: NextRequest) {
   const disabled = assertEphemeralWalletAuthEnabled();
   if (disabled) return disabled;
 
-  const session = await resolveEphemeralWalletSession(req);
+  let session;
+  try {
+    session = await resolveEphemeralWalletSession(req);
+  } catch (error) {
+    if (error instanceof EphemeralStateUnavailableError) {
+      const mapped = mapEphemeralStoreError(error);
+      if (mapped) return mapped;
+    }
+    throw error;
+  }
   if (!session) {
     return NextResponse.json(
       { ok: true, authenticated: false, auth_mode: "ephemeral_wallet" },

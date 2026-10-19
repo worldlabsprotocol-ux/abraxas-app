@@ -162,7 +162,7 @@ export async function resolveEphemeralWalletSession(
       const active = await isEphemeralWalletSessionActive(parsed.sessionId);
       if (!active) return null;
     } catch (error) {
-      if (error instanceof EphemeralStateUnavailableError) return null;
+      if (error instanceof EphemeralStateUnavailableError) throw error;
       throw error;
     }
   }
