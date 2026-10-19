@@ -22,6 +22,8 @@ export type SandboxReceiptValidationPayload = {
   session_independent: boolean;
   server_record_integrity_verified: boolean;
   standalone_cryptographic_verification: boolean;
+  /** Explains what signature_authentic means for this sandbox endpoint (not registry-backed offline crypto). */
+  signature_authentic_basis: "sandbox_server_record_and_policy_gates";
   code?: string;
 };
 
@@ -54,6 +56,7 @@ export async function buildSandboxReceiptValidationPayload(input: {
     session_independent: validation.session_independent,
     server_record_integrity_verified: validation.server_record_integrity_verified,
     standalone_cryptographic_verification: validation.standalone_cryptographic_verification,
+    signature_authentic_basis: "sandbox_server_record_and_policy_gates",
   };
 }
 

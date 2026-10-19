@@ -88,6 +88,7 @@ Unit tests additionally cover missing `payload_hash`, missing server record, and
 - `server_record_integrity_verified` — presented receipt matches server-held copy  
 - `standalone_cryptographic_verification` — `false` for ephemeral sandbox receipts  
 - `signature_authentic` — legacy aggregate: integrity + policy gates (not registry-backed standalone crypto)
+- `signature_authentic_basis` — always `sandbox_server_record_and_policy_gates` for this endpoint
 
 ---
 

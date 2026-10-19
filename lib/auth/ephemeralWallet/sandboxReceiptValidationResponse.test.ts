@@ -31,6 +31,7 @@ describe("sandboxReceiptValidationResponse", () => {
     expect(payload.server_record_integrity_verified).toBe(true);
     expect(payload.standalone_cryptographic_verification).toBe(false);
     expect(payload.signature_authentic).toBe(true);
+    expect(payload.signature_authentic_basis).toBe("sandbox_server_record_and_policy_gates");
     expect(payload.source).toBe("presented_receipt");
   });
 
