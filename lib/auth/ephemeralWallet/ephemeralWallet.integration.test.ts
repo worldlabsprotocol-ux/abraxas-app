@@ -235,9 +235,7 @@ describe.runIf(integrationEnabled)("ephemeral wallet authentication", () => {
     expect((await enterRes.json()).code).toBe("action_authorization_required");
   });
 
-  it("completes temporary sandbox test verification journey", async () => {
-    const { verifyRes, sessionCookie } = await signInWallet(keypair, wallet, origin);
-    expect(verifyRes.status).toBe(200);
+  async function openSandboxWorkspace(sessionCookie: string) {
     const sessionBody = await (
       await import("@/app/api/auth/wallet/session/route")
     ).GET(
@@ -271,12 +269,18 @@ describe.runIf(integrationEnabled)("ephemeral wallet authentication", () => {
     );
     expect(enterRes.status).toBe(200);
     const workspace = (await enterRes.json()).workspace as { workspace_id: string };
+    return { workspace, sessionCookie: enterAction.cookie };
+  }
+
+  it("rejects age_21 sandbox test without authoritative age evidence", async () => {
+    const { sessionCookie } = await signInWallet(keypair, wallet, origin);
+    const { workspace, sessionCookie: sandboxCookie } = await openSandboxWorkspace(sessionCookie);
 
     const testAction = await authorizeAction({
       keypair,
       wallet,
       origin,
-      sessionCookie: enterAction.cookie,
+      sessionCookie: sandboxCookie,
       operation: "sandbox:verification:test",
       resource: `abraxas:sandbox:${workspace.workspace_id}:policy:age_21_retail`,
       policyId: "age_21_retail",
@@ -298,8 +302,44 @@ describe.runIf(integrationEnabled)("ephemeral wallet authentication", () => {
         }),
       }),
     );
+    expect(testRes.status).toBe(422);
+    expect((await testRes.json()).code).toBe("insufficient_evidence_for_policy");
+  });
+
+  it("completes temporary sandbox test verification journey (wallet_control)", async () => {
+    const { sessionCookie } = await signInWallet(keypair, wallet, origin);
+    const { workspace, sessionCookie: sandboxCookie } = await openSandboxWorkspace(sessionCookie);
+
+    const policyId = "wallet_control";
+    const testAction = await authorizeAction({
+      keypair,
+      wallet,
+      origin,
+      sessionCookie: sandboxCookie,
+      operation: "sandbox:verification:test",
+      resource: `abraxas:sandbox:${workspace.workspace_id}:policy:${policyId}`,
+      policyId,
+    });
+    const { POST: testVerifyPost } = await import("@/app/api/auth/wallet/sandbox/test-verify/route");
+    const testRes = await testVerifyPost(
+      new NextRequest(`${origin}/api/auth/wallet/sandbox/test-verify`, {
+        method: "POST",
+        headers: {
+          cookie: testAction.cookie,
+          origin,
+          host: "localhost:3000",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          policy_id: policyId,
+          action_challenge_id: testAction.action_challenge_id,
+          signature: testAction.signature,
+        }),
+      }),
+    );
     expect(testRes.status).toBe(200);
     const testBody = await testRes.json();
+    expect(testBody.decision).toBe("approved");
     expect(testBody.result.result_label).toBe("ephemeral_sandbox_test_only");
     expect(testBody.production_usable).toBe(false);
     const { GET: validateGet } = await import("@/app/api/auth/wallet/sandbox/validate/route");

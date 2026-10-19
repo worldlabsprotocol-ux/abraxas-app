@@ -30,5 +30,13 @@ export async function GET(_req: NextRequest) {
     config_ok: config.ok,
     config_code: config.ok ? null : config.code,
     flag_enabled: isEphemeralWalletAuthEnabled(),
+    ephemeral_security: {
+      challenge_replay_backend: op.challenge_replay_backend,
+      distributed_replay_enforced: op.distributed_replay_enforced,
+      production_activation_blocked: op.production_activation_blocked,
+      missing_capability: op.missing_capability,
+      revocation_mode: op.revocation_mode,
+      transient_backend: op.transient_backend,
+    },
   });
 }

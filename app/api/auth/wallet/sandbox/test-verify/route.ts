@@ -9,7 +9,7 @@ import { enforceNativeAuthRateLimit } from "@/lib/auth/nativeAccount/rateLimit";
 import { mapEphemeralStoreError } from "@/lib/auth/ephemeralWallet/apiGate";
 import { requireEphemeralWalletScope } from "@/lib/auth/ephemeralWallet/walletSession";
 import { getEphemeralSandboxForSession } from "@/lib/auth/ephemeralWallet/sandboxWorkspace";
-import { runEphemeralSandboxTestVerification } from "@/lib/auth/ephemeralWallet/sandboxTestVerification";
+import { runEphemeralProtocolSandboxVerification } from "@/lib/protocolVerification/runSandboxVerification";
 import { verifyWalletActionAuthorization } from "@/lib/auth/ephemeralWallet/actionAuth";
 import { readWalletSolAuthContextCookie } from "@/lib/auth/ephemeralWallet/service";
 
@@ -78,22 +78,31 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const outcome = await runEphemeralSandboxTestVerification({
+    const outcome = await runEphemeralProtocolSandboxVerification({
       workspaceId: workspace.workspace_id,
       walletAddress: auth.session.walletAddress,
       policyId,
     });
     if (!outcome.ok) {
-      const status = outcome.code === "store_unavailable" ? 503 : 400;
-      return NextResponse.json({ ok: false, code: outcome.code }, { status });
+      const status =
+        outcome.code === "store_unavailable"
+          ? 503
+          : outcome.code === "insufficient_evidence_for_policy" || outcome.unsupported
+            ? 422
+            : 400;
+      return NextResponse.json(
+        { ok: false, code: outcome.code, unsupported: outcome.unsupported ?? false },
+        { status },
+      );
     }
 
     return NextResponse.json({
       ok: true,
       test_only: true,
       production_usable: false,
+      decision: outcome.decision,
       result: outcome.result,
-      validate_path: `/api/auth/wallet/sandbox/validate?receipt_id=${encodeURIComponent(String(outcome.result.receipt_id))}`,
+      validate_path: outcome.validate_path,
     });
   } catch (error) {
     const mapped = mapEphemeralStoreError(error);
