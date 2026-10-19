@@ -15,6 +15,12 @@ import {
   verificationReviewScopeNote,
   verificationReviewTitle,
 } from "@/lib/developers/ephemeralWorkspaceCopy";
+import {
+  EPHEMERAL_WALLET_SESSION_EVENT,
+  fetchEphemeralWalletClientSession,
+  notifyEphemeralWalletSessionChanged,
+} from "@/lib/auth/ephemeralWallet/clientSession";
+import { EphemeralWorkspaceSessionRail } from "./EphemeralWorkspaceSessionRail";
 import styles from "./EphemeralDeveloperWorkspace.module.css";
 
 const EPHEMERAL_SANDBOX_RESULT_LABEL = "ephemeral_sandbox_test_only";
@@ -78,9 +84,12 @@ export function EphemeralSandboxWorkspaceClient() {
   const [error, setError] = useState<string | null>(null);
   const [correlationId, setCorrelationId] = useState<string | null>(null);
   const [walletFocusHint, setWalletFocusHint] = useState(false);
+  const [sessionExpiresAt, setSessionExpiresAt] = useState<string | null>(null);
 
   const requestGenerationRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
+  const phaseRef = useRef<WorkspacePhase>("loading");
+  phaseRef.current = phase;
 
   const bumpRequestGeneration = useCallback(() => {
     requestGenerationRef.current += 1;
@@ -88,37 +97,51 @@ export function EphemeralSandboxWorkspaceClient() {
     abortRef.current = null;
   }, []);
 
-  const hydrate = useCallback(async () => {
-    setPhase("loading");
-    setError(null);
+  const hydrate = useCallback(async (options?: { silent?: boolean }) => {
+    const protectedPhases: WorkspacePhase[] = ["review", "signing", "submitting"];
+    const silent = Boolean(options?.silent);
+    if (!silent) {
+      setPhase("loading");
+      setError(null);
+    }
     try {
-      const sessionRes = await fetch("/api/auth/wallet/session", { credentials: "same-origin" });
-      const sessionBody = (await sessionRes.json()) as {
-        authenticated?: boolean;
-        session_id?: string;
-        wallet_address?: string;
-      };
-      if (!sessionBody.authenticated) {
+      const session = await fetchEphemeralWalletClientSession();
+      if (!session.authenticated) {
         setPhase("signed_out");
         setSessionId(null);
         setWalletAddress(null);
+        setSessionExpiresAt(null);
         setWorkspace(null);
         return;
       }
-      setSessionId(sessionBody.session_id ?? null);
-      setWalletAddress(sessionBody.wallet_address ?? null);
+      setSessionId(session.sessionId);
+      setWalletAddress(session.walletAddress);
+      setSessionExpiresAt(session.expiresAt);
 
-      const workspaceRes = await fetch("/api/auth/wallet/sandbox/workspace", { credentials: "same-origin" });
+      if (silent && protectedPhases.includes(phaseRef.current)) {
+        return;
+      }
+
+      const workspaceRes = await fetch("/api/auth/wallet/sandbox/workspace", {
+        credentials: "same-origin",
+        cache: "no-store",
+      });
       const workspaceBody = (await workspaceRes.json()) as { workspace?: Workspace | null; code?: string };
       if (workspaceBody.workspace) {
         setWorkspace(workspaceBody.workspace);
-        setPhase("workspace");
+        if (!protectedPhases.includes(phaseRef.current)) {
+          setPhase("workspace");
+        }
         return;
       }
-      setPhase("ready");
+      if (!protectedPhases.includes(phaseRef.current)) {
+        setPhase("ready");
+      }
     } catch {
-      setPhase("failure");
-      setError("Could not load workspace state. Refresh and try again.");
+      if (!silent) {
+        setPhase("failure");
+        setError("Could not load workspace state. Refresh and try again.");
+      }
     }
   }, []);
 
@@ -132,6 +155,12 @@ export function EphemeralSandboxWorkspaceClient() {
         if (list[0]) setSelectedPolicy(list[0].policy_id);
       })
       .catch(() => setPolicies([]));
+  }, [hydrate]);
+
+  useEffect(() => {
+    const onSession = () => void hydrate({ silent: true });
+    window.addEventListener(EPHEMERAL_WALLET_SESSION_EVENT, onSession);
+    return () => window.removeEventListener(EPHEMERAL_WALLET_SESSION_EVENT, onSession);
   }, [hydrate]);
 
   useEffect(() => {
@@ -360,11 +389,16 @@ export function EphemeralSandboxWorkspaceClient() {
   const signOut = useCallback(async () => {
     bumpRequestGeneration();
     await fetch("/api/auth/wallet/session", { method: "DELETE", credentials: "same-origin" });
+    notifyEphemeralWalletSessionChanged();
     setWorkspace(null);
     setResult(null);
     setPendingChallenge(null);
     void hydrate();
   }, [hydrate, bumpRequestGeneration]);
+
+  const openWalletSignIn = useCallback(() => {
+    window.dispatchEvent(new Event("abraxas:open-wallet-sign-in"));
+  }, []);
 
   const selectedPolicyMeta = policies.find((p) => p.policy_id === selectedPolicy);
   const reviewTitle = verificationReviewTitle(selectedPolicy, selectedPolicyMeta?.label);
@@ -380,7 +414,22 @@ export function EphemeralSandboxWorkspaceClient() {
           ? 3
           : 0;
 
-  const steps = ["Open workspace", "Configure policy", "Verify", "Validate"];
+  const steps = ["Application", "Policy", "Verification", "Receipt"];
+
+  const sessionRailState =
+    phase === "signed_out"
+      ? "session_expired"
+      : phase === "review" || phase === "signing"
+        ? "authorization_required"
+        : workspace
+          ? "workspace_ready"
+          : phase === "ready" || phase === "entering" || phase === "failure"
+            ? "authenticated"
+            : phase === "loading"
+              ? "loading"
+              : publicKey
+                ? "authenticated"
+                : "disconnected";
 
   if (phase === "loading") {
     return (
@@ -396,16 +445,33 @@ export function EphemeralSandboxWorkspaceClient() {
   if (phase === "signed_out") {
     return (
       <div className={styles.shell}>
-        <p className={styles.lead}>Sign in from the header to open your developer workspace.</p>
-        <p className={styles.muted}>
-          Wallet sign-in proves control of your address. It does not create a permanent personal account.
-        </p>
+        <EphemeralWorkspaceSessionRail
+          state="session_expired"
+          walletAddress={null}
+          sessionExpiresAt={null}
+          workspaceExpiresAt={null}
+        />
+        <div className={styles.panel}>
+          <h2 className={styles.sectionTitle}>Session expired</h2>
+          <p className={styles.muted}>Connect your wallet to continue in the Developer Workspace.</p>
+          <div className={styles.actions}>
+            <button type="button" className={styles.walletBtn} onClick={openWalletSignIn}>
+              Connect wallet
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className={styles.shell}>
+      <EphemeralWorkspaceSessionRail
+        state={sessionRailState}
+        walletAddress={walletAddress}
+        sessionExpiresAt={sessionExpiresAt}
+        workspaceExpiresAt={workspace?.expires_at ?? null}
+      />
       <div className={styles.workspaceHeader}>
         <span className={styles.sandboxBadge}>{EPHEMERAL_WORKSPACE_SANDBOX_BADGE}</span>
         <p className={styles.muted}>{EPHEMERAL_WORKSPACE_SANDBOX_EXPIRY_NOTE}</p>
@@ -450,7 +516,7 @@ export function EphemeralSandboxWorkspaceClient() {
 
         {workspace && phase !== "review" && phase !== "signing" && phase !== "submitting" ? (
           <>
-            <h2 className={styles.sectionTitle}>Configure test verification</h2>
+            <h2 className={styles.sectionTitle}>Choose a policy</h2>
             <p className={`${styles.meta} ${styles.muted}`}>
               Workspace {workspace.workspace_id.slice(0, 18)}… · expires{" "}
               {new Date(workspace.expires_at).toLocaleString()}
@@ -458,32 +524,33 @@ export function EphemeralSandboxWorkspaceClient() {
             {publicKey ? null : (
               <p className={styles.note}>Connect your wallet to authorize test verification when you are ready.</p>
             )}
-            <label className={styles.fieldLabel}>
-              Test policy
-              <select
-                className={styles.select}
-                value={selectedPolicy}
-                disabled={busy}
-                onChange={(e) => setSelectedPolicy(e.target.value)}
-              >
-                {policies.map((p) => (
-                  <option key={p.policy_id} value={p.policy_id}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {selectedPolicyMeta?.description ? (
-              <p className={styles.muted}>{selectedPolicyMeta.description}</p>
-            ) : null}
+            <div className={styles.policyGrid} role="radiogroup" aria-label="Choose a policy">
+              {policies.map((p) => {
+                const selected = p.policy_id === selectedPolicy;
+                return (
+                  <button
+                    key={p.policy_id}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    disabled={busy}
+                    className={selected ? styles.policyCardActive : styles.policyCard}
+                    onClick={() => setSelectedPolicy(p.policy_id)}
+                  >
+                    <span className={styles.policyCardTitle}>{p.label}</span>
+                    <span className={styles.policyCardDesc}>{p.description}</span>
+                  </button>
+                );
+              })}
+            </div>
             <div className={styles.actions}>
               <button
                 type="button"
-                className={styles.primaryBtn}
+                className={styles.verifyBtn}
                 disabled={busy || !selectedPolicy || !signMessage}
                 onClick={() => void beginVerificationReview()}
               >
-                Run test verification
+                Review request
               </button>
               <button type="button" className={styles.secondaryBtn} disabled={busy} onClick={() => void signOut()}>
                 Sign out
@@ -527,7 +594,7 @@ export function EphemeralSandboxWorkspaceClient() {
                 disabled={busy}
                 onClick={() => void openPhantomForReview()}
               >
-                Review in Phantom
+                Verify with Phantom
               </button>
               <button type="button" className={styles.secondaryBtn} disabled={busy} onClick={cancelVerificationRequest}>
                 Cancel

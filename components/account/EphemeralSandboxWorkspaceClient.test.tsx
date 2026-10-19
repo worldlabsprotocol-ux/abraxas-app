@@ -54,7 +54,7 @@ describe("EphemeralSandboxWorkspaceClient", () => {
         if (url.includes("/api/auth/wallet/sandbox/policies")) {
           return new Response(
             JSON.stringify({
-              policies: [{ policy_id: "wallet_control", label: "Wallet control", description: "" }],
+              policies: [{ policy_id: "wallet_control", label: "Wallet Control", description: "" }],
             }),
             { status: 200, headers: { "Content-Type": "application/json" } },
           );
@@ -91,7 +91,7 @@ describe("EphemeralSandboxWorkspaceClient", () => {
     fireEvent.click(screen.getByRole("button", { name: /Start building/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/Configure test verification/i)).toBeTruthy();
+      expect(screen.getByText(/Choose a policy/i)).toBeTruthy();
     });
   });
 });

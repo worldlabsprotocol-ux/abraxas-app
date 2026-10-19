@@ -358,7 +358,7 @@ export function SolanaAccountSignInDialog({
             textAlign: "center",
           }}
         >
-          Your wallet proves you control this address. Abraxas will ask for a message signature — not a
+          Your wallet proves you control this address. Abraxas asks for a message signature, not a
           transaction.
         </p>
         <p
@@ -371,8 +371,8 @@ export function SolanaAccountSignInDialog({
             textAlign: "center",
           }}
         >
-          No funds moved · no token approval · no personal identity verification. Connect your wallet first,
-          then review and sign a short message.
+          No funds move. No spending access is granted. Connect your wallet, then review and sign the
+          message.
         </p>
 
         {statusMessage ? (
@@ -388,7 +388,7 @@ export function SolanaAccountSignInDialog({
 
         {phase === "success" ? (
           <div className={styles.successBox} role="status">
-            Wallet confirmed — entering Abraxas…
+            Wallet confirmed. Entering Abraxas…
           </div>
         ) : null}
 
@@ -518,7 +518,7 @@ export function SolanaAccountSignInDialog({
               textAlign: "center",
             }}
           >
-            Wallet connected — click <strong>Sign message</strong> to finish sign-in.
+            Wallet connected. Click <strong>Sign message</strong> to finish sign in.
           </p>
         ) : null}
       </div>

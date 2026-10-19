@@ -3,7 +3,53 @@
 .shell {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.35rem;
+  --ws-bg-deep: #07090c;
+  --ws-teal: #3ec9b0;
+  --ws-cyan: #5eb8ff;
+  --ws-violet: #9b87f5;
+  --ws-emerald: #4cbb92;
+  --ws-warn: #e8a65a;
+}
+
+.sessionRail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, rgba(16, 22, 30, 0.95), rgba(8, 10, 14, 0.92));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.sessionRailPrimary {
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.sessionRailDetail {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.sessionRail_info .sessionRailPrimary {
+  color: var(--ws-cyan);
+}
+
+.sessionRail_success .sessionRailPrimary {
+  color: var(--ws-emerald);
+}
+
+.sessionRail_warn .sessionRailPrimary {
+  color: var(--ws-warn);
+}
+
+.sessionRail_auth .sessionRailPrimary {
+  color: var(--ws-violet);
 }
 
 .workspaceHeader {
@@ -133,10 +179,99 @@
 }
 
 .panel {
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
-  border-radius: var(--radius-lg, 4px);
-  background: var(--surface-raised, rgba(255, 255, 255, 0.04));
-  padding: 1.25rem 1.35rem;
+  border: 1px solid rgba(94, 184, 255, 0.12);
+  border-radius: 14px;
+  background: linear-gradient(165deg, rgba(14, 18, 26, 0.96), rgba(7, 9, 12, 0.98));
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  padding: clamp(1.1rem, 2.5vw, 1.55rem) clamp(1.15rem, 3vw, 1.65rem);
+}
+
+.policyGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 0.75rem;
+  margin-top: 0.85rem;
+}
+
+.policyCard,
+.policyCardActive {
+  appearance: none;
+  text-align: left;
+  border-radius: 12px;
+  padding: 0.85rem 0.95rem;
+  cursor: pointer;
+  font: inherit;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s ease;
+}
+
+.policyCard {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-primary);
+}
+
+.policyCardActive {
+  border: 1px solid rgba(62, 201, 176, 0.55);
+  background: linear-gradient(145deg, rgba(62, 201, 176, 0.12), rgba(155, 135, 245, 0.08));
+  box-shadow: 0 0 0 1px rgba(62, 201, 176, 0.15);
+  color: var(--text-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .policyCard,
+  .policyCardActive {
+    transition: none;
+  }
+}
+
+.policyCardTitle {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 650;
+  margin-bottom: 0.35rem;
+}
+
+.policyCardDesc {
+  display: block;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.walletBtn {
+  appearance: none;
+  border: 1px solid rgba(94, 184, 255, 0.45);
+  background: linear-gradient(135deg, rgba(94, 184, 255, 0.22), rgba(155, 135, 245, 0.18));
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  padding: 0.55rem 1.1rem;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.verifyBtn {
+  appearance: none;
+  border: 1px solid rgba(155, 135, 245, 0.45);
+  background: linear-gradient(135deg, rgba(155, 135, 245, 0.35), rgba(94, 184, 255, 0.2));
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  padding: 0.55rem 1.1rem;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.verifyBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .lead {
