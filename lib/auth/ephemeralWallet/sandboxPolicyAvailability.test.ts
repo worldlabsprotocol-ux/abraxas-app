@@ -27,6 +27,7 @@ describe("resolveSandboxPolicyAvailability", () => {
     expect(row?.can_request_verification).toBe(true);
     expect(row?.execution_status).toBe("ready");
     expect(row?.age_experience).toBe("age_21_test");
+    expect(row?.availability_label).toBe("Demonstration only");
     if (previous === undefined) delete process.env.ABRAXAS_EPHEMERAL_SANDBOX_AUTHORIZED_TEST_ISSUER;
     else process.env.ABRAXAS_EPHEMERAL_SANDBOX_AUTHORIZED_TEST_ISSUER = previous;
   });

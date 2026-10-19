@@ -629,6 +629,11 @@ export function EphemeralSandboxWorkspaceClient() {
       <div className={styles.workspaceHeader}>
         <span className={styles.sandboxBadge}>{EPHEMERAL_WORKSPACE_SANDBOX_BADGE}</span>
         <p className={styles.muted}>{EPHEMERAL_WORKSPACE_SANDBOX_EXPIRY_NOTE}</p>
+        {policyAvailability.some((row) => row.age_experience === "age_21_test") ? (
+          <p className={styles.integrityNote} role="note">
+            Issuer backed verification demonstration. Sandbox fixtures do not establish real world age eligibility.
+          </p>
+        ) : null}
       </div>
 
       {workspace ? <TrustExecutionTrace stages={trustStages} /> : null}
@@ -897,7 +902,7 @@ export function EphemeralSandboxWorkspaceClient() {
         {result ? (
           <div className={styles.resultBox}>
             <h3 className={styles.resultTitle}>
-              {selectedPolicy === "age_21_retail" ? "Age 21 test complete" : "Verification complete"}
+              {selectedPolicy === "age_21_retail" ? "Age 21 demonstration complete" : "Verification complete"}
             </h3>
             {selectedPolicy === "age_21_retail" ? (
               <p className={styles.note}>

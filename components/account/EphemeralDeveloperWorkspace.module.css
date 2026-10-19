@@ -72,6 +72,14 @@
   border-radius: var(--radius-lg, 4px);
 }
 
+.integrityNote {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--ws-teal);
+}
+
 .sectionTitle {
   margin: 0 0 0.65rem;
   font-size: 1.05rem;
