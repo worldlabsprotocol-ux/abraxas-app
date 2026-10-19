@@ -121,6 +121,15 @@ export const TRANSIENT_STATE_AUDIT: ReadonlyArray<{
       "Distributed Production without Redis: protected auth unavailable (fail closed). No silent downgrade.",
   },
   {
+    feature: "Sandbox presentation commit consume",
+    guarantee:
+      "Single-use holder presentation binding across concurrent test-verify attempts and Vercel instances (same backend as challenge replay)",
+    required: true,
+    backend: "Redis GETDEL (Production / Preview); process Map with in-process lock (local dev / isolated tests only)",
+    withoutSharedState:
+      "Distributed Production without Redis: sandbox age test presentation unavailable (fail closed). Hash binding alone does not establish issuer trust or current eligibility.",
+  },
+  {
     feature: "Capability allowlist",
     guarantee: "Immediate logout invalidates captured capability JWT before natural expiry",
     required: false,

@@ -7,6 +7,11 @@ import {
   putEphemeralWalletChallenge,
   resetEphemeralChallengeStoreForTests,
 } from "./challengeStore";
+import {
+  consumeSandboxPresentationCommit,
+  resetSandboxPresentationCommitStoreForTests,
+  storeSandboxPresentationCommit,
+} from "./sandboxPresentationCommitStore";
 import { resetEphemeralKvTcpForTests } from "./redisKv";
 
 const redisUrl = process.env.ABRAXAS_EPHEMERAL_REDIS_URL?.trim() || process.env.REDIS_URL?.trim();
@@ -24,10 +29,12 @@ describe.runIf(redisEnabled)("ephemeral wallet redis (TCP)", () => {
     delete process.env.UPSTASH_REDIS_REST_TOKEN;
     resetEphemeralKvTcpForTests();
     resetEphemeralChallengeStoreForTests();
+    resetSandboxPresentationCommitStoreForTests();
   });
 
   afterAll(() => {
     resetEphemeralChallengeStoreForTests();
+    resetSandboxPresentationCommitStoreForTests();
     resetEphemeralKvTcpForTests();
   });
 
@@ -51,5 +58,29 @@ describe.runIf(redisEnabled)("ephemeral wallet redis (TCP)", () => {
     const winners = results.filter((r) => r !== null);
     expect(winners).toHaveLength(1);
     expect(winners[0]?.challenge_id).toBe(record.challenge_id);
+  });
+
+  it("rejects concurrent sandbox presentation commit consumption (single winner)", async () => {
+    const commitId = `esbx_pc_redis_${Date.now()}`;
+    await storeSandboxPresentationCommit({
+      commit_id: commitId,
+      session_id: "sess_redis",
+      workspace_id: "ws_redis",
+      wallet_address: "11111111111111111111111111111111",
+      policy_id: "age_21_retail",
+      policy_version: 1,
+      presentation_method_id: "authorized_test_issuer_credential",
+      evidence_hash: "deadbeef",
+      expires_at: new Date(Date.now() + 60_000).toISOString(),
+      sandbox_labeled: true,
+      production_trusted: false,
+    });
+    const results = await Promise.all([
+      consumeSandboxPresentationCommit(commitId),
+      consumeSandboxPresentationCommit(commitId),
+    ]);
+    const winners = results.filter((r) => r !== null);
+    expect(winners).toHaveLength(1);
+    expect(winners[0]?.commit_id).toBe(commitId);
   });
 });

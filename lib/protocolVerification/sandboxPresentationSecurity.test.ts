@@ -135,4 +135,86 @@ describe("sandbox presentation security", () => {
     expect(await consumeSandboxPresentationCommit("esbx_pc_once")).not.toBeNull();
     expect(await consumeSandboxPresentationCommit("esbx_pc_once")).toBeNull();
   });
+
+  it("serializes concurrent in-process presentation commit consumption (single winner)", async () => {
+    await storeSandboxPresentationCommit({
+      commit_id: "esbx_pc_race",
+      session_id: "sess_a",
+      workspace_id: "ws_1",
+      wallet_address: TEST_WALLET,
+      policy_id: "age_21_retail",
+      policy_version: 1,
+      presentation_method_id: "authorized_test_issuer_credential",
+      evidence_hash: "race",
+      expires_at: new Date(Date.now() + 60_000).toISOString(),
+      sandbox_labeled: true,
+      production_trusted: false,
+    });
+    const results = await Promise.all([
+      consumeSandboxPresentationCommit("esbx_pc_race"),
+      consumeSandboxPresentationCommit("esbx_pc_race"),
+    ]);
+    expect(results.filter((r) => r !== null)).toHaveLength(1);
+  });
+
+  it("policy execution validates issuer trust and revocation (hash binding is not sufficient)", async () => {
+    const revoked = buildEphemeralSandboxAgeTestCredential({
+      walletAddress: TEST_WALLET,
+      variant: "revoked",
+    });
+    const request = bindVerificationRequest({
+      requestId: "req_revoked_at_execution",
+      partnerId: "ephemeral_wallet_sandbox",
+      policyId: "age_21_retail",
+      policyVersion: 1,
+      operation: "sandbox:verification:test",
+      resource: "abraxas:sandbox:ws:policy:age_21_retail",
+      walletAddress: TEST_WALLET,
+    });
+    const outcome = await executeProtocolVerification({
+      context: "sandbox_only",
+      request,
+      evidence: [
+        {
+          kind: "passport_reusable_credential",
+          credential: revoked.credential,
+          portable_revocation_snapshot: revoked.portable_revocation_snapshot,
+        },
+      ],
+    });
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    expect(outcome.decision).toBe("denied");
+    expect(outcome.reason_codes).not.toContain("policy_satisfied");
+  });
+
+  it("policy execution rejects untrusted issuer even when evidence shape matches", async () => {
+    const bundle = buildEphemeralSandboxAgeTestCredential({
+      walletAddress: TEST_WALLET,
+      variant: "invalid_issuer",
+    });
+    const request = bindVerificationRequest({
+      requestId: "req_bad_issuer",
+      partnerId: "ephemeral_wallet_sandbox",
+      policyId: "age_21_retail",
+      policyVersion: 1,
+      operation: "sandbox:verification:test",
+      resource: "abraxas:sandbox:ws:policy:age_21_retail",
+      walletAddress: TEST_WALLET,
+    });
+    const outcome = await executeProtocolVerification({
+      context: "sandbox_only",
+      request,
+      evidence: [
+        {
+          kind: "passport_reusable_credential",
+          credential: bundle.credential,
+          portable_revocation_snapshot: bundle.portable_revocation_snapshot,
+        },
+      ],
+    });
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    expect(outcome.decision).toBe("denied");
+  });
 });
