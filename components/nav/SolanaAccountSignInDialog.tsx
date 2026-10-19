@@ -3,12 +3,20 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { WalletReadyState, type WalletName } from "@solana/wallet-adapter-base";
+import { type WalletName } from "@solana/wallet-adapter-base";
+import { useSolanaWalletDiscovery, PREFERRED_SOLANA_WALLETS } from "@/lib/wallet/useSolanaWalletDiscovery";
+import { WALLET_INSTALL_URLS } from "@/lib/wallet/solanaWalletDiscovery";
+import { walletOfferMeta } from "@/lib/wallet/solanaWalletDiscovery";
+import {
+  waitForSolanaWalletAdapter,
+  WalletDiscoveryTimeoutError,
+} from "@/lib/wallet/waitForSolanaWalletAdapter";
+import { WALLET_CONNECT_USER_TIMEOUT_MS } from "@/lib/nav/solanaSignInDialogState";
+import type { PreferredSolanaWalletId } from "@/lib/wallet/solanaWalletDiscovery";
 import { completeSolanaAccountSignIn } from "@/lib/auth/nativeAccount/clientSolanaAccountSignIn";
 import { completeEphemeralWalletSignIn } from "@/lib/auth/ephemeralWallet/clientSignIn";
 import {
   SOLANA_SIGN_IN_STEPS,
-  WALLET_INSTALL_URLS,
   activeSignInStepIndex,
   mapSignInFailure,
   mapWalletConnectFailure,
@@ -19,8 +27,6 @@ import {
 import styles from "./SolanaAccountSignInDialog.module.css";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
-const PREFERRED_WALLETS = ["Phantom", "Solflare"] as const;
-
 function shortAddress(address: string): string {
   return `${address.slice(0, 4)}…${address.slice(-4)}`;
 }
@@ -42,8 +48,11 @@ export function SolanaAccountSignInDialog({
 }) {
   const { publicKey, signMessage, connected, connecting, connect, select, wallet, wallets, disconnect } =
     useWallet();
+  const { offers } = useSolanaWalletDiscovery(open);
   const primaryRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const walletsRef = useRef(wallets);
+  walletsRef.current = wallets;
 
   const [phase, setPhase] = useState<SolanaSignInPhase>("idle");
   const [localError, setLocalError] = useState<string | null>(null);
@@ -93,41 +102,54 @@ export function SolanaAccountSignInDialog({
     }
   }, [open, walletConnected, phase]);
 
-  const walletOptions = PREFERRED_WALLETS.map((label) => {
-    const match = wallets.find((w) => w.adapter.name === label);
-    const ready = match?.readyState ?? WalletReadyState.NotDetected;
-    const installed =
-      ready === WalletReadyState.Installed || ready === WalletReadyState.Loadable;
-    return {
-      name: label,
-      label,
-      installed,
-      installUrl: WALLET_INSTALL_URLS[label] ?? "#",
-      adapter: match,
-    };
-  });
-
   const connectWallet = useCallback(
-    async (walletName: string) => {
+    async (walletName: PreferredSolanaWalletId) => {
       setLocalError(null);
       setError(null);
       setSelectedWalletName(walletName);
       setPhase("connecting");
       setBusy(true);
       try {
+        try {
+          await waitForSolanaWalletAdapter({
+            walletId: walletName,
+            getReadyState: () =>
+              walletsRef.current.find((w) => w.adapter.name === walletName)?.readyState,
+          });
+        } catch (error) {
+          if (error instanceof WalletDiscoveryTimeoutError) {
+            throw error;
+          }
+          const offer = offers[walletName];
+          if (offer?.status !== "available") {
+            throw new Error("wallet_not_detected");
+          }
+        }
         select(walletName as WalletName);
-        await connect();
+        await Promise.race([
+          connect(),
+          new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error("wallet_connect_timeout")), WALLET_CONNECT_USER_TIMEOUT_MS);
+          }),
+        ]);
         setPhase("connected");
       } catch (error) {
+        if (error instanceof Error && error.message === "wallet_not_detected") {
+          setPhase("failure");
+          const msg = `${walletName} was not detected. Install the extension or choose another wallet.`;
+          setLocalError(msg);
+          setError(msg);
+          return;
+        }
         setPhase("failure");
-        const msg = mapWalletConnectFailure(error);
+        const msg = mapWalletConnectFailure(error, walletName);
         setLocalError(msg);
         setError(msg);
       } finally {
         setBusy(false);
       }
     },
-    [connect, select, setBusy, setError],
+    [connect, select, setBusy, setError, wallets, offers],
   );
 
   const runSign = useCallback(async () => {
@@ -349,44 +371,55 @@ export function SolanaAccountSignInDialog({
 
         {showWalletGrid ? (
           <div className={styles.walletGrid} role="group" aria-label="Choose a Solana wallet">
-            {walletOptions.map((option) => {
-              const isSelected = selectedWalletName === option.name;
-              if (!option.installed) {
+            {PREFERRED_SOLANA_WALLETS.map((walletId) => {
+              const isSelected = selectedWalletName === walletId;
+              const offer = offers[walletId];
+              const meta = walletOfferMeta(offer?.status ?? "discovering");
+              const installUrl = WALLET_INSTALL_URLS[walletId] ?? "#";
+
+              if (meta.showInstall) {
                 return (
                   <div
-                    key={option.name}
+                    key={walletId}
                     className={styles.walletCard}
                     style={{ cursor: "default" }}
                     role="group"
-                    aria-label={`${option.label} not installed`}
+                    aria-label={`${walletId} not installed`}
                   >
-                    <strong style={{ fontSize: "0.88rem" }}>{option.label}</strong>
-                    <span className={styles.walletMeta}>Extension not detected</span>
+                    <strong style={{ fontSize: "0.88rem" }}>{walletId}</strong>
+                    <span className={styles.walletMeta}>{meta.detail}</span>
                     <a
                       className={styles.linkBtn}
-                      href={option.installUrl}
+                      href={installUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      Install {option.label}
+                      Install {walletId}
                     </a>
                   </div>
                 );
               }
+
+              const connectLabel =
+                connecting && isSelected
+                  ? "Opening wallet…"
+                  : offer?.status === "discovering"
+                    ? meta.actionLabel
+                    : `Connect ${walletId}`;
+
               return (
                 <button
-                  key={option.name}
+                  key={walletId}
                   type="button"
                   className={`${styles.walletCard} ${isSelected ? styles.walletCardSelected : ""}`}
-                  disabled={pending || connecting}
+                  disabled={pending || connecting || offer?.status === "discovering"}
                   aria-pressed={isSelected}
-                  aria-label={`Connect ${option.label}`}
-                  onClick={() => void connectWallet(option.name)}
+                  aria-label={`Connect ${walletId}`}
+                  onClick={() => void connectWallet(walletId)}
                 >
-                  <strong style={{ fontSize: "0.88rem" }}>{option.label}</strong>
-                  <span className={styles.walletMeta}>
-                    {connecting && isSelected ? "Connecting…" : "Connect"}
-                  </span>
+                  <strong style={{ fontSize: "0.88rem" }}>{walletId}</strong>
+                  <span className={styles.walletMeta}>{meta.detail}</span>
+                  <span className={styles.walletMeta}>{connectLabel}</span>
                 </button>
               );
             })}
