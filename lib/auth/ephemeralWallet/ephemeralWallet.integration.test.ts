@@ -53,6 +53,8 @@ async function signInWallet(keypair: Keypair, wallet: string, origin: string) {
   );
   const challengeBody = await challengeRes.json();
   expect(challengeBody.challenge.message).toContain("abraxas_wallet_sign_in_v1");
+  expect(challengeBody.challenge.message).toContain("ABRAXAS — WALLET SIGN-IN");
+  expect(challengeBody.challenge.display?.kind).toBe("wallet_sign_in");
   const messageBytes = new TextEncoder().encode(challengeBody.challenge.message);
   const signature = Buffer.from(nacl.sign.detached(messageBytes, keypair.secretKey)).toString("base64");
   const { POST: verifyPost } = await import("@/app/api/auth/wallet/solana/verify/route");
