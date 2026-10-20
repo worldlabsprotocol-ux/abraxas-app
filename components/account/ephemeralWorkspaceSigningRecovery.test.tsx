@@ -33,7 +33,12 @@ describe("EphemeralSandboxWorkspaceClient signing recovery", () => {
     signMessage.mockReset();
   });
 
+  let challengeFetchCount = 0;
+  let testVerifyCalls = 0;
+
   beforeEach(() => {
+    challengeFetchCount = 0;
+    testVerifyCalls = 0;
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -72,15 +77,20 @@ describe("EphemeralSandboxWorkspaceClient signing recovery", () => {
           });
         }
         if (url.includes("/api/auth/wallet/solana/action/challenge") && init?.method === "POST") {
+          challengeFetchCount += 1;
           return Response.json({
             ok: true,
             challenge: {
-              challenge_id: "ewac_test_challenge",
-              message: "scoped verification message",
+              challenge_id: `ewac_test_challenge_${challengeFetchCount}`,
+              message: `scoped verification message ${challengeFetchCount}`,
               expires_at: new Date(Date.now() + 300_000).toISOString(),
               operation: "sandbox:verification:test",
             },
           });
+        }
+        if (url.includes("/api/auth/wallet/sandbox/test-verify") && init?.method === "POST") {
+          testVerifyCalls += 1;
+          return Response.json({ ok: true, result: { receipt_id: "dr_late" }, decision: "approved" });
         }
         return Response.json({}, { status: 404 });
       }),
@@ -129,6 +139,72 @@ describe("EphemeralSandboxWorkspaceClient signing recovery", () => {
 
     expect(signMessage).toHaveBeenCalledTimes(1);
     resolveSign?.(new Uint8Array([1]));
+    await waitFor(() => {
+      expect(testVerifyCalls).toBe(0);
+    });
+  });
+
+  it("Try again fetches a fresh challenge after cancel", async () => {
+    signMessage.mockRejectedValue(new Error("User rejected"));
+
+    render(
+      <WalletContextProvider>
+        <EphemeralSandboxWorkspaceClient />
+      </WalletContextProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/Choose a policy/i)).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /Review request/i }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Verify with Phantom/i })).toBeTruthy();
+    });
+    expect(challengeFetchCount).toBe(1);
+
+    fireEvent.click(screen.getByRole("button", { name: /Verify with Phantom/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Waiting for wallet approval/i)).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /Try again/i }));
+    await waitFor(() => {
+      expect(challengeFetchCount).toBe(2);
+      expect(screen.getByRole("button", { name: /Verify with Phantom/i })).toBeTruthy();
+    });
+  });
+
+  it("does not start duplicate concurrent sign prompts on rapid Verify clicks", async () => {
+    signMessage.mockImplementation(
+      () => new Promise<Uint8Array>(() => {
+        /* pending */
+      }),
+    );
+
+    render(
+      <WalletContextProvider>
+        <EphemeralSandboxWorkspaceClient />
+      </WalletContextProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/Choose a policy/i)).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /Review request/i }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Verify with Phantom/i })).toBeTruthy();
+    });
+
+    const verifyBtn = screen.getByRole("button", { name: /Verify with Phantom/i });
+    fireEvent.click(verifyBtn);
+    fireEvent.click(verifyBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Waiting for wallet approval/i)).toBeTruthy();
+    });
+    expect(signMessage).toHaveBeenCalledTimes(1);
   });
 
   it("surfaces wallet rejection and offers Try again without refresh", async () => {
