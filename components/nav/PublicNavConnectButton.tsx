@@ -4,7 +4,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { notifyEphemeralWalletSessionChanged } from "@/lib/auth/ephemeralWallet/clientSession";
+import {
+  notifyEphemeralWalletSessionChanged,
+  notifyWalletSignInDialogChanged,
+} from "@/lib/auth/ephemeralWallet/clientSession";
 import { PublicNavAccountMenu, PublicNavConnectPrimary } from "@/components/nav/PublicNavAccountMenu";
 import { SolanaAccountSignInDialog } from "@/components/nav/SolanaAccountSignInDialog";
 import {
@@ -125,6 +128,12 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
   const openSignIn = useCallback(() => {
     setError(null);
     setSignInOpen(true);
+    notifyWalletSignInDialogChanged(true);
+  }, []);
+
+  const closeSignIn = useCallback(() => {
+    setSignInOpen(false);
+    notifyWalletSignInDialogChanged(false);
   }, []);
 
   useEffect(() => {
@@ -211,7 +220,7 @@ export function PublicNavConnectButton({ prominent = false }: { prominent?: bool
       />
       <SolanaAccountSignInDialog
         open={signInOpen}
-        onClose={() => setSignInOpen(false)}
+        onClose={closeSignIn}
         onSuccess={() => void finishSuccess()}
         busy={busy}
         setBusy={setBusy}

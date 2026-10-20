@@ -7,6 +7,7 @@ import styles from "./EphemeralDeveloperWorkspace.module.css";
 export type WorkspaceSessionRailState =
   | "loading"
   | "session_expired"
+  | "sign_in_required"
   | "authenticated"
   | "workspace_ready"
   | "authorization_required"
@@ -32,6 +33,13 @@ export function EphemeralWorkspaceSessionRail(props: {
       primary = "Session expired";
       detail = "Connect your wallet to continue.";
       tone = "warn";
+      break;
+    case "sign_in_required":
+      primary = "Sign-in required";
+      detail = connected
+        ? "Your wallet is connected. Complete the message signature to open this workspace."
+        : "Connect your wallet, then sign in to continue.";
+      tone = "auth";
       break;
     case "authenticated":
       primary = "Authenticated";

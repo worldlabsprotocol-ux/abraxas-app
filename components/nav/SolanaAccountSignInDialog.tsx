@@ -70,6 +70,8 @@ export function SolanaAccountSignInDialog({
   const connectedRef = useRef(connected);
   connectedRef.current = connected;
   const signInAbortRef = useRef<AbortController | null>(null);
+  const signAttemptGenerationRef = useRef(0);
+  const signInFlightRef = useRef(false);
 
   const [phase, setPhase] = useState<SolanaSignInPhase>("idle");
   const [localError, setLocalError] = useState<string | null>(null);
@@ -89,8 +91,22 @@ export function SolanaAccountSignInDialog({
     setSelectedWalletName(null);
   }, []);
 
+  const abortPendingSignIn = useCallback(() => {
+    signInAbortRef.current?.abort();
+    signInAbortRef.current = null;
+  }, []);
+
+  const invalidateSignAttempt = useCallback(() => {
+    signAttemptGenerationRef.current += 1;
+    abortPendingSignIn();
+  }, [abortPendingSignIn]);
+
   useEffect(() => {
     if (!open) {
+      abortPendingSignIn();
+      signAttemptGenerationRef.current += 1;
+      signInFlightRef.current = false;
+      setBusy(false);
       resetDialog();
       return;
     }
@@ -98,7 +114,7 @@ export function SolanaAccountSignInDialog({
       primaryRef.current
       ?? panelRef.current?.querySelector<HTMLElement>('button[aria-label^="Connect"]');
     focusTarget?.focus();
-  }, [open, resetDialog, walletConnected]);
+  }, [open, resetDialog, walletConnected, abortPendingSignIn, setBusy]);
 
   useEffect(() => {
     if (!open || busy) return;
@@ -196,12 +212,8 @@ export function SolanaAccountSignInDialog({
     [connect, select, setBusy, setError, wallets, offers],
   );
 
-  const abortPendingSignIn = useCallback(() => {
-    signInAbortRef.current?.abort();
-    signInAbortRef.current = null;
-  }, []);
-
   const runSign = useCallback(async () => {
+    if (signInFlightRef.current) return;
     if (!publicKey) {
       const msg = "Connect a wallet first, then sign the message.";
       setLocalError(msg);
@@ -220,6 +232,8 @@ export function SolanaAccountSignInDialog({
     abortPendingSignIn();
     const controller = new AbortController();
     signInAbortRef.current = controller;
+    const generation = signAttemptGenerationRef.current;
+    signInFlightRef.current = true;
 
     setBusy(true);
     setLocalError(null);
@@ -232,31 +246,25 @@ export function SolanaAccountSignInDialog({
       const useEphemeral = enabledJson.auth_mode === "ephemeral_wallet";
 
       setPhase("signing");
-      const signPromise = useEphemeral
-        ? completeEphemeralWalletSignIn({
+      const result = useEphemeral
+        ? await completeEphemeralWalletSignIn({
             walletAddress: publicKey.toBase58(),
             signMessage,
             signal: controller.signal,
+            isStale: () => generation !== signAttemptGenerationRef.current,
           })
-        : completeSolanaAccountSignIn({
+        : await completeSolanaAccountSignIn({
             walletAddress: publicKey.toBase58(),
             signMessage,
           });
 
-      const timeoutMs = 120_000;
-      const result = await Promise.race([
-        signPromise,
-        new Promise<{ ok: false; reason: "failed"; message: string }>((resolve) => {
-          setTimeout(
-            () => resolve({ ok: false, reason: "failed", message: "Sign-in request timed out. Try again." }),
-            timeoutMs,
-          );
-        }),
-      ]);
+      if (generation !== signAttemptGenerationRef.current) {
+        return;
+      }
 
       if (!result.ok) {
         if (result.reason === "cancelled") {
-          if (controller.signal.aborted) {
+          if (controller.signal.aborted || generation !== signAttemptGenerationRef.current) {
             setPhase("connected");
             return;
           }
@@ -287,19 +295,22 @@ export function SolanaAccountSignInDialog({
       if (signInAbortRef.current === controller) {
         signInAbortRef.current = null;
       }
+      signInFlightRef.current = false;
       setBusy(false);
     }
   }, [publicKey, signMessage, setBusy, setError, onSuccess, onClose, abortPendingSignIn]);
 
   const handleDialogCancel = useCallback(() => {
     if (phase === "signing") {
-      abortPendingSignIn();
+      invalidateSignAttempt();
       setBusy(false);
+      setLocalError(null);
+      setError(null);
       setPhase("connected");
       return;
     }
     onClose();
-  }, [abortPendingSignIn, onClose, phase, setBusy]);
+  }, [invalidateSignAttempt, onClose, phase, setBusy, setError]);
 
   const handleRetry = useCallback(() => {
     setLocalError(null);
@@ -540,8 +551,12 @@ export function SolanaAccountSignInDialog({
               type="button"
               className={styles.secondaryBtn}
               onClick={() => {
-                abortPendingSignIn();
+                invalidateSignAttempt();
+                signInFlightRef.current = false;
                 setBusy(false);
+                setLocalError(null);
+                setError(null);
+                setPhase("connected");
                 void runSign();
               }}
             >
