@@ -2,7 +2,11 @@
 // Atomic sandbox provisioning via migration 084 RPC.
 import "server-only";
 
-import { persistenceUsesDirectPostgres } from "@/lib/persistence/env";
+import { persistenceUsesDirectPostgres, resolvePersistenceConfig } from "@/lib/persistence/env";
+import {
+  isLaunchpadPersistenceMisconfigured,
+  isPostgrestTransportErrorMessage,
+} from "@/lib/persistence/postgrestReachability";
 import { isSovereignNativeAccountMode } from "@/lib/persistence/sovereignNativeAccount";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { generatePartnerKey } from "@/lib/partner/partnerAuth";
@@ -81,6 +85,20 @@ export async function provisionLaunchpadSandbox(
   const policyRules = customPolicy && customPolicy.ok ? customPolicy.rules : template!.rules;
   const { raw, prefix, hash } = generatePartnerKey("test");
 
+  const persistenceCfg = resolvePersistenceConfig();
+  if (
+    !launchpadUsesSovereignPostgres()
+    && !launchpadUsesDirectPostgres()
+    && (!persistenceCfg.ok
+      || (persistenceCfg.backend === "supabase_postgrest"
+        && isLaunchpadPersistenceMisconfigured(
+          persistenceCfg.postgrestUrl,
+          persistenceCfg.serviceRoleKey,
+        )))
+  ) {
+    return { ok: false, code: "not_configured" };
+  }
+
   if (launchpadUsesSovereignPostgres()) {
     const { provisionSovereignLaunchpadSandbox } = await import("@/lib/partner/launchpad/sovereign/provisionSandboxTransaction");
     return provisionSovereignLaunchpadSandbox({
@@ -154,6 +172,12 @@ export async function provisionLaunchpadSandbox(
 
     if (error) {
       console.error("[launchpad/provision] rpc failed", { error_message: error.message });
+      const misconfigured =
+        isPostgrestTransportErrorMessage(error.message)
+        || /invalid api key/i.test(error.message ?? "");
+      if (misconfigured) {
+        return { ok: false, code: "not_configured" };
+      }
       return { ok: false, code: "provision_failed" };
     }
     row = data as ProvisionRow;

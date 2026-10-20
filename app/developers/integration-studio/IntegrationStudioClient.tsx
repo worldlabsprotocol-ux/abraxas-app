@@ -401,9 +401,27 @@ export function IntegrationStudioClient() {
         docs?: { hosted_link?: string; sandbox_testing?: string[] };
       };
       if (!res.ok) {
-        setError(data.error === "production_denied" || data.code === "production_denied"
-          ? "Production credentials are not self-service."
-          : (data.error ?? data.code ?? "Could not create sandbox"));
+        if (data.error === "production_denied" || data.code === "production_denied") {
+          setError("Production credentials are not self-service.");
+          return;
+        }
+        if (data.code === "launchpad_not_configured") {
+          setError(
+            "Sandbox provisioning is not connected to Launchpad persistence in this environment. "
+              + "Use a staging deployment with Supabase migrations 084–086 applied and valid "
+              + "NEXT_PUBLIC_SUPABASE_URL plus SUPABASE_SERVICE_ROLE_KEY, then retry. "
+              + "Your wallet verification in Developer Workspace is still valid.",
+          );
+          return;
+        }
+        if (data.code === "launchpad_provision_failed") {
+          setError(
+            "Could not create the sandbox application. Check the callback URL (use https://localhost or a public HTTPS URL on staging), "
+              + "wait out rate limits, and retry. If this persists on staging, contact support with the time of the attempt.",
+          );
+          return;
+        }
+        setError(data.error ?? data.code ?? "Could not create sandbox");
         return;
       }
       if (data.application) {
