@@ -40,6 +40,10 @@ import {
   SANDBOX_PARTNER_CONTRACT_STAGES,
 } from "./contract";
 
+if (!process.env.NEXTAUTH_SECRET?.trim()) {
+  process.env.NEXTAUTH_SECRET = "wallet-standard-durable-test-secret";
+}
+
 const PARTNER = "acme-sandbox";
 const PACK = "age_21_retail";
 const CALLBACK = "http://localhost:3000/abraxas/callback";
