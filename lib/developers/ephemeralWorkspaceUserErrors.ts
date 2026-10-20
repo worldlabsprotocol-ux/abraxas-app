@@ -61,9 +61,9 @@ export function mapWorkspaceUserFacingError(input: {
   switch (code) {
     case "wallet_sign_in_required":
       return {
-        title: "Session expired",
-        message: "Connect your wallet to continue.",
-        recovery: "Use Connect wallet in the header or below.",
+        title: "Sign-in required",
+        message: "Your Abraxas session ended. Connect your wallet and sign in to continue.",
+        recovery: "Use Sign in in the header or below.",
         technicalCode: code,
         correlationId: input.correlationId,
       };

@@ -11,7 +11,8 @@ export type WorkspaceSessionRailState =
   | "authenticated"
   | "workspace_ready"
   | "authorization_required"
-  | "disconnected";
+  | "disconnected"
+  | "sandbox_unavailable";
 
 export function EphemeralWorkspaceSessionRail(props: {
   state: WorkspaceSessionRailState;
@@ -65,6 +66,12 @@ export function EphemeralWorkspaceSessionRail(props: {
       detail = connected
         ? "Reconnect your wallet to authorize verification."
         : "Connect Phantom to authorize verification when you are ready.";
+      tone = "warn";
+      break;
+    case "sandbox_unavailable":
+      primary = "Developer sandbox unavailable";
+      detail =
+        "Wallet authentication is not enabled in this environment. This is not an expired session.";
       tone = "warn";
       break;
     default:

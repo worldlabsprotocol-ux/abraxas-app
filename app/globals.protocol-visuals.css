@@ -852,23 +852,49 @@
 }
 
 .abx-pv-verify__read-path {
-  display: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   margin: 0 0 1rem;
-  padding: 0.55rem 0.65rem;
+  padding: 0.65rem 0.75rem;
   border-radius: 10px;
   border: 1px dashed rgba(255, 255, 255, 0.12);
-  font-size: 0.74rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
   color: var(--text-secondary);
-  text-align: center;
-  gap: 0.35rem 0.5rem;
-  flex-wrap: wrap;
-  justify-content: center;
+  text-align: left;
+  gap: 0.35rem;
+}
+
+.abx-pv-verify__read-path-label {
+  margin: 0 0 0.15rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.abx-pv-verify__read-path-arrow {
+  display: none;
 }
 
 @media (min-width: 900px) {
   .abx-pv-verify__read-path {
-    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
     align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 0.35rem 0.5rem;
+  }
+
+  .abx-pv-verify__read-path-label {
+    display: none;
+  }
+
+  .abx-pv-verify__read-path-arrow {
+    display: inline;
   }
 }
 
@@ -889,6 +915,63 @@
 
 .abx-pv-verify__read-path-arrow {
   opacity: 0.45;
+}
+
+@media (max-width: 639px) {
+  .abx-pv-verify__receipt-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .abx-pv-verify__meta-row {
+    grid-template-columns: 1fr;
+    gap: 0.12rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .abx-pv-verify__meta-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .abx-pv-verify__meta-row dt {
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .abx-pv-verify__meta-row dd {
+    font-size: 0.82rem;
+    line-height: 1.5;
+    word-break: break-word;
+  }
+
+  .abx-pv-verify__mono {
+    font-size: 0.72rem;
+    line-height: 1.45;
+  }
+
+  .abx-pv-verify__layout {
+    gap: 1rem;
+  }
+
+  .abx-pv-verify__check-row {
+    padding: 0.65rem 0.7rem;
+  }
+
+  .abx-pv-verify__check-row span {
+    font-size: 0.82rem;
+  }
+
+  .abx-pv-verify__receipt {
+    padding: 1rem 0.85rem;
+  }
+
+  .abx-pv-verify__scenarios {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
 }
 
 .abx-pv-verify__sample-inline {

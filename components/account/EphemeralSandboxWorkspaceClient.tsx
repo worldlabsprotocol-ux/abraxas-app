@@ -164,6 +164,7 @@ export function EphemeralSandboxWorkspaceClient() {
   const [correlationId, setCorrelationId] = useState<string | null>(null);
   const [walletFocusHint, setWalletFocusHint] = useState(false);
   const [sessionExpiresAt, setSessionExpiresAt] = useState<string | null>(null);
+  const [walletAuthOperational, setWalletAuthOperational] = useState<boolean | null>(null);
 
   const sandboxPossessionSecretKeyRef = useRef<Uint8Array | null>(null);
   const requestGenerationRef = useRef(0);
@@ -203,6 +204,12 @@ export function EphemeralSandboxWorkspaceClient() {
         config_code?: string | null;
       };
       if (!enabledBody.operational) {
+        setWalletAuthOperational(false);
+        setServerSessionAuthenticated(false);
+        setSessionId(null);
+        setWalletAddress(null);
+        setSessionExpiresAt(null);
+        setWorkspace(null);
         setPhase("failure");
         setUserError(
           mapEphemeralWalletOperationalError({
@@ -212,6 +219,7 @@ export function EphemeralSandboxWorkspaceClient() {
         );
         return;
       }
+      setWalletAuthOperational(true);
 
       const session = await fetchEphemeralWalletClientSession();
       setServerSessionAuthenticated(session.authenticated);
@@ -329,7 +337,8 @@ export function EphemeralSandboxWorkspaceClient() {
       const sessionProbe = await fetchEphemeralWalletClientSession();
       setServerSessionAuthenticated(sessionProbe.authenticated);
       if (!sessionProbe.authenticated || !sessionProbe.sessionId) {
-        setPhase("signed_out");
+        const walletConnected = walletConnectedRef.current;
+        setPhase(walletConnected ? "awaiting_sign_in" : "signed_out");
         setUserError(mapWorkspaceUserFacingError({ code: "wallet_sign_in_required" }));
         notifyEphemeralWalletSessionChanged();
         return;
@@ -364,7 +373,7 @@ export function EphemeralSandboxWorkspaceClient() {
           const recheck = await fetchEphemeralWalletClientSession();
           setServerSessionAuthenticated(recheck.authenticated);
           if (!recheck.authenticated) {
-            setPhase("signed_out");
+            setPhase(walletConnectedRef.current ? "awaiting_sign_in" : "signed_out");
             notifyEphemeralWalletSessionChanged();
           } else {
             setPhase("ready");
@@ -769,20 +778,22 @@ export function EphemeralSandboxWorkspaceClient() {
 
   const steps = ["Application", "Policy", "Verification", "Receipt"];
 
-  const sessionRailState =
-    phase === "signed_out" || (!serverSessionAuthenticated && phase !== "loading")
-      ? "session_expired"
-      : phase === "review" || phase === "signing"
-        ? "authorization_required"
-        : workspace
-          ? "workspace_ready"
-          : phase === "ready" || phase === "entering"
-            ? "authenticated"
-            : phase === "loading"
-              ? "loading"
-              : publicKey
-                ? "authenticated"
-                : "disconnected";
+  const sessionRailState = ((): import("./EphemeralWorkspaceSessionRail").WorkspaceSessionRailState => {
+    if (phase === "loading") return "loading";
+    if (walletAuthOperational === false) return "sandbox_unavailable";
+    if (!serverSessionAuthenticated) {
+      if (walletAdapterConnected && publicKey) return "sign_in_required";
+      return "session_expired";
+    }
+    if (userError?.technicalCode === "wallet_sign_in_required") {
+      return walletAdapterConnected && publicKey ? "sign_in_required" : "session_expired";
+    }
+    if (phase === "review" || phase === "signing") return "authorization_required";
+    if (workspace) return "workspace_ready";
+    if (phase === "ready" || phase === "entering") return "authenticated";
+    if (phase === "failure") return "authenticated";
+    return walletAdapterConnected && publicKey ? "authenticated" : "disconnected";
+  })();
 
   const selectedAvailability = pickSandboxPolicyAvailability(policyAvailability, selectedPolicy);
 
@@ -815,6 +826,27 @@ export function EphemeralSandboxWorkspaceClient() {
         <div className={styles.statusRow} role="status">
           <span className={styles.spinner} aria-hidden />
           Loading workspace…
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === "failure" && walletAuthOperational === false && userError) {
+    return (
+      <div className={styles.shell}>
+        <EphemeralWorkspaceSessionRail
+          state="sandbox_unavailable"
+          walletAddress={null}
+          sessionExpiresAt={null}
+          workspaceExpiresAt={null}
+        />
+        <div className={styles.panel}>
+          <h2 className={styles.sectionTitle}>{userError.title}</h2>
+          <p className={styles.muted}>{userError.message}</p>
+          {userError.recovery ? <p className={styles.note}>{userError.recovery}</p> : null}
+          {userError.technicalCode ? (
+            <p className={styles.technicalDetails}>Code: {userError.technicalCode}</p>
+          ) : null}
         </div>
       </div>
     );
@@ -875,12 +907,12 @@ export function EphemeralSandboxWorkspaceClient() {
       {workspace ? <TrustExecutionTrace stages={trustStages} /> : null}
 
       <div className={styles.panel}>
-        {(phase === "ready" || phase === "entering" || phase === "failure") && !workspace ? (
+        {serverSessionAuthenticated && (phase === "ready" || phase === "entering") && !workspace ? (
           <>
             <h2 className={styles.sectionTitle}>Start building</h2>
             <p className={styles.muted}>
-              Your wallet session is active
-              {walletAddress ? ` (${walletAddress.slice(0, 4)}…${walletAddress.slice(-4)})` : ""}. Open an
+              You&apos;re signed in to Abraxas
+              {walletAddress ? ` with ${walletAddress.slice(0, 4)}…${walletAddress.slice(-4)}` : ""}. Open an
               isolated sandbox to configure policies and run test verification.
             </p>
             {phase === "entering" ? (
@@ -1136,10 +1168,10 @@ export function EphemeralSandboxWorkspaceClient() {
             <p className={styles.errorTitle}>{userError.title}</p>
             <p className={styles.errorMessage}>{userError.message}</p>
             {userError.recovery ? <p className={styles.errorRecovery}>{userError.recovery}</p> : null}
-            {userError.title === "Session expired" ? (
+            {userError.title === "Sign-in required" || userError.technicalCode === "wallet_sign_in_required" ? (
               <div className={styles.actions}>
                 <button type="button" className={styles.walletBtn} onClick={openWalletSignIn}>
-                  Connect wallet
+                  {walletAdapterConnected && publicKey ? "Sign in" : "Connect wallet"}
                 </button>
               </div>
             ) : null}

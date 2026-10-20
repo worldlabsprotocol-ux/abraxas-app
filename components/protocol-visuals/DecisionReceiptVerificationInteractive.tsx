@@ -104,7 +104,8 @@ export function DecisionReceiptVerificationInteractive(props?: { shell?: Decisio
           <strong>authorized now</strong>. Live partner verification uses the same split.
         </p>
 
-        <div className="abx-pv-verify__read-path" aria-hidden="true">
+        <div className="abx-pv-verify__read-path" role="note" aria-label="Receipt reading order">
+          <p className="abx-pv-verify__read-path-label">Reading order</p>
           <span className="abx-pv-verify__read-path-item abx-pv-verify__read-path-item--auth">
             Cryptographic authenticity
           </span>
