@@ -107,9 +107,12 @@ async function authorizeAction(input: {
   );
   const actionBody = await actionChallengeRes.json();
   if (input.operation === "sandbox:verification:test" && input.policyId) {
-    expect(actionBody.challenge.message).toContain("Authorize test verification");
+    expect(actionBody.challenge.message).toContain("What you approve:");
     expect(actionBody.challenge.message).toContain(input.policyId);
+    expect(actionBody.challenge.message).toContain("Authorization consequence:");
+    expect(actionBody.challenge.display?.kind).toBe("scoped_authorization");
     expect(actionBody.challenge.display?.policy_id).toBe(input.policyId);
+    expect(actionBody.challenge.display?.authorization_summary).toMatch(/verification/i);
   }
   const msg = new TextEncoder().encode(actionBody.challenge.message);
   const sig = Buffer.from(nacl.sign.detached(msg, input.keypair.secretKey)).toString("base64");
