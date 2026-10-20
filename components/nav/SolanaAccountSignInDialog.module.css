@@ -14,9 +14,9 @@
 .panel {
   width: min(440px, 100%);
   border-radius: 16px;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   background: var(--surface-raised);
-  padding: 1.25rem 1.35rem 1.35rem;
+  padding: 1.35rem 1.45rem 1.45rem;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
 }
 
@@ -60,13 +60,17 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 0.35rem;
-  margin: 0 0 1rem;
+  margin: 0 0 1.15rem;
+  padding: 0.65rem 0.5rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .step {
   text-align: center;
-  font-size: 0.62rem;
-  line-height: 1.25;
+  font-size: 0.7rem;
+  line-height: 1.35;
   color: var(--text-muted);
 }
 
@@ -89,8 +93,57 @@
 }
 
 .stepActive {
+  color: var(--text-primary);
+  font-weight: 650;
+}
+
+.stepDone {
   color: var(--text-secondary);
-  font-weight: 600;
+}
+
+.modalTitle {
+  margin: 0 0 0.65rem;
+  font-family: inherit;
+  font-size: 1.12rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.walletConnectedChip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem 0.5rem;
+  margin: 0 0 1.1rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.walletConnectedChip strong {
+  color: var(--text-primary);
+  font-weight: 650;
+}
+
+.walletConnectedChip code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.signInFootnote {
+  margin: 0.85rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  text-align: center;
 }
 
 .statusRow {
@@ -98,12 +151,13 @@
   align-items: center;
   gap: 0.5rem;
   margin: 0 0 0.85rem;
-  padding: 0.55rem 0.65rem;
+  padding: 0.65rem 0.75rem;
   border-radius: 10px;
   border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.02);
-  font-size: 0.78rem;
-  color: var(--text-secondary);
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--text-primary);
 }
 
 .statusRowPending {
@@ -130,9 +184,9 @@
 
 .connectDisclaimer {
   margin: 0 0 1rem;
-  font-size: 0.72rem;
-  line-height: 1.5;
-  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
   text-align: center;
 }
 

@@ -384,17 +384,7 @@ export function SolanaAccountSignInDialog({
           })}
         </div>
 
-        <h2
-          id="sol-account-signin-title"
-          style={{
-            margin: "0 0 0.5rem",
-            fontFamily: FONT,
-            fontSize: "1.05rem",
-            fontWeight: 650,
-            color: "var(--text-primary)",
-            textAlign: "center",
-          }}
-        >
+        <h2 id="sol-account-signin-title" className={styles.modalTitle}>
           {title}
         </h2>
 
@@ -428,17 +418,11 @@ export function SolanaAccountSignInDialog({
         ) : null}
 
         {walletConnected && publicKey ? (
-          <p
-            style={{
-              margin: "0 0 1rem",
-              fontFamily: FONT,
-              fontSize: "0.75rem",
-              color: "var(--text-muted)",
-              textAlign: "center",
-            }}
-          >
-            Connected: {wallet?.adapter.name ?? "Wallet"} · {shortAddress(publicKey.toBase58())}
-          </p>
+          <div className={styles.walletConnectedChip} role="status">
+            <span>Connected</span>
+            <strong>{wallet?.adapter.name ?? "Wallet"}</strong>
+            <code>{shortAddress(publicKey.toBase58())}</code>
+          </div>
         ) : null}
 
         {showWalletGrid ? (
@@ -591,16 +575,8 @@ export function SolanaAccountSignInDialog({
         </div>
 
         {walletConnected && phase === "connected" && !localError ? (
-          <p
-            style={{
-              margin: "0.75rem 0 0",
-              fontFamily: FONT,
-              fontSize: "0.72rem",
-              color: "var(--text-muted)",
-              textAlign: "center",
-            }}
-          >
-            Wallet connected. Click <strong>Sign message</strong> to finish sign in.
+          <p className={styles.signInFootnote}>
+            Connection only links your wallet. Select <strong>Sign message</strong> to authenticate.
           </p>
         ) : null}
       </div>

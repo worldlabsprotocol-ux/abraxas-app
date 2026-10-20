@@ -37,6 +37,12 @@ describe("EphemeralSandboxWorkspaceClient session continuity", () => {
       "fetch",
       vi.fn(async (input: RequestInfo | URL) => {
         const url = String(input);
+        if (url.includes("/api/auth/wallet/enabled")) {
+          return new Response(JSON.stringify({ operational: true, config_ok: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
         if (url.includes("/api/auth/wallet/session")) {
           if (!authenticated) {
             return new Response(JSON.stringify({ authenticated: false }), {

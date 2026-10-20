@@ -52,8 +52,8 @@ export function signInStatusMessage(input: {
       return walletName ? `Opening ${walletName}…` : "Opening wallet…";
     case "signing":
       return walletName
-        ? `Open ${walletName} to review the request.`
-        : "Waiting for wallet approval.";
+        ? `Confirm in ${walletName}. Abraxas is waiting for your signature.`
+        : "Confirm in your wallet. Abraxas is waiting for your signature.";
     case "verifying":
       return "Verifying signature…";
     case "success":
