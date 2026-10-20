@@ -6,6 +6,7 @@ import {
   HOMEPAGE_EVIDENCE_TITLE,
   HOMEPAGE_EVIDENCE_TITLE_ACCENT,
 } from "@/lib/home/homepagePlainCopy";
+import { RECEIPT_DEMO_SHELL_CAPTION } from "@/lib/home/receiptDemoPublicCopy";
 
 /** Evidence chapter — interactive receipt check (simulated fixtures). */
 export function HomeVerifiableTrustChapter() {
@@ -16,6 +17,7 @@ export function HomeVerifiableTrustChapter() {
           kicker: HOMEPAGE_EVIDENCE_KICKER,
           title: HOMEPAGE_EVIDENCE_TITLE,
           titleAccent: HOMEPAGE_EVIDENCE_TITLE_ACCENT,
+          caption: RECEIPT_DEMO_SHELL_CAPTION,
         }}
       />
     </div>

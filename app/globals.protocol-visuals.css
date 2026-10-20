@@ -30,9 +30,9 @@
 .abx-pv-shell__caption {
   margin: 0.85rem 0 0;
   max-width: 52ch;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   line-height: 1.55;
-  color: var(--text-secondary, rgba(245, 245, 243, 0.62));
+  color: var(--text-secondary, rgba(245, 245, 243, 0.72));
 }
 
 .abx-pv-shell__canvas {
@@ -64,8 +64,12 @@
 }
 
 .abx-trust-surface--build {
-  max-width: min(720px, 100%);
+  max-width: min(680px, 100%);
   margin: 0 auto;
+}
+
+.abx-cinematic-build-chapter .abx-trust-surface--build {
+  margin-top: 0.25rem;
 }
 
 .abx-pv-verify--elevated.abx-trust-surface {
@@ -814,12 +818,95 @@
 }
 
 /* Verify the decision — institutional receipt inspection */
+.abx-pv-verify__sample-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.55rem 0.75rem;
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 12px;
+  border: 1px solid rgba(212, 165, 116, 0.35);
+  background: rgba(212, 165, 116, 0.08);
+}
+
+.abx-pv-verify__sample-banner p {
+  margin: 0;
+  flex: 1 1 16rem;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.abx-pv-verify__sample-badge {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 165, 116, 0.5);
+  color: #e8c9a0;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.abx-pv-verify__read-path {
+  display: none;
+  margin: 0 0 1rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  text-align: center;
+  gap: 0.35rem 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+@media (min-width: 900px) {
+  .abx-pv-verify__read-path {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.abx-pv-verify__read-path-item--auth {
+  color: var(--text-primary);
+  font-weight: 650;
+}
+
+.abx-pv-verify__read-path-item--receipt {
+  color: var(--abx-premium-green, #4cbb92);
+  font-weight: 650;
+}
+
+.abx-pv-verify__read-path-item--live {
+  color: var(--text-primary);
+  font-weight: 650;
+}
+
+.abx-pv-verify__read-path-arrow {
+  opacity: 0.45;
+}
+
+.abx-pv-verify__sample-inline {
+  color: #e8c9a0;
+  font-weight: 650;
+}
+
 .abx-pv-verify__intro {
   margin: 0 0 1.1rem;
   max-width: 62ch;
   font-size: 0.92rem;
   line-height: 1.6;
   color: var(--text-secondary);
+}
+
+.abx-pv-verify__intro strong {
+  color: var(--text-primary);
+  font-weight: 650;
 }
 
 .abx-pv-verify__scenarios {

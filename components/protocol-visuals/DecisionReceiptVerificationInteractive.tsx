@@ -94,14 +94,31 @@ export function DecisionReceiptVerificationInteractive(props?: { shell?: Decisio
       className="abx-pv-shell--exhibit abx-pv-shell--open"
     >
       <div className="abx-pv-verify abx-pv-verify--elevated abx-trust-surface">
+        <div className="abx-pv-verify__sample-banner" role="note">
+          <span className="abx-pv-verify__sample-badge">Sample</span>
+          <p>{RECEIPT_DEMO_SAMPLE_NOTE}</p>
+        </div>
+
         <p className="abx-pv-verify__intro">
-          Inspect a sample decision receipt. Authenticity and current authorization are shown separately—the same
-          separation a production verifier applies to live evidence.
+          Abraxas separates two questions: whether the receipt is <strong>genuine</strong>, and whether the decision is{" "}
+          <strong>authorized now</strong>. Live partner verification uses the same split.
         </p>
 
-        <p className="abx-pv-verify__sample-note" role="note">
-          {RECEIPT_DEMO_SAMPLE_NOTE}
-        </p>
+        <div className="abx-pv-verify__read-path" aria-hidden="true">
+          <span className="abx-pv-verify__read-path-item abx-pv-verify__read-path-item--auth">
+            Cryptographic authenticity
+          </span>
+          <span className="abx-pv-verify__read-path-arrow" aria-hidden="true">
+            →
+          </span>
+          <span className="abx-pv-verify__read-path-item abx-pv-verify__read-path-item--receipt">Decision receipt</span>
+          <span className="abx-pv-verify__read-path-arrow" aria-hidden="true">
+            →
+          </span>
+          <span className="abx-pv-verify__read-path-item abx-pv-verify__read-path-item--live">
+            Current authorization
+          </span>
+        </div>
 
         <div className="abx-pv-verify__scenarios" role="tablist" aria-label="Receipt verification scenarios">
           {SCENARIOS.map((s) => (
@@ -130,7 +147,9 @@ export function DecisionReceiptVerificationInteractive(props?: { shell?: Decisio
             <header className="abx-pv-verify__receipt-head">
               <div>
                 <p className="abx-pv-verify__receipt-kicker">Decision receipt</p>
-                <p className="abx-pv-verify__receipt-version">v1 · sample</p>
+                <p className="abx-pv-verify__receipt-version">
+                  v1 · <span className="abx-pv-verify__sample-inline">sample fixture</span>
+                </p>
               </div>
               <div
                 className="abx-pv-verify__outcome"
