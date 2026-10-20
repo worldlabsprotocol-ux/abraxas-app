@@ -15,6 +15,7 @@ import {
   projectPartner,
 } from "@/lib/partner/hostedHandoff";
 import { resolveApplicationPolicyBinding } from "@/lib/partner/launchpad/resolveApplicationPolicyBinding";
+import { isLaunchpadStagingIdentityRouteAllowed } from "@/lib/partner/launchpad/stagingEnvironment";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +55,11 @@ export async function POST(req: NextRequest) {
     requireProductionActive: requiredEnvironment === "production",
   });
   if (!auth.ok) {
-    return NextResponse.json({ error: "unauthorized" }, { status: auth.status });
+    const exposeDetail = isLaunchpadStagingIdentityRouteAllowed();
+    return NextResponse.json(
+      exposeDetail ? { error: "unauthorized", detail: auth.error } : { error: "unauthorized" },
+      { status: auth.status },
+    );
   }
 
   const app = await getLaunchpadApplicationForPartner(applicationIdHeader, auth.ctx.partnerId);

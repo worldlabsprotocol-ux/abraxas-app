@@ -220,6 +220,7 @@ export async function pgLookupPartnerApiKeyByHash(keyHash: string): Promise<{
   key_prefix: string;
   scopes: string[];
   revoked_at: string | null;
+  launchpad_application_id: string | null;
 } | null> {
   const { rows } = await queryAbraxasPg<{
     id: string;
@@ -228,8 +229,9 @@ export async function pgLookupPartnerApiKeyByHash(keyHash: string): Promise<{
     key_prefix: string;
     scopes: string[];
     revoked_at: string | null;
+    launchpad_application_id: string | null;
   }>(
-    `select id, partner_id, display_name, key_prefix, scopes, revoked_at
+    `select id, partner_id, display_name, key_prefix, scopes, revoked_at, launchpad_application_id
        from public.partner_api_keys where key_hash = $1 limit 1`,
     [keyHash],
   );
