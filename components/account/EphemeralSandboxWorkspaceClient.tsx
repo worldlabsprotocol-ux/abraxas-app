@@ -31,8 +31,10 @@ import {
 } from "@/lib/auth/ephemeralWallet/sandboxPolicyAvailability.shared";
 import {
   EPHEMERAL_WALLET_SESSION_EVENT,
+  WALLET_SIGN_IN_DIALOG_EVENT,
   fetchEphemeralWalletClientSession,
   notifyEphemeralWalletSessionChanged,
+  type WalletSignInDialogDetail,
 } from "@/lib/auth/ephemeralWallet/clientSession";
 import { EphemeralWorkspaceSessionRail } from "./EphemeralWorkspaceSessionRail";
 import {
@@ -67,6 +69,7 @@ type TestResult = {
 type WorkspacePhase =
   | "loading"
   | "signed_out"
+  | "awaiting_sign_in"
   | "ready"
   | "entering"
   | "workspace"
@@ -136,7 +139,8 @@ function mapSignFailure(code?: string | null): WorkspaceUserFacingError {
 }
 
 export function EphemeralSandboxWorkspaceClient() {
-  const { signMessage, publicKey } = useWallet();
+  const { signMessage, publicKey, connected: walletAdapterConnected } = useWallet();
+  const [signInDialogOpen, setSignInDialogOpen] = useState(false);
   const [phase, setPhase] = useState<WorkspacePhase>("loading");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -167,6 +171,10 @@ export function EphemeralSandboxWorkspaceClient() {
   const signingAbortRef = useRef<AbortController | null>(null);
   const phaseRef = useRef<WorkspacePhase>("loading");
   phaseRef.current = phase;
+  const walletConnectedRef = useRef(false);
+  walletConnectedRef.current = walletAdapterConnected && Boolean(publicKey);
+  const publicKeyRef = useRef(publicKey);
+  publicKeyRef.current = publicKey;
 
   const abortPendingWalletSign = useCallback(() => {
     signingAbortRef.current?.abort();
@@ -208,9 +216,10 @@ export function EphemeralSandboxWorkspaceClient() {
       const session = await fetchEphemeralWalletClientSession();
       setServerSessionAuthenticated(session.authenticated);
       if (!session.authenticated) {
-        setPhase("signed_out");
+        const walletConnected = walletConnectedRef.current;
+        setPhase(walletConnected ? "awaiting_sign_in" : "signed_out");
         setSessionId(null);
-        setWalletAddress(null);
+        setWalletAddress(walletConnected ? publicKeyRef.current?.toBase58() ?? null : null);
         setSessionExpiresAt(null);
         setWorkspace(null);
         return;
@@ -249,6 +258,23 @@ export function EphemeralSandboxWorkspaceClient() {
       }
     }
   }, []);
+
+  useEffect(() => {
+    const onSignInDialog = (event: Event) => {
+      const detail = (event as CustomEvent<WalletSignInDialogDetail>).detail;
+      setSignInDialogOpen(Boolean(detail?.open));
+    };
+    window.addEventListener(WALLET_SIGN_IN_DIALOG_EVENT, onSignInDialog);
+    return () => window.removeEventListener(WALLET_SIGN_IN_DIALOG_EVENT, onSignInDialog);
+  }, []);
+
+  useEffect(() => {
+    if (phase !== "loading" && !serverSessionAuthenticated && walletAdapterConnected && publicKey) {
+      setPhase((current) =>
+        current === "signed_out" || current === "awaiting_sign_in" ? "awaiting_sign_in" : current,
+      );
+    }
+  }, [phase, publicKey, serverSessionAuthenticated, walletAdapterConnected]);
 
   useEffect(() => {
     void hydrate();
@@ -794,21 +820,33 @@ export function EphemeralSandboxWorkspaceClient() {
     );
   }
 
-  if (phase === "signed_out") {
+  if (phase === "signed_out" || phase === "awaiting_sign_in") {
+    const awaitingSignIn = phase === "awaiting_sign_in";
     return (
-      <div className={styles.shell}>
+      <div className={`${styles.shell} ${signInDialogOpen ? styles.workspaceSignInActive : ""}`}>
         <EphemeralWorkspaceSessionRail
-          state="session_expired"
-          walletAddress={null}
+          state={awaitingSignIn ? "sign_in_required" : "session_expired"}
+          walletAddress={walletAddress}
           sessionExpiresAt={null}
           workspaceExpiresAt={null}
         />
-        <div className={styles.panel}>
-          <h2 className={styles.sectionTitle}>Session expired</h2>
-          <p className={styles.muted}>Connect your wallet to continue in the Developer Workspace.</p>
+        <div className={styles.panel} aria-hidden={signInDialogOpen ? true : undefined}>
+          <h2 className={styles.sectionTitle}>
+            {awaitingSignIn ? "Sign in to continue" : "Session expired"}
+          </h2>
+          <p className={styles.muted}>
+            {awaitingSignIn
+              ? "Your wallet is connected. Abraxas still needs a message signature before this workspace opens."
+              : "Connect your wallet to continue in the Developer Workspace."}
+          </p>
+          {signInDialogOpen ? (
+            <p className={styles.note} role="status">
+              Complete sign-in in the dialog above. Cancel or try again there if Phantom was dismissed.
+            </p>
+          ) : null}
           <div className={styles.actions}>
             <button type="button" className={styles.walletBtn} onClick={openWalletSignIn}>
-              Connect wallet
+              {awaitingSignIn ? "Sign in" : "Connect wallet"}
             </button>
           </div>
         </div>

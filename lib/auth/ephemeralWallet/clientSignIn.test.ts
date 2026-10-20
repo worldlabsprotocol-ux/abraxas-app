@@ -42,4 +42,38 @@ describe("completeEphemeralWalletSignIn", () => {
     if (!result.ok) expect(result.reason).toBe("cancelled");
     expect(signMessage).toHaveBeenCalledTimes(1);
   });
+
+  it("does not verify when attempt is stale after signing", async () => {
+    let verifyCalled = false;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("/challenge")) {
+          return Response.json({
+            ok: true,
+            challenge: { challenge_id: "ch_stale", message: "sign in" },
+          });
+        }
+        if (url.includes("/verify")) {
+          verifyCalled = true;
+          return Response.json({ ok: true, wallet_address: "11111111111111111111111111111111" });
+        }
+        return Response.json({ ok: false }, { status: 400 });
+      }),
+    );
+
+    let stale = false;
+    const result = await completeEphemeralWalletSignIn({
+      walletAddress: "11111111111111111111111111111111",
+      signMessage: async () => {
+        stale = true;
+        return new Uint8Array([9]);
+      },
+      isStale: () => stale,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(verifyCalled).toBe(false);
+  });
 });

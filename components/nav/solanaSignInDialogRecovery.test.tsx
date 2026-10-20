@@ -33,7 +33,12 @@ describe("SolanaAccountSignInDialog signing recovery", () => {
     signMessage.mockReset();
   });
 
+  let challengeCount = 0;
+  let verifyCount = 0;
+
   beforeEach(() => {
+    challengeCount = 0;
+    verifyCount = 0;
     vi.stubGlobal(
       "fetch",
       vi.fn(async (input: RequestInfo | URL) => {
@@ -42,10 +47,15 @@ describe("SolanaAccountSignInDialog signing recovery", () => {
           return Response.json({ auth_mode: "ephemeral_wallet" });
         }
         if (url.includes("/api/auth/wallet/solana/challenge")) {
+          challengeCount += 1;
           return Response.json({
             ok: true,
-            challenge: { challenge_id: "ch_1", message: "Sign in to Abraxas" },
+            challenge: { challenge_id: `ch_${challengeCount}`, message: "Sign in to Abraxas" },
           });
+        }
+        if (url.includes("/api/auth/wallet/solana/verify")) {
+          verifyCount += 1;
+          return Response.json({ ok: true, wallet_address: "Abcd1234WalletAddressExample111111111111" });
         }
         return Response.json({ ok: false }, { status: 404 });
       }),
@@ -84,6 +94,47 @@ describe("SolanaAccountSignInDialog signing recovery", () => {
 
     await waitFor(() => {
       expect(setBusy).toHaveBeenCalledWith(false);
+    });
+  });
+
+  it("Try again after dismiss fetches a fresh challenge and avoids late verify", async () => {
+    let resolveSign: ((v: Uint8Array) => void) | null = null;
+    signMessage.mockImplementation(
+      () =>
+        new Promise<Uint8Array>((resolve) => {
+          resolveSign = resolve;
+        }),
+    );
+
+    const setBusy = vi.fn();
+    render(
+      <SolanaAccountSignInDialog
+        open
+        onClose={vi.fn()}
+        onSuccess={vi.fn()}
+        busy={false}
+        setBusy={setBusy}
+        setError={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Sign message/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Waiting for wallet approval/i)).toBeTruthy();
+    });
+    expect(challengeCount).toBe(1);
+
+    fireEvent.click(screen.getByRole("button", { name: /Try again/i }));
+    await waitFor(
+      () => {
+        expect(challengeCount).toBeGreaterThanOrEqual(2);
+      },
+      { timeout: 3000 },
+    );
+
+    resolveSign?.(new Uint8Array([1, 2]));
+    await waitFor(() => {
+      expect(verifyCount).toBe(0);
     });
   });
 });

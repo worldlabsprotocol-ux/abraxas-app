@@ -9,6 +9,16 @@ export type EphemeralWalletClientSession = {
 };
 
 export const EPHEMERAL_WALLET_SESSION_EVENT = "abraxas:wallet-session" as const;
+export const WALLET_SIGN_IN_DIALOG_EVENT = "abraxas:wallet-sign-in-dialog" as const;
+
+export type WalletSignInDialogDetail = { open: boolean };
+
+export function notifyWalletSignInDialogChanged(open: boolean): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent<WalletSignInDialogDetail>(WALLET_SIGN_IN_DIALOG_EVENT, { detail: { open } }),
+  );
+}
 
 export function notifyEphemeralWalletSessionChanged(): void {
   if (typeof window === "undefined") return;

@@ -12,6 +12,15 @@
   --ws-warn: #e8a65a;
 }
 
+.workspaceSignInActive .panel {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.workspaceSignInActive .sessionRail {
+  opacity: 0.85;
+}
+
 .sessionRail {
   display: flex;
   flex-direction: column;
