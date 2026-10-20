@@ -52,8 +52,8 @@ export function signInStatusMessage(input: {
       return walletName ? `Opening ${walletName}…` : "Opening wallet…";
     case "signing":
       return walletName
-        ? `Review the message in ${walletName}…`
-        : "Waiting for signature…";
+        ? `Open ${walletName} to review the request.`
+        : "Waiting for wallet approval.";
     case "verifying":
       return "Verifying signature…";
     case "success":

@@ -30,10 +30,24 @@ function describeError(code: string | undefined): string {
   }
 }
 
+function waitForAbort(signal?: AbortSignal): Promise<never> {
+  return new Promise((_, reject) => {
+    if (!signal) return;
+    if (signal.aborted) {
+      reject(new DOMException("Aborted", "AbortError"));
+      return;
+    }
+    signal.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")), {
+      once: true,
+    });
+  });
+}
+
 export async function completeEphemeralWalletSignIn(input: {
   walletAddress: string;
   signMessage: (message: Uint8Array) => Promise<Uint8Array>;
   solanaNetwork?: string;
+  signal?: AbortSignal;
 }): Promise<EphemeralWalletSignInResult> {
   const solanaNetwork = input.solanaNetwork ?? process.env.NEXT_PUBLIC_SOLANA_NETWORK ?? "devnet";
 
@@ -62,8 +76,14 @@ export async function completeEphemeralWalletSignIn(input: {
 
   let signatureBytes: Uint8Array;
   try {
-    signatureBytes = await input.signMessage(new TextEncoder().encode(challengeBody.challenge.message));
-  } catch {
+    signatureBytes = await Promise.race([
+      input.signMessage(new TextEncoder().encode(challengeBody.challenge.message)),
+      waitForAbort(input.signal),
+    ]);
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      return { ok: false, reason: "cancelled" };
+    }
     return { ok: false, reason: "cancelled" };
   }
 

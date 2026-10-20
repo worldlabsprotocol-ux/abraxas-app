@@ -100,15 +100,39 @@ function logSandboxStage(input: Record<string, unknown>): void {
 }
 
 function mapSignFailure(code?: string | null): WorkspaceUserFacingError {
-  if (code === "expired") {
-    return {
-      title: "Request expired",
-      message: "For your security, this request is no longer valid.",
-      recovery: "Create a new request.",
-      technicalCode: code,
-    };
+  switch (code) {
+    case "expired":
+      return {
+        title: "Request expired",
+        message: "For your security, this request is no longer valid.",
+        recovery: "Create a new request.",
+        technicalCode: code,
+      };
+    case "cancelled":
+    case "aborted":
+      return {
+        title: "Signature request cancelled",
+        message: "No signature was submitted. Your workspace and presentation stay as they were.",
+        recovery: "Try again when you are ready, or cancel to return to the policy screen.",
+        technicalCode: code,
+      };
+    case "timeout":
+      return {
+        title: "Wallet did not respond",
+        message: "Phantom may still show a pending request. Open your wallet to approve or dismiss it.",
+        recovery: "Try again to start a fresh request after you finish in Phantom.",
+        technicalCode: code,
+      };
+    case "stale":
+      return {
+        title: "Request superseded",
+        message: "This signing attempt was replaced or cancelled.",
+        recovery: "Use Try again if you still need to sign.",
+        technicalCode: code,
+      };
+    default:
+      return mapWorkspaceUserFacingError({ code });
   }
-  return mapWorkspaceUserFacingError({ code });
 }
 
 export function EphemeralSandboxWorkspaceClient() {
@@ -140,14 +164,21 @@ export function EphemeralSandboxWorkspaceClient() {
   const sandboxPossessionSecretKeyRef = useRef<Uint8Array | null>(null);
   const requestGenerationRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
+  const signingAbortRef = useRef<AbortController | null>(null);
   const phaseRef = useRef<WorkspacePhase>("loading");
   phaseRef.current = phase;
+
+  const abortPendingWalletSign = useCallback(() => {
+    signingAbortRef.current?.abort();
+    signingAbortRef.current = null;
+  }, []);
 
   const bumpRequestGeneration = useCallback(() => {
     requestGenerationRef.current += 1;
     abortRef.current?.abort();
     abortRef.current = null;
-  }, []);
+    abortPendingWalletSign();
+  }, [abortPendingWalletSign]);
 
   const hydrate = useCallback(async (options?: { silent?: boolean }) => {
     const protectedPhases: WorkspacePhase[] = ["review", "signing", "submitting"];
@@ -333,12 +364,23 @@ export function EphemeralSandboxWorkspaceClient() {
   }, []);
 
   const cancelVerificationRequest = useCallback(() => {
+    const signing = phaseRef.current === "signing";
+    const challenge = pendingChallenge;
     bumpRequestGeneration();
-    setPendingChallenge(null);
     setWalletFocusHint(false);
     setUserError(null);
+    setBusy(false);
+    if (
+      signing
+      && challenge
+      && new Date(challenge.expires_at) > new Date()
+    ) {
+      setPhase("review");
+      return;
+    }
+    setPendingChallenge(null);
     setPhase("workspace");
-  }, [bumpRequestGeneration]);
+  }, [bumpRequestGeneration, pendingChallenge]);
 
   const loadVerificationChallenge = useCallback(async (): Promise<boolean> => {
     if (!selectedPolicy || !workspace) return false;
@@ -613,6 +655,10 @@ export function EphemeralSandboxWorkspaceClient() {
 
   const openPhantomForReview = useCallback(async () => {
     if (!pendingChallenge || !signMessage) return;
+    if (signingAbortRef.current) return;
+    abortPendingWalletSign();
+    const controller = new AbortController();
+    signingAbortRef.current = controller;
     const generation = requestGenerationRef.current;
     setBusy(true);
     setUserError(null);
@@ -622,11 +668,17 @@ export function EphemeralSandboxWorkspaceClient() {
       const signed = await signWalletActionChallenge({
         challenge: pendingChallenge,
         signMessage: (msg) => signMessage(msg),
+        signal: controller.signal,
         isStale: () => generation !== requestGenerationRef.current,
       });
       if (generation !== requestGenerationRef.current) return;
       if (!signed.ok) {
-        setPhase(pendingChallenge ? "review" : "workspace");
+        if (signed.code === "aborted" || signed.code === "stale") {
+          return;
+        }
+        setPhase(
+          signed.code === "expired" || !pendingChallenge ? "workspace" : "review",
+        );
         setUserError(mapSignFailure(signed.code));
         if (signed.code === "expired") {
           setPendingChallenge(null);
@@ -640,17 +692,19 @@ export function EphemeralSandboxWorkspaceClient() {
         generation,
       });
     } finally {
-      if (generation === requestGenerationRef.current) {
-        setBusy(false);
+      if (signingAbortRef.current === controller) {
+        signingAbortRef.current = null;
       }
+      setBusy(false);
     }
-  }, [pendingChallenge, signMessage, submitSignedVerification]);
+  }, [pendingChallenge, signMessage, submitSignedVerification, abortPendingWalletSign]);
 
   const retryVerificationRequest = useCallback(async () => {
     bumpRequestGeneration();
     setPendingChallenge(null);
     setWalletFocusHint(false);
     setUserError(null);
+    setBusy(false);
     setBusy(true);
     try {
       await loadVerificationChallenge();
@@ -1010,22 +1064,23 @@ export function EphemeralSandboxWorkspaceClient() {
 
         {phase === "signing" ? (
           <div className={styles.reviewCard}>
-            <h2 className={styles.sectionTitle}>Waiting for Phantom</h2>
+            <h2 className={styles.sectionTitle}>Waiting for wallet approval</h2>
             <div className={styles.statusRow} role="status">
               <span className={styles.spinner} aria-hidden />
-              Review the request in Phantom.
+              Open Phantom to review the request.
             </div>
+            <p className={styles.note}>
+              Abraxas cannot reopen a dismissed wallet popup. If you closed Phantom, use Try again for a new request
+              after you finish in the wallet.
+            </p>
             {walletFocusHint ? (
-              <p className={styles.note}>
-                If the Phantom window closed, use Try again to create a fresh request. Abraxas cannot reopen your
-                wallet popup.
-              </p>
+              <p className={styles.note}>Return to Phantom if a request is still pending there.</p>
             ) : null}
             <div className={styles.actions}>
-              <button type="button" className={styles.secondaryBtn} disabled={busy} onClick={cancelVerificationRequest}>
-                Cancel request
+              <button type="button" className={styles.secondaryBtn} onClick={cancelVerificationRequest}>
+                Cancel
               </button>
-              <button type="button" className={styles.secondaryBtn} disabled={busy} onClick={() => void retryVerificationRequest()}>
+              <button type="button" className={styles.secondaryBtn} onClick={() => void retryVerificationRequest()}>
                 Try again
               </button>
             </div>
@@ -1071,6 +1126,13 @@ export function EphemeralSandboxWorkspaceClient() {
             {userError.title === "Request expired" ? (
               <button type="button" className={styles.linkBtn} onClick={() => void retryVerificationRequest()}>
                 Create a new request
+              </button>
+            ) : null}
+            {userError.title === "Signature request cancelled"
+            || userError.title === "Wallet did not respond"
+            || userError.title === "Request superseded" ? (
+              <button type="button" className={styles.linkBtn} onClick={() => void retryVerificationRequest()}>
+                Try again
               </button>
             ) : null}
           </div>
