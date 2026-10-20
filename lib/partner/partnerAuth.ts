@@ -188,29 +188,15 @@ async function loadLaunchpadApplicationContext(
   status: string | null;
   productionActivated: boolean;
 } | null> {
-  if (launchpadUsesSovereignPostgres()) {
-    const store = await import("@/lib/partner/launchpad/sovereign/launchpadPgStore");
-    const app = await store.pgGetLaunchpadApplicationForPartner(applicationId, partnerId);
-    if (!app) return null;
-    return {
-      environment: app.environment === "production" ? "production" : "sandbox",
-      status: String(app.status ?? ""),
-      productionActivated: Boolean(app.production_activated_at),
-    };
-  }
-
-  const client = sb();
-  if (!client) return null;
-  const { data } = await client
-    .from("partner_launchpad_applications")
-    .select("environment, status, production_activated_at, partner_id")
-    .eq("id", applicationId)
-    .maybeSingle();
-  if (!data || String(data.partner_id) !== partnerId) return null;
+  const { getLaunchpadApplicationForPartner } = await import(
+    "@/lib/partner/launchpad/resolveLaunchpadApplication.server"
+  );
+  const app = await getLaunchpadApplicationForPartner(applicationId, partnerId);
+  if (!app) return null;
   return {
-    environment: data.environment === "production" ? "production" : "sandbox",
-    status: String(data.status ?? ""),
-    productionActivated: Boolean(data.production_activated_at),
+    environment: app.environment === "production" ? "production" : "sandbox",
+    status: String(app.status ?? ""),
+    productionActivated: Boolean(app.production_activated_at),
   };
 }
 

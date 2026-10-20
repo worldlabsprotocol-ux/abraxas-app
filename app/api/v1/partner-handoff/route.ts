@@ -6,7 +6,7 @@ import { authenticatePartnerScoped } from "@/lib/partner/partnerAuth";
 import {
   getLaunchpadApplicationById,
   getLaunchpadApplicationForPartner,
-} from "@/lib/partner/launchpad/resolveLaunchpadApplication";
+} from "@/lib/partner/launchpad/resolveLaunchpadApplication.server";
 import { loadPartnerFlowStoredConfig } from "@/lib/partner/launchpad/partnerFlowRequest";
 import {
   createHostedHandoff,
