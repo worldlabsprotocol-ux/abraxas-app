@@ -1,18 +1,23 @@
 // FILE: lib/developers/ephemeralWorkspaceUserErrors.test.ts
 
 import { describe, expect, it } from "vitest";
-import { mapWorkspaceUserFacingError } from "./ephemeralWorkspaceUserErrors";
+import { mapEphemeralWalletOperationalError } from "./ephemeralWorkspaceUserErrors";
 
-describe("mapWorkspaceUserFacingError", () => {
-  it("maps wallet_sign_in_required to session expired copy", () => {
-    const row = mapWorkspaceUserFacingError({ code: "wallet_sign_in_required" });
-    expect(row.title).toBe("Session expired");
-    expect(row.message).not.toContain("wallet_sign_in_required");
+describe("mapEphemeralWalletOperationalError", () => {
+  it("maps distributed replay misconfiguration to actionable copy", () => {
+    const err = mapEphemeralWalletOperationalError({
+      degradedReason: "distributed_replay_not_configured",
+    });
+    expect(err.title).toMatch(/unavailable/i);
+    expect(err.message).toMatch(/Redis/i);
+    expect(err.technicalCode).toBe("distributed_replay_not_configured");
   });
 
-  it("maps insufficient evidence without raw code in message", () => {
-    const row = mapWorkspaceUserFacingError({ code: "insufficient_evidence_for_policy" });
-    expect(row.title).toBe("Evidence required");
-    expect(row.technicalCode).toBe("insufficient_evidence_for_policy");
+  it("maps session secret missing", () => {
+    const err = mapEphemeralWalletOperationalError({
+      configCode: "session_secret_missing",
+    });
+    expect(err.technicalCode).toBe("session_secret_missing");
+    expect(err.recovery).toMatch(/32/i);
   });
 });

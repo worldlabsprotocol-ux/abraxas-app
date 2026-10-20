@@ -18,6 +18,7 @@ export type EphemeralSandboxWorkspace = {
 };
 
 const memory = new Map<string, EphemeralSandboxWorkspace>();
+const memorySessionIndex = new Map<string, string>();
 
 import { processTransientStateAllowed, resolveTransientStateBackend } from "./transientStatePolicy";
 
@@ -41,6 +42,7 @@ export async function putEphemeralSandboxWorkspace(
   }
   if (!memoryAllowed(env)) throw new EphemeralStateUnavailableError();
   memory.set(record.workspace_id, record);
+  memorySessionIndex.set(record.session_id, record.workspace_id);
 }
 
 export async function getEphemeralSandboxForSession(
@@ -53,12 +55,12 @@ export async function getEphemeralSandboxForSession(
     return await ephemeralKvGet<EphemeralSandboxWorkspace>(`${PREFIX}${workspaceId}`, env);
   }
   if (!memoryAllowed(env)) throw new EphemeralStateUnavailableError();
-  for (const record of Array.from(memory.values())) {
-    if (record.session_id === sessionId) return record;
-  }
-  return null;
+  const workspaceId = memorySessionIndex.get(sessionId);
+  if (!workspaceId) return null;
+  return memory.get(workspaceId) ?? null;
 }
 
 export function resetEphemeralSandboxStoreForTests(): void {
   memory.clear();
+  memorySessionIndex.clear();
 }
