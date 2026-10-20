@@ -45,6 +45,46 @@ describe("clientActionAuth", () => {
     if (!result.ok) expect(result.code).toBe("expired");
   });
 
+  it("returns aborted when signing is cancelled via AbortSignal", async () => {
+    const controller = new AbortController();
+    const signMessage = vi.fn(
+      () =>
+        new Promise<Uint8Array>(() => {
+          /* hang until abort */
+        }),
+    );
+    const promise = signWalletActionChallenge({
+      challenge: {
+        challenge_id: "ewac_abort",
+        message: "test",
+        expires_at: new Date(Date.now() + 60_000).toISOString(),
+        operation: "sandbox:verification:test",
+      },
+      signMessage,
+      signal: controller.signal,
+    });
+    controller.abort();
+    const result = await promise;
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe("aborted");
+  });
+
+  it("maps wallet rejection to cancelled", async () => {
+    const result = await signWalletActionChallenge({
+      challenge: {
+        challenge_id: "ewac_reject",
+        message: "test",
+        expires_at: new Date(Date.now() + 60_000).toISOString(),
+        operation: "sandbox:verification:test",
+      },
+      signMessage: async () => {
+        throw new Error("User rejected the request");
+      },
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe("cancelled");
+  });
+
   it("fetchWalletActionChallenge rejects expired server challenges", async () => {
     vi.stubGlobal(
       "fetch",

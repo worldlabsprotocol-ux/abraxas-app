@@ -69,6 +69,7 @@ export function SolanaAccountSignInDialog({
   publicKeyRef.current = publicKey;
   const connectedRef = useRef(connected);
   connectedRef.current = connected;
+  const signInAbortRef = useRef<AbortController | null>(null);
 
   const [phase, setPhase] = useState<SolanaSignInPhase>("idle");
   const [localError, setLocalError] = useState<string | null>(null);
@@ -195,6 +196,11 @@ export function SolanaAccountSignInDialog({
     [connect, select, setBusy, setError, wallets, offers],
   );
 
+  const abortPendingSignIn = useCallback(() => {
+    signInAbortRef.current?.abort();
+    signInAbortRef.current = null;
+  }, []);
+
   const runSign = useCallback(async () => {
     if (!publicKey) {
       const msg = "Connect a wallet first, then sign the message.";
@@ -211,6 +217,10 @@ export function SolanaAccountSignInDialog({
       return;
     }
 
+    abortPendingSignIn();
+    const controller = new AbortController();
+    signInAbortRef.current = controller;
+
     setBusy(true);
     setLocalError(null);
     setError(null);
@@ -226,6 +236,7 @@ export function SolanaAccountSignInDialog({
         ? completeEphemeralWalletSignIn({
             walletAddress: publicKey.toBase58(),
             signMessage,
+            signal: controller.signal,
           })
         : completeSolanaAccountSignIn({
             walletAddress: publicKey.toBase58(),
@@ -245,6 +256,10 @@ export function SolanaAccountSignInDialog({
 
       if (!result.ok) {
         if (result.reason === "cancelled") {
+          if (controller.signal.aborted) {
+            setPhase("connected");
+            return;
+          }
           const msg = mapSignInFailure({ reason: "cancelled" });
           setLocalError(msg);
           setError(msg);
@@ -269,9 +284,22 @@ export function SolanaAccountSignInDialog({
       onSuccess();
       onClose();
     } finally {
+      if (signInAbortRef.current === controller) {
+        signInAbortRef.current = null;
+      }
       setBusy(false);
     }
-  }, [publicKey, signMessage, setBusy, setError, onSuccess, onClose]);
+  }, [publicKey, signMessage, setBusy, setError, onSuccess, onClose, abortPendingSignIn]);
+
+  const handleDialogCancel = useCallback(() => {
+    if (phase === "signing") {
+      abortPendingSignIn();
+      setBusy(false);
+      setPhase("connected");
+      return;
+    }
+    onClose();
+  }, [abortPendingSignIn, onClose, phase, setBusy]);
 
   const handleRetry = useCallback(() => {
     setLocalError(null);
@@ -297,7 +325,8 @@ export function SolanaAccountSignInDialog({
   const showSignPrimary =
     walletConnected
     && (phase === "connected" || phase === "failure" || phase === "signing" || phase === "verifying");
-  const pending = phase === "connecting" || phase === "signing" || phase === "verifying" || busy;
+  const pending = phase === "connecting" || phase === "verifying" || busy;
+  const signInPending = phase === "signing";
 
   return (
     <div
@@ -475,10 +504,10 @@ export function SolanaAccountSignInDialog({
               ref={primaryRef}
               type="button"
               className={styles.primaryBtn}
-              disabled={pending}
+              disabled={pending || signInPending}
               onClick={() => void runSign()}
             >
-              {phase === "signing" || phase === "verifying" ? "Waiting for signature…" : "Sign message"}
+              {signInPending || phase === "verifying" ? "Waiting for wallet approval" : "Sign message"}
             </button>
           ) : null}
 
@@ -501,11 +530,24 @@ export function SolanaAccountSignInDialog({
           <button
             type="button"
             className={styles.secondaryBtn}
-            disabled={pending}
-            onClick={onClose}
+            disabled={phase === "verifying"}
+            onClick={handleDialogCancel}
           >
-            Cancel
+            {signInPending ? "Cancel" : "Cancel"}
           </button>
+          {signInPending ? (
+            <button
+              type="button"
+              className={styles.secondaryBtn}
+              onClick={() => {
+                abortPendingSignIn();
+                setBusy(false);
+                void runSign();
+              }}
+            >
+              Try again
+            </button>
+          ) : null}
         </div>
 
         {walletConnected && phase === "connected" && !localError ? (
