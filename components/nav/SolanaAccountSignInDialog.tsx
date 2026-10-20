@@ -32,11 +32,13 @@ import {
   signInStatusMessage,
   type SolanaSignInPhase,
 } from "@/lib/nav/solanaSignInDialogState";
+import { WALLET_MESSAGE_ONLY_FUNDS_LINES } from "@/lib/auth/ephemeralWallet/walletMessageSafetyCopy";
+import { WalletMessageSafetyReview } from "@/components/wallet/WalletMessageSafetyReview";
 import styles from "./SolanaAccountSignInDialog.module.css";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const CONNECT_WALLET_DISCLAIMER =
-  "You'll be asked to sign a message to verify wallet control. No transaction or spending permission is required.";
+  "Connect your wallet, review the sign-in request, then approve the message in Phantom.";
 
 function shortAddress(address: string): string {
   return `${address.slice(0, 4)}…${address.slice(-4)}`;
@@ -89,6 +91,8 @@ export function SolanaAccountSignInDialog({
   const [selectedWalletName, setSelectedWalletName] = useState<string | null>(null);
 
   const walletConnected = connected && Boolean(publicKey);
+  const signInRequestedBy =
+    typeof window !== "undefined" ? window.location.host : "this site";
   const activeStep = activeSignInStepIndex({ phase, walletConnected });
   const title = signInModalTitle({ phase, walletConnected });
   const statusMessage = signInStatusMessage({
@@ -423,6 +427,17 @@ export function SolanaAccountSignInDialog({
             <strong>{wallet?.adapter.name ?? "Wallet"}</strong>
             <code>{shortAddress(publicKey.toBase58())}</code>
           </div>
+        ) : null}
+
+        {walletConnected && publicKey && !showWalletGrid && phase !== "success" ? (
+          <WalletMessageSafetyReview
+            title="Abraxas wallet sign-in"
+            summary="Verify control of your wallet"
+            fundsLines={WALLET_MESSAGE_ONLY_FUNDS_LINES}
+            requestedBy={signInRequestedBy}
+            walletAddress={publicKey.toBase58()}
+            footerNote="Expiration and request ID appear in your wallet."
+          />
         ) : null}
 
         {showWalletGrid ? (

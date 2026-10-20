@@ -43,6 +43,7 @@ import {
 } from "@/lib/passport/reusableCredential/holderPossessionChallengeSigning";
 import { generateSandboxSessionPossessionKeyPair } from "@/lib/auth/ephemeralWallet/sandboxHolderPossessionKey.shared";
 import { TrustExecutionTrace, deriveTrustExecutionStages } from "./TrustExecutionTrace";
+import { WALLET_MESSAGE_ONLY_FUNDS_LINES } from "@/lib/auth/ephemeralWallet/walletMessageSafetyCopy";
 import styles from "./EphemeralDeveloperWorkspace.module.css";
 
 const EPHEMERAL_SANDBOX_RESULT_LABEL = "ephemeral_sandbox_test_only";
@@ -1112,9 +1113,11 @@ export function EphemeralSandboxWorkspaceClient() {
               ) : null}
             </dl>
             <p className={styles.reviewLead}>You will sign a message confirming this test request.</p>
-            <p className={styles.securityNote}>
-              <strong>No funds move.</strong> No spending access is granted.
-            </p>
+            <ul className={styles.reviewAssurances}>
+              {WALLET_MESSAGE_ONLY_FUNDS_LINES.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
             {scopeNote ? <p className={styles.note}>{scopeNote}</p> : null}
             <div className={styles.actions}>
               <button

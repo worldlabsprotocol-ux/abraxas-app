@@ -33,16 +33,15 @@ describe("buildWalletAuthorizationMessage", () => {
         policyId: "wallet_control",
         environment: "Sandbox",
         requestedBy: "Abraxas Developer Workspace",
-        fundsSafetyLine: "No token transfer or spending approval is requested.",
       },
     });
-    expect(message).toContain("Protocol: Abraxas");
-    expect(message).toContain("Action: Authorize test verification");
+    expect(message.indexOf("No funds will move.")).toBeLessThan(message.indexOf("Authorization record"));
+    expect(message).toContain("ABRAXAS — AUTHORIZE TEST VERIFICATION");
     expect(message).toContain("Policy: Wallet Control (wallet_control)");
     expect(message).toContain("Environment: Sandbox");
     expect(message).toContain("Operation: sandbox:verification:test");
     expect(message).toContain("Policy ID: wallet_control");
-    expect(message).toContain("No token transfer or spending approval is requested.");
+    expect(message).toContain("No spending permission is requested.");
   });
 
   it("binds a different policy id in the technical record", () => {

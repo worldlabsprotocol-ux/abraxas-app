@@ -4,6 +4,7 @@ import { resolveEphemeralSandboxTestPolicy } from "./sandboxTestPolicies";
 
 export type WalletActionOperation = "sandbox:enter" | "sandbox:verification:test";
 import type { WalletAuthorizationHumanContext } from "./protocolEnvelope";
+import { WALLET_MESSAGE_ONLY_FUNDS_LINES } from "./walletMessageSafetyCopy";
 
 export type WalletActionChallengeDisplay = {
   action_title: string;
@@ -29,7 +30,6 @@ export function resolveWalletActionHumanContext(input: {
       policyId: input.policyId ?? null,
       environment: "Sandbox",
       requestedBy: "Abraxas Developer Workspace",
-      fundsSafetyLine: "No token transfer or spending approval is requested.",
     };
   }
   if (input.operation === "sandbox:enter") {
@@ -37,12 +37,10 @@ export function resolveWalletActionHumanContext(input: {
       actionTitle: "Open developer sandbox workspace",
       environment: "Sandbox",
       requestedBy: "Abraxas Developer Workspace",
-      fundsSafetyLine: "No token transfer or spending approval is requested.",
     };
   }
   return {
     actionTitle: "Authorize wallet action",
-    fundsSafetyLine: "No token transfer or spending approval is requested.",
   };
 }
 
@@ -64,7 +62,7 @@ export function buildWalletActionChallengeDisplay(input: {
     environment: human.environment ?? "Sandbox",
     requested_by: human.requestedBy ?? "Abraxas Developer Workspace",
     wallet_address: input.walletAddress,
-    funds_note: human.fundsSafetyLine ?? "No token transfer or spending approval is requested.",
+    funds_note: human.fundsSafetyLine ?? WALLET_MESSAGE_ONLY_FUNDS_LINES.join(" "),
     expires_at: input.expiresAt,
     challenge_id: input.challengeId,
   };
