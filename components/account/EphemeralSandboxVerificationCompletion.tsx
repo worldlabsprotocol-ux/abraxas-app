@@ -39,9 +39,11 @@ export function EphemeralSandboxVerificationCompletion({
           <strong>{view.policyLine}</strong>
         </p>
         <p className={styles.resultLine}>{view.decisionLine}</p>
+        <p className={styles.resultLine}>{view.acceptabilityLine}</p>
         <p className={styles.resultLine}>
           <strong>Receipt:</strong> {view.receiptRepresents}
         </p>
+        <p className={styles.muted}>{view.receiptUseLine}</p>
         {view.validationModeLine ? <p className={styles.muted}>{view.validationModeLine}</p> : null}
       </div>
 
@@ -70,6 +72,11 @@ export function EphemeralSandboxVerificationCompletion({
             </span>
           </Link>
           <p className={styles.muted}>{view.primaryAction.description}</p>
+          {view.secondaryAction ? (
+            <Link className={styles.completionSecondaryLink} href={view.secondaryAction.href}>
+              {view.secondaryAction.label}
+            </Link>
+          ) : null}
         </div>
       ) : null}
     </div>

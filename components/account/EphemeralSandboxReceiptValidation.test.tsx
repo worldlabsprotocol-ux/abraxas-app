@@ -265,9 +265,11 @@ describe("EphemeralSandboxWorkspaceClient receipt validation", () => {
     fireEvent.click(screen.getByRole("button", { name: /Verify with Phantom/i }));
 
     await waitFor(() => expect(screen.getByText(/Wallet control verified/i)).toBeTruthy());
-    expect(screen.getByRole("link", { name: /Integrate verification/i }).getAttribute("href")).toBe(
-      "/developers/integration-studio",
-    );
+    const studioHref = screen.getByRole("link", { name: /Continue in Integration Studio/i }).getAttribute("href");
+    expect(studioHref).toContain("/developers/integration-studio");
+    expect(studioHref).toContain("source=developer-workspace");
+    expect(studioHref).toContain("pack=wallet_control");
+    expect(studioHref).toContain("#sandbox");
     expect(screen.getByText(/Independent validation not run yet/i)).toBeTruthy();
     expect(screen.queryByText(/Receipt validated/i)).toBeNull();
 

@@ -2,6 +2,16 @@
 
 **Status:** Architecture and business-model assessment only. No production billing UI, token issuance, or hidden charges are authorized by this document.
 
+## Documentation legend
+
+| Label in this doc | Meaning |
+| --- | --- |
+| **Shipped** | Present in this repository and callable today (may require operator config or Launchpad session). |
+| **Entitlement control** | Access gate only (allowlist / review), not usage metering or settlement. |
+| **Proposed** | Design direction not implemented as product UI, billing API, or onchain settlement in this PR. |
+
+Commercial architecture (metering, billing, token settlement) is **proposed** until a dedicated service boundary is defined. Product completion (verification → Integration Studio handoff) is **shipped** separately on the developer path.
+
 ## Shipped capabilities (today)
 
 | Capability | Location | Economic relevance |

@@ -671,6 +671,20 @@
   font-size: 0.82rem;
 }
 
+.completionSecondaryLink {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 0.15rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ws-cyan);
+  text-decoration: none;
+}
+
+.completionSecondaryLink:hover {
+  text-decoration: underline;
+}
+
 .trustTrace {
   margin: 0.5rem 0 1rem;
   padding: 0.75rem 0.85rem;
