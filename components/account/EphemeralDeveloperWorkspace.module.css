@@ -164,6 +164,32 @@
   color: var(--text-secondary);
 }
 
+.reviewAssurances {
+  list-style: none;
+  margin: 0.5rem 0 0.75rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.reviewAssurances li {
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--text-primary);
+  padding-left: 1.2rem;
+  position: relative;
+}
+
+.reviewAssurances li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--abx-premium-green, #4cbb92);
+  font-weight: 700;
+}
+
 .linkBtn {
   appearance: none;
   border: none;

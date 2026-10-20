@@ -35,11 +35,6 @@ export function buildEphemeralWalletSignInMessage(input: {
     operation: "wallet:authenticate",
     resource: "abraxas:capability:wallet_session",
     policyId: null,
-    human: {
-      actionTitle: "Wallet sign-in",
-      environment: "Abraxas",
-      requestedBy: input.domain,
-      fundsSafetyLine: "No token transfer or spending approval is requested.",
-    },
+    human: null,
   });
 }

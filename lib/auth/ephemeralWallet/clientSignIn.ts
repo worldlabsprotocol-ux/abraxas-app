@@ -1,10 +1,19 @@
 // FILE: lib/auth/ephemeralWallet/clientSignIn.ts
 
 import { notifyEphemeralWalletSessionChanged } from "./clientSession";
+import type { WalletSignInChallengeDisplay } from "./signInDisplayContext";
+import { signWalletMessageWithControls } from "./walletMessageSignAttempt";
 
 export type EphemeralWalletSignInResult =
   | { ok: true; walletAddress: string }
   | { ok: false; reason: "cancelled" | "failed"; code?: string; message?: string };
+
+export type EphemeralWalletSignInChallenge = {
+  challenge_id: string;
+  message: string;
+  expires_at: string;
+  display: WalletSignInChallengeDisplay;
+};
 
 function describeError(code: string | undefined): string {
   switch (code) {
@@ -30,15 +39,14 @@ function describeError(code: string | undefined): string {
   }
 }
 
-import { signWalletMessageWithControls } from "./walletMessageSignAttempt";
-
-export async function completeEphemeralWalletSignIn(input: {
+export async function fetchEphemeralWalletSignInChallenge(input: {
   walletAddress: string;
-  signMessage: (message: Uint8Array) => Promise<Uint8Array>;
   solanaNetwork?: string;
   signal?: AbortSignal;
-  isStale?: () => boolean;
-}): Promise<EphemeralWalletSignInResult> {
+}): Promise<
+  | { ok: true; challenge: EphemeralWalletSignInChallenge }
+  | { ok: false; code?: string; message?: string }
+> {
   const solanaNetwork = input.solanaNetwork ?? process.env.NEXT_PUBLIC_SOLANA_NETWORK ?? "devnet";
 
   const challengeRes = await fetch("/api/auth/wallet/solana/challenge", {
@@ -49,23 +57,55 @@ export async function completeEphemeralWalletSignIn(input: {
       wallet_address: input.walletAddress,
       solana_network: solanaNetwork,
     }),
+    signal: input.signal,
   });
   const challengeBody = (await challengeRes.json()) as {
     ok?: boolean;
-    challenge?: { challenge_id: string; message: string };
+    challenge?: {
+      challenge_id: string;
+      message: string;
+      expires_at: string;
+      display?: WalletSignInChallengeDisplay;
+    };
     code?: string;
   };
   if (!challengeRes.ok || !challengeBody.challenge) {
     return {
       ok: false,
-      reason: "failed",
       code: challengeBody.code,
       message: describeError(challengeBody.code),
     };
   }
+  if (!challengeBody.challenge.display) {
+    return { ok: false, code: "invalid_challenge", message: describeError(undefined) };
+  }
+  if (new Date(challengeBody.challenge.expires_at) <= new Date()) {
+    return { ok: false, code: "expired", message: describeError("expired") };
+  }
+
+  return {
+    ok: true,
+    challenge: {
+      challenge_id: challengeBody.challenge.challenge_id,
+      message: challengeBody.challenge.message,
+      expires_at: challengeBody.challenge.expires_at,
+      display: challengeBody.challenge.display,
+    },
+  };
+}
+
+export async function completeEphemeralWalletSignInWithChallenge(input: {
+  challenge: EphemeralWalletSignInChallenge;
+  walletAddress: string;
+  signMessage: (message: Uint8Array) => Promise<Uint8Array>;
+  solanaNetwork?: string;
+  signal?: AbortSignal;
+  isStale?: () => boolean;
+}): Promise<EphemeralWalletSignInResult> {
+  const solanaNetwork = input.solanaNetwork ?? process.env.NEXT_PUBLIC_SOLANA_NETWORK ?? "devnet";
 
   const signed = await signWalletMessageWithControls({
-    message: challengeBody.challenge.message,
+    message: input.challenge.message,
     signMessage: input.signMessage,
     signal: input.signal,
     isStale: input.isStale,
@@ -90,7 +130,7 @@ export async function completeEphemeralWalletSignIn(input: {
     credentials: "include",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
-      challenge_id: challengeBody.challenge.challenge_id,
+      challenge_id: input.challenge.challenge_id,
       wallet_address: input.walletAddress,
       solana_network: solanaNetwork,
       signature,
@@ -108,4 +148,29 @@ export async function completeEphemeralWalletSignIn(input: {
 
   notifyEphemeralWalletSessionChanged();
   return { ok: true, walletAddress: verifyBody.wallet_address };
+}
+
+export async function completeEphemeralWalletSignIn(input: {
+  walletAddress: string;
+  signMessage: (message: Uint8Array) => Promise<Uint8Array>;
+  solanaNetwork?: string;
+  signal?: AbortSignal;
+  isStale?: () => boolean;
+}): Promise<EphemeralWalletSignInResult> {
+  const fetched = await fetchEphemeralWalletSignInChallenge({
+    walletAddress: input.walletAddress,
+    solanaNetwork: input.solanaNetwork,
+    signal: input.signal,
+  });
+  if (!fetched.ok) {
+    return { ok: false, reason: "failed", code: fetched.code, message: fetched.message };
+  }
+  return completeEphemeralWalletSignInWithChallenge({
+    challenge: fetched.challenge,
+    walletAddress: input.walletAddress,
+    signMessage: input.signMessage,
+    solanaNetwork: input.solanaNetwork,
+    signal: input.signal,
+    isStale: input.isStale,
+  });
 }

@@ -21,8 +21,13 @@ import {
   logWalletConnectFailure,
 } from "@/lib/nav/solanaSignInDialogState";
 import type { PreferredSolanaWalletId } from "@/lib/wallet/solanaWalletDiscovery";
+import {
+  completeEphemeralWalletSignInWithChallenge,
+  fetchEphemeralWalletSignInChallenge,
+  type EphemeralWalletSignInChallenge,
+} from "@/lib/auth/ephemeralWallet/clientSignIn";
 import { completeSolanaAccountSignIn } from "@/lib/auth/nativeAccount/clientSolanaAccountSignIn";
-import { completeEphemeralWalletSignIn } from "@/lib/auth/ephemeralWallet/clientSignIn";
+import { WalletSignInReviewCard } from "@/components/wallet/WalletAuthorizationReviewCard";
 import {
   SOLANA_SIGN_IN_STEPS,
   activeSignInStepIndex,
@@ -36,7 +41,7 @@ import styles from "./SolanaAccountSignInDialog.module.css";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 const CONNECT_WALLET_DISCLAIMER =
-  "You'll be asked to sign a message to verify wallet control. No transaction or spending permission is required.";
+  "Connect your wallet, review the sign-in request, then approve the message in Phantom.";
 
 function shortAddress(address: string): string {
   return `${address.slice(0, 4)}…${address.slice(-4)}`;
@@ -87,9 +92,15 @@ export function SolanaAccountSignInDialog({
   const [phase, setPhase] = useState<SolanaSignInPhase>("idle");
   const [localError, setLocalError] = useState<string | null>(null);
   const [selectedWalletName, setSelectedWalletName] = useState<string | null>(null);
+  const [pendingSignInChallenge, setPendingSignInChallenge] =
+    useState<EphemeralWalletSignInChallenge | null>(null);
 
   const walletConnected = connected && Boolean(publicKey);
-  const activeStep = activeSignInStepIndex({ phase, walletConnected });
+  const activeStep = activeSignInStepIndex({
+    phase,
+    walletConnected,
+    signInReviewReady: Boolean(pendingSignInChallenge),
+  });
   const title = signInModalTitle({ phase, walletConnected });
   const statusMessage = signInStatusMessage({
     phase,
@@ -100,6 +111,7 @@ export function SolanaAccountSignInDialog({
     setPhase("idle");
     setLocalError(null);
     setSelectedWalletName(null);
+    setPendingSignInChallenge(null);
   }, []);
 
   const abortPendingSignIn = useCallback(() => {
@@ -143,8 +155,37 @@ export function SolanaAccountSignInDialog({
     }
     if (!walletConnected && (phase === "connected" || phase === "success")) {
       setPhase("idle");
+      setPendingSignInChallenge(null);
     }
   }, [open, walletConnected, phase]);
+
+  const prepareSignInReview = useCallback(async () => {
+    if (!publicKey) return;
+    setBusy(true);
+    setLocalError(null);
+    setError(null);
+    try {
+      const enabledRes = await fetch("/api/auth/native/enabled", { credentials: "same-origin" });
+      const enabledJson = (await enabledRes.json()) as { auth_mode?: string };
+      if (enabledJson.auth_mode !== "ephemeral_wallet") {
+        setLocalError("Sign-in review is only available for wallet authentication in this environment.");
+        setError("Sign-in review is only available for wallet authentication in this environment.");
+        return;
+      }
+      const fetched = await fetchEphemeralWalletSignInChallenge({
+        walletAddress: publicKey.toBase58(),
+      });
+      if (!fetched.ok) {
+        const msg = fetched.message ?? mapSignInFailure({ reason: "failed", code: fetched.code });
+        setLocalError(msg);
+        setError(msg);
+        return;
+      }
+      setPendingSignInChallenge(fetched.challenge);
+    } finally {
+      setBusy(false);
+    }
+  }, [publicKey, setBusy, setError]);
 
   const connectWallet = useCallback(
     async (walletName: PreferredSolanaWalletId) => {
@@ -258,12 +299,32 @@ export function SolanaAccountSignInDialog({
 
       setPhase("signing");
       const result = useEphemeral
-        ? await completeEphemeralWalletSignIn({
-            walletAddress: publicKey.toBase58(),
-            signMessage,
-            signal: controller.signal,
-            isStale: () => generation !== signAttemptGenerationRef.current,
-          })
+        ? await (async () => {
+            let challenge = pendingSignInChallenge;
+            if (!challenge) {
+              const fetched = await fetchEphemeralWalletSignInChallenge({
+                walletAddress: publicKey.toBase58(),
+                signal: controller.signal,
+              });
+              if (!fetched.ok) {
+                return {
+                  ok: false as const,
+                  reason: "failed" as const,
+                  code: fetched.code,
+                  message: fetched.message,
+                };
+              }
+              challenge = fetched.challenge;
+              setPendingSignInChallenge(challenge);
+            }
+            return completeEphemeralWalletSignInWithChallenge({
+              challenge,
+              walletAddress: publicKey.toBase58(),
+              signMessage,
+              signal: controller.signal,
+              isStale: () => generation !== signAttemptGenerationRef.current,
+            });
+          })()
         : await completeSolanaAccountSignIn({
             walletAddress: publicKey.toBase58(),
             signMessage,
@@ -309,7 +370,16 @@ export function SolanaAccountSignInDialog({
       signInFlightRef.current = false;
       setBusy(false);
     }
-  }, [publicKey, signMessage, setBusy, setError, onSuccess, onClose, abortPendingSignIn]);
+  }, [
+    publicKey,
+    signMessage,
+    setBusy,
+    setError,
+    onSuccess,
+    onClose,
+    abortPendingSignIn,
+    pendingSignInChallenge,
+  ]);
 
   const handleDialogCancel = useCallback(() => {
     if (phase === "signing") {
@@ -326,6 +396,7 @@ export function SolanaAccountSignInDialog({
   const handleRetry = useCallback(() => {
     setLocalError(null);
     setError(null);
+    setPendingSignInChallenge(null);
     setPhase(walletConnected ? "connected" : "idle");
   }, [setError, walletConnected]);
 
@@ -344,8 +415,11 @@ export function SolanaAccountSignInDialog({
   if (!open) return null;
 
   const showWalletGrid = !walletConnected && phase !== "success" && phase !== "verifying";
+  const showReviewPrimary =
+    walletConnected && !pendingSignInChallenge && (phase === "connected" || phase === "failure");
   const showSignPrimary =
     walletConnected
+    && pendingSignInChallenge
     && (phase === "connected" || phase === "failure" || phase === "signing" || phase === "verifying");
   const pending = phase === "connecting" || phase === "verifying" || busy;
   const signInPending = phase === "signing";
@@ -423,6 +497,10 @@ export function SolanaAccountSignInDialog({
             <strong>{wallet?.adapter.name ?? "Wallet"}</strong>
             <code>{shortAddress(publicKey.toBase58())}</code>
           </div>
+        ) : null}
+
+        {pendingSignInChallenge ? (
+          <WalletSignInReviewCard display={pendingSignInChallenge.display} />
         ) : null}
 
         {showWalletGrid ? (
@@ -519,6 +597,17 @@ export function SolanaAccountSignInDialog({
         ) : null}
 
         <div className={styles.actions}>
+          {showReviewPrimary ? (
+            <button
+              ref={primaryRef}
+              type="button"
+              className={styles.primaryBtn}
+              disabled={pending}
+              onClick={() => void prepareSignInReview()}
+            >
+              Review sign-in request
+            </button>
+          ) : null}
           {showSignPrimary ? (
             <button
               ref={primaryRef}
@@ -527,7 +616,7 @@ export function SolanaAccountSignInDialog({
               disabled={pending || signInPending}
               onClick={() => void runSign()}
             >
-              {signInPending || phase === "verifying" ? "Waiting for wallet approval" : "Sign message"}
+              {signInPending || phase === "verifying" ? "Waiting for wallet approval" : "Sign in Phantom"}
             </button>
           ) : null}
 
@@ -565,8 +654,8 @@ export function SolanaAccountSignInDialog({
                 setBusy(false);
                 setLocalError(null);
                 setError(null);
+                setPendingSignInChallenge(null);
                 setPhase("connected");
-                void runSign();
               }}
             >
               Try again
@@ -576,7 +665,7 @@ export function SolanaAccountSignInDialog({
 
         {walletConnected && phase === "connected" && !localError ? (
           <p className={styles.signInFootnote}>
-            Connection only links your wallet. Select <strong>Sign message</strong> to authenticate.
+            Connection only links your wallet. Select <strong>Review sign-in request</strong>, then sign in Phantom.
           </p>
         ) : null}
       </div>

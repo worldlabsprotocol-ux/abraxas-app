@@ -68,7 +68,7 @@ describe("SolanaAccountSignInDialog connect layout", () => {
     expect(screen.getByText(/^Phantom$/i)).toBeTruthy();
     expect(screen.getByRole("button", { name: /Connect with Solflare/i })).toBeTruthy();
     expect(document.getElementById("sol-account-signin-desc")?.textContent).toMatch(
-      /verify wallet control/i,
+      /review the sign-in request/i,
     );
     expect(screen.queryByText(/Connect Phantom/i)).toBeNull();
     expect(screen.queryByText(/Connect with Phantom/i, { selector: "span" })).toBeNull();

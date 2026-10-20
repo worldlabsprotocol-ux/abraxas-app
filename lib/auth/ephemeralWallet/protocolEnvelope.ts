@@ -1,9 +1,16 @@
 // FILE: lib/auth/ephemeralWallet/protocolEnvelope.ts
 // Canonical Abraxas wallet authorization envelope (SIWS-style, purpose-separated).
 
+import {
+  WALLET_SCOPED_FINANCIAL_SAFETY_LINES,
+  WALLET_SIGN_IN_FUNDS_LINES,
+} from "./walletMessageSafetyCopy";
+
 export const ABRAXAS_WALLET_PROTOCOL_ID = "abraxas-wallet-trust" as const;
 export const ABRAXAS_WALLET_PROTOCOL_VERSION = "1" as const;
 export const ABRAXAS_PROTOCOL_DISPLAY_NAME = "Abraxas" as const;
+
+export const WALLET_SIGN_IN_MESSAGE_HEADER = "ABRAXAS — WALLET SIGN-IN" as const;
 
 /** Sign-in only — never authorizes transfers, issuance, or production policy changes. */
 export const WALLET_AUTH_PURPOSE_SIGN_IN = "abraxas_wallet_sign_in_v1" as const;
@@ -23,7 +30,12 @@ export type WalletAuthorizationHumanContext = {
   policyId?: string | null;
   environment?: string | null;
   requestedBy?: string | null;
-  fundsSafetyLine?: string | null;
+  /** Plain-language scope of what the signature approves. */
+  authorizationSummary?: string | null;
+  /** Who receives or evaluates the authorization. */
+  recipient?: string | null;
+  /** What the signature records or enables (may include disclosure). */
+  consequenceLine?: string | null;
 };
 
 export function formatWalletAuthorizationExpires(iso: string): string {
@@ -40,16 +52,48 @@ export function formatWalletAuthorizationExpires(iso: string): string {
   }
 }
 
-export function buildWalletAuthorizationHumanPreamble(input: {
+export function buildWalletSignInHumanSection(input: {
+  domain: string;
+  walletAddress: string;
+  expiresAt: string;
+}): string[] {
+  return [
+    WALLET_SIGN_IN_MESSAGE_HEADER,
+    "",
+    "Verify control of your wallet to sign in to Abraxas.",
+    "",
+    ...WALLET_SIGN_IN_FUNDS_LINES,
+    "",
+    `Requested by: ${input.domain}`,
+    `Wallet: ${input.walletAddress}`,
+    `Expires: ${formatWalletAuthorizationExpires(input.expiresAt)}`,
+  ];
+}
+
+export function buildScopedWalletActionHumanSection(input: {
   human: WalletAuthorizationHumanContext;
   walletAddress: string;
   expiresAt: string;
   requestId: string;
 }): string[] {
-  const lines: string[] = [
-    `Protocol: ${ABRAXAS_PROTOCOL_DISPLAY_NAME}`,
-    `Action: ${input.human.actionTitle}`,
-  ];
+  const header = input.human.actionTitle.trim().toUpperCase();
+  const lines: string[] = [`ABRAXAS — ${header}`, ""];
+
+  const summary =
+    input.human.authorizationSummary?.trim()
+    ?? (input.human.actionTitle.trim()
+      ? `${input.human.actionTitle.trim()} in Abraxas.`
+      : null);
+  if (summary) {
+    lines.push(`What you approve: ${summary}`, "");
+  }
+
+  const recipient =
+    input.human.recipient?.trim() ?? input.human.requestedBy?.trim() ?? null;
+  if (recipient) {
+    lines.push(`Recipient: ${recipient}`);
+  }
+
   const policyLabel = input.human.policyLabel?.trim();
   const policyId = input.human.policyId?.trim();
   if (policyLabel && policyId) {
@@ -65,13 +109,33 @@ export function buildWalletAuthorizationHumanPreamble(input: {
   if (input.human.requestedBy?.trim()) {
     lines.push(`Requested by: ${input.human.requestedBy.trim()}`);
   }
-  lines.push(`Wallet: ${input.walletAddress}`);
-  lines.push(`Expires: ${formatWalletAuthorizationExpires(input.expiresAt)}`);
-  lines.push(`Request ID: ${input.requestId}`);
-  if (input.human.fundsSafetyLine?.trim()) {
-    lines.push(input.human.fundsSafetyLine.trim());
+  lines.push(
+    `Wallet: ${input.walletAddress}`,
+    `Expires: ${formatWalletAuthorizationExpires(input.expiresAt)}`,
+    `Request ID: ${input.requestId}`,
+    "",
+  );
+
+  lines.push("Financial safety (this message):");
+  lines.push(...WALLET_SCOPED_FINANCIAL_SAFETY_LINES, "");
+
+  const consequence = input.human.consequenceLine?.trim();
+  if (consequence) {
+    lines.push("Authorization consequence:");
+    lines.push(consequence);
   }
+
   return lines;
+}
+
+/** @deprecated Prefer purpose-specific sections; kept for tests migrating off legacy layout. */
+export function buildWalletAuthorizationHumanPreamble(input: {
+  human: WalletAuthorizationHumanContext;
+  walletAddress: string;
+  expiresAt: string;
+  requestId: string;
+}): string[] {
+  return buildScopedWalletActionHumanSection(input);
 }
 
 export function buildWalletAuthorizationMessage(input: {
@@ -117,16 +181,25 @@ export function buildWalletAuthorizationMessage(input: {
     policyLine,
   ];
 
+  if (input.purpose === WALLET_AUTH_PURPOSE_SIGN_IN) {
+    const humanSection = buildWalletSignInHumanSection({
+      domain: input.domain,
+      walletAddress: input.walletAddress,
+      expiresAt: input.expiresAt,
+    });
+    return [...humanSection, "", "---", "Authorization record", ...technical.slice(2)].join("\n");
+  }
+
   if (!input.human) {
     return technical.join("\n");
   }
 
-  const preamble = buildWalletAuthorizationHumanPreamble({
+  const humanSection = buildScopedWalletActionHumanSection({
     human: input.human,
     walletAddress: input.walletAddress,
     expiresAt: input.expiresAt,
     requestId: input.requestId,
   });
 
-  return [...preamble, "", "---", "Authorization record", ...technical.slice(2)].join("\n");
+  return [...humanSection, "", "---", "Authorization record", ...technical.slice(2)].join("\n");
 }

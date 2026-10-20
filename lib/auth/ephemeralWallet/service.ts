@@ -11,6 +11,7 @@ import { verifyPassportSolanaPersonalMessage } from "@/lib/auth/passportSolanaAu
 import { canonicalizeSolanaNetwork, resolveAuthorizedSolanaNetworkFromEnv } from "@/lib/auth/passportSolanaAuth/network";
 import { buildEphemeralWalletSignInMessage } from "./message";
 import { WALLET_AUTH_PURPOSE_SIGN_IN } from "./protocolEnvelope";
+import { buildWalletSignInChallengeDisplay } from "./signInDisplayContext";
 import {
   commitEphemeralWalletChallenge,
   hashEphemeralSessionContext,
@@ -38,6 +39,7 @@ export async function issueEphemeralWalletAuthChallenge(input: {
         message: string;
         expires_at: string;
         solana_network: string;
+        display: ReturnType<typeof buildWalletSignInChallengeDisplay>;
       };
       sessionContext: string;
     }
@@ -107,6 +109,12 @@ export async function issueEphemeralWalletAuthChallenge(input: {
       message,
       expires_at: expiresAt,
       solana_network: canonicalNetwork,
+      display: buildWalletSignInChallengeDisplay({
+        domain,
+        walletAddress: wallet,
+        expiresAt,
+        challengeId,
+      }),
     },
   };
 }
