@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EphemeralSandboxWorkspaceClient } from "./EphemeralSandboxWorkspaceClient";
 import { WalletContextProvider } from "@/components/WalletContextProvider";
+import { buildWalletActionChallengeDisplay } from "@/lib/auth/ephemeralWallet/actionDisplayContext";
 
 const signMessage = vi.fn();
 
@@ -51,6 +52,12 @@ describe("EphemeralSandboxWorkspaceClient receipt validation", () => {
       "fetch",
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = String(input);
+        if (url.includes("/api/auth/wallet/enabled")) {
+          return new Response(JSON.stringify({ operational: true, config_ok: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
         if (url.includes("/api/auth/wallet/session")) {
           return new Response(
             JSON.stringify({
@@ -148,6 +155,12 @@ describe("EphemeralSandboxWorkspaceClient receipt validation", () => {
       "fetch",
       vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = String(input);
+        if (url.includes("/api/auth/wallet/enabled")) {
+          return new Response(JSON.stringify({ operational: true, config_ok: true }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
         if (url.includes("/api/auth/wallet/session")) {
           return new Response(
             JSON.stringify({
@@ -187,7 +200,7 @@ describe("EphemeralSandboxWorkspaceClient receipt validation", () => {
             { status: 200 },
           );
         }
-        if (url.includes("/api/auth/wallet/sandbox/test-verify")) {
+        if (url.includes("/api/auth/wallet/sandbox/test-verify") && init?.method === "POST") {
           return new Response(
             JSON.stringify({ ok: true, decision: "approved", result: receipt }),
             { status: 200, headers: { "Content-Type": "application/json" } },
@@ -205,20 +218,24 @@ describe("EphemeralSandboxWorkspaceClient receipt validation", () => {
             { status: 200 },
           );
         }
-        if (url.includes("/api/auth/wallet/solana/action/challenge")) {
+        if (url.includes("/api/auth/wallet/solana/action/challenge") && init?.method === "POST") {
+          const expiresAt = new Date(Date.now() + 60_000).toISOString();
+          const challengeId = "ewch_test";
           return new Response(
             JSON.stringify({
               ok: true,
               challenge: {
-                challenge_id: "ewch_test",
+                challenge_id: challengeId,
                 message: "msg",
-                expires_at: new Date(Date.now() + 60_000).toISOString(),
-                wallet_address: "Abcd1234WalletAddressExample111111111111",
-                solana_network: "devnet",
-                origin: "http://localhost:3000",
-                uri: "http://localhost:3000/",
-                session_context_hash: "abc",
-                nonce: "n",
+                expires_at: expiresAt,
+                operation: "sandbox:verification:test",
+                display: buildWalletActionChallengeDisplay({
+                  operation: "sandbox:verification:test",
+                  policyId: "wallet_control",
+                  walletAddress: "Abcd1234WalletAddressExample111111111111",
+                  expiresAt,
+                  challengeId,
+                }),
               },
             }),
             { status: 200, headers: { "Content-Type": "application/json" } },
@@ -242,19 +259,23 @@ describe("EphemeralSandboxWorkspaceClient receipt validation", () => {
     // Inject result by posting through review flow shortcuts — use fireEvent on policy + review if mocks allow.
 
     // Force result visibility: call validate by setting DOM via rerender not available — complete minimal flow:
-    fireEvent.click(screen.getAllByRole("radio")[0]!);
     fireEvent.click(screen.getByRole("button", { name: /Review request/i }));
 
     await waitFor(() => expect(screen.getByRole("button", { name: /Verify with Phantom/i })).toBeTruthy());
     fireEvent.click(screen.getByRole("button", { name: /Verify with Phantom/i }));
 
-    await waitFor(() => expect(screen.getByText(/Verification complete/i)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/Wallet control verified/i)).toBeTruthy());
+    expect(screen.getByRole("link", { name: /Integrate verification/i }).getAttribute("href")).toBe(
+      "/developers/integration-studio",
+    );
     expect(screen.getByText(/Independent validation not run yet/i)).toBeTruthy();
     expect(screen.queryByText(/Receipt validated/i)).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: /Validate receipt/i }));
 
-    await waitFor(() => expect(screen.getByText(/Receipt validated/i)).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByRole("heading", { level: 4, name: "Receipt validated" })).toBeTruthy(),
+    );
     expect(screen.getByText(/Signature authentic:/i)).toBeTruthy();
     const callsAfterValidate = signMessage.mock.calls.length;
     expect(callsAfterValidate).toBeGreaterThanOrEqual(1);

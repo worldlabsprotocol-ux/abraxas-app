@@ -44,6 +44,8 @@ import {
 import { generateSandboxSessionPossessionKeyPair } from "@/lib/auth/ephemeralWallet/sandboxHolderPossessionKey.shared";
 import { TrustExecutionTrace, deriveTrustExecutionStages } from "./TrustExecutionTrace";
 import { WalletScopedAuthorizationReviewCard } from "@/components/wallet/WalletAuthorizationReviewCard";
+import { buildEphemeralSandboxCompletionView } from "@/lib/developers/ephemeralWorkspaceCompletion";
+import { EphemeralSandboxVerificationCompletion } from "./EphemeralSandboxVerificationCompletion";
 import styles from "./EphemeralDeveloperWorkspace.module.css";
 
 const EPHEMERAL_SANDBOX_RESULT_LABEL = "ephemeral_sandbox_test_only";
@@ -821,6 +823,15 @@ export function EphemeralSandboxWorkspaceClient() {
     errorActive: Boolean(userError),
   });
 
+  const sandboxCompletionView = result
+    ? buildEphemeralSandboxCompletionView({
+        policyId: selectedPolicy,
+        policyLabel: selectedPolicyMeta?.label ?? selectedPolicy,
+        decision,
+        receiptValidation,
+      })
+    : null;
+
   if (phase === "loading") {
     return (
       <div className={styles.shell}>
@@ -1187,23 +1198,12 @@ export function EphemeralSandboxWorkspaceClient() {
 
         {result ? (
           <div className={styles.resultBox}>
-            <h3 className={styles.resultTitle}>
-              {selectedPolicy === "age_21_retail" ? "Age 21 demonstration complete" : "Verification complete"}
-            </h3>
-            {selectedPolicy === "age_21_retail" ? (
-              <p className={styles.note}>
-                Sandbox test result only. This does not prove real world age eligibility.
-              </p>
+            {sandboxCompletionView ? (
+              <EphemeralSandboxVerificationCompletion view={sandboxCompletionView} />
             ) : null}
-            <p className={styles.resultLine}>
-              <strong>Policy:</strong> {selectedPolicyMeta?.label ?? selectedPolicy}
-            </p>
-            <p className={styles.resultLine}>
-              <strong>Decision:</strong> {decision ?? "unknown"} (Sandbox test only)
-            </p>
             <p className={styles.note}>
-              Issuance complete. Use Validate receipt for an independent check of the signed receipt. No wallet
-              signature is required.
+              Validate receipt runs an independent check of the signed receipt. No additional wallet signature is
+              required.
             </p>
             <div className={styles.validationPanel} aria-live="polite">
               {receiptValidation.status === "idle" ? (

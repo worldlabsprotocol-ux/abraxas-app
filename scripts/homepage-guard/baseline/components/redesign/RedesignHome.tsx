@@ -1,8 +1,7 @@
 "use client";
 // FILE: components/redesign/RedesignHome.tsx
-// Sandbox-first homepage — hero · sandbox · how it works · demo · evidence · build.
+// Sandbox-first homepage — hero · sandbox · how it works · evidence · build.
 
-import dynamic from "next/dynamic";
 import type { CSSProperties, ReactNode } from "react";
 import { HomeHowAbraxasWorksSection } from "@/components/home/HomeHowAbraxasWorksSection";
 import { HomeVerifiableTrustChapter } from "@/components/home/HomeVerifiableTrustChapter";
@@ -16,11 +15,6 @@ import { RedesignNav } from "./RedesignNav";
 import { RedesignFooter } from "./RedesignFooter";
 import { HomeSignedInModule } from "@/components/home/HomeSignedInModule";
 import { HomeNativeSandboxChapter } from "@/components/home/HomeNativeSandboxChapter";
-
-const HomeGoodTroubleActionSection = dynamic(
-  () => import("@/components/home/HomeGoodTroubleActionSection").then((m) => m.HomeGoodTroubleActionSection),
-  { ssr: false, loading: () => <div className="abx-lazy-home-section" style={{ minHeight: "8rem" }} aria-hidden /> },
-);
 
 const SHELL: CSSProperties = {
   maxWidth: 1320,
@@ -46,19 +40,13 @@ function HomeContent({ hero }: { hero: ReactNode }) {
           <HomeHowAbraxasWorksSection />
         </PremiumHomeChapter>
 
-        <PremiumHomeChapter index="02" label="Demonstration" id="chapter-demo">
-          <LazyHomeSection minHeight="12rem">
-            <HomeGoodTroubleActionSection />
-          </LazyHomeSection>
-        </PremiumHomeChapter>
-
-        <PremiumHomeChapter index="03" label="Result" id="chapter-evidence" bleed>
+        <PremiumHomeChapter index="02" label="Result" id="chapter-evidence" bleed>
           <LazyHomeSection minHeight="22rem" eager>
             <HomeVerifiableTrustChapter />
           </LazyHomeSection>
         </PremiumHomeChapter>
 
-        <PremiumHomeChapter index="04" label="Ready" id="chapter-build-wrap">
+        <PremiumHomeChapter index="03" label="Ready" id="chapter-build-wrap">
           <HomeBuildEntrySection />
         </PremiumHomeChapter>
       </div>

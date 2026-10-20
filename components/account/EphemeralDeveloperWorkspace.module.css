@@ -545,6 +545,132 @@
   color: var(--text-secondary);
 }
 
+.completionHero {
+  margin: 0 0 0.85rem;
+  padding: 1rem 1.05rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(6, 8, 12, 0.72);
+}
+
+.completionSuccess {
+  border-color: rgba(76, 187, 146, 0.35);
+}
+
+.completionCaution {
+  border-color: rgba(232, 166, 90, 0.4);
+}
+
+.completionNeutral {
+  border-color: rgba(94, 184, 255, 0.25);
+}
+
+.completionEyebrow {
+  margin: 0 0 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ws-emerald);
+}
+
+.completionCaution .completionEyebrow {
+  color: var(--ws-warn);
+}
+
+.completionHeadline {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 650;
+  color: var(--text-primary);
+  line-height: 1.35;
+}
+
+.completionSummary {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: var(--text-primary);
+}
+
+.completionDetails {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.completionNext {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.completionNextTitle {
+  margin: 0 0 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: var(--text-primary);
+}
+
+.completionChecklist {
+  margin: 0.65rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.completionChecklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.completionChecklist li[data-state="done"] span:last-child {
+  color: var(--text-primary);
+}
+
+.completionChecklist li[data-state="next"] span:last-child {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.completionPrimaryWrap {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.completionPrimaryLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  width: fit-content;
+  max-width: 100%;
+  padding: 0.65rem 1.25rem;
+  border-radius: 999px;
+  background: #f4f4f4;
+  color: #0a0a0a;
+  font-size: 0.88rem;
+  font-weight: 650;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.completionPrimaryLink:hover {
+  background: #ffffff;
+}
+
+.completionPrimaryArrow {
+  font-size: 0.82rem;
+}
+
 .trustTrace {
   margin: 0.5rem 0 1rem;
   padding: 0.75rem 0.85rem;
