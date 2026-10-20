@@ -18,6 +18,7 @@ export function PremiumHomeHero() {
       <div className="abx-premium-hero__atmosphere" aria-hidden="true" />
       <div className="abx-premium-hero__depth-plane" aria-hidden="true" />
       <div className="abx-premium-hero__grid" aria-hidden="true" />
+      <div className="abx-premium-hero__trace-field" aria-hidden="true" />
       <div className="abx-premium-hero__layout abx-premium-hero__layout--composed">
         <div className="abx-premium-hero__copy">
           <h1 className="abx-premium-hero__title">

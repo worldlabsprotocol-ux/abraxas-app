@@ -20,23 +20,25 @@ const CapabilityMatrix = dynamic(
 export function HomeBuildEntrySection() {
   return (
     <section id="chapter-build" className="abx-cinematic-build-chapter abx-home-close-section" aria-labelledby="home-close-heading">
-      <h2 id="home-close-heading" className="abx-v2-section-title">
-        {HOMEPAGE_CLOSE_HEADING}
-      </h2>
-      <p className="abx-v2-section-lead abx-v2-section-lead--tight">{HOMEPAGE_CLOSE_LEAD}</p>
-      <div className="abx-build-entry__actions">
-        <HomeWorkspacePrimaryCta />
-        <Link className="abx-premium-hero__cta abx-premium-hero__cta--secondary" href="/docs">
-          {HOMEPAGE_CTA_DEVELOPER_GUIDES}
-        </Link>
-      </div>
+      <div className="abx-trust-surface abx-trust-surface--build">
+        <h2 id="home-close-heading" className="abx-v2-section-title abx-build-entry__title">
+          {HOMEPAGE_CLOSE_HEADING}
+        </h2>
+        <p className="abx-v2-section-lead abx-v2-section-lead--tight abx-build-entry__lead">{HOMEPAGE_CLOSE_LEAD}</p>
+        <div className="abx-build-entry__actions">
+          <HomeWorkspacePrimaryCta />
+          <Link className="abx-premium-hero__cta abx-premium-hero__cta--secondary" href="/docs">
+            {HOMEPAGE_CTA_DEVELOPER_GUIDES}
+          </Link>
+        </div>
 
-      <details className="abx-build-entry__advanced">
-        <summary>{HOMEPAGE_FEATURES_EXPANDER}</summary>
-        <LazyHomeSection minHeight="12rem">
-          <CapabilityMatrix />
-        </LazyHomeSection>
-      </details>
+        <details className="abx-build-entry__advanced">
+          <summary>{HOMEPAGE_FEATURES_EXPANDER}</summary>
+          <LazyHomeSection minHeight="12rem">
+            <CapabilityMatrix />
+          </LazyHomeSection>
+        </details>
+      </div>
     </section>
   );
 }

@@ -110,10 +110,11 @@
   position: absolute;
   left: 5%;
   right: 5%;
-  bottom: 8%;
+  bottom: 4%;
   height: 1px;
-  opacity: 0.85;
+  opacity: 0.55;
   pointer-events: none;
+  z-index: 0;
 }
 
 /* Dimensional emblem environment — official RGB square art isolated via screen blend */
@@ -153,9 +154,13 @@
 
 .abx-hero-emblem-env__orbit {
   position: absolute;
+  z-index: 1;
   border-radius: 50%;
   border: 1px solid rgba(76, 187, 146, 0.18);
   pointer-events: none;
+  /* Keep ring motion off the emblem — hollow center mask */
+  -webkit-mask-image: radial-gradient(circle at 50% 48%, transparent 0 36%, #000 42%, #000 100%);
+  mask-image: radial-gradient(circle at 50% 48%, transparent 0 36%, #000 42%, #000 100%);
 }
 
 .abx-hero-emblem-env__orbit--outer {
@@ -185,7 +190,7 @@
 
 .abx-hero-emblem-env__stage {
   position: relative;
-  z-index: 2;
+  z-index: 4;
   width: 88%;
   transform-style: preserve-3d;
   will-change: transform;
@@ -1280,6 +1285,25 @@
 
 .abx-home-close-section {
   margin-top: 0.5rem;
+  padding: 0 clamp(0.25rem, 2vw, 0.5rem);
+}
+
+.abx-build-entry__title {
+  margin: 0 0 0.65rem;
+  font-size: clamp(1.35rem, 3vw, 1.85rem);
+  letter-spacing: -0.03em;
+}
+
+.abx-build-entry__lead {
+  margin: 0;
+  max-width: 42rem;
+  font-size: clamp(0.92rem, 1.5vw, 1.02rem);
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.abx-build-entry__actions {
+  margin-top: 1.35rem;
 }
 
 /* Public header — single Connect control + compact recovery menu */

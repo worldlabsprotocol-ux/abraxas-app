@@ -93,7 +93,7 @@ export function DecisionReceiptVerificationInteractive(props?: { shell?: Decisio
       caption={props?.shell?.caption ?? RECEIPT_DEMO_SHELL_CAPTION}
       className="abx-pv-shell--exhibit abx-pv-shell--open"
     >
-      <div className="abx-pv-verify">
+      <div className="abx-pv-verify abx-pv-verify--elevated abx-trust-surface">
         <p className="abx-pv-verify__intro">
           Inspect a sample decision receipt. Authenticity and current authorization are shown separately—the same
           separation a production verifier applies to live evidence.

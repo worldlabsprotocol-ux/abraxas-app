@@ -120,7 +120,7 @@ describe("SolanaAccountSignInDialog signing recovery", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Sign message/i }));
     await waitFor(() => {
-      expect(screen.getByText(/Waiting for wallet approval/i)).toBeTruthy();
+      expect(screen.getByText(/waiting for your signature/i)).toBeTruthy();
     });
     expect(challengeCount).toBe(1);
 

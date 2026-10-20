@@ -1102,14 +1102,13 @@ export function EphemeralSandboxWorkspaceClient() {
 
         {phase === "signing" ? (
           <div className={styles.reviewCard}>
-            <h2 className={styles.sectionTitle}>Waiting for wallet approval</h2>
+            <h2 className={styles.sectionTitle}>Confirm in your wallet</h2>
             <div className={styles.statusRow} role="status">
               <span className={styles.spinner} aria-hidden />
-              Open Phantom to review the request.
+              Abraxas is waiting for your signature.
             </div>
             <p className={styles.note}>
-              Abraxas cannot reopen a dismissed wallet popup. If you closed Phantom, use Try again for a new request
-              after you finish in the wallet.
+              If you dismissed Phantom, finish or reject the request there, then use Try again here for a fresh prompt.
             </p>
             {walletFocusHint ? (
               <p className={styles.note}>Return to Phantom if a request is still pending there.</p>

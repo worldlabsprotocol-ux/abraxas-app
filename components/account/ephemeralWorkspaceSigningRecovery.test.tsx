@@ -125,7 +125,7 @@ describe("EphemeralSandboxWorkspaceClient signing recovery", () => {
     fireEvent.click(screen.getByRole("button", { name: /Verify with Phantom/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/Waiting for wallet approval/i)).toBeTruthy();
+      expect(screen.getByText(/Confirm in your wallet/i)).toBeTruthy();
     });
 
     const cancelBtn = screen.getByRole("button", { name: /^Cancel$/i });
@@ -165,7 +165,7 @@ describe("EphemeralSandboxWorkspaceClient signing recovery", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Verify with Phantom/i }));
     await waitFor(() => {
-      expect(screen.getByText(/Waiting for wallet approval/i)).toBeTruthy();
+      expect(screen.getByText(/Confirm in your wallet/i)).toBeTruthy();
     });
 
     fireEvent.click(screen.getByRole("button", { name: /Try again/i }));
@@ -202,7 +202,7 @@ describe("EphemeralSandboxWorkspaceClient signing recovery", () => {
     fireEvent.click(verifyBtn);
 
     await waitFor(() => {
-      expect(screen.getByText(/Waiting for wallet approval/i)).toBeTruthy();
+      expect(screen.getByText(/Confirm in your wallet/i)).toBeTruthy();
     });
     expect(signMessage).toHaveBeenCalledTimes(1);
   });
