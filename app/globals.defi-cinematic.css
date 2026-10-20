@@ -1225,7 +1225,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.65rem;
-  margin: 1rem 0 0.5rem;
+  margin: 1.35rem 0 0.5rem;
 }
 
 .abx-workspace-progress {
@@ -1300,10 +1300,6 @@
   font-size: clamp(0.92rem, 1.5vw, 1.02rem);
   line-height: 1.6;
   color: var(--text-secondary);
-}
-
-.abx-build-entry__actions {
-  margin-top: 1.35rem;
 }
 
 /* Public header — single Connect control + compact recovery menu */
