@@ -26,6 +26,33 @@ vi.mock("@/lib/wallet/useSolanaWalletDiscovery", () => ({
   PREFERRED_SOLANA_WALLETS: ["Phantom"],
 }));
 
+function mockSignInChallenge(challengeId: string) {
+  const expires = new Date(Date.now() + 300_000).toISOString();
+  return {
+    challenge_id: challengeId,
+    message: "Sign in to Abraxas",
+    expires_at: expires,
+    display: {
+      kind: "wallet_sign_in" as const,
+      action_title: "Abraxas wallet sign-in",
+      summary: "Verify control of your wallet to sign in to Abraxas.",
+      funds_lines: ["No funds will move."],
+      requested_by: "localhost",
+      wallet_address: "Abcd1234WalletAddressExample111111111111",
+      expires_at: expires,
+      challenge_id: challengeId,
+    },
+  };
+}
+
+async function prepareAndSign() {
+  fireEvent.click(screen.getByRole("button", { name: /Review sign-in request/i }));
+  await waitFor(() => {
+    expect(screen.getByText(/Abraxas wallet sign-in/i)).toBeTruthy();
+  });
+  fireEvent.click(screen.getByRole("button", { name: /Sign in Phantom/i }));
+}
+
 describe("SolanaAccountSignInDialog signing recovery", () => {
   afterEach(() => {
     cleanup();
@@ -50,7 +77,7 @@ describe("SolanaAccountSignInDialog signing recovery", () => {
           challengeCount += 1;
           return Response.json({
             ok: true,
-            challenge: { challenge_id: `ch_${challengeCount}`, message: "Sign in to Abraxas" },
+            challenge: mockSignInChallenge(`ch_${challengeCount}`),
           });
         }
         if (url.includes("/api/auth/wallet/solana/verify")) {
@@ -82,7 +109,7 @@ describe("SolanaAccountSignInDialog signing recovery", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Sign message/i }));
+    await prepareAndSign();
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /^Cancel$/i })).toBeTruthy();
@@ -118,19 +145,16 @@ describe("SolanaAccountSignInDialog signing recovery", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Sign message/i }));
+    await prepareAndSign();
     await waitFor(() => {
       expect(screen.getByText(/waiting for your signature/i)).toBeTruthy();
     });
     expect(challengeCount).toBe(1);
 
     fireEvent.click(screen.getByRole("button", { name: /Try again/i }));
-    await waitFor(
-      () => {
-        expect(challengeCount).toBeGreaterThanOrEqual(2);
-      },
-      { timeout: 3000 },
-    );
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Review sign-in request/i })).toBeTruthy();
+    });
 
     resolveSign?.(new Uint8Array([1, 2]));
     await waitFor(() => {

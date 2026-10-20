@@ -43,7 +43,7 @@ import {
 } from "@/lib/passport/reusableCredential/holderPossessionChallengeSigning";
 import { generateSandboxSessionPossessionKeyPair } from "@/lib/auth/ephemeralWallet/sandboxHolderPossessionKey.shared";
 import { TrustExecutionTrace, deriveTrustExecutionStages } from "./TrustExecutionTrace";
-import { WALLET_MESSAGE_ONLY_FUNDS_LINES } from "@/lib/auth/ephemeralWallet/walletMessageSafetyCopy";
+import { WalletScopedAuthorizationReviewCard } from "@/components/wallet/WalletAuthorizationReviewCard";
 import styles from "./EphemeralDeveloperWorkspace.module.css";
 
 const EPHEMERAL_SANDBOX_RESULT_LABEL = "ephemeral_sandbox_test_only";
@@ -1089,35 +1089,10 @@ export function EphemeralSandboxWorkspaceClient() {
           </div>
         ) : null}
 
-        {phase === "review" && pendingChallenge ? (
+        {phase === "review" && pendingChallenge && display ? (
           <div className={styles.reviewCard}>
             <h2 className={styles.sectionTitle}>{reviewTitle}</h2>
-            <dl className={styles.reviewList}>
-              <div>
-                <dt>Policy</dt>
-                <dd>{display?.policy_label ?? selectedPolicyMeta?.label ?? selectedPolicy}</dd>
-              </div>
-              <div>
-                <dt>Environment</dt>
-                <dd>{display?.environment ?? "Sandbox"}</dd>
-              </div>
-              <div>
-                <dt>Requested by</dt>
-                <dd>{display?.requested_by ?? "Abraxas Developer Workspace"}</dd>
-              </div>
-              {display?.wallet_address ? (
-                <div>
-                  <dt>Wallet</dt>
-                  <dd className={styles.mono}>{display.wallet_address}</dd>
-                </div>
-              ) : null}
-            </dl>
-            <p className={styles.reviewLead}>You will sign a message confirming this test request.</p>
-            <ul className={styles.reviewAssurances}>
-              {WALLET_MESSAGE_ONLY_FUNDS_LINES.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
+            <WalletScopedAuthorizationReviewCard display={display} />
             {scopeNote ? <p className={styles.note}>{scopeNote}</p> : null}
             <div className={styles.actions}>
               <button

@@ -1,7 +1,10 @@
 // FILE: lib/auth/ephemeralWallet/protocolEnvelope.ts
 // Canonical Abraxas wallet authorization envelope (SIWS-style, purpose-separated).
 
-import { WALLET_MESSAGE_ONLY_FUNDS_LINES } from "./walletMessageSafetyCopy";
+import {
+  WALLET_SCOPED_FINANCIAL_SAFETY_LINES,
+  WALLET_SIGN_IN_FUNDS_LINES,
+} from "./walletMessageSafetyCopy";
 
 export const ABRAXAS_WALLET_PROTOCOL_ID = "abraxas-wallet-trust" as const;
 export const ABRAXAS_WALLET_PROTOCOL_VERSION = "1" as const;
@@ -27,7 +30,12 @@ export type WalletAuthorizationHumanContext = {
   policyId?: string | null;
   environment?: string | null;
   requestedBy?: string | null;
-  fundsSafetyLine?: string | null;
+  /** Plain-language scope of what the signature approves. */
+  authorizationSummary?: string | null;
+  /** Who receives or evaluates the authorization. */
+  recipient?: string | null;
+  /** What the signature records or enables (may include disclosure). */
+  consequenceLine?: string | null;
 };
 
 export function formatWalletAuthorizationExpires(iso: string): string {
@@ -54,7 +62,7 @@ export function buildWalletSignInHumanSection(input: {
     "",
     "Verify control of your wallet to sign in to Abraxas.",
     "",
-    ...WALLET_MESSAGE_ONLY_FUNDS_LINES,
+    ...WALLET_SIGN_IN_FUNDS_LINES,
     "",
     `Requested by: ${input.domain}`,
     `Wallet: ${input.walletAddress}`,
@@ -71,14 +79,20 @@ export function buildScopedWalletActionHumanSection(input: {
   const header = input.human.actionTitle.trim().toUpperCase();
   const lines: string[] = [`ABRAXAS — ${header}`, ""];
 
-  if (input.human.actionTitle.trim()) {
-    lines.push(`${input.human.actionTitle.trim()} in Abraxas.`, "");
+  const summary =
+    input.human.authorizationSummary?.trim()
+    ?? (input.human.actionTitle.trim()
+      ? `${input.human.actionTitle.trim()} in Abraxas.`
+      : null);
+  if (summary) {
+    lines.push(`What you approve: ${summary}`, "");
   }
 
-  const safetyLines = input.human.fundsSafetyLine?.trim()
-    ? [input.human.fundsSafetyLine.trim()]
-    : [...WALLET_MESSAGE_ONLY_FUNDS_LINES];
-  lines.push(...safetyLines, "");
+  const recipient =
+    input.human.recipient?.trim() ?? input.human.requestedBy?.trim() ?? null;
+  if (recipient) {
+    lines.push(`Recipient: ${recipient}`);
+  }
 
   const policyLabel = input.human.policyLabel?.trim();
   const policyId = input.human.policyId?.trim();
@@ -99,7 +113,18 @@ export function buildScopedWalletActionHumanSection(input: {
     `Wallet: ${input.walletAddress}`,
     `Expires: ${formatWalletAuthorizationExpires(input.expiresAt)}`,
     `Request ID: ${input.requestId}`,
+    "",
   );
+
+  lines.push("Financial safety (this message):");
+  lines.push(...WALLET_SCOPED_FINANCIAL_SAFETY_LINES, "");
+
+  const consequence = input.human.consequenceLine?.trim();
+  if (consequence) {
+    lines.push("Authorization consequence:");
+    lines.push(consequence);
+  }
+
   return lines;
 }
 

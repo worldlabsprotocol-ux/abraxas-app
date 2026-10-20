@@ -22,10 +22,12 @@ export const SOLANA_SIGN_IN_STEPS: { id: SolanaSignInStepId; label: string }[] =
 export function activeSignInStepIndex(input: {
   phase: SolanaSignInPhase;
   walletConnected: boolean;
+  signInReviewReady?: boolean;
 }): number {
   if (input.phase === "success") return 3;
   if (input.phase === "verifying") return 3;
   if (input.phase === "signing") return 2;
+  if (input.signInReviewReady) return 1;
   if (input.walletConnected || input.phase === "connected") return 1;
   if (input.phase === "connecting") return 0;
   return 0;
@@ -149,7 +151,7 @@ export function mapSignInFailure(input: {
   message?: string;
 }): string {
   if (input.reason === "cancelled") {
-    return "Signature request dismissed. Click Sign message when you are ready.";
+    return "Signature request dismissed. Review the request and sign in Phantom when you are ready.";
   }
   if (input.code === "expired") return "Sign-in request timed out. Try again.";
   if (input.message) return input.message;

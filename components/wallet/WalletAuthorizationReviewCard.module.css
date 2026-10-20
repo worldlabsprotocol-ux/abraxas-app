@@ -1,4 +1,4 @@
-/* FILE: components/wallet/WalletMessageSafetyReview.module.css */
+/* FILE: components/wallet/WalletAuthorizationReviewCard.module.css */
 
 .card {
   margin: 0 0 1rem;
@@ -52,6 +52,46 @@
   color: var(--text-secondary);
 }
 
+.facts {
+  margin: 0 0 0.75rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.facts div {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+}
+
+.facts dt {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.facts dd {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.sectionLabel {
+  margin: 0 0 0.35rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.consequence {
+  margin: 0 0 0.75rem;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--text-primary);
+}
+
 .assurances {
   list-style: none;
   margin: 0 0 0.65rem;
@@ -92,6 +132,27 @@
   border: solid var(--abx-premium-green, #4cbb92);
   border-width: 0 0.12rem 0.12rem 0;
   transform: rotate(45deg);
+}
+
+.assurancesMuted {
+  list-style: none;
+  margin: 0 0 0.65rem;
+  padding: 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.assurancesMuted li {
+  padding-left: 0.85rem;
+  position: relative;
+}
+
+.assurancesMuted li::before {
+  content: "·";
+  position: absolute;
+  left: 0;
+  color: var(--text-muted);
 }
 
 .footer {

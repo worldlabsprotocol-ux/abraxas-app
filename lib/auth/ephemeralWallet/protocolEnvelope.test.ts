@@ -35,13 +35,16 @@ describe("buildWalletAuthorizationMessage", () => {
         requestedBy: "Abraxas Developer Workspace",
       },
     });
-    expect(message.indexOf("No funds will move.")).toBeLessThan(message.indexOf("Authorization record"));
+    expect(message.indexOf("What you approve:")).toBeLessThan(message.indexOf("Authorization record"));
+    expect(message.indexOf("Recipient:")).toBeLessThan(message.indexOf("Financial safety"));
+    expect(message.indexOf("Authorization consequence:")).toBeLessThan(message.indexOf("Authorization record"));
     expect(message).toContain("ABRAXAS — AUTHORIZE TEST VERIFICATION");
     expect(message).toContain("Policy: Wallet Control (wallet_control)");
     expect(message).toContain("Environment: Sandbox");
     expect(message).toContain("Operation: sandbox:verification:test");
     expect(message).toContain("Policy ID: wallet_control");
-    expect(message).toContain("No spending permission is requested.");
+    expect(message).toContain("No SOL transfer or token spending approval is requested by this message.");
+    expect(message).not.toContain("No spending permission is requested.");
   });
 
   it("binds a different policy id in the technical record", () => {

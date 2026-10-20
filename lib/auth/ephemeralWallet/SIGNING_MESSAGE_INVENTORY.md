@@ -14,4 +14,10 @@ Abraxas-controlled `signMessage` payloads (not Solana transactions).
 
 Security binding for ephemeral envelope: domain/host, origin, URI, audience, nonce, issued/expires, request ID, purpose, operation, resource, policy ID, chain ID, protocol ID/version. Verification compares signature to the **exact server-stored message** (rollout-safe for in-flight challenges).
 
-Message-only sign-in and scoped sandbox actions include explicit **no funds / no spending approval** lines. On-chain transactions are out of scope for those disclaimers.
+**Copy rules**
+
+- **Wallet sign-in (message-only):** three concise funds/spending/transaction reassurances.
+- **Scoped authorization (sandbox verify, enter, future presentation):** lead with *what you approve*, *recipient*, and *authorization consequence*; then a single **financial safety (this message)** line (no SOL/spending approval). Scoped signatures are **not** consequence-free—only non-financial for this message type.
+- **On-chain transactions:** never use sign-in or scoped message disclaimers.
+
+UI review cards must render from **server-issued `display` payloads** tied to the stored challenge message.

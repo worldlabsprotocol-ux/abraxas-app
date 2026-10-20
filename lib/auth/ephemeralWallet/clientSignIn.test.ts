@@ -17,7 +17,21 @@ describe("completeEphemeralWalletSignIn", () => {
         if (url.includes("/challenge")) {
           return Response.json({
             ok: true,
-            challenge: { challenge_id: "ch_1", message: "sign in" },
+            challenge: {
+              challenge_id: "ch_1",
+              message: "sign in",
+              expires_at: new Date(Date.now() + 300_000).toISOString(),
+              display: {
+                kind: "wallet_sign_in",
+                action_title: "Abraxas wallet sign-in",
+                summary: "Verify control of your wallet to sign in to Abraxas.",
+                funds_lines: ["No funds will move."],
+                requested_by: "localhost",
+                wallet_address: "11111111111111111111111111111111",
+                expires_at: new Date(Date.now() + 300_000).toISOString(),
+                challenge_id: "ch_1",
+              },
+            },
           });
         }
         return Response.json({ ok: false }, { status: 400 });
@@ -52,7 +66,21 @@ describe("completeEphemeralWalletSignIn", () => {
         if (url.includes("/challenge")) {
           return Response.json({
             ok: true,
-            challenge: { challenge_id: "ch_stale", message: "sign in" },
+            challenge: {
+              challenge_id: "ch_stale",
+              message: "sign in",
+              expires_at: new Date(Date.now() + 300_000).toISOString(),
+              display: {
+                kind: "wallet_sign_in",
+                action_title: "Abraxas wallet sign-in",
+                summary: "Verify control of your wallet to sign in to Abraxas.",
+                funds_lines: ["No funds will move."],
+                requested_by: "localhost",
+                wallet_address: "11111111111111111111111111111111",
+                expires_at: new Date(Date.now() + 300_000).toISOString(),
+                challenge_id: "ch_stale",
+              },
+            },
           });
         }
         if (url.includes("/verify")) {

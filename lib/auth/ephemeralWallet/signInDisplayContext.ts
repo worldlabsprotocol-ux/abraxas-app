@@ -1,8 +1,9 @@
 // FILE: lib/auth/ephemeralWallet/signInDisplayContext.ts
 
-import { WALLET_MESSAGE_ONLY_FUNDS_LINES } from "./walletMessageSafetyCopy";
+import { WALLET_SIGN_IN_FUNDS_LINES } from "./walletMessageSafetyCopy";
 
 export type WalletSignInChallengeDisplay = {
+  kind: "wallet_sign_in";
   action_title: string;
   summary: string;
   funds_lines: readonly string[];
@@ -19,9 +20,10 @@ export function buildWalletSignInChallengeDisplay(input: {
   challengeId: string;
 }): WalletSignInChallengeDisplay {
   return {
+    kind: "wallet_sign_in",
     action_title: "Abraxas wallet sign-in",
-    summary: "Verify control of your wallet",
-    funds_lines: WALLET_MESSAGE_ONLY_FUNDS_LINES,
+    summary: "Verify control of your wallet to sign in to Abraxas.",
+    funds_lines: WALLET_SIGN_IN_FUNDS_LINES,
     requested_by: input.domain,
     wallet_address: input.walletAddress,
     expires_at: input.expiresAt,
