@@ -42,6 +42,8 @@ export interface PartnerAuthScopeOptions {
   requiredCredentialEnvironment?: PartnerCredentialEnvironment;
   requiredApplicationId?: string;
   requireProductionActive?: boolean;
+  /** When the route already resolved the application tenant, enforce credential alignment. */
+  knownApplicationPartnerId?: string;
 }
 
 export interface PartnerAuthFailure {
@@ -201,11 +203,10 @@ async function loadLaunchpadApplicationContext(
   if (!client) return null;
   const { data } = await client
     .from("partner_launchpad_applications")
-    .select("environment, status, production_activated_at")
+    .select("environment, status, production_activated_at, partner_id")
     .eq("id", applicationId)
-    .eq("partner_id", partnerId)
     .maybeSingle();
-  if (!data) return null;
+  if (!data || String(data.partner_id) !== partnerId) return null;
   return {
     environment: data.environment === "production" ? "production" : "sandbox",
     status: String(data.status ?? ""),
@@ -228,8 +229,15 @@ export async function authenticatePartnerScoped(
   let productionActivated = false;
 
   const appId = options.requiredApplicationId ?? auth.ctx.launchpadApplicationId;
+  const applicationPartnerId = options.knownApplicationPartnerId ?? auth.ctx.partnerId;
+  if (
+    options.knownApplicationPartnerId
+    && options.knownApplicationPartnerId !== auth.ctx.partnerId
+  ) {
+    return { ok: false, error: "Credential tenant mismatch", status: 403 };
+  }
   if (appId) {
-    const appCtx = await loadLaunchpadApplicationContext(appId, auth.ctx.partnerId);
+    const appCtx = await loadLaunchpadApplicationContext(appId, applicationPartnerId);
     if (!appCtx) {
       return { ok: false, error: "Application not found for credential", status: 403 };
     }

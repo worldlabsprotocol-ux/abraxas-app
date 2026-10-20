@@ -51,13 +51,20 @@ export async function POST(req: NextRequest) {
   const requiredEnvironment = bindingPreview.binding.environment;
   const auth = await authenticatePartnerScoped(req, "verify:requests", {
     requiredApplicationId: applicationIdHeader,
+    knownApplicationPartnerId: appForBinding.partner_id,
     requiredCredentialEnvironment: requiredEnvironment,
     requireProductionActive: requiredEnvironment === "production",
   });
   if (!auth.ok) {
     const exposeDetail = isLaunchpadStagingIdentityRouteAllowed();
     return NextResponse.json(
-      exposeDetail ? { error: "unauthorized", detail: auth.error } : { error: "unauthorized" },
+      exposeDetail
+        ? {
+            error: "unauthorized",
+            detail: auth.error,
+            application_partner_id: appForBinding.partner_id,
+          }
+        : { error: "unauthorized" },
       { status: auth.status },
     );
   }
