@@ -120,6 +120,94 @@
   flex-shrink: 0;
 }
 
+.walletConnectStack {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.55rem;
+  margin: 0 0 0.75rem;
+}
+
+.connectDisclaimer {
+  margin: 0 0 1rem;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.walletHeroBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.78rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, #f4f4f2 0%, #e8e8e4 100%);
+  color: #0a0a0a;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 650;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+}
+
+.walletHeroBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.42);
+}
+
+.walletHeroBtn:disabled {
+  opacity: 0.62;
+  cursor: wait;
+}
+
+.walletBtnIcon {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.walletSecondaryBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  align-self: center;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.walletSecondaryBtn:hover:not(:disabled) {
+  border-color: rgba(20, 241, 149, 0.35);
+  color: var(--text-primary);
+}
+
+.walletSecondaryBtn:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.walletSecondaryLink {
+  align-self: center;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .walletGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -261,8 +349,8 @@
     row-gap: 0.5rem;
   }
 
-  .walletGrid {
-    grid-template-columns: 1fr;
+  .walletHeroBtn {
+    padding: 0.72rem 1rem;
   }
 
   .actions {
@@ -285,6 +373,7 @@
 
   .stepDot,
   .walletCard,
+  .walletHeroBtn,
   .primaryBtn {
     transition: none !important;
   }

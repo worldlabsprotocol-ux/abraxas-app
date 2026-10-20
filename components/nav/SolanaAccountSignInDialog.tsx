@@ -35,8 +35,19 @@ import {
 import styles from "./SolanaAccountSignInDialog.module.css";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
+const CONNECT_WALLET_DISCLAIMER =
+  "You'll be asked to sign a message to verify wallet control. No transaction or spending permission is required.";
+
 function shortAddress(address: string): string {
   return `${address.slice(0, 4)}…${address.slice(-4)}`;
+}
+
+function walletAdapterIcon(
+  wallets: ReturnType<typeof useWallet>["wallets"],
+  walletId: PreferredSolanaWalletId,
+): string | undefined {
+  const icon = wallets.find((w) => w.adapter.name === walletId)?.adapter.icon;
+  return icon && icon.length > 0 ? icon : undefined;
 }
 
 export function SolanaAccountSignInDialog({
@@ -112,7 +123,7 @@ export function SolanaAccountSignInDialog({
     }
     const focusTarget =
       primaryRef.current
-      ?? panelRef.current?.querySelector<HTMLElement>('button[aria-label^="Connect"]');
+      ?? panelRef.current?.querySelector<HTMLElement>('button[aria-label^="Connect with"]');
     focusTarget?.focus();
   }, [open, resetDialog, walletConnected, abortPendingSignIn, setBusy]);
 
@@ -387,33 +398,11 @@ export function SolanaAccountSignInDialog({
           {title}
         </h2>
 
-        <p
-          id="sol-account-signin-desc"
-          style={{
-            margin: "0 0 0.65rem",
-            fontFamily: FONT,
-            fontSize: "0.86rem",
-            lineHeight: 1.55,
-            color: "var(--text-secondary)",
-            textAlign: "center",
-          }}
-        >
-          Your wallet proves you control this address. Abraxas asks for a message signature, not a
-          transaction.
-        </p>
-        <p
-          style={{
-            margin: "0 0 1rem",
-            fontFamily: FONT,
-            fontSize: "0.78rem",
-            lineHeight: 1.5,
-            color: "var(--text-muted)",
-            textAlign: "center",
-          }}
-        >
-          No funds move. No spending access is granted. Connect your wallet, then review and sign the
-          message.
-        </p>
+        {!showWalletGrid ? (
+          <p id="sol-account-signin-desc" className="sr-only">
+            Review and sign the message in your wallet to finish sign in.
+          </p>
+        ) : null}
 
         {statusMessage ? (
           <div
@@ -453,60 +442,96 @@ export function SolanaAccountSignInDialog({
         ) : null}
 
         {showWalletGrid ? (
-          <div className={styles.walletGrid} role="group" aria-label="Choose a Solana wallet">
-            {PREFERRED_SOLANA_WALLETS.map((walletId) => {
-              const isSelected = selectedWalletName === walletId;
-              const offer = offers[walletId];
-              const meta = walletOfferMeta(offer?.status ?? "discovering");
-              const installUrl = WALLET_INSTALL_URLS[walletId] ?? "#";
+          <>
+            <div className={styles.walletConnectStack} role="group" aria-label="Choose a Solana wallet">
+              {(() => {
+                const walletId: PreferredSolanaWalletId = "Phantom";
+                const isSelected = selectedWalletName === walletId;
+                const offer = offers[walletId];
+                const meta = walletOfferMeta(offer?.status ?? "discovering");
+                const installUrl = WALLET_INSTALL_URLS[walletId];
+                const icon = walletAdapterIcon(wallets, walletId);
+                const opening = connecting && isSelected;
+                const detecting = offer?.status === "discovering";
 
-              if (meta.showInstall) {
-                return (
-                  <div
-                    key={walletId}
-                    className={styles.walletCard}
-                    style={{ cursor: "default" }}
-                    role="group"
-                    aria-label={`${walletId} not installed`}
-                  >
-                    <strong style={{ fontSize: "0.88rem" }}>{walletId}</strong>
-                    <span className={styles.walletMeta}>{meta.detail}</span>
+                if (meta.showInstall) {
+                  return (
                     <a
-                      className={styles.linkBtn}
+                      className={styles.walletHeroBtn}
                       href={installUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      Install {walletId}
+                      {icon ? <img src={icon} alt="" className={styles.walletBtnIcon} aria-hidden /> : null}
+                      Install Phantom
                     </a>
-                  </div>
+                  );
+                }
+
+                return (
+                  <button
+                    ref={primaryRef}
+                    type="button"
+                    className={styles.walletHeroBtn}
+                    disabled={pending || connecting || detecting}
+                    aria-label={`Connect with ${walletId}`}
+                    onClick={() => void connectWallet(walletId)}
+                  >
+                    {icon ? <img src={icon} alt="" className={styles.walletBtnIcon} aria-hidden /> : null}
+                    {opening ? "Opening…" : detecting ? "Detecting…" : walletId}
+                  </button>
                 );
-              }
+              })()}
 
-              const connectLabel =
-                connecting && isSelected
-                  ? "Opening wallet…"
-                  : offer?.status === "discovering"
-                    ? meta.actionLabel
-                    : `Connect ${walletId}`;
+              {(() => {
+                const walletId: PreferredSolanaWalletId = "Solflare";
+                if (!PREFERRED_SOLANA_WALLETS.includes(walletId)) return null;
+                const offer = offers[walletId];
+                const meta = walletOfferMeta(offer?.status ?? "discovering");
+                const installUrl = WALLET_INSTALL_URLS[walletId];
+                const icon = walletAdapterIcon(wallets, walletId);
+                const isSelected = selectedWalletName === walletId;
+                const opening = connecting && isSelected;
+                const detecting = offer?.status === "discovering";
+                const adapterListed = wallets.some((w) => w.adapter.name === walletId);
+                const supported =
+                  meta.showInstall
+                  || offer?.status === "available"
+                  || offer?.status === "discovering"
+                  || adapterListed;
+                if (!supported) return null;
 
-              return (
-                <button
-                  key={walletId}
-                  type="button"
-                  className={`${styles.walletCard} ${isSelected ? styles.walletCardSelected : ""}`}
-                  disabled={pending || connecting || offer?.status === "discovering"}
-                  aria-pressed={isSelected}
-                  aria-label={`Connect ${walletId}`}
-                  onClick={() => void connectWallet(walletId)}
-                >
-                  <strong style={{ fontSize: "0.88rem" }}>{walletId}</strong>
-                  <span className={styles.walletMeta}>{meta.detail}</span>
-                  <span className={styles.walletMeta}>{connectLabel}</span>
-                </button>
-              );
-            })}
-          </div>
+                if (meta.showInstall) {
+                  return (
+                    <a
+                      className={styles.walletSecondaryLink}
+                      href={installUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Install Solflare
+                    </a>
+                  );
+                }
+
+                return (
+                  <button
+                    type="button"
+                    className={styles.walletSecondaryBtn}
+                    disabled={pending || connecting || detecting}
+                    aria-label={`Connect with ${walletId}`}
+                    onClick={() => void connectWallet(walletId)}
+                  >
+                    {icon ? <img src={icon} alt="" className={styles.walletBtnIcon} aria-hidden /> : null}
+                    {opening ? "Opening…" : detecting ? "Detecting…" : walletId}
+                  </button>
+                );
+              })()}
+            </div>
+            <p id="sol-account-signin-desc" className={styles.connectDisclaimer}>
+              {CONNECT_WALLET_DISCLAIMER}
+            </p>
+          </>
         ) : null}
 
         <div className={styles.actions}>
