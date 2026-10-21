@@ -69,10 +69,8 @@ import {
   resolveProvenanceSandboxCredentialJti,
 } from "@/lib/provenance/constants";
 import { buildProvenancePartnerVerificationResult } from "@/lib/partner/provenancePartnerResult";
-import {
-  isWalletControlPartnerPolicy,
-  resolveWalletControlCompletionCredentialRef,
-} from "@/lib/partner/walletControlPartnerPolicy";
+import { isWalletControlPartnerPolicy } from "@/lib/partner/walletControlPartnerPolicy";
+import { resolveWalletControlCompletionCredentialRef } from "@/lib/partner/walletControlCompletionCredential.server";
 
 const APP_URL = getPublicAppOrigin();
 const ISSUER = process.env.ABRAXAS_ISSUER_URL ?? APP_URL;
