@@ -6,6 +6,7 @@ import {
   holderCopyLeaks,
   holderSafeClientMessage,
   resolveHolderRecovery,
+  resolvePartnerSessionRequiredRecovery,
 } from "@/lib/partner/holderExperience";
 import { HOLDER_RECOVERY_STATES } from "@/lib/partner/holderExperience/contract";
 import { GOOGLE_ACCOUNT_NOT_ELIGIBILITY } from "@/lib/partner/launchpad/policyPacks";
@@ -38,6 +39,24 @@ describe("holder verification experience", () => {
     });
     expect(brief.environment_label).toMatch(/Sandbox/i);
     expect(brief.environment_detail.toLowerCase()).toContain("not production-usable");
+  });
+
+  it("uses wallet-native recovery for wallet_control instead of Google sign-in", () => {
+    const view = resolvePartnerSessionRequiredRecovery("Acme Sandbox", null, {
+      verifyRequestId: "vr_partnerresume01",
+      policyId: "ref-wc-postrev-5ffe-wallet_control-v1",
+    });
+    expect(view.title.toLowerCase()).toContain("connect wallet");
+    expect(view.next_label.toLowerCase()).toContain("connect wallet");
+    expect(view.explanation.toLowerCase()).toContain("no google");
+    expect(view.href ?? "").not.toContain("/passport");
+    expect(view.footnotes?.length).toBeGreaterThan(0);
+  });
+
+  it("does not describe missing auth as session expired", () => {
+    const view = resolveHolderRecovery("session_required", "Acme");
+    expect(view.explanation.toLowerCase()).not.toContain("session ended");
+    expect(view.explanation.toLowerCase()).not.toContain("expired");
   });
 
   it("binds restart and contact actions to stored partner home, never a query return URL", () => {

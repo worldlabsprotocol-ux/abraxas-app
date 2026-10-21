@@ -20,6 +20,7 @@ import {
 } from "./store";
 import { verifyPassportSolanaPersonalMessage } from "./verifySignature";
 import { randomBytes } from "crypto";
+import { persistSolanaWalletControlBinding } from "@/lib/walletAuthority/service";
 
 export async function issuePassportSolanaAuthChallenge(input: {
   origin: string;
@@ -132,6 +133,23 @@ export async function verifyPassportSolanaAuth(input: {
   const caip = caip10Solana(row.solana_network, wallet);
   const subject = await resolveSubjectForVerifiedWallet({ caip, authMethod: "solana_wallet" });
   if (!subject.ok) return { ok: false, code: subject.code };
+
+  try {
+    const verifiedDomain = new URL(row.origin).host;
+    await persistSolanaWalletControlBinding({
+      subjectId: subject.subjectId,
+      walletAddress: wallet,
+      solanaNetwork: row.solana_network,
+      verifiedDomain,
+      signature: input.signature,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "binding_failed";
+    if (message.includes("another Passport subject")) {
+      return { ok: false, code: "wallet_bound_to_other_subject" };
+    }
+    return { ok: false, code: "wallet_control_persist_failed" };
+  }
 
   return {
     ok: true,

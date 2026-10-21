@@ -9,6 +9,8 @@ import {
   isVerificationRequestUuid,
 } from "@/lib/partner/partnerFlowContinuationIdentifiers";
 import { findProductionPolicyRules } from "@/lib/policy/productionPolicyContract";
+import { inferPolicyPackFromPolicyId } from "@/lib/partner/launchpad/policyPacks";
+import { isWalletControlPartnerPolicy } from "@/lib/partner/walletControlPartnerPolicy";
 import { isProgressivePartnerHandoffReady } from "@/lib/progressiveProof/handoffReady";
 import { isContentOriginDisclosurePolicyId } from "@/lib/provenance/constants";
 
@@ -21,6 +23,8 @@ export type PartnerFlowHandoffFailureCategory =
 
 export interface PartnerFlowHandoffContext {
   suiAddress: string | null;
+  /** Chain-neutral holder subject when wallet-native session has no legacy Sui address. */
+  sessionSubject?: string | null;
   identityStatus: string;
   hasCredential: boolean;
   returnPath: string | null;
@@ -30,6 +34,8 @@ export interface PartnerFlowHandoffContext {
   verifyRequestRef: string | null;
   /** Progressive proof — wallet binding for policy evaluation. */
   walletBound?: boolean;
+  /** Server-verified method qualification for this continuation. */
+  methodQualified?: boolean;
   /** Content provenance disclosure submitted for artifact-bound evaluation. */
   provenanceEvidenceComplete?: boolean;
 }
@@ -61,13 +67,20 @@ export function isPartnerFlowContext(
 }
 
 export function isPartnerFlowHandoffReady(ctx: PartnerFlowHandoffContext): boolean {
-  if (!isPartnerFlowContext(ctx) || !ctx.suiAddress) return false;
+  const sessionSubject = ctx.sessionSubject ?? ctx.suiAddress;
+  if (!isPartnerFlowContext(ctx) || !sessionSubject) return false;
 
   if (ctx.policyId && isContentOriginDisclosurePolicyId(ctx.policyId)) {
     return ctx.provenanceEvidenceComplete === true;
   }
 
-  const policyRules = ctx.policyId ? findProductionPolicyRules(ctx.policyId) : null;
+  if (ctx.policyId && isWalletControlPartnerPolicy(ctx.policyId)) {
+    return ctx.methodQualified === true && (ctx.walletBound ?? true);
+  }
+
+  const policyRules = ctx.policyId
+    ? (findProductionPolicyRules(ctx.policyId) ?? inferPolicyPackFromPolicyId(ctx.policyId)?.rules ?? null)
+    : null;
 
   return isProgressivePartnerHandoffReady({
     signedIn: true,

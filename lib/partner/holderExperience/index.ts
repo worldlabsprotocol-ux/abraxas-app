@@ -8,9 +8,12 @@ export {
 export { buildHolderRequestBrief, type HolderRequestBrief } from "./brief";
 export { buildHolderOpeningPresentation, type HolderOpeningPresentation } from "./opening";
 export {
+  buildPartnerHolderSignInContinuePath,
   holderCopyLeaks,
   holderSafeClientMessage,
   resolveHolderRecovery,
+  resolvePartnerSessionRequiredRecovery,
+  resolvePartnerWalletControlRecovery,
   HOLDER_RETURN_FAILURE_TECHNICAL,
   type HolderRecoveryView,
 } from "./recovery";
@@ -18,6 +21,7 @@ export {
   buildHolderVerificationPresentation,
   humanizeCurrentValidity,
   humanizeHolderResult,
+  humanizeHolderRequestedOutcome,
   humanizeInvalidityReason,
   mapVerifyPhaseToChecking,
   primarySurfaceFreeOfJargon,

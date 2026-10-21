@@ -2,7 +2,7 @@
 // FILE: components/partner/PartnerContinueClient.tsx
 // Partner evidence step — not the general Passport dashboard.
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSuiAuth } from "@/components/sui/SuiAuthProvider";
 import { useHostedHolderBootstrap } from "@/lib/partner/useHostedHolderBootstrap";
@@ -57,7 +57,9 @@ import {
   buildHolderOpeningPresentation,
   buildHolderRequestBrief,
   holderSafeClientMessage,
+  buildPartnerHolderSignInContinuePath,
   resolveHolderRecovery,
+  resolvePartnerSessionRequiredRecovery,
   type HolderRecoveryState,
 } from "@/lib/partner/holderExperience";
 import { HolderOpeningBrief } from "@/components/partner/HolderOpeningBrief";
@@ -75,6 +77,9 @@ import { ProtocolLoadingState } from "@/components/protocol/ProtocolLoadingState
 import { HolderDecisionComplete } from "@/components/protocol/HolderDecisionComplete";
 import { ProvenanceContinueFlow } from "@/components/partner/ProvenanceContinueFlow";
 import { isContentOriginDisclosurePolicyId } from "@/lib/provenance/constants";
+import { probeBrowserSessionDetails } from "@/lib/auth/ensureBrowserSession";
+import { isWalletControlPartnerPolicy } from "@/lib/partner/walletControlPartnerPolicy";
+import { PartnerWalletControlContinueFlow } from "@/components/partner/PartnerWalletControlContinueFlow";
 
 function resolveMinimumAge(policyId: string): number | null {
   if (policyId === GOOD_TROUBLE_RETAIL_POLICY_ID) return 21;
@@ -110,6 +115,8 @@ function PartnerContinueInner() {
   const [methodSelected, setMethodSelected] = useState(false);
   const [methodQualified, setMethodQualified] = useState(false);
   const [provenanceEvidenceComplete, setProvenanceEvidenceComplete] = useState(false);
+  const [walletBrowserSession, setWalletBrowserSession] = useState(false);
+  const [holderSubjectId, setHolderSubjectId] = useState<string | null>(null);
 
   const verifyRequestId = searchParams.get("verify_request");
   const urlPartnerId = searchParams.get("partner_id") ?? "";
@@ -313,6 +320,24 @@ function PartnerContinueInner() {
     policyId,
     purpose: purposeParam,
   });
+  const walletControlPolicy = isWalletControlPartnerPolicy(policyId);
+  const holderBrowserAuthenticated = Boolean(suiAddress || walletBrowserSession);
+  const sessionSubjectForHandoff = suiAddress ?? holderSubjectId;
+
+  const syncWalletBrowserSession = useCallback(() => {
+    void probeBrowserSessionDetails().then((probe) => {
+      if (probe.ok && (probe.holderSubjectId || probe.authMethod === "evm_wallet" || probe.authMethod === "solana_wallet" || probe.authMethod === "wallet")) {
+        setWalletBrowserSession(true);
+        setHolderSubjectId(probe.holderSubjectId ?? probe.suiAddress ?? null);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    syncWalletBrowserSession();
+    window.addEventListener("abraxas:holder-session", syncWalletBrowserSession);
+    return () => window.removeEventListener("abraxas:holder-session", syncWalletBrowserSession);
+  }, [syncWalletBrowserSession]);
 
   const {
     identityStatus,
@@ -322,7 +347,7 @@ function PartnerContinueInner() {
     veriffConfigured,
     idvProvider,
     walletBindingL3,
-  } = usePassportVerification(suiAddress, email || null);
+  } = usePassportVerification(sessionSubjectForHandoff, email || null);
 
   const walletDone = Boolean(suiAddress);
   const hasCredential = Boolean(credential) && identityStatus === "earned";
@@ -340,14 +365,16 @@ function PartnerContinueInner() {
   });
 
   const handoff = usePartnerFlowHandoff({
-    suiAddress,
+    suiAddress: sessionSubjectForHandoff,
+    sessionSubject: sessionSubjectForHandoff,
     identityStatus,
     hasCredential,
     returnPath: decodedReturnUrl,
     partnerId,
     policyId,
     verifyRequestRef: verifyRequestId,
-    walletBound: setup.walletBound,
+    walletBound: walletControlPolicy ? (setup.walletBound || methodQualified) : setup.walletBound,
+    methodQualified: walletControlPolicy ? methodQualified : undefined,
     provenanceEvidenceComplete,
   });
 
@@ -645,7 +672,7 @@ function PartnerContinueInner() {
           kind="preparing_request"
           detail={hostedBootstrapEligible ? `${partnerName} verification` : partnerName}
         />
-      ) : !suiAddress ? (
+      ) : !holderBrowserAuthenticated ? (
         hostedBootstrapEligible ? (
           <div>
             <p role="status" style={{ fontSize: "0.86rem", lineHeight: 1.6, margin: "0 0 0.75rem" }}>
@@ -674,17 +701,58 @@ function PartnerContinueInner() {
               </button>
             </p>
           </div>
+        ) : walletControlPolicy && verifyRequestId ? (
+          <PartnerWalletControlContinueFlow
+            partnerId={partnerId}
+            partnerName={partnerName}
+            policyId={policyId}
+            verifyRequestId={verifyRequestId}
+            returnUrl={decodedReturnUrl ?? ""}
+            returnLabel={returnLabel}
+            handoff={handoff}
+            onSessionEstablished={() => {
+              syncWalletBrowserSession();
+              refreshSession();
+            }}
+          />
         ) : (
-          <HolderRecoveryCard recovery={resolveHolderRecovery("session_required", partnerName, partnerHomeUrl)} />
+          <HolderRecoveryCard
+            recovery={resolvePartnerSessionRequiredRecovery(partnerName, partnerHomeUrl, {
+              verifyRequestId,
+              policyId,
+            })}
+            onPrimary={
+              verifyRequestId
+                ? () => {
+                    const continuePath = buildPartnerHolderSignInContinuePath(verifyRequestId);
+                    if (continuePath) void signInWithGoogle?.({ continuePath });
+                  }
+                : undefined
+            }
+          />
         )
+      ) : walletControlPolicy && verifyRequestId ? (
+        <PartnerWalletControlContinueFlow
+          partnerId={partnerId}
+          partnerName={partnerName}
+          policyId={policyId}
+          verifyRequestId={verifyRequestId}
+          returnUrl={decodedReturnUrl ?? ""}
+          returnLabel={returnLabel}
+          handoff={handoff}
+          onSessionEstablished={() => {
+            syncWalletBrowserSession();
+            refreshSession();
+          }}
+        />
       ) : simplifiedPurchase && verifyRequestId ? (
         <GoodTroublePurchaseContinueFlow
           partnerId={partnerId}
           policyId={policyId}
           partnerName={partnerName}
           verifyRequestId={verifyRequestId}
-          returnUrl={decodedReturnUrl}
-          suiAddress={suiAddress}
+          returnUrl={decodedReturnUrl ?? ""}
+          suiAddress={sessionSubjectForHandoff ?? ""}
           email={email}
           identityStatus={identityStatus}
           identityComplete={setup.identityComplete}

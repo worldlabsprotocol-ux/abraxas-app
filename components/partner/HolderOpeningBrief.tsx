@@ -27,7 +27,7 @@ export function HolderOpeningBrief({ opening }: { opening: HolderOpeningPresenta
         shared={opening.shared}
         withheld={opening.withheld}
         requestedTitle="Abraxas will confirm"
-        sharedTitle="Shared with this application"
+        sharedTitle="Requested outcome (if you approve)"
         withheldTitle="Not shared with this application"
         footer={
           <>

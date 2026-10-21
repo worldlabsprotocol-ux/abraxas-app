@@ -31,6 +31,8 @@ import { reclaimRouteForPolicy } from "@/lib/reclaimAttestation/policyFit";
 import { resolveHolderIdentityEvidenceComplete } from "@/lib/partner/resolveHolderIdentityEvidenceComplete";
 import { isCanonicalGoodTroublePurchaseFlow } from "@/lib/partner/goodTroublePurchaseFlow";
 import { getPolicy } from "@/lib/verification/requestsService";
+import { resolveActiveClaimsForRuntime } from "@/lib/credentials/activeClaims.server";
+import { WALLET_CONTROL_CLAIM_TYPE } from "@/lib/walletControl/contract";
 import {
   expectedSelfAttestationPurpose,
   isAgeEligibilityOnlyPolicy,
@@ -227,6 +229,12 @@ export async function POST(request: NextRequest) {
     ? await resolveHolderIdentityEvidenceComplete(session.session.subjectId)
     : undefined;
 
+  let walletControlClaimActive = false;
+  if (methodId === "wallet_control") {
+    const claims = await resolveActiveClaimsForRuntime(session.session.subjectId);
+    walletControlClaimActive = claims.some((claim) => claim.claim_type === WALLET_CONTROL_CLAIM_TYPE);
+  }
+
   const evaluated = evaluateMethodQualification({
     methodId,
     verifyRequestId: verifyRequest,
@@ -240,6 +248,7 @@ export async function POST(request: NextRequest) {
     reclaimRequired,
     reclaimSessionAccepted,
     identityEvidenceComplete,
+    walletControlClaimActive,
     policyRules,
     selfAttestationActive,
   });

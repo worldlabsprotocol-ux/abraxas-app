@@ -2,8 +2,8 @@
 // Canonical wallet binding readiness for Passport and repair flows.
 
 import { NextRequest, NextResponse } from "next/server";
-import { normalizeSuiAddress } from "@mysten/sui/utils";
 import { requireBrowserSession } from "@/lib/auth/browserSession";
+import { normalizePartnerFlowSubject } from "@/lib/auth/sessionSubject";
 import { readCanonicalWalletBindingTruth } from "@/lib/trust/readCanonicalWalletBinding";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: session.error }, { status: session.status });
   }
 
-  const subject = normalizeSuiAddress(session.session.subjectId);
+  const subject = normalizePartnerFlowSubject(session.session.subjectId);
   const truth = await readCanonicalWalletBindingTruth(subject);
 
   if (truth.status === "unavailable") {

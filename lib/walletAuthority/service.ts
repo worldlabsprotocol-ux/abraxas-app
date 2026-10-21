@@ -2,6 +2,7 @@
 // Wallet authority — bind, verify, list, revoke; preserves Sui/zkLogin paths.
 
 import { normalizeSuiAddress } from "@mysten/sui/utils";
+import { normalizeClaimSubjectId } from "@/lib/credentials/claimSubjectId";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { appendAuditEvent } from "@/lib/verification/audit";
@@ -19,6 +20,7 @@ import {
   normalizeEvmAddress,
   verifyEvmBindingSignature,
 } from "@/lib/walletAuthority/evmSiwe";
+import { normalizeSolanaAddress } from "@/lib/walletAuthority/solanaAddress";
 import type { WalletBindingRecord, WalletBindingStatus, WalletChain } from "@/lib/walletAuthority/types";
 import { getSdkDefaultBaseUrl } from "@/lib/app/publicAppOrigin";
 import { SITE_URL } from "@/lib/siteUrl";
@@ -64,16 +66,20 @@ export async function consumeWalletBindingChallenge(
   return (data as Record<string, unknown> | null) ?? null;
 }
 
+function normalizeWalletAddressForChain(chain: WalletChain, walletAddress: string): string {
+  if (chain === "evm") return normalizeEvmAddress(walletAddress);
+  if (chain === "solana") return normalizeSolanaAddress(walletAddress);
+  return normalizeSuiAddress(walletAddress);
+}
+
 async function assertWalletNotActiveOnOtherSubject(
   sb: SupabaseClient,
   chain: WalletChain,
   walletAddress: string,
   subjectId: string,
 ): Promise<void> {
-  const wallet = chain === "evm"
-    ? normalizeEvmAddress(walletAddress)
-    : normalizeSuiAddress(walletAddress);
-  const subject = normalizeSuiAddress(subjectId);
+  const wallet = normalizeWalletAddressForChain(chain, walletAddress);
+  const subject = normalizeClaimSubjectId(subjectId);
 
   const { data: existing } = await sb
     .from("wallet_bindings")
@@ -97,7 +103,7 @@ export async function listHolderWalletViews(subjectId: string): Promise<HolderWa
 
 export async function listSubjectWallets(subjectId: string): Promise<WalletBindingRecord[]> {
   const sb = requireSupabaseAdmin();
-  const subject = normalizeSuiAddress(subjectId);
+  const subject = normalizeClaimSubjectId(subjectId);
   const { data } = await sb
     .from("wallet_bindings")
     .select("*")
@@ -111,14 +117,12 @@ export async function getActiveWalletBinding(
   walletAddress: string,
   chain: WalletChain,
 ): Promise<WalletBindingRecord | null> {
-  const address = chain === "evm"
-    ? normalizeEvmAddress(walletAddress)
-    : normalizeSuiAddress(walletAddress);
+  const address = normalizeWalletAddressForChain(chain, walletAddress);
   const sb = requireSupabaseAdmin();
   const { data } = await sb
     .from("wallet_bindings")
     .select("*")
-    .eq("subject_id", normalizeSuiAddress(subjectId))
+    .eq("subject_id", normalizeClaimSubjectId(subjectId))
     .eq("wallet_address", address)
     .eq("chain", chain)
     .maybeSingle();
@@ -250,6 +254,70 @@ export async function confirmEvmBinding(input: {
   return mapBinding(binding as Record<string, unknown>);
 }
 
+/** Persist Solana wallet binding + wallet_control claim after verified passport Solana auth. */
+export async function persistSolanaWalletControlBinding(input: {
+  subjectId: string;
+  walletAddress: string;
+  solanaNetwork: string;
+  verifiedDomain: string;
+  signature: string;
+}): Promise<WalletBindingRecord> {
+  const sb = requireSupabaseAdmin();
+  const subject = normalizeClaimSubjectId(input.subjectId);
+  const wallet = normalizeSolanaAddress(input.walletAddress);
+  const network = input.solanaNetwork.trim();
+
+  await assertWalletNotActiveOnOtherSubject(sb, "solana", wallet, subject);
+
+  const now = new Date().toISOString();
+  const proofSnippet = input.signature.trim().slice(0, 128);
+
+  const { data: binding, error } = await sb.from("wallet_bindings").upsert({
+    subject_id: subject,
+    chain: "solana",
+    chain_id: null,
+    wallet_address: wallet,
+    binding_method: "passport_solana_sign",
+    binding_status: "active",
+    verified_domain: input.verifiedDomain,
+    proof_signature: proofSnippet,
+    verified_at: now,
+    revoked_at: null,
+    risk_status: "low",
+  }, { onConflict: "subject_id,wallet_address" }).select("*").single();
+
+  if (error || !binding) {
+    if (error?.message?.includes("idx_wallet_bindings_active_wallet_unique")) {
+      throw new Error("Wallet already bound to another Passport subject");
+    }
+    throw new Error(error?.message ?? "Failed to save Solana binding");
+  }
+
+  const bindingId = binding.id as string;
+  await upsertWalletControlClaim(buildWalletControlClaim({
+    subjectId: subject,
+    walletBindingId: bindingId,
+    walletAddress: wallet,
+    chain: "solana",
+    chainId: null,
+    network: `solana:${network}`,
+    controlMethod: "passport_solana_sign",
+    assuranceLevel: "L3",
+    verifiedAt: now,
+  }));
+
+  await appendAuditEvent({
+    actor_type: "subject",
+    actor_id: subject,
+    action: "wallet.bound",
+    object_type: "wallet_binding",
+    object_id: bindingId,
+    metadata: { chain: "solana", binding_id: bindingId, solana_network: network },
+  });
+
+  return mapBinding(binding as Record<string, unknown>);
+}
+
 export async function revokeWalletBinding(input: {
   subjectId: string;
   bindingId: string;
@@ -300,8 +368,10 @@ export function isWalletAuthorizedForRequest(
 ): boolean {
   if (!binding) return false;
   if (binding.binding_status !== "active") return false;
-  const addr = chain === "evm"
-    ? normalizeEvmAddress(walletAddress)
-    : normalizeSuiAddress(walletAddress);
-  return binding.wallet_address.toLowerCase() === addr.toLowerCase() && binding.chain === chain;
+  const addr = normalizeWalletAddressForChain(chain, walletAddress);
+  const stored = binding.chain === "evm"
+    ? binding.wallet_address.toLowerCase()
+    : binding.wallet_address;
+  const expected = chain === "evm" ? addr.toLowerCase() : addr;
+  return stored === expected && binding.chain === chain;
 }

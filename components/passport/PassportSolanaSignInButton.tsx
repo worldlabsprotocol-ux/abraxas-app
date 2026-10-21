@@ -11,9 +11,11 @@ const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 export function PassportSolanaSignInButton({
   intendedAction = HOLDER_AUTH_ACTIONS.passportSignIn,
   onSuccess,
+  label,
 }: {
   intendedAction?: typeof HOLDER_AUTH_ACTIONS.passportSignIn | typeof HOLDER_AUTH_ACTIONS.partnerVerify;
   onSuccess?: () => void;
+  label?: string;
 }) {
   const { publicKey, signMessage, connected } = useWallet();
   const [busy, setBusy] = useState(false);
@@ -94,7 +96,7 @@ export function PassportSolanaSignInButton({
           width: "100%",
         }}
       >
-        {busy ? "Authenticating…" : "Sign in with Solana wallet"}
+        {busy ? "Authenticating…" : (label ?? "Sign in with Solana wallet")}
       </button>
       {error ? <p style={{ color: "#E0524F", fontSize: "0.72rem" }}>{error}</p> : null}
     </div>

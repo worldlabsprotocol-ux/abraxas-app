@@ -84,6 +84,20 @@ describe("completePartnerVerifyOAuthCallback", () => {
     expect(mockClearLogin).toHaveBeenCalled();
   });
 
+  it("returns partner continue path from OAuth state when activate is unavailable", async () => {
+    mockResolveVerified.mockResolvedValue({
+      mode: "canonical",
+      continue_path: "/partner/continue?verify_request=vr_oauthresume01",
+    });
+    global.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      ok: false,
+      code: "missing",
+    }), { status: 404 })) as typeof fetch;
+
+    const result = await completePartnerVerifyOAuthCallback("#id_token=test");
+    expect(result.redirectPath).toBe("/partner/continue?verify_request=vr_oauthresume01");
+  });
+
   it("returns allowlisted holder continue path when partner resume is unavailable", async () => {
     mockResolveVerified.mockResolvedValue({
       mode: "canonical",

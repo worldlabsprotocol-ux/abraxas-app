@@ -79,6 +79,20 @@ export function humanizeHolderResult(resultFamily: string): string {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+/** Pre-approval copy — never implies verification already succeeded. */
+export function humanizeHolderRequestedOutcome(resultFamily: string): string {
+  const key = resultFamily.trim();
+  if (key === WALLET_CONTROL_RESULT_FAMILY) {
+    return "Wallet control confirmation (only if you approve)";
+  }
+  if (key === "age_eligible_21" || key === "age_eligible_18") {
+    return "Age requirement met (only if approved)";
+  }
+  const achieved = humanizeHolderResult(key);
+  if (!key) return "Eligibility result (only if approved)";
+  return `${achieved} (only if approved)`;
+}
+
 export function humanizeCurrentValidity(currentlyValid: boolean | undefined): string {
   if (currentlyValid === true) return CURRENT_VALIDITY_LABELS.current;
   if (currentlyValid === false) return CURRENT_VALIDITY_LABELS.invalid;
@@ -159,11 +173,16 @@ export function buildHolderVerificationPresentation(input: {
   brief: HolderRequestBrief;
   purpose?: string | null;
   applicationOrigin?: string | null;
+  /** pending = before cryptographic approval; achieved = after verified result exists */
+  outcomePhase?: "pending" | "achieved";
 }): HolderVerificationPresentation {
   const pack = inferPolicyPackFromPolicyId(input.policyId);
   const presentation = buildPolicyPresentationFromPolicyId(input.policyId);
   const resultFamily = pack?.disclosed_result ?? input.brief.shared_result_category.replace(/^Policy result:\s*/i, "");
-  const theyReceive = humanizeHolderResult(resultFamily);
+  const outcomePhase = input.outcomePhase ?? "pending";
+  const theyReceive = outcomePhase === "achieved"
+    ? humanizeHolderResult(resultFamily)
+    : humanizeHolderRequestedOutcome(resultFamily);
   const sandbox = input.brief.environment_label.toLowerCase().includes("sandbox")
     || Boolean(pack && policyPackIsSandboxOnly(pack));
 

@@ -1,6 +1,8 @@
 // FILE: lib/auth/holderContinuePath.ts
 // Same-origin holder return paths allowed across zkLogin OAuth (strict allowlist).
 
+import { isRestorablePartnerContinuePath } from "@/lib/partner/partnerFlowContinuation";
+
 const EXACT_PATHS = new Set([
   "/cielo/verified-rate",
   "/flagship",
@@ -13,6 +15,8 @@ const PREFIX_PATHS = [
   "/passport/",
 ];
 
+const PASSPORT_VERIFY_REQUEST_ONLY = /^\/passport\?verify_request=[^&#]+$/;
+
 export function normalizeHolderContinuePath(input: string | null | undefined): string | null {
   if (typeof input !== "string") return null;
   const trimmed = input.trim();
@@ -21,7 +25,18 @@ export function normalizeHolderContinuePath(input: string | null | undefined): s
   if (trimmed.includes("..") || trimmed.includes("#")) return null;
   if (!trimmed.startsWith("/")) return null;
 
+  if (isRestorablePartnerContinuePath(trimmed)) return trimmed;
+
   const pathOnly = trimmed.split("?")[0] ?? trimmed;
+  if (pathOnly === "/passport" && trimmed.includes("?")) {
+    if (!PASSPORT_VERIFY_REQUEST_ONLY.test(trimmed)) return null;
+    const params = new URLSearchParams(trimmed.slice(trimmed.indexOf("?") + 1));
+    const verifyRequest = params.get("verify_request")?.trim() ?? "";
+    const partnerContinue = `/partner/continue?verify_request=${encodeURIComponent(verifyRequest)}`;
+    if (isRestorablePartnerContinuePath(partnerContinue)) return partnerContinue;
+    return null;
+  }
+
   if (EXACT_PATHS.has(pathOnly)) return pathOnly;
 
   for (const prefix of PREFIX_PATHS) {
