@@ -26,6 +26,7 @@ import {
 import { verifyPassportSolanaPersonalMessage } from "./verifySignature";
 import { randomBytes } from "crypto";
 import { persistSolanaWalletControlBinding } from "@/lib/walletAuthority/service";
+import { mapWalletControlPersistFailure } from "./walletControlPersistErrors";
 
 export async function issuePassportSolanaAuthChallenge(input: {
   origin: string;
@@ -151,11 +152,15 @@ export async function verifyPassportSolanaAuth(input: {
         signature: input.signature,
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "binding_failed";
-      if (message.includes("another Passport subject")) {
-        return { ok: false, code: "wallet_bound_to_other_subject" };
+      const code = mapWalletControlPersistFailure(error);
+      if (process.env.NODE_ENV !== "test") {
+        const detail = error instanceof Error ? error.message : "unknown";
+        console.warn("[passport-solana] wallet_control persist failed", {
+          code,
+          detail: detail.slice(0, 240),
+        });
       }
-      return { ok: false, code: "wallet_control_persist_failed" };
+      return { ok: false, code };
     }
   }
 

@@ -22,6 +22,14 @@ export function describeWalletVerifyRecoveryCode(
       return "This verification must be completed on the same site that opened the request.";
     case "connect_succeeded_without_public_key":
       return "Phantom connected, but Abraxas did not receive your wallet address in time. Try signing again without refreshing.";
+    case "wallet_control_persist_failed":
+    case "wallet_control_claim_persist_failed":
+    case "wallet_control_binding_persist_failed":
+      return "Your wallet signature was received, but Abraxas could not complete verification storage. Try signing again.";
+    case "wallet_control_claim_store_unavailable":
+      return "Wallet verification is temporarily unavailable on this environment. Try again shortly or contact support if this continues.";
+    case "wallet_bound_to_other_subject":
+      return "This wallet is already linked to a different Abraxas account. Use that account or a different wallet for this request.";
     case "invalid_signature":
     case "verify_failed":
       return "Abraxas could not verify your wallet signature. Try signing again with a fresh approval.";
@@ -42,7 +50,7 @@ export function describeWalletVerifyRecoveryCode(
         return "Wallet signature was not completed. Approve the message in Phantom or try signing again.";
       }
       if (phase === "verify") {
-        return describeHolderAuthErrorCode(code);
+        return describeWalletVerifyRecoveryCode(code, phase);
       }
       if (phase === "connect") {
         return "Could not connect your wallet. Confirm the extension is unlocked, then try again.";
