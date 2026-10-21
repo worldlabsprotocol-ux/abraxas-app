@@ -6,7 +6,12 @@ import {
   isAllowedPassportWalletOrigin,
   originsMatch,
 } from "@/lib/auth/passportWalletAuth/origin";
-import { HOLDER_AUTH_CHALLENGE_TTL_MS, HOLDER_AUTH_CONTEXT_COOKIE, type HolderAuthIntendedAction } from "@/lib/auth/holderSubject/contract";
+import {
+  HOLDER_AUTH_ACTIONS,
+  HOLDER_AUTH_CHALLENGE_TTL_MS,
+  HOLDER_AUTH_CONTEXT_COOKIE,
+  type HolderAuthIntendedAction,
+} from "@/lib/auth/holderSubject/contract";
 import { caip10Solana } from "@/lib/auth/holderSubject/caip";
 import { resolveSubjectForVerifiedWallet } from "@/lib/auth/holderSubject/service";
 import { buildPassportSolanaAuthMessage } from "./message";
@@ -134,21 +139,24 @@ export async function verifyPassportSolanaAuth(input: {
   const subject = await resolveSubjectForVerifiedWallet({ caip, authMethod: "solana_wallet" });
   if (!subject.ok) return { ok: false, code: subject.code };
 
-  try {
-    const verifiedDomain = new URL(row.origin).host;
-    await persistSolanaWalletControlBinding({
-      subjectId: subject.subjectId,
-      walletAddress: wallet,
-      solanaNetwork: row.solana_network,
-      verifiedDomain,
-      signature: input.signature,
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "binding_failed";
-    if (message.includes("another Passport subject")) {
-      return { ok: false, code: "wallet_bound_to_other_subject" };
+  // Wallet-control claims are holder evidence for partner policies — not a side effect of generic sign-in.
+  if (input.expectedIntendedAction === HOLDER_AUTH_ACTIONS.partnerVerify) {
+    try {
+      const verifiedDomain = new URL(row.origin).host;
+      await persistSolanaWalletControlBinding({
+        subjectId: subject.subjectId,
+        walletAddress: wallet,
+        solanaNetwork: row.solana_network,
+        verifiedDomain,
+        signature: input.signature,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "binding_failed";
+      if (message.includes("another Passport subject")) {
+        return { ok: false, code: "wallet_bound_to_other_subject" };
+      }
+      return { ok: false, code: "wallet_control_persist_failed" };
     }
-    return { ok: false, code: "wallet_control_persist_failed" };
   }
 
   return {
