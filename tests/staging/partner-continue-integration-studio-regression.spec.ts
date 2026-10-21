@@ -36,18 +36,11 @@ test.describe("Partner continue and Integration Studio regression", () => {
 
     await page.context().clearCookies();
     await page.goto(`${base}/partner/continue?verify_request=${encodeURIComponent(verifyRequest)}`, {
-      waitUntil: "domcontentloaded",
+      waitUntil: "networkidle",
     });
 
     const signIn = page.getByRole("button", { name: /Sign in again/i }).first();
-    const hasSignIn = await signIn.isVisible().catch(() => false);
-
-    if (!hasSignIn) {
-      test.skip(true, "BLOCKED: session already present or request unavailable in this environment");
-      return;
-    }
-
-    await expect(signIn).toBeVisible();
+    await expect(signIn).toBeVisible({ timeout: 20000 });
     expect(page.url()).toContain(encodeURIComponent(verifyRequest));
 
     expect(page.url()).toContain("partner/continue");
