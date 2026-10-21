@@ -69,6 +69,10 @@ import {
   resolveProvenanceSandboxCredentialJti,
 } from "@/lib/provenance/constants";
 import { buildProvenancePartnerVerificationResult } from "@/lib/partner/provenancePartnerResult";
+import {
+  isWalletControlPartnerPolicy,
+  resolveWalletControlCompletionCredentialRef,
+} from "@/lib/partner/walletControlPartnerPolicy";
 
 const APP_URL = getPublicAppOrigin();
 const ISSUER = process.env.ABRAXAS_ISSUER_URL ?? APP_URL;
@@ -953,11 +957,15 @@ export async function completePartnerFlowAfterApproval(input: {
 
   const credential = await getHolderCredentialStatus(input.suiAddress);
   const provenanceFlow = isContentOriginDisclosurePolicyId(input.policyId);
-  const credentialJti = credential.status === "active" && credential.credential_jti
+  const walletControlFlow = isWalletControlPartnerPolicy(input.policyId);
+  let credentialJti = credential.status === "active" && credential.credential_jti
     ? credential.credential_jti
     : provenanceFlow
       ? resolveProvenanceSandboxCredentialJti(input.suiAddress)
       : null;
+  if (!credentialJti && walletControlFlow) {
+    credentialJti = await resolveWalletControlCompletionCredentialRef(input.suiAddress);
+  }
   if (!credentialJti) {
     return { ok: false, error: "Credential not yet active" };
   }
