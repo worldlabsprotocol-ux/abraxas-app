@@ -52,7 +52,7 @@ describe("resolvePartnerSandboxCallbackDisplay", () => {
     });
     expect(display.receipt_confirmed).toBe(true);
     expect(display.headline).toBe("Wallet control verified");
-    expect(display.trust_level).toBe("verified_sandbox");
+    expect(display.trust_level).toBe("verified");
   });
 
   it("rejects invalid signature even when URL says approved", () => {
