@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { WalletVerifyControlPanel } from "@/components/wallet/WalletVerifyControlPanel";
-import { ConsentCeremony } from "@/components/passport/ConsentCeremony";
+import { WalletControlPartnerConsent } from "@/components/partner/WalletControlPartnerConsent";
 import { PartnerFlowReturnHandler } from "@/components/partner/PartnerFlowReturnHandler";
 import {
   ensureBrowserSessionReadyForWalletAuth,
@@ -30,6 +30,7 @@ export function PartnerWalletControlContinueFlow({
   returnLabel,
   handoff,
   onSessionEstablished,
+  onMethodQualifiedChange,
 }: {
   partnerId: string;
   partnerName: string;
@@ -39,6 +40,7 @@ export function PartnerWalletControlContinueFlow({
   returnLabel: string;
   handoff: PartnerFlowHandoffController;
   onSessionEstablished: () => void;
+  onMethodQualifiedChange?: (qualified: boolean) => void;
 }) {
   const [methodQualified, setMethodQualified] = useState(false);
   const [qualifyBusy, setQualifyBusy] = useState(false);
@@ -55,12 +57,13 @@ export function PartnerWalletControlContinueFlow({
       const data = await res.json() as { method_qualified?: boolean };
       const qualified = res.ok && data.method_qualified === true;
       setMethodQualified(qualified);
+      onMethodQualifiedChange?.(qualified);
       return qualified;
     } catch {
       setMethodQualified(false);
       return false;
     }
-  }, [verifyRequestId]);
+  }, [verifyRequestId, onMethodQualifiedChange]);
 
   useEffect(() => {
     void refreshMethodQualification();
@@ -94,6 +97,7 @@ export function PartnerWalletControlContinueFlow({
       onSessionEstablished();
       if (await postWalletControlQualification()) {
         setMethodQualified(true);
+        onMethodQualifiedChange?.(true);
         return;
       }
       if (await refreshMethodQualification()) return;
@@ -105,7 +109,7 @@ export function PartnerWalletControlContinueFlow({
     }
   }
 
-  const showConsent = methodQualified && !consentDismissed && !handoff.ready;
+  const showConsent = methodQualified && !consentDismissed && handoff.phase !== "completed";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
@@ -126,22 +130,22 @@ export function PartnerWalletControlContinueFlow({
           ) : null}
         </div>
       ) : (
-        <p role="status" style={{ margin: 0, fontSize: "0.86rem", lineHeight: 1.6 }}>
-          Wallet control confirmed. Review partner authorization below.
+        <p role="status" style={{ margin: 0, fontSize: "0.86rem", lineHeight: 1.6, fontWeight: 600 }}>
+          Wallet verified. Review what this application is requesting before sharing the result.
         </p>
       )}
 
-      {showConsent && (
-        <ConsentCeremony
-          requestId={verifyRequestId}
-          identityComplete
-          onDismiss={() => setConsentDismissed(true)}
+      {showConsent ? (
+        <WalletControlPartnerConsent
+          partnerName={partnerName}
+          handoff={handoff}
+          onDeclined={() => setConsentDismissed(true)}
         />
-      )}
+      ) : null}
 
-      {methodQualified && consentDismissed && !handoff.ready && (
-        <p role="status" style={{ fontSize: "0.86rem" }}>Preparing partner result…</p>
-      )}
+      {methodQualified && consentDismissed && handoff.phase === "idle" && handoff.ready ? (
+        <p role="status" style={{ fontSize: "0.86rem" }}>Authorization declined. You can approve above when ready.</p>
+      ) : null}
 
       {handoff.phase === "completed" && handoff.receiptId && returnUrl ? (
         <HolderDecisionComplete
@@ -158,9 +162,11 @@ export function PartnerWalletControlContinueFlow({
         <HolderRecoveryCard recovery={resolveHolderRecovery("invalid_binding", partnerName, null)} />
       ) : null}
 
-      <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.55 }}>
-        Wallet approval is message-only — no token transfer or spending permission. Sign-in to Abraxas Passport with Google remains optional for other policies.
-      </p>
+      {!methodQualified ? (
+        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.55 }}>
+          This request uses a message signature. It does not authorize a transaction, transfer funds, or grant spending permission.
+        </p>
+      ) : null}
     </div>
   );
 }

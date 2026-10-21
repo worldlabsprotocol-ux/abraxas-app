@@ -30,21 +30,31 @@ export function buildHolderOpeningPresentation(input: {
   const pack = inferPolicyPackFromPolicyId(input.policyId);
   const walletControl = pack?.disclosed_result === WALLET_CONTROL_RESULT_FAMILY;
 
-  const footerNotes = [
-    input.brief.google_account_only,
-    walletControl
-      ? "Wallet approval is a message-only signature. It does not move funds or grant token spending."
-      : null,
-    input.brief.method_explanation,
-    input.brief.identity_not_default,
-  ].filter(Boolean) as string[];
+  const footerNotes = walletControl
+    ? [
+      "This request uses a message signature. It does not authorize a transaction, transfer funds, or grant spending permission.",
+    ]
+    : [
+      input.brief.google_account_only,
+      input.brief.method_explanation,
+      input.brief.identity_not_default,
+    ].filter(Boolean) as string[];
 
   return {
-    headline: presentation.requestHeadline,
-    requestReason: input.brief.purpose || presentation.requestReason,
+    headline: walletControl
+      ? "Verify wallet control"
+      : presentation.requestHeadline,
+    requestReason: walletControl
+      ? `${input.partnerName} wants to confirm that you control the wallet you connect.`
+      : (input.brief.purpose || presentation.requestReason),
     requested: presentation.requested,
     shared: presentation.sharedPreview,
-    withheld: input.brief.withheld.map((label) => ({ label })),
+    withheld: walletControl
+      ? [
+        { label: "Private keys and seed phrases" },
+        { label: "Unrelated identity or account data" },
+      ]
+      : input.brief.withheld.map((label) => ({ label })),
     environmentLabel: input.brief.environment_label,
     environmentDetail: input.brief.environment_detail,
     footerNotes,
