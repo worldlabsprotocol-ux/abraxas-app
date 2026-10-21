@@ -79,25 +79,38 @@
 
 .abx-holder-decision-complete__eyebrow {
   margin: 0;
-  font-size: 0.62rem;
+  font-size: 0.72rem;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #10B981;
 }
 
 .abx-holder-decision-complete__title {
   margin: 0.25rem 0 0;
-  font-size: 1.15rem;
+  font-size: 1.35rem;
   font-weight: 800;
+  line-height: 1.35;
   color: var(--text-primary);
 }
 
 .abx-holder-decision-complete__subtitle {
   margin: 0.35rem 0 0;
-  font-size: 0.82rem;
+  font-size: 0.95rem;
   line-height: 1.55;
   color: var(--text-secondary);
+}
+
+.abx-holder-decision-complete--wallet-control {
+  max-width: 36rem;
+}
+
+.abx-holder-decision-complete__details-summary {
+  font-size: 0.88rem;
+}
+
+.abx-partner-sandbox-callback {
+  padding: 0 0.25rem 2rem;
 }
 
 .abx-holder-decision-complete__reuse {

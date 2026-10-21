@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { isSafePartnerHandoffRedirectUrl, navigateToPartnerHandoffRedirect } from "./partnerClientNavigation";
+import {
+  isNavigablePartnerHandoffRedirectUrl,
+  isSafePartnerHandoffRedirectUrl,
+  navigateToPartnerHandoffRedirect,
+} from "./partnerClientNavigation";
 
 describe("isSafePartnerHandoffRedirectUrl", () => {
   it("allows HTTPS destinations for server-validated handoff redirects", () => {
@@ -30,8 +34,15 @@ describe("isSafePartnerHandoffRedirectUrl", () => {
     ).toBe(true);
   });
 
-  it("accepts valid same-origin relative paths", () => {
+  it("accepts safe same-origin relative paths", () => {
     expect(isSafePartnerHandoffRedirectUrl("/partner/verify")).toBe(true);
+  });
+
+  it("only navigates to known internal partner return routes on same origin", () => {
+    const origin = "https://preview.example";
+    expect(isNavigablePartnerHandoffRedirectUrl("/partner/callback?receipt_id=dr_x", origin)).toBe(true);
+    expect(isNavigablePartnerHandoffRedirectUrl("/partner/missing", origin)).toBe(false);
+    expect(isNavigablePartnerHandoffRedirectUrl("https://partner.example/cb", origin)).toBe(true);
   });
 
   it("rejects empty destinations", () => {

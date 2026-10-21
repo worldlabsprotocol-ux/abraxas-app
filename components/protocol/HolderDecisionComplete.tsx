@@ -20,6 +20,10 @@ export interface HolderDecisionCompleteProps {
   onReturn?: () => void;
   returnLoading?: boolean;
   showPassportNotice?: boolean;
+  /** Wallet-control partner flows use concise completion copy without repeating the opening request. */
+  surface?: "default" | "wallet_control";
+  /** When false, hide primary return CTA (e.g. redirect target not navigable). */
+  returnEnabled?: boolean;
 }
 
 export function HolderDecisionComplete({
@@ -30,15 +34,25 @@ export function HolderDecisionComplete({
   onReturn,
   returnLoading = false,
   showPassportNotice = true,
+  surface = "default",
+  returnEnabled = true,
 }: HolderDecisionCompleteProps) {
   const [showDetails, setShowDetails] = useState(false);
   const reduceMotion = useReducedMotion();
   const copy = buildHolderRequestPresentation(partnerName, policyId);
   const duration = reduceMotion ? 0 : abxMotionDuration("protocol") / 1000;
+  const walletControl = surface === "wallet_control";
+  const eyebrow = walletControl ? "Wallet control verified" : "Verification complete";
+  const title = walletControl
+    ? "Your verification is complete."
+    : copy.completionHeadline;
+  const subtitle = walletControl
+    ? `${partnerName} can verify the approved wallet-control result on its server before continuing.`
+    : "Only the approved result was shared. Sensitive evidence stayed inside Abraxas.";
 
   return (
     <section
-      className="abx-holder-decision-complete"
+      className={`abx-holder-decision-complete${walletControl ? " abx-holder-decision-complete--wallet-control" : ""}`}
       aria-labelledby="holder-decision-complete-heading"
     >
       <motion.header
@@ -48,37 +62,45 @@ export function HolderDecisionComplete({
         transition={{ duration, ease: [0.22, 1, 0.36, 1] }}
       >
         <p className="abx-holder-decision-complete__eyebrow" style={{ fontFamily: ABX_FONT_SANS }}>
-          Verification complete
+          {eyebrow}
         </p>
         <h2 id="holder-decision-complete-heading" className="abx-holder-decision-complete__title">
-          {copy.completionHeadline}
+          {title}
         </h2>
         <p className="abx-holder-decision-complete__subtitle" style={{ fontFamily: ABX_FONT_SANS }}>
-          Only the approved result was shared. Sensitive evidence stayed inside Abraxas.
+          {subtitle}
         </p>
       </motion.header>
 
-      <motion.div
-        initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration, delay: reduceMotion ? 0 : 0.12, ease: [0.22, 1, 0.36, 1] }}
-      >
-      <PrivacyDisclosureCard
-        compact
-        requester={partnerName}
-        requestReason={copy.requestReason}
-        requested={copy.requested}
-        shared={copy.sharedResult}
-        withheld={copy.withheld}
-      />
-      </motion.div>
+      {!walletControl ? (
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration, delay: reduceMotion ? 0 : 0.12, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <PrivacyDisclosureCard
+            compact
+            requester={partnerName}
+            requestReason={copy.requestReason}
+            requested={copy.requested}
+            shared={copy.sharedResult}
+            withheld={copy.withheld}
+          />
+        </motion.div>
+      ) : null}
 
-      {onReturn ? (
+      {onReturn && returnEnabled ? (
         <div className="abx-holder-decision-complete__actions">
           <Btn disabled={returnLoading} onClick={onReturn}>
             {returnLoading ? "Returning…" : returnLabel}
           </Btn>
         </div>
+      ) : null}
+
+      {onReturn && !returnEnabled ? (
+        <p className="abx-holder-decision-complete__subtitle" role="alert" style={{ fontFamily: ABX_FONT_SANS }}>
+          The partner return link is not available from this environment. Contact the application operator.
+        </p>
       ) : null}
 
       {showPassportNotice ? (
@@ -97,9 +119,9 @@ export function HolderDecisionComplete({
         style={{ marginTop: "0.35rem" }}
       >
         <summary
+          className="abx-holder-decision-complete__details-summary"
           style={{
             fontFamily: ABX_FONT_SANS,
-            fontSize: "0.74rem",
             fontWeight: 700,
             color: "var(--accent)",
             cursor: "pointer",
@@ -107,6 +129,18 @@ export function HolderDecisionComplete({
         >
           Verification details
         </summary>
+        {walletControl ? (
+          <div style={{ marginTop: "0.85rem" }}>
+            <PrivacyDisclosureCard
+              compact
+              requester={partnerName}
+              requestReason={copy.requestReason}
+              requested={copy.requested}
+              shared={copy.sharedResult}
+              withheld={copy.withheld}
+            />
+          </div>
+        ) : null}
         <div className="abx-holder-decision-complete__receipt" style={{ marginTop: "0.75rem" }}>
           <LiveDecisionReceiptCard receiptId={receiptId} partnerName={partnerName} />
         </div>

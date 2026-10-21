@@ -665,7 +665,7 @@ function PartnerContinueInner() {
       hideStatus={Boolean(holderOpening) || simplifiedPurchase || directHandoff || undefined}
       hideHeader={directHandoff || Boolean(holderOpening)}
     >
-      {!directHandoff && !simplifiedPurchase && holderOpening && (
+      {!directHandoff && !simplifiedPurchase && holderOpening && handoff.phase !== "completed" && (
         <HolderOpeningBrief opening={holderOpening} />
       )}
       {authLoading || contextLoading || (hostedBootstrapEligible && hostedBootstrap.bootstrapping) ? (
