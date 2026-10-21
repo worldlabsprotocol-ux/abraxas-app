@@ -23,10 +23,17 @@ describe("homepage journey sequence", () => {
     expect(body.indexOf("<HomeNativeSandboxChapter", sandboxIdx + 1)).toBe(-1);
   });
 
-  it("keeps evidence chapter before build capabilities", () => {
+  it("keeps trust architecture sections between how-it-works and evidence", () => {
     const shell = read("components/redesign/RedesignHome.tsx");
     const body = shell.slice(shell.indexOf("function HomeContent"));
-    expect(body.indexOf("HomeHowAbraxasWorksSection")).toBeLessThan(body.indexOf("HomeVerifiableTrustChapter"));
-    expect(body.indexOf("HomeVerifiableTrustChapter")).toBeLessThan(body.indexOf("HomeBuildEntrySection"));
+    const how = body.indexOf("HomeHowAbraxasWorksSection");
+    const what = body.indexOf("HomeWhatAbraxasDoesSection");
+    const why = body.indexOf("HomeWhyDefensibleSection");
+    const evidence = body.indexOf("HomeVerifiableTrustChapter");
+    const build = body.indexOf("HomeBuildEntrySection");
+    expect(how).toBeLessThan(what);
+    expect(what).toBeLessThan(why);
+    expect(why).toBeLessThan(evidence);
+    expect(evidence).toBeLessThan(build);
   });
 });
