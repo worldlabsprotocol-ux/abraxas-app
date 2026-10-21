@@ -33,7 +33,8 @@ export type StudioCreateErrorCode =
   | "policy_template_invalid"
   | "production_denied"
   | "rate_limited"
-  | "provision_failed";
+  | "provision_failed"
+  | "not_configured";
 
 function studioError(code: StudioCreateErrorCode, status: number) {
   const mapped =
@@ -42,6 +43,7 @@ function studioError(code: StudioCreateErrorCode, status: number) {
     : code === "return_url_rejected" ? LAUNCHPAD_PUBLIC_ERRORS.return_url_rejected
     : code === "policy_template_invalid" ? LAUNCHPAD_PUBLIC_ERRORS.policy_template_invalid
     : code === "rate_limited" ? LAUNCHPAD_PUBLIC_ERRORS.sandbox_rate_limited
+    : code === "not_configured" ? LAUNCHPAD_PUBLIC_ERRORS.not_configured
     : code === "provision_failed" ? LAUNCHPAD_PUBLIC_ERRORS.provision_failed
     : LAUNCHPAD_PUBLIC_ERRORS.invalid_input;
   return launchpadError(mapped, status, code);
@@ -143,6 +145,7 @@ export async function createStudioSandbox(req: NextRequest) {
   if (!result.ok) {
     if (result.code === "return_url_rejected") return studioError("return_url_rejected", 400);
     if (result.code === "policy_template_invalid") return studioError("policy_template_invalid", 400);
+    if (result.code === "not_configured") return studioError("not_configured", 503);
     if (result.code === "conflict") {
       return launchpadError(LAUNCHPAD_PUBLIC_ERRORS.invalid_input, 409, "conflict");
     }

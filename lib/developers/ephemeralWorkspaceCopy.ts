@@ -6,7 +6,9 @@ export const EPHEMERAL_WORKSPACE_PAGE_SUBTITLE =
   "Build, verify, and validate with Abraxas.";
 
 export const EPHEMERAL_WORKSPACE_SANDBOX_BADGE = "Sandbox";
-export const EPHEMERAL_WORKSPACE_SANDBOX_EXPIRY_NOTE = "Test results expire after 24 hours.";
+/** Retention for sandbox workspace metadata and test result records in ephemeral storage (see EPHEMERAL_TTL). */
+export const EPHEMERAL_WORKSPACE_SANDBOX_EXPIRY_NOTE =
+  "Sandbox test records and workspace metadata are retained for 24 hours. Wallet signing challenges expire in minutes. Credential validity is separate and issuer-defined.";
 export const EPHEMERAL_WORKSPACE_TEST_ONLY_NOTE = EPHEMERAL_WORKSPACE_SANDBOX_EXPIRY_NOTE;
 
 export function mapSandboxEnterFailure(code?: string | null): string {

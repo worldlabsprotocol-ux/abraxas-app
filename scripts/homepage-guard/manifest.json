@@ -69,7 +69,7 @@
     {
       "id": "command-center-map",
       "file": "components/redesign/RedesignHome.tsx",
-      "mustContain": ["hero", "HomeVerifiableTrustChapter", "HomeGoodTroubleActionSection", "HomeBuildEntrySection"]
+      "mustContain": ["hero", "HomeVerifiableTrustChapter", "HomeBuildEntrySection", "HomeNativeSandboxChapter"]
     },
     {
       "id": "how-abraxas-works-depth",

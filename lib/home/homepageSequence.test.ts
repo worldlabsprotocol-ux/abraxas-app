@@ -23,10 +23,10 @@ describe("homepage journey sequence", () => {
     expect(body.indexOf("<HomeNativeSandboxChapter", sandboxIdx + 1)).toBe(-1);
   });
 
-  it("keeps trust diagrams before build capabilities", () => {
+  it("keeps evidence chapter before build capabilities", () => {
     const shell = read("components/redesign/RedesignHome.tsx");
     const body = shell.slice(shell.indexOf("function HomeContent"));
-    expect(body.indexOf("HomeHowAbraxasWorksSection")).toBeLessThan(body.indexOf("HomeGoodTroubleActionSection"));
-    expect(body.indexOf("HomeGoodTroubleActionSection")).toBeLessThan(body.indexOf("HomeBuildEntrySection"));
+    expect(body.indexOf("HomeHowAbraxasWorksSection")).toBeLessThan(body.indexOf("HomeVerifiableTrustChapter"));
+    expect(body.indexOf("HomeVerifiableTrustChapter")).toBeLessThan(body.indexOf("HomeBuildEntrySection"));
   });
 });

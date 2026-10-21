@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { resetPersistenceClientForTests } from "@/lib/persistence/admin";
 import { resetFakeWalletStandardBackend, setFakeWalletSchemaMissing } from "@/lib/partner/walletStandard/fakeDurableBackend";
 import { resetSandboxPartnerMemory, setLaunchpadAdminMissing, setLaunchpadSchemaMissing } from "./memoryAdmin";
 
@@ -38,6 +39,10 @@ import {
   SANDBOX_PARTNER_CONTRACT_NOTICE,
   SANDBOX_PARTNER_CONTRACT_STAGES,
 } from "./contract";
+
+if (!process.env.NEXTAUTH_SECRET?.trim()) {
+  process.env.NEXTAUTH_SECRET = "wallet-standard-durable-test-secret";
+}
 
 const PARTNER = "acme-sandbox";
 const PACK = "age_21_retail";
@@ -129,6 +134,12 @@ function goLiveEvidence(result: Awaited<ReturnType<typeof provisionOne>>["result
 
 describe("end-to-end sandbox partner contract", () => {
   beforeEach(() => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv(
+      "SUPABASE_SERVICE_ROLE_KEY",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.test",
+    );
+    resetPersistenceClientForTests();
     resetSandboxPartnerMemory();
     resetFakeWalletStandardBackend();
   });

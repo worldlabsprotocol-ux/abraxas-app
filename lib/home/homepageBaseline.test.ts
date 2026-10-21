@@ -28,7 +28,7 @@ describe("homepage baseline (institutional invariants)", () => {
     const shell = read("components/redesign/RedesignHome.tsx");
     expect(shell).toContain("hero");
     expect(shell).toContain("HomeHowAbraxasWorksSection");
-    expect(shell).toContain("HomeGoodTroubleActionSection");
+    expect(shell).not.toContain("HomeGoodTroubleActionSection");
     expect(shell).toContain("HomeVerifiableTrustChapter");
     expect(shell).toContain("HomeBuildEntrySection");
     expect(shell).toContain("HomeNativeSandboxChapter");
