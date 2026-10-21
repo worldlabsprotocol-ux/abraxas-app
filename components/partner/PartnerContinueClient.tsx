@@ -267,33 +267,6 @@ function PartnerContinueInner() {
   }, [verifyRequestId, urlPartnerId, urlPolicyId, urlPurpose]);
 
   useEffect(() => {
-    setMethodSelected(false);
-    setMethodQualified(false);
-    if (!verifyRequestId) return;
-    let cancelled = false;
-    void (async () => {
-      try {
-        const res = await fetch(
-          `/api/v1/partner-verify/method-qualification?verify_request=${encodeURIComponent(verifyRequestId)}`,
-          { credentials: "include" },
-        );
-        const data = await res.json() as { method_qualified?: boolean; issuedReceipt?: boolean };
-        if (cancelled) return;
-        if (searchParams.get("method_qualified") === "1" && data.method_qualified !== true) {
-          setMethodQualified(false);
-          return;
-        }
-        setMethodQualified(res.ok && data.method_qualified === true && data.issuedReceipt !== true);
-      } catch {
-        if (!cancelled) setMethodQualified(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [verifyRequestId, searchParams]);
-
-  useEffect(() => {
     if (typeof window === "undefined") return;
     const sanitized = sanitizePartnerContinueBrowserSearch(searchParams);
     if (!sanitized.strippedUntrusted) return;
@@ -323,6 +296,34 @@ function PartnerContinueInner() {
   const walletControlPolicy = isWalletControlPartnerPolicy(policyId);
   const holderBrowserAuthenticated = Boolean(suiAddress || walletBrowserSession);
   const sessionSubjectForHandoff = suiAddress ?? holderSubjectId;
+
+  useEffect(() => {
+    setMethodSelected(false);
+    setMethodQualified(false);
+    if (!verifyRequestId) return;
+    if (walletControlPolicy && !holderBrowserAuthenticated) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch(
+          `/api/v1/partner-verify/method-qualification?verify_request=${encodeURIComponent(verifyRequestId)}`,
+          { credentials: "include" },
+        );
+        const data = await res.json() as { method_qualified?: boolean; issuedReceipt?: boolean };
+        if (cancelled) return;
+        if (searchParams.get("method_qualified") === "1" && data.method_qualified !== true) {
+          setMethodQualified(false);
+          return;
+        }
+        setMethodQualified(res.ok && data.method_qualified === true && data.issuedReceipt !== true);
+      } catch {
+        if (!cancelled) setMethodQualified(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [verifyRequestId, searchParams, walletControlPolicy, holderBrowserAuthenticated]);
 
   const syncWalletBrowserSession = useCallback(() => {
     void probeBrowserSessionDetails().then((probe) => {
@@ -710,6 +711,7 @@ function PartnerContinueInner() {
             returnUrl={decodedReturnUrl ?? ""}
             returnLabel={returnLabel}
             handoff={handoff}
+            onMethodQualifiedChange={setMethodQualified}
             onSessionEstablished={() => {
               syncWalletBrowserSession();
               refreshSession();
@@ -740,6 +742,7 @@ function PartnerContinueInner() {
           returnUrl={decodedReturnUrl ?? ""}
           returnLabel={returnLabel}
           handoff={handoff}
+          onMethodQualifiedChange={setMethodQualified}
           onSessionEstablished={() => {
             syncWalletBrowserSession();
             refreshSession();

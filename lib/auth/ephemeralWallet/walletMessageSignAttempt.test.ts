@@ -24,6 +24,24 @@ describe("signWalletMessageWithControls", () => {
     if (!result.ok) expect(result.code).toBe("aborted");
   });
 
+  it("accepts a delayed wallet signature (popup focus) without treating it as abort", async () => {
+    const signMessage = vi.fn(
+      () =>
+        new Promise<Uint8Array>((resolve) => {
+          setTimeout(() => resolve(new Uint8Array([4, 5])), 35);
+        }),
+    );
+
+    const result = await signWalletMessageWithControls({
+      message: "delayed-phantom-approval",
+      signMessage,
+      timeoutMs: 5_000,
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.signatureBytes).toEqual(new Uint8Array([4, 5]));
+  });
+
   it("returns stale when generation advances before wallet responds", async () => {
     let stale = false;
     const result = await signWalletMessageWithControls({

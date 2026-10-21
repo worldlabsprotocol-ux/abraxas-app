@@ -6,6 +6,7 @@ import {
   getLaunchpadStagingIdentityLogContext,
   resolveLaunchpadStagingEnvironment,
 } from "@/lib/partner/launchpad/stagingEnvironment";
+import { isWalletControlClaimRpcReady } from "@/lib/partner/launchpad/stagingWalletControlRpcReady";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -32,11 +33,14 @@ export async function GET() {
     return stagingIdentityResponse({ ok: false, code: "staging_identity_unavailable" }, 503);
   }
 
+  const walletControlClaimRpcReady = await isWalletControlClaimRpcReady();
+
   return stagingIdentityResponse(
     {
       deployment_environment: result.identity.deployment_environment,
       supabase_project_ref: result.identity.supabase_project_ref,
       commit_sha: result.identity.commit_sha,
+      wallet_control_claim_rpc_ready: walletControlClaimRpcReady,
     },
     200,
   );

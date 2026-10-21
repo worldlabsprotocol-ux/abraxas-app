@@ -5,6 +5,7 @@ import { useState } from "react";
 import { PassportWalletSignInButton } from "@/components/sui/PassportWalletSignInButton";
 import { PassportSolanaSignInButton } from "./PassportSolanaSignInButton";
 import { SolanaWalletConnectButton } from "./SolanaWalletConnectButton";
+import { WalletVerifyControlPanel } from "@/components/wallet/WalletVerifyControlPanel";
 import { PASSPORT_WALLET_ACTIONS, type PassportWalletIntendedAction } from "@/lib/auth/passportWalletAuth/contract";
 import { HOLDER_AUTH_ACTIONS } from "@/lib/auth/holderSubject/contract";
 import { HOLDER_WALLET_BOUNDARY } from "@/lib/sui/holderAccessCopy";
@@ -78,6 +79,10 @@ export function HolderWalletAuthPanel({
       ? HOLDER_AUTH_ACTIONS.linkLegacyWallet
       : HOLDER_AUTH_ACTIONS.passportSignIn;
 
+  if (intendedAction === PASSPORT_WALLET_ACTIONS.partnerVerify) {
+    return <WalletVerifyControlPanel compact onSuccess={onSuccess} />;
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem" }}>
       <button
@@ -114,15 +119,7 @@ export function HolderWalletAuthPanel({
       ) : null}
 
       <SolanaWalletConnectButton />
-      <PassportSolanaSignInButton
-        intendedAction={intendedAction === PASSPORT_WALLET_ACTIONS.partnerVerify ? "partner_verify" : "passport_sign_in"}
-        label={
-          intendedAction === PASSPORT_WALLET_ACTIONS.partnerVerify
-            ? "Sign to prove wallet control"
-            : undefined
-        }
-        onSuccess={onSuccess}
-      />
+      <PassportSolanaSignInButton intendedAction="passport_sign_in" onSuccess={onSuccess} />
 
       <button type="button" onClick={() => setShowSui((v) => !v)} style={{
         fontFamily: FONT, fontSize: "0.76rem", background: "transparent", border: "none", color: "var(--text-secondary)", cursor: "pointer", textAlign: "left",

@@ -30,6 +30,34 @@ describe("passport Solana auth adversarial", () => {
     return bs58.encode(sig);
   }
 
+  it("rejects verify when session context does not match issued challenge", async () => {
+    vi.spyOn(store, "insertSolanaChallenge").mockResolvedValue(undefined);
+    const issued = await issuePassportSolanaAuthChallenge({
+      origin: ORIGIN,
+      walletAddress: kp.publicKey.toBase58(),
+      solanaNetwork: "devnet",
+      intendedAction: HOLDER_AUTH_ACTIONS.partnerVerify,
+      sessionContext: "ctx-mismatch-a",
+    });
+    expect(issued.ok).toBe(true);
+    if (!issued.ok) return;
+
+    vi.spyOn(store, "consumeSolanaChallenge").mockResolvedValue(null);
+
+    const verified = await verifyPassportSolanaAuth({
+      challengeId: issued.challenge.challenge_id,
+      walletAddress: kp.publicKey.toBase58(),
+      solanaNetwork: "devnet",
+      signature: await signChallengeMessage(issued.challenge.message),
+      sessionContext: "ctx-mismatch-b",
+      requestOrigin: ORIGIN,
+      expectedIntendedAction: HOLDER_AUTH_ACTIONS.partnerVerify,
+    });
+    expect(verified.ok).toBe(false);
+    if (verified.ok) return;
+    expect(verified.code).toBe("replay");
+  });
+
   it("rejects replayed challenges", async () => {
     vi.spyOn(store, "insertSolanaChallenge").mockResolvedValue(undefined);
     vi.spyOn(holderSubject, "resolveSubjectForVerifiedWallet").mockResolvedValue({
