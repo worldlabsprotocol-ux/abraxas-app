@@ -116,6 +116,11 @@ export function HolderWalletAuthPanel({
       <SolanaWalletConnectButton />
       <PassportSolanaSignInButton
         intendedAction={intendedAction === PASSPORT_WALLET_ACTIONS.partnerVerify ? "partner_verify" : "passport_sign_in"}
+        label={
+          intendedAction === PASSPORT_WALLET_ACTIONS.partnerVerify
+            ? "Sign to prove wallet control"
+            : undefined
+        }
         onSuccess={onSuccess}
       />
 

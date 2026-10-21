@@ -21,6 +21,9 @@ import {
 } from "@/lib/partner/holderExperience";
 import { describeHolderAuthErrorCode } from "@/lib/auth/holderAuthErrorCopy";
 import { bindEvmWalletToPassport } from "@/lib/walletAuthority/client/bindEvmWallet";
+import { bindSolanaWalletToPassport } from "@/lib/walletAuthority/client/bindSolanaWallet";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { HOLDER_AUTH_ACTIONS } from "@/lib/auth/holderSubject/contract";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
@@ -48,6 +51,7 @@ export function PartnerWalletControlContinueFlow({
   const [qualifyBusy, setQualifyBusy] = useState(false);
   const [consentDismissed, setConsentDismissed] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { publicKey, signMessage } = useWallet();
 
   const syncWalletSession = useCallback(async () => {
     const probe = await probeBrowserSessionDetails();
@@ -117,8 +121,20 @@ export function PartnerWalletControlContinueFlow({
         setMethodQualified(true);
         return;
       }
+      const probe = await probeBrowserSessionDetails();
+      const preferSolana =
+        probe.authMethod === "solana_wallet"
+        || (publicKey && signMessage);
       try {
-        await bindEvmWalletToPassport();
+        if (preferSolana && publicKey && signMessage) {
+          await bindSolanaWalletToPassport({
+            walletAddress: publicKey.toBase58(),
+            signMessage,
+            intendedAction: HOLDER_AUTH_ACTIONS.partnerVerify,
+          });
+        } else {
+          await bindEvmWalletToPassport();
+        }
       } catch (bindError) {
         const message = bindError instanceof Error ? bindError.message : "wallet_control_not_ready";
         setError(describeHolderAuthErrorCode(message));
