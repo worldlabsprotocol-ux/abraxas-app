@@ -22,6 +22,8 @@ import {
   type PartnerFlowActivityRow,
 } from "./activity";
 import { capabilityAuthorityError, enabledPartnerFlowCapabilities } from "./capabilities";
+import { resolvePolicyPack } from "@/lib/partner/launchpad/policyPacks";
+import type { PartnerFlowAction } from "./contract";
 
 export async function loadPartnerFlowStoredConfig(
   applicationId: string,
@@ -39,7 +41,32 @@ export async function loadPartnerFlowStoredConfig(
     .limit(1);
   if (error) throw new Error("unavailable");
   const rows = (data ?? []) as PartnerFlowActivityRow[];
-  if (!rows.length) return { ...EMPTY_PARTNER_FLOW_STORED_CONFIG };
+  if (!rows.length) {
+    const { data: appRow } = await sb
+      .from("partner_launchpad_applications")
+      .select("environment, policy_template_id, display_name")
+      .eq("id", applicationId)
+      .eq("partner_id", partnerId)
+      .maybeSingle();
+    if (appRow?.environment === "sandbox") {
+      const callback = allowedUrls.find((url) => isLaunchpadReturnUrlAllowlisted(allowedUrls, url));
+      if (callback) {
+        const templateId = String(appRow.policy_template_id ?? "");
+        const pack = resolvePolicyPack(templateId);
+        const action: PartnerFlowAction = templateId === "wallet_control"
+          ? "wallet_bound_action"
+          : "sandbox_demo";
+        return {
+          purpose: pack?.holder_explanation ?? "Verify with Abraxas",
+          action,
+          callback_url: callback,
+          capabilities: [],
+          display_label: typeof appRow.display_name === "string" ? appRow.display_name : null,
+        };
+      }
+    }
+    return { ...EMPTY_PARTNER_FLOW_STORED_CONFIG };
+  }
   return storedConfigFromActivityRows(rows, applicationId, partnerId, allowedUrls);
 }
 

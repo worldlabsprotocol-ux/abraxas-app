@@ -25,6 +25,7 @@ Optional: `ABRAXAS_NATIVE_ACCOUNT_DATABASE_URL` when account data uses a dedicat
 4. `004_native_account_webauthn_hardening.sql` — membership status, sandbox idempotency, WebAuthn consume RPC
 5. `005_sovereign_developer_sandbox.sql` — partners, policies, API keys, launchpad applications, activity, audit
 6. `006_sovereign_verification_receipts.sql` — verification requests, signed receipt references, usage events
+7. `007_sovereign_launchpad_application_binding.sql` — `partner_api_keys.launchpad_application_id` for scoped partner auth
 
 Launchpad **runtime** in sovereign mode uses `resolveLaunchpadApplication.server.ts` and `lib/partner/launchpad/sovereign/*` (no PostgREST). Legacy Supabase launchpad tables remain for non-sovereign deployments only.
 

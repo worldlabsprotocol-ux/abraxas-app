@@ -6,7 +6,7 @@ import { authenticatePartnerScoped } from "@/lib/partner/partnerAuth";
 import {
   getLaunchpadApplicationById,
   getLaunchpadApplicationForPartner,
-} from "@/lib/partner/launchpad/resolveLaunchpadApplication";
+} from "@/lib/partner/launchpad/resolveLaunchpadApplication.server";
 import { loadPartnerFlowStoredConfig } from "@/lib/partner/launchpad/partnerFlowRequest";
 import {
   createHostedHandoff,
@@ -15,6 +15,7 @@ import {
   projectPartner,
 } from "@/lib/partner/hostedHandoff";
 import { resolveApplicationPolicyBinding } from "@/lib/partner/launchpad/resolveApplicationPolicyBinding";
+import { isLaunchpadStagingIdentityRouteAllowed } from "@/lib/partner/launchpad/stagingEnvironment";
 
 export const dynamic = "force-dynamic";
 
@@ -50,11 +51,22 @@ export async function POST(req: NextRequest) {
   const requiredEnvironment = bindingPreview.binding.environment;
   const auth = await authenticatePartnerScoped(req, "verify:requests", {
     requiredApplicationId: applicationIdHeader,
+    knownApplicationPartnerId: appForBinding.partner_id,
     requiredCredentialEnvironment: requiredEnvironment,
     requireProductionActive: requiredEnvironment === "production",
   });
   if (!auth.ok) {
-    return NextResponse.json({ error: "unauthorized" }, { status: auth.status });
+    const exposeDetail = isLaunchpadStagingIdentityRouteAllowed();
+    return NextResponse.json(
+      exposeDetail
+        ? {
+            error: "unauthorized",
+            detail: auth.error,
+            application_partner_id: appForBinding.partner_id,
+          }
+        : { error: "unauthorized" },
+      { status: auth.status },
+    );
   }
 
   const app = await getLaunchpadApplicationForPartner(applicationIdHeader, auth.ctx.partnerId);

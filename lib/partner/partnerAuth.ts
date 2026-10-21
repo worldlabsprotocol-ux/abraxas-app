@@ -2,7 +2,7 @@
 // Partner API key auth — Bearer abx_… or X-Abraxas-Api-Key header.
 
 import { createHash, randomBytes } from "crypto";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { NextRequest } from "next/server";
 import {
   partnerKeyEnvironment,
@@ -11,9 +11,7 @@ import {
 } from "@/lib/partner/productionIntegration/credentialBoundary";
 import type { LaunchpadEnvironment } from "@/lib/partner/launchpad/types";
 import { launchpadUsesSovereignPostgres } from "@/lib/partner/launchpad/launchpadPersistence";
-
-const SB_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+import { getPersistenceAdmin } from "@/lib/persistence/admin";
 
 export type PartnerScope =
   | "verify:credential"
@@ -44,6 +42,8 @@ export interface PartnerAuthScopeOptions {
   requiredCredentialEnvironment?: PartnerCredentialEnvironment;
   requiredApplicationId?: string;
   requireProductionActive?: boolean;
+  /** When the route already resolved the application tenant, enforce credential alignment. */
+  knownApplicationPartnerId?: string;
 }
 
 export interface PartnerAuthFailure {
@@ -55,8 +55,7 @@ export interface PartnerAuthFailure {
 export type PartnerAuthResult = { ok: true; ctx: PartnerAuthContext } | PartnerAuthFailure;
 
 function sb(): SupabaseClient | null {
-  if (!SB_URL || !SB_KEY) return null;
-  return createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
+  return getPersistenceAdmin();
 }
 
 export function hashPartnerKey(key: string): string {
@@ -119,7 +118,7 @@ export async function authenticatePartnerRawKey(
         displayName: data.display_name,
         keyPrefix: data.key_prefix,
         scopes,
-        launchpadApplicationId: null,
+        launchpadApplicationId: (data.launchpad_application_id as string | null) ?? null,
         credentialEnvironment,
         credentialStatus: "active",
       },
@@ -182,7 +181,6 @@ export async function authenticatePartner(
 }
 
 async function loadLaunchpadApplicationContext(
-  client: SupabaseClient,
   applicationId: string,
   partnerId: string,
 ): Promise<{
@@ -190,17 +188,15 @@ async function loadLaunchpadApplicationContext(
   status: string | null;
   productionActivated: boolean;
 } | null> {
-  const { data } = await client
-    .from("partner_launchpad_applications")
-    .select("environment, status, production_activated_at")
-    .eq("id", applicationId)
-    .eq("partner_id", partnerId)
-    .maybeSingle();
-  if (!data) return null;
+  const { getLaunchpadApplicationForPartner } = await import(
+    "@/lib/partner/launchpad/resolveLaunchpadApplication.server"
+  );
+  const app = await getLaunchpadApplicationForPartner(applicationId, partnerId);
+  if (!app) return null;
   return {
-    environment: data.environment === "production" ? "production" : "sandbox",
-    status: String(data.status ?? ""),
-    productionActivated: Boolean(data.production_activated_at),
+    environment: app.environment === "production" ? "production" : "sandbox",
+    status: String(app.status ?? ""),
+    productionActivated: Boolean(app.production_activated_at),
   };
 }
 
@@ -214,14 +210,20 @@ export async function authenticatePartnerScoped(
     return auth ?? { ok: false, error: "Partner API key required", status: 401 };
   }
 
-  const client = sb();
   let applicationEnvironment: LaunchpadEnvironment | null = null;
   let applicationStatus: string | null = null;
   let productionActivated = false;
 
   const appId = options.requiredApplicationId ?? auth.ctx.launchpadApplicationId;
-  if (appId && client) {
-    const appCtx = await loadLaunchpadApplicationContext(client, appId, auth.ctx.partnerId);
+  const applicationPartnerId = options.knownApplicationPartnerId ?? auth.ctx.partnerId;
+  if (
+    options.knownApplicationPartnerId
+    && options.knownApplicationPartnerId !== auth.ctx.partnerId
+  ) {
+    return { ok: false, error: "Credential tenant mismatch", status: 403 };
+  }
+  if (appId) {
+    const appCtx = await loadLaunchpadApplicationContext(appId, applicationPartnerId);
     if (!appCtx) {
       return { ok: false, error: "Application not found for credential", status: 403 };
     }
