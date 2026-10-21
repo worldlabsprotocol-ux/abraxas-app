@@ -89,6 +89,34 @@ export function PartnerSandboxCallbackClient() {
       <ContentCard title={display.headline}>
         <p style={body}>{display.body}</p>
 
+        {display.access_gate_note ? (
+          <div
+            role="status"
+            style={{
+              marginTop: "1rem",
+              padding: "0.85rem 1rem",
+              borderRadius: 12,
+              border: "1px solid rgba(251, 191, 36, 0.45)",
+              background: "rgba(251, 191, 36, 0.08)",
+            }}
+          >
+            <p
+              style={{
+                ...body,
+                margin: 0,
+                color: "var(--text-primary)",
+                fontWeight: 700,
+                fontSize: "0.88rem",
+              }}
+            >
+              Not authorization to grant access now
+            </p>
+            <p style={{ ...body, marginTop: "0.45rem", marginBottom: 0, fontSize: "0.86rem" }}>
+              {display.access_gate_note}
+            </p>
+          </div>
+        ) : null}
+
         {display.acceptability_note ? (
           <p style={{ ...body, marginTop: "0.75rem", color: "var(--text-primary)", fontWeight: 600 }}>
             {display.acceptability_note}
