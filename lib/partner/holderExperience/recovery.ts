@@ -1,6 +1,9 @@
 // FILE: lib/partner/holderExperience/recovery.ts
 // Recoverable holder states. Safe next actions. No raw backend text.
 
+import { buildPartnerContinuePath } from "@/lib/partner/partnerFlowContinuation";
+import { inferPolicyPackFromPolicyId } from "@/lib/partner/launchpad/policyPacks";
+import { WALLET_CONTROL_RESULT_FAMILY } from "@/lib/walletControl/contract";
 import { HOLDER_PASSPORT_HREF, type HolderNextAction, type HolderRecoveryState } from "./contract";
 
 export interface HolderRecoveryView {
@@ -85,6 +88,39 @@ const VIEWS: Record<HolderRecoveryState, Omit<HolderRecoveryView, "state">> = {
 
 export const HOLDER_RETURN_FAILURE_TECHNICAL =
   "Abraxas only returns to the destination registered with the original request. Query parameters cannot override that return URL.";
+
+export function buildPartnerHolderSignInContinuePath(
+  verifyRequestId: string | null | undefined,
+): string | null {
+  const id = verifyRequestId?.trim() ?? "";
+  if (!id) return null;
+  return buildPartnerContinuePath({ verificationRequestId: id });
+}
+
+export function resolvePartnerSessionRequiredRecovery(
+  partnerName?: string,
+  storedPartnerHome?: string | null,
+  options?: { verifyRequestId?: string | null; policyId?: string | null },
+): HolderRecoveryView {
+  const base = resolveHolderRecovery("session_required", partnerName, storedPartnerHome);
+  const verifyRequestId = options?.verifyRequestId?.trim() ?? "";
+  if (!verifyRequestId) return base;
+
+  const continuePath = buildPartnerHolderSignInContinuePath(verifyRequestId);
+  if (!continuePath) return base;
+
+  const pack = inferPolicyPackFromPolicyId(options?.policyId ?? "");
+  const walletControl = pack?.disclosed_result === WALLET_CONTROL_RESULT_FAMILY
+    || (options?.policyId ?? "").includes("wallet_control");
+
+  return {
+    ...base,
+    explanation: walletControl
+      ? "Sign in to return to this wallet-control request. Sign-in opens your Abraxas account only—it does not approve sharing or sign for the partner."
+      : "Sign in to return to this verification request. Sign-in opens your Abraxas account only—it does not prove eligibility or approve sharing.",
+    href: `/passport?verify_request=${encodeURIComponent(verifyRequestId)}`,
+  };
+}
 
 export function resolveHolderRecovery(
   state: HolderRecoveryState,

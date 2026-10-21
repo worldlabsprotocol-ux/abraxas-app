@@ -57,7 +57,9 @@ import {
   buildHolderOpeningPresentation,
   buildHolderRequestBrief,
   holderSafeClientMessage,
+  buildPartnerHolderSignInContinuePath,
   resolveHolderRecovery,
+  resolvePartnerSessionRequiredRecovery,
   type HolderRecoveryState,
 } from "@/lib/partner/holderExperience";
 import { HolderOpeningBrief } from "@/components/partner/HolderOpeningBrief";
@@ -675,7 +677,20 @@ function PartnerContinueInner() {
             </p>
           </div>
         ) : (
-          <HolderRecoveryCard recovery={resolveHolderRecovery("session_required", partnerName, partnerHomeUrl)} />
+          <HolderRecoveryCard
+            recovery={resolvePartnerSessionRequiredRecovery(partnerName, partnerHomeUrl, {
+              verifyRequestId,
+              policyId,
+            })}
+            onPrimary={
+              verifyRequestId
+                ? () => {
+                    const continuePath = buildPartnerHolderSignInContinuePath(verifyRequestId);
+                    if (continuePath) void signInWithGoogle?.({ continuePath });
+                  }
+                : undefined
+            }
+          />
         )
       ) : simplifiedPurchase && verifyRequestId ? (
         <GoodTroublePurchaseContinueFlow

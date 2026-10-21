@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AbxInstitutionalWorkspaceShell } from "@/components/design/AbxInstitutionalWorkspaceShell";
-import { Reveal } from "@/lib/motion/Reveal";
 
 const STEPS = [
   { id: "policy", label: "Policy", href: "/developers/integration-studio" },
@@ -66,9 +65,7 @@ export function IntegrationStudioWorkspace({
         })}
       </nav>
       <div className="abx-studio-workspace__main">
-        <Reveal motionRole="surface" tier="calm" className="abx-studio-workspace__canvas">
-          {children}
-        </Reveal>
+        <div className="abx-studio-workspace__canvas">{children}</div>
         {inspector ? <aside className="abx-studio-workspace__inspector">{inspector}</aside> : null}
       </div>
     </AbxInstitutionalWorkspaceShell>

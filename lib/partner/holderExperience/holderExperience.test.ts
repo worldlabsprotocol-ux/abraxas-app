@@ -6,6 +6,7 @@ import {
   holderCopyLeaks,
   holderSafeClientMessage,
   resolveHolderRecovery,
+  resolvePartnerSessionRequiredRecovery,
 } from "@/lib/partner/holderExperience";
 import { HOLDER_RECOVERY_STATES } from "@/lib/partner/holderExperience/contract";
 import { GOOGLE_ACCOUNT_NOT_ELIGIBILITY } from "@/lib/partner/launchpad/policyPacks";
@@ -38,6 +39,16 @@ describe("holder verification experience", () => {
     });
     expect(brief.environment_label).toMatch(/Sandbox/i);
     expect(brief.environment_detail.toLowerCase()).toContain("not production-usable");
+  });
+
+  it("preserves verify_request for partner session-required recovery", () => {
+    const view = resolvePartnerSessionRequiredRecovery("Acme Sandbox", null, {
+      verifyRequestId: "vr_partnerresume01",
+      policyId: "wallet_control",
+    });
+    expect(view.href).toBe("/passport?verify_request=vr_partnerresume01");
+    expect(view.explanation.toLowerCase()).toContain("wallet-control");
+    expect(view.explanation.toLowerCase()).not.toContain("integration studio");
   });
 
   it("binds restart and contact actions to stored partner home, never a query return URL", () => {

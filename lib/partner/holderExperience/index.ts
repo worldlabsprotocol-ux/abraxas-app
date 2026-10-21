@@ -8,9 +8,11 @@ export {
 export { buildHolderRequestBrief, type HolderRequestBrief } from "./brief";
 export { buildHolderOpeningPresentation, type HolderOpeningPresentation } from "./opening";
 export {
+  buildPartnerHolderSignInContinuePath,
   holderCopyLeaks,
   holderSafeClientMessage,
   resolveHolderRecovery,
+  resolvePartnerSessionRequiredRecovery,
   HOLDER_RETURN_FAILURE_TECHNICAL,
   type HolderRecoveryView,
 } from "./recovery";
