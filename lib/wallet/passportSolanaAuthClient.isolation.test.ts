@@ -80,6 +80,58 @@ describe("runPassportSolanaWalletAuth attempt isolation", () => {
     expect(window.dispatchEvent).not.toHaveBeenCalled();
   });
 
+  it("returns verify phase when server rejects signature", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ ok: true, challenge: { challenge_id: "c-verify-fail", message: "sign-me" } }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({ ok: false, code: "session_context_mismatch" }),
+      } as Response);
+
+    const attempt = createWalletVerifyAttempt();
+    const result = await runPassportSolanaWalletAuth({
+      walletAddress: "abc",
+      signMessage: vi.fn(async () => new Uint8Array([3])),
+      intendedAction: HOLDER_AUTH_ACTIONS.partnerVerify,
+      attempt,
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.phase).toBe("verify");
+      expect(result.code).toBe("session_context_mismatch");
+    }
+    expect(window.dispatchEvent).not.toHaveBeenCalled();
+  });
+
+  it("returns sign phase when wallet rejects message signing", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ ok: true, challenge: { challenge_id: "c-sign-fail", message: "sign-me" } }),
+    } as Response);
+
+    const signMessage = vi.fn(async () => {
+      throw new Error("User rejected");
+    });
+
+    const result = await runPassportSolanaWalletAuth({
+      walletAddress: "abc",
+      signMessage,
+      intendedAction: HOLDER_AUTH_ACTIONS.partnerVerify,
+      attempt: createWalletVerifyAttempt(),
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.phase).toBe("sign");
+      expect(result.code).toBe("cancelled");
+    }
+    expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).includes("/verify"))).toBe(false);
+  });
+
   it("does not verify when a newer attempt supersedes during wallet signing", async () => {
     vi.mocked(fetch)
       .mockResolvedValueOnce({

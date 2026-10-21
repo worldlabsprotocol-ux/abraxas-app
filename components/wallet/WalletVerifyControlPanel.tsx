@@ -226,6 +226,8 @@ export function WalletVerifyControlPanel({
       } else {
         setPhase("verifying");
       }
+      setFailureStage(connectedAuth.phase);
+      setFailureCode(connectedAuth.code);
       setError(describeWalletVerifyRecoveryCode(connectedAuth.code, connectedAuth.phase));
       setPhase("error");
       return;
