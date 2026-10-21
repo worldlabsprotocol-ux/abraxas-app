@@ -1,6 +1,6 @@
 "use client";
 // FILE: components/partner/PartnerSandboxCallbackClient.tsx
-// Sandbox / Launchpad acceptance callback — server verification required.
+// Sandbox / Launchpad acceptance callback — receipt-authoritative display.
 
 import Link from "next/link";
 import { useMemo, useState, useEffect } from "react";
@@ -9,6 +9,11 @@ import { ContentCard } from "@/components/redesign/RedesignContent";
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
 import { buildPartnerSandboxCallbackView } from "@/lib/partner/partnerSandboxCallback";
+import {
+  resolvePartnerSandboxCallbackDisplay,
+  type PartnerSandboxReceiptFetchStatus,
+} from "@/lib/partner/partnerSandboxCallbackReceipt";
+import type { DecisionReceiptPublicView } from "@/lib/decisionReceipts/types";
 import { LiveDecisionReceiptCard } from "@/components/protocol/LiveDecisionReceiptCard";
 
 const FONT = ABRAXAS_FONT_SANS;
@@ -24,45 +29,144 @@ const body: React.CSSProperties = {
 
 export function PartnerSandboxCallbackClient() {
   const searchParams = useSearchParams();
-  const [receiptVerified, setReceiptVerified] = useState<boolean | null>(null);
+  const [fetchStatus, setFetchStatus] = useState<PartnerSandboxReceiptFetchStatus>("idle");
+  const [receipt, setReceipt] = useState<DecisionReceiptPublicView | null>(null);
 
-  const view = useMemo(() => {
+  const urlView = useMemo(() => {
     return buildPartnerSandboxCallbackView(new URLSearchParams(searchParams.toString()));
   }, [searchParams]);
 
-  useEffect(() => {
-    setReceiptVerified(null);
-  }, [view.hints.receipt_id]);
+  const receiptId = urlView.hints.receipt_id;
 
-  const approved = view.holder_outcome === "approved" && !view.forbidden_detected;
+  useEffect(() => {
+    if (!receiptId) {
+      setFetchStatus("idle");
+      setReceipt(null);
+      return;
+    }
+
+    let cancelled = false;
+    setFetchStatus("loading");
+    setReceipt(null);
+
+    void (async () => {
+      try {
+        const res = await fetch(`/api/receipts/${encodeURIComponent(receiptId)}/public`);
+        if (res.status === 404) {
+          if (!cancelled) setFetchStatus("not_found");
+          return;
+        }
+        if (!res.ok) {
+          if (!cancelled) setFetchStatus("unavailable");
+          return;
+        }
+        const data = await res.json() as DecisionReceiptPublicView;
+        if (!cancelled) {
+          setReceipt(data);
+          setFetchStatus("loaded");
+        }
+      } catch {
+        if (!cancelled) setFetchStatus("unavailable");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [receiptId]);
+
+  const display = resolvePartnerSandboxCallbackDisplay({
+    urlView,
+    fetchStatus: receiptId ? fetchStatus : "idle",
+    receipt,
+  });
 
   return (
     <div
       className="abx-partner-sandbox-callback"
-      style={{ display: "grid", gap: "1.25rem", maxWidth: 640, margin: "0 auto", textAlign: "left" }}
+      style={{ display: "grid", gap: "1.25rem", maxWidth: 640, margin: "0 auto", textAlign: "left", padding: "0 1rem 2rem" }}
     >
-      <ContentCard title={view.headline}>
-        <p style={body}>{view.body}</p>
-        {view.forbidden_detected ? (
-          <p style={{ ...body, color: "#FBBF24", marginTop: "0.75rem" }}>
-            Remove sensitive query parameters from callback URLs. Partners must verify outcomes server-side.
-          </p>
+      <ContentCard title={display.headline}>
+        <p style={body}>{display.body}</p>
+
+        {display.access_gate_note ? (
+          <div
+            role="status"
+            style={{
+              marginTop: "1rem",
+              padding: "0.85rem 1rem",
+              borderRadius: 12,
+              border: "1px solid rgba(251, 191, 36, 0.45)",
+              background: "rgba(251, 191, 36, 0.08)",
+            }}
+          >
+            <p
+              style={{
+                ...body,
+                margin: 0,
+                color: "var(--text-primary)",
+                fontWeight: 700,
+                fontSize: "0.88rem",
+              }}
+            >
+              Not authorization to grant access now
+            </p>
+            <p style={{ ...body, marginTop: "0.45rem", marginBottom: 0, fontSize: "0.86rem" }}>
+              {display.access_gate_note}
+            </p>
+          </div>
         ) : null}
-        {view.parse_errors.length > 0 ? (
-          <p style={{ ...body, marginTop: "0.75rem", color: "var(--text-muted)", fontSize: "0.84rem" }}>
-            Callback validation: {view.parse_errors.join(", ")}
+
+        {display.acceptability_note ? (
+          <p style={{ ...body, marginTop: "0.75rem", color: "var(--text-primary)", fontWeight: 600 }}>
+            {display.acceptability_note}
           </p>
         ) : null}
 
-        {approved && view.hints.receipt_id ? (
+        {display.url_mismatches.length > 0 ? (
+          <ul style={{ ...body, marginTop: "0.75rem", paddingLeft: "1.1rem", color: "#FBBF24" }}>
+            {display.url_mismatches.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        ) : null}
+
+        {urlView.parse_errors.length > 0 ? (
+          <p style={{ ...body, marginTop: "0.75rem", color: "var(--text-muted)", fontSize: "0.84rem" }}>
+            Callback shape: {urlView.parse_errors.join(", ")}
+          </p>
+        ) : null}
+
+        {display.receipt_confirmed && display.receipt ? (
+          <div
+            style={{
+              marginTop: "1rem",
+              display: "grid",
+              gap: "0.45rem",
+              fontFamily: FONT,
+              fontSize: "0.88rem",
+            }}
+          >
+            <div><strong>Application:</strong> {display.receipt.partner_id}</div>
+            <div><strong>Policy:</strong> {display.receipt.policy_id}</div>
+            <div><strong>Decision:</strong> {display.receipt.decision_result}</div>
+            <div><strong>Signature:</strong> {display.receipt.signature_valid ? "Valid" : "Invalid"}</div>
+            <div>
+              <strong>Currently acceptable:</strong>{" "}
+              {display.receipt.currently_valid === true ? "Yes" : "No — confirm on server"}
+            </div>
+          </div>
+        ) : null}
+
+        {receiptId ? (
           <div style={{ marginTop: "1rem" }}>
-            <p style={{ ...body, fontWeight: 600, color: "var(--text-primary)" }}>
-              Result reference for your application server
+            <p style={{ ...body, fontSize: "0.8rem", color: "var(--text-muted)" }}>
+              Result reference (verify on server, not from URL alone)
             </p>
             <div
               style={{
-                marginTop: "0.5rem",
-                padding: "0.75rem 0.85rem",
+                marginTop: "0.35rem",
+                padding: "0.65rem 0.75rem",
                 borderRadius: 12,
                 border: "1px solid var(--border-subtle)",
                 background: "var(--surface-inset)",
@@ -71,18 +175,8 @@ export function PartnerSandboxCallbackClient() {
                 wordBreak: "break-all",
               }}
             >
-              {view.hints.receipt_id}
+              {receiptId}
             </div>
-            {receiptVerified === true ? (
-              <p style={{ ...body, marginTop: "0.65rem", color: "#10B981", fontWeight: 600 }}>
-                Public receipt signature verified for this reference.
-              </p>
-            ) : null}
-            {receiptVerified === false ? (
-              <p style={{ ...body, marginTop: "0.65rem", color: "var(--text-muted)" }}>
-                Receipt could not be loaded from the public verification endpoint.
-              </p>
-            ) : null}
           </div>
         ) : null}
 
@@ -96,7 +190,7 @@ export function PartnerSandboxCallbackClient() {
         </div>
       </ContentCard>
 
-      {approved && view.hints.receipt_id ? (
+      {display.receipt_confirmed && receiptId ? (
         <details>
           <summary
             style={{
@@ -110,14 +204,7 @@ export function PartnerSandboxCallbackClient() {
             Verification details
           </summary>
           <div style={{ marginTop: "0.85rem" }}>
-            <LiveDecisionReceiptCard
-              receiptId={view.hints.receipt_id}
-              compact
-              onLoaded={(receipt) => {
-                const sig = "signature_valid" in receipt ? receipt.signature_valid : undefined;
-                setReceiptVerified(sig !== false);
-              }}
-            />
+            <LiveDecisionReceiptCard receiptId={receiptId} compact />
           </div>
         </details>
       ) : null}
