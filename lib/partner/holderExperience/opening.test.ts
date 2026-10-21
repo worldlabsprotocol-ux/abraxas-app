@@ -21,6 +21,7 @@ describe("buildHolderOpeningPresentation", () => {
     });
     expect(opening.headline).toContain("Acme Shop");
     expect(opening.shared.length).toBeGreaterThan(0);
+    expect(opening.shared[0]?.label.toLowerCase()).toContain("if approved");
     expect(opening.withheld.length).toBeGreaterThan(0);
     expect(holderCopyLeaks(JSON.stringify(opening))).toEqual([]);
     expect(JSON.stringify(opening).toLowerCase()).not.toContain("receipt");

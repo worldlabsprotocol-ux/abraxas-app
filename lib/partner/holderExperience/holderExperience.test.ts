@@ -49,6 +49,14 @@ describe("holder verification experience", () => {
     expect(view.href).toBe("/passport?verify_request=vr_partnerresume01");
     expect(view.explanation.toLowerCase()).toContain("wallet-control");
     expect(view.explanation.toLowerCase()).not.toContain("integration studio");
+    expect(view.explanation.toLowerCase()).not.toContain("session ended");
+    expect(view.footnotes?.length).toBeGreaterThan(0);
+  });
+
+  it("does not describe missing auth as session expired", () => {
+    const view = resolveHolderRecovery("session_required", "Acme");
+    expect(view.explanation.toLowerCase()).not.toContain("session ended");
+    expect(view.explanation.toLowerCase()).not.toContain("expired");
   });
 
   it("binds restart and contact actions to stored partner home, never a query return URL", () => {

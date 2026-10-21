@@ -13,6 +13,8 @@ export interface HolderRecoveryView {
   next_action: HolderNextAction;
   next_label: string;
   href?: string;
+  /** Short assurance lines below the primary action (sign-in recovery). */
+  footnotes?: string[];
 }
 
 const VIEWS: Record<HolderRecoveryState, Omit<HolderRecoveryView, "state">> = {
@@ -54,7 +56,7 @@ const VIEWS: Record<HolderRecoveryState, Omit<HolderRecoveryView, "state">> = {
   },
   session_required: {
     title: "Sign in to continue",
-    explanation: "Your session ended. Sign in again to open your Abraxas account. Sign-in does not prove eligibility.",
+    explanation: "An Abraxas account is required to review and authorize this request. Sign-in opens your account only—it does not approve sharing or prove eligibility.",
     next_action: "sign_in_again",
     next_label: "Sign in again",
     href: HOLDER_PASSPORT_HREF,
@@ -115,10 +117,17 @@ export function resolvePartnerSessionRequiredRecovery(
 
   return {
     ...base,
+    title: "Sign in to continue",
     explanation: walletControl
-      ? "Sign in to return to this wallet-control request. Sign-in opens your Abraxas account only—it does not approve sharing or sign for the partner."
-      : "Sign in to return to this verification request. Sign-in opens your Abraxas account only—it does not prove eligibility or approve sharing.",
+      ? "Sign in to return to this exact wallet-control request. Sign-in opens your Abraxas account only—it does not approve sharing or sign for the partner."
+      : "Sign in to return to this exact verification request. Sign-in opens your Abraxas account only—it does not prove eligibility or approve sharing.",
     href: `/passport?verify_request=${encodeURIComponent(verifyRequestId)}`,
+    footnotes: [
+      "You return to the same request after sign-in.",
+      walletControl
+        ? "Wallet approval is message-only—no token transfer or spending approval."
+        : "Approving the request is a separate step after sign-in.",
+    ],
   };
 }
 

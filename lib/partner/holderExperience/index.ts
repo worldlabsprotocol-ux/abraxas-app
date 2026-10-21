@@ -20,6 +20,7 @@ export {
   buildHolderVerificationPresentation,
   humanizeCurrentValidity,
   humanizeHolderResult,
+  humanizeHolderRequestedOutcome,
   humanizeInvalidityReason,
   mapVerifyPhaseToChecking,
   primarySurfaceFreeOfJargon,

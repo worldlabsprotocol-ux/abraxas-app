@@ -37,7 +37,15 @@ describe("holder verification presentation", () => {
       brief,
     });
 
-    expect(view.theyReceive).toBe("Wallet control confirmed");
+    expect(view.theyReceive).toBe("Wallet control confirmation (only if you approve)");
+    expect(
+      buildHolderVerificationPresentation({
+        partnerName: "Post-Revocation Wallet Control Proof",
+        policyId: "ref-wc-postrev-5ffe-wallet_control-v1",
+        brief,
+        outcomePhase: "achieved",
+      }).theyReceive,
+    ).toBe("Wallet control confirmed");
     expect(view.primaryQuestion.toLowerCase()).toContain("wallet");
     expect(view.staysPrivate.join(" ").toLowerCase()).toContain("wallet address");
     expect(view.staysPrivate.join(" ").toLowerCase()).toContain("other connected wallets");
@@ -60,7 +68,7 @@ describe("holder verification presentation", () => {
       purpose: "purchase",
     });
 
-    expect(view.theyReceive).toBe("Age requirement met");
+    expect(view.theyReceive).toBe("Age requirement met (only if approved)");
     expect(view.staysPrivate.join(" ").toLowerCase()).toContain("date of birth");
     expect(view.staysPrivate.join(" ").toLowerCase()).not.toContain("wallet address");
     expect(view.staysPrivate.join(" ").toLowerCase()).not.toContain("other connected");
