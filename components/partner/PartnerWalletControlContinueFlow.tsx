@@ -18,6 +18,7 @@ import {
   resolveHolderRecovery,
 } from "@/lib/partner/holderExperience";
 import { describeHolderAuthErrorCode } from "@/lib/auth/holderAuthErrorCopy";
+import { isNavigablePartnerHandoffRedirectUrl } from "@/lib/partner/partnerClientNavigation";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
@@ -110,12 +111,16 @@ export function PartnerWalletControlContinueFlow({
   }
 
   const showConsent = methodQualified && !consentDismissed && handoff.phase !== "completed";
+  const flowComplete = handoff.phase === "completed" && Boolean(handoff.receiptId);
+  const returnEnabled = handoff.redirectUrl
+    ? isNavigablePartnerHandoffRedirectUrl(handoff.redirectUrl)
+    : false;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
       <PartnerFlowReturnHandler handoff={handoff} />
 
-      {!methodQualified ? (
+      {flowComplete ? null : !methodQualified ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
           <WalletVerifyControlPanel onSuccess={() => void afterWalletVerified()} />
           {qualifyBusy ? (
@@ -130,12 +135,12 @@ export function PartnerWalletControlContinueFlow({
           ) : null}
         </div>
       ) : (
-        <p role="status" style={{ margin: 0, fontSize: "0.86rem", lineHeight: 1.6, fontWeight: 600 }}>
+        <p role="status" style={{ margin: 0, fontSize: "0.92rem", lineHeight: 1.6, fontWeight: 600 }}>
           Wallet verified. Review what this application is requesting before sharing the result.
         </p>
       )}
 
-      {showConsent ? (
+      {flowComplete ? null : showConsent ? (
         <WalletControlPartnerConsent
           partnerName={partnerName}
           handoff={handoff}
@@ -147,14 +152,17 @@ export function PartnerWalletControlContinueFlow({
         <p role="status" style={{ fontSize: "0.86rem" }}>Authorization declined. You can approve above when ready.</p>
       ) : null}
 
-      {handoff.phase === "completed" && handoff.receiptId && returnUrl ? (
+      {flowComplete ? (
         <HolderDecisionComplete
-          receiptId={handoff.receiptId}
+          receiptId={handoff.receiptId!}
           partnerName={partnerName}
           policyId={policyId}
           returnLabel={returnLabel}
           onReturn={() => handoff.navigateToPartner()}
           returnLoading={handoff.inFlight}
+          surface="wallet_control"
+          showPassportNotice={false}
+          returnEnabled={returnEnabled}
         />
       ) : null}
 
@@ -162,8 +170,8 @@ export function PartnerWalletControlContinueFlow({
         <HolderRecoveryCard recovery={resolveHolderRecovery("invalid_binding", partnerName, null)} />
       ) : null}
 
-      {!methodQualified ? (
-        <p style={{ fontFamily: FONT, fontSize: "0.72rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.55 }}>
+      {!flowComplete && !methodQualified ? (
+        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.55 }}>
           This request uses a message signature. It does not authorize a transaction, transfer funds, or grant spending permission.
         </p>
       ) : null}
