@@ -2,6 +2,21 @@
 
 import type { WalletVerifyPhase } from "./walletVerifyFlowTypes";
 
+export function walletVerifyPhaseIcon(phase: WalletVerifyPhase): { glyph: string; color: string } {
+  switch (phase) {
+    case "verified":
+      return { glyph: "✓", color: "#14F195" };
+    case "error":
+      return { glyph: "!", color: "#E8A020" };
+    case "connecting":
+    case "awaiting_signature":
+    case "verifying":
+      return { glyph: "…", color: "var(--text-secondary)" };
+    default:
+      return { glyph: "◎", color: "#14F195" };
+  }
+}
+
 export function walletVerifyPhaseHeadline(phase: WalletVerifyPhase, walletLabel: string | null): string {
   switch (phase) {
     case "choose_wallet":
@@ -15,7 +30,7 @@ export function walletVerifyPhaseHeadline(phase: WalletVerifyPhase, walletLabel:
     case "verified":
       return "Wallet verified";
     case "error":
-      return "Wallet verification interrupted";
+      return "Wallet verification could not complete";
     default:
       return "Verify wallet control";
   }

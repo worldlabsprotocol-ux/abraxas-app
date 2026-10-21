@@ -12,4 +12,9 @@ describe("describeWalletVerifyRecoveryCode", () => {
     expect(describeWalletVerifyRecoveryCode("aborted")).toContain("without refreshing");
     expect(describeWalletVerifyRecoveryCode("timeout")).toContain("did not respond");
   });
+
+  it("maps verify failures separately from connection failures", () => {
+    expect(describeWalletVerifyRecoveryCode("verify_failed", "verify")).toContain("verify");
+    expect(describeWalletVerifyRecoveryCode("connect_succeeded_without_public_key", "connect")).toContain("address");
+  });
 });

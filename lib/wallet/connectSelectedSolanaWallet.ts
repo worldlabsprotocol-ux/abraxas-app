@@ -137,6 +137,7 @@ export type ConnectSelectedSolanaWalletInput = {
   getPublicKey: () => { toBase58(): string } | null;
   isContextConnected: () => boolean;
   commitSelection: (walletName: WalletName) => void;
+  publicKeyWaitMs?: number;
 };
 
 export async function connectSelectedSolanaWallet(
@@ -228,6 +229,21 @@ export async function connectSelectedSolanaWallet(
   }
 
   diagnostic.stage = "await_public_key";
+  const deadline = Date.now() + (input.publicKeyWaitMs ?? 8_000);
+  while (Date.now() < deadline) {
+    diagnostic.publicKeyReturned = Boolean(input.getPublicKey());
+    if (diagnostic.publicKeyReturned || input.isContextConnected()) {
+      return diagnostic;
+    }
+    await new Promise((resolve) => {
+      if (typeof requestAnimationFrame === "function") {
+        requestAnimationFrame(() => resolve(undefined));
+      } else {
+        setTimeout(() => resolve(undefined), 16);
+      }
+    });
+  }
+
   diagnostic.publicKeyReturned = Boolean(input.getPublicKey());
   if (!diagnostic.publicKeyReturned && !input.isContextConnected()) {
     diagnostic.errorMessage = "connect_succeeded_without_public_key";

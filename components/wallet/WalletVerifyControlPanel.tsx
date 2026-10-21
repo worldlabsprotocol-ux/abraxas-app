@@ -18,7 +18,13 @@ import {
 } from "@/lib/wallet/solanaWalletDiscovery";
 import { createWalletVerifyAttempt } from "@/lib/wallet/walletVerifyAttempt";
 import type { WalletVerifyChoice, WalletVerifyPhase } from "@/lib/wallet/walletVerifyFlowTypes";
-import { walletVerifyPhaseDetail, walletVerifyPhaseHeadline } from "@/lib/wallet/walletVerifyPhaseCopy";
+import { resolveSolanaSigningContext } from "@/lib/wallet/resolveSolanaSigningContext";
+import { waitForWalletSigningContext } from "@/lib/wallet/waitForWalletSigningContext";
+import {
+  walletVerifyPhaseDetail,
+  walletVerifyPhaseHeadline,
+  walletVerifyPhaseIcon,
+} from "@/lib/wallet/walletVerifyPhaseCopy";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
@@ -50,6 +56,8 @@ export function WalletVerifyControlPanel({
   const [phase, setPhase] = useState<WalletVerifyPhase>("choose_wallet");
   const [choice, setChoice] = useState<WalletVerifyChoice | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [failureStage, setFailureStage] = useState<string | null>(null);
+  const [failureCode, setFailureCode] = useState<string | null>(null);
   const [discoverySettled, setDiscoverySettled] = useState(false);
   const attemptRef = useRef<ReturnType<typeof createWalletVerifyAttempt> | null>(null);
   const publicKeyRef = useRef(publicKey);
@@ -88,24 +96,45 @@ export function WalletVerifyControlPanel({
     attemptRef.current = null;
     setPhase("choose_wallet");
     setError(null);
+    setFailureStage(null);
+    setFailureCode(null);
   }, []);
 
+  const readSigningContext = useCallback(() => {
+    return resolveSolanaSigningContext({
+      publicKey: publicKeyRef.current,
+      signMessage: signMessageRef.current,
+      wallet: walletRef.current,
+      wallets,
+      preferredWalletId: "Phantom",
+    });
+  }, [wallets]);
+
   const runSolanaVerify = useCallback(async (existingAttempt?: ReturnType<typeof createWalletVerifyAttempt>) => {
-    const pk = publicKeyRef.current;
-    const sm = signMessageRef.current;
-    if (!pk || !sm) {
-      setError("Connect Phantom before signing.");
-      setPhase("error");
-      return;
-    }
     const attempt = existingAttempt ?? createWalletVerifyAttempt();
     attemptRef.current = attempt;
     setPhase("awaiting_signature");
     setError(null);
+    setFailureStage(null);
+    setFailureCode(null);
+
+    const ctx = await waitForWalletSigningContext({
+      getPublicKey: () => readSigningContext().publicKey,
+      getSignMessage: () => readSigningContext().signMessage,
+      getConnected: () => connectedRef.current || Boolean(walletRef.current?.adapter.connected),
+    });
+    if (attempt.isStale()) return;
+    if (!ctx) {
+      setFailureStage("connect");
+      setFailureCode("wallet_signing_context_timeout");
+      setError(describeWalletVerifyRecoveryCode("connect_succeeded_without_public_key", "connect"));
+      setPhase("error");
+      return;
+    }
 
     const auth = await runPassportSolanaWalletAuth({
-      walletAddress: pk.toBase58(),
-      signMessage: sm,
+      walletAddress: ctx.publicKey.toBase58(),
+      signMessage: ctx.signMessage,
       intendedAction: HOLDER_AUTH_ACTIONS.partnerVerify,
       attempt,
       onPhase: (next) => setPhase(next === "verify" ? "verifying" : "awaiting_signature"),
@@ -117,6 +146,8 @@ export function WalletVerifyControlPanel({
         setPhase("choose_wallet");
         return;
       }
+      setFailureStage(auth.phase);
+      setFailureCode(auth.code);
       setError(describeWalletVerifyRecoveryCode(auth.code, auth.phase));
       setPhase("error");
       return;
@@ -125,7 +156,7 @@ export function WalletVerifyControlPanel({
     setPhase("verified");
     attemptRef.current = null;
     onSuccess?.();
-  }, [onSuccess]);
+  }, [onSuccess, readSigningContext]);
 
   const startPhantom = useCallback(async () => {
     setChoice("phantom");
@@ -139,6 +170,7 @@ export function WalletVerifyControlPanel({
     }
 
     setPhase("connecting");
+    const signingSnapshot = () => readSigningContext();
     try {
       await connectSelectedSolanaWallet({
         walletId: "Phantom" as PreferredSolanaWalletId,
@@ -146,19 +178,23 @@ export function WalletVerifyControlPanel({
         select,
         connect,
         getSelectedWallet: () => walletRef.current ?? null,
-        getPublicKey: () => publicKeyRef.current,
-        isContextConnected: () => connectedRef.current,
+        getPublicKey: () => signingSnapshot().publicKey,
+        isContextConnected: () => connectedRef.current || Boolean(walletRef.current?.adapter.connected),
         commitSelection: select,
       });
-      if (attempt.isStale()) return;
-      await runSolanaVerify(attempt);
     } catch (connectError) {
       if (attempt.isStale()) return;
       const message = connectError instanceof Error ? connectError.message : "wallet_connect_failed";
+      setFailureStage("connect");
+      setFailureCode(message);
       setError(describeWalletVerifyRecoveryCode(message, "connect"));
       setPhase("error");
+      return;
     }
-  }, [wallets, select, connect, runSolanaVerify]);
+
+    if (attempt.isStale()) return;
+    await runSolanaVerify(attempt);
+  }, [wallets, select, connect, runSolanaVerify, readSigningContext]);
 
   const startMetaMask = useCallback(async () => {
     setChoice("metamask");
@@ -203,6 +239,7 @@ export function WalletVerifyControlPanel({
   const walletLabel = walletChoiceLabel(choice);
   const pending = phase === "connecting" || phase === "awaiting_signature" || phase === "verifying";
   const showCancel = pending;
+  const phaseIcon = walletVerifyPhaseIcon(phase);
 
   return (
     <div
@@ -218,7 +255,7 @@ export function WalletVerifyControlPanel({
     >
       <div>
         <p style={{ margin: 0, fontWeight: 700, fontSize: "0.95rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-          <span aria-hidden style={{ color: "#14F195" }}>✓</span>
+          <span aria-hidden style={{ color: phaseIcon.color }}>{phaseIcon.glyph}</span>
           {walletVerifyPhaseHeadline(phase, walletLabel)}
         </p>
         <p style={{ margin: "0.35rem 0 0", fontSize: "0.84rem", lineHeight: 1.6, color: "var(--text-secondary)" }}>
@@ -320,9 +357,16 @@ export function WalletVerifyControlPanel({
       ) : null}
 
       {phase === "error" && error ? (
-        <p role="alert" style={{ margin: 0, color: "#E0524F", fontSize: "0.84rem", lineHeight: 1.55 }}>
-          {error}
-        </p>
+        <div>
+          <p role="alert" style={{ margin: 0, color: "#E0524F", fontSize: "0.84rem", lineHeight: 1.55 }}>
+            {error}
+          </p>
+          {failureStage && failureCode ? (
+            <p style={{ margin: "0.35rem 0 0", fontSize: "0.68rem", color: "var(--text-muted)" }}>
+              Stage: {failureStage} · {failureCode}
+            </p>
+          ) : null}
+        </div>
       ) : null}
 
       {phase === "error" ? (

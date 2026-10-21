@@ -20,6 +20,16 @@ export function describeWalletVerifyRecoveryCode(
       return "This signature no longer matches the active verification attempt. Try signing again without refreshing.";
     case "wrong_origin":
       return "This verification must be completed on the same site that opened the request.";
+    case "connect_succeeded_without_public_key":
+      return "Phantom connected, but Abraxas did not receive your wallet address in time. Try signing again without refreshing.";
+    case "invalid_signature":
+    case "verify_failed":
+      return "Abraxas could not verify your wallet signature. Try signing again with a fresh approval.";
+    case "expired":
+    case "replay":
+      return "That verification attempt expired. Try signing again to receive a fresh challenge.";
+    case "wrong_network":
+      return "Your wallet network does not match this verification request. Switch Phantom to Devnet and try again.";
     case "wallet_adapter_not_ready":
     case "wallet_not_listed":
     case "wallet_connect_failed":
@@ -28,8 +38,17 @@ export function describeWalletVerifyRecoveryCode(
     case "no_evm_provider":
       return "No EVM wallet extension detected. Install MetaMask or choose Phantom for Solana.";
     default:
+      if (phase === "sign") {
+        return "Wallet signature was not completed. Approve the message in Phantom or try signing again.";
+      }
+      if (phase === "verify") {
+        return describeHolderAuthErrorCode(code);
+      }
       if (phase === "connect") {
         return "Could not connect your wallet. Confirm the extension is unlocked, then try again.";
+      }
+      if (phase === "challenge") {
+        return "Could not start wallet verification. Try signing again.";
       }
       return describeHolderAuthErrorCode(code);
   }
