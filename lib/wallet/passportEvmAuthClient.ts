@@ -64,25 +64,39 @@ export async function runPassportEvmWalletAuth(input: {
     return { ok: false, code: challengeBody.code ?? "challenge_failed", phase: "challenge" };
   }
 
+  input.attempt?.bindChallenge(challengeBody.challenge.challenge_id);
+
   input.onPhase?.("sign");
-  const signed = await signWalletMessageWithControls({
-    message: challengeBody.challenge.message,
-    signMessage: async () => {
-      const signature = await eth.request({
-        method: "personal_sign",
-        params: [challengeBody.challenge!.message, wallet],
-      }) as string;
-      return Uint8Array.from(Buffer.from(signature.replace(/^0x/, ""), "hex"));
-    },
-    signal: input.attempt?.abort.signal,
-    isStale,
-  });
-  if (isStale()) return { ok: false, code: "stale", phase: "sign" };
-  if (!signed.ok) {
-    return { ok: false, code: signed.code, phase: "sign" };
+  let signatureHex: string;
+  try {
+    const signed = await signWalletMessageWithControls({
+      message: challengeBody.challenge.message,
+      signMessage: async () => {
+        const signature = await eth.request({
+          method: "personal_sign",
+          params: [challengeBody.challenge!.message, wallet],
+        }) as string;
+        if (typeof signature !== "string" || !signature.startsWith("0x")) {
+          throw new Error("invalid_signature_format");
+        }
+        return Uint8Array.from(Buffer.from(signature.slice(2), "hex"));
+      },
+      signal: input.attempt?.abort.signal,
+      isStale,
+    });
+    if (isStale()) return { ok: false, code: "stale", phase: "sign" };
+    if (!signed.ok) {
+      return { ok: false, code: signed.code, phase: "sign" };
+    }
+    signatureHex = `0x${Buffer.from(signed.signatureBytes).toString("hex")}`;
+  } catch {
+    return { ok: false, code: "cancelled", phase: "sign" };
   }
 
-  const signature = `0x${Buffer.from(signed.signatureBytes).toString("hex")}`;
+  if (isStale()) return { ok: false, code: "stale", phase: "sign" };
+  if (input.attempt && !input.attempt.canCommitChallenge(challengeBody.challenge.challenge_id)) {
+    return { ok: false, code: "stale", phase: "verify" };
+  }
 
   input.onPhase?.("verify");
   const verifyRes = await fetch("/api/auth/passport-evm/verify", {
@@ -93,7 +107,7 @@ export async function runPassportEvmWalletAuth(input: {
       challenge_id: challengeBody.challenge.challenge_id,
       wallet_address: wallet,
       chain_id: chainId,
-      signature,
+      signature: signatureHex,
       intended_action: input.intendedAction,
     }),
     signal: input.attempt?.abort.signal,

@@ -8,7 +8,7 @@ import { WalletReadyState } from "@solana/wallet-adapter-base";
 import { HOLDER_AUTH_ACTIONS } from "@/lib/auth/holderSubject/contract";
 import { describeWalletVerifyRecoveryCode } from "@/lib/auth/holderAuthErrorCopy";
 import { connectSelectedSolanaWallet } from "@/lib/wallet/connectSelectedSolanaWallet";
-import { detectEvmInjectable, detectMetaMaskInjectable, METAMASK_INSTALL_URL } from "@/lib/wallet/detectEvmProvider";
+import { detectMetaMaskInjectable, METAMASK_INSTALL_URL } from "@/lib/wallet/detectEvmProvider";
 import { runPassportEvmWalletAuth } from "@/lib/wallet/passportEvmAuthClient";
 import { runPassportSolanaWalletAuth } from "@/lib/wallet/passportSolanaAuthClient";
 import {
@@ -80,7 +80,8 @@ export function WalletVerifyControlPanel({
     || phantomListed?.readyState === WalletReadyState.Loadable,
   );
 
-  const metamaskAvailable = detectMetaMaskInjectable() || detectEvmInjectable();
+  /** MetaMask card only when MetaMask is detected — no generic EVM fallback for Solana wallet control. */
+  const metamaskAvailable = detectMetaMaskInjectable();
 
   const cancelAttempt = useCallback(() => {
     attemptRef.current?.invalidate();
@@ -89,7 +90,7 @@ export function WalletVerifyControlPanel({
     setError(null);
   }, []);
 
-  const runSolanaVerify = useCallback(async () => {
+  const runSolanaVerify = useCallback(async (existingAttempt?: ReturnType<typeof createWalletVerifyAttempt>) => {
     const pk = publicKeyRef.current;
     const sm = signMessageRef.current;
     if (!pk || !sm) {
@@ -97,7 +98,7 @@ export function WalletVerifyControlPanel({
       setPhase("error");
       return;
     }
-    const attempt = createWalletVerifyAttempt();
+    const attempt = existingAttempt ?? createWalletVerifyAttempt();
     attemptRef.current = attempt;
     setPhase("awaiting_signature");
     setError(null);
@@ -133,7 +134,7 @@ export function WalletVerifyControlPanel({
     attemptRef.current = attempt;
 
     if (connectedRef.current && walletRef.current?.adapter.name === "Phantom" && publicKeyRef.current) {
-      await runSolanaVerify();
+      await runSolanaVerify(attempt);
       return;
     }
 
@@ -150,7 +151,7 @@ export function WalletVerifyControlPanel({
         commitSelection: select,
       });
       if (attempt.isStale()) return;
-      await runSolanaVerify();
+      await runSolanaVerify(attempt);
     } catch (connectError) {
       if (attempt.isStale()) return;
       const message = connectError instanceof Error ? connectError.message : "wallet_connect_failed";
@@ -307,8 +308,13 @@ export function WalletVerifyControlPanel({
                 cursor: "pointer",
               }}
             >
-              Cancel and try again
+              Cancel Abraxas attempt
             </button>
+          ) : null}
+          {showCancel ? (
+            <p style={{ margin: 0, fontSize: "0.68rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
+              This stops Abraxas&apos;s pending step and starts fresh on retry. If a wallet extension popup is still open, dismiss it in the extension before signing again.
+            </p>
           ) : null}
         </div>
       ) : null}

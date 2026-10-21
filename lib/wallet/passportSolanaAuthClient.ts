@@ -44,6 +44,8 @@ export async function runPassportSolanaWalletAuth(input: {
     return { ok: false, code: challengeBody.code ?? "challenge_failed", phase: "challenge" };
   }
 
+  input.attempt?.bindChallenge(challengeBody.challenge.challenge_id);
+
   input.onPhase?.("sign");
   const signed = await signWalletMessageWithControls({
     message: challengeBody.challenge.message,
@@ -56,6 +58,11 @@ export async function runPassportSolanaWalletAuth(input: {
     return { ok: false, code: signed.code, phase: "sign" };
   }
   const signature = Buffer.from(signed.signatureBytes).toString("base64");
+
+  if (isStale()) return { ok: false, code: "stale", phase: "sign" };
+  if (input.attempt && !input.attempt.canCommitChallenge(challengeBody.challenge.challenge_id)) {
+    return { ok: false, code: "stale", phase: "verify" };
+  }
 
   input.onPhase?.("verify");
   const verifyRes = await fetch("/api/auth/passport-solana/verify", {

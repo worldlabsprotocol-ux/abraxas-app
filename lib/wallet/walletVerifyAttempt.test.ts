@@ -16,4 +16,20 @@ describe("walletVerifyAttempt", () => {
     invalidateAllWalletVerifyAttempts();
     expect(attempt.isStale()).toBe(true);
   });
+
+  it("binds a challenge only to the active attempt generation", () => {
+    const attempt = createWalletVerifyAttempt();
+    attempt.bindChallenge("challenge-a");
+    expect(attempt.canCommitChallenge("challenge-a")).toBe(true);
+    expect(attempt.canCommitChallenge("challenge-b")).toBe(false);
+    attempt.invalidate();
+    expect(attempt.canCommitChallenge("challenge-a")).toBe(false);
+  });
+
+  it("rejects commit when a newer attempt supersedes", () => {
+    const first = createWalletVerifyAttempt();
+    first.bindChallenge("challenge-old");
+    createWalletVerifyAttempt();
+    expect(first.canCommitChallenge("challenge-old")).toBe(false);
+  });
 });
