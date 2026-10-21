@@ -41,15 +41,15 @@ describe("holder verification experience", () => {
     expect(brief.environment_detail.toLowerCase()).toContain("not production-usable");
   });
 
-  it("preserves verify_request for partner session-required recovery", () => {
+  it("uses wallet-native recovery for wallet_control instead of Google sign-in", () => {
     const view = resolvePartnerSessionRequiredRecovery("Acme Sandbox", null, {
       verifyRequestId: "vr_partnerresume01",
-      policyId: "wallet_control",
+      policyId: "ref-wc-postrev-5ffe-wallet_control-v1",
     });
-    expect(view.href).toBe("/passport?verify_request=vr_partnerresume01");
-    expect(view.explanation.toLowerCase()).toContain("wallet-control");
-    expect(view.explanation.toLowerCase()).not.toContain("integration studio");
-    expect(view.explanation.toLowerCase()).not.toContain("session ended");
+    expect(view.title.toLowerCase()).toContain("connect wallet");
+    expect(view.next_label.toLowerCase()).toContain("connect wallet");
+    expect(view.explanation.toLowerCase()).toContain("no google");
+    expect(view.href ?? "").not.toContain("/passport");
     expect(view.footnotes?.length).toBeGreaterThan(0);
   });
 

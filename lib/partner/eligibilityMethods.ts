@@ -20,7 +20,8 @@ export type EligibilityMethodId =
   | "partner_age_check"
   | "privacy_preserving"
   | "identity_liveness"
-  | "self_attestation";
+  | "self_attestation"
+  | "wallet_control";
 
 export interface EligibilityDisclosure {
   requirement: string;

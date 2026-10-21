@@ -1,7 +1,7 @@
 // FILE: lib/policy/evaluateSubjectPolicy.ts
 // Unified policy evaluation with issuer trust context for a subject.
 
-import { normalizeSuiAddress } from "@mysten/sui/utils";
+import { normalizePartnerFlowSubject } from "@/lib/auth/sessionSubject";
 import { resolveActiveClaimsForRuntime } from "@/lib/credentials/activeClaims.server";
 import { evaluatePolicyRules } from "@/lib/policy/evaluatePolicy";
 import { assertPolicyBelongsToPartner } from "@/lib/policy/assertPolicyOwnership";
@@ -48,7 +48,7 @@ export async function evaluatePolicyForSubject(input: {
   if (!policy) throw new Error("Policy not found");
   assertPolicyBelongsToPartner(policy, input.partnerId);
 
-  const subject = normalizeSuiAddress(input.suiAddress);
+  const subject = normalizePartnerFlowSubject(input.suiAddress);
   const claims = await resolveActiveClaimsForRuntime(subject);
 
   const effectiveRules = resolveEffectivePolicyRules(policy);

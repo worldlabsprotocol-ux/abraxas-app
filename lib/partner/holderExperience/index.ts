@@ -13,6 +13,7 @@ export {
   holderSafeClientMessage,
   resolveHolderRecovery,
   resolvePartnerSessionRequiredRecovery,
+  resolvePartnerWalletControlRecovery,
   HOLDER_RETURN_FAILURE_TECHNICAL,
   type HolderRecoveryView,
 } from "./recovery";

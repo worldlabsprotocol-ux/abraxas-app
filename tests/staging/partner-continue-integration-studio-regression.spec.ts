@@ -39,8 +39,8 @@ test.describe("Partner continue and Integration Studio regression", () => {
       waitUntil: "networkidle",
     });
 
-    const signIn = page.getByRole("button", { name: /Sign in again/i }).first();
-    await expect(signIn).toBeVisible({ timeout: 20000 });
+    const continueAction = page.getByRole("button", { name: /Connect wallet|Sign in again/i }).first();
+    await expect(continueAction).toBeVisible({ timeout: 20000 });
     expect(page.url()).toContain(encodeURIComponent(verifyRequest));
 
     expect(page.url()).toContain("partner/continue");

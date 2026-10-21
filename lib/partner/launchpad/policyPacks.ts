@@ -162,7 +162,7 @@ export const POLICY_PACKS: Record<PolicyPackId, PolicyPack> = {
   wallet_control: pack({
     id: "wallet_control",
     display_name: "Wallet control eligibility",
-    holder_explanation: "Prove control of the wallet bound to your Abraxas account. Signing in alone is not wallet control.",
+    holder_explanation: "Prove control of the wallet you connect for this request. A fresh message signature is required—connecting alone is not wallet control.",
     required_claims: ["wallet_binding_confirmed"],
     minimum_assurance: "L1",
     receipt_lifetime_hours: 12,

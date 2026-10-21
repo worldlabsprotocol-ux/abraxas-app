@@ -3,7 +3,7 @@
 
 import { buildPartnerContinuePath } from "@/lib/partner/partnerFlowContinuation";
 import { inferPolicyPackFromPolicyId } from "@/lib/partner/launchpad/policyPacks";
-import { WALLET_CONTROL_RESULT_FAMILY } from "@/lib/walletControl/contract";
+import { isWalletControlPartnerPolicy } from "@/lib/partner/walletControlPartnerPolicy";
 import { HOLDER_PASSPORT_HREF, type HolderNextAction, type HolderRecoveryState } from "./contract";
 
 export interface HolderRecoveryView {
@@ -104,6 +104,11 @@ export function resolvePartnerSessionRequiredRecovery(
   storedPartnerHome?: string | null,
   options?: { verifyRequestId?: string | null; policyId?: string | null },
 ): HolderRecoveryView {
+  const policyId = options?.policyId ?? "";
+  if (isWalletControlPartnerPolicy(policyId)) {
+    return resolvePartnerWalletControlRecovery(partnerName, storedPartnerHome);
+  }
+
   const base = resolveHolderRecovery("session_required", partnerName, storedPartnerHome);
   const verifyRequestId = options?.verifyRequestId?.trim() ?? "";
   if (!verifyRequestId) return base;
@@ -111,23 +116,34 @@ export function resolvePartnerSessionRequiredRecovery(
   const continuePath = buildPartnerHolderSignInContinuePath(verifyRequestId);
   if (!continuePath) return base;
 
-  const pack = inferPolicyPackFromPolicyId(options?.policyId ?? "");
-  const walletControl = pack?.disclosed_result === WALLET_CONTROL_RESULT_FAMILY
-    || (options?.policyId ?? "").includes("wallet_control");
-
   return {
     ...base,
     title: "Sign in to continue",
-    explanation: walletControl
-      ? "Sign in to return to this exact wallet-control request. Sign-in opens your Abraxas account only—it does not approve sharing or sign for the partner."
-      : "Sign in to return to this exact verification request. Sign-in opens your Abraxas account only—it does not prove eligibility or approve sharing.",
+    explanation: "Sign in to return to this exact verification request. Sign-in opens your Abraxas account only—it does not prove eligibility or approve sharing.",
     href: `/passport?verify_request=${encodeURIComponent(verifyRequestId)}`,
     footnotes: [
       "You return to the same request after sign-in.",
-      walletControl
-        ? "Wallet approval is message-only—no token transfer or spending approval."
-        : "Approving the request is a separate step after sign-in.",
+      "Approving the request is a separate step after sign-in.",
     ],
+  };
+}
+
+export function resolvePartnerWalletControlRecovery(
+  partnerName?: string,
+  storedPartnerHome?: string | null,
+): HolderRecoveryView {
+  const partner = partnerName?.trim() || "the requesting partner";
+  return {
+    state: "session_required",
+    title: "Connect wallet to continue",
+    explanation: `${partner} needs a fresh wallet-control proof for this request. Connect your wallet and sign the Abraxas message—no Google account or email is required.`,
+    next_action: "sign_in_again",
+    next_label: "Connect wallet",
+    footnotes: [
+      "Wallet approval is message-only—no token transfer or spending approval.",
+      "Passport sign-in with Google is optional and not required for wallet control.",
+    ],
+    href: storedPartnerHome ?? undefined,
   };
 }
 

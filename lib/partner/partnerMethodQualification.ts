@@ -9,6 +9,7 @@ import {
   policyPackRequiresIdentityEvidence,
   type PolicyPack,
 } from "@/lib/partner/launchpad/policyPacks";
+import { policyPackIsWalletControl } from "@/lib/partner/walletControlPartnerPolicy";
 import type { PartnerPolicyRules } from "@/lib/policy/types";
 import { isSelfAttestationEligiblePolicy } from "@/lib/policy/selfAttestationGuards";
 import { policyRequiresIdentityEvidenceForPurchase } from "@/lib/goodTrouble/pilotAgeEligibilityPolicy";
@@ -57,6 +58,7 @@ export function evaluateMethodQualification(input: {
   reclaimRequired?: boolean;
   policyRules?: PartnerPolicyRules;
   selfAttestationActive?: boolean;
+  walletControlClaimActive?: boolean;
 }): MethodQualificationResult {
   const verifyRequestId = input.verifyRequestId.trim();
   const storedPartnerId = input.storedPartnerId.trim();
@@ -86,6 +88,9 @@ export function evaluateMethodQualification(input: {
   const methodId = input.methodId as EligibilityMethodId;
   if (methodId === "account_login") {
     return { ok: false, code: "login_is_not_eligibility", qualified: false, issuedReceipt: false };
+  }
+  if (methodId === "wallet_control" && pack && !policyPackIsWalletControl(pack)) {
+    return { ok: false, code: METHOD_NOT_QUALIFIED, qualified: false, issuedReceipt: false };
   }
   if (methodId === "reuse_existing_proof") {
     if (!input.existingProofCompatible) {
@@ -215,6 +220,26 @@ export function evaluateMethodQualification(input: {
         qualified: true,
         issuedReceipt: false,
         sandboxOnly: false,
+      },
+    };
+  }
+
+  if (pack && policyPackIsWalletControl(pack) && methodId === "wallet_control") {
+    if (!input.walletControlClaimActive) {
+      return { ok: false, code: METHOD_NOT_QUALIFIED, qualified: false, issuedReceipt: false };
+    }
+    return {
+      ok: true,
+      record: {
+        verifyRequestId,
+        partnerId: storedPartnerId,
+        policyId: storedPolicyId,
+        policyVersion: input.storedPolicyVersion,
+        methodId,
+        state: "qualified",
+        qualified: true,
+        issuedReceipt: false,
+        sandboxOnly: Boolean(policyPackIsSandboxOnly(pack)),
       },
     };
   }

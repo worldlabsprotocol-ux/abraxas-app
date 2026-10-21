@@ -2,6 +2,7 @@
 // Wallet authority — bind, verify, list, revoke; preserves Sui/zkLogin paths.
 
 import { normalizeSuiAddress } from "@mysten/sui/utils";
+import { normalizeClaimSubjectId } from "@/lib/credentials/claimSubjectId";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAdmin } from "@/lib/supabase/admin";
 import { appendAuditEvent } from "@/lib/verification/audit";
@@ -73,7 +74,7 @@ async function assertWalletNotActiveOnOtherSubject(
   const wallet = chain === "evm"
     ? normalizeEvmAddress(walletAddress)
     : normalizeSuiAddress(walletAddress);
-  const subject = normalizeSuiAddress(subjectId);
+  const subject = normalizeClaimSubjectId(subjectId);
 
   const { data: existing } = await sb
     .from("wallet_bindings")
@@ -97,7 +98,7 @@ export async function listHolderWalletViews(subjectId: string): Promise<HolderWa
 
 export async function listSubjectWallets(subjectId: string): Promise<WalletBindingRecord[]> {
   const sb = requireSupabaseAdmin();
-  const subject = normalizeSuiAddress(subjectId);
+  const subject = normalizeClaimSubjectId(subjectId);
   const { data } = await sb
     .from("wallet_bindings")
     .select("*")
@@ -118,7 +119,7 @@ export async function getActiveWalletBinding(
   const { data } = await sb
     .from("wallet_bindings")
     .select("*")
-    .eq("subject_id", normalizeSuiAddress(subjectId))
+    .eq("subject_id", normalizeClaimSubjectId(subjectId))
     .eq("wallet_address", address)
     .eq("chain", chain)
     .maybeSingle();

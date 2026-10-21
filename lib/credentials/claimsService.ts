@@ -2,6 +2,7 @@
 // Persist and query normalized credential claims.
 
 import { normalizeSuiAddress } from "@mysten/sui/utils";
+import { normalizeClaimSubjectId } from "@/lib/credentials/claimSubjectId";
 import { getSupabaseAdmin, requireSupabaseAdmin } from "@/lib/supabase/admin";
 import type { ClaimStatus, CredentialClaimRecord } from "@/lib/credentials/claimSchema";
 import { WalletPersistenceError } from "@/lib/credentials/walletPersistenceErrors";
@@ -37,7 +38,7 @@ export async function upsertWalletControlClaim(
   }
 
   const sb = requireSupabaseAdmin();
-  const subject = normalizeSuiAddress(claim.subject_id);
+  const subject = normalizeClaimSubjectId(claim.subject_id);
   const { data, error } = await sb.rpc("upsert_wallet_control_claim_atomic", {
     p_subject_id: subject,
     p_evidence_reference: claim.evidence_reference,
@@ -129,7 +130,7 @@ export async function upsertClaims(
   const now = new Date().toISOString();
 
   for (const claim of claims) {
-    const subject = normalizeSuiAddress(claim.subject_id);
+    const subject = normalizeClaimSubjectId(claim.subject_id);
     const { data, error } = await sb.rpc("replace_credential_claim_atomic", {
       p_subject_id: subject,
       p_credential_jti: claim.credential_jti,
@@ -176,7 +177,7 @@ export async function getActiveClaims(subjectId: string): Promise<CredentialClai
   const sb = getSupabaseAdmin();
   if (!sb) return [];
 
-  const subject = normalizeSuiAddress(subjectId);
+  const subject = normalizeClaimSubjectId(subjectId);
   const now = new Date().toISOString();
 
   const { data, error } = await sb
@@ -201,7 +202,7 @@ export async function revokeSubjectClaims(
   const sb = getSupabaseAdmin();
   if (!sb) return;
 
-  const subject = normalizeSuiAddress(subjectId);
+  const subject = normalizeClaimSubjectId(subjectId);
   const revokedAt = new Date().toISOString();
 
   await sb.from("credential_claims")

@@ -1,6 +1,7 @@
 import { GOOD_TROUBLE_PARTNER_ID } from "@/lib/goodTrouble/constants";
 import { isGoodTroubleBrowseFlow } from "@/lib/partner/goodTroubleBrowseFlow";
 import { isCanonicalGoodTroublePurchaseFlow } from "@/lib/partner/goodTroublePurchaseFlow";
+import { isWalletControlPartnerPolicy } from "@/lib/partner/walletControlPartnerPolicy";
 
 type PartnerSetupVisibilityInput = {
   partnerId: string;
@@ -24,6 +25,7 @@ export function resolvePartnerSetupVisibility({
 }: PartnerSetupVisibilityInput) {
   const dobFirstBrowse = isGoodTroubleBrowseFlow({ partnerId, policyId, purpose });
   const canonicalPurchase = isCanonicalGoodTroublePurchaseFlow({ partnerId, policyId, purpose });
+  const walletControl = isWalletControlPartnerPolicy(policyId);
 
   return {
     showWalletBinding:
@@ -31,9 +33,15 @@ export function resolvePartnerSetupVisibility({
       && !walletBound
       && !dobFirstBrowse
       && !canonicalPurchase
+      && !walletControl
       && partnerId !== GOOD_TROUBLE_PARTNER_ID,
     showIdentityVerification:
-      walletReady && !identityComplete && !underReview && !dobFirstBrowse && !canonicalPurchase,
+      walletReady
+      && !identityComplete
+      && !underReview
+      && !dobFirstBrowse
+      && !canonicalPurchase
+      && !walletControl,
     showDobFirstBrowseForm: walletReady && dobFirstBrowse && !underReview,
   };
 }
