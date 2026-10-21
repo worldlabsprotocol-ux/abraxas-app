@@ -1,10 +1,12 @@
 "use client";
 // FILE: components/passport/PassportSolanaSignInButton.tsx
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { HOLDER_AUTH_ACTIONS } from "@/lib/auth/holderSubject/contract";
-import { describeHolderAuthErrorCode } from "@/lib/auth/holderAuthErrorCopy";
+import { describeWalletVerifyRecoveryCode } from "@/lib/auth/holderAuthErrorCopy";
+import { runPassportSolanaWalletAuth } from "@/lib/wallet/passportSolanaAuthClient";
+import { createWalletVerifyAttempt } from "@/lib/wallet/walletVerifyAttempt";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
@@ -19,63 +21,49 @@ export function PassportSolanaSignInButton({
 }) {
   const { publicKey, signMessage, connected } = useWallet();
   const [busy, setBusy] = useState(false);
+  const [phaseLabel, setPhaseLabel] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const attemptRef = useRef<ReturnType<typeof createWalletVerifyAttempt> | null>(null);
+
+  const cancel = useCallback(() => {
+    attemptRef.current?.invalidate();
+    attemptRef.current = null;
+    setBusy(false);
+    setPhaseLabel(null);
+  }, []);
 
   const authenticate = useCallback(async () => {
     if (!publicKey || !signMessage) {
       setError("Connect a Solana wallet first.");
       return;
     }
+    attemptRef.current?.invalidate();
+    const attempt = createWalletVerifyAttempt();
+    attemptRef.current = attempt;
     setBusy(true);
     setError(null);
-    try {
-      const walletAddress = publicKey.toBase58();
-      const solanaNetwork = process.env.NEXT_PUBLIC_SOLANA_NETWORK ?? "devnet";
-      const challengeRes = await fetch("/api/auth/passport-solana/challenge", {
-        method: "POST",
-        credentials: "include",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          wallet_address: walletAddress,
-          solana_network: solanaNetwork,
-          intended_action: intendedAction,
-        }),
-      });
-      const challengeBody = await challengeRes.json() as {
-        ok?: boolean;
-        challenge?: { challenge_id: string; message: string };
-        code?: string;
-      };
-      if (!challengeRes.ok || !challengeBody.challenge) {
-        setError(describeHolderAuthErrorCode(challengeBody.code ?? "challenge_failed"));
-        return;
-      }
-      const messageBytes = new TextEncoder().encode(challengeBody.challenge.message);
-      const signatureBytes = await signMessage(messageBytes);
-      const signature = Buffer.from(signatureBytes).toString("base64");
+    setPhaseLabel("Review signature in your wallet");
 
-      const verifyRes = await fetch("/api/auth/passport-solana/verify", {
-        method: "POST",
-        credentials: "include",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          challenge_id: challengeBody.challenge.challenge_id,
-          wallet_address: walletAddress,
-          solana_network: solanaNetwork,
-          signature,
-          intended_action: intendedAction,
-        }),
-      });
-      const verifyBody = await verifyRes.json() as { ok?: boolean; code?: string };
-      if (!verifyRes.ok || !verifyBody.ok) {
-        setError(describeHolderAuthErrorCode(verifyBody.code ?? "verify_failed"));
-        return;
-      }
-      window.dispatchEvent(new Event("abraxas:holder-session"));
-      onSuccess?.();
-    } finally {
-      setBusy(false);
+    const auth = await runPassportSolanaWalletAuth({
+      walletAddress: publicKey.toBase58(),
+      signMessage,
+      intendedAction,
+      attempt,
+      onPhase: (phase) => setPhaseLabel(phase === "verify" ? "Verifying signature…" : "Review signature in your wallet"),
+    });
+
+    if (attempt.isStale()) return;
+
+    setBusy(false);
+    setPhaseLabel(null);
+    attemptRef.current = null;
+
+    if (!auth.ok) {
+      if (auth.code === "aborted" || auth.code === "stale") return;
+      setError(describeWalletVerifyRecoveryCode(auth.code, auth.phase));
+      return;
     }
+    onSuccess?.();
   }, [publicKey, signMessage, intendedAction, onSuccess]);
 
   return (
@@ -96,8 +84,27 @@ export function PassportSolanaSignInButton({
           width: "100%",
         }}
       >
-        {busy ? "Authenticating…" : (label ?? "Sign in with Solana wallet")}
+        {busy ? (phaseLabel ?? "Waiting for wallet…") : (label ?? "Sign in with Solana wallet")}
       </button>
+      {busy ? (
+        <button
+          type="button"
+          onClick={cancel}
+          style={{
+            marginTop: "0.35rem",
+            padding: 0,
+            border: "none",
+            background: "transparent",
+            color: "var(--text-secondary)",
+            fontFamily: FONT,
+            fontSize: "0.72rem",
+            cursor: "pointer",
+            textDecoration: "underline",
+          }}
+        >
+          Cancel and try again
+        </button>
+      ) : null}
       {error ? <p style={{ color: "#E0524F", fontSize: "0.72rem" }}>{error}</p> : null}
     </div>
   );
