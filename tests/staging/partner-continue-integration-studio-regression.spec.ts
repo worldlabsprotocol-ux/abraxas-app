@@ -40,19 +40,15 @@ test.describe("Partner continue and Integration Studio regression", () => {
     });
 
     const signIn = page.getByRole("button", { name: /Sign in again/i }).first();
-    const signInLink = page.getByRole("link", { name: /Sign in again/i }).first();
-    const hasSignIn = (await signIn.isVisible().catch(() => false))
-      || (await signInLink.isVisible().catch(() => false));
+    const hasSignIn = await signIn.isVisible().catch(() => false);
 
     if (!hasSignIn) {
       test.skip(true, "BLOCKED: session already present or request unavailable in this environment");
       return;
     }
 
-    if (await signInLink.isVisible().catch(() => false)) {
-      const href = await signInLink.getAttribute("href");
-      expect(href ?? "").toContain(`verify_request=${encodeURIComponent(verifyRequest)}`);
-    }
+    await expect(signIn).toBeVisible();
+    expect(page.url()).toContain(encodeURIComponent(verifyRequest));
 
     expect(page.url()).toContain("partner/continue");
     expect(page.url()).not.toMatch(/\/developers\/integration-studio/);
