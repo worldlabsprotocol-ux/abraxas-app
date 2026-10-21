@@ -11,20 +11,18 @@ test.describe("Partner continue and Integration Studio regression", () => {
       return;
     }
 
-    await page.goto(`${base}/developers/integration-studio`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${base}/developers/integration-studio`, { waitUntil: "networkidle" });
 
-    const sandboxHeading = page.getByRole("heading", { name: /Create ·/i }).first();
-    await expect(sandboxHeading).toBeVisible({ timeout: 20000 });
-
+    await page.locator('a.abx-studio-workspace__nav-item[href$="#sandbox"]').click();
     const sandboxForm = page.locator("#sandbox");
-    await sandboxHeading.scrollIntoViewIfNeeded();
-    await expect(sandboxForm).toBeVisible();
+    await expect(sandboxForm).toBeVisible({ timeout: 20000 });
     await expect(page.getByLabel(/Sandbox application name/i).first()).toBeVisible();
+    await expect(sandboxForm).not.toHaveCSS("opacity", "0");
 
-    await page.goto(`${base}/developers/integration-studio#configuration`, { waitUntil: "domcontentloaded" });
+    await page.locator('a.abx-studio-workspace__nav-item[href$="#configuration"]').click();
     const configuration = page.locator("#configuration");
-    await configuration.scrollIntoViewIfNeeded();
     await expect(configuration).toBeVisible({ timeout: 20000 });
+    await expect(page.getByRole("heading", { name: /Launchpad session/i })).toBeVisible();
     await expect(configuration).not.toHaveCSS("opacity", "0");
   });
 
