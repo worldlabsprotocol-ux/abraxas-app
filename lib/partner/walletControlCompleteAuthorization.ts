@@ -47,6 +47,7 @@ export async function enforceWalletControlCompleteAuthorization(input: {
     partnerId: input.partnerId,
     policyId: input.policyId,
     policyVersion: qualified.record.policyVersion ?? input.policyVersion,
+    sessionSubject: input.sessionSubject,
   });
   if (!sharing.ok) {
     return {

@@ -13,6 +13,7 @@ export async function requirePartnerSharingConsent(input: {
   partnerId: string;
   policyId: string;
   policyVersion?: number;
+  sessionSubject: string;
 }): Promise<{ ok: true } | { ok: false; code: string }> {
   const token = input.request.cookies.get(PARTNER_SHARING_CONSENT_COOKIE)?.value;
   const record = token ? await verifyPartnerSharingConsentCookie(token) : null;
@@ -22,6 +23,7 @@ export async function requirePartnerSharingConsent(input: {
     partnerId: input.partnerId,
     policyId: input.policyId,
     policyVersion: input.policyVersion,
+    sessionSubject: input.sessionSubject,
   })) {
     return { ok: false, code: "sharing_consent_required" };
   }

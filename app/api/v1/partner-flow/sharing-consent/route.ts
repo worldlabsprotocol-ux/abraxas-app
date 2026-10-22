@@ -12,6 +12,11 @@ import {
   recordPartnerFlowRequestOutcome,
 } from "@/lib/partner/partnerFlowRouteGuard";
 import { resolvePartnerFlowCompleteCorrelation } from "@/lib/partner/partnerFlowCompleteCorrelation";
+import {
+  auditPartnerFlowStepBestEffort,
+  flowTraceIdFromVerificationRequest,
+} from "@/lib/partner/partnerFlowAudit";
+import { PARTNER_FLOW_AUDIT_ACTIONS } from "@/lib/partner/partnerFlowAuditContract";
 
 export const dynamic = "force-dynamic";
 
@@ -113,10 +118,22 @@ export async function POST(request: NextRequest) {
     partnerId,
     policyId,
     policyVersion: qualified.record.policyVersion,
+    subjectId: session.session.subjectId,
   });
   if (!token) {
     return NextResponse.json({ error: "Consent could not be recorded" }, { status: 503 });
   }
+
+  void auditPartnerFlowStepBestEffort({
+    flowTraceId: flowTraceIdFromVerificationRequest(verifyRequestId),
+    action: PARTNER_FLOW_AUDIT_ACTIONS.consent,
+    partnerId,
+    policyId,
+    policyVersion: qualified.record.policyVersion,
+    subjectId: session.session.subjectId,
+    outcome: "sharing_consent_granted",
+    verificationRequestId: verifyRequestId,
+  });
 
   recordPartnerFlowRequestOutcome({
     request,

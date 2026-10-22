@@ -62,6 +62,7 @@ describe("enforceWalletControlCompleteAuthorization", () => {
       verifyRequestId: "vr_demo",
       partnerId: "p1",
       policyId: "p1-wallet_control-v1",
+      subjectId: "0xabc",
     });
     expect(sharingToken).toBeTruthy();
 
@@ -97,6 +98,7 @@ describe("enforceWalletControlCompleteAuthorization", () => {
       verifyRequestId: "vr_other",
       partnerId: "p1",
       policyId: "p1-wallet_control-v1",
+      subjectId: "0xabc",
     });
 
     const req = new NextRequest("http://localhost/complete", { method: "POST" });
@@ -108,6 +110,43 @@ describe("enforceWalletControlCompleteAuthorization", () => {
       policyId: "p1-wallet_control-v1",
       verifyRequestId: "vr_demo",
       sessionSubject: "0xabc",
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.code).toBe("sharing_consent_required");
+  });
+
+  it("fails when sharing consent was issued for a different holder session", async () => {
+    requireQualifiedPartnerMethod.mockResolvedValue({
+      ok: true,
+      record: {
+        verifyRequestId: "vr_demo",
+        partnerId: "p1",
+        policyId: "p1-wallet_control-v1",
+        methodId: "wallet_control",
+        state: "qualified",
+        qualified: true,
+        issuedReceipt: false,
+        sandboxOnly: true,
+      },
+    });
+
+    const sharingToken = await signPartnerSharingConsentCookie({
+      verifyRequestId: "vr_demo",
+      partnerId: "p1",
+      policyId: "p1-wallet_control-v1",
+      subjectId: "0xoriginal_holder",
+    });
+
+    const req = new NextRequest("http://localhost/complete", { method: "POST" });
+    req.cookies.set("abraxas_partner_sharing_consent", sharingToken!);
+
+    const result = await enforceWalletControlCompleteAuthorization({
+      request: req,
+      partnerId: "p1",
+      policyId: "p1-wallet_control-v1",
+      verifyRequestId: "vr_demo",
+      sessionSubject: "0xattacker",
     });
     expect(result.ok).toBe(false);
     if (result.ok) return;

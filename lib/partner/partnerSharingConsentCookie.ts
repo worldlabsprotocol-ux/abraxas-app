@@ -10,6 +10,8 @@ export type PartnerSharingConsentRecord = {
   partnerId: string;
   policyId: string;
   policyVersion?: number;
+  /** Browser session subject that approved sharing — prevents cross-holder cookie reuse. */
+  subjectId: string;
 };
 
 const MAX_AGE_SEC = 15 * 60;
@@ -37,6 +39,8 @@ export async function signPartnerSharingConsentCookie(
 ): Promise<string | null> {
   const key = secret();
   if (!key) return null;
+  const subjectId = record.subjectId.trim();
+  if (!subjectId) return null;
   return new SignJWT({
     verifyRequestId: record.verifyRequestId,
     partnerId: record.partnerId,
@@ -44,6 +48,7 @@ export async function signPartnerSharingConsentCookie(
     policyVersion: record.policyVersion ?? null,
   })
     .setProtectedHeader({ alg: "HS256" })
+    .setSubject(subjectId)
     .setIssuedAt()
     .setExpirationTime(`${MAX_AGE_SEC}s`)
     .sign(key);
@@ -61,12 +66,14 @@ export async function verifyPartnerSharingConsentCookie(
     const verifyRequestId = typeof payload.verifyRequestId === "string" ? payload.verifyRequestId.trim() : "";
     const partnerId = typeof payload.partnerId === "string" ? payload.partnerId.trim() : "";
     const policyId = typeof payload.policyId === "string" ? payload.policyId.trim() : "";
-    if (!verifyRequestId || !partnerId || !policyId) return null;
+    const subjectId = typeof payload.sub === "string" ? payload.sub.trim() : "";
+    if (!verifyRequestId || !partnerId || !policyId || !subjectId) return null;
     return {
       verifyRequestId,
       partnerId,
       policyId,
       policyVersion: typeof payload.policyVersion === "number" ? payload.policyVersion : undefined,
+      subjectId,
     };
   } catch {
     return null;
@@ -79,8 +86,11 @@ export function sharingConsentMatchesBinding(input: {
   partnerId: string;
   policyId: string;
   policyVersion?: number;
+  sessionSubject: string;
 }): boolean {
   if (!input.record) return false;
+  const sessionSubject = input.sessionSubject.trim();
+  if (!sessionSubject || input.record.subjectId !== sessionSubject) return false;
   if (input.record.verifyRequestId !== input.verifyRequestId.trim()) return false;
   if (input.record.partnerId !== input.partnerId.trim()) return false;
   if (input.record.policyId !== input.policyId.trim()) return false;
