@@ -94,6 +94,25 @@ describe("PartnerFlowReturnHandler", () => {
     expect(container.querySelector('[role="status"]')).toBeNull();
   });
 
+  it("does not auto-complete when autoCompleteWhenReady is false", async () => {
+    const complete = vi.fn();
+    const handoff = {
+      isPartnerFlowContext: true,
+      ready: true,
+      phase: "idle" as const,
+      failureCategory: null,
+      inFlight: false,
+      receiptId: null,
+      redirectUrl: null,
+      complete,
+      navigateToPartner: vi.fn(),
+    };
+    render(<PartnerFlowReturnHandler handoff={handoff} autoCompleteWhenReady={false} />);
+    await waitFor(() => {
+      expect(complete).not.toHaveBeenCalled();
+    });
+  });
+
   it("renders nothing when partner context is absent", () => {
     const handoff = {
       isPartnerFlowContext: false,

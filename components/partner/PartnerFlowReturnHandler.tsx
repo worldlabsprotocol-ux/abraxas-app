@@ -9,6 +9,8 @@ import type { PartnerFlowHandoffController } from "@/lib/passport/partnerFlowHan
 
 interface Props {
   handoff: PartnerFlowHandoffController;
+  /** When false, completion runs only from explicit holder actions (e.g. wallet-control consent). */
+  autoCompleteWhenReady?: boolean;
 }
 
 function failureCopy(category: NonNullable<PartnerFlowHandoffController["failureCategory"]>): {
@@ -39,10 +41,14 @@ function failureCopy(category: NonNullable<PartnerFlowHandoffController["failure
   }
 }
 
-export function PartnerFlowReturnHandler({ handoff }: Props) {
+export function PartnerFlowReturnHandler({
+  handoff,
+  autoCompleteWhenReady = true,
+}: Props) {
   const autoCompleteStarted = useRef(false);
 
   useEffect(() => {
+    if (!autoCompleteWhenReady) return;
     if (
       handoff.ready &&
       handoff.phase === "idle" &&
@@ -52,7 +58,7 @@ export function PartnerFlowReturnHandler({ handoff }: Props) {
       autoCompleteStarted.current = true;
       void handoff.complete();
     }
-  }, [handoff.ready, handoff.phase, handoff.inFlight, handoff.complete]);
+  }, [autoCompleteWhenReady, handoff.ready, handoff.phase, handoff.inFlight, handoff.complete]);
 
   if (!handoff.isPartnerFlowContext) return null;
 

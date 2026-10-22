@@ -66,10 +66,10 @@ export function WalletControlPartnerConsent({
           id="wallet-control-consent-heading"
           style={{ margin: 0, fontFamily: FONT, fontWeight: 800, fontSize: "0.95rem", lineHeight: 1.45 }}
         >
-          Review partner authorization
+          Approve sharing with {partnerName}
         </p>
         <p style={{ margin: "0.4rem 0 0", fontFamily: FONT, fontSize: "0.84rem", lineHeight: 1.6, color: "var(--text-secondary)" }}>
-          {partnerName} can receive a wallet-control verification result only if you approve below.
+          Your wallet signature already proved control. Sharing the result still requires your explicit approval below.
         </p>
       </div>
 

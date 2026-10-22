@@ -1,13 +1,29 @@
 import { describe, expect, it } from "vitest";
 import {
+  mapInternalStageToPublicStep,
   resolveWalletControlPresentationStage,
   mapPartnerVerifyPhaseToPresentationStage,
 } from "./holderPresentationStage";
 
 describe("holderPresentationStage", () => {
-  it("orders wallet_control stages", () => {
+  it("maps internal authorization and decision to public Approve", () => {
+    expect(mapInternalStageToPublicStep("authorization")).toBe("approve");
+    expect(mapInternalStageToPublicStep("decision")).toBe("approve");
+    expect(mapInternalStageToPublicStep("wallet")).toBe("verify_wallet");
+  });
+
+  it("orders wallet_control internal stages", () => {
     expect(
       resolveWalletControlPresentationStage({
+        reviewAcknowledged: false,
+        methodQualified: false,
+        showConsent: false,
+        flowComplete: false,
+      }),
+    ).toBe("review");
+    expect(
+      resolveWalletControlPresentationStage({
+        reviewAcknowledged: true,
         methodQualified: false,
         showConsent: false,
         flowComplete: false,
@@ -15,13 +31,7 @@ describe("holderPresentationStage", () => {
     ).toBe("wallet");
     expect(
       resolveWalletControlPresentationStage({
-        methodQualified: true,
-        showConsent: false,
-        flowComplete: false,
-      }),
-    ).toBe("authorization");
-    expect(
-      resolveWalletControlPresentationStage({
+        reviewAcknowledged: true,
         methodQualified: true,
         showConsent: true,
         flowComplete: false,
@@ -29,6 +39,7 @@ describe("holderPresentationStage", () => {
     ).toBe("decision");
     expect(
       resolveWalletControlPresentationStage({
+        reviewAcknowledged: true,
         methodQualified: true,
         showConsent: false,
         flowComplete: true,
