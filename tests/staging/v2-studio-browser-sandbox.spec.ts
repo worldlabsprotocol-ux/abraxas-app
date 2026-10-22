@@ -13,7 +13,7 @@ test.describe("Integration Studio browser sandbox lifecycle", () => {
     }
 
     const appName = `studio-e2e-${Date.now()}`;
-    await page.goto(`${base}/developers/integration-studio`, { waitUntil: "networkidle" });
+    await page.goto(`${base}/developers/integration-studio#sandbox`, { waitUntil: "networkidle" });
 
     const nameInput = page.getByRole("textbox", { name: /application name/i }).first();
     if (!(await nameInput.isVisible().catch(() => false))) {

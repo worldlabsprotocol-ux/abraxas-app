@@ -107,8 +107,73 @@
   background: rgba(8, 8, 12, 0.55);
   padding: clamp(0.85rem, 2.2vw, 1.35rem);
   min-width: 0;
-  min-height: min(420px, 50vh);
+  min-height: min(320px, 42vh);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+}
+
+.abx-studio-policy-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(76, 187, 146, 0.35);
+  background: rgba(76, 187, 146, 0.08);
+}
+
+.abx-studio-policy-summary__text {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: clamp(0.92rem, 2.1vw, 1rem);
+  line-height: 1.55;
+  color: var(--text-primary);
+  margin: 0;
+  flex: 1 1 16rem;
+}
+
+.abx-studio-empty-state {
+  padding: clamp(1rem, 2.5vw, 1.35rem);
+  border-radius: 14px;
+  border: 1px dashed rgba(76, 187, 146, 0.38);
+  background:
+    linear-gradient(165deg, rgba(76, 187, 146, 0.06), transparent 55%),
+    rgba(0, 0, 0, 0.2);
+}
+
+.abx-studio-empty-state__title {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: clamp(1.05rem, 2.4vw, 1.2rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem;
+}
+
+.abx-studio-empty-state__lead {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: clamp(0.92rem, 2.1vw, 1rem);
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 0 0 0.85rem;
+  max-width: 52ch;
+}
+
+.abx-studio-empty-state__steps {
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: clamp(0.88rem, 2vw, 0.95rem);
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin: 0 0 1.1rem;
+  padding-left: 1.15rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.abx-studio-empty-state__action {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
 }
 
 .abx-studio-workspace__inspector {
