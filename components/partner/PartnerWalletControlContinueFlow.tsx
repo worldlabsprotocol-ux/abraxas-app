@@ -19,6 +19,8 @@ import {
 } from "@/lib/partner/holderExperience";
 import { describeHolderAuthErrorCode } from "@/lib/auth/holderAuthErrorCopy";
 import { isNavigablePartnerHandoffRedirectUrl } from "@/lib/partner/partnerClientNavigation";
+import { HolderVerificationStepNav } from "@/components/partner/HolderVerificationStepNav";
+import { resolveWalletControlPresentationStage } from "@/lib/partner/holderExperience/holderPresentationStage";
 
 const FONT = "'Inter',system-ui,-apple-system,sans-serif";
 
@@ -116,65 +118,79 @@ export function PartnerWalletControlContinueFlow({
     ? isNavigablePartnerHandoffRedirectUrl(handoff.redirectUrl)
     : false;
 
+  const activeStage = resolveWalletControlPresentationStage({
+    methodQualified,
+    showConsent,
+    flowComplete,
+  });
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+    <div className="abx-holder-verification-focused" style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
       <PartnerFlowReturnHandler handoff={handoff} />
+      <HolderVerificationStepNav activeStage={activeStage} reviewComplete />
 
-      {flowComplete ? null : !methodQualified ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-          <WalletVerifyControlPanel onSuccess={() => void afterWalletVerified()} />
-          {qualifyBusy ? (
-            <p role="status" style={{ margin: 0, fontSize: "0.84rem", color: "var(--text-secondary)" }}>
-              Confirming wallet control for {partnerName}…
+      <div className="abx-holder-verification-focused__stage" aria-live="polite">
+        {activeStage === "wallet" && !flowComplete ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            <p style={{ margin: 0, fontSize: "0.86rem", lineHeight: 1.55, color: "var(--text-secondary)" }}>
+              Connect your wallet and sign the challenge to prove control. This is not approval to share data with {partnerName}.
             </p>
-          ) : null}
-          {error ? (
-            <p role="alert" style={{ margin: 0, color: "var(--text-secondary)", fontSize: "0.84rem" }}>
-              {error}
+            <WalletVerifyControlPanel onSuccess={() => void afterWalletVerified()} />
+            {qualifyBusy ? (
+              <p role="status" style={{ margin: 0, fontSize: "0.84rem", color: "var(--text-secondary)" }}>
+                Confirming wallet control for {partnerName}…
+              </p>
+            ) : null}
+            {error ? (
+              <p role="alert" style={{ margin: 0, color: "var(--text-secondary)", fontSize: "0.84rem" }}>
+                {error}
+              </p>
+            ) : null}
+            <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.55 }}>
+              This request uses a message signature. It does not authorize a transaction, transfer funds, or grant spending permission.
             </p>
-          ) : null}
-        </div>
-      ) : (
-        <p role="status" style={{ margin: 0, fontSize: "0.92rem", lineHeight: 1.6, fontWeight: 600 }}>
-          Wallet verified. Review what this application is requesting before sharing the result.
-        </p>
-      )}
+          </div>
+        ) : null}
 
-      {flowComplete ? null : showConsent ? (
-        <WalletControlPartnerConsent
-          partnerName={partnerName}
-          handoff={handoff}
-          onDeclined={() => setConsentDismissed(true)}
-        />
-      ) : null}
+        {activeStage === "authorization" && !flowComplete ? (
+          <p role="status" style={{ margin: 0, fontSize: "0.92rem", lineHeight: 1.6, fontWeight: 600 }}>
+            Wallet control confirmed. Review what {partnerName} is allowed to receive before you approve or decline.
+          </p>
+        ) : null}
 
-      {methodQualified && consentDismissed && handoff.phase === "idle" && handoff.ready ? (
-        <p role="status" style={{ fontSize: "0.86rem" }}>Authorization declined. You can approve above when ready.</p>
-      ) : null}
+        {activeStage === "decision" && !flowComplete && showConsent ? (
+          <>
+            <WalletControlPartnerConsent
+              partnerName={partnerName}
+              handoff={handoff}
+              onDeclined={() => setConsentDismissed(true)}
+            />
+            {methodQualified && consentDismissed && handoff.phase === "idle" && handoff.ready ? (
+              <p role="status" style={{ fontSize: "0.86rem", marginTop: "0.65rem" }}>
+                Authorization declined. Re-open the approval controls above when you are ready.
+              </p>
+            ) : null}
+          </>
+        ) : null}
 
-      {flowComplete ? (
-        <HolderDecisionComplete
-          receiptId={handoff.receiptId!}
-          partnerName={partnerName}
-          policyId={policyId}
-          returnLabel={returnLabel}
-          onReturn={() => handoff.navigateToPartner()}
-          returnLoading={handoff.inFlight}
-          surface="wallet_control"
-          showPassportNotice={false}
-          returnEnabled={returnEnabled}
-        />
-      ) : null}
+        {activeStage === "outcome" && flowComplete ? (
+          <HolderDecisionComplete
+            receiptId={handoff.receiptId!}
+            partnerName={partnerName}
+            policyId={policyId}
+            returnLabel={returnLabel}
+            onReturn={() => handoff.navigateToPartner()}
+            returnLoading={handoff.inFlight}
+            surface="wallet_control"
+            showPassportNotice={false}
+            returnEnabled={returnEnabled}
+          />
+        ) : null}
 
-      {handoff.phase === "failed" ? (
-        <HolderRecoveryCard recovery={resolveHolderRecovery("invalid_binding", partnerName, null)} />
-      ) : null}
-
-      {!flowComplete && !methodQualified ? (
-        <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.55 }}>
-          This request uses a message signature. It does not authorize a transaction, transfer funds, or grant spending permission.
-        </p>
-      ) : null}
+        {handoff.phase === "failed" ? (
+          <HolderRecoveryCard recovery={resolveHolderRecovery("invalid_binding", partnerName, null)} />
+        ) : null}
+      </div>
     </div>
   );
 }

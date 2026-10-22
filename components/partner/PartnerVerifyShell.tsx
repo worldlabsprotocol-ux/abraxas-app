@@ -35,6 +35,8 @@ import {
   VerificationFailure,
   VerificationProgress,
 } from "@/components/partner/holder";
+import { HolderVerificationStepNav } from "@/components/partner/HolderVerificationStepNav";
+import { mapPartnerVerifyPhaseToPresentationStage } from "@/lib/partner/holderExperience/holderPresentationStage";
 
 export type PartnerVerifyPhase =
   | "loading"
@@ -230,6 +232,9 @@ export function PartnerVerifyShell({
     ? resolveHolderRecovery("sandbox_approved", partnerName, partnerHomeUrl)
     : recovery;
 
+  const holderPresentationStage = mapPartnerVerifyPhaseToPresentationStage(phase);
+  const showHolderStepNav = Boolean(onWalletSignIn) && !recoveryPhases && phase !== "invalid_link";
+
   return (
     <PartnerJourneyLayout
       partnerName={partnerName}
@@ -245,6 +250,14 @@ export function PartnerVerifyShell({
       policyId={policyId}
       purpose={purpose}
     >
+      {showHolderStepNav ? (
+        <div style={{ marginBottom: "0.85rem" }}>
+          <HolderVerificationStepNav
+            activeStage={holderPresentationStage}
+            reviewComplete={Boolean(brief) || Boolean(showBrief)}
+          />
+        </div>
+      ) : null}
       {phase === "approved" ? (
         <HolderSuccessState
           presentation={presentation}
