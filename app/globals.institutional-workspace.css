@@ -492,3 +492,11 @@
   max-height: 280px;
   overflow: auto;
 }
+
+.abx-holder-verification__nav {
+  margin-bottom: 0.35rem;
+}
+
+.abx-holder-verification-focused__stage {
+  min-height: 4rem;
+}

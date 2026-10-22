@@ -67,7 +67,8 @@ describe("PartnerWalletControlContinueFlow", () => {
     await vi.waitFor(() => {
       expect(onMethodQualifiedChange).toHaveBeenCalledWith(true);
     });
-    expect(await screen.findByText(/Review partner authorization/i)).toBeTruthy();
+    expect(await screen.findByText(/Wallet control confirmed/i)).toBeTruthy();
+    expect(screen.getByRole("navigation", { name: "Holder verification steps" })).toBeTruthy();
     expect(screen.queryByText(/This request could not be loaded/i)).toBeNull();
   });
 });
