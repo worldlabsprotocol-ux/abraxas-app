@@ -117,7 +117,22 @@
   z-index: 0;
 }
 
-/* Dimensional emblem environment — official RGB square art isolated via screen blend */
+/* Living sphere hero — full-color JPG on dark field (no screen blend) */
+.abx-hero-emblem-env--living-sphere .abx-hero-emblem-env__emblem {
+  mix-blend-mode: normal;
+  opacity: 1;
+  border-radius: 50%;
+}
+
+.abx-hero-emblem-env--living-sphere .abx-hero-emblem-env__orbit {
+  border-color: rgba(155, 77, 255, 0.14);
+}
+
+.abx-hero-emblem-env--living-sphere .abx-hero-emblem-env__halo {
+  background: radial-gradient(circle, rgba(155, 77, 255, 0.22), rgba(76, 187, 146, 0.12) 45%, transparent 68%);
+}
+
+/* Dimensional emblem environment — legacy crystalline art used screen blend */
 .abx-hero-emblem-env {
   position: relative;
   width: 100%;

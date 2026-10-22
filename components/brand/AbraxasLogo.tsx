@@ -5,7 +5,7 @@
 import type { CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { OFFICIAL_BRAND_ASSETS, OFFICIAL_EMBLEM_HERO_WEBP } from "@/lib/brand/officialBrandAssets";
+import { livingSphereEmblemForSize } from "@/lib/brand/livingSphereBrandAssets";
 import { PUBLIC_FONT_SANS } from "@/lib/design/publicSurface";
 
 const FONT = PUBLIC_FONT_SANS;
@@ -28,31 +28,30 @@ export function AbraxasLogo({
   emblemOnly = false,
   className,
 }: AbraxasLogoProps) {
-  const emblem = OFFICIAL_BRAND_ASSETS.emblem;
-  const compactEmblem = emblemSize <= 48;
-  const emblemSrc = compactEmblem ? OFFICIAL_EMBLEM_HERO_WEBP.src : emblem.src;
-  const emblemWidth = compactEmblem ? OFFICIAL_EMBLEM_HERO_WEBP.width : emblem.width;
-  const emblemHeight = compactEmblem ? OFFICIAL_EMBLEM_HERO_WEBP.height : emblem.height;
+  const emblem = livingSphereEmblemForSize(emblemSize);
   const showWordmark = variant === "lockup" && !emblemOnly;
 
   const inner = (
     <>
-      <Image
-        src={emblemSrc}
-        alt={emblemOnly ? emblem.alt : ""}
-        width={emblemWidth}
-        height={emblemHeight}
-        priority={!compactEmblem}
-        fetchPriority={compactEmblem ? "low" : "high"}
-        sizes={`${emblemSize}px`}
+      <span
+        className="abx-brand-living-sphere-mark"
         style={{
-          display: "block",
+          width: emblemSize,
           height: emblemSize,
-          width: "auto",
-          maxWidth: emblemSize * 1.05,
-          objectFit: "contain",
+          flexShrink: 0,
+          position: "relative",
         }}
-      />
+      >
+        <Image
+          src={emblem.src}
+          alt={emblemOnly ? emblem.alt : ""}
+          fill
+          priority={emblemSize >= 40}
+          fetchPriority={emblemSize >= 40 ? "high" : "low"}
+          sizes={`${emblemSize}px`}
+          className="abx-brand-living-sphere-mark__img"
+        />
+      </span>
       {showWordmark ? (
         <span
           style={{

@@ -1,5 +1,20 @@
 /* Premium homepage — editorial asymmetric system (Build #545+ creative override) */
 
+.abx-brand-living-sphere-mark {
+  display: block;
+  border-radius: 50%;
+  overflow: hidden;
+  line-height: 0;
+}
+
+.abx-brand-living-sphere-mark__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 44%;
+  display: block;
+}
+
 .abx-premium-home {
   --abx-premium-green: #4cbb92;
   --abx-premium-green-dim: rgba(76, 187, 146, 0.14);

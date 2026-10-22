@@ -4,7 +4,7 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { OFFICIAL_EMBLEM_HERO_WEBP } from "@/lib/brand/officialBrandAssets";
+import { LIVING_SPHERE_BRAND } from "@/lib/brand/livingSphereBrandAssets";
 
 const PARALLAX_MAX_DEG = 5;
 
@@ -45,7 +45,7 @@ export function AbraxasHeroCenterpiece() {
 
   return (
     <div
-      className={`abx-hero-emblem-env${staticMode ? " abx-hero-emblem-env--static" : ""}`}
+      className={`abx-hero-emblem-env abx-hero-emblem-env--living-sphere${staticMode ? " abx-hero-emblem-env--static" : ""}`}
       onPointerMove={onPointerMove}
       onPointerLeave={onPointerLeave}
       aria-hidden="true"
@@ -59,10 +59,10 @@ export function AbraxasHeroCenterpiece() {
         <div ref={parallaxRef} className="abx-hero-emblem-env__parallax">
           <div className="abx-hero-emblem-env__mark">
             <Image
-              src={OFFICIAL_EMBLEM_HERO_WEBP.src}
+              src={LIVING_SPHERE_BRAND.hero.src}
               alt=""
-              width={OFFICIAL_EMBLEM_HERO_WEBP.width}
-              height={OFFICIAL_EMBLEM_HERO_WEBP.height}
+              width={LIVING_SPHERE_BRAND.hero.width}
+              height={LIVING_SPHERE_BRAND.hero.height}
               priority
               fetchPriority="high"
               sizes="(max-width: 959px) min(88vw, 400px), min(42vw, 520px)"
