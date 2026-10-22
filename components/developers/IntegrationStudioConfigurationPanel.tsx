@@ -77,7 +77,7 @@ export function IntegrationStudioConfigurationPanel({
   if (!applicationId) return null;
 
   return (
-    <ContentCard title="Sandbox configuration">
+    <ContentCard title="Sandbox configuration" id="configuration">
       {!signedIn && (
         <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--warning, #f59e0b)" }}>
           Attach a Launchpad session to load live policy pins, callback URLs, and readiness checks.

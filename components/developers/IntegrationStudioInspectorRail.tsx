@@ -1,6 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Btn } from "@/components/redesign/ui";
+import { ModeCCommandRail } from "@/components/product/ModeCCommandRail";
 import { ABRAXAS_FONT_MONO, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
 import {
   useIntegrationStudioOperational,
@@ -66,6 +69,8 @@ export function IntegrationStudioInspectorRail() {
     inspectorFocus,
     setInspectorFocus,
     lastHttpTrace,
+    operationsRail,
+    nextAction,
   } = useIntegrationStudioOperational();
   const [health, setHealth] = useState<HealthPayload | null>(null);
   const [healthError, setHealthError] = useState("");
@@ -143,7 +148,32 @@ export function IntegrationStudioInspectorRail() {
 
   return (
     <div className="abx-studio-inspector" aria-label="Integration inspector">
-      <h2 className="abx-studio-inspector__header">Integration inspector</h2>
+      <div className="abx-studio-inspector__operations">
+        <h2 className="abx-studio-inspector__header">Partner operations</h2>
+        {operationsRail.length > 0 ? (
+          <ModeCCommandRail items={operationsRail} />
+        ) : (
+          <p style={{ fontFamily: FONT, fontSize: "0.88rem", lineHeight: 1.55, color: "var(--text-secondary)", margin: 0 }}>
+            Environment and readiness appear here as you configure the workspace.
+          </p>
+        )}
+        {nextAction ? (
+          <div className="abx-studio-inspector__next-action">
+            <strong>{nextAction.action}</strong>
+            <p style={{ margin: "0.35rem 0 0.65rem" }}>{nextAction.detail}</p>
+            {nextAction.href ? (
+              <Btn href={nextAction.href} size="sm">
+                {nextAction.buttonLabel}
+              </Btn>
+            ) : (
+              <Link href="/developers/integration-studio#sandbox" style={{ color: "var(--accent)", fontWeight: 700 }}>
+                {nextAction.buttonLabel}
+              </Link>
+            )}
+          </div>
+        ) : null}
+      </div>
+      <h2 className="abx-studio-inspector__header" style={{ marginTop: "0.15rem" }}>Integration inspector</h2>
       <div className="abx-studio-inspector__tabs" role="tablist" aria-label="Inspector sections">
         {FOCUS_TABS.map((tab) => (
           <button
