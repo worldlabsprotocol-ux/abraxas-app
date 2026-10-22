@@ -111,6 +111,41 @@
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
 }
 
+.abx-studio-pack-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.abx-studio-pack-chip {
+  padding: 0.55rem 0.85rem;
+  min-height: 44px;
+  border-radius: 999px;
+  border: 1px solid rgba(245, 245, 243, 0.14);
+  background: var(--surface-inset, rgba(0, 0, 0, 0.25));
+  color: var(--text-primary);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: clamp(0.82rem, 2vw, 0.92rem);
+  font-weight: 600;
+  cursor: pointer;
+  line-height: 1.35;
+  transition:
+    border-color var(--abx-motion-surface, 220ms) ease,
+    background var(--abx-motion-surface, 220ms) ease;
+}
+
+.abx-studio-pack-chip:hover,
+.abx-studio-pack-chip:focus-visible {
+  border-color: rgba(76, 187, 146, 0.45);
+  outline: none;
+}
+
+.abx-studio-pack-chip--selected {
+  border-color: rgba(76, 187, 146, 0.55);
+  background: rgba(76, 187, 146, 0.12);
+  box-shadow: 0 0 0 1px rgba(76, 187, 146, 0.12);
+}
+
 .abx-studio-policy-summary {
   display: flex;
   flex-wrap: wrap;

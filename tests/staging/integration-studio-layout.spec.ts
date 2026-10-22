@@ -10,6 +10,7 @@ test.describe("Integration Studio production layout", () => {
     const canvas = page.locator(".abx-studio-workspace__canvas");
     await expect(canvas).toBeVisible();
     await expect(canvas.getByRole("heading", { name: /^Choose a policy pack$/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Age 21 eligibility/i })).toHaveAttribute("aria-pressed", "false");
 
     const inspector = page.locator(".abx-studio-workspace__inspector");
     await expect(inspector.getByRole("heading", { name: "Partner operations" })).toBeVisible();
