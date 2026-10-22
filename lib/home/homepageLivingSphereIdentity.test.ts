@@ -11,7 +11,7 @@ describe("homepage living sphere identity", () => {
     expect(centerpiece).not.toContain("OFFICIAL_EMBLEM_HERO_WEBP");
 
     const logo = readFileSync(resolve(ROOT, "components/brand/AbraxasLogo.tsx"), "utf8");
-    expect(logo).toContain("LIVING_SPHERE_BRAND");
+    expect(logo).toContain("livingSphereEmblemForSize");
     expect(logo).toContain("abx-brand-living-sphere-mark");
   });
 });
