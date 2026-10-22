@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { AbraxasLogo } from "@/components/brand/AbraxasLogo";
+import { OFFICIAL_BRAND_ASSETS } from "@/lib/brand/officialBrandAssets";
 import {
   AbraxasExplorationLockup,
   AbraxasExplorationMark,
@@ -134,7 +136,75 @@ export function FounderBrandReviewClient() {
         </div>
       </div>
 
-      <h2>5 · Product mockups (exploration lockup)</h2>
+      <h2>5 · Official vs Living Protocol (visual sign-off grid)</h2>
+      <p style={{ maxWidth: 720 }}>
+        Founder approved Direction B for deeper exploration — not production replacement. Compare at identical pixel
+        heights; exported SVG candidates live under <code>/brand/exploration/</code>.
+      </p>
+      <div className="abx-founder-brand-review__card">
+        <div className="abx-founder-brand-review__scale-row" style={{ alignItems: "center" }}>
+          {[16, 32, 48].map((px) => (
+            <div key={px} style={{ textAlign: "center", minWidth: 100 }}>
+              <p style={{ margin: "0 0 0.35rem", fontSize: "0.75rem" }}>{px}px emblem</p>
+              <div style={{ display: "flex", gap: "1rem", justifyContent: "center", alignItems: "center" }}>
+                <div>
+                  <Image
+                    src={OFFICIAL_BRAND_ASSETS.emblem.src}
+                    alt="Official production emblem"
+                    width={px}
+                    height={px}
+                    style={{ height: px, width: "auto", objectFit: "contain" }}
+                  />
+                  <div style={{ fontSize: "0.65rem", marginTop: 4, color: "#64748b" }}>Production</div>
+                </div>
+                <div>
+                  <AbraxasExplorationMark direction={RECOMMENDED_BRAND_DIRECTION} size={px} />
+                  <div style={{ fontSize: "0.65rem", marginTop: 4, color: "#4cbb92" }}>Living Protocol</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: "1.25rem", display: "grid", gap: "1rem", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+          <div>
+            <p style={{ margin: "0 0 0.5rem", fontSize: "0.8rem" }}>Wordmark lockup (dark)</p>
+            <AbraxasLogo emblemSize={32} href={undefined} />
+            <div style={{ height: 12 }} />
+            <AbraxasExplorationLockup direction={RECOMMENDED_BRAND_DIRECTION} emblemSize={32} />
+          </div>
+          <div className="abx-founder-brand-review__light-panel">
+            <p style={{ margin: "0 0 0.5rem", fontSize: "0.8rem", color: "#334155" }}>Wordmark lockup (light)</p>
+            <AbraxasExplorationLockup direction={RECOMMENDED_BRAND_DIRECTION} emblemSize={32} variant="light" />
+          </div>
+          <div style={{ background: "#111827", padding: "1rem", borderRadius: 12 }}>
+            <p style={{ margin: "0 0 0.5rem", fontSize: "0.8rem" }}>Monochrome</p>
+            <AbraxasExplorationLockup direction={RECOMMENDED_BRAND_DIRECTION} emblemSize={32} variant="mono" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/exploration/living-protocol-mark-mono.svg"
+              alt="Living Protocol mono SVG export"
+              width={64}
+              height={64}
+              style={{ marginTop: 12, display: "block" }}
+            />
+          </div>
+        </div>
+        <div style={{ marginTop: "1rem" }}>
+          <p style={{ margin: "0 0 0.5rem", fontSize: "0.8rem" }}>Level 2 dimensional comparison</p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "1.5rem", alignItems: "center", justifyContent: "center" }}>
+            <Image
+              src={OFFICIAL_BRAND_ASSETS.emblem.src}
+              alt="Official emblem at hero scale"
+              width={160}
+              height={160}
+              style={{ height: 160, width: "auto", objectFit: "contain", opacity: 0.95 }}
+            />
+            <AbraxasExplorationMark direction={RECOMMENDED_BRAND_DIRECTION} level="living" size={160} />
+          </div>
+        </div>
+      </div>
+
+      <h2>6 · Product mockups (exploration lockup)</h2>
       <div className="abx-founder-brand-review__grid">
         <div className="abx-founder-brand-review__mock">
           <MockNav exploration />
@@ -172,7 +242,7 @@ export function FounderBrandReviewClient() {
         </div>
       </div>
 
-      <h2>6 · Operator directions</h2>
+      <h2>7 · Operator directions</h2>
       <div className="abx-founder-brand-review__grid">
         {OPERATOR_DIRECTIONS.map((op) => (
           <div
@@ -191,7 +261,7 @@ export function FounderBrandReviewClient() {
         ))}
       </div>
 
-      <h2>7 · ASM &amp; verifiable agent authorization (summary)</h2>
+      <h2>8 · ASM &amp; verifiable agent authorization (summary)</h2>
       <div className="abx-founder-brand-review__card">
         <p>
           Full report:{" "}
@@ -220,12 +290,27 @@ export function FounderBrandReviewClient() {
         </ul>
       </div>
 
-      <h2>8 · Founder sign-off</h2>
+      <h2>9 · Recorded founder decisions</h2>
       <ul>
-        <li>Select protocol mark direction (default recommendation: Living Protocol).</li>
-        <li>Approve Level 1 geometry before any production swap.</li>
-        <li>Decide whether Operator ships in v1 (recommend: contextual help only, post-#788).</li>
-        <li>Confirm ASM research phase → pilot vs defer (see research doc).</li>
+        <li>
+          <strong style={{ color: "#e2e8f0" }}>Living Protocol:</strong> Approved for refinement and favicon exports —
+          pending final artwork sign-off before any production swap.
+        </li>
+        <li>
+          <strong style={{ color: "#e2e8f0" }}>Protocol Entity:</strong> Preferred Operator concept; optional contextual
+          guide only — no autonomous permissions or default AI provider.
+        </li>
+        <li>
+          <strong style={{ color: "#e2e8f0" }}>Agent delegation:</strong> Research and design-partner discovery only until
+          a credible institutional workflow exists.
+        </li>
+        <li>
+          <strong style={{ color: "#e2e8f0" }}>#788 consent gate:</strong> Merged; see{" "}
+          <Link href="/docs/founder/partner-sharing-consent-server-gate" style={{ color: "#4cbb92" }}>
+            server gate limitations
+          </Link>
+          .
+        </li>
       </ul>
     </div>
   );
