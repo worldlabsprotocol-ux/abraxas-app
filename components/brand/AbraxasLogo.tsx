@@ -5,7 +5,7 @@
 import type { CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { LIVING_SPHERE_BRAND } from "@/lib/brand/livingSphereBrandAssets";
+import { livingSphereEmblemForSize } from "@/lib/brand/livingSphereBrandAssets";
 import { PUBLIC_FONT_SANS } from "@/lib/design/publicSurface";
 
 const FONT = PUBLIC_FONT_SANS;
@@ -28,7 +28,7 @@ export function AbraxasLogo({
   emblemOnly = false,
   className,
 }: AbraxasLogoProps) {
-  const emblem = LIVING_SPHERE_BRAND.hero;
+  const emblem = livingSphereEmblemForSize(emblemSize);
   const showWordmark = variant === "lockup" && !emblemOnly;
 
   const inner = (

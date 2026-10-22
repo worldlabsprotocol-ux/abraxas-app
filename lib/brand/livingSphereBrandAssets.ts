@@ -7,4 +7,15 @@ export const LIVING_SPHERE_BRAND = {
     width: 1024,
     height: 1024,
   },
+  /** Center crop of hero art — navigation and compact lockups (≤48px display). */
+  nav: {
+    src: "/brand/living-sphere/abraxas-living-sphere-nav-256.jpg",
+    alt: "Abraxas living sphere mark",
+    width: 256,
+    height: 256,
+  },
 } as const;
+
+export function livingSphereEmblemForSize(emblemSize: number) {
+  return emblemSize <= 48 ? LIVING_SPHERE_BRAND.nav : LIVING_SPHERE_BRAND.hero;
+}
