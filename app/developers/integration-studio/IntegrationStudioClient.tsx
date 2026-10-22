@@ -19,7 +19,12 @@ import {
   studioSnippetForPath,
   type IntegrationStudioPathId,
 } from "@/lib/partner/integrationStudio";
-import { isPolicyPackId, resolvePolicyPack } from "@/lib/partner/launchpad/policyPacks";
+import {
+  inferPolicyPackFromPolicyId,
+  isPolicyPackId,
+  resolvePolicyPack,
+  type PolicyPackId,
+} from "@/lib/partner/launchpad/policyPacks";
 import { PARTNER_ACTIVITY_NO_RAW_DATA } from "@/lib/partner/partnerActivitySignal/contract";
 import { activityCategoriesForPack } from "@/lib/partner/partnerActivitySignal/categories";
 import { tradingVenueProfileExample } from "@/lib/partner/tradingVenue/profiles";
@@ -131,10 +136,14 @@ type ResumableApp = {
 export function IntegrationStudioClient() {
   const searchParams = useSearchParams();
   const packs = listStudioPackSummaries();
-  const [packId, setPackId] = useState(() => {
+  const [packId, setPackId] = useState<PolicyPackId | null>(() => {
     const requested = searchParams.get("pack");
     if (requested && isPolicyPackId(requested)) return requested;
-    return packs[1]?.pack_id ?? packs[0]?.pack_id ?? "age_21_retail";
+    const outcome = searchParams.get("outcome");
+    if (outcome && isIntegrationStudioOutcomeId(outcome)) {
+      return INTEGRATION_STUDIO_OUTCOMES[outcome].defaultPackId;
+    }
+    return null;
   });
   const [pathId, setPathId] = useState<IntegrationStudioPathId>(() => {
     const requested = searchParams.get("path");
@@ -186,7 +195,7 @@ export function IntegrationStudioClient() {
     return { action, category, environment, autoFind: Boolean(action && category) };
   }, [searchParams]);
 
-  const contract = useMemo(() => studioPackContract(packId), [packId]);
+  const contract = useMemo(() => (packId ? studioPackContract(packId) : null), [packId]);
   const snippet = useMemo(() => studioSnippetForPath(pathId), [pathId]);
   const venueProfiles = useMemo(() => studioPublicCatalog().trading_venue.profiles ?? [], []);
   const baseCreatedSnippet = pathInstructions?.[pathId] ?? snippet;
@@ -202,6 +211,7 @@ export function IntegrationStudioClient() {
   );
   const activitySignalSelected = optionalCaps.includes("partner_activity_signal");
   const activityPackCategories = useMemo(() => {
+    if (!packId) return [];
     const pack = resolvePolicyPack(packId);
     if (!pack?.allowed_activity_categories?.length) return [];
     return activityCategoriesForPack(pack, pack.allowed_activity_categories);
@@ -217,6 +227,11 @@ export function IntegrationStudioClient() {
     setKitError("");
     setKitBusy(true);
     try {
+      if (!packId) {
+        setKitError("Choose a policy pack before generating a starter kit.");
+        setKitBusy(false);
+        return;
+      }
       const payload = {
         pack_id: packId,
         path: pathId,
@@ -356,8 +371,15 @@ export function IntegrationStudioClient() {
       };
       const apps = workspace.workspace?.applications ?? [];
       const fromUrl = urlAppId ? apps.find((item) => item.id === urlAppId) : undefined;
-      setResumeApp(fromUrl ?? apps[0] ?? null);
+      const chosen = fromUrl ?? apps[0] ?? null;
+      setResumeApp(chosen);
       setResumePartnerId(workspace.workspace?.partner_id ?? "");
+      if (chosen) {
+        const inferred = inferPolicyPackFromPolicyId(chosen.policy_id);
+        if (inferred) {
+          setPackId((current) => current ?? inferred.id);
+        }
+      }
     } catch {
       setSignedIn(false);
       setResumeApp(null);
@@ -375,7 +397,9 @@ export function IntegrationStudioClient() {
       const raw = window.sessionStorage.getItem(STUDIO_DRAFT_STORAGE_KEY);
       if (!raw) return;
       const draft = JSON.parse(raw) as { packId?: string; pathId?: string };
-      if (draft.packId && isPolicyPackId(draft.packId)) setPackId(draft.packId);
+      if (draft.packId && isPolicyPackId(draft.packId)) {
+        setPackId((current) => (current ?? (draft.packId as PolicyPackId)));
+      }
       if (draft.pathId && isIntegrationStudioPathId(draft.pathId)) setPathId(draft.pathId);
     } catch {
       /* ignore corrupt draft */
@@ -396,6 +420,10 @@ export function IntegrationStudioClient() {
 
   async function createSandbox() {
     setError("");
+    if (!packId) {
+      setError("Choose a policy pack on the Policy stage before creating a sandbox.");
+      return;
+    }
     setSubmitting(true);
     try {
       const storageKey = "abraxas_studio_sandbox_id";
@@ -453,14 +481,26 @@ export function IntegrationStudioClient() {
       }
       if (data.application) {
         setCreated(data.application);
-        setSignedIn(true);
-        void refreshLaunchpadSession();
         void recordGtmClientEvent("sandbox_created", {
           recommended_path: pathId,
           environment: "sandbox",
         });
       }
-      if (data.api_key) setRevealedKey(data.api_key);
+      if (data.api_key) {
+        setRevealedKey(data.api_key);
+        try {
+          const sessionRes = await fetch("/api/launchpad/auth/session", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${data.api_key}` },
+            credentials: "include",
+          });
+          setSignedIn(sessionRes.ok);
+        } catch {
+          setSignedIn(false);
+        }
+      } else if (data.application) {
+        await refreshLaunchpadSession();
+      }
       if (data.path_instructions) setPathInstructions(data.path_instructions);
       if (data.docs) setHostedDocs(data.docs);
       if (data.idempotency_replay) {
@@ -526,7 +566,7 @@ export function IntegrationStudioClient() {
   const railApplication =
     resumeApp?.application_name
     ?? (created ? `${created.public_slug} (${created.application_id.slice(0, 8)}…)` : "None yet");
-  const railPolicyLabel = contract?.display_name ?? packId.replace(/_/g, " ");
+  const railPolicyLabel = contract?.display_name ?? (packId ? packId.replace(/_/g, " ") : "Not selected");
   const railReadiness = studioNextAction.action;
 
   const operationsRail: ModeCCommandRailItem[] = useMemo(
@@ -609,23 +649,23 @@ export function IntegrationStudioClient() {
             {handoffNotice}
           </p>
         )}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.45rem" }}>
+        {!packId ? (
+          <p role="status" style={{ ...body, marginBottom: "0.75rem", color: "var(--text-primary)", fontWeight: 600 }}>
+            Select one pack to continue. Abraxas supports age gates, wallet control, membership, provenance, and institutional protocol access—not identity verification by default.
+          </p>
+        ) : null}
+        <div className="abx-studio-pack-grid">
           {packs.map((pack) => (
             <button
               key={pack.pack_id}
               type="button"
+              className={
+                pack.pack_id === packId
+                  ? "abx-studio-pack-chip abx-studio-pack-chip--selected"
+                  : "abx-studio-pack-chip"
+              }
+              aria-pressed={pack.pack_id === packId}
               onClick={() => setPackId(pack.pack_id)}
-              style={{
-                padding: "0.45rem 0.75rem",
-                borderRadius: 999,
-                border: pack.pack_id === packId ? "1px solid rgba(45,212,191,0.55)" : "1px solid var(--border)",
-                background: pack.pack_id === packId ? "rgba(45,212,191,0.12)" : "var(--surface-inset)",
-                color: "var(--text-primary)",
-                fontFamily: FONT,
-                fontSize: "0.74rem",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
             >
               {pack.display_name}
             </button>
@@ -1073,7 +1113,7 @@ export function IntegrationStudioClient() {
             <p style={body}>Policy pack: {contract?.display_name ?? packId}. Environment: sandbox only.</p>
             <Btn
               size="sm"
-              disabled={submitting || !applicationName.trim()}
+              disabled={submitting || !applicationName.trim() || !packId}
               loading={submitting}
               onClick={() => void createSandbox()}
             >
