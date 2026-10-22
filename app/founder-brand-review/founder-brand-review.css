@@ -1,0 +1,111 @@
+.abx-founder-brand-review {
+  --fbr-bg: #070b10;
+  --fbr-panel: #0f141c;
+  --fbr-border: rgba(76, 187, 146, 0.22);
+  --fbr-text: #e8eef2;
+  --fbr-muted: #94a3b8;
+  --fbr-teal: #4cbb92;
+  min-height: 100vh;
+  background: radial-gradient(1200px 600px at 20% -10%, rgba(155, 77, 255, 0.12), transparent 55%),
+    radial-gradient(900px 500px at 90% 0%, rgba(76, 187, 146, 0.1), transparent 50%),
+    var(--fbr-bg);
+  color: var(--fbr-text);
+  padding: 2rem clamp(1rem, 4vw, 3rem) 4rem;
+}
+
+.abx-founder-brand-review__banner {
+  border: 1px solid rgba(245, 213, 71, 0.35);
+  background: rgba(245, 213, 71, 0.08);
+  color: #fde68a;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+}
+
+.abx-founder-brand-review h1 {
+  font-size: clamp(1.75rem, 3vw, 2.35rem);
+  letter-spacing: -0.02em;
+  margin: 0 0 0.35rem;
+}
+
+.abx-founder-brand-review h2 {
+  font-size: 1.15rem;
+  margin: 2rem 0 0.75rem;
+  color: var(--fbr-teal);
+}
+
+.abx-founder-brand-review p,
+.abx-founder-brand-review li {
+  color: var(--fbr-muted);
+  line-height: 1.55;
+  font-size: 0.95rem;
+}
+
+.abx-founder-brand-review__grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.abx-founder-brand-review__card {
+  background: var(--fbr-panel);
+  border: 1px solid var(--fbr-border);
+  border-radius: 14px;
+  padding: 1.1rem;
+}
+
+.abx-founder-brand-review__card--recommended {
+  box-shadow: 0 0 0 1px rgba(76, 187, 146, 0.45), 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.abx-founder-brand-review__scale-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1.25rem;
+}
+
+.abx-founder-brand-review__mock {
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  overflow: hidden;
+  background: #0b1016;
+}
+
+.abx-founder-brand-review__mock-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.abx-founder-brand-review__mock-body {
+  padding: 1rem;
+  font-size: 0.85rem;
+  color: var(--fbr-muted);
+}
+
+.abx-founder-brand-review__light-panel {
+  background: #f4f7fa;
+  color: #0b1218;
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+@keyframes abx-operator-breathe {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .abx-operator-idle {
+    animation: abx-operator-breathe 4.5s ease-in-out infinite;
+  }
+}
