@@ -18,19 +18,23 @@ import { describeApiKey } from "../launchpad-staging-smoke/redact";
 const FIRST_VR = "vr_62f996b73bba8bc0";
 const FIRST_RECEIPT = "dr_dlZExz0CSUFxQoaj";
 
+/** Non-secret — partner-demo staging record for first successful founder run. */
+const DEFAULT_REUSE_APPLICATION_ID = "fbea93d2-6660-428d-85c3-8c4e12d89b05";
+const DEFAULT_REUSE_PARTNER_ID = "studio-accept-wc-1792620888278-6a4a2447dfc8";
+
 const config = {
   ...parseStagingTargetFromEnv(),
   targetUrl: (process.env.LAUNCHPAD_STAGING_URL ?? "").replace(/\/$/, ""),
 };
 
 async function main() {
-  const partnerId = process.env.REUSE_PARTNER_ID?.trim();
-  const applicationId = process.env.REUSE_APPLICATION_ID?.trim();
+  const partnerId = process.env.REUSE_PARTNER_ID?.trim() || DEFAULT_REUSE_PARTNER_ID;
+  const applicationId = process.env.REUSE_APPLICATION_ID?.trim() || DEFAULT_REUSE_APPLICATION_ID;
   const apiKey = process.env.REUSE_SANDBOX_API_KEY?.trim();
 
-  if (!partnerId || !applicationId || !apiKey) {
+  if (!apiKey) {
     console.error(
-      "Set REUSE_PARTNER_ID, REUSE_APPLICATION_ID, and REUSE_SANDBOX_API_KEY for the existing sandbox app.",
+      "Set REUSE_SANDBOX_API_KEY in the Cloud Agent environment (Integration Studio rotate — do not paste in chat).",
     );
     process.exit(1);
   }
