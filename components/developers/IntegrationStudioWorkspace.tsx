@@ -48,10 +48,19 @@ export function IntegrationStudioWorkspace({
     };
   }, []);
 
-  function navigateInStudioStage(href: string, event: MouseEvent) {
+  function navigateInStudioStage(stepId: string, href: string, event: MouseEvent) {
     if (pathname !== "/developers/integration-studio") return;
     const hashIndex = href.indexOf("#");
-    if (hashIndex === -1) return;
+    if (hashIndex === -1) {
+      if (stepId === "policy") {
+        event.preventDefault();
+        if (window.location.hash) {
+          window.history.replaceState(null, "", "/developers/integration-studio");
+        }
+        setHashStep("policy");
+      }
+      return;
+    }
     event.preventDefault();
     const hash = href.slice(hashIndex);
     if (window.location.hash !== hash) {
@@ -78,7 +87,7 @@ export function IntegrationStudioWorkspace({
               <Link
                 key={step.id}
                 href={step.href}
-                onClick={(event) => navigateInStudioStage(step.href, event)}
+                onClick={(event) => navigateInStudioStage(step.id, step.href, event)}
                 className={
                   active
                     ? "abx-studio-workspace__nav-item abx-studio-workspace__nav-item--active"

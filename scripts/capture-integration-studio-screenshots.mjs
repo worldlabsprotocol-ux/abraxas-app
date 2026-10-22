@@ -4,7 +4,8 @@ const base = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3035";
 const shots = [
   { file: "integration-studio-recovery-desktop-policy.png", width: 1440, height: 900, hash: "" },
   { file: "integration-studio-recovery-laptop-sandbox.png", width: 1280, height: 800, hash: "#sandbox" },
-  { file: "integration-studio-recovery-tablet-configuration.png", width: 768, height: 1024, hash: "#configuration" },
+  { file: "integration-studio-acceptance-tablet-configuration-empty.png", width: 768, height: 1024, hash: "#configuration" },
+  { file: "integration-studio-acceptance-desktop-policy-refined.png", width: 1440, height: 900, hash: "" },
   { file: "integration-studio-recovery-mobile-policy.png", width: 390, height: 844, hash: "" },
 ];
 

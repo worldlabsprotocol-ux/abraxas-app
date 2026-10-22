@@ -43,7 +43,7 @@ function resolveStageMessage(
 ): string | null {
   switch (stageId) {
     case "policy":
-      return "Choose a policy pack and integration path. Nothing is provisioned until you create or resume a sandbox application.";
+      return "Pick a policy pack, then continue to sandbox when you are ready to provision a test application.";
     case "sandbox":
       if (ctx.applicationId) {
         return `Sandbox application ${ctx.applicationId.slice(0, 8)}… is bound to this browser. Create a verification request when you are ready.`;

@@ -62,6 +62,7 @@ import { IntegrationStudioRequestWorkbench } from "@/components/developers/Integ
 import { IntegrationStudioSessionHandoff } from "@/components/developers/IntegrationStudioSessionHandoff";
 import { IntegrationStudioConfigurationPanel } from "@/components/developers/IntegrationStudioConfigurationPanel";
 import { IntegrationStudioStageFooter } from "@/components/developers/IntegrationStudioStageFooter";
+import { IntegrationStudioEmptyState } from "@/components/developers/IntegrationStudioEmptyState";
 import { useIntegrationStudioStageFromContext } from "@/lib/developers/integrationStudioStageContext";
 import type { ModeCCommandRailItem } from "@/components/product/ModeCCommandRail";
 import {
@@ -75,6 +76,7 @@ import {
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
+const STUDIO_DRAFT_STORAGE_KEY = "abraxas_integration_studio_draft_v1";
 
 const PATH_LABEL: Record<IntegrationStudioPathId, string> = {
   verify_with_abraxas: "Verify with Abraxas",
@@ -367,6 +369,31 @@ export function IntegrationStudioClient() {
     void refreshLaunchpadSession();
   }, [refreshLaunchpadSession]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.sessionStorage.getItem(STUDIO_DRAFT_STORAGE_KEY);
+      if (!raw) return;
+      const draft = JSON.parse(raw) as { packId?: string; pathId?: string };
+      if (draft.packId && isPolicyPackId(draft.packId)) setPackId(draft.packId);
+      if (draft.pathId && isIntegrationStudioPathId(draft.pathId)) setPathId(draft.pathId);
+    } catch {
+      /* ignore corrupt draft */
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.sessionStorage.setItem(
+        STUDIO_DRAFT_STORAGE_KEY,
+        JSON.stringify({ packId, pathId }),
+      );
+    } catch {
+      /* ignore quota */
+    }
+  }, [packId, pathId]);
+
   async function createSandbox() {
     setError("");
     setSubmitting(true);
@@ -563,34 +590,10 @@ export function IntegrationStudioClient() {
 
       {stage === "policy" && (
       <>
-      <Reveal delay={0.06}>
-        <IntegrationStudioOutcomePicker
-          selectedOutcomeId={selectedOutcomeId}
-          onSelect={({ outcomeId, pathId: nextPath, packId: nextPack }) => {
-            setSelectedOutcomeId(outcomeId);
-            setPathId(nextPath);
-            setPackId(nextPack);
-          }}
-        />
-      </Reveal>
-
-      <Reveal delay={0.08}>
-        <PolicyFitPlanner
-          initial={policyFitInitial}
-          onApply={(selection) => {
-            if (!isPolicyPackId(selection.packId)) return;
-            setPackId(selection.packId);
-            setPathId(selection.pathId);
-            setOptionalCaps(selection.capabilities);
-          }}
-        />
-      </Reveal>
-
-      <Reveal delay={0.1}>
-      <ContentCard title="Discover · Choose a policy pack">
-        <p style={{ ...body, marginBottom: "0.75rem" }}>
-          These are the same packs Partner Launchpad uses. Identity or liveness is never the default path.
-          Content provenance verifies a holder&apos;s disclosure for a specific artifact without receiving the underlying file.
+      <Reveal delay={0.04}>
+      <ContentCard title="Choose a policy pack">
+        <p style={{ ...body, marginBottom: "0.85rem", maxWidth: "52ch" }}>
+          Select what your customers must prove. These are the same Launchpad policy packs—identity or liveness is never the default path.
         </p>
         {packId === "content_origin_disclosure" && contract ? (
           <div style={{ ...body, marginBottom: "0.85rem", padding: "0.85rem", borderRadius: 12, border: "1px solid rgba(45,212,191,0.25)", background: "rgba(45,212,191,0.06)" }}>
@@ -628,17 +631,54 @@ export function IntegrationStudioClient() {
             </button>
           ))}
         </div>
+        {contract ? (
+          <div className="abx-studio-policy-summary">
+            <p className="abx-studio-policy-summary__text">
+              <strong>{contract.display_name}</strong> shares only{" "}
+              <code style={{ fontFamily: MONO, fontSize: "0.88em" }}>{contract.disclosed_result}</code>{" "}
+              with your application.
+            </p>
+            <Btn href="/developers/integration-studio#sandbox" size="sm">
+              Continue to sandbox →
+            </Btn>
+          </div>
+        ) : null}
       </ContentCard>
       </Reveal>
 
+      <details style={{ marginBottom: "1.25rem" }}>
+        <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)", marginBottom: "0.65rem" }}>
+          Need help choosing? Guided matching (optional)
+        </summary>
+        <div style={{ marginTop: "0.85rem", display: "grid", gap: "1rem" }}>
+          <IntegrationStudioOutcomePicker
+            selectedOutcomeId={selectedOutcomeId}
+            onSelect={({ outcomeId, pathId: nextPath, packId: nextPack }) => {
+              setSelectedOutcomeId(outcomeId);
+              setPathId(nextPath);
+              setPackId(nextPack);
+            }}
+          />
+          <PolicyFitPlanner
+            initial={policyFitInitial}
+            onApply={(selection) => {
+              if (!isPolicyPackId(selection.packId)) return;
+              setPackId(selection.packId);
+              setPathId(selection.pathId);
+              setOptionalCaps(selection.capabilities);
+            }}
+          />
+        </div>
+      </details>
+
       {contract && (
-        <ContentCard title="Your policy result">
-          <p style={{ ...body, color: "var(--text-primary)" }}>
-            <strong>{contract.display_name}</strong> shares only <code>{contract.disclosed_result}</code>.
+        <ContentCard title="Policy privacy contract">
+          <p style={{ ...body, color: "var(--text-primary)", marginBottom: "0.5rem" }}>
+            Holders disclose the minimum required for <strong>{contract.display_name}</strong>. Your app receives the disclosed result—not raw identity data.
           </p>
-          <details style={{ marginTop: "0.75rem" }}>
+          <details>
             <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)" }}>
-              See privacy and verification details
+              See requirement, assurance, and verification methods
             </summary>
             <dl style={{ display: "grid", gap: "0.55rem", margin: "0.75rem 0 0" }}>
               {[
@@ -668,6 +708,11 @@ export function IntegrationStudioClient() {
         </ContentCard>
       )}
 
+      <details style={{ marginBottom: "1.25rem" }}>
+        <summary style={{ ...body, cursor: "pointer", fontWeight: 800, color: "var(--accent)" }}>
+          Technical path, implementation, and starter kit
+        </summary>
+        <div style={{ marginTop: "0.85rem", display: "grid", gap: "0.5rem" }}>
       <ContentCard title="Advanced integration path">
         <p style={{ ...body, color: "var(--text-primary)" }}>
           Recommended default: <strong>{PATH_LABEL[pathId]}</strong>
@@ -966,6 +1011,8 @@ export function IntegrationStudioClient() {
           </div>
         )}
       </ContentCard>
+        </div>
+      </details>
       <IntegrationStudioStageFooter stage="policy" />
       </>
       )}
@@ -1095,14 +1142,25 @@ export function IntegrationStudioClient() {
       {stage === "configuration" && (
       <>
       {!configuredAppId ? (
-        <ContentCard title="Configuration requires a sandbox">
-          <p style={body}>
-            Create or resume a sandbox application first. Callback URLs, policy pins, and optional wallet bindings load from Launchpad—not from placeholders in this workspace.
-          </p>
-          <Btn href="/developers/integration-studio#sandbox" size="sm">
-            Go to sandbox provisioning
-          </Btn>
-        </ContentCard>
+        <IntegrationStudioEmptyState
+          title="Configuration unlocks after sandbox provisioning"
+          lead="Callback URLs, policy pins, and optional wallet bindings load from Launchpad once a sandbox application exists. Nothing is fabricated in this workspace."
+          steps={[
+            "Choose a policy pack on the Policy stage.",
+            "Create or resume a sandbox application with an allowlisted callback URL.",
+            "Return here to review live pins, callbacks, and readiness checks.",
+          ]}
+          action={
+            <>
+              <Btn href="/developers/integration-studio#sandbox" size="sm">
+                Create sandbox application
+              </Btn>
+              <Btn href="/developers/integration-studio" variant="secondary" size="sm">
+                Review policy packs
+              </Btn>
+            </>
+          }
+        />
       ) : (
         <>
           <IntegrationStudioConfigurationPanel applicationId={configuredAppId} signedIn={signedIn} />
@@ -1136,14 +1194,20 @@ export function IntegrationStudioClient() {
       {stage === "request" && (
       <>
       {!configuredAppId ? (
-        <ContentCard title="Requests require a sandbox">
-          <p style={body}>
-            Provision a sandbox application, attach your Launchpad session if needed, then run authenticated harness scenarios here. Responses appear in the integration inspector.
-          </p>
-          <Btn href="/developers/integration-studio#sandbox" size="sm">
-            Create sandbox
-          </Btn>
-        </ContentCard>
+        <IntegrationStudioEmptyState
+          title="Verification requests require a sandbox application"
+          lead="Run authenticated harness scenarios against your sandbox after provisioning. Signed receipt material appears in the integration inspector—never in the URL."
+          steps={[
+            "Provision a sandbox and attach your Launchpad session (one-time API key).",
+            "Confirm callback configuration on the Configuration stage.",
+            "Run a harness scenario here, then verify receipts independently on the workbench.",
+          ]}
+          action={
+            <Btn href="/developers/integration-studio#sandbox" size="sm">
+              Go to sandbox provisioning
+            </Btn>
+          }
+        />
       ) : (
         <IntegrationStudioRequestWorkbench />
       )}

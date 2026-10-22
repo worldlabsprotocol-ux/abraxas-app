@@ -9,7 +9,7 @@ test.describe("Integration Studio production layout", () => {
 
     const canvas = page.locator(".abx-studio-workspace__canvas");
     await expect(canvas).toBeVisible();
-    await expect(canvas.getByRole("heading", { name: /Choose a policy pack/i })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: /^Choose a policy pack$/i })).toBeVisible();
 
     const inspector = page.locator(".abx-studio-workspace__inspector");
     await expect(inspector.getByRole("heading", { name: "Partner operations" })).toBeVisible();
@@ -37,8 +37,8 @@ test.describe("Integration Studio production layout", () => {
     await expect(page.getByRole("heading", { name: /Create.*sandbox integration/i })).toBeVisible();
     await expect(page.getByRole("heading", { name: /Choose a policy pack/i })).toHaveCount(0);
 
-    await page.getByRole("link", { name: /Configuration/i }).first().click();
+    await page.getByRole("link", { name: /Step 3:.*Configuration/i }).click();
     await expect(page).toHaveURL(/#configuration$/);
-    await expect(page.getByRole("heading", { name: /Configuration requires a sandbox|Sandbox configuration/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Configuration unlocks|Sandbox configuration/i })).toBeVisible();
   });
 });
