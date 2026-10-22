@@ -13,10 +13,16 @@ const FONT = ABRAXAS_FONT_SANS;
 
 export function WalletControlPartnerConsent({
   partnerName,
+  partnerId,
+  policyId,
+  verifyRequestId,
   handoff,
   onDeclined,
 }: {
   partnerName: string;
+  partnerId: string;
+  policyId: string;
+  verifyRequestId: string;
   handoff: PartnerFlowHandoffController;
   onDeclined?: () => void;
 }) {
@@ -40,6 +46,20 @@ export function WalletControlPartnerConsent({
     setBusy(true);
     setError(null);
     try {
+      const consentRes = await fetch("/api/v1/partner-flow/sharing-consent", {
+        method: "POST",
+        credentials: "include",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          partner_id: partnerId,
+          policy_id: policyId,
+          verify_request: verifyRequestId,
+        }),
+      });
+      if (!consentRes.ok) {
+        setError(holderSafeClientMessage());
+        return;
+      }
       await handoff.complete();
     } catch {
       setError(holderSafeClientMessage());

@@ -28,6 +28,12 @@ describe("PartnerWalletControlContinueFlow", () => {
       "fetch",
       vi.fn(async (input: RequestInfo, init?: RequestInit) => {
         const url = String(input);
+        if (url.includes("/api/v1/partner-flow/sharing-consent") && init?.method === "POST") {
+          return {
+            ok: true,
+            json: async () => ({ ok: true }),
+          } as Response;
+        }
         if (url.includes("method-qualification") && init?.method === "POST") {
           return {
             ok: true,

@@ -171,6 +171,9 @@ export function PartnerWalletControlContinueFlow({
             {activeStage === "decision" && showConsent ? (
               <WalletControlPartnerConsent
                 partnerName={partnerName}
+                partnerId={partnerId}
+                policyId={policyId}
+                verifyRequestId={verifyRequestId}
                 handoff={handoff}
                 onDeclined={() => setConsentDismissed(true)}
               />
