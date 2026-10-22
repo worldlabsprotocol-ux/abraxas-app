@@ -31,3 +31,5 @@ Status: shipped on `main` via merge commit `c2cb6de4` (includes `a95cf637`).
 - `POST /api/v1/partner-flow/sharing-consent` → **401** (same)
 
 Authenticated negative paths (qualification without consent → **403**) are covered by Vitest route boundaries on `main`.
+
+Research and draft visuals live outside the product: `docs/internal/` and `/internal/visual-draft` (noindex).
