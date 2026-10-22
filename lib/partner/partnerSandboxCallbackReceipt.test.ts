@@ -34,7 +34,7 @@ describe("resolvePartnerSandboxCallbackDisplay", () => {
       receipt: null,
     });
     expect(display.receipt_confirmed).toBe(false);
-    expect(display.headline).toBe("Result could not be verified");
+    expect(display.headline).toBe("Verification could not be confirmed");
   });
 
   it("confirms real receipt with approved decision and valid signature", () => {
@@ -51,8 +51,9 @@ describe("resolvePartnerSandboxCallbackDisplay", () => {
       receipt,
     });
     expect(display.receipt_confirmed).toBe(true);
-    expect(display.headline).toBe("Wallet control verified");
-    expect(display.trust_level).toBe("verified");
+    expect(display.headline).toBe("Verification complete");
+    expect(display.trust_level).toBe("verified_sandbox");
+    expect(display.holder_status_rows.find((r) => r.label === "Current authorization")?.value).toBe("Acceptable");
   });
 
   it("rejects invalid signature even when URL says approved", () => {
@@ -81,14 +82,33 @@ describe("resolvePartnerSandboxCallbackDisplay", () => {
       receipt: baseReceipt(),
     });
     expect(display.url_mismatches.length).toBeGreaterThan(0);
+    expect(display.holder_link_caution).toMatch(/altered/i);
+  });
+
+  it("does not warn when callback URL policy matches signed receipt (legitimate return)", () => {
+    const policyId = "studio-accept-wc-wallet_control-v1";
+    const urlView = buildPartnerSandboxCallbackView(new URLSearchParams({
+      status: "approved",
+      receipt_id: "dr_test",
+      partner_id: "studio-test",
+      policy_id: policyId,
+    }));
+    const display = resolvePartnerSandboxCallbackDisplay({
+      urlView,
+      fetchStatus: "loaded",
+      receipt: baseReceipt({ policy_id: policyId, partner_id: "studio-test" }),
+    });
+    expect(display.url_mismatches).toHaveLength(0);
+    expect(display.holder_link_caution).toBeNull();
   });
 
   it("distinguishes authentic signed approval from currently acceptable access", () => {
+    const policyId = "studio-accept-wc-1792620888278-6a4a2447dfc8-wallet_control-v1";
     const urlView = buildPartnerSandboxCallbackView(new URLSearchParams({
       status: "approved",
       receipt_id: "dr_dlZExz0CSUFxQoaj",
       partner_id: "studio-accept-wc-1792620888278-6a4a2447dfc8",
-      policy_id: "p-wallet_control-v1",
+      policy_id: policyId,
     }));
     const display = resolvePartnerSandboxCallbackDisplay({
       urlView,
@@ -97,16 +117,17 @@ describe("resolvePartnerSandboxCallbackDisplay", () => {
         receipt_id: "dr_dlZExz0CSUFxQoaj",
         currently_valid: false,
         partner_id: "studio-accept-wc-1792620888278-6a4a2447dfc8",
+        policy_id: policyId,
       }),
     });
     expect(display.receipt_confirmed).toBe(true);
     expect(display.historically_authentic_approval).toBe(true);
     expect(display.currently_acceptable_for_access).toBe(false);
-    expect(display.headline).toBe("Signed wallet-control approval on record");
-    expect(display.headline).not.toBe("Wallet control verified");
+    expect(display.headline).toBe("Verification record found");
+    expect(display.subheadline).toBe("A new authorization may be needed");
     expect(display.trust_level).toBe("verified_sandbox");
-    expect(display.access_gate_note).toMatch(/Do not grant access/i);
-    expect(display.acceptability_note).toMatch(/Sandbox receipt/i);
+    expect(display.holder_status_rows.find((r) => r.label === "Current authorization")?.value).toBe("Not acceptable");
+    expect(display.url_mismatches).toHaveLength(0);
   });
 
   it("fails safely for expired receipts with historically valid signature", () => {
@@ -122,7 +143,7 @@ describe("resolvePartnerSandboxCallbackDisplay", () => {
     expect(display.currently_acceptable_for_access).toBe(false);
     expect(display.historically_authentic_approval).toBe(true);
     expect(display.receipt_confirmed).toBe(false);
-    expect(display.headline).toBe("Result expired");
+    expect(display.headline).toBe("Verification expired");
   });
 
   it("fails safely when receipt fetch is unavailable", () => {
