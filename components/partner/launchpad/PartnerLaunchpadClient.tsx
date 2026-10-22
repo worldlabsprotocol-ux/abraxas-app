@@ -43,12 +43,14 @@ import { PartnerUniversalReadinessPanel } from "@/components/partner/launchpad/P
 import type { UniversalReadinessDiagnostic } from "@/lib/partner/universalIntegration/readinessDiagnostic";
 import { PartnerIntegrationPerformancePanel } from "@/components/partner/launchpad/PartnerIntegrationPerformancePanel";
 import { PartnerPilotProgressPanel } from "@/components/partner/launchpad/PartnerPilotProgressPanel";
-import { PartnerApplicationOverview } from "@/components/partner/launchpad/PartnerApplicationOverview";
+import { LaunchpadFocusedStepNav } from "@/components/partner/launchpad/LaunchpadFocusedStepNav";
+import { LaunchpadStageGuide } from "@/components/partner/launchpad/LaunchpadStageGuide";
+import { LaunchpadStageFooter } from "@/components/partner/launchpad/LaunchpadStageFooter";
 import { PartnerApplicationPoliciesPanel } from "@/components/partner/launchpad/PartnerApplicationPoliciesPanel";
 import { humanIntegrationEventLabel } from "@/lib/partner/launchpad/firstSuccessUx";
 import { PartnerBindingProductionPanel } from "@/components/partner/launchpad/PartnerBindingProductionPanel";
 import { EnvironmentBadge } from "@/components/product/EnvironmentBadge";
-import { ModeCCommandRail } from "@/components/product/ModeCCommandRail";
+import type { ModeCCommandRailItem } from "@/components/product/ModeCCommandRail";
 import { EligibilityPolicyCard } from "@/components/product/EligibilityPolicyCard";
 import { PartnerFlowRequestPanel } from "@/components/partner/launchpad/PartnerFlowRequestPanel";
 import { PolicyVersionPlannerPanel } from "@/components/partner/launchpad/PolicyVersionPlannerPanel";
@@ -59,10 +61,8 @@ import { OnchainVerifierConformanceCard } from "@/components/partner/launchpad/O
 import { GO_LIVE_REVIEW_ENTRY } from "@/lib/partner/launchpad/goLiveReadiness/contract";
 import { PolicyProposalForm } from "@/components/partner/policyProposal/PolicyProposalForm";
 import { POLICY_PROPOSAL_NOTICE } from "@/lib/partner/policyProposal/contract";
-import { PartnerLifecycleControlRoomVisual } from "@/components/protocol-visuals";
 import { LaunchpadApplicationNav } from "@/components/partner/launchpad/LaunchpadApplicationNav";
 import { LaunchpadOperationalInspector } from "@/components/partner/launchpad/LaunchpadOperationalInspector";
-import { LaunchpadActivityEvidenceTable } from "@/components/partner/launchpad/LaunchpadActivityEvidenceTable";
 import { AbxInstitutionalWorkspaceShell } from "@/components/design/AbxInstitutionalWorkspaceShell";
 import { InstitutionalTaskOnboardingPanel } from "@/components/developers/InstitutionalTaskOnboardingPanel";
 import { InstitutionalVerificationRequirementsPanel } from "@/components/developers/InstitutionalVerificationRequirementsPanel";
@@ -664,8 +664,48 @@ export function PartnerLaunchpadClient({
 
   const activeSandboxKey = Boolean(activeApp?.key_prefix);
   const productionActivated = activeApp?.environment === "production";
-  const currentStepMeta = STEPS.find((item) => item.id === step);
   const journey = merchantJourney;
+
+  const launchpadOperationsItems = useMemo((): ModeCCommandRailItem[] => {
+    if (institutionalFocus || !activeApp || !journey) return [];
+    return [
+      {
+        id: "env",
+        label: "Environment",
+        value: productionActivated ? "Production activated" : "Sandbox",
+        tone: productionActivated ? "live" : "sandbox",
+      },
+      {
+        id: "policy",
+        label: "Policy",
+        value: activeApp.policy_id,
+        tone: "neutral",
+      },
+      {
+        id: "app",
+        label: "Application",
+        value: activeApp.display_name || activeApp.application_name,
+        tone: "neutral",
+      },
+      {
+        id: "readiness",
+        label: "Readiness",
+        value: journey.statusLine || journey.primaryAction.label,
+        tone: journey.primaryAction.enabled ? (journey.testPassed ? "ready" : "neutral") : "blocked",
+      },
+    ];
+  }, [activeApp, institutionalFocus, journey, productionActivated]);
+
+  const focusedMerchantStep =
+    step === "advanced" ? (journey?.currentStage ?? "verify") : step;
+
+  function goToAdjacentLaunchpadStep(direction: "back" | "forward") {
+    const order = STEPS.map((s) => s.id).filter((id) => id !== "advanced") as WizardStep[];
+    const idx = order.indexOf(focusedMerchantStep as WizardStep);
+    if (idx < 0) return;
+    const target = direction === "back" ? order[idx - 1] : order[idx + 1];
+    if (target) navigateToStage(target);
+  }
 
   function syncLaunchpadStageInUrl(resolved: WizardStep) {
     if (typeof window === "undefined") return;
@@ -677,10 +717,8 @@ export function PartnerLaunchpadClient({
     window.history.replaceState(null, "", next);
   }
 
-  function focusLaunchpadStagePanel(resolved: WizardStep) {
-    const id = launchpadStagePanelDomId(resolved);
-    const node = document.getElementById(id) ?? stagePanelRef.current;
-    node?.scrollIntoView({ behavior: "smooth", block: "start" });
+  function focusLaunchpadStagePanel(_resolved: WizardStep) {
+    stagePanelRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
   function navigateToStage(target: WizardStep) {
@@ -744,29 +782,23 @@ export function PartnerLaunchpadClient({
 
   if (loading) {
     return (
-      <RedesignPage accent="developer" maxWidth={960}>
-        <PageHeader eyebrow="Partner operations" title="Launchpad console" subtitle="" />
+      <RedesignPage accent="developer" maxWidth={1200}>
+        <PageHeader eyebrow="Abraxas" title="Launchpad" subtitle="Loading workspace…" />
       </RedesignPage>
     );
   }
 
   return (
-    <RedesignPage accent="developer" maxWidth={institutionalFocus ? 1040 : 1320}>
+    <RedesignPage accent="developer" maxWidth={institutionalFocus ? 1040 : 1200}>
       <PageHeader
-        eyebrow={institutionalFocus ? "Institutional integration" : "Partner operations"}
-        title={institutionalFocus ? "Launchpad" : "Launchpad console"}
+        eyebrow={institutionalFocus ? "Institutional integration" : "Abraxas"}
+        title="Launchpad"
         subtitle={
           institutionalFocus
             ? "Your application · sandbox setup · signed verification results"
-            : "Sandbox telemetry · receipts · webhooks · reviewed production access."
+            : "One workspace for sandbox integration, verification, and reviewed production access."
         }
       />
-
-      {!institutionalFocus && (
-        <div className="abx-surface-protocol-visual abx-surface-protocol-visual--compact">
-          <PartnerLifecycleControlRoomVisual />
-        </div>
-      )}
 
       <AbxInstitutionalWorkspaceShell className="abx-launchpad-operational-shell" aria-label="Launchpad workspace">
       <div className="abx-launchpad-operational">
@@ -783,118 +815,24 @@ export function PartnerLaunchpadClient({
           <div className="abx-launchpad-nav abx-launchpad-nav--empty" aria-hidden />
         )}
 
-        <div className="abx-launchpad-operational__center abx-launchpad-console-stage">
-
-      {institutionalFocus && activeApp && (
         <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "0.65rem",
-            marginBottom: "0.85rem",
-            padding: "0.65rem 0.85rem",
-            borderRadius: 12,
-            border: "1px solid var(--border)",
-            background: "var(--surface-inset)",
-          }}
+          ref={stagePanelRef}
+          className="abx-launchpad-operational__center abx-launchpad-console-stage abx-launchpad-focused"
         >
-          <div>
-            <p style={{ ...bodyText, margin: 0, fontSize: "0.68rem", fontWeight: 800, color: "var(--text-muted)" }}>
-              Application
-            </p>
-            <p style={{ ...bodyText, margin: "0.15rem 0 0", fontWeight: 700, color: "var(--text-primary)" }}>
-              {activeApp.display_name || activeApp.application_name}
-            </p>
-          </div>
-          <EnvironmentBadge environment={productionActivated ? "production" : "sandbox"} />
-        </div>
-      )}
-
-      {!institutionalFocus && activeApp && journey && (
-        <ModeCCommandRail
-          items={[
-            {
-              id: "env",
-              label: "Environment",
-              value: productionActivated ? "Production activated" : "Sandbox",
-              tone: productionActivated ? "live" : "sandbox",
-            },
-            {
-              id: "policy",
-              label: "Policy",
-              value: activeApp.policy_id,
-              tone: "neutral",
-            },
-            {
-              id: "app",
-              label: "Application",
-              value: activeApp.display_name || activeApp.application_name,
-              tone: "neutral",
-            },
-            {
-              id: "readiness",
-              label: "Readiness",
-              value: journey.statusLine || journey.primaryAction.label,
-              tone: journey.primaryAction.enabled ? (journey.testPassed ? "ready" : "neutral") : "blocked",
-            },
-          ]}
-        />
-      )}
-
-      {activeApp && !journey && (
-        <ContentCard title={activeApp.display_name || activeApp.application_name}>
-          <p style={bodyText}>Loading your integration progress…</p>
-        </ContentCard>
-      )}
-
-      {!institutionalFocus && activeApp && journey && journeyEvidence && (
-        <PartnerApplicationOverview
-          application={activeApp}
-          journey={journey}
-          policySummary={policySummary}
-          evidence={journeyEvidence}
-          productionActivated={productionActivated}
-          onNavigate={(s) => navigateToStage(mapLegacyLaunchpadStep(s) as WizardStep)}
-        />
-      )}
-
-      {!institutionalFocus && activeApp && authenticated && activity.length > 0 && (
-        <ContentCard title="Integration activity">
-          <p style={{ ...bodyText, marginTop: 0 }}>Select a row to load timeline and metadata in the diagnostics rail.</p>
-          <LaunchpadActivityEvidenceTable events={activity} />
-        </ContentCard>
-      )}
-
-      {activeApp && journey && !journeyEvidence && (
-        <ContentCard title={activeApp.display_name || activeApp.application_name}>
-          <p style={bodyText}>Loading your integration progress…</p>
-        </ContentCard>
-      )}
 
       {!institutionalFocus && (
-      <div style={{ marginBottom: "0.85rem" }}>
-        <p style={{ ...bodyText, fontWeight: 800, color: "var(--text-primary)", marginBottom: "0.35rem" }}>
-          {currentStepMeta?.description ?? "Guided merchant integration"}
-        </p>
-        {!journey && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }} role="list" aria-label="Launchpad progress">
-            {STEPS.map((s, index) => (
-              <button
-                key={s.id}
-                type="button"
-                role="listitem"
-                onClick={() => navigateToStage(s.id)}
-                style={stepPillStyle(step === s.id, false, false, false)}
-                aria-current={step === s.id ? "step" : undefined}
-              >
-                {`${index + 1}. `}{s.label}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+        <>
+          <LaunchpadFocusedStepNav
+            activeStep={focusedMerchantStep as "verify" | "test_app" | "connect" | "test" | "go_live"}
+            stages={journey?.stages}
+            onNavigate={(target) => navigateToStage(target as WizardStep)}
+          />
+          <LaunchpadStageGuide
+            activeStep={focusedMerchantStep as "verify" | "test_app" | "connect" | "test" | "go_live"}
+            statusLine={journey?.statusLine}
+            environmentLabel={journey?.environmentLabel ?? (productionActivated ? "Production" : "Sandbox")}
+          />
+        </>
       )}
 
       {!authenticated && !workspace?.applications.length ? (
@@ -929,6 +867,45 @@ export function PartnerLaunchpadClient({
         <p role="status" style={{ color: "var(--accent)", fontFamily: FONT, fontSize: "0.72rem", marginBottom: "0.65rem" }}>
           {copyFeedback}
         </p>
+      )}
+
+      {institutionalFocus && activeApp && (
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "0.65rem",
+            marginBottom: "0.85rem",
+            padding: "0.65rem 0.85rem",
+            borderRadius: 12,
+            border: "1px solid var(--border)",
+            background: "var(--surface-inset)",
+          }}
+        >
+          <div>
+            <p style={{ ...bodyText, margin: 0, fontSize: "0.68rem", fontWeight: 800, color: "var(--text-muted)" }}>
+              Application
+            </p>
+            <p style={{ ...bodyText, margin: "0.15rem 0 0", fontWeight: 700, color: "var(--text-primary)" }}>
+              {activeApp.display_name || activeApp.application_name}
+            </p>
+          </div>
+          <EnvironmentBadge environment={productionActivated ? "production" : "sandbox"} />
+        </div>
+      )}
+
+      {activeApp && !journey && (
+        <ContentCard title={activeApp.display_name || activeApp.application_name}>
+          <p style={bodyText}>Loading your integration progress…</p>
+        </ContentCard>
+      )}
+
+      {activeApp && journey && !journeyEvidence && (
+        <ContentCard title={activeApp.display_name || activeApp.application_name}>
+          <p style={bodyText}>Loading your integration progress…</p>
+        </ContentCard>
       )}
 
       {institutionalFocus && authenticated && (
@@ -1281,6 +1258,33 @@ export function PartnerLaunchpadClient({
         </>
       )}
 
+      {!institutionalFocus && journey && (
+        <LaunchpadStageFooter
+          activeStep={focusedMerchantStep as "verify" | "test_app" | "connect" | "test" | "go_live"}
+          onBack={() => goToAdjacentLaunchpadStep("back")}
+          onContinue={() => {
+            if (
+              journey.primaryAction.enabled
+              && focusedMerchantStep === journey.currentStage
+              && journey.primaryAction.stage
+            ) {
+              navigateToStage(journey.primaryAction.stage as WizardStep);
+              return;
+            }
+            goToAdjacentLaunchpadStep("forward");
+          }}
+          continueLabel={
+            journey.primaryAction.enabled && focusedMerchantStep === journey.currentStage
+              ? `${journey.primaryAction.label} →`
+              : undefined
+          }
+          continueDisabled={
+            focusedMerchantStep === journey.currentStage && !journey.primaryAction.enabled
+          }
+          showContinue={Boolean(authenticated || workspace?.applications.length)}
+        />
+      )}
+
       {institutionalFocus && activeApp && (
         <InstitutionalLaunchpadOperationsPanel
           activation={institutionalActivation}
@@ -1443,6 +1447,8 @@ export function PartnerLaunchpadClient({
         <LaunchpadOperationalInspector
           applicationId={activeApp?.id ?? null}
           activity={activity}
+          operationsItems={launchpadOperationsItems}
+          showOperationalLifecycle={!institutionalFocus}
         />
       </div>
       </AbxInstitutionalWorkspaceShell>

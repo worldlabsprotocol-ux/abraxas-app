@@ -42,6 +42,21 @@ describe("Build #589 institutional workspace presentation", () => {
     expect(client).toContain("operationsRail={operationsRail}");
   });
 
+  it("keeps partner lifecycle diagram out of Launchpad primary canvas", () => {
+    const launchpad = readFileSync(
+      resolve(process.cwd(), "components/partner/launchpad/PartnerLaunchpadClient.tsx"),
+      "utf8",
+    );
+    const inspector = readFileSync(
+      resolve(process.cwd(), "components/partner/launchpad/LaunchpadOperationalInspector.tsx"),
+      "utf8",
+    );
+    expect(launchpad).not.toContain("PartnerLifecycleControlRoomVisual");
+    expect(launchpad).toContain("LaunchpadFocusedStepNav");
+    expect(launchpad).not.toContain("PartnerApplicationOverview");
+    expect(inspector).toContain("PartnerLifecycleControlRoomVisual");
+  });
+
   it("uses Integration inspector heading without fabricated live claims", () => {
     const inspector = readFileSync(
       resolve(process.cwd(), "components/developers/IntegrationStudioInspectorRail.tsx"),

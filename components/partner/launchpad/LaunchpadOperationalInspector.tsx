@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { ABRAXAS_FONT_MONO, ABRAXAS_FONT_SANS } from "@/lib/abraxasTypography";
-import { useLaunchpadOperational } from "@/components/partner/launchpad/launchpadOperationalContext";
+import {
+  useLaunchpadOperational,
+  type LaunchpadActivitySelection,
+} from "@/components/partner/launchpad/launchpadOperationalContext";
+import { ModeCCommandRail, type ModeCCommandRailItem } from "@/components/product/ModeCCommandRail";
+import { PartnerLifecycleControlRoomVisual } from "@/components/protocol-visuals";
+import { LaunchpadActivityEvidenceTable } from "@/components/partner/launchpad/LaunchpadActivityEvidenceTable";
 
 const FONT = ABRAXAS_FONT_SANS;
 const MONO = ABRAXAS_FONT_MONO;
@@ -18,9 +24,13 @@ type ActivityEvent = {
 export function LaunchpadOperationalInspector({
   applicationId,
   activity,
+  operationsItems = [],
+  showOperationalLifecycle = false,
 }: {
   applicationId: string | null;
   activity: ActivityEvent[];
+  operationsItems?: ModeCCommandRailItem[];
+  showOperationalLifecycle?: boolean;
 }) {
   const { selectedActivity } = useLaunchpadOperational();
   const [webhook, setWebhook] = useState<{ available?: boolean; error?: string; deliveries?: Array<{ id: string; status: string }> } | null>(null);
@@ -131,6 +141,37 @@ export function LaunchpadOperationalInspector({
         Evidence & diagnostics
       </h2>
       {loading && <p style={{ fontFamily: FONT, fontSize: "0.68rem", color: "var(--text-muted)" }}>Refreshing…</p>}
+
+      {operationsItems.length > 0 && (
+        <section style={{ marginBottom: "0.85rem" }}>
+          <ModeCCommandRail items={operationsItems} />
+        </section>
+      )}
+
+      {showOperationalLifecycle && (
+        <details className="abx-launchpad-inspector__lifecycle" open={false}>
+          <summary style={{ fontFamily: FONT, fontSize: "0.72rem", fontWeight: 700, cursor: "pointer", marginBottom: "0.5rem" }}>
+            Partner operations milestones
+          </summary>
+          <div className="abx-surface-protocol-visual abx-surface-protocol-visual--compact">
+            <PartnerLifecycleControlRoomVisual />
+          </div>
+        </details>
+      )}
+
+      {activity.length > 0 && (
+        <section style={{ marginBottom: "0.85rem" }}>
+          <h3 style={{ fontFamily: FONT, fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 0.35rem" }}>
+            Integration activity
+          </h3>
+          <p style={{ fontFamily: FONT, fontSize: "0.65rem", color: "var(--text-muted)", margin: "0 0 0.45rem" }}>
+            Select a row to inspect evidence below.
+          </p>
+          <LaunchpadActivityEvidenceTable
+            events={activity.filter((row): row is LaunchpadActivitySelection => Boolean(row.id))}
+          />
+        </section>
+      )}
 
       <section style={{ marginBottom: "0.85rem" }}>
         <h3 style={{ fontFamily: FONT, fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 0 0.35rem" }}>
