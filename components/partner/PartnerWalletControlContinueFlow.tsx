@@ -8,7 +8,6 @@ import { WalletControlPartnerConsent } from "@/components/partner/WalletControlP
 import { PartnerFlowReturnHandler } from "@/components/partner/PartnerFlowReturnHandler";
 import {
   ensureBrowserSessionReadyForWalletAuth,
-  probeBrowserSessionDetails,
 } from "@/lib/auth/ensureBrowserSession";
 import type { PartnerFlowHandoffController } from "@/lib/passport/partnerFlowHandoff";
 import { HolderDecisionComplete } from "@/components/protocol/HolderDecisionComplete";
@@ -21,8 +20,9 @@ import { describeHolderAuthErrorCode } from "@/lib/auth/holderAuthErrorCopy";
 import { isNavigablePartnerHandoffRedirectUrl } from "@/lib/partner/partnerClientNavigation";
 import { HolderVerificationStepNav } from "@/components/partner/HolderVerificationStepNav";
 import { resolveWalletControlPresentationStage } from "@/lib/partner/holderExperience/holderPresentationStage";
-
-const FONT = "'Inter',system-ui,-apple-system,sans-serif";
+import { HolderVerificationChrome } from "@/components/partner/HolderVerificationChrome";
+import { HolderWalletControlReviewPanel } from "@/components/partner/HolderWalletControlReviewPanel";
+import { ProtocolLoadingState } from "@/components/protocol/ProtocolLoadingState";
 
 export function PartnerWalletControlContinueFlow({
   partnerId,
@@ -34,6 +34,7 @@ export function PartnerWalletControlContinueFlow({
   handoff,
   onSessionEstablished,
   onMethodQualifiedChange,
+  environment = "sandbox",
 }: {
   partnerId: string;
   partnerName: string;
@@ -44,7 +45,9 @@ export function PartnerWalletControlContinueFlow({
   handoff: PartnerFlowHandoffController;
   onSessionEstablished: () => void;
   onMethodQualifiedChange?: (qualified: boolean) => void;
+  environment?: "sandbox" | "production";
 }) {
+  const [reviewAcknowledged, setReviewAcknowledged] = useState(false);
   const [methodQualified, setMethodQualified] = useState(false);
   const [qualifyBusy, setQualifyBusy] = useState(false);
   const [consentDismissed, setConsentDismissed] = useState(false);
@@ -119,26 +122,39 @@ export function PartnerWalletControlContinueFlow({
     : false;
 
   const activeStage = resolveWalletControlPresentationStage({
+    reviewAcknowledged,
     methodQualified,
     showConsent,
     flowComplete,
   });
 
+  const approveStage = activeStage === "authorization" || activeStage === "decision";
+
   return (
     <div className="abx-holder-verification-focused" style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
-      <PartnerFlowReturnHandler handoff={handoff} />
-      <HolderVerificationStepNav activeStage={activeStage} reviewComplete />
+      <PartnerFlowReturnHandler handoff={handoff} autoCompleteWhenReady={false} />
+      <HolderVerificationChrome environment={environment} />
+      <HolderVerificationStepNav activeStage={activeStage} />
 
       <div className="abx-holder-verification-focused__stage" aria-live="polite">
+        {activeStage === "review" && !flowComplete ? (
+          <HolderWalletControlReviewPanel
+            partnerName={partnerName}
+            environment={environment}
+            onContinue={() => setReviewAcknowledged(true)}
+          />
+        ) : null}
+
         {activeStage === "wallet" && !flowComplete ? (
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-            <p style={{ margin: 0, fontSize: "0.86rem", lineHeight: 1.55, color: "var(--text-secondary)" }}>
-              Connect your wallet and sign the challenge to prove control. This is not approval to share data with {partnerName}.
+            <h2 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800 }}>Verify wallet</h2>
+            <p style={{ margin: 0, fontSize: "0.88rem", lineHeight: 1.55, color: "var(--text-secondary)" }}>
+              Connect your wallet and sign the challenge. This proves control only — not approval to share with {partnerName}.
             </p>
             <WalletVerifyControlPanel onSuccess={() => void afterWalletVerified()} />
             {qualifyBusy ? (
               <p role="status" style={{ margin: 0, fontSize: "0.84rem", color: "var(--text-secondary)" }}>
-                Confirming wallet control for {partnerName}…
+                Confirming wallet control…
               </p>
             ) : null}
             {error ? (
@@ -146,31 +162,26 @@ export function PartnerWalletControlContinueFlow({
                 {error}
               </p>
             ) : null}
-            <p style={{ fontFamily: FONT, fontSize: "0.78rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.55 }}>
-              This request uses a message signature. It does not authorize a transaction, transfer funds, or grant spending permission.
-            </p>
           </div>
         ) : null}
 
-        {activeStage === "authorization" && !flowComplete ? (
-          <p role="status" style={{ margin: 0, fontSize: "0.92rem", lineHeight: 1.6, fontWeight: 600 }}>
-            Wallet control confirmed. Review what {partnerName} is allowed to receive before you approve or decline.
-          </p>
-        ) : null}
-
-        {activeStage === "decision" && !flowComplete && showConsent ? (
-          <>
-            <WalletControlPartnerConsent
-              partnerName={partnerName}
-              handoff={handoff}
-              onDeclined={() => setConsentDismissed(true)}
-            />
-            {methodQualified && consentDismissed && handoff.phase === "idle" && handoff.ready ? (
-              <p role="status" style={{ fontSize: "0.86rem", marginTop: "0.65rem" }}>
-                Authorization declined. Re-open the approval controls above when you are ready.
+        {approveStage && !flowComplete ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            <h2 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800 }}>Approve sharing</h2>
+            {activeStage === "decision" && showConsent ? (
+              <WalletControlPartnerConsent
+                partnerName={partnerName}
+                handoff={handoff}
+                onDeclined={() => setConsentDismissed(true)}
+              />
+            ) : consentDismissed ? (
+              <p role="status" style={{ margin: 0, fontSize: "0.88rem", lineHeight: 1.55 }}>
+                You declined sharing. Approve above when you want to continue — your wallet signature alone does not share anything.
               </p>
-            ) : null}
-          </>
+            ) : (
+              <ProtocolLoadingState kind="preparing_request" detail={partnerName} />
+            )}
+          </div>
         ) : null}
 
         {activeStage === "outcome" && flowComplete ? (

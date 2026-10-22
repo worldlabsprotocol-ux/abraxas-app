@@ -80,6 +80,10 @@ import { isContentOriginDisclosurePolicyId } from "@/lib/provenance/constants";
 import { probeBrowserSessionDetails } from "@/lib/auth/ensureBrowserSession";
 import { isWalletControlPartnerPolicy } from "@/lib/partner/walletControlPartnerPolicy";
 import { PartnerWalletControlContinueFlow } from "@/components/partner/PartnerWalletControlContinueFlow";
+import {
+  inferPolicyPackFromPolicyId,
+  policyPackIsSandboxOnly,
+} from "@/lib/partner/launchpad/policyPacks";
 
 function resolveMinimumAge(policyId: string): number | null {
   if (policyId === GOOD_TROUBLE_RETAIL_POLICY_ID) return 21;
@@ -294,6 +298,11 @@ function PartnerContinueInner() {
     purpose: purposeParam,
   });
   const walletControlPolicy = isWalletControlPartnerPolicy(policyId);
+  const walletControlEnvironment = useMemo((): "sandbox" | "production" => {
+    const pack = inferPolicyPackFromPolicyId(policyId);
+    if (pack && policyPackIsSandboxOnly(pack)) return "sandbox";
+    return "production";
+  }, [policyId]);
   const holderBrowserAuthenticated = Boolean(suiAddress || walletBrowserSession);
   const sessionSubjectForHandoff = suiAddress ?? holderSubjectId;
 
@@ -665,7 +674,7 @@ function PartnerContinueInner() {
       hideStatus={Boolean(holderOpening) || simplifiedPurchase || directHandoff || undefined}
       hideHeader={directHandoff || Boolean(holderOpening)}
     >
-      {!directHandoff && !simplifiedPurchase && holderOpening && handoff.phase !== "completed" && (
+      {!directHandoff && !simplifiedPurchase && holderOpening && !walletControlPolicy && handoff.phase !== "completed" && (
         <HolderOpeningBrief opening={holderOpening} />
       )}
       {authLoading || contextLoading || (hostedBootstrapEligible && hostedBootstrap.bootstrapping) ? (
@@ -711,6 +720,7 @@ function PartnerContinueInner() {
             returnUrl={decodedReturnUrl ?? ""}
             returnLabel={returnLabel}
             handoff={handoff}
+            environment={walletControlEnvironment}
             onMethodQualifiedChange={setMethodQualified}
             onSessionEstablished={() => {
               syncWalletBrowserSession();
@@ -742,6 +752,7 @@ function PartnerContinueInner() {
           returnUrl={decodedReturnUrl ?? ""}
           returnLabel={returnLabel}
           handoff={handoff}
+          environment={walletControlEnvironment}
           onMethodQualifiedChange={setMethodQualified}
           onSessionEstablished={() => {
             syncWalletBrowserSession();

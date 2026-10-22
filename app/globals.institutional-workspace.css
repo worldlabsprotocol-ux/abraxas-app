@@ -500,3 +500,65 @@
 .abx-holder-verification-focused__stage {
   min-height: 4rem;
 }
+
+.abx-holder-verification-chrome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.abx-holder-verification-chrome__eyebrow {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.abx-holder-wallet-review__title {
+  margin: 0 0 0.45rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--text-primary);
+}
+
+.abx-holder-wallet-review__lead {
+  margin: 0 0 0.85rem;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.abx-holder-wallet-review__facts {
+  margin: 0 0 0.85rem;
+  display: grid;
+  gap: 0.55rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.abx-holder-wallet-review__facts dt {
+  margin: 0;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.abx-holder-wallet-review__facts dd {
+  margin: 0.15rem 0 0;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.abx-holder-wallet-review__note {
+  margin: 0 0 0.85rem;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+}

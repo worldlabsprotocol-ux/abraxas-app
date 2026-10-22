@@ -252,10 +252,7 @@ export function PartnerVerifyShell({
     >
       {showHolderStepNav ? (
         <div style={{ marginBottom: "0.85rem" }}>
-          <HolderVerificationStepNav
-            activeStage={holderPresentationStage}
-            reviewComplete={Boolean(brief) || Boolean(showBrief)}
-          />
+          <HolderVerificationStepNav activeStage={holderPresentationStage} />
         </div>
       ) : null}
       {phase === "approved" ? (
