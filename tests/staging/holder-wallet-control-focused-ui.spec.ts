@@ -19,6 +19,17 @@ test.describe("holder wallet-control focused UI", () => {
         }),
       });
     });
+    await page.route("**/api/v1/partner-flow/sharing-consent**", async (route) => {
+      if (route.request().method() === "POST") {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ ok: true }),
+        });
+        return;
+      }
+      await route.continue();
+    });
     await page.route("**/api/v1/partner-verify/method-qualification**", async (route) => {
       if (route.request().method() === "GET") {
         await route.fulfill({

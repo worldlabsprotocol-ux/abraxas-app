@@ -33,6 +33,11 @@ import {
   PartnerFlowCompleteRequestError,
   resolvePartnerFlowCompleteCorrelation,
 } from "@/lib/partner/partnerFlowCompleteCorrelation";
+import {
+  enforceWalletControlCompleteAuthorization,
+  walletControlCompleteRequiresAuthorization,
+} from "@/lib/partner/walletControlCompleteAuthorization";
+import { clearPartnerSharingConsentCookie } from "@/lib/partner/partnerSharingConsentCookie";
 
 export const dynamic = "force-dynamic";
 
@@ -145,6 +150,35 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: e.message }, { status: 400 });
       }
       throw e;
+    }
+  }
+
+  if (
+    correlationId
+    && walletControlCompleteRequiresAuthorization({ policyId, verifyRequestId: correlationId })
+  ) {
+    const authorized = await enforceWalletControlCompleteAuthorization({
+      request,
+      partnerId,
+      policyId,
+      verifyRequestId: correlationId,
+      sessionSubject: session.session.subjectId,
+    });
+    if (!authorized.ok) {
+      recordPartnerFlowRequestOutcome({
+        request,
+        endpoint: ENDPOINT,
+        method: "POST",
+        started,
+        sessionSubject: session.session.subjectId,
+        partnerId,
+        policyId,
+        httpStatus: authorized.httpStatus,
+      });
+      return NextResponse.json(
+        { error: authorized.error, code: authorized.code },
+        { status: authorized.httpStatus },
+      );
     }
   }
 
@@ -369,9 +403,16 @@ export async function POST(request: NextRequest) {
     hasRedirectUrl: Boolean(result.redirect_url),
   });
 
-  return NextResponse.json({
+  const res = NextResponse.json({
     ...enrichPartnerFlowResponse(result),
     ok: result.ok,
     flow_trace_id: flowTraceId,
   });
+  if (
+    correlationId
+    && walletControlCompleteRequiresAuthorization({ policyId, verifyRequestId: correlationId })
+  ) {
+    clearPartnerSharingConsentCookie(res);
+  }
+  return res;
 }
