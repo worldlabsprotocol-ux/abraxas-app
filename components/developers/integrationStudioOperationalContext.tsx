@@ -1,6 +1,14 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import type { ModeCCommandRailItem } from "@/components/product/ModeCCommandRail";
+
+export type IntegrationStudioNextActionSummary = {
+  action: string;
+  detail: string;
+  href?: string;
+  buttonLabel: string;
+};
 
 export type IntegrationStudioInspectorFocus =
   | "overview"
@@ -18,7 +26,13 @@ type IntegrationStudioOperationalState = {
   returnUrl: string;
   inspectorFocus: IntegrationStudioInspectorFocus;
   lastHttpTrace: { request: unknown; response: unknown; at: string } | null;
+  operationsRail: ModeCCommandRailItem[];
+  nextAction: IntegrationStudioNextActionSummary | null;
   setApplicationContext: (input: { applicationId: string | null; signedIn: boolean; returnUrl?: string }) => void;
+  setOperationsPanel: (input: {
+    operationsRail: ModeCCommandRailItem[];
+    nextAction: IntegrationStudioNextActionSummary;
+  }) => void;
   setInspectorFocus: (focus: IntegrationStudioInspectorFocus) => void;
   recordHttpTrace: (request: unknown, response: unknown) => void;
 };
@@ -31,6 +45,8 @@ export function IntegrationStudioOperationalProvider({ children }: { children: R
   const [returnUrl, setReturnUrl] = useState("http://localhost:3000/callback");
   const [inspectorFocus, setInspectorFocus] = useState<IntegrationStudioInspectorFocus>("overview");
   const [lastHttpTrace, setLastHttpTrace] = useState<IntegrationStudioOperationalState["lastHttpTrace"]>(null);
+  const [operationsRail, setOperationsRail] = useState<ModeCCommandRailItem[]>([]);
+  const [nextAction, setNextAction] = useState<IntegrationStudioNextActionSummary | null>(null);
 
   const setApplicationContext = useCallback(
     (input: { applicationId: string | null; signedIn: boolean; returnUrl?: string }) => {
@@ -46,6 +62,14 @@ export function IntegrationStudioOperationalProvider({ children }: { children: R
     setInspectorFocus("response");
   }, []);
 
+  const setOperationsPanel = useCallback(
+    (input: { operationsRail: ModeCCommandRailItem[]; nextAction: IntegrationStudioNextActionSummary }) => {
+      setOperationsRail(input.operationsRail);
+      setNextAction(input.nextAction);
+    },
+    [],
+  );
+
   const value = useMemo(
     () => ({
       applicationId,
@@ -53,7 +77,10 @@ export function IntegrationStudioOperationalProvider({ children }: { children: R
       returnUrl,
       inspectorFocus,
       lastHttpTrace,
+      operationsRail,
+      nextAction,
       setApplicationContext,
+      setOperationsPanel,
       setInspectorFocus,
       recordHttpTrace,
     }),
@@ -63,7 +90,10 @@ export function IntegrationStudioOperationalProvider({ children }: { children: R
       returnUrl,
       inspectorFocus,
       lastHttpTrace,
+      operationsRail,
+      nextAction,
       setApplicationContext,
+      setOperationsPanel,
       recordHttpTrace,
     ],
   );

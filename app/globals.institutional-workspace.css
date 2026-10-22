@@ -74,33 +74,83 @@
 .abx-studio-workspace__main {
   display: grid;
   gap: clamp(0.85rem, 2vw, 1.25rem);
+  grid-template-areas:
+    "guide"
+    "canvas"
+    "inspector";
 }
 
 @media (min-width: 1024px) {
   .abx-studio-workspace__main {
-    grid-template-columns: minmax(0, 1fr) min(340px, 32vw);
+    grid-template-columns: minmax(0, 1fr) min(320px, 30vw);
+    grid-template-areas:
+      "guide guide"
+      "canvas inspector";
     align-items: start;
   }
 }
 
+.abx-studio-workspace__guide {
+  grid-area: guide;
+  min-width: 0;
+}
+
+.abx-studio-stage-guide {
+  font-size: clamp(0.92rem, 2.2vw, 1rem) !important;
+  line-height: 1.6 !important;
+}
+
 .abx-studio-workspace__canvas {
+  grid-area: canvas;
   border-radius: 14px;
   border: 1px solid rgba(245, 245, 243, 0.08);
   background: rgba(8, 8, 12, 0.55);
-  padding: clamp(0.75rem, 2vw, 1.15rem);
+  padding: clamp(0.85rem, 2.2vw, 1.35rem);
   min-width: 0;
+  min-height: min(420px, 50vh);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
 }
 
 .abx-studio-workspace__inspector {
+  grid-area: inspector;
   border-radius: 14px;
   border: 1px solid rgba(76, 187, 146, 0.22);
-  padding: clamp(0.75rem, 2vw, 1rem);
+  padding: clamp(0.85rem, 2.2vw, 1.15rem);
   background:
     linear-gradient(180deg, rgba(76, 187, 146, 0.05), transparent 42%),
     rgba(10, 10, 14, 0.85);
   min-width: 0;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+}
+
+.abx-studio-inspector__operations {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(245, 245, 243, 0.1);
+}
+
+.abx-studio-inspector__operations .abx-mode-c-rail__label {
+  font-size: 0.68rem !important;
+}
+
+.abx-studio-inspector__operations .abx-mode-c-rail__value {
+  font-size: 0.88rem !important;
+  line-height: 1.45;
+}
+
+.abx-studio-inspector__next-action {
+  margin-top: 0.75rem;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.abx-studio-inspector__next-action strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
 }
 
 .abx-studio-inspector__header {

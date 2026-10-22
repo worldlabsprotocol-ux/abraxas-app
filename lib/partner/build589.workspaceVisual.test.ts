@@ -24,6 +24,24 @@ describe("Build #589 institutional workspace presentation", () => {
     expect(css).toContain("prefers-reduced-motion");
   });
 
+  it("assigns canvas and inspector to distinct grid areas on desktop", () => {
+    const css = readFileSync(resolve(process.cwd(), "app/globals.institutional-workspace.css"), "utf8");
+    expect(css).toContain('grid-template-areas:');
+    expect(css).toContain('"canvas inspector"');
+    expect(css).toContain("grid-area: canvas");
+    expect(css).toContain("grid-area: inspector");
+  });
+
+  it("keeps lifecycle diagram out of Integration Studio primary canvas", () => {
+    const client = readFileSync(
+      resolve(process.cwd(), "app/developers/integration-studio/IntegrationStudioClient.tsx"),
+      "utf8",
+    );
+    expect(client).not.toContain("PartnerLifecycleControlRoomVisual");
+    expect(client).toContain("IntegrationStudioOperationalBridge");
+    expect(client).toContain("operationsRail={operationsRail}");
+  });
+
   it("uses Integration inspector heading without fabricated live claims", () => {
     const inspector = readFileSync(
       resolve(process.cwd(), "components/developers/IntegrationStudioInspectorRail.tsx"),

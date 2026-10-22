@@ -6,7 +6,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ContentCard } from "@/components/redesign/RedesignContent";
-import { NextActionCard } from "@/components/product/NextActionCard";
 import { Reveal } from "@/lib/motion/Reveal";
 import { Btn } from "@/components/redesign/ui";
 import { ABRAXAS_FONT_SANS, ABRAXAS_FONT_MONO } from "@/lib/abraxasTypography";
@@ -27,7 +26,6 @@ import { tradingVenueProfileExample } from "@/lib/partner/tradingVenue/profiles"
 import { launchpadConfigureHref } from "@/lib/partner/launchpad/partnerFlowRequest/contract";
 import { launchpadPolicyVersionHref } from "@/lib/partner/launchpad/policyVersionPlanner/contract";
 import { PolicyFitPlanner } from "@/app/developers/integration-studio/PolicyFitPlanner";
-import { ModeCCommandRail } from "@/components/product/ModeCCommandRail";
 import { PartnerBindingSelector } from "@/components/partner/launchpad/PartnerBindingSelector";
 import { OptionalWalletConnectionsPanel } from "@/app/developers/integration-studio/OptionalWalletConnectionsPanel";
 import { SolanaUsdcPlansPanel } from "@/app/developers/integration-studio/SolanaUsdcPlansPanel";
@@ -63,7 +61,9 @@ import {
 import { IntegrationStudioRequestWorkbench } from "@/components/developers/IntegrationStudioRequestWorkbench";
 import { IntegrationStudioSessionHandoff } from "@/components/developers/IntegrationStudioSessionHandoff";
 import { IntegrationStudioConfigurationPanel } from "@/components/developers/IntegrationStudioConfigurationPanel";
-import { PartnerLifecycleControlRoomVisual } from "@/components/protocol-visuals";
+import { IntegrationStudioStageFooter } from "@/components/developers/IntegrationStudioStageFooter";
+import { useIntegrationStudioStageFromContext } from "@/lib/developers/integrationStudioStageContext";
+import type { ModeCCommandRailItem } from "@/components/product/ModeCCommandRail";
 import {
   POLICY_FIT_ACTIONS,
   POLICY_FIT_CATEGORIES,
@@ -100,7 +100,7 @@ const PATH_LABEL: Record<IntegrationStudioPathId, string> = {
 
 const body: React.CSSProperties = {
   fontFamily: FONT,
-  fontSize: "0.82rem",
+  fontSize: "0.92rem",
   color: "var(--text-secondary)",
   lineHeight: 1.65,
   margin: 0,
@@ -493,9 +493,43 @@ export function IntegrationStudioClient() {
             buttonLabel: "Create sandbox below",
           };
 
+  const stage = useIntegrationStudioStageFromContext();
+
   const railEnvironment = created || resumeApp ? "Sandbox" : "Not provisioned";
-  const railApplication = resumeApp?.application_name ?? created?.application_id ?? "N/A";
+  const railApplication =
+    resumeApp?.application_name
+    ?? (created ? `${created.public_slug} (${created.application_id.slice(0, 8)}…)` : "None yet");
+  const railPolicyLabel = contract?.display_name ?? packId.replace(/_/g, " ");
   const railReadiness = studioNextAction.action;
+
+  const operationsRail: ModeCCommandRailItem[] = useMemo(
+    () => [
+      {
+        id: "env",
+        label: "Environment",
+        value: railEnvironment,
+        tone: created || resumeApp ? "sandbox" : "neutral",
+      },
+      { id: "policy", label: "Policy", value: railPolicyLabel, tone: "neutral" },
+      { id: "app", label: "Application", value: railApplication, tone: "neutral" },
+      {
+        id: "readiness",
+        label: "Readiness",
+        value: railReadiness,
+        tone: created || resumeApp ? "ready" : "neutral",
+      },
+    ],
+    [railEnvironment, railPolicyLabel, railApplication, railReadiness, created, resumeApp],
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document.querySelector(".abx-studio-workspace__canvas")?.scrollIntoView({
+      behavior: reduced ? "auto" : "smooth",
+      block: "start",
+    });
+  }, [stage]);
 
   return (
     <>
@@ -503,35 +537,11 @@ export function IntegrationStudioClient() {
         applicationId={configuredAppId}
         signedIn={signedIn}
         returnUrl={returnUrl}
+        operationsRail={operationsRail}
+        nextAction={studioNextAction}
       />
-      <Reveal style={{ marginBottom: "1.25rem" }}>
-        <div className="abx-surface-protocol-visual">
-          <PartnerLifecycleControlRoomVisual />
-        </div>
-      </Reveal>
 
-      <Reveal style={{ marginBottom: "1rem" }}>
-        <ModeCCommandRail
-          items={[
-            { id: "env", label: "Environment", value: railEnvironment, tone: "sandbox" },
-            { id: "policy", label: "Policy", value: packId.replace(/_/g, " "), tone: "neutral" },
-            { id: "app", label: "Application", value: railApplication, tone: "neutral" },
-            { id: "readiness", label: "Readiness", value: railReadiness, tone: created ? "ready" : "neutral" },
-          ]}
-        />
-      </Reveal>
-
-      <Reveal style={{ marginBottom: "1rem" }}>
-        <NextActionCard
-          title="What to do next"
-          action={studioNextAction.action}
-          detail={studioNextAction.detail}
-          href={studioNextAction.href}
-          buttonLabel={studioNextAction.buttonLabel}
-        />
-      </Reveal>
-
-      {resumeApp && !created && (
+      {stage === "sandbox" && resumeApp && !created && (
         <Reveal delay={0.05}>
           <ContentCard title="Current sandbox">
             <p style={{ ...body, marginBottom: "0.75rem" }}>
@@ -551,6 +561,8 @@ export function IntegrationStudioClient() {
         </Reveal>
       )}
 
+      {stage === "policy" && (
+      <>
       <Reveal delay={0.06}>
         <IntegrationStudioOutcomePicker
           selectedOutcomeId={selectedOutcomeId}
@@ -954,7 +966,12 @@ export function IntegrationStudioClient() {
           </div>
         )}
       </ContentCard>
+      <IntegrationStudioStageFooter stage="policy" />
+      </>
+      )}
 
+      {stage === "sandbox" && (
+      <>
       <ContentCard title={`Create · ${PARTNER_ACTIVATION_CREATE_CTA}`} id="sandbox">
         <p style={{ ...body, marginBottom: "0.75rem" }}>
           Create an isolated sandbox directly in the browser. No wallet, zkLogin, or existing API key is required. A secure cookie keeps the new sandbox attached to this browser.
@@ -1047,19 +1064,6 @@ export function IntegrationStudioClient() {
         </div>
       </ContentCard>
 
-      {walletApp && (
-        <OptionalWalletConnectionsPanel
-          applicationId={walletApp.applicationId}
-          partnerId={walletApp.partnerId}
-          policyId={walletApp.policyId}
-          policyVersion={walletApp.policyVersion}
-        />
-      )}
-
-      {walletApp && (
-        <SolanaUsdcPlansPanel applicationId={walletApp.applicationId} />
-      )}
-
       <IntegrationStudioSessionHandoff
         signedIn={signedIn}
         applicationId={configuredAppId}
@@ -1068,10 +1072,6 @@ export function IntegrationStudioClient() {
           if (authenticated) void refreshLaunchpadSession();
         }}
       />
-
-      <IntegrationStudioConfigurationPanel applicationId={configuredAppId} signedIn={signedIn} />
-
-      <IntegrationStudioRequestWorkbench />
 
       <ContentCard title="Test your sandbox">
         <p style={{ ...body }}>Run the hosted flow first. Open the full checklist only when you are ready to verify every integration edge.</p>
@@ -1088,18 +1088,83 @@ export function IntegrationStudioClient() {
           </ol>
         </details>
       </ContentCard>
+      <IntegrationStudioStageFooter stage="sandbox" />
+      </>
+      )}
+
+      {stage === "configuration" && (
+      <>
+      {!configuredAppId ? (
+        <ContentCard title="Configuration requires a sandbox">
+          <p style={body}>
+            Create or resume a sandbox application first. Callback URLs, policy pins, and optional wallet bindings load from Launchpad—not from placeholders in this workspace.
+          </p>
+          <Btn href="/developers/integration-studio#sandbox" size="sm">
+            Go to sandbox provisioning
+          </Btn>
+        </ContentCard>
+      ) : (
+        <>
+          <IntegrationStudioConfigurationPanel applicationId={configuredAppId} signedIn={signedIn} />
+          {configuredAppId && signedIn && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "1.25rem" }}>
+              <Btn href={launchpadConfigureHref(configuredAppId)} size="sm">
+                Edit callbacks in Launchpad
+              </Btn>
+              <Btn href={launchpadPolicyVersionHref(configuredAppId)} variant="secondary" size="sm">
+                Policy version planner
+              </Btn>
+            </div>
+          )}
+          {walletApp && (
+            <OptionalWalletConnectionsPanel
+              applicationId={walletApp.applicationId}
+              partnerId={walletApp.partnerId}
+              policyId={walletApp.policyId}
+              policyVersion={walletApp.policyVersion}
+            />
+          )}
+          {walletApp && (
+            <SolanaUsdcPlansPanel applicationId={walletApp.applicationId} />
+          )}
+        </>
+      )}
+      <IntegrationStudioStageFooter stage="configuration" />
+      </>
+      )}
+
+      {stage === "request" && (
+      <>
+      {!configuredAppId ? (
+        <ContentCard title="Requests require a sandbox">
+          <p style={body}>
+            Provision a sandbox application, attach your Launchpad session if needed, then run authenticated harness scenarios here. Responses appear in the integration inspector.
+          </p>
+          <Btn href="/developers/integration-studio#sandbox" size="sm">
+            Create sandbox
+          </Btn>
+        </ContentCard>
+      ) : (
+        <IntegrationStudioRequestWorkbench />
+      )}
 
       <ContentCard title="Upgrade · Production review">
         <p style={body}>{PARTNER_ACTIVATION_PRODUCTION.notice}</p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.75rem" }}>
-          <Btn href={created ? launchpadResumeHref(created.application_id) : INTEGRATION_STUDIO_PROVISION.launchpad_href} size="sm">
+          <Btn href={created ? launchpadResumeHref(created.application_id) : resumeApp ? launchpadResumeHref(resumeApp.id) : INTEGRATION_STUDIO_PROVISION.launchpad_href} size="sm">
             Open Launchpad readiness →
           </Btn>
-          <Btn href="/docs/sandbox-conformance" variant="secondary" size="sm">
+          <Btn href="/verify" variant="secondary" size="sm">
+            Independent verification workbench →
+          </Btn>
+          <Btn href="/docs/sandbox-conformance" variant="ghost" size="sm">
             Sandbox partner contract →
           </Btn>
         </div>
       </ContentCard>
+      <IntegrationStudioStageFooter stage="request" />
+      </>
+      )}
     </>
   );
 }
