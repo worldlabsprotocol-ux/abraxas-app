@@ -325,6 +325,51 @@ async function consumeWebAuthnChallengeLegacy(challengeId: string): Promise<bool
   return true;
 }
 
+/** Insert-only — never upgrades or downgrades an existing membership row. */
+export async function insertPartnerMembershipIfAbsent(input: {
+  accountId: string;
+  partnerId: string;
+  role: PartnerMembershipRole;
+}): Promise<boolean> {
+  if (useMemory()) {
+    return nativeAccountMemory.insertMembershipIfAbsent(input.accountId, input.partnerId, input.role);
+  }
+  if (usePostgresDirect()) {
+    return pgStore.insertPartnerMembershipIfAbsent(input);
+  }
+  const sb = persistenceAdmin();
+  const { error } = await sb.from("abraxas_account_partner_memberships").insert({
+    account_id: input.accountId,
+    partner_id: input.partnerId,
+    role: input.role,
+    status: "active",
+  });
+  if (!error) return true;
+  if (error.code === "23505") return false;
+  if (error.code === "42P01") throw new NativeAccountStoreUnavailableError();
+  throw error;
+}
+
+export async function revokePartnerMembership(accountId: string, partnerId: string): Promise<void> {
+  if (useMemory()) {
+    nativeAccountMemory.revokeMembership(accountId, partnerId);
+    return;
+  }
+  if (usePostgresDirect()) {
+    return pgStore.revokePartnerMembership(accountId, partnerId);
+  }
+  const sb = persistenceAdmin();
+  const { error } = await sb
+    .from("abraxas_account_partner_memberships")
+    .update({ status: "revoked" })
+    .eq("account_id", accountId)
+    .eq("partner_id", partnerId);
+  if (error) {
+    if (error.code === "42P01") throw new NativeAccountStoreUnavailableError();
+    throw error;
+  }
+}
+
 export async function upsertPartnerMembership(input: {
   accountId: string;
   partnerId: string;
