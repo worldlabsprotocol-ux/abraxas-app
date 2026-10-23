@@ -26,11 +26,13 @@ export function PartnerApplicationPoliciesPanel({
   applicationId,
   websiteConnected = false,
   integrationFilesReady = false,
+  hostedSandboxVerificationReady = false,
   onNavigate,
 }: {
   applicationId: string;
   websiteConnected?: boolean;
   integrationFilesReady?: boolean;
+  hostedSandboxVerificationReady?: boolean;
   onNavigate?: (step: string) => void;
 }) {
   const [summary, setSummary] = useState<ApplicationPoliciesSummary | null>(null);
@@ -124,9 +126,11 @@ export function PartnerApplicationPoliciesPanel({
     );
   }
 
+  const sandboxTestReady = integrationFilesReady || hostedSandboxVerificationReady;
   const effectiveNextAction = resolveMultiPolicyNextAction(summary, {
     websiteConnected,
     integrationFilesReady,
+    hostedSandboxVerificationReady,
   }) ?? nextAction;
 
   const initialTitle = summary.initial_policy_template_id
@@ -218,8 +222,10 @@ export function PartnerApplicationPoliciesPanel({
               effectiveNextAction === "connect_website"
                 ? "Finish connecting your website before running a test verification."
                 : effectiveNextAction.includes("test") || effectiveNextAction.includes("verification")
-                  ? integrationFilesReady
-                    ? "Run a test verification to confirm the customer experience."
+                  ? sandboxTestReady
+                    ? hostedSandboxVerificationReady && !integrationFilesReady
+                      ? "Run hosted verification with your approved callback — no merchant file deploy required."
+                      : "Run a test verification to confirm the customer experience."
                     : "Set up integration files first."
                   : "Resolved from configured policies and measured integration state."
             }
@@ -227,7 +233,7 @@ export function PartnerApplicationPoliciesPanel({
               effectiveNextAction === "connect_website"
                 ? "Connect website"
                 : effectiveNextAction.includes("test") || effectiveNextAction.includes("verification")
-                  ? integrationFilesReady ? "Run test verification" : "Connect website"
+                  ? sandboxTestReady ? "Run test verification" : "Connect website"
                   : effectiveNextAction.includes("production")
                     ? "Prepare to go live"
                     : "Continue"

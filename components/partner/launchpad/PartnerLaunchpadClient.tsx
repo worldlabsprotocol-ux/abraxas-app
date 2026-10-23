@@ -1242,6 +1242,17 @@ export function PartnerLaunchpadClient({
       {step === "test" && activeApp && (
         journey?.testAvailable ? (
           <>
+            {journey.hostedSandboxVerificationReady && !journey.integrationFilesReady && (
+              <ContentCard title="Hosted sandbox verification">
+                <p style={bodyText}>
+                  Your application already has an approved return URL and bound policy. Create a fresh hosted wallet-control request here — real Phantom signing and sharing consent still apply. Merchant integration files are only required when you embed Abraxas on your own website.
+                </p>
+                <PartnerFlowRequestPanel
+                  applicationId={activeApp.id}
+                  partnerId={workspace?.partner_id ?? activeApp.partner_id ?? ""}
+                />
+              </ContentCard>
+            )}
             <ContentCard title="Run a customer verification">
               <p style={bodyText}>
                 Confirm the customer experience works end to end. You should receive the eligibility result on your server, not date of birth, documents, or identity images.
@@ -1440,6 +1451,7 @@ export function PartnerLaunchpadClient({
                   applicationId={activeApp.id}
                   websiteConnected={journey.connectComplete}
                   integrationFilesReady={journey.integrationFilesReady}
+                  hostedSandboxVerificationReady={journey.hostedSandboxVerificationReady}
                   onNavigate={(s) => navigateToStage(mapLegacyLaunchpadStep(s) as WizardStep)}
                 />
               )}

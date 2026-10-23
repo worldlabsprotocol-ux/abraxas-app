@@ -64,6 +64,7 @@ export interface LaunchpadJourneyResolution {
   currentStage: MerchantJourneyStageId;
   connectComplete: boolean;
   integrationFilesReady: boolean;
+  hostedSandboxVerificationReady: boolean;
   primaryAction: {
     label: string;
     detail: string;
@@ -118,6 +119,18 @@ export function hasIntegrationFilesReady(input: LaunchpadJourneyInput): boolean 
   return input.starterKitEvidenced;
 }
 
+/** Approved callback + sandbox app ready — hosted verification without merchant starter-kit deploy. */
+export function hasHostedSandboxVerificationReady(input: LaunchpadJourneyInput): boolean {
+  if (isTestComplete(input)) return false;
+  if (!isVerifyComplete(input)) return false;
+  if (!isTestAppComplete(input)) return false;
+  return callbackConfigured(input.application.allowed_return_urls);
+}
+
+function canRunFirstSandboxVerification(input: LaunchpadJourneyInput, filesReady: boolean): boolean {
+  return filesReady || hasHostedSandboxVerificationReady(input);
+}
+
 export function isConnectComplete(input: LaunchpadJourneyInput): boolean {
   // Website connection is proven only by a verified sandbox receipt attributable
   // to this application (receipt_verification_succeeded integration events).
@@ -133,7 +146,7 @@ export function isGoLiveComplete(input: LaunchpadJourneyInput): boolean {
 }
 
 export function isReadyForFirstTest(input: LaunchpadJourneyInput): boolean {
-  return hasIntegrationFilesReady(input) && !isTestComplete(input);
+  return canRunFirstSandboxVerification(input, hasIntegrationFilesReady(input));
 }
 
 function resolveStateId(input: LaunchpadJourneyInput): LaunchpadJourneyStateId {
@@ -159,15 +172,16 @@ function buildStages(input: LaunchpadJourneyInput): MerchantJourneyStage[] {
     go_live: isGoLiveComplete(input),
   };
   const filesReady = hasIntegrationFilesReady(input);
+  const verificationReady = canRunFirstSandboxVerification(input, filesReady);
 
   return STAGE_ORDER.map((id) => {
-    const status = resolveStageStatus(id, input, completion, filesReady);
+    const status = resolveStageStatus(id, input, completion, verificationReady);
     return {
       id,
       label: STAGE_LABELS[id],
       status,
-      detail: stageDetail(id, input, completion, filesReady),
-      navigable: isStageNavigable(id, input, completion, filesReady, status),
+      detail: stageDetail(id, input, completion, filesReady, verificationReady),
+      navigable: isStageNavigable(id, input, completion, filesReady, verificationReady, status),
     };
   });
 }
@@ -176,7 +190,7 @@ function resolveStageStatus(
   stage: MerchantJourneyStageId,
   input: LaunchpadJourneyInput,
   completion: Record<MerchantJourneyStageId, boolean>,
-  filesReady: boolean,
+  verificationReady: boolean,
 ): MerchantJourneyStageStatus {
   if (completion[stage]) return "complete";
 
@@ -193,7 +207,7 @@ function resolveStageStatus(
     case "test":
       if (!completion.test_app) return "pending";
       if (completion.test) return "complete";
-      if (!filesReady) return "blocked";
+      if (!verificationReady) return "blocked";
       return "current";
     case "go_live":
       if (!completion.test) return "blocked";
@@ -208,6 +222,7 @@ export function isStageNavigable(
   input: LaunchpadJourneyInput,
   completion?: Record<MerchantJourneyStageId, boolean>,
   filesReady?: boolean,
+  verificationReady?: boolean,
   status?: MerchantJourneyStageStatus,
 ): boolean {
   const resolvedCompletion = completion ?? {
@@ -218,7 +233,14 @@ export function isStageNavigable(
     go_live: isGoLiveComplete(input),
   };
   const resolvedFilesReady = filesReady ?? hasIntegrationFilesReady(input);
-  const resolvedStatus = status ?? resolveStageStatus(stage, input, resolvedCompletion, resolvedFilesReady);
+  const resolvedVerificationReady = verificationReady
+    ?? canRunFirstSandboxVerification(input, resolvedFilesReady);
+  const resolvedStatus = status ?? resolveStageStatus(
+    stage,
+    input,
+    resolvedCompletion,
+    resolvedVerificationReady,
+  );
 
   if (resolvedStatus === "blocked") return false;
   if (resolvedStatus === "complete") return true;
@@ -228,7 +250,9 @@ export function isStageNavigable(
     return resolvedCompletion.verify || stage === "verify";
   }
   if (stage === "connect") return resolvedCompletion.test_app;
-  if (stage === "test") return resolvedCompletion.test_app && resolvedFilesReady;
+  if (stage === "test") {
+    return resolvedCompletion.test_app && resolvedVerificationReady;
+  }
   if (stage === "go_live") return resolvedCompletion.test;
   return false;
 }
@@ -245,10 +269,11 @@ export function stageNavigationTarget(
     go_live: isGoLiveComplete(input),
   };
   const filesReady = hasIntegrationFilesReady(input);
-  if (isStageNavigable(stage, input, completion, filesReady)) return stage;
-  if (stage === "test" && !filesReady) return "connect";
+  const verificationReady = canRunFirstSandboxVerification(input, filesReady);
+  if (isStageNavigable(stage, input, completion, filesReady, verificationReady)) return stage;
+  if (stage === "test" && !verificationReady) return "connect";
   if (stage === "go_live" && !completion.test) {
-    return filesReady ? "test" : "connect";
+    return verificationReady ? "test" : "connect";
   }
   if (!completion.test_app) return "verify";
   if (!completion.connect && stage !== "connect") return "connect";
@@ -260,8 +285,10 @@ function stageDetail(
   input: LaunchpadJourneyInput,
   completion: Record<MerchantJourneyStageId, boolean>,
   filesReady: boolean,
+  verificationReady: boolean,
 ): string | undefined {
   const appName = input.application.display_name || input.application.application_name || "your app";
+  const hostedReady = hasHostedSandboxVerificationReady(input);
   switch (stage) {
     case "verify":
       return completion.verify ? "Verification requirement selected" : "Choose what customers must prove";
@@ -275,7 +302,10 @@ function stageDetail(
       return `Connect Abraxas to ${appName}`;
     case "test":
       if (completion.test) return "Test verification passed";
-      if (!filesReady) return "Set up integration files first";
+      if (!verificationReady) return "Set up integration files first";
+      if (hostedReady && !filesReady) {
+        return "Run hosted verification with your approved callback";
+      }
       if (!completion.connect) return "Run your first end-to-end verification";
       return "Run a customer verification";
     case "go_live":
@@ -325,6 +355,19 @@ function buildPrimaryAction(
         enabled: true,
       };
     case "connect":
+      if (
+        hasHostedSandboxVerificationReady(input)
+        && !hasIntegrationFilesReady(input)
+        && !isConnectComplete(input)
+      ) {
+        return {
+          label: "Run hosted sandbox verification",
+          detail: `${appName} already has an approved return URL. Start a policy-bound hosted verification without deploying integration files on your website.`,
+          cta: "Run hosted verification",
+          stage: "test",
+          enabled: true,
+        };
+      }
       if (hasIntegrationFilesReady(input) && !isConnectComplete(input)) {
         return {
           label: "Integration files ready",
@@ -342,7 +385,7 @@ function buildPrimaryAction(
         enabled: true,
       };
     case "test":
-      if (!hasIntegrationFilesReady(input)) {
+      if (!canRunFirstSandboxVerification(input, hasIntegrationFilesReady(input))) {
         return {
           label: "Set up integration first",
           detail: "Generate platform-specific integration files before running a test verification.",
@@ -350,6 +393,15 @@ function buildPrimaryAction(
           stage: "connect",
           enabled: true,
           blockedReason: "integration_files_required",
+        };
+      }
+      if (hasHostedSandboxVerificationReady(input) && !hasIntegrationFilesReady(input)) {
+        return {
+          label: "Run hosted verification",
+          detail: "Create a fresh policy-bound hosted request using your allowlisted callback. Real holder signing and consent still apply.",
+          cta: "Run hosted verification",
+          stage: "test",
+          enabled: true,
         };
       }
       return {
@@ -433,6 +485,7 @@ export function resolveLaunchpadJourneyState(input: LaunchpadJourneyInput): Laun
     currentStage,
     connectComplete: isConnectComplete(input),
     integrationFilesReady: hasIntegrationFilesReady(input),
+    hostedSandboxVerificationReady: hasHostedSandboxVerificationReady(input),
     primaryAction: buildPrimaryAction(input, stages),
     statusLine: merchantVerificationLabel(input),
     environmentLabel: environmentLabel(input),

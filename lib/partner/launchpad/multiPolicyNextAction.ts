@@ -6,6 +6,7 @@ import type { ApplicationPoliciesSummary } from "@/lib/partner/launchpad/applica
 export interface MultiPolicyNextActionContext {
   websiteConnected?: boolean;
   integrationFilesReady?: boolean;
+  hostedSandboxVerificationReady?: boolean;
 }
 
 export function resolveMultiPolicyNextAction(
@@ -23,7 +24,7 @@ export function resolveMultiPolicyNextAction(
     (b) => (b.verified_receipts ?? 0) > 0,
   );
   if (!hasVerifiedReceipt) {
-    if (!context.integrationFilesReady) {
+    if (!context.integrationFilesReady && !context.hostedSandboxVerificationReady) {
       return "connect_website";
     }
     return "run_test_verification";

@@ -35,14 +35,14 @@ function baseInput(overrides: Partial<LaunchpadJourneyInput> = {}): LaunchpadJou
 }
 
 describe("resolveLaunchpadJourneyState", () => {
-  it("places freshly provisioned Good Trouble at Connect with one primary action", () => {
+  it("places freshly provisioned Good Trouble at hosted verification when callback is ready", () => {
     const journey = resolveLaunchpadJourneyState(baseInput());
-    expect(journey.currentStage).toBe("connect");
+    expect(journey.hostedSandboxVerificationReady).toBe(true);
     expect(journey.completedCount).toBe(2);
     expect(journey.connectComplete).toBe(false);
-    expect(journey.primaryAction.cta).toBe("Connect website");
-    expect(journey.primaryAction.label).toContain("Good Trouble");
-    expect(journey.verificationLabel).toBe("Waiting for your first test");
+    expect(journey.primaryAction.cta).toBe("Run hosted verification");
+    expect(journey.primaryAction.stage).toBe("test");
+    expect(journey.testAvailable).toBe(true);
   });
 
   it("does not mark connect complete when only starter kit is generated", () => {
@@ -57,12 +57,32 @@ describe("resolveLaunchpadJourneyState", () => {
     expect(journey.stages.find((stage) => stage.id === "test")?.status).toBe("current");
   });
 
-  it("blocks test navigation until integration files exist", () => {
-    const journey = resolveLaunchpadJourneyState(baseInput());
+  it("allows hosted sandbox test when callback is configured without starter kit", () => {
+    const input = baseInput();
+    const journey = resolveLaunchpadJourneyState(input);
+    expect(journey.hostedSandboxVerificationReady).toBe(true);
+    expect(journey.testAvailable).toBe(true);
+    const testStage = journey.stages.find((stage) => stage.id === "test");
+    expect(testStage?.status).toBe("current");
+    expect(testStage?.navigable).toBe(true);
+    expect(isStageNavigable("test", input)).toBe(true);
+    expect(stageNavigationTarget("test", input)).toBe("test");
+    expect(journey.primaryAction.stage).toBe("test");
+    expect(journey.primaryAction.cta).toBe("Run hosted verification");
+  });
+
+  it("blocks test navigation until callback or integration files exist", () => {
+    const input = baseInput({
+      application: {
+        ...baseInput().application,
+        allowed_return_urls: [],
+      },
+    });
+    const journey = resolveLaunchpadJourneyState(input);
     const testStage = journey.stages.find((stage) => stage.id === "test");
     expect(testStage?.status).toBe("blocked");
     expect(testStage?.navigable).toBe(false);
-    expect(stageNavigationTarget("test", baseInput())).toBe("connect");
+    expect(stageNavigationTarget("test", input)).toBe("connect");
   });
 
   it("enables first test after integration files without marking connect complete", () => {
