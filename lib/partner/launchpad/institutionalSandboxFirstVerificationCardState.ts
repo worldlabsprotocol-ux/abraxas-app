@@ -127,11 +127,14 @@ export function resolveInstitutionalCardNextAction(input: {
       stage: input.journey?.primaryAction.stage ?? "test",
     };
   }
-  if (input.journey?.connectComplete && input.journey.testAvailable) {
+  if (input.journey?.testAvailable) {
+    const hostedOnly = input.journey.hostedSandboxVerificationReady
+      && !input.journey.integrationFilesReady;
     return {
       label: "Run hosted verification test",
-      detail:
-        "Send a synthetic holder through hosted authorization, then verify the signed decision receipt on your server.",
+      detail: hostedOnly
+        ? "Your allowlisted callback is ready. Start a policy-bound hosted verification without deploying merchant integration files."
+        : "Send a holder through hosted authorization, then verify the signed decision receipt on your server.",
       stage: "test",
     };
   }
